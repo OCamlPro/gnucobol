@@ -1217,12 +1217,12 @@ AT_CLEANUP
 
 
 AT_SETUP([field BACKGROUND- / FOREGROUND-COLOUR via CONTROL])
-AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
-COLOR COLOUR REVERSED HIGHLIGHT BLINK])
+AT_KEYWORDS([screen DISPLAY REVERSED HIGHLIGHT BLINK COLOR
+BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR COLOUR])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
-AT_DATA([prog.cob], [
+AT_DATA([prog.cob], [[
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
@@ -1251,18 +1251,19 @@ AT_DATA([prog.cob], [
        
        77  LIN          PIC 99    COMP-5.
 
-       01  scr1 PIC X(80)
+       01  scr1 PIC X(75)
                VALUE 'Enter "y" if the text below matches the colour '
                & 'of the background/text.'.
-       01  scr2 PIC X(80)
+       01  scr2 PIC X(75)
                VALUE 'Note: the black text is on white background/the '
-               & 'white background has black text'.
-       01  scr3 PIC X(80)
-               VALUE 'to make the text visible.'.
-       01  scr8 PIC X(80)
+               & 'white background has black'.
+       01  scr3 PIC X(75)
+               VALUE 'text to make the text visible.'
+               & '  [This text *may* has "surrounding lines".]'.
+       01  scr8 PIC X(75)
                VALUE 'following lines should be identical but '
                & 'highlighted for the first line'.
-       01  scr9 PIC X(80)
+       01  scr9 PIC X(75)
                VALUE 'and blinking for the second one.'.
 
        01  scrblack PIC X(08) VALUE 'Black'.
@@ -1276,24 +1277,45 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
        testme.
-           DISPLAY scr1 AT 0102
-           DISPLAY scr2 AT 0202
-           DISPLAY scr3 AT 0303
-           MOVE 5 TO LIN
+           MOVE 2 TO LIN
+           DISPLAY scr1 ( 1:1) AT LINE LIN COL 2
+              CONTROL "LEFTLINE OVERLINE"
+           DISPLAY scr1 ( 2:)  AT LINE LIN COL 2 + 1
+              CONTROL "OVERLINE"
+           DISPLAY scr1 (75:)  AT LINE LIN COL 2 + 75
+              CONTROL "OVERLINE  RIGHTLINE"
+           ADD  1 TO LIN
+           DISPLAY scr2 ( 1:1) AT LINE LIN COL 2
+              CONTROL "LEFTLINE"
+           DISPLAY scr2 ( 2:)  AT LINE LIN COL 2 + 1
+           DISPLAY scr2 (75:)  AT LINE LIN COL 2 + 75
+              CONTROL "RIGHTLINE"
+           ADD  1 TO LIN
+           DISPLAY scr3 ( 1:1) AT LINE LIN COL 2
+              CONTROL "LEFTLINE UNDERLINE"
+           DISPLAY scr3 ( 2:)  AT LINE LIN COL 2 + 1
+              CONTROL "UNDERLINE"
+           DISPLAY scr3 (75:)  AT LINE LIN COL 2 + 75
+              CONTROL "UNDERLINE  RIGHTLINE"
+      *
+           ADD  2 TO LIN
            PERFORM dspcol
            MOVE "REVERSE," TO 
                CBLACK (40:), CBLUE (40:), CGREEN (40:), CCYAN (40:),
                CRED (40:), CMAGENTA (40:), CYELLOW (40:), CWHITE (40:)
-           MOVE 6 TO LIN
+           ADD  1 TO LIN
            PERFORM dspcol
       *
            INSPECT CRED REPLACING ALL "=" BY " "
-           DISPLAY scr8 AT 0802
-           DISPLAY scr9 AT 0903
+           ADD  2 TO LIN
+           DISPLAY scr8 AT LINE LIN COL 2
+           ADD  1 TO LIN
+           DISPLAY scr9 AT LINE LIN COL 2
+      *
            MOVE "HIGHLIGHT,NO REVERSE" TO 
                CBLACK (50:), CBLUE (50:), CGREEN (50:), CCYAN (50:),
                CRED (50:), CMAGENTA (50:), CYELLOW (50:), CWHITE (50:)
-           MOVE 11 TO LIN
+           ADD  1 TO LIN
            PERFORM dspcol
            MOVE "NO HIGH, BLINK" TO 
                CBLACK (60:), CBLUE (60:), CGREEN (60:), CCYAN (60:),
@@ -1301,7 +1323,7 @@ AT_DATA([prog.cob], [
            MOVE 12 TO LIN
            PERFORM dspcol
       *
-           ACCEPT success-flag AT 1401 UPDATE REQUIRED
+           ACCEPT success-flag AT 1801 UPDATE REQUIRED
 
            IF success AND COB-CRT-STATUS = 0
                GOBACK RETURNING 0
@@ -1310,14 +1332,91 @@ AT_DATA([prog.cob], [
 
        dspcol.
            DISPLAY scrblack LINE LIN COL 1,  CONTROL CBLACK.
-           DISPLAY scrblue  LINE LIN COL 11, CONTROL CBLUE.
-           DISPLAY scrgreen LINE LIN COL 21, CONTROL CGREEN.
-           DISPLAY scrcyan  LINE LIN COL 31, CONTROL CCYAN.
-           DISPLAY scrred   LINE LIN COL 41, CONTROL CRED.
-           DISPLAY scrmaggy LINE LIN COL 51, CONTROL CMAGENTA.
-           DISPLAY scryell  LINE LIN COL 61, CONTROL CYELLOW.
-           DISPLAY scrwhite LINE LIN COL 77, CONTROL CWHITE.
-])
+           DISPLAY scrblue  LINE LIN COL 10, CONTROL CBLUE.
+           DISPLAY scrgreen LINE LIN COL 19, CONTROL CGREEN.
+           DISPLAY scrcyan  LINE LIN COL 28, CONTROL CCYAN.
+           DISPLAY scrred   LINE LIN COL 37, CONTROL CRED.
+           DISPLAY scrmaggy LINE LIN COL 46, CONTROL CMAGENTA.
+           DISPLAY scryell  LINE LIN COL 55, CONTROL CYELLOW.
+           DISPLAY scrwhite LINE LIN COL 70, CONTROL CWHITE.
+]])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([line draw characters via CONTROL GRAPHICS])
+AT_KEYWORDS([screen DISPLAY])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       
+       77  LIN-START    PIC 99    COMP-5.
+       77  LIN          PIC 99    COMP-5.
+
+       01  scr1 PIC X(75)
+               VALUE 'Enter "y" if you see line draw characters. '
+               & 'The first set (single/double)'.
+       01  scr2 PIC X(75)
+               VALUE 'uses HIGHLIGHT, the second uses '
+               & 'LOWLIGHT, BLINK and MAGENTA.'.
+
+       01  graphcontrol PIC X(50) VALUE 'HIGH, GRAPHICS'.
+
+       PROCEDURE DIVISION.
+       testme.
+           MOVE 2 TO LIN
+           DISPLAY scr1 AT LINE LIN COL 2
+           ADD  1 TO LIN
+           DISPLAY scr2 AT LINE LIN COL 2
+      *
+           MOVE 5 TO LIN-START
+           PERFORM dspcol
+           MOVE 12 TO LIN-START
+           MOVE "LOW BLINK FCOLOR=MAGENTA GRAPHICS" TO graphcontrol
+           PERFORM dspcol
+      *
+           ACCEPT success-flag AT 1801 UPDATE REQUIRED
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1.
+
+       dspcol.
+      *    Single-line graphics
+           MOVE LIN-START TO LIN
+           DISPLAY "lqqqqwqqqqk" LINE LIN COL 05, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "x    x    x" LINE LIN COL 05, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "tqqqqnqqqqu" LINE LIN COL 05, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "x    x    x" LINE LIN COL 05, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "mqqqqvqqqqj" LINE LIN COL 05, CONTROL graphcontrol.
+           ADD  1 TO LIN
+      *    Double-line graphics
+           MOVE LIN-START TO LIN
+           DISPLAY "LQQQQWQQQQK" LINE LIN COL 20, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "X    X    X" LINE LIN COL 20, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "TQQQQNQQQQU" LINE LIN COL 20, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "X    X    X" LINE LIN COL 20, CONTROL graphcontrol.
+           ADD  1 TO LIN
+           DISPLAY "MQQQQVQQQQJ" LINE LIN COL 20, CONTROL graphcontrol.
+]])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])

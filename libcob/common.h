@@ -1009,10 +1009,11 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
 #define COB_SCREEN_CONV			((cob_flags_t)1 << 30)
 #define COB_SCREEN_GRAPHICS		((cob_flags_t)1 << 31)
-#define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
-#define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
-#define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
-#define COB_SCREEN_GRID			((cob_flags_t)1 << 35) /* used for syntax checking */
+#define COB_SCREEN_RIGHTLINE	((cob_flags_t)1 << 32)
+#define COB_SCREEN_TAB			((cob_flags_t)1 << 33) /* used for syntax checking */
+#define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 35) /* used for syntax checking */
+#define COB_SCREEN_GRID			((cob_flags_t)1 << 36) /* used for syntax checking */
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -2125,6 +2126,7 @@ COB_EXPIMP void		cob_accept_escape_key	(cob_field *);
 COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
 COB_EXPIMP int		cob_get_text 		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);

@@ -87,6 +87,18 @@
 #define WITH_EXTENDED_SCREENIO
 #endif
 
+/* work around broken system headers or compile flags defining
+   NCURSES_WIDECHAR / PDC_WIDE but not including the actual definitions */
+#if defined (NCURSES_WIDECHAR) && !defined (WACS_HLINE)
+#undef NCURSES_WIDECHAR
+#endif
+#if defined (PDC_WIDE) && !defined (WACS_HLINE)
+#undef PDC_WIDE
+#endif
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#define WITH_WIDE_FUNCTIONS
+#endif
+
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
@@ -373,7 +385,7 @@ cob_get_color_pair (const short fg_color, const short bg_color)
 	{
 		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 		   provide more color pairs than we currently support, limit appropriate */
-		const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
+		const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? (short)COLOR_PAIRS : SHRT_MAX - 1;
 		short	color_pair_number;
 		short	fg_defined, bg_defined;
 
@@ -651,7 +663,8 @@ struct parse_control
 	cob_flags_t     cobflag;
 };
 
-/* binary sorted list of known attribute names and their value */
+/* binary sorted list of known attribute names and their value,
+   note : the actual list is compiler specific, we support all */
 static struct parse_control control_attrs[] = {
 	{ "AUTO"                , COB_SCREEN_AUTO         } ,
 	{ "AUTO-SKIP"           , COB_SCREEN_AUTO         } ,
@@ -692,7 +705,7 @@ static struct parse_control control_attrs[] = {
 	{ "REVERSE"             , COB_SCREEN_REVERSE      } ,
 	{ "REVERSE-VIDEO"       , COB_SCREEN_REVERSE      } ,
 	{ "RIGHT-JUSTIFY"       , -1                      } ,
-	{ "SECURE"              , COB_SCREEN_SECURE       } ,
+	{ "RIGHTLINE"           , COB_SCREEN_RIGHTLINE    } ,	/* GC extension */
 	{ "TAB"                 , COB_SCREEN_TAB          } ,
 	{ "TRAILING"            , -1                      } ,
 	{ "TRAILING-SIGN"       , -1                      } ,
@@ -880,7 +893,7 @@ adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 	}
 }
 
-static void
+static cob_flags_t
 cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 		 cob_field *control, cob_field *color, const enum screen_statement stmt)
 {
@@ -910,7 +923,10 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 		adjust_attr_from_control_field (&attr, control, &fg_color, &bg_color);
 	}
 	
-	/* curses attributes from (possibly adjusted) COBOL attributes */
+	/* curses attributes from (possibly adjusted) COBOL attributes;
+	   note that several "may be ignored if not supported by the terminal"
+	   and that OVERLINE / LEFTLINE / RIGHTLINE is a curses extension
+	   in general */
 	if (attr & COB_SCREEN_REVERSE) {
 		styles |= A_REVERSE;
 	}
@@ -926,6 +942,21 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	if (attr & COB_SCREEN_UNDERLINE) {
 		styles |= A_UNDERLINE;
 	}
+#if defined (A_OVERLINE)
+	if (attr & COB_SCREEN_OVERLINE) {
+		styles |= A_OVERLINE;
+	}
+#endif
+#if defined (A_LEFTLINE)
+	if (attr & COB_SCREEN_LEFTLINE) {
+		styles |= A_LEFTLINE;
+	}
+#endif
+#if defined (A_RIGHTLINE)
+	if (attr & COB_SCREEN_RIGHTLINE) {
+		styles |= A_RIGHTLINE;
+	}
+#endif
 
 	/* apply attributes */
 	attrset (A_NORMAL);
@@ -970,6 +1001,7 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	if (attr & COB_SCREEN_BELL) {
 		cob_beep ();
 	}
+	return attr;
 }
 
 static int
@@ -1066,7 +1098,7 @@ cob_screen_init (void)
 			{
 				/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 				   provide more color pairs than we currently support, limit appropriate */
-				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
+				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? (short)COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
 	
 				for (color_pair_number = 2; color_pair_number < max_clr_pairs; ++color_pair_number) {
@@ -1404,6 +1436,199 @@ cob_addnstr (const char *data, const int size)
 	addnstr (data, size);
 }
 
+/* variant of cob_addnstr that outputs each character separately,
+   replacing special values by WACS symbols for CONTROL GRAPHICS */
+static void
+cob_addnstr_graph (const char *data, const int size)
+{
+	int	count;
+	raise_ec_on_truncation (size);
+	
+	for (count = 0; count < size; count++) {
+		const char c = *data++;
+		switch (c) {
+		case 'j':	/* lower-right corner */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_LRCORNER);
+#else
+			addch (ACS_LRCORNER);
+#endif
+			break;
+		case 'J':	/* lower-right corner, double */
+#if defined (WACS_D_LRCORNER) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_LRCORNER);
+#elif defined (ACS_D_LRCORNER)
+			addch (ACS_D_LRCORNER);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'k':	/* upper-right corner */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_URCORNER);
+#else
+			addch (ACS_URCORNER);
+#endif
+			break;
+		case 'K':	/* upper-right corner, double */
+#if defined (WACS_D_URCORNER) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_URCORNER);
+#elif defined (ACS_D_URCORNER)
+			addch (ACS_D_URCORNER);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'm':	/* lower-left corner */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_LLCORNER);
+#else
+			addch (ACS_LLCORNER);
+#endif
+			break;
+		case 'M':	/* lower-left corner, double */
+#if defined (WACS_D_LLCORNER) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_LLCORNER);
+#elif defined (ACS_D_LLCORNER)
+			addch (ACS_D_LLCORNER);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'l':	/* upper-left corner */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_ULCORNER);
+#else
+			addch (ACS_ULCORNER);
+#endif
+			break;
+		case 'L':	/* upper-left corner, double */
+#if defined (WACS_D_ULCORNER) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_ULCORNER);
+#elif defined (ACS_D_ULCORNER)
+			addch (ACS_D_ULCORNER);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'n':	/* plus */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_PLUS);
+#else
+			addch (ACS_PLUS);
+#endif
+			break;
+		case 'N':	/* plus, double */
+#if defined (WACS_D_PLUS) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_PLUS);
+#elif defined (ACS_D_PLUS)
+			addch (ACS_D_PLUS);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'q':	/* horizontal line */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_HLINE);
+#else
+			addch (ACS_HLINE);
+#endif
+			break;
+		case 'Q':	/* horizontal line, double */
+#if defined (WACS_D_HLINE) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_HLINE);
+#elif defined (ACS_D_HLINE)
+			addch (ACS_D_HLINE);
+#else
+			addch ((const chtype)'-');
+#endif
+			break;
+		case 'x':	/* vertical line */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_VLINE);
+#else
+			addch (ACS_VLINE);
+#endif
+			break;
+		case 'X':	/* vertical line, double */
+#if defined (WACS_D_VLINE) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_VLINE);
+#elif defined (ACS_D_VLINE)
+			addch (ACS_D_VLINE);
+#else
+			addch ((const chtype)'|');
+#endif
+			break;
+		case 't':	/* left tee */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_LTEE);
+#else
+			addch (ACS_LTEE);
+#endif
+			break;
+		case 'T':	/* left tee , double */
+#if defined (WACS_D_LTEE) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_LTEE);
+#elif defined (ACS_D_LTEE)
+			addch (ACS_D_LTEE);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'u':	/* right tee */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_RTEE);
+#else
+			addch (ACS_RTEE);
+#endif
+			break;
+		case 'U':	/* right tee , double */
+#if defined (WACS_D_RTEE) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_RTEE);
+#elif defined (ACS_D_RTEE)
+			addch (ACS_D_RTEE);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'v':	/* bottom tee */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_BTEE);
+#else
+			addch (ACS_BTEE);
+#endif
+			break;
+		case 'V':	/* bottom tee , double */
+#if defined (WACS_D_BTEE) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_BTEE);
+#elif defined (ACS_D_BTEE)
+			addch (ACS_D_BTEE);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		case 'w':	/* top tee */
+#if defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_TTEE);
+#else
+			addch (ACS_TTEE);
+#endif
+			break;
+		case 'W':	/* top tee , double */
+#if defined (WACS_D_TTEE) && defined (WITH_WIDE_FUNCTIONS)
+			add_wch (WACS_D_TTEE);
+#elif defined (ACS_D_TTEE)
+			addch (ACS_D_TTEE);
+#else
+			addch ((const chtype)'+');
+#endif
+			break;
+		default:
+			addch ((const chtype)c);
+		}
+	}
+}
+
 static void
 cob_addch (const chtype c)
 {
@@ -1578,7 +1803,6 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 #if	0	/* RXWRXW - Attr */
 	cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
 #endif
-	/* TODO: replace character by special "char" if s->attr & GRPAHICS */
 	if (s->attr & COB_SCREEN_INPUT) {
 		cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
 		if (s->prompt) {
@@ -1598,8 +1822,12 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 			}
 		}
 	} else if (!is_input) {
-		cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
-		cob_addnstr ((char *)f->data, (int)f->size);
+		const cob_flags_t attr = cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
+		if (attr & COB_SCREEN_GRAPHICS) {
+			cob_addnstr_graph ((char *)f->data, (int)f->size);
+		} else {
+			cob_addnstr ((char *)f->data, (int)f->size);
+		}
 	} else {
 		column += (int)f->size;
 		cob_move_cursor (line, column);
@@ -3113,7 +3341,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		pending_accept = 1;
 	}
 
-	cob_screen_attr (fgc, bgc, fattr, control, color, DISPLAY_STATEMENT);
+	fattr = cob_screen_attr (fgc, bgc, fattr, control, color, DISPLAY_STATEMENT);
 
 	if (!(fattr & COB_SCREEN_NO_DISP)) {
 		/* figurative constant and WITH SIZE repeats the literal */
@@ -3130,8 +3358,11 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 				cob_addnstr ((char *)f->data, size_display % fsize);
 			}
 		} else {
-			/* TODO: replace character by special "char" if f->attr & GRPAHICS */
-			cob_addnstr ((char *)f->data, cob_min_int (size_display, fsize));
+			if (fattr & COB_SCREEN_GRAPHICS) {
+				cob_addnstr_graph ((char *)f->data, cob_min_int (size_display, fsize));
+			} else {
+				cob_addnstr ((char *)f->data, cob_min_int (size_display, fsize));
+			}
 			if (size_display > fsize) {
 				/* WITH SIZE larger than field displays trailing spaces */
 				cob_addnch (size_display - fsize, COB_CH_SP);
@@ -3154,7 +3385,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 static void
 field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolumn,
 		  cob_field *fgc, cob_field *bgc, cob_field *fscroll, cob_field *ftimeout,
-	      cob_field *prompt, cob_field *size_is, cob_field *cursor,
+		  cob_field *prompt, cob_field *size_is, cob_field *cursor,
 		  cob_field *control, cob_field *color)
 {
 	unsigned char	*p;
@@ -3853,8 +4084,6 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	if (cursor) {
 		/* horizontal position stored in CURSOR clause */
 		if (!COB_FIELD_CONSTANT (cursor)) {
-			int		cline;
-			int		ccolumn;
 			getyx (stdscr, cline, ccolumn);
 			if (cline == sline) {
 				cob_set_int (cursor, ccolumn + 1 - scolumn);
@@ -4543,8 +4772,8 @@ cob_sys_get_csr_pos (unsigned char *fld)
 		/* group with sizes up to 64k (2 * 2 bytes)
 		   as used by Fujitsu (likely with a limit of
 		   254 which does _not_ apply to GnuCOBOL) */
-		const cob_u16_t bline = cline;
-		const cob_u16_t bcol = ccol;
+		const cob_u16_t bline = (cob_u16_t) cline;
+		const cob_u16_t bcol = (cob_u16_t) ccol;
 		memcpy (f->data, &bline, 2);
 		memcpy (f->data + 2, &bcol, 2);
 	} else {
@@ -4640,7 +4869,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 #endif
 }
 
-/* get current screen size */
+/* CBL_GET_SCR_SIZE - get current screen size */
 int
 cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 {
@@ -4651,11 +4880,38 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 	/* TODO: when COBOL: set by C routines, to also work for > UCHARMAX values */
 	*line = (unsigned char)LINES;
 	*col = (unsigned char)COLS;
+	return 0;
 #else
 	*line = 24U;
 	*col = 80U;
+	cob_set_exception (COB_EC_IMP_FEATURE_DISABLED);
+	return -1;
 #endif
+}
+
+/* CBL_GC_SET_SCR_SIZE - set current screen size */
+int
+cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
+{
+	COB_CHK_PARMS (CBL_SET_SCR_SIZE, 2);
+	init_cob_screen_if_needed ();
+
+#if !defined (WITH_EXTENDED_SCREENIO) || !defined (HAVE_RESIZE_TERM)
+	COB_UNUSED (line);
+	COB_UNUSED (col);
+	cob_set_exception (COB_EC_IMP_FEATURE_DISABLED);
+	return -1;
+#else
+	{
+		const int screen_row = (int)*line;
+		const int screen_col = (int)*col;
+		const int ret = resize_term (screen_row, screen_col);
+		if (ret != OK) {
+			return ret;
+		}
+	}
 	return 0;
+#endif
 }
 
 int

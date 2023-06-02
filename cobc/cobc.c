@@ -3113,6 +3113,7 @@ process_command_line (const int argc, char **argv)
 			cob_optimize = 0;
 			strip_output = 0;
 			cb_constant_folding = 0;
+			cb_flag_remove_unreachable = 0;
 			copt = CB_COPT_0;
 			break;
 
@@ -3148,13 +3149,12 @@ process_command_line (const int argc, char **argv)
 			save_all_src = 1;
 			cb_source_debugging = 1;
 			cb_flag_stack_check = 1;
-			/* note: cb_flag_source_location and cb_flag_stack_extended
-			         are explicit not set here */
+			/* note: cb_flag_source_location, cb_flag_stack_extended and
+			         cb_flag_remove_unreachable are explicit not set here */
 #if 1		/* auto-included, may be disabled manually if needed */
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
 #endif
-			cb_flag_remove_unreachable = 0;
 #ifdef COB_DEBUG_FLAGS
 			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
 #endif
@@ -5560,7 +5560,7 @@ print_fields (struct cb_field *top, int *found)
 				/* group never has a PICTURE ... */
 				got_picture = 0;
 			} else {
-				/* ...stilll output definitions for TYPEDEF / SAME AS */
+				/* ...still output definitions for TYPEDEF / SAME AS */
 				got_picture = set_picture (top, picture, picture_len);
 			}
 		} else {
@@ -5571,7 +5571,7 @@ print_fields (struct cb_field *top, int *found)
 			got_picture = set_picture (top, picture, picture_len);
 		}
 
-		if (top->flag_any_length || top->flag_unbounded) {
+		if (top->flag_any_length || cb_field_has_unbounded (top)) {
 			pd_off = sprintf (print_data, "????? ");
 		} else if (top->flag_occurs && !got_picture) {
 			pd_off = sprintf (print_data, "%05d ", top->size * top->occurs_max);

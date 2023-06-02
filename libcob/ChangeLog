@@ -1,4 +1,46 @@
 
+2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: minor refactoring for SORT related functions,
+	  mostly reducing scope of variables
+	* fileio.c (cob_file_sort_using): early exit for errors during OPEN
+	* fileio.c (cob_file_sort_giving): one-time setting of WRITE options
+	  after OPEN instead of doing it before every WRITE
+	* fileio.c (cob_file_sort_giving): don't try to WRITE to or CLOSE files
+	  where OPEN OUTPUT was not successful
+	* fileio.c (cob_file_sort_giving): skip GIVING file on WRITE errors,
+	  early exit if no GIVING file left
+
+2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (check_overflow_and_set_sign): disable "cleanup" of
+	  negative zero
+	* numeric.c (cob_addsub_optimized): include (disabled) internal
+	  use of BCD arithmetic for USAGE DISPLAY
+	* common.c (IS_INVALID_DIGIT_DATA, IS_VALID_DIGIT_DATA): minor optimization
+	* coblocal.h (COB_PUT_SIGN_ADJUSTED): optimize for most common case of
+	  "no adjustment needed"
+
+2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: added COB_SCREEN_RIGHTLINE, GC extension matching LEFTLINE
+	* screenio.c (cob_screen_attr): place curses extensions within #ifdef
+	* screenio.c (cob_screen_attr): return attr which may be adjusted by
+	  parsing COLOR / CONTROL attributes
+	* screenio.c (cob_addnstr_graph): variant of cob_addnstr for CONTROL
+	  GRAPHICS that outputs each character / WACS symbols separately
+	* screenio.c (cob_screen_puts, field_display): handle COB_SCREEN_GRAPHICS
+
+2023-05-25  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_set_scr_size), common.h, system.def: added as
+	  system library call CBL_GC_SET_SCR_SIZE
+	* screenio.c (cob_sys_get_scr_size): create exception and return -1
+	  if not supported
+	* screenio.c (control_attrs): handle RIGHTLINE (GC extension to CONTROL)
+	* screenio.c (cob_screen_attr): set attributes for OVERLINE, LEFTLINE,
+	  RIGHTLINE
+
 2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h: added COB_SCREEN_GRAPHICS attribute
@@ -13,7 +55,7 @@
 	* screenio.c (handle_control_field_color, get_cob_color_from_color_value):
 	  passing length parameter
 
-2023-05-14  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+2023-05-14  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (adjust_attr_from_control_field, control_attrs):
 	  replaced proof-of-concept by actual parsing function using new
@@ -42,6 +84,8 @@
 	* screenio.c (cob_screen_attr): refactor to read colors first, allowing
 	  later override via new functions
 	* screenio.c (cob_screen_set_mode, cob_screen_line_col): minor refactoring
+	* move.c (cob_move_display_to_packed): prevent writing out of bounds
+	* move.c (cob_move_display_to_binary): prevent reading out of bounds
 
 2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -229,7 +273,7 @@
 	* numeric.c (cob_set_packed_int, cob_decimal_get_packed): minor performance
 	  tuning
 
-2023-03-28  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+2023-03-28  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* numeric.c (cob_shift_left_nibble, cob_shift_right_nibble): variants of
 	  insert_packed_aligned for cob_move_bcd

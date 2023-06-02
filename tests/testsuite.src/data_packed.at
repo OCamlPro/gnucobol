@@ -11951,6 +11951,8 @@ AT_KEYWORDS([fundamental arithmetic COMP-3 COMP-6 PACKED-DECIMAL])
 # "small tin" and also to make it easier for checking tools to insert
 # additional debug code - without forcing the compiler to work too hard
 # to compile / link that.
+# As this code only tests BCD there is a duplicate in data_display.at
+# that tests the same with cob_decimal.
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -23961,7 +23963,7 @@ AT_DATA([prog2.cob], [
            VALUE X'22949432'.
        78  XPC-FLD0766E          VALUE 'N'.
        78  XPC-FLD0767B
-           VALUE X'0C'.
+           VALUE X'0D'.
        78  XPC-FLD0767E          VALUE 'N'.
        78  XPC-FLD0768B
            VALUE X'007D'.
@@ -24348,7 +24350,7 @@ AT_DATA([prog2.cob], [
            VALUE X'2889386308'.
        78  XPC-FLD0895E          VALUE 'N'.
        78  XPC-FLD0896B
-           VALUE X'0C'.
+           VALUE X'0D'.
        78  XPC-FLD0896E          VALUE 'N'.
        78  XPC-FLD0897B
            VALUE X'04404922200833586C'.
@@ -28357,9 +28359,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([BCD ADD and SUBTRACT all ROUNDED MODE variants])
-AT_KEYWORDS([fundamental arithmetic COMP-3 COMP-6 PACKED-DECIMAL
-ROUNDED MODE AWAY-FROM-ZERO NEAREST-AWAY-FROM-ZERO
+AT_SETUP([BCD ADD and SUBTRACT, all ROUNDED MODEs])
+AT_KEYWORDS([fundamental arithmetic SUBTRACT MODE
+COMP-3 COMP-6 PACKED-DECIMAL AWAY-FROM-ZERO NEAREST-AWAY-FROM-ZERO
 NEAREST-EVEN NEAREST-TOWARD-ZERO TOWARD-GREATER TOWARD-LESSER
 PROHIBITED TRUNCATION])
 
@@ -28372,6 +28374,8 @@ PROHIBITED TRUNCATION])
 # "small tin" and also to make it easier for checking tools to insert
 # additional debug code - without forcing the compiler to work too hard
 # to compile / link that.
+# As this code only tests BCD there is a duplicate in data_display.at
+# that tests the same with cob_decimal.
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -37510,7 +37514,7 @@ AT_DATA([prog2.cob], [
        78  XPC-FLD0793B
            VALUE X'0559177637820166807230'.
        78  XPC-FLD0794B
-           VALUE X'0C'.
+           VALUE X'0D'.
        78  XPC-FLD0795B
            VALUE X'0334944006958C'.
        78  XPC-FLD0796B
@@ -37714,7 +37718,7 @@ AT_DATA([prog2.cob], [
        78  XPC-FLD0895B
            VALUE X'2889386308'.
        78  XPC-FLD0896B
-           VALUE X'0C'.
+           VALUE X'0D'.
        78  XPC-FLD0897B
            VALUE X'04404922200833587C'.
        78  XPC-FLD0898B

@@ -791,7 +791,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
 					cb_note (COBC_WARN_FILLER, 0,
 						 _("maximum number of occurrences assumed to be exact number"));
-					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
+					current_field->occurs_min = 1; /* as done by IBM + MF */
 				}
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
@@ -802,7 +802,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			current_field->occurs_max = 0;	/* UNBOUNDED */
 		}
 	} else {
-		current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
+		current_field->occurs_min = 1; /* as done by IBM + MF */
 		current_field->occurs_max = cb_get_int (occurs_min);
 		if (current_field->depending) {
 			cb_verify (cb_odo_without_to, _("OCCURS DEPENDING ON without TO phrase"));
@@ -945,7 +945,7 @@ check_headers_present (const cob_flags_t lev1, const cob_flags_t lev2,
 }
 
 /*
-  TO-DO: Refactor header checks - have several header_checks: division_header,
+  TODO: Refactor header checks - have several header_checks: division_header,
   section_header, paragraph_header, sentence_type
 */
 static void
@@ -3141,6 +3141,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RH
 %token RIGHT
 %token RIGHT_ALIGN		"RIGHT-ALIGN"
+%token RIGHTLINE
 %token RIMMED
 %token ROLLBACK
 %token ROUNDED
@@ -6859,7 +6860,7 @@ communication_description_entry:
 				 current_program->cd_list);
 	} else {
 		current_cd = NULL;
-		/* TO-DO: Is this necessary? */
+		/* TODO: Is this necessary? */
 		if (current_program->cd_list) {
 			current_program->cd_list
 				= CB_CHAIN (current_program->cd_list);
@@ -8325,9 +8326,12 @@ occurs_clause:
   DEPENDING _on reference _occurs_keys_and_indexed
   {
 	current_field->flag_unbounded = 1;
+#if 0 /* Why should we do this? If this is relevant then it likely needs to be done
+	   either to the field founder or to the complete list of parents up to it. */
 	if (current_field->parent) {
 		current_field->parent->flag_unbounded = 1;
 	}
+#endif
 	current_field->depending = $7;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -9953,7 +9957,6 @@ screen_option:
 | OVERLINE
   {
 	set_screen_attr ("OVERLINE", COB_SCREEN_OVERLINE);
-	CB_PENDING ("OVERLINE");
   }
 | GRID
   {
@@ -9963,7 +9966,10 @@ screen_option:
 | LEFTLINE
   {
 	set_screen_attr ("LEFTLINE", COB_SCREEN_LEFTLINE);
-	CB_PENDING ("LEFTLINE");
+  }
+| RIGHTLINE
+  {
+	set_screen_attr ("RIGHTLINE", COB_SCREEN_RIGHTLINE);
   }
 | AUTO
   {
@@ -11870,7 +11876,7 @@ at_line_column:
 				&check_line_col_duplicate);
 
 	if ((CB_LITERAL_P ($2) && cb_get_int ($2) == 0) || $2 == cb_zero) {
-		cb_verify (cb_accept_display_extensions, "COLUMN 0");
+		cb_verify_x ($2, cb_accept_display_extensions, "COLUMN 0");
 	}
 
 	if (!line_column) {
@@ -11892,17 +11898,15 @@ at_line_column:
 ;
 
 line_number:
-  LINE _number num_id_or_lit
+  LINE _number exp
   {
-	/* FIXME: arithmetic expression should be possible, too, only numeric literals! */
 	$$ = $3;
   }
 ;
 
 column_number:
-  column_or_col_or_position_or_pos _number num_id_or_lit
+  column_or_col_or_position_or_pos _number exp
   {
-	/* FIXME: arithmetic expression should be possible, too, only numeric literals! */
 	$$ = $3;
   }
 ;
@@ -11943,9 +11947,8 @@ accp_attr:
 	check_repeated ("BLINK", SYN_CLAUSE_8, &check_duplicate);
 	set_dispattr (COB_SCREEN_BLINK);
   }
-| COLOR _is num_id_or_lit
+| COLOR _is exp
   {
-	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("COLOR", SYN_CLAUSE_30, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
   }
@@ -11987,6 +11990,11 @@ accp_attr:
   {
 	check_repeated ("LEFTLINE", SYN_CLAUSE_12, &check_duplicate);
 	set_dispattr (COB_SCREEN_LEFTLINE);
+  }
+| RIGHTLINE
+  {
+	check_repeated ("RIGHTLINE", SYN_CLAUSE_12, &check_duplicate);
+	set_dispattr (COB_SCREEN_RIGHTLINE);
   }
 | LOWER
   {
@@ -12045,6 +12053,11 @@ accp_attr:
 	check_repeated ("OVERLINE", SYN_CLAUSE_16, &check_duplicate);
 	set_dispattr (COB_SCREEN_OVERLINE);
   }
+| UNDERLINE
+  {
+	check_repeated ("UNDERLINE", SYN_CLAUSE_22, &check_duplicate);
+	set_dispattr (COB_SCREEN_UNDERLINE);
+  }
 | PROMPT _character _is id_or_lit
   {
 	/* Note: CHARACTER optional in ACUCOBOL, required by others */
@@ -12077,11 +12090,6 @@ accp_attr:
 	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("SIZE", SYN_CLAUSE_21, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $4, NULL, NULL, NULL);
-  }
-| UNDERLINE
-  {
-	check_repeated ("UNDERLINE", SYN_CLAUSE_22, &check_duplicate);
-	set_dispattr (COB_SCREEN_UNDERLINE);
   }
 | NO update_default
   {
@@ -13487,7 +13495,7 @@ display_window_clauses:
           SCREEN is optional(=implied) for ERASE here */
 display_window_clause:
   pop_up_or_handle	/* DISPLAY WINDOW actually only takes POP-UP */
-| LINES num_id_or_lit
+| LINES exp
   {
 	/* TODO: store */
   }
@@ -13653,7 +13661,7 @@ disp_attr:
 	check_repeated ("REVERSE-VIDEO", SYN_CLAUSE_14, &check_duplicate);
 	set_dispattr (COB_SCREEN_REVERSE);
   }
-| SIZE _is num_id_or_lit
+| SIZE _is exp
   {
 	check_repeated ("SIZE", SYN_CLAUSE_15, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL, NULL);
@@ -15688,7 +15696,7 @@ extended_with_lock:
   }
 | _with WAIT
   {
-	/* TO-DO: Merge with RETRY phrase */
+	/* TODO: Merge with RETRY phrase */
 	$$ = cb_int4;
   }
 ;
@@ -16303,7 +16311,7 @@ sort_body:
 
 	$$ = NULL;
 	if (CB_VALID_TREE (x)) {
-		if ($2 == NULL || CB_VALUE($2) == NULL) {
+		if ($2 == NULL || CB_VALUE ($2) == NULL) {
 			if (CB_FILE_P (x)) {
 				cb_error (_("file sort requires KEY phrase"));
 				$2 = cb_error_node;
@@ -16984,7 +16992,7 @@ use_file_exception:
 		current_section->flag_declarative_exit = 1;
 		current_section->flag_real_label = 1;
 		current_section->flag_skip_label = 0;
-		/* TO-DO: Use cobc_ec_turn? */
+		/* TODO: Use cobc_ec_turn? */
 		CB_EXCEPTION_ENABLE (COB_EC_I_O) = 1;
 		if (use_global_ind) {
 			current_section->flag_global = 1;
