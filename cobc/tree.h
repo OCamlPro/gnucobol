@@ -1519,7 +1519,6 @@ struct cb_statement {
 	enum cb_handler_type	handler_type;		/* Handler type */
 	unsigned int		flag_no_based	: 1;	/* Check BASED */
 	unsigned int		flag_in_debug	: 1;	/* In DEBUGGING */
-	unsigned int		flag_merge	: 1;	/* Is MERGE */
 	unsigned int		flag_callback	: 1;	/* DEBUG Callback */
 	unsigned int		flag_implicit	: 1;	/* Is an implicit statement */
 };

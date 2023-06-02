@@ -481,6 +481,7 @@ struct cobsort {
 	int			retrieval_queue;
 	struct queue_struct	queue[4];
 	struct file_struct	file[4];
+	int			flag_merge;
 };
 
 /* End SORT definitions */
@@ -7981,12 +7982,12 @@ cob_write_block (struct cobsort *hp, const int n)
 }
 
 static void
-cob_copy_check (cob_file *to, cob_file *from)
+cob_copy_check (cob_field *to_record, cob_field *from_record)
 {
-	unsigned char	*toptr = to->record->data;
-	unsigned char	*fromptr = from->record->data;
-	const size_t	tosize = to->record->size;
-	const size_t	fromsize = from->record->size;
+	unsigned char	*toptr = to_record->data;
+	unsigned char	*fromptr = from_record->data;
+	const size_t	tosize = to_record->size;
+	const size_t	fromsize = from_record->size;
 
 	if (unlikely (tosize > fromsize)) {
 		memcpy (toptr, fromptr, fromsize);
@@ -8112,17 +8113,19 @@ cob_file_sort_process (struct cobsort *hp)
 	return 0;
 }
 
+/* SORT/MERGE: insert record 'p' into the sort 'hp' */
 static int
-cob_file_sort_submit (cob_file *f, const unsigned char *p)
+cob_file_sort_submit (struct cobsort *hp, const unsigned char *p)
 {
-	struct cobsort		*hp = f->file;
 	struct cobitem		*q;
 	struct queue_struct	*z;
 	int 		n;
 
+#if 0	/* can't happen */
 	if (unlikely (!hp)) {
 		return COBSORTNOTOPEN;
 	}
+#endif
 	if (unlikely (hp->retrieving)) {
 		return COBSORTABORT;
 	}
@@ -8170,15 +8173,17 @@ cob_file_sort_submit (cob_file *f, const unsigned char *p)
 	return 0;
 }
 
+/* SORT/MERGE: retrieve next record to be output for sort 'hp' into 'p' */
 static int
-cob_file_sort_retrieve (cob_file *f, unsigned char *p)
+cob_file_sort_retrieve (struct cobsort *hp, unsigned char *p)
 {
-	struct cobsort	*hp = f->file;
 	int 		res;
 
+#if 0	/* can't happen */
 	if (unlikely (!hp)) {
 		return COBSORTNOTOPEN;
 	}
+#endif
 	if (unlikely (!hp->retrieving)) {
 		res = cob_file_sort_process (hp);
 		if (res) {
@@ -8222,7 +8227,7 @@ cob_file_sort_retrieve (cob_file *f, unsigned char *p)
 	return 0;
 }
 
-/* SORT: initial setup with adding sort definitions to sort file 'f' */
+/* SORT/MERGE: initial setup with adding sort definitions to sort file 'f' */
 void
 cob_file_sort_init (cob_file *f, const unsigned int nkeys,
 		    const unsigned char *collating_sequence,
@@ -8270,7 +8275,21 @@ cob_file_sort_init (cob_file *f, const unsigned int nkeys,
 	save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 }
 
-/* SORT: add key definition to internal sort file 'f' */
+/* SORT/MERGE: additional options for sort file 'f' - so far only note "we're in MERGE" */
+void
+cob_file_sort_options (cob_file *f, const char *parms, ...)
+{
+	struct cobsort	*hp = f->file;
+
+	/* note: varargs are currently not used, if more information is added
+	   handle as in cob_accept_field */
+	hp->flag_merge = (parms[0] == 'M');
+
+	/* FIXME: MERGE should expect to have an ordered file (performance) and also test for
+	   that / raise COB_EC_SORT_MERGE_SEQUENCE */
+}
+
+/* SORT/MERGE: add key definition to internal sort file 'f' */
 void
 cob_file_sort_init_key (cob_file *f, cob_field *field, const int flag,
 			const unsigned int offset)
@@ -8281,17 +8300,20 @@ cob_file_sort_init_key (cob_file *f, cob_field *field, const int flag,
 	f->nkeys++;
 }
 
-/* SORT: add all records from GIVING file 'data_file' to 'sort_file' */
+/* SORT/MERGE: add all records from GIVING file 'data_file' to 'sort_file' */
 void
 cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 {
 	/* FIXME: on each error the approprate USAGE AFTER EXCEPTION/ERROR must be called;
-	   with ISO COBOL2023 this could also mean a local PERFORM WITH EXCEPTION HANDLING;
 	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
+	struct cobsort *hp = sort_file->file;
 	int 	ret;
 
 	cob_open (data_file, COB_OPEN_INPUT, 0, NULL);
 	if (data_file->file_status[0] != '0') {
+		if (data_file->file_status[0] == '4') {
+			cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
+		}
 		return;
 	}
 	for (;;) {
@@ -8299,8 +8321,8 @@ cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 		if (data_file->file_status[0] != '0') {
 			break;
 		}
-		cob_copy_check (sort_file, data_file);
-		ret = cob_file_sort_submit (sort_file, sort_file->record->data);
+		cob_copy_check (sort_file->record, data_file->record);
+		ret = cob_file_sort_submit (hp, sort_file->record->data);
 		if (ret) {
 			break;
 		}
@@ -8313,7 +8335,6 @@ void
 cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 {
 	/* FIXME: on each error the approprate USAGE AFTER EXCEPTION/ERROR must be called;
-	   with ISO COBOL2023 this could also mean a local PERFORM WITH EXCEPTION HANDLING;
 	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
 
 	struct cobsort *hp = sort_file->file;
@@ -8338,6 +8359,9 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 				opt[i] = 0;
 			}
 		} else {
+			if (using_file->file_status[0] == '4') {
+				cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
+			}
 			opt[i] = -1;
 		}
 	}
@@ -8346,7 +8370,7 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 	/* retrieve all records, WRITE each to every GIVING file */
 	for (;;) {
 		/* retrieve next record to write, stop AT END / error */
-		ret = cob_file_sort_retrieve (sort_file, sort_file->record->data);
+		ret = cob_file_sort_retrieve (hp, sort_file->record->data);
 		if (ret) {
 			if (ret == COBSORTEND) {
 				sort_file->file_status[0] = '1';
@@ -8354,6 +8378,8 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 			} else {
 				if (hp->sort_return) {
 					*(int *)(hp->sort_return) = 16;
+				} else {
+					/* IBM doc: if not used then a runtime message is displayed */
 				}
 				sort_file->file_status[0] = '3';
 				sort_file->file_status[1] = '0';
@@ -8369,7 +8395,7 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 				continue;
 			}
 			using_file->record->size = using_file->record_max;
-			cob_copy_check (using_file, sort_file);
+			cob_copy_check (using_file->record, sort_file->record);
 			cob_write (using_file, using_file->record, opt[i], NULL, 0);
 			/* stop writing to this file if we got a permanent write error;
 			   note: other files are still written to; therefore
@@ -8440,50 +8466,50 @@ void
 cob_file_release (cob_file *f)
 {
 	struct cobsort	*hp = f->file;
-	cob_field	*fnstatus;
-	int		ret;
 
 	if (likely(hp)) {
-		fnstatus = hp->fnstatus;
+		cob_field	*fnstatus = hp->fnstatus;
+		const int	ret = cob_file_sort_submit (hp, f->record->data);
+		if (!ret) {
+			save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
+			return;
+		}
+		if (hp->sort_return) {
+			*(int *)(hp->sort_return) = 16;
+		} else {
+			/* IBM doc: if not used then a runtime message is displayed */
+		}
+		save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 	} else {
-		fnstatus = NULL;
+		save_status (f, NULL, COB_STATUS_30_PERMANENT_ERROR);
 	}
-	ret = cob_file_sort_submit (f, f->record->data);
-	if (!ret) {
-		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
-		return;
-	}
-	if (likely(hp && hp->sort_return)) {
-		*(int *)(hp->sort_return) = 16;
-	}
-	save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 }
 
 void
 cob_file_return (cob_file *f)
 {
 	struct cobsort	*hp = f->file;
-	cob_field	*fnstatus;
-	int		ret;
 
 	if (likely(hp)) {
-		fnstatus = hp->fnstatus;
+		cob_field	*fnstatus = hp->fnstatus;
+		const int	ret = cob_file_sort_retrieve (hp, f->record->data);
+		switch (ret) {
+		case 0:
+			save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
+			return;
+		case COBSORTEND:
+			save_status (f, fnstatus, COB_STATUS_10_END_OF_FILE);
+			return;
+		}
+		if (hp->sort_return) {
+			*(int *)(hp->sort_return) = 16;
+		} else {
+			/* IBM doc: if not used then a runtime message is displayed */
+		}
+		save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 	} else {
-		fnstatus = NULL;
+		save_status (f, NULL, COB_STATUS_30_PERMANENT_ERROR);
 	}
-	ret = cob_file_sort_retrieve (f, f->record->data);
-	switch (ret) {
-	case 0:
-		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
-		return;
-	case COBSORTEND:
-		save_status (f, fnstatus, COB_STATUS_10_END_OF_FILE);
-		return;
-	}
-	if (likely(hp && hp->sort_return)) {
-		*(int *)(hp->sort_return) = 16;
-	}
-	save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 }
 
 char *

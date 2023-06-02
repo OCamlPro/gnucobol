@@ -1,4 +1,18 @@
 
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_file_org, cob_file_access_mode): changed defines to enums
+	* fileio.c (cob_findkey_attr): extracted identical logic from cob_findkey,
+	  indexed_findkey and bdb_findkey;
+	  dropping the later two and set mapkey after calling it
+	* fileio.c (cob_file_sort_using, cob_file_sort_giving): raise
+	  COB_EC_SORT_MERGE_FILE_OPEN when applicable
+	* fileio.c (cob_copy_check, cob_file_sort_submit, cob_file_sort_retrieve):
+	  pass most matching argument type instead of the structures containing it
+	* fileio.c (cobsort): new attribute flag_merge
+	* fileio.c (cob_file_sort_options), common.h: new function to pass more
+	  options, so far only used to set flag_merge
+
 2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: minor refactoring for SORT related functions,

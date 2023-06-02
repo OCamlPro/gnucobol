@@ -1332,6 +1332,9 @@ typedef struct __cob_file_key {
 	unsigned int	offset;			/* Offset of field */
 	int		count_components;		/* 0..1::simple-key  2..n::split-key   */
 	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
+#if 0	/* TODO (for file keys, not for SORT/MERGE) */
+	const unsigned char *collating_sequence;	/* COLLATING */
+#endif
 } cob_file_key;
 
 
@@ -2454,12 +2457,14 @@ typedef struct __fcd2 {
 #define OP_FLUSH			0x000C	
 #define OP_UNLOCK_REC			0x000F	
 
-#define OP_CLOSE			0xFA80		/* OP CODES */
-#define OP_CLOSE_LOCK			0xFA81
-#define OP_CLOSE_NO_REWIND		0xFA82
-#define OP_CLOSE_REEL			0xFA84
-#define OP_CLOSE_REMOVE			0xFA85
-#define OP_CLOSE_NOREWIND		0xFA86
+/* standard OP CODES */
+
+#define OP_CLOSE			0xFA80	/* CLOSE */
+#define OP_CLOSE_LOCK			0xFA81	/* CLOSE WITH LOCK */
+#define OP_CLOSE_NO_REWIND		0xFA82	/* CLOSE WITH NO REWIND */
+#define OP_CLOSE_REEL			0xFA84	/* CLOSE REEL/UNIT */
+#define OP_CLOSE_REMOVE			0xFA85	/* CLOSE REEL/UNIT FOR REMOVAL */
+#define OP_CLOSE_NOREWIND		0xFA86	/* CLOSE REEL/UNIT WITH NO REWIND */
 
 #define OP_OPEN_INPUT			0xFA00
 #define OP_OPEN_OUTPUT			0xFA01
@@ -2618,6 +2623,7 @@ COB_EXPIMP int cob_sys_file_delete	(unsigned char *, unsigned char *);
 COB_EXPIMP void	cob_file_sort_init	(cob_file *, const unsigned int,
 					 const unsigned char *,
 					 void *, cob_field *);
+COB_EXPIMP void	cob_file_sort_options (cob_file *, const char *, ...);
 COB_EXPIMP void	cob_file_sort_init_key	(cob_file *, cob_field *,
 					 const int, const unsigned int);
 COB_EXPIMP void	cob_file_sort_close	(cob_file *);
