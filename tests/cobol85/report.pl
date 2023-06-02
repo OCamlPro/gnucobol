@@ -41,7 +41,7 @@ my $compile;
 my $compile_module;
 
 # change to 1 if executable doesn't work / cobcrun test should be done
-my $force_cobcrun = 1;
+my $force_cobcrun = 0;
 
 my $cobc = $ENV{"COBC"};
 my $cobol_flags = $ENV{"COBOL_FLAGS"};
