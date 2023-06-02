@@ -321,7 +321,7 @@ NEWS - user visible changes				-*- outline -*-
    original version; note: their use will be adjusted where they don't match
    GCC's same options in later versions, including addition of -M and -MD
 
-** New -std options:
+** new -std options:
 
    gcos            GCOS compatibility
    gcos-strict     GCOS compatibility                - strict
@@ -329,6 +329,14 @@ NEWS - user visible changes				-*- outline -*-
    We define the GCOS dialect based on the COBOL85 standard, with new
    dialect configuration options accompanying each specificity
    introduced by the dialect.
+
+** new diagnostic format for errors: the diagnostics now print the source
+   code context with a left margin showing line numbers, configurable with
+   -fno-diagnostics-show-line-numbers, and possible to disable completely
+   with -fno-diagnostics-show-caret;
+
+   the option -fdiagnostics-plain-output was added to request that diagnostic
+   output look as plain as possible and stay more stable over time
 
 * Important Bugfixes:
 

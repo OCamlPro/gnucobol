@@ -72,6 +72,7 @@ fi
 # FLAGS="-debug -Wall ${COBOL_FLAGS}"
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 
+COBC="${COBC} -fdiagnostics-plain-output"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
