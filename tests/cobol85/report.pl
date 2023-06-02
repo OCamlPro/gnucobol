@@ -41,7 +41,7 @@ my $compile;
 my $compile_module;
 
 # change to 1 if executable doesn't work / cobcrun test should be done
-my $force_cobcrun = 0;
+my $force_cobcrun = 1;
 
 my $cobc = $ENV{"COBC"};
 my $cobol_flags = $ENV{"COBOL_FLAGS"};
@@ -225,8 +225,8 @@ $cobc_flags{IC115A} = "-Wno-goto-section";
 # the following failed in previous versions with --debug,
 # but don't do any more
 
-# MOVE from PIC S9999 SEPARATE with "expected" value of SPACES to a target
-# of X(5) - RECHECK: is a conversion and therefore check needed?
+# this was a bad generation from PIC S9999 SEPARATE to
+# a target of X(5) where no conversion is needed
 $cobc_flags{DB201A} = "-fno-ec=data-incompatible";
 
 # 2.2 generated DEBUG-LINE as numeric - but it always was X(6)
@@ -434,12 +434,12 @@ sub run_test {
 
 testrepeat:
 	if (!$to_kill{$exe}) {
-		$ret = system ("$TRAP  $cmd > $exe.out");
+		$ret = system ("$TRAP  $cmd > $exe.out 2>&1");
 	} else {
 		$ret = system ("$TRAP  $cmd > $exe.out 2>/dev/null");
 	}
 
-	# extra check for both SIGINT as masked signal and as plain return, because
+	# extra check for SIGINT both as masked signal and as plain return, because
 	# AIX (at least 7.1 with GCC 4.2 and system libc) directly returns 2
 	if ($ret != 0 && !($to_kill{$exe} && ($ret >> 2 || $ret == 2))) {
 		if (($ret >> 8) == 77) {

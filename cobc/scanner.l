@@ -370,7 +370,7 @@ AREA_A		"#AREA_A"\n
 "FUNCTION" {
 	if (cobc_in_repository || cobc_cs_check == CB_CS_EXIT) {
 		yylval = NULL;
-	        RETURN_TOK (FUNCTION);
+		RETURN_TOK (FUNCTION);
 	}
 	BEGIN FUNCTION_STATE;
 }
@@ -936,8 +936,8 @@ H#[0-9A-Za-z]+ {
 	/* FIXME: move the code for filling "name" here and first
 	          check with "lookup_system_name (name) != NULL"
 	          if we actually want to do this,
-			  otherwise return 2 (!) WORD tokens (by adding a queue
-			  of tokens to be returned)
+	          otherwise return 2 (!) WORD tokens (by adding a queue
+	          of tokens to be returned)
 	*/
 	if (cobc_in_procedure) {
 		 /* unput characters */

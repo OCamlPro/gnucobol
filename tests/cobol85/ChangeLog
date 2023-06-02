@@ -1,4 +1,8 @@
 
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* report.pl: place stderr from test runs into .out file
+
 2023-04-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* report.pl: check "cobc_flags" also for building lib;
