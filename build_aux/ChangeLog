@@ -1,4 +1,10 @@
 
+2023-06-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.sub, texinfo.tex: updated to recent versions from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+	* create_mingw_bindist.sh: fix check for MSYS2/mingw environments
+
 2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pre-inst-env.in: export COB_ON_CYGWIN for testsuite checks

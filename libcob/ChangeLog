@@ -1,4 +1,8 @@
 
+2023-06-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (libcob_la_LDFLAGS): updated version-info - ABI fixed for 3.2
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h (cob_file_org, cob_file_access_mode): changed defines to enums
