@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -205,9 +205,10 @@ void	cob_bdb_init_fileio (cob_file_api *);
 void	cob_lmdb_init_fileio (cob_file_api *);
 #endif
 
+COB_HIDDEN int cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen);
+
 #if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)
 /* Routines in fsqlxfd.c common to all Database interfaces */
-COB_HIDDEN int db_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen);
 COB_HIDDEN int db_keylen (cob_file *f, int idx);
 COB_HIDDEN int db_savekey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx);
 COB_HIDDEN int db_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx, int partlen);

@@ -639,7 +639,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, SEQUENTIAL])
-AT_KEYWORDS([runfile using giving])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 # Note: We shouldn't use AT_DATA to create sequential record
 # data, because AT_DATA needs a \n at the end
@@ -689,7 +689,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -2017,7 +2017,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, LINE SEQUENTIAL])
-AT_KEYWORDS([runfile using giving])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 # Note: We shouldn't use AT_DATA to create sequential record
 # data, because AT_DATA needs a \n at the end
@@ -2076,7 +2076,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, LINE SEQUENTIAL same file])
-AT_KEYWORDS([runfile using giving])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([test.txt], [
 bla
@@ -2123,7 +2123,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, LINE SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([file1],
 [A1XXXX
@@ -2187,7 +2187,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File MERGE, LINE SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile MERGE USING GIVING])
 
 AT_DATA([file1],
 [A1XXXX
@@ -9993,6 +9993,10 @@ kdblen: 0398
 ], [])
 
 AT_CLEANUP
+
+
+# TODO: add missing test for CLOSE options (most important: REEL)
+#       which are missing both for "normal" io and for EXTFH tests
 
 
 AT_SETUP([EXTFH: changing record address])

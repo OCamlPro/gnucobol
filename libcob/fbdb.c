@@ -858,7 +858,7 @@ ix_bdb_start_internal (cob_file *f, const int cond, cob_field *key,
 	ret = 0;
 	p->start_cond = cond;
 	/* Look up for the key */
-	key_index = db_findkey (f, key, &fullkeylen, &partlen);
+	key_index = cob_findkey_attr (f, key, &fullkeylen, &partlen);
 	if (key_index < 0) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}

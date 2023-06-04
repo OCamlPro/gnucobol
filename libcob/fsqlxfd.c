@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -21,35 +21,38 @@
 
 #include "fileio.h"
 
-#if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)
-/* Routines in fsqlxfd.c common to all Database interfaces */
+/* Routines in fsqlxfd.c common to all interfaces */
 
+/* Return index number for given key and set length attributes */
 int
-db_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
+cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
-	int 	k, part;
-
+	int 	k,part;
 	*fullkeylen = *partlen = 0;
-	for (k = 0; k < (int)f->nkeys; ++k) {
-		if (f->keys[k].field
-		&&  f->keys[k].count_components <= 1
-		&&  f->keys[k].field->data == kf->data) {
-			*fullkeylen = f->keys[k].field->size;
+
+	for (k = 0; k < f->nkeys; ++k) {
+		cob_field *key = f->keys[k].field;
+		if (key
+		 && key->data == kf->data
+		 && f->keys[k].count_components <= 1) {
+			*fullkeylen = key->size;
 			*partlen = kf->size;
 			return k;
 		}
 	}
-	for (k = 0; k < (int)(f->nkeys); ++k) {
+	for (k = 0; k < f->nkeys; ++k) {
 		if (f->keys[k].count_components > 1) {
-			if ( (f->keys[k].field
-			   && f->keys[k].field->data == kf->data
-			   && f->keys[k].field->size == kf->size)
-			 ||  (f->keys[k].component[0]->data == kf->data)) {
-				for (part = 0; part < f->keys[k].count_components; part++) {
+			cob_field *key = f->keys[k].field;
+			if ((key
+			  && key->data == kf->data
+			  && key->size == kf->size)
+			 || (f->keys[k].component[0]->data == kf->data)) {
+				for (part=0; part < f->keys[k].count_components; part++) {
 					*fullkeylen += f->keys[k].component[part]->size;
 				}
-				if (f->keys[k].field && f->keys[k].field->data == kf->data) {
-					*partlen = kf->size;
+				if (key
+				 && key->data == kf->data) {
+					*partlen = key->size;
 				} else {
 					*partlen = *fullkeylen;
 				}
@@ -59,6 +62,10 @@ db_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 	}
 	return -1;
 }
+
+#if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)
+/* Routines in fsqlxfd.c common to all Database interfaces */
+
 
 /* Return total length of the key */
 int

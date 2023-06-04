@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -416,49 +416,6 @@ indexed_keycmp (struct keydesc *k1, struct keydesc *k2)
 		}
 	}
 	return 0;
-}
-
-/* Return index number for given key */
-static int
-indexed_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
-{
-	int 	k,part;
-	struct indexfile	*fh;
-
-	fh = f->file;
-	*fullkeylen = *partlen = 0;
-	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].field
-		 && f->keys[k].count_components <= 1
-		 && f->keys[k].field->data == kf->data) {
-			f->last_key = f->keys[k].field;
-			*fullkeylen = f->keys[k].field->size;
-			*partlen = kf->size;
-			f->mapkey = k;
-			return fh->idxmap[k];
-		}
-	}
-	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].count_components > 1) {
-			if ((f->keys[k].field
-			 && f->keys[k].field->data == kf->data
-			 && f->keys[k].field->size == kf->size)
-			 || (f->keys[k].component[0]->data == kf->data)) {
-				f->last_key = f->keys[k].field;
-				for(part=0; part < f->keys[k].count_components; part++)
-					*fullkeylen += f->keys[k].component[part]->size;
-				if (f->keys[k].field 
-				 && f->keys[k].field->data == kf->data) {
-					*partlen = kf->size;
-				} else {
-					*partlen = *fullkeylen;
-				}
-				f->mapkey = k;
-				return fh->idxmap[k];
-			}
-		}
-	}
-	return -1;
 }
 
 static int
@@ -1316,12 +1273,13 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	if (f->flag_nonexistent) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
-	k = indexed_findkey(f, key, &fullkeylen, &partlen);
-	if(k < 0) {
-		f->mapkey = -1;
+	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
+	f->mapkey = k;
+	if (k < 0) {
 		fh->startfail = 1;
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
+	k = fh->idxmap[k];
 	/* Use size of data field; This may indicate a partial key */
 	klen = partlen;
 	if (klen < 1 || klen > fullkeylen) {
@@ -1428,10 +1386,12 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	if (f->flag_nonexistent) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
-	k = indexed_findkey(f, key, &fullkeylen, &partlen);
-	if(k < 0) {
+	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
+	if (k < 0) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
+	f->mapkey = k;
+	k = fh->idxmap[k];
 	if (f->curkey != (int)k) {
 		/* Switch to this index */
 		isstart (fh->isfd, &fh->key[k], 0,

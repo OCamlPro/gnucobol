@@ -747,7 +747,7 @@ setup_use_file (struct cb_file *fileptr)
 	struct cb_file	*newptr;
 
 	if (fileptr->organization == COB_ORG_SORT) {
-		cb_error (_("USE statement invalid for SORT file"));
+		cb_error (_("USE statement invalid for SD file"));
 	}
 	if (fileptr->flag_global) {
 		newptr = cobc_parse_malloc (sizeof(struct cb_file));
@@ -1603,7 +1603,7 @@ setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 }
 
 static void
-error_if_record_delimiter_incompatible (const int organization,
+error_if_record_delimiter_incompatible (const enum cob_file_org organization,
 					const char *organization_name)
 {
 	int	is_compatible;
@@ -14256,9 +14256,8 @@ merge_statement:
   MERGE
   {
 	begin_statement (STMT_MERGE, 0);
-	current_statement->flag_merge = 1;
   }
-  sort_body
+  sort_merge_body
 ;
 
 
@@ -15453,19 +15452,24 @@ sort_statement:
   {
 	begin_statement (STMT_SORT, 0);
   }
-  sort_body
+  sort_merge_body
 ;
 
-sort_body:
-  table_identifier _sort_key_list _sort_duplicates _sort_collating
+sort_merge_body:
+  table_identifier	/* may reference a file or a table */
+  _sort_key_list _sort_duplicates _sort_collating
   {
 	cb_tree		x = cb_ref ($1);
 
 	$$ = NULL;
 	if (CB_VALID_TREE (x)) {
-		if ($2 == NULL || CB_VALUE($2) == NULL) {
+		if ($2 == NULL || CB_VALUE ($2) == NULL) {
+			if (current_statement->statement == STMT_MERGE) {
+				cb_error (_("MERGE requires KEY phrase"));
+				$2 = cb_error_node;
+			} else
 			if (CB_FILE_P (x)) {
-				cb_error (_("file sort requires KEY phrase"));
+				cb_error (_("file SORT requires KEY phrase"));
 				$2 = cb_error_node;
 			} else {
 				struct cb_field	*f = CB_FIELD_PTR (x);
@@ -15493,6 +15497,9 @@ sort_body:
 					$2 = cb_error_node;
 				}
 			}
+		} else if (CB_FILE_P (x) && CB_FILE (x)->organization != COB_ORG_SORT) {
+			cb_error_x (x, _("must be an SD filename"));
+			$2 = cb_error_node;
 		}
 		if (CB_VALID_TREE ($2)) {
 			cb_emit_sort_init ($1, $2, alphanumeric_collation, national_collation);
@@ -15551,7 +15558,11 @@ sort_input:
   /* empty */
   {
 	if ($0 && CB_FILE_P (cb_ref ($0))) {
-		cb_error (_("file sort requires USING or INPUT PROCEDURE"));
+		if (current_statement->statement == STMT_MERGE) {
+			cb_error (_("MERGE requires USING files"));
+		} else {
+			cb_error (_("file SORT requires USING or INPUT PROCEDURE"));
+		}
 	}
   }
 | USING file_name_list
@@ -15569,7 +15580,7 @@ sort_input:
 	if ($0) {
 		if (!CB_FILE_P (cb_ref ($0))) {
 			cb_error (_("INPUT PROCEDURE invalid with table SORT"));
-		} else if (current_statement->flag_merge) {
+		} else if (current_statement->statement == STMT_MERGE) {
 			cb_error (_("INPUT PROCEDURE invalid with MERGE"));
 		} else {
 			cb_emit_sort_input ($4);
@@ -15583,7 +15594,11 @@ sort_output:
   /* empty */
   {
 	if ($-1 && CB_FILE_P (cb_ref ($-1))) {
-		cb_error (_("file sort requires GIVING or OUTPUT PROCEDURE"));
+		if (current_statement->statement == STMT_MERGE) {
+			cb_error (_("MERGE requires GIVING or OUTPUT PROCEDURE"));
+		} else {
+			cb_error (_("file SORT requires GIVING or OUTPUT PROCEDURE"));
+		}
 	}
   }
 | GIVING file_name_list
@@ -16011,7 +16026,7 @@ unlock_body:
 	if (CB_VALID_TREE ($1)) {
 		if (CB_FILE (cb_ref ($1))->organization == COB_ORG_SORT) {
 			cb_error_x (CB_TREE (current_statement),
-				    _("UNLOCK invalid for SORT files"));
+				    _("UNLOCK invalid for SD files"));
 		} else {
 			cb_emit_unlock ($1);
 		}

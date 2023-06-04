@@ -1,4 +1,16 @@
 
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_file), parser.y: organization and access_mode as enums
+	* typeck.c (cb_emit_sort_init, cb_emit_sort_using, cb_emit_sort_giving),
+	  parser.y: extended syntax checks, distinguish MERGE and SORT within
+	  diagnostics
+	* parser.y, typeck.c (cb_emit_sort_init): move all syntax checks from
+	  code-emitter to parser
+	* tree.h (cb_statement), parser.y, typeck.c: drop flag_merge,
+	  instead check by "statement == STMT_MERGE"
+	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+
 2023-02-26  Ron Norman <rjn@inglenet.com>
 
 	* field.c: Emit warning if COMP-X has PIC S9 as COMP-X is always unsigned

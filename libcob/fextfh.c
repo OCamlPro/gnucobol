@@ -998,18 +998,17 @@ cob_extfh_start (
 	f->last_operation = COB_LAST_START;
 	fcd = find_fcd(f);
 	if (f->organization == COB_ORG_INDEXED) {
-		keyn = cob_findkey(f,key,&keylen,&partlen);
+		keyn = cob_findkey (f,key,&keylen,&partlen);
 		STCOMPX2(keyn, fcd->refKey);
-		if (keysize)
+		if (keysize) {
 			partlen = cob_get_int (keysize);
+		}
 		STCOMPX2(partlen, fcd->effKeyLen);
 		STCOMPX2(keyn, fcd->refKey);
-		STCOMPX2(OP_READ_RAN, opcode);
 	} else if(f->organization == COB_ORG_RELATIVE) {
 		memset(fcd->relKey,0,sizeof(fcd->relKey));
 		recn = cob_get_int(f->keys[0].field);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
-		STCOMPX2(OP_READ_RAN, opcode);
 	}
 
 	switch(cond) {

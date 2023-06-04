@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -35,7 +35,7 @@ AM_LDFLAGS = $(COB_FIX_LIB) $(COB_FIX_LIBTOOL) -no-undefined
 
 
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
-	fileio.c fextfh.c focextfh.c  mlio.c \
+	fileio.c fsqlxfd.c fextfh.c focextfh.c  mlio.c \
 	call.c cobcapi.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
 	coblocal.h cobinternal.h system.def sysdefines.h fileio.h
 
@@ -47,7 +47,7 @@ INDEXED_LD_FLAGS = -version-info 1:0:0
 
 if COB_MAKE_CISAM_LIB
 lib_ci = libcobci.la
-libcobci_la_SOURCES = libcobci.c  # includes fisam.c
+libcobci_la_SOURCES = libcobci.c fsqlxfd.c  # includes fisam.c
 libcobci_la_LIBADD = libcob.la $(CISAM_LIBS)
 libcobci_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobci_la_CFLAGS = $(AM_CFLAGS) $(CISAM_CFLAGS)
@@ -57,7 +57,7 @@ endif
 
 if COB_MAKE_DISAM_LIB
 lib_di = libcobdi.la
-libcobdi_la_SOURCES = libcobdi.c  # includes fisam.c
+libcobdi_la_SOURCES = libcobdi.c fsqlxfd.c  # includes fisam.c
 libcobdi_la_LIBADD = libcob.la $(DISAM_LIBS)
 libcobdi_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobdi_la_CFLAGS = $(AM_CFLAGS) $(DISAM_CFLAGS)
@@ -67,7 +67,7 @@ endif
 
 if COB_MAKE_VBISAM_LIB
 lib_vb = libcobvb.la
-libcobvb_la_SOURCES = libcobvb.c  # includes fisam.c
+libcobvb_la_SOURCES = libcobvb.c fsqlxfd.c  # includes fisam.c
 libcobvb_la_LIBADD = libcob.la $(VBISAM_LIBS)
 libcobvb_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobvb_la_CFLAGS = $(AM_CFLAGS) $(VBISAM_CFLAGS)
@@ -77,7 +77,7 @@ endif
 
 if COB_MAKE_VISAM_LIB
 lib_vc = libcobvc.la
-libcobvc_la_SOURCES = libcobvc.c  # includes fisam.c
+libcobvc_la_SOURCES = libcobvc.c fsqlxfd.c  # includes fisam.c
 libcobvc_la_LIBADD = libcob.la $(VISAM_LIBS)
 libcobvc_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobvc_la_CFLAGS = $(AM_CFLAGS) $(VISAM_CFLAGS)

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -138,6 +138,7 @@ struct cobsort {
 	int			retrieval_queue;
 	struct queue_struct	queue[4];
 	struct file_struct	file[4];
+	int			flag_merge;
 };
 
 /* End SORT definitions */
@@ -6042,8 +6043,8 @@ cob_file_create (
 	cob_file **	pfl, 
 	const char *exname,
 	const char *select_name,
-	const int	fileorg,
-	const int	accessmode,
+	const enum cob_file_org	fileorg,
+	const enum cob_file_access	accessmode,
 	const int	optional,
 	const int	format,
 	const int	select_features,
@@ -6073,8 +6074,8 @@ cob_file_create (
 		fl->nkeys = nkeys;
 		memset(fl->file_status,'0',4);
 		fl->select_name = select_name;
-		fl->organization = (enum cob_file_org)fileorg;
-		fl->access_mode = (enum cob_file_access)accessmode;
+		fl->organization = fileorg;
+		fl->access_mode = accessmode;
 		fl->flag_optional = (unsigned char)optional;
 		fl->file_format = (unsigned char)format;
 		fl->flag_select_features = (unsigned char)select;
@@ -7499,42 +7500,16 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	delete_file_status = 0;
 }
 
-/* Return index number for given key */
+/* Return index number for given key and set length attributes,
+   storing resulting key field in file's last_key */
 int
 cob_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
-	int 	k,part;
-	*fullkeylen = *partlen = 0;
-
-	for (k = 0; k < (int)f->nkeys; ++k) {
-		if (f->keys[k].field
-		 && f->keys[k].count_components <= 1
-		 && f->keys[k].field->data == kf->data) {
-			f->last_key = f->keys[k].field;
-			*fullkeylen = f->keys[k].field->size;
-			*partlen = kf->size;
-			return k;
-		}
+	int 	k = cob_findkey_attr (f, kf, fullkeylen, partlen);
+	if (k >= 0) {
+		f->last_key = f->keys[k].field;
 	}
-	for (k = 0; k < (int)f->nkeys; ++k) {
-		if (f->keys[k].count_components > 1) {
-			if ((f->keys[k].field
-			 &&  f->keys[k].field->data == kf->data
-			 &&  f->keys[k].field->size == kf->size)
-			 || (f->keys[k].component[0]->data == kf->data)) {
-				f->last_key = f->keys[k].field;
-				for (part=0; part < f->keys[k].count_components; part++)
-					*fullkeylen += f->keys[k].component[part]->size;
-				if (f->keys[k].field
-				 && f->keys[k].field->data == kf->data)
-					*partlen = kf->size;
-				else
-					*partlen = *fullkeylen;
-				return k;
-			}
-		}
-	}
-	return -1;
+	return k;
 }
 
 /* Copy key data and return length of data copied */
@@ -8470,17 +8445,13 @@ cob_write_block (struct cobsort *hp, const int n)
 }
 
 static void
-cob_copy_check (cob_file *to, cob_file *from)
+cob_copy_check (cob_field *to_record, cob_field *from_record)
 {
-	unsigned char	*toptr;
-	unsigned char	*fromptr;
-	size_t		tosize;
-	size_t		fromsize;
+	unsigned char	*toptr = to_record->data;
+	unsigned char	*fromptr = from_record->data;
+	const size_t	tosize = to_record->size;
+	const size_t	fromsize = from_record->size;
 
-	toptr = to->record->data;
-	fromptr = from->record->data;
-	tosize = to->record->size;
-	fromsize = from->record->size;
 	if (tosize > fromsize) {
 		memcpy (toptr, fromptr, fromsize);
 		memset (toptr + fromsize, ' ', tosize - fromsize);
@@ -8605,18 +8576,19 @@ cob_file_sort_process (struct cobsort *hp)
 	return 0;
 }
 
+/* SORT/MERGE: insert record 'p' into the sort 'hp' */
 static int
-cob_file_sort_submit (cob_file *f, const unsigned char *p)
+cob_file_sort_submit (struct cobsort *hp, const unsigned char *p)
 {
-	struct cobsort		*hp;
 	struct cobitem		*q;
 	struct queue_struct	*z;
-	int			n;
+	int 		n;
 
-	hp = f->file;
+#if 0	/* can't happen */
 	if (!hp) {
 		return COBSORTNOTOPEN;
 	}
+#endif
 	if (hp->retrieving) {
 		return COBSORTABORT;
 	}
@@ -8664,20 +8636,17 @@ cob_file_sort_submit (cob_file *f, const unsigned char *p)
 	return 0;
 }
 
+/* SORT/MERGE: retrieve next record to be output for sort 'hp' into 'p' */
 static int
-cob_file_sort_retrieve (cob_file *f, unsigned char *p)
+cob_file_sort_retrieve (struct cobsort *hp, unsigned char *p)
 {
-	struct cobsort		*hp;
-	struct cobitem		*next;
-	struct queue_struct	*z;
-	int			move;
-	int			source;
-	int			res;
+	int 		res;
 
-	hp = f->file;
+#if 0	/* can't happen */
 	if (!hp) {
 		return COBSORTNOTOPEN;
 	}
+#endif
 	if (!hp->retrieving) {
 		res = cob_file_sort_process (hp);
 		if (res) {
@@ -8685,7 +8654,8 @@ cob_file_sort_retrieve (cob_file *f, unsigned char *p)
 		}
 	}
 	if (hp->files_used) {
-		source = hp->retrieval_queue;
+		int 	source = hp->retrieval_queue;
+		int 	move;
 		if (hp->queue[source].first->end_of_block) {
 			if (hp->queue[source + 1].first->end_of_block) {
 				return COBSORTEND;
@@ -8706,7 +8676,8 @@ cob_file_sort_retrieve (cob_file *f, unsigned char *p)
 		}
 		/* LCOV_EXCL_STOP */
 	} else {
-		z = &hp->queue[hp->retrieval_queue];
+		struct queue_struct	*z = &hp->queue[hp->retrieval_queue];
+		struct cobitem		*next;
 		if (z->first == NULL) {
 			return COBSORTEND;
 		}
@@ -8719,79 +8690,7 @@ cob_file_sort_retrieve (cob_file *f, unsigned char *p)
 	return 0;
 }
 
-void
-cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
-{
-	int		ret;
-
-	cob_open (data_file, COB_OPEN_INPUT, 0, NULL);
-	for (;;) {
-		cob_read_next (data_file, NULL, COB_READ_NEXT);
-		if (data_file->file_status[0] != '0') {
-			break;
-		}
-		cob_copy_check (sort_file, data_file);
-		ret = cob_file_sort_submit (sort_file, sort_file->record->data);
-		if (ret) {
-			break;
-		}
-	}
-	cob_close (data_file, NULL, COB_CLOSE_NORMAL, 0);
-}
-
-void
-cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
-{
-	cob_file	**fbase;
-	struct cobsort	*hp;
-	size_t		i;
-	int		ret;
-	int		opt;
-	va_list		args;
-
-	fbase = cob_malloc (varcnt * sizeof (cob_file *));
-	va_start (args, varcnt);
-	for (i = 0; i < varcnt; ++i) {
-		fbase[i] = va_arg (args, cob_file *);
-	}
-	va_end (args);
-	for (i = 0; i < varcnt; ++i) {
-		cob_open (fbase[i], COB_OPEN_OUTPUT, 0, NULL);
-	}
-	for (;;) {
-		ret = cob_file_sort_retrieve (sort_file, sort_file->record->data);
-		if (ret) {
-			if (ret == COBSORTEND) {
-				sort_file->file_status[0] = '1';
-				sort_file->file_status[1] = '0';
-			} else {
-				hp = sort_file->file;
-				if (hp->sort_return) {
-					*(int *)(hp->sort_return) = 16;
-				}
-				sort_file->file_status[0] = '3';
-				sort_file->file_status[1] = '0';
-			}
-			break;
-		}
-		for (i = 0; i < varcnt; ++i) {
-			if (COB_FILE_SPECIAL (fbase[i]) 
-			 || fbase[i]->organization == COB_ORG_LINE_SEQUENTIAL) {
-				opt = COB_WRITE_BEFORE | COB_WRITE_LINES | 1;
-			} else {
-				opt = 0;
-			}
-			fbase[i]->record->size = fbase[i]->record_max;
-			cob_copy_check (fbase[i], sort_file);
-			cob_write (fbase[i], fbase[i]->record, opt, NULL, 0);
-		}
-	}
-	for (i = 0; i < varcnt; ++i) {
-		cob_close (fbase[i], NULL, COB_CLOSE_NORMAL, 0);
-	}
-	cob_free (fbase);
-}
-
+/* SORT/MERGE: initial setup with adding sort definitions to sort file 'f' */
 void
 cob_file_sort_init (cob_file *f, const unsigned int nkeys,
 		    const unsigned char *collating_sequence,
@@ -8839,6 +8738,21 @@ cob_file_sort_init (cob_file *f, const unsigned int nkeys,
 	cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 }
 
+/* SORT/MERGE: additional options for sort file 'f' - so far only note "we're in MERGE" */
+void
+cob_file_sort_options (cob_file *f, const char *parms, ...)
+{
+	struct cobsort	*hp = f->file;
+
+	/* note: varargs are currently not used, if more information is added
+	   handle as in cob_accept_field */
+	hp->flag_merge = (parms[0] == 'M');
+
+	/* FIXME: MERGE should expect to have an ordered file (performance) and also test for
+	   that / raise COB_EC_SORT_MERGE_SEQUENCE */
+}
+
+/* SORT/MERGE: add key definition to internal sort file 'f' */
 void
 cob_file_sort_init_key (cob_file *f, cob_field *field, const int flag,
 			const unsigned int offset)
@@ -8849,15 +8763,149 @@ cob_file_sort_init_key (cob_file *f, cob_field *field, const int flag,
 	f->nkeys++;
 }
 
+/* SORT/MERGE: add all records from GIVING file 'data_file' to 'sort_file' */
+void
+cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
+{
+	/* FIXME: on each error the approprate USAGE AFTER EXCEPTION/ERROR must be called;
+	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
+	struct cobsort *hp = sort_file->file;
+	int 	ret;
+
+	cob_open (data_file, COB_OPEN_INPUT, 0, NULL);
+	if (data_file->file_status[0] != '0') {
+		if (data_file->file_status[0] == '4') {
+			cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
+		}
+		return;
+	}
+	for (;;) {
+		cob_read_next (data_file, NULL, COB_READ_NEXT);
+		if (data_file->file_status[0] != '0') {
+			break;
+		}
+		cob_copy_check (sort_file->record, data_file->record);
+		ret = cob_file_sort_submit (hp, sort_file->record->data);
+		if (ret) {
+			break;
+		}
+	}
+	cob_close (data_file, NULL, COB_CLOSE_NORMAL, 0);
+}
+
+/* SORT: WRITE all records from 'sort_file' to all passed USING files */
+void
+cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
+{
+	/* FIXME: on each error the approprate USAGE AFTER EXCEPTION/ERROR must be called;
+	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
+
+	struct cobsort *hp = sort_file->file;
+	cob_file	**fbase;
+	size_t		i;
+	va_list		args;
+	int		*opt;
+	int		ret;
+
+	/* setup temporary arrays, OPEN OUTPUT all GIVING files and get write option */
+	fbase = cob_malloc (varcnt * sizeof (cob_file *));
+	opt = cob_malloc (varcnt * sizeof (int));
+	va_start (args, varcnt);
+	for (i = 0; i < varcnt; ++i) {
+		cob_file *using_file = fbase[i] = va_arg (args, cob_file *);
+		cob_open (using_file, COB_OPEN_OUTPUT, 0, NULL);
+		if (using_file->file_status[0] == '0') {
+			if (COB_FILE_SPECIAL (using_file)
+			 || using_file->organization == COB_ORG_LINE_SEQUENTIAL) {
+				opt[i] = COB_WRITE_BEFORE | COB_WRITE_LINES | 1;
+			} else {
+				opt[i] = 0;
+			}
+		} else {
+			if (using_file->file_status[0] == '4') {
+				cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
+			}
+			opt[i] = -1;
+		}
+	}
+	va_end (args);
+
+	/* retrieve all records, WRITE each to every GIVING file */
+	for (;;) {
+		/* retrieve next record to write, stop AT END / error */
+		ret = cob_file_sort_retrieve (hp, sort_file->record->data);
+		if (ret) {
+			if (ret == COBSORTEND) {
+				sort_file->file_status[0] = '1';
+				sort_file->file_status[1] = '0';
+			} else {
+				if (hp->sort_return) {
+					*(int *)(hp->sort_return) = 16;
+				} else {
+					/* IBM doc: if not used then a runtime message is displayed */
+				}
+				sort_file->file_status[0] = '3';
+				sort_file->file_status[1] = '0';
+			}
+			break;
+		}
+
+		/* WRITE record to all GIVING files */
+		for (i = 0; i < varcnt; ++i) {
+			cob_file *using_file = fbase[i];
+			/* skip files which got a permanent error before */
+			if (opt[i] < 0) {
+				continue;
+			}
+			using_file->record->size = using_file->record_max;
+			cob_copy_check (using_file->record, sort_file->record);
+			cob_write (using_file, using_file->record, opt[i], NULL, 0);
+			/* stop writing to this file if we got a permanent write error;
+			   note: other files are still written to; therefore
+			         SORT-RETURN 16 (early exit) is NOT set here */
+			if (using_file->file_status[0] == '3') {
+				int j;
+				opt[i] = -2;
+				/* early exit if no GIVING file left */
+				for (j = 0; j < varcnt; ++j) {
+					if (opt[i] >= 0) {
+						break;
+					}
+				}
+				if (j == varcnt) {
+					break;
+				}
+			}
+		}
+		if (i != varcnt) {
+			break;
+		}
+	}
+
+	/* all records processed - CLOSE all GIVING files */
+	for (i = 0; i < varcnt; ++i) {
+		cob_file *using_file = fbase[i];
+		/* skip files not opened */
+		if (opt[i] == -1) {
+			continue;
+		}
+		cob_close (using_file, NULL, COB_CLOSE_NORMAL, 0);
+	}
+
+	/* cleanup temporary arrays */
+	cob_free (opt);
+	cob_free (fbase);
+}
+
+/* SORT: close of internal sort file 'f' and deallocation
+   of temporary storage */
 void
 cob_file_sort_close (cob_file *f)
 {
-	struct cobsort	*hp;
+	struct cobsort	*hp = f->file;
 	cob_field	*fnstatus;
 	size_t		i;
 
-	fnstatus = NULL;
-	hp = f->file;
 	if (hp) {
 		fnstatus = hp->fnstatus;
 		cob_free_list (hp);
@@ -8867,6 +8915,8 @@ cob_file_sort_close (cob_file *f)
 			}
 		}
 		cob_free (hp);
+	} else {
+		fnstatus = NULL;
 	}
 	if (f->keys) {
 		cob_free (f->keys);
@@ -8879,51 +8929,51 @@ cob_file_sort_close (cob_file *f)
 void
 cob_file_release (cob_file *f)
 {
-	struct cobsort	*hp;
-	cob_field	*fnstatus;
-	int		ret;
+	struct cobsort	*hp = f->file;
 
-	fnstatus = NULL;
-	hp = f->file;
 	if (hp) {
-		fnstatus = hp->fnstatus;
+		cob_field	*fnstatus = hp->fnstatus;
+		const int	ret = cob_file_sort_submit (hp, f->record->data);
+		if (!ret) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
+			return;
+		}
+		if (hp->sort_return) {
+			*(int *)(hp->sort_return) = 16;
+		} else {
+			/* IBM doc: if not used then a runtime message is displayed */
+		}
+		cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
+	} else {
+		cob_file_save_status (f, NULL, COB_STATUS_30_PERMANENT_ERROR);
 	}
-	ret = cob_file_sort_submit (f, f->record->data);
-	if (!ret) {
-		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
-		return;
-	}
-	if (hp && hp->sort_return) {
-		*(int *)(hp->sort_return) = 16;
-	}
-	cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 }
 
 void
 cob_file_return (cob_file *f)
 {
-	struct cobsort	*hp;
-	cob_field	*fnstatus;
-	int		ret;
+	struct cobsort	*hp = f->file;
 
-	fnstatus = NULL;
-	hp = f->file;
 	if (hp) {
-		fnstatus = hp->fnstatus;
+		cob_field	*fnstatus = hp->fnstatus;
+		const int	ret = cob_file_sort_retrieve (hp, f->record->data);
+		switch (ret) {
+		case 0:
+			cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
+			return;
+		case COBSORTEND:
+			cob_file_save_status (f, fnstatus, COB_STATUS_10_END_OF_FILE);
+			return;
+		}
+		if (hp->sort_return) {
+			*(int *)(hp->sort_return) = 16;
+		} else {
+			/* IBM doc: if not used then a runtime message is displayed */
+		}
+		cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
+	} else {
+		cob_file_save_status (f, NULL, COB_STATUS_30_PERMANENT_ERROR);
 	}
-	ret = cob_file_sort_retrieve (f, f->record->data);
-	switch (ret) {
-	case 0:
-		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
-		return;
-	case COBSORTEND:
-		cob_file_save_status (f, fnstatus, COB_STATUS_10_END_OF_FILE);
-		return;
-	}
-	if (hp && hp->sort_return) {
-		*(int *)(hp->sort_return) = 16;
-	}
-	cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 }
 
 char *

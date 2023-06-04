@@ -12708,7 +12708,7 @@ cb_emit_set_last_exception_to_off (void)
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_set_exception", cb_int0));
 }
 
-/* SORT statement */
+/* SORT + MERGE statements */
 
 void
 cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
@@ -12731,7 +12731,7 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 	}
 
 	/* note: the reference to the program's collation,
-	   if not explicit specified in SORT is done within libcob */
+	   if not explicit specified in SORT/MERGE, is done within libcob */
 	if (col == NULL) {
 		col = cb_null;
 	} else {
@@ -12746,28 +12746,30 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 	COB_UNUSED (nat_col);
 
 	if (CB_FILE_P (rtree)) {
-		if (CB_FILE (rtree)->organization != COB_ORG_SORT) {
-			cb_error_x (name, _("invalid SORT filename"));
-		}
+		cb_tree sort_return;
+		const struct cb_file *sd_file = CB_FILE (rtree);
 		if (current_program->cb_sort_return) {
 			CB_FIELD_PTR (current_program->cb_sort_return)->count++;
-			cb_emit (CB_BUILD_FUNCALL_5 ("cob_file_sort_init", rtree,
-						     cb_int ((int)cb_list_length (keys)), col,
-						     CB_BUILD_CAST_ADDRESS (current_program->cb_sort_return),
-						     CB_FILE(rtree)->file_status));
+			sort_return = CB_BUILD_CAST_ADDRESS (current_program->cb_sort_return);
 		} else {
-			cb_emit (CB_BUILD_FUNCALL_5 ("cob_file_sort_init", rtree,
-						     cb_int ((int)cb_list_length (keys)), col,
-						     cb_null, CB_FILE(rtree)->file_status));
-
+			sort_return = cb_null;
+		}
+		cb_emit (CB_BUILD_FUNCALL_5 ("cob_file_sort_init", rtree,
+						    cb_int ((int)cb_list_length (keys)), col,
+						    sort_return, sd_file->file_status));
+		if (current_statement->statement == STMT_MERGE) {
+			/* note: this  function can be used later to set more options */
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_sort_options", rtree,
+				cb_build_string (cobc_parse_strdup ("M"), 1)));
 		}
 		/* TODO: pass key-specific collation to libcob */
 		for (l = keys; l; l = CB_CHAIN (l)) {
+			cb_tree fref = CB_VALUE (l);
 			cb_emit (CB_BUILD_FUNCALL_4 ("cob_file_sort_init_key",
 						     rtree,
-						     CB_VALUE (l),
+						     fref,
 						     CB_PURPOSE (l),
-						     cb_int (CB_FIELD_PTR (CB_VALUE(l))->offset)));
+						     cb_int (CB_FIELD_PTR (fref)->offset)));
 		}
 	} else {
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort_init",
@@ -12806,60 +12808,67 @@ cb_emit_sort_using (cb_tree file, cb_tree l)
 	}
 	/* LCOV_EXCL_STOP */
 	for (; l; l = CB_CHAIN (l)) {
-		if (CB_FILE (cb_ref(CB_VALUE(l)))->organization == COB_ORG_SORT) {
+		cb_tree use_ref = cb_ref (CB_VALUE (l));
+		const struct cb_file *use_file = CB_FILE (use_ref);
+		if (use_file->organization == COB_ORG_SORT) {
 			cb_error_x (CB_TREE (current_statement),
-				    _("invalid SORT USING parameter"));
+				    _("invalid %s parameter"),
+					current_statement->statement == STMT_MERGE ?
+					"MERGE USING" : "SORT USING");
 		}
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_sort_using",
-			rtree, cb_ref (CB_VALUE (l))));
+			rtree, use_ref));
 	}
 }
 
 void
 cb_emit_sort_input (cb_tree proc)
 {
-	if (current_program->flag_debugging &&
-	    !current_statement->flag_in_debug) {
+	if (current_program->flag_debugging
+	 && !current_statement->flag_in_debug) {
 		cb_emit (cb_build_debug (cb_debug_contents, "SORT INPUT", NULL));
 	}
 	cb_emit (cb_build_perform_once (proc));
 }
 
 void
-cb_emit_sort_giving (cb_tree file, cb_tree l)
+cb_emit_sort_giving (cb_tree sd_file, cb_tree l)
 {
 	cb_tree		p;
-	int		listlen;
 
 	if (cb_validate_list (l)) {
 		return;
 	}
 	for (p = l; p; p = CB_CHAIN (p)) {
-		if (CB_FILE (cb_ref(CB_VALUE(p)))->organization == COB_ORG_SORT) {
+		/* TODO: let parser create a list of files, not their references */
+		const struct cb_file *giving_file = CB_FILE (cb_ref (CB_VALUE (p)));
+		if (giving_file->organization == COB_ORG_SORT) {
 			cb_error_x (CB_TREE (current_statement),
-				    _("invalid SORT GIVING parameter"));
+				    _("invalid %s parameter"),
+					current_statement->statement == STMT_MERGE ?
+					"MERGE GIVING" : "SORT GIVING");
+
 		}
 	}
-	p = cb_ref (file);
+	p = cb_ref (sd_file);
 	/* LCOV_EXCL_START */
 	if (p == cb_error_node) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"cb_emit_sort_giving", "file");
+			"cb_emit_sort_giving", "sd_file");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
-	listlen = cb_list_length (l);
 	p = CB_BUILD_FUNCALL_2 ("cob_file_sort_giving", p, l);
-	CB_FUNCALL(p)->varcnt = listlen;
+	CB_FUNCALL(p)->varcnt = cb_list_length (l);
 	cb_emit (p);
 }
 
 void
 cb_emit_sort_output (cb_tree proc)
 {
-	if (current_program->flag_debugging &&
-	    !current_statement->flag_in_debug) {
-		if (current_statement->flag_merge) {
+	if (current_program->flag_debugging
+	 && !current_statement->flag_in_debug) {
+		if (current_statement->statement == STMT_MERGE) {
 			cb_emit (cb_build_debug (cb_debug_contents,
 						 "MERGE OUTPUT", NULL));
 		} else {

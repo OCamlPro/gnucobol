@@ -1,4 +1,8 @@
 
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* report.pl: place stderr from test runs into .out file
+
 2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: adjusted URL_NEWCOB_TAR_GZ as old value (SF download area)
@@ -371,7 +375,7 @@
 	* SQ.txt, summary.txt : We now pass the LINAGE tests
 
 
-Copyright 2005-2010,2015-2020,2022 Free Software Foundation, Inc.
+Copyright 2005-2010,2015-2020,2022-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

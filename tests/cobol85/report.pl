@@ -419,12 +419,12 @@ sub run_test {
 
 testrepeat:
 	if (!$to_kill{$exe}) {
-		$ret = system ("$TRAP  $cmd > $exe.out");
+		$ret = system ("$TRAP  $cmd > $exe.out 2>&1");
 	} else {
 		$ret = system ("$TRAP  $cmd > $exe.out 2>/dev/null");
 	}
 
-	# extra check for both SIGINT as masked signal and as plain return, because
+	# extra check for SIGINT both as masked signal and as plain return, because
 	# AIX (at least 7.1 with GCC 4.2 and system libc) directly returns 2
 	if ($ret != 0 && !($to_kill{$exe} && ($ret >> 2 || $ret == 2))) {
 		if (($ret >> 8) == 77) {

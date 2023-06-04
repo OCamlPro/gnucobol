@@ -1469,6 +1469,9 @@ typedef struct __cob_file_key {
 	cob_field		*field;			/* Key field (or SPLIT key save area) */
 	unsigned char	*str_suppress;	/* Complete SUPPRESS "string" */
 	cob_field	*component[COB_MAX_KEYCOMP];/* key-components iff split-key   */
+#if 0	/* TODO (for file keys, not for SORT/MERGE) */
+	const unsigned char *collating_sequence;	/* COLLATING */
+#endif
 } cob_file_key;
 
 typedef struct cob_io_stat_s {
@@ -2623,12 +2626,14 @@ typedef struct __fcd2 {
 #define OP_FLUSH			0x000C	
 #define OP_UNLOCK_REC			0x000F	
 
-#define OP_CLOSE			0xFA80		/* OP CODES */
-#define OP_CLOSE_LOCK			0xFA81
-#define OP_CLOSE_NO_REWIND		0xFA82
-#define OP_CLOSE_REEL			0xFA84
-#define OP_CLOSE_REMOVE			0xFA85
-#define OP_CLOSE_NOREWIND		0xFA86
+/* standard OP CODES */
+
+#define OP_CLOSE			0xFA80	/* CLOSE */
+#define OP_CLOSE_LOCK			0xFA81	/* CLOSE WITH LOCK */
+#define OP_CLOSE_NO_REWIND		0xFA82	/* CLOSE WITH NO REWIND */
+#define OP_CLOSE_REEL			0xFA84	/* CLOSE REEL/UNIT */
+#define OP_CLOSE_REMOVE			0xFA85	/* CLOSE REEL/UNIT FOR REMOVAL */
+#define OP_CLOSE_NOREWIND		0xFA86	/* CLOSE REEL/UNIT WITH NO REWIND */
 
 #define OP_OPEN_INPUT			0xFA00
 #define OP_OPEN_OUTPUT			0xFA01
@@ -2716,7 +2721,7 @@ COB_EXPIMP void cob_pre_open	(cob_file *f);
 COB_EXPIMP void cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkit);
 COB_EXPIMP int	cob_findkey (cob_file *, cob_field *, int *, int *);
 COB_EXPIMP void cob_file_create (cob_file ** pfl, const char *exname, const char *select_name,
-					const int fileorg, const int accessmode, const int optional,
+					const enum cob_file_org fileorg, const enum cob_file_access accessmode, const int optional,
 					const int format, const int select_features, const int nkeys, 
 					const int minrcsz, const int maxrcsz, cob_field * assign, cob_field * record);
 COB_EXPIMP void cob_file_destroy (cob_file ** pfl);
@@ -2811,6 +2816,7 @@ COB_EXPIMP int cob_sys_file_delete	(unsigned char *, unsigned char *);
 COB_EXPIMP void	cob_file_sort_init	(cob_file *, const unsigned int,
 					 const unsigned char *,
 					 void *, cob_field *);
+COB_EXPIMP void	cob_file_sort_options (cob_file *, const char *, ...);
 COB_EXPIMP void	cob_file_sort_init_key	(cob_file *, cob_field *,
 					 const int, const unsigned int);
 COB_EXPIMP void	cob_file_sort_close	(cob_file *);

@@ -2808,16 +2808,16 @@ output_emit_one_field (struct cb_field *f, const char *cmt, int sub)
 	else
 		output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 	output_field_sub (f, cb_build_field_reference (f, NULL), sub);
-	output_local(";\t/* ");
+	output_local (";\t/* ");
 	output_local ("%s ", get_field_name (f));
 	if ((f->report_flag & COB_REPORT_COLUMN_RIGHT)) {
-		output_local(", RIGHT %d",f->report_column);
+		output_local (", RIGHT %d",f->report_column);
 	} else
 	if ((f->report_flag & COB_REPORT_COLUMN_LEFT)) {
-		output_local(", LEFT %d",f->report_column);
+		output_local (", LEFT %d",f->report_column);
 	} else
 	if ((f->report_flag & COB_REPORT_COLUMN_CENTER)) {
-		output_local(", CENTER %d",f->report_column);
+		output_local (", CENTER %d",f->report_column);
 	} else
 	if (f->report_column > 0) {
 		if (sub > 0 
@@ -2832,12 +2832,12 @@ output_emit_one_field (struct cb_field *f, const char *cmt, int sub)
 		}
 	}
 	if ((f->report_flag & COB_REPORT_COLUMN_RIGHT)) {
-		output_local(", GROUP INDICATE");
+		output_local (", GROUP INDICATE");
 	}
 	if (cmt) {
 		output_local (" : %s ", cmt);
 	}
-	output_local("*/\n");
+	output_local ("*/\n");
 }
 
 /*
@@ -9826,6 +9826,12 @@ output_file_initialization (struct cb_file *f)
 	case COB_ORG_SORT:
 		org_name = "COB_ORG_SORT";
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cobc_err_msg ("unexpected file type: %d",
+			 (int)f->organization);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
 	}
 	switch (f->access_mode) {
 	case COB_ACCESS_SEQUENTIAL:
@@ -9837,6 +9843,12 @@ output_file_initialization (struct cb_file *f)
 	case COB_ACCESS_DYNAMIC:
 		acc_name = "COB_ACCESS_DYNAMIC";
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cobc_err_msg ("unexpected access type: %d",
+			 (int)f->access_mode);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
 	}
 	if (!f->flag_line_adv
 	 && !f->flag_has_organization
@@ -9891,6 +9903,7 @@ output_file_initialization (struct cb_file *f)
 	} else {
 		strcpy (extname, "NULL");
 	}
+	/* TODO: generate enum names here */
 	output_line ("cob_file_create (&%s, %s, \"%s\",", file_name, extname, f->name);
 	output_indent_level += 17;
 	output_line ("%s,%s,%d,",org_name,acc_name,f->optional);
