@@ -1,6 +1,11 @@
 
 2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
+	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
+	second equivalent token
+
+2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
 	* flag.def/cobc.c: new flags -fno-ttimestamp to suppress timestamp
 	  in listing headers, and -fttitle=<TITLE>, so that listings can be
 	  compared accross different versions and dates. This patch partially

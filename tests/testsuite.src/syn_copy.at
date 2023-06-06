@@ -933,12 +933,9 @@ AT_KEYWORDS([copy])
 # continue the loop with the - potential partially replaced -
 # new content.
 
-AT_XFAIL_IF([true])
-
 AT_DATA([copy.inc], [
        01 VAR-:TEST: PIC X(2) VALUE "OK".
 ])
-
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -954,6 +951,8 @@ AT_DATA([prog.cob], [
        REPLACE OFF.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:10: error: 'VAR-COMMA' is not defined
+])
 
 AT_CLEANUP
