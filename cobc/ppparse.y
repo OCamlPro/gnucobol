@@ -1633,11 +1633,11 @@ copy_replacing:
 replace_statement:
   REPLACE _also replacing_list
   {
-	pp_set_replace_list ($3, $2);
+	cb_set_replace_list ($3, $2);
   }
 | REPLACE _last OFF
   {
-	pp_set_replace_list (NULL, $2);
+	cb_set_replace_list (NULL, $2);
   }
 ;
 

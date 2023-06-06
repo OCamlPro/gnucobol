@@ -1643,8 +1643,8 @@ struct cb_replace_list {
 	const struct cb_text_list	*new_text;
 };
 
-extern void		pp_set_replace_list (struct cb_replace_list *,
-					     const cob_u32_t);
+extern void		cb_set_replace_list (struct cb_replace_list *,
+					     const int);
 
 /* List of error messages */
 struct list_error {
