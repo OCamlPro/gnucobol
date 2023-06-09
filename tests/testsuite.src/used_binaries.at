@@ -921,8 +921,7 @@ AT_CLEANUP
 
 
 AT_SETUP([cobc diagnostics show caret])
-# promoted on 2023-06-01T09:57
-AT_KEYWORDS([cobc diagnostics])
+#AT_KEYWORDS([cobc diagnostics])
 AT_DATA([prog.cob],[
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -936,47 +935,78 @@ AT_DATA([prog.cob],[
            MOVE 12 TO TEST-VAR
            DISPLAY TEST-VAR NO ADVANCING
            END-DISPLAY
-           STOP RUN.
+           STOP RUN...
 ])
+
+# note: $COBC has -fdiagnostics-plain-output
 AT_CHECK([$COBC -Wall -fsyntax-only prog.cob], [1], [],
-[prog.cob:7: error: CRUD.CPY: No such file or directory
-prog.cob:6: warning: numeric value is expected @<:@-Wothers@:>@
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+prog.cob:6: warning: numeric value is expected [-Wothers]
+prog.cob:14: warning: ignoring redundant . [-Wothers]
+]])
+AT_CHECK([$COBC -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+    5 |        WORKING-STORAGE  SECTION.
+    6 |        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 >        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+    9 |            DISPLAY TEST-VAR NO ADVANCING
+prog.cob:6: warning: numeric value is expected [-Wothers]
+    4 |        DATA             DIVISION.
+    5 |        WORKING-STORAGE  SECTION.
+    6 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 |        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+prog.cob:14: warning: ignoring redundant . [-Wothers]
+   12 |            DISPLAY TEST-VAR NO ADVANCING
+   13 |            END-DISPLAY
+   14 >            STOP RUN...
+   15 | <EOF>
+]])
+
+AT_CHECK([$COBC -fdiagnostics-show-caret prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+          WORKING-STORAGE  SECTION.
+          01 TEST-VAR PIC 9(2) VALUE 'A'.
+ >        COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION.
+              DISPLAY TEST-VAR NO ADVANCING
+prog.cob:6: warning: numeric value is expected [-Wothers]
+          DATA             DIVISION.
+          WORKING-STORAGE  SECTION.
+ >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+          COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION.
+prog.cob:14: warning: ignoring redundant . [-Wothers]
+              DISPLAY TEST-VAR NO ADVANCING
+              END-DISPLAY
+ >            STOP RUN...
+   <EOF>
+]])
+
+# Testcase for trailing whitespace
+AT_CHECK([sed -e 's/DIVISION\./DIVISION  \.\t  \t  /' prog.cob > progsp.cob])
+
+AT_CHECK([$COBC -Wno-others -fdiagnostics-show-caret progsp.cob], [1], [],
+[[progsp.cob:7: error: CRUD.CPY: No such file or directory
+          WORKING-STORAGE  SECTION.
+          01 TEST-VAR PIC 9(2) VALUE 'A'.
+ >        COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION  .
+              DISPLAY TEST-VAR NO ADVANCING
+]])
+
+# Testcase for line too long and printing only one line
+AT_DATA([longgy.cob],[ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 ])
-AT_CHECK([$COMPILE -fdiagnostics-show-caret -fdiagnostics-show-line-numbers -j prog.cob], [1], [],
-[prog.cob:7: error: CRUD.CPY: No such file or directory
 
-  0005          WORKING-STORAGE  SECTION.
-  0006          01 TEST-VAR PIC 9(2) VALUE 'A'.
-  0007 >        COPY 'CRUD.CPY'.
-  0008          PROCEDURE        DIVISION.
-  0009              DISPLAY TEST-VAR NO ADVANCING
+# note: this is actually an error in the parser line number,
+#       but until that is solved, it is a nice edge case of "line not available"
+AT_CHECK([$COBC -Wno-others -fdiagnostics-show-caret longgy.cob], [1], [],
+[[longgy.cob:2: error: PROGRAM-ID header missing
+   dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd..
+ > <EOF>
+]])
 
-prog.cob:6: warning: numeric value is expected
-
-  0004          DATA             DIVISION.
-  0005          WORKING-STORAGE  SECTION.
-  0006 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
-  0007          COPY 'CRUD.CPY'.
-  0008          PROCEDURE        DIVISION.
-
-])
-AT_CHECK([$COMPILE -fdiagnostics-show-caret -j prog.cob],[1], [],
-[prog.cob:7: error: CRUD.CPY: No such file or directory
-
-           WORKING-STORAGE  SECTION.
-           01 TEST-VAR PIC 9(2) VALUE 'A'.
-  >        COPY 'CRUD.CPY'.
-           PROCEDURE        DIVISION.
-               DISPLAY TEST-VAR NO ADVANCING
-
-prog.cob:6: warning: numeric value is expected
-
-           DATA             DIVISION.
-           WORKING-STORAGE  SECTION.
-  >        01 TEST-VAR PIC 9(2) VALUE 'A'.
-           COPY 'CRUD.CPY'.
-           PROCEDURE        DIVISION.
-
-])
 AT_CLEANUP
 
