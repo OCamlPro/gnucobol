@@ -70,61 +70,60 @@ print_error_prefix (const char *file, int line, const char *prefix)
 	}
 }
 
-/* Display a context around the location of the error/warning, only if
- * cb_diagnostics_show_caret is true
+/* Display a context around the location of the error/warning,
+   only used if cb_diagnostics_show_caret is true
 
    Only display two lines before and after. No caret yet for the column as
    we only have the line. Since we directly use the file, source is printed
-   before any REPLACE.
- */
-
-#define CARET_MAX_COLS 73
+   before any REPLACE. */
 static void
-diagnostics_show_caret (const char *file, int line)
+diagnostics_show_caret (FILE *fd, const int line)
 {
-	FILE* fd = fopen(file, "r");
-	if (fd == NULL) return;
-	char buffer[ CARET_MAX_COLS+1 ];
+	#define CARET_MAX_COLS 73 + 5
+	#define CARET_CONTEXT_LINES 2
+	const int line_start = line > CARET_CONTEXT_LINES ? line - CARET_CONTEXT_LINES : 1;
+	const int line_end = line + CARET_CONTEXT_LINES;
+	const int max_pos = cb_diagnostics_show_line_numbers ? CARET_MAX_COLS - 5 : CARET_MAX_COLS;
+	char buffer[ CARET_MAX_COLS + 1 ];
 	int line_pos = 1;
 	int char_pos = 0;
-	int printed = 0; /* nothing printed */
-	while(1){
-		int c = fgetc (fd);
-		if ( c == EOF ){
-			if (printed){
-				fprintf(stderr, "\n");
-			}
-			fclose(fd);
-			return ;
-		}
-		buffer[char_pos] = c ;
-		if (c == '\n' || char_pos == CARET_MAX_COLS){
-			buffer[char_pos] = 0;
-			if (line_pos > line-3 && line_pos < line+3){
-				if (line_pos == line-2) fprintf(stderr, "\n");
-				printed = 1;
-				fprintf (stderr, "  ");
-				if (cb_diagnostics_show_line_numbers){
-					fprintf (stderr, "%04d ",
-						 line_pos);
+	int c = 0;
+	while (c != EOF) {
+		buffer[char_pos] = c = fgetc (fd);;
+		if (c == '\n' || c == EOF || char_pos == max_pos) {
+			if (line_pos >= line_start) {
+				/* prefix */
+				if (cb_diagnostics_show_line_numbers) {
+					fprintf (stderr, "%5d %c ", line_pos,
+						line == line_pos ? '>' : '|');
+				} else {
+					fprintf (stderr, " %c ",
+						line == line_pos ? '>' : ' ');
 				}
-				fprintf (stderr, "%c %s%s\n",
-					 line == line_pos ? '>' : ' ',
-					 c == '\n' ? "" : ".." ,
-					 buffer);
-				if (line_pos == line+2){
-					fprintf(stderr, "\n");
-					fclose(fd);
-					return;
+				/* drop trailing whitespace from buffer */
+				while (char_pos >= 0
+				    && (buffer[char_pos] == ' '
+				     || buffer[char_pos] == '\t'
+				     || buffer[char_pos] == '\r'
+				     || buffer[char_pos] == '\n'
+				     || buffer[char_pos] == EOF
+					 || char_pos == max_pos)) {
+					buffer[char_pos--] = 0;
 				}
+				/* print it */
+				fprintf (stderr, "%s%s\n",
+					 buffer,
+					 c == '\n' ? "" :
+					 c == EOF ? "<EOF>" : "..");
 			}
-			while (c != '\n'){
-				/* skip end of line too long */
+			if (line_pos++ >= line_end) {
+				break;
+			}
+			/* skip end of line too long */
+			while (c != '\n' && c != EOF) {
 				c = fgetc (fd);
-				if( c == EOF ) { fclose(fd); return ; }
 			}
-			line_pos++;
-			char_pos=0;
+			char_pos = buffer[0] = 0;
 		} else {
 			char_pos++;
 		}
@@ -197,18 +196,23 @@ print_error (const char *file, int line, enum cb_error_kind kind,
 		cb_add_error_to_listing (file, line, prefix, errmsg);
 	}
 
-	static const char* last_caret_file = NULL ;
-	static int last_caret_line = -1 ;
 	if (cb_diagnostics_show_caret
-	    && file != NULL
-	    && strcmp (file, COB_DASH) != 0
-	    && line
-	    && (last_caret_file != file || last_caret_line != line)
-		){
-		/* remember last printed location to avoid reprinting it */
-		last_caret_file = file;
-		last_caret_line = line;
-		diagnostics_show_caret (file, line);
+	 && file != NULL
+	 && strcmp (file, COB_DASH) != 0
+	 && line != 0) {
+		static const char *last_caret_file = NULL ;
+		static int last_caret_line = -1 ;
+		if (last_caret_file != file
+		 || last_caret_line != line) {
+			FILE *fd = fopen (file, "r");
+			if (fd) {
+				diagnostics_show_caret (fd, line);
+				fclose (fd);
+			}
+			/* remember last printed location to avoid reprinting it */
+			last_caret_file = file;
+			last_caret_line = line;
+		}
 	}
 }
 
