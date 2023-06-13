@@ -92,7 +92,6 @@ static int ppwrap (void) {
 #include "cobc.h"
 #include "tree.h"
 #include "ppparse.h"
-#include "replace.h"
 
 #ifdef	_WIN32
 #include <io.h>	/* for access */
@@ -1970,6 +1969,11 @@ next_word_is_comment_paragraph_name (const char *buff)
 	return 1;
 }
 
+static COB_INLINE COB_A_INLINE int
+is_space_or_nl (const char c)
+{
+	return c == ' ' || c == '\n';
+}
 
 /* FIXME: try to optimize as this function used 25-10% (according to callgrind)
    of the complete time spent in a sample run with

@@ -1,13 +1,21 @@
 
 2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
+	* replace.c: rewrite the code for preprocessing with a two-phase
+	  algorithm. The first phase performs COPY REPLACING on the stream
+	  of tokens, while the second phase perform REPLACE on the resulting
+	  stream of tokens. This rewriting is closer to the COBOL standard
+	  and fixes bug #831 partially.
+
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
 	* pplex.l/replace.c: move the preprocessing code performing
-	COPY REPLACING and REPLACE from pplex.l to replace.c
+	  COPY REPLACING and REPLACE from pplex.l to replace.c
 
 2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
-	second equivalent token
+	  second equivalent token
 
 2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -89,8 +97,8 @@
 	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
 	  and comment algorithm
 
-	Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
-	and #887 error compiling parenthesized relation
+	  Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
+	  and #887 error compiling parenthesized relation
 	* typeck.c (cb_build_expr): additional generate 'invalid conditional
 	  expression' error", translate NOT comparison to inversed comparison
 	* typeck.c (cb_build_expr), tree.c (cb_build_binary_op): give more

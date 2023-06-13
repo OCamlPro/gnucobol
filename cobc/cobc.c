@@ -1337,6 +1337,50 @@ cobc_plex_strdup (const char *dupstr)
 	return p;
 }
 
+/* Return a newly allocated zero-terminated string with only the first
+ * len chars of the first argument */
+void *
+cobc_plex_strsub (const char *s, const int len)
+{
+	void	*p;
+	int	n;
+
+	n = strlen (s);
+
+#ifdef	COB_TREE_DEBUG
+	/* LCOV_EXCL_START */
+	if ( len>n ) {
+		cobc_err_msg ("call to %s with bad argument len=%d>%d=strlen(s)",
+			      "cobc_plex_strsub", len, n);
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
+#endif
+
+	p = cobc_plex_malloc (len + 1);
+	memcpy (p, s, len);
+	return p;
+}
+
+/* Returns a newly allocated zero-terminated string containing the
+ * concatenation of str1 and str2. str1 and str2 may be freed
+ * afterwards.
+ */
+char *
+cobc_plex_stradd (const char *str1, const char *str2)
+{
+	char	*p;
+	size_t	m, n;
+
+	m = strlen (str1);
+	n = strlen (str2);
+	p = cobc_plex_malloc (m + n + 1);
+	memcpy (p, str1, m);
+	memcpy (p + m, str2, n);
+	return p;
+}
+
+
 /* variant of strcpy which copies max 'max_size' bytes from 'src' to 'dest',
    if the size of 'src' is too long only its last/last bytes are copied and an
    eliding "..." is placed in front or at end depending on 'elide_at_end' */
