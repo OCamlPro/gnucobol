@@ -1266,7 +1266,9 @@ typedef struct __cob_module {
 #define COB_MODULE_TRACE	2
 #define COB_MODULE_TRACEALL	4
 
-	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
+	unsigned char		flag_io_extend_create;	/* Create file opened in IO or EXTEND mode if missing */
+
+//	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
 
 	unsigned int		module_stmt;		/* Position of last statement executed
 											   as modulated source line

@@ -11031,6 +11031,7 @@ output_module_init_function (struct cb_program *prog)
 	output_line ("module->flag_main = %d;", cobc_flag_main);
 	output_line ("module->flag_fold_call = %d;", cb_fold_call);
 	output_line ("module->flag_exit_program = 0;");
+	output_line ("module->flag_io_extend_create = %d;", cb_flag_io_extend_create);
 	{
 		int	opt = 0;
 		if (cb_flag_traceall) {

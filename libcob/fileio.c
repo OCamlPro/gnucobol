@@ -1710,7 +1710,9 @@ cob_fd_file_open (cob_file *f, char *filename,
 		if (mode == COB_OPEN_EXTEND || mode == COB_OPEN_OUTPUT) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
-		if (f->flag_optional) {
+		if (f->flag_optional ||
+		    COB_MODULE_PTR->flag_io_extend_create &&
+		    (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O)) {
 			f->fd = fd;
 			f->open_mode = mode;
 			f->flag_nonexistent = 1;
@@ -1819,7 +1821,10 @@ cob_file_open (cob_file *f, char *filename,
 		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-				return COB_STATUS_35_NOT_EXISTS;
+				if (mode != COB_OPEN_EXTEND && mode != COB_OPEN_I_O ||
+					COB_MODULE_PTR->flag_io_extend_create == 0) {
+					return COB_STATUS_35_NOT_EXISTS;
+				}
 			}
 		}
 		break;
@@ -1834,7 +1839,9 @@ cob_file_open (cob_file *f, char *filename,
 		f->open_mode = mode;
 		break;
 	case COB_STATUS_35_NOT_EXISTS:
-		if (f->flag_optional) {
+		if (f->flag_optional ||
+		    COB_MODULE_PTR->flag_io_extend_create &&
+		    (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O)) {
 			f->open_mode = mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
@@ -1862,7 +1869,10 @@ cob_file_open (cob_file *f, char *filename,
 	if (access (filename, F_OK)) {
 		if (errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-				return COB_STATUS_35_NOT_EXISTS;
+				if (mode != COB_OPEN_EXTEND && mode != COB_OPEN_I_O ||
+					COB_MODULE_PTR->flag_io_extend_create == 0) {
+					return COB_STATUS_35_NOT_EXISTS;
+				}
 			}
 			nonexistent = 1;
 #if 0 /* CHECKME: how to handle stuff like ENOTDIR here ?*/
@@ -1943,7 +1953,9 @@ cob_file_open (cob_file *f, char *filename,
 		if (mode == COB_OPEN_EXTEND || mode == COB_OPEN_OUTPUT) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
-		if (f->flag_optional) {
+		if (f->flag_optional ||
+		    COB_MODULE_PTR->flag_io_extend_create &&
+		    (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O)) {
 			f->file = NULL;
 			f->fd = -1;
 			f->open_mode = mode;
@@ -4164,7 +4176,10 @@ indexed_open (cob_file *f, char *filename,
 		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-				return COB_STATUS_35_NOT_EXISTS;
+				if (mode != COB_OPEN_EXTEND && mode != COB_OPEN_I_O ||
+					COB_MODULE_PTR->flag_io_extend_create == 0) {
+					return COB_STATUS_35_NOT_EXISTS;
+				}
 			}
 		}
 		break;
@@ -4179,7 +4194,9 @@ indexed_open (cob_file *f, char *filename,
 		f->open_mode = mode;
 		break;
 	case COB_STATUS_35_NOT_EXISTS:
-		if (f->flag_optional) {
+		if (f->flag_optional ||
+		    COB_MODULE_PTR->flag_io_extend_create &&
+		    (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O)) {
 			f->open_mode = mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
@@ -4219,7 +4236,9 @@ indexed_open (cob_file *f, char *filename,
 	errno = 0;
 	if (access (file_open_buff, checkvalue)) {
 		if (!(errno == ENOENT &&
-		      (mode == COB_OPEN_OUTPUT || f->flag_optional == 1))) {
+		      (mode == COB_OPEN_OUTPUT || f->flag_optional == 1 ||
+                       (COB_MODULE_PTR->flag_io_extend_create &&
+                        (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O))))) {
 			switch (errno) {
 			case ENOENT:
 				return COB_STATUS_35_NOT_EXISTS;
@@ -4236,7 +4255,9 @@ indexed_open (cob_file *f, char *filename,
 	errno = 0;
 	if (access (file_open_buff, checkvalue)) {
 		if (!(errno == ENOENT &&
-		      (mode == COB_OPEN_OUTPUT || f->flag_optional == 1))) {
+		      (mode == COB_OPEN_OUTPUT || f->flag_optional == 1 ||
+                       (COB_MODULE_PTR->flag_io_extend_create &&
+                        (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O))))) {
 			switch (errno) {
 			case ENOENT:
 				return COB_STATUS_35_NOT_EXISTS;
@@ -4341,7 +4362,9 @@ dobuild:
 		if (isfd < 0) {
 			if (ISERRNO == EFLOCKED)
 				return COB_STATUS_61_FILE_SHARING;
-			if (f->flag_optional) {
+			if (f->flag_optional ||
+			    COB_MODULE_PTR->flag_io_extend_create &&
+			    (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O)) {
 				if (mode == COB_OPEN_EXTEND
 				 || mode == COB_OPEN_I_O) {
 					dobld = 1;
@@ -4473,7 +4496,10 @@ dobuild:
 	if (bdb_nofile (filename)) {
 		nonexistent = 1;
 		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-			return COB_STATUS_35_NOT_EXISTS;
+			if (mode != COB_OPEN_EXTEND && mode != COB_OPEN_I_O ||
+				COB_MODULE_PTR->flag_io_extend_create == 0) {
+				return COB_STATUS_35_NOT_EXISTS;
+			}
 		}
 	}
 
@@ -4550,7 +4576,9 @@ dobuild:
 		ret = access (runtime_buffer, checkvalue);
 		if (ret != 0) {
 			if (errno == ENOENT &&
-			    (mode == COB_OPEN_OUTPUT || f->flag_optional == 1)) {
+			    (mode == COB_OPEN_OUTPUT || f->flag_optional == 1 ||
+			     (COB_MODULE_PTR->flag_io_extend_create &&
+			      (mode == COB_OPEN_EXTEND || mode == COB_OPEN_I_O))) {
 				ret = 0;
 				/* Check here if the directory exists ? */
 #if	0	/* RXWRXW - Check dir */

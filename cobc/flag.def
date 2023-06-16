@@ -201,6 +201,9 @@ CB_FLAG (cb_flag_optional_file, 1, "optional-file",
 	_("  -foptional-file       treat all files as OPTIONAL\n"
 	  "                        * unless NOT OPTIONAL specified"))
 
+CB_FLAG (cb_flag_io_extend_create, 1, "io-extend-create",
+	_("  -fio-extend-create    create files opened in IO or EXTEND mode if missing\n"))
+
 CB_FLAG (cb_flag_static_call, 1, "static-call",
 	_("  -fstatic-call         output static function calls for the CALL statement"))
 

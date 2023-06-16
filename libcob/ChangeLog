@@ -1,4 +1,10 @@
 
+2023-06-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h (cob_module): add a new flag_io_extend_create field
+	* fileio.c (cob_fd_file_open, cob_file_open, indexed_open): do not fail on
+	  opening files in EXTEND or I-O mode when flag_io_extend_create is set
+
 2023-06-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (libcob_la_LDFLAGS): updated version-info - ABI fixed for 3.2
