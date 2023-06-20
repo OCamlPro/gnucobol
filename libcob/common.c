@@ -4312,6 +4312,22 @@ cob_check_subscript (const int i, const int max,
 	}
 }
 
+#if 0	/* TODO: add codegen for "subscript-check: record" getting here (FR #437);
+		   along with an optimization inline variant as done for COB_CHK_SUBSCRIPT */
+/* check for "subscript leaves field founder / group" via offset as documented
+   by IBM - not checking the subscript itself (which may even be negative) */
+void
+cob_check_field_offset (const int offset, const int max_offset,
+	const char *record_name, const char *field_name, const int subscript)
+{
+	if (offset < 0 || offset > max_offset) {
+		cob_set_exception (COB_EC_BOUND_SUBSCRIPT);
+		cob_runtime_error (_("'%s (%d)' not in range of '%s'"), field_name, subscript, record_name);
+		cob_hard_failure ();
+	}
+}
+#endif
+
 void
 cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_allowed,
 	const int size, const int offset, const int length)
@@ -9069,7 +9085,7 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 		} else {
 			mouse_support = _("no");
 		}
-}
+	}
 #elif defined (NCURSES_MOUSE_VERSION)
 #if defined (__PDCURSES__)
 	mouse_support = _("yes");
@@ -9083,27 +9099,21 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 #if defined (PDC_VER_MAJOR)
 #define CURSES_CMP_MAJOR	PDC_VER_MAJOR
 #define CURSES_CMP_MINOR	PDC_VER_MINOR
-#if PDC_VER_MAJOR == 3 && PDC_BUILD >= 3703
+#if PDC_VER_MAJOR > 3 || (PDC_VER_MAJOR == 3 && PDC_BUILD >= 3703)
 #define RESOLVED_PDC_VER
 	{
 		PDC_VERSION ver;
 		PDC_get_version (&ver);
 		major = ver.major;
 		minor = ver.minor;
-		patch = 0;
+#ifdef __PDCURSESMOD__
+		patch = ver.change;		/* note: PDCursesMod has an extra field */
+#else
+		patch = ver.build % 100;	/* note: PDCurses has it only "embedded" here */
+#endif
 		opt1 = ver.csize * 8;
 		opt2 = ver.flags & PDC_VFLAG_WIDE;
 		opt3 = ver.flags & PDC_VFLAG_UTF8;
-	}
-#elif defined (PDC_HAS_VERSION_INFO)
-#define RESOLVED_PDC_VER
-	{
-		major = PDC_version.ver_major;
-		minor = PDC_version.ver_minor;
-		patch = PDC_version.ver_change;
-		opt1 = PDC_version.chtype_size * 8;
-		opt2 = PDC_version.is_wide;
-		opt3 = PDC_version.is_forced_utf8;
 	}
 #else
 	COB_UNUSED (opt1);
@@ -9355,7 +9365,7 @@ print_version_summary (void)
 #endif
 #if defined (__PDCURSES__)
 	printf (", %s %d.%d",
-#ifdef PDC_VER_YEAR	/* still the correct distinction in 2020 */
+#ifdef __PDCURSESMOD__
 		"PDCursesMod",
 #else
 		"PDCurses",
