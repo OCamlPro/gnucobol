@@ -255,11 +255,18 @@ NEWS - user visible changes				-*- outline -*-
    note that initialization for INDEXED BY items honors the defaultbyte
    configuration now, too
 
-** the dialect configuration option larger-redefines-ok was changed to
-   a support option larger-redefines; if specified on the command-line
+** the dialect configuration option larger-redefines-ok was replaced by
+   the support option larger-redefines; if specified on the command-line
    it is now -f[no-]larger-redefines instead of -f[no-]larger-redefines-ok,
    which allows to also raise a warning for those with -flarger-redefines=warn
    Note: the short one works both in current and older versions of cobc
+
+** the subscript checking enabled with -fec=bound-subscript (implied with
+   --debug) now generates checks depending on the new dialect configuration
+   option subscript-check if OCCURS DEPNDING ON is used;
+   the full check according to ISO COBOL, which checks against the ODO item
+   is still used in the default dialect, but several dialects now only check
+   against the maximum only
 
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
    if a program potentially calls its own PROGRAM-ID was moved
@@ -337,10 +344,6 @@ NEWS - user visible changes				-*- outline -*-
 
    the option -fdiagnostics-plain-output was added to request that diagnostic
    output look as plain as possible and stay more stable over time
-
-** the new dialect configuration option subscript-check is now used to either
-   check accesses to ODO items against runtime bounds ("full"), or
-   against the maximum only ("max")
 
 * Important Bugfixes:
 
