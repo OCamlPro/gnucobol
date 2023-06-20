@@ -13308,7 +13308,7 @@ codegen (struct cb_program *prog, const char *translate_name)
 {
 	const int set_xref = cb_listing_xref;
 	int subsequent_call = 0;
-
+	int has_global_file_level = 0 ;
 	codegen_init (prog, translate_name);
 
 	/* Temporarily disable cross-reference during C generation */
@@ -13320,11 +13320,20 @@ codegen (struct cb_program *prog, const char *translate_name)
 			break;
 		}
 		subsequent_call = 1;
+		/* set has_global_file if needed, only for sub-programs of this program */
 		if (current_program->flag_file_global
-		 && current_program->next_program->nested_level) {
-			has_global_file = 1;
+		 && current_program->next_program->nested_level >
+		    current_program->nested_level) {
+			if (!has_global_file) {
+				has_global_file = 1 ;
+				has_global_file_level = current_program->nested_level ;
+			}
 		} else {
-			has_global_file = 0;
+			if (has_global_file
+			 && current_program->next_program->nested_level <=
+			    has_global_file_level ){
+				has_global_file = 0 ;
+			}
 		}
 		current_program = current_program->next_program;
 	}
