@@ -778,6 +778,11 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				cb_subscript_check = CB_SUB_CHECK_MAX;
 			} else if (strcmp (val, "record") == 0) {
 				cb_subscript_check = CB_SUB_CHECK_RECORD;
+				unsupported_value (fname, line, name, val);
+#if 1				/* TODO: separate check/codegen with an additional entry point
+				   in libcob/common.c - see FR #437 for the details */
+				cb_subscript_check = CB_SUB_CHECK_MAX;	/* at least not check for ODO... */
+#endif
 			} else {
 				invalid_value (fname, line, name, val, "full, max, record", 0, 0);
 				return -1;
