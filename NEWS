@@ -338,6 +338,10 @@ NEWS - user visible changes				-*- outline -*-
    the option -fdiagnostics-plain-output was added to request that diagnostic
    output look as plain as possible and stay more stable over time
 
+** the new dialect configuration option subscript-check is now used to either
+   check accesses to ODO items against runtime bounds ("full"), or
+   against the maximum only ("max")
+
 * Important Bugfixes:
 
 ** for dialects other than the GnuCOBOL default different reserved "alias" words

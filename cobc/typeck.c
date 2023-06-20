@@ -2521,7 +2521,9 @@ cb_build_identifier (cb_tree x, const int subchk)
 		   --> either cache field name here (dropping after each statement)
 		       or remove/skip later during codegen
 		   */
-		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
+		if (cb_subscript_check == CB_SUB_CHECK_FULL
+		 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)
+		 && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (CB_VALID_TREE (p->depending)
 				    /* Do not check length for implicit access to
@@ -2570,12 +2572,13 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 				/* Run-time check for all non-literals */
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
-					if (p->depending && p->depending != cb_error_node) {
+					if (cb_subscript_check != CB_SUB_CHECK_MAX
+					 && p->depending && p->depending != cb_error_node) {
 						e1 = CB_BUILD_FUNCALL_4 ("cob_check_subscript",
-							 cb_build_cast_int (sub),
-							 cb_build_cast_int (p->depending),
-							 CB_BUILD_STRING0 (name),
-							 cb_int1);
+									 cb_build_cast_int (sub),
+									 cb_build_cast_int (p->depending),
+									 CB_BUILD_STRING0 (name),
+									 cb_int1);
 						optimize_defs[COB_CHK_SUBSCRIPT] = 1;
 						r->check = cb_list_add (r->check, e1);
 					} else {

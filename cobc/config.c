@@ -771,6 +771,19 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 			break;
 
+		} else if (strcmp (name, "subscript-check") == 0) {
+			if (strcmp (val, "full") == 0) {
+				cb_subscript_check = CB_SUB_CHECK_FULL;
+			} else if (strcmp (val, "max") == 0) {
+				cb_subscript_check = CB_SUB_CHECK_MAX;
+			} else if (strcmp (val, "record") == 0) {
+				cb_subscript_check = CB_SUB_CHECK_RECORD;
+			} else {
+				invalid_value (fname, line, name, val, "full, max, record", 0, 0);
+				return -1;
+			}
+			break;
+
 		} else if (strcmp (name, "defaultbyte") == 0) {
 			if (strcmp (val, "init") == 0) {
 				/* generate default initialization per INITIALIZE rules */
