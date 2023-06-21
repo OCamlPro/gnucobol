@@ -265,6 +265,13 @@ enum cb_dpc_in_data_options {
 	CB_DPC_IN_ALL
 };
 
+/* Subscript check */
+enum cb_sub_check {
+	CB_SUB_CHECK_FULL,
+	CB_SUB_CHECK_MAX,
+	CB_SUB_CHECK_RECORD,	/* PENDING */
+};
+
 /* Generic text list structure */
 struct cb_text_list {
 	struct cb_text_list	*next;			/* next pointer */

@@ -1,8 +1,15 @@
 
+2023-06-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #437: dialect option to limit bound checks for ODO to maximum
+	* config.def, config.c (cb_config_entry), cobc.h (cb_sub_check),
+	  typeck.c (cb_build_identifier): new dialect configuration option
+	  subscript-check to limit bound checks for ODO items
+
 2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
-	and comment algorithm
+	  and comment algorithm
 
 2023-06-13  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
