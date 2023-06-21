@@ -2292,7 +2292,7 @@ cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 	default:
 		cobc_err_msg ("unexpected register storage: %d", storage);
 		return cb_error_node;
-	/* LCOV_EXCL_STOP */		
+	/* LCOV_EXCL_STOP */
 	}
 	return x;
 }
@@ -2521,7 +2521,9 @@ cb_build_identifier (cb_tree x, const int subchk)
 		   --> either cache field name here (dropping after each statement)
 		       or remove/skip later during codegen
 		   */
-		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
+		if (cb_subscript_check == CB_SUB_CHECK_FULL
+		 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)
+		 && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (CB_VALID_TREE (p->depending)
 				    /* Do not check length for implicit access to
@@ -2570,7 +2572,8 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 				/* Run-time check for all non-literals */
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
-					if (p->depending && p->depending != cb_error_node) {
+					if (cb_subscript_check != CB_SUB_CHECK_MAX
+					 && p->depending && p->depending != cb_error_node) {
 						e1 = CB_BUILD_FUNCALL_4 ("cob_check_subscript",
 							 cb_build_cast_int (sub),
 							 cb_build_cast_int (p->depending),
@@ -6971,7 +6974,7 @@ cb_build_cond_fields (struct cb_binary_op *p,
 			cb_build_direct ("COB_ZEROES_ALPHABETIC", 0),
 			cb_int (size1));
 	}
-	
+
 #if 0	/* TODO: if at least one is a literal and smaller:
 		   possibly extend by building a new literal correctly
 		   left/right padded with system SPACE allowing direct memcmp;
@@ -7021,7 +7024,7 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 		decimal_stack = NULL;
 		return ret;
 	}
-	
+
 #if 0	/* possibly add check of classes of the two operands, note that there
 		   are a lot of defined comparisions in the standard 8.8.4.1.1 relation
 		   conditions, with explicit comparision of class alphanumeric (where
@@ -8018,7 +8021,7 @@ emit_field_accept_display (const enum cob_statement stmt,
 	}
 	cb_emit (cb_build_funcall (
 		stmt == STMT_ACCEPT ? "cob_accept_field" : "cob_display_field",
-		parnum + 3, x, cb_flags_t (disp_attrs), parameter_ids, 
+		parnum + 3, x, cb_flags_t (disp_attrs), parameter_ids,
 		params[0], params[1], params[2], params[3], params[4], params[5],
 		params[6], params[7], params[8], params[9], params[10]));
 }
@@ -9090,7 +9093,7 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	}
 
 #if 0 /* TODO, likely as multiple functions */
-	/* note that CONTROL VALUE in WINDOW related statements 
+	/* note that CONTROL VALUE in WINDOW related statements
 	   is different from CONTROL, which is not available for DISPLAY WINDOW */
 	cb_emit (CB_BUILD_FUNCALL_2 ("cob_display_window", own_handle, upon_handle));
 #endif
@@ -9835,7 +9838,7 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 		This is necessary to follow the standard rule
 		"At the beginning of the execution of the EVALUATE statement,
 		  each selection subject is evaluated and assigned a value"
-	    
+
 		Currently we do the selection on _each_ WHEN, which is bad
 		because (apart from not being correct per standard) this has
 		side effects when the selection-object is an intrinsic or user
@@ -11990,7 +11993,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 					if (cb_ebcdic_sign) {
 						cob_put_sign_ebcdic (p, 1);
 					}
-				} else 
+				} else
 #endif
 				if (cb_ebcdic_sign) {
 					cob_put_sign_ebcdic (p, l->sign);

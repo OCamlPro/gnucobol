@@ -427,6 +427,7 @@ test.conf: missing definitions:
 	no definition of 'assign-clause'
 	no definition of 'screen-section-rules'
 	no definition of 'dpc-in-data'
+	no definition of 'subscript-check'
 	no definition of 'filename-mapping'
 	no definition of 'pretty-display'
 	no definition of 'binary-truncate'
