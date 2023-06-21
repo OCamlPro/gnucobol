@@ -126,6 +126,8 @@ static unsigned char	packed_value[20];
 static cob_u64_t	last_packed_val;
 static int		cob_not_finite = 0;
 
+/* Function prototypes */
+static void cob_set_packed_u64 (cob_field * f, const cob_u64_t val, const int sign);
 
 #ifdef	COB_EXPERIMENTAL
 
@@ -398,12 +400,12 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 		scale--;
 	}
 	mza = mpz_get_str (NULL, 10, cob_mpzt2);
-	len = strlen (mza);
+	len = (int)strlen (mza);
 	if (len > 0
 	 && scale > 0
 	 && scale < len) {
 		fprintf (fp, "%.*s%c%.*s",
-			len-scale, mza, '.',
+			len - scale, mza, '.',
 			scale, mza + len - scale);
 	} else if (scale == 0) {
 		fprintf (fp, "%s", mza);
@@ -1219,13 +1221,15 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	unsigned int	size, diff;	/* packed fields are 38 digits max */
 	unsigned short		digits;
 
-	/* check for value zero (allows early exit) and handle sign */
-	if (sign == 0) {
+	/* handle sign and check for ZERO value (allows early exit) */
+	if (sign == 1) {
+		/* positive, nothing to do, most expected, so extra checked */
+	} else if (sign == -1) {
+		/* negative, switch */
+		mpz_abs (d->value, d->value);
+	} else /* sign == 0 */ {
 		cob_set_packed_zero (f);
 		return 0;
-	}
-	if (sign == -1) {
-		mpz_abs (d->value, d->value);
 	}
 
 	{
@@ -1259,9 +1263,8 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
 		/* integer setting, if possible */
-		if (mpz_fits_sint_p (cob_mexp)) {
-			const signed int val = mpz_get_si (cob_mexp) * sign;
-			cob_set_packed_int (f, val);
+		if (mpz_fits_ulong_p (cob_mexp)) {
+			cob_set_packed_u64 (f, mpz_get_ui (cob_mexp), sign);
 			return 0;
 		}
 		/* get truncated digits as string */
@@ -1270,9 +1273,8 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		         in which case mpz_get_str provides us with 12 */
 	} else {
 		/* integer setting, if possible */
-		if (mpz_fits_sint_p (d->value)) {
-			const signed int val = mpz_get_si (d->value) * sign;
-			cob_set_packed_int (f, val);
+		if (mpz_fits_ulong_p (d->value)) {
+			cob_set_packed_u64 (f, mpz_get_ui (d->value), sign);
 			return 0;
 		}
 
@@ -1331,27 +1333,13 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	return 0;
 }
 
-/* set the specified BCD field 'f' to the given integer 'val';
+/* set the specified BCD field 'f' to the given unsigned long 'val';
    note: the scale is ignored so has to be aligned up-front */
-void
-cob_set_packed_int (cob_field *f, const int val)
+static void
+cob_set_packed_u64 (cob_field *f, const cob_u64_t val, const int sign)
 {
 	register unsigned char	*p;
-	register cob_u32_t	n;
-	int		sign;
-
-	if (val == 0) {
-		cob_set_packed_zero (f);
-		return;
-	}
-
-	if (val < 0) {
-		n = (cob_u32_t)-val;
-		sign = -1;
-	} else {
-		n = (cob_u32_t)val;
-		sign = 1;
-	}
+	register cob_u64_t	n = val;
 
 	/* zero out storage; necessary as we stop below when reaching leading zero */
 	memset (f->data, 0, f->size);
@@ -1371,13 +1359,13 @@ cob_set_packed_int (cob_field *f, const int val)
 		p--;
 	}
 
-	/* set packed digits from end to front */
+	/* set packed digits from end to front, stopping when zero */
 	for (; n && p >= f->data; n /= 100, p--) {
 		*p = packed_bytes[n % 100];
 	}
 
 #if 0	/* clean first half-byte;
-		   would only be necessay if not zeroe'd out above */
+    	   would only be necessary if not zeroe'd out above */
 	{
 		const short	scale = COB_FIELD_SCALE (f);
 		short	digits;
@@ -1400,6 +1388,23 @@ cob_set_packed_int (cob_field *f, const int val)
 #endif
 }
 
+/* set the specified BCD field 'f' to the given integer 'val';
+   note: the scale is ignored so has to be aligned up-front */
+void
+cob_set_packed_int (cob_field *f, const int val)
+{
+	if (val > 0) {
+		/* positive (most likely) */
+		cob_set_packed_u64 (f, (cob_u64_t)val, 1);
+	} else if (val != 0) {
+		/* negative */
+		cob_set_packed_u64 (f, (cob_u64_t)-val, -1);
+	} else /* val == 0 */ {
+		cob_set_packed_zero (f);
+	}
+	return;
+}
+
 /* DISPLAY */
 
 static void
@@ -1409,7 +1414,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	   decrease of > 8% */
 
 	register unsigned char	*data = COB_FIELD_DATA (f);
-	register size_t		size = COB_FIELD_SIZE (f);
+	register unsigned int	size = (unsigned int) COB_FIELD_SIZE (f);
 	const int	sign = COB_GET_SIGN_ADJUST (f);
 
 	/* TODO: document special cases here */
@@ -1511,7 +1516,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 {
 	unsigned char	*data = COB_FIELD_DATA (f);
 	const int		sign = mpz_sgn (d->value);
-	const int		fsize = COB_FIELD_SIZE (f);
+	const size_t	fsize = COB_FIELD_SIZE (f);
 	char	buff[COB_MAX_BINARY + 1];
 
 	/* check for value zero (allows early exit) and handle sign */
@@ -1530,7 +1535,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	if (fsize > COB_MAX_BINARY) {
 		char *p = mpz_get_str (NULL, 10, d->value);
 		const size_t size = strlen (p);
-		const size_t diff = (size_t)fsize - size;
+		const size_t diff = fsize - size;
 		if (diff < 0) {
 			/* Overflow */
 			if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
@@ -1558,7 +1563,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	}
 
 	/* get divisor that would overflow */
-	cob_pow_10 (cob_mexp, fsize);
+	cob_pow_10 (cob_mexp, (unsigned int) fsize);
 	/* check if it is >= what we have */
 	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
@@ -1584,7 +1589,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	{
 		size_t		size, diff;
 		size = strlen (buff);
-		diff = (size_t)fsize - size;
+		diff = fsize - size;
 		memset (data, '0', diff);
 		memcpy (data + diff, buff, size);
 	}
@@ -1684,12 +1689,6 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 	const size_t	bitnum = (f->size * 8) - field_sign;
 	size_t			overflow;
 
-#if	!defined(COB_EXPERIMENTAL) && !defined(COB_LI_IS_LL)
-	cob_s64_t		llval;
-	cob_u64_t		ullval;
-	unsigned int		lo;
-#endif
-
 	if (unlikely (mpz_size (d->value) == 0)) {
 		memset (f->data, 0, f->size);
 		return 0;
@@ -1760,21 +1759,22 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 #else
 	if (f->size <= 4) {
 		if (!field_sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
-			cob_binary_set_uint64 (f, (cob_u64_t)mpz_get_ui (d->value));
+			cob_binary_set_uint64 (f, mpz_get_ui (d->value));
 		} else {
-			cob_binary_set_int64 (f, (cob_s64_t)mpz_get_si (d->value));
+			cob_binary_set_int64 (f, mpz_get_si (d->value));
 		}
 	} else {
+		unsigned int	lo;
 		mpz_fdiv_r_2exp (cob_mpzt, d->value, 32);
 		mpz_fdiv_q_2exp (d->value, d->value, 32);
-		lo = mpz_get_ui (cob_mpzt);
+		lo = (unsigned int) mpz_get_ui (cob_mpzt);
 
 		if (!field_sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
-			ullval = mpz_get_ui (d->value);
+			cob_u64_t	ullval = mpz_get_ui (d->value);
 			ullval = (ullval << 32) | lo;
 			cob_binary_set_uint64 (f, ullval);
 		} else {
-			llval = mpz_get_si (d->value);
+			cob_s64_t	llval = mpz_get_si (d->value);
 			llval = (llval << 32) | lo;
 			cob_binary_set_int64 (f, llval);
 		}
@@ -1902,9 +1902,9 @@ cob_print_realbin (const cob_field *f, FILE *fp, const int size)
 static int
 cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 {
-	cob_uli_t	adj;
 	const int	sign = mpz_sgn (d->value);
 	const int	scale = COB_FIELD_SCALE (f);
+	unsigned int	adj;	/* scale adjustment */
 
 	/* Nothing to do when value is 0 or when target has GE scale */
 	if (sign == 0
@@ -1984,7 +1984,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 			}
 		}
 		if (mpz_sgn (cob_mpzt) == 0) {
-			adj = mpz_tdiv_ui (d->value, 100UL);
+			adj = (unsigned int) mpz_tdiv_ui (d->value, 100UL);
 			switch (adj) {
 			case 5:
 			case 25:
