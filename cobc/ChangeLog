@@ -1,4 +1,13 @@
 
+2023-06-22  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y (setup_program, setup_default_collation)
+	  (program_init_without_program_id): properly record default collating
+	  sequence if required via -fdefault-colseq
+	* tree.c (cb_build_binary_op), typeck.c (cb_build_cond_default): inhibit
+	  -ffast-compare and -fconstant-folding for programs with a non-native
+	  collating sequence
+
 2023-06-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	FR #437: dialect option to limit bound checks for ODO to maximum
