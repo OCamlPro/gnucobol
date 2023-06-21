@@ -97,6 +97,9 @@ CB_CONFIG_ANY (enum cb_screen_clauses_rules, cb_screen_section_clauses, "screen-
 CB_CONFIG_ANY (enum cb_dpc_in_data_options, cb_dpc_in_data, "dpc-in-data",
 	_("whether DECIMAL-POINT IS COMMA has effect in XML/JSON GENERATE, may be one of: none, xml, json, all"))
 
+CB_CONFIG_ANY (enum cb_sub_check, cb_subscript_check, "subscript-check",
+	_("checking for subscript (only done with EC-BOUND-SUBSCRIPT active), may be one of: full, max, record"))
+
 /* Normal boolean flags */
 
 CB_CONFIG_BOOLEAN (cb_filename_mapping, "filename-mapping",

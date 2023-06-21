@@ -1,4 +1,8 @@
 
+2023-06-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add option subscript-check
+
 2023-03-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* rm-strict.conf: enable line-col-zero-default per RM-COBOL Language
