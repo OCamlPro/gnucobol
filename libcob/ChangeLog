@@ -1,4 +1,14 @@
 
+2023-06-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_set_packed_u64): extracted from cob_set_packed_int
+	  and extended, allowing to internally use bigger values without
+	  a double-check of the sign
+	* numeric.c (cob_decimal_get_packed): set by unsigned long when possible,
+	  instead of signed int (increasing from 9 to 19 digits for many systems)
+	* numeric.c (cob_decimal_get_display, cob_decimal_set_display,
+	  cob_decimal_do_round): fix compile warnings
+
 2023-06-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (get_screenio_and_mouse_info) [__PDCURSES__]:
@@ -230,6 +240,8 @@
 	* numeric.c (cob_decimal_do_round, cob_decimal_get_field): fix
 	  COB_STORE_PROHIBITED to not overwrite target data and always raise an
 	  exception if rounding would be necessary
+	* numeric.c (cob_decimal_get_packed, cob_set_packed_int): reordered check
+	  to most likely value (nonzero, positive) first
 
 2023-04-26  Simon Sobisch <simonsobisch@gnu.org>
 
