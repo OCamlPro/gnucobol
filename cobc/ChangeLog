@@ -1,4 +1,12 @@
 
+2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (get_word): fix an overflow with words exceeding the
+	maximal size COB_MAX_WORDLEN
+	* pplex.l (is_condition_directive_clause)
+	(next_word_is_comment_paragraph_name): decrease stack storage
+	and optimize string comparisons
+
 2023-06-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	FR #437: dialect option to limit bound checks for ODO to maximum
