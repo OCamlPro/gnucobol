@@ -102,6 +102,47 @@ static const cob_s64_t	cob_exp10_ll[19] = {
 	COB_S64_C(1000000000000000000)
 };
 
+
+/* translation table for BCD byte (2 digits) to integer;
+   identical defined in numeric.c */
+static const unsigned char pack_to_bin [] = {
+#if 0	/* invalid BCD nibbles as zero */
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   0,   0,   0,   0,   0,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,   0,   0,   0,   0,   0,   0,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,   0,   0,   0,   0,   0,   0,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,   0,   0,   0,   0,   0,   0,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,   0,   0,   0,   0,   0,   0,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,   0,   0,   0,   0,   0,   0,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,   0,   0,   0,   0,   0,   0,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,   0,   0,   0,   0,   0,   0,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,   0,   0,   0,   0,   0,   0,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
+#else	/* invalid BCD nibbles as translated since at least OC 1.1 */
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  25,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  65,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104, 105,
+   100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
+   110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
+   120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135,
+   130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145,
+   140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
+   150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165
+#endif
+};
+
 static void
 store_common_region (cob_field *f, const unsigned char *data,
 		     const size_t size, const int scale, const int verified_data)
@@ -439,6 +480,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	const int		sign = COB_GET_SIGN_ADJUST (f1);
 	const short		scale1 = COB_FIELD_SCALE (f1);
 	const short		scale2 = COB_FIELD_SCALE (f2);
+	const int 		target_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
 	unsigned short	 	digits1;
 	unsigned short		digits2;
 	register unsigned int	i;
@@ -456,11 +498,15 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	} else {
 		digits2 = COB_FIELD_DIGITS (f2) + scale2;
 	}
-	if (COB_FIELD_NO_SIGN_NIBBLE (f2)) {
+
+	if (target_no_sign_nibble) {
 		i = digits2 % 2;
 	} else {
-		i = 1 - (digits2 % 2);
+		i = 1 - digits2 % 2;
 	}
+
+	/* note: the overhead of checking for leading ZERO and zero-like data
+	   is higher than just setting it below - so not done here */
 
 	/* skip not available positions */
 	p = data1 + (digits1 - scale1) - (digits2 - scale2);
@@ -478,7 +524,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		const unsigned char *p_end_calc = data1 + digits1;
 		const unsigned char *p_end = p_end_calc > f2_end ? f2_end : p_end_calc;
 
-		if ((i % 2) == 1) {
+		if (i % 2 == 1) {
 			*q++ = COB_D2I (*p++);
 			i++;
 		}
@@ -508,7 +554,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 	COB_PUT_SIGN_ADJUSTED (f1, sign);
 
-	if (COB_FIELD_NO_SIGN_NIBBLE (f2)) {
+	if (target_no_sign_nibble) {
 		return;
 	}
 
@@ -539,11 +585,32 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 		digits = COB_FIELD_DIGITS (f1) + scale;
 	}
 
+	/* note: we hande invalid data of non-digit hex values identical to
+	   Micro Focus here - just prefixing: 0xae becomes 0x3a3e */
+
 	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
 		/* Unpack COMP-6 to string */
-		const size_t offset = digits % 2;
+		const int offset = digits % 2;
 		if (offset == 1) {
-			*b++ = COB_I2D (*d++ & 0x0F);
+			const unsigned char start = *d++ & 0x0F;
+			if (start) {
+				*b++ = COB_I2D (start);
+			} else {
+				/* Skip leading ZEROs */
+				digits -= 1;
+				while (d <= d_end
+				 && *d == 0x00) {
+					digits -= 2;
+					d++;
+				}
+			}
+		} else {
+			/* Skip leading ZEROs */
+			while (d <= d_end
+			 && *d == 0x00) {
+				digits -= 2;
+				d++;
+			}
 		}
 		while (d <= d_end) {
 			*b++ = COB_I2D (*d >> 4);
@@ -554,10 +621,28 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 		store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1), 1);
 		COB_PUT_SIGN (f2, 0);
 	} else {
-		/* Unpack PACKED-DECIMAL / COMP-3 to integer */
-		const size_t offset = 1 - digits % 2;
+		/* Unpack PACKED-DECIMAL / COMP-3 to string */
+		const int offset = 1 - digits % 2;
 		if (offset == 1) {
-			*b++ = COB_I2D (*d++ & 0x0F);
+			const unsigned char start = *d++ & 0x0F;
+			if (start) {
+				*b++ = COB_I2D (start);
+			} else {
+				/* Skip leading ZEROs */
+				digits -= 1;
+				while (d < d_end
+				 && *d == 0x00) {
+					digits -= 2;
+					d++;
+				}
+			}
+		} else {
+			/* Skip leading ZEROs */
+			while (d < d_end
+			 && *d == 0x00) {
+				digits -= 2;
+				d++;
+			}
 		}
 		while (d < d_end) {
 			*b++ = COB_I2D (*d >> 4);
@@ -694,7 +779,7 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 		target_digits = (unsigned short)size;
 	}
 
-	/* Skip leading zeros (and zero-like-data like space/low-value) */
+	/* skip leading zeros (and zero-like-data like space/low-value) */
 	for (i = size - target_digits; i < size1; ++i) {
 		if (COB_D2I (data1[i]) != 0) {
 			break;
@@ -1775,9 +1860,9 @@ cob_move (cob_field *src, cob_field *dst)
 static int
 cob_packed_get_int (cob_field *field)
 {
-	register int	val;
-	register unsigned char *d = field->data;
-	register unsigned char *d_end = d + field->size - 1;
+	register int 	val;
+	register unsigned char	*d = field->data;
+	const unsigned char	*d_end = d + field->size - 1;
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (field)) {
 		/* Unpack COMP-6 to integer */
@@ -1787,11 +1872,15 @@ cob_packed_get_int (cob_field *field)
 		} else {
 			val = 0;
 		}
+		if (val == 0) {
+			/* Skip leading ZEROs */
+			while (d <= d_end
+			 && *d == 0x00) {
+				d++;
+			}
+		}
 		while (d <= d_end) {
-			val = val * 10
-			    + (*d >> 4);
-			val = val * 10
-			    + (*d++ & 0x0F);
+			val = val * 100 + pack_to_bin[*d++];
 		}
 	} else {
 		/* Unpack PACKED-DECIMAL / COMP-3 to integer */
@@ -1801,11 +1890,15 @@ cob_packed_get_int (cob_field *field)
 		} else {
 			val = 0;
 		}
+		if (val == 0) {
+			/* Skip leading ZEROs */
+			while (d < d_end
+			 && *d == 0x00) {
+				d++;
+			}
+		}
 		while (d < d_end) {
-			val = val * 10
-			    + (*d >> 4);
-			val = val * 10
-			    + (*d++ & 0x0F);
+			val = val * 100 + pack_to_bin[*d++];
 		}
 		val = val * 10
 		    + (*d >> 4);
@@ -1813,7 +1906,7 @@ cob_packed_get_int (cob_field *field)
 			val = -val;
 		}
 	}
-	return val;	
+	return val;
 }
 
 static cob_s64_t
@@ -1822,7 +1915,7 @@ packed_get_long_long (cob_field *field)
 	const short	scale = COB_FIELD_SCALE (field);
 	register cob_s64_t		val;
 	register unsigned char	*d = field->data;
-	register unsigned char	*d_end = d + field->size - 1;
+	const unsigned char	*d_end = d + field->size - 1;
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (field)) {
 		/* Unpack COMP-6 to integer */
@@ -1832,11 +1925,15 @@ packed_get_long_long (cob_field *field)
 		} else {
 			val = 0;
 		}
+		if (val == 0) {
+			/* Skip leading ZEROs */
+			while (d <= d_end
+			 && *d == 0x00) {
+				d++;
+			}
+		}
 		while (d <= d_end) {
-			val = val * 10
-			    + (*d >> 4);
-			val = val * 10
-			    + (*d++ & 0x0F);
+			val = val * 100 + pack_to_bin[*d++];
 		}
 	} else {
 		/* Unpack PACKED-DECIMAL / COMP-3 to integer */
@@ -1846,11 +1943,15 @@ packed_get_long_long (cob_field *field)
 		} else {
 			val = 0;
 		}
+		if (val == 0) {
+			/* Skip leading ZEROs */
+			while (d < d_end
+			 && *d == 0x00) {
+				d++;
+			}
+		}
 		while (d < d_end) {
-			val = val * 10
-			    + (*d >> 4);
-			val = val * 10
-			    + (*d++ & 0x0F);
+			val = val * 100 + pack_to_bin[*d++];
 		}
 		val = val * 10
 		    + (*d >> 4);

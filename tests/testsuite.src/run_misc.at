@@ -3606,6 +3606,34 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([Alphanum comparison with default COLLATING SEQUENCE])
+AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+      >>IF   EXPECT-ORDER  =  'ASCII'
+           IF "1" NOT < "a"
+      >>ELIF EXPECT-ORDER  =  'EBCDIC'
+           IF "a" NOT < "1"
+      >>END-IF
+              DISPLAY "ERROR" END-DISPLAY
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ascii -DEXPECT-ORDER=ASCII -o ascii prog.cob], [0], [],
+[prog.cob:6: warning: expression '1' GREATER OR EQUAL 'a' is always FALSE
+])
+AT_CHECK([$COBCRUN_DIRECT ./ascii], [0], [], [])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SORT: table with default COLLATING SEQUENCE])
 AT_KEYWORDS([runmisc SORT EBCDIC ASCII default-colseq])
 
@@ -3638,6 +3666,46 @@ AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.
 AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 AT_CHECK([$COMPILE -fdefault-colseq=native -DEXPECT-ORDER=NATIVE -o native prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./native], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SEARCH ALL: table with default COLLATING SEQUENCE])
+AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 Z  PIC X(10)  VALUE "d4b2e1a3c5".
+       01 G             REDEFINES Z.
+         02 TBL         OCCURS 10 ASCENDING KEY K INDEXED BY I.
+           03 K         PIC X.
+       01 KK            PIC X.
+       PROCEDURE        DIVISION.
+           SORT TBL ASCENDING KEY K.
+           SET KK TO "3"
+           SEARCH ALL TBL
+              AT END
+                 DISPLAY KK " NOT FOUND"
+              WHEN K (I) = KK
+                 CONTINUE
+           END-SEARCH
+      >>IF   EXPECT-ORDER  =  'ASCII'
+           IF I NOT = 3
+      >>ELIF EXPECT-ORDER  =  'EBCDIC'
+           IF I NOT = 8
+      >>END-IF
+              DISPLAY "ERROR" END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ascii -DEXPECT-ORDER=ASCII -o ascii prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ascii], [0], [], [])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 
 AT_CLEANUP
 
