@@ -1,4 +1,14 @@
 
+2023-06-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_set_packed): backport pack_to_bin change while
+	  adjusting its translation table for invalid BCD "digits" to yield the
+	  same result as before
+	* numeric.c (cob_decimal_set_packed): more optimizations for speed
+	* move.c (cob_packed_get_int, packed_get_long_long): apply optimizations
+	  from (cob_decimal_set_packed) including skipping leading zeros and
+	  pack_to_bin
+
 2023-06-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_set_packed_u64): extracted from cob_set_packed_int
@@ -404,6 +414,11 @@
 	* termio.c (pretty_display_numeric): fix printing one byte after
 	  actual data
 	* termio.c (display_numeric): fix printing amount of P as leading zeroes
+
+2023-02-23  Ron Norman <rjn@inglenet.com>
+
+	* numeric.c (cob_decimal_set_packed): new lookup table pack_to_bin
+	  to translate two BCD digits at once for integer conversion
 
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 

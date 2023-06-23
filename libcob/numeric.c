@@ -88,6 +88,7 @@
 
 static cob_global	*cobglobptr;
 
+/* translation table for integer 0-99 to BCD byte */
 static const unsigned char packed_bytes[] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
 	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
@@ -99,6 +100,46 @@ static const unsigned char packed_bytes[] = {
 	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
 	0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89,
 	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99
+};
+
+/* translation table for BCD byte (2 digits) to integer;
+   identical defined in move.c */
+static const unsigned char pack_to_bin [] = {
+#if 0	/* invalid BCD nibbles as zero */
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   0,   0,   0,   0,   0,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,   0,   0,   0,   0,   0,   0,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,   0,   0,   0,   0,   0,   0,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,   0,   0,   0,   0,   0,   0,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,   0,   0,   0,   0,   0,   0,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,   0,   0,   0,   0,   0,   0,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,   0,   0,   0,   0,   0,   0,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,   0,   0,   0,   0,   0,   0,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,   0,   0,   0,   0,   0,   0,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
+#else	/* invalid BCD nibbles as translated since at least OC 1.1 */
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  25,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  65,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104, 105,
+   100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
+   110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
+   120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135,
+   130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145,
+   140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
+   150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165
+#endif
 };
 
 static cob_decimal	cob_d1;
@@ -986,7 +1027,7 @@ cob_add_packed (cob_field *f, int val, const int opt)
 	unsigned int	subtr = 0;
 	unsigned int	zeroes = 0;
 	unsigned int	origdigs;
-	unsigned char	savedata[256];
+	unsigned char	savedata[48];
 
 	ndigs = COB_FIELD_DIGITS(f) - COB_FIELD_SCALE (f);
 	if (ndigs <= 0) {
@@ -1102,21 +1143,13 @@ cob_set_packed_zero (cob_field *f)
 static void
 cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 {
-	register unsigned char	*p, *endp;
+	register unsigned char	*p = f->data;
+	const int nibtest = !!COB_FIELD_NO_SIGN_NIBBLE (f);
+	const unsigned char *endp = p + f->size - 1 + nibtest;
 	cob_uli_t	byteval;
-	int		digits, sign, nibtest;
-	const short scale = COB_FIELD_SCALE (f);
 
-	p = f->data;
-	if (unlikely (COB_FIELD_NO_SIGN_NIBBLE (f))) {
-		sign = 0;
-		endp = p + f->size;
-		nibtest = 1;
-	} else {
-		sign = cob_packed_get_sign (f);
-		endp = p + f->size - 1;
-		nibtest = 0;
-	}
+	const short scale = COB_FIELD_SCALE (f);
+	int 	digits;
 
 	if (scale >= 0) {
 		digits = COB_FIELD_DIGITS (f);
@@ -1124,7 +1157,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		/* 99P -> 3 digits, scale -1 */
 		digits = COB_FIELD_DIGITS (f) + scale;
 	}
-	if (digits % 2 == nibtest) {
+	if ((digits & 1) /* % 2 */ == nibtest) {
 		byteval = *p++ & 0x0F;
 		if (byteval == 0) {
 			/* Skip leading ZEROs */
@@ -1144,13 +1177,12 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		}
 	}
 	if (digits < MAX_LLI_DIGITS_PLUS_1) {
+		/* note: similar logic in move.c (packed_get_long_long, packed_get_int)
+		   so for all adjustments here - check there, too */
 		register cob_u64_t val = byteval;
 
 		for (; p < endp; p++) {
-			val = val * 10
-			    + (*p >> 4);
-			val = val * 10
-			    + (*p & 0x0F);
+			val = val * 100 + pack_to_bin[*p];
 		}
 
 		if (!nibtest) {
@@ -1167,30 +1199,32 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		/* note: an implementation similar to display - expanding to string,
 		   then convert to mpz from there - was tested and found to be slower */
 
+		const unsigned char *endp_4digits = endp - 1;
 		unsigned int	nonzero = !!byteval;
+
 		mpz_set_ui (d->value, byteval);
 
-		for (; p < endp; p++) {
-			/* when possible take 4 digits at once to reduce GMP calls */
-			if ( (endp - p) > 2) {
+		/* take 4 digits at once as long as possible to reduce GMP calls */
+		for (; p < endp_4digits; p += 2) {
+			if (nonzero) {
 				mpz_mul_ui (d->value, d->value, 10000UL);
-				mpz_add_ui (d->value, d->value,
-					    ( ((cob_uli_t)(*p >> 4U) * 1000)
-					    + ((cob_uli_t)(*p & 0x0FU) * 100)
-					    + ((cob_uli_t)(*(p + 1) >> 4U) * 10)
-					    + (*(p + 1) & 0x0FU)));
-				p++;
-				nonzero = 1;
-				continue;
 			}
+			mpz_add_ui (d->value, d->value,
+				    ( pack_to_bin[*p] * 100)
+				    + pack_to_bin[*(p + 1)]);
+			/* because of the zero-skipping we are always nonzero here */
+			nonzero = 1;
+		}
+		/* handling last digit + half-nibble */
+		if (p < endp) {
 			if (nonzero) {
 				mpz_mul_ui (d->value, d->value, 100);
 			}
 			if (*p) {
-				mpz_add_ui (d->value, d->value,
-					    ((cob_uli_t)(*p >> 4) * 10) + (*p & 0x0F));
+				mpz_add_ui (d->value, d->value, pack_to_bin[*p]);
 				nonzero = 1;
 			}
+			p++;
 		}
 
 		if (!nibtest) {
@@ -1201,7 +1235,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		}
 	}
 
-	if (sign == -1) {
+	if (cob_packed_get_sign (f) == -1) {
 		mpz_neg (d->value, d->value);
 	}
 	d->scale = COB_FIELD_SCALE (f);
@@ -3542,33 +3576,32 @@ cob_display_add_int (cob_field *f, int n, const int opt)
 int
 cob_add_int (cob_field *f, const int n, const int opt)
 {
-	int	scale;
-	int	val;
-
+	const int type = COB_FIELD_TYPE (f);
 	if (unlikely (n == 0)) {
 		return 0;
 	}
 #if	0	/* RXWRXW - Buggy */
-	if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_PACKED) {
+	if (type == COB_TYPE_NUMERIC_PACKED) {
 		return cob_add_packed (f, n, opt);
-	} else if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_DISPLAY) {
+	}
+	if (type == COB_TYPE_NUMERIC_DISPLAY) {
 		return cob_display_add_int (f, n, opt);
 	}
 #endif
 
 	/* Not optimized */
-	cob_decimal_set_field (&cob_d1, f);
 
-	if (COB_FIELD_TYPE (f) >= COB_TYPE_NUMERIC_FLOAT
-	&&  COB_FIELD_TYPE (f) <= COB_TYPE_NUMERIC_FP_BIN128) {
+	if (type >= COB_TYPE_NUMERIC_FLOAT
+	 && type <= COB_TYPE_NUMERIC_FP_BIN128) {
 		mpz_set_si (cob_d2.value, (cob_sli_t) n);
+		cob_decimal_set_field (&cob_d1, f);
 		cob_d2.scale = 0;
 		cob_decimal_add (&cob_d1, &cob_d2);
 		return cob_decimal_get_field (&cob_d1, f, opt);
 	}
-	else {
-		scale = COB_FIELD_SCALE (f);
-		val = n;
+	{
+		int	scale = COB_FIELD_SCALE (f);
+		int	val = n;
 		if (unlikely (scale < 0)) {
 			/* PIC 9(n)P(m) */
 			if (-scale < 10) {
@@ -3583,6 +3616,7 @@ cob_add_int (cob_field *f, const int n, const int opt)
 				return 0;
 			}
 		}
+		cob_decimal_set_field (&cob_d1, f);
 		mpz_set_si (cob_d2.value, (cob_sli_t)val);
 		cob_d2.scale = 0;
 		if (scale > 0) {
