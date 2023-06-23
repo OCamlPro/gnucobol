@@ -7067,7 +7067,15 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 			return ret;
 		}
 	}
+	/* TODO: try building cob_fields and calling cob_cmp directly from
+	   here. */
 	if (current_program->alphabet_name_list
+	 || (CB_TREE_CLASS (left) == CB_CLASS_NATIONAL
+	     ? current_program->collating_sequence_n != NULL
+	     : current_program->collating_sequence != NULL)
+	 || (CB_TREE_CLASS (right) == CB_CLASS_NATIONAL
+	     ? current_program->collating_sequence_n != NULL
+	     : current_program->collating_sequence != NULL)
 	 || !cb_check_alpha_cond (left)
 	 || !cb_check_alpha_cond (right)) {
 		return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);

@@ -6174,12 +6174,17 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		/*
 		 * If this is an operation between two literal strings
 		 * then resolve the value here at compile time -> "constant folding"
+		 *
+		 * TODO: build cob_fields and call cob_cmp from libcob.
 		 */
 		} else if (cb_constant_folding
 		 && CB_LITERAL_P (x)
 		 && CB_LITERAL_P (y)
 		 && !CB_NUMERIC_LITERAL_P (x)
 		 && !CB_NUMERIC_LITERAL_P (y)) {
+			const int colseq_p = CB_TREE_CLASS(x) == CB_CLASS_NATIONAL
+				? current_program->collating_sequence_n != NULL
+				: current_program->collating_sequence != NULL;
 			copy_file_line (e, y, x);
 			xl = CB_LITERAL(x);
 			yl = CB_LITERAL(y);
@@ -6216,6 +6221,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case '>':
+				if (colseq_p) break;
 				warn_type = 53;
 				if (xl->data[i] > yl->data[j]) {
 					relop = cb_true;
@@ -6224,6 +6230,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case '<':
+				if (colseq_p) break;
 				warn_type = 54;
 				if (xl->data[i] < yl->data[j]) {
 					relop = cb_true;
@@ -6232,6 +6239,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case ']':
+				if (colseq_p) break;
 				warn_type = 55;
 				if (xl->data[i] >= yl->data[j]) {
 					relop = cb_true;
@@ -6240,6 +6248,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case '[':
+				if (colseq_p) break;
 				warn_type = 56;
 				if (xl->data[i] <= yl->data[j]) {
 					relop = cb_true;
