@@ -6282,7 +6282,8 @@ decimal_compute (const int op, cb_tree x, cb_tree y)
 }
 
 /**
- * expand tree x to the previously allocated decimal tree d
+ * expand tree x to the previously allocated decimal tree d.
+ * Returns either d or cb_error_node in case of error.
  */
 static cb_tree
 decimal_expand (cb_tree d, cb_tree x)
@@ -6302,7 +6303,7 @@ decimal_expand (cb_tree d, cb_tree x)
 		/* LCOV_EXCL_START */
 		if (x != cb_zero) {
 			cobc_err_msg (_("unexpected constant expansion"));
-			return cb_error_node;
+			COBC_ABORT ();
 		}
 		/* LCOV_EXCL_STOP */
 		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_set_llint", d, cb_int0));
@@ -6373,7 +6374,8 @@ decimal_expand (cb_tree d, cb_tree x)
 		switch (p->op){
 		case '=': case '~': case '<': case '>': case '[': case ']':
 		case '!': case '&': case '|':
-			cb_error_x (x, _("condition expression found where decimal expression was expected"));
+			cb_error_x (x, "condition expression found where decimal expression was expected");
+			error_statement = current_statement;
 			return cb_error_node;
 		case 'c':
 		case 'd':

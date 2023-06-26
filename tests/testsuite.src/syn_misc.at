@@ -589,6 +589,12 @@ AT_DATA([prog.cob], [
                    >= (456 + 16)
               DISPLAY "And another brew! " WRKN
             END-IF.
+            IF ( WRKN-IS-ZERO + 3  ) > 0
+	      DISPLAY "Weird if compiled"
+	    END-IF.
+            IF ( 3 + WRKN-IS-ZERO  ) > 0
+	      DISPLAY "Weird if compiled"
+	    END-IF.
             IF ( WRKN-IS-ZERO AND WRKN-IS-ZERO ) > 0
               DISPLAY "Weird if compiled"
             END-IF.
@@ -602,7 +608,9 @@ prog.cob:18: error: condition expression found where decimal expression was expe
 prog.cob:21: error: condition expression found where decimal expression was expected
 prog.cob:30: error: condition expression found where decimal expression was expected
 prog.cob:33: error: invalid expression: unfinished expression
-prog.cob:40: error: condition expression found where decimal expression was expected
+prog.cob:40: error: condition-name not allowed here: 'WRKN-IS-ZERO'
+prog.cob:43: error: condition-name not allowed here: 'WRKN-IS-ZERO'
+prog.cob:46: error: condition expression found where decimal expression was expected
 ])
 
 AT_CLEANUP
