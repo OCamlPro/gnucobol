@@ -6392,10 +6392,11 @@ AT_CHECK([$COBCRUN_DIRECT ./packed], [0],
 
 AT_CLEANUP
 
-# bug Sourceforge 875
 
 AT_SETUP([Condition IS ZERO AND])
 AT_KEYWORDS([IF])
+
+# for more details see bug #875
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -6442,10 +6443,11 @@ V EQUAL 0 AND W IS POSITIVE
 
 AT_CLEANUP
 
-# bug Sourceforge 880
 
 AT_SETUP([abbreviated conditions with multiple words operators])
 AT_KEYWORDS([IF])
+
+# for more details see bug #880
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
