@@ -25,6 +25,13 @@
 
 2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
+	* typeck.c (cb_build_expr): fix bug #875 "V IS ZERO AND
+	... generate 'invalid conditional expression' error",
+	fix bug #880 error compiling abbreviated conditions in GC3.2 RC2
+        (NOT comparison should be translated to inversed comparison)
+
+2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
 	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
 	  and comment algorithm
 

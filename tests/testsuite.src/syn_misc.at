@@ -379,6 +379,7 @@ prog.cob:159: warning: 'PIC-9-SIGNED-DECIMAL' may not be GREATER THAN 99.99
 prog.cob:160: warning: 'PIC-9-SIGNED-DECIMAL' may not be LESS THAN -99.99
 prog.cob:161: warning: 'PIC-9-SIGNED-DECIMAL' may not be LESS THAN -99.99
 prog.cob:162: warning: literal '-99.991' has more decimals than 'PIC-9-SIGNED-DECIMAL'
+prog.cob:164: warning: 'XX' may not be GREATER THAN 99
 ])
 
 AT_CLEANUP
@@ -524,23 +525,23 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:10: error: invalid expression
-prog.cob:14: error: invalid expression
-prog.cob:18: error: invalid expression
-prog.cob:22: error: invalid expression
-prog.cob:26: error: invalid expression
+[prog.cob:10: error: incomplete expression
+prog.cob:14: error: incomplete expression
+prog.cob:18: error: incomplete expression
+prog.cob:22: error: incomplete expression
+prog.cob:26: error: incomplete expression
 prog.cob:30: error: invalid conditional expression
-prog.cob:35: error: invalid expression
-prog.cob:38: error: invalid expression
-prog.cob:41: error: invalid expression
-prog.cob:44: error: invalid expression
-prog.cob:47: error: invalid expression
-prog.cob:54: error: invalid expression
-prog.cob:60: error: invalid expression
-prog.cob:66: error: invalid expression
-prog.cob:72: error: invalid expression
+prog.cob:35: error: incomplete expression
+prog.cob:38: error: incomplete expression
+prog.cob:41: error: incomplete expression
+prog.cob:44: error: incomplete expression
+prog.cob:47: error: incomplete expression
+prog.cob:54: error: incomplete expression
+prog.cob:60: error: incomplete expression
+prog.cob:66: error: incomplete expression
+prog.cob:72: error: incomplete expression
 prog.cob:76: error: 'NOTDEFINED' is not defined
-prog.cob:80: error: invalid expression
+prog.cob:80: error: invalid expression: boolean expected with logical operator
 ])
 
 AT_CLEANUP
@@ -555,6 +556,7 @@ AT_DATA([prog.cob], [
         DATA DIVISION.
         WORKING-STORAGE SECTION.
         01 WRKN  PIC S999 VALUE 123.
+           88 WRKN-IS-ZERO VALUE 0.
         01 WRKX  PIC X(8) VALUE 'House'.
         PROCEDURE DIVISION.
         MAIN.
@@ -587,16 +589,28 @@ AT_DATA([prog.cob], [
                    >= (456 + 16)
               DISPLAY "And another brew! " WRKN
             END-IF.
+            IF ( WRKN-IS-ZERO + 3  ) > 0
+	      DISPLAY "Weird if compiled"
+	    END-IF.
+            IF ( 3 + WRKN-IS-ZERO  ) > 0
+	      DISPLAY "Weird if compiled"
+	    END-IF.
+            IF ( WRKN-IS-ZERO AND WRKN-IS-ZERO ) > 0
+              DISPLAY "Weird if compiled"
+            END-IF.
             STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob: in paragraph 'MAIN':
-prog.cob:10: error: GREATER THAN operator may be misplaced
-prog.cob:17: error: EQUALS operator may be misplaced
-prog.cob:20: error: NOT EQUAL operator may be misplaced
-prog.cob:29: error: LESS OR EQUAL operator may be misplaced
-prog.cob:32: error: invalid expression
+prog.cob:13: error: condition expression found where decimal expression was expected
+prog.cob:18: error: condition expression found where decimal expression was expected
+prog.cob:21: error: condition expression found where decimal expression was expected
+prog.cob:30: error: condition expression found where decimal expression was expected
+prog.cob:33: error: invalid expression: unfinished expression
+prog.cob:40: error: condition-name not allowed here: 'WRKN-IS-ZERO'
+prog.cob:43: error: condition-name not allowed here: 'WRKN-IS-ZERO'
+prog.cob:46: error: condition expression found where decimal expression was expected
 ])
 
 AT_CLEANUP
@@ -660,7 +674,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:15: error: invalid conditional expression
 prog.cob:20: error: invalid conditional expression
 prog.cob:25: error: invalid conditional expression
-prog.cob:35: error: invalid expression
+prog.cob:35: error: invalid expression: boolean expected with logical operator
 ])
 
 AT_CLEANUP
@@ -2489,7 +2503,7 @@ prog.cob:20: error: 'handle' is not defined, but is a reserved word in another d
 prog.cob:21: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob: in paragraph 'MAIN':
 prog.cob:35: error: 'handle IN mywindow' is not defined
-prog.cob:34: error: invalid expression
+prog.cob:34: error: invalid expression: unfinished expression
 prog.cob:38: error: syntax error, unexpected END-PERFORM
 prog.cob:39: error: 'thread' is not defined, but is a reserved word in another dialect
 prog.cob:39: error: syntax error, unexpected Identifier
@@ -3530,13 +3544,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:19: error: invalid conditional expression
-prog.cob:16: error: invalid expression
+prog.cob:16: error: invalid expression: boolean expected with logical operator
 prog.cob:28: error: wrong number of WHEN parameters
 prog.cob:31: error: wrong number of WHEN parameters
 ])
 
 AT_CLEANUP
-
 
 AT_SETUP([COBOL-WORDS directive])
 AT_KEYWORDS([misc reserved words])
@@ -6648,8 +6661,8 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob], [1], [],
-[prog.cob:9: error: invalid expression
+AT_CHECK([$COMPILE prog.cob], [1], [], 
+[prog.cob:9: error: invalid expression: unfinished expression
 ])
 AT_CLEANUP
 
@@ -8200,3 +8213,4 @@ AT_CHECK([$COMPILE -freserved="XX*=BYTE-LENGTH" prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1])
 
 AT_CLEANUP
+
