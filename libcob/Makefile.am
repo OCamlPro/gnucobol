@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2020, 2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2020, 2022-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -38,7 +38,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib \
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 # note: currently misses libsupport...
 libcob_la_LIBADD = $(LIBCOB_LIBS) $(CODE_COVERAGE_LIBS)
-libcob_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info 5:0:1 -no-undefined
+libcob_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info 6:0:2 -no-undefined
 AM_LDFLAGS = $(COB_FIX_LIB)
 
 pkgincludedir = $(includedir)/libcob

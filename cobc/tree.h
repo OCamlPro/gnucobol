@@ -875,6 +875,8 @@ struct cb_field {
 	cb_tree			screen_foreg;	/* FOREGROUND */
 	cb_tree			screen_backg;	/* BACKGROUND */
 	cb_tree			screen_prompt;	/* PROMPT */
+	cb_tree			screen_control;	/* CONTROL identifier (variable named attributes) */
+	cb_tree			screen_color;	/* COLOR identifier (variable bit-shifted attributes) */
 	cb_tree			report_source;	/* SOURCE field */
 	cb_tree			report_from;	/* SOURCE field subscripted; so MOVE to report_source */
 	cb_tree			report_sum_counter;/* SUM counter */
@@ -1128,8 +1130,8 @@ struct cb_file {
 	int			record_min;		/* RECORD CONTAINS */
 	int			record_max;		/* RECORD CONTAINS */
 	int			optional;		/* OPTIONAL */
-	int			organization;		/* ORGANIZATION - FIXME: use enum */
-	int			access_mode;		/* ACCESS MODE - FIXME: use enum */
+	enum cob_file_org		organization;		/* ORGANIZATION */
+	enum cob_file_access_mode		access_mode;		/* ACCESS MODE */
 	int			lock_mode;		/* LOCK MODE */
 	int			special;		/* Special file */
 	int			same_clause;		/* SAME clause */
@@ -1264,10 +1266,11 @@ struct cb_binary_op {
 
 /* Function call */
 
+#define CB_BUILD_FUNCALL_MAX 14
 struct cb_funcall {
 	struct cb_tree_common	common;		/* Common values */
 	const char		*name;		/* Function name */
-	cb_tree			argv[11];	/* Function arguments */
+	cb_tree			argv[CB_BUILD_FUNCALL_MAX];	/* Function arguments */
 	int			argc;		/* Number of arguments */
 	int			varcnt;		/* Variable argument count */
 	unsigned int		screenptr;	/* SCREEN usage */
@@ -1477,6 +1480,9 @@ struct cb_attr_struct {
 	cb_tree			timeout;	/* TIMEOUT */
 	cb_tree			prompt;		/* PROMPT */
 	cb_tree			size_is;	/* [PROTECTED] SIZE [IS] */
+	cb_tree			control;		/* CONTROL [IS] (named attributes) */
+	cb_tree			color;		/* CONTROL (bit-shifted attributes) */
+	cb_tree			cursor;		/* CURSOR */
 	cob_flags_t		dispattrs;	/* Attributes */
 };
 
@@ -1513,7 +1519,6 @@ struct cb_statement {
 	enum cb_handler_type	handler_type;		/* Handler type */
 	unsigned int		flag_no_based	: 1;	/* Check BASED */
 	unsigned int		flag_in_debug	: 1;	/* In DEBUGGING */
-	unsigned int		flag_merge	: 1;	/* Is MERGE */
 	unsigned int		flag_callback	: 1;	/* DEBUG Callback */
 	unsigned int		flag_implicit	: 1;	/* Is an implicit statement */
 };
@@ -1930,7 +1935,7 @@ struct cb_prototype {
 	const char		*name;
 	/* External name of the prototype/definition */
 	const char		*ext_name;
-	int			type;
+	enum cob_module_type		type;
 };
 
 #define CB_PROTOTYPE(x)		(CB_TREE_CAST (CB_TAG_PROTOTYPE, struct cb_prototype, x))
@@ -2045,6 +2050,7 @@ extern int			cb_tree_type (const cb_tree,
 					      const struct cb_field *);
 extern int			cb_category_is_alpha (cb_tree);
 extern int			cb_category_is_national (cb_tree);
+extern int			cb_field_has_unbounded (struct cb_field *);
 extern int			cb_fits_int (const cb_tree);
 extern int			cb_fits_long_long (const cb_tree);
 extern int			cb_get_int (const cb_tree);
@@ -2109,7 +2115,9 @@ extern int				cb_field_size (const cb_tree x);
 #define FIELD_SIZE_UNKNOWN -1
 extern struct cb_field		*cb_field_founder (const struct cb_field * const);
 extern struct cb_field		*cb_field_variable_size (const struct cb_field *);
+#if 0	/* unused */
 extern unsigned int		cb_field_variable_address (const struct cb_field *);
+#endif
 extern int			cb_field_subordinate (const struct cb_field *,
 						      const struct cb_field *);
 
@@ -2146,7 +2154,8 @@ extern cb_tree			cb_build_funcall (const char *, const int,
 						  const cb_tree, const cb_tree,
 						  const cb_tree, const cb_tree,
 						  const cb_tree, const cb_tree,
-						  const cb_tree);
+						  const cb_tree, const cb_tree,
+						  const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_cast (const enum cb_cast_type,
 					       const cb_tree);
@@ -2158,7 +2167,7 @@ extern cb_tree			cb_build_assign (const cb_tree, const cb_tree);
 extern cb_tree			cb_build_intrinsic (cb_tree, cb_tree,
 						    cb_tree, const int);
 extern cb_tree			cb_build_prototype (const cb_tree,
-						    const cb_tree, const int);
+						    const cb_tree, const enum cob_module_type);
 extern cb_tree			cb_build_any_intrinsic (cb_tree);
 
 extern cb_tree			cb_build_search (const int,
@@ -2627,51 +2636,63 @@ extern int		cobc_has_areacheck_directive (const char *directive);
 
 #define CB_BUILD_FUNCALL_0(f)					\
 	cb_build_funcall (f, 0, NULL, NULL, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_1(f,a1)				\
 	cb_build_funcall (f, 1, a1, NULL, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_2(f,a1,a2)				\
 	cb_build_funcall (f, 2, a1, a2, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_3(f,a1,a2,a3)				\
 	cb_build_funcall (f, 3, a1, a2, a3, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_4(f,a1,a2,a3,a4)			\
 	cb_build_funcall (f, 4, a1, a2, a3, a4, NULL,		\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_5(f,a1,a2,a3,a4,a5)			\
 	cb_build_funcall (f, 5, a1, a2, a3, a4, a5,		\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_6(f,a1,a2,a3,a4,a5,a6)			\
 	cb_build_funcall (f, 6, a1, a2, a3, a4, a5, a6,		\
-			  NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_7(f,a1,a2,a3,a4,a5,a6,a7)		\
 	cb_build_funcall (f, 7, a1, a2, a3, a4, a5, a6, a7,	\
-			  NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_8(f,a1,a2,a3,a4,a5,a6,a7,a8)		\
 	cb_build_funcall (f, 8, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_9(f,a1,a2,a3,a4,a5,a6,a7,a8,a9)	\
 	cb_build_funcall (f, 9, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  a9, NULL, NULL)
+			  a9, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_10(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)		\
 	cb_build_funcall (f, 10, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  a9, a10, NULL)
+			  a9, a10, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_11(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)	\
 	cb_build_funcall (f, 11, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  a9, a10, a11)
+			  a9, a10, a11, NULL, NULL, NULL)
+
+#define CB_BUILD_FUNCALL_12(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a11,a12)	\
+	cb_build_funcall (f, 9, a1, a2, a3, a4, a5, a6, a7, a8,	\
+			  a9, a10, a11, a12, NULL, NULL)
+
+#define CB_BUILD_FUNCALL_13(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13)	\
+	cb_build_funcall (f, 10, a1, a2, a3, a4, a5, a6, a7, a8,	\
+			  a9, a10, a11, a12, a13, NULL)
+
+#define CB_BUILD_FUNCALL_14(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14)	\
+	cb_build_funcall (f, 11, a1, a2, a3, a4, a5, a6, a7, a8,	\
+			  a9, a10, a11, a12, a13, a14)
 
 /* Miscellaneous defines */
 

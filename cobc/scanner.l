@@ -370,7 +370,7 @@ AREA_A		"#AREA_A"\n
 "FUNCTION" {
 	if (cobc_in_repository || cobc_cs_check == CB_CS_EXIT) {
 		yylval = NULL;
-	        RETURN_TOK (FUNCTION);
+		RETURN_TOK (FUNCTION);
 	}
 	BEGIN FUNCTION_STATE;
 }
@@ -936,8 +936,8 @@ H#[0-9A-Za-z]+ {
 	/* FIXME: move the code for filling "name" here and first
 	          check with "lookup_system_name (name) != NULL"
 	          if we actually want to do this,
-			  otherwise return 2 (!) WORD tokens (by adding a queue
-			  of tokens to be returned)
+	          otherwise return 2 (!) WORD tokens (by adding a queue
+	          of tokens to be returned)
 	*/
 	if (cobc_in_procedure) {
 		 /* unput characters */
@@ -1294,9 +1294,9 @@ H#[0-9A-Za-z]+ {
 %%
 
 static void
-error_literal (const char *type, const char *literal, unsigned int literal_error)
+error_literal (const char *type, const char *literal, int literal_error)
 {
-	if (!literal_error) {
+	if (literal_error < 1) {
 		char		lit_out[CB_ERR_LITMAX + 1] = { 0 };
 		/* snip literal for output, if too long or,
 			unlikely error case, has a line break */
@@ -1316,6 +1316,8 @@ error_literal (const char *type, const char *literal, unsigned int literal_error
 				cb_error (_("invalid numeric literal: '%s'"), lit_out);
 			} else if (strcmp (type, "float") == 0) {
 				cb_error (_("invalid floating-point literal: '%s'"), lit_out);
+			} else if (literal_error < 0) {
+				cb_warning (COBC_WARN_FILLER, _("invalid %s literal: '%s'"), type, lit_out);
 			} else {
 				cb_error (_("invalid %s literal: '%s'"), type, lit_out);
 			}
@@ -1339,7 +1341,7 @@ scan_ebcdic_char (int c)
 #endif
 	unsigned int j = 0;
 	do {
-		buff[j++] = c;
+		buff[j++] = (char)c;
 	} while ((c = input ()) != EOF && '0' <= c && c <= '9' && j < 10);
 	unput (c);
 	buff[j++] = 0;
@@ -1353,21 +1355,20 @@ scan_ebcdic_char (int c)
 #ifdef COB_EBCDIC_MACHINE
 	return (cob_u8_t) c;
 #else
-	if (!ebcdic_to_ascii_initialized ){
-		if (cob_load_collation (cb_ebcdic_table,
-                                        ebcdic_to_ascii,
-                                        NULL) < 0) {
-                        cb_error (_("invalid parameter: %s"), "-febcdic-table");
+	if (!ebcdic_to_ascii_initialized ) {
+		if (cob_load_collation (cb_ebcdic_table, ebcdic_to_ascii, NULL) < 0) {
+			cb_error (_("invalid parameter: %s"), "-febcdic-table");
 			ebcdic_to_ascii_initialized = -1;
-                } else {
+		} else {
 			ebcdic_to_ascii_initialized = 1;
 		}
 	}
 
-	if (ebcdic_to_ascii_initialized > 0)
+	if (ebcdic_to_ascii_initialized > 0) {
 		return ebcdic_to_ascii[c];
-	else
+	} else {
 		return '?';
+	}
 #endif
 }
 
@@ -1375,9 +1376,9 @@ static void
 read_literal (const char mark, const enum cb_literal_type type)
 {
 	size_t		i;
-	int		c;
-	unsigned int	literal_error = 0;
-	enum cb_sym_ebcdic_state ebcdic_flag = CB_SYM_EBCDIC_INACTIVE;
+	int			c;
+	int			literal_error = 0;
+	enum cb_sym_ebcdic_state	ebcdic_flag = CB_SYM_EBCDIC_INACTIVE;
 
 	i = 0;
 	/* read until a not-escaped mark is found (see break)
@@ -1538,7 +1539,7 @@ scan_x (const char *text, const char *type)
 	size_t		curr_len;
 	size_t		result_len;
 	char		c;
-	unsigned int	literal_error = 0;
+	int			literal_error = 0;
 
 	/* Remark:
 	   The standard allows for 8,191 (normal/national/boolean) character positions */
@@ -1577,7 +1578,9 @@ scan_x (const char *text, const char *type)
 	}
 	memcpy (plex_buff, text, curr_len);
 	if (type[0] == 'X' || type [0] == 'U') {
-		result_len = curr_len / 2; /* characters, two half-bytes (hex) = 1 byte */
+		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up
+		   to full bytes in case of odd digits */
+		result_len = (curr_len + 1) / 2;
 	} else if (type[0] == 'B') {
 		result_len = curr_len * 4; /* boolean characters B -> 1110 */
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
@@ -1636,9 +1639,8 @@ scan_x (const char *text, const char *type)
 					plex_buff[curr_len] = 0;
 				}
 				error_literal (type, plex_buff, literal_error++);
-				/* By not breaking immediately, we detect any following
-				   invalid chars
-				*/
+				/* Note: by not breaking immediately, we detect any following
+				   invalid chars */
 				c = 0;
 			}
 			val = (val << 4) + c;
@@ -1666,8 +1668,8 @@ scan_x (const char *text, const char *type)
 					plex_buff[curr_len] = 0;
 				}
 				error_literal (type, plex_buff, literal_error++);
-				/* By not breaking immediately, we detect any following
-					invalid chars
+				/* Note: by not breaking immediately, we detect any following
+				   invalid chars
 				*/
 				c = 0;
 			}
@@ -1681,13 +1683,19 @@ scan_x (const char *text, const char *type)
 
 		if (!high) {
 			/* This is non-standard behaviour */
+			*dst = (*dst >> 4);
+			dst++;
 			snprintf (err_msg, COB_MINI_MAX,
 				_("literal does not have an even number of digits"));
 			if (likely (literal_error == 0)) {
 				memcpy (plex_buff, text, curr_len + 1);
 				plex_buff[curr_len] = 0;
 			}
-			error_literal (type, plex_buff, literal_error++);
+			if (cb_relaxed_syntax_checks && result_len == 1) {
+				error_literal (type, plex_buff, literal_error++ == 0 ? -1 : 1);
+			} else {
+				error_literal (type, plex_buff, literal_error++);
+			}
 		}
 		/* TODO: for type U needs additional checks */
 		if (type[0] != 'N') {
@@ -1745,8 +1753,8 @@ scan_h (const char *text, const char *type)
 	size_t		curr_len;
 	char		*p;
 	cob_u64_t	val = 0;
-	int		c;
-	unsigned int	literal_error = 0;
+	int 		c;
+	int			literal_error = 0;
 
 	if (type[1] == '#'
 	 && !cb_verify (cb_acu_literals, _("ACUCOBOL numeric literal"))) {
@@ -1830,8 +1838,8 @@ scan_b (const char *text, const char *type)
 	size_t		curr_len;
 	char		*p;
 	cob_u64_t	val = 0;
-	int		c;
-	unsigned int	literal_error = 0;
+	int			c;
+	int			literal_error = 0;
 
 	/* curr_len can include the terminating quote */
 	curr_len = strlen (text);
@@ -1917,7 +1925,7 @@ scan_o (const char *text, const char *type)
 	cob_u64_t	val = 0;
 	char		*p;
 	char		c;
-	unsigned int	literal_error = 0;
+	int 		literal_error = 0;
 
 	if (type[0] == '%') {
 		if (!cb_verify (cb_hp_octal_literals, _("HP COBOL octal literal"))) {

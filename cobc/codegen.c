@@ -2273,7 +2273,7 @@ output_emit_field (cb_tree x, const char *cmt)
 		} else {
 			output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 			output_field (x);
-			output_local(";\t/* ");
+			output_local (";\t/* ");
 			if (f->report_column > 0) {
 				output_local ("col%3d ", f->report_column);
 			}
@@ -4180,12 +4180,26 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 }
 
 
+static void COB_INLINE COB_A_INLINE
+output_funcall_item (cb_tree x, const int i, unsigned int func_nolitcast)
+{
+	if (x && CB_LITERAL_P (x)) {
+		nolitcast = func_nolitcast;
+	} else {
+		nolitcast = 0;
+	}
+	output_param (x, i);
+}
+
+
 static void
 output_funcall (cb_tree x)
 {
 	struct cb_funcall	*p;
 	cb_tree			l;
 	int			i;
+	const int	nolitcast_origin = nolitcast;
+	const int	screenptr_origin = screenptr;
 
 	p = CB_FUNCALL (x);
 	if (p->name[0] == '$') {
@@ -4196,33 +4210,22 @@ output_funcall (cb_tree x)
 	screenptr = p->screenptr;
 	output ("%s (", p->name);
 	for (i = 0; i < p->argc; i++) {
+		if (i) {
+			output (", ");
+		}
 		if (p->varcnt && i + 1 == p->argc) {
-			output ("%d, ", p->varcnt);
-			for (l = p->argv[i]; l; l = CB_CHAIN (l)) {
-				if (CB_VALUE (l) && CB_LITERAL_P (CB_VALUE (l))) {
-					nolitcast = p->nolitcast;
-				}
-				output_param (CB_VALUE (l), i);
-				nolitcast = 0;
-				i++;
-				if (CB_CHAIN (l)) {
-					output (", ");
-				}
+			output ("%d", p->varcnt);
+			for (l = p->argv[i]; l; l = CB_CHAIN (l), i++) {
+				output (", ");
+				output_funcall_item (CB_VALUE (l), i, p->nolitcast);
 			}
 		} else {
-			if (p->argv[i] && CB_LITERAL_P (p->argv[i])) {
-				nolitcast = p->nolitcast;
-			}
-			output_param (p->argv[i], i);
-			nolitcast = 0;
-			if (i + 1 < p->argc) {
-				output (", ");
-			}
+			output_funcall_item (p->argv[i], i, p->nolitcast);
 		}
 	}
 	output (")");
-	nolitcast = 0;
-	screenptr = 0;
+	nolitcast = nolitcast_origin;
+	screenptr = screenptr_origin;
 }
 
 static void
@@ -5175,11 +5178,16 @@ output_init_comment_and_source_ref (struct cb_field *f)
 {
 	/* output comment and source location for each field */
 	output_line ("/* initialize field %s */", f->name);
+#ifndef	NO_INIT_SOURCE_LOC	/* allow user to not output these;
+	note: this will lead to a COBOL step never land in the
+	      DATA DIVISION; it will also lead to not be able to list
+	      copybooks in there to be visible to the debugger */
 	if (cb_flag_c_line_directives && f->common.source_line) {
 		output_cobol_info (CB_TREE (f));
 		output_line ("cob_nop ();");
 		output_c_info ();
 	}
+#endif
 }
 
 static void
@@ -6752,7 +6760,7 @@ output_call (struct cb_call *p)
 			name_str = cb_encode_program_id (s, 1, cb_fold_call);
 			lookup_call (name_str);
 
-			output_line ("if (unlikely(call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel))", name_str);
+			output_line ("if (unlikely(call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel == 1))", name_str);
 			output_block_open ();
 			output_prefix ();
 
@@ -7831,8 +7839,9 @@ output_if (const struct cb_if *ip)
 		if (ip->test == cb_true
 		 && cb_flag_remove_unreachable) {
 			output_line ("/* WHEN is always TRUE */");
-		} else if (ip->test == cb_false
-			&& cb_flag_remove_unreachable) {
+		} else
+		if (ip->test == cb_false
+		 && cb_flag_remove_unreachable) {
 			output_line ("/* WHEN is always FALSE */");
 		} else
 		if (CB_TREE_TAG (ip->test) == CB_TAG_BINARY_OP) {
@@ -7859,7 +7868,8 @@ output_if (const struct cb_if *ip)
 			} else {
 				output_line ("/* WHEN */");
 			}
-		} else if (ip->test->source_line) {
+		} else
+		if (ip->test->source_line) {
 			output_source_reference (ip->test, STMT_WHEN);
 		} else {
 			output_line ("/* WHEN */");
@@ -9273,6 +9283,7 @@ output_file_initialization (struct cb_file *f)
 		}
 	}
 
+	/* TODO: generate enum values and flags as text */
 	output_line ("%s%s->organization = %d;", CB_PREFIX_FILE, f->cname,
 		     f->organization);
 	output_line ("%s%s->access_mode = %d;", CB_PREFIX_FILE, f->cname,
@@ -9333,13 +9344,13 @@ output_screen_definition (struct cb_field *p)
 static void
 output_screen_init (struct cb_field *p, struct cb_field *previous)
 {
-	int	type;
-
-	type = (p->children ? COB_SCREEN_TYPE_GROUP :
+	const int	type = (p->children ? COB_SCREEN_TYPE_GROUP :
 		p->values ? COB_SCREEN_TYPE_VALUE :
 		(p->size > 0) ? COB_SCREEN_TYPE_FIELD : COB_SCREEN_TYPE_ATTRIBUTE);
+
 	output_prefix ();
-	output ("cob_set_screen (&%s%d, ", CB_PREFIX_SCR_FIELD, p->id);
+	output ("COB_SET_SCREEN (%s%d, %d, 0x" CB_FMT_LLX ", ",
+		CB_PREFIX_SCR_FIELD, p->id, type, p->screen_flag);
 
 	if (p->sister && p->sister->level != 1) {
 		output ("&%s%d, ", CB_PREFIX_SCR_FIELD, p->sister->id);
@@ -9371,10 +9382,10 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 
 	if (type == COB_SCREEN_TYPE_FIELD) {
 		output_param (cb_build_field_reference (p, NULL), -1);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	output_newline ();
 	output_prefix ();
@@ -9383,24 +9394,24 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 	if (type == COB_SCREEN_TYPE_VALUE) {
 		/* Need a field reference here */
 		output_param (cb_build_field_reference (p, NULL), -1);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_line) {
 		output_param (p->screen_line, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_column) {
 		output_param (p->screen_column, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	output_newline ();
 	output_prefix ();
@@ -9408,28 +9419,26 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 
 	if (p->screen_foreg) {
 		output_param (p->screen_foreg, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_backg) {
 		output_param (p->screen_backg, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_prompt) {
 		output_param (p->screen_prompt, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", %d);", p->occurs_min);
 
 	output_newline ();
-	output_line ("\t\t  %d, %d, 0x" CB_FMT_LLX ");",
-		type, p->occurs_min, p->screen_flag);
 
 	if (p->children) {
 		output_screen_init (p->children, NULL);
@@ -12287,10 +12296,17 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_newline ();
 
 	/* Check matching version */
-	if (!prog->nested_level) {
+#if !defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+#ifdef _WIN32
+	if (prog->flag_main)	/* otherwise we generate that in DllMain*/
+#else
+	if (!prog->nested_level)
+#endif
+	{
 		output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 		output_newline ();
 	}
+#endif
 
 	/* Resolve user functions */
 	for (clp = func_call_cache; clp; clp = clp->next) {
@@ -12418,6 +12434,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_line ("/* Initialize SCREEN items */");
 		/* Initialize items with VALUE */
 		output_initial_values (prog->screen_storage);
+		/* output structure, note: this can be quite complex
+		   and nested, therefore this isn't done in the header */
 		output_screen_init (prog->screen_storage, NULL);
 		output_newline ();
 	}
@@ -13290,7 +13308,7 @@ codegen (struct cb_program *prog, const char *translate_name)
 {
 	const int set_xref = cb_listing_xref;
 	int subsequent_call = 0;
-
+	int has_global_file_level = 0 ;
 	codegen_init (prog, translate_name);
 
 	/* Temporarily disable cross-reference during C generation */
@@ -13302,11 +13320,20 @@ codegen (struct cb_program *prog, const char *translate_name)
 			break;
 		}
 		subsequent_call = 1;
+		/* set has_global_file if needed, only for sub-programs of this program */
 		if (current_program->flag_file_global
-		 && current_program->next_program->nested_level) {
-			has_global_file = 1;
+		 && current_program->next_program->nested_level >
+		    current_program->nested_level) {
+			if (!has_global_file) {
+				has_global_file = 1 ;
+				has_global_file_level = current_program->nested_level ;
+			}
 		} else {
-			has_global_file = 0;
+			if (has_global_file
+			 && current_program->next_program->nested_level <=
+			    has_global_file_level ){
+				has_global_file = 0 ;
+			}
 		}
 		current_program = current_program->next_program;
 	}
@@ -13385,6 +13412,31 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	output_function_prototypes (prog);
 }
 
+/* Check matching version via constructor attribute / DllMain */
+static void output_so_load_version_check (struct cb_program *prog)
+{
+#if defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+	output_line ("static void gc_module_so_init () __attribute__ ((constructor));");
+	output_line ("static void gc_module_so_init ()");
+	output_block_open ();
+	output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+	output_block_close ();
+	output_newline ();
+#elif defined (_WIN32)
+	if (!prog->flag_main) {
+		output_line ("#include \"windows.h\"");
+		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
+		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
+		output_block_open ();
+		output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
+		output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+		output_line ("return TRUE;");
+		output_block_close ();
+		output_newline ();
+	}
+#endif
+}
+
 void
 codegen_internal (struct cb_program *prog, const int subsequent_call)
 {
@@ -13452,6 +13504,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		output ("/* Functions */");
 		output_newline ();
 		output_newline ();
+		output_so_load_version_check (prog);
 	}
 
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION) {

@@ -32,6 +32,13 @@
 #include "cobc.h"
 #include "tree.h"
 
+enum cb_error_kind {
+	CB_KIND_ERROR,
+	CB_KIND_WARNING,
+	CB_KIND_NOTE,
+	CB_KIND_GENERAL
+};
+
 static char		*errnamebuff = NULL;
 static struct cb_label	*last_section = NULL;
 static struct cb_label	*last_paragraph = NULL;
@@ -63,10 +70,79 @@ print_error_prefix (const char *file, int line, const char *prefix)
 	}
 }
 
+/* Display a context around the location of the error/warning,
+   only used if cb_diagnostics_show_caret is true
+
+   Only display two lines before and after. No caret yet for the column as
+   we only have the line. Since we directly use the file, source is printed
+   before any REPLACE. */
 static void
-print_error (const char *file, int line, const char *prefix,
+diagnostics_show_caret (FILE *fd, const int line)
+{
+	#define CARET_MAX_COLS 73 + 5
+	#define CARET_CONTEXT_LINES 2
+	const int line_start = line > CARET_CONTEXT_LINES ? line - CARET_CONTEXT_LINES : 1;
+	const int line_end = line + CARET_CONTEXT_LINES;
+	const int max_pos = cb_diagnostics_show_line_numbers ? CARET_MAX_COLS - 5 : CARET_MAX_COLS;
+	char buffer[ CARET_MAX_COLS + 1 ];
+	int line_pos = 1;
+	int char_pos = 0;
+	int c = 0;
+	while (c != EOF) {
+		buffer[char_pos] = c = fgetc (fd);;
+		if (c == '\n' || c == EOF || char_pos == max_pos) {
+			if (line_pos >= line_start) {
+				/* prefix */
+				if (cb_diagnostics_show_line_numbers) {
+					fprintf (stderr, "%5d %c ", line_pos,
+						line == line_pos ? '>' : '|');
+				} else {
+					fprintf (stderr, " %c ",
+						line == line_pos ? '>' : ' ');
+				}
+				/* drop trailing whitespace from buffer */
+				while (char_pos >= 0
+				    && (buffer[char_pos] == ' '
+				     || buffer[char_pos] == '\t'
+				     || buffer[char_pos] == '\r'
+				     || buffer[char_pos] == '\n'
+				     || buffer[char_pos] == EOF
+					 || char_pos == max_pos)) {
+					buffer[char_pos--] = 0;
+				}
+				/* print it */
+				fprintf (stderr, "%s%s\n",
+					 buffer,
+					 c == '\n' ? "" :
+					 c == EOF ? "<EOF>" : "..");
+			}
+			if (line_pos++ >= line_end) {
+				break;
+			}
+			/* skip end of line too long */
+			while (c != '\n' && c != EOF) {
+				c = fgetc (fd);
+			}
+			char_pos = buffer[0] = 0;
+		} else {
+			char_pos++;
+		}
+	}
+}
+
+static void
+print_error (const char *file, int line, enum cb_error_kind kind,
 	     const char *fmt, va_list ap, const char *diagnostic_option)
 {
+	const char *prefix;
+
+	switch( kind ){
+	case CB_KIND_ERROR: prefix = _("error: "); break;
+	case CB_KIND_WARNING: prefix = _("warning: "); break;
+	case CB_KIND_NOTE: prefix = _("note: "); break;
+	case CB_KIND_GENERAL: prefix = ""; break;
+	}
+
 	if (!file) {
 		file = cb_source_file;
 	}
@@ -119,12 +195,31 @@ print_error (const char *file, int line, const char *prefix,
 		}
 		cb_add_error_to_listing (file, line, prefix, errmsg);
 	}
+
+	if (cb_diagnostics_show_caret
+	 && file != NULL
+	 && strcmp (file, COB_DASH) != 0
+	 && line != 0) {
+		static const char *last_caret_file = NULL ;
+		static int last_caret_line = -1 ;
+		if (last_caret_file != file
+		 || last_caret_line != line) {
+			FILE *fd = fopen (file, "r");
+			if (fd) {
+				diagnostics_show_caret (fd, line);
+				fclose (fd);
+			}
+			/* remember last printed location to avoid reprinting it */
+			last_caret_file = file;
+			last_caret_line = line;
+		}
+	}
 }
 
 static void
 cobc_too_many_errors (void)
 {
-	if (!cb_diagnostic_show_option) {
+	if (!cb_diagnostics_show_option) {
 		fprintf (stderr, "cobc: %s\n",
 			_("too many errors"));
 	} else
@@ -306,7 +401,7 @@ static char *warning_option_text (const enum cb_warn_opt opt, const enum cb_warn
 {
 	const char *opt_name;
 
-	if (!cb_diagnostic_show_option) {
+	if (!cb_diagnostics_show_option) {
 		return NULL;
 	}
 	switch (opt) {
@@ -343,9 +438,9 @@ cb_warning_internal (const enum cb_warn_opt opt, const char *fmt, va_list ap)
 	}
 
 	if (pref != COBC_WARN_AS_ERROR) {
-		print_error (NULL, 0, _("warning: "),  fmt, ap, warning_option_text (opt, pref));
+		print_error (NULL, 0, CB_KIND_WARNING,  fmt, ap, warning_option_text (opt, pref));
 	} else {
-		print_error (NULL, 0, _("error: "),  fmt, ap, warning_option_text (opt, pref));
+		print_error (NULL, 0, CB_KIND_ERROR,  fmt, ap, warning_option_text (opt, pref));
 	}
 
 	if (sav_lst_file) {
@@ -379,7 +474,7 @@ cb_error_always (const char *fmt, ...)
 
 	cobc_in_repository = 0;
 	va_start (ap, fmt);
-	print_error (NULL, 0, _("error: "), fmt, ap, NULL);
+	print_error (NULL, 0, CB_KIND_ERROR, fmt, ap, NULL);
 	va_end (ap);
 
 	if (sav_lst_file) {
@@ -405,12 +500,12 @@ cb_error_internal (const char *fmt, va_list ap)
 	}
 
 	if (!ignore_error) {
-		print_error (NULL, 0, _("error: "), fmt, ap, NULL);
+		print_error (NULL, 0, CB_KIND_ERROR, fmt, ap, NULL);
 		ret = COBC_WARN_AS_ERROR;
 	} else if (pref == COBC_WARN_AS_ERROR) {
-		print_error (NULL, 0, _("error: "), fmt, ap, warning_option_text (opt, pref));
+		print_error (NULL, 0, CB_KIND_ERROR, fmt, ap, warning_option_text (opt, pref));
 	} else {
-		print_error (NULL, 0, _("warning: "), fmt, ap, warning_option_text (opt, pref));
+		print_error (NULL, 0, CB_KIND_WARNING, fmt, ap, warning_option_text (opt, pref));
 	}
 
 	if (sav_lst_file) {
@@ -447,7 +542,7 @@ cb_perror (const int config_error, const char *fmt, ...)
 	}
 
 	va_start (ap, fmt);
-	print_error (NULL, 0, "", fmt, ap, NULL);
+	print_error (NULL, 0, CB_KIND_GENERAL, fmt, ap, NULL);
 	va_end (ap);
 
 
@@ -472,9 +567,9 @@ cb_plex_warning (const enum cb_warn_opt opt, const size_t sline, const char *fmt
 
 	va_start (ap, fmt);
 	if (pref != COBC_WARN_AS_ERROR) {
-		print_error (NULL, cb_source_line + (int)sline, _("warning: "), fmt, ap, warning_option_text (opt, pref));
+		print_error (NULL, cb_source_line + (int)sline, CB_KIND_WARNING, fmt, ap, warning_option_text (opt, pref));
 	} else {
-		print_error (NULL, cb_source_line + (int)sline, _("error: "), fmt, ap, warning_option_text (opt, pref));
+		print_error (NULL, cb_source_line + (int)sline, CB_KIND_ERROR, fmt, ap, warning_option_text (opt, pref));
 	}
 	va_end (ap);
 
@@ -496,7 +591,7 @@ cb_plex_error (const size_t sline, const char *fmt, ...)
 	va_list ap;
 
 	va_start (ap, fmt);
-	print_error (NULL, cb_source_line + (int)sline, ("error: "), fmt, ap, NULL);
+	print_error (NULL, cb_source_line + (int)sline, CB_KIND_ERROR, fmt, ap, NULL);
 	va_end (ap);
 
 	if (sav_lst_file) {
@@ -628,7 +723,7 @@ cb_warning_x_internal (const enum cb_warn_opt opt, cb_tree x, const char *fmt, v
 	}
 
 	print_error (x->source_file, x->source_line,
-		pref == COBC_WARN_AS_ERROR ? _("error: ") : _("warning: "),
+		pref == COBC_WARN_AS_ERROR ? CB_KIND_ERROR : CB_KIND_WARNING,
 		fmt, ap, warning_option_text (opt, pref));
 
 	if (sav_lst_file) {
@@ -672,7 +767,7 @@ cb_warning_dialect_x (const enum cb_support tag, cb_tree x, const char *fmt, ...
 
 	va_start (ap, fmt);
 	print_error (x->source_file, x->source_line,
-		ret == COBC_WARN_AS_ERROR ? _("error: ") : _("warning: "),
+		ret == COBC_WARN_AS_ERROR ? CB_KIND_ERROR : CB_KIND_WARNING,
 		fmt, ap, NULL);
 	va_end (ap);
 
@@ -725,10 +820,10 @@ cb_note_x (const enum cb_warn_opt opt, cb_tree x, const char *fmt, ...)
 	listprint_suppress ();
 	va_start (ap, fmt);
 	if (opt != COB_WARNOPT_NONE) {
-		print_error (x->source_file, x->source_line, _("note: "),
+		print_error (x->source_file, x->source_line, CB_KIND_NOTE,
 			fmt, ap, warning_option_text (opt, pref));
 	} else {
-		print_error (x->source_file, x->source_line, _("note: "),
+		print_error (x->source_file, x->source_line, CB_KIND_NOTE,
 			fmt, ap, NULL);
 	}
 	va_end (ap);
@@ -752,10 +847,10 @@ cb_note (const enum cb_warn_opt opt, const int suppress_listing, const char *fmt
 	}
 	va_start (ap, fmt);
 	if (opt != COB_WARNOPT_NONE) {
-		print_error (NULL, 0, _("note: "),
+		print_error (NULL, 0, CB_KIND_NOTE,
 			fmt, ap, warning_option_text (opt, pref));
 	} else {
-		print_error (NULL, 0, _("note: "),
+		print_error (NULL, 0, CB_KIND_NOTE,
 			fmt, ap, NULL);
 	}
 	va_end (ap);
@@ -776,13 +871,13 @@ cb_error_x_internal (cb_tree x, const char *fmt, va_list ap)
 	}
 
 	if (!ignore_error) {
-		print_error (x->source_file, x->source_line, _("error: "),
+		print_error (x->source_file, x->source_line, CB_KIND_ERROR,
 			fmt, ap, NULL);
 	} else if (pref == COBC_WARN_AS_ERROR) {
-		print_error (x->source_file, x->source_line, _("error: "),
+		print_error (x->source_file, x->source_line, CB_KIND_ERROR,
 			fmt, ap, warning_option_text (opt, pref));
 	} else {
-		print_error (x->source_file, x->source_line, _("warning: "),
+		print_error (x->source_file, x->source_line, CB_KIND_WARNING,
 			fmt, ap, warning_option_text (opt, pref));
 		ret = COBC_WARN_ENABLED;
 	}

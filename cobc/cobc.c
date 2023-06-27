@@ -589,6 +589,7 @@ static const struct option long_options[] = {
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
 	{"use-extfh",		CB_RQ_ARG, NULL, 9},	/* this is used by COBOL-IT; Same is -fcallfh= */
+	{"fdiagnostics-plain-output",	CB_NO_ARG, NULL, '/'},
 	{"Wall",		CB_NO_ARG, NULL, 'W'},
 	{"Wextra",		CB_NO_ARG, NULL, 'Y'},		/* this option used to be called -W */
 #if 1
@@ -1505,7 +1506,7 @@ cobc_bcompare (const void *p1, const void *p2)
 enum name_error_reason {
 	INVALID_LENGTH = 1,
 	EMPTY_NAME,
-	SPACE_UNDERSCORE_FIRST_CHAR,
+	SPACE_HYPHEN_FIRST_CHAR,
 	GNUCOBOL_PREFIX,
 	C_KEYWORD,
 	CONTAINS_DIRECTORY_SEPARATOR
@@ -1525,8 +1526,8 @@ cobc_error_name (const char *name, const enum cobc_name_type type,
 	case EMPTY_NAME:
 		s = _(" - name cannot be empty");
 		break;
-	case SPACE_UNDERSCORE_FIRST_CHAR:
-		s = _(" - name cannot begin with space or underscore");
+	case SPACE_HYPHEN_FIRST_CHAR:
+		s = _(" - name cannot begin with space or hyphen");
 		break;
 	case GNUCOBOL_PREFIX:
 		s = _(" - name cannot begin with 'cob_' or 'COB_'");
@@ -1596,8 +1597,8 @@ cobc_check_valid_name (const char *name, const enum cobc_name_type prechk)
 	/* missing check (here): encoded length > internal buffer,
 	   see cob_encode_program_id */
 
-	if (*name == '_' || *name == ' ') {
-		cobc_error_name (name, prechk, SPACE_UNDERSCORE_FIRST_CHAR);
+	if (*name == '-' || *name == ' ') {
+		cobc_error_name (name, prechk, SPACE_HYPHEN_FIRST_CHAR);
 		return 1;
 	}
 
@@ -2218,14 +2219,15 @@ set_compile_date (void)
 {
 	static int sde_todo = 0;
 	if (sde_todo == 0) {
-		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		unsigned char  *s = (unsigned char *) getenv ("SOURCE_DATE_EPOCH");
 		sde_todo = 1;
 		if (s && *s) {
 			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
 				set_compile_date_tm ();
 				return;
 			}
-			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			cobc_err_msg (_("environment variable '%s' has invalid content"),
+				"SOURCE_DATE_EPOCH");
 			if (!cb_flag_syntax_only) {
 				cb_source_file = NULL;
 				cobc_abort_terminate (0);
@@ -3112,6 +3114,7 @@ process_command_line (const int argc, char **argv)
 			cob_optimize = 0;
 			strip_output = 0;
 			cb_constant_folding = 0;
+			cb_flag_remove_unreachable = 0;
 			copt = CB_COPT_0;
 			break;
 
@@ -3147,13 +3150,12 @@ process_command_line (const int argc, char **argv)
 			save_all_src = 1;
 			cb_source_debugging = 1;
 			cb_flag_stack_check = 1;
-			/* note: cb_flag_source_location and cb_flag_stack_extended
-			         are explicit not set here */
+			/* note: cb_flag_source_location, cb_flag_stack_extended and
+			         cb_flag_remove_unreachable are explicit not set here */
 #if 1		/* auto-included, may be disabled manually if needed */
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
 #endif
-			cb_flag_remove_unreachable = 0;
 #ifdef COB_DEBUG_FLAGS
 			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
 #endif
@@ -3456,6 +3458,12 @@ process_command_line (const int argc, char **argv)
 						cb_lines_per_page, 20);
 				cb_lines_per_page = 20;
 			}
+			break;
+
+		case '/':
+			/* -fdiagnostics-plain-output */
+			cb_diagnostics_show_caret = 0 ;
+			cb_diagnostics_show_line_numbers = 0;
 			break;
 
 		case 'P':
@@ -4372,7 +4380,7 @@ process_filename (const char *filename)
 #endif
 	}
 
-	cob_incr_temp_iteration();
+	cob_incr_temp_iteration ();
 	return fn;
 }
 
@@ -5424,7 +5432,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 }
 
 static void
-set_category_from_usage (int usage, char *type)
+set_category_from_usage (const enum cb_usage usage, char *type)
 {
 	switch (usage) {
 	case CB_USAGE_INDEX:
@@ -5450,7 +5458,8 @@ set_category_from_usage (int usage, char *type)
 }
 
 static void
-set_category (int category, int usage, char *type)
+set_category (const enum cb_category category, const enum cb_usage usage,
+	char *type)
 {
 	switch (category) {
 	case CB_CATEGORY_UNKNOWN:
@@ -5555,8 +5564,10 @@ print_fields (struct cb_field *top, int *found)
 		if (top->children) {
 			strcpy (type, "GROUP");
 			if (!top->external_definition) {
+				/* group never has a PICTURE ... */
 				got_picture = 0;
 			} else {
+				/* ...still output definitions for TYPEDEF / SAME AS */
 				got_picture = set_picture (top, picture, picture_len);
 			}
 		} else {
@@ -5567,7 +5578,7 @@ print_fields (struct cb_field *top, int *found)
 			got_picture = set_picture (top, picture, picture_len);
 		}
 
-		if (top->flag_any_length || top->flag_unbounded) {
+		if (top->flag_any_length || cb_field_has_unbounded (top)) {
 			pd_off = sprintf (print_data, "????? ");
 		} else if (top->flag_occurs && !got_picture) {
 			pd_off = sprintf (print_data, "%05d ", top->size * top->occurs_max);

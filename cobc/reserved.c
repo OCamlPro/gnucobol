@@ -2487,6 +2487,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "RIGHT-JUSTIFY",		0, 0, -1,			/* Extension */
 				0, 0
   },
+  { "RIGHTLINE",			0, 0, RIGHTLINE,		/* GC Extension mapping LEFTLINE extension */
+				0, 0
+  },
   { "RIMMED",			0, 1, RIMMED,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
@@ -3946,30 +3949,32 @@ struct list_reserved_line {
 
 /*
   Upper-casing for reserved words.
-  We use cob_lower_tab (C locale table) instead of toupper for efficiency.
+  We use cob_lower_tab (7bit C locale table) instead of toupper for efficiency.
 */
 static COB_INLINE COB_A_INLINE unsigned char
 res_toupper (unsigned char c)
 {
-	if (cob_lower_tab[c]) {
-		return cob_lower_tab[c];
+	const unsigned char tab_entry = cob_lower_tab[c];
+	if (tab_entry) {
+		return tab_entry;
 	}
 	return c;
 }
 
-/* Upper-casing for reserved words using efficient C locale table lookup. */
+/* Upper-casing for reserved words using efficient 7bit C locale table lookup. */
 unsigned char
 cb_toupper (const unsigned char c)
 {
 	return res_toupper (c);
 }
 
-/* Lower-casing for reserved words using efficient C locale table lookup. */
+/* Lower-casing for reserved words using efficient 7bit C locale table lookup. */
 unsigned char
 cb_tolower (const unsigned char c)
 {
-	if (cob_upper_tab[c]) {
-		return cob_upper_tab[c];
+	const unsigned char tab_entry = cob_upper_tab[c];
+	if (tab_entry) {
+		return tab_entry;
 	}
 	return c;
 }

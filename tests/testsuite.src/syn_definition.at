@@ -35,7 +35,9 @@ AT_CLEANUP
 
 
 AT_SETUP([Invalid PROGRAM-ID])
-AT_KEYWORDS([definition])
+AT_KEYWORDS([definition underscore hyphen ENTRY])
+
+# note: the name check is identical for the ENTRY statement
 
 AT_DATA([SHORT.cob], [
        IDENTIFICATION   DIVISION.
@@ -46,6 +48,39 @@ AT_DATA([SHORT.cob], [
 
 AT_CHECK([$COMPILE_ONLY SHORT.cob], [1], [],
 [SHORT.cob:3: error: invalid PROGRAM-ID 'short' - name duplicates a 'C' keyword
+])
+
+AT_DATA([SHORT2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      "_short".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY SHORT2.cob], [0], [], [])
+
+
+AT_DATA([SHORT3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      _short.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY SHORT3.cob], [1], [],
+[SHORT3.cob:3: error: invalid symbol '_' - skipping word
+SHORT3.cob:4: error: syntax error, unexpected DIVISION
+])
+
+AT_DATA([SHORT4.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      "-short".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY SHORT4.cob], [1], [],
+[SHORT4.cob:3: error: invalid PROGRAM-ID '-short' - name cannot begin with space or hyphen
 ])
 
 AT_CLEANUP
@@ -124,8 +159,7 @@ AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           DISPLAY X
-           END-DISPLAY.
+           DISPLAY X.
            STOP RUN.
 ])
 
@@ -146,8 +180,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY X IN G
-           END-DISPLAY.
+           DISPLAY X IN G.
            STOP RUN.
 ])
 
@@ -170,8 +203,7 @@ AT_DATA([prog.cob], [
          02 X           PIC X.
        01 Y             PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY Y IN G
-           END-DISPLAY.
+           DISPLAY Y IN G.
            STOP RUN.
 ])
 
@@ -423,7 +455,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Redefinition of 02 items])
-AT_KEYWORDS([definition])
+AT_KEYWORDS([definition redefines])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -435,9 +467,21 @@ AT_DATA([prog.cob], [
          02 X           PIC X.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:8: warning: redefinition of 'X'
-prog.cob:7: note: 'X' previously defined here
+# validation for #881 - error if redefinition on redefines
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X             PIC X.
+         02 X REDEFINES X PIC X.
+         02 Y             PIC 9.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [],
+[prog2.cob:8: warning: redefinition of 'X'
+prog2.cob:7: note: 'X' previously defined here
 ])
 
 AT_CLEANUP
@@ -813,8 +857,7 @@ AT_DATA([prog.cob], [
        01 G2.
          02 X           PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY X
-           END-DISPLAY.
+           DISPLAY X.
            STOP RUN.
 ])
 
@@ -839,8 +882,7 @@ AT_DATA([prog.cob], [
          02 X.
            03 X         PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY X
-           END-DISPLAY.
+           DISPLAY X.
            STOP RUN.
 ])
 
@@ -868,8 +910,7 @@ AT_DATA([prog.cob], [
          02 X.
            03 Y         PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY Y IN X
-           END-DISPLAY.
+           DISPLAY Y IN X.
            STOP RUN.
 ])
 
@@ -897,8 +938,7 @@ AT_DATA([prog.cob], [
          02 X.
            03 Z         PIC X VALUE "Z".
        PROCEDURE        DIVISION.
-           DISPLAY Z IN X NO ADVANCING
-           END-DISPLAY.
+           DISPLAY Z IN X NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2035,7 +2075,7 @@ AT_DATA([prog.cob], [
            03  i       PIC X.
            03  j       OCCURS 5 TIMES.
                05  k   PIC X.
-               05  l   PIC X.
+               05  l   PIC 9.
            03  m       PIC 9.
            03  n       POINTER, SYNC.
            03  o.
@@ -2116,12 +2156,12 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  MESSAGE-TEXT-2 EXTERNAL.
-         02 AUSGABE-FILE-NAME     PIC X(50).
+         02 AUSGABE-FILE-NAME   PIC X(50).
          02 FILLER REDEFINES AUSGABE-FILE-NAME.
-             05 FILLER PIC 9999.
+             05 FILLER          PIC 9999.
          02 AUSGABE-FILE-NAME-2.
-             05 FILLER PIC 9999.
-             05 DETAIL-NO PIC 9999.
+             05 FILLER          PIC 9999.
+             05 DETAIL-NO       PIC 9999.
          02 FILLER SAME AS AUSGABE-FILE-NAME.
       
        77 OUTPUT-NAME SAME AS DETAIL-NO GLOBAL.
@@ -2145,11 +2185,11 @@ AT_DATA([badprog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  MESSAGE-TEXT-2.
-         02 AUSGABE-FILE-NAME     PIC X(50).
-         02 F1 SAME AS MESSAGE-TEXT-2.
-       01 MT2 SAME AS MESSAGE-TEXT-2.
-             05 FILLER PIC 9999.
-       01 MT3 SAME AS MESSAGE-TEXT-2 PIC X.
+         02 AUSGABE-FILE-NAME                 PIC X(50).
+         02 F1         SAME AS MESSAGE-TEXT-2.
+       01 MT2          SAME AS MESSAGE-TEXT-2.
+             05 FILLER                        PIC 9999.
+       01 MT3          SAME AS MESSAGE-TEXT-2 PIC X.
        77 OUTPUT-NAME  SAME AS MESSAGE-TEXT-2.
 ])
 

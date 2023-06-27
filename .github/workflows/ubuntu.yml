@@ -9,6 +9,7 @@ on:
 
 jobs:
   build:
+    name: Build, test and provide nightly
     strategy:
       fail-fast: false
       matrix:
@@ -139,6 +140,7 @@ jobs:
 
 
   coverage:
+    name: Coverage and Warnings
     runs-on: ubuntu-latest
 
     steps:
@@ -159,10 +161,11 @@ jobs:
           export TERM="vt100"
           echo "TERM=$TERM" >> $GITHUB_ENV
 
+      # note: w add additional C compiler syntax checks here to not need _another_ CI run
       - name: configure
         run: |
           cd _build
-          ../configure --enable-code-coverage
+          ../configure --enable-code-coverage CPPFLAGS="-Werror=declaration-after-statement"
 
       - uses: actions/upload-artifact@v3
         if: failure()

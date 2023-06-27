@@ -982,10 +982,10 @@ AT_DATA([prog.cob], [
        01  x PIC 9(5).
 
        PROCEDURE DIVISION.
-           *> Ok
+      *> Ok
            INSPECT "abcde" TALLYING x FOR CHARACTERS CHARACTERS
        
-           *> Not ok
+      *> Not ok
            INSPECT "abcde" TALLYING x FOR ALL LEADING
                TRAILING ALL ALL ALL TRAILING
            INSPECT "abcde" TALLYING x FOR x FOR LEADING "a"
@@ -2487,7 +2487,6 @@ prog.cob:17: error: 'handle' is not defined, but is a reserved word in another d
 prog.cob:19: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:20: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:21: error: 'handle' is not defined, but is a reserved word in another dialect
-prog.cob:15: error: PICTURE clause required for 'unused-thread'
 prog.cob: in paragraph 'MAIN':
 prog.cob:35: error: 'handle IN mywindow' is not defined
 prog.cob:34: error: invalid expression
@@ -2654,12 +2653,11 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [0], [],
 [prog.cob:16: warning: GRAPHICAL CONTROL is not implemented
-prog.cob:21: warning: COLOR clause is not implemented
+prog.cob:21: warning: COLOR clause (SCREEN) is not implemented
 prog.cob:23: warning: LINES clause is not implemented
 prog.cob:26: warning: screen positions from data-item is not implemented
 prog.cob: in paragraph 'MAIN':
 prog.cob:36: warning: GRAPHICAL WINDOW is not implemented
-prog.cob:42: warning: COLOR is not implemented
 prog.cob:53: warning: GRAPHICAL WINDOW is not implemented
 ])
 
@@ -3546,49 +3544,49 @@ AT_KEYWORDS([misc reserved words])
 # note: currently not checked - should all be seen before first IDENTIFICATION DIVISION
 
 AT_DATA([prog.cob], [
-           *> Valid
+      *> Valid
            >>COBOL-WORDS RESERVE "CAT"
-           *> Valid (GC-extension)
+      *> Valid (GC-extension)
            >>COBOL-WORDS RESERVE  "doggy" "catty" "mouse"
-           *> Valid
+      *> Valid
            >>COBOL-WORDS EQUATE "VALUE" WITH "VA"
-           *> Invalid - Bread is not reserved.
+      *> Invalid - Bread is not reserved.
            >>COBOL-WORDS EQUATE "BREAD" WITH "BARA"
-           *> Invalid - ID is already reserved
+      *> Invalid - ID is already reserved
            >>COBOL-WORDS EQUATE "IDENTIFICATION" WITH "ID"
 
-           *> Valid, BREAD is not reserved.
+      *> Valid, BREAD is not reserved.
            >>COBOL-WORDS SUBSTITUTE "program" BY "bread"
-           *> Valid (GC-extension)
+      *> Valid (GC-extension)
            >>COBOL-WORDS SUBSTITUTE "DIVISION" BY "DIV", "JUST" BY "JS"
-           *> Invalid - Bread is not reserved.
+      *> Invalid - Bread is not reserved.
            >>COBOL-WORDS SUBSTITUTE "BREAD" BY "BARA"
-           *> Invalid - ID is already reserved
+      *> Invalid - ID is already reserved
            >>COBOL-WORDS SUBSTITUTE "IDENTIFICATION" BY "ID"
-           *> Invalid - needs BY, not WITH
-           *> FIXME: error-recovery is bad, see below
-           *> >>COBOL-WORDS SUBSTITUTE "INITIALIZE" WITH "INIT"
+      *> Invalid - needs BY, not WITH
+      *> FIXME: error-recovery is bad, see below
+      *> >>COBOL-WORDS SUBSTITUTE "INITIALIZE" WITH "INIT"
 
-           *> Valid
+      *> Valid
            >>COBOL-WORDS UNDEFINE "BREAD"
-           *> Valid (GC-extension)
+      *> Valid (GC-extension)
            >>COBOL-WORDS UNDEFINE "DOGGY" "CATTY"
-           *> Invalid in Standard COBOL, must be a defined word
+      *> Invalid in Standard COBOL, must be a defined word
            >>COBOL-WORDS UNDEFINE "BREAD"
            
-           *> FIXME: error-recovery is bad, see below
-           *>>COBOL-WORDS REMOVE "BREAD"
+      *> FIXME: error-recovery is bad, see below
+      *>>COBOL-WORDS REMOVE "BREAD"
 
        IDENTIFICATION DIV.
        PROGRAM-ID. prog.
 
        DATA DIV.
        WORKING-STORAGE SECTION.
-       *> Check EQUATE and SUBSTITUTE work correctly
+      *> Check EQUATE and SUBSTITUTE work correctly
        01  just PIC XX VA "1" JS.
-       *> Check RESERVE
+      *> Check RESERVE
        01  cat PIC 9 VA 1.
-       *> Check UNDEFINE
+      *> Check UNDEFINE
        01  dog PIC 9 VA 1.
 ])
 
@@ -3620,31 +3618,31 @@ AT_KEYWORDS([misc extensions ADDRSV ADDSYN MAKESYN OVERRIDE REMOVE])
 # note: currently not checked - should all be seen before first IDENTIFICATION DIVISION
 
 AT_DATA([prog.cob], [
-           *> Valid
+      *> Valid
            $SET ADDRSV"DOG""CAT"
            $SET ADD-RSV  "doggy" "catty"
-           *> Valid
+      *> Valid
            $SET ADD-SYN "VALUE" = "VA"
-           *> Invalid - Bread is not reserved.
+      *> Invalid - Bread is not reserved.
            $SET ADDSYN "BREAD" = "BARA"
-           *> Invalid - ID is already reserved
+      *> Invalid - ID is already reserved
            $SET ADDSYN "IDENTIFICATION" = "ID"
 
-           *> Valid
+      *> Valid
            $SET MAKESYN(PROGRAM) = (FUNCTION)
-           *> Invalid - BREAD is not reserved.
+      *> Invalid - BREAD is not reserved.
            $SET MAKESYN "BREAD" = "PROGRAM"
            $SET MAKE-SYN "program" = "bread"
 
-           *> Valid
+      *> Valid
            $SET OVERRIDE "DIVISION" = "DIV" "JUST" = "JS"
-           *> Invalid - Bread is not reserved
+      *> Invalid - Bread is not reserved
            $SET OVERRIDE "BREAD" = "BARA"
-           *>Invalid - ID is already reserved; note: MF documents this rule but
-           *>  does not check it and applies the line; we do it better on purpose :-)
+      *>Invalid - ID is already reserved; note: MF documents this rule but
+      *>  does not check it and applies the line; we do it better on purpose :-)
            $SET OVERRIDE "IDENTIFICATION" = "ID"
 
-           *> Valid - note: MF rules does allow reserving not reserved words
+      *> Valid - note: MF rules does allow reserving not reserved words
            $SET REMOVE "BREAD" (BARA)REMOVE(DOG)
 
        IDENTIFICATION DIV.
@@ -3652,11 +3650,11 @@ AT_DATA([prog.cob], [
 
        DATA DIV.
        WORKING-STORAGE SECTION.
-       *> Check ADDSYN and OVERRIDE work correctly
+      *> Check ADDSYN and OVERRIDE work correctly
        01  just PIC XX VA "1" JS.
-       *> Check ADDRSV
+      *> Check ADDRSV
        01  cat PIC 9 VA 1.
-       *> Check REMOVE
+      *> Check REMOVE
        01  dog PIC 9 VA 1.
 ])
 
@@ -3681,9 +3679,9 @@ AT_KEYWORDS([misc])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
-       *> Valid
+      *> Valid
        >> TURN ec-i-o f CHECKING ON
-       *> Invalid
+      *> Invalid
        >> TURN dd CHECKING ON
        >> TURN ec-all f CHECKING ON
        >> TURN EC-I-O-invalid-KEY not-exist CHECKING OFF
@@ -3971,7 +3969,7 @@ AT_XFAIL_IF([true])
 # needs updating
 
 AT_DATA([prog.cob], [
-       *> Prototype and definition have different signatures.
+      *> Prototype and definition have different signatures.
        IDENTIFICATION DIVISION.
        FUNCTION-ID. invalid-1 PROTOTYPE.
 
@@ -3992,7 +3990,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION USING x returning y.
        END FUNCTION invalid-1.
 
-       *> Prototype and definition have different signatures.
+      *> Prototype and definition have different signatures.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. invalid-2 PROTOTYPE.
        DATA DIVISION.
@@ -4001,7 +3999,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION USING x.
        END PROGRAM invalid-2.
 
-       *> Prototype and definition have matching signatures.
+      *> Prototype and definition have matching signatures.
        IDENTIFICATION DIVISION.
        FUNCTION-ID. valid-1 PROTOTYPE.
 
@@ -4063,7 +4061,7 @@ AT_DATA([prog.cob], [
            .
        END FUNCTION valid-1.
 
-       *> Prototypes must be at start of compilation group.
+      *> Prototypes must be at start of compilation group.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. invalid-3.
 
@@ -5626,14 +5624,14 @@ AT_DATA([prog.cob], [
        data division.
        working-storage section.
        01  item-01.
-           05  item-05-a       pointer.
-           05  item-05-b       pic x(01).
-       01 myk-01 constant global as length of item-01.
-       01 myk-02 constant is global as length item-05-a.
-       01 myk-03 constant global as length of pointer. *> extension
-       01 myk-04 constant global as byte-length of item-01.
+           05  item-05-a     pointer.
+           05  item-05-b     pic x(01).
+       01 myk-01 constant           as      length of item-01.
+       01 myk-02 constant is global as      length item-05-a.
+       01 myk-03 constant    global as      length of pointer. *> extension
+       01 myk-04 constant    global as byte-length of item-01.
        01 myk-05 constant is global as byte-length item-05-a.
-       01 myk-06 constant global as byte-length of pointer. *> extension
+       01 myk-06 constant           as byte-length of pointer. *> extension
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -5649,12 +5647,12 @@ AT_DATA([prog.cob], [
 
        DATA           DIVISION.
        LINKAGE        SECTION.
-       *> Valid
+      *> Valid
        01  valid-1    PIC X ANY LENGTH.
        01  valid-2    PIC N ANY LENGTH.
        01  valid-3    PIC 9 ANY NUMERIC.
 
-       *> Invalid
+      *> Invalid
        01  invalid-1  PIC A ANY LENGTH.
        01  invalid-2  PIC Z ANY LENGTH.
        01  invalid-3  PIC 9 ANY LENGTH.
@@ -5734,10 +5732,10 @@ AT_SETUP([SET SOURCEFORMAT syntax checks])
 AT_KEYWORDS([misc extensions source directives])
 
 AT_DATA([prog.cob], [
-       *> Valid
+      *> Valid
        $set sourceformat(free)
        $  SET SOURCEFORMAT"FIXED"
-       *> Invalid
+      *> Invalid
        $SET SOURCEFORMAT"hi!"
        $SET SOURCEFORMAT()
        $SET sourceformat'mis-matched"
@@ -6134,113 +6132,113 @@ AT_DATA([prog.cob], [
            03  with-attrs-child PIC X.
 
        PROCEDURE DIVISION.
-           *> Receiving area is not alphanumeric or national.
+      *> Receiving area is not alphanumeric or national.
            XML GENERATE bool-item FROM str
-           *> Receiving area is JUSTIFIED RIGHT.
+      *> Receiving area is JUSTIFIED RIGHT.
            XML GENERATE just-item FROM str
-           *> Receiving area is subscripted or ref-mod'd.
+      *> Receiving area is subscripted or ref-mod'd.
            XML GENERATE table-entry (1) FROM str
            XML GENERATE long-str (1:100) FROM str
 
-           *> Input record cannot be function identifier.
+      *> Input record cannot be function identifier.
            XML GENERATE long-str FROM FUNCTION CHAR(4)
-           *> Input record cannot be ref-mod'd.
+      *> Input record cannot be ref-mod'd.
            XML GENERATE long-str FROM str (2:1)
-           *>  "       "   is not RENAMES (children may be RENAMES).
+      *>  "       "   is not RENAMES (children may be RENAMES).
            XML GENERATE long-str FROM renames-item
-           *> Non-ignored items of the input record must:
-           *>  * alphabetic, alphanumeric, national, numeric or index.
-           *>  * there must be at least one item.
-           *>  * each non-FILLER name must be unique within the input record.
+      *> Non-ignored items of the input record must:
+      *>  * alphabetic, alphanumeric, national, numeric or index.
+      *>  * there must be at least one item.
+      *>  * each non-FILLER name must be unique within the input record.
            XML GENERATE long-str FROM invalid-sub-elt-rec *> XXXXXXXXX ptr element is invalid
            XML GENERATE long-str FROM all-filler-rec
 
-           *> COUNT IN field must be an integer.
+      *> COUNT IN field must be an integer.
            XML GENERATE long-str FROM str COUNT float-item
-           *> COUNT IN field must not have P in PIC.
+      *> COUNT IN field must not have P in PIC.
            XML GENERATE long-str FROM str COUNT pic-p-item
 
-           *> ENCODING codepage must be unsigned integer.
-           *> If receiving area is national, codepage must be 1200.
-           *> "        "       "   alphanumeric, codepage must be 1208 or EBCDIC
-           *>   page supported with XML.
+      *> ENCODING codepage must be unsigned integer.
+      *> If receiving area is national, codepage must be 1200.
+      *> "        "       "   alphanumeric, codepage must be 1208 or EBCDIC
+      *>   page supported with XML.
 
-           *> WITH ATTRIBUTES, generated immediate children must be
-           *>  * elementary
-           *>  * be non-FILLER
-           *>  * not be OCCURS
-           *>  * not be subject of a TYPE phrase.
+      *> WITH ATTRIBUTES, generated immediate children must be
+      *>  * elementary
+      *>  * be non-FILLER
+      *>  * not be OCCURS
+      *>  * not be subject of a TYPE phrase.
            XML GENERATE long-str FROM with-attrs-does-nothing
                WITH ATTRIBUTES
                TYPE OF with-attrs-child IS ELEMENT
 
-           *> NAMESPACE must be a valid URI.
+      *> NAMESPACE must be a valid URI.
            XML GENERATE long-str FROM str NAMESPACE "<>"
-           *> NAMESPACE and -PREFIX must be alphanumeric or national.
+      *> NAMESPACE and -PREFIX must be alphanumeric or national.
            XML GENERATE long-str FROM str
               NAMESPACE bool-item NAMESPACE-PREFIX bool-item
-           *>   "        "     "    may not be figurative constants.
+      *>   "        "     "    may not be figurative constants.
            XML GENERATE long-str FROM str
                NAMESPACE SPACES NAMESPACE-PREFIX QUOTES
-           *> NAMESPACE-PREFIX must be a valid XML name.
+      *> NAMESPACE-PREFIX must be a valid XML name.
            XML GENERATE long-str FROM str
                NAMESPACE "http://www.w3.org/xml" NAMESPACE-PREFIX X"00"
 
-           *> NAME items must reference input record or its children.
+      *> NAME items must reference input record or its children.
            XML GENERATE long-str FROM rec
                NAME OF child-1 IS "c1", long-str IS "c2", rec IS "r"
-           *> NAME items cannot be reference modified or subscripted.
+      *> NAME items cannot be reference modified or subscripted.
            XML GENERATE long-str FROM rec
                NAME OF child-1 (1:2) IS "c1"
-           *> NAME items may not be ignored by the statement.
+      *> NAME items may not be ignored by the statement.
            XML GENERATE long-str FROM rec
                NAME OF child-1a IS "c1a"
-           *> NAME literals must be valid XML names.
+      *> NAME literals must be valid XML names.
            XML GENERATE long-str FROM rec
                NAME OF child-1 IS X"00"
 
-           *> TYPE items must be elementary and children of input record.
+      *> TYPE items must be elementary and children of input record.
            XML GENERATE long-str FROM rec
                TYPE OF child-3 IS ELEMENT, long-str IS CONTENT,
                    rec IS CONTENT
-           *> TYPE items cannot be ref-mod'd or subscripted.
+      *> TYPE items cannot be ref-mod'd or subscripted.
            XML GENERATE long-str FROM rec
                TYPE OF child-1 (1:3) IS ATTRIBUTE,
                    child-3-1 (1) IS CONTENT
-           *> TYPE items may not be ignored by the statement
+      *> TYPE items may not be ignored by the statement
            XML GENERATE long-str FROM rec
                TYPE OF child-1a IS ELEMENT
-           *> TYPE ATTRIBUTE items must satisfy the conditions for WITH
-           *>  ATTRIBUTES. (Covered by the above.)
+      *> TYPE ATTRIBUTE items must satisfy the conditions for WITH
+      *>  ATTRIBUTES. (Covered by the above.)
 
-           *> SUPPRESS WHEN items must be:
-           *>  * elementary
-           *>  * not ignored
-           *>  * child of input record.
+      *> SUPPRESS WHEN items must be:
+      *>  * elementary
+      *>  * not ignored
+      *>  * child of input record.
            XML GENERATE long-str FROM rec
                SUPPRESS child-3 WHEN SPACES, child-1a WHEN SPACES,
                    rec WHEN SPACES
-          *> All SUPPRESS items must not be functions
+      *> All SUPPRESS items must not be functions
            XML GENERATE long-str FROM rec
                SUPPRESS FUNCTION CHAR(5) WHEN SPACE
-           *> All SUPPRESS items must not be ref-mod'd or subscripted.
+      *> All SUPPRESS items must not be ref-mod'd or subscripted.
            XML GENERATE long-str FROM rec
                SUPPRESS child-1 (1:3) WHEN ZERO,
                    child-3-1 (1) WHEN SPACES
-           *> If non-WHEN SUPPRESS items may be groups. (No error message here.)
+      *> If non-WHEN SUPPRESS items may be groups. (No error message here.)
            XML GENERATE long-str FROM rec SUPPRESS child-3
-           *> If SUPPRESS WHEN ZEROES, item is not DISPLAY-1.
-           *> If SUPPRESS WHEN SPACES, item must be USAGE DISPLAY, DISPLAY-1 or
-           *>   NATIONAL
+      *> If SUPPRESS WHEN ZEROES, item is not DISPLAY-1.
+      *> If SUPPRESS WHEN SPACES, item must be USAGE DISPLAY, DISPLAY-1 or
+      *>   NATIONAL
            XML GENERATE long-str FROM bool-area
                SUPPRESS bool-item WHEN SPACES
-           *> If SUPPRESS WHEN LOW-/HIGH-VALUES, item must be USAGE DISPLAY or
-           *>   NATIONAL. If item is a zoned/national decimal item, it must be
-           *>   an integer.
+      *> If SUPPRESS WHEN LOW-/HIGH-VALUES, item must be USAGE DISPLAY or
+      *>   NATIONAL. If item is a zoned/national decimal item, it must be
+      *>   an integer.
            XML GENERATE long-str FROM bool-area
                SUPPRESS bool-item WHEN LOW-VALUES,
                    zoned-decimal WHEN HIGH-VALUE
-           *> (For generic WHEN phrases, invalid items above are ignored.)
+      *> (For generic WHEN phrases, invalid items above are ignored.)
            GOBACK.
 ])
 
@@ -6532,10 +6530,10 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:32: error: table SORT requires KEY phrase
-prog.cob:35: error: file sort requires USING or INPUT PROCEDURE
-prog.cob:35: error: file sort requires GIVING or OUTPUT PROCEDURE
-prog.cob:37: error: file sort requires KEY phrase
-prog.cob:38: error: file sort requires KEY phrase
+prog.cob:35: error: file SORT requires USING or INPUT PROCEDURE
+prog.cob:35: error: file SORT requires GIVING or OUTPUT PROCEDURE
+prog.cob:37: error: file SORT requires KEY phrase
+prog.cob:38: error: file SORT requires KEY phrase
 ])
 AT_CLEANUP
 
@@ -7767,7 +7765,7 @@ AT_KEYWORDS([gcos])
 AT_DATA([prog.cob], [
        CONTROL          DIVISION.
        SUBSTITUTION     SECTION.
-       *> This REPLACE in Area A is ignored for now:
+      *> This REPLACE in Area A is ignored for now:
           REPLACE IISS BY IS
                   TERM BY TERMINAL
                   "KO" BY "OK".
@@ -7805,8 +7803,8 @@ AT_DATA([prog_extraneous_depending.cob], [
        PROGRAM-ID.      prog_extraneous_depending.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       1 L		COMP-1.
-       1 F-DAT		PICTURE X(10) DEPENDING ON L.
+       1 L              COMP-1.
+       1 F-DAT          PICTURE X(10) DEPENDING ON L.
        PROCEDURE        DIVISION.
            MOVE SPACES TO F-DAT
            STOP RUN.
@@ -7820,7 +7818,7 @@ AT_DATA([prog_missing_depending.cob], [
        PROGRAM-ID.      prog_missing_depending.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       1 F-DAT		PICTURE LX(10).
+       1 F-DAT          PICTURE LX(10).
        PROCEDURE        DIVISION.
            MOVE SPACES TO F-DAT
            STOP RUN.
@@ -7854,12 +7852,12 @@ AT_DATA([prog_errs.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        1 W-LGS.
-         2 LGS		PICTURE X(10).
+         2 LGS          PICTURE X(10).
        1 W-DATA.
-         2 L-DAT	PICTURE LX(10) DEPENDING ON LGS.
-	 2 L-ERR1       PICTURE L9 DEPENDING ON LGS.
-	 2 L-ERR2       PICTURE XXXXLA(2) DEPENDING ON LGS.
-	 2 L-ERR3       PICTURE LX(1) DEPENDING ON LGS JUSTIFIED.
+         2 L-DAT        PICTURE LX(10)    DEPENDING ON LGS.
+         2 L-ERR1       PICTURE L9        DEPENDING ON LGS.
+         2 L-ERR2       PICTURE XXXXLA(2) DEPENDING ON LGS.
+         2 L-ERR3       PICTURE LX(1)     DEPENDING ON LGS JUSTIFIED.
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
@@ -7870,6 +7868,8 @@ prog_errs.cob:11: error: L must be at start of PICTURE string
 prog_errs.cob:11: error: L cannot follow A or X
 prog_errs.cob:11: error: only USAGE DISPLAY may specify a variable-length PICTURE
 prog_errs.cob:12: error: 'L-ERR3' cannot have JUSTIFIED RIGHT clause
+prog_errs.cob:9: error: 'LGS' is not numeric
+prog_errs.cob:12: error: 'LGS' is not numeric
 ])
 
 AT_DATA([prog.cob], [
@@ -7877,8 +7877,8 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       1 LGS		PICTURE X(10).
-       1 L-DAT		PICTURE LX(10) DEPENDING ON LGS.
+       1 LGS            PICTURE 9(10).
+       1 L-DAT          PICTURE LX(10) DEPENDING ON LGS.
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
