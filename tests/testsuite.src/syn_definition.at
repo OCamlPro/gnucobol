@@ -319,9 +319,10 @@ prog.cob:30: error: syntax error, unexpected Identifier
 prog.cob:36: error: 'NOT-DEFINED' is not defined
 prog.cob:42: error: syntax error, unexpected ELSE
 prog.cob:42: error: syntax error, unexpected Identifier
-prog.cob:42: error: invalid expression
+prog.cob:42: error: incomplete expression
 prog.cob:47: error: 'broken' is not defined
 ])
+
 AT_CLEANUP
 
 

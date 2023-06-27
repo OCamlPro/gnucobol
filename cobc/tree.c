@@ -6046,16 +6046,20 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 	case ']':
 		/* Relational operators */
 		rel_bin_op = 1;
+#if 0	/* note: already tested in the parser with (check_not_88_level) */
 		if ((CB_REF_OR_FIELD_P (x))
 		 && CB_FIELD_PTR (x)->level == 88) {
-			cb_error_x (e, _("invalid expression"));
+			/* because this code is not active and the translation would be new,
+			   we don't have that gettextized */
+			cb_error_x (e, "invalid expression: conditional on the left of numeric operator");
 			return cb_error_node;
 		}
 		if ((CB_REF_OR_FIELD_P (y))
 		 && CB_FIELD_PTR (y)->level == 88) {
-			cb_error_x (e, _("invalid expression"));
+			cb_error_x (e, "invalid expression: conditional on the right of numeric operator");
 			return cb_error_node;
 		}
+#endif
 
 		if (x == cb_zero) {
 			xl = CB_LITERAL(cb_zero_lit);
@@ -6281,7 +6285,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				cb_error_x (e, _("invalid expression: %s %s %s"),
 					llit, explain_operator (op), rlit);
 			} else {
-				cb_error_x (e, _("invalid expression"));
+				cb_error_x (e, _("invalid expression: boolean expected with logical operator"));
 			}
 			return cb_error_node;
 		}
