@@ -321,6 +321,16 @@ cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
 int cb_flag_alt_ebcdic = 0;
 
+typedef struct s_line_file {
+	char				*line;
+	struct s_line_file	*next;
+}				t_line_file;
+
+typedef struct s_data_replace {
+	t_line_file	*firstline_replace;
+	t_line_file	*lastline_replace;
+	int			last_char;
+}				t_data_replace;
 
 /* Basic memory structure */
 struct cobc_mem_struct {
@@ -6647,7 +6657,7 @@ get_word (char *str)
 	if (!str) {
 		return NULL;
 	}
-	while (str[i] && isspace (str[i])) {
+	while (str[i] && (isspace (str[i]) || str[i] == ',' || str[i] == '.' || str[i] == ';')) {
 		++i;
 	}
 	if (str[i]) {
@@ -6667,7 +6677,7 @@ get_next_word (char *str)
 	while (str[i] && !isspace (str[i])) {
 		++i;
 	}
-	while (str[i] && isspace (str[i])) {
+	while (str[i] && (isspace (str[i]) || str[i] == ',' || str[i] == '.' || str[i] == ';')) {
 		++i;
 	}
 	if (str[i]) {
@@ -7736,6 +7746,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 				line_file = head_line_file;
 				search_end_replace (line_file, cfile);
 			}
+
 			line_file = head_line_file;
 
 			line_num = 1;
