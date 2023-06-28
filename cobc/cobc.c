@@ -289,6 +289,16 @@ cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
 int cb_flag_alt_ebcdic = 0;
 
+typedef struct s_line_file {
+	char				*line;
+	struct s_line_file	*next;
+}				t_line_file;
+
+typedef struct s_data_replace {
+	t_line_file	*firstline_replace;
+	t_line_file	*lastline_replace;
+	int			last_char;
+}				t_data_replace;
 
 /* Basic memory structure */
 struct cobc_mem_struct {
@@ -6489,7 +6499,7 @@ get_word (char *str)
 	if (!str) {
 		return NULL;
 	}
-	while (str[i] && isspace (str[i])) {
+	while (str[i] && (isspace (str[i]) || str[i] == ',' || str[i] == '.' || str[i] == ';')) {
 		++i;
 	}
 	if (str[i]) {
@@ -6509,7 +6519,7 @@ get_next_word (char *str)
 	while (str[i] && !isspace (str[i])) {
 		++i;
 	}
-	while (str[i] && isspace (str[i])) {
+	while (str[i] && (isspace (str[i]) || str[i] == ',' || str[i] == '.' || str[i] == ';')) {
 		++i;
 	}
 	if (str[i]) {
@@ -6545,7 +6555,7 @@ is_comment_line (char *line, int fixed)
 	}
 }
 
-static void
+static COB_INLINE COB_A_INLINE void
 abort_if_too_many_continuation_lines (int pline_cnt, const char *filename, int line_num)
 {
 	if (pline_cnt >= CB_READ_AHEAD) {
@@ -6555,7 +6565,7 @@ abort_if_too_many_continuation_lines (int pline_cnt, const char *filename, int l
 	}
 }
 
-static void
+static COB_INLINE COB_A_INLINE void
 cleanup_copybook_reference (struct list_files *cur)
 {
 	if (cur->name) {
@@ -6574,9 +6584,6 @@ print_fixed_line (const int line_num, char pch, char *line)
 	const int	indicator = cobc_get_indicator ();
 	const int	text_column = cobc_get_text_column ();
 
-	if (!line) {
-		return ;
-	}
 	len  = strlen (line);
 	if (line[indicator] == '&') {
 		line[indicator] = '-';
@@ -7198,12 +7205,12 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 	int	quotes[2] = {0, 0};
 	struct list_replace	*rep;
 	t_data_replace data_replace;
+	int	deb_line = -1;
 
 	j = 0;
 	i = line_num;
 	lastline_line_num = line_num;
 
-	int	deb_line = -1;
 	/* loop char */
 	while (line_file->line && line_file->line[j]) {
 		deb_line++;
@@ -7225,9 +7232,10 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 				if (data_replace.last_char != -1)
 				{
 					/* count quotes all lines except the last line */
+					t_line_file *bck_line = line_file;
+
 					tmp_j = j;
 					tmp_i = i;
-					t_line_file *bck_line = line_file;
 
 					while (line_file && line_file != data_replace.lastline_replace) {
 						while (line_file->line[++j]) {
@@ -7535,15 +7543,18 @@ print_program_code (struct list_files *cfile, int in_copy)
 	if (fd != NULL) {
 		abort_if_too_many_continuation_lines (pline_cnt, cfile->name, line_num);
 		if (get_next_listing_line (fd, &pline[pline_cnt], fixed) >= 0) {
+			char space[2] = {' ', 0};
+			t_line_file *next;
+
 			do {
+				char	cmp_line[CB_LINE_LENGTH + 2];
+				int	first_col = fixed ? cobc_get_margin_a (1) : 0;
+
 				abort_if_too_many_continuation_lines (pline_cnt, cfile->name, line_num);
 				if (get_next_listing_line (fd, &pline[pline_cnt + 1], fixed) < 0) {
 					eof = 1;
 				}
 				++pline_cnt;
-
-				char	cmp_line[CB_LINE_LENGTH + 2];
-				int	first_col = fixed ? cobc_get_margin_a (1) : 0;
 
 				memset (cmp_line, 0, CB_LINE_LENGTH + 2);
 				compare_prepare (cmp_line, pline, 0, 1, first_col, fixed);
@@ -7571,13 +7582,13 @@ print_program_code (struct list_files *cfile, int in_copy)
 				line_file = head_line_file;
 				search_end_replace (line_file, cfile);
 			}
+
 			line_file = head_line_file;
 
 			line_num = 1;
 			i = 0;
 			pline_cnt = 0;
 
-			char space[2] = {' ', 0};
 			/* search replacement and print */
 			while (i < line_replace) {
 				pline_cnt++;
@@ -7613,8 +7624,6 @@ print_program_code (struct list_files *cfile, int in_copy)
 			line_file = head_line_file;
 
 			/* free pline_replace */
-			t_line_file *next;
-
 			while (line_file) {
 				cobc_free (line_file->line);
 				line_file->line = NULL;
