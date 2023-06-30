@@ -1,4 +1,11 @@
 
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* config.def: new dialect configuration option init-justify
+	* codegen.c (output_initialize_to_value): added support for right
+	  justification when cb_initial_justify is on
+
 2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* pplex.l (get_word): fix an overflow with words exceeding the

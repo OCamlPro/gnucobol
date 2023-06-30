@@ -245,7 +245,7 @@ NEWS - user visible changes				-*- outline -*-
    affected programs (with OCCURS DEPENDING ON) or compile with additional
    -fno-odoslide to get the same results as with older GnuCOBOL versions
 
-** the compile flag -fdefaultbyte (initializarion for data-items without
+** the compile flag -fdefaultbyte (initialization for data-items without
    an explicit VALUE) was moved to a dialect configuration;
    while -fdefaultbyte still works as before it is now implied as binary
    zero with -std=ibm/mvs/bs2000/realia, space for -std=mf/acu/rm, and
@@ -254,6 +254,10 @@ NEWS - user visible changes				-*- outline -*-
    for compatibility to previous behavior compile with -fdefaultbyte=init;
    note that initialization for INDEXED BY items honors the defaultbyte
    configuration now, too
+
+** new dialect init-justified that applies right justification by JUSTIFIED
+   clause for VALUE clause; this is applied to IBM dialects, if you want
+   the previous behavior compile with -fno-init-justified
 
 ** the dialect configuration option larger-redefines-ok was replaced by
    the support option larger-redefines; if specified on the command-line

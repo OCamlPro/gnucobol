@@ -5034,6 +5034,14 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 
 	if ((int)l->size >= (int)size) {
 		memcpy (litbuff, l->data, (size_t)size);
+		if (f->flag_justified && cb_initial_justify) {
+			memcpy (litbuff, l->data + (size_t)l->size - (size_t)size, (size_t)size);
+		} else {
+			memcpy (litbuff, l->data, (size_t)size);
+		}
+	} else if (f->flag_justified && cb_initial_justify) {
+		memset (litbuff, ' ', (size_t)size - l->size);
+		memcpy (litbuff + l->size, l->data, (size_t)l->size);
 	} else {
 		memcpy (litbuff, l->data, (size_t)l->size);
 		memset (litbuff + l->size, ' ', (size_t)size - l->size);
