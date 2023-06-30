@@ -3670,6 +3670,222 @@ AT_CHECK([$COBCRUN_DIRECT ./native], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([JUSTIED and VALUE clauses])
+AT_KEYWORDS([runmisc JUST INITIALIZE ibm])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ARR-ARRAY.
+           03  ARR-ENTRY       OCCURS 6 TIMES.
+               05 ARR-FLD1             PIC X(10)
+                   VALUE 'RIGHT' JUSTIFIED RIGHT.
+               05 ARR-FLD2             PIC X(10)
+                   VALUE 'LEFT'.
+               05  ARR-FLD3        OCCURS 6 TIMES.
+                   10 ARR-FLD4             PIC X(10)
+                       VALUE 'RIGHT' JUSTIFIED RIGHT.
+                   10 ARR-FLD5             PIC X(10)
+                       VALUE 'LEFT'.
+
+       01  CNTR                        PIC S9(4)  COMP.
+       01  CNTR2                       PIC S9(4)  COMP.
+
+       77  ELE                         PIC X(10)
+                   VALUE 'RIGHT' JUSTIFIED RIGHT.
+
+       PROCEDURE DIVISION.
+
+           >>IF JUSTIFY EQUAL 'JUSTIFY'
+               PERFORM 1000-JUSTIFY-IS-RIGHT THRU 1000-EXIT.
+           >>ELSE
+               PERFORM 2000-JUSTIFY-IS-OFF   THRU 2000-EXIT.
+           >>END-IF
+
+           STOP RUN.
+
+
+       1000-JUSTIFY-IS-RIGHT.
+
+           IF ELE NOT EQUAL '     RIGHT'
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           MOVE ALL 'X'                TO ARR-ARRAY.
+           MOVE ALL 'X'                TO ELE.
+
+           INITIALIZE ELE       WITH FILLER ALL TO VALUE.
+           INITIALIZE ARR-ARRAY WITH FILLER ALL TO VALUE.
+
+           IF ELE NOT EQUAL '     RIGHT'
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+       1000-EXIT.  EXIT.
+
+
+       2000-JUSTIFY-IS-OFF.
+
+           IF ELE NOT EQUAL 'RIGHT     '
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           MOVE ALL 'X'                TO ARR-ARRAY.
+           MOVE ALL 'X'                TO ELE.
+
+           INITIALIZE ELE       WITH FILLER ALL TO VALUE.
+           INITIALIZE ARR-ARRAY WITH FILLER ALL TO VALUE.
+
+           IF ELE NOT EQUAL 'RIGHT     '
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+       2000-EXIT.  EXIT.
+
+
+       END PROGRAM PROG.
+
+])
+
+AT_CHECK([$COMPILE -std=ibm -DJUSTIFY=JUSTIFY -o prog  prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE -std=cobol2014 -DJUSTIFY=OFF -o prog  prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SEARCH ALL: table with default COLLATING SEQUENCE])
 AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
 
@@ -6772,7 +6988,7 @@ AT_CLEANUP
 
 # Simon added the test with r4592 as "COMP-3 Index", but
 # the revision and the ones before had no relation to this at all
-# and as the tests seem to be done in other places... disabld 
+# and as the tests seem to be done in other places... disabled
 # the test
 #AT_SETUP([PACKED-DECIMAL in PERFORM VARYING])
 #AT_KEYWORDS([numeric COMP-3])
@@ -11446,7 +11662,7 @@ AT_DATA([sub.cob], [
 AT_CHECK([$COMPILE_MODULE sub.cob], [0], [], [])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([COB_PRE_LOAD=sub $COBCRUN_DIRECT ./prog], [0], 
+AT_CHECK([COB_PRE_LOAD=sub $COBCRUN_DIRECT ./prog], [0],
 [SUB GOT X
 ], [])
 
@@ -14002,7 +14218,7 @@ AT_DATA([prog.cob], [
            03 TST-DECIMAL-SIGNED PIC S9(2)V9(4).
        77     ZERO-DECIMAL       PIC  9(2)V9(4) VALUE ZERO.
        77     ZERO-NUMBER        PIC  9(6)      VALUE ZERO.
-           
+
        PROCEDURE DIVISION.
            MOVE SPACES TO TST-VARS
 
