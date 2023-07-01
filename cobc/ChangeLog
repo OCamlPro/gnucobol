@@ -1,4 +1,10 @@
 
+2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_function_prototypes): generate plain "extern"
+	  instead of "COB_EXT_IMPORT" again, as the second only works with
+	  libraries, not with object files / sources
+
 2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	FR #439: dialect option to support justify for IBM compatibility
@@ -32,10 +38,9 @@
 
 2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
-	* typeck.c (cb_build_expr): fix bug #875 "V IS ZERO AND
-	... generate 'invalid conditional expression' error",
-	fix bug #880 error compiling abbreviated conditions in GC3.2 RC2
-        (NOT comparison should be translated to inversed comparison)
+	Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
+	* typeck.c (cb_build_expr): additional generate 'invalid conditional
+	   expression' error", translate NOT comparison to inversed comparison
 
 2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -6965,11 +6970,11 @@
 	* parser.y, reserved.c, typeck.c: Added parser support for OCCURS DYNAMIC
 	  along with CAPACITY clause as not implemented
 
-2014-09-08  Philipp B�hme <phi.boehme@googlemail.com>
+2014-09-08  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c (process) [_MSC_VER]: bugfix in output filter
 
-2014-09-03  Philipp B�hme <phi.boehme@googlemail.com>
+2014-09-03  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c, cobc.h: added cobc_free() function
 	  (Own freeing functions for debugging purposes.
@@ -7017,11 +7022,11 @@
 	* pplex.l: fixed bug #86 whitespace handling for IDENTIFICATION DIVISION
 	  and DEBUGGING MODE
 
-2014-07-10  Philipp B�hme <phi.boehme@googlemail.com>
+2014-07-10  Philipp B hme <phi.boehme@googlemail.com>
 
 	* typeck.c (cb_emit_sort_init): calculation of table key offset fixed
 
-2014-07-02  Philipp B�hme <phi.boehme@googlemail.com>
+2014-07-02  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c [_MSC_VER]: filter output of cl.exe (instead of redirecting to
 	  NUL), errors are printed in non-verbose mode now; new: (read_buffer_line)
@@ -7060,7 +7065,7 @@
 
 	* parser.y: Added extension "USE AT PROGRAM START/END" as not implemented
 
-2014-05-14  Philipp B�hme <phi.boehme@googlemail.com>
+2014-05-14  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c: Catch and treat error when no disc space is available for
 	  output files
@@ -7073,7 +7078,7 @@
 
 	* parser.y: Added extension "GOBACK/EXIT PROGRAM RETURNING/GIVING x"
 
-2014-04-29  Philipp B�hme <phi.boehme@googlemail.com>
+2014-04-29  Philipp B hme <phi.boehme@googlemail.com>
 
 	* codeoptim.c: Fixed bug in COB_ADD_PACKED_INT.
 	  Computing COMP-3 failed in MSVC-build versions,
