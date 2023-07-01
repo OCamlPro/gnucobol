@@ -13233,7 +13233,10 @@ output_function_prototypes (struct cb_program *prog)
 						  may use the same but not-default function */
 				if (strcmp (prog->extfh, extfh_value) != 0
 				 && strcmp ("EXTFH", extfh_value) != 0) {
-					output_line ("COB_EXT_IMPORT int %s (unsigned char *opcode, FCD3 *fcd);",
+					/* note: we may not use COB_EXT_IMPORT here as that only works with
+					         entry points in libraries, not with direct provided object files
+							 which we at least expect in our testsuite */
+					output_line ("extern int %s (unsigned char *opcode, FCD3 *fcd);",
 						extfh_value);
 				}
 			}
@@ -13254,7 +13257,10 @@ output_function_prototypes (struct cb_program *prog)
 	/* prototype for general EXTFH function */
 	if (prog->file_list && prog->extfh
 	 && strcmp ("EXTFH", prog->extfh) != 0) {
-		output ("COB_EXT_IMPORT int %s (unsigned char *opcode, FCD3 *fcd);", prog->extfh);
+					/* note: we may not use COB_EXT_IMPORT here as that only works with
+					         entry points in libraries, not with direct provided object files
+							 which we at least expect in our testsuite */
+		output ("extern int %s (unsigned char *opcode, FCD3 *fcd);", prog->extfh);
 		output_newline ();
 	}
 
