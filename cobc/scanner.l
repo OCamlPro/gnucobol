@@ -368,6 +368,16 @@ AREA_A		"#AREA_A"\n
 }
 
 "FUNCTION" {
+	if (!lookup_reserved_word ("FUNCTION")) {
+		/* FIXME: FUNCTION is always reserved, even when explicit
+		   disabled via -fnot-reserved=FUNCTION ?!? */
+		yylval = cb_build_reference (yytext);
+		if (cobc_in_area_a) {
+			RETURN_TOK (WORD_IN_AREA_A);
+		} else {
+			RETURN_TOK (WORD);
+		}
+	}
 	if (cobc_in_repository || cobc_cs_check == CB_CS_EXIT) {
 		yylval = NULL;
 		RETURN_TOK (FUNCTION);
@@ -792,14 +802,15 @@ H#[0-9A-Za-z]+ {
 }
 
 "NOT"[ ,;\n]+("AT"[ ,;\n]+)?("END-OF-PAGE"|"EOP")/[ .,;\n] {
-	/* TODO: if those words are not reserved -> directly return */
+	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
+	/* TODO: if END-OF-PAGE/EOP are not reserved -> directly return */
 	count_lines (yytext);
 	RETURN_TOK (NOT_EOP);
 }
 
 "AT"[ ,;\n]+("END-OF-PAGE"|"EOP")/[ .,;\n] {
 	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
-	/* TODO: if those words are not reserved -> directly return */
+	/* TODO: if END-OF-PAGE/EOP are not reserved -> directly return */
 	count_lines (yytext);
 	RETURN_TOK (EOP);
 }
@@ -867,6 +878,7 @@ H#[0-9A-Za-z]+ {
 "SUPPRESS"/[ .,;\n] {
 	count_lines (yytext);
 	if (!lookup_reserved_word ("SUPPRESS")) {
+		yylval = cb_build_reference (yytext);
 		RETURN_TOK (WORD);
 	}
 	if (cobc_in_xml_generate_body || cobc_in_json_generate_body) {
@@ -885,9 +897,10 @@ H#[0-9A-Za-z]+ {
 }
 
 "SEND"/[ .,;\n] {
-	/* FIXME: seems to wok fine with SUPPRESS, but not here ... */
+	/* FIXME: seems to work fine with SUPPRESS, but not here ... */
 	count_lines (yytext);
 	if (!lookup_reserved_word ("SEND")) {
+		yylval = cb_build_reference (yytext);
 		RETURN_TOK (WORD);
 	}
 #if 0
@@ -1257,15 +1270,17 @@ H#[0-9A-Za-z]+ {
 }
 
 <FUNCTION_STATE>{
-  [A-Z0-9-]+ {
+  [A-Z][A-Z0-9-]* {
 	struct cb_intrinsic_table	*cbp;
 	cb_tree				l;
-	cb_tree				x;
 
 	BEGIN INITIAL;
+
+	/* TODO: check for cb_word_length, if too long,
+	   then only handle up to max and error */
 	yylval = cb_build_reference (yytext);
 	for (l = current_program->user_spec_list; l; l = CB_CHAIN(l)) {
-		x = CB_VALUE (l);
+		cb_tree	x = CB_VALUE (l);
 		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
 			RETURN_TOK (USER_FUNCTION_NAME);
 		}
@@ -1278,7 +1293,7 @@ H#[0-9A-Za-z]+ {
   }
   . {
 	yylval = NULL;
-	RETURN_TOK (yytext[0]);
+	RETURN_TOK (yytext[0]);	/* is that correct? */
   }
 }
 
