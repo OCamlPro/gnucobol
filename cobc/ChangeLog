@@ -1,4 +1,9 @@
 
+2023-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: add check for reserved word FUNCTION, add missing
+	  word value for not reserved SUPPRESS and SEND
+
 2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_function_prototypes): generate plain "extern"
@@ -15,10 +20,10 @@
 2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* pplex.l (get_word): fix an overflow with words exceeding the
-	maximal size COB_MAX_WORDLEN
-	* pplex.l (is_condition_directive_clause)
-	(next_word_is_comment_paragraph_name): decrease stack storage
-	and optimize string comparisons
+	  maximal size COB_MAX_WORDLEN
+	* pplex.l (is_condition_directive_clause,
+	  next_word_is_comment_paragraph_name): decrease stack storage
+	  and optimize string comparisons
 
 2023-06-22  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
