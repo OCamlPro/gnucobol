@@ -3,6 +3,8 @@
 
 	* scanner.l: add check for reserved word FUNCTION, add missing
 	  word value for not reserved SUPPRESS and SEND
+	* parser.y (at_line_column): fixed bad cast when conflicting clauses
+	  were used, fixing bug #601
 
 2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
 
