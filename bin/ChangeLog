@@ -1,4 +1,9 @@
 
+2023-07-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cob-config: echo in same order as arguments. Add missing
+	arguments (--bindir,--libdir,--datadir,--mandir,--includedir)
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: minor validation - check for empty parameters
