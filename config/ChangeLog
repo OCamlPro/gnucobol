@@ -1,4 +1,9 @@
 
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* general: add option init-justify
+
 2023-06-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: add option subscript-check

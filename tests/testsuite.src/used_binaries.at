@@ -922,11 +922,12 @@ AT_CLEANUP
 
 AT_SETUP([cobc diagnostics show caret])
 #AT_KEYWORDS([cobc diagnostics])
-AT_DATA([prog.cob],[
+
+AT_DATA([progprep.cob],[
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
+       WORKING-STORAGE  SECTION.	  	#
        01 TEST-VAR PIC 9(2) VALUE 'A'.
        COPY 'CRUD.CPY'.
        PROCEDURE        DIVISION.
@@ -937,6 +938,9 @@ AT_DATA([prog.cob],[
            END-DISPLAY
            STOP RUN...
 ])
+
+# Testcase includes trailing whitespace, setup by dropping '#'
+AT_CHECK([cat progprep.cob | tr -d '#' > prog.cob])
 
 # note: $COBC has -fdiagnostics-plain-output
 AT_CHECK([$COBC -Wall -fsyntax-only prog.cob], [1], [],
@@ -982,18 +986,6 @@ prog.cob:14: warning: ignoring redundant . [-Wothers]
               END-DISPLAY
  >            STOP RUN...
    <EOF>
-]])
-
-# Testcase for trailing whitespace
-AT_CHECK([sed -e 's/DIVISION\./DIVISION  \.\t  \t  /' prog.cob > progsp.cob])
-
-AT_CHECK([$COBC -Wno-others -fdiagnostics-show-caret progsp.cob], [1], [],
-[[progsp.cob:7: error: CRUD.CPY: No such file or directory
-          WORKING-STORAGE  SECTION.
-          01 TEST-VAR PIC 9(2) VALUE 'A'.
- >        COPY 'CRUD.CPY'.
-          PROCEDURE        DIVISION  .
-              DISPLAY TEST-VAR NO ADVANCING
 ]])
 
 # Testcase for line too long and printing only one line

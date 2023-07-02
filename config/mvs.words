@@ -19,7 +19,7 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-# Word list for dialect: MVS/VM COBOL
+# Word list for dialect: IBM COBOL for MVS & VM
 
 # Note: only used for strict dialect and when
 #       requested by compiler directive >> IMP WORDS MVS

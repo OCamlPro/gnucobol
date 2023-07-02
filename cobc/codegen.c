@@ -5034,6 +5034,14 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 
 	if ((int)l->size >= (int)size) {
 		memcpy (litbuff, l->data, (size_t)size);
+		if (f->flag_justified && cb_initial_justify) {
+			memcpy (litbuff, l->data + (size_t)l->size - (size_t)size, (size_t)size);
+		} else {
+			memcpy (litbuff, l->data, (size_t)size);
+		}
+	} else if (f->flag_justified && cb_initial_justify) {
+		memset (litbuff, ' ', (size_t)size - l->size);
+		memcpy (litbuff + l->size, l->data, (size_t)l->size);
 	} else {
 		memcpy (litbuff, l->data, (size_t)l->size);
 		memset (litbuff + l->size, ' ', (size_t)size - l->size);
@@ -13225,7 +13233,10 @@ output_function_prototypes (struct cb_program *prog)
 						  may use the same but not-default function */
 				if (strcmp (prog->extfh, extfh_value) != 0
 				 && strcmp ("EXTFH", extfh_value) != 0) {
-					output_line ("COB_EXT_IMPORT int %s (unsigned char *opcode, FCD3 *fcd);",
+					/* note: we may not use COB_EXT_IMPORT here as that only works with
+					         entry points in libraries, not with direct provided object files
+							 which we at least expect in our testsuite */
+					output_line ("extern int %s (unsigned char *opcode, FCD3 *fcd);",
 						extfh_value);
 				}
 			}
@@ -13246,7 +13257,10 @@ output_function_prototypes (struct cb_program *prog)
 	/* prototype for general EXTFH function */
 	if (prog->file_list && prog->extfh
 	 && strcmp ("EXTFH", prog->extfh) != 0) {
-		output ("COB_EXT_IMPORT int %s (unsigned char *opcode, FCD3 *fcd);", prog->extfh);
+					/* note: we may not use COB_EXT_IMPORT here as that only works with
+					         entry points in libraries, not with direct provided object files
+							 which we at least expect in our testsuite */
+		output ("extern int %s (unsigned char *opcode, FCD3 *fcd);", prog->extfh);
 		output_newline ();
 	}
 

@@ -1,11 +1,31 @@
 
+2023-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: add check for reserved word FUNCTION, add missing
+	  word value for not reserved SUPPRESS and SEND
+	* parser.y (at_line_column): fixed bad cast when conflicting clauses
+	  were used, fixing bug #601
+
+2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_function_prototypes): generate plain "extern"
+	  instead of "COB_EXT_IMPORT" again, as the second only works with
+	  libraries, not with object files / sources
+
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* config.def: new dialect configuration option init-justify
+	* codegen.c (output_initialize_to_value): added support for right
+	  justification when cb_initial_justify is on
+
 2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* pplex.l (get_word): fix an overflow with words exceeding the
-	maximal size COB_MAX_WORDLEN
-	* pplex.l (is_condition_directive_clause)
-	(next_word_is_comment_paragraph_name): decrease stack storage
-	and optimize string comparisons
+	  maximal size COB_MAX_WORDLEN
+	* pplex.l (is_condition_directive_clause,
+	  next_word_is_comment_paragraph_name): decrease stack storage
+	  and optimize string comparisons
 
 2023-06-22  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -22,6 +42,12 @@
 	* config.def, config.c (cb_config_entry), cobc.h (cb_sub_check),
 	  typeck.c (cb_build_identifier): new dialect configuration option
 	  subscript-check to limit bound checks for ODO items
+
+2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
+	* typeck.c (cb_build_expr): additional generate 'invalid conditional
+	   expression' error", translate NOT comparison to inversed comparison
 
 2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -6951,11 +6977,11 @@
 	* parser.y, reserved.c, typeck.c: Added parser support for OCCURS DYNAMIC
 	  along with CAPACITY clause as not implemented
 
-2014-09-08  Philipp B�hme <phi.boehme@googlemail.com>
+2014-09-08  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c (process) [_MSC_VER]: bugfix in output filter
 
-2014-09-03  Philipp B�hme <phi.boehme@googlemail.com>
+2014-09-03  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c, cobc.h: added cobc_free() function
 	  (Own freeing functions for debugging purposes.
@@ -7003,11 +7029,11 @@
 	* pplex.l: fixed bug #86 whitespace handling for IDENTIFICATION DIVISION
 	  and DEBUGGING MODE
 
-2014-07-10  Philipp B�hme <phi.boehme@googlemail.com>
+2014-07-10  Philipp B hme <phi.boehme@googlemail.com>
 
 	* typeck.c (cb_emit_sort_init): calculation of table key offset fixed
 
-2014-07-02  Philipp B�hme <phi.boehme@googlemail.com>
+2014-07-02  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c [_MSC_VER]: filter output of cl.exe (instead of redirecting to
 	  NUL), errors are printed in non-verbose mode now; new: (read_buffer_line)
@@ -7046,7 +7072,7 @@
 
 	* parser.y: Added extension "USE AT PROGRAM START/END" as not implemented
 
-2014-05-14  Philipp B�hme <phi.boehme@googlemail.com>
+2014-05-14  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c: Catch and treat error when no disc space is available for
 	  output files
@@ -7059,7 +7085,7 @@
 
 	* parser.y: Added extension "GOBACK/EXIT PROGRAM RETURNING/GIVING x"
 
-2014-04-29  Philipp B�hme <phi.boehme@googlemail.com>
+2014-04-29  Philipp B hme <phi.boehme@googlemail.com>
 
 	* codeoptim.c: Fixed bug in COB_ADD_PACKED_INT.
 	  Computing COMP-3 failed in MSVC-build versions,

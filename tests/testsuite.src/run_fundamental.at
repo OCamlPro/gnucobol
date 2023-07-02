@@ -6391,3 +6391,165 @@ AT_CHECK([$COBCRUN_DIRECT ./packed], [0],
 ], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([Condition IS ZERO AND])
+AT_KEYWORDS([IF])
+
+# for more details see bug #875
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  V            PIC 9 VALUE 0.
+       01  W            PIC 9 VALUE 1.
+       PROCEDURE        DIVISION.
+           IF V IS ZERO
+              DISPLAY "V IS ZERO"
+           END-IF.
+           IF V IS ZERO AND W EQUAL 1
+              DISPLAY "V IS ZERO AND W EQUAL 1"
+           END-IF.
+           IF W EQUAL 1 AND V IS ZERO
+              DISPLAY "W EQUAL 1 AND V IS ZERO"
+           END-IF.
+           IF W IS POSITIVE
+              DISPLAY "W IS POSITIVE"
+           END-IF.
+           IF W IS NEGATIVE
+              DISPLAY "W IS NEGATIVE"
+           END-IF.
+           IF W IS POSITIVE AND V EQUAL 0
+              DISPLAY "W IS POSITIVE AND V EQUAL 0"
+           END-IF.
+           IF V EQUAL 0 AND W IS POSITIVE
+              DISPLAY "V EQUAL 0 AND W IS POSITIVE"
+           END-IF.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob:21: warning: unsigned 'W' may not be LESS THAN ZERO
+])
+
+AT_CHECK([./prog], [0], [V IS ZERO
+V IS ZERO AND W EQUAL 1
+W EQUAL 1 AND V IS ZERO
+W IS POSITIVE
+W IS POSITIVE AND V EQUAL 0
+V EQUAL 0 AND W IS POSITIVE
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([abbreviated conditions with multiple words operators])
+AT_KEYWORDS([IF])
+
+# for more details see bug #880
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    CHECKBOOL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  VAR1                    PIC X(16) VALUE "#0001".
+       01  VAR2                    PIC X(16) VALUE "#0002".
+       01  VAR3                    PIC X(16) VALUE "#0003".
+       01  VAR4                    PIC X(16) VALUE "#0004".
+       PROCEDURE DIVISION.
+       MAIN-PROGRAM SECTION.
+       INIZIO.
+           IF VAR1 = (VAR2 AND VAR3 AND VAR4)
+              DISPLAY "TRUE 1"
+           END-IF
+           IF VAR1 NOT = (VAR2 AND VAR3 AND VAR4)
+              DISPLAY "TRUE 2"
+           END-IF
+           IF VAR1 NOT > (VAR2 AND VAR3 AND VAR4)
+              DISPLAY "TRUE 3"
+           END-IF
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([./prog], [0], [TRUE 2
+TRUE 3
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([abbreviated conditions with multiple words operators])
+AT_KEYWORDS([IF])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    CHECKCOND.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  VAR1                    PIC X.
+                88 VAR1-K VALUE 'K'
+       01  VAR2                    PIC X.
+                88 VAR2-K VALUE 'K'
+
+       PROCEDURE DIVISION.
+       MAIN-PROGRAM SECTION.
+       BUG.
+           IF VAR1-K AND NOT = VAR2-K
+              DISPLAY "INVALID" UPON STDERR.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:8: error: syntax error, unexpected Identifier
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with JUSTIFIED clause])
+AT_KEYWORDS([RIGHT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. JUST00.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       77  ELE                         PIC X(10) JUSTIFIED RIGHT.
+       77  SHORT                       PIC X(4)  VALUE 'ABC '.
+       77  LONG                        PIC X(16)
+               VALUE 'ABCDEFGHIGKLMNOP'.
+
+       PROCEDURE DIVISION.
+           MOVE 'ABC '                 TO ELE
+           IF ELE NOT EQUAL '      ABC '
+               DISPLAY 'MOVE WITH SHORT FIELD JUSTIFIED HAS FAILED: '
+               '"' ELE '"'.
+
+           MOVE 'ABCDEFGHIGKLMNOP'     TO ELE
+           IF ELE NOT EQUAL 'GHIGKLMNOP'
+               DISPLAY 'MOVE WITH LONG FIELD JUSTIFIED HAS FAILED: '
+               '"' ELE '"'.
+
+           MOVE SHORT                  TO ELE
+           IF ELE NOT EQUAL '      ABC '
+               DISPLAY 'MOVE WITH SHORT FIELD JUSTIFIED HAS FAILED: '
+               '"' ELE '"'.
+
+           MOVE LONG                   TO ELE
+           IF ELE NOT EQUAL 'GHIGKLMNOP'
+               DISPLAY 'MOVE WITH LONG FIELD JUSTIFIED HAS FAILED: '
+               '"' ELE '"'.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
