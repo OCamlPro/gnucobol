@@ -1,4 +1,11 @@
 
+2023-07-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (check_listing): rewrite of change 2022-07-04:
+	  do not output sequence number of short lines,
+	  but keep its line break and the general output
+	* pplex.l: drop unused "requires_new_line" (added without use in OC2.0)
+
 2023-07-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l: add check for reserved word FUNCTION, add missing
