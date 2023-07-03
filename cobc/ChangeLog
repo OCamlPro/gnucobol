@@ -1,4 +1,14 @@
 
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def/cobc.c: new flags -fno-ttimestamp to suppress timestamp
+	  in listing headers, and -fttitle=<TITLE>, so that listings can be
+	  compared accross different versions and dates. This patch partially
+	  implements feature-request #294.
+	  Replace numeric constants in flags and switch by a constant macro
+	  CB_FLAG_GETOPT_. Remove unused 'case 6:' for -fdefaultbyte that is
+	  now handled in config.c
+
 2023-07-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (check_listing): rewrite of change 2022-07-04:
