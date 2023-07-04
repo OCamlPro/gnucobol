@@ -217,8 +217,8 @@ CB_FLAG (cb_flag_c_labels, 1, "gen-c-labels",
 	  "                        * turned on by -g"))
 
 CB_FLAG_ON (cb_listing_with_header, 1, "theaders",
-	_("  -fno-theaders         suppress all headers and output of compilation\n"
-	  "                        options from listing while keeping page breaks"))
+	_("  -fno-theaders         suppress all headers from listing while keeping\n"
+	  "                        page breaks"))
 
 CB_FLAG_ON (cb_listing_with_source, 1, "tsource",
 	_("  -fno-tsource          suppress source from listing"))
@@ -233,7 +233,7 @@ CB_FLAG (cb_listing_cmd, 1, "tcmd",
 	_("  -ftcmd                specify command line in listing"))
 
 CB_FLAG_ON (cb_listing_with_timestamp, 1, "ttimestamp",
-	_("  -fno-ttimestamp          suppress timestamp in listing headers"))
+	_("  -fno-ttimestamp       suppress timestamp in listing headers"))
 
 CB_FLAG_NQ (1, "ttitle", CB_FLAG_GETOPT_TTITLE,
 	_("  -fttitle=<title>      set listing title with '_' replaced by spaces;\n"
