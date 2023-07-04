@@ -4103,8 +4103,8 @@ output_char (const char *lead, const unsigned char c, const char *trail)
 	}
 #ifdef GEN_CHAR_AS_UINT		/* old "simple" version */
 	output ("%u", c);
-	if (!isprint (c)) {
 #else	/* "complex" one that we use everywhere else, like in output_string() */
+	if (!isprint (c)) {
 #if 0	/* octal */
 		/* output ("(unsigned char)'\\%03o'", c); */
 		output ("%03o", c);
