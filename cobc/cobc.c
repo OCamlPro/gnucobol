@@ -567,7 +567,7 @@ static const char	*const cob_csyns[] = {
 
 #define COB_NUM_CSYNS	sizeof(cob_csyns) / sizeof(cob_csyns[0])
 
-static const char short_options[] = "hVivqECScbmxjdFOPgwo:t:T:I:L:l:D:K:k:";
+static const char short_options[] = "hVivqECScbmxjdFOgwo:P:t:T:I:L:l:D:K:k:";
 
 #define	CB_NO_ARG	no_argument
 #define	CB_RQ_ARG	required_argument
@@ -9184,6 +9184,9 @@ main (int argc, char **argv)
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */
 	if (cobc_list_file) {
+		if (strcmp (cobc_list_file, COB_DASH) == 0) {
+			cb_listing_file = stdout;
+		} else
 		if (cb_unix_lf) {
 			cb_listing_file = fopen (cobc_list_file, "wb");
 		} else {
@@ -9269,7 +9272,10 @@ main (int argc, char **argv)
 	}
 
 	if (cobc_list_file) {
-		fclose (cb_listing_file);
+		if (cb_listing_file != stdout)
+			fclose (cb_listing_file);
+		else
+			fflush (stdout);
 		cb_listing_file = NULL;
 	}
 

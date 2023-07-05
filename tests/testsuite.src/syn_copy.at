@@ -946,9 +946,7 @@ AT_DATA([prog.cob], [
        REPLACE OFF.
 ])
 
-AT_CHECK([$COMPILE_ONLY -P=preproc.lst prog.cob])
-
-AT_CHECK([cat preproc.lst], [0],
+AT_CHECK([$COMPILE_ONLY -P- prog.cob], [0],
 [     1 @&t@
      2  IDENTIFICATION   DIVISION.
      3  PROGRAM-ID.      prog.
