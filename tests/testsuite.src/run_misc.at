@@ -3702,6 +3702,8 @@ AT_DATA([prog.cob], [
                    VALUE 'RRRRRRRRR' JUSTIFIED RIGHT.
        77  ELE4                        PIC X(10)
                    VALUE 'RRRRRRRRRR' JUSTIFIED RIGHT.
+       77  ELE5                        PIC X(1003)
+                   VALUE 'RRR' JUSTIFIED RIGHT.
 
        PROCEDURE DIVISION.
 
@@ -3730,6 +3732,11 @@ AT_DATA([prog.cob], [
 
            IF ELE3 NOT EQUAL ' RRRRRRRRR'
                DISPLAY 'ELE3 NOT INITIALIZED CORRECTLY ' ELE3
+           END-IF.
+
+           IF ELE5 (1:1000) NOT EQUAL SPACES
+           OR ELE5 (1001:)  NOT EQUAL "RRR"
+               DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
            END-IF.
 
            IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
@@ -3821,6 +3828,11 @@ AT_DATA([prog.cob], [
 
            IF ELE3 NOT EQUAL 'RRRRRRRRR '
                DISPLAY 'ELE3 NOT INITIALIZED CORRECTLY ' ELE3
+           END-IF.
+
+           IF ELE5 (1:3) NOT EQUAL "RRR"
+           OR ELE5 (4:)  NOT EQUAL SPACES
+               DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
            END-IF.
 
            IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '

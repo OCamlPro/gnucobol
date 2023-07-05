@@ -5016,90 +5016,97 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 	}
 
 	/* literal is smaller than target, so space-padding is needed */
-#if !defined (GEN_SINGLE_MEMCPY)
-	const unsigned int padlen = size - l->size;
-	const unsigned int padstart =
-		f->flag_justified && cb_initial_justify ? 0 : l->size;
-	const unsigned int litstart =
-		f->flag_justified && cb_initial_justify ? padlen : 0;
-	if (size < 128) {
-		/* for "common" small fields - generate a single memcpy
-		   from a string - we use a local buffer to set that up */
-		unsigned char litbuff[128];
-		memset (litbuff + padstart, ' ', padlen);
-		memcpy (litbuff + litstart, l->data, l->size);
-		output_prefix ();
-		output ("memcpy (");
-		output_data (x);
-		output (", ");
-		output_string (litbuff, size, l->llit);
-		output (", %d);", size);
-		output_newline ();
-	} else {
-		/* otherwise: memcpy for the data, memset for padding */
-		output_prefix ();
-		output ("memcpy (");
-		output_data (x);
-		if (litstart) {
-			output (" + %u);", litstart);
-		}
-		output (", ");
-		output_string (l->data, l->size, l->llit);
-		output (", %d);", l->size);
-		output_newline ();
-		output_prefix ();
-		output ("memset (");
-		output_data (x);
-		if (padstart) {
-			output (" + %u", padstart);
-		}
-		output (", ' ', %u);", padlen);
-		output_newline ();
-	}
-	
-#else /* GEN_SINGLE_MEMCPY follows */
-	/* construct buffer with actual content with space-padding,
-	   allowing us to generate a single memcpy */
-	if (size > litsize) {
-		litsize = size + 128;
-		if (litbuff) {
-			litbuff = cobc_main_realloc (litbuff, litsize);
-		} else {
-			litbuff = cobc_main_malloc (litsize);
-		}
-	}
-
-	if (f->flag_justified && cb_initial_justify) {
-		memset (litbuff, ' ', size - l->size);
-		memcpy (litbuff + size - l->size, l->data, l->size);
-	} else {
-		memcpy (litbuff, l->data, l->size);
-		memset (litbuff + l->size, ' ', size - l->size);
-	}
-
-	buffchar = *(litbuff + size - 1);
-	n = 0;
-	for (i = size - 1; i >= 0; i--, n++) {
-		if (litbuff[i] != buffchar) {
-			break;
-		}
-	}
-
-	if (n > 8) {
-		offset = size - n;
-		size -= n;
-	} else {
-		offset = 0;
-	}
-
-	/* undocumented optimization (?) or taking care
-	   for some old compiler's limits (?);
-	   note: if this is about readability / max line length,
-	   then splitting only the output of litbuff to multiple
-	   lines would be enough */
 	{
-		cob_u32_t		inci = 0;
-		for (; size > 509; size -= 509, inci += 509) {
+		const unsigned int padlen = size - l->size;
+		const unsigned int padstart =
+			f->flag_justified && cb_initial_justify ? 0 : l->size;
+		const unsigned int litstart =
+			f->flag_justified && cb_initial_justify ? padlen : 0;
+#if !defined (GEN_SINGLE_MEMCPY)
+		if (size < 128) {
+			/* for "common" small fields - generate a single memcpy
+			   from a string - we use a local buffer to set that up */
+			unsigned char litbuff[128];
+			memcpy (litbuff + litstart, l->data, l->size);
+			memset (litbuff + padstart, ' ', padlen);
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			output (", ");
+			output_string (litbuff, size, l->llit);
+			output (", %d);", size);
+			output_newline ();
+		} else {
+			/* otherwise: memcpy for the data, memset for padding */
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			if (litstart) {
+				output (" + %u", litstart);
+			}
+			output (", ");
+			output_string (l->data, l->size, l->llit);
+			output (", %d);", l->size);
+			output_newline ();
+			output_prefix ();
+			output ("memset (");
+			output_data (x);
+			if (padstart) {
+				output (" + %u", padstart);
+			}
+			output (", ' ', %u);", padlen);
+			output_newline ();
+		}	
+#else /* GEN_SINGLE_MEMCPY follows */
+		/* construct buffer with full content including space-padding,
+		   allowing us to generate a single memcpy */
+		if (size > litsize) {
+			litsize = size + 128;
+			if (litbuff) {
+				litbuff = cobc_main_realloc (litbuff, litsize);
+			} else {
+				litbuff = cobc_main_malloc (litsize);
+			}
+		}
+
+		memcpy (litbuff + litstart, l->data, l->size);
+		memset (litbuff + padstart, ' ', padlen);
+
+		buffchar = *(litbuff + size - 1);
+		n = 0;
+		for (i = size - 1; i >= 0; i--, n++) {
+			if (litbuff[i] != buffchar) {
+				break;
+			}
+		}
+
+		if (n > 8) {
+			offset = size - n;
+			size -= n;
+		} else {
+			offset = 0;
+		}
+
+		/* undocumented optimization (?) or taking care
+		   for some old compiler's limits (?);
+		   note: if this is about readability / max line length,
+		   then splitting only the output of litbuff to multiple
+		   lines would be enough */
+		{
+			cob_u32_t		inci = 0;
+			for (; size > 509; size -= 509, inci += 509) {
+				output_prefix ();
+				output ("memcpy (");
+				output_data (x);
+				if (!inci) {
+					output (", ");
+				} else {
+					output (" + %u, ", inci);
+				}
+				output_string (litbuff + inci, 509, l->llit);
+				output (", 509);");
+				output_newline ();
+			}
 			output_prefix ();
 			output ("memcpy (");
 			output_data (x);
@@ -5108,32 +5115,21 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			} else {
 				output (" + %u, ", inci);
 			}
-			output_string (litbuff + inci, 509, l->llit);
-			output (", 509);");
+			output_string (litbuff + inci, size, l->llit);
+			output (", %d);", size);
 			output_newline ();
 		}
-		output_prefix ();
-		output ("memcpy (");
-		output_data (x);
-		if (!inci) {
-			output (", ");
-		} else {
-			output (" + %u, ", inci);
-		}
-		output_string (litbuff + inci, size, l->llit);
-		output (", %d);", size);
-		output_newline ();
-	}
 
-	if (offset) {
-		output_prefix ();
-		output ("memset (");
-		output_data (x);
-		output (" + %d, %u, %d);",
-			offset, (unsigned int)buffchar, n);
-		output_newline ();
-	}
+		if (offset) {
+			output_prefix ();
+			output ("memset (");
+			output_data (x);
+			output (" + %d, %u, %d);",
+				offset, (unsigned int)buffchar, n);
+			output_newline ();
+		}
 #endif	/* GEN_SINGLE_MEMCPY */
+	}
 }
 
 static void
