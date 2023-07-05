@@ -1,4 +1,28 @@
 
+2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def/cobc.c: new flags -fno-ttimestamp to suppress timestamp
+	  in listing headers, and -fttitle=<TITLE>, so that listings can be
+	  compared accross different versions and dates. This patch partially
+	  implements feature-request #294.
+	  Replace numeric constants in flags and switch by a constant macro
+	  CB_FLAG_GETOPT_. Remove unused 'case 6:' for -fdefaultbyte that is
+	  now handled in config.c
+
+2023-07-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_char): extracted usage of disabled code for
+	  char generation as char into this new inline function
+	* codegen.c (output_char): fixed previously disabled code and enable it
+	  by default, old code may still be used with defining GEN_CHAR_AS_UINT
+	* codegen.c (output_initialize_to_value): handle zero-length VALUE
+	* codegen.c (output_initialize_to_value): fix cb_initial_justify
+	* codegen.c (output_initialize_to_value): disable setting from a
+	  possibly huge internal buffer with a single generated memcpy from
+	  a generated string, instead use a local buffer of max. 128 bytes
+	  and set padding spaces with memset for bigger fields, old code may
+	  still be used with defining GEN_SINGLE_MEMCPY
+
 2023-07-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (check_listing): rewrite of change 2022-07-04:
@@ -52,14 +76,15 @@
 
 2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
-	Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
-	* typeck.c (cb_build_expr): additional generate 'invalid conditional
-	   expression' error", translate NOT comparison to inversed comparison
-
-2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-
 	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
 	  and comment algorithm
+
+	Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
+	and #887 error compiling parenthesized relation
+	* typeck.c (cb_build_expr): additional generate 'invalid conditional
+	  expression' error", translate NOT comparison to inversed comparison
+	* typeck.c (cb_build_expr), tree.c (cb_build_binary_op): give more
+	  details on invalid expressions
 
 2023-06-13  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -427,7 +452,7 @@
 	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
 	  removing the need to check for bad USAGE later
 	* parser.y (display_erase, display_pos_specifier): pass display attributes
-	  to codegen
+	  to codegen, fixing bug #737
 
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 

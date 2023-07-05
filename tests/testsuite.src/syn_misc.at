@@ -827,11 +827,11 @@ AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
 [prog3.cob:1: error: PROGRAM-ID header missing
 ])
 
-AT_CHECK([$COMPILE -frelax-syntax-checks prog3.cob], [0], [],
+AT_CHECK([$COMPILE -fdiagnostics-plain-output -frelax-syntax-checks prog3.cob], [0], [],
 [prog3.cob:1: warning: PROGRAM-ID header missing
 prog3.cob:1: note: PROGRAM-ID header assumed
 ])
-AT_CHECK([$COBC -frelax-syntax-checks prog3.cob], [0], [],
+AT_CHECK([$COBC -fdiagnostics-plain-output -frelax-syntax-checks prog3.cob], [0], [],
 [prog3.cob:1: warning: PROGRAM-ID header missing [[-Wothers]]
 prog3.cob:1: note: PROGRAM-ID header assumed [[-Wothers]]
 ])
@@ -1857,20 +1857,20 @@ AT_DATA([prog_tmpl.cob], [
 # AT_DATA workaround via sed:
 AT_CHECK([$SED -e 's/_$//' prog_tmpl.cob > prog.cob], [0], [], [])
 
-AT_CHECK([$COBC -fsyntax-only -fixed -Wextra prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fixed -Wextra prog.cob], [0], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:11: warning: source text after program-text area (column 72) [[-Wdangling-text]]
 ])
 
-AT_CHECK([$COBC -fsyntax-only -free -Wextra prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -free -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
 prog.cob:8: note: unknown statement 'This'
 ])
 
-AT_CHECK([$COBC -fsyntax-only -F -Wextra prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -F -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
@@ -1878,7 +1878,7 @@ prog.cob:8: note: unknown statement 'This'
 ])
 
 # Check dialect option `format` (fixed for default) does not erase flags like `-F`, `--free`:
-AT_CHECK([$COBC -fsyntax-only -F -std=default -Wextra prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -F -std=default -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
@@ -1907,10 +1907,10 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 # fixing the initial setup but now producing a missing newline:
 printf "           CONTINUE." >> prog.cob
 
-AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wextra -fixed prog.cob], [0], [],
 [prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
 ])
-AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wextra -free prog.cob], [0], [],
 [prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
 ])
 # should not happen if the data only consists of space characters

@@ -390,11 +390,11 @@ AT_DATA([prog.cob], [
        E-3.
 ])
 
-AT_CHECK([$COBC -fsyntax-only prog.cob], [0], [],
+AT_CHECK([$COBC -fdiagnostics-plain-output -fsyntax-only prog.cob], [0], [],
 [prog.cob: in section 'S-1':
 prog.cob:6: warning: GO TO SECTION 'S-2' [[-Wgoto-section]]
 ])
-AT_CHECK([$COBC -fsyntax-only -Wall -Werror=goto-section prog.cob], [1], [],
+AT_CHECK([$COBC -fdiagnostics-plain-output -fsyntax-only -Wall -Werror=goto-section prog.cob], [1], [],
 [prog.cob: in section 'S-1':
 prog.cob:6: error: GO TO SECTION 'S-2' [[-Werror=goto-section]]
 prog.cob: in section 'S-2':

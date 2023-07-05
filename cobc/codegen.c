@@ -202,8 +202,10 @@ static const char		*excp_current_paragraph = NULL;
 static struct cb_program	*current_prog = NULL;    /* program in codegen (only) */
 
 static const struct cb_label		*last_section = NULL;
+#ifdef	GEN_SINGLE_MEMCPY
 static unsigned char		*litbuff = NULL;
 static int			litsize = 0;
+#endif
 
 static unsigned int		has_global_file = 0;
 static unsigned int		needs_exit_prog = 0;
@@ -4091,11 +4093,35 @@ output_funcall_typed_report (struct cb_funcall *p, const char type)
 }
 
 
-/*
-TODO: fix strange errors in "Simple Expressions with figurative constants",
-	  seen if the following is defined
-#define GEN_CHAR_AS_CHAR
-*/
+/* output a single char with optional (then empty)
+   leading and trailing string */
+static void COB_INLINE COB_A_INLINE
+output_char (const char *lead, const unsigned char c, const char *trail)
+{
+	if (lead) {
+		output ("%s", lead);
+	}
+#ifdef GEN_CHAR_AS_UINT		/* old "simple" version */
+	output ("%u", c);
+#else	/* "complex" one that we use everywhere else, like in output_string() */
+	if (!isprint (c)) {
+#if 0	/* octal */
+		/* output ("(unsigned char)'\\%03o'", c); */
+		output ("%03o", c);
+#else	/* hex */
+		/* output ("(unsigned char)'\\x%X'", c); */
+		output ("0x%X", c);
+#endif
+	} else if (c == '\'' || c == '\\') {
+		output ("(unsigned char)'\\%c'", c);
+	} else {
+		output ("(unsigned char)'%c'", c);
+	}
+#endif
+	if (trail) {
+		output ("%s", trail);
+	}
+}
 
 static void
 output_funcall_typed (struct cb_funcall *p, const char type)
@@ -4130,18 +4156,7 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 		} else if (p->argv[1] == cb_high) {
 			output (") - 255)");
 		} else if (CB_LITERAL_P (p->argv[1])) {
-			const unsigned char c = CB_LITERAL (p->argv[1])->data[0];
-#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
-			output (") - %u)", c);
-#else	/* "complex" one that we use everywhere else */
-			if (!isprint (c)) {
-				output (") - '\\%03o')", c);
-			} else if (c == '\'' || c == '\\') {
-				output (") - '\\%c')", c);
-			} else {
-				output (") - '%c')", c);
-			}
-#endif
+			output_char (") - ", CB_LITERAL (p->argv[1])->data[0], ")");
 		} else {
 			output (") - *(");
 			output_data (p->argv[1]);
@@ -4784,31 +4799,11 @@ output_initialize_uniform (cb_tree x, struct cb_field *f,
 	if (size == 1) {
 		output ("*(cob_u8_ptr)(");
 		output_data (x);
-#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
-		output (") = %u;", cc);
-#else	/* "complex" one that we use everywhere else */
-		if (!isprint (cc)) {
-			output (") = '\\%03o';", cc);
-		} else if (cc == '\'' || cc == '\\') {
-			output (") = '\\%c';", cc);
-		} else {
-			output (") = '%c';", cc);
-		}
-#endif
+		output_char (") = ", cc, ";");
 	} else {
 		output ("memset (");
 		output_data (x);
-#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
-		output (", %u, ", cc);
-#else	/* "complex" one that we use everywhere else */
-		if (!isprint (cc)) {
-			output (", '\\%03o', ", cc);
-		} else if (cc == '\'' || cc == '\\') {
-			output (", '\\%c', ", cc);
-		} else {
-			output (", '%c', ", cc);
-		}
-#endif
+		output_char (", ", cc, ", ");
 		if (size <= 0
 		 || (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length)) {
 			output_size (x);
@@ -4854,13 +4849,13 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 {
 	cb_tree			value;
 	struct cb_literal *l;
-	size_t			lsize;
-	cob_u32_t		inci;
-	int			i;
-	int			n;
-	int			size;
-	int			offset;
-	int			init_occurs;
+	int 		i;
+	int 		size;
+	int 		init_occurs;
+#if defined (GEN_SINGLE_MEMCPY)
+	int 		offset;
+	int 		n;
+#endif
 	unsigned char		buffchar;
 
 	if (!CB_LIST_P (f->values)) {
@@ -4961,161 +4956,179 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		return;
 	}
 
+	/* zero-length literal -> generate MOVE SPACES and return */
+	if (l->size == 0) {
+		output_move (cb_space, x);
+		return;
+	}
+
 	size = f->size;
 
+	/* only single-byte to set, generate assignment and return */
 	if (size == 1) {
 		const unsigned char c = l->data[0];
 		output_prefix ();
 		output ("*(cob_u8_ptr)(");
 		output_data (x);
-#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
-		output (") = %u;", c);
-#else	/* "complex" one that we use everywhere else */
-		if (!isprint (c)) {
-			output (") = '\\%03o';", c);
-		} else if (c == '\'' || c == '\\') {
-			output (") = '\\%c';", c);
-		} else {
-			output (") = '%c';", c);
-		}
-#endif
+		output_char (") = ", c, ";");
 		output_newline ();
 		return;
 	}
 
-	/* check if the literal only consist of the same character... */
-	buffchar = l->data[0];
-	for (lsize = 0; lsize < l->size; lsize++) {
-		if (l->data[lsize] != buffchar) {
-			break;
+	/* if the literal is at least as long as the target, we can use
+	   either a single memset or a single memcpy; check if the former
+	   is possible because it only consists of the same character */
+	if (l->size >= size) {
+		size_t first_pos = 0;
+		size_t last_pos = size;
+		/* we only care about the part that will be set in the target
+		   so use the target's size; if right-justified then adjust */
+		if (l->size > size
+		 && f->flag_justified && cb_initial_justify) {
+			first_pos = l->size - size;
+			last_pos = l->size;
 		}
-	}
-	if (lsize == l->size) {
-		/*... yes it does, so init by memset */
-		const unsigned char c = buffchar;
-		if (lsize > size) {
-			lsize = size;
+		buffchar = l->data[first_pos];
+		for (i = last_pos; i != first_pos; i--) {
+			if (l->data[i] != buffchar) {
+				break;
+			}
 		}
-		output_prefix ();
-		output ("memset (");
-		output_data (x);
-#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
-		output (", %u", c);
-#else	/* "complex" one that we use everywhere else */
-		if (!isprint (c)) {
-			output (", '\\%03o'", c);
-		} else if (c == '\'' || c == '\\') {
-			output (", '\\%c", c);
-		} else {
-			output (", '%c'", c);
-		}
-#endif
-		output (", %u);", (unsigned int)lsize);
-		output_newline ();
-		if (lsize < size) {
+		if (i == first_pos) {
+			/*... yes it does, so init by memset */
 			output_prefix ();
 			output ("memset (");
 			output_data (x);
-			output (" + %u, ' ', %u);",
-				(unsigned int)lsize, (unsigned int)(size - lsize));
+			output_char (", ", buffchar, ", ");
+			output ("%u);", size);
+			output_newline ();
+		} else {
+			/* no single value, so init by memcpy */
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			output (", ");
+			output_string (l->data + first_pos, size, l->llit);
+			output (", %d);", size);
 			output_newline ();
 		}
 		return;
 	}
 
-	if (size > litsize) {
-		litsize = size + 128;
-		if (litbuff) {
-			litbuff = cobc_main_realloc (litbuff, (size_t)litsize);
-		} else {
-			litbuff = cobc_main_malloc ((size_t)litsize);
-		}
-	}
-
-	if ((int)l->size >= (int)size) {
-		memcpy (litbuff, l->data, (size_t)size);
-		if (f->flag_justified && cb_initial_justify) {
-			memcpy (litbuff, l->data + (size_t)l->size - (size_t)size, (size_t)size);
-		} else {
-			memcpy (litbuff, l->data, (size_t)size);
-		}
-	} else if (f->flag_justified && cb_initial_justify) {
-		memset (litbuff, ' ', (size_t)size - l->size);
-		memcpy (litbuff + l->size, l->data, (size_t)l->size);
-	} else {
-		memcpy (litbuff, l->data, (size_t)l->size);
-		memset (litbuff + l->size, ' ', (size_t)size - l->size);
-	}
-
-	buffchar = *(litbuff + size - 1);
-	n = 0;
-	for (i = size - 1; i >= 0; i--, n++) {
-		if (*(litbuff + i) != buffchar) {
-			break;
-		}
-	}
-	if (i < 0) {
-		const unsigned char c = buffchar;
-		output_prefix ();
-		output ("memset (");
-		output_data (x);
-#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
-		output (", %u", c);
-#else	/* "complex" one that we use everywhere else */
-		if (!isprint (c)) {
-			output (", '\\%03o'", c);
-		} else if (c == '\'' || c == '\\') {
-			output (", '\\%c", c);
-		} else {
-			output (", '%c'", c);
-		}
-#endif
-		output (", %u);", (unsigned int)size);
-		output_newline ();
-		return;
-	}
-
-	if (n > 8) {
-		offset = size - n;
-		size -= n;
-	} else {
-		offset = 0;
-	}
-
-	inci = 0;
-	for (; size > 509; size -= 509, inci += 509) {
-		output_prefix ();
-		output ("memcpy (");
-		output_data (x);
-		if (!inci) {
+	/* literal is smaller than target, so space-padding is needed */
+	{
+		const unsigned int padlen = size - l->size;
+		const unsigned int padstart =
+			f->flag_justified && cb_initial_justify ? 0 : l->size;
+		const unsigned int litstart =
+			f->flag_justified && cb_initial_justify ? padlen : 0;
+#if !defined (GEN_SINGLE_MEMCPY)
+		if (size < 128) {
+			/* for "common" small fields - generate a single memcpy
+			   from a string - we use a local buffer to set that up */
+			unsigned char litbuff[128];
+			memcpy (litbuff + litstart, l->data, l->size);
+			memset (litbuff + padstart, ' ', padlen);
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
 			output (", ");
+			output_string (litbuff, size, l->llit);
+			output (", %d);", size);
+			output_newline ();
 		} else {
-			output (" + %u, ", inci);
+			/* otherwise: memcpy for the data, memset for padding */
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			if (litstart) {
+				output (" + %u", litstart);
+			}
+			output (", ");
+			output_string (l->data, l->size, l->llit);
+			output (", %d);", l->size);
+			output_newline ();
+			output_prefix ();
+			output ("memset (");
+			output_data (x);
+			if (padstart) {
+				output (" + %u", padstart);
+			}
+			output (", ' ', %u);", padlen);
+			output_newline ();
+		}	
+#else /* GEN_SINGLE_MEMCPY follows */
+		/* construct buffer with full content including space-padding,
+		   allowing us to generate a single memcpy */
+		if (size > litsize) {
+			litsize = size + 128;
+			if (litbuff) {
+				litbuff = cobc_main_realloc (litbuff, litsize);
+			} else {
+				litbuff = cobc_main_malloc (litsize);
+			}
 		}
-		output_string (litbuff + inci, 509, l->llit);
-		output (", 509);");
-		output_newline ();
-	}
 
-	output_prefix ();
-	output ("memcpy (");
-	output_data (x);
-	if (!inci) {
-		output (", ");
-	} else {
-		output (" + %u, ", inci);
-	}
-	output_string (litbuff + inci, size, l->llit);
-	output (", %d);", size);
-	output_newline ();
+		memcpy (litbuff + litstart, l->data, l->size);
+		memset (litbuff + padstart, ' ', padlen);
 
-	if (offset) {
-		output_prefix ();
-		output ("memset (");
-		output_data (x);
-		output (" + %d, %u, %d);",
-			offset, (unsigned int)buffchar, n);
-		output_newline ();
+		buffchar = *(litbuff + size - 1);
+		n = 0;
+		for (i = size - 1; i >= 0; i--, n++) {
+			if (litbuff[i] != buffchar) {
+				break;
+			}
+		}
+
+		if (n > 8) {
+			offset = size - n;
+			size -= n;
+		} else {
+			offset = 0;
+		}
+
+		/* undocumented optimization (?) or taking care
+		   for some old compiler's limits (?);
+		   note: if this is about readability / max line length,
+		   then splitting only the output of litbuff to multiple
+		   lines would be enough */
+		{
+			cob_u32_t		inci = 0;
+			for (; size > 509; size -= 509, inci += 509) {
+				output_prefix ();
+				output ("memcpy (");
+				output_data (x);
+				if (!inci) {
+					output (", ");
+				} else {
+					output (" + %u, ", inci);
+				}
+				output_string (litbuff + inci, 509, l->llit);
+				output (", 509);");
+				output_newline ();
+			}
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			if (!inci) {
+				output (", ");
+			} else {
+				output (" + %u, ", inci);
+			}
+			output_string (litbuff + inci, size, l->llit);
+			output (", %d);", size);
+			output_newline ();
+		}
+
+		if (offset) {
+			output_prefix ();
+			output ("memset (");
+			output_data (x);
+			output (" + %d, %u, %d);",
+				offset, (unsigned int)buffchar, n);
+			output_newline ();
+		}
+#endif	/* GEN_SINGLE_MEMCPY */
 	}
 }
 
