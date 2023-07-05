@@ -330,7 +330,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -Wextra prog.cob], [1], [],
+AT_CHECK([$COBC -fdiagnostics-plain-output -Wextra prog.cob], [1], [],
 [[prog.cob:8: error: larger REDEFINES used
 prog.cob:8: note: size of 'A' larger than size of 'X' [-Wdialect]
 prog.cob:11: error: larger REDEFINES used
@@ -342,7 +342,7 @@ prog.cob:17: warning: size of 'FILLER 1' larger than size of 'WRK-X2' [-Wlarger-
 
 # of course, other dialects ignore the rules, implicit adding a FILLER to the original item...
 AT_CHECK([$COBC -std=mf prog.cob], [0], [], [])
-AT_CHECK([$COBC -flarger-redefines=warning prog.cob], [0], [],
+AT_CHECK([$COBC -fdiagnostics-plain-output -flarger-redefines=warning prog.cob], [0], [],
 [[prog.cob:8: warning: larger REDEFINES used [-Wdialect]
 prog.cob:8: note: size of 'A' larger than size of 'X' [-Wdialect]
 prog.cob:11: warning: larger REDEFINES used [-Wdialect]
