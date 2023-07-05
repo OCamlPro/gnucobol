@@ -90,6 +90,23 @@ enum compile_level {
 	CB_LEVEL_EXECUTABLE	= 7
 };
 
+#define	CB_FLAG_GETOPT_STACK_SIZE       1
+#define	CB_FLAG_GETOPT_IF_CUTOFF        2
+#define	CB_FLAG_GETOPT_SIGN             3
+#define	CB_FLAG_GETOPT_FOLD_COPY        4
+#define	CB_FLAG_GETOPT_FOLD_CALL        5
+#define	CB_FLAG_GETOPT_TTITLE           6
+#define	CB_FLAG_GETOPT_MAX_ERRORS       7
+#define	CB_FLAG_GETOPT_DUMP             8
+#define	CB_FLAG_GETOPT_CALLFH           9
+#define	CB_FLAG_GETOPT_INTRINSICS      10
+#define	CB_FLAG_GETOPT_EC              11
+#define	CB_FLAG_GETOPT_NO_EC           12
+#define	CB_FLAG_GETOPT_NO_DUMP         13
+#define	CB_FLAG_GETOPT_EBCDIC_TABLE    14
+#define	CB_FLAG_GETOPT_DEFAULT_COLSEQ  15
+
+
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
 #define	CB_IVAL_SIZE		(74 - CB_IMSG_SIZE - 4)
@@ -226,6 +243,9 @@ FILE			*cb_storage_file = NULL;
 FILE			*cb_listing_file = NULL;
 FILE			*cb_depend_file = NULL;
 const char		*cb_ebcdic_table = NULL;
+
+/* set by option -fttitle=<title> */
+char                    *cb_listing_with_title = NULL;
 
 /* Listing structures and externals */
 
@@ -430,7 +450,8 @@ static unsigned int		cb_listing_linecount;
 static int		cb_listing_eject = 0;
 static char		cb_listing_filename[FILENAME_MAX];
 static char		*cb_listing_outputfile = NULL;
-static char		cb_listing_title[81];	/* Listing title (defaults to PACKAGE_NAME + Version */
+#define CB_LISTING_TITLE_MAX_LEN 80
+static char		cb_listing_title[CB_LISTING_TITLE_MAX_LEN+1];	/* Listing title (defaults to PACKAGE_NAME + Version */
 static char		cb_listing_header[133];	/* Listing header */
 static struct list_files	*cb_listing_file_struct = NULL;
 static struct list_error	*cb_listing_error_head = NULL;
@@ -2251,7 +2272,7 @@ set_listing_date (void)
 #define LISTING_TIMESTAMP_FORMAT "%a %b %d %Y %H:%M:%S"
 #endif
 	strftime (cb_listing_date, (size_t)CB_LISTING_DATE_MAX,
-		LISTING_TIMESTAMP_FORMAT, &current_compile_tm);
+		  LISTING_TIMESTAMP_FORMAT, &current_compile_tm);
 }
 
 
@@ -3656,7 +3677,7 @@ process_command_line (const int argc, char **argv)
 			CB_TEXT_LIST_ADD (cb_early_exit_list, cob_optarg);
 			break;
 
-		case 1:
+		case CB_FLAG_GETOPT_STACK_SIZE: /* 1 */
 			/* -fstack-size=<xx> : Specify stack (perform) size */
 			n = cobc_deciph_optarg (cob_optarg, 0);
 			if (n < 16 || n > 512) {
@@ -3666,7 +3687,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 #ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: to be removed in 4.0 */
-		case 2:
+		case CB_FLAG_GETOPT_IF_CUTOFF: /* 2 */
 			/* -fif-cutoff=<xx> : Specify IF cutoff level */
 			n = cobc_deciph_optarg (cob_optarg, 0);
 			if (n < 1 || n > 512) {
@@ -3676,7 +3697,7 @@ process_command_line (const int argc, char **argv)
 			break;
 #endif
 
-		case 3:
+		case CB_FLAG_GETOPT_SIGN: /* 3 */
 			/* -fsign=<ASCII/EBCDIC> : Specify display sign */
 			if (!cb_strcasecmp (cob_optarg, "EBCDIC")) {
 				cb_ebcdic_sign = 1;
@@ -3687,18 +3708,18 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case 14:
+		case CB_FLAG_GETOPT_EBCDIC_TABLE: /* 14 */
 			cb_ebcdic_table = cobc_main_strdup (cob_optarg);
 			break;
 
-		case 15:
+		case CB_FLAG_GETOPT_DEFAULT_COLSEQ: /* 15 */
 			/* -fdefault-colseq=<ASCII/EBCDIC/NATIVE> */
 			if (cb_deciph_default_colseq_name (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fdefault-colseq");
 			}
 			break;
 
-		case 4:
+		case CB_FLAG_GETOPT_FOLD_COPY: /* 4 */
 			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_copy = COB_FOLD_UPPER;
@@ -3709,7 +3730,7 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case 5:
+		case CB_FLAG_GETOPT_FOLD_CALL: /* 5 */
 			/* -ffold-call=<UPPER/LOWER> : CALL/PROG-ID fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_call = COB_FOLD_UPPER;
@@ -3720,16 +3741,23 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case 6:
-			/* -fdefaultbyte=<xx> : Default initialization byte */
-			n = cobc_deciph_optarg (cob_optarg, 1);
-			if (n < 0 || n > 255) {
-				cobc_err_exit (COBC_INV_PAR, "-fdefaultbyte");
+		case CB_FLAG_GETOPT_TTITLE: /* 6 */
+			/* -fttitle=<title> : Title for listing */
+			{
+				size_t i, len;
+
+				if (cb_listing_with_title)
+					cobc_main_free (cb_listing_with_title);
+				cb_listing_with_title = cobc_main_strdup (cob_optarg);
+				len = strlen (cb_listing_with_title);
+				for (i=0; i<len; i++){
+					if( cb_listing_with_title[i]=='_' )
+						cb_listing_with_title[i]=' ';
+				}
 			}
-			cb_default_byte = n;
 			break;
 
-		case 7:
+		case CB_FLAG_GETOPT_MAX_ERRORS: /* 7 */
 			/* -fmax-errors=<xx> : Maximum errors until abort */
 			n = cobc_deciph_optarg (cob_optarg, 0);
 			if (n < 0) {
@@ -3738,24 +3766,24 @@ process_command_line (const int argc, char **argv)
 			cb_max_errors = n;
 			break;
 
-		case 8:
+		case CB_FLAG_GETOPT_DUMP: /* 8 */
 			/* -fdump=<scope> : Add sections for dump code generation */
-		case 13:
+		case CB_FLAG_GETOPT_NO_DUMP: /* 13 */
 			/* -fno-dump=<scope> : Suppress sections in dump code generation */
 			/* These options were all processed in the first getopt-run */
 			break;
 
-		case 9:
+		case CB_FLAG_GETOPT_CALLFH: /* 9 */
 			/* -fcallfh=<func> : Function-name for EXTFH */
 			cb_call_extfh = cobc_main_strdup (cob_optarg);
 			break;
 
-		case 10:
+		case CB_FLAG_GETOPT_INTRINSICS: /* 10 */
 			/* -fintrinsics=<xx> : Intrinsic name or ALL */
 			cobc_deciph_funcs (cob_optarg);
 			break;
 
-		case 11:
+		case CB_FLAG_GETOPT_EC: /* 11 */
 			/* -fec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW,
 			               also allows to skip the prefix e.g. BOUND-OVERFLOW */
 			if (cobc_deciph_ec (cob_optarg, 1U)) {
@@ -3763,7 +3791,7 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case 12:
+		case CB_FLAG_GETOPT_NO_EC: /* 12 */
 			/* -fno-ec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW */
 			if (cobc_deciph_ec (cob_optarg, 0)) {
 				cobc_err_exit (COBC_INV_PAR, "-fno-ec");
@@ -5224,16 +5252,21 @@ set_listing_header_none (void)
 	cb_listing_header[0] = 0;
 }
 
-/* standard title for listing
-   (TODO: option to set by directive and/or command line option) */
+/* standard title for listing */
 static void
 set_standard_title (void)
 {
 	char		version[30];
-	snprintf (version, sizeof (version), "%s.%d", PACKAGE_VERSION, PATCH_LEVEL);
-	snprintf (cb_listing_title, 80, "%s %s",
-		PACKAGE_NAME,
-		version);
+
+	if (cb_listing_with_title){
+		snprintf (cb_listing_title, CB_LISTING_TITLE_MAX_LEN, "%s",
+			  cb_listing_with_title);
+	} else {
+		snprintf (version, sizeof (version), "%s.%d", PACKAGE_VERSION, PATCH_LEVEL);
+		snprintf (cb_listing_title, CB_LISTING_TITLE_MAX_LEN, "%s %s",
+			  PACKAGE_NAME,
+			  version);
+	}
 }
 
 /* print header */
@@ -5255,17 +5288,30 @@ print_program_header (void)
 			fputc ('\n', cb_src_list_file);
 			return;
 		}
-		if (cb_listing_wide) {
-			format_str = "%-23.23s %-61.61s %s  Page %04d\n";
+		if (!cb_listing_with_timestamp){
+			if (cb_listing_wide) {
+				format_str = "%-23.23s %-87.87s  Page %04d\n";
+			} else {
+				format_str = "%-23.23s %-46.46s  Page %04d\n";
+			}
+			fprintf (cb_src_list_file,
+				 format_str,
+				 cb_listing_title,
+				 cb_listing_filename,
+				 ++cb_listing_page);
 		} else {
-			format_str = "%-23.23s %-20.20s %s  Page %04d\n";
+			if (cb_listing_wide) {
+				format_str = "%-23.23s %-61.61s %s  Page %04d\n";
+			} else {
+				format_str = "%-23.23s %-20.20s %s  Page %04d\n";
+			}
+			fprintf (cb_src_list_file,
+				 format_str,
+				 cb_listing_title,
+				 cb_listing_filename,
+				 cb_listing_date,
+				 ++cb_listing_page);
 		}
-		fprintf (cb_src_list_file,
-			 format_str,
-			 cb_listing_title,
-			 cb_listing_filename,
-			 cb_listing_date,
-			 ++cb_listing_page);
 
 	/* header for listing without page breaks: --tlines=0 */
 	} else {
@@ -5276,16 +5322,28 @@ print_program_header (void)
 
 		if (cb_listing_page == 0) {
 			cb_listing_page = 1;
-			if (cb_listing_wide) {
-				format_str = "%-28.28s %-66.66s %s\n";
+			if (!cb_listing_with_timestamp){
+				if (cb_listing_wide) {
+					format_str = "%-28.28s %.92s\n";
+				} else {
+					format_str = "%-28.28s %.52s\n";
+				}
+				fprintf (cb_src_list_file,
+					 format_str,
+					 cb_listing_title,
+					 cb_listing_filename);
 			} else {
-				format_str = "%-28.28s %-26.26s %s\n";
+				if (cb_listing_wide) {
+					format_str = "%-28.28s %-66.66s %s\n";
+				} else {
+					format_str = "%-28.28s %-26.26s %s\n";
+				}
+				fprintf (cb_src_list_file,
+					 format_str,
+					 cb_listing_title,
+					 cb_listing_filename,
+					 cb_listing_date);
 			}
-			fprintf (cb_src_list_file,
-				 format_str,
-				 cb_listing_title,
-				 cb_listing_filename,
-				 cb_listing_date);
 		}
 	}
 	fputc ('\n', cb_src_list_file);
