@@ -921,24 +921,16 @@ AT_CLEANUP
 
 
 AT_SETUP([COPY and REPLACE in same file])
-AT_KEYWORDS([copy])
+AT_KEYWORDS([replacing preprocess])
 
-# see Bug #868
+# See Bug #831
 # the issue with this example is that the outer REPLACE
 # _could_ only see the result of the inner REPLACING:
 # "COLON", but needs to see "VAR-COLON".
-# To even enable it to see the replaced data in the outer
-# replacings pplex.l (ppecho_replace) must be changed to not
-# output the results with a call to (ppecho_direct) but has to
-# continue the loop with the - potential partially replaced -
-# new content.
-
-AT_XFAIL_IF([true])
 
 AT_DATA([copy.inc], [
        01 VAR-:TEST: PIC X(2) VALUE "OK".
 ])
-
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -954,6 +946,49 @@ AT_DATA([prog.cob], [
        REPLACE OFF.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -P- prog.cob], [0],
+[     1 @&t@
+     2  IDENTIFICATION   DIVISION.
+     3  PROGRAM-ID.      prog.
+     4  DATA             DIVISION.
+     5  WORKING-STORAGE  SECTION.
+     6  @&t@
+     7  @&t@
+     8 @&t@
+     9  01 VAR-COMMA PIC X(2) VALUE "OK".
+    10 @&t@
+    11  PROCEDURE        DIVISION.
+    12      DISPLAY VAR-COMMA NO ADVANCING
+    13      END-DISPLAY.
+    14      STOP RUN.
+    15  @&t@
+
+])
+
+AT_CHECK([$COMPILE_LISTING -t- prog.cob], [0],
+[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         REPLACE   ==VAR-COLON== BY ==VAR-COMMA==.
+000007         COPY "copy.inc"
+000001C
+000002C        01 VAR-:TEST: PIC X(2) VALUE "OK".
+000007            REPLACING ==:TEST:== BY ==COLON==.
+000008         PROCEDURE        DIVISION.
+000009             DISPLAY VAR-COMMA NO ADVANCING
+000010             END-DISPLAY.
+000011             STOP RUN.
+000012         REPLACE OFF.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
 
 AT_CLEANUP

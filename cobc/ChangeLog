@@ -1,6 +1,25 @@
 
 2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
+	* replace.c: rewrite the code for preprocessing with a two-phase
+	  algorithm. The first phase performs COPY REPLACING on the stream
+	  of tokens, while the second phase perform REPLACE on the resulting
+	  stream of tokens. This rewriting is closer to the COBOL standard
+	  and fixes bug #831 partially.
+	* cobc.c: flag -P now accepts - as argument to mean stdout
+
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l/replace.c: move the preprocessing code performing
+	  COPY REPLACING and REPLACE from pplex.l to replace.c
+
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
+	  second equivalent token
+
+2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
 	* flag.def/cobc.c: new flags -fno-ttimestamp to suppress timestamp
 	  in listing headers, and -fttitle=<TITLE>, so that listings can be
 	  compared accross different versions and dates. This patch partially

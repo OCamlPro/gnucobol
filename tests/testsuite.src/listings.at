@@ -95,9 +95,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_LISTING0 -t prog.lst prog.cob], [0], [], [])
-
-AT_DATA([expected.lst],
+AT_CHECK([$COMPILE_LISTING0 -t- prog.cob], [0],
 [GnuCOBOL V.R.P               prog.cob
 
 LINE    PG/LN  A...B............................................................
@@ -115,12 +113,6 @@ LINE    PG/LN  A...B............................................................
 0 warnings in compilation group
 0 errors in compilation group
 ])
-
-# TODO: add an AT_CHECK to compare prog.lst and expected.lst. There is
-# a problem with the Eject character here that makes the comparison fail,
-# need more time to investigate.
-
-AT_CHECK([diff expected.lst prog.lst], [0], [], [])
 
 AT_DATA([prog2.cob], [
   IDENTIFICATION   DIVISION.
@@ -2060,9 +2052,7 @@ AT_DATA([prog.cob], [
        END FUNCTION WITHPAR.
 ])
 
-AT_CHECK([$COBC $LISTING_FLAGS -q -fsyntax-only -t prog.lst -fno-theader -ftcmd prog.cob], [0], [], [])
-
-AT_DATA([reference.lst],
+AT_CHECK([$COBC $LISTING_FLAGS -q -fsyntax-only -t- -fno-theader -ftcmd prog.cob], [0],
 [
 000001
 000002         IDENTIFICATION   DIVISION.
@@ -2075,15 +2065,13 @@ AT_DATA([reference.lst],
 000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
 000010             GOBACK.
 000011         END FUNCTION WITHPAR.
-
+@&t@
 command line:
   cobc -fdiagnostics-plain-output -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q
-+ -fsyntax-only -t prog.lst -fno-theader -ftcmd prog.cob
++ -fsyntax-only -t- -fno-theader -ftcmd prog.cob
 0 warnings in compilation group
 0 errors in compilation group
 ])
-
-# TODO: we don't perform any comparison here between prog.lst and reference.lst. Why ?
 
 AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob], [0],
 [GnuCOBOL V.R.P          prog.cob                                        Page 0001
