@@ -280,8 +280,7 @@ static enum cb_ml_suppress_category	ml_suppress_category;
 static int			term_array[TERM_MAX];
 static cb_tree			eval_check[EVAL_DEPTH][EVAL_DEPTH];
 
-static const char		*backup_source_file = NULL;
-static int			backup_source_line = 0;
+static int			last_source_line = 0;
 
 /* Defines for header presence */
 
@@ -320,17 +319,25 @@ check_area_a (cb_tree word) {
 static COB_INLINE void
 check_area_a_of (const char * const item) {
 	if (!cobc_in_area_a && cobc_areacheck) {
-		(void) cb_syntax_check (_("'%s' should start in Area A"), item);
+		(void) cb_syntax_check (_("%s should start in Area A"), item);
+	}
+}
+
+static COB_INLINE void
+check_non_area_a_of (const char * const item) {
+	if (cobc_in_area_a && cobc_areacheck) {
+		(void) cb_syntax_check (_("%s should not start in Area A"), item);
 	}
 }
 
 static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
 	if (cobc_in_area_a && cobc_areacheck) {
-		if (stmt)
+		if (stmt) {
 			(void) cb_syntax_check_x (stmt, _("start of statement in Area A"));
-		else
+		} else {
 			(void) cb_syntax_check (_("start of statement in Area A"));
+		}
 	}
 }
 
@@ -347,11 +354,11 @@ enum cb_colseq cb_default_colseq = CB_COLSEQ_NATIVE;
 /* Decipher character conversion table names */
 int cb_deciph_default_colseq_name (const char * const name)
 {
-	if (! cb_strcasecmp (name, "ASCII")) {
+	if (!cb_strcasecmp (name, "ASCII")) {
 		cb_default_colseq = CB_COLSEQ_ASCII;
-	} else if (! cb_strcasecmp (name, "EBCDIC")) {
+	} else if (!cb_strcasecmp (name, "EBCDIC")) {
 		cb_default_colseq = CB_COLSEQ_EBCDIC;
-	} else if (! cb_strcasecmp (name, "NATIVE")) {
+	} else if (!cb_strcasecmp (name, "NATIVE")) {
 		cb_default_colseq = CB_COLSEQ_NATIVE;
 	} else {
 		return 1;
@@ -400,48 +407,44 @@ build_colseq (enum cb_colseq colseq)
 /* Statements */
 
 static void
+begin_statement_internal (enum cob_statement statement, const unsigned int term,
+	const char *file, const int line)
+{
+	cb_tree stmt_tree;
+	current_statement = cb_build_statement (statement);
+	current_paragraph->flag_statement = 1;
+	stmt_tree = CB_TREE (current_statement);
+	stmt_tree->source_file = file;
+	stmt_tree->source_line = line;
+	current_statement->flag_in_debug = in_debugging;
+	emit_statement (stmt_tree);
+	if (term) {
+		term_array[term]++;
+	}
+	check_non_area_a (stmt_tree);
+	if (check_unreached) {
+		cb_warning_x (cb_warn_unreachable, stmt_tree,
+			_("unreachable statement '%s'"),
+			cb_statement_name[statement]);
+	}
+}
+
+static COB_INLINE void
 begin_statement (enum cob_statement statement, const unsigned int term)
 {
-	if (check_unreached) {
-		cb_warning (cb_warn_unreachable,
-			_("unreachable statement '%s'"),
-			cb_statement_name[statement]);
-	}
-	current_paragraph->flag_statement = 1;
-	current_statement = cb_build_statement (statement);
-	CB_TREE (current_statement)->source_file = cb_source_file;
-	CB_TREE (current_statement)->source_line = cb_source_line;
-	current_statement->flag_in_debug = in_debugging;
-	check_non_area_a (CB_TREE (current_statement));
-	emit_statement (CB_TREE (current_statement));
-	if (term) {
-		term_array[term]++;
-	}
+	begin_statement_internal (statement, term, cb_source_file, cb_source_line);
 }
 
-static void
-restore_backup_pos (cb_tree item)
+/* begin statement, starting in "pos";
+   note: to be able to check for area A, pos->source_column must be temporarily set to -1
+         at the place where the tree is created, if cobc_in_area_a was true */
+static COB_INLINE void
+begin_statement_at_tree_pos (enum cob_statement statement, const unsigned int term, cb_tree pos)
 {
-	item->source_file = backup_source_file;
-	item->source_line = backup_source_line;
-}
-
-static void
-begin_statement_from_backup_pos (enum cob_statement statement, const unsigned int term)
-{
-	current_paragraph->flag_statement = 1;
-	current_statement = cb_build_statement (statement);
-	restore_backup_pos (CB_TREE (current_statement));
-	current_statement->flag_in_debug = in_debugging;
-	emit_statement (CB_TREE (current_statement));
-	if (term) {
-		term_array[term]++;
-	}
-	if (check_unreached) {
-		cb_warning_x (cb_warn_unreachable, CB_TREE (current_statement),
-			_("unreachable statement '%s'"),
-			cb_statement_name[statement]);
-	}
+	const int backup_in_area_a = cobc_in_area_a;
+	cobc_in_area_a = pos->source_column == -1;
+	begin_statement_internal (statement, term, pos->source_file, pos->source_line);
+	cobc_in_area_a = backup_in_area_a;
 }
 
 /* create a new statement with base attributes of current_statement
@@ -477,26 +480,26 @@ print_bits (cob_flags_t num)
 }
 #endif
 
-/* functions for storing current position and
-   assigning it to a cb_tree after its parsing is finished */
-static COB_INLINE void
-backup_current_pos (void)
-{
-	backup_source_file = cb_source_file;
-	backup_source_line = cb_source_line;
-}
-
-#if 0 /* currently not used */
-static COB_INLINE void
-set_pos_from_backup (cb_tree x)
-{
-	x->source_file = backup_source_file;
-	x->source_line = backup_source_line;
-}
-#endif
+/* general functions */
 
 static void
-emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree convention, int override_source_line)
+copy_pos (cb_tree item, cb_tree source)
+{
+	item->source_file = source->source_file;
+	item->source_line = source->source_line;
+}
+
+static COB_INLINE int
+is_valid_statement_tree (cb_tree tree) {
+	if ( tree == cb_error_node
+	 || (CB_LIST_P (tree) && CB_VALUE (tree) == cb_error_node)) {
+		return 0;
+	}
+	return 1;
+}
+
+static void
+emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree convention)
 {
 	cb_tree		l;
 	cb_tree		label;
@@ -514,9 +517,6 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 	}
 	CB_LABEL (label)->flag_begin = 1;
 	CB_LABEL (label)->flag_entry = 1;
-	if (override_source_line) {
-		label->source_line = override_source_line;
-	}
 	emit_statement (label);
 
 	if (current_program->flag_debugging) {
@@ -555,9 +555,9 @@ emit_main_entry (struct cb_program *program, cb_tree using_list)
 		program->num_proc_params = cb_list_length (using_list);
 	}
 
-	emit_entry (program->program_id, 0, using_list, NULL, 0);
+	emit_entry (program->program_id, 0, using_list, NULL);
 	if (program->source_name) {
-		emit_entry (program->source_name, 1, using_list, NULL, 0);
+		emit_entry (program->source_name, 1, using_list, NULL);
 	}
 }
 
@@ -575,7 +575,9 @@ emit_entry_goto (const char *name)
 	CB_LABEL (label)->flag_begin = 1;
 	CB_LABEL (label)->flag_entry = 1;
 	CB_LABEL (label)->flag_entry_for_goto = 1;
-	label->source_line = backup_source_line;	/* CHECKME: is that correct? */
+#if 0	/* seems to be not necessary */
+	copy_pos (label, current_statement);
+#endif
 	emit_statement (label);
 
 	for (l = current_program->entry_list_goto; l; l = CB_CHAIN (l)) {
@@ -1233,7 +1235,7 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 			emit_main_entry (program, NULL);
 		}
 	}
-	program->last_source_line = backup_source_line;
+	program->last_source_line = last_source_line;
 
 	if (program->nested_level == 0
 	 || defined_prog_list == NULL) {
@@ -1287,7 +1289,7 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 static void
 setup_registers (void)
 {
-	backup_source_file = cb_source_file;
+	const char *backup_source_file = cb_source_file;
 	cb_source_file = "register-definition";
 	cb_set_intr_when_compiled ();
 	cb_build_registers ();
@@ -1318,14 +1320,9 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 
 	setup_program_start ();
 
-	if (first_prog) {
-		/* in this case we had setup an "empty" current_program
-		   along with registers before (on start) and now only "add"
-		   to that */
-		first_prog = 0;
-	} else {
-		/* finish last program/function */
-		backup_source_file = cb_source_file;
+	/* finish last program/function */
+	if (!first_prog) {
+		const char *backup_source_file = cb_source_file;
 		if (!current_program->flag_validated) {
 			current_program->flag_validated = 1;
 			cb_validate_program_body (current_program);
@@ -1339,6 +1336,11 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 		}
 		cb_source_file = backup_source_file;
 		setup_registers ();
+	} else {
+		/* in this case we had setup an "empty" current_program
+		   along with registers before (on start) and now only "add"
+		   to that */
+		first_prog = 0;
 	}
 
 	/* set internal name */
@@ -2109,10 +2111,8 @@ check_not_88_level (cb_tree x)
 {
 	struct cb_field	*f;
 
-	if (x == cb_error_node) {
-		return cb_error_node;
-	}
 	if (!CB_REF_OR_FIELD_P(x)) {
+		/* note: this also applies to cb_error_node */
 		return x;
 	}
 
@@ -3538,6 +3538,9 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
+	const char *backup_source_file = cb_source_file;
+
+	clear_initial_values ();
 	defined_prog_list = NULL;
 	cobc_cs_check = 0;
 	main_flag_set = 0;
@@ -3545,7 +3548,11 @@ start:
 	clear_initial_values ();
 	current_program = cb_build_program (NULL, 0);
 
-	setup_registers ();
+	cb_source_file = "register-definition";
+	cb_set_intr_when_compiled ();
+	cb_build_registers ();
+	cb_add_external_defined_registers ();
+	cb_source_file = backup_source_file;
   }
   compilation_group
   {
@@ -3602,7 +3609,7 @@ simple_prog:
   _program_body
   /* do cleanup */
   {
-	backup_current_pos ();
+	last_source_line = cb_source_line;
 	clean_up_program (NULL, COB_MODULE_TYPE_PROGRAM);
   }
 ;
@@ -3628,7 +3635,7 @@ function_definition:
 _end_program_list:
   /* empty (still do cleanup) */
   {
-	backup_current_pos ();
+	last_source_line = cb_source_line;
 	clean_up_program (NULL, COB_MODULE_TYPE_PROGRAM);
   }
 | end_program_list
@@ -3642,8 +3649,8 @@ end_program_list:
 end_program:
   END_PROGRAM
   {
+	last_source_line = cb_source_line;
 	check_area_a_of ("END PROGRAM");
-	backup_current_pos ();
   }
   end_program_name _dot
   {
@@ -3655,7 +3662,8 @@ end_program:
 end_function:
   END_FUNCTION
   {
-	backup_current_pos ();
+	last_source_line = cb_source_line;
+	check_area_a_of ("END FUNCTION");
   }
   end_program_name _dot
   {
@@ -10841,25 +10849,26 @@ _procedure_division:
 ;
 
 procedure_division:
-  PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
-  DIVISION
+  PROCEDURE
   {
+	check_area_a_of ("PROCEDURE DIVISION");
 	current_section = NULL;
 	current_paragraph = NULL;
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
 	cobc_in_procedure = 1U;
 	cb_set_system_names ();
-	backup_current_pos ();
+	last_source_line = cb_source_line;
   }
+  DIVISION
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
-	cb_tree call_conv = $5;
-	if ($6) {
-		call_conv = $6;
-		if ($5) {
-			/* note: $4 is likely to be a reference to SPECIAL-NAMES */
-			cb_error_x ($6, _("%s and %s are mutually exclusive"),
+	cb_tree call_conv = $4;
+	if ($5) {
+		call_conv = $5;
+		if ($4) {
+			/* note: $3 is likely to be a reference to SPECIAL-NAMES */
+			cb_error_x ($5, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
 	}
@@ -10878,11 +10887,11 @@ procedure_division:
   _procedure_declaratives
   {
 	if (current_program->flag_main
-	 && !current_program->flag_chained && $7) {
+	 && !current_program->flag_chained && $6) {
 		cb_error (_("executable program requested but PROCEDURE/ENTRY has USING clause"));
 	}
 
-	emit_main_entry (current_program, $7);
+	emit_main_entry (current_program, $6);
 
 	cb_check_definition_matches_prototype (current_program);
   }
@@ -11181,6 +11190,7 @@ _procedure_returning:
 ;
 
 _procedure_declaratives:
+  /* empty */
 | DECLARATIVES
   {
 	check_area_a_of ("DECLARATIVES");
@@ -11426,7 +11436,18 @@ statement_list:
   {
 	/* push exec_list on the stack ($1), then unset */
 	$$ = current_program->exec_list;
-	current_program->exec_list = NULL;
+	if (!skip_statements) {
+		current_program->exec_list = NULL;
+	} else {
+		/* Provide "something" in case we never add statements
+		   to the program while parsing it below in "statements"
+		   to not break checks for "do we have any statements"
+		   by "callers".
+		   Not adding statements which are parsed will for example
+		   happen in DECLARATIVES with not-active USE FOR DEBUGGING. */
+		cb_tree note = cb_build_comment ("skipped statements");
+		current_program->exec_list = CB_BUILD_CHAIN (note, NULL);
+	}
 	check_unreached = 0;
   }
   {
@@ -11570,11 +11591,15 @@ statement:
 		label = cb_build_reference (name);
 		next_label_list = cb_list_add (next_label_list, label);
 		emit_statement (cb_build_goto (label, NULL));
+	} else {
+		cb_tree note = cb_build_comment ("skipped NEXT SENTENCE");
+		emit_statement (note);
 	}
 	check_unreached = 0;
   }
 | error error_stmt_recover
   {
+	emit_statement (cb_error_node);
 	yyerrok;
 	cobc_cs_check = 0;
   }
@@ -11869,40 +11894,50 @@ lines_or_number:
 ;
 
 at_line_column:
-  _at line_number
+  _at
+  {
+	$$ = cb_build_comment ("AT");	/* for position only */
+  }
+  line_number
   {
 	set_attr_with_conflict ("LINE", SYN_CLAUSE_1,
 				_("AT screen-location"), SYN_CLAUSE_3, 1,
 				&check_line_col_duplicate);
 
-	if ((CB_LITERAL_P ($2) && cb_get_int ($2) == 0) || $2 == cb_zero) {
-		cb_verify (cb_accept_display_extensions, "LINE 0");
+	if (((CB_LITERAL_P ($3) || CB_INTEGER_P ($3)) && cb_get_int ($3) == 0)
+	  || $3 == cb_zero) {
+		cb_verify_x ($2, cb_accept_display_extensions, "LINE 0");
 	}
 
 	if (!line_column) {
-		line_column = CB_BUILD_PAIR ($2, cb_int0);
+		line_column = CB_BUILD_PAIR ($3, cb_int0);
 	} else if (CB_PAIR_P (line_column)) {
 		/* note: if line_column is set but no pair, we already
 		   raised a conflict error as AT pos was used before */
-		CB_PAIR_X (line_column) = $2;
+		CB_PAIR_X (line_column) = $3;
 	}
   }
-| _at column_number
+| _at
+  {
+	$$ = cb_build_comment ("AT");	/* for position only */
+  }
+  column_number
   {
 	set_attr_with_conflict ("COLUMN", SYN_CLAUSE_2,
 				_("AT screen-location"), SYN_CLAUSE_3, 1,
 				&check_line_col_duplicate);
 
-	if ((CB_LITERAL_P ($2) && cb_get_int ($2) == 0) || $2 == cb_zero) {
+	if (((CB_LITERAL_P ($3) || CB_INTEGER_P ($3)) && cb_get_int ($3) == 0)
+	  || $3 == cb_zero) {
 		cb_verify_x ($2, cb_accept_display_extensions, "COLUMN 0");
 	}
 
 	if (!line_column) {
-		line_column = CB_BUILD_PAIR (cb_int0, $2);
+		line_column = CB_BUILD_PAIR (cb_int0, $3);
 	} else if (CB_PAIR_P (line_column)) {
 		/* note: if line_column is set but no pair, we already
 		   raised a conflict error as AT pos was used before */
-		CB_PAIR_Y (line_column) = $2;
+		CB_PAIR_Y (line_column) = $3;
 	}
   }
 | AT num_id_or_lit
@@ -12200,6 +12235,7 @@ _end_accept:
   }
 | END_ACCEPT
   {
+	check_non_area_a_of ("END-ACCEPT");
 	TERMINATOR_CLEAR ($-2, ACCEPT);
 # if 0 /* activate only for debugging purposes for attribs
 	FIXME: Replace by DEBUG_LOG function */
@@ -12259,6 +12295,7 @@ _end_add:
   }
 | END_ADD
   {
+	check_non_area_a_of ("END-ADD");
 	TERMINATOR_CLEAR ($-2, ADD);
   }
 ;
@@ -12347,7 +12384,6 @@ call_statement:
 	cobc_cs_check = CB_CS_CALL;
 	call_nothing = 0;
 	cobc_allow_program_name = 1;
-	backup_current_pos ();
   }
   call_body
   _end_call
@@ -12435,7 +12471,7 @@ call_body:
 		call_conv |= CB_CONV_NO_RET_UPD;
 	}
 	cb_emit_call ($3, $7, $8, CB_PAIR_X ($9), CB_PAIR_Y ($9),
-		      cb_int (call_conv), $2, $5, backup_source_line);
+		      cb_int (call_conv), $2, $5);
   }
 ;
 
@@ -12448,12 +12484,12 @@ _conv_linkage:
   {
 	/* FIXME: hack - fake cs for context-sensitive WITH ... LINKAGE */
 	cobc_cs_check |= CB_CS_OPTIONS;
-	backup_current_pos ();
+	$$ = cb_build_comment ("WITH");	/* for position only */
   }
   conv_linkage_option LINKAGE
   {
 	$$ = $3;
-	restore_backup_pos ($$);
+	copy_pos ($$, $2);
 	cobc_cs_check ^= CB_CS_OPTIONS;
 	cb_verify_x ($$, cb_call_convention_linkage, "WITH ... LINKAGE");
   }
@@ -12613,7 +12649,8 @@ call_param:
   {
 	if (call_mode != CB_CALL_BY_REFERENCE) {
 		cb_error_x (CB_TREE (current_statement),
-			    _("%s only allowed when arguments are passed %s"), "OMITTED", "BY REFERENCE");
+			    _("%s only allowed when arguments are passed %s"),
+				"OMITTED", "BY REFERENCE");
 	}
 	$$ = CB_BUILD_PAIR (cb_int (call_mode), cb_null);
   }
@@ -12634,7 +12671,8 @@ call_param:
   {
 	if (call_type != CB_CALL_BY_VALUE) {
 		cb_error_x ($2 /* or CB_TREE (current_statement) ? * /,
-			    _("%s only allowed when arguments are passed %s", "SIZE IS", "BY VALUE"));
+			    _("%s only allowed when arguments are passed %s",
+				"SIZE IS", "BY VALUE"));
 	}
 	$$ = cb_build_call_parameter ($2, call_mode, size_mode);
 	/ * note: ... while the MF extension is only given for the previous integer * /
@@ -12794,6 +12832,7 @@ _end_call:
   }
 | END_CALL
   {
+	check_non_area_a_of ("END-CALL");
 	TERMINATOR_CLEAR ($-2, CALL);
   }
 ;
@@ -12924,6 +12963,7 @@ _end_compute:
   }
 | END_COMPUTE
   {
+	check_non_area_a_of ("END-COMPUTE");
 	TERMINATOR_CLEAR ($-2, COMPUTE);
   }
 ;
@@ -12945,7 +12985,10 @@ commit_statement:
 continue_statement:
   CONTINUE
   {
-	backup_current_pos ();
+	$$ = cb_build_comment ("CONTINUE");
+	if (cobc_in_area_a) {
+		$$->source_column = -1;
+	}
   }
   _continue_after_phrase
   {
@@ -12953,11 +12996,11 @@ continue_statement:
 		/* Do not check unreached for CONTINUE without after phrase */
 		unsigned int	save_unreached = check_unreached;
 		check_unreached = 0;
-		begin_statement_from_backup_pos (STMT_CONTINUE, 0);
+		begin_statement_at_tree_pos (STMT_CONTINUE, 0, $2);
 		cb_emit_continue (NULL);
 		check_unreached = save_unreached;
 	} else {
-		begin_statement_from_backup_pos (STMT_CONTINUE_AFTER, 0);
+		begin_statement_at_tree_pos (STMT_CONTINUE_AFTER, 0, $2);
 		cb_emit_continue ($3);
 	}
   }
@@ -13049,6 +13092,7 @@ _end_delete:
   }
 | END_DELETE
   {
+	check_non_area_a_of ("END-DELETE");
 	TERMINATOR_CLEAR ($-2, DELETE);
   }
 ;
@@ -13171,7 +13215,7 @@ display_atom:
 		struct cb_list *l = CB_LIST($1);
 		if (l->value == cb_null) {
 			/* Emit DISPLAY OMITTED. */
-			CB_UNFINISHED_X (CB_TREE(current_statement), "DISPLAY OMITTED");
+			CB_UNFINISHED_X (CB_TREE (current_statement), "DISPLAY OMITTED");
 			error_if_no_advancing_in_screen_display (advancing_value);
 		}
 
@@ -13342,7 +13386,7 @@ field_or_literal_or_erase:
 display_message_box:
   MESSAGE _box x_list
   {
-	CB_UNFINISHED_X (CB_TREE(current_statement), "DISPLAY MESSAGE");
+	CB_UNFINISHED_X (CB_TREE (current_statement), "DISPLAY MESSAGE");
 	upon_value = NULL;
   }
   _display_message_clauses
@@ -13730,6 +13774,7 @@ _end_display:
   }
 | END_DISPLAY
   {
+	check_non_area_a_of ("END-DISPLAY");
 	TERMINATOR_CLEAR ($-2, DISPLAY);
   }
 ;
@@ -13776,6 +13821,7 @@ _end_divide:
   }
 | END_DIVIDE
   {
+	check_non_area_a_of ("END-DIVIDE");
 	TERMINATOR_CLEAR ($-2, DIVIDE);
   }
 ;
@@ -13794,22 +13840,26 @@ enable_statement:
 
 /* ENTRY statement */
 
-entry: ENTRY { check_non_area_a ($1); };
+entry: ENTRY {check_area_a_of ("ENTRY"); };
 entry_statement:
   entry
   {
 	check_unreached = 0;
 	begin_statement (STMT_ENTRY, 0);
-	backup_current_pos ();
   }
   entry_body
-| entry FOR GO TO
+| entry
   {
 	check_unreached = 0;
 	begin_statement (STMT_ENTRY_FOR_GO_TO, 0);
-	backup_current_pos ();
   }
-  entry_goto_body
+  FOR GO TO
+  LITERAL
+  {
+	if (cb_verify_x (CB_TREE (current_statement), cb_goto_entry, "ENTRY FOR GO TO")) {
+		emit_entry_goto ((char *)(CB_LITERAL ($6)->data));
+	}
+  }
 ;
 
 entry_body:
@@ -13830,17 +13880,8 @@ entry_body:
 			}
 		}
 		if (!cobc_check_valid_name ((char *)(CB_LITERAL ($2)->data), ENTRY_NAME)) {
-			emit_entry ((char *)(CB_LITERAL ($2)->data), 1, $4, call_conv, 0);
+			emit_entry ((char *)(CB_LITERAL ($2)->data), 1, $4, call_conv);
 		}
-	}
-  }
-;
-
-entry_goto_body:
-  LITERAL
-  {
-	if (cb_verify (cb_goto_entry, "ENTRY FOR GO TO")) {
-		emit_entry_goto ((char *)(CB_LITERAL ($1)->data));
 	}
   }
 ;
@@ -13949,14 +13990,24 @@ evaluate_case_list:
   evaluate_case			{ $$ = cb_list_add ($1, $2); }
 ;
 
+end_evaluate:
+  END_EVALUATE { check_non_area_a_of ("END-EVALUATE"); }
+;
+
 evaluate_case:
   evaluate_when_list
   statement_list
   {
+	/* FIXME: build STMT_WHEN directly in the parser instead of
+	   in cb_build_evaluate, this will also provide the correct
+	   source location directly */
 	$$ = CB_BUILD_CHAIN ($2, $1);
+	if (!is_valid_statement_tree ($2)) {
+		cb_error_x ($1, _("%s without imperative statement"), "WHEN");
+	}
 	eval_inc2 = 0;
   }
-| evaluate_when_list END_EVALUATE
+| evaluate_when_list end_evaluate
   {
 	eval_inc2 = 0;
 	cb_verify (cb_missing_statement,
@@ -13977,27 +14028,40 @@ evaluate_case:
   }
 ;
 
-evaluate_other:
+when_other:
   WHEN OTHER
+  {
+	/* FIXME: build STMT_WHEN_OTHER directly in the parser instead of
+	   in cb_build_evaluate */
+	check_non_area_a_of ("WHEN OTHER");
+	$$ = cb_build_comment ("WHEN OTHER");
+  }
+;
+
+evaluate_other:
+  when_other
   statement_list
   {
-	$$ = CB_BUILD_CHAIN ($3, NULL);
+	$$ = CB_BUILD_CHAIN ($2, NULL);
+	if (!is_valid_statement_tree ($2)) {
+		cb_error_x ($1,	_("%s without imperative statement"), "WHEN OTHER");
+	}
 	eval_inc2 = 0;
   }
-| WHEN OTHER END_EVALUATE
+| when_other end_evaluate
   {
 	eval_inc2 = 0;
-	cb_verify (cb_missing_statement,
+	cb_verify_x ($1, cb_missing_statement,
 		_("WHEN OTHER without imperative statement"));
 	/* Note: we don't clear the EVALUATE terminator here
 	         as we'd have to skip this later
 	         [side effect: possible warning about missing terminator] */
 	$$ = NULL;
   }
-| WHEN OTHER TOK_DOT
+| when_other TOK_DOT
   {
 	eval_inc2 = 0;
-	cb_verify (cb_missing_statement,
+	cb_verify_x ($1, cb_missing_statement,
 		_("WHEN OTHER without imperative statement"));
 	/* Put the dot token back into the stack for reparse */
 	cb_unput_dot ();
@@ -14005,26 +14069,30 @@ evaluate_other:
   }
 ;
 
-evaluate_when_list:
+when:
   WHEN
   {
-	backup_current_pos ();
+	/* FIXME: build STMT_WHEN directly in the parser instead of
+	   in cb_build_evaluate */
+	check_non_area_a_of ("WHEN");
+	$$ = cb_build_comment ("WHEN");
   }
+;
+
+evaluate_when_list:
+  when
   evaluate_object_list
   {
-	$$ = CB_LIST_INIT ($3);
-	restore_backup_pos ($$);
+	$$ = CB_LIST_INIT ($2);
+	copy_pos ($$, $1);
 	eval_inc2 = 0;
   }
 | evaluate_when_list
-  WHEN
-  {
-	backup_current_pos ();
-  }
+  when
   evaluate_object_list
   {
-	$$ = cb_list_add ($1, $4);
-	restore_backup_pos ($$);
+	$$ = cb_list_add ($1, $3);
+	copy_pos ($$, $2);
 	eval_inc2 = 0;
   }
 ;
@@ -14127,7 +14195,7 @@ _end_evaluate:
   {
 	TERMINATOR_WARNING ($-2, EVALUATE);
   }
-| END_EVALUATE
+| end_evaluate
   {
 	TERMINATOR_CLEAR ($-2, EVALUATE);
   }
@@ -14491,20 +14559,41 @@ if_statement:
   _end_if
 ;
 
-if_else_statements:
-  if_true statement_list ELSE if_false statement_list
+else:
+  ELSE
   {
-	cb_emit_if ($-1, $2, $5);
+	check_non_area_a_of ("ELSE");
+	$$ = cb_build_comment ("ELSE");
   }
-| ELSE if_false statement_list
+
+if_else_statements, :
+  if_true statement_list else if_false statement_list
   {
-	cb_emit_if ($-1, NULL, $3);
-	cb_verify (cb_missing_statement,
+	if (is_valid_statement_tree ($5)) {
+		cb_emit_if ($-1, $2, $5);
+	} else {
+		cb_error_x ($3, _("%s without imperative statement"), "ELSE");
+	}
+  }
+| else if_false statement_list
+  {
+	cb_verify_x (CB_TREE (current_statement),
+		cb_missing_statement,
 		_("IF without imperative statement"));
+	if (is_valid_statement_tree ($3)) {
+		cb_emit_if ($-1, NULL, $3);
+	} else {
+		cb_error_x ($1, _("%s without imperative statement"), "ELSE");
+	}
   }
 | if_true statement_list %prec SHIFT_PREFER
   {
-	cb_emit_if ($-1, $2, NULL);
+	if (is_valid_statement_tree ($2)) {
+		cb_emit_if ($-1, $2, NULL);
+	} else {
+		cb_error_x (CB_TREE (current_statement),
+			_("%s without imperative statement"), "IF");
+	}
   }
 ;
 
@@ -14514,6 +14603,7 @@ _if_then:
   }
 | THEN
   {
+	check_non_area_a_of ("THEN");
 	cb_save_cond ();
   }
 ;
@@ -14538,6 +14628,7 @@ _end_if:
   }
 | END_IF
   {
+	check_non_area_a_of ("END-IF");
 	TERMINATOR_CLEAR ($-4, IF);
 	cb_terminate_cond ();
   }
@@ -14731,7 +14822,7 @@ examine_statement:
 examine_format_variant:
   TALLYING
   {
-	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
+	cb_tree tally = cb_ref (cb_build_reference ("TALLY"));
 	cb_emit_move (cb_zero, CB_LIST_INIT (tally));
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);
@@ -15150,6 +15241,7 @@ _end_modify:
   }
 | END_MODIFY
   {
+	check_non_area_a_of ("END-MODIFY");
 	TERMINATOR_CLEAR ($-2, MODIFY);
   }
 ;
@@ -15206,6 +15298,7 @@ _end_multiply:
   }
 | END_MULTIPLY
   {
+	check_non_area_a_of ("END-MULTIPLY");
 	TERMINATOR_CLEAR ($-2, MULTIPLY);
   }
 ;
@@ -15413,6 +15506,7 @@ _end_perform:
   }
 | END_PERFORM
   {
+	check_non_area_a_of ("END-PERFORM");
 	TERMINATOR_CLEAR ($-6, PERFORM);
   }
 ;
@@ -15420,6 +15514,7 @@ _end_perform:
 end_perform_or_dot:
   END_PERFORM
   {
+	check_non_area_a_of ("END-PERFORM");
 	TERMINATOR_CLEAR ($-5, PERFORM);
   }
 | TOK_DOT
@@ -15738,6 +15833,7 @@ _end_read:
   }
 | END_READ
   {
+	check_non_area_a_of ("END-READ");
 	TERMINATOR_CLEAR ($-2, READ);
   }
 ;
@@ -15805,6 +15901,7 @@ _end_receive:
   }
 | END_RECEIVE
   {
+	check_non_area_a_of ("END-RECEIVE");
 	TERMINATOR_CLEAR ($-2, RECEIVE);
   }
 ;
@@ -15862,6 +15959,7 @@ _end_return:
   }
 | END_RETURN
   {
+	check_non_area_a_of ("END-RETURN");
 	TERMINATOR_CLEAR ($-2, RETURN);
   }
 ;
@@ -15915,6 +16013,7 @@ _end_rewrite:
   }
 | END_REWRITE
   {
+	check_non_area_a_of ("END-REWRITE");
 	TERMINATOR_CLEAR ($-2, REWRITE);
   }
 ;
@@ -16015,14 +16114,14 @@ _end_search:
   }
 | END_SEARCH end_search_pos_token
   {
-	cb_tree x = $-0;
-	if (x) {
+	if ($-0) {
 		struct cb_search *p = CB_SEARCH ($-0);
 		if (p->at_end == NULL) {
 			cb_tree brk = cb_build_direct ("break;", 0);
 			p->at_end = CB_BUILD_PAIR ($2, brk);
 		}
 	}
+	check_non_area_a_of ("END-SEARCH");
 	TERMINATOR_CLEAR ($-2, SEARCH);
   }
 ;
@@ -16573,6 +16672,7 @@ _end_start:
   }
 | END_START
   {
+	check_non_area_a_of ("END-START");
 	TERMINATOR_CLEAR ($-2, START);
   }
 ;
@@ -16748,6 +16848,7 @@ _end_string:
   }
 | END_STRING
   {
+	check_non_area_a_of ("END-STRING");
 	TERMINATOR_CLEAR ($-2, STRING);
   }
 ;
@@ -16791,6 +16892,7 @@ _end_subtract:
   }
 | END_SUBTRACT
   {
+	check_non_area_a_of ("END-SUBTRACT");
 	TERMINATOR_CLEAR ($-2, SUBTRACT);
   }
 ;
@@ -16956,6 +17058,7 @@ _end_unstring:
   }
 | END_UNSTRING
   {
+	check_non_area_a_of ("END-UNSTRING");
 	TERMINATOR_CLEAR ($-2, UNSTRING);
   }
 ;
@@ -17245,13 +17348,13 @@ program_start_end:
   {
 	emit_statement (cb_build_comment ("USE AT PROGRAM START"));
 	CB_PENDING ("USE AT PROGRAM START");
-	/* emit_entry ("_AT_START", 0, NULL, NULL, 0); */
+	/* emit_entry ("_AT_START", 0, NULL, NULL); */
   }
 | END
   {
 	emit_statement (cb_build_comment ("USE AT PROGRAM END"));
 	CB_PENDING ("USE AT PROGRAM END");
-	/* emit_entry ("_AT_END", 0, NULL, NULL, 0); */
+	/* emit_entry ("_AT_END", 0, NULL, NULL); */
   }
 ;
 
@@ -17385,6 +17488,7 @@ _end_write:
   }
 | END_WRITE
   {
+	check_non_area_a_of ("END-WRITE");
 	TERMINATOR_CLEAR ($-2, WRITE);
   }
 ;
@@ -17673,6 +17777,7 @@ _end_xml:
   }
 | END_XML
   {
+	check_non_area_a_of ("END-XML");
 	TERMINATOR_CLEAR ($-2, XML);
   }
 ;
@@ -17791,12 +17896,16 @@ accp_on_exception:
   {
 	current_statement->handler_type = ACCEPT_HANDLER;
 	current_statement->ex_handler = $3;
+	if (!is_valid_statement_tree ($3)) {
+		cb_error (_("%s without imperative statement"),
+			$1 == cb_int0 ? "ON ESCAPE" : "ON EXCEPTION");
+	}
   }
 ;
 
 escape_or_exception:
-  on_escape
-| on_exception
+  on_escape 	{ $$ = cb_int0; }
+| on_exception	{ $$ = cb_int1; }
 ;
 
 _accp_not_on_exception:
@@ -17809,12 +17918,16 @@ accp_not_on_exception:
   {
 	current_statement->handler_type = ACCEPT_HANDLER;
 	current_statement->not_ex_handler = $2;
+	if (!is_valid_statement_tree ($2)) {
+		cb_error (_("%s without imperative statement"),
+			$1 == cb_int0 ? "NOT ON ESCAPE" : "NOT ON EXCEPTION");
+	}
   }
 ;
 
 not_escape_or_not_exception:
-  NOT_ON_ESCAPE
-| NOT_ON_EXCEPTION
+  NOT_ON_ESCAPE 	{ $$ = cb_int0; }
+| NOT_ON_EXCEPTION	{ $$ = cb_int0; }
 ;
 
 
@@ -17846,6 +17959,9 @@ common_on_exception:
   {
 	current_statement->handler_type = get_handler_type_from_statement(current_statement);
 	current_statement->ex_handler = $2;
+	if (!is_valid_statement_tree ($2)) {
+		cb_error (_("%s without imperative statement"), "ON EXCEPTION");
+	}
   }
 ;
 
@@ -17859,6 +17975,9 @@ common_not_on_exception:
   {
 	current_statement->handler_type = get_handler_type_from_statement (current_statement);
 	current_statement->not_ex_handler = $2;
+	if (!is_valid_statement_tree ($2)) {
+		cb_error (_("%s without imperative statement"), "NOT ON EXCEPTION");
+	}
   }
 ;
 
@@ -17866,6 +17985,9 @@ common_not_on_exception:
 
 on_size_error_phrases:
   %prec SHIFT_PREFER
+  {
+	/* no [NOT] ON SIZE ERROR is specified (= no explicit handling) */
+  }
 | on_size_error _not_on_size_error
 | not_on_size_error _on_size_error
   {
@@ -17891,7 +18013,11 @@ on_size_error:
   SIZE_ERROR statement_list
   {
 	current_statement->handler_type = SIZE_ERROR_HANDLER;
-	current_statement->ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "ON SIZE ERROR");
+	}
   }
 ;
 
@@ -17904,7 +18030,11 @@ not_on_size_error:
   NOT_SIZE_ERROR statement_list
   {
 	current_statement->handler_type = SIZE_ERROR_HANDLER;
-	current_statement->not_ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->not_ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "NOT ON SIZE ERROR");
+	}
   }
 ;
 
@@ -17937,7 +18067,11 @@ on_overflow:
   TOK_OVERFLOW statement_list
   {
 	current_statement->handler_type = OVERFLOW_HANDLER;
-	current_statement->ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "ON OVERFLOW");
+	}
   }
 ;
 
@@ -17950,7 +18084,11 @@ not_on_overflow:
   NOT_ON_OVERFLOW statement_list
   {
 	current_statement->handler_type = OVERFLOW_HANDLER;
-	current_statement->not_ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->not_ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "NOT ON OVERFLOW");
+	}
   }
 ;
 
@@ -17996,7 +18134,11 @@ at_end_clause:
   at_end statement_list
   {
 	current_statement->handler_type = AT_END_HANDLER;
-	current_statement->ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "AT END");
+	}
   }
 ;
 
@@ -18009,7 +18151,11 @@ not_at_end_clause:
   NOT_AT_END statement_list
   {
 	current_statement->handler_type = AT_END_HANDLER;
-	current_statement->not_ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->not_ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "NOT AT END");
+	}
   }
 ;
 
@@ -18041,7 +18187,11 @@ at_eop_clause:
   EOP statement_list
   {
 	current_statement->handler_type = EOP_HANDLER;
-	current_statement->ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "AT END OF PAGE");
+	}
   }
 ;
 
@@ -18054,7 +18204,11 @@ not_at_eop_clause:
   NOT_EOP statement_list
   {
 	current_statement->handler_type = EOP_HANDLER;
-	current_statement->not_ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->not_ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "NOT AT END OF PAGE");
+	}
   }
 ;
 
@@ -18091,7 +18245,11 @@ invalid_key_sentence:
   INVALID_KEY statement_list
   {
 	current_statement->handler_type = INVALID_KEY_HANDLER;
-	current_statement->ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "INVALID KEY");
+	}
   }
 ;
 
@@ -18104,7 +18262,11 @@ not_invalid_key_sentence:
   NOT_INVALID_KEY statement_list
   {
 	current_statement->handler_type = INVALID_KEY_HANDLER;
-	current_statement->not_ex_handler = $2;
+	if (is_valid_statement_tree ($2)) {
+		current_statement->not_ex_handler = $2;
+	} else {
+		cb_error (_("%s without imperative statement"), "NOT INVALID KEY");
+	}
   }
 ;
 
@@ -19377,20 +19539,33 @@ target_identifier_1:
 ;
 
 target_identifier_single:
-| qualified_word %prec SHIFT_PREFER
+  data_name_without_sub_or_refmod
   {
 	$$ = $1;
-	if (CB_REFERENCE_P ($1)) {
+	if ($1 != cb_error_node) {
 		CB_REFERENCE ($1)->flag_target = 1;
 		if (cb_listing_xref) {
 			cobc_xref_set_receiving ($1);
 		}
-	}
-	if (start_debug) {
-		cb_check_field_debug ($1);
+		if (start_debug) {
+			cb_check_field_debug ($1);
+		}
 	}
   }
 ;
+
+data_name_without_sub_or_refmod:
+  qualified_word
+  {
+	cb_tree x = cb_ref ($1);
+	if (!CB_FIELD_P (x)) {
+		$$ = cb_error_node;
+	} else {
+		$$ = $1;
+	}
+  }
+;
+
 
 display_identifier_or_alphabet_name:
   identifier_1
@@ -20002,14 +20177,16 @@ error_stmt_recover:
   }
 | verb
   {
+	check_non_area_a ($1);
 	cobc_repeat_last_token = 1;
   }
-| ELSE
+| else
   {
 	cobc_repeat_last_token = 0;
   }
 | scope_terminator
   {
+	check_non_area_a_of (_("terminator"));
 	cobc_repeat_last_token = 0;
   }
 ;
@@ -20098,7 +20275,7 @@ scope_terminator:
 _dot:
   TOK_DOT
 | {
-	if (! cb_verify (cb_missing_period, _("optional period"))) {
+	if (!cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
 	}
   }
@@ -20108,7 +20285,7 @@ dot_or_else_end_of_file_control:
   TOK_DOT
 | file_control_end_delimiter
   {
-	if (! cb_verify (cb_missing_period, _("optional period"))) {
+	if (!cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
 	}
 	cobc_repeat_last_token = 1;
@@ -20129,7 +20306,7 @@ dot_or_else_end_of_file_description:
 | level_number_in_area_a	/* repeats last token */
 | file_description_end_delimiter
   {
-	if (! cb_verify (cb_missing_period, _("optional period"))) {
+	if (!cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
 	}
 	cobc_repeat_last_token = 1;
@@ -20150,7 +20327,7 @@ dot_or_else_end_of_record_description:
 | level_number_in_area_a	/* repeats last token */
 | record_description_end_delimiter
   {
-	if (! cb_verify (cb_missing_period, _("optional period"))) {
+	if (!cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
 	}
 	cobc_repeat_last_token = 1;
@@ -20170,7 +20347,7 @@ _dot_or_else_area_a:		/* in PROCEDURE DIVISION */
   TOK_DOT
 | TOKEN_EOF
   {
-	if (! cb_verify (cb_missing_period, _("optional period"))) {
+	if (!cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
 	}
   }

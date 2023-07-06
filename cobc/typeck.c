@@ -8598,8 +8598,7 @@ get_constant_call_name (cb_tree prog)
 void
 cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 	      cb_tree on_exception, cb_tree not_on_exception,
-	      cb_tree convention, cb_tree newthread, cb_tree handle,
-	      int call_line_number)
+	      cb_tree convention, cb_tree newthread, cb_tree handle)
 {
 	cb_tree				l;
 	cb_tree				check_list;
@@ -8859,12 +8858,12 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 			}
 		}
 		if (cb_listing_xref) {
-			cobc_xref_call (entry, call_line_number, 0, is_sys_call);
+			cobc_xref_call (entry, CB_TREE (current_statement)->source_line, 0, is_sys_call);
 		}
 	}
 	else if (cb_listing_xref && CB_REFERENCE_P(prog)) {
 		entry = CB_FIELD(CB_REFERENCE(prog)->value)->name;
-		cobc_xref_call (entry, call_line_number, 1, 0);
+		cobc_xref_call (entry, CB_TREE (current_statement)->source_line, 1, 0);
 	}
 
 	if (error_ind) {

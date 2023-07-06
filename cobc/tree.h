@@ -2415,7 +2415,7 @@ extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 
 extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree,
-				      cb_tree, cb_tree, cb_tree, cb_tree, int);
+				      cb_tree, cb_tree, cb_tree, cb_tree);
 
 extern void		cb_emit_cancel (cb_tree);
 extern void		cb_emit_close (cb_tree, cb_tree);
