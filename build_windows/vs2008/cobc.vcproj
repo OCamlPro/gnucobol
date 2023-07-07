@@ -288,6 +288,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\cobc\replace.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\reserved.c"
 				>
 			</File>

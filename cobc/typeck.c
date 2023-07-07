@@ -2126,9 +2126,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
 		} else {
-			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
-						cb_word_length, word);
-		}
+		(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+					cb_word_length, word);
+	}
 	}
 }
 
@@ -2886,7 +2886,7 @@ cb_build_const_start (struct cb_field *f, cb_tree x)
 		if (cb_field_variable_size (p)) {
 			cb_error (_("variable length item not allowed here"));
 			return cb_build_numeric_literal (0, "1", 0);
-		}
+	}
 	}
 	snprintf (buff, sizeof(buff), "%d", target->offset);
 	for (p = target; p; p = p->parent) {
@@ -10685,7 +10685,6 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	struct cb_field		*fsrc;
 	struct cb_literal	*l;
 	cb_tree			loc;
-	cob_s64_t		val;
 	size_t			i;
 	size_t			is_numeric_edited;
 	int			src_scale_mod;
@@ -10915,6 +10914,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			         || fdst->usage == CB_USAGE_COMP_X
 			         || fdst->usage == CB_USAGE_COMP_N
 			         || fdst->usage == CB_USAGE_BINARY))) {
+				cob_s64_t		val;
 				i = l->size - leftmost_significant;
 				if (i < 19) {
 					val = cb_get_long_long (src);
