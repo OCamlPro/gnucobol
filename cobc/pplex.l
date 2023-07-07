@@ -162,7 +162,7 @@ static struct plex_stack	plex_cond_stack[PLEX_COND_DEPTH];
 
 /* Function declarations */
 static int	ppinput			(char *, const size_t);
-static void	ppecho                  (const char *text, const char *token );
+static void	ppecho			(const char *text, const char *token );
 
 static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
@@ -191,7 +191,9 @@ MAYBE_AREA_A	[ ]?#?
 %x CALL_DIRECTIVE_STATE
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
+%x REPLACING_STATE
 %x PSEUDO_STATE
+%x REPLACE_STATE
 %x CONTROL_DIVISION_STATE
 %x SUBSTITUTION_SECTION_STATE
 %x SOURCE_DIRECTIVE_STATE
@@ -475,7 +477,7 @@ MAYBE_AREA_A	[ ]?#?
 }
 
 "REPLACE"/[ ,;\n]		{
-	yy_push_state (COPY_STATE);
+	yy_push_state (REPLACE_STATE);
 	return REPLACE;
 }
 
@@ -525,7 +527,7 @@ MAYBE_AREA_A	[ ]?#?
 <SUBSTITUTION_SECTION_STATE,
 CONTROL_DIVISION_STATE>{
   "REPLACE"	       {
-	  yy_push_state (COPY_STATE);
+	  yy_push_state (REPLACE_STATE);
 	  return REPLACE;
   }
 }
@@ -546,9 +548,9 @@ SUBSTITUTION_SECTION_STATE>{
 	  ppecho (yytext, NULL);
   }
   [,;]?\n		{
-	  ECHO;
-	  check_listing (yytext, 0);
-	  cb_source_line++;
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
 }
@@ -999,27 +1001,63 @@ ENDIF_DIRECTIVE_STATE>{
 	return TEXT_NAME;
   }
   \. 			{
+	/* note: if we get into the REPLACING state, then
+	   that one handles the dot and pops this state */
 	yy_pop_state ();
 	return DOT;
   }
-  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
-  "("			{ return '('; }
-  ")"			{ return ')'; }
-  "BY"			{ return BY; }
+  /* for COPY IN/OF lib */
   "IN"			{ return IN; }
   "OF"			{ return OF; }
-  "OFF"			{ return OFF; }
+
   "SUPPRESS"		{ return SUPPRESS; }
   "PRINTING"		{ return PRINTING; }
-  "REPLACING"		{ return REPLACING; }
-  "LEADING"		{ return LEADING; }
-  "TRAILING"		{ return TRAILING; }
+  "REPLACING"		{ yy_push_state (REPLACING_STATE); return REPLACING; }
   "ALSO"		{ return ALSO; }
   "LAST"		{ return LAST; }
   {WORD} |
   {NUMRIC_LITERAL} |
   {ALNUM_LITERAL} |
   .				{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+  }
+  /* for error handling only, only used in REPLACING state */
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ return EQEQ; }
+  "BY"			{ return BY; }
+}
+
+<REPLACING_STATE>{
+  [,;]?\n		{
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "BY"			{ return BY; }
+  \. 			{
+	  yy_pop_state ();
+	  yy_pop_state ();
+	  return DOT;
+  }
+  /* for qualification and subscripting */
+  "IN"			{ return IN; }
+  "OF"			{ return OF; }
+  "("			{ return '('; }
+  ")"			{ return ')'; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  /* for error handling only, only used in COPY state */
+  "REPLACING"		{ return REPLACING; }
+
+  {WORD} |
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL} |
+  .			{
 	pplval.s = cobc_plex_strdup (yytext);
 	return TOKEN;
   }
@@ -1051,6 +1089,38 @@ ENDIF_DIRECTIVE_STATE>{
   }
 }
 
+<REPLACE_STATE>{
+  [,;]?\n		{
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+  \. 			{
+	yy_pop_state ();
+	return DOT;
+  }
+  /* for qualification and subscripting */
+  "IN"			{ return IN; }
+  "OF"			{ return OF; }
+  "("			{ return '('; }
+  ")"			{ return ')'; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  "BY"			{ return BY; }
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "ALSO"		{ return ALSO; }
+  "LAST"		{ return LAST; }
+  "OFF"			{ return OFF; }
+  {WORD} |
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL} |
+  .				{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+  }
+}
+
 <<EOF>> {
 	struct copy_info *current_copy_info = copy_stack;
 
@@ -1074,7 +1144,7 @@ ENDIF_DIRECTIVE_STATE>{
 		newline_count = 0;
 		inside_bracket = 0;
 		comment_allowed = 1;
-                cb_free_replace ();
+		cb_free_replace ();
 		copy_stack = NULL;
 		quotation_mark = 0;
 		consecutive_quotation = 0;
@@ -1146,23 +1216,23 @@ ppopen_get_file (const char *name)
 	/* check for recursive inclusion */
 	for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
 		/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
-		*         ideally open first, then check if we have the same physical file
-		*         (would also fix recursion check for symlinked files) */
+		          ideally open first, then check if we have the same physical file
+		          (would also fix recursion check for symlinked files) */
 		if (!strcmp (name, current_copy_info->dname)) {
-			struct cb_tree_common	loc;
-			for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
-				int		line;
-				if (current_copy_info->prev) {
-					line = current_copy_info->prev->line;
-				} else {
-					line = cb_source_line;
-				}
-				cb_inclusion_note (current_copy_info->dname, line);
+		struct cb_tree_common	loc;
+		for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
+			int		line;
+			if (current_copy_info->prev) {
+				line = current_copy_info->prev->line;
+			} else {
+				line = cb_source_line;
 			}
-			loc.source_file = name;
-			loc.source_line = -1;
-			cb_error_x (&loc, _("recursive inclusion"));
-			return 0;
+			cb_inclusion_note (current_copy_info->dname, line);
+		}
+		loc.source_file = name;
+		loc.source_line = -1;
+		cb_error_x (&loc, _("recursive inclusion"));
+		return 0;		
 		}
 	}
 

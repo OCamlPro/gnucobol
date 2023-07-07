@@ -1,4 +1,19 @@
 
+2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	common preparser cleanup
+	* ppparse.y: error recovery for COPY and REPLACE (consume until DOT
+	  instead of until EOF)
+	* ppparse.y: renamed "TOKEN" from "Identifier" to "Word", adjust
+	  some terminals prefixing it with leading underscore as optional
+	Bug #890 wrong reference in COPY diagnostic
+	* ppparse.y: switch to new buffer after parsing DOT, not before
+	Bug #23 several replacement values create parser errors
+	* pplex.l: split REPLACE_STATE and REPLACING_STATE from COPY_STATE
+	  to limit their reserved word list to the applicable ones and to
+	  improve error handling
+	* ppparse.y: explicit parse IN and OF as single replacement words
+
 2023-07-06  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* replace.c: rewrite the code for preprocessing with a two-phase

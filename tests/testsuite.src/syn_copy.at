@@ -992,3 +992,83 @@ LINE    PG/LN  A...B............................................................
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([COPY and REPLACE errors])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+           05  VAR                    PIC XX.
+])
+
+# see Bug #890 - the buffer for the copybook was switched
+# already before parsing the DOT; additional the error did
+# not stopped at the DOT, so there was max. one error printed
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       COPY "copy.inc"  A.
+       COPY "copy.inc"  ==A== BY B.
+       COPY "copy.inc"  REPLACING.
+       COPY "copy.inc"  REPLACING ABC.
+       COPY "copy.inc"  REPLACING 'POST' IN.
+       COPY "copy.inc"  REPLACING 'POST' BY BY.
+       COPY "copy.inc"
+             REPLACING ==some-name== BY ==other-name==
+             REPLACING "some lit" BY "other literal".
+       COPY "copy.inc".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:6: error: syntax error, unexpected Word or Literal, expecting .
+prog.cob:7: error: syntax error, unexpected ==, expecting .
+prog.cob:8: error: syntax error, unexpected ., expecting == or LEADING or TRAILING or Word or Literal
+prog.cob:9: error: syntax error, unexpected ., expecting BY
+prog.cob:10: error: syntax error, unexpected ., expecting Word or Literal
+prog.cob:11: error: syntax error, unexpected BY, expecting == or IN or OF or Word or Literal
+prog.cob:14: error: syntax error, unexpected REPLACING, expecting .
+copy.inc:2: error: level number must begin with 01 or 77
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([COPY and REPLACE with reserved words])
+AT_KEYWORDS([copy])
+
+# see Bug #23
+AT_DATA([copy.inc], [
+           05  WS-'POST'                    PIC XX.
+           05  'POST'-A                     PIC XX.
+           05  'POST'-WS                    PIC XX.
+])
+AT_DATA([proc.inc], [
+           DISPLAY VAR VAR-2
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 INPUT-REC.
+       COPY "copy.inc"
+          REPLACING 'POST' BY IN.
+       PROCEDURE        DIVISION.
+           DISPLAY WS-IN IN-A IN-WS NO ADVANCING.
+           IF WS-IN EQUALS IN-A
+       COPY "proc.inc"
+          REPLACING VAR       BY IN-A IN INPUT-REC
+                    ==VAR-2== BY ==IN-WS (1:1)==.
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_CLEANUP
