@@ -162,7 +162,7 @@ static struct plex_stack	plex_cond_stack[PLEX_COND_DEPTH];
 
 /* Function declarations */
 static int	ppinput			(char *, const size_t);
-static void	ppecho			(const char *text, const char *token );
+static void	ppecho                  (const char *text, const char *token );
 
 static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
@@ -548,9 +548,9 @@ SUBSTITUTION_SECTION_STATE>{
 	  ppecho (yytext, NULL);
   }
   [,;]?\n		{
-	ECHO;
-	check_listing (yytext, 0);
-	cb_source_line++;
+	  ECHO;
+	  check_listing (yytext, 0);
+	  cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
 }
@@ -1015,6 +1015,13 @@ ENDIF_DIRECTIVE_STATE>{
   "REPLACING"		{ yy_push_state (REPLACING_STATE); return REPLACING; }
   "ALSO"		{ return ALSO; }
   "LAST"		{ return LAST; }
+
+  /* for error handling only, only used in REPLACING state */
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ return EQEQ; }
+  "BY"			{ return BY; }
+
   {WORD} |
   {NUMRIC_LITERAL} |
   {ALNUM_LITERAL} |
@@ -1022,11 +1029,6 @@ ENDIF_DIRECTIVE_STATE>{
 	pplval.s = cobc_plex_strdup (yytext);
 	return TOKEN;
   }
-  /* for error handling only, only used in REPLACING state */
-  "LEADING"		{ return LEADING; }
-  "TRAILING"		{ return TRAILING; }
-  "=="			{ return EQEQ; }
-  "BY"			{ return BY; }
 }
 
 <REPLACING_STATE>{
@@ -1039,6 +1041,7 @@ ENDIF_DIRECTIVE_STATE>{
 
   "LEADING"		{ return LEADING; }
   "TRAILING"		{ return TRAILING; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
   "BY"			{ return BY; }
   \. 			{
 	  yy_pop_state ();
@@ -1050,7 +1053,7 @@ ENDIF_DIRECTIVE_STATE>{
   "OF"			{ return OF; }
   "("			{ return '('; }
   ")"			{ return ')'; }
-  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+
   /* for error handling only, only used in COPY state */
   "REPLACING"		{ return REPLACING; }
 
@@ -1105,13 +1108,15 @@ ENDIF_DIRECTIVE_STATE>{
   "OF"			{ return OF; }
   "("			{ return '('; }
   ")"			{ return ')'; }
-  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
-  "BY"			{ return BY; }
+
   "LEADING"		{ return LEADING; }
   "TRAILING"		{ return TRAILING; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  "BY"			{ return BY; }
   "ALSO"		{ return ALSO; }
   "LAST"		{ return LAST; }
   "OFF"			{ return OFF; }
+
   {WORD} |
   {NUMRIC_LITERAL} |
   {ALNUM_LITERAL} |
@@ -1144,7 +1149,7 @@ ENDIF_DIRECTIVE_STATE>{
 		newline_count = 0;
 		inside_bracket = 0;
 		comment_allowed = 1;
-		cb_free_replace ();
+                cb_free_replace ();
 		copy_stack = NULL;
 		quotation_mark = 0;
 		consecutive_quotation = 0;

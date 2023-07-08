@@ -1750,7 +1750,7 @@ setup_external_definition_type (cb_tree x)
 
 /* verifies that no conflicting clauses are used and
    inherits the definition of the original field specified
-   by SAME AS or by type_name */
+   by SAME AS or by type_name into the current_field */
 static void
 inherit_external_definition (const int lvl)
 {
@@ -1788,9 +1788,9 @@ get_finalized_description_tree (void)
 {
 	struct cb_field *p;
 
-	/* finalize last field if target of SAME AS / TYPEDEF */
+			/* finalize last field if target of SAME AS / TYPEDEF */
 	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
-		inherit_external_definition (0);
+			inherit_external_definition (0);
 	}
 
 	/* validate the complete current "block" */
@@ -3576,7 +3576,8 @@ start:
 ;
 
 compilation_group:
-  simple_prog	/* extension: single program without PROCEDURE DIVISION */
+  simple_prog	/* extension: single program
+				   without PROGRAM-ID, possibly also without PROCEDURE DIVISION */
 | nested_list
 ;
 
@@ -14566,7 +14567,7 @@ else:
 	$$ = cb_build_comment ("ELSE");
   }
 
-if_else_statements, :
+if_else_statements:
   if_true statement_list else if_false statement_list
   {
 	if (is_valid_statement_tree ($5)) {
