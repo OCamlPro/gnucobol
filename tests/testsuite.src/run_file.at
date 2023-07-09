@@ -13771,8 +13771,8 @@ EXITING NESTED-PROGRAM-1-2
 ], [])
 AT_CLEANUP
 
-AT_SETUP([INPUT/CLOSE double arg])
-# AT_KEYWORD([])
+AT_SETUP([OPEN / CLOSE with multiple filenames])
+AT_KEYWORDS([DECLARATIVES file error])
 
 AT_DATA([prog1.cob], [
        IDENTIFICATION DIVISION.
@@ -13817,6 +13817,9 @@ AT_DATA([prog1.cob], [
           DISPLAY "CLOSE FILES".
           CLOSE FILE1.
           CLOSE FILE2.
+          DISPLAY "DELETE FILES".
+          DELETE FILE FILE1.
+          DELETE FILE FILE2.
           STOP RUN.
 ])
 AT_DATA([prog2.cob], [
@@ -13862,9 +13865,11 @@ AT_DATA([prog2.cob], [
           DISPLAY "CLOSE FILES".
           CLOSE FILE1
                 FILE2.
+          DISPLAY "DELETE FILES".
+          DELETE FILE FILE1
+                      FILE2.
           STOP RUN.
 ])
-AT_DATA([file1.txt], [])
 
 AT_DATA([expected.txt],
 [ERROR ON FILE2
@@ -13882,15 +13887,16 @@ CLOSE FILES
 ERROR ON FILE2
   STAT-FILE1: 00
   STAT-FILE2: 42
+DELETE FILES
 ])
 
 AT_CHECK([$COMPILE prog1.cob])
+AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 > prog1.txt])
 AT_CHECK([diff expected.txt prog1.txt])
 
-AT_XFAIL_IF([true])
-
 AT_CHECK([$COMPILE prog2.cob])
+AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2 > prog2.txt])
 AT_CHECK([diff expected.txt prog2.txt])
 

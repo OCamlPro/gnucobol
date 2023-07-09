@@ -1,4 +1,10 @@
 
+2023-07-09  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y: fix code generation for OPEN/CLOSE with multiple
+	filenames, where DECLARATIVES for all arguments were called when
+	only one argument failed
+
 2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	common preparser cleanup
