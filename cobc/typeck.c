@@ -2126,9 +2126,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
 		} else {
-			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
-						cb_word_length, word);
-		}
+		(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+					cb_word_length, word);
+	}
 	}
 }
 
@@ -2886,7 +2886,7 @@ cb_build_const_start (struct cb_field *f, cb_tree x)
 		if (cb_field_variable_size (p)) {
 			cb_error (_("variable length item not allowed here"));
 			return cb_build_numeric_literal (0, "1", 0);
-		}
+	}
 	}
 	snprintf (buff, sizeof(buff), "%d", target->offset);
 	for (p = target; p; p = p->parent) {
@@ -8598,8 +8598,7 @@ get_constant_call_name (cb_tree prog)
 void
 cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 	      cb_tree on_exception, cb_tree not_on_exception,
-	      cb_tree convention, cb_tree newthread, cb_tree handle,
-	      int call_line_number)
+	      cb_tree convention, cb_tree newthread, cb_tree handle)
 {
 	cb_tree				l;
 	cb_tree				check_list;
@@ -8859,12 +8858,12 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 			}
 		}
 		if (cb_listing_xref) {
-			cobc_xref_call (entry, call_line_number, 0, is_sys_call);
+			cobc_xref_call (entry, CB_TREE (current_statement)->source_line, 0, is_sys_call);
 		}
 	}
 	else if (cb_listing_xref && CB_REFERENCE_P(prog)) {
 		entry = CB_FIELD(CB_REFERENCE(prog)->value)->name;
-		cobc_xref_call (entry, call_line_number, 1, 0);
+		cobc_xref_call (entry, CB_TREE (current_statement)->source_line, 1, 0);
 	}
 
 	if (error_ind) {
@@ -10686,7 +10685,6 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	struct cb_field		*fsrc;
 	struct cb_literal	*l;
 	cb_tree			loc;
-	cob_s64_t		val;
 	size_t			i;
 	size_t			is_numeric_edited;
 	int			src_scale_mod;
@@ -10916,6 +10914,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			         || fdst->usage == CB_USAGE_COMP_X
 			         || fdst->usage == CB_USAGE_COMP_N
 			         || fdst->usage == CB_USAGE_BINARY))) {
+				cob_s64_t		val;
 				i = l->size - leftmost_significant;
 				if (i < 19) {
 					val = cb_get_long_long (src);

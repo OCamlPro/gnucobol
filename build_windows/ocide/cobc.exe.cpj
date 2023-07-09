@@ -86,6 +86,7 @@
 				<FILE NAME="..\..\cobc\parser.y" TITLE="parser.y" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\ppparse.y" TITLE="ppparse.y" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\reserved.c" TITLE="reserved.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\replace.c" TITLE="replace.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\tree.c" TITLE="tree.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\typeck.c" TITLE="typeck.c" CLEAN="0"/>
 			</FOLDER>

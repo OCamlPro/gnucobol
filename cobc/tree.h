@@ -1643,8 +1643,8 @@ struct cb_replace_list {
 	const struct cb_text_list	*new_text;
 };
 
-extern void		pp_set_replace_list (struct cb_replace_list *,
-					     const cob_u32_t);
+extern void		cb_set_replace_list (struct cb_replace_list *,
+					     const int);
 
 /* List of error messages */
 struct list_error {
@@ -2415,7 +2415,7 @@ extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 
 extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree,
-				      cb_tree, cb_tree, cb_tree, cb_tree, int);
+				      cb_tree, cb_tree, cb_tree, cb_tree);
 
 extern void		cb_emit_cancel (cb_tree);
 extern void		cb_emit_close (cb_tree, cb_tree);
@@ -2571,6 +2571,21 @@ extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
 					      const int, const enum cb_tag);
 #endif
+
+/* pplex.l */
+extern void	cb_ppecho_direct (const char *text, const char *token );
+extern struct cb_text_list	*cb_pp_text_list_add (struct cb_text_list *,
+					 const char *, const size_t);
+/* replace.c */
+extern void	cb_ppecho_copy_replace (const char *text, const char *token );
+extern void     cb_free_replace (void);
+
+/* For COPY-REPLACING */
+extern void cb_set_copy_replacing_list (struct cb_replace_list *list);
+extern struct cb_replace_list * cb_get_copy_replacing_list (void);
+
+extern void
+cb_set_print_replace_list	(struct cb_replace_list *);
 
 /* codeoptim.c */
 extern void		cob_gen_optim (const enum cb_optim);

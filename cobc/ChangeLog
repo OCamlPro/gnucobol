@@ -1,4 +1,28 @@
 
+2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	common preparser cleanup
+	* ppparse.y: error recovery for COPY and REPLACE (consume until DOT
+	  instead of until EOF)
+	* ppparse.y: renamed "TOKEN" from "Identifier" to "Word", adjust
+	  some terminals prefixing it with leading underscore as optional
+	Bug #890 wrong reference in COPY diagnostic
+	* ppparse.y: switch to new buffer after parsing DOT, not before
+	Bug #23 several replacement values create parser errors
+	* pplex.l: split REPLACE_STATE and REPLACING_STATE from COPY_STATE
+	  to limit their reserved word list to the applicable ones and to
+	  improve error handling
+	* ppparse.y: explicit parse IN and OF as single replacement words
+
+2023-07-06  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* replace.c: rewrite the code for preprocessing with a two-phase
+	  algorithm. The first phase performs COPY REPLACING on the stream
+	  of tokens, while the second phase perform REPLACE on the resulting
+	  stream of tokens. This rewriting is closer to the COBOL standard
+	  and fixes bug #831 partially.
+	* cobc.c: flag -P now accepts - as argument to mean stdout
+
 2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* flag.def/cobc.c: new flags -fno-ttimestamp to suppress timestamp
@@ -8,6 +32,13 @@
 	  Replace numeric constants in flags and switch by a constant macro
 	  CB_FLAG_GETOPT_. Remove unused 'case 6:' for -fdefaultbyte that is
 	  now handled in config.c
+
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
+	  second equivalent token
+	* pplex.l, replace.c: move the preprocessing code performing
+	  COPY REPLACING and REPLACE from pplex.l to replace.c
 
 2023-07-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -325,11 +356,26 @@
 
 	* typeck.c (cb_build_move_field): generate optimized code for
 	  reference-modification with same ref-mod length
+	* parser.y: fix several possible bad uses of "ALLOCATE identifier",
+	  including "no identifier at all" and use of subscripting / ref-mod
+	  which previously were all silently ignored
 
 2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* reserved.c (get_user_specified_reserved_word): add check for
 	  context sensitivity in aliases
+	* parser.y (begin_statement_internal): extracted from begin_statement and
+	  begin_statement_from_backup_pos
+	* parser.y: explicit creation of "comment note" tokens to store the start
+	  position for tokens used later, either direct for diagnostics or by
+	  assigning it with the new function copy_pos instead of using a global
+	  "backup position" or using the current position
+	* parser.y: explicit check for missing imperative statements in several
+	  places that need one to generate a clean error
+	* parser.y (emit_entry): removed unused parameter override_source_line
+	* typeck.c (cb_emit_call), tree.h, parser.y: remove passing the CALL's
+	  original line number as extra parameter, instead use the statement's
+	  (now correct) position
 
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -337,6 +383,9 @@
 	  ZEROES up to COB_ZEROES_ALPHABETIC_BYTE_LENGTH
 	* pplex.l (ppopen): fixes for auto-detection of reference-format FR #45
 	  handling tabs, dos eol and empty lines correctly
+	* parser.y (check_non_area_a_of): new function used to do the area check
+	  for all terminators and during error recovery
+	* parser.y: check area A for END FUNCTION
 
 2023-02-28  Simon Sobisch <simonsobisch@gnu.org>
 

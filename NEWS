@@ -185,6 +185,12 @@ NEWS - user visible changes				-*- outline -*-
    callee modules that use BY VALUE must be compiled with the same version of
    GnuCOBOL, either prior this release, or since.
 
+** cobc now uses a two-pass preprocessing algorithm, where replacements for
+   COPY-REPLACING are done in a first pass, and the replacements for
+   REPLACE are done in a second pass. Note that, however, both
+   statements are parsed before the first replacement pass, so
+   COPY-REPLACING cannot impact a REPLACE statement itself.
+
 * Changes to the COBOL compiler (cobc) options:
 
 ** new -fformat dialect option, and extended SOURCE FORMAT directives,
@@ -321,7 +327,9 @@ NEWS - user visible changes				-*- outline -*-
    and fatality `cobc --list-exceptions`
 
 ** new compiler command line option -ftcmd to enable printing of the command
-   line in the source listing
+   line in the source listing, -fno-timestamp to suppress printing of the time
+   and -ftittle to set a title instead of GnuCOBOL and version (_ chars are
+   replaced by spaces in the title)
 
 ** new compiler command line option --coverage to instrument binaries
    for coverage checks
@@ -348,6 +356,8 @@ NEWS - user visible changes				-*- outline -*-
 
    the option -fdiagnostics-plain-output was added to request that diagnostic
    output look as plain as possible and stay more stable over time
+
+** the -P flag accepts - as argument for stdout
 
 * Important Bugfixes:
 

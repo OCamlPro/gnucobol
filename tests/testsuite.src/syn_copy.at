@@ -921,24 +921,16 @@ AT_CLEANUP
 
 
 AT_SETUP([COPY and REPLACE in same file])
-AT_KEYWORDS([copy])
+AT_KEYWORDS([replacing preprocess])
 
-# see Bug #868
+# See Bug #831
 # the issue with this example is that the outer REPLACE
 # _could_ only see the result of the inner REPLACING:
 # "COLON", but needs to see "VAR-COLON".
-# To even enable it to see the replaced data in the outer
-# replacings pplex.l (ppecho_replace) must be changed to not
-# output the results with a call to (ppecho_direct) but has to
-# continue the loop with the - potential partially replaced -
-# new content.
-
-AT_XFAIL_IF([true])
 
 AT_DATA([copy.inc], [
        01 VAR-:TEST: PIC X(2) VALUE "OK".
 ])
-
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -952,6 +944,129 @@ AT_DATA([prog.cob], [
            END-DISPLAY.
            STOP RUN.
        REPLACE OFF.
+])
+
+AT_CHECK([$COMPILE_ONLY -P- prog.cob], [0],
+[     1 @&t@
+     2  IDENTIFICATION   DIVISION.
+     3  PROGRAM-ID.      prog.
+     4  DATA             DIVISION.
+     5  WORKING-STORAGE  SECTION.
+     6  @&t@
+     7  @&t@
+     8 @&t@
+     9  01 VAR-COMMA PIC X(2) VALUE "OK".
+    10 @&t@
+    11  PROCEDURE        DIVISION.
+    12      DISPLAY VAR-COMMA NO ADVANCING
+    13      END-DISPLAY.
+    14      STOP RUN.
+    15  @&t@
+
+])
+
+AT_CHECK([$COMPILE_LISTING -t- prog.cob], [0],
+[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         REPLACE   ==VAR-COLON== BY ==VAR-COMMA==.
+000007         COPY "copy.inc"
+000001C
+000002C        01 VAR-:TEST: PIC X(2) VALUE "OK".
+000007            REPLACING ==:TEST:== BY ==COLON==.
+000008         PROCEDURE        DIVISION.
+000009             DISPLAY VAR-COMMA NO ADVANCING
+000010             END-DISPLAY.
+000011             STOP RUN.
+000012         REPLACE OFF.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([COPY and REPLACE errors])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+           05  VAR                    PIC XX.
+])
+
+# see Bug #890 - the buffer for the copybook was switched
+# already before parsing the DOT; additional the error did
+# not stopped at the DOT, so there was max. one error printed
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       COPY "copy.inc"  A.
+       COPY "copy.inc"  ==A== BY B.
+       COPY "copy.inc"  REPLACING.
+       COPY "copy.inc"  REPLACING ABC.
+       COPY "copy.inc"  REPLACING 'POST' IN.
+       COPY "copy.inc"  REPLACING 'POST' BY BY.
+       COPY "copy.inc"
+             REPLACING ==some-name== BY ==other-name==
+             REPLACING "some lit" BY "other literal".
+       COPY "copy.inc".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:6: error: syntax error, unexpected Word or Literal, expecting .
+prog.cob:7: error: syntax error, unexpected ==, expecting .
+prog.cob:8: error: syntax error, unexpected ., expecting == or LEADING or TRAILING or Word or Literal
+prog.cob:9: error: syntax error, unexpected ., expecting BY
+prog.cob:10: error: syntax error, unexpected ., expecting Word or Literal
+prog.cob:11: error: syntax error, unexpected BY, expecting == or IN or OF or Word or Literal
+prog.cob:14: error: syntax error, unexpected REPLACING, expecting .
+copy.inc:2: error: level number must begin with 01 or 77
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([COPY and REPLACE with reserved words])
+AT_KEYWORDS([copy])
+
+# see Bug #23
+AT_DATA([copy.inc], [
+           05  WS-'POST'                    PIC XX.
+           05  'POST'-A                     PIC XX.
+           05  'POST'-WS                    PIC XX.
+])
+AT_DATA([proc.inc], [
+           DISPLAY VAR VAR-2
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 INPUT-REC.
+       COPY "copy.inc"
+          REPLACING 'POST' BY IN.
+       PROCEDURE        DIVISION.
+           DISPLAY WS-IN IN-A IN-WS NO ADVANCING.
+           IF WS-IN EQUALS IN-A
+       COPY "proc.inc"
+          REPLACING VAR       BY IN-A IN INPUT-REC
+                    ==VAR-2== BY ==IN-WS (1:1)==.
+           END-IF.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])

@@ -513,6 +513,8 @@ extern void			cobc_parse_free (void *);
 
 extern void			*cobc_plex_malloc (const size_t);
 extern void			*cobc_plex_strdup (const char *);
+extern void			*cobc_plex_strsub (const char *, const int len);
+extern char                     *cobc_plex_stradd (const char *str1, const char *str2);
 
 extern void			*cobc_check_string (const char *);
 extern void			cobc_err_msg (const char *, ...) COB_A_FORMAT12;
