@@ -296,6 +296,12 @@ NEWS - user visible changes				-*- outline -*-
    the origin of entrypoints and PERFORM, this is used for the internal
    stack trace on abort and can be used for improved source level debugging
 
+** new flag -fmemory-check (implied with --debug) to do some validation
+   of internal memory used during CALL; this can help in finding otherwise
+   hard to diagnose overwrite of memory and as it is only done on CALL
+   has a much smaller footprint than -fec=bounds (as both check different
+   aspects at different places it is also reasonable to use both)
+
 ** the option -g does no longer imply -fno-remove-unreachable; if you want to
    keep those in you need to explicit specify this
 
@@ -408,6 +414,8 @@ NEWS - user visible changes				-*- outline -*-
    or to use an explicit format (cut at 26 characters, may raise false-positives
    in listing tests) e.g. date only `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
 
+** new compile options to adjust the listing, see above
+
 * More notable changes
 
 ** in 64-bit environments, the maximum field size was increased from
@@ -494,6 +502,8 @@ NEWS - user visible changes				-*- outline -*-
     * compile from stdin
   * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
     emulating a program kill)
+  * if build with -fsanitize, then some tests will fail; while we accept patches
+    to improve that, we don't consider the failing tests as bug in GnuCOBOL
 
 ** the recent additions of ">> TURN" and "variable LIKE variable" may not work
    as expected in all cases

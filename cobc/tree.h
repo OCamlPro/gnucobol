@@ -986,6 +986,8 @@ struct cb_field {
 	unsigned int flag_constant	: 1;	/* Is 01 AS CONSTANT */
 	unsigned int flag_internal_constant	: 1;	/* Is an internally generated CONSTANT */
 
+	unsigned int flag_used_in_call : 1;	/* Is used in CALL (only set for level 01/77),
+							currently not set for EXTERNAL item or when in LOCAL-STORAGE / LINKAGE */
 	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
@@ -2594,6 +2596,13 @@ extern void		cob_gen_optim (const enum cb_optim);
 extern void		codegen (struct cb_program *, const char *);
 extern void		clear_local_codegen_vars (void);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
+
+#define CB_MEMCHK_NONE	0
+#define CB_MEMCHK_POINTER	(1 << 0)
+#define CB_MEMCHK_USING 	(1 << 1)
+#define CB_MEMCHK_ALL	(CB_MEMCHK_POINTER | CB_MEMCHK_USING)
+extern int		cb_flag_memory_check;
+
 extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
 
 /* scanner.l */
