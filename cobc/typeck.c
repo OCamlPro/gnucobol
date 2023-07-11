@@ -9039,6 +9039,12 @@ cb_emit_delete_file (cb_tree file)
 	if (file == cb_error_node) {
 		return;
 	}
+	/* Note: we should uncomment the following statement to have errors in DELETE FILE
+	   run DECLARATIVES handlers. The problem is that such a change would probably break
+	   existing programs.
+
+	current_statement->file = file;
+	*/
 	if (CB_FILE (file)->organization == COB_ORG_SORT) {
 		cb_error_x (CB_TREE (current_statement),
 				_("%s not allowed on %s files"), "DELETE FILE", "SORT");

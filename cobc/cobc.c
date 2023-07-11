@@ -1344,11 +1344,9 @@ void *
 cobc_plex_strsub (const char *s, const int len)
 {
 	void	*p;
-	int	n;
-
-	n = strlen (s);
 
 #ifdef	COB_TREE_DEBUG
+	int	n = strlen (s);
 	/* LCOV_EXCL_START */
 	if ( len>n ) {
 		cobc_err_msg ("call to %s with bad argument len=%d>%d=strlen(s)",
