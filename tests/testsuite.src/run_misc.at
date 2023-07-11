@@ -14113,13 +14113,25 @@ AT_DATA([caller.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
-       01 var                   PIC  x.
+       01 var                   PIC  X.
+
+       01 varg                  PIC  X GLOBAL.
+       01 vare                  PIC  X EXTERNAL.
+       01 varb                  PIC  X BASED.
+       LINKAGE SECTION.
+       01 varl                  PIC  X.
 
        PROCEDURE DIVISION.
       *
            CALL "callee" USING var
       *    without the check this second call would SIGSEGV
            CALL "callee" USING var
+
+      *    the following are mostly in to co-test the codegen
+           CALL "callee" USING varg
+           CALL "callee" USING vare
+           CALL "callee" USING varb
+           CALL "callee" USING varl
 
            GOBACK.
 ])
@@ -14147,22 +14159,22 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:12: error: memory violation detected after CALL
+[libcob: caller.cob:18: error: memory violation detected after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:12: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:12: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:12: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CLEANUP
@@ -14184,21 +14196,22 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
+       77 PNT USAGE POINTER EXTERNAL.
+
        01 REC.
-          03  VAR                   PIC  X(16).
-          03  VAR2                  PIC  X(16).
-       77 PNT USAGE POINTER.
+          03  VAR                   PIC  X.
+          03  VAR2                  PIC  X.
 
        LINKAGE SECTION.
        01 LREC.
-          03  LVAR                  PIC  X(32).
-          03  LVAR2                 PIC  X(32).
+          03  LVAR                  PIC  X(64).
+          03  LVAR2                 PIC  X(64).
 
        PROCEDURE DIVISION.
       *    using a (not working) call prevents the C compiler
       *    to know that we (do not) change the pointer variable
       *    and therefore disallows it to check
-      *    "that points to VAR2, you only have 32 bytes" (done with gcc -O)
+      *    "that points to VAR2, you only have 2 bytes" (done with gcc -O)
            SET PNT TO ADDRESS OF VAR2.
            CALL "notthere" USING PNT ON EXCEPTION CONTINUE.
            SET ADDRESS OF LREC TO PNT.
@@ -14210,7 +14223,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:27: error: memory violation detected after INIT CALL
+[libcob: prog.cob:28: error: memory violation detected after INIT CALL
 ])
 
 AT_CLEANUP

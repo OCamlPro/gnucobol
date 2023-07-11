@@ -1855,7 +1855,7 @@ output_call_cache (void)
 		/* note: we explicit do _not_ initialize it directly as that
 		   will more likely lead to a non-consecutive memory layout,
 		   which makes the whole purpose of the fence useless */
-		output_local ("static char\tcall_fence_pre[5];\n");
+		output_local ("static char\tcall_fence_pre[8];\n");
 	}
 	call_cache = call_list_reverse (call_cache);
 	for (call = call_cache; call; call = call->next) {
@@ -1869,7 +1869,7 @@ output_call_cache (void)
 	}
 	if ((call_cache || func_call_cache)
 	 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
-		output_local ("static char\tcall_fence_post[5];\n");
+		output_local ("static char\tcall_fence_post[8];\n");
 	}
 	if (static_call_cache) {
 		const char			*convention_modifier;
@@ -2094,10 +2094,10 @@ output_local_base_cache (void)
 				output_local ("static ");
 			}
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_local ("cob_u8_t	%s%d_fence_pre[5]%s;\n",
+			output_local ("cob_u8_t	%s%d_fence_pre[8]%s;\n",
 				CB_PREFIX_BASE, fld->id, COB_ALIGN);
 #else
-			output_local ("%scob_u8_t%s	%s%d_fence_pre[5];\n",
+			output_local ("%scob_u8_t%s	%s%d_fence_pre[8];\n",
 				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
 				CB_PREFIX_BASE, fld->id);
 #endif
@@ -2129,10 +2129,10 @@ output_local_base_cache (void)
 				output_local ("static ");
 			}
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_local ("cob_u8_t	%s%d_fence_post[5]%s;\n",
+			output_local ("cob_u8_t	%s%d_fence_post[8]%s;\n",
 				CB_PREFIX_BASE, fld->id, COB_ALIGN);
 #else
-			output_local ("%scob_u8_t%s	%s%d_fence_post[5];\n",
+			output_local ("%scob_u8_t%s	%s%d_fence_post[8];\n",
 				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
 				CB_PREFIX_BASE, fld->id);
 #endif
@@ -2165,13 +2165,13 @@ output_nonlocal_base_cache (void)
 
 		if (fld->flag_used_in_call) {
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_storage ("static cob_u8_t	%s%d_fence_pre[5]%s;\n",
+			output_storage ("static cob_u8_t	%s%d_fence_pre[8]%s;\n",
 				CB_PREFIX_BASE, fld->id, COB_ALIGN);
 #else
 #if defined(COB_ALIGN_PRAGMA_8)
 			output_storage ("#pragma align 8 (%s%d_fence_pre)\n", CB_PREFIX_BASE, fld->id);
 #endif
-			output_storage ("static %scob_u8_t%s	%s%d_fence_pre[5];\n",
+			output_storage ("static %scob_u8_t%s	%s%d_fence_pre[8];\n",
 				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
 				CB_PREFIX_BASE, fld->id);
 #endif
@@ -2200,13 +2200,13 @@ output_nonlocal_base_cache (void)
 		output_storage ("\t/* %s */\n", fld->name);
 		if (fld->flag_used_in_call) {
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_storage ("static cob_u8_t	%s%d_fence_post[5]%s;\n",
+			output_storage ("static cob_u8_t	%s%d_fence_post[8]%s;\n",
 				CB_PREFIX_BASE, fld->id, COB_ALIGN);
 #else
 #if defined(COB_ALIGN_PRAGMA_8)
 			output_storage ("#pragma align 8 (%s%d_fence_post)\n", CB_PREFIX_BASE, fld->id);
 #endif
-			output_storage ("static %scob_u8_t%s	%s%d_fence_post[5];\n",
+			output_storage ("static %scob_u8_t%s	%s%d_fence_post[8];\n",
 				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
 				CB_PREFIX_BASE, fld->id);
 #endif
@@ -6462,12 +6462,12 @@ output_memory_check_call (struct cb_call *p, const enum cob_statement stmt)
 				const struct cb_field *fchck = cb_field_founder (CB_FIELD (x));
 				if (fchck->flag_used_in_call) {
 					if (stmt == STMT_BEFORE_CALL) {
-						output_line ("if (memcmp (%s%d_fence_pre, \"\\x00\\x00\\x00\\x00\", 5) == 0) {",
+						output_line ("if (memcmp (%s%d_fence_pre, \"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\", 8) == 0) {",
 							CB_PREFIX_BASE, fchck->id);
 						output_indent_level += indent_adjust_level;
-						output_line ("memcpy (%s%d_fence_pre, \"\\xFF\\xFE\\xFD\\xFC\", 5);",
+						output_line ("memcpy (%s%d_fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8);",
 							CB_PREFIX_BASE, fchck->id);
-						output_line ("memcpy (%s%d_fence_post, \"\\xFA\\xFB\\xFC\\xFD\", 5);",
+						output_line ("memcpy (%s%d_fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8);",
 							CB_PREFIX_BASE, fchck->id);
 						output_indent_level -= indent_adjust_level;
 						output_line ("} else {");
@@ -12523,8 +12523,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	if ((call_cache || func_call_cache)
 	 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
 		output_line ("/* Initialize call-pointer memory fence */");
-		output_line ("memcpy (call_fence_pre, \"\\xFF\\xFE\\xFD\\xFC\", 5);");
-		output_line ("memcpy (call_fence_post, \"\\xFA\\xFB\\xFC\\xFD\", 5);");
+		output_line ("memcpy (call_fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8);");
+		output_line ("memcpy (call_fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8);");
 		output_newline ();
 	}
 

@@ -196,8 +196,8 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("cob_check_fence_inline (const char *fence_pre, const char *fence_post,");
 		output_storage ("	const enum cob_statement stmt, const char *name)");
 		output_storage ("{");
-		output_storage ("	if (memcmp (fence_pre, \"\\xFF\\xFE\\xFD\\xFC\", 5)");
-		output_storage ("	 || memcmp (fence_post, \"\\xFA\\xFB\\xFC\\xFD\", 5)) {");
+		output_storage ("	if (memcmp (fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8)");
+		output_storage ("	 || memcmp (fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8)) {");
 		output_storage ("		cob_check_fence (fence_pre, fence_post, stmt, name);");
 		output_storage ("	}");
 		output_storage ("}");

@@ -4150,8 +4150,8 @@ void
 cob_check_fence (const char *fence_pre, const char *fence_post,
 		const enum cob_statement stmt, const char *name)
 {
-	if (memcmp (fence_pre, "\xFF\xFE\xFD\xFC", 5)
-	 || memcmp (fence_post, "\xFA\xFB\xFC\xFD", 5)) {
+	if (memcmp (fence_pre, "\xFF\xFE\xFD\xFC\xFB\xFA\xFF", 8)
+	 || memcmp (fence_post, "\xFA\xFB\xFC\xFD\xFE\xFF\xFA", 8)) {
 		/* LCOV_EXCL_START */
 		if (name) {
 			/* note: reserved, currently not generated in libcob */
