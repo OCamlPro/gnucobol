@@ -14196,6 +14196,29 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
+       01 DUMMY-STORAGE             PIC  X(512).
+
+       PROCEDURE DIVISION.
+      *    using the var so cobc cannot easily optimize that out
+           IF DUMMY-STORAGE (1:1) <> SPACE  INITIALIZE DUMMY-STORAGE.
+
+      *    We use a simple wrapper to make it _less_ likely that the
+      *    following "real test" SIGSEGVs during MOVE
+           CALL STATIC "progt".
+
+      *    we don't expect to ever get here - but this creates more
+      *    memory space to decrease the likelyness of a SIGSEGV more
+           CALL STATIC "dummy".
+
+           GOBACK.
+       END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    progt.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
        77 PNT USAGE POINTER EXTERNAL.
 
        01 REC.
@@ -14216,14 +14239,31 @@ AT_DATA([prog.cob], [
            CALL "notthere" USING PNT ON EXCEPTION CONTINUE.
            SET ADDRESS OF LREC TO PNT.
            MOVE SPACES TO LREC.
+
            CALL "broken".
 
            GOBACK.
+       END PROGRAM progt.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    dummy.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 DUMMY-STORAGE             PIC  X(512).
+
+       PROCEDURE DIVISION.
+      *    using the var so cobc cannot easily optimize that out
+           IF DUMMY-STORAGE (1:1) <> SPACE  INITIALIZE DUMMY-STORAGE.
+
+           GOBACK.
+       END PROGRAM dummy.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:28: error: memory violation detected after INIT CALL
+[libcob: prog.cob:52: error: memory violation detected after INIT CALL
 ])
 
 AT_CLEANUP
