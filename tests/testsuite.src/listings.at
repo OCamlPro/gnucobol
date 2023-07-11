@@ -2067,8 +2067,8 @@ AT_CHECK([$COBC $LISTING_FLAGS -q -fsyntax-only -t- -fno-theader -ftcmd prog.cob
 000011         END FUNCTION WITHPAR.
 @&t@
 command line:
-  cobc -fdiagnostics-plain-output -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q
-+ -fsyntax-only -t- -fno-theader -ftcmd prog.cob
+  cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -fsyntax-only -t-
++ -fno-theader -ftcmd prog.cob
 0 warnings in compilation group
 0 errors in compilation group
 ])

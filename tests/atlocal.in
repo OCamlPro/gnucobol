@@ -72,7 +72,7 @@ FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
 FLAGS="$FLAGS -fno-diagnostics-show-option"
 
-COBC="${COBC} -fdiagnostics-plain-output"
+COBC="${COBC}"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
