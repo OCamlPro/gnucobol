@@ -14196,7 +14196,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
-       01 DUMMY-STORAGE             PIC  X(512).
+       01 DUMMY-STORAGE             PIC  X(128).
 
        PROCEDURE DIVISION.
       *    using the var so cobc cannot easily optimize that out
@@ -14251,7 +14251,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
-       01 DUMMY-STORAGE             PIC  X(512).
+       01 DUMMY-STORAGE             PIC  X(128).
 
        PROCEDURE DIVISION.
       *    using the var so cobc cannot easily optimize that out
@@ -14262,6 +14262,12 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# skipping the (nonportable) test - hardened GCC SIGSEGVs on the bad MOVE,
+# clang use a different memory layout so we never actually break
+# the call-pointers
+AT_SKIP_IF([true])
+
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:52: error: memory violation detected after INIT CALL
 ])
