@@ -2092,8 +2092,8 @@ LINE    PG/LN  A...B............................................................
 GnuCOBOL V.R.P          prog.cob                                        Page 0002
 
 command line:
-  cobc -fdiagnostics-plain-output -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q
-+ -std=default -Wall -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog
+  cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
++ -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob
 ])
 
 AT_CLEANUP
