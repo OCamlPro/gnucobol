@@ -1887,6 +1887,8 @@ COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
 COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 					 const int, const char *);
 COB_EXPIMP void	cob_check_beyond_exit (const char *);
+COB_EXPIMP void	cob_check_fence 	(const char *, const char *,
+					 const enum cob_statement, const char *);
 
 
 /* Comparison functions */

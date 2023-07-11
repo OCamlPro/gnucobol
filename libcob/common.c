@@ -397,17 +397,23 @@ static const int		cob_exception_tab_code[] = {
 static int		cob_switch[COB_SWITCH_MAX + 1];
 
 /* BCD to Integer translation (full byte -> 0 - 99) */
-static unsigned char   b2i[256]=
-		{   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 255, 255, 255, 255, 255, 255,
-		   10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 255, 255, 255, 255, 255, 255,
-		   20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 255, 255, 255, 255, 255, 255,
-		   30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 255, 255, 255, 255, 255, 255,
-		   40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 255, 255, 255, 255, 255, 255,
-		   50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 255, 255, 255, 255, 255, 255,
-		   60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 255, 255, 255, 255, 255, 255,
-		   70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 255, 255, 255, 255, 255, 255,
-		   80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 255, 255, 255, 255, 255, 255,
-		   90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 255, 255, 255, 255, 255, 255 };
+static unsigned char   b2i[]= {
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9, 255, 255, 255, 255, 255, 255,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19, 255, 255, 255, 255, 255, 255,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29, 255, 255, 255, 255, 255, 255,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39, 255, 255, 255, 255, 255, 255,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49, 255, 255, 255, 255, 255, 255,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59, 255, 255, 255, 255, 255, 255,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69, 255, 255, 255, 255, 255, 255,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79, 255, 255, 255, 255, 255, 255,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89, 255, 255, 255, 255, 255, 255,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 255, 255, 255, 255, 255, 255,
+   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
 
 #define IS_INVALID_BCD_DATA(c)	(b2i[(unsigned char)c] == 255)
 
@@ -4135,6 +4141,31 @@ cob_check_based (const unsigned char *x, const char *name)
 	}
 }
 
+/* internal test for writing outside of storage iduring CALL / UDF invocation,
+   checking 'fence_pre'/'fence_post' to contain 0xFFFEFDFC00 / 0xFAFBFCFD00;
+   'statement' specifies the place where that happened, which may
+   include psuedo-statements "INIT CALL" and "INIT UDF",
+   'name' (optional) specifies the variable where this was recognized */
+void
+cob_check_fence (const char *fence_pre, const char *fence_post,
+		const enum cob_statement stmt, const char *name)
+{
+	if (memcmp (fence_pre, "\xFF\xFE\xFD\xFC\xFB\xFA\xFF", 8)
+	 || memcmp (fence_post, "\xFA\xFB\xFC\xFD\xFE\xFF\xFA", 8)) {
+		/* LCOV_EXCL_START */
+		if (name) {
+			/* note: reserved, currently not generated in libcob */
+			cob_runtime_error (_("memory violation detected for '%s' after %s"),
+				name, cob_statement_name[stmt]);
+		} else {
+			cob_runtime_error (_("memory violation detected after %s"),
+				cob_statement_name[stmt]);
+		}
+		/* LCOV_EXCL_STOP */
+		cob_hard_failure ();
+	}
+}
+
 void
 cob_check_linkage (const unsigned char *x, const char *name, const int check_type)
 {
@@ -4311,22 +4342,6 @@ cob_check_subscript (const int i, const int max,
 		cob_hard_failure ();
 	}
 }
-
-#if 0	/* TODO: add codegen for "subscript-check: record" getting here (FR #437);
-		   along with an optimization inline variant as done for COB_CHK_SUBSCRIPT */
-/* check for "subscript leaves field founder / group" via offset as documented
-   by IBM - not checking the subscript itself (which may even be negative) */
-void
-cob_check_field_offset (const int offset, const int max_offset,
-	const char *record_name, const char *field_name, const int subscript)
-{
-	if (offset < 0 || offset > max_offset) {
-		cob_set_exception (COB_EC_BOUND_SUBSCRIPT);
-		cob_runtime_error (_("'%s (%d)' not in range of '%s'"), field_name, subscript, record_name);
-		cob_hard_failure ();
-	}
-}
-#endif
 
 void
 cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_allowed,

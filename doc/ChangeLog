@@ -1,8 +1,13 @@
 
+2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gnucobol.texi: updated "Build target" (change of -P / -E),
+	  updated "Debug switches" (changed -g and new memory-check)
+
 2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* gnucobol.texi: document warning and optimization options
-	  related to unreachable code; add node on core dumps
+	  related to unreachable code; add note on core dumps
 
 2023-01-31  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

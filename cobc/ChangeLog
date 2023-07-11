@@ -1,4 +1,30 @@
 
+2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y: fix code generation for OPEN/CLOSE with multiple
+	filenames, where DECLARATIVES for all arguments were called when
+	only one argument failed
+
+2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	check for internal memory bounds with new flag "memory-check"
+	* flag.def, cobc.c (cobc_deciph_memory_check), tree.h: new compile
+	  flag -fmemory-check, implied with --debug
+	* typeck.c (cb_emit_call), tree.h (cb_field): new field attribute
+	  flag_used_in_call
+	* codegen.c (output_local_base_cache, output_nonlocal_base_cache):
+	  generate fencing data fields for fields with flag_used_in_call
+	* codegen.c (output_call_cache): generate fencing data fields for
+	  cob_call_union fields (call pointers)
+	* codegen.c (output_memory_check_call): new function to output
+	  generate fencing data fields for flag_used_in_call
+	* codeoptim.def, codeoptim.c, codegen.c: new entry
+	  COB_CHK_MEMORYFENCE
+
+	additional
+	* codegen.c: only increment/decrement output_indent_level by
+	  indent_adjust_level
+
 2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	common preparser cleanup
@@ -2635,7 +2661,8 @@
 
 	* codeoptim.def (COB_GET_NUMDISPS), codeoptim.c, codegen.c: new routine
 	  to convert signed DISPLAY into binary value;
-	  use of register attribute for cob_get_numdisp + cob_get_numdisps
+	* codeoptim.def (cob_get_numdisp, cob_get_numdisps): use of register
+	  attribute and skipping of leading zeroes
 
 2020-04-23  Simon Sobisch <simonsobisch@gnu.org>
 

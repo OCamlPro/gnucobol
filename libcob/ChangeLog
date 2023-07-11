@@ -1,4 +1,11 @@
 
+2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_fence), common.h: new function to check for writing
+	  outside of COBOL data, triggered with compile option -fmemory-check
+	* statement.def (STMT_BEFORE_CALL, STMT_BEFORE_UDF): new internal
+	  statements, currently used for cob_check_fence
+
 2023-06-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_packed): backport pack_to_bin change while
@@ -8,6 +15,7 @@
 	* move.c (cob_packed_get_int, packed_get_long_long): apply optimizations
 	  from (cob_decimal_set_packed) including skipping leading zeros and
 	  pack_to_bin
+	* common.c (b2i): include marker for invalid data (previously not set)
 
 2023-06-21  Simon Sobisch <simonsobisch@gnu.org>
 

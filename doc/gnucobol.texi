@@ -353,6 +353,9 @@ The special input name @file{-} takes input from @file{stdin} which is
 assumed to be COBOL source, and uses a default output name of
 @file{a.out} (or @file{a.so/c/o/i}, selected as appropriate) for the build type.
 
+You may also use @file{-} as output name for the listing file or the preprocessor
+result, for example with @code{cobc -t - prog.cob} / @code{cobc -P- prog.cob}.
+
 By default, the compiler builds a dynamically loadable module.
 
 The following options specify the target type produced by the compiler:
@@ -361,11 +364,16 @@ The following options specify the target type produced by the compiler:
 @item -E
 Preprocess only: compiler directives are executed, comment lines are
 removed and @code{COPY} statements are expanded.
-The output is saved in file @file{*.i}.
+The output is sent to stdout, allowing you to directly use it as input for
+another process. You can manually set an output file using @option{-o}.
 
 @item -C
 Translation only.  COBOL source files are translated into C files.
 The output is saved in file @file{*.c}.
+
+@item --save-temps
+Normal compilation with additional storing the preprocessed files as @file{*.i}
+and the translated C files as file @file{*.c}.
 
 @item -S
 Compile only.  Translated C files are compiled by the C compiler
@@ -878,13 +886,17 @@ Produce C debugging information in the output.
 @item --debug, -d
 Enable all run-time error checks.
 
+@item -fmemory-check=scope
+Enable checking of internal storage during CALL (implied by @option{--debug}.
+
 @item -fec=exception-name, -fno=ec=exception-name
 Enable/disable specified exception checks,
-@pxref{Appendix F, Exception Names, Exception Names}.
+@pxref{Appendix F, Exception Names, Exception Names};
+@option{--debug} implies @option{-fec=ALL}.
 
 @item -fsource-location
-Generate source location code (implied by @option{--debug}, @option{-g} and
-@option{-fec}); @option{--debug} implies @option{-fec=ALL}.
+Generate source location code (implied by @option{--debug}, @option{-fdump} and
+@option{-fec}).
 
 @item -fstack-check
 Enable @code{PERFORM} stack checking (implied by @option{--debug} or @option{-g}).
@@ -1692,7 +1704,7 @@ In addition, setting the option @code{binary-size} to @code{2-4-8} or
 
 The compiler option @option{--debug} can be used, especially during the
 development of your programs.  It enables all run-time error checking, such as
-subscript boundary checks and numeric data checks, and displays
+subscript boundary checks and numeric data checks, and leads to display of
 run-time errors with source locations.
 Exceptions may also be enabled/disabled separately.
 @xref{Debug switches, Debug switches,,,}.

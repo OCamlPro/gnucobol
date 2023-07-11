@@ -8677,8 +8677,8 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 			if (CB_PURPOSE_INT (l) != CB_CALL_BY_VALUE) {
 				continue;
 			}
-			if (CB_SIZES_INT_UNSIGNED(l) &&
-			    CB_LITERAL (x)->sign < 0) {
+			if (CB_SIZES_INT_UNSIGNED (l)
+			 && CB_LITERAL (x)->sign < 0) {
 				cb_error_x (x, _("numeric literal is negative"));
 				error_ind = 1;
 				continue;
@@ -8689,7 +8689,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 			switch (CB_SIZES_INT (l)) {
 			case CB_SIZE_1:
 				val = cb_get_long_long (x);
-				if (CB_SIZES_INT_UNSIGNED(l)) {
+				if (CB_SIZES_INT_UNSIGNED (l)) {
 					valmin = 0;
 					valmax = UCHAR_MAX;
 				} else {
@@ -8699,7 +8699,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				break;
 			case CB_SIZE_2:
 				val = cb_get_long_long (x);
-				if (CB_SIZES_INT_UNSIGNED(l)) {
+				if (CB_SIZES_INT_UNSIGNED (l)) {
 					valmin = 0;
 					valmax = USHRT_MAX;
 				} else {
@@ -8709,7 +8709,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				break;
 			case CB_SIZE_4:
 				val = cb_get_long_long (x);
-				if (CB_SIZES_INT_UNSIGNED(l)) {
+				if (CB_SIZES_INT_UNSIGNED (l)) {
 					valmin = 0;
 					valmax = UINT_MAX;
 				} else {
@@ -8719,7 +8719,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				break;
 			case CB_SIZE_8:
 			case CB_SIZE_AUTO:
-				if (CB_SIZES_INT_UNSIGNED(l)) {
+				if (CB_SIZES_INT_UNSIGNED (l)) {
 					if (CB_LITERAL (x)->size < 20) {
 						break;
 					}
@@ -8778,10 +8778,12 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				continue;
 			}
 		}
-		if (CB_FIELD_P (x)) {	/* TODO: remove after 3.1 RC1 */
+#if 0	/* TODO: remove after 3.1 RC1 */
+		if (CB_FIELD_P (x)) {
 			cobc_abort ("should be not be a field", 1);
 		}
-		if ((CB_REFERENCE_P (x) && CB_FIELD_P(CB_REFERENCE(x)->value))) {
+#endif
+		if ((CB_REFERENCE_P (x) && CB_FIELD_P (CB_REFERENCE(x)->value))) {
 			f = CB_FIELD (cb_ref (x));
 			if (f->level == 88) {
 				cb_error_x (x, _("'%s' is not a valid data name"), CB_NAME (x));
@@ -8792,6 +8794,17 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				if (f->level != 01 && f->level != 77) {
 					cb_warning_x (cb_warn_call_params, x,
 						_("'%s' is not a 01 or 77 level item"), CB_NAME (x));
+				}
+				if ((cb_flag_memory_check & CB_MEMCHK_USING)
+				 && f->storage != CB_STORAGE_LINKAGE
+				 && f->storage != CB_STORAGE_LOCAL
+				 && !f->flag_external
+				 && !f->flag_item_based) {
+					f = cb_field_founder (f);
+					if (f->redefines) {
+						f = f->redefines;
+					}
+					f->flag_used_in_call = 1;
 				}
 				check_list = cb_list_add (check_list, x);
 			} else if (f->flag_any_length) {
@@ -8807,15 +8820,18 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 		for (l = check_list; l; l = CB_CHAIN (l)) {
 			cb_tree	l2 = CB_VALUE (l);
 			x = cb_ref (l2);
-			if (x != cb_error_node) {
-				for (l2 = check_list; l2 != l; l2 = CB_CHAIN (l2)) {
-					if (cb_ref (CB_VALUE (l2)) == x) {
-						cb_warning_x (COBC_WARN_FILLER, l,
-							_("duplicate USING BY REFERENCE item '%s'"),
-							cb_name (CB_VALUE (l)));
-						CB_VALUE (l) = cb_error_node;
-						break;
-					}
+#if 0		/* Note: we only add validated items so no need to check for valid x here */
+			if (x == cb_error_node) {
+				continue;
+			}
+#endif
+			for (l2 = check_list; l2 != l; l2 = CB_CHAIN (l2)) {
+				if (cb_ref (CB_VALUE (l2)) == x) {
+					cb_warning_x (COBC_WARN_FILLER, l,
+						_("duplicate USING BY REFERENCE item '%s'"),
+						cb_name (CB_VALUE (l)));
+					CB_VALUE (l) = cb_error_node;
+					break;
 				}
 			}
 		}
@@ -9023,6 +9039,12 @@ cb_emit_delete_file (cb_tree file)
 	if (file == cb_error_node) {
 		return;
 	}
+	/* Note: we should uncomment the following statement to have errors in DELETE FILE
+	   run DECLARATIVES handlers. The problem is that such a change would probably break
+	   existing programs.
+
+	current_statement->file = file;
+	*/
 	if (CB_FILE (file)->organization == COB_ORG_SORT) {
 		cb_error_x (CB_TREE (current_statement),
 				_("%s not allowed on %s files"), "DELETE FILE", "SORT");
@@ -12618,9 +12640,9 @@ cb_emit_open (cb_tree file, cb_tree mode, cb_tree sharing)
 	}
 
 	/* Check for file debugging */
-	if (current_program->flag_debugging &&
-	    !current_statement->flag_in_debug &&
-	    f->flag_fl_debug) {
+	if (current_program->flag_debugging
+	 && !current_statement->flag_in_debug
+	 && f->flag_fl_debug) {
 		cb_emit (cb_build_debug (cb_debug_name, f->name, NULL));
 		cb_emit (cb_build_move (cb_space, cb_debug_contents));
 		cb_emit (cb_build_debug_call (f->debug_section));
