@@ -1,9 +1,20 @@
 
+2023-07-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (cb_ppecho_direct, output_pending_newlines): output only up
+	  to 9 empty lines, for more empty lines in the preparsed output file
+	  generate a matching #line directive, this saves both space and serves
+	  as a workaround for an unclear scanner bug that may happen with huge
+	  amounts of empty lines
+	* pplex.l (switch_to_buffer): don't re-strdup the filename
+	* parser.y (emit_statement): changed from define to inline function
+	* codegen.c: complete output of program's end source location if requested
+
 2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y: fix code generation for OPEN/CLOSE with multiple
-	filenames, where DECLARATIVES for all arguments were called when
-	only one argument failed
+	  filenames, where DECLARATIVES for all arguments were called when
+	  only one argument failed
 
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2278,7 +2289,8 @@
 
 2020-09-27  Bob Dubner <rdubner@symas.com>
 
-	* codegen.c (output_cobol_info): emit doubled backslashes for source file
+	* codegen.c (output_cobol_info): emit doubled backslashes for source file,
+	  fixing bug #698 problem with #line directives
 
 2020-09-22  James K. Lowden  <jklowden@symas.com>
 

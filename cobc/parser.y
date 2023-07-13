@@ -49,13 +49,6 @@
 #define YYSTYPE			cb_tree
 #define yyerror(x)		cb_error_always ("%s", x)
 
-#define emit_statement(x) \
-do { \
-  if (!skip_statements) { \
-	CB_ADD_TO_CHAIN (x, current_program->exec_list); \
-  } \
-}  ONCE_COB
-
 #define push_expr(type, node) \
   current_expr = cb_build_list (cb_int (type), node, current_expr)
 
@@ -405,6 +398,14 @@ build_colseq (enum cb_colseq colseq)
 
 
 /* Statements */
+
+static COB_INLINE COB_A_INLINE void
+emit_statement (cb_tree x)
+{
+	if (!skip_statements) {
+		CB_ADD_TO_CHAIN (x, current_program->exec_list);
+	}
+}
 
 static void
 begin_statement_internal (enum cob_statement statement, const unsigned int term,

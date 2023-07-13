@@ -5262,6 +5262,7 @@ output_initialize_to_default (struct cb_field *f, cb_tree x)
 static void
 output_c_info (void)
 {
+	/* note: output name is already escaped for C string */
 	output ("#line %d \"%s\"", output_line_number + 1, output_name);
 	output_newline ();
 }
@@ -5271,6 +5272,7 @@ output_cobol_info (cb_tree x)
 {
 	const char	*p = x->source_file;
 	output ("#line %d \"", x->source_line);
+	/* escape COBOL file name for C string */
 	while (*p) {
 		if (*p == '\\') {
 			output ("%c",'\\');
@@ -12237,11 +12239,24 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	/* Output source location as code */
 	if (cb_flag_source_location) {
+		struct cb_tree_common	loc;
+
+		loc.source_file = prog->common.source_file;
+		loc.source_line = prog->last_source_line;
+		loc.source_column = 0;
 		output_newline ();
-		l = CB_TREE (prog);
+		output_line ("/* Line: %-10d: last source line                  :%s */",
+			prog->last_source_line, prog->common.source_file);
+		if (cb_flag_c_line_directives) {
+			output_cobol_info (&loc);
+		}
 		output_line ("module->module_stmt = 0x%08X;",
 			COB_SET_LINE_FILE (prog->last_source_line,
-			  lookup_source (l->source_file)));
+			  lookup_source (prog->common.source_file)));
+		if (cb_flag_c_line_directives) {
+			output_c_info ();
+			output_line ("cob_nop ();");
+		}
 		output_newline ();
 	}
 
