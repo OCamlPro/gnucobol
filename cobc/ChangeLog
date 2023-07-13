@@ -9,6 +9,7 @@
 	* pplex.l (switch_to_buffer): don't re-strdup the filename
 	* parser.y (emit_statement): changed from define to inline function
 	* codegen.c: complete output of program's end source location if requested
+	* scanner.l: handle line directive in any state
 
 2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
