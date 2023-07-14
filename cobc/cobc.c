@@ -4118,7 +4118,7 @@ process_command_line (const int argc, char **argv)
 #endif
 
 	{
-		enum cb_warn_val check_warn
+		enum cb_warn_val check_warn;
 		/* TODO: handle group warnings, likely via option in warning.def */
 
 		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
