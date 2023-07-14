@@ -316,6 +316,9 @@ NEWS - user visible changes				-*- outline -*-
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
+   -Wtyping as a new warning raises only very suspicious MOVEs,
+   -Wstrict-typing, which will warn as before even for MOVE 1 TO PICX-FLD
+    is not included in -Wall any more
    -Wlarger-01-redefines as new warning (enabled by -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
    -Wno-unsupported -Wunsupported new option to disable or only warn

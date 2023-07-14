@@ -10865,15 +10865,23 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			case CB_CATEGORY_ALPHANUMERIC:
 			case CB_CATEGORY_ALPHANUMERIC_EDITED:
 				if (is_value
-				 || l->scale == 0) {
+				 || l->scale != 0
+				 || l->size != fdst->size) {
 					goto expect_alphanumeric;
+				}
+				if (l->size == fdst->size) {
+					goto expect_alphanumeric_strict;
 				}
 				goto invalid;
 			case CB_CATEGORY_NATIONAL:
 			case CB_CATEGORY_NATIONAL_EDITED:
 				if (is_value
-				 || l->scale == 0) {
+				 || l->scale != 0
+				 || l->size != fdst->size) {
 					goto expect_national;
+				}
+				if (l->size == fdst->size) {
+					goto expect_national_strict;
 				}
 				goto non_integer_move;
 			case CB_CATEGORY_NUMERIC_EDITED:
@@ -11594,16 +11602,26 @@ non_integer_move:
 	return 0;
 
 expect_numeric:
-	move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
+	move_warning (src, dst, is_value, cb_warn_typing, 0,
 		    _("numeric value is expected"));
 	return 0;
 
 expect_alphanumeric:
+	move_warning (src, dst, is_value, cb_warn_typing, 0,
+		    _("alphanumeric value is expected"));
+	return 0;
+
+expect_alphanumeric_strict:
 	move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
 		    _("alphanumeric value is expected"));
 	return 0;
 
 expect_national:
+	move_warning (src, dst, is_value, cb_warn_typing, 0,
+		    _("national value is expected"));
+	return 0;
+
+expect_national_strict:
 	move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
 		    _("national value is expected"));
 	return 0;

@@ -4118,14 +4118,27 @@ process_command_line (const int argc, char **argv)
 #endif
 
 	{
+		/* TODO: handle group warnings, likely via option in warning.def */
+
 		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
-		/* TODO: handle group warnings */
 		const enum cb_warn_val detail_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
 		if (detail_warn != COBC_WARN_DISABLED_EXPL
 		 && detail_warn != COBC_WARN_ENABLED_EXPL) {
 			const enum cb_warn_val group_warn = get_warn_opt_value (cb_warn_constant_expr);
 			set_warn_opt_value (cb_warn_constant_numlit_expr, group_warn);
 		}
+		/* group with different main group: -Wstrict-typing (a -Wextra one) implies -Wtyping,
+		   (a -Wall one), and -Wno-typing implies -Wno-strict-typing */
+		const enum cb_warn_val strict_warn = get_warn_opt_value (cb_warn_strict_typing);
+		if (strict_warn == COBC_WARN_ENABLED_EXPL) {
+			set_warn_opt_value (cb_warn_typing, COBC_WARN_ENABLED_EXPL);
+		} else {
+			const enum cb_warn_val warn_type = get_warn_opt_value (cb_warn_typing);
+			if (warn_type == COBC_WARN_DISABLED_EXPL) {
+				set_warn_opt_value (cb_warn_strict_typing, COBC_WARN_DISABLED_EXPL);
+			}
+		}
+
 		/* set all explicit warning options to their later checked variants */
 #define CB_CHECK_WARNING(opt)  \
 		if (get_warn_opt_value (opt) == COBC_WARN_ENABLED_EXPL) {	\

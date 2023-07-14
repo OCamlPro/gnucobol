@@ -1704,8 +1704,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-# CHECKME: -Wno-strict-typing because of MOVE warning
-AT_CHECK([$COMPILE -Wno-strict-typing prog.cob], [0], [], [])
+# CHECKME: -Wno-typing because of MOVE warning
+AT_CHECK([$COMPILE -Wno-typing prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [MOVE 1P17: -100000000000000000 : 2.

@@ -10,6 +10,10 @@
 	* parser.y (emit_statement): changed from define to inline function
 	* codegen.c: complete output of program's end source location if requested
 	* scanner.l: handle line directive in any state
+	* warning.def, typeck.c (validate_move), cobc.c (process_command_line):
+	* use existing -Wstrict-typing only for "strict" type mismatches, including
+	  "same size, different type" and move it to -Wextra; the other mismatches
+	  are still raised with -Wall but under the new -Wtyping
 
 2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -246,6 +250,15 @@
 	  literal for use with CONTROL phrase
 	* parser.y: adjust a bunch of terminals to match the internal name with
 	  leading underscore as optional
+	* cobc.c: check for duplicate source file and skip with warning
+	* pplex.l: check for recursive file by resolved file name
+
+2023-05-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (usage), field.c (validate_field_1): postpone setting of
+	  field attribute flag_is_pointer from parsing the USAGE clause to final
+	  field validation, fixing group and "child" USAGE, as well as
+	  TYPEDEF + SAME AS with pointer types
 
 2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -253,6 +266,8 @@
 	  from int to their matching enum
 	* tree.c (cb_build_prototype), parser.y (setup_prototype),
 	  tree.h (struct cb_prototype): use matching enum
+	* tree.c (cb_field), parser.y, reserved.c: added parsing of GROUP-USAGE
+	* field.c (validate_field_1): handle new attribute group_usage
 
 2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -316,6 +331,11 @@
 	  (DISPLAY overpunched), that was removed undocumented with 2.0
 	* typeck.c (cb_build_move_literal): optimized output for literals to
 	  fields with BLANK WHEN ZERO and SIGN LEADING
+
+2023-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c: inclusion of condition-names (level 88) into field that use a
+	  TYPEDEF defintion
 
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -528,8 +548,6 @@
 
 2023-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* field.c (copy_into_field, copy_into_field_recursive): fix missing set
-	  of flag_is_pointer, fixing TYPEDEF + SAME AS with pointer types
 	* parser.y, reserved.c: add DISPLAY-1 as PENDING,
 	  actually pass NATIONAL usage if specified
 	* field.c (compute_size), tree.c (cb_tree_type): handle CB_USAGE_NATIONAL
