@@ -4118,19 +4118,20 @@ process_command_line (const int argc, char **argv)
 #endif
 
 	{
+		enum cb_warn_val check_warn
 		/* TODO: handle group warnings, likely via option in warning.def */
 
 		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
-		const enum cb_warn_val detail_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
-		if (detail_warn != COBC_WARN_DISABLED_EXPL
-		 && detail_warn != COBC_WARN_ENABLED_EXPL) {
+		check_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
+		if (check_warn != COBC_WARN_DISABLED_EXPL
+		 && check_warn != COBC_WARN_ENABLED_EXPL) {
 			const enum cb_warn_val group_warn = get_warn_opt_value (cb_warn_constant_expr);
 			set_warn_opt_value (cb_warn_constant_numlit_expr, group_warn);
 		}
 		/* group with different main group: -Wstrict-typing (a -Wextra one) implies -Wtyping,
 		   (a -Wall one), and -Wno-typing implies -Wno-strict-typing */
-		const enum cb_warn_val strict_warn = get_warn_opt_value (cb_warn_strict_typing);
-		if (strict_warn == COBC_WARN_ENABLED_EXPL) {
+		check_warn = get_warn_opt_value (cb_warn_strict_typing);
+		if (check_warn == COBC_WARN_ENABLED_EXPL) {
 			set_warn_opt_value (cb_warn_typing, COBC_WARN_ENABLED_EXPL);
 		} else {
 			const enum cb_warn_val warn_type = get_warn_opt_value (cb_warn_typing);
@@ -6580,13 +6581,14 @@ line_has_listing_directive (char *line, const enum cb_format source_format, int 
 
 	token = get_directive_start (line, source_format);
 
-	if (token != NULL &&
-		!strncasecmp (token, "LISTING", 7)) {
+	if (token != NULL
+	 && !strncasecmp (token, "LISTING", 7)) {
 		token += 7;
 		*on_off = 1;
 		token = get_next_nonspace (token);
-		if (!strncasecmp (token, "OFF", 3))
+		if (!strncasecmp (token, "OFF", 3)) {
 			*on_off = 0;
+		}
 		return 1;
 	}
 	return 0;
