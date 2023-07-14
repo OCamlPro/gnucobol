@@ -509,6 +509,7 @@ extern void			*cobc_realloc (void *, const size_t);
 
 extern void			*cobc_main_malloc (const size_t);
 extern void			*cobc_main_strdup (const char *);
+extern char			*cobc_main_stradd_dup (const char *, const char*);
 extern void			*cobc_main_realloc (void *, const size_t);
 extern void			cobc_main_free (void *);
 
