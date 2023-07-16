@@ -106,7 +106,8 @@ enum compile_level {
 #define	CB_FLAG_GETOPT_EBCDIC_TABLE    14
 #define	CB_FLAG_GETOPT_DEFAULT_COLSEQ  15
 #define	CB_FLAG_MEMORY_CHECK           16
-
+#define CB_FLAG_DUMP_TREE            17
+#define CB_FLAG_DUMP_TREE_FLAGS      18
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -444,6 +445,8 @@ static int		save_all_src = 0;
 static signed int	save_c_src = 0;
 static signed int	verbose_output = 0;
 static int		cb_coverage_enabled = 0;
+static char*		dump_tree_to_file = NULL;
+static char*		dump_tree_flags = NULL;
 static int		cob_optimize = 0;
 
 
@@ -1087,7 +1090,7 @@ cobc_main_strdup (const char *dupstr)
 }
 
 /* returns a fresh allocated copy of the concatenation from str1 + str2 */
-static char *
+char *
 cobc_main_stradd_dup (const char *str1, const char *str2)
 {
 	char	*p;
@@ -3635,6 +3638,22 @@ process_command_line (const int argc, char **argv)
 				memset (cb_depend_target + orig_len, ' ', 1);
 				memcpy (cb_depend_target + orig_len + 1, cob_optarg, new_len);
 				memset (cb_depend_target + orig_len + 1 + new_len, 0, 1);
+			}
+			break;
+
+		case CB_FLAG_DUMP_TREE:
+			if (dump_tree_to_file)
+				cobc_main_free (dump_tree_to_file);
+			dump_tree_to_file = cobc_main_strdup (cob_optarg);
+			break;
+
+		case CB_FLAG_DUMP_TREE_FLAGS:
+			if (dump_tree_flags){
+				char* old = dump_tree_flags;
+				dump_tree_flags = cobc_main_stradd_dup(dump_tree_flags, cob_optarg);
+				cobc_main_free (old);
+			} else {
+				dump_tree_flags = cobc_main_strdup (cob_optarg);
 			}
 			break;
 
@@ -8078,6 +8097,11 @@ process_translate (struct filename *fn)
 			}
 		}
 	}
+
+	if (!dump_tree_to_file)
+		dump_tree_to_file = getenv("COB_DUMP_TREE");
+	if (dump_tree_to_file)
+		cb_dump_tree_to_file (current_program, dump_tree_to_file, dump_tree_flags);
 
 	/* Translate to C */
 	codegen (current_program, fn->translate);
