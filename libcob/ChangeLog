@@ -1,4 +1,9 @@
 
+2023-07-18  Simon Sobisch <simonsobisch@gnu.org>
+after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (cob_move_display_to_packed): fix memory trashing in edge cases
+
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_check_fence), common.h: new function to check for writing
