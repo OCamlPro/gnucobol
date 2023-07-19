@@ -1035,7 +1035,7 @@ AT_CLEANUP
 
 ## Expressions
 
-AT_SETUP([Class check with reference modification])
+AT_SETUP([Class check with reference-modification])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -10505,8 +10505,6 @@ AT_DATA([sub2.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CAPTURE_FILE([tstdump.dump])
-
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=NONE \
@@ -10517,6 +10515,8 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
+
+AT_CAPTURE_FILE([tstdump.dump])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],

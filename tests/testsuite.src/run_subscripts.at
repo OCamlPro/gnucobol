@@ -239,7 +239,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([length of ODO w/- reference modification])
+AT_SETUP([length of ODO w/- reference-modification])
 AT_KEYWORDS([runsubscripts subscripts])
 
 AT_DATA([prog.cob], [

@@ -2383,23 +2383,149 @@ cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 	return cb_build_reference (full_name);
 }
 
+/* Reference modification checks */
+static void
+refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
+{
+	const char *name = r->word->name;
+	const int	adjusted_at_runtime = -1;
+	int			offset;
+	int			length;
+	int			pseudosize;
+
+	if (f->level == 88) {
+		if (r->offset) {
+#if 0	/* FIXME: we have to overlapping msgids - change to only use one in all of cobc */
+			cb_error_x (x, _("%s may not be reference modified"), name);
+#endif
+			cb_error_x (x, _("'%s' cannot be reference modified"), name);
+			r->offset = r->length = NULL;
+		}
+		return;
+	}
+	
+	if (!r->offset) {
+		/* no more checks needed */
+		return;
+	}
+
+	if (f->flag_any_length) {
+		pseudosize = 0 - f->size;
+	} else {
+		if (f->usage == CB_USAGE_NATIONAL) {
+			pseudosize = f->size / 2;
+		} else if (f->pic && f->pic->orig && f->pic->orig[0] == 'U') {
+			/* real "amount of codepoints" only possible to check at runtime */
+			pseudosize = f->size / 4;
+		} else {
+			/* note: child elements under UNBOUNDED are not included! */
+			pseudosize = f->size;
+		}
+		if (cb_field_has_unbounded (f)) {
+			pseudosize *= -1;
+		}
+	}
+
+	/* Compile-time check */
+	if (!r->length) {
+		length = 0;
+	} else
+	if (CB_LITERAL_P (r->length)) {
+		length = cb_get_int (r->length);
+		/* FIXME: needs to be supported for zero length literals */
+		if (length < 1) {
+			cb_error_x (x, _("length of '%s' out of bounds: %d"),
+				name, length);
+			return;
+		}
+		if (pseudosize > 0 && pseudosize < length) {
+			cb_error_x (x, _("length of '%s' out of bounds: %d"),
+				name, length);
+			return;
+		}
+	} else {
+		length = adjusted_at_runtime;
+	}
+	
+	if (CB_LITERAL_P (r->offset)) {
+		offset = cb_get_int (r->offset);
+		if (offset < 1) {
+			cb_error_x (x, _("offset of '%s' out of bounds: %d"), name, offset);
+			return;
+		}
+		if (length == adjusted_at_runtime && offset == pseudosize) {
+			cb_warning_x (cb_warn_filler, x,
+				_("suspicious reference-modification: always using max. position"));
+		} else
+		if (pseudosize > 0) {
+			if (offset > pseudosize) {
+				cb_error_x (x, _("offset of '%s' out of bounds: %d"), name, offset);
+				return;
+			}
+			if (length > 0 && length > pseudosize - offset + 1) {
+				cb_error_x (x, _("length of '%s' out of bounds: %d"),
+					name, length);
+				return;
+			}
+		}
+	} else {
+		offset = adjusted_at_runtime;
+		if (length == pseudosize) {
+			cb_warning_x (cb_warn_filler, x,
+				_("suspicious reference-modification: always using max. length"));
+		}
+	}	
+
+	/* Run-time check */
+	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
+		if (f->flag_any_length
+		 || offset == adjusted_at_runtime
+		 || length == adjusted_at_runtime) {
+			cb_tree		e1;
+			if (cb_ref_mod_zero_length == 2) {
+				/* allow everything but negative/zero */
+				e1 = CB_BUILD_FUNCALL_3 ("cob_check_ref_mod_minimal",
+					CB_BUILD_STRING0 (f->name),
+					cb_build_cast_int (r->offset),
+					r->length ?
+					cb_build_cast_int (r->length) :
+					cb_int1);
+				optimize_defs[COB_CHK_REFMOD_MIN] = 1;
+			} else {
+				/* check upper + size + lower as requested */
+				e1 = CB_BUILD_FUNCALL_6 ("cob_check_ref_mod_detailed",
+					CB_BUILD_STRING0 (f->name),
+					cb_int1,	/* abend */
+					cb_int (cb_ref_mod_zero_length),
+					f->flag_any_length ?
+					CB_BUILD_CAST_LENGTH (CB_TREE(f)) /* known via field.size */ :
+					pseudosize < 0 ?
+					CB_BUILD_CAST_LENGTH (x) /* needs to be runtime-calculated */ :
+					cb_int (pseudosize),
+					cb_build_cast_int (r->offset),
+					r->length ?
+					cb_build_cast_int (r->length) :
+					cb_int1);
+				optimize_defs[COB_CHK_REFMOD] = 1;
+			}
+			r->check = cb_list_add (r->check, e1);
+		}
+	}
+}
+
 cb_tree
 cb_build_identifier (cb_tree x, const int subchk)
 {
 	struct cb_reference	*r;
-	struct cb_field		*f;
-	struct cb_field		*p;
+	struct cb_field	*f;
+	struct cb_field	*p;
 	const char		*name;
 	cb_tree			v;
-	cb_tree			e1;
 	cb_tree			l;
 	cb_tree			sub;
-	int			offset;
-	int			length;
 	int			n;
 	int			numsubs;
 	int			refsubs;
-	int			pseudosize;
 
 	if (x == cb_error_node) {
 		return cb_error_node;
@@ -2453,7 +2579,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 				"cob_check_linkage",
 				cb_build_address (cb_build_field_reference (p, NULL)),
 				CB_BUILD_STRING0 (
-					CB_REFERENCE(cb_build_name_reference (p, f))->word->name),
+					CB_REFERENCE (cb_build_name_reference (p, f))->word->name),
 				cb_int1);
 			optimize_defs[COB_CHK_LINKAGE] = 1;
 		} else
@@ -2492,7 +2618,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 	} else {
 		numsubs = f->indexes;
 	}
-	if (likely(!r->flag_all)) {
+	if (likely (!r->flag_all)) {
 		if (refsubs != numsubs) {
 			if (refsubs > numsubs) {
 				goto refsubserr;
@@ -2501,8 +2627,8 @@ cb_build_identifier (cb_tree x, const int subchk)
 					goto refsubserr;
 				} else {
 					cb_warning_x (COBC_WARN_FILLER, x,
-							_("subscript missing for '%s' - defaulting to 1"),
-							name);
+						_("subscript missing for '%s' - defaulting to 1"),
+						name);
 					for (; refsubs < numsubs; ++refsubs) {
 						CB_ADD_TO_CHAIN (cb_one, r->subs);
 					}
@@ -2534,6 +2660,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 				       access to PIC L field (p->parent == f). */
 				 && (!p->parent || p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
+					cb_tree	e1;
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
 						 cb_build_cast_int (p->depending),
 						 cb_int (p->occurs_min),
@@ -2547,7 +2674,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 		}
 
 		/* Subscript check along with setting of table offset */
-		if (r->subs &&! cb_validate_list (r->subs)) {
+		if (r->subs && !cb_validate_list (r->subs)) {
 			l = r->subs;
 			for (p = f; p && l; p = p->parent) {
 				if (!p->flag_occurs) {
@@ -2574,6 +2701,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
 					if (cb_subscript_check != CB_SUB_CHECK_MAX
 					 && p->depending && p->depending != cb_error_node) {
+						cb_tree		e1;
 						e1 = CB_BUILD_FUNCALL_4 ("cob_check_subscript",
 							 cb_build_cast_int (sub),
 							 cb_build_cast_int (p->depending),
@@ -2581,16 +2709,16 @@ cb_build_identifier (cb_tree x, const int subchk)
 							 cb_int1);
 						optimize_defs[COB_CHK_SUBSCRIPT] = 1;
 						r->check = cb_list_add (r->check, e1);
-					} else {
-						if (!CB_LITERAL_P (sub)) {
-							e1 = CB_BUILD_FUNCALL_4 ("cob_check_subscript",
-								 cb_build_cast_int (sub),
-								 cb_int (p->occurs_max),
-								 CB_BUILD_STRING0 (name),
-								cb_int0);
-							optimize_defs[COB_CHK_SUBSCRIPT] = 1;
-							r->check = cb_list_add (r->check, e1);
-						}
+					} else
+					if (!CB_LITERAL_P (sub)) {
+						cb_tree		e1;
+						e1 = CB_BUILD_FUNCALL_4 ("cob_check_subscript",
+							 cb_build_cast_int (sub),
+							 cb_int (p->occurs_max),
+							 CB_BUILD_STRING0 (name),
+							cb_int0);
+						optimize_defs[COB_CHK_SUBSCRIPT] = 1;
+						r->check = cb_list_add (r->check, e1);
 					}
 				}
 			}
@@ -2603,92 +2731,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 		r->subs = cb_list_reverse (r->subs);
 	}
 
-	/* Reference modification check */
-	if (f->flag_any_length) {
-		pseudosize = 0 - f->size;
-	} else {
-		if (f->usage == CB_USAGE_NATIONAL) {
-			pseudosize = f->size / 2;
-		} else if (f->pic && f->pic->orig && f->pic->orig[0] == 'U') {
-			pseudosize = f->size / 4;
-		} else {
-			/* note: child elements under UNBOUNDED are not included! */
-			pseudosize = f->size;
-		}
-		if (cb_field_has_unbounded (f)) {
-			pseudosize *= -1;
-		}
-	}
-	if (r->offset) {
-		/* Compile-time check */
-		if (CB_LITERAL_P (r->offset)) {
-			offset = cb_get_int (r->offset);
-			if (pseudosize < 0) {
-				if (offset < 1) {
-					cb_error_x (x, _("offset of '%s' out of bounds: %d"), name, offset);
-				} else if (r->length && CB_LITERAL_P (r->length)) {
-					length = cb_get_int (r->length);
-					/* FIXME: needs to be supported for zero length literals */
-					if (length < 1) {
-						cb_error_x (x, _("length of '%s' out of bounds: %d"),
-							    name, length);
-					}
-				}
-			} else {
-				if (offset < 1 || offset > pseudosize) {
-					cb_error_x (x, _("offset of '%s' out of bounds: %d"), name, offset);
-				} else if (r->length && CB_LITERAL_P (r->length)) {
-					length = cb_get_int (r->length);
-					/* FIXME: needs to be supported for zero length literals */
-					if (length < 1 || length > pseudosize - offset + 1) {
-						cb_error_x (x, _("length of '%s' out of bounds: %d"),
-							    name, length);
-					}
-				}
-			}
-		} else if (r->length && CB_LITERAL_P (r->length)) {
-			length = cb_get_int (r->length);
-			/* FIXME: needs to be supported for zero length literals */
-			if (length < 1 || (pseudosize > 0 && pseudosize <= length)) {
-				cb_error_x (x, _("length of '%s' out of bounds: %d"),
-					    name, length);
-			}
-		}
-
-		/* Run-time check */
-		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
-			if (f->flag_any_length || !CB_LITERAL_P (r->offset) ||
-			    (r->length && !CB_LITERAL_P (r->length))) {
-				/* allow everything but negative/zero */
-				if (cb_ref_mod_zero_length == 2) {
-					e1 = CB_BUILD_FUNCALL_3 ("cob_check_ref_mod_minimal",
-								 CB_BUILD_STRING0 (f->name),
-								 cb_build_cast_int (r->offset),
-								 r->length ?
-								  cb_build_cast_int (r->length) :
-								  cb_int1);
-					optimize_defs[COB_CHK_REFMOD_MIN] = 1;
-				} else {
-					/* check upper + size + lower as requested */
-					e1 = CB_BUILD_FUNCALL_6 ("cob_check_ref_mod_detailed",
-								 CB_BUILD_STRING0 (f->name),
-								 cb_int1,	/* abend */
-								 cb_int (cb_ref_mod_zero_length),
-								 f->flag_any_length ?
-								  CB_BUILD_CAST_LENGTH (v) /* known via field.size */ :
-								  pseudosize < 0 ?
-								    CB_BUILD_CAST_LENGTH (x) /* needs to be runtime-calculated */ :
-								    cb_int (pseudosize),
-								 cb_build_cast_int (r->offset),
-								 r->length ?
-								  cb_build_cast_int (r->length) :
-								  cb_int1);
-					optimize_defs[COB_CHK_REFMOD] = 1;
-				}
-				r->check = cb_list_add (r->check, e1);
-			}
-		}
-	}
+	refmod_checks (x, f, r);
 
 	if (f->storage == CB_STORAGE_CONSTANT) {
 		return f->values;
@@ -2706,8 +2749,7 @@ refsubserr:
 		cb_error_x (x, _("'%s' requires one subscript"), name);
 		break;
 	default:
-		cb_error_x (x, _("'%s' requires %d subscripts"),
-			    name, f->indexes);
+		cb_error_x (x, _("'%s' requires %d subscripts"), name, f->indexes);
 		break;
 	}
 	return cb_error_node;
@@ -2737,8 +2779,7 @@ cb_build_length_1 (cb_tree x)
 				size = cb_build_binary_op (size, '*', f->depending);
 			}
 		} else if (f->occurs_max > 1) {
-			size = cb_build_binary_op (size, '*',
-						   cb_int (f->occurs_max));
+			size = cb_build_binary_op (size, '*', cb_int (f->occurs_max));
 		}
 		e = e ? cb_build_binary_op (e, '+', size) : size;
 	}
@@ -4778,7 +4819,7 @@ cb_validate_program_data (struct cb_program *prog)
 		} else if (cb_ref (q->depending) != cb_error_node) {
 			cb_tree dep_x = q->depending;
 			if (cb_tree_category (dep_x) != CB_CATEGORY_NUMERIC) {
-				cb_error_x (dep_x, _ ("'%s' is not numeric"), cb_name (dep_x));
+				cb_error_x (dep_x, _("'%s' is not numeric"), cb_name (dep_x));
 				q->depending = cb_error_node;
 			} else {
 				depfld = CB_FIELD_PTR (q->depending);
@@ -12190,15 +12231,34 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 
-	if ((f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_COMP_6)
+	if ((f->usage == CB_USAGE_PACKED
+	  || f->usage == CB_USAGE_COMP_6)
 	 && cb_fits_int (src)) {
+		/* early check for unsigned zero or non-signed field */
+		if (l->sign == 0
+		 || !f->pic->have_sign) {
+			int i;
+			for (i = 0; i < l->size; i++) {
+				if (l->data[i] != '0') {
+					break;
+				}
+			}
+			if (i == l->size) {
+				return cb_build_move_num_zero (dst);
+			}
+		}
+
+		/* postpone PPPs and non-integer settings to runtime */
 		if (f->pic->scale < 0) {
+			/* TODO: handle this case here */
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
 		n = f->pic->scale - l->scale;
 		if ((l->size + n) > 9) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
+
+		/* get value, then store as integer */
 		val = cb_get_int (src);
 		for (; n > 0; n--) {
 			val *= 10;
@@ -12206,7 +12266,10 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		for (; n < 0; n++) {
 			val /= 10;
 		}
-		if (val == 0) {
+		if (val == 0
+		 && (l->sign == 0
+		  || !f->pic->have_sign)) {
+			/* shortcut if the (trimmed) value is zero */
 			return cb_build_move_num_zero (dst);
 		}
 		if (val < 0 && !f->pic->have_sign) {

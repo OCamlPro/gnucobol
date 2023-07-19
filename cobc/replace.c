@@ -274,7 +274,7 @@ void ppecho_switch (WITH_DEPTH struct cb_replacement_state *repls,
 	fprintf (stderr, "%sppecho_switch(%s, '%s')\n",
 		DEPTH, repls->name, text);
 #endif
-	switch( repls->ppecho ){
+	switch (repls->ppecho) {
 	case CB_PPECHO_DIRECT:
 #ifdef DEBUG_REPLACE
 		fprintf (stderr, "%s ppecho_direct('%s')\n", DEPTH, text);
@@ -324,9 +324,9 @@ int is_leading_or_trailing (WITH_DEPTH int leading,
 	const size_t src_len = strlen (src_text);
 	const size_t text_len = strlen(text);
 	int result ;
-	if( text_len > src_len || ( !strict && text_len == src_len ) ){
+	if (text_len > src_len || ( !strict && text_len == src_len )) {
 		int pos = leading ? 0 : text_len - src_len ;
-		if( strncasecmp (src_text, text+pos, src_len) ){
+		if (strncasecmp (src_text, text+pos, src_len)) {
 			result = 0;
 		} else {
 			result = 1;
@@ -362,7 +362,7 @@ void ppecho_leading_or_trailing (WITH_DEPTH struct cb_replacement_state *repls,
 
 	if (!leading && text_len > src_len) {
 		/* For TRAILING, we have to keep only the non-matched
-		 * prefix part of the matching text */
+		   prefix part of the matching text */
 		const char* remaining_text =
 			cobc_plex_strsub (text,
 					  text_len - src_len);
@@ -503,7 +503,7 @@ void check_replace_all (WITH_DEPTH
 		check_replace_after_match (MORE_DEPTH repls);
 	} else {
 		const char* src_text = src->text;
-		if ( is_space_or_nl(src_text[0]) ){
+		if (is_space_or_nl(src_text[0])) {
 			/* skip spaces in replacement */
 			check_replace_all (MORE_DEPTH repls,new_text,texts,
 					   src->next, replace_list);
@@ -520,7 +520,7 @@ void check_replace_all (WITH_DEPTH
 			} else {
 				const char* text = texts->text;
 				texts = texts->next;
-				if ( is_space_or_nl(text[0]) ){
+				if (is_space_or_nl(text[0])) {
 					/* skip spaces in texts */
 					check_replace_all (MORE_DEPTH repls,
 							   new_text,
@@ -564,7 +564,7 @@ void check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls)
 #endif
   repls->current_list = NULL;
   if (repls->token_queue != NULL){
-	  if( is_space_or_nl (repls->token_queue->text[0]) ){
+	  if (is_space_or_nl (repls->token_queue->text[0])) {
 		  ppecho_switch (MORE_DEPTH repls,
 				 repls->token_queue->text,
 				 repls->token_queue->token);
@@ -632,6 +632,9 @@ static void add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
 			int prequeue, const char* text, const char* token
 	)
 {
+	/* CHECKME: this function takes >35% of the parsing cpu instructions,
+	   with > 18% for memory allocation - can we reduce especially the
+	   later in cases where REPLACE / REPLACING is not active? */
 #ifdef DEBUG_REPLACE_TRACE
 	fprintf (stderr, "%sadd_text_to_replace (%s%s, '%s')\n", DEPTH,
 		repls->name, prequeue ? ", PREQUEUE" : "", text);
@@ -640,7 +643,7 @@ static void add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
 
 		if (is_word (MORE_DEPTH text) ) {
 
-			if( repls->text_prequeue == NULL ){
+			if (repls->text_prequeue == NULL) {
 				/* a word should be kept in the prequeue */
 				repls->text_prequeue =
 					cobc_plex_strdup (text);
@@ -651,7 +654,7 @@ static void add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
 					cobc_plex_stradd (repls->text_prequeue,
 							  text);
 			}
-		} else if ( repls->text_prequeue == NULL ){
+		} else if (repls->text_prequeue == NULL) {
 			/* not a word, and empty prequeue,
 			   just perform replacements */
 			add_text_to_replace (MORE_DEPTH repls, 0, text, token);
@@ -724,7 +727,7 @@ struct cb_replacement_state * create_replacements (enum cb_ppecho ppecho)
 	s->ppecho = ppecho;
 
 #ifdef DEBUG_REPLACE
-	if( ppecho == CB_PPECHO_REPLACE ){
+	if (ppecho == CB_PPECHO_REPLACE) {
 		s->name = "COPY-REPLACING";
 	} else {
 		s->name = "REPLACE";

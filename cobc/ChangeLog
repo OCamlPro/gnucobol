@@ -1,4 +1,19 @@
 
+2023-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (refmod_checks): extracted from (cb_build_identifier)
+	* typeck.c (refmod_checks): prevent condition-names to be reference-modified
+	* parser.y (class_value): improved error messages
+	* tree.c (cb_build_cast): set numeric category for all integer casts
+
+2023-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_identifier): allow ref-mod up to identifier length
+	* typeck.c (cb_build_identifier): new warning for suspicious reference-
+	  modification with start or length set to maximum and the other to var
+	* typeck.c (cb_build_move_literal): optimize to cb_build_move_num_zero in
+	  more cases
+
 2023-07-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (cb_ppecho_direct, output_pending_newlines): output only up
@@ -218,6 +233,7 @@
 
 	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
 	* parser.y: drop PENDING from OVERLINE and LEFTLINE
+	* tree.c (cb_build_intrinsic): refactored to get the name in a single place
 
 2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
 

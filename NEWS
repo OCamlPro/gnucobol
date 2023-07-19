@@ -3,7 +3,7 @@ NEWS - user visible changes				-*- outline -*-
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
  GnuCOBOL 3.2rc3  ASAP
-          3.2 final (depending on feedback) around 2023/04/25
+          3.2 final (depending on feedback) end of July 2023
 
  planned for final:
    * extending testsuite and documentation
@@ -300,7 +300,8 @@ NEWS - user visible changes				-*- outline -*-
    of internal memory used during CALL; this can help in finding otherwise
    hard to diagnose overwrite of memory and as it is only done on CALL
    has a much smaller footprint than -fec=bounds (as both check different
-   aspects at different places it is also reasonable to use both)
+   aspects at different places it is also reasonable to use both);
+   to disable it use -fmemory-check=none or limit by -fmemory-check=pointer
 
 ** the option -g does no longer imply -fno-remove-unreachable; if you want to
    keep those in you need to explicit specify this
@@ -331,6 +332,8 @@ NEWS - user visible changes				-*- outline -*-
     a coding error
    -Wsuspicious-perform-thru (enabled by default) to check for PERFORM ranges
     that are likely to create unwanted behaviour
+   -Wother now  warns for suspicious reference-modification which is likely to
+    create out-of-bounds access at runtime
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
