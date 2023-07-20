@@ -6608,13 +6608,13 @@ print_fixed_line (const int line_num, char pch, char *line)
 }
 
 static int
-is_quotes_char (char c, int quotes[2])
+is_quotes_char (char c, int *simple_quote, int *double_quote)
 {
 	if (c == '\'') {
-		quotes[0] = !quotes[0];
+		*simple_quote = !(*simple_quote);
 	}
 	else if (c == '"') {
-		quotes[1] = !quotes[1];
+		*double_quote = !(*double_quote);
 	} else {
 		return 0;
 	}
@@ -6631,7 +6631,8 @@ print_multiple_fixed_line (const int line_num, char pch, char *line)
 	int start = 0;
 	const int max_chars_on_line = cb_listing_wide ? 112 : 72;
 	char dst[max_chars_on_line + 1];
-	int quotes[2] = {0, 0};
+	int simple_quote = 0;
+	int double_quote = 0;
 	int margin_b = cobc_get_margin_b (1);
 	int indicator = cobc_get_indicator ();
 	int last_word;
@@ -6648,21 +6649,21 @@ print_multiple_fixed_line (const int line_num, char pch, char *line)
 	while (line[i])
 	{
 		/* loop space */
-		while (line[i] && isspace (line[i]) && !is_quotes_char (line[i], quotes) && NOT_TOO_LONG (i, start)) {
+		while (line[i] && isspace (line[i]) && !is_quotes_char (line[i], &simple_quote, &double_quote) && NOT_TOO_LONG (i, start)) {
 			++i;
 		}
 		last_word = i;
 		/* loop chars */
-		if (NOT_TOO_LONG (i, start) && !is_quotes_char (line[i], quotes)) {
-			while (line[i] && !isspace (line[i]) && !is_quotes_char (line[i], quotes)) {
+		if (NOT_TOO_LONG (i, start) && !is_quotes_char (line[i], &simple_quote, &double_quote)) {
+			while (line[i] && !isspace (line[i]) && !is_quotes_char (line[i], &simple_quote, &double_quote)) {
 				++i;
 			}
 		}
 		/* check quotes */
-		if (line[i] && NOT_TOO_LONG (i, start) && (quotes[0] || quotes[1])) {
+		if (line[i] && NOT_TOO_LONG (i, start) && (simple_quote || double_quote)) {
 			last_word = i;
 			++i;
-			while (line[i] && !is_quotes_char (line[i], quotes) ) {
+			while (line[i] && !is_quotes_char (line[i], &simple_quote, &double_quote) ) {
 				++i;
 			}
 			++i;
@@ -7202,7 +7203,8 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 	int tmp_j;
 	int	match;
 	int	lastline_line_num;
-	int	quotes[2] = {0, 0};
+	int	simple_quote = 0;
+	int double_quote = 0;
 	struct list_replace	*rep;
 	t_data_replace data_replace;
 	int	deb_line = -1;
@@ -7224,9 +7226,9 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 		/* loop list replace */
 		rep = cfile->replace_head;
 		match = 0;
-		is_quotes_char (line_file->line[j], quotes);
+		is_quotes_char (line_file->line[j], &simple_quote, &double_quote);
 		while (rep && line_file->line[j]) {
-			if ((!quotes[0] && !quotes[1]) || rep->from[0] == '\'' || rep->from[0] == '"') {
+			if ((!simple_quote && !double_quote) || rep->from[0] == '\'' || rep->from[0] == '"') {
 				data_replace = search_strstr (line_file, i, rep, j, fixed);
 				/* Match */
 				if (data_replace.last_char != -1)
@@ -7239,7 +7241,7 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 
 					while (line_file && line_file != data_replace.lastline_replace) {
 						while (line_file->line[++j]) {
-							is_quotes_char (line_file->line[j], quotes);
+							is_quotes_char (line_file->line[j], &simple_quote, &double_quote);
 						}
 						++i;
 						line_file = line_file->next;
@@ -7248,7 +7250,7 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 					lastline_line_num = i;
 					/* and count quotes in the last line */
 					while (++j <= data_replace.last_char) {
-						is_quotes_char (line_file->line[j], quotes);
+						is_quotes_char (line_file->line[j], &simple_quote, &double_quote);
 					}
 					j = tmp_j;
 
