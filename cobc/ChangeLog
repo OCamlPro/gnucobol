@@ -1,4 +1,11 @@
 
+2023-07-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (copy_validation): new function
+	* field.c (copy_validation, copy_into_field): handling validation
+	* cobc.c (print_fields): leave a hint to field being TYPEDEF
+	* cobc.c (xref_fields): dont output references for TYPEDEF sub items
+
 2023-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (refmod_checks): extracted from (cb_build_identifier)
@@ -223,6 +230,8 @@
 2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.y (is_subordinate_to): start with parent, not field
+	* field.c (copy_into_field_recursive, copy_into_field): handling more
+	  field attributes, don't re-build picture
 
 2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -719,7 +719,7 @@ static void	print_program_header	(void);
 static void	print_program_data	(const char *);
 static void	print_program_trailer	(void);
 static void	print_program_listing	(void);
-static void print_with_overflow (char *, char *);
+static void print_with_overflow (const char *, char *);
 static int	process			(const char *);
 
 /* cobc functions */
@@ -5687,6 +5687,7 @@ print_88_values (struct cb_field *field)
 			"      %-14.14s %02d   %s",
 			"CONDITIONAL", f->level, f->name);
 		print_program_data (print_data);
+		/* CHECKME: Would it be useful or noise to print 88er values here? */
 	}
 }
 
@@ -5747,7 +5748,14 @@ print_fields (struct cb_field *top, int *found)
 			pd_off = sprintf (print_data, "%05d ", top->size);
 		}
 
-		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
+		if (top->flag_is_typedef) {
+			/* at least leave a hint on the TYPEDEF in symbol listing,
+			   note: for "ALPHANUMERIC" we have only 2 positions left, so "T " */
+			pd_off += sprintf (print_data + pd_off, "T %-12.12s ", type);
+		} else {
+			pd_off += sprintf (print_data + pd_off, "%-14.14s ", type);
+		}
+		pd_off += sprintf (print_data + pd_off, "%02d   ", top->level);
 
 		name_or_filler = check_filler_name (top);
 		if (got_picture) {
@@ -6064,6 +6072,12 @@ xref_fields (struct cb_field *top)
 			xref_print (&top->xref, XREF_FIELD, NULL);
 		}
 
+		/* enough, if we are a typedef, as its contents are only
+		   referenced through fields using this type */
+		if (top->flag_is_typedef) {
+			continue;
+		}
+
 		/* print xref for all assigned 88 validation entries */
 		if (top->validation) {
 			xref_88_values (top);
@@ -6308,7 +6322,7 @@ print_program_trailer (void)
 		cmd_line[pd_off - 1] = 0;
 		force_new_page_for_next_line ();
 		print_program_data (_("command line:"));
-		print_with_overflow ((char *)"  ", cmd_line);
+		print_with_overflow ("  ", cmd_line);
 		print_break = 0;
 	} else {
 		print_program_data ("");
@@ -6749,7 +6763,7 @@ print_free_line (const int line_num, char pch, char *line)
 }
 
 static void
-print_with_overflow (char *prefix, char *content)
+print_with_overflow (const char *prefix, char *content)
 {
 	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
 	int offset;

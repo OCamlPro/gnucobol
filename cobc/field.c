@@ -702,6 +702,33 @@ copy_duplicated_field_into_field (struct cb_field *field, struct cb_field *targe
 }
 
 static void
+copy_validation (struct cb_field *source, struct cb_field *target)
+{
+	struct cb_field *val, *last_val;
+#if 0 /* in case we want to allow combining condition-names of typedef and field */
+	for (last_val = target->validation; last_val; last_val = last_val->sister) {
+		/* get to the last validation entry*/
+		if (!last_val->sister) {
+			break;
+		}
+	}
+#else
+	if (target->validation) {
+		(void) cb_syntax_check_x (CB_TREE (target->validation), _("duplicate %s"), "level  88");
+	}
+#endif
+	for (val = source->validation; val; val = val->sister) {
+		/* create content-name and link into the reference list */
+		cb_tree x = cb_build_field_tree (88, cb_build_reference (val->name),
+			target, target->storage, target->file, 0);
+		last_val = CB_FIELD (x);
+		/* directly assign the typef's value + false (no need for copy) */
+		last_val->values = val->values;
+		last_val->false_88 = val->false_88;
+	}
+}
+
+static void
 copy_children (struct cb_field *child, struct cb_field *target,
 	const int level, const int outer_indexes, const enum cb_storage storage)
 {
@@ -800,10 +827,12 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	field_attribute_override (flag_sign_leading);
 	field_attribute_override (flag_sign_separate);
 	field_attribute_override (flag_synchronized);
-	field_attribute_override (flag_item_based);
+	field_attribute_override (flag_sync_right);
+	field_attribute_override (flag_sync_left);
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
+	field_attribute_override (flag_item_based);
 	field_attribute_override (flag_is_pointer);
 	/* Note: attributes must be handled both here and in copy_into_field */
 
@@ -814,10 +843,18 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 		target->redefines = cb_resolve_redefines (target, ref);
 	}
 
+	/* copy all level 88 */
+	if (source->validation) {
+		copy_validation (source, target);
+	}
+
 	if (source->children) {
 		copy_children (source->children, target, target->level, outer_indexes, target->storage);
 	} else if (source->pic){
-		target->pic = cb_build_picture (source->pic->orig);
+		/* take over internal PICTURE representation as-is, no use in re-building
+		   that from scratch and handle calculated ->pic special */
+		target->pic = cobc_parse_malloc (sizeof (struct cb_picture));
+		memcpy (target->pic, source->pic, sizeof (struct cb_picture));
 	}
 
 	if (source->sister) {
@@ -846,7 +883,8 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 #endif
 
 	/* note: EXTERNAL is always applied from the typedef (if level 1/77),
-			 but may be specified on the field */
+			 but may be specified on the field;
+	   note: MF has different syntax rules and _only_ allows it on the field */
 	if (target->level == 1 || target->level == 77) {
 		field_attribute_copy (flag_external);
 		if (target->flag_external
@@ -859,6 +897,11 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 		}
 	}
 	target->usage = source->usage;
+	target->common.category = source->common.category;
+
+	/* Note: The attributes GLOBAL and SELECT WHEN are never included;
+	         SAME AS does not include EXTERNAL, but the TYPEDEF  */
+
 	if (source->values) {
 		if (target->values) {
 			duplicate_clause_message (target->values, "VALUE");
@@ -871,19 +914,32 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	field_attribute_copy (flag_sign_clause);
 	field_attribute_copy (flag_sign_leading);
 	field_attribute_copy (flag_sign_separate);
-	field_attribute_copy (flag_synchronized);
-	field_attribute_copy (flag_item_based);
+	if (source->flag_synchronized
+	 && !target->flag_synchronized) {
+		target->flag_synchronized = source->flag_synchronized;
+		target->flag_sync_right = source->flag_sync_right;
+		target->flag_sync_left = source->flag_sync_left;
+	}	
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
+	field_attribute_copy (flag_item_based);
 	field_attribute_override (flag_is_pointer);
 	/* Note: attributes must be handled both here and in copy_into_field_recursive */
+
+	/* copy all level 88 */
+	if (source->validation) {
+		copy_validation (source, target);
+	}
 
 	if (unlikely (!target->like_modifier)) {
 		if (source->children) {
 			copy_children (source->children, target, target->level, target->indexes, target->storage);
 		} else if (source->pic) {
-			target->pic = cb_build_picture (source->pic->orig);
+			/* take over internal PICTURE representation as-is, no use in re-building
+			   that from scratch and in handling calculated ->pic special */
+			target->pic = cobc_parse_malloc (sizeof (struct cb_picture));
+			memcpy (target->pic, source->pic, sizeof (struct cb_picture));
 		}
 	} else {
 		struct cb_picture *new_pic = NULL;
@@ -954,6 +1010,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 		if (new_pic) {
 			target->pic = new_pic;
 		} else if (target->pic) {
+			/* CHECKME: is there any use in re-building the PIC? */
 			target->pic = cb_build_picture (target->pic->orig);
 		}
 	}
