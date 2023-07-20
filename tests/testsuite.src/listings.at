@@ -269,6 +269,31 @@ AT_CLEANUP
 AT_SETUP([COPY replacement with partial match])
 AT_KEYWORDS([listing copy])
 
+AT_DATA([expected.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         01 GET-VALUE.
+000007         COPY "copy.inc" REPLACING ==TEST-VAR==     BY ==TEST-AVR==
+000008                                   == 02 TEST-EE == BY == 02 TEST-FF ==.
+000001C
+000002C        02 TEST-AVR PIC X(2) VALUE "OK".
+000003C        02 TEST-CC PIC X(4) VALUE "OK 2".
+000009         PROCEDURE DIVISION.
+000010             DISPLAY TEST-AVR.
+000011             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
 AT_DATA([copy.inc], [
        02 TEST-VAR PIC X(2) VALUE "OK".
        02 TEST-CC PIC X(4) VALUE "OK 2".
@@ -317,6 +342,42 @@ AT_CLEANUP
 
 AT_SETUP([COPY replacement with multiple partial matches])
 AT_KEYWORDS([listing copy])
+
+AT_DATA([expected.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         01 GET-VALUE.
+000007         COPY "copy.inc" REPLACING
+000008            LEADING ==TEST-VAR==     BY ==TEST-AVR==
+000009                    == 02 TEST-OK == BY == 02 TEST-KO ==
+000010                    ==TEST-CC==      BY ==TEST-DD==
+000011                    == 02 TEST-EE == BY == 02 TEST-FF ==
+000012                    == PIC ==        BY == pic ==.
+000001C
+000002C        02 TEST-AVR  pic X(2) VALUE "OK".
+000003C        02 TEST-AVR-BIS  pic X(6) VALUE "OK BIS".
+000004C        02 TEST-DD  pic X(4) VALUE "OK 2".
+000005C        02 TEST-KO  pic X(4) VALUE "OK 3".
+000006C        02 TEST-FF  pic X(4) VALUE "OK 4".
+000013         PROCEDURE DIVISION.
+000014             DISPLAY TEST-AVR.
+000015             DISPLAY TEST-AVR-BIS.
+000016             DISPLAY TEST-KO.
+000017             DISPLAY TEST-DD.
+000018             DISPLAY TEST-FF.
+000019             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
 
 AT_DATA([copy.inc], [
        02 TEST-VAR PIC X(2) VALUE "OK".
@@ -513,6 +574,81 @@ LINE    PG/LN  A...B............................................................
 
 AT_CLEANUP
 
+AT_SETUP([Multiple replacement])
+AT_KEYWORDS([listing symbols])
+
+AT_DATA([copy.inc], [
+        01 A1000B-AA.
+           03 A1000B2-BB          PIC X(5).
+           03 A1000B2-CC          PIC X(5).
+           03 A1000B2-DD          PIC X(5).
+           03 A1000B2-EE          PIC X(5).
+           03 A1000B2-FF          PIC X(5).
+           03 A1000B2-GG          PIC X(5).
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO-WORLD.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "copy.inc" REPLACING LEADING ==A1000B== BY ==B2000B==
+                             == 03 A1000B2-CC          PIC X(5).
+                                03 A1000B2-DD          PIC X(5).
+                                03 A1000B2-EE          PIC X(5). ==
+                          BY == 03 B2000B2-CC1          PIC X(5).
+                                03 B2000B2-DD1          PIC X(5).
+                                03 B2000B2-EE           PIC X(5).
+                                03 B2000B2-TEST         PIC 9(1).
+                                03 B2000B2-TEST2        PIC X(1). ==.
+       PROCEDURE DIVISION.
+           DISPLAY 'Hello, world'.
+           STOP RUN.
+])
+
+AT_DATA([expected.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION DIVISION.
+000003         PROGRAM-ID. HELLO-WORLD.
+000004         DATA DIVISION.
+000005         WORKING-STORAGE SECTION.
+000006             COPY "copy.inc" REPLACING LEADING ==A1000B== BY ==B2000B==
+000007                               == 03 A1000B2-CC          PIC X(5).
+000008                                  03 A1000B2-DD          PIC X(5).
+000009                                  03 A1000B2-EE          PIC X(5). ==
+000010                            BY == 03 B2000B2-CC1          PIC X(5).
+000011                                  03 B2000B2-DD1          PIC X(5).
+000012                                  03 B2000B2-EE           PIC X(5).
+000013                                  03 B2000B2-TEST         PIC 9(1).
+000014                                  03 B2000B2-TEST2        PIC X(1). ==.
+000001C
+000002C        01 B2000B-AA.
+000003C        03 B2000B2-BB PIC X(5).
+000004C            03 B2000B2-CC1 PIC X(5). 03 B2000B2-DD1 PIC X(5). 03
+000004+       -    B2000B2-EE PIC X(5). 03 B2000B2-TEST PIC 9(1). 03
+000004+       -    B2000B2-TEST2 PIC X(1).
+000004C
+000004C
+000007C        03 B2000B2-FF PIC X(5).
+000008C        03 B2000B2-GG PIC X(5).
+000015         PROCEDURE DIVISION.
+000016             DISPLAY 'Hello, world'.
+000017             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 prog.cob], [0], [], [])
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
+AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+
+AT_CLEANUP
 
 AT_SETUP([COPY replacement order])
 AT_KEYWORDS([listing symbols])

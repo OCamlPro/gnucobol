@@ -1,4 +1,9 @@
 
+2023-07-20  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* cobc.c : rewrite partialy the copy replacing in listing
+	  mode (bug: #831)
+
 2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y: fix code generation for OPEN/CLOSE with multiple

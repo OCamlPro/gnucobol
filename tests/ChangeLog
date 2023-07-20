@@ -1,4 +1,9 @@
 
+2023-07-20  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* testsuite.src/listing.at: add test for the copy replacing in
+	  listing mode (bug: #831)
+
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal_win: updated to current atlocal.in
