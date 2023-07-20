@@ -78,17 +78,6 @@ struct strcache {
 	void		*val;
 };
 
-typedef struct s_line_file {
-	char				*line;
-	struct s_line_file	*next;
-}				t_line_file;
-
-typedef struct s_data_replace {
-	t_line_file	*firstline_replace;
-	t_line_file	*lastline_replace;
-	int			last_char;
-}				t_data_replace;
-
 /* Compile level */
 enum compile_level {
 	CB_LEVEL_UNSET  	= 0,
