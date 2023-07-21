@@ -78,6 +78,17 @@ struct strcache {
 	void		*val;
 };
 
+typedef struct s_line_file {
+	char				*line;
+	struct s_line_file	*next;
+}				t_line_file;
+
+typedef struct s_data_replace {
+	t_line_file	*firstline_replace;
+	t_line_file	*lastline_replace;
+	int			last_char;
+}				t_data_replace;
+
 /* Compile level */
 enum compile_level {
 	CB_LEVEL_UNSET  	= 0,
@@ -6638,9 +6649,6 @@ print_fixed_line (const int line_num, char pch, char *line)
 	const int	indicator = cobc_get_indicator ();
 	const int	text_column = cobc_get_text_column ();
 
-	if (!line) {
-		return ;
-	}
 	len  = strlen (line);
 	if (line[indicator] == '&') {
 		line[indicator] = '-';
@@ -6665,13 +6673,13 @@ print_fixed_line (const int line_num, char pch, char *line)
 }
 
 static int
-is_quotes_char (char c, int quotes[2])
+is_quotes_char (char c, int *simple_quote, int *double_quote)
 {
 	if (c == '\'') {
-		quotes[0] = !quotes[0];
+		*simple_quote = !(*simple_quote);
 	}
 	else if (c == '"') {
-		quotes[1] = !quotes[1];
+		*double_quote = !(*double_quote);
 	} else {
 		return 0;
 	}
@@ -6688,15 +6696,16 @@ print_multiple_fixed_line (const int line_num, char pch, char *line)
 	int start = 0;
 	const int max_chars_on_line = cb_listing_wide ? 112 : 72;
 	char dst[max_chars_on_line + 1];
-	int quotes[2] = {0, 0};
+	int simple_quote = 0;
+	int double_quote = 0;
 	int margin_b = cobc_get_margin_b (1);
 	int indicator = cobc_get_indicator ();
 	int last_word;
 
-	bzero (dst, max_chars_on_line + 1);
+	memset (dst, 0, max_chars_on_line + 1);
 	memset (dst, ' ', margin_b);
 
-	// skip space
+	/* skip space */
 	while (isspace (line[i]))
 		++i;
 	start = i;
@@ -6704,36 +6713,58 @@ print_multiple_fixed_line (const int line_num, char pch, char *line)
 
 	while (line[i])
 	{
-		// loop space
-		while (line[i] && isspace (line[i]) && NOT_TOO_LONG (i, start)) {
+		/* loop space */
+		while (line[i] && isspace (line[i]) && !is_quotes_char (line[i], &simple_quote, &double_quote) && NOT_TOO_LONG (i, start)) {
 			++i;
 		}
 		last_word = i;
-		// loop chars
-		if (NOT_TOO_LONG (i, start)) {
-			while (line[i] && !is_quotes_char (line[i], quotes) && !isspace (line[i])) {
+		/* loop chars */
+		if (NOT_TOO_LONG (i, start) && !is_quotes_char (line[i], &simple_quote, &double_quote)) {
+			while (line[i] && !isspace (line[i]) && !is_quotes_char (line[i], &simple_quote, &double_quote)) {
 				++i;
 			}
 		}
-		// check quotes
-		if (line[i] && NOT_TOO_LONG (i, start) && (quotes[0] || quotes[1])) {
+		/* check quotes */
+		if (line[i] && NOT_TOO_LONG (i, start) && (simple_quote || double_quote)) {
 			last_word = i;
 			++i;
-			while (line[i] && !is_quotes_char (line[i], quotes) && NOT_TOO_LONG (i, start)) {
+			while (line[i] && !is_quotes_char (line[i], &simple_quote, &double_quote) ) {
 				++i;
 			}
 			++i;
+			if (i - last_word > max_chars_on_line) {
+				last_word = i;
+			}
 		}
-		// print line
+		/* print line */
 		if (!NOT_TOO_LONG (i, start)) {
 			if (last_word == -1) {
 				last_word = i;
 			}
-			strncpy (dst + margin_b, line + start, last_word - start);
-			print_fixed_line (line_num, pch, dst);
+			if (last_word - start > max_chars_on_line - margin_b) {
+				while (last_word - start > max_chars_on_line - margin_b) {
+					strncpy (dst + margin_b, line + start, max_chars_on_line - margin_b);
+					dst[max_chars_on_line] = 0;
+
+					print_fixed_line (line_num, pch, dst);
+					start += max_chars_on_line - margin_b;
+					memset (dst, 0, max_chars_on_line + 1);
+					margin_b = cobc_get_margin_b (1);
+					memset (dst, ' ', margin_b);
+					dst[indicator] = '&';
+				}
+				if (last_word - start > 0) {
+					strncpy (dst + margin_b, line + start, last_word - start);
+					print_fixed_line (line_num, pch, dst);
+				}
+			} else {
+				strncpy (dst + margin_b, line + start, last_word - start);
+				print_fixed_line (line_num, pch, dst);
+
+			}
 			start = last_word;
 			last_word = -1;
-			bzero (dst, max_chars_on_line + 1);
+			memset (dst, 0, max_chars_on_line + 1);
 			margin_b = cobc_get_margin_b (1);
 			memset (dst, ' ', margin_b);
 			dst[indicator] = '&';
@@ -6741,11 +6772,24 @@ print_multiple_fixed_line (const int line_num, char pch, char *line)
 			last_word = i;
 		}
 	}
-	// print last line
+	/* print last line */
 	if (start < i) {
-		strncpy (dst + margin_b, line + start, i - start);
-		dst[margin_b + i - start] = 0;
-		print_fixed_line (line_num, pch, dst);
+		while (i - start > max_chars_on_line - margin_b) {
+			strncpy (dst + margin_b, line + start, max_chars_on_line - margin_b);
+			dst[max_chars_on_line] = 0;
+			print_fixed_line (line_num, pch, dst);
+
+			start += max_chars_on_line - margin_b;	
+			memset (dst, 0, max_chars_on_line + 1);
+			margin_b = cobc_get_margin_b (1);
+			memset (dst, ' ', margin_b);
+			dst[indicator] = '&';
+		}
+		if (start < i) {
+			strncpy (dst + margin_b, line + start, i - start);
+			dst[margin_b + i - start] = 0;
+			print_fixed_line (line_num, pch, dst);
+		}
 	}
 }
 
@@ -6757,7 +6801,7 @@ print_fixed_line_mode (const int line_num, char pch, char *line)
 	int	i = 0;
 	const int max_chars_on_line = cb_listing_wide ? 112 : 72;
 
-	if (strlen(line) <= max_chars_on_line) {
+	if (strlen (line) <= max_chars_on_line) {
 		while (isspace (*(line + i))) {
 			i++;
 		}
@@ -6839,7 +6883,6 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 	struct list_skip	*skip;
 	int	do_print;
 	int	on_off;
-	char	pch;
 
 	do_print = cfile->listing_on;
 
@@ -6860,7 +6903,7 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 	}
 
 	if (do_print) {
-		pch = in_copy ? 'C' : ' ';
+		char pch = in_copy ? 'C' : ' ';
 		for (skip = cfile->skip_head; skip; skip = skip->next) {
 			if (skip->skipline == line_num) {
 				pch = 'X';
@@ -6912,9 +6955,6 @@ compare_prepare (char *cmp_line, char *pline[CB_READ_AHEAD],
 	int	last_col = cobc_get_text_column ();
 	int	last_nonspace;
 	const int	max_chars_on_line = cb_listing_wide ? 112 : 72;
-
-	cmp_line[0] = 0;
-	bzero (cmp_line, CB_LINE_LENGTH + 2);
 
 	/* Collapse pline into a string of tokens separated by spaces */
 	last_nonspace = last_col;
@@ -7010,7 +7050,7 @@ is_comment_line (char *line, int fixed)
 	}
 }
 
-static void
+static COB_INLINE COB_A_INLINE void
 abort_if_too_many_continuation_lines (int pline_cnt, const char *filename, int line_num)
 {
 	if (pline_cnt >= CB_READ_AHEAD) {
@@ -7064,7 +7104,7 @@ strncpy_listing (char *dst, char *src, int n, int first, int in_copy, int is_new
 }
 
 /* Replace line by the new value for the listing mode */
-static void
+static int
 replace_value (t_line_file *line_file, t_data_replace data_replace, struct list_replace *lr, int pos, int fixed, int in_copy)
 {
 	char	*dst;
@@ -7075,8 +7115,9 @@ replace_value (t_line_file *line_file, t_data_replace data_replace, struct list_
 	int last_cpy = 0;
 	int	first = 1;
 	t_line_file *bck_line = line_file;
+	int stock_new_last_char;
 
-	// calculation the len char
+	/* calculation the len char */
 	len_to = strlen (lr->to);
 	while (line_file && line_file != data_replace.lastline_replace)
 	{
@@ -7091,29 +7132,30 @@ replace_value (t_line_file *line_file, t_data_replace data_replace, struct list_
 	dst = cobc_malloc (len_new_line);
 	line_file = bck_line;
 
-	// copy first line
+	/* copy the first line */
 	if (pos > 0) {
 		last_cpy = strncpy_listing (dst, line_file->line, pos, first, in_copy, 0);
 		first = 0;
 	}
-	// copy new str
+	/* copy the new str */
 	last_cpy += strncpy_listing (dst + last_cpy, lr->to, len_to, first, in_copy, 1);
+	stock_new_last_char = last_cpy;
 	first = 0;
 	while (line_file && line_file != data_replace.lastline_replace) {
 		line_file = line_file->next;
 	}
-	// copy end line
+	/* copy the end line */
 	if (line_file && len_end_line > 0) {
 		strncpy_listing (dst + last_cpy, line_file->line + data_replace.last_char, len_end_line, first, in_copy, 0);
 	}
 
-	// stock result in the first line
+	/* stock the result in the first line */
 	line_file = bck_line;
 	cobc_free (line_file->line);
 	line_file->line = NULL;
 	line_file->line = dst;
 
-	// free other line if it's multi replace line
+	/* free the other line if it's a multi replace of line */
 	if (line_file != data_replace.lastline_replace) {
 		line_file = line_file->next;
 		do {
@@ -7121,7 +7163,7 @@ replace_value (t_line_file *line_file, t_data_replace data_replace, struct list_
 			{
 				cobc_free (line_file->line);
 				line_file->line = NULL;
-				line_file->line = cobc_malloc(sizeof(char *) * 2);
+				line_file->line = cobc_malloc (sizeof(char *) * 2);
 				line_file->line[0] = ' ';
 				line_file->line[1] = 0;
 			}
@@ -7132,19 +7174,20 @@ replace_value (t_line_file *line_file, t_data_replace data_replace, struct list_
 			{
 				cobc_free (line_file->line);
 				line_file->line = NULL;
-				line_file->line = cobc_malloc(sizeof(char *) * 2);
+				line_file->line = cobc_malloc (sizeof(char *) * 2);
 				line_file->line[0] = ' ';
 				line_file->line[1] = 0;
 			}
 		}
 		line_file = bck_line;
 	}
+	return stock_new_last_char;
 }
 
 static int
 condition_leading (char *line, int start)
 {
-	if (start == 0 || isspace (line[start - 1]))
+	if (start == 0 || (isspace (line[start - 1]) || isspace (line[start])))
 		return 1;
 	return 0;
 }
@@ -7193,13 +7236,10 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 {
 	const int is_simple_quote = lr->from[0] == '\'';
 	t_line_file	*line_start = line_file;
-	t_data_replace data_replace = init_data_replace();
+	t_data_replace data_replace = init_data_replace ();
 	int	i = start;
 	int	j = 0;
 
-	while (lr->from[j] && isspace (lr->from[j])) {
-		++j;
-	}
 	while (line_file && line_file->line && line_file->line[i]) {
 		if (is_comment_line (line_file->line, fixed)) {
 			++line;
@@ -7222,6 +7262,7 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 				++j;
 			}
 		}
+
 		if (!line_file->line[i] && j > 0) {
 			while (lr->from[j] && isspace (lr->from[j])) {
 				++j;
@@ -7233,6 +7274,7 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 			if (!check_mode_trail_lead (data_replace, lr, start, i)) {
 				break ;
 			}
+
 			if (lr->from[0] == ':' || lr->from[0] == '(') {
 				while (line_file->line[i] && !isspace (line_file->line[i])) {
 					++i;
@@ -7249,7 +7291,7 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 			break ;
 		}
 	}
-	// no match
+	/* no match */
 	return data_replace;
 }
 
@@ -7258,57 +7300,61 @@ static int
 search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, int pline_cnt, int line_num, \
 	int fixed, int in_copy)
 {
-	int	j;
+	int j;
 	int i;
 	int tmp_i;
 	int tmp_j;
-	int	match;
-	int	lastline_line_num;
-	int	quotes[2] = {0, 0};
+	int match;
+	int lastline_line_num;
+	int simple_quote = 0;
+	int double_quote = 0;
 	struct list_replace	*rep;
 	t_data_replace data_replace;
+	int	deb_line = -1;
 
 	j = 0;
 	i = line_num;
 	lastline_line_num = line_num;
 
-	int	deb_line = -1;
-	// loop char
+	/* loop char */
 	while (line_file->line && line_file->line[j]) {
 		deb_line++;
-		// skip the spaces in the start file
+		/* skip the spaces in the start file */
 		while (line_file->line[j] && isspace (line_file->line[j])) {
 			j++;
 		}
 		if (!line_file->line[j]) {
 			break ;
 		}
-		// loop list replace
+		/* loop list replace */
 		rep = cfile->replace_head;
 		match = 0;
-		is_quotes_char (line_file->line[j], quotes);
+		is_quotes_char (line_file->line[j], &simple_quote, &double_quote);
 		while (rep && line_file->line[j]) {
-			if ((!quotes[0] && !quotes[1]) || rep->from[0] == '\'' || rep->from[0] == '"') {
+			if ((!simple_quote && !double_quote) || rep->from[0] == '\'' || rep->from[0] == '"') {
 				data_replace = search_strstr (line_file, i, rep, j, fixed);
-				// Match
+				/* Match */
 				if (data_replace.last_char != -1)
 				{
-					// count quotes all lines except the last line
+					/* count quotes all lines except the last line */
+					t_line_file *bck_line = line_file;
+					int stock_new_last_char;
+
 					tmp_j = j;
 					tmp_i = i;
-					t_line_file *bck_line = line_file;
+
 					while (line_file && line_file != data_replace.lastline_replace) {
 						while (line_file->line[++j]) {
-							is_quotes_char (line_file->line[j], quotes);
+							is_quotes_char (line_file->line[j], &simple_quote, &double_quote);
 						}
 						++i;
 						line_file = line_file->next;
 						j = -1;
 					}
 					lastline_line_num = i;
-					// and count quotes in the last line
+					/* and count quotes in the last line */
 					while (++j <= data_replace.last_char) {
-						is_quotes_char (line_file->line[j], quotes);
+						is_quotes_char (line_file->line[j], &simple_quote, &double_quote);
 					}
 					j = tmp_j;
 
@@ -7325,8 +7371,9 @@ search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, 
 					}
 					i = tmp_i;
 					line_file = bck_line;
-					// stock first line in tmp and clean other line in the multiple line replace
-					replace_value (line_file, data_replace, rep, j, fixed, in_copy);
+					/* stock first line in tmp and clean other line in the multiple line replace */
+					stock_new_last_char = replace_value (line_file, data_replace, rep, j, fixed, in_copy);
+					data_replace.last_char = stock_new_last_char - 1;
 
 					line_file = data_replace.firstline_replace;
 					j = data_replace.last_char;
@@ -7369,7 +7416,7 @@ deep_copy_list_replace (struct list_replace *src, struct list_files *dst_file)
 	dst_file->replace_tail = copy;
 }
 
-static void
+static COB_INLINE COB_A_INLINE void
 cleanup_copybook_reference (struct list_files *cur)
 {
 	if (cur->name) {
@@ -7436,18 +7483,21 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 	if (is_comment_line (line_file->line, cfile->source_format != CB_FORMAT_FREE)) {
 		return pline_cnt;
 	}
+	ptr = get_word (line_file->line);
 
 	rep = cfile->replace_head;
-	if (!rep) {
+	if (!rep || !ptr) {
 		return pline_cnt;
 	}
 
-	ptr = get_word (line_file->line);
 	is_copy_line = !strncmp (ptr, "COPY", strlen("COPY"));
 	is_replace_line = !strncmp (ptr, "REPLACE", strlen("REPLACE"));
+
 	if (is_replace_line && ptr) {
 		ptr = get_next_word (ptr);
-		is_replace_off = !strncmp (ptr, "OFF", strlen("OFF"));
+		if (ptr) {
+			is_replace_off = !strncmp (ptr, "OFF", strlen("OFF"));
+		}
 	}
 
 	/*
@@ -7559,8 +7609,8 @@ print_program_code_apply (struct list_files *cfile, int fixed, int in_copy,
 	return lines_read;
 }
 
-static t_line_file
-*add_new_line(t_line_file *last, char *str)
+static t_line_file *
+add_new_line(t_line_file *last, char *str)
 {
 	if (!last) {
 		last = cobc_malloc (sizeof (t_line_file));
@@ -7571,6 +7621,48 @@ static t_line_file
 	last->line = strdup (str);
 	last->next = NULL;
 	return last;
+}
+
+/* find the last line of replace */
+static void
+search_end_replace (t_line_file *line_file, struct list_files *cfile)
+{
+	const int	sz_equal = 2;
+	const int start_replace = cfile->copy_head->copy_line;
+	int idx_line;
+
+	for (idx_line = 1; idx_line < start_replace && line_file; idx_line++) {
+		line_file = line_file->next;
+	}
+
+	while (line_file) {
+		if (line_file->line) {
+			char *value = line_file->line;
+			while ((value = strstr (value, "=="))) {
+				int j = sz_equal;
+				t_line_file *head = line_file;
+				int			is_not_here = 0;
+
+				while (line_file && !is_not_here) {
+					while (value[j]) {
+						if (value[j] == '.') {
+							cfile->copy_head->copy_line = idx_line;
+							return ;
+						} else if (!isspace (value[j])) {
+							is_not_here = 1;
+							break ;
+						}
+						++j;
+					}
+					line_file = line_file->next;
+				}
+				line_file = head;
+				value = value + sz_equal;
+			}
+		}
+		++idx_line;
+		line_file = line_file->next;
+	}
 }
 
 /*
@@ -7605,26 +7697,32 @@ print_program_code (struct list_files *cfile, int in_copy)
 	if (fd != NULL) {
 		abort_if_too_many_continuation_lines (pline_cnt, cfile->name, line_num);
 		if (get_next_listing_line (fd, &pline[pline_cnt], fixed) >= 0) {
+			char space[2] = {' ', 0};
+			t_line_file *next;
+
 			do {
+				char	cmp_line[CB_LINE_LENGTH + 2];
+				int	first_col = fixed ? cobc_get_margin_a (1) : 0;
+
 				abort_if_too_many_continuation_lines (pline_cnt, cfile->name, line_num);
 				if (get_next_listing_line (fd, &pline[pline_cnt + 1], fixed) < 0) {
 					eof = 1;
 				}
 				++pline_cnt;
-				char	cmp_line[CB_LINE_LENGTH + 2];
-				int	first_col = fixed ? cobc_get_margin_a (1) : 0;
+
+				memset (cmp_line, 0, CB_LINE_LENGTH + 2);
 				compare_prepare (cmp_line, pline, 0, 1, first_col, fixed);
-				line_file = add_new_line(line_file, cmp_line);
+				line_file = add_new_line (line_file, cmp_line);
 				if (!head_line_file) {
 					head_line_file = line_file;
 				}
+
 				++line_replace;
 				++cnt_line;
 
 				/* Delete all but the last line. */
 				strcpy (pline[0], pline[pline_cnt]);
 				for (i = 1; i < pline_cnt + 1; i++) {
-					// abort_if_too_many_continuation_lines (i, cfile->name, line_num); ajouter par moi le 02/11 ne fonctionne pas
 					memset (pline[i], 0, CB_LINE_LENGTH);
 				}
 
@@ -7634,17 +7732,22 @@ print_program_code (struct list_files *cfile, int in_copy)
 				}
 			} while (!eof);
 
+			if (cfile->copy_head) {
+				line_file = head_line_file;
+				search_end_replace (line_file, cfile);
+			}
+
+			line_file = head_line_file;
+
 			line_num = 1;
 			i = 0;
 			pline_cnt = 0;
-			line_file = head_line_file;
 
-			char space[2] = {' ', 0};
-			// search replacement and print
+			/* search replacement and print */
 			while (i < line_replace) {
 				pline_cnt++;
 				lines_read = 0;
-				// if line is empty, just print
+				/* if line is empty, just print */
 				if (!line_file->line || strcmp (line_file->line, "") == 0) {
 					print_line (cfile, space, line_num, in_copy);
 					line_file = line_file->next;
@@ -7653,12 +7756,12 @@ print_program_code (struct list_files *cfile, int in_copy)
 					continue ;
 				}
 
-				// search replacement
+				/* search replacement */
 				lines_read = print_program_code_apply (cfile, fixed, in_copy, &pline_cnt, \
 					&i, &line_num, lines_read, line_file, &line_replace, fd);
 
 				if (lines_read > 0) {
-					// if edit is current don't print
+					/* if edit is current don't print */
 					line_num += lines_read;
 					i += lines_read;
 					while (line_file && lines_read > 0) {
@@ -7674,13 +7777,12 @@ print_program_code (struct list_files *cfile, int in_copy)
 			}
 
 			line_file = head_line_file;
-			// free pline_replace
-			t_line_file *next;
+			/* free pline_replace */
 			while (line_file) {
 				cobc_free (line_file->line);
 				line_file->line = NULL;
 				next = line_file->next;
-				cobc_free(line_file);
+				cobc_free (line_file);
 				line_file = next;
 			}
 		}

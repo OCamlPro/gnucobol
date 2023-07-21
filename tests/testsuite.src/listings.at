@@ -554,7 +554,7 @@ LINE    PG/LN  A...B............................................................
 000012                                  == PIC == BY == pic ==.
 000001C
 000002C        02 TEST-AVR pic X(2) VALUE "OK".
-000003C            02 TEST-AVR-BIS pic X(6) VALUE "OK BIS".
+000003C        02 TEST-AVR-BIS pic X(6) VALUE "OK BIS".
 000004C        02 TEST-DD pic X(4) VALUE "OK 2".
 000005C        02 TEST-KO pic X(4) VALUE "OK 3".
 000006C        02 TEST-FF pic X(4) VALUE "OK 4".
