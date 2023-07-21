@@ -2,18 +2,19 @@ NEWS - user visible changes				-*- outline -*-
 
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
-          3.2 final (depending on feedback) around 2023/02/25
+ GnuCOBOL 3.2rc3  ASAP
+          3.2 final (depending on feedback) around 2023/04/25
 
  planned for final:
    * extending testsuite and documentation
-   * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
    * investigation of code analysis tools and user feedback
 
 
 * New GnuCOBOL features
 
 ** Support for LINE SEQUENTIAL file type as per COBOL 2022
-  * OPEN INPUT-OUTPTUT and REWRITE are allowed
+  * OPEN INPUT-OUTPUT and REWRITE are allowed (note that INPUT-OUTPUT
+    leads to slower IO for LINE SEQUENTIAL files)
   * validation of data on (RE-)WRITE and READ, active by default,
     can be adjusted with the new runtime option COB_LS_VALIDATE
 
@@ -155,6 +156,15 @@ NEWS - user visible changes				-*- outline -*-
    of the color-number, leading to a previous value of 21 (which was ignored
    until now) being interpreted as 5, see FR #387
 
+** extended screen io with single-fields: runtime-adjustable attributes by
+   support of extension clauses COLOR and CONTROL for ACCEPT and DISPLAY
+   statements, see FR #189 + FR #355; note: while COLOR and CONTROL are parsed
+   for SCREEN SECTION they are ignored at runtime
+
+** extended screen io with single-fields: the ACCEPT statement now supports
+   the extension CURSOR clause, additional to the standard-defined
+   CONTROL phrase in SPECIAL-NAMES
+
 ** the programmable runtime switches "SWITCH A" through "SWITCH Z" internally
    used 1-26 and now use 11-36 to be able to combine then with switches 0-7;
    if you set those via COB_SWITCH environment variables you need to adjust
@@ -175,19 +185,25 @@ NEWS - user visible changes				-*- outline -*-
    callee modules that use BY VALUE must be compiled with the same version of
    GnuCOBOL, either prior this release, or since.
 
+** cobc now uses a two-pass preprocessing algorithm, where replacements for
+   COPY-REPLACING are done in a first pass, and the replacements for
+   REPLACE are done in a second pass. Note that, however, both
+   statements are parsed before the first replacement pass, so
+   COPY-REPLACING cannot impact a REPLACE statement itself.
+
 * Changes to the COBOL compiler (cobc) options:
 
-** new -fformat dialect option, and extended SOURCE FORMAT directives, with
-   the following newly supported reference-formats (in addition to
-   FIXED/FREE):
+** new -fformat dialect option, and extended SOURCE FORMAT directives,
+   with the following newly supported reference-formats (in addition
+   to FIXED/FREE):
 
-   COBOL85              Fixed-form format with enforcement of Area A
-   COBOLX		GCOS 7 extended format
-   CRT			ICOBOL Free-form format
-   TERMINAL		ACUCOBOL-GT Terminal format
-   VARIABLE		Micro Focus Variable Fixed-form format
-   XCARD		ICOBOL xCard (extended card) format
-   XOPEN		X/Open Free-form format
+   COBOL85      Fixed-form format with enforcement of Area A
+   COBOLX       GCOS 7 extended format
+   CRT          ICOBOL Free-form format
+   TERMINAL     ACUCOBOL-GT Terminal format
+   VARIABLE     Micro Focus Variable Fixed-form format
+   XCARD        ICOBOL xCard (extended card) format
+   XOPEN        X/Open Free-form format
 
    These formats come with Area A enforcement (except for XOPEN), that
    checks whether division, section, and paragraph names start in Area
@@ -235,7 +251,7 @@ NEWS - user visible changes				-*- outline -*-
    affected programs (with OCCURS DEPENDING ON) or compile with additional
    -fno-odoslide to get the same results as with older GnuCOBOL versions
 
-** the compile flag -fdefaultbyte (initializarion for data-items without
+** the compile flag -fdefaultbyte (initialization for data-items without
    an explicit VALUE) was moved to a dialect configuration;
    while -fdefaultbyte still works as before it is now implied as binary
    zero with -std=ibm/mvs/bs2000/realia, space for -std=mf/acu/rm, and
@@ -245,11 +261,22 @@ NEWS - user visible changes				-*- outline -*-
    note that initialization for INDEXED BY items honors the defaultbyte
    configuration now, too
 
-** the dialect configuration option larger-redefines-ok was changed to
-   a support option larger-redefines; if specified on the command-line
+** new dialect init-justified that applies right justification by JUSTIFIED
+   clause for VALUE clause; this is applied to IBM dialects, if you want
+   the previous behavior compile with -fno-init-justified
+
+** the dialect configuration option larger-redefines-ok was replaced by
+   the support option larger-redefines; if specified on the command-line
    it is now -f[no-]larger-redefines instead of -f[no-]larger-redefines-ok,
    which allows to also raise a warning for those with -flarger-redefines=warn
    Note: the short one works both in current and older versions of cobc
+
+** the subscript checking enabled with -fec=bound-subscript (implied with
+   --debug) now generates checks depending on the new dialect configuration
+   option subscript-check if OCCURS DEPNDING ON is used;
+   the full check according to ISO COBOL, which checks against the ODO item
+   is still used in the default dialect, but several dialects now only check
+   against the maximum only
 
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
    if a program potentially calls its own PROGRAM-ID was moved
@@ -258,7 +285,7 @@ NEWS - user visible changes				-*- outline -*-
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
 
-** the option -g does not longer imply -fsource-location; but it auto-includes
+** the option -g does no longer imply -fsource-location; but it auto-includes
    references to the COBOL-paragraphs to further ease source level debugging
 
 ** -fsource-location generates source references to copyboooks in DATA
@@ -268,6 +295,17 @@ NEWS - user visible changes				-*- outline -*-
 ** new flag -fstack-extended (implied with --debug and --dump) to include
    the origin of entrypoints and PERFORM, this is used for the internal
    stack trace on abort and can be used for improved source level debugging
+
+** new flag -fmemory-check (implied with --debug) to do some validation
+   of internal memory used during CALL; this can help in finding otherwise
+   hard to diagnose overwrite of memory and as it is only done on CALL
+   has a much smaller footprint than -fec=bounds (as both check different
+   aspects at different places it is also reasonable to use both)
+
+** the option -g does no longer imply -fno-remove-unreachable; if you want to
+   keep those in you need to explicit specify this
+
+** the option -O0 now implies -fno-remove-unreachable
 
 ** new options to ensure structured code-flow:
    -fsection-exit-check to ensure sections don't "fall through" (are always
@@ -295,7 +333,9 @@ NEWS - user visible changes				-*- outline -*-
    and fatality `cobc --list-exceptions`
 
 ** new compiler command line option -ftcmd to enable printing of the command
-   line in the source listing
+   line in the source listing, -fno-timestamp to suppress printing of the time
+   and -ftittle to set a title instead of GnuCOBOL and version (_ chars are
+   replaced by spaces in the title)
 
 ** new compiler command line option --coverage to instrument binaries
    for coverage checks
@@ -306,7 +346,7 @@ NEWS - user visible changes				-*- outline -*-
    original version; note: their use will be adjusted where they don't match
    GCC's same options in later versions, including addition of -M and -MD
 
-** New -std options:
+** new -std options:
 
    gcos            GCOS compatibility
    gcos-strict     GCOS compatibility                - strict
@@ -314,6 +354,16 @@ NEWS - user visible changes				-*- outline -*-
    We define the GCOS dialect based on the COBOL85 standard, with new
    dialect configuration options accompanying each specificity
    introduced by the dialect.
+
+** new diagnostic format for errors: the diagnostics now print the source
+   code context with a left margin showing line numbers, configurable with
+   -fno-diagnostics-show-line-numbers, and possible to disable completely
+   with -fno-diagnostics-show-caret;
+
+   the option -fdiagnostics-plain-output was added to request that diagnostic
+   output look as plain as possible and stay more stable over time
+
+** the -P flag accepts - as argument for stdout
 
 * Important Bugfixes:
 
@@ -346,6 +396,15 @@ NEWS - user visible changes				-*- outline -*-
 ** several bugs in COPY REPLACING / REPLACING were fixed along with adding
    support for exensions related to REPLACING LEADING / TRAILING
 
+** for PICTURE P several fixes were made, so results may vary compared with
+   previous versions; sources with *leading* P never worked correct before,
+   and *must* be recompiled after upgrading
+
+** since its addition to GnuCOBOL ROUNDING MODE PROHIBITED just prevented
+   rounding; its behaviour changed to match the specification by doing that,
+   raising EC-SIZE-TRUNCATION and changed: not adjust the target field if
+   rounding would be necessary to store the data
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -355,10 +414,19 @@ NEWS - user visible changes				-*- outline -*-
    or to use an explicit format (cut at 26 characters, may raise false-positives
    in listing tests) e.g. date only `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
 
+** new compile options to adjust the listing, see above
+
 * More notable changes
 
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+
+** numeric DISPLAY can store and may contain a positive zero after arithmetic,
+   PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
+   numeric comparisions to ZERO / 0 / +0 / -0 will all be identical
+
+** quotes around filenames and parts that are resolved by environment variables
+   are internally ignored
 
 ** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
@@ -400,6 +468,10 @@ NEWS - user visible changes				-*- outline -*-
 	  (implied with --debug and -fec), especially when many "simple"
 	  statements or lot of sections/paragraphs are used (re-compile needed)
 
+* New system functions
+
+  CBL_GC_SET_SCR_SIZE  option to resize extended screen
+
 * New build features
 
 ** configure now honors BDB_LIBS and BDB_CFLAGS
@@ -430,6 +502,8 @@ NEWS - user visible changes				-*- outline -*-
     * compile from stdin
   * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
     emulating a program kill)
+  * if build with -fsanitize, then some tests will fail; while we accept patches
+    to improve that, we don't consider the failing tests as bug in GnuCOBOL
 
 ** the recent additions of ">> TURN" and "variable LIKE variable" may not work
    as expected in all cases
@@ -442,6 +516,11 @@ NEWS - user visible changes				-*- outline -*-
    or discussion board to share your comments on this topic, keeping in mind
    that this has to take both mathematical and "C compiler portability" into
    account)
+
+** variables containing PICTURE symbol P may lead to wrong results in rare
+   cases (especially screenio) - please send a bug report if you catch a case;
+   since GC 3.2 rc3 all arithmetic operations and MOVE are believed to be
+   correct
 
 ** features that are known to not be portable to every environment yet
    (especially when using a different compiler than GCC)

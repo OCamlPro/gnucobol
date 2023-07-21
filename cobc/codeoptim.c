@@ -56,29 +56,22 @@ cob_gen_optim (const enum cb_optim val)
 	switch (val) {
 
 	case COB_SET_SCREEN:
-		output_storage ("static void COB_NOINLINE");
-		output_storage ("cob_set_screen (cob_screen *s, cob_screen *next,");
-		output_storage ("		cob_screen *prev, cob_screen *child, cob_screen *parent,");
-		output_storage ("		cob_field *field, cob_field *value,");
-		output_storage ("		cob_field *line, cob_field *column,");
-		output_storage ("		cob_field *foreg, cob_field *backg, cob_field *prompt,");
-		output_storage ("		const int type, const int occurs, const int attr)");
-		output_storage ("{");
-		output_storage ("	s->next = next;");
-		output_storage ("	s->prev = prev;");
-		output_storage ("	s->child = child;");
-		output_storage ("	s->parent = parent;");
-		output_storage ("	s->field = field;");
-		output_storage ("	s->value = value;");
-		output_storage ("	s->line = line;");
-		output_storage ("	s->column = column;");
-		output_storage ("	s->foreg = foreg;");
-		output_storage ("	s->backg = backg;");
-		output_storage ("	s->prompt = prompt;");
-		output_storage ("	s->type = type;");
-		output_storage ("	s->occurs = occurs;");
-		output_storage ("	s->attr = attr;");
-		output_storage ("}");
+		output_storage ("#define COB_SET_SCREEN(s,typ,att,nxt,prv,chld,p,fld,val,l,c,fg,bg,prmpt,occ) \\");
+		output_storage ("do{	s.next = nxt;     \\");
+		output_storage ("	s.prev = prv;     \\");
+		output_storage ("	s.child = chld;   \\");
+		output_storage ("	s.parent = p;     \\");
+		output_storage ("	s.field = fld;    \\");
+		output_storage ("	s.value = val;    \\");
+		output_storage ("	s.line = l;       \\");
+		output_storage ("	s.column = c;     \\");
+		output_storage ("	s.foreg = fg;     \\");
+		output_storage ("	s.backg = bg;     \\");
+		output_storage ("	s.prompt = prmpt; \\");
+		output_storage ("	s.type = typ;     \\");
+		output_storage ("	s.occurs = occ;   \\");
+		output_storage ("	s.attr = att;     \\");
+		output_storage ("} ONCE_COB");
 		return;
 
 	case COB_SET_REPORT:
@@ -146,7 +139,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("cob_check_subscript_inline (const int i, const int max,");
 		output_storage ("			const char* name, const int odo_item)");
 		output_storage ("{");
-		output_storage ("	if (i == 0 || i > max) {");
+		output_storage ("	if (i < 1 || i > max) {");
 		output_storage ("		cob_check_subscript (i, max, name, odo_item);");
 		output_storage ("	}");
 		output_storage ("}");
@@ -196,6 +189,21 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("#define cob_check_ref_mod_minimal" "\t" "cob_check_ref_mod_minimal_inline");
 		return;
 
+	case COB_CHK_MEMORYFENCE:
+		/* no need for an expensive function call (at least prevented if inline is honored)
+		   if we know the memory fence to be valid */
+		output_storage ("static void COB_INLINE COB_A_INLINE");
+		output_storage ("cob_check_fence_inline (const char *fence_pre, const char *fence_post,");
+		output_storage ("	const enum cob_statement stmt, const char *name)");
+		output_storage ("{");
+		output_storage ("	if (memcmp (fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8)");
+		output_storage ("	 || memcmp (fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8)) {");
+		output_storage ("		cob_check_fence (fence_pre, fence_post, stmt, name);");
+		output_storage ("	}");
+		output_storage ("}");
+		output_storage ("#define cob_check_fence" "\t" "cob_check_fence_inline");
+		return;
+
 	case COB_NOP:
 		/* cob_nop is only used to force something the optimizer does not remove
 		   to have "something" to call; a fast check (module is normally always set)
@@ -226,7 +234,11 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register int	val = 0;");
-
+		/* Improve performance by skipping leading ZEROs */
+		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
+		output_storage ("		if (*p > '0' && *p <= '9')");
+		output_storage ("			break;");
+		output_storage ("	}");
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		val = (val * 10)");
 		output_storage ("		    + (*p & 0x0F);");
@@ -242,7 +254,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = 0;");
-
+		/* Improve performance by skipping leading ZEROs */
 		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");

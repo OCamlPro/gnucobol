@@ -1,7 +1,7 @@
 #!/bin/bash
 # create_mingw_bindist.sh gnucobol
 #
-# Copyright (C) 2016-2020, 2022 Free Software Foundation, Inc.
+# Copyright (C) 2016-2020, 2022-2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -25,7 +25,7 @@
 # AND make sure EXTBUILDDIR exists with the right content.
 
 # Check we're in a MinGW environment
-if test -d "$MSYSTEM_PREFIX/bin"; then
+if test "x$MINGW_PREFIX" != "x" -a -d "$MSYSTEM_PREFIX/bin"; then
 	MINGWDIR="$MSYSTEM_PREFIX"
 	echo "generating binary ${MINGW_PREFIX:1} dist package..."
 elif test -d "/mingw/bin"; then

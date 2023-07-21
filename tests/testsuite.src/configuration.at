@@ -85,7 +85,7 @@ AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [0], [],
 ])
 AT_CHECK([$COMPILE_ONLY -std=realia-strict prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=mvs-strict prog.cob], [0], [],
-[prog.cob:4: warning: AUTHOR is obsolete in MVS/VM COBOL
+[prog.cob:4: warning: AUTHOR is obsolete in IBM COBOL for MVS & VM
 ])
 AT_CHECK([$COMPILE_ONLY -std=gcos-strict prog.cob], [0], [],
 [prog.cob:4: warning: AUTHOR is obsolete in GCOS
@@ -427,11 +427,13 @@ test.conf: missing definitions:
 	no definition of 'assign-clause'
 	no definition of 'screen-section-rules'
 	no definition of 'dpc-in-data'
+	no definition of 'subscript-check'
 	no definition of 'filename-mapping'
 	no definition of 'pretty-display'
 	no definition of 'binary-truncate'
 	no definition of 'complex-odo'
 	no definition of 'odoslide'
+	no definition of 'init-justify'
 	no definition of 'indirect-redefines'
 	no definition of 'relax-syntax-checks'
 	no definition of 'ref-mod-zero-length'
@@ -499,6 +501,7 @@ test.conf: missing definitions:
 	no definition of 'national-character-literals'
 	no definition of 'hp-octal-literals'
 	no definition of 'acu-literals'
+	no definition of 'ebcdic-symbolic-characters'
 	no definition of 'word-continuation'
 	no definition of 'not-exception-before-exception'
 	no definition of 'accept-display-extensions'
@@ -864,13 +867,13 @@ AT_DATA([wide.cob], [
 AT_CHECK([$COMPILE_ONLY -fformat=fixed wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
-wide.cob:9: error: missing terminating ' character
+wide.cob:9: note: missing terminating ' character
 wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=cobol85 wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
-wide.cob:9: error: missing terminating ' character
+wide.cob:9: note: missing terminating ' character
 wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -ftext-column=80 wide.cob], [0], [], [])

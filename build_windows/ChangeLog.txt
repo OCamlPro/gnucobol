@@ -1,4 +1,18 @@
 
+2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general for cobc: include new replace.c
+	* version_cobc.rc: updated date + rev
+
+2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: updated for OrangeC 6.0.70.2
+
+2023-05-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.cmd: first addition for CI output
+	* version_cobc.rc, version_libcob.rc: updated date + rev
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version_cobc.rc, version_libcob.rc: updated date + rev

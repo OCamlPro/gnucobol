@@ -393,6 +393,47 @@ note: maximum subscript for 'y': 5
 AT_CLEANUP
 
 
+AT_SETUP([enable / disable subscript check with ODO])
+AT_KEYWORDS([runsubscripts subscripts odo debug])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TAB.
+         02 X           PIC X OCCURS 4 TO 6 DEPENDING ON N
+	                      VALUE "A".
+       01 N             PIC 9 VALUE 5.
+       PROCEDURE        DIVISION.
+           MOVE "B" TO X (6)
+	   IF X (6) NOT EQUAL TO "B" THEN
+	      DISPLAY "Got X (6) = " X (6) ", expected B"
+	   END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob -o badprog1], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./badprog1], [1], [],
+[libcob: prog.cob:11: error: subscript of 'X' out of bounds: 6
+note: current maximum subscript for 'X': 5
+])
+
+AT_CHECK([$COMPILE prog.cob -fsubscript-check=full -o failprog1-check-full], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./failprog1-check-full], [1], [],
+[libcob: prog.cob:11: error: subscript of 'X' out of bounds: 6
+note: current maximum subscript for 'X': 5
+])
+
+AT_CHECK([$COMPILE prog.cob -fsubscript-check=max -o okprog1-check-max], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./okprog1-check-max], [0], [], [])
+
+AT_CHECK([$COMPILE prog.cob -fno-ec=bound -fsubscript-check=full -o okprog1-no-ec], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./okprog1-no-ec], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([BOUND and NOBOUND directives])
 AT_KEYWORDS([runsubscripts subscripts extensions directive])
 

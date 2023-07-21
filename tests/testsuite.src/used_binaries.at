@@ -68,19 +68,19 @@ AT_DATA([prog.cob],[
 ])
 AT_CHECK([$COBC -fsyntax-only prog.cob], [0], [], [])
 # increasing to more warnings
-AT_CHECK([$COBC -fsyntax-only -Wadditional prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wadditional prog.cob], [0], [],
 [prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 ])
-AT_CHECK([$COBC -fsyntax-only -fno-diagnostics-show-option -Wadditional prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fno-diagnostics-show-option -Wadditional prog.cob], [0], [],
 [prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE
 ])
 # which in this case is also included in -Wall
-AT_CHECK([$COBC -fsyntax-only -Wall prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wall prog.cob], [0], [],
 [prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-numlit-expression]]
 prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 ])
 # -Wextra is more descriptive ...
-AT_CHECK([$COBC -fsyntax-only -Wextra prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wextra prog.cob], [0], [],
 [prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-numlit-expression]]
 prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
@@ -89,7 +89,7 @@ prog.cob:7: note: 'var2' defined here as PIC 99 [[-Wpossible-truncate]]
 prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
 ])
 # ... the old -W is in for backwards portability
-AT_CHECK([$COBC -fsyntax-only -W prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -W prog.cob], [0], [],
 [prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-numlit-expression]]
 prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
@@ -100,26 +100,26 @@ prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
 # a global "error" use implies no warning settings
 AT_CHECK([$COBC -fsyntax-only -Werror prog.cob], [0], [], [])
 # a concrete "error" use implies setting the warning
-AT_CHECK([$COBC -fsyntax-only -Werror=additional prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Werror=additional prog.cob], [1], [],
 [prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
 ])
-AT_CHECK([$COBC -fsyntax-only -fno-diagnostics-show-option -Werror=additional prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fno-diagnostics-show-option -Werror=additional prog.cob], [1], [],
 [prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE
 ])
 # a "no-error" use implies nothing
 AT_CHECK([$COBC -fsyntax-only -Wno-error=additional prog.cob], [0], [], [])
 # ... now combined
 AT_CHECK([$COBC -fsyntax-only -Werror -Wno-error=additional prog.cob], [0], [], [])
-AT_CHECK([$COBC -fsyntax-only -Werror=additional -Wno-error prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Werror=additional -Wno-error prog.cob], [1], [],
 [prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
 ])
-AT_CHECK([$COBC -fsyntax-only -w -Werror=additional prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -w -Werror=additional prog.cob], [1], [],
 [prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
 ])
-AT_CHECK([$COBC -fsyntax-only -w -Wadditional prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -w -Wadditional prog.cob], [0], [],
 [prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 ])
-AT_CHECK([$COBC -fsyntax-only -w -Wpossible-truncate prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -w -Wpossible-truncate prog.cob], [0], [],
 [prog.cob:13: warning: some digits may be truncated [[-Wpossible-truncate]]
 prog.cob:7: note: 'var2' defined here as PIC 99 [[-Wpossible-truncate]]
 prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
@@ -150,19 +150,19 @@ AT_DATA([prog2.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -Wall -fsyntax-only prog2.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
 prog2.cob:6: warning: numeric value is expected [[-Wothers]]
 ])
 
-AT_CHECK([$COBC -fsyntax-only -fmax-errors=0 prog2.cob], [97], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=0 prog2.cob], [97], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
 cobc: too many errors [[-fmax-errors=0]]
 
 cobc: aborting compile of prog2.cob at line 7 (unknown: unknown)
 ])
 
-AT_CHECK([$COBC -fsyntax-only -Wfatal-errors prog2.cob], [97], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wfatal-errors prog2.cob], [97], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
 cobc: too many errors [[-Wfatal-errors]]
 
@@ -918,3 +918,86 @@ AT_CHECK([cat prog.cob | $COMPILE_MODULE -j -], [0], [job], [],
 )
 
 AT_CLEANUP
+
+
+AT_SETUP([cobc diagnostics show caret])
+#AT_KEYWORDS([cobc diagnostics])
+
+AT_DATA([progprep.cob],[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.	  	#
+       01 TEST-VAR PIC 9(2) VALUE 'A'.
+       COPY 'CRUD.CPY'.
+       PROCEDURE        DIVISION.
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           MOVE 12 TO TEST-VAR
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           STOP RUN...
+])
+
+# Testcase includes trailing whitespace, setup by dropping '#'
+AT_CHECK([cat progprep.cob | tr -d '#' > prog.cob])
+
+AT_CHECK([$COBC -fdiagnostics-plain-output -Wall prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+prog.cob:6: warning: numeric value is expected [-Wothers]
+prog.cob:14: warning: ignoring redundant . [-Wothers]
+]])
+AT_CHECK([$COBC -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+    5 |        WORKING-STORAGE  SECTION.
+    6 |        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 >        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+    9 |            DISPLAY TEST-VAR NO ADVANCING
+prog.cob:6: warning: numeric value is expected [-Wothers]
+    4 |        DATA             DIVISION.
+    5 |        WORKING-STORAGE  SECTION.
+    6 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 |        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+prog.cob:14: warning: ignoring redundant . [-Wothers]
+   12 |            DISPLAY TEST-VAR NO ADVANCING
+   13 |            END-DISPLAY
+   14 >            STOP RUN...
+   15 | <EOF>
+]])
+
+AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+          WORKING-STORAGE  SECTION.
+          01 TEST-VAR PIC 9(2) VALUE 'A'.
+ >        COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION.
+              DISPLAY TEST-VAR NO ADVANCING
+prog.cob:6: warning: numeric value is expected [-Wothers]
+          DATA             DIVISION.
+          WORKING-STORAGE  SECTION.
+ >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+          COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION.
+prog.cob:14: warning: ignoring redundant . [-Wothers]
+              DISPLAY TEST-VAR NO ADVANCING
+              END-DISPLAY
+ >            STOP RUN...
+   <EOF>
+]])
+
+# Testcase for line too long and printing only one line
+AT_DATA([longgy.cob],[ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+])
+
+# note: this is actually an error in the parser line number,
+#       but until that is solved, it is a nice edge case of "line not available"
+AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others longgy.cob], [1], [],
+[[longgy.cob:2: error: PROGRAM-ID header missing
+   dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd..
+ > <EOF>
+]])
+
+AT_CLEANUP
+

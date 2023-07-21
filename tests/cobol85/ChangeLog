@@ -1,4 +1,17 @@
 
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* report.pl: place stderr from test runs into .out file
+
+2023-04-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* report.pl: check "cobc_flags" also for building lib;
+	  ignore GO TO section for IC115A
+	* report.pl: move "cobol_default_flags" into separate variable and always
+	  include --debug in there; drop the "no_debug" array in favor of setting
+	  reasonable cobc_flags with specific suppression check
+	* Makefile.module.in: doc/todo notes
+
 2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: pass appropriate flags to cobc for compiling

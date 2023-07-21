@@ -909,8 +909,8 @@ AT_SETUP([OCCURS UNBOUNDED (2)])
 AT_KEYWORDS([extensions runsubscripts DEPENDING odo subscripts])
 
 # note: the following example is from IBM's Language Reference
-#       for Enterprise COBOL for z/OS 6.1, but with fixed use
-#       of old-size (+ removing some binary zeros for output)
+#       for Enterprise COBOL for z/OS 6.4,
+#       (+ removing some binary zeros for output)
 
 AT_DATA([ALLOC.cob], [
        ID DIVISION.
@@ -923,8 +923,6 @@ AT_DATA([ALLOC.cob], [
         77  SIZE-NEEDED  PIC 9(4) BINARY.
         77  old-size     pic 9(4) binary.
         77  VPTR  POINTER.
-        77  VPTR2 POINTER.
-        77  VPTR3 POINTER.
 
         LINKAGE       SECTION.
 
@@ -941,7 +939,7 @@ AT_DATA([ALLOC.cob], [
 
       *>    DISPLAY 'Starting testcase ALLOC'
 
-           SET VPTR VPTR2 VPTR3 To NULL
+           SET VPTR To NULL
 
       *************************************************************
       *  Allocate a table with 20 elements
@@ -989,22 +987,15 @@ AT_DATA([ALLOC.cob], [
 
              SET ADDRESS OF VARGRP TO VPTR
              MOVE NUM-ELEMENTS TO OBJ
+             move SIZE-NEEDED  to old-size
 
            Else                     *> If already have a table, doing re-size
       *********************************************************************
       * Re-size it!
-      * First, allocate space for data save area  and move data in
+      * First, map BUFFER on current table
       *********************************************************************
 
-             ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED RETURNING VPTR2
-             SET ADDRESS OF BUFFER TO VPTR2
-             MOVE VARGRP TO BUFFER(1:SIZE-NEEDED)
-             inspect BUFFER(1:SIZE-NEEDED) replacing all x'00' by space
-             DISPLAY 'BUFFER     = "'
-                   BUFFER(170:66) '"'
-             DISPLAY 'BUFFER     = "'
-                   BUFFER(226:66) '"'
-             move size-needed to old-size
+             SET ADDRESS OF BUFFER TO VPTR
 
       *********************************************************************
       * Calculate new size from NUM-ElEMENTS
@@ -1013,44 +1004,39 @@ AT_DATA([ALLOC.cob], [
                                    LENGTH OF VARTAB * NUM-ELEMENTS
 
              display 'Re-allocation, using ' size-needed ' bytes.'
-      *>     ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED RETURNING VPTR3
+      *>     ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED RETURNING VPTR
              if size-needed < 2097152
                 ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED
                                                 loc 24
-                                                RETURNING VPTR3
+                                                RETURNING VPTR
              else
                 ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED
                                                 loc 31
-                                                RETURNING VPTR3
+                                                RETURNING VPTR
              end-if
 
       *************************************************************
       * Move data from data save area to new larger table
       *************************************************************
-             SET ADDRESS OF VARGRP TO VPTR3
+             SET ADDRESS OF VARGRP TO VPTR
              MOVE NUM-ELEMENTS TO OBJ
              MOVE BUFFER(1:old-size) TO VARGRP
-             call 'CBL_OC_DUMP' using VARGRP   *> remove me once all is fine
-             (1:size-needed) *> FIXME (from rw-branch), shouldn't be needed
+             move SIZE-NEEDED  to old-size
       *************************************************************
-      * Free the original table and temp copy
-      *************************************************************
-             FREE VPTR  VPTR2
-             SET VPTR TO VPTR2
+      * Free the original table
+      ************************************************************
+             SET VPTR TO ADDRESS OF BUFFER
+             FREE VPTR
              .
 ])
 
+# FIXME: move the "LOC" from above to a syntax test, then drop the -w
 AT_CHECK([$COMPILE -std=ibm-strict -w ALLOC.cob], [0], [], [])
-
-# compiler limits ODO-item wrong, merge of rw-branch needed
-AT_XFAIL_IF([true])
 
 AT_CHECK([$COBCRUN_DIRECT ./ALLOC], [0],
 [First allocation, using 00322 bytes.
 VARTAB(12) = "9999        0000"
 VARTAB(17) = "0000HI MOM  0000"
-BUFFER     = "        9999        0000                                "
-             "                                0000HI MOM  0000        "
 Re-allocation, using 00482 bytes.
 VARTAB(12) = "9999        0000"
 VARTAB(17) = "0000HI MOM  0000"
@@ -1742,6 +1728,7 @@ AT_CHECK([test -e TESTFILE], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([CALL unusual PROGRAM-ID.])
 AT_KEYWORDS([extensions])
 
@@ -1806,6 +1793,7 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [P1P2P3P4])
 
 AT_CLEANUP
 
+
 AT_SETUP([CALL / GOBACK with LOCAL-STORAGE])
 AT_KEYWORDS([extensions])
 
@@ -1848,7 +1836,8 @@ AT_DATA([prog_b.cob], [
 
 AT_CHECK([$COMPILE prog_a.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog_b.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog_a], [0], [entered prog_b
+AT_CHECK([$COBCRUN_DIRECT ./prog_a], [0],
+[entered prog_b
 exiting prog_b
 back in prog_a
 ], [])
@@ -6194,5 +6183,45 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -freserved=EXAMINE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([GCOS literals with EBCDIC symbols (run)])
+AT_KEYWORDS([extensions])
+
+AT_DATA([prog.cob], [[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(11).
+       01 T             PIC 9.
+       01 S             USAGE COMP-1 VALUE ZERO.
+       PROCEDURE        DIVISION.
+           MOVE 1 TO T
+           MOVE ""135,151,151"bar"195,194,234"" TO X
+           IF X NOT EQUAL "foobarBAZ" PERFORM SHOW.
+
+           MOVE 2 TO T
+           MOVE "  "135,151,151"bar"195 194"Z" TO X
+           IF X NOT EQUAL "  foobarBAZ" PERFORM SHOW.
+
+           MOVE 3 TO T
+           MOVE ' '135 151,151'bar'195,194'Z' TO X
+           IF X NOT EQUAL " foobarBAZ" PERFORM SHOW.
+
+           MOVE 4 TO T
+           MOVE ""75,80,91"" TO X
+           IF X NOT EQUAL "[!]" PERFORM SHOW.
+
+           STOP RUN S.
+       SHOW.
+           DISPLAY "EBCDIC LIT " T " FAILED: X = """ X """"
+           MOVE 1 TO S.
+]])
+
+AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 
 AT_CLEANUP

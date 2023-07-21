@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2018, 2020-2022 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2018, 2020-2023 Free Software Foundation, Inc.
 ## Written by Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -522,24 +522,20 @@ AT_DATA([prog.cob], [
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
        PROCEDURE        DIVISION.
-           DISPLAY FUNCTION FORMATTED-TIME ("hhmmss,ss", 1)
-           END-DISPLAY
+           DISPLAY FUNCTION FORMATTED-TIME ("hhmmss,ss", 1).
            DISPLAY FUNCTION FORMATTED-DATETIME
-                       ("YYYYMMDDThhmmss,ss", 1, 1)
-           END-DISPLAY
+                       ("YYYYMMDDThhmmss,ss", 1, 1).
 
-           DISPLAY FUNCTION FORMATTED-TIME ("hhmmss.ss", 1)
-           END-DISPLAY
+           DISPLAY FUNCTION FORMATTED-TIME ("hhmmss.ss", 1).
            DISPLAY FUNCTION FORMATTED-DATETIME
-                       ("YYYYMMDDThhmmss.ss", 1, 1)
-           END-DISPLAY
+                       ("YYYYMMDDThhmmss.ss", 1, 1).
 
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:15: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
-prog.cob:17: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
+[prog.cob:13: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
+prog.cob:14: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
 ])
 
 AT_CLEANUP
@@ -577,26 +573,19 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION LENGTH      ("abcd" & "xyz")
-           END-DISPLAY
            DISPLAY FUNCTION BYTE-LENGTH ("abcd" & "xyz")
-           END-DISPLAY
            DISPLAY FUNCTION LENGTH      ("abcd" "xyz")
-           END-DISPLAY
            DISPLAY FUNCTION BYTE-LENGTH (01234)
-           END-DISPLAY
            DISPLAY FUNCTION LENGTH      (567)
-           END-DISPLAY
            DISPLAY FUNCTION LENGTH      ("abcd" & "xyz" PHYSICAL)
-           END-DISPLAY
            DISPLAY FUNCTION BYTE-LENGTH ("abcd" & "xyz" PHYSICAL)
-           END-DISPLAY
            .
 ])
 
 AT_CHECK([$COMPILE -Wno-pending prog.cob], [1], [],
-[prog.cob:9: error: syntax error, unexpected Literal, expecting PHYSICAL or )
-prog.cob:11: error: a non-numeric literal is expected here
-prog.cob:13: error: a non-numeric literal is expected here
+[prog.cob:7: error: syntax error, unexpected Literal, expecting PHYSICAL or )
+prog.cob:8: error: a non-numeric literal is expected here
+prog.cob:9: error: a non-numeric literal is expected here
 ])
 
 AT_CLEANUP

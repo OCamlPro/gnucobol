@@ -870,6 +870,10 @@ AT_CHECK([dd_FILENAME2="y" $COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CHECK([test -f "y"], [0], [], [])
 AT_CHECK([FILENAME2="z" $COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CHECK([test -f "z"], [0], [], [])
+AT_CHECK([FILENAME2="\"QUOTE\"" $COBCRUN_DIRECT ./prog2], [0], [], [])
+AT_CHECK([test -f "QUOTE"], [0], [], [])
+AT_CHECK([FILENAME2=\'APOST\' $COBCRUN_DIRECT ./prog2], [0], [], [])
+AT_CHECK([test -f "APOST"], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CHECK([test -f "FILENAME2"], [0], [], [])
 
@@ -1999,9 +2003,10 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED file split keys WITH DUPLICATES])
-AT_KEYWORDS([runfile key])
+AT_KEYWORDS([runfile key EXTFH])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
 ## Note: The order in which secondary records with duplicate keys
 ##       are returnded is not guaranteed.
 
@@ -2153,6 +2158,13 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# verify that all of this works with wrapping to EXTFH calls and
+# back to our own EXTFH entry point
+
+AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./extfh], [0], [], [])
+
 AT_CLEANUP
 
 
@@ -3554,14 +3566,14 @@ AT_DATA([prog.cob], [
        P0101.
            ADD 1 TO Z.
        END DECLARATIVES.
+      * some comments here
+      * to mimic real world programs
        MP01 SECTION.
        MP0101.
            OPEN INPUT TEST-FILE.
            PERFORM P0101.
            IF Z NOT = 2
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3603,10 +3615,8 @@ AT_DATA([prog.cob], [
            OPEN  INPUT  TEST-FILE.
            PERFORM P01 THRU P02.
            IF Z NOT = 3
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
-           STOP RUN.
+              DISPLAY Z.
+           GOBACK.
 ])
 
 # disabling the check for "something leaves the section" - as this is
@@ -4775,55 +4785,55 @@ AT_DATA([prog.cob], [
        01  page-count          pic 9999.
 
        PROCEDURE DIVISION.
+       main.
+           open input data-file.
+           read data-file
+               at end
+                   display "File open error: " data-file-status
+                   stop run
+           end-read.
 
-       open input data-file.
-       read data-file
-           at end
-               display "File open error: " data-file-status
-               stop run
-       end-read.
+           open output mini-report.
 
-       open output mini-report.
+           write report-line
+               from report-line-blank
+           end-write.
 
-       write report-line
-           from report-line-blank
-       end-write.
+           move 1 to page-count.
+           accept page-date from date end-accept.
+           move page-count to page-no.
+           write report-line
+               from report-line-header
+               after advancing page
+           end-write.
 
-       move 1 to page-count.
-       accept page-date from date end-accept.
-       move page-count to page-no.
-       write report-line
-           from report-line-header
-           after advancing page
-       end-write.
+           perform readwrite-loop until endofdata.
 
-       perform readwrite-loop until endofdata.
+           display
+               "Normal termination, ending status: "
+               data-file-status
+           close mini-report.
 
-       display
-           "Normal termination, ending status: "
-           data-file-status
-       close mini-report.
-
-       close data-file.
-       stop run.
+           close data-file.
+           stop run.
 
       ****************************************************************
        readwrite-loop.
-       move data-record to report-line-data
-       move linage-counter to body-tag
-       write report-line from report-line-data
-           end-of-page
-               add 1 to page-count end-add
-               move page-count to page-no
-               move linage-counter to header-tag
-               write report-line from report-line-header
-                   after advancing page
-               end-write
-       end-write
-       read data-file
-           at end set endofdata to true
-       end-read
-       .
+           move data-record to report-line-data
+           move linage-counter to body-tag
+           write report-line from report-line-data
+               end-of-page
+                   add 1 to page-count end-add
+                   move page-count to page-no
+                   move linage-counter to header-tag
+                   write report-line from report-line-header
+                       after advancing page
+                   end-write
+           end-write
+           read data-file
+               at end set endofdata to true
+           end-read
+           .
 ])
 
 AT_CAPTURE_FILE([mini-report])
@@ -4919,49 +4929,49 @@ PAGE: 0004                         LC: 000015                       DATE: 150206
 000008 01  page-count          pic 9999.
 000009
 000010 PROCEDURE DIVISION.
-000011
-000012 open input data-file.
-000013 read data-file
-000014     at end
+000011 main.
+000012     open input data-file.
+000013     read data-file
+000014         at end
 
 
 
 
 
 PAGE: 0005                         LC: 000015                       DATE: 150206
-000001         display "File open error: " data-file-status
-000002         stop run
-000003 end-read.
+000001             display "File open error: " data-file-status
+000002             stop run
+000003     end-read.
 000004
-000005 open output mini-report.
+000005     open output mini-report.
 000006
-000007 write report-line
-000008     from report-line-blank
-000009 end-write.
+000007     write report-line
+000008         from report-line-blank
+000009     end-write.
 000010
-000011 move 1 to page-count.
-000012 accept page-date from date end-accept.
-000013 move page-count to page-no.
-000014 write report-line
+000011     move 1 to page-count.
+000012     accept page-date from date end-accept.
+000013     move page-count to page-no.
+000014     write report-line
 
 
 
 
 
 PAGE: 0006                         LC: 000015                       DATE: 150206
-000001     from report-line-header
-000002     after advancing page
-000003 end-write.
+000001         from report-line-header
+000002         after advancing page
+000003     end-write.
 000004
-000005 perform readwrite-loop until endofdata.
+000005     perform readwrite-loop until endofdata.
 000006
-000007 display
-000008     "Normal termination, ending status: "
-000009     data-file-status
-000010 close mini-report.
+000007     display
+000008         "Normal termination, ending status: "
+000009         data-file-status
+000010     close mini-report.
 000011
-000012 close data-file.
-000013 stop run.
+000012     close data-file.
+000013     stop run.
 000014
 
 
@@ -4971,31 +4981,321 @@ PAGE: 0006                         LC: 000015                       DATE: 150206
 PAGE: 0007                         LC: 000015                       DATE: 150206
 000001****************************************************************
 000002 readwrite-loop.
-000003 move data-record to report-line-data
-000004 move linage-counter to body-tag
-000005 write report-line from report-line-data
-000006     end-of-page
-000007         add 1 to page-count end-add
-000008         move page-count to page-no
-000009         move linage-counter to header-tag
-000010         write report-line from report-line-header
-000011             after advancing page
-000012         end-write
-000013 end-write
-000014 read data-file
+000003     move data-record to report-line-data
+000004     move linage-counter to body-tag
+000005     write report-line from report-line-data
+000006         end-of-page
+000007             add 1 to page-count end-add
+000008             move page-count to page-no
+000009             move linage-counter to header-tag
+000010             write report-line from report-line-header
+000011                 after advancing page
+000012             end-write
+000013     end-write
+000014     read data-file
 
 
 
 
 
 PAGE: 0008                         LC: 000015                       DATE: 150206
-000001     at end set endofdata to true
-000002 end-read
-000003 .
+000001         at end set endofdata to true
+000002     end-read
+000003     .
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
+[Normal termination, ending status: 10
+], [])
+AT_CHECK([diff mini-report reference-report], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXTFH: LINAGE and LINAGE-COUNTER sample])
+AT_KEYWORDS([runfile EXTFH OPTIONAL FILE STATUS READ WRITE END-OF-PAGE LINE SEQUENTIAL])
+
+# modified version of the test above
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           select optional data-file assign to 'prog.cob'
+               organization is line sequential
+               file status is data-file-status.
+           select mini-report assign to "mini-report".
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  data-file.
+       01  data-record.
+           88 endofdata        value high-values.
+           02 data-line        pic x(80).
+       FD  mini-report
+           linage is 16 lines
+               with footing at 15
+               lines at top 2
+               lines at bottom 2.
+       01  report-line         pic x(80).
+
+       WORKING-STORAGE SECTION.
+       01  command-arguments   pic x(1024).
+       01  file-name           pic x(160).
+       01  data-file-status    pic xx.
+       01  lc                  pic 99.
+       01  report-line-blank.
+           02 filler           pic x(18) value all "*".
+           02 filler           pic x(05) value spaces.
+           02 filler           pic x(34)
+               VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
+           02 filler           pic x(05) value spaces.
+           02 filler           pic x(18) value all "*".
+       01  report-line-data.
+           02 body-tag         pic 9(6).
+           02 line-3           pic x(74).
+       01  report-line-header.
+           02 filler           pic x(6) VALUE "PAGE: ".
+           02 page-no          pic 9999.
+           02 filler           pic x(24).
+           02 filler           pic x(5) VALUE " LC: ".
+           02 header-tag       pic 9(6).
+
+
+
+
+       01  page-count          pic 9999.
+
+       PROCEDURE DIVISION.
+       main.
+           open input data-file.
+           read data-file
+               at end
+                   display "File open error: " data-file-status
+                   stop run
+           end-read.
+
+           open output mini-report.
+
+           write report-line
+               from report-line-blank
+           end-write.
+
+           move 1 to page-count.
+           move page-count to page-no.
+           write report-line
+               from report-line-header
+               after advancing page
+           end-write.
+
+           perform readwrite-loop until endofdata.
+
+           display
+               "Normal termination, ending status: "
+               data-file-status
+           close mini-report.
+
+           close data-file.
+           stop run.
+
+      ****************************************************************
+       readwrite-loop.
+           move data-record to report-line-data
+           move linage-counter to body-tag
+           write report-line from report-line-data
+               end-of-page
+                   add 1 to page-count end-add
+                   move page-count to page-no
+                   move linage-counter to header-tag
+                   write report-line from report-line-header
+                       after advancing page
+                   end-write
+           end-write
+           read data-file
+               at end set endofdata to true
+           end-read
+           .
+])
+
+AT_CAPTURE_FILE([mini-report])
+AT_DATA([reference-report], [
+
+******************     THIS PAGE INTENTIONALLY LEFT BLANK     ******************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PAGE: 0001                         LC: 000000
+000001
+000002 IDENTIFICATION DIVISION.
+000003 PROGRAM-ID. prog.
+000004 ENVIRONMENT DIVISION.
+000005 INPUT-OUTPUT SECTION.
+000006 FILE-CONTROL.
+000007     select optional data-file assign to 'prog.cob'
+000008         organization is line sequential
+000009         file status is data-file-status.
+000010     select mini-report assign to "mini-report".
+000011
+000012 DATA DIVISION.
+000013 FILE SECTION.
+000014 FD  data-file.
+
+
+
+
+
+PAGE: 0002                         LC: 000015
+000001 01  data-record.
+000002     88 endofdata        value high-values.
+000003     02 data-line        pic x(80).
+000004 FD  mini-report
+000005     linage is 16 lines
+000006         with footing at 15
+000007         lines at top 2
+000008         lines at bottom 2.
+000009 01  report-line         pic x(80).
+000010
+000011 WORKING-STORAGE SECTION.
+000012 01  command-arguments   pic x(1024).
+000013 01  file-name           pic x(160).
+000014 01  data-file-status    pic xx.
+
+
+
+
+
+PAGE: 0003                         LC: 000015
+000001 01  lc                  pic 99.
+000002 01  report-line-blank.
+000003     02 filler           pic x(18) value all "*".
+000004     02 filler           pic x(05) value spaces.
+000005     02 filler           pic x(34)
+000006         VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
+000007     02 filler           pic x(05) value spaces.
+000008     02 filler           pic x(18) value all "*".
+000009 01  report-line-data.
+000010     02 body-tag         pic 9(6).
+000011     02 line-3           pic x(74).
+000012 01  report-line-header.
+000013     02 filler           pic x(6) VALUE "PAGE: ".
+000014     02 page-no          pic 9999.
+
+
+
+
+
+PAGE: 0004                         LC: 000015
+000001     02 filler           pic x(24).
+000002     02 filler           pic x(5) VALUE " LC: ".
+000003     02 header-tag       pic 9(6).
+000004
+000005
+000006
+000007
+000008 01  page-count          pic 9999.
+000009
+000010 PROCEDURE DIVISION.
+000011 main.
+000012     open input data-file.
+000013     read data-file
+000014         at end
+
+
+
+
+
+PAGE: 0005                         LC: 000015
+000001             display "File open error: " data-file-status
+000002             stop run
+000003     end-read.
+000004
+000005     open output mini-report.
+000006
+000007     write report-line
+000008         from report-line-blank
+000009     end-write.
+000010
+000011     move 1 to page-count.
+000012     accept page-date from date end-accept.
+000013     move page-count to page-no.
+000014     write report-line
+
+
+
+
+
+PAGE: 0006                         LC: 000015
+000001         from report-line-header
+000002         after advancing page
+000003     end-write.
+000004
+000005     perform readwrite-loop until endofdata.
+000006
+000007     display
+000008         "Normal termination, ending status: "
+000009         data-file-status
+000010     close mini-report.
+000011
+000012     close data-file.
+000013     stop run.
+000014
+
+
+
+
+
+PAGE: 0007                         LC: 000015
+000001****************************************************************
+000002 readwrite-loop.
+000003     move data-record to report-line-data
+000004     move linage-counter to body-tag
+000005     write report-line from report-line-data
+000006         end-of-page
+000007             add 1 to page-count end-add
+000008             move page-count to page-no
+000009             move linage-counter to header-tag
+000010             write report-line from report-line-header
+000011                 after advancing page
+000012             end-write
+000013     end-write
+000014     read data-file
+
+
+
+
+
+PAGE: 0008                         LC: 000015
+000001         at end set endofdata to true
+000002     end-read
+000003     .
+])
+
+AT_CHECK([$COMPILE -fcallfh=EXTFH prog.cob], [0], [], [])
+
+# currently does not generate the expected report, as LINAGE options
+# are not passed via FCD and the internal part works only "partial"
+
+AT_XFAIL_IF([true])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
 AT_CHECK([diff mini-report reference-report], [0], [], [])
@@ -8290,8 +8590,11 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[Other Flags 32.
+AT_CAPTURE_FILE([prog.out])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog 1>prog.out], [0], [], [])
+
+AT_DATA([reference], [Other Flags 32.
 File has 0003 keys.
 Key def  0112 bytes.
 File assigned is 'mytstisam'
@@ -8364,7 +8667,18 @@ Key: MOR00000 is MORNINGSIDE CARPENTRY.    Disk=8470    .
 Key: OLD00000 is OLD TYME PIZZA MFG. CO.   Disk=8470    .
 Key: PRE00000 is PRESTIGE OFFICE FURNITURE Disk=8470    .
 Hit End of File after 11
-], [])
+])
+
+AT_CHECK([diff reference prog.out], [0], [], [])
+
+# verify that all of this works with wrapping to EXTFH calls
+# and that those don't trash the FH--FCD allocated memory
+
+AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
+
+AT_CHECK([diff reference prog.out], [0], [], [])
+
 
 AT_CLEANUP
 
@@ -9033,18 +9347,18 @@ AT_DATA([prog.cob], [
              END-PERFORM
              IF FCD-FILE-STATUS = '00'
                DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL WRITES COMPLETE.'
-               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCD-FILE-STATUS = '00'
-                DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL FILE IS CLOSED.'
-               ELSE
-                DISPLAY PROGRAM-NAME
-                    ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
-               END-IF
              ELSE
                DISPLAY PROGRAM-NAME
                    ': UNABLE TO CREATE LINE SEQUENTIAL FILE.'
+             END-IF
+             SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+             PERFORM CALL-EXTFH
+             PERFORM FCD-CHECK-STAT
+             IF FCD-FILE-STATUS = '00'
+              DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL FILE IS CLOSED.'
+             ELSE
+              DISPLAY PROGRAM-NAME
+                  ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
              END-IF
            ELSE
              DISPLAY PROGRAM-NAME
@@ -9078,18 +9392,18 @@ AT_DATA([prog.cob], [
              END-PERFORM
              IF FCD-FILE-STATUS = '00' OR '10'
                DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL READS COMPLETE.'
-               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCD-FILE-STATUS = '00'
-                 DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
-               ELSE
-                 DISPLAY PROGRAM-NAME
-                     ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
-               END-IF
              ELSE
                DISPLAY PROGRAM-NAME
                    ': UNABLE TO READ LINE SEQUENTIAL FILE.'
+             END-IF
+             SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+             PERFORM CALL-EXTFH
+             PERFORM FCD-CHECK-STAT
+             IF FCD-FILE-STATUS = '00'
+               DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
+             ELSE
+               DISPLAY PROGRAM-NAME
+                   ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
              END-IF
            ELSE
              DISPLAY PROGRAM-NAME
@@ -9153,6 +9467,12 @@ AT_CLEANUP
 
 AT_SETUP([EXTFH: FIXED SEQUENTIAL])
 AT_KEYWORDS([runfile EXTFH])
+
+# CHECKME: Should it really be possible to change the length
+# with a line-sequentia file this way?
+# If yes: should there be an implied "WRITE FROM" - so
+# that an intermediate record field, space padded, is
+# internally used?
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -9231,18 +9551,18 @@ AT_DATA([prog.cob], [
              END-PERFORM
              IF FCD-FILE-STATUS = '00'
                DISPLAY PROGRAM-NAME ': FIXED  SEQ WRITES COMPLETE.'
-               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCD-FILE-STATUS = '00'
-                DISPLAY PROGRAM-NAME ': FIXED  SEQ FILE IS CLOSED.'
-               ELSE
-                DISPLAY PROGRAM-NAME
-                    ': UNABLE TO CLOSE FIXED  SEQ FILE.'
-               END-IF
              ELSE
                DISPLAY PROGRAM-NAME
                    ': UNABLE TO CREATE FIXED  SEQ FILE.'
+             END-IF
+             SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+             PERFORM CALL-EXTFH
+             PERFORM FCD-CHECK-STAT
+             IF FCD-FILE-STATUS = '00'
+              DISPLAY PROGRAM-NAME ': FIXED  SEQ FILE IS CLOSED.'
+             ELSE
+              DISPLAY PROGRAM-NAME
+                  ': UNABLE TO CLOSE FIXED  SEQ FILE.'
              END-IF
            ELSE
              DISPLAY PROGRAM-NAME
@@ -9281,18 +9601,18 @@ AT_DATA([prog.cob], [
              END-PERFORM
              IF FCD-FILE-STATUS = '00' OR '10'
                DISPLAY PROGRAM-NAME ': FIXED  SEQ READS COMPLETE.'
-               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCD-FILE-STATUS = '00'
-                 DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
-               ELSE
-                 DISPLAY PROGRAM-NAME
-                     ': UNABLE TO CLOSE FIXED  SEQ FILE.'
-               END-IF
              ELSE
                DISPLAY PROGRAM-NAME
                    ': UNABLE TO READ FIXED  SEQ FILE.'
+             END-IF
+             SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+             PERFORM CALL-EXTFH
+             PERFORM FCD-CHECK-STAT
+             IF FCD-FILE-STATUS = '00'
+               DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
+             ELSE
+               DISPLAY PROGRAM-NAME
+                   ': UNABLE TO CLOSE FIXED  SEQ FILE.'
              END-IF
            ELSE
              DISPLAY PROGRAM-NAME
@@ -9518,6 +9838,10 @@ kdblen: 0398
 ], [])
 
 AT_CLEANUP
+
+
+# TODO: add missing test for CLOSE options (most important: REEL)
+#       which are missing both for "normal" io and for EXTFH tests
 
 
 AT_SETUP([EXTFH: changing record address])
@@ -10361,6 +10685,187 @@ REWRITE 00006: RECORD-6            00000000061234567890 .
 AT_CLEANUP
 
 
+AT_SETUP([EXTFH: reading two files with one FCD])
+AT_KEYWORDS([runfile EXTFH])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION          DIVISION.
+      ****************************************************************
+       PROGRAM-ID.             prog.
+      *AUTHOR.                 TOKYO-SYSTEM-HOUSE.
+      *DATE-WRITTEN.           2023/02/28.
+      ****************************************************************
+       ENVIRONMENT             DIVISION.
+      ****************************************************************
+       INPUT-OUTPUT            SECTION.
+       FILE-CONTROL.
+           SELECT  F-SEQ-FILE  ASSIGN          TO    "F-SEQ"
+                               ORGANIZATION    IS    SEQUENTIAL
+                               FILE STATUS     IS    F-SEQ-STATUS.
+           SELECT  F-TXT-FILE  ASSIGN          TO    "F-TXT"
+                               ORGANIZATION    IS    LINE SEQUENTIAL
+                               FILE STATUS     IS    F-TXT-STATUS.
+      ****************************************************************
+       DATA                    DIVISION.
+      ****************************************************************
+       FILE                    SECTION.
+       FD  F-SEQ-FILE.
+       01  F-SEQ-RECORD.
+         03  F-SEQ-DATA        PIC X(5).
+       FD  F-TXT-FILE.
+       01  F-TXT-RECORD.
+         03  F-TXT-DATA        PIC X(10).
+       WORKING-STORAGE         SECTION.
+       01  F-SEQ-STATUS        PIC X(2).
+       01  F-TXT-STATUS        PIC X(2).
+
+       01  OPCODE              PIC X(2).
+       78  OP-QUERY-FILE       VALUE X"0006".
+       78  OP-OPEN-INPUT       VALUE X"fa00".
+       78  OP-OPEN-OUTPUT      VALUE X"fa01".
+       78  OP-OPEN-I-O         VALUE X"fa02".
+       78  OP-WRITE            VALUE X"faf3".
+       78  OP-RELEASE          VALUE X"faf3".
+       78  OP-REWRITE          VALUE X"faf4".
+       78  OP-READ-NEXT        VALUE X"faf5".
+       78  OP-START-EQUAL      VALUE X"fae9".
+       78  OP-CLOSE            VALUE X"fa80".
+
+       01  FCD.
+           COPY "xfhfcd3.cpy".
+       01  EX-FILENAME         PIC X(260).
+       01  EX-RECORD-BUFFER    PIC X(32767).
+      ****************************************************************
+       PROCEDURE               DIVISION.
+      ****************************************************************
+       MAIN-RTN.
+      *    CREATE FILE
+           OPEN OUTPUT F-SEQ-FILE.
+           MOVE "SEQ01" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ02" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ03" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ04" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ05" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           CLOSE F-SEQ-FILE.
+           OPEN OUTPUT F-TXT-FILE.
+           MOVE "TXTA123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           MOVE "TXTB123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           MOVE "TXTC123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           MOVE "TXTD123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           CLOSE F-TXT-FILE.
+
+      *    SET FCD
+           MOVE LOW-VALUES TO FCD.
+           MOVE FCD--VERSION-NUMBER   TO FCD-VERSION.
+           SET  FCD-FILENAME-ADDRESS  TO ADDRESS OF EX-FILENAME.
+           MOVE 80                    TO FCD-NAME-LENGTH.
+           SET FCD-RECORD-ADDRESS     TO ADDRESS OF EX-RECORD-BUFFER.
+
+      *    OPEN first file
+           MOVE fcd--sequential-org   TO FCD-ORGANIZATION.
+           MOVE "F-SEQ"               TO EX-FILENAME.
+           MOVE OP-OPEN-INPUT         TO OPCODE.
+           MOVE FCD--DYNAMIC-ACCESS   TO FCD-ACCESS-MODE.
+           MOVE 5                     TO FCD-CURRENT-REC-LEN.
+           MOVE 5                     TO FCD-MIN-REC-LENGTH.
+           MOVE 5                     TO FCD-MAX-REC-LENGTH.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "OPEN STATUS:"  
+                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+
+      *    READ RECORD
+           MOVE OP-READ-NEXT          TO OPCODE.
+           MOVE "00" TO FCD-FILE-STATUS.
+           PERFORM UNTIL FCD-STATUS-KEY-1 NOT = "0"
+               MOVE SPACE                 TO EX-RECORD-BUFFER
+               CALL "EXTFH" USING OPCODE, FCD
+               DISPLAY "READ NEXT STATUS:"
+                                      FCD-STATUS-KEY-1 "/" FCD-BINARY
+               DISPLAY "DATA:" EX-RECORD-BUFFER(1:10) '-'
+           END-PERFORM.
+
+      *    CLOSE FILE
+           MOVE OP-CLOSE              TO OPCODE.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "CLOSE STATUS:"  
+                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+
+      *    OPEN second file
+           MOVE fcd--line-sequential-org   TO FCD-ORGANIZATION.
+           MOVE "F-TXT"               TO EX-FILENAME.
+           MOVE OP-OPEN-INPUT         TO OPCODE.
+           MOVE FCD--DYNAMIC-ACCESS   TO FCD-ACCESS-MODE.
+           MOVE 10                    TO FCD-CURRENT-REC-LEN.
+           MOVE 10                    TO FCD-MIN-REC-LENGTH.
+           MOVE 10                    TO FCD-MAX-REC-LENGTH.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "OPEN STATUS:"  
+                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+
+      *    READ RECORD
+           MOVE OP-READ-NEXT          TO OPCODE.
+           MOVE "00" TO FCD-FILE-STATUS.
+           PERFORM UNTIL FCD-STATUS-KEY-1 NOT = "0"
+               MOVE SPACE                 TO EX-RECORD-BUFFER
+               CALL "EXTFH" USING OPCODE, FCD
+               DISPLAY "READ NEXT STATUS:"
+                                      FCD-STATUS-KEY-1 "/" FCD-BINARY
+               DISPLAY "DATA:" EX-RECORD-BUFFER(1:10) '-'
+           END-PERFORM.
+
+      *    CLOSE FILE
+           MOVE OP-CLOSE              TO OPCODE.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "CLOSE STATUS:"  
+                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+
+       MAIN-EXT.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[OPEN STATUS:0/48
+READ NEXT STATUS:0/48
+DATA:SEQ01     -
+READ NEXT STATUS:0/48
+DATA:SEQ02     -
+READ NEXT STATUS:0/48
+DATA:SEQ03     -
+READ NEXT STATUS:0/48
+DATA:SEQ04     -
+READ NEXT STATUS:0/48
+DATA:SEQ05     -
+READ NEXT STATUS:1/48
+DATA:          -
+CLOSE STATUS:0/48
+OPEN STATUS:0/48
+READ NEXT STATUS:0/48
+DATA:TXTA123456-
+READ NEXT STATUS:0/48
+DATA:TXTB123456-
+READ NEXT STATUS:0/48
+DATA:TXTC123456-
+READ NEXT STATUS:0/48
+DATA:TXTD123456-
+READ NEXT STATUS:1/48
+DATA:          -
+CLOSE STATUS:0/48
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([EXTFH: auto-conversion FCD2 <-> FCD3 on 32bit])
 
 # FIXME: check for missing record / file pointer address should be
@@ -10978,7 +11483,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED File READ/DELETE/READ])
-AT_KEYWORDS([runfile READ DELETE])
+AT_KEYWORDS([runfile READ DELETE EXTFH])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
@@ -11655,8 +12160,11 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[Loading sample data file.
+AT_CAPTURE_FILE([prog.out])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog 1>prog.out], [0], [], [])
+
+AT_DATA([reference], [Loading sample data file.
 Sample data file load complete.
 List sample data file
 Key: ALP00000 is ALPHA ELECTRICAL CO. LTD. Disk=8417    .
@@ -11768,7 +12276,14 @@ Ph=8009329492 Key: FOR00000 is FORTUNE COOKIE COMPANY   .
 Ph=8372487274 Key: GAM00000 is GAMMA X-RAY TECHNOLOGY   .
 Ph=8787458374 Key: OLD00000 is OLD TYME PIZZA MFG. CO.  .
 Hit End of File
-], [])
+])
+
+AT_CHECK([diff reference prog.out], [0], [], [])
+
+AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
+
+AT_CHECK([diff reference prog.out], [0], [], [])
 
 AT_CLEANUP
 
@@ -12444,7 +12959,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, SEQUENTIAL])
-AT_KEYWORDS([runfile using giving])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 # Note: We shouldn't use AT_DATA to create sequential record
 # data, because AT_DATA needs a \n at the end
@@ -12494,7 +13009,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12580,7 +13095,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, LINE SEQUENTIAL])
-AT_KEYWORDS([runfile using giving])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 # Note: We shouldn't use AT_DATA to create sequential record
 # data, because AT_DATA needs a \n at the end
@@ -12639,7 +13154,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, LINE SEQUENTIAL same file])
-AT_KEYWORDS([runfile using giving])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([test.txt], [
 bla
@@ -12686,7 +13201,7 @@ AT_CLEANUP
 
 
 AT_SETUP([File SORT, LINE SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([file1],
 [A1XXXX
@@ -12732,6 +13247,73 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat file2], [0],
+[A4X
+A3XX
+A2XXX
+A1XXXX
+A0XXXXX
+B2XXXXXX
+B1XXXXXXX
+C2XXXXXXXX
+C1XXXXXXXXX
+Z9XXXXXXXXXX
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXTFH: File SORT, LINE SEQUENTIAL variable records])
+AT_KEYWORDS([runfile SORT USING GIVING EXTFH])
+
+# same test as above, but this time using an external file handler
+# which in this case is the internal EXTFH handler
+
+AT_DATA([file1],
+[A1XXXX
+A2XXX
+A3XX
+Z9XXXXXXXXXX
+A4X
+B1XXXXXXX
+B2XXXXXX
+A0XXXXX
+C1XXXXXXXXX
+C2XXXXXXXX
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file1".
+       SELECT file2 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file2".
+       SELECT file3 ASSIGN DISK.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1.
+       1  file1-rec pic x(12).
+       FD file2.
+       1  file2-rec pic x(12).
+       SD file3.
+       1  file3-rec.
+          2  file3-key1 pic x.
+          2  file3-key2 pic 9.
+          2  filler pic x(10).
+       PROCEDURE DIVISION.
+          SORT file3 ON ASCENDING file3-key1
+                        DESCENDING file3-key2
+             USING file1
+             GIVING file2.
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcallfh=EXTFH prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([cat file2], [0],
 [A4X
@@ -13025,5 +13607,297 @@ C2
 C1
 Z9
 ])
+
+AT_CLEANUP
+
+
+# Verify that FD GLOBAL will create default handlers in sub-programs, but
+# only in its own sub-programs
+
+AT_SETUP([Scope of FD GLOBAL in nested programs])
+AT_KEYWORDS([file])
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-FILES.
+       PROCEDURE DIVISION.
+         CALL    "NESTED-PROGRAM-1".
+         CALL    "NESTED-PROGRAM-2".
+         STOP RUN.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-1.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+         SELECT FILE-EXT ASSIGN "./TEST-FILE" FILE STATUS IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE-EXT GLOBAL.
+       01 FILE-EXT-REC PIC X(5).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       P01 SECTION.
+          USE AFTER ERROR PROCEDURE ON FILE-EXT.
+       P0101.
+          DISPLAY "ERROR ON FILE-EXT".
+       P02 SECTION.
+          USE AFTER ERROR PROCEDURE ON OUTPUT.
+       P0201.
+          DISPLAY "ERROR ON OUTPUT".
+       END DECLARATIVES.
+       MAIN SECTION.
+         OPEN OUTPUT FILE-EXT.
+         CALL    "NESTED-PROGRAM-1-1".
+      * The next line triggers a SILENT error in NESTED-PROGRAM-1-2
+         CLOSE FILE-EXT.
+         CALL    "NESTED-PROGRAM-1-2".
+         GOBACK.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-1-1.
+       PROCEDURE DIVISION.
+         NESTED-PROGRAM .
+         WRITE FILE-EXT-REC FROM "Hello".
+	 DISPLAY "1-1 TRIED TO WRITE".
+         GOBACK.
+       END PROGRAM NESTED-PROGRAM-1-1.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-1-2.
+       PROCEDURE DIVISION.
+         NESTED-PROGRAM .
+         WRITE FILE-EXT-REC FROM "Hello".
+	 DISPLAY "1-2 TRIED TO WRITE".
+         GOBACK.
+       END PROGRAM NESTED-PROGRAM-1-2.
+
+       END PROGRAM NESTED-PROGRAM-1.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-2.
+       PROCEDURE DIVISION.
+         GOBACK.
+       END PROGRAM NESTED-PROGRAM-2.
+
+       END PROGRAM NESTED-FILES.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1-1 TRIED TO WRITE
+1-2 TRIED TO WRITE
+], [])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-FILES.
+       PROCEDURE DIVISION.
+         CALL    "NESTED-PROGRAM-1".
+         CALL    "NESTED-PROGRAM-2".
+         STOP RUN.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-1.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+         SELECT FILE-EXT ASSIGN "./TEST-FILE" FILE STATUS IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE-EXT GLOBAL.
+       01 FILE-EXT-REC PIC X(5).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       P01 SECTION.
+      * This one is GLOBAL and should be called from within nested programs
+          USE GLOBAL AFTER ERROR PROCEDURE ON FILE-EXT.
+       P0101.
+          DISPLAY "ERROR ON FILE-EXT".
+       P02 SECTION.
+          USE AFTER ERROR PROCEDURE ON OUTPUT.
+       P0201.
+          DISPLAY "ERROR ON OUTPUT".
+       END DECLARATIVES.
+       MAIN SECTION.
+         OPEN OUTPUT FILE-EXT.
+         CALL    "NESTED-PROGRAM-1-1".
+	 DISPLAY "CLOSING FILE DESCRIPTOR".
+         CLOSE FILE-EXT.
+         CALL    "NESTED-PROGRAM-1-2".
+         GOBACK.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-1-1.
+       PROCEDURE DIVISION.
+         NESTED-PROGRAM .
+	 DISPLAY "ENTERING NESTED-PROGRAM-1-1".
+	 DISPLAY "TRYING TO WRITE".
+         WRITE FILE-EXT-REC FROM "Hello".
+	 DISPLAY "EXITING NESTED-PROGRAM-1-1".
+         GOBACK.
+       END PROGRAM NESTED-PROGRAM-1-1.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-1-2.
+       PROCEDURE DIVISION.
+         NESTED-PROGRAM .
+	 DISPLAY "ENTERING NESTED-PROGRAM-1-2".
+	 DISPLAY "TRYING TO WRITE".
+         WRITE FILE-EXT-REC FROM "Hello".
+	 DISPLAY "EXITING NESTED-PROGRAM-1-2".
+         GOBACK.
+       END PROGRAM NESTED-PROGRAM-1-2.
+
+       END PROGRAM NESTED-PROGRAM-1.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. NESTED-PROGRAM-2.
+       PROCEDURE DIVISION.
+         GOBACK.
+       END PROGRAM NESTED-PROGRAM-2.
+
+       END PROGRAM NESTED-FILES.
+])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [ENTERING NESTED-PROGRAM-1-1
+TRYING TO WRITE
+EXITING NESTED-PROGRAM-1-1
+CLOSING FILE DESCRIPTOR
+ENTERING NESTED-PROGRAM-1-2
+TRYING TO WRITE
+ERROR ON FILE-EXT
+EXITING NESTED-PROGRAM-1-2
+], [])
+AT_CLEANUP
+
+AT_SETUP([OPEN / CLOSE with multiple filenames])
+AT_KEYWORDS([DECLARATIVES file error])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DOUBLE-OPEN.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+          SELECT FILE1 ASSIGN TO "./file1.txt"
+            FILE STATUS STAT-FILE1.
+          SELECT FILE2 ASSIGN TO "./file2.txt"
+            FILE STATUS STAT-FILE2.
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE1.
+         01 FS-FILE1 PIC X(10).
+       FD FILE2.
+         01 FS-FILE2 PIC X(10).
+       WORKING-STORAGE SECTION.
+	 01  STAT-FILE1               PIC XX.
+	 01  STAT-FILE2               PIC XX.
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       F-FILE1 SECTION. USE AFTER ERROR PROCEDURE ON FILE1.
+       DEB-FILE1.
+         DISPLAY "ERROR ON FILE1".
+          DISPLAY "  STAT-FILE1: " STAT-FILE1.
+          DISPLAY "  STAT-FILE2: " STAT-FILE2.
+       F-FILE2 SECTION. USE AFTER ERROR PROCEDURE ON FILE2.
+       DEB-FILE2.
+         DISPLAY "ERROR ON FILE2".
+         DISPLAY "  STAT-FILE1: " STAT-FILE1.
+         DISPLAY "  STAT-FILE2: " STAT-FILE2.
+       END DECLARATIVES.
+       PROGRAMME SECTION.
+       MAIN.
+          OPEN INPUT FILE1
+	  OPEN INPUT FILE2.
+          DISPLAY "READ FILE1".
+          READ FILE1.
+          DISPLAY "READ FILE2".
+          READ FILE2.
+          DISPLAY "CLOSE FILES".
+          CLOSE FILE1.
+          CLOSE FILE2.
+          DISPLAY "DELETE FILES".
+          DELETE FILE FILE1.
+          DELETE FILE FILE2.
+          STOP RUN.
+])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DOUBLE-OPEN.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+          SELECT FILE1 ASSIGN TO "./file1.txt"
+            FILE STATUS STAT-FILE1.
+          SELECT FILE2 ASSIGN TO "./file2.txt"
+            FILE STATUS STAT-FILE2.
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE1.
+         01 FS-FILE1 PIC X(10).
+       FD FILE2.
+         01 FS-FILE2 PIC X(10).
+       WORKING-STORAGE SECTION.
+	 01  STAT-FILE1               PIC XX.
+	 01  STAT-FILE2               PIC XX.
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       F-FILE1 SECTION. USE AFTER ERROR PROCEDURE ON FILE1.
+       DEB-FILE1.
+         DISPLAY "ERROR ON FILE1".
+          DISPLAY "  STAT-FILE1: " STAT-FILE1.
+          DISPLAY "  STAT-FILE2: " STAT-FILE2.
+       F-FILE2 SECTION. USE AFTER ERROR PROCEDURE ON FILE2.
+       DEB-FILE2.
+         DISPLAY "ERROR ON FILE2".
+         DISPLAY "  STAT-FILE1: " STAT-FILE1.
+         DISPLAY "  STAT-FILE2: " STAT-FILE2.
+       END DECLARATIVES.
+       PROGRAMME SECTION.
+       MAIN.
+          OPEN INPUT FILE1
+	             FILE2.
+          DISPLAY "READ FILE1".
+          READ FILE1.
+          DISPLAY "READ FILE2".
+          READ FILE2.
+          DISPLAY "CLOSE FILES".
+          CLOSE FILE1
+                FILE2.
+          DISPLAY "DELETE FILES".
+          DELETE FILE FILE1
+                      FILE2.
+          STOP RUN.
+])
+
+AT_DATA([expected.txt],
+[ERROR ON FILE2
+  STAT-FILE1: 00
+  STAT-FILE2: 35
+READ FILE1
+ERROR ON FILE1
+  STAT-FILE1: 10
+  STAT-FILE2: 35
+READ FILE2
+ERROR ON FILE2
+  STAT-FILE1: 10
+  STAT-FILE2: 47
+CLOSE FILES
+ERROR ON FILE2
+  STAT-FILE1: 00
+  STAT-FILE2: 42
+DELETE FILES
+])
+
+AT_CHECK([$COMPILE prog1.cob])
+AT_DATA([file1.txt], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1 > prog1.txt])
+AT_CHECK([diff expected.txt prog1.txt])
+
+AT_CHECK([$COMPILE prog2.cob])
+AT_DATA([file1.txt], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2 > prog2.txt])
+AT_CHECK([diff expected.txt prog2.txt])
 
 AT_CLEANUP

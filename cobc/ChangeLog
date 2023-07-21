@@ -1,20 +1,470 @@
 
+2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y: fix code generation for OPEN/CLOSE with multiple
+	filenames, where DECLARATIVES for all arguments were called when
+	only one argument failed
+
+2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	check for internal memory bounds with new flag "memory-check"
+	* flag.def, cobc.c (cobc_deciph_memory_check), tree.h: new compile
+	  flag -fmemory-check, implied with --debug
+	* typeck.c (cb_emit_call), tree.h (cb_field): new field attribute
+	  flag_used_in_call
+	* codegen.c (output_local_base_cache, output_nonlocal_base_cache):
+	  generate fencing data fields for fields with flag_used_in_call
+	* codegen.c (output_call_cache): generate fencing data fields for
+	  cob_call_union fields (call pointers)
+	* codegen.c (output_memory_check_call): new function to output
+	  generate fencing data fields for flag_used_in_call
+	* codeoptim.def, codeoptim.c, codegen.c: new entry
+	  COB_CHK_MEMORYFENCE
+
+	additional
+	* codegen.c: only increment/decrement output_indent_level by
+	  indent_adjust_level
+
+2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	common preparser cleanup
+	* ppparse.y: error recovery for COPY and REPLACE (consume until DOT
+	  instead of until EOF)
+	* ppparse.y: renamed "TOKEN" from "Identifier" to "Word", adjust
+	  some terminals prefixing it with leading underscore as optional
+	Bug #890 wrong reference in COPY diagnostic
+	* ppparse.y: switch to new buffer after parsing DOT, not before
+	Bug #23 several replacement values create parser errors
+	* pplex.l: split REPLACE_STATE and REPLACING_STATE from COPY_STATE
+	  to limit their reserved word list to the applicable ones and to
+	  improve error handling
+	* ppparse.y: explicit parse IN and OF as single replacement words
+
+2023-07-06  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* replace.c: rewrite the code for preprocessing with a two-phase
+	  algorithm. The first phase performs COPY REPLACING on the stream
+	  of tokens, while the second phase perform REPLACE on the resulting
+	  stream of tokens. This rewriting is closer to the COBOL standard
+	  and fixes bug #831 partially.
+	* cobc.c: flag -P now accepts - as argument to mean stdout
+
+2023-07-05  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def/cobc.c: new flags -fno-ttimestamp to suppress timestamp
+	  in listing headers, and -fttitle=<TITLE>, so that listings can be
+	  compared accross different versions and dates. This patch partially
+	  implements feature-request #294.
+	  Replace numeric constants in flags and switch by a constant macro
+	  CB_FLAG_GETOPT_. Remove unused 'case 6:' for -fdefaultbyte that is
+	  now handled in config.c
+
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
+	  second equivalent token
+	* pplex.l, replace.c: move the preprocessing code performing
+	  COPY REPLACING and REPLACE from pplex.l to replace.c
+
+2023-07-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_char): extracted usage of disabled code for
+	  char generation as char into this new inline function
+	* codegen.c (output_char): fixed previously disabled code and enable it
+	  by default, old code may still be used with defining GEN_CHAR_AS_UINT
+	* codegen.c (output_initialize_to_value): handle zero-length VALUE
+	* codegen.c (output_initialize_to_value): fix cb_initial_justify
+	* codegen.c (output_initialize_to_value): disable setting from a
+	  possibly huge internal buffer with a single generated memcpy from
+	  a generated string, instead use a local buffer of max. 128 bytes
+	  and set padding spaces with memset for bigger fields, old code may
+	  still be used with defining GEN_SINGLE_MEMCPY
+
+2023-07-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (check_listing): rewrite of change 2022-07-04:
+	  do not output sequence number of short lines,
+	  but keep its line break and the general output
+	* pplex.l: drop unused "requires_new_line" (added without use in OC2.0)
+
+2023-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: add check for reserved word FUNCTION, add missing
+	  word value for not reserved SUPPRESS and SEND
+	* parser.y (at_line_column): fixed bad cast when conflicting clauses
+	  were used, fixing bug #601
+
+2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_function_prototypes): generate plain "extern"
+	  instead of "COB_EXT_IMPORT" again, as the second only works with
+	  libraries, not with object files / sources
+
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* config.def: new dialect configuration option init-justify
+	* codegen.c (output_initialize_to_value): added support for right
+	  justification when cb_initial_justify is on
+
+2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (get_word): fix an overflow with words exceeding the
+	  maximal size COB_MAX_WORDLEN
+	* pplex.l (is_condition_directive_clause,
+	  next_word_is_comment_paragraph_name): decrease stack storage
+	  and optimize string comparisons
+
+2023-06-22  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y (setup_program, setup_default_collation)
+	  (program_init_without_program_id): properly record default collating
+	  sequence if required via -fdefault-colseq
+	* tree.c (cb_build_binary_op), typeck.c (cb_build_cond_default): inhibit
+	  -ffast-compare and -fconstant-folding for programs with a non-native
+	  collating sequence
+
+2023-06-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #437: dialect option to limit bound checks for ODO to maximum
+	* config.def, config.c (cb_config_entry), cobc.h (cb_sub_check),
+	  typeck.c (cb_build_identifier): new dialect configuration option
+	  subscript-check to limit bound checks for ODO items
+
+2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
+	  and comment algorithm
+
+	Bugs #875 V IS ZERO AND, #880 error compiling abbreviated conditions
+	and #887 error compiling parenthesized relation
+	* typeck.c (cb_build_expr): additional generate 'invalid conditional
+	  expression' error", translate NOT comparison to inversed comparison
+	* typeck.c (cb_build_expr), tree.c (cb_build_binary_op): give more
+	  details on invalid expressions
+
+2023-06-13  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* codegen.c (codegen): correctly set and unset `has_global_file`
+	  when entering/leaving nested sub-programs
+
+2023-06-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c (print_error, diagnostics_show_caret): fix for C89 compat
+	* error.c (diagnostics_show_caret): trim trailing whitespace,
+	  remove printing empty lines before/after, print EOF, changed format
+
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_file), parser.y: organization and access_mode as enums
+	* typeck.c (cb_emit_sort_init, cb_emit_sort_using, cb_emit_sort_giving),
+	  parser.y: extended syntax checks, distinguish MERGE and SORT within
+	  diagnostics
+	* parser.y, typeck.c (cb_emit_sort_init): move all syntax checks from
+	  code-emitter to parser
+	* tree.h (cb_statement), parser.y, typeck.c: drop flag_merge,
+	  instead check by "statement == STMT_MERGE"
+	* parser.y (_close_option): parse UNIT/REEL WITH NO REWIND,
+	  currently handled as if only UNIT/REEL would have been specified
+
+2023-06-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def (cb_diagnostics_show_line_numbers), error.c
+	  (diagnostics_show_caret): new flag -fno-diagnostics-show-line-numbers
+	  to disable printing of line numbers in carets
+	* cobc.c: new option -fdiagnostics-plain-output to make
+	  output as plain as possible (disabling carets for example)
+
+2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* typeck.c (cb_emit_sort_using, cb_emit_sort_giving): check if GIVING/USING
+	  files have an active EXTFH handler and generate calls to sort functions
+	  cob_file_sort_using_extfh / cob_file_sort_giving_extfh for those
+
+2023-05-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_init_comment_and_source_ref) [NO_INIT_SOURCE_LOC]:
+	  option to skip generating the source location in DATA DIVISION
+	* parser.y (alphabet_name): add NATIVE (CB_COLSEQ_NATIVE),
+	  change STANDARD_1 from CB_COLSEQ_NATIVE to CB_COLSEQ_ASCII
+
+2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.y (is_subordinate_to): start with parent, not field
+
+2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: allow expressions for screen related clauses
+	  COL, LINE, LINES, SIZE, COLOR, implementing FR #414
+
+2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
+	* parser.y: drop PENDING from OVERLINE and LEFTLINE
+
+2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: disable unreached code removement with -O0, but keep it
+	  unchanged for -g
+	* field.c (validate_field_1): moved check for duplicate report LINE and
+	  "OCCURS with multi COLUMNs" here, originally found in (compute_size)
+	* field.c (get_max_int_val): new function to get the highest algebraic
+	  integer value
+	* field.c (compute_size): limit internal computed maximum for UNBOUNDED
+	  item to the maximum value that can be stored in its DEPENDING on item
+	* field.c (compute_size): set items that are too big to a fixed value
+	  to return eraly on follow-up checks
+	* field.c (compute_size): disabled check for missing PIC for NATIONAL
+	  and BCD USAGE
+	* tree.c (cb_field_variable_address), tree.h: disabled unused function
+	* tree.c (cb_field_has_unbounded), tree.h: new function checking both
+	  field and any of the child elements to be UNBOUNDED
+	* typeck.c (cb_validate_program_data): validate DEPENDING ON to be numeric
+	* typeck.c (cb_build_identifier): skip compile-time checks for ref-mod
+	  on UNBOUNDED items as size is not known; for runtime calculate the max.
+	  length for ref-mod using the ODO
+	* parser.y (occurs_clause): don't set flag_unbounded in parent
+	* cobc.c (print_fields): don't output (wrong) size for group items with
+	  OCCURS UNBOUNDED sub-fields
+
+2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (control_source): allow both an alphanumeric identifier or
+	  literal for use with CONTROL phrase
+	* parser.y: adjust a bunch of terminals to match the internal name with
+	  leading underscore as optional
+
+2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (set_category, set_category_from_usage): changed argument types
+	  from int to their matching enum
+	* tree.c (cb_build_prototype), parser.y (setup_prototype),
+	  tree.h (struct cb_prototype): use matching enum
+
+2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_check_valid_name): allow leading underscore,
+	  prevent leading hyphen
+	* scanner.l (error_literal): change parameter literal_error to unsigned
+	  and raise only a warning for negative values, adjust callers
+	* scanner.l (scan_x): internally handle odd numbers of x'' literals,
+	  raise only a warning if the size is 1 and relaxed-syntax is active
+	* parser.y (data_description): improve error handling in DATA DIVISION
+	  to raise less errors and create "validated invalid" fields
+
+2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_build_field_tree), parser.y: copy SCREEN SECTION
+	  attributes from parent - instead of doing it in the parser
+	* parser.y (validate_screen_attributes): extracted duplicate code
+	* typeck.c (emit_field_accept_display): new function extracted
+	  from (cb_emit_accept), handling both DISPLAY and ACCEPT
+	* typeck.c (cob_field_display): dropped, replaced in the callers
+	  by call to (emit_field_accept_display) for not generating a call to
+	  fixed-attribute "cob_field_display" but to the varargs
+	  function "cob_display_field"
+	* codegen.c (output_screen_init), codeoptim.c (COB_SET_SCREEN):
+	  generate screen init not as separate function "cob_set_screen" but
+	  as macro "COB_SET_SCREEN" (there's no need or use to put all
+	  attributes on the stack)
+
+2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_funcall): backup and restore adjusted static fields,
+	  minor refactoring
+	* codegen.c (output_funcall_item): extracted from (output_funcall)
+	* typeck.c (cb_emit_accept): dropped cb_gen_field_accept and don't generate
+	  call to fixed-attribute "cob_field_accept", instead generate a call to
+	  the varargs function "cob_accept_field" with passing only the attributes
+	  that are set (including the new CONTROL, COLOR and CURSOR)
+
+2023-05-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_funcall), tree.h (struct cb_funcall): defined
+	  max. parameters for internal function calls as CB_BUILD_FUNCALL_MAX
+	  and increased it to 14
+
+	FR #189 + FR #355 - runtime-adjustable attributes for extended screenio
+	* tree.h (cb_field): new attributes screen_control and screen_color
+	* tree.h (cb_attr_struct): new attributes control, color and cursor
+	* parser.y, typeck.c (validate_attrs, cb_emit_accept, cb_emit_display,
+	  emit_field_display_for_last): add complete parsing for CONTROL,
+	  COLOR and CURSOR and set/read new attributes as appropriate
+	* parser.y: pass COB_SCREEN_CONV to runtime (currently not handled)
+
+2023-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_resolve_redefines): fix #881 wrong REDEFINES error on
+	  fields with redefinition
+
+2023-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_literal): restore writing of negative zero
+	  (DISPLAY overpunched), that was removed undocumented with 2.0
+	* typeck.c (cb_build_move_literal): optimized output for literals to
+	  fields with BLANK WHEN ZERO and SIGN LEADING
+
+2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_so_load_version_check): new function to generate
+	  libcob version check in shared object constructor / DllMain, allowing
+	  better error messages if the generated COBOL functions cannot be loaded
+	  into memory because of newer ABI
+
+2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_field): emit call to cob_move_bcd for two
+	  BCD fields without negative scale
+
+2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: dropped last_token_is_dot and integer_is_label by checking
+	  last_token instead
+	* scanner.l, parser.y, reserved.c, tree.h: dropped cobc_force_literal by
+	  introducing second_last_token and checking the tokens instead
+	* scanner.l: early consume spaces after comma and semicolon
+	* scanner.l: simplify check for redundant periods by splitting its rule
+	* cobc.c (file_basename): directly use filename,
+	  only handle backslash on win32
+	* codegen.c: minor refactoring to drop global string_buffer
+	* codegen.c: generate COB_EXT_IMPORT and COB_EXT_EXPORT instead of extern
+	* codegen.c (codegen): minor refactoring
+	* parser.y (setup_registers): extracted
+	* parser.y: minor refactoring
+
+2023-04-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppopen_get_file): extracted from ppopen and minor refactor
+	* pplex.l (ppecho): disabled performance-dropping fflush until found
+	  necessary
+
+2023-04-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond, cb_emit_divide, cb_build_move_literal):
+	  minor refactoring
+
+2023-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_picture): don't include leading Ps in digit count
+	* typeck.c (validate_move): adjust checks for move from literal, fixing
+	  PPP edge cases; rewrote calculation for most and least significant places
+
+2023-03-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (count_pic_edited): renamed from count_pic_alphanumeric_edited
+	  and adjusted for general use
+	* typeck.c (validate_move): handle national target and source, including
+	  national literals
+	* typeck.c (validate_move): don't permit alphanumeric literals in VALUE
+	  clause for numeric items
+	* field.c (cleanup_field_value): cleanup for national space
+	* scanner.l (scan_x): build "implied for empty" N / NX literal with
+	  correct size
+	* scanner.l, tree.c (cb_concat_literals): output explanations of literal
+	  errors as "note" instead of "error"
+	* tree.c: minor refactoring
+
+2023-03-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_search_all): dropped unnecessary check
+	* codegen.c (output_search): add missing ODO runtime check
+	* codegen.c (output_search_whens): generate access to ODO value only once,
+	  instead of on every internal SEARCH VARYING
+	* codegen.c (output_param): reduce scope of variables
+
+2023-03-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: minor speedup in freeing memory
+	* reserved.c (get_user_specified_reserved_word): minor refactoring
+
+2023-03-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_field): generate optimized code for
+	  reference-modification with same ref-mod length
+	* parser.y: fix several possible bad uses of "ALLOCATE identifier",
+	  including "no identifier at all" and use of subscripting / ref-mod
+	  which previously were all silently ignored
+
 2023-03-14  Samuel Belondrade <samuel.belondrade@atos.net>
 
 	* codegen.c (output_report_control): add a loop to check if the variable
 	  exist (bug: #863)
 
+2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* reserved.c (get_user_specified_reserved_word): add check for
+	  context sensitivity in aliases
+	* parser.y (begin_statement_internal): extracted from begin_statement and
+	  begin_statement_from_backup_pos
+	* parser.y: explicit creation of "comment note" tokens to store the start
+	  position for tokens used later, either direct for diagnostics or by
+	  assigning it with the new function copy_pos instead of using a global
+	  "backup position" or using the current position
+	* parser.y: explicit check for missing imperative statements in several
+	  places that need one to generate a clean error
+	* parser.y (emit_entry): removed unused parameter override_source_line
+	* typeck.c (cb_emit_call), tree.h, parser.y: remove passing the CALL's
+	  original line number as extra parameter, instead use the statement's
+	  (now correct) position
+
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond_fields): optimize comparison between field and
+	  ZEROES up to COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+	* pplex.l (ppopen): fixes for auto-detection of reference-format FR #45
+	  handling tabs, dos eol and empty lines correctly
+	* parser.y (check_non_area_a_of): new function used to do the area check
+	  for all terminators and during error recovery
+	* parser.y: check area A for END FUNCTION
+
+2023-02-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_set_to): generate runtime check for SET source
+	  at most one time
+	* cobc.c (process_filename) [_WIN32 __GNUC__]: pass .dll input files
+	  to linker (GCC MinGW extension to drop need of link libraries)
+	* cobc.c (xref_files_and_their_records, xref_labels): minor refactoring
+
+2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initial_values): drop wrong init comment
+	* field.c (copy_into_field): set EXTERNAL name if missing
+	* pplex.l, scanner.l: dropped extra line breaks before area_a token
+	* pplex.l (ppinput): insert "preparse area_a token" in column 1 instead
+	  of column 2 to fix terminal-format support and insert it before
+	  newlines are added to the beginning of the buffer
+    
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
 	  output -fif-cutoff to help when available
 
-2022-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+2023-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* scanner.l, config.def: Add support for EBCDIC symbolic characters in
+	  alphanumeric literals, which is a GCOS-specific extension; add new
+	  configuration option ebcdic-symbolic-characters
+	* scanner.l, pplex.l: detect and issue a warning when EBCDIC
+	  symbolic character strings include extraneous separators
+
+2023-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* scanner.l (read_literal): refactor to use enum cb_literal_type
 	  instead of a char* for the type of literal
 	* pplex.l: allow REPLACE between Gcos CONTROL DIVISION and
 	  the IDENTIFICATION DIVISION
+
+2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def (cb_diagnostics_show_caret), error.c
+	  (diagnostics_show_caret): new -fdiagnostics-show-caret (enabled by
+	  default) to display source context of the error/warning, 2 lines
+	  before and after the location
+	* error.c (cb_error_kind): replace all occurrences of a
+	  error/warning/note string by a symbolic enum
+	* flag.def (cb_diagnostics_show_option), error.c: renamed from
+	  cb_diagnostic_show_option to match the argument name
 
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -81,6 +531,8 @@
 	* parser.y (usage_clause_screen_report), typeck.c (validate_usage): have
 	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
 	  removing the need to check for bad USAGE later
+	* parser.y (display_erase, display_pos_specifier): pass display attributes
+	  to codegen, fixing bug #737
 
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -89,6 +541,7 @@
 
 2023-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
+	FR #45: auto-detection of reference-format
 	* cobc.c (main): initialize cb_config_text_column to 72 to avoid a
 	  race condition in config files.
 	* pplex.l (ppopen): try to autodetect the format of a file after
@@ -110,6 +563,10 @@
 	FR #429: option to specify conversion table via translation table file
 	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
 	* codegen.c: generate code using the external table
+
+2023-01-20  Ron Norman <rjn@inglenet.com>
+
+	* codeoptim.c: fix cob_check_subscript_inline for min subscript value
 
 2023-01-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -690,7 +1147,7 @@
 	FR #360 AREACHECK
 	FR #309 raise warnings/errors when some periods are missing
 	* config.def: add dialect options areacheck and missing-period
-	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a set of
 	  dedicated *_IN_AREA_A tokens to detect missing periods and incorrect
 	  use of Area A
 	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK
@@ -1095,6 +1552,7 @@
 
 2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
 
+	FR #137: relax syntax for partial replace
 	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
 	  statements with partial REPLACING operands specified using
 	  literals
@@ -2208,7 +2666,8 @@
 
 	* codeoptim.def (COB_GET_NUMDISPS), codeoptim.c, codegen.c: new routine
 	  to convert signed DISPLAY into binary value;
-	  use of register attribute for cob_get_numdisp + cob_get_numdisps
+	* codeoptim.def (cob_get_numdisp, cob_get_numdisps): use of register
+	  attribute and skipping of leading zeroes
 
 2020-04-23  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3926,7 +4385,7 @@
 
 2017-10-18  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c (output_internal_function): Fixed problem with braces in
+	* codegen.c (output_internal_function): fixed problem with braces in
 	  variable dump code
 
 2017-10-17  Ron Norman <rjn@inglenet.com>
@@ -6631,11 +7090,11 @@
 	* parser.y, reserved.c, typeck.c: Added parser support for OCCURS DYNAMIC
 	  along with CAPACITY clause as not implemented
 
-2014-09-08  Philipp B�hme <phi.boehme@googlemail.com>
+2014-09-08  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c (process) [_MSC_VER]: bugfix in output filter
 
-2014-09-03  Philipp B�hme <phi.boehme@googlemail.com>
+2014-09-03  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c, cobc.h: added cobc_free() function
 	  (Own freeing functions for debugging purposes.
@@ -6683,11 +7142,11 @@
 	* pplex.l: fixed bug #86 whitespace handling for IDENTIFICATION DIVISION
 	  and DEBUGGING MODE
 
-2014-07-10  Philipp B�hme <phi.boehme@googlemail.com>
+2014-07-10  Philipp B hme <phi.boehme@googlemail.com>
 
 	* typeck.c (cb_emit_sort_init): calculation of table key offset fixed
 
-2014-07-02  Philipp B�hme <phi.boehme@googlemail.com>
+2014-07-02  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c [_MSC_VER]: filter output of cl.exe (instead of redirecting to
 	  NUL), errors are printed in non-verbose mode now; new: (read_buffer_line)
@@ -6726,7 +7185,7 @@
 
 	* parser.y: Added extension "USE AT PROGRAM START/END" as not implemented
 
-2014-05-14  Philipp B�hme <phi.boehme@googlemail.com>
+2014-05-14  Philipp B hme <phi.boehme@googlemail.com>
 
 	* cobc.c: Catch and treat error when no disc space is available for
 	  output files
@@ -6739,7 +7198,7 @@
 
 	* parser.y: Added extension "GOBACK/EXIT PROGRAM RETURNING/GIVING x"
 
-2014-04-29  Philipp B�hme <phi.boehme@googlemail.com>
+2014-04-29  Philipp B hme <phi.boehme@googlemail.com>
 
 	* codeoptim.c: Fixed bug in COB_ADD_PACKED_INT.
 	  Computing COMP-3 failed in MSVC-build versions,

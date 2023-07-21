@@ -1046,10 +1046,8 @@ AT_DATA([prog.cob], [
        01 X             PIC X(6) VALUE "123   ".
        PROCEDURE        DIVISION.
            IF X(1:3) NUMERIC
-              STOP RUN
-           END-IF.
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+              STOP RUN.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -1071,9 +1069,7 @@ AT_DATA([prog.cob], [
          02 X           PIC X OCCURS 1 INDEXED BY I.
        PROCEDURE        DIVISION.
          IF I < (I + 2)
-           DISPLAY "OK" NO ADVANCING
-           END-DISPLAY
-         END-IF.
+           DISPLAY "OK" NO ADVANCING.
          STOP RUN.
 ])
 
@@ -1122,17 +1118,12 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE x"0000" TO X (2:2)
            IF X-NUM NUMERIC
-              DISPLAY "low-value is numeric" UPON SYSERR
-              END-DISPLAY
-           END-IF
+              DISPLAY "low-value is numeric" UPON SYSERR.
            MOVE x"01" TO X (3:1)
            IF X-NUM NUMERIC
-              DISPLAY "SOH is numeric" UPON SYSERR
-              END-DISPLAY
-           END-IF
+              DISPLAY "SOH is numeric" UPON SYSERR.
            MOVE X-NUM TO NUM
            DISPLAY "test over"
-           END-DISPLAY
       *
            GOBACK.
 ])
@@ -1148,12 +1139,9 @@ AT_DATA([prog2.cob], [
        PROCEDURE        DIVISION.
            MOVE x"0A" TO X (2:1)
            IF X-NUM NUMERIC
-              DISPLAY "bad prog"
-              END-DISPLAY
-           END-IF
+              DISPLAY "bad prog".
            MOVE X-NUM TO NUM
            DISPLAY "test over"
-           END-DISPLAY
       *
            GOBACK.
 ])
@@ -1164,7 +1152,7 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:20: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
+[libcob: prog.cob:16: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
 ])
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
@@ -1173,8 +1161,8 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog2], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:15: error: 'X-NUM' (Type: PACKED-DECIMAL) not numeric: '0x000a123f'
-])
+[[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL (unsigned)) not numeric: '0x000a123f'
+]])
 
 AT_CLEANUP
 
@@ -3618,6 +3606,34 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([Alphanum comparison with default COLLATING SEQUENCE])
+AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+      >>IF   EXPECT-ORDER  =  'ASCII'
+           IF "1" NOT < "a"
+      >>ELIF EXPECT-ORDER  =  'EBCDIC'
+           IF "a" NOT < "1"
+      >>END-IF
+              DISPLAY "ERROR" END-DISPLAY
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ascii -DEXPECT-ORDER=ASCII -o ascii prog.cob], [0], [],
+[prog.cob:6: warning: expression '1' GREATER OR EQUAL 'a' is always FALSE
+])
+AT_CHECK([$COBCRUN_DIRECT ./ascii], [0], [], [])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SORT: table with default COLLATING SEQUENCE])
 AT_KEYWORDS([runmisc SORT EBCDIC ASCII default-colseq])
 
@@ -3650,6 +3666,300 @@ AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.
 AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 AT_CHECK([$COMPILE -fdefault-colseq=native -DEXPECT-ORDER=NATIVE -o native prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./native], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([JUSTIFIED and VALUE clauses])
+AT_KEYWORDS([runmisc JUST RIGHT INITIALIZE ibm])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ARR-ARRAY.
+           03  ARR-ENTRY       OCCURS 6 TIMES.
+               05 ARR-FLD1             PIC X(10)
+                   VALUE 'RIGHT' JUSTIFIED RIGHT.
+               05 ARR-FLD2             PIC X(10)
+                   VALUE 'LEFT'.
+               05  ARR-FLD3        OCCURS 6 TIMES.
+                   10 ARR-FLD4             PIC X(10)
+                       VALUE 'RIGHT' JUSTIFIED RIGHT.
+                   10 ARR-FLD5             PIC X(10)
+                       VALUE 'LEFT'.
+
+       01  CNTR                        PIC S9(4)  COMP.
+       01  CNTR2                       PIC S9(4)  COMP.
+
+       77  ELE                         PIC X(10)
+                   VALUE 'RIGHT' JUSTIFIED RIGHT.
+       77  ELE2                        PIC X(10)
+                   VALUE 'R' JUSTIFIED RIGHT.
+       77  ELE3                        PIC X(10)
+                   VALUE 'RRRRRRRRR' JUSTIFIED RIGHT.
+       77  ELE4                        PIC X(10)
+                   VALUE 'RRRRRRRRRR' JUSTIFIED RIGHT.
+       77  ELE5                        PIC X(1003)
+                   VALUE 'RRR' JUSTIFIED RIGHT.
+
+       PROCEDURE DIVISION.
+
+           >>IF JUSTIFY EQUAL 'JUSTIFY'
+               PERFORM 1000-JUSTIFY-IS-RIGHT THRU 1000-EXIT.
+           >>ELSE
+               PERFORM 2000-JUSTIFY-IS-OFF   THRU 2000-EXIT.
+           >>END-IF
+
+           IF ELE4 NOT EQUAL 'RRRRRRRRRR'
+               DISPLAY 'ELE4 NOT INITIALIZED CORRECTLY' ELE4
+           END-IF.
+
+           STOP RUN.
+
+
+       1000-JUSTIFY-IS-RIGHT.
+
+           IF ELE NOT EQUAL '     RIGHT'
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY ' ELE
+           END-IF.
+
+           IF ELE2 NOT EQUAL '         R'
+               DISPLAY 'ELE2 NOT INITIALIZED CORRECTLY ' ELE2
+           END-IF.
+
+           IF ELE3 NOT EQUAL ' RRRRRRRRR'
+               DISPLAY 'ELE3 NOT INITIALIZED CORRECTLY ' ELE3
+           END-IF.
+
+           IF ELE5 (1:1000) NOT EQUAL SPACES
+           OR ELE5 (1001:)  NOT EQUAL "RRR"
+               DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           MOVE ALL 'X'                TO ARR-ARRAY.
+           MOVE ALL 'X'                TO ELE.
+
+           INITIALIZE ELE       WITH FILLER ALL TO VALUE.
+           INITIALIZE ARR-ARRAY WITH FILLER ALL TO VALUE.
+
+           IF ELE NOT EQUAL '     RIGHT'
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL '     RIGHT'
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+       1000-EXIT.  EXIT.
+
+
+       2000-JUSTIFY-IS-OFF.
+
+           IF ELE NOT EQUAL 'RIGHT     '
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY ' ELE
+           END-IF.
+
+           IF ELE2 NOT EQUAL 'R         '
+               DISPLAY 'ELE2 NOT INITIALIZED CORRECTLY ' ELE2
+           END-IF.
+
+           IF ELE3 NOT EQUAL 'RRRRRRRRR '
+               DISPLAY 'ELE3 NOT INITIALIZED CORRECTLY ' ELE3
+           END-IF.
+
+           IF ELE5 (1:3) NOT EQUAL "RRR"
+           OR ELE5 (4:)  NOT EQUAL SPACES
+               DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           MOVE ALL 'X'                TO ARR-ARRAY.
+           MOVE ALL 'X'                TO ELE.
+
+           INITIALIZE ELE       WITH FILLER ALL TO VALUE.
+           INITIALIZE ARR-ARRAY WITH FILLER ALL TO VALUE.
+
+           IF ELE NOT EQUAL 'RIGHT     '
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (2) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (2) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD1 (6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD1 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD2 (6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD2 (6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (2,3) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (2,3) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (2,3) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD4 (6,6) NOT EQUAL 'RIGHT     '
+               DISPLAY 'ARR-FLD4 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+           IF ARR-FLD5 (6,6) NOT EQUAL 'LEFT      '
+               DISPLAY 'ARR-FLD5 (6,6) NOT INITIALIZED CORRECTLY'
+           END-IF.
+
+       2000-EXIT.  EXIT.
+
+
+       END PROGRAM PROG.
+
+])
+
+AT_CHECK([$COMPILE -std=ibm -DJUSTIFY=JUSTIFY -o prog  prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE -std=cobol2014 -DJUSTIFY=OFF -o prog  prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SEARCH ALL: table with default COLLATING SEQUENCE])
+AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 Z  PIC X(10)  VALUE "d4b2e1a3c5".
+       01 G             REDEFINES Z.
+         02 TBL         OCCURS 10 ASCENDING KEY K INDEXED BY I.
+           03 K         PIC X.
+       01 KK            PIC X.
+       PROCEDURE        DIVISION.
+           SORT TBL ASCENDING KEY K.
+           SET KK TO "3"
+           SEARCH ALL TBL
+              AT END
+                 DISPLAY KK " NOT FOUND"
+              WHEN K (I) = KK
+                 CONTINUE
+           END-SEARCH
+      >>IF   EXPECT-ORDER  =  'ASCII'
+           IF I NOT = 3
+      >>ELIF EXPECT-ORDER  =  'EBCDIC'
+           IF I NOT = 8
+      >>END-IF
+              DISPLAY "ERROR" END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ascii -DEXPECT-ORDER=ASCII -o ascii prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ascii], [0], [], [])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 
 AT_CLEANUP
 
@@ -5270,9 +5580,11 @@ AT_DATA([prog.cob], [
        MAIN.
       *    Test with DISPLAY on error
            PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
            SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
            PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
            GOBACK.
 
        DO-CHECK.
@@ -5682,6 +5994,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+#AT_CHECK([$COMPILE -fno-fast-math prog.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -6165,6 +6483,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+#AT_CHECK([$COMPILE -fno-fast-math prog.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -6702,7 +7026,7 @@ AT_CLEANUP
 
 # Simon added the test with r4592 as "COMP-3 Index", but
 # the revision and the ones before had no relation to this at all
-# and as the tests seem to be done in other places... disabld 
+# and as the tests seem to be done in other places... disabled
 # the test
 #AT_SETUP([PACKED-DECIMAL in PERFORM VARYING])
 #AT_KEYWORDS([numeric COMP-3])
@@ -11030,8 +11354,11 @@ AT_DATA([caller.cob], [
        PROCEDURE DIVISION.
        MAIN-LINE.
 
+           PERFORM DO-CHECK
+       >> IF CHECK-PERF IS DEFINED
       *>   minimal side-test for performance comparisons
            PERFORM DO-CHECK 10000 TIMES
+       >> END-IF
            DISPLAY 'DONE' UPON SYSERR WITH NO ADVANCING
            GOBACK.
 
@@ -11155,7 +11482,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Numeric MOVE with/without -fbinary-truncate])
-AT_KEYWORDS([runmisc size])
+AT_KEYWORDS([runmisc size binary-truncate])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
@@ -11163,7 +11490,7 @@ AT_DATA([prog.cob], [
 
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
-       01  x PIC 9(4) COMP.
+       01  x PIC 9(4)  COMP.
 
        PROCEDURE       DIVISION.
            MOVE 30000 TO x
@@ -11180,6 +11507,9 @@ AT_DATA([prog.cob], [
            .
        check-x-val     SECTION.
            EVALUATE x
+               WHEN 30000
+                   DISPLAY "x IS 30000"
+
                WHEN >= 10000
                    DISPLAY "x >= 10000"
 
@@ -11206,9 +11536,16 @@ x IS ZERO
 
 AT_CHECK([$COMPILE -fno-binary-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[x >= 10000
-x >= 10000
-x >= 10000
+[x IS 30000
+x IS 30000
+x IS 30000
+])
+
+AT_CHECK([$COMPILE -fno-binary-truncate -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[x IS 30000
+x IS 30000
+x IS 30000
 ])
 
 AT_CLEANUP
@@ -11329,6 +11666,43 @@ S U B  GOT B
 [libcob: prog.cob:12: warning: ' SUB' literal includes leading spaces which are omitted
 libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are omitted
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([PROGRAM-ID / CALL with hyphen and underscore])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           CALL "_SUB-PROG_NOW" USING 'X'.
+           STOP RUN.
+])
+
+AT_DATA([sub.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "_SUB-PROG_NOW".
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x  PIC X.
+
+       PROCEDURE DIVISION USING x.
+       MAIN.
+            DISPLAY "SUB GOT " X.
+            GOBACK.
+])
+
+AT_CHECK([$COMPILE_MODULE sub.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([COB_PRE_LOAD=sub $COBCRUN_DIRECT ./prog], [0],
+[SUB GOT X
+], [])
 
 AT_CLEANUP
 
@@ -13646,13 +14020,13 @@ AT_DATA([prog.cob], [
              = MYTAB(VAR2:VAR)
               DISPLAY 'WRONG RESULT REFMOD'.
 
-            INITIALIZE mytab
+           INITIALIZE mytab
 
-            GOBACK.
+           GOBACK.
 ])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-# note: we mostly are interessted in a good codegen here...
+# note: we mostly are interested in a good codegen here...
 
 
 AT_DATA([prog2.cob], [
@@ -13679,7 +14053,7 @@ AT_DATA([prog2.cob], [
              = T15-PRGM(VAR2)
               DISPLAY 'WRONG RESULT OCCURS'.
 
-            GOBACK.
+           GOBACK.
 ])
 AT_CHECK([$COBC -x prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
@@ -13713,13 +14087,189 @@ AT_DATA([prog3.cob], [
              = MYTAB(VAR:VAR )
               DISPLAY 'WRONG RESULT REFMOD'.
 
-            GOBACK.
+           GOBACK.
 ])
 AT_CHECK([$COBC -x prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([$COBC -x --debug -o prog3b prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3b], [1], [],
 [libcob: prog3.cob:20: error: length of 'mytab' out of bounds: 99, maximum: 52
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([runtime check: write to internal storage (1)])
+AT_KEYWORDS([runmisc CALL bounds])
+
+# note: this check is likely unportable and therefore will likely be adjusted/skipped,
+#       mainly because the memory layout of consecutive variables is not guaranteed;
+#       it is expected to raise a crash if C bound checking is enabled
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    caller.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 var                   PIC  X.
+
+       01 varg                  PIC  X GLOBAL.
+       01 vare                  PIC  X EXTERNAL.
+       01 varb                  PIC  X BASED.
+       LINKAGE SECTION.
+       01 varl                  PIC  X.
+
+       PROCEDURE DIVISION.
+      *
+           CALL "callee" USING var
+      *    without the check this second call would SIGSEGV
+           CALL "callee" USING var
+
+      *    the following are mostly in to co-test the codegen
+           CALL "callee" USING varg
+           CALL "callee" USING vare
+           CALL "callee" USING varb
+           CALL "callee" USING varl
+
+           GOBACK.
+])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    callee.
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+
+       77 var                   PIC  X.
+       01 lrec.
+          03  lvar                  PIC  X(64).
+          03  lvar2                 PIC  X(64).
+
+       PROCEDURE DIVISION USING var.
+      *
+           SET ADDRESS OF lrec TO ADDRESS OF var
+           SET ADDRESS OF lrec DOWN BY 64
+           MOVE SPACES TO lrec
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:18: error: memory violation detected after CALL
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([runtime check: write to internal storage (2)])
+AT_KEYWORDS([runmisc CALL bounds])
+
+# PROG A (WS 16 bytes) has its WS overwritten and calls PROG B
+# because of the write outside of WS the internal storage is broken
+# and the call pointer contains an invalid address
+# note: this check is possibly unportable and therefore will likely be adjusted/skipped
+#       it is expected to raise a crash if C bound checking is enabled
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 DUMMY-STORAGE             PIC  X(128).
+
+       PROCEDURE DIVISION.
+      *    using the var so cobc cannot easily optimize that out
+           IF DUMMY-STORAGE (1:1) <> SPACE  INITIALIZE DUMMY-STORAGE.
+
+      *    We use a simple wrapper to make it _less_ likely that the
+      *    following "real test" SIGSEGVs during MOVE
+           CALL STATIC "progt".
+
+      *    we don't expect to ever get here - but this creates more
+      *    memory space to decrease the likelyness of a SIGSEGV more
+           CALL STATIC "dummy".
+
+           GOBACK.
+       END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    progt.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       77 PNT USAGE POINTER EXTERNAL.
+
+       01 REC.
+          03  VAR                   PIC  X.
+          03  VAR2                  PIC  X.
+
+       LINKAGE SECTION.
+       01 LREC.
+          03  LVAR                  PIC  X(64).
+          03  LVAR2                 PIC  X(64).
+
+       PROCEDURE DIVISION.
+      *    using a (not working) call prevents the C compiler
+      *    to know that we (do not) change the pointer variable
+      *    and therefore disallows it to check
+      *    "that points to VAR2, you only have 2 bytes" (done with gcc -O)
+           SET PNT TO ADDRESS OF VAR2.
+           CALL "notthere" USING PNT ON EXCEPTION CONTINUE.
+           SET ADDRESS OF LREC TO PNT.
+           MOVE SPACES TO LREC.
+
+           CALL "broken".
+
+           GOBACK.
+       END PROGRAM progt.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    dummy.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 DUMMY-STORAGE             PIC  X(128).
+
+       PROCEDURE DIVISION.
+      *    using the var so cobc cannot easily optimize that out
+           IF DUMMY-STORAGE (1:1) <> SPACE  INITIALIZE DUMMY-STORAGE.
+
+           GOBACK.
+       END PROGRAM dummy.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# skipping the (nonportable) test - hardened GCC SIGSEGVs on the bad MOVE,
+# clang use a different memory layout so we never actually break
+# the call-pointers
+AT_SKIP_IF([true])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:52: error: memory violation detected after INIT CALL
 ])
 
 AT_CLEANUP
@@ -13846,7 +14396,6 @@ AT_DATA([prog.cob], [
        01 variable usage signed-int value 0.
           88 a-one value 1.
           88 a-two value 2.
-       LINKAGE SECTION.
        PROCEDURE DIVISION.
       *> bug #702, "pow"-call in generated program
            display n(n**0+ 1:) with no advancing.
@@ -13864,5 +14413,146 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [9-9succeeded
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([compare numeric DISPLAY SPACE with ZERO])
+AT_KEYWORDS([runmisc expression])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TST-VARS.
+           03 TST-NUMBER         PIC  9(6).
+           03 TST-NUMBER-SIGNED  PIC S9(6).
+           03 TST-DECIMAL        PIC  9(2)V9(4).
+           03 TST-DECIMAL-SIGNED PIC S9(2)V9(4).
+       77     ZERO-DECIMAL       PIC  9(2)V9(4) VALUE ZERO.
+       77     ZERO-NUMBER        PIC  9(6)      VALUE ZERO.
+
+       PROCEDURE DIVISION.
+           MOVE SPACES TO TST-VARS
+
+           IF TST-NUMBER > 0
+              DISPLAY "TST-NUMBER IS > 0".
+           IF TST-NUMBER NOT = 0
+              DISPLAY "TST-NUMBER IS NOT 0".
+           IF TST-NUMBER < 0
+              DISPLAY "TST-NUMBER IS < 0".
+
+           IF TST-NUMBER-SIGNED > 0
+              DISPLAY "TST-NUMBER-SIGNED IS > 0".
+           IF TST-NUMBER-SIGNED NOT = 0
+              DISPLAY "TST-NUMBER-SIGNED IS NOT 0".
+           IF TST-NUMBER-SIGNED < 0
+              DISPLAY "TST-NUMBER-SIGNED IS < 0".
+
+           IF TST-DECIMAL > 0
+              DISPLAY "TST-DECIMAL IS > 0".
+           IF TST-DECIMAL NOT = 0
+              DISPLAY "TST-DECIMAL IS NOT 0".
+           IF TST-DECIMAL < 0
+              DISPLAY "TST-DECIMAL IS < 0".
+
+           IF TST-DECIMAL-SIGNED > 0
+              DISPLAY "TST-DECIMAL-SIGNED IS > 0".
+           IF TST-DECIMAL-SIGNED NOT = 0
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT 0".
+           IF TST-DECIMAL-SIGNED < 0
+              DISPLAY "TST-DECIMAL-SIGNED IS < 0".
+
+           IF TST-NUMBER > ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS > ZERO-NUMBER".
+           IF TST-NUMBER NOT = ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS NOT ZERO-NUMBER".
+           IF TST-NUMBER < ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS < ZERO-NUMBER".
+
+           IF TST-NUMBER-SIGNED > ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS > ZERO-NUMBER".
+           IF TST-NUMBER-SIGNED NOT = ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS NOT ZERO-NUMBER".
+           IF TST-NUMBER-SIGNED < ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS < ZERO-NUMBER".
+
+           IF TST-DECIMAL > ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS > ZERO-NUMBER".
+           IF TST-DECIMAL NOT = ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS NOT ZERO-NUMBER".
+           IF TST-DECIMAL < ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS < ZERO-NUMBER".
+
+           IF TST-DECIMAL-SIGNED > ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS > ZERO-NUMBER".
+           IF TST-DECIMAL-SIGNED NOT = ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT ZERO-NUMBER".
+           IF TST-DECIMAL-SIGNED < ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS < ZERO-NUMBER".
+
+           IF TST-NUMBER > ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS > ZERO-DECIMAL".
+           IF TST-NUMBER NOT = ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS NOT ZERO-DECIMAL".
+           IF TST-NUMBER < ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS < ZERO-DECIMAL".
+
+           IF TST-NUMBER-SIGNED > ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS > ZERO-DECIMAL".
+           IF TST-NUMBER-SIGNED NOT = ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS NOT ZERO-DECIMAL".
+           IF TST-NUMBER-SIGNED < ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS < ZERO-DECIMAL".
+
+           IF TST-DECIMAL > ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS > ZERO-DECIMAL".
+           IF TST-DECIMAL NOT = ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS NOT ZERO-DECIMAL".
+           IF TST-DECIMAL < ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS < ZERO-DECIMAL".
+
+           IF TST-DECIMAL-SIGNED > ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS > ZERO-DECIMAL".
+           IF TST-DECIMAL-SIGNED NOT = ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT ZERO-DECIMAL".
+           IF TST-DECIMAL-SIGNED < ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS < ZERO-DECIMAL".
+
+           GOBACK.
+])
+
+# dropping "fast compare" does an internal numeric compare, where invalid data
+# in USAGE DISPLAY is converted (onlysecond half-byte used) and leading SPACE
+# is skipped in general
+AT_CHECK([$COMPILE -Wno-constant-expression -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# with "fast compare" enabled, the same PIC+USAGE leads to memcmp, therefore the
+# result differs with invalid data; note: the exact "difference" is unportable
+AT_CHECK([$COMPILE -Wno-constant-expression prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[TST-NUMBER IS NOT ZERO-NUMBER
+TST-NUMBER IS < ZERO-NUMBER
+TST-DECIMAL IS NOT ZERO-DECIMAL
+TST-DECIMAL IS < ZERO-DECIMAL
+], [])
+
+# result with MF would be:
+# TST-NUMBER IS NOT 0
+# TST-NUMBER IS < 0
+# TST-NUMBER-SIGNED IS NOT 0
+# TST-NUMBER-SIGNED IS < 0
+# TST-NUMBER IS NOT ZERO-NUMBER
+# TST-NUMBER IS < ZERO-NUMBER
+# TST-NUMBER-SIGNED IS NOT ZERO-NUMBER
+# TST-NUMBER-SIGNED IS < ZERO-NUMBER
+# TST-DECIMAL IS NOT ZERO-DECIMAL
+# TST-DECIMAL IS < ZERO-DECIMAL
+# TST-DECIMAL-SIGNED IS NOT ZERO-DECIMAL
+# TST-DECIMAL-SIGNED IS < ZERO-DECIMAL
+# CHECKME: Do we want to mimic that with -std=mf?
+
 
 AT_CLEANUP

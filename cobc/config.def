@@ -97,6 +97,9 @@ CB_CONFIG_ANY (enum cb_screen_clauses_rules, cb_screen_section_clauses, "screen-
 CB_CONFIG_ANY (enum cb_dpc_in_data_options, cb_dpc_in_data, "dpc-in-data",
 	_("whether DECIMAL-POINT IS COMMA has effect in XML/JSON GENERATE, may be one of: none, xml, json, all"))
 
+CB_CONFIG_ANY (enum cb_sub_check, cb_subscript_check, "subscript-check",
+	_("checking for subscript (only done with EC-BOUND-SUBSCRIPT active), may be one of: full, max, record"))
+
 /* Normal boolean flags */
 
 CB_CONFIG_BOOLEAN (cb_filename_mapping, "filename-mapping",
@@ -113,6 +116,9 @@ CB_CONFIG_BOOLEAN (cb_complex_odo, "complex-odo",
 
 CB_CONFIG_BOOLEAN (cb_odoslide, "odoslide",
 	_("adjust items following OCCURS DEPENDING (implies complex-odo)"))
+
+CB_CONFIG_BOOLEAN (cb_initial_justify, "init-justify",
+	_("applies JUSTIFY with VALUE clause"))
 
 CB_CONFIG_BOOLEAN (cb_indirect_redefines, "indirect-redefines",
 	_("allow REDEFINES to other than last equal level number"))
@@ -324,6 +330,9 @@ CB_CONFIG_SUPPORT (cb_hp_octal_literals, "hp-octal-literals",
 
 CB_CONFIG_SUPPORT (cb_acu_literals, "acu-literals",
 	_("ACUCOBOL-GT literals (#B #O #H #X)"))
+
+CB_CONFIG_BOOLEAN (cb_gcos_ebcdic_literals, "ebcdic-symbolic-characters",
+	_("EBCDIC symbolic characters in literals (\" \"135,151,151\"bar\"195, 194\"Z\" for \" foobarBAZ\")"))
 
 CB_CONFIG_SUPPORT (cb_word_continuation, "word-continuation",
 	_("continuation of COBOL words"))

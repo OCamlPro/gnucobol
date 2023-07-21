@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -800,21 +800,24 @@ enum cob_exception_id {
 
 #define COB_FILE_MODE		0666
 
-/* Organization, FIXME: change to enum */
+/* file ORGANIZATION IS */
+enum cob_file_org {
+	COB_ORG_SEQUENTIAL = 0,
+	COB_ORG_LINE_SEQUENTIAL = 1,
+	COB_ORG_RELATIVE = 2,
+	COB_ORG_INDEXED = 3,
+	COB_ORG_SORT = 4,
+	COB_ORG_MAX = 5,
+	COB_ORG_MESSAGE = 6 /* only for syntax checks */
+};
 
-#define COB_ORG_SEQUENTIAL	0
-#define COB_ORG_LINE_SEQUENTIAL	1
-#define COB_ORG_RELATIVE	2
-#define COB_ORG_INDEXED		3
-#define COB_ORG_SORT		4
-#define COB_ORG_MAX		5
-#define COB_ORG_MESSAGE	6 /* only for syntax checks */
-
-/* Access mode, FIXME: change to enum */
-
-#define COB_ACCESS_SEQUENTIAL	1
-#define COB_ACCESS_DYNAMIC	2
-#define COB_ACCESS_RANDOM	3
+/* file ACCESS MODE IS */
+enum cob_file_access_mode {
+	COB_ACCESS_UNDEFINED = 0,
+	COB_ACCESS_SEQUENTIAL = 1,
+	COB_ACCESS_DYNAMIC = 2,
+	COB_ACCESS_RANDOM = 3
+};
 
 /* SELECT features */
 
@@ -956,20 +959,24 @@ enum cob_open_mode {
 #define COB_STORE_TOWARD_LESSER		(1 << 10)
 #define COB_STORE_TRUNCATION		(1 << 11)
 
+#define COB_STORE_NO_SIZE_ERROR		(1 << 15)
+
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
-	 COB_STORE_TRUNC_ON_OVERFLOW)
+	 COB_STORE_TRUNC_ON_OVERFLOW | COB_STORE_NO_SIZE_ERROR)
 
 /* Screen attribute defines */
 
-#define COB_SCREEN_BLACK		0
-#define COB_SCREEN_BLUE			1
-#define COB_SCREEN_GREEN		2
-#define COB_SCREEN_CYAN			3
-#define COB_SCREEN_RED			4
-#define COB_SCREEN_MAGENTA		5
-#define COB_SCREEN_YELLOW		6
-#define COB_SCREEN_WHITE		7
+enum cob_colors {
+	COB_SCREEN_BLACK	= 0,
+	COB_SCREEN_BLUE		= 1,
+	COB_SCREEN_GREEN	= 2,
+	COB_SCREEN_CYAN		= 3,
+	COB_SCREEN_RED		= 4,
+	COB_SCREEN_MAGENTA	= 5,
+	COB_SCREEN_YELLOW	= 6,
+	COB_SCREEN_WHITE	= 7
+};
 
 typedef cob_s64_t cob_flags_t;
 
@@ -1003,11 +1010,13 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_EMULATE_NL		((cob_flags_t)1 << 27)
 #define COB_SCREEN_UPPER		((cob_flags_t)1 << 28)
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
-#define COB_SCREEN_GRID			((cob_flags_t)1 << 30)
-/*#define COB_SCREEN_reserved		((cob_flags_t)1 << 31) /+ reserved for next flag used in screenio */
-#define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
-#define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
-#define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_CONV			((cob_flags_t)1 << 30)
+#define COB_SCREEN_GRAPHICS		((cob_flags_t)1 << 31)
+#define COB_SCREEN_RIGHTLINE	((cob_flags_t)1 << 32)
+#define COB_SCREEN_TAB			((cob_flags_t)1 << 33) /* used for syntax checking */
+#define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 35) /* used for syntax checking */
+#define COB_SCREEN_GRID			((cob_flags_t)1 << 36) /* used for syntax checking */
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1305,7 +1314,9 @@ struct cob_func_loc {
 	int			save_num_params;
 };
 
-/* File connector */
+
+/** File connector **/
+
 
 /* Key structure */
 
@@ -1321,6 +1332,9 @@ typedef struct __cob_file_key {
 	unsigned int	offset;			/* Offset of field */
 	int		count_components;		/* 0..1::simple-key  2..n::split-key   */
 	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
+#if 0	/* TODO (for file keys, not for SORT/MERGE) */
+	const unsigned char *collating_sequence;	/* COLLATING */
+#endif
 } cob_file_key;
 
 
@@ -1350,12 +1364,12 @@ typedef struct __cob_file {
 	size_t			nkeys;			/* Number of keys */
 	int			fd;			/* File descriptor */
 
-	unsigned char		organization;		/* ORGANIZATION */
-	unsigned char		access_mode;		/* ACCESS MODE */
+	unsigned char		organization;		/* ORGANIZATION, read as cob_file_org */
+	unsigned char		access_mode;		/* ACCESS MODE, read as cob_file_access_mode  */
 	unsigned char		lock_mode;		/* LOCK MODE */
-	unsigned char		open_mode;		/* OPEN MODE: GC4: cob_open_mode */
+	unsigned char		open_mode;		/* OPEN MODE - GC4: cob_open_mode */
 	unsigned char		flag_optional;		/* OPTIONAL */
-	unsigned char		last_open_mode;		/* Mode given by OPEN: GC4: cob_open_mode */
+	unsigned char		last_open_mode;		/* Mode given by OPEN - GC4: cob_open_mode */
 	unsigned char		flag_operation;		/* File type specific */
 	unsigned char		flag_nonexistent;	/* Nonexistent file */
 
@@ -1822,7 +1836,7 @@ struct cob_time
 
 /* note: these are internal (cobc/libcob -> libcob) only functions */
 COB_EXPIMP struct cob_time cob_get_current_date_and_time	(void);	/* returning datetime without nanos */
-COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, const char *);
+COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, unsigned const char *);
 
 /* Registration of external handlers */
 COB_EXPIMP void	cob_reg_sighnd	(void (*sighnd) (int));
@@ -1872,7 +1886,9 @@ COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
 					 const int, const int);
 COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 					 const int, const char *);
-COB_EXPIMP void	cob_check_beyond_exit (const unsigned char *);
+COB_EXPIMP void	cob_check_beyond_exit (const char *);
+COB_EXPIMP void	cob_check_fence 	(const char *, const char *,
+					 const enum cob_statement, const char *);
 
 
 /* Comparison functions */
@@ -1908,6 +1924,9 @@ COB_EXPIMP void cob_unstring_finish	(void);
 
 COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
 #define COB_SPACES_ALPHABETIC_BYTE_LENGTH 1024
+
+COB_EXPIMP const char *COB_ZEROES_ALPHABETIC;	/* PIC X/A/U ZEROES */
+#define COB_ZEROES_ALPHABETIC_BYTE_LENGTH 256
 
 /*******************************/
 /*   Functions in move.c       */
@@ -1998,6 +2017,8 @@ COB_EXPIMP int	cob_cmp_numdisp		(const unsigned char *,
 COB_EXPIMP int	cob_cmp_float		(cob_field *, cob_field *);
 COB_EXPIMP void	cob_set_packed_zero	(cob_field *);
 COB_EXPIMP void	cob_set_packed_int	(cob_field *, const int);
+
+COB_EXPIMP void	cob_move_bcd		(cob_field *, cob_field *);
 
 COB_EXPIMP void	cob_decimal_alloc	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_push	(const cob_u32_t, ...);
@@ -2096,6 +2117,8 @@ COB_EXPIMP void		cob_screen_display	(cob_screen *, cob_field *,
 COB_EXPIMP void		cob_screen_accept	(cob_screen *, cob_field *,
 					 cob_field *, cob_field *,
 					 const int);
+COB_EXPIMP void		cob_accept_field	(cob_field *, const cob_flags_t, const char *, ...);
+COB_EXPIMP void		cob_display_field	(cob_field *, const cob_flags_t, const char *, ...);
 COB_EXPIMP void		cob_field_display	(cob_field *, cob_field *, cob_field *,
 					 cob_field *, cob_field *, cob_field *,
 					 cob_field *, const cob_flags_t);
@@ -2111,6 +2134,7 @@ COB_EXPIMP void		cob_accept_escape_key	(cob_field *);
 COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
 COB_EXPIMP int		cob_get_text 		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);
@@ -2435,12 +2459,14 @@ typedef struct __fcd2 {
 #define OP_FLUSH			0x000C	
 #define OP_UNLOCK_REC			0x000F	
 
-#define OP_CLOSE			0xFA80		/* OP CODES */
-#define OP_CLOSE_LOCK			0xFA81
-#define OP_CLOSE_NO_REWIND		0xFA82
-#define OP_CLOSE_REEL			0xFA84
-#define OP_CLOSE_REMOVE			0xFA85
-#define OP_CLOSE_NOREWIND		0xFA86
+/* standard OP CODES */
+
+#define OP_CLOSE			0xFA80	/* CLOSE */
+#define OP_CLOSE_LOCK			0xFA81	/* CLOSE WITH LOCK */
+#define OP_CLOSE_NO_REWIND		0xFA82	/* CLOSE WITH NO REWIND */
+#define OP_CLOSE_REEL			0xFA84	/* CLOSE REEL/UNIT */
+#define OP_CLOSE_REMOVE			0xFA85	/* CLOSE REEL/UNIT FOR REMOVAL */
+#define OP_CLOSE_NOREWIND		0xFA86	/* CLOSE REEL/UNIT WITH NO REWIND */
 
 #define OP_OPEN_INPUT			0xFA00
 #define OP_OPEN_OUTPUT			0xFA01
@@ -2599,11 +2625,15 @@ COB_EXPIMP int cob_sys_file_delete	(unsigned char *, unsigned char *);
 COB_EXPIMP void	cob_file_sort_init	(cob_file *, const unsigned int,
 					 const unsigned char *,
 					 void *, cob_field *);
+COB_EXPIMP void	cob_file_sort_options (cob_file *, const char *, ...);
 COB_EXPIMP void	cob_file_sort_init_key	(cob_file *, cob_field *,
 					 const int, const unsigned int);
 COB_EXPIMP void	cob_file_sort_close	(cob_file *);
 COB_EXPIMP void	cob_file_sort_using	(cob_file *, cob_file *);
+COB_EXPIMP void	cob_file_sort_using_extfh	(cob_file *, cob_file *,
+					 int (*callfh)(unsigned char *opcode, FCD3 *fcd));
 COB_EXPIMP void	cob_file_sort_giving	(cob_file *, const size_t, ...);
+COB_EXPIMP void	cob_file_sort_giving_extfh	(cob_file *, const size_t, ...);
 COB_EXPIMP void	cob_file_release	(cob_file *);
 COB_EXPIMP void	cob_file_return		(cob_file *);
 

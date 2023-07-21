@@ -144,7 +144,6 @@ static unsigned int		plex_nest_depth = 0;
 static int			quotation_mark = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
-static int			requires_new_line = 0;
 static enum cb_format		source_format = CB_FORMAT_AUTO;
 static int	indicator_column = 7;
 static int	text_column = 72;	   /* end of area B (in single-byte
@@ -157,30 +156,20 @@ static int	emit_area_a_tokens = 0;
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
-static struct cb_replace_list	*current_replace_list = NULL;
-static struct cb_replace_list	*save_current_replace = NULL;
-static struct cb_replace_list	*base_replace_list = NULL;
-
-static struct cb_text_list	*text_queue = NULL;
-static size_t			check_partial_match = 0;
-
 static struct copy_info		*copy_stack = NULL;
 
 static struct plex_stack	plex_cond_stack[PLEX_COND_DEPTH];
 
 /* Function declarations */
 static int	ppinput			(char *, const size_t);
-static void	ppecho			(const char *, const cob_u32_t,
-					 const int);
-static void	ppecho_direct			(const char *);
-static int	ppecho_replace		(struct cb_replace_list *);
+static void	ppecho                  (const char *text, const char *token );
+
 static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
 static void	check_listing		(const char *, const unsigned int);
 static void	skip_to_eol		(void);
 static void	count_newlines		(const char *);
 static void	display_finish		(void);
-static void	set_print_replace_list	(struct cb_replace_list *);
 static void	get_new_listing_file	(void);
 
 static struct cb_text_list	*pp_text_list_add (struct cb_text_list *,
@@ -190,7 +179,9 @@ static struct cb_text_list	*pp_text_list_add (struct cb_text_list *,
 
 WORD		[_0-9A-Z\x80-\xFF-]+
 NUMRIC_LITERAL	[+-]?[0-9,.]*[0-9]
-ALNUM_LITERAL	"\""[^""\n]*"\""|"\'"[^''\n]*"\'"
+ALNUM_LITERAL_Q	"\""([^""\n]|("\""[0-9][0-9, ]*"\""))*"\""
+ALNUM_LITERAL_A	"\'"([^''\n]|("\'"[0-9][0-9, ]+"\'"))*"\'"
+ALNUM_LITERAL	{ALNUM_LITERAL_Q}|{ALNUM_LITERAL_A}
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
@@ -200,7 +191,9 @@ MAYBE_AREA_A	[ ]?#?
 %x CALL_DIRECTIVE_STATE
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
+%x REPLACING_STATE
 %x PSEUDO_STATE
+%x REPLACE_STATE
 %x CONTROL_DIVISION_STATE
 %x SUBSTITUTION_SECTION_STATE
 %x SOURCE_DIRECTIVE_STATE
@@ -224,7 +217,7 @@ MAYBE_AREA_A	[ ]?#?
 	/* 2002+: inline comment */
 	#if	0	/* RXWRXW - Directive state */
 	if (YY_START != DIRECTIVE_STATE && YY_START != SET_DIRECTIVE_STATE) {
-		ppecho (" ", 0, 1);
+		ppecho (" ", NULL);
 	}
 	#endif
 }
@@ -484,7 +477,7 @@ MAYBE_AREA_A	[ ]?#?
 }
 
 "REPLACE"/[ ,;\n]		{
-	yy_push_state (COPY_STATE);
+	yy_push_state (REPLACE_STATE);
 	return REPLACE;
 }
 
@@ -505,7 +498,7 @@ MAYBE_AREA_A	[ ]?#?
 	   needed to properly handle the first line in each buffer, that for
 	   some reason always starts with a space.
 	*/
-	fprintf (ppout, "\n#area_a\n");
+	fprintf (ppout, "#area_a\n");
 }
 
 "CONTROL"[ ,;\n]+"DIVISION" {
@@ -514,7 +507,7 @@ MAYBE_AREA_A	[ ]?#?
 	   DEFAULT SECTION where compile-time defaults are specified. */
 	/* cf `ppparse.y`, grammar entry `program_with_control_division`, along
 	   with `parser.y`, entry `_control_division`. */
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 	yy_push_state (CONTROL_DIVISION_STATE);
 	return CONTROL_DIVISION;
 }
@@ -526,7 +519,7 @@ MAYBE_AREA_A	[ ]?#?
   }
   \. 			{
 	  /* Pass dots to the parser to handle DEFAULT SECTION. */
-	  ppecho (yytext, 0, (int)yyleng);
+	  ppecho (yytext, NULL);
 	  return DOT;
   }
 }
@@ -534,7 +527,7 @@ MAYBE_AREA_A	[ ]?#?
 <SUBSTITUTION_SECTION_STATE,
 CONTROL_DIVISION_STATE>{
   "REPLACE"	       {
-	  yy_push_state (COPY_STATE);
+	  yy_push_state (REPLACE_STATE);
 	  return REPLACE;
   }
 }
@@ -552,7 +545,7 @@ SUBSTITUTION_SECTION_STATE>{
 	  while (YY_START == CONTROL_DIVISION_STATE ||
 		 YY_START == SUBSTITUTION_SECTION_STATE)
 		  yy_pop_state ();
-	  ppecho (yytext, 0, (int)yyleng);
+	  ppecho (yytext, NULL);
   }
   [,;]?\n		{
 	  ECHO;
@@ -572,25 +565,25 @@ SUBSTITUTION_SECTION_STATE>
 		yy_pop_state ();
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 "PROGRAM-ID"/[ .,;\n]	{
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 "DIVISION"/[ .,;\n]	{
 	/* Disallow comment sentences/paragraphs */
 	comment_allowed = 0;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 "SECTION"/[ .,;\n]	{
 	/* Disallow comment sentences/paragraphs */
 	comment_allowed = 0;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 ^{MAYBE_AREA_A}[ ]*"EJECT"([ ]*\.)? |
@@ -639,43 +632,43 @@ SUBSTITUTION_SECTION_STATE>
 	/* Pick up early - Also activates debugging lines */
 	cb_verify (cb_debugging_mode, "DEBUGGING MODE");
 	cb_flag_debugging_line = 1;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 [,;]?\n		{
-	ppecho ("\n", 0, 1);
+	ppecho ("\n", NULL);
 	cb_source_line++;
 }
 
 [;]?[ ]+	{
-	ppecho (" ", 1U, 1);
+	ppecho (" ", yytext);
 }
 
 [,]?[ ]+	{
 	if (inside_bracket) {
-		ppecho (", ", 0, 2);
+		ppecho (", ", NULL);
 	} else {
-		ppecho (" ", 1U, 1);
+		ppecho (" ", yytext);
 	}
 }
 
 "("		{
-	inside_bracket++;
-	ppecho ("(", 0, 1);
+        inside_bracket++;
+	ppecho (yytext, NULL);
 }
 
 ")"		{
 	if (inside_bracket) {
 		inside_bracket--;
 	}
-	ppecho (")", 0, 1);
+	ppecho (yytext, NULL);
 }
 
 {WORD} |
 {NUMRIC_LITERAL} |
 {ALNUM_LITERAL} |
 .		{
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 <CALL_DIRECTIVE_STATE,
@@ -1008,27 +1001,66 @@ ENDIF_DIRECTIVE_STATE>{
 	return TEXT_NAME;
   }
   \. 			{
+	/* note: if we get into the REPLACING state, then
+	   that one handles the dot and pops this state */
 	yy_pop_state ();
 	return DOT;
   }
-  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
-  "("			{ return '('; }
-  ")"			{ return ')'; }
-  "BY"			{ return BY; }
+  /* for COPY IN/OF lib */
   "IN"			{ return IN; }
   "OF"			{ return OF; }
-  "OFF"			{ return OFF; }
+
   "SUPPRESS"		{ return SUPPRESS; }
   "PRINTING"		{ return PRINTING; }
-  "REPLACING"		{ return REPLACING; }
-  "LEADING"		{ return LEADING; }
-  "TRAILING"		{ return TRAILING; }
+  "REPLACING"		{ yy_push_state (REPLACING_STATE); return REPLACING; }
   "ALSO"		{ return ALSO; }
   "LAST"		{ return LAST; }
+
+  /* for error handling only, only used in REPLACING state */
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ return EQEQ; }
+  "BY"			{ return BY; }
+
   {WORD} |
   {NUMRIC_LITERAL} |
   {ALNUM_LITERAL} |
   .				{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+  }
+}
+
+<REPLACING_STATE>{
+  [,;]?\n		{
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  "BY"			{ return BY; }
+  \. 			{
+	  yy_pop_state ();
+	  yy_pop_state ();
+	  return DOT;
+  }
+  /* for qualification and subscripting */
+  "IN"			{ return IN; }
+  "OF"			{ return OF; }
+  "("			{ return '('; }
+  ")"			{ return ')'; }
+
+  /* for error handling only, only used in COPY state */
+  "REPLACING"		{ return REPLACING; }
+
+  {WORD} |
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL} |
+  .			{
 	pplval.s = cobc_plex_strdup (yytext);
 	return TOKEN;
   }
@@ -1060,6 +1092,40 @@ ENDIF_DIRECTIVE_STATE>{
   }
 }
 
+<REPLACE_STATE>{
+  [,;]?\n		{
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+  \. 			{
+	yy_pop_state ();
+	return DOT;
+  }
+  /* for qualification and subscripting */
+  "IN"			{ return IN; }
+  "OF"			{ return OF; }
+  "("			{ return '('; }
+  ")"			{ return ')'; }
+
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  "BY"			{ return BY; }
+  "ALSO"		{ return ALSO; }
+  "LAST"		{ return LAST; }
+  "OFF"			{ return OFF; }
+
+  {WORD} |
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL} |
+  .				{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+  }
+}
+
 <<EOF>> {
 	struct copy_info *current_copy_info = copy_stack;
 
@@ -1077,17 +1143,13 @@ ENDIF_DIRECTIVE_STATE>{
 		cobc_free (current_copy_info);
 		listing_line = 0;
 		requires_listing_line = 1;
-		requires_new_line = 0;
 		need_continuation = 0;
 		buffer_overflow = 0;
 		within_comment = 0;
 		newline_count = 0;
 		inside_bracket = 0;
 		comment_allowed = 1;
-		current_replace_list = NULL;
-		base_replace_list = NULL;
-		save_current_replace = NULL;
-		text_queue = NULL;
+                cb_free_replace ();
 		copy_stack = NULL;
 		quotation_mark = 0;
 		consecutive_quotation = 0;
@@ -1109,7 +1171,7 @@ ENDIF_DIRECTIVE_STATE>{
 			  current_copy_info->buffer);
 
 	/* Restore variables */
-	current_replace_list = current_copy_info->replacing;
+	cb_set_copy_replacing_list (current_copy_info->replacing);
 	quotation_mark = current_copy_info->quotation_mark;
 	cobc_set_source_format (current_copy_info->source_format);
 
@@ -1121,35 +1183,6 @@ ENDIF_DIRECTIVE_STATE>{
 %%
 
 /* Global functions */
-
-void
-pp_set_replace_list (struct cb_replace_list *list, const cob_u32_t is_pushpop)
-{
-	/* Handle REPLACE verb */
-	if (!list) {
-		/* REPLACE [LAST] OFF */
-		if (!is_pushpop) {
-			base_replace_list = NULL;
-			return;
-		}
-		if (!base_replace_list) {
-			return;
-		}
-		base_replace_list = base_replace_list->prev;
-		return;
-	}
-	/* REPLACE [ALSO] ... */
-	if (base_replace_list && is_pushpop) {
-		list->last->next = base_replace_list;
-		list->prev = base_replace_list;
-	} else {
-		list->prev = NULL;
-	}
-	base_replace_list = list;
-	if (cb_src_list_file) {
-		set_print_replace_list (list);
-	}
-}
 
 static int
 is_fixed_indicator (char c){
@@ -1168,13 +1201,126 @@ is_fixed_indicator (char c){
 	}
 }
 
+/* open file with the specified 'name', then check for BOM (skipped) and if
+   in reference-format "auto" also for "likely free-format" */
+static FILE *
+ppopen_get_file (const char *name)
+{
+	struct copy_info	*current_copy_info;
+
+	/* special case stdin;
+	   note that we cannot handle BOM or deduce source format in this case
+	   as rewind() clears the input buffer if used on stdin (and output in
+	   console has normally no BOM at all), therefore compile from stdin
+	   _has to_ specify free format if needed (or, more reasonable, use a CDF
+	   directive to specify that) */
+	if (strcmp (name, COB_DASH) == 0) {
+		return stdin;
+	}
+
+	/* check for recursive inclusion */
+	for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
+		/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
+		          ideally open first, then check if we have the same physical file
+		          (would also fix recursion check for symlinked files) */
+		if (!strcmp (name, current_copy_info->dname)) {
+		struct cb_tree_common	loc;
+		for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
+			int		line;
+			if (current_copy_info->prev) {
+				line = current_copy_info->prev->line;
+			} else {
+				line = cb_source_line;
+			}
+			cb_inclusion_note (current_copy_info->dname, line);
+		}
+		loc.source_file = name;
+		loc.source_line = -1;
+		cb_error_x (&loc, _("recursive inclusion"));
+		return 0;		
+		}
+	}
+
+	/* try to open the file with the given name */
+#ifdef	__OS400__
+	ppin = fopen (name, "r");
+#else
+	ppin = fopen (name, "rb");
+#endif
+	if (!ppin) {
+		cb_error ("%s: %s", name, cb_get_strerror ());
+		/* Note: postpone error exit as we need the saved buffers later on */
+		return 0;
+	}
+
+	/* Check for BOM and, if source-format was not specified, also for free-form */
+	{
+		int fseek_to = 0 ;
+#define COBC_LOOKAHEAD 20
+		unsigned char buffer[COBC_LOOKAHEAD];
+		int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
+
+		/* check for and skip UTF-8 BOM */
+		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
+			fseek_to = 3;
+		}
+
+		/* try to deduce source format */
+		if (source_format == CB_FORMAT_AUTO) {
+			int pos = fseek_to;
+			/* if indicator is wrong on first line with source, switch to free format */
+			/* skip empty lines */
+			char last_pos_7 = ' ';
+			int amount_of_0a_seen = 0;
+			int line_pos = 0;
+			while (nread - pos > 7) {
+				switch (buffer[pos]) {
+				case '\r':
+					break;
+				case '\n':
+					amount_of_0a_seen++;
+					line_pos = 0;
+					break;
+				case '\t':
+					buffer[pos] = ' ';
+					line_pos++;
+					while (line_pos % cb_tab_width != 0) {
+						line_pos++;
+					}
+					break;
+				default:
+					line_pos++;
+					break;
+				}
+				if (line_pos >= 7) {
+					last_pos_7 = buffer[pos];
+					break;
+				}
+				pos++;
+			}
+			/* check tab or indicator */
+			if (!is_fixed_indicator (last_pos_7)) {
+				struct cb_tree_common	loc;
+				loc.source_file = name;
+				loc.source_line = 1 + amount_of_0a_seen;
+				loc.source_column = 7;
+				cb_note_x (COB_WARNOPT_NONE, &loc, _("free format detected"));
+				(void)cobc_deciph_source_format ("FREE");
+			}
+		}
+		fseek (ppin, fseek_to, SEEK_SET);
+	}
+
+	return ppin;
+}
+
 /* open file (source or coypbook) for further processing */
 int
 ppopen (const char *name, struct cb_replace_list *replacing_list)
 {
 	struct copy_info	*current_copy_info;
 	char			*dname;
-	cb_tree x = NULL;
+	struct cb_replace_list *current_replace_list;
 
 	if (ppin) {
 		for (; newline_count > 0; newline_count--) {
@@ -1182,106 +1328,40 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 		}
 	}
 
-	/* Open copy/source file, or use stdin */
-	if (strcmp (name, COB_DASH) == 0) {
-		ppin = stdin;
-	} else {
-		for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
-			/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
-			*         ideally open first, then check if we have thy physical same file
-			*         (could also fix symlinked files) */
-			if (!strcmp (name, current_copy_info->dname)) {
-				struct cb_tree_common xc;
-				x = &xc;
-				for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
-					int		line;
-					if (current_copy_info->prev) {
-						line = current_copy_info->prev->line;
-					} else {
-						line = cb_source_line;
-					}
-					cb_inclusion_note (current_copy_info->dname, line);
-				}
-				x->source_file = name;
-				x->source_line = -1;
-				cb_error_x (x, _("recursive inclusion"));
-				break;
-			}
+	/* open copy/source file, or use stdin */
+	ppin = ppopen_get_file (name);
 
-		}
-		if (!x) {
-#ifdef	__OS400__
-			ppin = fopen (name, "r");
-#else
-			ppin = fopen (name, "rb");
-#endif
-		} else {
-			ppin = 0;
-		}
-	}
-
-	if (!ppin && !x) {
-		cb_error ("%s: %s", name, cb_get_strerror ());
-		/* Note: postpone error exit as we need the saved buffers later on */
-	}
-
-	/* Check for BOM - *not* for input from stdin as rewind() clears the input
-	  buffer if used on stdin and output in console has normally no BOM at all */
-	if (ppin && strcmp (name, COB_DASH) != 0) {
-		int fseek_to = 0 ;
-#define COBC_LOOKAHEAD 20
-		unsigned char buffer[COBC_LOOKAHEAD];
-		int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
-		int pos = 0;
-		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
-			fseek_to = 3;
-			pos = 3;
-		}
-		if (source_format == CB_FORMAT_AUTO){
-			/* If indicator is wrong on first line, switch to free format */
-			/* skip empty lines */
-			int amount_of_0a_seen = 0;
-			while (nread-pos > 7 && (buffer[pos] == '\r' || buffer[pos] == '\n')){
-				if (buffer[pos] == '\n') amount_of_0a_seen++;
-				pos++;
-			}
-			/* check tab or indicator */
-			if ( nread-pos > 7 && buffer[pos] != '\t' && !is_fixed_indicator (buffer[pos+6]) ){
-				struct cb_tree_common	loc;
-				loc.source_file = name;
-				loc.source_line = 1 + amount_of_0a_seen;
-				loc.source_column = 7;
-				cb_note_x (COB_WARNOPT_NONE, &loc, _("free format detected"));
-				(void) cobc_deciph_source_format ("FREE");
-			}
-		}
-		fseek(ppin, fseek_to, SEEK_SET);
-	}
-
-	if (source_format==CB_FORMAT_AUTO)
+	/* note: detection of free format in ppopen_get_file above (not for stdin) */
+	if (source_format == CB_FORMAT_AUTO) {
 		cobc_set_source_format (CB_FORMAT_FIXED);
+	}
 
-	if (cb_current_file){
-		if (cb_current_file->source_format==CB_FORMAT_AUTO)
-			cb_current_file->source_format=cobc_get_source_format ();
-		/* This is delayed until after format detection */
+	/* store listing information if requested */
+	if (cb_current_file) {
+		if (cb_current_file->source_format == CB_FORMAT_AUTO) {
+			cb_current_file->source_format = cobc_get_source_format ();
+		}
+		/* this must be delayed until after format detection */
 		cobc_set_listing_header_code ();
 		/* Save name for listing */
-		if (!cb_current_file->name)
+		if (!cb_current_file->name) {
 			cb_current_file->name = cobc_strdup (name);
+		}
+		cb_current_file->copy_line = cb_source_line;
 	}
 
-	/* Add to dependency list */
+	/* add opened file to dependency list */
 	if (cb_depend_file) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
-	/* Preserve the current buffer */
+	/* preserve the current buffer */
+	current_replace_list = cb_get_copy_replacing_list();
 	current_copy_info = cobc_malloc (sizeof (struct copy_info));
 	current_copy_info->file = cb_source_file;
 	current_copy_info->buffer = YY_CURRENT_BUFFER;
 
-	/* Save variables */
+	/* save variables */
 	current_copy_info->replacing = current_replace_list;
 	current_copy_info->line = cb_source_line;
 	current_copy_info->quotation_mark = quotation_mark;
@@ -1294,19 +1374,15 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 	copy_stack = current_copy_info;
 
-	if (cb_current_file) {
-		cb_current_file->copy_line = cb_source_line;
-	}
-
-	/* Set replacing list */
+	/* set replacing list */
 	if (replacing_list) {
 		if (current_replace_list) {
 			replacing_list->last->next = current_replace_list;
 			replacing_list->last = current_replace_list->last;
 		}
-		current_replace_list = replacing_list;
+		cb_set_copy_replacing_list (replacing_list);
 		if (cb_src_list_file) {
-			set_print_replace_list (replacing_list);
+			cb_set_print_replace_list (replacing_list);
 		}
 	}
 
@@ -1324,11 +1400,13 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 #endif
 
-	/* Switch to new buffer */
+	/* switch to new buffer */
 	switch_to_buffer (1, dname, yy_create_buffer (ppin, YY_BUF_SIZE));
 
 	/* postponed errror handling */
-	if (!ppin) return -1;
+	if (!ppin) {
+		return -1;
+	}
 	return 0;
 }
 
@@ -1826,8 +1904,8 @@ get_new_listing_file (void)
 	cb_current_file = newfile;
 }
 
-static void
-set_print_replace_list (struct cb_replace_list *list)
+void
+cb_set_print_replace_list (struct cb_replace_list *list)
 {
 	struct cb_replace_list		*r;
 	const struct cb_text_list	*l;
@@ -1880,91 +1958,97 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 }
 
 static COB_INLINE COB_A_INLINE int
-is_space_or_nl (const char c)
-{
-	return c == ' ' || c == '\n';
-}
-
-static COB_INLINE COB_A_INLINE int
 is_cobol_word_char (const char c)
 {
 	return c == '-' || c == '_' || isalnum (c);
 }
 
-static char *
-get_word (const char *str, char *word_buff)
+/* copies the next word in str to word_buff of size buff_len, and
+returns the length of the copy. If the word is longer than buff_len,
+returns 0. */
+static int
+get_word (const char *str, char *word_buff, size_t buff_len)
 {
-	char *ret = NULL;
+	int length = 0;
 	if (str) {
-		int length = COB_MAX_WORDLEN + 1;
 		while (*str == ' ' || *str == ',' || *str == ';') {
 			++str;
 		}
-		ret = word_buff;
-		while (is_cobol_word_char(*str)
-		    && length--) {
+		while (is_cobol_word_char(*str)){
+			if (length++ == buff_len) return 0;
 			*word_buff++ = (unsigned char)toupper((unsigned char)*str++);
 		}
-		if (length != 0) {
-			*word_buff = 0;
-		} else {
-			ret = NULL;
-		}
 	}
-	return ret;
+	return length;
 }
 
 static int
 is_condition_directive_clause (const char *buff)
 {
-	char word_buff[COB_MAX_WORDLEN + 1];
-	char *p;
+	char p[12]; /* size of maximal comparison, here END-EVALUATE */
+	int len;
+
 	if (buff[0] == '$') {
 		buff++;
 	} else if (buff[0] == '>' && buff[1] == '>') {
 		buff += 2;
 	}
-	p = get_word (buff, word_buff);
 
-	if (p == NULL) {
-		return 0;
+	len = get_word (buff, p, sizeof(p));
+	switch (len){
+	case 2:	return !memcmp (p, "IF", len);
+	case 3: return !memcmp (p, "END", len);
+	case 4: return     !memcmp (p, "ELSE", len)
+			|| !memcmp (p, "ELIF", len)
+			|| !memcmp (p, "WHEN", len);
+	case 6: return  !memcmp (p, "END-IF", len);
+	case 8: return  !memcmp (p, "EVALUATE", len);
+	case 12: return !memcmp (p, "END-EVALUATE", len);
 	}
-
-	return (strcmp (p, "IF") == 0
-		|| strcmp (p, "ELSE") == 0
-		|| strcmp (p, "END-IF") == 0
-		|| strcmp (p, "ELIF") == 0
-		|| strcmp (p, "END") == 0
-		|| strcmp (p, "EVALUATE") == 0
-		|| strcmp (p, "WHEN") == 0)
-		|| strcmp (p, "END-EVALUATE") == 0;
+	return 0;
 }
 
 static int
 next_word_is_comment_paragraph_name (const char *buff)
 {
-	char word_buff[COB_MAX_WORDLEN + 1];
-	const char	*p = get_word (buff, word_buff);
+	char p[13+1]; /* size of maximal comparison + 1, here
+			 DATE-MODIFIED.  We need +1 because we may
+			 have to add a terminating 0 to pass the
+			 string to cb_plex_verify(). */
+	int len;
 
-	if (!p) {
-		return 0;
+	if (cb_comment_paragraphs == CB_IGNORE) return 0;
+
+	len = get_word (buff, p, sizeof(p)-1);
+
+	switch (len){
+	case 6: if (memcmp (p, "AUTHOR", len)) return 0;
+		break;
+	case 7: if (memcmp (p, "REMARKS", len)) return 0;
+		break;
+	case 8: if (memcmp (p, "SECURITY", len)) return 0;
+		break;
+	case 12: if (   memcmp (p, "DATE-WRITTEN", len)
+		     && memcmp (p, "INSTALLATION", len)) return 0;
+		break;
+	case 13: if (   memcmp (p, "DATE-MODIFIED", len)
+		     && memcmp (p, "DATE-COMPILED", len)) return 0;
+		break;
+	default: return 0;
 	}
-	if (strcmp (p, "AUTHOR") == 0
-	 || strcmp (p, "DATE-WRITTEN") == 0
-	 || strcmp (p, "DATE-MODIFIED") == 0
-	 || strcmp (p, "DATE-COMPILED") == 0
-	 || strcmp (p, "INSTALLATION") == 0
-	 || strcmp (p, "REMARKS") == 0
-	 || strcmp (p, "SECURITY") == 0) {
-		if (cb_comment_paragraphs != CB_IGNORE) {
-			/* check so we get warnings / errors, but leave result unchanged */
-			cb_plex_verify (newline_count, cb_comment_paragraphs, p);
-			return 1;
-		}
-	}
-	return 0;
+	/* this part is reached only if a comparison above was successful */
+
+	/* check so we get warnings / errors, but leave result unchanged */
+	p[len] = 0;
+	cb_plex_verify (newline_count, cb_comment_paragraphs, p);
+	return 1;
 }
 
+static COB_INLINE COB_A_INLINE int
+is_space_or_nl (const char c)
+{
+	return c == ' ' || c == '\n';
+}
 
 /* FIXME: try to optimize as this function used 25-10% (according to callgrind)
    of the complete time spent in a sample run with
@@ -2499,11 +2583,6 @@ start:
 	} else {
 		/* Insert newlines at the start of the buffer */
 		gotcr = strlen (buff);
-		if (newline_count != 0) {
-			memmove (buff + newline_count, buff, gotcr + 1);
-			memset (buff, '\n', newline_count);
-			gotcr += newline_count;
-		}
 		if (in_area_a) {
 			/* (*area-a*): prepend special marker `#', indicating
 			   the current non-continuation line starts in area A
@@ -2512,8 +2591,13 @@ start:
 
 			   Assumes `buff' is large enough for one extra char. */
 			memmove (buff + 1, buff, gotcr + 1);
-			buff[1] = '#';
+			buff[0] = '#';
 			gotcr += 1;
+		}
+		if (newline_count != 0) {
+			memmove (buff + newline_count, buff, gotcr + 1);
+			memset (buff, '\n', newline_count);
+			gotcr += newline_count;
 		}
 		newline_count = 1;
 	}
@@ -2522,7 +2606,7 @@ start:
 
 static struct cb_text_list *
 pp_text_list_add (struct cb_text_list *list, const char *text,
-		  const size_t size)
+		     const size_t size)
 {
 	struct cb_text_list	*p;
 	void			*tp;
@@ -2541,201 +2625,9 @@ pp_text_list_add (struct cb_text_list *list, const char *text,
 }
 
 static void
-ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
+ppecho (const char *text, const char *token)
 {
-	/* performance note (last verified with GnuCOBOL 2.2):
-	   while this function used 5% (according to callgrind)
-	   of the complete time spent in a sample run with
-	   -fsyntax-only on 880 production code files (2,500,000 LOC),
-	   3.8% of this time is spent in fwrite, therefore not much potential
-	   for optimization */
-
-	struct cb_replace_list		*save_ptr;
-	const char			*s;
-	struct cb_text_list		*save_ptr_text_queue;
-	int				status, save_status;
-
-	/* ensure nothing is in the stream buffer */
-	fflush (ppout);
-
-	/* Check for replacement text before outputting */
-	if (alt_space) {
-		s = yytext;
-	} else {
-		s = text;
-	}
-
-	if (text_queue == NULL && (text[0] == ' ' || text[0] == '\n')) {
-		/* No replacement */
-		fwrite (text, (size_t)textlen, (size_t)1, ppout);
-		/* TODO: instead of \n (empty line: set "needs source-loc" flag and
-		   before first non-empty line output a #line directive, saving
-		   quite some file io [keep 1 empty line]) */
-		if (cb_listing_file) {
-			check_listing (s, 0);
-		}
-		return;
-	}
-	if (!current_replace_list && !base_replace_list) {
-		/* Output queue */
-		for (; text_queue; text_queue = text_queue->next) {
-			fputs (text_queue->text, ppout);
-		}
-		fwrite (text, (size_t)textlen, (size_t)1, ppout);
-		if (cb_listing_file) {
-			check_listing (s, 0);
-		}
-		return;
-	}
-	if (!current_replace_list) {
-		current_replace_list = base_replace_list;
-		save_ptr = NULL;
-	} else {
-		current_replace_list->last->next = base_replace_list;
-		save_ptr = current_replace_list->last;
-	}
-
-	/* Do replacement */
-	text_queue = pp_text_list_add (text_queue, text, (size_t)textlen);
-
-	save_ptr_text_queue = text_queue;
-	status = ppecho_replace (save_ptr);
-	/* Search another replacement when have a Partial Match	in the last ppecho call */
-	if (check_partial_match && status != -1) {
-		save_status = status;
-		text_queue = save_ptr_text_queue;
-		while (text_queue && check_partial_match) {
-			if (is_space_or_nl (text_queue->text[0])) {
-				ppecho_direct (text_queue->text);
-				text_queue = text_queue->next;
-				continue;
-			}
-			status = ppecho_replace (save_ptr);
-			if (status > save_status) {
-				save_status = status;
-			}
-			if (text_queue) {
-				/* Write text_queue if is not replaced */
-				if (status != -1 && check_partial_match) {
-					ppecho_direct (text_queue->text);
-				}
-				text_queue = text_queue->next;
-			}
-		}
-		status = save_status;
-	}
-	/* Manage Partial Match */
-	if (status == -1) {
-		check_partial_match = save_ptr_text_queue != NULL;
-		return;
-	}
-	if (!status) {
-		current_replace_list = NULL;
-	} else {
-		save_ptr->next = NULL;
-	}
-
-	/* No match */
-	for (; text_queue; text_queue = text_queue->next) {
-		ppecho_direct (text_queue->text);
-	}
-}
-
-/* handle all kinds of COPY REPLACING and REPLACE */
-static int
-ppecho_replace (struct cb_replace_list *save_ptr)
-{
-	char				*temp_ptr;
-	size_t				size;
-	size_t				size2;
-	struct cb_text_list		*queue;
-	struct cb_text_list		*save_queue;
-	const struct cb_text_list	*lno;
-	struct cb_replace_list		*r;
-
-	save_queue = NULL;
-	size = 0;
-	size2 = 0;
-	for (r = current_replace_list; r; r = r->next) {
-		queue = text_queue;
-		/* The LEADING/TRAILING code looks peculiar as we use */
-		/* variables after breaking out of the loop BUT */
-		/* ppparse.y guarantees that we have only one token */
-		/* and therefore only one iteration of this loop */
-		for (lno = r->src->text_list; lno; lno = lno->next) {
-			if (is_space_or_nl (lno->text[0])) {
-				continue;
-			}
-			while (queue && is_space_or_nl (queue->text[0])) {
-				queue = queue->next;
-			}
-			if (queue == NULL) {
-				/* Partial match */
-				if (!save_ptr) {
-					current_replace_list = NULL;
-				} else {
-					save_ptr->next = NULL;
-				}
-				return -1;
-			}
-			if (r->src->lead_trail == CB_REPLACE_LEADING) {
-				/* Check leading text */
-				size = strlen (lno->text);
-				if ((r->src->strict && strlen (queue->text) == size)
-				 || strncasecmp (lno->text, queue->text, size)) {
-					/* No match */
-					break;
-				}
-				save_queue = queue;
-			} else if (r->src->lead_trail == CB_REPLACE_TRAILING) {
-				/* Check trailing text */
-				size = strlen (lno->text);
-				size2 = strlen (queue->text);
-				if (size2 < size
-				 || (r->src->strict && size2 == size)) {
-					/* No match */
-					break;
-				}
-				size2 -= size;
-				if (strncasecmp (lno->text, queue->text + size2, size)) {
-					/* No match */
-					break;
-				}
-				save_queue = queue;
-			} else if (strcasecmp (lno->text, queue->text)) {
-				/* No match */
-				break;
-			}
-			queue = queue->next;
-		}
-		if (lno == NULL) {
-			/* Match */
-			if (r->src->lead_trail == CB_REPLACE_TRAILING
-			 && save_queue /* <- silence warnings */) {
-				/* Non-matched part of original text */
-				fprintf (ppout, "%*.*s", (int)size2, (int)size2,
-					 save_queue->text);
-				if (cb_listing_file) {
-					temp_ptr = cobc_strdup (save_queue->text);
-					*(temp_ptr + size2) = 0;
-					check_listing (temp_ptr, 0);
-					cobc_free (temp_ptr);
-				}
-			}
-			for (lno = r->new_text; lno; lno = lno->next) {
-				ppecho_direct (lno->text);
-			}
-			if (r->src->lead_trail == CB_REPLACE_LEADING
-			 && save_queue /* <- silence warnings */) {
-				/* Non-matched part of original text */
-				ppecho_direct (save_queue->text + size);
-			}
-			check_partial_match = 0;
-			text_queue = queue;
-			continue;
-		}
-	}
-	return (save_ptr ? 1 : 0);
+	cb_ppecho_copy_replace (text, token);
 }
 
 static void
@@ -2776,12 +2668,11 @@ display_finish (void)
 	unput ('\n');
 }
 
-static void
-ppecho_direct (const char *text)
+void	cb_ppecho_direct (const char *text, const char *token )
 {
 	fputs (text, ppout);
 	if (cb_listing_file) {
-		check_listing (text, 0);
+		check_listing (token != NULL ? token : text, 0);
 	}
 }
 
@@ -2813,19 +2704,20 @@ check_listing (const char *text, const unsigned int comment)
 	}
 
 	if (requires_listing_line) {
-		if (requires_new_line) {
-			requires_new_line = 0;
-			putc ('\n', cb_listing_file);
-		}
 		fprintf (cb_listing_file, "%6d%c", ++listing_line, c);
 	}
 
 	if (requires_listing_line
-	 && source_format != CB_FORMAT_FREE
-	 && strlen (text) >= (size_t)indicator_column) {
-		s = &text[indicator_column - 1];
+	 && source_format != CB_FORMAT_FREE) {
+		if (strlen (text) >= (size_t)indicator_column) {
+			s = text + indicator_column - 1;
+		} else if (strchr (text, '\n')) {
+			s = "\n";	/* no sequence area, but line break */
+		} else {
+			s = "";	/* do not output sequence area */
+		}
 	} else {
-		s = "";		/* do not output sequence area */
+		s = text;
 	}
 	fputs (s, cb_listing_file);
 	if (strchr (text, '\n')) {
