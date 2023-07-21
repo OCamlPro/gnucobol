@@ -310,6 +310,11 @@
 	* typeck.c (cb_build_move_literal): optimized output for literals to
 	  fields with BLANK WHEN ZERO and SIGN LEADING
 
+2023-04-26  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* cobc.c, tree.h : rewrite partialy the copy replacing in listing
+	  mode (bug: #831)
+
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_so_load_version_check): new function to generate

@@ -7286,6 +7286,9 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 	int	i = start;
 	int	j = 0;
 
+	while (lr->from[j] && isspace (lr->from[j])) {
+		++j;
+	}
 	while (line_file && line_file->line && line_file->line[i]) {
 		if (is_comment_line (line_file->line, fixed)) {
 			++line;
@@ -7308,7 +7311,24 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 				++j;
 			}
 		}
-
+		if (!line_file->line[i] && j > 0) {
+			while (lr->from[j] && isspace (lr->from[j])) {
+				++j;
+			}
+		}
+		if (j > 0 && !lr->from[j]) {
+			data_replace.firstline_replace = line_start;
+			data_replace.lastline_replace = line_file;
+			if (!check_mode_trail_lead (data_replace, lr, start, i)) {
+				break ;
+			}
+			if (lr->from[0] == ':' || lr->from[0] == '(') {
+				while (line_file->line[i] && !isspace (line_file->line[i])) {
+					++i;
+				}
+			}
+			data_replace.last_char = i;
+		}
 		if (!line_file->line[i] && j > 0) {
 			while (lr->from[j] && isspace (lr->from[j])) {
 				++j;
@@ -7343,8 +7363,7 @@ search_strstr (t_line_file *line_file, int line, struct list_replace *lr,
 
 /* return new line_num */
 static int
-search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, int pline_cnt, int line_num, \
-	int fixed, int in_copy)
+search_and_apply_replacement (struct list_files *cfile, t_line_file *line_file, int pline_cnt, int line_num, int fixed, int in_copy)
 {
 	int j;
 	int i;
