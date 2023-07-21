@@ -9679,7 +9679,7 @@ output_report_control (struct cb_report *p, int id, cb_tree ctl, cb_tree nx)
 	x = CB_VALUE (ctl);
 	s = cb_code_field(x);
 	if(nx) {
-		output_report_control(p, id, nx, CB_CHAIN(nx));
+		output_report_control (p, id, nx, CB_CHAIN(nx));
 	}
 
 	bfound = 0;
@@ -9693,9 +9693,8 @@ output_report_control (struct cb_report *p, int id, cb_tree ctl, cb_tree nx)
 		}
 	}
 	if (!bfound) {
-		cb_warning_x (COBC_WARN_FILLER,
-			CB_TREE(ctl), _("Control field %s is not referenced in report"), s->name);
-		ctl = NULL;
+		cb_warning (COBC_WARN_FILLER,
+			_("control field %s is not referenced in report"), s->name);
 		p->controls = NULL;
 		return ;
 	}
@@ -9746,8 +9745,6 @@ output_report_control (struct cb_report *p, int id, cb_tree ctl, cb_tree nx)
 		}
 	}
 	if(!bfound) {
-		cb_warning_x (COBC_WARN_FILLER,
-			CB_TREE(ctl), _("Control field %s is not referenced in report"), s->name);
 		output_local(",NULL");
 	}
 	seq = i = 0;
@@ -10043,8 +10040,8 @@ output_report_define_lines (int top, struct cb_field *f, struct cb_report *r)
 	if ((f->report_flag & COB_REPORT_LINE)
 	&& f->children
 	&& (f->children->report_flag & COB_REPORT_LINE)) {
-		cb_warning_x (COBC_WARN_FILLER,
-			CB_TREE(f), _("Warning: Ignoring nested LINE %s %d"),
+		cb_warning (COBC_WARN_FILLER,
+			_("ignoring nested LINE %s %d"),
 			(f->report_flag & COB_REPORT_LINE_PLUS)?"PLUS":"",
 			f->report_line);
 		f->report_line = 0;
@@ -10277,10 +10274,10 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 	output_local ("\n");
 	if(p->controls) {
 		for (l = p->controls; l; l = CB_CHAIN (l)) {
-			s = cb_code_field(l);
+			s = cb_code_field (l);
 			s->count++;
 		}
-		output_report_control(p,++r_ctl_id,p->controls,CB_CHAIN(p->controls));
+		output_report_control (p,++r_ctl_id,p->controls,CB_CHAIN(p->controls));
 		output_local ("\n");
 	}
 	sum_prv = 0;

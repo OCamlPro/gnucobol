@@ -689,3 +689,50 @@ prog.cob:37: warning: non-numeric PICTURE clause for SUM WSI-V
 
 AT_CLEANUP
 
+AT_SETUP([Check if the variable is referenced in the report])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MAIN.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+         SELECT A_1 ASSIGN TO EXTERNAL A_1.
+         SELECT A_2 ASSIGN TO EXTERNAL A_2.
+       DATA DIVISION.
+       FILE SECTION.
+         FD  A_1.
+         COPY test.
+         FD A_2 REPORT ETAT.
+       WORKING-STORAGE SECTION.
+       REPORT SECTION.
+         RD  ETAT
+             CONTROL FINAL ERROR-1 ERROR-2
+             PAGE LIMIT 66.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_DATA([test.cpy], [
+       01   TEST-01.
+           03   TEST-03.
+       88  TEST-88                   VALUE "0000000".
+                 09  ERROR-1.
+       88  E-TEST-1                  VALUE "111".
+                  10  E-TEST-10         PIC 9(3).
+           03   E-TEST-03.
+             04   E-TEST-04.
+               05   FILLER          PIC X(21).
+       88  E-TEST-2              VALUE " SM".
+           03   E-TEST-2-03.
+                   09   ERROR-2     PIC 9(3).
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob: warning: control field ERROR-1 is not referenced in report
+prog.cob: warning: control field ERROR-2 is not referenced in report
+])
+
+AT_CLEANUP
