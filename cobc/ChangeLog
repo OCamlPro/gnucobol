@@ -1,4 +1,8 @@
 
+2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (refmod_checks): fixed ec-bound-refmod checks for UNBOUNDED
+
 2023-07-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (copy_validation): new function

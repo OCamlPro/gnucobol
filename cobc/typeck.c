@@ -2387,7 +2387,7 @@ cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 static void
 refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 {
-	const char *name = r->word->name;
+	const char	*name = r->word->name;
 	const int	adjusted_at_runtime = -1;
 	int			offset;
 	int			length;
@@ -2478,7 +2478,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 
 	/* Run-time check */
 	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
-		if (f->flag_any_length
+		if (pseudosize < 0	/* UNBOUNDED or ANY LENGTH */
 		 || offset == adjusted_at_runtime
 		 || length == adjusted_at_runtime) {
 			cb_tree		e1;
@@ -2500,7 +2500,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 					f->flag_any_length ?
 					CB_BUILD_CAST_LENGTH (CB_TREE(f)) /* known via field.size */ :
 					pseudosize < 0 ?
-					CB_BUILD_CAST_LENGTH (x) /* needs to be runtime-calculated */ :
+					CB_BUILD_CAST_LENGTH (cb_build_field_reference (f, NULL)) /* needs to be runtime-calculated */ :
 					cb_int (pseudosize),
 					cb_build_cast_int (r->offset),
 					r->length ?
