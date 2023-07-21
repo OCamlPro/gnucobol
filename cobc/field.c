@@ -2867,15 +2867,41 @@ unbounded_again:
 			} else {
 				c->offset = f->offset + (int) size_check;
 				compute_size (c);
-				if (c->flag_unbounded) {
-					const int max_odo_value = get_max_int_val (CB_FIELD_PTR (c->depending));
-					unbounded_items++;
-					/* computed MAX */
-					c->occurs_max = (COB_MAX_UNBOUNDED_SIZE / c->size / unbounded_parts) - 1;
-					/* maximum from ODO field */
-					if (max_odo_value != 0
-					 && max_odo_value < c->occurs_max) {
-						c->occurs_max = max_odo_value;
+				if (c->flag_unbounded && CB_VALID_TREE (c->depending)) {
+					cb_tree dep = cb_ref (c->depending);
+					if (CB_FIELD_P (dep)) {
+						const int max_odo_value = get_max_int_val (CB_FIELD (dep));
+						unbounded_items++;
+						/* computed MAX */
+						{
+							/* size above the field  [there is no sister for UNBOUNDED]*/
+							cob_s64_t size_above = 0;
+							struct cb_field *curr_fld = c;
+							struct cb_field *p_fld = f;
+							while (p_fld) {
+								struct cb_field *p_fld_c;
+								for (p_fld_c = p_fld->children; p_fld_c != curr_fld; p_fld_c = p_fld_c->sister) {
+									if (p_fld_c->size == 0) {
+										compute_size (p_fld_c);
+									}
+									size_above += p_fld_c->size;
+								}
+								curr_fld = p_fld;
+								p_fld = p_fld->parent;
+							}
+							/* calculated size */
+							c->occurs_max = (   (COB_MAX_UNBOUNDED_SIZE - size_above)
+							                  / (c->size * unbounded_parts)
+							                ) - 1;
+							/* maximum possible in ODO field */
+							if (max_odo_value != 0
+							 && max_odo_value < c->occurs_max) {
+								c->occurs_max = max_odo_value;
+							}
+						}
+
+					} else {
+						c->depending = cb_error_node;
 					}
 				}
 				size_check += (cob_s64_t)c->size * c->occurs_max;

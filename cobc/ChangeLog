@@ -2,6 +2,10 @@
 2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (refmod_checks): fixed ec-bound-refmod checks for UNBOUNDED
+	* field.c (compute_size): take fields before the UNBOUNDED field into
+	  account when calculating its maximum elements
+	* parser.y (validated_field_reference): extracted from (identifier_field)
+	  and used in all places with the exact same code
 
 2023-07-20  Simon Sobisch <simonsobisch@gnu.org>
 

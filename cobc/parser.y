@@ -2300,6 +2300,23 @@ error_if_not_usage_display_or_nonnumeric_lit (cb_tree x)
 	}
 }
 
+/* guarantees a reference to a validated field-reference (or cb_error_node) */
+static cb_tree
+validated_field_reference (cb_tree fld_ref)
+{
+	cb_tree ref = NULL;
+	if (CB_REFERENCE_P (fld_ref)) {
+		ref = cb_ref (fld_ref);
+		if (CB_FIELD_P (ref)) {
+			return fld_ref;
+		}
+	}
+	if (ref != cb_error_node) {
+		cb_error_x (fld_ref, _ ("'%s' is not a field"), cb_name (fld_ref));
+	}
+	return cb_error_node;
+}
+
 static void
 check_validate_item (cb_tree x)
 {
@@ -19386,19 +19403,7 @@ identifier_or_file_name:
 identifier_field:
   identifier_1
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-
-	if (x && CB_FIELD_P (x)) {
-		$$ = $1;
-	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
-		$$ = cb_error_node;
-	}
+	$$ = validated_field_reference ($1);
   }
 ;
 
@@ -19407,10 +19412,7 @@ identifier_field:
 type_name:
   WORD
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
+	cb_tree x = CB_REFERENCE_P ($1) ? cb_ref ($1) : NULL;
 
 	if (x && CB_FIELD_P (x) && CB_FIELD (x)->flag_is_typedef) {
 		$$ = $1;
@@ -19426,16 +19428,10 @@ type_name:
 identifier:
   identifier_1
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-	if (x && CB_FIELD_P (x)) {
+	cb_tree x = validated_field_reference ($1);
+	if (x != cb_error_node) {
 		$$ = cb_build_identifier ($1, 0);
 	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
 		$$ = cb_error_node;
 	}
   }

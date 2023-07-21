@@ -1046,7 +1046,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INITIALIZE OCCURS UNBOUNDED])
-AT_KEYWORDS([extensions runsubscripts subscripts refmod exceptions])
+AT_KEYWORDS([extensions runsubscripts subscripts refmod exceptions ibm])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -1149,7 +1149,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INITIALIZE OCCURS ODOSLIDE])
-AT_KEYWORDS([extensions runsubscripts subscripts])
+AT_KEYWORDS([extensions runsubscripts subscripts ibm])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.

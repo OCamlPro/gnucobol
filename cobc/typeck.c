@@ -4802,6 +4802,8 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Resolve all references so far */
 	for (l = cb_list_reverse (prog->reference_list); l; l = CB_CHAIN (l)) {
 		cb_ref (CB_VALUE (l));
+		/* TODO: move allocation of prog->reference_list outside of parse_mem
+		         and free it here directly */
 	}
 
 	/* Check ODO items */
