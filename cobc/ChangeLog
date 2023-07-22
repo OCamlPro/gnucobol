@@ -3,6 +3,10 @@
 
 	* field.c (compute_size): inspect field storage to check for
 	  the appropriate field size limit
+	* tree.h (cb_field): new flag_above_unbounded
+	* tree.c (cb_field_has_unbounded), tree.h: removed; use
+	  flag_above_unbounded in callers (typeck.c, cobc.c) instead
+	* parser.y (occurs_clause): set flag_above_unbounded in parents
 
 2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
 

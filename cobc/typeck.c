@@ -2421,7 +2421,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 			/* note: child elements under UNBOUNDED are not included! */
 			pseudosize = f->size;
 		}
-		if (cb_field_has_unbounded (f)) {
+		if (f->flag_above_unbounded) {
 			pseudosize *= -1;
 		}
 	}

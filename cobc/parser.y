@@ -774,9 +774,16 @@ setup_occurs (void)
 	}
 
 	if (current_field->flag_unbounded) {
-		if (current_field->storage != CB_STORAGE_LINKAGE) {
-			cb_error_x (CB_TREE(current_field), _("'%s' is not in LINKAGE SECTION"),
-				cb_name (CB_TREE(current_field)));
+		if (current_field->storage == CB_STORAGE_LINKAGE) {
+			struct cb_field *p = current_field;
+			while (p) {
+				p->flag_above_unbounded = 1;
+				p = p->parent;
+			}
+		} else {
+			cb_tree x = CB_TREE (current_field);
+			cb_error_x (x, _("'%s' is not in LINKAGE SECTION"), cb_name (x));
+			current_field->flag_above_unbounded = 1;
 		}
 	}
 
@@ -8375,12 +8382,6 @@ occurs_clause:
   DEPENDING _on reference _occurs_keys_and_indexed
   {
 	current_field->flag_unbounded = 1;
-#if 0 /* Why should we do this? If this is relevant then it likely needs to be done
-	   either to the field founder or to the complete list of parents up to it. */
-	if (current_field->parent) {
-		current_field->parent->flag_unbounded = 1;
-	}
-#endif
 	current_field->depending = $7;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
