@@ -855,8 +855,8 @@ AT_CHECK([$COMPILE_ONLY -fnot-reserved=MESSAGE prog.cob], [1], [],
 prog.cob:11: warning: 'from-constant-with-size' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: warning: 'from-constant-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: error: PICTURE clause required for 'from-constant-without-pic'
-prog.cob:13: error: PICTURE clause required for 'FILLER'
 prog.cob:13: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:13: error: PICTURE clause required for 'FILLER'
 prog.cob:14: warning: 'from-func-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:14: error: PICTURE clause required for 'from-func-without-pic'
 ])
