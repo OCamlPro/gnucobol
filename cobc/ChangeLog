@@ -1,9 +1,15 @@
 
+2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (compute_size): inspect field storage to check for
+	  the appropriate field size limit
+
 2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (refmod_checks): fixed ec-bound-refmod checks for UNBOUNDED
 	* field.c (compute_size): take fields before the UNBOUNDED field into
-	  account when calculating its maximum elements
+	  account when calculating its maximum elements;
+	  fix compiler crash if DEPENDING field does not exist
 	* parser.y (validated_field_reference): extracted from (identifier_field)
 	  and used in all places with the exact same code
 
@@ -251,6 +257,10 @@
 	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
 	* parser.y: drop PENDING from OVERLINE and LEFTLINE
 	* tree.c (cb_build_intrinsic): refactored to get the name in a single place
+	* field.c (create_implicit_picture): don't imply a size if the source for
+	  VALUE is an intrinsic function or compile-time constant
+	* field.c (create_implicit_picture): don't stop on errors but still create
+	  an implied PIC to allow more checks later
 
 2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
 

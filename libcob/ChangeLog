@@ -1,4 +1,8 @@
 
+2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h (COB_MAX_FIELD_SIZE_LINKAGE): new definition
+
 2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (get_config_val): fixed output of "not set" for enum values

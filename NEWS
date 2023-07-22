@@ -424,8 +424,12 @@ NEWS - user visible changes				-*- outline -*-
 
 * More notable changes
 
-** in 64-bit environments, the maximum field size was increased from
-   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+** in general, the maximum field size in LINKAGE SECTION was increased from
+   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to the system
+   specific INT_MAX - 1, which is commonly 2 GB
+
+** in 64-bit environments, the maximum field size outside of LINKAGE SECTION
+   was increased from 268435456 bytes to 2 GB
 
 ** numeric DISPLAY can store and may contain a positive zero after arithmetic,
    PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
