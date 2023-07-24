@@ -1666,8 +1666,10 @@ cob_fd_file_open (cob_file *f, char *filename,
 	/* LCOV_EXCL_STOP */
 	}
 
-	errno = 0;
 	fd = open (filename, fdmode, fperms);
+	if (fd != -1) {
+		errno = 0;
+	}
 
 	switch (errno) {
 	case 0:
@@ -7060,9 +7062,10 @@ open_cbl_file (unsigned char *file_name, unsigned char *file_access,
 	cob_chk_file_mapping ();
 
 	fd = open (file_open_name, flag, COB_FILE_MODE);
-	if (fd < 0) {
+	if (fd == -1) {
+		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		memset (file_handle, -1, (size_t)4);
-		return 35;
+		return ret;
 	}
 	memcpy (file_handle, &fd, (size_t)4);
 	return 0;
@@ -7304,8 +7307,8 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 
 	flag |= O_RDONLY;
 	fd1 = open (file_open_name, flag, 0);
-	if (fd1 < 0) {
-		return -1;
+	if (fd1 == -1) {
+		return errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 	}
 
 	{
@@ -7319,9 +7322,10 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	flag &= ~O_RDONLY;
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
 	fd2 = open (file_open_name, flag, COB_FILE_MODE);
-	if (fd2 < 0) {
+	if (fd2 == -1) {
+		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		close (fd1);
-		return -1;
+		return ret;
 	}
 
 	ret = 0;
@@ -7844,7 +7848,7 @@ cob_create_tmpfile (const char *ext)
 #else
 	fd = open (filename, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, COB_FILE_MODE);
 #endif
-	if (fd < 0) {
+	if (fd == -1) {
 		cob_free (filename);
 		return NULL;
 	}
@@ -8327,6 +8331,11 @@ cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
 		if (data_file->file_status[0] == '4') {
 			cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
 		}
+		if (hp->sort_return) {
+			*(int *)(hp->sort_return) = 16;	/* TODO: recheck with MF */
+		} else {
+			/* IBM doc: if not used then a runtime message is displayed */
+		}
 		return;
 	}
 	for (;;) {
@@ -8386,6 +8395,9 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 			if (using_file->file_status[0] == '4') {
 				cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
 			}
+			if (!hp->sort_return) {
+				/* IBM doc: if not used then a runtime message is displayed */
+			}
 			opt[i] = -1;
 		}
 	}
@@ -8430,6 +8442,9 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 			if (using_file->file_status[0] == '3') {
 				int j;
 				opt[i] = -2;
+				if (!hp->sort_return) {
+					/* IBM doc: if not used then a runtime message is displayed */
+				}
 				/* early exit if no GIVING file left */
 				for (j = 0; j < giving_cnt; ++j) {
 					if (opt[i] >= 0) {
@@ -8465,6 +8480,16 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 	cob_free (fbase);
 	if (callfh) {
 		cob_free (callfh);
+	}
+
+	/* if any error happened with the GIVING files update SORT-RETURN */
+	if (hp->sort_return) {
+		for (i = 0; i < giving_cnt; ++i) {
+			if (opt[i] < 0) {
+				*(int *)(hp->sort_return) = 16;
+				break;
+			}
+		}
 	}
 }
 
@@ -8549,8 +8574,6 @@ cob_file_release (cob_file *f)
 		}
 		if (hp->sort_return) {
 			*(int *)(hp->sort_return) = 16;
-		} else {
-			/* IBM doc: if not used then a runtime message is displayed */
 		}
 		save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 	} else {
@@ -8576,8 +8599,6 @@ cob_file_return (cob_file *f)
 		}
 		if (hp->sort_return) {
 			*(int *)(hp->sort_return) = 16;
-		} else {
-			/* IBM doc: if not used then a runtime message is displayed */
 		}
 		save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 	} else {
@@ -9038,23 +9059,12 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	if (wasOpen >= 0) {
 		const int status_code_1 = isdigit(fcd->fileStatus[0])
 			? COB_D2I (fcd->fileStatus[0]) : 9;
-		if (status_code_1 == 0) {
+		if (status_code_1 != 0
+		 || cob_last_exception_is (COB_EC_I_O_EOP)) {
 			/* EOP is non-fatal therefore 00 status but needs exception;
-			   note that this global variable is only set if GnuCOBOL is used
+			   note that the global exception is only set if GnuCOBOL is used
 			   as EXTFH, in every other case we currently can't set EOP;
 			   also note that fcd->lineCount is never read/set */
-			if (eop_status == 0) {
-				cobglobptr->cob_exception_code = 0;
-		} else {
-#if 0 /* correct thing to do, but then also needs to have codegen adjusted
-         --> module-incompatibility --> 4.x */
-				cob_set_exception (eop_status);
-#else
-				cob_set_exception (COB_EC_I_O_EOP);
-#endif
-				eop_status = 0;
-			}
-		} else {
 			cob_set_exception (status_exception[status_code_1]);
 		}
 		if (f->file_status) {

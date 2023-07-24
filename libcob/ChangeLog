@@ -1,4 +1,9 @@
 
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: only check -1 as invalid fd; return fileio status for
+	  invalid file state in CBL_ routines, instead of fixed -1 / 35
+
 2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h (COB_MAX_FIELD_SIZE_LINKAGE): new definition
@@ -80,7 +85,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  otherwise it is lost on first CLOSE
 	* fileio.c: disable setting of record min/max size outside of OPEN,
 	  disable setting of record size in some places
-
+	* fileio.c: adjusted setting of SORT-RETURN register
 
 2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
 
