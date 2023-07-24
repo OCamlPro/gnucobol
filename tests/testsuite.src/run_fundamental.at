@@ -1556,8 +1556,11 @@ some (void)
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE module.c], [0], [], [])
+# CHECKME: the waning itself is likely system specific,
+#          in this case re-adjust to only check for a warning
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:6: error: entry point 'module' not found
+[libcob: prog.cob:6: warning: loading from existing path './module.so' failed; ./module.so: undefined symbol: module
+libcob: prog.cob:6: error: entry point 'module' not found
 ])
 
 AT_CLEANUP

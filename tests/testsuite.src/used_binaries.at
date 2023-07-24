@@ -786,7 +786,8 @@ AT_CHECK([$COBCRUN ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL], [1], [],
 # it would be allowed for preloading
 # this was previously checked in cobcrun, now only done in the runtime
 AT_CHECK([$COBCRUN -q -M ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL noprog], [1], [],
-[libcob: error: module 'noprog' not found
+[libcob: warning: preloading of 'ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL' failed
+libcob: error: module 'noprog' not found
 ])
 
 AT_CLEANUP

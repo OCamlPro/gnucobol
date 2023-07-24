@@ -3,6 +3,14 @@
 
 	* fileio.c: only check -1 as invalid fd; return fileio status for
 	  invalid file state in CBL_ routines, instead of fixed -1 / 35
+	* call.c (cache_preload, cob_resolve_internal): runtime warning if
+	  (pre)loading from existing path does not work
+	* (cache_preload): runtime warning if preloading from existing path
+	  does not work
+	* call.c (cob_try_preload): runtime warning if preloading of
+	  requested module does not work
+	* (cob_resolve_internal): runtime warning if loading module from
+	  existing path or resolving requested entry point does not work
 
 2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
 
