@@ -13880,6 +13880,7 @@ entry_statement:
   {
 	check_unreached = 0;
 	begin_statement (STMT_ENTRY, 0);
+	current_statement->flag_no_based = 1;
   }
   entry_body
 | entry

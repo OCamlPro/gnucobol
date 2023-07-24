@@ -2,8 +2,7 @@ NEWS - user visible changes				-*- outline -*-
 
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
- GnuCOBOL 3.2rc3  ASAP
-          3.2 final (depending on feedback) end of July 2023
+ GnuCOBOL 3.2      to be done end of July 2023
 
  planned for final:
    * extending testsuite and documentation
@@ -541,8 +540,10 @@ NEWS - user visible changes				-*- outline -*-
    WHEN (the standard explicit requests a one-time evaluation of the subjects,
    then comparing the value); to work around possible issues move more complex
    subjects like variables with subscripts and reference-modification, as well
-   as calculated subjects and function calls to a temporary variabe and use
+   as calculated subjects and function calls to a temporary variable and use
    this as subject for the EVALUATE
+
+For more known issues see the bug tracker.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

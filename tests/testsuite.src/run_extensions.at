@@ -2575,7 +2575,7 @@ AT_CLEANUP
 # ENTRY
 
 AT_SETUP([ENTRY])
-AT_KEYWORDS([extensions])
+AT_KEYWORDS([extensions exceptions ibm])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -2583,7 +2583,7 @@ AT_DATA([caller.cob], [
        PROCEDURE        DIVISION.
            CALL "hello" USING "COBOL"
            END-CALL.
-           CALL "bye" USING "COBOL"
+           CALL "bye" USING "COBOL-ENTRY"
            END-CALL.
            STOP RUN.
 ])
@@ -2597,9 +2597,11 @@ AT_DATA([hello.cob], [
        01 MSG-BYE       PIC X(5) VALUE "Bye, ".
        LINKAGE          SECTION.
        01 X             PIC X(5).
-       01 Y             PIC X(5).
+       01 Y             PIC X(11).
        PROCEDURE        DIVISION USING X.
            DISPLAY MSG-HELLO X "!".
+      * verifies that this does not generate an exception
+       ENTRY "unused" USING Y.
            EXIT PROGRAM.
 
        ENTRY "bye" USING Y.
@@ -2608,11 +2610,16 @@ AT_DATA([hello.cob], [
 ])
 
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-# TODO: Doesn't work without sticky-linkage which is likely a bug!
+AT_CHECK([$COMPILE_MODULE -fentry-statement=ok hello.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[Hello, COBOL!
+Bye, COBOL-ENTRY!
+])
+# no difference expected with sticky linkage (but other codegen)
 AT_CHECK([$COMPILE_MODULE -fentry-statement=ok -fsticky-linkage hello.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
 [Hello, COBOL!
-Bye, COBOL!
+Bye, COBOL-ENTRY!
 ])
 
 AT_CLEANUP

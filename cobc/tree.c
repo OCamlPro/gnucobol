@@ -1612,17 +1612,6 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 #endif
 }
 
-/* check if field or any of the child elements has UNBOUNDED */
-int
-cb_field_has_unbounded (struct cb_field *f)
-{
-	if (f->flag_unbounded) {
-		return 1;
-	}
-	f = cb_field_variable_size (f);
-	return (f && f->flag_unbounded);
-}
-
 int
 cb_fits_int (const cb_tree x)
 {
@@ -2107,14 +2096,11 @@ cb_list_reverse (cb_tree l)
 unsigned int
 cb_list_length (cb_tree l)
 {
-	unsigned int	n;
-
-	if (l == cb_error_node) {
-		return 0;
-	}
-	n = 0;
-	for (; l; l = CB_CHAIN (l)) {
-		n++;
+	unsigned int	n = 0;
+	if (l != cb_error_node) {
+		for (; l; l = CB_CHAIN (l)) {
+			n++;
+		}
 	}
 	return n;
 }
