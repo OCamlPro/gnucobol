@@ -8840,14 +8840,15 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				}
 				if ((cb_flag_memory_check & CB_MEMCHK_USING)
 				 && f->storage != CB_STORAGE_LINKAGE
-				 && f->storage != CB_STORAGE_LOCAL
-				 && !f->flag_external
-				 && !f->flag_item_based) {
+				 && f->storage != CB_STORAGE_LOCAL) {
 					f = cb_field_founder (f);
 					if (f->redefines) {
 						f = f->redefines;
 					}
-					f->flag_used_in_call = 1;
+					if (!f->flag_external
+					 && !f->flag_item_based) {
+						f->flag_used_in_call = 1;
+					}
 				}
 				check_list = cb_list_add (check_list, x);
 			} else if (f->flag_any_length) {

@@ -1,4 +1,16 @@
 
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (entry_statement): don't check parameter address
+	  directly on ENTRY, because it just assigns it
+	* codegen.c (output_internal_function, output_entry_function): moved
+	  setting of non-passed parameters to NULL to entry function as we only
+	  have ordinal CALL numbers available there; set BY VALUE parameters to
+	  zero instead of NULL
+	* codegen.c (output_field_no_target): extracted to reduce code duplication
+	* typeck.c (cb_emit_call): fixed skipping memory-fence generation for
+	  EXTERNAL/BASED sub-fields
+
 2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (compute_size): inspect field storage to check for
