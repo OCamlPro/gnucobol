@@ -557,7 +557,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([INITIALIZE with reference modification])
+AT_SETUP([INITIALIZE with reference-modification])
 AT_KEYWORDS([initialize])
 
 AT_DATA([prog.cob], [

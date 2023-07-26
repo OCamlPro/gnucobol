@@ -1035,7 +1035,7 @@ AT_CLEANUP
 
 ## Expressions
 
-AT_SETUP([Class check with reference modification])
+AT_SETUP([Class check with reference-modification])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -10505,8 +10505,6 @@ AT_DATA([sub2.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CAPTURE_FILE([tstdump.dump])
-
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=NONE \
@@ -10517,6 +10515,8 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
+
+AT_CAPTURE_FILE([tstdump.dump])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],
@@ -14100,7 +14100,7 @@ AT_CLEANUP
 
 
 AT_SETUP([runtime check: write to internal storage (1)])
-AT_KEYWORDS([runmisc CALL bounds])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
 
 # note: this check is likely unportable and therefore will likely be adjusted/skipped,
 #       mainly because the memory layout of consecutive variables is not guaranteed;
@@ -14114,12 +14114,24 @@ AT_DATA([caller.cob], [
        WORKING-STORAGE SECTION.
 
        01 var                   PIC  X.
+       01 vars.
+          03 filler             PIC  X.
+          03 vars-field         PIC  X.
 
-       01 varg                  PIC  X GLOBAL.
-       01 vare                  PIC  X EXTERNAL.
-       01 varb                  PIC  X BASED.
+       01 varg                  GLOBAL.
+          03 filler             PIC  X.
+          03 varg-field         PIC  X.
+       01 vare                  EXTERNAL.
+          03 filler             PIC  X.
+          03 vare-field         PIC  X.
+       01 varb                  BASED.
+          03 filler             PIC  X.
+          03 varb-field         PIC  X.
        LINKAGE SECTION.
        01 varl                  PIC  X.
+       01 varls.
+          03 filler             PIC  X.
+          03 varls-field        PIC  X.
 
        PROCEDURE DIVISION.
       *
@@ -14128,10 +14140,17 @@ AT_DATA([caller.cob], [
            CALL "callee" USING var
 
       *    the following are mostly in to co-test the codegen
+           CALL "callee" USING vars
            CALL "callee" USING varg
            CALL "callee" USING vare
            CALL "callee" USING varb
            CALL "callee" USING varl
+           CALL "callee" USING varls
+           CALL "callee" USING vars-field
+           CALL "callee" USING varg-field
+           CALL "callee" USING vare-field
+           CALL "callee" USING varb-field
+           CALL "callee" USING varls-field
 
            GOBACK.
 ])
@@ -14145,13 +14164,13 @@ AT_DATA([callee.cob], [
 
        77 var                   PIC  X.
        01 lrec.
-          03  lvar                  PIC  X(64).
-          03  lvar2                 PIC  X(64).
+          03  lvar                  PIC  X(32).
+          03  lvar2                 PIC  X(32).
 
        PROCEDURE DIVISION USING var.
       *
            SET ADDRESS OF lrec TO ADDRESS OF var
-           SET ADDRESS OF lrec DOWN BY 64
+           SET ADDRESS OF lrec DOWN BY 32
            MOVE SPACES TO lrec
            GOBACK.
 ])
@@ -14159,29 +14178,29 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected after CALL
+[libcob: caller.cob:30: error: memory violation detected after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([runtime check: write to internal storage (2)])
-AT_KEYWORDS([runmisc CALL bounds])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
 
 # PROG A (WS 16 bytes) has its WS overwritten and calls PROG B
 # because of the write outside of WS the internal storage is broken

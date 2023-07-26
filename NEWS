@@ -2,8 +2,7 @@ NEWS - user visible changes				-*- outline -*-
 
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
- GnuCOBOL 3.2rc3  ASAP
-          3.2 final (depending on feedback) around 2023/04/25
+ GnuCOBOL 3.2      to be done end of July 2023
 
  planned for final:
    * extending testsuite and documentation
@@ -300,7 +299,8 @@ NEWS - user visible changes				-*- outline -*-
    of internal memory used during CALL; this can help in finding otherwise
    hard to diagnose overwrite of memory and as it is only done on CALL
    has a much smaller footprint than -fec=bounds (as both check different
-   aspects at different places it is also reasonable to use both)
+   aspects at different places it is also reasonable to use both);
+   to disable it use -fmemory-check=none or limit by -fmemory-check=pointer
 
 ** the option -g does no longer imply -fno-remove-unreachable; if you want to
    keep those in you need to explicit specify this
@@ -316,6 +316,9 @@ NEWS - user visible changes				-*- outline -*-
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
+   -Wtyping as a new warning raises only very suspicious MOVEs,
+   -Wstrict-typing, which will warn as before even for MOVE 1 TO PICX-FLD
+    is not included in -Wall any more
    -Wlarger-01-redefines as new warning (enabled by -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
    -Wno-unsupported -Wunsupported new option to disable or only warn
@@ -328,6 +331,8 @@ NEWS - user visible changes				-*- outline -*-
     a coding error
    -Wsuspicious-perform-thru (enabled by default) to check for PERFORM ranges
     that are likely to create unwanted behaviour
+   -Wother now  warns for suspicious reference-modification which is likely to
+    create out-of-bounds access at runtime
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
@@ -418,8 +423,12 @@ NEWS - user visible changes				-*- outline -*-
 
 * More notable changes
 
-** in 64-bit environments, the maximum field size was increased from
-   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+** in general, the maximum field size in LINKAGE SECTION was increased from
+   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to the system
+   specific INT_MAX - 1, which is commonly 2 GB
+
+** in 64-bit environments, the maximum field size outside of LINKAGE SECTION
+   was increased from 268435456 bytes to 2 GB
 
 ** numeric DISPLAY can store and may contain a positive zero after arithmetic,
    PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
@@ -531,8 +540,10 @@ NEWS - user visible changes				-*- outline -*-
    WHEN (the standard explicit requests a one-time evaluation of the subjects,
    then comparing the value); to work around possible issues move more complex
    subjects like variables with subscripts and reference-modification, as well
-   as calculated subjects and function calls to a temporary variabe and use
+   as calculated subjects and function calls to a temporary variable and use
    this as subject for the EVALUATE
+
+For more known issues see the bug tracker.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

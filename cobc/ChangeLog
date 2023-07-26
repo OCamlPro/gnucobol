@@ -1,9 +1,77 @@
 
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (entry_statement): don't check parameter address
+	  directly on ENTRY, because it just assigns it
+	* codegen.c (output_internal_function, output_entry_function): moved
+	  setting of non-passed parameters to NULL to entry function as we only
+	  have ordinal CALL numbers available there; set BY VALUE parameters to
+	  zero instead of NULL
+	* codegen.c (output_field_no_target): extracted to reduce code duplication
+	* typeck.c (cb_emit_call): fixed skipping memory-fence generation for
+	  EXTERNAL/BASED sub-fields
+
+2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (compute_size): inspect field storage to check for
+	  the appropriate field size limit
+	* tree.h (cb_field): new flag_above_unbounded
+	* tree.c (cb_field_has_unbounded), tree.h: removed; use
+	  flag_above_unbounded in callers (typeck.c, cobc.c) instead
+	* parser.y (occurs_clause): set flag_above_unbounded in parents
+
+2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (refmod_checks): fixed ec-bound-refmod checks for UNBOUNDED
+	* field.c (compute_size): take fields before the UNBOUNDED field into
+	  account when calculating its maximum elements;
+	  fix compiler crash if DEPENDING field does not exist
+	* parser.y (validated_field_reference): extracted from (identifier_field)
+	  and used in all places with the exact same code
+
+2023-07-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (copy_validation): new function
+	* field.c (copy_validation, copy_into_field): handling validation
+	* cobc.c (print_fields): leave a hint to field being TYPEDEF
+	* cobc.c (xref_fields): dont output references for TYPEDEF sub items
+
+2023-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (refmod_checks): extracted from (cb_build_identifier)
+	* typeck.c (refmod_checks): prevent condition-names to be reference-modified
+	* parser.y (class_value): improved error messages
+	* tree.c (cb_build_cast): set numeric category for all integer casts
+
+2023-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_identifier): allow ref-mod up to identifier length
+	* typeck.c (cb_build_identifier): new warning for suspicious reference-
+	  modification with start or length set to maximum and the other to var
+	* typeck.c (cb_build_move_literal): optimize to cb_build_move_num_zero in
+	  more cases
+
+2023-07-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (cb_ppecho_direct, output_pending_newlines): output only up
+	  to 9 empty lines, for more empty lines in the preparsed output file
+	  generate a matching #line directive, this saves both space and serves
+	  as a workaround for an unclear scanner bug that may happen with huge
+	  amounts of empty lines
+	* pplex.l (switch_to_buffer): don't re-strdup the filename
+	* parser.y (emit_statement): changed from define to inline function
+	* codegen.c: complete output of program's end source location if requested
+	* scanner.l: handle line directive in any state
+	* warning.def, typeck.c (validate_move), cobc.c (process_command_line):
+	* use existing -Wstrict-typing only for "strict" type mismatches, including
+	  "same size, different type" and move it to -Wextra; the other mismatches
+	  are still raised with -Wall but under the new -Wtyping
+
 2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y: fix code generation for OPEN/CLOSE with multiple
-	filenames, where DECLARATIVES for all arguments were called when
-	only one argument failed
+	  filenames, where DECLARATIVES for all arguments were called when
+	  only one argument failed
 
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -192,6 +260,8 @@
 2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.y (is_subordinate_to): start with parent, not field
+	* field.c (copy_into_field_recursive, copy_into_field): handling more
+	  field attributes, don't re-build picture
 
 2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -202,6 +272,11 @@
 
 	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
 	* parser.y: drop PENDING from OVERLINE and LEFTLINE
+	* tree.c (cb_build_intrinsic): refactored to get the name in a single place
+	* field.c (create_implicit_picture): don't imply a size if the source for
+	  VALUE is an intrinsic function or compile-time constant
+	* field.c (create_implicit_picture): don't stop on errors but still create
+	  an implied PIC to allow more checks later
 
 2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -234,6 +309,15 @@
 	  literal for use with CONTROL phrase
 	* parser.y: adjust a bunch of terminals to match the internal name with
 	  leading underscore as optional
+	* cobc.c: check for duplicate source file and skip with warning
+	* pplex.l: check for recursive file by resolved file name
+
+2023-05-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (usage), field.c (validate_field_1): postpone setting of
+	  field attribute flag_is_pointer from parsing the USAGE clause to final
+	  field validation, fixing group and "child" USAGE, as well as
+	  TYPEDEF + SAME AS with pointer types
 
 2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -241,6 +325,8 @@
 	  from int to their matching enum
 	* tree.c (cb_build_prototype), parser.y (setup_prototype),
 	  tree.h (struct cb_prototype): use matching enum
+	* tree.c (cb_field), parser.y, reserved.c: added parsing of GROUP-USAGE
+	* field.c (validate_field_1): handle new attribute group_usage
 
 2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -304,6 +390,11 @@
 	  (DISPLAY overpunched), that was removed undocumented with 2.0
 	* typeck.c (cb_build_move_literal): optimized output for literals to
 	  fields with BLANK WHEN ZERO and SIGN LEADING
+
+2023-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c: inclusion of condition-names (level 88) into field that use a
+	  TYPEDEF defintion
 
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -516,8 +607,6 @@
 
 2023-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* field.c (copy_into_field, copy_into_field_recursive): fix missing set
-	  of flag_is_pointer, fixing TYPEDEF + SAME AS with pointer types
 	* parser.y, reserved.c: add DISPLAY-1 as PENDING,
 	  actually pass NATIONAL usage if specified
 	* field.c (compute_size), tree.c (cb_tree_type): handle CB_USAGE_NATIONAL
@@ -2278,7 +2367,8 @@
 
 2020-09-27  Bob Dubner <rdubner@symas.com>
 
-	* codegen.c (output_cobol_info): emit doubled backslashes for source file
+	* codegen.c (output_cobol_info): emit doubled backslashes for source file,
+	  fixing bug #698 problem with #line directives
 
 2020-09-22  James K. Lowden  <jklowden@symas.com>
 

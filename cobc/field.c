@@ -37,10 +37,13 @@
 #include "../libcob/coblocal.h"
 
 /* sanity checks */
-#if COB_MAX_FIELD_SIZE > INT_MAX
+#if COB_MAX_FIELD_SIZE >= INT_MAX
 #error COB_MAX_FIELD_SIZE is too big, must be less than INT_MAX
 #endif
-#if COB_MAX_UNBOUNDED_SIZE > INT_MAX
+#if COB_MAX_FIELD_SIZE_LINKAGE >= INT_MAX
+#error COB_MAX_FIELD_SIZE_LINKAGE is too big, must be less than INT_MAX
+#endif
+#if COB_MAX_UNBOUNDED_SIZE >= INT_MAX
 #error COB_MAX_UNBOUNDED_SIZE is too big, must be less than INT_MAX
 #endif
 
@@ -702,6 +705,33 @@ copy_duplicated_field_into_field (struct cb_field *field, struct cb_field *targe
 }
 
 static void
+copy_validation (struct cb_field *source, struct cb_field *target)
+{
+	struct cb_field *val, *last_val;
+#if 0 /* in case we want to allow combining condition-names of typedef and field */
+	for (last_val = target->validation; last_val; last_val = last_val->sister) {
+		/* get to the last validation entry*/
+		if (!last_val->sister) {
+			break;
+		}
+	}
+#else
+	if (target->validation) {
+		(void) cb_syntax_check_x (CB_TREE (target->validation), _("duplicate %s"), "level  88");
+	}
+#endif
+	for (val = source->validation; val; val = val->sister) {
+		/* create content-name and link into the reference list */
+		cb_tree x = cb_build_field_tree (88, cb_build_reference (val->name),
+			target, target->storage, target->file, 0);
+		last_val = CB_FIELD (x);
+		/* directly assign the typef's value + false (no need for copy) */
+		last_val->values = val->values;
+		last_val->false_88 = val->false_88;
+	}
+}
+
+static void
 copy_children (struct cb_field *child, struct cb_field *target,
 	const int level, const int outer_indexes, const enum cb_storage storage)
 {
@@ -800,10 +830,12 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	field_attribute_override (flag_sign_leading);
 	field_attribute_override (flag_sign_separate);
 	field_attribute_override (flag_synchronized);
-	field_attribute_override (flag_item_based);
+	field_attribute_override (flag_sync_right);
+	field_attribute_override (flag_sync_left);
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
+	field_attribute_override (flag_item_based);
 	field_attribute_override (flag_is_pointer);
 	/* Note: attributes must be handled both here and in copy_into_field */
 
@@ -814,10 +846,18 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 		target->redefines = cb_resolve_redefines (target, ref);
 	}
 
+	/* copy all level 88 */
+	if (source->validation) {
+		copy_validation (source, target);
+	}
+
 	if (source->children) {
 		copy_children (source->children, target, target->level, outer_indexes, target->storage);
 	} else if (source->pic){
-		target->pic = cb_build_picture (source->pic->orig);
+		/* take over internal PICTURE representation as-is, no use in re-building
+		   that from scratch and handle calculated ->pic special */
+		target->pic = cobc_parse_malloc (sizeof (struct cb_picture));
+		memcpy (target->pic, source->pic, sizeof (struct cb_picture));
 	}
 
 	if (source->sister) {
@@ -846,7 +886,8 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 #endif
 
 	/* note: EXTERNAL is always applied from the typedef (if level 1/77),
-			 but may be specified on the field */
+			 but may be specified on the field;
+	   note: MF has different syntax rules and _only_ allows it on the field */
 	if (target->level == 1 || target->level == 77) {
 		field_attribute_copy (flag_external);
 		if (target->flag_external
@@ -859,6 +900,11 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 		}
 	}
 	target->usage = source->usage;
+	target->common.category = source->common.category;
+
+	/* Note: The attributes GLOBAL and SELECT WHEN are never included;
+	         SAME AS does not include EXTERNAL, but the TYPEDEF  */
+
 	if (source->values) {
 		if (target->values) {
 			duplicate_clause_message (target->values, "VALUE");
@@ -871,19 +917,32 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	field_attribute_copy (flag_sign_clause);
 	field_attribute_copy (flag_sign_leading);
 	field_attribute_copy (flag_sign_separate);
-	field_attribute_copy (flag_synchronized);
-	field_attribute_copy (flag_item_based);
+	if (source->flag_synchronized
+	 && !target->flag_synchronized) {
+		target->flag_synchronized = source->flag_synchronized;
+		target->flag_sync_right = source->flag_sync_right;
+		target->flag_sync_left = source->flag_sync_left;
+	}	
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
+	field_attribute_copy (flag_item_based);
 	field_attribute_override (flag_is_pointer);
 	/* Note: attributes must be handled both here and in copy_into_field_recursive */
+
+	/* copy all level 88 */
+	if (source->validation) {
+		copy_validation (source, target);
+	}
 
 	if (unlikely (!target->like_modifier)) {
 		if (source->children) {
 			copy_children (source->children, target, target->level, target->indexes, target->storage);
 		} else if (source->pic) {
-			target->pic = cb_build_picture (source->pic->orig);
+			/* take over internal PICTURE representation as-is, no use in re-building
+			   that from scratch and in handling calculated ->pic special */
+			target->pic = cobc_parse_malloc (sizeof (struct cb_picture));
+			memcpy (target->pic, source->pic, sizeof (struct cb_picture));
 		}
 	} else {
 		struct cb_picture *new_pic = NULL;
@@ -954,6 +1013,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 		if (new_pic) {
 			target->pic = new_pic;
 		} else if (target->pic) {
+			/* CHECKME: is there any use in re-building the PIC? */
 			target->pic = cb_build_picture (target->pic->orig);
 		}
 	}
@@ -1056,13 +1116,17 @@ create_implicit_picture (struct cb_field *f)
 		cb_tree impl_tree = f->screen_from ? f->screen_from : f->screen_to ? f->screen_to : NULL;
 		if (impl_tree) {
 			if (impl_tree == cb_error_node) {
-				return 1;
+				size_implied = 1;	/* go on to allow further checks */
 			}
 			if (CB_INTRINSIC_P (impl_tree) || CB_CONST_P (impl_tree)) {
 				size_implied = FIELD_SIZE_UNKNOWN;
 			} else {
-				size_implied = cb_field_size (impl_tree);
-				is_numeric = CB_TREE_CATEGORY (impl_tree) == CB_CATEGORY_NUMERIC;
+				if (CB_INTRINSIC_P (impl_tree) || CB_CONST_P (impl_tree)) {
+					size_implied = FIELD_SIZE_UNKNOWN;
+				} else {
+					size_implied = cb_field_size (impl_tree);
+					is_numeric = CB_TREE_CATEGORY (impl_tree) == CB_CATEGORY_NUMERIC;
+				}
 			}
 		} else if (first_value) {
 			/* done later*/
@@ -1075,7 +1139,7 @@ create_implicit_picture (struct cb_field *f)
 		if (size_implied == FIELD_SIZE_UNKNOWN) {
 			cb_error_x (x, _("PICTURE clause required for '%s'"),
 				    cb_name (x));
-			return 1;
+			size_implied = 1;	/* go on to allow further checks */
 		}
 
 		if (is_numeric) {
@@ -1084,6 +1148,9 @@ create_implicit_picture (struct cb_field *f)
 			sprintf (pic, "X(%d)", size_implied);
 		}
 		f->pic = cb_build_picture (pic);
+		if (f->size < size_implied) {
+			f->size = size_implied;
+		}
 		return 0;
 	}
 
@@ -1096,10 +1163,12 @@ create_implicit_picture (struct cb_field *f)
 			sprintf (pic, "X(%d)", size_implied);
 		} else if (f->report_source) {
 			size_implied = 1;
-			if (CB_LITERAL_P (f->report_source))
+			if (CB_LITERAL_P (f->report_source)) {
 				size_implied = (int)CB_LITERAL(f->report_source)->size;
-			else if (CB_FIELD_P (f->report_source))
+			} else if (CB_FIELD_P (f->report_source)) {
+				/* CHECKME: A source of type BINARY may need a different size */
 				size_implied = (int)CB_FIELD(f->report_source)->size;
+			}
 			sprintf (pic, "X(%d)", size_implied);
 		} else {
 			/* CHECKME: Where do we want to generate a not-field in the C code?
@@ -1109,8 +1178,9 @@ create_implicit_picture (struct cb_field *f)
 			strcpy (pic, "X");
 		}
 		f->pic = cb_build_picture (pic);
-		if (f->size < size_implied)
+		if (f->size < size_implied) {
 			f->size = size_implied;
+		}
 		return 0;
 	}
 
@@ -1134,8 +1204,10 @@ create_implicit_picture (struct cb_field *f)
 			}
 			if (lp->size < 10) {
 				f->usage = CB_USAGE_COMP_5;
+				f->size = lp->size;	/* CHECKME: that seems wrong */
 			} else {
 				f->usage = CB_USAGE_DISPLAY;
+				f->size = lp->size;
 			}
 			f->pic = cb_build_picture (pic);
 			f->pic->category = CB_CATEGORY_NUMERIC;
@@ -1144,6 +1216,7 @@ create_implicit_picture (struct cb_field *f)
 			f->pic = cb_build_picture (pic);
 			f->pic->category = CB_CATEGORY_ALPHANUMERIC;
 			f->usage = CB_USAGE_DISPLAY;
+			f->size = lp->size;
 		}
 		return 0;
 	}
@@ -1168,9 +1241,10 @@ create_implicit_picture (struct cb_field *f)
 		}
 	}
 
-	/* Checkme: should we raise an error for !cb_relaxed_syntax_checks? */
+	/* CHECKME: should we raise an error for !cb_relaxed_syntax_checks? */
 	if (!ret) {
-		cb_warning_x (cb_warn_additional, x, _("defining implicit picture size %d for '%s'"),
+		cb_warning_x (cb_warn_additional, x,
+			    _("defining implicit picture size %d for '%s'"),
 			    size_implied, cb_name (x));
 	}
 	if (is_numeric) {
@@ -1181,6 +1255,9 @@ create_implicit_picture (struct cb_field *f)
 	f->pic = cb_build_picture (pic);
 	f->pic->category = CB_CATEGORY_ALPHANUMERIC;
 	f->usage = CB_USAGE_DISPLAY;
+	if (f->size < size_implied) {
+		f->size = size_implied;
+	}
 	return ret;
 }
 
@@ -1206,6 +1283,7 @@ validate_any_length_item (struct cb_field *f)
 		cb_error_x (x, _("'%s' ANY LENGTH has invalid definition"), cb_name (x));
 		return 1;
 	}
+
 	if (!f->pic) {
 		const char *pic = f->flag_any_numeric ? "9" : "X";
 		f->pic = cb_build_picture (pic);
@@ -1361,22 +1439,24 @@ validate_group (struct cb_field *f)
 		group_error (x, "PICTURE");
 	}
 	if (f->flag_justified) {
-		if (!f->flag_picture_l)
+		if (!f->flag_picture_l) {
 			group_error (x, "JUSTIFIED RIGHT");
-		else
+		} else {
 			cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"),
 				    cb_name (x));
+		}
 	}
 	if (f->flag_blank_zero) {
-		if (!f->flag_picture_l)
+		if (!f->flag_picture_l) {
 			group_error (x, "BLANK WHEN ZERO");
-		else
+		} else {
 			cb_error_x (x, _("'%s' cannot have BLANK WHEN ZERO clause"),
 				    cb_name (x));
+		}
 	}
 
-	if (f->storage == CB_STORAGE_SCREEN &&
-	    (f->screen_from || f->screen_to || f->values || f->pic)) {
+	if (f->storage == CB_STORAGE_SCREEN
+	 && (f->screen_from || f->screen_to || f->values || f->pic)) {
 		cb_error_x (x, _("SCREEN group item '%s' has invalid clause"),
 			    cb_name (x));
 		ret = 1;
@@ -1620,11 +1700,11 @@ validate_justified_right (const struct cb_field * const f)
 	/* TODO: Error if no PIC? */
 
 	if (f->flag_justified
-	    && f->pic
-	    && f->pic->category != CB_CATEGORY_ALPHABETIC
-	    && f->pic->category != CB_CATEGORY_ALPHANUMERIC
-	    && f->pic->category != CB_CATEGORY_BOOLEAN
-	    && f->pic->category != CB_CATEGORY_NATIONAL) {
+	 && f->pic
+	 && f->pic->category != CB_CATEGORY_ALPHABETIC
+	 && f->pic->category != CB_CATEGORY_ALPHANUMERIC
+	 && f->pic->category != CB_CATEGORY_BOOLEAN
+	 && f->pic->category != CB_CATEGORY_NATIONAL) {
 		cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"), cb_name (x));
 	}
 }
@@ -2130,7 +2210,7 @@ validate_elementary_item (struct cb_field *f)
 		validate_elem_screen (f);
 	}
 
-	/* Validate PICTURE */
+	/* Validate PICTURE (adjusts the field if an implicit PIC is created) */
 	ret |= validate_pic (f);
 
 	/* TODO: This is not validation and should be elsewhere. */
@@ -2741,12 +2821,24 @@ get_max_int_val (struct cb_field *f)
 static int
 compute_size (struct cb_field *f)
 {
+	const int max_size = f->storage == CB_STORAGE_LINKAGE
+		? COB_MAX_FIELD_SIZE_LINKAGE
+		: COB_MAX_FIELD_SIZE;
+
 	if (f->level == 66) {	/* RENAMES */
 		if (f->rename_thru) {
 			f->size = f->rename_thru->offset
 			        + f->rename_thru->size - f->redefines->offset;
 		} else if (f->redefines) {
+#if 0	/* FIXME: redefine loop, possibly also below */
+			if (f->redefines->size == 0) {
+				f->size = compute_size (f->redefines);
+			} else {
+				f->size = f->redefines->size;
+			}
+#else
 			f->size = f->redefines->size;
+#endif
 		} else {
 			f->size = 1;	/* error case: invalid REDEFINES */
 		}
@@ -2754,7 +2846,7 @@ compute_size (struct cb_field *f)
 	}
 
 	/* early exit if we're already calculated as "too big" */
-	if (f->size == COB_MAX_FIELD_SIZE + 1) {
+	if (f->size == max_size + 1) {
 		return f->size;
 	}
 
@@ -2810,15 +2902,41 @@ unbounded_again:
 			} else {
 				c->offset = f->offset + (int) size_check;
 				compute_size (c);
-				if (c->flag_unbounded) {
-					const int max_odo_value = get_max_int_val (CB_FIELD_PTR (c->depending));
-					unbounded_items++;
-					/* computed MAX */
-					c->occurs_max = (COB_MAX_UNBOUNDED_SIZE / c->size / unbounded_parts) - 1;
-					/* maximum from ODO field */
-					if (max_odo_value != 0
-					 && max_odo_value < c->occurs_max) {
-						c->occurs_max = max_odo_value;
+				if (c->flag_unbounded && CB_VALID_TREE (c->depending)) {
+					cb_tree dep = cb_ref (c->depending);
+					if (CB_FIELD_P (dep)) {
+						const int max_odo_value = get_max_int_val (CB_FIELD (dep));
+						unbounded_items++;
+						/* computed MAX */
+						{
+							/* size above the field  [there is no sister for UNBOUNDED]*/
+							cob_s64_t size_above = 0;
+							struct cb_field *curr_fld = c;
+							struct cb_field *p_fld = f;
+							while (p_fld) {
+								struct cb_field *p_fld_c;
+								for (p_fld_c = p_fld->children; p_fld_c != curr_fld; p_fld_c = p_fld_c->sister) {
+									if (p_fld_c->size == 0) {
+										compute_size (p_fld_c);
+									}
+									size_above += p_fld_c->size;
+								}
+								curr_fld = p_fld;
+								p_fld = p_fld->parent;
+							}
+							/* calculated size */
+							c->occurs_max = (   (COB_MAX_UNBOUNDED_SIZE - size_above)
+							                  / (c->size * unbounded_parts)
+							                ) - 1;
+							/* maximum possible in ODO field */
+							if (max_odo_value != 0
+							 && max_odo_value < c->occurs_max) {
+								c->occurs_max = max_odo_value;
+							}
+						}
+
+					} else {
+						c->depending = cb_error_node;
 					}
 				}
 				size_check += (cob_s64_t)c->size * c->occurs_max;
@@ -2922,11 +3040,11 @@ unbounded_again:
 				}
 				goto unbounded_again;
 			}
-		} else if (size_check > COB_MAX_FIELD_SIZE) {
+		} else if (size_check > max_size) {
 			cb_error_x (CB_TREE (f),
 					_("'%s' cannot be larger than %d bytes"),
-					f->name, COB_MAX_FIELD_SIZE);
-			size_check = COB_MAX_FIELD_SIZE + 1;
+					f->name, max_size);
+			size_check = max_size + 1;
 		}
 		if (size_check <= INT_MAX) {
 			f->size = (int) size_check;
@@ -2980,14 +3098,19 @@ unbounded_again:
 			compute_binary_size (f, size);
 			break;
 		case CB_USAGE_ERROR:
-			/* Fall-through */
-		case CB_USAGE_DISPLAY:
 			if (f->pic == NULL) {
 				/* should only happen for fields where we already raised
-				   an error and could not create an implied PICTURE eitehr */
+				   an error and could not create an implied PICTURE either */
 				f->size = 1;
 				break;
 			}
+			/* Fall-through */
+		case CB_USAGE_DISPLAY:
+#if 0	/* should be always available here */
+			if (f->pic == NULL) {
+				break;
+			}
+#endif
 			/* boolean items without USAGE BIT */
 			if (f->pic->category == CB_CATEGORY_BOOLEAN) {
 				f->size = f->pic->size / 8;
@@ -3001,11 +3124,11 @@ unbounded_again:
 				f->size++;
 			}
 			/* note: size check for single items > INT_MAX done in tree.c */
-			if (f->size > COB_MAX_FIELD_SIZE) {
+			if (f->size > max_size) {
 				cb_error_x (CB_TREE (f),
 						_("'%s' cannot be larger than %d bytes"),
-						f->name, COB_MAX_FIELD_SIZE);
-				f->size = COB_MAX_FIELD_SIZE + 1;
+						f->name, max_size);
+				f->size = max_size + 1;
 			}
 			break;
 		case CB_USAGE_NATIONAL:

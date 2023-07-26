@@ -49,13 +49,6 @@
 #define YYSTYPE			cb_tree
 #define yyerror(x)		cb_error_always ("%s", x)
 
-#define emit_statement(x) \
-do { \
-  if (!skip_statements) { \
-	CB_ADD_TO_CHAIN (x, current_program->exec_list); \
-  } \
-}  ONCE_COB
-
 #define push_expr(type, node) \
   current_expr = cb_build_list (cb_int (type), node, current_expr)
 
@@ -405,6 +398,14 @@ build_colseq (enum cb_colseq colseq)
 
 
 /* Statements */
+
+static COB_INLINE COB_A_INLINE void
+emit_statement (cb_tree x)
+{
+	if (!skip_statements) {
+		CB_ADD_TO_CHAIN (x, current_program->exec_list);
+	}
+}
 
 static void
 begin_statement_internal (enum cob_statement statement, const unsigned int term,
@@ -773,9 +774,16 @@ setup_occurs (void)
 	}
 
 	if (current_field->flag_unbounded) {
-		if (current_field->storage != CB_STORAGE_LINKAGE) {
-			cb_error_x (CB_TREE(current_field), _("'%s' is not in LINKAGE SECTION"),
-				cb_name (CB_TREE(current_field)));
+		if (current_field->storage == CB_STORAGE_LINKAGE) {
+			struct cb_field *p = current_field;
+			while (p) {
+				p->flag_above_unbounded = 1;
+				p = p->parent;
+			}
+		} else {
+			cb_tree x = CB_TREE (current_field);
+			cb_error_x (x, _("'%s' is not in LINKAGE SECTION"), cb_name (x));
+			current_field->flag_above_unbounded = 1;
 		}
 	}
 
@@ -2297,6 +2305,23 @@ error_if_not_usage_display_or_nonnumeric_lit (cb_tree x)
 			cb_error_x (x, _ ("'%s' is not USAGE DISPLAY"), cb_name (x));
 		}
 	}
+}
+
+/* guarantees a reference to a validated field-reference (or cb_error_node) */
+static cb_tree
+validated_field_reference (cb_tree fld_ref)
+{
+	cb_tree ref = NULL;
+	if (CB_REFERENCE_P (fld_ref)) {
+		ref = cb_ref (fld_ref);
+		if (CB_FIELD_P (ref)) {
+			return fld_ref;
+		}
+	}
+	if (ref != cb_error_node) {
+		cb_error_x (fld_ref, _ ("'%s' is not a field"), cb_name (fld_ref));
+	}
+	return cb_error_node;
 }
 
 static void
@@ -4988,12 +5013,12 @@ class_item:
   }
 | class_value THRU class_value
   {
-	if (CB_TREE_CLASS ($1) != CB_CLASS_NUMERIC &&
-	    CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
+	if (CB_TREE_CLASS ($1) != CB_CLASS_NUMERIC
+	 && CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
 		cb_error (_("CLASS literal with THRU must have size 1"));
 	}
-	if (CB_TREE_CLASS ($3) != CB_CLASS_NUMERIC &&
-	    CB_LITERAL_P ($3) && CB_LITERAL ($3)->size != 1) {
+	if (CB_TREE_CLASS ($3) != CB_CLASS_NUMERIC
+	 && CB_LITERAL_P ($3) && CB_LITERAL ($3)->size != 1) {
 		cb_error (_("CLASS literal with THRU must have size 1"));
 	}
 	if (cb_literal_value ($1) <= cb_literal_value ($3)) {
@@ -8357,12 +8382,6 @@ occurs_clause:
   DEPENDING _on reference _occurs_keys_and_indexed
   {
 	current_field->flag_unbounded = 1;
-#if 0 /* Why should we do this? If this is relevant then it likely needs to be done
-	   either to the field founder or to the complete list of parents up to it. */
-	if (current_field->parent) {
-		current_field->parent->flag_unbounded = 1;
-	}
-#endif
 	current_field->depending = $7;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -13861,6 +13880,7 @@ entry_statement:
   {
 	check_unreached = 0;
 	begin_statement (STMT_ENTRY, 0);
+	current_statement->flag_no_based = 1;
   }
   entry_body
 | entry
@@ -19385,19 +19405,7 @@ identifier_or_file_name:
 identifier_field:
   identifier_1
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-
-	if (x && CB_FIELD_P (x)) {
-		$$ = $1;
-	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
-		$$ = cb_error_node;
-	}
+	$$ = validated_field_reference ($1);
   }
 ;
 
@@ -19406,10 +19414,7 @@ identifier_field:
 type_name:
   WORD
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
+	cb_tree x = CB_REFERENCE_P ($1) ? cb_ref ($1) : NULL;
 
 	if (x && CB_FIELD_P (x) && CB_FIELD (x)->flag_is_typedef) {
 		$$ = $1;
@@ -19425,16 +19430,10 @@ type_name:
 identifier:
   identifier_1
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-	if (x && CB_FIELD_P (x)) {
+	cb_tree x = validated_field_reference ($1);
+	if (x != cb_error_node) {
 		$$ = cb_build_identifier ($1, 0);
 	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
 		$$ = cb_error_node;
 	}
   }
@@ -19742,11 +19741,12 @@ class_value:
   {
 	if (cb_tree_category ($1) == CB_CATEGORY_NUMERIC) {
 		if (CB_LITERAL ($1)->sign || CB_LITERAL ($1)->scale) {
-			cb_error (_("integer value expected"));
+			cb_error_x ($1, _("integer value expected"));
 		} else {
 			int	n = cb_get_int ($1);
+			/* FIXME: national class has bigger "number of characters in its character set" */
 			if (n < 1 || n > 256) {
-				cb_error (_("invalid CLASS value"));
+				cb_error_x ($1, _("CLASS value %d outside of range for the used character set"), n);
 			}
 		}
 	}

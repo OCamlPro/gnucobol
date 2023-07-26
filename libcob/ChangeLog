@@ -1,4 +1,31 @@
 
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: only check -1 as invalid fd; return fileio status for
+	  invalid file state in CBL_ routines, instead of fixed -1 / 35
+	* call.c (cache_preload, cob_resolve_internal): runtime warning if
+	  (pre)loading from existing path does not work
+	* (cache_preload): runtime warning if preloading from existing path
+	  does not work
+	* call.c (cob_try_preload): runtime warning if preloading of
+	  requested module does not work
+	* (cob_resolve_internal): runtime warning if loading module from
+	  existing path or resolving requested entry point does not work
+
+2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h (COB_MAX_FIELD_SIZE_LINKAGE): new definition
+
+2023-07-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (get_config_val): fixed output of "not set" for enum values
+	* common.c (create_dumpfile): more details if dump could not be created
+
+2023-07-18  Simon Sobisch <simonsobisch@gnu.org>
+after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (cob_move_display_to_packed): fix memory trashing in edge cases
+
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_check_fence), common.h: new function to check for writing
@@ -66,7 +93,7 @@
 	  otherwise it is lost on first CLOSE
 	* fileio.c: disable setting of record min/max size outside of OPEN,
 	  disable setting of record size in some places
-
+	* fileio.c: adjusted setting of SORT-RETURN register
 
 2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
 

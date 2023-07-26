@@ -293,6 +293,7 @@ static void output_integer	(cb_tree);
 static void output_index	(cb_tree);
 static void output_func_1	(const char *, cb_tree);
 static void output_param	(cb_tree, int);
+static void output_field_no_target	(cb_tree);
 static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
 
@@ -2768,7 +2769,6 @@ cb_lookup_literal (cb_tree x, int make_decimal)
 {
 	struct cb_literal	*literal;
 	struct literal_list	*l;
-	FILE			*savetarget;
 
 	literal = CB_LITERAL (x);
 	/* Search literal cache */
@@ -2788,11 +2788,7 @@ cb_lookup_literal (cb_tree x, int make_decimal)
 	}
 
 	/* Output new literal */
-	savetarget = output_target;
-	output_target = NULL;
-	output_field (x);
-
-	output_target = savetarget;
+	output_field_no_target (x);
 
 	/* Cache it */
 	l = cobc_parse_malloc (sizeof (struct literal_list));
@@ -3489,9 +3485,7 @@ create_field (struct cb_field *f, cb_tree x)
 {
 	if (!f->flag_field) {
 		struct field_list* fl;
-		FILE* savetarget = output_target;
-		output_target = NULL;
-		output_field (x);
+		output_field_no_target (x);
 
 		fl = cobc_parse_malloc (sizeof (struct field_list));
 		fl->x = x;
@@ -3508,8 +3502,16 @@ create_field (struct cb_field *f, cb_tree x)
 		}
 
 		f->flag_field = 1;
-		output_target = savetarget;
 	}
+}
+
+static void
+output_field_no_target (cb_tree x)
+{
+	FILE	*savetarget = output_target;
+	output_target = NULL;
+	output_field (x);
+	output_target = savetarget;
 }
 
 static void
@@ -5262,6 +5264,7 @@ output_initialize_to_default (struct cb_field *f, cb_tree x)
 static void
 output_c_info (void)
 {
+	/* note: output name is already escaped for C string */
 	output ("#line %d \"%s\"", output_line_number + 1, output_name);
 	output_newline ();
 }
@@ -5271,6 +5274,7 @@ output_cobol_info (cb_tree x)
 {
 	const char	*p = x->source_file;
 	output ("#line %d \"", x->source_line);
+	/* escape COBOL file name for C string */
 	while (*p) {
 		if (*p == '\\') {
 			output ("%c",'\\');
@@ -11500,7 +11504,6 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	struct call_list	*clp;
 	struct base_list	*bl;
 	struct literal_list	*m;
-	FILE			*savetarget;
 	const char		*s;
 	char			key_ptr[64];
 	cob_u32_t		inc, i;
@@ -12051,26 +12054,12 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_newline ();
 #endif
 
-	if (prog->num_proc_params) {
-		if (!cb_sticky_linkage && !prog->flag_chained
+	if (prog->num_proc_params
+	 && !cb_sticky_linkage && !prog->flag_chained
 #if	0	/* RXWRXW USERFUNC */
-		 && prog->prog_type != COB_MODULE_TYPE_FUNCTION
+	 && prog->prog_type != COB_MODULE_TYPE_FUNCTION
 #endif
 		) {
-			output_line ("/* Set not passed parameter pointers to NULL */");
-			output_line ("switch (cob_call_params) {");
-			inc = 0;
-			for (l = parameter_list; l; l = CB_CHAIN (l)) {
-				output_line ("case %u:", inc++);
-				output_line ("\t%s%d = NULL;",
-					CB_PREFIX_BASE, cb_code_field (CB_VALUE (l))->id);
-				output_line ("/* Fall through */");
-			}
-			output_line ("default:");
-			output_line ("\tbreak; ");
-			output_line ("}");
-			output_newline ();
-		}
 		output_line ("/* Store last parameters for possible later lookup */");
 		output_local ("/* Last USING parameters for possible later lookup */\n");
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
@@ -12097,12 +12086,17 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				seen = 1;
 				output_line ("/* Initialize ANY LENGTH parameters */");
 			}
-			/* Force field cache */
-			savetarget = output_target;
-			output_target = NULL;
-			output_param (CB_VALUE (l), inc);
-			output_target = savetarget;
+			{
+				/* Force field cache */
+				FILE	*savetarget = output_target;
+				output_target = NULL;
+				output_param (CB_VALUE (l), inc);
+				output_target = savetarget;
+			}
 
+			/* FIXME: the ordinal positions are _only_ correct in the entry point
+			   functions, see bug #902 (an ENTRY may only specify the ANY LENGTH
+			   parameter or even swap the order */
 			output_line ("if (cob_call_params > %u && "
 				         "module->next && "
 				         "module->next->cob_procedure_params[%u])",
@@ -12237,11 +12231,24 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	/* Output source location as code */
 	if (cb_flag_source_location) {
+		struct cb_tree_common	loc;
+
+		loc.source_file = prog->common.source_file;
+		loc.source_line = prog->last_source_line;
+		loc.source_column = 0;
 		output_newline ();
-		l = CB_TREE (prog);
+		output_line ("/* Line: %-10d: last source line                  :%s */",
+			prog->last_source_line, prog->common.source_file);
+		if (cb_flag_c_line_directives) {
+			output_cobol_info (&loc);
+		}
 		output_line ("module->module_stmt = 0x%08X;",
 			COB_SET_LINE_FILE (prog->last_source_line,
-			  lookup_source (l->source_file)));
+			  lookup_source (prog->common.source_file)));
+		if (cb_flag_c_line_directives) {
+			output_c_info ();
+			output_line ("cob_nop ();");
+		}
 		output_newline ();
 	}
 
@@ -13035,8 +13042,6 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	struct cb_field		*f;
 	struct cb_field		*f1;
 	struct cb_field		*f2;
-	const char		*s;
-	const char		*s2;
 	const char		*s_prefix;
 	const char		*s_type[MAX_CALL_FIELD_PARAMS];
 	cob_u32_t		parmnum;
@@ -13132,11 +13137,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 
 	/* For calling into a module, cob_call_params may not be known */
 	if (using_list) {
-		parmnum = 0;
-		for (l = using_list; l; l = CB_CHAIN (l)) {
-			parmnum++;
-		}
 		if (entry_convention & CB_CONV_COBOL) {
+			unsigned int inc = 0;
 			output_line("/* Get current number of call parameters,");
 			output_line("   if the parameter count is unknown, set it to all */");
 			if (cb_flag_implicit_init) {
@@ -13145,12 +13147,32 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 				output_line ("if (cob_get_global_ptr ()->cob_current_module) {");
 			}
 			output_line ("\tcob_call_params = cob_get_global_ptr ()->cob_call_params;");
+			if (!cb_sticky_linkage && !prog->flag_chained
+#if	0	/* RXWRXW USERFUNC */
+				&& prog->prog_type != COB_MODULE_TYPE_FUNCTION
+#endif
+				) {
+				output_line ("/* Set not passed parameter pointers to NULL */");
+				output_line ("switch (cob_call_params) {");
+				for (l = using_list; l; l = CB_CHAIN (l)) {
+					output_line ("case %u:", inc++);
+					output_line ("\t%s%d = %s;",
+						CB_PREFIX_BASE, cb_code_field (CB_VALUE (l))->id,
+						(CB_PURPOSE_INT (l) == CB_CALL_BY_VALUE)
+						? "0" : "NULL");
+					output_line ("/* Fall through */");
+				}
+				output_line ("default:");
+				output_line ("\tbreak; ");
+				output_line ("}");
+				output_newline ();
+			}
 			output_line ("} else {");
-			output_line ("\tcob_call_params = %d;", parmnum);
+			output_line ("\tcob_call_params = %u;", cb_list_length (using_list));
 			output_line ("};");
 		} else {
 			output_line ("/* Set current number of call parameters to max */");
-			output_line (" cob_call_params = %d;", parmnum);
+			output_line (" cob_call_params = %u;", cb_list_length (using_list));
 		}
 		output_newline();
 	}
@@ -13164,20 +13186,20 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	/* Sticky linkage parameters */
 	if (cb_sticky_linkage && using_list) {
 		for (l = using_list, parmnum = 0; l; l = CB_CHAIN (l), parmnum++) {
-			f = cb_code_field (CB_VALUE (l));
+			cb_tree f_tree = CB_VALUE (l);
+			f = cb_code_field (f_tree);
 			sticky_ids[parmnum] = f->id;
 			if (CB_PURPOSE_INT (l) == CB_CALL_BY_VALUE) {
-				s = try_get_by_value_parameter_type (f->usage, l);
-				if (f->usage == CB_USAGE_FP_BIN128
-				 || f->usage == CB_USAGE_FP_DEC128) {
-					s2 = "{{0, 0}}";
-				} else {
-					s2 = "0";
-				}
-
+				const char *s = try_get_by_value_parameter_type (f->usage, l);
 				if (s) {
-					output_line ("static %s\tcob_parm_l_%d = %s;",
-						s, f->id, s2);
+					output_line ("static %s\tcob_parm_l_%d = %s;"
+						"\t/* sticky linkage for %s */",
+						s, f->id,
+						(f->usage == CB_USAGE_FP_BIN128
+						 || f->usage == CB_USAGE_FP_DEC128)
+						? "{{0, 0}}" : "0",
+						cb_name (f_tree)
+						);
 					sticky_nonp[parmnum] = 1;
 				}
 			}
