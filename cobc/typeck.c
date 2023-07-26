@@ -13178,6 +13178,11 @@ search_set_keys (struct cb_field *f, cb_tree x)
 		}
 	}
 
+	if (!CB_BINARY_OP_P (x)) {
+		cb_error_x (x, _("invalid SEARCH ALL condition"));
+		return 1;
+	}
+
 	p = CB_BINARY_OP (x);
 	switch (p->op) {
 	case '&':
@@ -13198,11 +13203,12 @@ search_set_keys (struct cb_field *f, cb_tree x)
 		if (CB_REF_OR_FIELD_P (p->y)) {
 			fldy = CB_FIELD_PTR (p->y);
 		}
+#if 0	/* validated in the parser */
 		if (!fldx && !fldy) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("invalid SEARCH ALL condition"));
+			cb_error_x (CB_TREE (p), _("invalid SEARCH ALL condition"));
 			return 1;
 		}
+#endif
 
 		for (i = 0; i < f->nkeys; ++i) {
 			if (fldx == CB_FIELD_PTR (f->keys[i].key)) {
@@ -13221,15 +13227,13 @@ search_set_keys (struct cb_field *f, cb_tree x)
 				}
 			}
 			if (i == f->nkeys) {
-				cb_error_x (CB_TREE (current_statement),
-					    _("invalid SEARCH ALL condition"));
+				cb_error_x (x, _("SEARCH ALL requires comparision of KEY field"));
 				return 1;
 			}
 		}
 		break;
 	default:
-		cb_error_x (CB_TREE (current_statement),
-			    _("invalid SEARCH ALL condition"));
+		cb_error_x (x, _("invalid SEARCH ALL condition"));
 		return 1;
 	}
 	return 0;
