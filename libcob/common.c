@@ -115,6 +115,8 @@
 #include <ncurses/ncurses.h>
 #define COB_GEN_SCREENIO
 #elif defined (HAVE_PDCURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
 #define COB_GEN_SCREENIO
@@ -125,12 +127,6 @@
 #ifndef PDC_MOUSE_MOVED
 #undef PDC_NCMOUSE
 #endif
-#endif
-
-#if defined (__PDCURSES__)
-/* Note: PDC will internally define NCURSES_MOUSE_VERSION with
-   a recent version when PDC_NCMOUSE was defined;
-   for older version define manually! */
 #endif
 
 #if defined (WITH_XML2)
@@ -1977,8 +1973,6 @@ cob_cmp_alnum (cob_field *f1, cob_field *f2)
 	} else {		/* check with collation */
 
 		/* Compare common substring */
-		//raise(6);
-		//if ((ret = common_cmps (data1, data1, min, col)) != 0) {
 		if ((ret = common_cmps (data1, data2, min, col)) != 0) {
 			return ret;
 		}
@@ -4275,7 +4269,7 @@ cob_check_linkage (const unsigned char *x, const char *name, const int check_typ
 	if (!x) {
 		/* name includes '' already and can be ... 'x' of 'y' */
 		switch (check_type) {
-		case 0: /* check for passed items and (later = 4.x) size on module entry */
+		case 0: /* check for passed items on module entry */
 			cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
 			if (cobglobptr->cob_stmt_exception) {
 				/* CALL has ON EXCEPTION so return to caller */
@@ -4685,17 +4679,9 @@ static set_cob_time_from_localtime (time_t curtime,
 #if defined (_BSD_SOURCE)
 	cb_time->offset_known = 1;
 	cb_time->utc_offset = tmptr->tm_gmtoff / 60;
-#elif defined (HAVE_TIMEZONE_FUNCTIONS) || defined (HAVE_TIMEZONE)
+#elif defined (HAVE_TIMEZONE)
 	cb_time->offset_known = 1;
-#if defined (HAVE_TIMEZONE_FUNCTIONS) && defined (_UCRT)
-	{
-		long seconds;
-		_get_timezone (&seconds);
-		cb_time->utc_offset = seconds / -60;
-	}
-#else
 	cb_time->utc_offset = timezone / -60;
-#endif
 	/* LCOV_EXCL_START */
 	if (tmptr->tm_isdst) {
 		cb_time->utc_offset += 60;
@@ -6461,41 +6447,7 @@ cob_sys_hosted (void *p, const void *var)
 			*((int **)data) = &errno;
 			return 0;
 		}
-#if defined (HAVE_TIMEZONE_FUNCTIONS) && defined (_UCRT)
-		{
-			static char *tzname_buff[2] = { 0 };
-			size_t tznameSize;
-			unsigned int i;
-
-			_tzset ();	/* w may not have called a time function, so init */
-			for (i = 0; i != 2; i++) {
-				tznameSize = 0;
-				if (_get_tzname (&tznameSize, NULL, 0, 0)) {
-					return 1;
-				}
-				if (tzname_buff[i]) {
-					tzname_buff[i] = (char *)(cob_cache_realloc (tzname_buff[i], tznameSize));
-				} else {
-					tzname_buff[i] = (char *)(cob_cache_malloc (tznameSize));
-				}
-				if (!tzname_buff[i]) {
-					return 1;
-				}
-				if (_get_tzname (&tznameSize, tzname_buff[i], tznameSize, i)) {
-					return 1;
-				}
-			}
-
-		}
-		if ((i == 8) && !memcmp (name, "timezone", 8)) {
-			_get_timezone ((long *)data);
-			return 0;
-		}
-		if ((i == 8) && !memcmp (name, "daylight", 8)) {
-			_get_daylight ((int *)data);
-			return 0;
-		}
-#elif defined (HAVE_TIMEZONE)
+#if defined (HAVE_TIMEZONE)
 		if ((i == 6) && !memcmp (name, "tzname", 6)) {
 			/* Recheck: bcc raises "suspicious pointer conversion */
 			*((char ***)data) = tzname;
@@ -9148,16 +9100,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 				cob_statement_name[cobglobptr->last_exception_statement]);
 		}
 		break;
-	case COB_FERROR_FATAL_EXCEPTION:
-		if (cobglobptr->last_exception_statement == STMT_UNKNOWN) {
-			cob_runtime_error (_ ("fatal exception %s"),
-				cob_get_last_exception_name ());
-		} else {
-			cob_runtime_error (_("fatal exception %s on %s"),
-				cob_get_last_exception_name (),
-				cob_statement_name[cobglobptr->last_exception_statement]);
-		}
-		break;
 	/* LCOV_EXCL_START */
 	case COB_FERROR_FUNCTION:
 		cob_runtime_error (_("attempt to use non-implemented function"));
@@ -9277,10 +9219,8 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 			mouse_support = _("no");
 		}
 	}
-#elif defined (HAVE_MOUSEMASK)
+#elif defined (NCURSES_MOUSE_VERSION)
 #if defined (__PDCURSES__)
-	/* CHECKME: that looks wrong - can't we test as above?
-	   Double check with older PDCurses! */
 	mouse_support = _("yes");
 #endif
 #else
