@@ -179,6 +179,7 @@ AH_TEMPLATE([HAVE_RESIZE_TERM], [curses has resize_term function])
 AH_TEMPLATE([HAVE_DEFINE_KEY], [curses has define_key function])
 AH_TEMPLATE([HAVE_MOUSEINTERVAL], [curses has mouseinterval function])
 AH_TEMPLATE([HAVE_HAS_MOUSE], [curses has has_mouse function])
+AH_TEMPLATE([HAVE_MOUSEMASK], [curses has mousemask function and mmask_t definition])
 AH_TEMPLATE([HAVE_CURSES_FREEALL], [curses provides function to free all memory])
 AH_TEMPLATE([HAVE_USE_LEGACY_CODING], [ncurses has use_legacy_coding function])
 AH_TEMPLATE([HAVE_DESIGNATED_INITS], [Has designated initializers])
@@ -1527,6 +1528,28 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	has_mouse ();
 	]])],
 	[AC_DEFINE([HAVE_HAS_MOUSE], [1]) AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])],
+	[])
+
+	AC_MSG_CHECKING([for curses mousemask function and mmask_t])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+	#ifdef HAVE_NCURSESW_NCURSES_H
+	#include <ncursesw/ncurses.h>
+	#elif defined (HAVE_NCURSESW_CURSES_H)
+	#include <ncursesw/curses.h>
+	#elif defined (HAVE_NCURSES_H)
+	#include <ncurses.h>
+	#elif defined (HAVE_NCURSES_NCURSES_H)
+	#include <ncurses/ncurses.h>
+	#elif defined (HAVE_PDCURSES_H)
+	#include <pdcurses.h>
+	#elif defined (HAVE_CURSES_H)
+	#include <curses.h>
+	#endif]], [[
+	mmask_t 	dummy =  { 0 };
+	mousemask (dummy, NULL);
+	]])],
+	[AC_DEFINE([HAVE_MOUSEMASK], [1]) AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])],
 	[])
 fi

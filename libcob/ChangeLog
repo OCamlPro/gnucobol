@@ -1,4 +1,9 @@
 
+2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c, common.c: replace use of NCURSES_MOUSE_VERSION by
+	  HAVE_MOUSEMASK
+
 2023-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* move.c (cob_move_display_to_packed): fix data corruption caused

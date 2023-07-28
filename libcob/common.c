@@ -115,8 +115,6 @@
 #include <ncurses/ncurses.h>
 #define COB_GEN_SCREENIO
 #elif defined (HAVE_PDCURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
 #define COB_GEN_SCREENIO
@@ -127,6 +125,12 @@
 #ifndef PDC_MOUSE_MOVED
 #undef PDC_NCMOUSE
 #endif
+#endif
+
+#if defined (__PDCURSES__)
+/* Note: PDC will internally define NCURSES_MOUSE_VERSION with
+   a recent version when PDC_NCMOUSE was defined;
+   for older version define manually! */
 #endif
 
 #if defined (WITH_XML2)
@@ -9219,8 +9223,10 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 			mouse_support = _("no");
 		}
 	}
-#elif defined (NCURSES_MOUSE_VERSION)
+#elif defined (HAVE_MOUSEMASK)
 #if defined (__PDCURSES__)
+	/* CHECKME: that looks wrong - can't we test as above?
+	   Double check with older PDCurses! */
 	mouse_support = _("yes");
 #endif
 #else
