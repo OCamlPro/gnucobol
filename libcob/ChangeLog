@@ -1,4 +1,9 @@
 
+2023-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (cob_move_display_to_packed): fix data corruption caused
+	  by packing one extra digit from the input display field
+
 2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: only check -1 as invalid fd; return fileio status for
