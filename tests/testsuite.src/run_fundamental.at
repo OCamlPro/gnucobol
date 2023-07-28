@@ -1556,12 +1556,13 @@ some (void)
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE module.c], [0], [], [])
-# CHECKME: the waning itself is likely system specific,
-#          in this case re-adjust to only check for a warning
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:6: warning: loading from existing path './module.so' failed; ./module.so: undefined symbol: module
-libcob: prog.cob:6: error: entry point 'module' not found
+# the warning itself is very system specific, so disable it,
+# then run again checking only for the warning
+AT_CHECK([COB_DISABLE_WARNINGS=1 $COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:6: error: entry point 'module' not found
 ])
+AT_CHECK([$COBCRUN_DIRECT ./prog 2> err.log], [1], [], [])
+AT_CHECK([$GREP "libcob: prog.cob:6: warning: " err.log], [0], ignore, [])
 
 AT_CLEANUP
 
