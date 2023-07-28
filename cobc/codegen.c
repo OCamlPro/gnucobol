@@ -600,9 +600,8 @@ output_newline (void)
 static void
 output_prefix (void)
 {
-	int	i;
-
 	if (output_target) {
+		int	i;
 		for (i = 0; i < output_indent_level; i++) {
 			fputc (' ', output_target);
 		}
@@ -13042,7 +13041,6 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	struct cb_field		*f;
 	struct cb_field		*f1;
 	struct cb_field		*f2;
-	const char		*s_prefix;
 	const char		*s_type[MAX_CALL_FIELD_PARAMS];
 	cob_u32_t		parmnum;
 	cob_u32_t		n;
@@ -13124,57 +13122,18 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	output_newline ();
 
 	output_block_open ();
-
-	/* By value pointer fields */
-	for (l2 = using_list; l2; l2 = CB_CHAIN (l2)) {
-		f2 = cb_code_field (CB_VALUE (l2));
-		if (CB_PURPOSE_INT (l2) == CB_CALL_BY_VALUE &&
-		    (f2->usage == CB_USAGE_POINTER ||
-		     f2->usage == CB_USAGE_PROGRAM_POINTER)) {
-			output_line ("unsigned char\t\t*ptr_%d;", f2->id);
-		}
-	}
-
-	/* For calling into a module, cob_call_params may not be known */
-	if (using_list) {
-		if (entry_convention & CB_CONV_COBOL) {
-			unsigned int inc = 0;
-			output_line("/* Get current number of call parameters,");
-			output_line("   if the parameter count is unknown, set it to all */");
-			if (cb_flag_implicit_init) {
-				output_line ("if (cob_is_initialized () && cob_get_global_ptr ()->cob_current_module) {");
-			} else {
-				output_line ("if (cob_get_global_ptr ()->cob_current_module) {");
+	
+	if (!cb_sticky_linkage
+	 && (entry_convention & CB_CONV_COBOL)) {
+		/* By value pointer fields */
+		for (l2 = using_list; l2; l2 = CB_CHAIN (l2)) {
+			f2 = cb_code_field (CB_VALUE (l2));
+			if (CB_PURPOSE_INT (l2) == CB_CALL_BY_VALUE
+			 && (f2->usage == CB_USAGE_POINTER
+			  || f2->usage == CB_USAGE_PROGRAM_POINTER)) {
+				output_line ("unsigned char\t\t*ptr_%d;", f2->id);
 			}
-			output_line ("\tcob_call_params = cob_get_global_ptr ()->cob_call_params;");
-			if (!cb_sticky_linkage && !prog->flag_chained
-#if	0	/* RXWRXW USERFUNC */
-				&& prog->prog_type != COB_MODULE_TYPE_FUNCTION
-#endif
-				) {
-				output_line ("/* Set not passed parameter pointers to NULL */");
-				output_line ("switch (cob_call_params) {");
-				for (l = using_list; l; l = CB_CHAIN (l)) {
-					output_line ("case %u:", inc++);
-					output_line ("\t%s%d = %s;",
-						CB_PREFIX_BASE, cb_code_field (CB_VALUE (l))->id,
-						(CB_PURPOSE_INT (l) == CB_CALL_BY_VALUE)
-						? "0" : "NULL");
-					output_line ("/* Fall through */");
-				}
-				output_line ("default:");
-				output_line ("\tbreak; ");
-				output_line ("}");
-				output_newline ();
-			}
-			output_line ("} else {");
-			output_line ("\tcob_call_params = %u;", cb_list_length (using_list));
-			output_line ("};");
-		} else {
-			output_line ("/* Set current number of call parameters to max */");
-			output_line (" cob_call_params = %u;", cb_list_length (using_list));
 		}
-		output_newline();
 	}
 
 	/*
@@ -13183,93 +13142,207 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	  have the information as to possible ENTRY clauses.
 	*/
 
-	/* Sticky linkage parameters */
-	if (cb_sticky_linkage && using_list) {
-		for (l = using_list, parmnum = 0; l; l = CB_CHAIN (l), parmnum++) {
-			cb_tree f_tree = CB_VALUE (l);
-			f = cb_code_field (f_tree);
-			sticky_ids[parmnum] = f->id;
-			if (CB_PURPOSE_INT (l) == CB_CALL_BY_VALUE) {
-				const char *s = try_get_by_value_parameter_type (f->usage, l);
-				if (s) {
+	/* linkage parameters */
+	for (l = using_list, parmnum = 0; l; l = CB_CHAIN (l), parmnum++) {
+		cb_tree f_tree = CB_VALUE (l);
+		f = cb_code_field (f_tree);
+		sticky_ids[parmnum] = f->id;
+		if (!cb_sticky_linkage
+		 && (entry_convention & CB_CONV_COBOL)) {
+			output_line ("cob_u8_t *cob_parm_%d = NULL;"
+				"\t/* linkage for %s */",
+				f->id, cb_name (f_tree)
+			);
+		}
+		if (CB_PURPOSE_INT (l) == CB_CALL_BY_VALUE) {
+			const char *s = try_get_by_value_parameter_type (f->usage, l);
+			if (s) {
+				if (cb_sticky_linkage) {
 					output_line ("static %s\tcob_parm_l_%d = %s;"
 						"\t/* sticky linkage for %s */",
 						s, f->id,
-						(f->usage == CB_USAGE_FP_BIN128
+						(   f->usage == CB_USAGE_FP_BIN128
 						 || f->usage == CB_USAGE_FP_DEC128)
-						? "{{0, 0}}" : "0",
+						 ? "{{0, 0}}" : "0",
 						cb_name (f_tree)
-						);
-					sticky_nonp[parmnum] = 1;
+					);
 				}
+				sticky_nonp[parmnum] = 1;
 			}
 		}
 	}
+	if (using_list) {
+		output_newline ();
+	}
 
-	/* FIXME: add check for COB_EC_PROGRAM_ARG_MISMATCH here,
-	   including checking for OPTIONAL items.
-	   See comment in typeck.c (cb_build_identifier), too. */
+	/* For calling into a module, cob_call_params may not be known */
+	if (using_list) {
+		if (entry_convention & CB_CONV_COBOL) {
+			output_line("/* Get current number of call parameters,");
+			output_line("   if the parameter count is unknown, set it to all */");
+			if (cb_flag_implicit_init) {
+				output_line ("if (cob_is_initialized () && cob_get_global_ptr ()->cob_current_module) {");
+			} else {
+				output_line ("if (cob_get_global_ptr ()->cob_current_module) {");
+			}
+			output_line ("\tcob_call_params = cob_get_global_ptr ()->cob_call_params;");
+			output_line ("} else {");
+			output_line ("\tcob_call_params = %u;", cb_list_length (using_list));
+			output_line ("}");
+		} else {
+			output_line ("/* Set current number of call parameters to max */");
+			output_line ("cob_call_params = %u;", cb_list_length (using_list));
+		}
+		output_newline ();
+	}
 
-	/* Sticky linkage set up */
-	if (cb_sticky_linkage && using_list) {
+		/* Sticky linkage set up */
+	if (using_list
+	 && (cb_sticky_linkage
+	   || (entry_convention & CB_CONV_COBOL))
+	 && !prog->flag_chained
+#if	0	/* RXWRXW USERFUNC */
+	 && prog->prog_type != COB_MODULE_TYPE_FUNCTION
+#endif
+	  ) {
 		output_line ("/* Set the parameter list */");
 		parmnum = 0;
-		output_line ("switch (cob_call_params) {");
-		for (l = using_list; l; l = CB_CHAIN (l), parmnum++) {
-			output_prefix ();
-			output ("case %u:", parmnum);
-			output_newline ();
+		if (cb_sticky_linkage) {
+			if (entry_convention & CB_CONV_COBOL) {
+				output_line ("switch (cob_call_params) {");
+				for (l = using_list; l; l = CB_CHAIN (l), parmnum++) {
+					output_line ("case %u:", parmnum);
+					output_indent_level += indent_adjust_level;
+					for (n = 0; n < parmnum; ++n) {
+						if (sticky_nonp[n]) {
+							output_line ("cob_parm_l_%d = %s%d;",
+								sticky_ids[n], CB_PREFIX_BASE,
+								sticky_ids[n]);
+							output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
+								sticky_ids[n],
+								sticky_ids[n]);
+						} else {
+							output_line ("cob_parm_%d = %s%d;",
+								sticky_ids[n], CB_PREFIX_BASE,
+								sticky_ids[n]);
+						}
+					}
+					output_line ("break;");
+					output_indent_level -= indent_adjust_level;
+				}
+				output_prefix ();
+				output ("default:");
+				output_newline ();
+				output_indent_level += indent_adjust_level;
+			} else {
+				parmnum = cb_list_length (using_list);
+			}
 			for (n = 0; n < parmnum; ++n) {
 				if (sticky_nonp[n]) {
-					output_line ("\tcob_parm_l_%d = %s%d;",
+					output_line ("cob_parm_l_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
 						sticky_ids[n]);
-					output_line ("\tcob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
+					output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
 						sticky_ids[n],
 						sticky_ids[n]);
 				} else {
-					output_line ("\tcob_parm_%d = %s%d;",
+					output_line ("cob_parm_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
 						sticky_ids[n]);
 				}
 			}
-			output_line ("\tbreak;");
-		}
-		output_prefix ();
-		output ("default:");
-		output_newline ();
-		for (n = 0; n < parmnum; ++n) {
-			if (sticky_nonp[n]) {
-				output_line ("\tcob_parm_l_%d = %s%d;",
-					sticky_ids[n], CB_PREFIX_BASE,
-					sticky_ids[n]);
-				output_line ("\tcob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-					sticky_ids[n],
-					sticky_ids[n]);
-			} else {
-				output_line ("\tcob_parm_%d = %s%d;",
-					sticky_ids[n], CB_PREFIX_BASE,
-					sticky_ids[n]);
+			if (entry_convention & CB_CONV_COBOL) {
+				output_line ("break;");
+				output_indent_level -= indent_adjust_level;
+				output_line ("}");
+			}
+		} else if (entry_convention & CB_CONV_COBOL) {
+			for (l = using_list; l; l = CB_CHAIN (l), parmnum++) {
+				if (sticky_nonp[parmnum]) {
+					continue;
+				}
+				output_line ("if (cob_call_params > %u) {", parmnum);
+				output_indent_level += indent_adjust_level;
+				output_line ("cob_parm_%d = %s%d;",
+					sticky_ids[parmnum], CB_PREFIX_BASE,
+					sticky_ids[parmnum]);
+				output_indent_level -= indent_adjust_level;
+				output_line ("}");
 			}
 		}
-		output_line ("\tbreak;");
-		output ("}");
 		output_newline ();
 	}
 
-	if (cb_sticky_linkage) {
-		s_prefix = "cob_parm_";
-	} else {
-		s_prefix = CB_PREFIX_BASE;
+	/* runtime checks for parameters not passed / bad size */
+	if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)) {
+		parmnum = 0;
+		for (l = using_list; l; l = CB_CHAIN (l), parmnum++) {
+			if (!sticky_nonp[parmnum]) {
+				cb_tree f_tree = CB_VALUE (l);
+				f = cb_code_field (f_tree);
+				if (!cb_field_variable_size (f)
+				 && (entry_convention & CB_CONV_COBOL)) {
+					/* for COBOL and fixed-length: more detailed check including size */
+					/* "module" structure not available
+						output_source_reference (f_tree, STMT_ENTRY); */
+					const unsigned int stmt_ref = cb_flag_source_location ?
+						COB_SET_LINE_FILE (f_tree->source_line,
+							lookup_source (f_tree->source_file))
+						: 0;
+					const char *mod_src = source_cache ? "st_source_files" : "NULL";
+					if (cb_flag_c_line_directives) {
+						output_cobol_info (f_tree);
+					}
+					output_line ("if (cob_check_linkage_size (\"%s\", \"%s\", %u, %u, %lu, %s, %u)) {",
+						entry_name, cb_name (f_tree), parmnum + 1,
+						cb_sticky_linkage || cb_using_optional != CB_OK || f->flag_is_pdiv_opt,
+						(unsigned long)f->size,
+						mod_src, stmt_ref);
+					if (cb_flag_c_line_directives) {
+						output_c_info ();
+					}
+					if (prog->flag_void) {
+						output_line ("\treturn;");
+					} else {
+						output_line ("\treturn -1;");
+					}
+					output_line ("}");
+				} else
+				if (!cb_sticky_linkage
+				 && cb_using_optional == CB_OK
+				 && !f->flag_is_pdiv_opt) {
+					output_line ("if (%s%d == NULL) {",
+						(entry_convention & CB_CONV_COBOL)
+						? "cob_parm_" : CB_PREFIX_BASE,
+						sticky_ids[parmnum]);
+					/* "module" structure not available
+						output_source_reference (f_tree, STMT_ENTRY); */
+					output_line ("\tcob_check_linkage (NULL, \"%s\", 0);",
+						cb_name (f_tree));
+					if (prog->flag_void) {
+						output_line ("\treturn;");
+					} else {
+						output_line ("\treturn -1;");
+					}
+					output_line ("}");
+				}
+			}
+		}
 	}
-
-	for (l2 = using_list; l2; l2 = CB_CHAIN (l2)) {
-		f2 = cb_code_field (CB_VALUE (l2));
-		if (CB_PURPOSE_INT (l2) == CB_CALL_BY_VALUE
-		 && (   f2->usage == CB_USAGE_POINTER
-			 || f2->usage == CB_USAGE_PROGRAM_POINTER)) {
-			output_line ("ptr_%d = %s%d;",
-				f2->id, s_prefix, f2->id);
+	
+	if (!cb_sticky_linkage
+	 && (entry_convention & CB_CONV_COBOL)) {
+		for (l2 = using_list; l2; l2 = CB_CHAIN (l2)) {
+			f2 = cb_code_field (CB_VALUE (l2));
+			if (CB_PURPOSE_INT (l2) == CB_CALL_BY_VALUE
+			 && (   f2->usage == CB_USAGE_POINTER
+				 || f2->usage == CB_USAGE_PROGRAM_POINTER)) {
+				output_line ("ptr_%d = %s%d;",
+					f2->id,
+					(entry_convention & CB_CONV_COBOL)
+					? "cob_parm_" : CB_PREFIX_BASE,
+					f2->id);
+			}
 		}
 	}
 
@@ -13296,16 +13369,31 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 				if (strcasecmp (f1->name, f2->name) == 0) {
 					switch (CB_PURPOSE_INT (l2)) {
 					case CB_CALL_BY_VALUE:
-						if (f2->usage == CB_USAGE_POINTER ||
-						    f2->usage == CB_USAGE_PROGRAM_POINTER) {
-							output (", (cob_u8_ptr)&ptr_%d", f2->id);
-							break;
+						if (cb_sticky_linkage) {
+							if (f2->usage == CB_USAGE_POINTER
+							 || f2->usage == CB_USAGE_PROGRAM_POINTER) {
+								output (", (cob_u8_ptr)&cob_parm_%d", f2->id);
+							} else {
+								output (", (cob_u8_ptr)cob_parm_%d", f2->id);
+							}
+						} else {
+							if ((f2->usage == CB_USAGE_POINTER
+							  || f2->usage == CB_USAGE_PROGRAM_POINTER)
+							 && (entry_convention & CB_CONV_COBOL)) {
+								output (", (cob_u8_ptr)&ptr_%d", f2->id);
+							} else {
+								output (", (cob_u8_ptr)&%s%d",
+									CB_PREFIX_BASE, f2->id);
+							}
 						}
-						/* Fall through */
+						break;
 					case CB_CALL_BY_REFERENCE:
 					case CB_CALL_BY_CONTENT:
 						output (", %s%s%d",
-							s_type[n], s_prefix, f2->id);
+							s_type[n],
+							cb_sticky_linkage || (entry_convention & CB_CONV_COBOL)
+							? "cob_parm_" : CB_PREFIX_BASE,
+							f2->id);
 						break;
 					default:
 						break;
@@ -13315,8 +13403,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 			}
 			if (l2 == NULL) {
 				if (cb_sticky_linkage) {
-					output (", %s%d",
-						s_prefix, f1->id);
+					output (", cob_parm_%d", f1->id);
 				} else {
 					output (", NULL");
 				}

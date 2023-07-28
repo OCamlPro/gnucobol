@@ -1,4 +1,8 @@
 
+2023-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: add option using-optional
+
 2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	FR #439: dialect option to support justify for IBM compatibility

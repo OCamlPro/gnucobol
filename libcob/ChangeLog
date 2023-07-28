@@ -4,6 +4,16 @@
 	* move.c (cob_move_display_to_packed): fix data corruption caused
 	  by packing one extra digit from the input display field
 
+2023-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_linkage_size), common.h: new function
+	  to check for EC-PROGRAM-ARG-MISMATCH
+	* common.c (raise_arg_mismatch): new function to provide a "virtual"
+	  module entry for better error messages
+	* common.c (call_exit_handlers_and_terminate, cob_runtime_error):
+	  pass information about arguments to handlers written in COBOL
+	* common.c (cob_stack_trace_internal): slightly improved stack output
+
 2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: only check -1 as invalid fd; return fileio status for

@@ -3,6 +3,22 @@
 
 	* typeck.c (search_set_keys): improving SEARCH ALL syntax checks
 
+2023-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_entry_function): if COBOL CALL convention is
+	  used, then only use local pointers for specifying not-passed
+	  arguments, improving support for omission of trailing (optional)
+	  parameters in CALL
+	* config.def, codegen.c, typeck.c: added using-optional dialect option;
+	  if set to "ok" the check for not-passed arguments will only be done
+	  on program entry for all parameters not explicit specified as OPTIONAL
+	* parser.y (_procedure_optional): added checks for cb_using_optional,
+	  if OPTIONAL used and set to "warning", then reset it to "ok" after first
+	  warning
+	* codegen.c (output_entry_function): generate checks for
+	  EC-PROGRAM-ARG-MISMATCH validating that non-optional arguments are
+	  passed and if passed then checks its minimal size
+
 2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (entry_statement): don't check parameter address
