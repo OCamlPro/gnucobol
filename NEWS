@@ -1,17 +1,8 @@
 NEWS - user visible changes				-*- outline -*-
 
+ GnuCOBOL 3.2     (20230728)
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
- GnuCOBOL 3.2      to be done end of July 2023
-
- We are likely to release an update for this version (possibly 3.2b)
- containing the following sometime in 2023:
-
-   * extended testsuite and documentation
-   * updated message catalogues
-   * possibly even minor adjustments from research into code analysis
-     tools and of user feedback
-
 
 * New GnuCOBOL features
 
