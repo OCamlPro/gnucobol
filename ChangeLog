@@ -1,4 +1,8 @@
 
+2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for mousemask and mmask_t
+
 2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix for resolving COBCRUN_NAME

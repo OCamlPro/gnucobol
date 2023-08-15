@@ -115,8 +115,6 @@
 #include <ncurses/ncurses.h>
 #define COB_GEN_SCREENIO
 #elif defined (HAVE_PDCURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
 #define COB_GEN_SCREENIO
@@ -127,6 +125,12 @@
 #ifndef PDC_MOUSE_MOVED
 #undef PDC_NCMOUSE
 #endif
+#endif
+
+#if defined (__PDCURSES__)
+/* Note: PDC will internally define NCURSES_MOUSE_VERSION with
+   a recent version when PDC_NCMOUSE was defined;
+   for older version define manually! */
 #endif
 
 #if defined (WITH_XML2)
@@ -2333,7 +2337,6 @@ cob_set_exception (const int id)
 				strcpy (excp_para, mod->paragraph_name);
 				cobglobptr->last_exception_paragraph = excp_para;
 			}
-			return;
 		}
 	} else {
 		cobglobptr->cob_got_exception = 0;
@@ -2999,8 +3002,15 @@ static void
 call_exit_handlers_and_terminate (void)
 {
 	if (exit_hdlrs != NULL) {
-		struct exit_handlerlist* h = exit_hdlrs;
+		struct exit_handlerlist *h = exit_hdlrs;
 		while (h != NULL) {
+			/* ensure that exit handlers set their own locations */
+			cob_source_file = NULL;
+			cob_source_line = 0;
+			/* tell 'em they are not called with any parameters */
+			cobglobptr->cob_call_params = 0;
+
+			/* actual call and starting next iteration */
 			h->proc ();
 			h = h->next;
 		}
@@ -4165,18 +4175,115 @@ cob_check_fence (const char *fence_pre, const char *fence_post,
 	}
 }
 
+/* raise argument mismatch after pushing a temporary static "current module"
+   as COB_MODULE_PTR; caller needs to restore pop it afterwards! */
+static int
+raise_arg_mismatch (const char *entry_name,
+		const char **module_sources, unsigned int module_stmt)
+{
+	static cob_module mod_temp;
+
+	cob_module *mod = &mod_temp;
+
+	memset (mod, 0, sizeof (cob_module));
+	mod->next = COB_MODULE_PTR;
+	mod->module_name = entry_name;	/* not correct, but enough */
+	mod->module_sources = module_sources;
+	mod->statement = STMT_ENTRY;
+	mod->module_stmt = module_stmt;
+	COB_MODULE_PTR = mod;
+
+	cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
+
+	if (cobglobptr->cob_stmt_exception) {
+		/* CALL has ON EXCEPTION so return to caller */
+		cobglobptr->cob_stmt_exception = 0;
+		return 0;
+	}
+	return 1;
+}
+
+/* validates that the data item 'name' was passed by the caller
+   and has at least as much size as used in the callee,
+   used during CALL in the entry points of the callee to check
+   for COB_EC_PROGRAM_ARG_MISMATCH */
+int
+cob_check_linkage_size (const char *entry_name,
+		const char *name, const unsigned int ordinal_pos,
+		const int optional, const unsigned long size,
+		const char **module_sources, unsigned int module_stmt)
+{
+	/* name includes '' already and can be ... 'x' of 'y' */
+
+	if (!cobglobptr || !COB_MODULE_PTR) {
+		/* unlikely case: runtime not initialized, or we have no module
+		   so caller _must_ be something other than a GnuCOBOL module
+		   (while ENTRY-CONVENTION is COBOL) -> skip these checks */
+		/* possibly raise (an optional) runtime warning */
+		return 0;
+	} else if (cobglobptr->cob_call_params < ordinal_pos) {
+		if (optional) {
+			return 0;
+		} else {
+			if (raise_arg_mismatch (entry_name, module_sources, module_stmt)) {
+				cob_runtime_error (_("LINKAGE item %s not passed by caller"), name);
+				cob_hard_failure ();
+			}
+			COB_MODULE_PTR = COB_MODULE_PTR->next;
+		}
+		return -1;
+	} else {
+		/* note: the current module points to the caller, as we
+		         are early in the called function (its entry point) */
+		const cob_field		*parameter = COB_MODULE_PTR->cob_procedure_params[ordinal_pos - 1];
+		if (!parameter || !parameter->data) {
+			if (optional) {
+				return 0;
+			} else {
+				if (raise_arg_mismatch (entry_name, module_sources, module_stmt)) {
+					cob_runtime_error (_("LINKAGE item %s not passed by caller"), name);
+					cob_hard_failure ();
+				}
+				COB_MODULE_PTR = COB_MODULE_PTR->next;
+			}
+			return -1;
+		} else {
+			if (parameter->size < size) {
+				if (raise_arg_mismatch (entry_name, module_sources, module_stmt)) {
+					cob_runtime_error (_("LINKAGE item %s (size %lu) too small in the caller (size %lu)"),
+						name, size, (unsigned long) parameter->size);
+					cob_hard_failure ();
+				}
+				COB_MODULE_PTR = COB_MODULE_PTR->next;
+				return -1;
+			} else if ((unsigned long)parameter->size != size) {
+				/* possible warning that can additionally be activated */
+			}
+		}
+	}
+	return 0;
+}
+
+/* validates that the data item 'name' has a non-null data 'x',
+   used for both CALL (COB_EC_PROGRAM_ARG_MISMATCH) and
+   for actual use of the argument (COB_EC_PROGRAM_ARG_OMITTED) */
 void
 cob_check_linkage (const unsigned char *x, const char *name, const int check_type)
 {
 	if (!x) {
 		/* name includes '' already and can be ... 'x' of 'y' */
 		switch (check_type) {
-		case 0: /* check for passed items and size on module entry */
-			/* TODO: raise exception */
+		case 0: /* check for passed items on module entry */
+			cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
+			if (cobglobptr->cob_stmt_exception) {
+				/* CALL has ON EXCEPTION so return to caller */
+				cobglobptr->cob_stmt_exception = 0;
+				return;
+			}
 			cob_runtime_error (_("LINKAGE item %s not passed by caller"), name);
 			break;
 		case 1: /* check for passed OPTIONAL items on item use */
-			/* TODO: raise exception */
+			cob_set_exception (COB_EC_PROGRAM_ARG_OMITTED);
 			cob_runtime_error (_("LINKAGE item %s not passed by caller"), name);
 			break;
 		}
@@ -5992,11 +6099,15 @@ cob_tidy (void)
 
 /* System routines */
 
+/* CBL_EXIT_PROC - register exit handlers that will be called
+   before teardown (after posible error procedures) without
+   any parameters passed
+   'dispo': intallation flag (add/remove/priority)
+   'pptr':  function / ENTRY point to be called */
 int
 cob_sys_exit_proc (const void *dispo, const void *pptr)
 {
-	struct exit_handlerlist *hp;
-	struct exit_handlerlist *h;
+	struct exit_handlerlist *hp, *h;
 	unsigned char	install_flag;
 	/* only initialized to silence -Wmaybe-uninitialized */
 	unsigned char	priority = 0;
@@ -6114,11 +6225,15 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 	return 0;
 }
 
+/* CBL_ERROR_PROC - register error handlers that will be called
+   on runtime errors and may early-stop, those are called with a single
+   parameter containing the error message
+   'dispo': intallation flag (add/remove/priority)
+   'pptr':  function / ENTRY point to be called */
 int
 cob_sys_error_proc (const void *dispo, const void *pptr)
 {
-	struct handlerlist	*hp;
-	struct handlerlist	*h;
+	struct handlerlist	*hp, *h;
 	const unsigned char	*x;
 	int			(**p) (char *s);
 
@@ -8724,6 +8839,8 @@ cob_runtime_error (const char *fmt, ...)
 		const char		*err_source_file;
 		unsigned int	err_source_line, err_module_statement = 0;
 		cob_module_ptr	err_module_pointer = NULL;
+		cob_field *err_module_param0 = NULL;
+		cob_field err_field = {COB_ERRBUF_SIZE, NULL, &const_alpha_attr };
 		int call_params = cobglobptr->cob_call_params;
 
 		/* save error location */
@@ -8731,6 +8848,8 @@ cob_runtime_error (const char *fmt, ...)
 		if (COB_MODULE_PTR) {
 			err_module_pointer = COB_MODULE_PTR;
 			err_module_statement = COB_MODULE_PTR->module_stmt;
+			err_module_param0 = COB_MODULE_PTR->cob_procedure_params[0];
+			COB_MODULE_PTR->cob_procedure_params[0] = &err_field;
 		}
 
 		/* run registered error handlers */
@@ -8747,6 +8866,7 @@ cob_runtime_error (const char *fmt, ...)
 				/* fresh error buffer with guaranteed size */
 				char local_err_str[COB_ERRBUF_SIZE];
 				memcpy (local_err_str, runtime_err_str, COB_ERRBUF_SIZE);
+				err_field.data = (unsigned char *)local_err_str;
 
 				/* ensure that error handlers set their own locations */
 				cob_source_file = NULL;
@@ -8765,6 +8885,7 @@ cob_runtime_error (const char *fmt, ...)
 		COB_MODULE_PTR = err_module_pointer;
 		if (COB_MODULE_PTR) {
 			COB_MODULE_PTR->module_stmt = err_module_statement;
+			COB_MODULE_PTR->cob_procedure_params[0] = err_module_param0;
 		}
 		cobglobptr->cob_call_params = call_params;
 	}
@@ -9102,8 +9223,10 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 			mouse_support = _("no");
 		}
 	}
-#elif defined (NCURSES_MOUSE_VERSION)
+#elif defined (HAVE_MOUSEMASK)
 #if defined (__PDCURSES__)
+	/* CHECKME: that looks wrong - can't we test as above?
+	   Double check with older PDCurses! */
 	mouse_support = _("yes");
 #endif
 #else
@@ -10367,12 +10490,12 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 		if (count > 0 && count == i) {
 			break;
 		}
+		write_or_return_arr (file_no, " ");
 		if (mod->module_stmt != 0
 		 && mod->module_sources) {
 			const unsigned int source_file_num = COB_GET_FILE_NUM (mod->module_stmt);
 			const unsigned int source_line = COB_GET_LINE_NUM (mod->module_stmt);
 			const char *source_file = mod->module_sources[source_file_num];
-			write_or_return_arr (file_no, " ");
 			if (!verbose) {
 				write_or_return_str (file_no, mod->module_name);
 				write_or_return_arr (file_no, " at ");
@@ -10458,7 +10581,12 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 				}
 				write_or_return_arr (file_no, "\"");
 				write_or_return_str (file_no, mod->module_name);
-				write_or_return_arr (file_no, "\" unknown");
+				if (mod->statement != STMT_UNKNOWN) {
+					write_or_return_arr (file_no, "\" was ");
+					write_or_return_str (file_no, cob_statement_name[mod->statement]);
+				} else {
+					write_or_return_arr (file_no, "\" unknown");
+				}
 			} else {
 				write_or_return_str (file_no, mod->module_name);
 				write_or_return_arr (file_no, " at unknown");

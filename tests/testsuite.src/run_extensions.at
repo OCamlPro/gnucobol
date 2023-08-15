@@ -2182,9 +2182,9 @@ AT_DATA([callee.cob], [
        01 Y             PIC X.
        01 Z             PIC X.
        PROCEDURE        DIVISION
-           USING W X Y Z.
-           DISPLAY NUMBER-OF-CALL-PARAMETERS
-           END-DISPLAY.
+           USING OPTIONAL W
+                          X Y Z.
+           DISPLAY NUMBER-OF-CALL-PARAMETERS.
            EXIT PROGRAM.
 ])
 
@@ -2198,27 +2198,53 @@ AT_DATA([caller.cob], [
        01 Y             PIC X.
        01 Z             PIC X.
        PROCEDURE        DIVISION.
-           CALL "callee"
-           END-CALL.
-           CALL "callee" USING W
-           END-CALL.
-           CALL "callee" USING W X
-           END-CALL.
-           CALL "callee" USING W X Y
-           END-CALL.
-           CALL "callee" USING W X Y Z
-           END-CALL.
+           CALL "callee".
+           CALL "callee" USING W.
+           CALL "callee" USING W X.
+           CALL "callee" USING W X Y.
+           CALL "callee" USING W X Y OMITTED.
+           CALL "callee" USING W X Y Z.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+
+# having USING OPTIONAL not supported leads to only check on use
+AT_CHECK([$COMPILE_MODULE -fusing-optional=skip callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
 [+000000000
 +000000001
 +000000002
 +000000003
 +000000004
++000000004
+], [])
+
+# no argument check leads to only check on use
+AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[+000000000
++000000001
++000000002
++000000003
++000000004
++000000004
+], [])
+
+# sticky linkage leads to only check on use
+AT_CHECK([$COMPILE_MODULE -fsticky-linkage callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[+000000000
++000000001
++000000002
++000000003
++000000004
++000000004
+], [])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: callee.cob:12: error: LINKAGE item X not passed by caller
 ])
 
 AT_CLEANUP

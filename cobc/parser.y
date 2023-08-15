@@ -11154,11 +11154,18 @@ _procedure_optional:
   }
 | OPTIONAL
   {
-	if (call_mode != CB_CALL_BY_REFERENCE) {
-		cb_error (_("OPTIONAL only allowed for BY REFERENCE items"));
-		$$ = cb_int0;
+	if (cb_verify (cb_using_optional, "USING OPTIONAL")) {
+		if (cb_using_optional == CB_WARNING) {
+			cb_using_optional = CB_OK;	/* tested for with exception checking */
+		}
+		if (call_mode != CB_CALL_BY_REFERENCE) {
+			cb_error (_("OPTIONAL only allowed for BY REFERENCE items"));
+			$$ = cb_int0;
+		} else {
+			$$ = cb_int1;
+		}
 	} else {
-		$$ = cb_int1;
+		$$ = cb_int0;
 	}
   }
 ;
@@ -14340,7 +14347,23 @@ exit_statement:
 exit_body:
   /* empty */	%prec SHIFT_PREFER
   {
-  /* TODO: add warning/error if there's another statement in the paragraph */
+	/* TODO: add dialect specific warning/error if there's another statement in
+	   the same sentence / procedure; if there is another statement _after_ this
+	   statement in the same procedure then the following generates bad code
+	  */
+
+#if 0	/* activating this code makes an "assumption" (see above) which is reasonable
+		   but not guaranteed to be correct, and breaks SQ21A and ST133A */
+	/* Generate code for implicit exit of the last paragraph/section
+	   used with "PERFORM THRU" */
+	if (current_paragraph) {
+		emit_statement (cb_build_perform_exit (current_paragraph));
+	}
+	if (current_section) {
+		emit_statement (cb_build_perform_exit (current_section));
+	}
+#endif
+
   }
 | PROGRAM goback_exit_body
   {

@@ -2567,21 +2567,22 @@ cb_build_identifier (cb_tree x, const int subchk)
 		}
 		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
 		 && p->storage == CB_STORAGE_LINKAGE
-		 && p->flag_is_pdiv_parm
-#if 0
-		/* note: we can only ignore the check for fields with flag_is_pdiv_opt
-		   when we check for COB_EC_PROGRAM_ARG_MISMATCH in all entry points
-		   and this check is currently completely missing... */
-		 && !(p->flag_is_pdiv_opt && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)
-#endif
-		 ) {
-			current_statement->null_check = CB_BUILD_FUNCALL_3 (
-				"cob_check_linkage",
-				cb_build_address (cb_build_field_reference (p, NULL)),
-				CB_BUILD_STRING0 (
-					CB_REFERENCE (cb_build_name_reference (p, f))->word->name),
-				cb_int1);
-			optimize_defs[COB_CHK_LINKAGE] = 1;
+		 && p->flag_is_pdiv_parm) {
+			if (!p->flag_is_pdiv_opt && cb_using_optional == CB_OK
+			 && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)) {
+				/* we don't need to check for missing argument, if we already
+				   check this on entry - done if COB_EC_PROGRAM_ARG_MISMATCH
+				   is enabled, OPTIONAL is not set, but the dialect support option
+				   for USING OPTIONAL is given */
+			} else {
+				current_statement->null_check = CB_BUILD_FUNCALL_3 (
+					"cob_check_linkage",
+					cb_build_address (cb_build_field_reference (p, NULL)),
+					CB_BUILD_STRING0 (
+						CB_REFERENCE (cb_build_name_reference (p, f))->word->name),
+					cb_int1);
+				optimize_defs[COB_CHK_LINKAGE] = 1;
+			}
 		} else
 		if (CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL)
 		 && !current_statement->flag_no_based) {
@@ -13178,6 +13179,11 @@ search_set_keys (struct cb_field *f, cb_tree x)
 		}
 	}
 
+	if (!CB_BINARY_OP_P (x)) {
+		cb_error_x (x, _("invalid SEARCH ALL condition"));
+		return 1;
+	}
+
 	p = CB_BINARY_OP (x);
 	switch (p->op) {
 	case '&':
@@ -13198,11 +13204,12 @@ search_set_keys (struct cb_field *f, cb_tree x)
 		if (CB_REF_OR_FIELD_P (p->y)) {
 			fldy = CB_FIELD_PTR (p->y);
 		}
+#if 0	/* validated in the parser */
 		if (!fldx && !fldy) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("invalid SEARCH ALL condition"));
+			cb_error_x (CB_TREE (p), _("invalid SEARCH ALL condition"));
 			return 1;
 		}
+#endif
 
 		for (i = 0; i < f->nkeys; ++i) {
 			if (fldx == CB_FIELD_PTR (f->keys[i].key)) {
@@ -13221,15 +13228,13 @@ search_set_keys (struct cb_field *f, cb_tree x)
 				}
 			}
 			if (i == f->nkeys) {
-				cb_error_x (CB_TREE (current_statement),
-					    _("invalid SEARCH ALL condition"));
+				cb_error_x (x, _("SEARCH ALL requires comparision of KEY field"));
 				return 1;
 			}
 		}
 		break;
 	default:
-		cb_error_x (CB_TREE (current_statement),
-			    _("invalid SEARCH ALL condition"));
+		cb_error_x (x, _("invalid SEARCH ALL condition"));
 		return 1;
 	}
 	return 0;

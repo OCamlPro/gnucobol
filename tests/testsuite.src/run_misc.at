@@ -4041,7 +4041,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Sticky LINKAGE])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4056,10 +4056,7 @@ AT_DATA([callee.cob], [
               SET ADDRESS OF P3 TO ADDRESS OF P2
            ELSE
               IF P3 NOT = "OKOKOK"
-                 DISPLAY P3
-                 END-DISPLAY
-              END-IF
-           END-IF.
+                 DISPLAY P3.
            EXIT PROGRAM.
 ])
 
@@ -4071,12 +4068,10 @@ AT_DATA([caller.cob], [
        01 P1            PIC X    VALUE "A".
        01 P2            PIC X(6) VALUE "NOT OK".
        PROCEDURE        DIVISION.
-           CALL "callee" USING P1 P2
-           END-CALL.
+           CALL "callee" USING P1 P2.
            MOVE "B"      TO P1.
            MOVE "OKOKOK" TO P2.
-           CALL "callee" USING P1
-           END-CALL.
+           CALL "callee" USING P1.
            STOP RUN.
 ])
 
@@ -4717,7 +4712,6 @@ AT_DATA([callee.cob], [
               DISPLAY P1.
            IF P2 NOT EQUAL "FROM C"
               DISPLAY P2
-              END-DISPLAY
            ELSE
               DISPLAY "OK" WITH NO ADVANCING.
            EXIT PROGRAM.
@@ -4786,17 +4780,11 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION EXTERN USING
                         BY VALUE P1 P2 BY REFERENCE P3.
            IF P1 NOT EQUAL ADDRESS OF P3
-              DISPLAY P1
-              END-DISPLAY
-           END-IF
+              DISPLAY "P1 != ADDRESS OF P3: " P1.
            IF P2 NOT EQUAL 42
-              DISPLAY P2
-              END-DISPLAY
-           END-IF
+              DISPLAY "P2 != 42: " P2.
            IF P3 NOT EQUAL "CALLBACK"
-              DISPLAY P3
-              END-DISPLAY
-           END-IF
+              DISPLAY "P3 != CALLBACK: " P3.
            EXIT PROGRAM.
 ])
 
@@ -4818,6 +4806,15 @@ cprog (void *cb)
 ]])
 
 AT_CHECK([$COMPILE -Wno-unfinished -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fsticky-linkage -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fusing-optional=skip -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fusing-optional=skip -fsticky-linkage -o prog prog.cob cprog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -5244,7 +5241,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ANY LENGTH (5)])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 # any length variables resulted in SIGSEGV when module was first program called
 
@@ -5257,7 +5254,7 @@ AT_DATA([subprog.cob], [
        01 str1 PIC X ANY LENGTH.
        01 str2 PIC X ANY LENGTH.
 
-       PROCEDURE DIVISION USING str1 str2.
+       PROCEDURE DIVISION USING OPTIONAL str1 OPTIONAL str2.
            DISPLAY 'IN' WITH NO ADVANCING
            .
        END PROGRAM subprog.
@@ -5308,7 +5305,7 @@ AT_CLEANUP
 
 
 AT_SETUP([access to OPTIONAL LINKAGE item not passed])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -5317,10 +5314,8 @@ AT_DATA([caller.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X(4) VALUE '9876'.
        PROCEDURE        DIVISION.
-           CALL 'callee' USING X
-           END-CALL
-           CALL 'callee' USING OMITTED
-           END-CALL
+           CALL 'callee' USING X.
+           CALL 'callee' USING OMITTED.
            STOP RUN.
 ])
 
@@ -10202,7 +10197,7 @@ AT_CLEANUP
 
 
 AT_SETUP([stack and dump feature])
-AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE])
+AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL])
 
 AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
@@ -10370,7 +10365,7 @@ AT_DATA([prog.cob], [
            10  CM-DISK                         PICTURE X(8).
            10  CM-NO-TERMINALS                 PICTURE 9(4).
 
-       PROCEDURE DIVISION USING X, TSPFL-RECORD.
+       PROCEDURE DIVISION USING X, OPTIONAL TSPFL-RECORD.
        MAIN-1 SECTION.
             MOVE ALL "X" TO TSTREC.
             MOVE 1 TO TSTG-1 (1).

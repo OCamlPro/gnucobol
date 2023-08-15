@@ -830,13 +830,34 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  D-S99V99     PIC S99V99 DISPLAY VALUE  1.23.
-       01  D-N99V99     PIC S99V99 DISPLAY VALUE -1.32.
-       01  D-9V99       PIC   9V99 DISPLAY VALUE  1.1.
-       01  D-S99        PIC S99    DISPLAY VALUE  12.
-       01  D-99         PIC  99    DISPLAY VALUE  2.
-       01  D-P99        PIC P99    DISPLAY VALUE  0.02.
-       01  D-9PP        PIC 9PP    DISPLAY VALUE  200.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-S99V99     PIC S99V99 DISPLAY VALUE  1.23.
+        05 FILLER PIC XX VALUE '34'.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-N99V99     PIC S99V99 DISPLAY VALUE -1.32.
+        05 FILLER PIC XX VALUE '34'.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-9V99       PIC   9V99 DISPLAY VALUE  1.1.
+        05 FILLER PIC XX VALUE '34'.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-S99        PIC S99    DISPLAY VALUE  12.
+        05 FILLER PIC XX VALUE '34'.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-99         PIC  99    DISPLAY VALUE  2.
+        05 FILLER PIC XX VALUE '34'.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-P99        PIC P99    DISPLAY VALUE  0.02.
+        05 FILLER PIC XX VALUE '34'.
+       01  FILLER.
+        05 FILLER PIC XX VALUE '12'.
+        05 D-9PP        PIC 9PP    DISPLAY VALUE  200.
+        05 FILLER PIC XX VALUE '34'.
        01  P-S99V99     PIC S99V99 PACKED-DECIMAL.
        01  P-99V9       PIC  99V9  PACKED-DECIMAL.
        01  P-S999       PIC S999   PACKED-DECIMAL.

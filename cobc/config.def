@@ -374,6 +374,9 @@ CB_CONFIG_SUPPORT (cb_call_convention_mnemonic, "call-convention-mnemonic",
 CB_CONFIG_SUPPORT (cb_call_convention_linkage, "call-convention-linkage",
 	_("specifying call-convention by WITH ... LINKAGE"))
 
+CB_CONFIG_SUPPORT (cb_using_optional, "using-optional",
+	_("support for PROCEDURE DIVISION USING OPTIONAL"))
+
 CB_CONFIG_SUPPORT (cb_numeric_value_for_edited_item, "numeric-value-for-edited-item",
 	_("numeric literals in VALUE clause of numeric-edited items"))
 
