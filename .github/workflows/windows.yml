@@ -79,15 +79,16 @@ jobs:
           path: _build/install.log
 
       - name: check
-        continue-on-error: true
         run: |
           cd _build/tests
-          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || (echo "not all tests passed")
+          make check
           make test
         shell: msys2 {0}
 
+
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v3
+        if: failure()
         with:
           name: testsuite.log
           path: _build/tests/testsuite.log
