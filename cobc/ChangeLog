@@ -123,6 +123,21 @@
 	* codegen.c: handle profiling code generation under the
 	  cb_flag_prof guard
 
+2024-03-15  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c: add new flags to output dependencies following gcc: -M to
+	  output deps only, -MD to output deps while compiling (in .d files),
+	  -MP to output phony targets, -MG to keep missing copybooks,
+	  -MQ <target> to Makefile-quote target
+	* flags.def: -fcopybook-deps outputs only copybook names instead
+	  of file paths. -fcopybook-deps also forces -E, -foneline-deps,
+	  -MT=copybooks, disables errors on missing copybooks and removes
+	  output on stdout.
+	* error.c (print_error_prefix): add cobc_slashify to replace backslashes
+	  by slashes, only if COB_IS_RUNNING_IN_TESTMODE is set.
+        * typeck.c (check_argument_conformance): check that param is well defined
+	  to prevent a segfault
+
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals

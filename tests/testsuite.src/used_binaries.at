@@ -279,30 +279,6 @@ AT_CHECK([$GREP 'PARAGRAPH_00_l_4:'    prog.c], [0], ignore, [])
 AT_CHECK([$GREP 'PARAGRAPH_EX_l_7:'    prog.c], [0], ignore, [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb END], [])
 
-AT_CAPTURE_FILE([prog.d])
-AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], ignore, [])
-AT_CHECK([$GREP ' prog.i:'             prog.d], [0], ignore, [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
-  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
-  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], ignore, [])
-  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], ignore, [])
-], [
-  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], ignore, [])
-  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], ignore, [])
-])
-
-# test again with trailing slash which should not result in different files
-AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
-  # Previous test "failed" --> no entry with slash available, check backslash for this test
-  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], ignore, [])
-])
-
 AT_CLEANUP
 
 
@@ -396,13 +372,28 @@ AT_DATA([prog.cob], [
            EXIT PROGRAM.
 ])
 
-AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE prog.cob], [0], [],
-[libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
+AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE prog.cob 2> compiler.output], [0], [],
+[],[
+    # On Windows, we get a failure from gcc, so the binary is not created, the stderr is mixed and exit code is 1.
+    AT_CHECK([grep libcob: compiler.output], [0], [libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE prog.cob], [0], [],
-[libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
+  ],
+  [
+    AT_CHECK([cat compiler.output], [0], [libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
 ])
+    AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+  ])
+
+AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE prog.cob 2> compiler.output], [0], [],
+[],[
+    AT_CHECK([grep libcob: compiler.output], [0], [libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
+])
+  ],
+  [
+    AT_CHECK([cat compiler.output], [0], [libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
+])
+  ])
+
 # TMPDIR is only checked when actually needed which is currently only the case
 # for SORT
 #AT_CHECK([TMPDIR="./prog.cob" $COBCRUN_DIRECT ./prog], [0], [OK],
@@ -1081,15 +1072,16 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
 ]])
 
 AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
+AT_CAPTURE_FILE([compiler.output])
 
-# note: -fdiagnostics-absolute-paths will show the realpath,
-#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
-#       but the _return_path function from atlocal may adjust that
-AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
-[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
-DIR/prog.cob:6: warning: numeric value is expected
-DIR/prog.cob:14: warning: ignoring redundant .
-], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
+AT_CHECK([echo "$PWD/prog.cob:7: error: CRUD.CPY: No such file or directory" > expected.output])
+AT_CHECK([echo "$PWD/prog.cob:6: warning: numeric value is expected" >> expected.output])
+AT_CHECK([echo "$PWD/prog.cob:14: warning: ignoring redundant ." >> expected.output])
+AT_CAPTURE_FILE([expected.output])
+
+AT_CHECK([[cat compiler.output | tr '[:upper:]' '[:lower:]' | tr -d ':/\\' > compiler.output2]])
+AT_CHECK([[cat expected.output | tr '[:upper:]' '[:lower:]' | tr -d ':/\\' > expected.output2]])
+AT_CHECK([diff compiler.output2 expected.output2])
 
 AT_CLEANUP
 
@@ -1099,13 +1091,13 @@ AT_SETUP([check include header file])
 
 AT_DATA([filec.h], [
 /* COB_EXT_IMPORT will be defined by libcob.h up-front */
-COB_EXT_IMPORT void f (char *, long);
+COB_EXT_IMPORT void rename  (const char *, const char*);
 ])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           CALL "f" USING "Hello".
+           CALL "rename" USING "Hello".
 ])
 
 # dynamic call - program seems correct
@@ -1119,10 +1111,8 @@ AT_DATA([prog2.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 long USAGE BINARY-C-LONG.
        PROCEDURE        DIVISION.
-           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+           CALL "rename" USING "Hello" "Hello2" RETURNING NOTHING.
 ])
 
 # note: we likely need to build an import library for some environments
@@ -1153,22 +1143,208 @@ AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call prog2.cob -o pr
 # * putting RETURNING NOTHING is not supported
 # * putting RETURNING OMITTED is ok, but triggers a warning (see stderr)
 
-AT_DATA([f.copy], [
+AT_DATA([rename.copy], [
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. f PROTOTYPE.
+       PROGRAM-ID. rename PROTOTYPE.
        DATA DIVISION.
        LINKAGE SECTION.
        01  a PIC X(20).
-       01  b BINARY-C-LONG.
-       PROCEDURE DIVISION USING a BY VALUE b RETURNING OMITTED.
-       END PROGRAM f.
+       01  b PIC X(20).
+       PROCEDURE DIVISION USING a b RETURNING OMITTED.
+       END PROGRAM rename.
 ])
 
-AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
+AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "rename.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
 [prog2.cob:8: warning: unexpected RETURNING item
 ], [
   # Previous test "failed" --> retry with import library
-  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
+  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "rename.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
 )
 
 AT_CLEANUP
+
+
+AT_SETUP([output dependencies])
+
+AT_CAPTURE_FILE([compiler.output])
+# AT_KEYWORDS([])
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+	COPY COPY1.
+        PROCEDURE DIVISION.
+        MAIN-PROC SECTION.
+        00.
+        COPY COPY2.
+        END-PROC  SECTION.
+        COPY COPY3 in "sub".
+        EX.
+            STOP RUN.
+])
+
+AT_CHECK([mkdir -p sub])
+AT_DATA([COPY1.CPY], [])
+AT_DATA([COPY2.CPY], [       DISPLAY "Hello".
+])
+AT_DATA([sub/COPY3.CPY], [])
+
+AT_CHECK([$COMPILE_ONLY prog.cob])
+
+AT_CHECK([$COMPILE_ONLY -M prog.cob prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+
+AT_CHECK([$COMPILE_ONLY -M -MF prog.dep prog.cob])
+
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" prog.dep], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+
+AT_CHECK([$COMPILE_ONLY -M -fcopybook-deps prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: COPY1 COPY2 sub/COPY3
+
+])
+
+AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/prog.$COB_MODULE_EXT/prog.COB_MODULE_EXT/g" compiler.output], [0],
+[prog.COB_MODULE_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+
+AT_CHECK([test -f prog.c], [1])
+AT_CHECK([test -f prog.o], [1])
+
+AT_CHECK([$COMPILE_ONLY -M -MQ '$(target)#toto' prog.cob], [0],
+[$$(target)\#toto: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+
+AT_CHECK([rm -f prog.d])
+AT_CAPTURE_FILE([prog.d])
+
+AT_CHECK([$COMPILE -MD prog.cob])
+
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" prog.d], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+
+AT_CHECK([$COMPILE -MD -o sub/prog.exe  prog.cob])
+
+AT_CHECK([test -f sub/prog.exe])
+
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" sub/prog.d], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+
+AT_CHECK([rm sub/COPY3.CPY])
+
+AT_CHECK([$COMPILE_ONLY -M prog.cob > compiler.output], [1], [],
+[prog.cob:12: error: sub/COPY3: No such file or directory
+])
+
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY
+
+])
+
+AT_CHECK([$COMPILE_ONLY -M -MG prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ sub/COPY3.CPY
+
+])
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        MAIN-PROC SECTION.
+        00.
+        COPY PROC.
+        END-PROC  SECTION.
+        COPY PROCE in "sub".
+        EX.
+            STOP RUN.
+])
+
+AT_CHECK([mkdir -p sub/copy])
+AT_DATA([sub/copy/PROC.cpy], [
+           DISPLAY BLA NO ADVANCING.
+])
+AT_DATA([sub/PROCE.cpy], [
+           DISPLAY ' END' NO ADVANCING.
+])
+
+AT_CAPTURE_FILE([prog.d])
+AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -M -MP -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only])
+AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], [ignore])
+AT_CHECK([$GREP ' prog.i:'             prog.d], [0], [ignore])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
+  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], [ignore])
+  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], [ignore])
+], [
+  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], [ignore])
+  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], [ignore])
+])
+
+# test again with trailing slash which should not result in different files
+AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -M -MP -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this test
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], [ignore])
+])
+
+AT_CLEANUP
+
+

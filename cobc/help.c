@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -135,8 +135,13 @@ cobc_print_usage_common_options (void)
 	puts (_("  --list-system         display system routines"));
 	puts (_("  --save-temps[=<dir>]  save intermediate files\n"
 	        "                        * default: current directory"));
+	puts (_("  -M                    output dependency list in Makefile format"));
 	puts (_("  -MT <target>          set/add target file used in dependency list"));
+	puts (_("  -MQ <target>          same as -MT but with Makefile-quoting of the target"));
 	puts (_("  -MF <file>            place dependency list into <file>"));
+	puts (_("  -MP                   create phony targets for all dependencies"));
+	puts (_("  -MG                   output missing dependencies without complaining"));
+	puts (_("  -MD                   output dependencies in .d files while compiling"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
 	putchar ('\n');
 }

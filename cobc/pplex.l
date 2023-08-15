@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -159,6 +159,7 @@ static int	fill_continued_alnums = 1; /* whether continued alphanumeric
 					      literals should be filled with
 					      spaces up to text column */
 static int	emit_area_a_tokens = 0;
+
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
@@ -1299,7 +1300,7 @@ ppopen_get_file (const char *name)
 	ppin = fopen (name, "rb");
 #endif
 	if (!ppin) {
-		cb_error ("%s: %s", name, cb_get_strerror ());
+		cb_error ("%s: %s", cobc_slashify (name), cb_get_strerror ());
 		/* Note: postpone error exit as we need the saved buffers later on */
 		return 0;
 	}
@@ -1462,7 +1463,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* add opened file to dependency list */
-	if (cb_depend_file) {
+	if (cb_depend_output && !cb_flag_copybook_deps) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
@@ -1655,6 +1656,20 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
 	}
 
+	if (cb_depend_output && cb_flag_copybook_deps){
+
+		if (lib) {
+			snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
+				lib, SLASH_CHAR, name);
+			plexbuff1[COB_SMALL_MAX] = 0;
+		} else {
+			strcpy (plexbuff1, name);
+		}
+		cb_depend_list =
+			pp_text_list_add (cb_depend_list, plexbuff1,
+					  strlen (plexbuff1));
+	}
+
 	/* TODO: open with path relative to the current file's path,
 	         if any (applies both to with and without "lib") */
 
@@ -1725,10 +1740,23 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		}
 		/* otherwise fall-trough to error handling */
 	} else {
-		/* ensure to have errno from name as specified, not from another file */
-		(void)access (plexbuff1, R_OK);
-		/* pass file error as we have no more places to check */
-		cb_error ("%s: %s", plexbuff1, cb_get_strerror ());
+		/* do not output error if looking only for copybook deps */
+		if (!cb_flag_copybook_deps){
+
+			/* add opened file to dependency list */
+			if (cb_depend_output && cb_depend_keep_missing) {
+				const char *depname = cobc_plex_stradd (plexbuff1, cb_extension_list->text);
+
+				cb_depend_list = pp_text_list_add (cb_depend_list, depname, strlen (depname));
+			} else {
+
+				/* ensure to have errno from name as specified, not from another file */
+				(void)access (plexbuff1, R_OK);
+				/* pass file error as we have no more places to check */
+				cb_error ("%s: %s",
+					  cobc_slashify (plexbuff1), cb_get_strerror ());
+			}
+		}
 	}
 
 	/* On COPY, open error restore old file */

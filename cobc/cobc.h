@@ -473,6 +473,9 @@ extern int			cb_saveargc;
 extern FILE			*cb_listing_file;
 extern FILE			*cb_src_list_file;
 extern FILE			*cb_depend_file;
+extern int                      cb_depend_output;
+extern int                      cb_depend_keep_missing;
+extern int                      cb_depend_keep_system;
 extern struct cb_text_list	*cb_depend_list;
 extern struct cb_text_list	*cb_copy_list;
 extern struct cb_text_list	*cb_include_file_list;
@@ -668,6 +671,8 @@ DECLNORET extern void		flex_fatal_error (const char *, const char *,
 DECLNORET extern void		cobc_terminate_exit (const char *, const char *) COB_A_NORETURN;
 
 extern void		cobc_set_listing_header_code (void);
+
+extern char *           cobc_slashify (const char *);
 
 /* reserved.c */
 extern struct reserved_word_list	*cobc_user_res_list;

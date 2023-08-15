@@ -149,6 +149,11 @@ CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
 CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
 	_("  -fno-fast-compare     disables inline comparisions"))
 
+CB_FLAG (cb_flag_copybook_deps, 0, "copybook-deps",
+	_("  -fcopybook-deps       output copybook names as dependencies"))
+
+/* Normal flags */
+
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"
 	  "                        * turned off by -g"))
