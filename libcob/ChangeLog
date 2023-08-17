@@ -1,4 +1,9 @@
 
+2023-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_move_bcd): fix bug #904 unsigned to signed must write
+	  positive sign
+
 2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c, common.c: replace use of NCURSES_MOUSE_VERSION by
@@ -5271,7 +5276,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 2005-04-13  Keisuke Nishida  <knishida@opencobol.org>
 
 	* byteswap.h: #include <sys/types.h>.  Use u_int16_t, u_int32_t, and
-	u_int64_t instead of unsigned short, etc.
+	  u_int64_t instead of unsigned short, etc.
 
 2005-03-03  Roger While <simrw@sim-basis.de>
 

@@ -1,5 +1,18 @@
 NEWS - user visible changes				-*- outline -*-
 
+ GnuCOBOL 3.3     (planned December 2023)
+
+ work in progress
+
+* New GnuCOBOL features
+
+  work in progress
+
+* Important Bugfixes
+
+** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+
+
  GnuCOBOL 3.2     (20230728)
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
@@ -369,7 +382,7 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the -P flag accepts - as argument for stdout
 
-* Important Bugfixes:
+* Important Bugfixes
 
 ** for dialects other than the GnuCOBOL default different reserved "alias" words
    were not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed
