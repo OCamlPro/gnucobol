@@ -1,4 +1,8 @@
 
+2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: add -fstack-clash-protection to --enable-hardening[=no]
+
 2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac, NEWS: updated for 3.2
