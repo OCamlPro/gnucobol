@@ -1,4 +1,8 @@
 
+2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* version.h: bump to 3.3
+
 2023-08-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_move_bcd): fix bug #904 unsigned to signed must write
