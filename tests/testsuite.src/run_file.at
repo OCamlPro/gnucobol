@@ -1197,7 +1197,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ASSIGN DYNAMIC with data item in LINKAGE])
-AT_KEYWORDS([runfile-CONTROL file status])
+AT_KEYWORDS([runfile-CONTROL file status CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -1249,7 +1249,7 @@ AT_DATA([prog.cob], [
        01  REC-NUM    PIC 9(4).
        01  CUST-STAT  PIC X(2).
 
-       PROCEDURE DIVISION USING s-path, REC-NUM, CUST-STAT.
+       PROCEDURE DIVISION USING OPTIONAL s-path, REC-NUM, CUST-STAT.
            IF ADDRESS OF s-path = NULL
               SET ADDRESS OF s-path TO ADDRESS OF z-path
            END-IF.
@@ -1297,7 +1297,7 @@ AT_DATA([prog.cob], [
        LINKAGE SECTION.
        01  s-path   PIC X(80).
 
-       PROCEDURE DIVISION USING s-path.
+       PROCEDURE DIVISION USING OPTIONAL s-path.
            OPEN OUTPUT f
            IF IO-STS NOT = "00"
                DISPLAY "Opened error: " IO-STS "."
@@ -1341,7 +1341,7 @@ AT_DATA([prog2.cob], [
        LINKAGE SECTION.
        01  s-path     PIC X(80).
 
-       PROCEDURE DIVISION USING s-path.
+       PROCEDURE DIVISION USING OPTIONAL s-path.
            OPEN OUTPUT f
            GOBACK.
        END PROGRAM TSTOPEN.

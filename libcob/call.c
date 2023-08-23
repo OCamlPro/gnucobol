@@ -46,6 +46,10 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 
 #include <errno.h>
 
+/* include internal and external libcob definitions, forcing exports */
+#define	COB_LIB_EXPIMP
+#include "coblocal.h"
+
 /*	NOTE - The following variable should be uncommented when
 	it is known that dlopen(NULL) is borked.
 	This is known to be true for some PA-RISC HP-UX 11.11 systems.
@@ -86,12 +90,12 @@ lt_dlsym (HMODULE hmod, const char *p)
 #define	lt_dlexit()
 #define lt_dlhandle	HMODULE
 
-#if	0	/* RXWRXW - dlerror */
+#if	1	/* RXWRXW - dlerror */
 static char	errbuf[64];
 static char *
 lt_dlerror (void)
 {
-	sprintf(errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
+	sprintf (errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
 	return errbuf;
 }
 #endif
@@ -113,10 +117,6 @@ lt_dlerror (void)
 #include <ltdl.h>
 
 #endif
-
-/* include internal and external libcob definitions, forcing exports */
-#define	COB_LIB_EXPIMP
-#include "coblocal.h"
 
 #define	COB_MAX_COBCALL_PARMS	16
 #define	CALL_BUFF_SIZE		256U
@@ -616,11 +616,14 @@ cache_preload (const char *path)
 	}
 
 	if (access (path, R_OK) != 0) {
+		/* note: not reasonable to warn here as we test for multiple paths that way */
 		return 0;
 	}
 
 	libhandle = lt_dlopen (path);
 	if (!libhandle) {
+		cob_runtime_warning (
+			_("preloading from existing path '%s' failed; %s"), path, lt_dlerror());
 		return 0;
 	}
 
@@ -921,6 +924,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			set_resolve_error (module_type);
 			return NULL;
 		}
+		lt_dlerror ();	/* clear last error conditions */
 		handle = lt_dlopen (call_filename_buff);
 		if (handle != NULL) {
 			/* Candidate for future calls */
@@ -936,6 +940,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 			  "entry point '%s' not found", (const char *)s);
 		set_resolve_error (module_type);
+		/* lt_dlerror will now give either the message from lt_dlopen or lt_dlym */
+		cob_runtime_warning (
+			_("loading from existing path '%s' failed; %s"),
+			call_filename_buff, lt_dlerror ());
 		return NULL;
 	}
 	for (i = 0; i < resolve_size; ++i) {
@@ -949,6 +957,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		}
 		call_filename_buff[COB_NORMAL_MAX] = 0;
 		if (access (call_filename_buff, R_OK) == 0) {
+			lt_dlerror ();	/* clear last error conditions */
 			handle = lt_dlopen (call_filename_buff);
 			if (handle != NULL) {
 				/* Candidate for future calls */
@@ -964,6 +973,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 				  "entry point '%s' not found", (const char *)s);
 			set_resolve_error (module_type);
+			/* lt_dlerror will now give either the message from lt_dlopen or lt_dlym */
+			cob_runtime_warning (
+				_("loading from existing path '%s' failed; %s"),
+				call_filename_buff, lt_dlerror ());
 			return NULL;
 		}
 	}
@@ -1589,7 +1602,12 @@ size_t cob_try_preload (const char* module_name)
 		}
 	}
 	/* If not found, try just using the name as-is */
-	return cache_preload (module_name);
+	ret = cache_preload (module_name);
+
+	if (ret == 0) {
+		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
+	}
+	return ret;
 #endif
 }
 

@@ -25,7 +25,7 @@ dnl
 AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
 
 AC_INIT([GnuCOBOL],
-	[3.2-dev],
+	[3.2],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
@@ -179,6 +179,7 @@ AH_TEMPLATE([HAVE_RESIZE_TERM], [curses has resize_term function])
 AH_TEMPLATE([HAVE_DEFINE_KEY], [curses has define_key function])
 AH_TEMPLATE([HAVE_MOUSEINTERVAL], [curses has mouseinterval function])
 AH_TEMPLATE([HAVE_HAS_MOUSE], [curses has has_mouse function])
+AH_TEMPLATE([HAVE_MOUSEMASK], [curses has mousemask function and mmask_t definition])
 AH_TEMPLATE([HAVE_CURSES_FREEALL], [curses provides function to free all memory])
 AH_TEMPLATE([HAVE_USE_LEGACY_CODING], [ncurses has use_legacy_coding function])
 AH_TEMPLATE([HAVE_DESIGNATED_INITS], [Has designated initializers])
@@ -1529,6 +1530,28 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	[AC_DEFINE([HAVE_HAS_MOUSE], [1]) AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])],
 	[])
+
+	AC_MSG_CHECKING([for curses mousemask function and mmask_t])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+	#ifdef HAVE_NCURSESW_NCURSES_H
+	#include <ncursesw/ncurses.h>
+	#elif defined (HAVE_NCURSESW_CURSES_H)
+	#include <ncursesw/curses.h>
+	#elif defined (HAVE_NCURSES_H)
+	#include <ncurses.h>
+	#elif defined (HAVE_NCURSES_NCURSES_H)
+	#include <ncurses/ncurses.h>
+	#elif defined (HAVE_PDCURSES_H)
+	#include <pdcurses.h>
+	#elif defined (HAVE_CURSES_H)
+	#include <curses.h>
+	#endif]], [[
+	mmask_t 	dummy =  { 0 };
+	mousemask (dummy, NULL);
+	]])],
+	[AC_DEFINE([HAVE_MOUSEMASK], [1]) AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])],
+	[])
 fi
 LIBS="$curr_libs $LIBCOB_LIBS"
 
@@ -2380,8 +2403,16 @@ AX_AC_DEFINE_RESOLVED([COB_COPY_DIR],	[$COB_COPY_DIR],	[default search path for 
 dnl unused: AX_AC_DEFINE_RESOLVED([DATADIR],		[$datarootdir], 	[path for configuration files])
 dnl unused: AX_AC_DEFINE_RESOLVED([LOCALEDIR],		[$localedir], 		[path for locale-dependent data])
 
-dnl unused: AC_DEFINE_UNQUOTED([COBC_NAME],	["$(echo cobc    | $SED "$program_transform_name")"], [executable name for compiler])
-AC_DEFINE_UNQUOTED([COBCRUN_NAME],	["$(echo cobcrun | $SED "$program_transform_name")"], [executable name for module runner])
+# convert from "make" style to real command
+local_transform=$(echo "$program_transform_name" | $SED -e 's,\$\$,$,')
+
+dnl unused: cobc_name="$(echo cobc | $SED -e $local_transform)"
+dnl unused: AC_DEFINE_UNQUOTED([COBC_NAME],	["$cobc_name"], [executable name for compiler])
+dnl unused: unset cobc_name
+cobcrun_name="$(echo cobcrun | $SED -e $local_transform)"
+AC_DEFINE_UNQUOTED([COBCRUN_NAME],	["$cobcrun_name"], [executable name for module runner])
+unset cobcrun_name
+unset local_transform
 
 dnl informational only
 AC_DEFINE_UNQUOTED([COB_BLD_CC],		["$CC"],		[informational: compiler during compilation])

@@ -1,7 +1,7 @@
 ## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2023
 ## Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
-## Ron Norman
+## Ron Norman, Denis HUGONNARD-ROCHE, Chuck Haatvedt
 ##
 ## This file is part of GnuCOBOL.
 ##
@@ -528,7 +528,7 @@ AT_CLEANUP
 
 
 AT_SETUP([MOVE integer literal to alphanumeric])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental typing])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -538,16 +538,28 @@ AT_DATA([prog.cob], [
        01  X            PIC X(04) VALUE SPACES.
        PROCEDURE        DIVISION.
            MOVE 0 TO X.
-           DISPLAY X NO ADVANCING
-           END-DISPLAY.
+           DISPLAY X NO ADVANCING END-DISPLAY.
+           MOVE 1000 TO X.
+           DISPLAY X NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:8: warning: alphanumeric value is expected
-prog.cob:6: note: 'X' defined here as PIC X(04)
+AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option prog.cob], [0], [],
+[prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0   ])
+AT_CHECK([$COMPILE_ONLY -Wstrict-typing -fdiagnostics-show-option prog.cob], [0], [],
+[prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
+prog.cob:10: warning: alphanumeric value is expected [[-Wstrict-typing]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wstrict-typing]]
+])
+AT_CHECK([$COMPILE_ONLY -Wextra -Wno-strict-typing -fdiagnostics-show-option prog.cob], [0], [],
+[prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
+])
+AT_CHECK([$COMPILE -Wextra -Wno-typing -fdiagnostics-show-option prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0   1000])
 
 AT_CLEANUP
 
@@ -1544,9 +1556,13 @@ some (void)
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE module.c], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+# the warning itself is very system specific, so disable it,
+# then run again checking only for the warning
+AT_CHECK([COB_DISABLE_WARNINGS=1 $COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:6: error: entry point 'module' not found
 ])
+AT_CHECK([$COBCRUN_DIRECT ./prog 2> err.log], [1], [], [])
+AT_CHECK([$GREP "libcob: prog.cob:6: warning: " err.log], [0], ignore, [])
 
 AT_CLEANUP
 
@@ -2259,7 +2275,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CANCEL test (1)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2286,7 +2302,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CANCEL test (2)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2294,10 +2310,8 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        PROCEDURE        DIVISION.
-           CALL "prog2"
-           END-CALL.
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+           CALL "prog2".
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2308,8 +2322,7 @@ AT_DATA([prog2.cob], [
        WORKING-STORAGE SECTION.
        PROCEDURE        DIVISION.
            CANCEL "prog".
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2326,7 +2339,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CANCEL test (3)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2334,16 +2347,12 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        PROCEDURE        DIVISION.
-           CALL "prog2"
-           END-CALL.
-           CALL "prog2"
-           END-CALL.
+           CALL "prog2".
+           CALL "prog2".
            CANCEL "prog2".
-           CALL "prog2"
-           END-CALL.
+           CALL "prog2".
            CANCEL "prog2".
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2354,9 +2363,8 @@ AT_DATA([prog2.cob], [
        WORKING-STORAGE SECTION.
        77  VAR          PIC 9(01) value 1.
        PROCEDURE        DIVISION.
-           DISPLAY VAR NO ADVANCING
-           END-DISPLAY.
-           ADD  1 TO VAR END-ADD.
+           DISPLAY VAR NO ADVANCING.
+           ADD  1 TO VAR.
            GOBACK.
 ])
 
@@ -6308,7 +6316,7 @@ AT_CLEANUP
 
 
 AT_SETUP([DISPLAY with P fields])
-AT_KEYWORDS([runmisc pretty-display pretty-printing pretty PACKED-DECIMAL])
+AT_KEYWORDS([fundamental runmisc pretty-display pretty-printing pretty PACKED-DECIMAL])
 
 # this test verifies that the size is correctly printed, which was buggy
 # with "P on the left side of the decimal point", see bug #874
@@ -6393,8 +6401,8 @@ AT_CHECK([$COBCRUN_DIRECT ./packed], [0],
 AT_CLEANUP
 
 
-AT_SETUP([Condition IS ZERO AND])
-AT_KEYWORDS([IF])
+AT_SETUP([condition IS ZERO AND])
+AT_KEYWORDS([fundamental IF])
 
 # for more details see bug #875
 
@@ -6445,7 +6453,7 @@ AT_CLEANUP
 
 
 AT_SETUP([abbreviated conditions with multiple words operators])
-AT_KEYWORDS([IF])
+AT_KEYWORDS([fundamental IF])
 
 # for more details see bug #880
 
@@ -6483,7 +6491,7 @@ AT_CLEANUP
 
 
 AT_SETUP([abbreviated conditions with multiple words operators])
-AT_KEYWORDS([IF])
+AT_KEYWORDS([fundamental IF])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6511,7 +6519,7 @@ AT_CLEANUP
 
 
 AT_SETUP([MOVE with JUSTIFIED clause])
-AT_KEYWORDS([RIGHT])
+AT_KEYWORDS([fundamental RIGHT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6550,6 +6558,2569 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with PICTURE P])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. Move_Basic_P_Pic .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> Basic checking of P Picture
+      *>   -check lengt content and move
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *>
+       01 P-PIC-1       PIC 99P(4)    .
+       01 P-PIC-1-9 REDEFINES P-PIC-1  PIC 9(02)  .
+       01 FLD-1         PIC 9(06)     .
+       01 FLD-1-RES     PIC 9(06)                 .
+      *>
+       01 P-PIC-2       PIC S99P(4)   .
+       01 P-PIC-2-9 REDEFINES P-PIC-2  PIC S9(02)  .
+       01 FLD-2         PIC S9(06)    .
+       01 FLD-2-RES     PIC S9(06)    .
+      *>
+       01 P-PIC-3       PIC P(4)9     .
+       01 P-PIC-3-9 REDEFINES P-PIC-3  PIC 9(01)  .
+       01 FLD-3         PIC V9(05)    .
+       01 FLD-3-RES     PIC V9(05)    .
+      *>
+       01 P-PIC-4       PIC SP(4)9    .
+       01 P-PIC-4-9 REDEFINES P-PIC-4  PIC S9(01)  .
+       01 FLD-4         PIC SV9(05)   .
+       01 FLD-4-RES     PIC SV9(05)    .
+      *>
+       01 W01-I         PIC 9(02)     .
+      *>
+       PROCEDURE DIVISION .
+      *>
+      *>   Check Length
+      *>
+           PERFORM CHECK-LENGTH .
+      *>
+           PERFORM CHECK-CONTENT.
+      *>
+           PERFORM CHECK-MOVE   .
+      *>
+           GOBACK .
+      *>
+       CHECK-CONTENT.
+      *>------------
+      *>
+           MOVE    123456  TO P-PIC-1      .
+           IF P-PIC-1-9 NOT = 12
+           THEN
+                   DISPLAY 'Error C1 VALUE <' P-PIC-1-9 '> != 12' .
+      *>
+           MOVE    345678  TO P-PIC-2      .
+           IF P-PIC-2-9 NOT = 34
+           THEN
+                   DISPLAY 'Error C2 VALUE <' P-PIC-2-9 '> != 34' .
+      *>
+           MOVE   -456789  TO P-PIC-2      .
+           IF P-PIC-2-9 NOT = -45
+           THEN
+                   DISPLAY 'Error C3 VALUE <' P-PIC-2-9 '> != -45' .
+      *>
+           MOVE   0.12345  TO P-PIC-3      .
+           IF P-PIC-3-9 NOT = 5
+           THEN
+                   DISPLAY 'Error C4 VALUE <' P-PIC-3-9 '> != 5' .
+      *>
+           MOVE   0.56789  TO P-PIC-4      .
+           IF P-PIC-4-9 NOT = 9
+           THEN
+                   DISPLAY 'Error C5 VALUE <' P-PIC-4-9 '> != 9' .
+      *>
+           MOVE  -0.34567  TO P-PIC-4      .
+           IF P-PIC-4-9 NOT = -7
+           THEN
+                   DISPLAY 'Error C6 VALUE <' P-PIC-4-9 '> != -7' .
+      *>
+       CHECK-MOVE .
+      *>----------
+      *>
+           MOVE    123456  TO P-PIC-1      .
+           MOVE    P-PIC-1 TO FLD-1        .
+           MOVE    120000  TO FLD-1-RES    .
+           IF FLD-1 NOT = FLD-1-RES
+           THEN
+               DISPLAY 'M1 <' FLD-1-RES '> != ' FLD-1 .
+      *>
+           MOVE    001234  TO P-PIC-1      .
+           MOVE    P-PIC-1 TO FLD-1        .
+           MOVE    000000  TO FLD-1-RES    .
+           IF FLD-1 NOT = FLD-1-RES
+           THEN
+               DISPLAY 'M2 <' FLD-1-RES '> != ' FLD-1 .
+      *>-----------------------------------
+           MOVE    001234  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE    000000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M3 <' FLD-2-RES '> != ' FLD-2 .
+      *>
+           MOVE   -005678  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE    000000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M4 <' FLD-2-RES '> != ' FLD-2 .
+      *>
+           MOVE    456789  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE    450000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M5 <' FLD-2-RES '> != ' FLD-2 .
+      *>
+           MOVE   -456789  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE   -450000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M6 <' FLD-2-RES '> != ' FLD-2 .
+      *>-----------------------------------
+           MOVE   0.12345  TO P-PIC-3      .
+           MOVE    P-PIC-3 TO FLD-3        .
+           MOVE   0.00005  TO FLD-3-RES    .
+           IF FLD-3 NOT = FLD-3-RES
+           THEN
+               DISPLAY 'M7 <' FLD-3-RES '> != ' FLD-3 .
+      *>
+           MOVE   0.00010  TO P-PIC-3      .
+           MOVE    P-PIC-3 TO FLD-3        .
+           MOVE   0.00000  TO FLD-3-RES    .
+           IF FLD-3 NOT = FLD-3-RES
+           THEN
+               DISPLAY 'M8 <' FLD-3-RES '> != ' FLD-3 .
+      *>
+      *>-----------------------------------
+      *>
+           MOVE   0.23456  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE   0.00006  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M9 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+           MOVE   0.02340  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE   0.00000  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M10 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+           MOVE  -0.12345  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE  -0.00005  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M11 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+           MOVE  -0.34560  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE   0.00000  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M11 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+      *>-----------------------------------
+      *>
+       CHECK-LENGTH.
+      *>-----------
+      *>
+           MOVE LENGTH OF P-PIC-1 TO W01-I .
+           IF W01-I NOT = 2
+           THEN
+               DISPLAY 'Error 1 size <' W01-I '> !=2' .
+      *>
+           MOVE LENGTH OF P-PIC-2 TO W01-I .
+           IF W01-I NOT = 2
+           THEN
+               DISPLAY 'Error 2 size <' W01-I '> !=2' .
+      *>
+           MOVE LENGTH OF P-PIC-3 TO W01-I .
+           IF W01-I NOT = 1
+           THEN
+               DISPLAY 'Error 3 size <' W01-I '> !=1' .
+      *>
+
+           MOVE LENGTH OF P-PIC-4 TO W01-I .
+           IF W01-I NOT = 1
+           THEN
+               DISPLAY 'Error 4 size <' W01-I '> !=1' .
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to USAGE DISPLAY])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>    Receiving field is NUMERIC DISPLAY Type
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99.
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6).
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to DECIMAL IS COMMA])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_2 .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING WITH DECIMAL-POINT IS COMMA
+      *>     Receiving fied is display type
+      *>----------------------------------------------------------------
+      *>
+
+       ENVIRONMENT DIVISION .
+       CONFIGURATION    SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT    IS COMMA.
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9,99CR.
+       01  DISP-1               PIC S9(4)V99.
+       01  EDIT-2               PIC --9B,99B99/99.
+       01  DISP-2               PIC S99V9(6).
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123,45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123,45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123,45' .
+
+           IF    EDIT-1 NOT = " $123,45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123,45CR>'.
+
+           MOVE -42,9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42,987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42,987600>'.
+
+           IF   EDIT-2 NOT = "-42 ,98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 ,98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to BINARY])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_3.
+       DATA DIVISION.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>     Receiving fied is binary type
+      *>----------------------------------------------------------------
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99 BINARY .
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6) BINARY .
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to COMP-3])
+AT_KEYWORDS([fundamental PACKED-DECIMAL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_4.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>    Receiving field is PACKED Type
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99 COMP-3 .
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6) COMP-3 .
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to COMP-5])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_5.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>    Receiving field is COMP-5 Type
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99 COMP-5 .
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6) COMP-5 .
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to NUMERIC DISPLAY (2)])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.  MoveEditedToDisplay.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *>   Add more test case for edited field
+      *>----------------------------------------------------------------
+      *>
+
+        ENVIRONMENT DIVISION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+
+        01 EDITED-FIELD .
+
+
+           05 SRC-FIELD-100   PIC +$ZZ9999900BB9   .
+           05 SRC-FIELD-101   PIC -$ZZ9999900BB9   .
+           05 SRC-FIELD-102   PIC  $ZZ9999900BB9CR .
+           05 SRC-FIELD-103   PIC  $ZZ9999900BB9DB .
+           05 SRC-FIELD-400   PIC +$**9999900BB9   .
+           05 SRC-FIELD-401   PIC -$**9999900BB9   .
+           05 SRC-FIELD-402   PIC  $**9999900BB9CR .
+           05 SRC-FIELD-403   PIC  $**9999900BB9DB .
+      *
+        01 DST-FIELD.
+           05 DST-FIELD-1     PIC 9(10)V9(04) .
+           05 DST-FIELD-2     PIC S9(10)V9(04) .
+      *
+        PROCEDURE DIVISION.
+      *>-------------------
+      *>
+           MOVE 12345      TO SRC-FIELD-100  .
+           MOVE SRC-FIELD-100 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 1234005
+              DISPLAY '1: DST-FIELD-1 <' DST-FIELD-1 '> != 1234005' .
+      *>
+           MOVE 23456      TO SRC-FIELD-101  .
+           MOVE SRC-FIELD-101 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 2345006
+              DISPLAY '2: DST-FIELD-1 <' DST-FIELD-1 '> != 2345006' .
+      *>
+           MOVE 34567      TO SRC-FIELD-102  .
+           MOVE SRC-FIELD-102 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 3456007
+              DISPLAY '3: DST-FIELD-1 <' DST-FIELD-1 '> != 3456007' .
+      *>
+           MOVE 45678      TO SRC-FIELD-103  .
+           MOVE SRC-FIELD-103 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 4567008
+              DISPLAY '4: DST-FIELD-1 <' DST-FIELD-1 '> != 4567008' .
+      *>
+      *>--------------------------------------------------------------
+      *>
+           MOVE -12345      TO SRC-FIELD-100  .
+           MOVE SRC-FIELD-100 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = 1234005
+               DISPLAY '5: DST-FIELD-2 <' DST-FIELD-2 '> != 1234005' .
+      *>
+           MOVE -23456      TO SRC-FIELD-101  .
+           MOVE SRC-FIELD-101 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -2345006
+              DISPLAY '6: DST-FIELD-2 <' DST-FIELD-2 '> != -2345006' .
+      *>
+           MOVE -34567      TO SRC-FIELD-102  .
+           MOVE SRC-FIELD-102 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -3456007
+              DISPLAY '7: DST-FIELD-2 <' DST-FIELD-2 '> != -3456007' .
+      *>
+           MOVE -45678      TO SRC-FIELD-103  .
+           MOVE SRC-FIELD-103 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = 4567008
+              DISPLAY '8: DST-FIELD-2 <' DST-FIELD-2 '> != 45676008' .
+      *>
+      *>--------------------------------------------------------------
+      *>
+           MOVE 12345      TO SRC-FIELD-400  .
+           MOVE SRC-FIELD-400 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 1234005
+              DISPLAY '9: DST-FIELD-1 <' DST-FIELD-1 '> != 1234005' .
+      *>
+           MOVE 23456      TO SRC-FIELD-401  .
+           MOVE SRC-FIELD-401 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 2345006
+              DISPLAY '10: DST-FIELD-1 <' DST-FIELD-1 '> != 2345006' .
+      *>
+           MOVE 34567      TO SRC-FIELD-402  .
+           MOVE SRC-FIELD-402 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 3456007
+              DISPLAY '11: DST-FIELD-1 <' DST-FIELD-1 '> != 3456007' .
+      *>
+           MOVE 45678      TO SRC-FIELD-403  .
+           MOVE SRC-FIELD-403 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 4567008
+              DISPLAY '12: DST-FIELD-1 <' DST-FIELD-1 '1 != 45676008' .
+      *>
+           MOVE -12345     TO SRC-FIELD-400  .
+           MOVE SRC-FIELD-400 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = 1234005
+              DISPLAY '13: DST-FIELD-2 <' DST-FIELD-2 '> != 1234005' .
+      *>
+           MOVE -23456      TO SRC-FIELD-401  .
+           MOVE SRC-FIELD-401 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -2345006
+              DISPLAY '14: DST-FIELD-2 <' DST-FIELD-2 '> != -2345006' .
+      *>
+           MOVE -34567      TO SRC-FIELD-402  .
+           MOVE SRC-FIELD-402 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -3456007
+              DISPLAY '15: DST-FIELD-2 <' DST-FIELD-2 '> != -3456007' .
+      *>
+           MOVE -45678      TO SRC-FIELD-403  .
+           MOVE SRC-FIELD-403 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = 4567008
+              DISPLAY '16: DST-FIELD-2 <' DST-FIELD-2 '> != 4567008' .
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE misc. edited])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . MoveOtherCases .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> Last several specifics test cases
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+      *>-------------
+
+       DATA DIVISION .
+      *>--------------
+
+       WORKING-STORAGE SECTION.
+      *>-----------------------
+
+       01  SRC-BIN        PIC S9(09) BINARY .
+       01  DST-BIN        PIC  9(09) BINARY .
+      *>
+       01  SRC-EDIT       PIC $$$$,$$9V99-  .
+       01  DST-DISP       PIC  9(06)        .
+      *>
+       01  DST-FIELD-1    PIC XB0XB099/ .
+
+      *>
+       PROCEDURE DIVISION .
+      *>-------------------
+      *>
+      *>   Case 1 move unsigned to signed
+      *>
+           MOVE -12345678     TO SRC-BIN    .
+           MOVE SRC-BIN       TO DST-BIN    .
+           IF DST-BIN NOT = 12345678
+           THEN
+               DISPLAY '1: DST-BIN <' DST-BIN '>!= <12345678>'  .
+
+      *>
+      *>   Case 2 move negative edited to display
+      *>
+           MOVE -3            TO SRC-EDIT .
+           MOVE SRC-EDIT      TO DST-DISP .
+           IF SRC-EDIT NOT = '      $300-'
+           THEN
+             DISPLAY '2: SRC-EDIT <' SRC-EDIT '> != <      $300->'  .
+      *>
+           IF DST-DISP NOT = 3
+           THEN
+             DISPLAY '2.1: DST-DISP <' DST-DISP '> != <3>'  .
+
+
+      *>
+      *>   Case 3 cob_move alphanum to  edited case
+      *>
+           MOVE 3          TO SRC-EDIT     .
+           MOVE SRC-EDIT   TO DST-FIELD-1  .
+
+           IF DST-FIELD-1 NOT = '  0  0  /'
+           THEN
+             DISPLAY '3: DST-FIELD-1 <' DST-FIELD-1 '> != <  0  0  />'.
+
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE between USAGEs])
+AT_KEYWORDS([fundamental COMP-1 COMP-2 COMP-3
+COMP-4 COMP-5 COMP-6 DISPLAY BINARY PACKED-DECIMAL
+BINARY-C-LONG BINARY-CHAR BINARY-DOUBLE BINARY-INT
+BINARY-LONG SIGNED UNSIGNED BINARY-LONG-LONG 
+BINARY-SHORT FLOAT-DECIMAL-16 FLOAT-DECIMAL-34
+FLOAT-SHORT SIGNED-INT SIGNED-LONG SIGNED-SHORT
+UNSIGNED-INT UNSIGNED-LONG UNSIGNED-SHORT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . MoveTestCobMove .
+      *>----------------------------------------------------------------
+      *> This programm cover the cob_move function for numeric
+      *> data types except numeric edited
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 ALL-SRC .
+          05 FIELD-02 BINARY-C-LONG  SIGNED  .
+          05 FIELD-03 BINARY-C-LONG UNSIGNED .
+          05 FIELD-04 BINARY-CHAR  SIGNED  .
+          05 FIELD-05 BINARY-CHAR UNSIGNED .
+          05 FIELD-06 BINARY-DOUBLE  SIGNED  .
+          05 FIELD-07 BINARY-DOUBLE UNSIGNED .
+          05 FIELD-08 BINARY-INT .
+          05 FIELD-09 BINARY-LONG  SIGNED  .
+          05 FIELD-10 BINARY-LONG UNSIGNED .
+          05 FIELD-11 BINARY-LONG-LONG .
+          05 FIELD-12 BINARY-SHORT  SIGNED  .
+          05 FIELD-13 BINARY-SHORT UNSIGNED .
+          05 FIELD-14 FLOAT-DECIMAL-16 .
+          05 FIELD-15 FLOAT-DECIMAL-34 .
+          05 FIELD-16 FLOAT-LONG .
+          05 FIELD-17 FLOAT-SHORT .
+          05 FIELD-18 SIGNED-INT .
+          05 FIELD-19 SIGNED-LONG .
+          05 FIELD-20 SIGNED-SHORT .
+          05 FIELD-21 UNSIGNED-INT .
+          05 FIELD-22 UNSIGNED-LONG .
+          05 FIELD-23 UNSIGNED-SHORT .
+          05 FIELD-24            COMP-1 .
+          05 FIELD-25            COMP-2 .
+          05 FIELD-26 PIC  9(10) COMP-6 .
+          05 FIELD-50 PIC S9(09) BINARY            .
+          05 FIELD-51 PIC S9(09) COMP .
+          05 FIELD-52 PIC S9(09)V99 COMP-3 .
+          05 FIELD-53 PIC S9(09) COMP-4 .
+          05 FIELD-54 PIC S9(09) COMP-5 .
+          05 FIELD-55 PIC S9(09) COMP-X .
+          05 FIELD-56 PIC S9(09)V99 DISPLAY .
+      *>
+       01 EXPTD-RESULT PIC 9(09)     .
+      *>
+       01 ALL-DST .
+          05 FIELD-02 BINARY-C-LONG  SIGNED  .
+          05 FIELD-03 BINARY-C-LONG UNSIGNED .
+          05 FIELD-04 BINARY-CHAR  SIGNED  .
+          05 FIELD-05 BINARY-CHAR UNSIGNED .
+          05 FIELD-06 BINARY-DOUBLE  SIGNED  .
+          05 FIELD-07 BINARY-DOUBLE UNSIGNED .
+          05 FIELD-08 BINARY-INT .
+          05 FIELD-09 BINARY-LONG  SIGNED  .
+          05 FIELD-10 BINARY-LONG UNSIGNED .
+          05 FIELD-11 BINARY-LONG-LONG .
+          05 FIELD-12 BINARY-SHORT  SIGNED  .
+          05 FIELD-13 BINARY-SHORT UNSIGNED .
+          05 FIELD-14 FLOAT-DECIMAL-16 .
+          05 FIELD-15 FLOAT-DECIMAL-34 .
+          05 FIELD-16 FLOAT-LONG .
+          05 FIELD-17 FLOAT-SHORT .
+          05 FIELD-18 SIGNED-INT .
+          05 FIELD-19 SIGNED-LONG .
+          05 FIELD-20 SIGNED-SHORT .
+          05 FIELD-21 UNSIGNED-INT .
+          05 FIELD-22 UNSIGNED-LONG .
+          05 FIELD-23 UNSIGNED-SHORT .
+          05 FIELD-24            COMP-1 .
+          05 FIELD-25            COMP-2 .
+          05 FIELD-26 PIC 9(10)  COMP-6 .
+          05 FIELD-50 PIC S9(09) BINARY            .
+          05 FIELD-51 PIC S9(09) COMP .
+          05 FIELD-52 PIC S9(09)V99 COMP-3 .
+          05 FIELD-53 PIC S9(09) COMP-4 .
+          05 FIELD-54 PIC S9(09) COMP-5 .
+          05 FIELD-55 PIC S9(09) COMP-X .
+          05 FIELD-56 PIC S9(09)V99 DISPLAY .
+
+      *>
+       PROCEDURE DIVISION .
+      *>
+           INITIALIZE ALL-SRC REPLACING NUMERIC BY 1 .
+           PERFORM TEST-PASS-1 .
+      *>
+           INITIALIZE ALL-DST REPLACING NUMERIC BY 2 .
+           PERFORM TEST-PASS-2 .
+      *>
+           MOVE  3        TO FIELD-02 OF ALL-SRC .
+           MOVE  3        TO EXPTD-RESULT        .
+           MOVE  FIELD-02 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  4        TO FIELD-03 OF ALL-SRC .
+           MOVE  4        TO EXPTD-RESULT        .
+           MOVE  FIELD-03 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  5        TO FIELD-04 OF ALL-SRC .
+           MOVE  5        TO EXPTD-RESULT        .
+           MOVE  FIELD-04 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  6        TO FIELD-05 OF ALL-SRC .
+           MOVE  6        TO EXPTD-RESULT        .
+           MOVE  FIELD-05 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  7        TO FIELD-06 OF ALL-SRC .
+           MOVE  7        TO EXPTD-RESULT        .
+           MOVE  FIELD-06 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  8        TO FIELD-07 OF ALL-SRC .
+           MOVE  8        TO EXPTD-RESULT        .
+           MOVE  FIELD-07 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  9        TO FIELD-08 OF ALL-SRC .
+           MOVE  9        TO EXPTD-RESULT        .
+           MOVE  FIELD-08 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  10       TO FIELD-09 OF ALL-SRC .
+           MOVE  10       TO EXPTD-RESULT        .
+           MOVE  FIELD-09 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  11       TO FIELD-10 OF ALL-SRC .
+           MOVE  11       TO EXPTD-RESULT        .
+           MOVE  FIELD-10 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  12       TO FIELD-11 OF ALL-SRC .
+           MOVE  12       TO EXPTD-RESULT        .
+           MOVE  FIELD-11 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  13       TO FIELD-12 OF ALL-SRC .
+           MOVE  13       TO EXPTD-RESULT        .
+           MOVE  FIELD-12 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  14       TO FIELD-13 OF ALL-SRC .
+           MOVE  14       TO EXPTD-RESULT        .
+           MOVE  FIELD-13 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  15       TO FIELD-14 OF ALL-SRC .
+           MOVE  15       TO EXPTD-RESULT        .
+           MOVE  FIELD-14 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  16       TO FIELD-15 OF ALL-SRC .
+           MOVE  16       TO EXPTD-RESULT        .
+           MOVE  FIELD-15 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  17       TO FIELD-16 OF ALL-SRC .
+           MOVE  17       TO EXPTD-RESULT        .
+           MOVE  FIELD-16 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  18       TO FIELD-17 OF ALL-SRC .
+           MOVE  18       TO EXPTD-RESULT        .
+           MOVE  FIELD-17 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  19       TO FIELD-18 OF ALL-SRC .
+           MOVE  19       TO EXPTD-RESULT        .
+           MOVE  FIELD-18 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  20       TO FIELD-19 OF ALL-SRC .
+           MOVE  20       TO EXPTD-RESULT        .
+           MOVE  FIELD-19 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  21       TO FIELD-20 OF ALL-SRC .
+           MOVE  21       TO EXPTD-RESULT        .
+           MOVE  FIELD-20 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  22       TO FIELD-21 OF ALL-SRC .
+           MOVE  22       TO EXPTD-RESULT        .
+           MOVE  FIELD-21 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  23       TO FIELD-22 OF ALL-SRC .
+           MOVE  23       TO EXPTD-RESULT        .
+           MOVE  FIELD-22 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  24       TO FIELD-23 OF ALL-SRC .
+           MOVE  24       TO EXPTD-RESULT        .
+           MOVE  FIELD-23 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  25       TO FIELD-24 OF ALL-SRC .
+           MOVE  25       TO EXPTD-RESULT        .
+           MOVE  FIELD-24 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  26       TO FIELD-25 OF ALL-SRC .
+           MOVE  26       TO EXPTD-RESULT        .
+           MOVE  FIELD-25 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  27       TO FIELD-26 OF ALL-SRC .
+           MOVE  27       TO EXPTD-RESULT        .
+           MOVE  FIELD-26 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  50       TO FIELD-50 OF ALL-SRC .
+           MOVE  50       TO EXPTD-RESULT        .
+           MOVE  FIELD-50 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  51       TO FIELD-51 OF ALL-SRC .
+           MOVE  51       TO EXPTD-RESULT        .
+           MOVE  FIELD-51 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  52       TO FIELD-52 OF ALL-SRC .
+           MOVE  52       TO EXPTD-RESULT        .
+           MOVE  FIELD-52 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  53       TO FIELD-53 OF ALL-SRC .
+           MOVE  53       TO EXPTD-RESULT        .
+           MOVE  FIELD-53 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  54       TO FIELD-54 OF ALL-SRC .
+           MOVE  54       TO EXPTD-RESULT        .
+           MOVE  FIELD-54 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  55       TO FIELD-55 OF ALL-SRC .
+           MOVE  55       TO EXPTD-RESULT        .
+           MOVE  FIELD-55 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  56       TO FIELD-56 OF ALL-SRC .
+           MOVE  56       TO EXPTD-RESULT        .
+           MOVE  FIELD-56 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           GOBACK .
+      *>
+       TEST-PASS-1.
+      *>----------
+      *>
+         IF FIELD-02 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-02 <' FIELD-02 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-03 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-03 <' FIELD-03 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-04 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-04 <' FIELD-04 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-05 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-05 <' FIELD-05 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-06 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-06 <' FIELD-06 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-07 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-07 <' FIELD-07 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-08 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-08 <' FIELD-08 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-09 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-09 <' FIELD-09 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-10 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-10 <' FIELD-10 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-11 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-11 <' FIELD-11 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-12 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-12 <' FIELD-12 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-13 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-13 <' FIELD-13 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-14 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-14 <' FIELD-14 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-15 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-15 <' FIELD-15 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-16 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-16 <' FIELD-16 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-17 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-17 <' FIELD-17 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-18 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-18 <' FIELD-18 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-19 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-19 <' FIELD-19 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-20 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-20 <' FIELD-20 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-21 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-21 <' FIELD-21 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-22 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-22 <' FIELD-22 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-23 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-23 <' FIELD-23 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-24 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-24 <' FIELD-24 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-25 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-25 <' FIELD-25 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-26 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-26 <' FIELD-26 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-50 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-50 <' FIELD-50 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-51 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-51 <' FIELD-51 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-52 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-52 <' FIELD-52 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-53 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-53 <' FIELD-52 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-54 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-54 <' FIELD-54 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-55 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-55 <' FIELD-55 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-56 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-56 <' FIELD-56 OF
+                ALL-SRC '> != 1' .
+      *>
+       TEST-PASS-2.
+      *>----------
+      *>
+         IF FIELD-02 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-02 <' FIELD-02 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-03 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-03 <' FIELD-03 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-04 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-04 <' FIELD-04 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-05 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-05 <' FIELD-05 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-06 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-06 <' FIELD-06 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-07 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-07 <' FIELD-07 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-08 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-08 <' FIELD-08 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-09 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-09 <' FIELD-09 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-10 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-10 <' FIELD-10 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-11 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-11 <' FIELD-11 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-12 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-12 <' FIELD-12 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-13 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-13 <' FIELD-13 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-14 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-14 <' FIELD-14 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-15 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-15 <' FIELD-15 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-16 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-16 <' FIELD-16 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-17 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-17 <' FIELD-17 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-18 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-18 <' FIELD-18 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-19 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-19 <' FIELD-19 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-20 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-20 <' FIELD-20 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-21 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-21 <' FIELD-21 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-22 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-22 <' FIELD-22 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-23 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-23 <' FIELD-23 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-24 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-24 <' FIELD-24 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-25 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-25 <' FIELD-25 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-26 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-26 <' FIELD-26 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-50 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-50 <' FIELD-50 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-51 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-51 <' FIELD-51 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-52 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-52 <' FIELD-52 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-53 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-53 <' FIELD-52 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-54 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-54 <' FIELD-54 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-55 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-55 <' FIELD-55 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-56 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-56 <' FIELD-56 OF
+                ALL-DST '> != 2' .
+      *>
+       TEST-PASS-3.
+      *>----------
+      *>
+         IF FIELD-02 OF ALL-DST    IS NOT =  EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-02 <' FIELD-02 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-03 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-03 <' FIELD-03 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-04 OF ALL-DST    IS NOT =  EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-04 <' FIELD-04 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+
+      *>
+         IF FIELD-05 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-05 <' FIELD-05 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-06 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-06 <' FIELD-06 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-07 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-07 <' FIELD-07 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-08 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-08 <' FIELD-08 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-09 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-09 <' FIELD-09 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-10 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-10 <' FIELD-10 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-11 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-11 <' FIELD-11 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-12 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-12 <' FIELD-12 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-13 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-13 <' FIELD-13 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-14 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-14 <' FIELD-14 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-15 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-15 <' FIELD-15 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-16 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-16 <' FIELD-16 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-17 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-17 <' FIELD-17 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-18 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-18 <' FIELD-18 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-19 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-19 <' FIELD-19 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-20 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-20 <' FIELD-20 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-21 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-21 <' FIELD-21 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-22 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-22 <' FIELD-22 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-23 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-23 <' FIELD-23 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-24 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-24 <' FIELD-24 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-25 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-25 <' FIELD-25 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-26 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-26 <' FIELD-26 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-50 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-50 <' FIELD-50 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-51 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-51 <' FIELD-51 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-52 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-52 <' FIELD-52 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-53 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-53 <' FIELD-52 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-54 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-54 <' FIELD-54 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-55 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-55 <' FIELD-55 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-56 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-56 <' FIELD-56 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to editted ZERO])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveToEditedZero .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> Move To Edited
+      *>    Edited field contains only '*'  and sending field is ZERO
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 DISP-1       PIC 999999  .
+       01 EDIT-1       PIC ****** .
+       01 EDIT-1-X     REDEFINES EDIT-1 PIC X(06) .
+
+      *>
+       PROCEDURE DIVISION .
+      *>
+           MOVE 111111 TO EDIT-1 *> avoid init by default
+      *>
+           MOVE ZEROES  TO DISP-1 .
+           MOVE DISP-1  TO EDIT-1 .
+           IF EDIT-1-X NOT = '******'
+           THEN
+               DISPLAY 'Error EDIT-1-X <' EDIT-1-X '> !=  <******>' .
+      *>
+      *>
+           MOVE 123     TO DISP-1 .
+           MOVE DISP-1  TO EDIT-1 .
+           IF EDIT-1-X NOT = '***123'
+           THEN
+               DISPLAY 'Error EDIT-1-X <' EDIT-1-X '> !=  <***123>' .
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SPECIAL-NAMES CLASS])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TSTCLASS.
+
+       ENVIRONMENT  DIVISION.
+       CONFIGURATION SECTION .
+       SPECIAL-NAMES         .
+       CLASS HEXA IS '0' THRU '9'
+                     'A' THRU 'F' .
+       CLASS ODD   IS '1' '3' '5' '7' '9'   .
+
+      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+      *                                                               *
+      *    NOTICE THAT THE VALUES SUPPLIED ARE NUMERIC LITERALS       *
+      *    WHICH REPRESENT A VALUE WHICH IS 1 NUMBER HIGHER THAN      *
+      *    THE HEX VALUES WHICH THEY REPRESENT. THIS IS BECAUSE       *
+      *    THE ALLOWABLE VALUES ARE FROM 1 THROUGH 256.               *
+      *                                                               *
+      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+       CLASS EVEN  IS  49 51 53 55 57.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ALPHA       PIC X(01)  .
+       01  NUM-1       PIC 9(01)  .
+      *>
+       PROCEDURE DIVISION.
+      *>
+           MOVE '3' TO ALPHA .
+           IF ALPHA IS HEXA
+           THEN
+               CONTINUE
+           ELSE
+               DISPLAY 'ERROR 1'
+           END-IF.
+      *>
+           IF ALPHA IS ODD
+           THEN
+               CONTINUE
+           ELSE
+               DISPLAY 'ERROR 2'
+           END-IF.
+      *>
+           MOVE  2  TO NUM-1
+           IF NUM-1 IS EVEN
+           THEN
+               CONTINUE
+           ELSE
+               DISPLAY 'ERROR 3'
+           END-IF.
+      *>
+           GOBACK  .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

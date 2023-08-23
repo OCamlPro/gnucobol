@@ -136,11 +136,14 @@ print_error (const char *file, int line, enum cb_error_kind kind,
 {
 	const char *prefix;
 
-	switch( kind ){
+	switch (kind) {
 	case CB_KIND_ERROR: prefix = _("error: "); break;
 	case CB_KIND_WARNING: prefix = _("warning: "); break;
 	case CB_KIND_NOTE: prefix = _("note: "); break;
 	case CB_KIND_GENERAL: prefix = ""; break;
+	default:
+		cobc_err_msg ("call to print_error with unexpected error kind");
+		cobc_abort_terminate (1);
 	}
 
 	if (!file) {

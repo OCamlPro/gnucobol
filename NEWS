@@ -1,18 +1,12 @@
 NEWS - user visible changes				-*- outline -*-
 
+ GnuCOBOL 3.2     (20230728)
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
- GnuCOBOL 3.2rc3  ASAP
-          3.2 final (depending on feedback) around 2023/04/25
-
- planned for final:
-   * extending testsuite and documentation
-   * investigation of code analysis tools and user feedback
-
 
 * New GnuCOBOL features
 
-** Support for LINE SEQUENTIAL file type as per COBOL 2022
+** Support for LINE SEQUENTIAL file type as per COBOL 2023
   * OPEN INPUT-OUTPUT and REWRITE are allowed (note that INPUT-OUTPUT
     leads to slower IO for LINE SEQUENTIAL files)
   * validation of data on (RE-)WRITE and READ, active by default,
@@ -22,31 +16,31 @@ NEWS - user visible changes				-*- outline -*-
 
   BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
 
-** Support for COBOL 2022 directive COBOL-WORDS
+** Support for COBOL 2023 directive COBOL-WORDS
 
-** Support for bit operations according to COBOL 2022 with MF compatibility
+** Support for bit operations according to COBOL 2023 with MF compatibility
 
 ** Support for additional $SET directives: ODOSLIDE
 
-** Support for the EXTFH interface was heavily improved, now also supporting
-   FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
+** Support for the EXTFH has been greatly enhanched and now includes support
+   for FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
    pointers and now supports - for 32-bit builds - an internal conversion
    between FCD2 and FCD3 for cases where existing programs are coded with FCD2
 
-** OCCURS with multiple VALUEs supported (BS2000 format without FROM/TO)
+** OCCURS with multiple VALUEs supported (BS2000 format, FROM and TO pending)
 
-** new function to call COBOL from C that won't exit the program in case
+** new function to call COBOL from C that doesn't abort the program in case
    of runtime errors or STOP RUN: cob_call_with_exception_check()
 
-** Support for GCOS 7 (Bull) dialect, including:
+** Support for the GCOS 7 (Bull) dialect, including:
    * PICTURE strings with L character (variable length fields)
    * CONTROL DIVISION with SUBSTITUTION SECTION (full support) and DEFAULT
      SECTION (partial support)
 
-** Multiple sequential files may be concatenated by specifying multiple
-   files with a separator in its ASSIGN name (either directly or via
+** Multiple sequential files can be concatenated by specifying multiple
+   files with a separator in the ASSIGN name (either directly or via
    environment), see the new runtime options
-   COB_SEQ_CONCAT_NAME (defaulting to false) and COB_SEQ_CONCAT_SEP
+   COB_SEQ_CONCAT_NAME (defaults to false) and COB_SEQ_CONCAT_SEP
 
 ** Initial "testing support" of CODE-SET clause to convert between ASCII and
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
@@ -59,17 +53,14 @@ NEWS - user visible changes				-*- outline -*-
    [core-]dump and stacktrace) with "STOP ERROR" statement or by
    CALL "CBL_RUNTIME_ERROR"
 
-** COB_PHYSICAL_CANCEL may now be configured as "never" to prevent unloading,
+** COB_PHYSICAL_CANCEL can now be configured as "never" to prevent unloading
    of COBOL modules, both on CANCEL and on process exit, which is useful for
-   analysis tools like callgrind or perf to keep all symbols until the end of
-   the COBOL process
+   analysis tools such as callgrind or perf to keep all symbols until the end
+   of the COBOL process
 
-** the system function x'91' was extended to support more functions
+** the system function x'91' has been extended to support more functions
 
-** TODO - More to document before 3.2 final
-
-
-* Changes that potentially effects existing programs:
+* Changes that potentially effect existing programs:
 
 ** ALLOCATE statement: earlier versions of GnuCOBOL initialized the memory
    (to binary zero) if the INITIALIZED clause was not specified,
@@ -101,7 +92,7 @@ NEWS - user visible changes				-*- outline -*-
    in case of "overflowing" records previous versions of GnuCOBOL cut the
    data, set io status 00 and skipped the file until the next line
    terminator is found;
-   the default changed (per COBOL 2022 and other compilers) so the data is
+   the default changed (per COBOL 2023 and other compilers) so the data is
    returned as "multiple" records and a warning (status 06) is issued;
    setting COB_LS_SPLIT = false will have the old behaviour of truncating
    the record, but will now set status 04
@@ -170,10 +161,10 @@ NEWS - user visible changes				-*- outline -*-
    if you set those via COB_SWITCH environment variables you need to adjust
    their numbers
 
-* Changes that potentially effects recompilation of existing programs:
+* Changes that potentially effect recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially
-   to cater for new features of COBOL 2022; if compiling with any non-strict
+   to cater for new features of COBOL 2023; if compiling with any non-strict
    dialect you may need to unreserve any conflicting words / functions
 
 ** in 64-bit environments, the default size for BY VALUE parameters has changed:
@@ -265,6 +256,13 @@ NEWS - user visible changes				-*- outline -*-
    clause for VALUE clause; this is applied to IBM dialects, if you want
    the previous behavior compile with -fno-init-justified
 
+** depending on the new dialect option "using-optional" (included in the
+   the default dialect), checks for arguments not passed are now done (only)
+   on CALL, not on their (possibly many) references; if you want the old
+   "postponed" check either specify the parameter as OPTIONAL or use
+   -fusing-optional=skip; note: the non-strict dialects will raise a warning
+   on the first use of this feature, then automatically enable it
+
 ** the dialect configuration option larger-redefines-ok was replaced by
    the support option larger-redefines; if specified on the command-line
    it is now -f[no-]larger-redefines instead of -f[no-]larger-redefines-ok,
@@ -300,7 +298,8 @@ NEWS - user visible changes				-*- outline -*-
    of internal memory used during CALL; this can help in finding otherwise
    hard to diagnose overwrite of memory and as it is only done on CALL
    has a much smaller footprint than -fec=bounds (as both check different
-   aspects at different places it is also reasonable to use both)
+   aspects at different places it is also reasonable to use both);
+   to disable it use -fmemory-check=none or limit by -fmemory-check=pointer
 
 ** the option -g does no longer imply -fno-remove-unreachable; if you want to
    keep those in you need to explicit specify this
@@ -316,6 +315,9 @@ NEWS - user visible changes				-*- outline -*-
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
+   -Wtyping as a new warning raises only very suspicious MOVEs,
+   -Wstrict-typing, which will warn as before even for MOVE 1 TO PICX-FLD
+    is not included in -Wall any more
    -Wlarger-01-redefines as new warning (enabled by -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
    -Wno-unsupported -Wunsupported new option to disable or only warn
@@ -328,6 +330,8 @@ NEWS - user visible changes				-*- outline -*-
     a coding error
    -Wsuspicious-perform-thru (enabled by default) to check for PERFORM ranges
     that are likely to create unwanted behaviour
+   -Wother now  warns for suspicious reference-modification which is likely to
+    create out-of-bounds access at runtime
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
@@ -372,7 +376,7 @@ NEWS - user visible changes				-*- outline -*-
    and reserved words updated for the dialects "acu" (to ACUCOBOL-GT 10.4),
    "ibm" (to Enterprise COBOL 6.3) and "mf" (to Micro Focus Visual COBOL 6.0)
 
-** for all "lax" updates SYNC was handled even if commonly ignored by the strict
+** for all "lax" varants SYNC was handled even if commonly ignored by the strict
    dialects, this was fixed so SYNC is ignored depending on the dialect
 
 ** COBOL programs compiled with versions before GnuCOBOL 3 that used files with
@@ -418,8 +422,12 @@ NEWS - user visible changes				-*- outline -*-
 
 * More notable changes
 
-** in 64-bit environments, the maximum field size was increased from
-   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+** in general, the maximum field size in LINKAGE SECTION was increased from
+   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to the system
+   specific INT_MAX - 1, which is commonly 2 GB
+
+** in 64-bit environments, the maximum field size outside of LINKAGE SECTION
+   was increased from 268435456 bytes to 2 GB
 
 ** numeric DISPLAY can store and may contain a positive zero after arithmetic,
    PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
@@ -427,6 +435,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** quotes around filenames and parts that are resolved by environment variables
    are internally ignored
+
+** the exception check for EC-PROGRAM-ARG-MISMATCH is now generated, validating
+   that non-optional PROCEDURE DIVISION USING items are passed and that their
+   size in the caller is at least as big as in the program
 
 ** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
@@ -531,8 +543,10 @@ NEWS - user visible changes				-*- outline -*-
    WHEN (the standard explicit requests a one-time evaluation of the subjects,
    then comparing the value); to work around possible issues move more complex
    subjects like variables with subscripts and reference-modification, as well
-   as calculated subjects and function calls to a temporary variabe and use
+   as calculated subjects and function calls to a temporary variable and use
    this as subject for the EVALUATE
+
+For more known issues see the bug tracker.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -548,7 +562,7 @@ NEWS - user visible changes				-*- outline -*-
 ** JSON GENERATE statement
    (note: runtime support needs additional library cJSON or JSON-C)
 
-** CONTINUE AFTER statement (COBOL 2022) implemented, also handle fractions
+** CONTINUE AFTER statement (COBOL 2023) implemented, also handle fractions
    of seconds in C$SLEEP now
 
 ** TYPEDEF and SAME AS (COBOL 2002) implemented, including the MicroFocus

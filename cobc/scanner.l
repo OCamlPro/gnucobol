@@ -338,7 +338,7 @@ AREA_A		"#AREA_A"\n
 	cb_source_line++;
 }
 
-^"#LINE"[ ]?[0-9]+" ".* {
+<*>^"#LINE"[ ]?[0-9]+" ".* {
 	/* Line directive */
 	char		*p1;
 	char		*p2;

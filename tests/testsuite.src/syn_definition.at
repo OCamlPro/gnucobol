@@ -2217,7 +2217,7 @@ AT_CLEANUP
 
 
 AT_SETUP([TYPEDEF clause])
-AT_KEYWORDS([definition EXTERNAL GLOBAL TYPE USAGE listing symbols])
+AT_KEYWORDS([definition EXTERNAL GLOBAL TYPE USAGE listing symbols xref])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2246,7 +2246,9 @@ AT_DATA([prog.cob], [
           49 MT3                    USAGE MESSAGE-TEXT-2T.
           49 MT3-REN  REDEFINES MT3 USAGE MESSAGE-TEXT-2T.
 
-       77 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
+       01 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
+          88 NO-DETAIL         VALUE ZERO.
+          88 MIN-DETAIL        VALUE 0.001.
        01 USER-TYPE            IS TYPEDEF.
           02 AMOUNT            USAGE CALCULUS.
           02 FILLER            OCCURS 100.
@@ -2254,6 +2256,7 @@ AT_DATA([prog.cob], [
        01 USER-VAR             USAGE USER-TYPE.
 
        01 PROC                 USAGE PROGRAM-POINTER IS TYPEDEF.
+          88 PROC-UNSET        VALUE NULL.
        77 MY-PROC              USAGE PROC VALUE NULL.
 
        PROCEDURE DIVISION.
@@ -2362,10 +2365,10 @@ prog.cob:21: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:23: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:25: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:26: error: USAGE type-name does not conform to COBOL 2002
-prog.cob:30: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:32: error: USAGE type-name does not conform to COBOL 2002
-prog.cob:33: error: USAGE type-name does not conform to COBOL 2002
-prog.cob:36: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:34: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:35: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:39: error: USAGE type-name does not conform to COBOL 2002
 ])
 AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY progstd.cob], [0], [], [])
@@ -2395,33 +2398,77 @@ badprog.cob:11: error: illegal combination of TYPE TO with other clauses
 badprog.cob:12: error: elementary item expected
 ])
 
+# FIXME: mises NO-DETAIL above MIN-DETAIL (likely bug in copying in field.c)
+
+AT_CHECK([$COMPILE_LISTING0 -t - -Xref -fno-tsource -fno-tmessages prog.cob],
+[0],
+[GnuCOBOL V.R.P               prog.cob
+
+NAME                           DEFINED                REFERENCES
+
+AUSGABE-FILE-NAME-T            6        13      17                     x2
+SOME-VERY-LONG-TYPEDEF-NAME    7        10      21                     x2
+AUSGABE-FILE-NAME-2T           8        16      23                     x2
+MESSAGE-TEXT-2T                12       19      25      26             x3
+MESSAGE-TEXT-2                 19       42                             x1
+AUSGABE-FILE-NAME              21       42                             x1
+AUSGABE-FILE-NAME-2            21     referenced by parent
+DETAIL-NO                      21     referenced by parent
+OUTPUT-NAME                    21       45                             x1
+Z-MESSAGE-T2                   23       43                             x1
+DETAIL-NO                      24       43                             x1
+Z-MESSAGE-T3                   24     referenced by child
+MT3                            25       44                             x1
+AUSGABE-FILE-NAME              26       44                             x1
+AUSGABE-FILE-NAME-2            26     referenced by parent
+DETAIL-NO                      26     referenced by parent
+MT3-REN                        26     not referenced
+AUSGABE-FILE-NAME              28     not referenced
+AUSGABE-FILE-NAME-2            28     not referenced
+DETAIL-NO                      28     not referenced
+CALCULUS                       28       32      34                     x2
+USER-TYPE                      31       35                             x1
+USER-VAR                       35     referenced by child
+AMOUNT                         37      *46      47                     x2
+MIN-DETAIL                     37     not referenced
+GRP-AMOUNT                     37      *47                             x1
+MIN-DETAIL                     37     not referenced
+PROC                           37       39                             x1
+MY-PROC                        39       48     *49                     x2
+PROC-UNSET                     41     not referenced
+
+
+LABEL                          DEFINED                REFERENCES
+
+E prog                         42
+
+], [])
+
 AT_CAPTURE_FILE([symbols.lst])
 
-AT_CHECK([$COMPILE_ONLY -std=mf-strict -t symbols.lst -tsymbols -fno-tsource -fno-tmessages -tlines=0 prog.cob],
+AT_CHECK([$COMPILE_LISTING0 -t symbols.lst -tsymbols -fno-tsource -fno-tmessages prog.cob],
 [0], [], [])
-
-AT_CHECK([$UNIFY_LISTING symbols.lst symbols.lis once], [0], [], [])
 
 AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [], [
 
 # Previous test "failed" --> 32 bit
 
 AT_DATA([prog-32.lst],
-[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+[GnuCOBOL V.R.P               prog.cob
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
       WORKING-STORAGE SECTION
 
-00050 ALPHANUMERIC   01   AUSGABE-FILE-NAME-T            X(50)
+00050 T ALPHANUMERIC 01   AUSGABE-FILE-NAME-T            X(50)
 
-00004 NUMERIC        01   SOME-VERY-LONG-TYPEDEF-NAME    9999
+00004 T NUMERIC      01   SOME-VERY-LONG-TYPEDEF-NAME    9999
 
-00008 GROUP          01   AUSGABE-FILE-NAME-2T
+00008 T GROUP        01   AUSGABE-FILE-NAME-2T
 00004 NUMERIC        05   FILLER                         9999
 00004 NUMERIC        05   DETAIL-NO                      SOME-VERY-LONG-TYPEDE...
 
-00108 GROUP          01   MESSAGE-TEXT-2T
+00108 T GROUP        01   MESSAGE-TEXT-2T
 00050 ALPHANUMERIC   02   AUSGABE-FILE-NAME              AUSGABE-FILE-NAME-T
 00004 GROUP          02   FILLER, REDEFINES AUSGABE-FILE-NAME
 00004 NUMERIC        05   FILLER                         9999
@@ -2438,44 +2485,47 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00108 GROUP          49   MT3                            MESSAGE-TEXT-2T
 00108 GROUP          49   MT3-REN                        MESSAGE-TEXT-2T, REDEFINES MT3
 
-00018 NUMERIC        77   CALCULUS                       S9(15)V9(03)
+00018 T NUMERIC      01   CALCULUS                       S9(15)V9(03)
+      CONDITIONAL    88   NO-DETAIL
+      CONDITIONAL    88   MIN-DETAIL
 
-01818 GROUP          01   USER-TYPE
+01818 T GROUP        01   USER-TYPE
 00018 NUMERIC        02   AMOUNT                         CALCULUS
 01800 GROUP          02   FILLER                         OCCURS 100
 00018 NUMERIC        05   GRP-AMOUNT                     CALCULUS
 
 01818 GROUP          01   USER-VAR                       USER-TYPE
 
-00004 POINTER        01   PROC                           PROGRAM-POINTER
+00004 T POINTER      01   PROC                           PROGRAM-POINTER
+      CONDITIONAL    88   PROC-UNSET
 
 00004 POINTER        77   MY-PROC                        PROC
 
 
 ])
 
-AT_CHECK([diff prog-32.lst symbols.lis], [0], [], [])
+AT_CHECK([diff prog-32.lst symbols.lst], [0], [], [])
 
 ] , [
 
 # Previous test "passed" --> 64 bit
 
 AT_DATA([prog-64.lst],
-[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+[GnuCOBOL V.R.P               prog.cob
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
       WORKING-STORAGE SECTION
 
-00050 ALPHANUMERIC   01   AUSGABE-FILE-NAME-T            X(50)
+00050 T ALPHANUMERIC 01   AUSGABE-FILE-NAME-T            X(50)
 
-00004 NUMERIC        01   SOME-VERY-LONG-TYPEDEF-NAME    9999
+00004 T NUMERIC      01   SOME-VERY-LONG-TYPEDEF-NAME    9999
 
-00008 GROUP          01   AUSGABE-FILE-NAME-2T
+00008 T GROUP        01   AUSGABE-FILE-NAME-2T
 00004 NUMERIC        05   FILLER                         9999
 00004 NUMERIC        05   DETAIL-NO                      SOME-VERY-LONG-TYPEDE...
 
-00108 GROUP          01   MESSAGE-TEXT-2T
+00108 T GROUP        01   MESSAGE-TEXT-2T
 00050 ALPHANUMERIC   02   AUSGABE-FILE-NAME              AUSGABE-FILE-NAME-T
 00004 GROUP          02   FILLER, REDEFINES AUSGABE-FILE-NAME
 00004 NUMERIC        05   FILLER                         9999
@@ -2492,23 +2542,26 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00108 GROUP          49   MT3                            MESSAGE-TEXT-2T
 00108 GROUP          49   MT3-REN                        MESSAGE-TEXT-2T, REDEFINES MT3
 
-00018 NUMERIC        77   CALCULUS                       S9(15)V9(03)
+00018 T NUMERIC      01   CALCULUS                       S9(15)V9(03)
+      CONDITIONAL    88   NO-DETAIL
+      CONDITIONAL    88   MIN-DETAIL
 
-01818 GROUP          01   USER-TYPE
+01818 T GROUP        01   USER-TYPE
 00018 NUMERIC        02   AMOUNT                         CALCULUS
 01800 GROUP          02   FILLER                         OCCURS 100
 00018 NUMERIC        05   GRP-AMOUNT                     CALCULUS
 
 01818 GROUP          01   USER-VAR                       USER-TYPE
 
-00008 POINTER        01   PROC                           PROGRAM-POINTER
+00008 T POINTER      01   PROC                           PROGRAM-POINTER
+      CONDITIONAL    88   PROC-UNSET
 
 00008 POINTER        77   MY-PROC                        PROC
 
 
 ])
 
-AT_CHECK([diff prog-64.lst symbols.lis], [0], [], [])
+AT_CHECK([diff prog-64.lst symbols.lst], [0], [], [])
 
 ])
 

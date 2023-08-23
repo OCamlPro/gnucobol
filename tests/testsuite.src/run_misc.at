@@ -1035,7 +1035,7 @@ AT_CLEANUP
 
 ## Expressions
 
-AT_SETUP([Class check with reference modification])
+AT_SETUP([Class check with reference-modification])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -4041,7 +4041,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Sticky LINKAGE])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4056,10 +4056,7 @@ AT_DATA([callee.cob], [
               SET ADDRESS OF P3 TO ADDRESS OF P2
            ELSE
               IF P3 NOT = "OKOKOK"
-                 DISPLAY P3
-                 END-DISPLAY
-              END-IF
-           END-IF.
+                 DISPLAY P3.
            EXIT PROGRAM.
 ])
 
@@ -4071,12 +4068,10 @@ AT_DATA([caller.cob], [
        01 P1            PIC X    VALUE "A".
        01 P2            PIC X(6) VALUE "NOT OK".
        PROCEDURE        DIVISION.
-           CALL "callee" USING P1 P2
-           END-CALL.
+           CALL "callee" USING P1 P2.
            MOVE "B"      TO P1.
            MOVE "OKOKOK" TO P2.
-           CALL "callee" USING P1
-           END-CALL.
+           CALL "callee" USING P1.
            STOP RUN.
 ])
 
@@ -4717,7 +4712,6 @@ AT_DATA([callee.cob], [
               DISPLAY P1.
            IF P2 NOT EQUAL "FROM C"
               DISPLAY P2
-              END-DISPLAY
            ELSE
               DISPLAY "OK" WITH NO ADVANCING.
            EXIT PROGRAM.
@@ -4786,17 +4780,11 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION EXTERN USING
                         BY VALUE P1 P2 BY REFERENCE P3.
            IF P1 NOT EQUAL ADDRESS OF P3
-              DISPLAY P1
-              END-DISPLAY
-           END-IF
+              DISPLAY "P1 != ADDRESS OF P3: " P1.
            IF P2 NOT EQUAL 42
-              DISPLAY P2
-              END-DISPLAY
-           END-IF
+              DISPLAY "P2 != 42: " P2.
            IF P3 NOT EQUAL "CALLBACK"
-              DISPLAY P3
-              END-DISPLAY
-           END-IF
+              DISPLAY "P3 != CALLBACK: " P3.
            EXIT PROGRAM.
 ])
 
@@ -4818,6 +4806,15 @@ cprog (void *cb)
 ]])
 
 AT_CHECK([$COMPILE -Wno-unfinished -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fsticky-linkage -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fusing-optional=skip -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fusing-optional=skip -fsticky-linkage -o prog prog.cob cprog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -5244,7 +5241,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ANY LENGTH (5)])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 # any length variables resulted in SIGSEGV when module was first program called
 
@@ -5257,7 +5254,7 @@ AT_DATA([subprog.cob], [
        01 str1 PIC X ANY LENGTH.
        01 str2 PIC X ANY LENGTH.
 
-       PROCEDURE DIVISION USING str1 str2.
+       PROCEDURE DIVISION USING OPTIONAL str1 OPTIONAL str2.
            DISPLAY 'IN' WITH NO ADVANCING
            .
        END PROGRAM subprog.
@@ -5308,7 +5305,7 @@ AT_CLEANUP
 
 
 AT_SETUP([access to OPTIONAL LINKAGE item not passed])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -5317,10 +5314,8 @@ AT_DATA([caller.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X(4) VALUE '9876'.
        PROCEDURE        DIVISION.
-           CALL 'callee' USING X
-           END-CALL
-           CALL 'callee' USING OMITTED
-           END-CALL
+           CALL 'callee' USING X.
+           CALL 'callee' USING OMITTED.
            STOP RUN.
 ])
 
@@ -10202,7 +10197,7 @@ AT_CLEANUP
 
 
 AT_SETUP([stack and dump feature])
-AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE])
+AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL])
 
 AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
@@ -10370,7 +10365,7 @@ AT_DATA([prog.cob], [
            10  CM-DISK                         PICTURE X(8).
            10  CM-NO-TERMINALS                 PICTURE 9(4).
 
-       PROCEDURE DIVISION USING X, TSPFL-RECORD.
+       PROCEDURE DIVISION USING X, OPTIONAL TSPFL-RECORD.
        MAIN-1 SECTION.
             MOVE ALL "X" TO TSTREC.
             MOVE 1 TO TSTG-1 (1).
@@ -10505,8 +10500,6 @@ AT_DATA([sub2.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CAPTURE_FILE([tstdump.dump])
-
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=NONE \
@@ -10517,6 +10510,8 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
+
+AT_CAPTURE_FILE([tstdump.dump])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],
@@ -14100,7 +14095,7 @@ AT_CLEANUP
 
 
 AT_SETUP([runtime check: write to internal storage (1)])
-AT_KEYWORDS([runmisc CALL bounds])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
 
 # note: this check is likely unportable and therefore will likely be adjusted/skipped,
 #       mainly because the memory layout of consecutive variables is not guaranteed;
@@ -14114,12 +14109,24 @@ AT_DATA([caller.cob], [
        WORKING-STORAGE SECTION.
 
        01 var                   PIC  X.
+       01 vars.
+          03 filler             PIC  X.
+          03 vars-field         PIC  X.
 
-       01 varg                  PIC  X GLOBAL.
-       01 vare                  PIC  X EXTERNAL.
-       01 varb                  PIC  X BASED.
+       01 varg                  GLOBAL.
+          03 filler             PIC  X.
+          03 varg-field         PIC  X.
+       01 vare                  EXTERNAL.
+          03 filler             PIC  X.
+          03 vare-field         PIC  X.
+       01 varb                  BASED.
+          03 filler             PIC  X.
+          03 varb-field         PIC  X.
        LINKAGE SECTION.
        01 varl                  PIC  X.
+       01 varls.
+          03 filler             PIC  X.
+          03 varls-field        PIC  X.
 
        PROCEDURE DIVISION.
       *
@@ -14128,10 +14135,17 @@ AT_DATA([caller.cob], [
            CALL "callee" USING var
 
       *    the following are mostly in to co-test the codegen
+           CALL "callee" USING vars
            CALL "callee" USING varg
            CALL "callee" USING vare
            CALL "callee" USING varb
            CALL "callee" USING varl
+           CALL "callee" USING varls
+           CALL "callee" USING vars-field
+           CALL "callee" USING varg-field
+           CALL "callee" USING vare-field
+           CALL "callee" USING varb-field
+           CALL "callee" USING varls-field
 
            GOBACK.
 ])
@@ -14145,13 +14159,13 @@ AT_DATA([callee.cob], [
 
        77 var                   PIC  X.
        01 lrec.
-          03  lvar                  PIC  X(64).
-          03  lvar2                 PIC  X(64).
+          03  lvar                  PIC  X(32).
+          03  lvar2                 PIC  X(32).
 
        PROCEDURE DIVISION USING var.
       *
            SET ADDRESS OF lrec TO ADDRESS OF var
-           SET ADDRESS OF lrec DOWN BY 64
+           SET ADDRESS OF lrec DOWN BY 32
            MOVE SPACES TO lrec
            GOBACK.
 ])
@@ -14159,29 +14173,29 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected after CALL
+[libcob: caller.cob:30: error: memory violation detected after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([runtime check: write to internal storage (2)])
-AT_KEYWORDS([runmisc CALL bounds])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
 
 # PROG A (WS 16 bytes) has its WS overwritten and calls PROG B
 # because of the write outside of WS the internal storage is broken

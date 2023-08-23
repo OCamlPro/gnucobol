@@ -1889,7 +1889,10 @@ COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 COB_EXPIMP void	cob_check_beyond_exit (const char *);
 COB_EXPIMP void	cob_check_fence 	(const char *, const char *,
 					 const enum cob_statement, const char *);
-
+COB_EXPIMP int	cob_check_linkage_size	(const char *,
+					 const char *, const unsigned int,
+					 const int, const unsigned long,
+					 const char **, unsigned int);
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
