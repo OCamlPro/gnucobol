@@ -6783,6 +6783,10 @@ print_fixed_line (const int line_num, char pch, char *line)
 	}
 }
 
+/*
+	Set simple_quote to 1 if the character is a simple quote otherwise set to 0 and the same for the double quote.
+	Return 1 if the simple_quote or double_quote change otherwise it returns 0
+*/
 static int
 is_quotes_char (char c, int *simple_quote, int *double_quote)
 {
@@ -6825,7 +6829,7 @@ print_multiple_fixed_line (const int line_num, char pch, char *line)
 	while (line[i])
 	{
 		/* loop space */
-		while (line[i] && isspace (line[i]) && !is_quotes_char (line[i], &simple_quote, &double_quote) && NOT_TOO_LONG (i, start)) {
+		while (line[i] && isspace (line[i]) && NOT_TOO_LONG (i, start)) {
 			++i;
 		}
 		last_word = i;
