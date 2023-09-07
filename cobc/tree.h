@@ -2568,6 +2568,8 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 						const int, cb_tree, cb_tree);
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
+extern void		cb_emit_ingnoring_nested_line (struct cb_field *f);
+extern void		cb_not_referenced_in_report (int bfound, struct cb_report *p, const char *name);
 
 #ifdef	COB_TREE_DEBUG
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
