@@ -272,8 +272,7 @@ This chapter describes how to compile COBOL programs using GnuCOBOL.
 @section Compiler options
 
 The compiler @code{cobc} accepts the options described in this section.
-The compiler arguments follow the general syntax @code{cobc @var{options}
-@var{file} [@var{file} @dots{}]}.
+The compiler arguments follow the general syntax @code{cobc @var{options} @var{file} [@var{file} @dots{}]}.
 A complete list of options can be displayed by using the option @option{--help}.
 
 @menu
@@ -432,8 +431,7 @@ ICOBOL xCard and Free-form, ACUCOBOL-GT Terminal, and COBOLX source
 formats.  By default, the compiler tries to autodetect the format using
 the indicator on the first line, using the fixed format for correct
 indicators and the free format for incorrect ones.  This can be
-overridden either by the @code{>>SOURCE [FORMAT] [IS]
-@{FIXED|FREE|COBOL85|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX|AUTO@}}
+overridden either by the @code{>>SOURCE [FORMAT] [IS] @{FIXED|FREE|COBOL85|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX|AUTO@}}
 directive, or by one of the following options:
 
 @table @code
@@ -445,8 +443,7 @@ in GnuCOBOL).
 @item -fixed, -fformat=fixed
 Fixed format.  Source code is divided into: columns 1-6, the sequence
 number area; column 7, the indicator area; columns 8-72, the program-text
-area; and columns 72-80 as the reference area.@footnote{Historically, fixed
-format was based on 80-character punch cards.}
+area; and columns 72-80 as the reference area.@footnote{Historically, fixed format was based on 80-character punch cards.}
 
 @item -fformat=cobol85
 Fixed format with enforcements on the use of Area A.
@@ -1082,8 +1079,7 @@ Subprograms are compiled with the option @option{-m}:
 @example
 $ cobc -m subr.cob
 @end example
-This creates a module file @file{subr.so}@footnote{The extension
-used depends on your operating system.}.
+This creates a module file @file{subr.so}@footnote{The extension used depends on your operating system.}.
 
 Before running the main program, install the module files in your
 library directory:
