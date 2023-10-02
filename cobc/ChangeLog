@@ -1,4 +1,12 @@
 
+2023-10-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* error.c (print_error_prefix), flag.def: add new flag
+	  -fdiagnostics-absolute-paths to print the full path of
+	  a file in case of error. This flag can be activated if
+	  your editor and build system do not correctly work
+	  together to locate files after errors within your project.
+
 2023-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (search_set_keys): improving SEARCH ALL syntax checks

@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 
 #include "cobc.h"
 #include "tree.h"
@@ -57,6 +58,28 @@ static void
 print_error_prefix (const char *file, int line, const char *prefix)
 {
 	if (file) {
+		char *absfile = NULL ;
+		if (cb_diagnostics_absolute_paths
+		    && strcmp (file, COB_DASH) != 0
+		    && file[0] != '/'
+		    && file[0] != '\\'
+		    && ( file[0] != 0 && file[1] != ':' )
+			){
+			int filelen = strlen (file);
+			int dirlen = 256;
+			char *cwd ;
+			absfile = cobc_malloc( dirlen + 1 + filelen + 1 );
+			cwd = getcwd (absfile, dirlen);
+			if (cwd != NULL ){
+				struct stat st;
+				dirlen = strlen (cwd);
+				absfile[dirlen] = '/';
+				memcpy (absfile+dirlen+1, file, filelen+1);
+				if (!stat(absfile,&st)){
+					file = absfile;
+				}
+			}
+		}
 		if (line <= 0) {
 			fprintf (stderr, "%s: ", file);
 		} else if (cb_msg_style == CB_MSG_STYLE_MSC) {
@@ -64,6 +87,7 @@ print_error_prefix (const char *file, int line, const char *prefix)
 		} else {
 			fprintf (stderr, "%s:%d: ", file, line);
 		}
+		if (absfile) cobc_free (absfile);
 	}
 	if (prefix) {
 		fprintf (stderr, "%s", prefix);
