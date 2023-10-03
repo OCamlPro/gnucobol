@@ -14570,3 +14570,32 @@ TST-DECIMAL IS < ZERO-DECIMAL
 
 
 AT_CLEANUP
+
+AT_SETUP([Decimal constants working after sub-program call])
+AT_KEYWORDS([runmisc])
+
+# this used to cause a SIGSEGV
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2).
+       PROCEDURE DIVISION.
+           CALL "prog2"
+           IF X + 42 <> 0
+               DISPLAY "OK".
+           STOP RUN.
+       END PROGRAM prog.
+
+       PROGRAM-ID. prog2 INITIAL.
+       PROCEDURE DIVISION.
+           EXIT PROGRAM.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN prog], [0], [OK
+], [])
+AT_CLEANUP
