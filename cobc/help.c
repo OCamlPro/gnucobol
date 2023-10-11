@@ -116,6 +116,7 @@ cobc_print_usage_common_options (void)
 	puts (_("  -X, --Xref            specify cross reference in listing"));
 #endif
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
+	puts (_("  --copy <copybook>     include <copybook> at beginning of file, as would COPY copybook."));
 	puts (_("  -L <directory>        add <directory> to library search path"));
 	puts (_("  -l <lib>              link the library <lib>"));
 	puts (_("  -K <entry>            generate CALL to <entry> as static"));

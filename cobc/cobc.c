@@ -105,7 +105,8 @@ enum compile_level {
 #define	CB_FLAG_GETOPT_NO_DUMP         13
 #define	CB_FLAG_GETOPT_EBCDIC_TABLE    14
 #define	CB_FLAG_GETOPT_DEFAULT_COLSEQ  15
-#define	CB_FLAG_MEMORY_CHECK           16
+#define	CB_FLAG_GETOPT_MEMORY_CHECK    16
+#define	CB_FLAG_GETOPT_COPY_FILE       17
 
 
 /* Info display limits */
@@ -171,8 +172,8 @@ enum compile_level {
 #define GC_C_VERSION	_("unknown")
 #endif
 
-#define	CB_TEXT_LIST_ADD(y,z)	y = cb_text_list_add (y, z)
-#define	CB_TEXT_LIST_CHK(y,z)	y = cb_text_list_chk (y, z)
+#define	CB_TEXT_LIST_ADD(list,z)	list = cb_text_list_add (list, z)
+#define	CB_TEXT_LIST_CHK(list,z)	list = cb_text_list_chk (list, z)
 
 #ifdef	_MSC_VER
 #define	CB_COPT_0	" /Od"
@@ -232,6 +233,7 @@ const char		*cb_cobc_build_stamp = NULL;
 const char		*demangle_name = NULL;
 const char		*cb_storage_file_name = NULL;
 const char		*cb_call_extfh = NULL;
+struct cb_text_list	*cb_copy_list = NULL;
 struct cb_text_list	*cb_include_list = NULL;
 struct cb_text_list	*cb_depend_list = NULL;
 struct cb_text_list	*cb_intrinsic_list = NULL;
@@ -595,6 +597,7 @@ static const struct option long_options[] = {
 	{"save-temps",		CB_OP_ARG, NULL, '_'},
 	{"std",			CB_RQ_ARG, NULL, '$'},
 	{"conf",		CB_RQ_ARG, NULL, '&'},
+	{"copy",                CB_RQ_ARG, NULL, CB_FLAG_GETOPT_COPY_FILE},
 	{"debug",		CB_NO_ARG, NULL, 'd'},
 	{"ext",			CB_RQ_ARG, NULL, 'e'},	/* note: kept *undocumented* until GC4, will be changed to '.' */
 	{"free",		CB_NO_ARG, NULL, 'F'},	/* note: not assigned directly as this is only valid for */
@@ -3282,12 +3285,12 @@ process_command_line (const int argc, char **argv)
 			cobc_wants_debug = 1;
 			break;
 
-		case 8:
+		case CB_FLAG_GETOPT_DUMP:  /* 8 */
 			/* -fdump=<scope> : Add sections for dump code generation */
 			cobc_def_dump_opts (cob_optarg, 1);
 			break;
 
-		case 13:
+		case CB_FLAG_GETOPT_NO_DUMP: /* 13 */
 			/* -fno-dump=<scope> : Suppress sections in dump code generation */
 			if (cob_optarg) {
 				cobc_def_dump_opts (cob_optarg, 0);
@@ -3892,13 +3895,22 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_MEMORY_CHECK: /* 16 */
+		case CB_FLAG_GETOPT_MEMORY_CHECK: /* 16 */
 			/* -fmemory-check=<scope> :  */
 			if (!cob_optarg) {
 				cb_flag_memory_check = CB_MEMCHK_ALL;
 			} else if (cobc_deciph_memory_check (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fmemory-check");
 			}
+			break;
+
+		case CB_FLAG_GETOPT_COPY_FILE: /* 17 */
+			/* --copy=<file> : COPY file at beginning */
+			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
+				cobc_err_exit (COBC_INV_PAR, "--copy");
+			}
+			CB_TEXT_LIST_ADD (cb_copy_list,
+					  cobc_strdup (cob_optarg));
 			break;
 
 		case 'A':
@@ -9265,6 +9277,22 @@ main (int argc, char **argv)
 	/* Setup routines II */
 	finish_setup_compiler_env ();
 	finish_setup_internal_env ();
+
+	{
+		struct cb_text_list *l;
+		for (l = cb_copy_list; l; l=l->next){
+			const char *filename;
+			int has_ext;
+			char name[COB_MINI_BUFF];
+			int len = strlen (l->text);
+			memcpy (name, l->text, len+1);
+			has_ext = (strchr (name, '.') != NULL);
+			filename = cb_copy_find_file (name, has_ext);
+			if (!filename){
+				cobc_err_exit (_("fatal error: could not find --copy argument %s"), name);
+			}
+		}
+	}
 
 	/* Reset source format in case text column has been configured manually. */
 	cobc_set_source_format (cobc_get_source_format ());

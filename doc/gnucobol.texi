@@ -365,9 +365,13 @@ The following options specify the target type produced by the compiler:
 @table @code
 @item -E
 Preprocess only: compiler directives are executed, comment lines are
-removed and @code{COPY} statements are expanded.
+removed, and @code{COPY} and @code{REPLACE} statements are performed.
 The output is sent to stdout, allowing you to directly use it as input for
 another process. You can manually set an output file using @option{-o}.
+
+@item --copy @var{copybook}
+Include @file{copybook} at the beginning of the source code, as if
+@code{COPY copybook} had been parsed.
 
 @item -C
 Translation only.  COBOL source files are translated into C files.

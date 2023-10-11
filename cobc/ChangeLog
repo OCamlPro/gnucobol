@@ -1,4 +1,9 @@
 
+2023-10-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, pplex.l: new option --copy COPYBOOK, to include a COPYBOOK
+	  before reading the source file
+
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
