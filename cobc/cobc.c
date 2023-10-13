@@ -107,6 +107,7 @@ enum compile_level {
 #define	CB_FLAG_GETOPT_DEFAULT_COLSEQ  15
 #define	CB_FLAG_GETOPT_MEMORY_CHECK    16
 #define	CB_FLAG_GETOPT_COPY_FILE       17
+#define	CB_FLAG_GETOPT_INCLUDE_FILE    18
 
 
 /* Info display limits */
@@ -234,6 +235,7 @@ const char		*demangle_name = NULL;
 const char		*cb_storage_file_name = NULL;
 const char		*cb_call_extfh = NULL;
 struct cb_text_list	*cb_copy_list = NULL;
+struct cb_text_list	*cb_include_file_list = NULL;
 struct cb_text_list	*cb_include_list = NULL;
 struct cb_text_list	*cb_depend_list = NULL;
 struct cb_text_list	*cb_intrinsic_list = NULL;
@@ -598,6 +600,7 @@ static const struct option long_options[] = {
 	{"std",			CB_RQ_ARG, NULL, '$'},
 	{"conf",		CB_RQ_ARG, NULL, '&'},
 	{"copy",                CB_RQ_ARG, NULL, CB_FLAG_GETOPT_COPY_FILE},
+	{"include",             CB_RQ_ARG, NULL, CB_FLAG_GETOPT_INCLUDE_FILE},
 	{"debug",		CB_NO_ARG, NULL, 'd'},
 	{"ext",			CB_RQ_ARG, NULL, 'e'},	/* note: kept *undocumented* until GC4, will be changed to '.' */
 	{"free",		CB_NO_ARG, NULL, 'F'},	/* note: not assigned directly as this is only valid for */
@@ -3911,6 +3914,17 @@ process_command_line (const int argc, char **argv)
 			}
 			CB_TEXT_LIST_ADD (cb_copy_list,
 					  cobc_strdup (cob_optarg));
+			break;
+
+		case CB_FLAG_GETOPT_INCLUDE_FILE: /* 18 */
+			/* -include=<file.h> : add #include "file.h" to 
+			   generated C file */
+			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
+				cobc_err_exit (COBC_INV_PAR, "--include");
+			}
+			CB_TEXT_LIST_ADD (cb_include_file_list,
+					  cobc_strdup (cob_optarg));
+			cb_flag_c_decl_for_static_call = 0;
 			break;
 
 		case 'A':

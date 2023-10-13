@@ -1081,3 +1081,61 @@ HOME/prog.cob:14: warning: ignoring redundant .
 
 AT_CLEANUP
 
+
+AT_SETUP([check include header file])
+AT_KEYWORDS([-include])
+
+AT_DATA([file.h], [
+extern void f(char *, long );
+])
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello".
+])
+
+# No check, program seems correct
+
+AT_CHECK([$COBC -m -fstatic-call prog.cob], [0], [], [])
+
+# We ignore the error output, as it depends on the C compiler in use
+
+AT_CHECK([$COBC -m --include "$PWD/file.h" -fstatic-call prog.cob], [1], [], [ignore])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+AT_CHECK([$COBC -m --include "$PWD/file.h" -fstatic-call prog2.cob], [0], [], [])
+
+AT_CHECK([$COBC -I . -m --include "file.h" -fstatic-call prog2.cob], [0], [], [])
+
+# We can use --copy to check a CALL against a prototype. However, this
+# feature is not fully supported by GnuCOBOL yet, so we get some
+# warnings. For exemple:
+# * not putting RETURNING triggers an error
+# * putting RETURNING NOTHING is not supported
+# * putting RETURNING OMITTED is ok, but triggers a warning (see stderr)
+
+AT_DATA([f.copy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. f PROTOTYPE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  a PIC X(20).
+       01  b BINARY-C-LONG.
+       PROCEDURE DIVISION USING a BY VALUE b RETURNING OMITTED.
+       END PROGRAM f.
+])
+
+AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob], [0], [],
+[prog2.cob:8: warning: unexpected RETURNING item
+])
+
+AT_CLEANUP
