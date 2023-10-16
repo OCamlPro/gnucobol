@@ -12602,8 +12602,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	seen = 0;
 	for (m = literal_cache; m; m = m->next) {
-		if (CB_TREE_CLASS (m->x) == CB_CLASS_NUMERIC
-		 && m->make_decimal) {
+		if (m->make_decimal) {
 			if (!seen) {
 				seen = 1;
 				output_line ("/* Set Decimal Constant values */");
@@ -12810,8 +12809,7 @@ cancel_end:
 	output_line ("P_clear_decimal:");
 	seen = 0;
 	for (m = literal_cache; m; m = m->next) {
-		if (CB_TREE_CLASS (m->x) == CB_CLASS_NUMERIC
-		 && m->make_decimal) {
+		if (m->make_decimal) {
 			if (!seen) {
 				seen = 1;
 				output_line ("/* Clear Decimal Constant values */");
@@ -13929,11 +13927,10 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 
 	/* Decimal constants */
 	{
-		struct literal_list* m;
+		struct literal_list* m = literal_cache;
 		int comment_gen = 0;
-		for (m = literal_cache; m; m = m->next) {
-			if (CB_TREE_CLASS (m->x) == CB_CLASS_NUMERIC
-			 && m->make_decimal) {
+		for (; m; m = m->next) {
+			if (m->make_decimal) {
 				if (!comment_gen) {
 					comment_gen = 1;
 					output_local ("\n/* Decimal constants */\n");

@@ -14571,31 +14571,52 @@ TST-DECIMAL IS < ZERO-DECIMAL
 
 AT_CLEANUP
 
-AT_SETUP([Decimal constants working after sub-program call])
+
+AT_SETUP([Decimal constants and INITIAL programs in same source])
 AT_KEYWORDS([runmisc])
 
-# this used to cause a SIGSEGV
+# this used to cause a SIGSEGV, see bug #917
+
+AT_DATA([prog.cpy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. :PROG-NAME: INITIAL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 42.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           IF (X + Y) / 42.1 = 1
+               DISPLAY "OK" WITH NO ADVANCING.
+           EXIT PROGRAM.
+       END PROGRAM :PROG-NAME:.
+])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  X  PIC 9(2).
+       01  X  PIC 9(2) VALUE 0.
+       01  Y  PIC 9v9  VALUE 0.1.
        PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
            CALL "prog2"
-           IF X + 42 <> 0
-               DISPLAY "OK".
+           CALL "prog3"
+           IF X + Y + 42.1 <> 0
+               DISPLAY "OK" WITH NO ADVANCING.
            STOP RUN.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==prog2==.
        END PROGRAM prog.
-
-       PROGRAM-ID. prog2 INITIAL.
-       PROCEDURE DIVISION.
-           EXIT PROGRAM.
-       END PROGRAM prog2.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==prog3==.
 ])
 
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN prog], [0], [OK
-], [])
+AT_CHECK([$COBCRUN prog], [0], [OKOKOK], [])
 AT_CLEANUP
