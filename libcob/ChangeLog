@@ -1,4 +1,9 @@
 
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h: use stdint.h and inttypes.h when available to
+	  define cob_s64_t, cob_u64_t and the various CB_FMT_ macros
+
 2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c, common.c: replace use of NCURSES_MOUSE_VERSION by
