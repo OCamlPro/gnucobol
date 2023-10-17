@@ -38,22 +38,19 @@
 #include "cobc.h"
 #include "tree.h"
 
-#ifdef	HAVE_ATTRIBUTE_ALIGNED
 #define COB_ALIGN " __attribute__((aligned))"
+#define COB_ALIGN_DECL_8 ( cb_setting_WIN32 ? "__declspec(align(8)) " : "" )
+#define COB_ALIGN_ATTR_8 ( cb_setting_ARM ? " __align(8)" : "" )
+
+#ifdef	HAVE_ATTRIBUTE_ALIGNED
 #define ALIGN_KNOWN
 #else
 /*#if defined(_MSC_VER) || defined(__ORANGEC__)*/
 #if defined(_WIN32)
-#define COB_ALIGN_DECL_8 "__declspec(align(8)) "
 #define ALIGN_KNOWN
-#else
-#define COB_ALIGN_DECL_8 ""
 #endif
 #if defined(__arm__)
-#define COB_ALIGN_ATTR_8 " __align(8)"
 #define ALIGN_KNOWN
-#else
-#define COB_ALIGN_ATTR_8 ""
 #endif
 #if defined(__SUNPRO_C)
 /* Insert #pragma align 8 (varname) */
@@ -1757,14 +1754,6 @@ output_standard_includes (struct cb_program *prog)
 {
 	struct cb_program *p;
 
-#if defined (HAVE_GMP_H)
-	#define MATH_INCLUDE "#include <gmp.h>"
-#elif defined (HAVE_MPIR_H)
-	#define MATH_INCLUDE "#include <mpir.h>"
-#else
-#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
-#endif
-
 #if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
 	output_line ("#ifndef\t_XOPEN_SOURCE_EXTENDED");
 	output_line ("#define\t_XOPEN_SOURCE_EXTENDED 1");
@@ -1788,7 +1777,16 @@ output_standard_includes (struct cb_program *prog)
 	   then include appropriate header */
 	for (p = prog; p; p = p->next_program) {
 		if (p->decimal_index_max || p->flag_decimal_comp) {
-			output_line (MATH_INCLUDE);
+			if ( cb_setting_HAVE_GMP_H ){
+				output_line ("#include <gmp.h>");
+			} else
+				if ( cb_setting_HAVE_MPIR_H){
+					output_line ("#include <mpir.h>");
+				} else {
+					/* We could move such tests directly into a
+					   post-validation phase of settings.c */
+					cobc_err_exit ("either HAVE_GMP_H or HAVE_MPIR_H needs to be defined");
+				}
 			break;
 		}
 	}
@@ -2093,14 +2091,14 @@ output_local_base_cache (void)
 			if (fld->index_type != CB_INT_INDEX) {
 				output_local ("static ");
 			}
-#ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_local ("cob_u8_t	%s%d_fence_pre[8]%s;\n",
-				CB_PREFIX_BASE, fld->id, COB_ALIGN);
-#else
-			output_local ("%scob_u8_t%s	%s%d_fence_pre[8];\n",
-				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
-				CB_PREFIX_BASE, fld->id);
-#endif
+			if (cb_setting_HAVE_ATTRIBUTE_ALIGNED){
+				output_local ("cob_u8_t	%s%d_fence_pre[8]%s;\n",
+					      CB_PREFIX_BASE, fld->id, COB_ALIGN);
+			} else {
+				output_local ("%scob_u8_t%s	%s%d_fence_pre[8];\n",
+					      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+					      CB_PREFIX_BASE, fld->id);
+			}
 			optimize_defs[COB_CHK_MEMORYFENCE] = 1;
 			/* note: we explicit do _not_ initialize it directly as that
 			   will more likely lead to a non-consecutive memory layout,
@@ -2113,29 +2111,29 @@ output_local_base_cache (void)
 			output_local ("static int	%s%d;",
 				      CB_PREFIX_BASE, fld->id);
 		} else if( !(fld->report_flag & COB_REPORT_REF_EMITTED)) {
-#ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_local ("static cob_u8_t	%s%d[%d]%s;",
-				      CB_PREFIX_BASE, fld->id,
-				      fld->memory_size, COB_ALIGN);
-#else
-			output_local ("static %scob_u8_t%s	%s%d[%d];",
-				      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
-				      fld->id, fld->memory_size);
-#endif
+			if (cb_setting_HAVE_ATTRIBUTE_ALIGNED) {
+				output_local ("static cob_u8_t	%s%d[%d]%s;",
+					      CB_PREFIX_BASE, fld->id,
+					      fld->memory_size, COB_ALIGN);
+			} else {
+				output_local ("static %scob_u8_t%s	%s%d[%d];",
+					      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
+					      fld->id, fld->memory_size);
+			}
 		}
 		output_local ("\t/* %s */\n", fld->name);
 		if (fld->flag_used_in_call) {
 			if (fld->index_type != CB_INT_INDEX) {
 				output_local ("static ");
 			}
-#ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_local ("cob_u8_t	%s%d_fence_post[8]%s;\n",
-				CB_PREFIX_BASE, fld->id, COB_ALIGN);
-#else
-			output_local ("%scob_u8_t%s	%s%d_fence_post[8];\n",
-				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
-				CB_PREFIX_BASE, fld->id);
-#endif
+			if (cb_setting_HAVE_ATTRIBUTE_ALIGNED){
+				output_local ("cob_u8_t	%s%d_fence_post[8]%s;\n",
+					      CB_PREFIX_BASE, fld->id, COB_ALIGN);
+			} else {
+				output_local ("%scob_u8_t%s	%s%d_fence_post[8];\n",
+					      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+					      CB_PREFIX_BASE, fld->id);
+			}
 		}
 	}
 
@@ -2164,17 +2162,17 @@ output_nonlocal_base_cache (void)
 		}
 
 		if (fld->flag_used_in_call) {
-#ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_storage ("static cob_u8_t	%s%d_fence_pre[8]%s;\n",
-				CB_PREFIX_BASE, fld->id, COB_ALIGN);
-#else
+			if (cb_setting_HAVE_ATTRIBUTE_ALIGNED){
+				output_storage ("static cob_u8_t	%s%d_fence_pre[8]%s;\n",
+						CB_PREFIX_BASE, fld->id, COB_ALIGN);
+			} else {
 #if defined(COB_ALIGN_PRAGMA_8)
 			output_storage ("#pragma align 8 (%s%d_fence_pre)\n", CB_PREFIX_BASE, fld->id);
 #endif
 			output_storage ("static %scob_u8_t%s	%s%d_fence_pre[8];\n",
 				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
 				CB_PREFIX_BASE, fld->id);
-#endif
+			}
 			optimize_defs[COB_CHK_MEMORYFENCE] = 1;
 			/* note: we explicit do _not_ initialize it directly as that
 			   will more likely lead to a non-consecutive memory layout,
@@ -2184,32 +2182,32 @@ output_nonlocal_base_cache (void)
 			output_storage ("static int	  %s%d;",
 					CB_PREFIX_BASE, fld->id);
 		} else {
-#ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_storage ("static cob_u8_t	%s%d[%d]%s;",
-				      CB_PREFIX_BASE, fld->id,
-				      fld->memory_size, COB_ALIGN);
-#else
+			if (cb_setting_HAVE_ATTRIBUTE_ALIGNED){
+				output_storage ("static cob_u8_t	%s%d[%d]%s;",
+						CB_PREFIX_BASE, fld->id,
+						fld->memory_size, COB_ALIGN);
+			} else {
 #if defined(COB_ALIGN_PRAGMA_8)
-			output_storage ("#pragma align 8 (%s%d)\n", CB_PREFIX_BASE, fld->id);
+				output_storage ("#pragma align 8 (%s%d)\n", CB_PREFIX_BASE, fld->id);
 #endif
-			output_storage ("static %scob_u8_t%s	%s%d[%d];",
-				      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
-				      fld->id, fld->memory_size);
-#endif
+				output_storage ("static %scob_u8_t%s	%s%d[%d];",
+						COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
+						fld->id, fld->memory_size);
+			}
 		}
 		output_storage ("\t/* %s */\n", fld->name);
 		if (fld->flag_used_in_call) {
-#ifdef  HAVE_ATTRIBUTE_ALIGNED
-			output_storage ("static cob_u8_t	%s%d_fence_post[8]%s;\n",
-				CB_PREFIX_BASE, fld->id, COB_ALIGN);
-#else
+			if (cb_setting_HAVE_ATTRIBUTE_ALIGNED){
+				output_storage ("static cob_u8_t	%s%d_fence_post[8]%s;\n",
+						CB_PREFIX_BASE, fld->id, COB_ALIGN);
+			} else {
 #if defined(COB_ALIGN_PRAGMA_8)
-			output_storage ("#pragma align 8 (%s%d_fence_post)\n", CB_PREFIX_BASE, fld->id);
+				output_storage ("#pragma align 8 (%s%d_fence_post)\n", CB_PREFIX_BASE, fld->id);
 #endif
-			output_storage ("static %scob_u8_t%s	%s%d_fence_post[8];\n",
-				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
-				CB_PREFIX_BASE, fld->id);
-#endif
+				output_storage ("static %scob_u8_t%s	%s%d_fence_post[8];\n",
+						COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+						CB_PREFIX_BASE, fld->id);
+			}
 		}
 	}
 
@@ -2854,19 +2852,19 @@ output_integer (cb_tree x)
 			output (")");
 		} else {
 			output ("(");
-#ifdef	COB_NON_ALIGNED
-			if (CB_TREE_TAG (p->x) == CB_TAG_REFERENCE
-			 && p->x != cb_null) {
-				const struct cb_field *f = cb_code_field (p->x);
-				/* typecast is required on Sun because pointer
-				 * arithmetic is not allowed on (void *)
-				 */
-				if (f->usage == CB_USAGE_POINTER
-				 || f->usage == CB_USAGE_PROGRAM_POINTER) {
-					output ("(cob_u8_ptr)");
+			if (cb_setting_COB_NON_ALIGNED){
+				if (CB_TREE_TAG (p->x) == CB_TAG_REFERENCE
+				    && p->x != cb_null) {
+					const struct cb_field *f = cb_code_field (p->x);
+					/* typecast is required on Sun because pointer
+					 * arithmetic is not allowed on (void *)
+					 */
+					if (f->usage == CB_USAGE_POINTER
+					    || f->usage == CB_USAGE_PROGRAM_POINTER) {
+						output ("(cob_u8_ptr)");
+					}
 				}
 			}
-#endif
 			output_integer (p->x);
 			if (p->op == 'a')
 				output (" & ");
@@ -2880,19 +2878,19 @@ output_integer (cb_tree x)
 				output (" >> ");
 			else
 				output (" %c ", p->op);
-#ifdef	COB_NON_ALIGNED
-			if (CB_TREE_TAG (p->y) == CB_TAG_REFERENCE
-			 && p->y != cb_null) {
-				const struct cb_field *f = cb_code_field (p->y);
-				/* typecast is required on Sun because pointer
-				 * arithmetic is not allowed on (void *)
-				 */
-				if (f->usage == CB_USAGE_POINTER
-				 || f->usage == CB_USAGE_PROGRAM_POINTER) {
-					output ("(cob_u8_ptr)");
+			if (cb_setting_COB_NON_ALIGNED){
+				if (CB_TREE_TAG (p->y) == CB_TAG_REFERENCE
+				    && p->y != cb_null) {
+					const struct cb_field *f = cb_code_field (p->y);
+					/* typecast is required on Sun because pointer
+					 * arithmetic is not allowed on (void *)
+					 */
+					if (f->usage == CB_USAGE_POINTER
+					    || f->usage == CB_USAGE_PROGRAM_POINTER) {
+						output ("(cob_u8_ptr)");
+					}
 				}
 			}
-#endif
 			output_integer (p->y);
 			output (")");
 		}
@@ -2951,15 +2949,15 @@ output_integer (cb_tree x)
 
 		case CB_USAGE_POINTER:
 		case CB_USAGE_PROGRAM_POINTER:
-#ifdef	COB_NON_ALIGNED
-			output ("(cob_get_pointer (");
-			output_data (x);
-			output ("))");
-#else
-			output ("(*(unsigned char **) (");
-			output_data (x);
-			output ("))");
-#endif
+			if (cb_setting_COB_NON_ALIGNED){
+				output ("(cob_get_pointer (");
+				output_data (x);
+				output ("))");
+			} else {
+				output ("(*(unsigned char **) (");
+				output_data (x);
+				output ("))");
+			}
 			return;
 
 		case CB_USAGE_DISPLAY:
@@ -3237,15 +3235,15 @@ output_long_integer (cb_tree x)
 
 		case CB_USAGE_POINTER:
 		case CB_USAGE_PROGRAM_POINTER:
-#ifdef	COB_NON_ALIGNED
-			output ("(cob_get_pointer (");
-			output_data (x);
-			output ("))");
-#else
-			output ("(*(unsigned char **) (");
-			output_data (x);
-			output ("))");
-#endif
+			if (cb_setting_COB_NON_ALIGNED){
+				output ("(cob_get_pointer (");
+				output_data (x);
+				output ("))");
+			} else {
+				output ("(*(unsigned char **) (");
+				output_data (x);
+				output ("))");
+			}
 			return;
 
 		case CB_USAGE_BINARY:
@@ -6577,15 +6575,14 @@ output_call (struct cb_call *p)
 			}
 			output_line ("int ret;");
 		}
-#ifdef	COB_NON_ALIGNED
-		else {
-			if (!need_brace) {
-				need_brace = 1;
-				output_block_open ();
+		else
+			if (cb_setting_COB_NON_ALIGNED){
+				if (!need_brace) {
+					need_brace = 1;
+					output_block_open ();
+				}
+				output_line ("void *temptr;");
 			}
-			output_line ("void *temptr;");
-		}
-#endif
 	}
 
 	if (CB_REFERENCE_P (p->name)
@@ -12487,17 +12484,15 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_newline ();
 
 	/* Check matching version */
-#if !defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
-#ifdef _WIN32
-	if (prog->flag_main)	/* otherwise we generate that in DllMain*/
-#else
-	if (!prog->nested_level)
-#endif
-	{
+	if (!cb_setting_HAVE_ATTRIBUTE_CONSTRUCTOR &&
+	    (
+		    (cb_setting_WIN32 && prog->flag_main)	/* otherwise we generate that in DllMain*/
+		    ||
+		    (!cb_setting_WIN32 && !prog->nested_level)
+		    )){
 		output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 		output_newline ();
 	}
-#endif
 
 	/* Resolve user functions */
 	for (clp = func_call_cache; clp; clp = clp->next) {
@@ -12866,11 +12861,11 @@ output_function_entry_function (struct cb_program *prog, cb_tree entry,
 		output ("cob_field **cob_fret, const int cob_pam");
 #endif
 	} else {
-#if	(defined(_WIN32) || defined(__CYGWIN__)) && !defined(__clang__)
-		if (!prog->nested_level) {
-			output ("__declspec(dllexport) ");
+		if (cb_setting_WIN32 || ( cb_setting_CYGWIN && !cb_setting_CLANG) ){
+			if (!prog->nested_level) {
+				output ("__declspec(dllexport) ");
+			}
 		}
-#endif
 		output ("cob_field\t\t*%s (", entry_name);
 		output ("cob_field **, const int");
 	}
@@ -13122,7 +13117,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	output_newline ();
 
 	output_block_open ();
-	
+
 	if (!cb_sticky_linkage
 	 && (entry_convention & CB_CONV_COBOL)) {
 		/* By value pointer fields */
@@ -13329,7 +13324,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 			}
 		}
 	}
-	
+
 	if (!cb_sticky_linkage
 	 && (entry_convention & CB_CONV_COBOL)) {
 		for (l2 = using_list; l2; l2 = CB_CHAIN (l2)) {
@@ -13469,15 +13464,15 @@ output_function_prototypes (struct cb_program *prog)
 					cp->program_id);
 			}
 			output_newline ();
-#if	(defined(_WIN32) || defined(__CYGWIN__)) && !defined(__clang__)
-			for (l = cp->entry_list; l; l = CB_CHAIN (l)) {
-				const char *entry_name = CB_LABEL (CB_PURPOSE (l))->name;
-				if (0 == strcmp (entry_name, cp->program_id)) {
-					continue;
+			if (cb_setting_WIN32 || ( cb_setting_CYGWIN && !cb_setting_CLANG ) ){
+				for (l = cp->entry_list; l; l = CB_CHAIN (l)) {
+					const char *entry_name = CB_LABEL (CB_PURPOSE (l))->name;
+					if (0 == strcmp (entry_name, cp->program_id)) {
+						continue;
+					}
+					output_entry_function (cp, l, cp->parameter_list, 0);
 				}
-				output_entry_function (cp, l, cp->parameter_list, 0);
 			}
-#endif
 		} else {
 			/* Output implementation of other program wrapper. */
 			if (likely(cp->prog_type == COB_MODULE_TYPE_PROGRAM)) {
@@ -13724,26 +13719,26 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 /* Check matching version via constructor attribute / DllMain */
 static void output_so_load_version_check (struct cb_program *prog)
 {
-#if defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
-	output_line ("static void gc_module_so_init () __attribute__ ((constructor));");
-	output_line ("static void gc_module_so_init ()");
-	output_block_open ();
-	output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
-	output_block_close ();
-	output_newline ();
-#elif defined (_WIN32)
-	if (!prog->flag_main) {
-		output_line ("#include \"windows.h\"");
-		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
-		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
+	if (cb_setting_HAVE_ATTRIBUTE_CONSTRUCTOR){
+		output_line ("static void gc_module_so_init () __attribute__ ((constructor));");
+		output_line ("static void gc_module_so_init ()");
 		output_block_open ();
-		output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
-		output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
-		output_line ("return TRUE;");
+		output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 		output_block_close ();
 		output_newline ();
-	}
-#endif
+	} else
+		if (cb_setting_WIN32 &&
+		    !prog->flag_main) {
+			output_line ("#include \"windows.h\"");
+			output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
+			output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
+			output_block_open ();
+			output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
+			output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+			output_line ("return TRUE;");
+			output_block_close ();
+			output_newline ();
+		}
 }
 
 void

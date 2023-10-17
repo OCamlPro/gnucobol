@@ -134,6 +134,7 @@ AC_DEFINE_UNQUOTED([PACKAGE], ["$PACKAGE"], [Name of package])  # used for bindt
 dnl Autoheader templates
 AH_TEMPLATE([COB_DEBUG_LOG], [Enable internal logging (Developers only!)])
 AH_TEMPLATE([COB_EXPERIMENTAL], [Enable experimental code (Developers only!)])
+AH_TEMPLATE([COBC_IS_RELOCATABLE], [Enable path relocation from binary path])
 AH_TEMPLATE([COB_TREE_DEBUG], [Enable extra checks within the compiler (Developers only!)])
 AH_TEMPLATE([COB_PARAM_CHECK], [Enable minimum parameter check for system libraries])
 AH_TEMPLATE([PATCH_LEVEL], [Define a patch level (numeric, max. 8 digits)])
@@ -216,6 +217,14 @@ AC_ARG_ENABLE([experimental],
     [(GnuCOBOL) Enable experimental code (Developers only!)])],
   [if test "$enable_experimental" = yes; then
 	AC_DEFINE([COB_EXPERIMENTAL], [1])
+   fi],
+  [])
+
+AC_ARG_ENABLE([relocatable],
+  [AS_HELP_STRING([--enable-relocatable],
+    [(GnuCOBOL) Enable relocation of paths from binary location])],
+  [if test "$enable_relocatable" = yes; then
+	AC_DEFINE([COBC_IS_RELOCATABLE], [1])
    fi],
   [])
 

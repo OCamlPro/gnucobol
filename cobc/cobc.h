@@ -684,4 +684,18 @@ extern int		cb_strcasecmp (const void *, const void *);
 extern unsigned char	cb_toupper (const unsigned char);
 extern unsigned char	cb_tolower (const unsigned char);
 
+/* settings.c */
+
+#define STRING_SETTING(help,name) \
+	extern const char* cb_setting_##name;
+
+#define BOOL_SETTING(help,name) \
+	extern int cb_setting_##name;
+
+#include "settings.def"
+#undef STRING_SETTING
+#undef BOOL_SETTING
+extern void             cb_settings_print (void);
+extern void             cb_settings_load (const char* filename);
+
 #endif /* CB_COBC_H */
