@@ -1794,7 +1794,12 @@ struct cb_ml_generate_tree {
 
 /* Program */
 
-struct literal_list;
+struct literal_list {
+	struct literal_list	*next;
+	struct cb_literal	*literal;
+	int			id;
+	int			make_decimal;
+};
 
 struct nested_list {
 	struct nested_list	*next;

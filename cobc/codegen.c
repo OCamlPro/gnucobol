@@ -124,13 +124,6 @@ struct attr_list {
 	cob_u32_t		flags;
 };
 
-struct literal_list {
-	struct literal_list	*next;
-	struct cb_literal	*literal;
-	int			id;
-	int			make_decimal;
-};
-
 struct field_list {
 	struct field_list	*next;
 	struct cb_field		*f;
@@ -2762,26 +2755,30 @@ output_source_cache (void)
 
 /* Literal */
 
+/* Add the given literal to the list of "seen" decimal
+   constants in the given program "prog" */
 static void
 cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list *cached_literal)
 {
 	struct literal_list	*l;
-	if (prog != NULL && cached_literal->make_decimal) {
-		for (l = prog->decimal_constants; l; l = l->next) {
-			if (cached_literal->id == l->id) {
-				return;
-			}
+	for (l = prog->decimal_constants; l; l = l->next) {
+		if (cached_literal->id == l->id) {
+			return;
 		}
-
-		l = cobc_parse_malloc (sizeof (struct literal_list));
-		l->id = cached_literal->id;
-		l->literal = cached_literal->literal;
-		l->make_decimal = cached_literal->make_decimal;
-		l->next = prog->decimal_constants;
-		prog->decimal_constants = l;
 	}
+
+	l = cobc_parse_malloc (sizeof (struct literal_list));
+	l->id = cached_literal->id;
+	l->literal = cached_literal->literal;
+	l->make_decimal = cached_literal->make_decimal;
+	l->next = prog->decimal_constants;
+	prog->decimal_constants = l;
 }
 
+/* Resolve literal "x" from the literal cache and return its id.
+   The literal is added to the literal cache if missing.
+   Additionally, if the literal is a decimal constant, it is
+   added to the list of "seen" decimal constant of program "prog". */
 int
 cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 {
@@ -2800,8 +2797,8 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 			    (size_t)literal->size) == 0) {
 			if (make_decimal) {
 				l->make_decimal = 1;
+				cb_cache_program_decimal_constant (prog, l);
 			}
-			cb_cache_program_decimal_constant (prog, l);
 			return l->id;
 		}
 	}
@@ -2816,7 +2813,9 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 	l->make_decimal = make_decimal;
 	l->next = literal_cache;
 	literal_cache = l;
-	cb_cache_program_decimal_constant (prog, l);
+	if (make_decimal) {
+		cb_cache_program_decimal_constant (prog, l);
+	}
 
 	return cb_literal_id++;
 }
@@ -12622,19 +12621,17 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	seen = 0;
 	for (m = prog->decimal_constants; m; m = m->next) {
-		if (m->make_decimal) {
-			if (!seen) {
-				seen = 1;
-				output_line ("/* Set Decimal Constant values */");
-			}
-			output_line ("%s%d = &%s%d;", CB_PREFIX_DEC_CONST, m->id,
-				     CB_PREFIX_DEC_FIELD, m->id);
-			output_line ("cob_decimal_init (%s%d);", CB_PREFIX_DEC_CONST, m->id);
-			output_line ("cob_decimal_set_field (%s%d, (cob_field *)&%s%d);",
-				     CB_PREFIX_DEC_CONST, m->id,
-				     CB_PREFIX_CONST, m->id);
-			output_newline ();
+		if (!seen) {
+			seen = 1;
+			output_line ("/* Set Decimal Constant values */");
 		}
+		output_line ("%s%d = &%s%d;", CB_PREFIX_DEC_CONST, m->id,
+			     CB_PREFIX_DEC_FIELD, m->id);
+		output_line ("cob_decimal_init (%s%d);", CB_PREFIX_DEC_CONST, m->id);
+		output_line ("cob_decimal_set_field (%s%d, (cob_field *)&%s%d);",
+			     CB_PREFIX_DEC_CONST, m->id,
+			     CB_PREFIX_CONST, m->id);
+		output_newline ();
 	}
 	if (seen) {
 		output_newline ();
@@ -12829,14 +12826,12 @@ cancel_end:
 	output_line ("P_clear_decimal:");
 	seen = 0;
 	for (m = prog->decimal_constants; m; m = m->next) {
-		if (m->make_decimal) {
-			if (!seen) {
-				seen = 1;
-				output_line ("/* Clear Decimal Constant values */");
-			}
-			output_line ("cob_decimal_clear (%s%d);", CB_PREFIX_DEC_CONST, m->id);
-			output_line ("%s%d = NULL;", CB_PREFIX_DEC_CONST, m->id);
+		if (!seen) {
+			seen = 1;
+			output_line ("/* Clear Decimal Constant values */");
 		}
+		output_line ("cob_decimal_clear (%s%d);", CB_PREFIX_DEC_CONST, m->id);
+		output_line ("%s%d = NULL;", CB_PREFIX_DEC_CONST, m->id);
 	}
 	if (seen) {
 		output_newline ();

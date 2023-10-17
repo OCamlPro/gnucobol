@@ -2,21 +2,21 @@
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
 	BUG #923: generated modules init/clear unused decimal constants
-	* tree.h (struct cb_program): new `decimal_constant` field to store
-	  decimal constants used by the current program
-	* codegen.c (literal_list): removal of the unused `c` field
+	* codegen.c (literal_list): removal of the unused x field,
+	  and type moved to tree.h
+	* tree.h (struct cb_program): new decimal_constant field
+	  to store decimal constants used by the current program,
 	* codegen.c (cb_cache_program_decimal_constant): new function
 	  that adds constants used by the current program to the new
-	  `decimal_constant` field in `struct cb_prog`
+	  decimal_constant field in struct cb_prog
 	* codegen.c (cb_lookup_literal): added the current program as
-	  argument to `cb_lookup_literal` to account for different
+	  argument to cb_lookup_literal to account for different
 	  usage contexts (parse/typecheck vs codegen)
 	* codegen.c (output_internal_function): iterate over
-	  `prog->decimal_constants` instead of `literal_cache` so as to only
+	  prog->decimal_constants instead of literal_cache so as to only
 	  output decimal constants actually used by the current program
-	* codegen.c (output_param): pass `current_prog` to `cb_lookup_literal`
-	* typeck.c (decimal_expand, cb_build_cond_fields): pass `current_program`
-	  to `cb_lookup_literal`
+	* typeck.c (decimal_expand, cb_build_cond_fields),
+	  codegen.c (output_param) : pass current_program to cb_lookup_literal
 
 2023-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
