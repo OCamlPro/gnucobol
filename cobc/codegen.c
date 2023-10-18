@@ -1754,22 +1754,22 @@ output_standard_includes (struct cb_program *prog)
 {
 	struct cb_program *p;
 
-#if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
-	output_line ("#ifndef\t_XOPEN_SOURCE_EXTENDED");
-	output_line ("#define\t_XOPEN_SOURCE_EXTENDED 1");
-	output_line ("#endif");
-#endif
+	if (cb_setting_XOPEN_SOURCE_EXTENDED){
+		output_line ("#ifndef\t_XOPEN_SOURCE_EXTENDED");
+		output_line ("#define\t_XOPEN_SOURCE_EXTENDED 1");
+		output_line ("#endif");
+	}
 #if 0	/* Simon: why should we include that? */
 	output_line ("#include <stdio.h>");
 #endif
 	output_line ("#include <string.h> /* for memcpy, memcmp and friends */");
-#ifdef	WORDS_BIGENDIAN
-	output_line ("#define  WORDS_BIGENDIAN 1");
-#endif
-#ifdef	COB_KEYWORD_INLINE
-	output_line ("#define  COB_KEYWORD_INLINE %s",
-		CB_XSTRINGIFY(COB_KEYWORD_INLINE));
-#endif
+	if (cb_setting_WORDS_BIGENDIAN){
+		output_line ("#define  WORDS_BIGENDIAN 1");
+	}
+	if (cb_setting_COB_INLINE_KEYWORD){
+		output_line ("#define  COB_KEYWORD_INLINE %s",
+			     cb_setting_COB_INLINE_KEYWORD);
+	}
 	if (cb_flag_winmain) {
 		output_line ("#include <windows.h>");
 	}
@@ -6523,15 +6523,12 @@ output_call (struct cb_call *p)
 		ret_ptr = 1;
 	}
 
-#ifdef	_WIN32
-	if (p->convention & CB_CONV_STDCALL) {
+	if (cb_setting_WIN32 &&
+	    (p->convention & CB_CONV_STDCALL) ) {
 		convention = "_std";
 	} else {
 		convention = "";
 	}
-#else
-	convention = "";
-#endif
 
 	/* System routine entry points */
 	if (p->is_system) {

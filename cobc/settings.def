@@ -1,4 +1,12 @@
 
+/* All these settings must belong to these two categories:
+   - Settings that modify the way other commands are called (paths, options, etc.)
+   - Settings that modify the way the C code is generated
+
+   We are not interested by compile time defines from config.h that only
+   modify the code of cobc, but have no impact on its runtime behavior.
+   */
+
 STRING_SETTING (
 "executable name for module runner",
  COBCRUN_NAME )
@@ -65,7 +73,12 @@ STRING_SETTING (
 "strip command",
  COB_STRIP_CMD )
 
-/* just to test BOOL_SETTING */
+STRING_SETTING (
+"need keyword for inline",
+ COB_INLINE_KEYWORD )
+
+
+
 
 BOOL_SETTING (
 "has __attribute__((aligned))",
@@ -118,6 +131,14 @@ BOOL_SETTING (
 BOOL_SETTING (
 "Support for non aligned structures",
  COB_NON_ALIGNED )
+
+BOOL_SETTING (
+"XOPEN_SOURCE_EXTENDED is needed",
+ XOPEN_SOURCE_EXTENDED )
+
+BOOL_SETTING (
+"set to 1 if your processor stores words with the most significant byte first (like Motorola and SPARC, unlike Intel).",
+ WORDS_BIGENDIAN )
 
 
 

@@ -89,6 +89,38 @@ relatively to the directory containing `cobc` (`$bindir`):
 * `COB_LIBRARY_PATH`: set to `$bindir/../lib/gnucobol`
 * `COB_LIBS`: `-L$bindir/../lib` is added in front
 
+TODO in codegen.c:
+* COB_ALIGN_PRAGMA_8
+* USE_INT_HEX
+* COB_NON_ALIGNED
+* COB_SHORT_BORK
+* COB_EBCDIC_MACHINE
+* GEN_CHAR_AS_UINT
+* GEN_SINGLE_MEMCPY
+* NO_INIT_SOURCE_LOC
+* COB_64_BIT_POINTER
+* COB_TREE_DEBUG
+* COBC_HAS_CUTOFF_FLAG
+
+TODO in typeck.c:
+* COB_EBCDIC_MACHINE
+* COB_NON_ALIGNED
+* COB_SHORT_BORK
+* COB_ALLOW_UNALIGNED
+* COB_64_BIT_POINTER
+* WITH_EXTENDED_SCREENIO
+* WIN32
+* WITH_XML2
+
+TODO in parser.y:
+* COB_EBCDIC_MACHINE
+* COB_32_BIT_LONG
+
+TODO in ppparse.y:
+* #if	' ' == 0x20
+* #elif	' ' == 0x40
+
+
  */
 
 #ifndef COB_DEBUG_FLAGS
@@ -148,6 +180,17 @@ relatively to the directory containing `cobc` (`$bindir`):
 #define COB_NON_ALIGNED 0
 #endif
 
+#if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
+#define XOPEN_SOURCE_EXTENDED 1
+#else
+#define XOPEN_SOURCE_EXTENDED 0
+#endif
+
+#ifdef COB_KEYWORD_INLINE
+#define COB_INLINE_KEYWORD CB_XSTRINGIFY(COB_KEYWORD_INLINE)
+#else
+#define COB_INLINE_KEYWORD NULL
+#endif
 
 
 #ifndef COBC_IS_RELOCATABLE
@@ -164,6 +207,10 @@ relatively to the directory containing `cobc` (`$bindir`):
 
 #ifndef HAVE_MPIR_H
 #define HAVE_MPIR_H 0
+#endif
+
+#ifndef WORDS_BIGENDIAN
+#define WORDS_BIGENDIAN 0
 #endif
 
 #ifndef HAVE_ATTRIBUTE_CONSTRUCTOR
