@@ -582,15 +582,10 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 						  "SIGN",
 						  "'ASCII'", 0);
 	}
-#ifdef	WORDS_BIGENDIAN
 	ppp_setvar_list = ppp_define_add (ppp_setvar_list,
 					  "ENDIAN",
-					  "'BIG'", 0);
-#else
-	ppp_setvar_list = ppp_define_add (ppp_setvar_list,
-					  "ENDIAN",
-					  "'LITTLE'", 0);
-#endif
+					  cb_setting_WORDS_BIGENDIAN ? "'BIG'" : "'LITTLE'",
+					  0);
 #if	' ' == 0x20
 	ppp_setvar_list = ppp_define_add (ppp_setvar_list,
 					  "CHARSET",

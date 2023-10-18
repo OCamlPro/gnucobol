@@ -551,18 +551,18 @@ cb_is_integer_field (struct cb_field *f)
 	if (f->usage == CB_USAGE_BINARY
 	 && cb_binary_truncate)
 		return 0;
-#ifdef WORDS_BIGENDIAN
-	if (f->usage != CB_USAGE_COMP_5
-	 && f->usage != CB_USAGE_DISPLAY
-	 && f->usage != CB_USAGE_BINARY
-	 && f->usage != CB_USAGE_COMP_X)
-		return 0;
-#else
-	if (f->usage != CB_USAGE_COMP_5
-	 && f->usage != CB_USAGE_BINARY
-	 && f->usage != CB_USAGE_DISPLAY)
-		return 0;
-#endif
+	if (cb_setting_WORDS_BIGENDIAN){
+		if (f->usage != CB_USAGE_COMP_5
+		    && f->usage != CB_USAGE_DISPLAY
+		    && f->usage != CB_USAGE_BINARY
+		    && f->usage != CB_USAGE_COMP_X)
+			return 0;
+	} else {
+		if (f->usage != CB_USAGE_COMP_5
+		    && f->usage != CB_USAGE_BINARY
+		    && f->usage != CB_USAGE_DISPLAY)
+			return 0;
+	}
 	if (f->storage == CB_STORAGE_WORKING
 #ifdef	COB_SHORT_BORK
 	 && (f->size == 4 || f->size == 8 || f->size == 1)
