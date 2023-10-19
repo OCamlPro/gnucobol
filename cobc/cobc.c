@@ -3565,6 +3565,8 @@ process_command_line (const int argc, char **argv)
 			/* -fdiagnostics-plain-output */
 			cb_diagnostics_show_caret = 0 ;
 			cb_diagnostics_show_line_numbers = 0;
+			/* in the future, may also disable urls,
+			   colors, text art, flow paths */
 			break;
 
 		case 'P':

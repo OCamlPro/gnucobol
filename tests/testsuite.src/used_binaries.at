@@ -922,9 +922,9 @@ AT_CLEANUP
 
 
 AT_SETUP([cobc diagnostics show caret])
-#AT_KEYWORDS([cobc diagnostics])
 
-AT_DATA([progprep.cob],[
+#AT_KEYWORDS([cobc diagnostics])
+AT_DATA([progprep.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
@@ -941,6 +941,7 @@ AT_DATA([progprep.cob],[
 ])
 
 # Testcase includes trailing whitespace, setup by dropping '#'
+
 AT_CHECK([cat progprep.cob | tr -d '#' > prog.cob])
 
 AT_CHECK([$COBC -fdiagnostics-plain-output -Wall prog.cob], [1], [],
@@ -948,6 +949,7 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -Wall prog.cob], [1], [],
 prog.cob:6: warning: numeric value is expected [-Wothers]
 prog.cob:14: warning: ignoring redundant . [-Wothers]
 ]])
+
 AT_CHECK([$COBC -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
 [[prog.cob:7: error: CRUD.CPY: No such file or directory
     5 |        WORKING-STORAGE  SECTION.
@@ -989,24 +991,24 @@ prog.cob:14: warning: ignoring redundant . [-Wothers]
 ]])
 
 # Testcase for line too long and printing only one line
-AT_DATA([longgy.cob],[ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+AT_DATA([longgy.cob], [ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 ])
 
 # note: this is actually an error in the parser line number,
 #       but until that is solved, it is a nice edge case of "line not available"
+
 AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others longgy.cob], [1], [],
-[[longgy.cob:2: error: PROGRAM-ID header missing
+[longgy.cob:2: error: PROGRAM-ID header missing
    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd..
  > <EOF>
-]])
+])
 
+AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
 
-AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
-
-AT_CHECK([sed -e "s|$PWD|HOME|" compiler.output], [0],
+AT_CHECK([$SED -e "s|$PWD|HOME|" compiler.output], [0],
 [HOME/prog.cob:7: error: CRUD.CPY: No such file or directory
-HOME/prog.cob:6: warning: numeric value is expected @<:@-Wothers@:>@
-HOME/prog.cob:14: warning: ignoring redundant . @<:@-Wothers@:>@
+HOME/prog.cob:6: warning: numeric value is expected
+HOME/prog.cob:14: warning: ignoring redundant .
 ])
 
 AT_CLEANUP
