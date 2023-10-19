@@ -60,11 +60,10 @@ print_error_prefix (const char *file, int line, const char *prefix)
 	if (file) {
 		char *absfile = NULL ;
 		if (cb_diagnostics_absolute_paths
-		    && strcmp (file, COB_DASH) != 0
-		    && file[0] != '/'
-		    && file[0] != '\\'
-		    && ( file[0] != 0 && file[1] != ':' )
-			){
+		 && strcmp (file, COB_DASH) != 0
+		 && file[0] != '/'
+		 && file[0] != '\\'
+		 && file[1] != ':'){
 			int filelen = strlen (file);
 			int dirlen = 256;
 			char *cwd ;
