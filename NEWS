@@ -1,5 +1,25 @@
 NEWS - user visible changes				-*- outline -*-
 
+
+ GnuCOBOL 3.3     ASAP
+
+* New GnuCOBOL features:
+
+* Changes that potentially effect existing programs:
+
+* Changes that potentially effect recompilation of existing programs:
+
+* Changes to the COBOL compiler (cobc) options:
+
+** New option -fdiagnostics-absolute-paths to print the full path of
+   a file for diagnostics; this flag can be activated if your editor and
+   build system do not correctly work together to locate files from
+   diagnostic output
+
+* Important Bugfixes:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
  GnuCOBOL 3.2     (20230728)
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
