@@ -1,3 +1,7 @@
+2023-09-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* testsuite.src/used_binaries.at: add testing for profiling
+
 
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 

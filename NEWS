@@ -10,6 +10,13 @@ NEWS - user visible changes				-*- outline -*-
    the error output for format errors (for example invalid indicator column)
    is now limitted to 5 per source file
 
+** Suppport for time profiling of modules, sections, paragraphs, entries
+   and external CALLs. This feature is activated by compiling the modules
+   to be profiled with -fprof, and then executing the code with environment
+   variable COB_PROF_ENABLE. The output is stored in a CSV file. Further
+   customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
+   COB_PROF_FORMAT
+
   more work in progress
 
 * Important Bugfixes
@@ -38,6 +45,12 @@ NEWS - user visible changes				-*- outline -*-
 	comparison between numeric DISPLAY or BCD variable to zero
 	INSPECT CONVERTING (and "simple" INSPECT REPLACING), in general
 	   and especially if both from and to are constants
+
+* Changes in the COBOL runtime
+
+** more substitutions in environment variables: $f for executable filename,
+   $b for executable basename, $d for date in YYYYMMDD format, $t for time
+   in HHMMSS format (before, only $$ was available for pid)
 
 * Known issues in 3.x
 

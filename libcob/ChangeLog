@@ -1,3 +1,13 @@
+2023-09-04  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com> and Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* Makefile.am: add `profiling.c` to sources
+	* profiling.c: implement profiling functions
+	  (time spent in each procedure of the program)
+	* common.c: add 4 environments variables COB_PROF_FILE,
+	  COB_PROF_MAX_DEPTH,COB_PROF_ENABLE and COB_PROF_FORMAT
+	* common.c (cob_expand_env_string): add $b (executable basename),
+	  $f (executable filename), $d (date in yyyymmdd) and
+	  $t (time in hhmmss)
 
 2023-12-14  David Declerck <david.declerck@ocamlpro.com>
 

@@ -4318,6 +4318,186 @@ output_funcall_item (cb_tree x, const int i, unsigned int func_nolitcast)
 }
 
 
+
+/* Use constant strings to replace string comparisons by more
+ * efficient pointer comparisons */
+static const char *cob_prof_function_call_str = "cob_prof_function_call";
+
+/* Allocate a procedure description record and add it at the end of
+ * the procedure_list of the current program. The index of the
+ * procedure will be the position in the list. There is an invariant
+ * that 0 is reserved for the record of the program module. */
+static int
+procedure_list_add (
+	struct cb_program *program,
+	enum cob_prof_procedure_kind kind,
+	const char *text,
+	int section,
+	const char *file,
+	int line
+	)
+{
+	struct cb_procedure_list	*p;
+	int ret = program->procedure_list_len ;
+
+	p = cobc_main_malloc (sizeof (struct cb_procedure_list));
+	if (text){ p->proc.text = cobc_main_strdup (text); }
+	p->proc.kind = kind;
+	p->proc.file = file;
+	p->proc.line = line;
+	p->proc.section = section;
+	p->next = NULL;
+
+	if (program->procedure_list == NULL){
+		program->procedure_list = p;
+	} else {
+		program->procedure_list_last->next = p;
+	}
+	program->procedure_list_last = p;
+
+	program->procedure_list_len++;
+	return ret;
+}
+
+void
+cb_prof_procedure_division (struct cb_program *program,
+			    const char *source_file,
+			    int source_line)
+{
+	/* invariant: program always has index 0 */
+	procedure_list_add (
+		program,
+		COB_PROF_PROCEDURE_MODULE,
+		program->program_id,
+		0,
+		source_file,
+		source_line);
+}
+
+/* Returns a tree node for a funcall to one of the profiling
+ functions, with the index of the procedure as argument (and a second
+ argument for the entry point if meaningful). If the program, section
+ or paragraph are being entered for the first time, register them into
+ the procedure_list of the program. 
+
+ To avoid lookups, the current section and current paragraph are kept
+ in the program record for immediate use when exiting.
+*/
+cb_tree
+cb_build_prof_call (enum cb_prof_call prof_call,
+		    struct cb_program  *program,
+		    struct cb_label  *section,
+		    struct cb_label  *paragraph,
+		    const char  *entry,
+		    cb_tree location)
+{
+	const char  *func_name = cob_prof_function_call_str;
+	int          func_arg1;
+	int          func_arg2 = -1;
+
+	switch (prof_call){
+
+	case COB_PROF_ENTER_SECTION:
+
+		/* allocate section record and remember current section */
+		program->prof_current_section =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_SECTION,
+				section->name,
+				/* the current section will have
+				 * procedure_list_list as index */
+				program->procedure_list_len,
+				section->common.source_file,
+				section->common.source_line);
+		program->prof_current_paragraph = -1;
+		func_arg1 = program->prof_current_section;
+		break;
+
+	case COB_PROF_ENTER_PARAGRAPH:
+
+		/* allocate section record and remember current section */
+		program->prof_current_paragraph =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_PARAGRAPH,
+				paragraph->name,
+				program->prof_current_section,
+				paragraph->common.source_file,
+				paragraph->common.source_line);
+		func_arg1 = program->prof_current_paragraph;
+		break;
+
+		/* In the case of an ENTRY statement, add code before
+		 * to the falling-through paragraph to avoid
+		 * re-registering the entry into the paragraph. */
+	case COB_PROF_STAYIN_PARAGRAPH:
+
+		func_arg1 = program->prof_current_paragraph;
+		break;
+
+	case COB_PROF_USE_PARAGRAPH_ENTRY:
+
+		func_arg1 = program->prof_current_paragraph;
+		func_arg2 =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_ENTRY,
+				entry,
+				/* section field of entry is in fact its paragraph */
+				program->prof_current_paragraph,
+				location->source_file,
+				location->source_line);
+		break;
+
+	case COB_PROF_EXIT_PARAGRAPH:
+
+		func_arg1 = program->prof_current_paragraph;
+		/* Do not reinitialize, because we may have several of these
+		   EXIT_PARAGRAPH, for example at EXIT SECTION. 
+		   program->prof_current_paragraph = -1; */
+		break;
+
+	case COB_PROF_EXIT_SECTION:
+
+		func_arg1 = program->prof_current_section;
+		/* reset current paragraph and section */
+		program->prof_current_section = -1;
+		program->prof_current_paragraph = -1;
+		break;
+
+	case COB_PROF_ENTER_CALL:
+
+		/* allocate call record and remember current call */
+		program->prof_current_call =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_CALL,
+				NULL,
+				program->prof_current_paragraph,
+				paragraph->common.source_file,
+				paragraph->common.source_line);
+		func_arg1 = program->prof_current_call;
+		break;
+
+	case COB_PROF_EXIT_CALL:
+
+		/* We need to patch the last procedure to add the callee name and loc */
+		program->procedure_list_last->proc.text = cobc_main_strdup (entry);
+		program->procedure_list_last->proc.file = location->source_file;
+		program->procedure_list_last->proc.line = location->source_line;
+
+		func_arg1 = program->prof_current_call;
+		program->prof_current_call = -1;
+		break;
+
+	}
+	if (func_arg2 < 0){
+		return CB_BUILD_FUNCALL_2 (func_name, cb_int (prof_call), cb_int (func_arg1));
+	}
+	return CB_BUILD_FUNCALL_3 (func_name, cb_int (prof_call), cb_int (func_arg1), cb_int (func_arg2));
+}
+
 static void
 output_funcall (cb_tree x)
 {
@@ -4332,6 +4512,55 @@ output_funcall (cb_tree x)
 		output_funcall_typed (p, p->name[1]);
 		return;
 	}
+
+	if ( cb_flag_prof && p->name == cob_prof_function_call_str ) {
+
+		int proc_idx ;
+
+		switch ( CB_INTEGER (p->argv[0])->val ){
+
+		case COB_PROF_EXIT_PARAGRAPH:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_exit_procedure (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_ENTER_SECTION:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_enter_section (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_EXIT_SECTION:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_exit_section (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_ENTER_CALL:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_enter_procedure (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_EXIT_CALL:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_exit_procedure (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_ENTER_PARAGRAPH:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_enter_procedure (prof_info, %d);\n", proc_idx);
+			output ("  cob_prof_fallthrough_entry = 0");
+			break;
+		case COB_PROF_USE_PARAGRAPH_ENTRY: {
+			int paragraph_idx = CB_INTEGER(p->argv[1])->val;
+			int entry_idx = CB_INTEGER(p->argv[2])->val;
+			output ("if (!cob_prof_fallthrough_entry){\n");
+			output ("\tcob_prof_use_paragraph_entry (prof_info, %d, %d);\n",
+				paragraph_idx, entry_idx);
+			output ("  }\n");
+			output ("  cob_prof_fallthrough_entry = 0");
+			break;
+		}
+		case COB_PROF_STAYIN_PARAGRAPH:
+			output ("cob_prof_fallthrough_entry = 1");
+			break;
+		}
+		return ;
+	}
+
 
 	screenptr = p->screenptr;
 	output ("%s (", p->name);
@@ -7924,6 +8153,13 @@ output_goto (struct cb_goto *p)
 	cb_tree		l;
 	struct cb_field	*f;
 	int		i;
+
+	if (cb_flag_prof) {
+		/* Output this only if we are exiting the paragraph... */
+		if ( !(p->flags & CB_GOTO_FLAG_SAME_PARAGRAPH) ){
+			output_line ("cob_prof_goto (prof_info);");
+		}
+	}
 
 	i = 1;
 	if (p->depending) {
@@ -12206,6 +12442,19 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	/* Entry dispatch */
 	output_line ("/* Entry dispatch */");
+	if (cb_flag_prof) {
+		output_line ("if (!prof_info) {");
+		output_line (
+			"\tprof_info = cob_prof_init_module (module, prof_procedures, %d);",
+			prog->procedure_list_len);
+		output_line ("}");
+
+		/* Prevent CANCEL from dlclose() the module, because
+		   we keep pointers to static data there. */
+		output_line ("if (prof_info){ module->flag_no_phys_canc = 1; }");
+
+		output_line ("cob_prof_enter_procedure (prof_info, 0);");
+	}
 	if (cb_flag_stack_extended) {
 		/* entry marker = first frameptr is the one with
 		   an empty (instead of NULL) section name */;
@@ -12300,7 +12549,9 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 			output_newline ();
 		}
 	}
-
+	if (cb_flag_prof){
+		output_line ("cob_prof_exit_procedure (prof_info, 0);");
+	}
 	if (!prog->flag_recursive) {
 		output_line ("/* Decrement module active count */");
 		output_line ("if (module->module_active) {");
@@ -13629,6 +13880,45 @@ output_header (const char *locbuff, const struct cb_program *cp)
 	}
 }
 
+static void
+output_cob_prof_data ( struct cb_program * program )
+{
+	if (cb_flag_prof) {
+		struct cb_procedure_list *l;
+		char sep = ' ';
+
+		output_local ("/* cob_prof data */\n\n");
+
+		output_local ("static const int nprocedures = %d;\n",
+			      program->procedure_list_len);
+		output_local ("static struct cob_prof_procedure prof_procedures[%d] = {\n",
+			      program->procedure_list_len);
+		sep = ' ';
+		for (l = program->procedure_list; l; l=l->next) {
+			output_local ("  %c { \"%s\", \"%s\", %d,  %d, %d }\n",
+				      sep,
+				      l->proc.text,
+				      l->proc.file,
+				      l->proc.line,
+				      l->proc.section,
+				      l->proc.kind
+				);
+			sep = ',';
+		}
+		output_local ("};\n");
+
+		output_local ("static int cob_prof_fallthrough_entry = 0;\n");
+		output_local ("static struct cob_prof_module *prof_info;\n");
+
+		output_local ("\n/* End of cob_prof data */\n");
+
+		program->procedure_list = NULL;
+		program->procedure_list_len = 0;
+		program->prof_current_section = -1;
+		program->prof_current_paragraph = -1;
+	}
+}
+
 void
 codegen (struct cb_program *prog, const char *translate_name)
 {
@@ -13904,6 +14194,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 
 	output_local_base_cache ();
 	output_local_field_cache (prog);
+	output_cob_prof_data (prog);
 
 	/* Report data fields */
 	if (prog->report_storage) {

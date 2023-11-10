@@ -1,3 +1,11 @@
+2023-09-04  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com> and Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* parser.y: generate calls to "cob_prof_function_call" in the
+	  parsetree when profiling is unabled, when entering/leaving
+	  profiled blocks
+	* flag.def: add `-fprof` to enable profiling
+	* codegen.c: handle profiling code generation under the
+	  cb_flag_prof guard
 
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

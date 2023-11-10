@@ -2196,6 +2196,11 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	if (cb_call_extfh) {
 		p->extfh = cobc_parse_strdup (cb_call_extfh);
 	}
+
+	p->prof_current_section = -1;
+	p->prof_current_paragraph = -1;
+	p->prof_current_call = -1;
+
 	/* Save current program as actual at it's level */
 	container_progs[nest_level] = p;
 	if (nest_level
@@ -6656,7 +6661,7 @@ cb_build_alter (const cb_tree source, const cb_tree target)
 /* GO TO */
 
 cb_tree
-cb_build_goto (const cb_tree target, const cb_tree depending)
+cb_build_goto (const cb_tree target, const cb_tree depending, int flags)
 {
 	struct cb_goto *p;
 
@@ -6664,6 +6669,7 @@ cb_build_goto (const cb_tree target, const cb_tree depending)
 		       sizeof (struct cb_goto));
 	p->target = target;
 	p->depending = depending;
+	p->flags = flags;
 	return CB_TREE (p);
 }
 
