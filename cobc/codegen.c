@@ -4328,7 +4328,6 @@ output_funcall_item (cb_tree x, const int i, unsigned int func_nolitcast)
 	output_param (x, i);
 }
 
-
 static void
 output_funcall (cb_tree x)
 {
@@ -4343,6 +4342,61 @@ output_funcall (cb_tree x)
 		output_funcall_typed (p, p->name[1]);
 		return;
 	}
+
+	if ( cb_flag_prof && p->name == cob_prof_function_call_str ) {
+
+		int proc_idx ;
+
+		switch ( CB_INTEGER (p->argv[0])->val ){
+
+		case COB_PROF_EXIT_PARAGRAPH:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_exit_procedure (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_ENTER_SECTION:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_enter_section (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_EXIT_SECTION:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_exit_section (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_ENTER_CALL:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_enter_procedure (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_EXIT_CALL:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_exit_procedure (prof_info, %d)", proc_idx);
+			break;
+		case COB_PROF_ENTER_PARAGRAPH:
+			proc_idx = CB_INTEGER(p->argv[1])->val;
+			output ("cob_prof_enter_procedure (prof_info, %d);", proc_idx);
+			output_newline ();
+			output_prefix ();
+			output ("cob_prof_fallthrough_label = 0");
+			break;
+		case COB_PROF_USE_PARAGRAPH_ENTRY: {
+			int paragraph_idx = CB_INTEGER(p->argv[1])->val;
+			int entry_idx = CB_INTEGER(p->argv[2])->val;
+			output ("if (!cob_prof_fallthrough_label)");
+			output_block_open ();
+			output_line ("cob_prof_use_paragraph_entry (prof_info, %d, %d);",
+				     paragraph_idx, entry_idx);
+			output_block_close ();
+			output_line ("else");
+			output_block_open ();
+			output_line ("cob_prof_fallthrough_label = 0;");
+			output_block_close ();
+			break;
+		}
+		case COB_PROF_STAYIN_PARAGRAPH:
+			output ("cob_prof_fallthrough_label = 1");
+			break;
+		}
+		return;
+	}
+
 
 	screenptr = p->screenptr;
 	output ("%s (", p->name);
@@ -7935,6 +7989,13 @@ output_goto (struct cb_goto *p)
 	cb_tree		l;
 	struct cb_field	*f;
 	int		i;
+
+	if (cb_flag_prof) {
+		/* Output this only if we are exiting the paragraph... */
+		if ( !(p->flags & CB_GOTO_FLAG_SAME_PARAGRAPH) ){
+			output_line ("cob_prof_goto (prof_info);");
+		}
+	}
 
 	i = 1;
 	if (p->depending) {
@@ -12256,6 +12317,19 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	/* Entry dispatch */
 	output_line ("/* Entry dispatch */");
+	if (cb_flag_prof) {
+		output_line ("if (!prof_info) {");
+		output_line (
+			"\tprof_info = cob_prof_init_module (module, prof_procedures, %d);",
+			prog->procedure_list_len);
+		output_line ("}");
+
+		/* Prevent CANCEL from dlclose() the module, because
+		   we keep pointers to static data there. */
+		output_line ("if (prof_info) { module->flag_no_phys_canc = 1; }");
+
+		output_line ("cob_prof_enter_procedure (prof_info, 0);");
+	}
 	if (cb_flag_stack_extended) {
 		/* entry marker = first frameptr is the one with
 		   an empty (instead of NULL) section name */;
@@ -12350,7 +12424,9 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 			output_newline ();
 		}
 	}
-
+	if (cb_flag_prof){
+		output_line ("cob_prof_exit_procedure (prof_info, 0);");
+	}
 	if (!prog->flag_recursive) {
 		output_line ("/* Decrement module active count */");
 		output_line ("if (module->module_active) {");
@@ -13679,6 +13755,45 @@ output_header (const char *locbuff, const struct cb_program *cp)
 	}
 }
 
+static void
+output_cob_prof_data ( struct cb_program * program )
+{
+	if (cb_flag_prof) {
+		struct cb_procedure_list *l;
+		char sep = ' ';
+
+		output_local ("/* cob_prof data */\n\n");
+
+		output_local ("static const int nprocedures = %d;\n",
+			      program->procedure_list_len);
+		output_local ("static struct cob_prof_procedure prof_procedures[%d] = {\n",
+			      program->procedure_list_len);
+		sep = ' ';
+		for (l = program->procedure_list; l; l=l->next) {
+			output_local ("  %c { \"%s\", \"%s\", %d,  %d, %d }\n",
+				      sep,
+				      l->proc.text,
+				      l->proc.file,
+				      l->proc.line,
+				      l->proc.section,
+				      l->proc.kind
+				);
+			sep = ',';
+		}
+		output_local ("};\n");
+
+		output_local ("static int cob_prof_fallthrough_label = 0;\n");
+		output_local ("static struct cob_prof_module *prof_info;\n");
+
+		output_local ("\n/* End of cob_prof data */\n");
+
+		program->procedure_list = NULL;
+		program->procedure_list_len = 0;
+		program->prof_current_section = -1;
+		program->prof_current_paragraph = -1;
+	}
+}
+
 void
 codegen (struct cb_program *prog, const char *translate_name)
 {
@@ -13954,6 +14069,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 
 	output_local_base_cache ();
 	output_local_field_cache (prog);
+	output_cob_prof_data (prog);
 
 	/* Report data fields */
 	if (prog->report_storage) {

@@ -3,6 +3,10 @@
 
 	* rm-strict.conf (perform-osvs): enabled as noted in MF docs
 
+2023-09-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* runtime.cfg: add COB_PROF_FILE
+
 2023-07-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: add option using-optional

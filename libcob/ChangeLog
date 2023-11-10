@@ -1,4 +1,17 @@
 
+2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+	    Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* Makefile.am: add `profiling.c` to sources
+	* profiling.c: implement profiling functions
+	  (time spent in each procedure of the program)
+	* common.c: add 4 environments variables COB_PROF_FILE,
+	  COB_PROF_MAX_DEPTH,COB_PROF_ENABLE and COB_PROF_FORMAT
+	* common.c (cob_expand_env_string): add $b (executable basename),
+	  $f (executable filename), $d (date in yyyymmdd) and
+	  $t (time in hhmmss)
+	* common.c (cob_set_main_argv0): extracted from cob_init
+
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
 	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files

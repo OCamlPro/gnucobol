@@ -14631,3 +14631,410 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN prog], [0], [OKOKOKOKOK], [])
 AT_CLEANUP
+
+
+AT_SETUP([run profiling])
+AT_KEYWORDS([cobc profiling])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.    prog.
+        PROCEDURE      DIVISION.
+        1ST SECTION.
+        PARA-0001.
+            PERFORM PARA-0003.
+        PARA-0002.
+            CONTINUE.
+        PARA-0003.
+            GO TO 2ND.
+        PARA-0004.
+            CONTINUE.
+        2ND SECTION.
+        PARA-0005.
+            PERFORM PARA-0006.
+        PARA-0006.
+            CONTINUE.
+        PARA-0007.
+            STOP RUN.
+])
+AT_CAPTURE_FILE([prof-prog.csv])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob: in section '1ST':
+prog.cob: in paragraph 'PARA-0003':
+prog.cob:11: warning: GO TO SECTION '2ND'
+])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fprof prog.cob], [0], [],
+[prog.cob: in section '1ST':
+prog.cob: in paragraph 'PARA-0003':
+prog.cob:11: warning: GO TO SECTION '2ND'
+])
+
+AT_CHECK([COB_PROF_ENABLE=0 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0], [],
+[File prof-prog.csv generated
+])
+
+# note: The time here is actually the number of times the procedure has
+# been run, to avoid any indeterminism in the running time of the
+# procedure.
+
+AT_CHECK([cat prof-prog.csv], [0],
+[pid,program-id,section,paragraph,entry,file,line,location,kind,time-ns,time,ncalls,%x
+42,prog,,,,prog.cob,4,prog.cob:4,PROGRAM,13000000,0.013 s,1,%x
+42,prog,1ST,,,prog.cob,5,prog.cob:5,SECTION,12000000,0.012 s,1,%x
+42,prog,1ST,PARA-0001,,prog.cob,6,prog.cob:6,PARAGRAPH,11000000,0.011 s,1,%x
+42,prog,1ST,PARA-0002,,prog.cob,8,prog.cob:8,PARAGRAPH,0,0.000 s,0,%x
+42,prog,1ST,PARA-0003,,prog.cob,10,prog.cob:10,PARAGRAPH,1000000,0.001 s,1,%x
+42,prog,1ST,PARA-0004,,prog.cob,12,prog.cob:12,PARAGRAPH,0,0.000 s,0,%x
+42,prog,2ND,,,prog.cob,14,prog.cob:14,SECTION,6000000,0.006 s,1,%x
+42,prog,2ND,PARA-0005,,prog.cob,15,prog.cob:15,PARAGRAPH,3000000,0.003 s,1,%x
+42,prog,2ND,PARA-0006,,prog.cob,17,prog.cob:17,PARAGRAPH,2000000,0.002 s,2,%x
+42,prog,2ND,PARA-0007,,prog.cob,19,prog.cob:19,PARAGRAPH,1000000,0.001 s,1,%x
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([run profiling with no paragraph/section names])
+AT_KEYWORDS([cobc profiling])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.    prog.
+        PROCEDURE      DIVISION.
+          DISPLAY "HELLO".
+          DISPLAY "WORLD".
+])
+AT_CAPTURE_FILE([prof.csv])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
+WORLD
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog,,,,prog.cob:4,PROGRAM,3000000,0.003 s,1
+prog,MAIN SECTION,,,prog.cob:5,SECTION,1000000,0.001 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([run profiling with no section names])
+AT_KEYWORDS([cobc profiling])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.    prog.
+        PROCEDURE      DIVISION.
+        1ST.
+          DISPLAY "HELLO".
+        2ND.
+          DISPLAY "WORLD".
+])
+AT_CAPTURE_FILE([prof.csv])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
+WORLD
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog,,,,prog.cob:4,PROGRAM,5000000,0.005 s,1
+prog,MAIN SECTION,,,prog.cob:5,SECTION,2000000,0.002 s,1
+prog,MAIN SECTION,1ST,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
+prog,MAIN SECTION,2ND,,prog.cob:7,PARAGRAPH,1000000,0.001 s,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling depth overflow])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN.
+          PERFORM PARA.
+          STOP RUN.
+       PARA.
+          DISPLAY "OK" WITH NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([COB_PROF_MAX_DEPTH=2 COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [OK],
+[libcob: prog.cob:8: warning: [[cob_prof]] Profiling overflow at 2 calls, aborting profiling.
+libcob: prog.cob:8: warning:   Last 10 calls on stack:
+libcob: prog.cob:8: warning:   * MAIN at prog.cob:5
+libcob: prog.cob:8: warning:   * prog at prog.cob:4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([run profiling with recursion, entries and CALL])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog RECURSIVE.
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+          CALL "inside-program".
+       PROGRAM-ID. inside-program.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(4).
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           MOVE 100 TO COUNTER.
+       INSIDE SECTION.
+           PERFORM ITER.
+           EXIT SECTION.
+       ITER.
+           IF COUNTER = 0
+             DISPLAY "end iter"
+             EXIT PARAGRAPH.
+           SUBTRACT 1 FROM COUNTER.
+           PERFORM INSIDE.
+       END PROGRAM inside-program.
+       END PROGRAM prog.
+])
+AT_CAPTURE_FILE([prof.csv])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
+[HELLO WORLD
+end iter
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+inside-program,,,,prog.cob:14,PROGRAM,407000000,0.407 s,1
+inside-program,MAIN,,,prog.cob:15,SECTION,1000000,0.001 s,1
+inside-program,MAIN,MAIN PARAGRAPH,,prog.cob:15,PARAGRAPH,1000000,0.001 s,1
+inside-program,INSIDE,,,prog.cob:17,SECTION,804000000,0.804 s,101
+inside-program,INSIDE,MAIN PARAGRAPH,,prog.cob:17,PARAGRAPH,403000000,0.403 s,101
+inside-program,INSIDE,ITER,,prog.cob:20,PARAGRAPH,401000000,0.401 s,101
+prog,,,,prog.cob:4,PROGRAM,419000000,0.419 s,2
+prog,MAIN SECTION,,,prog.cob:5,SECTION,417000000,0.417 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:5,PARAGRAPH,417000000,0.417 s,2
+prog,MAIN SECTION,MAIN PARAGRAPH,entry,prog.cob:6,CALL,415000000,0.415 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,entry,prog.cob:8,ENTRY,0,0.000 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,inside-program,prog.cob:9,CALL,409000000,0.409 s,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling two modules with CALL])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       DATA DIVISION.
+       LOCAL-STORAGE SECTION.
+       01 COUNTER PIC 9(4).
+       01 PARAM PIC 9.
+       01 CALL-NAME PIC X(10).
+       PROCEDURE DIVISION.
+          MOVE 'prog2' TO CALL-NAME.
+          PERFORM CALL-PROG2
+             VARYING COUNTER FROM 0 BY 1
+             UNTIL COUNTER = 300.
+          GOBACK.
+       CALL-PROG2.
+            MOVE 1 TO PARAM.
+            CALL "prog2" USING PARAM.
+            MOVE 2 TO PARAM.
+            CALL CALL-NAME USING PARAM.
+       END PROGRAM prog1.
+])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 PARAM PIC 9.
+       PROCEDURE DIVISION USING PARAM.
+       DISPLAYER SECTION.
+          IF PARAM = 1
+             DISPLAY "X" NO ADVANCING
+	  ELSE
+	     PERFORM OTHER-DISPLAY.
+	  GOBACK.
+       OTHER-DISPLAY SECTION.
+          DISPLAY "Y" NO ADVANCING.
+       END PROGRAM prog2.
+])
+AT_CAPTURE_FILE([prof.csv])
+
+AT_CHECK([$COMPILE -fprof prog1.cob])
+
+AT_CHECK([$COMPILE_MODULE prog2.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+[XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog1,,,,prog1.cob:9,PROGRAM,1803000000,1.803 s,1
+prog1,MAIN SECTION,,,prog1.cob:10,SECTION,3301000000,3.301 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:10,PARAGRAPH,1801000000,1.801 s,1
+prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:15,PARAGRAPH,1500000000,1.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:17,CALL,300000000,0.300 s,300
+prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:19,CALL,300000000,0.300 s,300
+])
+
+AT_CHECK([$COMPILE_MODULE -fprof prog2.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+[XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog2,,,,prog2.cob:7,PROGRAM,2400000000,2.400 s,600
+prog2,DISPLAYER,,,prog2.cob:8,SECTION,1200000000,1.200 s,600
+prog2,DISPLAYER,MAIN PARAGRAPH,,prog2.cob:8,PARAGRAPH,1200000000,1.200 s,600
+prog2,OTHER-DISPLAY,,,prog2.cob:14,SECTION,300000000,0.300 s,300
+prog2,OTHER-DISPLAY,MAIN PARAGRAPH,,prog2.cob:14,PARAGRAPH,300000000,0.300 s,300
+prog1,,,,prog1.cob:9,PROGRAM,4803000000,4.803 s,1
+prog1,MAIN SECTION,,,prog1.cob:10,SECTION,9301000000,9.301 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:10,PARAGRAPH,4801000000,4.801 s,1
+prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:15,PARAGRAPH,4500000000,4.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:17,CALL,1500000000,1.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:19,CALL,2100000000,2.100 s,300
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling multiple programs])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       DATA DIVISION.
+       PROCEDURE DIVISION.
+          CALL "SYSTEM" USING "./prog2"
+          GOBACK.
+])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       PROCEDURE DIVISION.
+       MAIN.
+          SET ENVIRONMENT "COB_PROF_FILE" TO "prof2.csv"
+	  PERFORM PARA 5 TIMES.
+	  GOBACK.
+       PARA.
+          CONTINUE.
+])
+AT_CAPTURE_FILE([prof1.csv])
+AT_CAPTURE_FILE([prof2.csv])
+
+AT_CHECK([$COMPILE_MODULE -fprof prog1.cob])
+
+AT_CHECK([$COMPILE -fprof prog2.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv $COBCRUN ./prog1], [0], [],
+[File prof2.csv generated
+File prof1.csv generated
+])
+
+AT_CHECK([cat prof1.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog1,,,,prog1.cob:5,PROGRAM,5000000,0.005 s,1
+prog1,MAIN SECTION,,,prog1.cob:6,SECTION,3000000,0.003 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:6,PARAGRAPH,3000000,0.003 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,SYSTEM,prog1.cob:6,CALL,1000000,0.001 s,1
+])
+
+AT_CHECK([cat prof2.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog2,,,,prog2.cob:4,PROGRAM,13000000,0.013 s,1
+prog2,MAIN SECTION,,,prog2.cob:5,SECTION,16000000,0.016 s,1
+prog2,MAIN SECTION,MAIN,,prog2.cob:5,PARAGRAPH,11000000,0.011 s,1
+prog2,MAIN SECTION,PARA,,prog2.cob:9,PARAGRAPH,5000000,0.005 s,5
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling out of test mode])
+AT_KEYWORDS([cobc])
+
+AT_DATA([caller.c], [[
+#include <stdlib.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+   int i;
+
+   unsetenv("COB_IS_RUNNING_IN_TESTMODE");
+
+   cob_init (argc, argv);
+
+   for (i = 0; i < 300; ++i) {
+      cob_call ("callee", 0, NULL);
+   }
+
+   cob_tidy ();
+
+   return 0;
+}
+]])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       PROCEDURE DIVISION.
+       MAIN.
+	  PERFORM PARA 5 TIMES.
+	  GOBACK.
+       PARA.
+          CONTINUE.
+])
+AT_CAPTURE_FILE([prof.csv])
+
+AT_CHECK([$COMPILE caller.c])
+AT_CHECK([$COMPILE_MODULE -fprof callee.cob])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [], [File prof.csv generated
+])
+
+AT_CLEANUP
