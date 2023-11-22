@@ -4463,6 +4463,7 @@ output_call(cb_call * p)
 			output_indent_level += 2;
 			except_id = cb_id++;
 			str += output_line("%s%d:", CB_PREFIX_LABEL, except_id);
+			str += output_line("cob_set_exception(0);");
 			str += output_stmt(p->stmt1);
 			output_indent_level -= 2;
 			str += output_line("}");
@@ -4552,7 +4553,8 @@ output_call(cb_call * p)
 	str += output(");\n");
 
 	if(except_id > 0) {
-		str += output_line("if (unlikely(cob_glob_ptr->cob_exception_code != 0))");
+		str += output_line("if (unlikely((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x))",
+			CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
 		str += output_line("\tgoto %s%d;", CB_PREFIX_LABEL, except_id);
 	}
 

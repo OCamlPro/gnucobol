@@ -1,6 +1,16 @@
+2023-01-31 Sergey Kashyrin <ska@kiska.net>
+	* intrinsic.cpp: Fix for CR/DB in at_cr_or_db
+
+2021-04-02 Sergey Kashyrin <ska@kiska.net>
+	* numeric.cpp: Fix to raise overflow for double
+	* cobdecimal.cpp: Fix to raise overflow for double, bugfix in getting double.
+
+2021-04-01 Sergey Kashyrin <ska@kiska.net>
+	* numeric.cpp: Fix for cob_add_int in case of float
+
 2021-01-23 Sergey Kashyrin <ska@kiska.net>
-	* numeric.c: We can't use mpz_clear and mpz_init2 with cob_decimal
-	*            as constructor/destructor are taking care of that
+	* numeric.cpp: We can't use mpz_clear and mpz_init2 with cob_decimal
+	*              as constructor/destructor are taking care of that
 
 2020-10-12 Sergey Kashyrin <ska@kiska.net>
 	* common.h: increasing COB_MAX_FIELD_SIZE

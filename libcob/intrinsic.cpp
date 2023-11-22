@@ -1364,8 +1364,11 @@ in_last_n_chars(const cob_field * field, const size_t n, const unsigned int i)
 static int
 at_cr_or_db(const cob_field * srcfield, const int pos)
 {
-	return memcmp(&srcfield->data[pos], "CR", (size_t)2) == 0
-		   || memcmp(&srcfield->data[pos], "DB", (size_t)2) == 0;
+	return ((srcfield->data[pos] == 'C' || srcfield->data[pos] == 'c') &&
+		(srcfield->data[pos + 1] == 'R' || srcfield->data[pos + 1] == 'r'))
+		||
+		((srcfield->data[pos] == 'D' || srcfield->data[pos] == 'd') &&
+			(srcfield->data[pos + 1] == 'B' || srcfield->data[pos + 1] == 'b'));
 }
 
 enum numval_type {

@@ -1,3 +1,13 @@
+2023-11-21 Sergey Kashyrin <ska@kiska.net>
+	* codegen.cpp: fixed exception passing in CALL xxx ON OVERFLOW
+
+2022-02-05 Sergey Kashyrin <ska@kiska.net>
+	* typeck.cpp: fixed cb_set_intr_when_compiled
+	* typeck.cpp: fixed internal compiler error on wrong SET
+
+2021-02-04 Sergey Kashyrin <ska@kiska.net>
+	* typeck.cpp: fix to validate delimiter in cb_emit_string
+
 2019-03-08 Sergey Kashyrin <ska@kiska.net>
 	* typeck.cpp: fix for CB_CATEGORY_UNKNOWN in validate_move
 

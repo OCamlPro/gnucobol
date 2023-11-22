@@ -35,6 +35,9 @@
 #include "libcob.h"
 #include "coblocal.h"
 
+// overflow flag for numeric.cpp
+int cob_not_finite = 0;
+
 /////////////////////////////////////////////////////////////////////////////
 // assignment operators
 
@@ -622,14 +625,20 @@ cob_decimal::operator cob_u64_t()
 
 cob_decimal::operator double()
 {
-	double ret = value.get_d();
-	if(!ISFINITE(ret)) {
-		return 0.;
-	}
+	cob_not_finite = 0;
+	mpf_class val(value);
+	mpz_class temp;
 	if(scale > 0) {
-		ret /= pow(10.0, scale);
+		mpz_ui_pow_ui(temp.get_mpz_t(), 10, scale);
+		val = val / temp;
 	} else if(scale < 0) {
-		ret *= pow(10.0, scale);
+		mpz_ui_pow_ui(temp.get_mpz_t(), 10, -scale);
+		val *= temp;
+	}
+	double ret = val.get_d();
+	if(!ISFINITE(ret)) {
+		cob_not_finite = 1;
+		return 0.;
 	}
 	return ret;
 }

@@ -126,6 +126,9 @@ static mpf_t		cob_mpft_get;
 static unsigned char	packed_value[20];
 static cob_u64_t	last_packed_val;
 
+// Defined in cobdecimal.cpp
+extern int cob_not_finite;
+
 
 #ifdef	COB_EXPERIMENTAL
 
@@ -1579,11 +1582,23 @@ cob_decimal_get_field(cob_decimal * d, cob_field * f, const int opt)
 		return cob_decimal_get_packed(d, f, opt);
 	case COB_TYPE_NUMERIC_FLOAT: {
 		float fval = (float)(double) * d;
+		if((opt & COB_STORE_KEEP_ON_OVERFLOW)
+			&& (isinf(fval) || isnan(fval) || cob_not_finite)) {
+			cob_set_exception(COB_EC_SIZE_OVERFLOW);
+			cob_not_finite = 0;
+			return cobglobptr->cob_exception_code;
+		}
 		memcpy(f->data, &fval, sizeof(float));
 		return 0;
 	}
 	case COB_TYPE_NUMERIC_DOUBLE: {
 		double val = *d;
+		if((opt & COB_STORE_KEEP_ON_OVERFLOW)
+			&& (isinf(val) || isnan(val) || cob_not_finite)) {
+			cob_set_exception(COB_EC_SIZE_OVERFLOW);
+			cob_not_finite = 0;
+			return cobglobptr->cob_exception_code;
+		}
 		memcpy(f->data, &val, sizeof(double));
 		return 0;
 	}
@@ -1944,7 +1959,7 @@ cob_add_int(cob_field * f, const int n, const int opt)
 	if(COB_FIELD_TYPE(f) >= COB_TYPE_NUMERIC_FLOAT && COB_FIELD_TYPE(f) <= COB_TYPE_NUMERIC_FP_BIN128) {
 		cob_d2.value = (cob_sli_t) n;
 		cob_d2.scale = 0;
-		cob_d1.value += cob_d2.value;
+		cob_d1 += cob_d2;
 		return cob_decimal_get_field(&cob_d1, f, opt);
 	}
 	int scale = COB_FIELD_SCALE(f);

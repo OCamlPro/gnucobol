@@ -1177,6 +1177,7 @@ cb_set_intr_when_compiled(void)
 {
 	char	buff[36]; /* 36: make the compiler happy as "unsigned short" *could*
 						     have more digits than we "assume" */
+	cob_u16_t	offset_minutes;
 
 	snprintf(buff, sizeof(buff), "%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d%2.2d",
 			 (cob_u16_t) current_compile_time.year,
@@ -1187,9 +1188,14 @@ cb_set_intr_when_compiled(void)
 			 (cob_u16_t) current_compile_time.second,
 			 (cob_u16_t)(current_compile_time.nanosecond / 10000000));
 	if(current_compile_time.offset_known) {
-		snprintf(buff + 16, (size_t)11, "%+3.3d%2.2d",	/* 11: see above */
-				 (cob_u16_t) current_compile_time.utc_offset / 60,
-				 (cob_u16_t) current_compile_time.utc_offset % 60);
+		if(current_compile_time.utc_offset >= 0) {
+			offset_minutes = current_compile_time.utc_offset % 60;
+		} else {
+			offset_minutes = -current_compile_time.utc_offset % 60;
+		}
+		snprintf(buff + 16, (size_t)11, "%+2.2d%2.2d",	/* 11: see above */
+			(cob_s16_t)current_compile_time.utc_offset / 60,
+			offset_minutes);
 	} else {
 		snprintf(buff + 16, (size_t)6, "00000");
 	}
@@ -7821,6 +7827,8 @@ validate_move(cb_tree src, cb_tree dst, bool is_value)
 			return -1;
 		}
 		break;
+	case CB_TAG_CAST:
+		goto invalid;
 	case CB_TAG_INTEGER:
 	case CB_TAG_BINARY_OP:
 	case CB_TAG_INTRINSIC:
@@ -9693,11 +9701,18 @@ cb_emit_string(cb_tree items, cb_tree into, cb_tree pointer)
 		cb_tree dlm = end ? CB_PAIR_X(CB_VALUE(end)) : NULL;
 		if(dlm == cb_int0) {
 			dlm = NULL;
+		} else {
+			if(cb_validate_one(dlm)) {
+				return;
+			}
 		}
 		cb_emit(CB_BUILD_FUNCALL_1("cob_string_delimited", dlm));
 
 		/* generate cob_string_append for all entries until delimiter */
 		for(cb_tree l = start; l != end; l = CB_CHAIN(l)) {
+			if(cb_validate_one(CB_VALUE(l))) {
+				return;
+			}
 			cb_emit(CB_BUILD_FUNCALL_1("cob_string_append", CB_VALUE(l)));
 		}
 
