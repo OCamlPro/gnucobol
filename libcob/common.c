@@ -907,7 +907,7 @@ cob_get_source_line ()
 }
 
 /* reentrant version of strerror */
-static char *
+char *
 cob_get_strerror (void)
 {
 	size_t size;

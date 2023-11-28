@@ -424,6 +424,68 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 AT_CLEANUP
 
 
+AT_SETUP([save-temps in sub-directory])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "OK" NO ADVANCING
+           END-DISPLAY.
+           EXIT PROGRAM.
+])
+
+AT_CHECK([mkdir debug])
+
+AT_CHECK([$COMPILE -save-temps=debug -o prog.exe prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog.exe], [0], [OK])
+AT_CHECK([test -f debug/prog.$COB_OBJECT_EXT])
+AT_CHECK([test -f debug/prog.c])
+AT_CHECK([test -f debug/prog.s], [1])
+AT_CHECK([test -f debug/prog.i])
+AT_CHECK([test -f debug/prog.c.h])
+AT_CHECK([test -f debug/prog.c.l.h])
+
+# Check with -c
+
+AT_CHECK([test -f prog.$COB_OBJECT_EXT], [1])
+AT_CHECK([$COMPILE -save-temps=debug -c prog.cob])
+AT_CHECK([test -f prog.$COB_OBJECT_EXT])
+AT_CHECK([$COMPILE -save-temps=debug -c -o program.$COB_OBJECT_EXT prog.cob])
+AT_CHECK([test -f program.$COB_OBJECT_EXT])
+
+# Check with -S
+
+AT_CHECK([test -f prog.s], [1])
+AT_CHECK([$COMPILE -save-temps=debug -S prog.cob])
+AT_CHECK([test -f prog.s])
+AT_CHECK([$COMPILE -save-temps=debug -S -o program.s prog.cob])
+AT_CHECK([test -f program.s])
+
+# Check with -C
+
+AT_CHECK([test -f prog.c], [1])
+AT_CHECK([$COMPILE -save-temps=debug -C prog.cob])
+AT_CHECK([test -f prog.c])
+AT_CHECK([test -f prog.c.h])
+AT_CHECK([test -f prog.c.l.h])
+AT_CHECK([$COMPILE -save-temps=debug -C -o program.c prog.cob])
+AT_CHECK([test -f program.c])
+AT_CHECK([test -f program.c.h])
+AT_CHECK([test -f program.c.l.h])
+
+# Check with -E
+
+AT_CHECK([test -f prog.i], [1])
+AT_CHECK([$COMPILE -save-temps=debug -E -o prog.i prog.cob])
+AT_CHECK([test -f prog.i])
+AT_CHECK([$COMPILE -save-temps=debug -E -o program.i prog.cob])
+AT_CHECK([test -f program.i])
+
+AT_CLEANUP
+
+
 AT_SETUP([C Compiler optimizations])
 AT_KEYWORDS([runmisc cobc optimization])
 
