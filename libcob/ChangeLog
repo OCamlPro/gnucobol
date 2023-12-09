@@ -3,6 +3,7 @@
 
 	* screenio.c, common.c: replace use of NCURSES_MOUSE_VERSION by
 	  HAVE_MOUSEMASK
+	* fileio.c (cob_file_sort_giving_internal): fix memory cleanup
 
 2023-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 

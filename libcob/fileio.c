@@ -8475,13 +8475,6 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 		}
 	}
 
-	/* cleanup temporary arrays */
-	cob_free (opt);
-	cob_free (fbase);
-	if (callfh) {
-		cob_free (callfh);
-	}
-
 	/* if any error happened with the GIVING files update SORT-RETURN */
 	if (hp->sort_return) {
 		for (i = 0; i < giving_cnt; ++i) {
@@ -8490,6 +8483,13 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 				break;
 			}
 		}
+	}
+
+	/* cleanup temporary arrays */
+	cob_free (opt);
+	cob_free (fbase);
+	if (callfh) {
+		cob_free (callfh);
 	}
 }
 
