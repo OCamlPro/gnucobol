@@ -1,7 +1,7 @@
 
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
-	* coblocal.h, common.c: export "cob_get_strerror" as a public function
+	* common.c (cob_get_strerror), coblocal.h: export as utility function
 
 2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
