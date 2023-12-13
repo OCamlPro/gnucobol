@@ -1,4 +1,11 @@
 
+2023-12-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_terminate_routines, cob_call_with_exception_check):
+          add a mechanism to postpone unloading of modules when using longjmp,
+          as this is not safe on Windows (its implementation of longjmp
+          performs stack-unwinding)
+
 2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c, common.c: replace use of NCURSES_MOUSE_VERSION by
