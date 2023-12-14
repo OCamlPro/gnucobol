@@ -59,6 +59,7 @@
 
 2023-09-01  Simon Sobisch <simonsobisch@gnu.org>
 
+	FR #443: error handling for non-cobol "sources"
 	* pplex.l (ppopen_get_file): test for binary file and directly error out
 	* cobc.c (cobc_terminate_exit), cobc.h: split cobc_terminate and make
 	  the new function available

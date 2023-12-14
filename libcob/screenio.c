@@ -3105,27 +3105,26 @@ extract_line_and_col_vals (cob_field *line, cob_field *column,
 			*sline = 0;
 			*scolumn = 0;
 			return;
+		}
+		if (line->size < 4) {
+			/* this is used when only a LINE clause is specified,
+			   not an AT clause */
+			cobol_line = cob_get_int (line);
+			cobol_col = 1;
 		} else {
-			if (line->size < 4) {
-				/* this is used when only a LINE clause is specified,
-				   not an AT clause */
-				cobol_line = cob_get_int (line);
-				cobol_col = 1;
-			} else {
-				/* common case: line actually contains both the
-				   line and field numbers */
-				int ret = get_line_and_col_from_field
-					(line, &cobol_line, &cobol_col);
-				/* LCOV_EXCL_START */
-				if (unlikely (ret == 1)) {
-#if 0				/* Throw an exception? EC-SCREEN-IMP-LINE-VAR-LENGTH? */
-					cob_set_exception (COB_EC_SCREEN_IMP);
+			/* common case: line actually contains both the
+			   line and field numbers */
+			int ret = get_line_and_col_from_field
+				(line, &cobol_line, &cobol_col);
+			/* LCOV_EXCL_START */
+			if (unlikely (ret == 1)) {
+#if 0			/* Throw an exception? EC-SCREEN-IMP-LINE-VAR-LENGTH? */
+				cob_set_exception (COB_EC_SCREEN_IMP);
 #else
-					cob_fatal_error (COB_FERROR_CODEGEN);
+				cob_fatal_error (COB_FERROR_CODEGEN);
 #endif
-				}
-				/* LCOV_EXCL_STOP */
 			}
+			/* LCOV_EXCL_STOP */
 		}
 	} else {
 		get_line_column (line, column, &cobol_line, &cobol_col);
@@ -4188,7 +4187,7 @@ cob_display_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...
 
 	if (parms && *parms) {
 		va_list 	args;
-		const char	*p = parms;
+		const char *p = parms;
 
 		va_start (args, parms);
 		for (;;) {
@@ -4828,10 +4827,12 @@ cob_sys_get_char (unsigned char *fld)
 			return -1;
 		}
 	}
-#else
-	COB_UNUSED (fld);
-#endif
 	return 0;
+#else
+	/* this function is only valid for extended screenio! */
+	COB_UNUSED (fld);
+	return -2;
+#endif
 }
 
 /* set CurSoR position on screen,
