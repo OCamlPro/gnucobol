@@ -2,6 +2,7 @@
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* common.c (cob_get_strerror), coblocal.h: export as utility function
+	* common.c (cob_expand_env_string): fix potention buffer overflow
 
 2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
