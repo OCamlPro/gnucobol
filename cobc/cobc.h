@@ -684,4 +684,10 @@ extern int		cb_strcasecmp (const void *, const void *);
 extern unsigned char	cb_toupper (const unsigned char);
 extern unsigned char	cb_tolower (const unsigned char);
 
+/* debuggen.c */
+
+extern void debuggen_init(void);
+extern void debuggen_add_ref(int c_line, const char *cob_file_name, int cob_line);
+extern void debuggen_finalize(const struct cb_program *prog, const char *c_file);
+
 #endif /* CB_COBC_H */

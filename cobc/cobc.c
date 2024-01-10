@@ -3327,6 +3327,15 @@ process_command_line (const int argc, char **argv)
 		cb_flag_stack_extended = 1;	/* for extended stack output */
 	}
 
+	/* If generating a debug database, must also
+	   pass the appropriate flags to the C compiler */
+	if (cb_flag_gen_debug_db && !cb_source_debugging) {
+		cb_source_debugging = 1;
+#ifdef COB_DEBUG_FLAGS
+		COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
+#endif
+	}
+
 	cob_optind = 1;
 	cob_opterr = 0;	/* all error handling was done in the call above */
 	while ((c = cob_getopt_long_long (argc, argv, short_options,

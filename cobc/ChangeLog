@@ -1,4 +1,15 @@
 
+2024-01-10  David Declerck <david.declerck@ocamlpro.com>
+
+	* debuggen.c: implement a feature to collect and dump debug information
+	  relevant for debugging in a debug database file in binary format
+	* cobc.h: export the new `debuggen` functions
+	* codegen.c: add calls to `debuggen` at appropriate locations
+	* flag.def: add a -fgen-debug-db flag to enable debug database generation
+	* cobc.c: ensure proper options are passed to the C compiler when
+	  using the -fgen-debug-db flag
+	* Makefile.am: add `debuggen.c` to the list of source files
+
 2023-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (search_set_keys): improving SEARCH ALL syntax checks
