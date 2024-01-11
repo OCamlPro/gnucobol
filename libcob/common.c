@@ -1586,21 +1586,20 @@ cob_get_sign_ebcdic (unsigned char *p)
 		*p = sign_nibble;
 	}
 	switch (sign_nibble) {
-	/* negative */
+	/* positive */
 	case 0xC0:
-	/* negative, non-preferred */
+	/* positive, non-preferred */
 	case 0xA0:
 	case 0xE0:
 		return 1;
-	/* positive */
+	/* negative */
 	case 0xD0:
-	/* positive, non-preferred */
+	/* negative, non-preferred */
 	case 0xB0:
 		return -1;
 	/* unsigned  */
 	case 0xF0:
 		return 0;
-		return -1;
 	default:
 		/* What to do here outside of sign nibbles? */
 		return 1;
@@ -3983,25 +3982,28 @@ cob_is_numeric (const cob_field *f)
 			{
 				const char sign = *end & 0x0F;
 				if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-					/* COMP-6 - Check last nibble */
+					/* COMP-6 - check low nibble as digit */
 					if (sign > 0x09) {
 						return 0;
 					}
 				} else if (COB_FIELD_HAVE_SIGN (f)) {
 					if (COB_MODULE_PTR->flag_host_sign
 					 && sign == 0x0F) {
-						/* all fine, go on */
+						/* hostsign: "no sign" == "positive", so go on */
 					} else
 					if (sign != 0x0C
 					 && sign != 0x0D) {
+						/* expect explicit "positive" 0x0C
+						   or "negative" 0x0D sign */
 						return 0;
 					}
 				} else if (sign != 0x0F) {
+					/* unsigned must be "no sign" 0x0F */
 					return 0;
 				}
 			}
 
-			/* Check high nibble of last byte */
+			/* Check high nibble of last byte for digit */
 			if ((*end & 0xF0) > 0x90) {
 				return 0;
 			}
@@ -6382,7 +6384,7 @@ cob_sys_system (const void *cmdline)
 				   while GNU/Linux returns -1 */
 				status = system (command);
 				if (cobglobptr->cob_screen_initialized) {
-					cob_screen_set_mode (1U);
+					cob_screen_set_mode (1);
 				}
 #ifdef	WIFSIGNALED
 				if (WIFSIGNALED (status)) {
@@ -6892,7 +6894,7 @@ get_sleep_nanoseconds_from_seconds (cob_field *decimal_seconds) {
 	}
 	if (seconds >= MAX_SLEEP_TIME) {
 		return (cob_s64_t)MAX_SLEEP_TIME * 1000000000;
-} else {
+	} else {
 		cob_s64_t	nanoseconds;
 		cob_field	temp;
 		temp.size = 8;

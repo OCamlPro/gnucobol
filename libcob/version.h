@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2020-2022 Free Software Foundation, Inc.
+   Copyright (C) 2020-2023 Free Software Foundation, Inc.
    Written by Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -21,7 +21,7 @@
 #ifndef COB_VERSION_H
 
 #define __LIBCOB_VERSION	3
-#define __LIBCOB_VERSION_MINOR		2
+#define __LIBCOB_VERSION_MINOR		3
 #define __LIBCOB_VERSION_PATCHLEVEL	0	/* Note: possibly differs from patchelvel shown with cobc --version! */
 
 #define __LIBCOB_RELEASE (__LIBCOB_VERSION * 10000 + __LIBCOB_VERSION_MINOR * 100 + __LIBCOB_VERSION_PATCHLEVEL)
