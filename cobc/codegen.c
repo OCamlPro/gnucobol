@@ -296,6 +296,8 @@ static void output_param	(cb_tree, int);
 static void output_field_no_target	(cb_tree);
 static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
+static struct cb_field * real_field_founder (const struct cb_field *f);
+static void add_field_cache (struct cb_field *f01);
 
 static void output_trace_info	(cb_tree, const enum cob_statement);
 static void output_source_reference (cb_tree, const enum cob_statement);
@@ -307,6 +309,42 @@ static void codegen_finalize (void);
 static void output_perform_once (struct cb_perform *);
 
 /* Local functions */
+
+static void
+count_all_fields (struct cb_field *p)
+{
+	struct cb_field	*f, *f01;
+	cb_tree		l;
+	/* Exclude internal registers (those have level 0
+           in GC4 and are thus "automaticaly" excluded)
+           as well as typedefs */
+	if (p->flag_internal_register || p->flag_is_typedef) {
+		return;
+	}
+	if (p->storage == CB_STORAGE_REPORT) {
+		f01 = real_field_founder (p);
+		if (!f01->flag_base) {
+			add_field_cache (f01);
+		}
+	}
+	if (p->sister) {
+		count_all_fields (p->sister);
+	}
+	if (p->children) {
+		count_all_fields (p->children);
+	}
+	p->flag_sym_emitted = 0;
+
+	if (p->storage == CB_STORAGE_REPORT
+	 || p->level == 1
+	 || p->level == 77) {		/* Make sure cob_field is emitted */
+		p->count++;
+		for (l = p->index_list; l; l = CB_CHAIN (l)) {
+			f = CB_FIELD_PTR (CB_VALUE (l));
+			f->count++;
+		}
+	}
+}
 
 static struct cb_field *
 cb_code_field (cb_tree x)
@@ -1027,6 +1065,48 @@ out_odoslide_size (struct cb_field *fld)
 {
 	need_plus_sign = 0;
 	out_odoslide_fld_size (fld, fld);
+}
+
+static void
+add_field_cache (struct cb_field *f01)
+{
+	struct base_list	*bl;
+	if (!f01->flag_base) {
+		if (f01->index_type == CB_INT_INDEX) {
+			bl = cobc_parse_malloc (sizeof (struct base_list));
+			bl->f = f01;
+			bl->curr_prog = excp_current_program_id;
+			bl->next = local_base_cache;
+			local_base_cache = bl;
+		} else if (!f01->flag_external && !f01->flag_local_storage) {
+			if (!f01->flag_local || f01->flag_is_global) {
+				bl = cobc_parse_malloc (sizeof (struct base_list));
+				bl->f = f01;
+				bl->curr_prog = excp_current_program_id;
+				if (f01->flag_is_global
+				 || current_prog->flag_file_global) {
+					bl->next = base_cache;
+					base_cache = bl;
+				} else {
+					bl->next = local_base_cache;
+					local_base_cache = bl;
+				}
+			} else {
+				if (current_prog->flag_global_use) {
+					output_local ("unsigned char\t\t*%s%d = NULL;",
+							CB_PREFIX_BASE, f01->id);
+					output_local ("\t/* %s */\n", f01->name);
+					output_local ("static unsigned char\t*save_%s%d;\n",
+							CB_PREFIX_BASE, f01->id);
+				} else {
+					output_local ("unsigned char\t*%s%d = NULL;",
+							CB_PREFIX_BASE, f01->id);
+					output_local ("\t/* %s */\n", f01->name);
+				}
+			}
+		}
+		f01->flag_base = 1;
+	}
 }
 
 static void
@@ -2007,6 +2087,310 @@ output_debugging_fields (struct cb_program *prog)
 	}
 }
 
+static int	num_symtab = 0;
+static int	sym_storage = 255;
+static int	sym_comma = 0;
+static int	sym_1st_file = 0;
+static void
+emit_comma ()
+{
+	if (sym_comma) {
+		sym_comma = 0;
+		output (",");
+		output_newline ();
+	}
+}
+
+static void
+emit_one_sym (struct cb_field *f)
+{
+	struct cb_field *fp;
+	int		is_indirect,idx;
+	unsigned int offset;
+
+	if (f->flag_is_returning)	/* Non static so cannot be in symbol table */
+		return;
+	if (!output_target)
+		f->symtab = num_symtab++;
+	emit_comma ();
+	output ("/*%4d*/ {",f->symtab);
+	if (f->flag_indexed_by
+	|| (f->flag_external && f->level == 1)) {
+		output ("   0,   0");
+	} else {
+		output ("%4d",f->parent?f->parent->symtab:0);
+		output (",%4d",f->sister?f->sister->symtab:0);
+	}
+	if (f->flag_filler)
+		output(",NULL");
+	else
+		output (",\"%s\"", f->name);
+	fp = real_field_founder (f);
+	is_indirect = SYM_ADRS_PTR;
+	offset = f->offset;
+	if (chk_field_variable_address (f)) {
+		is_indirect = SYM_ADRS_VARY;
+		output (",NULL");
+		offset = 0;
+	} else
+	if (fp->flag_item_based) {
+		output (",&%s%d", CB_PREFIX_BASE, fp->id);
+	} else
+	if (fp->storage == CB_STORAGE_LINKAGE) {
+		if (f->flag_any_numeric
+		 || f->flag_any_length) {
+			output (",&%s%d", CB_PREFIX_FIELD, f->id);
+			offset = 0;
+			is_indirect = SYM_ADRS_FIELD;
+		} else
+		if (f->flag_cob_field) {
+			output (",&%s%d.data", CB_PREFIX_FIELD, f->id);
+			offset = 0;
+		} else
+		if (fp->flag_cob_field) {
+			output (",&%s%d.data", CB_PREFIX_FIELD, fp->id);
+		} else {
+			output (",&%s%d", CB_PREFIX_BASE, fp->id);
+		}
+	} else 
+	if (fp->storage == CB_STORAGE_LOCAL) {
+		output (",&cob_local_save");
+	} else 
+	if (fp->flag_external) {
+		output (",&%s%d", CB_PREFIX_BASE, fp->id);
+	} else 
+	if (f->flag_cob_field) {
+		output (",&%s%d.data", CB_PREFIX_FIELD, f->id);
+		offset = 0;
+	} else 
+	if (fp->flag_cob_field) {
+		output (",&%s%d.data", CB_PREFIX_FIELD, fp->id);
+	} else
+	if (f->flag_indexed_by
+	 || f->flag_local) {
+		output (",&%s%d", CB_PREFIX_BASE, f->id);
+		offset = 0;
+		is_indirect = SYM_ADRS_DATA;
+	} else
+	if (f->children
+	 && f->children->flag_cob_field
+	 && f->children->offset == 0) {
+		output (",&%s%d.data", CB_PREFIX_FIELD, f->children->id);
+	} else {
+		is_indirect = SYM_ADRS_DATA;
+		output (",%s%d", CB_PREFIX_BASE, fp->id);
+	}
+	output (",");
+	output_attr (cb_build_field_reference (f, NULL));
+	output (",0");	/* NOT is_file */
+	output (",%d",is_indirect);
+	if (f->level < 8)
+		output (",\t\t%02d",f->level);
+	else
+		output (",\t\t%2d",f->level);
+	output (",%d",f->storage);
+	output (",%d",f->children?1:0);
+	if (sym_1st_file) {
+		sym_1st_file = 0;
+		output(",0");
+	} else {
+		output (",%d",f->redefines?1:0);
+	}
+	output (",%d",f->depending?1:0);
+	for (idx=0, fp = f; fp; fp = fp->parent) {
+		if (fp->occurs_max > 1)
+			idx++;
+	}
+	output (",%d",idx);
+	output (",00");			/* Unused bits */
+	output (", %d",offset);
+	output (",%d",f->size);
+	if (f->depending) {
+		fp = cb_code_field (f->depending);
+		output (",%d", fp->symtab);
+	} else {
+		output(",0");
+	}
+	output (",%d",f->occurs_max>1?f->occurs_max:0);
+	if (is_indirect == SYM_ADRS_VARY)
+		output (",00");
+	else
+		output (", %d",f->offset);
+	output ("}");
+	sym_comma = 1;
+}
+
+static void
+emit_field_indexes (struct cb_field *f)
+{
+	cb_tree l;
+	struct cb_field *fp;
+
+	for (l = f->index_list; l; l = CB_CHAIN (l)) {
+		fp = CB_FIELD_PTR (CB_VALUE (l));
+		if (fp->flag_sym_emitted)
+			continue;
+		fp->flag_sym_emitted = 1;
+		emit_one_sym (fp);
+	}
+}
+
+static void
+emit_record_indexes (struct cb_field *f)
+{
+	while ( f != NULL ) {
+		if (f->index_list != NULL)
+			emit_field_indexes (f);
+		if (f->children != NULL) {
+			emit_record_indexes (f->children);
+		}
+		f = f->sister;
+	}
+	return;
+}
+
+static const char *sectname[] = {
+			"CONSTANT","FILE","WORKING-STORAGE",
+			"LOCAL","LINKAGE","SCREEN",
+			"REPORT","COMMUNICATION"};
+static void
+emit_symtab (struct cb_field *f)
+{
+	/* Exclude internal registers (those have level 0
+           in GC4 and are thus "automaticaly" excluded)
+           as well as typedefs */
+	if (f->flag_internal_register || f->flag_is_typedef) {
+		return;
+	}
+	if (!f->flag_sym_emitted
+	 && f->level >= 1
+	 && f->level != 66
+	 && f->level != 78
+	 && f->level != 88) {
+		f->flag_sym_emitted = 1;
+		if (f->storage != sym_storage) {
+			emit_comma ();
+			output_line ("/* %s */",sectname[f->storage]);
+			sym_storage = f->storage;
+		}
+		if (f->level == 1 || f->level == 77) {
+			emit_field_indexes (f);
+			emit_record_indexes (f->children);
+		}
+		emit_one_sym (f);
+	}
+	if (f->children) {
+		emit_symtab (f->children);
+	}
+	if (f->sister) {
+		emit_symtab (f->sister);
+	}
+}
+
+static void
+emit_mod_symtab (struct cb_program *prog)
+{
+	struct cb_file	*fl;
+	cb_tree			l;
+	struct cb_field *f;
+	char		wrk[64];
+	num_symtab = 0;
+	sym_comma = 0;
+	sym_storage = 255;
+	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
+		fl = CB_FILE(CB_VALUE (l));
+		if (!fl->record) continue;
+		sprintf(wrk,"%s %s",fl->organization != COB_ORG_SORT ? "FD" : "SD",fl->name);
+		emit_comma ();
+		if (sym_storage != CB_STORAGE_FILE) {
+			sym_storage = CB_STORAGE_FILE;
+			output_line ("/* FILE */");
+		}
+		output ("/*%4d*/ {",num_symtab++);
+		output ("%4d",0);
+		output (",%4d",fl->record->sister?fl->record->sister->symtab:0);
+		output (",\"%s\"",wrk);
+		output (",&%s%s",CB_PREFIX_FILE, fl->cname);
+		output (",NULL,1,1,\t\t00,%d,0,0,0,0,0,0,0,0",CB_STORAGE_FILE);
+		output ("}");
+		sym_comma = 1;
+		sym_1st_file = 1;
+		for (f = fl->record->sister; f; f = f->sister) {
+			emit_symtab (f);
+		}
+	}
+	for (f = prog->working_storage; f; f = f->sister) {
+		emit_symtab (f);
+	}
+	for (f = prog->screen_storage; f; f = f->sister) {
+		emit_symtab (f);
+	}
+	for (f = prog->report_storage; f; f = f->sister) {
+		emit_symtab (f);
+	}
+	for (f = prog->local_storage; f; f = f->sister) {
+		emit_symtab (f);
+	}
+	for (f = prog->linkage_storage; f; f = f->sister) {
+		emit_symtab (f);
+	}
+}
+
+/*
+ * Clear the symbol emited flag
+ */
+static void
+clear_symtab (struct cb_field *f)
+{
+	struct cb_field *fp;
+	cb_tree			l;
+	f->flag_sym_emitted = 0;
+	for (l = f->index_list; l; l = CB_CHAIN (l)) {
+		fp = CB_FIELD_PTR (CB_VALUE (l));
+		fp->flag_sym_emitted = 0;
+	}
+	if (f->children) {
+		clear_symtab (f->children);
+	}
+	if (f->sister) {
+		clear_symtab (f->sister);
+	}
+}
+
+static void
+clear_mod_symtab (struct cb_program *prog)
+{
+	struct cb_file	*fl;
+	cb_tree			l;
+	struct cb_field *f;
+
+	num_symtab = 0;
+	sym_comma = 0;
+	sym_storage = 255;
+	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
+		fl = CB_FILE(CB_VALUE (l));
+		if (!fl->record) continue;
+		for (f = fl->record->sister; f; f = f->sister) {
+			clear_symtab (f);
+		}
+	}
+	for (f = prog->working_storage; f; f = f->sister) {
+		clear_symtab (f);
+	}
+	for (f = prog->local_storage; f; f = f->sister) {
+		clear_symtab (f);
+	}
+	for (f = prog->linkage_storage; f; f = f->sister) {
+		clear_symtab (f);
+	}
+	for (f = prog->screen_storage; f; f = f->sister) {
+		clear_symtab (f);
+	}
+	for (f = prog->report_storage; f; f = f->sister) {
+		clear_symtab (f);
+	}
+}
+
 /* LOCAL-STORAGE pointer */
 
 static void
@@ -2015,7 +2399,8 @@ output_local_storage_pointer (struct cb_program *prog)
 	if (prog->local_storage && local_mem) {
 		output_local ("\n/* LOCAL storage pointer */\n");
 		output_local ("unsigned char\t\t*cob_local_ptr = NULL;\n");
-		if (prog->flag_global_use) {
+		if (current_prog->flag_global_use
+		 || cb_flag_symbols) {
 			output_local ("static unsigned char\t*cob_local_save = NULL;\n");
 		}
 	}
@@ -2334,7 +2719,10 @@ output_emit_field (cb_tree x, const char *cmt)
 	if (!(f->report_flag & COB_REPORT_REF_EMITTED)) {
 		int	i;
 
+		if (f->flag_cob_field)
+			return;
 		f->report_flag |= COB_REPORT_REF_EMITTED;
+		f->flag_cob_field = 1;
 		if (f->step_count < f->size) {
 			f->step_count = f->size;
 		}
@@ -2386,14 +2774,6 @@ output_local_field_cache (struct cb_program *prog)
 		return;
 	}
 
-	/* Switch to local storage file */
-	output_target = prog->local_include->local_fp;
-	if (prog->flag_recursive) {
-		output_local ("\n/* Fields for recursive routine */\n");
-	} else {
-		output_local ("\n/* Fields (local) */\n");
-	}
-
 	local_field_cache = list_cache_sort (local_field_cache,
 					     &field_cache_cmp);
 	for (field = local_field_cache; field; field = field->next) {
@@ -2408,10 +2788,13 @@ output_local_field_cache (struct cb_program *prog)
 				output_emit_field (cb_build_field_reference (f, NULL), NULL);
 				needs_comment = 0;
 			} else {
+				f->flag_cob_field = 1;
 				output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 				output_field (field->x);
 			}
 		} else {
+			if (!prog->flag_recursive) {
+				f->flag_cob_field = 1; }
 			output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 			output ("{");
 			output_size (field->x);
@@ -2429,6 +2812,40 @@ output_local_field_cache (struct cb_program *prog)
 		}
 		output_newline ();
 		f->report_flag |= COB_REPORT_REF_EMITTED;
+	}
+}
+
+static void
+output_local_fields (struct cb_program *prog)
+{
+	cb_tree			l;
+	struct cb_field		*f;
+
+	/* Switch to local storage file */
+	output_target = prog->local_include->local_fp;
+	if (prog->flag_recursive) {
+		output_local ("\n/* Fields for recursive routine */\n");
+	} else {
+		output_local ("\n/* Fields (local) */\n");
+	}
+
+	output_local_field_cache (prog);
+
+	/* Output variable size/location parameters */
+	for (l = prog->parameter_list; l; l = CB_CHAIN (l)) {
+		f = cb_code_field (CB_VALUE (l));
+		if (!f->flag_field
+		 && (chk_field_variable_size (f)
+		  || chk_field_variable_address (f))) {
+			f->flag_cob_field = 1;
+			output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
+			output ("{");
+			output ("0, NULL, ");
+			output_attr (cb_build_field_reference (f, NULL));
+			output ("}; /* %s */",f->name);
+			output_newline ();
+		}
+
 	}
 
 	/* Output report writer special fields */
@@ -2453,6 +2870,26 @@ output_local_field_cache (struct cb_program *prog)
 	}
 
 	output_local ("\n/* End of fields */\n\n");
+
+	if (cb_flag_symbols
+	 && prog->prog_type == 0
+	 && !prog->flag_recursive) {	
+		FILE			*svout = output_target;
+		int		max;
+		output_target = NULL;
+		emit_mod_symtab (prog);
+		max = num_symtab;
+		output_target = svout;
+		clear_mod_symtab (prog);
+		output_line ("/* Symbol table for %s */",prog->orig_program_id);
+		output_line ("static cob_symbol %s_sym_tab [] = {",prog->program_id);
+		emit_mod_symtab (prog);
+		emit_comma ();
+		output_line ("         {%4d,%4d,NULL,NULL,NULL,0,0,0,0}",0,0);
+		output_line ("};");
+		output_line ("static unsigned int %s_num_sym = %d;",prog->program_id,max);
+		output_newline ();
+	}
 	/* Switch to main storage file */
 	output_target = cb_storage_file;
 }
@@ -2476,7 +2913,7 @@ output_nonlocal_field_cache (void)
 			output_storage ("\n/* PROGRAM-ID : %s */\n",
 					prev_prog);
 		}
-
+		field->f->flag_cob_field = 1;
 		output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD,
 			field->f->id);
 		if (!field->f->flag_local) {
@@ -7094,6 +7531,10 @@ output_call (struct cb_call *p)
 
 	output (");");
 	output_newline ();
+	if (current_prog->local_storage
+	 && cb_flag_symbols) {
+		output_line ("cob_local_save = cob_local_ptr;");
+	}
 
 	if (except_id > 0) {
 		output_line ("if (unlikely((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x))",
@@ -8427,7 +8868,8 @@ output_trace_info (cb_tree x, const enum cob_statement stmnt)
 
 	if (!cb_old_trace) {
 		if (cb_flag_traceall) {
-			output_line ("cob_trace_statement (%s);", stmnt_enum);
+			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
+			output_line ("   cob_trace_statement (%s);", stmnt_enum);
 		}
 	} else {
 		output_prefix ();
@@ -9700,23 +10142,6 @@ output_ml_generate_init (struct cb_ml_generate_tree *tree)
 }
 
 /* Handle REPORTs */
-
-static void
-compute_report_rcsz (struct cb_field *p)
-{
-#if 0 /* already checked: doesn't happen */
-	if (p == NULL) {
-		return;
-	}
-#endif
-	if (p->sister) {
-		compute_report_rcsz (p->sister);
-	}
-	if (p->children) {
-		compute_report_rcsz (p->children);
-	}
-	p->count++;
-}
 
 /* Report data definition */
 
@@ -11220,8 +11645,9 @@ output_module_init_function (struct cb_program *prog)
 			opt |= COB_MODULE_DEBUG;
 		}
 #endif
-		output_line ("module->flag_debug_trace = %d;", opt);
+		output_line ("module->flag_debug_trace |= %d;", opt);
 	}
+	output_line ("module->flag_dump_sect = 0x%02X;", cb_flag_dump);
 	output_line ("module->flag_dump_ready = %u;", cb_flag_dump ? 1 : 0);
 	output_line ("module->xml_mode = %u;", cb_xml_parse_xmlss);
 	output_line ("module->module_stmt = 0;");
@@ -11804,8 +12230,6 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	if (prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_line ("/* CANCEL callback */");
 		output_line ("if (unlikely(entry < 0)) {");
-		output_line ("\tif (entry == -10)");
-		output_line ("\t\tgoto P_dump;");
 		output_line ("\tif (entry == -20)");
 		output_line ("\t\tgoto P_clear_decimal;");
 		output_line ("\tgoto P_cancel;");
@@ -11851,6 +12275,15 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	}
 	output_line ("module->cob_procedure_params = cob_procedure_params;");
 	output_newline ();
+	if (cb_flag_symbols
+	 && prog->prog_type == 0
+	 && !prog->flag_recursive) {	
+		output_line ("module->num_symbols = %s_num_sym;",prog->program_id);
+		output_line ("module->module_symbols = %s_sym_tab;",prog->program_id);
+	} else {
+		output_line ("module->num_symbols = 0;");
+		output_line ("module->module_symbols = NULL;");
+	}
 
 #if	0	/* RXWRXW USERFUNC */
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
@@ -11943,7 +12376,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 			output_line ("/* Allocate LOCAL storage */");
 			output_line ("cob_local_ptr = cob_malloc (%dU);",
 				     local_mem);
-			if (prog->flag_global_use) {
+			if (prog->flag_global_use
+		 	 || cb_flag_symbols) {
 				output_line ("cob_local_save = cob_local_ptr;");
 			}
 		}
@@ -11983,7 +12417,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		for (l = prog->global_list; l; l = CB_CHAIN (l)) {
 			output_line ("if (unlikely(entry == %d)) {",
 					CB_LABEL (CB_VALUE (l))->id);
-			if (local_mem) {
+			if (local_mem
+		 	 && cb_flag_symbols) {
 				output_line ("\tcob_local_ptr = cob_local_save;");
 			}
 			for (l2 = parameter_list; l2; l2 = CB_CHAIN (l2)) {
@@ -12314,7 +12749,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 			output_line ("if (cob_local_ptr) {");
 			output_line ("\tcob_free (cob_local_ptr);");
 			output_line ("\tcob_local_ptr = NULL;");
-			if (current_prog->flag_global_use) {
+			if (current_prog->flag_global_use
+		 	 || cb_flag_symbols) {
 				output_line ("\tcob_local_save = NULL;");
 			}
 			output_line ("}");
@@ -12361,7 +12797,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				     CB_PREFIX_STRING,
 				     lookup_string (string_buffer));
 		} else {
-			output_line ("cob_trace_exit (%s%d);",
+			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
+			output_line ("   cob_trace_exit (%s%d);",
 				     CB_PREFIX_STRING, lookup_string(excp_current_program_id));
 		}
 		output_newline ();
@@ -12681,10 +13118,13 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_line ("initialized = 1;");
 	output_line ("goto P_ret_initialize;");
 
-	output_newline ();
-	output_line ("P_dump:");
-	output_dump_code (prog, parameter_list);
-	output_line ("  return 0;");
+	/* Keep old dump for compatibility */
+	if (cb_wants_dump_comments) {
+		output_newline ();
+		output_line ("P_dump:");
+		output_dump_code (prog, parameter_list);
+		output_line ("  return 0;");
+	}
 	output_newline ();
 
 	/* Set up CANCEL callback code */
@@ -13612,6 +14052,36 @@ output_header (const char *locbuff, const struct cb_program *cp)
 	}
 }
 
+/* Symbol Table requested so make sure all 01/77 symbols have cob_field */
+static void
+emit_base_symbols (struct cb_program *prog)
+{
+	struct cb_file	*fl;
+	struct cb_field	*f;
+	cb_tree			l;
+	if (cb_flag_symbols) {
+		for (l = prog->file_list; l; l = CB_CHAIN (l)) {
+			fl = CB_FILE(CB_VALUE (l));
+			if (!fl->record) continue;
+			for (f = fl->record->sister; f; f = f->sister) {
+				count_all_fields (f);
+			}
+		}
+		for (f = prog->working_storage; f; f = f->sister) {
+			count_all_fields (f);
+		}
+		for (f = prog->local_storage; f; f = f->sister) {
+			count_all_fields (f);
+		}
+		for (f = prog->linkage_storage; f; f = f->sister) {
+			count_all_fields (f);
+		}
+		for (f = prog->screen_storage; f; f = f->sister) {
+			count_all_fields (f);
+		}
+	}
+}
+
 void
 codegen (struct cb_program *prog, const char *translate_name)
 {
@@ -13689,6 +14159,16 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	base_cache = NULL;
 	globext_cache = NULL;
 	field_cache = NULL;
+
+	{
+		struct cb_program	*cp;
+		for (cp = prog; cp; cp = cp->next_program) {
+			struct cb_program	*xp = current_prog;
+			current_prog = cp;
+			emit_base_symbols (cp);
+			current_prog = xp;
+		}
+	}
 
 	strftime (timestamp_buffer, (size_t)COB_MINI_MAX,
 		"%b %d %Y %H:%M:%S", &current_compile_tm);
@@ -13858,7 +14338,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 			}
 			rep = CB_REPORT_PTR (CB_VALUE(l));
 			if (rep) {
-				compute_report_rcsz (rep->records);
+				count_all_fields (rep->records);
 			}
 		}
 	}
@@ -13886,7 +14366,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	}
 
 	output_local_base_cache ();
-	output_local_field_cache (prog);
+	output_local_fields (prog);
 
 	/* Report data fields */
 	if (prog->report_storage) {

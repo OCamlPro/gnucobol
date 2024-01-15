@@ -1438,6 +1438,44 @@ cob_set_signal (void)
 #endif
 }
 
+/* Used by cob_set_dump_signal (triggered with symbols generated with -fdump) to catch abort while dumping */
+void
+cob_set_dump_signal (void *hndlr)
+{
+#if defined(HAVE_SIGACTION) && !defined(_WIN32)
+	int		k;
+	sigset_t sigs;
+	struct sigaction	sa;
+	struct sigaction	osa;
+
+	if (hndlr == NULL)
+		hndlr = (void*)SIG_DFL;
+
+	(void)sigemptyset(&sigs);
+	/* Unblock signals to allow catch of another abort during dump */
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			(void)sigaddset(&sigs, signals[k].sig);
+		}
+	}
+	(void)sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+	memset (&sa,  0, sizeof (sa));
+	memset (&osa, 0, sizeof (osa));
+	sa.sa_handler = (void(*)(int))hndlr;
+
+	/* Establish signals to catch and continue */
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			(void)sigemptyset (&sa.sa_mask);
+			(void)sigaction (signals[k].sig, &sa, NULL);
+		}
+	}
+#else
+	COB_UNUSED (hndlr);
+#endif
+}
+
 /* ASCII Sign - Reading and undo the "overpunch";
  * Note: if used on an EBCDIC machine this is actually _not_ an overpunch
  * but a replacement!
@@ -2980,13 +3018,31 @@ cob_nop (void)
 void
 cob_ready_trace (void)
 {
+	cob_module	*mod;
+	int		k;
+	const int	MAX_ITERS = 10240;
+
 	cobsetptr->cob_line_trace = 1;
+	/* FIXME: this is overkill - it should only be set in the current program
+	   and within the start code for each ENTRY be set */
+	for (k = 0, mod = COB_MODULE_PTR; mod && k < MAX_ITERS; mod = mod->next, k++) {
+		mod->flag_debug_trace |= COB_MODULE_READYTRACE;
+	}
 }
 
 void
 cob_reset_trace (void)
 {
+	cob_module	*mod;
+	int		k;
+	const int	MAX_ITERS = 10240;
+
 	cobsetptr->cob_line_trace = 0;
+	/* FIXME: with the change above only the current program and its calers need
+	   to be reset here */
+	for (k = 0, mod = COB_MODULE_PTR; mod && k < MAX_ITERS; mod = mod->next, k++) {
+		mod->flag_debug_trace &= ~COB_MODULE_READYTRACE;
+	}
 }
 
 unsigned char *
@@ -3254,6 +3310,11 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	COB_MODULE_PTR->statement = STMT_UNKNOWN;
 
 	cobglobptr->cob_stmt_exception = 0;
+	if (cobsetptr->cob_line_trace)
+		COB_MODULE_PTR->flag_debug_trace |= COB_MODULE_READYTRACE;
+	else
+		COB_MODULE_PTR->flag_debug_trace &= ~COB_MODULE_READYTRACE;
+
 	return 0;
 }
 
@@ -3268,6 +3329,7 @@ void
 cob_module_leave (cob_module *module)
 {
 	COB_UNUSED (module);
+	cob_get_source_line ();
 	/* Pop module pointer */
 	COB_MODULE_PTR = COB_MODULE_PTR->next;
 }
@@ -10685,6 +10747,215 @@ cob_get_dump_file (void)
 #endif
 }
 
+static const char *sectname[] = {
+			"CONSTANT","FILE","WORKING-STORAGE",
+			"LOCAL","LINKAGE","SCREEN",
+			"REPORT","COMMUNICATION"};
+static unsigned char sectdump[] = {
+	0, COB_DUMP_FD, COB_DUMP_WS, COB_DUMP_LO, COB_DUMP_LS,
+	COB_DUMP_SC, COB_DUMP_RD, COB_DUMP_RD};
+#define SYM_MAX_IDX 8
+static int	sym_idx = 0;
+static int	sym_sub [SYM_MAX_IDX];
+static int	sym_size[SYM_MAX_IDX];
+
+static jmp_buf save_sig_env;
+static void 
+catch_sig_jmp (int sig)
+{ 
+	longjmp(save_sig_env, sig);
+}
+
+void
+cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
+{
+	int		j;
+	f->size = sym[k].size;
+	f->attr = sym[k].attr;
+	if (sym[k].is_indirect == SYM_ADRS_PTR) {
+		memcpy (&f->data, sym[k].adrs, sizeof(void*));
+		/* 
+		 * If field has not yet been referenced, the address will be NULL
+		 *   Scan up to parent and use that base address plus 'roffset'
+		 * If the field had been referenced the field address will be set
+		 *   and 'offset' will be ZERO
+		 */
+		for (j = k; f->data == NULL; j = sym[j].parent) {
+			if (sym[j].parent == 0) {	/* Base of COBOL Record */
+				memcpy (&f->data, sym[j].adrs, sizeof(void*));
+				if (f->data != NULL)
+					f->data += sym[k].roffset;
+				return;
+			}
+		}
+		if (f->data != NULL)
+			f->data += sym[k].offset;
+	} else if (sym[k].is_indirect == SYM_ADRS_FIELD) {
+		memcpy (f, sym[k].adrs, sizeof(cob_field));
+	} else {
+		f->data = sym[k].adrs;
+		if (f->data != NULL)
+			f->data += sym[k].offset;
+	}
+}
+
+int
+cob_sym_get_occurs (cob_symbol *sym, int k)
+{
+	cob_field	d0;
+	int			occmax;
+	if (sym[k].has_depend) {
+		cob_sym_get_field (&d0, sym, sym[k].depending);
+		occmax = cob_get_int (&d0);
+		if (occmax > sym[k].occurs)
+			occmax = sym[k].occurs;
+	} else {
+		occmax = sym[k].occurs;
+	}
+	return occmax;
+}
+
+static void cob_dump_table ( cob_symbol *sym, int k);
+static void
+cob_dump_sub ( cob_symbol *sym, int k, int sub)
+{
+	cob_field	f0;
+	int		j;
+
+	sym_sub  [sym_idx-1] = sub;
+	cob_sym_get_field (&f0, sym, k);
+	cob_dump_field ( sym[k].level, sym[k].name?sym[k].name:"FILLER", 
+					&f0, 0, sym_idx, 
+					sym_sub [0], sym_size [0], 
+					sym_sub [1], sym_size [1], 
+					sym_sub [2], sym_size [2],
+					sym_sub [3], sym_size [3], 
+					sym_sub [4], sym_size [4], 
+					sym_sub [5], sym_size [5],
+					sym_sub [6], sym_size [6], 
+					sym_sub [7], sym_size [7]);
+	if (sym[k].is_group) {
+		for (j = k+1; sym[j].parent == k; j++) {
+			if (sym[j].occurs > 1) {
+				cob_dump_table (sym, j);
+				if ((j = sym[j].sister) == 0)
+					break;
+				j--;
+			} else {
+				cob_dump_sub (sym, j, sub);
+			}
+		}
+	}
+}
+
+static void
+cob_dump_table ( cob_symbol *sym, int k)
+{
+	int		j, occmax;
+
+	occmax = cob_sym_get_occurs (sym, k);
+	sym_size [sym_idx++] = sym[k].size;
+	for (j=0; j < occmax; j++)
+		cob_dump_sub (sym, k, j);
+	sym_size [--sym_idx] = 0;
+}
+
+static void
+cob_dump_symbols (cob_module *mod)
+{
+	static int skipgrp;
+	static cob_symbol *skpsym; 
+	int			j, k, sect;
+	cob_symbol *sym;
+	cob_field	f0;
+	char		msg[80];
+	FILE		*fp;
+	cob_file	*fl;
+
+	fp = cob_get_dump_file ();
+	sect = 255;
+	sym = mod->module_symbols;
+	mod->flag_debug_trace |= COB_MODULE_DUMPED;
+
+	fprintf (fp, _("Dump Program-Id %s from %s compiled %s"),
+					mod->module_name, mod->module_source, mod->module_formatted_date);
+	fputc ('\n', fp);
+	for (k = 0; k < mod->num_symbols; k++) {
+		if (sym[k].is_redef) {
+			j = k;
+			while (j < mod->num_symbols 
+				&& sym[j].is_redef
+				&& sym[j].sister ) {
+				k = j;
+				j = sym[j].sister;
+			}
+			continue;
+		}
+		if (sym[k].section == 0
+		|| !(mod->flag_dump_sect & sectdump[sym[k].section]))
+			continue;
+		if (sect != sym[k].section) {
+			sect = sym[k].section;
+			if (!sym[k].is_file)
+				cob_dump_output (sectname[sect]);
+		}
+		if (sym[k].is_file) {
+			memcpy (&fl, sym[k].adrs, sizeof(void*));
+			cob_dump_file (sym[k].name, fl);
+			continue;
+		}
+		skipgrp = 0;
+		cob_sym_get_field (&f0, sym, k);
+		cob_set_dump_signal ((void *)catch_sig_jmp);
+		if (setjmp (save_sig_env) != 0) {
+			skipgrp = 1;
+			while (sym[k].parent > 0)
+				k = sym[k].parent;
+			if (skpsym == &sym[k])
+				goto skipsym;
+			skpsym = &sym[k];
+			sprintf (msg," >>>> Dump of %s aborted! <<<< !!",
+						sym[k].name?sym[k].name:"FILLER");
+			cob_dump_output (msg);
+		} else if (sym[k].occurs > 1) {
+			for (sym_idx = 0; sym_idx < SYM_MAX_IDX; sym_idx++)
+				sym_sub [sym_idx] = sym_size [sym_idx] = 0;
+			sym_idx = 0;
+			cob_dump_table ( sym, k);
+			if (sym[k].is_group)
+				skipgrp = 1;
+		} else {
+			cob_dump_field ( sym[k].level, sym[k].name?sym[k].name:"FILLER", &f0, 0, 0);
+		}
+		if (skipgrp) {
+skipsym:
+			if (sym[k].sister) {
+				k = sym[k].sister;
+			} else {
+				while (++k < mod->num_symbols
+					&& sym[k].level > 1
+					&& sym[k].level != 77);
+			}
+			k--;
+		} else if (f0.data == NULL) {
+			if (sym[k].sister) {
+				k = sym[k].sister - 1;
+				continue;
+			} else if (k+1 < mod->num_symbols
+					&& sym[k].section != sym[k+1].section) {
+				continue;
+			} else if (sym[k].level == 1 
+					|| sym[k].level == 77) {
+				break;
+			}
+		}
+	}
+	sprintf (msg, "END OF DUMP - %s", mod->module_name);
+	cob_dump_output (msg);
+	fputc ('\n', fp);
+	fflush (fp);
+}
+
 static void
 cob_dump_module (char *reason)
 {
@@ -10755,15 +11026,10 @@ cob_dump_module (char *reason)
 		}
 		k = 0;
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
-			if (mod->module_cancel.funcint) {
-				int (*cancel_func)(const int);
-				cancel_func = mod->module_cancel.funcint;
-
-				fprintf (fp, _("Dump Program-Id %s from %s compiled %s"),
-					mod->module_name, mod->module_source, mod->module_formatted_date);
-				fputc ('\n', fp);
-				(void)cancel_func (-10);
-				fputc ('\n', fp);
+			if (mod->module_symbols
+			 && mod->num_symbols > 0
+			 && !(mod->flag_debug_trace & COB_MODULE_DUMPED)) {
+					cob_dump_symbols (mod);
 			}
 			if (mod->next == mod
 			 || k++ == MAX_MODULE_ITERS) {

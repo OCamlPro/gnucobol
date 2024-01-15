@@ -426,16 +426,6 @@ extern int			cb_ml_tree_id;
 extern int			cb_flag_functions_all;
 
 extern int			cb_flag_dump;
-#define COB_DUMP_NONE	0x0000	/* No dump */
-#define COB_DUMP_FD	0x0001	/* FILE SECTION -> FILE DESCRIPTION */
-#define COB_DUMP_WS	0x0002  /* WORKING-STORAGE SECTION */
-#define COB_DUMP_RD	0x0004	/* REPORT SECTION */
-#define COB_DUMP_SD	0x0008	/* FILE SECTION -> SORT DESCRIPTION */
-#define COB_DUMP_SC	0x0010	/* SCREEN SECTION */
-#define COB_DUMP_LS	0x0020  /* LINKAGE SECTION */
-#define COB_DUMP_LO	0x0040  /* LOCAL-STORAGE SECTION */
-#define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
-
 
 extern int			cb_unix_lf;
 
