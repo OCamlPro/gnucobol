@@ -5299,6 +5299,9 @@ output_init_comment_and_source_ref (struct cb_field *f)
 		output_c_info ();
 	}
 #endif
+	if (cb_flag_gen_debug_db) {
+		debuggen_add_ref(output_line_number, f->common.source_file, f->common.source_line);
+	}
 }
 
 static void
@@ -8481,6 +8484,10 @@ output_source_reference (cb_tree tree, const enum cob_statement statement)
 			last_line = -1;	/* force generation of source location */
 		}
 		output_trace_info (tree, statement);
+	}
+
+	if (cb_flag_gen_debug_db) {
+		debuggen_add_ref(output_line_number, tree->source_file, tree->source_line);
 	}
 }
 
@@ -13618,6 +13625,9 @@ codegen (struct cb_program *prog, const char *translate_name)
 	const int set_xref = cb_listing_xref;
 	int subsequent_call = 0;
 	int has_global_file_level = 0 ;
+	if (cb_flag_gen_debug_db) {
+		debuggen_init();
+	}
 	codegen_init (prog, translate_name);
 
 	/* Temporarily disable cross-reference during C generation */
@@ -13650,6 +13660,9 @@ codegen (struct cb_program *prog, const char *translate_name)
 	cb_listing_xref = set_xref;
 
 	codegen_finalize ();
+	if (cb_flag_gen_debug_db) {
+		debuggen_finalize(prog, translate_name);
+	}
 }
 
 void

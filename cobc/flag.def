@@ -254,3 +254,6 @@ CB_FLAG_ON (cb_diagnostics_show_caret, 1, "diagnostics-show-caret",
 
 CB_FLAG_ON (cb_diagnostics_show_line_numbers, 1, "diagnostics-show-line-numbers",
 	_("  -fno-diagnostics-show-line-numbers\tsuppress display of line numbers in diagnostics"))
+
+CB_FLAG (cb_flag_gen_debug_db, 1, "gen-debug-db",
+	_("  -fgen-debug-db        generate debugging database"))
