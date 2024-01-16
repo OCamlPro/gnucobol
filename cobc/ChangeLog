@@ -14,6 +14,11 @@
 	* cobc.c (process_command_line): passing -O0 by defaut for -g as some
 	  C compilers raise warnings otherwise, breaking the testsuite
 
+2023-08-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codeoptim.c (cob_gen_optim): fixed to actually skip leading zeros
+	  for COB_GET_NUMDISP and COB_GET_NUMDISPS
+
 2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (emit_definition_note): renamed from warning_destination
