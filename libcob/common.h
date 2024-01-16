@@ -1128,6 +1128,36 @@ typedef union __cob_fld_union {
 } cob_fld_union;
 #endif
 
+/* Symbol table structure; Used for dump & debugging */
+
+typedef struct __cob_symbol {
+	unsigned int	parent;		/* Index to parent cob_symbol */
+	unsigned int	sister;		/* Index to sister cob_symbol */
+	char			*name;		/* Field name, NULL means FILLER */
+	void			*adrs;		/* Pointer to data pointer */
+	const cob_field_attr *attr;	/* Pointer to attribute */
+
+	unsigned int	is_file:1;	/* 'data' points to FILE pointer */
+	unsigned int	is_indirect:2;/* 'data' points to the field's pointer */
+#define SYM_ADRS_DATA	0		/* 'adrs' is direct address of field data */
+#define SYM_ADRS_PTR	1		/* 'adrs' is address of address of field data */
+#define SYM_ADRS_FIELD	2		/* 'adrs' is address of complete cob_field */
+#define SYM_ADRS_VARY	3		/* 'adrs' varys due to prior DEPENDING ON */
+	unsigned int	level:7;	/* Level number */
+	unsigned int	section:3;	/* SECTION of program */
+	unsigned int	is_group:1;	/* Field was Group item */
+	unsigned int	is_redef:1;	/* Field has REDEFINES */
+	unsigned int	has_depend:1;/* Field has DEPENDING ON */
+	unsigned int	subscripts:5;/* Field requires N subscripts */
+	unsigned int	unused:11;
+
+	unsigned int	offset;		/* Offset in record, May be ZERO for LINKAGE fields */
+	unsigned int	size;		/* Field size */
+	unsigned int	depending;	/* Index to DEPENDING ON  field */
+	unsigned int	occurs;		/* Max number of OCCURS */
+	unsigned int	roffset;	/* Original Offset within record */
+} cob_symbol;
+
 /* Representation of 128 bit FP */
 
 typedef struct __cob_fp_128 {
@@ -1265,8 +1295,18 @@ typedef struct __cob_module {
 #endif
 #define COB_MODULE_TRACE	2
 #define COB_MODULE_TRACEALL	4
-
-	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
+#define COB_MODULE_READYTRACE	8
+#define COB_MODULE_DUMPED	16
+	unsigned char		flag_dump_sect;		/* Which SECTIONS to dump */
+#define COB_DUMP_NONE	0x00		/* No dump */
+#define COB_DUMP_FD		0x01		/* FILE SECTION -> FILE DESCRIPTION */
+#define COB_DUMP_WS		0x02  		/* WORKING-STORAGE SECTION */
+#define COB_DUMP_RD		0x04		/* REPORT SECTION */
+#define COB_DUMP_SD		0x08		/* FILE SECTION -> SORT DESCRIPTION */
+#define COB_DUMP_SC		0x10		/* SCREEN SECTION */
+#define COB_DUMP_LS		0x20  		/* LINKAGE SECTION */
+#define COB_DUMP_LO		0x40  		/* LOCAL-STORAGE SECTION */
+#define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
 
 	unsigned int		module_stmt;		/* Position of last statement executed
 											   as modulated source line
@@ -1292,6 +1332,8 @@ typedef struct __cob_module {
 #define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
 											   IBM may be different (_very_ likely for error codes);
 											   but the main difference is to "COMPAT" */
+	unsigned int	num_symbols;		/* Number of symbols in table */
+	cob_symbol		*module_symbols;	/* Array of module symbols */
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */
@@ -1633,12 +1675,15 @@ struct cobjmp_buf {
 
 /*******************************/
 /* Functions in common.c */
+COB_EXPIMP void		cob_set_dump_signal (void *);
 COB_EXPIMP const char*	cob_get_sig_name (int);
 COB_EXPIMP const char*	cob_get_sig_description (int);
 COB_EXPIMP void		print_info	(void);
 COB_EXPIMP void		print_info_detailed	(const int);
 COB_EXPIMP int		cob_load_config	(void);
 COB_EXPIMP void		print_runtime_conf	(void);
+COB_EXPIMP void		cob_sym_get_field (cob_field *f, cob_symbol *sym, int k);
+COB_EXPIMP int		cob_sym_get_occurs (cob_symbol *sym, int k);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);

@@ -933,6 +933,8 @@ struct cb_field {
 	enum cb_storage		storage;	/* Storage section */
 	enum cb_usage		usage;		/* USAGE */
 
+	unsigned int  symtab;			/* Position in cob_symbol table */
+
 	/* Flags */
 	unsigned char flag_base;		/* Has memory allocation */
 	unsigned char flag_external;		/* EXTERNAL */
@@ -991,6 +993,8 @@ struct cb_field {
 	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
+	unsigned int flag_sym_emitted: 1;	/* cob_symbol was emitted */
+	unsigned int flag_cob_field	: 1;	/* Had cob_field emitted */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */

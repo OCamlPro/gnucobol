@@ -2788,6 +2788,8 @@ cobc_def_dump_opts (const char *opt, const int on)
 		} else {
 			cb_flag_dump = COB_DUMP_NONE;
 		}
+		if (cb_flag_dump)
+			cb_flag_symbols = 1;
 		return;
 	}
 
@@ -2823,6 +2825,8 @@ cobc_def_dump_opts (const char *opt, const int on)
 	} else {
 		cb_flag_dump ^= dump_to_set;
 	}
+	if (cb_flag_dump)
+		cb_flag_symbols = 1;
 	cobc_free (p);
 }
 
@@ -3256,6 +3260,7 @@ process_command_line (const int argc, char **argv)
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
 #endif
+			cb_flag_symbols = 1;
 #ifdef COB_DEBUG_FLAGS
 			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
 #endif
@@ -3267,6 +3272,7 @@ process_command_line (const int argc, char **argv)
 			cb_flag_stack_extended = 1;
 			cb_flag_stack_check = 1;
 			cb_flag_memory_check = CB_MEMCHK_ALL;
+			cb_flag_symbols = 1;
 			cobc_wants_debug = 1;
 			break;
 
@@ -4197,6 +4203,9 @@ process_command_line (const int argc, char **argv)
 	if (cb_flag_traceall) {
 		cb_flag_trace = 1;
 		cb_flag_source_location = 1;
+	}
+	if (cb_flag_trace) {
+		cb_flag_symbols = 1;
 	}
 
 	/* If C debug, never strip output */
@@ -8937,6 +8946,8 @@ finish_setup_compiler_env (void)
 
 	if (getenv ("COBC_GEN_DUMP_COMMENTS")) {
 		cb_wants_dump_comments = 1;
+		/* Disable "new" symbol table if requesting dump comments */
+		cb_flag_symbols = 0;
 	}
 }
 
