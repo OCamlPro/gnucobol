@@ -552,7 +552,6 @@ AT_CHECK([$COMPILE_ONLY -Wstrict-typing -fdiagnostics-show-option prog.cob], [0]
 [prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
 prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
 prog.cob:10: warning: alphanumeric value is expected [[-Wstrict-typing]]
-prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wstrict-typing]]
 ])
 AT_CHECK([$COMPILE_ONLY -Wextra -Wno-strict-typing -fdiagnostics-show-option prog.cob], [0], [],
 [prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
@@ -6240,25 +6239,35 @@ AT_DATA([caller.cob], [
 
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
-       77  INT         IS TYPEDEF BINARY-LONG.
+       01  INT         IS TYPEDEF BINARY-LONG.
+           88  INT-ZERO  VALUE 0.
+           88  INT-ONE   VALUE 1.
        77  EXT-INT     IS TYPEDEF BINARY-LONG EXTERNAL.
       *> should this be possible?
       *>77  INT-VAL     IS TYPEDEF USAGE INT VALUE 12.
        77  INT-VAL     IS TYPEDEF BINARY-LONG VALUE 12.
-       77  SOMEVAR     USAGE INT VALUE 10.
+       01  SOMEVAR     USAGE INT VALUE 10.
+       01  SOMEVAR2    USAGE INT VALUE 11.
        77  SOMEVAL     USAGE INT-VAL.
        77  SOMEEXT     USAGE EXT-INT.
 
        PROCEDURE       DIVISION.
            IF SOMEVAR <> 10
-              DISPLAY "SOMEVAR (INT) wrong: " SOMEVAR
-           END-IF
+              DISPLAY "SOMEVAR (INT) wrong: " SOMEVAR.
            IF SOMEVAL <> 12
-              DISPLAY "SOMEVAR (INT-VAL) wrong: " SOMEVAL
-           END-IF
+              DISPLAY "SOMEVAL (INT-VAL) wrong: " SOMEVAL.
+           SET INT-ZERO OF SOMEVAR  TO TRUE
+           SET INT-ONE  OF SOMEVAR2 TO TRUE
+           IF SOMEVAR  <> 0
+              DISPLAY "SOMEVAR  (INT) by SET wrong: " SOMEVAR.
+           IF SOMEVAR2 <> 1
+              DISPLAY "SOMEVAR2 (INT) by SET wrong: " SOMEVAR2.
+           IF INT-ONE  OF SOMEVAR
+           OR NOT INT-ONE  OF SOMEVAR2
+              DISPLAY "CHECK BY condition-nam wrong".
            MOVE 42 TO SOMEEXT
            CALL "callee"
-           .
+           GOBACK.
 ])
 
 AT_DATA([callee.cob], [

@@ -450,7 +450,8 @@ cb_warning_internal (const enum cb_warn_opt opt, const char *fmt, va_list ap)
 		return pref;
 	}
 	if (pref == COBC_WARN_AS_ERROR) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -483,7 +484,8 @@ cb_error_always (const char *fmt, ...)
 	if (sav_lst_file) {
 		return;
 	}
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -517,7 +519,8 @@ cb_error_internal (const char *fmt, va_list ap)
 	if (ignore_error && pref != COBC_WARN_AS_ERROR) {
 		warningcount++;
 	} else {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	}
@@ -541,7 +544,7 @@ cb_perror (const int config_error, const char *fmt, ...)
 	va_list ap;
 
 	if (config_error) {
-		configuration_error_head();
+		configuration_error_head ();
 	}
 
 	va_start (ap, fmt);
@@ -549,7 +552,8 @@ cb_perror (const int config_error, const char *fmt, ...)
 	va_end (ap);
 
 
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -580,7 +584,8 @@ cb_plex_warning (const enum cb_warn_opt opt, const size_t sline, const char *fmt
 		return;
 	}
 	if (pref == COBC_WARN_AS_ERROR) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -600,7 +605,8 @@ cb_plex_error (const size_t sline, const char *fmt, ...)
 	if (sav_lst_file) {
 		return;
 	}
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -706,11 +712,12 @@ configuration_error (const char *fname, const int line,
 	putc ('\n', stderr);
 	fflush (stderr);
 
-	if (sav_lst_file) {
+	if (sav_lst_file || finish_error == 2) {
 		return;
 	}
 
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -733,7 +740,8 @@ cb_warning_x_internal (const enum cb_warn_opt opt, cb_tree x, const char *fmt, v
 		return pref;
 	}
 	if (pref == COBC_WARN_AS_ERROR) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -778,7 +786,8 @@ cb_warning_dialect_x (const enum cb_support tag, cb_tree x, const char *fmt, ...
 		return ret;
 	}
 	if (tag == CB_ERROR || tag == CB_UNCONFORMABLE) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -891,7 +900,8 @@ cb_error_x_internal (cb_tree x, const char *fmt, va_list ap)
 	if (ignore_error && pref != COBC_WARN_AS_ERROR) {
 		warningcount++;
 	} else {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	}
@@ -1209,7 +1219,7 @@ ambiguous_error (cb_tree x)
 
 /* error routine for flex */
 void
-flex_fatal_error (const char *msg, const char * filename, const int line_num)
+flex_fatal_error (const char *msg, const char *filename, const int line_num)
 {
 	/* LCOV_EXCL_START */
 	cobc_err_msg (_("fatal error: %s"), msg);

@@ -1,4 +1,25 @@
 
+2023-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppopen_get_file): test for binary file and directly error out
+	* cobc.c (cobc_terminate_exit), cobc.h: split cobc_terminate and make
+	  the new function available
+	* pplex.l: check for format errors per file and skip format related
+	  warnings if the file reached a max. of 5 such errors
+	* error.c, cobc.c (print_program_trailer), flag.def:
+	  implemented -fmax-errors=0 as unlimited
+	* flag.def (max_errors): reduced default from 128 to 20
+	* config.c (cb_load_conf), error.c (configuration_error): count missing
+	  definitions as single error
+	* cobc.c (process_command_line): passing -O0 by defaut for -g as some
+	  C compilers raise warnings otherwise, breaking the testsuite
+
+2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (emit_definition_note): renamed from warning_destination
+	* typeck.c (emit_definition_note), tree.h (cb_field): prevent output
+	  of the same field multiple times by new flag_had_definition_note
+
 2023-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (search_set_keys): improving SEARCH ALL syntax checks

@@ -1,4 +1,8 @@
 
+2023-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* rm-strict.conf (perform-osvs): enabled as noted in MF docs
+
 2023-07-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: add option using-optional

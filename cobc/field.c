@@ -413,8 +413,6 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 	struct cb_reference	*r;
 	struct cb_field		*f;
 	struct cb_field		*p;
-	struct cb_field		*field_fill;
-	cb_tree			dummy_fill;
 	cb_tree			l;
 	cb_tree			x;
 	int			lv;
@@ -449,6 +447,7 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 	} else {
 		f->level = lv;
 	}
+	/* copy EXTERNAL / GLOBAL attribute from file to record */
 	if (f->level == 01 && storage == CB_STORAGE_FILE && fn) {
 		if (fn->flag_external) {
 			f->flag_external = 1;
@@ -524,7 +523,8 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		last_field->children = f;
 		f->parent = last_field;
 	} else if (f->level == last_field->level) {
-		/* Same level */
+		/* Same level; note:
+		   last_field is a group if coming from "goto" */
 same_level:
 		last_field->sister = f;
 		f->parent = last_field->parent;
@@ -542,8 +542,8 @@ same_level:
 		/* always generate dummy filler field to prevent
 		   parsing of follow-on fields to fail the same way */
 		if (p) /* <- silence warnings */ {
-			dummy_fill = cb_build_filler ();
-			field_fill = CB_FIELD (cb_build_field (dummy_fill));
+			cb_tree			dummy_fill = cb_build_filler ();
+			struct cb_field	*field_fill = CB_FIELD (cb_build_field (dummy_fill));
 			field_fill->level = f->level;
 			field_fill->flag_filler = 1;
 			field_fill->storage = storage;
@@ -1525,7 +1525,7 @@ validate_pic (struct cb_field *f)
 		}
 		if (f->pic
 		 && f->pic->size > f->size)
-			f->size = f->pic->size;
+		f->size = f->pic->size;
 	}
 
 	/* ACUCOBOL/RM-COBOL-style COMP-1 ignores the PICTURE clause. */
@@ -2316,14 +2316,14 @@ validate_elementary_item (struct cb_field *f)
 				n = 2;
 			} else {
 				n = 1;
-			}
+		}
 			f->pic->str = cobc_parse_malloc ((size_t)n * sizeof(cob_pic_symbol));
 			pstr = f->pic->str;
 			if (f->pic->have_sign) {
 				pstr->symbol = '+';
 				pstr->times_repeated = 1;
 				++pstr;
-			}
+		}
 			pstr->symbol = '9';
 			pstr->times_repeated = f->pic->digits;
 		}
@@ -2350,9 +2350,9 @@ validate_field_1 (struct cb_field *f)
 #endif
 
 	if (f->flag_invalid) {
-		return 1;
-	}
-
+			return 1;
+		}
+			 
 	x = CB_TREE (f);
 	if (f->level == 77) {
 		if (f->storage != CB_STORAGE_WORKING
@@ -3445,7 +3445,7 @@ cb_validate_field (struct cb_field *f)
 		for (c = f->children; c; c = c->sister) {
 			c->flag_is_global = 1;
 			c->count++;
-		}
+	}
 #else
 		for (c = f->children; c; c = c->sister) {
 			c->flag_is_global = 1;

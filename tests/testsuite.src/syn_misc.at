@@ -1538,7 +1538,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY prog.cob -fmax-errors=0], [1], [],
 [prog.cob:7: error: invalid system-name 'SW1'
 prog.cob:8: error: ON/OFF usage requires a SWITCH name
 prog.cob:9: error: ON/OFF usage requires a SWITCH name
@@ -2088,8 +2088,7 @@ prog3.cob:3: error: invalid indicator 'M' at column 7
 prog3.cob:4: error: invalid indicator 'N' at column 7
 prog3.cob:5: error: invalid indicator 'U' at column 7
 prog3.cob:7: error: invalid indicator 'G' at column 7
-prog3.cob:8: error: invalid indicator 'U' at column 7
-prog3.cob:15: error: invalid indicator 'x' at column 7
+prog3.cob: error: too many format errors in file, skip output of further errors
 prog3.cob:6: error: PROGRAM-ID header missing
 prog3.cob:6: error: PROCEDURE DIVISION header missing
 prog3.cob:6: error: syntax error, unexpected DIVISION
@@ -6254,7 +6253,7 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:12: warning: USAGE BIT is not implemented
 prog.cob:37: warning: USAGE BIT is not implemented
 prog.cob:49: error: JSON/XML GENERATE receiving item must be alphanumeric or national
@@ -8300,7 +8299,7 @@ free.cob:3: error: invalid indicator 'R' at column 7
 free.cob:4: error: invalid indicator 'E' at column 7
 free.cob:5: error: invalid indicator 'I' at column 7
 free.cob:6: error: invalid indicator 'N' at column 7
-free.cob:7: error: invalid indicator 'T' at column 7
+free.cob: error: too many format errors in file, skip output of further errors
 free.cob:8: error: PROGRAM-ID header missing
 ])
 
@@ -8310,7 +8309,7 @@ domfree.cob:3: error: invalid indicator 'R' at column 7
 domfree.cob:4: error: invalid indicator 'E' at column 7
 domfree.cob:5: error: invalid indicator 'I' at column 7
 domfree.cob:6: error: invalid indicator 'N' at column 7
-domfree.cob:7: error: invalid indicator 'T' at column 7
+domfree.cob: error: too many format errors in file, skip output of further errors
 domfree.cob:8: error: PROGRAM-ID header missing
 ])
 

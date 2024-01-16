@@ -1323,8 +1323,8 @@ output_size (const cb_tree x)
 			output ("%s%d.size - ", CB_PREFIX_FIELD, f->id);
 			output_index (r->offset);
 		} else if (chk_field_variable_size (f)
-			&& cb_odoslide
-			&& !gen_init_working) {
+		 && cb_odoslide
+		 && !gen_init_working) {
 			out_odoslide_size (f);
 		} else {
 			struct cb_field		*p = chk_field_variable_size (f);

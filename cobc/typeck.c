@@ -2387,7 +2387,7 @@ cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 static void
 refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 {
-	const char	*name = r->word->name;
+	const char *name = r->word->name;
 	const int	adjusted_at_runtime = -1;
 	int			offset;
 	int			length;
@@ -3318,7 +3318,7 @@ items_have_same_data_clauses (const struct cb_field * const field_1,
 			}
 		} else {
 			/* only one has any length -> ensure it is the prototype and
-			   that the othr has the same numeric/nonnumeric type */
+			   that the other has the same numeric/nonnumeric type */
 			if (!field_1->flag_any_length) {
 				return 1;
 			}
@@ -5941,9 +5941,9 @@ cb_build_expr (cb_tree list)
 			}
 			v = CB_VALUE (l);
 			if (op == 'x') {
-                                if( has_var && v == cb_zero ){
-                                        has_rel = 1;
-                                }
+				if (has_var && v == cb_zero) {
+					has_rel = 1;
+				}
 				has_var = 1;
 				if (CB_TREE_TAG (v) == CB_TAG_BINARY_OP) {
 					has_rel = 1;
@@ -5951,7 +5951,7 @@ cb_build_expr (cb_tree list)
 				if (CB_TREE_TAG (v) == CB_TAG_FUNCALL) {
 					has_rel = 1;
 				} else
-                                if (CB_REF_OR_FIELD_P (v)) {
+				if (CB_REF_OR_FIELD_P (v)) {
 					f = CB_FIELD_PTR (v);
 					if (f->level == 88) {
 						has_rel = 1;
@@ -6365,18 +6365,18 @@ decimal_expand (cb_tree d, cb_tree x)
 		}
 		break;
 	case CB_TAG_REFERENCE:
-		/* Set d, X */
+		/* set d, X */
 		f = CB_FIELD_PTR (x);
 		/* Check numeric */
 		if (cb_flag_correct_numeric && f->usage == CB_USAGE_DISPLAY) {
 			cb_emit (CB_BUILD_FUNCALL_1 ("cob_correct_numeric", x));
 		}
 		if (CB_EXCEPTION_ENABLE (COB_EC_DATA_INCOMPATIBLE)) {
-			if (f->usage == CB_USAGE_DISPLAY ||
-			    f->usage == CB_USAGE_PACKED ||
-			    f->usage == CB_USAGE_COMP_6) {
+			if (f->usage == CB_USAGE_DISPLAY
+			 || f->usage == CB_USAGE_PACKED
+			 || f->usage == CB_USAGE_COMP_6) {
 				dpush (CB_BUILD_FUNCALL_2 ("cob_check_numeric",
-							   x, CB_BUILD_STRING0 (f->name)));
+					x, CB_BUILD_STRING0 (f->name)));
 			}
 		}
 		decimal_align ();
@@ -6622,8 +6622,8 @@ cb_emit_arithmetic (cb_tree vars, const int op, cb_tree val)
 		cb_tree l;
 		cb_emit_incompat_data_checks (x);
 		for (l = vars; l; l = CB_CHAIN (l)) {
-			const cb_tree	target = CB_VALUE(l);
-			const cb_tree	round_and_trunc = CB_PURPOSE(l);
+			const cb_tree	target = CB_VALUE (l);
+			const cb_tree	round_and_trunc = CB_PURPOSE (l);
 			cb_emit_incompat_data_checks (target);
 			switch (op) {
 			case '+':
@@ -6641,9 +6641,11 @@ cb_emit_arithmetic (cb_tree vars, const int op, cb_tree val)
 			}
 		}
 		cb_emit_list (vars);
-	} else {
-		cb_emit_list (build_decimal_assign (vars, op, x));
+		return;
 	}
+
+	/* no optimization - needs decimal */
+	cb_emit_list (build_decimal_assign (vars, op, x));
 }
 
 /* Condition */
@@ -8120,15 +8122,15 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	cb_tree		cursor = NULL;		/* CURSOR (position within the field) */
 	cob_flags_t		disp_attrs = 0;
 
-	if (current_program->flag_screen) {
 #ifndef WITH_EXTENDED_SCREENIO
-	if (!warn_screen_done) {
-		warn_screen_done = 1;
-		cb_warning (cb_warn_unsupported,
-			_("runtime is not configured to support %s"), "SCREEN SECTION");
+	if (current_program->flag_screen) {
+		if (!warn_screen_done) {
+			warn_screen_done = 1;
+			cb_warning (cb_warn_unsupported,
+				_("runtime is not configured to support %s"), "SCREEN SECTION");
+		}
 	}
 #endif
-	}
 	if (cb_validate_one (var)) {
 		return;
 	}
@@ -10123,7 +10125,8 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 	}
 }
 
-static size_t calc_reference_size (cb_tree xr)
+static size_t
+calc_reference_size (cb_tree xr)
 {
 	cb_tree	ref = cb_ref (xr);
 	if (ref == cb_error_node) {
@@ -10400,7 +10403,7 @@ cb_build_inspect_region_start (void)
 /* MOVE statement */
 
 static void
-warning_destination (const enum cb_warn_opt warning_opt, cb_tree x)
+emit_definition_note (const enum cb_warn_opt warning_opt, cb_tree x)
 {
 	struct cb_field		*f;
 	const char *usage;
@@ -10416,9 +10419,14 @@ warning_destination (const enum cb_warn_opt warning_opt, cb_tree x)
 		f = CB_FIELD (x);
 	} else {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"warning_destination", "x");
+			"emit_definition_note", "x");
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	}
+
+	if (f->flag_had_definition_note) {
+		return;
+	}
+	f->flag_had_definition_note = 1;
 
 #if 1  /* FIXME: this is wrong, should be removed and register building be
 	      adjusted, for example ACU has RETURN-CODE as SIGNED-LONG, EXTERNAL */
@@ -10493,7 +10501,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 				/* note: src_flag is -1 for numeric literals,
 				   contains literal size otherwise */
 				if (!CB_LITERAL_P (src)) {
-					warning_destination (warning_opt, src);
+					emit_definition_note (warning_opt, src);
 				} else if (src_flag == -1) {
 					if (CB_LITERAL_P (src)) {
 						cb_note_x (warning_opt, dst,
@@ -10504,7 +10512,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 						_("value size is %d"), src_flag);
 				}
 			}
-			warning_destination (warning_opt, dst);
+			emit_definition_note (warning_opt, dst);
 		}
 	}
 
@@ -12562,6 +12570,7 @@ cb_check_move (cb_tree src, cb_tree dsts, const int emit_error)
 		x = CB_VALUE (l);
 		if (CB_LITERAL_P (x) || CB_CONST_P (x)) {
 			if (emit_error) {
+				/* this may should be raised in the parser already */
 				cb_error_x (CB_TREE (current_statement),
 					    _("invalid MOVE target: %s"),
 					    cb_name (x));
@@ -12586,7 +12595,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		return;
 	}
 
-	/* Validate source, if requested. */
+	/* validate / fix-up source, if requested */
 	cb_emit_incompat_data_checks (src);
 
 	/* FIXME: this is way to much to cater for sum field */
@@ -13427,7 +13436,7 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 		return;
 	}
 
-	/* Validate source, if requested. */
+	/* validate / fix-up source, if requested */
 	cb_emit_incompat_data_checks (src);
 
 	/* Emit statements. */

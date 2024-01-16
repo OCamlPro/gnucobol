@@ -1,16 +1,26 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.3     (planned December 2023)
+ GnuCOBOL 3.3     (planned January 2023)
 
  work in progress
 
 * New GnuCOBOL features
 
-  work in progress
+** cobc now checks for binary files and early exit parsing those;
+   the error output for format errors (for example invalid indicator column)
+   is now limitted to 5 per source file
+
+  more work in progress
 
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+
+* Changes to the COBOL compiler (cobc) options:
+
+** output of unlimited errors may be requested by -fmax-errors=0,
+   to stop compiliation at first error use -Wfatal-errors
+** default value for -fmax-errors was changed from 128 to 20
 
 
  GnuCOBOL 3.2     (20230728)
