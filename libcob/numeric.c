@@ -1567,16 +1567,10 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	/* Build string, note: we can't check the decimal size with
 	   mpz_sizeinbase, as its result is "either exact or one too big" */
 
-	/* huge data, only for internal operations like intrinsic functions */
-	/* LCOV_EXCL_START */
+	/* huge data, only for internal operations like intrinsic functions,
+	   for example when directly called within intrinsic.c by
+	   cob_alloc_field, cob_decimal_get_field ->  cob_decimal_get_display */
 	if (fsize > COB_MAX_BINARY) {
-#if 1 /* as these fields cannot be a _target_ to get the decimal value
-		as intrinisic.c (cob_alloc_field, cob_decimal_move_temp) _creates_
-		those from a decimal already, this branch should never be taken */
-		cob_runtime_error ("function '%s' with unexpected state (%s)",
-			"cob_decimal_get_display", "huge decimal for numeric DISPLAY field");
-		cob_hard_failure ();
-#else
 		char *p = mpz_get_str (NULL, 10, d->value);
 		const size_t size = strlen (p);
 		const long long diff = fsize - size;
@@ -1604,9 +1598,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		cob_gmp_free (p);
 		COB_PUT_SIGN (f, sign);
 		return 0;
-#endif
 	}
-	/* LCOV_EXCL_STOP */
 
 	/* get divisor that would overflow */
 	cob_pow_10 (cob_mexp, (unsigned int) fsize);

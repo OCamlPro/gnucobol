@@ -3,8 +3,8 @@
 
 	* numeric.c (cob_add_int): minor adjustment to scale handling
 	* numeric.c (packed_is_negative): optimized by memcmp instead of loop
-	* numeric.c (cob_decimal_get_display): fixed broken sign in diff calculation
-	  and replaced it by an assert as it currently is never to be executed
+	* numeric.c (cob_decimal_get_display): fixed broken sign in
+	  diff calculation
 
 2023-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
