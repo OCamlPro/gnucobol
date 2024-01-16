@@ -1,4 +1,17 @@
 
+2023-09-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add_int): minor adjustment to scale handling
+	* numeric.c (packed_is_negative): optimized by memcmp instead of loop
+	* numeric.c (cob_decimal_get_display): fixed broken sign in diff calculation
+	  and replaced it by an assert as it currently is never to be executed
+
+2023-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
+	  fix C RTS check raising overflow by replacing casting to char by "& 0xFF"
+	* cconv.c (cob_field_to_string): fix analyzer warnings
+
 2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version.h: bump to 3.3

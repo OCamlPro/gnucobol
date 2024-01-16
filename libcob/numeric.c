@@ -542,7 +542,7 @@ cob_mul_by_pow_10 (mpz_t mexp, unsigned int n)
 	mpz_mul (mexp, mexp, cob_mexp);
 }
 
-/* scale - multiplicate mpz_t by power of 10 */
+/* scale - divide mpz_t by power of 10 */
 static COB_INLINE COB_A_INLINE void
 cob_div_by_pow_10 (mpz_t mexp, unsigned int n)
 {
@@ -1342,7 +1342,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 			i++;
 		}
 		while (i < size) {
-			*p++ = (unsigned char) (*q << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+			*p++ = ((*q << 4) & 0xFF)	/* -> dropping the higher bits = no use in COB_D2I */
 			   + COB_D2I (*(q + 1));
 			q += 2; i += 2;
 		}
@@ -1464,7 +1464,8 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 		return;
 	}
 
-	/* Skip leading zeros (also invalid space/low-value) */
+	/* Skip leading zeros (also invalid space/low-value
+	   and valid positive/negative zero overpunch) */
 	while (size > 1 && (COB_D2I (*data) == 0)) {
 		size--;
 		data++;
@@ -1523,7 +1524,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 		   these fields _must_ be _internal_ so there's no need to handle
 		   invalid data via COB_D2I + COB_I2D and we can copy as-is;
 		   this code has shown to be faster than mpz ui multiplication */
-		char	*buff = cob_fast_malloc (size + 1U);
+		char	*buff = cob_fast_malloc ((size_t)size + 1U);
 		memcpy (buff, data, size);
 		/* still we may need to unpunch the sign, which in this internal
 		   case will always be at the last digit */
@@ -1545,6 +1546,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	COB_PUT_SIGN_ADJUSTED (f, sign);
 }
 
+/* store value from decimal into field of type numeric DISPLAY */
 static int
 cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 {
@@ -1566,10 +1568,18 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	   mpz_sizeinbase, as its result is "either exact or one too big" */
 
 	/* huge data, only for internal operations like intrinsic functions */
+	/* LCOV_EXCL_START */
 	if (fsize > COB_MAX_BINARY) {
+#if 1 /* as these fields cannot be a _target_ to get the decimal value
+		as intrinisic.c (cob_alloc_field, cob_decimal_move_temp) _creates_
+		those from a decimal already, this branch should never be taken */
+		cob_runtime_error ("function '%s' with unexpected state (%s)",
+			"cob_decimal_get_display", "huge decimal for numeric DISPLAY field");
+		cob_hard_failure ();
+#else
 		char *p = mpz_get_str (NULL, 10, d->value);
 		const size_t size = strlen (p);
-		const size_t diff = fsize - size;
+		const long long diff = fsize - size;
 		if (diff < 0) {
 			/* Overflow */
 			if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
@@ -1594,7 +1604,9 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		cob_gmp_free (p);
 		COB_PUT_SIGN (f, sign);
 		return 0;
+#endif
 	}
+	/* LCOV_EXCL_STOP */
 
 	/* get divisor that would overflow */
 	cob_pow_10 (cob_mexp, (unsigned int) fsize);
@@ -3598,25 +3610,30 @@ cob_add_int (cob_field *f, const int n, const int opt)
 		int	scale = COB_FIELD_SCALE (f);
 		int	val = n;
 		if (unlikely (scale < 0)) {
-			/* PIC 9(n)P(m) */
-			if (-scale < 10) {
+			/* PIC 9(n)P(m) -> adjust "val"
+			   by applying the same scale (cut integer positions) */
+			if (scale <= -10) {
+				/* an int cannot have > 10 digit positions, so
+				   no need to do anything if scale is too small */
+				return 0;
+			}
 			while (scale++) {
 				val /= 10;
 			}
-			} else {
-				val = 0;
-			}
-			scale = 0;
 			if (!val) {
 				return 0;
 			}
+			/* not used anymore, but logically: scale = 0 here */
 		}
 		cob_decimal_set_field (&cob_d1, f);
 		mpz_set_si (cob_d2.value, (cob_sli_t)val);
-		cob_d2.scale = 0;
-		if (scale > 0) {
-			cob_mul_by_pow_10 (cob_d2.value, scale);
+		if (cob_d1.scale > 0) {
+			cob_mul_by_pow_10 (cob_d2.value, cob_d1.scale);
+#if 0	/* second scale is unused, these are just the "logic" values */
 			cob_d2.scale = cob_d1.scale;
+		} else {
+			cob_d2.scale = 0;
+#endif
 		}
 		mpz_add (cob_d1.value, cob_d1.value, cob_d2.value);
 		return cob_decimal_get_field (&cob_d1, f, opt);
@@ -3790,18 +3807,14 @@ packed_is_negative (cob_field *f)
 {
 	if (cob_packed_get_sign (f) == -1) {
 		/* negative sign, validate for nonzero data */
-		unsigned char			*data = COB_FIELD_DATA (f);
-		register unsigned char  *end = data + f->size - 1;
-		/* nonzero if byte with sign nibble has other data */
-		if ((*end != 0x0D)) {
-			return 1;	/* extra data -> really negative */
-		}
-		/* nonzero "really negative" if any other data is nonzero,
-		   checking backwards from before sign until end == start */
-		while (data != end) {
-			if (*--end != 0) {
+		unsigned char	nullbuff[(COB_MAX_DIGITS / 2) + 1] = { 0 };
+		/* nonzero "really negative" if any data is nonzero */
+		if (memcmp (f->data, nullbuff, f->size - 1)) {
 			return 1;
 		}
+		/* nonzero if byte with sign nibble has other data */
+		if ((*(f->data + f->size - 1) != 0x0D)) {
+			return 1;	/* extra data -> really negative */
 		}
 		/* all zero -> not negative, even with the sign telling so */
 		return 0;
@@ -4027,16 +4040,6 @@ cob_numeric_cmp (cob_field *f1, cob_field *f2)
 	const int f1_type = COB_FIELD_TYPE (f1);
 	const int f2_type = COB_FIELD_TYPE (f2);
 
-	/* float needs special comparison */
-	if (f1_type == COB_TYPE_NUMERIC_FLOAT
-	 || f1_type == COB_TYPE_NUMERIC_DOUBLE
-	 || f1_type == COB_TYPE_NUMERIC_L_DOUBLE
-	 || f2_type == COB_TYPE_NUMERIC_FLOAT
-	 || f2_type == COB_TYPE_NUMERIC_DOUBLE
-	 || f2_type == COB_TYPE_NUMERIC_L_DOUBLE) {
-		return cob_cmp_float (f1, f2);
-	}
-
 #ifndef NO_BCD_COMPARE
 	/* do bcd compare if possible */
 	if (f1_type == COB_TYPE_NUMERIC_PACKED
@@ -4045,8 +4048,18 @@ cob_numeric_cmp (cob_field *f1, cob_field *f2)
 		if (COB_FIELD_SCALE (f1) >= 0 && COB_FIELD_SCALE (f2) >= 0) {
 			return cob_bcd_cmp (f1, f2);
 		}
+		/* CHECKME: possible create temporary bcd2 if only one is packed
+		   and the other isn't float - then compare as BCD */
 	}
 #endif
+
+	/* float needs special comparison */
+	if ( (f1_type >= COB_TYPE_NUMERIC_FLOAT
+	   && f1_type <= COB_TYPE_NUMERIC_L_DOUBLE)
+	 ||  (f2_type >= COB_TYPE_NUMERIC_FLOAT
+	   && f2_type <= COB_TYPE_NUMERIC_L_DOUBLE)) {
+		return cob_cmp_float (f1, f2);
+	}
 
 	/* otherwise - preferably compare as integers */
 	if (COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2)
@@ -4300,12 +4313,8 @@ cob_cmp_numdisp (const unsigned char *data, const size_t size,
 		return (val < n) ? -1 : (val > n);
 	}
 	
-	/* safe-guard, should never happen */
-	if (!size) {
-		return 0;
-	}
 	p_end = p + size - 1;
-	while (p != p_end) {
+	while (p < p_end) {
 		val = val * 10 + COB_D2I (*p++);
 	}
 	val *= 10;
