@@ -22,6 +22,12 @@ NEWS - user visible changes				-*- outline -*-
    to stop compiliation at first error use -Wfatal-errors
 ** default value for -fmax-errors was changed from 128 to 20
 
+* More notable changes
+
+** execution times were significantly reduced for the following:
+	INSPECT CONVERTING (and "simple" INSPECT REPLACING), in general
+	   and especially if both from and to are constants
+
 
  GnuCOBOL 3.2     (20230728)
  GnuCOBOL 3.2rc1  (20230118)

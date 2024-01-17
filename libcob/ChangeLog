@@ -1,4 +1,15 @@
 
+2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (alloc_figurative): optimized handling for SPACES and ZEROES
+	* strings.c (cob_inspect_translating), common.h: variant of
+	  cob_inspect_converting that is called with a pre-computed translation
+	  table (COBOL source using only constants)
+	* strings.c (cob_inspect_converting): replaced partial conversion table
+	  with full table, which saves a check on each replaced byte
+	* strings.c (cob_inspect_converting): also call cob_real_put_sign for
+	  early exits
+
 2023-09-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_add_int): minor adjustment to scale handling

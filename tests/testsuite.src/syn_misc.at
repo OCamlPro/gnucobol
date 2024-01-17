@@ -929,12 +929,18 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:14: error: REPLACING operands differ in size
-prog.cob:15: error: REPLACING operands differ in size
-prog.cob:17: error: CONVERTING operands differ in size
-prog.cob:18: error: CONVERTING operands differ in size
-prog.cob:20: error: CONVERTING operands differ in size
-prog.cob:23: error: CONVERTING operands differ in size
+[prog.cob:14: error: REPLACING operands incompatible
+prog.cob:14: note: operands differ in size
+prog.cob:15: error: REPLACING operands incompatible
+prog.cob:15: note: operands differ in size
+prog.cob:17: error: CONVERTING operands incompatible
+prog.cob:17: note: operands differ in size
+prog.cob:18: error: CONVERTING operands incompatible
+prog.cob:18: note: operands differ in size
+prog.cob:20: error: CONVERTING operands incompatible
+prog.cob:20: note: operands differ in size
+prog.cob:23: error: CONVERTING operands incompatible
+prog.cob:23: note: operands differ in size
 ])
 
 AT_CLEANUP
@@ -4150,7 +4156,8 @@ prog.cob:20: error: 'not-a-num' is not numeric
 prog.cob:20: error: 3 is not an alphanumeric literal
 prog.cob:20: error: invalid target for TALLYING
 prog.cob:21: error: 'not-display' is not USAGE DISPLAY
-prog.cob:20: error: REPLACING operands differ in size
+prog.cob:20: error: REPLACING operands incompatible
+prog.cob:20: note: operands differ in size
 prog.cob:20: error: invalid target for REPLACING
 prog.cob:22: error: 'f' is not a field
 prog.cob:22: error: 3 is not an alphanumeric literal

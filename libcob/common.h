@@ -1327,8 +1327,8 @@ typedef struct __cob_file_key {
 	int		flag;				/* ASCENDING/DESCENDING (for SORT) [3.x only] */
 	int		tf_duplicates;			/* WITH DUPLICATES (for RELATIVE/INDEXED) */
 	int		tf_ascending;			/* ASCENDING/DESCENDING (for SORT) [4.x only, for now: unused] */
-	int		tf_suppress;			/* supress keys where all chars = char_suppress */
-	int		char_suppress;			/* key supression character  */
+	int		tf_suppress;			/* supress keys where all chars = char_suppress (for INDEXED) */
+	int		char_suppress;			/* key supression character (for INDEXED) */
 	unsigned int	offset;			/* Offset of field */
 	int		count_components;		/* 0..1::simple-key  2..n::split-key   */
 	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
@@ -1912,6 +1912,7 @@ COB_EXPIMP void cob_inspect_leading	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_first	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_trailing	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_converting	(const cob_field *, const cob_field *);
+COB_EXPIMP void cob_inspect_translating (const unsigned char *);
 COB_EXPIMP void cob_inspect_finish	(void);
 
 COB_EXPIMP void cob_string_init		(cob_field *, cob_field *);

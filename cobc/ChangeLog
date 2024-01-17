@@ -1,4 +1,25 @@
 
+2023-09-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (literal_list): removed self-reference as tree
+	* replace.c (ppecho_replace): now inline
+	* replace.c (cb_free_replace): removed setting child to zero before free
+	* replace.c: style adjustment
+
+2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_converting): protoype (disabled) to pre-generate
+	  conversion table and call new function cob_inspect_translating instead
+	  of cob_inspect_converting if both operands are literals/alphabets
+
+2023-09-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_inspect): check for identical operands,
+	  check for invalid combination of operands
+	* typeck.c (cb_build_converting): shortcut when identical operands
+	  are used
+	* tree.h: change alphabet_target and alphabet_type from defines to enums
+
 2023-09-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (ppopen_get_file): test for binary file and directly error out

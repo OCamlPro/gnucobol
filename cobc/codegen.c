@@ -127,7 +127,6 @@ struct attr_list {
 struct literal_list {
 	struct literal_list	*next;
 	struct cb_literal	*literal;
-	cb_tree			x;
 	int			id;
 	int			make_decimal;
 };
@@ -669,7 +668,12 @@ output_string (const unsigned char *s, const int size, const cob_u32_t llit)
 	for (i = 0; i < size; i++) {
 		c = s[i];
 		if (!isprint (c)) {
+#if 1	/* octal */
 			output ("\\%03o", c);
+#else	/* hex (can be useful for a small amount of non-printable characters,
+		   but gets really uggly if the string has a lot of those */
+			output ("\" \"\\x%X\" \"", c);
+#endif
 		} else if (c == '\"') {
 			output ("\\%c", c);
 		} else if ((c == '\\' || c == '?') && !llit) {
@@ -754,7 +758,7 @@ chk_field_variable_address (struct cb_field *fld)
 {
 	if (!fld->flag_vaddr_done) {
 		/* CHECKME: only sliding odo may create a varying address, no? */
-		/* Note: this is called _very_ often and takes 15-20% of parse + codegen time,
+		/* Note: this was called _very_ often and took 15-20% of parse + codegen time,
 		   with about half the time in chk_field_variable_size; so try to not call
 		   this function if not necessary (according to the testsuite: as long as
 		   cb_odoslide is not set, but the caller's coverage is not that well...) */
@@ -762,7 +766,7 @@ chk_field_variable_address (struct cb_field *fld)
 		struct cb_field		*p;
 		for (p = f->parent; p; f = f->parent, p = f->parent) {
 			for (p = p->children; p != f; p = p->sister) {
-#if 0	/* CHECKME: why does this fail the testsuite ? */
+#if 0	/* CHECKME: Why does this fail the testsuite ? Most likely "recompute" issue */
 				if (p->flag_vaddr_done) {
 					if (!p->vaddr) {
 						continue;
@@ -772,10 +776,9 @@ chk_field_variable_address (struct cb_field *fld)
 					return 1;
 				}
 #endif
-				/* Skip PIC L fields as their representation
-				   have constant length */
-				if (p->depending ||
-				    (!p->flag_picture_l && chk_field_variable_size (p))) {
+				if (p->depending	/* ODO leads to variable size */
+				 || (!p->flag_picture_l && chk_field_variable_size (p)) /* skipping PIC L fields */
+				   ) {
 #if 0	/* only useful with the code above */
 					/* as we have a variable address, all sisters will also;
 					   store this for next check */
@@ -2597,7 +2600,7 @@ output_literals_figuratives_and_constants (void)
 #else
 		output ("static const cob_field %s%d\t= ",
 			CB_PREFIX_CONST, lit->id);
-		output_field (lit->x);
+		output_field (CB_TREE(lit->literal));
 #endif
 		output (";");
 		output_newline ();
@@ -2794,7 +2797,6 @@ cb_lookup_literal (cb_tree x, int make_decimal)
 	l->id = cb_literal_id;
 	l->literal = literal;
 	l->make_decimal = make_decimal;
-	l->x = x;
 	l->next = literal_cache;
 	literal_cache = l;
 
@@ -12489,7 +12491,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Check matching version */
 #if !defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
 #ifdef _WIN32
-	if (prog->flag_main)	/* otherwise we generate that in DllMain*/
+	if (prog->flag_main)	/* otherwise we generate that in DllMain */
 #else
 	if (!prog->nested_level)
 #endif
@@ -12602,8 +12604,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	seen = 0;
 	for (m = literal_cache; m; m = m->next) {
-		if (CB_TREE_CLASS (m->x) == CB_CLASS_NUMERIC
-		 && m->make_decimal) {
+		if (m->make_decimal) {
 			if (!seen) {
 				seen = 1;
 				output_line ("/* Set Decimal Constant values */");
@@ -12810,8 +12811,7 @@ cancel_end:
 	output_line ("P_clear_decimal:");
 	seen = 0;
 	for (m = literal_cache; m; m = m->next) {
-		if (CB_TREE_CLASS (m->x) == CB_CLASS_NUMERIC
-		 && m->make_decimal) {
+		if (m->make_decimal) {
 			if (!seen) {
 				seen = 1;
 				output_line ("/* Clear Decimal Constant values */");
@@ -13970,8 +13970,7 @@ codegen_finalize (void)
 		struct literal_list* m;
 		int comment_gen = 0;
 		for (m = literal_cache; m; m = m->next) {
-			if (CB_TREE_CLASS (m->x) == CB_CLASS_NUMERIC
-			 && m->make_decimal) {
+			if (m->make_decimal) {
 				if (!comment_gen) {
 					comment_gen = 1;
 					output_storage ("\n/* Decimal constants */\n");

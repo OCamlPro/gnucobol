@@ -115,13 +115,20 @@ cob_str_memcpy (cob_field *dst, unsigned char *src, const int size)
 static void
 alloc_figurative (const cob_field *f1, const cob_field *f2)
 {
+	const size_t		size2 = f2->size;
 
-	unsigned char		*s;
-	size_t			size1;
-	size_t			size2;
-	size_t			n;
+#if 1	/* size1 is always 1 here, so several optimizations possible */
+	if (*f1->data == ' ' && size2 <= COB_SPACES_ALPHABETIC_BYTE_LENGTH) {
+		alpha_fld.size = size2;
+		alpha_fld.data = (unsigned char *) COB_SPACES_ALPHABETIC;
+		return;
+	}
+	if (*f1->data == '0' && size2 <= COB_ZEROES_ALPHABETIC_BYTE_LENGTH) {
+		alpha_fld.size = size2;
+		alpha_fld.data = (unsigned char *) COB_ZEROES_ALPHABETIC;
+		return;
+	}
 
-	size2 = f2->size;
 	if (size2 > figurative_size) {
 		if (figurative_ptr) {
 			cob_free (figurative_ptr);
@@ -129,15 +136,31 @@ alloc_figurative (const cob_field *f1, const cob_field *f2)
 		figurative_ptr = cob_malloc (size2);
 		figurative_size = size2;
 	}
-	size1 = 0;
-	s = figurative_ptr;
-	for (n = 0; n < size2; ++n, ++s) {
-		*s = f1->data[size1];
-		size1++;
-		if (size1 >= f1->size) {
-			size1 = 0;
+
+	memset (figurative_ptr, *f1->data, size2);
+#else
+	if (size2 > figurative_size) {
+		if (figurative_ptr) {
+			cob_free (figurative_ptr);
+		}
+		figurative_ptr = cob_malloc (size2);
+		figurative_size = size2;
+	}
+
+	{
+		unsigned char	*s = figurative_ptr;
+		size_t		n = size2;
+		size_t		size1 = 0;
+		while (n != 0) {
+			if (size1 >= f1->size) {
+				size1 = 0;
+			}
+			*s++ = f1->data[size1++];
+			--n;
 		}
 	}
+#endif
+
 	alpha_fld.size = size2;
 	alpha_fld.data = figurative_ptr;
 }
@@ -498,7 +521,7 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 	cob_inspect_start       (setting inspect_start/end)
 	cob_inspect_before        (optional, adjusting inspect_end)
 	cob_inspect_after         (optional, adjusting inspect_start)
-   one-time cob_inspect_converting (actual converstion) */
+   one-time cob_inspect_converting/cob_inspect_translating (actual converstion) */
 
 void
 cob_inspect_init_converting (cob_field *var)
@@ -549,7 +572,7 @@ cob_inspect_characters (cob_field *f1)
 	}
 
 	if (inspect_replacing) {
-		/* INSPECT REPLACING CHARACTERS BY f1 */
+		/* INSPECT REPLACING CHARACTERS BY f1 (= size 1) */
 		const unsigned char repl_by = *f1->data;
 		unsigned char	*repdata;
 		setup_repdata ();
@@ -623,7 +646,7 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 	if (inspect_len == 0) {
 		/* our task is to convert either a zero-length field or
 		   AFTER ... has not found a place to start the conversion */
-		return;
+		goto end;
 	}
 
 	if (unlikely (!f1)) {
@@ -638,7 +661,7 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 			f2 = &alpha_fld;
 		} else {
 			cob_set_exception (COB_EC_RANGE_INSPECT_SIZE);
-			return;
+			goto end;
 		}
 	}
 
@@ -649,14 +672,32 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 		unsigned char * const cur_data_end = cur_data + inspect_len;
 		
 #if 1 /* table-approach, _much faster_, _should_ be portable */
-		char conv_tab[256] = { 0 };		/* using 256 to remove the need to use offset */
-		char conv_set[256] = { 0 };
+		/* pre-filled conversion table */
+		unsigned char conv_tab[256] = {
+			  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+			 16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
+			 32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
+			 48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
+			 64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,  76,  77,  78,  79,
+			 80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+			 96,  97,  98,  99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+			112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+			128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,
+			144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
+			160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
+			176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
+			192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
+			208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
+			224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+			240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+		};
 		
-		/* pre-fill conversion table, skipping duplicates */
+		/* update conversion table with from/to, skipping duplicates */
 		{
 			const unsigned char *conv_to   = f2->data;
 			const unsigned char *conv_from = f1->data;
-			const unsigned char * const conv_from_end = f1->data + f1->size;
+			const unsigned char * const conv_from_end = conv_from + f1->size;
+			char conv_set[256] = { 0 };
 			while (conv_from < conv_from_end) {
 				if (conv_set[*conv_from] == 0) {
 					conv_set[*conv_from] = 1;
@@ -665,11 +706,9 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 				conv_from++, conv_to++;
 			}
 		}
-		/* iterate over target converting with table */
+		/* iterate over target converting with full table */
 		while (cur_data < cur_data_end) {
-			if (conv_set[*cur_data]) {
-				*cur_data = conv_tab[*cur_data];
-			}
+			*cur_data = conv_tab[*cur_data];
 			cur_data++;
 		}
 #else
@@ -696,8 +735,39 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 #endif
 	}
 
+end:
 	/* note: copied here for 3.2+ as cob_inspect_finish is not generated
 	         for TRANSFORM/INSPECT CONVERTING any more */
+	if (inspect_var) {
+		/* FIXME: needs test cases for all "goto end" cases above,
+		   ideally with a SIGN SEPARATE variable */
+		cob_real_put_sign (inspect_var, inspect_sign);
+	}
+}
+
+/* note: currently not used by cobc (disabled unfinished prototype) */
+void
+cob_inspect_translating (const unsigned char *conv_table)
+{
+	const size_t	inspect_len = inspect_end - inspect_start;
+
+	if (inspect_len == 0) {
+		/* our task is to convert either a zero-length field or
+		   AFTER ... has not found a place to start the conversion
+		   --> nothing to do here */
+	} else {
+		/* directly convert _all_ positions of the inspect target using the
+		   pre-generated conversion table */
+		unsigned char * cur_data = inspect_data + (inspect_start - inspect_data);
+		unsigned char * const cur_data_end = cur_data + inspect_len;
+		
+		/* iterate over target converting with full table */
+		while (cur_data < cur_data_end) {
+			*cur_data = conv_table[*cur_data];
+			cur_data++;
+		}
+	}
+
 	if (inspect_var) {
 		cob_real_put_sign (inspect_var, inspect_sign);
 	}
@@ -734,6 +804,13 @@ cob_inspect_finish (void)
 }
 
 /* STRING */
+/* a STRING is split into multiple parts:
+   one-time cob_string_init  (setting up memory and static variables)
+   1..n :
+    cob_string_delimited    (setting delimiter struct entries)
+     1..n:
+	   cob_string_append    (to handle a single source)
+   one-time cob_string_finish (setting the string pointer) */
 
 void
 cob_string_init (cob_field *dst, cob_field *ptr)
@@ -760,10 +837,11 @@ cob_string_init (cob_field *dst, cob_field *ptr)
 void
 cob_string_delimited (cob_field *dlm)
 {
-	string_dlm = NULL;
 	if (dlm) {
 		string_dlm_copy = *dlm;
 		string_dlm = &string_dlm_copy;
+	} else {
+		string_dlm = NULL;
 	}
 }
 
