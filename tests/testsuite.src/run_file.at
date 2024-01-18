@@ -86,6 +86,145 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([CLOSE WITH LOCK])
+AT_KEYWORDS([runfile OPEN WRITE READ DELETE FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE-TBL      ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+           SELECT  FILE0         ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE0.
+       01  F0REC             PIC X(80).
+       FD  FILE-TBL.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN OUTPUT FILE-TBL
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS OPEN OUTPUT:" WSFS.
+           MOVE ALL "A" TO FOREC
+           WRITE FOREC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE A:" WSFS.
+           CLOSE FILE-TBL WITH LOCK
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE WITH LOCK:" WSFS.
+           OPEN INPUT FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS INPUT after CLOSE LOCK:" WSFS.
+           CLOSE FILE-TBL
+           IF WSFS NOT = "42"
+              DISPLAY "STATUS CLOSE non-opened:" WSFS.
+           DELETE FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
+      *
+           OPEN INPUT FILE0
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS INPUT separate file:" WSFS.
+           READ FILE0 NEXT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS READ A:" WSFS.
+           IF F0REC NOT = ALL "A"
+              DISPLAY "content not ALL 'A':" F0REC ":".
+           CLOSE FILE0
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE:" WSFS.
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CLOSE WITH LOCK, EXTERNAL FILE])
+AT_KEYWORDS([runfile OPEN WRITE READ DELETE FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE-TBL      ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE-TBL EXTERNAL.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN OUTPUT FILE-TBL
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS OPEN OUTPUT:" WSFS.
+           MOVE ALL "A" TO FOREC
+           WRITE FOREC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE A:" WSFS.
+           CLOSE FILE-TBL WITH LOCK
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE WITH LOCK:" WSFS.
+      *
+           CALL "progb".
+      *
+           STOP RUN.
+])
+
+AT_DATA([progb.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. progb.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE-TBL      ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE-TBL EXTERNAL.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN INPUT FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS INPUT after CLOSE LOCK:" WSFS.
+           CLOSE FILE-TBL
+           IF WSFS NOT = "42"
+              DISPLAY "STATUS CLOSE non-opened:" WSFS.
+           DELETE FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
+      *
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_module progb.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([variable-length SEQUENTIAL data integrity])
 AT_KEYWORDS([runfile record OPEN])
 

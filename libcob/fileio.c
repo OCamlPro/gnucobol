@@ -2064,6 +2064,7 @@ cob_file_close (cob_file *f, const int opt)
 	case COB_CLOSE_NO_REWIND:
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			if (f->flag_needs_nl
+			 && f->file
 			 && !(f->flag_select_features & COB_SELECT_LINAGE)) {
 				f->flag_needs_nl = 0;
 				putc ('\n', (FILE *)f->file);
@@ -4302,6 +4303,9 @@ indexed_open (cob_file *f, char *filename,
 		lmode = ISEXCLLOCK;
 		omode = ISINOUT;
 		break;
+	default:
+		/* CLOSED / LOCKED-CLOSED */
+		break;
 	}
 	fh = cob_malloc (sizeof (struct indexfile) +
 			 ((sizeof (struct keydesc)) * (f->nkeys + 1)));
@@ -4739,13 +4743,13 @@ indexed_close (cob_file *f, const int opt)
 
 #elif	defined(WITH_ANY_ISAM)
 
-	struct indexfile	*fh;
+	struct indexfile	*fh = f->file;
 
 	COB_UNUSED (opt);
 
-	fh = f->file;
 	if (fh == NULL) {
-		return COB_STATUS_00_SUCCESS;
+		/* should we raise COB_STATUS_42_NOT_OPEN ? */
+		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 	if (fh->isfd >= 0) {
 		isfullclose (fh->isfd);
@@ -4762,6 +4766,10 @@ indexed_close (cob_file *f, const int opt)
 	COB_UNUSED (opt);
 
 	/* Close DB's */
+	if (p == NULL) {
+		/* should we raise COB_STATUS_42_NOT_OPEN ? */
+		return COB_STATUS_30_PERMANENT_ERROR;
+	}
 	for (i = 0; i < (int)f->nkeys; ++i) {
 		if (p->cursor[i]) {
 			bdb_close_index (f, i);
@@ -6307,17 +6315,19 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 		}
 	}
 
-	if (f->open_mode == COB_OPEN_CLOSED) {
+	if (f->open_mode == COB_OPEN_CLOSED
+	 || f->open_mode == COB_OPEN_LOCKED) {
 		save_status (f, fnstatus, COB_STATUS_42_NOT_OPEN);
 		return;
 	}
 
 	if (f->flag_nonexistent) {
-		ret = COB_STATUS_00_SUCCESS;
-	} else {
-		ret = fileio_funcs[(int)f->organization]->close (f, opt);
+		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
+		f->open_mode = COB_OPEN_CLOSED;
+		return;
 	}
 
+	ret = fileio_funcs[(int)f->organization]->close (f, opt);
 	if (ret == COB_STATUS_00_SUCCESS) {
 		switch (opt) {
 		case COB_CLOSE_LOCK:
@@ -6340,7 +6350,8 @@ cob_unlock (cob_file *f)
 
 	f->flag_read_done = 0;
 
-	if (f->open_mode == COB_OPEN_CLOSED) {
+	if (f->open_mode == COB_OPEN_CLOSED
+	 || f->open_mode == COB_OPEN_LOCKED) {
 		save_status (f, fnstatus, COB_STATUS_42_NOT_OPEN);
 		return;
 	}
@@ -8850,7 +8861,8 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 	else if (f->file_status)
 		memcpy (fcd->fileStatus, f->file_status, 2);
 	/* FIXME: use switch here */
-	if (f->open_mode == COB_OPEN_CLOSED)
+	if (f->open_mode == COB_OPEN_CLOSED
+	 || f->open_mode == COB_OPEN_LOCKED) 
 		fcd->openMode = OPEN_NOT_OPEN;
 	else if( f->open_mode == COB_OPEN_INPUT)
 		fcd->openMode = OPEN_INPUT;

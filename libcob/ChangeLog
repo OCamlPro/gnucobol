@@ -1,4 +1,10 @@
 
+2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	Fixing Bug #914 CLOSE may abend program
+	* fileio.c (cob_close, cob_unlock): handle CLOSE WITH LOCK files
+	* fileio.c (indexed_close): saveguard for broken state
+
 2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (alloc_figurative): optimized handling for SPACES and ZEROES
