@@ -1,9 +1,13 @@
 
 2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
 
-	Fixing Bug #914 CLOSE may abend program
+	Fixing Bug #914 CLOSE LOCK abends program on OPEN
 	* fileio.c (cob_close, cob_unlock): handle CLOSE WITH LOCK files
 	* fileio.c (indexed_close): saveguard for broken state
+
+	Fixing Bug #913 DISPLAY and ACCEPT with simple attributes SIGSEGV
+	* screenio.c (cob_accept_field, cob_display_field): check for extended
+	  params to be passed before using them
 
 2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
 

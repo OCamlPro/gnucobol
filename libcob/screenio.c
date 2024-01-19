@@ -173,13 +173,13 @@ static int cob_screen_init	(void);
 
 /* Local functions */
 
-/* 
- * Cf. GNU cpp info manual, section 7, Pragmas 
- * 
+/*
+ * Cf. GNU cpp info manual, section 7, Pragmas
+ *
  * Define a macro to use the _Pragma operator, restricted to modern gcc.
  * This section is experimental.  If it proves useful, it should be moved
  * to coblocal.h.
- * 
+ *
  * The ICC guard is there because ICC, clang and many others
  * "helpfully" define __GNUC__, but often leave out some extensions.
  */
@@ -188,8 +188,8 @@ static int cob_screen_init	(void);
 #  define GCC_PRAGMA(w)				\
    _Pragma ("GCC diagnostic push")		\
    _Pragma (#w)
-#  define GCC_POP()   _Pragma ("GCC diagnostic pop") 
-#else 
+#  define GCC_POP()   _Pragma ("GCC diagnostic pop")
+#else
 #  define  GCC_PRAGMA(w)
 #  define  GCC_POP()
 #endif
@@ -379,7 +379,7 @@ cob_get_color_pair (const short fg_color, const short bg_color)
 	if (fg_color == 0 && bg_color == 0) {
 		return 1;
 	}
-	
+
 	{
 		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 		   provide more color pairs than we currently support, limit appropriate */
@@ -920,7 +920,7 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	if (control) {
 		adjust_attr_from_control_field (&attr, control, &fg_color, &bg_color);
 	}
-	
+
 	/* curses attributes from (possibly adjusted) COBOL attributes;
 	   note that several "may be ignored if not supported by the terminal"
 	   and that OVERLINE / LEFTLINE / RIGHTLINE is a curses extension
@@ -1098,7 +1098,7 @@ cob_screen_init (void)
 				   provide more color pairs than we currently support, limit appropriate */
 				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? (short)COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
-	
+
 				for (color_pair_number = 2; color_pair_number < max_clr_pairs; ++color_pair_number) {
 					init_pair (color_pair_number, 0, 0);
 					if (color_pair_number == SHRT_MAX) {
@@ -1441,7 +1441,7 @@ cob_addnstr_graph (const char *data, const int size)
 {
 	int	count;
 	raise_ec_on_truncation (size);
-	
+
 	for (count = 0; count < size; count++) {
 		const char c = *data++;
 		switch (c) {
@@ -1761,7 +1761,7 @@ get_screen_item_line_and_col (cob_screen *s, int * const line,
 			if (s->line && !s->column) {
 				found_col = 1;
 			}
-			
+
 			if (!found_col && !s->column && is_elementary
 			 && !is_first_screen_item (s)) {
 				/*
@@ -2205,7 +2205,7 @@ static int
 is_number_with_pic_symbol (cob_field * const f, const char symbol)
 {
 	int	i;
-	
+
 	if (COB_FIELD_TYPE (f) != COB_TYPE_NUMERIC_EDITED) {
 		return 0;
 	}
@@ -2230,7 +2230,7 @@ get_pic_symbol_offset (cob_field * const f, const char symbol)
 {
 	int	offset = 0;
 	int	i = 0;
-	
+
 	do {
 		offset += f->attr->pic[i].times_repeated;
 	} while (f->attr->pic[i++].symbol != symbol);
@@ -2256,11 +2256,11 @@ shift_left (cob_screen * const s, const int cline, const int ccolumn,
 	unsigned char	move_char;
 
 	COB_UNUSED (right_pos);
-	
+
 	for (offset = 0; offset < ccolumn - scolumn; offset++) {
 		move_char = s->field->data[offset + 1];
 		s->field->data[offset] = move_char;
-		
+
 		cob_move_cursor (cline, offset + scolumn);
 		if (move_char != ' ') {
 			if (s->attr & COB_SCREEN_NO_ECHO) {
@@ -2325,7 +2325,7 @@ move_to_initial_field_pos (cob_field * const f, const int sline,
 	int	offset;
 
 	*data_ptr = f->data;
-	
+
 	if (COB_INSERT_MODE && cob_field_is_numeric_or_numeric_edited (f)) {
 		if (has_decimal_point (f)) {
 			if (to_right_side) {
@@ -2710,16 +2710,16 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			} else {
 				break;
 			}
-			
+
 			finalize_field_input (s);
-			
+
 			/* Move cursor to sign */
 			ccolumn = scolumn + get_pic_symbol_offset (s->field, sign);
 			cob_move_cursor (cline, ccolumn);
 			p = s->field->data + ccolumn - scolumn;
 			/* Enter sign */
 			break;
-			
+
 #ifdef HAVE_MOUSEMASK
 		case KEY_MOUSE:
 		{
@@ -2863,7 +2863,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			} else {
 				cob_addch ((const chtype)keyp);
 			}
-			
+
 			if (ccolumn == right_pos) {
 				/* Auto-skip at end of field. */
 				if (s->attr & COB_SCREEN_AUTO) {
@@ -3946,7 +3946,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Put cursor back to original position. */
 			cob_move_cursor (cline, ccolumn);
 			continue;
-			
+
 #ifdef HAVE_MOUSEMASK
 		case KEY_MOUSE:
 		{
@@ -4174,7 +4174,7 @@ cob_display_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...
 	cob_field *size_is = NULL;
 	cob_field *control = NULL;
 	cob_field *color = NULL;
-	
+
 	/*
 	  LINE/COL 0 is always allowed here as it is impossible to specify it in
 	  the standard format (DISPLAY ... UPON CRT) and all implementations of
@@ -4186,48 +4186,50 @@ cob_display_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...
 	int 	sline;
 	int 	scolumn;
 
-	va_list 	args;
-	const char	*p = parms;
+	if (parms && *parms) {
+		va_list 	args;
+		const char	*p = parms;
 
-	va_start (args, parms);
-	for (;;) {
-		char type = *p++;
-		if (type == 0) {
-			break;
+		va_start (args, parms);
+		for (;;) {
+			char type = *p++;
+			if (type == 0) {
+				break;
+			}
+			switch (type) {
+			case 'p':	/* AT POS, currently combined, likely to be changed later */
+			case 'l':	/* AT LINE */
+				line = va_arg (args, cob_field *);
+				break;
+			case 'c':	/* AT COLUMN */
+				column = va_arg (args, cob_field *);
+				break;
+			case 'f':	/* FOREGROUND-COLOR IS */
+				fgc = va_arg (args, cob_field *);
+				break;
+			case 'b':	/* BACKGROUND-COLOR IS */
+				bgc = va_arg (args, cob_field *);
+				break;
+			case 's':	/* SCROLL UP | DOWN */
+				fscroll = va_arg (args, cob_field *);
+				break;
+			case 'S':	/* SIZE IS */
+				size_is = va_arg (args, cob_field *);
+				break;
+			case 'C':	/* CONTROL -> variable named attributes */
+				control = va_arg (args, cob_field *);
+				break;
+			case 'L':	/* CONTROL -> variable numeric added attributes */
+				color = va_arg (args, cob_field *);
+				break;
+			default:
+				/* unknown attributes are explicit ignored */
+				break;
+			}
+			parms++;
 		}
-		switch (type) {
-		case 'p':	/* AT POS, currently combined, likely to be changed later */
-		case 'l':	/* AT LINE */
-			line = va_arg (args, cob_field *);
-			break;
-		case 'c':	/* AT COLUMN */
-			column = va_arg (args, cob_field *);
-			break;
-		case 'f':	/* FOREGROUND-COLOR IS */
-			fgc = va_arg (args, cob_field *);
-			break;
-		case 'b':	/* BACKGROUND-COLOR IS */
-			bgc = va_arg (args, cob_field *);
-			break;
-		case 's':	/* SCROLL UP | DOWN */
-			fscroll = va_arg (args, cob_field *);
-			break;
-		case 'S':	/* SIZE IS */
-			size_is = va_arg (args, cob_field *);
-			break;
-		case 'C':	/* CONTROL -> variable named attributes */
-			control = va_arg (args, cob_field *);
-			break;
-		case 'L':	/* CONTROL -> variable numeric added attributes */
-			color = va_arg (args, cob_field *);
-			break;
-		default:
-			/* unknown attributes are explicit ignored */
-			break;
-		}
-		parms++;
+		va_end (args);
 	}
-	va_end (args);
 
 	init_cob_screen_if_needed ();
 
@@ -4252,63 +4254,65 @@ cob_accept_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...)
 	cob_field *control = NULL;
 	cob_field *color = NULL;
 	cob_field *cursor = NULL;
-	
+
 	const int zero_line_col_allowed = 1;	/* see comment in cob_display_field */
 
 	int 	sline;
 	int 	scolumn;
 
-	va_list 	args;
-	const char	*p = parms;
+	if (parms && *parms) {
+		va_list 	args;
+		const char	*p = parms;
 
-	va_start (args, parms);
-	for (;;) {
-		char type = *p++;
-		if (type == 0) {
-			break;
+		va_start (args, parms);
+		for (;;) {
+			char type = *p++;
+			if (type == 0) {
+				break;
+			}
+			switch (type) {
+			case 'p':	/* AT POS, currently combined, likely to be changed later */
+			case 'l':	/* AT LINE */
+				line = va_arg (args, cob_field *);
+				break;
+			case 'c':	/* AT COLUMN */
+				column = va_arg (args, cob_field *);
+				break;
+			case 'f':	/* FOREGROUND-COLOR IS */
+				fgc = va_arg (args, cob_field *);
+				break;
+			case 'b':	/* BACKGROUND-COLOR IS */
+				bgc = va_arg (args, cob_field *);
+				break;
+			case 's':	/* SCROLL UP | DOWN */
+				fscroll = va_arg (args, cob_field *);
+				break;
+			case 't':	/* TIME-OUT [AFTER] */
+				ftimeout = va_arg (args, cob_field *);
+				break;
+			case 'P':	/* PROMPT CHARACTER OS */
+				prompt = va_arg (args, cob_field *);
+				break;
+			case 'S':	/* SIZE IS */
+				size_is = va_arg (args, cob_field *);
+				break;
+			case 'C':	/* CONTROL -> variable named attributes */
+				control = va_arg (args, cob_field *);
+				break;
+			case 'L':	/* CONTROL -> variable numeric added attributes */
+				color = va_arg (args, cob_field *);
+				break;
+			case 'R':	/* CURSOR -> offset within field */
+				cursor = va_arg (args, cob_field *);
+				break;
+			default:
+				/* unknown attributes are explicit ignored */
+				break;
+			}
+			parms++;
 		}
-		switch (type) {
-		case 'p':	/* AT POS, currently combined, likely to be changed later */
-		case 'l':	/* AT LINE */
-			line = va_arg (args, cob_field *);
-			break;
-		case 'c':	/* AT COLUMN */
-			column = va_arg (args, cob_field *);
-			break;
-		case 'f':	/* FOREGROUND-COLOR IS */
-			fgc = va_arg (args, cob_field *);
-			break;
-		case 'b':	/* BACKGROUND-COLOR IS */
-			bgc = va_arg (args, cob_field *);
-			break;
-		case 's':	/* SCROLL UP | DOWN */
-			fscroll = va_arg (args, cob_field *);
-			break;
-		case 't':	/* TIME-OUT [AFTER] */
-			ftimeout = va_arg (args, cob_field *);
-			break;
-		case 'P':	/* PROMPT CHARACTER OS */
-			prompt = va_arg (args, cob_field *);
-			break;
-		case 'S':	/* SIZE IS */
-			size_is = va_arg (args, cob_field *);
-			break;
-		case 'C':	/* CONTROL -> variable named attributes */
-			control = va_arg (args, cob_field *);
-			break;
-		case 'L':	/* CONTROL -> variable numeric added attributes */
-			color = va_arg (args, cob_field *);
-			break;
-		case 'R':	/* CURSOR -> offset within field */
-			cursor = va_arg (args, cob_field *);
-			break;
-		default:
-			/* unknown attributes are explicit ignored */
-			break;
-		}
-		parms++;
+		va_end (args);
 	}
-	va_end (args);
 
 	extract_line_and_col_vals (line, column, ACCEPT_STATEMENT,
 			zero_line_col_allowed, &sline, &scolumn);
@@ -4555,7 +4559,7 @@ cob_exit_screen_from_signal (int ss_only)
 	   PDCurses only with PDCursesMod 4.3.5) */
 #if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) \
  && (!defined (PDC_BUILD) || PDC_BUILD < 4305)
-	if (ss_only) return; 
+	if (ss_only) return;
 #endif
 
 	if (cobglobptr->cob_screen_initialized) {

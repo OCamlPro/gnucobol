@@ -6350,8 +6350,7 @@ cob_unlock (cob_file *f)
 
 	f->flag_read_done = 0;
 
-	if (f->open_mode == COB_OPEN_CLOSED
-	 || f->open_mode == COB_OPEN_LOCKED) {
+	if (f->open_mode == COB_OPEN_CLOSED) {
 		save_status (f, fnstatus, COB_STATUS_42_NOT_OPEN);
 		return;
 	}
