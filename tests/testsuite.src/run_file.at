@@ -12799,7 +12799,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL data])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile LS_NULLS LS_VALIDATE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12824,17 +12824,19 @@ AT_DATA([prog.cob], [
            10  CM-TYPE                         PICTURE X.
            10  CM-COMPANY                      PICTURE X(25).
            10  CM-DISK                         PICTURE X(8).
-           10  CM-NO-TERMINALS                 PICTURE 9(4) COMP-4.
-           10  CM-PK-DATE                      PICTURE S9(14) COMP-3.
+           10  CM-NO-TERMINALS                 PICTURE 9(2) COMP-4.
+           10  CM-NO-TERMINALS2                PICTURE 9(2) COMP-4.
+           10  CM-PK-DATE                      PICTURE S9(9) COMP-3.
 
        WORKING-STORAGE SECTION.
 
-       78  MAX-SUB           VALUE  4.
+       78  MAX-SUB           VALUE  5.
        77  CUST-STAT                           PICTURE X(2).
 
        01  TEST-DATA.
 
          02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "   00000".
            05  FILLER PIC X(8) VALUE "ALP00000".
            05  FILLER PIC X(8) VALUE "BET00000".
            05  FILLER PIC X(8) VALUE "GAM00000".
@@ -12843,6 +12845,7 @@ AT_DATA([prog.cob], [
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
                                        PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "SPACE COMPANY            ".
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
            05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
@@ -12850,6 +12853,7 @@ AT_DATA([prog.cob], [
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
                                        PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
+           05  FILLER PIC X(10) VALUE "EARTH     ".
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
            05  FILLER PIC X(10) VALUE "WASHINGTON".
@@ -12858,11 +12862,20 @@ AT_DATA([prog.cob], [
                                        PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) OCCURS MAX-SUB.
+         02  DATA-NO-TERMINALS-TBL2.
+           05  FILLER PIC 9(3) VALUE 50.
            05  FILLER PIC 9(3) VALUE 10.
            05  FILLER PIC 9(3) VALUE 13.
            05  FILLER PIC 9(3) VALUE 3.
            05  FILLER PIC 9(3) VALUE 254.
-         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+         02  DATA-NO-TERMINALS2 REDEFINES DATA-NO-TERMINALS-TBL2
                                        PIC 9(3) OCCURS MAX-SUB.
        01  WORK-AREA.
            05  SUB                             BINARY-SHORT UNSIGNED.
@@ -12904,10 +12917,21 @@ AT_DATA([prog.cob], [
            READ FLATFILE
            IF CUST-STAT NOT = "00"
              DISPLAY "Read Status: " CUST-STAT
+      *      ignore truncation and skip next record (not portable to EBCDIC)
+             IF CUST-STAT = "06"
+                PERFORM SHOW-RECORD
+                READ FLATFILE
+                MOVE "00" TO CUST-STAT
+             END-IF
            ELSE
-             DISPLAY "Read  " CM-CUST-NUM
-                     " Trms:" CM-NO-TERMINALS
+             PERFORM SHOW-RECORD
            END-IF.
+           
+
+       SHOW-RECORD.
+           DISPLAY "Read  " CM-CUST-NUM
+                   " Trms:" CM-NO-TERMINALS
+                   "-"      CM-NO-TERMINALS2.
 
        LOADFILE.
            OPEN OUTPUT FLATFILE.
@@ -12922,9 +12946,13 @@ AT_DATA([prog.cob], [
            MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
            MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
            MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
-           MOVE 20070319                     TO CM-PK-DATE.
-           IF SUB = 1 OR 4 OR 6
-               MOVE -20070319                 TO CM-PK-DATE.
+           MOVE DATA-NO-TERMINALS2 (SUB)     TO CM-NO-TERMINALS2.
+           IF SUB = 1
+               MOVE 505050505                TO CM-PK-DATE
+           ELSE IF SUB = 4 OR 6
+               MOVE -20070319                TO CM-PK-DATE
+           ELSE
+               MOVE 20070319                 TO CM-PK-DATE.
 
            IF  ODD-RECORD
                MOVE "8417"                   TO CM-DISK
@@ -12936,17 +12964,20 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-trunc prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [MF Load data
 MF Open Sts: 00
-Read  ALP00000 Trms:0010
-Read  BET00000 Trms:0013
-Read  GAM00000 Trms:0003
-Read  DEL00000 Trms:0254
+Read     00000 Trms:009-050
+Read  ALP00000 Trms:009-010
+Read  BET00000 Trms:009-013
+Read  GAM00000 Trms:009-003
+Read  DEL00000 Trms:009-254
 Read Status: 10
 Std Open Sts: 00
+Read Status: 06
+Read     00000 Trms:000-009
 Read Status: 09
 Std Load data
 Error status 71 writing record ALP00000

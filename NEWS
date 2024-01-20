@@ -15,6 +15,7 @@ NEWS - user visible changes				-*- outline -*-
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+** #918: COB_LS_VALIDATE (io status 09 and 71) partial broken
 
 * Changes to the COBOL compiler (cobc) options:
 

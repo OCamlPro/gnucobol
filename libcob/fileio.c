@@ -2749,9 +2749,10 @@ lineseq_write (cob_file *f, const int opt)
 			register unsigned char	*p = f->record->data;
 			const unsigned char *p_max = p + size;
 			while (p < p_max) {
-				if (IS_BAD_CHAR (*p++)) {
+				if (IS_BAD_CHAR (*p)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
+				p++;
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else if (cobsetptr->cob_ls_nulls) {
@@ -2865,9 +2866,10 @@ lineseq_rewrite (cob_file *f, const int opt)
 			register unsigned char	*p = f->record->data;
 			const unsigned char *p_max = p + size;
 			while (p < p_max) {
-				if (IS_BAD_CHAR (*p++)) {
+				if (IS_BAD_CHAR (*p)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
+				p++;
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else
