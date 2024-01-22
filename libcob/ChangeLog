@@ -1,4 +1,9 @@
 
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h: use stdint.h and inttypes.h when available to
+	  define cob_s64_t, cob_u64_t and the various CB_FMT_ macros
+
 2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	Fixing Bug #914 CLOSE LOCK abends program on OPEN

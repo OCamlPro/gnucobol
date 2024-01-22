@@ -3158,7 +3158,7 @@ output_long_integer (cb_tree x)
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_zero) {
-			output (CB_FMT_LLD_F, 0LL);
+			output (CB_FMT_LLD_F, COB_S64_C(0));
 		} else if (x == cb_null) {
 			output ("(cob_u8_ptr)NULL");
 		} else {
