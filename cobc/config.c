@@ -448,7 +448,7 @@ cb_load_conf (const char *fname, const int prefix_dir)
 
 	/* Checks for missing definitions */
 	if (ret == 0) {
-		for (i = 10U; i < CB_CONFIG_SIZE; i++) {
+		for (i = 10; i < CB_CONFIG_SIZE; i++) {
 #if COBC_STORES_CONFIG_VALUES
 			if (config_table[i].val == NULL) {
 #else
@@ -458,7 +458,7 @@ cb_load_conf (const char *fname, const int prefix_dir)
 				if (ret == 0) {
 					configuration_error (fname, 0, 1, _("missing definitions:"));
 				}
-				configuration_error (fname, 0, 1, _("\tno definition of '%s'"),
+				configuration_error (fname, 0, 2, _("\tno definition of '%s'"),
 						config_table[i].name);
 				ret = -1;
 			}
@@ -620,8 +620,15 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				snprintf (buff, (size_t)COB_NORMAL_MAX, "%s.words", val);
 				/* check if name.words exists and store the resolved name to words_file */
 				if (cb_load_conf_file (buff, CB_INCLUDE_RESOLVE_WORDS) != 0) {
+#if 0
+					/* must be executed before anything that may adjust errno, ...
+					   ...like function call below. */
+					const char *errno_str = cb_get_strerror ();
 					configuration_error (fname, line, 1, _("Could not access word list for '%s'"), val);
-					/*cb_perror (1, "%s: %s", words_file, cb_get_strerror ()); */
+					cb_perror (1, "%s: %s", words_file, errno_str);
+#else
+					configuration_error (fname, line, 1, _("Could not access word list for '%s'"), val);
+#endif
 					return -1;
 				};
 			}

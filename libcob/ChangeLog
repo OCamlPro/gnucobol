@@ -1,4 +1,50 @@
 
+2023-12-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_terminate_routines, cob_call_with_exception_check):
+          add a mechanism to postpone unloading of modules when using longjmp,
+          as this is not safe on Windows (its implementation of longjmp
+          performs stack-unwinding)
+
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h: use stdint.h and inttypes.h when available to
+	  define cob_s64_t, cob_u64_t and the various CB_FMT_ macros
+
+2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	Fixing Bug #914 CLOSE LOCK abends program on OPEN
+	* fileio.c (cob_close, cob_unlock): handle CLOSE WITH LOCK files
+	* fileio.c (indexed_close): saveguard for broken state
+
+	Fixing Bug #913 DISPLAY and ACCEPT with simple attributes SIGSEGV
+	* screenio.c (cob_accept_field, cob_display_field): check for extended
+	  params to be passed before using them
+
+2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (alloc_figurative): optimized handling for SPACES and ZEROES
+	* strings.c (cob_inspect_translating), common.h: variant of
+	  cob_inspect_converting that is called with a pre-computed translation
+	  table (COBOL source using only constants)
+	* strings.c (cob_inspect_converting): replaced partial conversion table
+	  with full table, which saves a check on each replaced byte
+	* strings.c (cob_inspect_converting): also call cob_real_put_sign for
+	  early exits
+
+2023-09-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add_int): minor adjustment to scale handling
+	* numeric.c (packed_is_negative): optimized by memcmp instead of loop
+	* numeric.c (cob_decimal_get_display): fixed broken sign in
+	  diff calculation
+
+2023-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
+	  fix C RTS check raising overflow by replacing casting to char by "& 0xFF"
+	* cconv.c (cob_field_to_string): fix analyzer warnings
+
 2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version.h: bump to 3.3

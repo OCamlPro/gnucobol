@@ -1599,7 +1599,7 @@ AT_DATA([prog.cob], [
                OCCURS 8 TIMES            PIC 1(8) BIT.
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=cobol2014 -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:9: warning: continuation of COBOL words is archaic in COBOL 2014
 prog.cob:11: warning: continuation of COBOL words is archaic in COBOL 2014
 prog.cob:12: warning: continuation of COBOL words is archaic in COBOL 2014
@@ -1678,7 +1678,7 @@ prog.cob:93: warning: USAGE BIT is not implemented
 prog.cob:96: warning: USAGE BIT is not implemented
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:9: warning: continuation of COBOL words used
 prog.cob:11: warning: continuation of COBOL words used
 prog.cob:12: warning: continuation of COBOL words used

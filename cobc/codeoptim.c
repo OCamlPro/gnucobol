@@ -235,11 +235,12 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register int	n;");
 		output_storage ("	register int	val = 0;");
 		/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
-		output_storage ("		if (*p > '0' && *p <= '9')");
+		output_storage ("	for (n = 0; n < size; ++n) {");
+		output_storage ("		if (*p & 0x0F)");
 		output_storage ("			break;");
+		output_storage ("		p++;");
 		output_storage ("	}");
-		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
+		output_storage ("	for (; n < size; ++n, ++p) {");
 		output_storage ("		val = (val * 10)");
 		output_storage ("		    + (*p & 0x0F);");
 		output_storage ("	}");
@@ -255,11 +256,11 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = 0;");
 		/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
-		output_storage ("		if (*p > '0' && *p <= '9')");
+		output_storage ("	for (n = 0; n < size; ++n) {");
+		output_storage ("		if (*p & 0x0F)");
 		output_storage ("			break;");
+		output_storage ("		p++;");
 		output_storage ("	}");
-		output_storage ("	val = 0;");
 		output_storage ("	for (; n < size; ++n, ++p) {");
 		output_storage ("		val = (val * 10)");
 		output_storage ("		    + (*p & 0x0F);");

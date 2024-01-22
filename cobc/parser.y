@@ -365,8 +365,8 @@ build_colseq_tree (const char *alphabet_name,
 		      int alphabet_target)
 {
 	const cb_tree name = cb_build_reference (alphabet_name);
-	struct cb_alphabet_name * alpha;
-	alpha = CB_ALPHABET_NAME (cb_build_alphabet_name (name));
+	struct cb_alphabet_name *alpha
+		= CB_ALPHABET_NAME (cb_build_alphabet_name (name));
 	alpha->alphabet_type = alphabet_type;
 	alpha->alphabet_target = alphabet_target;
 	return name;
@@ -393,7 +393,6 @@ build_colseq (enum cb_colseq colseq)
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
-
 }
 
 

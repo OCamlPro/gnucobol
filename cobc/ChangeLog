@@ -1,4 +1,74 @@
 
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #923: generated modules init/clear unused decimal constants
+	* codegen.c (literal_list): removal of the unused x field,
+	  and type moved to tree.h
+	* tree.h (struct cb_program): new decimal_constant field
+	  to store decimal constants used by the current program,
+	* codegen.c (cb_cache_program_decimal_constant): new function
+	  that adds constants used by the current program to the new
+	  decimal_constant field in struct cb_prog
+	* codegen.c (cb_lookup_literal): added the current program as
+	  argument to cb_lookup_literal to account for different
+	  usage contexts (parse/typecheck vs codegen)
+	* codegen.c (output_internal_function): iterate over
+	  prog->decimal_constants instead of literal_cache so as to only
+	  output decimal constants actually used by the current program
+	* typeck.c (decimal_expand, cb_build_cond_fields),
+	  codegen.c (output_param) : pass current_program to cb_lookup_literal
+
+	BUG #917: segfault on decimal constant after CANCEL on subprogram
+	* codegen.c (codegen_internal, codegen_finalize): move declaration
+	  of decimal constants from global storage to local storage
+
+2023-09-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (literal_list): removed self-reference as tree
+	* replace.c (ppecho_replace): now inline
+	* replace.c (cb_free_replace): removed setting child to zero before free
+	* replace.c: style adjustment
+
+2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_converting): protoype (disabled) to pre-generate
+	  conversion table and call new function cob_inspect_translating instead
+	  of cob_inspect_converting if both operands are literals/alphabets
+
+2023-09-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_inspect): check for identical operands,
+	  check for invalid combination of operands
+	* typeck.c (cb_build_converting): shortcut when identical operands
+	  are used
+	* tree.h: change alphabet_target and alphabet_type from defines to enums
+
+2023-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppopen_get_file): test for binary file and directly error out
+	* cobc.c (cobc_terminate_exit), cobc.h: split cobc_terminate and make
+	  the new function available
+	* pplex.l: check for format errors per file and skip format related
+	  warnings if the file reached a max. of 5 such errors
+	* error.c, cobc.c (print_program_trailer), flag.def:
+	  implemented -fmax-errors=0 as unlimited
+	* flag.def (max_errors): reduced default from 128 to 20
+	* config.c (cb_load_conf), error.c (configuration_error): count missing
+	  definitions as single error
+	* cobc.c (process_command_line): passing -O0 by defaut for -g as some
+	  C compilers raise warnings otherwise, breaking the testsuite
+
+2023-08-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codeoptim.c (cob_gen_optim): fixed to actually skip leading zeros
+	  for COB_GET_NUMDISP and COB_GET_NUMDISPS
+
+2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (emit_definition_note): renamed from warning_destination
+	* typeck.c (emit_definition_note), tree.h (cb_field): prevent output
+	  of the same field multiple times by new flag_had_definition_note
+
 2023-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (search_set_keys): improving SEARCH ALL syntax checks

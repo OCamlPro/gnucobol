@@ -148,18 +148,27 @@ AT_DATA([prog2.cob], [
            DISPLAY TEST-VAR NO ADVANCING
            END-DISPLAY
            STOP RUN.
+       COPY 'CRUD2.CPY'.
 ])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
 prog2.cob:6: warning: numeric value is expected [[-Wothers]]
 ])
 
-AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=0 prog2.cob], [97], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=0 -Wall prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
-cobc: too many errors [[-fmax-errors=0]]
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
+prog2.cob:6: warning: numeric value is expected [[-Wothers]]
+])
 
-cobc: aborting compile of prog2.cob at line 7 (unknown: unknown)
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=1 prog2.cob], [97], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
+cobc: too many errors [[-fmax-errors=1]]
+
+cobc: aborting compile of prog2.cob at line 15 (unknown: unknown)
 ])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wfatal-errors prog2.cob], [97], [],

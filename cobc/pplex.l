@@ -117,6 +117,7 @@ struct copy_info {
 	int			line;
 	int			quotation_mark;
 	int			source_format;
+	int			indicator_error;
 };
 
 struct plex_stack {
@@ -147,6 +148,7 @@ static int			listing_line = 0;
 static int			requires_listing_line;
 static enum cb_format		source_format = CB_FORMAT_AUTO;
 static int	indicator_column = 7;
+static int	indicator_error = 0;
 static int	text_column = 72;	   /* end of area B (in single-byte
 					      characters) */
 static int	floating_area_b = 0;	   /* whether indicator is optional */
@@ -1280,24 +1282,58 @@ ppopen_get_file (const char *name)
 
 	/* Check for BOM and, if source-format was not specified, also for free-form */
 	{
-		int fseek_to = 0 ;
+		unsigned char fseek_to = 0 ;
 #define COBC_LOOKAHEAD 20
 		unsigned char buffer[COBC_LOOKAHEAD];
-		int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
+		const int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
 
 		/* check for and skip UTF-8 BOM */
 		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
 			fseek_to = 3;
+		} else
+		/* check for binary */
+		if (nread > 5) {
+#if 0
+			if ((buffer[0] == 0x7F && buffer[1] == 0x45 && buffer[2] == 0x4C
+			  && buffer[3] == 0x46 && (buffer[4] & 0xF0) == 0x00	/* ELF */)
+			 || (buffer[0] == 0x4D && buffer[1] == 0x5A && buffer[3] == 0x00
+				 && (buffer[4] & 0xF0) == 0x00	/* PE */)) {
+				cb_error ("%s: %s", name, _("source file is binary"));
+				close (ppin);
+				return 0;
+			}
+#endif
+			{
+				int chck_pos = nread - 2;
+				while (chck_pos > 0) {
+					unsigned char test = buffer[chck_pos--];
+					if (test != 0x00 && test != 0x80 && test != 0x90) {
+						continue;
+					}
+					test = buffer[chck_pos--];
+					if (test == 0x00 || test == 0x80 || test == 0x90) {
+						/* two consecutive NULL / invalid ASCII/EBCDIC -> must be binary */
+						fclose (ppin);
+						ppin = NULL;
+						if (cb_source_line == 0) {
+							/* if this is a "main" source, terminate with an error */
+							cobc_terminate_exit (name, _("source file is binary"));
+						}
+						cb_error ("%s: %s", name, _("source file is binary"));
+						return 0;
+					}
+				}
+			}
 		}
 
 		/* try to deduce source format */
 		if (source_format == CB_FORMAT_AUTO) {
-			int pos = fseek_to;
+			unsigned char pos = fseek_to;
 			/* if indicator is wrong on first line with source, switch to free format */
 			/* skip empty lines */
 			char last_pos_7 = ' ';
-			int amount_of_0a_seen = 0;
-			int line_pos = 0;
+			unsigned char amount_of_0a_seen = 0;
+			unsigned char line_pos = 0;
 			while (nread - pos > 7) {
 				switch (buffer[pos]) {
 				case '\r':
@@ -1308,7 +1344,7 @@ ppopen_get_file (const char *name)
 					break;
 				case '\t':
 					buffer[pos] = ' ';
-					line_pos++;
+					line_pos++;				/* move test from run_extensions.at 1809 to -fformat */
 					while (line_pos % cb_tab_width != 0) {
 						line_pos++;
 					}
@@ -1391,6 +1427,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	current_copy_info->line = cb_source_line;
 	current_copy_info->quotation_mark = quotation_mark;
 	current_copy_info->source_format = cobc_get_source_format ();
+	current_copy_info->indicator_error = indicator_error;
 
 	current_copy_info->next = copy_stack;
 	current_copy_info->containing_files = old_list_file;
@@ -1426,7 +1463,8 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 #endif
 
 	/* switch to new buffer */
-	switch_to_buffer (1, dname, yy_create_buffer (ppin, YY_BUF_SIZE));
+	switch_to_buffer (1, current_copy_info->dname, yy_create_buffer (ppin, YY_BUF_SIZE));
+	indicator_error = 0;
 
 	/* postponed errror handling */
 	if (!ppin) {
@@ -1624,7 +1662,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 	/* expected case: filename found */
 	if (likely (filename)) {
 		if (ppopen (filename, replace_list) == 0) {
-		/* expected case: copybook could be processed */
+			/* expected case: copybook could be processed */
 			return 0;
 		}
 		/* otherwise fall-trough to error handling */
@@ -2478,9 +2516,18 @@ start:
 			break;
 		}
 		/* Invalid indicator */
-		cb_plex_error (newline_count,
-				_("invalid indicator '%c' at column %d"),
-				buff[indicator_column - 1], indicator_column);
+		if (indicator_error++ < 5) {
+			cb_plex_error (newline_count,
+					_("invalid indicator '%c' at column %d"),
+					buff[indicator_column - 1], indicator_column);
+		}
+		if (indicator_error == 5) {
+			int sav_line = cb_source_line;
+			cb_source_line = 0;
+			cb_error (_("too many format errors in file, skip output of further errors"));
+			cb_source_line = sav_line;
+		}
+
 		/* Note: Treat as comment line to allow further parsing
 		         instead of aborting compilation */
 		newline_count++;
@@ -2537,8 +2584,16 @@ start:
 			if (bp[0] == quotation_mark && bp[1] == quotation_mark) {
 				bp++;
 			} else {
-				cb_plex_error (newline_count,
+				if (indicator_error++ < 5) {
+					cb_plex_error (newline_count,
 						_("invalid line continuation"));
+				}
+				if (indicator_error == 5) {
+					int sav_line = cb_source_line;
+					cb_source_line = 0;
+					cb_error (_("too many format errors in file, skip output of further errors"));
+					cb_source_line = sav_line;
+				}
 				return YY_NULL;
 			}
 			quotation_mark = 0;
@@ -2548,16 +2603,33 @@ start:
 			if (*bp == quotation_mark) {
 				bp++;
 			} else {
-				cb_plex_error (newline_count,
+				if (indicator_error++ < 5) {
+					cb_plex_error (newline_count,
 						_("invalid line continuation"));
+				}
+				if (indicator_error == 5) {
+					int sav_line = cb_source_line;
+					cb_source_line = 0;
+					cb_error (_("too many format errors in file, skip output of further errors"));
+					cb_source_line = sav_line;
+				}
 				return YY_NULL;
 			}
 		}
 	} else {
 		/* Normal line */
 		if (need_continuation) {
-			cb_plex_error (newline_count,
+			/* CHECKME: close the last literal */
+			if (indicator_error++ < 5) {
+				cb_plex_error (newline_count,
 					_("continuation character expected"));
+			}
+			if (indicator_error == 5) {
+				int sav_line = cb_source_line;
+				cb_source_line = 0;
+				cb_error (_("too many format errors in file, skip output of further errors"));
+				cb_source_line = sav_line;
+			}
 			need_continuation = 0;
 		}
 		quotation_mark = 0;

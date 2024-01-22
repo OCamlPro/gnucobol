@@ -135,18 +135,22 @@ enum cb_tag {
 };
 
 /* Alphabet target */
-#define CB_ALPHABET_ALPHANUMERIC	0
-#define CB_ALPHABET_NATIONAL	1
+enum cb_alphabet_target {
+	CB_ALPHABET_ALPHANUMERIC	= 0,
+	CB_ALPHABET_NATIONAL	= 1
+};
 
 /* Alphabet type */
-#define CB_ALPHABET_NATIVE	0
-#define CB_ALPHABET_ASCII	1
-#define CB_ALPHABET_EBCDIC	2
-#define CB_ALPHABET_CUSTOM	3
-#define CB_ALPHABET_LOCALE	4
-#define CB_ALPHABET_UTF_8	5
-#define CB_ALPHABET_UTF_16	6
-#define CB_ALPHABET_UCS_4	7
+enum cb_alphabet_type {
+	CB_ALPHABET_NATIVE	= 0,
+	CB_ALPHABET_ASCII	= 1,
+	CB_ALPHABET_EBCDIC	= 2,
+	CB_ALPHABET_CUSTOM	= 3,
+	CB_ALPHABET_LOCALE	= 4,
+	CB_ALPHABET_UTF_8	= 5,
+	CB_ALPHABET_UTF_16	= 6,
+	CB_ALPHABET_UCS_4	= 7
+};
 
 /* Call convention bits */
 /* Bit number	Meaning			Value */
@@ -319,45 +323,45 @@ enum cb_storage {
 
 /* Field types */
 enum cb_usage {
-	CB_USAGE_BINARY = 0,		/* 0 */
-	CB_USAGE_BIT,			/* 1 */
-	CB_USAGE_COMP_5,		/* 2 */
-	CB_USAGE_COMP_X,		/* 3 */
-	CB_USAGE_DISPLAY,		/* 4 */
-	CB_USAGE_FLOAT,			/* 5 */
-	CB_USAGE_DOUBLE,		/* 6 */
-	CB_USAGE_INDEX,			/* 7 */
-	CB_USAGE_NATIONAL,		/* 8 */
-	CB_USAGE_OBJECT,		/* 9 */
-	CB_USAGE_PACKED,		/* 10 */
-	CB_USAGE_POINTER,		/* 11 */
-	CB_USAGE_LENGTH,		/* 12 */
-	CB_USAGE_PROGRAM_POINTER,	/* 13 */
-	CB_USAGE_UNSIGNED_CHAR,		/* 14 */
-	CB_USAGE_SIGNED_CHAR,		/* 15 */
-	CB_USAGE_UNSIGNED_SHORT,	/* 16 */
-	CB_USAGE_SIGNED_SHORT,		/* 17 */
-	CB_USAGE_UNSIGNED_INT,		/* 18 */
-	CB_USAGE_SIGNED_INT,		/* 19 */
-	CB_USAGE_UNSIGNED_LONG,		/* 20 */
-	CB_USAGE_SIGNED_LONG,		/* 21 */
-	CB_USAGE_COMP_6,		/* 22 */
-	CB_USAGE_FP_DEC64,		/* 23 */
-	CB_USAGE_FP_DEC128,		/* 24 */
-	CB_USAGE_FP_BIN32,		/* 25 */
-	CB_USAGE_FP_BIN64,		/* 26 */
-	CB_USAGE_FP_BIN128,		/* 27 */
-	CB_USAGE_LONG_DOUBLE,		/* 28 */
-	CB_USAGE_HNDL,			/* 29 */
-	CB_USAGE_HNDL_WINDOW,		/* 30 */
-	CB_USAGE_HNDL_SUBWINDOW,	/* 31 */
-	CB_USAGE_HNDL_FONT,		/* 32 */
-	CB_USAGE_HNDL_THREAD,		/* 33 */
-	CB_USAGE_HNDL_MENU,		/* 34 */
-	CB_USAGE_HNDL_VARIANT,		/* 35 */
-	CB_USAGE_HNDL_LM,		/* 36 */
-	CB_USAGE_COMP_N,		/* 37 */
-	CB_USAGE_ERROR			/* 38, always last */
+	CB_USAGE_BINARY = 0,
+	CB_USAGE_BIT,
+	CB_USAGE_COMP_5,
+	CB_USAGE_COMP_X,
+	CB_USAGE_DISPLAY,
+	CB_USAGE_FLOAT,
+	CB_USAGE_DOUBLE,
+	CB_USAGE_INDEX,
+	CB_USAGE_NATIONAL,
+	CB_USAGE_OBJECT,
+	CB_USAGE_PACKED,
+	CB_USAGE_POINTER,
+	CB_USAGE_LENGTH,
+	CB_USAGE_PROGRAM_POINTER,
+	CB_USAGE_UNSIGNED_CHAR,
+	CB_USAGE_SIGNED_CHAR,
+	CB_USAGE_UNSIGNED_SHORT,
+	CB_USAGE_SIGNED_SHORT,
+	CB_USAGE_UNSIGNED_INT,
+	CB_USAGE_SIGNED_INT,
+	CB_USAGE_UNSIGNED_LONG,
+	CB_USAGE_SIGNED_LONG,
+	CB_USAGE_COMP_6,
+	CB_USAGE_FP_DEC64,
+	CB_USAGE_FP_DEC128,
+	CB_USAGE_FP_BIN32,
+	CB_USAGE_FP_BIN64,
+	CB_USAGE_FP_BIN128,
+	CB_USAGE_LONG_DOUBLE,
+	CB_USAGE_HNDL,
+	CB_USAGE_HNDL_WINDOW,
+	CB_USAGE_HNDL_SUBWINDOW,
+	CB_USAGE_HNDL_FONT,
+	CB_USAGE_HNDL_THREAD,
+	CB_USAGE_HNDL_MENU,
+	CB_USAGE_HNDL_VARIANT,
+	CB_USAGE_HNDL_LM,
+	CB_USAGE_COMP_N,
+	CB_USAGE_ERROR			/* always last */
 };
 
 
@@ -687,8 +691,8 @@ struct cb_alphabet_name {
 	const char		*name;		/* Original name */
 	char			*cname;		/* Name used in C */
 	cb_tree			custom_list;	/* Custom ALPHABET / LOCALE reference */
-	unsigned int		alphabet_target;	/* ALPHANUMERIC or NATIONAL */
-	unsigned int		alphabet_type;	/* ALPHABET type */
+	enum cb_alphabet_target		alphabet_target;	/* ALPHANUMERIC or NATIONAL */
+	enum cb_alphabet_type		alphabet_type;	/* ALPHABET type */
 	int			low_val_char;	/* LOW-VALUE */
 	int			high_val_char;	/* HIGH-VALUE */
 	int			values[256];	/* Collating values */
@@ -962,7 +966,7 @@ struct cb_field {
 	unsigned int flag_field		: 1;	/* Has been internally cached */
 	unsigned int flag_chained	: 1;	/* CHAINING item */
 	unsigned int flag_anylen_done	: 1;	/* ANY LENGTH is set up */
-	unsigned int flag_is_verified	: 1;	/* Has been verified */
+	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_is_c_long	: 1;	/* Is BINARY-C-LONG */
 	unsigned int flag_is_pdiv_parm	: 1;	/* Is PROC DIV USING */
 	unsigned int flag_is_pdiv_opt	: 1;	/* Is PROC DIV USING OPTIONAL */
@@ -991,9 +995,11 @@ struct cb_field {
 	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
-	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */
+	unsigned int flag_is_verified	: 1;	/* Has been verified */
+
+	unsigned int flag_had_definition_note : 1;	/* had its defintion output */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1191,7 +1197,7 @@ struct cb_reference {
 	cb_tree			value;		/* Item referred to */
 	cb_tree			subs;		/* List of subscripts */
 	cb_tree			offset;		/* Reference mod offset */
-	cb_tree			length;		/* Reference mod length */
+	cb_tree			length;		/* Reference mod length, only set if offset set */
 	cb_tree			check;		/* Runtime checks */
 	enum cob_statement	statement;	/* statement that uses this reference */
 	struct cb_word		*word;		/* Pointer to word list */
@@ -1794,6 +1800,13 @@ struct cb_ml_generate_tree {
 
 /* Program */
 
+struct literal_list {
+	struct literal_list	*next;
+	struct cb_literal	*literal;
+	int			id;
+	int			make_decimal;
+};
+
 struct nested_list {
 	struct nested_list	*next;
 	struct cb_program	*nested_prog;
@@ -1890,6 +1903,7 @@ struct cb_program {
 	unsigned char	numeric_separator;		/* ',' or '.' */
 	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
+	struct literal_list	*decimal_constants;
 
 	unsigned int	flag_main		: 1;	/* Gen main function */
 	unsigned int	flag_common		: 1;	/* COMMON PROGRAM */
@@ -2076,7 +2090,7 @@ extern cb_tree			cb_concat_literals (const cb_tree,
 
 extern cb_tree			cb_build_decimal (const unsigned int);
 extern cb_tree			cb_build_decimal_literal (const int);
-extern int			cb_lookup_literal (cb_tree x, int make_decimal);
+extern int			cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal);
 
 extern cb_tree			cb_build_comment (const char *);
 extern cb_tree			cb_build_direct (const char *,

@@ -4013,7 +4013,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  MYOCC        PIC 9(8) COMP VALUE 0.
+       01  MYOCC        PIC 9(8) VALUE 0.
        PROCEDURE        DIVISION.
        ASTART SECTION.
        A01.
@@ -4032,6 +4032,7 @@ AT_DATA([prog.cob], [
            END-IF.
        B99.
            EXIT.
+      *> expected without -fperform-osvs: fall through here _SHOULD_ abort with -fsection-exit-check
 ])
 
 AT_CHECK([$COMPILE -fperform-osvs prog.cob], [0], [], [])
@@ -7489,7 +7490,6 @@ AT_CHECK([$COMPILE -std=mf -fno-move-non-numeric-lit-to-numeric-is-zero prog.cob
 prog.cob:28: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:34: warning: numeric value is expected
-prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:52: warning: numeric value is expected
 prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
 ])
@@ -14569,4 +14569,64 @@ TST-DECIMAL IS < ZERO-DECIMAL
 # CHECKME: Do we want to mimic that with -std=mf?
 
 
+AT_CLEANUP
+
+
+AT_SETUP([Decimal constants and programs in same source])
+AT_KEYWORDS([runmisc INITIAL CANCEL CALL])
+
+# this used to cause a SIGSEGV, see bug #917
+
+AT_DATA([prog.cpy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. :PROG-NAME: :PROG-KIND:.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 42.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           IF (X + Y) / 42.1 = 1
+               DISPLAY "OK" WITH NO ADVANCING.
+           EXIT PROGRAM.
+       END PROGRAM :PROG-NAME:.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 0.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           CALL "nested_init"
+           CALL "nonnested_init"
+           CALL "nested_noninit"
+           CANCEL "nested_noninit"
+           CALL "nonnested_noninit"
+           CANCEL "nonnested_noninit"
+           IF X + Y + 42.1 <> 0
+               DISPLAY "OK" WITH NO ADVANCING.
+           STOP RUN.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nested_init==
+                           ==:PROG-KIND:== BY ==INITIAL==.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nested_noninit==
+                           ==:PROG-KIND:== BY ====.
+       END PROGRAM prog.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nonnested_init==
+                           ==:PROG-KIND:== BY ==INITIAL==.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nonnested_noninit==
+                           ==:PROG-KIND:== BY ====.
+])
+
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN prog], [0], [OKOKOKOKOK], [])
 AT_CLEANUP

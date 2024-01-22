@@ -3478,3 +3478,35 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
+AT_SETUP([simple ACCEPT field WITH UPDATE])
+AT_KEYWORDS([screen])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 var           pic x(11) value 'ignore this'.
+       01  success-flag PIC X VALUE 'y'.
+           88  success  VALUE 'Y', 'y'.
+
+       PROCEDURE        DIVISION.
+           display "Press ENTER if you see an ""y"" "
+                   at 0302
+           accept success-flag update.
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
