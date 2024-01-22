@@ -1009,5 +1009,13 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
  > <EOF>
 ]])
 
+AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
+
+AT_CHECK([$SED -e "s|$PWD|HOME|" compiler.output], [0],
+[HOME/prog.cob:7: error: CRUD.CPY: No such file or directory
+HOME/prog.cob:6: warning: numeric value is expected
+HOME/prog.cob:14: warning: ignoring redundant .
+])
+
 AT_CLEANUP
 

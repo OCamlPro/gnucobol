@@ -28,9 +28,19 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 #include "cobc.h"
 #include "tree.h"
+
+#ifdef	_WIN32
+#if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
+#include <direct.h> // _getcwd
+#define	getcwd		_getcwd
+#endif
+#endif
 
 enum cb_error_kind {
 	CB_KIND_ERROR,
@@ -57,6 +67,32 @@ static void
 print_error_prefix (const char *file, int line, const char *prefix)
 {
 	if (file) {
+		char *absfile = NULL ;
+		if (cb_diagnostics_absolute_paths
+		 && strcmp (file, COB_DASH) != 0
+		 && file[0] != '/'
+		 && file[0] != '\\'
+		 && file[1] != ':'){
+			int filelen = strlen (file);
+			int dirlen = 256;
+			char *cwd ;
+			absfile = cobc_malloc( dirlen + 1 + filelen + 1 );
+			cwd = getcwd (absfile, dirlen);
+			if (cwd != NULL ){
+#ifdef HAVE_SYS_STAT_H
+				struct stat st;
+#endif
+				dirlen = strlen (cwd);
+				absfile[dirlen] = '/';
+				memcpy (absfile+dirlen+1, file, filelen+1);
+#ifdef HAVE_SYS_STAT_H
+				if (!stat (absfile,&st))
+#endif
+				{
+					file = absfile;
+				}
+			}
+		}
 		if (line <= 0) {
 			fprintf (stderr, "%s: ", file);
 		} else if (cb_msg_style == CB_MSG_STYLE_MSC) {
@@ -64,6 +100,7 @@ print_error_prefix (const char *file, int line, const char *prefix)
 		} else {
 			fprintf (stderr, "%s:%d: ", file, line);
 		}
+		if (absfile) cobc_free (absfile);
 	}
 	if (prefix) {
 		fprintf (stderr, "%s", prefix);
