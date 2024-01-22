@@ -13926,6 +13926,27 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		/* Switch to main storage file */
 		output_target = cb_storage_file;
 	}
+
+	/* Decimal constants */
+	{
+		struct literal_list* m = literal_cache;
+		int comment_gen = 0;
+		for (; m; m = m->next) {
+			if (m->make_decimal) {
+				if (!comment_gen) {
+					comment_gen = 1;
+					output_local ("\n/* Decimal constants */\n");
+				}
+				output_local ("static\tcob_decimal\t%s%d;\n",
+						CB_PREFIX_DEC_FIELD, m->id);
+				output_local ("static\tcob_decimal\t*%s%d = NULL;\n",
+						CB_PREFIX_DEC_CONST, m->id);
+			}
+		}
+		if (comment_gen) {
+			output_local ("\n");
+		}
+	}
 }
 
 void
@@ -13962,27 +13983,6 @@ codegen_finalize (void)
 				cob_gen_optim (optidx);
 				output_storage ("\n");
 			}
-		}
-	}
-
-	/* Decimal constants */
-	{
-		struct literal_list* m;
-		int comment_gen = 0;
-		for (m = literal_cache; m; m = m->next) {
-			if (m->make_decimal) {
-				if (!comment_gen) {
-					comment_gen = 1;
-					output_storage ("\n/* Decimal constants */\n");
-				}
-				output_storage ("static\tcob_decimal\t%s%d;\n",
-						CB_PREFIX_DEC_FIELD, m->id);
-				output_storage ("static\tcob_decimal\t*%s%d = NULL;\n",
-						CB_PREFIX_DEC_CONST, m->id);
-			}
-		}
-		if (comment_gen) {
-			output_storage ("\n");
 		}
 	}
 
