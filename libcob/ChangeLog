@@ -6,6 +6,11 @@
           as this is not safe on Windows (its implementation of longjmp
           performs stack-unwinding)
 
+2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* common.c (cob_get_strerror), coblocal.h: export as utility function
+	* common.c (cob_expand_env_string): fix potention buffer overflow
+
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h: use stdint.h and inttypes.h when available to
