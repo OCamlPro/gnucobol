@@ -280,6 +280,14 @@ struct cob_external {
 	int			esize;		/* Item size */
 };
 
+/* How should modules be unloaded */
+
+enum cob_module_unload {
+	COB_IMMEDIATE = 0,      /* Module unloading must be performed immediately */
+	COB_POSTPONE = 1,	/* Module unloading must be postponed */
+	COB_REQUESTED = 2       /* Module unloaded has been requested after being postponed */
+};
+
 #define COB_ERRBUF_SIZE		1024
 
 /* Local variables */
@@ -296,6 +304,8 @@ static const char		*cob_last_progid = NULL;
 
 static cob_global		*cobglobptr = NULL;
 static cob_settings		*cobsetptr = NULL;
+
+static enum cob_module_unload	module_unload = COB_IMMEDIATE;
 
 static int			last_exception_code;	/* Last exception: code */
 static int			active_error_handler = 0;
@@ -877,8 +887,13 @@ cob_terminate_routines (void)
 	cob_exit_numeric ();
 
 	cob_exit_common_modules ();
-	cob_exit_call ();
-	cob_exit_common ();
+	if (module_unload == COB_IMMEDIATE) {
+		cob_exit_call ();
+		cob_exit_common ();
+        /* If module unloading has been postponed, "remember" unloading has indeed been requested */
+	} else if (module_unload == COB_POSTPONE) {
+		module_unload = COB_REQUESTED;
+	}
 }
 
 static void
@@ -10016,17 +10031,26 @@ cob_common_init (void *setptr)
    errors (-1), hard errors (-2) or signals (-3) */
 int
 cob_call_with_exception_check (const char *name, const int argc, void **argv)
-{	
+{
 #ifndef COB_WITHOUT_JMP
 	int ret;
 	return_jmp_buffer_set = 1;
 	ret = setjmp (return_jmp_buf);
 	if (ret) {
 		return_jmp_buffer_set = 0;
+                /* Module unloading has been requested (after being postponed): perform it */
+		if (module_unload == COB_REQUESTED) {
+			cob_exit_call ();
+			cob_exit_common ();
+		}
+		module_unload = COB_IMMEDIATE;
 		return ret;
 	}
+        /* Set module unloading to be postponed (until longjmp is performed) */
+	module_unload = COB_POSTPONE;
 #endif
 	exit_code = cob_call (name, argc, argv);
+	module_unload = COB_IMMEDIATE;
 	return 0;
 }
 
