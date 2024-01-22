@@ -1800,6 +1800,13 @@ struct cb_ml_generate_tree {
 
 /* Program */
 
+struct literal_list {
+	struct literal_list	*next;
+	struct cb_literal	*literal;
+	int			id;
+	int			make_decimal;
+};
+
 struct nested_list {
 	struct nested_list	*next;
 	struct cb_program	*nested_prog;
@@ -1896,6 +1903,7 @@ struct cb_program {
 	unsigned char	numeric_separator;		/* ',' or '.' */
 	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
+	struct literal_list	*decimal_constants;
 
 	unsigned int	flag_main		: 1;	/* Gen main function */
 	unsigned int	flag_common		: 1;	/* COMMON PROGRAM */
@@ -2082,7 +2090,7 @@ extern cb_tree			cb_concat_literals (const cb_tree,
 
 extern cb_tree			cb_build_decimal (const unsigned int);
 extern cb_tree			cb_build_decimal_literal (const int);
-extern int			cb_lookup_literal (cb_tree x, int make_decimal);
+extern int			cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal);
 
 extern cb_tree			cb_build_comment (const char *);
 extern cb_tree			cb_build_direct (const char *,
