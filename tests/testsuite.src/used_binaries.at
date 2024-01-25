@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2014-2024 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -1083,10 +1083,10 @@ AT_CLEANUP
 
 
 AT_SETUP([check include header file])
-AT_KEYWORDS([-include])
+#AT_KEYWORDS([include])
 
 AT_DATA([file.h], [
-extern void f(char *, long );
+COB_EXT_IMPORT void f (char *, long);
 ])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
