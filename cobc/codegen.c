@@ -9271,6 +9271,39 @@ output_key_components (struct cb_file* f, struct cb_key_component* key_component
 	}
 }
 
+
+static void
+output_indexed_file_key_colseq (const struct cb_file *f, const struct cb_alt_key *ak, int idx)
+{
+	const cb_tree	key = ak ? ak->key : f->key;
+	const cb_tree	key_col = ak ? ak->collating_sequence_key : f->collating_sequence_key;
+	const int	type = cb_tree_type (key, cb_code_field (key));
+	cb_tree		col = NULL;
+
+	/* We only apply a collating sequence if the key is alphanumeric / display */
+	if ((type & COB_TYPE_ALNUM) || (type == COB_TYPE_NUMERIC_DISPLAY)) {
+		col = key_col ? key_col : f->collating_sequence;
+#if 0	/* TODO: this should be done for national, when available */
+	} else if (type & COB_TYPE_NATIONAL) {
+		col = key_col_n ? key_col_n : f->collating_sequence_n;
+#endif
+	}
+
+	output_prefix ();
+	if (idx == 0) {
+		output ("%s%s->collating_sequence = ", CB_PREFIX_KEYS, f->cname);
+	} else {
+		output ("(%s%s + %d)->collating_sequence = ", CB_PREFIX_KEYS, f->cname, idx);
+	}
+	if (col != NULL && CB_REFERENCE_P (col)) {
+		output_param (cb_ref(col), -1);
+		output (";");
+	} else {
+		output ("NULL;");
+	}
+	output_newline ();
+}
+
 static void
 output_file_initialization (struct cb_file *f)
 {
@@ -9331,6 +9364,9 @@ output_file_initialization (struct cb_file *f)
 		} else {
 			output_line ("%s%s->offset = 0;", CB_PREFIX_KEYS, f->cname);
 		}
+		if (f->organization == COB_ORG_INDEXED) {
+			output_indexed_file_key_colseq (f, NULL, 0);
+		}
 		nkeys = 1;
 		for (l = f->alt_key_list; l; l = l->next) {
 			output_prefix ();
@@ -9352,6 +9388,9 @@ output_file_initialization (struct cb_file *f)
 				output_line ("(%s%s + %d)->offset = 0;", CB_PREFIX_KEYS,
 					f->cname, nkeys);
 				output_key_components (f, l->component_list, nkeys);
+			}
+			if (f->organization == COB_ORG_INDEXED) {
+				output_indexed_file_key_colseq (f, l, nkeys);
 			}
 			nkeys++;
 		}

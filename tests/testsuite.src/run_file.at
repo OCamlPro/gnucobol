@@ -12430,6 +12430,425 @@ AT_CHECK([diff reference prog.out], [0], [], [])
 AT_CLEANUP
 
 
+# This is only supported by the BDB backend
+AT_SETUP([INDEXED file manipulation under ASCII/EBCDIC collation])
+AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
+
+AT_DATA([prog.cpy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER.
+           PROGRAM COLLATING SEQUENCE IS DISORDERED.
+       SPECIAL-NAMES.
+           ALPHABET DISORDERED IS "WVUTSRJIHGFEDCB".
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               FILE-COLSEQ
+               KEY-COLSEQ
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY1 WITH DUPLICATES
+               ALTERNATE RECORD KEY IS MY-AKEY2 WITH DUPLICATES.
+
+       DATA DIVISION.
+
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC X(3).
+           05  MY-AKEY1  PIC X(3).
+           05  MY-AKEY2  BINARY-LONG.
+           05  MY-DATA   PIC 9.
+
+       WORKING-STORAGE SECTION.
+       01  DONE-READING  PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+
+           DISPLAY "WRITING DATA"
+
+           MOVE "CCC" TO MY-PKEY
+           MOVE "888" TO MY-AKEY1
+           MOVE 43 TO MY-AKEY2
+           MOVE 1 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "ZZZ" TO MY-PKEY
+           MOVE "AAA" TO MY-AKEY1
+           MOVE 40 TO MY-AKEY2
+           MOVE 2 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "DDD" TO MY-PKEY
+           MOVE "777" TO MY-AKEY1
+           MOVE 42 TO MY-AKEY2
+           MOVE 3 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "XXX" TO MY-PKEY
+           MOVE "VVV" TO MY-AKEY1
+           MOVE 42 TO MY-AKEY2
+           MOVE 4 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "666" TO MY-PKEY
+           MOVE "AAA" TO MY-AKEY1
+           MOVE 41 TO MY-AKEY2
+           MOVE 5 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "222" TO MY-PKEY
+           MOVE "555" TO MY-AKEY1
+           MOVE 44 TO MY-AKEY2
+           MOVE 6 TO MY-DATA
+           WRITE MY-REC
+
+           CLOSE MY-FILE
+
+
+           OPEN I-O MY-FILE
+
+           DISPLAY "DELETING DATA"
+
+           MOVE "ZZZ" TO MY-PKEY
+           DELETE MY-FILE
+
+           MOVE "XXX" TO MY-PKEY
+           DELETE MY-FILE
+
+           CLOSE MY-FILE
+
+
+           OPEN INPUT MY-FILE
+
+           DISPLAY "READING BY PKEY"
+
+           MOVE 0 TO DONE-READING
+           MOVE SPACES TO MY-PKEY
+           START MY-FILE KEY >= MY-PKEY
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-AKEY1
+                       " " MY-AKEY2 " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           DISPLAY "READING BY AKEY1"
+
+           MOVE 0 TO DONE-READING
+           MOVE SPACES TO MY-AKEY1
+           START MY-FILE KEY >= MY-AKEY1
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-AKEY1
+                       " " MY-AKEY2 " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           DISPLAY "READING BY AKEY2"
+
+           MOVE 0 TO DONE-READING
+           MOVE ZERO TO MY-AKEY2
+           START MY-FILE KEY >= MY-AKEY2
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-AKEY1
+                       " " MY-AKEY2 " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           CLOSE MY-FILE
+
+
+           DISPLAY "DONE"
+
+           STOP RUN.
+])
+
+AT_DATA([reference_ascii],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+222 555 +0000000044 6
+666 AAA +0000000041 5
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+READING BY AKEY1
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+666 AAA +0000000041 5
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+AT_DATA([reference_ascii_ebcdic],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+222 555 +0000000044 6
+666 AAA +0000000041 5
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+READING BY AKEY1
+666 AAA +0000000041 5
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+AT_DATA([reference_ebcdic],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+222 555 +0000000044 6
+666 AAA +0000000041 5
+READING BY AKEY1
+666 AAA +0000000041 5
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+AT_DATA([reference_ebcdic_ascii],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+222 555 +0000000044 6
+666 AAA +0000000041 5
+READING BY AKEY1
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+666 AAA +0000000041 5
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+# Testing ASCII file collating sequence using clause
+AT_DATA([prog1.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
+         ==KEY-COLSEQ== BY ====.
+])
+AT_CHECK([$COMPILE -Wno-unfinished prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1 1>prog1.out], [0], [], [])
+AT_CHECK([diff reference_ascii prog1.out], [0], [], [])
+
+# Testing ASCII file collating sequence using flag
+AT_DATA([prog2.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ====.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2 1>prog2.out], [0], [], [])
+AT_CHECK([diff reference_ascii prog2.out], [0], [], [])
+
+
+# Testing ASCII file collating sequence + EBCDIC key collating sequence using clauses
+AT_DATA([prog3.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 1>prog3.out], [0], [], [])
+AT_CHECK([diff reference_ascii_ebcdic prog3.out], [0], [], [])
+
+# Testing ASCII file collating sequence using flag + EBCDIC key collating sequence using clause
+AT_DATA([prog4.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4 1>prog4.out], [0], [], [])
+AT_CHECK([diff reference_ascii_ebcdic prog4.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence using clause
+AT_DATA([prog5.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5 1>prog5.out], [0], [], [])
+AT_CHECK([diff reference_ebcdic prog5.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence using flag
+AT_DATA([prog6.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ====.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6 1>prog6.out], [0], [], [])
+AT_CHECK([diff reference_ebcdic prog6.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence + ASCII key collating sequence using clauses
+AT_DATA([prog7.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished prog7.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog7 1>prog7.out], [0], [], [])
+AT_CHECK([diff reference_ebcdic_ascii prog7.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence using flag + ASCII key collating sequence using clause
+AT_DATA([prog8.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog8 1>prog8.out], [0], [], [])
+AT_CHECK([diff reference_ebcdic_ascii prog8.out], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file numeric keys ordering])
+AT_KEYWORDS([runfile])
+
+# BUG: non-display numeric keys are currently ordered lexicographically
+# with respect to their binary representation, which is incorrect.
+# Could be fixed with a custom comparison function (BDB)
+# or using key types other than CHARTYPE (ISAM).
+AT_XFAIL_IF([true])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   BINARY-LONG.
+           05  MY-DATA   PIC 9.
+
+       WORKING-STORAGE SECTION.
+       01  DONE-READING  PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+
+           DISPLAY "WRITING DATA"
+
+           MOVE 255 TO MY-PKEY
+           MOVE 1 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE 256 TO MY-PKEY
+           MOVE 2 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE 65535 TO MY-PKEY
+           MOVE 3 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE 65536 TO MY-PKEY
+           MOVE 4 TO MY-DATA
+           WRITE MY-REC
+
+           CLOSE MY-FILE
+
+
+           OPEN INPUT MY-FILE
+
+           DISPLAY "READING BY PKEY"
+
+           MOVE 0 TO DONE-READING
+           MOVE 0 TO MY-PKEY
+           START MY-FILE KEY >= MY-PKEY
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           CLOSE MY-FILE
+
+           DISPLAY "DONE" WITH NO ADVANCING
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[WRITING DATA
+READING BY PKEY
++0000000255 1
++0000000256 2
++0000065535 3
++0000065536 4
+DONE], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([TURN EC-I-O])
 AT_KEYWORDS([runfile directive])
 
