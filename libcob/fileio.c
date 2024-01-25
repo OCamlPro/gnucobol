@@ -301,7 +301,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 		}
 		/* LCOV_EXCL_STOP */
 		keylen = 0;
-		for (part=0; part < key->count_components; part++) {
+		for (part = 0; part < key->count_components; part++) {
 			struct keypart *k_part = &kd->k_part[part];
 			k_part->kp_start = key->component[part]->data - f->record->data;
 			k_part->kp_leng = key->component[part]->size;
@@ -725,6 +725,18 @@ struct indexed_file {
 	DB_LOCK		bdb_record_lock;
 };
 
+/* collation aware key comparision,
+   currently only used for BDB, likely used in general later */
+static int
+indexed_key_compare (const unsigned char *k1, const unsigned char *k2,
+		     size_t sz, const unsigned char *col)
+{
+	if (col) {
+		return cob_cmps (k1, k2, sz, col);
+	}
+	return memcmp (k1, k2, sz);
+}
+
 /* Return total length of the key */
 static int
 bdb_keylen (cob_file *f, int idx)
@@ -897,6 +909,21 @@ bdb_close_index (cob_file *f, int index)
 #endif
 	p->cursor[index] = NULL;
 	return 1;
+}
+
+static int
+bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2)
+{
+	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA(k1);
+	/* LCOV_EXCL_START */
+	if (col == NULL) {
+		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
+	}
+	if (k1->size != k2->size) {
+		cob_runtime_error ("bdb_bt_compare was given keys of different length");
+	}
+	/* LCOV_EXCL_STOP */
+	return indexed_key_compare (k1->data, k2->data, k2->size, col);
 }
 
 #endif	/* WITH_DB */
@@ -4162,31 +4189,6 @@ indexed_file_delete (cob_file *f, const char *filename)
 #endif
 }
 
-static int
-indexed_key_compare (const unsigned char *k1, const unsigned char *k2,
-		     size_t sz, const unsigned char *col)
-{
-	if (col == NULL) {
-		return memcmp (k1, k2, sz);
-	} else {
-		return cob_cmps (k1, k2, sz, col);
-	}
-}
-
-static int
-bdb_bt_compare(DB *db, const DBT *k1, const DBT *k2)
-{
-	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA(k1);
-	/* LCOV_EXCL_START */
-	if (col == NULL) {
-		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
-	}
-	if (k1->size != k2->size) {
-		cob_runtime_error ("bdb_bt_compare was given keys of different length");
-	}
-	/* LCOV_EXCL_STOP */
-	return indexed_key_compare(k1->data, k2->data, k2->size, col);
-}
 
 /* OPEN INDEXED file */
 
