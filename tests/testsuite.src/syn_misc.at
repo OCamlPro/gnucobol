@@ -8364,28 +8364,23 @@ AT_DATA([prog.cob], [
       *> BINARY-C-INT usage does not exist: error on purpose to
       *> trigger an error below
        01 c USAGE BINARY-C-INT.
-      *> This one should also trigger an error, but does not...
+      *> level 78 triggers an error, but not the expected one: the
+      *> string replaces the identifier in the scanner, so it becomes
+      *> a syntax error instead of a complain about level 78
        78 d-const VALUE "abc".
        PROCEDURE DIVISION
           USING a
                 BY REFERENCE b
                 BY VALUE b
                          c
-			 d-const
+      *>                 d-const
                 RETURNING OMITTED.
        END PROGRAM f.
 ])
 
-AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [134], [],
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
 [prog.cob:10: error: unknown USAGE: BINARY-C-INT
-prog.cob:16: error: ANY LENGTH items may only be BY REFERENCE formal parameters
-
-cobc: ../../cobc/parser.y:11030: invalid cast from 'internal error node' type CONSTANT to type FIELD
-
-cobc: aborting compile of prog.cob at line 18 (PROGRAM-ID: f)
-
-cobc: Please report this!
-Aborted (core dumped)
+prog.cob:18: error: ANY LENGTH items may only be BY REFERENCE formal parameters
 ])
 
 AT_CLEANUP
