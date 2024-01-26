@@ -922,7 +922,7 @@ cob_get_source_line ()
 }
 
 /* reentrant version of strerror */
-static char *
+char *
 cob_get_strerror (void)
 {
 	size_t size;
@@ -7802,9 +7802,10 @@ cob_expand_env_string (char *strval)
 				}
 			}
 			if (penv != NULL) {
-				if ((strlen (penv) + j) > (envlen - 128)) {
-					env = cob_realloc (env, envlen, strlen (penv) + 256);
-					envlen = strlen (penv) + 256;
+				size_t copy_len = strlen (penv);
+				if (copy_len + j + 128 > envlen) {
+					env = cob_realloc (env, envlen, j + copy_len + 256);
+					envlen = j + copy_len + 256;
 				}
 				j += sprintf (&env[j], "%s", penv);
 				penv = NULL;

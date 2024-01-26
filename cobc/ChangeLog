@@ -1,4 +1,10 @@
 
+2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
+	  do not move object files and preprocess files when they were
+	  specified as an explicit target on the command line (-E, -c)
+
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
 	BUG #923: generated modules init/clear unused decimal constants
@@ -21,6 +27,14 @@
 	BUG #917: segfault on decimal constant after CANCEL on subprogram
 	* codegen.c (codegen_internal, codegen_finalize): move declaration
 	  of decimal constants from global storage to local storage
+
+2023-10-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* error.c (print_error_prefix), flag.def: new flag
+	  -fdiagnostics-absolute-paths to print the full path of
+	  a file for diagnostics; this flag can be activated if
+	  your editor and build system do not correctly work
+	  together to locate files from diagnostic output
 
 2023-09-12  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -45,6 +59,7 @@
 
 2023-09-01  Simon Sobisch <simonsobisch@gnu.org>
 
+	FR #443: error handling for non-cobol "sources"
 	* pplex.l (ppopen_get_file): test for binary file and directly error out
 	* cobc.c (cobc_terminate_exit), cobc.h: split cobc_terminate and make
 	  the new function available

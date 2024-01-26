@@ -5998,14 +5998,16 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		 && !(CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_X)) {
 			cb_error_x (CB_TREE(current_statement), 
-					_("%s should be COMP-X/COMP-5 for logical operator"), CB_FIELD_PTR (x)->name);
+					_("%s should be COMP-X/COMP-5 for logical operator"),
+					CB_FIELD_PTR (x)->name);
 			return cb_error_node;
 		}
 		if ((CB_REF_OR_FIELD_P (y)) 
 		 && !(CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_X)) {
 			cb_error_x (CB_TREE(current_statement), 
-					_("%s should be COMP-X/COMP-5 for logical operator"), CB_FIELD_PTR (y)->name);
+					_("%s should be COMP-X/COMP-5 for logical operator"),
+					CB_FIELD_PTR (y)->name);
 			return cb_error_node;
 		}
 		if (cb_constant_folding
@@ -6382,9 +6384,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 cb_tree
 cb_build_binary_list (cb_tree l, const int op)
 {
-	cb_tree e;
-
-	e = CB_VALUE (l);
+	cb_tree e = CB_VALUE (l);
 	for (l = CB_CHAIN (l); l; l = CB_CHAIN (l)) {
 		e = cb_build_binary_op (e, op, CB_VALUE (l));
 	}

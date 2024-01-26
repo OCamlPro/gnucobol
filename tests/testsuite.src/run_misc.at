@@ -10795,14 +10795,7 @@ AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
 
 
-AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
-
-# also checking that a dump file without anything to dump does not do anything
-AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
-[X is 000000001
-X is 000005441
-],
+AT_DATA([reference_stderr],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
@@ -10819,31 +10812,36 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
+
+AT_CAPTURE_FILE([stderr.txt])
+
+AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
+
+# also checking that a dump file without anything to dump does not do anything
+AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
+[X is 000000001
+X is 000005441
+], [])
+
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+stderr.txt > stderr.sed], [0], [], [])
+
+AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
 
 # also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
 [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+], [])
 
- Last statement of "sub1" was MOVE
-	MAIN-2 OF MAIN-1 at cpyabrt:4
-	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:159
- Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
- Last statement of "prog" was CALL
-	CALL-IT-OMIT at prog.cob:118
-	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:77
- Started by ./prog
-])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+stderr.txt > stderr.sed], [0], [], [])
+
+AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
@@ -10921,7 +10919,8 @@ END OF DUMP - prog
 
 # AT_DATA workaround via sed:
 AT_CHECK([$SED -e 's/_$//' reference_fdls_tmpl > reference], [0], [], [])
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
+                   s/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
 tstdump_fdls.dump > tstdump.sed], [0], [], [])
 
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
@@ -10939,7 +10938,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump_allfdls.dump
 ])
 
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
+                   s/Started by .*prog_allfdls.exe/Started by .\/prog_allfdls/g' \
 tstdump_allfdls.dump > tstdump.sed], [0], [], [])
 
 AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
@@ -11272,7 +11272,8 @@ END OF DUMP - prog
 ])
 
 # AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
+                   s/Started by .*prog.exe/Started by .\/prog/g' \
 dumpall.txt > dumpall.sed], [0], [], [])
 
 AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
