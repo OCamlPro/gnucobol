@@ -5,6 +5,14 @@
 	  do not move object files and preprocess files when they were
 	  specified as an explicit target on the command line (-E, -c)
 
+2023-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_cond): generate calls to new functions
+	  for numeric zero compare for USAGE DISPLAY and PACKED, as well
+	  as comparison between two USAGE DISPLAY or USAGE DISPLAY to literal
+	* typeck.c (validate_move): internally change literals like 0.00
+	  to zero constant allowing use of optimized MOVE code
+
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
 	BUG #923: generated modules init/clear unused decimal constants
