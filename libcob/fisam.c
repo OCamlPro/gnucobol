@@ -376,7 +376,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 		} else if (key->component[part]->attr->type == COB_TYPE_NUMERIC_DOUBLE) {
 			keytype = DOUBLETYPE;
 		} else if (key->component[part]->attr->type == COB_TYPE_NUMERIC_BINARY) {
-#if defined(INTTYPE) && defined(LONGTYPE)
+#if defined(INTTYPE) && defined(LONGTYPE) && defined(MINTTYPE) && defined(MLONGTYPE)
 #ifdef WORDS_BIGENDIAN
 			if (key->component[part]->size == 2) {
 				keytype = MINTTYPE;		/* 'short' */
