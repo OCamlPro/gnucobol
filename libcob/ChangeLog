@@ -1,4 +1,9 @@
 
+2024-01-30  Ron Norman <rjn@inglenet.com>
+
+	* fisam.c: Updated to set index field type for 'short' & 'int'
+			Enabled support for variable length records is using V-ISAM/D-ISAM
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fsqlxfd.c (cob_findkey_attr), fileio.c, fisam.c: extracted identical
@@ -14,7 +19,6 @@
 	* fileio.c (cob_file_sort_options), common.h: new function to pass more
 	  options, so far only used to set flag_merge
 
-2023-02-23  Ron Norman <rjn@inglenet.com> and
 2023-02-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c: Changes to speed up COMP-3 handling

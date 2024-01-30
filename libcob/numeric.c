@@ -1581,7 +1581,7 @@ cob_print_realbin (const cob_field *f, FILE *fp, const int size)
 	} llval;
 
 	if (f->size > sizeof(cob_u64_t)) {
-		cob_decimal_set_binary (&cob_d3, f);
+		cob_decimal_set_binary (&cob_d3, (cob_field*)f);
 		cob_decimal_print (&cob_d3, fp);
 		return;
 	}

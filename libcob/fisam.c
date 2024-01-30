@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -117,10 +117,6 @@ static	cob_settings	*isam_setptr;
 #if defined(VB_RTD)
 #undef VB_RTD
 #endif
-#if defined(ISVARLEN)
-/* Does not work well with V-ISAM */
-#undef ISVARLEN
-#endif
 #if !defined(COB_WITH_STATUS_02)
 #define COB_WITH_STATUS_02
 #endif
@@ -160,8 +156,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #ifndef ISVARLEN
 /* ISAM handler does not support variable length records */
 #define ISVARLEN 0
-#endif
-
+#endif   
 /**********************************************************************/
 
 #ifndef MAXKEYLEN
@@ -338,7 +333,7 @@ indexed_cmpkey (struct indexfile *fh, unsigned char *data, int idx, int partlen)
 static int
 indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 {
-	int	keylen,part;
+	int	keylen,part,keytype;
 	/* LCOV_EXCL_START */
 	if (key->count_components < 1) {
 		/* Should not happen as this was generated pre GC 3.0 */
@@ -375,11 +370,50 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 		kd->k_part[part].kp_start = key->component[part]->data - f->record->data;
 		kd->k_part[part].kp_leng = key->component[part]->size;
 		keylen += kd->k_part[part].kp_leng;
-		kd->k_part[part].kp_type = CHARTYPE;
+		keytype = CHARTYPE;
+		if (key->component[part]->attr->type == COB_TYPE_NUMERIC_FLOAT) {
+			keytype = FLOATTYPE;
+		} else if (key->component[part]->attr->type == COB_TYPE_NUMERIC_DOUBLE) {
+			keytype = DOUBLETYPE;
+		} else if (key->component[part]->attr->type == COB_TYPE_NUMERIC_BINARY) {
+#if defined(INTTYPE) && defined(LONGTYPE)
+#ifdef WORDS_BIGENDIAN
+			if (key->component[part]->size == 2) {
+				keytype = MINTTYPE;		/* 'short' */
+			} else if (key->component[part]->size == 4) {
+				keytype = MLONGTYPE;	/* 'int' */
+			}
+#else
+			if (COB_FIELD_BINARY_SWAP(key->component[part])) {
+				if (key->component[part]->size == 2) {
+					keytype = INTTYPE;		/* 'short' */
+				} else if (key->component[part]->size == 4) {
+					keytype = LONGTYPE;		/* 'int' */
+				}
+			} else {
+				if (key->component[part]->size == 2) {
+					keytype = MINTTYPE;		/* 'short' */
+				} else if (key->component[part]->size == 4) {
+					keytype = MLONGTYPE;	/* 'int' */
+				}
+			}
+#endif
+#endif
+		} else if (key->component[part]->attr->type == COB_TYPE_NUMERIC_COMP5
+				&& COB_FIELD_REAL_BINARY(key->component[part])) {
+#if defined(MINTTYPE) && defined(MLONGTYPE)
+			if (key->component[part]->size == 2) {
+				keytype = MINTTYPE;		/* Machine 'short' */
+			} else if (key->component[part]->size == 4) {
+				keytype = MLONGTYPE;	/* Machine 'int' */
+			}
+#endif
+		}
+		kd->k_part[part].kp_type = keytype;
 		if (key->tf_suppress) {
 #ifdef NULLKEY
 			kd->k_flags |= NULLKEY;
-			kd->k_part[part].kp_type = CHARTYPE | (key->char_suppress << 8);
+			kd->k_part[part].kp_type = keytype | (key->char_suppress << 8);
 #else
 			f->flag_write_chk_dups = 1;
 			kd->k_flags = ISDUPS;

@@ -6336,7 +6336,7 @@ AT_SETUP([INDEXED SEQUENTIAL with variable records])
 AT_KEYWORDS([runfile])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_SKIP_IF([test "$COB_HAS_ISAM" = "disam"])
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "vbisam"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
