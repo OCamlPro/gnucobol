@@ -1935,6 +1935,9 @@ COB_EXPIMP int	cob_check_linkage_size	(const char *,
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
 COB_EXPIMP int	cob_bcd_cmp		(cob_field *, cob_field *);
+COB_EXPIMP int	cob_numeric_display_cmp		(cob_field *, cob_field *);
+COB_EXPIMP int	cob_numeric_display_cmp_zero	(cob_field *);
+COB_EXPIMP int	cob_bcd_cmp_zero	(cob_field *);
 
 /*******************************/
 /* Functions in strings.c */
