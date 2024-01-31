@@ -1072,3 +1072,50 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([Option --copy COPYBOOK])
+AT_KEYWORDS([argument])
+
+AT_DATA([copybook1.CPY], [
+       REPLACE ==BEGIN PROGRAM== BY ==IDENTIFICATION DIVISION.
+       PROGRAM-ID.==.
+])
+AT_DATA([copybook2.CPY], [
+       REPLACE ALSO ==output== BY =="Hello world"==.
+])
+AT_DATA([copybook3.CPY], [
+       REPLACE ALSOO ==output== BY =="Hello world"==.
+])
+AT_DATA([prog.cob], [
+       BEGIN PROGRAM    prog.
+       PROCEDURE        DIVISION.
+           DISPLAY output
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:2: error: PROGRAM-ID header missing
+prog.cob:2: error: ENVIRONMENT DIVISION header missing
+prog.cob:2: error: CONFIGURATION SECTION header missing
+prog.cob:2: error: SPECIAL-NAMES header missing
+prog.cob:2: error: invalid system-name 'BEGIN'
+prog.cob:2: error: syntax error, unexpected PROGRAM, expecting CRT or Identifier
+prog.cob:2: error: invalid system-name 'prog'
+prog.cob:2: error: syntax error, unexpected ., expecting CRT or Identifier
+prog.cob:3: error: syntax error, unexpected PROCEDURE
+prog.cob:4: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY --copy copybook1 --copy copybook2 prog.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY --copy copybook1 --copy copybook3 prog.cob], [1], [],
+[copybook3.CPY:2: error: syntax error, unexpected ==, expecting BY
+copybook3.CPY:2: error: PROGRAM-ID header missing
+])
+
+AT_CHECK([$COMPILE_ONLY --copy copybook1 --copy copybook4 prog.cob], [1], [],
+[cobc: error: fatal error: could not find --copy argument copybook4
+])
+
+AT_CLEANUP

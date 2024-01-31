@@ -22,6 +22,16 @@ NEWS - user visible changes				-*- outline -*-
 
 * Changes to the COBOL compiler (cobc) options:
 
+** New option --copy COPYBOOK to load copybooks before parsing files. This
+   option can typically be used to perform replacements without modifying
+   the source code, or to add prototypes for external calls.
+
+** New option --include FILE.h to add a #include in the generated C file.
+   This option can typically be used to force the C compiler to check static
+   calls to externals. The files are put into quotes, unless they start by
+   '<'. Quoted files are expected to have absolute paths, as the C compiler
+   is called in a temp directory instead of the project directory.
+
 ** output of unlimited errors may be requested by -fmax-errors=0,
    to stop compiliation at first error use -Wfatal-errors
 ** default value for -fmax-errors was changed from 128 to 20
