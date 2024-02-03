@@ -116,7 +116,11 @@ cobc_print_usage_common_options (void)
 	puts (_("  -X, --Xref            specify cross reference in listing"));
 #endif
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
+	puts (_("  --copy <copybook>     include <copybook> at beginning of file,\n"
+                "                        as would COPY copybook."));
 	puts (_("  -L <directory>        add <directory> to library search path"));
+	puts (_("  --include <file.h>    add a #include \"file.h\" at the beginning of the C\n"
+		"                        generated file (implies -fno-gen-c-decl-static-call)"));
 	puts (_("  -l <lib>              link the library <lib>"));
 	puts (_("  -K <entry>            generate CALL to <entry> as static"));
 	puts (_("  -D <define>           define <define> for COBOL compilation"));

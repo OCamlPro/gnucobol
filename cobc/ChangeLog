@@ -1,4 +1,18 @@
 
+2023-10-12  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, codegen.c: new option --include FILE, to #include
+	  additional files in the C generated code. Such files can be
+	  used to statically check the number of arguments in static
+	  calls, for example. The files are put into quotes, unless
+	  they start by '<'. Since C files are compiled in a temp dir,
+	  quoted files should be absolute paths. Implementing FR #176
+
+2023-10-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, pplex.l: new option --copy COPYBOOK, to include a COPYBOOK
+	  before reading the source file
+
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
