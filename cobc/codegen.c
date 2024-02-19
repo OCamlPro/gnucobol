@@ -2506,6 +2506,28 @@ output_nonlocal_field_cache (void)
 	output_storage ("\n/* End of fields */\n\n");
 }
 
+/* Strings states */
+
+static void
+output_strings_states (struct cb_program *prog)
+{
+	unsigned int strings_used =
+		prog->flag_inspect_used ||
+		prog->flag_string_used ||
+		prog->flag_unstring_used;
+
+	if (strings_used)
+		output_local ("/* States of string statements */\n");
+	if (prog->flag_inspect_used)
+		output_local ("static cob_inspect_state	*inspect_st = NULL;\n");
+	if (prog->flag_string_used)
+		output_local ("static cob_string_state		*string_st = NULL;\n");
+	if (prog->flag_unstring_used)
+		output_local ("static cob_unstring_state *unstring_st = NULL;\n");
+	if (strings_used)
+		output_newline ();
+}
+
 /* Literals, figurative constants and user-defined constants */
 
 static void
@@ -12848,6 +12870,19 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_line ("\tcob_fatal_error (COB_FERROR_CANCEL);");
 	output_newline ();
 
+	if (prog->flag_inspect_used) {
+		output_line ("if (inspect_st != NULL)");
+		output_line ("\tcob_free (inspect_st);");
+	}
+	if (prog->flag_string_used) {
+		output_line ("if (string_st != NULL)");
+		output_line ("\tcob_free (string_st);");
+	}
+	if (prog->flag_unstring_used) {
+		output_line ("if (unstring_st != NULL)");
+		output_line ("\tcob_free (unstring_st);");
+	}
+
 	if (prog->flag_main) {
 		goto cancel_end;
 	}
@@ -14054,6 +14089,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	output_call_parameter_stack_pointers (prog);
 	output_frame_stack (prog);
 	output_dynamic_field_function_id_pointers ();
+	output_strings_states (prog);
 
 	if (prog->report_storage) {
 		output_target = prog->local_include->local_fp;

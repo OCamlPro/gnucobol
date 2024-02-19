@@ -81,3 +81,7 @@ m4_include([data_binary.at])		# USAGE BINARY
 m4_include([data_display.at])		# USAGE DISPLAY
 m4_include([data_packed.at])		# USAGE PACKED-DECIMAL
 m4_include([data_pointer.at])		# USAGE POINTER
+
+## Test for backward compatibility
+AT_BANNER([Backward compatibility])
+m4_include([backcomp.at])
