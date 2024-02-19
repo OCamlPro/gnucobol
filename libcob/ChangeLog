@@ -1,4 +1,10 @@
 
+2024-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_keylen): signature change to directly take the keydesc
+	* fileio.c [WITH_ANY_ISAM]: refactored to ease access to keydesc and keypart
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: refactored		
+
 2023-12-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_terminate_routines, cob_call_with_exception_check):
@@ -596,7 +602,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* fileio.c (open_next): set binary file mode, minor refactoring
 	* fileio.c (cob_file_close) [_WIN32]: don't try to unlock invalid file
 	  handles; mark file descriptor as closed when file handle was closed
-	
+
 2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_get_packed, cob_decimal_get_display):
@@ -6239,7 +6245,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

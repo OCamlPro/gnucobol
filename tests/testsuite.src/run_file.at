@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
 ## Brian Tiffin, Joe Robbins, Edward Hart
 ##
@@ -256,12 +256,12 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        FILE SECTION.
        FD TEST-XML00 RECORD VARYING FROM 5 TO 500 CHARACTERS.
-       01 E-ENR                          PIC X(500).
+       01 E-ENR          PIC X(500).
        WORKING-STORAGE SECTION.
-       01 ST-TEST  PIC X(2).
-       01 W-TYPE   PIC 9(03) VALUE ZERO.
+       01 ST-TEST        PIC X(2).
+       01 W-TYPE         PIC 9(03) VALUE ZERO.
        01 EOF-TEST-XML   PIC 9(03) VALUE ZERO.
-       01 COUNT-PASS   PIC 9(02) VALUE ZERO.
+       01 COUNT-PASS     PIC 9(02) VALUE ZERO.
        PROCEDURE DIVISION.
        DEBUT.
            OPEN INPUT  TEST-XML00
@@ -1947,8 +1947,9 @@ AT_DATA([prog.cob], [
                MOVE ALL "*"                  TO CM-TAPE.
 
            WRITE TSPFL-RECORD.
-           IF CUST-STAT NOT = "00"
-           AND CUST-STAT NOT = "02"
+      *    Note: some ISAM implementations do not support status 02
+           IF  CUST-STAT NOT = "02"
+           AND CUST-STAT NOT = "00"
                DISPLAY "Key: " TSPFL-KEY ", Status: " CUST-STAT
                                  UPON CONSOLE.
 
@@ -7156,9 +7157,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key1-2
            START f KEY = f-key1-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 1: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 1: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7166,9 +7167,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key1-2
            START f KEY < f-key1-1
            READ f PREVIOUS
-           IF (f-status <> "00") OR
-                   (file1-serial <> 3)
-               DISPLAY "FAILED 2: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 3)
+               DISPLAY "FAILED 2: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7176,9 +7177,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key1-2
            START f KEY > f-key1-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 3: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 3: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7186,9 +7187,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key2-2
            START f KEY = f-key2-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 4: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 4: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7196,9 +7197,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key2-2
            START f KEY < f-key2-1
            READ f PREVIOUS
-           IF (f-status <> "00") OR
-                   (file1-serial <> 3)
-               DISPLAY "FAILED 5: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 3)
+               DISPLAY "FAILED 5: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7206,9 +7207,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key2-2
            START f KEY > f-key2-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 6: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 6: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7216,12 +7217,12 @@ AT_DATA([prog.cob], [
            START f KEY > f-key3-1
            READ f NEXT
       *  CHECK: Return file-status "02" if duplicates exist
-           IF (f-status <> "02"
-      *    Depends on xISAM implementation and the way BDB is used (not yet
-      *    implemented in 3.x)
-            AND f-status <> "00"
-               ) OR file1-serial <> 3
-               DISPLAY "FAILED 7: status " f-status "-"
+      *    Depends on xISAM implementation and also on the way BDB is used
+           IF (f-status <> "02" 
+            AND f-status <> "00")
+           OR (file1-serial <> 3)
+               DISPLAY "FAILED 7: status " f-status " - "
+                       "serial: " file1-serial
            END-IF
            CLOSE f
            STOP RUN
