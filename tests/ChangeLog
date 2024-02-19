@@ -33,6 +33,12 @@
 	  or if --enable-debug was specified during configure
 	* testsuite.src: adjusted several tests to use that option
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* testsuite.at: added a new test suite to test the backward compatibility
+	  of strings functions (INSPECT, STRING, UNSTRING) for versions of compilers
+	  not using thread-safe functions for strings
+
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* testsuite.src/syn_literals.at: move syntax checks on literals
