@@ -14944,7 +14944,11 @@ examine_format_variant:
 		t = cb_build_tallying_value (x, r);
 		break;
 	case EXAMINE_TAL_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+		r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
+			"cob_inspect_before_r",
+			current_program->inspect_st_ref,
+			x
+		));
 		t = cb_build_tallying_characters (r);
 		break;
 	/* LCOV_EXCL_START */
@@ -14965,7 +14969,11 @@ examine_format_variant:
 			t = cb_build_replacing_leading (x, replacing_to, r);
 			break;
 		case EXAMINE_TAL_UNTIL_FIRST:
-			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+			r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
+				"cob_inspect_before_r",
+				current_program->inspect_st_ref,
+				x
+			));
 			t = cb_build_replacing_characters (replacing_to, r);
 			break;
 		}
@@ -14988,7 +14996,11 @@ examine_format_variant:
 		t = cb_build_replacing_first (from, to, r);
 		break;
 	case EXAMINE_REP_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
+		r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
+			"cob_inspect_before_r",
+			current_program->inspect_st_ref,
+			from
+		));
 		t = cb_build_replacing_characters (to, r);
 		break;
 	/* LCOV_EXCL_START */
@@ -15202,14 +15214,22 @@ inspect_region:
 inspect_before:
   BEFORE _initial x
   {
-	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_before", $3);
+	$$ = CB_BUILD_FUNCALL_2 (
+		"cob_inspect_before_r",
+		current_program->inspect_st_ref,
+		$3
+	);
   }
 ;
 
 inspect_after:
   AFTER _initial x
   {
-	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_after", $3);
+	$$ = CB_BUILD_FUNCALL_2 (
+		"cob_inspect_after_r",
+		current_program->inspect_st_ref,
+		$3
+	);
   }
 ;
 
