@@ -1248,6 +1248,51 @@ typedef struct __cob_screen {
 	int			attr;		/* COB_SCREEN_TYPE_ATTRIBUTE */
 } cob_screen;
 
+/* String structure */
+struct inspect_state {
+	cob_field	    	*var;
+	unsigned char		*data;
+	unsigned char		*start;
+	unsigned char		*end;
+	unsigned char		*mark;	/* buffer to marker only: 0/1 */
+	size_t		    	mark_size;	/* size of internal marker elements, increased up to
+																 the maximum needed (biggest target field size) */
+	size_t			    mark_min;	/* min. position of the marker set by the last initialize */
+	size_t			    mark_max;	/* max. position of the marker set by the last initialize */
+	unsigned char		*repdata;	/* contains data for REPLACING which is applied at end */
+	size_t			    repdata_size;	/* size of internal repdata buffer, increased up to
+																	 the maximum needed (biggest target field size) */
+	size_t			    size;
+	cob_u32_t		    replacing;	/* marker about current operation being INSPECT REPLACING */
+	int			        sign;
+	cob_field		    var_copy;
+};
+
+struct string_state {
+	cob_field		*dst;
+	cob_field		*ptr;
+	cob_field		*dlm;
+	cob_field		dst_copy;
+	cob_field		ptr_copy;
+	cob_field		dlm_copy;
+	int		    	offset;
+};
+
+struct unstring_state {
+	struct dlm_struct		*dlm_list;
+	cob_field						*src;
+	cob_field						*ptr;
+	size_t							dlm_list_size;	/* size of internal delimiter elements, increased up to
+																				 the maximum needed (amount of DELIMITED BY),
+																				 actual size of dlm_list is calculated by
+																				 dlm_list_size * sizeof(dlm_struct) */
+	cob_field						src_copy;
+	cob_field						ptr_copy;
+	int									offset;
+	int									count;
+	int									ndlms;
+};
+
 /* Module structure */
 enum cob_module_type {
 	COB_MODULE_TYPE_PROGRAM		= 0,
@@ -1336,7 +1381,6 @@ typedef struct __cob_module {
 	const char		*section_name;		/* name of current active section */
 	const char		*paragraph_name;		/* name of current active pagagraph */
 	enum cob_statement	statement;		/* statement currently executed */
-
 } cob_module;
 
 
@@ -1972,6 +2016,34 @@ COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
 
 COB_EXPIMP const char *COB_ZEROES_ALPHABETIC;	/* PIC X/A/U ZEROES */
 #define COB_ZEROES_ALPHABETIC_BYTE_LENGTH 256
+
+/* Multithread inspect */
+void cob_inspect_init_mt	(struct inspect_state **, cob_field *, const cob_u32_t);
+void cob_inspect_init_converting_mt (struct inspect_state **, cob_field *);
+COB_EXPIMP void cob_inspect_start_mt	(struct inspect_state *);
+COB_EXPIMP void cob_inspect_before_mt	(struct inspect_state *, const cob_field *);
+COB_EXPIMP void cob_inspect_after_mt	(struct inspect_state *, const cob_field *);
+COB_EXPIMP void cob_inspect_characters_mt	(struct inspect_state *, cob_field *);
+COB_EXPIMP void cob_inspect_all_mt		(struct inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_leading_mt	(struct inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_first_mt	(struct inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_trailing_mt	(struct inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_converting_mt	(struct inspect_state *, const cob_field *, const cob_field *);
+COB_EXPIMP void cob_inspect_translating_mt (struct inspect_state *, const unsigned char *);
+COB_EXPIMP void cob_inspect_finish_mt	(struct inspect_state *);
+
+/* Multithread string */
+void cob_string_init_mt (struct string_state **, cob_field *, cob_field *);
+COB_EXPIMP void cob_string_delimited_mt	(struct string_state *, cob_field *);
+COB_EXPIMP void cob_string_append_mt	(struct string_state *, cob_field *);
+COB_EXPIMP void cob_string_finish_mt	(struct string_state *);
+
+/* Multithread unstring */
+void cob_unstring_init_mt	(struct unstring_state **, cob_field *, cob_field *, const size_t);
+COB_EXPIMP void cob_unstring_delimited_mt	(struct unstring_state *, cob_field *, const cob_u32_t);
+COB_EXPIMP void cob_unstring_into_mt	(struct unstring_state *, cob_field *, cob_field *, cob_field *);
+COB_EXPIMP void cob_unstring_tallying_mt	(struct unstring_state *, cob_field *);
+COB_EXPIMP void cob_unstring_finish_mt	(struct unstring_state *);
 
 /*******************************/
 /*   Functions in move.c       */

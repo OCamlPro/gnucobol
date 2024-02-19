@@ -14889,6 +14889,7 @@ examine_format_variant:
   {
 	cb_tree x = $4, replacing_to = $5;
 	cb_tree t, r = cb_build_inspect_region_start ();
+	cb_tree st = cb_build_direct ("inspect_st", 0);
 	switch (examine_keyword.tallying) {
 	case EXAMINE_TAL_ALL:
 		cb_build_tallying_all ();
@@ -14899,7 +14900,7 @@ examine_format_variant:
 		t = cb_build_tallying_value (x, r);
 		break;
 	case EXAMINE_TAL_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+		r = cb_list_add (r, CB_BUILD_FUNCALL_2 ("cob_inspect_before_mt", st, x));
 		t = cb_build_tallying_characters (r);
 		break;
 	/* LCOV_EXCL_START */
@@ -14920,7 +14921,7 @@ examine_format_variant:
 			t = cb_build_replacing_leading (x, replacing_to, r);
 			break;
 		case EXAMINE_TAL_UNTIL_FIRST:
-			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+			r = cb_list_add (r, CB_BUILD_FUNCALL_2 ("cob_inspect_before_mt", st, x));
 			t = cb_build_replacing_characters (replacing_to, r);
 			break;
 		}
@@ -14932,6 +14933,7 @@ examine_format_variant:
   {
 	cb_tree from = $3, to = $5;
 	cb_tree t, r = cb_build_inspect_region_start ();
+	cb_tree st = cb_build_direct ("inspect_st", 0);
 	switch (examine_keyword.replacing) {
 	case EXAMINE_REP_ALL:
 		t = cb_build_replacing_all (from, to, r);
@@ -14943,7 +14945,7 @@ examine_format_variant:
 		t = cb_build_replacing_first (from, to, r);
 		break;
 	case EXAMINE_REP_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
+		r = cb_list_add (r, CB_BUILD_FUNCALL_2 ("cob_inspect_before_mt", st, from));
 		t = cb_build_replacing_characters (to, r);
 		break;
 	/* LCOV_EXCL_START */
@@ -15157,14 +15159,16 @@ inspect_region:
 inspect_before:
   BEFORE _initial x
   {
-	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_before", $3);
+	cb_tree st = cb_build_direct ("inspect_st", 0);
+	$$ = CB_BUILD_FUNCALL_2 ("cob_inspect_before_mt", st, $3);
   }
 ;
 
 inspect_after:
   AFTER _initial x
   {
-	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_after", $3);
+	cb_tree st = cb_build_direct ("inspect_st", 0);
+	$$ = CB_BUILD_FUNCALL_2 ("cob_inspect_after_mt", st, $3);
   }
 ;
 

@@ -2495,6 +2495,20 @@ output_nonlocal_field_cache (void)
 	output_storage ("\n/* End of fields */\n\n");
 }
 
+/* Strings states */
+
+
+
+static void
+output_strings_states (void)
+{
+	output_local ("/* States of string statements */\n");
+	output_local ("struct inspect_state	*inspect_st = NULL;\n");
+	output_local ("struct string_state		*string_st = NULL;\n");
+	output_local ("struct unstring_state *unstring_st = NULL;\n");
+	output_newline ();
+}
+
 /* Literals, figurative constants and user-defined constants */
 
 static void
@@ -13888,6 +13902,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	output_call_parameter_stack_pointers (prog);
 	output_frame_stack (prog);
 	output_dynamic_field_function_id_pointers ();
+	output_strings_states ();
 
 	if (prog->report_storage) {
 		output_target = prog->local_include->local_fp;

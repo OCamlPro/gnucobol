@@ -457,6 +457,9 @@ COB_HIDDEN void		cob_exit_intrinsic	(void);
 COB_HIDDEN void		cob_exit_strings	(void);
 COB_HIDDEN void		cob_exit_mlio		(void);
 
+COB_HIDDEN void		cob_exit_strings_mt
+(struct inspect_state *, struct unstring_state *); /* multi-thread version */
+
 COB_HIDDEN FILE		*cob_create_tmpfile	(const char *);
 COB_HIDDEN int		cob_check_numval_f	(const cob_field *);
 
