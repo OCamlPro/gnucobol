@@ -1822,8 +1822,8 @@ common_cmpc (const unsigned char *p, const unsigned int c,
 
 /* compare up to 'size' characters in 's1' to 's2'
    using collation 'col' */
-static int
-common_cmps (const unsigned char *s1, const unsigned char *s2,
+int
+cob_cmps (const unsigned char *s1, const unsigned char *s2,
 	     const size_t size, const unsigned char *col)
 {
 	register const unsigned char *end = s1 + size;
@@ -1943,7 +1943,7 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 		const size_t	chunk_size = size2;
 		size_t		size_loop = size1;
 		while (size_loop >= chunk_size) {
-			if ((ret = common_cmps (data1, data2, chunk_size, col)) != 0) {
+			if ((ret = cob_cmps (data1, data2, chunk_size, col)) != 0) {
 				break;
 			}
 			size_loop -= chunk_size;
@@ -1951,7 +1951,7 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 		}
 		if (!ret
 		 && size1 > 0) {
-			ret = common_cmps (data1, data2, size_loop, col);
+			ret = cob_cmps (data1, data2, size_loop, col);
 		}
 	}
 
@@ -1991,7 +1991,7 @@ cob_cmp_alnum (cob_field *f1, cob_field *f2)
 	} else {		/* check with collation */
 
 		/* Compare common substring */
-		if ((ret = common_cmps (data1, data2, min, col)) != 0) {
+		if ((ret = cob_cmps (data1, data2, min, col)) != 0) {
 			return ret;
 		}
 
@@ -2052,7 +2052,7 @@ sort_compare_collate (const void *data1, const void *data2)
 		if (COB_FIELD_IS_NUMERIC (&f1)) {
 			res = cob_numeric_cmp (&f1, &f2);
 		} else {
-			res = common_cmps (f1.data, f2.data, f1.size, sort_collate);
+			res = cob_cmps (f1.data, f2.data, f1.size, sort_collate);
 		}
 		if (res != 0) {
 			return (sort_keys[i].flag == COB_ASCENDING) ? res : -res;

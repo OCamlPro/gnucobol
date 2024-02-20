@@ -10,6 +10,9 @@ NEWS - user visible changes				-*- outline -*-
    the error output for format errors (for example invalid indicator column)
    is now limitted to 5 per source file
 
+** support the COLLATING SEQUENCE clause on indexed files
+   (currently only with the BDB backend)
+
   more work in progress
 
 * Important Bugfixes
@@ -40,6 +43,9 @@ NEWS - user visible changes				-*- outline -*-
    a file for diagnostics; this flag can be activated if your editor and
    build system do not correctly work together to locate files from
    diagnostic output
+
+** New option -fdefault-file-colseq to specify the default
+   file collating sequence
 
 * More notable changes
 

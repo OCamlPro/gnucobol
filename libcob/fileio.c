@@ -301,7 +301,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 		}
 		/* LCOV_EXCL_STOP */
 		keylen = 0;
-		for (part=0; part < key->count_components; part++) {
+		for (part = 0; part < key->count_components; part++) {
 			struct keypart *k_part = &kd->k_part[part];
 			k_part->kp_start = key->component[part]->data - f->record->data;
 			k_part->kp_leng = key->component[part]->size;
@@ -689,6 +689,16 @@ static unsigned int	bdb_lock_id = 0;
 	key.data = fld->data;			\
 	key.size = (cob_dbtsize_t) fld->size
 
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 0))
+#define DBT_SET_APP_DATA(key,data)	((key)->app_data = (data))
+#define DBT_GET_APP_DATA(key)		((key)->app_data)
+#else
+/* Workaround for older BDB versions that do not have app_data in DBT */
+static void		*bdb_app_data = NULL;
+#define DBT_SET_APP_DATA(key,data)	((void)(key), bdb_app_data = (data))
+#define DBT_GET_APP_DATA(key)		((void)(key), bdb_app_data)
+#endif
+
 struct indexed_file {
 	DB		**db;		/* Database handlers */
 	DBC		**cursor;
@@ -714,6 +724,18 @@ struct indexed_file {
 	DB_LOCK		bdb_file_lock;
 	DB_LOCK		bdb_record_lock;
 };
+
+/* collation aware key comparision,
+   currently only used for BDB, likely used in general later */
+static int
+indexed_key_compare (const unsigned char *k1, const unsigned char *k2,
+		     size_t sz, const unsigned char *col)
+{
+	if (col) {
+		return cob_cmps (k1, k2, sz, col);
+	}
+	return memcmp (k1, k2, sz);
+}
 
 /* Return total length of the key */
 static int
@@ -755,6 +777,13 @@ bdb_savekey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx
 	return (int)f->keys[idx].field->size;
 }
 
+static COB_INLINE void
+bdb_setkeycol (cob_file *f, int idx)
+{
+	struct indexed_file	*p = f->file;
+	DBT_SET_APP_DATA(&p->key, (void *)f->keys[idx].collating_sequence);
+}
+
 static void
 bdb_setkey (cob_file *f, int idx)
 {
@@ -765,6 +794,7 @@ bdb_setkey (cob_file *f, int idx)
 	len = bdb_savekey (f, p->savekey, f->record->data, idx);
 	p->key.data = p->savekey;
 	p->key.size = (cob_dbtsize_t) len;
+	bdb_setkeycol (f, idx);
 }
 
 /* Compare key for given index 'keyarea' to 'record'.
@@ -879,6 +909,21 @@ bdb_close_index (cob_file *f, int index)
 #endif
 	p->cursor[index] = NULL;
 	return 1;
+}
+
+static int
+bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2)
+{
+	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA(k1);
+	/* LCOV_EXCL_START */
+	if (col == NULL) {
+		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
+	}
+	if (k1->size != k2->size) {
+		cob_runtime_error ("bdb_bt_compare was given keys of different length");
+	}
+	/* LCOV_EXCL_STOP */
+	return indexed_key_compare (k1->data, k2->data, k2->size, col);
 }
 
 #endif	/* WITH_DB */
@@ -3901,6 +3946,7 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 		}
 		p->key.data = p->data.data;
 		p->key.size = p->primekeylen;
+		bdb_setkeycol (f, 0);
 		ret = DB_GET (p->db[0], &p->key, &p->data, 0);
 	}
 
@@ -4003,6 +4049,7 @@ indexed_delete_internal (cob_file *f, const int rewrite)
 		len = bdb_savekey(f, p->savekey, p->saverec, i);
 		p->key.data = p->savekey;
 		p->key.size = (cob_dbtsize_t) len;
+		bdb_setkeycol (f, i);
 		/* rewrite: no delete if secondary key is unchanged */
 		if (rewrite) {
 			bdb_savekey (f, p->suppkey, p->saverec, i);
@@ -4141,6 +4188,7 @@ indexed_file_delete (cob_file *f, const char *filename)
 	COB_UNUSED (filename);
 #endif
 }
+
 
 /* OPEN INDEXED file */
 
@@ -4611,6 +4659,9 @@ dobuild:
 			if (!ret) {
 				if (f->keys[i].tf_duplicates) {
 					p->db[i]->set_flags (p->db[i], DB_DUP);
+				}
+				if (f->keys[i].collating_sequence) {
+					p->db[i]->set_bt_compare(p->db[i], bdb_bt_compare);
 				}
 			}
 		} else {
@@ -5378,6 +5429,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 		/* Check if previously read data still exists */
 		p->key.size = (cob_dbtsize_t) bdb_keylen(f,p->key_index);
 		p->key.data = p->last_readkey[p->key_index];
+		bdb_setkeycol (f, p->key_index);
 		ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET);
 		if (!ret && p->key_index > 0) {
 			if (f->keys[p->key_index].tf_duplicates) {
@@ -5403,6 +5455,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 			if (!ret) {
 				p->key.size = (cob_dbtsize_t) p->primekeylen;
 				p->key.data = p->last_readkey[p->key_index + f->nkeys];
+				bdb_setkeycol (f, 0);
 				ret = DB_GET (p->db[0], &p->key, &p->data, 0);
 			}
 		}
@@ -5428,6 +5481,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 		} else {
 			p->key.size = (cob_dbtsize_t) bdb_keylen (f, p->key_index);
 			p->key.data = p->last_readkey[p->key_index];
+			bdb_setkeycol (f, p->key_index);
 			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET_RANGE);
 			/* ret != 0 possible, records may be deleted since last read */
 			if (ret != 0) {
@@ -5509,6 +5563,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 			}
 			p->key.data = p->data.data;
 			p->key.size = p->primekeylen;
+			bdb_setkeycol (f, 0);
 			ret = DB_GET (p->db[0], &p->key, &p->data, 0);
 			if (ret != 0) {
 				bdb_close_index (f, p->key_index);
@@ -5635,7 +5690,8 @@ indexed_write (cob_file *f, const int opt)
 		p->last_key = cob_malloc ((size_t)p->maxkeylen);
 	} else
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL
-	 && memcmp (p->last_key, p->key.data, (size_t)p->key.size) > 0) {
+	 && indexed_key_compare (p->last_key,  (unsigned char *)p->key.data, (size_t)p->key.size,
+				 (unsigned char *)DBT_GET_APP_DATA(&p->key)) > 0) {
 		return COB_STATUS_21_KEY_INVALID;
 	}
 	memcpy (p->last_key, p->key.data, (size_t)p->key.size);

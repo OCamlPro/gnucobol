@@ -570,6 +570,9 @@ cob_max_int (const int x, const int y)
 	return y;
 }
 
+COB_HIDDEN int		cob_cmps	(const unsigned char *, const unsigned char *,
+					 const size_t, const unsigned char *);
+
 #undef	COB_HIDDEN
 
 #endif	/* COB_LOCAL_H */
