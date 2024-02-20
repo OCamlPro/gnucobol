@@ -1,4 +1,5 @@
-2024-02-19	Boris Eng <boris.eng@ocamlpro.com>
+
+2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals
 

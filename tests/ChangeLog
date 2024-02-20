@@ -1,6 +1,3 @@
-2024-02-19	Boris Eng <boris.eng@ocamlpro.com>
-
-	* testsuite.src/syn_screen.at: added the test "VALUE ALL in SCREEN SECTION"
 
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
