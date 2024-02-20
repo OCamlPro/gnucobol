@@ -215,6 +215,25 @@
 	  also forces -E, -foneline-deps, -MT=copybooks, disables errors on
 	  missing copybooks and removes output on stdout
 
+2024-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
+	* tree.h: add low_value and high_value fields to hold the low
+	  and high values used by the program collating sequence
+	* tree.c: initialize the low_value and high_value fields
+	  to reasonable default values
+	* typeck.c: replace cob_refer_ascii and cob_refer_ebcdic by
+	  ebcdic_to_ascii and ascii_to_ebcdic; add load_collating_table
+	  to load the tables; modify cb_validate_collating to call
+	  load_collating_table and set low_value and high_value
+	  fields modify validate_alphabet to use the new tables
+	* cobc.h: export the new symbols defined in typeck.c
+	* codegen.c: replace hard-coded 0 and 255 / 0xff contants with
+	  the low_value and high_value fields where appropriate; move
+	  the cob_all_low and cob_all_high fields from global to local;
+	  adjust the output_collating_tables function to use the tables and
+	  functions defined in typeck.c; set the new module field low_value
+
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals
