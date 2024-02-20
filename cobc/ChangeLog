@@ -1,4 +1,17 @@
 
+2024-01-25  David Declerck <david.declerck@ocamlpro.com>
+
+	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files
+	* codegen.c (output_file_initialization): output the indexed
+	  file/keys collating sequence (were already present in the AST)
+	* tree.c (validate_indexed_key_field): process postponed
+	  key collating sequences
+	* parser.y (collating_sequence_clause, collating_sequence_clause_key):
+	  replace CB_PENDING by CB_UNFINISHED on file and key collating sequence
+	* flag.def, tree.c, tree.h, cobc.c, parser.y: add and handle a new
+	  -fdefault-file-colseq flag to specify the default collating
+	  sequence to use for files without a collating sequence clause
+
 2023-10-12  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c, codegen.c: new option --include FILE, to #include

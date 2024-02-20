@@ -103,6 +103,10 @@ CB_FLAG_NQ (1, "default-colseq", CB_FLAG_GETOPT_DEFAULT_COLSEQ,
 	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"
 	  "                        * default: NATIVE"))
 
+CB_FLAG_NQ (1, "default-file-colseq", CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ,
+	_("  -fdefault-file-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default file collating sequence\n"
+	  "                        * default: NATIVE"))
+
 /* Binary flags */
 
 /* Flags with suppressed help */

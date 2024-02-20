@@ -336,29 +336,6 @@ check_non_area_a (cb_tree stmt) {
 
 /* Collating sequences */
 
-/* Known collating sequences/alphabets */
-enum cb_colseq {
-	CB_COLSEQ_NATIVE,
-	CB_COLSEQ_ASCII,
-	CB_COLSEQ_EBCDIC,
-};
-enum cb_colseq cb_default_colseq = CB_COLSEQ_NATIVE;
-
-/* Decipher character conversion table names */
-int cb_deciph_default_colseq_name (const char * const name)
-{
-	if (!cb_strcasecmp (name, "ASCII")) {
-		cb_default_colseq = CB_COLSEQ_ASCII;
-	} else if (!cb_strcasecmp (name, "EBCDIC")) {
-		cb_default_colseq = CB_COLSEQ_EBCDIC;
-	} else if (!cb_strcasecmp (name, "NATIVE")) {
-		cb_default_colseq = CB_COLSEQ_NATIVE;
-	} else {
-		return 1;
-	}
-	return 0;
-}
-
 static cb_tree
 build_colseq_tree (const char *alphabet_name,
 		      int alphabet_type,
@@ -901,21 +878,32 @@ check_relaxed_syntax (const cob_flags_t lev)
 }
 
 static void
-setup_default_collation (struct cb_program *program) {
-	switch (cb_default_colseq) {
+prepare_default_collation (enum cb_colseq colseq) {
+	switch (colseq) {
 #ifdef COB_EBCDIC_MACHINE
 	case CB_COLSEQ_ASCII:
 #else
 	case CB_COLSEQ_EBCDIC:
 #endif
-		alphanumeric_collation = build_colseq (cb_default_colseq);
+		alphanumeric_collation = build_colseq (colseq);
 		break;
 	default:
 		alphanumeric_collation = NULL;
 	}
 	national_collation = NULL; /* TODO: default national collation */
+}
+
+static void
+setup_default_collation (struct cb_program *program) {
+	prepare_default_collation (cb_default_colseq);
 	program->collating_sequence = alphanumeric_collation;
 	program->collating_sequence_n = national_collation;
+}
+
+static void
+setup_default_file_collation (struct cb_file *file) {
+	prepare_default_collation (cb_default_file_colseq);
+	file->collating_sequence = alphanumeric_collation;
 }
 
 static void
@@ -5365,6 +5353,7 @@ file_control_entry:
 
 	}
 	key_type = NO_KEY;
+        setup_default_file_collation (current_file);
   }
   _select_clauses_or_error
   {
@@ -5752,7 +5741,7 @@ collating_sequence_clause:
 	check_repeated ("COLLATING", SYN_CLAUSE_3, &check_duplicate);
 	current_file->collating_sequence = alphanumeric_collation;
 	current_file->collating_sequence_n = national_collation;
-	CB_PENDING ("FILE COLLATING SEQUENCE");
+	CB_UNFINISHED ("FILE COLLATING SEQUENCE"); /* only implemented for BDB */
   }
 ;
 
@@ -5804,7 +5793,7 @@ collating_sequence_clause_key:
 	   and also attached to the correct key later, so just store in a list here: */
 	current_file->collating_sequence_keys =
 		cb_list_add(current_file->collating_sequence_keys, CB_BUILD_PAIR ($6, $4));
-	CB_PENDING ("KEY COLLATING SEQUENCE");
+	CB_UNFINISHED ("KEY COLLATING SEQUENCE"); /* only implemented for BDB */
   }
 ;
 

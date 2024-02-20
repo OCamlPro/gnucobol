@@ -1,4 +1,12 @@
 
+2024-01-25  David Declerck <david.declerck@ocamlpro.com>
+
+	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files
+	* fileio.c (bdb_setkeycol, bdb_bt_compare, indexed_open, ...):
+	  take the file collating sequence into account when comparing keys
+	* common.c, coblocal.h: rename common_cmps to cob_cmps
+	  and make it available locally
+
 2024-01-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (indexed_keylen): signature change to directly take the keydesc
