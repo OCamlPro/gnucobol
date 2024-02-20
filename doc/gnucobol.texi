@@ -66,7 +66,7 @@ together with a designated C compiler and linker.
 This manual corresponds to GnuCOBOL @value{VERSION}.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2002-2012, 2014-2023 Free Software Foundation, Inc.@*
+Copyright @copyright{} 2002-2012, 2014-2024 Free Software Foundation, Inc.@*
 Written by Keisuke Nishida, Roger While, Brian Tiffin, Simon Sobisch.
 
 @insertcopying
@@ -365,9 +365,25 @@ The following options specify the target type produced by the compiler:
 @table @code
 @item -E
 Preprocess only: compiler directives are executed, comment lines are
-removed and @code{COPY} statements are expanded.
+removed, and @code{COPY} and @code{REPLACE} statements are performed.
 The output is sent to stdout, allowing you to directly use it as input for
 another process. You can manually set an output file using @option{-o}.
+
+@item --copy @var{copybook}
+Include @file{copybook} at the beginning of the source code, as if
+@code{COPY copybook} had been parsed.
+
+@item --include @var{file.h}
+Add a @code{#include} @file{file.h} at the beginning of the generated
+C source file. The file name is put into quotes, unless it starts by
+@code{<}. Quoted files should be absolute paths, since C files are compiled
+in temporary directories.
+The option also implies @option{-fno-gen-c-decl-static-call}.
+This option can be used to check function prototypes when
+static calls are used. When this option is used, the source file is
+compiled in the project directory (instead of the temp directory), and
+no prototypes are generated, so ALL static call functions must appear
+in the header file, with GnuCOBOL compatible types.
 
 @item -C
 Translation only.  COBOL source files are translated into C files.
@@ -1581,7 +1597,7 @@ enum cob_runtime_option_switch @{
    COB_SET_RUNTIME_RESCAN_ENV              /* rescan environment variables */
    COB_SET_RUNTIME_DISPLAY_PUNCH_FILE      /* 'p' is  FILE *  */
 @};
-COB_EXPIMP  void  cob_set_runtime_option   (enum cob_runtime_option_switch opt, void *p);
+COB_EXT_IMPORT  void  cob_set_runtime_option   (enum cob_runtime_option_switch opt, void *p);
 @end smallexample
 
 So from you C code you can tell the GnuCOBOL runtime to redirect TRACE output by:
@@ -1604,7 +1620,7 @@ cob_set_runtime_option (COB_SET_RUNTIME_DISPLAY_PUNCH_FILE,
 
 Another routine can be used to return the current value of the option.
 @example
-COB_EXPIMP  void *
+COB_EXT_IMPORT  void *
 cob_get_runtime_option (enum cob_runtime_option_switch opt);
 @end example
 
@@ -1615,7 +1631,7 @@ When an EBCDIC/ASCII translation table is needed (for instance when calling
 sort functions), you can can call the @code{cob_load_collation} function to
 retrieve such tables:
 @example
-COB_EXPIMP int
+COB_EXT_IMPORT int
 cob_load_collation (const char *col_name,
                     cob_u8_t *ebcdic_to_ascii,
                     cob_u8_t *ascii_to_ebcdic)

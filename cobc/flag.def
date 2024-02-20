@@ -103,6 +103,10 @@ CB_FLAG_NQ (1, "default-colseq", CB_FLAG_GETOPT_DEFAULT_COLSEQ,
 	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"
 	  "                        * default: NATIVE"))
 
+CB_FLAG_NQ (1, "default-file-colseq", CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ,
+	_("  -fdefault-file-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default file collating sequence\n"
+	  "                        * default: NATIVE"))
+
 /* Binary flags */
 
 /* Flags with suppressed help */
@@ -166,7 +170,7 @@ CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
 	  "                        * turned on by --debug/-g"))
 
-CB_FLAG_OP (1, "memory-check", CB_FLAG_MEMORY_CHECK,
+CB_FLAG_OP (1, "memory-check", CB_FLAG_GETOPT_MEMORY_CHECK,
 	_("  -fmemory-check=<scope>     checks for invalid writes to internal storage,\n"
 	  "                        <scope> may be one of: all, pointer, using, none\n"
 	  "                        * default: none, set to all by --debug"))

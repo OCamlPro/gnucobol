@@ -10,6 +10,9 @@ NEWS - user visible changes				-*- outline -*-
    the error output for format errors (for example invalid indicator column)
    is now limitted to 5 per source file
 
+** support the COLLATING SEQUENCE clause on indexed files
+   (currently only with the BDB backend)
+
   more work in progress
 
 * Important Bugfixes
@@ -22,6 +25,16 @@ NEWS - user visible changes				-*- outline -*-
 
 * Changes to the COBOL compiler (cobc) options:
 
+** New option --copy COPYBOOK to load copybooks before parsing files. This
+   option can typically be used to perform replacements without modifying
+   the source code, or to add prototypes for external calls.
+
+** New option --include FILE.h to add a #include in the generated C file.
+   This option can typically be used to force the C compiler to check static
+   calls to externals. The files are put into quotes, unless they start by
+   '<'. Quoted files are expected to have absolute paths, as the C compiler
+   is called in a temp directory instead of the project directory.
+
 ** output of unlimited errors may be requested by -fmax-errors=0,
    to stop compiliation at first error use -Wfatal-errors
 ** default value for -fmax-errors was changed from 128 to 20
@@ -30,6 +43,9 @@ NEWS - user visible changes				-*- outline -*-
    a file for diagnostics; this flag can be activated if your editor and
    build system do not correctly work together to locate files from
    diagnostic output
+
+** New option -fdefault-file-colseq to specify the default
+   file collating sequence
 
 * More notable changes
 

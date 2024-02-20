@@ -1370,9 +1370,7 @@ typedef struct __cob_file_key {
 	unsigned int	offset;			/* Offset of field */
 	int		count_components;		/* 0..1::simple-key  2..n::split-key   */
 	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
-#if 0	/* TODO (for file keys, not for SORT/MERGE) */
-	const unsigned char *collating_sequence;	/* COLLATING */
-#endif
+	const unsigned char *collating_sequence;	/* COLLATING (for file keys, not for SORT/MERGE) */
 } cob_file_key;
 
 
