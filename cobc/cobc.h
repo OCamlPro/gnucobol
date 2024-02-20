@@ -625,6 +625,11 @@ extern int		yyparse (void);
 /* typeck.c */
 extern size_t		suppress_warn;	/* no warnings for internal generated stuff */
 
+extern cob_u8_t ebcdic_to_ascii[256];
+extern cob_u8_t ascii_to_ebcdic[256];
+
+void load_collating_tables (void);
+
 /* error.c */
 #define CB_MSG_STYLE_GCC	0
 #define CB_MSG_STYLE_MSC	1U
