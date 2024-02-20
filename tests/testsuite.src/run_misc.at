@@ -15251,3 +15251,370 @@ AT_CHECK([$COMPILE prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 
 AT_CLEANUP
+
+
+# See bug #948 - Comparison with HIGH-VALUE in presence of collating sequences
+AT_SETUP([LOW/HIGH-VALUE when using non-native program collating sequence])
+AT_KEYWORDS([LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               64 THRU 1
+               65 THRU 192
+               256 THRU 193.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV-ORD PIC 999.
+       01 LV     PIC X.
+       88 IS-LV VALUE LOW-VALUE.
+       01 HV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV VALUE HIGH-VALUE.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-ORD
+                 " HIGH-VALUE: " HV-ORD.
+           IF LV = LOW-VALUE AND IS-LV
+             DISPLAY "LOW-VALUE OK"
+           ELSE
+             DISPLAY "LOW-VALUE KO"
+           END-IF.
+           IF HV = HIGH-VALUE AND IS-HV
+             DISPLAY "HIGH-VALUE OK"
+           ELSE
+             DISPLAY "HIGH-VALUE KO"
+           END-IF.
+           IF "X" > LOW-VALUE AND "X" > LV
+              DISPLAY "X > LOW-VALUE"
+           ELSE
+              DISPLAY "X < LOW-VALUE"
+           END-IF.
+           IF "X" < HIGH-VALUE AND "X" < HV
+              DISPLAY "X < HIGH-VALUE"
+           ELSE
+              DISPLAY "X > HIGH-VALUE"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
+[LOW-VALUE: 064 HIGH-VALUE: 193
+LOW-VALUE OK
+HIGH-VALUE OK
+X > LOW-VALUE
+X < HIGH-VALUE
+], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               65.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV-ORD PIC 999.
+       01 LV     PIC X.
+       88 IS-LV VALUE LOW-VALUE.
+       01 HV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV VALUE HIGH-VALUE.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-ORD
+                 " HIGH-VALUE: " HV-ORD.
+           IF LV = LOW-VALUE AND IS-LV
+             DISPLAY "LOW-VALUE OK"
+           ELSE
+             DISPLAY "LOW-VALUE KO"
+           END-IF.
+           IF HV = HIGH-VALUE AND IS-HV
+             DISPLAY "HIGH-VALUE OK"
+           ELSE
+             DISPLAY "HIGH-VALUE KO"
+           END-IF.
+           IF "X" > LOW-VALUE AND "X" > LV
+              DISPLAY "X > LOW-VALUE"
+           ELSE
+              DISPLAY "X < LOW-VALUE"
+           END-IF.
+           IF "X" < HIGH-VALUE AND "X" < HV
+              DISPLAY "X < HIGH-VALUE"
+           ELSE
+              DISPLAY "X > HIGH-VALUE"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[LOW-VALUE: 065 HIGH-VALUE: 256
+LOW-VALUE OK
+HIGH-VALUE OK
+X > LOW-VALUE
+X < HIGH-VALUE
+], [])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV-ORD PIC 999.
+       01 LV     PIC X.
+       88 IS-LV VALUE LOW-VALUE.
+       01 HV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV VALUE HIGH-VALUE.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-ORD
+                 " HIGH-VALUE: " HV-ORD.
+           IF LV = LOW-VALUE AND IS-LV
+             DISPLAY "LOW-VALUE OK"
+           ELSE
+             DISPLAY "LOW-VALUE KO"
+           END-IF.
+           IF HV = HIGH-VALUE AND IS-HV
+             DISPLAY "HIGH-VALUE OK"
+           ELSE
+             DISPLAY "HIGH-VALUE KO"
+           END-IF.
+           IF "X" > LOW-VALUE AND "X" > LV
+              DISPLAY "X > LOW-VALUE"
+           ELSE
+              DISPLAY "X < LOW-VALUE"
+           END-IF.
+           IF "X" < HIGH-VALUE AND "X" < HV
+              DISPLAY "X < HIGH-VALUE"
+           ELSE
+              DISPLAY "X > HIGH-VALUE"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
+[LOW-VALUE: 001 HIGH-VALUE: 160
+LOW-VALUE OK
+HIGH-VALUE OK
+X > LOW-VALUE
+X < HIGH-VALUE
+], [])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV-ORD PIC 999.
+       01 LV     PIC X.
+       88 IS-LV VALUE LOW-VALUE.
+       01 HV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV VALUE HIGH-VALUE.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-ORD
+                 " HIGH-VALUE: " HV-ORD.
+           IF LV = LOW-VALUE AND IS-LV
+             DISPLAY "LOW-VALUE OK"
+           ELSE
+             DISPLAY "LOW-VALUE KO"
+           END-IF.
+           IF HV = HIGH-VALUE AND IS-HV
+             DISPLAY "HIGH-VALUE OK"
+           ELSE
+             DISPLAY "HIGH-VALUE KO"
+           END-IF.
+           IF "X" > LOW-VALUE AND "X" > LV
+              DISPLAY "X > LOW-VALUE"
+           ELSE
+              DISPLAY "X < LOW-VALUE"
+           END-IF.
+           IF "X" < HIGH-VALUE AND "X" < HV
+              DISPLAY "X < HIGH-VALUE"
+           ELSE
+              DISPLAY "X > HIGH-VALUE"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
+[LOW-VALUE: 001 HIGH-VALUE: 160
+LOW-VALUE OK
+HIGH-VALUE OK
+X > LOW-VALUE
+X < HIGH-VALUE
+], [])
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV-ORD PIC 999.
+       01 LV     PIC X.
+       88 IS-LV VALUE LOW-VALUE.
+       01 HV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV VALUE HIGH-VALUE.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
+           DISPLAY "P1 LOW-VALUE: " LV-ORD
+                 " HIGH-VALUE: " HV-ORD.
+           IF LV = LOW-VALUE AND IS-LV
+             DISPLAY "LOW-VALUE OK"
+           ELSE
+             DISPLAY "LOW-VALUE KO"
+           END-IF.
+           IF HV = HIGH-VALUE AND IS-HV
+             DISPLAY "HIGH-VALUE OK"
+           ELSE
+             DISPLAY "HIGH-VALUE KO"
+           END-IF.
+           IF "X" > LOW-VALUE AND "X" > LV
+              DISPLAY "X > LOW-VALUE"
+           ELSE
+              DISPLAY "X < LOW-VALUE"
+           END-IF.
+           IF "X" < HIGH-VALUE AND "X" < HV
+              DISPLAY "X < HIGH-VALUE"
+           ELSE
+              DISPLAY "X > HIGH-VALUE"
+           END-IF.
+           CALL "prog2".
+           STOP RUN.
+       END PROGRAM prog1.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ascii.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ascii IS ASCII.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV-ORD PIC 999.
+       01 LV     PIC X.
+       88 IS-LV VALUE LOW-VALUE.
+       01 HV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV VALUE HIGH-VALUE.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
+           DISPLAY "P2 LOW-VALUE: " LV-ORD
+                 " HIGH-VALUE: " HV-ORD.
+           IF LV = LOW-VALUE AND IS-LV
+             DISPLAY "LOW-VALUE OK"
+           ELSE
+             DISPLAY "LOW-VALUE KO"
+           END-IF.
+           IF HV = HIGH-VALUE AND IS-HV
+             DISPLAY "HIGH-VALUE OK"
+           ELSE
+             DISPLAY "HIGH-VALUE KO"
+           END-IF.
+           IF "X" > LOW-VALUE AND "X" > LV
+              DISPLAY "X > LOW-VALUE"
+           ELSE
+              DISPLAY "X < LOW-VALUE"
+           END-IF.
+           IF "X" < HIGH-VALUE AND "X" < HV
+              DISPLAY "X < HIGH-VALUE"
+           ELSE
+              DISPLAY "X > HIGH-VALUE"
+           END-IF.
+           STOP RUN.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [0],
+[P1 LOW-VALUE: 001 HIGH-VALUE: 160
+LOW-VALUE OK
+HIGH-VALUE OK
+X > LOW-VALUE
+X < HIGH-VALUE
+P2 LOW-VALUE: 001 HIGH-VALUE: 256
+LOW-VALUE OK
+HIGH-VALUE OK
+X > LOW-VALUE
+X < HIGH-VALUE
+], [])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 IND PIC 9(02).
+       01 ENDX PIC X(01).
+       01 ENDXS PIC X(05).
+       PROCEDURE DIVISION.
+           INITIALIZE ENDX.
+           PERFORM VARYING IND FROM 1 BY 1 UNTIL ENDX = HIGH-VALUE
+              DISPLAY IND " " WITH NO ADVANCING
+              IF IND = 9
+                 MOVE HIGH-VALUE TO ENDX
+              END-IF
+           END-PERFORM.
+           INITIALIZE ENDXS.
+           PERFORM VARYING IND FROM 1 BY 1 UNTIL ENDXS = HIGH-VALUE
+              DISPLAY IND " " WITH NO ADVANCING
+              IF IND = 9
+                 MOVE HIGH-VALUE TO ENDXS
+              END-IF
+           END-PERFORM.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [0],
+[01 02 03 04 05 06 07 08 09 01 02 03 04 05 06 07 08 09 ], [])
+
+AT_CLEANUP
