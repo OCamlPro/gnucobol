@@ -100,6 +100,16 @@ static cob_field		str_cob_low;
 
 /* Local functions */
 
+static COB_INLINE COB_A_INLINE void
+cob_update_low_value (void)
+{
+	if (COB_MODULE_PTR->collating_sequence != NULL) {
+		str_cob_low.data = (cob_u8_ptr)&COB_MODULE_PTR->collating_sequence[0];
+	} else {
+		str_cob_low.data = (cob_u8_ptr)"\0";
+	}
+}
+
 static void
 cob_str_memcpy (cob_field *dst, unsigned char *src, const int size)
 {
@@ -423,9 +433,11 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 	}
 
 	if (unlikely (!f1)) {
+		cob_update_low_value ();
 		f1 = &str_cob_low;
 	}
 	if (unlikely (!f2)) {
+		cob_update_low_value ();
 		f2 = &str_cob_low;
 	}
 
@@ -649,9 +661,11 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 	}
 
 	if (unlikely (!f1)) {
+		cob_update_low_value ();
 		f1 = &str_cob_low;
 	}
 	if (unlikely (!f2)) {
+		cob_update_low_value ();
 		f2 = &str_cob_low;
 	}
 	if (f1->size != f2->size) {
