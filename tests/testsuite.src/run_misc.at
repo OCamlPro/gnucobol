@@ -14631,3 +14631,189 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN prog], [0], [OKOKOKOKOK], [])
 AT_CLEANUP
+
+
+# See bug #948 - Comparison with HIGH-VALUE in presence of collating sequences
+AT_SETUP([LOW/HIGH-VALUE when using non-native program collating sequence])
+AT_KEYWORDS([LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               64 THRU 1
+               65 THRU 192
+               256 THRU 193.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV PIC 999.
+       01 HV PIC 999.
+       PROCEDURE DIVISION.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV.
+           DISPLAY "LOW-VALUE: " LV
+                 " HIGH-VALUE: " HV WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0], [LOW-VALUE: 064 HIGH-VALUE: 193], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               65.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV PIC 999.
+       01 HV PIC 999.
+       PROCEDURE DIVISION.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV.
+           DISPLAY "LOW-VALUE: " LV
+                 " HIGH-VALUE: " HV WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [LOW-VALUE: 065 HIGH-VALUE: 256], [])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV PIC 999.
+       01 HV PIC 999.
+       PROCEDURE DIVISION.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV.
+           DISPLAY "LOW-VALUE: " LV
+                  " HIGH-VALUE: " HV WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0], [LOW-VALUE: 001 HIGH-VALUE: 160], [])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV PIC 999.
+       01 HV PIC 999.
+       PROCEDURE DIVISION.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV.
+           DISPLAY "LOW-VALUE: " LV
+                  " HIGH-VALUE: " HV WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0], [LOW-VALUE: 001 HIGH-VALUE: 160], [])
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       PROCEDURE DIVISION.
+           IF "X" < HIGH-VALUE
+              DISPLAY "X < HIGH-VALUE" WITH NO ADVANCING
+           ELSE
+              DISPLAY "X > HIGH-VALUE" WITH NO ADVANCING
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [0], [X < HIGH-VALUE], [])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           IF "X" < HIGH-VALUE
+              DISPLAY "X < HIGH-VALUE" WITH NO ADVANCING
+           ELSE
+              DISPLAY "X > HIGH-VALUE" WITH NO ADVANCING
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [0], [X < HIGH-VALUE], [])
+
+AT_DATA([prog7.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV PIC 999.
+       01 HV PIC 999.
+       PROCEDURE DIVISION.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV.
+           DISPLAY "P1 LOW-VALUE: " LV
+                     " HIGH-VALUE: " HV.
+           CALL "prog2".
+           STOP RUN.
+       END PROGRAM prog1.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ascii.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ascii IS ASCII.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV PIC 999.
+       01 HV PIC 999.
+       PROCEDURE DIVISION.
+           MOVE FUNCTION ORD (LOW-VALUE) TO LV.
+           MOVE FUNCTION ORD (HIGH-VALUE) TO HV.
+           DISPLAY "P2 LOW-VALUE: " LV
+                     " HIGH-VALUE: " HV WITH NO ADVANCING.
+           STOP RUN.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE -save-temps -febcdic-table=ebcdic500_latin1 prog7.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog7], [0],
+[P1 LOW-VALUE: 001 HIGH-VALUE: 160
+P2 LOW-VALUE: 001 HIGH-VALUE: 256], [])
+
+AT_CLEANUP
