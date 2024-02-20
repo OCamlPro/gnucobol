@@ -1,7 +1,6 @@
 2024-02-19	Boris Eng <boris.eng@ocamlpro.com>
 
-	* parser.y: changed basic_literal for literal in screen section
-		clauses
+	* parser.y (screen_value_clause): replaced basic literals by literals
 
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
