@@ -170,9 +170,6 @@ setup_repdata_mt (struct inspect_state *st)
 static COB_INLINE COB_A_INLINE void
 setup_repdata (void)
 {
-	struct inspect_state *st = &share_inspect_state;
-	if (st->size > st->repdata_size && st->repdata)
-		cob_free (st->repdata);
 	setup_repdata_mt (&share_inspect_state);
 }
 
@@ -570,9 +567,6 @@ cob_inspect_init_mt (struct inspect_state **pst, cob_field *var, const cob_u32_t
 void
 cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 {
-	struct inspect_state *st = pshare_inspect_state;
-	if (st->size > st->mark_size && st->mark)
-		cob_free (st->mark);
 	cob_inspect_init_mt (&pshare_inspect_state, var, replacing);	
 }
 
@@ -1105,9 +1099,6 @@ cob_unstring_init (
 	const size_t num_dlm
 )
 {
-	struct unstring_state *st = pshare_unstring_state;
-	if (num_dlm > st->dlm_list_size && st->dlm_list)
-		cob_free (st->dlm_list);
 	cob_unstring_init_mt (&pshare_unstring_state, src, ptr, num_dlm);
 }
 
@@ -1333,14 +1324,6 @@ cob_exit_strings_mt (struct inspect_state *sti, struct unstring_state *stu)
 void
 cob_exit_strings (void)
 {
-	struct inspect_state *sti = &share_inspect_state;
-	struct unstring_state *stu = &share_unstring_state;
-	if (sti->mark)
-		cob_free (sti->mark);
-	if (sti->repdata)
-		cob_free (sti->repdata);
-	if (stu->dlm_list)
-		cob_free (stu->dlm_list);
 	cob_exit_strings_mt (&share_inspect_state, &share_unstring_state);
 }
 
