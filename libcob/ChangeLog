@@ -1,4 +1,15 @@
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* coblocal.h (cob_exit_strings_mt): add multithreaded version of
+		cob_exit_strings
+
+	* common.h: add signature and structures for multithreaded strings
+		functions
+
+	* strings.c: add multithreaded version (with 'mt' suffix) for all
+		functions related to the INSPECT, STRING and UNSTRING statements
+
 2023-12-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_terminate_routines, cob_call_with_exception_check):

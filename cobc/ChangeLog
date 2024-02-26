@@ -1,4 +1,20 @@
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* codegen.c (output_strings_states, codegen_internal):
+		added structures for the data used by strings functions as local variables
+		in the C generated code
+
+	* parser.y (examine_format_variant, inspect_region):
+		function calls of strings functions have been replaced by calls to
+		multithreaded versions (using state structures instead of static variables)
+
+	* typeck.c (cb_emit_inspect, cb_build_tallying_data, cb_build_tallying_all,
+	  cb_build_tallying_leading, cb_build_tallying_trailing, cb_build_converting,
+		cb_emit_string, cb_emit_unstring, cb_build_unstring_into:
+		function calls of strings functions have been replaced by calls to
+		multithreaded versions (using state structures instead of static variables)
+
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
