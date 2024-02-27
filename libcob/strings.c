@@ -51,9 +51,9 @@ struct dlm_struct {
 static cob_global		*cobglobptr = NULL;
 
 static const cob_field_attr	const_alpha_attr =
-				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+	{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 static const cob_field_attr	const_strall_attr =
-				{COB_TYPE_ALPHANUMERIC_ALL, 0, 0, 0, NULL};
+	{COB_TYPE_ALPHANUMERIC_ALL, 0, 0, 0, NULL};
 
 /* Static structures for backward compatibility */
 static struct inspect_state		share_inspect_state;
@@ -63,15 +63,14 @@ static struct inspect_state	 	*pshare_inspect_state  = &share_inspect_state;
 static struct string_state		*pshare_string_state   = &share_string_state;
 static struct unstring_state	*pshare_unstring_state = &share_unstring_state;
 
-static unsigned char		*figurative_ptr;
-static size_t			figurative_size;
-
-static cob_field		alpha_fld;
-static cob_field		str_cob_low;
+unsigned char		*figurative_ptr;
+size_t					figurative_size;
+cob_field				alpha_fld;
+cob_field				str_cob_low;
 
 /* Local functions */
 
-static void
+void
 cob_str_memcpy (cob_field *dst, unsigned char *src, const int size)
 {
 	cob_field	temp;
@@ -82,8 +81,8 @@ cob_str_memcpy (cob_field *dst, unsigned char *src, const int size)
 	cob_move (&temp, dst);
 }
 
-static void
-alloc_figurative (const cob_field *f1, const cob_field *f2)
+void
+alloc_figurative (struct inspect_state *st, const cob_field *f1, const cob_field *f2)
 {
 	const size_t		size2 = f2->size;
 
@@ -139,8 +138,8 @@ alloc_figurative (const cob_field *f1, const cob_field *f2)
    This is a must-have for REPLACING as the original data may not be
    changed to correctly handle multiple replacements with BEFORE/AFTER
    clauses */
-static COB_INLINE COB_A_INLINE void
-setup_repdata_mt (struct inspect_state *st)
+COB_INLINE COB_A_INLINE void
+setup_repdata (struct inspect_state *st)
 {
 	/* implementation note:
 	   A version that memcpy'd the complete data to repdata
@@ -167,14 +166,9 @@ setup_repdata_mt (struct inspect_state *st)
 		st->repdata = cob_fast_malloc (st->repdata_size + 1);
 	}
 }
-static COB_INLINE COB_A_INLINE void
-setup_repdata (void)
-{
-	setup_repdata_mt (&share_inspect_state);
-}
 
-static COB_INLINE COB_A_INLINE unsigned char *
-inspect_find_data_mt (struct inspect_state *st, const cob_field *str)
+COB_INLINE COB_A_INLINE unsigned char *
+inspect_find_data (struct inspect_state *st, const cob_field *str)
 {
 	const unsigned char *data = str->data;
 	const size_t	len = str->size;
@@ -194,14 +188,9 @@ inspect_find_data_mt (struct inspect_state *st, const cob_field *str)
 	}
 	return NULL;
 }
-static COB_INLINE COB_A_INLINE unsigned char *
-inspect_find_data (const cob_field *str)
-{
-	return inspect_find_data_mt (&share_inspect_state, str);
-}
 
-static COB_INLINE COB_A_INLINE void
-set_inspect_mark_mt (
+COB_INLINE COB_A_INLINE void
+set_inspect_mark (
 	struct inspect_state *st,
 	const size_t pos,
 	const size_t length
@@ -217,18 +206,10 @@ set_inspect_mark_mt (
 		st->mark_max = pos_end;
 	}
 }
-static COB_INLINE COB_A_INLINE void
-set_inspect_mark (
-	const size_t pos,
-	const size_t length
-)
-{
-	set_inspect_mark_mt (&share_inspect_state, pos, length);
-}
 
 /* check for an area in the marker to be non-zero */
-static COB_INLINE COB_A_INLINE int
-is_marked_mt (struct inspect_state *st, size_t pos, size_t length)
+COB_INLINE COB_A_INLINE int
+is_marked (struct inspect_state *st, size_t pos, size_t length)
 {
 	/* no need to check further if there's no mark or no possible overlap ... */
 	if (st->mark[st->mark_min] == 0
@@ -254,14 +235,9 @@ is_marked_mt (struct inspect_state *st, size_t pos, size_t length)
 	}
 	return 0;
 }
-static COB_INLINE COB_A_INLINE int
-is_marked (size_t pos, size_t length)
-{
-	return is_marked_mt (&share_inspect_state, pos, length);
-}
 
-static void
-inspect_common_no_replace_mt (
+void
+inspect_common_no_replace (
 	struct inspect_state *st,
 	cob_field *f1,
 	cob_field *f2,
@@ -280,7 +256,7 @@ inspect_common_no_replace_mt (
 			/* Find matching substring */
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
-				if (!is_marked_mt (st, pos + i, f2->size)) {
+				if (!is_marked (st, pos + i, f2->size)) {
 					n++;
 					first_marker = i;
 					i -= f2->size - 1;
@@ -294,7 +270,7 @@ inspect_common_no_replace_mt (
 		}
 		/* set the marker so we won't iterate over this area again */
 		if (n) {
-			set_inspect_mark_mt (st, pos + first_marker, len - first_marker);
+			set_inspect_mark (st, pos + first_marker, len - first_marker);
 		}
 	} else if (type == INSPECT_LEADING) {
 		const size_t	i_max = len - f2->size + 1;
@@ -303,7 +279,7 @@ inspect_common_no_replace_mt (
 			/* Find matching substring */
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, skip handled positions and set mark pos */
-				if (!is_marked_mt (st, pos + i, f2->size)) {
+				if (!is_marked (st, pos + i, f2->size)) {
 					n++;
 					i += f2->size - 1;
 					last_marker = i;
@@ -314,7 +290,7 @@ inspect_common_no_replace_mt (
 		}
 		/* set the marker so we won't iterate over this area again */
 		if (n) {
-			set_inspect_mark_mt (st, pos, last_marker);
+			set_inspect_mark (st, pos, last_marker);
 		}
 	/* note: same code as for LEADING, moved out as we don't need to check
 	   LEADING for _every_ byte in that tight loop */
@@ -325,10 +301,10 @@ inspect_common_no_replace_mt (
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				const size_t checked_pos = pos + i;
 				/* when not marked yet: count, mark and skip handled positions */
-				if (!is_marked_mt (st, checked_pos, f2->size)) {
+				if (!is_marked (st, checked_pos, f2->size)) {
 					n++;
 					/* set the marker so we won't iterate over this area again */
-					set_inspect_mark_mt (st, checked_pos, f2->size);
+					set_inspect_mark (st, checked_pos, f2->size);
 					if (type == INSPECT_FIRST) {
 						break;
 					}
@@ -343,41 +319,32 @@ inspect_common_no_replace_mt (
 	}
 }
 
-static COB_INLINE COB_A_INLINE int
-do_mark_mt (
+COB_INLINE COB_A_INLINE int
+do_mark (
 	struct inspect_state *st,
 	const size_t pos,
 	const size_t length,
 	unsigned char *replace_data
 )
 {
-	if (is_marked_mt (st, pos, length)) {
+	if (is_marked (st, pos, length)) {
 		return 0;	/* it is, nothing to do here */
 	}
 	/* nothing done there yet, so: */
 
 	/* 1 - handle possible replacing */
-	setup_repdata_mt (st);
+	setup_repdata (st);
 	memcpy (st->repdata + pos, replace_data, length);
 
 	/* 2 - set the marker so we won't iterate over this area again */
-	set_inspect_mark_mt (st, pos, length);
+	set_inspect_mark (st, pos, length);
 
 	/* 3 - let the caller handle pos adjustment */
 	return 1;
 }
-static COB_INLINE COB_A_INLINE int
-do_mark (
-	const size_t pos,
-	const size_t length,
-	unsigned char *replace_data
-)
-{
-	return do_mark_mt(&share_inspect_state, pos, length, replace_data);
-}
 
-static void
-inspect_common_replacing_mt (
+void
+inspect_common_replacing (
 	struct inspect_state *st,
 	cob_field *f1,
 	cob_field *f2,
@@ -394,7 +361,7 @@ inspect_common_replacing_mt (
 			/* Find matching substring */
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
-				if (do_mark_mt (st, pos + i, f2->size, f1->data)) {
+				if (do_mark (st, pos + i, f2->size, f1->data)) {
 					i -= f2->size - 1;
 				}
 				if (i == 0) {
@@ -410,7 +377,7 @@ inspect_common_replacing_mt (
 			/* Find matching substring */
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
-				if (do_mark_mt (st, pos + i, f2->size, f1->data)) {
+				if (do_mark (st, pos + i, f2->size, f1->data)) {
 					i += f2->size - 1;
 				}
 			} else {
@@ -425,7 +392,7 @@ inspect_common_replacing_mt (
 			/* Find matching substring */
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
-				if (do_mark_mt (st, pos + i, f2->size, f1->data)) {
+				if (do_mark (st, pos + i, f2->size, f1->data)) {
 					if (type == INSPECT_FIRST) {
 						break;
 					}
@@ -436,8 +403,8 @@ inspect_common_replacing_mt (
 	}
 }
 
-static void
-inspect_common_mt (
+void
+inspect_common (
 	struct inspect_state *st,
 	cob_field *f1,
 	cob_field *f2,
@@ -468,11 +435,11 @@ inspect_common_mt (
 		if (f2->size > len) {
 			return;
 		}
-		inspect_common_no_replace_mt (st, f1, f2, type, pos, len);
+		inspect_common_no_replace (st, f1, f2, type, pos, len);
 	} else {
 		if (f1->size != f2->size) {
 			if (COB_FIELD_TYPE (f1) == COB_TYPE_ALPHANUMERIC_ALL) {
-				alloc_figurative (f1, f2);
+				alloc_figurative (st, f1, f2);
 				f1 = &alpha_fld;
 			} else {
 				cob_set_exception (COB_EC_RANGE_INSPECT_SIZE);
@@ -482,17 +449,8 @@ inspect_common_mt (
 		if (f2->size > len) {
 			return;
 		}
-		inspect_common_replacing_mt (st, f1, f2, type, pos, len);
+		inspect_common_replacing (st, f1, f2, type, pos, len);
 	}
-}
-static void
-inspect_common (
-	cob_field *f1,
-	cob_field *f2,
-	const enum inspect_type type
-)
-{
-	inspect_common_mt (&share_inspect_state, f1, f2, type);
 }
 
 /* Global functions */
@@ -607,7 +565,7 @@ cob_inspect_start (void)
 void
 cob_inspect_before_mt (struct inspect_state *st, const cob_field *str)
 {
-	unsigned char *data_pos = inspect_find_data_mt (st, str);
+	unsigned char *data_pos = inspect_find_data (st, str);
 	if (data_pos)
 		st->end = data_pos;
 }
@@ -620,7 +578,7 @@ cob_inspect_before (const cob_field *str)
 void
 cob_inspect_after_mt (struct inspect_state *st, const cob_field *str)
 {
-	unsigned char *data_pos = inspect_find_data_mt (st, str);
+	unsigned char *data_pos = inspect_find_data (st, str);
 	if (data_pos) 
 		st->start = data_pos + str->size;
 	else 
@@ -650,9 +608,9 @@ cob_inspect_characters_mt (struct inspect_state *st, cob_field *f1)
 		/* INSPECT REPLACING CHARACTERS BY f1 (= size 1) */
 		const unsigned char repl_by = *f1->data;
 		unsigned char	*repdata;
-		setup_repdata_mt (st);
+		setup_repdata (st);
 		repdata = st->repdata + pos;
-		if (is_marked_mt (st, pos, len)) {
+		if (is_marked (st, pos, len)) {
 			/* at least a partial marking - so iterate */
 			while (mark_pos != mark_end) {
 				/* replace all positions in the original data where
@@ -668,7 +626,7 @@ cob_inspect_characters_mt (struct inspect_state *st, cob_field *f1)
 		}
 	} else {
 		/* INSPECT TALLYING f1 CHARACTERS */
-		if (is_marked_mt (st, pos, len)) {
+		if (is_marked (st, pos, len)) {
 			/* at least a partial marking - so iterate */
 			int	n = 0;
 			/* Note: field->size and therefore INSPECT target's size are
@@ -686,7 +644,7 @@ cob_inspect_characters_mt (struct inspect_state *st, cob_field *f1)
 			cob_add_int (f1, (int)len, 0);
 		}
 	}
-	set_inspect_mark_mt (st, pos, len);
+	set_inspect_mark (st, pos, len);
 }
 void
 cob_inspect_characters (cob_field *f1)
@@ -697,45 +655,45 @@ cob_inspect_characters (cob_field *f1)
 void
 cob_inspect_all_mt (struct inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common_mt (st, f1, f2, INSPECT_ALL);
+	inspect_common (st, f1, f2, INSPECT_ALL);
 }
 void
 cob_inspect_all (cob_field *f1, cob_field *f2)
 {
-	inspect_common (f1, f2, INSPECT_ALL);
+	inspect_common (&share_inspect_state, f1, f2, INSPECT_ALL);
 }
 
 void
 cob_inspect_leading_mt (struct inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common_mt (st, f1, f2, INSPECT_LEADING);
+	inspect_common (st, f1, f2, INSPECT_LEADING);
 }
 void
 cob_inspect_leading (cob_field *f1, cob_field *f2)
 {
-	inspect_common (f1, f2, INSPECT_LEADING);
+	inspect_common (&share_inspect_state, f1, f2, INSPECT_LEADING);
 }
 
 void
 cob_inspect_first_mt (struct inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common_mt (st, f1, f2, INSPECT_FIRST);
+	inspect_common (st, f1, f2, INSPECT_FIRST);
 }
 void
 cob_inspect_first (cob_field *f1, cob_field *f2)
 {
-	inspect_common (f1, f2, INSPECT_FIRST);
+	inspect_common (&share_inspect_state, f1, f2, INSPECT_FIRST);
 }
 
 void
 cob_inspect_trailing_mt (struct inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common_mt (st, f1, f2, INSPECT_TRAILING);
+	inspect_common (st, f1, f2, INSPECT_TRAILING);
 }
 void
 cob_inspect_trailing (cob_field *f1, cob_field *f2)
 {
-	inspect_common (f1, f2, INSPECT_TRAILING);
+	inspect_common (&share_inspect_state, f1, f2, INSPECT_TRAILING);
 }
 
 void
@@ -761,7 +719,7 @@ cob_inspect_converting_mt (
 	}
 	if (f1->size != f2->size) {
 		if (COB_FIELD_TYPE (f2) == COB_TYPE_ALPHANUMERIC_ALL) {
-			alloc_figurative (f2, f1);
+			alloc_figurative (st, f2, f1);
 			f2 = &alpha_fld;
 		} else {
 			cob_set_exception (COB_EC_RANGE_INSPECT_SIZE);
@@ -1328,7 +1286,7 @@ cob_exit_strings (void)
 }
 
 void
-cob_init_strings (cob_global *lptr)
+cob_init_strings_mt (struct inspect_state *st, cob_global *lptr)
 {
 	cobglobptr = lptr;
 
@@ -1343,4 +1301,8 @@ cob_init_strings (cob_global *lptr)
 	str_cob_low.data = (cob_u8_ptr)"\0";
 	str_cob_low.attr = &const_strall_attr;
 }
-
+void
+cob_init_strings (cob_global *lptr)
+{
+	cob_init_strings_mt (&share_inspect_state, lptr);
+}
