@@ -10133,7 +10133,7 @@ screen_option:
 ;
 
 screen_value_clause:
-  _value_is basic_literal
+  _value_is literal
   {
 	/* omitting VALUE is at least allowed in MS-COBOL, MF-COBOL, ACUCOBOL for SCREEN VALUE,
 	   and not according to XOPEN uses 85-std which has no SCREEN SECTION and newer Standards */
