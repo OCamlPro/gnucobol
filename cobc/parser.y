@@ -11015,9 +11015,12 @@ procedure_param:
 	}
 
 	if (call_mode == CB_CALL_BY_VALUE
-	 && CB_REFERENCE_P ($4)
-	 && CB_FIELD (cb_ref ($4))->flag_any_length) {
-		cb_error_x ($4, _("ANY LENGTH items may only be BY REFERENCE formal parameters"));
+	    && CB_REFERENCE_P ($4)){
+		cb_tree fx = cb_ref ($4);
+		if (fx != cb_error_node
+		    && CB_FIELD (fx)->flag_any_length) {
+			cb_error_x ($4, _("ANY LENGTH items may only be BY REFERENCE formal parameters"));
+		}
 	}
 
 	$$ = CB_BUILD_PAIR (cb_int (call_mode), x);

@@ -1,8 +1,12 @@
 
-
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals
+
+2024-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y: fix SEGFAULT when checking the BY VALUE arguments of a
+          prototype with ANY LENGTH
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
