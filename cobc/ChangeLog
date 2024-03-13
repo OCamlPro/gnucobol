@@ -1,4 +1,9 @@
 
+
+2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
+
+	* parser.y (screen_value_clause): replaced basic literals by literals
+
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
 	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files
