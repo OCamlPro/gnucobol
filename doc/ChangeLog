@@ -1,4 +1,8 @@
 
+2023-09-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* gnucobol.texi: document the profiling feature
+
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* gnucobol.texi: updated "Build target" (change of -P / -E),
