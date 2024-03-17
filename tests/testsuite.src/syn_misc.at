@@ -8385,3 +8385,252 @@ prog.cob:18: error: ANY LENGTH items may only be BY REFERENCE formal parameters
 
 AT_CLEANUP
 
+
+AT_SETUP([Check recursive calls])
+AT_KEYWORDS([RECURSIVE])
+
+# Some of these tests are expected to fail, either at compile time or run
+# time, but they don't because gnucobol does not perform the checks... yet
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1 RECURSIVE.
+       PROCEDURE DIVISION.
+          DISPLAY "main".
+          CALL "entry".
+	  DISPLAY "end-main".
+          GOBACK.
+          ENTRY "entry".
+          DISPLAY "entry".
+])
+
+AT_CHECK([$COMPILE prog1.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0], [main
+entry
+end-main
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       PROCEDURE DIVISION.
+          DISPLAY "main".
+          CALL "entry".
+	  DISPLAY "end-main".
+          GOBACK.
+          ENTRY "entry".
+          DISPLAY "entry".
+])
+
+# The next check should fail because the RECURSIVE flag is missing in the
+# previous program, and there is a static call to one of its entries
+
+AT_CHECK([$COMPILE prog2.cob], [0])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 counter PIC 9(1).
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+	  ADD 1 TO counter.
+	  DISPLAY "entry " counter.
+	  IF counter < 5 THEN
+            CALL "inside-program"
+          END-IF.
+	  GOBACK.
+       PROGRAM-ID. inside-program.
+       PROCEDURE DIVISION.
+           CALL "entry".
+       END PROGRAM inside-program.
+       END PROGRAM prog3.
+])
+
+AT_CHECK([$COMPILE prog3.cob])
+
+# The next one is not correct either: 'entry 2' should not be printed,
+# because it results from a recursive call from inside-program to prog3,
+# but it is only detected at the next iteration.
+
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [1], [HELLO WORLD
+entry 1
+entry 2
+],
+[libcob: prog3.cob:15: error: recursive CALL from 'prog3' to 'inside-program' which is NOT RECURSIVE
+max module iterations exceeded, possible broken chain
+])
+
+# This one should be ok, at least on MicroFocus because LOCAL-STORAGE
+# section implies RECURSIVE for them
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog4.
+       DATA DIVISION.
+       LOCAL-STORAGE SECTION.
+       PROCEDURE DIVISION.
+          DISPLAY "main".
+          CALL "entry".
+	  DISPLAY "end-main".
+          GOBACK.
+          ENTRY "entry".
+          DISPLAY "entry".
+])
+
+AT_CHECK([$COMPILE -std=mf-strict prog4.cob])**************
+
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0], [main
+entry
+end-main
+])
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog5 RECURSIVE.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 counter PIC 9(1).
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+	  ADD 1 TO counter.
+	  DISPLAY "entry " counter.
+	  IF counter < 5 THEN
+            CALL "inside-program"
+          END-IF.
+	  GOBACK.
+       PROGRAM-ID. inside-program RECURSIVE.
+       PROCEDURE DIVISION.
+           CALL "entry".
+       END PROGRAM inside-program.
+       END PROGRAM prog5.
+])
+
+# There is no reason for this one to fail, it has the RECURSIVE flag...
+# but no IDENTIFICATION DIVISION before the second PROGRAM-ID
+
+AT_CHECK([$COMPILE prog5.cob], [1], [],
+[prog5.cob:18: error: syntax error, unexpected Identifier
+])
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog5 RECURSIVE.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 counter PIC 9(1).
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+	  ADD 1 TO counter.
+	  DISPLAY "entry " counter.
+	  IF counter < 5 THEN
+            CALL "inside-program"
+          END-IF.
+	  GOBACK.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. inside-program RECURSIVE.
+       PROCEDURE DIVISION.
+           CALL "entry".
+       END PROGRAM inside-program.
+       END PROGRAM prog5.
+])
+
+# Adding the IDENTIFICATION DIVISION makes it work... why ?
+
+AT_CHECK([$COMPILE prog5.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [0], [HELLO WORLD
+entry 1
+entry 2
+entry 3
+entry 4
+entry 5
+])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog6 RECURSIVE.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 counter PIC 9(1).
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+	  ADD 1 TO counter.
+	  DISPLAY "entry " counter.
+	  IF counter < 5 THEN
+            CALL "inside-program"
+          END-IF.
+	  GOBACK.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. inside-program.
+       DATA DIVISION.
+       LOCAL-STORAGE SECTION.
+       PROCEDURE DIVISION.
+           CALL "entry".
+       END PROGRAM inside-program.
+       END PROGRAM prog6.
+])
+
+# No LOCAL-STORAGE in nested programs ? Microfocus documentation does
+# not display such a limitation
+
+AT_CHECK([$COMPILE prog6.cob], [1], [],
+[prog6.cob:21: error: LOCAL-STORAGE not allowed in nested programs
+])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog6.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 counter PIC 9(1).
+       LOCAL-STORAGE SECTION.
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+	  ADD 1 TO counter.
+	  DISPLAY "entry " counter.
+	  IF counter < 5 THEN
+            CALL "inside-program"
+          END-IF.
+	  GOBACK.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. inside-program RECURSIVE.
+       PROCEDURE DIVISION.
+           CALL "entry".
+       END PROGRAM inside-program.
+       END PROGRAM prog6.
+])
+
+# This is ok to run if LOCAL-STORAGE implies RECURSIVE. Note that the
+# need for RECURSIVE on a nested program that is currently not allowed
+# to have a LOCAL-STORAGE section is paradoxal.
+
+AT_CHECK([$COMPILE prog6.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [139], [HELLO WORLD
+entry 1
+entry 2
+entry 3
+entry 4
+entry 5
+],
+[ignore])
+
+AT_CLEANUP
