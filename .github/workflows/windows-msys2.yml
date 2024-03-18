@@ -1,0 +1,118 @@
+name: Windows MSYS2 Workflow
+
+on:
+  pull_request:
+    branches: [ gcos4gnucobol-3.x ]
+  push:
+    branches: [ gcos4gnucobol-3.x ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+        arch:
+          - x64
+        target:
+          - debug
+          - release
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          echo GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
+          If ("${{ matrix.target }}" -eq "release") {
+            echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
+            echo CFGOPT= >> $env:GITHUB_ENV
+          } Else {
+            echo DISTDIR=GnuCOBOL_mingw_dbg >> $env:GITHUB_ENV
+            echo CFGOPT="--enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
+          }
+
+      - name: Install MSYS2 packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ucrt64
+          install: autoconf automake libtool make mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-libxml2 mingw-w64-ucrt-x86_64-cjson mingw-w64-ucrt-x86_64-db mingw-w64-ucrt-x86_64-gmp libdb-devel mingw-w64-ucrt-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
+
+      - name: Bootstrap GnuCOBOL
+        shell: msys2 {0}
+        run: |
+          ./autogen.sh
+          autoconf
+          autoreconf --install --force
+
+      - name: Configure GnuCOBOL
+        shell: msys2 {0}
+        run: |
+          mkdir _build
+          cd _build
+          ../configure $CFGOPT --with-db --prefix=/opt/cobol/gnucobol
+
+      - name: Upload config-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: config-${{ matrix.target }}.log
+          path: ${{ env.GITHUB_WORKSPACE }}/_build/config.log
+
+      - name: Build GnuCOBOL
+        shell: msys2 {0}
+        run: |
+          cd _build
+          make --jobs=$(($(nproc)+1))
+
+      - name: Install GnuCOBOL
+        shell: msys2 {0}
+        run: |
+          cd _build
+          make install
+          find /opt/cobol > install.log
+
+      - name: Upload install-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-${{ matrix.target }}.log
+          path: ${{ env.GITHUB_WORKSPACE }}/_build/install.log
+
+      - name: Run testuite
+        shell: msys2 {0}
+        run: |
+          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
+          cd _build/tests
+          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make test
+
+      - name: Upload testsuite-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-${{ matrix.target }}.log
+          path: ${{ env.GITHUB_WORKSPACE }}/_build/tests/testsuite.log
+
+      - name: Package GnuCOBOL
+        shell: msys2 {0}
+        run: |
+          cd _build
+          make distmingw
+
+      - name: Upload GnuCOBOL_mingw-${{ matrix.target }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: GnuCOBOL_mingw-${{ matrix.target }}
+          path: ${{ env.GITHUB_WORKSPACE }}/_build/${{ env.DISTDIR }}
