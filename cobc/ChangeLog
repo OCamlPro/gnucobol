@@ -626,6 +626,11 @@
 	  including "no identifier at all" and use of subscripting / ref-mod
 	  which previously were all silently ignored
 
+2023-03-14  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* codegen.c (output_report_control): add a loop to check if the variable
+	  exist (bug: #863)
+
 2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* reserved.c (get_user_specified_reserved_word): add check for
@@ -669,7 +674,7 @@
 	* pplex.l (ppinput): insert "preparse area_a token" in column 1 instead
 	  of column 2 to fix terminal-format support and insert it before
 	  newlines are added to the beginning of the buffer
-
+    
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
