@@ -1379,6 +1379,12 @@ typedef struct __cob_file_key {
 /* File version (likely can be removed from cob_file in the future) */
 #define	COB_FILE_VERSION	1
 
+
+#define COB_JOR_FILE_OPERATIONS 10
+typedef struct __cob_file_jor {
+	cob_u32_t   *ops [COB_JOR_FILE_OPERATIONS] ;
+} cob_file_jor;
+
 /* File structure */
 
 /*NOTE: *** Add new fields to end  ***
@@ -1435,6 +1441,7 @@ typedef struct __cob_file {
 	const unsigned char* code_set_read;	/* CODE-SET conversion for READs */
 	size_t			nconvert_fields;	/* Number of logical fields to convert */
 	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
+	cob_file_jor    *jor;                   /* job occurrence report */
 } cob_file;
 
 
@@ -2863,6 +2870,37 @@ COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
 COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
 COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
+
+
+
+/************************/
+/* Functions in jor.c */
+/************************/
+
+enum cob_jor_file_operation {
+/* order must match field_file_op_name[] in jor.c */
+	COB_JOR_WRITE_TRY = 0,
+	COB_JOR_WRITE_OK,
+	COB_JOR_READ_TRY,
+	COB_JOR_READ_OK,
+	COB_JOR_START_TRY,
+	COB_JOR_START_OK,
+	COB_JOR_OPEN_TRY,
+	COB_JOR_OPEN_OK,
+	COB_JOR_CLOSE_TRY,
+	COB_JOR_CLOSE_OK,
+	COB_JOR_AFTER_LAST_OPERATION
+};
+
+COB_EXPIMP void cob_jor_exit (int, const char*, ...);
+COB_EXPIMP void cob_jor_file_operation (cob_file*, enum cob_jor_file_operation);
+
+/* For extensions to update the way JOR are allocated and saved/sent. */
+struct cob_jor_funcs {
+	void (*save) (const char* filename, char* buffer, int len);
+	char* (*allocate)(int *size);
+};
+COB_EXPIMP void cob_jor_set_funcs (struct cob_jor_funcs *);
 
 /************************/
 /* Functions in cconv.c */

@@ -1117,6 +1117,8 @@ AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' ./prog], [0], [],
 [File prof-prog.csv generated
 ])
 
+AT_CHECK([COB_PROF_ENABLE=1 ./prog], [0], [],[ignore])
+
 # note: The time here is actually the number of times the procedure has
 # been run, to avoid any indeterminism in the running time of the
 # procedure.

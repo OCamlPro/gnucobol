@@ -347,6 +347,9 @@ typedef struct __cob_settings {
 	FILE		*cob_dump_file;		/* FILE* to write DUMP information to */
 
 	char		*cob_dump_filename;	/* Place to write dump of variables */
+	char		*cob_jor_filename;	/* Place to write the JOR file */
+	int		cob_jor_enable; 	/* Whether JOR is enabled */
+	int		cob_jor_max_size;	/* Max size of JOR buffer (4096 by default) */
 	char		*cob_prof_filename;	/* Place to write profiling data */
 	int		cob_prof_enable;	/* Whether profiling is enabled */
 	int		cob_prof_max_depth;	/* Max stack depth during profiling (255 by default) */
@@ -448,6 +451,7 @@ COB_HIDDEN void		cob_init_move		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_prof		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_screenio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_mlio		(cob_global * const);
+COB_HIDDEN void         cob_init_jor            (cob_global *, cob_settings *, int, char**);
 
 COB_HIDDEN const char *cob_statement_name[STMT_MAX_ENTRY];
 

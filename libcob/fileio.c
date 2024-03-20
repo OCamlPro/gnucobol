@@ -6148,6 +6148,10 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 {
 	/*: GC4: mode as cob_open_mode */
 
+	int ret;
+
+	cob_jor_file_operation (f, COB_JOR_OPEN_TRY);
+
 	last_operation_open = 1;
 
 	/* File was previously closed with lock */
@@ -6274,9 +6278,13 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 #endif
 
 	/* Open the file */
-	save_status (f, fnstatus,
-		     fileio_funcs[(int)f->organization]->open (f, file_open_name,
-								mode, sharing));
+	ret = fileio_funcs[(int)f->organization]->open (f, file_open_name,
+							mode, sharing);
+
+	if ( ret == COB_STATUS_00_SUCCESS )
+		cob_jor_file_operation (f, COB_JOR_OPEN_OK);
+
+	save_status (f, fnstatus, ret);
 }
 
 void
@@ -6285,6 +6293,8 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 	struct file_list	*l;
 	struct file_list	*m;
 	int			ret;
+
+	cob_jor_file_operation (f, COB_JOR_CLOSE_TRY);
 
 	f->flag_read_done = 0;
 	f->flag_operation = 0;
@@ -6331,6 +6341,7 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 
 	ret = fileio_funcs[(int)f->organization]->close (f, opt);
 	if (ret == COB_STATUS_00_SUCCESS) {
+		cob_jor_file_operation (f, COB_JOR_CLOSE_OK);
 		switch (opt) {
 		case COB_CLOSE_LOCK:
 			f->open_mode = COB_OPEN_LOCKED;
@@ -6374,6 +6385,8 @@ cob_start (cob_file *f, const int cond, cob_field *key,
 	int		ret;
 	cob_field	tempkey;
 
+	cob_jor_file_operation (f, COB_JOR_START_TRY);
+
 	f->flag_read_done = 0;
 	f->flag_first_read = 0;
 
@@ -6406,6 +6419,8 @@ cob_start (cob_file *f, const int cond, cob_field *key,
 		ret = fileio_funcs[(int)f->organization]->start (f, cond, key);
 	}
 	if (ret == COB_STATUS_00_SUCCESS) {
+		cob_jor_file_operation (f, COB_JOR_START_OK);
+
 		f->flag_end_of_file = 0;
 		f->flag_begin_of_file = 0;
 		f->flag_first_read = 1;
@@ -6422,6 +6437,8 @@ void
 cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 {
 	int	ret;
+
+	cob_jor_file_operation (f, COB_JOR_READ_TRY);
 
 	f->flag_read_done = 0;
 
@@ -6467,6 +6484,8 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 #if defined (COB_EXPERIMENTAL)
 	case COB_STATUS_0P_NOT_PRINTABLE:
 #endif
+		cob_jor_file_operation (f, COB_JOR_READ_OK);
+
 		f->flag_first_read = 0;
 		f->flag_read_done = 1;
 		f->flag_end_of_file = 0;
@@ -6635,6 +6654,10 @@ void
 cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 	   const unsigned int check_eop)
 {
+	int status;
+
+	cob_jor_file_operation (f, COB_JOR_WRITE_TRY);
+
 	f->flag_read_done = 0;
 
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL) {
@@ -6726,15 +6749,20 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 			return;
 		}
 		f->record->data = converted_copy;
-		save_status (f, fnstatus,
-			     fileio_funcs[(int)f->organization]->write (f, opt));
+		status = fileio_funcs[(int)f->organization]->write (f, opt);
+		if (status == COB_STATUS_00_SUCCESS)
+			cob_jor_file_operation (f, COB_JOR_WRITE_OK);
+		save_status (f, fnstatus, status);
+
 		f->record->data = real_rec_data;
 		cob_free (converted_copy);
 		return;
 	}
 
-	save_status (f, fnstatus,
-		     fileio_funcs[(int)f->organization]->write (f, opt));
+	status = fileio_funcs[(int)f->organization]->write (f, opt);
+	if (status == COB_STATUS_00_SUCCESS)
+		cob_jor_file_operation (f, COB_JOR_WRITE_OK);
+	save_status (f, fnstatus, status);
 }
 
 void

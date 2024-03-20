@@ -505,6 +505,9 @@ static struct config_tbl gc_conf[] = {
 	{"COB_CORE_ON_ERROR", "core_on_error", 	"0", 	coeopts, GRP_MISC, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_core_on_error)},
 	{"COB_CORE_FILENAME", "core_filename", 	"./core.libcob", 	NULL, GRP_MISC, ENV_STR, SETPOS (cob_core_filename)},
 	{"COB_DUMP_FILE", "dump_file",		NULL,	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_dump_filename)},
+	{"COB_JOR_FILE", "jor_file",		"cob-jor-$b-$$-$d-$t.jor",	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_jor_filename)},
+	{"COB_JOR_ENABLE", "jor_enable",		"0",	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_jor_enable)},
+	{"COB_JOR_MAX_SIZE", "jor_max_size",        "8192",	NULL, GRP_MISC, ENV_UINT, SETPOS (cob_jor_max_size)},
 	{"COB_PROF_FILE", "prof_file",		"cob-prof-$b-$$-$d-$t.csv",	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_prof_filename)},
 	{"COB_PROF_ENABLE", "prof_enable",		"0",	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_prof_enable)},
 	{"COB_PROF_MAX_DEPTH", "prof_max_depth",        "8192",	NULL, GRP_MISC, ENV_UINT, SETPOS (cob_prof_max_depth)},
@@ -1113,6 +1116,7 @@ cob_sig_handler (int sig)
 
 #ifdef	HAVE_SIG_ATOMIC_T
 	 if (sig_is_handled) {
+		 cob_jor_exit (sig, "signal %d caused termination (2)", sig);
 #ifdef	HAVE_RAISE
 		raise (sig);
 #else
@@ -1244,12 +1248,14 @@ cob_sig_handler (int sig)
 		sig = SIGABRT;
 	}
 	signal (sig, SIG_DFL);
+	cob_jor_exit (sig, "signal %d caused termination", sig);
+
 #ifdef	HAVE_RAISE
 	raise (sig);
 #else
 	kill (cob_sys_getpid (), sig);
 #endif
-	
+
 #if 0 /* we don't necessarily want the OS to handle this,
          so exit in all other cases*/
 	exit (sig);
@@ -3050,6 +3056,7 @@ cob_stop_run (const int status)
 		longjmp (return_jmp_buf, 1);
 	}
 #endif
+	cob_jor_exit (status, "STOP RUN reached");
 	exit (status);
 }
 
@@ -3104,6 +3111,8 @@ cob_hard_failure ()
 		longjmp (return_jmp_buf, -1);
 	}
 #endif
+	cob_jor_exit (EXIT_FAILURE, "hard failure");
+
 	/* if explicit requested for errors or
 	   an explicit manual coredump creation did
 	   not work raise an abort here */
@@ -3139,6 +3148,8 @@ cob_hard_failure_internal (const char *prefix)
 		longjmp (return_jmp_buf, -2);
 	}
 #endif
+	cob_jor_exit (EXIT_FAILURE, "hard failure (%s)", prefix);
+
 	/* if explicit requested for errors or
 	   an explicit manual coredump creation did
 	   not work raise an abort here */
@@ -10352,6 +10363,7 @@ cob_init (const int argc, char **argv)
 
 	/* Call inits with cobsetptr to get the addresses of all */
 	/* Screen-IO might be needed for error outputs */
+	cob_init_jor (cobglobptr, cobsetptr, cob_argc, cob_argv);
 	cob_init_screenio (cobglobptr, cobsetptr);
 	cob_init_cconv (cobglobptr);
 	cob_init_numeric (cobglobptr);
