@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2023 Free Software Foundation, Inc.
-   Written by Emilien Lemaire and Fabrice Le Fessant.
+   Copyright (C) 2024 Free Software Foundation, Inc.
+   Written by Fabrice LE FESSANT.
 
    This file is part of GnuCOBOL.
 
@@ -49,6 +49,7 @@
 #endif
 
 #include <sys/time.h>
+#include <arpa/inet.h>
 
 /* Remember static and dynamic configuration */
 static cob_global               *cobglobptr = NULL;
@@ -62,6 +63,7 @@ static char* jor_position ;
 static int jor_name_counter ;
 
 static struct timeval tv0;
+static int file_counter = 0;
 
 static int field_secs ;
 static int field_usecs ;
@@ -75,10 +77,11 @@ static int field_exit ;
 static int field_duration ;
 static int field_time ;
 static int field_args ;
+static int field_filename ;
 
-static int field_file_op[COB_JOR_FILE_OPERATIONS] ;
+static int field_file_op[COB_JOR_OPERATIONS_MAX] ;
 
-static const char* field_file_op_name[COB_JOR_FILE_OPERATIONS] = {
+static const char* field_file_op_name[COB_JOR_OPERATIONS_MAX] = {
 	"write-try",
 	"write-ok",
 	"read-try",
@@ -99,10 +102,12 @@ static const char* field_file_op_name[COB_JOR_FILE_OPERATIONS] = {
  * the idea is to have it binary (for size) and extensible (a tool
   should be able to read both new and old versions without problem)
 
-  HEADER: 8 bytes
+  HEADER: 16 bytes
+  * u8[8]: magic = GNUCOJOR"
   * u32: total size of JOR (including the HEADER)
   * u8: version (currently 1)
-  * u8[3]: padding (not used)
+  * u8: byte order (little-endian = 0, big-endian = 1)
+  * u8[2]: padding (not used)
 
   JOURNAL: a concatenation of records
 
@@ -195,36 +200,27 @@ exit = {
 
  */
 
+#define SET_U16(addr, v)				\
+	*((cob_u16_t*) (addr)) = v
+
+#define SET_U32(addr, v)				\
+	*((cob_u32_t*) (addr)) = v
+
+
 #define RECORD_BEGIN(opcode)	{	       \
 	char *jor_record_begin = jor_position; \
 	jor_position += 2;		       \
 	*jor_position++ = opcode
 #define RECORD_END()					\
-	*((cob_u16_t*) jor_record_begin) =		\
-		jor_position - jor_record_begin;	\
-	*((cob_u32_t*) jor_buffer) =			\
-		jor_position - jor_buffer;		\
+	SET_U16( jor_record_begin,			\
+		 jor_position - jor_record_begin);	\
+	SET_U32( jor_buffer+JOR_MAGIC_LEN,		\
+		 jor_position - jor_buffer);		\
 	}
 #define RECORD_FIELD(level,field,type)		\
 	*jor_position++ = level;		\
 	*jor_position++ = field;		\
 	*jor_position++ = type
-
-#define OPCODE_NEW_NAME 0
-#define OPCODE_LOCAL_FIELD 1
-
-#define TYPE_RECORD     0
-#define TYPE_UINT8      1
-#define TYPE_INT8       2
-#define TYPE_UINT16     3
-#define TYPE_INT16      4
-#define TYPE_UINT32     5
-#define TYPE_INT32      6
-#define TYPE_UINT64     7
-#define TYPE_INT64      8
-#define TYPE_FLOAT      9
-#define TYPE_STRING8   10
-#define TYPE_STRING16  11
 
 static int jor_field_name (const char* s)
 {
@@ -257,7 +253,7 @@ static void jor_field_uint32 (int level, int field, cob_u32_t v)
 {
 	RECORD_BEGIN (OPCODE_LOCAL_FIELD);
 	RECORD_FIELD (level, field, TYPE_UINT32);
-	* ( (cob_u32_t*)jor_position) = v;
+	SET_U32 (jor_position, v);
 	jor_position += 4;
 	RECORD_END ();
 }
@@ -285,7 +281,7 @@ void jor_save (const char* filename, char* buffer, int len)
 {
 	FILE *fd = fopen (filename, "w");
 	const char* s = jor_buffer;
-	fwrite (s, len, 1, fd);
+	fwrite (s, 1, len, fd);
 	fclose (fd);
 }
 
@@ -294,18 +290,32 @@ static struct cob_jor_funcs jor_funcs = {
 	jor_allocate
 };
 
+/*
+\brief Function used to overwrite the default functions used to 
+   allocate the memory buffer for the JOR file, and later, to save
+   the memory buffer to disk.
+\param f The new functions to use.
+ */
 void cob_jor_set_funcs (struct cob_jor_funcs *f)
 {
-	jor_funcs.save = f->save;
-	jor_funcs.allocate = f->allocate;
+	if (f->save) jor_funcs.save = f->save;
+	if (f->allocate) jor_funcs.allocate = f->allocate;
 }
 
+
+/*
+\brief Function called during the initialisation of the execution. The space
+  for the JOR file is allocated in memory and the first records are written
+  in the space (but nothing on disk).
+\param lptr Global settings
+\param sptr Runtime configuration
+\param argc Number of arguments with which the program was called
+\param argv The arguments themselves
+*/
 void cob_init_jor (cob_global *lptr, cob_settings *sptr,
-		   int cob_argc, char** cob_argv)
+		   int argc, char** argv)
 {
 	int i;
-
-	if (!!cobsetptr) return ;
 
 	cobglobptr = lptr;
 	cobsetptr  = sptr;
@@ -313,17 +323,10 @@ void cob_init_jor (cob_global *lptr, cob_settings *sptr,
 
 	/* Check that these fields have been correctly initialized
 	   by the developer. */
-	if (COB_JOR_FILE_OPERATIONS != COB_JOR_AFTER_LAST_OPERATION){
-		fprintf (stderr, "COB_JOR_FILE_OPERATIONS = %d\n",
-			 COB_JOR_FILE_OPERATIONS);
-		fprintf (stderr, "COB_JOR_AFTER_LAST_OPERATION = %d\n",
-			 COB_JOR_AFTER_LAST_OPERATION);
-		exit (2);
-	}
-	if ( field_file_op_name[COB_JOR_FILE_OPERATIONS-1] == NULL ){
+	if ( field_file_op_name[COB_JOR_OPERATIONS_MAX-1] == NULL ){
 		fprintf (stderr,
 			 "field_file_op_name[%d] not initialized\n",
-			 COB_JOR_FILE_OPERATIONS-1);
+			 COB_JOR_OPERATIONS_MAX-1);
 		exit (2);
 	}
 
@@ -331,7 +334,7 @@ void cob_init_jor (cob_global *lptr, cob_settings *sptr,
 	    /* testsuite clears COB_JOR_ENABLE... */
 	    !getenv ("COB_JOR_ENABLED")) return ;
 
-	if (cob_argc == 0) return ;
+	if (argc == 0) return ;
 
 	is_active = 1;
 
@@ -342,9 +345,16 @@ void cob_init_jor (cob_global *lptr, cob_settings *sptr,
 	jor_size = cobsetptr->cob_jor_max_size ;
 	jor_position = jor_buffer;
 
-	jor_buffer +=4;    /* size of journal */
-	*jor_position = JOR_VERSION; /* version */
-	jor_position += 3; /* padding */
+	memcpy (jor_buffer, JOR_MAGIC, JOR_MAGIC_LEN);
+	jor_position +=JOR_MAGIC_LEN+4;    /* magic + size of journal */
+	*jor_position++ = JOR_VERSION; /* version */
+#ifdef WORDS_BIGENDIAN
+	*jor_position = 1; /* byte-order = BIG ENDIAN */
+#else
+	*jor_position = 0; /* byte-order = LITTLE ENDIAN */
+#endif
+	jor_position++;
+	jor_position += 2; /* padding */
 
 	/* Initialize JOR field names */
 	field_start = jor_field_name ("start");
@@ -358,6 +368,7 @@ void cob_init_jor (cob_global *lptr, cob_settings *sptr,
 	field_name = jor_field_name ("name");
 	field_time = jor_field_name ("time");
 	field_args = jor_field_name ("args");
+	field_filename = jor_field_name ("filename");
 
 	/* Start storing information */
 	gettimeofday (&tv0, NULL);
@@ -366,12 +377,17 @@ void cob_init_jor (cob_global *lptr, cob_settings *sptr,
 	jor_field_uint32 (2, field_secs, tv0.tv_sec);
 	jor_field_uint32 (2, field_usecs, tv0.tv_usec);
 	jor_field_record (1, field_args);
-	for (i=0; i<cob_argc; i++){
-		jor_field_string8 (1, field_name,
-				   cob_argv[i]);
+	for (i=0; i<argc; i++){
+		jor_field_string8 (2, field_name, argv[i]);
 	}
 }
 
+/*
+\brief Function called to check if there is enough space in the file to
+  store another record. When the file is seen as full, a "truncated" record
+  is added to the file to warn the reader.
+\return 1 if the JOR file is full, 0 if there is still space for another record
+*/
 static int
 jor_truncate(void)
 {
@@ -383,11 +399,18 @@ jor_truncate(void)
 		truncated = 1;
 		field_truncated = jor_field_name ("truncated");
 		jor_field_uint8 (0, field_truncated, 1);
+		return 1;
 	}
 
 	return 0;
 }
 
+/*
+\brief Function called when an operation has been executed on a file, to
+  increase the corresponding counter in the JOR file
+\param f The structure describing the file
+\param op The operation that has been executed
+*/
 void cob_jor_file_operation (cob_file *f, enum cob_jor_file_operation op)
 {
 	if (is_active){
@@ -396,9 +419,12 @@ void cob_jor_file_operation (cob_file *f, enum cob_jor_file_operation op)
 		if (!f->jor){
 			if (jor_truncate()) return;
 			f->jor = cob_malloc (sizeof(cob_file_jor));
+			f->jor->id = file_counter++;
 			jor_field_record (0, field_file);
+			jor_field_uint8 (1, field_file, f->jor->id);
 			jor_field_string8 (1, field_name,
 					  f->select_name);
+			jor_field_string8 (1, field_filename, f->org_filename);
 		}
 
 		counter = f->jor->ops[op];
@@ -414,6 +440,7 @@ void cob_jor_file_operation (cob_file *f, enum cob_jor_file_operation op)
 			}
 
 			jor_field_record (0, field_file);
+			jor_field_uint8 (1, field_file, f->jor->id);
 			jor_field_uint32 (1, field, 0);
 			counter = (cob_u32_t*)  (jor_position-4);
 			f->jor->ops[op] = counter ;
@@ -423,6 +450,12 @@ void cob_jor_file_operation (cob_file *f, enum cob_jor_file_operation op)
 	}
 }
 
+/*
+\brief Should be called when the execution terminates, to create the
+  last records of the JOR file and save it to a file.
+\param code The exit code of the program
+\param fmt  A message explaining the reason for the termination
+*/
 void cob_jor_exit(int code, const char* fmt, ...)
 {
 	if (is_active){
@@ -441,16 +474,16 @@ void cob_jor_exit(int code, const char* fmt, ...)
 		jor_field_uint8 (1, field_status, code);
 		jor_field_string8 (1, field_reason, exit_reason);
 
+		jor_field_record (1, field_time);
+		jor_field_uint32 (2, field_secs, tv.tv_sec);
+		jor_field_uint32 (2, field_usecs, tv.tv_usec);
+
 		if ( tv.tv_usec < tv0.tv_usec ){
 			tv.tv_usec += 1000000;
 		tv.tv_sec--;
 		}
 		tv.tv_usec -= tv0.tv_usec;
 		tv.tv_sec -= tv0.tv_sec;
-
-		jor_field_record (1, field_time);
-		jor_field_uint32 (2, field_secs, tv.tv_sec);
-		jor_field_uint32 (2, field_usecs, tv.tv_usec);
 
 		jor_field_record (1, field_duration);
 		jor_field_uint32 (2, field_secs, tv.tv_sec);

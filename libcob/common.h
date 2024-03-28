@@ -1380,9 +1380,24 @@ typedef struct __cob_file_key {
 #define	COB_FILE_VERSION	1
 
 
-#define COB_JOR_FILE_OPERATIONS 10
+enum cob_jor_file_operation {
+/* order must match field_file_op_name[] in jor.c */
+	COB_JOR_WRITE_TRY = 0,
+	COB_JOR_WRITE_OK,
+	COB_JOR_READ_TRY,
+	COB_JOR_READ_OK,
+	COB_JOR_START_TRY,
+	COB_JOR_START_OK,
+	COB_JOR_OPEN_TRY,
+	COB_JOR_OPEN_OK,
+	COB_JOR_CLOSE_TRY,
+	COB_JOR_CLOSE_OK,
+	COB_JOR_OPERATIONS_MAX
+};
+
 typedef struct __cob_file_jor {
-	cob_u32_t   *ops [COB_JOR_FILE_OPERATIONS] ;
+	int id ;
+	cob_u32_t   *ops [COB_JOR_OPERATIONS_MAX] ;
 } cob_file_jor;
 
 /* File structure */
@@ -2877,19 +2892,26 @@ COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
 /* Functions in jor.c */
 /************************/
 
-enum cob_jor_file_operation {
-/* order must match field_file_op_name[] in jor.c */
-	COB_JOR_WRITE_TRY = 0,
-	COB_JOR_WRITE_OK,
-	COB_JOR_READ_TRY,
-	COB_JOR_READ_OK,
-	COB_JOR_START_TRY,
-	COB_JOR_START_OK,
-	COB_JOR_OPEN_TRY,
-	COB_JOR_OPEN_OK,
-	COB_JOR_CLOSE_TRY,
-	COB_JOR_CLOSE_OK,
-	COB_JOR_AFTER_LAST_OPERATION
+#define JOR_MAGIC "GNUCOJOR"
+#define JOR_MAGIC_LEN 8
+#define JOR_HEADER_SIZE 16
+
+#define OPCODE_NEW_NAME 0
+#define OPCODE_LOCAL_FIELD 1
+
+enum jor_operation_type {
+	TYPE_RECORD =     0,
+	TYPE_UINT8,
+	TYPE_INT8,
+	TYPE_UINT16,
+	TYPE_INT16,
+	TYPE_UINT32,
+	TYPE_INT32,
+	TYPE_UINT64,
+	TYPE_INT64,
+	TYPE_FLOAT,
+	TYPE_STRING8,
+	TYPE_STRING16 /* = 11 */
 };
 
 COB_EXPIMP void cob_jor_exit (int, const char*, ...);

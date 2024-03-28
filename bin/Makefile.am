@@ -20,8 +20,9 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 bin_SCRIPTS = cob-config
-bin_PROGRAMS = cobcrun
+bin_PROGRAMS = cobcrun jorread
 cobcrun_SOURCES = cobcrun.c
+jorread_SOURCES = jorread.c
 dist_man_MANS = cobcrun.1 cob-config.1
 COBCRUN = cobcrun$(EXEEXT)
 
@@ -29,6 +30,9 @@ COBCRUN = cobcrun$(EXEEXT)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 cobcrun_LDADD = $(top_builddir)/libcob/libcob.la \
+	$(top_builddir)/lib/libsupport.la \
+	$(PROGRAMS_LIBS) $(CODE_COVERAGE_LIBS)
+jorread_LDADD = $(top_builddir)/libcob/libcob.la \
 	$(top_builddir)/lib/libsupport.la \
 	$(PROGRAMS_LIBS) $(CODE_COVERAGE_LIBS)
 
