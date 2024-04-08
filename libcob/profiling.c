@@ -67,7 +67,7 @@ static int is_active = 0;
 static int is_test = 0;
 
 /* Which clock to use for clock_gettime (if available) */
-#if !defined (_WIN32) && defined (HAVE_CLOCK_GETTIME)
+#ifdef HAVE_CLOCK_GETTIME
 static clockid_t clockid = CLOCK_REALTIME;
 #endif
 
@@ -82,41 +82,69 @@ static cob_settings             *cobsetptr = NULL;
 
 
 
-/* Return the current time in nanoseconds. The result is guarranteed
- * to be monotonic, by using an internal storage of the previous
- * time. */
+/* Return the current time in nanoseconds. The result is guaranteed
+   to be monotonic, by using an internal storage of the previous time. */
 static cob_ns_time
 get_ns_time (void)
 {
-	if (is_test){
-		static cob_ns_time ns_time = 0;
+	static cob_ns_time ns_time = 0;
+	if (is_test) {
 		ns_time += 1000000;
 		return ns_time;
-	} else {
-		cob_ns_time ns_time = 0;
-		unsigned long long nanoseconds;
+	}
+
 #ifdef _WIN32
-		if (qpc_freq) {
-			LARGE_INTEGER performance_counter;
-			QueryPerformanceCounter(&performance_counter);
-			performance_counter.QuadPart *= 1000000000;
-			performance_counter.QuadPart /= qpc_freq;
-			nanoseconds = performance_counter.QuadPart;
-		} else {
-#endif /* _WIN32 */
+	if (qpc_freq) {
+		LARGE_INTEGER performance_counter;
+		QueryPerformanceCounter (&performance_counter);
+		return performance_counter.QuadPart * 1000000000 / qpc_freq;
+	}
+#endif
+	{
+		cob_ns_time nanoseconds;
 #ifdef HAVE_CLOCK_GETTIME
-			struct timespec ts;
-			clock_gettime(clockid, &ts);
-			nanoseconds = ts.tv_sec * 1000000000 + ts.tv_nsec;
+		struct timespec ts;
+		clock_gettime (clockid, &ts);
+		/* we may only have CLOCK_REALTIME, so need the monotonic check below */
+		nanoseconds = COB_U64_C (1000000000) * ts.tv_sec + ts.tv_nsec;
 #else
-			nanoseconds = clock() * 1000000000 / CLOCKS_PER_SEC;
-#endif /* HAVE_CLOCK_GETTIME */
-#ifdef _WIN32
-		}
-#endif /* _WIN32 */
-		if (nanoseconds > ns_time) ns_time = nanoseconds;
+		nanoseconds = COB_U64_C (1000000000) * clock () / CLOCKS_PER_SEC;
+#endif
+		if (nanoseconds > ns_time) return nanoseconds;
 		return ns_time;
 	}
+}
+
+static void
+prof_setup_clock ()
+{
+#ifdef _WIN32
+	/* Should always succeed on Windows XP and above, but might
+	   fail on Windows 2000. Not available on Windows 9x & NT. */
+	LARGE_INTEGER performance_frequency;
+	if (QueryPerformanceFrequency (&performance_frequency)) {
+		qpc_freq = performance_frequency.QuadPart;
+		return;
+	}
+#endif
+
+#ifdef HAVE_CLOCK_GETTIME
+	/* only CLOCK_REALTIME is guaranteed to be defined (and work),
+ 	   not all defined clocks are guaranteed to work */
+	struct timespec ts;
+ #ifdef CLOCK_MONOTONIC_RAW
+	if (clock_gettime (CLOCK_MONOTONIC_RAW, &ts) == 0) {
+		clockid = CLOCK_MONOTONIC_RAW;
+		return;
+	}
+ #endif
+ #ifdef CLOCK_MONOTONIC
+	if (clock_gettime (CLOCK_MONOTONIC, &ts) == 0) {
+		clockid = CLOCK_MONOTONIC;
+		return;
+	}
+ #endif
+#endif
 }
 
 static void
@@ -124,28 +152,13 @@ prof_init_static ()
 {
 	static int init_done = 0;
 
-	if (!init_done && cobsetptr){
-#ifdef HAVE_CLOCK_GETTIME
-		struct timespec ts;
-		if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) == 0) {
-			clockid = CLOCK_MONOTONIC_RAW;
-		} else if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-			clockid = CLOCK_MONOTONIC;
-		}
-#endif
-#ifdef _WIN32
-		/* Should always succeed on Windows XP and above, but might
-		   fail on Windows 2000. Not available on Windows 9x & NT. */
-		LARGE_INTEGER performance_frequency;
-		if (QueryPerformanceFrequency(&performance_frequency)) {
-			qpc_freq = performance_frequency.QuadPart;
-		}
-#endif
-		init_done = 1;
+	if (!init_done && cobsetptr) {
+		prof_setup_clock ();
 		is_active = cobsetptr->cob_prof_enable;
 		if (is_active) {
 			is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
 		}
+		init_done = 1;
 	}
 }
 
