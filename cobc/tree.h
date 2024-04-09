@@ -1432,10 +1432,14 @@ struct cb_alter {
 
 /* GO TO */
 
+#define CB_GOTO_FLAG_NONE           0
+#define CB_GOTO_FLAG_SAME_PARAGRAPH 1
+
 struct cb_goto {
 	struct cb_tree_common	common;		/* Common values */
 	cb_tree			target;		/* Procedure name(s) */
 	cb_tree			depending;	/* DEPENDING */
+	int                     flags;          /* Goto flags */
 };
 
 #define CB_GOTO(x)		(CB_TREE_CAST (CB_TAG_GOTO, struct cb_goto, x))
@@ -1798,6 +1802,11 @@ struct cb_ml_generate_tree {
 #define CB_ML_TREE(x)		(CB_TREE_CAST (CB_TAG_ML_TREE, struct cb_ml_generate_tree, x))
 #define CB_ML_TREE_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_TREE)
 
+struct cb_procedure_list {
+	struct cb_procedure_list	*next;
+	struct cob_prof_procedure        proc;
+};
+
 /* Program */
 
 struct literal_list {
@@ -1904,6 +1913,14 @@ struct cb_program {
 	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;
+
+        /* Data and functions used for profiling */
+	struct cb_procedure_list *procedure_list;
+	struct cb_procedure_list *procedure_list_last;
+	int             procedure_list_len;
+	int             prof_current_section;
+	int             prof_current_paragraph;
+	int             prof_current_call;
 
 	unsigned int	flag_main		: 1;	/* Gen main function */
 	unsigned int	flag_common		: 1;	/* COMMON PROGRAM */
@@ -2189,7 +2206,7 @@ extern cb_tree			cb_build_alter (const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_cancel (const cb_tree);
 
-extern cb_tree			cb_build_goto (const cb_tree, const cb_tree);
+extern cb_tree			cb_build_goto (const cb_tree, const cb_tree, int flags);
 
 extern cb_tree			cb_build_if (const cb_tree, const cb_tree,
 					     const cb_tree, const enum cob_statement);
@@ -2464,7 +2481,7 @@ extern void		cb_emit_divide (cb_tree, cb_tree,
 
 extern void		cb_emit_evaluate (cb_tree, cb_tree);
 
-extern void		cb_emit_goto (cb_tree, cb_tree);
+extern void		cb_emit_goto (cb_tree, cb_tree, int);
 extern void		cb_emit_exit (const unsigned int);
 
 extern void		cb_emit_if (cb_tree, cb_tree, cb_tree);
@@ -2611,6 +2628,38 @@ extern void		cob_gen_optim (const enum cb_optim);
 extern void		codegen (struct cb_program *, const char *);
 extern void		clear_local_codegen_vars (void);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
+
+
+enum cb_prof_call {
+	COB_PROF_ENTER_SECTION,
+	COB_PROF_ENTER_PARAGRAPH,
+	COB_PROF_STAYIN_PARAGRAPH,
+	COB_PROF_USE_PARAGRAPH_ENTRY,
+	COB_PROF_EXIT_PARAGRAPH,
+	COB_PROF_EXIT_SECTION,
+	COB_PROF_ENTER_CALL,
+	COB_PROF_EXIT_CALL
+};
+
+extern const char *cob_prof_function_call_str;
+
+extern cb_tree		cb_build_prof_call (enum cb_prof_call  prof_fun,
+					    struct cb_program *program,
+					    struct cb_label   *section,
+					    struct cb_label   *paragraph,
+					    const char        *entry,
+					    cb_tree location);
+
+extern void		cb_prof_procedure_division (struct cb_program *program,
+						    const char *file,
+						    int line);
+
+extern int		procedure_list_add (struct cb_program *program,
+					    enum cob_prof_procedure_kind kind,
+					    const char *text,
+					    int section,
+					    const char *file,
+					    int line);
 
 #define CB_MEMCHK_NONE	0
 #define CB_MEMCHK_POINTER	(1 << 0)

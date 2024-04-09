@@ -661,25 +661,9 @@ insert (const char *name, void *func, lt_dlhandle handle,
 	p->func = func;
 	p->handle = handle;
 	p->module = module;
-	if (path) {
-#if	defined(HAVE_CANONICALIZE_FILE_NAME)
-		/* Malloced path or NULL */
-		p->path = canonicalize_file_name (path);
-#elif	defined(HAVE_REALPATH)
-		char	*s;
 
-		s = cob_malloc ((size_t)COB_NORMAL_BUFF);
-		if (realpath (path, s) != NULL) {
-			p->path = cob_strdup (s);
-		}
-		cob_free (s);
-#elif	defined	(_WIN32)
-		/* Malloced path or NULL */
-		p->path = _fullpath (NULL, path, 1);
-#endif
-		if (!p->path) {
-			p->path = cob_strdup (path);
-		}
+	if (path) {
+		p->path = cob_path_to_absolute (path);
 	}
 	p->no_phys_cancel = nocanc;
 	val = hash ((const unsigned char *)name);

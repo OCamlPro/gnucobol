@@ -22,7 +22,7 @@
 lib_LTLIBRARIES = libcob.la
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
-	mlio.c coblocal.h cconv.c system.def
+	mlio.c coblocal.h cconv.c system.def profiling.c
 
 if LOCAL_CJSON
 nodist_libcob_la_SOURCES = cJSON.c

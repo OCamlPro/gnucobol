@@ -383,6 +383,21 @@ emit_statement (cb_tree x)
 	}
 }
 
+static COB_INLINE COB_A_INLINE void
+emit_prof_call (enum cb_prof_call prof_call, const char* entry, cb_tree location)
+{
+	if (cb_flag_prof) {
+		emit_statement (
+			cb_build_prof_call (prof_call,
+					    current_program,
+					    current_section,
+					    current_paragraph,
+					    entry,
+					    location
+				));
+	}
+}
+
 static void
 begin_statement_internal (enum cob_statement statement, const unsigned int term,
 	const char *file, const int line)
@@ -2092,8 +2107,8 @@ check_preceding_tallying_phrases (const enum tallying_phrase phrase)
 	previous_tallying_phrase = phrase;
 }
 
-static int
-is_recursive_call (cb_tree target)
+static const char *
+get_call_target (cb_tree target)
 {
 	const char *target_name = "";
 
@@ -2104,7 +2119,13 @@ is_recursive_call (cb_tree target)
 		target_name = CB_PROTOTYPE (cb_ref (target))->ext_name;
 	}
 
-	return !strcmp (target_name, current_program->orig_program_id);
+	return target_name ;
+}
+
+static int
+is_recursive_call (const char *call_target)
+{
+	return !strcmp ( call_target, current_program->orig_program_id);
 }
 
 static cb_tree
@@ -10873,6 +10894,12 @@ procedure_division:
 	cobc_in_procedure = 1U;
 	cb_set_system_names ();
 	last_source_line = cb_source_line;
+
+	cb_prof_procedure_division (
+		current_program,
+		cb_source_file,
+		cb_source_line
+		);
   }
   DIVISION
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
@@ -10915,12 +10942,14 @@ procedure_division:
 		if (current_paragraph->exit_label) {
 			emit_statement (current_paragraph->exit_label);
 		}
+		emit_prof_call (COB_PROF_EXIT_PARAGRAPH, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_paragraph));
 	}
 	if (current_section) {
 		if (current_section->exit_label) {
 			emit_statement (current_section->exit_label);
 		}
+		emit_prof_call (COB_PROF_EXIT_SECTION, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_section));
 	}
   }
@@ -10947,6 +10976,8 @@ procedure_division:
 	emit_statement (CB_TREE (current_section));
 	label = cb_build_reference ("MAIN PARAGRAPH");
 	current_paragraph = CB_LABEL (cb_build_label (label, NULL));
+	emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
+	emit_prof_call (COB_PROF_ENTER_PARAGRAPH, NULL, NULL);
 	current_paragraph->flag_declaratives = !!in_declaratives;
 	current_paragraph->flag_skip_label = !!skip_statements;
 	current_paragraph->flag_dummy_paragraph = 1;
@@ -10957,6 +10988,10 @@ procedure_division:
   statements
   _dot_or_else_area_a
   _procedure_list
+  {
+	  emit_prof_call (COB_PROF_EXIT_PARAGRAPH, NULL, NULL);
+	  emit_prof_call (COB_PROF_EXIT_SECTION, NULL, NULL);
+  }
 ;
 
 _procedure_using_chaining:
@@ -11235,6 +11270,7 @@ _procedure_declaratives:
 		if (current_paragraph->exit_label) {
 			emit_statement (current_paragraph->exit_label);
 		}
+		emit_prof_call (COB_PROF_EXIT_PARAGRAPH, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_paragraph));
 		current_paragraph = NULL;
 	}
@@ -11243,6 +11279,7 @@ _procedure_declaratives:
 			emit_statement (current_section->exit_label);
 		}
 		current_section->flag_fatal_check = 1;
+		emit_prof_call (COB_PROF_EXIT_SECTION, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_section));
 		current_section = NULL;
 	}
@@ -11319,12 +11356,14 @@ section_header:
 		if (current_paragraph->exit_label) {
 			emit_statement (current_paragraph->exit_label);
 		}
+		emit_prof_call (COB_PROF_EXIT_PARAGRAPH, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_paragraph));
 	}
 	if (current_section) {
 		if (current_section->exit_label) {
 			emit_statement (current_section->exit_label);
 		}
+		emit_prof_call (COB_PROF_EXIT_SECTION, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_section));
 	}
 	if (current_program->flag_debugging && !in_debugging) {
@@ -11349,6 +11388,7 @@ section_header:
   _use_statement
   {
 	emit_statement (CB_TREE (current_section));
+	emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
   }
 ;
 
@@ -11372,6 +11412,7 @@ paragraph_header:
 		if (current_paragraph->exit_label) {
 			emit_statement (current_paragraph->exit_label);
 		}
+		emit_prof_call (COB_PROF_EXIT_PARAGRAPH, NULL, NULL);
 		emit_statement (cb_build_perform_exit (current_paragraph));
 		if (current_program->flag_debugging && !in_debugging) {
 			emit_statement (cb_build_comment (
@@ -11391,6 +11432,7 @@ paragraph_header:
 		current_section->flag_skip_label = !!skip_statements;
 		current_section->xref.skip = 1;
 		emit_statement (CB_TREE (current_section));
+		emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
 	}
 	current_paragraph = CB_LABEL (cb_build_label ($1, current_section));
 	current_paragraph->flag_declaratives = !!in_declaratives;
@@ -11398,6 +11440,7 @@ paragraph_header:
 	current_paragraph->flag_real_label = !in_debugging;
 	current_paragraph->segment = current_section->segment;
 	emit_statement (CB_TREE (current_paragraph));
+	emit_prof_call (COB_PROF_ENTER_PARAGRAPH, NULL, NULL);
   }
 ;
 
@@ -11500,6 +11543,7 @@ statements:
 		current_section->flag_declaratives = !!in_declaratives;
 		current_section->xref.skip = 1;
 		emit_statement (CB_TREE (current_section));
+		emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
 	}
 	if (!current_paragraph) {
 		cb_tree label = cb_build_reference ("MAIN PARAGRAPH");
@@ -11513,6 +11557,7 @@ statements:
 		current_paragraph->flag_dummy_paragraph = 1;
 		current_paragraph->xref.skip = 1;
 		emit_statement (CB_TREE (current_paragraph));
+		emit_prof_call (COB_PROF_ENTER_PARAGRAPH, NULL, NULL);
 	}
 	if (check_headers_present (COBC_HD_PROCEDURE_DIVISION, 0, 0, 0) == 1) {
 		if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
@@ -11614,7 +11659,7 @@ statement:
 		sprintf (name, "L$%d", next_label_id);
 		label = cb_build_reference (name);
 		next_label_list = cb_list_add (next_label_list, label);
-		emit_statement (cb_build_goto (label, NULL));
+		emit_statement (cb_build_goto (label, NULL, CB_GOTO_FLAG_NONE));
 	} else {
 		cb_tree note = cb_build_comment ("skipped NEXT SENTENCE");
 		emit_statement (note);
@@ -12404,6 +12449,7 @@ _proceed_to:	| PROCEED TO ;
 call_statement:
   CALL
   {
+	emit_prof_call (COB_PROF_ENTER_CALL, NULL, NULL);
 	begin_statement (STMT_CALL, TERM_CALL);
 	cobc_cs_check = CB_CS_CALL;
 	call_nothing = 0;
@@ -12429,10 +12475,11 @@ call_body:
   {
 	int call_conv = 0;
 	int call_conv_local = 0;
+	const char *target_name = get_call_target ($3);
 
 	if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM
 	 && !current_program->flag_recursive
-	 && is_recursive_call ($3)) {
+	 && is_recursive_call (target_name)) {
 		cb_tree x = CB_TREE (current_statement);
 	 	if (cb_verify_x (x, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
 			cb_note_x (cb_warn_dialect, x, _("assuming RECURSIVE attribute"));
@@ -12496,6 +12543,9 @@ call_body:
 	}
 	cb_emit_call ($3, $7, $8, CB_PAIR_X ($9), CB_PAIR_Y ($9),
 		      cb_int (call_conv), $2, $5);
+	emit_prof_call (COB_PROF_EXIT_CALL,
+			target_name[0] == 0 ? "(dynamic)" : target_name,
+			$3);
   }
 ;
 
@@ -13877,6 +13927,7 @@ entry_statement:
   entry
   {
 	check_unreached = 0;
+	emit_prof_call (COB_PROF_STAYIN_PARAGRAPH, NULL, NULL);
 	begin_statement (STMT_ENTRY, 0);
 	current_statement->flag_no_based = 1;
   }
@@ -13915,6 +13966,8 @@ entry_body:
 		if (!cobc_check_valid_name ((char *)(CB_LITERAL ($2)->data), ENTRY_NAME)) {
 			emit_entry ((char *)(CB_LITERAL ($2)->data), 1, $4, call_conv);
 		}
+		emit_prof_call (COB_PROF_USE_PARAGRAPH_ENTRY,
+				(char *)(CB_LITERAL ($2)->data), $2 );
 	}
   }
 ;
@@ -14407,7 +14460,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
 		current_statement->statement = STMT_EXIT_PERFORM_CYCLE;
-		cb_emit_goto (CB_LIST_INIT (p->cycle_label), NULL);
+		cb_emit_goto (CB_LIST_INIT (p->cycle_label), NULL, CB_GOTO_FLAG_SAME_PARAGRAPH);
 		check_unreached = 1;
 	}
   }
@@ -14430,7 +14483,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
 		current_statement->statement = STMT_EXIT_PERFORM;
-		cb_emit_goto (CB_LIST_INIT (p->exit_label), NULL);
+		cb_emit_goto (CB_LIST_INIT (p->exit_label), NULL, CB_GOTO_FLAG_SAME_PARAGRAPH);
 		check_unreached = 1;
 	}
   }
@@ -14451,7 +14504,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
 		current_statement->statement = STMT_EXIT_SECTION;
-		cb_emit_goto (CB_LIST_INIT (current_section->exit_label), NULL);
+		cb_emit_goto (CB_LIST_INIT (current_section->exit_label), NULL, CB_GOTO_FLAG_NONE);
 		check_unreached = 1;
 	}
   }
@@ -14472,7 +14525,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
 		current_statement->statement = STMT_EXIT_PARAGRAPH;
-		cb_emit_goto (CB_LIST_INIT (current_paragraph->exit_label), NULL);
+		cb_emit_goto (CB_LIST_INIT (current_paragraph->exit_label), NULL, CB_GOTO_FLAG_SAME_PARAGRAPH);
 		check_unreached = 1;
 	}
   }
@@ -14557,13 +14610,13 @@ goto_statement:
 go_body:
   _to procedure_name_list _goto_depending
   {
-	cb_emit_goto ($2, $3);
+	cb_emit_goto ($2, $3, CB_GOTO_FLAG_NONE);
 	start_debug = save_debug;
   }
 | _to ENTRY entry_name_list _goto_depending
   {
 	if (cb_verify (cb_goto_entry, "ENTRY FOR GO TO")) {
-		cb_emit_goto ($3, $4);
+		cb_emit_goto ($3, $4, CB_GOTO_FLAG_NONE);
 	}
 	start_debug = save_debug;
   }

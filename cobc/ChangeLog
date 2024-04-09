@@ -1,4 +1,23 @@
 
+2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+	    Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* parser.y: generate calls to "cob_prof_function_call" in the
+	  parsetree when profiling is unabled, when entering/leaving
+	  profiled blocks
+	* flag.def: add `-fprof` to enable profiling
+	* tree.h: add a flags field to cb_goto, add profiling
+	  fields to cb_program, add cb_prof_call enum and export
+	  cb_build_prof_call and cb_prof_procedure_fivision functions
+	* tree.c (cb_build_program): initialize the new profiling
+	  fields of the cb_program structure
+	* tree.c (cb_build_goto): add a "flags" argument
+	  (stored in the cb_program structure)
+	* typeck.c (cb_emit_goto): add a "flags" argument
+	  (passed to cb_build_goto)
+	* codegen.c: handle profiling code generation under the
+	  cb_flag_prof guard
+
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals
