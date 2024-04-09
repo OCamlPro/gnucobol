@@ -333,6 +333,8 @@ static const unsigned char	*sort_collate = NULL;
 static const char		*cob_source_file = NULL;
 static unsigned int		cob_source_line = 0;
 
+int				is_test = 0;
+
 #ifdef	HAVE_DESIGNATED_INITS
 const char	*cob_statement_name[STMT_MAX_ENTRY] = {
 	[STMT_UNKNOWN] = "UNKNOWN"
@@ -7864,7 +7866,11 @@ cob_expand_env_string (const char *strval)
 			const char *s = NULL;
 		        switch ( strval[k+1] ){
 			case '$': /* Replace $$ with process-id */
-				j += sprintf (&env[j], "%d", cob_sys_getpid());
+				if (is_test) {
+					j += sprintf (&env[j], "%d", 123456);
+				} else {
+					j += sprintf (&env[j], "%d", cob_sys_getpid());
+				}
 				k++;
 				break;
 			case 'f': /* $f is the executable filename */
@@ -10204,22 +10210,7 @@ void cob_set_main_argv0 (const int argc, char **argv)
 #endif
 
 	if (argc && argv && argv[0]) {
-#if	defined (HAVE_CANONICALIZE_FILE_NAME)
-		/* Returns malloced path or NULL */
-		cobglobptr->cob_main_argv0 = canonicalize_file_name (argv[0]);
-#elif	defined (HAVE_REALPATH)
-		s = cob_malloc ((size_t)COB_LARGE_BUFF);
-		if (realpath (argv[0], s) != NULL) {
-			cobglobptr->cob_main_argv0 = cob_strdup (s);
-		}
-		cob_free (s);
-#elif	defined	(_WIN32)
-		/* Returns malloced path or NULL */
-		cobglobptr->cob_main_argv0 = _fullpath (NULL, argv[0], 1);
-#endif
-		if (!cobglobptr->cob_main_argv0) {
-			cobglobptr->cob_main_argv0 = cob_strdup (argv[0]);
-		}
+		cobglobptr->cob_main_argv0 = cob_path_to_absolute (argv[0]);
 	} else {
 		cobglobptr->cob_main_argv0 = cob_strdup (_("unknown"));
 	}
@@ -10288,6 +10279,8 @@ cob_init (const int argc, char **argv)
 	cobsetptr = cob_malloc (sizeof (cob_settings));
 
 	cob_initialized = 1;
+
+	is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
 
 #ifdef	HAVE_SETLOCALE
 	/* Prime the locale from user settings */

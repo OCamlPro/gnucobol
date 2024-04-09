@@ -63,8 +63,6 @@ static int current_idx = -1;
 
 /* Whether profiling is active or not. */
 static int is_active = 0;
-/* Whether we are in testsuite mode */
-static int is_test = 0;
 
 /* Which clock to use for clock_gettime (if available) */
 #ifdef HAVE_CLOCK_GETTIME
@@ -155,9 +153,6 @@ prof_init_static ()
 	if (!init_done && cobsetptr) {
 		prof_setup_clock ();
 		is_active = cobsetptr->cob_prof_enable;
-		if (is_active) {
-			is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
-		}
 		init_done = 1;
 	}
 }
@@ -460,7 +455,7 @@ cob_prof_print_line (
 			case 'i':
 				if (info){
 					if (is_test){
-						fprintf (file, "%d", 42);
+						fprintf (file, "%d", 123456);
 					} else {
 						fprintf (file, "%d", cob_sys_getpid());
 					}

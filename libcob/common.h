@@ -2680,6 +2680,8 @@ COB_EXPIMP void	cob_file_sort_giving_extfh	(cob_file *, const size_t, ...);
 COB_EXPIMP void	cob_file_release	(cob_file *);
 COB_EXPIMP void	cob_file_return		(cob_file *);
 
+COB_EXPIMP char * cob_path_to_absolute (const char *path);
+
 /***************************/
 /* Functions in reportio.c */
 /***************************/

@@ -4374,24 +4374,24 @@ output_funcall (cb_tree x)
 			output ("cob_prof_enter_procedure (prof_info, %d);", proc_idx);
 			output_newline ();
 			output_prefix ();
-			output ("cob_prof_fallthrough_label = 0");
+			output ("fallthrough_label = 0");
 			break;
 		case COB_PROF_USE_PARAGRAPH_ENTRY: {
 			int paragraph_idx = CB_INTEGER(p->argv[1])->val;
 			int entry_idx = CB_INTEGER(p->argv[2])->val;
-			output ("if (!cob_prof_fallthrough_label)");
+			output ("if (!fallthrough_label)");
 			output_block_open ();
 			output_line ("cob_prof_use_paragraph_entry (prof_info, %d, %d);",
 				     paragraph_idx, entry_idx);
 			output_block_close ();
 			output_line ("else");
 			output_block_open ();
-			output_line ("cob_prof_fallthrough_label = 0;");
+			output_line ("fallthrough_label = 0;");
 			output_block_close ();
 			break;
 		}
 		case COB_PROF_STAYIN_PARAGRAPH:
-			output ("cob_prof_fallthrough_label = 1");
+			output ("fallthrough_label = 1");
 			break;
 		}
 		return;
@@ -13782,7 +13782,7 @@ output_cob_prof_data ( struct cb_program * program )
 		}
 		output_local ("};\n");
 
-		output_local ("static int cob_prof_fallthrough_label = 0;\n");
+		output_local ("static int fallthrough_label = 0;\n");
 		output_local ("static struct cob_prof_module *prof_info;\n");
 
 		output_local ("\n/* End of cob_prof data */\n");

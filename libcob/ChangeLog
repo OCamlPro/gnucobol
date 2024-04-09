@@ -11,6 +11,8 @@
 	  $f (executable filename), $d (date in yyyymmdd) and
 	  $t (time in hhmmss)
 	* common.c (cob_set_main_argv0): extracted from cob_init
+	* fileio.c (cob_path_to_absolute): extracted from insert
+	  and cob_set_main_argv0
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 

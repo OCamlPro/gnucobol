@@ -14675,26 +14675,30 @@ prog.cob:11: warning: GO TO SECTION '2ND'
 
 AT_CHECK([COB_PROF_ENABLE=0 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0], [],
-[File prof-prog.csv generated
+# Specific test for $f, which is an absolute file name
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='$f-prof.csv' $COBCRUN_DIRECT ./prog], [0], [], [ignore])
+AT_CHECK([ls prog-prof.csv], [0], [ignore], [])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$$-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0], [],
+[File prof-123456-prog.csv generated
 ])
 
 # note: The time here is actually the number of times the procedure has
 # been run, to avoid any indeterminism in the running time of the
 # procedure.
 
-AT_CHECK([cat prof-prog.csv], [0],
+AT_CHECK([cat prof-123456-prog.csv], [0],
 [pid,program-id,section,paragraph,entry,file,line,location,kind,time-ns,time,ncalls,%x
-42,prog,,,,prog.cob,4,prog.cob:4,PROGRAM,13000000,0.013 s,1,%x
-42,prog,1ST,,,prog.cob,5,prog.cob:5,SECTION,12000000,0.012 s,1,%x
-42,prog,1ST,PARA-0001,,prog.cob,6,prog.cob:6,PARAGRAPH,11000000,0.011 s,1,%x
-42,prog,1ST,PARA-0002,,prog.cob,8,prog.cob:8,PARAGRAPH,0,0.000 s,0,%x
-42,prog,1ST,PARA-0003,,prog.cob,10,prog.cob:10,PARAGRAPH,1000000,0.001 s,1,%x
-42,prog,1ST,PARA-0004,,prog.cob,12,prog.cob:12,PARAGRAPH,0,0.000 s,0,%x
-42,prog,2ND,,,prog.cob,14,prog.cob:14,SECTION,6000000,0.006 s,1,%x
-42,prog,2ND,PARA-0005,,prog.cob,15,prog.cob:15,PARAGRAPH,3000000,0.003 s,1,%x
-42,prog,2ND,PARA-0006,,prog.cob,17,prog.cob:17,PARAGRAPH,2000000,0.002 s,2,%x
-42,prog,2ND,PARA-0007,,prog.cob,19,prog.cob:19,PARAGRAPH,1000000,0.001 s,1,%x
+123456,prog,,,,prog.cob,4,prog.cob:4,PROGRAM,13000000,0.013 s,1,%x
+123456,prog,1ST,,,prog.cob,5,prog.cob:5,SECTION,12000000,0.012 s,1,%x
+123456,prog,1ST,PARA-0001,,prog.cob,6,prog.cob:6,PARAGRAPH,11000000,0.011 s,1,%x
+123456,prog,1ST,PARA-0002,,prog.cob,8,prog.cob:8,PARAGRAPH,0,0.000 s,0,%x
+123456,prog,1ST,PARA-0003,,prog.cob,10,prog.cob:10,PARAGRAPH,1000000,0.001 s,1,%x
+123456,prog,1ST,PARA-0004,,prog.cob,12,prog.cob:12,PARAGRAPH,0,0.000 s,0,%x
+123456,prog,2ND,,,prog.cob,14,prog.cob:14,SECTION,6000000,0.006 s,1,%x
+123456,prog,2ND,PARA-0005,,prog.cob,15,prog.cob:15,PARAGRAPH,3000000,0.003 s,1,%x
+123456,prog,2ND,PARA-0006,,prog.cob,17,prog.cob:17,PARAGRAPH,2000000,0.002 s,2,%x
+123456,prog,2ND,PARA-0007,,prog.cob,19,prog.cob:19,PARAGRAPH,1000000,0.001 s,1,%x
 ])
 
 AT_CLEANUP

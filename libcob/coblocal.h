@@ -583,6 +583,9 @@ COB_HIDDEN int		cob_cmps	(const unsigned char *, const unsigned char *,
 
 COB_HIDDEN FILE *	cob_open_logfile (const char *filename);
 
+/* Whether we are in testsuite mode */
+COB_HIDDEN int is_test;
+
 #undef	COB_HIDDEN
 
 #endif	/* COB_LOCAL_H */
