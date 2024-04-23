@@ -396,11 +396,16 @@ AT_DATA([prog.cob], [
            EXIT PROGRAM.
 ])
 
-AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE prog.cob], [0], [],
+# Note: on Windows, GCC/MinGW randomly fails when it can't access the temporary directory,
+# so we only perform the COBOL-to-C translation. This is sufficient since the error we want
+# to check is a compile-time error. Note that we nevertheless perform a full compilation
+# afterwards, without tweaking the temporary, so that we can test the actual execution.
+AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE_ONLY prog.cob], [0], [],
 [libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
 ])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE prog.cob], [0], [],
+AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE_ONLY prog.cob], [0], [],
 [libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
 ])
 # TMPDIR is only checked when actually needed which is currently only the case
