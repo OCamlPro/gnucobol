@@ -163,6 +163,12 @@
 	  replace stream) and we use a circular buffer for the temporary
 	  queue of tokens instead of a list.
 
+2024-04-25  Boris Eng <boris.eng@ocamlpro.com>
+
+	* pplex.l, ppparse.y, scanner.l, cobc.h, codegen.c:
+	  new >>IMP INCLUDE directive to include one or multiple header files in
+	  the generated C code (same behavior as the --include compiler option)
+
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
             Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
