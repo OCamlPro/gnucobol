@@ -175,6 +175,8 @@ static size_t			pic2_size;
 static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
 
+struct cb_text_list	*cb_include_file_list_directive = NULL;
+
 /* Function declarations */
 static void	read_literal (const char, const enum cb_literal_type);
 static int	scan_x (const char *, const char *);
@@ -192,6 +194,7 @@ static void	copy_two_words_in_quotes (char ** const, char ** const);
 static void	add_synonym (const int, const int);
 static void	make_synonym (void);
 static void clear_constants (void);
+static struct cb_text_list *scan_list_add (struct cb_text_list *, const char *);
 
 %}
 
@@ -321,6 +324,13 @@ AREA_A		"#AREA_A"\n
 
 <*>^[ ]?"#NOAREACHECK"\n {
 	cobc_areacheck = 0;
+}
+
+<*>^[ ]?"#INCLUDE".*/\n {
+	cb_include_file_list_directive = scan_list_add (
+		cb_include_file_list_directive,
+		yytext + 9
+	);
 }
 
 <*>^{AREA_A}[ ]*/"." {
@@ -2581,6 +2591,22 @@ clear_constants (void)
 		cobc_free (p78);
 	}
 	top_78_ptr = NULL;
+}
+
+static struct cb_text_list *
+scan_list_add (struct cb_text_list *list, const char *text)
+{
+	struct cb_text_list	*p;
+
+	p = cobc_malloc (sizeof (struct cb_text_list));
+	p->text = cobc_strdup (text);
+	if (!list) {
+		p->last = p;
+		return p;
+	}
+	list->last->next = p;
+	list->last = p;
+	return list;
 }
 
 /* Global functions */

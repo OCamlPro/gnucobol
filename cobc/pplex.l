@@ -204,6 +204,7 @@ ALNUM_LITERAL_A	"\'"([^''\n]|("\'"[0-9][0-9, ]+"\'"))*"\'"
 ALNUM_LITERAL	{ALNUM_LITERAL_Q}|{ALNUM_LITERAL_A}
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
+RAW_SEQ	[^ \n]+
 
 AREA_A		[ ]?#
 MAYBE_AREA_A	[ ]?#?
@@ -227,6 +228,7 @@ MAYBE_AREA_A	[ ]?#?
 %x ALNUM_LITERAL_STATE
 %x CONTROL_STATEMENT_STATE
 %x DISPLAY_DIRECTIVE_STATE
+%x IMP_DIRECTIVE_STATE
 
 %%
 
@@ -358,6 +360,11 @@ MAYBE_AREA_A	[ ]?#?
 	BEGIN CALL_DIRECTIVE_STATE;
 	output_pending_newlines (ppout);
 	return CALL_DIRECTIVE;
+}
+
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"IMP"	{
+	BEGIN IMP_DIRECTIVE_STATE;
+	return IMP_DIRECTIVE;
 }
 
 ^{MAYBE_AREA_A}[ ]*">>"[ ]*\n		{
@@ -724,6 +731,7 @@ ELSE_DIRECTIVE_STATE,
 ENDIF_DIRECTIVE_STATE,
 ALNUM_LITERAL_STATE,
 CONTROL_STATEMENT_STATE,
+IMP_DIRECTIVE_STATE,
 COBOL_WORDS_DIRECTIVE_STATE>{
   \n			{
 	BEGIN INITIAL;
@@ -991,6 +999,14 @@ ENDIF_DIRECTIVE_STATE>{
   {WORD}		{
 	return GARBAGE;
   }
+}
+
+<IMP_DIRECTIVE_STATE>{
+  "INCLUDE"		{ return INCLUDE; }		/* GnuCOBOL 3.3 extension */
+  {RAW_SEQ}		{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+	}
 }
 
 <IF_DIRECTIVE_STATE>{
