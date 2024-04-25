@@ -8414,3 +8414,67 @@ prog.cob:18: error: ANY LENGTH items may only be BY REFERENCE formal parameters
 
 AT_CLEANUP
 
+
+AT_SETUP([IMP INCLUDE directive])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file.h"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=fixed prog.cob], [0], [], [])
+
+AT_DATA([prog.cob], [
+>>IMP INCLUDE "file.h"
+identification division.
+program-id. prog.
+procedure division.
+    goback.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=free prog.cob], [0], [], [])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE <file.h>
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=fixed prog.cob], [0], [], [])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=fixed prog.cob], [1], [],
+[prog.cob:2: error: syntax error, unexpected end of line, expecting Word or Literal
+prog.cob:2: error: PROGRAM-ID header missing
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([IMP INCLUDE directive multiple files])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+>>IMP INCLUDE "file1.h" file2.h <file3.h> "<file4.h>"
+identification division.
+program-id. prog.
+procedure division.
+    goback.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=free prog.cob], [0], [], [])
+
+AT_CLEANUP
