@@ -383,6 +383,8 @@ Add a @code{#include} @file{file.h} at the beginning of the generated
 C source file. The file name is put into quotes, unless it starts by
 @code{<}. Quoted files should be absolute paths, since C files are compiled
 in temporary directories.
+The directive @code{>>IMP INCLUDE "FILE.h"} or @code{>>IMP INCLUDE <FILE.h>}
+can be used as an alternative to this compiler option.
 The option also implies @option{-fno-gen-c-decl-static-call}.
 This option can be used to check function prototypes when
 static calls are used. When this option is used, the source file is

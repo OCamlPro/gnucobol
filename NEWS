@@ -41,6 +41,9 @@ NEWS - user visible changes				-*- outline -*-
    calls to externals. The files are put into quotes, unless they start by
    '<'. Quoted files are expected to have absolute paths, as the C compiler
    is called in a temp directory instead of the project directory.
+   The directive >>IMP INCLUDE "file.h", >>IMP INCLUDE "<file.h>",
+   >>IMP INCLUDE <file.h> or >>IMP INCLUDE file.h can be used as an alternative
+   to this compiler option.
 
 ** output of unlimited errors may be requested by -fmax-errors=0,
    to stop compiliation at first error use -Wfatal-errors

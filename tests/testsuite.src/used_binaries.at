@@ -1083,7 +1083,7 @@ AT_CLEANUP
 
 
 AT_SETUP([check include header file])
-#AT_KEYWORDS([include])
+#AT_KEYWORDS([include imp])
 
 AT_DATA([file.h], [
 COB_EXT_IMPORT void f (char *, long);
@@ -1137,5 +1137,50 @@ AT_DATA([f.copy], [
 AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob], [0], [],
 [prog2.cob:8: warning: unexpected RETURNING item
 ])
+
+AT_DATA([prog3.cob], [
+       >> IMP INCLUDE "file.h"
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+# static build with correct function signature
+# AT_CHECK([$COBC -m -I . -fstatic-call prog3.cob], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([check include header file with directive])
+#AT_KEYWORDS([imp include])
+
+AT_DATA([file.h], [
+COB_EXT_IMPORT void f (char *, long);
+])
+AT_DATA([prog.cob], [
+       >> IMP INCLUDE "file.h"
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello".
+])
+
+AT_CHECK([$COBC -m -I . -fstatic-call prog.cob], [1], [], [ignore])
+
+AT_DATA([prog2.cob], [
+       >> IMP INCLUDE "file.h"
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+AT_CHECK([$COBC -m -I . -fstatic-call prog2.cob], [0], [], [])
 
 AT_CLEANUP
