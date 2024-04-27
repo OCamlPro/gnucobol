@@ -57,10 +57,13 @@ NEWS - user visible changes				-*- outline -*-
 * More notable changes
 
 ** execution times were significantly reduced for the following:
-	comparison between a numeric DISPLAY variable to another or to a literal
-	comparison between numeric DISPLAY or BCD variable to zero
-	INSPECT CONVERTING (and "simple" INSPECT REPLACING), in general
-	   and especially if both from and to are constants
+   comparison between a numeric DISPLAY variable to another or to a
+   literal comparison between numeric DISPLAY or BCD variable to zero
+   INSPECT CONVERTING (and "simple" INSPECT REPLACING), in general and
+   especially if both from and to are constants
+
+** optimization of the two-pass preprocessing step of cobc: memory usage
+   and performance should be back close to the ones of 3.1.
 
 * Changes in the COBOL runtime
 
