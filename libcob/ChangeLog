@@ -14,6 +14,10 @@
 	* fileio.c (cob_path_to_absolute): extracted from insert
 	  and cob_set_main_argv0
 
+2024-03-10  Alfredo Tupone <tupone@gentoo.org>
+
+	* common.c: add missing include libxml/parser.h
+
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
 	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files
