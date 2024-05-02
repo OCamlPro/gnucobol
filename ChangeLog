@@ -1,4 +1,10 @@
 
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: use pkg-config (with a fallback to ncurses-config) for
+	  getting link / compile information for ncurses/ncursesw; now honoring
+	  NCURSES_CONFIG, NCURSES_LIBS and NCURSES_FLAGS; document XML2_CONFIG
+
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: add checks to allow using stdint.h and inttypes.h
@@ -1563,7 +1569,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

@@ -1,6 +1,6 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.3     (planned January 2023)
+ GnuCOBOL 3.3     (planned ASAP)
 
  work in progress
 
@@ -70,6 +70,11 @@ NEWS - user visible changes				-*- outline -*-
 ** more substitutions in environment variables: $f for executable filename,
    $b for executable basename, $d for date in YYYYMMDD format, $t for time
    in HHMMSS format (before, only $$ was available for pid)
+
+* New build features
+
+** configure now uses pkg-config/ncurses-config to search for ncurses and
+   honors NCURSES_LIBS and NCURSES_CFLAGS
 
 * Known issues in 3.x
 

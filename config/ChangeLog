@@ -1,6 +1,7 @@
 
 2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
 
+	fixing bug #965
 	* mf-strict.conf: set missing-statement to ok (according to MF tests)
 
 2023-09-19  Simon Sobisch <simonsobisch@gnu.org>
