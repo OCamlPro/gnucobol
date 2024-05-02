@@ -1,4 +1,9 @@
 
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h [__MINGW32__]: drop ancient redefinition of
+	  strcasecmp and strncasecmp
+
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
             Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
@@ -30,7 +35,7 @@
 
 	* fileio.c (indexed_keylen): signature change to directly take the keydesc
 	* fileio.c [WITH_ANY_ISAM]: refactored to ease access to keydesc and keypart
-	* fileio.c (indexed_open) [WITH_ANY_ISAM]: refactored		
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: refactored
 
 2023-12-14  David Declerck <david.declerck@ocamlpro.com>
 

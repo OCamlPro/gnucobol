@@ -360,11 +360,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #endif /* _MSC_VER */
 
-#ifdef	__MINGW32__	/* needed by older versions */
-#define strncasecmp		_strnicmp
-#define strcasecmp		_stricmp
-#endif /* __MINGW32__ */
-
 #ifdef __BORLANDC__
 #define strncasecmp	strnicmp
 #define strcasecmp	stricmp
