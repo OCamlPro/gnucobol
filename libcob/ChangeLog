@@ -3,6 +3,7 @@
 
 	* common.h [__MINGW32__]: drop ancient redefinition of
 	  strcasecmp and strncasecmp
+	* fileio.c (bdb_bt_compare) [WITH_DB]: cater for ABI break in BDB 12
 
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
             Emilien Lemaire <emilien.lemaire@ocamlpro.com>

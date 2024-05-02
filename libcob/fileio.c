@@ -912,7 +912,11 @@ bdb_close_index (cob_file *f, int index)
 }
 
 static int
-bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2)
+bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
+#if DB_VERSION_MAJOR >= 12 /* ABI break in BDB 12...) */
+                size_t *locp
+#endif
+)
 {
 	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA(k1);
 	/* LCOV_EXCL_START */
@@ -923,6 +927,9 @@ bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2)
 		cob_runtime_error ("bdb_bt_compare was given keys of different length");
 	}
 	/* LCOV_EXCL_STOP */
+#if DB_VERSION_MAJOR >= 12
+	locp = NULL;	/* docs: must be set to NULL or corruption can occur ...  */
+#endif
 	return indexed_key_compare (k1->data, k2->data, k2->size, col);
 }
 
