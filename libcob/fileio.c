@@ -914,7 +914,7 @@ bdb_close_index (cob_file *f, int index)
 static int
 bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 #if DB_VERSION_MAJOR >= 12 /* ABI break in BDB 12...) */
-                size_t *locp
+                , size_t *locp
 #endif
 )
 {
