@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -28,7 +28,7 @@
 /* Normal binary flags (standard: on) */
 /* CB_FLAG_ON (var, help switch, name, help) */
 
-/* Flags with required parameter (standard: default)*/
+/* Flags with required parameter (standard: default) */
 /* CB_FLAG_RQ (var, help switch, name, default, getopt return, help) */
 
 /* Flags with required parameter and no associated variable */
@@ -107,13 +107,23 @@ CB_FLAG_NQ (1, "default-file-colseq", CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ,
 	_("  -fdefault-file-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default file collating sequence\n"
 	  "                        * default: NATIVE"))
 
-/* Binary flags */
-
-/* Flags with suppressed help */
-
-CB_FLAG (cb_flag_winmain, 0, "winmain",
+/* Binary flags, partially with suppressed help */
+#ifdef _WIN32
+#define COB_SHOW 1
+#else
+#define COB_SHOW 0
+#endif
+CB_FLAG (cb_flag_winmain, COB_SHOW, "winmain",
 	_("  -fwinmain             generate WinMain instead of main when compiling\n"
 	  "                        as executable"))
+#undef COB_SHOW
+
+#ifdef HAVE_ATTRIBUTE_CONSTRUCTOR
+CB_FLAG_ON (cb_flag_use_constructor, 1, "use-constructor",
+#else
+CB_FLAG (cb_flag_use_constructor, 0, "use-constructor",
+#endif
+	_("  -fuse-constructor     generate internal one-time code via constructor"))
 
 CB_FLAG (cb_flag_computed_goto, 0, "computed-goto",
 	_("  -fcomputed-goto       generate computed goto C statements"))
@@ -133,8 +143,6 @@ CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
 
 CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
 	_("  -fno-fast-compare     disables inline comparisions"))
-
-/* Normal flags */
 
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"

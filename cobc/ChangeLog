@@ -1,4 +1,15 @@
 
+2024-05-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (main): refactored to not need iterating via "iparams"
+	* flag.def (cb_flag_use_constructor), cobc.c (main), cobc.h,
+	  codegen.c (codegen_internal, output_so_load_version_check):
+	  new flag -fuse-constructor to override possible use of that feature;
+	  internally disabling it for generation of libraries after first
+	  program as we only need that code once, fixing Win32 build errors
+	  and duplication warnings in other environments
+	* flag.def: don't suppress the help of -fwinmain under Win32
+
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* replace.c: optimize speed and memory usage. For speed, we add two
@@ -10,7 +21,7 @@
 	  queue of tokens instead of a list.
 
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-	    Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+            Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* parser.y: generate calls to "cob_prof_function_call" in the
 	  parsetree when profiling is unabled, when entering/leaving
@@ -35,7 +46,7 @@
 2024-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y: fix SEGFAULT when checking the BY VALUE arguments of a
-          prototype with ANY LENGTH
+	  prototype with ANY LENGTH
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
@@ -10027,7 +10038,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2023 Free Software Foundation, Inc.
+Copyright 2001-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

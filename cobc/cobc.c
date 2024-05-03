@@ -3852,15 +3852,14 @@ process_command_line (const int argc, char **argv)
 		case CB_FLAG_GETOPT_TTITLE: /* 6 */
 			/* -fttitle=<title> : Title for listing */
 			{
-				size_t i, len;
-
+				const size_t len = strlen (cob_optarg);
+				size_t i;
 				if (cb_listing_with_title)
 					cobc_main_free (cb_listing_with_title);
 				cb_listing_with_title = cobc_main_strdup (cob_optarg);
-				len = strlen (cb_listing_with_title);
-				for (i=0; i<len; i++){
-					if( cb_listing_with_title[i]=='_' )
-						cb_listing_with_title[i]=' ';
+				for (i = 0; i < len; i++) {
+					if (cb_listing_with_title[i] == '_')
+						cb_listing_with_title[i] = ' ';
 				}
 			}
 			break;
@@ -3920,8 +3919,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--copy");
 			}
-			CB_TEXT_LIST_ADD (cb_copy_list,
-					  cobc_strdup (cob_optarg));
+			CB_TEXT_LIST_ADD (cb_copy_list, cobc_strdup (cob_optarg));
 			break;
 
 		case CB_FLAG_GETOPT_INCLUDE_FILE: /* 19 */
@@ -3930,8 +3928,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--include");
 			}
-			CB_TEXT_LIST_ADD (cb_include_file_list,
-					  cobc_strdup (cob_optarg));
+			CB_TEXT_LIST_ADD (cb_include_file_list, cobc_strdup (cob_optarg));
 			cb_flag_c_decl_for_static_call = 0;
 			break;
 
@@ -4122,7 +4119,8 @@ process_command_line (const int argc, char **argv)
 	}
 	
 #if 0	/* TODO: */
-	if (cb_compile_level == CB_LEVEL_PREPROCESS && output_name && strcmp (output_name, COB_DASH) != 0)) {
+	if (cb_compile_level == CB_LEVEL_PREPROCESS
+	 && output_name && strcmp (output_name, COB_DASH) != 0)) {
 		cb_depend_file = output_file;
 	}
 #endif
@@ -9233,7 +9231,6 @@ int
 main (int argc, char **argv)
 {
 	struct filename		*fn;
-	unsigned int		iparams;
 	unsigned int		local_level;
 	int			status;
 	int			statuses = 0;
@@ -9278,8 +9275,9 @@ main (int argc, char **argv)
 				cb_compile_level = CB_LEVEL_MODULE;
 				cobc_flag_module = 1;
 			}
-		} else if (cb_compile_level != CB_LEVEL_PREPROCESS &&
-		    !cobc_flag_main && !cobc_flag_module && !cobc_flag_library) {
+		} else
+		if (cb_compile_level != CB_LEVEL_PREPROCESS
+		 && !cobc_flag_main && !cobc_flag_module && !cobc_flag_library) {
 			cobc_flag_module = 1;
 		}
 	} else {
@@ -9302,15 +9300,13 @@ main (int argc, char **argv)
 
 	{
 		struct cb_text_list *l;
-		for (l = cb_copy_list; l; l=l->next){
-			const char *filename;
-			int has_ext;
+		for (l = cb_copy_list; l; l = l->next) {
+			const size_t len = strlen (l->text) + 1;
+			const int has_ext = strchr (l->text, '.') != NULL;
+			/* note: check for COB_MINI_MAX was done when adding to cb_copy_list */
 			char name[COB_MINI_BUFF];
-			int len = strlen (l->text);
-			memcpy (name, l->text, len+1);
-			has_ext = (strchr (name, '.') != NULL);
-			filename = cb_copy_find_file (name, has_ext);
-			if (!filename){
+			memcpy (name, l->text, len);
+			if (cb_copy_find_file (name, has_ext) == NULL) {
 				cobc_err_exit (_("fatal error: could not find --copy argument %s"), name);
 			}
 		}
@@ -9380,40 +9376,48 @@ main (int argc, char **argv)
 		}
 	}
 
+	/* resolve runtime name from first file */
+	if (cobc_flag_run) {
+		if (file_list->file_is_stdin
+		 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
+			run_name = COB_DASH_OUT;
+		} else {
+			run_name = file_basename (file_list->source, NULL);
+		}
+		run_name = cobc_main_strdup (run_name);
+	}
+
 	/* process all files */
 	status = 0;
-	iparams = 0;
 	local_level = 0;
 
 	for (fn = file_list; fn; fn = fn->next) {
-		iparams++;
-		if (iparams == 1 && cobc_flag_run) {
-			if (fn->file_is_stdin
-			 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
-				run_name = COB_DASH_OUT;
-			} else {
-				run_name = file_basename (fn->source, NULL);
-			}
-			run_name = cobc_main_strdup (run_name);
-		}
-		if (iparams > 1 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
-			/* only the first source has the compile_level and main flag set */
-			local_level = cb_compile_level;
-			cb_compile_level = CB_LEVEL_ASSEMBLE;
-			cobc_flag_main = 0;
-		}
 		status = process_file (fn, status);
 		statuses += status;
 
 		/* take care for all intermediate files which aren't needed for linking */
 		clean_up_intermediates (fn, status);
+
+		/* first source-only handling */
+		if (cb_compile_level == CB_LEVEL_EXECUTABLE) {
+			/* only the first source has the compile_level and main flag set */
+			local_level = cb_compile_level;
+			cb_compile_level = CB_LEVEL_ASSEMBLE;
+			cobc_flag_main = 0;
+		} else
+		if (cb_compile_level == CB_LEVEL_LIBRARY
+		 && cb_flag_use_constructor == 1) {
+			/* we only need one check, already generated for first source */
+			cb_flag_use_constructor = 2;
+		}
 	}
 
 	if (cobc_list_file) {
-		if (cb_listing_file != stdout)
+		if (cb_listing_file != stdout) {
 			fclose (cb_listing_file);
-		else
+		} else {
 			fflush (stdout);
+		}
 		cb_listing_file = NULL;
 	}
 
