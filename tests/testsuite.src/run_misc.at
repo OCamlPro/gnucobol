@@ -15011,7 +15011,7 @@ main (int argc, char **argv)
    int i;
 
    /* portable version from libcob */
-   (void)(cob_unsetenv("COB_IS_RUNNING_IN_TESTMODE");
+   (void)cob_unsetenv("COB_IS_RUNNING_IN_TESTMODE");
 
    cob_init (argc, argv);
 
