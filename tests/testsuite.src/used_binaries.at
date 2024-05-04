@@ -1121,7 +1121,7 @@ AT_DATA([filec.c], [
 #include <libcob.h>
 COB_EXT_IMPORT void f (char *str, long num) {};
 ])
-AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfoo.$COB_MODULE_EXT], [0], [], [])
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0], [], [])
 
 
 # static build with correct function signature

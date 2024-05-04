@@ -5,10 +5,13 @@
 	* flag.def (cb_flag_use_constructor), cobc.c (main), cobc.h,
 	  codegen.c (codegen_internal, output_so_load_version_check):
 	  new flag -fuse-constructor to override possible use of that feature;
-	  internally disabling it for generation of libraries after first
-	  program as we only need that code once, fixing Win32 build errors
+	  internally disabling it for generation of libraries/executable after
+	  first program as we only need that code once, fixing Win32 build errors
 	  and duplication warnings in other environments
 	* flag.def: don't suppress the help of -fwinmain under Win32
+	* typeck.c (build_expr_finish): use fallback error position token, fixing
+	  compiler aborts on broken expressions, bugs #933, #938 and #966
+	* typeck.c: minor refacting within functions
 
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -2516,7 +2516,7 @@ static void
 cobc_print_version (void)
 {
 	printf ("cobc (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2024 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
@@ -9404,6 +9404,10 @@ main (int argc, char **argv)
 			local_level = cb_compile_level;
 			cb_compile_level = CB_LEVEL_ASSEMBLE;
 			cobc_flag_main = 0;
+			if (cb_flag_use_constructor == 1) {
+				/* we only need one check, already generated for first source */
+				cb_flag_use_constructor = 2;
+			}
 		} else
 		if (cb_compile_level == CB_LEVEL_LIBRARY
 		 && cb_flag_use_constructor == 1) {

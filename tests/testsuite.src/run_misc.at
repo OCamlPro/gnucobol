@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -15010,7 +15010,8 @@ main (int argc, char **argv)
 {
    int i;
 
-   unsetenv("COB_IS_RUNNING_IN_TESTMODE");
+   /* portable version from libcob */
+   (void)(cob_unsetenv("COB_IS_RUNNING_IN_TESTMODE");
 
    cob_init (argc, argv);
 

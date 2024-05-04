@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -597,8 +597,6 @@ cb_is_compx_field (struct cb_field *f)
 static int
 cb_is_compx_expr (cb_tree x)
 {
-	struct cb_binary_op	*p;
-	cb_tree	y;
 	if (!cb_flag_fast_math)
 		return 0;
 	if (current_statement
@@ -607,7 +605,7 @@ cb_is_compx_expr (cb_tree x)
 	  || current_statement->handler_type != NO_HANDLER))
 		return 0;
 	if (CB_REFERENCE_P (x)) {
-		y = cb_ref (x);
+		const cb_tree	y = cb_ref (x);
 		if (y == cb_error_node) {
 			return 0;
 		}
@@ -619,7 +617,7 @@ cb_is_compx_expr (cb_tree x)
 		return cb_is_compx_field (CB_FIELD_PTR (x));
 	}
 	if (CB_BINARY_OP_P (x)) {
-		p = CB_BINARY_OP (x);
+		const struct cb_binary_op	*p = CB_BINARY_OP (x);
 		if (p->op == '+'
 		 || p->op == '-'
 		 || p->op == '*') {
@@ -681,8 +679,6 @@ cb_is_compx_expr (cb_tree x)
 static int
 cb_is_integer_expr (cb_tree x)
 {
-	struct cb_binary_op	*p;
-	cb_tree	y;
 	if (!cb_flag_fast_math)
 		return 0;
 	if (current_statement
@@ -691,7 +687,7 @@ cb_is_integer_expr (cb_tree x)
 	  || current_statement->handler_type != NO_HANDLER))
 		return 0;
 	if (CB_REFERENCE_P (x)) {
-		y = cb_ref (x);
+		cosnt cb_tree	y = cb_ref (x);
 		if (y == cb_error_node) {
 			return 0;
 		}
@@ -709,7 +705,7 @@ cb_is_integer_expr (cb_tree x)
 		return 0;
 	}
 	if (CB_BINARY_OP_P (x)) {
-		p = CB_BINARY_OP (x);
+		const struct cb_binary_op	*p = CB_BINARY_OP (x);
 		if (p->op == '+'
 		 || p->op == '-'
 		 || p->op == '*') {
@@ -817,7 +813,6 @@ cb_check_needs_break (cb_tree stmt)
 static size_t
 cb_validate_one (cb_tree x)
 {
-
 	if (x == cb_error_node) {
 		return 1;
 	}
@@ -877,14 +872,12 @@ cb_validate_list (cb_tree l)
 static cb_tree
 cb_check_group_name (cb_tree x)
 {
-	cb_tree		y;
-
 	if (x == cb_error_node) {
 		return cb_error_node;
 	}
 
 	if (CB_REFERENCE_P (x)) {
-		y = cb_ref (x);
+		const cb_tree	y = cb_ref (x);
 		if (y == cb_error_node) {
 			return cb_error_node;
 		}
@@ -5842,18 +5835,24 @@ start:
 static cb_tree
 build_expr_finish (void)
 {
+	cb_tree pos;
+	struct cb_tree_common err_pos;
+	
 	/* Reduce all (prio of token 0 is smaller than all other ones) */
 	(void)build_expr_reduce (0);
 
-	expr_stack[TOPSTACK].value->source_file = cb_source_file;
-	expr_stack[TOPSTACK].value->source_line = cb_exp_line;
+	pos = expr_stack[TOPSTACK].value;
+	if (!pos) pos = &err_pos;
 
-	if (expr_index != TOPSTACK+1) {
-		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression: unfinished expression"));
+	pos->source_file = cb_source_file;
+	pos->source_line = cb_exp_line;
+
+	if (expr_index != TOPSTACK + 1) {
+		cb_error_x (pos, _("invalid expression: unfinished expression"));
 		return cb_error_node;
 	}
 
-	if (!expr_stack[TOPSTACK].value) {
+	if (pos == &err_pos) {
 		/* TODO: Add test case for this to syn_misc.at invalid expression */
 		cb_error (_("invalid expression"));
 		return cb_error_node;
@@ -5862,7 +5861,7 @@ build_expr_finish (void)
 	build_expr_expand (&expr_stack[TOPSTACK].value);
 	if (expr_stack[TOPSTACK].token != 'x') {
 		/* TODO: add a test case, for now, no idea how to reach this */
-		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression"));
+		cb_error_x (pos, _("invalid expression"));
 		return cb_error_node;
 	}
 
@@ -5877,8 +5876,6 @@ cb_build_expr (cb_tree list)
 	int	op, has_rel, has_con, has_var, bad_cond;
 
 	build_expr_init ();
-
-	/* Checkme: maybe add validate_list(l) here */
 
 	bad_cond = has_rel = has_con = has_var = 0;
 	for (l = list; l; l = CB_CHAIN (l)) {
@@ -5928,10 +5925,10 @@ cb_build_expr (cb_tree list)
 			has_rel = 1;
 			break;
 		default:
-			if(TOKEN (-1) == '!'){
+			if (TOKEN (-1) == '!') {
 /* switch `NOT` relation, e.g. the two expression tokens `NOT` and `>`
  * are reduced to a single token `<=` */
-				switch(op){
+				switch (op){
 				case '=': TOKEN (-1) = '~'; continue;
 				case '>': TOKEN (-1) = '['; continue;
 				case '<': TOKEN (-1) = ']'; continue;
@@ -5939,8 +5936,9 @@ cb_build_expr (cb_tree list)
 				case '[': TOKEN (-1) = '>'; continue;
 				}
 			}
-			v = CB_VALUE (l);
+			v = NULL;
 			if (op == 'x') {
+				v = CB_VALUE (l);
 				if (has_var && v == cb_zero) {
 					has_rel = 1;
 				}

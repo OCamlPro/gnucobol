@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2024 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -514,17 +514,32 @@ AT_DATA([prog.cob], [
               CONTINUE
            END-PERFORM.
            IF NOTDEFINED = 1 OR 2
-              CONTINUE
-           END-IF.
+              CONTINUE.
 
            IF (V = 1) AND V
+              CONTINUE.
+
+           IF (1 = 2) *> valid
+              CONTINUE.
+
+           IF 1 == 2
+              CONTINUE.
+
+           IF (1 == 2)
+              CONTINUE.
+
+           IF +
+              CONTINUE.
+
+           EVALUATE V
+           WHEN -
               CONTINUE
-           END-IF
+           END-EVALUATE.
 
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:10: error: incomplete expression
 prog.cob:14: error: incomplete expression
 prog.cob:18: error: incomplete expression
@@ -541,7 +556,12 @@ prog.cob:60: error: incomplete expression
 prog.cob:66: error: incomplete expression
 prog.cob:72: error: incomplete expression
 prog.cob:76: error: 'NOTDEFINED' is not defined
-prog.cob:80: error: invalid expression: boolean expected with logical operator
+prog.cob:79: error: invalid expression: boolean expected with logical operator
+prog.cob:82: warning: expression '1' EQUALS '2' is always FALSE
+prog.cob:85: error: invalid expression: unfinished expression
+prog.cob:88: error: invalid expression: unfinished expression
+prog.cob:92: error: invalid expression
+prog.cob:96: error: invalid expression
 ])
 
 AT_CLEANUP
