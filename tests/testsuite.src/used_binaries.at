@@ -1074,12 +1074,13 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
 AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
 
 # note: -fdiagnostics-absolute-paths will show the realpath,
-#       so for MSYS/MSVC builds that will be x:\something\prog.cob
-AT_CHECK([$SED -e "s|$(_return_path "$(pwd)/prog.cob")|DIR/prog.cob|" compiler.output], [0],
+#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
+#       but the _return_path function from atlocal may adjust that
+AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
 [DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
 DIR/prog.cob:6: warning: numeric value is expected
 DIR/prog.cob:14: warning: ignoring redundant .
-])
+], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
 
 AT_CLEANUP
 
@@ -1127,11 +1128,11 @@ AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0]
 # static build with correct function signature
 AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog2.cob], [0], [], [], [
   # Previous test "failed" --> retry with import library
-  AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call -lfilec prog2.cob], [0], [], [])]
+  AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call -L. -lfilec prog2.cob], [0], ignore, ignore)]
 )
 AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call prog2.cob -o prog2b], [0], [], [], [
   # Previous test "failed" --> retry with import library
-  AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call -lfilec prog2.cob -o prog2b], [0], [], [])]
+  AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call -L. -lfilec prog2.cob -o prog2b], [0], ignore, ignore)]
 )
 
 # We can use --copy to check a CALL against a prototype. However, this
@@ -1156,7 +1157,7 @@ AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.co
 [prog2.cob:8: warning: unexpected RETURNING item
 ], [
   # Previous test "failed" --> retry with import library
-  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -lfilec prog2.cob -o prog2c], [0], [], ignore)]
+  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
 )
 
 AT_CLEANUP
