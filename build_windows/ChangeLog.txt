@@ -1,4 +1,8 @@
 
+2024-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* general for libcob: add missing profiling.c
+
 2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general for cobc: include new replace.c
