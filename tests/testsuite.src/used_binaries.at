@@ -1073,19 +1073,23 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
 
 AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
 
-AT_CHECK([$SED -e "s|$PWD|HOME|" compiler.output], [0],
-[HOME/prog.cob:7: error: CRUD.CPY: No such file or directory
-HOME/prog.cob:6: warning: numeric value is expected
-HOME/prog.cob:14: warning: ignoring redundant .
-])
+# note: -fdiagnostics-absolute-paths will show the realpath,
+#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
+#       but the _return_path function from atlocal may adjust that
+AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
+[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
+DIR/prog.cob:6: warning: numeric value is expected
+DIR/prog.cob:14: warning: ignoring redundant .
+], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
 
 AT_CLEANUP
 
 
 AT_SETUP([check include header file])
-#AT_KEYWORDS([include])
+#AT_KEYWORDS([cobc copy])
 
-AT_DATA([file.h], [
+AT_DATA([filec.h], [
+/* COB_EXT_IMPORT will be defined by libcob.h up-front */
 COB_EXT_IMPORT void f (char *, long);
 ])
 AT_DATA([prog.cob], [
@@ -1095,13 +1099,13 @@ AT_DATA([prog.cob], [
            CALL "f" USING "Hello".
 ])
 
-# No check, program seems correct
+# dynamic call - program seems correct
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 
-AT_CHECK([$COBC -m -fstatic-call prog.cob], [0], [], [])
+# mismatch in function signature - we ignore the error output,
+# as it depends on the C compiler in use
+AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog.cob], [1], [], [ignore])
 
-# We ignore the error output, as it depends on the C compiler in use
-
-AT_CHECK([$COBC -m --include "$PWD/file.h" -fstatic-call prog.cob], [1], [], [ignore])
 AT_DATA([prog2.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -1112,9 +1116,24 @@ AT_DATA([prog2.cob], [
            CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
 ])
 
-AT_CHECK([$COBC -m --include "$PWD/file.h" -fstatic-call prog2.cob], [0], [], [])
+# note: we likely need to build an import library for some environments
+AT_DATA([filec.c], [
+/* for COB_EXT_EXPORT */
+#include <libcob.h>
+COB_EXT_IMPORT void f (char *str, long num) {};
+])
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0], [], [])
 
-AT_CHECK([$COBC -I . -m --include "file.h" -fstatic-call prog2.cob], [0], [], [])
+
+# static build with correct function signature
+AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog2.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call -L. -lfilec prog2.cob], [0], ignore, ignore)]
+)
+AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call prog2.cob -o prog2b], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call -L. -lfilec prog2.cob -o prog2b], [0], ignore, ignore)]
+)
 
 # We can use --copy to check a CALL against a prototype. However, this
 # feature is not fully supported by GnuCOBOL yet, so we get some
@@ -1134,8 +1153,11 @@ AT_DATA([f.copy], [
        END PROGRAM f.
 ])
 
-AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob], [0], [],
+AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
 [prog2.cob:8: warning: unexpected RETURNING item
-])
+], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
+)
 
 AT_CLEANUP

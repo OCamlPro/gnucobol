@@ -74,19 +74,19 @@ print_error_prefix (const char *file, int line, const char *prefix)
 		 && file[0] != '\\'
 		 && file[1] != ':'){
 			int filelen = strlen (file);
-			int dirlen = 256;
-			char *cwd ;
-			absfile = cobc_malloc( dirlen + 1 + filelen + 1 );
+			int dirlen = COB_MINI_BUFF;
+			char *cwd;
+			absfile = cobc_malloc (dirlen + 1 + filelen + 1);
 			cwd = getcwd (absfile, dirlen);
 			if (cwd != NULL ){
 #ifdef HAVE_SYS_STAT_H
 				struct stat st;
 #endif
 				dirlen = strlen (cwd);
-				absfile[dirlen] = '/';
-				memcpy (absfile+dirlen+1, file, filelen+1);
+				absfile[dirlen] = SLASH_CHAR;
+				memcpy (absfile + dirlen + 1, file, filelen + 1);
 #ifdef HAVE_SYS_STAT_H
-				if (!stat (absfile,&st))
+				if (!stat (absfile, &st))
 #endif
 				{
 					file = absfile;

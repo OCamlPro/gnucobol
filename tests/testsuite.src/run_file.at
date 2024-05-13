@@ -46,10 +46,11 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  WSFS              PIC X(2).
        PROCEDURE DIVISION.
-      *
+       OUT.
            OPEN EXTEND FILE-OPT
            IF WSFS NOT = "05"
-              DISPLAY "STATUS EXTEND, missing optional file:" WSFS.
+              DISPLAY "STATUS EXTEND, missing optional file:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO INP.
            MOVE ALL "A" TO FOREC
            WRITE FOREC
            IF WSFS NOT = "00"
@@ -64,19 +65,22 @@ AT_DATA([prog.cob], [
            WRITE F0REC
            IF WSFS NOT = "00"
               DISPLAY "STATUS WRITE B:" WSFS.
-           CLOSE FILE0
+           CLOSE FILE0.
       *
+       INP.
            OPEN INPUT FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS INPUT:" WSFS.
+              DISPLAY "STATUS INPUT:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO EX.
            READ FILE-OPT NEXT
            IF WSFS NOT = "00"
               DISPLAY "STATUS READ A:" WSFS.
            READ FILE-OPT NEXT
            IF WSFS NOT = "00"
               DISPLAY "STATUS READ B:" WSFS.
-           CLOSE FILE-OPT
+           CLOSE FILE-OPT.
       *
+       EX.
            STOP RUN.
 ])
 
@@ -110,10 +114,11 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  WSFS              PIC X(2).
        PROCEDURE DIVISION.
-      *
+       OUT.
            OPEN OUTPUT FILE-TBL
            IF WSFS NOT = "00"
-              DISPLAY "STATUS OPEN OUTPUT:" WSFS.
+              DISPLAY "STATUS OPEN OUTPUT:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO INP.
            MOVE ALL "A" TO FOREC
            WRITE FOREC
            IF WSFS NOT = "00"
@@ -121,6 +126,7 @@ AT_DATA([prog.cob], [
            CLOSE FILE-TBL WITH LOCK
            IF WSFS NOT = "00"
               DISPLAY "STATUS CLOSE WITH LOCK:" WSFS.
+       INP.
            OPEN INPUT FILE-TBL
            IF WSFS NOT = "38"
               DISPLAY "STATUS INPUT after CLOSE LOCK:" WSFS.
@@ -128,14 +134,17 @@ AT_DATA([prog.cob], [
            IF WSFS NOT = "42"
               DISPLAY "STATUS CLOSE non-opened:" WSFS.
       *
+       DEL.
       *    Note: MicroFocus _does_ delete the file and returns status 00 here
            DELETE FILE FILE-TBL
            IF WSFS NOT = "38"
               DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
       *
+       INP2.
            OPEN INPUT FILE0
            IF WSFS NOT = "00"
-              DISPLAY "STATUS INPUT separate file:" WSFS.
+              DISPLAY "STATUS INPUT separate file:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO EX.
            READ FILE0 NEXT
            IF WSFS NOT = "00"
               DISPLAY "STATUS READ A:" WSFS.
@@ -145,6 +154,7 @@ AT_DATA([prog.cob], [
            IF WSFS NOT = "00"
               DISPLAY "STATUS CLOSE:" WSFS.
       *
+       EX.
            STOP RUN.
 ])
 
@@ -173,10 +183,11 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  WSFS              PIC X(2).
        PROCEDURE DIVISION.
-      *
+       MAIN.
            OPEN OUTPUT FILE-TBL
            IF WSFS NOT = "00"
-              DISPLAY "STATUS OPEN OUTPUT:" WSFS.
+              DISPLAY "STATUS OPEN OUTPUT:" WSFS
+              IF WSFS (1:1) NOT = "0" GOBACK.
            MOVE ALL "A" TO FOREC
            WRITE FOREC
            IF WSFS NOT = "00"
@@ -1190,7 +1201,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        LOCAL-STORAGE    SECTION.
@@ -1230,7 +1241,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        LOCAL-STORAGE    SECTION.
@@ -1267,7 +1278,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        WORKING-STORAGE  SECTION.
@@ -1300,7 +1311,7 @@ AT_DATA([prog2.cob], [
                         ORGANIZATION LINE SEQUENTIAL
                         FILE STATUS TEST-STAT.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        WORKING-STORAGE  SECTION.
@@ -1521,7 +1532,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        WORKING-STORAGE  SECTION.
@@ -1561,7 +1572,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN fpath
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        PROCEDURE        DIVISION.
@@ -2343,7 +2354,7 @@ AT_DATA([prog.cob], [
            record is varying in size
                from 107 to 362 characters
                depending on end-tbw-record
-	       .
+           .
        01  tbw-record.
            02 tbw-key                        pic x(100).
            02 tbw-alt.
@@ -4280,13 +4291,13 @@ fexists_signed (char *fid, char *signature, int signature_size)
 
 	f = fopen (fid, "r");
 	if (f != NULL) {
-		 bfr = (char *) cob_malloc (signature_size);
-		 if (1 == fread (bfr, signature_size, 1, f)) {
+		bfr = (char *) cob_malloc (signature_size);
+		if (1 == fread (bfr, signature_size, 1, f)) {
 				if (!memcmp (signature, bfr, signature_size)) {
-					 res = 0;
+					res = 0;
 				}
-		 }
-		 free (bfr);
+		}
+		free (bfr);
 	}
 	return res;
 }
@@ -13776,7 +13787,7 @@ AT_DATA([prog.cob], [
                 ASCENDING sort-entry
                 USING  SORT-IN
                 GIVING SORT-IN.
-             STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13979,11 +13990,11 @@ AT_DATA([prog.cob], [
           2  file4-key2 pic 9.
           2  filler pic x(10).
        PROCEDURE DIVISION.
-          MERGE file4 ON ASCENDING file4-key1
+           MERGE file4 ON ASCENDING file4-key1
                         DESCENDING file4-key2
              USING file1 file2
              GIVING file3.
-          STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -14039,7 +14050,7 @@ AT_DATA([prog.cob], [
                 ASCENDING KEY WRK-REC
                 USING  SORT-IN
                 GIVING SORT-OUT.
-             STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -14100,37 +14111,37 @@ AT_DATA([prog.cob], [
            3 1-data pic x(10).
        PROCEDURE DIVISION.
        a01-main.
-          SORT file1 ON ASCENDING file1-key
-             INPUT PROCEDURE a02-release-to-sort
-             OUTPUT PROCEDURE a03-return-from-sort.
-          STOP RUN.
+           SORT file1 ON ASCENDING file1-key
+              INPUT PROCEDURE a02-release-to-sort
+              OUTPUT PROCEDURE a03-return-from-sort.
+           STOP RUN.
       *
        a02-release-to-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
-          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
+           PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
+              RELEASE file1-rec from 1-record(ix-1)
+           END-PERFORM.
+           PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
+              RELEASE file1-rec from 1-record(ix-1)
+           END-PERFORM.
       *
        a03-return-from-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 1
-             UNTIL (ix-1 > 26) OR (w-eof = 1)
-             RETURN file1 RECORD
-               AT END MOVE 1 TO w-eof
-             END-RETURN
-             IF (file1-rec <> 1-record(ix-1))
-                MOVE 1 TO w-eof
-             END-IF
-          END-PERFORM.
-          IF (w-eof = 1)
-             DISPLAY "FAILED: unexpected eof"
-          ELSE
-             RETURN file1 RECORD
-               AT END CONTINUE
-               NOT AT END DISPLAY "FAILED: expected eof"
-             END-RETURN
-          END-IF.
+           PERFORM VARYING ix-1 FROM 1 BY 1
+              UNTIL (ix-1 > 26) OR (w-eof = 1)
+              RETURN file1 RECORD
+                AT END MOVE 1 TO w-eof
+              END-RETURN
+              IF (file1-rec <> 1-record(ix-1))
+                 MOVE 1 TO w-eof
+              END-IF
+           END-PERFORM.
+           IF (w-eof = 1)
+              DISPLAY "FAILED: unexpected eof"
+           ELSE
+              RETURN file1 RECORD
+                AT END CONTINUE
+                NOT AT END DISPLAY "FAILED: expected eof"
+              END-RETURN
+           END-IF.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -14178,11 +14189,11 @@ AT_DATA([prog.cob], [
           2  file3-key2 pic 9.
           2  file3-dot pic x.
        PROCEDURE DIVISION.
-          SORT file3 ON ASCENDING file3-key1
-                        DESCENDING file3-key2
-             USING file1
-             GIVING file2.
-          STOP RUN.
+           SORT file3 ON ASCENDING file3-key1
+                         DESCENDING file3-key2
+              USING file1
+              GIVING file2.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -14231,38 +14242,38 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
        DECLARATIVES.
        P01 SECTION.
-          USE AFTER ERROR PROCEDURE ON FILE-EXT.
+           USE AFTER ERROR PROCEDURE ON FILE-EXT.
        P0101.
-          DISPLAY "ERROR ON FILE-EXT".
+           DISPLAY "ERROR ON FILE-EXT".
        P02 SECTION.
-          USE AFTER ERROR PROCEDURE ON OUTPUT.
+           USE AFTER ERROR PROCEDURE ON OUTPUT.
        P0201.
-          DISPLAY "ERROR ON OUTPUT".
+           DISPLAY "ERROR ON OUTPUT".
        END DECLARATIVES.
        MAIN SECTION.
-         OPEN OUTPUT FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-1".
+           OPEN OUTPUT FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-1".
       * The next line triggers a SILENT error in NESTED-PROGRAM-1-2
-         CLOSE FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-2".
-         GOBACK.
+           CLOSE FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-2".
+           GOBACK.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-1.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "1-1 TRIED TO WRITE".
-         GOBACK.
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "1-1 TRIED TO WRITE".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-1.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-2.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "1-2 TRIED TO WRITE".
-         GOBACK.
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "1-2 TRIED TO WRITE".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-2.
 
        END PROGRAM NESTED-PROGRAM-1.
@@ -14283,9 +14294,9 @@ AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-FILES.
        PROCEDURE DIVISION.
-         CALL    "NESTED-PROGRAM-1".
-         CALL    "NESTED-PROGRAM-2".
-         STOP RUN.
+           CALL    "NESTED-PROGRAM-1".
+           CALL    "NESTED-PROGRAM-2".
+           STOP RUN.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1.
@@ -14303,42 +14314,42 @@ AT_DATA([prog2.cob], [
        DECLARATIVES.
        P01 SECTION.
       * This one is GLOBAL and should be called from within nested programs
-          USE GLOBAL AFTER ERROR PROCEDURE ON FILE-EXT.
+           USE GLOBAL AFTER ERROR PROCEDURE ON FILE-EXT.
        P0101.
-          DISPLAY "ERROR ON FILE-EXT".
+           DISPLAY "ERROR ON FILE-EXT".
        P02 SECTION.
-          USE AFTER ERROR PROCEDURE ON OUTPUT.
+           USE AFTER ERROR PROCEDURE ON OUTPUT.
        P0201.
-          DISPLAY "ERROR ON OUTPUT".
+           DISPLAY "ERROR ON OUTPUT".
        END DECLARATIVES.
        MAIN SECTION.
-         OPEN OUTPUT FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-1".
-	 DISPLAY "CLOSING FILE DESCRIPTOR".
-         CLOSE FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-2".
-         GOBACK.
+           OPEN OUTPUT FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-1".
+           DISPLAY "CLOSING FILE DESCRIPTOR".
+           CLOSE FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-2".
+           GOBACK.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-1.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-	 DISPLAY "ENTERING NESTED-PROGRAM-1-1".
-	 DISPLAY "TRYING TO WRITE".
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "EXITING NESTED-PROGRAM-1-1".
-         GOBACK.
+           DISPLAY "ENTERING NESTED-PROGRAM-1-1".
+           DISPLAY "TRYING TO WRITE".
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "EXITING NESTED-PROGRAM-1-1".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-1.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-2.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-	 DISPLAY "ENTERING NESTED-PROGRAM-1-2".
-	 DISPLAY "TRYING TO WRITE".
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "EXITING NESTED-PROGRAM-1-2".
-         GOBACK.
+           DISPLAY "ENTERING NESTED-PROGRAM-1-2".
+           DISPLAY "TRYING TO WRITE".
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "EXITING NESTED-PROGRAM-1-2".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-2.
 
        END PROGRAM NESTED-PROGRAM-1.
@@ -14346,7 +14357,7 @@ AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-2.
        PROCEDURE DIVISION.
-         GOBACK.
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-2.
 
        END PROGRAM NESTED-FILES.
@@ -14383,8 +14394,8 @@ AT_DATA([prog1.cob], [
        FD FILE2.
          01 FS-FILE2 PIC X(10).
        WORKING-STORAGE SECTION.
-	 01  STAT-FILE1               PIC XX.
-	 01  STAT-FILE2               PIC XX.
+       01  STAT-FILE1               PIC XX.
+       01  STAT-FILE2               PIC XX.
        PROCEDURE DIVISION.
        DECLARATIVES.
        F-FILE1 SECTION. USE AFTER ERROR PROCEDURE ON FILE1.
@@ -14401,7 +14412,7 @@ AT_DATA([prog1.cob], [
        PROGRAMME SECTION.
        MAIN.
           OPEN INPUT FILE1
-	  OPEN INPUT FILE2.
+          OPEN INPUT FILE2.
           DISPLAY "READ FILE1".
           READ FILE1.
           DISPLAY "READ FILE2".
@@ -14431,8 +14442,8 @@ AT_DATA([prog2.cob], [
        FD FILE2.
          01 FS-FILE2 PIC X(10).
        WORKING-STORAGE SECTION.
-	 01  STAT-FILE1               PIC XX.
-	 01  STAT-FILE2               PIC XX.
+       01  STAT-FILE1               PIC XX.
+       01  STAT-FILE2               PIC XX.
        PROCEDURE DIVISION.
        DECLARATIVES.
        F-FILE1 SECTION. USE AFTER ERROR PROCEDURE ON FILE1.
@@ -14449,7 +14460,7 @@ AT_DATA([prog2.cob], [
        PROGRAMME SECTION.
        MAIN.
           OPEN INPUT FILE1
-	             FILE2.
+                     FILE2.
           DISPLAY "READ FILE1".
           READ FILE1.
           DISPLAY "READ FILE2".

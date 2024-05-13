@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -20,6 +20,14 @@
 
 #include "tarstamp.h"
 #include "config.h"
+
+#ifdef __MINGW32__
+/* Is this needed for other environments as well?
+   We want to use all POSIX extensions possible. */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112
+#endif
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,6 +142,7 @@
 #endif
 
 #if defined (WITH_XML2)
+#include <libxml/parser.h>
 #include <libxml/xmlversion.h>
 #include <libxml/xmlwriter.h>
 #endif

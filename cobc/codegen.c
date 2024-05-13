@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -12635,18 +12635,17 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_line ("P_initialize:");
 	output_newline ();
 
-	/* Check matching version */
-#if !defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+	/* Check matching version in program init */
+	if ( (cb_flag_use_constructor == 0	/* if constructor option disabled */
 #ifdef _WIN32
-	if (prog->flag_main)	/* otherwise we generate that in DllMain */
-#else
-	if (!prog->nested_level)
+	   || prog->flag_main 	/* or under Win32 (where we can only use DllMain) for executables */
 #endif
-	{
+	     )
+	 /* no use in generating that for nested programs, as the outest program must be started first */
+	 && !prog->nested_level) {
 		output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 		output_newline ();
 	}
-#endif
 
 	/* Resolve user functions */
 	for (clp = func_call_cache; clp; clp = clp->next) {
@@ -13906,25 +13905,28 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 /* Check matching version via constructor attribute / DllMain */
 static void output_so_load_version_check (struct cb_program *prog)
 {
-#if defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+#if defined (_WIN32)
+	if (prog->flag_main) {
+		return;
+	}
+	output_newline ();
+	output_line ("#include \"windows.h\"");
+	output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
+	output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
+	output_block_open ();
+	output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
+	output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+	output_line ("return TRUE;");
+	output_block_close ();
+	output_newline ();
+#else
+	output_newline ();
 	output_line ("static void gc_module_so_init () __attribute__ ((constructor));");
 	output_line ("static void gc_module_so_init ()");
 	output_block_open ();
 	output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 	output_block_close ();
 	output_newline ();
-#elif defined (_WIN32)
-	if (!prog->flag_main) {
-		output_line ("#include \"windows.h\"");
-		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
-		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
-		output_block_open ();
-		output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
-		output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
-		output_line ("return TRUE;");
-		output_block_close ();
-		output_newline ();
-	}
 #endif
 }
 
@@ -13994,8 +13996,9 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	if (!subsequent_call) {
 		output ("/* Functions */");
 		output_newline ();
-		output_newline ();
-		output_so_load_version_check (prog);
+		if (cb_flag_use_constructor == 1) {
+			output_so_load_version_check (prog);
+		}
 	}
 
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
