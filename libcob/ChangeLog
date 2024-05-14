@@ -1,4 +1,14 @@
 
+2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_numeric_display_cmp_zero): fixed overflow compare
+	* cobgetopt.c, intrinsic.c, move.c, numeric.c, reportio.c, strings.c,
+	  termio.c: dropped headers ctype, errno and math where unused
+
+2024-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_accept_exception_status): fixed status 128
+
 2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h [__MINGW32__]: drop ancient redefinition of

@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2023
+## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2024
 ## Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman, Denis HUGONNARD-ROCHE, Chuck Haatvedt
@@ -6483,7 +6483,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:21: warning: unsigned 'W' may not be LESS THAN ZERO
 ])
 
-AT_CHECK([./prog], [0], [V IS ZERO
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [V IS ZERO
 V IS ZERO AND W EQUAL 1
 W EQUAL 1 AND V IS ZERO
 W IS POSITIVE
@@ -6494,7 +6494,7 @@ V EQUAL 0 AND W IS POSITIVE
 AT_CLEANUP
 
 
-AT_SETUP([abbreviated conditions with multiple words operators])
+AT_SETUP([abbreviated conditions])
 AT_KEYWORDS([fundamental IF])
 
 # for more details see bug #880
@@ -6524,15 +6524,14 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-
-AT_CHECK([./prog], [0], [TRUE 2
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [TRUE 2
 TRUE 3
 ], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([abbreviated conditions with multiple words operators])
+AT_SETUP([invalid use of condition-names])
 AT_KEYWORDS([fundamental IF])
 
 AT_DATA([prog.cob], [

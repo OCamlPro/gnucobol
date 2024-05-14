@@ -1,4 +1,11 @@
 
+2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h: inclusion of cobc.h for types
+	* codeoptim.c, config.c, error.c, field.c, replace.c, reserved.c:
+	  dropped unused header ctype
+	* codeoptim.c: dropped unused headers stdlib and string
+
 2024-05-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (main): refactored to not need iterating via "iparams"
