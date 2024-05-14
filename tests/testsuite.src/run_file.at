@@ -12441,8 +12441,8 @@ AT_CHECK([diff reference prog.out], [0], [], [])
 AT_CLEANUP
 
 
-# This is only supported by the BDB backend
-AT_SETUP([INDEXED file manipulation under ASCII/EBCDIC collation])
+# This is, so far, only supported by the BDB backend
+AT_SETUP([INDEXED files under ASCII/EBCDIC collation])
 AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
@@ -13803,7 +13803,7 @@ world
 AT_CLEANUP
 
 
-AT_SETUP([File SORT, LINE SEQUENTIAL variable records])
+AT_SETUP([File SORT, LINE SEQUENTIAL])
 AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([file1],
@@ -13867,7 +13867,7 @@ Z9XXXXXXXXXX
 AT_CLEANUP
 
 
-AT_SETUP([EXTFH: File SORT, LINE SEQUENTIAL variable records])
+AT_SETUP([EXTFH: File SORT, LINE SEQUENTIAL])
 AT_KEYWORDS([runfile SORT USING GIVING EXTFH])
 
 # same test as above, but this time using an external file handler

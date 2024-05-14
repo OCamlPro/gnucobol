@@ -119,11 +119,16 @@ CB_FLAG (cb_flag_winmain, COB_SHOW, "winmain",
 #undef COB_SHOW
 
 #ifdef HAVE_ATTRIBUTE_CONSTRUCTOR
-CB_FLAG_ON (cb_flag_use_constructor, 1, "use-constructor",
+#define CB_FLAG_M CB_FLAG_ON
+#define COB_SHOW 1
 #else
-CB_FLAG (cb_flag_use_constructor, 0, "use-constructor",
+#define CB_FLAG_M CB_FLAG
+#define COB_SHOW 0
 #endif
+CB_FLAG_M (cb_flag_use_constructor, COB_SHOW, "use-constructor",
 	_("  -fuse-constructor     generate internal one-time code via constructor"))
+#undef CB_FLAG_M
+#undef COB_SHOW
 
 CB_FLAG (cb_flag_computed_goto, 0, "computed-goto",
 	_("  -fcomputed-goto       generate computed goto C statements"))

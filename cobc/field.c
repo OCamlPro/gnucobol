@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -29,7 +29,6 @@
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
 #endif
-#include <ctype.h>
 #include <limits.h>
 
 #include "cobc.h"

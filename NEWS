@@ -76,6 +76,9 @@ NEWS - user visible changes				-*- outline -*-
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
    honors NCURSES_LIBS and NCURSES_CFLAGS
 
+** use the "default" -shared flag to build dynamic libraries on macOS
+   so as to fix testuite issues with recent macOS versions
+
 * Known issues in 3.x
 
 ** testsuite:

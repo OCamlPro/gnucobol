@@ -1322,9 +1322,10 @@ typedef struct __cob_module {
 	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
 
 	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
-											   IBM may be different (_very_ likely for error codes);
-											   but the main difference is to "COMPAT" */
+		/* similar to XMLPARSE(XMLNSS) Micro Focus,
+		   IBM may be different (_very_ likely for error codes);
+		   but the main difference is to "COMPAT" */
+		#define COB_XML_XMLNSS		1
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */

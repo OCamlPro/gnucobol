@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Chuck Haatveet
 
@@ -31,8 +31,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#include <ctype.h>
-#include <errno.h>
 
 #include <math.h>
 #ifdef HAVE_FINITE_IEEEFP_H
@@ -4236,7 +4234,7 @@ cob_numeric_display_cmp_zero (cob_field *f)
 	do {
 		const unsigned char p = COB_D2I (*ptr);
 		if (p != 0) {
-			const char p_sign = *(ptr_end - 1) & 0xF0;
+			const unsigned char p_sign = *(ptr_end - 1) & 0xF0;
 			int sign = p_sign == 0x70 || p_sign == 0xD0 || p_sign == 0xB0
 			         ? -1 : 1;
 			return sign;

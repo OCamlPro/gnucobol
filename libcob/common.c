@@ -42,7 +42,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include <math.h>
+#include <math.h>	/* for finite macros */
 #ifdef HAVE_FINITE_IEEEFP_H
 #include <ieeefp.h>
 #endif
@@ -2407,7 +2407,7 @@ cob_accept_exception_status (cob_field *f)
 			exception = 1;
 		} else if (exception == cob_exception_tab_code[COB_EC_PROGRAM_NOT_FOUND]) {
 			exception = 2;
-		} else if (exception || cob_exception_tab_code[COB_EC_PROGRAM]) {
+		} else if (exception & cob_exception_tab_code[COB_EC_PROGRAM]) {
 			exception = 128;
 		}
 	}
@@ -8459,7 +8459,7 @@ cb_config_entry (char *buf, int line)
 
 	while (buf[i] != 0 && (isspace ((unsigned char)buf[i]) || buf[i] == ':' || buf[i] == '=')) i++;
 	if (buf[i] == '"'
-	||  buf[i] == '\'') {
+	 || buf[i] == '\'') {
 		qt = buf[i++];
 		for (j = 0; buf[i] != qt && buf[i] != 0; )
 			value[j++] = buf[i++];
@@ -8483,7 +8483,7 @@ cb_config_entry (char *buf, int line)
 	}
 	if (strcmp (value, "") == 0) {
 		if (strcasecmp (keyword, "include") != 0
-		&&  strcasecmp (keyword, "includeif")) {
+		 && strcasecmp (keyword, "includeif")) {
 			conf_runtime_error(1, _("WARNING - '%s' without a value - ignored!"), keyword);
 			return 2;
 		} else {

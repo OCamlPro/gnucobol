@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -32,7 +32,6 @@
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
 #endif
-#include <ctype.h>
 #include <time.h>
 #include <limits.h>
 

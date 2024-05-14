@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -27,12 +27,10 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <errno.h>
 #include <time.h>
 #ifdef	HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#include <math.h>
 
 /* include decimal definitions, allowing their use in common.h later */
 #ifdef	HAVE_GMP_H
