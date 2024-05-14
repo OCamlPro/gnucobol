@@ -1,4 +1,9 @@
 
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: update flags for building dynamic libraries on macOS
+	  (helps fixing testsuite issues on recent macOS versions)
+
 2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: use pkg-config (with a fallback to ncurses-config) for

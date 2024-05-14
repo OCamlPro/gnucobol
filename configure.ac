@@ -2210,7 +2210,7 @@ if test "$COB_USES_CLANG_ONLY" = yes; then
 	# don't warn for untyped function call - only possible if the interal repository would be enforced
 	curr_cflags="$CFLAGS"
 	CFLAGS="$CFLAGS -Wdeprecated-non-prototype $ERRWARN"
-	AC_MSG_CHECKING([for need to suppress clang ürototype warning])
+	AC_MSG_CHECKING([for need to suppress clang prototype warning])
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],
 		[COB_CFLAGS="$COB_CFLAGS -Wno-deprecated-non-prototype"; AC_MSG_RESULT([yes])],
 		[AC_MSG_RESULT([no])])
@@ -2307,7 +2307,7 @@ case $host_os in
 	fi
 	#COB_FIX_LIB=""
 	;;
-  darwin* | rhapsody*)
+  rhapsody*)
 	if test "$COB_USES_GCC" = yes; then
 		COB_SHARED_OPT="-bundle -flat_namespace -undefined suppress"
 	fi
