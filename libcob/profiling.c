@@ -1,6 +1,7 @@
 /*
    Copyright (C) 2023-2024 Free Software Foundation, Inc.
-   Written by Emilien Lemaire and Fabrice Le Fessant.
+   Written by Emilien Lemaire, Fabrice Le Fessant, David Declerck,
+   Simon Sobisch.
 
    This file is part of GnuCOBOL.
 
@@ -38,7 +39,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef	_WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -54,29 +55,29 @@ static struct cob_prof_module_list *prof_info_list ;
 
 /* We maintain a stack of the procedures entered as 3 different
  * arrays, with "current_idx" being the stack pointer. */
-static cob_ns_time              *start_times;
-static int                      *called_procedures;
-static struct cob_prof_module*  *called_runtimes;
+static cob_ns_time				*start_times;
+static int        				*called_procedures;
+static struct cob_prof_module	**called_runtimes;
 /* Current size of previous arrays */
 static int max_prof_depth;
 static int current_idx = -1;
 
 /* Whether profiling is active or not. */
-static int is_active = 0;
+static int is_active = -1;
 
 /* Which clock to use for clock_gettime (if available) */
 #ifdef HAVE_CLOCK_GETTIME
-static clockid_t clockid = CLOCK_REALTIME;
+static clockid_t	clockid = CLOCK_REALTIME;
 #endif
 
 /* Cached clock frequency on Windows */
 #ifdef _WIN32
-static LONGLONG qpc_freq = 0;
+static LONGLONG 	qpc_freq = 0;
 #endif
 
 /* Remember static and dynamic configuration */
-static cob_global               *cobglobptr = NULL;
-static cob_settings             *cobsetptr = NULL;
+static cob_global			*cobglobptr = NULL;
+static cob_settings			*cobsetptr = NULL;
 
 
 
@@ -148,12 +149,9 @@ prof_setup_clock ()
 static void
 prof_init_static ()
 {
-	static int init_done = 0;
-
-	if (!init_done && cobsetptr) {
+	if (is_active == -1 && cobsetptr) {
 		prof_setup_clock ();
 		is_active = cobsetptr->cob_prof_enable;
-		init_done = 1;
 	}
 }
 
@@ -161,7 +159,7 @@ void
 cob_init_prof (cob_global *lptr, cob_settings *sptr)
 {
 	cobglobptr = lptr;
-        cobsetptr  = sptr;
+	cobsetptr  = sptr;
 }
 
 struct cob_prof_module *
@@ -169,7 +167,9 @@ cob_prof_init_module (cob_module *module,
 		      struct cob_prof_procedure *procedures,
 		      size_t procedure_count)
 {
-	prof_init_static();
+	COB_UNUSED (module);
+
+	prof_init_static ();
 	if (is_active){
 		struct cob_prof_module *info;
 		struct cob_prof_module_list *item;
@@ -200,7 +200,8 @@ cob_prof_realloc_arrays (void)
 
 	if (max_prof_depth >= new_size){
 		int i;
-		cob_runtime_warning (_("[cob_prof] Profiling overflow at %d calls, aborting profiling."), current_idx);
+		cob_runtime_warning (_("[cob_prof] Profiling overflow at %d calls, aborting profiling."),
+			current_idx);
 		cob_runtime_warning (_("  Last 10 calls on stack:"));
 		for (i = 0; i < cob_min_int(10, current_idx); i++){
 			struct cob_prof_module *info = called_runtimes[current_idx-1-i];
@@ -307,6 +308,8 @@ void
 cob_prof_exit_section (struct cob_prof_module *info, int proc_idx)
 {
 	/* For now, nothing to do */
+	COB_UNUSED (info);
+	COB_UNUSED (proc_idx);
 }
 
 void
@@ -330,13 +333,13 @@ print_monotonic_time (FILE *file, cob_ns_time t) {
 
 	cob_ns_time nanoseconds = t ;
 	cob_ns_time milliseconds = nanoseconds / 1000000;
-	unsigned int seconds = milliseconds / 1000;
-	milliseconds = milliseconds - 1000 * seconds;
+	unsigned int seconds = (unsigned int)(milliseconds / 1000);
 
 	if (seconds > 1000) {
-		fprintf (file, "%d s", seconds);
+		fprintf (file, "%u s", seconds);
 	} else {
-		fprintf (file, "%d.%03Ld s", seconds, milliseconds);
+		milliseconds = milliseconds - 1000 * seconds;
+		fprintf (file, "%u.%03u s", seconds, (unsigned int)milliseconds);
 	}
 }
 
