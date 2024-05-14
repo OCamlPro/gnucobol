@@ -1,4 +1,8 @@
 
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* flag.def: fix macro usage for MSVC
+
 2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h: inclusion of cobc.h for types
