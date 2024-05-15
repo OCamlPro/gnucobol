@@ -879,14 +879,16 @@ cb_ppecho_copy_replace (const char *text, const char *token)
 	 && token_queue_is_empty(copy_repls->token_queue)
 	 && replace_repls->text_prequeue == NULL
 	 && token_queue_is_empty(replace_repls->token_queue)) {
-		return cb_ppecho_direct (text, token);
+		cb_ppecho_direct (text, token);
+		return;
 	}
 
 	if (copy_repls->replace_list == NULL
 	 && copy_repls->current_list == NULL
 	 && replace_repls->replace_list == NULL
 	 && replace_repls->current_list == NULL) {
-		return cb_ppecho_direct (text, token);
+		cb_ppecho_direct (text, token);
+		return;
 	}
 
 	add_text_to_replace (INIT_DEPTH copy_repls, 0, text, token);
