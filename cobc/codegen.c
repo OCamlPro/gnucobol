@@ -5558,7 +5558,7 @@ output_initialize_record_one (struct cb_initialize *p, cb_tree c,
 		multi VALUES */
 	if (p->val && f->values && CB_LIST_P (f->values)) {
 		const cb_tree save_val = p->val;
-		const int save_default = p->flag_default;
+		const unsigned char save_default = p->flag_default;
 		p->val = NULL;
 		p->flag_default = 1;
 		output_initialize_one (p, c);

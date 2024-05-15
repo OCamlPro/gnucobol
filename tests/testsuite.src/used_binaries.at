@@ -1102,9 +1102,9 @@ AT_DATA([prog.cob], [
 # dynamic call - program seems correct
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 
-# mismatch in function signature - we ignore the error output,
-# as it depends on the C compiler in use
-AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog.cob], [1], [], [ignore])
+# mismatch in function signature - we ignore the error output, as it depends
+# on the C compiler in use (and also stdout as some [MSVC] put errors there...)
+AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog.cob], [1], ignore, ignore)
 
 AT_DATA([prog2.cob], [
        IDENTIFICATION   DIVISION.
@@ -1123,6 +1123,8 @@ AT_DATA([filec.c], [
 COB_EXT_EXPORT void f (char *str, long num) {};
 ])
 AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0], [], [])
+# cater for environments that do not use a lib prefix
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o filec.$COB_MODULE_EXT], [0], [], [])
 
 
 # static build with correct function signature

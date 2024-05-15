@@ -1,4 +1,8 @@
 
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* profiling.c: fix compile warnings
+
 2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_numeric_display_cmp_zero): fixed overflow compare

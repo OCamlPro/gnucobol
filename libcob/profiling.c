@@ -318,6 +318,8 @@ cob_prof_goto (struct cob_prof_module *info)
 	int curr_proc;
 	struct cob_prof_module *curr_info;
 
+	COB_UNUSED (info);
+
 	if (!is_active) return;
 
 	curr_proc = called_procedures[current_idx];
@@ -350,17 +352,17 @@ cob_prof_print_line (
 	struct cob_prof_module *info,
 	int proc_idx)
 {
-	int i;
-	const char *module = NULL;
-	const char *section = NULL;
-	const char *paragraph = NULL;
-	const char *entry = NULL;
-	const char *kind = NULL;
-	const char *source_file;
-	int         line;
-	int         ncalls;
-	cob_ns_time time = 0;
-	struct cob_prof_procedure *proc;
+	int 	i;
+	const char	*module = NULL;
+	const char	*section = NULL;
+	const char	*paragraph = NULL;
+	const char	*entry = NULL;
+	const char	*kind = NULL;
+	const char	*source_file;
+	int 		line;
+	int 		ncalls;
+	cob_ns_time	time = 0;
+	struct cob_prof_procedure	*proc;
 
 	if (info){
 		time = info->total_times[proc_idx];
@@ -419,7 +421,7 @@ cob_prof_print_line (
 		entry = "entry";
 		kind = "kind";
 		source_file = "file";
-		ncalls = 0;
+		ncalls = line = 0;
 	}
 
 	for (i = 0; cobsetptr->cob_prof_format[i] != 0; i++) {
