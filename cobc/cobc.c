@@ -8193,6 +8193,9 @@ process_compile (struct filename *fn)
 		name = file_basename (fn->source, NULL);
 #ifndef	_MSC_VER
 		strcat (name, ".s");
+#else
+		/* earlier versions of msbuild don't recognize .s */
+		strcat (name, ".asm");
 #endif
 	}
 	size = strlen (name);
@@ -8207,6 +8210,7 @@ process_compile (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
+	/* TODO: we likely need to call ml.exe / ml64.exe */
 	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
