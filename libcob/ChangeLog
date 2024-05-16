@@ -1,4 +1,8 @@
 
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* profiling.c: fix compile warnings
+
 2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_numeric_display_cmp_zero): fixed overflow compare
@@ -18,11 +22,11 @@
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
             Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
-	* Makefile.am: add `profiling.c` to sources
 	* profiling.c: implement profiling functions
 	  (time spent in each procedure of the program)
-	* common.c: add 4 environments variables COB_PROF_FILE,
-	  COB_PROF_MAX_DEPTH,COB_PROF_ENABLE and COB_PROF_FORMAT
+	* Makefile.am: add profiling.c to sources
+	* common.c: add runtime settings COB_PROF_FILE, COB_PROF_MAX_DEPTH,
+	  COB_PROF_ENABLE and COB_PROF_FORMAT
 	* common.c (cob_expand_env_string): add $b (executable basename),
 	  $f (executable filename), $d (date in yyyymmdd) and
 	  $t (time in hhmmss)

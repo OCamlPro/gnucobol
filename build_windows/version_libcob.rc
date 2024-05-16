@@ -4,7 +4,7 @@
 #include "config.h"
 
 #include "../libcob/version.h"
-#define VCS_REF 5059
+#define VCS_REF 5257
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
@@ -44,7 +44,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "FileDescription",  PACKAGE_NAME " runtime, supporting most COBOL dialects with lots of extensions"
       VALUE "FileVersion",      STRINGIZE(__LIBCOB_VERSION)"."STRINGIZE(__LIBCOB_VERSION_MINOR)"."STRINGIZE(__LIBCOB_VERSION_PATCHLEVEL)"."STRINGIZE(VCS_REF)
       VALUE "InternalName",     "libcob"
-      VALUE "LegalCopyright",   "Copyright (C) 2001-2023 Free Software Foundation, Inc."
+      VALUE "LegalCopyright",   "Copyright (C) 2001-2024 Free Software Foundation, Inc."
       VALUE "LegalTrademarks",  "Runtime: GNU Lesser General Public License v3 - see COPYING.LESSER,\x0ADocumentation: GNU Free Documentation License."
       VALUE "OriginalFilename", "libcob.dll"
       VALUE "ProductName",      PACKAGE_NAME " runtime library"
@@ -55,7 +55,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "SpecialBuild",     ""
 
       /* Non-Standard entries */
-      VALUE "Build",            "May 2023"
+      VALUE "Build",            "May 2024"
       VALUE "Developer",        "Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Edward Hart and many others (see AUTHORS and THANKS)"
       VALUE "Support",          "https://www.gnu.org/software/gnucobol/"
       VALUE "Users",            "Unlimited."

@@ -1,4 +1,8 @@
 
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* replace.c: fix compile warnings and formatting
+
 2024-05-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* flag.def: fix macro usage for MSVC

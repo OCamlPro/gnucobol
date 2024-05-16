@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2023 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2024 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -347,13 +347,12 @@ if exist "%copy_from%\libvbisam.dll" (
    echo No ISAM handler found.
 )
 
-:: Copy the intl libraries.
+:: Copy the intl library.
 call :copy_lib_if_exists "intl"    %copy_to_bin% "libintl.dll"
-call :copy_lib_if_exists "intl"    %copy_to_bin% "libiconv.dll"
 
 :: Copy the cJSON library.
-call :copy_lib_if_exists "cJSON"   %copy_to_bin% "cjson.dll"
-call :copy_lib_if_exists "cJSON"   %copy_to_bin% "json-c.dll"
+call :copy_lib_if_exists "cJSON"   %copy_to_bin% "*cjson.dll"
+call :copy_lib_if_exists "JSON-c"  %copy_to_bin% "*json-c.dll"
 
 :: Copy the curses library.
 call :copy_lib_if_exists "curses"  %copy_to_bin% "pdcurses*.dll"
@@ -362,10 +361,10 @@ call :copy_lib_if_exists "curses"  %copy_to_bin% "pdcurses*.dll"
 call :copy_lib_if_exists "XML"     %copy_to_bin% "libxml2.dll"
 call :copy_lib_if_exists "zlib"    %copy_to_bin% "zlib*.dll"
 call :copy_lib_if_exists "charset" %copy_to_bin% "libcharset.dll"
-call :copy_lib_if_exists "lzma"    %copy_to_bin% "lzma*.dll"
+call :copy_lib_if_exists "lzma"    %copy_to_bin% "*lzma*.dll"
 
 :: Copy the iconv library.
-call :copy_lib_if_exists "libiconv.dll" %copy_to_bin% "iconv"
+call :copy_lib_if_exists "iconv"   %copy_to_bin% "libiconv.dll"
 
 goto :eof
 

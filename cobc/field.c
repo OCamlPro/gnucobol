@@ -2924,7 +2924,8 @@ unbounded_again:
 								p_fld = p_fld->parent;
 							}
 							/* calculated size */
-							c->occurs_max = (   (COB_MAX_UNBOUNDED_SIZE - size_above)
+							c->occurs_max = (int)(
+							                 (COB_MAX_UNBOUNDED_SIZE - size_above)
 							                  / (c->size * unbounded_parts)
 							                ) - 1;
 							/* maximum possible in ODO field */

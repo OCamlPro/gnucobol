@@ -4707,11 +4707,7 @@ validate_assign_name (struct cb_file * const f,
 void
 cb_validate_program_data (struct cb_program *prog)
 {
-	cb_tree			l, x;
-	struct cb_field		*p;
-	struct cb_field		*q;
-	struct cb_field		*field;
-	char			buff[COB_MINI_BUFF];
+	cb_tree		l, x;
 
 	prog->report_list = cb_list_reverse (prog->report_list);
 
@@ -4719,6 +4715,7 @@ cb_validate_program_data (struct cb_program *prog)
 		/* Set up LINE-COUNTER / PAGE-COUNTER */
 		struct cb_report	*rep = CB_REPORT (CB_VALUE (l));
 		if (rep->line_counter == NULL) {
+			char	buff[COB_MINI_BUFF];
 			snprintf (buff, (size_t)COB_MINI_MAX,
 				  "LINE-COUNTER %s", rep->cname);
 			x = cb_build_field (cb_build_reference (buff));
@@ -4730,6 +4727,7 @@ cb_validate_program_data (struct cb_program *prog)
 			CB_FIELD_ADD (prog->working_storage, CB_FIELD (x));
 		}
 		if (rep->page_counter == NULL) {
+			char	buff[COB_MINI_BUFF];
 			snprintf (buff, (size_t)COB_MINI_MAX,
 				  "PAGE-COUNTER %s", rep->cname);
 			x = cb_build_field (cb_build_reference (buff));
@@ -4777,7 +4775,7 @@ cb_validate_program_data (struct cb_program *prog)
 		l = cb_build_reference ("COB-CRT-STATUS");
 		x = cb_try_ref (l);
 		if (x == cb_error_node) {
-			p = CB_FIELD (cb_build_field (l));
+			struct cb_field		*p = CB_FIELD (cb_build_field (l));
 			p->usage = CB_USAGE_DISPLAY;
 			p->pic = cb_build_picture ("9(4)");
 			cb_validate_field (p);
@@ -4803,6 +4801,7 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Check ODO items */
 	for (l = cb_depend_check; l; l = CB_CHAIN (l)) {
 		struct cb_field		*depfld = NULL;
+		struct cb_field		*p, *q;
 		unsigned int		odo_level = 0, parent_is_pic_l;
 		cb_tree	xerr = NULL;
 		x = CB_VALUE (l);
@@ -4901,11 +4900,11 @@ cb_validate_program_data (struct cb_program *prog)
 	}
 
 	/* check alphabets */
-	for (l = current_program->alphabet_name_list; l; l = CB_CHAIN(l)) {
-		struct cb_alphabet_name *alphabet = CB_ALPHABET_NAME (CB_VALUE(l));
+	for (l = current_program->alphabet_name_list; l; l = CB_CHAIN (l)) {
+		struct cb_alphabet_name *alphabet = CB_ALPHABET_NAME (CB_VALUE (l));
 		if (alphabet->alphabet_type == CB_ALPHABET_LOCALE) {
 			x = cb_ref (alphabet->custom_list);
-			if (x != cb_error_node && !CB_LOCALE_NAME_P(x)) {
+			if (x != cb_error_node && !CB_LOCALE_NAME_P (x)) {
 				cb_error_x (alphabet->custom_list, _("'%s' is not a locale-name"),
 					cb_name(x));
 				alphabet->custom_list = cb_error_node;
@@ -4913,13 +4912,13 @@ cb_validate_program_data (struct cb_program *prog)
 		}
 	}
 
-	/* Resolve APPLY COMMIT  */
-	if (CB_VALID_TREE(prog->apply_commit)) {
-		for (l = prog->apply_commit; l; l = CB_CHAIN(l)) {
+	/* Resolve APPLY COMMIT */
+	if (CB_VALID_TREE (prog->apply_commit)) {
+		for (l = prog->apply_commit; l; l = CB_CHAIN (l)) {
 			cb_tree	l2 = CB_VALUE (l);
 			x = cb_ref (l2);
 			if (x != cb_error_node) {
-				for (l2 = prog->apply_commit; l2 != l; l2 = CB_CHAIN(l2)) {
+				for (l2 = prog->apply_commit; l2 != l; l2 = CB_CHAIN (l2)) {
 					if (cb_ref (CB_VALUE (l2)) == x) {
 						cb_error_x (l,
 							_("duplicate APPLY COMMIT target: '%s'"),
@@ -4942,7 +4941,7 @@ cb_validate_program_data (struct cb_program *prog)
 						_("APPLY COMMIT statement invalid for REPORT file"));
 				}
 			} else if (CB_FIELD_P (x)) {
-				field = CB_FIELD (x);
+				struct cb_field	*field = CB_FIELD (x);
 				if (field->storage != CB_STORAGE_WORKING
 				 && field->storage != CB_STORAGE_LOCAL) {
 					cb_error_x (l,
@@ -12339,7 +12338,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 					p = buff + f->size - 1;
 				}
 #if 0	/* Simon: negative zero back by disabling the following code
-´                 included without documentation by Roger in 2.0 */
+     	          included without documentation by Roger in 2.0 */
 				if (!n) {
 					/* Zeros */
 					/* EBCDIC - store sign otherwise nothing */
@@ -12476,7 +12475,6 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		/* early check for unsigned zero or non-signed field */
 		if (l->sign == 0
 		 || !f->pic->have_sign) {
-			int i;
 			for (i = 0; i < l->size; i++) {
 				if (l->data[i] != '0') {
 					break;
@@ -12530,8 +12528,8 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 {
 	const struct cb_field	*src_f = CB_FIELD_PTR (src);
 	const struct cb_field	*dst_f = CB_FIELD_PTR (dst);
-	int		src_size;
-	int		dst_size;
+	int 		src_size;
+	int 		dst_size;
 
 	if (dst_f->flag_any_length || src_f->flag_any_length) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
@@ -12616,9 +12614,9 @@ cb_tree
 cb_build_move (cb_tree src, cb_tree dst)
 {
 	struct cb_reference	*src_ref, *dst_ref, *x;
-	cb_tree	chks = NULL;
-	cb_tree	ret;
-	int	move_zero;
+	cb_tree 	chks = NULL;
+	cb_tree 	ret;
+	int 	move_zero;
 
 	if (CB_INVALID_TREE (src)
 	 || CB_INVALID_TREE (dst)) {

@@ -29,7 +29,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#ifdef	HAVE_STRINGS_H
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 #include <time.h>
@@ -85,6 +85,10 @@
 #define DEBUG_REPLACE
 #endif
 
+#ifdef DEBUG_REPLACE
+#define DEBUG_REPLACE
+#endif
+
 /* BEGIN implementation of a queue of text and token pairs. The
    implementation could easily be translated to any other type of
    data.
@@ -96,7 +100,7 @@
 
 struct cb_token_queue {
 	int maxsize;
-        int pos;
+	int pos;
 	int length;
 	const char **texts;
 	const char **tokens;
@@ -106,55 +110,52 @@ static struct cb_token_queue *token_queue_new(int initial_size)
 {
 	struct cb_token_queue *q;
 
-	/* assert (initial_size>0); */
+	/* assert (initial_size > 0); */
 	q = cobc_malloc (sizeof (struct cb_token_queue));
-        q->maxsize = initial_size;
-        q->pos = 0;
-        q->length = 0;
+	q->maxsize = initial_size;
+	q->pos = 0;
+	q->length = 0;
 	q->texts = cobc_malloc (sizeof(char*) * initial_size * 2);
-        q->tokens = q->texts + initial_size;
+	q->tokens = q->texts + initial_size;
 	return q;
 }
 
 static void token_queue_put(struct cb_token_queue *q, int strdup,
-                            const char *text,
-                            const char *token)
+			    const char *text,
+			    const char *token)
 {
 	int pos;
-        if (q->length == q->maxsize) {
+	if (q->length == q->maxsize) {
 		int maxsize = q->maxsize * 2;
 		int n = q->maxsize - q->pos;
-                const char **p =
-			cobc_malloc (sizeof(char *) * maxsize * 2);
-                const char **old_text = q->texts;
+		const char **p = cobc_malloc (sizeof(char *) * maxsize * 2);
+		const char **old_text = q->texts;
 
-                memcpy (p, q->texts + q->pos,
-			sizeof(char *) * n);
-                if (q->pos > 0) {
-			memcpy(p + n, q->texts,
-			       sizeof(char *) * ( q->maxsize - n ) );
-                }
-                q->texts = p;
+		memcpy (p, q->texts + q->pos, sizeof(char *) * n);
+		if (q->pos > 0) {
+			memcpy (p + n, q->texts,
+				sizeof(char *) * ( q->maxsize - n ) );
+		}
+		q->texts = p;
 
-                p += maxsize;
+		p += maxsize;
 
-                memcpy (p, q->tokens + q->pos,
-			sizeof(char *) * n);
-                if (q->pos > 0) {
-			memcpy(p + n, q->tokens,
-			       sizeof(char *) * ( q->maxsize - n ) );
-                }
-                q->tokens = p;
+		memcpy (p, q->tokens + q->pos, sizeof(char *) * n);
+		if (q->pos > 0) {
+			memcpy (p + n, q->tokens,
+				sizeof(char *) * ( q->maxsize - n ) );
+		}
+		q->tokens = p;
 
 		cobc_free (old_text);
-                q->pos = 0;
+		q->pos = 0;
 		q->maxsize = maxsize;
 	}
 	pos = (q->pos+q->length) % q->maxsize ;
-        q->texts[pos] = strdup ? cobc_plex_strdup(text) : text;
+	q->texts[pos] = strdup ? cobc_plex_strdup(text) : text;
 	if (token != NULL && strdup){
-		token = cobc_plex_strdup(token);
-        }
+		token = cobc_plex_strdup (token);
+	}
 	q->tokens[pos] = token;
 	q->length++;
 }
@@ -175,34 +176,34 @@ static
 void token_queue_peek (struct cb_token_queue *q, const char **text,
 			      const char **token) {
 	/* assert (q->length > 0); */
-        if (text)
+	if (text)
 		*text = q->texts[q->pos];
-        if (token)
+	if (token)
 		*token = q->tokens[q->pos];
 }
 
 static void token_queue_get(struct cb_token_queue *q, int index,
-                             const char **text,
+			     const char **text,
 			     const char **token) {
-  /* assert (q->length - index > 0); */
+	/* assert (q->length - index > 0); */
 	int pos = ( q->pos + index ) % q->maxsize;
-        if (text)
+	if (text)
 		*text = q->texts[pos];
-        if (token)
+	if (token)
 		*token = q->tokens[pos];
 }
 
 static
 void token_queue_take (struct cb_token_queue *q, const char **text,
-                            const char **token) {
+			    const char **token) {
 
 	/* assert (q->length > 0); */
 
-        if (text)
+	if (text)
 		*text = q->texts[q->pos];
-        if (token)
+	if (token)
 		*token = q->tokens[q->pos];
-        q->length--;
+	q->length--;
 	q->pos = (q->pos+1) % q->maxsize;
 }
 
@@ -210,7 +211,7 @@ static
 void token_queue_remove (struct cb_token_queue *q, int n)
 {
 	/* assert (q->length >= n); */
-        q->length -= n;
+	q->length -= n;
 	q->pos = ( q->pos + n ) % q->maxsize;
 }
 
@@ -218,14 +219,14 @@ static
 void token_queue_empty (struct cb_token_queue *q)
 {
 	/* assert (q->length >= n); */
-        q->length = 0;
-        q->pos = 0;
+	q->length = 0;
+	q->pos = 0;
 }
 
 static void token_queue_free(struct cb_token_queue *q) {
 	if (q){
 		cobc_free (q->texts);
-                cobc_free(q);
+		cobc_free (q);
 	}
 }
 
@@ -265,7 +266,7 @@ struct cb_replacement_state {
 	 * preprocessing could create larger words. Instead, we buffer
 	 * WORD tokens (and merge them) until another kind of token
 	 * (SPACE,DELIM,etc.) is received. */
-	const char              *text_prequeue ;
+	const char	      *text_prequeue ;
 
 	/* Current list of replacements specified in COPY-REPLACING or
 	 * REPLACE */
@@ -277,7 +278,7 @@ struct cb_replacement_state {
 
 	/* The next pass to which generated tokens should be passed
 	 * (either REPLACE pass or direct output */
-	enum cb_ppecho           ppecho ;
+	enum cb_ppecho	   ppecho ;
 
 #ifdef DEBUG_REPLACE
 	const char* name ;
@@ -313,7 +314,7 @@ char text_list_string[MAX_TEXT_LIST_STRING];
 /* In debugging mode only, stores a list of text/tokens into a
    preallocated string for easy display */
 #define STRING_OF_LIST(kind)						\
-static								        \
+static									\
 char * string_of_##kind##_list(const struct cb_##kind##_list *list)	\
 {									\
 	int pos = 1;							\
@@ -345,7 +346,7 @@ char * string_of_token_queue_after(struct cb_token_queue *q, int index)
 
 	for(; index < token_queue_length (q); index++){
 		size_t len;
-                const char *text;
+		const char *text;
 
 		token_queue_get (q,index, &text, NULL);
 		len = strlen (text);
@@ -401,9 +402,11 @@ ppecho_switch (WITH_DEPTH struct cb_replacement_state *repls,
 #ifdef DEBUG_REPLACE
 		fprintf (stderr, "%s ppecho_direct('%s')\n", DEPTH, text);
 #endif
-		return cb_ppecho_direct (text, token);
+		cb_ppecho_direct (text, token);
+		return;
 	case CB_PPECHO_REPLACE:
-		return ppecho_replace (MORE_DEPTH text, token);
+		ppecho_replace (MORE_DEPTH text, token);
+		return;
 	}
 }
 
@@ -431,8 +434,8 @@ ppecho_switch_token_queue (WITH_DEPTH struct cb_replacement_state *repls,
 		 DEPTH, repls->name, string_of_token_queue_after(q,0));
 #endif
 	int n;
-        const char *text;
-        const char *token;
+	const char *text;
+	const char *token;
 	for ( n = token_queue_length (q); n>0 ; --n){
 		token_queue_take (q, &text, &token);
 		ppecho_switch (MORE_DEPTH repls, text, token);
@@ -550,12 +553,12 @@ check_replace (WITH_DEPTH struct cb_replacement_state* repls,
 			int leading = (src->lead_trail == CB_REPLACE_LEADING);
 			unsigned int strict = src->strict;
 			const char *src_text = src->text_list->text;
-                        const char *text;
+			const char *text;
 
-                        token_queue_peek (repls->token_queue, &text, NULL);
+			token_queue_peek (repls->token_queue, &text, NULL);
 
 			if (is_leading_or_trailing (MORE_DEPTH leading,
-						    src_text,text,strict)){
+						  src_text,text,strict)){
 
 				/* MATCH */
 				/* remove the text from the current stream */
@@ -564,9 +567,9 @@ check_replace (WITH_DEPTH struct cb_replacement_state* repls,
 				/* perform a partial replacement on the text,
 				   and pass it to the next stream */
 				ppecho_leading_or_trailing (MORE_DEPTH repls,
-							    leading,
-							    src_text,text,
-							    new_text) ;
+						  leading,
+						  src_text,text,
+						  new_text) ;
 
 				/* restart replacements on this stream */
 				check_replace_after_match (MORE_DEPTH repls);
@@ -577,8 +580,8 @@ check_replace (WITH_DEPTH struct cb_replacement_state* repls,
 			/* we need to compare a list of texts from
 			 * this stream with a list of texts from the
 			 * replacement */
-                        check_replace_all(MORE_DEPTH repls,
-                                          new_text,
+			check_replace_all (MORE_DEPTH repls,
+					  new_text,
 					  src->text_list,
 					  replace_list);
 		}
@@ -608,9 +611,9 @@ check_replace_all (WITH_DEPTH
 {
 	int matched = 0;
 
-	while (1){
+	for (;;) {
 		const char* src_text;
-                const char *text;
+		const char *text;
 
 #ifdef DEBUG_REPLACE_TRACE
 		fprintf (stderr, "%scheck_replace_all(%s,",
@@ -624,7 +627,7 @@ check_replace_all (WITH_DEPTH
 		fprintf (stderr, "%s)\n", DEPTH);
 #endif
 
-		if (src==NULL){
+		if (!src){
 			/* MATCH */
 			/* pass the new text to the next stream */
 			ppecho_switch_text_list (MORE_DEPTH repls, new_text) ;
@@ -632,19 +635,19 @@ check_replace_all (WITH_DEPTH
 			 * been matched */
 			token_queue_remove (repls->token_queue, matched);
 			/* restart replacements on the stream */
-                        check_replace_after_match(MORE_DEPTH repls);
+			check_replace_after_match (MORE_DEPTH repls);
 			break;
-                }
+		}
 
-                src_text = src->text;
+		src_text = src->text;
 
 		if (is_space_or_nl(src_text[0])) {
 			/* skip spaces in replacement */
-                        src = src->next;
+			src = src->next;
 			continue;
 		}
 
-                if ( token_queue_length (repls->token_queue) == matched){
+		if ( token_queue_length (repls->token_queue) == matched){
 			/* PARTIAL MATCH, we have emptied the
 			 * list of texts, but there are still
 			 * texts in the replacement, so wait
@@ -654,29 +657,30 @@ check_replace_all (WITH_DEPTH
 			fprintf (stderr, "%s  check_replace_all --> PARTIAL MATCH\n", DEPTH);
 #endif
 			return;
-                }
+		}
 
 		token_queue_get(repls->token_queue, matched, &text, NULL);
-                matched++;
+		matched++;
 
-		if (is_space_or_nl(text[0])) {
+		if (is_space_or_nl(*text)) {
 			/* skip spaces in texts */
 			continue;
-                }
+		}
 
-		if (!strcasecmp (src_text,text)){
+		if (!strcasecmp (src_text, text)){
 			/* We could match one text from the stream
 			 * with a text from the replacement, so move
 			 * on to the next text */
 			src = src->next;
 			continue;
-                }
+		}
 
-                /* match failed, move on to the next potential
+		/* match failed, move on to the next potential
 		 * replacement */
-		return check_replace (
+		check_replace (
 			MORE_DEPTH repls,
 			replace_list);
+		return;
 	}
 }
 
@@ -688,7 +692,7 @@ check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls)
 		DEPTH, repls->name);
 #endif
 	repls->current_list = NULL;
-        while (!token_queue_is_empty(repls->token_queue)) {
+	while (!token_queue_is_empty(repls->token_queue)) {
 		const char *text;
 		const char *token;
 		token_queue_peek (repls->token_queue, &text, &token);
@@ -696,7 +700,8 @@ check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls)
 			ppecho_switch(MORE_DEPTH repls, text, token);
 			token_queue_remove (repls->token_queue, 1);
 		} else {
-			return do_replace(MORE_DEPTH repls);
+			do_replace(MORE_DEPTH repls);
+			return;
 		}
 	}
 }
@@ -716,7 +721,7 @@ do_replace (WITH_DEPTH struct cb_replacement_state* repls)
 			 * substitution. */
 			ppecho_switch_token_queue (MORE_DEPTH repls,
 						  repls->token_queue);
-                        token_queue_empty (repls->token_queue);
+			token_queue_empty (repls->token_queue);
 		} else {
 			check_replace (MORE_DEPTH repls, repls->replace_list);
 		}
@@ -803,7 +808,7 @@ add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
 		if ( token_queue_is_empty (repls->token_queue)
 		 && is_space_or_nl (text[0]) ) {
 			ppecho_switch (MORE_DEPTH repls, text, token);
-                } else {
+		} else {
 			/* use strdup if we are in the COPY phase */
 			int strdup = repls->ppecho == CB_PPECHO_REPLACE ? 1 : 0;
 #ifdef DEBUG_REPLACE_TRACE
@@ -811,7 +816,7 @@ add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
 				"%s add_text_to_replace () -> push_text()\n",
 				DEPTH);
 #endif
-                        token_queue_put (repls->token_queue,
+			token_queue_put (repls->token_queue,
 					 strdup, text, token);
 
 			do_replace (MORE_DEPTH repls);
@@ -867,21 +872,23 @@ cb_ppecho_copy_replace (const char *text, const char *token)
 	fprintf (stderr, "cb_ppecho_copy_replace('%s')\n", text);
 #endif
 
-        /* two fast path to avoid the streams if no replacements are
+	/* two fast path to avoid the streams if no replacements are
 	 * active */
 
-        if (is_space_or_nl(text[0]) &&
-            token_queue_is_empty(copy_repls->token_queue) &&
-	    replace_repls->text_prequeue == NULL &&
-            token_queue_is_empty(replace_repls->token_queue)) {
-		return cb_ppecho_direct (text, token);
+	if (is_space_or_nl(text[0])
+	 && token_queue_is_empty(copy_repls->token_queue)
+	 && replace_repls->text_prequeue == NULL
+	 && token_queue_is_empty(replace_repls->token_queue)) {
+		cb_ppecho_direct (text, token);
+		return;
 	}
 
-        if (copy_repls->replace_list == NULL
-            && copy_repls->current_list == NULL
-            && replace_repls->replace_list == NULL
-            && replace_repls->current_list == NULL) {
-		return cb_ppecho_direct (text, token);
+	if (copy_repls->replace_list == NULL
+	 && copy_repls->current_list == NULL
+	 && replace_repls->replace_list == NULL
+	 && replace_repls->current_list == NULL) {
+		cb_ppecho_direct (text, token);
+		return;
 	}
 
 	add_text_to_replace (INIT_DEPTH copy_repls, 0, text, token);
@@ -931,7 +938,7 @@ cb_set_copy_replacing_list (struct cb_replace_list *list)
 	copy_repls->replace_list = list;
 #ifdef DEBUG_REPLACE
 	fprintf (stderr, "set_copy_replacing_list(\n");
-	for(;list != NULL; list=list->next){
+	for (;list != NULL; list=list->next){
 		fprintf (stderr, "    repl = {\n");
 		fprintf (stderr, "       src = %s\n",
 			string_of_text_list(list->src->text_list));
@@ -939,7 +946,7 @@ cb_set_copy_replacing_list (struct cb_replace_list *list)
 			list->src->lead_trail);
 		fprintf (stderr, "       new_text = %s\n",
 			string_of_text_list(list->new_text));
-		fprintf (stderr, "           };\n");
+		fprintf (stderr, "    };\n");
 	}
 	fprintf (stderr, "   )\n");
 #endif
@@ -947,11 +954,11 @@ cb_set_copy_replacing_list (struct cb_replace_list *list)
 
 /* Called by pplex.l from pp_set_replace_list() after a REPLACE statement:
 
-                          list          is_pushpop
- REPLACE <repls>.         <> NULL       false
- REPLACE ALSO <repls>.    <> NULL       true
- REPLACE LAST OFF.        NULL          true
- REPLACE OFF.             NULL          false
+                          list       is_pushpop
+ REPLACE <repls>.         <> NULL    false
+ REPLACE ALSO <repls>.    <> NULL    true
+ REPLACE LAST OFF.        NULL       true
+ REPLACE OFF.             NULL       false
  */
 void
 cb_set_replace_list (struct cb_replace_list *list, const int is_pushpop)

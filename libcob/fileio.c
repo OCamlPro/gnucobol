@@ -918,7 +918,9 @@ bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 #endif
 )
 {
-	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA(k1);
+	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA (k1);
+	COB_UNUSED (db);
+
 	/* LCOV_EXCL_START */
 	if (col == NULL) {
 		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
@@ -2639,14 +2641,16 @@ again:
 			 && (cobsetptr->cob_ls_split)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
-				off_t	k = 1;
+				long	k;
 				n = getc (fp);
 				if (n == '\r') {
 					n = getc (fp);
-					k++;
+					k = -2;
+				} else {
+					k = -1;
 				}
 				if (n != '\n') {
-					fseek (fp, -k, SEEK_CUR);
+					fseek (fp, k, SEEK_CUR);
 					sts = COB_STATUS_06_READ_TRUNCATE;
 				}
 				break;
@@ -7396,7 +7400,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
 	fd2 = open (file_open_name, flag, COB_FILE_MODE);
 	if (fd2 == -1) {
-		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
+		ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		close (fd1);
 		return ret;
 	}
