@@ -1,0 +1,893 @@
+## Copyright (C) 2018-2020 Free Software Foundation, Inc.
+## Written by Edward Hart, Simon Sobisch
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+AT_SETUP([XML GENERATE general])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION       DIVISION.
+       PROGRAM-ID.          prog.
+
+       DATA                 DIVISION.
+       WORKING-STORAGE      SECTION.
+       01  namespace-str    PIC X(100)
+                            VALUE 'http://www.w3.org/1999/xhtml'.
+       01  prefix-str       PIC X(100) VALUE 'pre'.
+
+       01  out              PIC X(200).
+       01  rec.
+           03  a            PIC X(3) VALUE 'A'.
+           03  b            PIC X(3) VALUE ALL 'B'.
+           03  c.
+               05  d        PIC X(3) VALUE SPACES.
+
+       01  0SpecialTAGName  PIC X(3) VALUE "abc".
+
+       01  employee.
+           05 id            PIC 9(1)  value 1.
+           05 name          PIC X(10) value "Someone".
+           05 dept          PIC X(10) value "Marketing".
+
+       PROCEDURE            DIVISION.
+           XML GENERATE out
+               FROM rec
+               WITH XML-DECLARATION
+               NAME OF a IS 'alpha', d IS 'ABCDEF';
+               TYPE OF a IS ATTRIBUTE
+               SUPPRESS WHEN SPACES
+           IF out <> '<?xml version="1.0"?>' & X'0A'
+                   & '<rec alpha="A"><b>BBB</b></rec>'
+               DISPLAY 'Test 1 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM d
+           IF out <> '<d> </d>'
+               DISPLAY 'Test 2 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM c, WITH ATTRIBUTES.
+           IF out <> '<c d=" "/>'
+               DISPLAY 'Test 3 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           MOVE ALL 'A' TO a
+           MOVE ALL 'C' TO c
+           XML GENERATE out FROM rec, TYPE OF a IS CONTENT,
+               b IS CONTENT, d IS CONTENT
+           IF out <> '<rec>AAABBB<c>CCC</c></rec>'
+               DISPLAY 'Test 4 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM rec, TYPE OF a IS CONTENT, d IS CONTENT
+           IF out <> '<rec>AAA<b>BBB</b><c>CCC</c></rec>'
+               DISPLAY 'Test 5 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM c, NAMESPACE namespace-str,
+               NAMESPACE-PREFIX prefix-str
+           IF out <> '<pre:c xmlns:pre="http://www.w3.org/1999/xhtml">'-
+                   '<pre:d>CCC</pre:d></pre:c>'
+               DISPLAY 'Test 6 failed: ' FUNCTION TRIM (out)
+                   " " XML-CODE
+           END-IF
+
+           MOVE SPACES TO namespace-str, prefix-str
+           XML GENERATE out FROM c, NAMESPACE namespace-str,
+               NAMESPACE-PREFIX prefix-str
+           IF out <> '<c><d>CCC</d></c>'
+               DISPLAY 'Test 7 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           MOVE ALL "&" TO d
+           XML GENERATE out FROM d
+           IF out <> '<d>&amp;&amp;&amp;</d>'
+               DISPLAY 'Test 8 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           *> Test the case of the id in the DATA DIVISION is preserved.
+           XML GENERATE out FROM 0specialtagname
+           IF out <> '<_0SpecialTAGName>abc</_0SpecialTAGName>'
+               DISPLAY 'Test 9 failed: ' FUNCTION TRIM (out)
+           END-IF
+           .
+
+           *> Another test with mixed attributes and values
+           XML GENERATE out FROM EMPLOYEE TYPE OF ID IS ATTRIBUTE
+           IF out <> '<employee id="1">'-
+                     '<name>Someone</name>'-
+                     '<dept>Marketing</dept>'-
+                     '</employee>'
+               DISPLAY 'Test 10 failed: ' FUNCTION TRIM (out)
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE -fnot-reserved=ID prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML GENERATE SUPPRESS])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION       DIVISION.
+       PROGRAM-ID.          prog.
+
+       DATA                 DIVISION.
+       WORKING-STORAGE      SECTION.
+       01  a.
+           03  b            PIC X(3) VALUE SPACES.
+           03  c            PIC X(3) VALUE SPACES.
+
+       01  p.
+           03  q            PIC 9(3) VALUE ZERO.
+           03  r            PIC X(3) VALUE "abc".
+
+       01  x.
+           03  y.
+               05  z        PIC X VALUE SPACE.
+
+       01  out              PIC X(100).
+
+       PROCEDURE            DIVISION.
+           XML GENERATE out FROM a SUPPRESS WHEN SPACES
+           IF out <> '<a/>'
+               DISPLAY 'Test 1 failed: ' out
+           END-IF
+
+           XML GENERATE out FROM a SUPPRESS b WHEN SPACES
+           IF out <> '<a><c> </c></a>'
+               DISPLAY 'Test 2 failed: ' out
+           END-IF
+
+           XML GENERATE out FROM a SUPPRESS EVERY NONNUMERIC WHEN SPACES
+           IF out <> '<a/>'
+               DISPLAY 'Test 3 failed: ' out
+           END-IF
+
+           XML GENERATE out FROM p
+               WITH ATTRIBUTES
+               SUPPRESS EVERY ATTRIBUTE WHEN ZERO
+           IF out <> '<p r="abc"/>'
+               DISPLAY 'Test 4 failed: ' out
+           END-IF
+
+           XML GENERATE out FROM a
+               SUPPRESS c WHEN LOW-VALUES, c WHEN SPACES,
+                    c WHEN LOW-VALUES,
+                    EVERY ELEMENT WHEN SPACES
+           IF out <> '<a><c> </c></a>'
+               DISPLAY 'Test 5 failed: ' out
+           END-IF
+
+           MOVE HIGH-VALUES TO b
+           MOVE LOW-VALUES TO c
+           XML GENERATE out FROM a
+               SUPPRESS EVERY ELEMENT WHEN HIGH-VALUES OR LOW-VALUES
+                   OR ZEROES OR SPACES
+           IF out <> '<a/>'
+               DISPLAY 'Test 6 failed: ' out
+           END-IF
+
+           XML GENERATE out FROM x SUPPRESS z WHEN SPACE
+           IF out <> '<x/>'
+               DISPLAY 'Test 7 failed: ' out
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML GENERATE exceptions])
+AT_KEYWORDS([extensions XML-CODE])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  normal-str PIC X(200).
+
+       01  valid-rec.
+           03  a PIC XX VALUE "aa".
+           03  b PIC XX VALUE "bb".
+       01  short-str PIC X(5).
+       01  xml-len   PIC 99.
+
+       01  valid-namespace CONSTANT "http://www.w3.org/1999/xhtml".
+       01  invalid-namespace CONSTANT X"00".
+       01  invalid-prefix PIC XXX VALUE "#<>".
+       01  invalid-content PIC X(3) VALUE X"8AFF00".
+       01  count-in-too-small PIC 9.
+
+       PROCEDURE DIVISION.
+           XML GENERATE short-str FROM valid-rec
+               COUNT IN xml-len
+           IF short-str <> "<vali"
+                   OR xml-len <> 42
+                   OR XML-CODE <> 400
+               DISPLAY "Failed 1: " short-str " " xml-len " " XML-CODE
+           END-IF
+
+           XML GENERATE normal-str FROM valid-rec
+               NAMESPACE invalid-namespace
+           IF XML-CODE <> 416
+               DISPLAY "Failed 2: " FUNCTION TRIM (normal-str)
+                   " " XML-CODE
+           END-IF
+
+           XML GENERATE normal-str FROM invalid-content
+           IF normal-str <> '<hex.invalid-content>8aff00</hex.'-
+                            'invalid-content>'
+                   OR XML-CODE <> 417
+               DISPLAY "Failed 3: " FUNCTION TRIM (normal-str)
+                   " " XML-CODE
+           END-IF
+
+           XML GENERATE normal-str FROM valid-rec
+               NAMESPACE "http://www.w3.org/1999/xhtml"
+               NAMESPACE-PREFIX invalid-prefix
+           IF XML-CODE <> 419
+               DISPLAY "Failed 4: " FUNCTION TRIM (normal-str)
+                   " " XML-CODE
+           END-IF
+
+           XML GENERATE normal-str FROM valid-rec
+                ON EXCEPTION
+                    DISPLAY "Failed 5: EXCEPTION "
+                        FUNCTION TRIM (normal-str)
+                        " " XML-CODE
+                    END-DISPLAY
+                    *> The END-DISPLAY is important! Otherwise the DISPLAY will
+                    *> take the NOT ON EXCEPTION.
+
+                NOT ON EXCEPTION
+                    IF XML-CODE <> 0
+                        DISPLAY "Failed 5: NOT EXCEPTION "
+                            FUNCTION TRIM (normal-str)
+                            " " XML-CODE
+                    END-IF
+           END-XML
+
+           XML GENERATE short-str FROM valid-rec
+                NOT EXCEPTION
+                    DISPLAY "Failed 6: NOT EXCEPTION "
+                        FUNCTION TRIM (normal-str)
+                        " " XML-CODE
+                    END-DISPLAY
+
+                EXCEPTION
+                    IF XML-CODE <> 400
+                        DISPLAY "Failed 6: ON EXCEPTION "
+                            FUNCTION TRIM (normal-str)
+                            " " XML-CODE
+                    END-IF
+           END-XML
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML GENERATE record selection])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+# TO-DO: Add support for generating OCCURS items.
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  a.
+           03  b.
+               05 c1 PIC X(3) VALUE "abc".
+               05 c2 PIC 9(3) VALUE 0.
+           03  d REDEFINES b.
+               05  e PIC X(6).
+           03  f PIC X OCCURS 3 VALUE "f".
+
+       66  h RENAMES c1 THRU c2.
+
+       01  out PIC X(60).
+
+       PROCEDURE DIVISION.
+           *> XML GENERATE out FROM a
+           *> IF out <> '<a><b><c1>abc</c1><c2>0</c2></b><f>f</f><f>f</f>'-
+           *>          '<f>f</f></a>'
+           *>    DISPLAY "Failed 1: " FUNCTION TRIM (out)
+           *> END-IF
+
+           XML GENERATE out FROM d
+           IF out <> '<d><e>abc000</e></d>'
+               DISPLAY "Failed 2: " FUNCTION TRIM (out)
+           END-IF
+           .
+       END PROGRAM prog.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML GENERATE trimming])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+# TO-DO: Add support for IBM/COBOL 2002 edited floating point (e.g. PIC 9(3)E+99).
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  str                     PIC X(3) VALUE "ab".
+       01  num-edited              PIC 99.99 VALUE "01.00".
+       01  leading-zeroes          PIC 9(5) VALUE 5.
+       01  decimal-num             PIC 99V999 PACKED-DECIMAL VALUE 0.12.
+       01  signed-decimal-num      PIC S999 COMP-5 VALUE -1.
+       01  comp-5-item             PIC 9(10) COMP-5 VALUE 5.
+       01  index-item              INDEX.
+       01  float-short-item        FLOAT-SHORT VALUE 100.
+       01  float-long-item         FLOAT-LONG VALUE 123.0E-10.
+       01  just-item               PIC X(10) JUST.
+       01  integer-with-p          PIC 999PPP VALUE 10000.
+       01  decimal-with-p          PIC VPP99 VALUE 0.0004.
+
+       01  out                     PIC X(300).
+
+       PROCEDURE DIVISION.
+           XML GENERATE out FROM str
+           IF out <> '<str>ab</str>'
+               DISPLAY "Failed 1: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM num-edited
+           IF out <> '<num-edited>01.00</num-edited>'
+               DISPLAY "Failed 2: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM leading-zeroes
+           IF out <> '<leading-zeroes>5</leading-zeroes>'
+               DISPLAY "Failed 3: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM decimal-num
+           IF out <> '<decimal-num>0.120</decimal-num>'
+               DISPLAY "Failed 4: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM signed-decimal-num
+           IF out <> '<signed-decimal-num>-1</signed-decimal-num>'
+               DISPLAY "Failed 5: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM comp-5-item
+           IF out <> '<comp-5-item>5</comp-5-item>'
+               DISPLAY "Failed 6: " FUNCTION TRIM (out)
+           END-IF
+
+           SET index-item TO 500
+           XML GENERATE out FROM index-item
+           IF out <> '<index-item>500</index-item>'
+               DISPLAY "Failed 7: " FUNCTION TRIM (out)
+           END-IF
+
+           *> XML GENERATE out FROM float-short-item
+           *> IF out <> '<float-short-item>1E+02</float-short-item>'
+           *>     DISPLAY "Failed 8: " FUNCTION TRIM (out)
+           *> END-IF
+
+           *> XML GENERATE out FROM float-long-item
+           *> IF out <> '<float-long-item>123E-10</float-long-item>'
+           *>     DISPLAY "Failed 9: " FUNCTION TRIM (out)
+           *> END-IF
+
+           MOVE "blah " TO just-item
+           XML GENERATE out FROM just-item
+           IF out <> '<just-item>blah </just-item>'
+               DISPLAY "Failed 10: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM integer-with-p
+           IF out <> '<integer-with-p>10000</integer-with-p>'
+               DISPLAY "Failed 11: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM decimal-with-p
+           IF out <> '<decimal-with-p>0.0004</decimal-with-p>'
+               DISPLAY "Failed 12: " FUNCTION TRIM (out)
+           END-IF
+           .
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML DPC-IN-DATA directive])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+AT_DATA([prog.cob], [
+      $SET DPC-IN-DATA "JSON"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+           
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  num PIC 9V9 VALUE 1,1.
+       01  out PIC X(100).
+       
+       PROCEDURE DIVISION.
+           XML GENERATE out FROM num
+           IF out <> '<num>1.1</num>'
+              DISPLAY "Failed: " FUNCTION TRIM (out).
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML dpc-in-data config option])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+           
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  num PIC 9V9 VALUE 1,1.
+       01  out PIC X(100).
+       
+       PROCEDURE DIVISION.
+           XML GENERATE out FROM num
+           DISPLAY FUNCTION TRIM(out)
+           .
+])
+
+AT_CHECK([$COMPILE -fdpc-in-data=none prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<num>1.1</num>
+])
+AT_CHECK([$COMPILE -fdpc-in-data=xml prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<num>1,1</num>
+])
+AT_CHECK([$COMPILE  -fdpc-in-data=json prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<num>1.1</num>
+])
+AT_CHECK([$COMPILE  -fdpc-in-data=all prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<num>1,1</num>
+])
+AT_CLEANUP
+
+
+AT_SETUP([JSON GENERATE general])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION       DIVISION.
+       PROGRAM-ID.          prog.
+
+       DATA                 DIVISION.
+       WORKING-STORAGE      SECTION.
+       01  out              PIC X(200).
+       01  rec.
+           03  a            PIC X(3) VALUE 'A'.
+           03  b            PIC X(3) VALUE ALL 'B'.
+           03  c.
+               05  d        PIC X(3) VALUE SPACES.
+
+       PROCEDURE            DIVISION.
+           JSON GENERATE out
+               FROM rec
+               NAME OF a IS 'alpha', d IS 'ABCDEF'
+               SUPPRESS c
+           IF out <> '{"rec":{"alpha":"A","b":"BBB"}}'
+               DISPLAY 'Test 1 failed: ' FUNCTION TRIM (out)
+           END-IF
+           JSON GENERATE out
+               FROM rec
+               NAME OF a IS 'alpha', rec IS OMITTED
+               SUPPRESS c
+           IF out <> '{"alpha":"A","b":"BBB"}'
+               DISPLAY 'Test 2 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM d
+           IF out <> '{"d":" "}'
+               DISPLAY 'Test 3 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM c
+           IF out <> '{"c":{"d":" "}}'
+               DISPLAY 'Test 4 failed: ' FUNCTION TRIM (out)
+           END-IF
+
+           MOVE ALL QUOTES TO d
+           JSON GENERATE out FROM d
+           IF out <> '{"d":"\"\"\""}'
+               DISPLAY 'Test 5 failed: ' FUNCTION TRIM (out)
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([JSON GENERATE SUPPRESS])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION       DIVISION.
+       PROGRAM-ID.          prog.
+
+       DATA                 DIVISION.
+       WORKING-STORAGE      SECTION.
+       01  a.
+           03  b            PIC X(3) VALUE SPACES.
+           03  c            PIC X(3) VALUE SPACES.
+
+       01  x.
+           03  y.
+               05  z        PIC X VALUE SPACE.
+
+       01  out              PIC X(100).
+
+       PROCEDURE            DIVISION.
+           JSON GENERATE out FROM a SUPPRESS b
+           IF out <> '{"a":{"c":" "}}'
+               DISPLAY 'Test 1 failed: ' out
+           END-IF
+
+           JSON GENERATE out FROM x SUPPRESS z
+           IF out <> '{"x":{}}'
+               DISPLAY 'Test 2 failed: ' out
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([JSON GENERATE exceptions])
+AT_KEYWORDS([extensions JSON-CODE])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  normal-str PIC X(200).
+
+       01  valid-rec.
+           03  a PIC XX VALUE "aa".
+           03  b PIC XX VALUE "bb".
+       01  short-str PIC X(5).
+       01  json-len   PIC 99.
+
+       PROCEDURE DIVISION.
+           JSON GENERATE short-str FROM valid-rec
+               COUNT IN json-len
+           IF short-str <> '{"val'
+                   OR json-len <> 33
+                   OR JSON-CODE <> 1
+               DISPLAY "Failed 1: " short-str " " json-len " " JSON-CODE
+           END-IF
+
+           JSON GENERATE normal-str FROM valid-rec
+                ON EXCEPTION
+                    DISPLAY "Failed 2: EXCEPTION "
+                        FUNCTION TRIM (normal-str)
+                        " " JSON-CODE
+                    END-DISPLAY
+
+                NOT ON EXCEPTION
+                    IF JSON-CODE <> 0
+                        DISPLAY "Failed 2: NOT EXCEPTION "
+                            FUNCTION TRIM (normal-str)
+                            " " JSON-CODE
+                    END-IF
+           END-JSON
+
+           JSON GENERATE short-str FROM valid-rec
+                NOT EXCEPTION
+                    DISPLAY "Failed 3: NOT EXCEPTION "
+                        FUNCTION TRIM (normal-str)
+                        " " JSON-CODE
+                    END-DISPLAY
+
+                EXCEPTION
+                    IF JSON-CODE <> 1
+                        DISPLAY "Failed 3: ON EXCEPTION "
+                            FUNCTION TRIM (normal-str)
+                            " " JSON-CODE
+                    END-IF
+           END-JSON
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([JSON GENERATE record selection])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+# TO-DO: Add support for generating OCCURS items.
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  a.
+           03  b.
+               05 c1 PIC X(3) VALUE "abc".
+               05 c2 PIC 9(3) VALUE 0.
+           03  d REDEFINES b.
+               05  e PIC X(6).
+           03  f PIC X OCCURS 3 VALUE "f".
+
+       66  h RENAMES c1 THRU c2.
+
+       01  out PIC X(60).
+
+       PROCEDURE DIVISION.
+           *> JSON GENERATE out FROM a
+           *> IF out <> '<a><b><c1>abc</c1><c2>0</c2></b><f>f</f><f>f</f>'-
+           *>          '<f>f</f></a>'
+           *>    DISPLAY "Failed 1: " FUNCTION TRIM (out)
+           *> END-IF
+
+           JSON GENERATE out FROM d
+           IF out <> '{"d":{"e":"abc000"}}'
+               DISPLAY "Failed 2: " FUNCTION TRIM (out)
+           END-IF
+           .
+       END PROGRAM prog.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([JSON GENERATE trimming])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+# TO-DO: Add support for IBM/COBOL 2002 edited floating point (e.g. PIC 9(3)E+99).
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  str                     PIC X(3) VALUE "ab".
+       01  num-edited              PIC 99.99 VALUE "01.00".
+       01  leading-zeroes          PIC 9(5) VALUE 5.
+       01  decimal-nums.
+           03  decimal-num         PIC 99V999 PACKED-DECIMAL VALUE 0.12.
+           03  decimal-num-2       PIC 99V9 VALUE 0.1.
+       01  signed-decimal-num      PIC S999 COMP-5 VALUE -1.
+       01  comp-5-item             PIC 9(10) COMP-5 VALUE 5.
+       01  index-item              INDEX.
+       01  float-short-item        FLOAT-SHORT VALUE 100.
+       01  float-long-item         FLOAT-LONG VALUE 123.0E-10.
+       01  just-item               PIC X(10) JUST.
+       01  integer-with-p          PIC 999PPP VALUE 10000.
+       01  decimal-with-p          PIC VPP99 VALUE 0.0004.
+
+       01  out                     PIC X(300).
+
+       PROCEDURE DIVISION.
+           JSON GENERATE out FROM str
+           IF out <> '{"str":"ab"}'
+               DISPLAY "Failed 1: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM num-edited
+           IF out <> '{"num-edited":"01.00"}'
+               DISPLAY "Failed 2: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM leading-zeroes
+           IF out <> '{"leading-zeroes":5}'
+               DISPLAY "Failed 3: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM decimal-nums
+           IF out <> '{"decimal-nums":{"decimal-num":0.120,'-
+                     '"decimal-num-2":0.1}}'
+               DISPLAY "Failed 4: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM signed-decimal-num
+           IF out <> '{"signed-decimal-num":-1}'
+               DISPLAY "Failed 5: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM comp-5-item
+           IF out <> '{"comp-5-item":5}'
+               DISPLAY "Failed 6: " FUNCTION TRIM (out)
+           END-IF
+
+           SET index-item TO 500
+           JSON GENERATE out FROM index-item
+           IF out <> '{"index-item":500}'
+               DISPLAY "Failed 7: " FUNCTION TRIM (out)
+           END-IF
+
+           *> JSON GENERATE out FROM float-short-item
+           *> IF out <> '{"float-short-item":1E+02}'
+           *>     DISPLAY "Failed 8: " FUNCTION TRIM (out)
+           *> END-IF
+
+           *> JSON GENERATE out FROM float-long-item
+           *> IF out <> '{"float-long-item":123E-10}'
+           *>     DISPLAY "Failed 9: " FUNCTION TRIM (out)
+           *> END-IF
+
+           MOVE "blah " TO just-item
+           JSON GENERATE out FROM just-item
+           IF out <> '{"just-item":"blah "}'
+               DISPLAY "Failed 10: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM integer-with-p
+           IF out <> '{"integer-with-p":10000}'
+               DISPLAY "Failed 11: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM decimal-with-p
+           IF out <> '{"decimal-with-p":0.0004}'
+               DISPLAY "Failed 12: " FUNCTION TRIM (out)
+           END-IF
+           .
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([JSON DPC-IN-DATA directive])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+AT_DATA([prog.cob], [
+      $SET DPC-IN-DATA "JSON"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+           
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  num PIC 9V9 VALUE 1,1.
+       01  out PIC X(100).
+       
+       PROCEDURE DIVISION.
+           JSON GENERATE out FROM num
+           IF out <> '{"num":1,1}'
+              DISPLAY "Failed: " FUNCTION TRIM (out).
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([JSON dpc-in-data config option])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+           
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  num PIC 9V9 VALUE 1,1.
+       01  out PIC X(100).
+       
+       PROCEDURE DIVISION.
+           JSON GENERATE out FROM num
+           DISPLAY FUNCTION TRIM(out)
+           .
+])
+
+AT_CHECK([$COMPILE -fdpc-in-data=none prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[{"num":1.1}
+])
+AT_CHECK([$COMPILE -fdpc-in-data=xml prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[{"num":1.1}
+])
+AT_CHECK([$COMPILE  -fdpc-in-data=json prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[{"num":1,1}
+])
+AT_CHECK([$COMPILE  -fdpc-in-data=all prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[{"num":1,1}
+])
+AT_CLEANUP

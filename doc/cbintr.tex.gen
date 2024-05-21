@@ -1,0 +1,53 @@
+#!/usr/bin/awk -f
+# cbintr.tex.gen gnucobol/doc
+#
+# Copyright (C) 2020 Free Software Foundation, Inc.
+# Written by James K. Lowden
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+
+# Intrinsic Function              Implemented     Parameters
+# ABS                             Yes             1
+# ACOS                            Yes             1
+# ANNUITY                         Yes             2
+# ASIN                            Yes             1
+# ATAN                            Yes             1
+# ...
+
+BEGIN {
+    print "@multitable @columnfractions .40 .20 .40"
+    header_done = 0
+}
+
+# Skip blank lines
+! $1 {
+    next;
+}
+
+# First non-blank line is the header
+header_done++ == 0 {
+    print  "@headitem", $1 "\n@tab", $2, "@tab", $3
+    next
+}
+
+{
+    print  "@item @code{" $1 "}\n@tab", $2, "@tab", $3
+}
+
+END {
+    print  "@end multitable"
+}

@@ -1,0 +1,428 @@
+/*
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
+
+   This file is part of GnuCOBOL.
+
+   The GnuCOBOL compiler is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation, either version 3 of the
+   License, or (at your option) any later version.
+
+   GnuCOBOL is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* Definitions of variables in config/xxx.conf files
+   Possible override via -f(no-)tag or -ftag=value
+ */
+
+/* Compiler configuration defines */
+
+/* String (label) flags */
+/* CB_CONFIG_STRING    (var, name, help) */
+
+/* Flags with required parameter */
+/* Integer flags */
+/* CB_CONFIG_INT		(var, name, min, max, option-help, help) */
+/* Support flags */
+/* CB_CONFIG_SUPPORT    (var, name, help) */
+
+/* Normal boolean flags */
+/* CB_CONFIG_BOOLEAN    (var, name, help) */
+
+/* Flags with required parameter and special values */
+/* CB_CONFIG_ANY		(type, var, name, help) */
+
+
+/* String (label) flags */
+
+CB_CONFIG_STRING (cb_config_name, "name", NULL) /* Configuration Name, any value */
+
+CB_CONFIG_STRING (cb_reserved_words, "reserved-words", _("use of complete/fixed reserved words")) /* Reserved word list, filename */
+
+/* Integer flags */
+
+CB_CONFIG_INT (cb_tab_width, "tab-width", 1, 12, CB_XRANGE(1,12),
+	_("set number of spaces that are assumed for tabs"))
+
+CB_CONFIG_INT (cb_config_text_column, "text-column", 72, 255, CB_XRANGE(72,255),
+	_("set right margin for source (fixed format only)"))
+
+CB_CONFIG_INT (cb_pic_length, "pic-length", 1, COB_MINI_MAX, _("<number>"),
+	_("maximum number of characters allowed in the PICTURE character-string"))
+
+CB_CONFIG_INT (cb_word_length, "word-length", 1, COB_MAX_WORDLEN, CB_XRANGE(1,COB_MAX_WORDLEN),
+	_("maximum word-length for COBOL (= programmer defined) words"))
+
+CB_CONFIG_INT (cb_lit_length, "literal-length", 1, COB_MAX_LITERAL_LEN, _("<number>"),
+	_("maximum literal size in general"))
+
+CB_CONFIG_INT (cb_numlit_length, "numeric-literal-length", 1, COB_MAX_DIGITS, CB_XRANGE(1,COB_MAX_DIGITS),
+	_("maximum numeric literal size"))
+
+CB_CONFIG_SINT (cb_default_byte, "defaultbyte", -1, 255, _("<number>"),
+	_("initialize fields without VALUE to <number>\n"
+	  "                        * decimal 0..255 representing a character\n"
+	  "                        * default: initialize to picture"))
+
+CB_CONFIG_INT (cb_align_record, "align-record", 0, 256, CB_XRANGE(0,256),
+	_("align WORKING-STORAGE/LOCAL-STORAGE record on boundary"))
+
+CB_CONFIG_INT (cb_keycompress, "keycompress", 0, 16, CB_XRANGE(0,16),
+	_("do ISAM indexes with duplicates get compressed"))
+
+CB_CONFIG_BOOLEAN (cb_align_opt, "align-opt",
+	_("align like MF OPT, Default: false (Like MF ALIGN=FIXED)"))
+
+
+/* Flags with required parameter and special values */
+
+CB_CONFIG_ANY (enum cb_std_def, cb_std_define, "standard-define", NULL) /* Used Standard (set via -std) */
+
+CB_CONFIG_ANY (enum cb_binary_size_options, cb_binary_size, "binary-size",
+	_("binary byte size - defines the allocated bytes according to PIC, may be one of: 2-4-8, 1-2-4-8, 1--8"))
+
+CB_CONFIG_ANY (enum cb_binary_byteorder_options, cb_binary_byteorder, "binary-byteorder",
+	_("binary byte order, may be one of: native, big-endian"))
+
+CB_CONFIG_ANY (enum cb_assign_type, cb_assign_type_default, "assign-clause",
+	_("how to interpret 'ASSIGN word': as 'ASSIGN EXTERNAL word' or 'ASSIGN DYNAMIC word', may be one of: dynamic, external, ibm (= external), mf (= dynamic)"))
+
+CB_CONFIG_ANY (enum cb_screen_clauses_rules, cb_screen_section_clauses, "screen-section-rules",
+	_("which compiler's rules to apply to SCREEN SECTION item clauses, may be one of: acu, gc, mf, rm, std, xopen"))
+
+CB_CONFIG_ANY (enum cb_dpc_in_data_options, cb_dpc_in_data, "dpc-in-data",
+	_("whether DECIMAL-POINT IS COMMA has effect in XML/JSON GENERATE, may be one of: none, xml, json, all"))
+
+/* Normal boolean flags */
+
+CB_CONFIG_BOOLEAN (cb_filename_mapping, "filename-mapping",
+	_("resolve file names at run time using environment variables"))
+
+CB_CONFIG_BOOLEAN (cb_pretty_display, "pretty-display",
+	_("alternate formatting of numeric fields"))
+
+CB_CONFIG_BOOLEAN (cb_binary_truncate, "binary-truncate",
+	_("numeric truncation according to ANSI"))
+
+CB_CONFIG_BOOLEAN (cb_complex_odo, "complex-odo",
+	_("allow complex OCCURS DEPENDING ON"))
+
+CB_CONFIG_BOOLEAN (cb_odoslide, "odoslide",
+	_("adjust items following OCCURS DEPENDING (implies complex-odo)"))
+
+CB_CONFIG_BOOLEAN (cb_indirect_redefines, "indirect-redefines",
+	_("allow REDEFINES to other than last equal level number"))
+
+CB_CONFIG_BOOLEAN (cb_larger_redefines_ok, "larger-redefines-ok", /* TO-DO: change to CB_CONFIG_SUPPORT */
+	_("allow larger REDEFINES items"))
+
+CB_CONFIG_BOOLEAN (cb_relaxed_syntax_checks, "relax-syntax-checks",
+	_("allow certain syntax variations (e.g. REDEFINES position)"))
+
+CB_CONFIG_BOOLEAN (cb_ref_mod_zero_length, "ref-mod-zero-length",
+	_("allow zero length reference-modification (only changed with EC-BOUND-REF-MOD active)"))
+
+CB_CONFIG_BOOLEAN (cb_relax_level_hierarchy, "relax-level-hierarchy",
+	_("allow non-matching level numbers"))
+
+CB_CONFIG_BOOLEAN (cb_local_implies_recursive, "local-implies-recursive",
+	_("LOCAL-STORAGE SECTION implies RECURSIVE attribute"))
+
+CB_CONFIG_BOOLEAN (cb_sticky_linkage, "sticky-linkage",
+	_("LINKAGE SECTION items remain allocated between invocations"))
+
+CB_CONFIG_BOOLEAN (cb_move_ibm, "move-ibm",	/* counterpart for MF's BYTE-MODE-MOVE */
+	_("MOVE operates as on IBM (left to right, byte by byte), otherwise no propagating move"))
+
+CB_CONFIG_BOOLEAN (cb_perform_osvs, "perform-osvs",
+	_("exit point of any currently executing perform is recognized if reached"))
+
+CB_CONFIG_BOOLEAN (cb_arithmetic_osvs, "arithmetic-osvs",
+	_("limit precision in intermediate results to precision of final result (less accurate)"))
+
+CB_CONFIG_BOOLEAN (cb_constant_folding, "constant-folding",
+	_("evaluate constant expressions at compile time"))
+
+CB_CONFIG_BOOLEAN (cb_host_sign, "hostsign",
+	_("allow hexadecimal value 'F' for NUMERIC test of signed PACKED DECIMAL field"))
+
+CB_CONFIG_BOOLEAN (cb_program_name_redefinition, "program-name-redefinition",
+	_("program names don't lead to a reserved identifier"))
+
+CB_CONFIG_BOOLEAN (cb_accept_update, "accept-update",
+	_("set WITH UPDATE clause as default for ACCEPT dest-item, instead of WITH NO UPDATE"))
+
+CB_CONFIG_BOOLEAN (cb_accept_auto, "accept-auto",
+	_("set WITH AUTO clause as default for ACCEPT dest-item, instead of WITH TAB"))
+
+CB_CONFIG_BOOLEAN (cb_console_is_crt, "console-is-crt",
+	_("assume CONSOLE IS CRT if not set otherwise"))
+
+CB_CONFIG_BOOLEAN (cb_no_echo_means_secure, "no-echo-means-secure",
+	_("NO-ECHO hides input with asterisks like SECURE"))
+
+CB_CONFIG_BOOLEAN (cb_line_col_zero_default, "line-col-zero-default",
+	_("assume a field DISPLAY starts at LINE 0 COL 0 (i.e. at the cursor), not LINE 1 COL 1"))
+
+CB_CONFIG_BOOLEAN (cb_report_column_plus, "report-column-plus",
+	_("in a REPORT COLUMN may have PLUS num, + num, or +num"))
+
+CB_CONFIG_BOOLEAN (cb_display_special_fig_consts, "display-special-fig-consts",
+	_("special behaviour of DISPLAY SPACE/ALL X'01'/ALL X'02'/ALL X'07'"))
+
+CB_CONFIG_BOOLEAN (cb_binary_comp_1, "binary-comp-1",
+	_("COMP-1 is a 16-bit signed integer"))
+
+CB_CONFIG_BOOLEAN (cb_numeric_pointer, "numeric-pointer",
+	_("POINTER is a 64-bit unsigned integer"))
+
+CB_CONFIG_BOOLEAN (cb_move_nonnumlit_to_numeric_is_zero, "move-non-numeric-lit-to-numeric-is-zero",
+	_("imply zero in move of non-numeric literal to numeric items"))
+
+CB_CONFIG_BOOLEAN (cb_implicit_assign_dynamic_var, "implicit-assign-dynamic-var",
+	_("implicitly define a variable if an ASSIGN DYNAMIC does not match any data item"))
+
+/* Support flags */
+
+CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
+	_("comment paragraphs in IDENTIFICATION DIVISION (AUTHOR, DATE-WRITTEN, ...)"))
+
+CB_CONFIG_SUPPORT (cb_memory_size_clause, "memory-size-clause",
+	_("MEMORY-SIZE clause"))
+
+CB_CONFIG_SUPPORT (cb_multiple_file_tape_clause, "multiple-file-tape-clause",
+	_("MULTIPLE-FILE-TAPE clause"))
+
+CB_CONFIG_SUPPORT (cb_label_records_clause, "label-records-clause",
+	_("LABEL-RECORDS clause"))
+
+CB_CONFIG_SUPPORT (cb_value_of_clause, "value-of-clause",
+	_("VALUE-OF clause"))
+
+CB_CONFIG_SUPPORT (cb_data_records_clause, "data-records-clause",
+	_("DATA-RECORDS clause"))
+
+CB_CONFIG_SUPPORT (cb_top_level_occurs_clause, "top-level-occurs-clause",
+	_("OCCURS clause on top-level"))
+
+#if 0 /* Simon: deemed to be not neccessary, see related bug #421 */
+CB_CONFIG_SUPPORT (cb_select_working, "select-working",
+	_("ASSIGN USING items outside of WORKING-STORAGE"))
+#endif
+
+CB_CONFIG_SUPPORT (cb_same_as_clause, "same-as-clause",
+	_("SAME AS clause"))
+
+CB_CONFIG_SUPPORT (cb_type_to_clause, "type-to-clause",
+	_("TYPE TO clause"))
+
+CB_CONFIG_SUPPORT (cb_usage_type_name, "usage-type",
+	_("USAGE type-name"))
+
+CB_CONFIG_SUPPORT (cb_synchronized_clause, "synchronized-clause",
+	_("SYNCHRONIZED clause"))
+
+CB_CONFIG_SUPPORT (cb_sync_left_right, "sync-left-right",
+	_("LEFT/RIGHT phrases in SYNCHRONIZED clause"))
+
+CB_CONFIG_SUPPORT (cb_special_names_clause, "special-names-clause",
+	_("SPECIAL-NAMES clause"))
+
+CB_CONFIG_SUPPORT (cb_goto_statement_without_name, "goto-statement-without-name",
+	_("GOTO statement without name"))
+
+CB_CONFIG_SUPPORT (cb_stop_literal_statement, "stop-literal-statement",
+	_("STOP-literal statement"))
+
+CB_CONFIG_SUPPORT (cb_stop_identifier_statement, "stop-identifier-statement",
+	_("STOP-identifier statement"))
+
+CB_CONFIG_SUPPORT (cb_debugging_mode, "debugging-mode",
+	_("DEBUGGING MODE and debugging indicator"))
+
+CB_CONFIG_SUPPORT (cb_use_for_debugging, "use-for-debugging",
+	"USE FOR DEBUGGING")
+
+CB_CONFIG_SUPPORT (cb_padding_character_clause, "padding-character-clause",
+	_("PADDING CHARACTER clause"))
+
+CB_CONFIG_SUPPORT (cb_next_sentence_phrase, "next-sentence-phrase",
+	_("NEXT SENTENCE phrase"))
+
+CB_CONFIG_SUPPORT (cb_listing_statements, "listing-statements",
+	_("listing-directive statements EJECT, SKIP1, SKIP2, SKIP3"))
+
+CB_CONFIG_SUPPORT (cb_title_statement, "title-statement",
+	_("listing-directive statement TITLE"))
+
+CB_CONFIG_SUPPORT (cb_entry_statement, "entry-statement",
+	_("ENTRY statement"))
+
+CB_CONFIG_SUPPORT (cb_move_noninteger_to_alphanumeric, "move-noninteger-to-alphanumeric",
+	_("move noninteger to alphanumeric"))
+
+CB_CONFIG_BOOLEAN (cb_occurs_max_length_without_subscript, "occurs-max-length-without-subscript",
+	_("occurs max length without subscript"))
+
+CB_CONFIG_BOOLEAN (cb_length_in_data_division, "length-in-data-division",
+	_("length in data division")) 
+
+CB_CONFIG_SUPPORT (cb_move_fig_constant_to_numeric, "move-figurative-constant-to-numeric",
+	_("move figurative constants to numeric"))
+
+CB_CONFIG_SUPPORT (cb_move_fig_space_to_numeric, "move-figurative-space-to-numeric",
+	_("move figurative constant SPACE to numeric"))
+
+CB_CONFIG_SUPPORT (cb_move_fig_quote_to_numeric, "move-figurative-quote-to-numeric",
+	_("move figurative constant QUOTE to numeric"))
+
+CB_CONFIG_SUPPORT (cb_odo_without_to, "odo-without-to",
+	_("OCCURS DEPENDING ON without to"))
+
+CB_CONFIG_SUPPORT (cb_odo_last_varlen, "odo-last-varlen",
+	_("OCCURS DEPENDING ON last of record then variable lenght"))
+
+CB_CONFIG_SUPPORT (cb_section_segments, "section-segments",
+	_("section segments"))
+
+CB_CONFIG_SUPPORT (cb_alter_statement, "alter-statement",
+	_("ALTER statement"))
+
+CB_CONFIG_SUPPORT (cb_call_overflow, "call-overflow",
+	_("OVERFLOW clause for CALL"))
+
+CB_CONFIG_SUPPORT (cb_numeric_boolean, "numeric-boolean",
+	_("boolean literals (B'1010')"))
+
+CB_CONFIG_SUPPORT (cb_hexadecimal_boolean, "hexadecimal-boolean",
+	_("hexadecimal-boolean literals (BX'A')"))
+
+CB_CONFIG_SUPPORT (cb_national_literals, "national-literals",
+	_("national literals (N'UTF-16 string')"))
+
+CB_CONFIG_SUPPORT (cb_national_hex_literals, "hexadecimal-national-literals",
+	_("hexadecimal-national literals (NX'265E')"))
+
+CB_CONFIG_SUPPORT (cb_nationalc_literals, "national-character-literals",
+	_("non-standard national literals (NC'UTF-16 string')"))
+
+CB_CONFIG_SUPPORT (cb_hp_octal_literals, "hp-octal-literals",
+	_("HP COBOL octal literals (%377)"))
+
+CB_CONFIG_SUPPORT (cb_acu_literals, "acu-literals",
+	_("ACUCOBOL-GT literals (#B #O #H #X)"))
+
+CB_CONFIG_SUPPORT (cb_word_continuation, "word-continuation",
+	_("continuation of COBOL words"))
+
+CB_CONFIG_SUPPORT (cb_not_exception_before_exception, "not-exception-before-exception",
+	_("NOT ON EXCEPTION before ON EXCEPTION"))
+
+CB_CONFIG_SUPPORT (cb_accept_display_extensions, "accept-display-extensions",
+	_("extensions to ACCEPT and DISPLAY"))
+
+CB_CONFIG_SUPPORT (cb_renames_uncommon_levels, "renames-uncommon-levels",
+	_("RENAMES of 01-, 66- and 77-level items"))
+
+CB_CONFIG_SUPPORT (cb_symbolic_constant, "symbolic-constant",
+	_("constants defined in SPECIAL-NAMES"))
+
+CB_CONFIG_SUPPORT (cb_constant_78, "constant-78",
+	_("constant with level 78 item (note: has left to right precedence in expressions)"))
+
+CB_CONFIG_SUPPORT (cb_constant_01, "constant-01",
+	_("constant with level 01 CONSTANT AS/FROM item")) /* COBOL 2002+ */
+
+CB_CONFIG_SUPPORT (cb_perform_varying_without_by, "perform-varying-without-by",
+	_("PERFORM VARYING without BY phrase (implies BY 1)"))
+
+CB_CONFIG_SUPPORT (cb_reference_out_of_declaratives, "reference-out-of-declaratives",
+	_("references to sections not in DECLARATIVES from within DECLARATIVES"))
+
+CB_CONFIG_SUPPORT (cb_reference_bounds_check, "reference-bounds-check",
+	_("reference modification strict bounds check"))
+
+CB_CONFIG_SUPPORT (cb_program_prototypes, "program-prototypes",
+	_("CALL/CANCEL with program-prototype-name"))
+
+CB_CONFIG_SUPPORT (cb_call_convention_mnemonic, "call-convention-mnemonic",
+	_("specifying call-convention by mnemonic"))
+
+CB_CONFIG_SUPPORT (cb_call_convention_linkage, "call-convention-linkage",
+	_("specifying call-convention by WITH ... LINKAGE"))
+
+CB_CONFIG_SUPPORT (cb_numeric_value_for_edited_item, "numeric-value-for-edited-item",
+	_("numeric literals in VALUE clause of numeric-edited items"))
+
+CB_CONFIG_SUPPORT (cb_incorrect_conf_sec_order, "incorrect-conf-sec-order",
+	_("incorrect order of CONFIGURATION SECTION paragraphs")) /* OpenCOBOL/GnuCOBOL extension */
+
+CB_CONFIG_SUPPORT (cb_define_constant_directive, "define-constant-directive",
+	_("allow >> DEFINE CONSTANT var AS literal")) /* OpenCOBOL/GnuCOBOL extension */
+
+CB_CONFIG_SUPPORT (cb_free_redefines_position, "free-redefines-position",
+	_("REDEFINES clause not following entry-name in definition"))
+
+CB_CONFIG_SUPPORT (cb_records_mismatch_record_clause, "records-mismatch-record-clause",
+	_("record sizes does not match RECORD clause"))
+
+CB_CONFIG_SUPPORT (cb_record_delimiter, "record-delimiter",
+	_("RECORD DELIMITER clause"))
+
+CB_CONFIG_SUPPORT (cb_sequential_delimiters, "sequential-delimiters",
+	_("BINARY-SEQUENTIAL and LINE-SEQUENTIAL phrases in RECORD DELIMITER"))
+
+CB_CONFIG_SUPPORT (cb_record_delim_with_fixed_recs, "record-delim-with-fixed-recs",
+	_("RECORD DELIMITER clause on file with fixed-length records"))
+
+CB_CONFIG_SUPPORT (cb_sequential_advancing, "record-sequential-advancing",
+	_("SEQUENTIAL with WRITE ADVANCING phrases"))
+
+CB_CONFIG_SUPPORT (cb_missing_statement, "missing-statement",
+	_("missing statement (e.g. empty IF / PERFORM)"))
+
+CB_CONFIG_SUPPORT (cb_zero_length_lit, "zero-length-literals",
+	_("zero-length literals, e.g. '' and \"\""))
+
+CB_CONFIG_SUPPORT (cb_xml_generate_extra_phrases, "xml-generate-extra-phrases",
+	_("XML GENERATE's phrases other than COUNT IN"))
+
+CB_CONFIG_SUPPORT (cb_continue_after, "continue-after",
+	_("AFTER phrase in CONTINUE statement"))
+
+CB_CONFIG_SUPPORT (cb_goto_entry, "goto-entry",
+	_("ENTRY FOR GOTO and GOTO ENTRY statements"))
+
+CB_CONFIG_SUPPORT (cb_depending_on_not_fixed, "depending-on-not-fixed", _("depending-on-not-fixed"))
+
+CB_CONFIG_SUPPORT (cb_binary_sync_clause, "binary-sync-clause",
+	_("BINARY-SHORT/LONG/DOUBLE SYNCHRONIZED clause"))
+
+CB_CONFIG_SUPPORT (cb_nonnumeric_with_numeric_group_usage, "nonnumeric-with-numeric-group-usage",
+	_("Non-numeric item with numeric group USAGE clause"))
+
+CB_CONFIG_SUPPORT (cb_assign_variable, "assign-variable",
+	_("ASSIGN [TO] variable in SELECT"))
+
+CB_CONFIG_SUPPORT (cb_assign_using_variable, "assign-using-variable",
+	_("ASSIGN USING/VARYING variable in SELECT"))
+
+CB_CONFIG_SUPPORT (cb_assign_ext_dyn, "assign-ext-dyn",
+	_("ASSIGN EXTERNAL/DYNAMIC in SELECT"))
+
+CB_CONFIG_SUPPORT (cb_assign_disk_from, "assign-disk-from",
+	_("ASSIGN DISK FROM variable in SELECT"))
+
+CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
+	_("VSAM status in FILE STATUS"))
+		
+CB_CONFIG_SUPPORT (cb_self_call_recursive, "self-call-recursive",
+	_("CALL to own PROGRAM-ID implies RECURSIVE attribute"))
+

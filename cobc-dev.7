@@ -1,0 +1,280 @@
+.Dd 1 April 2019
+.Dt COBC-DEV \&7 "cobc Development"
+.Os Linux 
+.Sh NAME
+.Nm cobc-dev
+.Nd guide to cobc/libcob development (in C)
+.Sh DESCRIPTION
+.ds project GnuCOBOL
+\*[project] consists of a compiler,
+.Em cobc ,
+and runtime library,
+.Em libcob .
+The compiler, in the
+.Pa cobc
+directory, consists of
+a preprocessor (pplex.l and ppparse.y),
+a parser (scanner.l and parser.y), and
+a code generator (codegen.c, etc.)\0
+The runtime library code is in the
+.Pa libcob
+directory.
+.Pp
+This document describes the standards and some conventions used in the C source code.  Please note this does not
+include the C code
+.Em generated
+by the compiler, only the compilation of the compiler and its runtime library.  
+.Pp
+This document does not address cosmetic choices, such as indentation and brace placement.  For that, a discussion can be found at 
+https://sourceforge.net/p/open-cobol/wiki/Style%20guide.
+A more comprehensive and widely adopted style guide was developed by the BSD community.  It deserves consideration.  Notably it includes an 80-character line limit, which is surprisingly durable despite the advent of megapixel displays.  It is the rule at Google, for instance, to facilitate side-by-side code comparison.  
+.Pp
+All C projects face choices about what version of the C language they want to use, and to what degree Posix or other standards should be honored.  \*[project], insofar as is practical, requires compilers that support C99 and environments that support the current Posix standard.
+.Pp
+As of this writing, the C99 standard is 20 years old and has been widely supported by most C compilers for over a decade, if not two.  The standout exception is the Microsoft compiler, which tends to lack C99 features that are not also part of C++.  Because compiling on Windows is a desirable feature for \*[project], we do not use C99 features that are unsupported by any Microsoft compiler. When they come around \(em as they ultimately must, one hopes \(em that restriction can be relieved.  Until then, the list of
+.Dq banned
+features appears below.  
+.Pp
+When certain functionality requires Posix and is not otherwise supported (because no one has contributed the requisite code) the documentation reflects that.  In other cases, it is often desirable to implement the missing functionality, and thus be able to write standard code.
+.Sh C Practices
+Prefer
+.Vt enum
+to
+.Vt #define
+constants.  You don't get much type-checking for your trouble, but enumerated types do a better job of conveying the domain to the programmer.  Most compilers also support a warning about switches that don't handle every enumerated value for a type.  Such warnings serve to remind us of needed related changes when expanding the enumerated set. 
+.Pp
+.Sh Deprecated choices
+The code reflects decisions made over the years by a variety of authors, some sound, others peculiar.  We are making the following changes: 
+.Bl -tag -width indent
+.It Xr printf 3 
+The code contains many uses of the simpler
+.Fn puts
+and
+.Fn putc
+functions, perhaps in pursuit of efficiency.  It's much simpler just to always use printf.
+.It likely/unlikely
+It's well known that programmers have a difficult time predicting what is efficient and not.  With today's superscalar processors, hints about branch prediction are probably moot, and definitely clutter the code.
+.It Vt void*
+Do not cast to/from
+.Vt void* .
+In C, any pointer can be cast to/from
+.Vt void*
+implicitly.  Reserve casts for when they're actually needed, and minimize that need.  If the cast is intended to quell a warning, is the warning in fact justified?  If so, an inline wrapper function to contain the cast would preserve type-checking.  (Ideally we could use _Generic to hide the wrapper.)
+.ig
+.It signed/unsigned
+Do not cast integer assignments or integer function arguments.  Do not cast integer literals.  Do not enable warnings about them.  C defines integer promotion and carries it out implicitly.  Making it explicit only clutters the code.
+..
+.El
+.
+.Sh C99 Features
+As mentioned above, the Microsoft compiler lags in C99 support.  
+In an online forum on November 18, 2017, one Andrew Pardoe, who represented himself as part of Microsoft, offered the following comment:
+.
+.Bd -ragged -offset indent
+The MSVC team plans to achieve C conformance but we are first very focused on completing our C++ conformance work.
+.Pp
+We have done some C99 conformance work, most notably C99 _Bool, compound literals, C99 designated initializers, and variable declaration a couple of years back. More recently as we've implemented C++ features that resemble C features we have also implemented their C counterparts.
+.Ed
+.
+.Pp
+Use of the following C99 language features and standards is encouraged:
+.
+.Bl -tag -width indent -compact
+.sp
+.It C++ comments
+Comments that start with
+.Ql //
+and continue to end-of-line use less
+.Dq comment syntax
+than the standard /*...*/ C comments.
+.It inline functions
+In C,
+.Vt inline
+is not a mere recommendation to the compiler.  Short inline functions (often static) are preferable to preprocessor macros because of the compiler's type-checking. 
+.It Vt bool
+Requires 
+.Pa stdbool.h .
+Preferred to using
+.Vt int ,
+which appears frequently in the code, or bit fields.  Bits are better for property sets, along the lines of file permission bits in Unix.  The
+.Vt bool
+type has the advantage of passing in and out of functions unaltered, and of optional runtime support to enforce the
+.Br true,false
+domain.  The compiler is also to reduce the
+.Vt bool
+variable to a single bit if it so chooses. 
+.It Pa stdint.h
+Similarly, C99 defines integer types of specific size and signedness. There is no need to invent these types or craft tests for them. 
+.It "designated initializers"
+where the member is named in the initialization, e.g.
+.Bd -literal
+char name[18];
+struct iovec iov = { .iov_base = name,
+                     .iov_len = sizeof(name) };
+.Ed
+.It "variable declaration"
+means that a variable can be declared wherever it is first used, not necessarily at the beginning of a block.
+.El
+.
+.Pp
+The following C99 language features cannot be used:
+.
+.Bl -tag -width _Generic -compact
+.sp
+.It "variable length arrays (VLA)"
+Array size must be a compile-time constant.  C99 VLAs are arrays whose size is determined at runtime:
+.Bd -literal
+void f( int length ) {
+	char name[length];
+	/* ... */
+}
+.Ed
+.It _Generic
+This preprocessor feature allow a primitive form of function overloading, where the preprocessor executes different code depending on the type of the passed parameter. In C++ you would use a template, of course.  
+.El
+.
+.Sh C Preprocessor
+There is an over-reliance on the C preprocessor reflected in the code.  This is partly the use of old-fashioned techniques and partly a by-product of supporting some old compilers.  Before introducing any more preprocessor logic into the code, please consider if it really is necessary.  If it is, it should be confined to a header file.  Source files
+.Pq Sq \&.c 
+can and should be free of conditional compilation.  
+.Pp
+As mentioned above, inline functions can the serve same purpose as macros if no tokens are manipulated.  Functions (or macros) that extract/set a structure member can afford clarity and/or correctness.
+.Pp
+Avoid macros that check a value and
+.Em return
+in the event of an error.  Such a macro hides flow of control from the programmer.  There is almost always a better solution.  
+.
+.Sh IMPLEMENTATION NOTES
+.Ss Debug Logging
+.Ev DEBUG_LOG
+was developed in 2015 as part of the
+.Em "report writer" .
+It is handy for GnuCOBOL developers but of no use to the average
+COBOL programmer.  By default it is completely compiled out.
+It is enabled with
+.sp
+.Dl configure --enable-debuglog
+.sp
+It is turned on at runtime via the environment variable
+.Ev COB_DEBUG_LOG .
+For example:
+.sp
+.Dl COB_DEBUG_LOG='M=db,L=T,O=/tmp/gcdb.log'
+.sp
+where
+.Bl -tag -compact -width O
+.It Sy O
+defines the output file
+.It Sy L
+defines the logging level (i.e. different DEBUG_xxx where
+.Ar xxx
+is one of
+.Ql LOG ,
+.Ql WARN ,
+or
+.Ql TRACE .
+.It Sy M
+defines the module to be logged. This allows you to log just parts of the compiler. Example db (database) rw (report), etc..
+.El
+.\" TODO: enumerate module list
+.\" TODO: verify compilation fails if invalid module supplied. 
+.\" Consider: Use whole words for levels, instead of a single letter. 
+.Pp
+Macros to add log points and test logging status are in
+.Pa coblocal.h .
+To add log points at
+.Ql TRACE ,
+.Ql WARN ,
+or
+.Ql LOG
+levels, use
+.Bl -item -compact
+.It
+.Fn DEBUG_TRACE module arglist
+.It
+.Fn DEBUG_WARN module arglist
+.It
+.Fn DEBUG_LOG module arglist
+.El
+.ig
+.\" It's not clear these need to be mentioned: 
+COB_HIDDEN int  cob_debug_logit     (int level, char *module);
+COB_HIDDEN int  cob_debug_logger    (const char *fmt, ... );
+COB_HIDDEN int  cob_debug_dump      (void *mem, int len);
+..
+.Pp
+These are similar but different ...
+.\" TODO: explain how different
+.Bl -item -compact	
+.It
+.Fn DEBUG_DUMP_TRACE module mem len
+.It
+.Fn DEBUG_DUMP_WARN module mem len
+.It
+.Fn DEBUG_DUMP module mem len
+.El
+.Pp
+To test if logging is turned on at a particular level for a module:
+.Bl -item -compact
+.It
+.Fn DEBUG_ISON_TRACE module
+.It
+.Fn DEBUG_ISON_WARN module
+.It
+.Fn DEBUG_ISON module
+.El
+.\"  TODO: consider _P (predicate) instead, e.g., DEBUG_TRACE_P
+.\" "ISON" is confusing.  It looks like "I SON" (like json).  
+.
+.Ss libcob Interaction
+At present, there is unfortunately not a clean API for the runtime library,
+.Pa libcob.so .
+There are data structures in the library that are exposed to and referenced by the code generated by the compiler.  Consequently, installing a new version of the library necessitates recompilation of any Cobol programs that use it.  
+.Pp
+No one considers this state of affairs ideal.  In the ideal case \(em which we're hopefully working toward \(em the runtime library is versioned, or uses versioned symbols, such that newer versions can coexist with older ones, and programs compiled for an older version continue to work.
+.Pp
+To get there, more functions have to be added to the library's API, enabling access to information independent of how the information is maintained inside the library.  Like so much else, it's a work in progress.
+.
+.\" This next command is for sections 1, 6, 7, and 8 only.
+.\" .Sh ENVIRONMENT
+.\" .Sh FILES
+.\" .Sh EXAMPLES
+.\" This next command is for sections 1, 4, 6, 7, 8, and 9 only
+.\" .Sh DIAGNOSTICS
+.Sh COMPATIBILITY
+.Ss Operating Systems
+\*[project] has no specific list of operating systems it supports.  Bugs won't be addressed if they're related to versions of operating systems for which the vendor/distributor no longer offers support and are resolved by using a newer version.  As a rule of thumb in the industry, the look-back period is 3 years, and never more than 5. 
+.Ss Compilers
+Except for Microsoft, which is granted the 800-pound-gorilla exception, building \*[project] requires a C99 compiler.  C99 language features not supported by Microsoft are cited above. In general, \*[project] is expected to build with any C99 compiler, but bugs in a compiler released more than 5 years ago and cured in a subsequent release will not be
+.Dq fixed ,
+because the correct fix is to upgrade.
+\*[project] is known to build on the following compilers.  Failure to build on any of the following (or later) is a bug:
+.Bl -tag -width "Clang 3.5.1"
+.It GCC 5.2 
+with std=c11
+.It Microsoft Visual C++ 2015
+This release of \*[project] drops any commitment to older versions, which lacked most C99 features. 
+.It Clang 3.5.1
+(3.1 was released in 2012 with C11 support, and will probably work). 
+.El
+.
+.Sh SEE ALSO
+.Bl -tag -width indent
+.It Li OpenBSD Em Kernel Developer's Manual
+https://man.openbsd.org/style.9
+.It Li LLVM Em Coding Standards
+https://llvm.org/docs/CodingStandards.html
+.It Li Modern C, by Em Jens Gustedt 
+http://icube-icps.unistra.fr/img_auth.php/d/db/ModernC.pdf
+.El
+
+
+
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.
+\"  LocalWords:  runtime Preprocessor preprocessor signedness
+\"  LocalWords:  initializers

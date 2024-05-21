@@ -1,0 +1,143 @@
+
+		                 GnuCOBOL
+		https://www.gnu.org/software/gnucobol/
+		https://sourceforge.net/projects/gnucobol
+		https://savannah.gnu.org/projects/gnucobol
+
+============
+Requirements
+============
+
+GnuCOBOL uses other software packages, some of these are necessary,
+some optional. You find a detailed list of software "for the common
+user" below.
+
+  ***
+    NOTE
+    For all the following packages (required or optional),
+    BOTH runtime AND development components are necessary.
+  ***
+  ***
+    NOTE
+    All the following packages are normally part of a Linux
+    distribution. Cygwin distribution also has these as installable
+    packages, other operating systems also may have repositories for
+    these - eg. MAC OS, CentOS and others all have package repositories.
+    ALWAYS install the distribution packages when available !!
+  ***
+
+GnuCOBOL REQUIRES one of the following external libraries to be installed
+for implementation of decimal arithmetic:
+
+    BOTH runtime AND development components required.
+
+  o GNU MP (libgmp) 4.1.2 or later
+    https://gmplib.org
+
+  OR
+
+  o MPIR (libgmp - MPIR gmp-compat) 1.3.1 or later
+    (preferred when compiling on Windows with other compilers than GCC)
+    http://mpir.org
+
+    GNU MP and MPIR are distributed under GNU Lesser General Public License.
+
+    NOTE
+    Please ALWAYS use the distro package whenever possible !!
+    See NOTE above.
+
+
+GnuCOBOL MAY require the following external libraries to be installed:
+
+    ***
+    NOTE - libltdl is NOT needed when installing on Linux,
+    SUN Solaris, MAC OS, CentOS or Windows
+        (including Cygwin, MingW and native windows).
+    It is also NOT needed with later versions of AIX and HP-UX.
+    (AIX >= 5.1 and HP-UX >= 11.1 are known to NOT require this).
+    (Check if you have the "dlopen" function).
+    ***
+
+  o GNU Libtool (libltdl)
+    https://www.gnu.org/software/libtool/libtool.html
+
+    libltdl is used to implement dynamic CALL statements.
+
+    GNU Libtool is distributed under GNU Lesser General Public License.
+
+
+The following libraries ARE required WHEN :
+
+1) Indexed-Sequential file I/O (ISAM) is used
+
+    BOTH runtime AND development components required.
+
+    One of the following:
+
+  o Berkeley DB (libdb) 4.1 or later
+    https://www.oracle.com/
+    https://www.oracle.com/technology/products/berkeley-db/db/index.html
+
+    Berkeley DB is distributed under Oracles own open-source license.
+    Note that if you linked your software with Berkeley DB,
+    you must distribute the source code of your software along with your
+    software, or you have to pay royalty to Oracle.
+
+  o VBISAM - ISAM file handler (libvbisam) 2.0 or later
+    https://sourceforge.net/projects/vbisam/
+
+    VBISAM is distributed under GNU Lesser General Public License.
+
+  o DISAM File handler (libdisam)
+    http://www.isamcentral.com
+
+    DISAM is distributed under the proprietary License
+    "Byte Designs Ltd. DISAM Software License".
+
+2) SCREEN SECTION and/or extended ACCEPT/DISPLAY is used
+
+    BOTH runtime AND development components required.
+
+    One of the following:
+
+  o Ncurses (ncurses or ncursesw) 5.2 or later
+    https://www.gnu.org/software/ncurses/ncurses.html
+
+    Ncurses is distributed under a BSD style license.
+
+  o PDCurses (pdcurses) for MinGW/native windows ports
+    https://pdcurses.org/ or https://github.com/Bill-Gray/PDCursesMod/
+
+    PDCurses is distributed as Public Domain.
+
+  o Unix curses
+
+3) XML runtime support is used
+
+    BOTH runtime AND development components required.
+
+    libxml2 - http://xmlsoft.org
+
+    libxml2 is distributed under MIT License.
+
+4) JSON runtime support is used
+
+    BOTH runtime AND development components required.
+
+    One of the following:
+
+  o cJSON >= 1.3.0 - https://github.com/DaveGamble/cJSON
+    Note: As an alternative of an installed version you may place
+    cJSON.c and cJSON.h under "libcob" to include the used functions
+    directly in the COBOL runtime.
+
+    cJSON is distributed under MIT License.
+
+  o JSON-C >= 0.12 - https://github.com/json-c/json-c
+
+    JSON-C is distributed under Expat License.
+
+
+See HACKING if you wish to hack the GnuCOBOL source or build directly
+from version control as this includes the list of additional tools
+necessary for this task.

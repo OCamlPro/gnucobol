@@ -1,0 +1,44 @@
+## Copyright (C) 2014-2018, 2021-2022 Free Software Foundation, Inc.
+## Written by Edward Hart, Simon Sobisch
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+## 
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+AT_COPYRIGHT([Test cases Copyright (C) 2022 Free Software Foundation, Inc.
+
+Written by Edward Hart, Simon Sobisch])
+
+### GnuCOBOL Test Suite
+
+AT_INIT([GnuCOBOL Manual Tests])
+AT_COLOR_TESTS
+
+AT_TESTED([cobc cobcrun])
+
+# macro for the manual test, executing under test runner
+# and passing the definition
+m4_define([MANUAL_CHECK],
+  [AT_CHECK(
+   [DESC="$at_desc_line" $RUN_PROG_MANUAL $1],
+   [$2],
+   [$3],
+   [$4])
+  ])
+
+
+## Run screen tests
+AT_BANNER([Run screen tests])
+
+m4_include([run_manual_screen.at])

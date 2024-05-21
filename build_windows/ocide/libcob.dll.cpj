@@ -1,0 +1,67 @@
+<CC386PROJECT>
+	<VERSION ID="5"/>
+	<WORKAREA NAME=".\GnuCOBOL.cwa"/>
+	<TARGET TITLE="libcob">
+		<PROPERTIES>
+			<PROFILE NAME="WIN32" TYPE="DEBUG">
+				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
+				<PROP ID="__PROJECTTYPE">2</PROP>
+				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__LLIBS">gmp.l pdcurses.l vbisam.l</PROP>
+				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="DETAILBUILD">1</PROP>
+			</PROFILE>
+			<PROFILE NAME="WIN32" TYPE="RELEASE">
+				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
+				<PROP ID="DETAILBUILD">1</PROP>
+				<PROP ID="__PROJECTTYPE">2</PROP>
+				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__LLIBS">gmp.l pdcurses.l vbisam.l</PROP>
+				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+			</PROFILE>
+		</PROPERTIES>
+		<FILES>
+			<FOLDER TITLE="External">
+				<FILE NAME="..\..\libcob\cJSON.c" TITLE="cJSON.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cJSON.h" TITLE="cJSON.h" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Include Files">
+				<FILE NAME="..\..\libcob\cobcapi.h" TITLE="cobcapi.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cobgetopt.h" TITLE="cobgetopt.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\coblocal.h" TITLE="coblocal.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\common.h" TITLE="common.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\exception.def" TITLE="exception.def" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fileio.h" TITLE="fileio.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\system.def" TITLE="system.def" CLEAN="0"/>
+				<FILE NAME="..\..\tarstamp.h" TITLE="tarstamp.h" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Resource Files">
+				<FILE NAME="..\version_libcob.rc" TITLE="version_libcob.rc" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Source Files">
+				<FILE NAME="..\..\libcob\call.c" TITLE="call.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cobcapi.c" TITLE="cobcapi.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cobgetopt.c" TITLE="cobgetopt.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\common.c" TITLE="common.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fbdb.c" TITLE="fbdb.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fextfh.c" TITLE="fextfh.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fileio.c" TITLE="fileio.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fisam.c" TITLE="fisam.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\flmdb.c" TITLE="flmdb.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\focextfh.c" TITLE="focextfh.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\foci.c" TITLE="foci.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fodbc.c" TITLE="fodbc.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\fsqlxfd.c" TITLE="fsqlxfd.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\intrinsic.c" TITLE="intrinsic.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\mlio.c" TITLE="mlio.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\move.c" TITLE="move.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\numeric.c" TITLE="numeric.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\reportio.c" TITLE="reportio.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\screenio.c" TITLE="screenio.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\strings.c" TITLE="strings.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\termio.c" TITLE="termio.c" CLEAN="0"/>
+			</FOLDER>
+			<FILE NAME="..\..\libcob\ChangeLog" TITLE="ChangeLog" CLEAN="0"/>
+		</FILES>
+	</TARGET>
+</CC386PROJECT>

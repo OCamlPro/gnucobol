@@ -1,0 +1,113 @@
+
+		                 GnuCOBOL
+		https://www.gnu.org/software/gnucobol/
+		https://sourceforge.net/projects/gnucobol
+		https://savannah.gnu.org/projects/gnucobol
+
+See README for general instructions and DEPENDENCIES for general requirements.
+
+============
+Development
+============
+
+If you wish to hack the GnuCOBOL source code, proceed as follows.
+The following extra packages need to be installed with versions equal
+or greater (which is often useful to work around strange bugs not seen with
+an official release, which will commonly be created using a newer toolset).
+
+If you build from VCS the tools in the first 4 lists are always needed.
+
+For running "autogen.sh" (necessary after VCS checkout) / reconfigure:
+  o autoconf 2.64
+  o automake 1.13
+  o libtool 2.2.6
+  o m4 1.4.12
+
+If you modify top-level configure.ac or Makefile.am in any directory then
+you will need to run "autoreconf -I m4" to regenerate the necessary files.
+
+If you want to update to a newer automake/libtool version or get errors
+about wrong version numbers in m4 run "autoreconf -vfi -I m4" instead.
+
+For compiling (when changing flex/bison sources):
+  o Bison 3.6
+  o Flex 2.5.35
+
+For generating the testsuite (when changing any .at files):
+  o autoconf 2.64
+
+For generating the translation files (when changing any msgid):
+  o gettext 0.17
+    ** NOTE **
+    If you don't need an up-to-date translation you can do
+    "touch po/*.pot po/*.po po/*.gmo" instead.
+
+For generating the documentation (necessary for preparing a distribution):
+  o help2man 0.17
+    ** NOTE **
+    If you don't need an up-to-date manpage you can do
+    "touch cobc/cobc.1 bin/cobcrun.1" instead.
+  o texinfo 6.1 (with texinfo-tex)
+  o texlive (latest, texlive-collection-latex suffices)
+    ** NOTE **
+    If you don't need an up-to-date info source / manual you can do
+    "touch doc/gnucobol.info doc/gnucobol.pdf" instead.
+
+
+For more information about some of the internals and a coding guideline see
+https://sourceforge.net/p/gnucobol/wiki/Style%20guide/ and
+https://sourceforge.net/p/gnucobol/wiki/For%20Maintainers/
+
+
+For preparing a distribution do the following steps:
+  ./configure           # check that the current environment is ok and
+                        # generate Makefiles for distclean
+  make distclean        # only needed if it isn't a direct VCS checkout
+                        # --> start with a clean directory
+  ./configure && make   # build, needed for re-generating bison/flex sources
+                        # and for generating the texi-includes later
+  po/update_linguas.sh  # get latest translations
+  make distcheck        # generate a distribution tarball and check
+                        # that it will work in a VPATH environment
+                        # including make targets uninstall, distclean and dist
+
+Most often there is a minimal supported version (for example GnuCOBOL 3.x
+should work with GnuCOBOL versions back to 2.2); the easiest way to test
+that is to first have the old version installed installed or build locally,
+then do a manual run of hand-picked "special" tests from the version to test,
+for example:
+
+  make check TESTSUITEFLAGS="--debug -k exception-location -k trace"
+
+which keeps the test sources because of "--debug".
+
+Then do for each test you're interested in the following:
+ pushd tests/testsuite.dir/NNNN  # go into the test directory
+ ./run                           # re-execute the test verbose with
+                                 # the version under test
+ cobc --debug XXXXX              # execute all of the compile commands
+                                 # with the old active environment
+OR                               # if you want to compare with an
+                                 # uninstalled version:
+ /some/path/pre-inst-env cobc --debug XXXXX
+ ../../../pre-inst-env prog      # execute the old-compiled programs
+                                 # with the version under test
+ popd                            # back to root...
+ 
+And when running compare the output to the one seen when executing ./run.
+
+For an unspecific test that does not check any of the "newer" features or
+extensions the NIST suite can be compiled with that "old active" environment
+while being executed with the version under test.
+
+ cd tests/cobol85
+ make test-local-compat -j6      # compile with the old active environment
+                                 # but run with the new version under test
+OR                               # if you want to compare with an
+                                 # uninstalled version:
+ make test-local-compat COBC="/some/path/pre-inst-env cobc"
+
+There should be no difference shown as long as the "old version" passed
+the same tests as the new version - given the example above: there was
+no support for REPORT WRITER in 2.2 so there would be an expected failure
+of the RW tests).

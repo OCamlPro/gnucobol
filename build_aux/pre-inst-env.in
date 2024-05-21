@@ -1,0 +1,77 @@
+#! /bin/sh
+#
+# pre-inst-env gnucobol
+#
+# Copyright (C) 2017,2019-2020,2022-2023 Free Software Foundation, Inc.
+# Written by Mathieu Lirzin, Simon Sobisch
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+PATH="@abs_top_builddir@/libcob/.libs:${PATH}"
+PATH="@abs_top_builddir@/cobc:@abs_top_builddir@/bin:${PATH}"
+export PATH
+
+
+# trigger the preference of local instead of installed files
+#GNUCOBOL_UNINSTALLED=1
+#export GNUCOBOL_UNINSTALLED
+
+# let atlocal know that there's less to setup
+GNUCOBOL_ENV_SETUP=1
+export GNUCOBOL_ENV_SETUP
+
+# entries likely referenced in the LIBS entries as shell variables below
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+
+# options that are also used in atlocal (always add to both)
+# keep indent for easier diff
+	# note: quoting the directories breaks building on MSYS (as this disables
+	#       path translation), therefore disabled for now
+	#COB_CFLAGS="-I\"@abs_top_srcdir@" @COB_CFLAGS@"
+	#COB_LDFLAGS="-L\"@abs_top_builddir@/libcob/.libs\" @COB_LDFLAGS@"
+	COB_CFLAGS="-I@abs_top_srcdir@ @COB_CFLAGS@"
+	COB_LDFLAGS="-L@abs_top_builddir@/libcob/.libs @COB_LDFLAGS@"
+	COB_LIBS="@COB_LIBS@ ${COB_LIBS}"
+	COB_CONFIG_DIR="@abs_top_srcdir@/config"
+	COB_COPY_DIR="@abs_top_srcdir@/copy"
+	LD_LIBRARY_PATH="@abs_top_builddir@/libcob/.libs:${LD_LIBRARY_PATH}"     # GNU/Linux, Solaris, ...
+	DYLD_LIBRARY_PATH="@abs_top_builddir@/libcob/.libs:${DYLD_LIBRARY_PATH}" # Mac OS
+	SHLIB_PATH="@abs_top_builddir@/libcob/.libs:${SHLIB_PATH}"               # HP-UX
+	LIBPATH="@abs_top_builddir@/libcob/.libs:${LIBPATH}"                     # AIX
+
+	COB_LIBRARY_PATH="@abs_top_builddir@/extras:${COB_LIBRARY_PATH}"         # only in pre-inst case: prepend
+
+if test "x${COB_SCHEMA_DIR}" = "x"; then
+	# Note: COB_SCHEMA_DIR is unchanged - if set - by purpose in pre-inst env
+	COB_SCHEMA_DIR="@datarootdir@/schema"; export COB_SCHEMA_DIR
+fi
+
+export COB_CFLAGS COB_LDFLAGS COB_LIBS
+export COB_CONFIG_DIR COB_COPY_DIR
+export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
+export COB_LIBRARY_PATH
+
+# not robust check, but better than none
+if test "x${BASH_SOURCE}" != "x" -a "${BASH_SOURCE}" != "$0"; then
+	echo "This script should not be sourced but called instead!"
+else
+	if test "x$1" != "x"; then
+		exec "$@"
+	else
+		$SHELL
+	fi
+fi

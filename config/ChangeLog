@@ -1,0 +1,706 @@
+
+2022-11-26  Ron Norman <rjn@inglenet.com>
+
+	* all: added 'keycompress'  used for MF COBOL ISAM files
+
+2022-11-04  Ron Norman <rjn@inglenet.com>
+
+	* all: added odo-last-varlen: ok to all
+			If OCCURS DEPENDING ON is last of record then it is variable
+			length. If find something this does not apply to, change it
+
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: add COB_CORE_FILENAME and adjust COB_CORE_ON_ERROR
+
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* *.conf: changed top-level-occurs-clause "skip" to "unconformable"
+
+2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed alias VALUES=VALUE, now a separate word
+
+2022-06-10  Ron Norman <rjn@inglenet.com>
+
+	* general: add 'defaultbyte'
+
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
+	  GCOS 7 (Bull) dialect
+
+2021-11-14  Ron Norman <rjn@inglenet.com>
+
+	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit
+			operations
+
+2021-11-09  Ron Norman <rjn@inglenet.com>
+
+	* Added 'record-sequential-advancing' initial value
+
+2021-10-01  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg: Removed the COB_MF_LS_xxx options and replaced COB_MF_FILES
+	  with COB_FILE_FORMAT
+
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* lax.conf-inc: set synchronized-clause to be only ignored if the
+	  dialect including this has it set to error/unconformable
+
+2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobol2002.words, cobol2014.words: fixed missing aliases THROUGH=THRU,
+	  CORR=CORRESPONDING, COMPUTATIONAL*=COMP*, QUOTES=QUOTE, SYNC=SYNCHRONIZED
+
+2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added odoslide, active in bs200, ibm, mvs (previously a
+	  compile flag only)
+	* bs2000-strict.conf: adjusted complex-odo to "yes"
+
+2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu.words, bs2000.words, cobol85.words, ibm.words, mf.words, mvs.words,
+	  realia.words, rm.words: fixed missing aliases CORR=CORRESPONDING,
+	  COMPUTATIONAL*=COMP*, QUOTES=QUOTE, SYNC=SYNCHRONIZED, THROUGH=THRU
+	* ibm.words: updated to Enterprise COBOL 6.3, now includes a lot of
+	  ISO2002 functions and HEX/BIT conversion functions
+	* mf.words: updated to Visual COBOL 6.0, similar additions to ibm,
+	  removed ISO2002-only words
+	* acu.words: updated to ACUCOBOL-GT 10.4, now with XML and JSON
+	  statements from MF/IBM
+
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added self-call-recursive, only active (as "warning") for
+	  default.conf, in all other cases no change to RECURSIVE attribute
+	  is happening any more, fixing bug 686
+
+2021-03-05  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg (fileio): added COB_FILE_ISNODAT to disable ISAM datafile.dat
+
+2021-02-25  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg (fileio): added COB_FILE_VBISAM to set default ISAM format
+
+2021-02-12  Ron Norman <rjn@inglenet.com>
+
+	* fileio database: added comments about some possible environment
+			variables that could be set to define database connection
+
+2021-02-08  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg (fileio): change 'file_log' name to 'rollback'
+	  removed 'create_table' since table is only created if not present
+
+2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: fix settings indirect-redefines + assign-variable
+
+2021-01-08  Ron Norman <rjn@inglenet.com>
+
+	* fileio: added option file_log for ISAM files
+
+||||||| .merge-left.r4286
+=======
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added self-call-recursive, only active (as "warning") for
+	  default.conf, in all other cases no change to RECURSIVE attribute
+	  is happening any more, fixing bug 686
+
+2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: fix settings indirect-redefines + assign-variable
+
+>>>>>>> .merge-right.r4287
+2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added ref-mod-zero-length, only active for default.conf
+
+2020-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf, mf-strict.conf, acu-strict.conf, lax.conf-inc:
+	  vsam-status as ignored
+
+2020-10-19  Ron Norman <rjn@inglenet.com>
+
+	* fileio: added option dups_ahead for INDEXED files
+
+2020-08-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bs2000-strict.conf, cobol85.conf, cobol2002.conf, cobol2014.conf:
+	  changed assign-clause to 'external'
+
+2020-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added option local-implies-recursive
+
+2020-07-17  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added option dpc-in-data.
+
+2020-07-05  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added option vsam-status.
+
+2020-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added options type-to-clause and usage-type
+
+2020-04-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added option numeric-pointer *EXPERIMENTAL*
+
+2020-03-31  Ron Norman <rjn@inglenet.com>
+
+	* general: added option align-record and align-opt
+
+2020-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed option "select-working" (see bug #421)
+
+2020-03-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added option special-names-clause
+
+2020-02-13  Ron Norman <rjn@inglenet.com>
+
+	* general: added option create_table
+
+2020-01-22  Ron Norman <rjn@inglenet.com>
+
+	* general: added option bdb_byteorder
+
+2020-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: bug #513 (partial) added sync-left-right
+
+2020-01-04  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added options assign-variable, assign-using-variable,
+	  assign-ext-dyn and assign-disk-from.
+
+2020-01-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #193 added same-as-clause
+
+2019-12-28  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: changed assign-clause directives to use more descriptive
+	  dynamic/external instead of mf/ibm.
+	* general: added option implicit-assign-dynamic-var.
+
+2019-09-30  Edward Hart <edward.dan.hart@gmail.com>
+
+	* realia.words: Removed words belonging to other dialects - word list
+	  now matches REALIA6.
+
+2019-09-28  Edward Hart <edward.dan.hart@gmail.com>
+
+	* realia.conf, realia-strict.conf, realia.words, Makefile.am: added
+	  dialect for CA Realia II.
+
+2019-09-26  Ron Norman <rjn@inglenet.com>
+
+	* general: added option reference-bounds-check
+
+2019-09-22  Ron Norman <rjn@inglenet.com>
+
+	* general: added option report-column-plus
+
+2019-08-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added option hp-octal-literals
+
+2019-06-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed options json-generate and xml-generate (support is
+	  now only depending on the reserved words)
+
+2019-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added option records-mismatch-record-clause
+
+2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #311 added options call-convention-mnemonic and
+	  call-convention-linkage
+
+2019-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf, lax.conf-inc, mf-strict, rm-strict.conf:
+	  increased word-length to 63 per COBOL 202x
+
+2019-04-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #354 added continue-after option, set to ok
+	  for default/lax only as we won't have a dialect file for COBOL 202x
+	  until its final working draft and release date is available
+
+2019-03-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #352 added national-character-literals option, set to warning
+	  for default/lax only as we still don't have a dialect file for Fujitsu
+
+2019-01-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: added COB_DISPLAY_PUNCH_FILE
+
+2019-01-05  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added json-generate option
+
+2018-04-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf: set missing-statement (FR# 244) to warning as older
+	  GnuCOBOL versions allowed a partial subset of these
+
+2018-09-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mf-strict.conf: set missing-statement to error (according to MF docs)
+
+2018-08-07  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added xml-generate and xml-generate-extra-phrases options
+	* general: marked XML-CODE as implemented
+
+2018-07-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ibm.words: updated to Enterprise COBOL 6.1 documentation,
+	  added notes about coprocessor-only reserved words, made all phrases
+	  for XML GENERATE / XML PARSE statements context-sensitive
+
+2018-04-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added symbolic-constant, set to OK for default only
+	  as we don't have a dialect file for Fujitsu currently
+
+2018-03-31  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added zero-length-literals option
+
+2018-03-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added move-figurative-space-to-numeric, set to OK for
+	  ACUCOBOL and MicroFocus
+
+2018-01-14  Ron Norman <rjn@inglenet.com>
+
+	* general: added move-non-numeric-lit-to-numeric-is-zero
+	  This changes MOVE SPACE/QUOTE/HIGH-VALUES TO PIC 9 field
+	  into MOVE ZERO
+	* mf.conf: move-figurative-constant-to-numeric: warn
+	  move-non-numeric-lit-to-numeric-is-zero: yes
+
+2018-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: changed sticky-linkage to "no"
+
+2018-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added missing-statement (FR #288)
+
+2017-12-26  Edward Hart <edward.dan.hart@gmail.com>
+
+	* default.conf, lax.conf-inc: changed screen-section-rules to gc
+	  (bug #482)
+
+2017-12-24  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added screen-section-rules option (Bug #382)
+
+2017-11-14  Edward Hart <edward.dan.hart@gmail.com>
+
+	* ibm.words, mvs.words, rm.words: fixed bug #476, where WHEN-COMPILED
+	  register was hidden by WHEN-COMPILED reserved word
+
+2017-11-10  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added binary-comp-1 option (FR #272)
+
+2017-11-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #158 added perform-varying-without-by (COBOL2002+)
+
+2017-11-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf: added aliases HIGH-VALUES/LOW-VALUES/VALUES/ZEROES/ZEROS
+	* acu.conf: heavily updated from MF Studio Enterprise reserved word list
+
+2017-11-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobol85.words, ibm.words, mf.words, mvs.words, rm.words, xopen.conf:
+	  added DEBUG-ITEM to be handled as register
+
+2017-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobol85.conf, ibm-strict.conf, mvs-strict.conf, mf-strict.conf,
+	  rm-strict.conf: fixed "debugging-mode" to be "ok" (only use-for-debugging
+	  is obsolete in COBOL 85, debugging-mode became obsolete with COBOL 2002)
+	* default.conf: changed use-for-debugging to "ok"
+	* runtime.cfg: included COB_SET_DEBUG in the documentation
+
+2017-10-07  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added screen-section-rules option.
+
+2017-10-06  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added record-delimiter, sequential-delimiters and
+	  record-delim-with-fixed-recs options.
+
+2017-09-18  Ron Norman <rjn@inglenet.com>
+
+	* general: bug #421 added option "select-working" disallowing
+	  SELECT ASSIGN and RELATIVE KEY fields to be in other than
+	  WORKING-STORAGE locations
+
+2017-09-16  Edward Hart <edward.dan.hart@gmail.com>
+
+	* ibm.words: updated to Enterprise COBOL V6.2.
+	* general: added free-redefines-position option.
+
+2017-09-10  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added line-col-zero-default and display-special-fig-consts
+	  options.
+
+2017-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf, mf-strict.conf: set incorrect-conf-sec-order
+	  from "error" to "ok"
+
+2017-08-11  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: moved all register definitions to the words files.
+	* general: added unimplemented registers as reserved words.
+
+2017-08-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf: set entry-statement from "obsolete" to "ok"
+
+2017-08-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* lax.conf-inc: odo-without-to and incorrect-conf-sec-order set to
+	  "at least warning" instead of "ok"
+
+2017-07-29  Edward Hart <edward.dan.hart@gmail.com>
+
+	* bs2000-strict.conf: further corrections.
+
+2017-07-26  Edward Hart <edward.dan.hart@gmail.com>
+
+	* mf.words: updated to Visual COBOL 3.0.
+	* bs2000-strict.conf: corrected using actual COBOL2000 manual.
+
+2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: allow GnuCOBOL specific registers for lax dialect
+	  configurations
+
+2017-07-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf: set word-length to most unrestrictive value: 61
+
+2017-07-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added move-figurative-constant-to-numeric and
+	  move-figurative-quote-to-numeric option
+
+2017-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added settings for registers. mnemonic names and
+	  intrinsic functions
+	* acu.conf: added (non-standard) mnemonic names for switches
+
+2017-07-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added constant-folding option
+	* general: renamed acucobol-literals option to acu-literals
+
+2017-07-02  Ron Norman <rjn@inglenet.com>
+
+	* mf.conf: corrected to have synchronized-clause: ignore
+
+2017-06-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: created a "strict" set of vendor dialect configurations,
+	  made "normal" vendor dialect configurations lax by allowing *all*
+	  words GnuCOBOL can handle *additional* to the not-implemented
+	  vendor specific extensions and by allowing use of most features
+	  Note: COBOL85, COBOL2002 and COBOL2014 are always "strict"
+
+2017-06-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: moved reserved words list from conf files to seperate files,
+	  replaced "specify-all-reserved" option by "reserved-words"
+	  (special include file);
+	  reviewed all word lists, defining aliases where needed and removing
+	  mnemonic devices / special registers
+
+2017-06-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: renamed "debugging-line" option to "debugging-mode"
+
+2017-06-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added define-constant-directive option
+
+2017-06-05  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added incorrect-conf-sec-order option
+
+2017-06-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: renamed eject-statement to listing-statements,
+	  added title-statement
+
+2017-06-04  Edward Hart <edward.dan.hart@gmail.com>
+
+	* rm.conf: added config file for RM-COBOL
+
+2017-05-22  Ron Norman <rjn@inglenet.com>
+
+	* mf.conf: corrected to have pretty-display: yes
+
+2017-05-13  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added numeric-value-for-edited-item
+
+2017-04-26  Ron Norman <rjn@inglenet.com>
+
+	* general: added 'constant-78' to indicate if 78 is allowed and
+	  'constant-01' to indicate if 01 CONSTANT is allowed
+
+2017-04-22  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added stop-identifier config option
+
+2016-12-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.conf: FR #191 added COB_EXIT_WAIT and COB_EXIT_MSG
+
+2016-12-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu.conf, mf.conf: removed CONSOLE as it is internally used as
+	  mnemonic device and therefore should not be in reserved list
+	* mf.conf: added COMMAND-LINE as it is in parser
+
+2016-11-19  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added use-for-debugging config option
+
+2016-10-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #179 added reference-out-of-declaratives option
+
+2016-10-13  Ron Norman <rjn@inglenet.com>
+
+	* general: added arithmetic-osvs option
+
+2016-10-02  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added no-echo-means-secure option
+	* acu.conf: added aliases for ACCEPT/DISPLAY clauses
+
+2016-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: FR #173 added pic-length configuration option
+
+2016-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added national-literals, hexadecimal-national-literals and
+	  hexadecimal-boolean configuration options
+
+2016-08-13  Frank Swarbrick <infocat@@users.sf.net>
+
+	* ibm.conf, mf.conf: patch #50 added UNBOUNDED as context sensitive keyword
+
+2016-08-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: renamed relaxed-syntax-check to relax-syntax-checks
+	  for supporting the removed -frelax-syntax when set on command line
+
+2016-08-09  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added program-name-redefinition and program-prototypes
+	  configuration options
+
+2016-07-27  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added renames-uncommon-levels configuration option
+
+2016-07-18  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added accept-display-extensions and console-is-crt
+	  configuration options
+
+2016-06-14  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: moved uncommon aliases from reserved.c to config files
+
+2016-06-03  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added not-exception-before-exception configuration option.
+
+2016-04-24  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added recording-modes as context-sensitive words.
+
+2016-03-18  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: updated comment for reserved to describe how to specify
+	  aliases
+
+2016-03-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu.conf: added ASSIGN TO devices as context-sensitive words
+
+2016-03-09  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added/marked context-sensitive words
+
+2016-02-28  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added reserved and specify-all-reserved
+	* general: removed cobol85-reserved
+
+2015-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added call-overflow
+
+2015-10-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: update for documentation
+	* runtime_empty.cfg: new empty file for faster startup (used in testsuite)
+
+2015-09-23  Edward Hart <edward.dan.hart@gmail.com>
+
+	* general: added numeric-boolean and acu-literals
+
+2015-07-07  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg: added COBPRINTER and COB_DISPLAY_PRINTER
+
+2015-07-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobol2014.conf: added new configuration for COBOL 2014 (most values
+	  marked as not verified yet)
+	* general: added literal-length, numeric-literal-length
+
+2015-03-14  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg: added all configuration options with documentation
+
+2015-03-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: added new configuration type "runtime configuration",
+	  runtime.cfg will include all runtime flags and short documentation
+	  of these (TODO)
+
+2014-10-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu.conf: added new configuration for ACUCOBOL-GT (most values marked as
+	  not verified yet)
+	* general: added word-length
+
+2014-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added accept-update and accept-auto (set to "no" in all
+	  configuration files)
+
+2010-06-28  Roger While <simrw@sim-basis.de>
+
+	* MARK - Version 2.0
+	* Move to GPL/LGPL 3
+	* add information about config options in config/xyz.conf while removing
+	  include of default.conf (every conf file now contains all configuration
+	  entries)
+
+2007-12-27  Roger While <simrw@sim-basis.de>
+
+	* Mark 1.0 RELEASE
+
+2007-08-23  Roger While <simrw@sim-basis.de>
+
+	* Remove deprecated v023.conf
+	  Remove display-sign
+
+2007-01-29  Roger While <simrw@sim-basis.de>
+
+	* Add odo-without-to, default OK, set to unconformable
+	  for 85/2002
+
+2006-09-30  Roger While <simrw@sim-basis.de>
+
+	* All conf's : Make filename-mapping default
+
+2006-02-02  Roger While <simrw@sim-basis.de>
+
+	* Add relax-level-hierarchy to ibm.conf, mvs.conf,
+	  mf.conf, bs2000.conf
+
+2006-01-20  Roger While <simrw@sim-basis.de>
+
+	* Add relax-level-hierarchy to default.conf
+	  Allows mismatched level numbers
+
+2005-12-18  Roger While <simrw@sim-basis.de>
+
+	* Add perform-osvs, sticky-linkage to ibm.conf, mvs.conf
+
+2005-11-25  Roger While <simrw@sim-basis.de>
+
+	* New variable - sticky-linkage
+	  New config file - bs2000.conf
+
+2005-11-05  Roger While <simrw@sim-basis.de>
+
+	* New variable - perform-osvs
+
+2005-05-15  Roger While <simrw@sim-basis.de>
+
+	* Do not nest includes. All config files include
+	  default.conf. We will need this for individual
+	  "not-resrved" words.
+
+2005-05-12  Roger While <simrw@sim-basis.de>
+
+	* Revert cobol2002.conf
+
+2005-05-03  Roger While <simrw@sim-basis.de>
+
+	* default.conf, cobol2002.conf, mf.conf
+	  New variable - larger-redefines-ok
+	  New variable - relaxed-syntax-check
+
+2005-03-07  Roger While <simrw@sim-basis.de>
+
+	* default.conf, mvs.conf :
+	  New variable - not-reserved
+	  Document in default.conf
+	  CYCLE as not reserved in mvs.conf
+
+2003-08-30  Keisuke Nishida  <kxn30@yahoo.co.jp>
+
+	* gnu.conf: Removed.
+	* default.conf: Renamed from default.inc.
+
+2003-08-28  Keisuke Nishida  <kxn30@yahoo.co.jp>
+
+	* v023.conf: New file.
+
+2003-08-09  Keisuke Nishida  <knishida@netlab.jp>
+
+	* gnu.conf, cobol85.conf, cobol2002.conf, mf.conf, mvs.conf: New files.
+	* default.inc, Makefile.am: New files.
+
+
+Copyright 2003,2005-2007-2010,2014-2021 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification, are
+permitted provided the copyright notice and this notice are preserved.

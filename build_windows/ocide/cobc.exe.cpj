@@ -1,0 +1,96 @@
+<CC386PROJECT>
+	<VERSION ID="5"/>
+	<WORKAREA NAME=".\GnuCOBOL.cwa"/>
+	<TARGET TITLE="cobc">
+		<PROPERTIES>
+			<PROFILE NAME="WIN32" TYPE="DEBUG">
+
+				<PROP ID="__DEBUG_WORKING_DIR">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\</PROP>
+				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__LLIBS">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\libcob.l</PROP>
+				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
+				<PROP ID="__DEBUG_ARGUMENTS">--info</PROP>
+			</PROFILE>
+			<PROFILE NAME="WIN32" TYPE="RELEASE">
+				<PROP ID="DETAILBUILD">1</PROP>
+				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__LLIBS">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\libcob.l</PROP>
+				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
+				<PROP ID="__DEBUG_ARGUMENTS">--info</PROP>
+			</PROFILE>
+		</PROPERTIES>
+		<FILES>
+			<FOLDER TITLE="Include Files">
+				<FOLDER TITLE="Auto Generated Files">
+					<FILE NAME="..\..\cobc\parser.h" TITLE="parser.h" CLEAN="0"/>
+					<FILE NAME="..\..\cobc\ppparse.h" TITLE="ppparse.h" CLEAN="0"/>
+				</FOLDER>
+				<FILE NAME="..\..\cobc\cobc.h" TITLE="cobc.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cobgetopt.h" TITLE="cobgetopt.h" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\codeoptim.def" TITLE="codeoptim.def" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\common.h" TITLE="common.h" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\config.def" TITLE="config.def" CLEAN="0"/>
+				<FILE NAME="..\config.h" TITLE="config.h" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\exception.def" TITLE="exception.def" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\flag.def" TITLE="flag.def" CLEAN="0"/>
+				<FILE NAME="..\..\libcob.h" TITLE="libcob.h" CLEAN="0"/>
+				<FILE NAME="..\..\tarstamp.h" TITLE="tarstamp.h" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\ppparse.def" TITLE="ppparse.def" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\system.def" TITLE="system.def" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\tree.h" TITLE="tree.h" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\warning.def" TITLE="warning.def" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Resource Files">
+				<FILE NAME="..\version_cobc.rc" TITLE="version_cobc.rc" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Source Files">
+				<FOLDER TITLE="Auto Generated Files">
+					<FILE NAME="..\..\cobc\parser.c" TITLE="parser.c" CLEAN="0">
+						<PROPERTIES>
+							<PROFILE NAME="WIN32" TYPE="RELEASE">
+								<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+							</PROFILE>
+						</PROPERTIES>
+					</FILE>
+					<FILE NAME="..\..\cobc\pplex.c" TITLE="pplex.c" CLEAN="0">
+						<PROPERTIES>
+							<PROFILE NAME="WIN32" TYPE="RELEASE">
+								<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+							</PROFILE>
+						</PROPERTIES>
+					</FILE>
+					<FILE NAME="..\..\cobc\ppparse.c" TITLE="ppparse.c" CLEAN="0">
+						<PROPERTIES>
+							<PROFILE NAME="WIN32" TYPE="RELEASE">
+								<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+							</PROFILE>
+						</PROPERTIES>
+					</FILE>
+					<FILE NAME="..\..\cobc\scanner.c" TITLE="scanner.c" CLEAN="0">
+						<PROPERTIES>
+							<PROFILE NAME="WIN32" TYPE="RELEASE">
+								<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+							</PROFILE>
+						</PROPERTIES>
+					</FILE>
+				</FOLDER>
+				<FILE NAME="..\..\cobc\cobc.c" TITLE="cobc.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\codegen.c" TITLE="codegen.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\codeoptim.c" TITLE="codeoptim.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\config.c" TITLE="config.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\error.c" TITLE="error.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\field.c" TITLE="field.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\help.c" TITLE="help.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\parser.y" TITLE="parser.y" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\ppparse.y" TITLE="ppparse.y" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\reserved.c" TITLE="reserved.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\sqlxfdgen.c" TITLE="sqlxfdgen.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\tree.c" TITLE="tree.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\typeck.c" TITLE="typeck.c" CLEAN="0"/>
+			</FOLDER>
+			<FILE NAME="..\..\cobc\ChangeLog" TITLE="ChangeLog" CLEAN="0"/>
+		</FILES>
+	</TARGET>
+</CC386PROJECT>
