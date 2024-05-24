@@ -3835,11 +3835,19 @@ cob_fd_file_open (cob_file *f, char *filename,
 		return COB_XSTATUS_NOT_DIR;
 	}
 	errno = 0;
-	if (access (filename, F_OK) && errno == ENOENT) {
-		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-			return COB_STATUS_35_NOT_EXISTS;
+	if (access (filename, F_OK)) {
+		if (errno == ENOENT) {
+			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
+				return COB_STATUS_35_NOT_EXISTS;
+			}
+			nonexistent = 1;
+#if 0 /* CHECKME: how to handle stuff like ENOTDIR here ?*/
+		} else if (errno == ENOTDIR) {
+				return COB_STATUS_30_PERMANENT_ERROR;
+		} else {
+			...
+#endif
 		}
-		nonexistent = 1;
 	}
 
 	if ((f->organization == COB_ORG_RELATIVE || f->organization == COB_ORG_SEQUENTIAL)
