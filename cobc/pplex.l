@@ -679,11 +679,9 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "ASSIGN"	{
 	return ASSIGN;
-/* not merged yet
   }
   "BOUND"	{
 	 return BOUND;
-*/
   }
   "CALLFH"	{
 	return CALLFH;
@@ -712,12 +710,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "MAKESYN" 	|
   "MAKE-SYN"	{
 	return MAKESYN;
-/* not merged yet
   }
   "NOBOUND" |
   "NO-BOUND"		{
 	return NOBOUND;
-*/
   }
   "NODPCINDATA" 	|
   "NO-DPCINDATA"	|
@@ -729,12 +725,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NOFOLD-COPY-NAME"	|
   "NO-FOLD-COPY-NAME"	{
 	return NOFOLDCOPYNAME;
-/* not merged yet
   }
   "NOSSRANGE"	|
   "NO-SSRANGE"	{
 	return NOSSRANGE;
-*/
   }
   "NOODOSLIDE"	|
   "NO-ODOSLIDE"	{
@@ -748,11 +742,9 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "REMOVE"		{
 	return REMOVE;
-/* not merged yet
   }
   "SSRANGE"	{
 	return SSRANGE;
-*/
   }
   "SOURCEFORMAT" |
   "SOURCE-FORMAT"	{
@@ -2328,10 +2320,8 @@ skip_to_eol (void)
 static void
 display_finish (void)
 {
-	int	msg_len;
-
 	if (!plex_skip_input) {
-		msg_len = strlen (display_msg) - 1;
+		int msg_len = strlen (display_msg) - 1;
 		while (msg_len != 0 && display_msg[msg_len] == ' ') {
 			display_msg[msg_len--] = 0;
 		}

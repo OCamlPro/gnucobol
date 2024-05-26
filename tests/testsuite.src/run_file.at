@@ -25809,3 +25809,95 @@ Key: GAM00014  Key3='UNI-80/3', Sts '00'
 
 AT_CLEANUP
 
+
+AT_SETUP([TURN EC-I-O])
+AT_KEYWORDS([runfile directive])
+
+AT_XFAIL_IF([true])
+# FIXME: FUNCTION EXCEPTION-STATUS should be empty when an EC occurs but has been
+#   >>TURN'd off.
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL f ASSIGN "out.txt"
+               SEQUENTIAL
+               FILE STATUS f-status.
+
+           SELECT g ASSIGN "out.txt"
+               SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  f.
+       01  f-rec PIC X.
+
+       FD  g.
+       01  g-rec PIC X.
+
+       WORKING-STORAGE SECTION.
+       01  f-status PIC XX.
+                   
+       PROCEDURE DIVISION.
+           OPEN OUTPUT f
+           WRITE f-rec FROM "a"
+           CLOSE f
+           
+           >>TURN EC-I-O CHECKING ON
+           *> Read f too many times without libcob error
+           OPEN INPUT f
+           PERFORM 2 TIMES
+               READ f
+               DISPLAY f-rec
+           END-PERFORM
+
+           DISPLAY f-status
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+
+           CLOSE f
+
+           >>TURN EC-I-O g CHECKING ON
+
+           *> Read f too many times without libcob error
+           OPEN INPUT f
+           PERFORM 2 TIMES
+               READ f
+               DISPLAY f-rec
+           END-PERFORM
+
+           DISPLAY f-status
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+
+           CLOSE f
+
+           *> Read g too many times with libcob error
+           OPEN INPUT g
+           PERFORM 2 TIMES
+               READ g
+               DISPLAY g-rec
+           END-PERFORM
+
+           CLOSE g
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
+[a
+a
+10
+
+a
+a
+10
+
+a
+], [libcob: prog.cob:61: error: end of file (status = 10) for file g ('out.txt') on READ
+libcob: prog.cob:61: warning: implicit CLOSE of g ('out.txt')
+])
+
+AT_CLEANUP

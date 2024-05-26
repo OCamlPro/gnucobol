@@ -352,9 +352,6 @@ AT_SETUP([enable / disable subscript check])
 AT_KEYWORDS([runsubscripts subscripts debug exception-name
 TURN BOUND NOBOUND])
 
-# Not merged yet
-AT_SKIP_IF(true)
-
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
@@ -399,8 +396,6 @@ AT_CLEANUP
 AT_SETUP([BOUND and NOBOUND directives])
 AT_KEYWORDS([runsubscripts subscripts extensions directive])
 
-# Not merged yet
-AT_SKIP_IF(true)
 # note: the >> TURN directive is checked in run_misc.at
 
 AT_DATA([prog.cob], [
@@ -470,9 +465,6 @@ AT_CLEANUP
 AT_SETUP([SSRANGE and NOSSRANGE directives])
 AT_KEYWORDS([runsubscripts subscripts extensions directive])
 
-# Not fully merged yet
-AT_SKIP_IF(true)
-
 # WARNING: this testcase is "broken" as those SSRANGE may only be
 #          defined before IDENTIFICATION DIVISION (initial $SET)
 
@@ -499,7 +491,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [!
-], [libcob: prog.cob:17: error: subscript of 'y' out of bounds: 6
+], [libcob: prog.cob:18: error: subscript of 'y' out of bounds: 6
 note: maximum subscript for 'y': 5
 ])
 

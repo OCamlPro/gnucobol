@@ -4749,6 +4749,39 @@ prog.cob:37: error: 'cat' is a reserved word, but isn't supported
 AT_CLEANUP
 
 
+AT_SETUP([TURN directive])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       *> Valid
+       >> TURN ec-i-o f CHECKING ON
+       *> Invalid
+       >> TURN dd CHECKING ON
+       >> TURN ec-all f CHECKING ON
+       >> TURN EC-I-O-invalid-KEY not-exist CHECKING OFF
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+           SELECT F ASSIGN "f.txt", SEQUENTIAL.
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD  f.
+       01  f-rec        PIC X.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:6: error: invalid exception-name: DD
+prog.cob:7: error: invalid exception-name: F
+prog.cob:8: error: file 'not-exist' does not exist
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([STRING / UNSTRING with invalid syntax])
 AT_KEYWORDS([misc])
 

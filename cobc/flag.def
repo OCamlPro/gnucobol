@@ -82,14 +82,12 @@ CB_FLAG_NQ (1, "callfh", 9,
 CB_FLAG_NQ (1, "sqlschema", 11,		/* stored in cb_sqldb_schema */
 	_("  -fsqlschema=<name>    define database schema name"))
 
-# if 0 /* not yet merged */
 /* note: suppressed help to have it local to --debug */
 CB_FLAG_NQ (0, "ec", 14,
 	_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
       "                        sets -fsource-location"))
 CB_FLAG_NQ (0, "no-ec", 15,
 	_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"))
-#endif
 
 /* Binary flags */
 
@@ -143,8 +141,7 @@ CB_FLAG (cb_flag_trace, 1, "trace",
 
 CB_FLAG (cb_flag_traceall, 1, "traceall",
 	_("  -ftraceall            generate trace code\n"
-	  "                        * scope: executed SECTION/PARAGRAPH/STATEMENTS\n"
-	  "                        * turned on by -debug"))
+	  "                        * scope: executed SECTION/PARAGRAPH/STATEMENTS"))
 
 CB_FLAG (cb_flag_symbols, 1, "symtab",
 	_("  -fsymtab              build symbol table for dump/trace/debug"))
@@ -158,7 +155,7 @@ CB_FLAG (cb_flag_debugging_line, 1, "debugging-line",
 
 CB_FLAG (cb_flag_source_location, 1, "source-location",
 	_("  -fsource-location     generate source location code\n"
-	  "                        * turned on by -debug/-g/-ftraceall"))
+	  "                        * turned on by -debug/-g/-ftraceall/-fec"))
 
 CB_FLAG (cb_flag_implicit_init, 1, "implicit-init",
 	_("  -fimplicit-init       automatic initialization of the COBOL runtime system"))
@@ -211,11 +208,13 @@ CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
 	_("  -fno-gen-c-decl-static-call\tdisable generation of C function declarations\n"
 	  "                        for subroutines with static CALL"))
 
-CB_FLAG (cb_flag_c_line_directives, 0, "gen-c-line-directives",
-	_("  -fgen-c-line-directives\tgenerate source location directives in C code"))
+CB_FLAG (cb_flag_c_line_directives, 1, "gen-c-line-directives",
+	_("  -fgen-c-line-directives\tgenerate source location directives in C code;\n"
+	  "                        useful for source-level debugging"))
 
-CB_FLAG (cb_flag_c_labels, 0, "gen-c-labels",
-	_("  -fgen-c-labels       generate extra labels in C sources"))
+CB_FLAG (cb_flag_c_labels, 1, "gen-c-labels",
+	_("  -fgen-c-labels        generate extra labels in C sources;\n"
+	  "                        useful for source-level debugging"))
 
 CB_FLAG (cb_mf_files, 1, "mf-files",
 	 _("  -fmf-files            Sequential & Relative files will match Micro Focus format"))

@@ -136,51 +136,7 @@ COB_EXCEPTION  (0407, COB_EC_FLOW_SEARCH,
 COB_EXCEPTION  (0408, COB_EC_FLOW_USE,
 		"EC-FLOW-USE", 1)
 
-
-/* input-output exception */
-COB_EXCEPTION  (0500, COB_EC_I_O,
-		"EC-I-O", 0)
-
-/* I-O status "1x" */
-COB_EXCEPTION  (0501, COB_EC_I_O_AT_END,
-		"EC-I-O-AT-END", 0)
-
-/* An end of page condition occurred */
-COB_EXCEPTION  (0502, COB_EC_I_O_EOP,
-		"EC-I-O-EOP", 0)
-
-/* A page overflow condition occurred */
-COB_EXCEPTION  (0503, COB_EC_I_O_EOP_OVERFLOW,
-		"EC-I-O-EOP-OVERFLOW", 0)
-
-/* I-O status "6x" */
-COB_EXCEPTION  (0504, COB_EC_I_O_FILE_SHARING,
-		"EC-I-O-FILE-SHARING", 0)
-
-/* I-O status "9x" */
-COB_EXCEPTION  (0505, COB_EC_I_O_IMP,
-		"EC-I-O-IMP", 0)
-
-/* I-O status "2x" */
-COB_EXCEPTION  (0506, COB_EC_I_O_INVALID_KEY,
-		"EC-I-O-INVALID-KEY", 0)
-
-/* The value of a LINAGE data-item is not within the required range */
-COB_EXCEPTION  (0507, COB_EC_I_O_LINAGE,
-		"EC-I-O-LINAGE", 1)
-
-/* I-O status "4x" */
-COB_EXCEPTION  (0508, COB_EC_I_O_LOGIC_ERROR,
-		"EC-I-O-LOGIC-ERROR", 1)
-
-/* I-O status "3x" */
-COB_EXCEPTION  (0509, COB_EC_I_O_PERMANENT_ERROR,
-		"EC-I-O-PERMANENT-ERROR", 1)
-
-/* I-O status "5x" */
-COB_EXCEPTION  (050A, COB_EC_I_O_RECORD_OPERATION,
-		"EC-I-O-RECORD-OPERATION", 0)
-
+#include "exception-io.def"
 
 /* Implementation-defined exception condition */
 COB_EXCEPTION  (0600, COB_EC_IMP,
@@ -367,6 +323,7 @@ COB_EXCEPTION  (1203, COB_EC_STORAGE_NOT_AVAIL,
 
 
 /* User-defined exception condition */
+/* Only valid in TURN directive + RAISE + EXIT PROGRAM / GOBACK */
 COB_EXCEPTION  (1300, COB_EC_USER,
 		"EC-USER", 0)
 
@@ -396,7 +353,7 @@ COB_EXCEPTION  (1405, COB_EC_VALIDATE_VARYING,
 		"EC-VALIDATE-VARYING", 1)
 
 
-/* FUNCTION exception */
+/* FUNCTION exception (nonstandard) */
 COB_EXCEPTION  (1500, COB_EC_FUNCTION,
 		"EC-FUNCTION", 0)
 
@@ -414,7 +371,7 @@ COB_EXCEPTION  (1504, COB_EC_FUNCTION_NOT_FOUND,
 		"EC-FUNCTION-NOT-FOUND", 1)
 
 
-/* XML exception */
+/* XML exception  (nonstandard) */
 COB_EXCEPTION  (1600, COB_EC_XML,
 		"EC-XML", 0)
 

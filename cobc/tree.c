@@ -4846,6 +4846,11 @@ build_file (cb_tree name)
 	p->access_mode = COB_ACCESS_SEQUENTIAL;
 	p->handler = CB_LABEL (cb_standard_error_handler);
 	p->handler_prog = current_program;
+	p->exception_table = cobc_parse_malloc (sizeof (struct cb_exception)
+						* cb_io_exception_table_len);
+	memcpy (p->exception_table, cb_io_exception_table,
+		sizeof (struct cb_exception) * cb_io_exception_table_len);
+
 	return p;
 }
 
@@ -7052,11 +7057,11 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 	int argnum = 0;
 
 	for (l = args; l; l = CB_CHAIN(l)) {
-		
+
 		argnum++;
 		if (argnum < check_from) continue;
 		if (check_to && argnum > check_to) break;
-		
+
 		arg = CB_VALUE(l);
 		arg_cat = cb_tree_category (arg);
 
@@ -7626,7 +7631,7 @@ cb_build_ml_tree (struct cb_field *record, const int children_are_attrs,
 	if (is_unconditionally_suppressed (record, suppress_list)) {
 		return NULL;
 	}
-	
+
 	tree = make_tree (CB_TAG_ML_TREE, CB_CATEGORY_UNKNOWN,
 			  sizeof (struct cb_ml_generate_tree));
 	tree->sibling = NULL;

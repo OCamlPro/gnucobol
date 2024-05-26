@@ -314,10 +314,6 @@ AT_CLEANUP
 AT_SETUP([enable / disable ref-mod check])
 AT_KEYWORDS([refmod debug exception-name])
 
-
-# Not fully merged yet
-AT_SKIP_IF(true)
-
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
@@ -635,4 +631,3 @@ TSTBIN10 is 825373492 vs '1234'
 ])
 
 AT_CLEANUP
-

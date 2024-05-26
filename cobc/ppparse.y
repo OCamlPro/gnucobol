@@ -457,6 +457,37 @@ ppp_error_invalid_option (const char *directive, const char *option)
 	}
 }
 
+static void
+append_to_turn_list (struct cb_text_list *ec_names, int enable, int with_location)
+{
+	struct cb_turn_list	*l;
+	struct cb_turn_list	*turn_list_end;
+
+	/* Add turn directive data to end of cb_turn_list */
+	l = cobc_plex_malloc (sizeof (struct cb_turn_list));
+	l->ec_names = ec_names;
+	l->enable = enable;
+	l->with_location = with_location;
+	l->next = NULL;
+	/* The line number is set properly in the scanner */
+	l->line = -1;
+	
+	if (cb_turn_list) {
+		for (turn_list_end = cb_turn_list;
+		     turn_list_end->next;
+		     turn_list_end = turn_list_end->next);
+		turn_list_end->next = l;
+	} else {
+		cb_turn_list = l;
+	}
+
+	/*
+	  Output #TURN so we can assign a line number to this data later in the
+	  scanner.
+	*/
+	fprintf (ppout, "#TURN\n");
+}
+
 /* Global functions */
 
 void
@@ -591,6 +622,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token ADDRSV
 %token ADDSYN
 %token ASSIGN
+%token BOUND
 %token CALLFH
 %token XFD
 %token COMP1
@@ -600,9 +632,11 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token KEYCOMPRESS
 %token NOKEYCOMPRESS
 %token MAKESYN
+%token NOBOUND
 %token NODPC_IN_DATA	"NODPC-IN-DATA"
 %token NOFOLDCOPYNAME
 %token NOODOSLIDE
+%token NOSSRANGE
 /* OVERRIDE token defined above. */
 %token ODOSLIDE
 %token REMOVE
@@ -662,6 +696,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_by_list
 %type <l>	alnum_equality
 %type <l>	alnum_equality_list
+%type <l>	ec_list
 
 %type <r>	copy_replacing
 %type <r>	replacing_list
@@ -674,6 +709,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <ui>	_also
 %type <ui>	_last
 %type <ui>	lead_trail
+%type <ui>	on_or_off
 
 %%
 
@@ -786,6 +822,11 @@ set_choice:
 		ppp_error_invalid_option ("ASSIGN", p);
 	}	
   }
+| BOUND
+  {
+	/* Enable EC-BOUND-SUBSCRIPT checking */
+	append_to_turn_list (ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT"), 1, 0);
+  }
 | CALLFH LITERAL
   {
 	char	*p = $2;
@@ -881,6 +922,11 @@ set_choice:
   {
 	fprintf (ppout, "#MAKESYN %s %s\n", $2->text, $2->next->text);
   }
+| NOBOUND
+  {
+	/* Disable EC-BOUND-SUBSCRIPT checking */
+	append_to_turn_list (ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT"), 0, 0);
+  }
 | NODPC_IN_DATA
   {
 	cb_dpc_in_data = CB_DPC_IN_NONE;
@@ -888,6 +934,14 @@ set_choice:
 | NOFOLDCOPYNAME
   {
 	cb_fold_copy = 0;
+  }
+| NOSSRANGE
+  {
+	/* Disable EC-BOUND-SUBSCRIPT and -REF-MOD checking */
+	struct cb_text_list	*txt = ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT");
+	txt = ppp_list_add (txt, "EC-BOUND-REF-MOD");
+	
+	append_to_turn_list (txt, 0, 0);
   }
 | NOODOSLIDE
   {
@@ -980,11 +1034,7 @@ set_choice:
 		}
 		txt = ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT");
 		txt = ppp_list_add (txt, "EC-BOUND-REF-MOD");
-#if 0 /* not merged yet */
 		append_to_turn_list (txt, 1, 0);
-#else
-		CB_PENDING ("SSRANGE");
-#endif
 	} else {
 		ppp_error_invalid_option ("SSRANGE", p);
 	}
@@ -1255,19 +1305,38 @@ leap_second_directive:
 turn_directive:
   ec_list CHECKING on_or_off
   {
-	CB_PENDING (_("TURN directive"));
+	append_to_turn_list ($1, !!$3, $3 == 2U);
   }
 ;
 
 ec_list:
   VARIABLE_NAME
+  {
+	$$ = ppp_list_add (NULL, $1);
+  }
 | ec_list VARIABLE_NAME
+  {
+	$$ = ppp_list_add ($1, $2);
+  }
 ;
 
 on_or_off:
-  /* Empty */
+  on_with_loc
+  {
+	$$ = 2U;
+  }
+| ON
+  {
+	$$ = 1U;
+  }
 | OFF
-| ON with_loc
+  {
+	$$ = 0;
+  }
+;
+
+on_with_loc:
+  ON with_loc
 | with_loc
 ;
 

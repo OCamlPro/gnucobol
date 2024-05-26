@@ -88,12 +88,10 @@ cobc_print_usage_common_options (void)
 	puts (_("  -g                    enable C compiler debug and stack check"));
 	puts (_("  -d, --debug           enable all run-time error checking,\n"
 	        "                        equal to -fstack-check -fec=EC-ALL"));
-# if 0 /* not yet merged */
 	/* duplicated here from flags.def to place it next to -debug */
 	puts (_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
 	        "                        sets -fsource-location"));
 	puts (_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"));
-#endif
 	puts (_("  -o <file>             place the output into <file>"));
 	puts (_("  -b                    combine all input files into a single\n"
 	        "                        dynamically loadable module"));

@@ -10812,14 +10812,18 @@ statements:
 			emit_entry (current_program->program_id, 0, NULL, NULL);
 		}
 	}
+
+	cobc_apply_turn_directives ();
   }
   statement
   {
 	cobc_cs_check = 0;
+	cobc_apply_turn_directives ();
   }
 | statements statement
   {
 	cobc_cs_check = 0;
+	cobc_apply_turn_directives ();
   }
 ;
 
@@ -16171,6 +16175,7 @@ use_file_exception:
 		current_section->flag_declarative_exit = 1;
 		current_section->flag_real_label = 1;
 		current_section->flag_skip_label = 0;
+		/* TO-DO: Use cobc_ec_turn? */
 		CB_EXCEPTION_ENABLE (COB_EC_I_O) = 1;
 		if (use_global_ind) {
 			current_section->flag_global = 1;
