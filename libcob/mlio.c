@@ -971,7 +971,7 @@ cob_json_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 	int	num_newlines = 0;
 	int	status = 0;
 #if defined (WITH_CJSON)
-	cJSON	*json;
+	cJSON	*json = NULL;
 #elif defined (WITH_JSON_C)
 	json_object	*json = NULL;
 #endif
