@@ -321,6 +321,11 @@
 	  as its documentation specify to explicit include via -I dstdir/json-c
 	* NEWS, DEPENDENCIES: updated
 
+2020-07-24  James K. Lowden  <jklowden@symas.com>
+
+	* build_aux/bootstrap: suppress portability warning stemming from
+	AMINCLUDE_STATIC
+
 2020-07-19  Edward Hart <edward.dan.hart@gmail.com>
 
 	* configure.ac: added support for JSON-C as JSON handler
