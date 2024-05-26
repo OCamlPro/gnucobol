@@ -1560,6 +1560,13 @@
 	* fileio.c, coblocal.h: renamed cob_srttmpfile to cob_create_tmpfile and made
 	  it internally available
 
+2020-06-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_fd_file_open, cob_file_open): removed duplicate code;
+	  ensure that the cob_file->fd and ->file are not set if open fails set some
+	  file attributes only if open works; set the cop_file->open_mode to CLOSED
+	  if locking via fcntl fails
+
 2020-06-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_file_close) [_WIN32]: pipe code compiles again, but still
