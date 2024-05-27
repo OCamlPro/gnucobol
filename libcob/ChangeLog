@@ -1423,6 +1423,10 @@
 
 	* common.c, common.h: removed support for VC older than VC 2008
 
+2020-09-08  James K. Lowden  <jklowden@symas.com>
+
+	* intrinsic.c (cob_intr_seconds_from_formatted_time): fix bug #886
+
 2020-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c: huge performance improvements for INSPECT by splitting

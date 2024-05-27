@@ -5603,7 +5603,8 @@ cob_field *
 cob_intr_seconds_from_formatted_time (cob_field *format_field, cob_field *time_field)
 {
 	size_t		str_length;
-	char		format_str[COB_DATETIMESTR_LEN] = { '\0' };
+	char		format_str[2 * COB_DATETIMESTR_LEN] = { '\0' };
+	char *		time_format_str = format_str;
 	const char	decimal_point = COB_MODULE_PTR->decimal_point;
 	int		is_datetime = 0;
 	char		time_str[COB_DATETIMESTR_LEN] = { '\0' };
@@ -5625,14 +5626,15 @@ cob_intr_seconds_from_formatted_time (cob_field *format_field, cob_field *time_f
 
 	/* Extract the time part of the strings */
 	if (is_datetime) {
-		split_around_t (format_str, NULL, format_str);
+		time_format_str = format_str + sizeof(format_str) / 2;
+		split_around_t (format_str, NULL, time_format_str);
 		split_around_t ((char *) time_field->data, NULL, time_str);
 	} else {
 		memcpy (time_str, time_field->data, str_length);
 	}
 
 	/* Validate the formatted time */
-	time_fmt = parse_time_format_string (format_str);
+	time_fmt = parse_time_format_string (time_format_str);
 	if (test_formatted_time (time_fmt, time_str, decimal_point) != 0) {
 		goto invalid_args;
 	}
