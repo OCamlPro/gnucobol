@@ -1489,6 +1489,11 @@
 
 	* common.c: minimal adjustments to --info output
 
+2020-07-26  Edward Hart <edward.dan.hart@gmail.com>
+
+	* screenio.c (cob_screen_puts): fixed bug #665, where spaces where
+	  replaced with underscores in DISPLAY.
+
 2020-07-25  Edward Hart <edward.dan.hart@gmail.com>
 
 	* screenio.c (cob_screen_get_all): improve number entry:
