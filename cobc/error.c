@@ -108,7 +108,7 @@ print_error (const char *file, int line, const char *prefix,
 		last_paragraph = current_paragraph;
 	}
 
-	/* Print the error */
+	/* Print the error TODO: use cobc_err_msg*/
 	print_error_prefix (file, line, prefix);
 	if (!cb_src_list_file) {
 		/* note: better would be one print path, but this would

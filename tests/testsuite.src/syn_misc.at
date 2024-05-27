@@ -7633,7 +7633,7 @@ prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
 AT_CLEANUP
 
 
-AT_SETUP([very long literal in error message])
+AT_SETUP([very long literal in error message, max 1024])
 AT_KEYWORDS([misc literals])
 
 AT_DATA([prog.cob], [
@@ -7663,7 +7663,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 ])
 
 AT_CLEANUP
-
+#' <-- fix syntax highlighting
 
 AT_SETUP([literal missing terminating character])
 AT_KEYWORDS([misc literals terminator])
