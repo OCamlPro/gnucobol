@@ -8661,13 +8661,31 @@ output_c_info (void)
 static void
 output_cobol_info (cb_tree x)
 {
+	const char *p = x->source_file;
 	if (!cb_cob_line_num) {
 		skip_line_num = 0;
 		return;
 	}
-	if (!cb_flag_c_line_directives)
-		sprintf (last_line_num, "#line %d \"%s\"", x->source_line, x->source_file);
-	output ("#line %d \"%s\"", x->source_line, x->source_file);
+	if (!cb_flag_c_line_directives) {
+		char *q = last_line_num + strlen(last_line_num);
+		sprintf (last_line_num, "#line %d \"", x->source_line);
+		while(*p){
+			if( *p == '\\' ){
+				*q++ = '\\';
+			}
+			*q++ = *p++;
+		}
+		sprintf (q, "\"");
+	}
+	output ("#line %d \"", x->source_line);
+
+	while(*p){
+		if( *p == '\\' ){
+			output("%c",'\\');
+		}
+		output("%c",*p++);
+	}
+	output("\"");
 	skip_line_num++;
 	output_newline ();
 }

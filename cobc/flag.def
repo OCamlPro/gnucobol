@@ -96,10 +96,6 @@ CB_FLAG (cb_flag_sql_xfd, 1, "sql",
 
 /* Flags with suppressed help */
 
-CB_FLAG_ON (cb_flag_recursive_check, 1, "recursive-check",
-	_("  -fno-recursive-check  disable check of recursive program call;\n"
-	  "                        effectively compiling as RECURSIVE program"))
-
 CB_FLAG (cb_flag_winmain, 0, "winmain",
 	_("  -fwinmain             generate WinMain instead of main when compiling\n"
 	  "                        as executable"))
@@ -159,6 +155,10 @@ CB_FLAG (cb_flag_source_location, 1, "source-location",
 
 CB_FLAG (cb_flag_implicit_init, 1, "implicit-init",
 	_("  -fimplicit-init       automatic initialization of the COBOL runtime system"))
+
+CB_FLAG_ON (cb_flag_recursive_check, 1, "recursive-check",
+	_("  -fno-recursive-check  disable check of recursive program call;\n"
+	  "                        effectively compiling as RECURSIVE program"))
 
 CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"

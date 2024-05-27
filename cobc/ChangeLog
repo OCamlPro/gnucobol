@@ -1148,6 +1148,10 @@
 	* cobc.c (cobc_print_info): adjusted version output for JSON and MPIR
 	* typeck.c: adjusted check of defines for JSON
 
+2020-09-27  Robert Dubner <rdubner-s@users.sf.net>
+
+	* codegen.c (output_cobol_info): emit doubled backslashes for source file
+
 2020-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_xref_link), tree.h: changed cb_xref_elem to a dual-linked
