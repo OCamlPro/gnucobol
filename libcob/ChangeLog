@@ -1398,6 +1398,11 @@
 
 	* call.c: define fmemopen if available but declaration missing
 
+2020-10-02  James K. Lowden  <jklowden@symas.com>
+
+	* screenio.c: quell unused-result warning when compiled with
+	  _FORTIFY_SOURCE, providing a draft for GCC_PRAGMA and GCC_POP
+
 2020-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: extracted (is_suppressed_key_value) from (cob_read_next)

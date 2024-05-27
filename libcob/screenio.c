@@ -157,6 +157,28 @@ static int cob_screen_init	(void);
 
 /* Local functions */
 
+/* 
+ * Cf. GNU cpp info manual, section 7, Pragmas 
+ * 
+ * Define a macro to use the _Pragma operator, restricted to modern gcc.
+ * This section is experimental.  If it proves useful, it should be moved
+ * to coblocal.h.
+ * 
+ * The ICC guard is there because ICC, clang and many others
+ * "helpfully" define __GNUC__, but often leave out some extensions.
+ */
+#if defined(__GNUC__) && ! defined(__ICC) && \
+ (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
+#  define GCC_PRAGMA(w)				\
+   _Pragma ("GCC diagnostic push")		\
+   _Pragma (#w)
+#  define GCC_POP()   _Pragma ("GCC diagnostic pop") 
+#else 
+#  define  GCC_PRAGMA(w)
+#  define  GCC_POP()
+#endif
+
+GCC_PRAGMA( GCC diagnostic ignored "-Wunused-result" )
 static void
 cob_speaker_beep (void)
 {
@@ -167,6 +189,7 @@ cob_speaker_beep (void)
 		(void)write (fd, "\a", (size_t)1);
 	}
 }
+GCC_POP()
 
 static COB_INLINE COB_A_INLINE void
 init_cob_screen_if_needed (void)
