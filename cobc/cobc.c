@@ -2865,7 +2865,7 @@ process_command_line (const int argc, char **argv)
 		while (++argnum < argc) {
 			if (strrchr(argv[argnum], '/') == argv[argnum]) {
 				if (argv[argnum][1] == '?' && !argv[argnum][2]) {
-					argv[argnum] = (char *)"--help";
+					argv[argnum] = (char *) "--help";
 					continue;
 				}
 				argv[argnum][0] = '-';
@@ -7717,18 +7717,7 @@ process_translate (struct filename *fn)
 	}
 
 	/* Translate to C */
-	current_section = NULL;
-	current_paragraph = NULL;
-	current_statement = NULL;
-	cb_source_line = 0;
-	/* Temporarily disable cross-reference during C generation */
-	if (cb_listing_xref) {
-		cb_listing_xref = 0;
-		codegen (current_program, fn->translate, 0);
-		cb_listing_xref = 1;
-	} else {
-		codegen (current_program, fn->translate, 0);
-	}
+	codegen (current_program, fn->translate);
 
 	/* Close files */
 	if (fclose (cb_storage_file) != 0) {

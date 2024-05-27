@@ -1211,6 +1211,11 @@
 
 	* scanner.l (read_literal): catch and error  missing termination of literal
 
+2020-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (codegen_init): fixed broken codegen for multi-source compiles
+	  introduced when fixing bug #666
+
 2020-08-28  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Changes for UNBOUNDED OCCURS
@@ -1233,10 +1238,9 @@
 	  improved syntax checks, now allowing RECORD VARYING also with
 	  fixed length FD (as all other known compilers do)
 
-2020-07-14  Simon Sobisch <simonsobisch@gnu.org>
+2020-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* cobc.c, cobc.h, codegen.c: added dumping of LOCAL-STORAGE,
-	  fixed dump of of SD
+	* codegen.c (output_call): don't setup exceptions for static CALLs
 
 2020-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1244,11 +1248,14 @@
 	  including fix for bug #670 "multiple listing of -debug"
 	* flag.def: removed dummy variables cb_def_dump, cb_def_callfh
 
-2020-07-09  Edward Hart <edward.dan.hart@gmail.com>
+2020-07-27  Simon Sobisch <simonsobisch@gnu.org>
 
-	* reserved.c (is_reserved_word): fixed division by zero when called
-	  before reserved words list has been initialised (bug #659). Thanks
-	  to Paul Smith for fix.
+	refactored codegen, now using a loop instead of a recursive call
+	fixing bug #666
+	* codegen.c, cobc.c, tree.h: split (codegen) into
+	  (codegen_init, codegen_internal, codegen_finalize);
+	  moved more initialization to codegen_init;
+	  limit variable scope and use of static variables
 
 2020-07-26  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -1265,6 +1272,17 @@
 	* pplex.l, ppparse.y: added corresponding SET DPC-IN-DATA directive.
 	* scanner.l: add EQUALS as alias for EQUAL in conditions (bug #663).
 	* typeck.c: fixed segfault with parens around condition word (bug #663).
+
+2020-07-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, cobc.h, codegen.c: added dumping of LOCAL-STORAGE,
+	  fixed dump of of SD
+
+2020-07-09  Edward Hart <edward.dan.hart@gmail.com>
+
+	* reserved.c (is_reserved_word): fixed division by zero when called
+	  before reserved words list has been initialised (bug #659). Thanks
+	  to Paul Smith for fix.
 
 2020-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
