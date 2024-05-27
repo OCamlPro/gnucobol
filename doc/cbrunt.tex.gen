@@ -24,17 +24,27 @@
     gsub(/\r/, "")
 }
 
-/^## General instructions/,/^##$/ {
+# The first section, "General instructions", gets special treatment.
+# The others, starting with "General environment", simply get a section
+# heading and verbatim quotation.
+
+/^## General instructions/,/^## General environment/ {
     
-    if( debug ) { print "@c input:", NR, $0 }
+    if( debug ) { printf "@c input: %3d: %s\n", NR, $0 }
+    
     if( sub(/^## /, "@section ") ) {
-	$0 = $0 "\n"
+	verbatim = ""
+	if( /General environment$/ ) {
+	    section = 1
+	    verbatim = "\n@verbatim"
+	}
+    	$0 = $0 verbatim "\n"
 	print
 	next
     }
 
     sub(/^# |^#$/, "")
-    gsub(/[{}]/, "@&")  # escape literal square brackets. 
+    gsub(/[{}]/, "@&")  # escape literal braces as @{ and @}. 
 
     # mark up plain text references
     gsub(/runtime.cfg/, "@file{&}")
@@ -66,7 +76,7 @@
 	gsub(/kilo|mega|giga/, "@samp{&}")
     }
     
-    if( debug ) { print "@c marked up:", NR, $0 }
+    if( debug ) { printf "@c marked:%3d: %s\n", NR, $0 }
 
     # Wrap 1-line examples in "code{...}"
     if( sub(/^ *Example: */, "") ) {
@@ -77,12 +87,8 @@
 	next
     }
     
-    if( /^##$/ ) {
-	section = 1
-    } else {
-	print
-    }
-    if( debug ) { print "@c output:", NR, $0 }
+    if( debug ) { printf "@c output:%3d: %s\n", NR, $0 }
+    print
     next
 }
 

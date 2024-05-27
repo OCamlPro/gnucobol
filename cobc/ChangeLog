@@ -703,22 +703,12 @@
 2021-07-29  Ron Norman <rjn@inglenet.com>
 
 	* flag.def, cobc.c: Add -fdatamap to usage report
-	          
+
 2021-07-23  Ron Norman <rjn@inglenet.com>
 
 	* tree.c: A few more checks for folding constant expressions
 	  Check for + 0, * 1, / 1, * 0
 
-||||||| .merge-left.r4286
-=======
-2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
-
-	* parser.y, config.def: changed the auto-setting of the RECURSIVE attribute
-	  in programs that CALL their own PROGRAM-ID (possibly deep in never called
-	  copybooks) to depend on the dialect option "self-call-recursive", with the
-	  option to skip that or warn/error, fixing bug 686
-
->>>>>>> .merge-right.r4287
 2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_getenv_path): drop invalid list from path
@@ -1158,6 +1148,10 @@
 	* cobc.c (cobc_print_info): adjusted version output for JSON and MPIR
 	* typeck.c: adjusted check of defines for JSON
 
+2020-09-27  Robert Dubner <rdubner-s@users.sf.net>
+
+	* codegen.c (output_cobol_info): emit doubled backslashes for source file
+
 2020-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_xref_link), tree.h: changed cb_xref_elem to a dual-linked
@@ -1221,6 +1215,15 @@
 
 	* scanner.l (read_literal): catch and error  missing termination of literal
 
+2020-09-02  James K. Lowden  <jklowden@fig.schemamania.org>
+
+	* cobc.c, error.c: prevent messages from overflowing message buffer
+
+2020-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (codegen_init): fixed broken codegen for multi-source compiles
+	  introduced when fixing bug #666
+
 2020-08-28  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Changes for UNBOUNDED OCCURS
@@ -1243,10 +1246,9 @@
 	  improved syntax checks, now allowing RECORD VARYING also with
 	  fixed length FD (as all other known compilers do)
 
-2020-07-14  Simon Sobisch <simonsobisch@gnu.org>
+2020-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* cobc.c, cobc.h, codegen.c: added dumping of LOCAL-STORAGE,
-	  fixed dump of of SD
+	* codegen.c (output_call): don't setup exceptions for static CALLs
 
 2020-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1254,11 +1256,14 @@
 	  including fix for bug #670 "multiple listing of -debug"
 	* flag.def: removed dummy variables cb_def_dump, cb_def_callfh
 
-2020-07-09  Edward Hart <edward.dan.hart@gmail.com>
+2020-07-27  Simon Sobisch <simonsobisch@gnu.org>
 
-	* reserved.c (is_reserved_word): fixed division by zero when called
-	  before reserved words list has been initialised (bug #659). Thanks
-	  to Paul Smith for fix.
+	refactored codegen, now using a loop instead of a recursive call
+	fixing bug #666
+	* codegen.c, cobc.c, tree.h: split (codegen) into
+	  (codegen_init, codegen_internal, codegen_finalize);
+	  moved more initialization to codegen_init;
+	  limit variable scope and use of static variables
 
 2020-07-26  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -1276,6 +1281,17 @@
 	* scanner.l: add EQUALS as alias for EQUAL in conditions (bug #663).
 	* typeck.c: fixed segfault with parens around condition word (bug #663).
 
+2020-07-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, cobc.h, codegen.c: added dumping of LOCAL-STORAGE,
+	  fixed dump of of SD
+
+2020-07-09  Edward Hart <edward.dan.hart@gmail.com>
+
+	* reserved.c (is_reserved_word): fixed division by zero when called
+	  before reserved words list has been initialised (bug #659). Thanks
+	  to Paul Smith for fix.
+
 2020-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (scan_x): fixed #658 by building a national literal for nx''
@@ -1283,6 +1299,11 @@
 2020-07-07  Edward Hart <edward.dan.hart@gmail.com>
 
 	* cobc.c, scanner.l: fixed memory issues.
+
+2020-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #53 TURN directive
+	* cobc.c (turn_ec_io): fixed case-sensitivity in filename comparison
 
 2020-07-06  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1324,6 +1345,13 @@
 
 	* Makefile.am: include PROGRAMS_LIBS
 
+2020-06-26  Edward Hart <edward.dan.hart@gmail.com>
+
+	FR #53 TURN directive
+	* cobc.c, cobc.h, tree.c: completed >>TURN EC-I-O file.
+	* cobc.c: fixed line reported in >>TURN syntax errors.
+	* pplex.l, ppparse.y: added SET BOUND and SET SSRANGE.
+
 2020-06-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: allow more characters in $DISPLAY
@@ -1341,6 +1369,18 @@
 	* codegen.c: Changes for EXCEPTION handling for DELETE FILE
 	* typeck.c: Changes for EXCEPTION handling for DELETE FILE
 			and some code tidy up
+
+2020-06-23  Edward Hart <edward.dan.hart@gmail.com>
+
+	FR #53 TURN directive
+	* cobc.c, cobc.h: completed initial implementation on disabling ECs.
+	* cobc.c, cobc.h, parser.y, ppparse.y, scanner.l: completed initial
+	  implementation of >>TURN.
+
+2020-06-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, cobc.h, flag.def, ppparse.y: draft work on >>TURN and
+	  disabling exceptions (FR #53).
 
 2020-06-22  Simon Sobisch <simonsobisch@gnu.org>
 

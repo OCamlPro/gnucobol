@@ -1398,6 +1398,11 @@
 
 	* call.c: define fmemopen if available but declaration missing
 
+2020-10-02  James K. Lowden  <jklowden@symas.com>
+
+	* screenio.c: quell unused-result warning when compiled with
+	  _FORTIFY_SOURCE, providing a draft for GCC_PRAGMA and GCC_POP
+
 2020-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: extracted (is_suppressed_key_value) from (cob_read_next)
@@ -1422,6 +1427,10 @@
 2020-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c, common.h: removed support for VC older than VC 2008
+
+2020-09-08  James K. Lowden  <jklowden@symas.com>
+
+	* intrinsic.c (cob_intr_seconds_from_formatted_time): fix bug #886
 
 2020-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1488,6 +1497,11 @@
 2020-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c: minimal adjustments to --info output
+
+2020-07-26  Edward Hart <edward.dan.hart@gmail.com>
+
+	* screenio.c (cob_screen_puts): fixed bug #665, where spaces where
+	  replaced with underscores in DISPLAY.
 
 2020-07-25  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -1559,6 +1573,18 @@
 	* intrinsic.c, coblocal.h: made cob_check_numval_f internally available
 	* fileio.c, coblocal.h: renamed cob_srttmpfile to cob_create_tmpfile and made
 	  it internally available
+
+2020-06-26  Edward Hart <edward.dan.hart@gmail.com>
+
+	* exception.def: split I/O exceptions into exception-io.def to control
+	  exceptions for specific files (>>TURN EC-I-O file).
+
+2020-06-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_fd_file_open, cob_file_open): removed duplicate code;
+	  ensure that the cob_file->fd and ->file are not set if open fails set some
+	  file attributes only if open works; set the cop_file->open_mode to CLOSED
+	  if locking via fcntl fails
 
 2020-06-25  Simon Sobisch <simonsobisch@gnu.org>
 

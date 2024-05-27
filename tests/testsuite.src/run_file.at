@@ -20,6 +20,365 @@
 ### GnuCOBOL Test Suite
 
 
+AT_SETUP([OPEN EXTEND and CLOSE, SEQUENTIAL])
+AT_KEYWORDS([runfile empty CLOSE OPTIONAL WRITE READ])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  OPTIONAL      FILE-OPT
+                   ASSIGN        TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+           SELECT  FILE0         ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE0.
+       01  F0REC             PIC X(80).
+       FD  FILE-OPT.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN EXTEND FILE-OPT
+           IF WSFS NOT = "05"
+              DISPLAY "STATUS EXTEND, missing optional file:" WSFS.
+           MOVE ALL "A" TO FOREC
+           WRITE FOREC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE A:" WSFS.
+           CLOSE FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE:" WSFS.
+           OPEN EXTEND FILE0
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS EXTEND, empty file:" WSFS.
+           MOVE ALL "B" TO F0REC
+           WRITE F0REC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE B:" WSFS.
+           CLOSE FILE0
+      *
+           OPEN INPUT FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS INPUT:" WSFS.
+           READ FILE-OPT NEXT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS READ A:" WSFS.
+           READ FILE-OPT NEXT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS READ B:" WSFS.
+           CLOSE FILE-OPT
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DELETE FILE, SEQUENTIAL])
+AT_KEYWORDS([runfile FILE OPEN I-O OPTIONAL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  OPTIONAL      FILE-OPT
+                   ASSIGN        TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE-OPT.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+      *>   DELETE FILE FILE-OPT
+      *>    ON EXCEPTION
+      *>     DISPLAY "STATUS DELETE FILE (missing) - EXCEPTION:" WSFS
+      *>     END-DISPLAY
+      *>    NOT ON EXCEPTION
+      *>      IF WSFS NOT = "05"
+      *>         DISPLAY "STATUS DELETE FILE (missing):" WSFS
+      *>      END-IF
+      *>   END-DELETE
+           OPEN I-O FILE-OPT
+           IF WSFS NOT = "05"
+              DISPLAY "STATUS I-O, missing optional file:" WSFS.
+           CLOSE FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE:" WSFS.
+           OPEN I-O FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS I-O, empty file:" WSFS.
+           DELETE FILE FILE-OPT
+      *>     ON EXCEPTION
+              IF WSFS NOT = "41"
+                 DISPLAY "STATUS DELETE FILE (OPENED):" WSFS
+              END-IF
+      *>    NOT ON EXCEPTION
+      *>     DISPLAY "STATUS DELETE FILE (OPENED) - NO EXCEPTION:" WSFS
+      *>   END-DELETE
+           CLOSE FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE #2:" WSFS.
+           DELETE FILE FILE-OPT
+      *>     ON EXCEPTION
+      *>      DISPLAY "STATUS DELETE FILE (closed) - EXCEPTION:" WSFS
+      *>      END-DISPLAY
+      *>     NOT ON EXCEPTION
+              IF WSFS NOT = "00"
+                 DISPLAY "STATUS DELETE FILE (closed):" WSFS
+              END-IF
+      *>   END-DELETE
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([OUTPUT on SEQUENTIAL file to missing directory])
+AT_KEYWORDS([runfile OPEN ASSIGN])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE0 ASSIGN  TO "./nosubhere/MYFILE0"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE0.
+       01  F0REC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN OUTPUT FILE0
+           IF WSFS NOT = "30"
+              DISPLAY "STATUS OPENO " WSFS.
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+[echo "Test" > ./nosubhere]
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([OPEN EXTEND and CLOSE, INDEXED])
+AT_KEYWORDS([runfile empty CLOSE OPTIONAL WRITE READ])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  OPTIONAL      FILE-OPT
+                   ASSIGN        TO "testfile"
+                   ORGANIZATION  IS INDEXED
+                   RECORD KEY    IS FOREC
+                   FILE STATUS   IS WSFS.
+           SELECT  FILE0         ASSIGN TO "testfile"
+                   ORGANIZATION  IS INDEXED
+                   RECORD KEY    IS F0REC
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE0.
+       01  F0REC             PIC X(80).
+       FD  FILE-OPT.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN EXTEND FILE-OPT
+           IF WSFS NOT = "05"
+              DISPLAY "STATUS EXTEND, missing optional file:" WSFS.
+           MOVE ALL "A" TO FOREC
+           WRITE FOREC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE A:" WSFS.
+           CLOSE FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE:" WSFS.
+           OPEN EXTEND FILE0
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS EXTEND, empty file:" WSFS.
+           MOVE ALL "B" TO F0REC
+           WRITE F0REC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE B:" WSFS.
+           CLOSE FILE0
+      *
+           OPEN INPUT FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS INPUT:" WSFS.
+           MOVE ALL "A" TO FOREC
+           READ FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS READ A:" WSFS.
+           MOVE ALL "B" TO FOREC
+           READ FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS READ B:" WSFS.
+           CLOSE FILE-OPT
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DELETE FILE, INDEXED])
+AT_KEYWORDS([runfile FILE OPEN I-O OPTIONAL])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  OPTIONAL      FILE-OPT
+                   ASSIGN        TO "testfile"
+                   ORGANIZATION  IS INDEXED
+                   RECORD KEY    IS FOREC
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE-OPT.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+      *>   DELETE FILE FILE-OPT
+      *>    ON EXCEPTION
+      *>     DISPLAY "STATUS DELETE FILE (missing) - EXCEPTION:" WSFS
+      *>     END-DISPLAY
+      *>    NOT ON EXCEPTION
+      *>      IF WSFS NOT = "05"
+      *>         DISPLAY "STATUS DELETE FILE (missing):" WSFS
+      *>      END-IF
+      *>   END-DELETE
+           OPEN I-O FILE-OPT
+           IF WSFS NOT = "05"
+              DISPLAY "STATUS I-O, missing optional file:" WSFS.
+           CLOSE FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE:" WSFS.
+           OPEN I-O FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS I-O, empty file:" WSFS.
+           DELETE FILE FILE-OPT
+      *>     ON EXCEPTION
+              IF WSFS NOT = "41"
+                 DISPLAY "STATUS DELETE FILE (OPENED):" WSFS
+              END-IF
+      *>    NOT ON EXCEPTION
+      *>     DISPLAY "STATUS DELETE FILE (OPENED) - NO EXCEPTION:" WSFS
+      *>   END-DELETE
+           CLOSE FILE-OPT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE #2:" WSFS.
+           DELETE FILE FILE-OPT
+      *>     ON EXCEPTION
+      *>      DISPLAY "STATUS DELETE FILE (closed) - EXCEPTION:" WSFS
+      *>      END-DISPLAY
+      *>     NOT ON EXCEPTION
+              IF WSFS NOT = "00"
+                 DISPLAY "STATUS DELETE FILE (closed):" WSFS
+              END-IF
+      *>   END-DELETE
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([OUTPUT on INDEXED file to missing directory])
+AT_KEYWORDS([runfile OPEN ASSIGN])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE0 ASSIGN  TO "./nosubhere/MYFILE0"
+                   ORGANIZATION  IS INDEXED
+                   RECORD KEY    IS F0REC
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE0.
+       01  F0REC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN OUTPUT FILE0
+           DISPLAY "STATUS OPENO " WSFS.
+      *
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[STATUS OPENO 35
+], [])
+[echo "Test" > ./nosubhere]
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[STATUS OPENO 30
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([READ INTO data item AT-END sequence])
 AT_KEYWORDS([runfile])
 
@@ -53,337 +412,6 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([LINAGE and LINAGE-COUNTER sample])
-AT_KEYWORDS([runfile optional file status READ WRITE END-OF-PAGE LINE SEQUENTIAL configuration COB_CURRENT_DATE])
-
-# modified version of GC-FAQ: Example of LINAGE File Descriptor
-# Author: Brian Tiffin, Date:   10-July-2008
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           select optional data-file assign to 'prog.cob'
-               organization is line sequential
-               file status is data-file-status.
-           select mini-report assign to "mini-report".
-
-       DATA DIVISION.
-       FILE SECTION.
-       FD  data-file.
-       01  data-record.
-           88 endofdata        value high-values.
-           02 data-line        pic x(80).
-       FD  mini-report
-           linage is 16 lines
-               with footing at 15
-               lines at top 2
-               lines at bottom 2.
-       01  report-line         pic x(80).
-
-       WORKING-STORAGE SECTION.
-       01  command-arguments   pic x(1024).
-       01  file-name           pic x(160).
-       01  data-file-status    pic xx.
-       01  lc                  pic 99.
-       01  report-line-blank.
-           02 filler           pic x(18) value all "*".
-           02 filler           pic x(05) value spaces.
-           02 filler           pic x(34)
-               VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
-           02 filler           pic x(05) value spaces.
-           02 filler           pic x(18) value all "*".
-       01  report-line-data.
-           02 body-tag         pic 9(6).
-           02 line-3           pic x(74).
-       01  report-line-header.
-           02 filler           pic x(6) VALUE "PAGE: ".
-           02 page-no          pic 9999.
-           02 filler           pic x(24).
-           02 filler           pic x(5) VALUE " LC: ".
-           02 header-tag       pic 9(6).
-           02 filler           pic x(23).
-           02 filler           pic x(6) VALUE "DATE: ".
-           02 page-date        pic x(6).
-
-       01  page-count          pic 9999.
-
-       PROCEDURE DIVISION.
-
-       open input data-file.
-       read data-file
-           at end
-               display "File open error: " data-file-status
-               stop run
-       end-read.
-
-       open output mini-report.
-
-       write report-line
-           from report-line-blank
-       end-write.
-
-       move 1 to page-count.
-       accept page-date from date end-accept.
-       move page-count to page-no.
-       write report-line
-           from report-line-header
-           after advancing page
-       end-write.
-
-       perform readwrite-loop until endofdata.
-
-       display
-           "Normal termination, ending status: "
-           data-file-status
-       close mini-report.
-
-       close data-file.
-       stop run.
-
-      ****************************************************************
-       readwrite-loop.
-       move data-record to report-line-data
-       move linage-counter to body-tag
-       write report-line from report-line-data
-           end-of-page
-               add 1 to page-count end-add
-               move page-count to page-no
-               move linage-counter to header-tag
-               write report-line from report-line-header
-                   after advancing page
-               end-write
-       end-write
-       read data-file
-           at end set endofdata to true
-       end-read
-       .
-])
-
-AT_CAPTURE_FILE([mini-report])
-AT_DATA([reference-report], [
-
-******************     THIS PAGE INTENTIONALLY LEFT BLANK     ******************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-PAGE: 0001                         LC: 000000                       DATE: 150206
-000001
-000002 IDENTIFICATION DIVISION.
-000003 PROGRAM-ID. prog.
-000004 ENVIRONMENT DIVISION.
-000005 INPUT-OUTPUT SECTION.
-000006 FILE-CONTROL.
-000007     select optional data-file assign to 'prog.cob'
-000008         organization is line sequential
-000009         file status is data-file-status.
-000010     select mini-report assign to "mini-report".
-000011
-000012 DATA DIVISION.
-000013 FILE SECTION.
-000014 FD  data-file.
-
-
-
-
-
-PAGE: 0002                         LC: 000015                       DATE: 150206
-000001 01  data-record.
-000002     88 endofdata        value high-values.
-000003     02 data-line        pic x(80).
-000004 FD  mini-report
-000005     linage is 16 lines
-000006         with footing at 15
-000007         lines at top 2
-000008         lines at bottom 2.
-000009 01  report-line         pic x(80).
-000010
-000011 WORKING-STORAGE SECTION.
-000012 01  command-arguments   pic x(1024).
-000013 01  file-name           pic x(160).
-000014 01  data-file-status    pic xx.
-
-
-
-
-
-PAGE: 0003                         LC: 000015                       DATE: 150206
-000001 01  lc                  pic 99.
-000002 01  report-line-blank.
-000003     02 filler           pic x(18) value all "*".
-000004     02 filler           pic x(05) value spaces.
-000005     02 filler           pic x(34)
-000006         VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
-000007     02 filler           pic x(05) value spaces.
-000008     02 filler           pic x(18) value all "*".
-000009 01  report-line-data.
-000010     02 body-tag         pic 9(6).
-000011     02 line-3           pic x(74).
-000012 01  report-line-header.
-000013     02 filler           pic x(6) VALUE "PAGE: ".
-000014     02 page-no          pic 9999.
-
-
-
-
-
-PAGE: 0004                         LC: 000015                       DATE: 150206
-000001     02 filler           pic x(24).
-000002     02 filler           pic x(5) VALUE " LC: ".
-000003     02 header-tag       pic 9(6).
-000004     02 filler           pic x(23).
-000005     02 filler           pic x(6) VALUE "DATE: ".
-000006     02 page-date        pic x(6).
-000007
-000008 01  page-count          pic 9999.
-000009
-000010 PROCEDURE DIVISION.
-000011
-000012 open input data-file.
-000013 read data-file
-000014     at end
-
-
-
-
-
-PAGE: 0005                         LC: 000015                       DATE: 150206
-000001         display "File open error: " data-file-status
-000002         stop run
-000003 end-read.
-000004
-000005 open output mini-report.
-000006
-000007 write report-line
-000008     from report-line-blank
-000009 end-write.
-000010
-000011 move 1 to page-count.
-000012 accept page-date from date end-accept.
-000013 move page-count to page-no.
-000014 write report-line
-
-
-
-
-
-PAGE: 0006                         LC: 000015                       DATE: 150206
-000001     from report-line-header
-000002     after advancing page
-000003 end-write.
-000004
-000005 perform readwrite-loop until endofdata.
-000006
-000007 display
-000008     "Normal termination, ending status: "
-000009     data-file-status
-000010 close mini-report.
-000011
-000012 close data-file.
-000013 stop run.
-000014
-
-
-
-
-
-PAGE: 0007                         LC: 000015                       DATE: 150206
-000001****************************************************************
-000002 readwrite-loop.
-000003 move data-record to report-line-data
-000004 move linage-counter to body-tag
-000005 write report-line from report-line-data
-000006     end-of-page
-000007         add 1 to page-count end-add
-000008         move page-count to page-no
-000009         move linage-counter to header-tag
-000010         write report-line from report-line-header
-000011             after advancing page
-000012         end-write
-000013 end-write
-000014 read data-file
-
-
-
-
-
-PAGE: 0008                         LC: 000015                       DATE: 150206
-000001     at end set endofdata to true
-000002 end-read
-000003 .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
-[Normal termination, ending status: 10
-], [])
-AT_CHECK([gcdiff mini-report reference-report], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([OUTPUT on INDEXED file to missing directory])
-AT_KEYWORDS([runfile OPEN ASSIGN])
-
-AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           SELECT  FILE0 ASSIGN  TO "./nosubhere/MYFILE0"
-                   ORGANIZATION  IS INDEXED
-                   RECORD KEY    IS F0REC
-                   FILE STATUS   IS WSFS.
-       DATA DIVISION.
-       FILE SECTION.
-       FD  FILE0.
-       01  F0REC             PIC X(80).
-       WORKING-STORAGE SECTION.
-       01  WSFS              PIC X(2).
-       PROCEDURE DIVISION.
-      *
-           OPEN OUTPUT FILE0
-           DISPLAY "STATUS OPENO " WSFS
-      *
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[STATUS OPENO 35
-], [])
-
-AT_CHECK([echo Test > ./nosubhere], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[STATUS OPENO 30
-], [])
 
 AT_CLEANUP
 
@@ -2012,6 +2040,292 @@ Key: OLD00000 is OLD TYME PIZZA MFG. CO.   Disk=8470 Tape=6250 BPI.
 Key: PRE00000 is PRESTIGE OFFICE FURNITURE Disk=8470 Tape=6250 BPI.
 Hit End of File after 09
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LINAGE and LINAGE-COUNTER sample])
+AT_KEYWORDS([runfile optional file status READ WRITE END-OF-PAGE LINE SEQUENTIAL configuration COB_CURRENT_DATE])
+
+# modified version of GC-FAQ: Example of LINAGE File Descriptor
+# Author: Brian Tiffin, Date:   10-July-2008
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           select optional data-file assign to 'prog.cob'
+               organization is line sequential
+               file status is data-file-status.
+           select mini-report assign to "mini-report".
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  data-file.
+       01  data-record.
+           88 endofdata        value high-values.
+           02 data-line        pic x(80).
+       FD  mini-report
+           linage is 16 lines
+               with footing at 15
+               lines at top 2
+               lines at bottom 2.
+       01  report-line         pic x(80).
+
+       WORKING-STORAGE SECTION.
+       01  command-arguments   pic x(1024).
+       01  file-name           pic x(160).
+       01  data-file-status    pic xx.
+       01  lc                  pic 99.
+       01  report-line-blank.
+           02 filler           pic x(18) value all "*".
+           02 filler           pic x(05) value spaces.
+           02 filler           pic x(34)
+               VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
+           02 filler           pic x(05) value spaces.
+           02 filler           pic x(18) value all "*".
+       01  report-line-data.
+           02 body-tag         pic 9(6).
+           02 line-3           pic x(74).
+       01  report-line-header.
+           02 filler           pic x(6) VALUE "PAGE: ".
+           02 page-no          pic 9999.
+           02 filler           pic x(24).
+           02 filler           pic x(5) VALUE " LC: ".
+           02 header-tag       pic 9(6).
+           02 filler           pic x(23).
+           02 filler           pic x(6) VALUE "DATE: ".
+           02 page-date        pic x(6).
+
+       01  page-count          pic 9999.
+
+       PROCEDURE DIVISION.
+
+       open input data-file.
+       read data-file
+           at end
+               display "File open error: " data-file-status
+               stop run
+       end-read.
+
+       open output mini-report.
+
+       write report-line
+           from report-line-blank
+       end-write.
+
+       move 1 to page-count.
+       accept page-date from date end-accept.
+       move page-count to page-no.
+       write report-line
+           from report-line-header
+           after advancing page
+       end-write.
+
+       perform readwrite-loop until endofdata.
+
+       display
+           "Normal termination, ending status: "
+           data-file-status
+       close mini-report.
+
+       close data-file.
+       stop run.
+
+      ****************************************************************
+       readwrite-loop.
+       move data-record to report-line-data
+       move linage-counter to body-tag
+       write report-line from report-line-data
+           end-of-page
+               add 1 to page-count end-add
+               move page-count to page-no
+               move linage-counter to header-tag
+               write report-line from report-line-header
+                   after advancing page
+               end-write
+       end-write
+       read data-file
+           at end set endofdata to true
+       end-read
+       .
+])
+
+AT_CAPTURE_FILE([mini-report])
+AT_DATA([reference-report], [
+
+******************     THIS PAGE INTENTIONALLY LEFT BLANK     ******************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PAGE: 0001                         LC: 000000                       DATE: 150206
+000001
+000002 IDENTIFICATION DIVISION.
+000003 PROGRAM-ID. prog.
+000004 ENVIRONMENT DIVISION.
+000005 INPUT-OUTPUT SECTION.
+000006 FILE-CONTROL.
+000007     select optional data-file assign to 'prog.cob'
+000008         organization is line sequential
+000009         file status is data-file-status.
+000010     select mini-report assign to "mini-report".
+000011
+000012 DATA DIVISION.
+000013 FILE SECTION.
+000014 FD  data-file.
+
+
+
+
+
+PAGE: 0002                         LC: 000015                       DATE: 150206
+000001 01  data-record.
+000002     88 endofdata        value high-values.
+000003     02 data-line        pic x(80).
+000004 FD  mini-report
+000005     linage is 16 lines
+000006         with footing at 15
+000007         lines at top 2
+000008         lines at bottom 2.
+000009 01  report-line         pic x(80).
+000010
+000011 WORKING-STORAGE SECTION.
+000012 01  command-arguments   pic x(1024).
+000013 01  file-name           pic x(160).
+000014 01  data-file-status    pic xx.
+
+
+
+
+
+PAGE: 0003                         LC: 000015                       DATE: 150206
+000001 01  lc                  pic 99.
+000002 01  report-line-blank.
+000003     02 filler           pic x(18) value all "*".
+000004     02 filler           pic x(05) value spaces.
+000005     02 filler           pic x(34)
+000006         VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
+000007     02 filler           pic x(05) value spaces.
+000008     02 filler           pic x(18) value all "*".
+000009 01  report-line-data.
+000010     02 body-tag         pic 9(6).
+000011     02 line-3           pic x(74).
+000012 01  report-line-header.
+000013     02 filler           pic x(6) VALUE "PAGE: ".
+000014     02 page-no          pic 9999.
+
+
+
+
+
+PAGE: 0004                         LC: 000015                       DATE: 150206
+000001     02 filler           pic x(24).
+000002     02 filler           pic x(5) VALUE " LC: ".
+000003     02 header-tag       pic 9(6).
+000004     02 filler           pic x(23).
+000005     02 filler           pic x(6) VALUE "DATE: ".
+000006     02 page-date        pic x(6).
+000007
+000008 01  page-count          pic 9999.
+000009
+000010 PROCEDURE DIVISION.
+000011
+000012 open input data-file.
+000013 read data-file
+000014     at end
+
+
+
+
+
+PAGE: 0005                         LC: 000015                       DATE: 150206
+000001         display "File open error: " data-file-status
+000002         stop run
+000003 end-read.
+000004
+000005 open output mini-report.
+000006
+000007 write report-line
+000008     from report-line-blank
+000009 end-write.
+000010
+000011 move 1 to page-count.
+000012 accept page-date from date end-accept.
+000013 move page-count to page-no.
+000014 write report-line
+
+
+
+
+
+PAGE: 0006                         LC: 000015                       DATE: 150206
+000001     from report-line-header
+000002     after advancing page
+000003 end-write.
+000004
+000005 perform readwrite-loop until endofdata.
+000006
+000007 display
+000008     "Normal termination, ending status: "
+000009     data-file-status
+000010 close mini-report.
+000011
+000012 close data-file.
+000013 stop run.
+000014
+
+
+
+
+
+PAGE: 0007                         LC: 000015                       DATE: 150206
+000001****************************************************************
+000002 readwrite-loop.
+000003 move data-record to report-line-data
+000004 move linage-counter to body-tag
+000005 write report-line from report-line-data
+000006     end-of-page
+000007         add 1 to page-count end-add
+000008         move page-count to page-no
+000009         move linage-counter to header-tag
+000010         write report-line from report-line-header
+000011             after advancing page
+000012         end-write
+000013 end-write
+000014 read data-file
+
+
+
+
+
+PAGE: 0008                         LC: 000015                       DATE: 150206
+000001     at end set endofdata to true
+000002 end-read
+000003 .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
+[Normal termination, ending status: 10
+], [])
+AT_CHECK([gcdiff mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -3790,7 +4104,7 @@ AT_DATA([prog.cob], [
        file-control.
           select optional indexed-file
           assign to "indexed-file.dat"
-          status is indexing-status-code
+          status is indexing-status-code indexing-isam-status
           organization is indexed
           access mode is dynamic
           record key is keyfield of indexing-record
@@ -3815,6 +4129,11 @@ AT_DATA([prog.cob], [
        01 indexing-status-code pic xx.
        01 indexing-status redefines indexing-status-code pic 99.
           88 indexing-ok       values 0 thru 10.
+       01 indexing-isam-status.
+          03 high-status-code  pic xx.
+          03 high-status redefines high-status-code pic 99.
+          03 low-status-code   pic xx.
+          03 low-status redefines low-status-code pic 99.
 
        78 line-separator       value
            '-----------------------------------------'.
@@ -4094,7 +4413,9 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob:14: warning: VSAM status ignored
+])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Read all 00b02 keys sequentially
 Reading: 00b02
@@ -7453,8 +7774,11 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([export IX_OPTIONS='keycheck=off'
-$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:82: error: unknown file error (status = 39) for file file2 ('./fileX') on OPEN
+])
+AT_CHECK([COB_KEYCHECK=OFF $COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
@@ -25495,3 +25819,95 @@ Key: GAM00014  Key3='UNI-80/3', Sts '00'
 
 AT_CLEANUP
 
+
+AT_SETUP([TURN EC-I-O])
+AT_KEYWORDS([runfile directive])
+
+AT_XFAIL_IF([true])
+# FIXME: FUNCTION EXCEPTION-STATUS should be empty when an EC occurs but has been
+#   >>TURN'd off.
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL f ASSIGN "out.txt"
+               SEQUENTIAL
+               FILE STATUS f-status.
+
+           SELECT g ASSIGN "out.txt"
+               SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  f.
+       01  f-rec PIC X.
+
+       FD  g.
+       01  g-rec PIC X.
+
+       WORKING-STORAGE SECTION.
+       01  f-status PIC XX.
+                   
+       PROCEDURE DIVISION.
+           OPEN OUTPUT f
+           WRITE f-rec FROM "a"
+           CLOSE f
+           
+           >>TURN EC-I-O CHECKING ON
+           *> Read f too many times without libcob error
+           OPEN INPUT f
+           PERFORM 2 TIMES
+               READ f
+               DISPLAY f-rec
+           END-PERFORM
+
+           DISPLAY f-status
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+
+           CLOSE f
+
+           >>TURN EC-I-O g CHECKING ON
+
+           *> Read f too many times without libcob error
+           OPEN INPUT f
+           PERFORM 2 TIMES
+               READ f
+               DISPLAY f-rec
+           END-PERFORM
+
+           DISPLAY f-status
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+
+           CLOSE f
+
+           *> Read g too many times with libcob error
+           OPEN INPUT g
+           PERFORM 2 TIMES
+               READ g
+               DISPLAY g-rec
+           END-PERFORM
+
+           CLOSE g
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
+[a
+a
+10
+
+a
+a
+10
+
+a
+], [libcob: prog.cob:61: error: end of file (status = 10) for file g ('out.txt') on READ
+libcob: prog.cob:61: warning: implicit CLOSE of g ('out.txt')
+])
+
+AT_CLEANUP

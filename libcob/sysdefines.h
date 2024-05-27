@@ -83,7 +83,7 @@
 
 #elif  defined(__HP_cc)
 #define GC_C_VERSION_PRF       "(HP aC++/ANSI C) "
-#define GC_C_VERSION   CB_XSTRINGIFY(__HP_cc) 
+#define GC_C_VERSION   CB_XSTRINGIFY(__HP_cc)
 
 #elif  defined(__hpux) || defined(_HPUX_SOURCE)
 #if  defined(__ia64)
@@ -91,7 +91,7 @@
 #else
 #define GC_C_VERSION_PRF       "(HPUX PA-RISC) "
 #endif
-#define GC_C_VERSION   " C"  
+#define GC_C_VERSION   " C"
 
 #else
 #define GC_C_VERSION_PRF	""

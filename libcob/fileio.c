@@ -3808,6 +3808,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 	int		fperms;
 	unsigned int	nonexistent;
 	int		ret;
+	FILE		*file;
 	COB_UNUSED(sharing);
 
 	/* Note filename points to file_open_name */
@@ -3835,11 +3836,19 @@ cob_fd_file_open (cob_file *f, char *filename,
 		return COB_XSTATUS_NOT_DIR;
 	}
 	errno = 0;
-	if (access (filename, F_OK) && errno == ENOENT) {
-		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-			return COB_STATUS_35_NOT_EXISTS;
+	if (access (filename, F_OK)) {
+		if (errno == ENOENT) {
+			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
+				return COB_STATUS_35_NOT_EXISTS;
+			}
+			nonexistent = 1;
+#if 0 /* CHECKME: how to handle stuff like ENOTDIR here ?*/
+		} else if (errno == ENOTDIR) {
+				return COB_STATUS_30_PERMANENT_ERROR;
+		} else {
+			...
+#endif
 		}
-		nonexistent = 1;
 	}
 
 	if ((f->organization == COB_ORG_RELATIVE || f->organization == COB_ORG_SEQUENTIAL)
@@ -3865,7 +3874,6 @@ cob_fd_file_open (cob_file *f, char *filename,
 
 	fdmode = O_BINARY;
 	fperms = 0;
-	f->fd = -1;
 	f->flag_file_lock = 0;
 	switch (mode) {
 	case COB_OPEN_INPUT:
@@ -3921,6 +3929,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		if (f->flag_optional) {
+			f->fd = fd;
 			f->open_mode = (unsigned char)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
@@ -3940,25 +3949,24 @@ cob_fd_file_open (cob_file *f, char *filename,
 	default:
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
-	f->fd = fd;
 	if (mode == COB_OPEN_INPUT) {
-       f->file = (void*)fdopen(f->fd, "r");
+       file = (void*)fdopen(fd, "r");
 	} else if (mode == COB_OPEN_I_O) {
        if (nonexistent)
-           f->file = (void*)fdopen(f->fd, "w+");
+           file = (void*)fdopen(fd, "w+");
        else
-           f->file = (void*)fdopen(f->fd, "r+");
+           file = (void*)fdopen(fd, "r+");
 	} else if (mode == COB_OPEN_EXTEND) {
-           f->file = (void*)fdopen(f->fd, "a");
+           file = (void*)fdopen(fd, "a");
 	} else {
-       f->file = (void*)fdopen(f->fd, "w");
+       file = (void*)fdopen(fd, "w");
 	}
 	if (errno != 0) { 	/* should never happen here... */
 		close (fd);
-		f->file = NULL;
-		f->fd = -1;
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
+	f->fd = fd;
+	f->file = file;
 	if (mode == COB_OPEN_EXTEND) {
 		set_file_pos (f, -1);
 	}
@@ -4034,6 +4042,8 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	 && mode == COB_OPEN_OUTPUT)
 		a->cob_write_dict(f, filename); 
 
+	f->file = NULL;
+	f->fd = -1;
 	if (f->organization != COB_ORG_LINE_SEQUENTIAL) {
 		return cob_fd_file_open (f, filename, mode, sharing);
 	}
@@ -4210,14 +4220,21 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	if (!isdirvalid (filename))
 		return COB_XSTATUS_NOT_DIR;
 	errno = 0;
-	if (access (filename, F_OK) && errno == ENOENT) {
-		nonexistent = 1;
-		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
-			return COB_STATUS_35_NOT_EXISTS;
+	if (access (filename, F_OK)) {
+		if (errno == ENOENT) {
+			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
+				return COB_STATUS_35_NOT_EXISTS;
+			}
+			nonexistent = 1;
+#if 0 /* CHECKME: how to handle stuff like ENOTDIR here ?*/
+		} else if (errno == ENOTDIR) {
+				return COB_STATUS_30_PERMANENT_ERROR;
+		} else {
+			...
+#endif
 		}
 	}
 
-	fp = NULL;
 	fmode = NULL;
 	/* Open the file */
 	switch (mode) {
@@ -4276,12 +4293,6 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	errno = 0;
 	f->last_write_mode = COB_LAST_WRITE_UNKNOWN;
 	fp = fopen (filename, fmode);
-	f->file = fp;
-	if (fp) {
-		f->fd = fileno (fp);
-	} else {
-		f->fd = -1;
-	}
 	switch (errno) {
 	case 0:
 		f->open_mode = (unsigned char)mode;
@@ -4302,6 +4313,8 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			return COB_XSTATUS_NOT_DIR;
 		}
 		if (f->flag_optional) {
+			f->file = fp;
+			f->fd = fileno (fp);
 			f->open_mode = (unsigned char)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
@@ -4331,8 +4344,6 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			if (fp) {
 				fclose (fp);
 			}
-			f->file = NULL;
-			f->fd = -1;
 			return COB_STATUS_57_I_O_LINAGE;
 		}
 		f->flag_needs_top = 1;
@@ -4340,6 +4351,13 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		cob_set_int (lingptr->linage_ctr, 1);
 	}
 	(void)cob_set_file_format(f, file_open_io_env, 1);		/* Set file format */
+
+	f->file = fp;
+	if (fp) {
+		f->fd = fileno (fp);
+	} else {
+		f->fd = -1;
+	}
 
 	if (mode == COB_OPEN_EXTEND) {
 		f->record_off = set_file_pos (f, -1);
@@ -6567,10 +6585,6 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		return;
 	}
 
-	f->flag_read_done = 0;
-	f->curkey = -1;
-	f->mapkey = -1;
-
 	/* File was previously closed with lock */
 	if (f->open_mode == COB_OPEN_LOCKED) {
 		cob_file_save_status (f, fnstatus, COB_STATUS_38_CLOSED_WITH_LOCK);
@@ -6582,6 +6596,10 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		cob_file_save_status (f, fnstatus, COB_STATUS_41_ALREADY_OPEN);
 		return;
 	}
+
+	f->flag_read_done = 0;
+	f->curkey = -1;
+	f->mapkey = -1;
 
 	f->last_open_mode = (unsigned char)mode;
 	f->share_mode = (unsigned char)sharing;
@@ -7587,12 +7605,11 @@ open_cbl_file (cob_u8_ptr file_name, int file_access,
 			return -1;
 	}
 	fd = open (fn, flag, COB_FILE_MODE);
+	cob_free (fn);
 	if (fd < 0) {
-		cob_free (fn);
 		memset (file_handle, -1, (size_t)4);
 		return 35;
 	}
-	cob_free (fn);
 	memcpy (file_handle, &fd, (size_t)4);
 	return 0;
 }

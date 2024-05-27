@@ -840,9 +840,6 @@ AT_CLEANUP
 AT_SETUP([TURN directive])
 AT_KEYWORDS([runmisc BOUND NOBOUND directives])
 
-# not merged yet
-AT_SKIP_IF(true)
-
 # note: we only check here that the TURN directive applies
 #       for more general tests, including command line options
 #       and extension directives, see run_subscript.at, run_refmod.at

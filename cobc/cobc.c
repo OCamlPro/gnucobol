@@ -212,13 +212,23 @@ const size_t COBC_MEM_SIZE =
 	/ sizeof(long long)) * sizeof(long long);
 
 
-#define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0},
+#define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0, 0},
 struct cb_exception cb_exception_table[] = {
-	{NULL, 0, 0},		/* CB_EC_ZERO */
+	{NULL, 0, 0, 0},	/* CB_EC_ZERO */
 #include "../libcob/exception.def"
-	{NULL, 0, 0}		/* CB_EC_MAX */
+	{NULL, 0, 0, 0}		/* CB_EC_MAX */
+};
+
+const struct cb_exception cb_io_exception_table[] = {
+	{NULL, 0, 0, 0},
+#include "libcob/exception-io.def"
+	{NULL, 0, 0, 0}		/* CB_EC_MAX */
 };
 #undef	COB_EXCEPTION
+const size_t	cb_io_exception_table_len = sizeof (cb_io_exception_table) / sizeof (struct cb_exception);
+static const size_t	cb_exception_table_len = sizeof (cb_exception_table) / sizeof (struct cb_exception);
+
+struct cb_turn_list	*cb_turn_list = NULL;
 
 #define	CB_FLAG(var,print_help,name,doc)	int var = 0;
 #define	CB_FLAG_ON(var,print_help,name,doc)	int var = 1;
@@ -1499,7 +1509,6 @@ cobc_check_valid_name (const char *name, const enum cobc_name_type prechk)
 	return 0;
 }
 
-#if 0	/* to be merged */
 /* Turn generation of runtime exceptions on/off */
 
 static void
@@ -1537,7 +1546,6 @@ turn_ec_for_table (struct cb_exception *table, const size_t table_len,
 		}
 	}
 }
-
 
 static unsigned int
 turn_ec_io (const struct cb_exception ec_to_turn,
@@ -1719,7 +1727,6 @@ cobc_deciph_ec (const char *opt, const cob_u32_t to_on_off)
 	loc.source_line = 0;
 	return cobc_turn_ec (cb_ec_list, to_on_off, &loc);
 }
-#endif	/* to be merged */
 
 /* Local functions */
 
@@ -2858,7 +2865,7 @@ process_command_line (const int argc, char **argv)
 		while (++argnum < argc) {
 			if (strrchr(argv[argnum], '/') == argv[argnum]) {
 				if (argv[argnum][1] == '?' && !argv[argnum][2]) {
-					argv[argnum] = (char *)"--help";
+					argv[argnum] = (char *) "--help";
 					continue;
 				}
 				argv[argnum][0] = '-';
@@ -3644,6 +3651,21 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
+		case 14:
+			/* -fec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW,
+			               also allows to skip the prefix e.g. BOUND-OVERFLOW */
+			if (cobc_deciph_ec (cob_optarg, 1U)) {
+				cobc_err_exit (COBC_INV_PAR, "-fec");
+			};
+			break;
+
+		case 15:
+			/* -fno-ec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW */
+			if (cobc_deciph_ec (cob_optarg, 0)) {
+				cobc_err_exit (COBC_INV_PAR, "-fno-ec");
+			};
+			break;
+
 		case 'A':
 			/* -A <xx> : Add options to C compile phase */
 			COBC_ADD_STR (cobc_cflags, " ", cob_optarg, NULL);
@@ -3922,7 +3944,9 @@ process_command_line (const int argc, char **argv)
 	/* debug: Turn on all exception conditions */
 	if (cobc_wants_debug) {
 		for (i = (enum cob_exception_id)1; i < COB_EC_MAX; ++i) {
-			CB_EXCEPTION_ENABLE (i) = 1;
+			if (!CB_EXCEPTION_EXPLICIT (i)) {
+				CB_EXCEPTION_ENABLE (i) = 1;
+			}
 		}
 		if (verbose_output > 1) {
 			fputs (_("all runtime checks are enabled"), stderr);
@@ -4841,6 +4865,7 @@ static int
 preprocess (struct filename *fn)
 {
 	const char		*sourcename;
+	struct cb_exception	save_exception_table[COB_EC_MAX];
 	int			save_source_format, save_fold_copy, save_fold_call;
 	int			save_ref_mod_zero_length;
 #ifndef COB_INTERNAL_XREF
@@ -4896,7 +4921,8 @@ preprocess (struct filename *fn)
 	plex_clear_vars ();
 	ppparse_clear_vars (cb_define_list);
 
-	/* Save default flags in case program directives change them */
+	/* Save default exceptions and flags in case program directives change them */
+	memcpy(save_exception_table, cb_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
 	save_source_format = cb_source_format;
 	save_fold_copy = cb_fold_copy;
 	save_fold_call = cb_fold_call;
@@ -4905,7 +4931,8 @@ preprocess (struct filename *fn)
 	/* Preprocess */
 	ppparse ();
 
-	/* Restore default flags */
+	/* Restore default exceptions and flags */
+	memcpy(cb_exception_table, save_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
 	cb_source_format = save_source_format;
 	cb_fold_copy = save_fold_copy;
 	cb_fold_call = save_fold_call;
@@ -7690,18 +7717,7 @@ process_translate (struct filename *fn)
 	}
 
 	/* Translate to C */
-	current_section = NULL;
-	current_paragraph = NULL;
-	current_statement = NULL;
-	cb_source_line = 0;
-	/* Temporarily disable cross-reference during C generation */
-	if (cb_listing_xref) {
-		cb_listing_xref = 0;
-		codegen (current_program, fn->translate, 0);
-		cb_listing_xref = 1;
-	} else {
-		codegen (current_program, fn->translate, 0);
-	}
+	codegen (current_program, fn->translate);
 
 	/* Close files */
 	if (fclose (cb_storage_file) != 0) {
@@ -8600,8 +8616,9 @@ begin_setup_internal_and_compiler_env (void)
 	cb_flag_computed_goto = 1;
 #endif
 
-	/* Enable default I/O exceptions */
-	CB_EXCEPTION_ENABLE (COB_EC_I_O) = 1;
+	/* Enable default I/O exceptions without source locations */
+	cobc_deciph_ec("EC-I-O", 1U);
+	cb_flag_source_location = 0;
 
 #ifndef	HAVE_DESIGNATED_INITS
 	cobc_init_reserved ();
@@ -8937,7 +8954,7 @@ main (int argc, char **argv)
 			status = process_run (run_name);
 		}
 	}
-	
+
 	if (cb_compile_level < CB_LEVEL_LIBRARY
 	 || status || cb_flag_syntax_only) {
 		/* Finished */
