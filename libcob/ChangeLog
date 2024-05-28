@@ -1,8 +1,13 @@
 
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fisam.c (isam_read_next): use ISSTAT only for COB_WITH_STATUS_02,
+	  fixing compile errors with VBISAM
+
 2024-01-30  Ron Norman <rjn@inglenet.com>
 
 	* fisam.c: Updated to set index field type for 'short' & 'int'
-			Enabled support for variable length records is using V-ISAM/D-ISAM
+	  Enabled support for variable length records is using V-ISAM/D-ISAM
 
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 

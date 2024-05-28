@@ -1813,8 +1813,6 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		if (ret == COB_STATUS_00_SUCCESS) {
 			if (indexed_cmpkey(fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
 				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
-				ISSTAT1 = '0';
-				ISSTAT2 = '2';
 			}
 			fh->duprecnum = fh->saverecnum;
 			restorefileposition (f);
@@ -1829,9 +1827,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		fh->saverecnum = -1;
 		fh->duprecnum = 0;
 		fh->wrkhasrec = 0;
-		memset(fh->savekey, 0, fh->lenkey);
-	} else {
-		ret = COB_CHECK_DUP (ret);
+		memset (fh->savekey, 0, fh->lenkey);
 	}
 	return ret;
 #endif
