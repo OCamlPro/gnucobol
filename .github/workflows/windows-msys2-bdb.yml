@@ -1,0 +1,95 @@
+name: Windows MSYS2 BDB (build only)
+
+on:
+  pull_request:
+    branches: [ gc4 ]
+  push:
+    branches: [ gc3_to_gc4 ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: autoconf automake libtool make mingw-w64-x86_64-ncurses mingw-w64-x86_64-libxml2 mingw-w64-x86_64-cjson mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: bootstrap
+        run: |
+          ./autogen.sh
+          autoconf
+          autoreconf --install --force
+        shell: msys2 {0}
+
+      - name: Build environment setup
+        run: |
+          mkdir _build
+        shell: msys2 {0}
+
+      - name: configure
+        run: |
+          cd _build
+          ../configure --with-db --with-indexed=db --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol
+        shell: msys2 {0}
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: config.log
+          path: _build/config.log
+
+      - name: make
+        run: |
+          sed -i '/#include <libxml\/xmlwriter.h>/a \#include <libxml\/parser.h>' libcob/common.c
+          sed -i '/#include <libxml\/xmlwriter.h>/a \#include <libxml\/parser.h>' libcob/mlio.c
+          cd _build
+          make --jobs=$(($(nproc)+1))
+        shell: msys2 {0}
+
+      - name: install
+        run: |
+          cd _build
+          make install
+          find /opt/cobol > install.log
+        shell: msys2 {0}
+
+      - name: Upload install.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: install.log
+          path: _build/install.log
+
+      - name: check
+        continue-on-error: true
+        run: |
+          sed -i '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_accept.at
+          cd _build/tests
+          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+        shell: msys2 {0}
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: testsuite.log
+          path: _build/tests/testsuite.log

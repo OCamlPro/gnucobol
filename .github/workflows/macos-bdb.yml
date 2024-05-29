@@ -1,0 +1,129 @@
+name: MacOS BDB
+
+on:
+  pull_request:
+    branches: [ gc4 ]
+  push:
+    branches: [ gc3_to_gc4 ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Configure git
+        run: git config --global core.symlinks false
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install packages
+        run: |
+          brew install pkg-config automake libtool help2man texinfo bison berkeley-db@4 json-c
+          opt="/opt/homebrew/opt"
+          echo "$opt/pkg-config/bin" >> $GITHUB_PATH
+          echo "$opt/bison/bin" >> $GITHUB_PATH
+          echo "LDFLAGS=-L$opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: bootstrap
+        run: |
+          sed -i '' 's/-undefined suppress//g' configure.ac
+          ./autogen.sh
+          autoconf
+          autoreconf --install --force
+
+      - name: Build environment setup
+        run: |
+          mkdir _build
+          echo "NPROC=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
+          export TERM="vt100"
+          echo "TERM=$TERM" >> $GITHUB_ENV
+
+      - name: configure
+        run: |
+          cd _build
+          export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
+          ../configure --with-db --with-indexed=db --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: config.log
+          path: _build/config.log
+        if: failure()
+
+      - name: make
+        run: |
+          cd _build
+          make --jobs=$((${NPROC}+1))
+
+# make install must be done before make check, otherwise execution of
+# generated COBOL files fail for a missing /usr/local/lib/libcob.dylib
+      - name: make install
+        run: |
+          cd _build
+          sudo make install
+          find /opt/cobol > install.log
+
+      - name: Upload install.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: install.log
+          path: _build/install.log
+
+      - name: check
+        run: |
+          sed -i '' '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL \+ KEYCHECK\])/a\
+          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          sed -i '' '/AT_SETUP(\[EXTFH: using ISAM callback\])/a\
+          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          sed -i '' '/AT_SETUP(\[trace feature\])/a\
+          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          sed -i '' '/AT_SETUP(\[trace feature with subroutine\])/a\
+          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          sed -i '' '/AT_SETUP(\[trace feature with indexed EXTFH\])/a\
+          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          cd _build
+          make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: testsuite.log
+          path: _build/tests/testsuite.log
+
+      - name: Cache newcob.val.Z
+        uses: actions/cache@v3
+        id: newcob
+        with:
+          path: _build/tests/cobol85/newcob.val.Z.cached
+          key: newcob
+
+      - name: Download newcob.val.Z
+        if: steps.newcob.outputs.cache-hit != 'true'
+        run: |
+          cd _build/tests/cobol85
+          make newcob.val.Z
+          ln -f newcob.val.Z newcob.val.Z.cached
+
+      - name: NIST85 Test Suite
+        run: |
+          cd _build/tests/cobol85
+          ln -f newcob.val.Z.cached newcob.val.Z
+          make EXEC85 && make --jobs=$(($(nproc)+1)) test

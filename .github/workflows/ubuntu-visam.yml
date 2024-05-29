@@ -1,0 +1,217 @@
+name: Ubuntu VISAM
+
+on:
+  pull_request:
+    branches: [ gc4 ]
+  push:
+    branches: [ gc3_to_gc4 ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build, test and provide nightly
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        include:
+          - os: ubuntu-latest
+            skip_test: true
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext texlive
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: Installing VISAM prerequisite
+        run: |
+          wget http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          tar -xvzf visam-2.2.tar.Z
+          cd visam-2.2
+          ./configure --prefix=/usr/local/visam-2.2 --enable-vbisamdefault
+          make
+          sudo make install
+          echo "CPATH=/usr/local/visam-2.2/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
+
+      - name: bootstrap
+        run: |
+          ./build_aux/bootstrap
+
+      # FIXME: With TERM="dumb" `make check` fails with:
+      # ...
+      # 571: ACCEPT OMITTED (SCREEN)                         FAILED (run_accept.at:307)
+      # ...
+      # 693: ON EXCEPTION clause of DISPLAY                  FAILED (run_misc.at:6335)
+      # 695: LINE/COLUMN 0 exceptions                        FAILED (run_misc.at:6414)
+      # 694: EC-SCREEN-LINE-NUMBER and -STARTING-COLUMN      FAILED (run_misc.at:6376)
+      # ...
+      # Failure cases read: "Error opening terminal: unknown." on
+      # stderr, and exit with code 1.
+      #
+      # Another alternative is passing `--with-curses=no` to the
+      # configure script, yet distcheck does call configure too...
+      #
+      - name: Build environment setup
+        run: |
+          mkdir _build
+          export TERM="vt100"
+          echo "TERM=$TERM" >> $GITHUB_ENV
+          echo "INSTALL_PATH=$(pwd)/_install" >> $GITHUB_ENV
+
+      - name: configure
+        run: |
+          cd _build
+          ../configure --with-visam --with-indexed=visam --enable-cobc-internal-checks --enable-hardening --prefix ${INSTALL_PATH}
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: config.log
+          path: _build/config.log
+
+      - name: make
+        run: |
+          cd _build
+          make --jobs=$(($(nproc)+1))
+
+      # - name: check
+      #   run: |
+      #     cd _build
+      #     make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+
+      # note: distcheck also creates the dist tarball
+      - name: distcheck
+        run: |
+          cd _build
+          make --jobs=$(($(nproc)+1)) distcheck TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          # Assume there's only one directory matching `_build/gnucobol-*`:
+          name: testsuite.log
+          path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
+
+      - name: Upload dist tarball
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: gnucobol-ci source distribution
+          path: _build/gnucobol*.tar*
+          if-no-files-found: error
+          retention-days: 0
+
+      - name: Cache newcob.val.Z
+        uses: actions/cache@v3
+        id: newcob
+        with:
+          path: _build/tests/cobol85/newcob.val.Z.cached
+          key: newcob
+
+      - name: Download newcob.val.Z
+        if: steps.newcob.outputs.cache-hit != 'true'
+        run: |
+          cd _build/tests/cobol85
+          make newcob.val.Z
+          ln -f newcob.val.Z newcob.val.Z.cached
+
+      - name: NIST85 Test Suite
+        run: |
+          cd _build/tests/cobol85
+          ln -f newcob.val.Z.cached newcob.val.Z
+          make EXEC85 && make --jobs=$(($(nproc)+1)) test
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: NIST85 results
+          path: |
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+
+      - name: install
+        run: |
+          cd _build
+          make install
+
+
+  coverage:
+    name: Coverage and Warnings
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # note: less dependencies as we don't generate a dist tarball, one additional for lcov
+      - name: Install dependencies
+        run: |
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext lcov
+
+      - name: bootstrap
+        run: |
+          ./build_aux/bootstrap
+
+      - name: Build environment setup
+        run: |
+          mkdir _build
+          export TERM="vt100"
+          echo "TERM=$TERM" >> $GITHUB_ENV
+
+      # note: w add additional C compiler syntax checks here to not need _another_ CI run
+      - name: configure
+        run: |
+          cd _build
+          ../configure --enable-code-coverage CPPFLAGS="-Werror=declaration-after-statement"
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: config.log
+          path: _build/config.log
+
+      - name: make
+        run: |
+          cd _build
+          make --jobs=$(($(nproc)+1))
+
+      - name: coverage
+        run: |
+          cd _build
+          make check-code-coverage TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: testsuite.log
+          path: _build/tests/testsuite.log
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: _build/GnuCOBOL-**-coverage/
+
+      - uses: codecov/codecov-action@v2
+        with:
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          directory: _build
+          # Shall fail until we have a working account on codecov.io
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)
+
