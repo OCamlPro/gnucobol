@@ -1,0 +1,156 @@
+name: Windows MSYS1 BDB (build only)
+
+on:
+  pull_request:
+    branches: [ gc4 ]
+  push:
+    branches: [ gc3_to_gc4 ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+env:
+  MSYS_ROOT: C:\MinGW\
+  MSYS_BIN: C:\MinGW\msys\1.0\bin
+  BISON_PKGDATADIR: C:\MinGW\share\bison
+
+  MSYSTEM: MINGW32
+  MSYSPKGS: msys-m4 msys-flex msys-coreutils msys-help2man
+
+  M4: m4
+
+  MINGW_BISON_VERS: bison-3.0.1
+  MINGW_GMP_VERS: gmp-6.3.0
+  MINGW_BDB_VERS: db-6.0.19.NC
+  MINGW_PDCM_VERS: 4.4.0
+  MINGW_CJSON_VERS: 1.7.18
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup environment
+        run: echo GITHUB_WORKSPACE=%GITHUB_WORKSPACE%>> %GITHUB_ENV%
+
+      - name: Restore MSYS env
+        id: restore-msys
+        uses: actions/cache/restore@v3
+        with:
+          key: cache-msys
+          path: |
+            ${{ env.MSYS_ROOT }}
+
+      - name: Install MSYS1
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          curl -O https://www.arnoldtrembley.com/MinGW-bkup02.7z
+          7z x MinGW-bkup02.7z -o%MSYS_ROOT%
+
+      - name: Install MSYS1 packages
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          %MSYS_BIN%\bash -lc "mingw-get install %MSYSPKGS%"
+
+      - name: Install Bison 3.0
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          curl -L "https://mirror.ibcp.fr/pub/gnu/bison/%MINGW_BISON_VERS%.tar.xz" -o "%MINGW_BISON_VERS%.tar.xz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\"                    && tar -xvf %MINGW_BISON_VERS%.tar.xz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\%MINGW_BISON_VERS%\" && ./configure --prefix=/mingw && make"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\%MINGW_BISON_VERS%\" && make install"
+
+      # - name: Install GMP
+      #   if: steps.restore-msys.outputs.cache-hit != 'true'
+      #   run: |
+      #     curl -L "https://gmplib.org/download/gmp/%MINGW_GMP_VERS%.tar.xz" -o "%MINGW_GMP_VERS%.tar.xz"
+      #     %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\"                  && tar -xvf %MINGW_GMP_VERS%.tar.xz"
+      #     %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\%MINGW_GMP_VERS%\" && ./configure --prefix=/mingw --enable-fat --enable-shared --disable-static CFLAGS=\"-Wno-attributes -Wno-ignored-attributes\" ABI=32 && make"
+      #     %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\%MINGW_GMP_VERS%\" && make install"
+
+      - name: Install BDB
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          curl -L "https://download.oracle.com/berkeley-db/%MINGW_BDB_VERS%.tar.gz" -o "%MINGW_BDB_VERS%.tar.gz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\"                             && tar -xvf %MINGW_BDB_VERS%.tar.gz && sed -i 's/_tcsclen/strlen/' %MINGW_BDB_VERS%/src/os_windows/os_stat.c"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\%MINGW_BDB_VERS%\build_unix\" && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl LIBCSO_LIBS=-lwsock32 && make || make"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\%MINGW_BDB_VERS%\build_unix\" && make install"
+
+      - name: Install PDCurses
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          curl -L "https://github.com/Bill-Gray/PDCursesMod/archive/refs/tags/v%MINGW_PDCM_VERS%.tar.gz" -o "PDCursesMod-%MINGW_PDCM_VERS%.tar.xz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\"                                      && tar -xvf PDCursesMod-%MINGW_PDCM_VERS%.tar.xz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\wincon\" && make INFOEX=N CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\wingui\" && make CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\vt\"     && make CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll CFLAGS=\"-Wall -Wextra -pedantic -g -DPDCDEBUG -fPIC -DPDC_DLL_BUILD\""
+          echo #define CHTYPE_64 > "PDCursesMod-%MINGW_PDCM_VERS%\pdcurses.h" && echo #define PDC_DLL_BUILD >> "PDCursesMod-%MINGW_PDCM_VERS%\pdcurses.h" && echo #include "pdcurses/curses.h" >> "PDCursesMod-%MINGW_PDCM_VERS%\pdcurses.h"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install wincon/libpdcurses.dll.a /mingw/lib/"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install wincon/libpdcurses.dll /mingw/bin/"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install wincon/libpdcurses.dll /mingw/bin/libpdcurses-wincon.dll"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install wingui/libpdcurses.dll /mingw/bin/libpdcurses-wingui.dll"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install vt/libpdcurses.dll /mingw/bin/libpdcurses-vt.dll"
+          %MSYS_BIN%\bash -lc "install -d /mingw/include/pdcurses"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install -m 0644 curses.h panel.h term.h /mingw/include/pdcurses/"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\PDCursesMod-%MINGW_PDCM_VERS%\" && install -m 0644 pdcurses.h /mingw/include/"
+
+      - name: Cleanup MSYS1 env
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          rmdir /Q /S C:\MinGW\docs
+          rmdir /Q /S C:\MinGW\var
+          del /Q C:\MinGW\bin\gdb.exe
+
+      - name: Save MSYS env
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          key: cache-msys
+          path: |
+            ${{ env.MSYS_ROOT }}
+
+      - name: Download CJSON sources
+        run: |
+          curl -L "https://github.com/DaveGamble/cJSON/archive/refs/tags/v%MINGW_CJSON_VERS%.tar.gz" -o "cjson-%MINGW_CJSON_VERS%.tar.xz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && tar -xvf cjson-%MINGW_CJSON_VERS%.tar.xz"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && cp cjson-%MINGW_CJSON_VERS%/cJSON.[ch] ./libcob/"
+
+      - name: Bootstrap GnuCOBOL
+        run: |
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && sed -i 's/AM_PROG_AR/m4_ifdef\(\[AM_PROG_AR\], \[AM_PROG_AR\]\)/g' ./configure.ac"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && sed -i 's/po extras doc tests/po extras tests/g' ./Makefile.am"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && ./autogen.sh"
+
+      - name: Configure GnuCOBOL
+        run: |
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && sed -i 'N;s/else/else :;/g' ./configure"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && sed -i 's/\} else \:;/} else/g' ./configure"
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && ./configure"
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: config.log
+          path: _build/config.log
+
+      - name: Build GnuCOBOL
+        run: |
+          %MSYS_BIN%\bash -lc "cd \"%GITHUB_WORKSPACE%\" && make"
