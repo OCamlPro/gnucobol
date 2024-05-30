@@ -225,7 +225,7 @@ num_val (char *s, int len)
 {
 	int		i, val;
 	for (i=val=0; i < len; i++) {
-		if (isdigit(*s))
+		if (isdigit((unsigned char)*s))
 			val = val * 10 + (*s - '0');
 		s++;
 	}
@@ -390,7 +390,7 @@ trim_line(char *buf)
 static int
 compare_file (FILE *ref, FILE *rslt, FILE *rpt)
 {
-	unsigned char	rbuf[4096], nbuf[4096];
+	char		rbuf[4096], nbuf[4096];
 	const char *tagout, *tagin;
 	int		i, j, k, n, t, val, numdiff, linenum;
 	int		nx, rx;
@@ -456,7 +456,7 @@ compare_file (FILE *ref, FILE *rslt, FILE *rpt)
 				if (templates[t].is_time == IS_VER) {	/* Version pattern */
 					i += templates[t].len - 1;
 					if(nbuf[j] == ' ') j++;
-					if(!isdigit(nbuf[j]))
+					if(!isdigit((unsigned char)nbuf[j]))
 						goto mis_match;
 					while (nbuf[j] != ' '				/* Skip past version stamp */
 						&& nbuf[j] != ','
@@ -614,7 +614,7 @@ compare_file (FILE *ref, FILE *rslt, FILE *rpt)
 						if (rbuf[i] == nbuf[j]
 						 || nbuf[j] == ' ')
 							continue;
-						if (!isdigit(nbuf[j])) {
+						if (!isdigit((unsigned char)nbuf[j])) {
 							while (n < templates[t].len-1)
 								i++,j++,n++;
 							goto mis_match;
@@ -772,12 +772,12 @@ set_option (char *binary, int opt, char *arg)
  */
 int
 main(
-	int		argc,
+	int	argc,
 	char	*argv[])
 {
-	int		opt,idx,i,k;
+	int	opt,idx,i,k;
 	FILE	*ref,*rslt;
-	unsigned char	buf[1024], conffile[512];
+	char	buf[1024], conffile[512];
 
 #ifdef	HAVE_SETLOCALE
 	setlocale (LC_ALL, "");
@@ -818,7 +818,7 @@ main(
 			k = trim_line (buf);
 			if (buf[0] == '-') {	/* Option for gcdiff ?*/
 				opt = buf[1];
-				for (i=2; isspace(buf[i]); i++);
+				for (i=2; isspace((unsigned char)buf[i]); i++);
 				set_option(conffile,opt,&buf[i]);
 			}
 		}
