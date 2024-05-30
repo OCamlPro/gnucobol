@@ -1,4 +1,8 @@
 
+2024-05-30  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobfile.c, gcdiff.c: fixed some warnings about unsigned char
+
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobfile.c, gcdiff.c: fixed some warnings about signed char
