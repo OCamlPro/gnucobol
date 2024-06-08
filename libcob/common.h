@@ -280,9 +280,6 @@ typedef __mpz_struct mpz_t[1];
 #ifndef	_CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE	1
 #endif
-#include <malloc.h>
-#include <io.h>
-#include <fcntl.h>
 
 /* Disable certain warnings */
 /* Deprecated functions */

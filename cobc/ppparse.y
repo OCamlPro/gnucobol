@@ -625,6 +625,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token BOUND
 %token CALLFH
 %token XFD
+%token CHECKNUM
 %token COMP1
 %token CONSTANT
 %token DPC_IN_DATA	"DPC-IN-DATA"
@@ -633,9 +634,11 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token NOKEYCOMPRESS
 %token MAKESYN
 %token NOBOUND
+%token NOCHECKNUM
 %token NODPC_IN_DATA	"NODPC-IN-DATA"
 %token NOFOLDCOPYNAME
 %token NOODOSLIDE
+%token NOSPZERO
 %token NOSSRANGE
 /* OVERRIDE token defined above. */
 %token ODOSLIDE
@@ -741,12 +744,12 @@ directive:
   {
 	current_cmd = PLEX_ACT_IF;
   }
-  if_directive
+  if_directive_if
 | ELIF_DIRECTIVE
   {
 	current_cmd = PLEX_ACT_ELIF;
   }
-  if_directive
+  if_directive_elif
 | ELSE_DIRECTIVE
   {
 	plex_action_directive (PLEX_ACT_ELSE, 0);
@@ -764,6 +767,24 @@ directive:
 	if (current_call_convention == CB_CONV_STATIC_LINK) {
 		current_call_convention |= CB_CONV_COBOL;
 	};
+  }
+;
+
+if_directive_if:
+  if_directive
+| error
+  {
+	cb_error (_("invalid %s directive"), "IF");
+	yyerrok;
+  }
+;
+
+if_directive_elif:
+  if_directive
+| error
+  {
+	cb_error (_("invalid %s directive"), "ELIF");
+	yyerrok;
   }
 ;
 
@@ -848,6 +869,11 @@ set_choice:
 	p[strlen (p) - 1] = '\0';
 	fprintf (ppout, "#XFD \"%s\"\n", p);
   }
+| CHECKNUM
+  {
+	/* Enable EC-DATA-INCOMPATIBLE checking */
+	append_to_turn_list (ppp_list_add (NULL, "EC-DATA-INCOMPATIBLE"), 1, 0);
+  }
 | COMP1 LITERAL
   {
 	char	*p = $2;
@@ -927,6 +953,11 @@ set_choice:
 	/* Disable EC-BOUND-SUBSCRIPT checking */
 	append_to_turn_list (ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT"), 0, 0);
   }
+| NOCHECKNUM
+  {
+	/* Disable EC-DATA-INCOMPATIBLE checking */
+	append_to_turn_list (ppp_list_add (NULL, "EC-DATA-INCOMPATIBLE"), 0, 0);
+  }
 | NODPC_IN_DATA
   {
 	cb_dpc_in_data = CB_DPC_IN_NONE;
@@ -934,6 +965,11 @@ set_choice:
 | NOFOLDCOPYNAME
   {
 	cb_fold_copy = 0;
+  }
+| NOSPZERO
+  {
+	CB_PENDING ("SPZERO");
+	/* TODO: cb_space_is_zero = 0; */
   }
 | NOSSRANGE
   {
@@ -993,7 +1029,7 @@ set_choice:
   }
 | SOURCEFORMAT _as error
   {
-    /* FIXME: we should consume until end of line here! */
+	/* FIXME: we should consume until end of line here! */
 	ppp_error_invalid_option ("SOURCEFORMAT", NULL);
   }
 | SPZERO
@@ -1412,10 +1448,17 @@ if_directive:
 	}
 	plex_action_directive (current_cmd, found ^ $3);
   }
-| variable_or_literal
+| garbage
   {
-	cb_error (_("invalid %s directive"), "IF/ELIF");
+	plex_action_directive (current_cmd, 0);
+	YYERROR;
   }
+;
+
+garbage:
+  variable_or_literal
+| garbage variable_or_literal
+| garbage error
 ;
 
 variable_or_literal:

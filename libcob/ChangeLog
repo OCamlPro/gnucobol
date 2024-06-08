@@ -1,4 +1,9 @@
 
+2024-06-08  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (apply_file_paths): extracted from cob_chk_file_mapping
+	  to factor out duplicated code
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fisam.c (isam_read_next): use ISSTAT only for COB_WITH_STATUS_02,
@@ -1307,6 +1312,11 @@
 	* fextfh.c (copy_file_to_fcd): use cob_cache_malloc instead of cob_strdup
 	* fsqlxfd.c: if count_components > 1 then its a composite key
 
+2020-11-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_stack_trace_internal): early exit if no data available
+	* common.c (cob_check_version): test for minimal version 2.2
+
 2020-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_init): skip initialization again if already done as
@@ -1320,6 +1330,14 @@
 2020-11-13  James K. Lowden  <jklowden@symas.com>
 
 	* common.c (cob_check_version): support 3-part version strings
+
+2020-11-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: initialize errno in all places where it is checked afterwards
+	* fileio.c [_WIN32]: implemented file locking via LockFileEx/UnlockFile
+	* common.c (cob_sys_waitpid) [_WIN32]: fixed logic error in #if, allowing
+	  the best process synchronization possible on that platform
+	* common.h [_MSC_VER]: removed unused global includes
 
 2020-11-01  Ron Norman <rjn@inglenet.com>
 
@@ -1459,6 +1477,22 @@
 	* common.c, coblocal.h (__cob_settings): new runtime configuration
 	  COB_STACKTRACE allowing to disable stracktrace creation on abort
 	* common.c: also handle SIGEMT; skip module dump for SIGTERM and SIGINT
+
+2020-08-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	rework file mapping via environment names and apply them to CBL_/C$
+	* fileio.c (has_directory_separator, looks_absolute): new helpers
+	* fileio.c (cob_chk_file_mapping, cob_chk_file_env): rewritten:
+	  file names / parts that start with period/digit are not converted,
+	  periods within the name converted to underscores to get the environment
+	  variable name, empty environment names are not used, if COB_FILE_PATH
+	  is set, it is always applied if the file name is neither absolute nor
+	  start with -F/-D (acu-compat)
+	* fileio.c (cob_open): return COB_STATUS_31_INCONSISTENT_FILENAME if it is
+	  unset/empty
+	* fileio.c (open_cbl_file, cob_sys_delete_file, cob_sys_copy_file,
+	  cob_sys_check_file_exist, cob_sys_rename_file): CBL_ and C$ file routines
+	  use common mapping rules now
 
 2020-08-17  Simon Sobisch <simonsobisch@gnu.org>
 

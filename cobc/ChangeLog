@@ -1028,6 +1028,19 @@
 	  'memcpy' to speed up the process
 	  If size is not known until run time then emit call to cob_init_table
 
+2020-11-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppinput): fixed processing after "line not terminated"
+
+2020-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #53 TURN directive and -fno-ec=NAME/-fec=NAME - finish
+	* cobc.c (turn_ec_for_table): correct handling for EC-ALL
+	* cobc.c (cobc_turn_ec): handling EC-USER as PENDING
+	* cobc.c (process_command_line), cobc.h: handle -debug before all the
+	  flags and exception options it sets, allowing to remove its internal
+	  explicit_set flag
+
 2020-11-18  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c,typeck.c: Generated code for INITIALIZE computes the actual
@@ -1270,6 +1283,14 @@
 	* config.def: added possible values for assign-clause and
 	  screen-section-rules.
 
+2020-07-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l, ppparse.y: implemented CHECKNUM/NOCHECKNUM,
+	  preparation for SPZERO
+	* ppparse.y: improved error handling for broken IF/ELIF
+	  directives by consuming as much errors as possible and
+	  emitting a "false"
+
 2020-07-19  Edward Hart <edward.dan.hart@gmail.com>
 
 	* cobc.c, typeck.c: added support for JSON-C as JSON handler.
@@ -1326,6 +1347,13 @@
 	* cobc.c (compare_prepare): fixed bug #569: stop copying into cmp_line
 	  when line length exceeds CB_LINE_LENGTH.
 
+2020-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #53 TURN directive - finished command line variant as -fno-ec/-fec
+	* cobc.c, flag.def, help.c: renamed -fdisable-ec/-fenable-ec
+	* cobc.c: removed the need to use EC- prefix in the name for -f[no-]ec
+	* flag.def, help.c: fixed some help output
+
 2020-06-30  Edward Hart <edward.dan.hart@gmail.com>
 
 	* typeck.c (validate_move): refactored.
@@ -1373,14 +1401,15 @@
 2020-06-23  Edward Hart <edward.dan.hart@gmail.com>
 
 	FR #53 TURN directive
-	* cobc.c, cobc.h: completed initial implementation on disabling ECs.
+	* cobc.c, cobc.h: completed initial implementation on disabling ECs
+	  on command line with -fdisable-ec=NAME -fenable-ec=NAME
 	* cobc.c, cobc.h, parser.y, ppparse.y, scanner.l: completed initial
-	  implementation of >>TURN.
+	  implementation of >>TURN
 
 2020-06-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, cobc.h, flag.def, ppparse.y: draft work on >>TURN and
-	  disabling exceptions (FR #53).
+	  disabling exceptions (FR #53)
 
 2020-06-22  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -2351,6 +2351,9 @@ cb_build_identifier (cb_tree x, const int subchk)
 	f = CB_FIELD (v);
 
 	/* BASED check and check for OPTIONAL LINKAGE items */
+
+	/* CHECKME: do we need the field founder to decide?  LINKAGE and flag_item_based
+	            should be available in 'f' already ... */
 	if (current_statement && !suppress_data_exceptions &&
 	    (CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL) ||
 	     CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED))) {

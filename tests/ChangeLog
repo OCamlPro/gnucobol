@@ -108,10 +108,9 @@
 
 2020-11-20  Simon Sobisch <simonsobisch@gnu.org>
 
-	* general: pass AWK, GREP, SED to the testsuite
+	* general: pass AWK, GREP, SED to the testsuite and use those
 	* atlocal.in, atlocal_valgrind, atlocal_win:
 	  remove temporary file info.out after use
-	* listings-sed.sh: replace both 2 and 3-part version numbers
 
 2020-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -120,6 +119,14 @@
 2020-11-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_valgrind: exec_prefix as exec_prefix
+
+2020-11-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_valgrind, atlocal_win:
+	  fix unsetting of variables which values contain "COB";
+	  allow screenio-tests to be run on cygwin/msys with ncurses
+	  out-of-the box; fixed TEST_LOCAL (may not use pre-inst-env)
+	  and "external" versions with old indexed file msgid
 
 2020-10-26  Simon Sobisch <simonsobisch@gnu.org>
 

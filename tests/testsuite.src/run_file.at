@@ -110,40 +110,40 @@ AT_DATA([prog.cob], [
       *
       *>   DELETE FILE FILE-OPT
       *>    ON EXCEPTION
-      *>     DISPLAY "STATUS DELETE FILE (missing) - EXCEPTION:" WSFS
+      *>     DISPLAY "STATUS DELETE FILE (missing) - EXCEPTION: " WSFS
       *>     END-DISPLAY
       *>    NOT ON EXCEPTION
       *>      IF WSFS NOT = "05"
-      *>         DISPLAY "STATUS DELETE FILE (missing):" WSFS
+      *>         DISPLAY "STATUS DELETE FILE (missing): " WSFS
       *>      END-IF
       *>   END-DELETE
            OPEN I-O FILE-OPT
            IF WSFS NOT = "05"
-              DISPLAY "STATUS I-O, missing optional file:" WSFS.
+              DISPLAY "STATUS I-O, missing optional file: " WSFS.
            CLOSE FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS CLOSE:" WSFS.
+              DISPLAY "STATUS CLOSE: " WSFS.
            OPEN I-O FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS I-O, empty file:" WSFS.
+              DISPLAY "STATUS I-O, empty file: " WSFS.
            DELETE FILE FILE-OPT
       *>     ON EXCEPTION
               IF WSFS NOT = "41"
-                 DISPLAY "STATUS DELETE FILE (OPENED):" WSFS
+                 DISPLAY "STATUS DELETE FILE (opened): " WSFS
               END-IF
       *>    NOT ON EXCEPTION
-      *>     DISPLAY "STATUS DELETE FILE (OPENED) - NO EXCEPTION:" WSFS
+      *>     DISPLAY "STATUS DELETE FILE (opened) - NO EXCEPTION: " WSFS
       *>   END-DELETE
            CLOSE FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS CLOSE #2:" WSFS.
+              DISPLAY "STATUS CLOSE #2: " WSFS.
            DELETE FILE FILE-OPT
       *>     ON EXCEPTION
-      *>      DISPLAY "STATUS DELETE FILE (closed) - EXCEPTION:" WSFS
+      *>      DISPLAY "STATUS DELETE FILE (closed) - EXCEPTION: " WSFS
       *>      END-DISPLAY
       *>     NOT ON EXCEPTION
               IF WSFS NOT = "00"
-                 DISPLAY "STATUS DELETE FILE (closed):" WSFS
+                 DISPLAY "STATUS DELETE FILE (closed): " WSFS
               END-IF
       *>   END-DELETE
       *
@@ -291,40 +291,40 @@ AT_DATA([prog.cob], [
       *
       *>   DELETE FILE FILE-OPT
       *>    ON EXCEPTION
-      *>     DISPLAY "STATUS DELETE FILE (missing) - EXCEPTION:" WSFS
+      *>     DISPLAY "STATUS DELETE FILE (missing) - EXCEPTION: " WSFS
       *>     END-DISPLAY
       *>    NOT ON EXCEPTION
       *>      IF WSFS NOT = "05"
-      *>         DISPLAY "STATUS DELETE FILE (missing):" WSFS
+      *>         DISPLAY "STATUS DELETE FILE (missing): " WSFS
       *>      END-IF
       *>   END-DELETE
            OPEN I-O FILE-OPT
            IF WSFS NOT = "05"
-              DISPLAY "STATUS I-O, missing optional file:" WSFS.
+              DISPLAY "STATUS I-O, missing optional file: " WSFS.
            CLOSE FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS CLOSE:" WSFS.
+              DISPLAY "STATUS CLOSE: " WSFS.
            OPEN I-O FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS I-O, empty file:" WSFS.
+              DISPLAY "STATUS I-O, empty file: " WSFS.
            DELETE FILE FILE-OPT
       *>     ON EXCEPTION
               IF WSFS NOT = "41"
-                 DISPLAY "STATUS DELETE FILE (OPENED):" WSFS
+                 DISPLAY "STATUS DELETE FILE (opened): " WSFS
               END-IF
       *>    NOT ON EXCEPTION
-      *>     DISPLAY "STATUS DELETE FILE (OPENED) - NO EXCEPTION:" WSFS
+      *>     DISPLAY "STATUS DELETE FILE (opened) - NO EXCEPTION: " WSFS
       *>   END-DELETE
            CLOSE FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS CLOSE #2:" WSFS.
+              DISPLAY "STATUS CLOSE #2: " WSFS.
            DELETE FILE FILE-OPT
       *>     ON EXCEPTION
-      *>      DISPLAY "STATUS DELETE FILE (closed) - EXCEPTION:" WSFS
+      *>      DISPLAY "STATUS DELETE FILE (closed) - EXCEPTION: " WSFS
       *>      END-DISPLAY
       *>     NOT ON EXCEPTION
               IF WSFS NOT = "00"
-                 DISPLAY "STATUS DELETE FILE (closed):" WSFS
+                 DISPLAY "STATUS DELETE FILE (closed): " WSFS
               END-IF
       *>   END-DELETE
       *
@@ -3109,6 +3109,47 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([ASSIGN with empty data item])
+AT_KEYWORDS([runfile status])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT test-file ASSIGN path
+                        ORGANIZATION LINE SEQUENTIAL.
+       DATA             DIVISION.
+       FILE	            SECTION.
+       FD  test-file.
+       01  test-rec     PIC X(5).
+       WORKING-STORAGE  SECTION.
+       01  WS-SUBSCRIPT-CNT         PIC 9.
+       01  path         PIC X(10).
+       01  x            PIC X.
+       PROCEDURE        DIVISION CHAINING x.
+           IF X = SPACE
+              MOVE SPACES     TO path
+           ELSE
+              MOVE LOW-VALUES TO path
+           END-IF
+           OPEN INPUT test-file
+           DISPLAY "Hello"
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: error: inconsistant file name (status = 31) for file test-file ('')
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog X], [1], [],
+[libcob: error: inconsistant file name (status = 31) for file test-file ('')
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([INDEXED file key-name])
 AT_KEYWORDS([runfile split key])
 
@@ -3830,7 +3871,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED file variable length record])
-AT_KEYWORDS([runfile WRITE START READ])
+AT_KEYWORDS([runfile OPTIONAL SUPPRESS WRITE START READ])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
@@ -3915,8 +3956,9 @@ AT_DATA([prog.cob], [
 
            Perform tbw-read-next thru tbw-exit.
 
-      * Second test.
            Perform tbw-close thru tbw-exit.
+
+      * Second test.
 
            Perform tbw-delete-file thru tbw-exit.
 
@@ -3950,6 +3992,9 @@ AT_DATA([prog.cob], [
            Move spaces to tbw-alt.
            Perform tbw-rewrite thru tbw-exit.
 
+      *>   note: should not have status 02 as it a suppressed alternate key
+      *>         therefore duplicate checks must be skipped
+
       * Finish.
            Perform tbw-close thru tbw-exit.
            Display "Test completed".
@@ -3958,75 +4003,92 @@ AT_DATA([prog.cob], [
       * I/O.
        tbw-Open-I-O.
            If flag-tbw-open
-               Perform tbw-Close thru tbw-Close-exit
-           end-if.
+               Perform tbw-Close thru tbw-Close-exit.
            Display "open".
            Open i-o tbw.
-           Display "open".
+           Display "open done".
            If fs-file-status is less than "10"
-               Set flag-tbw-open to true
-           end-if.
+               Set flag-tbw-open to true.
            Go to tbw-exit.
       *
        tbw-Start-Primary-Greater.
            Display "start > tbw-key".
            Start tbw
                key is greater than tbw-key
-               invalid key Continue
-           end-start.
-           Display "start > tbw-key".
+               invalid key
+                 Display "start > tbw-key inv"
+                 Go to tbw-exit
+               not invalid
+                 Display "start > tbw-key done"
+                 Go to tbw-exit.
+           Display "start > tbw-key "  fs-file-status
            Go to tbw-exit.
       *
        tbw-Start-Alternate.
            Display "start >= tbw-alt".
            Start tbw
                key is not less than tbw-alt
-               invalid key Continue
-           end-start.
-           Display "start >= tbw-alt".
+               invalid key
+      *>Inspect! Display "start >= tbw-alt inv"
+                 Display "start >= tbw-alt done"
+                 Go to tbw-exit
+               not invalid
+                 Display "start >= tbw-alt done"
+                 Go to tbw-exit.
+           Display "start >= tbw-alt "  fs-file-status
            Go to tbw-exit.
       *
        tbw-Read-Next.
            Display "read next".
            Read tbw
                next record
-               at end Continue
-           end-read.
-           Display "read next done".
+               at end 
+                 Display "read next end"
+                 Go to tbw-exit
+               not at end
+                 Display "read next done"
+                 Go to tbw-exit.
+           Display "read next "  fs-file-status
            Go to tbw-exit.
       *
        tbw-Write.
            Display "write".
            Write tbw-record
-               invalid key Continue
-           end-write.
-           Display "write".
+               invalid key
+                 Display "write inv"
+                 Go to tbw-exit
+               not invalid
+                 Display "write done"
+                 Go to tbw-exit.
+           Display "write "  fs-file-status
            Go to tbw-exit.
       *
        tbw-Rewrite.
            Display "rewrite".
            Rewrite tbw-record
-               invalid key Continue
-           end-rewrite.
-           Display "rewrite " fs-file-status.
+               invalid key
+                 Display "rewrite inv "  fs-file-status
+                 Go to tbw-exit
+               not invalid
+                 Display "rewrite done " fs-file-status
+                 Go to tbw-exit.
+           Display "rewrite "  fs-file-status
            Go to tbw-exit.
       *
        tbw-Delete-File.
            If flag-tbw-open
-               Perform tbw-Close thru tbw-Close-exit
-           end-if.
+               Perform tbw-Close thru tbw-Close-exit.
            Move "xx" to fs-file-status.
            Display "delete file".
-           Delete file tbw
-           end-delete.
-           Display "delete file".
+           Delete file tbw.
+           Display "delete file done".
            Go to tbw-exit.
       *
        tbw-Close.
            If flag-tbw-open
                Display "close"
                Close tbw
-               Display "close"
+               Display "close done"
                Set flag-tbw-closed to true
            end-if.
        tbw-Close-exit.
@@ -4039,45 +4101,45 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [delete file
-delete file
+delete file done
 open
-open
+open done
 start > tbw-key
-start > tbw-key
+start > tbw-key inv
 read next
-read next done
+read next 46
 write
-write
+write done
 start >= tbw-alt
-start >= tbw-alt
+start >= tbw-alt done
 start > tbw-key
-start > tbw-key
+start > tbw-key done
 read next
 read next done
 read next
-read next done
+read next end
 close
-close
+close done
 delete file
-delete file
+delete file done
 open
-open
+open done
 start > tbw-key
-start > tbw-key
+start > tbw-key inv
 read next
-read next done
+read next 46
 write
+write done
 write
-write
-write
+write done
 start >= tbw-alt
-start >= tbw-alt
+start >= tbw-alt done
 read next
 read next done
 rewrite
-rewrite 00
+rewrite done 00
 close
-close
+close done
 Test completed
 ], [])
 
@@ -5519,15 +5581,119 @@ AT_DATA([prog2.cob], [
         STOP RUN.
 ])
 
+AT_DATA([prog3.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.     prog3.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 FNAME        PIC X(256).
+        01 RET          PIC -9.
+        01 FHANDLE      PIC X(4)   USAGE COMP-X.
+
+        01 OFFSET       PIC X(8)   USAGE COMP-X.
+        01 NBYTES       PIC X(4)   USAGE COMP-X.
+        01 READ-BUFFER  PIC X(10).
+
+        PROCEDURE DIVISION CHAINING FNAME.
+        DISPLAY 'RUN WITH ' FUNCTION TRIM (FNAME TRAILING).
+        CALL 'CBL_OPEN_FILE' USING FNAME 1 0 0 FHANDLE.
+        IF RETURN-CODE NOT = 0
+           DISPLAY 'error opening file ...'
+           MOVE 0 TO RETURN-CODE
+           STOP RUN.
+
+        CALL 'CBL_CLOSE_FILE' USING FHANDLE.
+        IF RETURN-CODE NOT = 0
+           DISPLAY 'error closing file ...'
+                   return-code
+           MOVE 0 TO RETURN-CODE.
+
+        STOP RUN.
+])
+
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
 [libcob: prog.cob:15: warning: call to CBL_CREATE_FILE with wrong file_lock: 11
 libcob: prog.cob:15: warning: call to CBL_CREATE_FILE with wrong file_dev: 22
 libcob: prog.cob:15: warning: call to CBL_OPEN_FILE with wrong access mode: 55
 ])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
+
+AT_CHECK([mkdir -p sub], [0], [], [])
+AT_CHECK([$COMPILE prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 notthere], [0],
+[RUN WITH notthere
+error opening file ...
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 prog2], [0],
+[RUN WITH prog2
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 ./prog2], [0],
+[RUN WITH ./prog2
+], [])
+# the first part is resolved by DD_var and dd_var
+AT_CHECK([DD_dot="." dd_dot="A" dot="B"  $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
+[RUN WITH dot/prog
+], [])
+AT_CHECK([DD_dot="" dd_dot="." dot="A"  $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
+[RUN WITH dot/prog
+], [])
+# MF would say (ignore for now as this conflicts with ACUCOBOL) don't resolve by $
+# as it does not start with $:
+#AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
+#[RUN WITH dot/prog
+#error opening file ...
+#], [])
+AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
+[RUN WITH dot/prog
+], [])
+AT_CHECK([DD_dot="" dd_dot="" dot="" $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
+[RUN WITH dot/prog
+error opening file ...
+], [])
+# the first part with $  is resolved by DD_var and dd_var and var
+AT_CHECK([DD_dot="." dd_dot="" dot=""  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
+[RUN WITH $dot/prog
+], [])
+AT_CHECK([DD_dot="" dd_dot="." dot=""  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
+[RUN WITH $dot/prog
+], [])
+AT_CHECK([DD_dot="" dd_dot="" dot="."  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
+[RUN WITH $dot/prog
+], [])
+# if a _leading_ $ does not exist it is removed, together with the following slash
+# should ignore the variable and the first slash
+AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
+[RUN WITH $dot/prog
+], [])
+# would _possibly_ fail with MF (docs are wrong here in any case...)
+# but this is by GnuCOBOL design here:
+AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog3 '$dot/$dotter/prog'], [0],
+[RUN WITH $dot/$dotter/prog
+], [])
+AT_CHECK([DD_dot="" dd_dot="" dot="dot"  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
+[RUN WITH $dot/prog
+error opening file ...
+], [])
+# should try './prog'
+AT_CHECK([DD_prog="A" dd_prog="B" prog="C"  $COBCRUN_DIRECT ./prog3 './prog'], [0],
+[RUN WITH ./prog
+], [])
+# should try './$prog'
+AT_CHECK([DD_prog="" dd_prog="" prog=""  $COBCRUN_DIRECT ./prog3 './$prog'], [0],
+[RUN WITH ./$prog
+error opening file ...
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 ../prog2], [0],
+[RUN WITH ../prog2
+error opening file ...
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 sub/../prog2], [0],
+[RUN WITH sub/../prog2
+], [])
 
 AT_CLEANUP
 
@@ -6366,12 +6532,12 @@ AT_DATA([prog2.cob], [
        procedure division.
            open i-o file1.
            if fs not = "61"
-              display "I-O FAILED: " fs
+              display "I-O FAILED 1: " fs
               close file1
            end-if.
            open input file1.
            if fs not = "00"
-              display "IN FAILED: " fs
+              display "IN FAILED 2: " fs
            else
               close file1
            end-if.
@@ -14036,9 +14202,9 @@ Program-Id:  prog
 # hack for not checking Status 02 as this isn't returned by all
 # ISAM implementations
 
-AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
+AT_CHECK([$SED -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
 reference > references], [0], [], [])
-AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
+AT_CHECK([$SED -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
@@ -15624,10 +15790,10 @@ Program-Id:  prog
 # hack for not checking Status 02 as this isn't returned by all
 # ISAM implementations
 
-AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
+AT_CHECK([$SED -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
 -e 's/_$//g' \
 reference > references], [0], [], [])
-AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
+AT_CHECK([$SED -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
@@ -16686,10 +16852,10 @@ AT_DATA([reference],
 # hack for not checking Status 02 as this isn't returned by all
 # ISAM implementations; meve trailing line helper along
 
-AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
+AT_CHECK([$SED -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
 -e 's/_$//g' \
 reference > references], [0], [], [])
-AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
+AT_CHECK([$SED -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
@@ -25856,7 +26022,8 @@ AT_DATA([prog.cob], [
            OPEN OUTPUT f
            WRITE f-rec FROM "a"
            CLOSE f
-           
+
+           SET LAST EXCEPTION TO OFF
            >>TURN EC-I-O CHECKING ON
            *> Read f too many times without libcob error
            OPEN INPUT f
@@ -25867,6 +26034,7 @@ AT_DATA([prog.cob], [
 
            DISPLAY f-status
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+           SET LAST EXCEPTION TO OFF
 
            CLOSE f
 
@@ -25881,6 +26049,7 @@ AT_DATA([prog.cob], [
 
            DISPLAY f-status
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+           SET LAST EXCEPTION TO OFF
 
            CLOSE f
 
@@ -25906,7 +26075,8 @@ a
 10
 
 a
-], [libcob: prog.cob:61: error: end of file (status = 10) for file g ('out.txt') on READ
+],
+[libcob: prog.cob:61: error: end of file (status = 10) for file g ('out.txt') on READ
 libcob: prog.cob:61: warning: implicit CLOSE of g ('out.txt')
 ])
 

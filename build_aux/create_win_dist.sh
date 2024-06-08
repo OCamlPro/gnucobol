@@ -1,7 +1,7 @@
 #!/bin/sh
 # create_win_dist.sh gnucobol
 #
-# Copyright (C) 2016-2017,2019 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2019-2020 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -65,10 +65,9 @@ cp "$EXTSRCDIR/tests/atlocal_win" "$EXTWINDISTDIR/tests/atlocal_win" || exit 2
 olddir="$(pwd)"
 cd "$EXTWINDISTDIR" || exit 3
 
-# rename templates for faster setup
+# rename template for faster setup
 cd build_windows || exit 5
 mv "config.h.in"   "config.h"
-mv "defaults.h.in" "defaults.h"
 cd ..
 
 # remove content not necessary for windows-only distribution --> breaks make dist[check]

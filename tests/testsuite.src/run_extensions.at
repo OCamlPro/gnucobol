@@ -968,6 +968,7 @@ AT_DATA([prog.cob], [
 # note: IBM implies -fodoslide
 AT_CHECK([$COBC -x -std=ibm prog.cob], [0], [], [])
 AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -1269,6 +1270,74 @@ GRP-4:***AB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZ***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon
 0000372
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INITIALIZE OCCURS UNBOUNDED])
+AT_KEYWORDS([extensions runsubscripts subscripts refmod INITIALIZE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  p            USAGE POINTER.
+       01  p2           USAGE POINTER.
+
+       LINKAGE SECTION.
+       01  a-table.
+           03  prefix.
+               05  n    PIC 9(03)  VALUE 123.
+           03  table-data value all "ABCDE".
+            04  rows    OCCURS 0 TO UNBOUNDED TIMES
+                        DEPENDING ON n.
+               05 col1  PIC X.
+               05 col2  PIC X(02).
+
+       PROCEDURE DIVISION.
+           ALLOCATE LENGTH OF prefix CHARACTERS
+                    RETURNING p
+           SET ADDRESS OF a-table TO p
+           INITIALIZE prefix ALL TO VALUE
+           IF FUNCTION LENGTH (a-table) NOT = 372
+              DISPLAY 'WRONG LENGTH table: ' FUNCTION LENGTH (a-table)
+              END-DISPLAY
+           END-IF
+           ALLOCATE FUNCTION LENGTH (a-table) CHARACTERS
+                    RETURNING p2
+           SET ADDRESS OF a-table TO p2
+           FREE p
+           INITIALIZE prefix ALL TO VALUE
+      *> FIXME: broken - initializes up to max but only should initialize
+      *>        up to current size   INITIALIZE table-data ALL TO VALUE
+      *>  INITIALIZE table-data  ALL TO VALUE
+      *> FIXME: broken - FUNCTION LENGTH(table-data) must be resolved
+      *>        at run-time but is currently set to max at compile-time
+      *>   INITIALIZE table-data (1:FUNCTION LENGTH(table-data))
+      *>              ALL TO VALUE
+           INITIALIZE table-data (1:FUNCTION LENGTH(rows(1)) * n)
+                      ALL TO VALUE
+           IF col2(1) NOT = "BC"
+              DISPLAY "col2(1) wrong: " col2(1)
+              END-DISPLAY
+           END-IF
+           IF rows(2) NOT = "DEA"
+              DISPLAY "rows(2) wrong: " rows(2)
+              END-DISPLAY
+           END-IF
+           DISPLAY LENGTH OF a-table
+      *>   check if ref-mod also works as expected
+           MOVE ALL ZEROES TO a-table (1: (LENGTH OF a-table))
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# multiple issues, see comments above
+AT_XFAIL_IF(true)
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
@@ -2879,6 +2948,7 @@ STATUS OPENO 2 30
 
 AT_CLEANUP
 
+
 AT_SETUP([ASSIGN with COB_FILE_PATH])
 AT_KEYWORDS([extensions runfile])
 
@@ -2899,17 +2969,56 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST-FILE ASSIGN "SUBDIR/FILENAMEX".
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TEST-FILE.
+       01 TEST-REC      PIC X(4).
+       PROCEDURE        DIVISION.
+           OPEN OUTPUT TEST-FILE.
+           CLOSE TEST-FILE.
+           STOP RUN.
+])
+
 AT_CHECK([$COMPILE -ffilename-mapping prog.cob], [0], [], [])
+
 AT_CHECK([rm -rf "tstdir" && mkdir "tstdir"], [0], [], [])
+
 AT_CHECK([COB_FILE_PATH="tstdir" $COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([test -f "tstdir/FILENAMEX" && rm -f "tstdir/FILENAMEX"], [0], [], [])
+
 AT_CHECK([COB_FILE_PATH="tstdir/" $COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([test -f "tstdir/FILENAMEX"], [0], [], [])
 
 # FIXME: on OPEN we should also output the full filename (if any) leading to the error
-AT_CHECK([COB_FILE_PATH="./nosubhere" $COBCRUN_DIRECT ./prog], [1], [],
+AT_CHECK([COB_FILE_PATH="./nosubhere" $COBCRUN_DIRECT ./prog 2>prog.err], [1], [], [])
+# workaround for testing windows-builds...
+AT_CHECK([cat prog.err | tr '\\' '/'], [0],
 [libcob: prog.cob:13: error: permanent file error (status = 30) for file TEST-FILE ('FILENAMEX' => ./nosubhere/FILENAMEX) on OPEN
-])
+], [])
+
+
+AT_CHECK([$COMPILE -ffilename-mapping prog2.cob], [0], [], [])
+
+AT_CHECK([mkdir "tstdir/SUBDIR"], [0], [], [])
+
+AT_CHECK([COB_FILE_PATH="tstdir" $COBCRUN_DIRECT ./prog2], [0], [], [])
+AT_CHECK([test -f "tstdir/SUBDIR/FILENAMEX" && rm -f "tstdir/SUBDIR/FILENAMEX"], [0], [], [])
+
+AT_CHECK([COB_FILE_PATH="tstdir/" $COBCRUN_DIRECT ./prog2], [0], [], [])
+AT_CHECK([test -f "tstdir/SUBDIR/FILENAMEX"], [0], [], [])
+
+AT_CHECK([COB_FILE_PATH="./nosubhere" $COBCRUN_DIRECT ./prog2 2>prog.err], [1], [], [])
+AT_CHECK([cat prog.err | tr '\\' '/'], [0],
+[libcob: prog2.cob:13: error: permanent file error (status = 30) for file TEST-FILE ('SUBDIR/FILENAMEX' => ./nosubhere/SUBDIR/FILENAMEX) on OPEN
+], [])
+
 
 AT_CLEANUP
 
@@ -5766,99 +5875,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -DACTIVATE2 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
-AT_CLEANUP
-
-
-AT_SETUP([Conditional / define directives (5)])
-AT_KEYWORDS([extensions directive])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       PROCEDURE        DIVISION.
-       >>IF ACTIVATE DEFINED
-       >>DISPLAY NOTOK
-       >>ELIF ACTIVATE2 DEFINED
-       >>DISPLAY OK
-       >>ELSE
-       >>DISPLAY NOTOK
-       >>END-IF
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE -DACTIVATE2 prog.cob], [0],
-[OK
-])
-AT_CLEANUP
-
-
-AT_SETUP([Conditional / define directives (6)])
-AT_KEYWORDS([extensions directive])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID.    prog.
-       PROCEDURE      DIVISION.
-       >>IF X DEFINED
-         >>DISPLAY X defined
-       >>ELSE
-         >>DISPLAY X not defined
-         >>DEFINE X 1
-       >>END-IF
-           CONTINUE
-           .
-])
-
-AT_CHECK([$COMPILE -D X prog.cob], [0],
-[X defined
-])
-AT_CHECK([$COMPILE prog.cob], [0],
-[X not defined
-])
-AT_CLEANUP
-
-
-AT_SETUP([Conditional / define directives (7)])
-AT_KEYWORDS([extensions directive])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID.    prog.
-       PROCEDURE      DIVISION.
-       >>IF A IS DEFINED
-       >>IF B IS DEFINED
-           CONTINUE
-           .
-       >>ELSE
-           CONTINUE
-           .
-       >>END-IF
-       >>END-IF
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [])
-AT_CLEANUP
-
-
-AT_SETUP([Conditional/define directives (8)])
-AT_KEYWORDS([extensions directive])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID.    prog.
-       PROCEDURE      DIVISION.
-       >>IF A IS DEFINED
-           CONTINUE
-           .
-       >>else
-           CONTINUE
-           .
-       >>eNd-If
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [])
 AT_CLEANUP
 
 
