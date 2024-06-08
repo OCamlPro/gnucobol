@@ -469,7 +469,7 @@ Open Plans:
    still applied;
    File name mapping now applies both to COBOL statements and CALLable
    CBL_ and C$ file routines.
-   
+
 ** Screen I/O: initial mouse support (for details see runtime.cfg),
    use of CURSOR clause in SPECIAL-NAMES for positioning on ACCEPT
 
@@ -522,7 +522,7 @@ Open Plans:
        not included in -Wall any more
    -Wno-ignored-error allows to suppress messages that normally would be an
        error and are only allowed because they are never executed
-   -Wcorresponding is now enabled by default
+   -Wimplicit-define and -Wcorresponding are now enabled by default
 
    -f[no]-diagnostics-show-option, enabled by default, shows the
     command line option responsible for the diagnostic message

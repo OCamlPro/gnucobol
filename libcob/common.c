@@ -3520,9 +3520,7 @@ cob_check_version (const char *prog,
 	app.point = 0;
 	lib.major = 9;
 	lib.minor = 9;
-	lib.point = 9;
-
-	/* note: to be tested with direct C call */
+	lib.point = 0;
 
 	nparts = sscanf (PACKAGE_VERSION, "%d.%d.%d",
 			 &lib.major, &lib.minor, &lib.point);
@@ -3536,8 +3534,12 @@ cob_check_version (const char *prog,
 		if (app.version == lib.version 
 		 && patchlev_prog <= PATCH_LEVEL)
 			return;
-		if (app.version < lib.version)
-			return;
+		if (app.version < lib.version) {
+			struct ver_t minimal = { 4, 0 };
+			if (app.version >= version_bitstring (minimal)) {
+				return;
+			}
+		}
 	}
 
 	/* TODO: when CALLed - raise exception so program can go ON EXCEPTION */
@@ -6677,7 +6679,7 @@ cob_sys_waitpid (const void *p_id)
 		*/
 #if defined (PROCESS_QUERY_LIMITED_INFORMATION)
 		process = OpenProcess (SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-#if !defined (_MSC_VER) || !COB_USE_VC2012_OR_GREATER /* only try a higher level if we possibly compile on XP/2003 */
+#if !defined (_MSC_VER) || COB_USE_VC2012_OR_GREATER /* only try a higher level if we possibly compile on XP/2003 */
 		/* TODO: check what happens on WinXP / 2003 as PROCESS_QUERY_LIMITED_INFORMATION isn't available there */
 		if (!process && GetLastError () == ERROR_ACCESS_DENIED) {
 			process = OpenProcess (SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, pid);
@@ -10015,6 +10017,14 @@ cob_stack_trace (void *target)
 static void
 flush_target (FILE *target)
 {
+	/* exit early in the case of no module loaded at all,
+	   possible to happen for example when aborted from cob_check_version of first module */
+	if (!COB_MODULE_PTR
+	 || (   COB_MODULE_PTR->module_stmt == 0
+	     && COB_MODULE_PTR->next == NULL)) {
+		return;
+	}
+
 	if (target == stderr
 	 || target == stdout) {
 		fflush (stdout);

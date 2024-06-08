@@ -60,6 +60,7 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <io.h>	/* for access */
 
 static HMODULE
 lt_dlopen (const char *x)

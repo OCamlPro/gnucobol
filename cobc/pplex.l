@@ -227,7 +227,8 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 }
 
 ^[ ]*">>"[ ]?"DISPLAY"[ ]+ {
-	/* OpenCOBOL/GnuCOBOL 2.x extension, 202x: display message during compilation */
+	/* previous OpenCOBOL/GnuCOBOL 2.x extension, added in COBOL 202x with slightly different syntax:
+	   display message during compilation --> needs a dialect option to switch to the appropriate state */
 	display_msg[0] = 0;
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
@@ -686,6 +687,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "CALLFH"	{
 	return CALLFH;
   }
+  "CHECKNUM"	|
+  "CHECK-NUM"	{
+	return CHECKNUM;
+  }
   "COMP1"	|
   "COMP-1"	{
 	return COMP1;
@@ -715,6 +720,11 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NO-BOUND"		{
 	return NOBOUND;
   }
+  "NOCHECKNUM"  	|
+  "NO-CHECKNUM" 	|
+  "NO-CHECK-NUM"	{
+	return NOCHECKNUM;
+  }
   "NODPCINDATA" 	|
   "NO-DPCINDATA"	|
   "NODPC-IN-DATA"	|
@@ -729,6 +739,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NOSSRANGE"	|
   "NO-SSRANGE"	{
 	return NOSSRANGE;
+  }
+  "NOSPZERO"	|
+  "NO-SPZERO"	{
+	return NOSPZERO;
   }
   "NOODOSLIDE"	|
   "NO-ODOSLIDE"	{
@@ -745,6 +759,9 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "SSRANGE"	{
 	return SSRANGE;
+  }
+  "SPZERO"	{
+	return SPZERO;
   }
   "SOURCEFORMAT" |
   "SOURCE-FORMAT"	{
@@ -1729,20 +1746,22 @@ start:
 		if (cb_source_format == CB_FORMAT_FREE) {
 			if (line_overflow == 0) {
 				cb_plex_warning (cb_missing_newline, newline_count + 1,
-						 _("line not terminated by a newline"));
+						_("line not terminated by a newline"));
+				n++;
 			} else if (line_overflow == 2) {
 				cb_plex_warning (COBC_WARN_FILLER, newline_count + 1,
-						 _("source text exceeds %d bytes, will be truncated"),
-						   PPLEX_BUFF_LEN);
+						_("source text exceeds %d bytes, will be truncated"),
+						  PPLEX_BUFF_LEN);
 			}
 		} else {
 			if (line_overflow == 0) {
 				cb_plex_warning (cb_missing_newline, newline_count,
-						 _("line not terminated by a newline"));
+						_("line not terminated by a newline"));
+				n++;
 			} else if (line_overflow == 2) {
 				cb_plex_warning (COBC_WARN_FILLER, newline_count,
-						 _("source text exceeds %d bytes, will be truncated"),
-						   PPLEX_BUFF_LEN);
+						_("source text exceeds %d bytes, will be truncated"),
+						  PPLEX_BUFF_LEN);
 			}
 		}
 		buff[n++] = '\n';

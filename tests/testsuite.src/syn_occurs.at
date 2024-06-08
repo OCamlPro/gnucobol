@@ -463,7 +463,7 @@ AT_DATA([prog.cob], [
 # all entries may raise this error but only the last error message is guaranteed.
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [], ignore)
 AT_CHECK([$COMPILE_ONLY prog.cob 2>&1 | \
-grep "prog.cob:11: error: numeric literal '9223372036854775808' exceeds limit"],
+$GREP "prog.cob:11: error: numeric literal '9223372036854775808' exceeds limit"],
 [0], ignore, [])
 
 AT_CLEANUP

@@ -195,7 +195,7 @@ AT_DATA([prog3.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       COPY "sub.inc" OF SUB.
+       COPY "subb.inc" OF SUB.
        PROCEDURE        DIVISION.
            DISPLAY TEST-VAR.
            STOP RUN.
@@ -206,7 +206,7 @@ AT_DATA([prog4.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       COPY "sub" OF SUB.
+       COPY "subb" OF SUB.
        PROCEDURE        DIVISION.
            DISPLAY TEST-VAR.
            STOP RUN.
@@ -217,7 +217,7 @@ AT_DATA([prog5.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       COPY "sub" OF "..".
+       COPY "subb" OF "..".
        PROCEDURE        DIVISION.
            DISPLAY TEST-VAR.
            STOP RUN.
@@ -228,7 +228,7 @@ AT_DATA([prog6.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       COPY "sub".
+       COPY "subb".
        PROCEDURE        DIVISION.
            DISPLAY TEST-VAR.
            STOP RUN.
@@ -238,7 +238,7 @@ AT_DATA([copy.inc], [
        77  TEST-VAR     PIC X VALUE 'V'.
 ])
 AT_CHECK([mkdir -p SUB/OSUB], [0], [], [])
-AT_DATA([SUB/sub.inc], [
+AT_DATA([SUB/subb.inc], [
        77  TEST-VAR     PIC X VALUE 'V'.
 ])
 

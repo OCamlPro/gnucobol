@@ -1508,8 +1508,9 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		lmode = ISLOCK;
 	} else if (read_opts & COB_READ_WAIT_LOCK) {
 		lmode = ISLCKW;
-	} else if ((f->lock_mode & COB_LOCK_AUTOMATIC)
-	 	&&  f->open_mode != COB_OPEN_INPUT) {
+	} else
+	if ((f->lock_mode & COB_LOCK_AUTOMATIC)
+	 &&  f->open_mode != COB_OPEN_INPUT) {
 		if (!(read_opts & COB_READ_IGNORE_LOCK)) {
 			lmode = ISLOCK;
 		}
@@ -1902,6 +1903,8 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 	if (ret == COB_STATUS_00_SUCCESS
 	 && retdup != COB_STATUS_00_SUCCESS)
 		ret = retdup;
+		/* FIXME: use (is_suppressed_key_value) or similar to verify
+		   that the duplicate this is not a SUPPRESSed KEY */
 	return ret;
 }
 

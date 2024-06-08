@@ -224,6 +224,9 @@ else
 	COB_HAS_64_BIT_POINTER=$(grep "64bit-mode" info.out | cut -d: -f2 | cut -b2-)
 
 	cob_indexed=$(grep -i "indexed file" info.out | cut -d: -f2)
+	if test "x$cob_indexed" = "x"; then
+		cob_indexed=$(grep ISAM info.out | cut -d: -f2)
+	fi
 	case "$cob_indexed" in
 	" disabled")	COB_HAS_ISAM="no";;
 	" BDB") 		COB_HAS_ISAM="db";;

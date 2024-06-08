@@ -120,6 +120,7 @@ indexed_open (cob_file_api *a, cob_file *f, char *filename, const int mode, cons
 	switch (ret) {
 	case COB_NOT_CONFIGURED:
 		a->chk_file_mapping (f, NULL);
+		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
 				return COB_STATUS_35_NOT_EXISTS;
@@ -321,6 +322,7 @@ seqra_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const 
 	switch (ret) {
 	case COB_NOT_CONFIGURED:
 		a->chk_file_mapping (f, NULL);
+		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
 				return COB_STATUS_35_NOT_EXISTS;

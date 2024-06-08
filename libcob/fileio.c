@@ -1431,7 +1431,11 @@ cob_read_dict (cob_file *f, char *filename, int updt)
 	return ret;
 }
 
-/* Check for file options from environment variables */
+/* Check for DD_xx, dd_xx, xx environment variables for a filename
+   or a part specified with 'src';
+   returns either the value or NULL if not found in the environment
+   Note: MF only checks for xx if the variable started with a $,
+	     ACUCOBOL only checks for xx in general ... */
 static char *
 cob_chk_file_env (cob_file *f, const char *src)
 {
@@ -1441,78 +1445,106 @@ cob_chk_file_env (cob_file *f, const char *src)
 	const char	*t;
 	unsigned int	 i;
 
+	/* GC-sanity rule: no environment handling if src starts with period */
+	if (*src == '.') {
+		return NULL;
+	}
+
+	/* no mapping if filename begins with a slash [externally checked], hypen or digits
+	   (taken from "Programmer's Guide to File Handling, Chapter 2: File Naming") */
+	switch (*file_open_name) {
+	case '-':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		return NULL;
+	default:
+		break;
+	}
+
+	q = cob_strdup (src);
+	s = q;
 	if (file_setptr->cob_env_mangle) {
-		q = cob_strdup (src);
-		s = q;
 		for (i = 0; s[i] != 0; ++i) {
 			if (!isalnum ((int)s[i])) {
 				s[i] = '_';
 			}
 		}
 	} else {
-		q = NULL;
-		s = (char *)src;
-	}
-
-	if ((file_open_io_env = cob_get_env ("IO_OPTIONS", NULL)) != NULL) {
-		cob_set_file_format (f, file_open_io_env, 1);	/* Set initial defaults */
-	}
-	if (f->organization == COB_ORG_INDEXED) {
-		t = "IX";
-	} else if (f->organization == COB_ORG_SEQUENTIAL) {
-		t = "SQ";
-	} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-		if((f->flag_line_adv & COB_LINE_ADVANCE))
-			t = "LA";
-		else
-			t = "LS";
-	} else if (f->organization == COB_ORG_RELATIVE) {
-		t = "RL";
-	} else {
-		t = "IO";
-	}
-	snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s_OPTIONS", t);
-	if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
-		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s_options", t);
-		file_open_env[0] = (char)tolower(file_open_env[0]);
-		file_open_env[1] = (char)tolower(file_open_env[1]);
-		file_open_io_env = cob_get_env (file_open_env, NULL);
-	}
-	if (file_open_io_env != NULL) {
-		cob_set_file_format (f, file_open_io_env, 1);	/* Defaults for file type */
-	}
-
-	/* Check for IO_filename with file specific options */
-	file_open_io_env = NULL;
-	snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", s);
-	if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
-		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", s);
-		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
-			for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
-				file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
+		for (i = 0; s[i] != 0; ++i) {
+			if (s[i] == '.') {
+				s[i] = '_';
 			}
-			file_open_io_env = cob_get_env (file_open_env, NULL);
 		}
 	}
-	if (file_open_io_env == NULL) {	/* Re-check for IO_fdname */
-		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", f->select_name);
+
+	if (f != NULL) {
+		if ((file_open_io_env = cob_get_env ("IO_OPTIONS", NULL)) != NULL) {
+			cob_set_file_format (f, file_open_io_env, 1);	/* Set initial defaults */
+		}
+		if (f->organization == COB_ORG_INDEXED) {
+			t = "IX";
+		} else if (f->organization == COB_ORG_SEQUENTIAL) {
+			t = "SQ";
+		} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+			if((f->flag_line_adv & COB_LINE_ADVANCE))
+				t = "LA";
+			else
+				t = "LS";
+		} else if (f->organization == COB_ORG_RELATIVE) {
+			t = "RL";
+		} else {
+			t = "IO";
+		}
+		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s_OPTIONS", t);
 		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
-			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", f->select_name);
+			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s_options", t);
+			file_open_env[0] = (char)tolower(file_open_env[0]);
+			file_open_env[1] = (char)tolower(file_open_env[1]);
+			file_open_io_env = cob_get_env (file_open_env, NULL);
+		}
+		if (file_open_io_env != NULL) {
+			cob_set_file_format (f, file_open_io_env, 1);	/* Defaults for file type */
+		}
+
+		/* Check for IO_filename with file specific options */
+		file_open_io_env = NULL;
+		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", s);
+		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
+			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", s);
 			if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 				for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
-					file_open_env[i] = (unsigned char)toupper((int)file_open_env[i]);
+					file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
 				}
 				file_open_io_env = cob_get_env (file_open_env, NULL);
 			}
 		}
+		if (file_open_io_env == NULL) {	/* Re-check for IO_fdname */
+			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", f->select_name);
+			if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
+				snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", f->select_name);
+				if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
+					for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
+						file_open_env[i] = (unsigned char)toupper((int)file_open_env[i]);
+					}
+					file_open_io_env = cob_get_env (file_open_env, NULL);
+				}
+			}
+		}
 	}
 
+	/* no mapping at all if explicit disabled on compile-time (dialect configuration)*/
 	if (COB_MODULE_PTR
 	&& !COB_MODULE_PTR->flag_filename_mapping) {	/* No DD_name checks */
 		strcpy (file_open_env, file_open_name);
-		if (q) {
-			cob_free (q);
-		}
+		cob_free (q);
 		return NULL;
 	}
 
@@ -1520,9 +1552,11 @@ cob_chk_file_env (cob_file *f, const char *src)
 	for (i = 0; i < NUM_PREFIX; ++i) {
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", prefix[i], s);
 		file_open_env[COB_FILE_MAX] = 0;
-		if ((p = cob_get_env (file_open_env, NULL)) != NULL) {
+		p = cob_get_env (file_open_env, NULL);
+		if (p && *p) {
 			break;
 		}
+		p = NULL;
 	}
 	if (p == NULL) {		/* Try all Upper case env var name */
 		for (i = 0; i < NUM_PREFIX; ++i) {
@@ -1531,18 +1565,111 @@ cob_chk_file_env (cob_file *f, const char *src)
 			for (i = 0; file_open_env[i] != 0; ++i) {
 				file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
 			}
-			if ((p = cob_get_env (file_open_env, NULL)) != NULL) {
+			p = cob_get_env (file_open_env, NULL);
+			if (p && *p) {
 				break;
 			}
+			p = NULL;
 		}
 		if (p == NULL) {
 			strcpy (file_open_env, file_open_name);
 		}
 	}
-	if (q) {
-		cob_free (q);
-	}
+	cob_free (q);
 	return p;
+}
+
+/* checks if 'src' containes a / or \ */
+static int
+has_directory_separator (char *src)
+{
+	for (; *src; src++) {
+		if (*src == '/' || *src == SLASH_CHAR) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* checks if 'src' looks like starting with  name */
+static int
+looks_absolute (char *src)
+{
+	/* no file path adjustment if filename is absolute
+	   because it begins with a slash (or win-disk-drive) */
+	if (file_open_name[0] == '/'
+	 || file_open_name[0] == SLASH_CHAR
+#if WIN32
+	 || file_open_name[1] == ':'
+#endif
+		) {
+		return 1;
+	}
+	return 0;
+}
+
+/* checks for special ACUCOBOL-case: file that start with hypen [note: -P not supported]
+   no translation at all, name starts after first non-space */
+static int
+has_acu_hypen (char *src)
+{
+	if ( src[0] == '-'
+	 && (src[1] == 'F' || src[1] == 'D' || src[1] == 'f' || src[1] == 'd')
+	 && isspace((cob_u8_t)src[2])) {
+		return 1;
+	}
+	return 0;
+}
+
+/* do acu translation, 'src' may not be file_open_buff! */
+static void
+do_acu_hypen_translation (char *src)
+{
+	/* maybe store device type to "adjust locking rules" */
+	/* find first non-space and return it in the original storage  */
+	for (src = src + 3; *src && isspace ((cob_u8_t)*src); src++);
+	
+	strncpy (file_open_buff, src, (size_t)COB_FILE_MAX);
+	strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
+}
+
+/* apply COB_FILE_PATH if set (similar to ACUCOBOL's FILE-PREFIX)
+   MF and Fujistu simply don't have that - not set by default,
+   so no compatilibity issue here; writes to global file_open_buff */
+static void
+apply_file_paths (char *src)
+{
+	int k;
+	if (file_paths) {
+		for(k=0; file_paths[k] != NULL; k++) {
+			snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
+				  file_paths[k], SLASH_CHAR, src);
+			file_open_buff[COB_FILE_MAX] = 0;
+			if (access (file_open_buff, F_OK) == 0) {
+				break;
+			}
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
+			/* ISAM may append '.dat' to file name */
+			snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s.dat",
+				  file_paths[k], SLASH_CHAR, src);
+			file_open_buff[COB_FILE_MAX] = 0;
+			if (access (file_open_buff, F_OK) == 0) {
+				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
+					  file_paths[k], SLASH_CHAR, src);
+				file_open_buff[COB_FILE_MAX] = 0;
+				break;
+			}
+#endif
+		}
+		if (file_paths[k] == NULL) {
+			snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
+				  file_paths[0], SLASH_CHAR, src);
+			file_open_buff[COB_FILE_MAX] = 0;
+		}
+		strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
+	} else if (src != file_open_name) {
+		strncpy (file_open_name, src, (size_t)COB_FILE_MAX);
+	}
 }
 
 void
@@ -1554,13 +1681,21 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 	char		*saveptr;
 	char		*orig;
 	unsigned int	dollar, badchar;
-	int		k, qt;
+	int		qt;
 
-	memset (f->file_status, '0', (size_t)2);
+	if (f != NULL)
+		memset (f->file_status, '0', (size_t)2);
 	if (filename)
 		strcpy(file_open_name, filename);
-	/* Misuse "dollar" here to indicate a separator */
-	dollar = 0;
+
+	/* Special ACUCOBOL-case: file that start with hypen [note: -P not supported]
+	   no translation at all, name starts after first non-space */
+	if (has_acu_hypen (file_open_name)) {
+		do_acu_hypen_translation (file_open_name);
+		return ;
+	}
+
+	/* Handle the COB_FILENAME_SPACES option */
 	if (chk_filename_spaces) {
 		p = file_open_name;
 	 	if (*p == '"') {
@@ -1572,9 +1707,7 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 			badchar = 0;
 		}
 		for (; 1; p++) {
-			if (*p == '/' || *p == SLASH_CHAR) {
-				dollar = 1;
-			} else if (*p == qt) {
+		        if (*p == qt) {
 				*p = 0;
 				if (qt == '"')
 					memmove (file_open_name, file_open_name + 1, (size_t)(p - file_open_name));
@@ -1592,77 +1725,59 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 				break;
 			}
 		}
-		if (badchar) {
+		if (badchar && f != NULL) {
 			f->file_status[0] = '9';
 			f->file_status[1] = 4;
-		}
-	} else {
-		for (p = file_open_name; *p; p++) {
-			if (*p == '/' || *p == SLASH_CHAR) {
-				dollar = 1;
-				break;
-			}
 		}
 	}
 
 	src = file_open_name;
 
-	/* Simple case - No separators */
-	if (dollar == 0) {
+	/* Simple case - No separators [note: this is also the ACU and Fujitsu way] */
+	if (!looks_absolute(src)
+	 && !has_directory_separator(src)) {
 		/* Ignore leading dollar */
 		if (*src == '$') {
 			src++;
 		}
 		/* Check for DD_xx, dd_xx, xx environment variables */
-		/* If not found, use as is including the dollar character */
+		/* Note: ACU and Fujitsu would only check for xx */
+		/* If not found, use as is, possibly including the dollar character */
 		if ((p = cob_chk_file_env (f, src)) != NULL) {
 			strncpy (file_open_name, p, (size_t)COB_FILE_MAX);
-		} else if (file_paths) {
-			for(k=0; file_paths[k] != NULL; k++) {
-				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
-					  file_paths[k], SLASH_CHAR, file_open_name);
-				file_open_buff[COB_FILE_MAX] = 0;
-				if (access (file_open_buff, F_OK) == 0) {
-					break;
-				}
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
-				/* ISAM may append '.dat' to file name */
-				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s.dat",
-					  file_paths[k], SLASH_CHAR, file_open_name);
-				file_open_buff[COB_FILE_MAX] = 0;
-				if (access (file_open_buff, F_OK) == 0) {
-					snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
-						  file_paths[k], SLASH_CHAR, file_open_name);
-					file_open_buff[COB_FILE_MAX] = 0;
-					break;
-				}
-#endif
+			/* Note: ACU specifies: "repeated until variable can't be resolved" 
+			   we don't apply this and will not in the future
+			   [recursion is only one of the problems] */
+			if (looks_absolute (src)) {
+				return;
 			}
-			if (file_paths[k] == NULL) {
-				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
-					  file_paths[0], SLASH_CHAR, file_open_name);
-				file_open_buff[COB_FILE_MAX] = 0;
+			if (has_acu_hypen (file_open_name)) {
+				do_acu_hypen_translation (file_open_name);
+				return ;
 			}
-			strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 		}
+		apply_file_paths (file_open_name);
 		return;
 	}
 
 	/* Complex */
+
+	/* Note: ACU and Fujitsu would return the value back and stop here */
+
 	/* Isolate first element (everything before the slash) */
-	/* If it starts with a slash, it's absolute, do nothing */
-	/* Else if it starts with a $, mark and skip over the $ */
+	/* If it starts with a $, mark and skip over the $ */
 	/* Try mapping on resultant string - DD_xx, dd_xx, xx */
 	/* If successful, use the mapping */
 	/* If not, use original element EXCEPT if we started */
-	/* with a $, in which case, we ignore the element AND */
+	/* with a $, in which case we ignore the element AND */
 	/* the following slash */
 
-	dollar = 0;
 	dst = file_open_buff;
 	*dst = 0;
 
-	if (*src == '$') {
+	if (*src != '$') {
+		dollar = 0;
+	} else {
 		dollar = 1;
 		src++;
 	}
@@ -1686,29 +1801,48 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 	}
 	/* First element completed, loop through remaining */
 	/* elements delimited by slash */
-	/* Check each for $ mapping */
+	/* Check only for $ from now on; includes the DD_xx/dd_xx/xx mapping */
+	src = NULL;
 	for (; ;) {
 		p = strtok (orig, "/\\");
 		if (!p) {
 			break;
 		}
 		if (!orig) {
-			if (dollar) {
-				dollar = 0;
-			} else {
+			if (!dollar) {
 				strcat (file_open_buff, SLASH_STR);
 			}
 		} else {
 			orig = NULL;
 		}
-		if (*p == '$' && (src = cob_chk_file_env (f, p + 1)) != NULL) {
-			strncat (file_open_buff, src, (size_t)COB_FILE_MAX);
+		if (*p != '$') {
+			dollar = 0;
 		} else {
-			strncat (file_open_buff, p, (size_t)COB_FILE_MAX);
+			dollar = 1;
+			p++;
 		}
+		if (dollar && (src = cob_chk_file_env (f, p)) != NULL) {
+			strncat (file_open_buff, src, (size_t)COB_FILE_MAX);
+			src = NULL;
+		} else if (!dollar) {
+			strncat (file_open_buff, p, (size_t)COB_FILE_MAX);
+			src = NULL;
+		} else {
+			src = p - 1;
+		}
+	}
+	/* if we have a final $something that cannot be resolved - use as plain name */
+	if (src) {
+		strncat (file_open_buff, src, (size_t)COB_FILE_MAX);
 	}
 	strcpy (file_open_name, file_open_buff);
 	cob_free (saveptr);
+
+	if (looks_absolute (file_open_name)) {
+		return;
+	}
+
+	apply_file_paths (file_open_name);
 }
 
 void
@@ -2808,6 +2942,7 @@ lock_record (cob_file *f, unsigned int recnum, int forwrite, int *errsts)
 	lck.l_whence = SEEK_SET;
 	lck.l_start = pos;
 	lck.l_len = rcsz;
+	errno = 0;
 	if (fcntl (f->fd, F_SETLK, &lck) != -1) {
 		*errsts = 0;
 		if(recnum == 0
@@ -2937,9 +3072,60 @@ unlock_record (cob_file *f, unsigned int recnum)
 	return 0;						/* Record is not locked! */
 }
 
+#elif defined _WIN32
+
+/*TODO: handle record-level locks*/
+static int
+lock_record(cob_file *f, unsigned int recnum, int forwrite, int *errsts)
+{
+	HANDLE osHandle;
+
+	COB_UNUSED (recnum);
+
+	f->blockpid = 0;
+	f->flag_file_lock = 1;
+
+	osHandle = (HANDLE)_get_osfhandle (f->fd);
+	if (osHandle != INVALID_HANDLE_VALUE) {
+		DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
+		OVERLAPPED fromStart = {0};
+		if (forwrite) flags |= LOCKFILE_EXCLUSIVE_LOCK;
+		if (LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
+			*errsts = 0;
+			return 1;
+		}
+	}
+
+	*errsts = EAGAIN; /*TODO: return actual error*/
+	return 0;
+}
+
+/*TODO: handle record-level locks*/
+static int
+unlock_record(cob_file *f, unsigned int recnum)
+{
+	HANDLE osHandle;
+
+	COB_UNUSED (recnum);
+
+	osHandle = (HANDLE)_get_osfhandle (f->fd);
+	if (osHandle != INVALID_HANDLE_VALUE) {
+		if (!UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
+#if 0 /* CHECKME - What is the correct thing to do here? */
+			/* not translated as "testing only" */
+			cob_runtime_warning ("issue during UnLockFile (%s), lastError: " CB_FMT_LLU,
+				"unlock_record", (cob_u64_t)GetLastError ());
+#endif
+			return 0;
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
 #else
 	/* System does not even have 'fcntl' so no explicit Record/File lock is used */
-	/* TODO: check later for possible fall-back [at least WIN32]*/
 static int
 lock_record(cob_file *f, unsigned int recnum, int forwrite, int *errsts)
 {
@@ -4313,8 +4499,8 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			return COB_XSTATUS_NOT_DIR;
 		}
 		if (f->flag_optional) {
-			f->file = fp;
-			f->fd = fileno (fp);
+			f->file = NULL;
+			f->fd = -1;
 			f->open_mode = (unsigned char)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
@@ -4438,8 +4624,22 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 			lock.l_whence = SEEK_SET;
 			lock.l_start = 0;
 			lock.l_len = 0;
+			errno = 0;
 			if (fcntl (f->fd, F_SETLK, &lock) == -1) {
 				cob_runtime_warning ("issue during unlock (%s), errno: %d", "cob_file_close", errno);
+			}
+		}
+#elif defined _WIN32
+		{
+			HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
+			if (osHandle != INVALID_HANDLE_VALUE) {
+				if (!UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
+#if 0 /* CHECKME - What is the correct thing to do here? */
+					/* not translated as "testing only" */
+					cob_runtime_warning ("issue during UnLockFile (%s), lastError: " CB_FMT_LLU,
+						"cob_file_close", (cob_u64_t)GetLastError ());
+#endif
+				}
 			}
 		}
 #endif
@@ -5062,6 +5262,7 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 				}
 			}
 			if (i < size) {
+				errno = 0;
 				ret = fwrite (&p[i],(int)size - i, 1, fo);
 				if (ret <= 0) {
 					return errno_cob_sts (COB_STATUS_30_PERMANENT_ERROR);
@@ -5077,6 +5278,7 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 					}
 				}
 			}
+			errno = 0;
 			ret = fwrite (f->record->data, size, (size_t)1, fo);
 			/* LCOV_EXCL_START */
 			if (ret != 1) {
@@ -6043,6 +6245,19 @@ cob_file_unlock (cob_file *f)
 					}
 				}
 			}
+#elif defined _WIN32
+			{
+				HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
+				if (osHandle != INVALID_HANDLE_VALUE) {
+					if (!UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
+#if 0 /* CHECKME - What is the correct thing to do here? */
+						/* not translated as "testing only" */
+						cob_runtime_warning ("issue during UnLockFile (%s), lastError: " CB_FMT_LLU,
+							"cob_file_unlock", (cob_u64_t)GetLastError());
+#endif
+					}
+				}
+			}
 #endif
 
 		} else {
@@ -6638,12 +6853,17 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	}
 
 	if (f->assign == NULL) {
+		/* CHECKME: that _seems_ to be a codegen error, but may also happen with EXTFH */
 		cob_runtime_error (_("ERROR FILE %s has ASSIGN field is NULL"),
 							f->select_name);
 		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
 	}
 	if (f->assign->data == NULL) {
+#if 0 /* we don't raise an error in other places and a similar error is raised in cob_fatal_error */
+		cob_runtime_error ("file %s has ASSIGN field with NULL address",
+			f->select_name);
+#endif
 		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
 	}
@@ -7573,6 +7793,7 @@ cob_param_no_quotes (int n)
 	return (void*)s;
 }
 
+/* actual processing for CBL_OPEN_FILE and CBL_CREATE_FILE */
 static int
 open_cbl_file (cob_u8_ptr file_name, int file_access,
 	       	cob_u8_ptr file_handle, const int file_flags)
@@ -7604,8 +7825,12 @@ open_cbl_file (cob_u8_ptr file_name, int file_access,
 			memset (file_handle, -1, (size_t)4);
 			return -1;
 	}
-	fd = open (fn, flag, COB_FILE_MODE);
+
+	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
 	cob_free (fn);
+	cob_chk_file_mapping (NULL, NULL);
+
+	fd = open (file_open_name, flag, COB_FILE_MODE);
 	if (fd < 0) {
 		memset (file_handle, -1, (size_t)4);
 		return 35;
@@ -7614,6 +7839,7 @@ open_cbl_file (cob_u8_ptr file_name, int file_access,
 	return 0;
 }
 
+/* entry point for library routine CBL_OPEN_FILE */
 int
 cob_sys_open_file (unsigned char *file_name, unsigned char *file_access,
 		   unsigned char *file_lock, unsigned char *file_dev,
@@ -7628,6 +7854,7 @@ cob_sys_open_file (unsigned char *file_name, unsigned char *file_access,
 	return open_cbl_file (file_name, (int)cob_get_s64_param (2), file_handle, 0);
 }
 
+/* entry point for library routine CBL_CREATE_FILE */
 int
 cob_sys_create_file (unsigned char *file_name, unsigned char *file_access,
 		     unsigned char *file_lock, unsigned char *file_dev,
@@ -7657,6 +7884,7 @@ cob_sys_create_file (unsigned char *file_name, unsigned char *file_access,
 	return open_cbl_file (file_name, (int)cob_get_s64_param (2), file_handle, O_CREAT | O_TRUNC);
 }
 
+/* entry point and processing for library routine CBL_READ_FILE */
 int
 cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 		   unsigned char *file_len, unsigned char *flags,
@@ -7682,6 +7910,7 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	if (lseek (fd, (off_t)off, SEEK_SET) == -1) {
 		return -1;
 	}
+
 	if (len > 0) {
 		rc = read (fd, buf, len);
 		if (rc < 0) {
@@ -7703,6 +7932,7 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	return rc;
 }
 
+/* entry point and processing for library routine CBL_WRITE_FILE */
 int
 cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 		    unsigned char *file_len, unsigned char *flags,
@@ -7732,6 +7962,7 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 	return COB_STATUS_00_SUCCESS;
 }
 
+/* entry point and processing for library routine CBL_CLOSE_FILE */
 int
 cob_sys_close_file (unsigned char *file_handle)
 {
@@ -7743,6 +7974,7 @@ cob_sys_close_file (unsigned char *file_handle)
 	return close (fd);
 }
 
+/* dummy entry point for library routine CBL_FLUSH_FILE - doesn't do anything yet! */
 int
 cob_sys_flush_file (unsigned char *file_handle)
 {
@@ -7753,6 +7985,7 @@ cob_sys_flush_file (unsigned char *file_handle)
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_DELETE_FILE */
 int
 cob_sys_delete_file (unsigned char *file_name)
 {
@@ -7767,14 +8000,20 @@ cob_sys_delete_file (unsigned char *file_name)
 	if (fn == NULL) {
 		return -1;
 	}
-	ret = unlink (fn);
+
+	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
 	cob_free (fn);
+	cob_chk_file_mapping (NULL, NULL);
+
+	ret = unlink (file_open_name);
 	if (ret) {
 		return 128;
 	}
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_COPY_FILE,
+   does a direct read + write of the complete file */
 int
 cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 {
@@ -7799,20 +8038,27 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 		cob_free (fn1);
 		return -1;
 	}
+
+	strncpy (file_open_name, fn1, (size_t)COB_FILE_MAX);
+	cob_free (fn1);
+	cob_chk_file_mapping (NULL, NULL);
+
 	flag |= O_RDONLY;
-	fd1 = open (fn1, flag, 0);
+	fd1 = open (file_open_name, flag, 0);
 	if (fd1 < 0) {
-		cob_free (fn1);
 		cob_free (fn2);
 		return -1;
 	}
+
+	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
+	cob_free (fn2);
+	cob_chk_file_mapping (NULL, NULL);
+
 	flag &= ~O_RDONLY;
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
-	fd2 = open (fn2, flag, COB_FILE_MODE);
+	fd2 = open (file_open_name, flag, COB_FILE_MODE);
 	if (fd2 < 0) {
 		close (fd1);
-		cob_free (fn1);
-		cob_free (fn2);
 		return -1;
 	}
 
@@ -7825,11 +8071,10 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	}
 	close (fd1);
 	close (fd2);
-	cob_free (fn1);
-	cob_free (fn2);
 	return ret;
 }
 
+/* entry point and processing for library routine CBL_CHECK_FILE_EXIST */
 int
 cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 {
@@ -7859,11 +8104,14 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 #endif
 	}
 
-	if (stat (fn, &st) < 0) {
-		cob_free (fn);
+	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
+	cob_free (fn);
+	cob_chk_file_mapping (NULL, NULL);
+
+	if (stat (file_open_name, &st) < 0) {
 		return 35;
 	}
-	cob_free (fn);
+
 	sz = (cob_s64_t)st.st_size;
 	tm = localtime (&st.st_mtime);
 	d = (short)tm->tm_mday;
@@ -7893,12 +8141,14 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_RENAME_FILE */
 int
 cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 {
 	char	*fn1;
 	char	*fn2;
-	int	ret;
+	char	localbuff [COB_FILE_BUFF];
+	int 	ret;
 
 	COB_UNUSED (fname1);
 	COB_UNUSED (fname2);
@@ -7914,15 +8164,25 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 		cob_free (fn1);
 		return -1;
 	}
-	ret = rename (fn1, fn2);
+
+	strncpy (file_open_name, fn1, (size_t)COB_FILE_MAX);
 	cob_free (fn1);
+	cob_chk_file_mapping (NULL, NULL);
+
+	strncpy (localbuff, file_open_name, (size_t)COB_FILE_MAX);
+
+	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
 	cob_free (fn2);
+	cob_chk_file_mapping (NULL, NULL);
+
+	ret = rename (localbuff, file_open_name);
 	if (ret) {
 		return 128;
 	}
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_GET_CURRENT_DIR */
 int
 cob_sys_get_current_dir (const int p1, const int p2, unsigned char *p3)
 {
@@ -7970,6 +8230,7 @@ cob_sys_get_current_dir (const int p1, const int p2, unsigned char *p3)
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_CREATE_DIR */
 int
 cob_sys_create_dir (unsigned char *dir)
 {
@@ -7992,6 +8253,7 @@ cob_sys_create_dir (unsigned char *dir)
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_CHANGE_DIR */
 int
 cob_sys_change_dir (unsigned char *dir)
 {
@@ -8014,6 +8276,7 @@ cob_sys_change_dir (unsigned char *dir)
 	return 0;
 }
 
+/* entry point and processing for library routine CBL_DELETE_DIR */
 int
 cob_sys_delete_dir (unsigned char *dir)
 {
@@ -8036,6 +8299,7 @@ cob_sys_delete_dir (unsigned char *dir)
 	return 0;
 }
 
+/* entry point for C$MAKEDIR, processing in cob_sys_create_dir */
 int
 cob_sys_mkdir (unsigned char *dir)
 {
@@ -8050,6 +8314,7 @@ cob_sys_mkdir (unsigned char *dir)
 	return ret;
 }
 
+/* entry point for C$CHDIR, processing in cob_sys_change_dir */
 int
 cob_sys_chdir (unsigned char *dir, unsigned char *status)
 {
@@ -8067,6 +8332,7 @@ cob_sys_chdir (unsigned char *dir, unsigned char *status)
 	return ret;
 }
 
+/* entry point for C$COPY, processing in cob_sys_copy_file */
 int
 cob_sys_copyfile (unsigned char *fname1, unsigned char *fname2,
 		  unsigned char *file_type)
@@ -8088,6 +8354,7 @@ cob_sys_copyfile (unsigned char *fname1, unsigned char *fname2,
 	return ret;
 }
 
+/* entry point and processing for C$FILEINFO */
 int
 cob_sys_file_info (unsigned char *file_name, unsigned char *file_info)
 {
@@ -8156,6 +8423,7 @@ cob_sys_file_info (unsigned char *file_name, unsigned char *file_info)
 	return 0;
 }
 
+/* entry point for C$DELETE, processing in cob_sys_delete_file */
 int
 cob_sys_file_delete (unsigned char *file_name, unsigned char *file_type)
 {

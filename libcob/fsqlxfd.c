@@ -56,7 +56,7 @@ cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 				} else {
 					*partlen = *fullkeylen;
 				}
-				return k;
+				return (int)k;
 			}
 		}
 	}
@@ -104,7 +104,7 @@ db_savekey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx)
 		return totlen;
 	}
 	memcpy (keyarea, record + f->keys[idx].offset, f->keys[idx].field->size);
-	return f->keys[idx].field->size;
+	return (int)f->keys[idx].field->size;
 }
 
 /* Compare key for given index 'keyarea' to 'record'.

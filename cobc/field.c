@@ -1240,7 +1240,10 @@ validate_any_length_item (struct cb_field *f)
 		return 1;
 	}
 
-	/* CHECKME: Why do we increase the reference counter here and not in another place? */
+	/* CHECKME: Why do we increase the reference counter here
+	            (to ensure the field is generated)?
+	            Better would be to add the check for 'f->count != 0' to the place
+	            where it possibly is missing... */
 	f->count++;
 	return 0;
 }

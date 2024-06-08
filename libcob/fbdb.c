@@ -797,7 +797,7 @@ ix_bdb_write_internal (cob_file *f, const int rewrite, const int opt)
 		memset(&p->data,0,sizeof(p->data));
 		if (f->keys[i].tf_duplicates) {
 			flags =  0;
-			dupno = get_dupno(f, i);
+			dupno = get_dupno (f, i);
 			dupno = COB_DUPSWAP (dupno);
 			if (dupno > dupcnt)
 				dupcnt = dupno;
@@ -1091,6 +1091,7 @@ ix_bdb_file_delete (cob_file_api *a, cob_file *f, char *filename)
 			snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s.%d", filename, (int)i);
 		}
 		file_open_buff[COB_FILE_MAX] = 0;
+		errno = 0;
 		unlink (file_open_buff);
 	}
 	return 0;

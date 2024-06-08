@@ -11925,6 +11925,12 @@ output_module_init_function (struct cb_program *prog)
 		if (cb_flag_trace) {
 			opt |= COB_MODULE_TRACE;
 		}
+#if 0 /* currently unused */
+		if (cobc_wants_debug
+		 || cb_flag_dump) {
+			opt |= COB_MODULE_DEBUG;
+		}
+#endif
 		output_line ("module->flag_debug_trace |= %d;", opt);
 	}
 	output_line ("module->flag_dump_sect = 0x%02X;", cb_flag_dump);

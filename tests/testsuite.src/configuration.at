@@ -551,9 +551,9 @@ AT_CHECK([$COBCRUN --runtime-conf], [0], ignore, [])
 # use tr to remove newlines and spaces as the path likely is split
 # into two lines
 AT_CHECK([$COBCRUN --runtime-conf | tr -d '\n ' | \
-grep "runtime_empty.cfg"], [0], ignore, [])
+$GREP "runtime_empty.cfg"], [0], ignore, [])
 AT_CHECK([COB_RUNTIME_CONFIG="" $COBCRUN --runtime-conf | tr -d '\n ' \
-| grep "runtime.cfg"],
+| $GREP "runtime.cfg"],
 [0], ignore, [])
 
 AT_CLEANUP
@@ -577,23 +577,23 @@ setenv COB_PHYSICAL_CANCEL=true
 
 # verify that default for physical cancel is still "no"
 AT_CHECK([$COBCRUN --runtime-conf | \
-grep "COB_PHYSICAL_CANCEL" | grep "no" | grep "default"], [0], ignore, [])
+$GREP "COB_PHYSICAL_CANCEL" | $GREP "no" | $GREP "default"], [0], ignore, [])
 
 # verify that override via -c works and if include works
 AT_CHECK([$COBCRUN -c test2.cfg --runtime-conf | \
-grep "physical_cancel" | grep "yes"], [0], ignore, [])
+$GREP "physical_cancel" | $GREP "yes"], [0], ignore, [])
 AT_CHECK([$COBCRUN -c test.cfg --runtime-conf | \
-grep "physical_cancel" | grep "yes"], [0], ignore, [])
+$GREP "physical_cancel" | $GREP "yes"], [0], ignore, [])
 AT_CHECK([$COBCRUN -c test3.cfg --runtime-conf | \
-grep "COB_PHYSICAL_CANCEL" | grep "yes"], [0], ignore, [])
+$GREP "COB_PHYSICAL_CANCEL" | $GREP "yes"], [0], ignore, [])
 
 # verify that that long option works
 AT_CHECK([$COBCRUN --config=test3.cfg --runtime-conf | \
-grep "COB_PHYSICAL_CANCEL" | grep "yes"], [0], ignore, [])
+$GREP "COB_PHYSICAL_CANCEL" | $GREP "yes"], [0], ignore, [])
 
 # verify that that environment setting works
 AT_CHECK([COB_RUNTIME_CONFIG=test3.cfg $COBCRUN --runtime-conf | \
-grep "COB_PHYSICAL_CANCEL" | grep "yes"], [0], ignore, [])
+$GREP "COB_PHYSICAL_CANCEL" | $GREP "yes"], [0], ignore, [])
 
 # verify that configuration file loading with full path works
 AT_CHECK([$COBCRUN -c "$(_return_path "$(pwd)/test.cfg")" --runtime-conf],
@@ -639,7 +639,7 @@ physical_cancel true
 ])
 
 AT_CHECK([COB_PHYSICAL_CANCEL=false $COBCRUN -c test.cfg --runtime-conf | \
-grep "COB_PHYSICAL_CANCEL" | grep "no"], [0], ignore, [])
+$GREP "COB_PHYSICAL_CANCEL" | $GREP "no"], [0], ignore, [])
 
 AT_CLEANUP
 
@@ -774,9 +774,9 @@ AT_CHECK([unset greet name ; \
    TESTME="this is a test" \
    COB_EXIT_MSG='${greet:Bye} ${name:-user}, ${TESTME}' \
    $COBCRUN --runtime-conf | \
-grep "COB_EXIT_MSG" | grep "Bye user, this is a test"], [0], ignore, [])
+$GREP "COB_EXIT_MSG" | $GREP "Bye user, this is a test"], [0], ignore, [])
 AT_CHECK([$COBCRUN --runtime-conf | \
-grep "COB_EXIT_MSG" | grep "end of program, please press a key to exit"], [0], ignore, [])
+$GREP "COB_EXIT_MSG" | $GREP "end of program, please press a key to exit"], [0], ignore, [])
 
 AT_CLEANUP
 

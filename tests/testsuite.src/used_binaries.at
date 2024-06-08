@@ -461,7 +461,8 @@ AT_CHECK([$COBCRUN -v --version], [0], [ignore], [])
 AT_CHECK([$COBCRUN -q --version], [0], [ignore], [])
 AT_CHECK([$COBCRUN --help], [0], [ignore], [])
 AT_CHECK([$COBCRUN --info], [0], [ignore], [])
-AT_CHECK([$COBCRUN -v --info], [0], [ignore], [])
+# we explicit do not want to run this here, as it initializes curses
+# AT_CHECK([$COBCRUN -v --info], [0], [ignore], [])
 AT_CHECK([$COBCRUN -q --info], [0], [ignore], [])
 AT_CHECK([$COBCRUN --dumpversion], [0], [ignore], [])
 AT_CLEANUP

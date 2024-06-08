@@ -1768,14 +1768,14 @@ AT_CHECK([$COMPILE_ONLY -Wextra prog.cob], [0], [],
 AT_CLEANUP
 
 
-AT_SETUP([line overflow in Fixed-form / Free-form])
+AT_SETUP([line overflow in fixed-form / free-form])
 AT_KEYWORDS([misc])
 
 # We're testing trailing tabs and whitespace (should not lead to warning)
 # along with comments after boundaries (col 72 / col 512)
 
-# AT_DATA removes trailing spaces, workaround: add "_" and
-# remove it later via sed
+# remark: some editors remove trailing spaces, the  workaround: add "_" and
+# remove it later via sed; AT_DATA would not do that when using double [[  ]]
 
 AT_DATA([prog_tmpl.cob], [
        IDENTIFICATION   DIVISION.
@@ -1793,23 +1793,23 @@ AT_DATA([prog_tmpl.cob], [
 ])
 
 # AT_DATA workaround via sed:
-AT_CHECK([sed -e 's/_$//' prog_tmpl.cob > prog.cob], [0], [], [])
+AT_CHECK([$SED -e 's/_$//' prog_tmpl.cob > prog.cob], [0], [], [])
 
-AT_CHECK([$COMPILE_ONLY -fixed -Wextra prog.cob], [0], [],
-[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated
-prog.cob:8: warning: source text exceeds 512 bytes, will be truncated
-prog.cob:11: warning: source text after program-text area (column 72)
+AT_CHECK([$COBC -fsyntax-only -fixed -Wextra prog.cob], [0], [],
+[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:11: warning: source text after program-text area (column 72) [[-Wdangling-text]]
 ])
 
-AT_CHECK([$COMPILE_ONLY -free -Wextra prog.cob], [1], [],
-[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated
-prog.cob:8: warning: source text exceeds 512 bytes, will be truncated
+AT_CHECK([$COBC -fsyntax-only -free -Wextra prog.cob], [1], [],
+[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: error: unknown statement 'This'
 ])
 
-AT_CHECK([$COMPILE_ONLY -F -Wextra prog.cob], [1], [],
-[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated
-prog.cob:8: warning: source text exceeds 512 bytes, will be truncated
+AT_CHECK([$COBC -fsyntax-only -F -Wextra prog.cob], [1], [],
+[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: error: unknown statement 'This'
 ])
 
@@ -1835,19 +1835,17 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 # fixing the initial setup but now producing a missing newline:
 printf "           CONTINUE." >> prog.cob
 
-AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [0], [],
 [prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
-prog.cob:9: error: syntax error, unexpected end of file
 ])
-AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [1], [],
+AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [0], [],
 [prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
-prog.cob:9: error: syntax error, unexpected end of file
 ])
-# not yet merged to trunk:
+
 # should not happen if the data only consists of space characters
-#printf "\n              \t " >> prog.cob
-#
-#AT_CHECK([$COMPILE_ONLY -Wextra prog.cob], [0], [], [])
+printf "\n              \t " >> prog.cob
+
+AT_CHECK([$COMPILE_ONLY -Wextra prog.cob], [0], [], [])
 AT_CLEANUP
 
 
@@ -8161,3 +8159,284 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free prog.cob], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([DISPLAY directive (1)])
+AT_KEYWORDS([misc directive])
+
+# this format is COBOL 202x without UPON
+# --> implied UPON LISTING which goes to stdout
+# as there is no listing active
+# TODO: extend the >> DISPLAY tests and actually support
+#       the complete format...
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       >>DISPLAY "OK"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[OK
+])
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY directive (2)])
+AT_KEYWORDS([misc extension directive])
+
+# this is an OpenCOBOL/GnuCOBOL 2.x extension, with implied literal
+# similar to $DISPLAY
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       >>DISPLAY OK
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[OK
+])
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY directive (3)])
+AT_KEYWORDS([misc extension directive])
+
+# this is the classical MicroFocus format
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+      $DISPLAY OK
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[OK
+])
+AT_CLEANUP
+
+
+AT_SETUP([conditional / define directives (1)])
+AT_KEYWORDS([misc directive])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+       >>IF ACTIVATE DEFINED
+       >>DISPLAY "NOTOK"
+       >>ELIF ACTIVATE2 DEFINED
+       >>DISPLAY "OK"
+       >>ELSE
+       >>DISPLAY "NOTOK"
+       >>END-IF
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -DACTIVATE2 prog.cob], [0],
+[OK
+])
+AT_CLEANUP
+
+
+AT_SETUP([conditional / define directives (2)])
+AT_KEYWORDS([misc directive])
+
+# COBOL 2002 format; checks that defines are applied at correct place
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+       PROCEDURE      DIVISION.
+       >> IF X DEFINED
+         >>DISPLAY "X defined"
+       >> ELSE
+         >> DISPLAY "X not defined"
+         >> DEFINE X 1
+       >> END-IF
+           CONTINUE
+           .
+])
+
+AT_CHECK([$COMPILE_ONLY -D X prog.cob], [0],
+[X defined
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[X not defined
+])
+AT_CLEANUP
+
+
+AT_SETUP([conditional / define directives (3)])
+AT_KEYWORDS([misc directive])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+       PROCEDURE      DIVISION.
+       >>IF A IS DEFINED
+       >>IF B IS DEFINED
+           CONTINUE
+       >> DISPLAY "NOT OK (not both definitions)"
+           .
+       >>ELSE
+           CONTINUE
+       >> DISPLAY "NOT OK (no definitions)"
+           .
+       >>END-IF
+       >>ELSE
+           CONTINUE
+       >> DISPLAY "OK"
+           .
+       >>END-IF
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[OK
+], [])
+AT_CLEANUP
+
+
+AT_SETUP([conditional / define directives (4)])
+AT_KEYWORDS([misc directive])
+
+# check for case-insensivity
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+       PROCEDURE      DIVISION.
+       >>IF A IS DEFINED
+           CONTINUE
+           .
+       >>else
+           CONTINUE
+           .
+       >>eNd-If
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CLEANUP
+
+
+AT_SETUP([error handling in conditional directives])
+AT_KEYWORDS([misc directive])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+       PROCEDURE      DIVISION.
+       >> IF BANANA
+         >>DISPLAY "Who throws bananas?"
+       >> ELSE
+         >> DISPLAY "No BANANA here."
+         >> DEFINE X 1
+       >> END-IF
+           CONTINUE
+           .
+])
+
+AT_CHECK([$COMPILE_ONLY -D X prog.cob], [1],
+[No BANANA here.
+],
+[prog.cob:5: error: invalid IF directive
+prog.cob:9: error: duplicate DEFINE directive 'X'
+])
+AT_CLEANUP
+
+
+AT_SETUP([conditional directives with lvl 78 (1)])
+AT_KEYWORDS([misc extensions directive])
+
+# MicroFocus format; checks that level 78 are applied
+
+# FIXME - not done yet:
+AT_XFAIL_IF(true)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       78 Y            VALUE 'a'.
+       PROCEDURE       DIVISION.
+      $IF X DEFINED
+      $DISPLAY X defined
+      $ELIF Y DEFINED
+      $DISPLAY X not defined, but Y via lvl 78
+      $ELSE
+      $DISPLAY X not defined
+      $END
+           CONTINUE
+           .
+])
+
+AT_CHECK([$COMPILE_ONLY -D X prog.cob], [0],
+[X defined
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[X not defined, but Y via lvl 78
+])
+AT_CLEANUP
+
+
+AT_SETUP([conditional directives with lvl 78 (2)])
+AT_KEYWORDS([misc extensions directive])
+
+# MicroFocus format; checks that level 78 are applied with correct values
+
+# FIXME - not done yet:
+AT_XFAIL_IF(true)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       78 Y            VALUE 1.
+       78 Y2           VALUE 1.
+       78 X            VALUE 2.
+       78 Z            VALUE 354.
+       PROCEDURE       DIVISION.
+      $IF Y = Y2X
+      $DISPLAY correct Y = Y2
+      $ELSE
+      $DISPLAY bad: Y should be = Y2
+      $END
+      $IF Y > X
+      $DISPLAY BAD - Y is not > X
+      $ELIF Y < X
+      $DISPLAY correct Y < X
+      $ELSE
+      $DISPLAY BROKEN
+      $END
+      
+      $IF X > Y
+      $DISPLAY correct X > Y
+      $ELIF X < Y
+      $DISPLAY BAD - X is not < Y
+      $ELSE
+      $DISPLAY BROKEN
+      $END
+           CONTINUE
+           .
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0],
+[correct Y = Y2
+correct Y < X
+correct X > Y
+])
+AT_CLEANUP
+
+# TODO: add missing tests for syntax errors in >>IF/ELSE/END
+
