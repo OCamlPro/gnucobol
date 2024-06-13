@@ -88,6 +88,13 @@
 
 	* testsuite.src/run_file.at: Added test cases for COMMIT/ROLLBACK
 
+2020-12-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* testsuite.src/run_extensions.at, testsuite.src/run_file.at:
+	  moved ASSIGN related tests to run_file.at
+	* testsuite.src/run_misc.at: work around bug for CANCEL in test
+	  "Recursive CALL of RECURSIVE program" by disabling that side-tests
+
 2020-12-04   Ron Norman <rjn@inglenet.com>
 
 	* testsuite.src/run_misc.at: corrected for 32/64-bit by removing pointer

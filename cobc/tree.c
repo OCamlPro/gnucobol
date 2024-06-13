@@ -5703,7 +5703,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 		 }
 		 if (lit_length > refmod_length) {
 			copy_file_line (e, CB_TREE(l), NULL);
-			if (cb_warn_constant_expr
+			if (cb_warn_opt_val[cb_warn_constant_expr]
 			&& !was_prev_warn (e->source_line, 2)) {
 				if (lit_length > f->size) {
 					cb_warning_x (cb_warn_constant_expr, e,
@@ -5732,7 +5732,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 
 	if (alph_lit) {
 		copy_file_line (e, CB_TREE(l), NULL);
-		if (cb_warn_constant_expr
+		if (cb_warn_opt_val[cb_warn_constant_expr]
 		 && category == CB_CATEGORY_NUMERIC
 		 && !was_prev_warn (e->source_line, 3)) {
 			cb_warning_x (cb_warn_constant_expr, e,
@@ -5775,7 +5775,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	 && fscale >= 0
 	 && fscale < scale) {
 		copy_file_line (e, CB_TREE(l), NULL);
-		if (cb_warn_constant_expr
+		if (cb_warn_opt_val[cb_warn_constant_expr]
 		&& !was_prev_warn (e->source_line, 4)) {
 			cb_warning_x (cb_warn_constant_expr, e,
 						_("literal '%s' has more decimals than '%s'"),
@@ -5817,7 +5817,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 		 * Then the literal value will never match the field contents
 		 */
 		copy_file_line (e, CB_TREE(l), NULL);
-		if (cb_warn_constant_expr
+		if (cb_warn_opt_val[cb_warn_constant_expr]
 		&& !was_prev_warn (e->source_line, 4)) {
 			cb_warning_x (cb_warn_constant_expr, e,
 				_("literal '%s' has more digits than '%s'"),
@@ -5849,7 +5849,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	 *       be dependent on compiler configuration flags;
 	 *       therefore we don't set cb_true/cb_false here
 	 */
-	if (cb_warn_constant_expr
+	if (cb_warn_opt_val[cb_warn_constant_expr]
 	 && (op == '<' || op == '[' || op == '>' || op == ']')) {
 		copy_file_line (e, CB_TREE(l), NULL);
 
@@ -6970,7 +6970,7 @@ warn_if_no_definition_seen_for_prototype (const struct cb_prototype *proto)
 		return;
 	}
 
-	if (cb_warn_prototypes) {
+	if (cb_warn_opt_val[cb_warn_ignored_initial_val] != COBC_WARN_DISABLED) {
 		if (strcmp (proto->name, proto->ext_name) == 0) {
 			/*
 			  Warn if no definition seen for element with prototype-

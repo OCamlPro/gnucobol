@@ -1597,10 +1597,10 @@ looks_absolute (char *src)
 {
 	/* no file path adjustment if filename is absolute
 	   because it begins with a slash (or win-disk-drive) */
-	if (file_open_name[0] == '/'
-	 || file_open_name[0] == SLASH_CHAR
+	if (src[0] == '/'
+	 || src[0] == SLASH_CHAR
 #if WIN32
-	 || file_open_name[1] == ':'
+	 || src[1] == ':'
 #endif
 		) {
 		return 1;
@@ -1630,6 +1630,7 @@ do_acu_hypen_translation (char *src)
 	for (src = src + 3; *src && isspace ((cob_u8_t)*src); src++);
 	
 	strncpy (file_open_buff, src, (size_t)COB_FILE_MAX);
+	file_open_buff[COB_FILE_MAX] = 0;
 	strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 }
 
@@ -1799,6 +1800,7 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 			strncpy (file_open_buff, p, (size_t)COB_FILE_MAX);
 		}
 	}
+	file_open_buff[COB_FILE_MAX] = 0;
 	/* First element completed, loop through remaining */
 	/* elements delimited by slash */
 	/* Check only for $ from now on; includes the DD_xx/dd_xx/xx mapping */
@@ -7827,6 +7829,7 @@ open_cbl_file (cob_u8_ptr file_name, int file_access,
 	}
 
 	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn);
 	cob_chk_file_mapping (NULL, NULL);
 
@@ -8002,6 +8005,7 @@ cob_sys_delete_file (unsigned char *file_name)
 	}
 
 	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn);
 	cob_chk_file_mapping (NULL, NULL);
 
@@ -8040,6 +8044,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	}
 
 	strncpy (file_open_name, fn1, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn1);
 	cob_chk_file_mapping (NULL, NULL);
 
@@ -8051,6 +8056,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	}
 
 	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn2);
 	cob_chk_file_mapping (NULL, NULL);
 
@@ -8105,6 +8111,7 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 	}
 
 	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn);
 	cob_chk_file_mapping (NULL, NULL);
 
@@ -8166,12 +8173,15 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 	}
 
 	strncpy (file_open_name, fn1, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn1);
 	cob_chk_file_mapping (NULL, NULL);
 
 	strncpy (localbuff, file_open_name, (size_t)COB_FILE_MAX);
+	localbuff[COB_FILE_MAX] = 0;
 
 	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
 	cob_free (fn2);
 	cob_chk_file_mapping (NULL, NULL);
 

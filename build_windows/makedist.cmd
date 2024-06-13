@@ -247,7 +247,7 @@ endlocal & exit /b %cb_errorlevel%
 
 :: pause if not started directly
 :pause_if_interactive
-if not [%stay_open%] == [] (
+if not [%stay_open%%CI%] == [] (
    echo.
    pause
 )

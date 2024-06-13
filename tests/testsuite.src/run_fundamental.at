@@ -1173,20 +1173,19 @@ AT_DATA([prog.cob], [
            DISPLAY 'in prog3'
            END-DISPLAY
            IF GLOB-PATH NOT = SPACES
-              DISPLAY GLOB-PATH
+              DISPLAY FUNCTION TRIM (GLOB-PATH TRAILING)
               END-DISPLAY
            END-IF
            EXIT PROGRAM.
        END PROGRAM prog3.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:60: warning: variable 'GLOB-PATH' will be implicitly defined
-])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [GLOBP1GLOBV1
 GLOBP2GLOBV2
 in prog3
+GLOB-PATH
 ])
 
 AT_CLEANUP

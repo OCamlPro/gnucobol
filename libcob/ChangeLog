@@ -1247,6 +1247,10 @@
 	  Added cob_get_sig_name and cob_get_sig_description;
 	  Rewrote cob_set_signal to be table driven
 
+2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (libcob_la_LDFLAGS): updated version-info
+
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* termio.c (cob_dump_field): complete rewrite to allow any size of OCCURS
@@ -1264,6 +1268,11 @@
 	  especially for WIN32)
 	* fileio.c (cob_file_close)[_MSC_VER]: fixed crash on close - at least for
 	  this compiler a file close also closes the attached file-stream
+
+2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: preprocessor check/define for S_ISDIR and S_ISREG now done
+	  for all compilers
 
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
@@ -1286,6 +1295,12 @@
 	  ptr (!= 0 && == ' ')
 	* call.c, common.c, fileio.c, intrinsic.c, mlio.c, strings.c:
 	  reduced scope of some variables
+
+2020-11-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_version): restored compat option for GC 2.x pre 2.2
+	* fileio.c, screenio.c, strings.c, termio.c: fixed some minor coding issues
+	* termio.c (cob_dump_field): fixed bad memcpy
 
 2020-11-27  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1311,6 +1326,11 @@
 	* fbdb.c (ix_bdb_delete_internal): fix error in use of wrong record area
 	* fextfh.c (copy_file_to_fcd): use cob_cache_malloc instead of cob_strdup
 	* fsqlxfd.c: if count_components > 1 then its a composite key
+
+2020-11-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h (cob_save_func): have correct return type
+	  struct cob_func_loc* instead of void*
 
 2020-11-20  Simon Sobisch <simonsobisch@gnu.org>
 

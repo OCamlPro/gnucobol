@@ -28,8 +28,9 @@ COBCRUN = cobcrun$(EXEEXT)
 gcdiff_sources = gcdiff.c
 cobfile_sources = cobfile.c
 
-COMMON_LIBS = $(PROGRAMS_LIBS) $(top_builddir)/libcob/libcob.la \
-	$(top_builddir)/lib/libsupport.la $(CODE_COVERAGE_LIBS)
+COMMON_LIBS = $(top_builddir)/libcob/libcob.la \
+	$(top_builddir)/lib/libsupport.la \
+	$(PROGRAMS_LIBS) $(CODE_COVERAGE_LIBS)
 # AM_LDFLAGS = $(COB_EXPORT_DYN)
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)

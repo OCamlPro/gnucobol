@@ -571,7 +571,7 @@ static int		set_config_val	(char *value, int pos);
 static char		*get_config_val	(char *value, int pos, char *orgvalue);
 
 static void		cob_dump_module (char *reason);
-static char		abort_reason[COB_MINI_BUFF] = { 0 };
+static char		abort_reason[COB_MINI_BUFF] = "";
 static unsigned int 	dump_trace_started;	/* ensures that we dump/stacktrace only once */
 #define 		DUMP_TRACE_DONE_DUMP 		(1U << 0)
 #define 		DUMP_TRACE_DONE_TRACE		(1U << 1)
@@ -3418,7 +3418,7 @@ cob_module_free (cob_module **module)
 
 /* save module environment - returns an allocated cob_func_loc (free at cob_restore_func)
    and the intermediate return field (must be freed by caller) */
-void *
+struct cob_func_loc *
 cob_save_func (cob_field **savefld, const int params,
 	       const int eparams, ...)
 {
@@ -3433,6 +3433,7 @@ cob_save_func (cob_field **savefld, const int params,
 
 	/* Allocate return field */
 	*savefld = cob_malloc (sizeof (cob_field));
+
 	/* Allocate save area */
 	fl = cob_malloc (sizeof (struct cob_func_loc));
 	fl->func_params = cob_malloc (sizeof (void *) * ((size_t)numparams + 1U));
@@ -3527,7 +3528,7 @@ cob_check_version (const char *prog,
 	lib.version = version_bitstring(lib);
 
 	if (nparts >= 2) {
-		sscanf (packver_prog, "%d.%d.%d",
+		(void)sscanf (packver_prog, "%d.%d.%d",
 			 &app.major, &app.minor, &app.point);
 		app.version = version_bitstring(app);
 
@@ -8591,7 +8592,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 			msg = _("permanent file error");
 			break;
 		case COB_STATUS_31_INCONSISTENT_FILENAME:
-			msg = _("inconsistant file name");
+			msg = _("inconsistent file name");
 			break;
 		case COB_STATUS_35_NOT_EXISTS:
 			msg = _("file does not exist");

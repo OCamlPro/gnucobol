@@ -1658,7 +1658,6 @@ cb_build_generic_register (const char *name, const char *external_definition,
 {
 	cb_tree field_tree;
 	char	definition[COB_MINI_BUFF];
-	char	temp[COB_MINI_BUFF] = { 0 };
 	char *p, *r;
 	struct cb_field *field;
 	enum cb_usage	usage;
@@ -1707,9 +1706,10 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		if (strncmp (p, "DISPLAY", (size_t)7) == 0) {
 			memset (p, ' ', 7);
 		} else {
+			char	temp[COB_MINI_BUFF];
 			r = p;
 			while (*r != 0 && *r != ' ') r++;
-			strncpy (temp, p, r - p);
+			memcpy (temp, p, r - p);
 			temp [r - p] = 0;
 			memset (p, ' ', r - p);
 			COB_UNUSED (temp);	/* FIXME: parse actual USAGE from temp */
@@ -1731,10 +1731,11 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
+		char	temp[COB_MINI_BUFF];
 		while (*p == ' ') p++;
 		r = p;
 		while (*r != 0 && *r != ' ') r++;
-		strncpy (temp, p, r - p);
+		memcpy (temp, p, r - p);
 		temp [r - p] = 0;
 		memset (p, ' ', r - p);
 		picture = cb_build_picture (temp);
@@ -3803,6 +3804,7 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 {
 	cb_tree	x;
 	struct cb_field	*p;
+	const char	*assign_name = CB_NAME (assign);
 
 	cb_warning (cb_warn_implicit_define,
 		    _("variable '%s' will be implicitly defined"), CB_NAME (assign));
@@ -3811,6 +3813,8 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 #if 0
 	p->count++;
 #endif
+	x = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, assign_name, strlen (assign_name)));
+	p->values = CB_LIST_INIT (x);
 	CB_FIELD_ADD (prog->working_storage, p);
 }
 
@@ -5145,8 +5149,7 @@ cb_build_expr (cb_tree list)
 			 }
 			/* Warning for complex expressions without explicit parentheses
 			   (i.e., "a OR b AND c" or "a AND b OR c") */
-			if (cb_warn_parentheses
-			 && expr_index > 3
+			if (expr_index > 3
 			 && (op == '|' || op == '&')) {
 			 	/* hack to use exp_line instead of source_line */
 				cb_error_node->source_line = cb_exp_line;
@@ -5356,8 +5359,7 @@ decimal_align (void)
 			break;
 		}
 		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_align", expr_x, expr_dec));
-		if (cb_warn_arithmetic_osvs
-		&&  expr_line != cb_source_line) {
+		if (expr_line != cb_source_line) {
 			expr_line = cb_source_line; /* only warn once per line */
 			cb_warning_x (cb_warn_arithmetic_osvs, CB_TREE (current_statement),
 				_("precision of result may change with arithmetic-osvs"));
@@ -7863,11 +7865,9 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				continue;
 			}
 			if (CB_PURPOSE_INT (l) == CB_CALL_BY_REFERENCE) {
-				if (cb_warn_call_params) {
-					if (f->level != 01 && f->level != 77) {
-						cb_warning_x (cb_warn_call_params, x,
-							_("'%s' is not a 01 or 77 level item"), CB_NAME (x));
-					}
+				if (f->level != 01 && f->level != 77) {
+					cb_warning_x (cb_warn_call_params, x,
+						_("'%s' is not a 01 or 77 level item"), CB_NAME (x));
 				}
 				check_list = cb_list_add (check_list, x);
 			} else if (f->flag_any_length) {
@@ -9216,15 +9216,18 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 	def_init = (def != NULL);
 	for (l = vars; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
-		if (!(CB_REFERENCE_P (x) && CB_FIELD_P (CB_REFERENCE (x)->value)) &&
-		    !CB_FIELD_P (x)) {
+		if (CB_VALID_TREE (x)
+		 && ( CB_FIELD_P (x)
+		  || (CB_REFERENCE_P (x) && CB_FIELD_P (CB_REFERENCE (x)->value)))) {
+			/* as expected */
+		} else {
 			cb_error_x (CB_TREE (current_statement), _("invalid INITIALIZE statement"));
 			return;
 		}
 
 		f = CB_FIELD_PTR (x);
 		odo_level = 0;
-		while(f->children)
+		while (f->children)
 			f = f->children;
 		for (p = f; p; p = p->parent) {
 			if (p->depending) {
@@ -10408,13 +10411,13 @@ warn_overlapping_move (cb_tree loc)
 	case 1:
 		break;
 	case 2:
-		if (cb_warn_pos_overlap && !suppress_warn) {
+		if (!suppress_warn) {
 			cb_warning_x(cb_warn_pos_overlap, loc,
 				_("overlapping MOVE may occur and produce unpredictable results"));
 		}
 		break;
 	case 3:
-		if ((cb_warn_overlap) && !suppress_warn) {
+		if (!suppress_warn) {
 			cb_warning_x (cb_warn_overlap, loc,
 				_("overlapping MOVE may produce unpredictable results"));
 		}
@@ -10717,7 +10720,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			cb_error_x (loc, _("literal exceeds data size"));
 			return -1;
 		}
-		if (cb_warn_truncate && !suppress_warn) {
+		if (!suppress_warn) {
 			cb_warning_x (cb_warn_truncate, loc, _("numeric literal exceeds data size"));
 		}
 		return 0;
@@ -13110,7 +13113,7 @@ validate_pointer_clause (cb_tree pointer, cb_tree pointee)
 	struct cb_field	*pointer_field = CB_FIELD_PTR (pointer);
 
 	if (pointer_field->children) {
-		cb_error_x (pointer, _("'%s' is not an elementary item"),
+		cb_error_x (pointee, _("'%s' is not an elementary item"),
 			    CB_NAME (pointer));
 		return;
 	}
@@ -13677,6 +13680,18 @@ is_subordinate_to (cb_tree ref, cb_tree parent_ref)
 }
 
 static int
+is_subordinate_to_fields (struct cb_field* f, struct cb_field* parent)
+{
+	for (f = f->parent; f; f = f->parent) {
+		if (f == parent) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static int
 error_if_not_child_of_input_record (cb_tree ref, cb_tree input_record,
 				    const char *name)
 {
@@ -13990,35 +14005,52 @@ syntax_check_xml_gen_prefix (cb_tree prefix)
 }
 
 static int
-syntax_check_ml_gen_name_list (cb_tree name_list, cb_tree input)
+syntax_check_ml_gen_name_list (cb_tree name_list, cb_tree input, const int is_xml)
 {
 	cb_tree	name_pair;
 	cb_tree	ref;
 	cb_tree	name;
-	int	error = 0;
 	cb_tree	l;
+	struct cb_field	*reference_field;
+	struct cb_field	*input_field = CB_FIELD (cb_ref (input));
+	int	error = 0;
 
 	for (l = name_list; l; l = CB_CHAIN (l)) {
 		name_pair = CB_VALUE (l);
-	        ref = CB_PAIR_X (name_pair);
+		ref = CB_PAIR_X (name_pair);
 		name = CB_PAIR_Y (name_pair);
 		if (cb_validate_one (ref)
-		    || cb_validate_one (name)) {
-			return 1;
+		 || cb_validate_one (name)) {
+			error = 1;
+			continue;
 		}
+		reference_field = CB_FIELD (cb_ref (ref));
 
 		error |= error_if_subscript_or_refmod (ref, _("NAME OF item"));
 
-		if (cb_ref (ref) != cb_ref (input)
-		    && !is_subordinate_to (ref, input)) {
-			cb_error_x (ref, _("NAME OF item must be the input record or a child of it"));
+		if (reference_field != input_field
+		 && !is_subordinate_to_fields (reference_field, input_field)) {
+			cb_error_x (ref,
+				_("NAME OF item must be the input record or a child of it"));
 			error = 1;
 		} else {
 			error |= error_if_ignored_in_ml_gen (ref, input, _("NAME OF item"));
 		}
 
-		if (name != cb_null && !is_valid_xml_name (CB_LITERAL (name))) {
-			cb_error_x (ref, _("NAME OF name must be a valid XML name"));
+		if (name == cb_null) {
+			/* note: only allowed for JSON in the parser */
+			if (reference_field != input_field) {
+				cb_error_x (ref,
+					_("NAME OF ... OMITTED only valid for source identifier"));
+				error = 1;
+			}
+			continue;
+		}
+
+		if (!is_valid_xml_name (CB_LITERAL (name))) {
+			cb_error_x (ref,
+				_("NAME OF literal must be a valid %s identifier"),
+				is_xml ? "XML" : "JSON");
 			error = 1;
 		}
 	}
@@ -14130,7 +14162,7 @@ syntax_check_ml_generate (cb_tree out, cb_tree from, cb_tree count,
 			  cb_tree encoding,
 			  cb_tree namespace_and_prefix,
 			  cb_tree name_list, cb_tree type_list,
-			  cb_tree suppress_list)
+			  cb_tree suppress_list, const int is_xml)
 {
 	int	error = 0;
 
@@ -14142,7 +14174,7 @@ syntax_check_ml_generate (cb_tree out, cb_tree from, cb_tree count,
 		error |= syntax_check_xml_gen_namespace (CB_PAIR_X (namespace_and_prefix));
 		error |= syntax_check_xml_gen_prefix (CB_PAIR_Y (namespace_and_prefix));
 	}
-	error |= syntax_check_ml_gen_name_list (name_list, from);
+	error |= syntax_check_ml_gen_name_list (name_list, from, is_xml);
 	error |= syntax_check_ml_gen_type_list (type_list, from);
 	error |= syntax_check_ml_gen_suppress_list (suppress_list, from);
 
@@ -14175,14 +14207,14 @@ cb_emit_xml_generate (cb_tree out, cb_tree from, cb_tree count,
 	}
 #endif
 	if (syntax_check_ml_generate (out, from, count, encoding,
-				       namespace_and_prefix, name_list,
-				       type_list, suppress_list)) {
+						namespace_and_prefix, name_list,
+						type_list, suppress_list, 1)) {
 		return;
 	}
 
 	tree = CB_ML_TREE (cb_build_ml_tree (CB_FIELD (cb_ref (from)),
-					     with_attrs, 0, name_list,
-					     type_list, suppress_list));
+						with_attrs, 0, name_list,
+						type_list, suppress_list));
 
 	tree->sibling = current_program->ml_trees;
 	current_program->ml_trees = tree;
@@ -14230,8 +14262,8 @@ cb_emit_json_generate (cb_tree out, cb_tree from, cb_tree count,
 	}
 #endif
 	if (syntax_check_ml_generate (out, from, count, NULL,
-				      NULL, name_list, NULL,
-				      suppress_list)) {
+						NULL, name_list,
+						NULL, suppress_list, 0)) {
 		return;
 	}
 

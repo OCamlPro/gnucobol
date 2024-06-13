@@ -914,12 +914,42 @@
 	* cobc.c: --info Displays short (concatenated) list of available
 	  INDEXED file handlers
 
+2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
+	  instead of actual value via cb_warn_opt_val
+
 2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	FR #397: add support for JSON GENERATE anonymous JSON objects
 	* parser.y: split _name_of to _xml_name_of and _json_name_of, the later
 	  one with additional possible NAME ... IS OMITTED and
 	  without GENERATE XML checks
+	* typeck.c (is_subordinate_to_fields): cob_field based
+	  variant of is_subordinate_to
+	* typeck.c (syntax_check_ml_gen_name_list): additional parameter is_xml
+	  to distinguish between XML and JSON generation (messages, possible rules)
+	* typeck.c (syntax_check_ml_gen_name_list): check of NAME ... IS OMITTED
+
+2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #397: add support for JSON GENERATE anonymous JSON objects
+	* parser.y: split _name_of to _xml_name_of and _json_name_of, the later
+	  one with additional possible NAME ... IS OMITTED and
+	  without GENERATE XML checks
+
+2020-12-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	bug #571 revised:
+	* typeck.c (create_implicit_assign_dynamic_var): add ASSIGN name as
+	  implicit VALUE clause for the implicit variable providing a
+	  reasonable (expected) default if not manually set
+	* warning.def (implicit-define): changed from "always on" to "only upon
+	  request" as the unexpected "inconsistent empty filename" was fixed
+
+2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c [!COB_ALLOW_UNALIGNED]: fixed unused variable warning
 
 2020-12-15  Ron Norman <rjn@inglenet.com>
 
@@ -956,6 +986,18 @@
 	* codegen.c (output_dump_code): emit code for BASED/LINKAGE fields
 	  to catch SIGSEGV/SIGBUS/SIGFPE and then skip the dump of that record
 
+2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_display_fields): prevent bad integer promotion in
+	  libcob (typeck within va_arg) by forcing the unsigned long type for
+	  the varargs argument
+	* typeck.c (cb_build_generic_register): favor memcpy over strncpy
+
+2020-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (cobc_LDADD): fixed ordering, in-tree libraries
+	  must be specified first
+
 2020-12-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_display_fields): codegen to output INDEXED BY variables
@@ -964,6 +1006,11 @@
 
 	* cobc.c (remove_trailing_slash) [_MSC_VER]: new function added to resolve
 	  MSVC's issues with trailing slashes
+
+2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppcopy_try_open): removed preprocessor check/define S_ISREG as
+	  done in libcob/common.h
 
 2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -988,7 +1035,8 @@
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Only emit the 'i_len' variable if it is used
-	* pplex.l: When searching for COPY book, use 'stat' to verify its a file
+	* pplex.l (ppcopy_try_open): when searching for COPY book, use 'stat'
+	  to verify its a file
 
 2020-11-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -996,6 +1044,25 @@
 	  to source + constant
 	* error.c (cb_note_x): fixed late return that lead to listing issues and
 	  memory leak
+
+2020-11-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: fixed bad memory access for cobc -v -version
+	* scanner.l: fixed bad memory access for "missing terminator"
+	* tree.c, parser.y, field.c: last missing adjustments for cb_warn_opt_val
+	* codegen.c, error.c, pplex.l, typeck.c: fixed some minor coding issues
+
+2020-11-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line): early processing for -g and optimization
+	  flags to allow their "grouped" options to be adjusted by single options
+	  later on
+	* cobc.c (process_command_line), flag.def: -g now implies the recently
+	  added flags -fgen-c-line-directives and -fgen-c-labels
+	* codegen.c: output "cob_nop ();" instead of ";" for not-optimized "no op"
+	* codegen.c (output_initialize_compound): temporary remove of reference
+	  checks not needed any more
+	* codegen.c (output_param): removed extra fname
 
 2020-11-27  Ron Norman <rjn@inglenet.com>
 
@@ -1027,6 +1094,10 @@
 	* codegen.c: Generated code for INITIALIZE enhanced to emit progressive
 	  'memcpy' to speed up the process
 	  If size is not known until run time then emit call to cob_init_table
+
+2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codgen.c (process_command_line): minor cleanup
 
 2020-11-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1281,7 +1352,7 @@
 2020-07-26  Edward Hart <edward.dan.hart@gmail.com>
 
 	* config.def: added possible values for assign-clause and
-	  screen-section-rules.
+	  screen-section-rules
 
 2020-07-21  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -465,7 +465,8 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 	}
 
 	/* Checks for redefinition */
-	if (cb_warn_redefinition && r->word->count > 1 && !r->flag_filler_ref) {
+	if (cb_warn_opt_val[cb_warn_redefinition]
+	 && r->word->count > 1 && !r->flag_filler_ref) {
 		if (f->level == 01 || f->level == 77) {
 			redefinition_warning (name, NULL);
 		} else {
@@ -1715,7 +1716,7 @@ validate_elem_value (const struct cb_field * const f)
 	}
 
 	/* ISO+IEC+1989-2002: 13.16.42.2-10 */
-	if (cb_warn_ignored_initial_val) {
+	if (cb_warn_opt_val[cb_warn_ignored_initial_val] != COBC_WARN_DISABLED) {
 		for (p = f; p; p = p->parent) {
 			if (p->flag_external) {
 				cb_warning_x (cb_warn_ignored_initial_val, x,

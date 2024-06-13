@@ -308,16 +308,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #define __attribute__(x)
 
-#ifdef	S_ISDIR
-#undef	S_ISDIR
-#endif
-#define S_ISDIR(x)		(((x) & _S_IFMT) == _S_IFDIR)
-
-#ifdef	S_ISREG
-#undef	S_ISREG
-#endif
-#define S_ISREG(x)		(((x) & _S_IFMT) == _S_IFREG)
-
 #ifndef	_M_IA64
 #ifdef	_WIN64
 #define	__x86_64__
@@ -475,6 +465,15 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define	COB_A_COLD
 #undef	COB_HAVE_STEXPR
 
+#endif
+
+/* Posix macros, in case they are not defined */
+#ifndef	S_ISDIR
+#define S_ISDIR(x)		(((x) & _S_IFMT) == _S_IFDIR)
+#endif
+
+#ifndef	S_ISREG
+#define S_ISREG(x)		(((x) & _S_IFMT) == _S_IFREG)
 #endif
 
 /* Prevent unwanted verbosity when using icc */
@@ -1902,8 +1901,8 @@ COB_EXPIMP cob_field	*cob_function_return (cob_field *);
 COB_EXPIMP void	cob_check_version		(const char *, const char *,
 						 const int);
 
-COB_EXPIMP void	*cob_save_func			(cob_field **, const int,
-						 const int, ...);
+COB_EXPIMP struct cob_func_loc *cob_save_func	(cob_field **,
+									const int, const int, ...);
 COB_EXPIMP void	cob_restore_func		(struct cob_func_loc *);
 
 COB_EXPIMP void	cob_accept_arg_number		(cob_field *);
@@ -2121,7 +2120,7 @@ COB_EXPIMP void cob_unstring_finish	(void);
 
 COB_EXPIMP void		cob_move	(cob_field *, cob_field *);
 COB_EXPIMP void		cob_move_ibm	(void *, void *, const int);
-COB_EXPIMP void		cob_init_table	(void *, unsigned long, long);
+COB_EXPIMP void		cob_init_table	(void *, const size_t, const size_t);
 COB_EXPIMP void		cob_set_int	(cob_field *, const int);
 COB_EXPIMP int		cob_get_int	(cob_field *);
 COB_EXPIMP void		cob_set_llint   (cob_field *, cob_s64_t, cob_s64_t);

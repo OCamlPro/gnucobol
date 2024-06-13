@@ -1243,11 +1243,11 @@ cob_move_ibm (void *dst, void *src, const int len)
  * (used by INITIALIZE)
  */
 void
-cob_init_table (void *tbl, unsigned long len, long occ)
+cob_init_table (void *tbl, const size_t len, const size_t occ)
 {
-	char	*m = ((char*)tbl) + len;
-	unsigned long		i = len;
-	int		j = 1;
+	char	*m = (char*)tbl + len;
+	size_t	i = len;
+	size_t	j = 1;
 	if (occ < 2)
 		return;
 	do {

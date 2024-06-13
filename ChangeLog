@@ -240,7 +240,6 @@
 	* configure.ac: Updates to accept --with-vbcisam
 	  which is for VB-ISAM 2.2 build in C-ISAM mode
 
-
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fixed use of MPIR_LIBS
@@ -259,6 +258,11 @@
 2020-12-04  James K. Lowden  <jklowden@symas.com>
 
 	* CMakeLists.txt: added, builds on Ubuntu and maybe Windows
+
+2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac, NEWS: explicit note about obsolete OpenCOBOL-EXTFH
+	  and BorlandC
 
 2020-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
