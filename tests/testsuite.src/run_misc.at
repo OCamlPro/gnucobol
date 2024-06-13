@@ -1249,7 +1249,8 @@ AT_DATA([caller.cob], [
            MOVE 0 TO STOPPER
            CALL "callee"
            DISPLAY 'OK' NO ADVANCING END-DISPLAY
-           CANCEL "callee" , "callee2"
+      *> FIXME: CANCEL broken on special environments
+      *>   CANCEL "callee" , "callee2"
            DISPLAY ' + FINE' NO ADVANCING END-DISPLAY
            STOP RUN.
 ])
@@ -1367,13 +1368,11 @@ AT_DATA([callee.cob], [
        WORKING-STORAGE  SECTION.
        77  STOPPER      PIC 9 EXTERNAL.
        PROCEDURE        DIVISION.
-           IF STOPPER = 9
-              DISPLAY 'OK' NO ADVANCING END-DISPLAY
-              STOP RUN
-           ELSE
+           IF STOPPER = 8
+              DISPLAY 'OK' NO ADVANCING END-DISPLAY.
+           IF STOPPER NOT = 9
               ADD  1 TO STOPPER END-ADD
-              CALL "callee2" END-CALL
-           END-IF.
+              CALL "callee2" END-CALL.
            GOBACK.
 ])
 

@@ -1,9 +1,47 @@
+# bash is internally used in the test runner an possibly by make
+# but we don't care about it as external tool
 {
    bashMemoryLeak
    Memcheck:Leak
    ...
    obj:/bin/bash
 }
+
+# issue that normally has to be checked manually once, as long as
+# endwin and possibly _nc_free_all is called then we did everything
+# we should do to free up the memory
+#{
+#   ncursesMemoryLeakInit
+#   Memcheck:Leak
+#   match-leak-kinds: reachable
+#   fun:*alloc
+#   ...
+#   fun:newterm
+#   fun:initscr
+#}
+
+# minor color leak, no problem as not called too often
+{
+   ncursesMemoryLeakColor
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:start_color_sp
+}
+
+# that's a potential issue (but external) as a refresh is done quite often
+{
+   ncursesMemoryLeakRefresh
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   ...
+   fun:wrefresh
+}
+
+# BDB issue, can't be solved by us as the part is from its "internal" structure
+# Old BDB issue, at least existing from 4.x to 5.3
 {
    bdbBadJump
    Memcheck:Cond
@@ -11,6 +49,8 @@
    fun:__bamc_put
    fun:__dbc_iput
 }
+
+# Another old BDB issue, at least existing from 4.x to 5.3
 {
    bdbBadWrite
    Memcheck:Param

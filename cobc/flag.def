@@ -210,11 +210,11 @@ CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
 
 CB_FLAG (cb_flag_c_line_directives, 1, "gen-c-line-directives",
 	_("  -fgen-c-line-directives\tgenerate source location directives in C code;\n"
-	  "                        useful for source-level debugging"))
+	  "                        * turned on by -g"))
 
 CB_FLAG (cb_flag_c_labels, 1, "gen-c-labels",
 	_("  -fgen-c-labels        generate extra labels in C sources;\n"
-	  "                        useful for source-level debugging"))
+	  "                        * turned on by -g"))
 
 CB_FLAG (cb_mf_files, 1, "mf-files",
 	 _("  -fmf-files            Sequential & Relative files will match Micro Focus format"))

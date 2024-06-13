@@ -396,9 +396,9 @@ cb_error_always (const char *fmt, ...)
 enum cb_warn_val
 cb_error (const char *fmt, ...)
 {
-	enum cb_warn_val	ret;
 	const enum cb_warn_opt	opt = cb_warn_ignored_error;
 	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+	enum cb_warn_val	ret = pref;
 	va_list ap;
 
 	cobc_in_repository = 0;
@@ -410,11 +410,11 @@ cb_error (const char *fmt, ...)
 	va_start (ap, fmt);
 	if (!ignore_error) {
 		print_error (NULL, 0, _("error: "), fmt, ap, NULL);
+		ret = COBC_WARN_AS_ERROR;
 	} else if (pref == COBC_WARN_AS_ERROR) {
 		print_error (NULL, 0, _("error: "), fmt, ap, warning_option_text (opt, pref));
 	} else {
 		print_error (NULL, 0, _("warning: "), fmt, ap, warning_option_text (opt, pref));
-		ret = COBC_WARN_AS_ERROR;
 	}
 	va_end (ap);
 

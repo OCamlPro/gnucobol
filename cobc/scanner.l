@@ -210,20 +210,22 @@ static void	make_synonym (void);
 %}
 
 <*>^[ ]?"#CALLFH".*\n {
-	const char	*p1;
-	char		*p2;
-	if (current_program->extfh) {
-		cobc_parse_free ((void *)current_program->extfh);
-		current_program->extfh = NULL;
-	}
-	p1 = strchr (yytext, '"');
-	if (p1) {
-		++p1;
-		p2 = strrchr (p1, '"');
-		if (p2) {
-			*p2 = 0;
-			if (strcmp (p1, "EXTFH")) {
-				current_program->extfh = cobc_parse_strdup (p1);
+	if (current_program) {
+		const char	*p1;
+		char		*p2;
+		if (current_program->extfh) {
+			cobc_parse_free ((void *)current_program->extfh);
+			current_program->extfh = NULL;
+		}
+		p1 = strchr (yytext, '"');
+		if (p1) {
+			++p1;
+			p2 = strrchr (p1, '"');
+			if (p2) {
+				*p2 = 0;
+				if (strcmp (p1, "EXTFH")) {
+					current_program->extfh = cobc_parse_strdup (p1);
+				}
 			}
 		}
 	}
@@ -1362,7 +1364,7 @@ read_literal (const char mark, const char *type)
 		) {
 			snprintf (err_msg, COB_MINI_MAX,
 				_("missing terminating %c character"), mark);
-			plex_buff[cb_lit_length] = 0; /* ensure valid C-string for error message */
+			plex_buff[plex_size - 1] = 0; /* ensure valid C-string for error message */
 			error_literal ("", plex_buff);
 	}
 

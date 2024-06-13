@@ -696,6 +696,7 @@ setup_varname_with_indices (char *buffer, cob_u32_t	*subscript,
 	} else {
 		size_t len = strlen (name);
 		memcpy (buffer, name, len + 1);
+		buffer[len] = 0;
 		return len;
 	}
 }
@@ -780,7 +781,7 @@ cob_dump_field (const int level, const char *name,
 
 	/* copy over indexes to local array and calculate size offset */
 	if (indexes != 0) {
-		unsigned int size;
+		size_t size;
 		va_start (ap, indexes);
 		for (cob_idx = 1; cob_idx <= indexes; cob_idx++) {
 			int c_subscript = va_arg (ap, int);
@@ -802,7 +803,7 @@ cob_dump_field (const int level, const char *name,
 	/* copy field pointer to allow access to its data pointer and size
 	   and for the actual dump also its attributes */
 	memcpy (f, f_addr, sizeof (cob_field));
-	
+
 	if (calc_dump_index != 0) {
 		calc_dump_index--;
 	}

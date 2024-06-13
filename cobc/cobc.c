@@ -2929,7 +2929,7 @@ process_command_line (const int argc, char **argv)
 					snprintf (cobc_buffer, cobc_buffer_size, "%s -v", cobc_cc);
 				}
 #endif
-				cobc_buffer[cobc_buffer_size] = 0;
+				cobc_buffer[cobc_buffer_size - 1] = 0;
 				process (cobc_buffer);
 				cobc_free (cobc_buffer);
 				cobc_buffer = NULL;
@@ -3049,6 +3049,68 @@ process_command_line (const int argc, char **argv)
 			}
 			cob_std_conf[0] = 0;		/* Avoid reloading this one */
 			conf_ret |= cb_load_conf (cob_optarg, 0);
+			break;
+
+		case '0':
+			/* -O0 : disable optimizations (or at least minimize them) */
+			cb_flag_optimize_check = 0;
+			strip_output = 0;
+			cb_constant_folding = 0;
+			copt = CB_COPT_0;
+			break;
+
+		case 'O':
+			/* -O : Optimize */
+			cb_flag_optimize_check = 1;
+			copt = CB_COPT_1;
+			break;
+
+		case '2':
+			/* -O2 : Optimize */
+			cb_flag_optimize_check = 1;
+			strip_output = 1;
+			copt = CB_COPT_2;
+			break;
+
+		case '3':
+			/* -O3 : Optimize */
+			cb_flag_optimize_check = 1;
+			strip_output = 1;
+			copt = CB_COPT_3;
+			break;
+
+		case 's':
+			/* -Os : Optimize */
+			cb_flag_optimize_check = 1;
+			strip_output = 1;
+			copt = CB_COPT_S;
+			break;
+
+		case 'g':
+			/* -g : Generate C debug code */
+			save_all_src = 1;
+			cb_source_debugging = 1;
+			/* note: cb_flag_source_location and cb_flag_stack_extended
+			         are explicit not set here */
+#if 1		/* auto-included, may be disabled manually if needed */
+			cb_flag_c_line_directives = 1;
+			cb_flag_c_labels = 1;
+#endif
+			cb_flag_stack_check = 1;
+			cb_flag_source_location = 1;
+			cb_flag_symbols = 1;
+			cb_flag_remove_unreachable = 0;
+#ifdef COB_DEBUG_FLAGS
+			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
+#endif
+			break;
+
+		case 'G':
+			/* -G : Generate C debug code for use with gdb on COBOL source */
+			cb_source_debugging = 1;
+			cb_cob_line_num = 1;
+			cb_flag_symbols = 1;
+			cb_flag_remove_unreachable = 0;
 			break;
 
 		case 'd':
@@ -3259,64 +3321,19 @@ process_command_line (const int argc, char **argv)
 
 		case '0':
 			/* -O0 : disable optimizations (or at least minimize them) */
-			cb_flag_optimize_check = 0;
-			strip_output = 0;
-			cb_constant_folding = 0;
-			copt = CB_COPT_0;
-			break;
-
 		case 'O':
 			/* -O : Optimize */
-			cb_flag_optimize_check = 1;
-			copt = CB_COPT_1;
-			break;
-
 		case '2':
 			/* -O2 : Optimize */
-			cb_flag_optimize_check = 1;
-			strip_output = 1;
-			copt = CB_COPT_2;
-			break;
-
 		case '3':
 			/* -O3 : Optimize */
-			cb_flag_optimize_check = 1;
-			strip_output = 1;
-			copt = CB_COPT_3;
-			break;
-
 		case 's':
 			/* -Os : Optimize */
-			cb_flag_optimize_check = 1;
-			strip_output = 1;
-			copt = CB_COPT_S;
-			break;
-
 		case 'g':
 			/* -g : Generate C debug code */
-			save_all_src = 1;
-			cb_source_debugging = 1;
-			/* note: cb_flag_source_location and cb_flag_stack_extended
-			         are explicit not set here */
-#if 0		/* TO BE MERGED auto-included, may be disabled manually if needed */
-			cb_flag_c_line_directives = 1;
-			cb_flag_c_labels = 1;
-#endif
-			cb_flag_stack_check = 1;
-			cb_flag_source_location = 1;
-			cb_flag_symbols = 1;
-			cb_flag_remove_unreachable = 0;
-#ifdef COB_DEBUG_FLAGS
-			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
-#endif
-			break;
-
 		case 'G':
 			/* -G : Generate C debug code for use with gdb on COBOL source */
-			cb_source_debugging = 1;
-			cb_cob_line_num = 1;
-			cb_flag_symbols = 1;
-			cb_flag_remove_unreachable = 0;
+			/* These options were all processed in the first getopt-run */
 			break;
 
 		case '$':
