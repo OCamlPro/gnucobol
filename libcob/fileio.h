@@ -176,10 +176,11 @@ static const int	status_exception[] = {
 	COB_EC_I_O_LOGIC_ERROR,		/* 4x */
 	COB_EC_I_O_RECORD_OPERATION,	/* 5x */
 	COB_EC_I_O_FILE_SHARING,	/* 6x */
-	COB_EC_I_O,			/* Unused */
+	COB_EC_I_O_RECORD_CONTENT,	/* 7x, currently unused */
 	COB_EC_I_O,			/* Unused */
 	COB_EC_I_O_IMP			/* 9x */
 };
+
 
 #define COB_STATUS_BASE					100
 /* Extended Status values */

@@ -611,6 +611,12 @@
 
 2021-10-06  Simon Sobisch <simonsobisch@gnu.org>
 
+	* fileio.c (save_status): only internally distinguish between
+	  COB_EC_I_O_EOP and COB_EC_I_O_EOP_OVERFLOW for now as otherwise
+	  recompilation of modules would be necessary (-> postponed)
+
+2021-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
 	* common.c (cob_get_environment, cob_display_environment): move strlen
 	  out of a loop
 
@@ -740,6 +746,14 @@
 2021-09-05  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Add check for record address being available
+
+2021-09-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* exception.def, exception-io.def: update for COBOL 202x,
+	  also adding some entries from COBOL 2014 and dropping one wrong
+	* fileio.c: handling of COB_EC_I_O_RECORD_CONTENT,
+	  distinguish between COB_EC_I_O_EOP and COB_EC_I_O_EOP_OVERFLOW
+	* fileio.c (update_fcd_to_file): don't set error status at 0x
 
 2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1071,6 +1085,21 @@
 
 	* fsqlxfd.c: Fixes to handle hundreds of seconds and TIME only fields
 
+2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (lineseq_read), common.c, coblocal.h:
+	  backport of COB_LS_SPLIT from 4.x
+
+2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sys_getopt_long_long): fix for EBCDIC
+
+2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c: check for output errors and early exit; while this is unlikely
+	  to happen with stdscr/stderr, it is when using these functions in dump
+	  code or externally (with real files or with memory mapped io)
+
 2021-01-26  Ron Norman <rjn@inglenet.com>
 
 	* fsqlxfd.c: Fixes to handle COMP-6
@@ -1095,12 +1124,6 @@
 	* common.c: Add check for COB_DEBUG_LOG not defined
 	* fodbc.c, fsqlxfd.c: set db->no_for_update for SQLite
 	* fileio.c: report any error from loading a module that should be present
-
-2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
-
-	* termio.c: check for output errors and early exit; while this is unlikely
-	  to happen with stdscr/stderr, it is when using these functions in dump
-	  code or externally (with real files or with memory mapped io)
 
 2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
 

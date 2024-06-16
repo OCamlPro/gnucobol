@@ -640,6 +640,12 @@
 	  COBOL 202x Message Control System (MCS) statements SEND and RECEIVE
 	* scanner.l: return WORD token if SUPPRESS is not reserved
 
+2021-09-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h (cb_exception), cobc.c: add fatal attribute
+	* reserved.c, tree.h, cobc.c, help.c: added cb_list_exceptions /
+	  --list-exceptions
+
 2021-09-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (cb_toupper): extracted and used in different places
@@ -669,6 +675,14 @@
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: fix local includes to use "local" instead of <system>
+
+2021-08-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_assignment_name): fix SELECT filename ASSIGN filename
+	  to lead to "redefinition of filename" when (the default) dialect option
+	  assign-clause=dynamic is active; identical names are now always seen
+	  as literal (similar to assign-clause=external, but without label
+	  handling), see bug 669
 
 2021-08-26  Ron Norman <rjn@inglenet.com>
 
@@ -751,6 +765,7 @@
 	* codegen.c: Emit setting of module compile dialect
 
 2021-05-28  Ron Norman <rjn@inglenet.com>
+
 	* tree.c: Allow PIC clause not handled by precendence table
 	          Count decimals in $.$$ style PICTURE
 	* typeck.c: Format numeric value for display in error message
@@ -773,6 +788,21 @@
 
 	* parser.y (use_reporting): check for valid identifier before use,
 	  use common malloc for generated common
+
+2021-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (emit_main_entry): extracted for re-use
+	* parser.y (emit_entry): override source location only upon
+	  explicit request, we need entry points to be where the first
+	  section/paragraph/statement comes to not confuse tools like GDB
+	  with the wrong line reference (especially if we have DECLARATIVES)
+
+2021-04-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (print_with_overflow): extracted from print_errors_for_line,
+	  fixed potential overflow on HPUX and MSVC
+	* flag.def, cobc.c: new -ftcmd (cb_listing_cmd) to include command line in
+	  listing summary
 
 2021-04-01  Ron Norman <rjn@inglenet.com>
 
@@ -913,6 +943,10 @@
 
 	* cobc.c: --info Displays short (concatenated) list of available
 	  INDEXED file handlers
+
+2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initialize_compound): special handling for OCCURS 1
 
 2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
 

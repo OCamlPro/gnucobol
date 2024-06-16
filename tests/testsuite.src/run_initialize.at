@@ -406,7 +406,9 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
+# CHECKME: that should likely be implied with -std=ibm
 #AT_CHECK([$COMPILE -std=ibm prog3.cob], [0], [], [])
+#AT_CHECK([$COMPILE -fodoslide prog3.cob], [0], [], [])
 #AT_CHECK([$COBCRUN_DIRECT ./prog3], [0], [], [])
 
 AT_CLEANUP

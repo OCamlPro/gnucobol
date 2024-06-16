@@ -263,14 +263,15 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION ABS (1).
-           DISPLAY FUNCTION TRIM (" some text here").
+           DISPLAY FUNCTION STORED-CHAR-LENGTH (" some text here").
            DISPLAY FUNCTION SUBSTITUTE ('some text' 'some' 'nice').
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
-[prog.cob:10: error: FUNCTION 'SUBSTITUTE' unknown
+[prog.cob:9: error: FUNCTION 'STORED-CHAR-LENGTH' unknown
+prog.cob:10: error: FUNCTION 'SUBSTITUTE' unknown
 ])
 
 AT_CLEANUP

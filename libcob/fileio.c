@@ -3328,11 +3328,16 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 	if (status == 0) {
 		memset (f->file_status, '0', (size_t)2);
 		/* EOP is non-fatal therefore 00 status but needs exception */
-		if (eop_status) {
-			eop_status = 0;
-			cob_set_exception (COB_EC_I_O_EOP);
-		} else {
+		if (eop_status == 0) {
 			file_globptr->cob_exception_code = 0;
+		} else {
+#if 0 /* correct thing to do, but then also needs to have codegen adjusted
+         --> module-incompatibility --> 4.x */
+			cob_set_exception (eop_status);
+#else
+			cob_set_exception (COB_EC_I_O_EOP);
+#endif
+			eop_status = 0;
 		}
 		if ((f->file_features & COB_FILE_SYNC)) {
 			cob_file_sync (f);
@@ -3692,13 +3697,13 @@ cob_linage_write_opt (cob_file *f, const int opt)
 		/* Set EOP status if requested */
 		if (check_eop_status && lingptr->lin_foot) {
 			if (i >= lingptr->lin_foot) {
-				eop_status = 1;
+				eop_status = COB_EC_I_O_EOP;
 			}
 		}
 		if (i > lingptr->lin_lines) {
 			/* Set EOP status if requested */
 			if (check_eop_status) {
-				eop_status = 1;
+				eop_status = COB_EC_I_O_EOP_OVERFLOW;
 			}
 			for (; n < lingptr->lin_lines; ++n) {
 				COB_CHECKED_FPUTC ('\n', fp);
