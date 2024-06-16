@@ -19,13 +19,13 @@
 */
 
 
-/* COB_EXCEPTION (code, tag, name, critical) */
+/* COB_EXCEPTION (code, tag, name, fatal) */
 
 /* input-output exception */
 COB_EXCEPTION  (0500, COB_EC_I_O,
 		"EC-I-O", 0)
 
-/* I-O status "1x" */
+/* I-O status "1x" (COBOL 2014) */
 COB_EXCEPTION  (0501, COB_EC_I_O_AT_END,
 		"EC-I-O-AT-END", 0)
 
@@ -37,30 +37,39 @@ COB_EXCEPTION  (0502, COB_EC_I_O_EOP,
 COB_EXCEPTION  (0503, COB_EC_I_O_EOP_OVERFLOW,
 		"EC-I-O-EOP-OVERFLOW", 0)
 
-/* I-O status "6x" */
+/* I-O status "6x" (COBOL 2014) */
 COB_EXCEPTION  (0504, COB_EC_I_O_FILE_SHARING,
 		"EC-I-O-FILE-SHARING", 0)
 
-/* I-O status "9x" */
+/* I-O status "9x" (COBOL 2014) */
 COB_EXCEPTION  (0505, COB_EC_I_O_IMP,
 		"EC-I-O-IMP", 0)
 
-/* I-O status "2x" */
+/* I-O status "2x" (COBOL 2014) */
 COB_EXCEPTION  (0506, COB_EC_I_O_INVALID_KEY,
 		"EC-I-O-INVALID-KEY", 0)
 
-/* The value of a LINAGE data-item is not within the required range */
+/* The value of a LINAGE data-item is not within the required range
+   (COBOL 2014). */
 COB_EXCEPTION  (0507, COB_EC_I_O_LINAGE,
 		"EC-I-O-LINAGE", 1)
 
-/* I-O status "4x" */
+/* I-O status "4x" (COBOL 2014) */
 COB_EXCEPTION  (0508, COB_EC_I_O_LOGIC_ERROR,
 		"EC-I-O-LOGIC-ERROR", 1)
 
-/* I-O status "3x" */
+/* I-O status "3x" (COBOL 2014) */
 COB_EXCEPTION  (0509, COB_EC_I_O_PERMANENT_ERROR,
 		"EC-I-O-PERMANENT-ERROR", 1)
 
-/* I-O status "5x" */
+/* I-O status "7x" (COBOL 202x) */
+COB_EXCEPTION  (050B, COB_EC_I_O_RECORD_CONTENT,
+		"EC-I-O-RECORD-CONTENT", 1)
+
+/* I-O status "5x" (COBOL 2014) */
 COB_EXCEPTION  (050A, COB_EC_I_O_RECORD_OPERATION,
 		"EC-I-O-RECORD-OPERATION", 0)
+
+/* I-O status "0x" (COBOL 202x) */
+COB_EXCEPTION  (050C, COB_EC_I_O_RECORD_WARNING,
+		"EC-I-O-RECORD-WARNING", 0)

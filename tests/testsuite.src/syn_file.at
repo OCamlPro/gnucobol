@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014, 2016-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014, 2016-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Joe Robbins,
 ## Edward Hart
 ##
@@ -1825,6 +1825,34 @@ AT_CHECK([$COMPILE_ONLY -Wimplicit-define prog.cob], [0], [],
 [prog.cob:10: warning: VALUE OF is obsolete in GnuCOBOL
 prog.cob:12: warning: variable 'fid-file1' will be implicitly defined
 ])
+AT_CLEANUP
+
+
+AT_SETUP([ASSIGN external-name matching filename])
+AT_KEYWORDS([file external])
+
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT SYSUT1    ASSIGN TO sysut1.
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD  SYSUT1.
+       01  SYSUT1-REC   PIC X(4).
+       PROCEDURE        DIVISION.
+           OPEN INPUT SYSUT1.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -fassign-clause=external prog.cob], [0], [], [])
+# ASSIGN dynamic should still work here, it is to be seen as literal
+# as long as it matches the file name (note: it still differs as "external"
+# would also cut "labels" from the literal
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CLEANUP
 
 

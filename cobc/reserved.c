@@ -5041,6 +5041,28 @@ cb_list_intrinsics (void)
 	}
 }
 
+void
+cb_list_exceptions (void)
+{
+	size_t		i;
+
+	putchar ('\n');
+	printf ("%-32s", _("Exception Name"));	/* more to add later */
+	for (i = COB_EC_ALL; i < cb_exception_table_len - 1; ++i) {
+		if (i == COB_EC_ALL) {
+			/* EC-ALL - level-1 EC to set all ECs, no indent */
+			printf ("\n%s", CB_EXCEPTION_NAME (i));
+		} else if ((CB_EXCEPTION_CODE(i) & 0x00FF) == 0) {
+			/* EC level-2 EC, newline and indent by 2 */
+			printf ("\n  %-26s", CB_EXCEPTION_NAME (i));
+		} else {
+			/* individual level-3 EC, including fatal marker */
+			printf ("\n    %s%s", CB_EXCEPTION_NAME (i), CB_EXCEPTION_FATAL (i) ? " (f)" : "");
+		}
+	}
+	putchar ('\n');
+}
+
 static struct register_struct *
 lookup_register_internal (const char *upper_name, const int checkimpl)
 {

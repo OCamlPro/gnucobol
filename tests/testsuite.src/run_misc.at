@@ -7766,6 +7766,10 @@ AT_DATA([preload.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      callee2b.
        PROCEDURE        DIVISION.
+       DECLARATIVES.
+       DEC SECTION. USE EXCEPTION CONDITION EC-BOUNDS.
+           DISPLAY "BADDY".
+       END DECLARATIVES.
        SOME-SEC SECTION.
        SOME-PAR.
            PERFORM OTHER-SEC
@@ -7832,9 +7836,9 @@ AT_DATA([callee2c.cob], [
 
 AT_CHECK([$COBC -ftraceall callee1.cob], [0], [], [])
 AT_CHECK([$COBC callee2.cob], [0], [], [])
-AT_CHECK([$COBC -ftrace preload.cob], [0], [], [])
+AT_CHECK([$COBC -ftrace -w preload.cob], [0], [], [])
 AT_CHECK([$COBC -ftraceall preload2.cob], [0], [], [])
-AT_CHECK([$COBC -fsource-location callee2c.cob], [0], [], [])
+AT_CHECK([$COBC -fsource-location -w callee2c.cob], [0], [], [])
 AT_CHECK([$COMPILE -o prog -ftraceall caller.cob], [0], [], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" \
  $COBCRUN_DIRECT ./prog], [0], [],
@@ -7846,7 +7850,7 @@ Program-Id:  caller                      MOVE                            Line:  
 Program-Id:  caller                      CALL                            Line:     21
 Source: 'callee1.cob'
 Program-Id:  callee1
-Program-Id:  callee1              Entry: callee1                         Line:      4
+Program-Id:  callee1              Entry: callee1                         Line:      5
 Program-Id:  callee1                     ADD                             Line:      5
 Program-Id:  callee1                     IF                              Line:      7
 Program-Id:  callee1                     IF                              Line:      9
@@ -7864,14 +7868,14 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      4
-Program-Id:  callee2b           Section: SOME-SEC                        Line:      5
-Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:      6
-Program-Id:  callee2b           Section: OTHER-SEC                       Line:     12
-Program-Id:  callee2b         Paragraph: EX                              Line:     14
-Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     14
-Program-Id:  callee2b         Paragraph: END-PAR                         Line:     10
-Program-Id:  callee2b              Exit: callee2b                        Line:     10
+Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
+Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
+Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
+Program-Id:  callee2b         Paragraph: EX                              Line:     18
+Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     18
+Program-Id:  callee2b         Paragraph: END-PAR                         Line:     14
+Program-Id:  callee2b              Exit: callee2b                        Line:     14
 Source: 'callee1.cob'
 Program-Id:  callee1
 Program-Id:  callee1                     CANCEL                          Line:     33
@@ -7883,7 +7887,7 @@ Program-Id:  caller
 Program-Id:  caller                      CALL                            Line:     23
 Source: 'callee1.cob'
 Program-Id:  callee1
-Program-Id:  callee1              Entry: callee1                         Line:      4
+Program-Id:  callee1              Entry: callee1                         Line:      5
 Program-Id:  callee1                     ADD                             Line:      5
 Program-Id:  callee1                     IF                              Line:      7
 Program-Id:  callee1                     IF                              Line:      9
@@ -7901,14 +7905,14 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      4
-Program-Id:  callee2b           Section: SOME-SEC                        Line:      5
-Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:      6
-Program-Id:  callee2b           Section: OTHER-SEC                       Line:     12
-Program-Id:  callee2b         Paragraph: EX                              Line:     14
-Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     14
-Program-Id:  callee2b         Paragraph: END-PAR                         Line:     10
-Program-Id:  callee2b              Exit: callee2b                        Line:     10
+Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
+Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
+Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
+Program-Id:  callee2b         Paragraph: EX                              Line:     18
+Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     18
+Program-Id:  callee2b         Paragraph: END-PAR                         Line:     14
+Program-Id:  callee2b              Exit: callee2b                        Line:     14
 Source: 'callee1.cob'
 Program-Id:  callee1
 Program-Id:  callee1                     CANCEL                          Line:     33
@@ -7921,12 +7925,12 @@ Program-Id:  caller                      CANCEL                          Line:  
 Program-Id:  caller                      CALL                            Line:     25
 Source: 'preload2.cob'
 Program-Id:  callrec
-Program-Id:  callrec              Entry: callrec                         Line:      9
+Program-Id:  callrec              Entry: callrec                         Line:     10
 Program-Id:  callrec            Section: SOME-SEC                        Line:     10
 Program-Id:  callrec                     IF                              Line:     11
 Program-Id:  callrec                     SET                             Line:     12
 Program-Id:  callrec                     CALL                            Line:     13
-Program-Id:  callrec              Entry: callrec                         Line:      9
+Program-Id:  callrec              Entry: callrec                         Line:     10
 Program-Id:  callrec            Section: SOME-SEC                        Line:     10
 Program-Id:  callrec                     IF                              Line:     11
 Program-Id:  callrec                     GOBACK                          Line:     35
@@ -8295,14 +8299,14 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
  Last statement of "sub1" was MOVE
 	MAIN-2 OF MAIN-1 at cpyabrt:4
 	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:158
+	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
 	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:38
+	ENTRY sub2 at sub2.cob:39
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:75
+	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
 
@@ -8320,14 +8324,14 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
  Last statement of "sub1" was MOVE
 	MAIN-2 OF MAIN-1 at cpyabrt:4
 	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:158
+	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
 	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:38
+	ENTRY sub2 at sub2.cob:39
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:75
+	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
 
@@ -8359,14 +8363,14 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
  Last statement of "sub1" was MOVE
 	MAIN-2 OF MAIN-1 at cpyabrt:4
 	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:158
+	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
 	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:38
+	ENTRY sub2 at sub2.cob:39
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:75
+	ENTRY prog at prog.cob:77
  Started by prog
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -8575,14 +8579,14 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
  Last statement of "sub1" was MOVE
 	MAIN-2 OF MAIN-1 at cpyabrt:4
 	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:158
+	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
 	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:38
+	ENTRY sub2 at sub2.cob:39
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:75
+	ENTRY prog at prog.cob:77
  Started by prog
 
 dump written to tstdump.dump
@@ -8612,14 +8616,14 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
  Last statement of "sub1" was MOVE
 	MAIN-2 OF MAIN-1 at cpyabrt:4
 	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:158
+	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
 	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:38
+	ENTRY sub2 at sub2.cob:39
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:75
+	ENTRY prog at prog.cob:77
  Started by ./prog_fdls
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -8704,14 +8708,14 @@ AT_CHECK([gcdiff -I'Started by' -U reference_fdls_tmpl tstdump_allfdls.dump], [0
 # Last statement of "sub1" was MOVE
 #	MAIN-2 OF MAIN-1 at cpyabrt:4
 #	MAIN-1 at prog.cob:177
-#	ENTRY sub1 at prog.cob:158
+#	ENTRY sub1 at prog.cob:159
 # Last statement of "sub2" was CALL
 #	DO-CALL OF SubwaY at sub2.cob:48
-#	ENTRY sub2 at sub2.cob:38
+#	ENTRY sub2 at sub2.cob:39
 # Last statement of "prog" was CALL
 #	CALL-IT-OMIT at prog.cob:118
 #	MAIN-100 at prog.cob:85
-#	ENTRY prog at prog.cob:75
+#	ENTRY prog at prog.cob:77
 # Started by ./prog_ls_sticky
 #
 #Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -8875,7 +8879,7 @@ AT_DATA([reference], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
  Last statement of "prog" was MOVE at line 102 of prog.cob
-	ENTRY prog at prog.cob:74
+	ENTRY prog at prog.cob:75
  Started by ./prog
 	param 1
 	param
@@ -9428,11 +9432,11 @@ AT_DATA([reference], [
 Module dump due to signal SIGSEGV
 
  Last statement of "sub2" was MOVE at line 3 of cpyabrt
-	ENTRY sub2 at prog.cob:237
+	ENTRY sub2 at prog.cob:238
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:135
 	MAIN-100 at prog.cob:99
-	ENTRY prog at prog.cob:89
+	ENTRY prog at prog.cob:91
  Started by ./prog
 
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
@@ -9649,11 +9653,11 @@ Module dump due to module '' not found
 	DMP-TIME1 OF MAIN-1 at prog.cob:58
 	DMP-TIME OF MAIN-1 at prog.cob:60
 	MAIN-1 at prog.cob:52
-	ENTRY sub1 at prog.cob:50
+	ENTRY sub1 at prog.cob:51
  Last statement of "prog" was CALL
 	CALL-SUB-1 at prog.cob:32
 	MAIN-100 at prog.cob:28
-	ENTRY prog at prog.cob:21
+	ENTRY prog at prog.cob:23
  Started by ./prog
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS

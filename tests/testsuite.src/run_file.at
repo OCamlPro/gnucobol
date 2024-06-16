@@ -6342,7 +6342,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0])
 AT_CLEANUP
 
 
-AT_SETUP([LINE SEQUENTIAL record truncation])
+AT_SETUP([LINE SEQUENTIAL record truncation (1)])
 AT_KEYWORDS([runfile])
 
 AT_DATA([TEST-FILE],
@@ -6448,6 +6448,259 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 06 (abcd)
 00 (e   )
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([LINE SEQUENTIAL record truncation (2)])
+AT_KEYWORDS([runfile split])
+
+AT_DATA([inp_data],
+[Record 1................................X.......
+Record 2.....................X
+Record 3................................X...
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT INFILE     ASSIGN TO EXTERNAL INFILE
+                ORGANIZATION IS LINE SEQUENTIAL
+                FILE STATUS  IS INPUT-STATUS .
+      
+           SELECT OUTFILE   ASSIGN TO EXTERNAL OUTFILE
+                ORGANIZATION IS LINE SEQUENTIAL
+                FILE STATUS  IS INPUT-STATUS .
+      
+       DATA DIVISION.
+       FILE SECTION.
+       FD INFILE
+             RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
+             DEPENDING ON INPUT-LEN
+            .
+       01  INPUT-REC           PIC X(40).
+      
+       FD OUTFILE
+             RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
+             DEPENDING ON INPUT-LEN
+            .
+       01  OUTPUT-REC          PIC X(40).
+      
+       WORKING-STORAGE SECTION.
+      
+       01  OUTPUT-FILE         PIC X(19)     VALUE 'TEST-FILE'.
+       01  INPUT-FILE          PIC X(19)     VALUE 'TEST-INP'.
+       01  INPUT-STATUS        PIC XX.
+       01  INPUT-LEN           PIC 999  VALUE 18 .
+      
+       PROCEDURE DIVISION.
+       A000-BEGIN.
+           OPEN INPUT INFILE.
+           READ INFILE
+           DISPLAY " Read 1: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":" 
+           READ INFILE
+           DISPLAY " Read 2: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":" 
+           MOVE 0 TO INPUT-LEN
+           READ INFILE
+           DISPLAY " Read 3: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":" 
+           MOVE SPACES TO INPUT-REC
+           MOVE 0 TO INPUT-LEN
+           READ INFILE
+           DISPLAY " Read 4: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           IF INPUT-STATUS = "00"
+               DISPLAY "       :" INPUT-REC ":" 
+           END-IF
+           CLOSE INFILE
+
+           OPEN OUTPUT OUTFILE
+           MOVE 9 TO INPUT-LEN
+           MOVE "Record 1............." TO OUTPUT-REC
+           WRITE OUTPUT-REC
+           DISPLAY "Write 1: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+                             UPON CONSOLE
+           MOVE 64 TO INPUT-LEN
+           MOVE ALL '.' TO OUTPUT-REC
+           MOVE "Record 2" TO OUTPUT-REC (1:8)
+           WRITE OUTPUT-REC
+           DISPLAY "Write 2: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+                             UPON CONSOLE
+           CLOSE OUTFILE
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([COB_LS_SPLIT=FALSE DD_INFILE=./inp_data OUTFILE=TEST-FILE \
+$COBCRUN_DIRECT ./prog], [0],
+[ Read 1: STATUS IS 00 LENGTH IS 040
+       :Record 1................................:
+ Read 2: STATUS IS 00 LENGTH IS 030
+       :Record 2.....................X          :
+ Read 3: STATUS IS 00 LENGTH IS 040
+       :Record 3................................:
+ Read 4: STATUS IS 10 LENGTH IS 000
+Write 1: STATUS IS 00 LENGTH IS 009
+Write 2: STATUS IS 00 LENGTH IS 064
+], [])
+
+
+AT_CAPTURE_FILE(./TEST-FILE)
+
+AT_DATA([reference],
+[Record 1.
+Record 2................................
+])
+
+AT_CHECK([diff reference TEST-FILE], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LINE SEQUENTIAL non-standard record overflow])
+AT_KEYWORDS([runfile split])
+
+AT_DATA([inp_data],
+[Record 1................................X.......
+Record 2.....................X
+Record 3................................X...
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT INFILE     ASSIGN TO EXTERNAL INFILE
+                ORGANIZATION IS LINE SEQUENTIAL
+                FILE STATUS  IS INPUT-STATUS .
+      
+           SELECT OUTFILE   ASSIGN TO EXTERNAL OUTFILE
+                ORGANIZATION IS LINE SEQUENTIAL
+                FILE STATUS  IS INPUT-STATUS .
+      
+       DATA DIVISION.
+       FILE SECTION.
+       FD INFILE
+             RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
+             DEPENDING ON INPUT-LEN
+            .
+       01  INPUT-REC           PIC X(40).
+      
+       FD OUTFILE
+             RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
+             DEPENDING ON INPUT-LEN
+            .
+       01  OUTPUT-REC          PIC X(40).
+      
+       WORKING-STORAGE SECTION.
+      
+       01  OUTPUT-FILE         PIC X(19)     VALUE 'TEST-FILE'.
+       01  INPUT-FILE          PIC X(19)     VALUE 'TEST-INP'.
+       01  INPUT-STATUS        PIC XX.
+       01  INPUT-LEN           PIC 999  VALUE 18 .
+      
+       PROCEDURE DIVISION.
+       A000-BEGIN.
+           OPEN INPUT INFILE.
+           READ INFILE
+           DISPLAY " Read 1: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":" 
+           READ INFILE
+           DISPLAY " Read 2: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":" 
+           MOVE 0 TO INPUT-LEN
+           READ INFILE
+           DISPLAY " Read 3: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":" 
+           MOVE SPACES TO INPUT-REC
+           MOVE 0 TO INPUT-LEN
+           READ INFILE
+           DISPLAY " Read 4: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+           IF INPUT-STATUS = "00"
+               DISPLAY "       :" INPUT-REC ":" 
+           END-IF
+           CLOSE INFILE
+
+           OPEN OUTPUT OUTFILE
+           MOVE 9 TO INPUT-LEN
+           MOVE "Record 1............." TO OUTPUT-REC
+           WRITE OUTPUT-REC
+           DISPLAY "Write 1: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+                             UPON CONSOLE
+           MOVE 64 TO INPUT-LEN
+           MOVE ALL '.' TO OUTPUT-REC
+           MOVE "Record 2" TO OUTPUT-REC (1:8)
+           WRITE OUTPUT-REC
+           DISPLAY "Write 2: STATUS IS " INPUT-STATUS 
+                   " LENGTH IS " INPUT-LEN
+                             UPON CONSOLE
+           CLOSE OUTFILE
+           STOP RUN.
+])
+
+AT_CAPTURE_FILE(./TEST-FILE)
+
+# normal compile, switched via runtime option
+AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
+
+AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
+COB_LS_SPLIT=TRUE \
+$COBCRUN_DIRECT ./prog], [0],
+[ Read 1: STATUS IS 00 LENGTH IS 040
+       :Record 1................................:
+ Read 2: STATUS IS 00 LENGTH IS 008
+       :X.......                                :
+ Read 3: STATUS IS 00 LENGTH IS 030
+       :Record 2.....................X          :
+ Read 4: STATUS IS 00 LENGTH IS 040
+       :Record 3................................:
+Write 1: STATUS IS 00 LENGTH IS 009
+Write 2: STATUS IS 00 LENGTH IS 064
+], [])
+
+AT_DATA([reference],
+[Record 1.
+Record 2................................
+])
+
+AT_CHECK([diff reference TEST-FILE], [0], [], [])
+
+# same check with dialect option (4.x feature)
+# AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
+# 
+# AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
+# $COBCRUN_DIRECT ./prog], [0],
+# [ Read 1: STATUS IS 00 LENGTH IS 040
+#        :Record 1................................:
+#  Read 2: STATUS IS 00 LENGTH IS 008
+#        :X.......                                :
+#  Read 3: STATUS IS 00 LENGTH IS 030
+#        :Record 2.....................X          :
+#  Read 4: STATUS IS 00 LENGTH IS 040
+#        :Record 3................................:
+# Write 1: STATUS IS 00 LENGTH IS 009
+# Write 2: STATUS IS 00 LENGTH IS 064
+# ], [])
+# 
+# AT_CHECK([diff reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -13881,7 +14134,7 @@ AT_CAPTURE_FILE(./trace.txt)
 AT_DATA([reference],
 [Source: 'prog.cob'
 Program-Id:  prog
- Line:    279    Entry: prog
+ Line:    281    Entry: prog
  Line:    281Paragraph: MAINFILE
  Line:    282           OPEN
             OPEN OUTPUT TSPFILE -> 'testisam' Status: 00
@@ -15336,7 +15589,7 @@ AT_CAPTURE_FILE(./trace.txt)
 AT_DATA([reference],
 [Source: 'prog.cob'
 Program-Id:  prog
- Line:    290     Entry: prog
+ Line:    292     Entry: prog
  Line:    292 Paragraph: MAINFILE
  Line:    293            OPEN
             OPEN OUTPUT TSPFILE -> 'testisam' Status: 00

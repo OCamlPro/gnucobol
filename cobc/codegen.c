@@ -773,9 +773,13 @@ real_field_founder (const struct cb_field *f)
 struct cb_field *
 chk_field_variable_size (struct cb_field *f)
 {
-	struct cb_field		*p;
-	struct cb_field		*fc;
 	if (!f->flag_vsize_done) {
+		/* Note: will always return NULL for RENAMES items as those have no children,
+		   which is fine because of the RENAMES syntax rule:
+		   "None of the items within the range [...] shall be [...] a
+		   variable-length data item, or an occurs-depending table. " */
+		struct cb_field		*p;
+		struct cb_field		*fc;
 		f->vsize = NULL;
 		for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 			if (fc->depending) {
@@ -5259,40 +5263,39 @@ propagate_table (cb_tree x, int bgn_idx)
 	  && !f->depending)) {
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
-		if (occ > 1) {
-			output_block_open ();
-			output_prefix ();
-			output ("cob_u8_ptr b_ptr = ");
-			output_data(x);
-			if (bgn_idx > 1) {
-				output (" + %ld",len * (bgn_idx - 1));
-				maxlen -= len * (bgn_idx - 1);
-			}
-			output (";");
-			output_newline ();
-			/* double the chunks each time */
-			do {
-				output_prefix ();
-				output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);", len, len);
-				output ("\t/* %s: %5d thru %d */",
-						f->name, j + bgn_idx, j * 2 + bgn_idx - 1);
-				output_newline ();
-				j = j * 2;
-				len = len * 2;
-			} while ((j * 2) < occ);
-
-			/* missing piece after last chunk */
-			if (j < occ
-			 && maxlen > len) {
-				output_prefix ();
-				output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);",
-					len, maxlen - len);
-				output ("\t/* %s: %5d thru %d */",
-					f->name, j + bgn_idx, occ);
-				output_newline ();
-			}
-			output_block_close ();
+		output_block_open ();
+		output_prefix ();
+		output ("cob_u8_ptr b_ptr = ");
+		output_data(x);
+		if (bgn_idx > 1) {
+			output (" + %ld",len * (bgn_idx - 1));
+			maxlen -= len * (bgn_idx - 1);
 		}
+		output (";");
+		output_newline ();
+
+		/* double the chunks each time */
+		do {
+			output_prefix ();
+			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);", len, len);
+			output ("\t/* %s: %6u thru %u */",
+					f->name, j + bgn_idx, j * 2 + bgn_idx - 1);
+			output_newline ();
+			j = j * 2;
+			len = len * 2;
+		} while ((j * 2) < occ);
+
+		/* missing piece after last chunk */
+		if (j < occ
+		 && maxlen > len) {
+			output_prefix ();
+			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);",
+				len, maxlen - len);
+			output ("\t/* %s: %6u thru %u */",
+				f->name, j + bgn_idx, occ);
+			output_newline ();
+		}
+		output_block_close ();
 	} else {
 		/* Table size is only known at run time */
 		output_prefix ();
@@ -5608,8 +5611,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 		value = CB_VALUE (f->values);
 		/* Check for non-standard OCCURS */
 		if ((f->level == 1 || f->level == 77)
-		 && f->flag_occurs
-		 && !p->flag_init_statement) {
+		 && f->flag_occurs && !p->flag_init_statement) {
 			init_occurs = 1;
 		} else {
 			init_occurs = 0;
@@ -6089,15 +6091,21 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				}
 			} else {
 				struct cb_reference *ref = CB_REFERENCE (c);
-				cb_tree			save_length, r2;
+				cb_tree			save_check, save_length, r2;
 
 				/* Output initialization for the first record */
-				output_line ("/* initialize first record for %s */", f->name);
+				if (f->occurs_max > 1) {
+					output_line ("/* initialize first record for %s */", f->name);
+				}
+
 				save_length = ref->length;
+				save_check = ref->check;
 				/* Output all 'check' first */
 				for (r2 = ref->check; r2; r2 = CB_CHAIN (r2)) {
 					output_stmt (CB_VALUE (r2));
 				}
+				/* all exceptions would have been raised above,
+				   so temporarily detach from the reference */
 				ref->check = NULL;
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
@@ -6123,17 +6131,21 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					}
 				}
 
-				ref->length = NULL;
+				if (f->occurs_max > 1) {
 
-				for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
-				if (pf == NULL
-				 || !pf->flag_occurs_values) {
-					output_line ("/* copy initialized record for %s to later occurrences */",
-					f->name);
-					propagate_table (c, 1);
+					ref->length = NULL;
+
+					for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
+					if (pf == NULL
+					 || !pf->flag_occurs_values) {
+						output_line ("/* copy initialized record for %s to later occurrences */",
+						f->name);
+						propagate_table (c, 1);
+					}
 				}
 
 				/* restore previous exception-checks for the reference */
+				ref->check = save_check;
 				ref->length = save_length;
 			}
 		}
@@ -8601,6 +8613,7 @@ get_ec_code_for_handler (const enum cb_handler_type handler_type)
 	case AT_END_HANDLER:
 		return CB_EXCEPTION_CODE (COB_EC_I_O_AT_END);
 	case EOP_HANDLER:
+		/* FIXME: handler should actually also check for COB_EC_I_O_EOP_OVERFLOW */
 		return CB_EXCEPTION_CODE (COB_EC_I_O_EOP);
 	case INVALID_KEY_HANDLER:
 		return CB_EXCEPTION_CODE (COB_EC_I_O_INVALID_KEY);
