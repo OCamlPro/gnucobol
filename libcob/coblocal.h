@@ -468,8 +468,7 @@ enum cob_case_modifier {
 	CCM_LOWER_LOCALE,
 	CCM_UPPER_LOCALE
 };
-COB_HIDDEN unsigned char	cob_toupper (const unsigned char);
-COB_HIDDEN unsigned char	cob_tolower (const unsigned char);
+
 COB_HIDDEN int		cob_field_to_string	(const cob_field *, void *,
 						 const size_t, const enum cob_case_modifier target_case);
 
