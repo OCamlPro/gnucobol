@@ -477,7 +477,6 @@ PRINT_VAR(JNI_INCLUDES)
 
 AC_PATH_PROG(javahome,java, "/usr/bin")
 javahome=`dirname ${javahome}`
-javahome=`dirname ${javahome}`
 echo "JAVAHOME=${javahome}"
 for each in `ls ${javahome}/include` ;do
   if [ test -d ${javahome}/include/${each} ] ;then

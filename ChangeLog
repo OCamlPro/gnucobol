@@ -1,3 +1,6 @@
+2024-06-12	Vedant Tewari <vedanttewari541@gmail.com>
+
+	* configure.ac: Add support for JNI (Java Native Interface)
 
 2023-02-25  Ron Norman <rjn@inglenet.com> 
 
