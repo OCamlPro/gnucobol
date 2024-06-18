@@ -720,6 +720,35 @@ cb_note_x (const enum cb_warn_opt opt, cb_tree x, const char *fmt, ...)
 	listprint_restore ();
 }
 
+/* additional hint for the user, commonly to give more details
+   for a previously given diagnostic; printed to listing according to caller */
+void
+cb_note (const enum cb_warn_opt opt, const int suppress_listing, const char *fmt, ...)
+{
+	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+	va_list ap;
+
+	if (opt != COB_WARNOPT_NONE && pref == COBC_WARN_DISABLED) {
+		return;
+	}
+
+	if (suppress_listing) {
+		listprint_suppress ();
+	}
+	va_start (ap, fmt);
+	if (opt != COB_WARNOPT_NONE) {
+		print_error (NULL, 0, _("note: "),
+			fmt, ap, warning_option_text (opt, pref));
+	} else {
+		print_error (NULL, 0, _("note: "),
+			fmt, ap, NULL);
+	}
+	va_end (ap);
+	if (suppress_listing) {
+		listprint_restore ();
+	}
+}
+
 enum cb_warn_val
 cb_error_x (cb_tree x, const char *fmt, ...)
 {

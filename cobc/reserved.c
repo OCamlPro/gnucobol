@@ -662,7 +662,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "CODE-SET",			0, 0, CODE_SET,			/* 2002 */
 				0, 0
   },
-  { "COL",			0, 0, COL,			/* 2002 */
+  { "COL",			0, 0, COL,			/* 2002 -> Does we need this or can we alias COLUMN? */
 				0, 0
   },
   { "COLLATING",		0, 0, COLLATING,		/* 2002 */

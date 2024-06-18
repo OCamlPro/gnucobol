@@ -64,6 +64,13 @@
 	* testsuite.src/listings.at: ignore all stderr in listing tests
 	  as those are checked via the listing output there
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: workaround for MSYS issues
+	* listings-sed.sh: adjusted replacement to actually check the year and
+	  convert the final timestamp in default format to ANSI format
+	  for matching testsuite reference
+
 2021-09-25   Ron Norman <rjn@inglenet.com>
 
 	* atlocal.in,atlocal_win,atlocal_valgrind: Add -std=default to COBC

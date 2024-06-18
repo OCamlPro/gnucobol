@@ -1275,8 +1275,7 @@ typedef union __cob_call_union {
 	cob_field	*(*funcfld)();	/* Function returning "cob_field *" */
 	int		(*funcint)();	/* Function returning "int" */
 	void		*funcvoid;	/* Redefine to "void *" */
-#ifdef	_WIN32
-							/* stdcall variants */
+#ifdef	_WIN32				/* stdcall variants */
 	void		*(__stdcall *funcptr_std)();
 	void		(__stdcall *funcnull_std)();
 	cob_field	*(__stdcall *funcfld_std)();

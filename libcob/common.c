@@ -5642,45 +5642,57 @@ check_valid_env_tmpdir (const char *envname)
 static const char *
 cob_gettmpdir (void)
 {
-	const char	*tmpdir;
+	static const char	*tmpdir = NULL;
 	char	*tmp;
 
-	if ((tmpdir = check_valid_env_tmpdir ("TMPDIR")) == NULL) {
-		tmp = NULL;
+	if (tmpdir != NULL) {
+		return tmpdir;
+	}
+
+	tmp = NULL;
+	/* target directory, also used by most called external tools*/
+	if ((tmpdir = check_valid_env_tmpdir ("TMPDIR")) == NULL
+	/* OS specific temporary paths */
 #ifdef	_WIN32
-		if ((tmpdir = check_valid_env_tmpdir ("TEMP")) == NULL
-		 && (tmpdir = check_valid_env_tmpdir ("TMP")) == NULL
-		 && (tmpdir = check_valid_env_tmpdir ("USERPROFILE")) == NULL) {
+	 && (tmpdir = check_valid_env_tmpdir ("TEMP")) == NULL
+	 && (tmpdir = check_valid_env_tmpdir ("TMP")) == NULL
+	 && (tmpdir = check_valid_env_tmpdir ("USERPROFILE")) == NULL) {
 #else
-		if ((tmpdir = check_valid_env_tmpdir ("TMP")) == NULL
-		 && (tmpdir = check_valid_env_tmpdir ("TEMP")) == NULL) {
-			if (!check_valid_dir ("/tmp")) {
-				tmp = cob_fast_malloc (5U);
-				strcpy (tmp, "/tmp");
-				tmpdir = tmp;
-			}
-		}
-		if (!tmpdir) {
-#endif
-			tmp = cob_fast_malloc (2U);
-			tmp[0] = '.';
-			tmp[1] = 0;
+	 && (tmpdir = check_valid_env_tmpdir ("TMP")) == NULL
+	 && (tmpdir = check_valid_env_tmpdir ("TEMP")) == NULL) {
+		if (!check_valid_dir ("/tmp")) {
+			tmp = cob_fast_malloc (5U);
+			strcpy (tmp, "/tmp");
 			tmpdir = tmp;
-		} else {
-			size_t size = strlen (tmpdir) - 1;
-			if (tmpdir[size] == SLASH_CHAR) {
-				tmp = (char*)cob_fast_malloc (size + 1);
-				memcpy (tmp, tmpdir, size);
-				tmp[size] = 0;
-				tmpdir = tmp;
-			}
 		}
-		(void)cob_setenv ("TMPDIR", tmpdir, 1);
-		if (tmp) {
-			cob_free ((void *)tmp);
-			tmpdir = getenv ("TMPDIR");
+#endif
+	}
+	/* fallback if still not valid: current directory */
+	if (!tmpdir) {
+		tmp = cob_fast_malloc (2U);
+		tmp[0] = '.';
+		tmp[1] = 0;
+		tmpdir = tmp;
+	} else {
+		/* if we have a valid path: ensure there's no trailing slash */
+		size_t size = strlen (tmpdir) - 1;
+		if (tmpdir[size] == SLASH_CHAR) {
+			tmp = (char*)cob_fast_malloc (size + 1);
+			memcpy (tmp, tmpdir, size);
+			tmp[size] = 0;
+			tmpdir = tmp;
 		}
 	}
+	/* ensure TMPDIR is set for called tools (which partially break hard otherwise) */
+	(void)cob_setenv ("TMPDIR", tmpdir, 1);
+
+	if (tmp) {
+		cob_free ((void *)tmp);
+	}
+
+	/* get the pointer to the environment copy - as this may point to a different place -
+	   store it for subsequent calls and finally return it to the caller */
+	tmpdir = getenv ("TMPDIR");
 	return tmpdir;
 }
 

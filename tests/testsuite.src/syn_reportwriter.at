@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2015, 2017-2020 Free Software Foundation, Inc.
+## Copyright (C) 2014-2015, 2017-2021 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Edward Hart, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
@@ -169,6 +169,47 @@ AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
 prog.cob:24: error: unsigned integer value expected
 prog.cob:25: error: unsigned integer value expected
 prog.cob:30: error: unsigned integer value expected
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Missing PICTURE for SOURCE])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT out-file ASSIGN "blah.txt"
+           ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  out-file REPORT rp.
+
+       WORKING-STORAGE SECTION.
+       77  data-source pic x(20) value "data".
+
+       REPORT SECTION.
+       RD  rp.
+       01  rp-head TYPE IS DETAIL.
+          02  LINE 1, COL 2 VALUE "Hello!".
+          02  LINE PLUS 1.
+              03 COLUMN 01      PIC X(09) VALUE 'CUST. NO.'.
+              03 ok  COLUMN PLUS 20 SOURCE IS data-source PIC X(10).
+              03 bad COLUMN PLUS 20 SOURCE IS data-source.
+
+
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:25: error: PICTURE clause required for 'bad'
 ])
 
 AT_CLEANUP

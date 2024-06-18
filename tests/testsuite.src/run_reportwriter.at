@@ -367,7 +367,6 @@ AT_DATA([prog.cob], [
            TERMINATE rp.
              CLOSE report-file.
            STOP RUN.
-           END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -4241,7 +4240,6 @@ AT_DATA([prog.cob], [
            CLOSE rp-file
 
            STOP RUN.
-           END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -4674,7 +4672,6 @@ AT_DATA([prog.cob], [
            TERMINATE rp.
              CLOSE report-file.
            STOP RUN.
-           END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])

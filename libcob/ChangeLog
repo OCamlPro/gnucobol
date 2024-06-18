@@ -677,6 +677,11 @@
 	  having only its POINTER be "external" and use cob_file_malloc to allocate
 	  and set the attributes
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_gettmpdir): do the lookup and validation only once,
+	  also ensure for TMPDIR that it has no trailing slash
+
 2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (call_exit_handlers_and_terminate): extracted from

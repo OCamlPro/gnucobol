@@ -140,6 +140,12 @@ _return_path () {
 # Fix for testcases where cobc translates path to win32 equivalents
 if test "x$MSYSTEM" != "x"; then
 	PATHSEP=";"
+	# finding the cobc executable is done from MSYS, but if this calls cobcrun
+	# it just uses the PATH variable which not necessarily has the correct
+	# order - especially if the current system has cobcrun installed - so
+	# let that cobc call COBCRUN with a full path (converted by MSYS into
+	# the Win32 variant when starting the cobc process)
+	COBCRUN=${ABS_COBCRUN}
 else
 	PATHSEP='@PATH_SEPARATOR@';
 fi
@@ -187,7 +193,7 @@ for cobenv in $(${LOCAL_ENV} ${ABS_COBCRUN} --runtime-conf \
 done
 
 # prevent multiple calls by caching the output
-${LOCAL_ENV} ${ABS_COBC} --info > info.out
+${LOCAL_ENV} ${ABS_COBC} --verbose --info > info.out
 
 # ... and also unset for the compiler
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then

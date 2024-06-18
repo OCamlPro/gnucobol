@@ -579,6 +579,14 @@
 	* codegen.c (output_file_initialization): don't generate attribute
 	  setting which is done in cob_file_malloc / cob_file_external_addr
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_print_info): skip initial "." when printing COB_EXE_EXT
+	* cobc.c (process_command_line): postpone version output for --verbose
+	* cobc.c (set_listing_date): use formatted instead of ANSI timestamp,
+	  allow format to be specified at cobc compile-time via with define
+	  LISTING_TIMESTAMP_FORMAT
+
 2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_generic_register): handle CONSTANT
@@ -586,6 +594,11 @@
 	* typeck.c (cb_build_generic_register), tree.h: optionally return
 	  cob_field for register
 	* cobc.c, cobc.h, reserved.c: code for ancient OSVS registers - disabled
+
+2021-09-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (create_implicit_picture): PICTURE is mandatory
+	  for report description entries with SOURCE or SUM clause
 
 2021-09-25  Ron Norman <rjn@inglenet.com>
 
@@ -605,16 +618,51 @@
 
 	* scanner.l, cobc.c: fix ODOSLIDE directive
 
+2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_param_size), parser.y: new enum instead of single defines,
+	  including new CB_SIZE_UNSET and partial addition CB_SIZE_16/CB_SIZE_32
+	* tree.c (set_sign_and_size_from_parameter_field): extracted from
+	  (output_call_protocast, output_call_by_value_args)
+	* tree.c (get_size_parameter_type): extracted from (output_call_protocast,
+	  output_call_by_value_args, try_get_by_value_parameter_type)
+
+2021-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_abort, abort_if_too_many_continuation_lines,
+	  cobc_tree_cast_error): use common diagnostic format for internal errors
+	* tree.c (cb_build_call_parameter), tree.h, parser.y: extracted from
+	  parser, internally convert BY VALUE ZERO to BY VALUE 0
+	* parser.y (call_param): added MicroFocus SIZE IS clause for CALL BY VALUE,
+	  but deactivated because of reduce/reduce conflicts -> needs dialect
+	  option and scanner adjustment or drop of OpenCOBOL SIZE IS extension
+
+2021-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, typeck.c: let DISPLAY OMITTED be handled identical
+	  to common display sources: as the entry of a list; removing the
+	  need to cast and extra check during the validation
+
 2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: some minor conflicts "resolved", support of old extension
 	  SCREEN SECTION VALUE without "VALUE", fixed ACU's PROPERTY xyz ARE
+	* warning.def: new option cb_warn_repository_checks (defaults to on)
+	* typeck.c: depend repository checks on cb_warn_repository_checks
 
 2021-09-16  Edward Hart <edward.dan.hart@gmail.com>
 
 	* reserved.c: fixed bug #764, where deleting a reserved word which
 	  shares the same hash as another word could make the other word
 	  inaccessible in the reserve word table.
+
+2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (emit entry), typeck.c (cb_validate_parameters_and_returning),
+	  tree.h: extracted function from parser.y
+	* parser.y, reserved.c, codegen.c, tree.h, error.c: work on
+	  partial integration of patch #32 (2017-10-07) for supporting PROTOTYPE,
+	  adjusting checks from numbered LINKAGE items to PROCEDURE DIVISION USING
 
 2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -964,13 +1012,6 @@
 	* typeck.c (syntax_check_ml_gen_name_list): additional parameter is_xml
 	  to distinguish between XML and JSON generation (messages, possible rules)
 	* typeck.c (syntax_check_ml_gen_name_list): check of NAME ... IS OMITTED
-
-2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
-
-	FR #397: add support for JSON GENERATE anonymous JSON objects
-	* parser.y: split _name_of to _xml_name_of and _json_name_of, the later
-	  one with additional possible NAME ... IS OMITTED and
-	  without GENERATE XML checks
 
 2020-12-17  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3706,6 +3747,15 @@
 
 	* typeck.c: refactored and improved variable names in external form
 	  functions.
+
+2017-10-07  Edward Hart <edward.dan.hart@gmail.com>
+
+	* typeck.c: extracted (cb_check_arithmetic) from (cb_emit_arithmetic) and
+	  (cb_check_set_to) from (cb_emit_set_to)
+	* typeck.c (cb_emit_incompat_data_checks): renamed from
+	  (cb_check_data_incompat)
+	* parser.y, reserved.c, codegen.c, tree.h, typeck.c: work on
+	  PROTOTYPE support
 
 2017-10-07  Ron Norman <rjn@inglenet.com>
 
