@@ -4717,11 +4717,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 			char	tmp[COB_MINI_BUFF];
 			struct cb_field *s = NULL;
 			int		pos, len;
-			/* force generation of report source field */
 			fld = CB_FIELD_PTR (p->report_source);
-			if (fld->count == 0) {
-				fld->count = 1;
-			}
 			for (ff = p; !ff->flag_occurs && ff->parent; ff = ff->parent);
 			s = cb_field_direct (fld, CB_REFERENCE (p->report_source), tmp, &pos, &len);
 			p->report_source_txt = cobc_parse_strdup (tmp);
@@ -4730,6 +4726,13 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 				p->report_field_from = fld;
 				p->report_field_offset = pos;
 				p->report_field_size = len;
+			}
+			/* force generation of report source field
+			   CHECKME: Why - it should be the target of an internal
+			            MOVE or COMPUTE (for ROUNDED clause)
+						which sets the reference */
+			if (fld->count == 0) {
+				fld->count = 1;
 			}
 		} else
 		if (p->report_source
@@ -4756,13 +4759,14 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 				p->report_from = add_report_sum (r, buff, dig, dec);
 			}
 		}
-		/* force generation of report sum counter */
 		if (p->report_sum_counter
 		 && CB_REF_OR_FIELD_P (p->report_sum_counter)) {
 			fld = CB_FIELD_PTR (p->report_sum_counter);
+			/* force generation of report sum counter TODO: Check why */
 			if (fld->count == 0)
 				fld->count = 1;
 		}
+		/* force generation of report control counter TODO: Check why */
 		if (p->report_control
 		 && CB_REF_OR_FIELD_P (p->report_control)) {
 			fld = CB_FIELD_PTR (p->report_control);
@@ -6751,6 +6755,63 @@ cb_build_call (const cb_tree name, const cb_tree args, const cb_tree on_exceptio
 	p->is_system = is_system_call;
 	p->convention = convention;
 	return CB_TREE (p);
+}
+
+cb_tree
+cb_build_call_parameter (cb_tree arg, int call_mode, int size_mode)
+{
+	cb_tree	res;
+	if (CB_LITERAL_P(arg)) {
+		/* literals become BY CONTENT */
+		if (CB_NUMERIC_LITERAL_P (arg)) {
+			/* If not BY VALUE numeric-literals become BY CONTENT */
+			if (call_mode != CB_CALL_BY_VALUE) {
+				call_mode = CB_CALL_BY_CONTENT;
+			}
+		} else {
+			call_mode = CB_CALL_BY_CONTENT;
+		}
+	}
+	if (call_mode != CB_CALL_BY_REFERENCE) {
+		if (CB_FILE_P (arg)
+		|| (CB_REFERENCE_P (arg) && CB_FILE_P (CB_REFERENCE (arg)->value))) {
+			cb_error_x (CB_TREE (current_statement),
+				    _("invalid file name reference"));
+		} else if (call_mode == CB_CALL_BY_VALUE) {
+			/* FIXME: compiler configuration needed, IBM allows one-byte
+			          alphanumeric items [--> a `char`], too, while
+			          COBOL 2002/2014 allow only numeric literals
+			   --> revise after rw-merge */
+			if (cb_category_is_alpha (arg)) {
+				cb_warning_x (COBC_WARN_FILLER, arg,
+					      _("BY CONTENT assumed for alphanumeric item '%s'"),
+						  cb_name (arg));
+				call_mode = CB_CALL_BY_CONTENT;
+			} else if (cb_category_is_national (arg)) {
+				cb_warning_x (COBC_WARN_FILLER, arg,
+					      _("BY CONTENT assumed for national item '%s'"),
+						  cb_name (arg));
+				call_mode = CB_CALL_BY_CONTENT;
+			} else if (arg == cb_zero) {
+				/* conversion of single "constant" numeric literal */
+				arg = CB_TREE(cb_build_numeric_literal (0, "0", 0));
+			}
+		}
+	}
+
+	res = CB_BUILD_PAIR (cb_int (call_mode), arg);
+	if (call_mode == CB_CALL_BY_VALUE) {
+		if (size_mode != CB_SIZE_UNSET) {
+			CB_SIZES (res) = size_mode;
+		} else {
+#ifdef COB_64_BIT_POINTER
+			CB_SIZES (res) = CB_SIZE_8;
+#else
+			CB_SIZES (res) = CB_SIZE_4;
+#endif
+		}
+	}
+	return res;
 }
 
 /* CANCEL */

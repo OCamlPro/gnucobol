@@ -5250,7 +5250,7 @@ propagate_table (cb_tree x, int bgn_idx)
 {
 	struct cb_field *f = cb_code_field (x);
 	const unsigned int occ = (unsigned int)f->occurs_max;
-	size_t len = (size_t)f->size;
+	cob_uli_t len = (cob_uli_t)f->size;
 	size_t maxlen = len * occ;
 	unsigned int j = 1;
 
@@ -6475,16 +6475,115 @@ debug_call_by_value(cb_tree x, cb_tree l) {
 /**
  * cast function pointer call frame to avoid default argument promotion
  */
+
+static const char *
+get_size_parameter_type (const enum cb_param_size size, const int is_unsigned)
+{
+	switch (size) {
+	case CB_SIZE_1:
+		if (is_unsigned) {
+			return "cob_u8_t";
+		} else {
+			return "cob_c8_t";
+		}
+
+	case CB_SIZE_2:
+		if (is_unsigned) {
+			return "cob_u16_t";
+		} else {
+			return "cob_s16_t";
+		}
+
+	case CB_SIZE_4:
+		if (is_unsigned) {
+			return "cob_u32_t";
+		} else {
+			return "cob_s32_t";
+		}
+
+	case CB_SIZE_8:
+		if (is_unsigned) {
+			return "cob_u64_t";
+		} else {
+			return "cob_s64_t";
+		}
+
+#if 0 /* reserved for future use */
+	case CB_SIZE_16:
+		if (is_unsigned) {
+			return "cob_u128_t";
+		} else {
+			return "cob_s128_t";
+		}
+
+	case CB_SIZE_32:
+		if (is_unsigned) {
+			return "cob_u256_t";
+		} else {
+			return "cob_s256_t";
+		}
+#endif
+
+	/* LCOV_EXCL_START */
+	default:
+		cobc_err_msg (_("unexpected size: %d"), size);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
+	}
+}
+
+static void
+set_sign_and_size_from_parameter_field (cb_tree param, struct cb_field *f,
+										int *sign, int *size)
+{
+	*size = CB_SIZES_INT (param);
+	*sign = 0;
+	if (*size == CB_SIZE_AUTO) {
+		if (f->pic->have_sign) {
+			*sign = 1;
+		}
+		if (f->usage == CB_USAGE_PACKED
+		 || f->usage == CB_USAGE_DISPLAY
+		 || f->usage == CB_USAGE_COMP_6) {
+			*size = f->pic->digits - f->pic->scale;
+		} else {
+			*size = f->size;
+		}
+		switch (*size) {
+		case 0:
+#ifdef COB_64_BIT_POINTER
+			*size = CB_SIZE_8;
+#else
+			*size = CB_SIZE_4;
+#endif
+			break;
+		case 1:
+			*size = CB_SIZE_1;
+			break;
+		case 2:
+			*size = CB_SIZE_2;
+			break;
+		case 3:
+		case 4:
+			*size = CB_SIZE_4;
+			break;
+		case 5:
+		case 6:
+		case 7:
+		default:
+			*size = CB_SIZE_8;
+			break;
+		}
+	} else {
+		if (!CB_SIZES_INT_UNSIGNED(param)) {
+			*sign = 1;
+		}
+	}
+}
+
 static void
 output_call_protocast (cb_tree x, cb_tree l)
 {
-	struct cb_field	*f;
-	const char	*s;
-	cob_s64_t	val;
-	cob_u64_t	uval;
-	int		sizes;
-	int		sign;
-
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CAST:
 		output ("int");
@@ -6499,192 +6598,81 @@ output_call_protocast (cb_tree x, cb_tree l)
 	case CB_TAG_LITERAL:
 		if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC) {
 			output ("int");
-			return;
-		}
-		if (CB_SIZES_INT_UNSIGNED(l)) {
-			uval = cb_get_u_long_long (x);
-			switch (CB_SIZES_INT (l)) {
-			case CB_SIZE_AUTO:
-				if (uval > UINT_MAX) {
-					output ("cob_u64_t");
-					return;
+		} else {
+			int	size = CB_SIZES_INT (l);
+			if (CB_SIZES_INT_UNSIGNED(l)) {
+				if (size == CB_SIZE_AUTO) {
+					const cob_u64_t	uval = cb_get_u_long_long (x);
+					if (uval > UINT_MAX) {
+						size = CB_SIZE_8;
+					} else {
+						size = CB_SIZE_4;
+					}
 				}
-				/* Fall through to case 4 */
-			case CB_SIZE_4:
-				output ("cob_u32_t");
-				return;
-			case CB_SIZE_1:
-				output ("cob_u8_t");
-				return;
-			case CB_SIZE_2:
-				output ("cob_u16_t");
-				return;
-			case CB_SIZE_8:
-				output ("cob_u64_t");
-				return;
-			/* LCOV_EXCL_START */
-			default:
-				cobc_err_msg (_("unexpected size: %d"), CB_SIZES_INT (l));
-				COBC_ABORT ();
-			/* LCOV_EXCL_STOP */
+				output ("%s", get_size_parameter_type (size, 0));
+			} else {
+				if (size == CB_SIZE_AUTO) {
+					const cob_s64_t val = cb_get_long_long (x);
+					if (val > INT_MAX) {
+						size = CB_SIZE_8;
+					} else {
+						size = CB_SIZE_4;
+					}
+				}
+				output ("%s", get_size_parameter_type (size, 1));
 			}
-		}
-		val = cb_get_long_long (x);
-		switch (CB_SIZES_INT (l)) {
-		case CB_SIZE_AUTO:
-			if (val > INT_MAX) {
-				output ("cob_s64_t");
-				return;
-			}
-			/* Fall through to case 4 */
-		case CB_SIZE_4:
-			output ("cob_s32_t");
-			return;
-		case CB_SIZE_1:
-			output ("cob_s8_t");
-			return;
-		case CB_SIZE_2:
-			output ("cob_s16_t");
-			return;
-		case CB_SIZE_8:
-			output ("cob_s64_t");
-			return;
-		/* LCOV_EXCL_START */
-		default:
-			cobc_err_msg (_("unexpected size: %d"), CB_SIZES_INT (l));
-			COBC_ABORT ();
-		/* LCOV_EXCL_STOP */
 		}
 		return;
 	default:
-		f = cb_code_field (x);
-		switch (f->usage) {
-		case CB_USAGE_BINARY:
-		case CB_USAGE_COMP_5:
-		case CB_USAGE_COMP_X:
-		case CB_USAGE_COMP_N:
-		case CB_USAGE_PACKED:
-		case CB_USAGE_DISPLAY:
-		case CB_USAGE_COMP_6:
-			sizes = CB_SIZES_INT (l);
-			sign = 0;
-			if (sizes == CB_SIZE_AUTO) {
-				if (f->pic->have_sign) {
-					sign = 1;
-				}
-				if (f->usage == CB_USAGE_PACKED 
-				 || f->usage == CB_USAGE_DISPLAY 
-				 || f->usage == CB_USAGE_COMP_6) {
-					sizes = f->pic->digits - f->pic->scale;
-				} else {
-					sizes = f->size;
-				}
-				switch (sizes) {
-				case 0:
-					sizes = CB_SIZE_4;
-					break;
-				case 1:
-					sizes = CB_SIZE_1;
-					break;
-				case 2:
-					sizes = CB_SIZE_2;
-					break;
-				case 3:
-					sizes = CB_SIZE_4;
-					break;
-				case 4:
-					sizes = CB_SIZE_4;
-					break;
-				case 5:
-					sizes = CB_SIZE_8;
-					break;
-				case 6:
-					sizes = CB_SIZE_8;
-					break;
-				case 7:
-					sizes = CB_SIZE_8;
-					break;
-				default:
-					sizes = CB_SIZE_8;
-					break;
-				}
-			} else {
-				if (!CB_SIZES_INT_UNSIGNED(l)) {
-					sign = 1;
-				}
-			}
-			switch (sizes) {
-			case CB_SIZE_1:
-				if (sign) {
-					s = "cob_c8_t";
-				} else {
-					s = "cob_u8_t";
-				}
-				break;
-			case CB_SIZE_2:
-				if (sign) {
-					s = "cob_s16_t";
-				} else {
-					s = "cob_u16_t";
-				}
-				break;
-			case CB_SIZE_4:
-				if (sign) {
-					s = "cob_s32_t";
-				} else {
-					s = "cob_u32_t";
-				}
-				break;
-			case CB_SIZE_8:
-				if (sign) {
-					s = "cob_s64_t";
-				} else {
-					s = "cob_u64_t";
-				}
-				break;
+		{
+			struct cb_field	*f = cb_code_field (x);
+			int	size, sign;
+
+			switch (f->usage) {
+			case CB_USAGE_BINARY:
+			case CB_USAGE_COMP_5:
+			case CB_USAGE_COMP_X:
+			case CB_USAGE_COMP_N:
+			case CB_USAGE_PACKED:
+			case CB_USAGE_DISPLAY:
+			case CB_USAGE_COMP_6:
+				set_sign_and_size_from_parameter_field (l, f, &sign, &size);
+				output ("%s", get_size_parameter_type (size, sign));
+				return;
+			case CB_USAGE_INDEX:
+				output ("cob_s32_t");
+				return;
+			case CB_USAGE_LENGTH:
+				output ("cob_u32_t");
+				return;
+			case CB_USAGE_POINTER:
+			case CB_USAGE_PROGRAM_POINTER:
+				output ("void *");
+				return;
+			case CB_USAGE_FLOAT:
+				output ("float");
+				return;
+			case CB_USAGE_DOUBLE:
+				output ("double");
+				return;
+			case CB_USAGE_LONG_DOUBLE:
+				output ("long double");
+				return;
+			case CB_USAGE_FP_BIN32:
+				output ("cob_u32_t");
+				return;
+			case CB_USAGE_FP_BIN64:
+			case CB_USAGE_FP_DEC64:
+				output ("cob_u64_t");
+				return;
+			case CB_USAGE_FP_BIN128:
+			case CB_USAGE_FP_DEC128:
+				output ("cob_fp_128");
+				return;
 			default:
-				if (sign) {
-					s = "cob_s32_t";
-				} else {
-					s = "cob_u32_t";
-				}
-				break;
+				output ("void *");
+				return;
 			}
-			output ("%s", s);
-			return;
-		case CB_USAGE_INDEX:
-			output ("cob_s32_t");
-			return;
-		case CB_USAGE_LENGTH:
-			output ("cob_u32_t");
-			return;
-		case CB_USAGE_POINTER:
-		case CB_USAGE_PROGRAM_POINTER:
-			output ("void *");
-			return;
-		case CB_USAGE_FLOAT:
-			output ("float");
-			return;
-		case CB_USAGE_DOUBLE:
-			output ("double");
-			return;
-		case CB_USAGE_LONG_DOUBLE:
-			output ("long double");
-			return;
-		case CB_USAGE_FP_BIN32:
-			output ("cob_u32_t");
-			return;
-		case CB_USAGE_FP_BIN64:
-		case CB_USAGE_FP_DEC64:
-			output ("cob_u64_t");
-			return;
-		case CB_USAGE_FP_BIN128:
-		case CB_USAGE_FP_DEC128:
-			output ("cob_fp_128");
-			return;
-		default:
-			output ("void *");
-			return;
 		}
 	}
 }
@@ -6695,13 +6683,6 @@ output_call_protocast (cb_tree x, cb_tree l)
 static void
 output_call_by_value_args (cb_tree x, cb_tree l)
 {
-	struct cb_field	*f;
-	const char	*s;
-	cob_s64_t	val;
-	cob_u64_t	uval;
-	int		sizes;
-	int		sign;
-
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CAST:
 		output_integer (x);
@@ -6718,222 +6699,104 @@ output_call_by_value_args (cb_tree x, cb_tree l)
 	case CB_TAG_LITERAL:
 		if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC) {
 			output ("%d", CB_LITERAL (x)->data[0]);
-			return;
-		}
-		if (CB_SIZES_INT_UNSIGNED(l)) {
-			uval = cb_get_u_long_long (x);
-			switch (CB_SIZES_INT (l)) {
-			case CB_SIZE_AUTO:
-				if (uval > UINT_MAX) {
-					output ("(cob_u64_t)");
-					output (CB_FMT_LLU_F, uval);
-					return;
+		} else {
+			int size = CB_SIZES_INT (l);
+			if (CB_SIZES_INT_UNSIGNED(l)) {
+				const cob_u64_t	uval = cb_get_u_long_long (x);
+				if (size == CB_SIZE_AUTO) {
+					if (uval > UINT_MAX) {
+						size = CB_SIZE_8;
+					} else {
+						size = CB_SIZE_4;
+					}
 				}
-				/* Fall through to case 4 */
-			case CB_SIZE_4:
-				output ("(cob_u32_t)");
-				output (CB_FMT_LLU_F, uval);
-				return;
-			case CB_SIZE_1:
-				output ("(cob_u8_t)");
-				output (CB_FMT_LLU_F, uval);
-				return;
-			case CB_SIZE_2:
-				output ("(cob_u16_t)");
-				output (CB_FMT_LLU_F, uval);
-				return;
-			case CB_SIZE_8:
-				output ("(cob_u64_t)");
-				output (CB_FMT_LLU_F, uval);
-				return;
-			/* LCOV_EXCL_START */
-			default:
-				cobc_err_msg (_("unexpected size: %d"), CB_SIZES_INT (l));
-				COBC_ABORT ();
-			/* LCOV_EXCL_STOP */
+				output ("(%s)" CB_FMT_LLU_F,
+					get_size_parameter_type (size, 0), uval);
+			} else {
+				const cob_s64_t	val = cb_get_long_long (x);
+				if (size == CB_SIZE_AUTO) {
+					if (val > INT_MAX) {
+						size = CB_SIZE_8;
+					} else {
+						size = CB_SIZE_4;
+					}
+				}
+				output ("(%s)" CB_FMT_LLD_F,
+					get_size_parameter_type (size, 1), val);
 			}
-		}
-		val = cb_get_long_long (x);
-		switch (CB_SIZES_INT (l)) {
-		case CB_SIZE_AUTO:
-			if (val > INT_MAX) {
-				output ("(cob_s64_t)");
-				output (CB_FMT_LLD_F, val);
-				return;
-			}
-			/* Fall through to case 4 */
-		case CB_SIZE_4:
-			output ("(cob_s32_t)");
-			output (CB_FMT_LLD_F, val);
-			return;
-		case CB_SIZE_1:
-			output ("(cob_s8_t)");
-			output (CB_FMT_LLD_F, val);
-			return;
-		case CB_SIZE_2:
-			output ("(cob_s16_t)");
-			output (CB_FMT_LLD_F, val);
-			return;
-		case CB_SIZE_8:
-			output ("(cob_s64_t)");
-			output (CB_FMT_LLD_F, val);
-			return;
-		/* LCOV_EXCL_START */
-		default:
-			cobc_err_msg (_("unexpected size: %d"), CB_SIZES_INT (l));
-			COBC_ABORT ();
-		/* LCOV_EXCL_STOP */
 		}
 		return;
 	default:
-		f = cb_code_field (x);
-		switch (f->usage) {
-		case CB_USAGE_BINARY:
-		case CB_USAGE_COMP_5:
-		case CB_USAGE_COMP_X:
-		case CB_USAGE_COMP_N:
-		case CB_USAGE_PACKED:
-		case CB_USAGE_DISPLAY:
-		case CB_USAGE_COMP_6:
-			sizes = CB_SIZES_INT (l);
-			sign = 0;
-			if (sizes == CB_SIZE_AUTO) {
-				if (f->pic->have_sign) {
-					sign = 1;
-				}
-				if (f->usage == CB_USAGE_PACKED
-				 || f->usage == CB_USAGE_DISPLAY
-				 || f->usage == CB_USAGE_COMP_6) {
-					sizes = f->pic->digits - f->pic->scale;
-				} else {
-					sizes = f->size;
-				}
-				switch (sizes) {
-				case 0:
-					sizes = CB_SIZE_4;
-					break;
-				case 1:
-					sizes = CB_SIZE_1;
-					break;
-				case 2:
-					sizes = CB_SIZE_2;
-					break;
-				case 3:
-					sizes = CB_SIZE_4;
-					break;
-				case 4:
-					sizes = CB_SIZE_4;
-					break;
-				case 5:
-					sizes = CB_SIZE_8;
-					break;
-				case 6:
-					sizes = CB_SIZE_8;
-					break;
-				case 7:
-					sizes = CB_SIZE_8;
-					break;
-				default:
-					sizes = CB_SIZE_8;
-					break;
-				}
-			} else {
-				if (!CB_SIZES_INT_UNSIGNED(l)) {
-					sign = 1;
-				}
+		{
+			struct cb_field	*f = cb_code_field (x);
+			switch (f->usage) {
+			case CB_USAGE_BINARY:
+			case CB_USAGE_COMP_5:
+			case CB_USAGE_COMP_X:
+			case CB_USAGE_COMP_N:
+			case CB_USAGE_PACKED:
+			case CB_USAGE_DISPLAY:
+			case CB_USAGE_COMP_6:
+			{
+				int	size, sign = 0;
+				set_sign_and_size_from_parameter_field (l, f, &sign, &size);
+				output ("(%s)(", get_size_parameter_type (size, sign));
+				output_integer (x);
+				output (")");
+				return;
 			}
-			switch (sizes) {
-			case CB_SIZE_1:
-				if (sign) {
-					s = "cob_c8_t";
-				} else {
-					s = "cob_u8_t";
-				}
-				break;
-			case CB_SIZE_2:
-				if (sign) {
-					s = "cob_s16_t";
-				} else {
-					s = "cob_u16_t";
-				}
-				break;
-			case CB_SIZE_4:
-				if (sign) {
-					s = "cob_s32_t";
-				} else {
-					s = "cob_u32_t";
-				}
-				break;
-			case CB_SIZE_8:
-				if (sign) {
-					s = "cob_s64_t";
-				} else {
-					s = "cob_u64_t";
-				}
-				break;
+			case CB_USAGE_INDEX:
+			case CB_USAGE_HNDL:
+			case CB_USAGE_HNDL_WINDOW:
+			case CB_USAGE_HNDL_SUBWINDOW:
+			case CB_USAGE_HNDL_FONT:
+			case CB_USAGE_HNDL_THREAD:
+			case CB_USAGE_HNDL_MENU:
+			case CB_USAGE_HNDL_VARIANT:
+			case CB_USAGE_HNDL_LM:
+			case CB_USAGE_LENGTH:
+			case CB_USAGE_POINTER:
+			case CB_USAGE_PROGRAM_POINTER:
+				output_integer (x);
+				return;
+			case CB_USAGE_FLOAT:
+				output ("*(float *)(");
+				output_data (x);
+				output (")");
+				return;
+			case CB_USAGE_DOUBLE:
+				output ("*(double *)(");
+				output_data (x);
+				output (")");
+				return;
+			case CB_USAGE_LONG_DOUBLE:
+				output ("*(long double *)(");
+				output_data (x);
+				output (")");
+				return;
+			case CB_USAGE_FP_BIN32:
+				output ("*(cob_u32_t *)(");
+				output_data (x);
+				output (")");
+				return;
+			case CB_USAGE_FP_BIN64:
+			case CB_USAGE_FP_DEC64:
+				output ("*(cob_u64_t *)(");
+				output_data (x);
+				output (")");
+				return;
+			case CB_USAGE_FP_BIN128:
+			case CB_USAGE_FP_DEC128:
+				output ("*(cob_fp_128 *)(");
+				output_data (x);
+				output (")");
+				return;
 			default:
-				if (sign) {
-					s = "cob_s32_t";
-				} else {
-					s = "cob_u32_t";
-				}
-				break;
+				output ("*(");
+				output_data (x);
+				output (")");
+				return;
 			}
-			output ("(%s)(", s);
-			output_integer (x);
-			output (")");
-			return;
-		case CB_USAGE_INDEX:
-		case CB_USAGE_HNDL:
-		case CB_USAGE_HNDL_WINDOW:
-		case CB_USAGE_HNDL_SUBWINDOW:
-		case CB_USAGE_HNDL_FONT:
-		case CB_USAGE_HNDL_THREAD:
-		case CB_USAGE_HNDL_MENU:
-		case CB_USAGE_HNDL_VARIANT:
-		case CB_USAGE_HNDL_LM:
-		case CB_USAGE_LENGTH:
-		case CB_USAGE_POINTER:
-		case CB_USAGE_PROGRAM_POINTER:
-			output_integer (x);
-			return;
-		case CB_USAGE_FLOAT:
-			output ("*(float *)(");
-			output_data (x);
-			output (")");
-			return;
-		case CB_USAGE_DOUBLE:
-			output ("*(double *)(");
-			output_data (x);
-			output (")");
-			return;
-		case CB_USAGE_LONG_DOUBLE:
-			output ("*(long double *)(");
-			output_data (x);
-			output (")");
-			return;
-		case CB_USAGE_FP_BIN32:
-			output ("*(cob_u32_t *)(");
-			output_data (x);
-			output (")");
-			return;
-		case CB_USAGE_FP_BIN64:
-		case CB_USAGE_FP_DEC64:
-			output ("*(cob_u64_t *)(");
-			output_data (x);
-			output (")");
-			return;
-		case CB_USAGE_FP_BIN128:
-		case CB_USAGE_FP_DEC128:
-			output ("*(cob_fp_128 *)(");
-			output_data (x);
-			output (")");
-			return;
-		default:
-			output ("*(");
-			output_data (x);
-			output (")");
-			return;
 		}
 	}
 }
@@ -13591,9 +13454,6 @@ static const char *
 try_get_by_value_parameter_type (const enum cb_usage usage,
 				 cb_tree param_list_elt)
 {
-	const int	is_unsigned =
-		CB_SIZES (param_list_elt) == CB_SIZE_UNSIGNED;
-
 	if (usage == CB_USAGE_FLOAT) {
 		return "float";
 	} else if (usage == CB_USAGE_DOUBLE) {
@@ -13610,39 +13470,9 @@ try_get_by_value_parameter_type (const enum cb_usage usage,
 		return "cob_fp_128";
 	} else if (CB_TREE_CLASS (CB_VALUE (param_list_elt))
 		   == CB_CLASS_NUMERIC) {
-		/* To-do: Split this duplicated code into another function */
-		switch (CB_SIZES_INT (param_list_elt)) {
-		case CB_SIZE_1:
-			if (is_unsigned) {
-				return "cob_u8_t";
-			} else {
-				return "cob_c8_t";
-			}
-
-		case CB_SIZE_2:
-			if (is_unsigned) {
-				return "cob_u16_t";
-			} else {
-				return "cob_s16_t";
-			}
-
-		case CB_SIZE_4:
-			if (is_unsigned) {
-				return "cob_u32_t";
-			} else {
-				return "cob_s32_t";
-			}
-
-		case CB_SIZE_8:
-			if (is_unsigned) {
-				return "cob_u64_t";
-			} else {
-				return "cob_s64_t";
-			}
-
-		default:
-			break;
-		}
+		return get_size_parameter_type(
+			CB_SIZES_INT (param_list_elt),
+			CB_SIZES_INT_UNSIGNED (param_list_elt));
 	}
 
 	return NULL;
@@ -14298,6 +14128,9 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	{
 		struct cb_program* cp;
 		for (cp = prog; cp; cp = cp->next_program) {
+			if (cp->flag_prototype) {
+				continue;
+			}
 			output_target = cp->local_include->local_fp;
 			output_header (string_buffer, cp);
 		}
@@ -14336,6 +14169,11 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	int	comment_gen;
 
 	struct cb_report *rep;
+
+	/* skip prototypes */
+	if (prog->flag_prototype) {
+		return;
+	}
 
 	/* Clear local program stuff */
 	current_prog = prog;

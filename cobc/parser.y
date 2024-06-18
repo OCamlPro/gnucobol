@@ -215,7 +215,7 @@ static int			eval_inc;
 static int			eval_inc2;
 static int			depth;
 static int			first_nested_program;
-static int			call_mode;
+static enum cb_call_mode	call_mode;
 static int			size_mode;
 static cob_flags_t		set_attr_val_on;
 static cob_flags_t		set_attr_val_off;
@@ -383,120 +383,11 @@ void set_pos_from_backup (cb_tree x)
 #endif
 
 static void
-validate_main_using_param (cb_tree using_list)
-{
-	cb_tree		x;
-	struct cb_field	*f;
-	struct cb_field *size_field;
-	struct cb_field *string_field;
-	
-	if (current_program->num_proc_params == 0) {
-		return;
-	} else if (current_program->num_proc_params > 1) {
-		cb_error (_("at most one USING parameter allowed in main programs"));
-		return;
-	}
-
-	/* De-reference the parameter */
-	x = CB_VALUE (using_list);
-	if (!CB_VALID_TREE (x) || cb_ref (x) == cb_error_node) {
-		return;
-	}
-	f = CB_FIELD (cb_ref (x));
-
-	/* Verify is group item */
-	if (!f->children) {
-		cb_error_x (CB_TREE (f), _("parameter '%s' is not a group item"),
-			    f->name);
-	}
-	/* Containing a signed 16-bit integer */
-	size_field = f->children;
-	if (!(size_field->size == 2
-	 && size_field->pic != NULL
-	 && size_field->pic->have_sign
-	 && size_field->usage == CB_USAGE_BINARY)) {
-		cb_error_x (CB_TREE (size_field), _("item '%s' is not a signed 16-bit COMP integer"),
-			    size_field->name);
-	}
-
-	/* And a USAGE DISPLAY string (usually ODO). */
-	string_field = f->children->sister;
-	if (!string_field) {
-		cb_error_x (CB_TREE (f), _("group item '%s' has no record for parameter string"),
-			    f->name);
-	} else if (string_field->usage != CB_USAGE_DISPLAY) {
-		cb_error_x (CB_TREE (string_field), _("item '%s' must be USAGE DISPLAY"),
-			    string_field->name);
-	}
-
-	CB_PENDING (_("parameter for main program"));
-}
-
-static void
-validate_using (cb_tree using_list)
-{
-	cb_tree		l;
-	cb_tree		x;
-	cb_tree		check_list;
-	struct cb_field	*f;
-
-	check_list = NULL;
-	for (l = using_list; l; l = CB_CHAIN (l)) {
-		x = CB_VALUE (l);
-		if (cb_try_ref (x) != cb_error_node) {
-			f = CB_FIELD (cb_ref (x));
-			if (!current_program->flag_chained) {
-				if (f->storage != CB_STORAGE_LINKAGE) {
-					cb_error_x (x, _("'%s' is not in LINKAGE SECTION"), f->name);
-				}
-				if (f->flag_item_based || f->flag_external) {
-					cb_error_x (x, _("'%s' cannot be BASED/EXTERNAL"), f->name);
-				}
-			} else {
-				if (f->storage != CB_STORAGE_WORKING) {
-					cb_error_x (x, _("'%s' is not in WORKING-STORAGE SECTION"), f->name);
-				}
-			}
-			if (f->level != 01 && f->level != 77) {
-				cb_error_x (x, _("'%s' not level 01 or 77"), f->name);
-			}
-			if (f->redefines) {
-				cb_error_x (x, _("'%s' REDEFINES field not allowed here"), f->name);
-			}
-			if (CB_PURPOSE_INT (l) == CB_CALL_BY_REFERENCE) {
-				check_list = cb_list_add (check_list, x);
-			}
-		}
-	}
-
-	if (check_list != NULL) {
-		for (l = check_list; l; l = CB_CHAIN (l)) {
-			cb_tree	l2 = CB_VALUE (l);
-			x = cb_ref (l2);
-			if (x != cb_error_node) {
-				for (l2 = check_list; l2 != l; l2 = CB_CHAIN (l2)) {
-					if (cb_ref (CB_VALUE (l2)) == x) {
-						cb_error_x (l,
-							_("duplicate USING BY REFERENCE item '%s'"),
-							cb_name (CB_VALUE (l)));
-						CB_VALUE (l) = cb_error_node;
-						break;
-					}
-				}
-			}
-		}
-	}
-}
-
-static void
 emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree convention, int override_source_line)
 {
 	cb_tree		l;
 	cb_tree		label;
-	cb_tree		x;
 	cb_tree		entry_conv;
-	struct cb_field	*f, *ret_f;
-	int			param_num;
 	char		buff[COB_MINI_BUFF];
 
 	snprintf (buff, (size_t)COB_MINI_MAX, "E$%s", name);
@@ -520,57 +411,7 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 						"START PROGRAM", NULL));
 	}
 
-	validate_using (using_list);
-	if (current_program->flag_main
-	 && !current_program->flag_chained) {
-		validate_main_using_param (using_list);
-	}
-
-	
-	/* Mark USING fields as parameters */
-	param_num = 1;
-	for (l = using_list; l; l = CB_CHAIN (l)) {
-		x = CB_VALUE (l);
-		if (cb_try_ref (x) != cb_error_node) {
-			f = CB_FIELD (cb_ref (x));
-			if (!current_program->flag_chained) {
-				f->flag_is_pdiv_parm = 1;
-			} else {
-				f->flag_chained = 1;
-				f->param_num = param_num;
-				param_num++;
-			}
-			/* add a "receiving" entry for the USING parameter */
-			if (cb_listing_xref) {
-				cobc_xref_link (&f->xref, CB_REFERENCE (x)->common.source_line, 1);
-			}
-		}
-	}
-
-	/* Validate RETURNING */
-	if (current_program->returning &&
-		cb_ref (current_program->returning) != cb_error_node) {
-		ret_f = CB_FIELD (cb_ref (current_program->returning));
-		if (ret_f->redefines) {
-			cb_error_x (current_program->returning,
-				_("'%s' REDEFINES field not allowed here"), ret_f->name);
-		}
-	} else {
-		ret_f = NULL;
-	}
-
-	/* Check a FUNCTION's RETURNING item is not a USING item */
-	if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION && ret_f) {
-		for (l = using_list; l; l = CB_CHAIN (l)) {
-			x = CB_VALUE (l);
-			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-				f = CB_FIELD (cb_ref (x));
-				if (ret_f == f) {
-					cb_error_x (x, _("'%s' USING item duplicates RETURNING item"), f->name);
-				}
-			}
-		}
-	}
+	cb_validate_parameters_and_returning (current_program, using_list);
 
 	/* Check if duplicate ENTRY name */
 	for (l = current_program->entry_list; l; l = CB_CHAIN (l)) {
@@ -1203,20 +1044,31 @@ begin_scope_of_program_name (struct cb_program *program)
 {
 	const char	*prog_name = program->program_name;
 	const char	*prog_id = program->orig_program_id;
-	const char	*elt_name;
-	const char	*elt_id;
 	cb_tree		l;
 
-	/* Error if a program with the same name has been defined. */
+	/*
+	  Error if we find a program or prototype with the same name as the
+	  given program or prototype, respectively.
+	*/
 	for (l = defined_prog_list; l; l = CB_CHAIN (l)) {
-		elt_name = ((struct cb_program *) CB_VALUE (l))->program_name;
-		elt_id = ((struct cb_program *) CB_VALUE (l))->orig_program_id;
+		const struct cb_program	*elt_program = CB_PROGRAM (CB_VALUE (l));
+		const char	*elt_name = elt_program->program_name;
+		const char	*elt_id = elt_program->orig_program_id;
+		/*
+		  If we find a program's matching prototype or a prototype's
+		  matching definition, nothing needs to be done.
+		*/
+		if (program->flag_prototype != elt_program->flag_prototype) {
+			continue;
+		}
+
 		if (cb_fold_call && strcasecmp (prog_name, elt_name) == 0) {
-			cb_error_x ((cb_tree) program,
+			cb_error_x (CB_TREE(program),
 				    _("redefinition of program name '%s'"),
 				    elt_name);
+			return;
 		} else if (strcmp (prog_id, elt_id) == 0) {
-		        cb_error_x ((cb_tree) program,
+			cb_error_x (CB_TREE(program),
 				    _("redefinition of program ID '%s'"),
 				    elt_id);
 			return;
@@ -1224,7 +1076,7 @@ begin_scope_of_program_name (struct cb_program *program)
 	}
 
 	/* Otherwise, add the program to the list. */
-	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE (program));
+	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE(program));
 }
 
 static void
@@ -1247,7 +1099,10 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 
 	/* create empty entry if the program has no PROCEDURE DIVISION, error for UDF */
 	if (!program->entry_list) {
-		if (type == COB_MODULE_TYPE_FUNCTION) {
+		if (type == COB_MODULE_TYPE_FUNCTION
+		/* CHECKME: That would be valid in a function-definition according to COBOL2014
+		  --> How is it intended to work? */
+		 && !program->flag_prototype) {
 			cb_error (_("FUNCTION '%s' has no PROCEDURE DIVISION"), program->program_name);
 		} else {
 			emit_main_entry (program, NULL);
@@ -1255,7 +1110,8 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 	}
 	program->last_source_line = backup_source_line;
 
-	if (program->nested_level == 0) {
+	if (program->nested_level == 0
+	 || defined_prog_list == NULL) {
 		return;
 	}
 
@@ -1319,7 +1175,7 @@ setup_program_start (void)
 }
 
 static int
-setup_program (cb_tree id, cb_tree as_literal, const unsigned char type)
+setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const int prototype)
 {
 	const char	*external_name = NULL;
 
@@ -1352,6 +1208,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type)
 	}
 	stack_progid[depth] = current_program->program_name;
 	current_program->prog_type = type;
+	current_program->flag_prototype = prototype;
 
 	if (depth != 0 && type == COB_MODULE_TYPE_FUNCTION) {
 		cb_error (_("functions may not be defined within a program/function"));
@@ -1595,7 +1452,7 @@ setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 	prototype = cb_build_prototype (prototype_name, ext_name, type);
 
 	if (!is_current_element
-	    && check_for_duplicate_prototype (prototype_name, prototype)) {
+	 && check_for_duplicate_prototype (prototype_name, prototype)) {
 		return;
 	}
 
@@ -2101,7 +1958,7 @@ static cb_tree
 get_default_display_device (void)
 {
 	if (current_program->flag_console_is_crt
-	    || cb_console_is_crt) {
+	 || cb_console_is_crt) {
 		return cb_null;
 	} else {
 		return cb_int0;
@@ -2109,22 +1966,17 @@ get_default_display_device (void)
 }
 
 static COB_INLINE COB_A_INLINE int
-contains_one_screen_field (struct cb_list *x_list)
+contains_one_screen_field (struct cb_list *l)
 {
-	return (cb_tree) x_list != cb_null
-		&& cb_list_length ((cb_tree) x_list) == 1
-		&& is_screen_field (x_list->value);
+	return cb_list_length (CB_TREE(l)) == 1
+		&& is_screen_field (l->value);
 }
 
 static int
-contains_only_screen_fields (struct cb_list *x_list)
+contains_only_screen_fields (struct cb_list *l)
 {
-	if ((cb_tree) x_list == cb_null) {
-		return 0;
-	}
-
-	for (; x_list; x_list = (struct cb_list *) x_list->chain) {
-		if (!is_screen_field (x_list->value)) {
+	for (; l; l = l->chain ? CB_LIST (l->chain) : NULL) {
+		if (!is_screen_field (l->value)) {
 			return 0;
 		}
 	}
@@ -2133,17 +1985,13 @@ contains_only_screen_fields (struct cb_list *x_list)
 }
 
 static int
-contains_fields_and_screens (struct cb_list *x_list)
+contains_fields_and_screens (struct cb_list *l)
 {
 	int	field_seen = 0;
 	int	screen_seen = 0;
 
-	if ((cb_tree) x_list == cb_null) {
-		return 0;
-	}
-
-	for (; x_list; x_list = (struct cb_list *) x_list->chain) {
-		if (is_screen_field (x_list->value)) {
+	for (; l; l = l->chain ? CB_LIST (l->chain) : NULL) {
+		if (is_screen_field (l->value)) {
 			screen_seen = 1;
 		} else {
 			field_seen = 1;
@@ -2154,34 +2002,34 @@ contains_fields_and_screens (struct cb_list *x_list)
 }
 
 static enum cb_display_type
-deduce_display_type (cb_tree x_list, cb_tree local_upon_value, cb_tree local_line_column,
+deduce_display_type (struct	cb_list *l, cb_tree local_upon_value, cb_tree local_line_column,
 		     struct cb_attr_struct * const attr_ptr)
 {
 	int	using_default_device_which_is_crt =
 		local_upon_value == NULL && get_default_display_device () == cb_null;
 
 	/* TODO: Separate CGI DISPLAYs here */
-	if (contains_only_screen_fields ((struct cb_list *) x_list)) {
-		if (!contains_one_screen_field ((struct cb_list *) x_list)
-		    || attr_ptr) {
-			cb_verify_x (x_list, cb_accept_display_extensions,
+	if (contains_only_screen_fields (l)) {
+		if (!contains_one_screen_field (l)
+		 || attr_ptr) {
+			cb_verify_x (CB_TREE(l), cb_accept_display_extensions,
 				     _("non-standard DISPLAY"));
 		}
 
 		if (local_upon_value != NULL && local_upon_value != cb_null) {
-			cb_error_x (x_list, _("screens may only be displayed on CRT"));
+			cb_error_x (CB_TREE(l), _("screens may only be displayed on CRT"));
 		}
 
 		return SCREEN_DISPLAY;
-	} else if (contains_fields_and_screens ((struct cb_list *) x_list)) {
-		cb_error_x (x_list, _("cannot mix screens and fields in the same DISPLAY statement"));
+	} else if (contains_fields_and_screens (l)) {
+		cb_error_x (CB_TREE(l), _("cannot mix screens and fields in the same DISPLAY statement"));
 		return MIXED_DISPLAY;
 	} else if (local_line_column || attr_ptr) {
 		if (local_upon_value != NULL && local_upon_value != cb_null) {
-			cb_error_x (x_list, _("screen clauses may only be used for DISPLAY on CRT"));
+			cb_error_x (CB_TREE(l), _("screen clauses may only be used for DISPLAY on CRT"));
 		}
 
-		cb_verify_x (x_list, cb_accept_display_extensions,
+		cb_verify_x (CB_TREE(l), cb_accept_display_extensions,
 			     _("non-standard DISPLAY"));
 
 		return FIELD_ON_SCREEN_DISPLAY;
@@ -2197,18 +2045,18 @@ deduce_display_type (cb_tree x_list, cb_tree local_upon_value, cb_tree local_lin
 }
 
 static void
-set_display_type (cb_tree x_list, cb_tree local_upon_value,
+set_display_type (struct cb_list *l, cb_tree local_upon_value,
 		  cb_tree local_line_column, struct cb_attr_struct * const attr_ptr)
 {
-	display_type = deduce_display_type (x_list, local_upon_value, local_line_column, attr_ptr);
+	display_type = deduce_display_type (l, local_upon_value, local_line_column, attr_ptr);
 }
 
 static void
-error_if_different_display_type (cb_tree x_list, cb_tree local_upon_value,
+error_if_different_display_type (struct cb_list *l, cb_tree local_upon_value,
 				 cb_tree local_line_column, struct cb_attr_struct * const attr_ptr)
 {
 	const enum cb_display_type	type =
-		deduce_display_type (x_list, local_upon_value, local_line_column, attr_ptr);
+		deduce_display_type (l, local_upon_value, local_line_column, attr_ptr);
 
 	/* Avoid re-displaying the same error for mixed DISPLAYs */
 	if (type == display_type || display_type == MIXED_DISPLAY) {
@@ -2217,13 +2065,13 @@ error_if_different_display_type (cb_tree x_list, cb_tree local_upon_value,
 
 	if (type != MIXED_DISPLAY) {
 		if (type == SCREEN_DISPLAY || display_type == SCREEN_DISPLAY) {
-			cb_error_x (x_list, _("cannot mix screens and fields in the same DISPLAY statement"));
+			cb_error_x (CB_TREE(l), _("cannot mix screens and fields in the same DISPLAY statement"));
 		} else {
 			/*
 			  The only other option is that there is a mix of
 			  FIELD_ON_SCREEN_DISPLAY and DEVICE_DISPLAY.
 			*/
-			cb_error_x (x_list, _("ambiguous DISPLAY; put items to display on device in separate DISPLAY"));
+			cb_error_x (CB_TREE(l), _("ambiguous DISPLAY; put items to display on device in separate DISPLAY"));
 		}
 	}
 
@@ -3532,6 +3380,8 @@ source_element_list:
 source_element:
   program_definition
 | function_definition
+| program_prototype
+| function_prototype
 ;
 
 simple_prog:
@@ -3601,6 +3451,111 @@ end_function:
   }
 ;
 
+/* Program prototype */
+
+program_prototype:
+  _identification_header
+  program_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE TOK_DOT
+  {
+	/* Error if program_id_name is a literal */
+
+	/* Check that previous program was also a prototype */
+	if (!current_program->flag_prototype) {
+		/* Technically, prototypes must come before all other *source units*.  */
+		cb_error (_("prototypes must be come before any program/function definitions"));
+	}
+
+	if (setup_program ($4, $5, COB_MODULE_TYPE_PROGRAM, 1)) {
+		YYABORT;
+	}
+	setup_prototype ($4, $5, COB_MODULE_TYPE_PROGRAM, 1);
+	cobc_cs_check = 0;
+	cobc_in_id = 0;
+
+	CB_UNFINISHED ("PROGRAM PROTOTYPE");
+
+	/*
+	 Must record:
+	  * externalised name
+	  * type of source unit (program/function/class/interface)
+	  * description of parameters, whether they are BY REFERENCE or BY VALUE, whether they are OPTIONAL
+	  * description of return item
+	  * exceptions that may be raised
+	  * entry convention
+	  * object properties
+	  * methods contained
+	  * type declarations required
+	  * whether DECIMAL-POINT IS COMMA is required
+	  * CURRENCY SYMBOLS and their corresponding currency strings
+	  * any external locales associated with linkage items
+	 */
+  }
+  _prototype_environment_division
+  _prototype_data_division
+  _prototype_procedure_division_header
+  end_program
+  {
+	cb_check_definition_matches_prototype (current_program);
+
+	/* Write information to external repository, if permitted */
+  }
+;
+
+/* Function prototype */
+
+function_prototype:
+  _identification_header
+  function_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE TOK_DOT
+  {
+	/* Error if program_id_name is a literal */
+
+	if (setup_program ($4, $5, COB_MODULE_TYPE_FUNCTION, 1)) {
+		YYABORT;
+	}
+	setup_prototype ($4, $5, COB_MODULE_TYPE_FUNCTION, 1);
+	cobc_cs_check = 0;
+	cobc_in_id = 0;
+
+	CB_UNFINISHED ("FUNCTION PROTOTYPE");
+
+	/*
+	 Must record:
+	  * externalised name
+	  * type of source unit (program/function/class/interface)
+	  * description of parameters, whether they are BY REFERENCE or BY VALUE, whether they are OPTIONAL
+	  * description of return item
+	  * exceptions that may be raised
+	  * entry convention
+	  * object properties
+	  * methods contained
+	  * type declarations required
+	  * whether DECIMAL-POINT IS COMMA is required
+	  * CURRENCY SYMBOLS and their corresponding currency strings
+	  * any external locales associated with linkage items
+	 */
+  }
+  _prototype_environment_division
+  _prototype_data_division
+  _prototype_procedure_division_header
+  end_function
+  {
+	cb_check_definition_matches_prototype (current_program);
+
+	/* Write information to external repository, if permitted */
+  }
+;
+
+_prototype_procedure_division_header:
+  /* empty */
+| PROCEDURE DIVISION _procedure_using_chaining _procedure_returning TOK_DOT
+  {
+	cb_validate_parameters_and_returning (current_program, $3);
+	current_program->num_proc_params = cb_list_length ($3);
+	/* add pseudo-entry as it contains the actual USING parameters */
+	emit_main_entry (current_program, $3);
+  }
+;
+
 /* PROGRAM body */
 
 _program_body:
@@ -3639,37 +3594,60 @@ identification_or_id:
   IDENTIFICATION | ID
 ;
 
-program_id_paragraph:
+program_id_header:
   PROGRAM_ID
   {
 	cobc_in_id = 1;
+	save_tree = NULL;
   }
-  TOK_DOT program_id_name _as_literal
+;
+
+program_id_paragraph:
+  program_id_header TOK_DOT program_id_name _as_literal _program_type TOK_DOT
   {
-	if (setup_program ($4, $5, COB_MODULE_TYPE_PROGRAM)) {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_PROGRAM, 0)) {
 		YYABORT;
 	}
 
-	setup_prototype ($4, $5, COB_MODULE_TYPE_PROGRAM, 1);
-  }
-  _program_type TOK_DOT
-  {
+
+	setup_prototype ($3, $4, COB_MODULE_TYPE_PROGRAM, 1);
+	
+	if ($5) {
+		if (!current_program->nested_level) {
+			cb_error (_("COMMON may only be used in a contained program"));
+		} else {
+			current_program->flag_common = 1;
+			cb_add_common_prog (current_program);
+		}
+	}
+	
+	/* TODO: do that more clean, this and above was only moved here
+	         to fix a shift/reduce conflict with program prototype */
+	if (save_tree == cb_int1) {
+		current_program->flag_initial = 1;
+	} else if (save_tree == cb_int2) {
+		current_program->flag_recursive = 1;
+	}
+
 	cobc_cs_check = 0;
 	cobc_in_id = 0;
   }
 ;
 
-function_id_paragraph:
+function_id_header:
   FUNCTION_ID
   {
 	cobc_in_id = 1;
   }
-  TOK_DOT program_id_name _as_literal _is_prototype TOK_DOT
+;
+
+function_id_paragraph:
+  function_id_header TOK_DOT program_id_name _as_literal TOK_DOT
   {
-	if (setup_program ($4, $5, COB_MODULE_TYPE_FUNCTION)) {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_FUNCTION, 0)) {
 		YYABORT;
 	}
-	setup_prototype ($4, $5, COB_MODULE_TYPE_FUNCTION, 1);
+	setup_prototype ($3, $4, COB_MODULE_TYPE_FUNCTION, 1);
 	cobc_cs_check = 0;
 	cobc_in_id = 0;
   }
@@ -3707,29 +3685,18 @@ _as_literal:
 ;
 
 _program_type:
-  /* empty */
-| _is program_type_clause _program
-| is_prototype
+  /* empty */				{ $$ = NULL; }
+| _is program_type_clause _program	{ $$ = $2; }
 ;
 
 program_type_clause:
   COMMON
   {
-	if (!current_program->nested_level) {
-		cb_error (_("COMMON may only be used in a contained program"));
-	} else {
-		current_program->flag_common = 1;
-		cb_add_common_prog (current_program);
-	}
+	$$ = cb_int1;
   }
 | init_or_recurse_or_resident_and_common
   {
-	if (!current_program->nested_level) {
-		cb_error (_("COMMON may only be used in a contained program"));
-	} else {
-		current_program->flag_common = 1;
-		cb_add_common_prog (current_program);
-	}
+	$$ = cb_int2;
   }
 | init_or_recurse_or_resident
 | EXTERNAL
@@ -3746,27 +3713,15 @@ init_or_recurse_or_resident_and_common:
 init_or_recurse_or_resident:
   TOK_INITIAL
   {
-	current_program->flag_initial = 1;
+	save_tree = cb_int1;
   }
 | RECURSIVE
   {
-	current_program->flag_recursive = 1;
+	save_tree = cb_int2;
   }
 | RESIDENT
   {
 	current_program->flag_resident = 1;
-  }
-;
-
-_is_prototype:
-  /* empty */
-| is_prototype
-;
-
-is_prototype:
-_is PROTOTYPE
-  {
-	CB_PENDING (_("CALL prototypes"));
   }
 ;
 
@@ -3896,7 +3851,11 @@ _environment_division:
 ;
 
 _environment_header:
-| ENVIRONMENT DIVISION TOK_DOT
+| environment_header
+;
+
+environment_header:
+  ENVIRONMENT DIVISION TOK_DOT
   {
 	header_check |= COBC_HD_ENVIRONMENT_DIVISION;
   }
@@ -3910,7 +3869,11 @@ _configuration_section:
 ;
 
 _configuration_header:
-| CONFIGURATION SECTION TOK_DOT
+| configuration_header
+;
+
+configuration_header:
+  CONFIGURATION SECTION TOK_DOT
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_CONFIGURATION_SECTION;
@@ -3939,6 +3902,10 @@ configuration_paragraph:
 ;
 
 /* SOURCE-COMPUTER paragraph */
+
+_source_computer_paragraph:
+| source_computer_paragraph
+;
 
 source_computer_paragraph:
   SOURCE_COMPUTER TOK_DOT
@@ -4111,6 +4078,9 @@ computer_words:
 ;
 
 /* REPOSITORY paragraph */
+_repository_paragraph:
+| repository_paragraph
+;
 
 repository_paragraph:
   REPOSITORY TOK_DOT
@@ -6043,6 +6013,43 @@ rerun_event:
   integer RECORDS
 | END _of reel_or_unit
 ;
+
+
+_prototype_environment_division:
+  /* empty */
+| environment_header
+| environment_header
+  configuration_header
+  _source_computer_paragraph
+  _prototype_special_names_paragraph
+  _repository_paragraph
+;
+
+_prototype_special_names_paragraph:
+  special_names_header
+  _prototype_special_names_sentence_list
+;
+
+_prototype_special_names_sentence_list:
+| prototype_special_names_sentence_list
+;
+
+prototype_special_names_sentence_list:
+  prototype_special_name_list TOK_DOT
+| prototype_special_names_sentence_list prototype_special_name_list TOK_DOT
+;
+
+prototype_special_name_list:
+  prototype_special_name
+| prototype_special_name_list prototype_special_name
+;
+
+prototype_special_name:
+  locale_clause
+| currency_sign_clause
+| decimal_point_clause
+;
+
 
 /* DATA DIVISION */
 
@@ -10218,6 +10225,11 @@ screen_global_clause:
   }
 ;
 
+_prototype_data_division:
+  /* empty */
+| data_division_header _linkage_section
+;
+
 /* PROCEDURE DIVISION */
 
 _procedure_division:
@@ -10267,6 +10279,8 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	header_check |= COBC_HD_PROCEDURE_DIVISION;
+	
+	cb_check_definition_matches_prototype (current_program);
   }
   _procedure_declaratives
   {
@@ -10330,7 +10344,7 @@ _procedure_using_chaining:
 | USING
   {
 	call_mode = CB_CALL_BY_REFERENCE;
-	size_mode = CB_SIZE_4;
+	size_mode = CB_SIZE_UNSET;
   }
   procedure_param_list
   {
@@ -10400,7 +10414,11 @@ _procedure_type:
 
 _size_optional:
   /* empty */
-| SIZE _is AUTO
+| using_size_clause
+;
+
+using_size_clause:
+  SIZE _is AUTO
   {
 	if (call_mode != CB_CALL_BY_VALUE) {
 		cb_error (_("SIZE only allowed for BY VALUE items"));
@@ -10410,6 +10428,7 @@ _size_optional:
   }
 | SIZE _is DEFAULT
   {
+    /* TODO: handle all this for prototypes */
 	if (call_mode != CB_CALL_BY_VALUE) {
 		cb_error (_("SIZE only allowed for BY VALUE items"));
 	} else {
@@ -10458,6 +10477,14 @@ size_is_integer:
 		case '8':
 			size_mode = CB_SIZE_8;
 			break;
+#if 0 /* reserved */
+		case '16':
+			size_mode = CB_SIZE_16;
+			break;
+		case '32':
+			size_mode = CB_SIZE_32;
+			break;
+#endif
 		default:
 			cb_error_x ($3, _("invalid value for SIZE"));
 			break;
@@ -11744,6 +11771,19 @@ call_body:
 			call_conv = cb_get_int($1);
 		}
 	}
+
+	/* Check parameter conformance, if we can work out what is being called. */
+	if (CB_LITERAL_P ($3)) {
+		cb_check_conformance ($3, $7, $8);
+	} else if (CB_REFERENCE_P ($3)) {
+		cb_tree	ref = cb_ref ($3);
+		if ((CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78)
+		 || CB_PROGRAM_P (ref)
+		 || CB_PROTOTYPE_P (ref)) {
+			cb_check_conformance ($3, $7, $8);
+		}
+	}
+
 	/* For CALL ... RETURNING NOTHING, set the call convention bit */
 	if (call_nothing) {
 		call_conv |= CB_CONV_NO_RET_UPD;
@@ -11899,7 +11939,7 @@ call_using:
 | USING
   {
 	call_mode = CB_CALL_BY_REFERENCE;
-	size_mode = CB_SIZE_4;
+	size_mode = CB_SIZE_UNSET;
   }
   call_param_list
   {
@@ -11923,53 +11963,34 @@ call_param:
   {
 	if (call_mode != CB_CALL_BY_REFERENCE) {
 		cb_error_x (CB_TREE (current_statement),
-			    _("OMITTED only allowed when arguments are passed BY REFERENCE"));
+			    _("%s only allowed when arguments are passed %s"), "OMITTED", "BY REFERENCE");
 	}
 	$$ = CB_BUILD_PAIR (cb_int (call_mode), cb_null);
   }
-| _call_type _size_optional call_x
+| _call_type call_x
   {
-	int	save_mode;	/* internal single parameter only mode */
-
-	save_mode = call_mode;
-	if (CB_LITERAL_P($3)) {
-		/* literals become BY CONTENT */
-		if (CB_NUMERIC_LITERAL_P ($3)) {
-			/* If not BY VALUE numeric-literals become BY CONTENT */
-			if (call_mode != CB_CALL_BY_VALUE) {
-				call_mode = CB_CALL_BY_CONTENT;
-			}
-		} else {
-			call_mode = CB_CALL_BY_CONTENT;
-		}
-	}
-	if (call_mode != CB_CALL_BY_REFERENCE) {
-		if (CB_FILE_P ($3) || (CB_REFERENCE_P ($3) &&
-		    CB_FILE_P (CB_REFERENCE ($3)->value))) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("invalid file name reference"));
-		} else if (call_mode == CB_CALL_BY_VALUE) {
-			/* FIXME: compiler configuration needed, IBM allows one-byte
-			          alphanumeric items [--> a `char`], too, while
-			          COBOL 2002/2014 allow only numeric literals
-			   --> revise after rw-merge */
-			if (cb_category_is_alpha ($3)) {
-				cb_warning_x (COBC_WARN_FILLER, $3,
-					      _("BY CONTENT assumed for alphanumeric item '%s'"),
-						  cb_name ($3));
-				call_mode = CB_CALL_BY_CONTENT;
-			} else if (cb_category_is_national ($3)) {
-				cb_warning_x (COBC_WARN_FILLER, $3,
-					      _("BY CONTENT assumed for national item '%s'"),
-						  cb_name ($3));
-				call_mode = CB_CALL_BY_CONTENT;
-			}
-		}
-	}
-	$$ = CB_BUILD_PAIR (cb_int (call_mode), $3);
-	CB_SIZES ($$) = size_mode;
-	call_mode = save_mode;
+	$$ = cb_build_call_parameter ($2, call_mode, size_mode);
   }
+| _call_type using_size_clause call_x /* OC-extension: size before argument, allows ZERO */
+  {
+	$$ = cb_build_call_parameter ($3, call_mode, size_mode);
+	/* note: the OpenCOBOL extension keeps the size... - that is possibly problematic
+	   recheck: drop that extension with GC 4.0 - or prefer the scanner adjustment
+	            to fix the conflict?
+	*/
+  }
+/* FIXME: reduce/reduce conflict, BY VALUE 10, 42 SIZE IS 2 15 -> size either for 42 or 15
+| _call_type integer size_is_integer	/ * MF-extension: size after integer * /
+  {
+	if (call_type != CB_CALL_BY_VALUE) {
+		cb_error_x ($2 /* or CB_TREE (current_statement) ? * /,
+			    _("%s only allowed when arguments are passed %s", "SIZE IS", "BY VALUE"));
+	}
+	$$ = cb_build_call_parameter ($2, call_mode, size_mode);
+	/ * note: ... while the MF extension is only given for the previous integer * /
+	size_mode = CB_SIZE_4;
+  }
+*/
 ;
 
 _call_type:
@@ -11980,21 +12001,29 @@ _call_type:
   }
 | _by CONTENT
   {
+#if 0 /* CHECKME: seems to only belong to PROCEDURE DIVISION - but this is a different token */
 	if (current_program->flag_chained) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("%s not allowed in CHAINED programs"), "BY CONTENT");
 	} else {
 		call_mode = CB_CALL_BY_CONTENT;
 	}
+#else
+	call_mode = CB_CALL_BY_CONTENT;
+#endif
   }
 | _by VALUE
   {
+#if 0 /* CHECKME: seems to only belong to PROCEDURE DIVISION - but this is a different token */
 	if (current_program->flag_chained) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("%s not allowed in CHAINED programs"), "BY VALUE");
 	} else {
 		call_mode = CB_CALL_BY_VALUE;
 	}
+#else
+	call_mode = CB_CALL_BY_VALUE;
+#endif
   }
 ;
 
@@ -12440,17 +12469,19 @@ display_body:
 screen_or_device_display:
   display_list _x_list
   {
-	if ($2 != NULL) {
-		error_if_different_display_type ($2, NULL, NULL, NULL);
+	if (CB_VALID_TREE($2)) {
+		error_if_different_display_type (CB_LIST($2), NULL, NULL, NULL);
 		cb_emit_display ($2, NULL, cb_int1, NULL, NULL, 0,
 				 display_type);
 	}
   }
 | x_list
   {
-	set_display_type ($1, NULL, NULL, NULL);
-	cb_emit_display ($1, NULL, cb_int1, NULL, NULL, 1,
-			 display_type);
+	if (CB_VALID_TREE($1)) {
+		set_display_type (CB_LIST($1), NULL, NULL, NULL);
+		cb_emit_display ($1, NULL, cb_int1, NULL, NULL, 1,
+				 display_type);
+	}
   }
 ;
 
@@ -12470,22 +12501,25 @@ display_atom:
   }
   display_clauses
   {
-	if ($1 == cb_null) {
-		error_if_no_advancing_in_screen_display (advancing_value);
-	}
+	if (CB_VALID_TREE($1)) {
+		struct cb_list *l = CB_LIST($1);
+		if (l->value == cb_null) {
+			error_if_no_advancing_in_screen_display (advancing_value);
+		}
 
-	/* Emit device or screen DISPLAY. */
+		/* Emit device or screen DISPLAY. */
 
-	/*
-	  Check that disp_list does not contain an invalid mix of fields.
-	*/
-	if (display_type == UNKNOWN_DISPLAY) {
-		set_display_type ($1, upon_value, line_column,
-				  current_statement->attr_ptr);
-	} else {
-		error_if_different_display_type ($1, upon_value,
-						 line_column,
-						 current_statement->attr_ptr);
+		/*
+		  Check that disp_list does not contain an invalid mix of fields.
+		*/
+		if (display_type == UNKNOWN_DISPLAY) {
+			set_display_type (l, upon_value, line_column,
+					  current_statement->attr_ptr);
+		} else {
+			error_if_different_display_type (l, upon_value,
+							 line_column,
+							 current_statement->attr_ptr);
+		}
 	}
 
 	if (display_type == SCREEN_DISPLAY
@@ -12508,7 +12542,7 @@ disp_list:
   }
 | OMITTED
   {
-	$$ = cb_null;
+	$$ = CB_LIST_INIT(cb_null);
   }
 ;
 

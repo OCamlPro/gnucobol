@@ -1202,6 +1202,11 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 		}
 	}
 
+	/* broken definition, may happen with EXTFH */
+	if (f->nkeys == 0) {
+		return COB_STATUS_30_PERMANENT_ERROR;
+	}
+
 	p = cob_malloc (sizeof (struct indexed_file));
 	f->flag_file_lock = 0;	
 	f->curkey = -1;

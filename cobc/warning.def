@@ -37,10 +37,13 @@ CB_ONWARNDEF (cb_warn_unfinished, "unfinished",
 	_("  -Wno-unfinished       do not warn if unfinished features are used"))
 
 CB_ONWARNDEF (cb_warn_pending, "pending",
-	_("  -Wno-pending          do not warn if pending features are mentioned"))
+	_("  -Wno-pending          do not warn if pending features are used"))
+
+CB_ONWARNDEF (cb_warn_repository_checks, "repository-checks",
+	_("  -Wno-repository-checks\tdo not warn/check for program/function/external signature mismatch"))
 
 CB_ONWARNDEF (cb_warn_ignored_error, "ignored-error",
-	_("  -Wno-ignored-error    do not warn about errors in unreachable code parts and so normally ignored"))
+	_("  -Wno-ignored-error    do not warn about errors in code parts which are unreachable and so normally ignored"))
 
 CB_WARNDEF (cb_warn_obsolete, "obsolete",
 	_("  -Wobsolete            warn if obsolete features are used"))

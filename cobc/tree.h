@@ -54,16 +54,27 @@
 #define CB_PROGRAM_TYPE		0
 #define CB_FUNCTION_TYPE	1
 
-#define CB_CALL_BY_REFERENCE	1
-#define CB_CALL_BY_CONTENT	2
-#define CB_CALL_BY_VALUE	3
+/* call mode for passing/receiving a parameter */
+enum cb_call_mode {
+	CB_CALL_BY_REFERENCE = 1,
+	CB_CALL_BY_CONTENT,
+	CB_CALL_BY_VALUE,
+	CB_CALL_DEFAULT_MODE
+};
 
-#define CB_SIZE_AUTO		0
-#define CB_SIZE_1		1
-#define CB_SIZE_2		2
-#define CB_SIZE_4		3
-#define CB_SIZE_8		4
-#define CB_SIZE_UNSIGNED	8
+/* call size for passing/receiving a parameter, must always
+   be accessed via macros CB_SIZES_INT | CB_SIZES_INT_UNSIGNED */
+enum cb_param_size {
+	CB_SIZE_UNSET = 0,
+	CB_SIZE_1 = 1,			/*  8bit item -> char */
+	CB_SIZE_2 = 2,			/* 16bit item -> short */
+	CB_SIZE_4 = 4,			/* 32bit item -> int */
+	CB_SIZE_8 = 8,			/* 64bit item -> long long int */
+	CB_SIZE_16 = 16,		/* 128bit reserved */
+	CB_SIZE_32 = 32,		/* 256bit reserved */
+	CB_SIZE_AUTO = 64,		/* "as needed" 1-8, CHECKME: in some cases only 4/8 */
+	CB_SIZE_UNSIGNED = 128	/* not directly used, contained to ensure correct position for bit-operation */
+};
 
 /* Hash values */
 /* Power of 2 - see hash function in tree.c */
@@ -142,40 +153,40 @@ enum cb_tag {
 /* Call convention bits */
 /* Bit number	Meaning			Value */
 /*	0	currently ignored by GC			*/
-/*		Parameter order		0 - Right to left		*/
-/*					1 - Left to right		*/
+/*		Parameter order     0 - Right to left		*/
+/*		                    1 - Left to right		*/
 /*	1	currently ignored by GC			*/
-/*		Stack manipulation	0 - Caller removes params	*/
-/*					1 - Callee removes params	*/
-/*	2	RETURN-CODE update	0 - Updated			*/
-/*					1 - Not updated			*/
+/*		Stack manipulation  0 - Caller removes params	*/
+/*		                    1 - Callee removes params	*/
+/*	2	RETURN-CODE update  0 - Updated			*/
+/*		                    1 - Not updated			*/
 /*	3	Linking behaviour	0 - Normal linking		*/
-/*					1 - Static CALL linking		*/
+/*		                    1 - Static CALL linking		*/
 /*	4	currently ignored by GC + MF		*/
-/*		OS/2 Optlink		0 - ??				*/
-/*					1 - ??				*/
+/*		OS/2 Optlink        0 - ??				*/
+/*		                    1 - ??				*/
 /*	5	currently ignored by GC + MF		*/
-/*		Thunked to 16 bit	0 - No thunk			*/
-/*					1 - Thunk			*/
+/*		Thunked to 16 bit   0 - No thunk			*/
+/*		                    1 - Thunk			*/
 /*	6	GC: works both with static/dynamic calls */
 /*		MF: this has his has no effect on dynamic calls	*/
-/*		STDCALL convention	0 - CDECL			*/
-/*					1 - STDCALL			*/
+/*		STDCALL convention  0 - CDECL			*/
+/*		                    1 - STDCALL			*/
 /*	7	currently ignored by GC + MF		*/
 /*	8	currently ignored by GC			*/
-/*		parameter-count for individual entry points	0 - checked	*/
-/*					1 - not checked			*/
+/*		parameter-count for individual entry points 0 - checked	*/
+/*		                                            1 - not checked	*/
 /*	9	currently ignored by GC			*/
-/*		case of call + program names	0 - disregarded (depending on compile time flags)		*/
-/*					1 - regarded			*/
+/*		case of call + program names	0 - disregarded (depending on compile time flags) */
+/*		                                1 - regarded			*/
 /*	10	currently ignored by GC			*/
-/*		RETURN-CODE storage	0 - passed as return value		*/
-/*					1 - passed in the first parameter			*/
+/*		RETURN-CODE storage 0 - passed as return value		*/
+/*		                    1 - passed in the first parameter			*/
 /*	11-14	currently ignored by GC+MF			*/
-/*	15	GC: enabling COBOL parameter handling for external callers	*/
+/*	15	GC: enabling COBOL parameter handling for external callers, likely dropped with GC4	*/
 /*		currently ignored by MF			*/
 /*					0 - external callers don't set cob_call_params	*/
-/*					1 - external callers set cob_call_params	- standard (!)*/
+/*					1 - external callers set cob_call_params	- standard (!) */
 
 #define CB_CONV_L_TO_R		(1 << 0)
 #define CB_CONV_CALLEE_STACK	(1 << 1)
@@ -1542,7 +1553,7 @@ struct cb_list {
 
 #define CB_PURPOSE_INT(x)		(CB_INTEGER (CB_PURPOSE (x))->val)
 
-#define CB_SIZES_INT(x)			((CB_LIST (x)->sizes) & 0x07)
+#define CB_SIZES_INT(x)			((CB_LIST (x)->sizes) & 0x7F)
 #define CB_SIZES_INT_UNSIGNED(x)	((CB_LIST (x)->sizes) & CB_SIZE_UNSIGNED)
 
 /* Pair */
@@ -1801,9 +1812,11 @@ struct cb_program {
 	unsigned int	flag_screen		: 1;	/* Have SCREEN SECTION */
 	unsigned int	flag_void		: 1;	/* void return for subprogram */
 	unsigned int	flag_decimal_comp	: 1;	/* program group has decimal computations */
+	unsigned int	flag_prototype		: 1;	/* Is a prototype */
 };
 
 #define CB_PROGRAM(x)	(CB_TREE_CAST (CB_TAG_PROGRAM, struct cb_program, x))
+#define CB_PROGRAM_P(x)	(CB_TREE_TAG (x) == CB_TAG_PROGRAM)
 
 /* Function prototype */
 
@@ -2048,6 +2061,7 @@ extern cb_tree			cb_build_call (const cb_tree, const cb_tree,
 					       const cb_tree, const cb_tree,
 					       const cb_tree, const cob_u32_t,
 					       const int);
+extern cb_tree			cb_build_call_parameter (cb_tree, int, const int);
 
 extern cb_tree			cb_build_alter (const cb_tree, const cb_tree);
 
@@ -2155,6 +2169,7 @@ extern cb_tree			get_cb_error_node (void);
 extern enum cb_warn_val		cb_warning_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
+extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
 extern char		*cb_get_qualified_name (const struct cb_reference *);
 extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
@@ -2429,6 +2444,7 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
+extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);
@@ -2462,6 +2478,9 @@ extern struct cb_field	*check_level_78 (const char *);
 
 extern struct cb_program	*cb_find_defined_program_by_name (const char *);
 extern struct cb_program	*cb_find_defined_program_by_id (const char *);
+
+extern void		cb_validate_parameters_and_returning (struct cb_program *, cb_tree);
+extern void		cb_check_definition_matches_prototype (struct cb_program *);
 
 /* cobc.c */
 #ifndef COB_EXTERNAL_XREF
