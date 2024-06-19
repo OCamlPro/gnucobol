@@ -326,6 +326,15 @@
 	  Added calls to cob_relocate_string to insert -I and -L for compiler
 	  installed in different location
 
+2022-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c (cb_verify): use a valid position tree instead of cb_error_node
+	  as this is only valid during parsing + codegen state, fixing #821
+	* cobc.h: define CB_PENDING and CB_UNFINISHED without cb_error_node
+	  as this is only valid during parsing + codegen state
+	* tree.c (cb_init_parse_constants), tree.h, cobc.c: renamed
+	  from cb_init_constants
+
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
@@ -433,6 +442,25 @@
 	* codegen.c: Accept INDEXED file with PRIMARY KEY DUPLICATEs
 	* parser.y: Warn if PRIMARY KEY WITH DUPLICATES and using BDB/OCI/ODBC
 
+2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (table_name): check for KEY phrase in SEARCH ALL
+	* parser.y (end_perform_or_dot): fix terminator cleanup, previously freed the
+	  wrong cb_tree
+	* parser.y, scanner.l: distinguish between tokens END / AT_END,
+	  ESCAPE / ON_ESCAPE, EXCEPTION / ON_EXCEPTION and
+	  renamed tokens NOT_END -> NOT_AT_END, NOT_ON_EXCEPTION -> NOT_EXCEPTION,
+	  NOT_OVERFLOW -> NOT_ON_OVERFLOW, NOT_ESCAPE -> NOT_ON_ESCAPE
+	* codegen.c (output_search_all): add WHEN tracing, to keep performance only
+	  done after the actual execution
+	* codegen.c (output_search_whens): add SEARCH VARYING tracing
+	* tree.h (struct cb_search), tree.c (cb_build_search), parser.y,
+	  typeck.c (cb_emit_search, cb_emit_search_all),
+	  codegen.c (output_search_whens, output_search_all): renamed end_stmt in
+	  cb_search to at_end, storing pair of AT END (position) and statements
+	* codegen.c (output_search_whens, output_search_all): adjust output of
+	  source references for better debugging experience and add AT END tracing
+
 2021-12-30  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix handling of RESET ON phrase
@@ -463,6 +491,12 @@
 	* scanner.l: Check for typedef variable and return TYPEDEF_NAME
 	* parser.y: Changes to look for TYPEDEF_NAME
 
+2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (print_fields), codegen.c (output_field_display): only check for
+	  EXTERNAL/BASED GLOBAL on level 01/77
+	* codegen.c (output_param): don't set external attribute for sub-fields
+
 2021-12-08  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: When setting value into COMP-X field use cob_set_compx
@@ -477,6 +511,11 @@
 
 	* field.c: More checks for USAGE on a group and if compatible
 	  with the elementary data field description
+
+2021-11-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_allocate_identifier, cb_emit_allocate_characters),
+	  tree.h, parser.y: split and document (cb_emit_allocate)
 
 2021-11-18  Ron Norman <rjn@inglenet.com>
 
@@ -549,6 +588,18 @@
 	* cobc.c: removed unused aflag_set, renamed gflag_set to source_debugging
 	* cobc.c (process) [__OS400__]: simplified source-debugging handling
 
+2021-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.def (larger-redefines): changed to support option from boolean
+	  larger-redefines-ok
+	* warning.def (cb_warn_larger_01_redefines): new warning for possibly
+	  problematic but allowed level 01 non-external REDEFINE
+	* field.c (compute_size): cater for cb_larger_redefines and
+	  cb_warn_larger_01_redefines
+	* codegen.c (output_display_fields, output_field_display): add validation
+	  (level 88) items in commented output if COBC_GEN_DUMP_COMMENTS is active
+	  with full list of VALUE constants
+
 2021-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (cb_build_full_field_reference): fix bug #776
@@ -578,6 +629,7 @@
 
 	* codegen.c (output_file_initialization): don't generate attribute
 	  setting which is done in cob_file_malloc / cob_file_external_addr
+	* codegen.c (output_module_init_function): set module->gc_version
 
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1043,9 +1095,9 @@
 
 2020-12-09  Ron Norman <rjn@inglenet.com>
 
-	* cobc.c: Now calls cob_get_sig_name {in common.c} to get signal name
-	* codegen.c (output_dump_code): Only emits code to catch abort 
-	      when HAVE_SIGACTION is defined 
+	* cobc.c: now calls cob_get_sig_name from common.c to get signal name
+	* codegen.c (output_dump_code): Only emits code to catch abort
+	  when HAVE_SIGACTION is defined
 
 2020-12-08  Ron Norman <rjn@inglenet.com>
 

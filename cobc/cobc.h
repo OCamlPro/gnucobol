@@ -635,13 +635,17 @@ extern void		cb_init_codegen (void);
 
 #define CB_PENDING_X(x,s) \
 	do { cb_warning_x (cb_warn_pending, x, _("%s is not implemented"), s); } ONCE_COB
+#define CB_PENDING(s) \
+	do { cb_warning (cb_warn_pending, _("%s is not implemented"), s); } ONCE_COB
 
 #define CB_UNFINISHED_X(x,s) \
 	do { cb_warning_x (cb_warn_unfinished, x, \
 		_("handling of %s is unfinished; implementation is likely to be changed"), s); \
 	} ONCE_COB
-#define CB_PENDING(s)		CB_PENDING_X	(cb_error_node, s)
-#define CB_UNFINISHED(s)	CB_UNFINISHED_X	(cb_error_node, s)
+#define CB_UNFINISHED(s) \
+	do { cb_warning (cb_warn_unfinished, \
+		_("handling of %s is unfinished; implementation is likely to be changed"), s); \
+	} ONCE_COB
 #define CB_UNSUPPORTED(x) \
 	do { cb_error (_("%s is not supported"), x); } ONCE_COB
 #define CB_UNSUPPORTED_X(x,y) \

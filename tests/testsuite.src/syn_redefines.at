@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2016-2017, 2020, 2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2016-2017, 2020-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ## 
 ## This file is part of GnuCOBOL.
@@ -316,19 +316,37 @@ AT_DATA([prog.cob], [
        01 G2.
          02 X           PIC X.
          02 A           REDEFINES X PIC 9 OCCURS 2.
-       01 WRK-X         PIC X.
-       01 WRK-X-REDEF   REDEFINES WRK-X PIC 99.
        01 EXT-X         PIC X EXTERNAL.
        01 EXT-X-REDEF   REDEFINES EXT-X PIC 99.
+      *> other than the above EXTERNAL one, this is explicit "fine" 
+      *> by COBOL standard (01, non-external) - only warn upon explicit request
+       01 WRK-X2        PIC X.
+       01 FILLER        REDEFINES WRK-X2 PIC X(4).
+          88 WRK-X2-BADDY VALUE "99".
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:8: error: size of 'A' larger than size of 'X'
-prog.cob:11: error: size of 'A' larger than size of 'X'
-prog.cob:15: error: size of 'EXT-X-REDEF' larger than size of 'EXT-X'
-])
+AT_CHECK([$COBC -Wextra prog.cob], [1], [],
+[[prog.cob:8: error: larger REDEFINES used
+prog.cob:8: note: size of 'A' larger than size of 'X' [-Wdialect]
+prog.cob:11: error: larger REDEFINES used
+prog.cob:11: note: size of 'A' larger than size of 'X' [-Wdialect]
+prog.cob:13: error: larger REDEFINES used
+prog.cob:13: note: size of 'EXT-X-REDEF' larger than size of 'EXT-X' [-Wdialect]
+prog.cob:17: warning: size of 'FILLER 1' larger than size of 'WRK-X2' [-Wlarger-01-redefines]
+]])
+
+# of course, other dialects ignore the rules...
+AT_CHECK([$COBC -std=mf prog.cob], [0], [], [])
+AT_CHECK([$COBC -flarger-redefines=warning prog.cob], [0], [],
+[[prog.cob:8: warning: larger REDEFINES used [-Wdialect]
+prog.cob:8: note: size of 'A' larger than size of 'X' [-Wdialect]
+prog.cob:11: warning: larger REDEFINES used [-Wdialect]
+prog.cob:11: note: size of 'A' larger than size of 'X' [-Wdialect]
+prog.cob:13: warning: larger REDEFINES used [-Wdialect]
+prog.cob:13: note: size of 'EXT-X-REDEF' larger than size of 'EXT-X' [-Wdialect]
+]])
 
 AT_CLEANUP
 

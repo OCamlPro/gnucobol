@@ -3532,9 +3532,20 @@ cob_check_version (const char *prog,
 			 &app.major, &app.minor, &app.point);
 		app.version = version_bitstring(app);
 
-		if (app.version == lib.version 
-		 && patchlev_prog <= PATCH_LEVEL)
+		if (app.major == 2 && app.minor < 2) {
+			goto err;
+		}
+		/* COB_MODULE_PTR is expected to be set, because cob_module_global_enter
+		   was called _directly_ before this function, also with 2.2,
+		   still checking at least for the case of "misuse" of this function as
+		   undocumented ABI call [as in our testsuite ...] */
+		if (cobglobptr && COB_MODULE_PTR && !COB_MODULE_PTR->gc_version) {
+			COB_MODULE_PTR->gc_version = packver_prog;
+		}
+		if (app.version == lib.version
+		 && patchlev_prog <= PATCH_LEVEL) {
 			return;
+		}
 		if (app.version < lib.version) {
 			struct ver_t minimal = { 4, 0 };
 			if (app.version >= version_bitstring (minimal)) {
@@ -3543,6 +3554,7 @@ cob_check_version (const char *prog,
 		}
 	}
 
+err:
 	/* TODO: when CALLed - raise exception so program can go ON EXCEPTION */
 	cob_runtime_error (_("version mismatch"));
 	cob_runtime_hint (_("%s has version %s.%d"), prog,
@@ -5457,38 +5469,49 @@ cob_continue_after (cob_field *decimal_seconds)
 	internal_nanosleep (nanoseconds, 0);
 }
 
+/* ALLOCATE statement
+   dataptr    -> used for ALLOCATE identifier only, NULL otherwise
+   retptr     -> RETURNING ret, may be NULL
+   initialize -> used for ALLOCATE CHARACTERS only, may be NULL
+*/
 void
 cob_allocate (unsigned char **dataptr, cob_field *retptr,
 	      cob_field *sizefld, cob_field *initialize)
 {
-	void			*mptr;
-	struct cob_alloc_cache	*cache_ptr;
-	cob_s64_t		fsize;
-	cob_field		temp;
+	const cob_s64_t		fsize = cob_get_llint (sizefld);
+	void			*mptr = NULL;
 
-	/* ALLOCATE */
 	cobglobptr->cob_exception_code = 0;
-	mptr = NULL;
-	fsize = cob_get_llint (sizefld);
 	if (fsize > COB_MAX_ALLOC_SIZE) {
 		cob_set_exception (COB_EC_STORAGE_IMP);
 	} else if (fsize > 0) {
-		cache_ptr = cob_malloc (sizeof (struct cob_alloc_cache));
-		mptr = malloc ((size_t)fsize);
+		const size_t memsize = (size_t)fsize;
+		if (initialize
+		 && initialize->data[0] == 0
+		 && COB_FIELD_TYPE (initialize) == COB_TYPE_ALPHANUMERIC_ALL) {
+			mptr = calloc (1, memsize);
+		} else {
+			mptr = malloc (memsize);
+		}
 		if (!mptr) {
 			cob_set_exception (COB_EC_STORAGE_NOT_AVAIL);
-			cob_free (cache_ptr);
 		} else {
+			struct cob_alloc_cache	*cache_ptr;
 			if (initialize) {
-				temp.size = (size_t)fsize;
+				cob_field	temp;
+				temp.size = memsize;
 				temp.data = mptr;
 				temp.attr = &const_alpha_attr;
 				cob_move (initialize, &temp);
-			} else {
-				memset (mptr, 0, (size_t)fsize);
 			}
+#if 0
+			else {
+				memset (mptr, 0, memsize);
+			}
+#endif
+			cache_ptr = cob_malloc (sizeof (struct cob_alloc_cache));
 			cache_ptr->cob_pointer = mptr;
-			cache_ptr->size = (size_t)fsize;
+			cache_ptr->size = memsize;
 			cache_ptr->next = cob_alloc_base;
 			cob_alloc_base = cache_ptr;
 		}
@@ -5501,13 +5524,13 @@ cob_allocate (unsigned char **dataptr, cob_field *retptr,
 	}
 }
 
+/* FREE statement */
 void
 cob_free_alloc (unsigned char **ptr1, unsigned char *ptr2)
 {
 	struct cob_alloc_cache	*cache_ptr;
 	struct cob_alloc_cache	*prev_ptr;
 
-	/* FREE */
 	cobglobptr->cob_exception_code = 0;
 	cache_ptr = cob_alloc_base;
 	prev_ptr = cob_alloc_base;

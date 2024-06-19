@@ -4099,8 +4099,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [42], [subprogram+000000042], [])
 AT_CLEANUP
 
 
-AT_SETUP([COB_LOAD_CASE=UPPER test])
-AT_KEYWORDS([runmisc])
+AT_SETUP([COB_LOAD_CASE=UPPER])
+AT_KEYWORDS([runmisc CALL COB_LOAD_CASE])
 
 AT_DATA([CALLEE.cob], [
        IDENTIFICATION   DIVISION.
@@ -4137,12 +4137,11 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
        ASTART SECTION.
        A01.
-           ALLOCATE MYFLD INITIALIZED.
+           ALLOCATE MYFLD INITIALIZED
            IF MYFLD NOT = "ABCDEF"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
-           FREE ADDRESS OF MYFLD.
+           END-IF
+           FREE ADDRESS OF MYFLD
            STOP RUN.
 ])
 
@@ -4166,28 +4165,25 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            IF ADDRESS OF MYFLD NOT = NULL
               DISPLAY "BASED ITEM WITH ADDRESS ON START"
-              END-DISPLAY
-           END-IF.
-           FREE MYFLD.
-           ALLOCATE MYFLD.
+           END-IF
+           FREE MYFLD
+           ALLOCATE MYFLD
            IF ADDRESS OF MYFLD = NULL
               DISPLAY "BASED ITEM WITHOUT ADDRESS AFTER ALLOCATE"
-              END-DISPLAY
-           END-IF.
-           INITIALIZE MYFLD.
+           END-IF
+           INITIALIZE MYFLD
            IF MYFLD NOT = " 0"
               DISPLAY "BASED ITEM INITIALIZED WRONG: "
                  WITH NO ADVANCING
               END-DISPLAY
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
+           END-IF
 
-           FREE ADDRESS OF MYFLD.
+           FREE ADDRESS OF MYFLD
            IF ADDRESS OF MYFLD NOT = NULL
               DISPLAY "BASED ITEM WITH ADDRESS AFTER FREE"
-              END-DISPLAY
-           END-IF.
+           END-IF
+           GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -4199,7 +4195,7 @@ AT_CHECK([$COBCRUN prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([ALLOCATE CHARACTERS INITIALIZED TO])
+AT_SETUP([ALLOCATE CHARACTERS INITIALIZED (TO)])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -4215,22 +4211,28 @@ AT_DATA([prog.cob], [
        A01.
            ALLOCATE 4 CHARACTERS
                     INITIALIZED TO "ABCD"
-                    RETURNING MYPTR.
-           SET ADDRESS OF MYFLD TO MYPTR.
+                    RETURNING MYPTR
+           SET ADDRESS OF MYFLD TO MYPTR
            IF MYFLD NOT = "ABCD"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
-           FREE MYPTR.
+           END-IF
+           FREE MYPTR
            ALLOCATE 4 CHARACTERS
                     INITIALIZED TO ALL "Z"
-                    RETURNING MYPTR.
-           SET ADDRESS OF MYFLD TO MYPTR.
+                    RETURNING MYPTR
+           SET ADDRESS OF MYFLD TO MYPTR
            IF MYFLD NOT = "ZZZZ"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
-           FREE MYPTR.
+           END-IF
+           FREE MYPTR
+           ALLOCATE 4 CHARACTERS
+                    INITIALIZED
+                    RETURNING MYPTR
+           SET ADDRESS OF MYFLD TO MYPTR
+           IF MYFLD NOT = LOW-VALUES
+              DISPLAY MYFLD
+           END-IF
+           FREE MYPTR
            STOP RUN.
 ])
 
@@ -4254,8 +4256,7 @@ AT_DATA([prog.cob], [
        A01.
            IF MYFLD NOT = "AAAAAA"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
+           END-IF
            STOP RUN.
 ])
 
@@ -4278,8 +4279,7 @@ AT_DATA([callee.cob], [
        PROCEDURE        DIVISION USING P1 OPTIONAL P2.
            IF P2 NOT OMITTED
               DISPLAY P2
-              END-DISPLAY
-           END-IF.
+           END-IF
            EXIT PROGRAM.
 ])
 
@@ -4291,9 +4291,7 @@ AT_DATA([caller.cob], [
        01 P1            PIC X    VALUE "A".
        PROCEDURE        DIVISION.
            CALL "callee" USING P1
-           END-CALL.
            CALL "callee" USING P1 OMITTED
-           END-CALL.
            STOP RUN.
 ])
 
@@ -4703,7 +4701,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CALL C with callback, ENTRY-CONVENTION EXTERN])
-AT_KEYWORDS([runmisc CALL-CONVENTION LINKAGE])
+AT_KEYWORDS([runmisc CALL-CONVENTION LINKAGE OPTIONS])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -7739,7 +7737,7 @@ AT_DATA([callee1.cob], [
            END-EVALUATE
            CALL "callee2"  END-CALL
            CANCEL "callee2"  CALL "callee2b" END-CALL  CANCEL "callee2b"
-           SUBTRACT 1 FROM RETURN-CODE END-SUBTRACT
+           SUBTRACT 1 FROM RETURN-CODE
            EXIT PROGRAM.
 ])
 
@@ -7954,6 +7952,7 @@ Source: 'caller.cob'
 Program-Id:  caller
 Program-Id:  caller                      MOVE                            Line:     26
 Program-Id:  caller                      SEARCH ALL                      Line:     28
+Program-Id:  caller                      AT END                          Line:     29
 Program-Id:  caller                      ADD                             Line:     30
 Program-Id:  caller                      SET                             Line:     31
 Program-Id:  caller                      MOVE                            Line:     32
@@ -7964,13 +7963,13 @@ Program-Id:  caller                      SET                             Line:  
 Program-Id:  caller                      MOVE                            Line:     43
 Program-Id:  caller                      SEARCH                          Line:     46
 Program-Id:  caller                      WHEN                            Line:     52
+Program-Id:  caller                      SEARCH VARYING                  Line:     47
+Program-Id:  caller                      AT END                          Line:     48
 Program-Id:  caller                      ADD                             Line:     49
 Program-Id:  caller                      SET                             Line:     50
 Program-Id:  caller                      MOVE                            Line:     51
 Program-Id:  caller                      SEARCH ALL                      Line:     55
-Program-Id:  caller                      SEARCH VARYING                  Line:     55
 Program-Id:  caller                      WHEN                            Line:     58
-Program-Id:  caller                      SEARCH VARYING                  Line:     55
 Program-Id:  caller                      WHEN                            Line:     58
 Program-Id:  caller                      CONTINUE                        Line:     59
 Program-Id:  caller                      STOP RUN                        Line:     62
@@ -11215,8 +11214,7 @@ libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are
 
 AT_CLEANUP
 
-
-AT_SETUP([DEFAULT ROUNDED MODE])
+AT_SETUP([OPTIONS paragraph, DEFAULT ROUNDED MODE])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -11976,7 +11974,7 @@ AT_DATA([prog3.cob], [
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 # Note: MF does not redefine a value via SET CONSTANT
-# the first definitions wins (we should add a warning)
+# the first definitions wins (warning check: syn_misc.at)
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Your Dog's name is Barky;
 The Dog's name is Barky ;
@@ -11987,7 +11985,7 @@ My little pony is Blacky.
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 
 # Note: MF does not redefine a value via SET CONSTANT
-# the first definitions wins (we should add a warning)
+# the first definitions wins (warning check: syn_misc.at)
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
 [Your Dog's name is Barky;
 The Dog's name is Barky ;
@@ -17252,8 +17250,10 @@ AT_DATA([prog.cob], [
           88 a-two value 2.
        LINKAGE SECTION.
        PROCEDURE DIVISION.
-           display n(n**0+ 1:).   *> bug # 702 ("pow"-call in generated program
-           if not a-one and not a-two  *> arithmetic handling (optimize code)
+      *> bug #702, "pow"-call in generated program
+           display n(n**0+ 1:).
+      *> bug #631 arithmetic handling (optimize code)
+           if not a-one and not a-two
               display 'succeeded'
            else
               display 'failed'

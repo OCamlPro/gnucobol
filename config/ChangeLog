@@ -39,6 +39,11 @@
 
 	* Added 'record-sequential-advancing' initial value
 
+2021-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: changed larger-redefines-ok (boolean) to larger-redefines,
+	  now a support option allowing "warning only"
+
 2021-10-01  Ron Norman <rjn@inglenet.com>
 
 	* runtime.cfg: Removed the COB_MF_LS_xxx options and replaced COB_MF_FILES
@@ -104,19 +109,6 @@
 
 	* fileio: added option file_log for ISAM files
 
-||||||| .merge-left.r4286
-=======
-2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
-
-	* general: added self-call-recursive, only active (as "warning") for
-	  default.conf, in all other cases no change to RECURSIVE attribute
-	  is happening any more, fixing bug 686
-
-2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
-
-	* acu-strict.conf: fix settings indirect-redefines + assign-variable
-
->>>>>>> .merge-right.r4287
 2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: added ref-mod-zero-length, only active for default.conf

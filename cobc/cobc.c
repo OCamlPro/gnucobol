@@ -5505,10 +5505,12 @@ print_fields (struct cb_field *top, int *found)
 			}
 		}
 
-		pd_off += sprintf (print_data + pd_off, "%s%s%s",
-			top->flag_external ? " EXTERNAL" : "",
-			top->flag_is_global ? " GLOBAL" : "",
-			top->flag_item_based ? " BASED" : "");
+		if (top->level == 1 || top->level == 77) {
+			pd_off += sprintf (print_data + pd_off, "%s%s%s",
+				top->flag_external ? " EXTERNAL" : "",
+				top->flag_is_global ? " GLOBAL" : "",
+				top->flag_item_based ? " BASED" : "");
+		}
 
 		if (top->redefines && !top->file) {
 			pd_off += sprintf (print_data + pd_off, ", REDEFINES %s", top->redefines->name);
@@ -7603,7 +7605,9 @@ process_translate (struct filename *fn)
 	cb_correct_program_order = 0;
 	cb_source_file = fn->source;
 
-	cb_init_constants ();
+	/* create constants, which are attached to the current
+	   run of parsing + translation; memory is released by the caller! */
+	cb_init_parse_constants ();
 
 	/* Parse */
 	ret = yyparse ();
