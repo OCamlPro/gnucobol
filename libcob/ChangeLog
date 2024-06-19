@@ -531,6 +531,11 @@
 	* fileio.c: Changes to open sequential files in binary mode on Windows
 				(Untested on real Windows at this time)
 
+2021-11-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_allocate): only initialize upon request with optimized
+	  initialization for binary zeroes
+
 2021-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_get_sig_name, cob_get_sig_description,
@@ -676,6 +681,11 @@
 	* fileio.c (cob_file_external_addr): change the way the file is allocated,
 	  having only its POINTER be "external" and use cob_file_malloc to allocate
 	  and set the attributes
+	* common.h (cob_module): new attribute gc_version
+	* common.c (cob_check_version): set last modules gc_version
+	* fileio.c (cob_cache_file): fix aborts when running GC 2 modules with
+	  INDEXED/RELATIVE files by converting old cob_file_key structure
+	  to the expected one
 
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1256,7 +1266,7 @@
 			    and to load libcobvc.so at startup
 	* fisam.c: Changes for building with VBISAM in C-ISAM mode
 	* Makefile.am: Changes for configure/build of VBISAM in C-ISAM mode
-				
+
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	Bug #692 missing output for DISPLAY WITH NO ADVANCING
@@ -1269,11 +1279,9 @@
 
 2020-12-09  Ron Norman <rjn@inglenet.com>
 
-	* common.c: If the system supports sigaction then codegen.c emits
-	  code to catch an abort while dumping and recover
-	  the routine cob_set_dump_signal sets up the signal processing;
-	  Added cob_get_sig_name and cob_get_sig_description;
-	  Rewrote cob_set_signal to be table driven
+	* common.c, common.h: added cob_get_sig_name and cob_get_sig_description
+	* common.c (cob_sig_handler): use cob_get_sig_name instead of get_sig_name
+	* common.c (cob_set_signal): rewrote to be table driven
 
 2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
 

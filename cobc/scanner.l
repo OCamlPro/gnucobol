@@ -732,50 +732,57 @@ H#[0-9A-Za-z]+ {
 
 "NOT"[ ,;\n]+("ON"[ ,;\n]+)?"ESCAPE"/[ .,;\n] {
 	count_lines (yytext);
-	RETURN_TOK (NOT_ESCAPE);
+	RETURN_TOK (NOT_ON_ESCAPE);
 }
 
 "NOT"[ ,;\n]+("ON"[ ,;\n]+)?"EXCEPTION"/[ .,;\n] {
 	count_lines (yytext);
-	RETURN_TOK (NOT_EXCEPTION);
+	RETURN_TOK (NOT_ON_EXCEPTION);
 }
 
 "ON"[ ,;\n]+"ESCAPE"/[ .,;\n] {
+	/* Note: plain ESCAPE is directly matched via registered words */
 	count_lines (yytext);
-	RETURN_TOK (ESCAPE);
+	RETURN_TOK (ON_ESCAPE);
 }
 
 "ON"[ ,;\n]+"EXCEPTION"/[ .,;\n] {
+	/* Note: plain EXCEPTION is directly matched via registered words */
 	count_lines (yytext);
-	RETURN_TOK (EXCEPTION);
+	RETURN_TOK (ON_EXCEPTION);
 }
 
 "NOT"[ ,;\n]+("ON"[ ,;\n]+)?"OVERFLOW"/[ .,;\n] {
 	count_lines (yytext);
-	RETURN_TOK (NOT_OVERFLOW);
+	RETURN_TOK (NOT_ON_OVERFLOW);
 }
 
 "NOT"[ ,;\n]+("AT"[ ,;\n]+)?"END"/[ .,;\n] {
 	count_lines (yytext);
-	RETURN_TOK (NOT_END);
+	RETURN_TOK (NOT_AT_END);
 }
 
 "AT"[ ,;\n]+"END"/[ .,;\n] {
+	/* Note: plain END is directly matched via registered words */
 	count_lines (yytext);
-	RETURN_TOK (END);
+	RETURN_TOK (AT_END);
 }
 
-("ON"[ ,;\n]+)?"OVERFLOW"/[ .,;\n] {
+"ON"[ ,;\n]+"OVERFLOW"/[ .,;\n] {
+	/* Note: plain OVERFLOW is directly matched via registered words */
 	count_lines (yytext);
 	RETURN_TOK (TOK_OVERFLOW);
 }
 
 "NOT"[ ,;\n]+("AT"[ ,;\n]+)?("END-OF-PAGE"|"EOP")/[ .,;\n] {
+	/* TODO: if those words are not reserved -> directly return */
 	count_lines (yytext);
 	RETURN_TOK (NOT_EOP);
 }
 
-("AT"[ ,;\n]+)?("END-OF-PAGE"|"EOP")/[ .,;\n] {
+"AT"[ ,;\n]+("END-OF-PAGE"|"EOP")/[ .,;\n] {
+	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
+	/* TODO: if those words are not reserved -> directly return */
 	count_lines (yytext);
 	RETURN_TOK (EOP);
 }

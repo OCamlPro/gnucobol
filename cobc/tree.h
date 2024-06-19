@@ -1356,10 +1356,11 @@ struct cb_initialize {
 
 struct cb_search {
 	struct cb_tree_common	common;		/* Common values */
-	cb_tree			table;		/* Table name */
-	cb_tree			var;		/* Varying */
-	cb_tree			end_stmt;	/* AT END */
-	cb_tree			whens;		/* WHEN */
+	cb_tree			table;		/* Reference to table name */
+	cb_tree			var;		/* VARYING field */
+	cb_tree			at_end;		/* AT END (pair of position and statements) */
+	cb_tree			whens;		/* WHEN (conditions and statements)
+	       			      		   [for not SEARCH ALL: list of those] */
 	int			flag_all;	/* SEARCH ALL */
 };
 
@@ -1945,7 +1946,7 @@ extern int			cb_get_int (const cb_tree);
 extern cob_s64_t		cb_get_long_long (const cb_tree);
 extern cob_u64_t		cb_get_u_long_long (const cb_tree);
 
-extern void			cb_init_constants (void);
+extern void			cb_init_parse_constants (void);
 
 extern cb_tree			cb_int (const int);
 extern cb_tree			cb_int_hex (const int);
@@ -2303,8 +2304,9 @@ extern void		cb_emit_accept_arg_number (cb_tree);
 extern void		cb_emit_accept_arg_value (cb_tree);
 extern void		cb_emit_get_environment (cb_tree, cb_tree);
 
-extern void		cb_emit_allocate (cb_tree, cb_tree,
-					  cb_tree, cb_tree);
+extern void		cb_emit_allocate_identifier (cb_tree, cb_tree, const int);
+extern void		cb_emit_allocate_characters (cb_tree, cb_tree, cb_tree);
+
 extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 

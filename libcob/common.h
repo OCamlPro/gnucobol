@@ -1408,6 +1408,8 @@ typedef struct __cob_module {
 	unsigned char		flag_unused[6];	/* For future, use for new flags etc */
 
 	unsigned char		unused[32];		/* For future use */
+
+	const char	*gc_version;	/* module version */
 } cob_module;
 
 /* For 'module_type'

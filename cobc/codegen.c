@@ -4202,7 +4202,6 @@ output_param (cb_tree x, int id)
 {
 	struct cb_reference	*r;
 	struct cb_field		*f;
-	struct cb_field		*ff;
 	struct cb_cast		*cp;
 	struct cb_binary_op	*bp;
 	struct field_list	*fl;
@@ -4439,13 +4438,12 @@ output_param (cb_tree x, int id)
 
 		f = CB_FIELD (r->value);
 
-		ff = real_field_founder (f);
-
-		if (ff->flag_external) {
-			f->flag_external = 1;
-			f->flag_local = 1;
-		} else if (ff->flag_item_based) {
-			f->flag_local = 1;
+		{
+			struct cb_field	*ff = real_field_founder (f);
+			if (ff->flag_external
+			 || ff->flag_item_based) {
+				f->flag_local = 1;
+			}
 		}
 		if (!r->subs
 		 && !r->offset
@@ -6252,13 +6250,11 @@ output_occurs (struct cb_field *p)
 /* SEARCH */
 
 static void
-output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
+output_search_whens (cb_tree table, struct cb_field *p, cb_tree at_end,
 						cb_tree var, cb_tree whens)
 {
 	cb_tree		l;
 	cb_tree		idx = NULL;
-
-	COB_UNUSED(table);	/* to be handled later */
 
 	/* LCOV_EXCL_START */
 	if (!p->index_list) {
@@ -6314,20 +6310,37 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
 	output_occurs (p);
 	output (") )");
 	output_newline ();
-	output_block_open ();
 	output_line ("/* Table end */");
-	if (stmt) {
-		output_stmt (stmt);
+	output_block_open ();
+	if (at_end) {
+		output_source_reference (CB_PAIR_X (at_end), STMT_AT_END);
+		output_stmt (CB_PAIR_Y (at_end));
 	} else {
+		/* position is best guess here */
+		table->source_line++;
+		output_source_reference (table, STMT_AT_END);
+		table->source_line--;
 		output_line ("break;");
 	}
 	output_block_close ();
 
 	/* WHEN test */
 	output_stmt (whens);
+	output_newline ();
 
 	/* Iteration */
-	output_newline ();
+	{
+		/* Output source location as code,
+		   especially for tracking adjustment of the index */
+		if (var) {
+			output_source_reference (var, STMT_SEARCH_VARYING);
+		} else {
+			int sav_fsl = cb_flag_source_location;
+			cb_flag_source_location = 0;
+			output_source_reference (table, STMT_SEARCH_VARYING);
+			cb_flag_source_location = sav_fsl;
+		}
+	}
 	output_prefix ();
 	output_integer (idx);
 	output ("++;");
@@ -6335,14 +6348,13 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
 	if (var && var != idx) {
 		output_move (idx, var);
 	}
-	output_line ("/* Iterate */");
 	/* End loop */
 	output_indent_level -= 2;
 	output_line ("}");
 }
 
 static void
-output_search_all (cb_tree table, struct cb_field *p, cb_tree end_stmt,
+output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 					cb_tree when_cond, cb_tree when_stmts)
 {
 	cb_tree		idx;
@@ -6366,6 +6378,7 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree end_stmt,
 		output (" == 0) head = tail;");
 		output_newline ();
 	}
+	output_newline ();
 
 	/* Start loop */
 	last_line = -1; /* force statement reference output at begin of loop */
@@ -6375,21 +6388,30 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree end_stmt,
 
 	/* End test */
 	output_line ("if (head >= tail - 1)");
-	output_block_open ();
 	output_line ("/* Table end */");
-	if (end_stmt) {
-		output_stmt (end_stmt);
+	output_block_open ();
+	if (at_end) {
+		output_source_reference (CB_PAIR_X (at_end), STMT_AT_END);
+		output_stmt (CB_PAIR_Y (at_end));
 	} else {
+		/* position is best guess here */
+		table->source_line++;
+		output_source_reference (table, STMT_AT_END);
+		table->source_line--;
 		output_line ("break;");
 	}
 	output_block_close ();
+	output_newline ();
 
 	/* Next index */
-
-	/* Output source location as code,
-	   especially for tracking adjustment of the index */
-	/* output_source_reference (table, "SEARCH VARYING (internal)"); */
-	output_source_reference (table, STMT_SEARCH_VARYING);
+	{
+		/* Output source location as code,
+		   especially for tracking adjustment of the index */
+		int sav_fsl = cb_flag_source_location;
+		cb_flag_source_location = 0;
+		output_source_reference (table, STMT_SEARCH_VARYING);
+		cb_flag_source_location = sav_fsl;
+	}
 	output_prefix ();
 	output_integer (idx);
 	output (" = (head + tail) / 2;");
@@ -6400,7 +6422,7 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree end_stmt,
 	{
 		/* output_source_reference would be ok here but
 		   we don't want to trace this (already tracing
-		   SEARCH VARYING), so temporarily disable trace all here */
+		   SEARCH VARYING), so temporarily disable traceall here */
 		const int sav_trc_all = cb_flag_traceall;
 		cb_flag_traceall = 0;
 		output_source_reference (when_cond, STMT_WHEN);
@@ -6448,10 +6470,10 @@ output_search (struct cb_search *p)
 	/* TODO: Add run-time checks for the table, including ODO */
 
 	if (p->flag_all) {
-		output_search_all (p->table, fp, p->end_stmt,
+		output_search_all (p->table, fp, p->at_end,
 				   CB_IF (p->whens)->test, CB_IF (p->whens)->stmt1);
 	} else {
-		output_search_whens (p->table, fp, p->end_stmt, p->var, p->whens);
+		output_search_whens (p->table, fp, p->at_end, p->var, p->whens);
 	}
 }
 
@@ -8136,6 +8158,7 @@ output_perform (struct cb_perform *p)
 		output_newline ();
 		loop_counter++;
 		output_block_open ();
+		last_line = -1; /* force statement reference output at begin of loop */
 		output_perform_once (p);
 		output_block_close ();
 		break;
@@ -8161,6 +8184,7 @@ output_perform (struct cb_perform *p)
 	case CB_PERFORM_FOREVER:
 		output_line ("for (;;)");
 		output_block_open ();
+		last_line = -1; /* force statement reference output at begin of loop */
 		output_perform_once (p);
 		output_block_close ();
 		break;
@@ -8551,7 +8575,7 @@ output_cobol_info (cb_tree x)
 	output ("#line %d \"", x->source_line);
 
 	while(*p){
-		if( *p == '\\' ){
+		if (*p == '\\') {
 			output("%c",'\\');
 		}
 		output("%c",*p++);
@@ -11740,6 +11764,7 @@ output_module_init_function (struct cb_program *prog)
 	output_line ("module->module_name = \"%s\";", prog->orig_program_id);
 	output_line ("module->module_formatted_date = COB_MODULE_FORMATTED_DATE;");
 	output_line ("module->module_source = COB_SOURCE_FILE;");
+	output_line ("module->gc_version = COB_PACKAGE_VERSION;");
 	if (!prog->nested_level) {
 		output_line ("module->module_entry.funcptr = (void *(*)())%s;",
 			     prog->program_id);

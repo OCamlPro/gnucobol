@@ -1,4 +1,4 @@
-/## Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -7444,13 +7444,14 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            ALLOCATE one
            ALLOCATE seven INITIALIZED
-           ALLOCATE seven CHARACTERS.
-           ALLOCATE seven CHARACTERS RETURNING ptr.
-           ALLOCATE 1 + 2 * 3 CHARACTERS RETURNING ptr.
-           ALLOCATE 1 + one * 3 CHARACTERS RETURNING ptr.
-           ALLOCATE one   CHARACTERS RETURNING ptr.
-           ALLOCATE seven CHARACTERS INITIALIZED RETURNING ptr.
+           ALLOCATE seven CHARACTERS
+           ALLOCATE seven CHARACTERS RETURNING ptr
+           ALLOCATE 1 + 2 * 3 CHARACTERS RETURNING ptr
+           ALLOCATE 1 + one * 3 CHARACTERS RETURNING ptr
+           ALLOCATE one   CHARACTERS RETURNING ptr
+           ALLOCATE seven CHARACTERS INITIALIZED RETURNING ptr
            ALLOCATE var
+           ALLOCATE 9 CHARACTERS INITIALIZED TO 9 RETURNING ptr.
            FREE var
            FREE ADDRESS OF var
            FREE one
@@ -7471,8 +7472,9 @@ prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
 prog.cob:26: error: 'one' is not a numeric value
 prog.cob:27: error: amount must be specified as a numeric expression
 prog.cob:29: error: target of ALLOCATE is not a BASED item
-prog.cob:30: error: target 1 of FREE is not a BASED data item
+prog.cob:30: error: INITIALIZED TO item is not alphanumeric
 prog.cob:31: error: target 1 of FREE is not a BASED data item
+prog.cob:32: error: target 1 of FREE is not a BASED data item
 ])
 AT_CLEANUP
 
@@ -8370,6 +8372,103 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0],
 [OK
 ])
+AT_CLEANUP
+
+
+AT_SETUP([SET CONSTANT directive])
+AT_KEYWORDS([misc directives extensions])
+
+# The SET CONSTANT directive defines a level78 variable
+# for the current compilation unit
+
+# original MF extension: $SET CONSTANT
+AT_DATA([prog.cob], [
+       $SET CONSTANT DOGGY "Barky"
+       $SET CONSTANT PONY "Blacky"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  THEDOG    PIC X(6) VALUE DOGGY.
+       77  MYHORSE   PIC X(7) VALUE PONY.
+       $SET CONSTANT PONY "White"
+      *
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "Your Dog's name is " DOGGY ";".
+           DISPLAY "The Dog's name is " THEDOG ";".
+           DISPLAY "My Horse is " MYHORSE ";".
+           DISPLAY "My little pony is " PONY ".".
+           STOP RUN.
+])
+
+# OpenCOBOL/GnuCOBOL extension: >>SET CONSTANT
+AT_DATA([prog2.cob], [
+       >>SET CONSTANT DOGGY "Barky"
+       >>SET CONSTANT PONY "Blacky"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  THEDOG    PIC X(6) VALUE DOGGY.
+       77  MYHORSE   PIC X(7) VALUE PONY.
+       >>SET CONSTANT PONY "White"
+      *
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "Your Dog's name is " DOGGY ";".
+           DISPLAY "The Dog's name is " THEDOG ";".
+           DISPLAY "My Horse is " MYHORSE ";".
+           DISPLAY "My little pony is " PONY ".".
+           STOP RUN.
+])
+
+# OpenCOBOL/GnuCOBOL extension: >>DEFINE CONSTANT
+AT_DATA([prog3.cob], [
+       >>DEFINE CONSTANT DOGGY "Barky"
+       >>DEFINE CONSTANT PONY "Blacky"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  THEDOG    PIC X(6) VALUE DOGGY.
+       77  MYHORSE   PIC X(7) VALUE PONY.
+       >>DEFINE CONSTANT PONY "White" OVERRIDE
+      *
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "Your Dog's name is " DOGGY ";".
+           DISPLAY "The Dog's name is " THEDOG ";".
+           DISPLAY "My Horse is " MYHORSE ";".
+           DISPLAY "My little pony is " PONY ".".
+           STOP RUN.
+])
+
+# Note: MF does not redefine a value via SET CONSTANT
+# the first definitions wins (we should add a warning)
+AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [0], [], [])
+# FIXME: Should raise an error or at least a warning
+# AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog.cob], [0], [], [])
+
+# Note: MF does not redefine a value via SET CONSTANT
+# the first definitions wins (we should add a warning)
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [], [])
+# FIXME: Should raise an error or at least a warning
+# AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog2.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY -fdefine-constant-directive=ok prog3.cob], [0], [], [])
+# CHECKME: Replace the syntax error by explicit "is not defined".
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog3.cob], [1], [],
+[prog3.cob:2: error: >> DEFINE CONSTANT var used
+prog3.cob:3: error: >> DEFINE CONSTANT var used
+prog3.cob:10: error: >> DEFINE CONSTANT var used
+prog3.cob:8: error: syntax error, unexpected Identifier
+prog3.cob:9: error: syntax error, unexpected Identifier
+prog3.cob: in paragraph 'MAIN':
+prog3.cob:14: error: 'DOGGY' is not defined
+prog3.cob:17: error: 'PONY' is not defined
+])
+
 AT_CLEANUP
 
 
