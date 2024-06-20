@@ -65,6 +65,7 @@ screen-section-rules:		gc
 
 alter-statement:			+obsolete
 comment-paragraphs:			ok
+control-division:			+obsolete
 call-overflow:				ok
 data-records-clause:			+obsolete
 debugging-mode:				ok

@@ -17,23 +17,63 @@
 
 	* *.conf: changed top-level-occurs-clause "skip" to "unconformable"
 
+2022-07-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: set defaultbyte to "none" for standard COBOL, 32 to " "
+
+2022-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ibm-strict.conf, mvs-strict.conf, gcos-strict.conf, bs2000-strict.conf:
+	  adjusted defaultbyte to 0
+
 2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: removed alias VALUES=VALUE, now a separate word
 
+2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: remove indicator-column option, which is now a flag
+
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: added config option device-mnemonics (boolean)
+
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
 	* general: add 'defaultbyte'
+
+2022-05-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option partial-replacing-with-literal
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* general: add a stop-error-statement option to allow configuring
+	  the support of the STOP ERROR statement
+
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add a record-contains-depending-clause option to allow
+	  configuring the support of the DEPENDING clause in RECORD CONTAINS
 
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
 	  GCOS 7 (Bull) dialect
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add an indicator-column option to allow customizing
+	  the position of the indicator
+
+2022-01-27  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option control-division
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit
-			operations
+	  operations
 
 2021-11-09  Ron Norman <rjn@inglenet.com>
 
@@ -692,7 +732,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2021 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

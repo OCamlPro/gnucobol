@@ -2430,6 +2430,8 @@ extern void		cb_emit_start (cb_tree, cb_tree, cb_tree, cb_tree);
 
 extern void		cb_emit_stop_run (cb_tree);
 
+extern void		cb_emit_stop_error (void);
+
 extern void		cb_emit_stop_thread (cb_tree);
 
 extern void		cb_emit_string (cb_tree, cb_tree, cb_tree);

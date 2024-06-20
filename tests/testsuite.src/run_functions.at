@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -416,6 +416,8 @@ AT_DATA([prog.cob], [
        01  Y      PIC   X(4) VALUE "HI.".
        01  BIN    PIC   9(9) BINARY VALUE 12.
        01  PAC    PIC   9(5) COMP-3 VALUE 1234.
+       01  N9     PIC   9(2) USAGE NATIONAL VALUE 12.
+       01  NX     PIC   N(2) VALUE N"!".
        01  HEXX   PIC   X(10).
            88 HEXX-FILLER VALUE ALL "-".
        PROCEDURE        DIVISION.
@@ -459,6 +461,36 @@ AT_DATA([prog.cob], [
        >> END-IF
               DISPLAY "UNEXPECTED HEX-VALUE OF z'01': " HEXX.
 
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (' ') DELIMITED BY SIZE INTO HEXX.
+           IF HEXX NOT = "20--------"
+              DISPLAY "UNEXPECTED HEX-VALUE OF ' ': " HEXX.
+
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (n' ') DELIMITED BY SIZE INTO HEXX.
+           IF HEXX NOT = "0020------"
+              DISPLAY "UNEXPECTED HEX-VALUE OF n' ': " HEXX.
+
+       *>  FIXME: Failing with "3132------" -> missing padding
+       *>         -> codegen issue for initialization / move
+       *>            and libcob issue at least for MOVE
+       *>  SET  HEXX-FILLER TO TRUE
+       *>  STRING FUNCTION HEX-OF (N9) DELIMITED BY SIZE INTO HEXX.
+       *>  IF HEXX NOT = "00310032--"
+       *>     DISPLAY "UNEXPECTED HEX-VALUE OF N9: " HEXX.
+
+       *>  FIXME: Failing with "00212020--" -> bad padding
+       *>         -> codegen issue for initialization / move
+       *>            and libcob issue at least for MOVE
+       *>  SET  HEXX-FILLER TO TRUE
+       *>  STRING FUNCTION HEX-OF (NX) DELIMITED BY SIZE INTO HEXX.
+       *>  IF HEXX NOT = "00210020--"
+       *>     DISPLAY "UNEXPECTED HEX-VALUE OF NX: " HEXX.
+
+       *>  setting up test data:
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (z"01") DELIMITED BY SIZE INTO HEXX.
+
            IF FUNCTION HEX-TO-CHAR (HEXX(1:6)) NOT = z"01"
               DISPLAY "UNEXPECTED CHAR VALUE, does not match z'01': "
                       HEXX (1:6).
@@ -477,7 +509,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -1748,6 +1780,9 @@ AT_DATA([prog.cob], [
        01  X   PIC      S9(4)V9(4) VALUE -1.5.
        01  N   PIC      N(9).
        01  TEST-FLD     PIC S9(04)V9(02).
+       01  TEST-TAB.
+           05 T-ENTRIES   PIC 99 VALUE 10.
+           05 TEST-ENTRY  PIC X OCCURS 1 TO 10 DEPENDING ON T-ENTRIES.
        PROCEDURE        DIVISION.
            MOVE FUNCTION LENGTH ( X )
              TO TEST-FLD
@@ -1793,13 +1828,24 @@ AT_DATA([prog.cob], [
               DISPLAY 'LENGTH n"a0" wrong: ' TEST-FLD
               END-DISPLAY
            END-IF
+           MOVE 10 TO T-ENTRIES
+           MOVE FUNCTION LENGTH ( TEST-TAB)
+             TO TEST-FLD
+           IF TEST-FLD NOT = 12
+              DISPLAY 'LENGTH TEST-TAB (10 entries): ' TEST-FLD
+              END-DISPLAY
+           END-IF
+           MOVE 1 TO T-ENTRIES
+           MOVE FUNCTION LENGTH ( TEST-TAB)
+             TO TEST-FLD
+           IF TEST-FLD NOT = 3
+              DISPLAY 'LENGTH TEST-TAB (1 entry): ' TEST-FLD
+              END-DISPLAY
+           END-IF
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:7: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
-prog.cob:48: warning: handling of national literal is unfinished; implementation is likely to be changed
-])
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

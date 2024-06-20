@@ -3372,6 +3372,7 @@ nested_list:
 	depth = 0;
 	setup_from_identification = 0;
   }
+  _control_division		/* GCOS extension */
   source_element_list
 ;
 
@@ -3556,6 +3557,51 @@ _prototype_procedure_division_header:
 	current_program->num_proc_params = cb_list_length ($3);
 	/* add pseudo-entry as it contains the actual USING parameters */
 	emit_main_entry (current_program, $3);
+  }
+;
+
+/* CONTROL DIVISION (GCOS extension) */
+
+_control_division:
+  /* empty */
+| CONTROL DIVISION TOK_DOT
+  {
+	  cb_verify (cb_control_division, "CONTROL DIVISION");
+  }
+  _default_section
+;
+
+_default_section:
+  /* empty */
+| DEFAULT SECTION TOK_DOT
+  _default_clauses
+  {
+	cobc_cs_check = 0;
+  }
+;
+
+_default_clauses:
+  /*empty*/
+| _default_accept_clause
+  _default_display_clause
+  TOK_DOT
+;
+
+_default_accept_clause:
+  /* empty */
+| ACCEPT _is word_or_terminal
+  {
+	  CB_PENDING ("ACCEPT statement in DEFAULT SECTION");
+	  /* TODO: setup_default_accept ($3); */
+  }
+;
+
+_default_display_clause:
+  /* empty */
+| DISPLAY _is word_or_terminal
+  {
+	  CB_PENDING ("DISPLAY statement in DEFAULT SECTION");
+	  /* TODO: setup_default_display ($3); */
   }
 ;
 
@@ -4200,7 +4246,7 @@ special_name:
 /* Mnemonic name clause */
 
 mnemonic_name_clause:
-  WORD
+  word_or_terminal
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION,
@@ -4217,6 +4263,11 @@ mnemonic_name_clause:
   }
   mnemonic_choices
 ;
+
+word_or_terminal:
+  WORD     { $$ = $1; }
+  /* under GCOS, this reserved name can also be a system name */
+| TERMINAL { $$ = cb_build_reference("TERMINAL"); }
 
 mnemonic_choices:
   _is CRT
@@ -6227,12 +6278,19 @@ record_clause:
 	}
   }
 | RECORD _contains integer TO integer _characters
+  _record_depending /* GCOS extension */
   {
 	check_repeated ("RECORD", SYN_CLAUSE_4, &check_duplicate);
 	if (current_file->organization == COB_ORG_LINE_SEQUENTIAL) {
 		cb_warning (cb_warn_additional, _("RECORD clause ignored for LINE SEQUENTIAL"));
 	} else {
 		set_record_size ($3, $5);
+		if ($7) {
+			cb_verify (cb_record_contains_depending_clause, "RECORD CONTAINS DEPENDING");
+			current_file->record_depending = $7;
+			current_file->flag_check_record_varying_limits =
+				current_file->record_min == 0 || current_file->record_max == 0;
+		}
 	}
   }
 | RECORD _is VARYING _in _size _from_integer _to_integer _characters
@@ -6240,16 +6298,15 @@ record_clause:
   {
 	check_repeated ("RECORD", SYN_CLAUSE_4, &check_duplicate);
 	set_record_size ($6, $7);
+	current_file->record_depending = $9;
 	current_file->flag_check_record_varying_limits =
 		current_file->record_min == 0 || current_file->record_max == 0;
   }
 ;
 
 _record_depending:
-| DEPENDING _on reference
-  {
-	current_file->record_depending = $3;
-  }
+  /* empty */			{ $$ = NULL; }
+| DEPENDING _on reference	{ $$ = $3; }
 ;
 
 _from_integer:
@@ -12167,11 +12224,21 @@ cancel_statement:
 ;
 
 cancel_body:
+  cancel_list
+| ALL
+  {
+	const char *all_name = "CANCEL ALL";
+	struct cb_literal *all = build_literal (CB_CATEGORY_ALPHANUMERIC, all_name, strlen (all_name));
+	cb_emit_cancel (CB_TREE(all));
+  }
+;
+
+cancel_list:
   id_or_lit_or_program_name
   {
 	cb_emit_cancel ($1);
   }
-| cancel_body id_or_lit_or_program_name
+| cancel_list id_or_lit_or_program_name
   {
 	cb_emit_cancel ($2);
   }
@@ -12461,6 +12528,10 @@ display_body:
 	cb_emit_command_line ($1);
   }
 | screen_or_device_display _common_exception_phrases
+| _with CONVERSION screen_or_device_display _common_exception_phrases
+  {
+	CB_PENDING ("DISPLAY WITH CONVERSION");
+  }
 | display_erase	/* note: may also be part of display_pos_specifier */
 | display_pos_specifier
 | display_message_box
@@ -12595,7 +12666,7 @@ display_upon:
   {
 	upon_value = cb_build_display_mnemonic ($2);
   }
-| UPON WORD
+| UPON word_or_terminal
   {
 	upon_value = cb_build_display_name ($2);
   }
@@ -15811,6 +15882,13 @@ stop_statement:
 	cb_emit_stop_run ($4);
 	check_unreached = 1;
 	cobc_cs_check = 0;
+  }
+| STOP ERROR /* GCOS */
+  {
+	begin_statement (STMT_STOP_ERROR, 0);
+	cb_verify (cb_stop_error_statement, cb_statement_name[STMT_STOP_ERROR]);
+	cb_emit_stop_error ();
+	check_unreached = 1;
   }
 | STOP stop_argument
   {

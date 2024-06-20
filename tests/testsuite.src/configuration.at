@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022 Free Software Foundation, Inc.
 ## Written by Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -409,7 +409,7 @@ name: "Empty Conf"
 ])
 
 # check if incomplete configuration result in error
-AT_CHECK([$COMPILE_ONLY -conf=test.conf prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -conf=test.conf prog.cob], [97], [],
 [configuration error:
 test.conf: missing definitions:
 	no definition of 'reserved-words'
@@ -419,10 +419,10 @@ test.conf: missing definitions:
 	no definition of 'word-length'
 	no definition of 'literal-length'
 	no definition of 'numeric-literal-length'
-	no definition of 'defaultbyte'
 	no definition of 'align-record'
 	no definition of 'keycompress'
 	no definition of 'align-opt'
+	no definition of 'defaultbyte'
 	no definition of 'standard-define'
 	no definition of 'binary-size'
 	no definition of 'binary-byteorder'
@@ -457,7 +457,10 @@ test.conf: missing definitions:
 	no definition of 'numeric-pointer'
 	no definition of 'move-non-numeric-lit-to-numeric-is-zero'
 	no definition of 'implicit-assign-dynamic-var'
+	no definition of 'device-mnemonics'
 	no definition of 'comment-paragraphs'
+	no definition of 'control-division'
+	no definition of 'partial-replacing-with-literal'
 	no definition of 'memory-size-clause'
 	no definition of 'multiple-file-tape-clause'
 	no definition of 'label-records-clause'
@@ -473,6 +476,7 @@ test.conf: missing definitions:
 	no definition of 'goto-statement-without-name'
 	no definition of 'stop-literal-statement'
 	no definition of 'stop-identifier-statement'
+	no definition of 'stop-error-statement'
 	no definition of 'debugging-mode'
 	no definition of 'use-for-debugging'
 	no definition of 'padding-character-clause'
@@ -535,6 +539,10 @@ test.conf: missing definitions:
 	no definition of 'assign-disk-from'
 	no definition of 'vsam-status'
 	no definition of 'self-call-recursive'
+	no definition of 'record-contains-depending-clause'
+cobc: too many errors
+
+cobc: aborting
 ])
 
 AT_CLEANUP
@@ -817,5 +825,54 @@ cobc: error: please check environment variables as noted above
 ])
 
 )
+
+AT_CLEANUP
+
+
+AT_SETUP([cobc configuration: source format])
+AT_KEYWORDS([configuration misc format])
+
+AT_DATA([fixed.cob], [
+      *Example prog in fixed format (the default)
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      fixed.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      /
+       PROCEDURE        DIVISION.
+      D    DISPLAY 'START'
+           DISPLAY '     20        30        40         50       60    '
+           DISPLAY '     20        30        40         50       60     
+      -            '    70'
+      D    DISPLAY 'STOP'
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=unknown fixed.cob], [1], [],
+[cobc: error: invalid parameter: -fformat
+])
+AT_CHECK([$COMPILE_ONLY -fixed fixed.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed.cob], [0], [], [])
+
+AT_DATA([wide.cob], [
+      *Example prog in fixed format with wider record length
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      wide.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      /
+       PROCEDURE        DIVISION.
+           DISPLAY '     20        30        40         50       60         70 '
+           DISPLAY '     20        30        40         50       60         70
+      -            '        80'
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY -fformat=fixed wide.cob], [1], [],
+[wide.cob:10: error: continuation character expected
+wide.cob:9: error: invalid literal: '  ...'
+wide.cob:9: error: missing terminating ' character
+wide.cob:9: error: syntax error, unexpected end of file
+])
+AT_CHECK([$COMPILE_ONLY -ftext-column=80 wide.cob], [0], [], [])
 
 AT_CLEANUP

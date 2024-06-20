@@ -3188,6 +3188,13 @@ handle_core_on_error ()
 }
 
 void
+cob_stop_error (void)
+{
+	cob_runtime_error ("STOP ERROR");
+	cob_hard_failure ();
+}
+
+void
 cob_hard_failure ()
 {
 	unsigned int core_on_error = handle_core_on_error ();
