@@ -12872,15 +12872,15 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	if (prog->flag_inspect_used) {
 		output_line ("if (inspect_st != NULL)");
-		output_line ("\tcob_free (inspect_st);");
+		output_line ("\tcob_inspect_free (inspect_st);");
 	}
 	if (prog->flag_string_used) {
 		output_line ("if (string_st != NULL)");
-		output_line ("\tcob_free (string_st);");
+		output_line ("\tcob_string_free (string_st);");
 	}
 	if (prog->flag_unstring_used) {
 		output_line ("if (unstring_st != NULL)");
-		output_line ("\tcob_free (unstring_st);");
+		output_line ("\tcob_unstring_free (unstring_st);");
 	}
 
 	if (prog->flag_main) {
