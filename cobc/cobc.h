@@ -46,6 +46,12 @@
 
 #include "../libcob/sysdefines.h"
 
+#ifdef HAVE_ATTRIBUTE_PURE
+#define COB_A_PURE	__attribute__((pure))
+#else
+#define COB_A_PURE
+#endif
+
 /* Defines for access() */
 #ifndef	F_OK
 #define	F_OK		0
@@ -70,7 +76,13 @@
 /* Source format enum */
 enum cb_format {
 	CB_FORMAT_FIXED = 0,
-	CB_FORMAT_FREE
+	CB_FORMAT_FREE,
+	CB_FORMAT_VARIABLE,	/* MF's Variable format */
+	CB_FORMAT_XOPEN_FFF,	/* X/Open Free-form format */
+	CB_FORMAT_ICOBOL_XCARD,	/* ICOBOL xCard */
+	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
+	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
+	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
 };
 
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
@@ -331,11 +343,9 @@ struct list_files {
 
 extern struct list_files	*cb_current_file;
 
-extern enum cb_format		cb_source_format;
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 extern enum cb_current_date	current_date;
 #endif
-extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 extern int	cb_mf_ibm_comp;
 extern int	cb_cob_line_num;
 extern int	cb_all_files_xfd;
@@ -602,8 +612,18 @@ extern int		ppcopy (const char *, const char *,
 				struct cb_replace_list *);
 extern void		pp_set_replace_list (struct cb_replace_list *,
 					     const cob_u32_t);
+extern unsigned int	ppparse_verify (const enum cb_support tag,
+					const char *feature);
 extern void		ppparse_error (const char *);
 
+extern int		cobc_deciph_source_format (const char *);
+extern void		cobc_set_source_format (const enum cb_format);
+extern enum cb_format	cobc_get_source_format (void) COB_A_PURE;
+extern int		cobc_get_indicator_column (void) COB_A_PURE;
+extern int		cobc_get_text_column (void) COB_A_PURE;
+extern int		cobc_get_indicator (void) COB_A_PURE;
+extern int		cobc_get_margin_a (int indicator_width) COB_A_PURE;
+extern int		cobc_get_margin_b (int indicator_width) COB_A_PURE;
 
 /* parser (in scanner.l, parser.y) */
 #if	!defined (COB_IN_SCANNER ) && !defined (COB_IN_PPLEX) && \

@@ -357,6 +357,9 @@ Open Plans:
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
+** the call-stack on error / in the dump file now contains all parameters given
+   to the program via command line options, if any
+
 ** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
    or be suppressed by -Wno-unsupported) and if the feature is actually used

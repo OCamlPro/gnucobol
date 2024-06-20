@@ -6938,13 +6938,13 @@ AT_DATA([prog.cob], [
        01  n           PIC 9.
 
        PROCEDURE       DIVISION.
-           MOVE X'' TO x
-           MOVE H'' TO x
-           MOVE Z'' TO x
-           MOVE L'' TO x
-           MOVE N"" TO nat
+           MOVE X''  TO x
+           MOVE H''  TO n
+           MOVE Z''  TO x
+           MOVE L''  TO x
+           MOVE N""  TO nat
            MOVE NX'' TO nat
-           MOVE B"" TO n
+           MOVE B""  TO n
            MOVE BX"" TO n
            .
 ])
@@ -8689,3 +8689,176 @@ AT_CLEANUP
 
 # TODO: add missing tests for syntax errors in >>IF/ELSE/END
 
+
+AT_SETUP([CONTROL DIVISION])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([empty.cob], [
+       CONTROL          DIVISION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      empty.
+])
+
+AT_CHECK([$COMPILE_ONLY -fcontrol-division=ok empty.cob], [0], [], [])
+
+AT_DATA([replace.cob], [
+       CONTROL          DIVISION.
+       SUBSTITUTION     SECTION.
+           REPLACE ==TEST-VAR== BY ==VAR==.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      replace.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok replace.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./replace], [0], [OK], [])
+AT_CHECK([$COMPILE replace.cob], [1], [],
+[replace.cob:2: error: CONTROL DIVISION does not conform to GnuCOBOL
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([CONTROL: empty default section])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL		DIVISION.
+       DEFAULT		SECTION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:2: error: CONTROL DIVISION does not conform to GnuCOBOL
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([CONTROL: default section])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL		DIVISION.
+       DEFAULT		SECTION.
+           ACCEPT ALTERNATE CONSOLE
+           DISPLAY IS TERMINAL
+	   .
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [],
+[prog.cob:4: warning: ACCEPT statement in DEFAULT SECTION is not implemented
+prog.cob:5: warning: DISPLAY statement in DEFAULT SECTION is not implemented
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:2: error: CONTROL DIVISION does not conform to GnuCOBOL
+prog.cob:4: warning: ACCEPT statement in DEFAULT SECTION is not implemented
+prog.cob:5: warning: DISPLAY statement in DEFAULT SECTION is not implemented
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([CONTROL: substitution & default section])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([empties.cob], [
+       CONTROL		DIVISION.
+       SUBSTITUTION	SECTION.
+       DEFAULT		SECTION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      empties.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok empties.cob], [0], [], [])
+
+AT_DATA([empty0.cob], [
+       CONTROL		DIVISION.
+       SUBSTITUTION	SECTION.
+       DEFAULT		SECTION.
+           ACCEPT ALTERNATE CONSOLE
+	   .
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      empty0.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok empty0.cob], [0], [],
+[empty0.cob:5: warning: ACCEPT statement in DEFAULT SECTION is not implemented
+])
+
+AT_DATA([empty1.cob], [
+       CONTROL		DIVISION.
+       SUBSTITUTION	SECTION.
+           REPLACE "KO" BY "OK".
+       DEFAULT		SECTION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      empty1.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAR PIC X(2) VALUE "KO".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok empty1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./empty1], [0], [OK], [])
+
+AT_DATA([prog.cob], [
+       CONTROL		DIVISION.
+       SUBSTITUTION	SECTION.
+           REPLACE IISS BY IS
+	           TERM BY TERMINAL
+	           "KO" BY "OK".
+       DEFAULT		SECTION.
+           ACCEPT ALTERNATE CONSOLE
+           DISPLAY IISS TERM
+	   .
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAR PIC X(2) VALUE "KO".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [],
+[prog.cob:8: warning: ACCEPT statement in DEFAULT SECTION is not implemented
+prog.cob:9: warning: DISPLAY statement in DEFAULT SECTION is not implemented
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_CLEANUP

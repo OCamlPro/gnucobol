@@ -3580,6 +3580,7 @@ cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 
 /* Intrinsics */
 
+/* FUNCTION LENGTH - amount of positions */
 cob_field *
 cob_intr_length (cob_field *srcfield)
 {
@@ -3600,6 +3601,8 @@ cob_intr_length (cob_field *srcfield)
 	return curr_field;
 }
 
+
+/* FUNCTION BYTE-LENGTH (or, as an extension: LENGTH-AN) - amount of bytes */
 cob_field *
 cob_intr_byte_length (cob_field *srcfield)
 {

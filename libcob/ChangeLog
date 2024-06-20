@@ -239,6 +239,13 @@
 	  error status and fatal exception (no runtime exit) along with a
 	  warning if the runtime is not configured for XML / JSON
 
+2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_resolve_internal): added check for module name length,
+	  fixed compiler warnings
+	* call.c (cob_call): switched argument table from dynamic allocation
+	  to stack allocation
+
 2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [__PDCURSES__] (cob_exit_screen): execute
@@ -248,10 +255,19 @@
 	* common.c, coblocal.h, screenio.c (cob_exit_screen_from_signal):
 	  only minimal screenio exit from signal handler
 
+2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_cancel): preparation for CANCEL ALL
+
 2022-07-04  Ron Norman <rjn@inglenet.com>
 
 	* Updated Copyright date to include 2022
 	* Reverted back to using D-ISAM and V-ISAM names
+
+2022-06-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_unstring_into): minor performance-tweak
+	  for UNSTRING with a single DELIMITED BY phrase
 
 2022-06-21  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -360,6 +376,7 @@
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+
 2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: adjustments for XCurses defines
@@ -388,6 +405,10 @@
 						cob_relocate_string. All used for installing
 						compiler into directory different that declared
 						when compiler was built
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* common.c, common.h: add support for the STOP ERROR statement
 
 2022-02-21  Ron Norman <rjn@inglenet.com>
 

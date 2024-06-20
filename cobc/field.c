@@ -637,31 +637,32 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 		return NULL;
 	}
 
-	/* Resolve the name in the current group (if any) */
-	if (field->parent && field->parent->children) {
-		for (f = field->parent->children; f; f = f->sister) {
-			if (strcasecmp (f->name, name) == 0) {
-				break;
-			}
+	/* Get last defined name */
+	/* note: chaining over these are much faster than chaining over the complete
+	         parent using strcasecmp */
+	for (items = r->word->items; items; items = CB_CHAIN (items)) {
+		const cb_tree value = CB_VALUE (items);
+		if (CB_FIELD_P (value)) {
+			candidate = value;
+			/* we want to get the last, so no "break" here */
 		}
-		if (f == NULL) {
-			cb_error_x (x, _("'%s' is not defined in '%s'"), name, field->parent->name);
-			return NULL;
-		}
-	} else {
-		/* Get last defined name */
-		candidate = NULL;
-		items = r->word->items;
-		for (; items; items = CB_CHAIN (items)) {
-			if (CB_FIELD_P (CB_VALUE (items))) {
-				candidate = CB_VALUE (items);
-			}
-		}
-		if (!candidate) {
+	}
+	if (!candidate) {
+		if (field->parent) {
+			cb_error_x (x, _("'%s' is not defined in '%s'"),
+				name, field->parent->name);
+		} else {
 			undefined_error (redefines);
-			return NULL;
 		}
-		f = CB_FIELD_PTR (candidate);
+		return NULL;
+	}
+	f = CB_FIELD_PTR (candidate);
+
+	/* Check if candidate is in the current group (if any) */
+	if (field->parent && field->parent != f->parent) {
+		cb_error_x (x, _ ("'%s' is not defined in '%s'"),
+			name, field->parent->name);
+		return NULL;
 	}
 
 	/* Check level number */

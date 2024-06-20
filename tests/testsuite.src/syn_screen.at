@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Edward Hart, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
@@ -137,11 +137,21 @@ AT_DATA([prog.cob], [
        01  curs-4      PIC 9(8) VALUE 0101.
        01  curs-5      PIC X(4).
 
+       01  SCREEN-POS.
+           03  SPOS            PIC  9(04) VALUE ZERO.
+           03  WS2-CURS REDEFINES SPOS.
+               05  SLIN        PIC  9(02).
+               05  SCOL        PIC  9(02).
+
        PROCEDURE       DIVISION.
            *> Valid AT clauses
            DISPLAY "a" AT curs-1
            DISPLAY "a" AT curs-2
            DISPLAY "a" AT posc
+           DISPLAY "a" AT posc
+           DISPLAY "a" AT SPOS
+           DISPLAY "a" AT WS2-CURS
+           DISPLAY "a" AT SCREEN-POS
 
            *> Invalid AT clauses
            DISPLAY "a" AT curs-3
@@ -153,11 +163,11 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:24: error: value in AT clause must have 4 or 6 digits
-prog.cob:25: error: value in AT clause must have 4 or 6 digits
-prog.cob:26: error: value in AT clause is not numeric
-prog.cob:27: error: value in AT clause must have 4 or 6 digits
-prog.cob:29: error: cannot specify figurative constant ZERO in AT clause
+[prog.cob:34: error: value in AT clause must have 4 or 6 digits
+prog.cob:35: error: value in AT clause must have 4 or 6 digits
+prog.cob:36: error: value in AT clause is not numeric
+prog.cob:37: error: value in AT clause must have 4 or 6 digits
+prog.cob:39: error: cannot specify figurative constant ZERO in AT clause
 ])
 AT_CLEANUP
 
@@ -824,6 +834,26 @@ prog.cob:11: warning: 'from-constant-with-size' has FROM, TO or USING without PI
 prog.cob:12: warning: 'from-constant-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: error: PICTURE clause required for 'from-constant-without-pic'
 prog.cob:13: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied                                              
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY WITH CONVERSION])
+AT_KEYWORDS([DISPLAY])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           DISPLAY WITH CONVERSION "Whatever".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:7: warning: DISPLAY WITH CONVERSION is not implemented
 ])
 
 AT_CLEANUP

@@ -767,7 +767,7 @@ cob_encode_invalid_chars (const unsigned char* const name,
 
 /** encode given name
   \param name to encode
-  \param name_buff to place the encoded name to
+  \param name_buff to place the encoded name to (unchanged, when no encoding necessary)
   \param buff_size available
   \param fold_case may be COB_FOLD_UPPER or COB_FOLD_LOWER
   \return size of the encoded name, negative if the buffer size would be exceeded
@@ -818,13 +818,13 @@ static void *
 cob_resolve_internal  (const char *name, const char *dirent,
 	const int fold_case, int module_type)
 {
-	const unsigned char	*s;
 	void			*func;
 	struct struct_handle	*preptr;
 	lt_dlhandle		handle;
 	size_t			i;
-	char call_entry_buff[COB_MINI_BUFF];
-	unsigned char call_entry2_buff[COB_MINI_BUFF];
+	char call_entry_buff[COB_MINI_BUFF];	/* entry name, possibly encoded */
+	unsigned char call_module_buff[COB_MAX_NAMELEN + 1];
+	const unsigned char *s;
 
 	/* LCOV_EXCL_START */
 	if (!cobglobptr) {
@@ -839,10 +839,21 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		return func;
 	}
 
-	s = (const unsigned char *)name;
+	if (strlen (name) > COB_MAX_NAMELEN) {
+		/* note: we allow up to COB_MAX_WORDLEN for relaxed syntax... */
+		snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
+			module_type == COB_MODULE_TYPE_PROGRAM
+			? _("%s: PROGRAM name exceeds %d characters")
+			: _("%s: FUNCTION name exceeds %d characters"),
+			name, COB_MAX_NAMELEN);
+		set_resolve_error (module_type);
+		return NULL;
+	}
 
-	/* Encode program name, including case folding */
-	cob_encode_program_id (s, (unsigned char *)call_entry_buff,
+	/* Encode program name, including case folding,
+	   put to call_entry_buff, may tripple the size */
+	cob_encode_program_id ((const unsigned char *)name,
+		(unsigned char *)call_entry_buff,
 		COB_MINI_MAX, fold_case);
 
 #ifndef	COB_BORKED_DLOPEN
@@ -893,29 +904,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 	}
 #endif
 #endif
-
-	s = (const unsigned char *)name;
-
-	/* Check if name needs conversion */
-	if (cobsetptr->name_convert != 0) {
-		unsigned char *p = call_entry2_buff;
-		for (; *s; ++s, ++p) {
-			if (cobsetptr->name_convert == 1 && isupper (*s)) {
-				*p = (cob_u8_t) tolower (*s);
-			} else if (cobsetptr->name_convert == 2 && islower (*s)) {
-				*p = (cob_u8_t) toupper (*s);
-			} else {
-				*p = *s;
-			}
-		}
-		*p = 0;
-		s = call_entry2_buff;
-	}
-
 	/* Search external modules */
 	resolve_error_buff[CALL_BUFF_MAX] = 0;
 #ifdef	__OS400__
-	strcpy (call_filename_buff, s);
+	strcpy (call_filename_buff, name);
 	for (p = call_filename_buff; *p; ++p) {
 		*p = (cob_u8_t)toupper(*p);
 	}
@@ -931,6 +923,26 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		}
 	}
 #else
+	/* Check if *module name* needs conversion */
+	/* CHECKME: why do we separate this by COB_LOAD_CASE
+	   from the entry points, which are a compile-time setup only? */
+	if (cobsetptr->name_convert != 0) {
+		cob_u8_t* p = call_module_buff;
+		for (s = (const unsigned char *)name; *s; ++s, ++p) {
+			if (cobsetptr->name_convert == 1 && isupper (*s)) {
+				*p = (cob_u8_t)tolower (*s);
+			} else if (cobsetptr->name_convert == 2 && islower (*s)) {
+				*p = (cob_u8_t)toupper (*s);
+			} else {
+				*p = *s;
+			}
+		}
+		*p = 0;
+		s = call_module_buff;
+	} else {
+		s = (const unsigned char *)name;
+	}
+
 	if (dirent) {
 		snprintf (call_filename_buff, (size_t)COB_NORMAL_MAX,
 			  "%s%s.%s", dirent, (char *)s, COB_MODULE_EXT);
@@ -1303,6 +1315,17 @@ cob_cancel (const char *name)
 		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
+
+	/* CANCEL ALL (acu extension) */
+	if (strcmp (name, "CANCEL ALL") == 0) {
+		/* TODO: add list of all modules in CALL (with marker preloaded or not)
+		   then when setting the COB_MODULE_PTR via cob_module_global_enter add
+		   it also to this new list;
+		   then drop in CANCEL and use here canceling non-active COBOL
+		   and - for physical cancel only - also the "not COBOL" ones */
+		return;
+	}
+
 	entry = cob_chk_dirp (name);
 
 #ifdef	COB_ALT_HASH
@@ -1365,7 +1388,7 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 int
 cob_call (const char *name, const int argc, void **argv)
 {
-	void			**pargv;
+	void			*pargv[MAX_CALL_FIELD_PARAMS] = { 0 };
 	cob_call_union		unifunc;
 	int			i;
 
@@ -1383,7 +1406,6 @@ cob_call (const char *name, const int argc, void **argv)
 	}
 	/* LCOV_EXCL_STOP */
 	unifunc.funcvoid = cob_resolve_cobol (name, 0, 1);
-	pargv = cob_malloc (MAX_CALL_FIELD_PARAMS * sizeof(void *));
 	/* Set number of parameters */
 	cobglobptr->cob_call_params = argc;
 	cobglobptr->cob_call_from_c = 1;
@@ -1474,7 +1496,6 @@ cob_call (const char *name, const int argc, void **argv)
 #endif
 #endif
 				);
-	cob_free (pargv);
 	return i;
 }
 

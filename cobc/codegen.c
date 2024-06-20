@@ -4326,7 +4326,11 @@ output_param (cb_tree x, int id)
 		break;
 	case CB_TAG_REPORT_LINE:
 		/* NOTE: do not use CB_REFERENCE_P because 'x' has a tag of CB_TAG_REPORT_LINE */
+#if 1 /* FIXME: Should have expected type! */
 		r = (struct cb_reference *)x;
+#else
+		r = CB_REFERENCE (x);
+#endif
 		f = CB_FIELD (r->value);
 		output ("&%s%d", CB_PREFIX_REPORT_LINE, f->id);
 		break;
@@ -5249,11 +5253,12 @@ propagate_table (cb_tree x, int bgn_idx)
 	struct cb_field *f = cb_code_field (x);
 	const unsigned int occ = (unsigned int)f->occurs_max;
 	cob_uli_t len = (cob_uli_t)f->size;
-	size_t maxlen = len * occ;
+	cob_uli_t maxlen = len * occ;
 	unsigned int j = 1;
 
-	if (bgn_idx < 1)
+	if (bgn_idx < 1) {
 		bgn_idx = 1;
+	}
 
 	if (gen_init_working
 	 || (!chk_field_variable_size (f)
@@ -5261,39 +5266,40 @@ propagate_table (cb_tree x, int bgn_idx)
 	  && !f->depending)) {
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
-		output_block_open ();
-		output_prefix ();
-		output ("cob_u8_ptr b_ptr = ");
-		output_data(x);
-		if (bgn_idx > 1) {
-			output (" + %ld",len * (bgn_idx - 1));
-			maxlen -= len * (bgn_idx - 1);
-		}
-		output (";");
-		output_newline ();
-
-		/* double the chunks each time */
-		do {
+		if (occ > 1) {
+			output_block_open ();
 			output_prefix ();
-			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);", len, len);
-			output ("\t/* %s: %6u thru %u */",
-					f->name, j + bgn_idx, j * 2 + bgn_idx - 1);
+			output ("cob_u8_ptr b_ptr = ");
+			output_data (x);
+			if (bgn_idx > 1) {
+				output (" + %ld",len * (bgn_idx - 1));
+				maxlen -= len * (bgn_idx - 1);
+			}
+			output (";");
 			output_newline ();
-			j = j * 2;
-			len = len * 2;
-		} while ((j * 2) < occ);
 
-		/* missing piece after last chunk */
-		if (j < occ
-		 && maxlen > len) {
-			output_prefix ();
-			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);",
-				len, maxlen - len);
-			output ("\t/* %s: %6u thru %u */",
-				f->name, j + bgn_idx, occ);
-			output_newline ();
+			/* double the chunks each time */
+			do {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);", len, len);
+				output ("\t/* %s: %6u thru %u */",
+						f->name, j + bgn_idx, j * 2 + bgn_idx - 1);
+				output_newline ();
+				j = j * 2;
+				len = len * 2;
+			} while ((j * 2) < occ);
+			/* missing piece after last chunk */
+			if (j < occ
+			 && maxlen > len) {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);",
+					len, maxlen - len);
+				output ("\t/* %s: %6u thru %u */",
+					f->name, j + bgn_idx, occ);
+				output_newline ();
+			}
+			output_block_close ();
 		}
-		output_block_close ();
 	} else {
 		/* Table size is only known at run time */
 		output_prefix ();
@@ -5341,6 +5347,10 @@ initialize_uniform_char (const struct cb_field *f,
 			return '0';
 		case COB_TYPE_ALPHANUMERIC:
 			return ' ';
+#if 1 /* TODO: proper initialization of NATIONAL data */
+		case COB_TYPE_NATIONAL:
+			return ' ';
+#endif
 		default:
 			return -1;
 		}
@@ -5915,9 +5925,9 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 	cb_tree		list;
 	cb_tree		l;
 	int			k, offset, idx, idx_clr, total_occurs, simple_occurs;
-	int			idxtbl[COB_MAX_SUBSCRIPTS+1];
-	int			occtbl[COB_MAX_SUBSCRIPTS+1];
-	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1];
+	int			idxtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
+	int			occtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
+	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1] = { NULL };
 
 	f = cb_code_field (x);
 	if (f->flag_occurs
@@ -5926,10 +5936,12 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 		simple_occurs = 1;
 	else
 		simple_occurs = 0;
+#if 0 /* CHECKME: the init above should be fine */
 	for (idx=0; idx <= COB_MAX_SUBSCRIPTS; idx++) {
 		idxtbl[idx] = 0;
 		pftbl[idx] = NULL;
 	}
+#endif
 	total_occurs = 1;
 	idx_clr = 0;
 	for (idx = 0, pf = f; pf; pf = pf->parent) {
@@ -6131,6 +6143,9 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 
 				if (f->occurs_max > 1) {
 
+					/* all exceptions should have been raised above,
+					   so temporarily detach from the reference */
+					ref->check = NULL;
 					ref->length = NULL;
 
 					for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);

@@ -49,10 +49,10 @@ CB_CONFIG_STRING (cb_reserved_words, "reserved-words", _("use of complete/fixed 
 /* Integer flags */
 
 CB_CONFIG_INT (cb_tab_width, "tab-width", 1, 12, CB_XRANGE(1,12),
-	_("set number of spaces that are assumed for tabs"))
+	_("number of spaces that are assumed for tabs"))
 
 CB_CONFIG_INT (cb_config_text_column, "text-column", 72, 255, CB_XRANGE(72,255),
-	_("set right margin for source (fixed format only)"))
+	_("right margin column number for fixed-form reference-format"))
 
 CB_CONFIG_INT (cb_pic_length, "pic-length", 1, COB_MINI_MAX, _("<number>"),
 	_("maximum number of characters allowed in the PICTURE character-string"))
@@ -66,11 +66,6 @@ CB_CONFIG_INT (cb_lit_length, "literal-length", 1, COB_MAX_LITERAL_LEN, _("<numb
 CB_CONFIG_INT (cb_numlit_length, "numeric-literal-length", 1, COB_MAX_DIGITS, CB_XRANGE(1,COB_MAX_DIGITS),
 	_("maximum numeric literal size"))
 
-CB_CONFIG_SINT (cb_default_byte, "defaultbyte", -1, 255, _("<number>"),
-	_("initialize fields without VALUE to <number>\n"
-	  "                        * decimal 0..255 representing a character\n"
-	  "                        * default: initialize to picture"))
-
 CB_CONFIG_INT (cb_align_record, "align-record", 0, 256, CB_XRANGE(0,256),
 	_("align WORKING-STORAGE/LOCAL-STORAGE record on boundary"))
 
@@ -82,6 +77,14 @@ CB_CONFIG_BOOLEAN (cb_align_opt, "align-opt",
 
 
 /* Flags with required parameter and special values */
+
+CB_CONFIG_ANY (signed int, cb_default_byte, "defaultbyte",
+	_("default initialization for fields without VALUE, may be one of\n"
+	  "                        * character in quotes\n"
+	  "                        * decimal 0..255 representing a character\n"
+	  "                        * \"init\" to initialize to PICTURE/USAGE\n"
+	  "                        * \"none\" to do no explicit initialization\n"
+	  "                        * default: \"init\""))
 
 CB_CONFIG_ANY (enum cb_std_def, cb_std_define, "standard-define", NULL) /* Used Standard (set via -std) */
 
@@ -186,10 +189,20 @@ CB_CONFIG_BOOLEAN (cb_move_nonnumlit_to_numeric_is_zero, "move-non-numeric-lit-t
 CB_CONFIG_BOOLEAN (cb_implicit_assign_dynamic_var, "implicit-assign-dynamic-var",
 	_("implicitly define a variable if an ASSIGN DYNAMIC does not match any data item"))
 
+CB_CONFIG_BOOLEAN (cb_device_mnemonics, "device-mnemonics",
+	_("specifying device by mnemonic"))
+
 /* Support flags */
 
 CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
 	_("comment paragraphs in IDENTIFICATION DIVISION (AUTHOR, DATE-WRITTEN, ...)"))
+
+CB_CONFIG_SUPPORT (cb_control_division, "control-division",
+	_("CONTROL DIVISION"))
+
+CB_CONFIG_SUPPORT (cb_partial_replacing_with_literal,
+		   "partial-replacing-with-literal",
+		   _("partial replacing with literal"))
 
 CB_CONFIG_SUPPORT (cb_memory_size_clause, "memory-size-clause",
 	_("MEMORY-SIZE clause"))
@@ -240,6 +253,9 @@ CB_CONFIG_SUPPORT (cb_stop_literal_statement, "stop-literal-statement",
 
 CB_CONFIG_SUPPORT (cb_stop_identifier_statement, "stop-identifier-statement",
 	_("STOP-identifier statement"))
+
+CB_CONFIG_SUPPORT (cb_stop_error_statement, "stop-error-statement",
+	_("STOP ERROR statement"))
 
 CB_CONFIG_SUPPORT (cb_debugging_mode, "debugging-mode",
 	_("DEBUGGING MODE and debugging indicator"))
@@ -427,3 +443,5 @@ CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
 CB_CONFIG_SUPPORT (cb_self_call_recursive, "self-call-recursive",
 	_("CALL to own PROGRAM-ID implies RECURSIVE attribute"))
 
+CB_CONFIG_SUPPORT (cb_record_contains_depending_clause, "record-contains-depending-clause",
+	_("DEPENDING clause in RECORD CONTAINS"))
