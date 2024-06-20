@@ -34,10 +34,11 @@
 #include "coblocal.h"
 
 enum inspect_type {
-	INSPECT_ALL		= 0,
-	INSPECT_LEADING = 1,
-	INSPECT_FIRST	= 2,
-	INSPECT_TRAILING	= 3	
+	INSPECT_UNSET = 0,
+	INSPECT_ALL,
+	INSPECT_LEADING,
+	INSPECT_FIRST,
+	INSPECT_TRAILING
 };
 #define DLM_DEFAULT_NUM		8U
 
@@ -47,30 +48,28 @@ struct dlm_struct {
 };
 
 struct cob_inspect_state {
-	cob_field	    	*var;
-	unsigned char		*data;
-	unsigned char		*start;
-	unsigned char		*end;
-	unsigned char		*mark;	/* buffer to marker only: 0/1 */
-	size_t		    	mark_size;	/* size of internal marker elements, increased up to
+	cob_field	    	  *var;
+	unsigned char		  *data;
+	unsigned char		  *start;
+	unsigned char		  *end;
+	unsigned char		  *mark;	/* buffer to marker only: 0/1 */
+	size_t		    	  mark_size;	/* size of internal marker elements, increased up to
                                  the maximum needed (biggest target field size) */
-	size_t			    mark_min;	/* min. position of the marker set by the last initialize */
-	size_t			    mark_max;	/* max. position of the marker set by the last initialize */
-	unsigned char		*repdata;	/* contains data for REPLACING which is applied at end */
-	size_t			    repdata_size;	/* size of internal repdata buffer, increased up to
+	size_t			      mark_min;	/* min. position of the marker set by the last initialize */
+	size_t			      mark_max;	/* max. position of the marker set by the last initialize */
+	unsigned char		  *repdata;	/* contains data for REPLACING which is applied at end */
+	size_t			      repdata_size;	/* size of internal repdata buffer, increased up to
                                    the maximum needed (biggest target field size) */
-	size_t			    size;
-	cob_u32_t		    replacing;	/* marker about current operation being INSPECT REPLACING */
-	int			        sign;
+	size_t			      size;
+	cob_u32_t		      replacing;	/* marker about current operation being INSPECT REPLACING */
+	int			          sign;
+	enum inspect_type type;
 };
 
 struct cob_string_state {
 	cob_field		*dst;
 	cob_field		*ptr;
 	cob_field		*dlm;
-	cob_field		dst_copy;
-	cob_field		ptr_copy;
-	cob_field		dlm_copy;
 	int		    	offset;	/* value associated with WITH POINTER clauses */
 };
 
@@ -82,8 +81,6 @@ struct cob_unstring_state {
                                          the maximum needed (amount of DELIMITED BY),
                                          actual size of dlm_list is calculated by
                                          dlm_list_size * sizeof(dlm_struct) */
-	cob_field           src_copy;
-	cob_field           ptr_copy;
 	int                 offset;
 	unsigned int        count;
 	unsigned int        ndlms;
@@ -179,7 +176,7 @@ alloc_figurative (const cob_field *f1, const cob_field *f2)
    This is a must-have for REPLACING as the original data may not be
    changed to correctly handle multiple replacements with BEFORE/AFTER
    clauses */
-COB_INLINE COB_A_INLINE void
+static COB_INLINE COB_A_INLINE void
 setup_repdata (struct cob_inspect_state *st)
 {
 	/* implementation note:
@@ -280,7 +277,6 @@ inspect_common_no_replace (
 	struct cob_inspect_state *st,
 	cob_field *f1,
 	cob_field *f2,
-	const enum inspect_type type,
 	const size_t pos,
 	const size_t len
 )
@@ -288,7 +284,7 @@ inspect_common_no_replace (
 	register size_t		i;
 	int		n = 0;
 
-	if (type == INSPECT_TRAILING) {
+	if (st->type == INSPECT_TRAILING) {
 		const size_t	i_max = len - f2->size; /* no + 1 here */
 		size_t	first_marker = 0;
 		for (i = i_max; ; --i) {
@@ -311,7 +307,7 @@ inspect_common_no_replace (
 		if (n) {
 			set_inspect_mark (st, pos + first_marker, len - first_marker);
 		}
-	} else if (type == INSPECT_LEADING) {
+	} else if (st->type == INSPECT_LEADING) {
 		const size_t	i_max = len - f2->size + 1;
 		size_t	last_marker = 0;
 		for (i = 0; i < i_max; ++i) {
@@ -344,7 +340,7 @@ inspect_common_no_replace (
 					n++;
 					/* set the marker so we won't iterate over this area again */
 					set_inspect_mark (st, checked_pos, f2->size);
-					if (type == INSPECT_FIRST) {
+					if (st->type == INSPECT_FIRST) {
 						break;
 					}
 					i += f2->size - 1;
@@ -387,14 +383,13 @@ inspect_common_replacing (
 	struct cob_inspect_state *st,
 	cob_field *f1,
 	cob_field *f2,
-	const enum inspect_type type,
 	const size_t pos,
 	const size_t len
 )
 {
 	register size_t		i;
 
-	if (type == INSPECT_TRAILING) {
+	if (st->type == INSPECT_TRAILING) {
 		const size_t	i_max = len - f2->size; /* no + 1 here */
 		for (i = i_max; ; --i) {
 			/* Find matching substring */
@@ -410,7 +405,7 @@ inspect_common_replacing (
 				break;
 			}
 		}
-	} else if (type == INSPECT_LEADING) {
+	} else if (st->type == INSPECT_LEADING) {
 		const size_t	i_max = len - f2->size + 1;
 		for (i = 0; i < i_max; ++i) {
 			/* Find matching substring */
@@ -432,7 +427,7 @@ inspect_common_replacing (
 			if (memcmp (i + st->start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (st, pos + i, f2->size, f1->data)) {
-					if (type == INSPECT_FIRST) {
+					if (st->type == INSPECT_FIRST) {
 						break;
 					}
 					i += f2->size - 1;
@@ -446,8 +441,7 @@ static void
 inspect_common (
 	struct cob_inspect_state *st,
 	cob_field *f1,
-	cob_field *f2,
-	const enum inspect_type type
+	cob_field *f2
 )
 {
 	const size_t	pos = st->start - st->data;
@@ -474,7 +468,7 @@ inspect_common (
 		if (f2->size > len) {
 			return;
 		}
-		inspect_common_no_replace (st, f1, f2, type, pos, len);
+		inspect_common_no_replace (st, f1, f2, pos, len);
 	} else {
 		if (f1->size != f2->size) {
 			if (COB_FIELD_TYPE (f1) == COB_TYPE_ALPHANUMERIC_ALL) {
@@ -488,7 +482,7 @@ inspect_common (
 		if (f2->size > len) {
 			return;
 		}
-		inspect_common_replacing (st, f1, f2, type, pos, len);
+		inspect_common_replacing (st, f1, f2, pos, len);
 	}
 }
 
@@ -511,7 +505,7 @@ cob_inspect_init_common_r (struct cob_inspect_state **pst, cob_field *var)
 {
 	struct cob_inspect_state *st;
 	if (*pst == NULL) {
-		*pst = malloc (sizeof(struct cob_inspect_state));
+		*pst = cob_malloc (sizeof(struct cob_inspect_state));
 		(*pst)->mark = NULL;
 		(*pst)->repdata = NULL;
 	}
@@ -702,45 +696,53 @@ cob_inspect_characters (cob_field *f1)
 void
 cob_inspect_all_r (struct cob_inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common (st, f1, f2, INSPECT_ALL);
+	st->type = INSPECT_ALL;
+	inspect_common (st, f1, f2);
 }
 void
 cob_inspect_all (cob_field *f1, cob_field *f2)
 {
-	inspect_common (share_inspect_state, f1, f2, INSPECT_ALL);
+	share_inspect_state->type = INSPECT_ALL;
+	inspect_common (share_inspect_state, f1, f2);
 }
 
 void
 cob_inspect_leading_r (struct cob_inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common (st, f1, f2, INSPECT_LEADING);
+	st->type = INSPECT_LEADING;
+	inspect_common (st, f1, f2);
 }
 void
 cob_inspect_leading (cob_field *f1, cob_field *f2)
 {
-	inspect_common (share_inspect_state, f1, f2, INSPECT_LEADING);
+	share_inspect_state->type = INSPECT_LEADING;
+	inspect_common (share_inspect_state, f1, f2);
 }
 
 void
 cob_inspect_first_r (struct cob_inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common (st, f1, f2, INSPECT_FIRST);
+	st->type = INSPECT_FIRST;
+	inspect_common (st, f1, f2);
 }
 void
 cob_inspect_first (cob_field *f1, cob_field *f2)
 {
-	inspect_common (share_inspect_state, f1, f2, INSPECT_FIRST);
+	share_inspect_state->type = INSPECT_FIRST;
+	inspect_common (share_inspect_state, f1, f2);
 }
 
 void
 cob_inspect_trailing_r (struct cob_inspect_state *st, cob_field *f1, cob_field *f2)
 {
-	inspect_common (st, f1, f2, INSPECT_TRAILING);
+	st->type = INSPECT_TRAILING;
+	inspect_common (st, f1, f2);
 }
 void
 cob_inspect_trailing (cob_field *f1, cob_field *f2)
 {
-	inspect_common (share_inspect_state, f1, f2, INSPECT_TRAILING);
+	share_inspect_state->type = INSPECT_TRAILING;
+	inspect_common (share_inspect_state, f1, f2);
 }
 
 void
@@ -942,16 +944,11 @@ cob_string_init_r (struct cob_string_state **pst, cob_field *dst, cob_field *ptr
 {
 	struct cob_string_state *st;
 	if (*pst == NULL)
-		*pst = malloc (sizeof(struct cob_string_state));
+		*pst = cob_malloc (sizeof(struct cob_string_state));
 	st = *pst;
 
-	st->dst_copy = *dst;
-	st->dst = &st->dst_copy;
-	st->ptr = NULL;
-	if (ptr) {
-		st->ptr_copy = *ptr;
-		st->ptr = &st->ptr_copy;
-	}
+	st->dst = dst;
+	st->ptr = ptr;
 	st->offset = 0;
 	cobglobptr->cob_exception_code = 0;
 
@@ -976,8 +973,7 @@ void
 cob_string_delimited_r (struct cob_string_state *st, cob_field *dlm)
 {
 	if (dlm) {
-		st->dlm_copy = *dlm;
-		st->dlm = &st->dlm_copy;
+		st->dlm = dlm;
 	} else {
 		st->dlm = NULL;
 	}
@@ -1065,18 +1061,13 @@ cob_unstring_init_r (
 {
 	struct cob_unstring_state *st;
 	if (*pst == NULL) {
-		*pst = malloc (sizeof(struct cob_unstring_state));
+		*pst = cob_malloc (sizeof(struct cob_unstring_state));
 		(*pst)->dlm_list = NULL;
 	}
 	st = *pst;
 
-	st->src_copy = *src;
-	st->src = &st->src_copy;
-	st->ptr = NULL;
-	if (ptr) {
-		st->ptr_copy = *ptr;
-		st->ptr = &st->ptr_copy;
-	}
+	st->src = src;
+	st->ptr = ptr;
 
 	st->offset = 0;
 	st->count = 0;
@@ -1310,31 +1301,50 @@ cob_unstring_finish (void)
 /* Initialization/Termination */
 
 void
+cob_inspect_free (struct cob_inspect_state *st)
+{
+	if (st != NULL) {
+		if (st->mark) {
+			cob_free (st->mark);
+			st->mark = NULL;
+		}
+		st->mark_size = st->mark_min = st->mark_max = 0;
+		if (st->repdata) {
+			cob_free (st->repdata);
+			st->repdata = NULL;
+		}
+		st->repdata_size = 0;
+	}
+}
+
+void
+cob_string_free (struct cob_string_state *st)
+{
+	cob_free (st->dst);
+	cob_free (st->ptr);
+	cob_free (st->dlm);
+}
+
+void
+cob_unstring_free (struct cob_unstring_state *st)
+{
+	if (st != NULL) {
+		if (st->dlm_list) {
+			cob_free (st->dlm_list);
+			st->dlm_list = NULL;
+			st->dlm_list_size = 0;
+		}
+	}
+}
+
+void
 cob_exit_strings ()
 {
 	struct cob_inspect_state *sti = share_inspect_state;
 	struct cob_unstring_state *stu = share_unstring_state;
 
-	if (sti != NULL) {
-		if (sti->mark) {
-			cob_free (sti->mark);
-			sti->mark = NULL;
-		}
-		sti->mark_size = sti->mark_min = sti->mark_max = 0;
-		if (sti->repdata) {
-			cob_free (sti->repdata);
-			sti->repdata = NULL;
-		}
-		sti->repdata_size = 0;
-	}
-
-	if (stu != NULL) {
-		if (stu->dlm_list) {
-			cob_free (stu->dlm_list);
-			stu->dlm_list = NULL;
-		}
-		stu->dlm_list_size = 0;
-	}
+	cob_inspect_free (sti);
+	cob_unstring_free (stu);
 
 	if (figurative_ptr) {
 		cob_free (figurative_ptr);

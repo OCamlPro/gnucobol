@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2019, 2022-2023 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2019, 2022-2024 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -63,9 +63,9 @@ testsuite_sources = \
 	testsuite.src/data_display.at \
 	testsuite.src/data_packed.at \
 	testsuite.src/data_pointer.at \
+	testsuite.src/backcomp.at \
 	testsuite.src/numeric-dump.cob \
-	testsuite.src/numeric-display.cob \
-	testsuite.src/backcomp.at
+	testsuite.src/numeric-display.cob
 
 testsuite_manual_sources = \
 	testsuite.src/run_manual_screen.at
