@@ -1,4 +1,8 @@
 
+2024-06-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_compile): fix MSVC build command
+
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* replace.c: fix compile warnings and formatting
