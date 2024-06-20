@@ -92,6 +92,7 @@ ipch
 /cobc/pplex.c
 /cobc/ppparse.c
 /cobc/ppparse.h
+/cobc/ppparse.output
 /cobc/scanner.c
 
 /doc/cbchelp.tex
