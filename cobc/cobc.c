@@ -8217,7 +8217,7 @@ process_compile (struct filename *fn)
 		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include, name,
-			name, fn->translate);
+			fn->object, fn->translate);
 	if (verbose_output > 1) {
 		return process (cobc_buffer);
 	} else {
