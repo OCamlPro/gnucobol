@@ -977,14 +977,14 @@ LINE    PG/LN  A...B............................................................
 000005         WORKING-STORAGE  SECTION.
 000006         REPLACE   ==VAR-COLON== BY ==VAR-COMMA==.
 000007         COPY "copy.inc"
+000008            REPLACING ==:TEST:== BY ==COLON==.
 000001C
 000002C        01 VAR-:TEST: PIC X(2) VALUE "OK".
-000007            REPLACING ==:TEST:== BY ==COLON==.
-000008         PROCEDURE        DIVISION.
-000009             DISPLAY VAR-COMMA NO ADVANCING
-000010             END-DISPLAY.
-000011             STOP RUN.
-000012         REPLACE OFF.
+000009         PROCEDURE        DIVISION.
+000010             DISPLAY VAR-COMMA NO ADVANCING
+000011             END-DISPLAY.
+000012             STOP RUN.
+000013         REPLACE OFF.
 
 
 0 warnings in compilation group

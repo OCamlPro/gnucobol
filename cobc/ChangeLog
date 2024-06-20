@@ -243,6 +243,11 @@
 	* cobc.c (print_fields): leave a hint to field being TYPEDEF
 	* cobc.c (xref_fields): dont output references for TYPEDEF sub items
 
+2023-07-20  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* cobc.c : rewrite partialy the copy replacing in listing
+	  mode (bug: #831)
+
 2023-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (refmod_checks): extracted from (cb_build_identifier)
