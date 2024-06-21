@@ -2439,6 +2439,14 @@ cb_build_identifier (cb_tree x, const int subchk)
 			for (p = f; p; p = p->children) {
 				if (p->depending 
 				 && p->depending != cb_error_node
+				    /* Do not check length for implicit access
+				       to a PIC L field (i.e, via enclosing
+				       group), as those disregard the DEPENDING.
+				       However, assuming the filler is never
+				       explicitly accessed (p == f), check is
+				       still done for explicit access to PIC L
+				       field (p->parent == f). */
+				 && (p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = cb_add_check_odo (p);
 					if (e1 != NULL) {
@@ -2970,7 +2978,7 @@ cb_build_length (cb_tree x)
 		if (f->flag_any_length) {
 			return cb_build_any_intrinsic (CB_LIST_INIT (x));
 		}
-		if (cb_field_variable_size (f) == NULL) {
+		if (f->flag_picture_l || cb_field_variable_size (f) == NULL) {
 			sprintf (buff, FMT_LEN, cb_field_size (x));
 			return cb_build_numeric_literal (0, buff, 0);
 		}
@@ -4732,7 +4740,7 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Check ODO items */
 	for (l = cb_depend_check; l; l = CB_CHAIN (l)) {
 		struct cb_field		*depfld = NULL;
-		unsigned int		odo_level = 0;
+		unsigned int		odo_level = 0, parent_is_pic_l;
 		cb_tree	xerr = NULL;
 		x = CB_VALUE (l);
 		if (x == NULL || x == cb_error_node) {
@@ -4754,12 +4762,17 @@ cb_validate_program_data (struct cb_program *prog)
 				}
 			}
 		}
+		/* Direct parent being PIC L means we are checking an implicit
+		   FILLER with ODO: this permits nested ODO and further sister
+		   fields. */
+		parent_is_pic_l = q->parent && q->parent->flag_picture_l;
 		/* The data item that contains a OCCURS DEPENDING clause must be
 		   the last data item in the group */
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
-				 && !cb_odoslide) {
+				 && !cb_odoslide
+				 && !parent_is_pic_l) {
 					xerr = x;
 					cb_error_x (x,
 						_("'%s' cannot have nested OCCURS DEPENDING"),
@@ -4782,6 +4795,7 @@ cb_validate_program_data (struct cb_program *prog)
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
 					 && !cb_complex_odo
+					 && !parent_is_pic_l
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
@@ -7543,19 +7557,28 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 
 	found = 0;
 	for (f1 = CB_FIELD_PTR (x1)->children; f1; f1 = f1->sister) {
-		if (!f1->redefines && !f1->flag_occurs) {
-			for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
-				if (!f2->redefines && !f2->flag_occurs) {
-					if (strcmp (f1->name, f2->name) == 0) {
-						t1 = cb_build_field_reference (f1, x1);
-						t2 = cb_build_field_reference (f2, x2);
-						if (f1->children && f2->children) {
-							found += emit_move_corresponding (t1, t2);
-						} else {
-							cb_emit (cb_build_move (t1, t2));
-							found++;
-						}
-					}
+		if (f1->redefines || f1->flag_occurs) continue;
+		for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
+			if (f2->redefines || f2->flag_occurs) continue;
+			if (strcmp (f1->name, f2->name) == 0) {
+				t1 = cb_build_field_reference (f1, x1);
+				t2 = cb_build_field_reference (f2, x2);
+				/* GCOS 7: Contrary to the documentation,
+				   handling of PIC L fields in MOVE
+				   CORRESPONDING ignores the DEPENDING var for
+				   both sending and receiving fields. */
+				if (f1->flag_picture_l) {
+					CB_REFERENCE (t1)->length = cb_int (f1->size);
+				}
+				if (f2->flag_picture_l) {
+					CB_REFERENCE (t2)->length = cb_int (f2->size);
+				}
+				if (f1->children && !f1->flag_picture_l &&
+				    f2->children && !f2->flag_picture_l) {
+					found += emit_move_corresponding (t1, t2);
+				} else {
+					cb_emit (cb_build_move (t1, t2));
+					found++;
 				}
 			}
 		}
@@ -9974,6 +9997,9 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 		 && CB_REFERENCE_P (x)
 		 && CB_REFERENCE (x)->subs == NULL
 		 && CB_REFERENCE (x)->length == NULL) {
+			/* GCOS 7: Contrary to what the documentation states,
+			   PIC L fields are initialized up to length indicated
+			   by DEPENDING var. */
 			cb_tree		temp;
 			struct cb_field	*f;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
@@ -12341,7 +12367,8 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					 && p->storage != CB_STORAGE_LINKAGE
 					 && !p->flag_item_based
 					 && CB_LITERAL_P (src)
-					 && !cb_is_field_unbounded (p)) {
+					 && !cb_is_field_unbounded (p)
+					 && !p->flag_picture_l) {
 						CB_REFERENCE (x)->length = cb_int (p->size - bgnpos + 1);
 					} else {
 						if (bgnpos >= p->offset

@@ -2862,6 +2862,15 @@ process_command_line (const int argc, char **argv)
 					  long_options, &idx, 1)) >= 0) {
 		switch (c) {
 
+		case 7:
+			/* -fmax-errors=<xx> : Maximum errors until abort */
+			n = cobc_deciph_optarg (cob_optarg, 0);
+			if (n < 0) {
+				cobc_err_exit (COBC_INV_PAR, "-fmax-errors");
+			}
+			cb_max_errors = n;
+			break;
+
 		case '?':
 			/* Unknown option or ambiguous */
 			if (verbose_output >= 1) {
@@ -3602,11 +3611,7 @@ process_command_line (const int argc, char **argv)
 
 		case 7:
 			/* -fmax-errors=<xx> : Maximum errors until abort */
-			n = cobc_deciph_optarg (cob_optarg, 0);
-			if (n < 0) {
-				cobc_err_exit (COBC_INV_PAR, "-fmax-errors");
-			}
-			cb_max_errors = n;
+			/* This option was processed in the first getopt-run */
 			break;
 
 		case 16:

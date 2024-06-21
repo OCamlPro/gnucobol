@@ -797,6 +797,7 @@ struct cb_picture {
 	cob_u32_t		have_sign;	/* Have 'S' */
 	unsigned int flag_is_calculated	: 1;	/* is calculated */
 	unsigned int flag_has_p	: 1;	/* Has PPs in PICTURE */
+	unsigned int variable_length	: 1;	/* Starts with 'L' */
 };
 
 #define CB_PICTURE(x)	(CB_TREE_CAST (CB_TAG_PICTURE, struct cb_picture, x))
@@ -993,7 +994,7 @@ struct cb_field {
 
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
-
+	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))

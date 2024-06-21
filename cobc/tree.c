@@ -2946,6 +2946,20 @@ find_floating_insertion_str (const cob_pic_symbol *str,
 	*last = str - 1;
 }
 
+/* Number of character types in picture strings */
+/*
+  The 25 character types are:
+  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+  0           -  - DB        *  *  -  -           X
+  /
+  Duplicates indicate floating/non-floating insertion symbols and/or left/right
+  of decimal point positon.
+*/
+#define CB_PIC_CHAR_TYPES 25
+#define CB_FIRST_NON_P_DIGIT_CHAR_TYPE 9
+#define CB_LAST_NON_P_DIGIT_CHAR_TYPE 15
+#define CB_PIC_S_CHAR_TYPE 18
+
 static int
 char_to_precedence_idx (const cob_pic_symbol *str,
 			const cob_pic_symbol *current_sym,
@@ -3018,27 +3032,30 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 	case 'X':
 		return 16;
 
-	case 'S':
+	case 'L':
 		return 17;
 
-	case 'V':
+	case 'S':
 		return 18;
+
+	case 'V':
+		return 19;
 
 	case 'P':
 		if (non_p_digits_seen && before_decimal_point) {
-			return 19;
-		} else {
 			return 20;
+		} else {
+			return 21;
 		}
 
 	case '1':
-		return 21;
-
-	case 'N':
 		return 22;
 
-	case 'E':
+	case 'N':
 		return 23;
+
+	case 'E':
+		return 24;
 
 	default:
 		if (current_sym->symbol == current_program->currency_symbol) {
@@ -3116,18 +3133,20 @@ get_char_type_description (const int idx)
 	case 16:
 		return _("A or X");
 	case 17:
-		return "S";
+		return "L";
 	case 18:
-		return "V";
+		return "S";
 	case 19:
-		return _("a P which is before the decimal point");
+		return "V";
 	case 20:
-		return _("a P which is after the decimal point");
+		return _("a P which is before the decimal point");
 	case 21:
-		return "1";
+		return _("a P which is after the decimal point");
 	case 22:
-		return "N";
+		return "1";
 	case 23:
+		return "N";
+	case 24:
 		return "E";
 	default:
 		return NULL;
@@ -3155,42 +3174,46 @@ emit_precedence_error (const int preceding_idx, const int following_idx)
 static int
 valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 {
-	static int	precedence_table[24][24] = {
+	static int	precedence_table[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {
 	/*
 	  Refer to the standard's PICTURE clause precedence rules for complete explanation.
+
+	  The entries for character `L' are based on the GCOS7 reference
+	  manual.
 	*/
-		/*
-		      B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  S  V  P  P  1  N  E
-		      0           -  - DB        *  *  -  -           X
-		      /
-		*/
-	/* B */ { 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0 },
-	/* , */ { 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0 },
-	/* . */ { 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* + */ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-	/* + */ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* + */ { 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 },
-	/* C */ { 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 },
-	/* $ */ { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* $ */ { 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0 },
-	/* Z */ { 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* Z */ { 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
-	/* + */ { 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* + */ { 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-	/* $ */ { 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* $ */ { 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-	/* 9 */ { 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1 },
-	/* X */ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-	/* S */ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* V */ { 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 },
-	/* P */ { 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 },
-	/* P */ { 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0 },
-	/* 1 */ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-	/* N */ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-	/* E */ { 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/*
+		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+		  0           -  - DB        *  *  -  -           X
+		  /
+	*/
+	/* B */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0 },
+	/* , */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
+	/* . */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* + */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+	/* + */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* + */	{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+	/* C */	{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+	/* $ */	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* $ */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+	/* Z */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* Z */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
+	/* + */	{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* + */	{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+	/* $ */	{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* $ */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+	/* 9 */	{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1 },
+	/* X */	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+	/* L */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* S */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* V */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+	/* P */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+	/* P */	{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0 },
+	/* 1 */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+	/* N */	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
+	/* E */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	};
-	int		error_emitted[24][24] = {{ 0 }};
-	int		chars_seen[24] = { 0 };
+	int		error_emitted[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {{ 0 }};
+	int		chars_seen[CB_PIC_CHAR_TYPES] = { 0 };
 	const cob_pic_symbol	*first_floating_sym;
 	const cob_pic_symbol	*last_floating_sym;
 	int		before_decimal_point = 1;
@@ -3201,7 +3224,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	int		non_p_digits_seen = 0;
 	int		error_detected = 0;
 
-	chars_seen[17] = s_char_seen;
+	chars_seen[CB_PIC_S_CHAR_TYPE] = s_char_seen;
 	find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym);
 
 	k=0;
@@ -3217,7 +3240,8 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 						      non_p_digits_seen);
 			if (idx == -1) {
 				continue;
-			} else if (9 <= idx && idx <= 15) {
+			} else if (CB_FIRST_NON_P_DIGIT_CHAR_TYPE <= idx &&
+				   idx <= CB_LAST_NON_P_DIGIT_CHAR_TYPE) {
 				non_p_digits_seen = 1;
 			}
 
@@ -3226,7 +3250,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 			  character it is not allowed to. Display an error once
 			  for each combination detected.
 			*/
-			for (j = 0; j < 24; ++j) {
+			for (j = 0; j < CB_PIC_CHAR_TYPES; ++j) {
 				if (chars_seen[j]
 				 && !precedence_table[idx][j]
 				 && !error_emitted[idx][j]) {
@@ -3569,6 +3593,16 @@ repeat:
 		case 'A':
 			category |= PIC_ALPHABETIC;
 			x_digits += n;
+			break;
+
+		case 'L':
+			pic->variable_length = 1;
+			(void) cb_verify (cb_picture_l,
+					  _("PICTURE string with 'L' character"));
+			if (idx != 0) {
+				cb_error (_("L must be at start of PICTURE string"));
+				error_detected = 1;
+			}
 			break;
 
 		case 'S':
@@ -4204,6 +4238,8 @@ cb_field_variable_size (const struct cb_field *f)
 	for (fc = f->children; fc; fc = fc->sister) {
 		if (fc->depending) {
 			return fc;
+		} else if (fc->flag_picture_l) {
+			continue;
 		} else if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
@@ -4220,7 +4256,8 @@ cb_field_variable_address (const struct cb_field *fld)
 	f = fld;
 	for (p = f->parent; p; f = f->parent, p = f->parent) {
 		for (p = p->children; p != f; p = p->sister) {
-			if (p->depending || cb_field_variable_size (p)) {
+			if (p->depending ||
+			    (!p->flag_picture_l && cb_field_variable_size (p))) {
 				return 1;
 			}
 		}
@@ -5048,7 +5085,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 			}
 		}
 	}
-	
+
 	/* Validate and set max and min record size */
 	for (p = records; p; p = p->sister) {
 		if (f->organization == COB_ORG_INDEXED

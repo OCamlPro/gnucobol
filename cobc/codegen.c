@@ -51,7 +51,7 @@
 /* Type of initialization to be done */
 enum cobc_init_type {
 	INITIALIZE_NONE = 0,	/* no init (beause of FILLER, REDEFINES, ...) */
-	INITIALIZE_ONE,		/* initialize a single varialbe */
+	INITIALIZE_ONE,		/* initialize a single variable */
 	INITIALIZE_COMPOUND,	/* init structure */
 	INITIALIZE_DEFAULT	/* init to default-byte value / PIC (USAGE) */
 };
@@ -783,7 +783,7 @@ chk_field_variable_size (struct cb_field *f)
 		f->vsize = NULL;
 		for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 			if (fc->depending) {
-				if (cb_odoslide) {
+				if (cb_odoslide || f->flag_picture_l) {
 					f->vsize = fc;
 					break;
 				}
@@ -794,11 +794,13 @@ chk_field_variable_size (struct cb_field *f)
 					 && f->level != 77
 					 && !f->sister->redefines)
 						break;
-					if (fc->sister != NULL)	
+					if (fc->sister != NULL)
 						continue;	 /* Group has sister so NOT vary size */
 					f->vsize = fc;
 					break;
 				}
+			} else if (fc->flag_picture_l) {
+				continue;
 			} else if ((p = chk_field_variable_size (fc)) != NULL) {
 				f->vsize = p;
 				break;
@@ -865,7 +867,10 @@ chk_field_variable_address (struct cb_field *fld)
 		struct cb_field		*p;
 		for (p = f->parent; p; f = f->parent, p = f->parent) {
 			for (p = p->children; p != f; p = p->sister) {
-				if (p->depending || chk_field_variable_size (p)) {
+				/* Skip PIC L fields as their representation
+				   have constant length */
+				if (p->depending ||
+				    (!p->flag_picture_l && chk_field_variable_size (p))) {
 					fld->flag_vaddr_done = 1;
 					fld->vaddr = 1;
 					return 1;
@@ -888,7 +893,7 @@ out_odoslide_fld_offset (struct cb_field *p, struct cb_field *fld)
 	if (p == fld) 	/* Single field */
 		return 1;
 
-	if (p->children) {
+	if (p->children && !p->flag_picture_l) {
 		if (out_odoslide_grp_offset (p, fld))
 			return 1;
 	} else {
@@ -1146,7 +1151,6 @@ static void
 output_base (struct cb_field *f, const cob_u32_t no_output)
 {
 	struct cb_field		*f01;
-	struct cb_field		*p;
 
 	/* LCOV_EXCL_START */
 	if (f->flag_item_78) {
@@ -1196,7 +1200,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		if (cb_odoslide) {
 			out_odoslide_offset (f01, f);
 		} else {
-			struct cb_field		*v;
+			struct cb_field		*v, *p;
 			for (p = f->parent; p; f = f->parent, p = f->parent) {
 				for (p = p->children; p != f; p = p->sister) {
 					v = chk_field_variable_size (p);
@@ -1761,10 +1765,9 @@ output_attr (const cb_tree x)
 			case COB_TYPE_GROUP:
 			case COB_TYPE_ALPHANUMERIC:
 				if (f->flag_justified) {
-					id = lookup_attr (type, 0, 0, COB_FLAG_JUSTIFIED, NULL, 0);
-				} else {
-					id = lookup_attr (type, 0, 0, 0, NULL, 0);
+					flags |= COB_FLAG_JUSTIFIED;
 				}
+				id = lookup_attr (type, 0, 0, flags, NULL, 0);
 				break;
 			default:
 				if (f->pic->have_sign) {
@@ -5557,15 +5560,12 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 	} else {
 		output ("memset (");
 		output_data (x);
-		if (size <= 0) {
+		if (size <= 0 ||
+		    (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length)) {
 			output (", %d, ", c);
 			output_size (x);
 			output (");");
-		} else if (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length) {
-			output (", %d, ", c);
-			output_size (x);
-			output (");");
-		} else if (!gen_init_working 
+		} else if (!gen_init_working
 				&& (f->flag_unbounded || !(cb_complex_odo || cb_odoslide))
 				&& chk_field_variable_size (f) != NULL) {
 			output (", %d, ", c);

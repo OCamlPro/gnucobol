@@ -21,6 +21,10 @@
 
 	* general: set defaultbyte to "none" for standard COBOL, 32 to " "
 
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add option picture-l
+
 2022-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ibm-strict.conf, mvs-strict.conf, gcos-strict.conf, bs2000-strict.conf:

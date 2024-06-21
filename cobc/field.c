@@ -940,7 +940,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 					"LIKE", cb_get_usage_string (target->usage));
 				target->flag_invalid = 1;
 			}
- 
+
 #if 0		/* TODO, also syntax-check for usage here */
 			if (target->cat is_numeric) {
 				sprintf (pic, "9(%d)", size_implied);
@@ -1179,7 +1179,7 @@ create_implicit_picture (struct cb_field *f)
 			ret = 1;
 		}
 	}
-	
+
 	/* Checkme: should we raise an error for !cb_relaxed_syntax_checks? */
 	if (!ret) {
 		cb_warning_x (cb_warn_additional, x, _("defining implicit picture size %d for '%s'"),
@@ -1312,6 +1312,7 @@ validate_occurs (const struct cb_field * const f)
 			/* The data item that contains a OCCURS DEPENDING clause shall not
 			   be subordinate to a data item that has an OCCURS clause */
 			for (p = f->parent; p; p = p->parent) {
+				if (p->flag_picture_l) continue;
 				if (p->flag_occurs) {
 					cb_error_x (CB_TREE (p),
 						    _("'%s' cannot have an OCCURS clause due to '%s'"),
@@ -1346,10 +1347,11 @@ validate_redefines (const struct cb_field * const f)
 	}
 
 	/* Check variable occurrence */
-	if (f->depending || cb_field_variable_size (f)) {
+	if (f->depending ||
+	    (!f->flag_picture_l && cb_field_variable_size (f))) {
 		cb_error_x (x, _("'%s' cannot be variable length"), f->name);
 	}
-	if (cb_field_variable_size (f->redefines)) {
+	if (!f->redefines->flag_picture_l && cb_field_variable_size (f->redefines)) {
 		cb_error_x (x, _("the original definition '%s' cannot be variable length"),
 			    f->redefines->name);
 	}
@@ -1366,10 +1368,18 @@ validate_group (struct cb_field *f)
 		group_error (x, "PICTURE");
 	}
 	if (f->flag_justified) {
-		group_error (x, "JUSTIFIED RIGHT");
+		if (!f->flag_picture_l)
+			group_error (x, "JUSTIFIED RIGHT");
+		else
+			cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"),
+				    cb_name (x));
 	}
 	if (f->flag_blank_zero) {
-		group_error (x, "BLANK WHEN ZERO");
+		if (!f->flag_picture_l)
+			group_error (x, "BLANK WHEN ZERO");
+		else
+			cb_error_x (x, _("'%s' cannot have BLANK WHEN ZERO clause"),
+				    cb_name (x));
 	}
 
 	if (f->storage == CB_STORAGE_SCREEN &&
@@ -2336,6 +2346,7 @@ validate_field_1 (struct cb_field *f)
 		validate_occurs (f);
 	}
 
+
 	if (f->level == 66) {
 		/* no check for redefines here */
 		return 0;
@@ -2861,7 +2872,7 @@ unbounded_again:
 		}
 
 		/* Ensure items within OCCURS are aligned correctly. */
-		if (f->occurs_max > 1 
+		if (f->occurs_max > 1
 		 && occur_align_size > 1
 		 && (size_check % occur_align_size) != 0) {
 			pad = occur_align_size - (size_check % occur_align_size);
@@ -3094,7 +3105,14 @@ validate_field_value (struct cb_field *f)
 {
 	if (f->values) {
 		if (f->usage != CB_USAGE_CONTROL) {
-			validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
+			if (f->flag_picture_l) {
+				cb_error_x (CB_TREE (f),
+					    _("%s and %s are mutually exclusive"),
+					    _("variable-length PICTURE"), "VALUE");
+				f->values = NULL;
+			} else {
+				validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
+			}
 		} else {
 			/* CHECK: possibly add validation according to control type */
 		}

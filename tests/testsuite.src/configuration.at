@@ -409,7 +409,7 @@ name: "Empty Conf"
 ])
 
 # check if incomplete configuration result in error
-AT_CHECK([$COMPILE_ONLY -conf=test.conf prog.cob], [97], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=132 -conf=test.conf prog.cob], [1], [],
 [configuration error:
 test.conf: missing definitions:
 	no definition of 'reserved-words'
@@ -540,9 +540,7 @@ test.conf: missing definitions:
 	no definition of 'vsam-status'
 	no definition of 'self-call-recursive'
 	no definition of 'record-contains-depending-clause'
-cobc: too many errors
-
-cobc: aborting
+	no definition of 'picture-l'
 ])
 
 AT_CLEANUP
