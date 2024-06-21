@@ -10,6 +10,7 @@
 	* tree.h (cb_statement), parser.y, typeck.c: drop flag_merge,
 	  instead check by "statement == STMT_MERGE"
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2023-02-26  Ron Norman <rjn@inglenet.com>
 
@@ -236,6 +237,13 @@
 
 	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree
 	  as all but one caller directly use it that way
+
+2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (create_implicit_picture): explicit disallow generating picture
+	  from FUNCTION which size is commonly unknown (and use of intrinsic
+	  functions outside of PROCEDURE DIVISION is an extension already)
+	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
 
 2022-07-14  Matthew Remacle <mattata@users.sf.net>
 
