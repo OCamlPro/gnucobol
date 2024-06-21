@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2015, 2017-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -1750,6 +1750,8 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
+# FIXME: move to different place or adjust test - note: so far
+#        we only want to verify codegen
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -1802,8 +1804,10 @@ AT_DATA([prog.cob], [
         END PROGRAM prog2.
        END PROGRAM prog.
 ])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# FIXME: move to different place or adjust test - note: so far
+#        we only want to verify codegen, otherwise add
+# AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+AT_CHECK([$COMPILE -Wno-unsupported prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -1905,8 +1909,10 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+# Note: special check: we test the invalid open here, it doesn't
+#       matter _why_ it is invalid (missing file / missing support)
+AT_CHECK([$COMPILE -Wno-unsupported prog.cob], [0], [], [])
+AT_CHECK([COB_DISABLE_WARNINGS=1 $COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
