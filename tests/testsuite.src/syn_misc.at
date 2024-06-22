@@ -6993,18 +6993,20 @@ AT_CLEANUP
 
 
 AT_SETUP([@OPTIONS parsing])
-AT_KEYWORDS([misc OPTIONS])
+AT_KEYWORDS([misc OPTIONS fujitsu])
 
 # GnuCOBOL currently only skips these, see FR 305
 
 AT_DATA([valid.cob], [
 000100 @OPTIONS NOMAIN,APOST
-000200 IDENTIFICATION  DIVISION.
-000300 PROGRAM-ID. VALID.
+000200 @OPTIONS APOST
+000300 IDENTIFICATION  DIVISION.
+000400 PROGRAM-ID. VALID.
 ])
 
 AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
-[valid.cob:2: warning: ignoring unknown directive: '@OPTIONS'
+[valid.cob:2: warning: ignoring unknown directive: '@OPTIONS NOMAIN,APOST'
+valid.cob:3: warning: ignoring unknown directive: '@OPTIONS APOST'
 ])
 
 #AT_DATA([invalid.cob], [
@@ -7030,6 +7032,104 @@ AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
 #invalid.cob:6: warning: skipping line after first space
 #invalid.cob:7: error: @OPTIONS MAIN conflicts with command line option '-m'
 #])
+
+AT_CLEANUP
+
+
+AT_SETUP([PROCESS / CBL parsing])
+AT_KEYWORDS([misc ibm])
+
+# GnuCOBOL currently only skips these, see FR 305
+
+#AT_DATA([valid.cob], [
+#Process codepage(1047)
+#CBL CODEPAGE(1047)
+#Process
+#  Process codepage(1208)
+#  CBL CODEPAGE(1208)
+#000100 Process codepage(1047)
+#000200 CBL CODEPAGE(1047)
+#000300 CBL
+#000400 IDENTIFICATION  DIVISION.
+#000500 PROGRAM-ID. VALID.
+#])
+#
+#AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+#[valid.cob:2: warning: ignoring unknown directive: 'Process codepage(1047)'
+#valid.cob:3: warning: ignoring unknown directive: 'CBL CODEPAGE(1047)'
+#valid.cob:5: warning: ignoring unknown directive: 'Process codepage(1208)'
+#valid.cob:6: warning: ignoring unknown directive: 'CBL CODEPAGE(1208)'
+#valid.cob:7: warning: ignoring unknown directive: 'Process codepage(1047)'
+#valid.cob:8: warning: ignoring unknown directive: 'CBL CODEPAGE(1047)'
+#])
+
+# FIXME: the part above does not work
+
+#AT_DATA([valid.cob], [
+#Process codepage(1047)
+#   Process
+#    CBL
+#000100 Process codepage(1208)
+#000200 CBL CODEPAGE(1208)
+#000300 CBL
+#000400 IDENTIFICATION  DIVISION.
+#000500 PROGRAM-ID. VALID.
+#])
+
+#AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+#[valid.cob:2: warning: ignoring unknown directive: 'Process codepage(1047)'
+#valid.cob:5: warning: ignoring unknown directive: 'Process codepage(1208)'
+#valid.cob:6: warning: ignoring unknown directive: 'CBL CODEPAGE(1208)'
+#])
+
+# simple one, to consider later how to make the necessary changes for
+# process/cbl before col 7
+
+AT_DATA([valid.cob], [
+000100 Process codepage(1047)
+000200 CBL CODEPAGE(1208)
+000300 CBL
+000400 IDENTIFICATION  DIVISION.
+000500 PROGRAM-ID. VALID.
+])
+
+AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+[valid.cob:2: warning: ignoring unknown directive: 'Process codepage(1047)'
+valid.cob:3: warning: ignoring unknown directive: 'CBL CODEPAGE(1208)'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([*CONTROL / *CBL parsing])
+AT_KEYWORDS([misc ibm])
+
+#AT_DATA([valid.cob], [
+#      *CONTROL LIST
+#        *CONTROL SOURCE
+#      *CBL MAP LIST
+#000100 *CBL NOMAP NOSOURCE NOLIST
+#000200 IDENTIFICATION  DIVISION.
+#000300 PROGRAM-ID. VALID.
+#])
+
+#AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+#[valid.cob:2: warning: LIST is not applicable, consider -g / -s
+#valid.cob:4: warning: LIST is not applicable, consider -g / -s
+#])
+
+# for now only simple one -> ignored
+
+AT_DATA([valid.cob], [
+      *CONTROL LIST
+        *CONTROL SOURCE
+      *CBL MAP LIST
+000100 *CBL NOMAP NOSOURCE NOLIST
+000200 IDENTIFICATION  DIVISION.
+000300 PROGRAM-ID. VALID.
+])
+
+AT_CHECK([$COMPILE_ONLY valid.cob], [0], [], [])
 
 AT_CLEANUP
 
