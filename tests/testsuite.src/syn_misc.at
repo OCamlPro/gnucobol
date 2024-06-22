@@ -1813,6 +1813,13 @@ prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers
 prog.cob:8: error: unknown statement 'This'
 ])
 
+# Check dialect option `format` (fixed for default) does not erase flags like `-F`, `--free`:
+AT_CHECK([$COBC -fsyntax-only -F -std=default -Wextra prog.cob], [1], [],
+[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: error: unknown statement 'This'
+])
+
 AT_CLEANUP
 
 

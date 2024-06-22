@@ -63,11 +63,6 @@ CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 128, 7,
 
 /* Flags with required parameter and no associated variable */
 
-CB_FLAG_NQ (1, "format", 16,
-	_("  -fformat=[FIXED|FREE|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX]\n"
-	  "                        reference format\n"
-	  "                        * default: FIXED"))
-
 CB_FLAG_NQ (1, "intrinsics", 10,		/* added to cb_intrinsic_list */
 	_("  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"
 	  "                        intrinsics to be used without FUNCTION keyword"))

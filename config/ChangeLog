@@ -17,6 +17,10 @@
 
 	* *.conf: changed top-level-occurs-clause "skip" to "unconformable"
 
+2022-07-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add option format
+
 2022-07-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: set defaultbyte to "none" for standard COBOL, 32 to " "
