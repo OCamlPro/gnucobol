@@ -51,7 +51,6 @@
 #include <json.h>
 #endif
 
-
 /* Local variables */
 
 /* XMLSS return-code halfword */
@@ -252,6 +251,28 @@ get_trimmed_data (const cob_field * const f,
 	return (*strndup_func)(str, len);
 }
 
+/* Returns 1 if str contains invalid XML 1.0 chars, 0 otherwise. */
+static int
+has_invalid_xml_char (const cob_field * const f)
+{
+	size_t	i;
+
+	/*  Char       ::=      #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF] */
+	/* TO-DO: This assumes the data is already in UTF-8! */
+	for (i = 0; i < f->size; ++i) {
+		if (iscntrl (f->data[i])
+		 && f->data[i] != 0x09
+		 && f->data[i] != 0x0a
+		 && f->data[i] != 0x0d) {
+			return 1;
+		}
+	}
+
+	/* TO-DO: 2/3/4-byte characters. Will this need libicu? */
+
+	return 0;
+}
+
 /* check for valid XML name */
 static int
 is_valid_xml_name (const cob_field * const f)
@@ -377,28 +398,6 @@ static xmlChar *
 get_trimmed_xml_data (const cob_field * const f)
 {
 	return (xmlChar *) get_trimmed_data (f, &xmlCharStrndup_void);
-}
-
-/* Returns 1 if str contains invalid XML 1.0 chars, 0 otherwise. */
-static int
-has_invalid_xml_char (const cob_field * const f)
-{
-	size_t	i;
-
-	/*  Char       ::=      #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF] */
-	/* TO-DO: This assumes the data is already in UTF-8! */
-	for (i = 0; i < f->size; ++i) {
-		if (iscntrl (f->data[i])
-		 && f->data[i] != 0x09
-		 && f->data[i] != 0x0a
-		 && f->data[i] != 0x0d) {
-			return 1;
-		}
-	}
-
-	/* TO-DO: 2/3/4-byte characters. Will this need libicu? */
-
-	return 0;
 }
 
 static xmlChar *
