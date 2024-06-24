@@ -1369,15 +1369,9 @@ typedef struct __cob_module {
 #define COB_DUMP_LS		0x20  		/* LINKAGE SECTION */
 #define COB_DUMP_LO		0x40  		/* LOCAL-STORAGE SECTION */
 #define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
-	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
-											   IBM may be different (_very_ likely for error codes);
-											   but the main difference is to "COMPAT" */
-
 #if 0
-	unsigned char		unused[4];		/* Use these flags up later, added for alignment */
+	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
 #endif
-
 	unsigned int		module_stmt;		/* Last statement executed as modulated source line
 											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
@@ -1418,6 +1412,12 @@ typedef struct __cob_module {
 	unsigned char		unused[32];		/* For future use */
 
 	const char	*gc_version;	/* module version */
+
+	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
+#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
+											   IBM may be different (_very_ likely for error codes);
+											   but the main difference is to "COMPAT" */
+
 } cob_module;
 
 /* For 'module_type'
