@@ -1008,7 +1008,6 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	d->scale = COB_FIELD_SCALE (f);
 }
 
-
 /* get the numeric value from the given decimal and store it in the
    specified field (or, depending on opt, set overflow exception and return
    with the field unchanged) */
@@ -1019,20 +1018,22 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	register unsigned char	*p, *q;
 	unsigned char	*data;
 	size_t	size;
-	int 	i, diff, sign, digits, last;
-	sign = mpz_sgn (d->value);
+	int 	i, diff, last;
+	const int		sign = mpz_sgn (d->value);
+	const int		digits = COB_FIELD_DIGITS (f);
 
 	/* check for value zero (allows early exit) and handle sign */
 	if (sign == 0) {
 		cob_set_packed_zero (f);
 		return 0;
 	}
+
+	/* Build string */
 	if (sign < 0) {
 		mpz_abs (d->value, d->value);
 	}
 	/* Build string, note: we can't check the decimal size with
 	   mpz_sizeinbase, as its result is "either exact or one too big" */
-	digits = COB_FIELD_DIGITS (f);
 
 	/* get divisor that would overflow */
 	cob_pow_10 (cob_mexp, digits);
@@ -1481,22 +1482,6 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 overflow:
 	cob_set_exception (COB_EC_SIZE_OVERFLOW);
 	return cobglobptr->cob_exception_code;
-}
-
-/* General uint -> field */
-
-void
-cob_set_field_to_uint (cob_field *field, const cob_u32_t data)
-{
-	cob_decimal	dec;
-
-	mpz_init2 (dec.value, COB_MPZ_DEF);
-	mpz_set_ui (dec.value, data);
-	dec.scale = 0;
-
-	cob_decimal_get_field (&dec, field, 0);
-
-	mpz_clear (dec.value);
 }
 
 /* General field */

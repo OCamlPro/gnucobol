@@ -1246,11 +1246,6 @@ validate_any_length_item (struct cb_field *f)
 		return 1;
 	}
 
-	/* CHECKME: Why do we increase the reference counter here
-	            (to ensure the field is generated)?
-	            Better would be to add the check for 'f->count != 0' to the place
-	            where it possibly is missing... */
-	f->count++;
 	return 0;
 }
 
@@ -3170,6 +3165,7 @@ cb_validate_field (struct cb_field *f)
 	validate_field_value (f);
 	if (f->flag_is_global) {
 		struct cb_field		*c;
+#if 0 /* CHECKME: Why should we adjust the field count here? */
 		if (f->count == 0)
 			f->count++;
 		for (c = f->children; c; c = c->sister) {
@@ -3177,6 +3173,11 @@ cb_validate_field (struct cb_field *f)
 			if (c->count == 0)
 				c->count++;
 		}
+#else
+		for (c = f->children; c; c = c->sister) {
+			c->flag_is_global = 1;
+		}
+#endif
 	}
 
 	f->flag_is_verified = 1;

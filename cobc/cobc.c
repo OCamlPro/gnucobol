@@ -5425,7 +5425,8 @@ print_fields (struct cb_field *top, int *found)
 	const char	*name_or_filler;
 
 	for (; top; top = top->sister) {
-		if (!top->level) {
+		if (top->level == 0
+		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
 		if (*found == 0) {
@@ -5556,6 +5557,35 @@ print_fields_in_section (struct cb_field *first_field_in_section)
 	return found;
 }
 
+/* add a "receiving" entry for a given field reference
+   and increment used counter */
+void
+cobc_xref_set_receiving (const cb_tree target_ext)
+{
+	cb_tree	target = target_ext;
+	struct cb_field		*target_fld;
+	int				xref_line;
+
+	if (CB_CAST_P (target)) {
+		target = CB_CAST (target)->val;
+	}
+	if (!CB_REF_OR_FIELD_P (target)) {
+		return;
+	}
+	target_fld = CB_FIELD_PTR (target);
+	target_fld->count++;
+#ifdef COB_INTERNAL_XREF
+	if (CB_REFERENCE_P (target)) {
+		xref_line = CB_REFERENCE (target)->common.source_line;
+	} else if (current_statement) {
+		xref_line = current_statement->common.source_line;
+	} else {
+		xref_line = cb_source_line;
+	}
+	cobc_xref_link (&target_fld->xref, xref_line, 1);
+#endif
+}
+
 #ifdef COB_INTERNAL_XREF
 /* create xref_elem with line number for existing xref entry */
 void
@@ -5630,32 +5660,6 @@ cobc_xref_link_parent (const struct cb_field *field)
 		}
 		p_xref->tail = f_xref->tail;
 	}
-}
-
-/* add a "receiving" entry for a given field reference */
-void
-cobc_xref_set_receiving (const cb_tree target_ext)
-{
-	cb_tree	target = target_ext;
-	struct cb_field		*target_fld;
-	int				xref_line;
-
-	if (CB_CAST_P (target)) {
-		target = CB_CAST (target)->val;
-	}
-	if (CB_REF_OR_FIELD_P (target)) {
-		target_fld = CB_FIELD_PTR (target);
-	} else {
-		return;
-	}
-	if (CB_REFERENCE_P (target)) {
-		xref_line = CB_REFERENCE (target)->common.source_line;
-	} else if (current_statement) {
-		xref_line = current_statement->common.source_line;
-	} else {
-		xref_line = cb_source_line;
-	}
-	cobc_xref_link (&target_fld->xref, xref_line, 1);
 }
 
 void
@@ -5756,8 +5760,9 @@ xref_fields (struct cb_field *top)
 	for (; top; top = top->sister) {
 		/* no entry for internal generated fields
 		   other than used special indexes */
-		if (!top->level || (top->index_type != CB_NORMAL_INDEX
-				    && !top->count)) {
+		if (top->level == 0
+		 || (top->flag_internal_register && !top->count)
+		 || (top->index_type != CB_NORMAL_INDEX && !top->count)) {
 			continue;
 		}
 #if 0 /* FIXME: at least in the context of RW flag_filler is not set correct in
@@ -5819,7 +5824,9 @@ xref_fields_in_section (struct cb_field *first_field_in_section)
 
 	if (first_field_in_section != NULL) {
 		found = !!xref_fields (first_field_in_section);
-		print_program_data ("");
+		if (found) {
+			print_program_data ("");
+		}
 	}
 	return found;
 }

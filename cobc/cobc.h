@@ -147,7 +147,8 @@ enum cb_current_date {
 #define	CB_CS_CONVERT			CB_CS_DAY
 #define	CB_CS_MODULE_NAME		CB_CS_DAY
 #define	CB_CS_DEFAULT			CB_CS_DAY
-#define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
+#define	CB_CS_VALIDATE_STATUS		CB_CS_DAY
+#define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -512,8 +513,6 @@ extern int			cb_exp_line;
 extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
-extern struct cb_field		*external_defined_fields_ws;
-extern struct cb_field		*external_defined_fields_global;
 
 /* Functions */
 

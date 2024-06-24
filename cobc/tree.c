@@ -2217,7 +2217,7 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	/* Save current program as actual at it's level */
 	container_progs[nest_level] = p;
 	if (nest_level
-		&& last_program /* <- silence warnings */) {
+	 && last_program /* <- silence warnings */) {
 		/* Contained program */
 		/* Inherit from upper level */
 		p->global_file_list = last_program->global_file_list;
@@ -2300,10 +2300,8 @@ cb_enum_explain (const enum cb_tag tag)
 		return "LOCALE";
 	case CB_TAG_SYSTEM_NAME:
 		return "SYSTEM";
-#if 0 /* pending merge */
 	case CB_TAG_SCHEMA_NAME:
 		return "XML-SCHEMA";
-#endif
 	case CB_TAG_LITERAL:
 		return "LITERAL";
 	case CB_TAG_DECIMAL:
@@ -2350,10 +2348,8 @@ cb_enum_explain (const enum cb_tag tag)
 		return "ALTER";
 	case CB_TAG_SET_ATTR:
 		return "SET ATTRIBUTE";
-#if 0 /* pending merge */
 	case CB_TAG_XML_PARSE:
 		return "XML PARSE";
-#endif
 	case CB_TAG_PERFORM_VARYING:
 		return "PERFORM";
 	case CB_TAG_PICTURE:
@@ -2635,6 +2631,22 @@ cb_build_alphabet_name (cb_tree name)
 		       sizeof (struct cb_alphabet_name));
 	p->name = cb_define (name, CB_TREE (p));
 	p->cname = cb_to_cname (p->name);
+	return CB_TREE (p);
+}
+
+/* XML-Schema-name */
+
+cb_tree
+cb_build_schema_name (cb_tree name)
+{
+	struct cb_schema_name *p;
+
+	if (!name || name == cb_error_node) {
+		return NULL;
+	}
+	p = make_tree (CB_TAG_SCHEMA_NAME, CB_CATEGORY_UNKNOWN,
+		       sizeof (struct cb_schema_name));
+	p->name = cb_define (name, CB_TREE (p));
 	return CB_TREE (p);
 }
 
@@ -7052,6 +7064,27 @@ cb_build_set_attribute (const struct cb_field *fld,
 	p->fld = (struct cb_field *)fld;
 	p->val_on = val_on;
 	p->val_off = val_off;
+	return CB_TREE (p);
+}
+
+/* XML PARSE */
+
+cb_tree
+cb_build_xml_parse (cb_tree data, cb_tree proc,
+		      const int returning_national,
+		      cb_tree encoding, cb_tree validation)
+{
+	struct cb_xml_parse *p;
+
+	p = make_tree (CB_TAG_XML_PARSE, CB_CATEGORY_UNKNOWN,
+		       sizeof (struct cb_xml_parse));
+	p->data = data;
+	p->proc = cb_build_perform_once (proc);
+	p->encoding = encoding;
+	p->validating = validation;
+	p->returning_national = returning_national;
+	p->common.source_file = current_statement->common.source_file;
+	p->common.source_line = current_statement->common.source_line;
 	return CB_TREE (p);
 }
 
