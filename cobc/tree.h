@@ -84,54 +84,56 @@ enum cb_param_size {
 /* Basic tree tag */
 enum cb_tag {
 	/* Primitives */
-	CB_TAG_CONST = 0,	/* 0 Constant value */
-	CB_TAG_INTEGER,		/* 1 Integer constant */
-	CB_TAG_STRING,		/* 2 String constant */
-	CB_TAG_ALPHABET_NAME,	/* 3 Alphabet-name */
-	CB_TAG_CLASS_NAME,	/* 4 Class-name */
-	CB_TAG_LOCALE_NAME,	/* 5 Locale-name */
-	CB_TAG_SYSTEM_NAME,	/* 6 System-name */
-	CB_TAG_LITERAL,		/* 7 Numeric/alphanumeric literal */
-	CB_TAG_DECIMAL,		/* 8 Decimal number */
-	CB_TAG_FIELD,		/* 9 User-defined variable */
-	CB_TAG_FILE,		/* 10 File description */
-	CB_TAG_REPORT,		/* 11 Report description */
-	CB_TAG_CD,		/* 12 Communication description */
+	CB_TAG_CONST = 0,	/* Constant value */
+	CB_TAG_INTEGER,		/* Integer constant */
+	CB_TAG_STRING,		/* String constant */
+	CB_TAG_ALPHABET_NAME,	/* Alphabet-name */
+	CB_TAG_CLASS_NAME,	/* Class-name */
+	CB_TAG_LOCALE_NAME,	/* Locale-name */
+	CB_TAG_SYSTEM_NAME,	/* System-name */
+	CB_TAG_SCHEMA_NAME,	/* xml-schema-name */
+	CB_TAG_LITERAL,		/* Numeric/alphanumeric literal */
+	CB_TAG_DECIMAL,		/* Decimal number */
+	CB_TAG_FIELD,		/* User-defined variable */
+	CB_TAG_FILE,		/* File description */
+	CB_TAG_REPORT,		/* Report description */
+	CB_TAG_CD,		/* Communication description */
 	/* Expressions */
-	CB_TAG_REFERENCE,	/* 13 Reference to a field, file, or label */
-	CB_TAG_BINARY_OP,	/* 14 Binary operation */
-	CB_TAG_FUNCALL,		/* 15 Run-time function call */
-	CB_TAG_CAST,		/* 16 Type cast */
-	CB_TAG_INTRINSIC,	/* 17 Intrinsic function */
+	CB_TAG_REFERENCE,	/* Reference to a field, file, or label */
+	CB_TAG_BINARY_OP,	/* Binary operation */
+	CB_TAG_FUNCALL,		/* Run-time function call */
+	CB_TAG_CAST,		/* Type cast */
+	CB_TAG_INTRINSIC,	/* Intrinsic function */
 	/* Statements */
-	CB_TAG_LABEL,		/* 18 Label statement */
-	CB_TAG_ASSIGN,		/* 19 Assignment statement */
-	CB_TAG_INITIALIZE,	/* 20 INITIALIZE statement */
-	CB_TAG_SEARCH,		/* 21 SEARCH statement */
-	CB_TAG_CALL,		/* 22 CALL statement */
-	CB_TAG_GOTO,		/* 23 GO TO statement */
-	CB_TAG_IF,		/* 24 IF statement / WHEN clause / PRESENT WHEN clause */
-	CB_TAG_PERFORM,		/* 25 PERFORM statement */
-	CB_TAG_STATEMENT,	/* 26 General statement */
-	CB_TAG_CONTINUE,	/* 27 CONTINUE statement */
-	CB_TAG_CANCEL,		/* 28 CANCEL statement */
-	CB_TAG_ALTER,		/* 29 ALTER statement */
-	CB_TAG_SET_ATTR,	/* 30 SET ATTRIBUTE statement */
+	CB_TAG_LABEL,		/* Label statement */
+	CB_TAG_ASSIGN,		/* Assignment statement */
+	CB_TAG_INITIALIZE,	/* INITIALIZE statement */
+	CB_TAG_SEARCH,		/* SEARCH statement */
+	CB_TAG_CALL,		/* CALL statement */
+	CB_TAG_GOTO,		/* GO TO statement */
+	CB_TAG_IF,		/* IF statement / WHEN clause / PRESENT WHEN clause */
+	CB_TAG_PERFORM,		/* PERFORM statement */
+	CB_TAG_STATEMENT,	/* General statement */
+	CB_TAG_CONTINUE,	/* CONTINUE statement */
+	CB_TAG_CANCEL,		/* CANCEL statement */
+	CB_TAG_ALTER,		/* ALTER statement */
+	CB_TAG_SET_ATTR,	/* SET ATTRIBUTE statement */
+	CB_TAG_XML_PARSE,	/* XML PARSE statement */
 	/* Miscellaneous */
-	CB_TAG_PERFORM_VARYING,	/* 31 PERFORM VARYING parameter */
-	CB_TAG_PICTURE,		/* 32 PICTURE clause */
-	CB_TAG_LIST,		/* 33 List */
-	CB_TAG_DIRECT,		/* 34 Code output or comment */
-	CB_TAG_DEBUG,		/* 35 Debug item set */
-	CB_TAG_DEBUG_CALL,	/* 36 Debug callback */
-	CB_TAG_PROGRAM,		/* 37 Program */
-	CB_TAG_PROTOTYPE,	/* 38 Prototype */
-	CB_TAG_DECIMAL_LITERAL,	/* 39 Decimal Literal */
-	CB_TAG_REPORT_LINE,	/* 40 Report line description */
-	CB_TAG_ML_SUPPRESS,	/* 41 JSON/XML GENERATE SUPPRESS clause */
-	CB_TAG_ML_TREE,		/* 42 JSON/XML GENERATE output tree */
-	CB_TAG_ML_SUPPRESS_CHECKS,	/* 43 JSON/XML GENERATE SUPPRESS checks */
-	CB_TAG_VARY			/* 44 Report line description */
+	CB_TAG_PERFORM_VARYING,	/* PERFORM VARYING parameter */
+	CB_TAG_PICTURE,		/* PICTURE clause */
+	CB_TAG_LIST,		/* List */
+	CB_TAG_DIRECT,		/* Code output or comment */
+	CB_TAG_DEBUG,		/* Debug item set */
+	CB_TAG_DEBUG_CALL,	/* Debug callback */
+	CB_TAG_PROGRAM,		/* Program */
+	CB_TAG_PROTOTYPE,	/* Prototype */
+	CB_TAG_DECIMAL_LITERAL,	/* Decimal Literal */
+	CB_TAG_REPORT_LINE,	/* Report line description */
+	CB_TAG_ML_SUPPRESS,	/* JSON/XML GENERATE SUPPRESS clause */
+	CB_TAG_ML_TREE,		/* JSON/XML GENERATE output tree */
+	CB_TAG_ML_SUPPRESS_CHECKS,	/* JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_VARY		/* Report line description */
 	/* When adding a new entry, please remember to add it to
 	   cb_enum_explain in tree.c as well. */
 };
@@ -749,6 +751,17 @@ struct cb_system_name {
 #define CB_SYSTEM_NAME(x)	(CB_TREE_CAST (CB_TAG_SYSTEM_NAME, struct cb_system_name, x))
 #define CB_SYSTEM_NAME_P(x)	(CB_TREE_TAG (x) == CB_TAG_SYSTEM_NAME)
 
+/* XML-schema-name */
+
+struct cb_schema_name {
+	struct cb_tree_common	common;		/* Common values */
+	const char		*name;		/* Original name */
+	const char		*data;		/* file name */
+};
+
+#define CB_SCHEMA_NAME(x)	(CB_TREE_CAST (CB_TAG_SCHEMA_NAME, struct cb_schema_name, x))
+#define CB_SCHEMA_NAME_P(x)	(CB_TREE_TAG (x) == CB_TAG_SCHEMA_NAME)
+
 /* Literal */
 
 struct cb_literal {
@@ -797,6 +810,7 @@ struct cb_picture {
 	cob_u32_t		have_sign;	/* Have 'S' */
 	unsigned int flag_is_calculated	: 1;	/* is calculated */
 	unsigned int flag_has_p	: 1;	/* Has PPs in PICTURE */
+	unsigned int variable_length	: 1;	/* Starts with 'L' */
 };
 
 #define CB_PICTURE(x)	(CB_TREE_CAST (CB_TAG_PICTURE, struct cb_picture, x))
@@ -993,7 +1007,7 @@ struct cb_field {
 
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
-
+	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1367,6 +1381,20 @@ struct cb_search {
 #define CB_SEARCH(x)		(CB_TREE_CAST (CB_TAG_SEARCH, struct cb_search, x))
 #define CB_SEARCH_P(x)		(CB_TREE_TAG (x) == CB_TAG_SEARCH)
 
+/* XML PARSE */
+
+struct cb_xml_parse {
+	struct cb_tree_common	common;		/* Common values */
+	cb_tree			data;		/* XML data (field identifier) */
+	cb_tree			proc;		/* PROCESSING PROCEDURE (internally as PERFORM ...) */
+	cb_tree			encoding;		/* ENCODING codepage (optional) */
+	cb_tree			validating;		/* VALIDATING source (optional) */
+	int			returning_national;	/* RETURNING NATIONAL */
+};
+
+#define CB_XML_PARSE(x)		(CB_TREE_CAST (CB_TAG_XML_PARSE, struct cb_xml_parse, x))
+#define CB_XML_PARSE_P(x)		(CB_TREE_TAG (x) == CB_TAG_XML_PARSE)
+
 /* CALL */
 
 struct cb_call {
@@ -1724,6 +1752,7 @@ struct cb_program {
 	cb_tree			alphabet_name_list;	/* ALPHABET list */
 	cb_tree			symbolic_char_list;	/* SYMBOLIC list */
 	cb_tree			class_name_list;	/* CLASS list */
+	cb_tree			schema_name_list;	/* XML-SCHEMA list */
 	cb_tree			parameter_list;		/* USING parameters */
 	cb_tree			locale_list;		/* LOCALE list */
 	cb_tree			global_list;		/* GLOBAL list */
@@ -2104,6 +2133,7 @@ extern struct cb_intrinsic_table	*lookup_intrinsic (const char *,
 							   const int);
 
 extern cb_tree		cb_build_alphabet_name (cb_tree);
+extern cb_tree		cb_build_schema_name (cb_tree);
 
 extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
 					   const cb_tree,
@@ -2457,6 +2487,10 @@ extern void		cb_emit_xml_generate (cb_tree, cb_tree, cb_tree,
 					      cb_tree, const int, const int,
 					      cb_tree, cb_tree, cb_tree,
 					      cb_tree);
+extern void		cb_emit_xml_parse (cb_tree, cb_tree, const int,
+					      cb_tree, cb_tree);
+extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
+						const int, cb_tree, cb_tree);
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
 
@@ -2494,14 +2528,13 @@ extern void		cb_check_definition_matches_prototype (struct cb_program *);
 #ifdef COB_INTERNAL_XREF
 extern void			cobc_xref_link (struct cb_xref *, const int, const int);
 extern void			cobc_xref_link_parent (const struct cb_field *);
-extern void			cobc_xref_set_receiving (const cb_tree);
 extern void			cobc_xref_call (const char *, const int, const int, const int);
 #else
 #define cobc_xref_link(x,l,r)
 #define cobc_xref_link_parent(f)
-#define cobc_xref_set_receiving(t)
 #define cobc_xref_call(n,l,i,s)
 #endif
+extern void			cobc_xref_set_receiving (const cb_tree);
 extern unsigned int		cb_correct_program_order;
 
 /* Function defines */

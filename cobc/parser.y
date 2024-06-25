@@ -237,7 +237,7 @@ static enum key_clause_type	key_type;
 
 static int			ext_dyn_specified;
 static enum cb_assign_device	assign_device;
- 
+
 static enum cb_display_type	display_type;
 static int			is_first_display_item;
 static cb_tree			advancing_value;
@@ -1927,7 +1927,7 @@ check_not_88_level (cb_tree x)
 		/* invalidate field to prevent same error in typeck.c (validate_one) */
 		/* FIXME: If we really need the additional check here then we missed
 		          a call to cb_validate_one() somewhere */
-		return cb_error_node; 
+		return cb_error_node;
 #endif
 	} else {
 		return x;
@@ -2282,7 +2282,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token AT_END				"AT END"
 %token ATTRIBUTE
 %token ATTRIBUTES
-%token AUTHOR	/* remark: not used here */
+%token AUTHOR			/* remark: not used here */
 %token AUTO
 %token AUTO_DECIMAL			"AUTO-DECIMAL"
 %token AUTO_SPIN			"AUTO-SPIN"
@@ -2366,7 +2366,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CLASS_NAME		"class-name"
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
 %token CLINE
-%token CLINES
+%token CLINES			/* remark: not used here */
 %token CLOSE
 %token COBOL
 %token CODE
@@ -2402,7 +2402,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token COMP_N			"COMP-N"
 %token COMP_X			"COMP-X"
 %token CONCATENATE_FUNC		"FUNCTION CONCATENATE"
-%token CONDITION
+%token CONDITION		/* remark: not used here */
 %token CONFIGURATION
 %token CONSTANT
 %token CONTAINS
@@ -2414,7 +2414,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CONTROLS
 %token CONVERSION
 %token CONVERTING
-%token COPY
+%token COPY			/* remark: not used here */
 %token COPY_SELECTION		"COPY-SELECTION"
 %token CORE_INDEX		"CORE-INDEX"
 %token CORRESPONDING
@@ -2468,7 +2468,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token DISPLAY
 %token DISPLAY_COLUMNS		"DISPLAY-COLUMNS"
 %token DISPLAY_FORMAT		"DISPLAY-FORMAT"
-%token DISPLAY_OF_FUNC		"FUNCTION DISPLAY-OF"
+%token DISPLAY_OF_FUNC		"FUNCTION DISPLAY-OF" /* remark: not used here */
 %token DIVIDE
 %token DIVIDERS
 %token DIVIDER_COLOR		"DIVIDER-COLOR"
@@ -2541,7 +2541,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ESCAPE_BUTTON	"ESCAPE-BUTTON"
 %token ESI
 %token EVALUATE
-%token EVENT
+%token EVENT			/* remark: not used here */
 %token EVENT_LIST		"EVENT-LIST"
 %token EVENT_STATUS		"EVENT STATUS"
 %token EVERY
@@ -2665,7 +2665,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INTERMEDIATE
 %token INTO
 %token INTRINSIC
-%token INVALID
+%token INVALID			/* remark: not used here */
 %token INVALID_KEY		"INVALID KEY"
 %token IS
 %token ITEM
@@ -2684,7 +2684,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token LABEL
 %token LABEL_OFFSET			"LABEL-OFFSET"
 %token LARGE_FONT			"LARGE-FONT"
-%token LARGE_OFFSET			"LARGE-OFFSET"
+%token LARGE_OFFSET			"LARGE-OFFSET" /* remark: not used here */
 %token LAST
 %token LAST_ROW				"LAST-ROW"
 %token LAYOUT_DATA			"LAYOUT-DATA"
@@ -2760,7 +2760,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token NAMESPACE_PREFIX		"NAMESPACE-PREFIX"
 %token NATIONAL
 %token NATIONAL_EDITED		"NATIONAL-EDITED"
-%token NATIONAL_OF_FUNC		"FUNCTION NATIONAL-OF"
+%token NATIONAL_OF_FUNC		"FUNCTION NATIONAL-OF" /* remark: not used here */
 %token NATIVE
 %token NAVIGATE_URL		"NAVIGATE-URL"
 %token NEAREST_AWAY_FROM_ZERO	"NEAREST-AWAY-FROM-ZERO"
@@ -2783,7 +2783,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token NO_ECHO			"NO-ECHO"
 %token NO_F4			"NO-F4"
 %token NO_FOCUS			"NO-FOCUS"
-%token NO_GROUP_TAB		"NO-GROUP-TAB"
+%token NO_GROUP_TAB		"NO-GROUP-TAB" /* remark: not used here */
 %token NO_KEY_LETTER	"NO-KEY-LETTER"
 %token NO_SEARCH		"NO-SEARCH"
 %token NO_UPDOWN		"NO-UPDOWN"
@@ -2905,7 +2905,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token READ_ONLY		"READ-ONLY"
 %token READY_TRACE		"READY TRACE"
 %token RECEIVE
-%token RECEIVED
+%token RECEIVED			/* remark: not used here */
 %token RECORD
 %token RECORD_DATA		"RECORD-DATA"
 %token RECORD_OVERFLOW		"RECORD-OVERFLOW"
@@ -2928,7 +2928,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token REMOVAL
 %token RENAMES
 %token REORG_CRITERIA		"REORG-CRITERIA"
-%token REPLACE
+%token REPLACE			/* remark: not used here */
 %token REPLACING
 %token REPORT
 %token REPORTING
@@ -3072,10 +3072,10 @@ set_record_size (cb_tree min, cb_tree max)
 %token TERMINATION_VALUE	"TERMINATION-VALUE"
 %token TEST
 %token TEXT
-%token THAN
+%token THAN			/* remark: not used here */
 %token THEN
 %token THREAD
-%token THREADS
+%token THREADS			/* remark: not used here */
 %token THRU
 %token THUMB_POSITION	"THUMB-POSITION"
 %token TILED_HEADINGS	"TILED-HEADINGS"
@@ -3199,6 +3199,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token X
 %token XML
 %token XML_DECLARATION		"XML-DECLARATION"
+%token XML_SCHEMA		"XML-SCHEMA"
 %token Y
 %token YYYYDDD
 %token YYYYMMDD
@@ -3660,7 +3661,7 @@ program_id_paragraph:
 
 
 	setup_prototype ($3, $4, COB_MODULE_TYPE_PROGRAM, 1);
-	
+
 	if ($5) {
 		if (!current_program->nested_level) {
 			cb_error (_("COMMON may only be used in a contained program"));
@@ -3669,7 +3670,7 @@ program_id_paragraph:
 			cb_add_common_prog (current_program);
 		}
 	}
-	
+
 	/* TODO: do that more clean, this and above was only moved here
 	         to fix a shift/reduce conflict with program prototype */
 	if (save_tree == cb_int1) {
@@ -4211,6 +4212,7 @@ special_names_header:
 	if (current_program->nested_level) {
 		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
 	}
+	cobc_cs_check = CB_CS_SPECIAL_NAMES;
   }
 ;
 
@@ -4234,6 +4236,7 @@ special_name:
 | class_name_clause
 | currency_sign_clause
 | decimal_point_clause
+| xml_schema_clause
 | numeric_sign_clause
 | cursor_clause
 | crt_status_clause
@@ -4788,6 +4791,49 @@ locale_clause:
   }
 ;
 
+/* XML-SCHEMA clause */
+
+xml_schema_clause:
+  XML_SCHEMA undefined_word
+  {
+	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
+			       COBC_HD_CONFIGURATION_SECTION,
+			       COBC_HD_SPECIAL_NAMES, 0);
+	if (current_program->nested_level) {
+		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
+		$$ = NULL;
+	} else {
+		/* Returns null on error */
+		$$ = cb_build_schema_name ($2);
+	}
+  }
+  schema_definition
+  {
+	if ($3) {
+		current_program->schema_name_list =
+			cb_list_add (current_program->schema_name_list, $3);
+	}
+	cobc_cs_check = 0;
+  }
+;
+
+schema_definition:
+  literal
+  {
+	$$ = $0;
+	if ($0) {
+		CB_SCHEMA_NAME ($0)->data = (const char *) CB_LITERAL ($1)->data;
+	}
+  }
+| WORD
+  {
+	$$ = $0;
+	if ($0) {
+		CB_SCHEMA_NAME ($0)->data = CB_REFERENCE ($1)->word->name;
+	}
+  }
+;
+
 /* CURRENCY SIGN clause */
 
 currency_sign_clause:
@@ -5036,7 +5082,7 @@ file_control_entry:
   SELECT flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
-	  
+
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -7435,31 +7481,75 @@ volatile_clause:
 
 picture_clause:
   PICTURE	/* token from scanner, includes full picture definition */
-  _pic_locale_format
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);	/* always returned, invalid picture will have size == 0 */
-
-	if (CB_VALID_TREE ($2)) {
-		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
-		    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
-		 || strpbrk (current_field->pic->orig, " CRDB-*") /* the standard seems to forbid also ',' */) {
-			cb_error_x ($1, _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
-		} else {
-			/* TODO: check that not we're not within a CONSTANT RECORD */
-			CB_PENDING_X ($1, "locale-format PICTURE");
-		}
-	}
+  }
+  _pic_locale_format_or_depending_on
+  {
+	  if ((!current_field->pic || current_field->pic->variable_length) &&
+	      !current_field->flag_picture_l) {
+		  /* Current field with PIC L was not translated */
+		  cb_error_x (CB_TREE (current_field->pic),
+			      _("%s requires DEPENDING clause"),
+			      _("variable-length PICTURE"));
+	  }
   }
 ;
 
-_pic_locale_format:
+_pic_locale_format_or_depending_on:
   /* empty */
-  { $$ = NULL; }
 | LOCALE _is_locale_name SIZE _is integer
   {
-	/* $2 -> optional locale-name to be used */
-	$$ = $5;
+	  /* $2 -> optional locale-name to be used */
+	  if ((current_field->pic->category != CB_CATEGORY_NUMERIC &&
+	       current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED) ||
+	      strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
+		  cb_error_x (CB_TREE (current_field->pic),
+			      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
+	  } else {
+		  /* TODO: check that not we're not within a CONSTANT RECORD */
+		  CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
+	  }
+  }
+| DEPENDING _on reference
+  {
+	  cb_tree depending = $3;
+	  if (!current_field->pic->variable_length) {
+		  cb_error_x ($3, _("DEPENDING clause needs either an "
+				    "OCCURS clause or a variable-length "
+				    "PICTURE"));
+	  } else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
+		     current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+		  cb_error_x ($3, _("only USAGE DISPLAY may specify a "
+				    "variable-length PICTURE"));
+	  } else if (current_storage == CB_STORAGE_SCREEN ||
+		     current_storage == CB_STORAGE_REPORT) {
+		  cb_error_x ($3, _("%s not allowed in %s"),
+			      _("variable-length PICTURE"),
+			      enum_explain_storage (current_storage));
+	  } else {
+		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
+		     `c` may actually only be `X` or `A`) into a group
+		     with a single sub-field `PIC c OCCURS 1 TO N`. */
+		  const char pic[2] = { current_field->pic->orig[1], 0};
+		  struct cb_field * const chld =
+			  CB_FIELD (cb_build_field (cb_build_filler ()));
+		  chld->pic = cb_build_picture (pic);
+		  chld->storage = current_field->storage;
+		  chld->depending = depending;
+		  chld->flag_occurs = 1;
+		  chld->occurs_min = 1;
+		  chld->occurs_max = current_field->pic->size - 1;
+		  chld->parent = current_field;
+		  current_field->children = chld;
+		  cobc_parse_free (current_field->pic);
+		  current_field->pic = NULL;
+	  }
+	  /* Raise this flag in the error cases above, to avoid unrelated
+	     warning or error messages upon tentative validation of
+	     redefines.  */
+	  current_field->flag_picture_l = 1;
   }
 ;
 
@@ -7474,7 +7564,6 @@ _is_locale_name:
   }
 ;
 
-
 locale_name:
   WORD
   {
@@ -7486,7 +7575,6 @@ locale_name:
 	}
   }
 ;
-
 
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
@@ -10339,7 +10427,7 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	header_check |= COBC_HD_PROCEDURE_DIVISION;
-	
+
 	cb_check_definition_matches_prototype (current_program);
   }
   _procedure_declaratives
@@ -10678,7 +10766,7 @@ _procedure_list:
 procedure:
   section_header
 | paragraph_header
-| statements TOK_DOT
+| statements
   {
 	if (next_label_list) {
 		cb_tree	plabel;
@@ -10696,6 +10784,7 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
+  TOK_DOT
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT
   {
@@ -11406,7 +11495,7 @@ accp_attr:
 	if (current_program->cursor_pos) {
 		emit_duplicate_clause_message ("CURSOR");
 	} else {
-		/* TODO: actually reasonable and easy extension: an 
+		/* TODO: actually reasonable and easy extension: an
 		         *offset within the field* [auto-correct to 1/max]
 				 (when variable also stored back on return)
 		*/
@@ -13865,7 +13954,7 @@ goback_statement:
   GOBACK {
 	begin_statement (STMT_GOBACK, 0);
   }
-  goback_exit_body	  
+  goback_exit_body
   {
 	check_unreached = 1;
 	cb_emit_exit (1U);
@@ -14292,6 +14381,7 @@ json_generate_statement:
 	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
 	cobc_cs_check = CB_CS_JSON_GENERATE;
+	cobc_xref_set_receiving (current_program->json_code);
   }
   json_generate_body
   _end_json
@@ -14351,6 +14441,8 @@ json_parse_statement:
   {
 	begin_statement (STMT_JSON_PARSE, TERM_JSON);
 	CB_PENDING ("JSON PARSE");
+	cobc_xref_set_receiving (current_program->json_code);
+	cobc_xref_set_receiving (current_program->json_status);
   }
   json_parse_body
   _end_json
@@ -14742,8 +14834,9 @@ _perform_option:
 	if (!$3) {
 		$$ = cb_build_perform_forever (NULL);
 	} else {
-		if ($1 == CB_AFTER)
-			cb_build_perform_after_until();
+		if ($1 == CB_AFTER) {
+			cb_build_perform_after_until ();
+		}
 		varying = CB_LIST_INIT (cb_build_perform_varying (NULL, NULL, NULL, $3));
 		$$ = cb_build_perform_until ($1, varying);
 	}
@@ -15323,7 +15416,7 @@ send_body_mcs:
   _to
    FIXME - workaround: expeciting TO here */
   TO
-  x from_identifier 
+  x from_identifier
 /* FIXME: conflict because the RETURNING could belong to the exception phrases
   _common_exception_phrases
    FIXME - workaround end */
@@ -15361,7 +15454,7 @@ from_identifier:
   {
   }
 ;
-  
+
 /* FIXME later: too many conflicts here
 _send_raising:
   %prec SHIFT_PREFER
@@ -16686,6 +16779,7 @@ xml_generate_statement:
 	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
 	cobc_cs_check = CB_CS_XML_GENERATE;
+	cobc_xref_set_receiving (current_program->xml_code);
   }
   xml_generate_body
   _end_xml
@@ -16971,9 +17065,19 @@ xml_parse_statement:
   XML PARSE
   {
 	begin_statement (STMT_XML_PARSE, TERM_XML);
-	/* TO-DO: Add xml-parse and xml-parse-extra-phrases config options. */
 	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
+	cobc_xref_set_receiving (current_program->xml_code);
+	cobc_xref_set_receiving (current_program->xml_event);
+	cobc_xref_set_receiving (current_program->xml_text);
+	cobc_xref_set_receiving (current_program->xml_ntext);
+	if (cb_xml_parse_xmlss) {
+		cobc_xref_set_receiving (current_program->xml_information);
+		cobc_xref_set_receiving (current_program->xml_namespace);
+		cobc_xref_set_receiving (current_program->xml_namespace_prefix);
+		cobc_xref_set_receiving (current_program->xml_nnamespace);
+		cobc_xref_set_receiving (current_program->xml_nnamespace_prefix);
+	}
   }
   xml_parse_body
   _end_xml
@@ -16986,35 +17090,48 @@ xml_parse_body:
   _validating_with
   PROCESSING PROCEDURE _is perform_procedure
   {
+	if (($2 || $3 || $4) && !cb_xml_parse_xmlss) {
+		cb_verify_x (CB_TREE (current_statement),
+			CB_ERROR, "XML PARSE XMLSS");
+	}
 	cobc_cs_check = 0;
   }
   _common_exception_phrases
+  {
+	cb_emit_xml_parse ($1, $8, $3 == cb_true, $2, $4);
+  }
 ;
 
 _with_encoding:
 /* empty */
+  {
+	$$ = NULL;
+  }
 | _with ENCODING simple_value
+  {
+	CB_PENDING ("XML PARSE ENCODING");
+	$$ = $3;
+  }
 ;
 
 _returning_national:
-/* empty */         		{ $$ = NULL; }
+/* empty */			{ $$ = NULL; }
 | RETURNING NATIONAL		{ $$ = cb_true; }
 ;
 
 _validating_with:
-/* empty */                 	{ $$ = NULL; }
-| VALIDATING _with
-  schema_file_or_record_name	{ $$ = $3; }
+/* empty */					{ $$ = NULL; }
+| VALIDATING _with schema_file_or_record_name	{ $$ = $3; }
 ;
 
 schema_file_or_record_name:
   record_name  { $$ = $1; }
 | TOK_FILE WORD
   {
-	if (CB_FILE_P (cb_ref ($2))) {
+	if (CB_SCHEMA_NAME_P (cb_ref ($2))) {
 		$$ = $2;
 	} else {
-		cb_error_x ($2, _("'%s' is not a file name"), CB_NAME ($2));
+		cb_error_x ($2, _("'%s' is not a schema name"), CB_NAME ($2));
 		$$ = cb_error_node;
 	}
   }

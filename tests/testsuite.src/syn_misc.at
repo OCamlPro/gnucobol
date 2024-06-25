@@ -1813,6 +1813,13 @@ prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers
 prog.cob:8: error: unknown statement 'This'
 ])
 
+# Check dialect option `format` (fixed for default) does not erase flags like `-F`, `--free`:
+AT_CHECK([$COBC -fsyntax-only -F -std=default -Wextra prog.cob], [1], [],
+[prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
+prog.cob:8: error: unknown statement 'This'
+])
+
 AT_CLEANUP
 
 
@@ -6986,18 +6993,20 @@ AT_CLEANUP
 
 
 AT_SETUP([@OPTIONS parsing])
-AT_KEYWORDS([misc OPTIONS])
+AT_KEYWORDS([misc OPTIONS fujitsu])
 
 # GnuCOBOL currently only skips these, see FR 305
 
 AT_DATA([valid.cob], [
 000100 @OPTIONS NOMAIN,APOST
-000200 IDENTIFICATION  DIVISION.
-000300 PROGRAM-ID. VALID.
+000200 @OPTIONS APOST
+000300 IDENTIFICATION  DIVISION.
+000400 PROGRAM-ID. VALID.
 ])
 
 AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
-[valid.cob:2: warning: ignoring unknown directive: '@OPTIONS'
+[valid.cob:2: warning: ignoring unknown directive: '@OPTIONS NOMAIN,APOST'
+valid.cob:3: warning: ignoring unknown directive: '@OPTIONS APOST'
 ])
 
 #AT_DATA([invalid.cob], [
@@ -7023,6 +7032,104 @@ AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
 #invalid.cob:6: warning: skipping line after first space
 #invalid.cob:7: error: @OPTIONS MAIN conflicts with command line option '-m'
 #])
+
+AT_CLEANUP
+
+
+AT_SETUP([PROCESS / CBL parsing])
+AT_KEYWORDS([misc ibm])
+
+# GnuCOBOL currently only skips these, see FR 305
+
+#AT_DATA([valid.cob], [
+#Process codepage(1047)
+#CBL CODEPAGE(1047)
+#Process
+#  Process codepage(1208)
+#  CBL CODEPAGE(1208)
+#000100 Process codepage(1047)
+#000200 CBL CODEPAGE(1047)
+#000300 CBL
+#000400 IDENTIFICATION  DIVISION.
+#000500 PROGRAM-ID. VALID.
+#])
+#
+#AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+#[valid.cob:2: warning: ignoring unknown directive: 'Process codepage(1047)'
+#valid.cob:3: warning: ignoring unknown directive: 'CBL CODEPAGE(1047)'
+#valid.cob:5: warning: ignoring unknown directive: 'Process codepage(1208)'
+#valid.cob:6: warning: ignoring unknown directive: 'CBL CODEPAGE(1208)'
+#valid.cob:7: warning: ignoring unknown directive: 'Process codepage(1047)'
+#valid.cob:8: warning: ignoring unknown directive: 'CBL CODEPAGE(1047)'
+#])
+
+# FIXME: the part above does not work
+
+#AT_DATA([valid.cob], [
+#Process codepage(1047)
+#   Process
+#    CBL
+#000100 Process codepage(1208)
+#000200 CBL CODEPAGE(1208)
+#000300 CBL
+#000400 IDENTIFICATION  DIVISION.
+#000500 PROGRAM-ID. VALID.
+#])
+
+#AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+#[valid.cob:2: warning: ignoring unknown directive: 'Process codepage(1047)'
+#valid.cob:5: warning: ignoring unknown directive: 'Process codepage(1208)'
+#valid.cob:6: warning: ignoring unknown directive: 'CBL CODEPAGE(1208)'
+#])
+
+# simple one, to consider later how to make the necessary changes for
+# process/cbl before col 7
+
+AT_DATA([valid.cob], [
+000100 Process codepage(1047)
+000200 CBL CODEPAGE(1208)
+000300 CBL
+000400 IDENTIFICATION  DIVISION.
+000500 PROGRAM-ID. VALID.
+])
+
+AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+[valid.cob:2: warning: ignoring unknown directive: 'Process codepage(1047)'
+valid.cob:3: warning: ignoring unknown directive: 'CBL CODEPAGE(1208)'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([*CONTROL / *CBL parsing])
+AT_KEYWORDS([misc ibm])
+
+#AT_DATA([valid.cob], [
+#      *CONTROL LIST
+#        *CONTROL SOURCE
+#      *CBL MAP LIST
+#000100 *CBL NOMAP NOSOURCE NOLIST
+#000200 IDENTIFICATION  DIVISION.
+#000300 PROGRAM-ID. VALID.
+#])
+
+#AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
+#[valid.cob:2: warning: LIST is not applicable, consider -g / -s
+#valid.cob:4: warning: LIST is not applicable, consider -g / -s
+#])
+
+# for now only simple one -> ignored
+
+AT_DATA([valid.cob], [
+      *CONTROL LIST
+        *CONTROL SOURCE
+      *CBL MAP LIST
+000100 *CBL NOMAP NOSOURCE NOLIST
+000200 IDENTIFICATION  DIVISION.
+000300 PROGRAM-ID. VALID.
+])
+
+AT_CHECK([$COMPILE_ONLY valid.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -8860,5 +8967,98 @@ AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [],
 prog.cob:9: warning: DISPLAY statement in DEFAULT SECTION is not implemented
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L])
+AT_KEYWORDS([extensions gcos picture-l])
+
+AT_DATA([prog_extraneous_depending.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_extraneous_depending.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 L		COMP-1.
+       1 F-DAT		PICTURE X(10) DEPENDING ON L.
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog_extraneous_depending.cob], [1], [],
+[prog_extraneous_depending.cob:7: error: DEPENDING clause needs either an OCCURS clause or a variable-length PICTURE
+])
+
+AT_DATA([prog_missing_depending.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_missing_depending.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 F-DAT		PICTURE LX(10).
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog_missing_depending.cob], [1], [],
+[prog_missing_depending.cob:6: error: variable-length PICTURE requires DEPENDING clause
+])
+
+AT_DATA([prog_value.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_value.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 L              COMP-1 VALUE 10.
+       1 F-DAT          PICTURE LX(10) DEPENDING ON L
+                        VALUE "0123456789".
+       1 F-DAT2         PICTURE LX(10) DEPENDING ON L
+                        BLANK WHEN ZERO.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog_value.cob], [1], [],
+[prog_value.cob:7: error: variable-length PICTURE and VALUE are mutually exclusive
+prog_value.cob:9: error: 'F-DAT2' cannot have BLANK WHEN ZERO clause
+])
+
+AT_DATA([prog_errs.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_errs.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-LGS.
+         2 LGS		PICTURE X(10).
+       1 W-DATA.
+         2 L-DAT	PICTURE LX(10) DEPENDING ON LGS.
+	 2 L-ERR1       PICTURE L9 DEPENDING ON LGS.
+	 2 L-ERR2       PICTURE XXXXLA(2) DEPENDING ON LGS.
+	 2 L-ERR3       PICTURE LX(1) DEPENDING ON LGS JUSTIFIED.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog_errs.cob], [1], [],
+[prog_errs.cob:10: error: only USAGE DISPLAY may specify a variable-length PICTURE
+prog_errs.cob:11: error: L must be at start of PICTURE string
+prog_errs.cob:11: error: L cannot follow A or X
+prog_errs.cob:11: error: only USAGE DISPLAY may specify a variable-length PICTURE
+prog_errs.cob:12: error: 'L-ERR3' cannot have JUSTIFIED RIGHT clause
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 LGS		PICTURE X(10).
+       1 L-DAT		PICTURE LX(10) DEPENDING ON LGS.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fpicture-l=warning prog.cob], [0], [],
+[prog.cob:7: warning: PICTURE string with 'L' character used
+])
 
 AT_CLEANUP

@@ -234,12 +234,15 @@ AT_DATA([prog.cob], [
           05 SI2-2 LINE 2 COL 5 PIC X(03) FROM ALL SPACES.
           05 SI3   LINE 3 COL 1 PIC 9 FROM ZERO.
           05 SI3-2 LINE 3 COL 5 PIC X(03) FROM ALL ZEROES.
+          05 SI4   LINE 4 COL 1 FROM X.  *> PIC is implied by FROM
        PROCEDURE        DIVISION.
            DISPLAY SG END-DISPLAY.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:14: warning: 'SI4' has FROM, TO or USING without PIC; PIC will be implied
+])
 
 AT_CLEANUP
 
@@ -644,14 +647,14 @@ AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=std prog.cob], [1], [],
 prog.cob:13: error: 'no-required-clauses' needs a PIC, FROM, TO, USING, VALUE, BELL, BLANK or ERASE clause
 prog.cob:14: error: 'only-line' needs a PIC, FROM, TO, USING, VALUE, BELL, BLANK or ERASE clause
 prog.cob:16: error: 'only-pic' cannot have PIC without FROM, TO, USING or numeric VALUE
-prog.cob:17: warning: 'from-to-using-without-pic' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:17: error: cannot have FROM, TO or USING without PIC
 prog.cob:18: error: 'auto-without-from-to-using' cannot have PIC without FROM, TO, USING or numeric VALUE
 prog.cob:20: error: cannot specify both FULL and JUSTIFIED
-prog.cob:23: warning: 'blank-when-zero-without-pic' has FROM, TO or USING without PIC; PIC will be implied
-prog.cob:24: warning: 'justified-without-pic' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:23: error: cannot have FROM, TO or USING without PIC
+prog.cob:24: error: cannot have FROM, TO or USING without PIC
 prog.cob:25: error: 'sign-no-clauses' cannot have PIC without FROM, TO, USING or numeric VALUE
 prog.cob:26: error: VALUE may not contain a figurative constant
-prog.cob:30: warning: 'numeric-value-no-pic' has numeric VALUE without PIC; PIC will be implied
+prog.cob:30: error: cannot have numeric VALUE without PIC
 ])
 
 AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=acu prog.cob], [1], [],
@@ -807,19 +810,24 @@ AT_CLEANUP
 AT_SETUP([Screen with invalid FROM clause])
 AT_KEYWORDS([screen constant])
 
+# FIXME: some warnings are useless / confusing with follow-up errors
+#        this has to be adjusted in cobc/field.c
+
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-       
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  some-const CONSTANT AS '123'.
-
+       77  x          PIC XX.
        SCREEN SECTION.
        01  bild.
            05 from-constant-with-size   FROM some-const.
            05 from-constant-without-pic FROM ZERO.
            05 LINE 24 COL 1 FROM message.
+           05 from-func-without-pic     FROM FUNCTION TRIM(x).
+           05 from-func-with-pic        FROM FUNCTION TRIM(x) PIC XX.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -827,13 +835,17 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:11: warning: 'from-constant-with-size' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: warning: 'from-constant-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: error: PICTURE clause required for 'from-constant-without-pic'
+prog.cob:14: warning: 'from-func-without-pic' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:14: error: PICTURE clause required for 'from-func-without-pic'
 ])
 AT_CHECK([$COMPILE_ONLY -fnot-reserved=MESSAGE prog.cob], [1], [],
-[prog.cob:13: error: 'message' is not defined, but is a reserved word in another dialect                                            
+[prog.cob:13: error: 'message' is not defined, but is a reserved word in another dialect
 prog.cob:11: warning: 'from-constant-with-size' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: warning: 'from-constant-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: error: PICTURE clause required for 'from-constant-without-pic'
-prog.cob:13: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied                                              
+prog.cob:13: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:14: warning: 'from-func-without-pic' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:14: error: PICTURE clause required for 'from-func-without-pic'
 ])
 
 AT_CLEANUP

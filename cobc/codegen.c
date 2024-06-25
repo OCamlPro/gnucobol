@@ -51,7 +51,7 @@
 /* Type of initialization to be done */
 enum cobc_init_type {
 	INITIALIZE_NONE = 0,	/* no init (beause of FILLER, REDEFINES, ...) */
-	INITIALIZE_ONE,		/* initialize a single varialbe */
+	INITIALIZE_ONE,		/* initialize a single variable */
 	INITIALIZE_COMPOUND,	/* init structure */
 	INITIALIZE_DEFAULT	/* init to default-byte value / PIC (USAGE) */
 };
@@ -291,6 +291,8 @@ static void codegen_init (struct cb_program *, const char *);
 static void codegen_internal (struct cb_program *, const int);
 static void codegen_finalize (void);
 
+static void output_perform_once (struct cb_perform *);
+
 /* Local functions */
 
 static void
@@ -298,6 +300,9 @@ count_all_fields (struct cb_field *p)
 {
 	struct cb_field	*f, *f01;
 	cb_tree		l;
+	if (p->flag_internal_register) {
+		return;
+	}
 	if (p->storage == CB_STORAGE_REPORT) {
 		f01 = real_field_founder (p);
 		if (!f01->flag_base) {
@@ -783,7 +788,7 @@ chk_field_variable_size (struct cb_field *f)
 		f->vsize = NULL;
 		for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 			if (fc->depending) {
-				if (cb_odoslide) {
+				if (cb_odoslide || f->flag_picture_l) {
 					f->vsize = fc;
 					break;
 				}
@@ -794,11 +799,13 @@ chk_field_variable_size (struct cb_field *f)
 					 && f->level != 77
 					 && !f->sister->redefines)
 						break;
-					if (fc->sister != NULL)	
+					if (fc->sister != NULL)
 						continue;	 /* Group has sister so NOT vary size */
 					f->vsize = fc;
 					break;
 				}
+			} else if (fc->flag_picture_l) {
+				continue;
 			} else if ((p = chk_field_variable_size (fc)) != NULL) {
 				f->vsize = p;
 				break;
@@ -865,7 +872,10 @@ chk_field_variable_address (struct cb_field *fld)
 		struct cb_field		*p;
 		for (p = f->parent; p; f = f->parent, p = f->parent) {
 			for (p = p->children; p != f; p = p->sister) {
-				if (p->depending || chk_field_variable_size (p)) {
+				/* Skip PIC L fields as their representation
+				   have constant length */
+				if (p->depending ||
+				    (!p->flag_picture_l && chk_field_variable_size (p))) {
 					fld->flag_vaddr_done = 1;
 					fld->vaddr = 1;
 					return 1;
@@ -888,7 +898,7 @@ out_odoslide_fld_offset (struct cb_field *p, struct cb_field *fld)
 	if (p == fld) 	/* Single field */
 		return 1;
 
-	if (p->children) {
+	if (p->children && !p->flag_picture_l) {
 		if (out_odoslide_grp_offset (p, fld))
 			return 1;
 	} else {
@@ -1146,7 +1156,6 @@ static void
 output_base (struct cb_field *f, const cob_u32_t no_output)
 {
 	struct cb_field		*f01;
-	struct cb_field		*p;
 
 	/* LCOV_EXCL_START */
 	if (f->flag_item_78) {
@@ -1196,7 +1205,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		if (cb_odoslide) {
 			out_odoslide_offset (f01, f);
 		} else {
-			struct cb_field		*v;
+			struct cb_field		*v, *p;
 			for (p = f->parent; p; f = f->parent, p = f->parent) {
 				for (p = p->children; p != f; p = p->sister) {
 					v = chk_field_variable_size (p);
@@ -1761,10 +1770,9 @@ output_attr (const cb_tree x)
 			case COB_TYPE_GROUP:
 			case COB_TYPE_ALPHANUMERIC:
 				if (f->flag_justified) {
-					id = lookup_attr (type, 0, 0, COB_FLAG_JUSTIFIED, NULL, 0);
-				} else {
-					id = lookup_attr (type, 0, 0, 0, NULL, 0);
+					flags |= COB_FLAG_JUSTIFIED;
 				}
+				id = lookup_attr (type, 0, 0, flags, NULL, 0);
 				break;
 			default:
 				if (f->pic->have_sign) {
@@ -2299,6 +2307,7 @@ static void
 emit_symtab (struct cb_field *f)
 {
 	if (!f->flag_sym_emitted
+	 && !f->flag_internal_register
 	 && f->level >= 1
 	 && f->level != 66
 	 && f->level != 78
@@ -4197,6 +4206,34 @@ output_ml_trees_definitions (struct cb_ml_generate_tree *tree)
 
 /* Parameter */
 
+static COB_INLINE COB_A_INLINE void
+create_field (struct cb_field *f, cb_tree x)
+{
+	if (!f->flag_field) {
+		struct field_list* fl;
+		FILE* savetarget = output_target;
+		output_target = NULL;
+		output_field (x);
+
+		fl = cobc_parse_malloc (sizeof (struct field_list));
+		fl->x = x;
+		fl->f = f;
+		fl->curr_prog = excp_current_program_id;
+		if (f->index_type != CB_INT_INDEX
+			&& (f->flag_is_global
+				|| current_prog->flag_file_global)) {
+			fl->next = field_cache;
+			field_cache = fl;
+		} else {
+			fl->next = local_field_cache;
+			local_field_cache = fl;
+		}
+
+		f->flag_field = 1;
+		output_target = savetarget;
+	}
+}
+
 static void
 output_param (cb_tree x, int id)
 {
@@ -4204,8 +4241,6 @@ output_param (cb_tree x, int id)
 	struct cb_field		*f;
 	struct cb_cast		*cp;
 	struct cb_binary_op	*bp;
-	struct field_list	*fl;
-	FILE			*savetarget;
 	struct cb_intrinsic	*ip;
 	struct cb_alphabet_name	*abp;
 	cb_tree			l;
@@ -4454,28 +4489,7 @@ output_param (cb_tree x, int id)
 		 && f->count != 0
 		 && !chk_field_variable_size (f)
 		 && !chk_field_variable_address (f)) {
-			if (!f->flag_field) {
-				savetarget = output_target;
-				output_target = NULL;
-				output_field (x);
-
-				fl = cobc_parse_malloc (sizeof (struct field_list));
-				fl->x = x;
-				fl->f = f;
-				fl->curr_prog = excp_current_program_id;
-				if (f->index_type != CB_INT_INDEX
-				 && (   f->flag_is_global
-				     || current_prog->flag_file_global)) {
-					fl->next = field_cache;
-					field_cache = fl;
-				} else {
-					fl->next = local_field_cache;
-					local_field_cache = fl;
-				}
-
-				f->flag_field = 1;
-				output_target = savetarget;
-			}
+			create_field (f, x);
 			if (add_comma) {
 				add_comma = 0;
 				output (", ");
@@ -5557,15 +5571,12 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 	} else {
 		output ("memset (");
 		output_data (x);
-		if (size <= 0) {
+		if (size <= 0 ||
+		    (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length)) {
 			output (", %d, ", c);
 			output_size (x);
 			output (");");
-		} else if (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length) {
-			output (", %d, ", c);
-			output_size (x);
-			output (");");
-		} else if (!gen_init_working 
+		} else if (!gen_init_working
 				&& (f->flag_unbounded || !(cb_complex_odo || cb_odoslide))
 				&& chk_field_variable_size (f) != NULL) {
 			output (", %d, ", c);
@@ -7687,6 +7698,45 @@ output_set_attribute (const struct cb_field *f, cob_flags_t val_on,
 	}
 }
 
+/* XML PARSE */
+
+
+static void
+output_xml_parse (struct cb_xml_parse *p)
+{
+	output_block_open ();
+	output_line ("void *xml_state = NULL;");
+	output_prefix ();
+	output ("cob_set_int ("),
+	output_param (current_program->xml_code, 0);
+	output (", 0);");
+	output_newline ();
+
+	output_line ("for (;;)");
+	output_block_open ();
+
+	/* actual XML parsing function and possible end */
+	output_source_reference (CB_TREE (p), STMT_XML_PARSE);
+	output_prefix ();
+	output ("if (cob_xml_parse ("),
+	output_param (p->data, 0);
+	output (", ");
+	output_param (p->encoding, 1);
+	output (", ");
+	output_param (p->validating, 2);
+	output (", %d, &xml_state)) break;", p->returning_national);
+
+	/* COBOL callback function -> PROCESSING PROCEDURE */
+	/* note: automatic source reference */
+	output_newline ();
+	output_perform_once (CB_PERFORM (p->proc));
+
+	output_block_close ();
+
+	output_block_close ();
+	output_newline ();
+}
+
 /* CANCEL */
 
 static void
@@ -9405,6 +9455,9 @@ output_stmt (cb_tree x)
 		output_set_attribute (sap->fld, sap->val_on, sap->val_off);
 		break;
 	}
+	case CB_TAG_XML_PARSE:
+		output_xml_parse (CB_XML_PARSE (x));
+		break;
 	case CB_TAG_ALTER:
 		output_alter (CB_ALTER (x));
 		break;
@@ -10245,17 +10298,16 @@ output_report_sum_control_field (struct cb_field *p)
 	}
 	if (p->storage == CB_STORAGE_REPORT) {
 		if (p->level == 01) {
-			output_base(p,1U);
+			output_base (p, 1U);
 		}
 		if (p->report_sum_counter) {
-			output_base(cb_code_field(p->report_sum_counter),1U);
+			output_base (cb_code_field (p->report_sum_counter), 1U);
 		}
 		if (p->report_control) {
-			output_base(cb_code_field(p->report_control),1U);
+			output_base (cb_code_field (p->report_control), 1U);
 		}
-		if (p->report_source
-		 && CB_REF_OR_FIELD_P (p->report_source)) {
-			output_base(cb_code_field(p->report_source),1U);
+		if (p->report_source && CB_REF_OR_FIELD_P (p->report_source)) {
+			output_base (cb_code_field (p->report_source), 1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
@@ -11846,6 +11898,7 @@ output_module_init_function (struct cb_program *prog)
 	}
 	output_line ("module->flag_dump_sect = 0x%02X;", cb_flag_dump);
 	output_line ("module->flag_dump_ready = %u;", cb_flag_dump ? 1 : 0);
+	output_line ("module->xml_mode = %u;", cb_xml_parse_xmlss);
 	output_line ("module->module_stmt = 0;");
 	if (source_cache) {
 		output_line ("module->module_sources = %ssource_files;",
