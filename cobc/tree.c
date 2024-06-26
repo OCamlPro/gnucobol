@@ -1375,8 +1375,9 @@ build_literal (const enum cb_category category, const void *data,
 			cobc_err_msg(_("iconv failed"));
 		}
 		iconv_close(cd);
-	}
+		p->size -= outbytesleft;
 
+	}
 	return p;
 }
 
