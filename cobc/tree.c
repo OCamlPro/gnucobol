@@ -1359,7 +1359,24 @@ build_literal (const enum cb_category category, const void *data,
 	p = make_tree (CB_TAG_LITERAL, category, sizeof (struct cb_literal));
 	p->data = cobc_parse_malloc (size + 1U);
 	p->size = size;
-	memcpy (p->data, data, size);
+	
+    iconv_t cd = iconv_open("ISO-8859-15", "UTF-8");
+	if(cd == (iconv_t)-1) {
+		cobc_err_msg(_("iconv_open failed"));
+		memcpy (p->data, data, size);
+	} else{
+		size_t inbytesleft = size;
+		size_t outbytesleft = size;
+		char *inbuf = (char *)data;
+		char *outbuf = (char *)p->data;
+		
+		size_t convResult = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		if(convResult == (size_t)-1) {
+			cobc_err_msg(_("iconv failed"));
+		}
+		iconv_close(cd);
+	}
+
 	return p;
 }
 
