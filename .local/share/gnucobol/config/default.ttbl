@@ -1,0 +1,79 @@
+# GnuCOBOL EBCDIC/ASCII translation tables
+#
+# Copyright (C) 2005,2006,2022,2023 Free Software Foundation, Inc.
+#  Written by Roger While, Nicolas Berthier, Simon Sobisch, David Declerck
+#
+# This file is part of the GnuCOBOL runtime.
+#
+# The GnuCOBOL runtime is free software: you can redistribute it
+# and/or modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+# EBCDIC/ASCII translation tables
+#
+# These files allow to define custom EBCDIC/ASCII translations.
+# A translation is defined by one or two tables.
+# The first one translates from EBCDIC to ASCII and is mandatory.
+# The second one translates from ASCII to EBCDIC and is optional.
+# If missing, it will be built automatically as the inverse of the
+# EBCDIC to ASCII table (useful when the translation is a bijection).
+#
+# A table is a sequence of 256 hexadecimal bytes (two consecutive digits),
+# optionally separated by an arbitrary number of blanks (space, tab, newline)
+# or comments (anything after a # (included) until the end of the line
+# is considered a comment). This flexible format allows to lay out the
+# table in whatever fashion you like to make it readable.
+#
+# When two tables are present, there are no specfic separators between them.
+# The tables just follow each other, in essence making a sequence of 512
+# hexadecimal bytes. It is however advised to mark the separation by a comment.
+# Similarly, if a translation is symmetric and does not require a second
+# table, state it explicitly in a comment after the first table.
+
+# "default" EBCDIC 1047 to 8-bit ASCII table (likely MF)
+#
+# This table was copied from `codegen.c:output_ebcdic_to_ascii_table`.
+# There are many "EBCDIC-*" variants out there [1].
+# This one is thought to be as encoded by MF.
+#
+# Hints:
+#
+# 0x5B (ASCII '[') is at index 173 (0xAD), which does appear to correspond to
+# some conversion irregularities [2].
+#
+# However following [3], we should find the same ASCII character 0x5B further
+# below at index 186 (0xBA); yet there we find 0xAA.
+#
+# [1] https://www.rfc-editor.org/rfc/rfc1345
+# [2] https://www.ibm.com/docs/en/iis/11.3?topic=tables-conversion-table-irregularities
+# [3] https://www.ibm.com/docs/en/cobol-zos/6.1?topic=sequences-ebcdic-collating-sequence
+
+00 01 02 03 EC 09 CA 7F E2 D2 D3 0B 0C 0D 0E 0F
+10 11 12 13 EF C5 08 CB 18 19 DC D8 1C 1D 1E 1F
+B7 B8 B9 BB C4 0A 17 1B CC CD CF D0 D1 05 06 07
+D9 DA 16 DD DE DF E0 04 E3 E5 E9 EB 14 15 9E 1A
+20 C9 83 84 85 A0 F2 86 87 A4 D5 2E 3C 28 2B B3
+26 82 88 89 8A A1 8C 8B 8D E1 21 24 2A 29 3B 5E
+2D 2F B2 8E B4 B5 B6 8F 80 A5 7C 2C 25 5F 3E 3F
+BA 90 BC BD BE F3 C0 C1 C2 60 3A 23 40 27 3D 22
+C3 61 62 63 64 65 66 67 68 69 AE AF C6 C7 C8 F1
+F8 6A 6B 6C 6D 6E 6F 70 71 72 A6 A7 91 CE 92 A9
+E6 7E 73 74 75 76 77 78 79 7A AD A8 D4 5B D6 D7
+9B 9C 9D FA 9F B1 B0 AC AB FC AA FE E4 5D BF E7
+7B 41 42 43 44 45 46 47 48 49 E8 93 94 95 A2 ED
+7D 4A 4B 4C 4D 4E 4F 50 51 52 EE 96 81 97 A3 98
+5C F0 53 54 55 56 57 58 59 5A FD F5 99 F7 F6 F9
+30 31 32 33 34 35 36 37 38 39 DB FB 9A F4 EA FF
+
+# "default" 8-bit ASCII to EBCDIC 1047 conversion table (likely MF)
+#
+# This translation being symmetric, the table is built from the previous one.
