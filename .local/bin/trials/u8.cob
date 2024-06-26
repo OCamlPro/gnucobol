@@ -14,13 +14,9 @@
 
        data division.
            working-storage section.
-           01 x pic 9(2) value 5.
-           01 y pic 9(2) value 10.
-           01 z pic 9(2) value 0.
-           01 ahmed pic u(3) value 'foo'. 
+           01 x pic x(3) value '€'. 
        procedure division.
-           compute z = x + y.
            display "hello world".
-           DISPLAY "UTF8: -" FUNCTION HEX-OF (ahmed) "-".
+           DISPLAY "UTF8: -" FUNCTION HEX-OF (x) "-".
        stop run.
 
