@@ -1,0 +1,551 @@
+# GnuCOBOL compiler - list of reserved words
+#
+# Copyright (C) 2016-2018,2021-2023 Free Software Foundation, Inc.
+# Written by Simon Sobisch, Edward Hart
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+
+# Word list for dialect: IBM COBOL for MVS & VM
+
+# Note: only used for strict dialect and when
+#       requested by compiler directive >> IMP WORDS MVS
+#       the default reserved word list will not be used.
+
+# Value: Word to make up reserved words list (case independent)
+# All reserved entries listed will replace entire default reserved words list.
+#   Words ending with * will be treated as context-sensitive words. This will be
+# ignored if GnuCOBOL uses that word as a reserved word.
+#   Entries of the form word-1=word-2 define word-1 as an alias for default
+# reserved word word-2. No spaces are allowed around the equal sign.
+reserved:	ACCEPT
+reserved:	ACCESS
+reserved:	ADD
+reserved:	ADDRESS
+reserved:	ADVANCING
+reserved:	AFTER
+reserved:	ALL
+reserved:	ALPHABET
+reserved:	ALPHABETIC
+reserved:	ALPHABETIC-LOWER
+reserved:	ALPHABETIC-UPPER
+reserved:	ALPHANUMERIC
+reserved:	ALPHANUMERIC-EDITED
+reserved:	ALSO
+reserved:	ALTER
+reserved:	ALTERNATE
+reserved:	AND
+reserved:	ANY
+reserved:	APPLY
+reserved:	ARE
+reserved:	AREA
+reserved:	AREAS
+reserved:	ASCENDING
+reserved:	ASSIGN
+reserved:	AT
+reserved:	AUTHOR
+reserved:	BASIS
+reserved:	BEFORE
+reserved:	BEGINNING
+reserved:	BINARY
+reserved:	BLANK
+#reserved:	BLOB*            # note: only with EXEC SQL coprocessor
+#reserved:	BLOB-FILE*       # note: only with EXEC SQL coprocessor
+#reserved:	BLOB-LOCATOR*    # note: only with EXEC SQL coprocessor
+reserved:	BLOCK
+reserved:	BOTTOM
+reserved:	BY
+reserved:	CALL
+reserved:	CANCEL
+reserved:	CBL
+reserved:	CD
+reserved:	CF
+reserved:	CH
+#reserved:	CHAR*            # note: only with EXEC SQL coprocessor
+#reserved:	CHAR-VARYING*    # note: only with EXEC SQL coprocessor
+reserved:	CHARACTER
+reserved:	CHARACTERS
+reserved:	CLASS
+#reserved:	CLOB*            # note: only with EXEC SQL coprocessor
+#reserved:	CLOB-FILE*       # note: only with EXEC SQL coprocessor
+#reserved:	CLOB-LOCATOR*    # note: only with EXEC SQL coprocessor
+reserved:	CLOCK-UNITS
+reserved:	CLOSE
+reserved:	COBOL
+reserved:	CODE
+reserved:	CODE-SET
+reserved:	COLLATING
+reserved:	COLUMN
+reserved:	COM-REG
+reserved:	COMMA
+reserved:	COMMON
+reserved:	COMMUNICATION
+reserved:	COMP
+reserved:	COMP-1
+reserved:	COMP-2
+reserved:	COMP-3
+reserved:	COMP-4
+reserved:	COMPUTATIONAL=COMP
+reserved:	COMPUTATIONAL-1=COMP-1
+reserved:	COMPUTATIONAL-2=COMP-2
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-4=COMP-4
+reserved:	COMPUTE
+reserved:	CONFIGURATION
+reserved:	CONTAINS
+reserved:	CONTENT
+reserved:	CONTINUE
+reserved:	CONTROL
+reserved:	CONTROLS
+reserved:	CONVERTING
+reserved:	COPY
+reserved:	CORR=CORRESPONDING
+reserved:	CORRESPONDING
+reserved:	COUNT
+reserved:	CURRENCY
+reserved:	DATA
+reserved:	DATE
+reserved:	DATE-COMPILED
+#reserved:	DATE-RECORD*     # note: only with EXEC SQL coprocessor
+reserved:	DATE-WRITTEN
+reserved:	DAY
+reserved:	DAY-OF-WEEK
+#reserved:	DBCLOB*          # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB-FILE*     # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB-LOCATOR*  # note: only with EXEC SQL coprocessor
+reserved:	DBCS
+reserved:	DE
+# note: the following are part of the register DEBUG-ITEM,
+#       they are automatically unreserved if the register is
+#       created, which happens on USE FOR DEBUGGING
+reserved:	DEBUG-CONTENTS
+reserved:	DEBUG-ITEM
+reserved:	DEBUG-LINE
+reserved:	DEBUG-NAME
+reserved:	DEBUG-SUB-1
+reserved:	DEBUG-SUB-2
+reserved:	DEBUG-SUB-3
+# debug-item end
+reserved:	DEBUGGING
+reserved:	DECIMAL-POINT
+reserved:	DECLARATIVES
+reserved:	DELETE
+reserved:	DELIMITED
+reserved:	DELIMITER
+reserved:	DEPENDING
+reserved:	DESCENDING
+reserved:	DESTINATION
+reserved:	DETAIL
+reserved:	DISABLE
+reserved:	DISPLAY
+reserved:	DISPLAY-1
+reserved:	DIVIDE
+reserved:	DIVISION
+reserved:	DOWN
+reserved:	DUPLICATES
+reserved:	DYNAMIC
+reserved:	EGCS
+reserved:	EGI
+reserved:	EJECT
+reserved:	ELSE
+reserved:	EMI
+reserved:	ENABLE
+reserved:	END
+reserved:	END-ADD
+reserved:	END-CALL
+reserved:	END-COMPUTE
+reserved:	END-DELETE
+reserved:	END-DIVIDE
+reserved:	END-EVALUATE
+reserved:	END-IF
+reserved:	END-MULTIPLY
+reserved:	END-OF-PAGE
+reserved:	END-PERFORM
+reserved:	END-READ
+reserved:	END-RECEIVE
+reserved:	END-RETURN
+reserved:	END-REWRITE
+reserved:	END-SEARCH
+reserved:	END-START
+reserved:	END-STRING
+reserved:	END-SUBTRACT
+reserved:	END-UNSTRING
+reserved:	END-WRITE
+reserved:	ENDING
+reserved:	ENTER
+reserved:	ENTRY
+reserved:	ENVIRONMENT
+reserved:	EOP
+reserved:	EQUAL
+reserved:	ERROR
+reserved:	ESI
+reserved:	EVALUATE
+reserved:	EVERY
+reserved:	EXCEPTION
+reserved:	EXIT
+reserved:	EXTEND
+reserved:	EXTERNAL
+reserved:	F*
+reserved:	FALSE
+reserved:	FD
+reserved:	FILE
+reserved:	FILE-CONTROL
+reserved:	FILLER
+reserved:	FINAL
+reserved:	FIRST
+reserved:	FOOTING
+reserved:	FOR
+reserved:	FROM
+reserved:	GENERATE
+reserved:	GIVING
+reserved:	GLOBAL
+reserved:	GO
+reserved:	GOBACK
+reserved:	GREATER
+reserved:	GROUP
+reserved:	HEADING
+reserved:	HIGH-VALUE
+reserved:	HIGH-VALUES=HIGH-VALUE
+reserved:	I-O
+reserved:	I-O-CONTROL
+reserved:	ID
+reserved:	IDENTIFICATION
+reserved:	IF
+reserved:	IN
+reserved:	INDEX
+reserved:	INDEXED
+reserved:	INDICATE
+reserved:	INITIAL
+reserved:	INITIALIZE
+reserved:	INITIATE
+reserved:	INPUT
+reserved:	INPUT-OUTPUT
+reserved:	INSERT
+reserved:	INSPECT
+reserved:	INSTALLATION
+reserved:	INTO
+reserved:	INVALID
+reserved:	IS
+reserved:	JUST=JUSTIFIED
+reserved:	JUSTIFIED
+reserved:	KANJI
+reserved:	KEY
+reserved:	LABEL
+reserved:	LAST
+reserved:	LEADING
+reserved:	LEFT
+reserved:	LENGTH
+reserved:	LESS
+reserved:	LIMIT
+reserved:	LIMITS
+reserved:	LINAGE
+reserved:	LINAGE-COUNTER
+reserved:	LINE
+reserved:	LINE-COUNTER
+reserved:	LINES
+reserved:	LINKAGE
+reserved:	LOCK
+#reserved:	LONG-VARBINARY*  # note: only with EXEC SQL coprocessor
+#reserved:	LONG-VARCHAR*    # note: only with EXEC SQL coprocessor
+reserved:	LOW-VALUE
+reserved:	LOW-VALUES=LOW-VALUE
+reserved:	MEMORY
+reserved:	MERGE
+reserved:	MESSAGE
+reserved:	MODE
+reserved:	MODULES
+reserved:	MORE-LABELS
+reserved:	MOVE
+reserved:	MULTIPLE*        # CHECKME: is C/S correct?
+reserved:	MULTIPLY
+reserved:	NATIVE
+reserved:	NEGATIVE
+reserved:	NEXT
+reserved:	NO
+reserved:	NOT
+reserved:	NULL
+reserved:	NULLS=NULL
+reserved:	NUMBER
+reserved:	NUMERIC
+reserved:	NUMERIC-EDITED
+reserved:	OBJECT-COMPUTER
+reserved:	OCCURS
+reserved:	OF
+reserved:	OFF
+reserved:	OMITTED
+reserved:	ON
+reserved:	OPEN
+reserved:	OPTIONAL
+reserved:	OR
+reserved:	ORDER
+reserved:	ORGANIZATION
+reserved:	OTHER
+reserved:	OUTPUT
+reserved:	OVERFLOW
+reserved:	PACKED-DECIMAL
+reserved:	PADDING
+reserved:	PAGE
+reserved:	PAGE-COUNTER
+reserved:	PASSWORD
+reserved:	PERFORM
+reserved:	PF
+reserved:	PH
+reserved:	PIC=PICTURE
+reserved:	PICTURE
+reserved:	PLUS
+reserved:	POINTER
+reserved:	POSITION
+reserved:	POSITIVE
+reserved:	PRINTING
+reserved:	PROCEDURE
+reserved:	PROCEDURES
+reserved:	PROCEED
+reserved:	PROCESSING
+reserved:	PROGRAM
+reserved:	PROGRAM-ID
+reserved:	PURGE
+reserved:	QUEUE
+reserved:	QUOTE
+reserved:	QUOTES=QUOTE
+reserved:	RANDOM
+reserved:	RD
+reserved:	READ
+reserved:	READY
+reserved:	RECEIVE
+reserved:	RECORD
+reserved:	RECORDING
+reserved:	RECORDS
+reserved:	REDEFINES
+reserved:	REEL
+reserved:	REFERENCE
+reserved:	REFERENCES
+reserved:	RELATIVE
+reserved:	RELEASE
+reserved:	RELOAD
+reserved:	REMAINDER
+reserved:	REMOVAL
+reserved:	RENAMES
+reserved:	REPLACE
+reserved:	REPLACING
+reserved:	REPORT
+reserved:	REPORTING
+reserved:	REPORTS
+reserved:	RERUN
+reserved:	RESERVE
+reserved:	RESET
+#reserved:	RESULT-SET-LOCATOR* # note: only with EXEC SQL coprocessor
+reserved:	RETURN
+reserved:	REVERSED
+reserved:	REWIND
+reserved:	REWRITE
+reserved:	RF
+reserved:	RH
+reserved:	RIGHT
+reserved:	ROUNDED
+#reserved:	ROWID*           # note: only with EXEC SQL coprocessor
+reserved:	RUN
+reserved:	S*
+reserved:	SAME
+reserved:	SD
+reserved:	SEARCH
+reserved:	SECTION
+reserved:	SECURITY
+reserved:	SEGMENT
+reserved:	SEGMENT-LIMIT
+reserved:	SELECT
+reserved:	SEND
+reserved:	SENTENCE
+reserved:	SEPARATE
+reserved:	SEQUENCE
+reserved:	SEQUENTIAL
+reserved:	SERVICE
+reserved:	SET
+reserved:	SHIFT-IN         # note: this is a register, move as soon as supported
+reserved:	SHIFT-OUT        # note: this is a register, move as soon as supported
+reserved:	SIGN
+reserved:	SIZE
+reserved:	SKIP1
+reserved:	SKIP2
+reserved:	SKIP3
+reserved:	SORT
+reserved:	SORT-CONTROL     # note: this is a register, move as soon as supported
+reserved:	SORT-CORE-SIZE   # note: this is a register, move as soon as supported
+reserved:	SORT-FILE-SIZE   # note: this is a register, move as soon as supported
+reserved:	SORT-MERGE
+reserved:	SORT-MESSAGE     # note: this is a register, move as soon as supported
+reserved:	SORT-MODE-SIZE   # note: this is a register, move as soon as supported
+reserved:	SOURCE
+reserved:	SOURCE-COMPUTER
+reserved:	SPACE
+reserved:	SPACES=SPACE
+reserved:	SPECIAL-NAMES
+reserved:	SQL              # note: for use with coprocessors, generally reserved
+reserved:	STANDARD
+reserved:	STANDARD-1
+reserved:	STANDARD-2
+reserved:	START
+reserved:	STATUS
+reserved:	STOP
+reserved:	STRING
+reserved:	SUB-QUEUE-1
+reserved:	SUB-QUEUE-2
+reserved:	SUB-QUEUE-3
+reserved:	SUBTRACT
+reserved:	SUM
+reserved:	SUPPRESS
+reserved:	SYMBOL
+reserved:	SYMBOLIC
+reserved:	SYNC=SYNCHRONIZED
+reserved:	SYNCHRONIZED
+reserved:	TABLE
+reserved:	TALLYING
+reserved:	TAPE
+reserved:	TERMINAL
+reserved:	TERMINATE
+reserved:	TEST
+reserved:	TEXT
+reserved:	THAN
+reserved:	THEN
+reserved:	THROUGH=THRU
+reserved:	THRU
+reserved:	TIME
+reserved:	TIME-RECORD
+reserved:	TIMES
+#reserved:	TIMESTAMP*                # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-OFFSET*         # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-OFFSET-RECORD*  # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-RECORD*         # note: only with EXEC SQL coprocessor
+reserved:	TITLE
+reserved:	TO
+reserved:	TOP
+reserved:	TRACE
+reserved:	TRAILING
+reserved:	TRUE
+reserved:	TYPE
+reserved:	U*
+reserved:	UNIT
+reserved:	UNSTRING
+reserved:	UNTIL
+reserved:	UP
+reserved:	UPON
+reserved:	USAGE
+reserved:	USE
+reserved:	USING
+reserved:	V*
+reserved:	VALUE
+reserved:	VALUES
+#reserved:	VARBINARY*            # note: only with EXEC SQL coprocessor
+reserved:	VARYING
+reserved:	WHEN
+reserved:	WITH
+reserved:	WORDS
+reserved:	WORKING-STORAGE
+reserved:	WRITE
+reserved:	WRITE-ONLY
+reserved:	XML
+reserved:	YYYYDDD*
+reserved:	YYYYMMDD*
+reserved:	ZERO
+reserved:	ZEROES=ZERO
+reserved:	ZEROS=ZERO
+
+
+# list of registers:
+not-register:	DIALECT-ALL
+register:	"ADDRESS\ OF"
+register:	DEBUG-ITEM
+register:	"LENGTH\ OF"
+# register:	LINAGE-COUNTER
+register:	RETURN-CODE
+# register:	SHIFT-IN              #  78 SHIFT-IN  GLOBAL VALUE X"0F".
+# register:	SHIFT-OUT             #  78 SHIFT-OUT GLOBAL VALUE X"0E".
+# register:	SORT-CONTROL
+# register:	SORT-CORE-SIZE
+# register:	SORT-FILE-SIZE
+# register:	SORT-MESSAGE
+# register:	SORT-MODE-SIZE
+register:	SORT-RETURN
+register:	TALLY
+register:	WHEN-COMPILED
+
+
+# list of system names:
+not-system-name:	DIALECT-ALL-SWITCHES
+system-name:	UPSI-0
+system-name:	UPSI-1
+system-name:	UPSI-2
+system-name:	UPSI-3
+system-name:	UPSI-4
+system-name:	UPSI-5
+system-name:	UPSI-6
+system-name:	UPSI-7
+
+
+# disable all functions
+not-intrinsic-function:	DIALECT-ALL
+
+# add all that are supported by MVS
+intrinsic-function:	ACOS
+intrinsic-function:	ANNUITY
+intrinsic-function:	ASIN
+intrinsic-function:	ATAN
+intrinsic-function:	CHAR
+intrinsic-function:	COS
+intrinsic-function:	CURRENT-DATE
+intrinsic-function:	DATE-OF-INTEGER
+intrinsic-function:	DATE-TO-YYYYMMDD
+#intrinsic-function:	DATEVAL          # IBM extension (Millennium Language Extension),
+#                   	                   not known to GnuCOBOL
+intrinsic-function:	DAY-OF-INTEGER
+intrinsic-function:	DAY-TO-YYYYDDD
+intrinsic-function:	FACTORIAL
+intrinsic-function:	INTEGER
+intrinsic-function:	INTEGER-OF-DATE
+intrinsic-function:	INTEGER-OF-DAY
+intrinsic-function:	INTEGER-PART
+intrinsic-function:	LENGTH
+intrinsic-function:	LOG
+intrinsic-function:	LOG10
+intrinsic-function:	LOWER-CASE
+intrinsic-function:	MAX
+intrinsic-function:	MEAN
+intrinsic-function:	MEDIAN
+intrinsic-function:	MIDRANGE
+intrinsic-function:	MIN
+intrinsic-function:	MOD
+intrinsic-function:	NUMVAL
+intrinsic-function:	NUMVAL-C
+intrinsic-function:	ORD
+intrinsic-function:	ORD-MAX
+intrinsic-function:	ORD-MIN
+intrinsic-function:	PRESENT-VALUE
+intrinsic-function:	RANDOM
+intrinsic-function:	RANGE
+intrinsic-function:	REM
+intrinsic-function:	REVERSE
+intrinsic-function:	SIN
+intrinsic-function:	SQRT
+intrinsic-function:	STANDARD-DEVIATION
+intrinsic-function:	SUM
+intrinsic-function:	TAN
+#intrinsic-function:	UNDATE           # IBM extension (Millennium Language Extension),
+#                   	                   not known to GnuCOBOL
+intrinsic-function:	UPPER-CASE
+intrinsic-function:	VARIANCE
+intrinsic-function:	WHEN-COMPILED
+intrinsic-function:	YEAR-TO-YYYY
+#intrinsic-function:	YEARWINDOW       # IBM extension (Millennium Language Extension),
+#                   	                   not known to GnuCOBOL
