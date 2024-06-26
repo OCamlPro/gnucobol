@@ -669,7 +669,7 @@ configure:13641: checking how to hardcode library paths into programs
 configure:13666: result: immediate
 configure:13768: checking for shl_load
 configure:13768: gcc -o conftest -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/cc3vUSh9.o: in function `main':
+/usr/bin/ld: /tmp/ccpn5EfS.o: in function `main':
 conftest.c:(.text.startup+0xb): undefined reference to `shl_load'
 collect2: error: ld returned 1 exit status
 configure:13768: $? = 1
@@ -815,7 +815,7 @@ configure:14054: $? = 0
 configure:14072: result: yes
 configure:14077: checking whether a statically linked program can dlopen itself
 configure:14158: gcc -o conftest -O2  -DHAVE_DLFCN_H  -Wl,--export-dynamic -static conftest.c   >&5
-/usr/bin/ld: /tmp/ccf5jHPi.o: in function `main':
+/usr/bin/ld: /tmp/ccgOS9WE.o: in function `main':
 conftest.c:(.text.startup+0xd): warning: Using 'dlopen' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 configure:14161: $? = 0
 conftest: undefined symbol: _fnord
@@ -841,7 +841,7 @@ configure:14570: $? = 0
 configure:14583: result: none needed
 configure:14598: checking for library containing yywrap
 configure:14628: gcc -o conftest -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/ccxnMdnc.o: in function `main':
+/usr/bin/ld: /tmp/cclQ2d98.o: in function `main':
 conftest.c:(.text.startup+0xb): undefined reference to `yywrap'
 collect2: error: ld returned 1 exit status
 configure:14628: $? = 1
@@ -1432,7 +1432,7 @@ configure:15693: $? = 0
 configure:15693: result: yes
 configure:15699: checking for getexecname
 configure:15699: gcc -o conftest -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/ccBAAtQu.o: in function `main':
+/usr/bin/ld: /tmp/cc3DcfQS.o: in function `main':
 conftest.c:(.text.startup+0xb): undefined reference to `getexecname'
 collect2: error: ld returned 1 exit status
 configure:15699: $? = 1
