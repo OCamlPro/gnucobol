@@ -1,0 +1,27 @@
+     ../../cobc/cobc.c \
+     ../../cobc/codegen.c \
+     ../../cobc/codeoptim.c \
+     ../../cobc/config.c \
+     ../../cobc/config.def \
+     ../../cobc/error.c \
+     ../../cobc/field.c \
+     ../../cobc/flag.def \
+     ../../cobc/help.c \
+     ../../cobc/parser.y \
+     ../../cobc/pplex.l \
+     ../../cobc/ppparse.y \
+     ../../cobc/reserved.c \
+     ../../cobc/scanner.l \
+     ../../cobc/tree.c \
+     ../../cobc/typeck.c \
+     ../../cobc/warning.def \
+     ../../libcob/call.c \
+     ../../libcob/cobgetopt.c \
+     ../../libcob/common.c \
+     ../../libcob/fileio.c \
+     ../../libcob/move.c \
+     ../../libcob/numeric.c \
+     ../../libcob/reportio.c \
+     ../../libcob/screenio.c \
+     ../../libcob/termio.c \
+     ../../bin/cobcrun.c

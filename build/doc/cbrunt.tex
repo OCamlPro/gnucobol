@@ -1,0 +1,568 @@
+@section General instructions
+
+
+
+The initial @file{runtime.cfg} file is found in the  @env{$COB_CONFIG_DIR}  ,
+which defaults to  installdir/gnucobol/config  (see  @command{cobcrun --info}  for the
+local path that is configured).
+The environment variable  @env{COB_RUNTIME_CONFIG}  may define a different runtime
+configuration file to read.
+
+If settings are included in the runtime environment file multiple times
+then the last setting value is used, no warning occurs.
+
+Settings via environment variables always take precedence over settings
+that are given in runtime configuration files. And the environment is
+checked after completing processing of the runtime configuration file(s)
+
+All values set to string variables or environment variables are checked
+for  $@{envvar@}  and replacement is done at the time of the setting.
+You can also specify a default value for the case that envvar is not set:
+  @code{$@{envvar:default@}}  (the format  @code{$@{envvar:-default@}}  is supported, too).
+
+Any environment variable may be set with the directive @code{setenv}  .
+@table @asis
+@item Example
+@code{@code{setenv} COB_LIBARAY_PATH $@{LD_LIBRARY_PATH@}}
+@end table
+
+Any environment variable may be unset with the directive @code{unsetenv}
+(one var per line).
+@table @asis
+@item Example
+@code{@code{unsetenv} COB_LIBRARY_PATH}
+@end table
+
+Runtime configuration files can @code{include }other files with the
+directive  @code{include } .
+@table @asis
+@item Example
+@code{@code{include }my-runtime-configuration-file}
+@end table
+
+To @code{include }another configuration file only if it is present use the
+directive  @code{includeif}  .
+You can also use  $@{envvar@}  inside this.
+@table @asis
+@item Example
+@code{@code{includeif} $@{HOME@}/mygc.cfg}
+@end table
+
+If you want to reset a parameter to its default value use
+  @code{reset parametername}  .
+
+Most runtime variables have boolean values, some are switches, some have
+string values, integer values (if not explicit noted: unsigned) and some
+are size values.
+The boolean values will be evaluated as following:
+	to true:	  @code{1}, @code{Y}, O@code{N}, @code{YES}, @code{TRUE}  (no matter of case)
+	to false:	  @code{0}, @code{N}, @code{OFF}.
+
+A @code{size} value is an unsigned integer optionally followed by @samp{K}, @samp{M}, or @samp{G}
+for @samp{kilo}, @samp{mega} or @samp{giga}.
+
+Variables of type string can be of three different kinds:
+regular string, file name, and path list
+All those may contain the following escape sequences:
+	$$	process id
+	$f	executable filename (full path)
+	$b	executable basename (anything after the last separator)
+#	$d	date (yyyymmdd)
+	$t	time (hhmmss)
+
+For convenience a parameter in the @file{runtime.cfg} file may be defined by using
+either the environment variable name or the parameter name.
+In most cases the environment variable name is the parameter name (in upper
+case) with the prefix @code{COB_}  .
+
+For a complete list of the settings in use see  @command{cobcrun --runtime-config}  .
+
+Note:
+If you want to @i{slightly} speed up a program's startup time, remove all
+of the comments from the actual real configuration file that is processed.
+
+
+
+@section General environment
+@verbatim
+
+
+
+Environment name:  COB_DISABLE_WARNINGS
+  Parameter name:  disable_warnings
+         Purpose:  turn off runtime warning messages
+            Type:  boolean
+         Default:  false
+         Example:  DISABLE_WARNINGS  TRUE
+
+Environment name:  COB_ENV_MANGLE
+  Parameter name:  env_mangle
+         Purpose:  names checked in the environment would get non alphanumeric
+                   change to '_'
+            Type:  boolean
+         Default:  false
+         Example:  ENV_MANGLE  TRUE
+
+Environment name:  COB_SET_DEBUG
+  Parameter name:  debugging_mode
+         Purpose:  to enable USE ON DEBUGGING procedures that were active
+                   during compile-time because of WITH DEBUGGING MODE,
+                   otherwise the code generated will be skipped
+            Type:  boolean
+         Default:  false
+         Example:  COB_SET_DEBUG  1
+
+Environment name:  COB_SET_TRACE
+  Parameter name:  set_trace
+         Purpose:  to enable COBOL trace feature
+            Type:  boolean
+         Default:  false
+         Example:  SET_TRACE  TRUE
+
+Environment name:  COB_TRACE_FILE
+  Parameter name:  trace_file
+         Purpose:  to define where COBOL trace output should go
+            Type:  string (file) ; may use $-sequences
+            Note:  file is opened for append if name starts with "+"
+         Default:  stderr
+         Example:  TRACE_FILE  ${HOME}/mytrace.$$
+
+Environment name:  COB_TRACE_FORMAT
+  Parameter name:  trace_format
+         Purpose:  to define format of COBOL trace output
+            Type:  string
+         Default:  "%P %S Line: %L"
+                   %P is replaced by Program-Id/Function-Id minimal length 29
+                      with prefix
+                   %I is replaced by Program-Id/Function-Id variable length,
+                      without prefix
+                   %L is replaced by Line number, right justified, length 6
+                   %S is replaced by statement type and name
+                   %F is replaced by source file name 
+         Example:  TRACE_FORMAT  "Line: %L %S"
+            Note:  format of GC2.2 and older:
+                   "PROGRAM-ID: %I 	Line: %L 	%S"
+
+Environment name:  COB_CORE_ON_ERROR
+  Parameter name:  core_on_error
+         Purpose:  to enable operating system handling of signals and to
+                   raise an ABORT signal on runtime error instead of the
+                   default error handling, which will commonly kill the
+                   process after creating a coredump
+            Type:  0   means catching all default signals and do full
+                       internal error handling as done in versions pre 3.2
+                       along with full internal handling of COBOL runtime
+                       errors
+                   1   means to forward any signals; whatever happens
+                       by means of system signal handers will happen,
+                       which may include creating coredumps and killing
+                       the process before libcob does any cleanup; preserve
+                       full internal handling of COBOL runtime errors
+                   2   is identical to 1, but on runtime errors explicit
+                       raises SIGABRT after displaying it along with the  
+                       stacktrace and after doing minimal cleanup
+                   3   similar to 2, but instead of raising SIGABRT execute
+                       "gcore -a -o NAME $$" (where $$ is the process id and
+                       NAME is specified by COB_CORE_FILENAME) as early as
+                       possible before doing the normal internal error
+                       handling; if the command does not work or if a signal
+                       handler was executed before a SIGABRT is raised
+         Default:  0
+         Example:  core_on_error 3
+            Note:  If the operating system kills the process as part of the
+                   signal handling no COBOL centric dump will be created and
+                   no cleanup will be done either.
+                   When catching a signal (for example 11) it will be
+                   returned as exit code of the process, the generated
+                   coredumps store the reason for the error in the variable
+                   "runtime_err_str".
+
+Environment name:  COB_CORE_FILENAME
+  Parameter name:  core_filename
+         Purpose:  to adjust the default name or specify a folder for a
+                   COB_CORE_ON_ERROR=3 generated coredump
+            Type:  string
+         Default:  ./core.libcob
+         Example:  core_filename /home/me/SomeApp.core
+
+Environment name:  COB_STACKTRACE
+  Parameter name:  stracktrace
+         Purpose:  to disable stracktrace creation on abort
+            Type:  boolean
+         Default:  true
+         Example:  STRACKTRACE  no
+
+Environment name:  COB_DUMP_FILE
+  Parameter name:  dump_file
+         Purpose:  to define where COBOL dump output should go
+            Note:  the -fdump=all compile option prepares for dump;
+                   file is opened for append if name starts with "+";
+                   may be disabled by setting it to "NONE"
+            Type:  string (file) ; may use $-sequences
+         Default:  stderr
+         Example:  DUMP_FILE  ${HOME}/mytrace.log
+
+Environment name:  COB_DUMP_WIDTH
+  Parameter name:  dump_width
+         Purpose:  to define COBOL dump line length
+            Type:  integer
+         Default:  100
+         Example:  dump_width 120
+
+Environment name:  COB_CURRENT_DATE
+  Parameter name:  current_date
+         Purpose:  specify an alternate Date/Time to be returned to ACCEPT
+                   statement; this is used for testing purposes or to tweak
+                   a missing offset, partial setting is allowed
+            Type:  numeric string in format YYYYDDMMHHMISS or date string
+                   or seconds since the epoch as @SSSSSSSS
+         Default:  the operating system date is used
+         Example:  COB_CURRENT_DATE "2026/03/16 16:40:52"
+                   current_date YYYYMMDDHHMMSS+01:00
+
+Environment name:  COB_PROF_FILE
+  Parameter name:  prof_file
+         Purpose:  to define where COBOL profiling output should go
+            Type:  string (file) ; may use $-sequences
+         Default:  cob-prof-$b-$$-$d-$t.csv
+         Example:  PROF_FILE  ${HOME}/$$-prof.csv
+
+Environment name:  COB_PROF_ENABLE
+  Parameter name:  prof_enable
+         Purpose:  to enable profiling for modules compiled with profiling;
+                   note that this disables physical cancel
+            Type:  boolean
+         Default:  false
+         Example:  PROF_ENABLE yes
+
+Environment name:  COB_PROF_MAX_DEPTH
+  Parameter name:  prof_max_depth
+         Purpose:  the number of sections and paragraphs that can be nested;
+                   if the nesting level is higher than this threshold,
+                   profiling is disabled automatically
+            Type:  integer
+         Default:  8192
+         Example:  PROF_MAX_DEPTH  8192
+
+Environment name:  COB_PROF_FORMAT
+  Parameter name:  prof_format
+         Purpose:  to define the format of the columns in the profiling CSV file.
+            Type:  string a comma separated list of fields, with %m for module,
+                   %s for section, %p for paragraph, %e for entry, %w for
+                   location, %k for kind (PROGRAM,SECTION,PARAGRAPH,ENTRY)
+                   %f for file, %i for PID, %t for time in nano-seconds,
+                   %h for human-readable time, %n for number of calls
+         Default:  %m,%s,%p,%e,%w,%k,%t,%h,%n
+         Example:  COB_PROF_FORMAT %m,%s,%p,%e,%w,%k,%t,%h,%n
+
+
+@section Call environment
+@verbatim
+
+
+Environment name:  COB_LIBRARY_PATH
+  Parameter name:  library_path
+         Purpose:  paths for dynamically-loadable modules
+            Type:  string (path list)
+            Note:  the default paths .:/installpath/extras are always
+                   added to the given paths
+         Example:  LIBRARY_PATH    /opt/myapp/test:/opt/myapp/production
+
+Environment name:  COB_PRE_LOAD
+  Parameter name:  pre_load
+         Purpose:  modules that are loaded during startup, can be used
+                   to CALL COBOL programs or C functions that are part
+                   of a module library
+            Type:  string
+            Note:  the modules listed should NOT include extensions, the
+                   runtime will use the right ones on the various platforms,
+                   COB_LIBRARY_PATH is used to locate the modules
+         Example:  PRE_LOAD      COBOL_function_library:external_c_library
+
+Environment name:  COB_LOAD_CASE
+  Parameter name:  load_case
+         Purpose:  resolve ALL called program names to UPPER or LOWER case
+            Type:  Only use  UPPER  or  LOWER
+         Default:  if not set program names in CALL are case sensitive
+         Example:  LOAD_CASE  UPPER
+
+Environment name:  COB_PHYSICAL_CANCEL
+  Parameter name:  physical_cancel
+         Purpose:  physically unload a dynamically-loadable module on CANCEL,
+                   this frees some RAM and allows the change of modules during
+                   run-time but needs more time to resolve CALLs (both to
+                   active and not-active programs)
+           Alias:  default_cancel_mode, LOGICAL_CANCELS (0 = yes)
+            Type:  TRUE/YES/1  unload module on CANCEL
+                   FALSE/NO/0  unload module on STOP RUN only
+                   NEVER       never unload module, only useful for profilers
+                               and tracing tools that do a post-mortem lookup
+                               of function address
+         Default:  false
+         Example:  PHYSICAL_CANCEL  TRUE
+
+
+@end verbatim
+
+@section File I/O
+@verbatim
+
+
+Environment name:  COB_VARSEQ_FORMAT
+  Parameter name:  varseq_format
+         Purpose:  declare format used for variable length sequential files 
+                   - different types and lengths precede each record
+                   - 'length' is the data length, does not include the prefix
+            Type:  0   means 2 byte record length (big-endian) + 2 NULs
+                   1   means 4 byte record length (big-endian)
+                   2   means 4 byte record length (local machine int)
+                   3   means 2 byte record length (big-endian)
+         Default:  0
+         Example:  VARSEQ_FORMAT 1
+
+Environment name:  COB_FILE_PATH
+  Parameter name:  file_path
+         Purpose:  define default location where data files are stored
+            Type:  file path directory
+         Default:  .  (current directory)
+         Example:  FILE_PATH ${HOME}/mydata
+
+Environment name:  COB_LS_FIXED
+  Parameter name:  ls_fixed
+         Purpose:  Defines if LINE SEQUENTIAL files should be fixed length
+                   (or variable, by removing trailing spaces)
+           Alias:  STRIP_TRAILING_SPACES  (0 = yes)
+            Type:  boolean
+         Default:  false
+            Note:  This setting is most useful if you want to REWRITE those
+                   files.
+         Example:  LS_FIXED TRUE
+
+Environment name:  COB_LS_VALIDATE
+  Parameter name:  ls_validate
+         Purpose:  Defines for LINE SEQUENTIAL files that the data should be
+                   validated as it is read (status 09) / written (status 71).
+            Type:  boolean
+         Default:  true (per COBOL 2022)
+            Note:  If active effectively disables COB_LS_NULLS.
+         Example:  LS_VALIDATE FALSE
+
+Environment name:  COB_LS_NULLS
+  Parameter name:  ls_nulls
+         Purpose:  Defines for LINE SEQUENTIAL files what to do with data
+                   which is not DISPLAY type.  This could happen if a LINE
+                   SEQUENTIAL record has BINARY/COMP data fields in it.
+            Type:  boolean
+         Default:  false
+            Note:  The TRUE setting will insert a null character x"00" before
+                   those values to escape them, and redo on read-in plus
+                   validating that they only occur after a null character.
+                   Decreases LINE SEQUENTIAL performance and prevents writing
+                   escape sequences or formatting within the data.
+                   Only checked if COB_LS_VALIDATE is disabled.
+         Example:  LS_NULL = TRUE
+
+Environment name:  COB_LS_SPLIT
+  Parameter name:  ls_split
+         Purpose:  Defines for LINE SEQUENTIAL files what to do when a record
+                   is longer than the program handles. If 'ls_split=true' then
+                   the data is returned as multiple records with io status 06,
+                   otherwise the record is truncated, io status set to 04 and
+                   the file skips to the next LF.
+            Type:  boolean
+         Default:  true (per COBOL 2022)
+         Example:  LS_SPLIT = FALSE
+
+Environment name:  COB_SYNC
+  Parameter name:  sync
+         Purpose:  Should the file be synced to disk after each write/update
+            Type:  boolean
+         Default:  false
+         Example:  SYNC: TRUE
+
+Environment name:  COB_SORT_MEMORY
+  Parameter name:  sort_memory
+         Purpose:  Defines how much RAM to assign for sorting data
+                   if this size is exceeded the  SORT  will be done
+                   on disk instead of memory
+            Type:  size  but must be more than 1M
+         Default:  128M
+         Example:  SORT_MEMORY 64M
+
+Environment name:  COB_SORT_CHUNK
+  Parameter name:  sort_chunk
+         Purpose:  Defines how much RAM to assign for sorting data in chunks
+            Type:  size  but must be within 128K and 16M
+         Default:  256K
+         Example:  SORT_CHUNK 1M
+
+Environment name:  COB_SEQ_CONCAT_NAME
+  Parameter name:  seq_concat_name
+         Purpose:  Does DD_asgname hold multiple input file names
+            Type:  boolean
+         Default:  false
+         Example:  seq_concat_name = true
+
+Environment name:  COB_SEQ_CONCAT_SEP
+  Parameter name:  seq_concat_sep
+         Purpose:  Character separating file names
+            Type:  char
+         Default:  +
+         Example:  seq_concat_name = '&'
+
+
+@end verbatim
+
+@section Screen I/O
+@verbatim
+
+
+Environment name:  COB_BELL
+  Parameter name:  bell
+         Purpose:  Defines how a request for the screen to beep is handled
+            Type:  FLASH, SPEAKER, FALSE, BEEP
+         Default:  BEEP
+         Example:  BELL SPEAKER
+
+Environment name:  COB_REDIRECT_DISPLAY
+  Parameter name:  redirect_display
+         Purpose:  Defines if DISPLAY output should be sent to 'stderr'
+            Type:  boolean
+         Default:  false
+         Example:  redirect_display Yes
+
+Environment name:  COB_SCREEN_ESC
+  Parameter name:  screen_esc
+         Purpose:  Enable handling of ESC key during ACCEPT
+            Type:  boolean
+         Default:  false
+            Note:  is only evaluated if COB_SCREEN_EXCEPTIONS is active
+         Example:  screen_esc Yes
+
+Environment name:  COB_SCREEN_EXCEPTIONS
+  Parameter name:  screen_exceptions
+         Purpose:  enable exceptions for function keys during ACCEPT
+            Type:  boolean
+         Default:  false
+         Example:  screen_exceptions Yes
+
+Environment name:  COB_TIMEOUT_SCALE
+  Parameter name:  timeout_scale
+         Purpose:  specify translation in milliseconds for ACCEPT clauses
+                   BEFORE TIME value / AFTER TIMEOUT
+            Type:  integer
+                   0 means 1000 (Micro Focus COBOL compatible), 1 means 100
+                   (ACUCOBOL compatible), 2 means 10, 3 means 1
+         Default:  0
+            Note:  the minimum and possible maximum value depend on the
+                   screenio library used
+         Example:  timeout_scale 3
+
+Environment name:  COB_INSERT_MODE
+  Parameter name:  insert_mode
+         Purpose:  specify default insert mode for ACCEPT; 0=off, 1=on
+            Type:  boolean
+         Default:  false
+            Note:  also sets the cursor type (if available)
+         Example:  insert_mode Y
+
+Environment name:  COB_MOUSE_FLAGS
+  Parameter name:  mouse_flags
+         Purpose:  specify which mouse events will be sent as function key
+                   to the application during ACCEPT and how they will be
+                   handled
+            Type:  int (by bits)
+         Default:  1
+            Note:  0 disables the mouse cursor, any other value enables it,
+                   any value containing 1 will enable internal handling (click
+                   to position, double-click to enter).
+                   See copy/screenio.cpy for list of events and their values.
+           Alias:  MOUSE_FLAGS
+         Example:  11 (enable internal handling => 1, left press => 2,
+                       double-click => 8; 1+2+8=11)
+
+Environment name:  COB_MOUSE_INTERVAL
+  Parameter name:  mouse_interval
+         Purpose:  specifies the maximum time (in thousands of a second)
+                   that can elapse between press and release events for them
+                   to be recognized as a click.
+            Type:  int (0 - 166)
+         Default:  100
+            Note:  0 disables the click resolution (instead press + release
+                   are recognized), also disables positioning by mouse click
+
+Environment name:  COB_DISPLAY_PRINT_PIPE
+  Parameter name:  display_print_pipe
+         Purpose:  Defines command line used for sending output of
+                   DISPLAY UPON PRINTER to (via pipe)
+                   This is very similar to Micro Focus COBPRINTER
+            Note:  Each executed DISPLAY UPON PRINTER statement causes a
+                   new invocation of command-line (= new process start).
+                   Each invocation receives the data referenced in
+                   the DISPLAY statement and is followed by an
+                   end-of-file condition.
+                   COB_DISPLAY_PRINT_FILE, if set, takes precedence
+                   over COB_DISPLAY_PRINT_PIPE.
+           Alias:  COBPRINTER
+            Type:  string
+         Default:  not set
+         Example:  print 'cat >>/tmp/myprt.log'
+
+Environment name:  COB_DISPLAY_PRINT_FILE
+  Parameter name:  display_print_file
+         Purpose:  Defines file to be appended to by DISPLAY UPON PRINTER
+            Note:  Each DISPLAY UPON PRINTER opens, appends and closes the file.
+            Type:  string ; may use $-sequences
+         Default:  not set
+         Example:  display_printer '/tmp/myprt.log'
+
+Environment name:  COB_DISPLAY_PUNCH_FILE
+  Parameter name:  display_punch_file
+         Purpose:  Defines file to be created on first
+                   DISPLAY UPON SYSPUNCH/SYSPCH
+            Note:  The file will be only be closed on runtime exit.
+            Type:  string ; may use $-sequences
+         Default:  not set
+         Example:  display_punch './punch_$$.out'
+
+Environment name:  COB_LEGACY
+  Parameter name:  legacy
+         Purpose:  keep behavior of former runtime versions, currently only
+                   for setting screen attributes for non input fields and
+                   disabling blinking on some systems
+            Type:  boolean
+         Default:  not set
+         Example:  legacy true
+
+Environment name:  COB_EXIT_WAIT
+  Parameter name:  exit_wait
+         Purpose:  to wait on main program exit if an extended screenio
+                   DISPLAY was issued without an ACCEPT following
+            Type:  boolean
+         Default:  true
+         Example:  COB_EXIT_WAIT off
+
+Environment name:  COB_EXIT_MSG
+  Parameter name:  exit_msg
+         Purpose:  string to display if COB_EXIT_WAIT is processed, set to ''
+                   if no actual display but an ACCEPT should be done
+            Type:  string
+         Default:  'end of program, please press a key to exit' (localized)
+         Example:  COB_EXIT_MSG ''
+
+
+@end verbatim
+
+@section Report I/O
+@verbatim
+
+
+Environment name:  COB_COL_JUST_LRC
+  Parameter name:  col_just_lrc
+         Purpose:  If true, then COLUMN defined as LEFT, RIGHT or CENTER
+                   will have the data justified within the field limits
+                   If false, then the data is just copied into the column as is
+            Type:  boolean
+         Default:  TRUE
+         Example:  col_just_lrc True
+@end verbatim
