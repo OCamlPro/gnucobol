@@ -1374,8 +1374,9 @@ build_literal (const enum cb_category category, const void *data,
 			cobc_err_msg(_("iconv failed"));
 		}
 		iconv_close(cd);
-	}
+		p->size -= outbytesleft;
 
+	}
 	return p;
 }
 
@@ -2689,7 +2690,7 @@ cb_build_class_name (cb_tree name, cb_tree list)
 	snprintf (scratch_buff, (size_t)COB_MINI_MAX, "cob_is_%s_%d",
 		  cb_to_cname (p->name), class_id++);
 	p->cname = cobc_parse_strdup (scratch_buff);
-	p->list = list;re
+	p->list = list;
 	return CB_TREE (p);
 }
 
