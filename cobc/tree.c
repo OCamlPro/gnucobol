@@ -1355,10 +1355,37 @@ build_literal (const enum cb_category category, const void *data,
 	       const size_t size)
 {
 	struct cb_literal *p;
-
 	p = make_tree (CB_TAG_LITERAL, category, sizeof (struct cb_literal));
 	p->data = cobc_parse_malloc (size + 1U);
 	p->size = size;
+
+	switch(category) {
+	case CB_CATEGORY_UNKNOWN:
+	case CB_CATEGORY_ERROR:
+		cobc_err_msg(_("invalid category"));
+		memcpy (p->data, data, size);
+		return p;
+	case CB_CATEGORY_ALPHABETIC:
+	case CB_CATEGORY_ALPHANUMERIC:
+	case CB_CATEGORY_ALPHANUMERIC_EDITED:
+	case CB_CATEGORY_NUMERIC:
+	case CB_CATEGORY_NUMERIC_EDITED:
+		p->size = size;
+		break;
+	case CB_CATEGORY_NATIONAL:
+	case CB_CATEGORY_NATIONAL_EDITED:
+		p->size = 2 * size;
+		break;
+	case CB_CATEGORY_BOOLEAN:
+	case CB_CATEGORY_INDEX:
+	case CB_CATEGORY_OBJECT_REFERENCE:
+	case CB_CATEGORY_DATA_POINTER:
+	case CB_CATEGORY_PROGRAM_POINTER:
+	case CB_CATEGORY_FLOATING_EDITED:
+		cobc_err_msg(_("invalid category"));
+		memcpy (p->data, data, size);
+		return p;	     
+	}
 	
     iconv_t cd = iconv_open("ISO-8859-15", "UTF-8");
 	if(cd == (iconv_t)-1) {
