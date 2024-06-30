@@ -4893,9 +4893,10 @@ read_literal (const char mark, const enum cb_literal_type type)
 			CB_UNFINISHED (_("UTF-8 literal"));
 		}
 	} else {
+		
 		/* poor-man's conversion iso-8859 -> utf-16 */
 		/* "!a0" = x'21613000' -> nx'00210061003000' */
-		size_t new_size = i * COB_NATIONAL_SIZE;
+		/* size_t new_size = i * COB_NATIONAL_SIZE;
 		if (new_size + 1 > plex_size) {
 			plex_size = new_size + 1;
 			plex_buff = cobc_realloc (plex_buff, plex_size);
@@ -4905,7 +4906,8 @@ read_literal (const char mark, const enum cb_literal_type type)
 			i--;
 			plex_buff[i * 2 + 1] = plex_buff [i];
 			plex_buff[i * 2] = 0;
-		}
+		} */
+
 		if (type != CB_LITERAL_NC) {
 			if (cb_verify (cb_national_literals, _("national literal"))) {
 				CB_UNFINISHED (_("national literal"));
@@ -4915,7 +4917,7 @@ read_literal (const char mark, const enum cb_literal_type type)
 				CB_UNFINISHED (_("national literal"));
 			}
 		}
-		yylval = cb_build_national_literal (plex_buff, new_size);
+		yylval = cb_build_national_literal (plex_buff, i);
 	}
 }
 
