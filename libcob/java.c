@@ -34,7 +34,7 @@ int cacheSize = 0;
 
 static JavaVM *jvm = NULL;
 /* pointer to native method interface */  
-static JNIEnv* env = NULL;
+static JNIEnv *env = NULL;
 
 static void 
 add_to_cache(jclass cls, jmethodID mid) {
@@ -73,6 +73,10 @@ cob_create_vm() {
     else
         return rv;
     return env;
+}
+
+void cob_destroy_jni() {
+    (*jvm)->DestroyJavaVM(jvm);
 }
 
 static void 
@@ -162,6 +166,152 @@ JNICALL cob_call_java_static_method(JNIEnv *env, JavaVM *jvm, const char *classN
     (*env)->ReleaseStringUTFChars(env, result, nativeResult);
 
     free(methodSig);
+}
+
+jobject cob_create_java_object(JNIEnv *env, const char *className, const char *constructorSig, jvalue *args) {
+    jclass cls = (*env)->FindClass(env, className);
+    if (cls == NULL) {
+        return NULL; 
+    }
+
+    jmethodID constructor = (*env)->GetMethodID(env, cls, "<init>", constructorSig);
+    if (constructor == NULL) {
+        return NULL;
+    }
+
+    jobject obj = (*env)->NewObjectA(env, cls, constructor, args);
+    return obj;
+}
+
+void cob_set_java_field(JNIEnv *env, jobject obj, const char *fieldName, const char *fieldSig, jvalue value) {
+    jclass cls = (*env)->GetObjectClass(env, obj);
+    jfieldID fieldID = (*env)->GetFieldID(env, cls, fieldName, fieldSig);
+    if (fieldID == NULL) {
+        return;
+    }
+
+    switch (fieldSig[0]) {
+        case 'Z': // jboolean
+            (*env)->SetBooleanField(env, obj, fieldID, value.z);
+            break;
+        case 'B': // jbyte
+            (*env)->SetByteField(env, obj, fieldID, value.b);
+            break;
+        case 'C': // jchar
+            (*env)->SetCharField(env, obj, fieldID, value.c);
+            break;
+        case 'S': // jshort
+            (*env)->SetShortField(env, obj, fieldID, value.s);
+            break;
+        case 'I': // jint
+            (*env)->SetIntField(env, obj, fieldID, value.i);
+            break;
+        case 'J': // jlong
+            (*env)->SetLongField(env, obj, fieldID, value.j);
+            break;
+        case 'F': // jfloat
+            (*env)->SetFloatField(env, obj, fieldID, value.f);
+            break;
+        case 'D': // jdouble
+            (*env)->SetDoubleField(env, obj, fieldID, value.d);
+            break;
+        case 'L': // jobject
+            (*env)->SetObjectField(env, obj, fieldID, value.l);
+            break;
+        default:
+            break;
+    }
+}
+
+jvalue cob_get_java_field(JNIEnv *env, jobject obj, const char *fieldName, const char *fieldSig) {
+    jvalue result;
+    memset(&result, 0, sizeof(result));
+
+    jclass cls = (*env)->GetObjectClass(env, obj);
+    jfieldID fieldID = (*env)->GetFieldID(env, cls, fieldName, fieldSig);
+    if (fieldID == NULL) {
+        return result;
+    }
+
+    switch (fieldSig[0]) {
+        case 'Z': // jboolean
+            result.z = (*env)->GetBooleanField(env, obj, fieldID);
+            break;
+        case 'B': // jbyte
+            result.b = (*env)->GetByteField(env, obj, fieldID);
+            break;
+        case 'C': // jchar
+            result.c = (*env)->GetCharField(env, obj, fieldID);
+            break;
+        case 'S': // jshort
+            result.s = (*env)->GetShortField(env, obj, fieldID);
+            break;
+        case 'I': // jint
+            result.i = (*env)->GetIntField(env, obj, fieldID);
+            break;
+        case 'J': // jlong
+            result.j = (*env)->GetLongField(env, obj, fieldID);
+            break;
+        case 'F': // jfloat
+            result.f = (*env)->GetFloatField(env, obj, fieldID);
+            break;
+        case 'D': // jdouble
+            result.d = (*env)->GetDoubleField(env, obj, fieldID);
+            break;
+        case 'L': // jobject
+            result.l = (*env)->GetObjectField(env, obj, fieldID);
+            break;
+        default:
+            break;
+    }
+    return result;
+}
+
+jvalue cob_call_java_method(JNIEnv *env, jobject obj, const char *methodName, const char *methodSig, jvalue *args) {
+    jvalue result;
+    memset(&result, 0, sizeof(result));
+
+    jclass cls = (*env)->GetObjectClass(env, obj);
+    jmethodID methodID = (*env)->GetMethodID(env, cls, methodName, methodSig);
+    if (methodID == NULL) {
+        return result;
+    }
+
+    switch (methodSig[strlen(methodSig) - 1]) {
+        case 'V': // void
+            (*env)->CallVoidMethodA(env, obj, methodID, args);
+            break;
+        case 'Z': // jboolean
+            result.z = (*env)->CallBooleanMethodA(env, obj, methodID, args);
+            break;
+        case 'B': // jbyte
+            result.b = (*env)->CallByteMethodA(env, obj, methodID, args);
+            break;
+        case 'C': // jchar
+            result.c = (*env)->CallCharMethodA(env, obj, methodID, args);
+            break;
+        case 'S': // jshort
+            result.s = (*env)->CallShortMethodA(env, obj, methodID, args);
+            break;
+        case 'I': // jint
+            result.i = (*env)->CallIntMethodA(env, obj, methodID, args);
+            break;
+        case 'J': // jlong
+            result.j = (*env)->CallLongMethodA(env, obj, methodID, args);
+            break;
+        case 'F': // jfloat
+            result.f = (*env)->CallFloatMethodA(env, obj, methodID, args);
+            break;
+        case 'D': // jdouble
+            result.d = (*env)->CallDoubleMethodA(env, obj, methodID, args);
+            break;
+        case 'L': // jobject
+            result.l = (*env)->CallObjectMethodA(env, obj, methodID, args);
+            break;
+        default:
+            break;
+    }
+    return result;
 }
 
 /*

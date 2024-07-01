@@ -840,6 +840,15 @@ cob_resolve_internal  (const char *name, const char *dirent,
 
 	s = (const unsigned char *)name;
 
+	if(module_type == COB_MODULE_TYPE_FUNCTION && strmcmp ("Java.", s, 6) == 0) {
+		(void*)func = cob_lookup_static_java_method(s + 6); /* <- java.c, declared in coblocal.h */
+		if(func != NULL) {
+			insert(name, func, NULL, NULL, NULL, 1);
+			resolve_error = NULL;
+			return func;
+		}
+	}
+
 	/* Encode program name, including case folding */
 	cob_encode_program_id (s, (unsigned char *)call_entry_buff,
 		COB_MINI_MAX, fold_case);
@@ -1383,6 +1392,14 @@ cob_call (const char *name, const int argc, void **argv)
 	/* LCOV_EXCL_STOP */
 	unifunc.funcvoid = cob_resolve_cobol (name, 0, 1);
 	pargv = cob_malloc (MAX_CALL_FIELD_PARAMS * sizeof(void *));
+	
+	#ifndef HAVE_JNI
+	/* Distinguishing lookup from call*/
+	if(strncmp("Java.", name, 6) == 0) {
+		static_java_method = cob_lookup_static_method(s + 6, argv);
+		cob_call_java_static_method(method);
+	}
+	/*HAVE_JNI*/
 	/* Set number of parameters */
 	cobglobptr->cob_call_params = argc;
 	cobglobptr->cob_call_from_c = 1;

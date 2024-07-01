@@ -461,6 +461,12 @@ COB_HIDDEN void cob_lookup_static_method		(JNIEnv* env, JavaVM* jvm, const char 
 COB_HIDDEN void cob_static_method		(JNIEnv* env, JavaVM* jvm, jclass cls, jmethodID mid);
 COB_HIDDEN void cob_call_java_static_method		(JNIEnv *env, JavaVM *jvm, const char *className, const char *methodName, jobject obj, jstring input);
 
+COB_HIDDEN jobject cob_create_java_object(JNIEnv* env, const char* className, const char* constructorSig, jvalue* args);
+COB_HIDDEN void cob_set_java_field(JNIEnv* env, jobject obj, const char* fieldName, const char* fieldSig, jvalue value);
+
+COB_HIDDEN jvalue cob_get_java_field(JNIEnv* env, jobject obj, const char* fieldName, const char* fieldSig);
+COB_HIDDEN jvalue cob_call_java_method(JNIEnv* env, jobject obj, const char* methodName, const char* methodSig, jvalue* args);
+
 enum cob_case_modifier {
 	CCM_NONE,
 	CCM_LOWER,
