@@ -457,6 +457,9 @@ COB_HIDDEN char* cob_gen_method_sig		(const char** paramType, int paramCount, co
 
 COB_HIDDEN void cob_lookup_static_method		(JNIEnv* env, JavaVM* jvm, const char *className, const char *methodName, 
                               const char *methodSig, const char *returnType, const char** paramTypes, int paramCount);
+COB_HIDDEN static char* cob_gen_method_sig(JNIEnv *env, jobjectArray paramTypes, const char *className, const char *returnType);
+
+COB_HIDDEN jobjectArray cob_get_method_parameter_types(JNIEnv* env, jclass clazz, const char* methodName);
 
 COB_HIDDEN void cob_static_method		(JNIEnv* env, JavaVM* jvm, jclass cls, jmethodID mid);
 COB_HIDDEN void cob_call_java_static_method		(JNIEnv *env, JavaVM *jvm, const char *className, const char *methodName, jobject obj, jstring input);

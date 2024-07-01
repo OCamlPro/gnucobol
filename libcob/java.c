@@ -75,7 +75,8 @@ cob_create_vm() {
     return env;
 }
 
-void cob_destroy_jni() {
+void 
+cob_destroy_jni() {
     (*jvm)->DestroyJavaVM(jvm);
 }
 
@@ -85,7 +86,7 @@ cob_handle_error(JavaVM* jvm, char* methodSig) {
         free(methodSig);
     }
     if (jvm != NULL) {
-        (*jvm)->DestroyJavaVM(jvm);
+        cob_destroy_jni();
     }
 }
 
@@ -110,6 +111,22 @@ cob_gen_method_sig(const char** paramType, int paramCount, const char** returnTy
     return sig;
 }
 
+static char* 
+cob_gen_method_sig(JNIEnv *env, jobjectArray paramTypes, const char *className, const char *returnType) {
+    int paramCount = (*env)->GetArrayLength(env, paramTypes);
+    const char **paramTypeStrings = (const char **) malloc(paramCount * sizeof(const char *));
+    if (paramTypeStrings == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < paramCount; i++) {
+        jobject paramType = (*env)->GetObjectArrayElement(env, paramTypes, i);
+        paramTypeStrings[i] = className;
+        (*env)->DeleteLocalRef(env, paramType);
+    }
+
+    return cob_gen_method_sig(paramTypeStrings, paramCount, returnType);
+}
+
 static void
 cob_lookup_static_method(JNIEnv* env, JavaVM* jvm, const char *className, const char *methodName, 
 const char *methodSig, const char *returnType, const char** paramTypes, int paramCount) {
@@ -121,7 +138,7 @@ const char *methodSig, const char *returnType, const char** paramTypes, int para
     
     jmethodID mid = get_from_cache(cls, methodName, methodSig);
     if (mid == NULL) {
-        char* signature = generate_method_signature(paramTypes, paramCount, returnType);
+        char* signature = cob_gen_method_sig(paramTypes, paramCount, returnType);
         mid = (*env)->GetStaticMethodID(env, cls, methodName, signature);
         if (mid == NULL) {
             free(signature);
@@ -135,15 +152,50 @@ const char *methodSig, const char *returnType, const char** paramTypes, int para
     cob_static_method(env, jvm, cls, mid);
 }
 
+jobjectArray 
+cob_get_method_parameter_types(JNIEnv* env, jclass clazz, const char* methodName) {
+    jmethodID methodId = (*env)->GetMethodID(env, clazz, methodName, NULL);
+    if (methodId == NULL) {
+        return NULL;
+    }
+
+    jint argCount = (*env)->GetArrayLength(env, methodId);
+    if (argCount <= 0) {
+        return NULL;
+    }
+
+    jclass classClass = (*env)->FindClass(env, "java/lang/Class");
+    if (classClass == NULL) {
+        return NULL;
+    }
+
+    jobjectArray paramTypes = (*env)->NewObjectArray(env, argCount, classClass, NULL);
+    if (paramTypes == NULL) {
+        (*env)->DeleteLocalRef(env, classClass);
+        return NULL;
+    }
+
+    for (int i = 0; i < argCount; ++i) {
+        jclass paramType = (*env)->GetObjectArrayElement(env, paramTypes, i);
+        if (paramType == NULL) {
+            (*env)->DeleteLocalRef(env, classClass);
+            (*env)->DeleteLocalRef(env, paramTypes);
+            return NULL;
+        }
+        (*env)->SetObjectArrayElement(env, paramTypes, i, paramType);
+    }
+    return paramTypes;
+}
+
 static void 
 cob_static_method(JNIEnv* env, JavaVM* jvm, jclass cls, jmethodID mid) {
     (*env)->CallStaticVoidMethod(env, cls, mid, NULL);
 }
 
 static void 
-JNICALL cob_call_java_static_method(JNIEnv *env, JavaVM *jvm, const char *className, const char *methodName, jobject obj, jstring input) {
-    const char* paramTypes[] = {"Ljava/lang/String;"};
-    char* methodSig = generate_method_signature(paramTypes, 1, "Ljava/lang/String;");
+JNICALL cob_call_java_static_method(JNIEnv *env, JavaVM *jvm, jclass cls, char *className, const char* methodName, const char *returnType, jobject obj, jstring input) {
+    char* paramTypes = cob_get_method_parameter_types(env, cls, methodName);
+    char* methodSig = cob_gen_method_sig(paramTypes, 1, returnType);
 
     jclass cls = (*env)->FindClass(env, className);
     if (cls == NULL) {
@@ -168,7 +220,8 @@ JNICALL cob_call_java_static_method(JNIEnv *env, JavaVM *jvm, const char *classN
     free(methodSig);
 }
 
-jobject cob_create_java_object(JNIEnv *env, const char *className, const char *constructorSig, jvalue *args) {
+jobject 
+cob_create_java_object(JNIEnv *env, const char *className, const char *constructorSig, jvalue *args) {
     jclass cls = (*env)->FindClass(env, className);
     if (cls == NULL) {
         return NULL; 
@@ -183,7 +236,8 @@ jobject cob_create_java_object(JNIEnv *env, const char *className, const char *c
     return obj;
 }
 
-void cob_set_java_field(JNIEnv *env, jobject obj, const char *fieldName, const char *fieldSig, jvalue value) {
+void 
+cob_set_java_field(JNIEnv *env, jobject obj, const char *fieldName, const char *fieldSig, jvalue value) {
     jclass cls = (*env)->GetObjectClass(env, obj);
     jfieldID fieldID = (*env)->GetFieldID(env, cls, fieldName, fieldSig);
     if (fieldID == NULL) {
@@ -223,7 +277,8 @@ void cob_set_java_field(JNIEnv *env, jobject obj, const char *fieldName, const c
     }
 }
 
-jvalue cob_get_java_field(JNIEnv *env, jobject obj, const char *fieldName, const char *fieldSig) {
+jvalue 
+cob_get_java_field(JNIEnv *env, jobject obj, const char *fieldName, const char *fieldSig) {
     jvalue result;
     memset(&result, 0, sizeof(result));
 
@@ -267,7 +322,8 @@ jvalue cob_get_java_field(JNIEnv *env, jobject obj, const char *fieldName, const
     return result;
 }
 
-jvalue cob_call_java_method(JNIEnv *env, jobject obj, const char *methodName, const char *methodSig, jvalue *args) {
+jvalue 
+cob_call_java_method(JNIEnv *env, jobject obj, const char *methodName, const char *methodSig, jvalue *args) {
     jvalue result;
     memset(&result, 0, sizeof(result));
 
@@ -323,7 +379,7 @@ JNIEXPORT jstring JNICALL Java_callJavaMemberFunction(JNIEnv *env, jobject obj, 
     }
 
     const char* paramTypes[] = {"Ljava/lang/String;"};
-    char* methodSig = generate_method_signature(paramTypes, 1, "Ljava/lang/String;");
+    char* methodSig = cob_gen_method_sig(paramTypes, 1, "Ljava/lang/String;");
 
     jmethodID mid = (*env)->GetMethodID(env, cls, "greet", methodSig);
     if (mid == NULL) {
