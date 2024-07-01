@@ -10327,8 +10327,6 @@ emit_invalid_target_error (const enum cb_inspect_clause clause)
 void
 cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
-
 	switch (CB_TREE_TAG (var)) {
 	case CB_TAG_REFERENCE:
 		break;
@@ -10361,7 +10359,7 @@ cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 		if (clause == CONVERTING_CLAUSE || clause == TRANSFORM_STATEMENT) {
 			cb_emit (CB_BUILD_FUNCALL_2 (
 				"cob_inspect_init_converting_r",
-				cb_build_direct ("&inspect_st", 0),
+				CB_BUILD_CAST_ADDR_OF_ADDR (current_program->inspect_st),
 				var
 			));
 			cb_emit_list (body);
@@ -10369,12 +10367,14 @@ cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 		} else {
 			cb_emit (CB_BUILD_FUNCALL_3 (
 				"cob_inspect_init_r",
-				cb_build_direct ("&inspect_st", 0),
+				CB_BUILD_CAST_ADDR_OF_ADDR (current_program->inspect_st),
 				var,
 				replacing_flag
 			));
 			cb_emit_list (body);
-			cb_emit (CB_BUILD_FUNCALL_1 ("cob_inspect_finish_r", st));
+			cb_emit (
+				CB_BUILD_FUNCALL_1 ("cob_inspect_finish_r", current_program->inspect_st)
+			);
 		}
 	}
 	return;
@@ -10400,13 +10400,14 @@ cb_build_tallying_data (cb_tree x)
 cb_tree
 cb_build_tallying_characters (cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	if (inspect_data == NULL) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("data name expected before %s"), "CHARACTERS");
 	}
 	inspect_func = NULL;
-	return cb_list_add (l, CB_BUILD_FUNCALL_2 ("cob_inspect_characters_r", st, inspect_data));
+	return cb_list_add (l, CB_BUILD_FUNCALL_2 (
+		"cob_inspect_characters_r", current_program->inspect_st, inspect_data)
+	);
 }
 
 cb_tree
@@ -10445,54 +10446,60 @@ cb_build_tallying_trailing (void)
 cb_tree
 cb_build_tallying_value (cb_tree x, cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	if (inspect_func == NULL) {
 		cb_error_x (x, _("ALL, LEADING or TRAILING expected before '%s'"), cb_name (x));
 	}
-	return cb_list_add (l, CB_BUILD_FUNCALL_3 (inspect_func, st, inspect_data, x));
+	return cb_list_add (l, CB_BUILD_FUNCALL_3 (
+		inspect_func, current_program->inspect_st, inspect_data, x)
+	);
 }
 
 cb_tree
 cb_build_replacing_characters (cb_tree x, cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	if (CB_LITERAL_P (x) && CB_LITERAL(x)->size != 1) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("operand has wrong size"));
 	}
-	return cb_list_add (l, CB_BUILD_FUNCALL_2 ("cob_inspect_characters_r", st, x));
+	return cb_list_add (l, CB_BUILD_FUNCALL_2 (
+		"cob_inspect_characters_r", current_program->inspect_st, x)
+	);
 }
 
 cb_tree
 cb_build_replacing_all (cb_tree x, cb_tree y, cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	(void) validate_inspect (x, y, 1);
-	return cb_list_add (l, CB_BUILD_FUNCALL_3 ("cob_inspect_all_r", st, y, x));
+	return cb_list_add (l, CB_BUILD_FUNCALL_3 (
+		"cob_inspect_all_r", current_program->inspect_st, y, x)
+	);
 }
 
 cb_tree
 cb_build_replacing_leading (cb_tree x, cb_tree y, cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	(void) validate_inspect (x, y, 1);
-	return cb_list_add (l, CB_BUILD_FUNCALL_3 ("cob_inspect_leading_r", st, y, x));
+	return cb_list_add (l, CB_BUILD_FUNCALL_3 (
+		"cob_inspect_leading_r", current_program->inspect_st, y, x)
+	);
 }
 
 cb_tree
 cb_build_replacing_first (cb_tree x, cb_tree y, cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	(void) validate_inspect (x, y, 1);
-	return cb_list_add (l, CB_BUILD_FUNCALL_3 ("cob_inspect_first_r", st, y, x));
+	return cb_list_add (l, CB_BUILD_FUNCALL_3 (
+		"cob_inspect_first_r", current_program->inspect_st, y, x)
+	);
 }
 
 cb_tree
 cb_build_replacing_trailing (cb_tree x, cb_tree y, cb_tree l)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 	(void) validate_inspect (x, y, 1);
-	return cb_list_add (l, CB_BUILD_FUNCALL_3 ("cob_inspect_trailing_r", st, y, x));
+	return cb_list_add (l, CB_BUILD_FUNCALL_3 (
+		"cob_inspect_trailing_r", current_program->inspect_st, y, x)
+	);
 }
 
 /* pre-filled conversion table */
@@ -10520,7 +10527,6 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 {
 	const enum cb_tag	tag_x = CB_TREE_TAG (x);
 	const enum cb_tag	tag_y = CB_TREE_TAG (y);
-	cb_tree st = cb_build_direct ("inspect_st", 0);
 
 	const int ret = validate_inspect (x, y, 2);
 	if (ret) {
@@ -10528,7 +10534,9 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 		/* identical FROM/TO - we still need the func call if the variable
 		   is signed-numeric and not sign separate, but don't need to convert anything */
 		/* FIXME: add test case ! */
-		return cb_list_add (l, CB_BUILD_FUNCALL_1 ("cob_inspect_finish_r", st));
+		return cb_list_add (l, CB_BUILD_FUNCALL_1 (
+			"cob_inspect_finish_r", current_program->inspect_st)
+		);
 	}
 
 #if 0	/* Simon: unfinished prototype, get back to it later */
@@ -10629,14 +10637,17 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 	}
 #endif
 
-	return cb_list_add (l, CB_BUILD_FUNCALL_3 ("cob_inspect_converting_r", st, x, y));
+	return cb_list_add (l, CB_BUILD_FUNCALL_3 (
+		"cob_inspect_converting_r", current_program->inspect_st, x, y)
+	);
 }
 
 cb_tree
 cb_build_inspect_region_start (void)
 {
-	cb_tree st = cb_build_direct ("inspect_st", 0);
-	return CB_LIST_INIT (CB_BUILD_FUNCALL_1 ("cob_inspect_start_r", st));
+	return CB_LIST_INIT (CB_BUILD_FUNCALL_1 (
+		"cob_inspect_start_r", current_program->inspect_st)
+	);
 }
 
 /* MOVE statement */
@@ -14406,7 +14417,6 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 	cb_tree l;
 	cb_tree end;
 	cb_tree dlm;
-	cb_tree st = cb_build_direct ("string_st", 0);
 	int		nat,nfld;
 	struct cb_field	*f;
 
@@ -14423,7 +14433,7 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 	current_program->flag_string_used = 1;
 	cb_emit (CB_BUILD_FUNCALL_3 (
 		"cob_string_init_r",
-		cb_build_direct ("&string_st", 0),
+		CB_BUILD_CAST_ADDR_OF_ADDR (current_program->string_st),
 		into, pointer
 	));
 	while (start) {
@@ -14443,7 +14453,9 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 				return;
 			}
 		}
-		cb_emit (CB_BUILD_FUNCALL_2 ("cob_string_delimited_r", st, dlm));
+		cb_emit (CB_BUILD_FUNCALL_2 (
+			"cob_string_delimited_r", current_program->string_st, dlm)
+		);
 
 		nat = nfld = 0;
 		/* generate cob_string_append for all entries until delimiter */
@@ -14467,7 +14479,9 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 			default:
 				break;
 			}
-			cb_emit (CB_BUILD_FUNCALL_2 ("cob_string_append_r", st, cur));
+			cb_emit (CB_BUILD_FUNCALL_2 (
+				"cob_string_append_r", current_program->string_st, cur)
+			);
 		}
 		if (nat > 0 && nat != nfld)
 			cb_error_x (CB_TREE (current_statement),
@@ -14475,7 +14489,9 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 
 		start = end ? CB_CHAIN (end) : NULL;
 	}
-	cb_emit (CB_BUILD_FUNCALL_1 ("cob_string_finish_r", st));
+	cb_emit (CB_BUILD_FUNCALL_1 (
+		"cob_string_finish_r", current_program->string_st)
+	);
 }
 
 /* UNLOCK statement */
@@ -14499,8 +14515,6 @@ void
 cb_emit_unstring (cb_tree name, cb_tree delimited, cb_tree into,
 		  cb_tree pointer, cb_tree tallying)
 {
-	cb_tree st = cb_build_direct ("unstring_st", 0);
-
 	if (cb_validate_one (name)
 	 || cb_validate_one (tallying)
 	 || cb_validate_list (delimited)
@@ -14514,7 +14528,7 @@ cb_emit_unstring (cb_tree name, cb_tree delimited, cb_tree into,
 	current_program->flag_unstring_used = 1;
 	cb_emit (CB_BUILD_FUNCALL_4 (
 		"cob_unstring_init_r",
-		cb_build_direct ("&unstring_st", 0),
+		CB_BUILD_CAST_ADDR_OF_ADDR (current_program->unstring_st),
 		name,
 		pointer,
 		cb_int ((int)cb_list_length (delimited))
@@ -14522,25 +14536,29 @@ cb_emit_unstring (cb_tree name, cb_tree delimited, cb_tree into,
 	cb_emit_list (delimited);
 	cb_emit_list (into);
 	if (tallying) {
-		cb_emit (CB_BUILD_FUNCALL_2 ("cob_unstring_tallying_r", st, tallying));
+		cb_emit (CB_BUILD_FUNCALL_2 (
+			"cob_unstring_tallying_r", current_program->unstring_st, tallying)
+		);
 	}
-	cb_emit (CB_BUILD_FUNCALL_1 ("cob_unstring_finish_r", st));
+	cb_emit (CB_BUILD_FUNCALL_1 (
+		"cob_unstring_finish_r", current_program->unstring_st)
+	);
 }
 
 cb_tree
 cb_build_unstring_delimited (cb_tree all, cb_tree value)
 {
-	cb_tree st = cb_build_direct ("unstring_st", 0);
 	if (cb_validate_one (value)) {
 		return cb_error_node;
 	}
-	return CB_BUILD_FUNCALL_3 ("cob_unstring_delimited_r", st, value, all);
+	return CB_BUILD_FUNCALL_3 (
+		"cob_unstring_delimited_r", current_program->unstring_st, value, all
+	);
 }
 
 cb_tree
 cb_build_unstring_into (cb_tree name, cb_tree delimiter, cb_tree count)
 {
-	cb_tree st = cb_build_direct ("unstring_st", 0);
 	if (cb_validate_one (name)) {
 		return cb_error_node;
 	}
@@ -14551,7 +14569,9 @@ cb_build_unstring_into (cb_tree name, cb_tree delimiter, cb_tree count)
 	 || error_if_not_int_field_or_has_pic_p ("COUNT", count)) {
 		count = cb_int0;
 	}
-	return CB_BUILD_FUNCALL_4 ("cob_unstring_into_r", st, name, delimiter, count);
+	return CB_BUILD_FUNCALL_4 (
+		"cob_unstring_into_r", current_program->unstring_st, name, delimiter, count
+	);
 }
 
 /* WRITE statement */
