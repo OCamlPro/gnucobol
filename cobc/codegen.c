@@ -7070,7 +7070,7 @@ output_call (struct cb_call *p)
 		ret_ptr = 1;
 	}
 	system_call = NULL;
-
+	// check the name where it is translated, check if the string begins with java then encode the string differently
 #ifdef	_WIN32
 	if (p->convention & CB_CONV_STDCALL) {
 		convention = "_std";
