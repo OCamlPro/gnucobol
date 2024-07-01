@@ -1,4 +1,37 @@
 
+2024-06-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_compile): fix MSVC build command
+
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* replace.c: fix compile warnings and formatting
+
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* flag.def: fix macro usage for MSVC
+
+2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h: inclusion of cobc.h for types
+	* codeoptim.c, config.c, error.c, field.c, replace.c, reserved.c:
+	  dropped unused header ctype
+	* codeoptim.c: dropped unused headers stdlib and string
+
+2024-05-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (main): refactored to not need iterating via "iparams"
+	* flag.def (cb_flag_use_constructor), cobc.c (main), cobc.h,
+	  codegen.c (codegen_internal, output_so_load_version_check):
+	  new flag -fuse-constructor to override possible use of that feature;
+	  internally disabling it for generation of libraries/executable after
+	  first program as we only need that code once, fixing Win32 build errors
+	  and duplication warnings in other environments
+	* flag.def: don't suppress the help of -fwinmain under Win32
+	* typeck.c (build_expr_finish): use fallback error position token, fixing
+	  compiler aborts on broken expressions, bugs #933, #938 and #966
+	* typeck.c: minor refactoring within functions
+
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* replace.c: optimize speed and memory usage. For speed, we add two
@@ -10,7 +43,7 @@
 	  queue of tokens instead of a list.
 
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-	    Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+            Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* parser.y: generate calls to "cob_prof_function_call" in the
 	  parsetree when profiling is unabled, when entering/leaving
@@ -30,15 +63,14 @@
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
 
+	FR #488: thread-safety for string handling using state vars
+	* tree.h (cb_program), tree.c (cb_build_program): new attributes
 	* codegen.c (output_strings_states, codegen_internal):
 	  added structures for the data used by strings functions as local variables
 	  in the C generated code
-	* parser.y (examine_format_variant, inspect_region):
+	* parser.y (examine_format_variant, inspect_region), typeck.c:
 	  function calls of strings functions have been replaced by calls to
-	  thread-safe versions (using state structures instead of static variables)
-	* typeck.c: a lot of functions have been changed in that file in order to
-	  make them coherent with the above changes and all those changes are
-		omitted for more concision
+	  thread-safe versions
 
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
@@ -47,7 +79,7 @@
 2024-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y: fix SEGFAULT when checking the BY VALUE arguments of a
-          prototype with ANY LENGTH
+	  prototype with ANY LENGTH
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
@@ -7305,7 +7337,11 @@
 
 2014-12-11  Ron Norman <rjn@inglenet.com>
 
-	* Fixes so WARNING is given if no DETAIL lines in a report
+	* Fixes so WARNING is given if no DETAIL lines in a repor
+
+2014-06-17  Ron Norman <rjn@inglenet.com>
+
+        * parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
 
 2014-06-16  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -10035,7 +10071,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2023 Free Software Foundation, Inc.
+Copyright 2001-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

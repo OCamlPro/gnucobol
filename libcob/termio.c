@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -27,7 +27,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <errno.h>
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #endif

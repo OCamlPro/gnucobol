@@ -1,12 +1,32 @@
 
-2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-	    Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefile.am: add `profiling.c` to sources
+	* profiling.c: fix compile warnings
+
+2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_numeric_display_cmp_zero): fixed overflow compare
+	* cobgetopt.c, intrinsic.c, move.c, numeric.c, reportio.c, strings.c,
+	  termio.c: dropped headers ctype, errno and math where unused
+
+2024-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_accept_exception_status): fixed status 128
+
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h [__MINGW32__]: drop ancient redefinition of
+	  strcasecmp and strncasecmp
+	* fileio.c (bdb_bt_compare) [WITH_DB]: cater for ABI break in BDB 12
+
+2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+            Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
 	* profiling.c: implement profiling functions
 	  (time spent in each procedure of the program)
-	* common.c: add 4 environments variables COB_PROF_FILE,
-	  COB_PROF_MAX_DEPTH,COB_PROF_ENABLE and COB_PROF_FORMAT
+	* Makefile.am: add profiling.c to sources
+	* common.c: add runtime settings COB_PROF_FILE, COB_PROF_MAX_DEPTH,
+	  COB_PROF_ENABLE and COB_PROF_FORMAT
 	* common.c (cob_expand_env_string): add $b (executable basename),
 	  $f (executable filename), $d (date in yyyymmdd) and
 	  $t (time in hhmmss)
@@ -14,9 +34,14 @@
 	* fileio.c (cob_path_to_absolute): extracted from insert
 	  and cob_set_main_argv0
 
+2024-03-10  Alfredo Tupone <tupone@gentoo.org>
+
+	* common.c: add missing include libxml/parser.h
+
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
 
-	* coblocal.h (cob_exit_strings_mt): add multithreaded version of
+	FR #488: thread-safety for string handling using state vars
+	* coblocal.h (cob_exit_strings_mt): add thread-safe version of
 	  cob_exit_strings
 	* common.h (cob_inspect_state, cob_string_state, cob_unstring_state),
 	  strings.c: moved static variables to structures
@@ -35,7 +60,7 @@
 
 	* fileio.c (indexed_keylen): signature change to directly take the keydesc
 	* fileio.c [WITH_ANY_ISAM]: refactored to ease access to keydesc and keypart
-	* fileio.c (indexed_open) [WITH_ANY_ISAM]: refactored		
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: refactored
 
 2023-12-14  David Declerck <david.declerck@ocamlpro.com>
 
@@ -4154,15 +4179,13 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2014-06-17  Ron Norman <rjn@inglenet.com>
 
-	* parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
-
-2014-06-14  Ron Norman <rjn@inglenet.com>
-
-	* parser.y: Fixes for LINE|COL 0 to get error message
+	* reportio.c (limitCheck, limitCheckLine, limitCheckOneLine,
+	  cob_report_initiate): added check to verify PAGE LIMITS of report
+	* reportio.c (do_page_footing): adjusted write options
 
 2014-06-04  Eric Gallager <cooljeanius@users.sourceforge.net>
 
-	Makefile.am (install-data-hook): removed  [merged 2020-09-23]
+	* Makefile.am (install-data-hook): removed  [merged 2020-09-23]
 
 2014-05-20  Philipp Böhme <phi.boehme@googlemail.com>
 
@@ -4180,11 +4203,11 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2014-05-06  Philipp Böhme <phi.boehme@googlemail.com>
 
-	* common.c, common.h: Added print_runtime_env showing all environment values
+	* common.c, common.h: added print_runtime_env showing all environment values
 	  along with resolved variables used in libcob
-	  New string helper functions: cob_int_to_string, cob_strcat, cob_strjoin,
+	  new string helper functions: cob_int_to_string, cob_strcat, cob_strjoin,
 	  cob_int_to_formatted_bytestring
-	* call.c: Remove duplicates when resolving COB_LIBRARY_PATH
+	* call.c: remove duplicates when resolving COB_LIBRARY_PATH
 
 2014-04-25  Ron Norman <rjn@inglenet.com>
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013-2023 Free Software Foundation, Inc.
+   Copyright (C) 2013-2024 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -25,8 +25,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <ctype.h>
-#include <errno.h>
 
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP

@@ -1,9 +1,7 @@
 
-2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
-	* testsuite.at: added a new test suite to test the backward compatibility
-	  of strings functions (INSPECT, STRING, UNSTRING) for versions of compilers
-	  not using thread-safe functions for strings
+	* atlocal_win: fix path-related issues in Windows builds
 
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -29,6 +27,12 @@
 	  or if --enable-debug was specified during configure
 	* testsuite.src: adjusted several tests to use that option
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* testsuite.at: added a new test suite to test the backward compatibility
+	  of strings functions (INSPECT, STRING, UNSTRING) for versions of compilers
+	  not using thread-safe functions for strings
+
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* testsuite.src/syn_literals.at: move syntax checks on literals
@@ -43,11 +47,6 @@
 	* testsuite.src/run_file.at: skip OS recognition on cygwin
 	* testsuite.src/run_misc.at: fix linking/dlopen issue happening
 	  on some systems (mostly win32) in test CALL RETURNING POINTER
-
-2023-01-23 David Declerck <david.declerck@ocamlpro.com>
-
-	* testsuite.src/configuration.at: test reading translation
-	  tables from an external file
 
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -90,16 +89,6 @@
 
 	* atlocal_valgrind, atlocal_win: updated to match atlocal.in
 
-2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* testsuite.src/general: fix area A in testsuite
-
-2022-03-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* testsuite.src/configuration.at, testsuite.at/syn_misc.at: new
-	  tests for sections and paragraphs that do not end with a period
-	* testsuite.src/run_misc.at: fix lines in trace test
-
 2022-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: option to run part of the testsuite via perf -stat
@@ -108,15 +97,6 @@
 	* Makefile.am: additional dependencies atlocal and
 	  run_prog_manual.sh where used
 	* testsuite.src: added missing $COBCRUN_DIRECT
-
-2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* testsuite.src/syn_copy.at: test partial replacing with SPACES
-	  figurative constant
-
-2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* testsuite.src/syn_copy.at: test partial replacing with literal
 
 2022-02-10  Simon Sobisch <simonsobisch@gnu.org>
 

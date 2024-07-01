@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -440,7 +440,8 @@ extern int			cb_flag_dump;
 extern int			cb_unix_lf;
 
 extern int			cb_flag_main;	/* set if "main" requested by -x */
-extern int			cobc_flag_main;	/* set only until first program compiled, for general: use cb_flag_main*/
+/* set only until first program compiled, for general: use cb_flag_main */
+extern int			cobc_flag_main;
 extern int			cobc_wants_debug;
 extern int			cb_listing_xref;
 extern int			cobc_seen_stdin;

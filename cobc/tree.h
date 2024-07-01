@@ -22,6 +22,8 @@
 #ifndef CB_TREE_H
 #define CB_TREE_H
 
+#include "cobc.h"			/* type definitions */
+
 #define CB_BEFORE		cb_int0
 #define CB_AFTER		cb_int1
 

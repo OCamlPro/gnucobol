@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -5580,7 +5580,7 @@ output_initialize_record_one (struct cb_initialize *p, cb_tree c,
 		multi VALUES */
 	if (p->val && f->values && CB_LIST_P (f->values)) {
 		const cb_tree save_val = p->val;
-		const int save_default = p->flag_default;
+		const unsigned char save_default = p->flag_default;
 		p->val = NULL;
 		p->flag_default = 1;
 		output_initialize_one (p, c);
@@ -12657,18 +12657,17 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_line ("P_initialize:");
 	output_newline ();
 
-	/* Check matching version */
-#if !defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+	/* Check matching version in program init */
+	if ( (cb_flag_use_constructor == 0	/* if constructor option disabled */
 #ifdef _WIN32
-	if (prog->flag_main)	/* otherwise we generate that in DllMain */
-#else
-	if (!prog->nested_level)
+	   || prog->flag_main 	/* or under Win32 (where we can only use DllMain) for executables */
 #endif
-	{
+	     )
+	 /* no use in generating that for nested programs, as the outest program must be started first */
+	 && !prog->nested_level) {
 		output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 		output_newline ();
 	}
-#endif
 
 	/* Resolve user functions */
 	for (clp = func_call_cache; clp; clp = clp->next) {
@@ -12873,15 +12872,15 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	if (prog->flag_inspect_used) {
 		output_line ("if (inspect_st != NULL)");
-		output_line ("\tcob_free (inspect_st);");
+		output_line ("\tcob_inspect_free (inspect_st);");
 	}
 	if (prog->flag_string_used) {
 		output_line ("if (string_st != NULL)");
-		output_line ("\tcob_free (string_st);");
+		output_line ("\tcob_string_free (string_st);");
 	}
 	if (prog->flag_unstring_used) {
 		output_line ("if (unstring_st != NULL)");
-		output_line ("\tcob_free (unstring_st);");
+		output_line ("\tcob_unstring_free (unstring_st);");
 	}
 
 	if (prog->flag_main) {
@@ -13941,25 +13940,28 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 /* Check matching version via constructor attribute / DllMain */
 static void output_so_load_version_check (struct cb_program *prog)
 {
-#if defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+#if defined (_WIN32)
+	if (prog->flag_main) {
+		return;
+	}
+	output_newline ();
+	output_line ("#include \"windows.h\"");
+	output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
+	output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
+	output_block_open ();
+	output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
+	output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+	output_line ("return TRUE;");
+	output_block_close ();
+	output_newline ();
+#else
+	output_newline ();
 	output_line ("static void gc_module_so_init () __attribute__ ((constructor));");
 	output_line ("static void gc_module_so_init ()");
 	output_block_open ();
 	output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 	output_block_close ();
 	output_newline ();
-#elif defined (_WIN32)
-	if (!prog->flag_main) {
-		output_line ("#include \"windows.h\"");
-		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
-		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
-		output_block_open ();
-		output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
-		output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
-		output_line ("return TRUE;");
-		output_block_close ();
-		output_newline ();
-	}
 #endif
 }
 
@@ -13968,8 +13970,6 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 {
 	cb_tree			l;
 	int			i;
-
-	int	comment_gen;
 
 	struct cb_report *rep;
 
@@ -14029,8 +14029,9 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	if (!subsequent_call) {
 		output ("/* Functions */");
 		output_newline ();
-		output_newline ();
-		output_so_load_version_check (prog);
+		if (cb_flag_use_constructor == 1) {
+			output_so_load_version_check (prog);
+		}
 	}
 
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
@@ -14109,7 +14110,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 
 	/* Report data fields */
 	if (prog->report_storage) {
-		comment_gen = 0;
+		int comment_gen = 0;
 		for (l = prog->report_list; l; l = CB_CHAIN (l)) {
 			if (!CB_VALUE (l)) {
 				continue;

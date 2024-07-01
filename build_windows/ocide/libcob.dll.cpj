@@ -47,6 +47,7 @@
 				<FILE NAME="..\..\libcob\mlio.c" TITLE="mlio.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\move.c" TITLE="move.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\numeric.c" TITLE="numeric.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\profiling.c" TITLE="profiling.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\reportio.c" TITLE="reportio.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\screenio.c" TITLE="screenio.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\strings.c" TITLE="strings.c" CLEAN="0"/>

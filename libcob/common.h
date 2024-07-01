@@ -360,11 +360,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #endif /* _MSC_VER */
 
-#ifdef	__MINGW32__	/* needed by older versions */
-#define strncasecmp		_strnicmp
-#define strcasecmp		_stricmp
-#endif /* __MINGW32__ */
-
 #ifdef __BORLANDC__
 #define strncasecmp	strnicmp
 #define strcasecmp	stricmp
@@ -1249,9 +1244,6 @@ typedef struct __cob_screen {
 } cob_screen;
 
 /* String structure */
-struct cob_inspect_state;
-struct cob_string_state;
-struct cob_unstring_state;
 typedef struct cob_inspect_state cob_inspect_state;
 typedef struct cob_string_state cob_string_state;
 typedef struct cob_unstring_state cob_unstring_state;
@@ -1335,9 +1327,10 @@ typedef struct __cob_module {
 	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
 
 	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
-											   IBM may be different (_very_ likely for error codes);
-											   but the main difference is to "COMPAT" */
+		/* similar to XMLPARSE(XMLNSS) Micro Focus,
+		   IBM may be different (_very_ likely for error codes);
+		   but the main difference is to "COMPAT" */
+		#define COB_XML_XMLNSS		1
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */
@@ -1948,8 +1941,8 @@ COB_EXPIMP int	cob_bcd_cmp_zero	(cob_field *);
 /* Functions in strings.c */
 
 /* Thread-safe inspect */
-void cob_inspect_init_r	(cob_inspect_state **, cob_field *, const cob_u32_t);
-void cob_inspect_init_converting_r (cob_inspect_state **, cob_field *);
+COB_EXPIMP void cob_inspect_init_r	(cob_inspect_state **, cob_field *, const cob_u32_t);
+COB_EXPIMP void cob_inspect_init_converting_r (cob_inspect_state **, cob_field *);
 COB_EXPIMP void cob_inspect_start_r	(cob_inspect_state *);
 COB_EXPIMP void cob_inspect_before_r	(cob_inspect_state *, const cob_field *);
 COB_EXPIMP void cob_inspect_after_r	(cob_inspect_state *, const cob_field *);
@@ -1961,19 +1954,22 @@ COB_EXPIMP void cob_inspect_trailing_r	(cob_inspect_state *, cob_field *, cob_fi
 COB_EXPIMP void cob_inspect_converting_r	(cob_inspect_state *, const cob_field *, const cob_field *);
 COB_EXPIMP void cob_inspect_translating_r (cob_inspect_state *, const unsigned char *);
 COB_EXPIMP void cob_inspect_finish_r	(cob_inspect_state *);
+COB_EXPIMP void cob_inspect_free	(cob_inspect_state *);
 
 /* Thread-safe string */
-void cob_string_init_r (cob_string_state **, cob_field *, cob_field *);
+COB_EXPIMP void cob_string_init_r (cob_string_state **, cob_field *, cob_field *);
 COB_EXPIMP void cob_string_delimited_r	(cob_string_state *, cob_field *);
 COB_EXPIMP void cob_string_append_r	(cob_string_state *, cob_field *);
 COB_EXPIMP void cob_string_finish_r	(cob_string_state *);
+COB_EXPIMP void cob_string_free	(cob_string_state *);
 
 /* Thread-safe unstring */
-void cob_unstring_init_r	(cob_unstring_state **, cob_field *, cob_field *, const size_t);
+COB_EXPIMP void cob_unstring_init_r	(cob_unstring_state **, cob_field *, cob_field *, const size_t);
 COB_EXPIMP void cob_unstring_delimited_r	(cob_unstring_state *, cob_field *, const cob_u32_t);
 COB_EXPIMP void cob_unstring_into_r	(cob_unstring_state *, cob_field *, cob_field *, cob_field *);
 COB_EXPIMP void cob_unstring_tallying_r	(cob_unstring_state *, cob_field *);
 COB_EXPIMP void cob_unstring_finish_r	(cob_unstring_state *);
+COB_EXPIMP void cob_unstring_free	(cob_unstring_state *);
 
 /* Compat-only functions for old programs */
 COB_EXPIMP void cob_inspect_init	(cob_field *, const cob_u32_t);
@@ -3006,30 +3002,30 @@ enum cob_prof_procedure_kind {
 
 struct cob_prof_procedure {
 	/* Name of the module or section or paragraph or entry */
-	const char		        *text;
+	const char				*text;
 	/* File Location */
-	const char                      *file;
-	int                              line;
+	const char				*file;
+	int 					line;
 	/* Index of the section record of this procedure. In the case
 	   of COB_PROF_PROCEDURE_ENTRY, the "section" field is in fact
 	   the paragraph, not the section */
-	int		                 section;
+	int 					section;
 	/* Kind of procedure. */
-	enum cob_prof_procedure_kind     kind;
+	enum cob_prof_procedure_kind	kind;
 };
 
 /* Structure storing profiling information about each COBOL module */
 struct cob_prof_module {
 	/* Array of execution times */
-	cob_ns_time                     *total_times;
+	cob_ns_time 				*total_times;
 	/* Array of execution counts */
-	unsigned int                    *called_count;
+	unsigned int				*called_count;
 	/* Array of current recursions per procedure  */
-	unsigned int                    *procedure_recursions;
+	unsigned int				*procedure_recursions;
 	/* Array of procedure descriptions */
-	struct cob_prof_procedure       *procedures ;
+	struct cob_prof_procedure	*procedures ;
 	/* Number of procedures */
-	size_t                           procedure_count;
+	size_t  			procedure_count;
 };
 
 /* Function called to start profiling a COBOL module. Allocates the
@@ -3037,13 +3033,13 @@ struct cob_prof_module {
    times. */
 COB_EXPIMP struct cob_prof_module *cob_prof_init_module (
 	cob_module *module,
-	struct cob_prof_procedure  *procedure_names,
-	size_t      procedure_count);
+	struct cob_prof_procedure	*procedure_names,
+	size_t		procedure_count);
 
 /* Functions used to instrument the generated C code and measure
  * counters and times */
-COB_EXPIMP void cob_prof_enter_procedure  	(struct cob_prof_module *, int);
-COB_EXPIMP void cob_prof_exit_procedure   	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_enter_procedure	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_exit_procedure 	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_enter_section  	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_exit_section   	(struct cob_prof_module *, int);
 

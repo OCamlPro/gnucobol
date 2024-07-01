@@ -1,4 +1,9 @@
 
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	fixing bug #965
+	* mf-strict.conf: set missing-statement to ok (according to MF tests)
+
 2023-09-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* rm-strict.conf (perform-osvs): enabled as noted in MF docs
@@ -786,7 +791,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2023 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
