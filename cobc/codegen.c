@@ -1287,6 +1287,9 @@ output_data (cb_tree x)
 			output (")->data");
 		}
 		break;
+	case CB_TAG_DIRECT:
+		output ("%s", CB_DIRECT (x)->line);
+		break;
 	/* LCOV_EXCL_START */
 	default:
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
@@ -2521,7 +2524,7 @@ output_strings_states (struct cb_program *prog)
 	if (prog->flag_inspect_used)
 		output_local ("static cob_inspect_state	*inspect_st = NULL;\n");
 	if (prog->flag_string_used)
-		output_local ("static cob_string_state		*string_st = NULL;\n");
+		output_local ("static cob_string_state\t*string_st = NULL;\n");
 	if (prog->flag_unstring_used)
 		output_local ("static cob_unstring_state *unstring_st = NULL;\n");
 	if (strings_used)

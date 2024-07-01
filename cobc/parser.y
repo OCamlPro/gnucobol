@@ -14946,7 +14946,7 @@ examine_format_variant:
 	case EXAMINE_TAL_UNTIL_FIRST:
 		r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
 			"cob_inspect_before_r",
-			current_program->inspect_st_ref,
+			current_program->inspect_st,
 			x
 		));
 		t = cb_build_tallying_characters (r);
@@ -14971,7 +14971,7 @@ examine_format_variant:
 		case EXAMINE_TAL_UNTIL_FIRST:
 			r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
 				"cob_inspect_before_r",
-				current_program->inspect_st_ref,
+				current_program->inspect_st,
 				x
 			));
 			t = cb_build_replacing_characters (replacing_to, r);
@@ -14998,7 +14998,7 @@ examine_format_variant:
 	case EXAMINE_REP_UNTIL_FIRST:
 		r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
 			"cob_inspect_before_r",
-			current_program->inspect_st_ref,
+			current_program->inspect_st,
 			from
 		));
 		t = cb_build_replacing_characters (to, r);
@@ -15216,7 +15216,7 @@ inspect_before:
   {
 	$$ = CB_BUILD_FUNCALL_2 (
 		"cob_inspect_before_r",
-		current_program->inspect_st_ref,
+		current_program->inspect_st,
 		$3
 	);
   }
@@ -15227,7 +15227,7 @@ inspect_after:
   {
 	$$ = CB_BUILD_FUNCALL_2 (
 		"cob_inspect_after_r",
-		current_program->inspect_st_ref,
+		current_program->inspect_st,
 		$3
 	);
   }

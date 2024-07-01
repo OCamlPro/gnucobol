@@ -75,7 +75,7 @@
 	* tree.h (cb_program), tree.c (cb_build_program): new attributes
 	* codegen.c (output_strings_states, codegen_internal):
 	  added structures for the data used by strings functions as local variables
-	  in the C generated code
+	  in the C generated code. Handle CB_TAG_DIRECT in output_data function
 	* parser.y (examine_format_variant, inspect_region), typeck.c:
 	  function calls of strings functions have been replaced by calls to
 	  thread-safe versions

@@ -1899,9 +1899,9 @@ struct cb_program {
 	const char		*extfh;		/* CALLFH for this program */
 
 	int			last_source_line;	/* Line of (implicit) END PROGRAM/FUNCTION */
-	cb_tree			inspect_st_ref;
-	cb_tree			string_st_ref;
-	cb_tree			unstring_st_ref;
+	cb_tree			inspect_st;
+	cb_tree			string_st;
+	cb_tree			unstring_st;
 
 	/* Internal variables */
 	int		loop_counter;			/* Loop counters */
