@@ -5206,31 +5206,8 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			   from a string - we use a local buffer to set that up */
 			unsigned char litbuff[128];
 			memcpy (litbuff + litstart, l->data, l->size);
-			/////////////////////////////////////////////////////////////////////////
-			/*
-			if(x->category == CB_CATEGORY_NATIONAL || x->category == CB_CATEGORY_NATIONAL_EDITED){
-				// convert the whole string to UTF-16LE
-				iconv_t cd = iconv_open("UTF-16LE", "UTF-8");
-				if(cd == (iconv_t)-1){
-					perror("iconv_open");	
-				}
-				else{
-					char *inbuf = litbuff;
-					char outbuf[size*2];
-					size_t inbytesleft = size;
-					size_t outbytesleft = size*2;
-					char *outptr = outbuf;
-					size_t convResult = iconv(cd, &inbuf, &inbytesleft, &outptr, &outbytesleft);
-					if(convResult == -1){
-						cobc_err_msg(_("iconv failed"));
-					}
-					iconv_close(cd);
-					memcpy(litbuff, outbuf, size*2 - outbytesleft);
-				}
-			}
-			*/
 
-			if(x->category == CB_CATEGORY_NATIONAL || x->category == CB_CATEGORY_NATIONAL_EDITED){
+			if(l->common.category == CB_CATEGORY_NATIONAL || l->common.category == CB_CATEGORY_NATIONAL_EDITED){
 				// Calculate the number of bytes to pad (multiply by 2 for UTF-16)
 				size_t padbytes = padlen * 2;
 
@@ -5239,15 +5216,14 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 
 				// Pad the rest of the string with UTF-16 space character
 				for (size_t i = 0; i < padbytes; i += 2) {
-					padptr[i] = 0x00;    
-					padptr[i + 1] = 0x20; 
+					padptr[i] = 0x20;    
+					padptr[i + 1] = 0x00; 
 				}
 			}
 			else{
 				memset (litbuff + padstart, ' ', padlen);
-				printf("category: %d\n", x->category);
 			}
-			/////////////////////////////////////////////////////////////////////////////
+
 			output_prefix ();
 			output ("memcpy (");
 			output_data (x);
@@ -5289,7 +5265,7 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		}
 
 		memcpy (litbuff + litstart, l->data, l->size);
-		//////////////////////////////////////////////////////////////////////////////
+
 		if(x->category == CB_CATEGORY_NATIONAL || x->category == CB_CATEGORY_NATIONAL_EDITED){
 			// Calculate the number of bytes to pad (multiply by 2 for UTF-16)
 			size_t padbytes = padlen * 2;
@@ -5299,14 +5275,14 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 
 			// Pad the rest of the string with UTF-16 space character
 			for (size_t i = 0; i < padbytes; i += 2) {
-				padptr[i] = 0x00;    
-				padptr[i + 1] = 0x20; 
+				padptr[i] = 0x20;    
+				padptr[i + 1] = 0x00; 
 			}
 		}
 		else{
 			memset (litbuff + padstart, ' ', padlen);
 		}
-		/////////////////////////////////////////////////////////////////////////////
+
 		buffchar = *(litbuff + size - 1);
 		n = 0;
 		for (i = size - 1; i >= 0; i--, n++) {
