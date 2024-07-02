@@ -14877,6 +14877,8 @@ inquire_body:
 inspect_statement:
   INSPECT
   {
+	if (!current_program->inspect_st)
+		current_program->inspect_st = cb_build_direct ("inspect_st", 0);
 	begin_statement (STMT_INSPECT, 0);
 	inspect_keyword = INSPECT_REP_DEFAULT;
   }
@@ -14915,6 +14917,8 @@ inspect_format_variant:
 examine_statement:
   EXAMINE
   {
+	if (!current_program->inspect_st)
+		current_program->inspect_st = cb_build_direct ("inspect_st", 0);
 	begin_statement (STMT_EXAMINE, 0);
   }
   send_identifier
@@ -16906,6 +16910,8 @@ stop_literal:
 string_statement:
   STRING
   {
+	if (!current_program->string_st)
+		current_program->string_st = cb_build_direct ("string_st", 0);
 	begin_statement (STMT_STRING, TERM_STRING);
   }
   string_body
@@ -17074,6 +17080,8 @@ terminate_body:
 transform_statement:
   TRANSFORM
   {
+	if (!current_program->inspect_st)
+		current_program->inspect_st = cb_build_direct ("inspect_st", 0);
 	begin_statement (STMT_TRANSFORM, 0);
   }
   transform_body
@@ -17117,6 +17125,8 @@ unlock_body:
 unstring_statement:
   UNSTRING
   {
+	if (!current_program->unstring_st)
+		current_program->unstring_st = cb_build_direct ("unstring_st", 0);
 	begin_statement (STMT_UNSTRING, TERM_UNSTRING);
   }
   unstring_body

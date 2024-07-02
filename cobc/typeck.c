@@ -10355,7 +10355,6 @@ cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 	}
 	{
 		const cb_tree	replacing_flag = clause == REPLACING_CLAUSE ? cb_int1 : cb_int0;
-		current_program->flag_inspect_used = 1;
 		if (clause == CONVERTING_CLAUSE || clause == TRANSFORM_STATEMENT) {
 			cb_emit (CB_BUILD_FUNCALL_2 (
 				"cob_inspect_init_converting_r",
@@ -14412,7 +14411,6 @@ validate_pointer_clause (cb_tree pointer, cb_tree pointee)
 void
 cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 {
-
 	cb_tree start;
 	cb_tree l;
 	cb_tree end;
@@ -14430,7 +14428,6 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 	}
 
 	start = items;
-	current_program->flag_string_used = 1;
 	cb_emit (CB_BUILD_FUNCALL_3 (
 		"cob_string_init_r",
 		CB_BUILD_CAST_ADDR_OF_ADDR (current_program->string_st),
@@ -14524,8 +14521,6 @@ cb_emit_unstring (cb_tree name, cb_tree delimited, cb_tree into,
 	if (pointer) {
 		validate_pointer_clause (pointer, name);
 	}
-
-	current_program->flag_unstring_used = 1;
 	cb_emit (CB_BUILD_FUNCALL_4 (
 		"cob_unstring_init_r",
 		CB_BUILD_CAST_ADDR_OF_ADDR (current_program->unstring_st),
