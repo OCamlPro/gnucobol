@@ -2250,12 +2250,9 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	}
 
 	/* state structure for strings */
-	p->inspect_st = cb_build_direct ("inspect_st", 0);
-	p->string_st = cb_build_direct ("string_st", 0);
-	p->unstring_st = cb_build_direct ("unstring_st", 0);
-	p->flag_inspect_used = 0;
-	p->flag_string_used = 0;
-	p->flag_unstring_used = 0;
+	p->inspect_st = NULL;
+	p->string_st = NULL;
+	p->unstring_st = NULL;
 
 	return p;
 }
