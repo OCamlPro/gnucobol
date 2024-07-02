@@ -2248,6 +2248,12 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 			p->flag_recursive = 1;
 		}
 	}
+
+	/* state structure for strings */
+	p->inspect_st = NULL;
+	p->string_st = NULL;
+	p->unstring_st = NULL;
+
 	return p;
 }
 

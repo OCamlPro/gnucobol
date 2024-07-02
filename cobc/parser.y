@@ -14877,6 +14877,8 @@ inquire_body:
 inspect_statement:
   INSPECT
   {
+	if (!current_program->inspect_st)
+		current_program->inspect_st = cb_build_direct ("inspect_st", 0);
 	begin_statement (STMT_INSPECT, 0);
 	inspect_keyword = INSPECT_REP_DEFAULT;
   }
@@ -14915,6 +14917,8 @@ inspect_format_variant:
 examine_statement:
   EXAMINE
   {
+	if (!current_program->inspect_st)
+		current_program->inspect_st = cb_build_direct ("inspect_st", 0);
 	begin_statement (STMT_EXAMINE, 0);
   }
   send_identifier
@@ -14944,7 +14948,11 @@ examine_format_variant:
 		t = cb_build_tallying_value (x, r);
 		break;
 	case EXAMINE_TAL_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+		r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
+			"cob_inspect_before_r",
+			current_program->inspect_st,
+			x
+		));
 		t = cb_build_tallying_characters (r);
 		break;
 	/* LCOV_EXCL_START */
@@ -14965,7 +14973,11 @@ examine_format_variant:
 			t = cb_build_replacing_leading (x, replacing_to, r);
 			break;
 		case EXAMINE_TAL_UNTIL_FIRST:
-			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+			r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
+				"cob_inspect_before_r",
+				current_program->inspect_st,
+				x
+			));
 			t = cb_build_replacing_characters (replacing_to, r);
 			break;
 		}
@@ -14988,7 +15000,11 @@ examine_format_variant:
 		t = cb_build_replacing_first (from, to, r);
 		break;
 	case EXAMINE_REP_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
+		r = cb_list_add (r, CB_BUILD_FUNCALL_2 (
+			"cob_inspect_before_r",
+			current_program->inspect_st,
+			from
+		));
 		t = cb_build_replacing_characters (to, r);
 		break;
 	/* LCOV_EXCL_START */
@@ -15202,14 +15218,22 @@ inspect_region:
 inspect_before:
   BEFORE _initial x
   {
-	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_before", $3);
+	$$ = CB_BUILD_FUNCALL_2 (
+		"cob_inspect_before_r",
+		current_program->inspect_st,
+		$3
+	);
   }
 ;
 
 inspect_after:
   AFTER _initial x
   {
-	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_after", $3);
+	$$ = CB_BUILD_FUNCALL_2 (
+		"cob_inspect_after_r",
+		current_program->inspect_st,
+		$3
+	);
   }
 ;
 
@@ -16886,6 +16910,8 @@ stop_literal:
 string_statement:
   STRING
   {
+	if (!current_program->string_st)
+		current_program->string_st = cb_build_direct ("string_st", 0);
 	begin_statement (STMT_STRING, TERM_STRING);
   }
   string_body
@@ -17054,6 +17080,8 @@ terminate_body:
 transform_statement:
   TRANSFORM
   {
+	if (!current_program->inspect_st)
+		current_program->inspect_st = cb_build_direct ("inspect_st", 0);
 	begin_statement (STMT_TRANSFORM, 0);
   }
   transform_body
@@ -17097,6 +17125,8 @@ unlock_body:
 unstring_statement:
   UNSTRING
   {
+	if (!current_program->unstring_st)
+		current_program->unstring_st = cb_build_direct ("unstring_st", 0);
 	begin_statement (STMT_UNSTRING, TERM_UNSTRING);
   }
   unstring_body
