@@ -132,14 +132,12 @@ static void
 cob_call_java_static_method(const char *className, const char* methodName, const char *returnType, const char** paramTypes, int paramCount, jvalue *args) {
     jclass cls = (*env)->FindClass(env, className);
     if (cls == NULL) {
-        fprintf(stderr, "Failed to find class: %s\n", className);
         cob_destroy_jni();
         return;
     }
 
     char* methodSig = cob_gen_method_sig(paramTypes, paramCount, returnType);
     if (methodSig == NULL) {
-        fprintf(stderr, "Failed to generate method signature\n");
         cob_destroy_jni();
         return;
     }
@@ -148,7 +146,6 @@ cob_call_java_static_method(const char *className, const char* methodName, const
     if (mid == NULL) {
         mid = (*env)->GetStaticMethodID(env, cls, methodName, methodSig);
         if (mid == NULL) {
-            fprintf(stderr, "Failed to get method ID for method: %s\n", methodName);
             free(methodSig);
             cob_destroy_jni();
             return;
@@ -191,7 +188,6 @@ cob_call_java_static_method(const char *className, const char* methodName, const
             result.l = (*env)->CallStaticObjectMethodA(env, cls, mid, args);
             break;
         default:
-            fprintf(stderr, "Unsupported return type: %s\n", returnType);
             break;
     }
 
