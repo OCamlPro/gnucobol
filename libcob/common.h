@@ -1294,6 +1294,14 @@ struct cob_call_struct {
 	cob_call_union		cob_cstr_cancel;	/* Cancel entry */
 };
 
+#ifdef COB_HAVE_JNI
+COB_EXPIMP cob_call_java_static_method(const char *className, const char* methodName, const char *returnType, const char** paramTypes, int paramCount, jvalue *args)
+typedef struct __cob_java_static_method {
+	jclass cls;
+	jmethodID mid;
+} cob_java_static_method_handle;
+#endif
+
 /* Screen structure */
 typedef struct __cob_screen {
 	struct __cob_screen	*next;		/* Pointer to next */

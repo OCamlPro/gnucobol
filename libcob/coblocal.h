@@ -451,17 +451,21 @@ COB_EXPIMP void		cob_field_to_string	(const cob_field *, void *,
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 COB_HIDDEN char*        cob_get_strerror (void);
 
-COB_HIDDEN JNIEnv*	cob_create_vm					();
-COB_HIDDEN void	cob_handle_error		(JavaVM* jvm, char* methodSig);
-COB_HIDDEN char* cob_gen_method_sig		(const char** paramType, int paramCount, const char** returnType);
+// COB_HIDDEN JNIEnv*	cob_create_vm					();
+// COB_HIDDEN void	cob_handle_error		(JavaVM* jvm, char* methodSig);
+// COB_HIDDEN char* cob_gen_method_sig		(const char** paramType, int paramCount, const char** returnType);
 
-COB_HIDDEN void cob_lookup_static_method		(JNIEnv* env, JavaVM* jvm, const char *className, const char *methodName, 
-                              const char *methodSig, const char *returnType, const char** paramTypes, int paramCount);
-COB_HIDDEN static char* cob_gen_method_sig(JNIEnv *env, jobjectArray paramTypes, const char *className, const char *returnType);
+#ifdef COB_WITH_JNI
+COB_EXPIMP cob_call_java_static_method(const char *className, const char* methodName, const char *returnType, const char** paramTypes, int paramCount, jvalue *args)
+#endif
 
-COB_HIDDEN jobjectArray cob_get_method_parameter_types(JNIEnv* env, jclass clazz, const char* methodName);
+// COB_HIDDEN void cob_lookup_static_method		(JNIEnv* env, JavaVM* jvm, const char *className, const char *methodName, 
+//                               const char *methodSig, const char *returnType, const char** paramTypes, int paramCount);
+// COB_HIDDEN static char* cob_gen_method_sig(JNIEnv *env, jobjectArray paramTypes, const char *className, const char *returnType);
 
-COB_HIDDEN void cob_static_method		(JNIEnv* env, JavaVM* jvm, jclass cls, jmethodID mid);
+// COB_HIDDEN jobjectArray cob_get_method_parameter_types(JNIEnv* env, jclass clazz, const char* methodName);
+
+// COB_HIDDEN void cob_static_method		(JNIEnv* env, JavaVM* jvm, jclass cls, jmethodID mid);
 COB_HIDDEN void cob_call_java_static_method		(JNIEnv *env, JavaVM *jvm, const char *className, const char *methodName, jobject obj, jstring input);
 
 COB_HIDDEN jobject cob_create_java_object(JNIEnv* env, const char* className, const char* constructorSig, jvalue* args);

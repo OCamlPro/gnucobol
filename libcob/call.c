@@ -840,15 +840,6 @@ cob_resolve_internal  (const char *name, const char *dirent,
 
 	s = (const unsigned char *)name;
 
-	if(module_type == COB_MODULE_TYPE_FUNCTION && strmcmp ("Java.", s, 6) == 0) {
-		(void*)func = cob_lookup_static_java_method(s + 6); /* <- java.c, declared in coblocal.h */
-		if(func != NULL) {
-			insert(name, func, NULL, NULL, NULL, 1);
-			resolve_error = NULL;
-			return func;
-		}
-	}
-
 	/* Encode program name, including case folding */
 	cob_encode_program_id (s, (unsigned char *)call_entry_buff,
 		COB_MINI_MAX, fold_case);

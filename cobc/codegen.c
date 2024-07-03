@@ -7529,6 +7529,14 @@ output_call (struct cb_call *p)
 		}
 	} else {
 		/* Dynamic link */
+		if(module_type == COB_MODULE_TYPE_FUNCTION && strmcmp ("Java.", s, 6) == 0) {
+			(void*)func = cob_lookup_static_java_method(s + 6); /* <- java.c, declared in coblocal.h */
+			if(func != NULL) {
+				insert(name, func, NULL, NULL, NULL, 1);
+				resolve_error = NULL;
+				return func;
+			}
+		}
 		if (name_is_literal_or_prototype) {
 			s = get_program_id_str (p->name);
 			name_str = cb_encode_program_id (s, 1, cb_fold_call);
