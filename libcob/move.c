@@ -1,22 +1,22 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020, 2022-2024 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
-   Edwart Hard
+	 Copyright (C) 2002-2012, 2014-2020, 2022-2024 Free Software Foundation, Inc.
+	 Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
+	 Edwart Hard
 
-   This file is part of GnuCOBOL.
+	 This file is part of GnuCOBOL.
 
-   The GnuCOBOL runtime library is free software: you can redistribute it
-   and/or modify it under the terms of the GNU Lesser General Public License
-   as published by the Free Software Foundation, either version 3 of the
-   License, or (at your option) any later version.
+	 The GnuCOBOL runtime library is free software: you can redistribute it
+	 and/or modify it under the terms of the GNU Lesser General Public License
+	 as published by the Free Software Foundation, either version 3 of the
+	 License, or (at your option) any later version.
 
-   GnuCOBOL is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
+	 GnuCOBOL is distributed in the hope that it will be useful,
+	 but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Lesser General Public License
-   along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+	 You should have received a copy of the GNU Lesser General Public License
+	 along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
@@ -102,42 +102,42 @@ static const cob_s64_t	cob_exp10_ll[19] = {
 
 
 /* translation table for BCD byte (2 digits) to integer;
-   identical defined in numeric.c */
+	 identical defined in numeric.c */
 static const unsigned char pack_to_bin [] = {
 #if 0	/* invalid BCD nibbles as zero */
-     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   0,   0,   0,   0,   0,
-    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,   0,   0,   0,   0,   0,   0,
-    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,   0,   0,   0,   0,   0,   0,
-    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,   0,   0,   0,   0,   0,   0,
-    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,   0,   0,   0,   0,   0,   0,
-    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,   0,   0,   0,   0,   0,   0,
-    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,   0,   0,   0,   0,   0,   0,
-    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,   0,   0,   0,   0,   0,   0,
-    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,   0,   0,   0,   0,   0,   0,
-    90,  91,  92,  93,  94,  95,  96,  97,  98,  99,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
+		 0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   0,   0,   0,   0,   0,
+		10,  11,  12,  13,  14,  15,  16,  17,  18,  19,   0,   0,   0,   0,   0,   0,
+		20,  21,  22,  23,  24,  25,  26,  27,  28,  29,   0,   0,   0,   0,   0,   0,
+		30,  31,  32,  33,  34,  35,  36,  37,  38,  39,   0,   0,   0,   0,   0,   0,
+		40,  41,  42,  43,  44,  45,  46,  47,  48,  49,   0,   0,   0,   0,   0,   0,
+		50,  51,  52,  53,  54,  55,  56,  57,  58,  59,   0,   0,   0,   0,   0,   0,
+		60,  61,  62,  63,  64,  65,  66,  67,  68,  69,   0,   0,   0,   0,   0,   0,
+		70,  71,  72,  73,  74,  75,  76,  77,  78,  79,   0,   0,   0,   0,   0,   0,
+		80,  81,  82,  83,  84,  85,  86,  87,  88,  89,   0,   0,   0,   0,   0,   0,
+		90,  91,  92,  93,  94,  95,  96,  97,  98,  99,   0,   0,   0,   0,   0,   0,
+		 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+		 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+		 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+		 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+		 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+		 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
 #else	/* invalid BCD nibbles as translated since at least OC 1.1 */
-     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
-    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,
-    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  25,
-    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,
-    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,
-    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  65,
-    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,
-    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,
-    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
-    90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104, 105,
-   100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
-   110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
-   120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135,
-   130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145,
-   140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
-   150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165
+		 0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+		10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,
+		20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  25,
+		30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,
+		40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,
+		50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  65,
+		60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,
+		70,  71,  72,  73,  74,  75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,
+		80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+		90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104, 105,
+	 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
+	 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
+	 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135,
+	 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145,
+	 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
+	 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165
 #endif
 };
 
@@ -474,11 +474,11 @@ cob_move_alphanum_to_alphanum (cob_field *f1, cob_field *f2)
 void
 cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 {
-	unsigned char	*data1 = COB_FIELD_DATA (f1);
-	const int		sign = COB_GET_SIGN_ADJUST (f1);
-	const short		scale1 = COB_FIELD_SCALE (f1);
-	const short		scale2 = COB_FIELD_SCALE (f2);
-	const int 		target_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
+	unsigned char *data1 = COB_FIELD_DATA (f1);
+	const int     sign = COB_GET_SIGN_ADJUST (f1);
+	const short   scale1 = COB_FIELD_SCALE (f1);
+	const short   scale2 = COB_FIELD_SCALE (f2);
+	const int     target_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
 	unsigned short	 	digits1;
 	unsigned short		digits2;
 	register unsigned int	i;
@@ -540,7 +540,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 			while (i < i_end) {
 				*q = ((*p << 4) & 0xFF) 	/* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
-				q++;
+			q++;
 				i++;
 				p += 2;
 			}
@@ -555,13 +555,13 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		/* clean bottom nibble if we packed one extra digit past the end of the input */
 		if (p > p_end) {
 			*(q - 1) &= 0xf0;
-		}
+	}
 	}
 
 	COB_PUT_SIGN_ADJUSTED (f1, sign);
 
 	if (target_no_sign_nibble) {
-		return;
+			return;
 	}
 
 	/* note: for zero-fill like MOVE 2.1 TO C3-9v9999 we only go to the second position and
@@ -703,7 +703,7 @@ cob_move_fp_to_fp (cob_field *src, cob_field *dst)
 
 
 /* move from one to the other binary field ignoring the scale
-   --> these must match */
+	 --> these must match */
 static void
 cob_move_binary_to_binary (cob_field *f1, cob_field *f2)
 {
@@ -871,187 +871,185 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 
 /* create numeric edited field, note: non-display fields
    get "unpacked" first via indirect_move, then be edited
-   from display using this function */ 
+   from display using this function */
 static void
-cob_move_display_to_edited (cob_field *f1, cob_field *f2)
+optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 {
-	register unsigned char	*dst = f2->data;
-	register unsigned char	*src;
-	const cob_pic_symbol	*p;
-	unsigned char	*min = COB_FIELD_DATA (f1);
-	unsigned char	*max = min + COB_FIELD_SIZE (f1);
-	unsigned char	*end = f2->data + f2->size;
-	unsigned char	*decimal_point = NULL;
-	/* note: can't use the "adjust" variant here as we don't convert to digit
-	   to explicit keep invalid data "as is";
-	   CHECKME for using a buffer instead of original data */
-	const int		sign = COB_GET_SIGN (f1);
-	int		neg = (sign < 0) ? 1 : 0;
-	int		count = 0;
-	int		count_sign = 1;
-	int		count_curr = 1;
-	int		trailing_sign = 0;
-	int		trailing_curr = 0;
-	int		is_zero = 1;
-	int		suppress_zero = 1;
-	int		sign_first = 0;
-	int		p_is_left = 0;
-	int		has_b = 0;
-	int		repeat;
-	int		n;
-	unsigned char	pad = ' ';
-	unsigned char	x;
-	unsigned char	c;
-	unsigned char	sign_symbol = 0;
-	unsigned char	curr_symbol = 0;
-	const unsigned char	dec_symbol = COB_MODULE_PTR->decimal_point == ','
-	                   	           ? ',' : '.';
-	const unsigned char	currency = COB_MODULE_PTR->currency_symbol;
-	int		floating_insertion = 0;
-	unsigned char	*last_fixed_insertion_pos = NULL;
-	unsigned char   last_fixed_insertion_char = '\0';
+	 /************************************************************/
+	 /*  this is a special "optimized" version of the            */
+	 /*  cob_move_display_to_edited function. The scale and      */
+	 /*  digits of the f2 field must be the same as the f1       */
+	 /*  field.                                                  */
+	 /*                                                          */
+	 /*  it is only called from the indirect_move function when  */
+	 /*  the destination field is type                           */
+	 /*  COB_TYPE_NUMERIC_EDITED                                 */
+	 /*                                                          */
+	 /*  create numeric edited field, note: non-display fields   */
+	 /*  get "unpacked" first via indirect_move, then be edited  */
+	 /*  from display using this function                        */
+	 /*                                                          */
+	 /*  This requires that the input field MUST be signed       */
+	 /*  separate (which is trailing). Also the source field     */
+	 /*  must contain the exact same number of digits as the     */
+	 /*  destination..                                           */
+	 /*                                                          */
+	 /*  This ensures that we can make a single pass thru the    */
+	 /*  picture symbols and not have to worry about padding or  */
+	 /*  insertation after the loop thru the picture symbols.    */
+	 /*                                                          */
+	 /*  The reason for this change has more to do with          */
+	 /*  reducing the complexity of the code than performance.   */
+	 /*  Although it may result in a slight performance gain as  */
+	 /*  well.                                                   */
+	 /*                                                          */
+	 /************************************************************/
 
-	/* Setup counters (only before decimal point) */
-	/*
-	  TO-DO: This is computed in cb_build_picture; add computed results to
-	  cb_field / new overlay cb_field_edited and use those.
-	*/
-	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
-		c = p->symbol;
-		repeat = p->times_repeated;
-		if (c == '9' || c == 'Z' || c == '*') {
-			count += repeat;
-			count_sign = 0;
-			count_curr = 0;
-		} else if (count_curr && c == currency) {
-			count += repeat;
-		} else if (count_sign && (c == '+' || c == '-')) {
-			count += repeat;
-		} else if (c == 'P') {
-			if (count == 0) {
-				p_is_left = 1;
-				break;
-			} else {
-				count += repeat;
-				count_sign = 0;
-				count_curr = 0;
-			}
-		} else if (c == 'V' || c == dec_symbol) {
-			break;
+	register unsigned char  *dst = f2->data;
+	register unsigned char  *src = f1->data;
+	const cob_pic_symbol  *p;
+	unsigned char *src_end = src + f1->size - 1;
+	unsigned char *dst_end = f2->data + f2->size;
+
+	unsigned char *prev_float_char = NULL;
+	unsigned char *sign_position   = NULL;
+	int   neg = 0;
+	int   is_zero = 1;
+	int   suppress_zero = 1;
+	int   n;
+	unsigned char pad = ' ';
+	unsigned char c;
+	const unsigned char dec_symbol = COB_MODULE_PTR->decimal_point == ','
+																 ? ',' : '.';
+	const unsigned char currency = COB_MODULE_PTR->currency_symbol;
+
+#if 1	/* Sanity check to ensure that the data types of both the fields have the 
+		   correct attributes, if not then something is brokend and needs to be fixed  */
+	if (!(COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_EDITED
+	 && COB_FIELD_DIGITS (f1) == COB_FIELD_DIGITS (f2)
+	 && COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2)
+	 && COB_FIELD_HAVE_SIGN (f1) == COB_FIELD_HAVE_SIGN (f2)
+	 && ((COB_FIELD_HAVE_SIGN (f1) && (!COB_FIELD_SIGN_LEADING (f1) && COB_FIELD_SIGN_SEPARATE (f1)))
+			|| !COB_FIELD_HAVE_SIGN (f1)))) {
+		cob_runtime_error ("optimized_move_display_to_edited: invalid argument");
+	}
+#endif
+
+	/* first check for BLANK WHEN ZERO attribute */
+	if (COB_FIELD_BLANK_ZERO(f2)) {
+		for(; (src <= src_end) ; src++) {
+			if (*src != '0') break;
 		}
+		if (src > src_end) {
+			memset(dst, (int)' ', (size_t)f2->size);
+			return;
+		}
+		src = f1->data;
 	}
 
-	/* now insert data to destination */
-	src = max - COB_FIELD_SCALE (f1) - count;
+	if (COB_FIELD_HAVE_SIGN(f1))
+		neg = (*src_end == '-') ? 1 : 0;
+
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
 		c = p->symbol;
 		n = p->times_repeated;
-		for (; n > 0; n--, ++dst) {
+		if (c == 'P')
+			continue;
+		for (; n > 0; n--) {
+			if (dst >= dst_end) {
+				cob_runtime_error ("optimized_move_display_to_edited: overflow in destination field");
+				break;
+			}
 			switch (c) {
 
 			case '9':
-				x = (min <= src && src < max) ? *src++ : (src++, '0');
-				if (x != '0') {
+				suppress_zero = 0;
+				*dst = *src;
+				if (*src != '0') {
 					is_zero = 0;
 				}
-				suppress_zero = 0;
-				trailing_sign = 1;
-				trailing_curr = 1;
-				*dst = x;
+				src++;
+				dst++;
 				break;
 
 			case 'Z':
 			case '*':
-				x = (min <= src && src < max) ? *src++ : (src++, '0');
-				if (x != '0') {
+				*dst = *src;
+				if (*src != '0') {
 					is_zero = suppress_zero = 0;
+				} else {
+					if (suppress_zero)
+						*dst = pad = (c == '*') ? '*' : ' ';
 				}
-				trailing_sign = 1;
-				trailing_curr = 1;
-				pad = (c == '*') ? '*' : ' ';
-				*dst = suppress_zero ? pad : x;
+				src++;
+				dst++;
 				break;
 
 			case '+':
 			case '-':
-				x = (min <= src && src < max) ? *src++ : (src++, '0');
-				if (x != '0') {
-					is_zero = suppress_zero = 0;
-				}
-				if (trailing_sign) {
-					/* Check negative and not zero */
-					if (neg && !is_zero) {
-						*dst = '-';
-					} else if (c == '+') {
-						*dst = '+';
-					} else {
-						*dst = ' ';
-					}
-					--end;
-				} else if (dst == f2->data || suppress_zero) {
-					*dst = pad;
-					sign_symbol = c;
-					if (!curr_symbol) {
-						++sign_first;
-					}
+				if ((prev_float_char == NULL) || (c != *prev_float_char)) {
+					*dst = c;
+					prev_float_char = dst;
+					sign_position   = dst;
+					dst++;
+					break;
+				} else if ((*src == '0') && (suppress_zero)) {
+					*prev_float_char = ' ';
+					prev_float_char = dst;
+					sign_position   = dst;
+					*dst = c;
+					dst++;
+					src++;
+					break;
 				} else {
-					*dst = x;
+					*dst = *src;
+					is_zero = suppress_zero = 0;
+					dst++;
+					src++;
+					break;
 				}
-
-				if (n > 1 || last_fixed_insertion_char == c) {
-					floating_insertion = 1;
-				} else if (!trailing_sign) {
-					if (last_fixed_insertion_pos) {
-						*last_fixed_insertion_pos = last_fixed_insertion_char;
-					}
-					last_fixed_insertion_pos = dst;
-					last_fixed_insertion_char = c;
-				}
-				break;
 
 			case '.':
 			case ',':
 				if (c == dec_symbol) {
 					*dst = dec_symbol;
-					decimal_point = dst;
 				} else {
 					if (suppress_zero) {
-						*dst = pad;
+						if (prev_float_char) {
+							*dst = *prev_float_char;
+							*prev_float_char = pad;
+							prev_float_char = dst;
+							if (*dst == '-' || *dst == '+')
+								sign_position = dst;
+						}
+						else
+							*dst = pad;
 					} else {
 						*dst = c;
 					}
 				}
+				dst++;
 				break;
 
 			case 'V':
-				--dst;
-				decimal_point = dst;
 				break;
 
 			case '0':
 			case '/':
 				*dst = c;
+				dst++;
 				break;
 
 			case 'B':
-				if (suppress_zero) {
-					*dst = pad;
-				} else {
-					*dst = 'B';
-					has_b = 1;
-				}
+				*dst = pad;
+				dst++;
 				break;
 
 			case 'P':
-				if (p_is_left) {
-					++src;
-					--dst;
-				}
 				break;
 
 			case 'C':
 			case 'D':
-				end = dst;
 				/* Check negative and not zero */
 				if (neg && !is_zero) {
 					if (c == 'C') {
@@ -1062,151 +1060,74 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				} else {
 					memset (dst, ' ', (size_t)2);
 				}
-				dst++;
+				dst += 2;
 				break;
 
 			default:
 				/* LCOV_EXCL_START */
 				if (c != currency) {
 					/* should never happen, consider remove [also the reason for not translating that] */
-					cob_runtime_error ("cob_move_display_to_edited: invalid PIC character %c", c);
-					*dst = '?';	/* Invalid PIC */
+					cob_runtime_error ("optimized_move_display_to_edited: invalid PIC character %c", c);
+					*dst = '?'; /* Invalid PIC */
 					break;
-				}
-				/* LCOV_EXCL_STOP */
-
-				x = (min <= src && src < max) ? *src++ : (src++, '0');
-				if (x != '0') {
-					is_zero = suppress_zero = 0;
-				}
-				if (trailing_curr) {
-					*dst = currency;
-					--end;
-				} else if (dst == f2->data || suppress_zero) {
-					*dst = pad;
-					curr_symbol = currency;
 				} else {
-					*dst = x;
-				}
-				if (n > 1 || last_fixed_insertion_char == c) {
-					floating_insertion = 1;
-				} else if (!trailing_curr) {
-					if (last_fixed_insertion_pos) {
-						*last_fixed_insertion_pos = last_fixed_insertion_char;
-					}
-					last_fixed_insertion_pos = dst;
-					last_fixed_insertion_char = c;
-				}
-				break;
-			}
-		}
-	}
-
-	if (sign_symbol) {
-		/* Check negative and not zero */
-		if (neg && !is_zero) {
-			sign_symbol = '-';
-		} else if (sign_symbol != '+') {
-			sign_symbol = ' ';
-		}
-	}
-
-	if (suppress_zero || (is_zero && COB_FIELD_BLANK_ZERO (f2))) {
-		/* All digits are zeros */
-		if (pad == ' ' || COB_FIELD_BLANK_ZERO (f2)) {
-			memset (f2->data, ' ', f2->size);
-		} else {
-			for (dst = f2->data; dst < f2->data + f2->size; ++dst) {
-				if (*dst != dec_symbol) {
-					*dst = pad;
-				}
-			}
-		}
-	} else {
-		/* Put zero after the decimal point if necessary */
-		if (decimal_point) {
-			for (dst = decimal_point + 1; dst < end; ++dst) {
-				switch (*dst) {
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-#if 1	/* CHECKME: Why should we have a comma in here, necessary as shown in NIST NC,
-     	   (TODO: add this to the internal testsuite, must fail if commented out)
-     	   but not skip a period? */
-				case ',':
-				case '.':
-#endif
-				case '+':
-				case '-':
-				case '/':
-				case 'B':
-					break;
-				default:
-					*dst = '0';
-				}
-			}
-		}
-
-		/* Put sign or currency symbol at the beginning */
-		if (sign_symbol || curr_symbol) {
-			if (floating_insertion) {
-				/* use memrchr here as soon as gnulib is used */
-				for (dst = end - 1; dst > f2->data; --dst) {
-					if (*dst == ' ') {
+					if ((prev_float_char == NULL) || (c != *prev_float_char)) {
+						*dst = c;
+						prev_float_char = dst;
+						dst++;
+						break;
+					} else if ((*src == '0') && (suppress_zero)) {
+						*prev_float_char = ' ';
+						prev_float_char = dst;
+						*dst = c;
+						dst++;
+						src++;
+						break;
+					} else {
+						*dst = *src;
+						is_zero = suppress_zero = 0;
+						dst++;
+						src++;
 						break;
 					}
 				}
-				if (sign_symbol && curr_symbol) {
-					/*
-					  Only one of $ and +/- can be floating
-					  in any given picture, so the symbol
-					  which comes after the other must be
-					  the one which floats.
-					*/
-					if (sign_first) {
-						*dst = curr_symbol;
-					} else {
-						*dst = sign_symbol;
-					}
-				} else if (sign_symbol) {
-					*dst = sign_symbol;
-				} else {
-					*dst = curr_symbol;
-				}
-			} else {
-				if (last_fixed_insertion_char == currency) {
-					*last_fixed_insertion_pos = curr_symbol;
-				} else { /* + or - */
-					*last_fixed_insertion_pos = sign_symbol;
-				}
-			}
-		}
+				/* LCOV_EXCL_STOP */
+			} /* END OF SWITCH STATEMENT */
+		}   /* END OF INNER FOR LOOP   */
+	}     /* END OF OUTER FOR LOOP   */
 
-		/* Replace all leading 'B's by pad, others by space */
-		if (has_b) {
-			for (dst = f2->data; dst < end; ++dst) {
-				if (*dst == 'B') {
-					if (has_b) {
-						*dst = pad;
-					} else {
-						*dst = ' ';
-					}
-				} else {
-					has_b = 0;	/* non-starting characters seen */
-				}
-			}
-		}
+			 /************************************************************/
+			 /*  after the edited string is built from the mask          */
+			 /*  then the sign mask has to be adjusted according to      */
+			 /*  the actual sign of the data.                            */
+			 /************************************************************/
+
+	if (sign_position == NULL)
+		return;
+
+		/* if we have not printed any digits set sign to space and return */
+
+	if (suppress_zero){
+		*sign_position = ' ';
+		return;
+}
+
+	if ((neg) && (*sign_position == '+')){
+		*sign_position = (is_zero) ? '+' : '-';
+		return;
 	}
 
-	COB_PUT_SIGN (f1, sign);
+	if ((neg) && (*sign_position == '-')){
+		*sign_position = (is_zero) ? ' ' : '-';
+		return;
+				}
+
+
+	if ((*sign_position == '-') && (!neg))
+		*sign_position = ' ';
+
 }
+
 
 static void
 cob_move_edited_to_display (cob_field *f1, cob_field *f2)
@@ -1331,10 +1252,58 @@ indirect_move (void (*func) (cob_field *src, cob_field *dst),
 	       cob_field *src, cob_field *dst,
 	       const size_t size, const int scale)
 {
+	 /************************************************************/
+	 /*                                                          */
+	 /*  this function was modified to call a new version of     */
+	 /*  the optimized_move_display_to_edited function           */
+	 /*  which is much simpler. However it requires the          */
+	 /*  intermediate numeric_display field created below to be  */
+	 /*  signed separate with the scale and number of digits to  */
+	 /*  match the final destination field.                      */
+	 /*                                                          */
+	 /*  Note that this function requires that the sign flag on  */
+	 /*  the final destination field be set correctly. This      */
+	 /*  required changes to the pretty_display_numeric          */
+	 /*  function in termio.c, Also the get_num function in      */
+	 /*  mlio.c had to change as well. Both of these changes     */
+	 /*  involved setting the sign flag correctly on the         */
+	 /*  destination field.                                      */
+	 /*                                                          */
+	 /************************************************************/
+
 	cob_field	field;
 	cob_field_attr	attr;
+	size_t      temp_size;
+	unsigned short   digits;
 
-	if (size <= 2 * COB_MAX_DIGITS) {
+	if ( (COB_FIELD_TYPE(dst) == COB_TYPE_NUMERIC_EDITED)
+	&& ( (func == cob_move_binary_to_display)
+		|| (func == cob_move_packed_to_display)
+		|| (func == cob_move_display_to_display) ) ) {
+		if (COB_FIELD_SCALE(dst) < 0)
+				temp_size = COB_FIELD_DIGITS(dst) + COB_FIELD_SCALE(dst) + 1;
+		else
+				temp_size = COB_FIELD_DIGITS(dst) + 1;
+		digits = (unsigned short)temp_size - 1;
+		unsigned char buff[COB_MAX_DIGITS + 1] = { 0 };
+		if (COB_FIELD_HAVE_SIGN(dst)) {
+			COB_FIELD_INIT (temp_size, buff, &attr);
+			COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY,
+										 digits,
+										 COB_FIELD_SCALE(dst),
+										 (COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE),
+										 NULL);
+		} else {
+			COB_FIELD_INIT (temp_size - 1, buff, &attr);
+			COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY,
+										 digits,
+										 COB_FIELD_SCALE(dst),
+										 0,
+										 NULL);
+		}
+		func (src, &field);
+		optimized_move_display_to_edited (&field, dst);
+	} else if (size <= 2 * COB_MAX_DIGITS) {
 		unsigned char buff[2 * COB_MAX_DIGITS] = { 0 };
 		COB_FIELD_INIT (size, buff, &attr);
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, (unsigned short) size, (short) scale,
@@ -1507,7 +1476,17 @@ cob_move (cob_field *src, cob_field *dst)
 			cob_move_display_to_binary (src, dst);
 			return;
 		case COB_TYPE_NUMERIC_EDITED:
-			cob_move_display_to_edited (src, dst);
+			if (COB_FIELD_DIGITS(src) == COB_FIELD_DIGITS(dst)
+			 && COB_FIELD_SCALE(src) == COB_FIELD_SCALE(dst)
+			 && COB_FIELD_HAVE_SIGN(src) == COB_FIELD_HAVE_SIGN(dst)
+			 && ((COB_FIELD_HAVE_SIGN(src) && (!COB_FIELD_SIGN_LEADING(src) && COB_FIELD_SIGN_SEPARATE (src)))
+				|| COB_FIELD_HAVE_SIGN(src) == 0)) {
+				optimized_move_display_to_edited(src, dst);
+			} else {
+				indirect_move (cob_move_display_to_display, src, dst,
+					(size_t)(COB_FIELD_DIGITS(src)),
+					COB_FIELD_SCALE (src));
+			}
 			return;
 		case COB_TYPE_ALPHANUMERIC_EDITED:
 			if (COB_FIELD_SCALE (src) < 0
@@ -1928,11 +1907,26 @@ packed_get_long_long (cob_field *field)
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (field)) {
 		/* Unpack COMP-6 to integer */
+			 /************************************************************/
+			 /*  if the scale is negative we need to determine if the    */
+			 /*  number of digits in the data plus the number of P's is  */
+			 /*  greater than the number of digits in the field.         */
+			 /************************************************************/
+		if (scale < 0)
+		{
+			 if (((field->size * 2) - scale) > COB_FIELD_DIGITS (field))
+					 val = *d++ & 0x0F;
+			 else
+					 val = 0;
+		}
+		else
+		{
 		const size_t	offset = COB_FIELD_DIGITS (field) % 2;
 		if (offset == 1) {
 			val = *d++ & 0x0F;
 		} else {
 			val = 0;
+		}
 		}
 		if (val == 0) {
 			/* Skip leading ZEROs */
@@ -1945,12 +1939,27 @@ packed_get_long_long (cob_field *field)
 			val = val * 100 + pack_to_bin[*d++];
 		}
 	} else {
+			 /************************************************************/
+			 /*  if the scale is negative we need to determine if the    */
+			 /*  number of digits in the data plus the number of P's is  */
+			 /*  greater than the number of digits in the field.         */
+			 /************************************************************/
+		if (scale < 0)
+		{
+			 if (((field->size * 2) - 1 - scale) > COB_FIELD_DIGITS (field))
+					 val = *d++ & 0x0F;
+			 else
+					 val = 0;
+		}
+		else
+		{
 		/* Unpack PACKED-DECIMAL / COMP-3 to integer */
 		const size_t	offset = 1 - COB_FIELD_DIGITS (field) % 2;
 		if (offset == 1) {
 			val = *d++ & 0x0F;
 		} else {
 			val = 0;
+		}
 		}
 		if (val == 0) {
 			/* Skip leading ZEROs */

@@ -1,4 +1,23 @@
 
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	fix errors in cob_move_display_to_edited and simplify the code
+	this was done by cloning the function to an optimized version
+	and making the changes to the calling functions to support it
+	Basically this involves changing the intermediate cob_field to
+	match the attributes of the target edited field instead of the
+	sending field.
+
+	* move.c (cob_optimized_move_display_to_edited): added new function
+	  (cob_move): when move numeric-display to numeric-edited added logic
+	    to check if an indirect move is needed
+	  (indirect_move): when the destination field is numeric-edited and
+	    the function source is binary, packed or display then the attributes
+	    need to generated to match destination attributes instead of the
+	    source attributes
+	* termio.c (pretty_display_numeric), mlio.c (get_num):
+	  changed to use the attributes of the receiving field
+
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* profiling.c: fix compile warnings
