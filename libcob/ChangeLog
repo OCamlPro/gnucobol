@@ -1,6 +1,19 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
+		fix errors in filio.c when building with VISAM 2.2. This issue
+		occurred when using a partial key with a sequential read previous.
+
+	* fileio.c (indexed_start_internal), (indexed_start)
+	  and (indexed_read_next): added a new field, partial_key_length,
+	  to the indexfile structure for use in these functions.
+	  This will allow the saved partial key to be used in the
+	  positioning logic.
+	  Also the BDB logic was changed to return a status code of "35" 
+	  when encountering a missing directory for OUTPUT on INDEXED file.
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
 	fix errors in cob_move_display_to_edited and simplify the code
 	this was done by cloning the function to an optimized version
 	and making the changes to the calling functions to support it
