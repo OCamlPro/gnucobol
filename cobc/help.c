@@ -59,14 +59,14 @@ cobc_print_usage_common_options (void)
 	puts (_("  -h, --help            display this help and exit"));
 	puts (_("  -V, --version         display compiler version information and exit"));
 	puts (_("  -dumpversion          display compiler version and exit"));
-	puts (_("  -i, --info            display compiler information (build/environment)\n" 
+	puts (_("  -i, --info            display compiler information (build/environment)\n"
 	        "                        and exit"));
 	puts (_("  -v, --verbose         verbose mode, display additional information;\n"
-		    "                        multiple -v options increase the verbosity,\n"   
-		    "                        the maximum is 3 as follows:\n"                  
-		    "                        (1) display compiler version and the commands\n" 
-	        "                        invoked by the compiler,\n"                      
-		    "                        (2) pass verbose option to assembler/compiler\n" 
+		    "                        multiple -v options increase the verbosity,\n"
+		    "                        the maximum is 3 as follows:\n"
+		    "                        (1) display compiler version and the commands\n"
+	        "                        invoked by the compiler,\n"
+		    "                        (2) pass verbose option to assembler/compiler\n"
 		    "                        (3) pass verbose option to linker"));
 	puts (_("  -q, --brief           reduced displays, commands invoked not shown"));
 	puts (_("  -###                  like -v but commands not executed"));
@@ -81,8 +81,9 @@ cobc_print_usage_common_options (void)
 	        "                        acu-strict, acu, rm-strict, rm, gcos-strict,\n"
 	        "                        gcos;\n"
 	        "                        see configuration files in directory config"));
-	puts (_("  -F, --free            use free source format"));
-	puts (_("  --fixed               use fixed source format (default)"));
+	puts (_("  -F, --free            use free source format (alias for -fformat=free)"));
+	puts (_("  --fixed               use fixed source format (default; alias for\n"
+		"                        -fformat=fixed)"));
 	puts (_("  -O, -O2, -O3, -Os     enable optimization"));
 	puts (_("  -O0                   disable optimization"));
 	puts (_("  -g                    enable C compiler debug and stack check"));
@@ -277,6 +278,7 @@ cobc_print_usage_dialect (void)
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list"), _("<word>"));
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list as alias"), _("<word>:<alias>"));
 	cobc_print_config_flag ("not-register", _("special register to disable"), _("<word>"));
-	cobc_print_config_flag ("register", _("special register to enable"), _("<word>"));
+	cobc_print_config_flag ("register", _("special register to enable"),
+		_("<word> or <word>:<definition>, where definition uses backslash escaped spaces"));
 	putchar ('\n');
 }

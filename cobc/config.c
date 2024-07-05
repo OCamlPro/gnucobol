@@ -67,7 +67,7 @@ enum cb_config_type {
 
 /* Previously done, but currently not actually used,
    recheck this later (possible output on cobc --print-config) */
-#define COBC_STORES_CONFIG_VALUES 0  
+#define COBC_STORES_CONFIG_VALUES 0
 
 #define CB_CONFIG_ANY(type,var,name,doc)	, {CB_ANY, name, (void *)&var}
 #if COBC_STORES_CONFIG_VALUES
@@ -802,6 +802,13 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			config_table[i].min_value = 0;
 			config_table[i].max_value = 255;
 			/* fall through */
+		} else if (strcmp (name, "format") == 0) {
+			if (cobc_deciph_source_format (val) != 0) {
+				invalid_value (fname, line, name, val, CB_SF_ALL_NAMES, 0, 0);
+				return -1;
+			}
+			break;
+
 		/* for enums without a string value: set max_value and fall through to CB_INT */
 		} else if (strcmp (name, "standard-define") == 0) {
 			config_table[i].max_value = CB_STD_MAX - 1;

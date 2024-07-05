@@ -10,6 +10,7 @@
 	* tree.h (cb_statement), parser.y, typeck.c: drop flag_merge,
 	  instead check by "statement == STMT_MERGE"
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2023-02-26  Ron Norman <rjn@inglenet.com>
 
@@ -221,6 +222,47 @@
 	* field.c (has_std_needed_screen_clause), typeck.c (validate_alphabet),
 	  codegen.c (output_initialize_one): minor refactorings
 
+2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l: match and ignore editor folding $REGION statement
+	* pplex.l: output actual directive for @OPTIONS and PROCESS
+	* pplex.l: *CONTROL from col7+
+	* pparse.y: don't warn on *CONTROL as this adjust listing only
+	  and does not apply directly (possibly real handling later)
+
+2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (validate_any_length_item): don't enforce codegen for
+	  unused ANY LENGTH items
+	* parser.y, cobc.c (cobc_xref_set_receiving): set XML and JSON
+	  registers to be receiving items in XML and JSON statements
+	  and to increment their used counter
+	* cobc.c, codegen.c (has_field_to_dump): only output symbol and
+	  xref headers as well as dump comments if there are actual
+	  generated fields
+
+2022-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (create_field): extracted from (output_param)
+	* parser.y, codegen.c ,tree.c, tree.h: added codegen for XML PARSE
+	* reserved.c, config.h, parser.y, tree.h, cobc.c: added parsing
+	  for XML-SCHEMA clause in SPECIAL NAMES
+	* typeck.c: adjust for generation of ANY LENGTH registers (only to be
+	  set in the runtime)
+	* reserved.c, typeck.c: added all XML and JSON registers
+	* config.def, parser.y, codegen.c: added cb_xml_parse_xmlss, passed
+	  to runtime as module->xml_mode
+
+2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* flag.def, config.def: make format a dialect option instead of a flag
+	* help.c: mention alias for options --free and --fixed
+	* cobc.h: extend cb_format_enum with COBOL85 (fixed format with
+	  pending Area A enforcement); define CB_SF_FIXED and CB_SF_FREE
+	* cobc.c: use new source format macros
+	* parser.y, pplex.l: annotate every token that is not used in the
+	  grammar
+
 2022-07-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* typeck.c (cb_emit_sort_init): avoid SIGSEGV on SORT of toplevel field
@@ -236,6 +278,13 @@
 
 	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree
 	  as all but one caller directly use it that way
+
+2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (create_implicit_picture): explicit disallow generating picture
+	  from FUNCTION which size is commonly unknown (and use of intrinsic
+	  functions outside of PROCEDURE DIVISION is an extension already)
+	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
 
 2022-07-14  Matthew Remacle <mattata@users.sf.net>
 
@@ -267,6 +316,28 @@
 	  passing it (to error_literal); return a valid literal in case of
 	  literal errors (intead of cb_error_node) to prevent spurious
 	  follow-up errors on their use
+
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y: add DEPENDING ON for picture strings with an `L`
+	  character
+	* config.def: new option picture-l
+	* tree.h (struct cb_picture, struct cb_field), tree.c
+	  (cb_field_variable_size, cb_field_variable_address), typeck.c
+	  (cb_build_identifier, cb_validate_program_data, cb_emit_initialize)
+	  (cb_emit_move_corresponding, emit_move_corresponding), codegen.c
+	  (chk_field_variable_size, chk_field_variable_address)
+	  (out_odoslide_fld_offset): add support for `L` characters in picture
+	  strings, variable-length alphanumeric fields (GCOS extension)
+	* field.c (validate_field_value): PIC L fields may not have VALUE clause
+	* field.c (validate_occurs): allow PIC L fields in OCCURS groups
+	* field.c (validate_redefines): allow more liberal REDEFINES of
+	  fields with PIC L
+	* field.c (validate_group): A PIC L data-item cannot be JUSTIFIED
+	  or BLANK WHEN ZERO
+	* typeck.c (emit_move_corresponding): simplified code
+	* codegen.c (output_base, output_initialize_uniform): small code
+	  refactorings
 
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -5587,7 +5658,7 @@
 	* tree.h:  new field flag_unbounded for OCCURS ... TO UNBOUNDED
 	* cobc.h: added CB_CS_OCCURS
 	* reserved.c: added UNBOUNDED as context sensitive reserved word for OCCURS
-	* parser.y: added token UNBOUNDED and first attemt for adding
+	* parser.y: added token UNBOUNDED and first attemt to add
 	  OCCURS ... TO UNBOUNDED in the parser
 
 2016-08-13  Simon Sobisch <simonsobisch@gnu.org>

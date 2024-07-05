@@ -3152,6 +3152,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "XML-DECLARATION",		0, 1, XML_DECLARATION,		/* IBM extension */
    				0, CB_CS_XML_GENERATE
   },
+  { "XML-SCHEMA",		0, 1, XML_SCHEMA,		/* IBM extension */
+				0, CB_CS_SPECIAL_NAMES
+  },
   { "XOR",		0, 0, -1,			/* 202x */
 				0, 0
   },
@@ -3212,16 +3215,16 @@ static struct register_struct	register_list[] = {
 	{"TIME-OF-DAY", "CONSTANT PICTURE 9(6) USAGE DISPLAY", CB_FEATURE_MUST_BE_ENABLED},		/* ancient IBM extension */
 #endif
 	{"XML-CODE", "GLOBAL PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE},
-	/* {"XML-EVENT", "USAGE DISPLAY PICTURE X(30) VALUE SPACE", CB_FEATURE_ACTIVE}, */
-	/* {"XML-INFORMATION", "PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE}, */
-	/* {"XML-NAMESPACE", "PIC X ANY LENGTH", CB_FEATURE_ACTIVE}, /\* FIXME: currently not handled the "normal" register way *\/ */
-	/* {"XML-NAMESPACE-PREFIX", "PIC X ANY LENGTH", CB_FEATURE_ACTIVE}, /\* FIXME: currently not handled the "normal" register way *\/ */
-	/* {"XML-NNAMESPACE", "PIC N ANY LENGTH", CB_FEATURE_ACTIVE}, /\* FIXME: currently not handled the "normal" register way *\/ */
-	/* {"XML-NNAMESPACE-PREFIX", "PIC N ANY LENGTH", CB_FEATURE_ACTIVE}, /\* FIXME: currently not handled the "normal" register way *\/ */
-	/* {"XML-NTEXT", "PIC N ANY LENGTH", CB_FEATURE_ACTIVE}, /\* FIXME: currently not handled the "normal" register way *\/ */
-	/* {"XML-TEXT", "PIC X ANY LENGTH", CB_FEATURE_ACTIVE} /\* FIXME: currently not handled the "normal" register way *\/ */
-	{"JSON-CODE", "GLOBAL PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE}
-	/* {"JSON-STATUS", "PIC X ANY LENGTH", CB_FEATURE_ACTIVE} /\* FIXME: currently not handled the "normal" register way *\/ */
+	{"XML-EVENT", "GLOBAL USAGE DISPLAY PICTURE X(30) VALUE SPACE", CB_FEATURE_ACTIVE},
+	{"XML-INFORMATION", "GLOBAL PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE},
+	{"XML-NAMESPACE", "GLOBAL PIC X ANY LENGTH", CB_FEATURE_ACTIVE},
+	{"XML-NAMESPACE-PREFIX", "GLOBAL PIC X ANY LENGTH", CB_FEATURE_ACTIVE},
+	{"XML-NNAMESPACE", "GLOBAL PIC N ANY LENGTH", CB_FEATURE_ACTIVE},
+	{"XML-NNAMESPACE-PREFIX", "GLOBAL PIC N ANY LENGTH", CB_FEATURE_ACTIVE},
+	{"XML-NTEXT", "GLOBAL PIC N ANY LENGTH", CB_FEATURE_ACTIVE},
+	{"XML-TEXT", "GLOBAL PIC X ANY LENGTH", CB_FEATURE_ACTIVE},
+	{"JSON-CODE", "GLOBAL PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE},
+	{"JSON-STATUS", "GLOBAL PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE}
 };
 
 #define	NUM_REGISTERS	sizeof(register_list) / sizeof(struct register_struct)
@@ -5082,6 +5085,15 @@ lookup_register_internal (const char *upper_name, const int checkimpl)
 	}
 	return NULL;
 }
+
+#if 0
+void
+enable_register (const char* upper_name)
+{
+	/* note: this is an internal function, names are "guaranteed" t */
+	lookup_register_internal (upper_name, 1)->active = CB_FEATURE_ACTIVE;
+}
+#endif
 
 static struct register_struct *
 lookup_register (const char *name, const int checkimpl)

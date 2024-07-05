@@ -2772,6 +2772,22 @@ cob_strdup (const char *p)
 	return mptr;
 }
 
+char *
+cob_strndup (const char *p, const size_t max_len)
+{
+	char	*mptr;
+	size_t	len;
+
+	len = strlen (p);
+	if (len > max_len) {
+		len = max_len;
+	}
+	mptr = (char *)cob_fast_malloc (len + 1);
+	memcpy (mptr, p, len);
+	*(mptr + len) = 0;
+	return mptr;
+}
+
 /* Caching versions of malloc/free */
 void *
 cob_cache_malloc (const size_t size)
