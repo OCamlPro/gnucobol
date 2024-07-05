@@ -437,6 +437,24 @@ lookup_func_call (const char *p)
 }
 
 static void
+lookup_java_call (const char *p)
+{
+	struct static_call_list *sclp;
+
+	for (sclp = static_call_cache; sclp; sclp = sclp->next) {
+		if (strcmp (p, sclp->call_name) == 0) {
+			return;
+		}
+	}
+	sclp = cobc_parse_malloc (sizeof (struct static_call_list));
+	sclp->call_name = p;
+	sclp->convention = convention;
+	sclp->return_type = return_type;
+	sclp->next = static_call_cache;
+	static_call_cache = sclp;
+}
+
+static void
 lookup_static_call (const char *p, int convention, int return_type)
 {
 	struct static_call_list *sclp;

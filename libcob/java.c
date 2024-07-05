@@ -65,29 +65,6 @@ void cob_delete_java_object(jobject obj) {
     }
 }
 
-cob_java_handle*
-cob_resolve_java(const char *class_name, const char* method_name, const char *return_type, const char *type_signature) {
-    if(jvm == NULL) {
-        cob_java_initialize();
-    }
-    jclass cls = (*env)->FindClass(env, class_name);
-    if (cls == NULL) {
-        return NULL;
-    }
-
-    jmethodID mid = get_from_cache(cls, method_name, type_signature);
-    if (mid == NULL) {
-        mid = (*env)->GetStaticMethodID(env, cls, method_name, type_signature);
-        if (mid == NULL) {
-            return NULL;
-        }
-    }
-    // run autoconf
-    // allocate structure that represents the method to be called
-    cob_java_handle* h = (cob_java_handle*)cob_malloc(sizeof(cob_java_handle));
-    return h;
-}
-
 static void 
 cob_static_method(jclass cls, jmethodID mid) {
     (*env)->CallStaticVoidMethod(env, cls, mid, NULL);
@@ -189,6 +166,8 @@ cob_call_java(const cob_java_handle *method_handle) {
 
 cob_java_handle* cob_resolve_java(const char *class_name, const char* method_name, const char *type_signature) {
     if (jvm == NULL) {
+        // Initializes JVM variables and env variables
+        // TODO: check return status; if error, return NULL
         cob_java_initialize();
     }
 
@@ -217,4 +196,23 @@ cob_java_handle* cob_resolve_java(const char *class_name, const char* method_nam
     (*env)->DeleteLocalRef(env, cls);
 
     return handle;
+}
+
+static void
+cob_lookup_static_method(const char *className, const char *methodName, 
+const char *methodSig, const char *returnType, const char** paramTypes, int paramCount) {
+    jclass cls = (*env)->FindClass(env, className);
+    jmethodID mid = get_from_cache(cls, methodName, methodSig);
+    if (mid == NULL) {
+        char* signature = cob_gen_method_sig(paramTypes, paramCount, returnType);
+        mid = (*env)->GetStaticMethodID(env, cls, methodName, signature);
+        if (mid == NULL) {
+            free(signature);
+            (*jvm)->DestroyJavaVM(jvm);
+            return;
+        }
+        free(signature);
+    }
+
+    cob_static_method(env, jvm, cls, mid);
 }
