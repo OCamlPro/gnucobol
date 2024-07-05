@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ gc4 ]
   push:
-    branches: [ gc3_to_gc4 ]
+    branches: [ gc3_to_gc4, gc4 ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -145,10 +145,14 @@ jobs:
         continue-on-error: true
         shell: cmd
         run: |
-          set COB_CFLAGS=/I "%cd%" /I "%VCPKG_ROOT%\installed\x64-windows\include"
+          set COB_CFLAGS=/I "%cd%" /I "%cd%\build_windows" /I "%VCPKG_ROOT%\installed\x64-windows\include"
           set COB_LIBS=libcob-5.lib /LIBPATH:"%cd%\build_windows\x64\Release"
+          set PATH="%cd%\build_windows\x64\Release";"%cd%\bin";%PATH%
+          set COB_CONFIG_DIR=%cd%\config
           call "%VCVARS%"
-          cd tests
+          cd bin
+          cobc -x gcdiff.c
+          cd ..\tests
           bash -c "./testsuite || ./testsuite --recheck --verbose"
 
       - name: Upload testsuite.log
