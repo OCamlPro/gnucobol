@@ -393,6 +393,12 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
+^[ ]*"$REGION"		|
+^[ ]*"$END-$REGION"	{
+	/* MF extension for logical marking of a block in the editor */
+	/* _possibly_ check: MF rule "$REGION and $IF statements must not overlap." */
+	skip_to_eol ();
+}
 
 ^[ ]*"$"[_0-9A-Z-]+	{
 	/* unknown MF style directive */
@@ -404,7 +410,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^......."@OPTIONS"	{
+^......."@OPTIONS"[ ][A-Z0-9() ,;'"=]* {
 	/* Fujitsu COBOL extension for specifying command line options */
 	/* TODO: check position of the @OPTIONS directive */
 	char *s = strchr (yytext, '@');
@@ -413,11 +419,24 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]*("PROCESS"|"CBL")/[ ,;\n] {
+^[ ]*("PROCESS"|"CBL")[ ,;]*[\n] {
 	/* IBM COBOL extension for specifying compiler options */
-	/* TODO: The CBL (PROCESS) statement must be placed before any comment lines or other compiler-directing statements. */
+	/* TODO: The CBL (PROCESS) statement must be placed before any
+	   comment lines, IDENTIFICATIO DIVISION, or other
+	   compiler-directing statements. */
+	/* empty - so ignored */
+	skip_to_eol ();
+}
+
+^[ ]*("PROCESS"|"CBL")[ ][A-Z0-9() ,;'"=]* {
+	/* IBM COBOL extension for specifying compiler options */
+	/* TODO: The CBL (PROCESS) statement must be placed before any
+	   comment lines, IDENTIFICATIO DIVISION, or other
+	   compiler-directing statements. */
+	char *s = yytext;
+	while (*s == ' ') s++;
 	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
-		_("PROCESS statement ignored"));
+		_("ignoring unknown directive: '%s'"), s);
 	skip_to_eol ();
 }
 
@@ -450,8 +469,8 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return REPLACE;
 }
 
-^[ ]*"*CONTROL"		|
-^[ ]*"*CBL"		{
+^......[ ]*"*CONTROL" |
+^......[ ]*"*CBL"	{
 	BEGIN CONTROL_STATEMENT_STATE;
 	return CONTROL_STATEMENT;
 }
@@ -1369,7 +1388,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		s = name;
 		filename = ppcopy_find_file (s, has_ext);
 	}
-	
+
 	/* expected case: filename found */
 	if (filename) {
 		int ret;
@@ -1432,6 +1451,7 @@ cobc_set_source_format (const enum cb_format sf) {
 
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
+	case CB_FORMAT_COBOL85:
 		text_column = cb_config_text_column; /* 72 by default */
 		break;
 	case CB_FORMAT_VARIABLE:
@@ -1483,6 +1503,8 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 		format = CB_FORMAT_FIXED;
 	} else if (!cb_strcasecmp (sfname, "FREE")) {
 		format = CB_FORMAT_FREE;
+	} else if (!cb_strcasecmp (sfname, "COBOL85")) {
+		format = CB_FORMAT_COBOL85;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
 		format = CB_FORMAT_VARIABLE;
 	} else if (!cb_strcasecmp (sfname, "XOPEN")) {
@@ -1735,7 +1757,7 @@ get_word (const char *str, char *word_buff)
 			*word_buff = 0;
 		} else {
 			ret = NULL;
-		}		
+		}
 	}
 	return ret;
 }

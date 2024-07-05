@@ -1370,6 +1370,10 @@ typedef struct __cob_module {
 #define COB_DUMP_LO		0x40  		/* LOCAL-STORAGE SECTION */
 #define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
 
+	unsigned char		flag_dialect;	/* Module -std=  for status code choices */
+	unsigned char		flag_file_format;	/* Default file format: GC or MF */
+	unsigned char		flag_unused[6];	/* For future, use for new flags etc */
+
 	unsigned int		module_stmt;		/* Last statement executed as modulated source line
 											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
@@ -1393,6 +1397,14 @@ typedef struct __cob_module {
 
 	cob_field		*json_code;			/* JSON-CODE */
 	cob_field		*json_status;		/* JSON-STATUS */
+
+	const char	*gc_version;	/* module version */
+
+	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
+#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
+											   IBM may be different (_very_ likely for error codes);
+											   but the main difference is to "COMPAT" */
+
 	cob_field		function_return;	/* Copy of RETURNING field */
 	unsigned int	num_symbols;		/* Number of symbols in table */
 	cob_symbol		*module_symbols;	/* Array of module symbols */
@@ -1403,13 +1415,8 @@ typedef struct __cob_module {
 	const char		*section_name;
 	const char		*paragraph_name;
 
-	unsigned char		flag_dialect;	/* Module -std=  for status code choices */
-	unsigned char		flag_file_format;	/* Default file format: GC or MF */
-	unsigned char		flag_unused[6];	/* For future, use for new flags etc */
-
 	unsigned char		unused[32];		/* For future use */
 
-	const char	*gc_version;	/* module version */
 } cob_module;
 
 /* For 'module_type'
@@ -2843,6 +2850,8 @@ COB_EXPIMP void	cob_xml_generate	(cob_field *, cob_ml_tree *,
 					 cob_field *, const char);
 COB_EXPIMP void cob_json_generate	(cob_field *, cob_ml_tree *,
 					 cob_field *, const char);
+COB_EXPIMP int	cob_xml_parse	(cob_field *, cob_field *,
+					 cob_field *, const int, void **);
 
 
 /****************************/

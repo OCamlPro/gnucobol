@@ -451,6 +451,7 @@ COB_EXPIMP void		cob_field_to_string	(const cob_field *, void *,
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
+COB_HIDDEN char	*cob_strndup		(const char *, size_t);
 
 COB_HIDDEN FILE			*cob_get_dump_file	(void);
 
@@ -459,7 +460,6 @@ COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
 COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
 
-COB_HIDDEN void	cob_set_field_to_uint	(cob_field *, const cob_u32_t);
 COB_EXPIMP int cob_ncase_cmp (char *, const char *, unsigned );
 COB_EXPIMP char * cob_str_case_str (char *, const char *);
 
