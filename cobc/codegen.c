@@ -146,6 +146,8 @@ static struct literal_list	*literal_cache = NULL;
 static struct field_list	*field_cache = NULL;
 static struct field_list	*local_field_cache = NULL;
 static struct call_list		*call_cache = NULL;
+extern JavaVM *jvm;
+extern JNIEnv *env;
 static struct call_list		*func_call_cache = NULL;
 static struct static_call_list	*static_call_cache = NULL;
 static struct base_list		*base_cache = NULL;
@@ -385,6 +387,21 @@ lookup_source (const char *p)
 	stp->next = source_cache;
 	source_cache = stp;
 	return source_id++;
+}
+
+static void lookup_java_call(const char *p) {
+    struct call_list *clp;
+
+    for (clp = call_cache; clp; clp = clp->next) {
+        if (strcmp(p, clp->call_name) == 0) {
+            return;
+        }
+	}
+
+    clp = (struct call_list *)cob_malloc(sizeof(struct call_list));
+    clp->call_name = p;
+    clp->next = call_cache;
+    call_cache = clp;
 }
 
 static void
@@ -7529,38 +7546,42 @@ output_call (struct cb_call *p)
 		}
 	} else {
 		/* Dynamic link */
-		if(module_type == COB_MODULE_TYPE_FUNCTION && strmcmp ("Java.", s, 6) == 0) {
-			(void*)func = cob_lookup_static_java_method(s + 6); /* <- java.c, declared in coblocal.h */
-			if(func != NULL) {
-				insert(name, func, NULL, NULL, NULL, 1);
-				resolve_error = NULL;
-				return func;
-			}
-		}
 		if (name_is_literal_or_prototype) {
 			s = get_program_id_str (p->name);
 			name_str = cb_encode_program_id (s, 1, cb_fold_call);
-			lookup_call (name_str);
-			callname = s;
-
-			output_line ("if (call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel)", name_str);
-			output_block_open ();
-			output_prefix ();
-
-			nlp = find_nested_prog_with_id (name_str);
-			if (nlp) {
-				output ("call_%s.funcint = %s_%d__;",
-					name_str, name_str,
-					nlp->nested_prog->toplev_count);
+#ifdef HAVE_JNI
+			/* Distinguishing lookup from call*/
+			if(strncmp("Java.", name, 6) == 0) {
+				void static_java_method = lookup_static_call(s + 6, p->argv[0], COB_RETURN_NULL);
+				cob_call_java(static_java_method);
 			} else {
-				output ("call_%s.funcvoid = ", name_str);
-				output ("cob_resolve_cobol (");
-				output_string ((const unsigned char *)s,
-						(int)strlen (s), 0);
-				output (", %d, %d);", cb_fold_call, !p->stmt1);
+				// rest
+#endif	
+				// we need to use lookup_java_call instead (implement)
+				lookup_java_call (name_str);
+				callname = s;
+
+				output_line ("if (call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel)", name_str);
+				output_block_open ();
+				output_prefix ();
+
+				nlp = find_nested_prog_with_id (name_str);
+				if (nlp) {
+					output ("call_%s.funcint = %s_%d__;",
+						name_str, name_str,
+						nlp->nested_prog->toplev_count);
+				} else {
+					output ("call_%s.funcvoid = ", name_str);
+					output ("cob_resolve_cobol (");
+					output_string ((const unsigned char *)s,
+							(int)strlen (s), 0);
+					output (", %d, %d);", cb_fold_call, !p->stmt1);
+				}
+				output_newline ();
+				output_block_close ();
+#ifdef HAVE_JNI
 			}
-			output_newline ();
-			output_block_close ();
+#endif	
 		} else {
 			name_str = NULL;
 			needs_unifunc = 1;

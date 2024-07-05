@@ -1383,14 +1383,6 @@ cob_call (const char *name, const int argc, void **argv)
 	/* LCOV_EXCL_STOP */
 	unifunc.funcvoid = cob_resolve_cobol (name, 0, 1);
 	pargv = cob_malloc (MAX_CALL_FIELD_PARAMS * sizeof(void *));
-	
-	#ifndef HAVE_JNI
-	/* Distinguishing lookup from call*/
-	if(strncmp("Java.", name, 6) == 0) {
-		static_java_method = cob_lookup_static_method(s + 6, argv);
-		cob_call_java_static_method(method);
-	}
-	/*HAVE_JNI*/
 	/* Set number of parameters */
 	cobglobptr->cob_call_params = argc;
 	cobglobptr->cob_call_from_c = 1;

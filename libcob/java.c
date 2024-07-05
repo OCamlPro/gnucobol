@@ -24,39 +24,16 @@
 #include <stdlib.h>
 #include <common.h>
 
-/* For caching which is an optimization but can we internally implement it as well? */
-typedef struct {
-    jclass cls;
-    jmethodID mid;
-} MethodCache;
+#define HAVE_JNI
 
-MethodCache* cache = NULL;
-int cacheSize = 0;
+/* For caching which is an optimization but can we internally implement it as well? */
 
 static JavaVM *jvm = NULL;
 /* pointer to native method interface */  
 static JNIEnv *env = NULL;
 
-static void 
-add_to_cache(jclass cls, jmethodID mid) {
-    cacheSize++;
-    cache = (MethodCache*)realloc(cache, sizeof(MethodCache) * cacheSize);
-    cache[cacheSize - 1].cls = cls;
-    cache[cacheSize - 1].mid = mid;
-}
-
-jmethodID 
-get_from_cache(jclass cls, const char* methodName, const char* methodSig) {
-    for (int i = 0; i < cacheSize; i++) {
-        if (cache[i].cls == cls) {
-            return cache[i].mid;
-        }
-    }
-    return;
-}
-
-static JNIEnv* 
-cob_create_vm() {
+static void
+cob_java_initialize() {
     /* JDK/JRE 6 VM initialization arguments */
     JavaVMInitArgs args;
     JavaVMOption* options = (JavaVMOption*)cob_malloc(sizeof(JavaVMOption) * 1);
@@ -69,189 +46,46 @@ cob_create_vm() {
     int rv;
     /* loading and initializing a Java VM, returning as JNI interface */
     rv = JNI_CreateJavaVM(jvm, (void**)&env, &args);
-    if (rv < 0 || !env)
-        return;
-    else
-        return rv;
-    return env;
 }
 
-void 
-cob_destroy_jni() {
-    (*jvm)->DestroyJavaVM(jvm);
-}
-
-static void 
-cob_handle_error(char* methodSig) {
-    if (methodSig != NULL) {
-        free(methodSig);
+static void cob_handle_error(const char* method_sig) {
+    if (method_sig != NULL) {
+        free(method_sig);
     }
-    if (jvm != NULL) {
-        cob_destroy_jni();
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionDescribe(env);
+        (*env)->ExceptionClear(env);
+    }
+    cob_cleanup();
+}
+
+void cob_delete_java_object(jobject obj) {
+    if (obj != NULL) {
+        (*env)->DeleteGlobalRef(env, obj);
     }
 }
 
-static char* 
-cob_gen_method_sig(const char** paramType, int paramCount, const char** returnType) {
-    /* (param_list) + return_type */
-    int length = 2 + strlen(returnType);
-    for(int i = 0; i < paramCount; i++) {
-        length += strlen(paramType[i]);
+cob_java_handle*
+cob_resolve_java(const char *class_name, const char* method_name, const char *return_type, const char *type_signature) {
+    if(jvm == NULL) {
+        cob_java_initialize();
     }
-    
-    /* internal malloc */
-    char* sig = (char*)cob_malloc(length + 1);
-    sig[0] = '(';
-    int pos = 1;
-    for(int i = 0; i < paramCount; i++) {
-        strcpy(sig + pos, paramType[i]);
-        pos += strlen(paramType[i]);
-    }
-    sig[pos++] = ')';
-    strcpy(sig + pos, returnType);
-    return sig;
-}
-
-static char* 
-cob_gen_method_sig(jobjectArray paramTypes, const char *className, const char *returnType) {
-    int paramCount = (*env)->GetArrayLength(env, paramTypes);
-    const char **paramTypeStrings = (const char **) malloc(paramCount * sizeof(const char *));
-    if (paramTypeStrings == NULL) {
-        return NULL;
-    }
-    for (int i = 0; i < paramCount; i++) {
-        jobject paramType = (*env)->GetObjectArrayElement(env, paramTypes, i);
-        paramTypeStrings[i] = className;
-        (*env)->DeleteLocalRef(env, paramType);
-    }
-
-    return cob_gen_method_sig(paramTypeStrings, paramCount, returnType);
-}
-
-static void
-cob_call_java_static_method(const char *className, const char* methodName, const char *returnType, const char** paramTypes, int paramCount, jvalue *args) {
-    jclass cls = (*env)->FindClass(env, className);
+    jclass cls = (*env)->FindClass(env, class_name);
     if (cls == NULL) {
-        cob_destroy_jni();
-        return;
+        return NULL;
     }
 
-    char* methodSig = cob_gen_method_sig(paramTypes, paramCount, returnType);
-    if (methodSig == NULL) {
-        cob_destroy_jni();
-        return;
-    }
-
-    jmethodID mid = get_from_cache(cls, methodName, methodSig);
+    jmethodID mid = get_from_cache(cls, method_name, type_signature);
     if (mid == NULL) {
-        mid = (*env)->GetStaticMethodID(env, cls, methodName, methodSig);
+        mid = (*env)->GetStaticMethodID(env, cls, method_name, type_signature);
         if (mid == NULL) {
-            free(methodSig);
-            cob_destroy_jni();
-            return;
-        }
-        add_to_cache(cls, mid);
-    }
-
-    jvalue result;
-    memset(&result, 0, sizeof(result));
-
-    switch (methodSig[strlen(methodSig) - 1]) {
-        case 'V': // void
-            (*env)->CallStaticVoidMethodA(env, cls, mid, args);
-            break;
-        case 'Z': // jboolean
-            result.z = (*env)->CallStaticBooleanMethodA(env, cls, mid, args);
-            break;
-        case 'B': // jbyte
-            result.b = (*env)->CallStaticByteMethodA(env, cls, mid, args);
-            break;
-        case 'C': // jchar
-            result.c = (*env)->CallStaticCharMethodA(env, cls, mid, args);
-            break;
-        case 'S': // jshort
-            result.s = (*env)->CallStaticShortMethodA(env, cls, mid, args);
-            break;
-        case 'I': // jint
-            result.i = (*env)->CallStaticIntMethodA(env, cls, mid, args);
-            break;
-        case 'J': // jlong
-            result.j = (*env)->CallStaticLongMethodA(env, cls, mid, args);
-            break;
-        case 'F': // jfloat
-            result.f = (*env)->CallStaticFloatMethodA(env, cls, mid, args);
-            break;
-        case 'D': // jdouble
-            result.d = (*env)->CallStaticDoubleMethodA(env, cls, mid, args);
-            break;
-        case 'L': // jobject
-            result.l = (*env)->CallStaticObjectMethodA(env, cls, mid, args);
-            break;
-        default:
-            break;
-    }
-
-    free(methodSig);
-}
-
-static void
-cob_lookup_static_method(const char *className, const char *methodName, 
-const char *methodSig, const char *returnType, const char** paramTypes, int paramCount) {
-    jclass cls = (*env)->FindClass(env, className);
-    if (cls == NULL) {
-        (*jvm)->DestroyJavaVM(jvm);
-        return;
-    }
-    
-    jmethodID mid = get_from_cache(cls, methodName, methodSig);
-    if (mid == NULL) {
-        char* signature = cob_gen_method_sig(paramTypes, paramCount, returnType);
-        mid = (*env)->GetStaticMethodID(env, cls, methodName, signature);
-        if (mid == NULL) {
-            free(signature);
-            (*jvm)->DestroyJavaVM(jvm);
-            return;
-        }
-        add_to_cache(cls, mid);
-        free(signature);
-    }
-
-    cob_static_method(env, jvm, cls, mid);
-}
-
-jobjectArray 
-cob_get_method_parameter_types(jclass clazz, const char* methodName) {
-    jmethodID methodId = (*env)->GetMethodID(env, clazz, methodName, NULL);
-    if (methodId == NULL) {
-        return NULL;
-    }
-
-    jint argCount = (*env)->GetArrayLength(env, methodId);
-    if (argCount <= 0) {
-        return NULL;
-    }
-
-    jclass classClass = (*env)->FindClass(env, "java/lang/Class");
-    if (classClass == NULL) {
-        return NULL;
-    }
-
-    jobjectArray paramTypes = (*env)->NewObjectArray(env, argCount, classClass, NULL);
-    if (paramTypes == NULL) {
-        (*env)->DeleteLocalRef(env, classClass);
-        return NULL;
-    }
-
-    for (int i = 0; i < argCount; ++i) {
-        jclass paramType = (*env)->GetObjectArrayElement(env, paramTypes, i);
-        if (paramType == NULL) {
-            (*env)->DeleteLocalRef(env, classClass);
-            (*env)->DeleteLocalRef(env, paramTypes);
             return NULL;
         }
-        (*env)->SetObjectArrayElement(env, paramTypes, i, paramType);
     }
-    return paramTypes;
+    // run autoconf
+    // allocate structure that represents the method to be called
+    cob_java_handle* h = (cob_java_handle*)cob_malloc(sizeof(cob_java_handle));
+    return h;
 }
 
 static void 
@@ -260,191 +94,77 @@ cob_static_method(jclass cls, jmethodID mid) {
 }
 
 static void 
-JNICALL cob_call_java_static_method(jclass cls, char *className, const char* methodName, const char *returnType, jobject obj, jstring input) {
-    char* paramTypes = cob_get_method_parameter_types(env, cls, methodName);
-    char* methodSig = cob_gen_method_sig(paramTypes, 1, returnType);
+JNICALL cob_call_java_static_method(jclass cls, char *class_name, const char* method_name, const char *return_type, jobject obj, jstring input) {
+    char* paramTypes = cob_get_method_parameter_types(env, cls, method_name);
+    char* methodSig = cob_gen_method_sig(paramTypes, 1, return_type);
 
-    jclass cls = (*env)->FindClass(env, className);
+    jclass cls = (*env)->FindClass(env, class_name);
     if (cls == NULL) {
-        cob_handle_error(jvm, methodSig);
+        cob_handle_error(methodSig);
         return;
     }
 
-    jmethodID mid = (*env)->GetStaticMethodID(env, cls, methodName, methodSig);
+    jmethodID mid = (*env)->GetStaticMethodID(env, cls, method_name, methodSig);
     if (mid == NULL) {
-        cob_handle_error(jvm, methodSig);
+        cob_handle_error(methodSig);
         return;
     }
 
     const char *nativeInput = (*env)->GetStringUTFChars(env, input, NULL);
+    if (nativeInput == NULL) {
+        cob_handle_error(methodSig);
+        return;
+    }
     jstring result = (jstring)(*env)->CallStaticObjectMethod(env, cls, mid, (*env)->NewStringUTF(env, nativeInput));
 
     const char *nativeResult = (*env)->GetStringUTFChars(env, result, 0);
+    if (nativeResult == NULL) {
+        cob_handle_error(NULL);
+        return;
+    }
 
     (*env)->ReleaseStringUTFChars(env, input, nativeInput);
     (*env)->ReleaseStringUTFChars(env, result, nativeResult);
+
+    if ((*env)->ExceptionCheck(env)) {
+        cob_handle_error(NULL);
+        return;
+    }
 
     free(methodSig);
 }
 
 jobject 
-cob_create_java_object(const char *className, const char *constructorSig, jvalue *args) {
-    jclass cls = (*env)->FindClass(env, className);
+cob_create_java_object(const char *class_name, const char *constructor_sig, jvalue *args) {
+    jclass cls = (*env)->FindClass(env, class_name);
     if (cls == NULL) {
+        cob_handle_error(NULL);
         return NULL; 
     }
 
-    jmethodID constructor = (*env)->GetMethodID(env, cls, "<init>", constructorSig);
+    jmethodID constructor = (*env)->GetMethodID(env, cls, "<init>", constructor_sig);
     if (constructor == NULL) {
+        cob_handle_error(NULL);
         return NULL;
     }
 
     jobject obj = (*env)->NewObjectA(env, cls, constructor, args);
-    return obj;
-}
-
-void 
-cob_set_java_field(jobject obj, const char *fieldName, const char *fieldSig, jvalue value) {
-    jclass cls = (*env)->GetObjectClass(env, obj);
-    jfieldID fieldID = (*env)->GetFieldID(env, cls, fieldName, fieldSig);
-    if (fieldID == NULL) {
-        return;
+    if (obj == NULL) {
+        cob_handle_error(NULL);
+        return NULL;
     }
-
-    switch (fieldSig[0]) {
-        case 'Z': // jboolean
-            (*env)->SetBooleanField(env, obj, fieldID, value.z);
-            break;
-        case 'B': // jbyte
-            (*env)->SetByteField(env, obj, fieldID, value.b);
-            break;
-        case 'C': // jchar
-            (*env)->SetCharField(env, obj, fieldID, value.c);
-            break;
-        case 'S': // jshort
-            (*env)->SetShortField(env, obj, fieldID, value.s);
-            break;
-        case 'I': // jint
-            (*env)->SetIntField(env, obj, fieldID, value.i);
-            break;
-        case 'J': // jlong
-            (*env)->SetLongField(env, obj, fieldID, value.j);
-            break;
-        case 'F': // jfloat
-            (*env)->SetFloatField(env, obj, fieldID, value.f);
-            break;
-        case 'D': // jdouble
-            (*env)->SetDoubleField(env, obj, fieldID, value.d);
-            break;
-        case 'L': // jobject
-            (*env)->SetObjectField(env, obj, fieldID, value.l);
-            break;
-        default:
-            break;
-    }
-}
-
-jvalue 
-cob_get_java_field(jobject obj, const char *fieldName, const char *fieldSig) {
-    jvalue result;
-    memset(&result, 0, sizeof(result));
-
-    jclass cls = (*env)->GetObjectClass(env, obj);
-    jfieldID fieldID = (*env)->GetFieldID(env, cls, fieldName, fieldSig);
-    if (fieldID == NULL) {
-        return result;
-    }
-
-    switch (fieldSig[0]) {
-        case 'Z': // jboolean
-            result.z = (*env)->GetBooleanField(env, obj, fieldID);
-            break;
-        case 'B': // jbyte
-            result.b = (*env)->GetByteField(env, obj, fieldID);
-            break;
-        case 'C': // jchar
-            result.c = (*env)->GetCharField(env, obj, fieldID);
-            break;
-        case 'S': // jshort
-            result.s = (*env)->GetShortField(env, obj, fieldID);
-            break;
-        case 'I': // jint
-            result.i = (*env)->GetIntField(env, obj, fieldID);
-            break;
-        case 'J': // jlong
-            result.j = (*env)->GetLongField(env, obj, fieldID);
-            break;
-        case 'F': // jfloat
-            result.f = (*env)->GetFloatField(env, obj, fieldID);
-            break;
-        case 'D': // jdouble
-            result.d = (*env)->GetDoubleField(env, obj, fieldID);
-            break;
-        case 'L': // jobject
-            result.l = (*env)->GetObjectField(env, obj, fieldID);
-            break;
-        default:
-            break;
-    }
-    return result;
-}
-
-jvalue 
-cob_call_java_method(jobject obj, const char *methodName, const char *methodSig, jvalue *args) {
-    jvalue result;
-    memset(&result, 0, sizeof(result));
-
-    jclass cls = (*env)->GetObjectClass(env, obj);
-    jmethodID methodID = (*env)->GetMethodID(env, cls, methodName, methodSig);
-    if (methodID == NULL) {
-        return result;
-    }
-
-    switch (methodSig[strlen(methodSig) - 1]) {
-        case 'V': // void
-            (*env)->CallVoidMethodA(env, obj, methodID, args);
-            break;
-        case 'Z': // jboolean
-            result.z = (*env)->CallBooleanMethodA(env, obj, methodID, args);
-            break;
-        case 'B': // jbyte
-            result.b = (*env)->CallByteMethodA(env, obj, methodID, args);
-            break;
-        case 'C': // jchar
-            result.c = (*env)->CallCharMethodA(env, obj, methodID, args);
-            break;
-        case 'S': // jshort
-            result.s = (*env)->CallShortMethodA(env, obj, methodID, args);
-            break;
-        case 'I': // jint
-            result.i = (*env)->CallIntMethodA(env, obj, methodID, args);
-            break;
-        case 'J': // jlong
-            result.j = (*env)->CallLongMethodA(env, obj, methodID, args);
-            break;
-        case 'F': // jfloat
-            result.f = (*env)->CallFloatMethodA(env, obj, methodID, args);
-            break;
-        case 'D': // jdouble
-            result.d = (*env)->CallDoubleMethodA(env, obj, methodID, args);
-            break;
-        case 'L': // jobject
-            result.l = (*env)->CallObjectMethodA(env, obj, methodID, args);
-            break;
-        default:
-            break;
-    }
-    return result;
+    jobject global_obj = (*env)->NewGlobalRef(env, obj);
+    (*env)->DeleteLocalRef(env, obj);
+    return global_obj;
 }
 
 int
-cob_call_java(const cob_java_static_method_handle *method_handle) {
+cob_call_java(const cob_java_handle *method_handle) {
     JNIEnv *env;
     va_list args;
     jobject result;
 
     if (method_handle == NULL) {
-        cob_set_exception(COB_EC_INVALID_ARGUMENT);
         return -1;
     }
 
@@ -460,34 +180,41 @@ cob_call_java(const cob_java_static_method_handle *method_handle) {
 
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionDescribe(env);
-        (*env)->ExceptionClear(env);
-        cob_set_exception(COB_EC_JAVA_EXCEPTION);
+        (*env)->ExceptionClear(env);;
         return -1;
     }
 
     return (result != NULL) ? 0 : -1;
 }
 
-/*
-extern "C"
-JNIEXPORT jstring JNICALL Java_callJavaMemberFunction(jobject obj, jobject javaObject, jstring input) {
-    jclass cls = (*env)->GetObjectClass(env, javaObject);
-    if (cls == NULL) {
+cob_java_handle* cob_resolve_java(const char *class_name, const char* method_name, const char *type_signature) {
+    if (jvm == NULL) {
+        cob_java_initialize();
+    }
+
+    jclass cls = (*env)->FindClass(env, class_name);
+    if (!cls) {
+        cob_handle_error("Class not found");
         return NULL;
     }
 
-    const char* paramTypes[] = {"Ljava/lang/String;"};
-    char* methodSig = cob_gen_method_sig(paramTypes, 1, "Ljava/lang/String;");
-
-    jmethodID mid = (*env)->GetMethodID(env, cls, "greet", methodSig);
-    if (mid == NULL) {
-        free(methodSig);
+    jmethodID mid = (*env)->GetStaticMethodID(env, cls, method_name, type_signature);
+    if (!mid) {
+        (*env)->DeleteLocalRef(env, cls);
+        cob_handle_error("Method not found");
         return NULL;
     }
 
-    jstring result = (jstring)(*env)->CallObjectMethod(env, javaObject, mid, input);
+    cob_java_handle *handle = (cob_java_handle*)malloc(sizeof(cob_java_handle));
+    if (!handle) {
+        (*env)->DeleteLocalRef(env, cls);
+        cob_handle_error("Memory allocation failed");
+        return NULL;
+    }
 
-    free(methodSig);
-    return result;
+    handle->cls = (*env)->NewGlobalRef(env, cls);
+    handle->mid = mid;
+    (*env)->DeleteLocalRef(env, cls);
+
+    return handle;
 }
-*/
