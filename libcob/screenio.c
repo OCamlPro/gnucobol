@@ -4917,6 +4917,48 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 #endif
 }
 
+    /* save the current stdscr screen to a file */
+int
+cob_sys_scr_dump(unsigned char *parm)
+{
+  const char *filename = cob_get_param_str_buffered (1);
+  FILE *filep;
+
+  if (filename && (filep = fopen(filename, "wb")) != NULL)
+  {
+    refresh();
+    int result = putwin(stdscr, filep);
+    fclose(filep);
+    return result;
+  }
+
+  return ERR;
+}
+
+
+    /* restore the current stdscr screen from a file */
+int cob_sys_scr_restore(unsigned char *parm)
+{
+  const char *filename = cob_get_param_str_buffered (1);
+  FILE *filep;
+
+  if (filename && (filep = fopen(filename, "rb")) != NULL)
+  {
+    WINDOW *replacement = getwin(filep);
+    fclose(filep);
+
+    if (replacement)
+    {
+      int result = overwrite(replacement, stdscr);
+      refresh();
+      delwin(replacement);
+      return result;
+    }
+  }
+
+  return ERR;
+}
+
 int
 cob_get_scr_cols (void)
 {

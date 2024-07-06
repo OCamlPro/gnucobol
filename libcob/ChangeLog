@@ -1,4 +1,11 @@
 
+2024-06-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) added new functions
+	* common.h added exports for the two new functions
+	* system.def: added as system library call CBL_GC_SCR_DUMP,
+	  CBL_GC_SCR_RESTORE
+
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 		fix errors caught by the Sanitizer functionality of GCC. This 
