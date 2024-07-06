@@ -1355,60 +1355,11 @@ build_literal (const enum cb_category category, const void *data,
 	       const size_t size)
 {
 	struct cb_literal *p;
+
 	p = make_tree (CB_TAG_LITERAL, category, sizeof (struct cb_literal));
 	p->data = cobc_parse_malloc (size + 1U);
 	p->size = size;
-	char * fromCode = "UTF-8";
-	char * toCode = "ISO-8859-15";
-
-	switch(category) {
-	case CB_CATEGORY_UNKNOWN:
-	case CB_CATEGORY_ERROR:
-		cobc_err_msg(_("invalid category"));
-		memcpy (p->data, data, size);
-		return p;
-	case CB_CATEGORY_ALPHABETIC:
-	case CB_CATEGORY_ALPHANUMERIC:
-	case CB_CATEGORY_ALPHANUMERIC_EDITED:
-	case CB_CATEGORY_NUMERIC:
-	case CB_CATEGORY_NUMERIC_EDITED:
-		p->size = size;
-		break;
-	case CB_CATEGORY_NATIONAL:
-	case CB_CATEGORY_NATIONAL_EDITED:
-		p->data = cobc_parse_malloc (size * 2 + 1U); // Allocate enough space for UTF-16
-		p->size = 2 * size;
-		toCode = "UTF-16LE";
-		break;
-	case CB_CATEGORY_BOOLEAN:
-	case CB_CATEGORY_INDEX:
-	case CB_CATEGORY_OBJECT_REFERENCE:
-	case CB_CATEGORY_DATA_POINTER:
-	case CB_CATEGORY_PROGRAM_POINTER:
-	case CB_CATEGORY_FLOATING_EDITED:
-		cobc_err_msg(_("invalid category"));
-		memcpy (p->data, data, size);
-		return p;	     
-	}
-	
-    iconv_t cd = iconv_open(toCode, fromCode);
-	if(cd == (iconv_t)-1) {
-		cobc_err_msg(_("iconv_open failed"));
-		memcpy (p->data, data, size);
-	} else{
-		size_t inbytesleft = size;
-		size_t outbytesleft = p->size;
-		char *inbuf = (char *)data;
-		char *outbuf = (char *)p->data;
-		
-		size_t convResult = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-		if(convResult == (size_t)-1) {
-			cobc_err_msg(_("iconv failed"));
-		}
-		iconv_close(cd);
-		p->size -= outbytesleft;
-
-	}
+	memcpy (p->data, data, size);
 	return p;
 }
 
