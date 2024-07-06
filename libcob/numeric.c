@@ -3088,7 +3088,7 @@ cob_add_bcd (cob_field *fdst,
 	if ((used_original_scale <= dst_scale)
 	 || (used_scale < dest_scale)
 	 || (opt & COB_STORE_TRUNCATION)
-	 || !(opt & ~COB_STORE_MASK)) {
+	 || !(opt & (~COB_STORE_MASK | COB_STORE_ROUND))) {
 		check_rounding = 0;
 		check_all_zeros = 0;
 		all_zeros = 0;

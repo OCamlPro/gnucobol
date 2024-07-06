@@ -1,4 +1,9 @@
 
+2024-07-02  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* numeric.c (cob_add_bcd) fixed check for default ROUNDED option
+	  to resolve bug 934
+
 2024-06-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) added new functions
