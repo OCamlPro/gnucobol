@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include <iconv.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
