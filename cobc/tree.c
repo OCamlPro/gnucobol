@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include <err.h>
 #include <iconv.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1409,7 +1408,6 @@ build_literal (const enum cb_category category, const void *data,
 		p->size -= outbytesleft;
 
 	}
-	warnx("%s:%d: category %d, data %p, size %zu", __func__, __LINE__, category, data, size);
 	return p;
 }
 
