@@ -1,6 +1,19 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
+		fix errors caught by the Sanitizer functionality of GCC. This 
+		change did not resolve all of the issues found as some of them
+		were in Berkeley DB and some were intentional in the memory 
+		corruption logic which has been implemented in the runtime.
+
+	* move.c (the cob_move_display_to_packed function was rewritten to 
+	  fix the out of bounds memory addressing issues and also to make
+	  the code simpler.
+	* numeric.c (the function count_leading_zeros was changed to fix 
+	  an out of bounds memory addressing issue
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
 		fix errors in filio.c when building with VISAM 2.2. This issue
 		occurred when using a partial key with a sequential read previous.
 
