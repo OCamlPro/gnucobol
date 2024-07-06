@@ -327,6 +327,9 @@ cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
 int cb_flag_alt_ebcdic = 0;
 
+// call the struct cb_iconv
+struct cb_iconv_t cb_iconv;
+
 
 /* Basic memory structure */
 struct cobc_mem_struct {
@@ -9139,7 +9142,11 @@ static void
 begin_setup_internal_and_compiler_env (void)
 {
 	char			*p;
-
+	
+	// initialize the iconv struct
+	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", "UTF-8");
+	cb_iconv.national = iconv_open("UTF-16LE", "UTF-8");
+	
 	/* register signal handlers from cobc */
 	cob_reg_sighnd (&cobc_sig_handler);
 

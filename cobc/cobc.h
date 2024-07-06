@@ -31,6 +31,8 @@
 #endif
 #include <stdio.h>	/* for FILE* */
 
+#include <iconv.h>
+
 #include "../libcob/common.h"
 
 #ifdef	ENABLE_NLS
@@ -322,6 +324,15 @@ enum cobc_name_type {
 	ENTRY_NAME,
 	PROGRAM_ID_NAME
 };
+
+
+/* Structure for a iconv conversion */
+struct cb_iconv_t{
+    iconv_t alphanumeric;
+    iconv_t national;
+};
+
+extern struct cb_iconv_t cb_iconv;
 
 /* Listing structures and externals */
 
