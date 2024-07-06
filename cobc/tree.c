@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include <iconv.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -2786,8 +2785,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 	void * outdata = malloc(outsize);
 	memset(outdata, ' ', outsize);
 	
-	iconv_t cd = iconv_open("ISO-8859-15", "UTF-8");
-	if(cd == (iconv_t)-1) {
+	if(cb_iconv.alphanumeric == (iconv_t)-1) {
 		cobc_err_msg(_("iconv_open failed"));
 	} else{
 		size_t inbytesleft = size;
@@ -2796,12 +2794,11 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		char *inbuf = (char *)data;
 		char * outbuf = (char *)outdata;
 		
-		size_t convResult = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		size_t convResult = iconv(cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
 			cobc_err_msg(_("iconv failed"));
 		}
 
-		iconv_close(cd);
 		outsize -= outbytesleft;
 	}
 
@@ -2822,8 +2819,7 @@ cb_build_national_literal (const void *data, const size_t size)
 	void * outdata = malloc(outsize);
 	memset(outdata, ' ', outsize);
 	
-	iconv_t cd = iconv_open("UTF-16LE", "UTF-8");
-	if(cd == (iconv_t)-1) {
+	if(cb_iconv.national == (iconv_t)-1) {
 		cobc_err_msg(_("iconv_open failed"));
 	} else{
 		size_t inbytesleft = size;
@@ -2832,12 +2828,11 @@ cb_build_national_literal (const void *data, const size_t size)
 		char *inbuf = (char *)data;
 		char * outbuf = (char *)outdata;
 		
-		size_t convResult = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		size_t convResult = iconv(cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
 			cobc_err_msg(_("iconv failed"));
 		}
 
-		iconv_close(cd);
 		outsize -= outbytesleft;
 	}
 	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
