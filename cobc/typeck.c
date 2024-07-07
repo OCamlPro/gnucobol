@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include<err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -11059,6 +11060,41 @@ is_floating_point_usage (const enum cb_usage usage)
 		|| usage == CB_USAGE_FP_DEC128;
 }
 
+
+static int 
+is_blank( unsigned char *s, int class ) {
+	static const char national[] = { 0x20, 0x00 };
+	static const char alpha[] = { 0x20 };
+	
+	switch(class) {
+		case CB_CLASS_NATIONAL:
+			if( 0 == memcmp( s, national, sizeof(national) ) ) 
+				return sizeof(national);
+			break;
+		case CB_CLASS_ALPHANUMERIC: 
+			if( 0 == memcmp( s, alpha, sizeof(alpha) ) ) 
+				return sizeof(alpha);
+			break;
+    }
+	return 0;
+}
+
+static size_t 
+trimmed_size(unsigned char *s, size_t len, int right_justified, int class){
+	int size = len;
+	unsigned char *p = s;
+	int dir = right_justified? 1 : -1;
+	if( ! right_justified && len > 2 ) p += len - 2; 
+
+	for( int inc, i=0; i < len; i += inc ) {
+		if( (inc = is_blank(p, class)) == 0 ) break;
+		size -= inc ;
+		p += dir * inc;
+	}
+	return size;
+}
+
+
 int
 validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_zero)
 {
@@ -11512,32 +11548,17 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
 				size /= COB_NATIONAL_SIZE;
 			}
-			if (size > 0
+			if (size > 0	
 			 && l->size > 0
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				if (fdst->flag_justified) {
-					/* right justified: trim left */
-					for (i = 0; i != l->size; i += 2) {
-						if (l->data[i] != 0x00
-						 || l->data[i + 1] != ' ') {
-							break;
-						}
-					}
-					i = l->size - i;
-				} else {
-					/* normal field: trim right */
-					for (i = l->size - 1; i != 0; i -= 2) {
-						if (l->data[i] != ' '
-						 || l->data[i - 1] != 0x00) {
-							break;
-						}
-					}
-					i++;
+				int class = CB_TREE_CLASS(src);
+				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
+				if(getenv(__func__)) {
+					//warnx("data: %s, l->size: %d, flag: %d, i: %d", l->data, l->size, fdst->flag_justified, i); 
 				}
-				i /= COB_NATIONAL_SIZE;
-				if ((int)i > size) {
+				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
 				}
@@ -11638,24 +11659,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				if (fdst->flag_justified) {
-					/* right justified: trim left */
-					for (i = 0; i != l->size; i++) {
-						if (l->data[i] != ' ') {
-							break;
-						}
-					}
-					i = l->size - i;
-				} else {
-					/* normal field: trim right */
-					for (i = l->size - 1; i != 0; i--) {
-						if (l->data[i] != ' ') {
-							break;
-						}
-					}
-					i++;
-				}
-				if ((int)i > size) {
+				int class = CB_TREE_CLASS(src);
+				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
+				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
 				}
