@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -4028,6 +4029,9 @@ repeat:
 		}
 		if (c == 'N') {
 			size += n * (COB_NATIONAL_SIZE - 1);
+			if(getenv(__func__)){
+				warnx("str: %s, c: %c, n: %d, size %d", str, c, n, size);		
+			}
 		}
 		if (c == 'U') {
 			size += n * (4 - 1);
