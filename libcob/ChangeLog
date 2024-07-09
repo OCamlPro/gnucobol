@@ -1,4 +1,14 @@
 
+2024-08-14  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* common.c (print_info_detailed): added note for Java interoperability
+
+2024-06-12  Vedant Tewari <vedanttewari541@gmail.com>
+
+        * Makefile.am: Updated to include JNI-related files
+        * common.h: Added internal state for JNI support
+        * java.c: Implemented JNI support for GnuCOBOL
+
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2022-12-21:

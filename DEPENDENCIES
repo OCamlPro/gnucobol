@@ -137,6 +137,21 @@ The following libraries ARE required WHEN :
 
     JSON-C is distributed under Expat License.
 
+5) JNI (Java Native Interface) support is used
+
+    BOTH runtime AND development components required.
+
+    Java Development Kit (JDK) 8 or later
+
+    https://openjdk.org/
+
+    The JDK is distributed under various open-source licenses depending
+    on the vendor and version. Common licenses include the GNU General
+    Public License (GPL) and the Oracle Binary Code License Agreement.
+
+    To enable JNI support, ensure that the JDK is installed on your system,
+    and set the appropriate environment variables (e.g., JAVA_HOME) to point
+    to the JDK installation directory.
 
 See HACKING if you wish to hack the GnuCOBOL source or build directly
 from version control as this includes the list of additional tools

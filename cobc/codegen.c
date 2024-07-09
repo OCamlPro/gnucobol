@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2003-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
-   Edward Hart
+   Edward Hart, Vedant Tewari
 
    This file is part of GnuCOBOL.
 
@@ -147,6 +147,7 @@ static struct literal_list	*literal_cache = NULL;
 static struct field_list	*field_cache = NULL;
 static struct field_list	*local_field_cache = NULL;
 static struct call_list		*call_cache = NULL;
+static struct call_list	*call_java_cache = NULL;
 static struct call_list		*func_call_cache = NULL;
 static struct static_call_list	*static_call_cache = NULL;
 static struct base_list		*base_cache = NULL;
@@ -393,6 +394,22 @@ lookup_source (const char *p)
 	stp->next = source_cache;
 	source_cache = stp;
 	return source_id++;
+}
+
+static void
+lookup_java_call(const char *p)
+{
+	struct call_list *clp;
+
+	for (clp = call_java_cache; clp; clp = clp->next) {
+		if (strcmp (p, clp->call_name) == 0) {
+			return;
+		}
+	}
+	clp = cobc_parse_malloc (sizeof (struct call_list));
+	clp->call_name = p;
+	clp->next = call_java_cache;
+	call_java_cache = clp;
 }
 
 static void
@@ -1976,6 +1993,11 @@ output_call_cache (void)
 	call_cache = call_list_reverse (call_cache);
 	for (call = call_cache; call; call = call->next) {
 		output_local ("static cob_call_union\tcall_%s;\n",
+			      call->call_name);
+	}
+	call_java_cache = call_list_reverse (call_java_cache);
+	for (call = call_java_cache; call; call = call->next) {
+		output_local ("static cob_java_handle*\tcall_java_%s;\n",
 			      call->call_name);
 	}
 	func_call_cache = call_list_reverse (func_call_cache);
@@ -7069,6 +7091,45 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 }
 
 static void
+output_java_call (struct cb_call *p)
+{
+	char* full_name = (char *)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`)*/
+	char* class_and_method_name = full_name + 5;
+	char *last_dot;
+	char *method_name;
+	const char *class_name;
+	char* mangled;
+
+	mangled = strdup(class_and_method_name);
+	for (size_t i = 0; i < strlen(mangled) + 1; i++) {
+		mangled[i] = (mangled[i] == '.') ? '_' : mangled[i];
+	}
+
+	last_dot = strrchr(class_and_method_name, '.');
+	if (last_dot == NULL) {
+		cobc_err_msg (_("malformed call '%s' to a Java method"), class_and_method_name);
+		COBC_ABORT ();
+	}
+
+	*last_dot = '\0';
+	method_name = last_dot + 1;
+	class_name = class_and_method_name;
+
+	lookup_java_call(mangled);
+	output_line("if (call_java_%s == NULL)", mangled);
+	output_block_open();
+
+	output_prefix();
+	output_line("call_java_%s = ", mangled);
+	output("cob_resolve_java(\"%s\", \"%s\", \"()V\");", class_name, method_name);
+	output_newline ();
+	output_prefix ();
+	output_line("cob_call_java(call_java_%s);\n", mangled);
+	output_newline();
+	output_block_close();
+}
+
+static void
 output_call (struct cb_call *p)
 {
 	cb_tree				x;
@@ -7096,6 +7157,11 @@ output_call (struct cb_call *p)
 		ret_ptr = 1;
 	}
 	system_call = NULL;
+
+	if (p->convention & CB_CONV_JAVA) {
+		output_java_call(p);
+		return;
+	}
 
 #ifdef	_WIN32
 	if (p->convention & CB_CONV_STDCALL) {
