@@ -11558,6 +11558,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				if(getenv(__func__)) {
 					//warnx("data: %s, l->size: %d, flag: %d, i: %d", l->data, l->size, fdst->flag_justified, i); 
 				}
+				i /= COB_NATIONAL_SIZE;
 				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
