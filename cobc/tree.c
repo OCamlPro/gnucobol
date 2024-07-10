@@ -3800,6 +3800,13 @@ repeat:
 				} else {
 					digits += n;
 				}
+				if (v_count) {
+					if (c_count == 0) {
+						scale += n - 1;
+					} else {
+						scale += n;
+					}
+				}
 				c_count += n;
 				break;
 			}

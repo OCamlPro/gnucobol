@@ -1009,9 +1009,15 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 	int   neg = 0;
 	int   is_zero = 1;
 	int   suppress_zero = 1;
+	int   have_decimal_point = 0;
+	int   have_check_protect = 0;
 	int   n;
+	int   cntr_currency = 0;
+	int   cntr_sign_neg = 0;
+	int   cntr_sign_pos = 0;
 	unsigned char pad = ' ';
 	unsigned char c;
+	unsigned char float_char = 0x00;
 	const unsigned char dec_symbol = COB_MODULE_PTR->decimal_point == ','
 																 ? ',' : '.';
 	const unsigned char currency = COB_MODULE_PTR->currency_symbol;
@@ -1027,6 +1033,50 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 		cob_runtime_error ("optimized_move_display_to_edited: invalid argument");
 	}
 #endif
+
+
+	 /************************************************************/
+	 /*    Currently this will require two passes of the symbol  */
+	 /*    table to find the float char....                      */
+	 /*                                                          */
+	 /*  this logic to find the floating char if one exits       */
+	 /*  should be moved to COBC in GC40. This would require     */
+	 /*  some structure changes so for now it is needed here.    */
+	 /************************************************************/
+
+	c = 0x00;
+
+	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
+		c = p->symbol;
+		n = p->times_repeated;
+		if ((c == '9')
+		 || (c == 'Z')
+		 || (c == '*')
+		 || (c == 'C')
+		 || (c == 'D')) {
+			break;
+		} else if (c == '-') {
+			cntr_sign_neg += n;
+			if (cntr_sign_neg > 1) break;
+		} else if (c == '+') {
+			cntr_sign_pos += n;
+			if (cntr_sign_pos > 1) break;
+		} else if (c == currency) {
+			cntr_currency += n;
+			if (cntr_currency > 1) break;
+		}
+	}
+
+	switch (c) {
+		case '-' : float_char = c; break;
+		case '+' : float_char = c; break;
+		case '*' : pad = c; break;
+		default:
+			if (c == currency) {
+				float_char = c;
+				break;
+			}
+	}
 
 	/* first check for BLANK WHEN ZERO attribute */
 	if (COB_FIELD_BLANK_ZERO(f2)) {
@@ -1066,13 +1116,26 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'Z':
-			case '*':
 				*dst = *src;
+				pad = ' ';
 				if (*src != '0') {
 					is_zero = suppress_zero = 0;
 				} else {
-					if (suppress_zero)
-						*dst = pad = (c == '*') ? '*' : ' ';
+					if (suppress_zero && (!have_decimal_point))
+						*dst = pad;
+				}
+				src++;
+				dst++;
+				break;
+
+			case '*':
+				*dst = *src;
+				have_check_protect = 1;
+				if (*src != '0') {
+					is_zero = suppress_zero = 0;
+				} else {
+					if (suppress_zero && (!have_decimal_point))
+						*dst = pad;
 				}
 				src++;
 				dst++;
@@ -1080,7 +1143,12 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 
 			case '+':
 			case '-':
-				if ((prev_float_char == NULL) || (c != *prev_float_char)) {
+				if (c != float_char) {
+					*dst = c;
+					sign_position   = dst;
+					dst++;
+					break;
+				} else if (prev_float_char == NULL) {
 					*dst = c;
 					prev_float_char = dst;
 					sign_position   = dst;
@@ -1106,6 +1174,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			case ',':
 				if (c == dec_symbol) {
 					*dst = dec_symbol;
+					have_decimal_point = 1;
 				} else {
 					if (suppress_zero) {
 						if (prev_float_char) {
@@ -1134,7 +1203,15 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'B':
-				*dst = pad;
+				if (suppress_zero && prev_float_char) {
+					*dst = *prev_float_char;
+					*prev_float_char = pad;
+					prev_float_char = dst;
+				} else if (have_check_protect) {
+					*dst = pad;
+				} else {
+					*dst = ' ';
+				}
 				dst++;
 				break;
 
@@ -1161,28 +1238,33 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				if (c != currency) {
 					/* should never happen, consider remove [also the reason for not translating that] */
 					cob_runtime_error ("optimized_move_display_to_edited: invalid PIC character %c", c);
-					*dst = '?'; /* Invalid PIC */
+					*dst = '?';    /* Invalid PIC */
 					break;
-				} else {
-					if ((prev_float_char == NULL) || (c != *prev_float_char)) {
+				} else if (c != float_char) {
+						*dst = c;
+						dst++;
+						break;
+				} else if (prev_float_char == NULL) {
 						*dst = c;
 						prev_float_char = dst;
 						dst++;
 						break;
-					} else if ((*src == '0') && (suppress_zero)) {
+				} else if ((*src == '0') && (suppress_zero) && (!have_decimal_point)) {
 						*prev_float_char = ' ';
 						prev_float_char = dst;
 						*dst = c;
 						dst++;
 						src++;
 						break;
-					} else {
+				} else {
 						*dst = *src;
-						is_zero = suppress_zero = 0;
+						if (*src != '0') {
+							is_zero = 0;
+							suppress_zero = 0;
+						}
 						dst++;
 						src++;
 						break;
-					}
 				}
 				/* LCOV_EXCL_STOP */
 			} /* END OF SWITCH STATEMENT */
@@ -1195,15 +1277,23 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			 /*  the actual sign of the data.                            */
 			 /************************************************************/
 
-	if (sign_position == NULL)
-		return;
-
-		/* if we have not printed any digits set sign to space and return */
+		/* if we have not printed any digits set destination to spaces and return */
 
 	if (suppress_zero){
-		*sign_position = ' ';
+		if (pad == '*'){
+			for(dst = f2->data; dst < dst_end; dst++) {
+				if (*dst != dec_symbol){
+					*dst = '*';
+				}
+			}
+		} else {
+			memset(f2->data, ' ', f2->size);
+			return;
+		}
+	}
+
+	if (sign_position == NULL)
 		return;
-}
 
 	if ((neg) && (*sign_position == '+')){
 		*sign_position = (is_zero) ? '+' : '-';
@@ -1369,14 +1459,8 @@ indirect_move (void (*func) (cob_field *src, cob_field *dst),
 	size_t      temp_size;
 	unsigned short   digits;
 
-	if ( (COB_FIELD_TYPE(dst) == COB_TYPE_NUMERIC_EDITED)
-	&& ( (func == cob_move_binary_to_display)
-		|| (func == cob_move_packed_to_display)
-		|| (func == cob_move_display_to_display) ) ) {
-		if (COB_FIELD_SCALE(dst) < 0)
-				temp_size = COB_FIELD_DIGITS(dst) + COB_FIELD_SCALE(dst) + 1;
-		else
-				temp_size = COB_FIELD_DIGITS(dst) + 1;
+	if (COB_FIELD_TYPE(dst) == COB_TYPE_NUMERIC_EDITED) {
+		temp_size = COB_FIELD_DIGITS(dst) + 1;
 		digits = (unsigned short)temp_size - 1;
 		unsigned char buff[COB_MAX_DIGITS + 1] = { 0 };
 		if (COB_FIELD_HAVE_SIGN(dst)) {

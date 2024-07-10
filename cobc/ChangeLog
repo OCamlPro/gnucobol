@@ -1,4 +1,8 @@
 
+2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* tree.c (cb_build_picture): fixed currency scale counting logic
+
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (process_compile): fix MSVC build command

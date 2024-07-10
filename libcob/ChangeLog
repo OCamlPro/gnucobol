@@ -1,4 +1,15 @@
 
+2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	fix errors in cob_optimized_move_display_to_edited introduced
+	with changes at revision R5285. The errors showed up in the 
+	NIST tests in group NC.
+
+	* move.c (optimized_move_display_to_edited): fixed bugs
+	  (indirect_move): fixed bug when calculating scale of 
+	  the intermediate cob field
+
+
 2024-07-02  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* numeric.c (cob_add_bcd) fixed check for default ROUNDED option
@@ -46,7 +57,7 @@
 	match the attributes of the target edited field instead of the
 	sending field.
 
-	* move.c (cob_optimized_move_display_to_edited): added new function
+	* move.c (optimized_move_display_to_edited): added new function
 	  (cob_move): when move numeric-display to numeric-edited added logic
 	    to check if an indirect move is needed
 	  (indirect_move): when the destination field is numeric-edited and
