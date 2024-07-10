@@ -57,6 +57,7 @@ jobs:
       - name: configure
         run: |
           cd _build
+          export CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
           export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
           ../configure --with-db --with-indexed=db --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol
 
