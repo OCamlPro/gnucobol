@@ -1736,7 +1736,6 @@ prog.cob:25: warning: source is non-numeric - substituting zero
 AT_CLEANUP
 
 
-
 AT_SETUP([WRITE / REWRITE on LINE SEQUENTIAL files])
 AT_KEYWORDS([file])
 AT_XFAIL_IF(true)
@@ -1770,7 +1769,6 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:18: error: REWRITE not allowed on LINE SEQUENTIAL files
 ])
 AT_CLEANUP
-
 
 
 AT_SETUP([WRITE / REWRITE on REPORT files])

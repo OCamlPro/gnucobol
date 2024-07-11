@@ -156,8 +156,33 @@ unsigned int			cobc_cs_check = 0;
 unsigned int			cobc_allow_program_name = 0;
 unsigned int			cobc_in_xml_generate_body = 0;
 unsigned int			cobc_in_json_generate_body = 0;
+unsigned int			cobc_areacheck = 0;
+unsigned int			cobc_in_area_a = 0;
 
 /* Local variables */
+
+enum inspect_rep_keyword {
+	INSPECT_REP_DEFAULT,
+	INSPECT_REP_ALL,
+	INSPECT_REP_LEADING,
+	INSPECT_REP_FIRST,
+	INSPECT_REP_TRAILING,
+};
+
+union examine_keyword {
+	/* EXAMINE TALLYING/REPLACING options */
+	enum {
+		EXAMINE_TAL_ALL,
+		EXAMINE_TAL_LEADING,
+		EXAMINE_TAL_UNTIL_FIRST,
+	} tallying;
+	enum {
+		EXAMINE_REP_ALL,
+		EXAMINE_REP_LEADING,
+		EXAMINE_REP_FIRST,
+		EXAMINE_REP_UNTIL_FIRST,
+	} replacing;
+};
 
 enum tallying_phrase {
 	NO_PHRASE,
@@ -207,7 +232,8 @@ static unsigned int		first_prog;
 static unsigned int		setup_from_identification;
 static unsigned int		use_global_ind;
 static unsigned int		same_area;
-static unsigned int		inspect_keyword;
+static enum inspect_rep_keyword	inspect_keyword;
+static union examine_keyword	examine_keyword;
 static unsigned int		main_flag_set;
 static int			next_label_id;
 static int			eval_level;
@@ -287,6 +313,35 @@ static int			backup_source_line = 0;
 
 /* Static functions */
 
+/* Area A enforcement */
+
+static COB_INLINE void
+check_area_a (cb_tree word) {
+	if (!cobc_in_area_a && cobc_areacheck) {
+		(void) cb_syntax_check_x (word, _("'%s' should start in Area A"),
+					  CB_NAME (word));
+	}
+}
+
+static COB_INLINE void
+check_area_a_of (const char * const item) {
+	if (!cobc_in_area_a && cobc_areacheck) {
+		(void) cb_syntax_check (_("'%s' should start in Area A"), item);
+	}
+}
+
+static COB_INLINE void
+check_non_area_a (cb_tree stmt) {
+	if (cobc_in_area_a && cobc_areacheck) {
+		if (stmt)
+			(void) cb_syntax_check_x (stmt, _("start of statement in Area A"));
+		else
+			(void) cb_syntax_check (_("start of statement in Area A"));
+	}
+}
+
+/* Statements */
+
 static void
 begin_statement (enum cob_statement statement, const unsigned int term)
 {
@@ -300,6 +355,7 @@ begin_statement (enum cob_statement statement, const unsigned int term)
 	CB_TREE (current_statement)->source_file = cb_source_file;
 	CB_TREE (current_statement)->source_line = cb_source_line;
 	current_statement->flag_in_debug = in_debugging;
+	check_non_area_a (CB_TREE (current_statement));
 	emit_statement (CB_TREE (current_statement));
 	if (term) {
 		term_array[term]++;
@@ -576,28 +632,6 @@ terminator_clear (cb_tree stmt, const unsigned int termid)
 	}
 }
 
-static int
-literal_value (cb_tree x)
-{
-	if (x == cb_space) {
-		return ' ';
-	} else if (x == cb_zero) {
-		return '0';
-	} else if (x == cb_quote) {
-		return cb_flag_apostrophe ? '\'' : '"';
-	} else if (x == cb_null) {
-		return 0;
-	} else if (x == cb_low) {
-		return 0;
-	} else if (x == cb_high) {
-		return 255;
-	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-		return cb_get_int (x);
-	} else {
-		return CB_LITERAL (x)->data[0];
-	}
-}
-
 static void
 setup_use_file (struct cb_file *fileptr)
 {
@@ -629,14 +663,7 @@ setup_use_file (struct cb_file *fileptr)
 static int
 emit_duplicate_clause_message (const char *clause)
 {
-	/* FIXME: replace by a new warning level that is set
-	   to warn/error depending on cb_relaxed_syntax_checks */
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("duplicate %s clause"), clause);
-		return 0;
-	}
-	cb_error (_("duplicate %s clause"), clause);
-	return 1;
+	return cb_syntax_check (_("duplicate %s clause"), clause);
 }
 
 static int
@@ -653,14 +680,9 @@ check_repeated (const char *clause, const cob_flags_t bitval,
 static void
 emit_conflicting_clause_message (const char *clause, const char *conflicting)
 {
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("cannot specify both %s and %s; %s is ignored"),
-			clause, conflicting, clause);
-	} else {
-		cb_error (_("cannot specify both %s and %s"),
-			clause, conflicting);
+	if (cb_syntax_check (_("cannot specify both %s and %s"), clause, conflicting)) {
+		cb_note (COBC_WARN_FILLER, 0, _("%s is ignored"), clause);
 	}
-
 }
 
 
@@ -707,12 +729,10 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 		if (occurs_max != cb_int0) {
 			current_field->occurs_max = cb_get_int (occurs_max);
 			if (!current_field->depending) {
-				if (cb_relaxed_syntax_checks) {
-					cb_warning (COBC_WARN_FILLER, _("TO phrase without DEPENDING phrase"));
-					cb_warning (COBC_WARN_FILLER, _("maximum number of occurrences assumed to be exact number"));
+				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
+					cb_note (COBC_WARN_FILLER, 0,
+						 _("maximum number of occurrences assumed to be exact number"));
 					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
-				} else {
-					cb_error (_("TO phrase without DEPENDING phrase"));
 				}
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
@@ -790,10 +810,8 @@ check_relaxed_syntax (const cob_flags_t lev)
 		break;
 	/* LCOV_EXCL_STOP */
 	}
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("%s header missing - assumed"), s);
-	} else {
-		cb_error (_("%s header missing"), s);
+	if (cb_syntax_check (_("%s header missing"), s)) {
+		cb_note (COBC_WARN_FILLER, 0, _("%s header assumed"), s);
 	}
 }
 
@@ -1010,7 +1028,7 @@ clear_initial_values (void)
 	eval_level = 0;
 	eval_inc = 0;
 	eval_inc2 = 0;
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
 	check_unreached = 0;
 	cobc_in_id = 0;
 	cobc_in_usage = 0;
@@ -1851,7 +1869,7 @@ check_preceding_tallying_phrases (const enum tallying_phrase phrase)
 
 	case ALL_LEADING_TRAILING_PHRASES:
 		if (previous_tallying_phrase == CHARACTERS_PHRASE
-			   || previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES) {
+		 || previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES) {
 			cb_error (_("missing value between ALL/LEADING/TRAILING words"));
 		}
 		/* fall through */
@@ -1862,8 +1880,8 @@ check_preceding_tallying_phrases (const enum tallying_phrase phrase)
 		break;
 
 	case VALUE_REGION_PHRASE:
-		if (!(previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES
-		      || previous_tallying_phrase == VALUE_REGION_PHRASE)) {
+		if (! ( previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES
+		     || previous_tallying_phrase == VALUE_REGION_PHRASE)) {
 			cb_error (_("missing ALL/LEADING/TRAILING before value"));
 		}
 		break;
@@ -1883,8 +1901,8 @@ static int
 has_relative_pos (struct cb_field const *field)
 {
 	return !!(field->screen_flag
-		  & (COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS
-		     | COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS));
+		  & ( COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS
+		    | COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS));
 }
 
 static int
@@ -1895,7 +1913,7 @@ is_recursive_call (cb_tree target)
 	if (CB_LITERAL_P (target)) {
 		target_name = (const char *)(CB_LITERAL(target)->data);
 	} else if (CB_REFERENCE_P (target)
-		   && CB_PROTOTYPE_P (cb_ref (target))) {
+	        && CB_PROTOTYPE_P (cb_ref (target))) {
 		target_name = CB_PROTOTYPE (cb_ref (target))->ext_name;
 	}
 
@@ -2545,6 +2563,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EVENT_LIST		"EVENT-LIST"
 %token EVENT_STATUS		"EVENT STATUS"
 %token EVERY
+%token EXAMINE
 %token EXCEPTION
 %token EXCEPTION_CONDITION	"EXCEPTION CONDITION"
 %token EXCEPTION_VALUE		"EXCEPTION-VALUE"
@@ -3205,6 +3224,9 @@ set_record_size (cb_tree min, cb_tree max)
 %token YYYYMMDD
 %token ZERO
 
+%token LEVEL_NUMBER_IN_AREA_A	"level-number (Area A)"
+%token WORD_IN_AREA_A		"Identifier (Area A)"
+
 /* Set up precedence operators to force shift */
 
 %nonassoc SHIFT_PREFER
@@ -3229,6 +3251,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc ENABLE
 %nonassoc ENTRY
 %nonassoc EVALUATE
+%nonassoc EXAMINE
 %nonassoc EXHIBIT
 %nonassoc EXIT
 %nonassoc FREE
@@ -3316,6 +3339,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc IN
 
 %nonassoc WORD
+%nonassoc WORD_IN_AREA_A
 %nonassoc LITERAL
 
 %nonassoc TOK_OPEN_PAREN
@@ -3436,9 +3460,10 @@ end_program_list:
 end_program:
   END_PROGRAM
   {
+	check_area_a_of ("END PROGRAM");
 	backup_current_pos ();
   }
-  end_program_name TOK_DOT
+  end_program_name _dot
   {
 	first_nested_program = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_PROGRAM);
@@ -3450,7 +3475,7 @@ end_function:
   {
 	backup_current_pos ();
   }
-  end_program_name TOK_DOT
+  end_program_name _dot
   {
 	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
   }
@@ -3460,7 +3485,7 @@ end_function:
 
 program_prototype:
   _identification_header
-  program_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE TOK_DOT
+  program_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE _dot
   {
 	/* Error if program_id_name is a literal */
 
@@ -3510,7 +3535,7 @@ program_prototype:
 
 function_prototype:
   _identification_header
-  function_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE TOK_DOT
+  function_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE _dot
   {
 	/* Error if program_id_name is a literal */
 
@@ -3552,20 +3577,22 @@ function_prototype:
 
 _prototype_procedure_division_header:
   /* empty */
-| PROCEDURE DIVISION _procedure_using_chaining _procedure_returning TOK_DOT
+| PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
+  DIVISION _procedure_using_chaining _procedure_returning _dot
   {
-	cb_validate_parameters_and_returning (current_program, $3);
-	current_program->num_proc_params = cb_list_length ($3);
+	cb_validate_parameters_and_returning (current_program, $4);
+	current_program->num_proc_params = cb_list_length ($4);
 	/* add pseudo-entry as it contains the actual USING parameters */
-	emit_main_entry (current_program, $3);
+	emit_main_entry (current_program, $4);
   }
 ;
 
 /* CONTROL DIVISION (GCOS extension) */
 
+control: CONTROL { check_area_a_of ("CONTROL DIVISION"); };
 _control_division:
   /* empty */
-| CONTROL DIVISION TOK_DOT
+| control DIVISION _dot
   {
 	  cb_verify (cb_control_division, "CONTROL DIVISION");
   }
@@ -3574,7 +3601,8 @@ _control_division:
 
 _default_section:
   /* empty */
-| DEFAULT SECTION TOK_DOT
+| DEFAULT { check_area_a_of ("DEFAULT SECTION"); }
+  SECTION TOK_DOT
   _default_clauses
   {
 	cobc_cs_check = 0;
@@ -3632,7 +3660,8 @@ _identification_header:
 ;
 
 identification_header:
-  identification_or_id DIVISION TOK_DOT
+  identification_or_id { check_area_a_of ("IDENTIFICATION DIVISION"); }
+  DIVISION _dot
   {
 	setup_program_start ();
 	setup_from_identification = 1;
@@ -3653,7 +3682,7 @@ program_id_header:
 ;
 
 program_id_paragraph:
-  program_id_header TOK_DOT program_id_name _as_literal _program_type TOK_DOT
+  program_id_header TOK_DOT program_id_name _as_literal _program_type TOK_DOT /* optional, yet impacts errors on recovery */
   {
 	if (setup_program ($3, $4, COB_MODULE_TYPE_PROGRAM, 0)) {
 		YYABORT;
@@ -3692,7 +3721,7 @@ function_id_header:
 ;
 
 function_id_paragraph:
-  function_id_header TOK_DOT program_id_name _as_literal TOK_DOT
+function_id_header TOK_DOT program_id_name _as_literal TOK_DOT /* optional, yet impacts errors on recovery */
   {
 	if (setup_program ($3, $4, COB_MODULE_TYPE_FUNCTION, 0)) {
 		YYABORT;
@@ -3789,7 +3818,7 @@ _options_clauses:
   _default_rounded_clause
   _entry_convention_clause
   _intermediate_rounding_clause
-  TOK_DOT
+  _dot
 ;
 
 _arithmetic_clause:
@@ -3904,8 +3933,9 @@ _environment_header:
 | environment_header
 ;
 
+environment: ENVIRONMENT { check_area_a_of ("ENVIRONMENT DIVISION"); };
 environment_header:
-  ENVIRONMENT DIVISION TOK_DOT
+  environment DIVISION _dot
   {
 	header_check |= COBC_HD_ENVIRONMENT_DIVISION;
   }
@@ -3922,8 +3952,9 @@ _configuration_header:
 | configuration_header
 ;
 
+configuration: CONFIGURATION { check_area_a_of ("CONFIGURATION SECTION"); };
 configuration_header:
-  CONFIGURATION SECTION TOK_DOT
+  configuration SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_CONFIGURATION_SECTION;
@@ -3958,7 +3989,7 @@ _source_computer_paragraph:
 ;
 
 source_computer_paragraph:
-  SOURCE_COMPUTER TOK_DOT
+  SOURCE_COMPUTER _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
@@ -3986,7 +4017,7 @@ _with_debugging_mode:
 /* OBJECT-COMPUTER paragraph */
 
 object_computer_paragraph:
-  OBJECT_COMPUTER TOK_DOT
+  OBJECT_COMPUTER _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
@@ -4133,7 +4164,7 @@ _repository_paragraph:
 ;
 
 repository_paragraph:
-  REPOSITORY TOK_DOT
+  REPOSITORY _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
@@ -4202,7 +4233,7 @@ repository_name_list:
 /* SPECIAL-NAMES paragraph */
 
 special_names_header:
-  SPECIAL_NAMES TOK_DOT
+  SPECIAL_NAMES _dot
   {
 	check_duplicate = 0;
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
@@ -4762,7 +4793,7 @@ class_item:
 	    CB_LITERAL_P ($3) && CB_LITERAL ($3)->size != 1) {
 		cb_error (_("CLASS literal with THRU must have size 1"));
 	}
-	if (literal_value ($1) <= literal_value ($3)) {
+	if (cb_literal_value ($1) <= cb_literal_value ($3)) {
 		$$ = CB_BUILD_PAIR ($1, $3);
 	} else {
 		$$ = CB_BUILD_PAIR ($3, $1);
@@ -5055,8 +5086,9 @@ _input_output_section:
   _i_o_control
 ;
 
+input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
 _input_output_header:
-| INPUT_OUTPUT SECTION TOK_DOT
+| input_output SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_INPUT_OUTPUT_SECTION;
@@ -5066,7 +5098,7 @@ _input_output_header:
 /* FILE-CONTROL paragraph */
 
 _file_control_header:
-| FILE_CONTROL TOK_DOT
+| FILE_CONTROL _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION, 0, 0);
@@ -5079,7 +5111,8 @@ _file_control_sequence:
 ;
 
 file_control_entry:
-  SELECT flag_optional undefined_word
+  SELECT { check_non_area_a ($1); }
+  flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
 
@@ -5087,10 +5120,10 @@ file_control_entry:
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
 	check_duplicate = 0;
-	if (CB_VALID_TREE ($3)) {
+	if (CB_VALID_TREE ($4)) {
 		/* Build new file */
-		current_file = build_file ($3);
-		current_file->optional = CB_INTEGER ($2)->val;
+		current_file = build_file ($4);
+		current_file->optional = CB_INTEGER ($3)->val;
 
 		/* Add file to current program list */
 		CB_ADD_TO_CHAIN (CB_TREE (current_file),
@@ -5109,7 +5142,7 @@ file_control_entry:
   _select_clauses_or_error
   {
 	cobc_cs_check = 0;
-	if (CB_VALID_TREE ($3)) {
+	if (CB_VALID_TREE ($4)) {
 		if (current_file->organization == COB_ORG_INDEXED
 		 && key_type == RELATIVE_KEY) {
 			cb_error_x (current_file->key,
@@ -5120,7 +5153,7 @@ file_control_entry:
 				    _("cannot use RECORD KEY clause on RELATIVE files"));
 		}
 
-		validate_file (current_file, $3);
+		validate_file (current_file, $4);
 		if (cb_keycompress_pend > 0) {
 			cb_keycompress = cb_keycompress_ready;
 			cb_keycompress_pend = 0;
@@ -5491,11 +5524,11 @@ _suppress_clause:
   }
 | SUPPRESS WHEN ALL basic_value
   {
-	$$ = cb_int (literal_value ($4));
+	$$ = cb_int (cb_literal_value ($4));
   }
 | SUPPRESS WHEN space_or_zero
   {
-	$$ = cb_int (literal_value ($3));
+	$$ = cb_int (cb_literal_value ($3));
   }
 | SUPPRESS WHEN LITERAL
   {
@@ -5970,7 +6003,7 @@ _i_o_control:
 ;
 
 i_o_control_header:
-  I_O_CONTROL TOK_DOT
+  I_O_CONTROL _dot
 {
 	check_headers_present(COBC_HD_ENVIRONMENT_DIVISION,
 				 COBC_HD_INPUT_OUTPUT_SECTION, 0, 0);
@@ -6172,8 +6205,9 @@ _data_division_header:
 | data_division_header
 ;
 
+data: DATA { check_area_a_of ("DATA DIVISION"); };
 data_division_header:
-  DATA DIVISION TOK_DOT
+  data DIVISION _dot
   {
 	header_check |= COBC_HD_DATA_DIVISION;
 	cobc_in_data_division = 1;
@@ -6182,8 +6216,9 @@ data_division_header:
 
 /* FILE SECTION */
 
+tok_file: TOK_FILE { check_area_a_of ("FILE SECTION"); };
 _file_section_header:
-| TOK_FILE SECTION TOK_DOT
+| tok_file SECTION _dot
   {
 	current_storage = CB_STORAGE_FILE;
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
@@ -6248,10 +6283,12 @@ file_description_entry:
 file_type:
   FD
   {
+	check_area_a_of ("FD");
 	$$ = cb_int0;
   }
 | SD
   {
+	check_area_a_of ("SD");
 	$$ = cb_int1;
   }
 ;
@@ -6600,8 +6637,9 @@ rep_name_list:
 
 /* COMMUNICATION SECTION */
 
+communication: COMMUNICATION { check_area_a_of ("COMMUNICATION SECTION"); };
 _communication_section:
-| COMMUNICATION SECTION TOK_DOT
+| communication SECTION _dot
   {
 	current_storage = CB_STORAGE_COMMUNICATION;
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
@@ -6639,8 +6677,9 @@ communication_description:
 
 /* File description entry */
 
+cd: CD { check_area_a_of ("CD"); };
 communication_description_entry:
-  CD undefined_word
+  cd undefined_word
   {
 	/* CD internally defines a new file */
 	if (CB_VALID_TREE ($2)) {
@@ -6747,8 +6786,9 @@ unnamed_i_o_cd_clauses:
 
 /* WORKING-STORAGE SECTION */
 
+working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
-| WORKING_STORAGE SECTION TOK_DOT
+| working_storage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -6781,8 +6821,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description TOK_DOT
-| record_description_list data_description TOK_DOT
+  data_description _dot_or_else_area_a_in_data_division
+| record_description_list data_description _dot_or_else_area_a_in_data_division
 ;
 
 data_description:
@@ -6827,6 +6867,19 @@ data_description:
 
 level_number:
   not_const_word LEVEL_NUMBER
+  {
+	int level = cb_get_level ($2);
+	switch (level) {
+	case 1:
+	case 77:
+		check_area_a ($2);
+		break;
+	default:
+		break;
+	}
+	$$ = $2;
+  }
+| not_const_word LEVEL_NUMBER_IN_AREA_A
   {
 	$$ = $2;
   }
@@ -8050,11 +8103,7 @@ _occurs_keys_and_indexed:
 | occurs_keys occurs_indexed
 | occurs_indexed
   {
-	if (!cb_relaxed_syntax_checks) {
-		cb_error (_("INDEXED should follow ASCENDING/DESCENDING"));
-	} else {
-		cb_warning (cb_warn_additional, _("INDEXED should follow ASCENDING/DESCENDING"));
-	}
+	(void) cb_syntax_check (_("INDEXED should follow ASCENDING/DESCENDING"));
   }
   occurs_keys
 | occurs_indexed
@@ -8460,8 +8509,9 @@ identified_by_clause:
 
 /* LOCAL-STORAGE SECTION */
 
+local_storage: LOCAL_STORAGE { check_area_a_of ("LOCAL-STORAGE SECTION"); };
 _local_storage_section:
-| LOCAL_STORAGE SECTION TOK_DOT
+| local_storage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LOCAL_STORAGE_SECTION;
@@ -8483,8 +8533,9 @@ _local_storage_section:
 
 /* LINKAGE SECTION */
 
+linkage: LINKAGE { check_area_a_of ("LINKAGE SECTION"); };
 _linkage_section:
-| LINKAGE SECTION TOK_DOT
+| linkage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LINKAGE_SECTION;
@@ -8501,7 +8552,8 @@ _linkage_section:
 /* REPORT SECTION */
 
 _report_section:
-| REPORT SECTION TOK_DOT
+| REPORT { check_area_a_of ("REPORT SECTION"); }
+  SECTION _dot
   {
 	header_check |= COBC_HD_REPORT_SECTION;
 	current_storage = CB_STORAGE_REPORT;
@@ -8519,15 +8571,16 @@ _report_description_sequence:
 /* RD report description */
 
 report_description:
-  RD report_name
+  RD { check_area_a_of ("RD"); }
+  report_name
   {
-	if (CB_INVALID_TREE ($2)) {
+	if (CB_INVALID_TREE ($3)) {
 		YYERROR;
 	} else {
 		current_field = NULL;
 		control_field = NULL;
 		description_field = NULL;
-		current_report = CB_REPORT_PTR ($2);
+		current_report = CB_REPORT_PTR ($3);
 	}
 	check_duplicate = 0;
   }
@@ -9273,7 +9326,8 @@ group_indicate_clause:
 /* SCREEN SECTION */
 
 _screen_section:
-| SCREEN SECTION TOK_DOT
+| SCREEN { check_area_a_of ("SCREEN SECTION"); }
+  SECTION _dot
   {
 	cobc_cs_check = CB_CS_SCREEN;
 	current_storage = CB_STORAGE_SCREEN;
@@ -10395,7 +10449,8 @@ _procedure_division:
 ;
 
 procedure_division:
-  PROCEDURE DIVISION
+  PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
+  DIVISION
   {
 	current_section = NULL;
 	current_paragraph = NULL;
@@ -10406,14 +10461,14 @@ procedure_division:
 	cb_set_system_names ();
 	backup_current_pos ();
   }
-  _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning TOK_DOT
+  _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
-	cb_tree call_conv = $4;
-	if ($5) {
-		call_conv = $5;
-		if ($4) {
+	cb_tree call_conv = $5;
+	if ($6) {
+		call_conv = $6;
+		if ($5) {
 			/* note: $4 is likely to be a reference to SPECIAL-NAMES */
-			cb_error_x ($5, _("%s and %s are mutually exclusive"),
+			cb_error_x ($6, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
 	}
@@ -10430,10 +10485,10 @@ procedure_division:
 
 	cb_check_definition_matches_prototype (current_program);
   }
+  _dot_or_else_area_a
   _procedure_declaratives
   {
-
-	emit_main_entry (current_program, $6);
+	emit_main_entry (current_program, $7);
   }
   _procedure_list
   {
@@ -10481,7 +10536,9 @@ procedure_division:
 	emit_statement (CB_TREE (current_paragraph));
 	cb_set_system_names ();
   }
-  statements TOK_DOT _procedure_list
+  statements
+  _dot_or_else_area_a
+  _procedure_list
 ;
 
 _procedure_using_chaining:
@@ -10722,13 +10779,16 @@ _procedure_returning:
 ;
 
 _procedure_declaratives:
-| DECLARATIVES TOK_DOT
+| DECLARATIVES
   {
+	check_area_a_of ("DECLARATIVES");
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
+  _dot_or_else_area_a
   _procedure_list
-  END DECLARATIVES TOK_DOT
+  END { check_area_a_of ("END DECLARATIVES"); }
+  DECLARATIVES
   {
 	if (needs_field_debug) {
 		start_debug = 1;
@@ -10754,6 +10814,7 @@ _procedure_declaratives:
 	emit_statement (cb_build_comment ("END DECLARATIVES"));
 	check_unreached = 0;
   }
+  _dot_or_else_area_a
 ;
 
 
@@ -10784,7 +10845,7 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
-  TOK_DOT
+  _dot_or_else_area_a
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT
   {
@@ -10796,8 +10857,20 @@ procedure:
 
 /* Section/Paragraph */
 
+proc_name:
+  WORD_IN_AREA_A
+  {
+	$$ = $1;
+  }
+| WORD
+  {
+	check_area_a ($1);
+	$$ = $1;
+  }
+;
+
 section_header:
-  WORD SECTION
+  proc_name SECTION
   {
 	non_const_word = 0;
 	check_unreached = 0;
@@ -10848,7 +10921,7 @@ _use_statement:
 ;
 
 paragraph_header:
-  WORD TOK_DOT
+  proc_name TOK_DOT
   {
 	cb_tree label;
 
@@ -10893,18 +10966,21 @@ paragraph_header:
 ;
 
 invalid_statement:
-  WORD
+  WORD error	  /* error is required here to avoid a reduce/reduce conflict */
   {
 	non_const_word = 0;
 	check_unreached = 0;
 	if (cb_build_section_name ($1, 0) != cb_error_node) {
 		if (is_reserved_word (CB_NAME ($1))) {
-			cb_error_x ($1, _("'%s' is not a statement"), CB_NAME ($1));
+			cb_note_x (COB_WARNOPT_NONE, $1,
+				   _("'%s' is not a statement"), CB_NAME ($1));
 		} else if (is_default_reserved_word (CB_NAME ($1))) {
-			cb_error_x ($1, _("unknown statement '%s'; it may exist in another dialect"),
-				    CB_NAME ($1));
+			cb_note_x (COB_WARNOPT_NONE, $1,
+				   _("unknown statement '%s'; it may exist in another dialect"),
+				   CB_NAME ($1));
 		} else {
-			cb_error_x ($1, _("unknown statement '%s'"), CB_NAME ($1));
+			cb_note_x (COB_WARNOPT_NONE, $1,
+				   _("unknown statement '%s'"), CB_NAME ($1));
 		}
 	}
 	YYERROR;
@@ -11032,6 +11108,7 @@ statement:
 | enable_statement
 | entry_statement
 | evaluate_statement
+| examine_statement
 | exhibit_statement
 | exit_statement
 | free_statement
@@ -11082,7 +11159,8 @@ statement:
 | xml_generate_statement
 | xml_parse_statement
 | %prec SHIFT_PREFER
-  NEXT SENTENCE
+  NEXT { check_non_area_a ($1); }
+  SENTENCE
   {
 	if (cb_verify (cb_next_sentence_phrase, "NEXT SENTENCE")) {
 		cb_tree label;
@@ -12821,7 +12899,6 @@ field_or_literal_or_erase_list:
   }
 ;
 
-
 field_or_literal_or_erase:
   identifier
 | basic_literal
@@ -12832,7 +12909,6 @@ field_or_literal_or_erase:
 	$$ = cb_space;
   }
 ;
-
 
 display_message_box:
   MESSAGE _box x_list
@@ -13278,15 +13354,16 @@ enable_statement:
 
 /* ENTRY statement */
 
+entry: ENTRY { check_non_area_a ($1); };
 entry_statement:
-  ENTRY
+  entry
   {
 	check_unreached = 0;
 	begin_statement (STMT_ENTRY, 0);
 	backup_current_pos ();
   }
   entry_body
-| ENTRY FOR GO TO
+| entry FOR GO TO
   {
 	check_unreached = 0;
 	begin_statement (STMT_ENTRY_FOR_GO_TO, 0);
@@ -14167,7 +14244,7 @@ inspect_statement:
   INSPECT
   {
 	begin_statement (STMT_INSPECT, 0);
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
   }
   inspect_body
 ;
@@ -14199,6 +14276,135 @@ inspect_format_variant:
 | inspect_converting
 ;
 
+/* EXAMINE statement */
+
+examine_statement:
+  EXAMINE
+  {
+	begin_statement (STMT_EXAMINE, 0);
+  }
+  send_identifier
+  examine_format_variant
+;
+
+examine_format_variant:
+  TALLYING
+  {
+	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
+	cb_emit_initialize (CB_LIST_INIT (tally), NULL, cb_int0, NULL, NULL);
+	cb_init_tallying ();
+	cb_build_tallying_data (tally);
+  }
+  examine_tallying_keyword single_character_value
+  _examine_tallying_replacing
+  {
+	cb_tree x = $4, replacing_to = $5;
+	cb_tree t, r = cb_build_inspect_region_start ();
+	switch (examine_keyword.tallying) {
+	case EXAMINE_TAL_ALL:
+		cb_build_tallying_all ();
+		t = cb_build_tallying_value (x, r);
+		break;
+	case EXAMINE_TAL_LEADING:
+		cb_build_tallying_leading ();
+		t = cb_build_tallying_value (x, r);
+		break;
+	case EXAMINE_TAL_UNTIL_FIRST:
+		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+		t = cb_build_tallying_characters (r);
+		break;
+	/* LCOV_EXCL_START */
+	default:
+		/* This should never happen (and therefore doesn't get a translation) */
+		cb_error ("unexpected EXAMINE TALLYING %d", examine_keyword.tallying);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
+	}
+	cb_emit_inspect ($0, t, TALLYING_CLAUSE);
+	if (replacing_to) {
+		r = cb_build_inspect_region_start ();
+		switch (examine_keyword.tallying) {
+		case EXAMINE_TAL_ALL:
+			t = cb_build_replacing_all (x, replacing_to, r);
+			break;
+		case EXAMINE_TAL_LEADING:
+			t = cb_build_replacing_leading (x, replacing_to, r);
+			break;
+		case EXAMINE_TAL_UNTIL_FIRST:
+			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+			t = cb_build_replacing_characters (replacing_to, r);
+			break;
+		}
+		cb_emit_inspect ($0, t, REPLACING_CLAUSE);
+	}
+  }
+| REPLACING examine_replacing_keyword
+  single_character_value BY single_character_value
+  {
+	cb_tree from = $3, to = $5;
+	cb_tree t = NULL, r = cb_build_inspect_region_start ();
+	switch (examine_keyword.replacing) {
+	case EXAMINE_REP_ALL:
+		t = cb_build_replacing_all (from, to, r);
+		break;
+	case EXAMINE_REP_LEADING:
+		t = cb_build_replacing_leading (from, to, r);
+		break;
+	case EXAMINE_REP_FIRST:
+		t = cb_build_replacing_first (from, to, r);
+		break;
+	case EXAMINE_REP_UNTIL_FIRST:
+		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
+		t = cb_build_replacing_characters (to, r);
+		break;
+	/* LCOV_EXCL_START */
+	default:
+		/* This should never happen (and therefore doesn't get a translation) */
+		cb_error ("unexpected EXAMINE REPLACING %d", examine_keyword.replacing);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
+	}
+	cb_emit_inspect ($0, t, REPLACING_CLAUSE);
+  }
+;
+
+examine_tallying_keyword:
+  ALL			{ examine_keyword.tallying = EXAMINE_TAL_ALL; }
+| LEADING		{ examine_keyword.tallying = EXAMINE_TAL_LEADING; }
+| UNTIL FIRST		{ examine_keyword.tallying = EXAMINE_TAL_UNTIL_FIRST; }
+;
+
+examine_replacing_keyword:
+  ALL			{ examine_keyword.replacing = EXAMINE_REP_ALL; }
+| LEADING		{ examine_keyword.replacing = EXAMINE_REP_LEADING; }
+| FIRST			{ examine_keyword.replacing = EXAMINE_REP_FIRST; }
+| UNTIL FIRST		{ examine_keyword.replacing = EXAMINE_REP_UNTIL_FIRST; }
+;
+
+_examine_tallying_replacing:
+  /* empty */				{ $$ = NULL; }
+| REPLACING BY single_character_value	{ $$ = $3; }
+;
+
+single_character_value:
+  alphabet_lits
+  {
+	if (CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
+		cb_error_x ($1, _("single-character literal or data item expected"));
+	}
+	$$ = $1;
+  }
+| qualified_word
+  {
+	struct cb_reference * const r =
+		CB_REFERENCE_P ($1) ? CB_REFERENCE ($1) : NULL;
+	if (!r || CB_FIELD_PTR ($1)->size != 1) {
+		cb_error_x ($1, _("single-character literal or data item expected"));
+	}
+	$$ = $1;
+  }
+;
+
 /* INSPECT TALLYING */
 
 inspect_tallying:
@@ -14226,7 +14432,7 @@ inspect_replacing:
   REPLACING replacing_list
   {
 	cb_emit_inspect ($0, $2, REPLACING_CLAUSE);
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
   }
 ;
 
@@ -14293,7 +14499,7 @@ replacing_item:
   CHARACTERS BY simple_display_value inspect_region
   {
 	$$ = cb_build_replacing_characters ($3, $4);
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
   }
 | rep_keyword replacing_region
   {
@@ -14303,33 +14509,33 @@ replacing_item:
 
 rep_keyword:
   /* empty */
-| ALL				{ inspect_keyword = 1; }
-| LEADING			{ inspect_keyword = 2; }
-| FIRST				{ inspect_keyword = 3; }
-| TRAILING			{ inspect_keyword = 4; }
+| ALL				{ inspect_keyword = INSPECT_REP_ALL; }
+| LEADING			{ inspect_keyword = INSPECT_REP_LEADING; }
+| FIRST				{ inspect_keyword = INSPECT_REP_FIRST; }
+| TRAILING			{ inspect_keyword = INSPECT_REP_TRAILING; }
 ;
 
 replacing_region:
   inspect_from BY inspect_to inspect_region
   {
 	switch (inspect_keyword) {
-		case 1:
-			$$ = cb_build_replacing_all ($1, $3, $4);
-			break;
-		case 2:
-			$$ = cb_build_replacing_leading ($1, $3, $4);
-			break;
-		case 3:
-			$$ = cb_build_replacing_first ($1, $3, $4);
-			break;
-		case 4:
-			$$ = cb_build_replacing_trailing ($1, $3, $4);
-			break;
-		default:
-			cb_error_x (CB_TREE (current_statement),
-				    _("INSPECT missing ALL/FIRST/LEADING/TRAILING"));
-			$$ = cb_build_replacing_all ($1, $3, $4);
-			break;
+	case INSPECT_REP_ALL:
+		$$ = cb_build_replacing_all ($1, $3, $4);
+		break;
+	case INSPECT_REP_LEADING:
+		$$ = cb_build_replacing_leading ($1, $3, $4);
+		break;
+	case INSPECT_REP_FIRST:
+		$$ = cb_build_replacing_first ($1, $3, $4);
+		break;
+	case INSPECT_REP_TRAILING:
+		$$ = cb_build_replacing_trailing ($1, $3, $4);
+		break;
+	default:
+		cb_error_x (CB_TREE (current_statement),
+			    _("INSPECT missing ALL/FIRST/LEADING/TRAILING"));
+		$$ = cb_build_replacing_all ($1, $3, $4);
+		break;
 	}
   }
 ;
@@ -14375,8 +14581,9 @@ inspect_after:
 
 /* JSON GENERATE statement */
 
+json: JSON { check_non_area_a ($1); };
 json_generate_statement:
-  JSON GENERATE
+  json GENERATE
   {
 	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
@@ -14437,7 +14644,7 @@ _end_json:
 /* JSON PARSE statement */
 
 json_parse_statement:
-  JSON PARSE
+  json PARSE
   {
 	begin_statement (STMT_JSON_PARSE, TERM_JSON);
 	CB_PENDING ("JSON PARSE");
@@ -15311,14 +15518,15 @@ rollback_statement:
 
 /* SEARCH statement */
 
+search: SEARCH { check_non_area_a ($1); };
 search_statement:
-  SEARCH
+  search
   {
 	begin_statement (STMT_SEARCH, TERM_SEARCH);
   }
   search_body
   _end_search
-| SEARCH ALL
+| search ALL
   {
 	begin_statement (STMT_SEARCH_ALL, TERM_SEARCH);
   }
@@ -15964,8 +16172,9 @@ transaction:
 
 /* STOP statement */
 
+stop: STOP { check_non_area_a ($1); };
 stop_statement:
-  STOP RUN
+  stop RUN
   {
 	begin_statement (STMT_STOP_RUN, 0);
 	cobc_cs_check = CB_CS_STOP;
@@ -15976,14 +16185,14 @@ stop_statement:
 	check_unreached = 1;
 	cobc_cs_check = 0;
   }
-| STOP ERROR /* GCOS */
+| stop ERROR /* GCOS */
   {
 	begin_statement (STMT_STOP_ERROR, 0);
 	cb_verify (cb_stop_error_statement, cb_statement_name[STMT_STOP_ERROR]);
 	cb_emit_stop_error ();
 	check_unreached = 1;
   }
-| STOP stop_argument
+| stop stop_argument
   {
 	begin_statement (STMT_STOP, 0);
 	cb_emit_display (CB_LIST_INIT ($2), cb_int0, cb_int1, NULL,
@@ -15991,7 +16200,7 @@ stop_statement:
 	cb_emit_accept (cb_null, NULL, NULL);
 	cobc_cs_check = 0;
   }
-| STOP thread_reference_optional
+| stop thread_reference_optional
   {
 	begin_statement (STMT_STOP_THREAD, 0);
 	cb_emit_stop_thread ($2);
@@ -16182,7 +16391,8 @@ _end_subtract:
 /* SUPPRESS statement */
 
 suppress_statement:
-  SUPPRESS _printing
+  SUPPRESS { check_non_area_a ($1); }
+  _printing
   {
 	begin_statement (STMT_SUPPRESS, 0);
 	if (!in_declaratives) {
@@ -16773,8 +16983,9 @@ _end_write:
 
 /* XML GENERATE statement */
 
+xml: XML { check_non_area_a ($1); };
 xml_generate_statement:
-  XML GENERATE
+  xml GENERATE
   {
 	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
@@ -17062,7 +17273,7 @@ _end_xml:
 /* XML PARSE statement */
 
 xml_parse_statement:
-  XML PARSE
+  xml PARSE
   {
 	begin_statement (STMT_XML_PARSE, TERM_XML);
 	CB_PENDING ("XML PARSE");
@@ -19404,6 +19615,39 @@ scope_terminator:
 | END_UNSTRING
 | END_WRITE
 | END_XML
+;
+
+_dot:
+  TOK_DOT
+| {
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
+  }
+;
+
+_dot_or_else_area_a:
+  TOK_DOT
+| TOKEN_EOF
+  {
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
+  }
+| WORD_IN_AREA_A
+  {
+	/* No need to raise the error for *_IN_AREA_A tokens */
+	(void) cb_verify (cb_missing_period, _("optional period"));
+	cobc_repeat_last_token = 1;
+  }
+;
+
+_dot_or_else_area_a_in_data_division:
+  TOK_DOT
+| LEVEL_NUMBER_IN_AREA_A
+  {
+	/* No need to raise the error for *_IN_AREA_A tokens */
+	(void) cb_verify (cb_missing_period, _("optional period"));
+	cobc_repeat_last_token = 1;
+  }
 ;
 
 /* Mandatory/Optional keyword selection without actions */

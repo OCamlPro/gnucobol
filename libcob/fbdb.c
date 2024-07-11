@@ -1492,6 +1492,7 @@ ix_bdb_close (cob_file_api *a, cob_file *f, const int opt)
 		bdb_env->lock_id_free (bdb_env, p->bdb_lock_id);
 	}
 	cob_free (p);
+	f->file = NULL;
 
 	return COB_STATUS_00_SUCCESS;
 }

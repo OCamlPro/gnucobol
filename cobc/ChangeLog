@@ -208,6 +208,64 @@
 	* codegen.c (output_perform_call): allow label end to be NULL if
 	  there is no PERFORM THRU, adjusted callers to not pass duplicate labels
 
+2022-09-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_abort_msg): use negative cb_source_line to reference
+	  last known position during codegen
+	* codegen.c (output_stmt): store source reference if generated
+	  statement has one attached
+	* codegen.c (output_standard_includes): fix bug #708 missing math
+	  header inclusion if first program has no decimal
+	* codegen.c (output_data, output_call): fix bug #855 CALL generation
+	  when using figurative constants
+	* codegen.c: correct use of CB_PREFIX_DECIMAL -> generated code now has
+	  "d_" prefix instead of "d" in all places
+	* cobc.h, tree.h: moved some function declarations
+	* tree.c, tree.h (cb_literal_value), codegen.c, parser.y: moved double
+	  and identical defined function literal_value to a single place
+	* codegen.c, tree.h, cobc.c: renamed cb_init_codegen
+	  to clear_local_codegen_vars
+	* cobc.c: ask user for reporting reallocation memory issues
+
+2022-09-26  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* error.c (cb_syntax_check, cb_syntax_check_x): add variants of
+	  cb_{error,warning}[_x] functions with explicit va_list, and new helper
+	  functions to dispach to errors or warnings w.r.t
+	  cb_relaxed_syntax_checks
+	* scanner.l, parser.l: make Area A enforcement raise errors instead of
+	  warnings on strict dialects
+	* parser.y: add missing Area A check on SELECT and CD
+	* parser.y, typeck.c: simplify some uses of cb_relaxed_syntax_checks
+	* pplex.l: drop `>>(NO)AREACHECK` directives
+	* config.def: improve documentation for areacheck option
+
+2022-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (examine_format_variant): fix compiler warning
+
+2022-09-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #360 AREACHECK
+	FR #309 raise warnings/errors when some periods are missing
+	* config.def: add dialect options areacheck and missing-period
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	  dedicated *_IN_AREA_A tokens to detect missing periods and incorrect
+	  use of Area A
+	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK
+	  directives
+	* pplex.l (cobc_has_areacheck_directive): new helper function
+	* pplex.l (count_newlines): new helper function
+	* parser.y (check_area_a, check_non_area_a): new functions for Area A
+	  checks
+	* parser.y (begin_statement): check statement does not start in Area A
+	* parser.y: support some missing periods
+
+2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #18 support EXAMINE statement
+	* parser.y: add missing options for EXAMINE statement
+
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (copy_literal): inlined into literal handling and added
@@ -253,6 +311,11 @@
 	* config.def, parser.y, codegen.c: added cb_xml_parse_xmlss, passed
 	  to runtime as module->xml_mode
 
+2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y, reserved.c: add support for EXAMINE statement (TALLYING
+	  LEADING only)
+
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* flag.def, config.def: make format a dialect option instead of a flag
@@ -273,6 +336,9 @@
 	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
 	  to parsing
 	* tree.c, typeck.c: msgid change for -Wunsupported
+	* reserved.c (add_reserved_word): fixed theoretical additions of
+	  reserved=alias longer than 32 characters
+	* typeck.c (cb_build_const_next): minor refactoring to get field founder
 
 2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -666,6 +732,8 @@
 	  cb_search to at_end, storing pair of AT END (position) and statements
 	* codegen.c (output_search_whens, output_search_all): adjust output of
 	  source references for better debugging experience and add AT END tracing
+	* typeck.c: Remove ERROR for REWRITE an INPUT-OUTPUT of LINE SEQUENTIAL
+	            This has been supported for a while in rw/trunk
 
 2021-12-30  Ron Norman <rjn@inglenet.com>
 
@@ -779,12 +847,11 @@
 2021-11-01  Ron Norman <rjn@inglenet.com>
 
 	* typeck.c (cb_emit_write): For LINE SEQUENTIAL, default WRITE with no
-				ADVANCING to AFTER ADVANCING 1 LINE
+	  ADVANCING to AFTER ADVANCING 1 LINE
 
 2021-10-30  Ron Norman <rjn@inglenet.com>
 
-	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to 
-				LINE ADVANCING
+	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to LINE ADVANCING
 
 2021-10-23  Simon Sobisch <simonsobisch@gnu.org>
 

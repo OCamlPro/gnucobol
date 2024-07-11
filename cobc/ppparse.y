@@ -643,6 +643,8 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token SET_DIRECTIVE
 %token ADDRSV
 %token ADDSYN
+%token AREACHECK
+%token NOAREACHECK
 %token ASSIGN
 %token BOUND
 %token CALLFH
@@ -878,6 +880,12 @@ set_choice:
 		fprintf (ppout, "#ADDSYN %s %s\n", l->text, l->next->text);
 	}
   }
+| AREACHECK
+  {
+	if (cobc_has_areacheck_directive ("AREACHECK")) {
+		fprintf (ppout, "#AREACHECK\n");
+	}
+  }
 | ASSIGN unquoted_literal
   {
 	char	*p = $2;
@@ -970,6 +978,12 @@ set_choice:
 | MAKESYN alnum_equality
   {
 	fprintf (ppout, "#MAKESYN %s %s\n", $2->text, $2->next->text);
+  }
+| NOAREACHECK
+  {
+	if (cobc_has_areacheck_directive ("NOAREACHECK")) {
+		fprintf (ppout, "#NOAREACHECK\n");
+	}
   }
 | NOBOUND
   {

@@ -2161,6 +2161,7 @@ extern cb_tree		cb_build_ml_tree (struct cb_field *, const int,
 					   cb_tree);
 extern cb_tree		cb_build_ml_suppress_checks (struct cb_ml_generate_tree *);
 
+extern int		cb_literal_value (cb_tree);
 
 /* parser.y */
 extern int		non_const_word;
@@ -2176,6 +2177,9 @@ extern unsigned int	cobc_cs_check;
 extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
 extern unsigned int	cobc_in_json_generate_body;
+extern unsigned int	cobc_areacheck;
+extern unsigned int	cobc_in_area_a;	      /* set by scanner only */
+extern unsigned int	cobc_still_in_area_a; /* raised by parser only */
 
 /* reserved.c */
 extern int			is_reserved_word (const char *);
@@ -2204,6 +2208,8 @@ extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_
 extern void		cb_inclusion_note (const char *, int);
 extern char		*cb_get_qualified_name (const struct cb_reference *);
 extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern unsigned int	cb_syntax_check (const char *, ...) COB_A_FORMAT12;
+extern unsigned int	cb_syntax_check_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
 extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);
@@ -2499,12 +2505,15 @@ extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
 					      const int, const enum cb_tag);
 #endif
 
+/* codeoptim.c */
+extern void		cob_gen_optim (const enum cb_optim);
 
 /* codegen.c */
 extern void		codegen (struct cb_program *, const char *);
+extern void		clear_local_codegen_vars (void);
 extern struct cb_field *chk_field_variable_size (struct cb_field *f);
 extern unsigned int	chk_field_variable_address (struct cb_field *fld);
-extern struct cb_field * cb_code_field (cb_tree x);
+extern struct cb_field *cb_code_field (cb_tree x);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
 /* scanner.l */
@@ -2519,6 +2528,10 @@ extern struct cb_program	*cb_find_defined_program_by_id (const char *);
 
 extern void		cb_validate_parameters_and_returning (struct cb_program *, cb_tree);
 extern void		cb_check_definition_matches_prototype (struct cb_program *);
+
+/* parser (in scanner.l) */
+extern void		ylex_clear_all (void);
+extern void		ylex_call_destroy (void);
 
 /* cobc.c */
 #ifndef COB_EXTERNAL_XREF
@@ -2536,6 +2549,9 @@ extern void			cobc_xref_call (const char *, const int, const int, const int);
 #endif
 extern void			cobc_xref_set_receiving (const cb_tree);
 extern unsigned int		cb_correct_program_order;
+
+/* pplex.l */
+extern int		cobc_has_areacheck_directive (const char *directive);
 
 /* Function defines */
 

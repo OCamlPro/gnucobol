@@ -126,6 +126,7 @@ record-delimiter:			ok
 sequential-delimiters:			ok
 record-delim-with-fixed-recs:		ok
 missing-statement:			+warning
+missing-period:				+warning
 zero-length-literals:			ok
 xml-generate-extra-phrases:		ok
 continue-after:				warning
@@ -145,6 +146,9 @@ picture-l:				+warning
 # (vendor specific, currently not supported words are
 # loaded by *including* the appropriate word list)
 reserved-words:		default
+
+# enable EXAMINE statements
+reserved:		EXAMINE
 
 # enable all intrinsic functions
 intrinsic-function:	DIALECT-ALL

@@ -55,7 +55,7 @@ COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
 
-# test runner for manual tests, content may be changed by the user
+# test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
 
 # unset option if not internally set in this script
@@ -119,7 +119,7 @@ for cobenv in $(${LOCAL_ENV} ${COBCRUN} --runtime-conf \
 done
 
 # prevent multiple calls by caching the output
-${LOCAL_ENV} ${COBC} --info > info.out
+${LOCAL_ENV} ${COBC} --verbose --info > info.out
 
 # ... and also unset for the compiler
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
@@ -217,7 +217,4 @@ COB_SCHEMA_DIR="." && export COB_SCHEMA_DIR
 DB_HOME="" && export DB_HOME
 
 # For the very rare cases where cobc/libcob may need to know if they're running in test mode:
-case $0 in
-	*/testsuite) COB_IS_RUNNING_IN_TESTMODE=1 && export COB_IS_RUNNING_IN_TESTMODE;;
-	*)	unset COB_IS_RUNNING_IN_TESTMODE;;
-esac
+COB_IS_RUNNING_IN_TESTMODE=1 && export COB_IS_RUNNING_IN_TESTMODE

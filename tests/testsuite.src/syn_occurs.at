@@ -94,7 +94,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting .
+[prog.cob:7: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
 ])
 
 AT_CLEANUP
@@ -112,7 +112,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: error: syntax error, unexpected OCCURS, expecting .
+[prog.cob:6: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
 ])
 
 AT_CLEANUP
@@ -133,8 +133,9 @@ AT_DATA([prog.cob], [
 # note: the message is from level-88 content-validation entry format,
 #       which is mixed in the parser (as it may be used as) condition format
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting INVALID or VALID
+[prog.cob:7: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
 ])
+
 
 AT_CLEANUP
 
@@ -395,7 +396,7 @@ prog.cob:12: error: 'MISSING' is not defined
 AT_CHECK([$COMPILE_ONLY -frelax-syntax prog.cob], [1], [],
 [prog.cob:8: warning: OCCURS DEPENDING ON without TO phrase used
 prog.cob:10: warning: TO phrase without DEPENDING phrase
-prog.cob:10: warning: maximum number of occurrences assumed to be exact number
+prog.cob:10: note: maximum number of occurrences assumed to be exact number
 prog.cob:12: error: 'MISSING' is not defined
 ])
 

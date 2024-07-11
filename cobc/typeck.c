@@ -2324,12 +2324,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			/* Absolute limit */
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
-		} else if (!cb_relaxed_syntax_checks) {
-			cb_error (_("word length exceeds %d characters: '%s'"),
-				  cb_word_length, word);
 		} else {
-			cb_warning (cb_warn_additional, _("word length exceeds %d characters: '%s'"),
-				  cb_word_length, word);
+			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+						cb_word_length, word);
 		}
 	}
 }
@@ -2717,14 +2714,10 @@ cb_build_identifier (cb_tree x, const int subchk)
 				if (CB_LITERAL_P (sub)) {
 					n = cb_get_int (sub);
 					if (n < 1 || (!p->flag_unbounded && n > p->occurs_max)) {
-						if (cb_relaxed_syntax_checks) {
-							cb_warning_x (COBC_WARN_FILLER, x,
-								_("subscript of '%s' out of bounds: %d"),
-								name, n);
+						if (cb_syntax_check_x (x, _("subscript of '%s' out of bounds: %d"),
+								       name, n)) {
 							continue;	/* *skip runtime check, as MF does */
 						}
-						cb_error_x (x, _("subscript of '%s' out of bounds: %d"),
-								name, n);
 					}
 				}
 
@@ -3118,16 +3111,11 @@ cb_build_const_next (struct cb_field *f)
 	}
 
 	if (previous->storage != CB_STORAGE_FILE
-	 && previous->storage != CB_STORAGE_LINKAGE) {
-		p = previous;
-		while (p->parent) {
-			p = p->parent;
-		}
-		if (!p->flag_external) {
-			cb_error (_("VALUE of '%s': %s target is invalid"), f->name, "NEXT");
-			cb_error (_("target must be in FILE SECTION or LINKAGE SECTION or have the EXTERNAL clause"));
-			return cb_build_numeric_literal (0, "1", 0);
-		}
+	 && previous->storage != CB_STORAGE_LINKAGE
+	 && !cb_field_founder(previous)->flag_external) {
+		cb_error (_("VALUE of '%s': %s target is invalid"), f->name, "NEXT");
+		cb_error (_("target must be in FILE SECTION or LINKAGE SECTION or have the EXTERNAL clause"));
+		return cb_build_numeric_literal (0, "1", 0);
 	}
 
 	/*
@@ -8708,10 +8696,10 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 		if (CB_TREE_CLASS (returning) != CB_CLASS_NUMERIC &&
 		    CB_TREE_CLASS (returning) != CB_CLASS_POINTER) {
 			cb_error_x (CB_TREE (current_statement),
-				    _("invalid RETURNING field"));
-			return;
+					_("invalid RETURNING field"));
+				return;
+			}
 		}
-	}
 
 	error_ind = 0;
 
@@ -13030,9 +13018,9 @@ cb_emit_rewrite (cb_tree record, cb_tree from, cb_tree lockopt)
 		cb_error_x (CB_TREE (current_statement),
 				_("%s not allowed on %s files"), "REWRITE", "REPORT");
 		return;
-	} else if (current_statement->handler_type == INVALID_KEY_HANDLER
-			&& f->organization != COB_ORG_RELATIVE
-			&& f->organization != COB_ORG_INDEXED) {
+	} else if (current_statement->handler_type == INVALID_KEY_HANDLER &&
+		  (f->organization != COB_ORG_RELATIVE &&
+		   f->organization != COB_ORG_INDEXED)) {
 			cb_error_x (CB_TREE(current_statement),
 			_("INVALID KEY clause invalid with this file type"));
 		return;

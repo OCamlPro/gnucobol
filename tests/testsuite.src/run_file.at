@@ -2803,7 +2803,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
        01  whatever PIC X(10) VALUE "out.txt".
-       
+
        PROCEDURE DIVISION.
            OPEN OUTPUT f
            WRITE f-rec FROM "hi"
@@ -4477,7 +4477,7 @@ AT_DATA([prog.cob], [
            Display "read next".
            Read tbw
                next record
-               at end 
+               at end
                  Display "read next end"
                  Go to tbw-exit
                not at end
@@ -4582,7 +4582,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED sample])
-AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START])
+AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START COB_SYNC])
 
 # modified version of GC-FAQ: indexing example
 # Author: Brian Tiffin, Date:   17-Feb-2009, 28-Jan-2014
@@ -4987,6 +4987,50 @@ rewriting key: 12349865
 rewriting key: 98651234
 ])
 
+# recheck with COB_SYNC to cover additional code paths - see bug # 753
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0],
+[Read all 00b02 keys sequentially
+Reading: 00b02
+    12345679  00 b 02, some 12345679 data
+    97654321  00 b 02, some 97654321 data
+    12349765  00 b 02, some 12349765 data
+    97651234  00 b 02, some 97651234 data
+-----------------------------------------
+Read all alternate keys greater than 00a02
+Seeking >= 00a02
+    12345679  00 b 02, some 12345679 data
+    97654321  00 b 02, some 97654321 data
+    12349765  00 b 02, some 12349765 data
+    97651234  00 b 02, some 97651234 data
+    12345689  00 c 13, some 12345689 data
+    98654321  00 c 13, some 98654321 data
+    12349865  00 c 13, some 12349865 data
+    98651234  00 c 13, some 98651234 data
+-----------------------------------------
+Read all primary keys less than 87654321
+Prime < 87654321
+    87651234  00 a 01, some 87651234 data
+    12349865  00 c 13, some 12349865 data
+    12349765  00 b 02, some 12349765 data
+    12348765  00 a 01, some 12348765 data
+    12345689  00 c 13, some 12345689 data
+    12345679  00 b 02, some 12345679 data
+    12345678  00 a 01, some 12345678 data
+-----------------------------------------
+],
+[rewriting key: 12345678
+rewriting key: 87654321
+rewriting key: 12348765
+rewriting key: 87651234
+rewriting key: 12345679
+rewriting key: 97654321
+rewriting key: 12349765
+rewriting key: 97651234
+rewriting key: 12345689
+rewriting key: 98654321
+rewriting key: 12349865
+rewriting key: 98651234
+])
 
 AT_CHECK([test "$COB_HAS_ISAM" = "db"], [0], [], [],
 # Previous test "failed" --> other ISAM, no need for more checks
@@ -5043,7 +5087,7 @@ AT_CLEANUP
 
 
 AT_SETUP([WRITE + REWRITE FILE name])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile RELATIVE COB_SYNC])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -5087,7 +5131,7 @@ AT_DATA([prog.cob], [
 
        78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(4).
+       77  REC-NUM           VALUE  1          BINARY-SHORT UNSIGNED.
 
        01  TEST-DATA.
 
@@ -5135,7 +5179,7 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             BINARY-SHORT.
+           05  SUB                             BINARY-SHORT UNSIGNED.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -5186,6 +5230,14 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Loading sample program data file.
+Sample program data file load complete.
+Read    BET00000 Sts:00 Trms:0013
+REWROTE BET00000 Sts:00 Trms:0014
+], [])
+
+# recheck with COB_SYNC to cover additional code paths
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
 Sample program data file load complete.
 Read    BET00000 Sts:00 Trms:0013
@@ -6258,7 +6310,7 @@ AT_CLEANUP
 ### TO-DO: Already in run_extensions.at.
 
 AT_SETUP([SEQUENTIAL basic I/O])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile READ WRITE REWRITE COB_SYNC])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6277,22 +6329,34 @@ AT_DATA([prog.cob], [
            MOVE "A" TO file1-rec.
            WRITE file1-rec.
            CLOSE file1.
+           OPEN I-O file1.
+           READ file1.
+           IF file1-rec <> "A"
+              display "FIRST READ FAILED"
+           ELSE
+              MOVE "X" TO file1-rec
+              REWRITE file1-rec.
+           CLOSE file1.
+           IF file1-rec NOT = "X"
+              STOP RUN.
            OPEN INPUT file1.
            READ file1.
-           IF (file1-rec <> "A")
-              display "FAILED".
+           IF file1-rec <> "X"
+              display "SECOND READ FAILED".
            CLOSE file1.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0])
+# recheck with COB_SYNC to cover additional code paths
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL basic I/O])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile READ WRITE REWRITE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6485,11 +6549,11 @@ AT_DATA([prog.cob], [
            SELECT INFILE     ASSIGN TO EXTERNAL INFILE
                 ORGANIZATION IS LINE SEQUENTIAL
                 FILE STATUS  IS INPUT-STATUS .
-      
+
            SELECT OUTFILE   ASSIGN TO EXTERNAL OUTFILE
                 ORGANIZATION IS LINE SEQUENTIAL
                 FILE STATUS  IS INPUT-STATUS .
-      
+
        DATA DIVISION.
        FILE SECTION.
        FD INFILE
@@ -6497,43 +6561,43 @@ AT_DATA([prog.cob], [
              DEPENDING ON INPUT-LEN
             .
        01  INPUT-REC           PIC X(40).
-      
+
        FD OUTFILE
              RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
              DEPENDING ON INPUT-LEN
             .
        01  OUTPUT-REC          PIC X(40).
-      
+
        WORKING-STORAGE SECTION.
-      
+
        01  OUTPUT-FILE         PIC X(19)     VALUE 'TEST-FILE'.
        01  INPUT-FILE          PIC X(19)     VALUE 'TEST-INP'.
        01  INPUT-STATUS        PIC XX.
        01  INPUT-LEN           PIC 999  VALUE 18 .
-      
+
        PROCEDURE DIVISION.
        A000-BEGIN.
            OPEN INPUT INFILE.
            READ INFILE
-           DISPLAY " Read 1: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 1: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           DISPLAY "       :" INPUT-REC ":" 
+           DISPLAY "       :" INPUT-REC ":"
            READ INFILE
-           DISPLAY " Read 2: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 2: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           DISPLAY "       :" INPUT-REC ":" 
+           DISPLAY "       :" INPUT-REC ":"
            MOVE 0 TO INPUT-LEN
            READ INFILE
-           DISPLAY " Read 3: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 3: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           DISPLAY "       :" INPUT-REC ":" 
+           DISPLAY "       :" INPUT-REC ":"
            MOVE SPACES TO INPUT-REC
            MOVE 0 TO INPUT-LEN
            READ INFILE
-           DISPLAY " Read 4: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 4: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
            IF INPUT-STATUS = "00"
-               DISPLAY "       :" INPUT-REC ":" 
+               DISPLAY "       :" INPUT-REC ":"
            END-IF
            CLOSE INFILE
 
@@ -6541,14 +6605,14 @@ AT_DATA([prog.cob], [
            MOVE 9 TO INPUT-LEN
            MOVE "Record 1............." TO OUTPUT-REC
            WRITE OUTPUT-REC
-           DISPLAY "Write 1: STATUS IS " INPUT-STATUS 
+           DISPLAY "Write 1: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
                              UPON CONSOLE
            MOVE 64 TO INPUT-LEN
            MOVE ALL '.' TO OUTPUT-REC
            MOVE "Record 2" TO OUTPUT-REC (1:8)
            WRITE OUTPUT-REC
-           DISPLAY "Write 2: STATUS IS " INPUT-STATUS 
+           DISPLAY "Write 2: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
                              UPON CONSOLE
            CLOSE OUTFILE
@@ -6601,11 +6665,11 @@ AT_DATA([prog.cob], [
            SELECT INFILE     ASSIGN TO EXTERNAL INFILE
                 ORGANIZATION IS LINE SEQUENTIAL
                 FILE STATUS  IS INPUT-STATUS .
-      
+
            SELECT OUTFILE   ASSIGN TO EXTERNAL OUTFILE
                 ORGANIZATION IS LINE SEQUENTIAL
                 FILE STATUS  IS INPUT-STATUS .
-      
+
        DATA DIVISION.
        FILE SECTION.
        FD INFILE
@@ -6613,43 +6677,43 @@ AT_DATA([prog.cob], [
              DEPENDING ON INPUT-LEN
             .
        01  INPUT-REC           PIC X(40).
-      
+
        FD OUTFILE
              RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
              DEPENDING ON INPUT-LEN
             .
        01  OUTPUT-REC          PIC X(40).
-      
+
        WORKING-STORAGE SECTION.
-      
+
        01  OUTPUT-FILE         PIC X(19)     VALUE 'TEST-FILE'.
        01  INPUT-FILE          PIC X(19)     VALUE 'TEST-INP'.
        01  INPUT-STATUS        PIC XX.
        01  INPUT-LEN           PIC 999  VALUE 18 .
-      
+
        PROCEDURE DIVISION.
        A000-BEGIN.
            OPEN INPUT INFILE.
            READ INFILE
-           DISPLAY " Read 1: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 1: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           DISPLAY "       :" INPUT-REC ":" 
+           DISPLAY "       :" INPUT-REC ":"
            READ INFILE
-           DISPLAY " Read 2: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 2: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           DISPLAY "       :" INPUT-REC ":" 
+           DISPLAY "       :" INPUT-REC ":"
            MOVE 0 TO INPUT-LEN
            READ INFILE
-           DISPLAY " Read 3: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 3: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           DISPLAY "       :" INPUT-REC ":" 
+           DISPLAY "       :" INPUT-REC ":"
            MOVE SPACES TO INPUT-REC
            MOVE 0 TO INPUT-LEN
            READ INFILE
-           DISPLAY " Read 4: STATUS IS " INPUT-STATUS 
+           DISPLAY " Read 4: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
            IF INPUT-STATUS = "00"
-               DISPLAY "       :" INPUT-REC ":" 
+               DISPLAY "       :" INPUT-REC ":"
            END-IF
            CLOSE INFILE
 
@@ -6657,14 +6721,14 @@ AT_DATA([prog.cob], [
            MOVE 9 TO INPUT-LEN
            MOVE "Record 1............." TO OUTPUT-REC
            WRITE OUTPUT-REC
-           DISPLAY "Write 1: STATUS IS " INPUT-STATUS 
+           DISPLAY "Write 1: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
                              UPON CONSOLE
            MOVE 64 TO INPUT-LEN
            MOVE ALL '.' TO OUTPUT-REC
            MOVE "Record 2" TO OUTPUT-REC (1:8)
            WRITE OUTPUT-REC
-           DISPLAY "Write 2: STATUS IS " INPUT-STATUS 
+           DISPLAY "Write 2: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
                              UPON CONSOLE
            CLOSE OUTFILE
@@ -6700,7 +6764,7 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 
 # same check with dialect option (4.x feature)
 # AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
-# 
+#
 # AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
 # $COBCRUN_DIRECT ./prog], [0],
 # [ Read 1: STATUS IS 00 LENGTH IS 040
@@ -6714,7 +6778,7 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 # Write 1: STATUS IS 00 LENGTH IS 009
 # Write 2: STATUS IS 00 LENGTH IS 064
 # ], [])
-# 
+#
 # AT_CHECK([diff reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
@@ -9509,7 +9573,7 @@ AT_DATA([prog.cob], [
                10  STAT-X2 PIC X COMP-X.
        77  BYTE-1  PICTURE 9(3).
        77  BYTE-2  PICTURE 9(3).
-       77  MAX-SUB           VALUE  16         PICTURE 9(2).
+       78  MAX-SUB           VALUE  16.
        77  IDX                                 PICTURE 9.
        77  IDX2                                PICTURE 9.
        77  OUT-FILE-NAME                       PICTURE X(9)
@@ -9537,7 +9601,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -9558,7 +9622,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -9579,7 +9643,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -9600,7 +9664,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
 
            05  FILLER PIC X(10) VALUE "N.Y.      ".
@@ -9621,7 +9685,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
 
            05  FILLER PIC 9(10) VALUE 3131234432.
@@ -9642,7 +9706,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
 
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
@@ -9663,7 +9727,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
 
            05  FILLER PIC X(8) VALUE "UNI-9030".
@@ -9684,7 +9748,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -9705,7 +9769,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 16.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
        01  WORK-AREA.
            05  REC-NUM                 PICTURE 9(2) VALUE 0.
@@ -10125,7 +10189,7 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             BINARY-SHORT.
+           05  SUB                             BINARY-SHORT UNSIGNED.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -12437,7 +12501,7 @@ AT_DATA([prog.cob], [
 
        78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(04).
+       77  REC-NUM           VALUE  1          BINARY-SHORT UNSIGNED.
 
        01  TEST-DATA.
 
@@ -12486,7 +12550,7 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             BINARY-SHORT.
+           05  SUB                             BINARY-SHORT UNSIGNED.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -12606,36 +12670,36 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
 Sample program data file load complete.
 Initial Re-Read Open Sts:00
-Read2 ALP00000 #:0001 Trms:0010
-Read  BET00000 #:0002 Trms:0013
-Read2 GAM00000 #:0003 Trms:0075
-Read  DEL00000 #:0004 Trms:0010
-Read2 EPS00000 #:0005 Trms:0090
-Read  FOR00000 #:0006 Trms:0254
+Read2 ALP00000 #:00001 Trms:0010
+Read  BET00000 #:00002 Trms:0013
+Read2 GAM00000 #:00003 Trms:0075
+Read  DEL00000 #:00004 Trms:0010
+Read2 EPS00000 #:00005 Trms:0090
+Read  FOR00000 #:00006 Trms:0254
 Read Status: 10
 For Rewrite Open I-O Sts:00
-Read2 ALP00000 #:0001 Trms:0010
+Read2 ALP00000 #:00001 Trms:0010
 REWRITE ALP00000 Sts 00 Trms:0011
 For Rewrite/Delete Open I-O Sts:00
-Read2 ALP00000 #:0001 Trms:0011
+Read2 ALP00000 #:00001 Trms:0011
 REWRITE ALP00000 Sts 00 Trms:0012
-Read  BET00000 #:0002 Trms:0013
+Read  BET00000 #:00002 Trms:0013
 DELETE BET00000 Sts 00
 Re-list Open Sts:00
-Read2 ALP00000 #:0001 Trms:0012
-Read2 GAM00000 #:0003 Trms:0075
-Read  DEL00000 #:0004 Trms:0010
-Read2 EPS00000 #:0005 Trms:0090
-Read  FOR00000 #:0006 Trms:0254
+Read2 ALP00000 #:00001 Trms:0012
+Read2 GAM00000 #:00003 Trms:0075
+Read  DEL00000 #:00004 Trms:0010
+Read2 EPS00000 #:00005 Trms:0090
+Read  FOR00000 #:00006 Trms:0254
 Read Status: 10
 Re-list afer Extend Open Sts:00
-Read2 ALP00000 #:0001 Trms:0012
-Read2 GAM00000 #:0003 Trms:0075
-Read  DEL00000 #:0004 Trms:0010
-Read2 EPS00000 #:0005 Trms:0090
-Read  FOR00000 #:0006 Trms:0254
-Read2 ALP00000 #:0007 Trms:0010
-Read  BET00000 #:0008 Trms:0013
+Read2 ALP00000 #:00001 Trms:0012
+Read2 GAM00000 #:00003 Trms:0075
+Read  DEL00000 #:00004 Trms:0010
+Read2 EPS00000 #:00005 Trms:0090
+Read  FOR00000 #:00006 Trms:0254
+Read2 ALP00000 #:00007 Trms:0010
+Read  BET00000 #:00008 Trms:0013
 Read Status: 10
 ], [])
 
@@ -19389,7 +19453,7 @@ AT_CHECK([diff reference child.txt], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([WRITE and REWRITE FILE name ])
+AT_SETUP([WRITE and REWRITE FILE name])
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
@@ -21569,7 +21633,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL one Record])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile COB_SYNC READ WRITE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -21593,15 +21657,14 @@ AT_DATA([prog.cob], [
            10  CM-CUST-NUM                     PICTURE X(8).
            10  CM-COMPANY                      PICTURE X(25).
            10  CM-DISK                         PICTURE X(8).
-           10  CM-NO-TERMINALS                 PICTURE 9(5) COMP-4.
-           10  CM-PK-DATE                      PICTURE S9(14) COMP-3.
+           10  CM-NO-TERMINALS                 PICTURE 9(5).
+           10  CM-PK-DATE                      PICTURE S9(14).
            10  CM-TRAILER                      PICTURE X(52).
 
        WORKING-STORAGE SECTION.
 
        78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          BINARY-LONG.
 
        01  TEST-DATA.
 
@@ -21640,18 +21703,18 @@ AT_DATA([prog.cob], [
 
          02  DATA-NO-TERMINALS-TBL.
 
-           05  FILLER PIC 9(5) COMP-3 VALUE 8240.
-           05  FILLER PIC 9(5) COMP-3 VALUE 10.
-           05  FILLER PIC 9(5) COMP-3 VALUE 13.
-           05  FILLER PIC 9(5) COMP-3 VALUE 65535.
-           05  FILLER PIC 9(5) COMP-3 VALUE 10.
-           05  FILLER PIC 9(5) COMP-3 VALUE 254.
+           05  FILLER PIC 9(5) VALUE 8240.
+           05  FILLER PIC 9(5) VALUE 10.
+           05  FILLER PIC 9(5) VALUE 13.
+           05  FILLER PIC 9(5) VALUE 65535.
+           05  FILLER PIC 9(5) VALUE 10.
+           05  FILLER PIC 9(5) VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(5) COMP-3 OCCURS MAX-SUB.
+                                       PIC 9(5) OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             BINARY-SHORT.
-               88  ODD-RECORD                  VALUE 1 3 5.
+           05  SUB                     USAGE BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5.
 
 
        PROCEDURE DIVISION.
@@ -21668,6 +21731,7 @@ AT_DATA([prog.cob], [
            OPEN I-O FLATFILE.
            PERFORM READ-RECORD
            MOVE 10 TO CM-NO-TERMINALS
+           MOVE "STUFF" TO CM-TRAILER
            REWRITE TSPFL-RECORD
            DISPLAY "REWRITE " CM-CUST-NUM " Sts " CUST-STAT
                    " Trms:" CM-NO-TERMINALS.
@@ -21800,7 +21864,45 @@ Read  BET00000 Trms:00010
 Read Status: 10
 ], [])
 
+# recheck with COB_SYNC to cover additional code paths
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0],
+[Loading sample program data file.
+Sample program data file load complete.
+Open Sts:00
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00010
+Read  GAM00000 Trms:00013
+Read  DEL00000 Trms:65535
+Read  ALP00000 Trms:08240
+REWRITE ALP00000 Sts 44 Trms:00010
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00010
+REWRITE BET00000 Sts 00 Trms:00011
+Read  GAM00000 Trms:00013
+Read EPS00000 Sts:00
+REWRITE EPS00000 Sts 00 Trms:08240
+List back Open Sts:00
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00011
+Read  GAM00000 Trms:00013
+Read  DEL00000 Trms:65535
+Read  EPS00000 Trms:08240
+Read  FOR00000 Trms:00254
+Read Status: 10
+List after extend Open Sts:00
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00011
+Read  GAM00000 Trms:00013
+Read  DEL00000 Trms:65535
+Read  EPS00000 Trms:08240
+Read  FOR00000 Trms:00254
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00010
+Read Status: 10
+], [])
+
 AT_CLEANUP
+
 
 #TODO: Expandtab
 
@@ -22216,10 +22318,10 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
-       78 REC-MAX                     VALUE 16.
+       78  REC-MAX                    VALUE MAX-SUB.
        01  WORK-AREA.
            05  REC-NUM                BINARY-SHORT UNSIGNED VALUE 0.
-           05  SUB                    BINARY-SHORT.
+           05  SUB                    BINARY-SHORT UNSIGNED.
                88  ODD-RECORD         VALUE 1 3 5 7 9 10 11.
                88  NULL-KEY           VALUE 4 5 8 12 14.
 
@@ -22461,7 +22563,7 @@ AT_DATA([prog.cob], [
              AND CUST-STAT NOT = "02"
                  DISPLAY "Error " CUST-STAT " start " CM-CUST-NUM
              ELSE
-                 DISPLAY REC-NUM "    Initial: " CM-CUST-NUM
+                 DISPLAY REC-NUM " Initial: " CM-CUST-NUM
                          " " CM-TELEPHONE
                  IF REC-NUM = 3
                     MOVE CM-CUST-NUM TO SAV-KEY
@@ -22723,10 +22825,10 @@ Ph=8372487274 Key: GAM00000 is GAMMA X-RAY TECHNOLOGY   .
 Ph=8787458374 Key: OLD00000 is OLD TYME PIZZA MFG. CO.  .
 Hit End of File
 Read Prev/Delete
-00001    Initial: PRE00000 4169898509
-00002    Initial: MOR00000 4169898509
-00003    Initial: DEL00000 4169898509
-00004    Initial: BET00000 4169898509
+00001 Initial: PRE00000 4169898509
+00002 Initial: MOR00000 4169898509
+00003 Initial: DEL00000 4169898509
+00004 Initial: BET00000 4169898509
   Start: PRE00000 4169898509
    Prev: MOR00000 4169898509
  Delete: MOR00000 sequential
@@ -24026,7 +24128,7 @@ AT_DATA([prog.cob], [
 
        78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          BINARY-LONG.
+       77  REC-NUM           VALUE  1          BINARY-LONG UNSIGNED.
        77  ADD-TERMS                           PICTURE 9(8) VALUE 0.
 
        01  TEST-DATA.
@@ -24066,18 +24168,18 @@ AT_DATA([prog.cob], [
 
          02  DATA-NO-TERMINALS-TBL.
 
-           05  FILLER PIC 9(5) COMP-3 VALUE 8240.
-           05  FILLER PIC 9(5) COMP-3 VALUE 10.
-           05  FILLER PIC 9(5) COMP-3 VALUE 13.
-           05  FILLER PIC 9(5) COMP-3 VALUE 65535.
-           05  FILLER PIC 9(5) COMP-3 VALUE 10.
-           05  FILLER PIC 9(5) COMP-3 VALUE 254.
+           05  FILLER PIC 9(5) VALUE 8240.
+           05  FILLER PIC 9(5) VALUE 10.
+           05  FILLER PIC 9(5) VALUE 13.
+           05  FILLER PIC 9(5) VALUE 65535.
+           05  FILLER PIC 9(5) VALUE 10.
+           05  FILLER PIC 9(5) VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(5) COMP-3 OCCURS MAX-SUB.
+                                       PIC 9(5) OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             BINARY-SHORT.
-               88  ODD-RECORD                  VALUE 1 3 5.
+           05  SUB                     USAGE BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5.
 
 
        PROCEDURE DIVISION.
@@ -24229,7 +24331,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([COB_LS_VALIDATE=0 $COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
 Sample program data file load complete.
 List: Open after COMMIT Sts:00
@@ -24290,6 +24392,7 @@ Read Status: 10
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([OPEN OUTPUT COMMIT / ROLLBACK])
 AT_KEYWORDS([runfile])
@@ -25006,49 +25109,48 @@ List tmp directory       Open Sts: 9/021
 AT_CLEANUP
 
 
-AT_SETUP([LINE SEQUENTIAL Data])
+AT_SETUP([LINE SEQUENTIAL data])
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-      
+
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
-      
+
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT FLATFILE ASSIGN "LS-TEST"
            ORGANIZATION LINE SEQUENTIAL
-           FILE STATUS IS CUST-STAT.
+           FILE STATUS IS CUST-STAT .
 
        DATA  DIVISION.
        FILE SECTION.
        FD  FLATFILE
            BLOCK CONTAINS 5 RECORDS.
-      
+
        01  TSPFL-RECORD.
-           10  CM-CUST-NUM                     PICTURE X(8). 
-           10  CM-TYPE                         PICTURE X. 
-           10  CM-COMPANY                      PICTURE X(25). 
-           10  CM-DISK                         PICTURE X(8). 
-           10  CM-NO-TERMINALS                 PICTURE 9(4) COMP-4. 
+           10  CM-CUST-NUM                     PICTURE X(8).
+           10  CM-TYPE                         PICTURE X.
+           10  CM-COMPANY                      PICTURE X(25).
+           10  CM-DISK                         PICTURE X(8).
+           10  CM-NO-TERMINALS                 PICTURE 9(4) COMP-4.
            10  CM-PK-DATE                      PICTURE S9(14) COMP-3.
 
        WORKING-STORAGE SECTION.
-      
+
        78  MAX-SUB           VALUE  4.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          BINARY-LONG.
-      
+
        01  TEST-DATA.
-      
+
          02  DATA-CUST-NUM-TBL.
            05  FILLER PIC X(8) VALUE "ALP00000".
            05  FILLER PIC X(8) VALUE "BET00000".
            05  FILLER PIC X(8) VALUE "GAM00000".
            05  FILLER PIC X(8) VALUE "DEL00000".
-      
+
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
                                        PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
@@ -25067,51 +25169,49 @@ AT_DATA([prog.cob], [
                                        PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
-           05  FILLER PIC 9(3) COMP-3 VALUE 10.
-           05  FILLER PIC 9(3) COMP-3 VALUE 13.
-           05  FILLER PIC 9(3) COMP-3 VALUE 3.
-           05  FILLER PIC 9(3) COMP-3 VALUE 254.
+           05  FILLER PIC 9(3) VALUE 10.
+           05  FILLER PIC 9(3) VALUE 13.
+           05  FILLER PIC 9(3) VALUE 3.
+           05  FILLER PIC 9(3) VALUE 254.
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
+                                       PIC 9(3) OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             BINARY-SHORT.
+           05  SUB                             BINARY-SHORT UNSIGNED.
                88  ODD-RECORD                  VALUE 1 3 5.
-      
+
        PROCEDURE DIVISION.
       * Load file using MF rules
-           DISPLAY "LS_OPTIONS"  UPON ENVIRONMENT-NAME
-           DISPLAY "format=mf"   UPON ENVIRONMENT-VALUE
+           SET ENVIRONMENT "COB_LS_VALIDATE" TO "FALSE"
+           SET ENVIRONMENT "COB_LS_NULLS"    TO "TRUE"
            DISPLAY "MF Load data"
            PERFORM LOADFILE.
 
       * Read file using MF rules
            OPEN INPUT FLATFILE.
-           DISPLAY "MF List Open Sts:" CUST-STAT 
+           DISPLAY "MF Open Sts: " CUST-STAT
            PERFORM UNTIL CUST-STAT NOT = "00"
                PERFORM READ-RECORD
            END-PERFORM.
            CLOSE FLATFILE.
 
-      * Read file using GC rules
-           DISPLAY "LS_OPTIONS"  UPON ENVIRONMENT-NAME
-           DISPLAY "format=gc"   UPON ENVIRONMENT-VALUE
+      * Read file using Std rules
+           SET ENVIRONMENT "COB_LS_VALIDATE" TO "true"
+           SET ENVIRONMENT "COB_LS_NULLS"    TO "false"
            OPEN INPUT FLATFILE.
-           DISPLAY "GC List Open Sts:" CUST-STAT 
+           DISPLAY "Std Open Sts: " CUST-STAT
            PERFORM UNTIL CUST-STAT NOT = "00"
                PERFORM READ-RECORD
            END-PERFORM.
            CLOSE FLATFILE.
 
-      * Load file using GC rules
-           DISPLAY "GC Load data"
-           DISPLAY "LS_OPTIONS"  UPON ENVIRONMENT-NAME
-           DISPLAY "format=gc"   UPON ENVIRONMENT-VALUE
+      * Load file using Std rules
+           DISPLAY "Std Load data"
            PERFORM LOADFILE.
 
            STOP RUN RETURNING 0.
-      
+
        READ-RECORD.
-           MOVE SPACES                       TO TSPFL-RECORD.
+      *    MOVE SPACES                       TO TSPFL-RECORD.
            READ FLATFILE
            IF CUST-STAT NOT = "00"
              DISPLAY "Read Status: " CUST-STAT
@@ -25123,11 +25223,11 @@ AT_DATA([prog.cob], [
        LOADFILE.
            OPEN OUTPUT FLATFILE.
            PERFORM LOAD-RECORD
-                        VARYING SUB FROM 1 BY 1 
+                        VARYING SUB FROM 1 BY 1
                           UNTIL SUB > MAX-SUB
                               OR CUST-STAT NOT = "00".
            CLOSE FLATFILE.
-      
+
        LOAD-RECORD.
            MOVE SPACES                       TO TSPFL-RECORD.
            MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
@@ -25136,9 +25236,9 @@ AT_DATA([prog.cob], [
            MOVE 20070319                     TO CM-PK-DATE.
            IF SUB = 1 OR 4 OR 6
                MOVE -20070319                 TO CM-PK-DATE.
-      
+
            IF  ODD-RECORD
-               MOVE "8417"                   TO CM-DISK 
+               MOVE "8417"                   TO CM-DISK
            ELSE
                MOVE "8470"                   TO CM-DISK.
            WRITE TSPFL-RECORD.
@@ -25151,15 +25251,15 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [MF Load data
-MF List Open Sts:00
+MF Open Sts: 00
 Read  ALP00000 Trms:0010
 Read  BET00000 Trms:0013
 Read  GAM00000 Trms:0003
 Read  DEL00000 Trms:0254
 Read Status: 10
-GC List Open Sts:00
+Std Open Sts: 00
 Read Status: 09
-GC Load data
+Std Load data
 Error status 71 writing record ALP00000
 ], [])
 
@@ -25167,7 +25267,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Concatenated Files])
-AT_KEYWORDS([runfile Status])
+AT_KEYWORDS([runfile status])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -25183,9 +25283,7 @@ AT_DATA([prog.cob], [
 
        DATA  DIVISION.
        FILE SECTION.
-       FD  FLATFILE
-           BLOCK CONTAINS 5 RECORDS.
-
+       FD  FLATFILE.
        01  FLAT-RECORD.
            10  FILE-NAME                       PICTURE X(8).
            10  FLAT-MARK                       PICTURE X(6).
@@ -25194,8 +25292,8 @@ AT_DATA([prog.cob], [
            10  FLAT-FILLER                     PICTURE X(2).
 
        WORKING-STORAGE SECTION.
-       77  REC-NUM           VALUE  0          PICTURE 9(2).
-       77  MAX-REC           VALUE  3          PICTURE 9(2).
+       77  REC-NUM           VALUE  0          BINARY-SHORT UNSIGNED.
+       78  MAX-REC           VALUE  3.
        77  FLAT-STAT                           PICTURE X(2).
        77  THE-FILE-NAME                       PICTURE X(48).
 
@@ -25209,13 +25307,10 @@ AT_DATA([prog.cob], [
            MOVE "file3" TO THE-FILE-NAME
            PERFORM LOADFILE.
 
-           DISPLAY "COB_SEQ_CONCAT_NAME" UPON ENVIRONMENT-NAME.
-           DISPLAY "TRUE"                UPON ENVIRONMENT-VALUE.
            MOVE "file1+file2+file3" TO THE-FILE-NAME
            PERFORM UPDTFILE.
 
-           DISPLAY "COB_SEQ_CONCAT_SEP" UPON ENVIRONMENT-NAME.
-           DISPLAY "&"                  UPON ENVIRONMENT-VALUE.
+           SET ENVIRONMENT "COB_SEQ_CONCAT_SEP" TO "&"
            MOVE "file1&file2&file3" TO THE-FILE-NAME
            PERFORM LISTFILE.
            STOP RUN RETURNING 0.
@@ -25236,7 +25331,7 @@ AT_DATA([prog.cob], [
                DISPLAY "OPEN I-O: " THE-FILE-NAME " Sts:" FLAT-STAT
            END-IF.
            PERFORM VARYING REC-NUM FROM 1 BY 1
-                     UNTIL FLAT-STAT NOT = "00"
+                      UNTIL FLAT-STAT NOT = "00"
                MOVE SPACES          TO FLAT-RECORD
                READ FLATFILE
                IF REC-NUM = 5
@@ -25258,7 +25353,7 @@ AT_DATA([prog.cob], [
            CLOSE FLATFILE.
 
        READ-RECORD.
-           MOVE SPACES                       TO FLAT-RECORD.
+      *    MOVE SPACES                       TO FLAT-RECORD.
            READ FLATFILE
            IF FLAT-STAT NOT = "00"
                IF FLAT-STAT NOT = "10"
@@ -25292,6 +25387,11 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[OPEN I-O: file1+file2+file3                                Sts:35
+OPEN INPUT: file1&file2&file3                                Sts:35
+], [])
+
+AT_CHECK([COB_SEQ_CONCAT_NAME=true $COBCRUN_DIRECT ./prog], [0],
 [file1         Record 1  .
 file1         Record 2  .
 file1         Record 3  .
@@ -26720,7 +26820,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
        01  f-status PIC XX.
-                   
+
        PROCEDURE DIVISION.
            OPEN OUTPUT f
            WRITE f-rec FROM "a"
