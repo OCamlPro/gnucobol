@@ -568,7 +568,7 @@ list_cache_sort (void *inlist, int (*cmpfunc)(const void *mp1, const void *mp2))
 
 /* Clear local variables */
 void
-cb_init_codegen (void)
+clear_local_codegen_vars (void)
 {
 	attr_cache = NULL;
 	base_cache = NULL;
@@ -1411,12 +1411,13 @@ output_data (cb_tree x)
 			field_iteration);
 		break;
 	case CB_TAG_CONST:
-		/* LCOV_EXCL_START */
-		if (x != cb_null) {
-			CB_TREE_TAG_UNEXPECTED_ABORT (x);
+		if (x == cb_null) {
+			output ("NULL");
+		} else {
+			output ("(");
+			output_param (x, 0);
+			output (")->data");
 		}
-		/* LCOV_EXCL_STOP */
-		output ("NULL");
 		break;
 	/* LCOV_EXCL_START */
 	default:
@@ -1918,6 +1919,16 @@ output_globext_cache (void)
 static void
 output_standard_includes (struct cb_program *prog)
 {
+	struct cb_program *p;
+
+#if defined (HAVE_GMP_H)
+	const char *math_include = "#include <gmp.h>";
+#elif defined (HAVE_MPIR_H)
+	const char *math_include = "#include <mpir.h>";
+#else
+#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+#endif
+
 #if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
 	output_line ("#ifndef\t_XOPEN_SOURCE_EXTENDED");
 	output_line ("#define\t_XOPEN_SOURCE_EXTENDED 1");
@@ -1935,14 +1946,12 @@ output_standard_includes (struct cb_program *prog)
 	if (cb_flag_winmain) {
 		output_line ("#include <windows.h>");
 	}
-	if (prog->decimal_index_max || prog->flag_decimal_comp) {
-		#if defined (HAVE_GMP_H)
-		output_line ("#include <gmp.h>");
-		#elif defined (HAVE_MPIR_H)
-		output_line ("#include <mpir.h>");
-		#else
-		#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
-		#endif
+	/* check if any of the processed programs has any decimal - then include appropriate header */
+	for (p = prog; p; p = p->next_program) {
+		if (p->decimal_index_max || p->flag_decimal_comp) {
+			output_line (math_include);
+			break;
+		}
 	}
 	output_line ("#include <libcob.h>");
 	output_newline ();
@@ -4348,7 +4357,7 @@ output_param (cb_tree x, int id)
 		}
 		break;
 	case CB_TAG_DECIMAL:
-		output ("d%d", CB_DECIMAL (x)->id);
+		output ("%s%d", CB_PREFIX_DECIMAL, CB_DECIMAL (x)->id);
 		break;
 	case CB_TAG_DECIMAL_LITERAL:
 		output ("%s%d", CB_PREFIX_DEC_CONST, CB_DECIMAL_LITERAL (x)->id);
@@ -7322,8 +7331,10 @@ output_call (struct cb_call *p)
 			}
 			if (x == cb_null) {
 				output ("NULL /*OMITTED*/");
-				break;
+			} else {
+				output_param (x, 0);
 			}
+			break;
 		default:
 			output ("NULL");
 			break;
@@ -8397,13 +8408,15 @@ output_goto (struct cb_goto *p)
 		output_block_close ();
 	} else if (p->target == NULL
 	        || p->target == cb_int1) {
-		/* EXIT PROGRAM/FUNCTION */
 		needs_exit_prog = 1;
+		/* EXIT FUNCTION */
 		if (current_prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
 			output_line ("goto exit_function;");
+		/* GOBACK (target = cb_int1), possibly implied */
 		} else if (p->target == cb_int1
 		        || cb_flag_implicit_init || current_prog->nested_level) {
 			output_line ("goto exit_program;");
+		/* EXIT PROGRAM */
 		} else {
 			/* Ignore if not a callee */
 			output_line ("if (module->next)");
@@ -9003,6 +9016,12 @@ output_stmt (cb_tree x)
 			output (",");
 			output_newline ();
 		}
+	}
+
+	if (x->source_line) {
+		cb_source_file = x->source_file;
+		cb_source_line = -x->source_line;
+		/* cb_source_column = x->source_column; */
 	}
 
 	switch (CB_TREE_TAG (x)) {
@@ -10537,7 +10556,7 @@ output_report_one_field (struct cb_report *r, struct cb_field *f, int idx, int o
 		sprintf (report_field_name, "&%s", field_name);
 
 		if (f->report_field_from) {
-			output_local ("/*FROM %s*/{", f->report_field_from->name);
+			output_local ("/* FROM %s */{", f->report_field_from->name);
 			p = real_field_founder (f->report_field_from);
 			if (f->report_field_size > 1)
 				output_local ("%d,", f->report_field_size);
@@ -10553,7 +10572,7 @@ output_report_one_field (struct cb_report *r, struct cb_field *f, int idx, int o
 			output_local ("},");
 		} else if (f->report_from) {
 			p = cb_code_field (f->report_from);
-			output_local ("/*COMPUTE*/{%d,", p->size);
+			output_local ("/* COMPUTE */{%d,", p->size);
 			output_base (p, 0);
 			output_local (",");
 			output_attr (cb_build_field_reference (p, NULL));
@@ -10562,14 +10581,14 @@ output_report_one_field (struct cb_report *r, struct cb_field *f, int idx, int o
 			output_local ("{0,NULL,NULL},");
 		}
 		if (f->report_sum_counter) {
-			output_local ("/*SUM*/");
+			output_local ("/* SUM */");
 			output_param (f->report_sum_counter, 0);
 		} else {
 			output_local ("NULL");
 		}
 		output_local (",");
 		if(f->report_control) {
-			output_local("/*CONTROL*/");
+			output_local("/* CONTROL */");
 			output_param (f->report_control, 0);
 		} else {
 			output_local("NULL");
@@ -11059,7 +11078,7 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 	if (x) {
 		output_local("&%s%d,",CB_PREFIX_FIELD, cb_code_field(x)->id);
 	} else {
-		output_local("/*NO SUM!*/NULL,");
+		output_local("/* NO SUM! */NULL,");
 	}
 	if (f->report_sum_counter) {
 		output_local("&%s%d,",CB_PREFIX_FIELD, cb_code_field(f->report_sum_counter)->id);
@@ -11523,28 +11542,6 @@ output_report_source_move (struct cb_report *rep)
 
 /* Alphabet-name */
 
-static int
-literal_value (cb_tree x)
-{
-	if (x == cb_space) {
-		return ' ';
-	} else if (x == cb_zero) {
-		return '0';
-	} else if (x == cb_quote) {
-		return cb_flag_apostrophe ? '\'' : '"';
-	} else if (x == cb_norm_low) {
-		return 0;
-	} else if (x == cb_norm_high) {
-		return 255;
-	} else if (x == cb_null) {
-		return 0;
-	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-		return cb_get_int (x) - 1;
-	} else {
-		return CB_LITERAL (x)->data[0];
-	}
-}
-
 static void
 output_alphabet_name_definition (struct cb_alphabet_name *p)
 {
@@ -11603,14 +11600,14 @@ output_class_name_definition (struct cb_class_name *p)
 	for (l = p->list; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
 		if (CB_PAIR_P (x)) {
-			lower = literal_value (CB_PAIR_X (x));
-			upper = literal_value (CB_PAIR_Y (x));
+			lower = cb_literal_value (CB_PAIR_X (x));
+			upper = cb_literal_value (CB_PAIR_Y (x));
 			for (n = lower; n <= upper; ++n) {
 				vals[n] = 1;
 			}
 		} else {
 			if (CB_NUMERIC_LITERAL_P (x)) {
-				vals[literal_value (x)] = 1;
+				vals[cb_literal_value (x)] = 1;
 			} else if (x == cb_space) {
 				vals[' '] = 1;
 			} else if (x == cb_zero) {
@@ -12343,7 +12340,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	if (prog->decimal_index_max) {
 		output_local ("/* Decimal structures */\n");
 		for (inc = 0; inc < prog->decimal_index_max; inc++) {
-			output_local ("cob_decimal\t*d%d = NULL;\n", inc);
+			output_local ("cob_decimal\t*%s%d = NULL;\n", CB_PREFIX_DECIMAL, inc);
 		}
 		output_local ("\n");
 	}
@@ -12641,7 +12638,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 			output ("cob_decimal_alloc (%u", prog->decimal_index_max);
 		}
 		for (inc = 0; inc < prog->decimal_index_max; inc++) {
-			output (", &d%u", inc);
+			output (", &%s%u", CB_PREFIX_DECIMAL, inc);
 		}
 		output (");");
 		output_newline ();
@@ -13002,8 +12999,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				output_line ("if (%s%d) {", CB_PREFIX_BASE, f->id);
 				output_line ("\tcob_free_alloc (&%s%d, NULL);",
 					     CB_PREFIX_BASE, f->id);
-				output_line ("\t%s%d = NULL;",
-					     CB_PREFIX_BASE, f->id);
+				output_line ("\t%s%d = NULL;", CB_PREFIX_BASE, f->id);
 				output_line ("}");
 			}
 		}
@@ -13015,7 +13011,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_prefix ();
 		output ("cob_decimal_pop (%u", prog->decimal_index_max);
 		for (inc = 0; inc < prog->decimal_index_max; inc++) {
-			output (", d%u", inc);
+			output (", %s%u", CB_PREFIX_DECIMAL, inc);
 		}
 		output (");");
 		output_newline ();
@@ -13191,7 +13187,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				seen = 1;
 				output_line ("/* Set Decimal Constant values */");
 			}
-			output_line ("%s%d = &%s%d;", 	CB_PREFIX_DEC_CONST, m->id,
+			output_line ("%s%d = &%s%d;", CB_PREFIX_DEC_CONST, m->id,
 				     CB_PREFIX_DEC_FIELD, m->id);
 			output_line ("cob_decimal_init(%s%d);", CB_PREFIX_DEC_CONST, m->id);
 			output_line ("cob_decimal_set_field (%s%d, (cob_field *)&%s%d);",

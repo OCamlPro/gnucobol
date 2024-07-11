@@ -231,9 +231,9 @@ typedef struct __cob_settings {
 	unsigned int	cob_unix_lf;		/* Use POSIX LF */
 	unsigned int	cob_do_sync;
 	unsigned int	cob_ls_fixed;		/* Line Sequential is fixed length */
+	unsigned int	cob_ls_validate;	/* Validate data in Line Sequential */
 	unsigned int	cob_ls_nulls;		/* NUL insert to Line Sequential */
 	unsigned int	cob_ls_split;		/* Split 'too long' record into parts (Default is truncate) */
-	unsigned int	cob_ls_validate;	/* Validate data in Line Sequential */
 	unsigned int	cob_ls_instab;		/* TAB insert to Line Sequential (INSERTTAB)*/
 	unsigned int	cob_varseq_type;	/* Variable Sequential Default file format */
 	unsigned int	cob_varrel_type;	/* Variable Relative default file format */

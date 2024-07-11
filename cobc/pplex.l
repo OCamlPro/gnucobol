@@ -156,6 +156,7 @@ static int	floating_area_b = 0;	   /* whether indicator is optional */
 static int	fill_continued_alnums = 1; /* whether continued alphanumeric
 					      literals should be filled with
 					      spaces up to text column */
+static int	emit_area_a_tokens = 0;
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
@@ -178,6 +179,7 @@ static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
 static void	check_listing		(const char *, const unsigned int);
 static void	skip_to_eol		(void);
+static void	count_newlines		(const char *);
 static void	display_finish		(void);
 static void	set_print_replace_list	(struct cb_replace_list *list);
 static void	get_new_listing_file	(void);
@@ -189,6 +191,9 @@ NUMRIC_LITERAL	[+-]?[0-9,.]*[0-9]
 ALNUM_LITERAL	"\""[^""\n]*"\""|"\'"[^''\n]*"\'"
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
+
+AREA_A		[ ]?#
+MAYBE_AREA_A	[ ]?#?
 
 %x CALL_DIRECTIVE_STATE
 %x COBOL_WORDS_DIRECTIVE_STATE
@@ -222,33 +227,33 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	#endif
 }
 
-^[ ]*">>"[ ]?"COBOL-WORDS"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"COBOL-WORDS"	{
 	/* 202x+: directive for setting source format */
 	BEGIN COBOL_WORDS_DIRECTIVE_STATE;
 	return COBOL_WORDS_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"DEFINE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"DEFINE"	{
 	/* 2002+: definition of compiler constants display message during compilation */
 	/* Define here to preempt next debug rule below */
 	BEGIN DEFINE_DIRECTIVE_STATE;
 	return DEFINE_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"DISPLAY"[ ]+ {
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"DISPLAY"[ ]+ {
 	/* previous OpenCOBOL/GnuCOBOL 2.x extension, added in COBOL 202x with slightly different syntax:
 	   display message during compilation --> needs a dialect option to switch to the appropriate state */
 	display_msg[0] = 0;
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
 
-^[ ]*">>"[ ]?"REF-MOD-ZERO-LENGTH"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"REF-MOD-ZERO-LENGTH"	{
 	/* 202x: directive to allow zero ref-mod */
 	BEGIN ON_OFF_DIRECTIVE_STATE;
 	return REFMOD_DIRECTIVE;
 }
 
-^[ ]*">>D"		{
+^{MAYBE_AREA_A}[ ]*">>D"		{
 	/* 2002 (only) floating debug line */
 	/* Remove line if debugging lines not activated */
 	/* Otherwise ignore the directive part of the line */
@@ -258,13 +263,13 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	}
 }
 
-^[ ]*">>"[ ]?"PAGE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"PAGE"	{
 	/* 2002+: listing directive for page eject with optional comment
 	   Note: processed in cobc.c */
 	skip_to_eol ();
 }
 
-^[ ]*">>"[ ]?"LISTING"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"LISTING"	{
 	/* 2002+: listing directive for (de-)activating the listing,
 	   ON implied for empty value
 	   Note: further checks in ppparse.y, processed in cobc.c */
@@ -272,68 +277,68 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return LISTING_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"SOURCE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"SOURCE"	{
 	/* 2002+: directive for setting source format */
 	BEGIN SOURCE_DIRECTIVE_STATE;
 	return SOURCE_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"SET"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"SET"	{
 	/* OpenCOBOL/GnuCOBOL 2.0 extension: MF SET directive in 2002+ style format */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"TURN"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"TURN"	{
 	/* 2002+: directive for (de-)activating exception checks */
 	BEGIN TURN_DIRECTIVE_STATE;
 	return TURN_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"IF"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"IF"	{
 	/* 2002+: conditional compilation */
 	BEGIN IF_DIRECTIVE_STATE;
 	return IF_DIRECTIVE;
 }
-^[ ]*">>"[ ]?"ELIF" |
-^[ ]*">>"[ ]?"ELSE-IF"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"ELIF" |
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"ELSE-IF"	{
 	/* OpenCOBOL extension: conditional compilation combined ELSE IF,
 	   2002+ style format */
 	BEGIN IF_DIRECTIVE_STATE;
 	return ELIF_DIRECTIVE;
 }
-^[ ]*">>"[ ]?"ELSE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"ELSE"	{
 	/* 2002+: conditional compilation */
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^[ ]*">>"[ ]?"END-IF"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"END-IF"	{
 	/* 2002+: conditional compilation */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"LEAP-SECOND"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"LEAP-SECOND"	{
 	/* 2002+: more then 60 seconds per minute (currently always set to off),
 	          OFF implied for empty value */
 	BEGIN ON_OFF_DIRECTIVE_STATE;
 	return LEAP_SECOND_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"CALL-CONVENTION"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"CALL-CONVENTION"	{
 	/* 2002+: convention for CALL/CANCEL */
 	BEGIN CALL_DIRECTIVE_STATE;
 	return CALL_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]*\n		{
+^{MAYBE_AREA_A}[ ]*">>"[ ]*\n		{
 	/* empty 2002+ style directive */
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 			_("ignoring empty directive"));
 	unput ('\n');
 }
 
-^[ ]*">>"[ ]*[_0-9A-Z-]+	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]*[_0-9A-Z-]+	{
 	/* unknown 2002+ style directive */
 	char	*s;
 
@@ -343,64 +348,64 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]*">>"		{
+^{MAYBE_AREA_A}[ ]*">>"		{
 	/* unknown 2002+ style directive */
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 			_("ignoring invalid directive"));
 	skip_to_eol ();
 }
 
-^[ ]*"$DISPLAY"[ ]+"VCS"[ ]+"="[ ]+	{
+^{MAYBE_AREA_A}[ ]*"$DISPLAY"[ ]+"VCS"[ ]+"="[ ]+	{
 	/* MF extension: include @(#)text\0 in the object file */
 	/* we just add a warning for now, maybe implement it later */
 	CB_PENDING (_("VCS directive"));
 	skip_to_eol ();
 }
 
-^[ ]*"$DISPLAY"[ ]+		{
+^{MAYBE_AREA_A}[ ]*"$DISPLAY"[ ]+		{
 	/* MF extension: display message during compilation */
 	display_msg[0] = 0;
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
 
-^[ ]*"$SET"		{
+^{MAYBE_AREA_A}[ ]*"$SET"		{
 	/* MF extension: SET directive */
 	/* TODO: check position of the $SET directive */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
 
-^[ ]*"$IF"		{
+^{MAYBE_AREA_A}[ ]*"$IF"		{
 	/* MF extension: conditional compilation */
 	BEGIN IF_DIRECTIVE_STATE;
 	return IF_DIRECTIVE;
 }
-^[ ]*"$ELIF" |
-^[ ]*"$ELSE-IF"		{
+^{MAYBE_AREA_A}[ ]*"$ELIF" |
+^{MAYBE_AREA_A}[ ]*"$ELSE-IF"		{
 	/* OpenCOBOL/GnuCOBOL 2.0 extension: conditional compilation combined ELSE IF,
 	   MF style format */
 	BEGIN IF_DIRECTIVE_STATE;
 	return ELIF_DIRECTIVE;
 }
-^[ ]*"$ELSE"		{
+^{MAYBE_AREA_A}[ ]*"$ELSE"		{
 	/* MF extension: conditional compilation */
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^[ ]*"$END"		|
-^[ ]*"$END-IF"	{
+^{MAYBE_AREA_A}[ ]*"$END"		|
+^{MAYBE_AREA_A}[ ]*"$END-IF"	{
 	/* MF extension: conditional compilation, second undocumented */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
-^[ ]*"$REGION"		|
-^[ ]*"$END-$REGION"	{
+^{MAYBE_AREA_A}[ ]*"$REGION"		|
+^{MAYBE_AREA_A}[ ]*"$END-$REGION"	{
 	/* MF extension for logical marking of a block in the editor */
 	/* _possibly_ check: MF rule "$REGION and $IF statements must not overlap." */
 	skip_to_eol ();
 }
 
-^[ ]*"$"[_0-9A-Z-]+	{
+^{MAYBE_AREA_A}[ ]*"$"[_0-9A-Z-]+	{
 	/* unknown MF style directive */
 	char	*s;
 
@@ -410,7 +415,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^......."@OPTIONS"[ ][A-Z0-9() ,;'"=]* {
+^{MAYBE_AREA_A}.{7}"@OPTIONS"[ ][A-Z0-9() ,;'"=]* {
 	/* Fujitsu COBOL extension for specifying command line options */
 	/* TODO: check position of the @OPTIONS directive */
 	char *s = strchr (yytext, '@');
@@ -419,7 +424,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]*("PROCESS"|"CBL")[ ,;]*[\n] {
+^{MAYBE_AREA_A}[ ]*("PROCESS"|"CBL")[ ,;]*[\n] {
 	/* IBM COBOL extension for specifying compiler options */
 	/* TODO: The CBL (PROCESS) statement must be placed before any
 	   comment lines, IDENTIFICATIO DIVISION, or other
@@ -428,7 +433,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]*("PROCESS"|"CBL")[ ][A-Z0-9() ,;'"=]* {
+^{MAYBE_AREA_A}[ ]*("PROCESS"|"CBL")[ ][A-Z0-9() ,;'"=]* {
 	/* IBM COBOL extension for specifying compiler options */
 	/* TODO: The CBL (PROCESS) statement must be placed before any
 	   comment lines, IDENTIFICATIO DIVISION, or other
@@ -440,11 +445,19 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]*"$"		{
+^{MAYBE_AREA_A}[ ]*"$"		{
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 		_("spurious '$' detected - ignored"));
 	skip_to_eol ();
 }
+
+%{/* Strip any Area A marker leading to COPY, INCLUDE, and REPLACE right now as
+     at this stage they may not be seen on the line that directly follows the
+     marker.  However, we still need to count the lines we are skipping this
+     way. */%}
+^{AREA_A}[ \n]*/"COPY"[ ,;\n]    { count_newlines (yytext); }
+^{AREA_A}[ \n]*/"INCLUDE"[ ,;\n] { count_newlines (yytext); }
+^{AREA_A}[ \n]*/"REPLACE"[ ,;\n] { count_newlines (yytext); }
 
 "COPY"/[ ,;\n]			{
 	yy_push_state (COPY_STATE);
@@ -469,10 +482,24 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return REPLACE;
 }
 
-^......[ ]*"*CONTROL" |
-^......[ ]*"*CBL"	{
+^{MAYBE_AREA_A}.{6}[ ]*"*CONTROL" |
+^{MAYBE_AREA_A}.{6}[ ]*"*CBL"	{
 	BEGIN CONTROL_STATEMENT_STATE;
 	return CONTROL_STATEMENT;
+}
+
+^{AREA_A}		{
+	/* Output a special marker that precedes lines starting in area A.  This
+	   is required to detect missing periods.
+
+	   See "(*area-a*)" in `ppinput' function below for the code that emits
+	   the `#'.
+
+	   The optional space before '#' in the rule above is only needed to
+	   properly handle the first line in each buffer, that for some reason
+	   always starts with a space.
+	*/
+	fprintf (ppout, "\n#area_a\n");
 }
 
 "CONTROL"[ ,;\n]+"DIVISION" {
@@ -524,6 +551,7 @@ SUBSTITUTION_SECTION_STATE>{
 	  cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
+  ^{AREA_A}		{}
 }
 
 <INITIAL,
@@ -557,10 +585,10 @@ SUBSTITUTION_SECTION_STATE>
 	ppecho (yytext, 0, (int)yyleng);
 }
 
-^[ ]*"EJECT"([ ]*\.)? |
-^[ ]*"SKIP1"([ ]*\.)? |
-^[ ]*"SKIP2"([ ]*\.)? |
-^[ ]*"SKIP3"([ ]*\.)?	{
+^{MAYBE_AREA_A}[ ]*"EJECT"([ ]*\.)? |
+^{MAYBE_AREA_A}[ ]*"SKIP1"([ ]*\.)? |
+^{MAYBE_AREA_A}[ ]*"SKIP2"([ ]*\.)? |
+^{MAYBE_AREA_A}[ ]*"SKIP3"([ ]*\.)?	{
 	/* These words can either be a listing-directive statement,
 	   a reserved word, or a user-defined word...
 	   some implementations (dis-)allow the (optional) "."
@@ -579,7 +607,7 @@ SUBSTITUTION_SECTION_STATE>
 	}
 }
 
-^[ ]*"TITLE"[ ,;\n]	{
+^{MAYBE_AREA_A}[ ]*"TITLE"[ ,;\n]	{
 	/* This word can either be a listing-directive statement,
 	   a reserved word, or a user-defined word...
 	   some implementations (dis-)allow the (optional) "."
@@ -765,6 +793,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "ADD-SYN"	{
 	return ADDSYN;
   }
+  "AREACHECK"	|
+  "AREA-CHECK"	{
+	return AREACHECK;
+  }
   "ASSIGN"	{
 	return ASSIGN;
   }
@@ -806,6 +838,11 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NOBOUND" |
   "NO-BOUND"		{
 	return NOBOUND;
+  }
+  "NOAREACHECK"		|
+  "NO-AREACHECK"	|
+  "NO-AREA-CHECK"	{
+	return NOAREACHECK;
   }
   "NOCHECKNUM"  	|
   "NO-CHECKNUM" 	|
@@ -963,6 +1000,7 @@ ENDIF_DIRECTIVE_STATE>{
 	cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
+  ^{AREA_A}		{}
   [_0-9A-Z\x80-\xFF-]+(\.[_0-9A-Z\x80-\xFF-]+)+		{
 	/* special case to allow copybook names with periods
 	   without a literal
@@ -1003,6 +1041,12 @@ ENDIF_DIRECTIVE_STATE>{
 	ECHO;
 	check_listing (yytext, 0);
 	cb_source_line++;
+  }
+
+  ^{AREA_A}		{
+	/* Pseudo-text words that start in area-a retain that property, and
+	   should thus be preceded with the marker. */
+	pplval.s = cobc_plex_strdup ("\n#area_a\n");
   }
 
   [,;]?[ ]+		{
@@ -1426,8 +1470,21 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 
-/* Sets `source_format`, `indicator_column`, `text_column`,
-   `floating_area_b`, and `fill_continued_alnums`, based on the given source
+int
+cobc_has_areacheck_directive (const char * directive) {
+	if (source_format != CB_FORMAT_FIXED &&
+	    source_format != CB_FORMAT_FREE) {
+		return 1;
+	} else {
+		cb_plex_warning (COBC_WARN_FILLER, newline_count,
+				 _("ignoring %s directive because of %s"),
+				 directive, "-fformat=fixed/free");
+		return 0;
+	}
+}
+
+/* Sets `source_format`, `indicator_column`, `text_column`, `floating_area_b`,
+   `fill_continued_alnums`, and `cobc_areacheck`, based on the given source
    format. */
 void
 cobc_set_source_format (const enum cb_format sf) {
@@ -1476,6 +1533,17 @@ cobc_set_source_format (const enum cb_format sf) {
 		   some bugs? */
 		text_column = -1;
 		break;
+	}
+
+	switch (source_format) {
+	case CB_FORMAT_FIXED:
+	case CB_FORMAT_FREE:
+		emit_area_a_tokens = 0;
+		cobc_areacheck = 0;
+		break;
+	default:
+		emit_area_a_tokens = 1;
+		cobc_areacheck = cb_areacheck;
 	}
 }
 
@@ -1832,6 +1900,7 @@ ppinput (char *buff, const size_t max_size)
 	int	i,k;
 	int	n;
 	int	coln;
+	int	in_area_a;
 	struct list_skip *skip;
 
 	/* check that we actually have input to process
@@ -2265,13 +2334,20 @@ start:
 		goto start;
 	}
 
-	/* Substitute spaces for indicator */
+	/* Substitute spaces for indicator, and check whether area A is blank */
 	{
 		const int margin_a = cobc_get_margin_a (indicator_width);
+		const int margin_b = cobc_get_margin_b (indicator_width);
 		for (i = indicator_column - 1; i < margin_a; i++) {
 			buff[i] = ' ';
 		}
 		bp = buff + margin_a;
+
+		in_area_a = 0;
+		if (emit_area_a_tokens) {
+			for (i = margin_a; i < margin_b; i++)
+				in_area_a |= buff[i] != ' ';
+		}
 	}
 
 	if (continuation) {
@@ -2388,6 +2464,17 @@ start:
 			memmove (buff + newline_count, buff, gotcr + 1);
 			memset (buff, '\n', newline_count);
 			gotcr += newline_count;
+		}
+		if (in_area_a) {
+			/* (*area-a*): prepend special marker `#', indicating
+			   the current non-continuation line starts in area A
+			   (see "AREA_A" and "MAYBE_AREA_A"... in lexer rules
+			   above).
+
+			   Assumes `buff' is large enough for one extra char. */
+			memmove (buff + 1, buff, gotcr + 1);
+			buff[1] = '#';
+			gotcr += 1;
 		}
 		newline_count = 1;
 	}
@@ -2582,6 +2669,14 @@ skip_to_eol (void)
 	if (c != EOF) {
 		unput (c);
 	}
+}
+
+static void
+count_newlines (const char *p)
+{
+	for (; *p; p++)
+		if (*p == '\n')
+			newline_count++;
 }
 
 static void

@@ -459,7 +459,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_LS_SPLIT","ls_split",				"true",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
 	{"COB_LS_INSTAB","ls_instab",			"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_instab)},
 	{"COB_LS_NULLS","ls_nulls",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
-	{"COB_LS_VALIDATE","ls_validate",		"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
+	{"COB_LS_VALIDATE","ls_validate",		"true",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
 	{"COB_SHARE_MODE","share_mode",			"none",shareopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_share_mode)},
 	{"COB_RETRY_MODE","retry_mode",			"none",retryopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_retry_mode)},
 	{"COB_RETRY_TIMES","retry_times",		"0",NULL,GRP_FILE,ENV_UINT,SETPOS(cob_retry_times)},
@@ -5838,6 +5838,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 	struct exit_handlerlist *hp;
 	struct exit_handlerlist *h;
 	unsigned char	install_flag;
+	/* only initialized to silence -Wmaybe-uninitialized */
 	unsigned char	priority = 0;
 	int			(**p)(void);
 
@@ -7898,14 +7899,14 @@ get_config_val (char *value, int pos, char *orgvalue)
 	 && !(gc_conf[pos].data_type & STS_CNFSET)
 	 && !(gc_conf[pos].data_type & ENV_BOOL)
 	 && gc_conf[pos].default_val != NULL) {
-		strcpy(value,gc_conf[pos].default_val);
+		strcpy (value, gc_conf[pos].default_val);
 		orgvalue[0] = 0;
 	}
 
 	if (gc_conf[pos].default_val != NULL
 	 && strcmp (orgvalue, gc_conf[pos].default_val) != 0) {
 		orgvalue[0] = 0;
-	} else if(strcmp(value,orgvalue) == 0) {
+	} else if (strcmp (value, orgvalue) == 0) {
 		orgvalue[0] = 0;
 	}
 

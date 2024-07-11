@@ -184,6 +184,7 @@ reserved:	ERROR
 reserved:	ESI
 reserved:	EVALUATE
 reserved:	EVERY
+reserved:	EXAMINE
 reserved:	EXCEEDS=GREATER
 reserved:	EXCEPTION
 reserved:	EXIT

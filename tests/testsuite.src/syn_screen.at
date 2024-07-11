@@ -442,16 +442,26 @@ prog.cob:24: error: cannot specify both HIGHLIGHT and LOWLIGHT
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
-[prog.cob:11: warning: cannot specify both LOWLIGHT and HIGHLIGHT; LOWLIGHT is ignored
-prog.cob:12: warning: cannot specify both ERASE EOS and ERASE EOL; ERASE EOS is ignored
-prog.cob:13: warning: cannot specify both BLANK SCREEN and BLANK LINE; BLANK SCREEN is ignored
-prog.cob:16: warning: cannot specify both LOWLIGHT and HIGHLIGHT; LOWLIGHT is ignored
-prog.cob:17: warning: cannot specify both ERASE EOS and ERASE EOL; ERASE EOS is ignored
-prog.cob:18: warning: cannot specify both BLANK SCREEN and BLANK LINE; BLANK SCREEN is ignored
-prog.cob:21: warning: cannot specify both SCROLL DOWN and SCROLL UP; SCROLL DOWN is ignored
-prog.cob:21: warning: cannot specify both TAB and AUTO; TAB is ignored
-prog.cob:22: warning: cannot specify both SCROLL DOWN and SCROLL UP; SCROLL DOWN is ignored
-prog.cob:22: warning: cannot specify both NO UPDATE and UPDATE; NO UPDATE is ignored
+[prog.cob:11: warning: cannot specify both LOWLIGHT and HIGHLIGHT
+prog.cob:11: note: LOWLIGHT is ignored
+prog.cob:12: warning: cannot specify both ERASE EOS and ERASE EOL
+prog.cob:12: note: ERASE EOS is ignored
+prog.cob:13: warning: cannot specify both BLANK SCREEN and BLANK LINE
+prog.cob:13: note: BLANK SCREEN is ignored
+prog.cob:16: warning: cannot specify both LOWLIGHT and HIGHLIGHT
+prog.cob:16: note: LOWLIGHT is ignored
+prog.cob:17: warning: cannot specify both ERASE EOS and ERASE EOL
+prog.cob:17: note: ERASE EOS is ignored
+prog.cob:18: warning: cannot specify both BLANK SCREEN and BLANK LINE
+prog.cob:18: note: BLANK SCREEN is ignored
+prog.cob:21: warning: cannot specify both SCROLL DOWN and SCROLL UP
+prog.cob:21: note: SCROLL DOWN is ignored
+prog.cob:21: warning: cannot specify both TAB and AUTO
+prog.cob:21: note: TAB is ignored
+prog.cob:22: warning: cannot specify both SCROLL DOWN and SCROLL UP
+prog.cob:22: note: SCROLL DOWN is ignored
+prog.cob:22: warning: cannot specify both NO UPDATE and UPDATE
+prog.cob:22: note: NO UPDATE is ignored
 prog.cob:24: error: cannot specify both HIGHLIGHT and LOWLIGHT
 ])
 

@@ -201,6 +201,19 @@
 	  PERFORM stack and used for restoring those on return
 	* common.h (cob_module): fields for current frame_ptr
 
+2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, fileio.c: change COB_LS_VALIDATE to be the default and to
+	  override COB_LS_NULLS
+	* fileio.c: fix bug #853 pass \r to validation / COBOL if it isn't
+	   followed by \n
+	* fileio.c: minor refactor - use of separate FILE *fp
+
+2022-09-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_check_numval): fix missing check for
+	  embedded sign and decimal, minor performance-tweak
+
 2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fbdb.c: manual merge of fileio.c from 2019-08-25 and 2021-01-08
@@ -215,6 +228,7 @@
 
 	* screenio.c (cob_exit_screen): ensure to not end COB_EXIT_MESSAGE
 	  on mouse-move
+	* common.c (cob_sys_exit_proc): fix compiler warning
 
 2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -436,6 +450,13 @@
 	* screenio.c (cob_field_display): If no field, use empty field as default
 					This is to handle DISPLAY OMITTED
 
+2022-02-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: backport of REWRITE in LINE SEQUENTIAL (especially: record_off),
+	  COB_LS_VALIDATE to check LINE SEQUENTIAL files during read/write,
+	  COB_SEQ_CONCAT_NAME and COB_SEQ_CONCAT_SEP, and other file specific
+	  features
+
 2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (set_resolve_error): distinguish between exceptions
@@ -542,6 +563,11 @@
 2021-12-27  Ron Norman <rjn@inglenet.com>
 
 	* reportio.c: Fixed spacing and test cases to match Microfocus
+
+2021-12-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_close) [WITH_DB]: fix bug #753 sigsegv on CLOSE
+	  when COB_SYNC is active
 
 2021-12-12  Ron Norman <rjn@inglenet.com>
 
@@ -683,7 +709,8 @@
 
 	* common.c: Runtime report show 'not set' if that was the default
 	* fileio.c: Change default for LS_SPLIT = TRUE
-				Check LINE SEQUENTIAL data and if invalid return 09 status
+	* fileio.c (lineseq_read): Check LINE SEQUENTIAL data and if invalid
+	  return 09 status per COBOL 2022
 
 2021-10-01  Ron Norman <rjn@inglenet.com>
 
@@ -866,6 +893,15 @@
 2021-07-12  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Check FCD-CURRENT-REC-LEN being changed on WRITE/REWRITE
+
+2021-07-05  Ron Norman <rjn@inglenet.com>
+
+	* common.h (cob_file): Added flag_is_concat, org_filename and nxt_filename
+	* common.c: Handle runtime options COB_SEQ_CONCAT_NAME and
+	  COB_SEQ_CONCAT_SEP used for 'concatenated input files'
+	* coblocal.h (cob_settings): Added fields for concatenated files
+	* fileio.c: Add code to handle SEQUENTIAL and LINE SEQUENTIAL
+	  concatenated input files for OPEN INPUT and I-O
 
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1841,6 +1877,7 @@
 	* fileio.c: For LINE SEQUENTIAL and OPEN I-O some platforms
 				(SUNOS for one) require that a fflush be done
 				between each read/write of the file
+	  Simon 2022-02-04: for now surrounded with [READ_WRITE_NEEDS_FLUSH]
 	* common.h,move.c,sysdefines.h: Updates for speeding up arithmetic
 
 2020-04-17  Ron Norman <rjn@inglenet.com>
@@ -1852,8 +1889,8 @@
 2020-04-14  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Fixed to NOT mix I/O to FILE * via putc and 'int fd' via write
-	            'FILE *' is buffered and 'int fd' is NOT so the data
-				can end up in a very strange sequence in the file
+	   'FILE *' is buffered and 'int fd' is NOT so the data
+	   could end up in a very strange sequence in the file
 
 2020-04-14  Ron Norman <rjn@inglenet.com>
 
@@ -2067,7 +2104,7 @@
 
 2019-11-14  Ron Norman <rjn@inglenet.com>
 
-	* common.c: Fix for display of runtime options
+	* common.c (get_config_val): fix for display of runtime options
 	* fileio.c: If bad data in LINE SEQUENTIAL file cause error status 71
 	            instead of 34
 
@@ -3696,6 +3733,12 @@
 
 2016-06-20  Ron Norman <rjn@inglenet.com>
 
+	* common.h: added some COB_CHAR_xxx to define some characters
+	* fileio.c: for LINE SEQUENTIAL files with COB_LS_VALIDATE = true
+	    changed bad data error from 30 to 34
+	    Also allow some characters thru such as BS, FF, TAB, ESC, SI
+	    No data validation is done for LINE ADVANCING output files
+
 	* coblocal.h, common.c: FR #138 identify config variables which accept
 	  a path list and any which only accept a single directory/file
 	  are checked for the PATH_SEP character and error is given if
@@ -4084,14 +4127,16 @@
 	  something that is clobbering free memory on SUN system.
 	  It did work fine on x86 Linux so watch out for this later.
 
-2015-04-27  Ron Norman
+2015-04-27  Ron Norman <rjn@inglenet.com>
 
-	* common.c fileio.c common.h
+	* common.c, fileio.c, common.h:
 	  updated to support Micro Focus format files.
 	  fileio.c also check for environment variable
 	  IO_filename that can specify options for just the one file
 	  New runtime option (mf_files) to set all files to default
 	  to Micro Focus format
+	* fileio.c, common.h (cob_file): updated to support line sequential rewrite
+	* fileio.c, common.c, coblocal.h (cob_settings): new COB_LS_VALIDATE
 
 2015-04-14  Ron Norman <rjn@inglenet.com>
 
