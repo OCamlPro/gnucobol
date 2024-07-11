@@ -4921,13 +4921,13 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 int
 cob_sys_scr_dump(unsigned char *parm)
 {
-	COB_CHK_PARMS (CBL_GC_SCR_DUMP, 1);
-	init_cob_screen_if_needed ();
-
 #ifdef	WITH_EXTENDED_SCREENIO
 	int	result;
 	FILE	*filep;
 	const char *filename = cob_get_param_str_buffered (1);
+
+	COB_CHK_PARMS (CBL_GC_SCR_DUMP, 1);
+	init_cob_screen_if_needed ();
 
 	if (filename && (filep = fopen(filename, "wb")) != NULL)
 	{
@@ -4948,13 +4948,13 @@ cob_sys_scr_dump(unsigned char *parm)
 		/* restore the current stdscr screen from a file */
 int cob_sys_scr_restore(unsigned char *parm)
 {
-	COB_CHK_PARMS (CBL_GC_SCR_RESTORE, 1);
-	init_cob_screen_if_needed ();
-
 #ifdef	WITH_EXTENDED_SCREENIO
 	int	result;
 	FILE	*filep;
 	const char	*filename = cob_get_param_str_buffered (1);
+
+	COB_CHK_PARMS (CBL_GC_SCR_RESTORE, 1);
+	init_cob_screen_if_needed ();
 
 	if (filename && (filep = fopen(filename, "rb")) != NULL)
 	{

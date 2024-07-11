@@ -2,6 +2,10 @@
 2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) fixed C90 warnings
+
+2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) fixed C90 warnings
 	  Also fixed issue when build without curses
 	* move.c (indirect_move) fixed C90 warnings
 	* profiling.c (profile_setup_clock) fixed C90 warnings
