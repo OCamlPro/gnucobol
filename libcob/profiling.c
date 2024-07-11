@@ -117,6 +117,10 @@ get_ns_time (void)
 static void
 prof_setup_clock ()
 {
+#ifdef HAVE_CLOCK_GETTIME
+	struct timespec ts;
+#endif
+
 #ifdef _WIN32
 	/* Should always succeed on Windows XP and above, but might
 	   fail on Windows 2000. Not available on Windows 9x & NT. */
@@ -130,7 +134,6 @@ prof_setup_clock ()
 #ifdef HAVE_CLOCK_GETTIME
 	/* only CLOCK_REALTIME is guaranteed to be defined (and work),
  	   not all defined clocks are guaranteed to work */
-	struct timespec ts;
  #ifdef CLOCK_MONOTONIC_RAW
 	if (clock_gettime (CLOCK_MONOTONIC_RAW, &ts) == 0) {
 		clockid = CLOCK_MONOTONIC_RAW;
