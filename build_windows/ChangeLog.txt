@@ -1,4 +1,18 @@
 
+2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* version_cobc.rc, version_libcob.rc: updated date + rev
+
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.cmd: cater for new different library names
+	* version_cobc.rc, version_libcob.rc: updated date + rev
+
+2023-05-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.cmd: first addition for CI output
+	* version_cobc.rc, version_libcob.rc: updated date + rev
+
 2022-10-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version_cobfile.rc: new file
@@ -304,7 +318,7 @@
 
 	* update for subfolder vc10
 
-2014-07-07  Philipp Böhme <phi.boehme@googlemail.com>
+2014-07-07  Philipp B hme <phi.boehme@googlemail.com>
 
 	* minor bugfix (tpyos) for subfolder vc12
 
@@ -315,7 +329,7 @@
 	* updated all project files
 	* added subfolder vc11
 
-2014-06-20  Philipp Böhme <phi.boehme@googlemail.com>
+2014-06-20  Philipp B hme <phi.boehme@googlemail.com>
 
 	* added project files - subfolders: vc7, vc8, vc9, vc10, vc12 
 	  (original project files and resource files version_cobc.rc,
