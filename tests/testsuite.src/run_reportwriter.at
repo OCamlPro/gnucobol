@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2021, 2024 Free Software Foundation, Inc.
 ## Written by Ron Norman, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -3792,10 +3792,11 @@ AT_CLEANUP
 AT_SETUP([Sample Inventory Report])
 AT_KEYWORDS([report runfile])
 
-AT_DATA([inp_data],[01Data Processing   02000500012388
-02Cow Milking       02000600054398
-03Grass Cutting     03000600054397
-03Lawn mowing       03000600054397
+AT_DATA([inp_data],
+[01Data Processing   020005000123880
+02Cow Milking       020006000543980
+03Grass Cutting     030006000543970
+03Lawn mowing       030006000543970
 ])
 
 AT_DATA([prog.cob], [

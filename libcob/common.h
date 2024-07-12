@@ -2174,6 +2174,8 @@ COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_scr_dump  (unsigned char *);
+COB_EXPIMP int		cob_sys_scr_restore  (unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
 COB_EXPIMP int		cob_get_text 		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);
