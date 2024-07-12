@@ -131,6 +131,7 @@
 #endif
 
 #if defined (WITH_XML2)
+#include <libxml/parser.h>
 #include <libxml/xmlversion.h>
 #include <libxml/xmlwriter.h>
 #endif

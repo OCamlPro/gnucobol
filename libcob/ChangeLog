@@ -9,6 +9,15 @@
 	* fisam.c (isam_read_next): use ISSTAT only for COB_WITH_STATUS_02,
 	  fixing compile errors with VBISAM
 
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h [__MINGW32__]: drop ancient redefinition of
+	  strcasecmp and strncasecmp
+
+2024-03-10  Alfredo Tupone <tupone@gentoo.org>
+
+	* common.c: add missing include libxml/parser.h
+
 2024-01-30  Ron Norman <rjn@inglenet.com>
 
 	* fisam.c: Updated to set index field type for 'short' & 'int'
@@ -6459,7 +6468,7 @@
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
