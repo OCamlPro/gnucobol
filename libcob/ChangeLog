@@ -1,4 +1,8 @@
 
+2023-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_set_binar): C89 fix
+
 2024-06-08  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (apply_file_paths): extracted from cob_chk_file_mapping

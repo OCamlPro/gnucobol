@@ -1309,34 +1309,36 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 		mpz_set_ui (d->value, cob_binary_get_uint64 (f));
 	}
 #else
-	cob_u64_t		uval;
-	cob_s64_t		val;
-	size_t			negative;
+	{
+		cob_u64_t		uval;
+		cob_s64_t		val;
+		size_t			negative;
 
-	if (f->size <= 4) {
-		if (COB_FIELD_HAVE_SIGN (f)) {
-			mpz_set_si (d->value, (cob_sli_t)cob_binary_get_sint64 (f));
-		} else {
-			mpz_set_ui (d->value, (cob_uli_t) cob_binary_get_uint64 (f));
-		}
-	} else {
-		negative = 0;
-		if (COB_FIELD_HAVE_SIGN (f)) {
-			val = cob_binary_get_sint64 (f);
-			if (val < 0) {
-				negative = 1;
-				uval = (cob_u64_t)-val;
+		if (f->size <= 4) {
+			if (COB_FIELD_HAVE_SIGN (f)) {
+				mpz_set_si (d->value, (cob_sli_t)cob_binary_get_sint64 (f));
 			} else {
-				uval = (cob_u64_t)val;
+				mpz_set_ui (d->value, (cob_uli_t) cob_binary_get_uint64 (f));
 			}
 		} else {
-			uval = cob_binary_get_uint64 (f);
-		}
-		mpz_set_ui (d->value, (cob_uli_t)(uval >> 32));
-		mpz_mul_2exp (d->value, d->value, 32);
-		mpz_add_ui (d->value, d->value, (cob_uli_t)(uval & 0xFFFFFFFFU));
-		if (negative) {
-			mpz_neg (d->value, d->value);
+			negative = 0;
+			if (COB_FIELD_HAVE_SIGN (f)) {
+				val = cob_binary_get_sint64 (f);
+				if (val < 0) {
+					negative = 1;
+					uval = (cob_u64_t)-val;
+				} else {
+					uval = (cob_u64_t)val;
+				}
+			} else {
+				uval = cob_binary_get_uint64 (f);
+			}
+			mpz_set_ui (d->value, (cob_uli_t)(uval >> 32));
+			mpz_mul_2exp (d->value, d->value, 32);
+			mpz_add_ui (d->value, d->value, (cob_uli_t)(uval & 0xFFFFFFFFU));
+			if (negative) {
+				mpz_neg (d->value, d->value);
+			}
 		}
 	}
 #endif
