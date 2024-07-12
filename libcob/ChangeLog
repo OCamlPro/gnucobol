@@ -20,6 +20,12 @@
 	  (indirect_move): fixed bug when calculating scale of 
 	  the intermediate cob field
 
+2024-07-09  Boris Eng <boris.eng@ocamlpro.com>
+
+	* fileio.c (bdb_bt_compare, indexed_open): handle BDB keys of different
+	  length with a flag USE_BDB_KEYDIFF (passed with preparser flag CPPFLAGS)
+	* common.c (cob_cmp_strings), coblocal.h (cob_cmp_strings):
+	  extracted from (cob_cmp_alnum)
 
 2024-07-02  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 

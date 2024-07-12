@@ -1975,16 +1975,14 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 	return ret;
 }
 
-/* compare content of field 'f1' to content of 'f2', space padded,
-   using the optional collating sequence of the program */
-static int
-cob_cmp_alnum (cob_field *f1, cob_field *f2)
+/* compare string 'data1' to string 'data2', of size 'size1' and 'size2'
+   respectively, space padded, using a given collating sequence */
+int
+cob_cmp_strings (
+	unsigned char* data1, unsigned char* data2,
+	size_t size1, size_t size2,
+	const unsigned char *col)
 {
-	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
-	const unsigned char	*data1 = COB_FIELD_DATA (f1);
-	const unsigned char	*data2 = COB_FIELD_DATA (f2);
-	const size_t		size1 = COB_FIELD_SIZE (f1);
-	const size_t		size2 = COB_FIELD_SIZE (f2);	
 	const size_t	min = (size1 < size2) ? size1 : size2;
 	int		ret;
 
@@ -2023,6 +2021,20 @@ cob_cmp_alnum (cob_field *f1, cob_field *f2)
 	}
 
 	return 0;
+}
+
+/* compare content of field 'f1' to content of 'f2', space padded,
+   using the optional collating sequence of the program */
+static int
+cob_cmp_alnum (cob_field *f1, cob_field *f2)
+{
+	return cob_cmp_strings (
+		(unsigned char *)COB_FIELD_DATA (f1),
+		(unsigned char *)COB_FIELD_DATA (f2),
+		COB_FIELD_SIZE (f1),
+		COB_FIELD_SIZE (f2),
+		COB_MODULE_PTR->collating_sequence
+	);
 }
 
 /* comparision of all key fields for SORT (without explicit collation)

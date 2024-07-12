@@ -494,6 +494,9 @@ COB_HIDDEN const char	*cob_get_last_exception_name	(void);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 COB_HIDDEN char*        cob_get_strerror (void);
 
+COB_HIDDEN int		cob_cmp_strings (unsigned char*, unsigned char*,
+						 size_t, size_t, const unsigned char*);
+
 enum cob_case_modifier {
 	CCM_NONE,
 	CCM_LOWER,

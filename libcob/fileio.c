@@ -921,19 +921,24 @@ bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 {
 	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA (k1);
 	COB_UNUSED (db);
-
+#ifdef USE_BDB_KEYDIFF /* flag passed with CPPFLAGS */
+	return cob_cmp_strings (k1->data, k2->data, (size_t)k1->size, (size_t)k2->size, col);
+#else
 	/* LCOV_EXCL_START */
 	if (col == NULL) {
 		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
+		cob_hard_failure ();
 	}
 	if (k1->size != k2->size) {
 		cob_runtime_error ("bdb_bt_compare was given keys of different length");
+		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
 #if DB_VERSION_MAJOR >= 6
 	locp = NULL;	/* docs: must be set to NULL or corruption can occur ... */
 #endif
 	return indexed_key_compare (k1->data, k2->data, k2->size, col);
+#endif /* USE_BDB_KEYDIFF */
 }
 
 #endif	/* WITH_DB */
@@ -4672,9 +4677,14 @@ dobuild:
 				if (f->keys[i].tf_duplicates) {
 					p->db[i]->set_flags (p->db[i], DB_DUP);
 				}
+				/* TODO: add national compare function later */
+#ifdef USE_BDB_KEYDIFF
+				p->db[i]->set_bt_compare(p->db[i], bdb_bt_compare);
+#else
 				if (f->keys[i].collating_sequence) {
 					p->db[i]->set_bt_compare(p->db[i], bdb_bt_compare);
 				}
+#endif
 			}
 		} else {
 			handle_created = 0;
