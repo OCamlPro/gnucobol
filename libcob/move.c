@@ -1458,9 +1458,9 @@ indirect_move (void (*func) (cob_field *src, cob_field *dst),
 	cob_field_attr	attr;
 	size_t      temp_size;
 	unsigned short   digits;
-	unsigned char buff[COB_MAX_DIGITS + 1] = { 0 };
 
 	if (COB_FIELD_TYPE(dst) == COB_TYPE_NUMERIC_EDITED) {
+		unsigned char buff[COB_MAX_DIGITS + 1] = { 0 };
 		temp_size = COB_FIELD_DIGITS(dst) + 1;
 		digits = (unsigned short)temp_size - 1;
 		if (COB_FIELD_HAVE_SIGN(dst)) {
