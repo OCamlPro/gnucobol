@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014, 2016-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014, 2016-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Joe Robbins,
 ## Edward Hart
 ##
@@ -1104,13 +1104,15 @@ AT_DATA([prog.cob], [
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
-           ALPHABET A IS ASCII.
+           ALPHABET A IS ASCII, ALPHABET EBC IS EBCDIC.
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT f, ASSIGN "f.dat", LINE SEQUENTIAL.
-           SELECT g, ASSIGN "g.dat", LINE SEQUENTIAL.
-
+           SELECT g, ASSIGN "g.dat", SEQUENTIAL.
+           SELECT h, ASSIGN "h.dat", LINE SEQUENTIAL.
+           SELECT i, ASSIGN "i.dat", SEQUENTIAL.
+           
        DATA DIVISION.
        FILE SECTION.
        FD  f CODE-SET A.
@@ -1118,13 +1120,27 @@ AT_DATA([prog.cob], [
 
        FD  g CODE-SET foo.
        01  g-rec PIC X(10).
+
+       FD  h CODE-SET ebcdic.
+       01  h-rec PIC X(10).
+
+       FD  i CODE-SET ebc FOR h-rec.
+       01  i-rec PIC X(10).
 ])
 
+/* FIXME: this test will false-positive fail on EBCDIC machines */
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:17: warning: ignoring CODE-SET 'A'
-prog.cob:20: error: 'foo' is not defined
-prog.cob:20: error: 'foo' is not an alphabet-name
+[prog.cob:19: note: ignoring CODE-SET 'A'
+prog.cob:22: error: 'foo' is not defined
+prog.cob:22: error: 'foo' is not an alphabet-name
+prog.cob:25: error: 'ebcdic' cannot be used here
+prog.cob:25: error: 'ebcdic' is not an alphabet-name
+prog.cob:28: warning: handling of CODE-SET is unfinished; implementation is likely to be changed
+prog.cob:28: error: FOR item 'h-rec' is a record
+prog.cob:28: error: FOR item 'h-rec' is not in a record associated with 'FILE i'
 ])
+
 AT_CLEANUP
 
 
@@ -1154,8 +1170,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:16: warning: FOR sub-records is not implemented
-prog.cob:16: warning: CODE-SET is not implemented
+[prog.cob:16: warning: handling of CODE-SET is unfinished; implementation is likely to be changed
 prog.cob:16: error: FOR item 'x' is a record
 prog.cob:16: error: FOR item 'z' is in different record to 'x'
 ])

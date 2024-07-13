@@ -36,6 +36,9 @@
     <ClCompile Include="..\..\cobc\cobc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cobc\cconv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cobc\codegen.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -246,6 +249,9 @@
       <Filter>Auto Generated Files\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cobc\cobc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cobc\cconv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libcob\common.h">

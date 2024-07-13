@@ -989,13 +989,13 @@ enum cob_file_operation {
 
 /* I-O status */
 
-#define COB_STATUS_00_SUCCESS				00
-#define COB_STATUS_02_SUCCESS_DUPLICATE		02
-#define COB_STATUS_04_SUCCESS_INCOMPLETE	04
-#define COB_STATUS_05_SUCCESS_OPTIONAL		05
-#define COB_STATUS_06_READ_TRUNCATE			06
-#define COB_STATUS_07_SUCCESS_NO_UNIT		07
-#define COB_STATUS_09_READ_DATA_BAD			 9
+#define COB_STATUS_00_SUCCESS				0
+#define COB_STATUS_02_SUCCESS_DUPLICATE		2
+#define COB_STATUS_04_SUCCESS_INCOMPLETE	4
+#define COB_STATUS_05_SUCCESS_OPTIONAL		5
+#define COB_STATUS_06_READ_TRUNCATE			6
+#define COB_STATUS_07_SUCCESS_NO_UNIT		7
+#define COB_STATUS_09_READ_DATA_BAD			9
 #define COB_STATUS_10_END_OF_FILE			10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14
 #define COB_STATUS_21_KEY_INVALID			21
@@ -1019,8 +1019,8 @@ enum cob_file_operation {
 #define COB_STATUS_48_OUTPUT_DENIED			48
 #define COB_STATUS_49_I_O_DENIED			49
 #define COB_STATUS_51_RECORD_LOCKED			51
-#define COB_STATUS_52_DEAD_LOCK				52	/* currently not implemented (patch available) */
-#define COB_STATUS_53_MAX_LOCKS				53	
+#define COB_STATUS_52_DEAD_LOCK				52
+#define COB_STATUS_53_MAX_LOCKS				53
 #define COB_STATUS_54_MAX_LOCKS_FD			54	/* currently not implemented */
 #define COB_STATUS_57_I_O_LINAGE			57
 #define COB_STATUS_61_FILE_SHARING			61
@@ -1526,7 +1526,7 @@ typedef struct __cob_file {
 	cob_file_key		*keys;			/* ISAM/RANDOM/SORT keys */
 	void			*file;			/* File specific pointer */
 	cob_linage		*linage;		/* LINAGE */
-	const unsigned char	*sort_collating;	/* SORT collating */
+	const unsigned char	*sort_collating;	/* SORT collating / CODE-SET (used for RE-/WRITE) */
 	void			*extfh_ptr;		/* For EXTFH usage */
 	int				record_min;		/* Record min size */
 	int				record_max;		/* Record max size */
@@ -1619,6 +1619,10 @@ typedef struct __cob_file {
 	int					blockpid;		/* Process Id blocking the lock */
 	char				*org_filename;	/* Full concatenated file name */
 	char				*nxt_filename;	/* Next position in org_filename */
+
+	const unsigned char* code_set_read;	/* CODE-SET conversion for READs */
+	size_t			nconvert_fields;	/* Number of logical fields to convert */
+	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
 } cob_file;
 
 

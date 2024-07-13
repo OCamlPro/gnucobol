@@ -5432,10 +5432,6 @@ AT_CLEANUP
 AT_SETUP([USE FOR DEBUGGING, referencing BASED item])
 AT_KEYWORDS([fundamental DEBUGGING FREE ALLOCATE])
 
-# uncommon issue but shouldn't SIGSEGV --> TODO: fix later
-# TODO: also check "ADDRESS OF" (non)-ALLOCATED field
-AT_XFAIL_IF(true)
-
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -5445,22 +5441,44 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  DATA-FIELD   PIC X(40) VALUE "ABCD" BASED.
+       77  PTR          USAGE POINTER VALUE NULL.
+       01  DATA-FIELD3  PIC X(13) VALUE "42"   BASED.
+       LINKAGE SECTION.
+       01  DATA-FIELD2  PIC X(10) VALUE "DEF".
        PROCEDURE        DIVISION.
        DECLARATIVES.
        TEST-DEBUG SECTION.
-           USE FOR DEBUGGING ON ALL REFERENCES OF DATA-FIELD.
+           USE FOR DEBUGGING  ON ALL REFERENCES OF DATA-FIELD
+                                 ALL REFERENCES OF DATA-FIELD2
+                                 DATA-FIELD3.
            DISPLAY DEBUG-ITEM "|" END-DISPLAY.
        END DECLARATIVES.
        SOME-PAR.
-           ALLOCATE DATA-FIELD INITIALIZED.
-           FREE DATA-FIELD.
+           ALLOCATE -20 CHARACTERS RETURNING PTR
+           SET ADDRESS OF DATA-FIELD TO PTR   *> first expected output -> is NULL
+           ALLOCATE DATA-FIELD INITIALIZED    *> output with data as specified
+           FREE DATA-FIELD                    *> No data any more
+           ALLOCATE DATA-FIELD2 INITIALIZED   *> testing MF extension - otherwise identical
+           SET PTR TO ADDRESS OF DATA-FIELD2
+           FREE PTR
+           SET ADDRESS OF DATA-FIELD2 TO NULL
+           ALLOCATE DATA-FIELD3 INITIALIZED
+           SET PTR TO ADDRESS OF DATA-FIELD3  *> only read, no output expected
+           FREE DATA-FIELD3
            STOP RUN.
 ])
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# not sure about the output, check MF, claiming to support BASED + DEBUGGING
+# relaxed syntax is needed as the standard allows only to ALLOCATE BASED items
+AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])  # not active -> no displays
 AT_CHECK([COB_SET_DEBUG=1 $COBCRUN_DIRECT ./prog], [0],
-[    17 DATA-FIELD                                      ABCD                                     |
-    18 DATA-FIELD                                       ABCD                                    |
+[    24 DATA-FIELD                                       <NULL>                                  |
+    25 DATA-FIELD                                       ABCD                                    |
+    26 DATA-FIELD                                       <NULL>                                  |
+    27 DATA-FIELD2                                      DEF                                     |
+    28 DATA-FIELD2                                      DEF                                     |
+    30 DATA-FIELD2                                      <NULL>                                  |
+    31 DATA-FIELD3                                      42                                      |
+    33 DATA-FIELD3                                      <NULL>                                  |
 ], [])
 
 AT_CLEANUP

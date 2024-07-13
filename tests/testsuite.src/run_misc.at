@@ -879,7 +879,8 @@ AT_CLEANUP
 ## OCCURS clause
 
 AT_SETUP([OCCURS on level 01])
-AT_KEYWORDS([runmisc VALUE SET ADDRESS])
+AT_KEYWORDS([runmisc toplevel
+VALUE SET ADDRESS BOUND DEPENDING ODO])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -899,7 +900,35 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 XX PIC 99 VALUE 5.
+       01 X             PIC X OCCURS 0 TO 10
+                        DEPENDING ON XX VALUE "A".
+       LINKAGE SECTION.
+       01 X-ALL         PIC X(10).
+       PROCEDURE        DIVISION.
+           INITIALIZE   X(1) X(3) X(5) X(7)
+           MOVE ZERO TO X(2) X(4) X(6) X(8)
+           SET ADDRESS OF X-ALL TO ADDRESS OF X(1)
+           IF X-ALL NOT = " 0 0 0 0AA"
+              DISPLAY X-ALL UPON SYSERR
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-ec=bound -o baddy prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./baddy], [0], [], [])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:13: error: subscript of 'X' out of bounds: 6
+note: current maximum subscript for 'X': 5
+])
 
 AT_CLEANUP
 
@@ -1707,7 +1736,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
-       01 TESTHEX PIC X(10) VALUE X'C17BD6F2F0F1F8404040'.
+       01 TESTHEX PIC X(10) VALUE X'C17BD6F2F0F1F8406A5A'.
 
        procedure division.
        sample-main.
@@ -1721,7 +1750,21 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[Converted: "A#O2018   "], [])
+[Converted: "A#O2018 |!"], [])
+
+# For characters above IBM (with irregularities) and GCOS should match:
+AT_CHECK([$COMPILE prog.cob -febcdic-table=ibm -o prog-ibm], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-ibm], [0],
+[Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
+
+AT_CHECK([$COMPILE prog.cob -febcdic-table=gcos -o prog-gcos], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-gcos], [0],
+[Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
+
+# FIXME: This really does not convert to anything close to ASCII;
+# what's this table supposed to encode?
+# AT_CHECK([$COMPILE prog.cob -febcdic-table=restricted-gc -o prog-rgc], [0], [], [])
+# AT_CHECK([$COBCRUN_DIRECT ./prog-rgc], [0], [])
 
 AT_CLEANUP
 
@@ -2086,154 +2129,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
-
-AT_SETUP([INSPECT REPLACING TRAILING ZEROS BY SPACES])
-AT_KEYWORDS([runmisc])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       01 X             PIC X(4) VALUE "1000".
-       PROCEDURE        DIVISION.
-           INSPECT X REPLACING TRAILING ZEROS BY SPACES.
-           IF X NOT = "1   "
-              DISPLAY X.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([INSPECT REPLACING complex])
-AT_KEYWORDS([runmisc CHARACTERS])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       01 X             PIC X(12) VALUE "AZABBCDCCECC".
-       PROCEDURE        DIVISION.
-           INSPECT X REPLACING
-             ALL      "A" BY "Z"
-                      "B" BY "Y"
-                      "Z" BY "0"
-             TRAILING "C" BY "X"
-           IF X NOT = "Z0ZYYCDCCEXX"
-              DISPLAY "1 - " X.
-
-           INSPECT X REPLACING
-             CHARACTERS BY SPACES
-              BEFORE  "C" AFTER "0"
-             CHARACTERS BY ZEROES
-              BEFORE  "E" AFTER "C"
-           IF X NOT = "Z0   C000EXX"
-              DISPLAY "2 - " X.
-
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CLEANUP
-
-
-AT_SETUP([EXAMINE TALLYING])
-AT_KEYWORDS([runmisc])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       01 X             PIC X(8) VALUE "AABABCAB".
-       01 N             PIC S9(5)V9(2) VALUE -11122.55.
-       01 T             PIC X(10) VALUE "    8     ".
-       PROCEDURE        DIVISION.
-           EXAMINE X TALLYING ALL "A"
-           IF TALLY NOT = 4
-              DISPLAY "Should be 4 but is " TALLY.
-           EXAMINE X TALLYING LEADING "A"
-           IF TALLY NOT = 2
-              DISPLAY "Should be 2 but is " TALLY.
-           EXAMINE X TALLYING UNTIL FIRST "C"
-           IF TALLY NOT = 5
-              DISPLAY "Should be 5 but is " TALLY.
-           EXAMINE X TALLYING ALL "A" REPLACING BY "Z"
-           IF TALLY NOT = 4
-              DISPLAY "Should be 4 but is " TALLY.
-           IF X NOT = "ZZBZBCZB"
-              DISPLAY "Should be ZZBZBCZB but is " X.
-           EXAMINE X TALLYING LEADING "Z" REPLACING BY "A"
-           IF TALLY NOT = 2
-              DISPLAY "Should be 2 but is " TALLY.
-           IF X NOT = "AABZBCZB"
-              DISPLAY "Should be AABZBCZB but is " X.
-           EXAMINE X TALLYING UNTIL FIRST "C" REPLACING BY "X"
-           IF TALLY NOT = 5
-              DISPLAY "Should be 5 but is " TALLY.
-           IF X NOT = "XXXXXCZB"
-              DISPLAY "Should be XXXXXCZB but is " X.
-           EXAMINE X TALLYING UNTIL FIRST "Y" REPLACING BY "Y"
-           IF TALLY NOT = 8
-              DISPLAY "Should be 8 but is " TALLY.
-           IF X NOT = "YYYYYYYY"
-              DISPLAY "Should be YYYYYYYY but is " X.
-           EXAMINE N TALLYING UNTIL FIRST 5 REPLACING BY 8
-           IF N NOT = -88888.55
-              DISPLAY "Should be -88888.55 but is " N.
-      *    Re-mod is forbidden here (at least on GCOS):
-      *    EXAMINE N TALLYING LEADING T (5:1)
-      *    IF TALLY NOT = 5
-      *       DISPLAY "Should be 5 but is " TALLY.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE -freserved=EXAMINE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([EXAMINE REPLACING])
-AT_KEYWORDS([runmisc])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       01 X             PIC X(8) VALUE "AABABCAB".
-       01 Y             PIC X VALUE "Y".
-       01 N             PIC S9(5) VALUE -11122.
-       PROCEDURE        DIVISION.
-           EXAMINE X REPLACING ALL "A" BY "X"
-           IF X NOT = "XXBXBCXB"
-              DISPLAY "Should be XXBXBCXB but is " X.
-           EXAMINE X REPLACING LEADING "X" BY "Y"
-           IF X NOT = "YYBXBCXB"
-              DISPLAY "Should be YYBXBCXB but is " X.
-           EXAMINE X REPLACING FIRST "B" BY "C"
-           IF X NOT = "YYCXBCXB"
-              DISPLAY "Should be YYCXBCXB but is " X.
-           EXAMINE X REPLACING UNTIL FIRST "B" BY "Z"
-           IF X NOT = "ZZZZBCXB"
-              DISPLAY "Should be ZZZZBCXB but is " X.
-           EXAMINE N REPLACING ALL 1 BY 3
-           IF N NOT = -33322
-              DISPLAY "Should be -33322 but is " N.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE -freserved=EXAMINE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_CLEANUP
+# Note: more INSPECT for "TRAILING" and EXAMINE in run_extensions.at
 
 
 AT_SETUP([SWITCHES (environment COB_SWITCH_n and SET)])
@@ -3134,6 +3030,120 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -ftop-level-occurs-clause=ok prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UNSTRING combined])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. UnstringTest.
+      *>----------------------------------------------------------------
+      *>           Additional test case for UNSTRING
+      *> testing unstring tallying with and without OVERFLOW and with
+      *> ALL clause for delimiters
+      *>----------------------------------------------------------------
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *>-----------------------
+       01 INP-STRING           PIC X(13) VALUE 'ABC1|DEF--GHI'.
+       01 STR-POINTER          PIC 9(02).
+       01 RES-DATA.
+          05 RES-TRGT-1        PIC X(20).
+          05 RES-DELIM-1       PIC X(01).
+          05 RES-COUNT-1       PIC 9(02).
+          05 RES-TRGT-2        PIC X(20).
+          05 RES-DELIM-2       PIC X(01).
+          05 RES-COUNT-2       PIC 9(02).
+          05 RES-TALLY         PIC 9(02).
+      *>
+       PROCEDURE DIVISION.
+      *>------------------
+      *>
+      *>   case A : should not  OVERFLOW; use of one delimiter
+           INITIALIZE RES-DATA
+           MOVE 1  TO STR-POINTER
+      *>
+           UNSTRING INP-STRING
+                    DELIMITED BY '|'
+               INTO RES-TRGT-1
+                    DELIMITER IN RES-DELIM-1 COUNT IN RES-COUNT-1
+                    RES-TRGT-2
+                    DELIMITER IN RES-DELIM-2 COUNT IN RES-COUNT-2
+               WITH POINTER STR-POINTER
+               TALLYING RES-TALLY
+               ON OVERFLOW
+                   DISPLAY
+                      'Unstring tallying case 1 should not OVERFLOW'
+                   END-DISPLAY
+           END-UNSTRING.
+           PERFORM TEST-CASE-1-RESULT
+      *>
+      *>   case B : should  OVERFLOW; use of two delimiters
+           INITIALIZE RES-DATA
+           MOVE 1  TO STR-POINTER
+
+           UNSTRING INP-STRING
+                    DELIMITED BY '|' OR  ALL '-'
+               INTO RES-TRGT-1
+                    DELIMITER IN RES-DELIM-1 COUNT IN RES-COUNT-1
+                    RES-TRGT-2
+                    DELIMITER IN RES-DELIM-2 COUNT IN RES-COUNT-2
+               WITH POINTER STR-POINTER
+               TALLYING RES-TALLY
+               NOT ON OVERFLOW
+                   DISPLAY
+                      'Unstring tallying case 2 should  OVERFLOW'
+                   END-DISPLAY
+           END-UNSTRING.
+           PERFORM TEST-CASE-2-RESULT
+      *>
+           GOBACK.
+
+      *>
+       TEST-CASE-1-RESULT.
+      *>------------------
+           IF RES-TRGT-1 NOT = 'ABC1'
+              DISPLAY 'A: RES-TRGT-1 <'   RES-TRGT-1  '> != <ABC1>'.
+           IF RES-DELIM-1 NOT = '|'                   
+              DISPLAY 'A: RES-DELIM-1 <'  RES-DELIM-1 '> != <|>'.
+           IF RES-COUNT-1 NOT = 4                     
+              DISPLAY 'A: RES-COUNT-1 <'  RES-COUNT-1 '> != <4>'.
+           IF RES-TRGT-2 NOT = 'DEF--GHI'             
+              DISPLAY 'A: RES-TRGT-2 <'   RES-TRGT-2  '> != <DEF--GHI>'.
+           IF RES-DELIM-2  NOT = SPACES               
+              DISPLAY 'A: RES-DELIM2 <'   RES-DELIM-2 '> != SPACE'.
+           IF RES-COUNT-2 NOT = 8                     
+              DISPLAY 'A: RES-COUNT-1 <'  RES-COUNT-2 '> != <8>'.
+           IF STR-POINTER NOT = 14                    
+              DISPLAY 'A: STR-POINTER <'  STR-POINTER '> != <14>'.
+           IF RES-TALLY NOT = 2                       
+              DISPLAY 'A: RES-TALLY <'    RES-TALLY   '> != <2>'.
+      *>                                              
+       TEST-CASE-2-RESULT.                            
+      *>------------------                            
+           IF RES-TRGT-1 NOT = 'ABC1'                 
+              DISPLAY 'B: RES-TRGT-1 <'   RES-TRGT-1  '> != <ABC1>'.
+           IF RES-DELIM-1 NOT = '|'                   
+              DISPLAY 'B: RES-DELIM-1 <'  RES-DELIM-1 '> != <|>'.
+           IF RES-COUNT-1 NOT = 4                     
+              DISPLAY 'B: RES-COUNT-1 <'  RES-COUNT-1 '> != <4>'.
+           IF RES-TRGT-2 NOT = 'DEF'                  
+              DISPLAY 'B: RES-TRGT-2 <'   RES-TRGT-2  '> != <DEF>'.
+           IF RES-DELIM-2  NOT = '-'                  
+              DISPLAY 'B: RES-DELIM2 <'   RES-DELIM-2 '> != <->'.
+           IF RES-COUNT-2 NOT = 3                     
+              DISPLAY 'B: RES-COUNT-1 <'  RES-COUNT-2 '> != <3>'.
+           IF STR-POINTER NOT = 11
+              DISPLAY 'B: STR-POINTER <'  STR-POINTER '> != <11>'.
+           IF RES-TALLY NOT = 2                       
+              DISPLAY 'B: RES-TALLY <'    RES-TALLY   '> != <2>'.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -8500,6 +8510,15 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
+AT_CHECK([COB_DUMP_FILE=NONE \
+$COBCRUN prog], [1],
+[X is 000000001
+X is 000005441
+],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+])
+
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],
 [X is 000000001
@@ -8509,15 +8528,6 @@ X is 000005441
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump.dump
-])
-
-AT_CHECK([COB_DUMP_FILE=NONE \
-$COBCRUN prog], [1],
-[X is 000000001
-X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
 
 AT_DATA([reference], [

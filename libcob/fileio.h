@@ -45,6 +45,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #ifndef EDEADLK
 #ifdef EDEADLOCK		/* SCO name for EDEADLK */

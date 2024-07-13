@@ -457,10 +457,10 @@ static struct config_tbl gc_conf[] = {
 	{"COB_BDB_BYTEORDER","bdb_byteorder",	"native",bdborder,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_bdb_byteorder)},
 	{"COB_LS_FIXED","ls_fixed",				"0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_fixed)},
 	{"STRIP_TRAILING_SPACES","strip_trailing_spaces",NULL,NULL,GRP_HIDE,ENV_BOOL|ENV_NOT,SETPOS(cob_ls_fixed)},
-	{"COB_LS_SPLIT","ls_split",				"true",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
+	{"COB_LS_SPLIT","ls_split",				"1",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
 	{"COB_LS_INSTAB","ls_instab",			"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_instab)},
 	{"COB_LS_NULLS","ls_nulls",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
-	{"COB_LS_VALIDATE","ls_validate",		"true",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
+	{"COB_LS_VALIDATE","ls_validate",		"1",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
 	{"COB_SHARE_MODE","share_mode",			"none",shareopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_share_mode)},
 	{"COB_RETRY_MODE","retry_mode",			"none",retryopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_retry_mode)},
 	{"COB_RETRY_TIMES","retry_times",		"0",NULL,GRP_FILE,ENV_UINT,SETPOS(cob_retry_times)},
@@ -7496,11 +7496,11 @@ translate_boolean_to_int (const char *ptr)
 	if (ptr == NULL || *ptr == 0) {
 		return 2;
 	}
-	if (strcasecmp (ptr, "not set") == 0)
-		return -1;
-
 	if (*(ptr + 1) == 0 && isdigit ((unsigned char)*ptr)) {
 		return atoi (ptr);		/* 0 or 1 */
+	} else
+	if (strcasecmp (ptr, "not set") == 0) {
+		return -1;
 	} else
 	if (strcasecmp (ptr, "true") == 0
 	 || strcasecmp (ptr, "t") == 0
@@ -7820,20 +7820,21 @@ get_config_val (char *value, int pos, char *orgvalue)
 
 	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
 		numval = get_value (data, data_len);
-		if ((data_type & ENV_NOT)) {
-			numval = !numval;
-		}
 		if (numval == -1) {
 			strcpy (value, _("not set"));
-		} else
-		if (numval) {
-			strcpy (value, _("yes"));
 		} else {
-			strcpy (value, _("no"));
+			if ((data_type & ENV_NOT)) {
+				numval = !numval;
+			}
+			if (numval) {
+				strcpy (value, _("yes"));
+			} else {
+				strcpy (value, _("no"));
+			}
 		}
 
 	/* TO-DO: Consolidate copy-and-pasted code! */
-	} else if ((data_type & ENV_STR)) {	/* String stored as a string */
+	} else if (data_type & ENV_STR) {	/* String stored as a string */
 		memcpy (&str, data, sizeof (char *));
 		if (data_loc == offsetof (cob_settings, cob_display_print_filename)
 		 && cobsetptr->cob_display_print_file) {
@@ -8693,6 +8694,9 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		case COB_STATUS_61_FILE_SHARING:
 			msg = _("file sharing conflict");
 			break;
+		case COB_STATUS_71_BAD_CHAR:
+			msg = _("invalid data in LINE SEQUENTIAL file");
+			break;
 		/* LCOV_EXCL_START */
 		case COB_STATUS_91_NOT_AVAILABLE:
 			msg = _("runtime library is not configured for this operation");
@@ -9489,7 +9493,8 @@ print_runtime_conf ()
 					putchar (' ');
 					if (gc_conf[i].data_type & STS_FNCSET) {
 						printf ("   ");
-					} else if ((gc_conf[i].data_type & STS_CNFSET)) {
+					} else
+					if (gc_conf[i].data_type & STS_CNFSET) {
 						printf ("Ovr");
 					} else {
 						printf ("env");
@@ -9501,7 +9506,8 @@ print_runtime_conf ()
 						}
 					}
 					printf (": %-*s : ", hdlen, gc_conf[i].env_name);
-				} else if ((gc_conf[i].data_type & STS_CNFSET)) {
+				} else
+				if (gc_conf[i].data_type & STS_CNFSET) {
 					if ((gc_conf[i].data_type & STS_ENVCLR)) {
 						printf ("    : %-*s : ", hdlen, gc_conf[i].env_name);
 						puts (_("... removed from environment"));
@@ -9569,10 +9575,12 @@ print_runtime_conf ()
 					putchar (' ');
 					if ((gc_conf[i].data_type & STS_RESET)) {
 						printf (_("(reset)"));
-					} else if (strcmp (value, not_set) != 0) {
+					} else
+					if (strcmp (value, not_set) != 0) {
 						printf (_("(default)"));
-					} else if (gc_conf[i].default_val
-							&& strcmp (gc_conf[i].default_val, not_set) == 0) {
+					} else
+					if (gc_conf[i].default_val
+					 && strcmp (gc_conf[i].default_val, not_set) == 0) {
 						printf (_("(default)"));
 					}
 				}

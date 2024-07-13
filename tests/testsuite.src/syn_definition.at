@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2016-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2016-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -1760,6 +1760,33 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:7: error: PICTURE clause not compatible with USAGE COMP-6
 prog.cob:8: error: PICTURE clause not compatible with USAGE COMP-3
 ])
+AT_CLEANUP
+
+
+AT_SETUP([Edited monetary PICTURE strings])
+AT_KEYWORDS([definition])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 DOLLARS.
+           05  REPORT-LINE.
+               10  REPORT-ITEMS                PIC ZZ,ZZZ,ZZZ,ZZ9-.
+               10  REPORT-FICA-WAGES           PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+               10  REPORT-FICA-TIPS            PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+               10  REPORT-TOTAL-COMP           PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+               10  REPORT-MEDICARE             PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+           05  ACCT-REPORT-TOTAL-LINE          PIC XXX.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CLEANUP
 
 

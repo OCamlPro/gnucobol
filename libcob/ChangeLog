@@ -207,19 +207,54 @@
 	* intrinsic.c: extend internal docs
 	* fileio.c: add some guards against bad function calls
 
+2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (numval, cob_intr_numval_f): rewritten for improved
+	  performance (and creating smaller temporary fields);
+	  changed to just skip invalid data instead of doing pre-validation
+	  (which can be re-enabled by defining [INVALID_NUMVAL_IS_ZERO])
+	* intrinsic.c (cob_check_numval_f, cob_intr_numval_f): correctly
+	  recognize lowercase E
+
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h (cob_frame_ext): new variant of cob_frame storing the
 	  section/paragraph + location to return to; allowing a full textual
 	  PERFORM stack and used for restoring those on return
 	* common.h (cob_module): fields for current frame_ptr
+	* general: merged missing line sequential changes from 4.x to 3.x
+	* common.c: fixed, then disabled boolean options "not set"
+	* fileio.c (lineseq_read): set io status 71 for EOF after x'00'
+	  when parsed for COB_LS_NULLS
+	* common.c (cob_fatal_error): added missing COB_STATUS_71_BAD_CHAR
+	* fileio.c (cob_read, cob_read_next): handle io status 04 and 09
+	  as successful as io status 06
+	* fileio.c (lineseq_read): set return status 04 if record is truncated
+	  because LS_SPLIT is false
+
+2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (lineseq_read): Status 09 for validation is a warning,
+	  so still parse until end of field when reading bad data
+
+	FR #422 - initial implementation of conversion via CODE-SET
+	* common.h (cob_file): new fields
+	* fileio.c (sequential_read, lineseq_read, cob_write, cob_rewrite,
+	  get_code_set_converted_data): handle conversion
+
+2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_file_close): clear file pointer for LINE SEQUENTIAL
+	  files, fixing a later use
+	* fileio.c: EXTFH memory adjustment - use cache_malloc for internally
+	  created select names and free it along with its fcd_file_list entry
 
 2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c, fileio.c: change COB_LS_VALIDATE to be the default and to
 	  override COB_LS_NULLS
 	* fileio.c: fix bug #853 pass \r to validation / COBOL if it isn't
-	   followed by \n
+	  followed by \n
 	* fileio.c: minor refactor - use of separate FILE *fp
 
 2022-09-13  Simon Sobisch <simonsobisch@gnu.org>
@@ -721,9 +756,9 @@
 2021-10-02  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Runtime report show 'not set' if that was the default
-	* fileio.c: Change default for LS_SPLIT = TRUE
-	* fileio.c (lineseq_read): Check LINE SEQUENTIAL data and if invalid
+	* fileio.c (lineseq_read): check LINE SEQUENTIAL data and if invalid
 	  return 09 status per COBOL 2022
+	* fileio.c: change default for LS_SPLIT = TRUE
 
 2021-10-01  Ron Norman <rjn@inglenet.com>
 
@@ -731,6 +766,11 @@
 				replaced cob_gc_files/cob_mf_files with cob_file_format
 	* common.c: Changes related to removal of COB_MF_LS_xxx from runtime.cfg
 	* fileio.c: Changes related to removal of COB_MF_LS_xxx from runtime.cfg
+	* fileio.c (lineseq_read): check LINE SEQUENTIAL data and if invalid
+	  return 09 status per COBOL 2022
+	* common.c: added 'not set' for boolean options [disabed in 3.x]
+	* common.c: change default for LS_SPLIT = TRUE
+	* fileio.c, common.h: return status 06 for split line sequential
 
 2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -964,7 +1004,7 @@
 
 2021-06-26  Ron Norman <rjn@inglenet.com>
 
-	* common.h: Add COB_DIALECT_xxx 
+	* common.h: Add COB_DIALECT_xxx
 	* fileio.c: Preparing for dialect specific status codes
 
 2021-06-11  Ron Norman <rjn@inglenet.com> and Christian Lademann
@@ -978,7 +1018,7 @@
 
 2021-05-04  Ron Norman <rjn@inglenet.com>
 
-	* common.c: Make a few variables 'static' to better 
+	* common.c: Make a few variables 'static' to better
 	 handle when there is an abort during dumping
 
 2021-04-30  Ron Norman <rjn@inglenet.com>
@@ -1025,17 +1065,19 @@
 	* common.h: Add to cob_symbol values for 'is_indirect'
 				Changed 'data' to 'adrs', 'indexes' to 'subscripts'
 	* common.c: Adjusted for new field names, handle ANY LENGTH/NUMERIC
-				
+
 2021-03-20  Ron Norman <rjn@inglenet.com>
 
-	* common.h: Add 'indexes' to cob_symbol 
-				
+	* common.h: Add 'indexes' to cob_symbol
+
 2021-03-18  Ron Norman <rjn@inglenet.com>
 
 	* common.h: New cob_symbol defined for a table of all module symbols
 				Field added to cob_module for section/paragraph/verb names
 	* common.c: New routines added to dump a module using the symbol table
 				instead of a bunch in generated code to do it
+	* common.h (cob_module): fields for section/paragraph/statement names
+	* common.c: adjusted to use new fields in cob_module
 
 2021-03-05  Ron Norman <rjn@inglenet.com>
 

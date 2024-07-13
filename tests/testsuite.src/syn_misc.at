@@ -2773,7 +2773,7 @@ WORKING-STORAGE  SECTION.
 PROCEDURE        DIVISION.
       * DISPLAY 'NOCOMMENT'           END-DISPLAY
       / DISPLAY 'NOCOMMENTSLASH'      END-DISPLAY
-      $ DISPLAY 'NOCOMMENTDOLLAR'     END-DISPLAY
+$       DISPLAY 'ACUCOMMENTDOLLAR'    END-DISPLAY
 *       DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
 /       DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
  |      DISPLAY 'ACUFLOATING'         END-DISPLAY
@@ -2798,8 +2798,8 @@ prog2.cob:17: error: invalid symbol '|' - skipping word
 ])
 
 # note: for checking the result we actually either need to run the program
-#       or change it to string concatenation and raise a constant compile time warning
-#       we do (historically) the first (for now)
+#       or change it to string concatenation and raise a constant compile
+#       time warning we do (historically) the first (for now)
 #
 AT_CHECK([$COMPILE -fmfcomment prog.cob], [0], [],
 [])
@@ -2840,29 +2840,34 @@ NOFLOATING
 
 
 AT_CHECK([$COMPILE_ONLY -free prog3.cob], [1], [],
-[prog3.cob:11: warning: spurious '$' detected - ignored
-prog3.cob:9: error: syntax error, unexpected *
+[prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
+prog3.cob:11: error: invalid symbol '$' - skipping word
 prog3.cob:12: error: syntax error, unexpected *
 prog3.cob:13: error: syntax error, unexpected /
 prog3.cob:14: error: invalid symbol '|' - skipping word
 prog3.cob:16: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -fmfcomment prog3.cob], [1], [],
-[prog3.cob:11: warning: spurious '$' detected - ignored
-prog3.cob:9: error: syntax error, unexpected *
+[prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
+prog3.cob:11: error: invalid symbol '$' - skipping word
 prog3.cob:12: error: syntax error, unexpected *
 prog3.cob:13: error: syntax error, unexpected /
 prog3.cob:14: error: invalid symbol '|' - skipping word
 prog3.cob:16: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -facucomment prog3.cob], [1], [],
-[prog3.cob:11: warning: spurious '$' detected - ignored
-prog3.cob:9: error: syntax error, unexpected *
+[prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
+prog3.cob:11: error: invalid symbol '$' - skipping word
 prog3.cob:12: error: syntax error, unexpected *
 prog3.cob:13: error: syntax error, unexpected /
+prog3.cob:16: error: syntax error, unexpected Identifier
+])
+AT_CHECK([$COMPILE_ONLY -fformat=terminal -facucomment prog3.cob], [1], [],
+[prog3.cob:9: error: syntax error, unexpected *
+prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:16: error: syntax error, unexpected Identifier
 ])
 # Check that invalid indicator and doesn't abort preprocessing
@@ -2874,7 +2879,6 @@ prog3.cob:4: error: invalid indicator 'N' at column 7
 prog3.cob:5: error: invalid indicator 'U' at column 7
 prog3.cob:7: error: invalid indicator 'G' at column 7
 prog3.cob:8: error: invalid indicator 'U' at column 7
-prog3.cob:11: error: invalid indicator '$' at column 7
 prog3.cob:16: error: invalid indicator 'x' at column 7
 prog3.cob:6: error: PROGRAM-ID header missing
 prog3.cob:6: error: PROCEDURE DIVISION header missing
@@ -6289,7 +6293,7 @@ prog.cob:10: error: syntax error, unexpected Identifier
 AT_CHECK([$COMPILE_ONLY -std=mf-strict -freserved=CONSTANT prog.cob], [1], [],
 [prog.cob:6: error: 01 CONSTANT does not conform to Micro Focus COBOL
 prog.cob:7: error: 01 CONSTANT does not conform to Micro Focus COBOL
-prog.cob:7: error: syntax error, unexpected Identifier, expecting . or level-number (Area A)
+prog.cob:7: error: syntax error, unexpected Identifier
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
@@ -7875,7 +7879,26 @@ prog.cob:20: error: syntax error, unexpected PROCEDURE
 prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
 prog.cob:26: error: 'one' is not a numeric value
 prog.cob:27: error: amount must be specified as a numeric expression
-prog.cob:29: error: target of ALLOCATE is not a BASED item
+prog.cob:29: error: target of ALLOCATE must have BASED clause
+prog.cob:30: error: INITIALIZED TO item is not alphanumeric
+prog.cob:31: error: target 1 of FREE is not a BASED data item
+prog.cob:32: error: target 1 of FREE is not a BASED data item
+])
+
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
+[prog.cob:8: error: BASED only allowed at 01/77 level
+prog.cob:16: warning: PROCEDURE DIVISION header missing
+prog.cob:16: note: PROCEDURE DIVISION header assumed
+prog.cob:16: error: syntax error, unexpected Identifier
+prog.cob:17: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:17: note: unknown statement '01'
+prog.cob:18: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:18: note: unknown statement '03'
+prog.cob:20: error: syntax error, unexpected PROCEDURE
+prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
+prog.cob:26: error: 'one' is not a numeric value
+prog.cob:27: error: amount must be specified as a numeric expression
+prog.cob:29: error: cannot change address of 'var', which is not BASED or a LINKAGE item
 prog.cob:30: error: INITIALIZED TO item is not alphanumeric
 prog.cob:31: error: target 1 of FREE is not a BASED data item
 prog.cob:32: error: target 1 of FREE is not a BASED data item
@@ -9443,7 +9466,7 @@ prog.cob:19: error: start of statement in Area A
 AT_CLEANUP
 
 
-AT_SETUP([Optional dots])
+AT_SETUP([optional dots])
 AT_KEYWORDS([misc missing-periods])
 
 AT_DATA([prog.cob], [
@@ -9498,6 +9521,43 @@ cobol85.cob:14: warning: optional period used
 AT_CLEANUP
 
 
+AT_SETUP([optional dots before PROCEDURE DIVISION])
+AT_KEYWORDS([misc missing-periods])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION
+       PROGRAM-ID. prog.
+       DATA DIVISION
+       WORKING-STORAGE SECTION
+       77 PMODE   PIC X
+       PROCEDURE DIVISION.
+          STOP RUN.
+])
+
+# The syntax error below is hard to avoid, and can be missleading.
+# The error is actually on the `77`, which is only parsed as a
+# LEVEL_NUMBER if the preceding token is a `.`.
+#
+# TODO: To avoid this, we need to unput the WORD/Literal when dealing
+# with optional periods outside of PROCEDURE DIVISION, and ensure it
+# is reparsed as a LEVEL_NUMBER.
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob:6: error: syntax error, unexpected Literal
+])
+
+# Here the AREACHECK helps us recover from all missing periods
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog.cob], [0], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob:6: warning: optional period used
+prog.cob:7: warning: optional period used
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([AREACHECK])
 AT_KEYWORDS([misc])
 
@@ -9537,3 +9597,4 @@ pgm1.cob:18: error: start of statement in Area A
 ])
 
 AT_CLEANUP
+

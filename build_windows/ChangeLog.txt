@@ -26,6 +26,12 @@
 	  preventing resource compilers to stumble over C definitions
 	* makedist.cmd: cater for new header files
 
+2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general for cobc: include new cconv module;
+	  for cobc.vcxproj: add gcos to auxiliary compiler files;
+	  for cobc.vcproj: have auxiliary compiler files included
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: project files - only include "build_windows" and top_srcdir;
