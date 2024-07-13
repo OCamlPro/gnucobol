@@ -443,12 +443,16 @@ MAYBE_AREA_A	[ ]?#?
 	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
 		_("ignoring unknown directive: '%s'"), s);
 	skip_to_eol ();
+/*
 }
+   This test was deemed to produce more issues than it is useful,
+   see bug #839 and others
 
 ^{MAYBE_AREA_A}[ ]*"$"		{
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 		_("spurious '$' detected - ignored"));
 	skip_to_eol ();
+*/
 }
 
 %{/* Strip any Area A marker leading to COPY, INCLUDE, and REPLACE right now as

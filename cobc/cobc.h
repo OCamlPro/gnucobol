@@ -28,10 +28,7 @@
          and include that here */
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
-#else
-#include <stdio.h>
 #endif
-#include <stdio.h>	/* for FILE* */
 
 #include "../libcob/common.h"
 

@@ -94,7 +94,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
+[prog.cob:7: error: syntax error, unexpected OCCURS
 ])
 
 AT_CLEANUP
@@ -112,7 +112,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
+[prog.cob:6: error: syntax error, unexpected OCCURS
 ])
 
 AT_CLEANUP
@@ -133,7 +133,7 @@ AT_DATA([prog.cob], [
 # note: the message is from level-88 content-validation entry format,
 #       which is mixed in the parser (as it may be used as) condition format
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
+[prog.cob:7: error: syntax error, unexpected OCCURS
 ])
 
 

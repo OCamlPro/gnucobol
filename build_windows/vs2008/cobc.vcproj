@@ -184,6 +184,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\cobc\cconv.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\cobc.c"
 				>
 			</File>
@@ -334,6 +338,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\cobc\cconv.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\cobc.h"
 				>
 			</File>
@@ -354,19 +362,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libcob\exception-io.def"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libcob\exception.def"
 				>
 			</File>
 			<File
 				RelativePath="..\..\cobc\flag.def"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libcob\exception.def"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libcob\system.def"
 				>
 			</File>
 			<File

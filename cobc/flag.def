@@ -89,9 +89,16 @@ CB_FLAG_NQ (0, "ec", 14,
 CB_FLAG_NQ (0, "no-ec", 15,
 	_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"))
 
+CB_FLAG_NQ (1, "ebcdic-table", 16, /* cf cconv.h for all available tables */
+	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
+	  "                        * default: translation to extended ASCII as per MF\n"
+	  "                        * restricted-gc: translation from restricted ASCII only\n"
+	  "                        * ibm: translation to restricted ASCII as per IBM"
+	  "                        * gcos: translation to extended ASCII as per GCOS7"))
+
 /* Binary flags */
 
-CB_FLAG (cb_flag_sql_xfd, 1, "sql", 
+CB_FLAG (cb_flag_sql_xfd, 1, "sql",
 	_("  -fsql                 process the XFD directives"))
 
 /* Flags with suppressed help */
@@ -102,9 +109,6 @@ CB_FLAG (cb_flag_winmain, 0, "winmain",
 
 CB_FLAG (cb_flag_computed_goto, 0, "computed-goto",
 	_("  -fcomputed-goto       generate computed goto C statements"))
-
-CB_FLAG (cb_flag_alt_ebcdic, 0, "alternate-ebcdic",
-	_("  -falternate-ebcdic    use restricted ASCII to EBCDIC translate"))
 
 CB_FLAG (cb_flag_extra_brace, 0, "extra-brace",
 	_("  -fextra-brace         generate extra braces in C source"))

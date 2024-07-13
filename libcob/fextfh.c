@@ -29,8 +29,9 @@ static struct fcd_file {
 	FCD3		*fcd;
 	cob_file	*f;
 	char		*fname;
-	int			sts;
-	int			free_fcd;
+	int		sts;
+	int		free_fcd;
+	int		free_select;
 } *fcd_file_list = NULL;
 #if !COB_64_BIT_POINTER
 static	FCD3	*tmpfcd = NULL;	/* Used to convert FCD2 into FCD3 for I/O */
@@ -51,6 +52,9 @@ free_extfh_fcd (void)
 
 	for(ff = fcd_file_list; ff; ff = nff) {
 		nff = ff->next;
+		if (ff->free_select) {
+			cob_cache_free ((void*)ff->f->select_name);
+		}
 		if (ff->free_fcd) {
 			if (ff->fcd->fnamePtr != NULL) {
 				cob_cache_free ((void*)(ff->fcd->fnamePtr));
@@ -194,6 +198,9 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		fcd->fnamePtr = NULL;
 	}
 	if (fcd->fnamePtr == NULL) {
+		/* when missing add cached name, "early" freed
+		   on EXTFH close, otherwise on fileio teardown */
+		/* CHECKME: we should likely use cob_malloc/cob_free for this */
 		char	assign_to[COB_FILE_BUFF];
 		size_t	fnlen;
 		if (f->assign) {
@@ -468,7 +475,7 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
  * Copy 'FCD' to 'cob_file' based information
  */
 static void
-copy_fcd_to_file (FCD3* fcd, cob_file *f)
+copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 {
 	int	k, min, max;
 
@@ -612,30 +619,35 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->assign->attr = &alnum_attr;
 	}
 
-	/* build select name from assign value, if missing*/
+	/* build select name from assign value, if missing */
 	if (f->select_name == NULL
 	 && f->assign != NULL) {
 		char	fdname[49];
-		/* get filename - before last path separator */
+		char	*origin = (char*)f->assign->data;
+		/* limit filename to last element after
+		   path separator, when specified */
 		for (k=(int)f->assign->size; k; k--) {
 			if (f->assign->data[k] == SLASH_CHAR
 #ifdef	_WIN32
 			 || f->assign->data[k] == '/'
 #endif
 			) {
-				f->select_name = (char*)&f->assign->data[k+1];
+				origin = (char*)&f->assign->data[k+1];
 				break;
 			}
 		}
-		if (!f->select_name) {
-			f->select_name = (char*)f->assign->data;
-		}
 		/* now copy that until the first space/low-value (max 48) as upper-case */
-		for (k=0; f->select_name[k] && f->select_name[k] > ' ' && k < 48; k++) {
-			fdname[k] = (char)toupper((int)f->select_name[k]);
+		for (k=0; origin[k] && origin[k] > ' ' && k < 48; k++) {
+			fdname[k] = (char)toupper((int)origin[k]);
 		}
 		fdname[k] = 0;
-		f->select_name = cob_strdup (fdname);
+		/* we don't necessarily know later if we built the name ourself,
+		   so we need to cache the storage */
+		f->select_name = cob_cache_malloc (k);
+		memcpy ((void *)f->select_name, fdname, k);
+		if (fcd_list_entry) {
+		    fcd_list_entry->free_select = 1;
+		}
 	}
 
 	if (f->organization == COB_ORG_INDEXED) {
@@ -830,7 +842,6 @@ newfile:
 	}
 	cob_file_malloc (&f, &k, nkeys, linage);
 	f->fcd = fcd;
-	copy_fcd_to_file (fcd, f);
 	/* attach it to our fcd_file_list, if not found above create a new one */
 	if (!ff) {
 		ff = cob_cache_malloc (sizeof (struct fcd_file));
@@ -842,6 +853,7 @@ newfile:
 		fcd_file_list = ff;
 	}
 	ff->f = f;
+	copy_fcd_to_file (fcd, f, ff);
 
 	return f;
 }
@@ -1262,7 +1274,7 @@ void
 cob_fcd_file_sync (cob_file *f, char *file_open_name)
 {
 	if (f->last_operation == COB_LAST_OPEN) {
-		copy_fcd_to_file (f->fcd, f);
+		copy_fcd_to_file (f->fcd, f, NULL);
 		if (f->fcd && f->fcd->fnamePtr)
 			strncpy(file_open_name, f->fcd->fnamePtr, LDCOMPX2(f->fcd->fnameLen));
 	} else {
@@ -1369,6 +1381,8 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 static int
 EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 {
+	/* TODO check CODE-SET conversion for lsq/seq read/write */
+
 	int	opcd,sts,opts,eop,k;
 	unsigned char	fnstatus[2];	/* storage for local file status field */
 	unsigned char	keywrk[80];

@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2022 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2024 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -230,7 +230,12 @@ if exist "%ProgramFiles%\7-Zip\7z.exe" (
    goto :end
 )
 echo.
-echo %cob_build_path%%DIST_PACKAGE%.7z ready for distribution.
+
+if "%APPVEYOR%"=="True" (
+   appveyor AddMessage "%cob_build_path%%DIST_PACKAGE%.7z ready for distribution." -Category Information
+) else (
+   echo %cob_build_path%%DIST_PACKAGE%.7z ready for distribution.
+)
 
 goto :end
 
@@ -247,7 +252,7 @@ endlocal & exit /b %cb_errorlevel%
 
 :: pause if not started directly
 :pause_if_interactive
-if not [%stay_open%%CI%] == [] (
+if not [%stay_open%] == [] (
    echo.
    pause
 )
@@ -347,13 +352,12 @@ if exist "%copy_from%\libvbisam.dll" (
    echo No ISAM handler found.
 )
 
-:: Copy the intl libraries.
+:: Copy the intl library.
 call :copy_lib_if_exists "intl"    %copy_to_bin% "libintl.dll"
-call :copy_lib_if_exists "intl"    %copy_to_bin% "libiconv.dll"
 
 :: Copy the cJSON library.
-call :copy_lib_if_exists "cJSON"   %copy_to_bin% "cjson.dll"
-call :copy_lib_if_exists "cJSON"   %copy_to_bin% "json-c.dll"
+call :copy_lib_if_exists "cJSON"   %copy_to_bin% "*cjson.dll"
+call :copy_lib_if_exists "JSON-c"  %copy_to_bin% "*json-c.dll"
 
 :: Copy the curses library.
 call :copy_lib_if_exists "curses"  %copy_to_bin% "pdcurses*.dll"
@@ -362,10 +366,10 @@ call :copy_lib_if_exists "curses"  %copy_to_bin% "pdcurses*.dll"
 call :copy_lib_if_exists "XML"     %copy_to_bin% "libxml2.dll"
 call :copy_lib_if_exists "zlib"    %copy_to_bin% "zlib*.dll"
 call :copy_lib_if_exists "charset" %copy_to_bin% "libcharset.dll"
-call :copy_lib_if_exists "lzma"    %copy_to_bin% "lzma*.dll"
+call :copy_lib_if_exists "lzma"    %copy_to_bin% "*lzma*.dll"
 
 :: Copy the iconv library.
-call :copy_lib_if_exists "libiconv.dll" %copy_to_bin% "iconv"
+call :copy_lib_if_exists "iconv"   %copy_to_bin% "libiconv.dll"
 
 goto :eof
 
@@ -374,7 +378,8 @@ goto :eof
 setlocal
 call :set_platform_and_ext %1%
 set "stay_open="
-echo Using created GnuCOBOL distribution -%platform%- to compile extras...
+
+echo Setup using created GnuCOBOL distribution -%platform%-...
 pushd "%cob_dist_path%bin_%platform_ext%"
 call ..\set_env_vs_%platform_ext%.cmd
 if not [%VCPKG_EXPORT_DIR%]==[] (
@@ -384,6 +389,20 @@ if not [%VCPKG_EXPORT_DIR%]==[] (
 ) else (
    set "extra_include=."
 )
+
+cobcrun -vV | findstr /c:"GnuCOBOL " > vers1
+cobcrun -vV | findstr /c:MPIR /c:GMP > vers2
+set /p vers1=<vers1
+set /p vers2=<vers2
+erase /Q vers*
+if "%APPVEYOR%"=="True" goto :appveyor
+echo Building extras with %vers1% %vers2%
+goto :next
+:appveyor
+appveyor AddMessage "Building extras with %vers1% %vers2%" -Category Information
+goto :next
+:next
+
 cobc -m -Wall -O2 -I "%extra_include%" ..\extras\CBL_OC_DUMP.cob
 if %errorlevel% neq 0 (
    echo.

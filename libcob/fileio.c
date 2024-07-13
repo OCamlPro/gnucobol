@@ -4908,6 +4908,30 @@ again:
 			if (read(f->fd, recsize.sbuff, padlen) != padlen) /* Read past padding chars */
 				return COB_STATUS_30_PERMANENT_ERROR;
 	}
+
+	/* CODE-SET conversion */
+	if (f->sort_collating) {
+		const unsigned char* rec_end = f->record->data + bytesread;
+		if (f->nconvert_fields) {
+			/* CODE-SET FOR - convert specific area only */
+			size_t ic;
+			for (ic = 0; ic < f->nconvert_fields; ic++) {
+				const cob_field to_conv = f->convert_field[ic];
+				const unsigned char* to_conv_end = to_conv.data + to_conv.size;
+				const unsigned char* conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+				unsigned char* p;
+				for (p = to_conv.data; p < conv_end; p++) {
+					*p = f->code_set_read[*p];
+				}
+			}
+		} else {
+			/* CODE-SET conversion for complete record */
+			unsigned char* p;
+			for (p = f->record->data; p < rec_end; p++) {
+				*p = f->code_set_read[*p];
+			}
+		}
+	}
 	if (bytesread != (int)f->record->size) {
 		if (bytesread == 0) {
 			return COB_STATUS_10_END_OF_FILE;
@@ -5101,8 +5125,8 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 	FILE		*fp = (FILE *)f->file;
 	unsigned char	*dataptr;
 	size_t		i = 0;
-	int		sts = COB_STATUS_00_SUCCESS;
 	int		n;
+	int		sts = COB_STATUS_00_SUCCESS;
 
 	COB_UNUSED (a);
 	COB_UNUSED (read_opts);
@@ -5142,25 +5166,25 @@ again:
 		if (n == '\n') {
 			break;
 		}
-		if ((f->file_features & COB_FILE_LS_VALIDATE)) {
+		/* CODE-SET conversion for complete record */
+		if (n < UCHAR_MAX && f->sort_collating && !f->nconvert_fields) {
+			n = f->code_set_read[(unsigned char)n];
+		}
+		if ((f->file_features & COB_FILE_LS_VALIDATE)
+		 && !f->nconvert_fields) {
 			if ((IS_BAD_CHAR (n)
 			  || (n > 0x7E && !isprint(n)))) {
-				return COB_STATUS_09_READ_DATA_BAD;
+				sts = COB_STATUS_09_READ_DATA_BAD;
 			}
 		} else if ((f->file_features & COB_FILE_LS_NULLS)) {
 			if (n == 0) {
 				n = getc (fp);
-				/* LCOV_EXCL_START */
-				if (n == EOF) {
-					return COB_STATUS_30_PERMANENT_ERROR;
-				}
-				/* LCOV_EXCL_STOP */
 				/* NULL-Encoded -> should be less than a space */
-				if ((unsigned char)n >= ' ') {
+				if (n == EOF || (unsigned char)n >= ' ') {
 					return COB_STATUS_71_BAD_CHAR;
 				}
 			/* Not NULL-Encoded, may not be less than a space */
-			} else if ((unsigned char)n < ' ') {
+			} else if (!f->nconvert_fields && (unsigned char)n < ' ') {
 				return COB_STATUS_71_BAD_CHAR;
 			}
 		} else
@@ -5190,7 +5214,7 @@ again:
 			 && (f->file_features & COB_FILE_LS_SPLIT)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
-				long	k = 1;
+				off_t	k = 1;
 				n = getc (fp);
 				if (n == '\r') {
 					n = getc (fp);
@@ -5203,6 +5227,27 @@ again:
 						sts = COB_STATUS_06_READ_TRUNCATE;
 				}
 				break;
+			}
+		} else
+		if (i == f->record_max) {
+			sts = COB_STATUS_04_SUCCESS_INCOMPLETE;
+		}
+	}
+	/* CODE-SET FOR - convert specific area only */
+	if (f->sort_collating && f->nconvert_fields) {
+		const unsigned char *rec_end = f->record->data + i;
+		size_t ic;
+		for (ic = 0; ic < f->nconvert_fields; ic++) {
+			const cob_field to_conv = f->convert_field[ic];
+			const unsigned char *to_conv_end = to_conv.data + to_conv.size;
+			const unsigned char *conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+			unsigned char *p;
+			for (p = to_conv.data; p < conv_end; p++) {
+				n = *p = f->code_set_read[*p];
+				if ((IS_BAD_CHAR (n)
+				 || (n > 0x7E && !isprint (n)))) {
+					sts = COB_STATUS_09_READ_DATA_BAD;
+				}
 			}
 		}
 	}
@@ -5257,13 +5302,10 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 	FILE			*fp = (FILE *)f->file;
 	unsigned char		*p;
 	cob_linage		*lingptr;
-	size_t			size;
+	const size_t		size = f->record->size;
 	int			ret;
 
 	COB_UNUSED (a);
-
-	/* Determine the size to be written */
-	size = lineseq_size (f);
 
 	if (f->flag_is_pipe) {
 		if (f->fdout >= 0) {
@@ -5322,7 +5364,8 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 		if ((f->file_features & COB_FILE_LS_CRLF)) {
 			f->flag_needs_cr = 1;
 		}
-		if ((f->file_features & COB_FILE_LS_VALIDATE)) {
+		if ((f->file_features & COB_FILE_LS_VALIDATE)
+		 && !f->sort_collating /* pre-validated */) {
 			size_t i;
 			p = f->record->data;
 			for (i = 0; i < size; ++i, ++p) {
@@ -5434,7 +5477,8 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 {
 	FILE		*fp = (FILE *)f->file;
 	unsigned char	*p;
-	size_t		size, psize, slotlen, rcsz;
+	const size_t	size = f->record->size;
+	size_t		psize, slotlen, rcsz;
 	off_t		curroff, savepos;
 
 	COB_UNUSED (a);
@@ -5445,7 +5489,6 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	}
 
 	curroff = ftell (fp);	/* Current file position */
-	size = lineseq_size (f);
 
 	p = f->record->data;
 	psize = size;
@@ -5567,7 +5610,7 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		}
 	}
 
-	if (fseek (fp, (off_t)curroff, SEEK_SET) != 0) {
+	if (fseek (fp, curroff, SEEK_SET) != 0) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 
@@ -6734,10 +6777,12 @@ cob_file_free (cob_file **pfl, cob_file_key **pky)
 			cob_cache_free (fl->org_filename);
 			fl->org_filename = NULL;
 		}
-		if (*pfl != NULL) {
-			cob_cache_free (*pfl);
-			*pfl = NULL;
+		if (fl->convert_field) {
+			cob_free (fl->convert_field);
+			fl->convert_field = NULL;
 		}
+		cob_cache_free (*pfl);
+		*pfl = NULL;
 	}
 }
 
@@ -7216,7 +7261,9 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_04_SUCCESS_INCOMPLETE:
 	case COB_STATUS_06_READ_TRUNCATE:
+	case COB_STATUS_09_READ_DATA_BAD:
 		f->flag_first_read = 0;
 		f->flag_read_done = 1;
 		f->flag_end_of_file = 0;
@@ -7351,7 +7398,9 @@ Again:
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_04_SUCCESS_INCOMPLETE:
 	case COB_STATUS_06_READ_TRUNCATE:
+	case COB_STATUS_09_READ_DATA_BAD:
 		/* If record has suppressed key, skip it */
 		/* This is to catch CISAM, old VBISAM, ODBC & OCI */
 		if (f->organization == COB_ORG_INDEXED) {
@@ -7386,6 +7435,41 @@ Again:
 	}
 
 	cob_file_save_status (f, fnstatus, ret);
+}
+
+/* CODE-SET conversion for re-/write */
+static unsigned char *
+get_code_set_converted_data (cob_file *f)
+{
+	const size_t size = f->record->size;
+	unsigned char *real_rec_data = f->record->data;
+	unsigned char *converted_copy = cob_malloc (size);
+	if (!converted_copy) return NULL;
+
+	if (f->nconvert_fields) {
+		/* CODE-SET FOR - convert specific areas only */
+		const unsigned char* rec_end = converted_copy + size;
+		size_t ic;
+		memcpy (converted_copy, real_rec_data, size);
+		for (ic = 0; ic < f->nconvert_fields; ic++) {
+			const cob_field to_conv = f->convert_field[ic];
+			const unsigned char* to_conv_end = to_conv.data + to_conv.size;
+			const unsigned char* conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+			unsigned char* p;
+			for (p = to_conv.data; p < conv_end; p++) {
+				*p = f->sort_collating[*p];
+			}
+		}
+	} else {
+		/* CODE-SET FOR - convert complete record */
+		const unsigned char *rec_end = real_rec_data + size;
+		unsigned char *d, *p;
+		for (d = converted_copy, p = real_rec_data; p < rec_end; d++, p++) {
+			*d = f->sort_collating[*p];
+		}
+	}
+
+	return converted_copy;
 }
 
 void
@@ -7454,13 +7538,54 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 			f->cur_rec_num = cob_get_int (f->keys[0].field);
 		}
 	}
+
 	check_eop_status = check_eop;
 	f->flag_was_updated = 1;
-	cob_file_save_status (f, fnstatus,
-		     fileio_funcs[get_io_ptr (f)]->write (&file_api, f, opt));
+
+	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+		/* Re-Determine the size to be written (done here so possible
+		   CODE-SET conversions do not convert trailing spaces when
+		   not part of the record [= fixed length] */
+		const size_t size = lineseq_size (f);
+		/* early pre-validation for data we'd otherwise convert */
+		if (cobsetptr->cob_ls_validate
+		 && !f->flag_line_adv
+		 && f->sort_collating) {
+			const unsigned char *p = f->record->data;
+			size_t i;
+			for (i = 0; i < size; ++i, ++p) {
+				if (IS_BAD_CHAR (*p)) {
+					cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+					return;
+				}
+			}
+		}
+		f->record->size = size;
+	}
+
+	/* CODE-SET conversion (write from converted shadow-copy) */
+	if (f->organization != COB_ORG_SORT && f->sort_collating) {
+		unsigned char *real_rec_data = f->record->data;
+		unsigned char *converted_copy = get_code_set_converted_data (f);
+		if (!converted_copy) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
+			return;
+		}
+		f->record->data = converted_copy;
+		cob_file_save_status (f, fnstatus,
+			     fileio_funcs[get_io_ptr (f)]->write (&file_api, f, opt));
+		f->record->data = real_rec_data;
+		cob_free (converted_copy);
+
+	} else {
+		cob_file_save_status (f, fnstatus,
+			     fileio_funcs[get_io_ptr (f)]->write (&file_api, f, opt));
+	}
+
 	if (f->cur_rec_num > f->max_rec_num
 	 && f->file_status[0] == '0')
 		f->max_rec_num = f->cur_rec_num;
+
 	f->flag_begin_of_file = 0;
 
 	if (f->file_status[0] == '0'
@@ -7533,13 +7658,36 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 	  || f->organization == COB_ORG_RELATIVE)) {
 		memcpy (qbl_tmp, f->record->data, f->record_max);
 		ret = fileio_funcs[get_io_ptr (f)]->read (&file_api, f, f->keys[0].field, 0);
-		if (ret == 0) 
+		if (ret == 0)
 			cob_put_qbl (f, QBL_BEFORE);
 		memcpy (f->record->data, qbl_tmp, f->record_max);
 	}
 
-	cob_file_save_status (f, fnstatus,
-		     fileio_funcs[get_io_ptr (f)]->rewrite (&file_api, f, opt));
+	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+		/* Re-Determine the size to be written (done here so possible
+		   CODE-SET conversions do not convert trailing spaces when
+		   not part of the record [= fixed length] */
+		f->record->size = lineseq_size (f);
+	}
+
+	/* CODE-SET conversion (rewrite from converted shadow-copy) */
+	if (f->organization != COB_ORG_SORT && f->sort_collating) {
+		unsigned char *real_rec_data = f->record->data;
+		unsigned char *converted_copy = get_code_set_converted_data (f);
+		if (!converted_copy) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
+			return;
+		}
+		f->record->data = converted_copy;
+		cob_file_save_status (f, fnstatus,
+			     fileio_funcs[get_io_ptr (f)]->rewrite (&file_api, f, opt));
+		f->record->data = real_rec_data;
+		cob_free (converted_copy);
+
+	} else {
+		cob_file_save_status (f, fnstatus,
+			     fileio_funcs[get_io_ptr (f)]->rewrite (&file_api, f, opt));
+	}
 
 	if (f->file_status[0] == '0'
 	 && f->flag_do_qbl
@@ -7646,7 +7794,7 @@ cob_rollback (void)
 			f->flag_was_updated = 0;
 		}
 		if (f->open_mode == COB_OPEN_CLOSED		/* Close pending commit/rollback */
-		 && f->flag_close_pend) {	
+		 && f->flag_close_pend) {
 			if (f->tran_open_mode != COB_OPEN_CLOSED) {	/* Mark OPEN I-O for rollback */
 				f->open_mode = COB_OPEN_I_O;
 			}
@@ -7747,7 +7895,7 @@ cob_rollback (void)
 			continue;
 		f = l->file;
 		if (f->open_mode == COB_OPEN_CLOSED		/* Close pending commit/rollback */
-		 && f->flag_close_pend) {	
+		 && f->flag_close_pend) {
 			cob_open (f, f->tran_open_mode, 0, NULL);
 			f->tran_open_mode = COB_OPEN_CLOSED;
 		}
@@ -7810,7 +7958,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
 	cob_chk_file_mapping (f, NULL);
 	if (f->file_status[0] > '0') {
-		cob_file_save_status (f, fnstatus, 
+		cob_file_save_status (f, fnstatus,
 				COB_D2I (f->file_status[0]) * 10 + COB_D2I(f->file_status[1]));
 		return;
 	}

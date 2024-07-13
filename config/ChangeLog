@@ -17,6 +17,10 @@
 
 	* *.conf: changed top-level-occurs-clause "skip" to "unconformable"
 
+2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: adjustments for LINE SEQUENTIAL docs
+
 2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* runtime.cfg: extend docs for LINE SEQUENTIAL settings
