@@ -26,10 +26,10 @@
 
 # Check we're in a MinGW environment
 if test -d "$MSYSTEM_PREFIX/bin"; then
-	MINGWDIR="$MSYSTEM_PREFIX/bin"
+	MINGWDIR="$MSYSTEM_PREFIX"
 	echo "generating binary ${MINGW_PREFIX:1} dist package..."
 elif test -d "/mingw/bin"; then
-	MINGWDIR="/mingw/bin"
+	MINGWDIR="/mingw"
 	echo "generating binary mingw dist package..."
 else
 	echo "binary mingw dist packages can only be created from MSYS/MinGW or MSYS2"
@@ -63,7 +63,7 @@ fi
 
 # getting version information, testing the current build works
 versinfo=$($EXTBUILDDIR/pre-inst-env cobcrun -v --version | tail -n2)
-versinfo_cmds=$(echo "echo. $(echo "$versinfo" | sed -e 's/^/\&\& echo /')" | tr '\n' ' ') 
+versinfo_cmds=$(echo "echo. $(echo "$versinfo" | sed -e 's/^/\&\& echo /')" | tr '\n' ' ')
 
 # Create folder
 echo
@@ -83,23 +83,39 @@ fi
 mkdir "$target_dir" || (echo "cannot create target directory" && exit 97)
 pushd "$target_dir" 1>/dev/null
 if test "$target_dir" != "$(pwd)"; then
-   target_dir="$(pwd)"
+	target_dir="$(pwd)"
 	echo "target (resolved): $target_dir"
 fi
 popd 1>/dev/null
 
 echo && echo copying MinGW files...
 echo "  bin..."
-cp -pr "/mingw/bin"          "$target_dir/"
+if test -f "$MINGWDIR/mingw32/bin"; then
+	cp -pr "$MINGWDIR/mingw32/bin" "$target_dir/"
+fi
+cp -pr "$MINGWDIR/bin"          "$target_dir/"
 echo "  include..."
-cp -pr "/mingw/include"      "$target_dir/"
+if test -f "$MINGWDIR/mingw32/include"; then
+	cp -pr "$MINGWDIR/mingw32/include" "$target_dir/"
+fi
+cp -pr "$MINGWDIR/include"      "$target_dir/"
 echo "  lib..."
-cp -pr "/mingw/lib"          "$target_dir/"
+if test -f "$MINGWDIR/mingw32/lib"; then
+	cp -pr "$MINGWDIR/mingw32/lib" "$target_dir/"
+fi
+cp -pr "$MINGWDIR/lib"          "$target_dir/"
 echo "  libexec..."
-cp -pr "/mingw/libexec"      "$target_dir/"
-echo "  share/locale..."
+cp -pr "$MINGWDIR/libexec"      "$target_dir/"
+echo "  share... (locale and friends)"
 # note: possible copying more of share later
-cp -pr "/mingw/share/locale" "$target_dir/"
+cp -pr "$MINGWDIR/share/locale" "$target_dir/"
+mkdir -p "$target_dir/share"
+cp -pr "$MINGWDIR/share/gdb"    "$target_dir/share/"
+cp -pr "$MINGWDIR/share/gcc"*   "$target_dir/share/"
+cp -pr "$MINGWDIR/share/man"    "$target_dir/share/"
+if test -f "$MINGWDIR/share/zoneinfo"; then
+	cp -pr "$MINGWDIR/share/zoneinfo" "$target_dir/share/"
+fi
 
 echo && echo copying GnuCOBOL files...
 cp -pr "$EXTBUILDDIR/extras" "$target_dir/"
@@ -110,7 +126,7 @@ cp -p $EXTBUILDDIR/cobc/.libs/cobc.exe      "$target_dir/bin/"
 cp -p $EXTBUILDDIR/bin/.libs/cobcrun.exe    "$target_dir/bin/"
 cp -p $EXTBUILDDIR/libcob/.libs/libcob*.dll "$target_dir/bin/"
 cp -p $EXTBUILDDIR/libcob/.libs/libcob.*    "$target_dir/lib/"
-mkdir "$target_dir/include/libcob"
+mkdir -p "$target_dir/include/libcob"
 cp -p $EXTSRCDIR/libcob.h      "$target_dir/include/"
 cp -p $EXTSRCDIR/libcob/*.h    "$target_dir/include/libcob"
 cp -p $EXTSRCDIR/libcob/*.def  "$target_dir/include/libcob"
@@ -134,14 +150,22 @@ sed -e 's/\r*$/\r/' "bin/ChangeLog" > "$target_dir/ChangeLog_bin.txt"
 sed -e 's/\r*$/\r/' "cobc/ChangeLog" > "$target_dir/ChangeLog_cobc.txt"
 sed -e 's/\r*$/\r/' "libcob/ChangeLog" > "$target_dir/ChangeLog_libcob.txt"
 
-# copy manpages (checkme) ...
-#cp bin/cobcrun.1
-#cp cobc/cobc.1
-##cp libcob/libcob.3
-# ... and locales
+if test -f "$EXTBUILDDIR/cobc/cobc.1"; then
+	echo && echo installing manpages...
+	make -C "$EXTBUILDDIR/bin" install-man1 datarootdir="$target_dir/share"
+	make -C "$EXTBUILDDIR/cobc" install-man1 datarootdir="$target_dir/share"
+	#make -C "$EXTBUILDDIR/libcob" install-man3 datarootdir="$target_dir/share"
+else
+	echo "WARNING: GnuCOBOL manpages not found!"
+fi
 
-echo && echo installing locales...
-make -C "$EXTBUILDDIR/po" install-data-yes localedir="$target_dir/locale"
+# note: locales are configured to be created in the srcdir
+if test -f "$EXTSRCDIR/po/fr.po"; then
+	echo && echo installing locales...
+	make -C "$EXTBUILDDIR/po" install-data-yes datarootdir="$target_dir"
+else
+	echo "WARNING: GnuCOBOL locales not found!"
+fi
 
 popd 1>/dev/null
 
@@ -191,7 +215,7 @@ cat > "$target_dir/set_env.cmd" << _FEOF
 @echo off
 
 :: Check if called already
-:: if yes, check if called from here - exit, in any other case 
+:: if yes, check if called from here - exit, in any other case
 :: raise warning and reset env vars
 if not "%COB_MAIN_DIR%" == "" (
    echo.
@@ -202,7 +226,7 @@ if not "%COB_MAIN_DIR%" == "" (
       goto :cobcver
    ) else (
       echo Warning: batch was called before from "%COB_MAIN_DIR%"
-      echo          resetting COB_CFLAGS, COB_LDFLAGS 
+      echo          resetting COB_CFLAGS, COB_LDFLAGS
       set "COB_CFLAGS="
       set "COB_LDLAGS="
    )
@@ -226,6 +250,11 @@ set "PATH=%COB_MAIN_DIR%bin;%PATH%"
 :: Locales
 set "LOCALEDIR=%COB_MAIN_DIR%locale"
 
+:: Timezone database
+if exist "%COB_MAIN_DIR%share\zoneinfo" (
+  set "TZDIR=%COB_MAIN_DIR%share\zoneinfo"
+)
+
 :: start executable as requested
 :call_if_needed
 if not [%1] == [] (
@@ -236,8 +265,8 @@ if not [%1] == [] (
   goto :eof
 )
 
-:: new cmd to stay open if not started directly from cmd.exe window 
-echo %cmdcmdline% | find /i "%~0" >nul
+:: new cmd to stay open if not started directly from cmd.exe window
+echo %cmdcmdline% | %windir%\system32\find.exe /i "%~0" >nul
 if %errorlevel% equ 0 (
   cmd /k "cobc.exe --version && $versinfo_cmds"
   goto :eof
@@ -280,12 +309,37 @@ same source tarball don't have.
 Important: See BUGS.txt for possible known issues in this distribution!
 
 For running GnuCOBOL simply double-click set_env.cmd found next to this file, or,
-if already in cmd, call setenv.cmd once.
-You can use cobc/cobcrun in the command prompt afterwards.
+if already in cmd, call set_env.cmd once.
+You can use cobc and cobcrun in the command prompt afterwards.
 
 _FEOF
 } >> "$target_dir/README.txt"
 sed -i 's/$/\r/' "$target_dir/README.txt"
+
+
+echo && echo removing some unneeded files
+pushd "$target_dir/bin" 1>/dev/null
+rm -rf auto*
+rm -rf aclocal*
+
+rm -rf *perl*
+cd ../lib 1>/dev/null
+rm -rf *perl*
+
+rm -rf *.la
+
+rm -rf terminfo*
+
+rm -rf tcl*
+rm -rf tkl*
+rm -rf tdbc*
+
+rm -rf cmake*
+rm -rf pkgconfig*
+
+cd .. 1>/dev/null
+rm -rf libexec/mingw-get
+popd 1>/dev/null
 
 
 echo && echo duplicating for debug version...
