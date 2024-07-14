@@ -78,6 +78,7 @@
 
 #include "config.h"
 #include <assert.h>
+#include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 
