@@ -15,81 +15,102 @@ jobs:
       matrix:
         os:
           - windows-latest
+        target:
+          - debug
+          - release
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install packages
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: autoconf automake libtool make mingw-w64-x86_64-ncurses mingw-w64-x86_64-libxml2 mingw-w64-x86_64-cjson mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
 
       - name: Set git user
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          echo GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
+          If ("${{ matrix.target }}" -eq "release") {
+            echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
+            echo CFGOPT="" >> $env:GITHUB_ENV
+          } Else {
+            echo DISTDIR=GnuCOBOL_mingw_dbg >> $env:GITHUB_ENV
+            echo CFGOPT="--enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
+          }
+
+      - name: Install packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ucrt64
+          install: autoconf automake libtool make mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-libxml2 mingw-w64-ucrt-x86_64-cjson mingw-w64-ucrt-x86_64-db mingw-w64-ucrt-x86_64-gmp libdb-devel mingw-w64-ucrt-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
+
       - name: bootstrap
+        shell: msys2 {0}
         run: |
           ./autogen.sh
           autoconf
           autoreconf --install --force
-        shell: msys2 {0}
-
-      - name: Build environment setup
-        run: |
-          mkdir _build
-        shell: msys2 {0}
 
       - name: configure
-        run: |
-          cd _build
-          ../configure --with-db --with-indexed=db --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol
         shell: msys2 {0}
+        run: |
+          mkdir _build
+          cd _build
+          ../configure $CFGOPT --with-db --with-indexed=db --prefix /opt/cobol/gnucobol
 
-      - name: Upload config.log
-        uses: actions/upload-artifact@v3
+      - name: Upload config-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config.log
+          name: config-${{ matrix.target }}.log
           path: _build/config.log
 
       - name: make
+        shell: msys2 {0}
         run: |
-          sed -i '/#include <libxml\/xmlwriter.h>/a \#include <libxml\/parser.h>' libcob/common.c
-          sed -i '/#include <libxml\/xmlwriter.h>/a \#include <libxml\/parser.h>' libcob/mlio.c
           cd _build
           make --jobs=$(($(nproc)+1))
-        shell: msys2 {0}
 
       - name: install
+        shell: msys2 {0}
         run: |
           cd _build
           make install
           find /opt/cobol > install.log
-        shell: msys2 {0}
 
-      - name: Upload install.log
-        uses: actions/upload-artifact@v3
+      - name: Upload install-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
         with:
-          name: install.log
+          name: install-${{ matrix.target }}.log
           path: _build/install.log
 
       - name: check
         continue-on-error: true
+        shell: msys2 {0}
         run: |
           sed -i '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_accept.at
           cd _build/tests
           make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-        shell: msys2 {0}
 
-      - name: Upload testsuite.log
-        uses: actions/upload-artifact@v3
+      - name: Upload testsuite-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
         with:
-          name: testsuite.log
+          name: testsuite-${{ matrix.target }}.log
           path: _build/tests/testsuite.log
+
+      - name: distmingw
+        shell: msys2 {0}
+        run: |
+          cd _build
+          make distmingw
+
+      - name: Upload GnuCOBOL_mingw-${{ matrix.target }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: GnuCOBOL_mingw-${{ matrix.target }}
+          path: _build/${{ env.DISTDIR }}
