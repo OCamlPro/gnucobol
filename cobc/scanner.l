@@ -83,6 +83,7 @@ static int yywrap (void) {
 
 #include "config.h"
 #include <assert.h>
+#include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 
@@ -1611,9 +1612,9 @@ scan_x (const char *text, const char *type)
 		RETURN_TOK (LITERAL);
 	}
 
-	/* ensure buffers don't get too big */
+	// ensure buffers don't get too big
 	if (curr_len > (size_t)cb_lit_length + 1) {
-		curr_len = cb_lit_length + 1;
+    	curr_len = cb_lit_length + 1;
 	}
 	required_size = curr_len + 1;
 	if (unlikely (required_size > plex_size)) {
