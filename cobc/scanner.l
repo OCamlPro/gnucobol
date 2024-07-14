@@ -77,7 +77,7 @@
 	}
 
 #include "config.h"
-
+#include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 
@@ -1543,183 +1543,154 @@ read_literal (const char mark, const enum cb_literal_type type)
 		yylval = cb_build_national_literal (plex_buff, i);
 	}
 }
+/*
+ * The function takes two parameters, the input string and its type(X, NX, UX, B)
+ *It determine the length of the string and checks if it is zero length literal
+ *It ensures that the buffer size is not too big and allocates memory for the plex_buff if necessary (still exploring the details of that part)
+ 
+ *According to the type, the function calculates the resulting length for the literal. 
+ For X and U it divides the length  by 2 to get the number of bytes, 
+ and for B literals it multiplies the length by 4 to get the number of binary characters, 
+ and for N type it divides the input length by (2 * COB_NATIONAL_SIZE) 
+ to get the number of the national characters
+ 
+ *It then checks if the resulting length exceeds the maximum allowed literal length and raise and error
+ *It then iterates over the string and processes each character based on the literal type
+ *Finally, it returns the token LITERAL along with thye parsed literal value stored in yyval
+ 
+ */
+
+
+// helper function to build a literal with a given category 
+// using the original build_literal function
+ static cb_tree 
+ build_national_or_alpha_literal_by_category(int category, const char *text, size_t len) 
+ {	
+	struct cb_literal *lit = build_literal(category, text, len);
+	
+	cb_tree l;
+	l = CB_TREE(lit);
+
+	l->source_file = cb_source_file;
+	l->source_line = cb_source_line;
+
+	return l;	
+}
 
 static int
 scan_x (const char *text, const char *type)
 {
-	char		*p;
-	char		*e;
-	char		*dst;
-	size_t		curr_len;
-	size_t		result_len;
-	char		c;
-	int			literal_error = 0;
+	size_t curr_len = strlen(text) - 1;
+	size_t result_len;
+    int literal_error = 0;
 
-	/* Remark:
-	   The standard allows for 8,191 (normal/national/boolean) character positions */
-
-	/* curr_len includes the terminating quote
-	   and has to be adjusted according to type */
-
-	curr_len = strlen (text);
-	curr_len--;
+	// handle zero length literal case
 	if (curr_len == 0) {
 		/* CHECKME: should this always be active or only with x"" ? */
 		(void)cb_verify (cb_zero_length_lit, _("zero-length literal"));
 		cb_warning (COBC_WARN_FILLER,
 				_("hexadecimal literal has zero length; X'00' will be assumed"));
 		memset (plex_buff, 0, 5);
-		if (type[0] == 'B') {
-			yylval = cb_build_numeric_literal (0, "0", 0);
-			(void)cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"));
-		} else if (type[0] != 'N') {
-			yylval = cb_build_alphanumeric_literal (plex_buff, 1);
-		} else /* type N */ {
-			(void)cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"));
-			yylval = cb_build_national_literal (plex_buff, COB_NATIONAL_SIZE);
+		switch (type[0]) {
+			case 'B':
+				yylval = cb_build_numeric_literal (0, "0", 0);
+				(void)cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"));
+				break;
+			case 'X':
+			case 'U':
+				yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, plex_buff, 1);
+				break;
+			case 'N':
+				(void)cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"));
+				yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
+				break;
+			default:
+				break;
 		}
 		RETURN_TOK (LITERAL);
 	}
 
-	/* ensure buffers don't get too big */
+	// ensure buffers don't get too big
 	if (curr_len > (size_t)cb_lit_length + 1) {
-		curr_len = cb_lit_length + 1;
+    	curr_len = cb_lit_length + 1;
 	}
-	if (unlikely (curr_len + 1 > plex_size)) {
-		plex_size = curr_len + 1;
+	size_t required_size = curr_len + 1;
+	if (unlikely (required_size > plex_size)) {
+		plex_size = required_size;
 		cobc_free (plex_buff);
 		plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	if (type[0] == 'X' || type [0] == 'U') {
-		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up
-		   to full bytes in case of odd digits */
+	if(type[0] == 'X' || type[0] == 'U'){
+		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up 
+		to full bytes in case of odd digits */
 		result_len = (curr_len + 1) / 2;
 	} else if (type[0] == 'B') {
-		result_len = curr_len * 4; /* boolean characters B -> 1110 */
+		result_len = curr_len * 4; // boolean characters B -> 1110
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
 		}
-
-		/* GnuCOBOL currently only support 64 bit booleans */
+		// GnuCOBOL currently only support 64 bit booleans
 		if (unlikely (result_len > 64)) {
 			snprintf (err_msg, COB_MINI_MAX,
 				_("literal length %lu exceeds %u characters"),
-				  (unsigned long) result_len, 64);
+				(unsigned long) result_len, 64);
 			error_literal (type, plex_buff, literal_error++);
-			/* we'll get an overflow below, but that's no problem,
-			   an alternative would be to increment *text to only parse 64 / 4
-			   characters but that leads to not verified data, which is
-			   more important as the compilation will error-exit in any case */
 		}
-	} else /* type N */ {
+	} else {
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
 			memset (plex_buff, 0, 5);
-			yylval = cb_build_national_literal (plex_buff, COB_NATIONAL_SIZE);
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
 			RETURN_TOK (LITERAL);
 		} else {
 			CB_UNFINISHED (_("national literal"));
 		}
 	}
-	if (unlikely (result_len > cb_lit_length)) {
-		snprintf (err_msg, COB_MINI_MAX,
-			_("literal length %lu exceeds %u characters"),
-			  (unsigned long) result_len, cb_lit_length);
-		error_literal (type, plex_buff, literal_error++);
-	}
+	if (unlikely(result_len > cb_lit_length)) {
+        error_literal(type, plex_buff, literal_error++);
+    }
 
-	p = (char *)text;
-	e = (char *)p + curr_len;
-	dst = plex_buff;
+	// Input conversion
+	if (type[0] == 'B') {
+		// hex boolean
+        cob_u64_t val = 0;
+        if (sscanf(text, "%" SCNx64, &val) != 1) {
+            snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal-boolean literal"));
+            error_literal(type, plex_buff, literal_error++);
+        }
+        sprintf((char *)plex_buff, CB_FMT_LLU, val);
+        yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
+    } else {
+		// hex alphanumeric or national
+		size_t i = 0;
+        for (; i < curr_len; i += 2) {
+            unsigned int byte;
+            if (sscanf(text + i, "%2x", &byte) != 1) {
+                snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal character '%zu'"), i);
+                error_literal(type, plex_buff, literal_error++);
+                break;
+            }
+            plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 
+        }
+		// check if the number of digits is odd
+        if (i != curr_len) {
+            snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
+            if (cb_relaxed_syntax_checks && result_len == 1) {
+                error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
+            } else {
+                error_literal(type, plex_buff, literal_error++);
+            }
+        }
+        if (type[0] != 'N') {
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, plex_buff, result_len);
+        } else {
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, result_len);
+        }
+    }
+    RETURN_TOK(LITERAL);
 
-	if (unlikely(type[0] == 'B')) {
-		/* hexadecimal-boolean */
-		cob_u64_t	val = 0;
-		for (; *p != *e; p++) {
-			c = *p;
-			if ('0' <= c && c <= '9') {
-				c = c - '0';
-			} else if ('A' <= c && c <= 'F') {
-				c = c - 'A' + 10;
-			} else if ('a' <= c && c <= 'f') {
-				c = c - 'a' + 10;
-			} else {
-				snprintf (err_msg, COB_MINI_MAX,
-					_("literal contains invalid character '%c'"), c);
-				if (likely (literal_error == 0)) {
-					memcpy (plex_buff, text, curr_len + 1);
-					plex_buff[curr_len] = 0;
-				}
-				error_literal (type, plex_buff, literal_error++);
-				/* Note: by not breaking immediately, we detect any following
-				   invalid chars */
-				c = 0;
-			}
-			val = (val << 4) + c;
-		}
-		sprintf ((char *)plex_buff, CB_FMT_LLU, val);
-		yylval = cb_build_numeric_literal (0, (const void *)plex_buff, 0);
-
-	} else {
-
-		/* hexadecimal */
-		int		high = 1;
-		for (; *p != *e; p++) {
-			c = (int) *p;
-			if ('0' <= c && c <= '9') {
-				c = c - '0';
-			} else if ('A' <= c && c <= 'F') {
-				c = c - 'A' + 10;
-			} else if ('a' <= c && c <= 'f') {
-				c = c - 'a' + 10;
-			} else {
-				snprintf (err_msg, COB_MINI_MAX,
-					_("literal contains invalid character '%c'"), c);
-				if (likely (literal_error == 0)) {
-					memcpy (plex_buff, text, curr_len + 1);
-					plex_buff[curr_len] = 0;
-				}
-				error_literal (type, plex_buff, literal_error++);
-				/* Note: by not breaking immediately, we detect any following
-				   invalid chars
-				*/
-				c = 0;
-			}
-			if (high) {
-				*dst = (cob_u8_t)(c << 4);
-			} else {
-				*dst++ += (cob_u8_t)c;
-			}
-			high = 1 - high;
-		}
-
-		if (!high) {
-			/* This is non-standard behaviour */
-			*dst = (*dst >> 4);
-			dst++;
-			snprintf (err_msg, COB_MINI_MAX,
-				_("literal does not have an even number of digits"));
-			if (likely (literal_error == 0)) {
-				memcpy (plex_buff, text, curr_len + 1);
-				plex_buff[curr_len] = 0;
-			}
-			if (cb_relaxed_syntax_checks && result_len == 1) {
-				error_literal (type, plex_buff, literal_error++ == 0 ? -1 : 1);
-			} else {
-				error_literal (type, plex_buff, literal_error++);
-			}
-		}
-		/* TODO: for type U needs additional checks */
-		if (type[0] != 'N') {
-			yylval = cb_build_alphanumeric_literal (plex_buff, (size_t)(dst - plex_buff));
-		} else {
-			yylval = cb_build_national_literal (plex_buff, (size_t)(dst - plex_buff));
-		}
-	}
-
-	RETURN_TOK (LITERAL);
 }
 
 static int
