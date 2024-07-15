@@ -11079,14 +11079,23 @@ is_blank( unsigned char *s, int class ) {
 	return 0;
 }
 
+/*
+ * s is input string, converted to the destination's encoding. 
+ * len is the computed length of s.
+ * Compute the length of s, minus leading or trailing blanks,
+ * according to whether or not the destination is right-justified. 
+ */
+
 static size_t 
-trimmed_size(unsigned char *s, size_t len, int right_justified, int class){
+trimmed_size(unsigned char *s, size_t len, int right_justified, int class) {
 	int size = len;
 	unsigned char *p = s;
 	int dir = right_justified? 1 : -1;
-	if( ! right_justified && len > 2 ) p += len - 2; 
+        int inc = class == CB_CLASS_NATIONAL? COB_NATIONAL_SIZE : 1;
+        
+	if( ! right_justified && len > 2 ) p += len - inc; 
 
-	for( int inc, i=0; i < len; i += inc ) {
+	for( int i=0; i < len; i += inc ) {
 		if( (inc = is_blank(p, class)) == 0 ) break;
 		size -= inc ;
 		p += dir * inc;
