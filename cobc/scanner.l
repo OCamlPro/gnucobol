@@ -1614,13 +1614,13 @@ scan_x (const char *text, const char *type)
 
 	// ensure buffers don't get too big
 	if (curr_len > (size_t)cb_lit_length + 1) {
-    	curr_len = cb_lit_length + 1;
+                curr_len = cb_lit_length + 1;
 	}
 	required_size = curr_len + 1;
 	if (unlikely (required_size > plex_size)) {
-		plex_size = required_size;
-		cobc_free (plex_buff);
-		plex_buff = cobc_malloc (plex_size);
+	        plex_size = required_size;
+	        cobc_free (plex_buff);
+	        plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
 	switch(type[0]){
