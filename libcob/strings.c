@@ -557,10 +557,6 @@ cob_inspect_init_r (struct cob_inspect_state **pst, cob_field *var, const cob_u3
 void
 cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 {
-	if (share_inspect_state != NULL) {
-		static cob_inspect_state st;
-		share_inspect_state = &st;
-	}
 	cob_inspect_init_r (&share_inspect_state, var, replacing);	
 }
 
@@ -584,10 +580,6 @@ cob_inspect_init_converting_r (struct cob_inspect_state **pst, cob_field *var)
 void
 cob_inspect_init_converting (cob_field *var)
 {
-	if (share_inspect_state != NULL) {
-		static cob_inspect_state st;
-		share_inspect_state = &st;
-	}
 	cob_inspect_init_converting_r (&share_inspect_state, var);
 }
 
@@ -962,10 +954,6 @@ cob_string_init_r (struct cob_string_state **pst, cob_field *dst, cob_field *ptr
 void
 cob_string_init (cob_field *dst, cob_field *ptr)
 {
-	if (share_string_state != NULL) {
-		static cob_string_state st;
-		share_string_state = &st;
-	}
 	cob_string_init_r (&share_string_state, dst, ptr);
 }
 
@@ -1100,10 +1088,6 @@ cob_unstring_init (
 	const size_t num_dlm
 )
 {
-	if (share_unstring_state != NULL) {
-		static cob_unstring_state st;
-		share_unstring_state = &st;
-	}
 	cob_unstring_init_r (&share_unstring_state, src, ptr, num_dlm);
 }
 
@@ -1303,18 +1287,17 @@ cob_unstring_finish (void)
 void
 cob_inspect_free (struct cob_inspect_state *st)
 {
-	if (st != NULL) {
-		if (st->mark) {
-			cob_free (st->mark);
-			st->mark = NULL;
-		}
-		st->mark_size = st->mark_min = st->mark_max = 0;
-		if (st->repdata) {
-			cob_free (st->repdata);
-			st->repdata = NULL;
-		}
-		st->repdata_size = 0;
+	if (st->mark) {
+		cob_free (st->mark);
+		st->mark = NULL;
 	}
+	st->mark_size = st->mark_min = st->mark_max = 0;
+	if (st->repdata) {
+		cob_free (st->repdata);
+		st->repdata = NULL;
+	}
+	st->repdata_size = 0;
+	cob_free (st);
 }
 
 void
@@ -1323,18 +1306,18 @@ cob_string_free (struct cob_string_state *st)
 	cob_free (st->dst);
 	cob_free (st->ptr);
 	cob_free (st->dlm);
+	cob_free (st);
 }
 
 void
 cob_unstring_free (struct cob_unstring_state *st)
 {
-	if (st != NULL) {
-		if (st->dlm_list) {
-			cob_free (st->dlm_list);
-			st->dlm_list = NULL;
-			st->dlm_list_size = 0;
-		}
+	if (st->dlm_list) {
+		cob_free (st->dlm_list);
+		st->dlm_list = NULL;
 	}
+	st->dlm_list_size = 0;
+	cob_free (st);
 }
 
 void
@@ -1343,8 +1326,10 @@ cob_exit_strings ()
 	struct cob_inspect_state *sti = share_inspect_state;
 	struct cob_unstring_state *stu = share_unstring_state;
 
-	cob_inspect_free (sti);
-	cob_unstring_free (stu);
+	if (sti != NULL)
+		cob_inspect_free (sti);
+	if (stu != NULL)
+		cob_unstring_free (stu);
 
 	if (figurative_ptr) {
 		cob_free (figurative_ptr);
