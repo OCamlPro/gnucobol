@@ -1569,11 +1569,11 @@ read_literal (const char mark, const enum cb_literal_type type)
 
 // helper function to build a literal with a given category 
 // using the original build_literal function
- static cb_tree 
- build_national_or_alpha_literal_by_category(int category, const char *text, size_t len) 
- {	
+static cb_tree 
+build_national_or_alpha_literal_by_category(int category, const char *text, size_t len) 
+{	
 	struct cb_literal *lit = build_literal(category, text, len);
-	
+
 	cb_tree l;
 	l = CB_TREE(lit);
 
@@ -1598,20 +1598,20 @@ scan_x (const char *text, const char *type)
 				_("hexadecimal literal has zero length; X'00' will be assumed"));
 		memset (plex_buff, 0, 5);
 		switch (type[0]) {
-			case 'B':
-				yylval = cb_build_numeric_literal (0, "0", 0);
-				(void)cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"));
-				break;
-			case 'X':
-			case 'U':
-				yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, plex_buff, 1);
-				break;
-			case 'N':
-				(void)cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"));
-				yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
-				break;
-			default:
-				break;
+		case 'B':
+			yylval = cb_build_numeric_literal (0, "0", 0);
+			(void)cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"));
+			break;
+		case 'X':
+		case 'U':
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, plex_buff, 1);
+			break;
+		case 'N':
+			(void)cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"));
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
+			break;
+		default:
+			break;
 		}
 		RETURN_TOK (LITERAL);
 	}
