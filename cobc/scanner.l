@@ -1664,23 +1664,25 @@ scan_x (const char *text, const char *type)
         	cob_u64_t val = 0;
         	if (sscanf(text, "%" SCNx64, &val) != 1) {
             		snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal-boolean literal"));
+					sprintf(plex_buff, "%.2s", text);
             		error_literal(type, plex_buff, literal_error++);
         	}
         	sprintf((char *)plex_buff, CB_FMT_LLU, val);
         	yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
-    	} else {
-		// hex alphanumeric or national
-		size_t i = 0;
+    } else {
+			// hex alphanumeric or national
+			size_t i = 0;
         	for (; i < curr_len; i += 2) {
             		unsigned int byte;
             		if (sscanf(text + i, "%2x", &byte) != 1) {
                 		snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal character '%zu'"), i);
+						sprintf(plex_buff, "%.2s", text + i);
                 		error_literal(type, plex_buff, literal_error++);
                 		break;
             		}
             		plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 
        		}	
-		// check if the number of digits is odd
+		    // check if the number of digits is odd
         	if (i != curr_len) {
             		snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
             		if (cb_relaxed_syntax_checks && result_len == 1) {
@@ -1689,12 +1691,10 @@ scan_x (const char *text, const char *type)
                 		error_literal(type, plex_buff, literal_error++);
             		}
         	}
-        	if (type[0] != 'N') {
-			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, plex_buff, result_len);
-        	} else {
-			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, result_len);
-        	}
-    	}
+			enum cb_category category = type[0] == 'N'? 
+				CB_CATEGORY_NATIONAL : CB_CATEGORY_ALPHANUMERIC;
+			yylval = build_national_or_alpha_literal_by_category(category, plex_buff, result_len);
+	}
 
     RETURN_TOK(LITERAL);
 }
