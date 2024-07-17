@@ -1663,33 +1663,42 @@ scan_x (const char *text, const char *type)
 		// hex boolean
         	cob_u64_t val = 0;
         	if (sscanf(text, "%" SCNx64, &val) != 1) {
-            		snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal-boolean literal"));
-					sprintf(plex_buff, "%.2s", text);
-            		error_literal(type, plex_buff, literal_error++);
+				snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal-boolean literal"));
+				sprintf(plex_buff, "%.2s", text);
+				error_literal(type, plex_buff, literal_error++);
         	}
+			plex_buff[curr_len] = 0;
         	sprintf((char *)plex_buff, CB_FMT_LLU, val);
         	yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
     } else {
 			// hex alphanumeric or national
 			size_t i = 0;
         	for (; i < curr_len; i += 2) {
-            		unsigned int byte;
-            		if (sscanf(text + i, "%2x", &byte) != 1) {
-                		snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal character '%zu'"), i);
-						sprintf(plex_buff, "%.2s", text + i);
-                		error_literal(type, plex_buff, literal_error++);
-                		break;
-            		}
-            		plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 
+				unsigned int byte;
+				//int n = 0;
+				int nchar = 0;
+				int nout = sscanf(text + i, "%2x%n", &byte, &nchar);
+				if ( !( nout == 1 && nchar == 2) ) {
+					sprintf(plex_buff, "%.2s", text + i);
+					for(;nchar < 2; nchar++, i++) { 
+						if( !isxdigit(text[i])) {
+							snprintf(err_msg, COB_MINI_MAX,  _("literal contains invalid character '%c'"), text[i]);
+						}
+				    }  
+					plex_buff[i] = '\0';
+					error_literal(type, plex_buff, literal_error++);
+					break;
+				}
+				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 
        		}	
 		    // check if the number of digits is odd
         	if (i != curr_len) {
-            		snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
-            		if (cb_relaxed_syntax_checks && result_len == 1) {
-                		error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
-            		} else {
-                		error_literal(type, plex_buff, literal_error++);
-            		}
+				snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
+				if (cb_relaxed_syntax_checks && result_len == 1) {
+					error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
+				} else {
+					error_literal(type, plex_buff, literal_error++);
+				}
         	}
 			enum cb_category category = type[0] == 'N'? 
 				CB_CATEGORY_NATIONAL : CB_CATEGORY_ALPHANUMERIC;
