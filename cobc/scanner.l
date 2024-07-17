@@ -1671,7 +1671,7 @@ scan_x (const char *text, const char *type)
 				sprintf(plex_buff, "%.2s", text);
 				error_literal(type, plex_buff, literal_error++);
         	}
-			plex_buff[curr_len] = 0;
+			plex_buff[curr_len] = '\0';
         	sprintf((char *)plex_buff, CB_FMT_LLU, val);
         	yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
     } else {
@@ -1679,7 +1679,6 @@ scan_x (const char *text, const char *type)
 			size_t i = 0;
         	for (; i < curr_len; i += 2) {
 				unsigned int byte;
-				//int n = 0;
 				int nchar = 0;
 				int nout = sscanf(text + i, "%2x%n", &byte, &nchar);
 				if ( !( nout == 1 && nchar == 2) ) {
@@ -1687,6 +1686,7 @@ scan_x (const char *text, const char *type)
 					for(;nchar < 2; nchar++, i++) { 
 						if( !isxdigit(text[i])) {
 							snprintf(err_msg, COB_MINI_MAX,  _("literal contains invalid character '%c'"), text[i]);
+							error_literal(type, plex_buff, literal_error++);
 						}
 				    }  
 					plex_buff[i] = '\0';
