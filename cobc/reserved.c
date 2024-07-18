@@ -636,7 +636,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "CLASS",			0, 0, CLASS,			/* 2002 */
 				0, 0
   },
-  { "CLASS-ID",			0, 0, -1,			/* 2002 */
+  { "CLASS-ID",			0, 0, CLASS_ID,			/* 2002 */
 				0, 0
   },
   { "CLASSIFICATION",		0, 1, CLASSIFICATION,		/* 2002 (C/S) */
@@ -1577,7 +1577,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INDICATE",			0, 0, INDICATE,			/* 2002 */
 				0, 0
   },
-  { "INHERITS",			0, 0, -1,			/* 2002 */
+  { "INHERITS",			0, 0, INHERITS,			/* 2002 */
 				0, 0
   },
   { "INITIAL",			0, 0, TOK_INITIAL,		/* 2002 */
@@ -1632,7 +1632,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INVALID",			0, 0, INVALID,			/* 2002 */
 				0, 0
   },
-  { "INVOKE",			0, 0, -1,			/* 2002 */
+  { "INVOKE",			0, 0, INVOKE,			/* 2002 */
 				0, 0
   },
   { "IS",			0, 0, IS,			/* 2002 */

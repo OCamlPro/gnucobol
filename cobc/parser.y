@@ -25,7 +25,7 @@
 %verbose
 %error-verbose
 
-%{
+
 #include "config.h"
 
 #include <stdlib.h>
@@ -2601,6 +2601,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CHARACTERS
 %token CHECK_BOX		"CHECK-BOX"
 %token CLASS
+%token CLASS_ID
 %token CLASSIFICATION
 %token CLASS_NAME		"class-name"
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
@@ -2893,6 +2894,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INDEX
 %token INDEXED
 %token INDICATE
+%token INHERITS
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
@@ -3640,6 +3642,7 @@ source_element:
 | function_definition
 | program_prototype
 | function_prototype
+| class_definition
 ;
 
 simple_prog:
@@ -3663,6 +3666,15 @@ program_definition:
      The _end_program_list above is used for allowing an end marker
      in a program which contains a nested program.
   */
+;
+
+class_definition:
+	_identification_header
+	class_id_paragraph
+	end_class
+
+
+
 ;
 
 function_definition:
@@ -3915,6 +3927,16 @@ identification_or_id:
   IDENTIFICATION | ID
 ;
 
+
+class_id_header:
+	CLASS_ID
+;
+
+class_id_paragraph:
+program_id_header TOK_DOT program_id_name _as_literal _is_final _inherits TOK_DOT /*_using_class*/ 
+;
+
+
 program_id_header:
   PROGRAM_ID
   {
@@ -4003,6 +4025,21 @@ end_program_name:
 _as_literal:
   /* empty */			{ $$ = NULL; }
 | AS LITERAL			{ $$ = $2; }
+;
+
+_is_final:
+	/**empty*/
+	| _is FINAL
+
+
+_inherits:
+	/*empty*/
+	| INHERITS _from
+;
+
+_from:
+	/*empty*/
+	| FROM
 ;
 
 _program_type:
@@ -5323,7 +5360,7 @@ _input_output_section:
 ;
 
 input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
-_input_output_header:
+ input_output_header:
 | input_output SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
@@ -5376,7 +5413,7 @@ file_control_entry:
 	key_type = NO_KEY;
         setup_default_file_collation (current_file);
   }
-  _select_clauses_or_error
+  _ select_clauses_or_error
   {
 	cobc_cs_check = 0;
 	if (CB_VALID_TREE ($4)) {
@@ -8262,7 +8299,6 @@ usage:
 	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
-;
 
 _to_program_type:
   /* empty */		{ $$ = NULL; }
@@ -11610,7 +11646,7 @@ statement:
 | initiate_statement
 | inquire_statement
 | inspect_statement
-/* | TODO: invoke_statement */
+| invoke_statement 
 | json_generate_statement
 | json_parse_statement
 | merge_statement
@@ -12896,7 +12932,7 @@ call_not_on_exception:
   NOT_ON_EXCEPTION statement_list
   {
 	$$ = $2;
-  }
+  }			
 ;
 
 _end_call:
@@ -12910,6 +12946,28 @@ _end_call:
 	TERMINATOR_CLEAR ($-2, CALL);
   }
 ;
+
+
+
+
+/*INVOKE statement*/
+
+invoke_statement:
+  INVOKE 
+
+  
+;
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* CANCEL statement */
