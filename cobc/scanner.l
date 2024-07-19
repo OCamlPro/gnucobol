@@ -1679,17 +1679,20 @@ scan_x (const char *text, const char *type)
 				int nout = sscanf(text + i, "%2x%n", &byte, &nchar);
 				if ( !( nout == 1 && nchar == 2) ) {
 					sprintf(plex_buff, "%.2s", text + i);
+					if(nchar == 1){
+						snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
+						error_literal(type, plex_buff, literal_error++);
+					}
 					for(;nchar < 2; nchar++, i++) { 
 						if( !isxdigit(text[i])) {
 							snprintf(err_msg, COB_MINI_MAX,  _("literal contains invalid character '%c'"), text[i]);
 							error_literal(type, plex_buff, literal_error++);
 						}
 				    }  
-					plex_buff[i] = '\0';
-					error_literal(type, plex_buff, literal_error++);
 					break;
 				}
-				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 
+				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 4
+	
        		}	
 		    // check if the number of digits is odd
         	if (i != curr_len) {
