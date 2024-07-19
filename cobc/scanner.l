@@ -1678,10 +1678,16 @@ scan_x (const char *text, const char *type)
 				int nchar = 0;
 				int nout = sscanf(text + i, "%2x%n", &byte, &nchar);
 				if ( !( nout == 1 && nchar == 2) ) {
-					sprintf(plex_buff, "%.2s", text + i);
+					snprintf(plex_buff, 3, "%.2s", text + i);
+					// case of nchar is 1 (not total failure or total success)
 					if(nchar == 1){
+						snprintf(plex_buff, 2, "%c", text[i]);
 						snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
-						error_literal(type, plex_buff, literal_error++);
+						if (cb_relaxed_syntax_checks && result_len == 1) {
+							error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
+						} else {
+							error_literal(type, plex_buff, literal_error++);
+						}
 					}
 					for(;nchar < 2; nchar++, i++) { 
 						if( !isxdigit(text[i])) {
@@ -1692,17 +1698,7 @@ scan_x (const char *text, const char *type)
 					break;
 				}
 				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 4
-	
        		}	
-		    // check if the number of digits is odd
-        	if (i != curr_len) {
-				snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
-				if (cb_relaxed_syntax_checks && result_len == 1) {
-					error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
-				} else {
-					error_literal(type, plex_buff, literal_error++);
-				}
-        	}
 			enum cb_category category = type[0] == 'N'? 
 				CB_CATEGORY_NATIONAL : CB_CATEGORY_ALPHANUMERIC;
 			yylval = build_national_or_alpha_literal_by_category(category, plex_buff, result_len);
