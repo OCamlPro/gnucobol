@@ -2509,28 +2509,6 @@ output_nonlocal_field_cache (void)
 	output_storage ("\n/* End of fields */\n\n");
 }
 
-/* Strings states */
-
-static void
-output_strings_states (struct cb_program *prog)
-{
-	unsigned int strings_defined =
-		prog->inspect_st ||
-		prog->string_st||
-		prog->unstring_st;
-
-	if (strings_defined)
-		output_local ("/* States of string statements */\n");
-	if (prog->inspect_st)
-		output_local ("static cob_inspect_state	*inspect_st = NULL;\n");
-	if (prog->string_st)
-		output_local ("static cob_string_state\t*string_st = NULL;\n");
-	if (prog->unstring_st)
-		output_local ("static cob_unstring_state *unstring_st = NULL;\n");
-	if (strings_defined)
-		output_newline ();
-}
-
 /* Literals, figurative constants and user-defined constants */
 
 static void
@@ -12873,19 +12851,6 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_line ("\tcob_fatal_error (COB_FERROR_CANCEL);");
 	output_newline ();
 
-	if (prog->inspect_st) {
-		output_line ("if (inspect_st != NULL)");
-		output_line ("\tcob_inspect_free (inspect_st);");
-	}
-	if (prog->string_st) {
-		output_line ("if (string_st != NULL)");
-		output_line ("\tcob_string_free (string_st);");
-	}
-	if (prog->unstring_st) {
-		output_line ("if (unstring_st != NULL)");
-		output_line ("\tcob_unstring_free (unstring_st);");
-	}
-
 	if (prog->flag_main) {
 		goto cancel_end;
 	}
@@ -14092,7 +14057,6 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	output_call_parameter_stack_pointers (prog);
 	output_frame_stack (prog);
 	output_dynamic_field_function_id_pointers ();
-	output_strings_states (prog);
 
 	if (prog->report_storage) {
 		output_target = prog->local_include->local_fp;
