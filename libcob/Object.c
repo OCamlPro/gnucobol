@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include "OOModule.h"
+#include "Object.h"
 #include "hash_table.h"
 
 /* Un type pour toutes les fonctions qui définissent des méthodes d'un objet.
