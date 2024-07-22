@@ -123,15 +123,8 @@
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
-
-<<<<<<< HEAD
-	* coblocal.h (cob_exit_strings_mt): add multithreaded version of
-	  cob_exit_strings
-=======
 	FR #488: thread-safety for string handling using state vars
->>>>>>> 3224291 (Revert changes: remove allocated states and use full static states for strings)
-	* common.h (cob_inspect_state, cob_string_state, cob_unstring_state),
-	  strings.c: moved static variables to structures
+	* strings.c: moved static variables to structures
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
