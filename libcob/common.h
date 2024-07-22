@@ -1243,11 +1243,6 @@ typedef struct __cob_screen {
 	int			attr;		/* COB_SCREEN_TYPE_ATTRIBUTE */
 } cob_screen;
 
-/* String structure */
-typedef struct cob_inspect_state cob_inspect_state;
-typedef struct cob_string_state cob_string_state;
-typedef struct cob_unstring_state cob_unstring_state;
-
 /* Module structure */
 enum cob_module_type {
 	COB_MODULE_TYPE_PROGRAM		= 0,
