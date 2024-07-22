@@ -3929,7 +3929,7 @@ _default_display_clause:
   /* empty */
 | DISPLAY { check_non_area_a ($1); }
   _is word_or_terminal
-  {f
+  {
 	  CB_PENDING ("DISPLAY statement in DEFAULT SECTION");
 	  /* TODO: setup_default_display ($3); */
   }
