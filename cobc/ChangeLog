@@ -69,10 +69,6 @@
 	* codegen.c: handle profiling code generation under the
 	  cb_flag_prof guard
 
-2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
-
-	* codegen.c (output_data): handle CB_TAG_DIRECT in output_data function
-
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals

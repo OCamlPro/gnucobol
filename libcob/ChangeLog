@@ -80,8 +80,7 @@
 
 2024-07-19  Simon Sobisch <simonsobisch@gnu.org>
 	* coblocal.h (COB_TLS): add a new attribute for thread local static.
-	* common.h, common.c (cob_cleanup_thread): add a cleanup function for
-	threads
+	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
 
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 

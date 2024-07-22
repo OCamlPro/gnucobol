@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2002-2014, 2016-2020, 2022-2024 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch,
-   Boris Eng
+   Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch, Boris
+   Eng
 
    This file is part of GnuCOBOL.
 
@@ -96,9 +96,9 @@ static const cob_field_attr	const_strall_attr =
 				{COB_TYPE_ALPHANUMERIC_ALL, 0, 0, 0, NULL};
 
 /* Static structures for backward compatibility */
-static struct cob_inspect_state	 	share_inspect_state;
-static struct cob_string_state		share_string_state;
-static struct cob_unstring_state	share_unstring_state;
+COB_TLS struct cob_inspect_state	share_inspect_state;
+COB_TLS struct cob_string_state		share_string_state;
+COB_TLS struct cob_unstring_state	share_unstring_state;
 
 static unsigned char		*figurative_ptr;
 static size_t			figurative_size;
