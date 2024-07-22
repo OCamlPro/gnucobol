@@ -23,9 +23,9 @@
 
 %defines
 %verbose
-%error-verbose
+%define parse.error verbose
 
-
+%{
 #include "config.h"
 
 #include <stdlib.h>
@@ -2738,6 +2738,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_ACCEPT		"END-ACCEPT"
 %token END_ADD  		"END-ADD"
 %token END_CALL 		"END-CALL"
+%token END_CLASS		"END CLASS"
 %token END_COMPUTE		"END-COMPUTE"
 %token END_COLOR		"END-COLOR"
 %token END_DELETE		"END-DELETE"
@@ -2747,6 +2748,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
 %token END_JSON			"END-JSON"
+%token END_METHOD    "END METHOD"
 %token END_MODIFY		"END-MODIFY"
 %token END_MULTIPLY		"END-MULTIPLY"
 %token END_PERFORM		"END-PERFORM"
@@ -2898,6 +2900,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
+%token IMPLEMENTS
 %token INPUT
 %token INPUT_OUTPUT		"INPUT-OUTPUT"
 %token INQUIRE
@@ -2910,6 +2913,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INTRINSIC
 %token INVALID			/* remark: not used here */
 %token INVALID_KEY		"INVALID KEY"
+%token INVOKE
 %token IS
 %token ITEM
 %token ITEM_TEXT		"ITEM-TEXT"
@@ -2987,6 +2991,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
@@ -3080,6 +3085,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
 %token OVERLINE
+%token OVERRIDE
 %token PACKED_DECIMAL		"PACKED-DECIMAL"
 %token PADDING
 %token PASCAL
@@ -3671,18 +3677,49 @@ program_definition:
 class_definition:
 	_identification_header
 	class_id_paragraph
+	_class_body
 	end_class
 
+;
 
+method_definition:
+  _identification_header
+  method_id_paragraph
+  _program_body 
+  end_method
+;
 
+method_definition_list : 
+  method_definition
+| method_definition_list method_definition
+;
+
+_method_definition_list : 
+  /*empty*/
+| method_definition_list
 ;
 
 function_definition:
   _identification_header
-  function_id_paragraph
+	function_id_paragraph
   _program_body
   end_function
 ;
+
+
+_object_definition:
+/*empty*/
+| object_paragraph
+  _factory_object_body
+	END OBJECT TOK_DOT
+;
+
+factory_definition:
+  factory_paragraph
+  _factory_object_body
+	END FACTORY TOK_DOT
+;
+
 
 _end_program_list:
   /* empty (still do cleanup) */
@@ -3722,6 +3759,16 @@ end_function:
 	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
   }
 ;
+
+end_class:
+	END_CLASS 
+	end_program_name _dot
+;
+
+end_method:
+  END_METHOD
+  end_program_name _dot
+
 
 /* Program prototype */
 
@@ -3882,11 +3929,52 @@ _default_display_clause:
   /* empty */
 | DISPLAY { check_non_area_a ($1); }
   _is word_or_terminal
-  {
+  {f
 	  CB_PENDING ("DISPLAY statement in DEFAULT SECTION");
 	  /* TODO: setup_default_display ($3); */
   }
 ;
+
+
+/*CLASS body*/
+
+_class_body:
+  _options_paragraph
+	_environment_division
+	factory_definition
+	_object_definition
+|_options_paragraph
+	_environment_division
+	_object_definition
+;
+
+
+
+_implements:
+/*empty*/
+| IMPLEMENTS 
+  identifier
+;
+
+
+_factory_object_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment (current_program);
+  }
+  _data_division
+  {
+	/* note:
+	   we also validate all references we found so far here */
+	cb_validate_program_data (current_program);
+	within_typedef_definition = 0;
+  }
+  _OO_procedure_division
+;
+
+
+
 
 /* PROGRAM body */
 
@@ -3933,7 +4021,36 @@ class_id_header:
 ;
 
 class_id_paragraph:
-program_id_header TOK_DOT program_id_name _as_literal _is_final _inherits TOK_DOT /*_using_class*/ 
+class_id_header TOK_DOT program_id_name _as_literal _is_final _inherits TOK_DOT /*_using_class*/ 
+;
+
+
+factory_paragraph:
+
+  _identification_header
+  FACTORY TOK_DOT 
+  _implements
+;
+
+object_paragraph:
+  _identification_header
+  OBJECT TOK_DOT
+  _implements
+;
+
+method_id_header:
+  METHOD_ID
+;
+
+method_id_paragraph:
+  method_id_header 
+  method_name_or_get_set
+  _override
+  _is_final
+;
+
+method_name_or_get_set:
+  
 ;
 
 
@@ -4030,6 +4147,12 @@ _as_literal:
 _is_final:
 	/**empty*/
 	| _is FINAL
+;
+
+_override:
+  /*empty*/
+| OVERRIDE
+;
 
 
 _inherits:
@@ -4037,10 +4160,6 @@ _inherits:
 	| INHERITS _from
 ;
 
-_from:
-	/*empty*/
-	| FROM
-;
 
 _program_type:
   /* empty */			{ $$ = NULL; }
@@ -5360,7 +5479,7 @@ _input_output_section:
 ;
 
 input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
- input_output_header:
+ _input_output_header:
 | input_output SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
@@ -5413,7 +5532,7 @@ file_control_entry:
 	key_type = NO_KEY;
         setup_default_file_collation (current_file);
   }
-  _ select_clauses_or_error
+  _select_clauses_or_error
   {
 	cobc_cs_check = 0;
 	if (CB_VALID_TREE ($4)) {
@@ -8299,6 +8418,7 @@ usage:
 	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
+  ;
 
 _to_program_type:
   /* empty */		{ $$ = NULL; }
@@ -11030,6 +11150,13 @@ procedure_division:
   }
 ;
 
+
+_OO_procedure_division:
+  /*empty*/
+|  PROCEDURE DIVISION
+  _method_definition_list
+;
+
 _procedure_using_chaining:
   /* empty */
   {
@@ -11646,7 +11773,6 @@ statement:
 | initiate_statement
 | inquire_statement
 | inspect_statement
-| invoke_statement 
 | json_generate_statement
 | json_parse_statement
 | merge_statement
@@ -12948,15 +13074,6 @@ _end_call:
 ;
 
 
-
-
-/*INVOKE statement*/
-
-invoke_statement:
-  INVOKE 
-
-  
-;
 
 
 

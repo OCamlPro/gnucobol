@@ -1558,7 +1558,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "IGNORING",			0, 1, IGNORING,			/* 2002 (C/S) */
 				0, CB_CS_READ
   },
-  { "IMPLEMENTS",		0, 1, -1,			/* 2002 (C/S) */
+  { "IMPLEMENTS",		0, 1, IMPLEMENTS,			/* 2002 (C/S) */
 				0, 0
 	/* FIXME: 2014 Context-sensitive to FACTORY and OBJECT paragraph */
   },
@@ -1867,7 +1867,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "METHOD",			0, 0, -1,			/* 2002 */
 				0, 0
   },
-  { "METHOD-ID",		0, 0, -1,			/* 2002 */
+  { "METHOD-ID",		0, 0, METHOD_ID,			/* 2002 */
 				0, 0
   },
   { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */
@@ -2119,7 +2119,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "OVERLINE",			0, 0, OVERLINE,			/* Extension */
 				0, 0
   },
-  { "OVERRIDE",			0, 0, -1,			/* 2002 */
+  { "OVERRIDE",			0, 0, OVERRIDE,			/* 2002 */
 				0, 0
   },
   { "PACKED-DECIMAL",		0, 0, PACKED_DECIMAL,		/* 2002 */
