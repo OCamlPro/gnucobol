@@ -64,7 +64,8 @@ testsuite_sources = \
 	testsuite.src/data_packed.at \
 	testsuite.src/data_pointer.at \
 	testsuite.src/numeric-dump.cob \
-	testsuite.src/numeric-display.cob
+	testsuite.src/numeric-display.cob \
+	testsuite.src/backcomp.at
 
 testsuite_manual_sources = \
 	testsuite.src/run_manual_screen.at

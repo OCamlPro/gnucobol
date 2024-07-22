@@ -1243,6 +1243,14 @@ typedef struct __cob_screen {
 	int			attr;		/* COB_SCREEN_TYPE_ATTRIBUTE */
 } cob_screen;
 
+/* String structure */
+struct cob_inspect_state;
+struct cob_string_state;
+struct cob_unstring_state;
+typedef struct cob_inspect_state cob_inspect_state;
+typedef struct cob_string_state cob_string_state;
+typedef struct cob_unstring_state cob_unstring_state;
+
 /* Module structure */
 enum cob_module_type {
 	COB_MODULE_TYPE_PROGRAM		= 0,
@@ -1332,7 +1340,6 @@ typedef struct __cob_module {
 	const char		*section_name;		/* name of current active section */
 	const char		*paragraph_name;		/* name of current active pagagraph */
 	enum cob_statement	statement;		/* statement currently executed */
-
 } cob_module;
 
 
@@ -1936,6 +1943,35 @@ COB_EXPIMP int	cob_bcd_cmp_zero	(cob_field *);
 /*******************************/
 /* Functions in strings.c */
 
+/* Thread-safe inspect */
+void cob_inspect_init_r	(cob_inspect_state **, cob_field *, const cob_u32_t);
+void cob_inspect_init_converting_r (cob_inspect_state **, cob_field *);
+COB_EXPIMP void cob_inspect_start_r	(cob_inspect_state *);
+COB_EXPIMP void cob_inspect_before_r	(cob_inspect_state *, const cob_field *);
+COB_EXPIMP void cob_inspect_after_r	(cob_inspect_state *, const cob_field *);
+COB_EXPIMP void cob_inspect_characters_r	(cob_inspect_state *, cob_field *);
+COB_EXPIMP void cob_inspect_all_r		(cob_inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_leading_r	(cob_inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_first_r	(cob_inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_trailing_r	(cob_inspect_state *, cob_field *, cob_field *);
+COB_EXPIMP void cob_inspect_converting_r	(cob_inspect_state *, const cob_field *, const cob_field *);
+COB_EXPIMP void cob_inspect_translating_r (cob_inspect_state *, const unsigned char *);
+COB_EXPIMP void cob_inspect_finish_r	(cob_inspect_state *);
+
+/* Thread-safe string */
+void cob_string_init_r (cob_string_state **, cob_field *, cob_field *);
+COB_EXPIMP void cob_string_delimited_r	(cob_string_state *, cob_field *);
+COB_EXPIMP void cob_string_append_r	(cob_string_state *, cob_field *);
+COB_EXPIMP void cob_string_finish_r	(cob_string_state *);
+
+/* Thread-safe unstring */
+void cob_unstring_init_r	(cob_unstring_state **, cob_field *, cob_field *, const size_t);
+COB_EXPIMP void cob_unstring_delimited_r	(cob_unstring_state *, cob_field *, const cob_u32_t);
+COB_EXPIMP void cob_unstring_into_r	(cob_unstring_state *, cob_field *, cob_field *, cob_field *);
+COB_EXPIMP void cob_unstring_tallying_r	(cob_unstring_state *, cob_field *);
+COB_EXPIMP void cob_unstring_finish_r	(cob_unstring_state *);
+
+/* Compat-only functions for old programs */
 COB_EXPIMP void cob_inspect_init	(cob_field *, const cob_u32_t);
 COB_EXPIMP void cob_inspect_init_converting	(cob_field *);
 COB_EXPIMP void cob_inspect_start	(void);

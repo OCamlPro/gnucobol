@@ -117,6 +117,15 @@
 
 	* common.c: add missing include libxml/parser.h
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* coblocal.h (cob_exit_strings_mt): add multithreaded version of
+	  cob_exit_strings
+	* common.h (cob_inspect_state, cob_string_state, cob_unstring_state),
+	  strings.c: moved static variables to structures
+	* strings.c, common.h: add thread-safe variant for all functions related to
+	  strings
+
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
 	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files

@@ -1899,6 +1899,9 @@ struct cb_program {
 	const char		*extfh;		/* CALLFH for this program */
 
 	int			last_source_line;	/* Line of (implicit) END PROGRAM/FUNCTION */
+	cb_tree			inspect_st_ref;
+	cb_tree			string_st_ref;
+	cb_tree			unstring_st_ref;
 
 	/* Internal variables */
 	int		loop_counter;			/* Loop counters */
@@ -1947,6 +1950,9 @@ struct cb_program {
 	unsigned int	flag_void		: 1;	/* void return for subprogram */
 	unsigned int	flag_decimal_comp	: 1;	/* program group has decimal computations */
 	unsigned int	flag_prototype		: 1;	/* Is a prototype */
+	unsigned int	flag_inspect_used		: 1;
+	unsigned int	flag_string_used		: 1;
+	unsigned int	flag_unstring_used		: 1;
 };
 
 #define CB_PROGRAM(x)	(CB_TREE_CAST (CB_TAG_PROGRAM, struct cb_program, x))

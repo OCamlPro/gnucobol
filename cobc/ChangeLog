@@ -69,6 +69,18 @@
 	* codegen.c: handle profiling code generation under the
 	  cb_flag_prof guard
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* codegen.c (output_strings_states, codegen_internal):
+	  added structures for the data used by strings functions as local variables
+	  in the C generated code
+	* parser.y (examine_format_variant, inspect_region):
+	  function calls of strings functions have been replaced by calls to
+	  thread-safe versions (using state structures instead of static variables)
+	* typeck.c: a lot of functions have been changed in that file in order to
+	  make them coherent with the above changes and all those changes are
+		omitted for more concision
+
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals
