@@ -258,6 +258,20 @@ Note: also defined together with __clang__ in both frontends:
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
 #define	COB_USE_ESC		cobsetptr->cob_use_esc
 
+#if defined(COB_TLS)
+    /* already defined, for example as static to explicit disable TLS */
+#elif defined(_WIN32)
+    #define COB_TLS	__declspec(thread)
+#elif defined(__GNUC__) && (__GNUC__ >= 4) || defined(__clang__) || \
+      defined(__hpux) || defined(_AIX) || defined(__sun)
+    #define COB_TLS	static __thread
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    #include <threads.h>
+    #define COB_TLS	thread_local
+#else
+    #define COB_TLS	static	/* fallback definition */
+#endif
+
 /* Global settings structure */
 
 typedef struct __cob_settings {
@@ -323,7 +337,6 @@ typedef struct __cob_settings {
 	unsigned int	cob_insert_mode;	/* insert toggle, 0=off, 1=on */
 	unsigned int	cob_exit_wait;		/* wait on program exit if no ACCEPT came after last DISPLAY */
 	const char		*cob_exit_msg;		/* message for cob_exit_wait */
-
 
 	/* reportio.c */
 	unsigned int 	cob_col_just_lrc;	/* Justify data in column LEFT/RIGHT/CENTER */

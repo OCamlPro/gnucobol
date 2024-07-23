@@ -11218,3 +11218,8 @@ init_statement_list (void)
 #undef COB_STATEMENT
 }
 #endif
+
+void cob_cleanup_thread ()
+{
+	cob_exit_strings ();
+}
