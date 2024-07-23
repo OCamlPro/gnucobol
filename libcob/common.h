@@ -1332,6 +1332,7 @@ typedef struct __cob_module {
 	const char		*section_name;		/* name of current active section */
 	const char		*paragraph_name;		/* name of current active pagagraph */
 	enum cob_statement	statement;		/* statement currently executed */
+
 } cob_module;
 
 

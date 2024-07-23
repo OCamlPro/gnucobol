@@ -3,12 +3,6 @@
 
 	* atlocal_win: fix path-related issues in Windows builds
 
-2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
-
-	* testsuite.at: added a new test suite to test the backward compatibility
-	  of strings functions (INSPECT, STRING, UNSTRING) for versions of compilers
-	  not using thread-safe functions for strings
-
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal_win: updated to current atlocal.in
@@ -36,8 +30,7 @@
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
 
 	* testsuite.at: added a new test suite to test the backward compatibility
-	  of strings functions (INSPECT, STRING, UNSTRING) for versions of compilers
-	  not using thread-safe functions for strings
+	  of strings functions (INSPECT, STRING, UNSTRING)
 
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
