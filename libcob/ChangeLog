@@ -79,6 +79,7 @@
 	  changed to use the attributes of the receiving field
 
 2024-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
 	* coblocal.h (COB_TLS): add a new attribute for thread local static.
 	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
 
