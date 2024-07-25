@@ -1074,7 +1074,7 @@ AT_CLEANUP
 
 
 AT_SETUP([check include header file])
-#AT_KEYWORDS([cobc copy include imp])
+AT_KEYWORDS([cobc copy directive imp])
 
 AT_DATA([filec.h], [
 /* COB_EXT_IMPORT will be defined by libcob.h up-front */
@@ -1150,8 +1150,9 @@ AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.co
   AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
 )
 
+# additional check via directive
 AT_DATA([prog3.cob], [
-       >> IMP INCLUDE "file.h"
+       >> IMP INCLUDE "filec.h"
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA DIVISION.
@@ -1160,6 +1161,12 @@ AT_DATA([prog3.cob], [
        PROCEDURE        DIVISION.
            CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
 ])
+
+# static build with correct function signature
+AT_CHECK([$COMPILE_MODULE -I . -fstatic-call prog3.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -L. -lfilec prog3.cob], [0], ignore, ignore)]
+)
 
 # static build with correct function signature
 # AT_CHECK([$COBC -m -I . -fstatic-call prog3.cob], [0], [], [])
