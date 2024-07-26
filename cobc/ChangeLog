@@ -1,4 +1,12 @@
 
+2024-07-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, config.def: rewrite ENVIRONMENT DIVISION parsing to allow
+	  non-standard order of CONFIGURATION and INPUT-OUTPUT sections,
+	  depending on dialect setting "incorrect-conf-sec-order"
+	* reserved.c: make MENU context-sensitive
+	* reserved.c, parser.y: added MODAL + MODELESS to acu extension windows
+
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): fixed currency scale counting logic
