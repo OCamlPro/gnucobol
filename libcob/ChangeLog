@@ -1,4 +1,10 @@
 
+2024-07-25  David Declerck <david.declerck@ocamlpro.com>
+
+	* fbdb.c, fextfh.c, fisam.c, flmdb.c, focextfh.c, foci.c, fodbc.c:
+	  adjusted to use cob_open_mode where possible while
+	  merging 2022-10-04
+
 2023-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_binar): C89 fix
@@ -190,6 +196,28 @@
 	* common.c (output_procedure_stack_entry, cob_stack_trace_internal):
 	  replaced use of stdio functions by signal-safe write + memcpy
 
+2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c [WITH_DB]: fixed bug #533 multiple file unlocking by
+	  backport of adjusted struct indexed_file with new file_lock_set
+	  from rw-branch together with related changes
+	* fileio.c [WITH_DB] (unlock_file): extracted to match other functions
+	* fileio.c [WITH_DB]->fbdb.c: added extra parameters to DB_PUT, DB_GET,
+	  DB_SEQ, DB_CPUT to show what is actually used
+	* fileio.c: fixed some memory leaks related to filename handling
+	* fileio.c (cob_file_free): file was not removed from cache which
+	  led to double-free scenarios on cleanup
+	* fileio.c (cob_open): fixed concattenated filenames resetting the static
+	  filename buffer, leading to use-after-free later
+	* fileio.c (do_acu_hyphen_translation, copy_fcd_to_file):
+	  fix read of invalid data
+	* intrinsic.c (split_around_t): fix read of invalid data
+	* mlio.c (copy_data_as_string): new function replacing cob_strndup_void,
+	  doing what the callers expect, fixing read of invalid data;
+	  added missing check for its return value in is_valid_xml_name
+	* mlio.c (cob_xml_generate_new): fixed memory leak when valid namespace
+	  data and invalid namepace prefix is passed
+
 2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (check_current_date): improved validation
@@ -206,6 +234,9 @@
 	  (to provide same output as the version that this was used with)
 	* intrinsic.c: extend internal docs
 	* fileio.c: add some guards against bad function calls
+	* common.h (cob_open_mode): new enum instead instead #define'd constants
+	* fileio.c: use cob_open_mode where possible (external functions are
+	  postponed to GC 4.x as this possibly changes the ABI)
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -231,6 +262,7 @@
 	  as successful as io status 06
 	* fileio.c (lineseq_read): set return status 04 if record is truncated
 	  because LS_SPLIT is false
+	* common.c: adjustments for merge of 2021-03-18
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -947,6 +979,11 @@
 
 	* fextfh.c: Check FCD-CURRENT-REC-LEN being changed on WRITE/REWRITE
 
+2021-07-07  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c (cob_report_generate): Fix bug #745 - missing invoke of
+	  DECLARATIVES for DETAIL line
+
 2021-07-05  Ron Norman <rjn@inglenet.com>
 
 	* common.h (cob_file): Added flag_is_concat, org_filename and nxt_filename
@@ -963,11 +1000,6 @@
 	  for CODE IS to handle all file attributes; backup and restore
 	  original record definition
 	* reportio.c (write_rec): fixed bad dereference for memset in above changes
-
-2021-07-07  Ron Norman <rjn@inglenet.com>
-
-	* reportio.c (cob_report_generate): Fix bug #745 - missing invoke of
-	  DECLARATIVES for DETAIL line
 
 2021-07-05  Ron Norman <rjn@inglenet.com>
 
@@ -990,7 +1022,7 @@
 
 2021-07-01  Ron Norman <rjn@inglenet.com>
 
-	* fbdb.c: Checks if filename is actually a directory
+	* fileio.c [WITH_DB]->fbdb.c: checks if filename is actually a directory
 
 2021-06-28  Ron Norman <rjn@inglenet.com> and Christian Lademann
 
@@ -3555,14 +3587,14 @@
 
 2016-12-30  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c,common.h
+	* fileio.c, common.h:
 	  Complete work on BDB use of SHARING & RETRY
 	  Problems solved by closing BDB cursor as soon/often as possible
 	  as the BDB cursor seems to create some internal locks
 	  Retry interval reduced to 100ms
-
-	* INDEXED file test case added and uses a file to synchronize tests
-	* RELATIVE file test case added and uses a file to synchronize tests
+	* fileio.c [WITH_DB]->fbdb.c: fixed BDB locking issues by closing BDB cursor as
+	  soon/often as possible as the BDB cursor seems to create some internal
+	  locks
 
 2016-12-27  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3592,7 +3624,7 @@
 
 2016-12-24  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c,common.c,common.h,coblocal.h
+	* fileio.c, common.c, common.h, coblocal.h:
 	  Extensive updates for fileio.c to handle OPEN SHARING
 	  and RETRY clauses on all I/O statements.
 	  Relative files use sigaction/alarm/fcntl to wait for
@@ -3601,10 +3633,11 @@
 	  a wait/retry loop. each loop happens at 125ms interval.
 	  BDB code updated to use none deprecated functions, use some
 	  subroutines instead of inline code and changes for SHARING/RETRY
-
-	* At present there are no test cases but these will come in a while
-	  I need to come up with a better way to synchronize separate
-	  processes so I can reliably recreate the test cases
+	* fileio.c [WITH_DB]->fbdb.c: reordered struct indexed_file, adding file_lock_set
+	  and use it to fix multiple unlocking
+	* fileio.c [WITH_DB]->fbdb.c: extracted bdb_open_cursor, bdb_close_cursor,
+	  bdb_close_index, lock_file
+	* fileio.c [WITH_DB]->fbdb.c: added code for BDB < 4.6
 
 2016-12-23  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -864,7 +864,7 @@ enum cob_file_routines {
 
 /* io_routine */
 enum cob_file_operation {
-	COB_LAST_NONE	= 0,
+	COB_LAST_NONE		= 0,
 	COB_LAST_START		= 1,
 	COB_LAST_READ_SEQ	= 2,
 	COB_LAST_READ		= 3,
@@ -936,12 +936,14 @@ enum cob_file_operation {
 
 /* Open mode */
 
-#define COB_OPEN_CLOSED		0
-#define COB_OPEN_INPUT		1
-#define COB_OPEN_OUTPUT		2
-#define COB_OPEN_I_O		3
-#define COB_OPEN_EXTEND		4
-#define COB_OPEN_LOCKED		5
+enum cob_open_mode {
+	COB_OPEN_CLOSED	= 0,
+	COB_OPEN_INPUT	= 1,
+	COB_OPEN_OUTPUT	= 2,
+	COB_OPEN_I_O	= 3,
+	COB_OPEN_EXTEND	= 4,
+	COB_OPEN_LOCKED	= 5
+};
 
 /* Close options */
 
@@ -969,7 +971,7 @@ enum cob_file_operation {
 #define	COB_LAST_WRITE_UNKNOWN	0
 #define	COB_LAST_WRITE_AFTER	1
 #define	COB_LAST_WRITE_BEFORE	2
-#define	COB_LAST_WRITE_OPEN		3
+#define	COB_LAST_WRITE_OPEN	3
 
 /* Read options */
 
@@ -1369,7 +1371,8 @@ typedef struct __cob_module {
 	unsigned char		flag_file_format;	/* Default file format: GC or MF */
 	unsigned char		flag_unused[6];	/* For future, use for new flags etc */
 
-	unsigned int		module_stmt;		/* Last statement executed as modulated source line
+	unsigned int		module_stmt;		/* Position of last statement executed
+											   as modulated source line
 											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
 
@@ -1540,8 +1543,8 @@ typedef struct __cob_file {
 	cob_s64_t		max_rec_num;	/* Last record number (1 relative) in file */
 
 	unsigned char		lock_mode;		/* LOCK MODE */
-	unsigned char		open_mode;		/* OPEN MODE */
-	unsigned char		last_open_mode;		/* Mode given by OPEN */
+	enum cob_open_mode	open_mode;		/* OPEN MODE */
+	enum cob_open_mode	last_open_mode;		/* Mode given by OPEN */
 	unsigned char		flag_operation;		/* File type specific */
 	unsigned char		flag_nonexistent;	/* Nonexistent file */
 	unsigned char		flag_end_of_file;	/* Reached end of file */
@@ -1603,7 +1606,7 @@ typedef struct __cob_file {
 	cob_field			*last_key;		/* Last field used as 'key' for I/O */
 	enum cob_file_operation		last_operation;		/* Most recent I/O operation */
 	enum cob_file_routines		io_routine;		/* Index to I/O routine function pointers */
-	unsigned char		tran_open_mode;	/* initial OPEN mode for commit/rollback */
+	enum cob_open_mode		tran_open_mode;	/* initial OPEN mode for commit/rollback */
 	short 				curkey;			/* Current file index read sequentially */
 	short 				mapkey;			/* Remapped index number, when FD does note match file */
 
@@ -1817,7 +1820,9 @@ typedef struct __cob_global {
 	unsigned int		cob_stmt_exception;	/* Statement has 'On Exception' */
 
 	unsigned int		cob_debugging_mode;	/* activation of USE ON DEBUGGING code */
-
+#if 0	/* consider addition for 4.x */
+	const char		*last_exception_source;	/* Last exception: Source */
+#endif
 } cob_global;
 
 #ifndef COB_WITHOUT_JMP
@@ -2431,13 +2436,13 @@ typedef struct __fcd3 {
 #define ACCESS_DYNAMIC		8
 #define ACCESS_USER_STAT	0x80
 	unsigned char	openMode;			/* open mode INPUT, I-O, etc. */
-#define OPEN_INPUT		0		
+#define OPEN_INPUT		0
 #define OPEN_OUTPUT		1
 #define OPEN_IO			2
 #define OPEN_EXTEND		3
 #define OPEN_NOT_OPEN	128
 	unsigned char	recordMode;			/* recording mode */
-#define REC_MODE_FIXED		0	
+#define REC_MODE_FIXED		0
 #define REC_MODE_VARIABLE	1
 	unsigned char	fileFormat;			/* File format */
 #define MF_FF_DEFAULT		0		/* Default format */
@@ -2508,7 +2513,7 @@ typedef struct __fcd3 {
 	unsigned char	idxCacheArea;		/* index cache buffers */
 	unsigned char	fcdInternal1;
 	unsigned char	fcdInternal2;
-	char		res3[14];	
+	char		res3[14];
 	unsigned char	gcFlags; 			/* was "res3"; Local GnuCOBOL feature only */
 #define MF_CALLFH_GNUCOBOL	0x80			/* GnuCOBOL is being used */
 #define MF_CALLFH_BYPASS	0x40			/* Stop passing this file to 'callfh' */
@@ -2625,10 +2630,10 @@ typedef struct __fcd2 {
 /*************************/
 /* EXTFH operation codes */
 /*************************/
-#define OP_GETINFO			0x0006	
-#define OP_CRE8_INDEX			0x0007	
-#define OP_FLUSH			0x000C	
-#define OP_UNLOCK_REC			0x000F	
+#define OP_GETINFO			0x0006
+#define OP_CRE8_INDEX			0x0007
+#define OP_FLUSH			0x000C
+#define OP_UNLOCK_REC			0x000F
 
 /* standard OP CODES */
 
@@ -2746,7 +2751,7 @@ COB_EXPIMP void cob_file_complete (cob_file * fl);
 /******************************************/
 /* Functions in fileio.c  API for codegen */
 /******************************************/
-COB_EXPIMP void cob_open	(cob_file *, const int, const int, cob_field *);
+COB_EXPIMP void cob_open	(cob_file *, const enum cob_open_mode, const int, cob_field *);
 COB_EXPIMP void cob_close	(cob_file *, cob_field *, const int, const int);
 COB_EXPIMP void cob_read	(cob_file *, cob_field *, cob_field *, const int);
 COB_EXPIMP void cob_read_next	(cob_file *, cob_field *, const int);
@@ -2765,7 +2770,7 @@ COB_EXPIMP void cob_unlock_file	(cob_file *, cob_field *);
 /***************************************************************/
 COB_EXPIMP int	EXTFH		(unsigned char *, FCD3 *);
 COB_EXPIMP void	cob_extfh_open		(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, const int, const int, cob_field *);
+					cob_file *, const enum cob_open_mode, const int, cob_field *);
 COB_EXPIMP void cob_extfh_close		(int (*callfh)(unsigned char *, FCD3 *),
 					cob_file *, cob_field *, const int, const int);
 COB_EXPIMP void cob_extfh_read		(int (*callfh)(unsigned char *, FCD3 *),

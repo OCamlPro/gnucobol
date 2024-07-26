@@ -133,7 +133,8 @@ enum cb_tag {
 	CB_TAG_ML_SUPPRESS,	/* JSON/XML GENERATE SUPPRESS clause */
 	CB_TAG_ML_TREE,		/* JSON/XML GENERATE output tree */
 	CB_TAG_ML_SUPPRESS_CHECKS,	/* JSON/XML GENERATE SUPPRESS checks */
-	CB_TAG_VARY		/* Report line description */
+	CB_TAG_VARY,		/* Report line description */
+	CB_TAG_TAB_VALS		/* VALUE entries in table-format */
 	/* When adding a new entry, please remember to add it to
 	   cb_enum_explain in tree.c as well. */
 };
@@ -837,6 +838,20 @@ struct cb_vary {
 #define CB_VARY(x)	(CB_TREE_CAST (CB_TAG_VARY, struct cb_vary, x))
 #define CB_VARY_P(x)	(CB_TREE_TAG (x) == CB_TAG_VARY)
 
+/* multi VALUE entries (table-format) */
+
+struct cb_table_values {
+	struct cb_tree_common	common;		/* Common values */
+	cb_tree		values;					/* list of literals*/
+	cb_tree		from;					/* NULL or list of subscripts start */
+	cb_tree		to;  					/* NULL or list of subscripts stop */
+	cb_tree		repeat_times;			/* NULL or integer to repeat the values,
+	       		     					   or cb_null for "repeat to end" */
+};
+
+#define CB_TAB_VALS(x)	(CB_TREE_CAST (CB_TAG_TAB_VALS, struct cb_table_values, x))
+#define CB_TAB_VALS_P(x)	(CB_TREE_TAG (x) == CB_TAG_TAB_VALS)
+
 /* Field */
 
 struct cb_field {
@@ -844,7 +859,10 @@ struct cb_field {
 	const char		*name;		/* Original name */
 	const char		*ename;		/* Externalized name */
 	cb_tree			depending;	/* OCCURS ... DEPENDING ON */
-	cb_tree			values;		/* VALUE */
+	cb_tree			values;		/* VALUES, in the simple case: direct value;
+								   for level 78 _can_ be a list (expression),
+								   for level 88 and RW be either a list or direct value,
+								   for VALUES ARE (table-format) a list of table_values */
 	cb_tree			false_88;	/* 88 FALSE clause */
 	cb_tree			index_list;	/* INDEXED BY */
 	cb_tree			external_form_identifier;	/* target of IDENTIFIED BY
@@ -1006,7 +1024,6 @@ struct cb_field {
 	unsigned int flag_set_col_offset: 1;	/* offset was set based on COLUMN */
 
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
-	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
@@ -1355,7 +1372,7 @@ struct cb_intrinsic {
 struct cb_initialize {
 	struct cb_tree_common	common;			/* Common values */
 	cb_tree			var;			/* Field */
-	cb_tree			val;			/* Value */
+	cb_tree			val;			/* ALL (cb_true) or category (cb_int) TO VALUE */
 	cb_tree			rep;			/* Replacing */
 	unsigned char		flag_default;		/* Default */
 	unsigned char		flag_init_statement;	/* INITIALIZE statement */
@@ -2019,6 +2036,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 
 extern cb_tree			cb_build_field (cb_tree);
 extern cb_tree			cb_build_vary (cb_tree, cb_tree, cb_tree);
+extern cb_tree			cb_build_table_values (cb_tree, cb_tree, cb_tree, cb_tree);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
 extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);
@@ -2515,6 +2533,7 @@ extern struct cb_field *chk_field_variable_size (struct cb_field *f);
 extern unsigned int	chk_field_variable_address (struct cb_field *fld);
 extern struct cb_field *cb_code_field (cb_tree x);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
+extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
 
 /* scanner.l */
 extern void		cb_unput_dot (void);

@@ -538,7 +538,6 @@ prog.cob:60: error: invalid expression
 prog.cob:66: error: invalid expression
 prog.cob:72: error: invalid expression
 prog.cob:76: error: 'NOTDEFINED' is not defined
-prog.cob:76: error: invalid expression
 prog.cob:80: error: invalid expression
 ])
 
@@ -8469,35 +8468,35 @@ AT_CLEANUP
 
 
 AT_SETUP([OCCURS too many VALUEs])
-AT_KEYWORDS([Initialize])
+AT_KEYWORDS([initialize VALUE])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION. 
-       CONFIGURATION SECTION. 
-       DATA DIVISION. 
-       WORKING-STORAGE SECTION. 
-       
-       01  WS. 
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  WS.
          05  IX1  PIC 99.
          05  IX2  PIC 99.
          05  IX3  PIC 99.
          05  GRP1 OCCURS 3 TIMES.
              10  GRPX  PIC X(99).
          05  MONTH-IN-YEAR OCCURS 13 TIMES PICTURE X(3)
-                         VALUE "jan" "feb" "mar" "apr"
+                         VALUES "jan" "feb" "mar" "apr"
                                "may" "jun" "jul" "aug"
-                               "sep" "oct" "nov" "dec" 
+                               "sep" "oct" "nov" "dec"
                                "Hi" "Bye" "Dog".
-         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY 
-                         VALUE 31 28 31 30 31 30 31 31 30 31 30 31.
+         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY
+                         VALUES 31 28 31 30 31 30 31 31 30 31 30 31.
          05  DAYS-MONTHS  OCCURS 2 TIMES.
           06  DAYX-MONTHX OCCURS 4 TIMES.
            07  DAY-MONTH  OCCURS 3 TIMES.
              10  XXX1   PICTURE X VALUE " ".
              10  MONTHS PICTURE X(3)
-                         VALUE "Jan" "Feb" "Mar" "Apr"
+                        VALUES "Jan" "Feb" "Mar" "Apr"
                                "May" "Jun" "Jul" "Aug"
                                "Sep" "Oct" "Nov" "Dec"
                                "JAN" "FEB" "MAR" "APR"
@@ -8505,38 +8504,37 @@ AT_DATA([prog.cob], [
                                "SEP" "OCT" "NOV" "DEC" "Bye".
              10  SEPX   PICTURE XX VALUE ", ".
              10  DAYS   PICTURE 99
-                         VALUE 31 28 31 30 31 30 31 31 30 31 30 31
+                        VALUES 31 28 31 30 31 30 31 31 30 31 30 31
                                91 28 91 90 91 90 91 91 90 91 90 91.
              10  PER    PICTURE X VALUE ".".
-           07  FLR    PICTURE X(4) VALUE " <A>" " <B>" " <C>" " <D>"
+           07  FLR    PICTURE X(4) VALUES " <A>" " <B>" " <C>" " <D>"
                                   " <E>" " <F>" " <G>" " <H>" " <*>".
-       
+
        PROCEDURE DIVISION.
-       
-       INIT-RTN. 
+
+       INIT-RTN.
            DISPLAY "Simple OCCURS with multi VALUES".
            PERFORM VARYING IX1 FROM 1 BY 1 UNTIL IX1 > 13
               DISPLAY IX1 ": "
-                      MONTH-IN-YEAR (IX1) " has " 
+                      MONTH-IN-YEAR (IX1) " has "
                       DAYS-IN-MONTH (IX1) " days"
               END-DISPLAY
            END-PERFORM.
            DISPLAY "Complex OCCURS with multi VALUES".
            PERFORM VARYING IX3 FROM 1 BY 1 UNTIL IX3 > 2
              PERFORM VARYING IX2 FROM 1 BY 1 UNTIL IX2 > 4
-                 DISPLAY IX3 "-" IX2 ": " 
-                         DAYX-MONTHX (IX3, IX2) 
+                 DISPLAY IX3 "-" IX2 ": "
+                         DAYX-MONTHX (IX3, IX2)
                  END-DISPLAY
              END-PERFORM
            END-PERFORM.
            STOP RUN.
 ])
 
-# FIXME: errors currently only with full compilation
-AT_CHECK([$COMPILE prog.cob], [1], [],
-[prog.cob:15: error: MONTH-IN-YEAR has 2 more values than needed
-prog.cob:26: error: MONTHS has 1 more value than needed
-prog.cob:38: error: FLR has 1 more value than needed
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:15: error: elements in VALUE clause for 'MONTH-IN-YEAR' (15) exceed max amount (13)
+prog.cob:26: error: elements in VALUE clause for 'MONTHS' (25) exceed max amount (24)
+prog.cob:38: error: elements in VALUE clause for 'FLR' (9) exceed max amount (8)
 ])
 
 AT_CLEANUP
@@ -8588,9 +8586,6 @@ prog.cob:11: warning: ignoring Sign for TST9-12 S9(12) COMP-X
 ])
 
 AT_CLEANUP
-
-
-# TODO: add missing tests for syntax errors in >>IF/ELSE/END
 
 
 AT_SETUP([VALIDATE parsing])
@@ -9006,6 +9001,8 @@ AT_CLEANUP
 AT_SETUP([error handling in conditional directives])
 AT_KEYWORDS([misc directive])
 
+# TODO: add missing tests for syntax errors in >>IF/ELSE/END
+
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID.    prog.
@@ -9112,8 +9109,6 @@ correct Y < X
 correct X > Y
 ])
 AT_CLEANUP
-
-# TODO: add missing tests for syntax errors in >>IF/ELSE/END
 
 
 AT_SETUP([CONTROL DIVISION])
@@ -9286,6 +9281,42 @@ AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [],
 prog.cob:9: warning: DISPLAY statement in DEFAULT SECTION is not implemented
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CONTROL DIVISION & AREACHECK])
+AT_KEYWORDS([gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL          DIVISION.
+       SUBSTITUTION     SECTION.
+       *> This REPLACE in Area A is ignored for now:
+          REPLACE IISS BY IS
+                  TERM BY TERMINAL
+                  "KO" BY "OK".
+       DEFAULT          SECTION.
+          ACCEPT ALTERNATE CONSOLE
+          DISPLAY IISS TERM
+       .
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAR PIC X(2) VALUE "KO".
+       PROCEDURE        DIVISION.
+          DISPLAY VAR
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=gcos-strict prog.cob], [0], [],
+[prog.cob:9: warning: start of statement in Area A
+prog.cob:9: warning: ACCEPT statement in DEFAULT SECTION is not implemented
+prog.cob:10: warning: start of statement in Area A
+prog.cob:10: warning: DISPLAY statement in DEFAULT SECTION is not implemented
+prog.cob:18: warning: start of statement in Area A
+prog.cob:19: warning: start of statement in Area A
+])
 
 AT_CLEANUP
 

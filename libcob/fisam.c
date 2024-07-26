@@ -95,7 +95,7 @@ static	cob_settings	*isam_setptr;
 #endif
 #if defined (ISCOBOL_STATS) && (ISCOBOL & ISCOBOL_STATS)
 /* the additional status is a configurable feature with DISAM */
-#ifndef COB_WITH_STATUS_02 
+#ifndef COB_WITH_STATUS_02
 #define	COB_WITH_STATUS_02
 #endif
 #endif
@@ -134,9 +134,9 @@ static	cob_settings	*isam_setptr;
 /* Since VBISAM 2.1.1: access to isrecnum iserrno etc is no longer global */
 #if defined(VB_RTD)
 static	vb_rtd_t *vbisam_rtd = NULL;
-#undef ISRECNUM 
+#undef ISRECNUM
 #define ISRECNUM vbisam_rtd->isrecnum
-#undef ISERRNO 
+#undef ISERRNO
 #define ISERRNO  vbisam_rtd->iserrno
 #undef ISRECLEN
 #define ISRECLEN vbisam_rtd->isreclen
@@ -156,7 +156,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #ifndef ISVARLEN
 /* ISAM handler does not support variable length records */
 #define ISVARLEN 0
-#endif   
+#endif
 /**********************************************************************/
 
 #ifndef MAXKEYLEN
@@ -172,7 +172,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 		(ISSTAT1 == '0' && ISSTAT2 == '2' && !f->flag_read_no_02) ? \
 		COB_STATUS_02_SUCCESS_DUPLICATE : 0
 #else
-#define COB_CHECK_DUP(s) s ? s : s 
+#define COB_CHECK_DUP(s) s ? s : s
 #endif
 
 /* Isam File handler packet */
@@ -205,7 +205,7 @@ struct indexfile {
 
 /* Local variables */
 
-static int isam_open	(cob_file_api *a, cob_file *, char *, const int, const int);
+static int isam_open	(cob_file_api *a, cob_file *, char *, const enum cob_open_mode, const int);
 static int isam_close	(cob_file_api *a, cob_file *, const int);
 static int isam_start	(cob_file_api *a, cob_file *, const int, cob_field *);
 static int isam_read	(cob_file_api *a, cob_file *, cob_field *, const int);
@@ -222,7 +222,7 @@ static void cob_isam_exit_fileio (cob_file_api *a);
 
 COB_EXT_EXPORT void cob_isam_init_fileio (cob_file_api *a);
 
-static int 
+static int
 isam_dummy ()
 {
 	return 0;
@@ -641,7 +641,7 @@ savefileposition (cob_file *f)
 			if (isread (fh->isfd, (void *)fh->recwrk, fh->readdir)) {
 				fh->saverecnum = -1;
 				fh->saveerrno = ISERRNO;
-				if (fh->saveerrno == EENDFILE 
+				if (fh->saveerrno == EENDFILE
 				 || fh->saveerrno == ENOREC)  {
 					fh->eofpending = fh->readdir;
 				}
@@ -720,7 +720,7 @@ isopen_retry(cob_file *f, char *filename, int mode)
 	}
 	isfd = isopen ((void *)filename, mode);
 	while(isfd < 0 && retry != 0) {
-		if (ISERRNO != EFLOCKED) 
+		if (ISERRNO != EFLOCKED)
 			break;
 		if(retry > 0) {
 			retry--;
@@ -730,9 +730,9 @@ isopen_retry(cob_file *f, char *filename, int mode)
 	}
 	if (isfd >= 0
 	 && (mode & ISEXCLLOCK))
-		f->flag_file_lock = 1;	
+		f->flag_file_lock = 1;
 	else
-		f->flag_file_lock = 0;	
+		f->flag_file_lock = 0;
 	return isfd;
 }
 
@@ -777,7 +777,7 @@ isread_retry(cob_file *f, void *data, int mode)
 			break;
 		if (ISERRNO != ELOCKED
 		 || retry == 0
-		 || sts == 0) 
+		 || sts == 0)
 			break;
 		if(retry > 0) {
 			retry--;
@@ -877,7 +877,7 @@ isam_set_mode (cob_file *f)
 }
 
 static int
-isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
+isam_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -956,7 +956,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 				if (f->isam_duplen == 2
 				 || f->isam_duplen == 4) {
 					fmode |= f->isam_duplen << ISMDUPSHIFT;
-				} else 
+				} else
 				if (idxhdr[10] == 0x07)	 {	/* Retain DUPLEN value */
 					fmode |= idxhdr[11] << ISMDUPSHIFT;
 				}
@@ -1035,7 +1035,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		} else {
 			lmode = ISMANULOCK;
 		}
-	} else if ((f->lock_mode & COB_LOCK_AUTOMATIC) 
+	} else if ((f->lock_mode & COB_LOCK_AUTOMATIC)
 			&& mode != COB_OPEN_INPUT) {
 		lmode = ISAUTOLOCK;
 	} else {
@@ -1110,7 +1110,7 @@ dobuild:
 	} else {
 		if (lmode == ISAUTOLOCK
 		&& (f->lock_mode & COB_LOCK_MULTIPLE)) {
-			lmode = ISMANULOCK;	
+			lmode = ISMANULOCK;
 		}
 		if (lmode == ISMANULOCK) {
 			fh->lmode = ISLOCK; 	/* fileio will handle Record locking */
@@ -1120,14 +1120,14 @@ dobuild:
 			if (ISERRNO == EFLOCKED)
 				return COB_STATUS_61_FILE_SHARING;
 			if (f->flag_optional) {
-				if (mode == COB_OPEN_EXTEND 
+				if (mode == COB_OPEN_EXTEND
 				 || mode == COB_OPEN_I_O) {
 					dobld = 1;
 					ret = COB_STATUS_05_SUCCESS_OPTIONAL;
 					goto dobuild;
 				}
 				freefh (fh);
-				f->open_mode = mode;
+				f->open_mode = (enum cob_open_mode)mode;
 				f->flag_end_of_file = 1;
 				f->flag_begin_of_file = 1;
 				if (f->flag_nonexistent) {
@@ -1237,7 +1237,7 @@ dobuild:
 		}
 	}
 	f->file = fh;
-	f->open_mode = mode;
+	f->open_mode = (enum cob_open_mode)mode;
 	fh->isfd = isfd;
 	fh->filename = cob_strdup (filename);
 	fh->isopenmode = omode | lmode | vmode;
@@ -1452,7 +1452,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	 || (read_opts & COB_READ_NO_LOCK) ) {
 		lmode &= ~ISLOCK;
 	}
-	if ((fh->lmode & ISLOCK) 
+	if ((fh->lmode & ISLOCK)
 	 && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		isrelease (fh->isfd);
 	}
@@ -1525,7 +1525,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		lmode &= ~ISLOCK;
 	}
 
-	if ((fh->lmode & ISLOCK) 
+	if ((fh->lmode & ISLOCK)
 	 && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		isrelease (fh->isfd);
 	}
@@ -1862,7 +1862,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 		for (k = 0; k < f->nkeys; ++k) {
 			if (fh->key[k].k_flags & ISDUPS) {
 				memcpy (fh->recwrk, f->record->data, f->record_max);
-				isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, 
+				isstart (fh->isfd, &fh->key[k], fh->key[k].k_len,
 						(void *)fh->recwrk, ISEQUAL);
 				if (!isread (fh->isfd, (void *)fh->recwrk, ISEQUAL)) {
 					retdup = COB_STATUS_02_SUCCESS_DUPLICATE;
@@ -1875,7 +1875,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 #endif
 	set_isreclen (f);
 	if ((opt & COB_WRITE_LOCK)
-	 && !(f->lock_mode & COB_LOCK_AUTOMATIC) 
+	 && !(f->lock_mode & COB_LOCK_AUTOMATIC)
 	 && !f->flag_file_lock) {
 		/* WRITE and make it 'current' */
 		if ((iswrcurr (fh->isfd, (void *)f->record->data))) {
@@ -1984,7 +1984,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 #ifndef COB_WITH_STATUS_02
 	svky = f->curkey;
 	if (f->flag_read_chk_dups
-	 || f->curkey >= 0) { 	
+	 || f->curkey >= 0) {
 		if (f->curkey < 0) {
 			isstart (fh->isfd, &fh->key[0], fh->key[0].k_len, (void *)f->record->data, ISEQUAL);
 			f->curkey = 0;
@@ -2023,7 +2023,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 
 					memcpy (fh->recwrk, f->record->data, f->record_max);
 					indexed_savekey(fh, (void*)fh->recwrk, k);
-					isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, 
+					isstart (fh->isfd, &fh->key[k], fh->key[k].k_len,
 							(void *)fh->recwrk, ISEQUAL);
 					while (ISERRNO == 0) {
 						if (isread (fh->isfd, (void *)fh->recwrk, ISNEXT))
@@ -2039,7 +2039,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 				}
 #endif
 				ret = COB_STATUS_00_SUCCESS;
-			} else 
+			} else
 			if (k > 0) {
 				memcpy (fh->recwrk, f->record->data, f->record_max);
 				ISERRNO = 0;

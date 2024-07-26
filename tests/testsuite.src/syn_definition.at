@@ -1120,12 +1120,20 @@ AT_DATA([prog.cob], [
                 10 C PIC X.
            04 D.
             05 E PIC X.
+            05 F PIC X.
+           04 D2.
+            05 E2 PIC X.
+           04 D3.
+            05 E3 PIC X.
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-level-hierarchy prog.cob], [0], [],
 [prog.cob:9: warning: no previous data item of level 04
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:9: error: no previous data item of level 04
 ])
 
 AT_CLEANUP

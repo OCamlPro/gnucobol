@@ -501,6 +501,9 @@
 	  run concurrent test cases. There is also several C$SLEEP
 	  calls to setup the test scenarios.
 	  So these tests appear to run for a long time
+	* INDEXED file test case added and uses a file to synchronize tests
+	* RELATIVE file test case added and uses a file to synchronize tests
+
 
 2016-12-06  Simon Sobisch <simonsobisch@gnu.org>
 

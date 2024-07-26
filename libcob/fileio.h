@@ -146,7 +146,7 @@ typedef struct _cob_file_api {
 
 /* File I/O function pointer structure */
 struct cob_fileio_funcs {
-	int	(*open)			(cob_file_api *, cob_file *, char *, const int, const int);
+	int	(*open)			(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
 	int	(*close)		(cob_file_api *, cob_file *, const int);
 	int	(*start)		(cob_file_api *, cob_file *, const int, cob_field *);
 	int	(*read)			(cob_file_api *, cob_file *, cob_field *, const int);

@@ -4568,33 +4568,33 @@ main (int argc, char **argv)
    case 0:  /* program coming back */
 
       /* Clean up and terminate runtime */
-      cob_runtime_hint("program exited with return code %d",
+      cob_runtime_hint ("program exited with return code %d",
          cob_last_exit_code ());
       cob_tidy ();
       break;
 
    case 1:  /* normal exit */
-      cob_runtime_hint("STOP RUN with return code %d",
+      cob_runtime_hint ("STOP RUN with return code %d",
          cob_last_exit_code ());
       break;
 
    case -1:  /* error exit */
-      cob_runtime_hint("error exit with return code %d and error \"%s\"",
+      cob_runtime_hint ("error exit with return code %d and error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
 
    case -2:  /* hard error exit */
-      cob_runtime_hint("hard error exit with return code %d and error \"%s\"",
+      cob_runtime_hint ("hard error exit with return code %d and error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
 
    case -3:  /* signal handler  exit */
-      cob_runtime_hint("signal handler exit with signal %d and error \"%s\"",
+      cob_runtime_hint ("signal handler exit with signal %d and error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
 
    default:
-      cob_runtime_hint("unexpected return from cob_call_with_exception_check, "
+      cob_runtime_hint ("unexpected return from cob_call_with_exception_check, "
          "last exit code %d, last error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
@@ -4614,13 +4614,13 @@ AT_CHECK([$COBCRUN_DIRECT ./caller callee 42], [0], [P1: A],
 AT_CHECK([$COBCRUN_DIRECT ./caller callee2], [0], [STOP WITH 2],
 [note: STOP RUN with return code 2
 ])
-AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
-[libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
-note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
-])
 AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
 [libcob: error: module 'notthere' not found
 note: error exit with return code -1 and error "module 'notthere' not found"
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+[libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
+note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
 ])
 
 AT_CLEANUP
@@ -7365,6 +7365,63 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL RETURNING POINTER])
+AT_KEYWORDS([run_extensions])
+
+AT_DATA([prog.cob], [
+       identification division.
+       program-id. prog.
+
+       data division.
+       working-storage section.
+
+       01  c-text-pointer usage pointer.
+
+       procedure division.
+
+           call static "cob_getenv"
+                       using "COB_UNIX_LF"
+                       returning c-text-pointer
+           end-call
+
+           IF function content-of(c-text-pointer) <> "1"
+              DISPLAY "unexpected value: "
+                      function content-of(c-text-pointer).
+
+          GOBACK.
+])
+
+AT_DATA([progdyn.cob], [
+       identification division.
+       program-id. progdyn.
+
+       data division.
+       working-storage section.
+
+       01  c-text-pointer usage pointer.
+
+       procedure division.
+
+           call        "cob_getenv"
+                       using "COB_UNIX_LF"
+                       returning c-text-pointer
+           end-call
+
+           IF function content-of(c-text-pointer) <> "1"
+              DISPLAY "unexpected value: "
+                      function content-of(c-text-pointer).
+
+          GOBACK.
+])
+
+AT_CHECK([$COMPILE -fno-gen-c-decl-static-call prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progdyn.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progdyn], [0], [], [])
 
 AT_CLEANUP
 

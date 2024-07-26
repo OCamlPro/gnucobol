@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022, 2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -330,7 +330,7 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	}
 	if (wasOpen > 0) {
 		if((fcd->openMode & OPEN_NOT_OPEN))
-			f->open_mode = 0;
+			f->open_mode = COB_OPEN_CLOSED;
 		else if((fcd->openMode&0x7f) == OPEN_INPUT)
 			f->open_mode = COB_OPEN_INPUT;
 		else if((fcd->openMode&0x7f) == OPEN_OUTPUT)
@@ -626,7 +626,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 		char	*origin = (char*)f->assign->data;
 		/* limit filename to last element after
 		   path separator, when specified */
-		for (k=(int)f->assign->size; k; k--) {
+		for (k=(int)f->assign->size - 1; k; k--) {
 			if (f->assign->data[k] == SLASH_CHAR
 #ifdef	_WIN32
 			 || f->assign->data[k] == '/'
@@ -914,7 +914,7 @@ save_fcd_status (FCD3 *fcd, int sts)
 void
 cob_extfh_open (
 	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
+	cob_file *f, const enum cob_open_mode mode, const int sharing, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -923,7 +923,7 @@ cob_extfh_open (
 	f->last_operation = COB_LAST_OPEN;
 	fcd = find_fcd(f);
 	f->share_mode = (unsigned char)sharing;
-	f->last_open_mode = (unsigned char)mode;
+	f->last_open_mode = (enum cob_open_mode)mode;
 	if (mode == COB_OPEN_OUTPUT)
 		STCOMPX2(OP_OPEN_OUTPUT, opcode);
 	else if (mode == COB_OPEN_I_O)
@@ -1267,7 +1267,7 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 	return EXTFH3 ((unsigned char *)opcode_ptr, fcd);
 }
 
-/* 
+/*
  * Sync FCD3 values to cob_file values
  */
 void
@@ -1282,7 +1282,7 @@ cob_fcd_file_sync (cob_file *f, char *file_open_name)
 	}
 }
 
-/* 
+/*
  * Sync cob_file values to FCD3 values
  */
 void
@@ -1295,7 +1295,7 @@ cob_file_fcd_sync (cob_file *f)
 	}
 	return;
 }
-/* 
+/*
  * Return address of FH--FCD for the given file
  * Create the FCD3 as needed
  */
@@ -1323,7 +1323,7 @@ cob_file_fcd_adrs (cob_file *f, void *pfcd)
 	return;
 }
 
-/* 
+/*
  * Return address of FH--KEYDEF for the given file
  * Create the FCD3 is needed
  */
@@ -1443,7 +1443,7 @@ org_handling:
 	switch (fcd->fileOrg) {
 	case ORG_INDEXED:
 		k = LDCOMPX2(fcd->refKey);
-		if (k >= 0 
+		if (k >= 0
 		 && k <= (int)f->nkeys
 		 && f->keys[k].field) {
 			key->size = f->keys[k].field->size;
@@ -1773,7 +1773,7 @@ org_handling:
 			f->record->size = rec->size;
 		}
 		if (rec->size < f->record_min) {
-			rec->size = f->record_min; 
+			rec->size = f->record_min;
 		}
 		eop = LDCOMPX2(fcd->eop);
 		opts = LDCOMPX4(fcd->opt);
@@ -1788,7 +1788,7 @@ org_handling:
 			f->record->size = rec->size;
 		}
 		if (rec->size < f->record_min) {
-			rec->size = f->record_min; 
+			rec->size = f->record_min;
 		}
 		opts = LDCOMPX4(fcd->opt);
 		cob_rewrite (f, rec, opts, fs);
