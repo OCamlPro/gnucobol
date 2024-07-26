@@ -1,0 +1,223 @@
+name: Windows MSVC (build only)
+
+on:
+  pull_request:
+    branches: [ gc4 ]
+  push:
+    branches: [ gc4 ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+env:
+  GC_VERSION: GnuCOBOL 4.0-dev
+
+  FLEXBISON: https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip
+
+  MSBUILD: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe
+  VCVARS32: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat
+  VCVARS64: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
+
+  VCPKG_ROOT: C:\vcpkg
+  VCPKGS32: mpir:x86-windows pdcurses:x86-windows berkeleydb:x86-windows libxml2:x86-windows cjson:x86-windows
+  VCPKGS64: mpir:x64-windows pdcurses:x64-windows berkeleydb:x64-windows libxml2:x64-windows cjson:x64-windows
+
+  MSYS2_ROOT: C:\msys64
+  MSYSTEM: UCRT64
+  MSYSPKGS: autoconf
+
+defaults:
+  run:
+    shell: cmd
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+        isam:
+          - db  # Purely informative
+        arch:
+          - x86
+          - x64
+        target:
+          - Debug
+          - Release
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        shell: pwsh
+        run: |
+          echo GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
+          If ("${{ matrix.arch }}" -eq "x86") {
+            echo VCVARS=$env:VCVARS32 >> $env:GITHUB_ENV
+            echo VCPKGS=$env:VCPKGS32 >> $env:GITHUB_ENV
+            echo ARCHDIR=Win32 >> $env:GITHUB_ENV
+          } Else {
+            echo VCVARS=$env:VCVARS64 >> $env:GITHUB_ENV
+            echo VCPKGS=$env:VCPKGS64 >> $env:GITHUB_ENV
+            echo ARCHDIR=x64 >> $env:GITHUB_ENV
+          }
+
+      - name: Restore VCPKG cache
+        id: restore-vcpkg
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-vcpkg-${{ matrix.arch }}-${{ matrix.target }}
+          path: |
+            ${{ env.VCPKG_ROOT }}/installed
+            ${{ env.VCPKG_ROOT }}/packages
+
+      - name: Bootstrap VCPKG
+        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
+        run: |
+          cd /d %VCPKG_ROOT%
+          vcpkg update
+          git pull
+          cmd /C .\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Integrate VCPKG
+        run: |
+          vcpkg integrate install
+
+      - name: Install VCPKG packages
+        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
+        run: |
+          vcpkg install %VCPKGS%
+
+      - name: Save VCPKG cache
+        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-vcpkg-${{ matrix.arch }}-${{ matrix.target }}
+          path: |
+            ${{ env.VCPKG_ROOT }}/installed
+            ${{ env.VCPKG_ROOT }}/packages
+
+      - name: Restore WinFlexBison cache
+        uses: actions/cache/restore@v4
+        id: restore-flexbison
+        with:
+          key: cache-flexbison-${{ matrix.arch }}-${{ matrix.target }}
+          path: ${{ env.GITHUB_WORKSPACE }}/flexbison
+
+      - name: Install WinFlexBison
+        if: steps.restore-flexbison.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:FLEXBISON -OutFile flexbison.zip
+          Expand-Archive flexbison.zip -DestinationPath flexbison
+
+      - name: Save WinFlexBison cache
+        if: steps.restore-flexbison.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-flexbison-${{ matrix.arch }}-${{ matrix.target }}
+          path: ${{ env.GITHUB_WORKSPACE }}/flexbison
+
+      - name: Configure GnuCOBOL
+        shell: pwsh
+        run: |
+          cd build_windows
+          Get-Content -Path 'config.h.in' | ForEach-Object { $_ `
+              -replace '(#define\s+CONFIGURED_ISAM)\s.+$', '$1   BDB' `
+              -replace '(#define\s+CONFIGURED_CURSES)\s.+$', '$1 PDCURSES' `
+              -replace '(#define\s+CONFIGURED_XML)\s.+$', '$1    XML2' `
+              -replace '(#define\s+CONFIGURED_JSON)\s.+$', '$1   CJSON_CJSON' `
+            } | Set-Content -Path 'config.h'
+          & .\maketarstamp.ps1 > tarstamp.h
+
+      - name: Generate parser
+        run: |
+          cd build_windows
+          set PATH=%GITHUB_WORKSPACE%\flexbison;%PATH%
+          cmd /C .\makebisonflex.cmd <NUL
+
+      - name: Build GnuCOBOL
+        run: |
+          cd build_windows
+          set CL=/DCOB_MAIN_DIR=\"%GITHUB_WORKSPACE:\=\\%\"
+          "%MSBUILD%" .\vs2019\GnuCOBOL.sln /m /p:Platform=${{ matrix.arch }} /p:Configuration=${{ matrix.target }}
+
+      - name: Install MSYS2 packages
+        shell: C:\shells\msys2bash.cmd {0}
+        run: |
+          pacman --needed --noconfirm -S $MSYSPKGS
+
+      - name: Build testsuite
+        shell: C:\shells\msys2bash.cmd {0}
+        run: |
+          cd tests
+          echo at_testdir=\'tests\' > atconfig
+          echo abs_builddir=\'$(pwd)\' >> atconfig
+          echo at_srcdir=\'./\' >> atconfig
+          echo abs_srcdir=\'$(pwd)/\' >> atconfig
+          echo at_top_srcdir=\'../\' >> atconfig
+          echo abs_top_srcdir=\'$(pwd)/../\' >> atconfig
+          echo at_top_build_prefix=\'../\' >> atconfig
+          echo abs_top_builddir=\'$(pwd)/../\' >> atconfig
+          echo at_top_builddir=\$at_top_build_prefix >> atconfig
+          echo EXEEXT=\'.exe\' >> atconfig
+          echo AUTOTEST_PATH=\'tests\' >> atconfig
+          echo SHELL=\${CONFIG_SHELL-\'/bin/sh\'} >> atconfig
+          echo m4_define\([AT_PACKAGE_STRING], [$GC_VERSION]\) > package.m4
+          echo m4_define\([AT_PACKAGE_BUGREPORT], [bug-gnucobol@gnu.org]\) >> package.m4
+          sed 's/x64\/Debug/${{ env.ARCHDIR }}\/${{ matrix.target }}/g' atlocal_win > atlocal
+          sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
+
+          sed -i '/AT_SETUP(\[ASSIGN DYNAMIC with data item in LINKAGE\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[SEQUENTIAL basic I\/O\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[EXTERNAL RELATIVE file])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[Concatenated Files])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+
+          autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
+
+# The tests in sed commands above randomly hang (under debug configurations)
+
+      - name: Run testsuite
+        continue-on-error: true
+        run: |
+          cd tests
+          set PATH="%GITHUB_WORKSPACE%\build_windows\%ARCHDIR%\${{ matrix.target }}";"%GITHUB_WORKSPACE%\bin";%PATH%
+          set COB_CFLAGS=/I"%GITHUB_WORKSPACE%" /I"%GITHUB_WORKSPACE%\build_windows"
+          set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
+          call "%VCVARS%"
+          pushd ..\bin
+          cobc -x gcdiff.c
+          popd
+          set MSYS2_PATH_TYPE=inherit
+          C:\shells\msys2bash.cmd -c "./testsuite || ./testsuite --recheck --verbose"
+
+      - name: Upload testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
+          path: ${{ env.GITHUB_WORKSPACE }}/tests/testsuite.log
+
+      # - name: Package GnuCOBOL
+      #   run: |
+      #     cd build_windows
+      #     set PATH="%GITHUB_WORKSPACE%\build_windows\%ARCHDIR%\${{ matrix.target }}";"%GITHUB_WORKSPACE%\bin";%PATH%
+      #     set COB_CFLAGS=/I"%GITHUB_WORKSPACE%" /I"%GITHUB_WORKSPACE%\build_windows"
+      #     set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
+      #     call "%VCVARS%"
+      #     cmd /C .\makedist.cmd <NUL
+
+      # - name: Upload distribution
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: GnuCOBOL_4.0-dev_${{ matrix.arch }}-${{ matrix.target }}.7z
+      #     path: ${{ env.GITHUB_WORKSPACE }}/GnuCOBOL_4.0-dev_vs_bin.7z

@@ -1,10 +1,10 @@
-name: MacOS VISAM
+name: MacOS
 
 on:
   pull_request:
     branches: [ gc4 ]
   push:
-    branches: [ gc3_to_gc4 ]
+    branches: [ gc4 ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -15,16 +15,24 @@ jobs:
       matrix:
         os:
           - macos-latest
+        isam:
+          - db
+          - visam
 
     runs-on: ${{ matrix.os }}
 
     steps:
+
       - name: Configure git
         run: git config --global core.symlinks false
 
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install packages
         run: |
@@ -35,12 +43,8 @@ jobs:
           echo "LDFLAGS=-L$opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
 
-      - name: Set git user
-        run: |
-          git config --global user.name github-actions
-          git config --global user.email github-actions-bot@users.noreply.github.com
-
       - name: Installing VISAM prerequisite
+        if: ${{ matrix.isam == 'visam' }}
         run: |
           wget http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
           tar -xvzf visam-2.2.tar.Z
@@ -72,14 +76,14 @@ jobs:
           cd _build
           export CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
           export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
-          ../configure --with-visam --with-indexed=visam --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol
+          ../configure --with-${{ matrix.isam }} --with-indexed=${{ matrix.isam }} --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol
 
-      - name: Upload config.log
-        uses: actions/upload-artifact@v3
-        with:
-          name: config.log
-          path: _build/config.log
+      - name: Upload config-${{ matrix.isam }}.log
+        uses: actions/upload-artifact@v4
         if: failure()
+        with:
+          name: config-${{ matrix.isam }}.log
+          path: _build/config.log
 
       - name: make
         run: |
@@ -94,10 +98,10 @@ jobs:
           sudo make install
           find /opt/cobol > install.log
 
-      - name: Upload install.log
-        uses: actions/upload-artifact@v3
+      - name: Upload install-${{ matrix.isam }}.log
+        uses: actions/upload-artifact@v4
         with:
-          name: install.log
+          name: install-${{ matrix.isam }}.log
           path: _build/install.log
 
       - name: check
@@ -115,19 +119,19 @@ jobs:
           cd _build
           make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
 
-      - name: Upload testsuite.log
-        uses: actions/upload-artifact@v3
+      - name: Upload testsuite-${{ matrix.isam }}.log
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: testsuite.log
+          name: testsuite-${{ matrix.isam }}.log
           path: _build/tests/testsuite.log
 
       - name: Cache newcob.val.Z
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: newcob
         with:
           path: _build/tests/cobol85/newcob.val.Z.cached
-          key: newcob
+          key: newcob-${{ matrix.isam }}
 
       - name: Download newcob.val.Z
         if: steps.newcob.outputs.cache-hit != 'true'
