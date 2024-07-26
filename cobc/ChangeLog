@@ -74,10 +74,43 @@
 				if it ends with OCCURS DEPENDING ON
 				If a field follows ODO and not odoslide then it is fixed size
 
+2022-10-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c: rewritten codegen for INITIALIZE of table fields,
+	  effectively using the 3.1.2 codegen for that with "check only"
+	  for table-format VALUE, then after everything was initialized
+	  post-setting of the table-format VALUES with
+	  output_initialize_multi_values, a simplified version of the
+	  previously often called output_initialize_occurs (now renamed),
+	  added originally for FR #234: multiple VALUEs for OCCURS
+	* tree.h (cb_field): drop flag_occurs_values
+	* codegen.c (output_initialize_to_value, output_initialize_to_default):
+	  extracted from output_initialize_one (split only)
+	* codegen.c: draft for codegen of better readable init code as
+	  done in other places (not active, inspect and decide later)
+	* codegen.c (output_figurative): fix bug #724 lvl01 OCCURS items to
+	  also correctly INITIALIZE TO VALUE with figurative constants
+	* field.c (cleanup_field_value): new function called from field
+	  value validation code; replaces values that match default by
+	  cb_zero/cb_space for better codegen
+	* tree.c (cb_build_binary_op): don't raise an error in the condition
+	  code when we raised an error - for example on a bad reference - before
+	* field.c (cb_build_field_tree): generate dummy filler for level
+	  mismatch also for non-relaxed parsing to prevent follow-on errors
+
 2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
 	  static variables in the parser for creation of the rw vary items
+	* parser.y, reserved.c: full parsing for COBOL2002 and BS2000
+	  multi VALUE entries via VALUES [ARE]
+	* parser.y, field.c, tree.h, codegen.c, tree.c, scanner.l: new struct
+	  cb_table_values to store the complex parsing result, only embed the VALUE
+	  in a list when actually necessary, and use these adjustments in syntax
+	  and codegen
+	* field.c: check all multi-values for correct type and length;
+	  verify that only up to max amount entries are specified;
+	  TODO: complete handling of FROM/TO/REPEATED clause
 
 2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -158,6 +191,16 @@
 	* cobc.c (cobc_abort_terminate): run into libcob provided abort handling
 	  with a default of SIGABRT and a configurable coredump via
 	  COBC_CORE_ON_ERROR overriding COB_CORE_ON_ERROR (currently fixed "2")
+	* codegen.c (output_call) [COB_NON_ALIGNED]: fix CALL RETURNING
+
+2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (plex_call_destroy): fixed minor memory leak
+	* cobc.c (compile_level): using enum values instead of numeric constants
+	* parser.y (examine_format_variant): internally use "MOVE ZERO TO TALLY"
+	  instead of "INITIALIZE TALLY"
+	* cobc.c: minor reformatting
+	* flag.def: fixed minor doc issues
 
 2022-10-06  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -174,6 +217,10 @@
 	* config.c (cb_load_conf_file): check snprintf size fixing compile warning
 	* typeck.c (validate_occurs): change level 01/77 check back to plain
 	  dialect verification fixing #854
+
+2022-10-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, parser.y: fix AREACHECK in DEFAULT SECTION of CONTROL DIVISON
 
 2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -194,12 +241,22 @@
 	* field.c (copy_duplicated_field_into_field): extracted
 	  from copy_children, copy_into_field_recursive
 	* tree.c (build_sum_counter): fix reference to sum counter
+	* cobc.c (process_command_line): full parse of options on error to provide
+	  all information to the user
+	* codegen.c (cb_open_mode_to_string), tree.h: new function
+	* codegen.c (output_param): generation for CB_DIRECT (string passed as tree)
+	* codegen.c (output_error_handler), typeck.c (cb_emit_open): use of
+	  cb_open_mode_to_string for improved codegen (using enum values instead
+	  of numeric constants)
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (function): attach ref-mod to all kind of functions to consume
 	  them here and to pass invalid ref-mod for all numeric intrinsics to
 	  cb_build_intrinsic enable us to create a nice diagnostic
+	* cobc.c, flag.def: do not imply -fsource-location with -g any more (but
+	  still with --debug and -ftrace-all); imply -fsource-location with -fdump
+	* codegen.c: don't output source location for -fdump -fno-source-location
 
 2022-09-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -220,6 +277,7 @@
 	  on level 01 OCCURS items, bug introduced with 2022-07-12
 	* pplex.l: dropped check for "spurious '$'", fixing bug #839
 	  and acucomment not handling $ correct
+	* codegen.c (output_section_info, output_trace_info): minor refactoring
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -617,7 +675,7 @@
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
 	* pplex.l (get_word): new function to extract word and use in
 	  (is_condition_directive_clause, next_word_is_comment_paragraph_name)
-	* reserved.c, scanner.l, tree.h: renamed cb_memcpy_upper to
+	* reserved.c, scanner.l, tree.h: renamed cb_strncpy_upper to
 	  cb_memcpy_upper, as it does not follow strncpy rules
 	* reserved.c (cb_strcasecmp) streamlined from glibc implementation
 	* reserved.c, cobc.h: exported cb_strcasecmp

@@ -31,8 +31,8 @@
  * fodbc.c     has the ODBC code for INDEXED files
  * foci.c      has the OCI (Oracle) code for INDEXED files
  * fsqlxfd.c   has routines common to ODBC, OCI, BDB, LMDB
- * fextfh.c    has the EXTFH code (defacto standard used by MicroFocus, IBM, ...) 
- * focextfh.c  has code for obsolete OpenCOBOL WITH_INDEX_EXTFH/WITH_SEQRA_EXTFH 
+ * fextfh.c    has the EXTFH code (defacto standard used by MicroFocus, IBM, ...)
+ * focextfh.c  has code for obsolete OpenCOBOL WITH_INDEX_EXTFH/WITH_SEQRA_EXTFH
  *
  */
 #include "fileio.h"
@@ -190,9 +190,9 @@ static unsigned int qblhdrsz = 0;
 /* Each record in the QBL file starts with this header */
 static struct cob_qbl_hdr {
 	char		type[2];	/* Record type */
-#define QBL_DEF		"FD"	/* File definition */	
-#define QBL_OPEN	"FO"	/* File was Opened */	
-#define QBL_CLOSE	"FC"	/* File was Closed */	
+#define QBL_DEF		"FD"	/* File definition */
+#define QBL_OPEN	"FO"	/* File was Opened */
+#define QBL_CLOSE	"FC"	/* File was Closed */
 #define QBL_BEFORE	"B4"	/* Before image a record */
 #define QBL_AFTER	"AF"	/* After image a record */
 #define QBL_NEW		"NU"	/* Image of new record */
@@ -215,7 +215,7 @@ static int dummy_91			() {return COB_STATUS_91_NOT_AVAILABLE;};
 static int cob_set_file_format(cob_file *, char *, int);
 static void cob_set_file_defaults (cob_file *);
 static int cob_savekey (cob_file *f, int idx, unsigned char *data);
-static int cob_file_open	(cob_file_api *, cob_file *, char *, const int, const int);
+static int cob_file_open	(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
 static int cob_file_close	(cob_file_api *, cob_file *, const int);
 static int cob_file_write_opt	(cob_file *, const int);
 
@@ -1063,7 +1063,7 @@ cob_open_qbl (char *filename, int makeit, int append)
 	mode = O_RDWR;
 	if (append)
 		mode |= O_APPEND;
-	if (makeit) 
+	if (makeit)
 		mode |= O_CREAT;
 	fd = open (filename, mode, 0666);
 	if (errno) {
@@ -1641,12 +1641,18 @@ has_acu_hyphen (char *src)
 static void
 do_acu_hyphen_translation (char *src)
 {
+	size_t len;
 	/* maybe store device type to "adjust locking rules" */
 	/* find first non-space and return it in the original storage  */
 	for (src = src + 3; *src && isspace ((cob_u8_t)*src); src++);
-	
-	strncpy (file_open_buff, src, (size_t)COB_FILE_MAX);
-	file_open_buff[COB_FILE_MAX] = 0;
+
+	len = strlen (src);
+	if (len >= COB_FILE_MAX) {
+		len = COB_FILE_MAX;
+	}
+	memcpy (file_open_buff, src, len);
+	file_open_buff[len + 1] = 0;
+
 	strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 }
 
@@ -3155,8 +3161,8 @@ lock_record(cob_file *f, unsigned int recnum, int forwrite, int *errsts)
 }
 
 static int
-unlock_record(cob_file *f, unsigned int recnum) 
-{ 
+unlock_record(cob_file *f, unsigned int recnum)
+{
 	COB_UNUSED (f);
 	COB_UNUSED (recnum);
 	return 1;
@@ -3165,10 +3171,10 @@ unlock_record(cob_file *f, unsigned int recnum)
 #endif
 
 /*
- * Determine if file should be locked 
+ * Determine if file should be locked
  */
 static int
-set_file_lock (cob_file *f, const char *filename, int open_mode) 
+set_file_lock (cob_file *f, const char *filename, int open_mode)
 {
 	int	lock_mode, ret;
 
@@ -3181,7 +3187,7 @@ set_file_lock (cob_file *f, const char *filename, int open_mode)
 	 && ((open_mode == COB_OPEN_INPUT) || (open_mode == COB_OPEN_I_O))) {/* File is SHARE ALL */
 		f->flag_record_lock = 1;
 		return 0;
-	} 
+	}
 
 	/* Lock the file */
 	if ((f->share_mode & COB_SHARE_ALL_OTHER)) {
@@ -4014,7 +4020,7 @@ write_mf_header(cob_file *f, char *filename)
  */
 static int
 cob_fd_file_open (cob_file *f, char *filename,
-		const int mode, const int sharing)
+		const enum cob_open_mode mode, const int sharing)
 {
 	int		fd;
 	int		fdmode;
@@ -4042,7 +4048,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 	}
 
 	nonexistent = 0;
-	if (mode != COB_OPEN_EXTEND 
+	if (mode != COB_OPEN_EXTEND
 	 && mode != COB_OPEN_OUTPUT
 	 && !f->flag_optional
 	 && !isdirvalid (filename)) {
@@ -4133,7 +4139,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 
 	switch (ret) {
 	case 0:
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		break;
 	case ENOENT:
 		if (mode == COB_OPEN_EXTEND || mode == COB_OPEN_OUTPUT) {
@@ -4143,7 +4149,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 		}
 		if (f->flag_optional) {
 			f->fd = fd;
-			f->open_mode = (unsigned char)mode;
+			f->open_mode = (enum cob_open_mode)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
 			f->flag_begin_of_file = 1;
@@ -4248,7 +4254,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 #define dMaxArgs 16
 static int
 cob_file_open (cob_file_api *a, cob_file *f, char *filename,
-		const int mode, const int sharing)
+		const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -4272,7 +4278,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 
 	if (file_setptr->cob_file_dict == COB_DICTIONARY_ALL
 	 && mode == COB_OPEN_OUTPUT)
-		a->cob_write_dict(f, filename); 
+		a->cob_write_dict(f, filename);
 
 	f->file = NULL;
 	f->fd = -1;
@@ -4285,7 +4291,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	f->file_pid = 0;
 	f->flag_is_pipe = 0;
 	if (filename[0] == '>') {
-		if (mode != COB_OPEN_OUTPUT) 
+		if (mode != COB_OPEN_OUTPUT)
 			return COB_STATUS_37_PERMISSION_DENIED;
 		if (!file_setptr->cob_unix_lf) {
 			fmode = "w";
@@ -4304,11 +4310,11 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		f->fileout = f->file;
 		f->fdout = f->fd;
 		f->flag_is_pipe = 1;
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		return 0;
 	}
 	if (filename[0] == '<') {
-		if (mode != COB_OPEN_INPUT) 
+		if (mode != COB_OPEN_INPUT)
 			return COB_STATUS_37_PERMISSION_DENIED;
 		if (!file_setptr->cob_unix_lf) {
 			fmode = "r";
@@ -4327,11 +4333,11 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			f->fd = -1;
 		}
 		f->flag_is_pipe = 1;
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		return 0;
 	}
 	if (strcmp (filename,":CI:") == 0) {
-		if (mode != COB_OPEN_INPUT) 
+		if (mode != COB_OPEN_INPUT)
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features |= COB_SELECT_STDIN;
 		f->flag_select_features &= ~COB_SELECT_STDOUT;
@@ -4339,12 +4345,12 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		f->fileout = NULL;
 		f->fdout = -1;
 		f->fd = STDIN_FILENO;
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		f->flag_is_std = 1;
 		return 0;
 	}
 	if (strcmp (filename,":CO:") == 0) {
-		if (mode != COB_OPEN_OUTPUT) 
+		if (mode != COB_OPEN_OUTPUT)
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features &= ~COB_SELECT_STDIN;
 		f->flag_select_features |= COB_SELECT_STDOUT;
@@ -4352,12 +4358,12 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		f->fileout = stdout;
 		f->fdout = STDOUT_FILENO;
 		f->fd = STDOUT_FILENO;
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		f->flag_is_std = 1;
 		return 0;
 	}
 	if (strcmp (filename,":CE:") == 0) {
-		if (mode != COB_OPEN_OUTPUT) 
+		if (mode != COB_OPEN_OUTPUT)
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features &= ~COB_SELECT_STDIN;
 		f->flag_select_features |= COB_SELECT_STDOUT;
@@ -4365,7 +4371,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		f->fileout = stderr;
 		f->fdout = STDERR_FILENO;
 		f->fd = STDERR_FILENO;
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		f->flag_is_std = 1;
 		return 0;
 	}
@@ -4376,7 +4382,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		int		j, k;
 		int		p_fds[2], c_fds[2];
 		char* args[dMaxArgs];
-		if (mode != COB_OPEN_I_O) 
+		if (mode != COB_OPEN_I_O)
 			return COB_STATUS_37_PERMISSION_DENIED;
 		filename++;
 		while(*filename == ' ')
@@ -4410,7 +4416,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			errno = 0;
 			f->fileout = (void*)fdopen(f->fdout, "w");
 			f->flag_is_pipe = 1;
-			f->open_mode = (unsigned char)mode;
+			f->open_mode = (enum cob_open_mode)mode;
 			f->file_features &= ~COB_FILE_LS_NULLS;
 			f->file_features &= ~COB_FILE_LS_VALIDATE;
 			f->flag_ls_instab = 0;
@@ -4475,7 +4481,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
 			fmode = "r+";
 #ifndef _WIN32
-		} else 
+		} else
 		if (!file_setptr->cob_unix_lf) {
 			fmode = "r";
 #endif
@@ -4535,13 +4541,13 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	fp = fopen (filename, fmode);
 	switch (errno) {
 	case 0:
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		if (f->file_features & COB_FILE_LS_CRLF)
 			f->flag_needs_cr = 1;
 		break;
 	case EINVAL:
 		if (f->flag_optional && nonexistent) {
-			f->open_mode = (unsigned char)mode;
+			f->open_mode = (enum cob_open_mode)mode;
 		} else {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
@@ -4555,7 +4561,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		if (f->flag_optional) {
 			f->file = NULL;
 			f->fd = -1;
-			f->open_mode = (unsigned char)mode;
+			f->open_mode = (enum cob_open_mode)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
 			f->flag_begin_of_file = 1;
@@ -4804,7 +4810,7 @@ open_next (cob_file *f)
 				f->fd = open (f->nxt_filename, O_RDONLY);
 			f->flag_is_concat = 0;
 			if (f->org_filename) {
-				cob_cache_free (f->org_filename);
+				cob_free (f->org_filename);
 				f->org_filename = NULL;
 			}
 		}
@@ -6760,7 +6766,6 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 void
 cob_file_free (cob_file **pfl, cob_file_key **pky)
 {
-	cob_file	*fl;
 	if (pky != NULL) {
 		if (*pky != NULL) {
 			cob_cache_free (*pky);
@@ -6768,19 +6773,36 @@ cob_file_free (cob_file **pfl, cob_file_key **pky)
 		}
 	}
 	if (pfl != NULL && *pfl != NULL) {
-		fl = *pfl;
+		struct file_list *fc, *prev;
+		cob_file	*fl = *pfl;
 		if (fl->linage) {
 			cob_cache_free (fl->linage);
 			fl->linage = NULL;
 		}
 		if (fl->org_filename) {
-			cob_cache_free (fl->org_filename);
+			cob_free (fl->org_filename);
 			fl->org_filename = NULL;
 		}
 		if (fl->convert_field) {
 			cob_free (fl->convert_field);
 			fl->convert_field = NULL;
 		}
+
+		/* Remove from cache  */
+		prev = file_cache;
+		for (fc = file_cache; fc; fc =fc->next) {
+			if (fc->file == fl) {
+				if (fc == file_cache) {
+					file_cache = fc->next;
+				} else {
+					prev->next = fc->next;
+				}
+				cob_free (fc);
+				break;
+			}
+			prev = fc;
+		}
+
 		cob_cache_free (*pfl);
 		*pfl = NULL;
 	}
@@ -6894,7 +6916,7 @@ cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkfile)
  * Open the data file
  */
 void
-cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
+cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_field *fnstatus)
 {
 	char	*cp;
 	if (f->file_version != COB_FILE_VERSION) {
@@ -6930,8 +6952,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			cob_runtime_warning ("Open %s OUTPUT with CLOSE pending", f->select_name);
 			f->cur_rec_num = f->max_rec_num = 0;
 		}
-		f->last_open_mode = (unsigned char)mode;
-		f->open_mode = (unsigned char)mode;
+		f->last_open_mode = (enum cob_open_mode)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		f->share_mode = (unsigned char)sharing;
 		f->lock_mode |= COB_LOCK_MULTIPLE;
 		if ((f->share_mode & COB_LOCK_OPEN_EXCLUSIVE))
@@ -6964,7 +6986,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	f->curkey = -1;
 	f->mapkey = -1;
 
-	f->last_open_mode = (unsigned char)mode;
+	f->last_open_mode = (enum cob_open_mode)mode;
 	f->share_mode = (unsigned char)sharing;
 	if ((f->share_mode & COB_LOCK_OPEN_EXCLUSIVE))
 		f->share_mode |= COB_SHARE_NO_OTHER;
@@ -6984,7 +7006,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		}
 		f->file = stdin;
 		f->fd = fileno (stdin);
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
 	}
@@ -6995,7 +7017,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		}
 		f->file = stdout;
 		f->fd = fileno (stdout);
-		f->open_mode = (unsigned char)mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
 	}
@@ -7036,7 +7058,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	  || f->organization == COB_ORG_LINE_SEQUENTIAL)
 	 && (mode == COB_OPEN_INPUT
 	  || mode == COB_OPEN_I_O)
-	 && (cp = strchr(file_open_name,file_setptr->cob_concat_sep[0])) != NULL
+	 && (cp = strchr (file_open_name, file_setptr->cob_concat_sep[0])) != NULL
 	 && file_open_name[0] != '>'
 	 && file_open_name[0] != '<'
 	 && file_open_name[0] != '|') {
@@ -7044,7 +7066,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		f->org_filename = cob_strdup (file_open_name);
 		f->nxt_filename = strchr(f->org_filename,file_setptr->cob_concat_sep[0]);
 		*f->nxt_filename++ = 0;
-		file_open_name = f->org_filename;
+		strcpy (file_open_name, f->org_filename);
 	}
 
 	if (!f->flag_optional

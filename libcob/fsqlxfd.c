@@ -27,7 +27,7 @@
 int
 cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
-	int 	k,part;
+	int 	k, part;
 	*fullkeylen = *partlen = 0;
 
 	for (k = 0; k < f->nkeys; ++k) {

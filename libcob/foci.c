@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022, 2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -34,7 +34,7 @@ void cob_oci_init_fileio (cob_file_api *a);
 static int oci_sync			(cob_file_api *, cob_file *);
 static int oci_commit		(cob_file_api *, cob_file *);
 static int oci_rollback		(cob_file_api *, cob_file *);
-static int oci_open			(cob_file_api *, cob_file *, char *, const int, const int);
+static int oci_open			(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
 static int oci_close		(cob_file_api *, cob_file *, const int);
 static int oci_start		(cob_file_api *, cob_file *, const int, cob_field *);
 static int oci_read			(cob_file_api *, cob_file *, cob_field *, const int);
@@ -109,8 +109,8 @@ oci_version (void)
 **************************************************/
 static int
 chkSts(
-	struct db_state		*db, 
-	char		*msg, 
+	struct db_state		*db,
+	char		*msg,
 	int			ociSts)
 {
 	int			i;
@@ -152,7 +152,7 @@ chkSts(
 	if (msg == NULL) msg = (void*)"?";
 	oraStatus = 0;
 	strcpy(errMsg,"");
-	OCIErrorGet(db->dbErrH, 1, (text*)NULL, (void*)&oraStatus, 
+	OCIErrorGet(db->dbErrH, 1, (text*)NULL, (void*)&oraStatus,
 						(void*)errMsg, (int)sizeof(errMsg)-1, OCI_HTYPE_ERROR);
 	if (oraStatus < 0)
 		db->dbStatus = -oraStatus;
@@ -196,7 +196,7 @@ chkSts(
 		return 1;
 	}
 
-	if (db->dbStatus != 0 
+	if (db->dbStatus != 0
 	&& db->dbStatus != db->dbStsNotFound) {
 		if (db->dbStatus == db->dbStsRecLock		/* FOR UPDATE NOWAIT and its held! */
 		&& db->intRecWait > 1000
@@ -214,7 +214,7 @@ chkSts(
 		&& db->dbStatus > 1000) {
 			db->dbFatalStatus = db->dbStatus;
 		}
-		DEBUG_LOG("db",("%s; Status %d, fatal %d\n", 
+		DEBUG_LOG("db",("%s; Status %d, fatal %d\n",
 							msg, db->dbStatus, db->dbFatalStatus));
 		DEBUG_LOG("db",("    : %s\n",errMsg));
 	}
@@ -367,7 +367,7 @@ oci_rollback (cob_file_api *a, cob_file *f)
 }
 
 /****************************************************
-	Bind just column to return data 
+	Bind just column to return data
 ****************************************************/
 static int
 bindColumn(
@@ -387,7 +387,7 @@ bindColumn(
 				col->sqlType = SQLT_TIMESTAMP;
 			else if (col->dtfrm->hasTime)
 				col->sqlType = SQLT_TIME;
-			else 
+			else
 				col->sqlType = SQLT_DAT;
 		} else if (col->type == COB_XFDT_FLOAT) {
 			if (col->size == sizeof(double))
@@ -412,8 +412,8 @@ bindColumn(
 	col->nRlen4 = col->sqlColSize;
 	if (chkSts(db,msg,
 			OCIDefineByPos(s->handle, (OCIDefine **)&db->dbBindV, db->dbErrH,
-				(ub4)pos, (ub1*)col->sdata, (sword)col->sqlColSize, 
-				(ub2)col->hostType, (ub2*)col->ind, 
+				(ub4)pos, (ub1*)col->sdata, (sword)col->sqlColSize,
+				(ub2)col->hostType, (ub2*)col->ind,
 				(ub2*)&col->nRlen2, (ub2*)&col->nRcode, OCI_DEFAULT))) {
 		return 1;
 	}
@@ -421,7 +421,7 @@ bindColumn(
 }
 
 /****************************************************
-	Bind just one column as parameter to statment 
+	Bind just one column as parameter to statment
 ****************************************************/
 static int
 bindParam(
@@ -444,7 +444,7 @@ bindParam(
 	db->dbBindV = NULL;
 	col->nRlen2 = col->sqlColSize;
 	col->nRlen4 = col->sqlColSize;
-	if (col->type == COB_XFDT_BIN) 
+	if (col->type == COB_XFDT_BIN)
 		prmtype = SQLT_BIN;
 	else
 		prmtype = col->hostType;
@@ -452,7 +452,7 @@ bindParam(
 	if (chkSts(db,msg,
 			OCIBindByPos(s->handle, (OCIBind **)&db->dbBindV, db->dbErrH,
 						(ub4)pos, (ub1*)col->sdata, (sword)col->sqlColSize,
-						(sword)prmtype, (ub2*)col->ind, NULL, 
+						(sword)prmtype, (ub2*)col->ind, NULL,
 						(ub2*)&col->nRcode, 0, NULL, OCI_DEFAULT))) {
 		return 1;
 	}
@@ -573,7 +573,7 @@ oci_setup_stmt (
 		}
 		s->preped = TRUE;
 	}
-	if (!s->params 
+	if (!s->params
 	 && (bindtype & SQL_BIND_PRMS)) {
 		pos = 0;
 		for (k=0; k < fx->nmap; k++) {
@@ -586,7 +586,7 @@ oci_setup_stmt (
 		s->bindpos = pos;
 		s->params = TRUE;
 	} else
-	if (!s->bound 
+	if (!s->bound
 	 && (bindtype & SQL_BIND_COLS)) {
 		pos = 0;
 		for (k=0; k < fx->nmap; k++) {
@@ -731,7 +731,7 @@ ociCheckDups(
 		return -1;
 	}
 	rtn = atoi(varFetch);
-	OCIHandleFree(s->handle, OCI_HTYPE_STMT); 
+	OCIHandleFree(s->handle, OCI_HTYPE_STMT);
 	return rtn;
 }
 
@@ -763,14 +763,14 @@ ociStmt(
 	}
 	snprintf(msg,sizeof(msg),"Prep: %.50s",stmt);
 	db->dbStatus = 0;
-	if(chkSts(db,(char*)msg, 
+	if(chkSts(db,(char*)msg,
 				OCIStmtPrepare(stmtHndl,db->dbErrH,
 								(text*)stmt,len,OCI_NTV_SYNTAX,OCI_DEFAULT))) {
 		DEBUG_LOG("db",("OCIStmtPrepare status %d; Failed!\n",db->dbStatus));
 	} else {
 		snprintf(msg,sizeof(msg),"Exec: %.50s",stmt);
 		db->dbStatus = 0;
-		if (strncasecmp(stmt,"SELECT ",7) == 0) 
+		if (strncasecmp(stmt,"SELECT ",7) == 0)
 			iters = 0;
 		chkSts(db,(char*)msg,
 				OCIStmtExecute(db->dbSvcH,stmtHndl,db->dbErrH,
@@ -793,7 +793,7 @@ ociStmt(
 			DEBUG_LOG("db",("Fetch: %.50s; '%s' OK\n",stmt,varFetch));
 		}
 	}
-	OCIHandleFree(stmtHndl, OCI_HTYPE_STMT); 
+	OCIHandleFree(stmtHndl, OCI_HTYPE_STMT);
 	return rtn;
 }
 
@@ -846,7 +846,7 @@ ociCountIndex(
 	}
 
 	if (!fx->key[idx]->count_eq.preped) {
-		if(chkSts(db,(char*)"Peek prepare", 
+		if(chkSts(db,(char*)"Peek prepare",
 					OCIStmtPrepare(fx->key[idx]->count_eq.handle,db->dbErrH,
 									(text*)fx->key[idx]->count_eq.text,
 									strlen(fx->key[idx]->count_eq.text),OCI_NTV_SYNTAX,OCI_DEFAULT))) {
@@ -923,11 +923,11 @@ oci_create_table (
 		db->dbStatus = db->dbStsNoTable;
 		return;
 	}
-	if (fx->fileorg == COB_ORG_RELATIVE) 
+	if (fx->fileorg == COB_ORG_RELATIVE)
 		return;
 	for (k=0; k < fx->nkeys && fx->key[k]->create_index; k++) {
 		if (ociStmt (db, fx->key[k]->create_index)) {
-			DEBUG_LOG ("db",("k%d: %s\n",k,fx->key[k]->create_index)); 
+			DEBUG_LOG ("db",("k%d: %s\n",k,fx->key[k]->create_index));
 			db->dbStatus = db->dbStsNoTable;
 			return;
 		}
@@ -968,7 +968,7 @@ join_environment (cob_file_api *a)
 	}
 
 	if (chkSts(db,(char*)"Alloc EnvH",
-		OCIEnvCreate((OCIEnv**)&db->dbEnvH,OCI_DEFAULT|OCI_NO_UCB, 
+		OCIEnvCreate((OCIEnv**)&db->dbEnvH,OCI_DEFAULT|OCI_NO_UCB,
 					NULL, NULL, NULL, NULL, 0, NULL))) {
 		DEBUG_LOG("db",("OCIAllocHandle Env status %d; Failed!\n",db->dbStatus));
 		return;
@@ -1019,10 +1019,10 @@ join_environment (cob_file_api *a)
 	} else {
 		db->commitInterval = (int)BIGCOMMIT;
 	}
-	if (db->dbName[0] > ' ' 
+	if (db->dbName[0] > ' '
 	 && db->attachDbName) {
 		sprintf(tmp,"Attach DBNAME=%s",db->dbName);
-		if (chkSts(db, (char*)tmp, 
+		if (chkSts(db, (char*)tmp,
 				OCIServerAttach(db->dbSvrH, db->dbErrH,
 							(text*)db->dbName, strlen(db->dbName), OCI_DEFAULT) ) ) {
 			oci_free_all_handles (db);
@@ -1030,7 +1030,7 @@ join_environment (cob_file_api *a)
 		}
 	} else {
 		sprintf(tmp,"Attach Default %s",db->dbSid);
-		if (chkSts(db, (char*)tmp, 
+		if (chkSts(db, (char*)tmp,
 				OCIServerAttach(db->dbSvrH, db->dbErrH,
 							(text*)NULL, 0, OCI_DEFAULT) ) ) {
 			oci_free_all_handles (db);
@@ -1054,7 +1054,7 @@ join_environment (cob_file_api *a)
 	}
 
 	chkSts(db,(char*)"AttrSet Uid",OCIAttrSet(	db->dbSesH, OCI_HTYPE_SESSION,
-								(text *)db->dbUser, strlen(db->dbUser), 
+								(text *)db->dbUser, strlen(db->dbUser),
 										OCI_ATTR_USERNAME, db->dbErrH ));
 	if(db->dbStatus) {
 		DEBUG_LOG("db",("OCIAttrSet User status %d; Failed!\n",db->dbStatus));
@@ -1062,7 +1062,7 @@ join_environment (cob_file_api *a)
 	}
 
 	chkSts(db,(char*)"AttrSet Pwd",OCIAttrSet(	db->dbSesH, OCI_HTYPE_SESSION,
-								(text *)db->dbPwd, strlen(db->dbPwd), 
+								(text *)db->dbPwd, strlen(db->dbPwd),
 										OCI_ATTR_PASSWORD, db->dbErrH ));
 	if(db->dbStatus) {
 		DEBUG_LOG("db",("OCIAttrSet Password status %d; Failed!\n",db->dbStatus));
@@ -1088,7 +1088,7 @@ join_environment (cob_file_api *a)
 	}
 
 	if (chkSts(db,(char*)"AttrSet Ses",
-			OCIServerVersion( db->dbSvcH, db->dbErrH, 
+			OCIServerVersion( db->dbSvcH, db->dbErrH,
 							(text*)tmp, sizeof(tmp), OCI_HTYPE_SVCCTX))) {
 		DEBUG_LOG("db",("OCIAttrSet Session status %d; Failed!\n",db->dbStatus));
 		return;
@@ -1162,7 +1162,7 @@ oci_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		}
 		p = cob_malloc (sizeof (struct indexed_file));
 		f->file = p;
-		f->flag_file_lock = 0;	
+		f->flag_file_lock = 0;
 		f->curkey = -1;
 		p->fx = fx;
 	}
@@ -1176,7 +1176,7 @@ oci_file_delete (cob_file_api *a, cob_file *f, char *filename)
 	if (ociStmt(db,buff)
 	 && db->dbStatus == db->dbStsNoTable) {
 		return 0;
-	} 
+	}
 	if (db->dbStatus != db->dbStsOk) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
@@ -1186,7 +1186,7 @@ oci_file_delete (cob_file_api *a, cob_file *f, char *filename)
 
 /* OPEN INDEXED file */
 static int
-oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
+oci_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing)
 {
 	struct indexed_file	*p;
 	int				i, k, ln;
@@ -1219,7 +1219,7 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 
 	p = cob_malloc (sizeof (struct indexed_file));
 	f->file = p;
-	f->flag_file_lock = 0;	
+	f->flag_file_lock = 0;
 	f->curkey = -1;
 	p->startcond = -1;
 	p->fx = fx;
@@ -1318,13 +1318,13 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 			return COB_STATUS_30_PERMANENT_ERROR;
 	}
 
-	f->open_mode = mode;
-	f->last_open_mode = mode;
+	f->open_mode = (enum cob_open_mode)mode;
+	f->last_open_mode = (enum cob_open_mode)mode;
 	f->flag_nonexistent = 0;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
 	f->flag_io_tran = TRUE;
-	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */
 		db->autocommit = FALSE;
 		f->flag_do_qbl = FALSE;					/* fileio should not do QBL work */
 	} else {
@@ -1343,7 +1343,7 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 					fx->map[k].sqlType = SQLT_TIMESTAMP;
 				else if (fx->map[k].dtfrm->hasTime)
 					fx->map[k].sqlType = SQLT_TIME;
-				else 
+				else
 					fx->map[k].sqlType = SQLT_DAT;
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				if (fx->map[k].size == sizeof(double))
@@ -1548,7 +1548,7 @@ oci_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 			return COB_STATUS_61_FILE_SHARING;
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
-	if (chkSts(db,(char*)"Read", 
+	if (chkSts(db,(char*)"Read",
 			OCIStmtFetch(fx->start->handle,db->dbErrH,
 					1,OCI_FETCH_NEXT,OCI_DEFAULT))) {
 		DEBUG_LOG("db",("Read: %.40s...; Sts %d '%.5s'\n",fx->start->text,
@@ -1659,7 +1659,7 @@ oci_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	}
 	switch (opts & COB_READ_MASK) {
 	default:
-    case COB_READ_NEXT:                 
+    case COB_READ_NEXT:
 		if (p->startcond != COB_GT) {
 			fx->start = cob_sql_select (db, fx, ky, COB_GT, read_opts, oci_free_stmt);
 			oci_close_stmt (fx->start);
@@ -1712,7 +1712,7 @@ oci_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 							0,0,NULL,NULL,excmode))){
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
-		if (chkSts(db,(char*)"Read First", 
+		if (chkSts(db,(char*)"Read First",
 					OCIStmtFetch2(fx->start->handle,db->dbErrH,
 							1,OCI_FETCH_NEXT,0,OCI_DEFAULT))) {
 			DEBUG_LOG("db",("Read First: %.50s; Sts %d\n",fx->start->text,db->dbStatus));

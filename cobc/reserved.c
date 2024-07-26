@@ -2402,6 +2402,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "REORG-CRITERIA",		0, 1, REORG_CRITERIA,		/* OS/VS extension */
 				0, CB_CS_I_O_CONTROL
   },
+  { "REPEATED",			0, 0, REPEATED,			/* BS2000 */
+				0 /* Should be for VALUE only in GC */, 0
+  },
   { "REPLACE",			0, 0, REPLACE,			/* 2002 */
 				0, 0
   },

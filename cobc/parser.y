@@ -2947,6 +2947,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token REMOVAL
 %token RENAMES
 %token REORG_CRITERIA		"REORG-CRITERIA"
+%token REPEATED
 %token REPLACE			/* remark: not used here */
 %token REPLACING
 %token REPORT
@@ -3618,7 +3619,8 @@ _default_clauses:
 
 _default_accept_clause:
   /* empty */
-| ACCEPT _is word_or_terminal
+| ACCEPT  { check_non_area_a ($1); }
+  _is word_or_terminal
   {
 	  CB_PENDING ("ACCEPT statement in DEFAULT SECTION");
 	  /* TODO: setup_default_accept ($3); */
@@ -3627,7 +3629,8 @@ _default_accept_clause:
 
 _default_display_clause:
   /* empty */
-| DISPLAY _is word_or_terminal
+| DISPLAY { check_non_area_a ($1); }
+  _is word_or_terminal
   {
 	  CB_PENDING ("DISPLAY statement in DEFAULT SECTION");
 	  /* TODO: setup_default_display ($3); */
@@ -4599,6 +4602,7 @@ _in_alphabet:
   }
 | IN alphabet_name
   {
+	/* note: IN is really mandatory here */
 	$$ = $2;
   }
 ;
@@ -4725,15 +4729,13 @@ symbolic_constant:
   user_entry_name _is literal
   {
 	struct cb_field *f;
-	cb_tree v;
 
-	v = CB_LIST_INIT ($3);
-	f = CB_FIELD (cb_build_constant ($1, v));
+	f = CB_FIELD (cb_build_constant ($1, $3));
 	f->flag_item_78 = 1;
 	f->flag_constant = 1;
 	f->flag_is_global = 1;
 	f->level = 1;
-	f->values = v;
+	f->values = $3;
 	cb_needs_01 = 1;
 	/* Ignore return value */
 	(void)cb_validate_78_item (f, 0);
@@ -7122,7 +7124,7 @@ constant_entry:
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
 	} else if ($5) {
-		if (cb_verify(cb_constant_01, "01 CONSTANT")) {
+		if (cb_verify (cb_constant_01, "01 CONSTANT")) {
 			x = cb_build_constant ($2, $5);
 			CB_FIELD (x)->flag_item_78 = 1;
 			CB_FIELD (x)->flag_constant = 1;
@@ -7152,30 +7154,40 @@ constant_entry:
 ;
 
 constant_source:
-  _as value_item_list
+  _as constant_expression_list
   {
-	$$ = $2;
+	/* this can be a list containing an arithmetic expression */
+	if (CB_LIST_P ($2) && !CB_CHAIN ($2)) {
+		$$ = CB_VALUE ($2);
+	} else {
+		$$ = $2;
+	}
   }
 | FROM WORD
   {
-	$$ = CB_LIST_INIT(cb_build_const_from ($2));
+	$$ = cb_build_const_from ($2);
   }
 ;
 
 constant_78_source:
   constant_expression_list
   {
+	/* this can be a list containing an arithmetic expression */
 	if (CB_VALID_TREE (current_field)) {
-		current_field->values = $1;
+		if (CB_LIST_P ($1) && !CB_CHAIN ($1)) {
+			current_field->values = CB_VALUE ($1);
+		} else {
+			current_field->values = $1;
+		}
 	}
   }
 | START _of identifier
   {
-	current_field->values = CB_LIST_INIT (cb_build_const_start (current_field, $3));
+	current_field->values = cb_build_const_start (current_field, $3);
   }
 | NEXT
   {
-	current_field->values = CB_LIST_INIT (cb_build_const_next (current_field));
+	current_field->values = cb_build_const_next (current_field);
   }
 ;
 
@@ -7543,13 +7555,13 @@ picture_clause:
   }
   _pic_locale_format_or_depending_on
   {
-	  if ((!current_field->pic || current_field->pic->variable_length) &&
-	      !current_field->flag_picture_l) {
-		  /* Current field with PIC L was not translated */
-		  cb_error_x (CB_TREE (current_field->pic),
+	if ((!current_field->pic || current_field->pic->variable_length) &&
+	    !current_field->flag_picture_l) {
+		/* Current field with PIC L was not translated */
+		cb_error_x (CB_TREE (current_field->pic),
 			      _("%s requires DEPENDING clause"),
 			      _("variable-length PICTURE"));
-	  }
+	}
   }
 ;
 
@@ -7557,34 +7569,37 @@ _pic_locale_format_or_depending_on:
   /* empty */
 | LOCALE _is_locale_name SIZE _is integer
   {
-	  /* $2 -> optional locale-name to be used */
-	  if ((current_field->pic->category != CB_CATEGORY_NUMERIC &&
-	       current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED) ||
-	      strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
-		  cb_error_x (CB_TREE (current_field->pic),
+	/* $2 -> optional locale-name to be used */
+	if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
+	    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
+	   || strpbrk (current_field->pic->orig, " CRDBL-*")) {
+		/* CHECKME: the standard seems to forbid additional ',' */
+		cb_error_x (CB_TREE (current_field->pic),
 			      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
-	  } else {
-		  /* TODO: check that not we're not within a CONSTANT RECORD */
-		  CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
-	  }
+	} else {
+		/* TODO: check that not we're not within a CONSTANT RECORD */
+		CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
+	}
   }
 | DEPENDING _on reference
   {
-	  cb_tree depending = $3;
-	  if (!current_field->pic->variable_length) {
-		  cb_error_x ($3, _("DEPENDING clause needs either an "
+	cb_tree depending = $3;
+	if (!current_field->pic->variable_length) {
+		cb_error_x ($3, _("DEPENDING clause needs either an "
 				    "OCCURS clause or a variable-length "
 				    "PICTURE"));
-	  } else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
-		     current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
-		  cb_error_x ($3, _("only USAGE DISPLAY may specify a "
+	} else
+	if (current_field->pic->category != CB_CATEGORY_ALPHABETIC
+	 && current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+		cb_error_x ($3, _("only USAGE DISPLAY may specify a "
 				    "variable-length PICTURE"));
-	  } else if (current_storage == CB_STORAGE_SCREEN ||
-		     current_storage == CB_STORAGE_REPORT) {
-		  cb_error_x ($3, _("%s not allowed in %s"),
+	} else
+	if (current_storage == CB_STORAGE_SCREEN
+	 || current_storage == CB_STORAGE_REPORT) {
+		cb_error_x ($3, _("%s not allowed in %s"),
 			      _("variable-length PICTURE"),
 			      enum_explain_storage (current_storage));
-	  } else {
+	} else {
 		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
 		     `c` may actually only be `X` or `A`) into a group
 		     with a single sub-field `PIC c OCCURS 1 TO N`. */
@@ -7601,11 +7616,11 @@ _pic_locale_format_or_depending_on:
 		  current_field->children = chld;
 		  cobc_parse_free (current_field->pic);
 		  current_field->pic = NULL;
-	  }
-	  /* Raise this flag in the error cases above, to avoid unrelated
-	     warning or error messages upon tentative validation of
-	     redefines.  */
-	  current_field->flag_picture_l = 1;
+	}
+	/* Raise this flag in the error cases above, to avoid unrelated
+	   warning or error messages upon tentative validation of
+	   redefines.  */
+	current_field->flag_picture_l = 1;
   }
 ;
 
@@ -7635,7 +7650,7 @@ locale_name:
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
 type_to_clause:
-  TYPE _to TYPEDEF_NAME 
+  TYPE _to TYPEDEF_NAME
   {
 	cb_verify (cb_type_to_clause, _("TYPE TO clause"));
 	setup_external_definition_type ($3);
@@ -8065,14 +8080,14 @@ occurs_clause:
   }
 ;
 
-_occurs_to_integer:
-  /* empty */			{ $$ = NULL; }
-| TO integer			{ $$ = $2; }
-;
-
 _occurs_from_integer:
   /* empty */			{ $$ = NULL; }
 | FROM integer			{ $$ = $2; }
+;
+
+_occurs_to_integer:
+  /* empty */			{ $$ = NULL; }
+| TO integer			{ $$ = $2; }
 ;
 
 _occurs_integer_to:
@@ -8277,12 +8292,126 @@ based_clause:
 /* VALUE clause */
 
 value_clause:
-  value_is_are value_item_list
+  /* normal format for data items: single VALUE, stored as-is */
+  VALUE _is value_item
   {
 	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
-	current_field->values = $2;
+	current_field->values = $3;
+  }
+  /* normal format for data items: single VALUE, stored as-is,
+     OSVS extension "VALUES ARE"; for now disabled in favor of
+	 BS2000 table-format without FROM
+| VALUES _are value_item
+  {
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = $3;
+  } */
+  /* COBOL2002 table-format with mandatory FROM, optional TO */
+| VALUES _are value_table_item_list
+  {
+	/* note: "VALUE _is" would also be correct, but we ignore that
+	         because of parser conflicts */
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = $3;
+  }
+/* BS2000 table-format without FROM (implied 1,1,1,1) and optional REPEATED */
+| VALUES _are value_item_list _repeated_phrase
+  {	
+	/* note: "VALUE _is" would also be correct, but we ignore that
+	         because of parser conflicts */
+	cb_tree value_table_item = cb_build_table_values ($3, NULL, NULL, $4);
+	/* note: this format can actually be specified multiple times,
+	         but we expect the part without FROM first */
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = CB_LIST_INIT (value_table_item);
+  }
+/* BS2000 table-format with FROM and optional REPEATED */
+| VALUES from_subscripts _are value_item_list _repeated_phrase
+  {	
+	/* note: "VALUE _is" would also be correct, but we ignore that
+	         because of parser conflicts */
+	cb_tree value_table_item = cb_build_table_values ($4, $2, NULL, $5);
+	/* note: this format can actually be specified multiple times */
+	if (!current_field->values) {
+		check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+		current_field->values = CB_LIST_INIT (value_table_item);
+	} else {
+		current_field->values = cb_list_add (current_field->values, value_table_item);
+	}
   }
 ;
+
+value_table_item_list:
+  value_table_item			{ $$ = CB_LIST_INIT ($1); }
+| value_table_item_list value_table_item { $$ = cb_list_add ($1, $2); }
+;
+
+value_table_item:
+value_item_list from_subscripts _to_subscripts
+{
+	/* note: actual matching to amount of subs (OCCURS) is
+	         postponed as this phrase can be specified later
+			 and/or in a higher level */
+
+	cb_tree to_subs = $3;
+	if (to_subs) {
+		if (cb_list_length ($2) != cb_list_length (to_subs)) {
+			cb_error_x (to_subs, _("amount of entries in FROM and TO must match"));
+			to_subs = NULL;
+		} else {
+			cb_tree f = $2, t = to_subs;
+			while (f) {
+				int f_idx = cb_get_int (CB_VALUE (f));
+				int t_idx = cb_get_int (CB_VALUE (t));
+				if (f_idx > t_idx) {
+					cb_error_x ($2,
+						_("entry in FROM (%d) must be <= entry in TO (%d)"),
+						f_idx, t_idx);
+					break;
+				}
+				f = CB_CHAIN (f);
+				t = CB_CHAIN (t);
+			}
+		}
+	}
+	$$ = cb_build_table_values ($1, $2, $3, NULL);
+  }
+;
+
+from_subscripts:
+  FROM from_to_subscripts	{ $$ = $2; }
+;
+
+_to_subscripts:
+  /* empty */				{ $$ = NULL; }
+| TO from_to_subscripts		{ $$ = $2; }
+;
+
+from_to_subscripts:
+  TOK_OPEN_PAREN subscripts TOK_CLOSE_PAREN
+  {
+	$$ = cb_list_reverse ($2);
+  }
+;
+
+_repeated_phrase:
+  /* empty */				{ $$ = NULL; }
+| REPEATED unsigned_pos_integer _times	{ $$ = $2; }
+| REPEATED _to END			{ $$ = cb_null; }
+
+;
+
+subscripts:
+  unsigned_pos_integer %prec SHIFT_PREFER
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| subscripts _e_sep unsigned_pos_integer %prec SHIFT_PREFER
+  {
+	$$ = cb_list_add ($1, $3);
+  }
+;
+
 
 value_is_are:
   VALUE _is
@@ -8295,8 +8424,16 @@ value_item_list:
 ;
 
 value_item:
-  lit_or_length THRU lit_or_length		{ $$ = CB_BUILD_PAIR ($1, $3); }
-| constant_expression
+ constant_expression
+;
+
+
+value_clause_report:
+  value_is_are value_item_list
+  {
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = $2;
+  }
 ;
 
 
@@ -8309,7 +8446,7 @@ value_clause_condition:
 ;
 
 value_item_list_in_alphabet:
-  value_item_list
+  value_item_condition_list
 /* the following is correct, passes parser, but is matched in places where
    it shouldn't (record key), therefore disabled for now
 | value_item_list _in alphabet_name
@@ -8318,6 +8455,16 @@ value_item_list_in_alphabet:
 	CB_PENDING ("literal in alphabet");
   }
  */
+;
+
+value_item_condition_list:
+  value_item_condition { $$ = CB_LIST_INIT ($1); }
+| value_item_condition_list value_item_condition { $$ = cb_list_add ($1, $2); }
+;
+
+value_item_condition:
+  lit_or_length THRU lit_or_length		{ $$ = CB_BUILD_PAIR ($1, $3); }
+| constant_expression
 ;
 
 
@@ -8884,7 +9031,7 @@ report_group_option:
 | blank_clause
 | source_clause
 | sum_clause_list
-| value_clause
+| value_clause_report
 | present_when_condition
 | group_indicate_clause
 | report_occurs_clause
@@ -9118,12 +9265,12 @@ data_varying_list:
 ;
 
 data_varying:
-  WORD _var_from _var_by 
+  WORD _var_from _var_by
   {
 	cb_tree x;
 
 	if (CB_WORD_COUNT ($1) == 0) {
-		x = cb_build_field (cb_build_reference (CB_NAME($1)));
+		x = cb_build_field (cb_build_reference (CB_NAME ($1)));
 		CB_FIELD (x)->usage = CB_USAGE_INDEX;
 		CB_FIELD (x)->index_type = CB_STATIC_INT_INDEX;
 		CB_FIELD (x)->values = CB_LIST_INIT (cb_zero);
@@ -9138,7 +9285,7 @@ data_varying:
 		struct cb_field *f = CB_FIELD (cb_ref ($1));
 		if (f->usage != CB_USAGE_INDEX
 		 || !f->flag_internal_register)
-			cb_error_x ($1, _("%s is not valid for VARYING"),f->name);
+			cb_error_x ($1, _("%s is not valid for VARYING"), f->name);
 		x = CB_TREE (f);
 	}
 
@@ -9151,7 +9298,7 @@ _var_from:
   {
 	$$ = NULL;
   }
-| FROM exp 
+| FROM exp
   {
 	$$ = $2;
   }
@@ -9162,7 +9309,7 @@ _var_by:
   {
 	$$ = NULL;
   }
-| BY exp 
+| BY exp
   {
 	$$ = $2;
   }
@@ -9725,7 +9872,7 @@ screen_value_clause:
 		cb_error (_("missing %s"), "VALUE");
 	}
 	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
-	current_field->values = CB_LIST_INIT ($2);
+	current_field->values = $2;
   }
 ;
 
@@ -14294,7 +14441,7 @@ examine_format_variant:
   TALLYING
   {
 	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
-	cb_emit_initialize (CB_LIST_INIT (tally), NULL, cb_int0, NULL, NULL);
+	cb_emit_move (cb_zero, CB_LIST_INIT (tally));
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);
   }
@@ -17334,8 +17481,9 @@ _returning_national:
 ;
 
 _validating_with:
-/* empty */					{ $$ = NULL; }
-| VALIDATING _with schema_file_or_record_name	{ $$ = $3; }
+/* empty */			{ $$ = NULL; }
+| VALIDATING _with
+  schema_file_or_record_name	{ $$ = $3; }
 ;
 
 schema_file_or_record_name:

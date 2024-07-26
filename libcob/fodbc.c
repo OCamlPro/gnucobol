@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022, 2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -28,7 +28,7 @@
 #if defined(DB2DBI)
 #include <sqlcli1.h>
 #include <sqlca.h>
-#include <sqludf.h> 
+#include <sqludf.h>
 #else
 #include <sql.h>
 #include <sqlext.h>
@@ -46,7 +46,7 @@ static int odbcStmt			(struct db_state *db, char *stmt);
 static int odbc_sync		(cob_file_api *, cob_file *);
 static int odbc_commit		(cob_file_api *, cob_file *);
 static int odbc_rollback	(cob_file_api *, cob_file *);
-static int odbc_open		(cob_file_api *, cob_file *, char *, const int, const int);
+static int odbc_open		(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
 static int odbc_close		(cob_file_api *, cob_file *, const int);
 static int odbc_start		(cob_file_api *, cob_file *, const int, cob_field *);
 static int odbc_read		(cob_file_api *, cob_file *, cob_field *, const int);
@@ -306,8 +306,8 @@ getOdbcMsg(
 **************************************************/
 static int
 chkSts(
-	struct db_state		*db, 
-	char		*msg, 
+	struct db_state		*db,
+	char		*msg,
 	SQLHANDLE	hndl,
 	int			odbcSts)
 {
@@ -350,7 +350,7 @@ chkSts(
 		i = strlen(errMsg);
 		if (i > errLen)
 			i = errLen;
-		if (i < sizeof(db->lastErrMsg)-1) 
+		if (i < sizeof(db->lastErrMsg)-1)
 			strcpy(db->lastErrMsg,errMsg);
 		else
 			memcpy(db->lastErrMsg,errMsg,sizeof(db->lastErrMsg)-1);
@@ -392,7 +392,7 @@ chkSts(
 		db->dbStatus = -odbcStatus;
 	else
 		db->dbStatus = odbcStatus;
-		
+
 	memset(db->odbcState, 0, sizeof(db->odbcState));
 	memcpy(db->odbcState, szState, sizeof(db->odbcState)-1);
 
@@ -419,7 +419,7 @@ chkSts(
 		i = errLen;
 	if(errMsg[i-1] == '\n')
 		errMsg[--i] = 0;
-	if (i < sizeof(db->lastErrMsg)-1) 
+	if (i < sizeof(db->lastErrMsg)-1)
 		strcpy(db->lastErrMsg,errMsg);
 	else
 		memcpy(db->lastErrMsg,errMsg,sizeof(db->lastErrMsg)-1);
@@ -451,7 +451,7 @@ chkSts(
 		return 1;
 	}
 
-	if(db->dbStatus != 0 
+	if(db->dbStatus != 0
 	&& db->dbStatus != db->dbStsNotFound) {
 		if(db->dbStatus == db->dbStsRecLock		/* FOR UPDATE NOWAIT and its held! */
 		&& db->intRecWait > 1000
@@ -471,7 +471,7 @@ chkSts(
 		} else {
 			chkOdbc(db);
 		}
-		DEBUG_LOG("db",("%.40s Status of %d '%.5s', fatal %d\n", 
+		DEBUG_LOG("db",("%.40s Status of %d '%.5s', fatal %d\n",
 							msg, db->dbStatus, szState, db->dbFatalStatus));
 		if(errMsg[0] >= ' ')
 			DEBUG_LOG("db",("    : %s\n",errMsg));
@@ -490,7 +490,7 @@ chkSts(
 }
 
 /****************************************************
-	Bind just column to return data 
+	Bind just column to return data
 ****************************************************/
 static int
 bindColumn(
@@ -510,7 +510,7 @@ bindColumn(
 				col->sqlType = SQL_TIMESTAMP;
 			else if (col->dtfrm->hasTime)
 				col->sqlType = SQL_TIME;
-			else 
+			else
 				col->sqlType = SQL_DATE;
 		} else if (col->type == COB_XFDT_FLOAT) {
 			if (col->size == sizeof(double))
@@ -532,7 +532,7 @@ bindColumn(
 	sprintf(msg,"BindColumn %s.%s Pos %d",fx->tablename,col->colname,pos);
 	if(chkSts(db,msg,s->handle,
 			SQLBindCol(s->handle, pos, col->hostType,
-						col->sdata, col->sqlsize, 
+						col->sdata, col->sqlsize,
 						(SQLPOINTER)col->ind))) {
 		return 1;
 	}
@@ -540,7 +540,7 @@ bindColumn(
 }
 
 /****************************************************
-	Bind just one column as parameter to statment 
+	Bind just one column as parameter to statment
 ****************************************************/
 static int
 bindParam(
@@ -564,7 +564,7 @@ bindParam(
 			SQLBindParameter(s->handle,
 						pos, SQL_PARAM_INPUT, col->hostType, col->sqlType,
 						col->sqlColSize, col->sqlDecimals,
-						col->sdata, col->sqlsize, 
+						col->sdata, col->sqlsize,
 						(SQLPOINTER)col->ind))) {
 		return 1;
 	}
@@ -640,19 +640,19 @@ odbc_setup_stmt (
 		 && fx->fl->keys[idx].tf_duplicates == 1) {
 			if (db->mysql) {
 				chkSts(db,(char*)"MySQL Set CURSOR FORWARD",s->handle,
-					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_TYPE, 
+					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_TYPE,
 										(SQLPOINTER)SQL_CURSOR_FORWARD_ONLY, SQL_IS_UINTEGER));
 				chkSts(db,(char*)"Set CURSOR SCROLLABLE",s->handle,
-					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_SCROLLABLE, 
+					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_SCROLLABLE,
 										(SQLPOINTER)SQL_SCROLLABLE, SQL_IS_UINTEGER));
 			} else if (db->postgres) {
 				fx->fl->flag_read_chk_dups = 0; /* Not possible here */
 			} else {
 				chkSts(db,(char*)"Set CURSOR DYNAMIC",s->handle,
-					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_TYPE, 
+					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_TYPE,
 										(SQLPOINTER)SQL_CURSOR_DYNAMIC, SQL_IS_UINTEGER));
 				chkSts(db,(char*)"Set CURSOR SCROLLABLE",s->handle,
-					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_SCROLLABLE, 
+					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_SCROLLABLE,
 										(SQLPOINTER)SQL_SCROLLABLE, SQL_IS_UINTEGER));
 			}
 		}
@@ -669,7 +669,7 @@ odbc_setup_stmt (
 		skiptype = COB_XFDT_COMP5IDX;
 	else
 		skiptype = 999;
-	if (!s->params 
+	if (!s->params
 	 && (bindtype & SQL_BIND_PRMS)) {
 		pos = 0;
 		for (k=0; k < fx->nmap; k++) {
@@ -682,7 +682,7 @@ odbc_setup_stmt (
 		s->bindpos = pos;
 		s->params = TRUE;
 	} else
-	if (!s->bound 
+	if (!s->bound
 	 && (bindtype & SQL_BIND_COLS)) {
 		pos = 0;
 		for (k=0; k < fx->nmap; k++) {
@@ -789,7 +789,7 @@ odbc_commit (cob_file_api *a, cob_file *f)
 		}
 		db->autocommit = FALSE;
 		db->updatesDone = 0;
-	} else 
+	} else
 	if (db->updatesDone < db->commitInterval
 	 && f->last_operation != COB_LAST_CLOSE) {
 		return 0;
@@ -862,7 +862,7 @@ odbc_rollback (cob_file_api *a, cob_file *f)
 		db->autocommit = FALSE;
 		db->updatesDone = 0;
 		return 0;
-	} 
+	}
 	if (db->updatesDone < db->commitInterval)
 		return 0;
 	if (db->mysql) {
@@ -912,7 +912,7 @@ odbc_sync (cob_file_api *a, cob_file *f)
 
 /****************************************************
 	Issue one SQL statment to count records with matching key value
-		Return number of rows with same key 
+		Return number of rows with same key
 *****************************************************/
 static int
 odbcCountIndex(
@@ -942,7 +942,7 @@ odbcCountIndex(
 			for (j=0; j < fx->key[idx]->ncols && !notsup; j++) {
 				col = &fx->map[fx->key[idx]->col[j]];
 				if (col->sdata[0] == supchr) {
-					for (i=0; i < col->sqlColSize 
+					for (i=0; i < col->sqlColSize
 							&& col->sdata[i] == f->keys[idx].char_suppress; i++);
 					if (i < col->sqlColSize)
 						notsup = 1;
@@ -982,7 +982,7 @@ odbcCountIndex(
 	}
 	chkSts(db,(char*)"Count Exec",fx->key[idx]->count_eq.handle,
 			SQLExecute(fx->key[idx]->count_eq.handle));
-	if(chkSts(db,(char*)"Count Fetch",fx->key[idx]->count_eq.handle, 
+	if(chkSts(db,(char*)"Count Fetch",fx->key[idx]->count_eq.handle,
 				SQLFetch(fx->key[idx]->count_eq.handle))) {
 		return -1;
 	}
@@ -1043,7 +1043,7 @@ odbcCheckDups(
 				SQLExecute(s->handle))) {
 		return -1;
 	}
-	if (chkSts(db,(char*)"Dups Fetch",s->handle, 
+	if (chkSts(db,(char*)"Dups Fetch",s->handle,
 				SQLFetch(s->handle))) {
 		return -1;
 	}
@@ -1087,7 +1087,7 @@ odbcStmt(
 	if (rtn == 0
 	 && memcmp(stmt,"SELECT ",7) == 0) {
 		chkSts(db,(char*)"Bind Var",stmtHndl,
-				SQLBindCol(stmtHndl, 1, SQL_C_CHAR, 
+				SQLBindCol(stmtHndl, 1, SQL_C_CHAR,
 						varFetch, sizeof(varFetch)-1, (SQLPOINTER)&ind));
 		memset(varFetch,0,sizeof(varFetch));
 		if (chkSts(db,(char*)"Fetch Stmt",stmtHndl, SQLFetch(stmtHndl))
@@ -1151,7 +1151,7 @@ odbc_recreate_index (
 			/* Skip UNIQUE INDEX */
 			if (db->mysql)
 				j = sprintf(wrk,"ALTER TABLE %s DROP INDEX IF EXISTS ",fx->tablename);
-			else 
+			else
 				j = sprintf(wrk,"DROP INDEX IF EXISTS ");
 			for (i=13; fx->key[k]->create_index[i] > ' '; )
 				wrk[j++] = fx->key[k]->create_index[i++];
@@ -1192,7 +1192,7 @@ odbc_create_table (
 		db->dbStatus = db->dbStsNoTable;
 		return;
 	}
-	if (fx->fileorg == COB_ORG_RELATIVE) 
+	if (fx->fileorg == COB_ORG_RELATIVE)
 		return;
 
 	odbc_recreate_index (db, fx);
@@ -1307,7 +1307,7 @@ join_environment (cob_file_api *a, cob_file *f)
 			}
 			return;
 		}
-	} else 
+	} else
 #endif
 	if(db->dbDsn[0] > ' '
 	&& (db->dbUser[0] <= ' ' || db->dbPwd[0] <= ' ')) {	/* Connect with DSN name only */
@@ -1421,7 +1421,7 @@ join_environment (cob_file_api *a, cob_file *f)
 				db->no_for_update = TRUE;
 				db->dbStsNoTable = 1098;
 				strcpy(db->dbType,"SQLite");
-				if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+				if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */
 					db->autocommit = FALSE;
 					if ((f->share_mode & COB_SHARE_NO_OTHER)
 					 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
@@ -1492,7 +1492,7 @@ join_environment (cob_file_api *a, cob_file *f)
 	}
 
 	db->isopen = TRUE;
-	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */
 		db->autocommit = FALSE;
 		/* Default to AUTO COMMIT OFF */
 		if (db->mysql) {
@@ -1544,7 +1544,7 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		}
 		p = cob_malloc (sizeof (struct indexed_file));
 		f->file = p;
-		f->flag_file_lock = 0;	
+		f->flag_file_lock = 0;
 		f->curkey = -1;
 		p->fx = fx;
 	}
@@ -1559,7 +1559,7 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 	 && (db->dbStatus == db->dbStsNoTable
 	 ||  db->dbStatus == 1042)) {
 		return 0;
-	} 
+	}
 	if (db->dbStatus != db->dbStsOk) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
@@ -1569,7 +1569,7 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 
 /* OPEN INDEXED file */
 static int
-odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
+odbc_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing)
 {
 	struct indexed_file	*p;
 	int				i, k, ln, joined = 0;
@@ -1603,7 +1603,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 
 	p = cob_malloc (sizeof (struct indexed_file));
 	f->file = p;
-	f->flag_file_lock = 0;	
+	f->flag_file_lock = 0;
 	f->curkey = -1;
 	p->startcond = -1;
 	p->fx = fx;
@@ -1619,7 +1619,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 
 	switch (mode) {
 	case COB_OPEN_OUTPUT:
-		if (db->sqlite 
+		if (db->sqlite
 		 || db->mssql
 		 || db->postgres)
 			snprintf(buff,sizeof(buff),"DELETE FROM %s",fx->tablename);
@@ -1630,7 +1630,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		 ||  db->dbStatus == 1042
 		 ||  memcmp(db->odbcState,"HY000",4) == 0)) {
 			odbc_create_table (db, fx);
-		} 
+		}
 		if (db->dbStatus != db->dbStsOk
 		 && db->dbStatus != db->dbStsNotFound) {
 			return COB_STATUS_30_PERMANENT_ERROR;
@@ -1736,13 +1736,13 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		}
 	}
 
-	f->open_mode = mode;
-	f->last_open_mode = mode;
+	f->open_mode = (enum cob_open_mode)mode;
+	f->last_open_mode = (enum cob_open_mode)mode;
 	f->flag_nonexistent = 0;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
 	f->flag_io_tran = TRUE;
-	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */
 		if (db->autocommit)				/* Tell database of change */
 			joined = 1;
 		db->autocommit = FALSE;
@@ -1796,7 +1796,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 					fx->map[k].sqlType = SQL_TIMESTAMP;
 				else if (fx->map[k].dtfrm->hasTime)
 					fx->map[k].sqlType = SQL_TIME;
-				else 
+				else
 					fx->map[k].sqlType = SQL_DATE;
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				if (fx->map[k].size == sizeof(double))
@@ -2096,7 +2096,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	ky = f->curkey;
 	switch (opts) {
 	default:
-    case COB_READ_NEXT:                 
+    case COB_READ_NEXT:
 		if (p->startcond != COB_GT) {
 			fx->start = cob_sql_select (db, fx, ky, COB_GT, read_opts, odbc_free_stmt);
 			odbc_close_stmt (fx->start);

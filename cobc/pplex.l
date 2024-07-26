@@ -492,16 +492,16 @@ MAYBE_AREA_A	[ ]?#?
 	return CONTROL_STATEMENT;
 }
 
-^{AREA_A}		{
+<*>^{AREA_A}		{
 	/* Output a special marker that precedes lines starting in area A.  This
-	   is required to detect missing periods.
+	   is required to detect some missing periods.
 
 	   See "(*area-a*)" in `ppinput' function below for the code that emits
 	   the `#'.
 
-	   The optional space before '#' in the rule above is only needed to
-	   properly handle the first line in each buffer, that for some reason
-	   always starts with a space.
+	   The optional space before '#' in the definition of AREA_A is only
+	   needed to properly handle the first line in each buffer, that for
+	   some reason always starts with a space.
 	*/
 	fprintf (ppout, "\n#area_a\n");
 }
@@ -555,7 +555,6 @@ SUBSTITUTION_SECTION_STATE>{
 	  cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
-  ^{AREA_A}		{}
 }
 
 <INITIAL,
@@ -1004,7 +1003,6 @@ ENDIF_DIRECTIVE_STATE>{
 	cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
-  ^{AREA_A}		{}
   [_0-9A-Z\x80-\xFF-]+(\.[_0-9A-Z\x80-\xFF-]+)+		{
 	/* special case to allow copybook names with periods
 	   without a literal
@@ -1045,12 +1043,6 @@ ENDIF_DIRECTIVE_STATE>{
 	ECHO;
 	check_listing (yytext, 0);
 	cb_source_line++;
-  }
-
-  ^{AREA_A}		{
-	/* Pseudo-text words that start in area-a retain that property, and
-	   should thus be preceded with the marker. */
-	pplval.s = cobc_plex_strdup ("\n#area_a\n");
   }
 
   [,;]?[ ]+		{
@@ -1172,7 +1164,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	char			*s;
 #endif
 	char			*dname;
-	cb_tree			x = NULL;
+	cb_tree x = NULL;
 
 	if (ppin) {
 		for (; newline_count > 0; newline_count--) {
@@ -1189,6 +1181,8 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 			*         ideally open first, then check if we have thy physical same file
 			*         (could also fix symlinked files) */
 			if (!strcmp (name, current_copy_info->dname)) {
+				struct cb_tree_common xc;
+				x = &xc;
 				for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
 					int		line;
 					if (current_copy_info->prev) {
@@ -1198,11 +1192,9 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 					}
 					cb_inclusion_note (current_copy_info->dname, line);
 				}
-				x = cobc_malloc (sizeof (struct cb_tree_common));
 				x->source_file = name;
 				x->source_line = -1;
 				cb_error_x (x, _("recursive inclusion"));
-				cobc_free (x);
 				break;
 			}
 
@@ -1637,6 +1629,9 @@ plex_call_destroy (void)
 	while (copy_stack) {
 		ci = copy_stack;
 		copy_stack = ci->next;
+		if (ci->dname) {
+			cobc_free (ci->dname);
+		}
 		cobc_free (ci);
 	}
 

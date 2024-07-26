@@ -93,7 +93,7 @@ CB_FLAG_NQ (1, "ebcdic-table", 16, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
 	  "                        * default: translation to extended ASCII as per MF\n"
 	  "                        * restricted-gc: translation from restricted ASCII only\n"
-	  "                        * ibm: translation to restricted ASCII as per IBM"
+	  "                        * ibm: translation to restricted ASCII as per IBM\n"
 	  "                        * gcos: translation to extended ASCII as per GCOS7"))
 
 /* Binary flags */
@@ -155,7 +155,7 @@ CB_FLAG (cb_flag_debugging_line, 1, "debugging-line",
 
 CB_FLAG (cb_flag_source_location, 1, "source-location",
 	_("  -fsource-location     generate source location code\n"
-	  "                        * turned on by -debug/-g/-ftraceall/-fec"))
+	  "                        * turned on by -debug/-ftraceall/-fec/-dump"))
 
 CB_FLAG (cb_flag_implicit_init, 1, "implicit-init",
 	_("  -fimplicit-init       automatic initialization of the COBOL runtime system"))
@@ -166,7 +166,7 @@ CB_FLAG_ON (cb_flag_recursive_check, 1, "recursive-check",
 
 CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
-	  "                        * turned on by -debug or -g"))
+	  "                        * turned on by -debug/-g"))
 
 CB_FLAG (cb_flag_section_exit_check, 1, "section-exit-check",
 	_("  -fsection-exit-check  check that code execution does not leave the scope of SECTIONs"))

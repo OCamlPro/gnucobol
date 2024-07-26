@@ -730,6 +730,40 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		break;
 	}
 
+	/* LCOV_EXCL_START */
+	case CB_TAG_LIST: {
+		cb_tree l;
+		size_real = snprintf (s, size, "LIST");
+		if (size_real + 4 > size) goto game_over;
+		s += size_real;
+		for (l = x; l; l = CB_CHAIN (l)) {
+			const size_t size_left = size - (s - orig);
+			char *s_orig = s;
+			size_t size_element;
+			size_element = snprintf (s, size_left, (l == x) ? ": " : ", ");
+			size_element += cb_name_1 (s + size_element, CB_VALUE (l), size_left);
+			if (size_element > size_left + 4) {
+				/* if we don't have enough room: go out leaving s unchanged */
+				s_orig[0] = '\0';
+				goto game_over;
+			}
+			size_real += size_element;
+			s += size_element;
+		}
+		sprintf (s, ")");
+		size_real++;
+		break;
+	}
+	/* LCOV_EXCL_STOP */
+
+	/* LCOV_EXCL_START */
+	case CB_TAG_TAB_VALS: {
+		size_real = snprintf (s, size, "VALUE (table-format) ");
+		size_real += cb_name_1 (s + size_real, CB_TAB_VALS (x)->values, size - size_real);
+		break;
+	}
+	/* LCOV_EXCL_STOP */
+
 	case CB_TAG_INTRINSIC: {
 		const struct cb_intrinsic *cbit = CB_INTRINSIC (x);
 		if (!cbit->isuser) {
@@ -2378,6 +2412,10 @@ cb_enum_explain (const enum cb_tag tag)
 		return "ML SUPPRESS CHECKS";
 	case CB_TAG_CD:
 		return "COMMUNICATION DESCRIPTION";
+	case CB_TAG_VARY:
+		return "REPORT VARYING";
+	case CB_TAG_TAB_VALS:
+		return "VALUE list (table-format)";
 	default: 
 		{
 			/* whenever we get here, someone missed to add to the list above... */
@@ -2462,7 +2500,7 @@ cb_int_hex (const int n)
 
 	/* Do not use make_tree here as we want a main_malloc
 	   instead of parse_malloc! */
-	y = cobc_main_malloc (sizeof(struct cb_integer));
+	y = cobc_main_malloc (sizeof (struct cb_integer));
 	y->val = n;
 	y->hexval = 1;
 
@@ -3413,7 +3451,7 @@ get_number_in_parentheses (const unsigned char ** p,
 			return 1;
 		}
 
-		item_value = CB_VALUE (CB_FIELD (item)->values);
+		item_value = CB_FIELD (item)->values;
 		if (!CB_NUMERIC_LITERAL_P (item_value)) {
 			cb_error (_("'%s' is not a numeric literal"), name_buff);
 			*error_detected = 1;
@@ -3934,6 +3972,19 @@ cb_build_vary (cb_tree var, cb_tree from, cb_tree by)
 	return x;
 }
 
+/* VALUE: multiple entries (table-format) */
+
+cb_tree
+cb_build_table_values (cb_tree values, cb_tree from, cb_tree to, cb_tree times)
+{
+	struct cb_table_values	*vals
+		= make_tree (CB_TAG_TAB_VALS, CB_CATEGORY_UNKNOWN, sizeof (struct cb_table_values));
+	vals->values = values;
+	vals->from = from;
+	vals->to = to;
+	vals->repeat_times = times;
+	return CB_TREE (vals);
+}
 /* Field */
 
 cb_tree
@@ -3974,7 +4025,7 @@ cb_build_constant (cb_tree name, cb_tree value)
 	x = cb_build_field (name);
 	x->category = cb_tree_category (value);
 	CB_FIELD (x)->storage = CB_STORAGE_CONSTANT;
-	CB_FIELD (x)->values = CB_LIST_INIT (value);
+	CB_FIELD (x)->values = value;
 	return x;
 }
 
@@ -4410,7 +4461,7 @@ add_report_sum (struct cb_report *r, char *buff, int dig, int dec)
 	}
 	s = CB_FIELD (cb_build_field (cb_build_reference (buff)));
 	s->pic		= cb_build_picture (pic);
-	s->values	= CB_LIST_INIT (cb_zero);
+	s->values	= cb_zero;
 	s->storage	= CB_STORAGE_WORKING;
 	s->usage	= CB_USAGE_DISPLAY;
 	s->report	= r;
@@ -5677,7 +5728,7 @@ display_literal (char *disp, struct cb_literal *l, int offset, int scale)
 		} else if (scale > 0) {
 			snprintf (disp, COB_MAX_DIGITS + 1, "%s%.*s.%.*s",
 				(char *)(l->sign == -1 ? "-" : ""),
-				(l->size - l->scale - offset), (char *)(l->data + offset),
+				(int)(l->size - l->scale - offset), (char *)(l->data + offset),
 				scale, (char *)(l->data + l->size - l->scale));
 		} else {
 			snprintf (disp, COB_MAX_DIGITS + 1, "%s%s",
@@ -6083,6 +6134,12 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	 && y == NULL
 	 && CB_NUMERIC_LITERAL_P(x) )	/* Parens around a Numeric Literal */
 		return x;
+
+	/* Simon: just ignore here as we already created
+		   an error for that in another place */
+	if (x == cb_error_node
+	 || y == cb_error_node)
+		return cb_error_node;
 
 	/* setting an error tree to point to the correct expression
 	   instead of the literal/var definition / current line */
@@ -6585,7 +6642,6 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 
 	case 0:
 		/* Operation on invalid elements */
-		cb_error_x (e, _("invalid expression"));
 		return cb_error_node;
 
 	/* LCOV_EXCL_START */

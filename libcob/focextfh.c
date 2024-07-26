@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022, 2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -65,7 +65,7 @@ void cob_index_init_fileio (cob_file_api *);
 /* Local variables */
 
 static void cob_index_exit_fileio (cob_file_api *a);
-static int indexed_open		(cob_file_api *, cob_file *, char *, const int, const int);
+static int indexed_open		(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
 static int indexed_close	(cob_file_api *, cob_file *, const int);
 static int indexed_start	(cob_file_api *, cob_file *, const int, cob_field *);
 static int indexed_read		(cob_file_api *, cob_file *, cob_field *, const int);
@@ -100,7 +100,7 @@ extern void	extfh_cob_exit_fileio	(void);
 
 extern void extfh_indexed_unlock	(cob_file *);
 extern int extfh_indexed_locate		(cob_file *, char *);
-extern int extfh_indexed_open		(cob_file *, char *, const int, const int);
+extern int extfh_indexed_open		(cob_file *, char *, const enum cob_open_mode, const int);
 extern int extfh_indexed_close		(cob_file *, const int);
 extern int extfh_indexed_start		(cob_file *, const int, cob_field *);
 extern int extfh_indexed_read		(cob_file *, cob_field *, const int);
@@ -111,7 +111,7 @@ extern int extfh_indexed_rewrite	(cob_file *, const int);
 
 /* OPEN INDEXED file */
 static int
-indexed_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
+indexed_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing)
 {
 	int		ret;
 
@@ -135,11 +135,11 @@ indexed_open (cob_file_api *a, cob_file *f, char *filename, const int mode, cons
 	ret = extfh_indexed_open (f, filename, mode, sharing);
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
-		f->open_mode = mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		break;
 	case COB_STATUS_35_NOT_EXISTS:
 		if (f->flag_optional) {
-			f->open_mode = mode;
+			f->open_mode = (enum cob_open_mode)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
 			f->flag_begin_of_file = 1;
@@ -240,7 +240,7 @@ cob_index_init_fileio (cob_file_api *a)
 #ifdef WITH_SEQRA_EXTFH
 extern void extfh_seqra_unlock		(cob_file *);
 extern int extfh_seqra_locate		(cob_file *, char *);
-extern int extfh_cob_file_open		(cob_file *, char *, const int, const int);
+extern int extfh_cob_file_open		(cob_file *, char *, const enum cob_open_mode, const int);
 extern int extfh_cob_file_close		(cob_file *, const int);
 extern int extfh_sequential_read	(cob_file *, const int);
 extern int extfh_sequential_write	(cob_file *, const int);
@@ -252,7 +252,7 @@ extern int extfh_relative_write		(cob_file *, const int);
 extern int extfh_relative_rewrite	(cob_file *, const int);
 extern int extfh_relative_delete	(cob_file *);
 void cob_seqra_init_fileio (cob_file_api *);
-static int seqra_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing);
+static int seqra_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing);
 static int seqra_close (cob_file_api *a, cob_file *f, const int opt);
 static void cob_seqra_exit_fileio (cob_file_api *a);
 
@@ -310,7 +310,7 @@ extern void	extfh_cob_init_fileio	(const struct cob_fileio_funcs *,
 extern void	extfh_cob_exit_fileio	(void);
 
 static int
-seqra_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
+seqra_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -337,11 +337,11 @@ seqra_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const 
 	ret = extfh_cob_file_open (f, filename, mode, sharing);
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
-		f->open_mode = mode;
+		f->open_mode = (enum cob_open_mode)mode;
 		break;
 	case COB_STATUS_35_NOT_EXISTS:
 		if (f->flag_optional) {
-			f->open_mode = mode;
+			f->open_mode = (enum cob_open_mode)mode;
 			f->flag_nonexistent = 1;
 			f->flag_end_of_file = 1;
 			f->flag_begin_of_file = 1;

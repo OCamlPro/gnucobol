@@ -839,20 +839,25 @@ cob_terminate_routines (void)
 static void
 cob_get_source_line ()
 {
-	cob_module	*mod;
 	if (cobglobptr
 	 && COB_MODULE_PTR) {
-		mod = COB_MODULE_PTR;
-		if (mod->module_stmt == 0
-		 && mod->next != NULL
-		 && mod->next->module_stmt != 0)
+		cob_module	*mod = COB_MODULE_PTR;
+		while (mod && mod->module_stmt == 0) {
 			mod = mod->next;
-		if (mod->module_stmt != 0
+		}
+		if (mod
+		 && mod->module_stmt != 0
 		 && mod->module_sources) {
 			cob_source_file =
 				mod->module_sources[COB_GET_FILE_NUM (mod->module_stmt)];
 			cob_source_line = COB_GET_LINE_NUM (mod->module_stmt);
 		}
+#if 0	/* note: those are also manually set
+		         and therefore may not be reset here */
+	} else {
+		cob_source_file = NULL;
+		cob_source_line = 0;
+#endif
 	}
 }
 
@@ -977,7 +982,7 @@ output_source_location (void)
 	const char		*source_file;
 	unsigned int	 source_line;
 	set_source_location (&source_file, &source_line);
-	
+
 	if (source_file) {
 		write_to_stderr_or_return_str (source_file);
 		if (source_line) {
@@ -1182,7 +1187,7 @@ cob_sig_handler (int sig)
 #else
 	kill (cob_sys_getpid (), sig);
 #endif
-	
+
 #if 0 /* we don't necessarily want the OS to handle this,
          so exit in all other cases*/
 	exit (sig);
@@ -1251,7 +1256,7 @@ cob_init_sig_descriptions (void)
 {
 	int	k;
 	for (k = 0; k <= NUM_SIGNALS; k++) {
-		/* always defined, if missing */ 
+		/* always defined, if missing */
 		if (signals[k].sig == SIGFPE) {
 			signals[k].description = _("fatal arithmetic error");
 	#ifdef	SIGINT
@@ -2600,18 +2605,21 @@ cob_set_exception (const int id)
 		cob_module	*mod = COB_MODULE_PTR;
 		cobglobptr->cob_got_exception = 1;
 #if 0	/* consider addition for 4.x */
-		cobglobptr->last_exception_source = cob_source_file;	/* needs to be strdup'd */
-#endif
 		cobglobptr->last_exception_line = cob_source_line;
+#endif
 		if (mod) {
 #if 0	/* consider addition for 4.x */
 			if (mod->module_sources
 			 && mod->module_stmt != 0) {
 				/* note: it is likely best to not copy name + line but store the name+line
 				   together, maybe even comma-separated when we have copy->copy-prog */
-				cobglobptr->last_exception_source = mod->module_sources
-					[COB_GET_FILE_NUM (mod->module_stmt)];	/* needs to be strdup'd */
+				cobglobptr->last_exception_source = cob_strdup (mod->module_sources
+					[COB_GET_FILE_NUM (mod->module_stmt)]);
 				cobglobptr->last_exception_line = COB_GET_LINE_NUM (mod->module_stmt);
+			} else {
+				if (cob_source_file != NULL) {
+					cobglobptr->last_exception_source = cob_strdup (cob_source_file);
+				}
 #else
 			if (mod->module_stmt != 0) {
 				cobglobptr->last_exception_line = COB_GET_LINE_NUM (mod->module_stmt);
@@ -2631,14 +2639,20 @@ cob_set_exception (const int id)
 				cobglobptr->last_exception_paragraph = excp_para;
 			}
 			return;
+#if 0	/* consider addition for 4.x */
+		} else {
+       			if (cob_source_file != NULL) {
+				cobglobptr->last_exception_source = cob_strdup (cob_source_file);
+			}
+#endif
 		}
 		/* if no current module is available fall-through */
 	} else {
 		cobglobptr->cob_got_exception = 0;
 #if 0	/* consider addition for 4.x */
 		if (cobglobptr->last_exception_source) {
+			cob_free ((void *)cobglobptr->last_exception_source);
 			cobglobptr->last_exception_source = NULL;
-			cob_free (cobglobptr->last_exception_source);
 		}
 #endif
 		cobglobptr->last_exception_line = 0;
@@ -2965,14 +2979,13 @@ cob_trace_print (char *val)
 void
 cob_trace_sect (const char *name)
 {
-	char	val[60];
-
 	COB_MODULE_PTR->section_name = name;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -2984,15 +2997,14 @@ cob_trace_sect (const char *name)
 void
 cob_trace_para (const char *name)
 {
-	char	val[60];
-
 	/* store for CHECKME */
 	COB_MODULE_PTR->paragraph_name = name;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -3004,12 +3016,11 @@ cob_trace_para (const char *name)
 void
 cob_trace_entry (const char *name)
 {
-	char	val[60];
-
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -3021,12 +3032,11 @@ cob_trace_entry (const char *name)
 void
 cob_trace_exit (const char *name)
 {
-	char	val[60];
-
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -8411,7 +8421,7 @@ cob_runtime_hint (const char *fmt, ...)
 
 /* extra function for direct interaction with the debugger
    when a new runtime error string is constructed */
-static void COB_NOINLINE 
+static void COB_NOINLINE
 cob_setup_runtime_error_str (const char *fmt, va_list ap)
 {
 	const char		*source_file;

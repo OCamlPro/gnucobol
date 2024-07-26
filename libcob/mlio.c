@@ -220,11 +220,19 @@ is_empty (const cob_field * const f)
 	return 1;
 }
 
-/* strdup wrapper for get_trimmed_data */
+/* strdup-like wrapper for get_trimmed_data, returns a pointer to
+   fresh allocated memory pointing to a copy of the specified
+   data with specified size as string (+ trailing NULL) */
 static void *
-cob_strndup_void (const char* str, const size_t size)
+copy_data_as_string (const char* data, const size_t size)
 {
-	return (void*)cob_strndup (str, size);
+	char *ptr = cob_malloc (size + 1);
+	if (!ptr) {
+		return NULL;
+	}
+	memcpy (ptr, data, size);
+	ptr[size] = 0;
+	return (void *)ptr;
 }
 
 /* returns a duplicate of the given cob_field's data,
@@ -245,7 +253,7 @@ get_trimmed_data (const cob_field * const f,
 	if (COB_FIELD_JUSTIFIED (f)) {
 		for (; *str == ' ' && len > 1; ++str, --len);
 	} else {
-		for (; str[len - 1] == ' ' && len > 1; --len);
+		for (; (str[len - 1] == ' ' || str[len - 1] == 0) && len > 1; --len);
 	}
 
 	return (*strndup_func)(str, len);
@@ -284,7 +292,11 @@ is_valid_xml_name (const cob_field * const f)
 		return 0;
 	}
 
-	str = get_trimmed_data (f, &cob_strndup_void);
+	str = get_trimmed_data (f, &copy_data_as_string);
+	if (!str) {
+		/* likely should raise an exception */
+		return 0;
+	}
 
 	ret = 1;
 	for (c = str + 1; *c; ++c) {
@@ -966,7 +978,7 @@ cob_xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 			set_xml_exception (XML_INVALID_NAMESPACE);
 			return;
 		} else {
-			ns_data = get_trimmed_data (ns, &cob_strndup_void);
+			ns_data = get_trimmed_data (ns, &copy_data_as_string);
 			if (!cob_is_valid_uri (ns_data)) {
 				set_xml_exception (XML_INVALID_NAMESPACE);
 				cob_free ((void *)ns_data);
@@ -981,6 +993,9 @@ cob_xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		if (is_empty (ns_prefix)) {
 			ns_prefix = NULL;
 		} else if (!is_valid_xml_name (ns_prefix)) {
+			if (ns_data) {
+				cob_free ((void *)ns_data);
+			}
 			set_xml_exception (XML_INVALID_NAMESPACE_PREFIX);
 			return;
 		}

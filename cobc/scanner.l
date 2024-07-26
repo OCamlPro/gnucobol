@@ -1107,7 +1107,7 @@ H#[0-9A-Za-z]+ {
 			if (p78->chk_const && p78->not_const) {
 				break;
 			}
-			x = CB_VALUE (p78->fld_78->values);
+			x = p78->fld_78->values;
 			if (CB_LITERAL_P (x)) {
 				/* duplicate the constant literal
 				   to assign current source location */
