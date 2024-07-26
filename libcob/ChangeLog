@@ -1,4 +1,10 @@
 
+2024-07-13  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (indirect_move) fixed sanitizer warnings by moving
+	  one line of code
+
+
 2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) fixed C90 warnings
@@ -20,6 +26,12 @@
 	  (indirect_move): fixed bug when calculating scale of 
 	  the intermediate cob field
 
+2024-07-09  Boris Eng <boris.eng@ocamlpro.com>
+
+	* fileio.c (bdb_bt_compare, indexed_open): handle BDB keys of different
+	  length with a flag USE_BDB_KEYDIFF (passed with preparser flag CPPFLAGS)
+	* common.c (cob_cmp_strings), coblocal.h (cob_cmp_strings):
+	  extracted from (cob_cmp_alnum)
 
 2024-07-02  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -78,6 +90,11 @@
 	* termio.c (pretty_display_numeric), mlio.c (get_num):
 	  changed to use the attributes of the receiving field
 
+2024-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h (COB_TLS): add a new attribute for thread local static.
+	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
+
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* profiling.c: fix compile warnings
@@ -116,6 +133,10 @@
 2024-03-10  Alfredo Tupone <tupone@gentoo.org>
 
 	* common.c: add missing include libxml/parser.h
+
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+	FR #488: using state structures instead of state vars for strings
+	* strings.c: moved static variables to structures
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 

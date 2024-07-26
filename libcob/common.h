@@ -1682,6 +1682,8 @@ COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
 
+COB_EXPIMP void		cob_cleanup_thread ();
+
 /* General functions */
 
 COB_EXPIMP int		cob_is_initialized	(void);

@@ -1287,6 +1287,9 @@ output_data (cb_tree x)
 			output (")->data");
 		}
 		break;
+	case CB_TAG_DIRECT:
+		output ("%s", CB_DIRECT (x)->line);
+		break;
 	/* LCOV_EXCL_START */
 	default:
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
