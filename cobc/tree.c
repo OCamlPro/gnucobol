@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -2797,7 +2798,20 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv(cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
-			cobc_err_msg(_("iconv failed"));
+			switch (errno) {
+			case E2BIG:
+				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
+				break;
+			case EILSEQ:
+				//cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
+				break;
+			case EINVAL:
+				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
+				break;
+			default:
+				cobc_err_msg(_("iconv failed: Unknown error"));
+				break;
+			}
 		}
 
 		outsize -= outbytesleft;
@@ -2831,7 +2845,20 @@ cb_build_national_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv(cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
-			cobc_err_msg(_("iconv failed"));
+			switch (errno) {
+			case E2BIG:
+				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
+				break;
+			case EILSEQ:
+				//cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
+				break;
+			case EINVAL:
+				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
+				break;
+			default:
+				cobc_err_msg(_("iconv failed: Unknown error"));
+				break;
+			}
 		}
 
 		outsize -= outbytesleft;
