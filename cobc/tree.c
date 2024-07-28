@@ -2821,6 +2821,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv (cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
+#ifdef HAVE_ERRNO_H
 			switch (errno) {
 			case E2BIG:
 				cobc_err_msg (_("iconv failed: Insufficient output buffer space"));
@@ -2850,10 +2851,10 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
 #endif
 
-	l->source_file = cb_source_file;
-	l->source_line = cb_source_line;
+    l->source_file = cb_source_file;
+    l->source_line = cb_source_line;
 
-	return l;
+    return l;
 }
 
 cb_tree
@@ -2917,8 +2918,8 @@ cb_build_national_literal (const void *data, const size_t size)
 	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
 	cobc_free (outdata);
 
-	l->source_file = cb_source_file;
-	l->source_line = cb_source_line;
+    l->source_file = cb_source_file;
+    l->source_line = cb_source_line;
 
 	free(outdata);
 
@@ -4030,9 +4031,6 @@ repeat:
 		}
 		if (c == 'N') {
 			size += n * (COB_NATIONAL_SIZE - 1);
-			if(getenv(__func__)){
-				warnx("str: %s, c: %c, n: %d, size %d", str, c, n, size);		
-			}
 		}
 		if (c == 'U') {
 			size += n * (4 - 1);
