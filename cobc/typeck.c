@@ -8947,7 +8947,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				x == cb_norm_high||
 				x == cb_quote) {
 				c = (char)get_value (x);
-				x = cb_build_alphanumeric_literal (&c, 1);
+				x = cb_build_alphanumeric_for_figurative_constant(&c, 1);
 			} else if (x == cb_zero) {
 				x = cb_build_numsize_literal ("0", 1, 0);
 			} else{

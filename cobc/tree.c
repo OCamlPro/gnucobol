@@ -2771,6 +2771,20 @@ cb_build_numsize_literal (const void *data, const size_t size, const int sign)
 }
 
 cb_tree
+cb_build_alphanumeric_for_figurative_constant(const void *data, const size_t size)
+{
+	cb_tree			l;
+
+	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
+
+	l->source_file = cb_source_file;
+	l->source_line = cb_source_line;
+
+	return l;
+}
+
+
+cb_tree
 cb_build_alphanumeric_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
@@ -2795,7 +2809,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
 				break;
 			case EILSEQ:
-				//cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
+				cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
 				break;
 			case EINVAL:
 				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
@@ -2842,7 +2856,7 @@ cb_build_national_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
 				break;
 			case EILSEQ:
-				//cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
+				cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
 				break;
 			case EINVAL:
 				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
