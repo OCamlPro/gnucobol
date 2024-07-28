@@ -499,7 +499,7 @@ AT_DATA([prog.cob], [
 
            SET  HEXX-FILLER TO TRUE
            STRING FUNCTION HEX-OF (n' ') DELIMITED BY SIZE INTO HEXX.
-           IF HEXX NOT = "0020------"
+           IF HEXX NOT = "2000------"
               DISPLAY "UNEXPECTED HEX-VALUE OF n' ': " HEXX.
 
        *>  FIXME: Failing with "3132------" -> missing padding
@@ -507,7 +507,7 @@ AT_DATA([prog.cob], [
        *>            and libcob issue at least for MOVE
        *>  SET  HEXX-FILLER TO TRUE
        *>  STRING FUNCTION HEX-OF (N9) DELIMITED BY SIZE INTO HEXX.
-       *>  IF HEXX NOT = "00310032--"
+       *>  IF HEXX NOT = "31003200--"
        *>     DISPLAY "UNEXPECTED HEX-VALUE OF N9: " HEXX.
 
        *>  FIXME: Failing with "00212020--" -> bad padding
@@ -515,7 +515,7 @@ AT_DATA([prog.cob], [
        *>            and libcob issue at least for MOVE
        *>  SET  HEXX-FILLER TO TRUE
        *>  STRING FUNCTION HEX-OF (NX) DELIMITED BY SIZE INTO HEXX.
-       *>  IF HEXX NOT = "00210020--"
+       *>  IF HEXX NOT = "21002000--"
        *>     DISPLAY "UNEXPECTED HEX-VALUE OF NX: " HEXX.
 
        *>  setting up test data:
