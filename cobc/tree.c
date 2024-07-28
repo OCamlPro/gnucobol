@@ -2796,7 +2796,8 @@ cb_tree
 cb_build_alphanumeric_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
-	
+
+#ifdef HAVE_ICONV_H
 	size_t outsize = size;
 	void * outdata = malloc(outsize);
 	memset(outdata, ' ', outsize);
@@ -2812,6 +2813,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv(cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
+#ifdef HAVE_ERRNO_H
 			switch (errno) {
 			case E2BIG:
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
@@ -2826,24 +2828,30 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Unknown error"));
 				break;
 			}
+#else
+            cobc_err_msg(_("iconv failed"));
+#endif
 		}
 
 		outsize -= outbytesleft;
 	}
-
 	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, outdata, outsize));
+    free(outdata);
+#else
+    l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
+#endif
 
-	l->source_file = cb_source_file;
-	l->source_line = cb_source_line;
+    l->source_file = cb_source_file;
+    l->source_line = cb_source_line;
 
-	return l;
+    return l;
 }
 
 cb_tree
 cb_build_national_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
-
+#ifdef HAVE_ICONV_H
 	size_t outsize = size*2;
 	void * outdata = malloc(outsize);
 	memset(outdata, ' ', outsize);
@@ -2859,6 +2867,7 @@ cb_build_national_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv(cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
+#ifdef HAVE_ERRNO_H
 			switch (errno) {
 			case E2BIG:
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
@@ -2873,18 +2882,24 @@ cb_build_national_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Unknown error"));
 				break;
 			}
-		}
+#else
+            cobc_err_msg(_("iconv failed"));
+#endif
+	    }
 
-		outsize -= outbytesleft;
-	}
-	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
+        outsize -= outbytesleft;
+    }
 
-	l->source_file = cb_source_file;
-	l->source_line = cb_source_line;
+    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
+    free(outdata);
+#else
+    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, size));
+#endif
 
-	free(outdata);
+    l->source_file = cb_source_file;
+    l->source_line = cb_source_line;
 
-	return l;
+    return l;
 }
 
 cb_tree
@@ -3927,9 +3942,6 @@ repeat:
 		}
 		if (c == 'N') {
 			size += n * (COB_NATIONAL_SIZE - 1);
-			if(getenv(__func__)){
-				warnx("str: %s, c: %c, n: %d, size %d", str, c, n, size);		
-			}
 		}
 		if (c == 'U') {
 			size += n * (4 - 1);
