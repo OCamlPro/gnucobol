@@ -8447,7 +8447,7 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
-[prog2.cob:2: error: prog2.cob:2: error: PROGRAM-ID header missing
+[prog2.cob:2: error: Missing argument for IMP INCLUDE directive
 ])
 
 AT_CLEANUP
