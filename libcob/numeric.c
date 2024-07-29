@@ -2683,7 +2683,7 @@ cob_move_bcd (cob_field *f1, cob_field *f2)
 				}
 			} else {
 				memcpy (fld2, fld1 + fld1_size - llen, llen);
-				if (fld1_sign) {
+				if (fld1_sign && llen) {
 					*(fld2 + llen - 1) &= 0xF0;
 				}
 			}
@@ -2919,7 +2919,11 @@ static COB_INLINE COB_A_INLINE int
 count_leading_zeros (unsigned char *ptr_char, int len)
 {
 	int  cntr = 0;
-	while (*ptr_char++ == 0x00 && cntr++ < len);
+	while (cntr < len && *ptr_char == 0x00)
+	{
+		cntr++;
+		ptr_char++;
+	}
 	return cntr;
 }
 
@@ -3084,7 +3088,7 @@ cob_add_bcd (cob_field *fdst,
 	if ((used_original_scale <= dst_scale)
 	 || (used_scale < dest_scale)
 	 || (opt & COB_STORE_TRUNCATION)
-	 || !(opt & ~COB_STORE_MASK)) {
+	 || !(opt & (~COB_STORE_MASK | COB_STORE_ROUND))) {
 		check_rounding = 0;
 		check_all_zeros = 0;
 		all_zeros = 0;

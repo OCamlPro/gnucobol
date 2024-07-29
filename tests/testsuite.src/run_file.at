@@ -580,7 +580,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
       *
            OPEN OUTPUT FILE0
-           IF WSFS NOT = "30"
+           IF WSFS NOT = "35"
               DISPLAY "STATUS OPENO " WSFS.
       *
            STOP RUN.

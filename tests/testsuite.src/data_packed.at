@@ -28743,6 +28743,45 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([BCD ADD and SUBTRACT, DEFAULT ROUNDING MODE])
+AT_KEYWORDS([fundamental arithmetic PACKED-DECIMAL ROUNDED])
+
+# This test was created to test the default rounding mode
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. GAG1.
+      *
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. VAX-11.
+       OBJECT-COMPUTER. VAX-11.
+       SPECIAL-NAMES.
+      *      DECIMAL-POINT IS COMMA.
+      *
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+        1  TOTO.
+         2   RESULT PIC S9(13)V9(2) COMP-3.
+         2   RESULT-5 PIC S9(13)V9(5) COMP-3.
+
+       PROCEDURE DIVISION.
+       DEBUT.
+             MOVE 3.14659 TO RESULT-5.
+             MOVE ZERO TO RESULT.
+             ADD  RESULT-5 TO RESULT ROUNDED.
+             IF RESULT NOT EQUAL 3.15
+                 DISPLAY "RESULT " RESULT.
+             GOBACK.
+])
+
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([BCD ADD and SUBTRACT, all ROUNDED MODEs])
 AT_KEYWORDS([fundamental arithmetic SUBTRACT MODE
 COMP-3 COMP-6 PACKED-DECIMAL AWAY-FROM-ZERO NEAREST-AWAY-FROM-ZERO

@@ -1,4 +1,83 @@
 
+2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) fixed C90 warnings
+
+2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) fixed C90 warnings
+	  Also fixed issue when build without curses
+	* move.c (indirect_move) fixed C90 warnings
+	* profiling.c (profile_setup_clock) fixed C90 warnings
+
+2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	fix errors in cob_optimized_move_display_to_edited introduced
+	with changes at revision R5285. The errors showed up in the 
+	NIST tests in group NC.
+
+	* move.c (optimized_move_display_to_edited): fixed bugs
+	  (indirect_move): fixed bug when calculating scale of 
+	  the intermediate cob field
+
+
+2024-07-02  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* numeric.c (cob_add_bcd) fixed check for default ROUNDED option
+	  to resolve bug 934
+
+2024-06-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) added new functions
+	* common.h added exports for the two new functions
+	* system.def: added as system library call CBL_GC_SCR_DUMP,
+	  CBL_GC_SCR_RESTORE
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+		fix errors caught by the Sanitizer functionality of GCC. This 
+		change did not resolve all of the issues found as some of them
+		were in Berkeley DB and some were intentional in the memory 
+		corruption logic which has been implemented in the runtime.
+
+	* move.c (the cob_move_display_to_packed function was rewritten to 
+	  fix the out of bounds memory addressing issues and also to make
+	  the code simpler.
+	* numeric.c (the function count_leading_zeros was changed to fix 
+	  an out of bounds memory addressing issue
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+		fix errors in filio.c when building with VISAM 2.2. This issue
+		occurred when using a partial key with a sequential read previous.
+
+	* fileio.c (indexed_start_internal), (indexed_start)
+	  and (indexed_read_next): added a new field, partial_key_length,
+	  to the indexfile structure for use in these functions.
+	  This will allow the saved partial key to be used in the
+	  positioning logic.
+	  Also the BDB logic was changed to return a status code of "35" 
+	  when encountering a missing directory for OUTPUT on INDEXED file.
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	fix errors in cob_move_display_to_edited and simplify the code
+	this was done by cloning the function to an optimized version
+	and making the changes to the calling functions to support it
+	Basically this involves changing the intermediate cob_field to
+	match the attributes of the target edited field instead of the
+	sending field.
+
+	* move.c (optimized_move_display_to_edited): added new function
+	  (cob_move): when move numeric-display to numeric-edited added logic
+	    to check if an indirect move is needed
+	  (indirect_move): when the destination field is numeric-edited and
+	    the function source is binary, packed or display then the attributes
+	    need to generated to match destination attributes instead of the
+	    source attributes
+	* termio.c (pretty_display_numeric), mlio.c (get_num):
+	  changed to use the attributes of the receiving field
+
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* profiling.c: fix compile warnings
