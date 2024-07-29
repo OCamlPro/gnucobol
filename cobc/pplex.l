@@ -201,7 +201,7 @@ ALNUM_LITERAL_A	"\'"([^''\n]|("\'"[0-9][0-9, ]+"\'"))*"\'"
 ALNUM_LITERAL	{ALNUM_LITERAL_Q}|{ALNUM_LITERAL_A}
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
-RAW_SEQ	[^ \n]+
+RAW_SEQ		[^ \n]+
 
 AREA_A		[ ]?#
 MAYBE_AREA_A	[ ]?#?

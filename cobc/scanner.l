@@ -2595,8 +2595,8 @@ scan_list_add (struct cb_text_list *list, const char *text)
 {
 	struct cb_text_list	*p;
 
-	p = cobc_malloc (sizeof (struct cb_text_list));
-	p->text = cobc_strdup (text);
+	p = cobc_parse_malloc (sizeof (struct cb_text_list));
+	p->text = cobc_parse_strdup (text);
 	if (!list) {
 		p->last = p;
 		return p;
