@@ -1375,7 +1375,7 @@ leap_second_directive:
 
 imp_directive:
   /* GnuCOBOL 3.3 extension */
-	INCLUDE
+  INCLUDE
   {
 	ppparse_error (_("Missing argument for IMP INCLUDE directive"));
   }
