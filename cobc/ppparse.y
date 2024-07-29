@@ -1375,7 +1375,11 @@ leap_second_directive:
 
 imp_directive:
   /* GnuCOBOL 3.3 extension */
-  INCLUDE imp_include_sources
+	INCLUDE
+	{
+		ppparse_error (_("Missing argument for IMP INCLUDE directive"));
+	}
+| INCLUDE imp_include_sources
   {
 	struct cb_text_list *p = $2;
 	while (p != NULL) {
