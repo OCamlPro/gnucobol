@@ -22,8 +22,6 @@
 
 #include "config.h"
 
-#include <err.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -2813,7 +2811,6 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv(cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
-#ifdef HAVE_ERRNO_H
 			switch (errno) {
 			case E2BIG:
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
@@ -2828,9 +2825,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Unknown error"));
 				break;
 			}
-#else
-            cobc_err_msg(_("iconv failed"));
-#endif
+
 		}
 
 		outsize -= outbytesleft;
@@ -2851,6 +2846,7 @@ cb_tree
 cb_build_national_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
+	
 #ifdef HAVE_ICONV_H
 	size_t outsize = size*2;
 	void * outdata = malloc(outsize);
@@ -2867,7 +2863,6 @@ cb_build_national_literal (const void *data, const size_t size)
 		
 		size_t convResult = iconv(cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
-#ifdef HAVE_ERRNO_H
 			switch (errno) {
 			case E2BIG:
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
@@ -2882,9 +2877,6 @@ cb_build_national_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Unknown error"));
 				break;
 			}
-#else
-            cobc_err_msg(_("iconv failed"));
-#endif
 	    }
 
         outsize -= outbytesleft;
