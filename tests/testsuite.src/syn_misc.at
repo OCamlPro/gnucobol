@@ -5438,29 +5438,16 @@ AT_DATA([prog.cob], [
        END PROGRAM invalid-3.
 ])
 
-# TODO message handling has to be adjusted
-#AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-#[prog.cob:59: error: prototype and definition of 'invalid-1' do not match
-#   definition is a program but the prototype is a function;
-#   DECIMAL-POINT IS COMMA clauses differ;
-#   CURRENCY clauses differ;
-#   parameters #1 ('a-1' in the definition an 'x1' in the prototype) differ;
-#   returning items ('b' in the definition an 'y' in the prototype) differ
-#prog.cob:72: error: prototype and definition of 'invalid-2' do not match
-#   number of parameters differ;
-#   definition has a RETURNING item but protoype does not;
-#prog.cob:106: error: prototypes must be come before any program/function definitions
-#])
-AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
-[prog.cob:59: error: prototype and definition of 'invalid-1' do not match
-prog.cob:59: note: definition is a program but the prototype is a function
-prog.cob:59: note: DECIMAL-POINT IS COMMA clauses differ
-prog.cob:59: note: CURRENCY clauses differ
-prog.cob:59: note: parameters #1 ('a-1' in the definition an 'x1' in the prototype) differ
-prog.cob:59: note: returning items ('b' in the definition an 'y' in the prototype) differ
-prog.cob:72: error: prototype and definition of 'invalid-2' do not match
-prog.cob:72: note: number of parameters differ
-prog.cob:72: note: definition has a RETURNING item but protoype does not
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished -Wno-pending prog.cob], [1], [],
+[prog.cob:60: warning: prototype and definition of 'invalid-1' do not match
+prog.cob:60: note: definition is a program but the prototype is a function
+prog.cob:60: note: DECIMAL-POINT IS COMMA clauses differ
+prog.cob:60: note: CURRENCY clauses differ
+prog.cob:60: note: parameters #1 ('a-1' in the definition and 'x1' in the prototype) differ
+prog.cob:60: note: returning items ('b' in the definition and 'y' in the prototype) differ
+prog.cob:73: warning: prototype and definition of 'invalid-2' do not match
+prog.cob:73: note: number of parameters differ
+prog.cob:73: note: definition has a RETURNING item but protoype does not
 prog.cob:106: error: prototypes must be come before any program/function definitions
 ])
 AT_CLEANUP
