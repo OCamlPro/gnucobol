@@ -1148,13 +1148,13 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					sign_position   = dst;
 					dst++;
 					break;
-				} else if (prev_float_char == NULL) {
+				} else if (prev_float_char == NULL && !have_decimal_point) {
 					*dst = c;
 					prev_float_char = dst;
 					sign_position   = dst;
 					dst++;
 					break;
-				} else if ((*src == '0') && (suppress_zero)) {
+				} else if (*src == '0' && suppress_zero && !have_decimal_point) {
 					*prev_float_char = ' ';
 					prev_float_char = dst;
 					sign_position   = dst;
@@ -1164,7 +1164,10 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					break;
 				} else {
 					*dst = *src;
-					is_zero = suppress_zero = 0;
+					if (*src != '0') {
+						is_zero = 0;
+						suppress_zero = 0;
+					}
 					dst++;
 					src++;
 					break;
@@ -1194,6 +1197,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'V':
+				have_decimal_point = 1;
 				break;
 
 			case '0':

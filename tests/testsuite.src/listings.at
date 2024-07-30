@@ -1,4 +1,4 @@
-## Copyright (C) 2015-2023 Free Software Foundation, Inc.
+## Copyright (C) 2015-2024 Free Software Foundation, Inc.
 ## Written by Dave Pitts, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -125,7 +125,7 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_LISTING0 -t- -free prog2.cob], [0],
-[GnuCOBOL V.R.P               prog2.cob   
+[GnuCOBOL V.R.P               prog2.cob
 
 LINE    .....................SOURCE.............................................
 
@@ -411,7 +411,7 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_LISTING0 -t- prog2.cob], [0],
-[GnuCOBOL V.R.P               prog2.cob   
+[GnuCOBOL V.R.P               prog2.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -475,7 +475,7 @@ AT_DATA([prog3.cob], [
 ])
 
 AT_CHECK([$COMPILE_LISTING0 -t- prog3.cob], [0],
-[GnuCOBOL V.R.P               prog3.cob   
+[GnuCOBOL V.R.P               prog3.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -568,7 +568,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 AT_CHECK([$COBC $FLAGS -E -o prog.i prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_LISTING0 -t- -ftsymbols prog.i], [0],
-[GnuCOBOL V.R.P               prog.i  
+[GnuCOBOL V.R.P               prog.i
 
 LINE    PG/LN  A...B............................................................
 
@@ -772,7 +772,7 @@ AT_DATA([prog1.cob], [
 ])
 
 AT_CHECK([$COMPILE_LISTING0 -t- -ftsymbols prog1.cob], [0],
-[GnuCOBOL V.R.P               prog1.cob   
+[GnuCOBOL V.R.P               prog1.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -1459,7 +1459,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_DATA([prog17.lst],
-[GnuCOBOL V.R.P               prog.i  
+[GnuCOBOL V.R.P               prog.i
 
 LINE    PG/LN  A...B............................................................
 
@@ -2250,7 +2250,7 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_LISTING0 -t- -fno-tmessages -fno-tsource -ftsymbols prog2.cob], [0],
-[GnuCOBOL V.R.P               prog2.cob   
+[GnuCOBOL V.R.P               prog2.cob
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -2284,7 +2284,7 @@ AT_DATA([prog3.cob], [
 AT_CHECK([$COMPILE_LISTING0 -t prog.lst -fno-tsource -fno-tmessages -ftsymbols prog3.cob], [0], [], [])
 
 AT_DATA([prog15-1.lst],
-[GnuCOBOL V.R.P               prog3.cob   
+[GnuCOBOL V.R.P               prog3.cob
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -3382,11 +3382,9 @@ error: . may only occur once in a PICTURE string
 000020             03  PIC 99VV9.
 error: V may only occur once in a PICTURE string
 000021             03  PIC +$99+.
-error: a trailing +/- sign cannot follow a leading +/- sign
+error: floating '+' symbols cannot have a '9' between them
 000022             03  PIC $+99$-.
-error: a leading +/- sign cannot follow a leading currency symbol
-error: a trailing currency symbol cannot follow a leading currency symbol
-error: a trailing +/- sign cannot follow a leading +/- sign
+error: floating '$' symbols cannot have a '9' between them
 000023         01  non-symbols.
 000024             03  PIC 9K.
 error: invalid PICTURE character 'K'
@@ -3414,9 +3412,8 @@ error: . cannot follow V
 000036             03  PIC Z*.
 error: cannot have both Z and * in PICTURE string
 000037             03  PIC +(5)--.
-error: a trailing +/- sign cannot follow a floating +/- string which is before
-     + the decimal point
-error: a trailing +/- sign may only occur once in a PICTURE string
+error: only one of the symbols '-' , '+' or '$' can occur multiple times in a
+     + picture string
 000038             03  PIC $(4)Z(9).
 error: a Z or * which is before the decimal point cannot follow a floating
      + currency symbol string which is before the decimal point
@@ -3434,15 +3431,10 @@ error: A or X cannot follow .
 000044             03  PIC SA.
 error: A or X cannot follow S
 000045             03  PIC $$$B+++B---.
-error: a leading +/- sign cannot follow B, 0 or /
-error: a leading +/- sign cannot follow a floating currency symbol string
-     + which is before the decimal point
-error: a leading +/- sign may only occur once in a PICTURE string
-error: a trailing +/- sign cannot follow a leading +/- sign
-error: a trailing +/- sign may only occur once in a PICTURE string
+error: only one of the symbols '-' , '+' or '$' can occur multiple times in a
+     + picture string
 000046             03  PIC +++9+.
-error: a trailing +/- sign cannot follow a floating +/- string which is before
-     + the decimal point
+error: floating '+' symbols cannot have a '9' between them
 000047             03  PIC +9(5)CR.
 error: CR or DB cannot follow a leading +/- sign
 000048             03  PIC -9(5)DB.
@@ -3460,7 +3452,7 @@ error: 9 cannot follow CR or DB
 error: a floating currency symbol string which is before the decimal point
      + cannot follow 9
 000055             03  PIC 99$B.
-error: a leading currency symbol cannot follow 9
+error: B, 0 or / cannot follow a trailing currency symbol
 000056             03  PIC 0$99.
 error: a leading currency symbol cannot follow B, 0 or /
 000057             03  PIC PPPVP9.
@@ -3626,10 +3618,8 @@ prog.cob:18: error: S may only occur once in a PICTURE string
 prog.cob:18: error: S must be at start of PICTURE string
 prog.cob:19: error: . may only occur once in a PICTURE string
 prog.cob:20: error: V may only occur once in a PICTURE string
-prog.cob:21: error: a trailing +/- sign cannot follow a leading +/- sign
-prog.cob:22: error: a leading +/- sign cannot follow a leading currency symbol
-prog.cob:22: error: a trailing currency symbol cannot follow a leading currency symbol
-prog.cob:22: error: a trailing +/- sign cannot follow a leading +/- sign
+prog.cob:21: error: floating '+' symbols cannot have a '9' between them
+prog.cob:22: error: floating '$' symbols cannot have a '9' between them
 prog.cob:24: error: invalid PICTURE character 'K'
 prog.cob:25: error: C must be followed by R
 prog.cob:26: error: D must be followed by B
@@ -3642,8 +3632,7 @@ prog.cob:32: error: parentheses must contain an unsigned integer
 prog.cob:34: error: . cannot follow a P which is after the decimal point
 prog.cob:35: error: . cannot follow V
 prog.cob:36: error: cannot have both Z and * in PICTURE string
-prog.cob:37: error: a trailing +/- sign cannot follow a floating +/- string which is before the decimal point
-prog.cob:37: error: a trailing +/- sign may only occur once in a PICTURE string
+prog.cob:37: error: only one of the symbols '-' , '+' or '$' may occur multiple times in a PICTURE string
 prog.cob:38: error: a Z or * which is before the decimal point cannot follow a floating currency symbol string which is before the decimal point
 prog.cob:39: error: a Z or * which is before the decimal point cannot follow a floating currency symbol string which is before the decimal point
 prog.cob:40: error: A or X cannot follow N
@@ -3651,12 +3640,8 @@ prog.cob:41: error: N cannot follow A or X
 prog.cob:42: error: a Z or * which is before the decimal point cannot follow A or X
 prog.cob:43: error: A or X cannot follow .
 prog.cob:44: error: A or X cannot follow S
-prog.cob:45: error: a leading +/- sign cannot follow B, 0 or /
-prog.cob:45: error: a leading +/- sign cannot follow a floating currency symbol string which is before the decimal point
-prog.cob:45: error: a leading +/- sign may only occur once in a PICTURE string
-prog.cob:45: error: a trailing +/- sign cannot follow a leading +/- sign
-prog.cob:45: error: a trailing +/- sign may only occur once in a PICTURE string
-prog.cob:46: error: a trailing +/- sign cannot follow a floating +/- string which is before the decimal point
+prog.cob:45: error: only one of the symbols '-' , '+' or '$' may occur multiple times in a PICTURE string
+prog.cob:46: error: floating '+' symbols cannot have a '9' between them
 prog.cob:47: error: CR or DB cannot follow a leading +/- sign
 prog.cob:48: error: CR or DB cannot follow a leading +/- sign
 prog.cob:50: error: a leading +/- sign cannot follow B, 0 or /
@@ -3664,7 +3649,7 @@ prog.cob:51: error: a leading +/- sign cannot follow 9
 prog.cob:52: error: B, 0 or / cannot follow CR or DB
 prog.cob:53: error: 9 cannot follow CR or DB
 prog.cob:54: error: a floating currency symbol string which is before the decimal point cannot follow 9
-prog.cob:55: error: a leading currency symbol cannot follow 9
+prog.cob:55: error: B, 0 or / cannot follow a trailing currency symbol
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
@@ -3678,7 +3663,7 @@ prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 
 1 warning in compilation group
-57 errors in compilation group
+50 errors in compilation group
 ])
 
 AT_CHECK([diff expected.lst prog.lst], [0])
@@ -5129,7 +5114,7 @@ EDITOR.cob:254: warning: ALTER is obsolete in GnuCOBOL
 ], [ignore])
 
 AT_CHECK([$COMPILE_LISTING0 -Xref -T- -ftsymbols EDITOR.cob], [1],
-[GnuCOBOL V.R.P               EDITOR.cob                                      
+[GnuCOBOL V.R.P               EDITOR.cob
 
 LINE    PG/LN  A...B............................................................SEQUENCE
 

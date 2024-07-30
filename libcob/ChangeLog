@@ -1,9 +1,14 @@
 
+2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed small bug
+	  in logic for floating sign symbol to the right of decimal_point
+	  or assumed decimal_point
+
 2024-07-13  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* move.c (indirect_move) fixed sanitizer warnings by moving
 	  one line of code
-
 
 2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
