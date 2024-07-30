@@ -25,6 +25,8 @@ TESTS_LOCAL = ##TESTS_LOCAL##
 RM = rm -rf
 DIFF_FLAGS = ##DIFF_FLAGS##
 
+PERL = ##PERL##
+
 all:
 	@$(MAKE) test
 	@$(MAKE) diff
@@ -54,7 +56,7 @@ test:
 test-local:
 	@echo
 	@echo "Performing tests for module directory ##MODULE##"
-	@perl ##COB85DIR##/report.pl
+	@$(PERL) ##COB85DIR##/report.pl
 
 diff: report.txt
 	@echo
@@ -67,7 +69,7 @@ test-O:
 test-O-local:
 	@echo
 	@echo "Performing tests (optimized) for module directory ##MODULE##"
-	@perl ##COB85DIR##/report.pl -O
+	@$(PERL) ##COB85DIR##/report.pl -O
 
 libs:
 	@if test -d lib; then                                                        \
@@ -78,7 +80,7 @@ libs-local:
 	@if test -d lib; then                                     \
 	 echo ""                                                 ; \
 	 echo "Compiling libs for module directory ##MODULE##...";  \
-	 perl ##COB85DIR##/report.pl lib                         ;   \
+	 $(PERL) ##COB85DIR##/report.pl lib                         ;   \
 	fi
 
 $(TESTS): libs
@@ -86,7 +88,7 @@ $(TESTS): libs
 
 $(TESTS_LOCAL): libs-local
 	@echo "Running single test `echo $@ | sed -e 's|-.*||g'`"
-	@perl ##COB85DIR##/report.pl `echo $@ | sed -e 's|-.*||g'` 2>$@.log
+	@$(PERL) ##COB85DIR##/report.pl `echo $@ | sed -e 's|-.*||g'` 2>$@.log
 	@grep `echo $@ | sed -e 's|-.*||g'` ##COB85DIR##/##MODULE##.txt | diff - $@.log
 	@rm -rf $@.log
 
