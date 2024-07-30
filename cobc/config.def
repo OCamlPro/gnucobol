@@ -204,7 +204,7 @@ CB_CONFIG_BOOLEAN (cb_areacheck, "areacheck",
 	  "                        * division, section, paragraph names, level indicators (FD, SD, RD, and CD),\n"
 	  "                          and toplevel numbers (01 and 77) must start in Area A;\n"
 	  "                        * statements must not start in Area A; and\n"
-	  "                        * separator periods must not be within Area A."))
+	  "                        * separator periods must not be within Area A"))
 
 /* Support flags */
 
@@ -214,9 +214,10 @@ CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
 CB_CONFIG_SUPPORT (cb_control_division, "control-division",
 	_("CONTROL DIVISION"))
 
-CB_CONFIG_SUPPORT (cb_partial_replacing_with_literal,
-		   "partial-replacing-with-literal",
-		   _("partial replacing with literal"))
+/* Enables literals as replacement operands. */
+CB_CONFIG_SUPPORT (cb_partial_replace_when_literal_src, "partial-replace-when-literal-src",
+	_("apply partial replacing with literal source operand even when it replaces with spaces only;\n"
+	  "                        * \"skip\" prevents such replacements"))
 
 CB_CONFIG_SUPPORT (cb_memory_size_clause, "memory-size-clause",
 	_("MEMORY-SIZE clause"))
