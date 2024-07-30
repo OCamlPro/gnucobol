@@ -3115,41 +3115,43 @@ cob_get_pointer (const void *srcptr)
 void
 cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 {
-	unsigned char	*s;
-	size_t		count;
-	size_t		i;
+	register unsigned char	*end, *data, *s;
 
 	if (f == NULL) {
 		snprintf (str, maxsize, "%s", ("NULL field"));
 		return;
 	}
 
-	count = 0;
 	if (f->size == 0) {
 		return;
 	}
+	data = f->data;
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
-	if (f->data == NULL) {
+	if (data == NULL) {
 		snprintf (str, maxsize, "%s", ("field with NULL address"));
 		return;
 	}
-	for (i = f->size - 1; ; i--) {
-		if (f->data[i] && f->data[i] != (unsigned char)' ') {
-			count = i + 1;
+	end = data + f->size - 1;
+	while (end > data) {
+		if (*end != ' ' && *end) {
 			break;
 		}
-		if (!i) {
-			break;
-		}
-	}
-	if (count > maxsize) {
-		count = maxsize;
+		end--;
 	}
 	s = (unsigned char *)str;
-	for (i = 0; i < count; ++i) {
-		s[i] = f->data[i];
+	if (*end == ' ' || *end == 0) {
+		*s = 0;
+		return;
 	}
-	s[i] = 0;
+
+	/* note: the specified max does not contain the low-value */
+	if (end - data > maxsize) {
+		end = data + maxsize;
+	}
+	while (data <= end) {
+		*s++ = *data++;
+	}
+	*s = 0;
 }
 
 static void
@@ -11196,7 +11198,8 @@ void
 init_statement_list (void)
 {
 	cob_statement_name[STMT_UNKNOWN] = "UNKNOWN";
-#define COB_STATEMENT(ename,str)	cob_statement_name[ename] = str;
+#define COB_STATEMENT(ename,str) \
+	cob_statement_name[ename] = str;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
 }
