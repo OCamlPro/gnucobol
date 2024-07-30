@@ -2740,14 +2740,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION ORD ( "k" )
-           END-DISPLAY.
+                   WITH NO ADVANCING.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[0000000108
-])
+[0000000108])
 
 AT_CLEANUP
 
@@ -2762,14 +2761,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION ORD-MAX ( 3 -14 0 8 -3 )
-           END-DISPLAY.
+                   WITH NO ADVANCING.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[0000000004
-])
+[0000000004])
 
 AT_CLEANUP
 
@@ -2784,14 +2782,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION ORD-MIN ( 3 -14 0 8 -3 )
-           END-DISPLAY.
+                   WITH NO ADVANCING.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[0000000002
-])
+[0000000002])
 
 AT_CLEANUP
 
@@ -2808,9 +2805,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE    FUNCTION PI TO Y.
            IF Y NOT = 3.14159265358979323846264338327950288
-              DISPLAY Y
-              END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -2830,14 +2825,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION PRESENT-VALUE ( 3 2 1 )
-           END-DISPLAY.
+                   WITH NO ADVANCING.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[00000.5625
-])
+[00000.5625])
 
 AT_CLEANUP
 
@@ -2854,9 +2848,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION RANDOM ( ) TO Y.
            IF Y < 0
-                   DISPLAY Y
-                   END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -2878,9 +2870,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION RANGE ( 3 -14 0 8 -3 ) TO Z.
            IF Z NOT = 22
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -2902,8 +2892,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION REM ( -11 5 ) TO R
            IF R NOT = -1
-              DISPLAY R END-DISPLAY
-           END-IF
+              DISPLAY R.
            STOP RUN.
 ])
 
@@ -2928,13 +2917,9 @@ AT_DATA([prog.cob], [
            IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            NOT = 'EC-ARGUMENT-FUNCTION'
               DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
+                      FUNCTION EXCEPTION-STATUS.
            IF R NOT = 0
-              DISPLAY 'result is not zero: ' R
-              END-DISPLAY
-           END-IF
+              DISPLAY 'result is not zero: ' R.
            STOP RUN.
 ])
 
@@ -2957,9 +2942,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION REVERSE ( X ) TO Z.
            IF Z NOT = "$E+D%C.B#A"
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -2982,9 +2965,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION REVERSE ( X ) (1 : 4) TO Z.
            IF Z NOT = "$E+D      "
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3008,49 +2989,37 @@ AT_DATA([prog.cob], [
                     ("hhmmss", "010203")
                TO result.
            IF result NOT = 3723
-                   DISPLAY "Test 1 failed: " result
-                   END-DISPLAY
-           END-IF.
+              DISPLAY "Test 1 failed: " result.
 
            MOVE FUNCTION SECONDS-FROM-FORMATTED-TIME
                     ("hh:mm:ss", "01:02:03")
                TO result.
            IF result NOT = 3723
-                   DISPLAY "Test 2 failed: " result
-                   END-DISPLAY
-           END-IF.
+              DISPLAY "Test 2 failed: " result.
 
            MOVE FUNCTION SECONDS-FROM-FORMATTED-TIME
                     ("hhmmss.ssssssss", "010203.04050607")
                TO result.
            IF result NOT = 3723.04050607
-                   DISPLAY "Test 3 failed: " result
-                   END-DISPLAY
-           END-IF.
+              DISPLAY "Test 3 failed: " result.
 
            MOVE FUNCTION SECONDS-FROM-FORMATTED-TIME
                     ("hhmmssZ", "010203Z")
                TO result.
            IF result NOT = 3723
-                   DISPLAY "Test 4 failed: " result
-                   END-DISPLAY
-           END-IF.
+               DISPLAY "Test 4 failed: " result.
 
            MOVE FUNCTION SECONDS-FROM-FORMATTED-TIME
                     ("hhmmss+hhmm", "010203+0405")
                TO result.
            IF result NOT = 3723
-                   DISPLAY "Test 5 failed: " result
-                   END-DISPLAY
-           END-IF.
+              DISPLAY "Test 5 failed: " result.
 
            MOVE FUNCTION SECONDS-FROM-FORMATTED-TIME
                     ("YYYYMMDDThhmmss", "16010101T010203")
                TO result.
            IF result NOT = 3723
-                   DISPLAY "Test 6 failed: " result
-                   END-DISPLAY
-           END-IF.
+              DISPLAY "Test 6 failed: " result.
 
            STOP RUN.
 ])
@@ -3073,9 +3042,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION SECONDS-PAST-MIDNIGHT TO Y.
            IF Y NOT < 86402
-                   DISPLAY Y
-                   END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -3097,24 +3064,16 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION SIGN ( 3.12345 ) TO Z.
            IF Z NOT = 1
-              DISPLAY "Sign 1 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Sign 1 " Z.
            MOVE FUNCTION SIGN ( -0.0 ) TO Z.
            IF Z NOT = 0
-              DISPLAY "Sign 2 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Sign 2 " Z.
            MOVE FUNCTION SIGN ( 0.0 ) TO Z.
            IF Z NOT = 0
-              DISPLAY "Sign 3 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Sign 3 " Z.
            MOVE FUNCTION SIGN ( -3.12345 ) TO Z.
            IF Z NOT = -1
-              DISPLAY "Sign 4 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Sign 4 " Z.
            STOP RUN.
 ])
 
@@ -3136,9 +3095,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION SIN ( 1.5 ) TO Y.
            IF Y NOT = 0.99749498660405443094172337114148732
-                   DISPLAY Y
-                   END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -3160,9 +3117,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION SQRT ( 1.5 ) TO Y.
            IF Y NOT = 1.22474487139158904909864203735294569
-                   DISPLAY Y
-                   END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -3184,9 +3139,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION STANDARD-DEVIATION ( 3 -14 0 8 -3 ) TO Y.
            IF Y NOT = 7.35934779718963954877237043574538183
-                   DISPLAY Y
-                   END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -3210,9 +3163,7 @@ AT_DATA([prog.cob], [
            MOVE "123456789012" TO Y.
            MOVE FUNCTION STORED-CHAR-LENGTH ( Y ) TO Z.
            IF Z NOT = 12
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3239,9 +3190,7 @@ AT_DATA([prog.cob], [
                   INTO Z
            END-STRING
            IF Z NOT = "zz1114446665defxxzz_"
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3267,9 +3216,7 @@ AT_DATA([prog.cob], [
                    ( Y "abc" "zz" "55" "666" ) (2 : 9)
                 TO Z.
            IF Z NOT = "z11144466"
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3294,9 +3241,7 @@ AT_DATA([prog.cob], [
            MOVE FUNCTION SUBSTITUTE-CASE (Y "abc" "zz" "55" "666")
                 TO Z.
            IF Z NOT = "zz1114446665defxxzz"
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3322,9 +3267,7 @@ AT_DATA([prog.cob], [
                    ( Y "ABC" "zz" "55" "666" ) (2 : 9)
                 TO Z.
            IF Z NOT = "z11144466"
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3346,9 +3289,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION SUM ( 3 -14 0 8 -3 ) TO Z.
            IF Z NOT = -6
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -3370,9 +3311,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION TAN ( 1.5 ) TO Y.
            IF Y NOT = 14.1014199471717193876460836519877564
-                   DISPLAY Y
-                   END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -3391,15 +3330,15 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
-           DISPLAY FUNCTION TEST-DATE-YYYYMMDD ( 20020231 )
-           END-DISPLAY.
+      *> explicit DISPLAY to verify size
+           DISPLAY FUNCTION TEST-DATE-YYYYMMDD (20020231)
+                   WITH NO ADVANCING.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[0000000003
-])
+[0000000003])
 
 AT_CLEANUP
 
@@ -3413,15 +3352,15 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
-           DISPLAY FUNCTION TEST-DAY-YYYYDDD ( 2002400 )
-           END-DISPLAY.
+      *> explicit DISPLAY to verify size
+           DISPLAY FUNCTION TEST-DAY-YYYYDDD (2002400)
+                   WITH NO ADVANCING.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[0000000002
-])
+[0000000002])
 
 AT_CLEANUP
 
@@ -3437,111 +3376,85 @@ AT_DATA([prog.cob], [
         PROCEDURE        DIVISION.
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "16010101") <> 0
-                DISPLAY "Test 1 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 1 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYY-MM-DD", "1601-01-01") <> 0
-                DISPLAY "Test 2 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 2 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYDDD", "1601001") <> 0
-                DISPLAY "Test 3 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 3 failed"
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYY-DDD", "1601-001") <> 0
-                DISPLAY "Test 4 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 4 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYWwwD", "1601W011") <> 0
-                DISPLAY "Test 5 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 5 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYY-Www-D", "1601-W01-1") <> 0
-                DISPLAY "Test 6 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 6 failed".
 
 
             *> How will this work with zero-length items?
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "1") <> 2
-                DISPLAY "Test 7 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 7 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "160A0101") <> 4
-                DISPLAY "Test 8 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 8 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "00000101") <> 1
-                DISPLAY "Test 9 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 9 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "16000101") <> 4
-                DISPLAY "Test 10 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 10 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "16010001") <> 6
-                DISPLAY "Test 11 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 11 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "16011301") <> 6
-                DISPLAY "Test 12 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 12 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "16010190") <> 7
-                DISPLAY "Test 13 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 13 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "18000229") <> 8
-                DISPLAY "Test 14 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 14 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYY-MM-DD", "1601 01 01") <> 5
-                DISPLAY "Test 15 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 15 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "160101010") <> 9
-                DISPLAY "Test 16 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 16 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYWwwD", "1601A011") <> 5
-                DISPLAY "Test 17 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 17 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYWwwD", "1601W531") <> 7
-                DISPLAY "Test 18 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 18 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYWwwD", "1601W601") <> 6
-                DISPLAY "Test 19 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 19 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYWwwD", "2009W531") <> 0
-                DISPLAY "Test 20 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 20 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYWwwD", "1601W018") <> 8
-                DISPLAY "Test 21 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 21 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYDDD", "1601366") <> 7
-                DISPLAY "Test 22 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 22 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYDDD", "1601370") <> 6
-                DISPLAY "Test 23 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 23 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYDDD", "1601400") <> 5
-                DISPLAY "Test 24 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 24 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "01") <> 1
-                DISPLAY "Test 25 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 25 failed".
             IF FUNCTION TEST-FORMATTED-DATETIME
                    ("YYYYMMDD", "1601010") <> 8
-                DISPLAY "Test 26 failed" END-DISPLAY
-            END-IF
+                DISPLAY "Test 26 failed".
 
             STOP RUN
             .

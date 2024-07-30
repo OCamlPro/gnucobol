@@ -5021,7 +5021,7 @@ cb_validate_program_data (struct cb_program *prog)
 			}
 			for (; p->sister; p = p->sister) {
 				if (p->sister->level == 66) continue;
-				if (p->sister == depfld && x != xerr) {
+				if (p->sister == depfld && !parent_is_pic_l && x != xerr) {
 					xerr = x;
 					cb_error_x (x,
 					    _("'%s' OCCURS DEPENDING ON field item invalid here"),

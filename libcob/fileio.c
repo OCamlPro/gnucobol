@@ -8166,44 +8166,42 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 {
 	cob_s64_t	off;
 	int		fd;
-	size_t	len;
-	int		rc;
-	struct stat	st;
+	size_t		len;
 	cob_u8_ptr	p_flags;
 
 	COB_CHK_PARMS (CBL_READ_FILE, 5);
 
-	memcpy (&fd, file_handle, (size_t)4);
+	memcpy (&fd, file_handle, 4);
 	COB_UNUSED (file_offset);
 	COB_UNUSED (file_len);
 	COB_UNUSED (flags);
-	off = cob_get_s64_param (2);
-	len = (size_t)cob_get_s64_param (3);
 	p_flags = cob_get_param_data (4);
-
-	if (lseek (fd, (off_t)off, SEEK_SET) == -1) {
-		return -1;
-	}
-
-	if (len > 0) {
-		rc = read (fd, buf, len);
-		if (rc < 0) {
-			rc = -1;
-		} else if (rc == 0) {
-			rc = 10;
-		} else {
-			rc = 0;
-		}
-	} else {
-		rc = 0;
-	}
 	if ((*p_flags & 0x80) != 0) {
+		struct stat	st;
 		if (fstat (fd, &st) < 0) {
 			return -1;
 		}
-		cob_put_s64_param ( 2, (cob_s64_t) st.st_size);
+		cob_put_s64_param (2, (cob_s64_t) st.st_size);
+		return 0;
 	}
-	return rc;
+
+	off = cob_get_s64_param (2);
+	len = (size_t)cob_get_s64_param (3);
+
+	if (lseek (fd, (off_t)off, SEEK_SET) == -1) {
+		return -1;	/* error in positioning -> bad offset */
+	}
+
+	if (len > 0) {
+		const int	rc = read (fd, buf, (size_t)len);
+		if (rc < 0) {
+			return -1;	/* error in read */
+		} else if (rc == 0) {
+			/* 0 byte read -> "at end" */
+			return COB_STATUS_10_END_OF_FILE;
+		}
+	}
+	return COB_STATUS_00_SUCCESS;
 }
 
 /* entry point and processing for library routine CBL_WRITE_FILE */
@@ -8214,7 +8212,7 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 {
 	cob_s64_t	off;
 	int		fd;
-	size_t	len;
+	size_t		len;
 	int		rc;
 
 	COB_UNUSED (flags);
@@ -8223,7 +8221,7 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 
 	COB_CHK_PARMS (CBL_WRITE_FILE, 5);
 
-	memcpy (&fd, file_handle, (size_t)4);
+	memcpy (&fd, file_handle, 4);
 	off = cob_get_s64_param (2);
 	len = (size_t)cob_get_s64_param (3);
 	if (lseek (fd, (off_t)off, SEEK_SET) == -1) {
@@ -8244,7 +8242,7 @@ cob_sys_close_file (unsigned char *file_handle)
 
 	COB_CHK_PARMS (CBL_CLOSE_FILE, 1);
 
-	memcpy (&fd, file_handle, (size_t)4);
+	memcpy (&fd, file_handle, 4);
 	return close (fd);
 }
 
@@ -9750,7 +9748,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	io_rtns [WITH_INDEXED].loaded = 1;
 	io_rtns [WITH_INDEXED].config = 1;
 	/* V-ISAM can handle all of C|D|VB-ISAM format files */
-#if (WITH_INDEXED == COB_IO_VISAM) 
+#if (WITH_INDEXED == COB_IO_VISAM)
 #if !defined(WITH_CISAM)
 	io_rtns [COB_IO_CISAM].loaded = 1;
 	file_api.io_funcs[COB_IO_CISAM] = file_api.io_funcs[COB_IO_VISAM];

@@ -43,6 +43,31 @@
 	* codegen.c: Verify that EXTERNAL variables have 'ename'
 	* field.c (copy_into_field): If EXTERNAL set 'ename'
 
+2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
+
+2022-12-06 Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (validate_redefines): check for target not to have ANY LENGTH
+
+2022-12-03 Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: check SOURCE_DATE_EPOCH once, if set parse via libcob
+	  to use as compile timestamp
+
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: allow to override COB_DASH_NAME and COB_DASH_OUT
+
+2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: fixed double and missing free for internal constants
+	* parser.y (_erase): fixed missing return, breaking (exhibit_body)
+	* tree.c (cb_concat_literals, cb_name_1), scanner.l (error_literal),
+	  reserved.c (get_system_name_translated): fixed missing initialization
+	* parser.y: marked missing translatable string
+
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c,cobc.h: Add cb_keycompress flags
@@ -52,10 +77,42 @@
 	* pplex.l,scanner.l,ppparse.y: Add code to pas thru KEYCOMPRESS value
 	* parser.y: Pick up KEYCOMPRESS value to cb_alt_key for codegen
 
+2022-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (value_clause): handle simple VALUES without any optional
+	  phrases and with only a single value explicit not as table-format but
+	  as if VALUE was specified (raising a warning/error depending on
+	  relax-syntax-checks), as at least MicroFocus has this non-standard
+	  (and undocumented) extension
+	* field.c (validate_elem_value): explicit check that non-occurs item has
+	  only a single value
+	* parser.y (value_clause): improved parsing for table-format
+
+2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c (print_line): fully honor -fmfcomment by suppressing lines
+	  that start with an asterisk from listings
+
 2022-11-16  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix for computing length of ODO fields
 	* typeck.c: EVALUATE when possible compute the expression values once
+
+2022-11-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l: allow spaces or tab characters after the `$` in MF-style
+	  directives
+	* pplex.l (cobc_parse_source_format): select X/Open free-form under MF
+	* pplex.l (cobc_set_source_format): X/Open free-form format allows lines
+	  of up to 255 bytes, and may not be subject to Area A enforcement
+	* cobc.c (process_command_line): handling of `-free` is subject to
+	  `-std`: it is an alias of `-fformat=free` with the MF-specific
+	  semantics of "free" when `-std=mf`
+
+2022-11-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* typeck.c (cb_validate_program_data): DEPENDING var
+	  for PIC L data-items can come after parent groups
 
 2022-11-04  Ron Norman <rjn@inglenet.com>
 
@@ -716,6 +773,11 @@
 	* codegen.c: corrected for CB_TAG_REPORT_LINE
 				Removed some code under #ifdef COB_TREE_DEBUG as it does not
 				compile
+
+2022-02-10  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* pplex.l (ppecho, ppecho_replace): add a loop to check all data queue
+	  after a partial match [bugs:#778]
 
 2022-02-08  Simon Sobisch <simonsobisch@gnu.org>
 

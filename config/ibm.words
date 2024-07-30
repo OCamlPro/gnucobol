@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2018,2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2018,2021-2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -19,7 +19,7 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-# Word list for dialect: IBM Enterprise COBOL for z/OS (current: 6.3)
+# Word list for dialect: IBM Enterprise COBOL for z/OS (current: 6.4)
 
 # Note: only used for strict dialect and when
 #       requested by compiler directive >> IMP WORDS IBM
@@ -65,11 +65,11 @@ reserved:	AUTHOR
 reserved:	BASIS
 reserved:	BEFORE
 reserved:	BEGINNING
-reserved:	BINARY           # note: only with EXEC SQL coprocessor
+reserved:	BINARY
 reserved:	BLANK
-reserved:	BLOB             # note: only with EXEC SQL coprocessor
-reserved:	BLOB-FILE        # note: only with EXEC SQL coprocessor
-reserved:	BLOB-LOCATOR     # note: only with EXEC SQL coprocessor
+#reserved:	BLOB*            # note: only with EXEC SQL coprocessor
+#reserved:	BLOB-FILE*       # note: only with EXEC SQL coprocessor
+#reserved:	BLOB-LOCATOR*    # note: only with EXEC SQL coprocessor
 reserved:	BLOCK
 reserved:	BOTTOM
 reserved:	BY
@@ -79,16 +79,15 @@ reserved:	CBL
 reserved:	CD
 reserved:	CF
 reserved:	CH
-reserved:	CHAR             # Is this an error and was in for FUNCTION CHAR
-#        	                   or is it only defined with EXEC SQL coprocessor?
-reserved:	CHAR-VARYING     # note: only with EXEC SQL coprocessor
+#reserved:	CHAR*            # note: only with EXEC SQL coprocessor
+#reserved:	CHAR-VARYING*    # note: only with EXEC SQL coprocessor
 reserved:	CHARACTER
 reserved:	CHARACTERS
 reserved:	CLASS
 reserved:	CLASS-ID
-reserved:	CLOB             # note: only with EXEC SQL coprocessor
-reserved:	CLOB-FILE        # note: only with EXEC SQL coprocessor
-reserved:	CLOB-LOCATOR     # note: only with EXEC SQL coprocessor
+#reserved:	CLOB*            # note: only with EXEC SQL coprocessor
+#reserved:	CLOB-FILE*       # note: only with EXEC SQL coprocessor
+#reserved:	CLOB-LOCATOR*    # note: only with EXEC SQL coprocessor
 reserved:	CLOCK-UNITS
 reserved:	CLOSE
 reserved:	COBOL
@@ -129,13 +128,13 @@ reserved:	CYCLE*
 reserved:	DATA
 reserved:	DATE
 reserved:	DATE-COMPILED
-reserved:	DATE-RECORD      # note: only with EXEC SQL coprocessor
+#reserved:	DATE-RECORD*     # note: only with EXEC SQL coprocessor
 reserved:	DATE-WRITTEN
 reserved:	DAY
 reserved:	DAY-OF-WEEK
-reserved:	DBCLOB           # note: only with EXEC SQL coprocessor
-reserved:	DBCLOB-FILE      # note: only with EXEC SQL coprocessor
-reserved:	DBCLOB-LOCATOR   # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB*          # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB-FILE*     # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB-LOCATOR*  # note: only with EXEC SQL coprocessor
 reserved:	DBCS
 reserved:	DE
 # note: the following are part of the register DEBUG-ITEM,
@@ -231,6 +230,7 @@ reserved:	FOR
 reserved:	FREE             # V6
 reserved:	FROM
 reserved:	FUNCTION
+reserved:	FUNCTION-ID      # V6.4
 reserved:	FUNCTION-POINTER
 reserved:	GENERATE
 reserved:	GIVING
@@ -293,8 +293,8 @@ reserved:	LINKAGE
 reserved:	LOCAL-STORAGE
 reserved:	LOC*
 reserved:	LOCK
-reserved:	LONG-VARBINARY   # note: only with EXEC SQL coprocessor
-reserved:	LONG-VARCHAR     # note: only with EXEC SQL coprocessor
+#reserved:	LONG-VARBINARY*  # note: only with EXEC SQL coprocessor
+#reserved:	LONG-VARCHAR*    # note: only with EXEC SQL coprocessor
 reserved:	LOW-VALUE
 reserved:	LOW-VALUES=LOW-VALUE
 reserved:	MEMORY
@@ -403,7 +403,7 @@ reserved:	REPOSITORY
 reserved:	RERUN
 reserved:	RESERVE
 reserved:	RESET
-reserved:	RESULT-SET-LOCATOR  # note: only with EXEC SQL coprocessor
+#reserved:	RESULT-SET-LOCATOR* # note: only with EXEC SQL coprocessor
 reserved:	RETURN
 reserved:	RETURNING
 reserved:	REVERSED
@@ -413,7 +413,7 @@ reserved:	RF
 reserved:	RH
 reserved:	RIGHT
 reserved:	ROUNDED
-reserved:	ROWID               # note: only with EXEC SQL coprocessor
+#reserved:	ROWID*           # note: only with EXEC SQL coprocessor
 reserved:	RUN
 reserved:	S*
 reserved:	SAME
@@ -485,10 +485,10 @@ reserved:	THRU
 reserved:	TIME
 reserved:	TIME-RECORD
 reserved:	TIMES
-reserved:	TIMESTAMP
-reserved:	TIMESTAMP-OFFSET
-reserved:	TIMESTAMP-OFFSET-RECORD
-reserved:	TIMESTAMP-RECORD
+#reserved:	TIMESTAMP*                # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-OFFSET*         # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-OFFSET-RECORD*  # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-RECORD*         # note: only with EXEC SQL coprocessor
 reserved:	TITLE
 reserved:	TO
 reserved:	TOP
@@ -513,7 +513,7 @@ reserved:	VALIDATING*           # note: not included in IBMs reserved words
          	                      #       for XML PARSE
 reserved:	VALUE
 reserved:	VALUES
-#reserved:	VARBINARY             not included in Language Reference for 4.2 and 6.1
+#reserved:	VARBINARY*            # note: only with EXEC SQL coprocessor
 reserved:	VARYING
 reserved:	VOLATILE              # V6
 reserved:	WHEN
@@ -540,6 +540,7 @@ reserved:	YYYYMMDD*
 reserved:	ZERO
 reserved:	ZEROES=ZERO
 reserved:	ZEROS=ZERO
+
 
 # list of registers:
 not-register:	DIALECT-ALL
@@ -594,10 +595,11 @@ intrinsic-function:	ASIN
 intrinsic-function:	ATAN
 intrinsic-function:	BIT-OF
 intrinsic-function:	BIT-TO-CHAR
-intrinsic-function:	BYTE-LENGTH       # additional: C/S to PICTURE
+intrinsic-function:	BYTE-LENGTH          # additional: C/S to PICTURE
 intrinsic-function:	CHAR
 intrinsic-function:	COMBINED-DATETIME
-intrinsic-function:	COS
+#intrinsic-function:	CONTENT-OF       # IBM extension - different than GnuCOBOL one
+reserved:	CONTENT-OF                   # to raise error message
 intrinsic-function:	CURRENT-DATE
 intrinsic-function:	DATE-OF-INTEGER
 intrinsic-function:	DATE-TO-YYYYMMDD

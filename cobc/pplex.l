@@ -165,6 +165,7 @@ static struct cb_replace_list	*save_current_replace = NULL;
 static struct cb_replace_list	*base_replace_list = NULL;
 
 static struct cb_text_list	*text_queue = NULL;
+static size_t			check_partial_match = 0;
 
 static struct copy_info		*copy_stack = NULL;
 
@@ -175,6 +176,7 @@ static int	ppinput			(char *, const size_t);
 static void	ppecho			(const char *, const cob_u32_t,
 					 const int);
 static void	ppecho_direct			(const char *);
+static int	ppecho_replace		(struct cb_replace_list *);
 static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
 static void	check_listing		(const char *, const unsigned int);
@@ -368,44 +370,44 @@ MAYBE_AREA_A	[ ]?#?
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
 
-^{MAYBE_AREA_A}[ ]*"$SET"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"SET"		{
 	/* MF extension: SET directive */
 	/* TODO: check position of the $SET directive */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
 
-^{MAYBE_AREA_A}[ ]*"$IF"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"IF"		{
 	/* MF extension: conditional compilation */
 	BEGIN IF_DIRECTIVE_STATE;
 	return IF_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$ELIF" |
-^{MAYBE_AREA_A}[ ]*"$ELSE-IF"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"ELIF" |
+^{MAYBE_AREA_A}[ ]*$[ \t]*"ELSE-IF"		{
 	/* OpenCOBOL/GnuCOBOL 2.0 extension: conditional compilation combined ELSE IF,
 	   MF style format */
 	BEGIN IF_DIRECTIVE_STATE;
 	return ELIF_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$ELSE"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"ELSE"		{
 	/* MF extension: conditional compilation */
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$END"		|
-^{MAYBE_AREA_A}[ ]*"$END-IF"	{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"END"		|
+^{MAYBE_AREA_A}[ ]*$[ \t]*"END-IF"	{
 	/* MF extension: conditional compilation, second undocumented */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$REGION"		|
-^{MAYBE_AREA_A}[ ]*"$END-$REGION"	{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"REGION"		|
+^{MAYBE_AREA_A}[ ]*$[ \t]*"END-$REGION"	{
 	/* MF extension for logical marking of a block in the editor */
 	/* _possibly_ check: MF rule "$REGION and $IF statements must not overlap." */
 	skip_to_eol ();
 }
 
-^{MAYBE_AREA_A}[ ]*"$"[_0-9A-Z-]+	{
+^{MAYBE_AREA_A}[ ]*$[ \t]*[_0-9A-Z-]+	{
 	/* unknown MF style directive */
 	char	*s;
 
@@ -1511,22 +1513,23 @@ cobc_set_source_format (const enum cb_format sf) {
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		text_column = 250;
 		break;
-	case CB_FORMAT_XOPEN_FFF:
-		text_column = 80;
-		break;
 	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_ICOBOL_CRT:
 		/* CHECKME:
 		   https://sf.net/p/gnucobol/feature-requests/29/#c2d0/8d2f */
 		text_column = 320;
 		break;
+	case CB_FORMAT_XOPEN_FFF:
 	case CB_FORMAT_COBOLX:
 	case CB_FORMAT_ICOBOL_XCARD:
+		/* For X/Open, this is the number of "bytes" allowed on single
+		   source line as per the X/Open CAE Specification (1991),
+		   Section 7.4 "Limits". */
 		text_column = 255;
 		break;
 	case CB_FORMAT_FREE:
 		/* text-column should be ignored: put an invalid value to catch
-		   some bugs? */
+		   some bugs. */
 		text_column = -1;
 		break;
 	}
@@ -1534,6 +1537,7 @@ cobc_set_source_format (const enum cb_format sf) {
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
 	case CB_FORMAT_FREE:
+	case CB_FORMAT_XOPEN_FFF:
 		emit_area_a_tokens = 0;
 		cobc_areacheck = 0;
 		break;
@@ -1566,7 +1570,11 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 	if (!cb_strcasecmp (sfname, "FIXED")) {
 		format = CB_FORMAT_FIXED;
 	} else if (!cb_strcasecmp (sfname, "FREE")) {
-		format = CB_FORMAT_FREE;
+		/* Note: SOURCEFORMAT"FREE" in MicroFocus dialect actually
+		   selects an X/Open-derived free-form format. */
+		format = (cb_std_define == CB_STD_MF)
+			? CB_FORMAT_XOPEN_FFF
+			: CB_FORMAT_FREE;
 	} else if (!cb_strcasecmp (sfname, "COBOL85")) {
 		format = CB_FORMAT_COBOL85;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
@@ -2063,11 +2071,11 @@ start:
 			goto start;
 		}
 
-		if (cb_flag_mfcomment) {
-			if (buff[0] == '*' || buff[0] == '/') {
-				newline_count++;
-				goto start;
-			}
+		if (buff[0] == '*'
+		 && cb_flag_mfcomment
+		 && CB_MFCOMMENT_APPLIES (source_format)) {
+			newline_count++;
+			goto start;
 		}
 
 		/* Check if text is longer than text_column */
@@ -2509,15 +2517,10 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	   3.8% of this time is spent in fwrite, therefore not much potential
 	   for optimization
 	*/
-	struct cb_replace_list		*r;
 	struct cb_replace_list		*save_ptr;
-	const struct cb_text_list	*lno;
-	struct cb_text_list		*queue;
-	struct cb_text_list		*save_queue;
 	const char			*s;
-	char				*temp_ptr;
-	size_t				size;
-	size_t				size2;
+	struct cb_text_list		*save_ptr_text_queue;
+	int				status, save_status;
 
 	/* ensure nothing is in the stream buffer */
 	fflush (ppout);
@@ -2562,6 +2565,61 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	/* Do replacement */
 	text_queue = pp_text_list_add (text_queue, text, (size_t)textlen);
 
+	save_ptr_text_queue = text_queue;
+	status = ppecho_replace (save_ptr);
+	/* Search another replacement when have a Partial Match	in the last ppecho call */
+	if (check_partial_match && status != -1) {
+		save_status = status;
+		text_queue = save_ptr_text_queue;
+		while (text_queue && check_partial_match) {
+			if (text_queue->text[0] == ' '
+			 || text_queue->text[0] == '\n') {
+				ppecho_direct (text_queue->text);
+				text_queue = text_queue->next;
+				continue;
+			}
+			status = ppecho_replace (save_ptr);
+			if (status > save_status) {
+				save_status = status;
+			}
+			if (text_queue) {
+				/* Write text_queue if is not replaced */
+				if (status != -1 && check_partial_match) {
+					ppecho_direct (text_queue->text);
+				}
+				text_queue = text_queue->next;
+			}
+		}
+		status = save_status;
+	}
+	/* Manage Partial Match */
+	if (status == -1) {
+		check_partial_match = save_ptr_text_queue != NULL;
+		return;
+	}
+	if (!status) {
+		current_replace_list = NULL;
+	} else {
+		save_ptr->next = NULL;
+	}
+
+	/* No match */
+	for (; text_queue; text_queue = text_queue->next) {
+		ppecho_direct (text_queue->text);
+	}
+}
+
+static int
+ppecho_replace (struct cb_replace_list *save_ptr)
+{
+	char				*temp_ptr;
+	size_t				size;
+	size_t				size2;
+	struct cb_text_list		*queue;
+	struct cb_text_list		*save_queue;
+	const struct cb_text_list	*lno;
+	struct cb_replace_list		*r;
+
 	save_queue = NULL;
 	size = 0;
 	size2 = 0;
@@ -2586,7 +2644,7 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 				} else {
 					save_ptr->next = NULL;
 				}
-				return;
+				return -1;
 			}
 			if (r->lead_trail == CB_REPLACE_LEADING) {
 				/* Check leading text */
@@ -2638,20 +2696,12 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 				/* Non-matched part of original text */
 				ppecho_direct (save_queue->text + size);
 			}
+			check_partial_match = 0;
 			text_queue = queue;
 			continue;
 		}
 	}
-
-	/* No match */
-	for (; text_queue; text_queue = text_queue->next) {
-		ppecho_direct (text_queue->text);
-	}
-	if (!save_ptr) {
-		current_replace_list = NULL;
-	} else {
-		save_ptr->next = NULL;
-	}
+	return (save_ptr ? 1 : 0);
 }
 
 static void

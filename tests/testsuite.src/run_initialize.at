@@ -612,7 +612,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  T01-ALL.
            05 T01-REC OCCURS 10.
-              10 T01-SOMEBER                PIC X(500) VALUES SPACES.
+              10 T01-SOMEBER                PIC X(500) VALUE SPACES.
               10 T01-ENTRY.
                  15 T01-TAB OCCURS 2200.
                     20 T01-NAME             PIC  X(020).
@@ -668,14 +668,14 @@ AT_DATA([prog.cob], [
        01  GRP-3.
            05   FILLER  PIC X(3).
            05   FLD-3   OCCURS 3 TIMES.
-                15   FLD-3-2 PIC XXX VALUE "ABC".
-                15   FLD-3-3 PIC 99  VALUE ZERO.
+                15   FLD-3-2 PIC XXX VALUES "ABC".
+                15   FLD-3-3 PIC 99  VALUES ZERO.
                 15           OCCURS 4 VALUE ALL "D99".
                      25   FLD-3O-1 PIC X.
                      25   FLD-3O-2 PIC 99.
                 15   FLD-3-4 PIC XX  VALUE ALL "X".
            05   FILLER  PIC X(3).
-           05   FILLER  PIC X(3) VALUE "End".
+           05   FILLER  PIC X(3) VALUES "End".  *> needs relaxed
 
        77  C5    PIC 9(03)  VALUE 6.
        01  GRP-5.
@@ -683,9 +683,9 @@ AT_DATA([prog.cob], [
            05   FLD-5.
               10   FLD-5-1 OCCURS 0 TO 9 TIMES
                         DEPENDING ON C5.
-                15   FLD-5-2 PIC XXX VALUE "Mon".
-                15   FLD-5-3 PIC 99  VALUE 49.
-                15   FLD-5-4 PIC XX  VALUE "ey".
+                15   FLD-5-2 PIC XXX VALUES "Mon".
+                15   FLD-5-3 PIC 99  VALUES 49.
+                15   FLD-5-4 PIC XX  VALUES "ey".
            05   FILLER  PIC X(3).
 
        01  WS.
@@ -772,8 +772,11 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-# CHECKME: which part of -std=mf is used here?
-AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
+# Note to compile options: 
+#   -fbinary-truncate --> error
+#   -fcomplex-odo             because of fields after ODO
+#   -frelax-syntax-checks -w  to compile "VAR VALUES lit" (must be VALUE according to all COBOL standards)
+AT_CHECK([$COMPILE -fno-binary-truncate  -fcomplex-odo -frelax-syntax-checks -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Simple OCCURS with multi VALUES
 01: jan has 31 days

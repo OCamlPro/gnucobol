@@ -72,9 +72,37 @@
 
 	* call.c: For AIX, use RTLD_MEMBER to dlopen shared code from archive
 
+2022-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_sys_read_file): if called with flag value 128 only resolve
+	  the file size, instead of re-positioning it first
+
+2022-12-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, common.c, coblocal.h: moved functions cob_decimal_set_mpf and
+	  cob_decimal_get_mpf to numeric.c as they nearly duplicated
+	  cob_decimal_set_double and cob_decimal_get_double using those functions;
+	  moved out definition of COB_MAX_INTERMEDIATE_FLOATING_SIZE
+	* numeric.c (cob_decimal_set_mpf_core): extracted from cob_decimal_set_mpf
+	  and optimized for performance, especially by using a local storage
+	* numeric.c (cob_decimal_set_double): handling of "spaced out double" using
+	  a static buffer instead of setting it each time
+
+2022-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_set_date_from_epoch), common.h: new function to
+	  parse epoch date
+	* common.c (cob_get_current_datetime), coblocal.h (cob_datetime_res):
+	  new function to get the datetime with adjustable resolution
+	* common.c, intrinsic.c: speedup for date/time lookup by using precision
+	  as necessary
+	* common.c [!TIME_T_IS_NON_ARITHMETIC]: removing the possibly expensive
+	  call to localtime by caching its previous result
+
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fix mishandled "extended attributes" (bit 4)
+	* termio.c: several minor performance tweaks for DISPLAY
 
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
@@ -85,6 +113,18 @@
 	* fisam.c: Updated to better replicate MF COBOL behaviour
 	  in relation to START ... READ NEXT/PREVIOUS
 
+2022-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: switching random number generation to GMP,
+	  providing a good-distributed, portable implementation
+	* intrinsic.c (cob_intr_random) [DISABLE_GMP_RANDOM]:
+	  fix a rare bug returning 1
+	* intrinsic.c (get_seconds_past_midnight): extracted from
+	  cob_intr_seconds_past_midnight
+	* intrinsic.c (cob_intr_random) [!DISABLE_GMP_RANDOM]:
+	  switched initial default-seed from "system dependent"
+	  (mostly always zero) to a random seed
+
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
@@ -94,8 +134,16 @@
 	* fileio.c: Preliminary implemenation of support for the
 	  COB_FILENAME_SPACES option (default TRUE, checking option to disable).
 	  If the name in ASSIGN variable starts with double quote then
-	  trailing spaces are included in file name 
+	  trailing spaces are included in file name
 	  If the name in ASSIGN variable has invalid data status 9/004
+
+2022-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_get_field): optimized intermediate move
+	  from numeric-edited by using a local storage
+	* numeric.c: refactoring of floating-point usages to not use a union
+	  for re-re-definition of float/double where not necessary
+	* numeric.c: refactoring of bit-wise functions for readability
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 

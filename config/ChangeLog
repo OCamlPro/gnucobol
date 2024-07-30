@@ -1,7 +1,17 @@
 
+2022-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: updated COB_CURRENT_DATE for epoch
+
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
 	* all: added 'keycompress'  used for MF COBOL ISAM files
+
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ibm.words, mvs.words: removed words only reserved with EXEC SQL coprocessor,
+	  fixing bug #810
+	* ibm.words: update for Enterprise COBOL 6.4 (added FUNCTION-ID)
 
 2022-11-04  Ron Norman <rjn@inglenet.com>
 

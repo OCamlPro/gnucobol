@@ -90,6 +90,9 @@ enum cb_format {
 #define CB_SF_ALL_NAMES							\
 	"FIXED, FREE, COBOL85, VARIABLE, XOPEN, XCARD, CRT, TERMINAL, COBOLX"
 
+/* Macro to enable/disable features based on source reference-format */
+#define CB_MFCOMMENT_APPLIES(sf) (CB_SF_FIXED (sf) || sf == CB_FORMAT_VARIABLE)
+
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 /* format in CURRENT-DATE register */
 enum cb_current_date {
@@ -150,9 +153,12 @@ enum cb_current_date {
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
+#ifndef COB_DASH_NAME
 #define COB_DASH_NAME			"a.cob"
+#endif
+#ifndef COB_DASH_OUT
 #define COB_DASH_OUT			"a.out"
-
+#endif
 
 /* Operand operation type */
 enum cb_operation_type {

@@ -404,7 +404,7 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 	EXTKEY	*key;
 	f->flag_keycheck = 0;
 	parts_seen = 0;
-	for (k=0; k < f->nkeys; k++) {
+	for (k = 0; k < f->nkeys; k++) {
 		if (fcd->kdbPtr->key[k].keyFlags & KEY_SPARSE) {
 			f->keys[k].char_suppress = fcd->kdbPtr->key[k].sparse;
 			f->keys[k].tf_suppress = 1;
@@ -431,35 +431,41 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 		}
 		parts_seen += parts;
 		key   = (EXTKEY*) ((char*)(fcd->kdbPtr) + off);
-		if (f->keys[k].offset == 0)
+		if (f->keys[k].offset == 0) {
 			f->keys[k].offset = LDCOMPX4(key->pos);
+		}
 		if (f->keys[k].field == NULL
 		 || doall
 		 || f->keys[k].offset != LDCOMPX4(key->pos)
 		 || (parts == 1 && f->keys[k].field->size != LDCOMPX4(key->len))) {
-			if (f->keys[k].field == NULL)
-				f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
+			if (f->keys[k].field == NULL) {
+				f->keys[k].field = cob_cache_malloc (sizeof(cob_field));
+			}
 			if (f->record
-			 && f->record->data)
+			 && f->record->data) {
 				f->keys[k].field->data = f->record->data + LDCOMPX4(key->pos);
+			}
 			f->keys[k].field->attr = &alnum_attr;
 			f->keys[k].field->size = LDCOMPX4(key->len);
 			f->keys[k].offset = LDCOMPX4(key->pos);
 		}
 		klen = 0;
-		for (p=0; p < parts; p++) {
-			if (f->keys[k].component[p] == NULL)
-				f->keys[k].component[p] = cob_cache_malloc(sizeof(cob_field));
+		for (p = 0; p < parts; p++) {
+			if (f->keys[k].component[p] == NULL) {
+				f->keys[k].component[p] = cob_cache_malloc (sizeof(cob_field));
+			}
 			if (f->record
-			 && f->record->data)
+			 && f->record->data) {
 				f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
+			}
 			f->keys[k].component[p]->attr = &alnum_attr;
 			f->keys[k].component[p]->size = LDCOMPX4(key->len);
 			klen += LDCOMPX4(key->len);
 			key   = (EXTKEY*) ((char*)(key) + sizeof(EXTKEY));
 		}
-		if (f->keys[k].field == NULL)
-			f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
+		if (f->keys[k].field == NULL) {
+			f->keys[k].field = cob_cache_malloc (sizeof(cob_field));
+		}
 		if (parts > 1
 		 && f->keys[k].field != NULL) {
 			if (f->keys[k].field->data == NULL

@@ -379,6 +379,10 @@ struct config_tbl {
 #define	COB_MAX_UNBOUNDED_SIZE	2147483646
 #endif
 
+/* number of digits used when converting from
+  internal float to internal decimal */
+#define COB_MAX_INTERMEDIATE_FLOATING_SIZE 96
+
 /* Local function prototypes */
 COB_EXPIMP const char * cob_io_version	(const int, const int);
 COB_EXPIMP const char * cob_io_name		(const int);
@@ -428,6 +432,8 @@ COB_HIDDEN void		cob_real_put_sign	(cob_field *, const int);
 
 #ifndef COB_WITHOUT_DECIMAL
 COB_HIDDEN void		cob_decimal_init2	(cob_decimal *, const cob_uli_t);
+COB_HIDDEN void		cob_decimal_set_mpf (cob_decimal *, const mpf_t);
+COB_HIDDEN void		cob_decimal_get_mpf (mpf_t, const cob_decimal *);
 #endif
 COB_HIDDEN void		cob_decimal_setget_fld	(cob_field *, cob_field *,
 						 const int);
@@ -451,7 +457,18 @@ COB_EXPIMP void		cob_field_to_string	(const cob_field *, void *,
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
-COB_HIDDEN char	*cob_strndup		(const char *, size_t);
+COB_HIDDEN char	*cob_strndup		(const char *, const size_t);
+
+
+enum cob_datetime_res {
+	DTR_DATE,
+	DTR_TIME_NO_NANO,
+	DTR_FULL
+};
+
+/* internal function with specified internal resolution, used in nearly all places
+   where the exported cob_get_current_date_and_time was used before */
+COB_EXPIMP struct cob_time cob_get_current_datetime (const enum cob_datetime_res);
 
 COB_HIDDEN FILE			*cob_get_dump_file	(void);
 

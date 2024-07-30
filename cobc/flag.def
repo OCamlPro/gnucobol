@@ -179,8 +179,8 @@ CB_FLAG (cb_flag_write_after, 1, "write-after",
 	  "                        * default: BEFORE 1"))
 
 CB_FLAG (cb_flag_mfcomment, 1, "mfcomment",
-	_("  -fmfcomment           '*' or '/' in column 1 treated as comment\n"
-	  "                        * FIXED format only"))
+	_("  -fmfcomment           '*' in column 1 treated as comment with listing suppression\n"
+	  "                        * FIXED/COBOL85/VARIABLE format only"))
 
 CB_FLAG (cb_flag_acucomment, 1, "acucomment",
 	_("  -facucomment          '$' in indicator area treated as '*',\n"

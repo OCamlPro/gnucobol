@@ -5128,6 +5128,7 @@ AT_DATA([prog2.cob], [
 
         01 OFFSET       PIC X(8)   USAGE COMP-X.
         01 NBYTES       PIC X(4)   USAGE COMP-X.
+        01 FLAGS        PIC X(1)   USAGE COMP-X VALUE 128.
         01 READ-BUFFER  PIC X(10).
 
         PROCEDURE DIVISION.
@@ -5135,6 +5136,33 @@ AT_DATA([prog2.cob], [
         END-CALL
         IF RETURN-CODE NOT = 0
            DISPLAY 'error opening file ...' END-DISPLAY
+           GOBACK
+        END-IF
+
+        CALL 'CBL_READ_FILE' USING
+        FHANDLE OFFSET NBYTES FLAGS READ-BUFFER
+        END-CALL
+        IF RETURN-CODE NOT = 0
+           DISPLAY 'error getting file size...'
+                   return-code
+           END-DISPLAY
+           MOVE 0 TO RETURN-CODE
+        END-IF
+        IF OFFSET NOT = 9 *> size written in the first test
+           DISPLAY 'Wrong size: ' offset END-DISPLAY
+           *> still go on with the explicit size
+        ELSE
+           *> recheck with unexpected parms:
+           MOVE 'baddy' to offset(1:)
+           CALL 'CBL_READ_FILE' USING
+           FHANDLE OFFSET 0 FLAGS NULL
+           END-CALL
+           IF RETURN-CODE NOT = 0 or OFFSET NOT = 9
+              DISPLAY 'bad handling bad parms '
+                      'size: ' offset  ' return: ' return-code
+              END-DISPLAY
+              MOVE 0 TO RETURN-CODE
+           END-IF
         END-IF
 
         MOVE SPACES TO READ-BUFFER.
@@ -5217,9 +5245,7 @@ AT_CLEANUP
 
 
 AT_SETUP([System routines for files - filename mapping])
-AT_KEYWORDS([extensions runfile CBL_CREATE_FILE CBL_WRITE_FILE CBL_FLUSH_FILE
-CBL_OPEN_FILE CBL_READ_FILE CBL_CLOSE_FILE CBL_RENAME_FILE CBL_DELETE_FILE
-C$DELETE])
+AT_KEYWORDS([extensions runfile CBL_OPEN_FILE CBL_CLOSE_FILE])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.

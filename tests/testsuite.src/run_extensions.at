@@ -5596,6 +5596,56 @@ AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
 AT_CLEANUP
 
 
+AT_SETUP([MF FREE format (X/Open)])
+AT_KEYWORDS([fundamental xopen extensions directives])
+
+AT_DATA([prog.cob], [
+IDENTIFICATION DIVISION.
+PROGRAM-ID. prog.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+1 X PIC 99.
+PROCEDURE DIVISION.
+MAIN.
+COMPUTE X = 6
+* 7
+DISPLAY X NO ADVANCING
+STOP RUN.
+])
+
+AT_CHECK([$COMPILE -free -o prog-free prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-free], [0], [42])
+
+AT_CHECK([$COMPILE -std=mf -fformat=free -o prog-mf-fformat-free prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-mf-fformat-free], [0], [06])
+
+AT_CHECK([$COMPILE -std=mf -free -o prog-mf-free prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-mf-free], [0], [06])
+
+AT_DATA([prog2.cob], [
+      $SET SOURCEFORMAT"FREE"
+IDENTIFICATION DIVISION.
+PROGRAM-ID. prog.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+1 X PIC 99.
+PROCEDURE DIVISION.
+MAIN.
+COMPUTE X = 6
+* 7
+DISPLAY X NO ADVANCING
+STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [42])
+
+AT_CHECK([$COMPILE -std=mf -o prog2-mf prog2.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2-mf], [0], [06])
+
+AT_CLEANUP
+
+
 AT_SETUP([Binary COMP-1 (1)])
 AT_KEYWORDS([extensions])
 
@@ -5907,10 +5957,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([PICTURE L])
+AT_SETUP([PICTURE L (basic)])
 AT_KEYWORDS([extensions gcos picture-l odo])
-
-# Basic behaviors
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5928,8 +5976,13 @@ AT_DATA([prog.cob], [
            3 X-V       PICTURE LX(10) DEPENDING ON LGX.
            3 X-1       PICTURE X VALUE "1".
        1 W-LGS.
-          2 LGX         USAGE COMP-1 VALUE 10.
-          2 LGY         PIC 9 VALUE 9.
+          2 LGX        USAGE COMP-1 VALUE 10.
+          2 LGY        PICTURE 9 VALUE 9.
+       1 W-LATE-LVAR.
+         2 Z-GRP.
+           3 Z-V       PICTURE LX(2) DEPENDING ON LGZ.
+           3 UNUSED-0  PICTURE X VALUE "1".
+         2 LGZ         PICTURE 9 VALUE 2.
        1 W-LEN          USAGE COMP-1.
        PROCEDURE        DIVISION.
        MAIN.
@@ -6005,6 +6058,7 @@ AT_DATA([prog.cob], [
                       Y-ALPHA
               PERFORM SHOW-VARS
            END-IF
+           PERFORM CHECK-LATE-LVAR
            STOP RUN
            .
        SHOW-VARS.
@@ -6014,6 +6068,15 @@ AT_DATA([prog.cob], [
            DISPLAY X-GRP "*"
            DISPLAY X-V "*"
            .
+       CHECK-LATE-LVAR.
+           MOVE "aa" TO Z-GRP (1:2)
+           MOVE 1 TO LGZ
+           MOVE SPACES TO Z-V
+           IF Z-GRP NOT EQUAL " a1"
+              DISPLAY "UNEXPECTED Z-GRP WITH NESTED LATE L-VAR: "
+                      "*" Z-GRP "*"
+           END-IF
+           .
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -6021,7 +6084,11 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o prog-x prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog-x], [0], [])
 
-# under/over shoot
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (under/over shoot)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([under.cob], [
        IDENTIFICATION   DIVISION.
@@ -6072,7 +6139,11 @@ AT_CHECK([$COBCRUN_DIRECT ./over-x], [1], [],
 note: maximum subscript for 'FILLER 1': 5
 ])
 
-# MOVE CORRESPONDING
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (MOVE CORRESPONDING)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([corr.cob], [
        IDENTIFICATION   DIVISION.
@@ -6146,7 +6217,11 @@ AT_CHECK([$COBCRUN_DIRECT ./corr], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o corr-x corr.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./corr-x], [0], [])
 
-# OCCURS ... PIC L  ...
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (OCCURS ... PIC L)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([nested.cob], [
        IDENTIFICATION   DIVISION.
@@ -6211,7 +6286,11 @@ AT_CHECK([$COBCRUN_DIRECT ./nested], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o nested-x nested.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./nested-x], [0], [])
 
-# REDEFINES
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (REDEFINES)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([redefines.cob], [
        IDENTIFICATION   DIVISION.
@@ -6232,6 +6311,13 @@ AT_DATA([redefines.cob], [
           2 LGY         PIC 9 VALUE 5.
           2 LGZ         PIC 9 VALUE 7.
           2 LGT         PIC 9 VALUE 5.
+       1 W-DATA2.
+          2 W-X.
+             3 W-TAB0.
+                4 W-PREFIX PIC X(5).
+                4          PIC X(5).
+             3 W-TAB1   REDEFINES W-TAB0 PIC LX(10) DEPENDING LG-TAB1.
+          2 LG-TAB1     COMP-1.
        PROCEDURE        DIVISION.
        MAIN.
            MOVE "......." TO Z-DAT
@@ -6266,6 +6352,15 @@ AT_DATA([redefines.cob], [
               DISPLAY "UNEXPECTED T-DAT/Z-DAT AFTER "
                        "'INITIALIZE Z-DAT': " T-DAT "/" Z-DAT "*"
               PERFORM SHOW-VARS
+           END-IF
+      *    Basic manipulation for late DEPENDING var
+           MOVE "aaaaaaaaaa" TO W-TAB0
+           MOVE 5 TO LG-TAB1
+           IF W-TAB1 NOT EQUAL "aaaaa"
+              DISPLAY "UNEXPECTED W-TAB1 WITH LATE L-VAR: *" W-TAB1 "*"
+           END-IF
+           IF W-X NOT EQUAL "aaaaaaaaaa"
+              DISPLAY "UNEXPECTED W-X WITH NESTED LATE L-VAR: *" W-X "*"
            END-IF
            STOP RUN
            .
