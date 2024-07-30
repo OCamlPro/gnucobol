@@ -360,6 +360,10 @@ Open Plans:
    this issue and all executed code from the signal handler but the COBOL data
    dump is now signal and thread safe
 
+** TYPEDEF items got storage and attribute assigned, leading to bigger modules,
+   longer loading time and longer compile times; if you use those a recompile
+   is highly suggested
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like

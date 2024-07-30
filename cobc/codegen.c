@@ -2280,6 +2280,7 @@ emit_symtab (struct cb_field *f)
 {
 	if (!f->flag_sym_emitted
 	 && !f->flag_internal_register
+	 && !f->flag_is_typedef
 	 && f->level >= 1
 	 && f->level != 66
 	 && f->level != 78
@@ -11858,8 +11859,9 @@ output_initial_values (struct cb_field *f)
 	cb_tree		x;
 
 	for (p = f; p; p = p->sister) {
-		x = cb_build_field_reference (p, NULL);
 		if (p->flag_item_based
+		 || p->flag_external
+		 || p->flag_is_typedef
 		 || p->level == 99) {
 			continue;
 		}
@@ -11867,6 +11869,7 @@ output_initial_values (struct cb_field *f)
 		if (p->flag_no_init && !p->count) {
 			continue;
 		}
+		x = cb_build_field_reference (p, NULL);
 		output_line ("/* initialize field %s */", p->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, 0, 0));
 		output_newline ();
