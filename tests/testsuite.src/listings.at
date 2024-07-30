@@ -217,6 +217,144 @@ AT_CHECK([gcdiff expected.lst prog.lst], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([COPY replacement with partial match])
+AT_KEYWORDS([listing copy])
+AT_XFAIL_IF([true])
+
+AT_DATA([copy.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION. 
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION. 
+       01 GET-VALUE.
+       COPY "copy.inc" REPLACING ==TEST-VAR==     BY ==TEST-AVR==
+                                 == 02 TEST-EE == BY == 02 TEST-FF ==.
+       PROCEDURE DIVISION.
+           DISPLAY TEST-AVR.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 prog.cob], [0], [], [])
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
+AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+# TODO: check listing
+
+AT_CLEANUP
+
+
+AT_SETUP([COPY replacement with multiple partial matches])
+AT_KEYWORDS([listing copy])
+AT_XFAIL_IF([true])
+
+AT_DATA([copy.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-VAR-BIS PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+       02 TEST-OK PIC X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION. 
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION. 
+       01 GET-VALUE.
+       COPY "copy.inc" REPLACING
+          LEADING ==TEST-VAR==     BY ==TEST-AVR==
+                  == 02 TEST-OK == BY == 02 TEST-KO ==
+                  ==TEST-CC==      BY ==TEST-DD==
+                  == 02 TEST-EE == BY == 02 TEST-FF ==
+                  == PIC ==        BY == pic ==.
+       PROCEDURE DIVISION.
+           DISPLAY TEST-AVR.
+           DISPLAY TEST-AVR-BIS.
+           DISPLAY TEST-KO.
+           DISPLAY TEST-DD.
+           DISPLAY TEST-FF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 prog.cob], [0], [], [])
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
+AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+# TODO: check listing
+
+AT_DATA([copy2.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-VAR-BIS PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+       02 TEST-OK PIC X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION. 
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION. 
+       01 GET-VALUE.
+       COPY "copy2.inc"
+           REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
+            ==     02    TEST-OK       == BY == 02 TEST-KO ==
+        ==            TEST-CC          == BY == TEST-DD ==
+         == 02 TEST-EE                 == BY == 02 TEST-FF ==
+          ==                       PIC == BY == pic ==.
+       PROCEDURE DIVISION.
+           DISPLAY TEST-AVR.
+           DISPLAY TEST-AVR-BIS.
+           DISPLAY TEST-KO.
+           DISPLAY TEST-DD.
+           DISPLAY TEST-FF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog2.lst -tlines=0 prog2.cob], [0], [], [])
+AT_CHECK([$UNIFY_LISTING prog2.lst prog2.lis once], [0], [], [])
+AT_CHECK([diff expected2.lst prog2.lis], [0], [], [])
+# TODO: check listing
+
+AT_DATA([copy3.inc], [
+       02         TEST-VAR      PIC       X(2)     VALUE         "OK".
+              02  TEST-VAR-BIS               PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4)            VALUE "OK 2".
+       02 TEST-OK PIC            X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION. 
+       PROGRAM-ID. prog3.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION. 
+       01 GET-VALUE.
+       COPY "copy3.inc"
+           REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
+                         == 02 TEST-OK == BY == 02 TEST-KO ==
+                              ==TEST-CC== BY ==TEST-DD==
+                         == 02 TEST-EE == BY == 02 TEST-FF ==
+                                == PIC == BY == pic ==.
+       PROCEDURE DIVISION.
+           DISPLAY TEST-AVR.
+           DISPLAY TEST-AVR-BIS.
+           DISPLAY TEST-KO.
+           DISPLAY TEST-DD.
+           DISPLAY TEST-FF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog3.lst -tlines=0 prog3.cob], [0], [], [])
+AT_CHECK([$UNIFY_LISTING prog3.lst prog3.lis once], [0], [], [])
+AT_CHECK([diff expected3.lst prog3.lis], [0], [], [])
+# TODO: check listing
+
+AT_CLEANUP
+
+
 AT_SETUP([COPY replacement order])
 AT_KEYWORDS([listing symbols])
 
@@ -3530,6 +3668,75 @@ LINE    PG/LN  A...B............................................................
 ])
 
 AT_CHECK([gcdiff prog20.lst prog.lst], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MFCOMMENT])
+AT_KEYWORDS([listing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+      *    DISPLAY 'COMMENTASTERISK'
+      /    DISPLAY 'COMMENTSLASH'
+*          DISPLAY 'MFCOMMENTASTERISK'
+/          DISPLAY 'MFCOMMENTSLASH'
+           STOP RUN.
+])
+AT_DATA([prog-nomfcomment.lst.expected],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         PROCEDURE        DIVISION.
+000005        *    DISPLAY 'COMMENTASTERISK'
+
+LINE    PG/LN  A...B............................................................
+
+000006        /    DISPLAY 'COMMENTSLASH'
+000007  *          DISPLAY 'MFCOMMENTASTERISK'
+000008  /          DISPLAY 'MFCOMMENTSLASH'
+000009             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+AT_DATA([prog-mfcomment.lst.expected],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         PROCEDURE        DIVISION.
+000005        *    DISPLAY 'COMMENTASTERISK'
+
+LINE    PG/LN  A...B............................................................
+
+000006        /    DISPLAY 'COMMENTSLASH'
+000008  /          DISPLAY 'MFCOMMENTSLASH'
+000009             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog-nomfcomment.lst -tlines=0             prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t   prog-mfcomment.lst -tlines=0 -fmfcomment prog.cob], [0], [], [])
+#AT_CHECK([$UNIFY_LISTING prog-nomfcomment.lst prog-nomfcomment.lis once], [0], [], [])
+#AT_CHECK([$UNIFY_LISTING   prog-mfcomment.lst   prog-mfcomment.lis once], [0], [], [])
+#AT_CHECK([diff prog-nomfcomment.lst.expected prog-nomfcomment.lis], [0], [], [])
+#AT_CHECK([diff   prog-mfcomment.lst.expected   prog-mfcomment.lis], [0], [], [])
+AT_CHECK([gcdiff -IGnuCOBOL prog-nomfcomment.lst.expected prog-nomfcomment.lst], [0], [], [])
+AT_CHECK([gcdiff -IGnuCOBOL   prog-mfcomment.lst.expected   prog-mfcomment.lst], [0], [], [])
 
 AT_CLEANUP
 

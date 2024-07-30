@@ -69,6 +69,7 @@
 static cob_u32_t	integer_of_date (const int, const int, const int);
 static void		get_iso_week (const int, int *, int *);
 static void		cob_mpf_log (mpf_t, const mpf_t);
+static int		get_seconds_past_midnight (void);
 
 /* Local variables */
 
@@ -85,6 +86,12 @@ static cob_decimal	d2;
 static cob_decimal	d3;
 static cob_decimal	d4;
 static cob_decimal	d5;
+
+#ifndef DISABLE_GMP_RANDOM
+static mpf_t			rand_float;	/* Hold our random float numbers */
+static gmp_randstate_t	rand_state;			/* Random generator state object */
+#endif
+static int		rand_needs_seeding = 1;
 
 static mpz_t		cob_mexp;
 static mpz_t		cob_mpzt;
@@ -862,57 +869,6 @@ cob_check_numval_f (const cob_field *srcfield)
 	return 0;
 }
 
-/* Decimal <-> GMP float */
-
-static void
-cob_decimal_set_mpf (cob_decimal *d, const mpf_t src)
-{
-	char		*p;
-	char		*q;
-	cob_sli_t	scale;
-	cob_sli_t	len;
-
-	if (!mpf_sgn (src)) {
-		mpz_set_ui (d->value, 0UL);
-		d->scale = 0;
-		return;
-	}
-	q = mpf_get_str (NULL, &scale, 10, (size_t)96, src);
-	p = q;
-	mpz_set_str (d->value, p, 10);
-	if (*p == '-') {
-		++p;
-	}
-	len = (cob_sli_t)strlen (p);
-	cob_gmp_free (q);
-	len -= scale;
-	if (len >= 0) {
-		d->scale = len;
-	} else {
-		mpz_ui_pow_ui (cob_mexp, 10UL, (cob_uli_t)-len);
-		mpz_mul (d->value, d->value, cob_mexp);
-		d->scale = 0;
-	}
-}
-
-static void
-cob_decimal_get_mpf (mpf_t dst, const cob_decimal *d)
-{
-	cob_sli_t	scale;
-
-	mpf_set_z (dst, d->value);
-	scale = d->scale;
-	if (scale < 0) {
-		mpz_ui_pow_ui (cob_mexp, 10UL, (cob_uli_t)-scale);
-		mpf_set_z (cob_mpft_get, cob_mexp);
-		mpf_mul (dst, dst, cob_mpft_get);
-	} else if (scale > 0) {
-		mpz_ui_pow_ui (cob_mexp, 10UL, (cob_uli_t)scale);
-		mpf_set_z (cob_mpft_get, cob_mexp);
-		mpf_div (dst, dst, cob_mpft_get);
-	}
-}
-
 /* Trigonometric formulae (formulas?) from Wikipedia */
 
 
@@ -1487,7 +1443,7 @@ int_strncasecmp (const void *s1, const void *s2, size_t n)
 
 /* NUMVAL + NUMVAL-C implementation */
 
-static COB_INLINE COB_A_INLINE int
+static COB_INLINE COB_A_INLINE size_t
 space_left (unsigned char * p, unsigned char *p_end)
 {
 	return p_end - p + 1;
@@ -2639,7 +2595,7 @@ get_system_offset_time_ptr (int * const offset_time)
 {
 	struct cob_time	current_time;
 
-	current_time = cob_get_current_date_and_time ();
+	current_time = cob_get_current_datetime (DTR_FULL);
 	if (current_time.offset_known) {
 		*offset_time = current_time.utc_offset;
 		return offset_time;
@@ -3161,7 +3117,7 @@ format_current_date (const struct date_format date_fmt,
 		     const struct time_format time_fmt,
 		     char *formatted_datetime)
 {
-	struct cob_time	time = cob_get_current_date_and_time ();
+	struct cob_time	time = cob_get_current_datetime (DTR_FULL);
 	int		days
 		= integer_of_date (time.year, time.month, time.day_of_month);
 	int		seconds_from_midnight
@@ -4398,7 +4354,11 @@ cob_intr_current_date (const int offset, const int length)
 	COB_FIELD_INIT (21, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
-	time = cob_get_current_date_and_time ();
+	if (offset == 1 && length <= 14) {
+		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
+	} else {
+		time = cob_get_current_datetime (DTR_FULL);
+	}
 
 	sprintf (buff, "%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d%2.2d",
 		  time.year, time.month, time.day_of_month, time.hour,
@@ -4407,7 +4367,7 @@ cob_intr_current_date (const int offset, const int length)
 	add_offset_time (0, &time.utc_offset, 16, buff);
 
 	memcpy (curr_field->data, buff, (size_t)21);
-	if (offset > 0) {
+	if (offset != 0) {
 		calc_ref_mod (curr_field, offset, length);
 	}
 	return curr_field;
@@ -5557,36 +5517,83 @@ cob_intr_random (const int params, ...)
 	cob_field	*f;
 	va_list		args;
 	double		val;
-	int		seed;
-	int		randnum;
+#ifdef DISABLE_GMP_RANDOM
+	unsigned int		seed;
+#else
+	unsigned long		seed;
+#endif
 	cob_field_attr	attr;
 	cob_field	field;
 
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_DOUBLE, 20, 9, COB_FLAG_HAVE_SIGN, NULL);
-	COB_FIELD_INIT (sizeof(double), NULL, &attr);
 	va_start (args, params);
-
 	if (params) {
+		cob_s64_t specified_seed;
 		f = va_arg (args, cob_field *);
-		seed = cob_get_int (f);
-		if (seed < 0) {
+		specified_seed = cob_get_llint (f);
+		if (specified_seed < 0) {
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 			seed = 0;
+		} else {
+			seed = specified_seed;
 		}
-#ifdef	__CYGWIN__
-		srandom ((unsigned int)seed);
+		rand_needs_seeding++;
+#ifdef DISABLE_GMP_RANDOM
+	} else {
+		rand_needs_seeding = 0;
 #else
-		srand ((unsigned int)seed);
+	} else if (rand_needs_seeding) {
+		/* first invocation without explicit seed, use a random one */
+		seed = get_seconds_past_midnight () * (long)COB_MODULE_PTR;
+		rand_needs_seeding = 2;
 #endif
 	}
 	va_end (args);
 
-#ifdef	__CYGWIN__
+
+#ifdef DISABLE_GMP_RANDOM
+	/* note: the following code is suboptimal in multiple places
+	   but is "explicit legacy" so it isn't changed */
+	if (rand_needs_seeding) {
+ #ifdef	__CYGWIN__
+		srandom ((unsigned int)seed);
+ #else
+		srand ((unsigned int)seed);
+ #endif
+		rand_needs_seeding = 0;
+	}
+	{
+		int		randnum;
+ #ifdef	__CYGWIN__
 	randnum = (int)random ();
-#else
+ #else
 	randnum = rand ();
-#endif
-	make_field_entry (&field);
+ #endif
 	val = (double)randnum / (double)RAND_MAX;
+		/* sole adjustment: otherwise breaks returned value rules */
+		if (val >= 1) val = 0.099999999999999999;
+	}
+
+#else	/* DISABLE_GMP_RANDOM */
+
+	if (rand_needs_seeding) {
+		if (rand_needs_seeding > 1) {
+			/* initialize state for a Mersenne Twister algorithm,
+			   this algorithm is fast and has good randomness properties;
+			   also initialize return value */
+			gmp_randinit_mt (rand_state);
+			mpf_init (rand_float);
+		}
+		gmp_randseed_ui (rand_state, seed);
+		rand_needs_seeding = 0;
+	}
+
+	mpf_urandomb (rand_float, rand_state, 63);
+	val = mpf_get_d (rand_float);
+#endif
+
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_DOUBLE, 20, 9, COB_FLAG_HAVE_SIGN, NULL);
+	COB_FIELD_INIT (sizeof (double), NULL, &attr);
+	make_field_entry (&field);
 	memcpy (curr_field->data, &val, sizeof(val));
 	return curr_field;
 }
@@ -5835,8 +5842,8 @@ cob_intr_day_to_yyyyddd (const int params, ...)
 	return curr_field;
 }
 
-cob_field *
-cob_intr_seconds_past_midnight (void)
+static int
+get_seconds_past_midnight (void)
 {
 	struct tm	*timeptr;
 	time_t		t;
@@ -5850,7 +5857,13 @@ cob_intr_seconds_past_midnight (void)
 	}
 	seconds = (timeptr->tm_hour * 3600) + (timeptr->tm_min * 60) +
 			timeptr->tm_sec;
-	cob_alloc_set_field_int (seconds);
+	return seconds;
+}
+
+cob_field*
+cob_intr_seconds_past_midnight (void)
+{
+	cob_alloc_set_field_int (get_seconds_past_midnight ());
 	return curr_field;
 }
 
@@ -6372,6 +6385,7 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 
 	case COB_TYPE_NUMERIC_FLOAT:
 	case COB_TYPE_NUMERIC_DOUBLE:
+	case COB_TYPE_NUMERIC_L_DOUBLE:
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		cob_alloc_set_field_uint (0);
 		break;
@@ -6448,6 +6462,7 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 
 	case COB_TYPE_NUMERIC_FLOAT:
 	case COB_TYPE_NUMERIC_DOUBLE:
+	case COB_TYPE_NUMERIC_L_DOUBLE:
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		cob_alloc_set_field_uint (0);
 		break;
@@ -7204,6 +7219,12 @@ cob_exit_intrinsic (void)
 	if (set_cob_log_ten) {
 		mpf_clear (cob_log_ten);
 	}
+#ifndef DISABLE_GMP_RANDOM
+	if (rand_needs_seeding == 0) {
+		mpf_clear (rand_float);
+		gmp_randclear (rand_state);
+	}
+#endif
 
 	mpf_clear (cob_mpft_get);
 	mpf_clear (cob_mpft2);

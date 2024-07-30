@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2018,2021-2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -61,11 +61,10 @@ reserved:	BASIS
 reserved:	BEFORE
 reserved:	BEGINNING
 reserved:	BINARY
-reserved:	BINARY
 reserved:	BLANK
-reserved:	BLOB
-reserved:	BLOB-FILE
-reserved:	BLOB-LOCATOR
+#reserved:	BLOB*            # note: only with EXEC SQL coprocessor
+#reserved:	BLOB-FILE*       # note: only with EXEC SQL coprocessor
+#reserved:	BLOB-LOCATOR*    # note: only with EXEC SQL coprocessor
 reserved:	BLOCK
 reserved:	BOTTOM
 reserved:	BY
@@ -75,14 +74,14 @@ reserved:	CBL
 reserved:	CD
 reserved:	CF
 reserved:	CH
-reserved:	CHAR
-reserved:	CHAR-VARYING
+#reserved:	CHAR*            # note: only with EXEC SQL coprocessor
+#reserved:	CHAR-VARYING*    # note: only with EXEC SQL coprocessor
 reserved:	CHARACTER
 reserved:	CHARACTERS
 reserved:	CLASS
-reserved:	CLOB
-reserved:	CLOB-FILE
-reserved:	CLOB-LOCATOR
+#reserved:	CLOB*            # note: only with EXEC SQL coprocessor
+#reserved:	CLOB-FILE*       # note: only with EXEC SQL coprocessor
+#reserved:	CLOB-LOCATOR*    # note: only with EXEC SQL coprocessor
 reserved:	CLOCK-UNITS
 reserved:	CLOSE
 reserved:	COBOL
@@ -120,13 +119,13 @@ reserved:	CURRENCY
 reserved:	DATA
 reserved:	DATE
 reserved:	DATE-COMPILED
-reserved:	DATE-RECORD
+#reserved:	DATE-RECORD*     # note: only with EXEC SQL coprocessor
 reserved:	DATE-WRITTEN
 reserved:	DAY
 reserved:	DAY-OF-WEEK
-reserved:	DBCLOB
-reserved:	DBCLOB-FILE
-reserved:	DBCLOB-LOCATOR
+#reserved:	DBCLOB*          # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB-FILE*     # note: only with EXEC SQL coprocessor
+#reserved:	DBCLOB-LOCATOR*  # note: only with EXEC SQL coprocessor
 reserved:	DBCS
 reserved:	DE
 # note: the following are part of the register DEBUG-ITEM,
@@ -259,8 +258,8 @@ reserved:	LINE-COUNTER
 reserved:	LINES
 reserved:	LINKAGE
 reserved:	LOCK
-reserved:	LONG-VARBINARY
-reserved:	LONG-VARCHAR
+#reserved:	LONG-VARBINARY*  # note: only with EXEC SQL coprocessor
+#reserved:	LONG-VARCHAR*    # note: only with EXEC SQL coprocessor
 reserved:	LOW-VALUE
 reserved:	LOW-VALUES=LOW-VALUE
 reserved:	MEMORY
@@ -270,7 +269,7 @@ reserved:	MODE
 reserved:	MODULES
 reserved:	MORE-LABELS
 reserved:	MOVE
-reserved:	MULTIPLE*
+reserved:	MULTIPLE*        # CHECKME: is C/S correct?
 reserved:	MULTIPLY
 reserved:	NATIVE
 reserved:	NEGATIVE
@@ -278,7 +277,7 @@ reserved:	NEXT
 reserved:	NO
 reserved:	NOT
 reserved:	NULL
-reserved:	NULLS
+reserved:	NULLS=NULL
 reserved:	NUMBER
 reserved:	NUMERIC
 reserved:	NUMERIC-EDITED
@@ -347,7 +346,7 @@ reserved:	REPORTS
 reserved:	RERUN
 reserved:	RESERVE
 reserved:	RESET
-reserved:	RESULT-SET-LOCATOR
+#reserved:	RESULT-SET-LOCATOR* # note: only with EXEC SQL coprocessor
 reserved:	RETURN
 reserved:	REVERSED
 reserved:	REWIND
@@ -356,7 +355,7 @@ reserved:	RF
 reserved:	RH
 reserved:	RIGHT
 reserved:	ROUNDED
-reserved:	ROWID
+#reserved:	ROWID*           # note: only with EXEC SQL coprocessor
 reserved:	RUN
 reserved:	S*
 reserved:	SAME
@@ -374,26 +373,26 @@ reserved:	SEQUENCE
 reserved:	SEQUENTIAL
 reserved:	SERVICE
 reserved:	SET
-reserved:	SHIFT-IN # note: this is a register, move as soon as supported
-reserved:	SHIFT-OUT # note: this is a register, move as soon as supported
+reserved:	SHIFT-IN         # note: this is a register, move as soon as supported
+reserved:	SHIFT-OUT        # note: this is a register, move as soon as supported
 reserved:	SIGN
 reserved:	SIZE
 reserved:	SKIP1
 reserved:	SKIP2
 reserved:	SKIP3
 reserved:	SORT
-reserved:	SORT-CONTROL # note: this is a register, move as soon as supported
-reserved:	SORT-CORE-SIZE # note: this is a register, move as soon as supported
-reserved:	SORT-FILE-SIZE # note: this is a register, move as soon as supported
+reserved:	SORT-CONTROL     # note: this is a register, move as soon as supported
+reserved:	SORT-CORE-SIZE   # note: this is a register, move as soon as supported
+reserved:	SORT-FILE-SIZE   # note: this is a register, move as soon as supported
 reserved:	SORT-MERGE
-reserved:	SORT-MESSAGE # note: this is a register, move as soon as supported
-reserved:	SORT-MODE-SIZE # note: this is a register, move as soon as supported
+reserved:	SORT-MESSAGE     # note: this is a register, move as soon as supported
+reserved:	SORT-MODE-SIZE   # note: this is a register, move as soon as supported
 reserved:	SOURCE
 reserved:	SOURCE-COMPUTER
 reserved:	SPACE
 reserved:	SPACES=SPACE
 reserved:	SPECIAL-NAMES
-reserved:	SQL
+reserved:	SQL              # note: for use with coprocessors, generally reserved
 reserved:	STANDARD
 reserved:	STANDARD-1
 reserved:	STANDARD-2
@@ -425,10 +424,10 @@ reserved:	THRU
 reserved:	TIME
 reserved:	TIME-RECORD
 reserved:	TIMES
-reserved:	TIMESTAMP
-reserved:	TIMESTAMP-OFFSET
-reserved:	TIMESTAMP-OFFSET-RECORD
-reserved:	TIMESTAMP-RECORD
+#reserved:	TIMESTAMP*                # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-OFFSET*         # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-OFFSET-RECORD*  # note: only with EXEC SQL coprocessor
+#reserved:	TIMESTAMP-RECORD*         # note: only with EXEC SQL coprocessor
 reserved:	TITLE
 reserved:	TO
 reserved:	TOP
@@ -448,7 +447,7 @@ reserved:	USING
 reserved:	V*
 reserved:	VALUE
 reserved:	VALUES
-reserved:	VARBINARY
+#reserved:	VARBINARY*            # note: only with EXEC SQL coprocessor
 reserved:	VARYING
 reserved:	WHEN
 reserved:	WITH
@@ -471,8 +470,8 @@ register:	DEBUG-ITEM
 register:	"LENGTH\ OF"
 # register:	LINAGE-COUNTER
 register:	RETURN-CODE
-# register:	SHIFT-IN
-# register:	SHIFT-OUT
+# register:	SHIFT-IN              #  78 SHIFT-IN  GLOBAL VALUE X"0F".
+# register:	SHIFT-OUT             #  78 SHIFT-OUT GLOBAL VALUE X"0E".
 # register:	SORT-CONTROL
 # register:	SORT-CORE-SIZE
 # register:	SORT-FILE-SIZE
@@ -508,7 +507,8 @@ intrinsic-function:	COS
 intrinsic-function:	CURRENT-DATE
 intrinsic-function:	DATE-OF-INTEGER
 intrinsic-function:	DATE-TO-YYYYMMDD
-#intrinsic-function:	DATEVAL		# MVS extension, not known to GnuCOBOL
+#intrinsic-function:	DATEVAL          # IBM extension (Millennium Language Extension),
+#                   	                   not known to GnuCOBOL
 intrinsic-function:	DAY-OF-INTEGER
 intrinsic-function:	DAY-TO-YYYYDDD
 intrinsic-function:	FACTORIAL
@@ -541,9 +541,11 @@ intrinsic-function:	SQRT
 intrinsic-function:	STANDARD-DEVIATION
 intrinsic-function:	SUM
 intrinsic-function:	TAN
-#intrinsic-function:	UNDATE		# MVS extension, not known to GnuCOBOL
+#intrinsic-function:	UNDATE           # IBM extension (Millennium Language Extension),
+#                   	                   not known to GnuCOBOL
 intrinsic-function:	UPPER-CASE
 intrinsic-function:	VARIANCE
 intrinsic-function:	WHEN-COMPILED
 intrinsic-function:	YEAR-TO-YYYY
-#intrinsic-function:	YEARWINDOW		# MVS extension, not known to GnuCOBOL
+#intrinsic-function:	YEARWINDOW       # IBM extension (Millennium Language Extension),
+#                   	                   not known to GnuCOBOL

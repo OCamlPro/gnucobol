@@ -4304,7 +4304,7 @@ mnemonic_name_clause:
 word_or_terminal:
   WORD     { $$ = $1; }
   /* under GCOS, this reserved name can also be a system name */
-| TERMINAL { $$ = cb_build_reference("TERMINAL"); }
+| TERMINAL { $$ = cb_build_reference ("TERMINAL"); }
 
 mnemonic_choices:
   _is CRT
@@ -8299,7 +8299,7 @@ value_clause:
 	current_field->values = $3;
   }
   /* normal format for data items: single VALUE, stored as-is,
-     OSVS extension "VALUES ARE"; for now disabled in favor of
+     undocumented extension "VALUES ARE"; for now disabled in favor of
 	 BS2000 table-format without FROM
 | VALUES _are value_item
   {
@@ -8316,21 +8316,40 @@ value_clause:
   }
 /* BS2000 table-format without FROM (implied 1,1,1,1) and optional REPEATED */
 | VALUES _are value_item_list _repeated_phrase
-  {	
-	/* note: "VALUE _is" would also be correct, but we ignore that
-	         because of parser conflicts */
+  {
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	/* note: bad parsing of "01 var PIC XX VALUES 'AB'." goes here, too,
+	         if there is no 'repeated' and we have only one item: handle as "VALUE IS" */
+	if (!$4 && cb_list_length ($3) == 1) {
+		cb_tree x = CB_TREE (current_field);
+		current_field->values = CB_LIST ($3)->value;
+		if (cb_relaxed_syntax_checks) {
+			cb_warning_x (COBC_WARN_FILLER, x, _("unexpected %s"), "VALUES ARE");
+		} else {
+			cb_error_x (x, _("unexpected %s"), "VALUES ARE");
+		}
+	} else {
+		cb_tree value_table_item = cb_build_table_values ($3, NULL, NULL, $4);
+		/* note: this format can actually be specified multiple times,
+		         but we expect the part without FROM first */
+		current_field->values = CB_LIST_INIT (value_table_item);
+	}
+  }
+/* BS2000 table-format without FROM (implied 1,1,1,1) and REPEATED */
+| VALUE _is value_item_list repeated_phrase
+  {
 	cb_tree value_table_item = cb_build_table_values ($3, NULL, NULL, $4);
 	/* note: this format can actually be specified multiple times,
 	         but we expect the part without FROM first */
-	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
 	current_field->values = CB_LIST_INIT (value_table_item);
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	/* note: "VALUE _is" with optional repeated would also be correct,
+	         but we ignore that because of parser conflicts */
   }
 /* BS2000 table-format with FROM and optional REPEATED */
-| VALUES from_subscripts _are value_item_list _repeated_phrase
-  {	
-	/* note: "VALUE _is" would also be correct, but we ignore that
-	         because of parser conflicts */
-	cb_tree value_table_item = cb_build_table_values ($4, $2, NULL, $5);
+| value_from_subscripts_is_are value_item_list _repeated_phrase
+  {
+	cb_tree value_table_item = cb_build_table_values ($2, $1, NULL, $3);
 	/* note: this format can actually be specified multiple times */
 	if (!current_field->values) {
 		check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
@@ -8378,6 +8397,11 @@ value_item_list from_subscripts _to_subscripts
   }
 ;
 
+value_from_subscripts_is_are:
+  VALUES FROM from_to_subscripts _are	{ $$ = $2; }
+| VALUE  FROM from_to_subscripts _is	{ $$ = $2; }
+;
+
 from_subscripts:
   FROM from_to_subscripts	{ $$ = $2; }
 ;
@@ -8395,10 +8419,13 @@ from_to_subscripts:
 ;
 
 _repeated_phrase:
-  /* empty */				{ $$ = NULL; }
-| REPEATED unsigned_pos_integer _times	{ $$ = $2; }
-| REPEATED _to END			{ $$ = cb_null; }
+  /* empty */		{ $$ = NULL; }
+| repeated_phrase	{ $$ = $1; }
+;
 
+repeated_phrase:
+  REPEATED unsigned_pos_integer _times	{ $$ = $2; }
+| REPEATED _to END			{ $$ = cb_null; }
 ;
 
 subscripts:
@@ -8414,7 +8441,7 @@ subscripts:
 
 
 value_is_are:
-  VALUE _is
+  VALUE  _is
 | VALUES _are
 ;
 
@@ -13902,6 +13929,7 @@ exhibit_body:
 
 _changed:	{ $$ = NULL; } | CHANGED	{ $$ = cb_int0; } ;
 _named:		{ $$ = NULL; } | NAMED  	{ $$ = cb_int0; } ;
+_erase:		{ $$ = NULL; } | ERASE		{ $$ = cb_int0; } ;
 
 exhibit_target_list:
   exhibit_target
@@ -17701,8 +17729,13 @@ return_at_end:
   at_end_clause _not_at_end_clause
 | not_at_end_clause at_end_clause
   {
-	cb_verify (cb_not_exception_before_exception, "NOT AT END before AT END");
+	cb_verify (cb_not_exception_before_exception, _("NOT AT END before AT END"));
   }
+/* mandatory - but creates shift/reduce conflict
+| not_at_end_clause
+  {
+	cb_error (_("%s is mandatory for %s"), "AT END", "RETURN");
+  } */
 ;
 
 read_at_end:
@@ -17711,7 +17744,7 @@ read_at_end:
 | not_at_end_clause _at_end_clause
   {
 	if ($2) {
-		cb_verify (cb_not_exception_before_exception, "NOT AT END before AT END");
+		cb_verify (cb_not_exception_before_exception, _("NOT AT END before AT END"));
 	}
   }
 ;
@@ -19876,7 +19909,6 @@ _controls:	| CONTROLS ;
 _control:	| CONTROL ;
 _data:		| DATA ;
 _end_of:	| _to END _of ;
-_erase:		| ERASE ;
 _every:		| EVERY ;
 _file:		| TOK_FILE ;
 _for:		| FOR ;

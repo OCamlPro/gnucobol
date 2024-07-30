@@ -1951,7 +1951,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 		return;
 	}
 	if (fn->need_preprocess
-	 && (status 
+	 && (status
 		||  cb_compile_level > CB_LEVEL_PREPROCESS
 		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
 		cobc_check_action (fn->preprocess);
@@ -2066,13 +2066,33 @@ cobc_clean_up (const int status)
 }
 
 static void
+set_compile_date (void)
+{
+	static int sde_todo = 0;
+	if (sde_todo == 0) {
+		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		sde_todo = 1;
+		if (s && *s) {
+			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
+				return;
+			}
+			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			if (!cb_flag_syntax_only) {
+				cb_source_file = NULL;
+				cobc_abort_terminate (0);
+			}
+		}
+	}
+	current_compile_time = cob_get_current_date_and_time ();
+}
+
+static void
 set_listing_date (void)
 {
 	if (!current_compile_time.year) {
-		current_compile_time = cob_get_current_date_and_time();
+		set_compile_date ();
 	}
 
-	/* the following code is likely to get replaced by a self-written format */
 	current_compile_tm.tm_sec = current_compile_time.second;
 	current_compile_tm.tm_min = current_compile_time.minute;
 	current_compile_tm.tm_hour = current_compile_time.hour;
@@ -2449,6 +2469,11 @@ cobc_print_info (void)
 		cobc_var_print ("COB_EXE_EXT", &COB_EXE_EXT[1], 0);
 	} else {
 		cobc_var_print ("COB_EXE_EXT", COB_EXE_EXT, 0);
+	}
+	if ((s = getenv ("SOURCE_DATE_EPOCH")) != NULL) {
+		/* reading and validating + setting print version */
+		set_listing_date ();
+		cobc_var_print ("SOURCE_DATE_EPOCH", cb_listing_date, 1);
 	}
 
 #ifdef COB_64_BIT_POINTER
@@ -3327,12 +3352,12 @@ process_command_line (const int argc, char **argv)
 
 		case 'F':
 			/* --free, alias of `-fformat=free` */
-			cobc_set_source_format (CB_FORMAT_FREE);
+			(void) cobc_deciph_source_format ("FREE");
 			break;
 
 		case 'f':
 			/* --fixed, alias of `-fformat=fixed` */
-			cobc_set_source_format (CB_FORMAT_FIXED);
+			(void) cobc_deciph_source_format ("FIXED");
 			break;
 
 		case 'q':
@@ -6535,6 +6560,12 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 		cfile->listing_on = on_off;
 		/* always print the directive itself */
 		do_print = 1;
+	} else if (line[0] == '*'
+		&& cb_flag_mfcomment
+		&& CB_MFCOMMENT_APPLIES (cfile->source_format)) {
+		/* When MFCOMMENT holds, asterisk in column 1 means comment line
+		   with listing suppression in fixed format. */
+		do_print = 0;
 	} else if (line_has_page_eject (line, cfile->source_format)) {
 		force_new_page_for_next_line ();
 	} else if (line_has_listing_statement (line, cfile->source_format)) {
@@ -7011,9 +7042,9 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	}
 	fprintf (stdout, "   rep: first = %d, last = %d, lead_trail = %d\n",
 		 rep->firstline, rep->lastline, rep->lead_trail);
-	fprintf (stdout, "   fromlen: %d\n", strlen(rfp));
+	fprintf (stdout, "   fromlen: %lu\n", strlen(rfp));
 	fprintf (stdout, "   from: '%80.80s'\n", rfp);
-	fprintf (stdout, "   tolen: %d\n", strlen(rep->to));
+	fprintf (stdout, "   tolen: %lu\n", strlen(rep->to));
 	fprintf (stdout, "   to:   '%80.80s'\n", rep->to);
 #endif
 
@@ -7354,8 +7385,8 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 					if (i == 0)
 						fprintf (stdout, "   replace_list: \n");
 					fprintf (stdout, "      line[%d]: %d\n", i, rep->firstline);
-					fprintf (stdout, "      from[%d]:%d: '%80.80s'\n", i, strlen(rep->from), rep->from);
-					fprintf (stdout, "      to  [%d]:%d: '%80.80s'\n", i, strlen(rep->to), rep->to);
+					fprintf (stdout, "      from[%d]:%lu: '%80.80s'\n", i, strlen(rep->from), rep->from);
+					fprintf (stdout, "      to  [%d]:%lu: '%80.80s'\n", i, strlen(rep->to), rep->to);
 				}
 			}
 #endif
@@ -7446,8 +7477,8 @@ print_program_code (struct list_files *cfile, int in_copy)
 			fprintf (stdout, "   replace_list: \n");
 		}
 		fprintf (stdout, "      line[%d]: %d\n", i, rep->firstline);
-		fprintf (stdout, "      from[%d]:%d: '%80.80s'\n", i, strlen(rep->from), rep->from);
-		fprintf (stdout, "      to  [%d]:%d: '%80.80s'\n", i, strlen(rep->to), rep->to);
+		fprintf (stdout, "      from[%d]:%lu: '%80.80s'\n", i, strlen(rep->from), rep->from);
+		fprintf (stdout, "      to  [%d]:%lu: '%80.80s'\n", i, strlen(rep->to), rep->to);
 	}
 	for (i = 0, err = cfile->err_head; err; i++, err = err->next) {
 		if (i == 0) {
@@ -8746,7 +8777,9 @@ process_file (struct filename *fn, int status)
 	struct cobc_mem_struct	*mptr;
 	struct cobc_mem_struct	*mptrt;
 
-	current_compile_time = cob_get_current_date_and_time ();
+	if (!cb_flag_syntax_only) {
+		set_compile_date ();
+	}
 
 	/* Initialize listing */
 	if (cb_src_list_file) {

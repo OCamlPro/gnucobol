@@ -1,5 +1,7 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020 Free Software Foundation, Inc.
-## Written by Keisuke Nishida, Roger While, Simon Sobisch
+## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020-2022
+## Free Software Foundation, Inc.
+## Written by Keisuke Nishida, Roger While, Simon Sobisch,
+## Nicolas Berthier
 ## 
 ## This file is part of GnuCOBOL.
 ## 
@@ -523,7 +525,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK])
 AT_CLEANUP
 
 
-AT_SETUP([COPY: partial replacement with literals])
+AT_SETUP([COPY: partial replacement BY literal])
 AT_KEYWORDS([copy gcos])
 
 AT_DATA([copy.inc], [
@@ -653,8 +655,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 AT_CLEANUP
 
 
-AT_SETUP([REPLACE: partial replacement with SPACES figurative constant])
-AT_KEYWORDS([replace gcos acu])
+AT_SETUP([REPLACE: partial replacement BY SPACE])
+AT_KEYWORDS([replace gcos acu figurative constant spaces])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -679,5 +681,172 @@ AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog.cob], [0], [], 
 AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog_err.cob], [1], [],
 [prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
 ])
+
+AT_CLEANUP
+
+AT_SETUP([COPY: Simple Partial match])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+])
+
+AT_DATA([prog.cob], [
+  IDENTIFICATION   DIVISION. 
+  PROGRAM-ID.      prog.
+  DATA             DIVISION.
+  WORKING-STORAGE  SECTION. 
+  01 GET-VALUE.
+  COPY "copy.inc" REPLACING ==TEST-VAR== BY ==TEST-AVR==
+    == 02 TEST-EE == BY == 02 TEST-FF ==.
+  PROCEDURE DIVISION.
+    DISPLAY TEST-AVR.
+    STOP RUN.
+])
+
+AT_CHECK([$COMPILE -F prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([COPY: with LEADING, Multiple Partial match])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-VAR-BIS PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+       02 TEST-OK PIC X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog.cob], [
+  IDENTIFICATION   DIVISION. 
+  PROGRAM-ID.      prog.
+  DATA             DIVISION.
+  WORKING-STORAGE  SECTION. 
+  01 GET-VALUE.
+  COPY "copy.inc" REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
+    == 02 TEST-OK == BY == 02 TEST-KO ==
+    ==TEST-CC== BY ==TEST-DD==
+    == 02 TEST-EE == BY == 02 TEST-FF ==
+    == PIC == BY == pic ==.
+  PROCEDURE DIVISION.
+    DISPLAY TEST-AVR.
+    DISPLAY TEST-AVR-BIS.
+    DISPLAY TEST-KO.
+    DISPLAY TEST-DD.
+    DISPLAY TEST-FF.
+    STOP RUN.
+])
+
+AT_CHECK([$COMPILE -F prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([COPY: Multiple Partial match with an error])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-VAR-BIS PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+       02 TEST-OK PIC X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog.cob], [
+  IDENTIFICATION   DIVISION. 
+  PROGRAM-ID.      prog.
+  DATA             DIVISION.
+  WORKING-STORAGE  SECTION. 
+  01 GET-VALUE.
+  COPY "copy.inc" REPLACING ==TEST-VAR== BY ==TEST-AVR==
+    == 02 TEST-OK == BY == 02 TEST-KO ==
+    ==TEST-CC== BY ==TEST-DD==
+    == 02 TEST-EE == BY == 02 TEST-FF ==
+    == PIC == BY == pic ==.
+  PROCEDURE DIVISION.
+    DISPLAY TEST-AVR.
+    DISPLAY TEST-AVR-BIS.
+    DISPLAY TEST-KO.
+    DISPLAY TEST-DD.
+    DISPLAY TEST-FF.
+    STOP RUN.
+])
+
+AT_CHECK([$COMPILE -F prog.cob], [1], [],
+[prog.cob:14: error: 'TEST-AVR-BIS' is not defined
+])
+
+AT_CLEANUP
+
+AT_SETUP([COPY: Multiple Partial match with a multiple space])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+       02 TEST-VAR PIC X(2) VALUE "OK".
+       02 TEST-VAR-BIS PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4) VALUE "OK 2".
+       02 TEST-OK PIC X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog.cob], [
+  IDENTIFICATION DIVISION. 
+  PROGRAM-ID. prog.
+  DATA DIVISION.
+  WORKING-STORAGE SECTION. 
+  01 GET-VALUE.
+  COPY "copy.inc" REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
+    ==         02       TEST-OK         == BY == 02 TEST-KO ==
+    ==                TEST-CC            == BY == TEST-DD ==
+    == 02 TEST-EE                               == BY == 02 TEST-FF ==
+    ==                            PIC == BY == pic ==.
+  PROCEDURE DIVISION.
+    DISPLAY TEST-AVR.
+    DISPLAY TEST-AVR-BIS.
+    DISPLAY TEST-KO.
+    DISPLAY TEST-DD.
+    DISPLAY TEST-FF.
+    STOP RUN.
+])
+
+AT_CHECK([$COMPILE -F prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([COPY: Multiple Partial match with a multiple space in copy])
+AT_KEYWORDS([copy])
+
+AT_DATA([copy.inc], [
+       02         TEST-VAR      PIC       X(2)     VALUE         "OK".
+              02  TEST-VAR-BIS               PIC X(6) VALUE "OK BIS".
+       02 TEST-CC PIC X(4)            VALUE "OK 2".
+       02 TEST-OK PIC            X(4) VALUE "OK 3".
+       02 TEST-EE PIC X(4) VALUE "OK 4".
+])
+
+AT_DATA([prog.cob], [
+  IDENTIFICATION DIVISION. 
+  PROGRAM-ID. prog.
+  DATA DIVISION.
+  WORKING-STORAGE SECTION. 
+  01 GET-VALUE.
+  COPY "copy.inc" REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
+    == 02 TEST-OK == BY == 02 TEST-KO ==
+    ==TEST-CC== BY ==TEST-DD==
+    == 02 TEST-EE == BY == 02 TEST-FF ==
+    == PIC == BY == pic ==.
+  PROCEDURE DIVISION.
+    DISPLAY TEST-AVR.
+    DISPLAY TEST-AVR-BIS.
+    DISPLAY TEST-KO.
+    DISPLAY TEST-DD.
+    DISPLAY TEST-FF.
+    STOP RUN.
+])
+
+AT_CHECK([$COMPILE -F prog.cob], [0], [], [])
 
 AT_CLEANUP

@@ -2046,7 +2046,9 @@ struct cob_time
 	int is_daylight_saving_time;	/* DST [-1/0/1] */
 };
 
-COB_EXPIMP struct cob_time cob_get_current_date_and_time	(void);
+/* note: these are internal (cobc/libcob -> libcob) only functions */
+COB_EXPIMP struct cob_time cob_get_current_date_and_time	(void);	/* returning datetime without nanos */
+COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, const char *);
 
 COB_EXPIMP void cob_sleep_msec (const unsigned int);
 
