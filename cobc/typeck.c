@@ -11693,6 +11693,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	signed int		size;	/* -1 as special value */
 	enum move_outcome	outcome = MOVE_OK;
 
+	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
+
 	overlapping = 0;
 
 	if (move_zero) {
@@ -11700,19 +11702,20 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	}
 
 	/* Easy stuff */
-	/* Check dst not alphabet or file */
+	/* Check dst not alphabet, file or constant */
 	if (CB_REFERENCE_P (dst)) {
-		cb_tree dstr = CB_REFERENCE(dst)->value;
-		if (CB_ALPHABET_NAME_P(dstr)
+		cb_tree dstr = CB_REFERENCE (dst)->value;
+		if (CB_ALPHABET_NAME_P (dstr)
+		 || CB_CONST_P (dstr)
+		 || CB_LITERAL_P (dstr)
 		 || CB_FILE_P (dstr)) {
 			outcome = MOVE_INVALID;
 			goto process_outcome;
 		}
 	}
-	/* Check dst not Boolean */
-	if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_BOOLEAN) {
-		cb_error_x (loc, _("invalid destination for MOVE"));
-		outcome = MOVE_INVALID_NO_MESSAGE;
+	/* Check dst not literal */
+	if (CB_LITERAL_P (dst)) {
+		outcome = MOVE_INVALID;
 		goto process_outcome;
 	}
 
@@ -11728,6 +11731,12 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				outcome = MOVE_INVALID;
 			}
 		}
+		goto process_outcome;
+	}
+
+	/* Check dst not Boolean */
+	if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_BOOLEAN) {
+		outcome = MOVE_INVALID;
 		goto process_outcome;
 	}
 
