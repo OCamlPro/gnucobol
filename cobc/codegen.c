@@ -5711,6 +5711,7 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		return;
 	}
 
+	/* check if the literal only consist of the same character... */
 	buffchar = l->data[0];
 	for (lsize = 0; lsize < l->size; lsize++) {
 		if (l->data[lsize] != buffchar) {
@@ -5718,7 +5719,11 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		}
 	}
 	if (lsize == l->size) {
+		/*... yes it does, so init by memset */
 		const unsigned char c = buffchar;
+		if (lsize > size) {
+			lsize = size;
+		}
 		output_prefix ();
 		output ("memset (");
 		output_data (x);
@@ -5735,11 +5740,12 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 #endif
 		output (", %u);", (unsigned int)lsize);
 		output_newline ();
+
 		/* REPORT lines are cleared to SPACES */
 		if (f->storage == CB_STORAGE_REPORT) {
 			return;
 		}
-		if ((int)l->size < (int)size) {
+		if (lsize < size) {
 			output_prefix ();
 			output ("memset (");
 			output_data (x);
