@@ -286,7 +286,7 @@ static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
 static int	any_source_moves (struct cb_report *r, struct cb_field *f, int first);
 static struct cb_field * real_field_founder (const struct cb_field *f);
-static void add_field_cache (struct cb_field *f01);
+static void add_field_cache (struct cb_field *f01, unsigned char flag_is_global);
 
 static void output_source_reference (cb_tree, const enum cob_statement);
 
@@ -309,7 +309,7 @@ count_all_fields (struct cb_field *p)
 	if (p->storage == CB_STORAGE_REPORT) {
 		f01 = real_field_founder (p);
 		if (!f01->flag_base) {
-			add_field_cache (f01);
+			add_field_cache (f01, p->flag_is_global);
 		}
 	}
 	if (p->sister) {
@@ -1073,7 +1073,7 @@ out_odoslide_size (struct cb_field *fld)
 }
 
 static void
-add_field_cache (struct cb_field *f01)
+add_field_cache (struct cb_field *f01, unsigned char flag_is_global)
 {
 	struct base_list	*bl;
 	if (!f01->flag_base) {
@@ -1088,7 +1088,7 @@ add_field_cache (struct cb_field *f01)
 				bl = cobc_parse_malloc (sizeof (struct base_list));
 				bl->f = f01;
 				bl->curr_prog = excp_current_program_id;
-				if (f01->flag_is_global 
+				if (f01->flag_is_global || flag_is_global
 				 || current_prog->flag_file_global) {
 					bl->next = base_cache;
 					base_cache = bl;
@@ -1131,7 +1131,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 	/* Base storage */
 
 	if (!f01->flag_base) {
-		add_field_cache (f01);
+		add_field_cache (f01, f->flag_is_global);
 	}
 
 	if (no_output) {

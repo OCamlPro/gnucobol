@@ -25,15 +25,15 @@
 
 	* cobc.c,cobc.h: Added cb_max_binary to hold max digits allowed in binary
 					data field and cb_max_compx for max length of COMP-X
-	* field.c: Change to use cb_max_binary & cb_max_compx instead of constants 
+	* field.c: Change to use cb_max_binary & cb_max_compx instead of constants
 				For COMP-N it has data in 'native' byte order
-	* tree.c: Change to use cb_max_binary instead of constant 
-	* typeck.c: Change to use cb_max_binary instead of constant 
+	* tree.c: Change to use cb_max_binary instead of constant
+	* typeck.c: Change to use cb_max_binary instead of constant
 
 2023-01-20  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Verify INDEXED BY variables in PERFORM VARYING
-	* typeck.c: Add cb_emit_check_index to warn if SET constant value is 
+	* typeck.c: Add cb_emit_check_index to warn if SET constant value is
 	            out of bounds
 	* codeoptim.c: Fix cob_check_subscript_inline for min subscript value
 
@@ -42,6 +42,11 @@
 	* cobc.c: Make sure the 'schema' directory is created for -fsql
 	* codegen.c: Verify that EXTERNAL variables have 'ename'
 	* field.c (copy_into_field): If EXTERNAL set 'ename'
+
+2022-12-21  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* codegen.c (output_base): fix undeclared variable with REDEFINE GLOBAL
+	  [bugs:#777]
 
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -990,12 +995,12 @@
 	* parser.y: Interim Changes to handle multiple VARYING clauses
 				for a REPORT (More to come)
 	* codegen.c: Handle report VARYING clause as a list
-	* field.c:  Allow multiple VALUES when in REPORT section 
+	* field.c:  Allow multiple VALUES when in REPORT section
 
 2021-12-18  Ron Norman <rjn@inglenet.com>
 
 	* tree.h: Add extern cobc_in_data_division
-	* tree.c: Clear cobc_in_data_division 
+	* tree.c: Clear cobc_in_data_division
 	* scanner.l: Check for typedef variable and return TYPEDEF_NAME
 	* parser.y: Changes to look for TYPEDEF_NAME
 
