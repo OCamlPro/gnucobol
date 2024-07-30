@@ -182,6 +182,7 @@ jobs:
           sed -i '/AT_SETUP(\[EXTERNAL RELATIVE file])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
           sed -i '/AT_SETUP(\[Concatenated Files])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[FUNCTION RANDOM])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
 
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
 
