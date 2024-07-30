@@ -3641,6 +3641,13 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
+		case 15:
+			/* -fdefault-colseq=<ASCII/EBCDIC/NATIVE> */
+			if (cb_deciph_default_colseq_name (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-fdefault-colseq");
+			}
+			break;
+
 		case 4:
 			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
@@ -3737,7 +3744,7 @@ process_command_line (const int argc, char **argv)
 			};
 			break;
 
-		case 15:
+		case 17:
 			/* -fno-ec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW */
 			if (cobc_deciph_ec (cob_optarg, 0)) {
 				cobc_err_exit (COBC_INV_PAR, "-fno-ec");
