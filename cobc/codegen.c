@@ -6283,6 +6283,15 @@ output_initialize (struct cb_initialize *p)
 		return;
 	}
 
+	/* output runtime checks */
+	if (CB_REFERENCE_P (p->var)
+	 && CB_REFERENCE (p->var)->check) {
+		/* note: should only be when init_flag is set */
+		struct cb_reference *ref = CB_REFERENCE (p->var);
+		output_stmt (ref->check);
+		ref->check = NULL;
+	}
+
 	/* TODO: if cb_default_byte >= 0 do a huge memset first, then only
 	         emit setting for fields that need it (VALUE clause or
 	         special category - in general: not matching cb_default_byte);
@@ -9185,6 +9194,7 @@ output_stmt (cb_tree x)
 					output_file_variable (fl->assign, fl, c, "assign", 0);
 					break;
 				}
+				case CB_TAG_LIST:
 				case CB_TAG_DEBUG:
 					/* CHECKME: anything needed here? */
 					break;
