@@ -3412,8 +3412,8 @@ error: . cannot follow V
 000036             03  PIC Z*.
 error: cannot have both Z and * in PICTURE string
 000037             03  PIC +(5)--.
-error: only one of the symbols '-' , '+' or '$' can occur multiple times in a
-     + picture string
+error: only one of the symbols '-' , '+' or '$' may occur multiple times in a
+     + PICTURE string
 000038             03  PIC $(4)Z(9).
 error: a Z or * which is before the decimal point cannot follow a floating
      + currency symbol string which is before the decimal point
@@ -3431,8 +3431,8 @@ error: A or X cannot follow .
 000044             03  PIC SA.
 error: A or X cannot follow S
 000045             03  PIC $$$B+++B---.
-error: only one of the symbols '-' , '+' or '$' can occur multiple times in a
-     + picture string
+error: only one of the symbols '-' , '+' or '$' may occur multiple times in a
+     + PICTURE string
 000046             03  PIC +++9+.
 error: floating '+' symbols cannot have a '9' between them
 000047             03  PIC +9(5)CR.
