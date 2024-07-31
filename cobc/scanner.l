@@ -1510,23 +1510,25 @@ read_literal (const char mark, const enum cb_literal_type type)
 
 	/* build literal with given size */
 	plex_buff[i] = 0;
-	if ( type != CB_LITERAL_N && type != CB_LITERAL_NC ) {
-		yylval = cb_build_alphanumeric_literal (plex_buff, i);
-		if (type == CB_LITERAL_U) {
-			CB_UNFINISHED (_("UTF-8 literal"));
-		}
-	} else {
-		
-		if (type != CB_LITERAL_NC) {
-			if (cb_verify (cb_national_literals, _("national literal"))) {
-				CB_UNFINISHED (_("national literal"));
-			}
-		} else {
-			if (cb_verify (cb_nationalc_literals, _("national-character literal"))) {
-				CB_UNFINISHED (_("national literal"));
-			}
-		}
-		yylval = cb_build_national_literal (plex_buff, i);
+	switch (type) {
+    case CB_LITERAL_U:
+        yylval = cb_build_UTF8_literal(plex_buff, i);
+        break;
+    case CB_LITERAL_N:
+        if (cb_verify(cb_national_literals, _("national literal"))) {
+            CB_UNFINISHED(_("national literal"));
+        }
+        yylval = cb_build_national_literal(plex_buff, i);
+        break;
+    case CB_LITERAL_NC:
+        if (cb_verify(cb_nationalc_literals, _("national-character literal"))) {
+            CB_UNFINISHED(_("national literal"));
+        }
+        yylval = cb_build_national_literal(plex_buff, i);
+        break;
+    default:
+        yylval = cb_build_alphanumeric_literal(plex_buff, i);
+        break;
 	}
 }
 
