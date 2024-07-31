@@ -332,11 +332,13 @@ enum cobc_name_type {
 
 
 /* Structure for a iconv conversion */
+#ifdef HAVE_ICONV_H
 struct cb_iconv_t{
     iconv_t alphanumeric;
     iconv_t national;
 	iconv_t utf8;
 };
+#endif
 
 extern struct cb_iconv_t cb_iconv;
 

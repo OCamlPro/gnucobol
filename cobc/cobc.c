@@ -9144,9 +9144,11 @@ begin_setup_internal_and_compiler_env (void)
 	char			*p;
 	
 	// initialize the iconv struct
+#ifdef HAVE_ICONV_H
 	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", "UTF-8");
 	cb_iconv.national = iconv_open("UTF-16LE", "UTF-8");
 	cb_iconv.utf8 = iconv_open("UTF-8", "ISO-8859-15");
+#endif
 	
 	/* register signal handlers from cobc */
 	cob_reg_sighnd (&cobc_sig_handler);
