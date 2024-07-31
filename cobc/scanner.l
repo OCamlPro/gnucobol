@@ -1687,8 +1687,12 @@ scan_x (const char *text, const char *type)
 				}
 				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 4
        		}	
-			enum cb_category category = type[0] == 'N'? 
-				CB_CATEGORY_NATIONAL : CB_CATEGORY_ALPHANUMERIC;
+			enum cb_category category;
+			if (type[0] == 'N') {
+				category = CB_CATEGORY_NATIONAL;
+			} else {
+				category = CB_CATEGORY_ALPHANUMERIC;
+			}
 			yylval = build_national_or_alpha_literal_by_category(category, plex_buff, result_len);
 	}
 
