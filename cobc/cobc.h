@@ -335,6 +335,7 @@ enum cobc_name_type {
 struct cb_iconv_t{
     iconv_t alphanumeric;
     iconv_t national;
+	iconv_t utf8;
 };
 
 extern struct cb_iconv_t cb_iconv;
