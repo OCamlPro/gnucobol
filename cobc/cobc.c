@@ -327,8 +327,10 @@ cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
 int cb_flag_alt_ebcdic = 0;
 
+#ifdef HAVE_ICONV_H
 // call the struct cb_iconv
 struct cb_iconv_t cb_iconv;
+#endif
 
 
 /* Basic memory structure */
