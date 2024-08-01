@@ -103,11 +103,6 @@ jobs:
           make check
           make test
 
-#          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-# also randomly in release
-# FUNCTION PI
-# FUNCTION RANDOM
-
       - name: Upload testsuite-${{ matrix.target }}.log
         uses: actions/upload-artifact@v4
         with:

@@ -175,7 +175,7 @@ jobs:
           sed -i 'N;s/else/else :;/g' .\configure
           sed -i 's/\} else \:;/} else/g' .\configure
           sed -i 's/#else \:;/#else/g' .\configure
-          bash -lc "cd _build && ../configure %CFGOPT% --with-db --with-indexed=db --prefix=/opt/cobol/gnucobol"
+          bash -lc "cd _build && CFLAGS=\"-I ../libcob\" ../configure %CFGOPT% --with-db --with-indexed=db --prefix=/opt/cobol/gnucobol"
 
       - name: Upload config-${{ matrix.target }}.log
         uses: actions/upload-artifact@v4
@@ -204,7 +204,7 @@ jobs:
       - name: Run testsuite
         continue-on-error: true
         run: |
-          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' .\tests\testsuite.src\used_binaries.at
+          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
           bash -lc "cd _build/tests && CPATH=/opt/cobol/gnucobol/include make check TESTSUITEFLAGS=\"--jobs=$(($(nproc)+1))\""
 
 # Note: the extra CPATH above is only required in debug builds, for some reason...

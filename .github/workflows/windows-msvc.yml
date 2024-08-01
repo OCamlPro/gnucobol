@@ -156,6 +156,26 @@ jobs:
         run: |
           pacman --needed --noconfirm -S $MSYSPKGS
 
+      - name: Adjust testsuite
+        shell: C:\shells\msys2bash.cmd {0}
+        run: |
+          cd tests
+          sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
+
+      - name: Adjust testsuite for Debug target
+        if: ${{ matrix.target == 'Debug' }}
+        shell: C:\shells\msys2bash.cmd {0}
+        run: |
+          cd tests
+          sed -i '/AT_SETUP(\[ASSIGN DYNAMIC with data item in LINKAGE\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[SEQUENTIAL basic I\/O\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[EXTERNAL RELATIVE file])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[Concatenated Files])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[FUNCTION RANDOM])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
+
+# The tests in sed commands above randomly hang (under debug configurations)
+
       - name: Build testsuite
         shell: C:\shells\msys2bash.cmd {0}
         run: |
@@ -175,18 +195,7 @@ jobs:
           echo m4_define\([AT_PACKAGE_STRING], [$GC_VERSION]\) > package.m4
           echo m4_define\([AT_PACKAGE_BUGREPORT], [bug-gnucobol@gnu.org]\) >> package.m4
           sed 's/x64\/Debug/${{ env.ARCHDIR }}\/${{ matrix.target }}/g' atlocal_win > atlocal
-          sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-
-          sed -i '/AT_SETUP(\[ASSIGN DYNAMIC with data item in LINKAGE\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[SEQUENTIAL basic I\/O\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[EXTERNAL RELATIVE file])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[Concatenated Files])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[FUNCTION RANDOM])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
-
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
-
-# The tests in sed commands above randomly hang (under debug configurations)
 
       - name: Run testsuite
         continue-on-error: true
