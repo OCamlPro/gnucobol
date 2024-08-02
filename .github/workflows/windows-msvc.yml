@@ -166,9 +166,6 @@ jobs:
         run: |
           cd tests
 
-          sed -i '/AT_SETUP(\[MF FIGURATIVE to NUMERIC\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[Default file external name\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[EXTFH: SEQUENTIAL files\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
           sed -i '/AT_SETUP(\[System routine CBL_GC_HOSTED\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_extensions.at
 
           sed -i '/AT_SETUP(\[MOVE to edited item (4)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
