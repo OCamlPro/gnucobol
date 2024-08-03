@@ -2789,6 +2789,18 @@ cb_build_literal_by_category(const void *data, const size_t size, int category)
 	return l;
 }
 
+cb_tree
+cb_build_gcos_literal(const void *data, const size_t size)
+{
+	cb_tree			l;
+
+	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
+
+	l->source_file = cb_source_file;
+	l->source_line = cb_source_line;
+
+	return l;
+}
 
 cb_tree
 cb_build_alphanumeric_literal (const void *data, const size_t size)
