@@ -1577,12 +1577,9 @@ build_national_or_alpha_literal_by_category(int category, const char *text, size
 static int
 scan_x (const char *text, const char *type)
 {
-	size_t curr_len = strlen(text) - 1;
-	size_t result_len;
-	int literal_error = 0;
-	size_t required_size;
-	size_t i;
-	enum cb_category category;
+    	size_t curr_len = strlen(text) - 1;
+    	size_t result_len;
+    	int literal_error = 0;
 
 
 	/* handle zero length literal case */
