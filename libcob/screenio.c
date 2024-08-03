@@ -5025,6 +5025,12 @@ cob_settings_screenio (void)
 		curr_setting_insert_mode = COB_INSERT_MODE;
 	}
 
+	if (COB_HIDE_CURSOR) {
+		(void)curs_set (0);	/* hide the cursor */
+	} else {
+		(void)curs_set (1);	/* set vertical bar cursor */
+        }
+
 #ifdef HAVE_MOUSEINTERVAL
 	mouseinterval (COB_MOUSE_INTERVAL);
 #endif
