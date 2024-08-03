@@ -1,4 +1,10 @@
 
+2024-08-03  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (add_field_cache): adjustments to merge 2022-12-21; added
+	  the actual field as argument in addition to the founder, as more
+	  information is actually needed to determine which cache to use
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (cb_file), parser.y: organization and access_mode as enums

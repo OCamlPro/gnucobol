@@ -11713,6 +11713,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			goto process_outcome;
 		}
 	}
+	/* CHECKME: why was it necessary to add this ? */
 	/* Check dst not literal */
 	if (CB_LITERAL_P (dst)) {
 		outcome = MOVE_INVALID;

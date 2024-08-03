@@ -1201,6 +1201,7 @@ typedef struct __cob_symbol {
 	void			*adrs;		/* Pointer to data pointer */
 	const cob_field_attr *attr;	/* Pointer to attribute */
 
+	unsigned int	is_internal:1;	/* Internal definition (TYPEDEF, ...), not for dump */
 	unsigned int	is_file:1;	/* 'data' points to FILE pointer */
 	unsigned int	is_indirect:2;/* 'data' points to the field's pointer */
 #define SYM_ADRS_DATA	0		/* 'adrs' is direct address of field data */
@@ -1213,7 +1214,7 @@ typedef struct __cob_symbol {
 	unsigned int	is_redef:1;	/* Field has REDEFINES */
 	unsigned int	has_depend:1;/* Field has DEPENDING ON */
 	unsigned int	subscripts:5;/* Field requires N subscripts */
-	unsigned int	unused:11;
+	unsigned int	unused:10;
 
 	unsigned int	offset;		/* Offset in record, May be ZERO for LINKAGE fields */
 	unsigned int	size;		/* Field size */

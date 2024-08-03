@@ -286,7 +286,7 @@ static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
 static int	any_source_moves (struct cb_report *r, struct cb_field *f, int first);
 static struct cb_field * real_field_founder (const struct cb_field *f);
-static void add_field_cache (struct cb_field *f01, unsigned char flag_is_global);
+static void add_field_cache (struct cb_field *f01, struct cb_field *f);
 
 static void output_source_reference (cb_tree, const enum cob_statement);
 
@@ -309,7 +309,7 @@ count_all_fields (struct cb_field *p)
 	if (p->storage == CB_STORAGE_REPORT) {
 		f01 = real_field_founder (p);
 		if (!f01->flag_base) {
-			add_field_cache (f01, p->flag_is_global);
+			add_field_cache (f01, p);
 		}
 	}
 	if (p->sister) {
@@ -1073,7 +1073,7 @@ out_odoslide_size (struct cb_field *fld)
 }
 
 static void
-add_field_cache (struct cb_field *f01, unsigned char flag_is_global)
+add_field_cache (struct cb_field *f01, struct cb_field *f)
 {
 	struct base_list	*bl;
 	if (!f01->flag_base) {
@@ -1088,7 +1088,7 @@ add_field_cache (struct cb_field *f01, unsigned char flag_is_global)
 				bl = cobc_parse_malloc (sizeof (struct base_list));
 				bl->f = f01;
 				bl->curr_prog = excp_current_program_id;
-				if (f01->flag_is_global || flag_is_global
+				if (f01->flag_is_global || f->flag_is_global
 				 || current_prog->flag_file_global) {
 					bl->next = base_cache;
 					base_cache = bl;
@@ -1131,7 +1131,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 	/* Base storage */
 
 	if (!f01->flag_base) {
-		add_field_cache (f01, f->flag_is_global);
+		add_field_cache (f01, f);
 	}
 
 	if (no_output) {
@@ -2145,6 +2145,10 @@ emit_one_sym (struct cb_field *f)
 	fp = real_field_founder (f);
 	is_indirect = SYM_ADRS_PTR;
 	offset = f->offset;
+	if (fp->flag_is_typedef) {
+		output (",NULL");
+		offset = 0;
+	} else
 	if (chk_field_variable_address (f)) {
 		is_indirect = SYM_ADRS_VARY;
 		output (",NULL");
@@ -2199,6 +2203,7 @@ emit_one_sym (struct cb_field *f)
 	}
 	output (",");
 	output_attr (cb_build_field_reference (f, NULL));
+	output (",%d",fp->flag_is_typedef?1:0);
 	output (",0");	/* NOT is_file */
 	output (",%d",is_indirect);
 	if (f->level < 8)
@@ -2275,7 +2280,6 @@ emit_symtab (struct cb_field *f)
 {
 	if (!f->flag_sym_emitted
 	 && !f->flag_internal_register
-	 && !f->flag_is_typedef
 	 && f->level >= 1
 	 && f->level != 66
 	 && f->level != 78
@@ -2325,7 +2329,7 @@ emit_mod_symtab (struct cb_program *prog)
 		output (",%4d",fl->record->sister?fl->record->sister->symtab:0);
 		output (",\"%s\"",wrk);
 		output (",&%s%s",CB_PREFIX_FILE, fl->cname);
-		output (",NULL,1,1,\t\t00,%d,0,0,0,0,0,0,0,0",CB_STORAGE_FILE);
+		output (",NULL,0,1,1,\t\t00,%d,0,0,0,0,0,0,0,0",CB_STORAGE_FILE);
 		output ("}");
 		sym_comma = 1;
 		sym_1st_file = 1;

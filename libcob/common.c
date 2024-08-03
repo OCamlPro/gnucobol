@@ -10714,6 +10714,9 @@ cob_dump_symbols (cob_module *mod)
 					mod->module_name, mod->module_source, mod->module_formatted_date);
 	fputc ('\n', fp);
 	for (k = 0; k < mod->num_symbols; k++) {
+		if (sym[k].is_internal) {
+			continue;
+		}
 		if (sym[k].is_redef) {
 			j = k;
 			while (j < mod->num_symbols 
