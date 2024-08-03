@@ -11118,6 +11118,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	int			dst_size_mod;
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
+	int class;
+
 
 	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
 
@@ -11562,7 +11564,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				int class = CB_TREE_CLASS(src);
+				class = CB_TREE_CLASS(src);
 				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
 				i /= COB_NATIONAL_SIZE;
 				if( size < i ) {
@@ -11666,7 +11668,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				int class = CB_TREE_CLASS(src);
+				class = CB_TREE_CLASS(src);
 				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
 				if( size < i ) {
 					size = (signed int)i;
