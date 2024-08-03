@@ -1,4 +1,11 @@
 
+2024-08-03  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_file.at, testsuite.src/run_misc.at:
+	  fix a few tests that break under MSVC Debug while working
+	  under MSVC Release, by forcing a flush of stdout with
+	  fflush and using cob_free instead of free in C codes
+
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* atlocal_win: fix path-related issues in Windows builds

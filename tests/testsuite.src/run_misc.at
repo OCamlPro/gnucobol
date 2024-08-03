@@ -7486,6 +7486,7 @@ dump (unsigned char *data)
   for (i = 0; i < 4; i++)
     printf ("%02X", data[i]);
   puts (" .");
+  fflush(stdout);
   return 0;
 }
 ]])
