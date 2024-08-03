@@ -4061,6 +4061,7 @@ validate_alphabet (cb_tree alphabet)
 		if (dupls || unvals) {
 			if (dupls) {
 				/* FIXME: can't handle UTF8 / NATIONAL values */
+				// just to see in the changes
 				char		dup_vals[256];
 				i = 0;
 				for (n = 0; n < 256; n++) {
@@ -8858,7 +8859,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				x == cb_norm_high||
 				x == cb_quote) {
 				c = (char)get_value (x);
-				x = cb_build_alphanumeric_literal (&c, 1);
+				x = cb_build_alphanumeric_for_figurative_constant(&c, 1);
 			} else if (x == cb_zero) {
 				x = cb_build_numsize_literal ("0", 1, 0);
 			} else{
@@ -10971,6 +10972,50 @@ is_floating_point_usage (const enum cb_usage usage)
 		|| usage == CB_USAGE_FP_DEC128;
 }
 
+
+static int 
+is_blank( unsigned char *s, int class ) {
+	static const char national[] = { 0x20, 0x00 };
+	static const char alpha[] = { 0x20 };
+	
+	switch(class) {
+		case CB_CLASS_NATIONAL:
+			if( 0 == memcmp( s, national, sizeof(national) ) ) 
+				return sizeof(national);
+			break;
+		case CB_CLASS_ALPHANUMERIC: 
+			if( 0 == memcmp( s, alpha, sizeof(alpha) ) ) 
+				return sizeof(alpha);
+			break;
+    }
+	return 0;
+}
+
+/*
+ * s is input string, converted to the destination's encoding. 
+ * len is the computed length of s.
+ * Compute the length of s, minus leading or trailing blanks,
+ * according to whether or not the destination is right-justified. 
+ */
+
+static size_t 
+trimmed_size(unsigned char *s, size_t len, int right_justified, int class) {
+	int size = len;
+	unsigned char *p = s;
+	int dir = right_justified? 1 : -1;
+        int inc = class == CB_CLASS_NATIONAL? COB_NATIONAL_SIZE : 1;
+        
+	if( ! right_justified && len > 2 ) p += len - inc; 
+
+	for( int i=0; i < len; i += inc ) {
+		if( (inc = is_blank(p, class)) == 0 ) break;
+		size -= inc ;
+		p += dir * inc;
+	}
+	return size;
+}
+
+
 int
 validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_zero)
 {
@@ -10985,6 +11030,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	int			dst_size_mod;
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
+	int class;
+
 
 	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
 
@@ -11424,32 +11471,15 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
 				size /= COB_NATIONAL_SIZE;
 			}
-			if (size > 0
+			if (size > 0	
 			 && l->size > 0
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				if (fdst->flag_justified) {
-					/* right justified: trim left */
-					for (i = 0; i != l->size; i += 2) {
-						if (l->data[i] != 0x00
-						 || l->data[i + 1] != ' ') {
-							break;
-						}
-					}
-					i = l->size - i;
-				} else {
-					/* normal field: trim right */
-					for (i = l->size - 1; i != 0; i -= 2) {
-						if (l->data[i] != ' '
-						 || l->data[i - 1] != 0x00) {
-							break;
-						}
-					}
-					i++;
-				}
+				class = CB_TREE_CLASS(src);
+				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
 				i /= COB_NATIONAL_SIZE;
-				if ((int)i > size) {
+				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
 				}
@@ -11550,24 +11580,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				if (fdst->flag_justified) {
-					/* right justified: trim left */
-					for (i = 0; i != l->size; i++) {
-						if (l->data[i] != ' ') {
-							break;
-						}
-					}
-					i = l->size - i;
-				} else {
-					/* normal field: trim right */
-					for (i = l->size - 1; i != 0; i--) {
-						if (l->data[i] != ' ') {
-							break;
-						}
-					}
-					i++;
-				}
-				if ((int)i > size) {
+				class = CB_TREE_CLASS(src);
+				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
+				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
 				}

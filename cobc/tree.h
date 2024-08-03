@@ -308,7 +308,8 @@ enum cb_category {
 	CB_CATEGORY_DATA_POINTER,		/* 11 */
 	CB_CATEGORY_PROGRAM_POINTER,		/* 12 */
 	CB_CATEGORY_FLOATING_EDITED,	/* 13 */
-	CB_CATEGORY_ERROR		/* 14, always last */
+	CB_CATEGORY_UTF8,			/* 14 */
+	CB_CATEGORY_ERROR		/* 15, always last */
 };
 
 /* Storage sections */
@@ -2097,6 +2098,10 @@ extern cb_tree			cb_build_locale_name (cb_tree, cb_tree);
 extern cb_tree			cb_build_numeric_literal (int,
 							  const void *,
 							  const int);
+extern cb_tree			cb_build_alphanumeric_for_figurative_constant(const void *,
+									const size_t);
+extern cb_tree 			cb_build_gcos_literal (const void *,
+							  const size_t);
 extern cb_tree			cb_build_alphanumeric_literal (const void *,
 							       const size_t);
 extern cb_tree			cb_build_national_literal (const void *,
@@ -2104,6 +2109,8 @@ extern cb_tree			cb_build_national_literal (const void *,
 extern cb_tree			cb_build_numsize_literal (const void *,
 							  const size_t,
 							  const int);
+extern cb_tree			cb_build_UTF8_literal (const void *,
+							  const size_t);
 extern cb_tree			cb_concat_literals (const cb_tree,
 						    const cb_tree);
 

@@ -30,6 +30,13 @@
 #include <unistd.h>
 #endif
 #include <stdio.h>	/* for FILE* */
+	
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+
+#include <errno.h>
+
 
 #include "../libcob/common.h"
 
@@ -321,6 +328,18 @@ enum cobc_name_type {
 	ENTRY_NAME,
 	PROGRAM_ID_NAME
 };
+
+
+/* Structure for a iconv conversion */
+#ifdef HAVE_ICONV_H
+struct cb_iconv_t{
+    iconv_t alphanumeric;
+    iconv_t national;
+	iconv_t utf8;
+};
+#endif
+
+extern struct cb_iconv_t cb_iconv;
 
 /* Listing structures and externals */
 

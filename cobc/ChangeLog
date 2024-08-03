@@ -1,7 +1,31 @@
 
+2024-08-1 Ahmed Maher<ahmed.maher.ahmed.309@gmail.com>
+
+	* scanner.l, cobc.h, cobc.c, tree.c: added guards around iconv.h header and
+	used it around the usages of the headers functions
+	* tree.c: created a new function cb_build_utf8_literal for UTF-8 literals
+	* scanner.l: changed read_literal funtion to handle the utf8 literals
+	reading 
+
+2024-07-27 Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
+	* scanner.l: refactor scan_x function
+
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): fixed currency scale counting logic
+
+2024-07-09  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+            James K. Lowden  <jklowden@symas.com>
+
+	* typeck.c: refactor validate_move function
+
+2024-07-06 Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
+	* tree.c: added encoding conversion support to cb_build_national_literal and
+	cb_build_alphanumeric_literal
+	* cobc.h: declared struct cb_iconv used for encoding conversion
+	* cobc.c: defined the struct cb_iconv with default values
 
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
