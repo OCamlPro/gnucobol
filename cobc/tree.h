@@ -2104,6 +2104,8 @@ extern cb_tree			cb_build_numeric_literal (int,
 							  const int);
 extern cb_tree			cb_build_alphanumeric_for_figurative_constant(const void *,
 									const size_t);
+extern cb_tree 			cb_build_gcos_literal (const void *,
+							  const size_t);
 extern cb_tree			cb_build_alphanumeric_literal (const void *,
 							       const size_t);
 extern cb_tree			cb_build_national_literal (const void *,
