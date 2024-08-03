@@ -1577,6 +1577,10 @@ scan_x (const char *text, const char *type)
     	size_t curr_len = strlen(text) - 1;
     	size_t result_len;
     	int literal_error = 0;
+		size_t required_size;
+		size_t i;
+		enum cb_category category;
+
 
 	// handle zero length literal case
 	if (curr_len == 0) {
@@ -1608,7 +1612,7 @@ scan_x (const char *text, const char *type)
 	if (curr_len > (size_t)cb_lit_length + 1) {
                 curr_len = cb_lit_length + 1;
 	}
-	size_t required_size = curr_len + 1;
+	required_size = curr_len + 1;
 	if (unlikely (required_size > plex_size)) {
 	        plex_size = required_size;
 	        cobc_free (plex_buff);
@@ -1660,7 +1664,7 @@ scan_x (const char *text, const char *type)
         	yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
     } else {
 			// hex alphanumeric or national
-			size_t i = 0;
+			i = 0;
         	for (; i < curr_len; i += 2) {
 				unsigned int byte;
 				int nchar = 0;
@@ -1687,7 +1691,6 @@ scan_x (const char *text, const char *type)
 				}
 				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 4
        		}	
-			enum cb_category category;
 			if (type[0] == 'N') {
 				category = CB_CATEGORY_NATIONAL;
 			} else {
