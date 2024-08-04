@@ -2125,6 +2125,311 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 AT_CLEANUP
 
 
+AT_SETUP([MOVE to edited item (5)])
+AT_KEYWORDS([fundamental editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.   prog.
+      *AUTHOR.  CHUCK HAATVEDT
+
+      *  CHECK THE char_to_precedence_idx function in tree.c
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      ******************************************************************
+      *                                                                *
+      *    THIS PROGRAM WILL ONLY DISPLAY MESSAGES IF THE              *
+      *    COMPILER IS GENERATING AN INCORRECT RESULT.                 *
+      *                                                                *
+      *    IF YOU WISH TO SEE ALL THE DISPLAYS, THEN                   *
+      *    COMMENT THE SOURCE-COMPUTER LINE BELOW.                     *
+      *                                                                *
+      ******************************************************************
+
+      ******************************************************************
+       SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+      ******************************************************************
+       OBJECT-COMPUTER. IBM-PC.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77  CURR00                      PIC 9$DB.
+       77  CURR01                      PIC 9$+.
+       77  CURR02                      PIC 9$.
+       77  CURR03                      PIC $9.
+       77  CURR04                      PIC +$9.
+       77  CURR05                      PIC 090.
+       77  CURR06                      PIC $9,9999.99-.
+       77  CURR07                      PIC +$9,9999.99.
+       77  CURR08                      PIC +$9,9999.99,99.
+       77  CURR09                      PIC +$9,9999.99099.
+       77  CURR10                      PIC 9,9/99.99$.
+       77  CURR11                      PIC $,$$$$.$$+.
+       77  CURR12                      PIC $,$$$$.$$CR.
+       77  CURR13                      PIC -$,$$$$.$$.
+       77  CURR14                      PIC $,$$$$.$$.
+       77  CURR15                      PIC $,$$$$V99.
+       77  CURR16                      PIC $,$$$$.99.
+       77  CURR17                      PIC -,----V--.
+       77  CURR18                      PIC -,----.--.
+       77  CURR19                      PIC 9$-.
+       77  CURR20                      PIC -$9.
+       77  CURR21                      PIC 9$DB.
+       77  CURR22                      PIC 9$CR.
+       77  CURR23                      PIC 9,9/99.99+.
+       77  N1                          PIC S9(8) COMP-5  VALUE +0.
+       77  PAD-1                       PIC *,***.**-.
+       77  PAD-2                       PIC $.**.
+
+       PROCEDURE DIVISION.
+           MOVE +7                     TO CURR00
+      D    IF CURR00 NOT EQUAL '7$  '
+               DISPLAY 'TEST 1  CURR00 ===>' CURR00 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR01
+      D    IF CURR01 NOT EQUAL '0$+'
+               DISPLAY 'TEST 1  CURR01 ===>' CURR01 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR02
+      D    IF CURR02 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR02 ===>' CURR02 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR03
+      D    IF CURR03 NOT EQUAL '$0'
+               DISPLAY 'TEST 1  CURR03 ===>' CURR03 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR04
+      D    IF CURR04 NOT EQUAL '+$0'
+               DISPLAY 'TEST 1  CURR04 ===>' CURR04 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR05
+      D    IF CURR05 NOT EQUAL '000'
+               DISPLAY 'TEST 1  CURR05 ===>' CURR05 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR06
+      D    IF CURR06 NOT EQUAL '$0,0000.01'
+               DISPLAY 'TEST 1  CURR06 ===>' CURR06 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR07
+      D    IF CURR07 NOT EQUAL '+$0,0000.01'
+               DISPLAY 'TEST 1  CURR07 ===>' CURR07 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR08
+      D    IF CURR08 NOT EQUAL '+$0,0000.01,00'
+               DISPLAY 'TEST 1  CURR08 ===>' CURR08 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR09
+      D    IF CURR09 NOT EQUAL '+$0,0000.01000'
+               DISPLAY 'TEST 1  CURR09 ===>' CURR09 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR10
+      D    IF CURR10 NOT EQUAL '0,0/00.01$'
+               DISPLAY 'TEST 1  CURR10 ===>' CURR10 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR11
+      D    IF CURR11 NOT EQUAL '     $.01+'
+               DISPLAY 'TEST 1  CURR11 ===>' CURR11 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR12
+      D    IF CURR12 NOT EQUAL '     $.01  '
+               DISPLAY 'TEST 1  CURR12 ===>' CURR12 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR13
+      D    IF CURR13 NOT EQUAL '      $.01'
+               DISPLAY 'TEST 1  CURR13 ===>' CURR13 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR14
+      D    IF CURR14 NOT EQUAL '     $.01'
+               DISPLAY 'TEST 1  CURR14 ===>' CURR14 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR15
+      D    IF CURR15 NOT EQUAL '     $01'
+               DISPLAY 'TEST 1  CURR15 ===>' CURR15 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR16
+      D    IF CURR16 NOT EQUAL '     $.01'
+               DISPLAY 'TEST 1  CURR16 ===>' CURR16 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR17
+      D    IF CURR17 NOT EQUAL '      01'
+               DISPLAY 'TEST 1  CURR17 ===>' CURR17 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR18
+      D    IF CURR18 NOT EQUAL '      .01'
+               DISPLAY 'TEST 1  CURR18 ===>' CURR18 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR19
+      D    IF CURR19 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR19 ===>' CURR19 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR20
+      D    IF CURR20 NOT EQUAL ' $0'
+               DISPLAY 'TEST 1  CURR20 ===>' CURR20 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR21
+      D    IF CURR21 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR21 ===>' CURR21 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR22
+      D    IF CURR22 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR22 ===>' CURR22 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR23
+      D    IF CURR23 NOT EQUAL '0,0/00.01+'
+               DISPLAY 'TEST 1  CURR23 ===>' CURR23 '<==='
+      D    END-IF.
+
+
+
+           MOVE -987654321.987654      TO CURR01
+      D    IF CURR01 NOT EQUAL '1$-'
+               DISPLAY 'TEST 2  CURR01 ===>' CURR01 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR02
+      D    IF CURR02 NOT EQUAL '1$'
+               DISPLAY 'TEST 2  CURR02 ===>' CURR02 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR03
+      D    IF CURR03 NOT EQUAL '$1'
+               DISPLAY 'TEST 2  CURR03 ===>' CURR03 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR04
+      D    IF CURR04 NOT EQUAL '-$1'
+               DISPLAY 'TEST 2  CURR04 ===>' CURR04 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR05
+      D    IF CURR05 NOT EQUAL '010'
+               DISPLAY 'TEST 2  CURR05 ===>' CURR05 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR06
+      D    IF CURR06 NOT EQUAL '$5,4321.98-'
+               DISPLAY 'TEST 2  CURR06 ===>' CURR06 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR07
+      D    IF CURR07 NOT EQUAL '-$5,4321.98'
+               DISPLAY 'TEST 2  CURR07 ===>' CURR07 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR08
+      D    IF CURR08 NOT EQUAL '-$5,4321.98,76'
+               DISPLAY 'TEST 2  CURR08 ===>' CURR08 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR09
+      D    IF CURR09 NOT EQUAL '-$5,4321.98076'
+               DISPLAY 'TEST 2  CURR09 ===>' CURR09 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR10
+      D    IF CURR10 NOT EQUAL '4,3/21.98$'
+               DISPLAY 'TEST 2  CURR10 ===>' CURR10 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR11
+      D    IF CURR11 NOT EQUAL ' $4321.98-'
+               DISPLAY 'TEST 2  CURR11 ===>' CURR11 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR12
+      D    IF CURR12 NOT EQUAL ' $4321.98CR'
+               DISPLAY 'TEST 2  CURR12 ===>' CURR12 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR13
+      D    IF CURR13 NOT EQUAL '- $4321.98'
+               DISPLAY 'TEST 2  CURR13 ===>' CURR13 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR14
+      D    IF CURR14 NOT EQUAL ' $4321.98'
+               DISPLAY 'TEST 2  CURR14 ===>' CURR14 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR15
+      D    IF CURR15 NOT EQUAL ' $432198'
+               DISPLAY 'TEST 2  CURR15 ===>' CURR15 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR16
+      D    IF CURR16 NOT EQUAL ' $4321.98'
+               DISPLAY 'TEST 2  CURR16 ===>' CURR16 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR17
+      D    IF CURR17 NOT EQUAL ' -432198'
+               DISPLAY 'TEST 2  CURR17 ===>' CURR17 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR18
+      D    IF CURR18 NOT EQUAL ' -4321.98'
+               DISPLAY 'TEST 2  CURR18 ===>' CURR18 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR19
+      D    IF CURR19 NOT EQUAL '1$-'
+               DISPLAY 'TEST 2  CURR19 ===>' CURR19 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR20
+      D    IF CURR20 NOT EQUAL '-$1'
+               DISPLAY 'TEST 2  CURR20 ===>' CURR20 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR21
+      D    IF CURR21 NOT EQUAL '1$DB'
+               DISPLAY 'TEST 2  CURR21 ===>' CURR21 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR22
+      D    IF CURR22 NOT EQUAL '1$CR'
+               DISPLAY 'TEST 2  CURR22 ===>' CURR22 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR23
+      D    IF CURR23 NOT EQUAL '4,3/21.98-'
+               DISPLAY 'TEST 2  CURR23 ===>' CURR23 '<==='
+      D    END-IF.
+
+
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([MOVE to item with simple and floating insertion])
 AT_KEYWORDS([fundamental edited editing])
 
