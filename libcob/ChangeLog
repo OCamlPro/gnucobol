@@ -1,4 +1,10 @@
 
+2024-08-04  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2022-12-21:
+	* common.h (cob_symbol): added an is_internal flag
+	* common.c (cob_dump_symbols): skip symbols marked is_internal in dump
+
 2024-07-25  David Declerck <david.declerck@ocamlpro.com>
 
 	* fbdb.c, fextfh.c, fisam.c, flmdb.c, focextfh.c, foci.c, fodbc.c:
@@ -68,9 +74,35 @@
 	* screenio.c: renamed max_pairs_available as this is defined on HPUX
 	* common.c (check_current_date): fixed bad snprintf size
 
+2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (inspect_find_data): added missing area check bug #865
+	* strings.c (inspect_common_no_replace, inspect_common_replacing,
+	  is_marked): minor refactoring for optimization hints
+
 2022-12-08  Ron Norman <rjn@inglenet.com>
 
 	* call.c: For AIX, use RTLD_MEMBER to dlopen shared code from archive
+
+2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_module_type): module type as enum instead of defines only
+	* call.c (cob_call_field, cob_call_init): speedup of first CALL by using
+	  comparing name hash against newly added hash of system routines before
+	  doing an expensive strcmp against their names
+	* call.c [COB_ALT_HASH]: removed
+	* common.c (cob_field_to_string), call.c (cob_chk_call_path): optimized
+	* call.c (hash): optimized, especially for debug builds
+	* common.c: added hashing for resolving the statement from a given string,
+	  instead of heavy use of strcmp; note: this is only used for backward
+	  compatibilty and then reduces the previously overhead to the minimum
+	* fileio.c (cob_str_from_fld): applied optimization similar
+	  to common.c (cob_field_to_string)
+
+2022-12-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_call_field): speedup of consecutive CALLs by doing the
+	  lookup in called programs before testing the system routines
 
 2022-12-06  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -103,6 +135,11 @@
 
 	* screenio.c: fix mishandled "extended attributes" (bit 4)
 	* termio.c: several minor performance tweaks for DISPLAY
+
+2022-11-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c, common.c: internal and explicit setting of no-physical-unload
+	* common.c: adjustments for COB_PHYSICAL_CANCEL
 
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
@@ -144,12 +181,24 @@
 	* numeric.c: refactoring of floating-point usages to not use a union
 	  for re-re-definition of float/double where not necessary
 	* numeric.c: refactoring of bit-wise functions for readability
+	* numeric.c (cob_decimal_set_display): prefer local buffer over
+	  dynamic allocation
+	* numeric.c (cob_cmp_int, cob_cmp_uint, cob_cmp_llint): pre-comparision
+	  by checking sign/zero and reduced number of decimal shifting
+	  dynamic allocation
+	* move.c (store_common_region): minor optimization
+	* move.c:
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [__PDCURSES__]: drop use of PDC_free_memory_allocations
 	  as testing showed it raising memory errors and the function was
 	  removed in PDCursesMod
+	* common.c (cob_cmp, cob_cmp_all, cob_cmp_alnum): use buffer to drop the
+	  overpunch sign, removing the need to add it back later; which solves
+	  both issues of "changing invalid data by DISPLAY" and raising strange
+	  watchpoints during debugging
+	* common.c (common_cmpc, common_cmps, locate_sign): minor optimization
 
 2022-10-31  Ron Norman <rjn@inglenet.com>
 

@@ -322,9 +322,11 @@ pushd "$target_dir/bin" 1>/dev/null
 rm -rf auto*
 rm -rf aclocal*
 
-rm -rf *perl*
+# Note: perl may be used in the distribution for
+#       test coverage via lcov, so leave in
+#rm -rf *perl*
 cd ../lib 1>/dev/null
-rm -rf *perl*
+#rm -rf *perl*
 
 rm -rf *.la
 

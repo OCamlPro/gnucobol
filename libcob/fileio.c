@@ -8047,23 +8047,28 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 
 /* System routines */
 
+/* stores the parameter's content into a fresh allocated
+   string, which later needs to be passed to cob_free */
 static void *
 cob_param_no_quotes (int n)
 {
-	int		i, j;
-	char	*s;
+	register unsigned char	*data, *s;
+	void		*mptr;
 
-	s = cob_get_picx_param (n, NULL, 0);
-	if (s == NULL)
+	s = data = mptr = cob_get_picx_param (n, NULL, 0);
+	if (s == NULL) {
 		return NULL;
-	for (i = j = 0; s[j] != 0; j++) {
-		if (s[j] == '"') {
+	}
+	while (*data != 0) {
+		if (*data == '"') {
+			data++;
 			continue;
 		}
-		s[i++] = s[j];
+		*s++ = *data++;
 	}
-	s[i] = 0;
-	return (void*)s;
+	*s = 0;
+
+	return mptr;
 }
 
 /* actual processing for CBL_OPEN_FILE and CBL_CREATE_FILE */

@@ -535,6 +535,8 @@ AT_DATA([prog.cob], [
       *> see bug #255 and an internal compiler error, see bug #295:
            set address of float-var to default-float
            set no-pointer to address of default-float
+      *> previously raised internal compiler error, see bug #643:
+           set 1 to no-pointer
       *> all fine...
            set address of float-var to address of default-float
            goback.
@@ -544,6 +546,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:14: error: invalid SET statement
 prog.cob:15: error: invalid SET statement
+prog.cob:17: error: invalid SET statement
 ])
 
 AT_CLEANUP
