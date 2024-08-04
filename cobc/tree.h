@@ -698,8 +698,8 @@ struct cb_alphabet_name {
 	enum cb_alphabet_type		alphabet_type;	/* ALPHABET type */
 	int			low_val_char;	/* LOW-VALUE */
 	int			high_val_char;	/* HIGH-VALUE */
-	int			values[256];	/* Collating values */
-	int			alphachr[256];	/* Actual values */
+	int			values[65536];	/* Collating values */
+	int			alphachr[65536];	/* Actual values */
 };
 
 #define CB_ALPHABET_NAME(x)	(CB_TREE_CAST (CB_TAG_ALPHABET_NAME, struct cb_alphabet_name, x))

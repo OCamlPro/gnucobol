@@ -3879,11 +3879,13 @@ validate_alphabet (cb_tree alphabet)
 		int			lastval = 0, tableval = 0;
 		int			pos = 0;
 		int			i;
-		int			values[256];
-		int			charvals[256];
-		int			dupvals[256];
+		const int maxchar = ap->alphabet_target == CB_ALPHABET_ALPHANUMERIC
+			? 256: 65536;
+		int			values[maxchar];
+		int			charvals[maxchar];
+		int			dupvals[maxchar];
 
-		for (n = 0; n < 256; n++) {
+		for (n = 0; n < maxchar; n++) {
 			values[n] = -1;
 			charvals[n] = -1;
 			dupvals[n] = -1;
@@ -3891,11 +3893,12 @@ validate_alphabet (cb_tree alphabet)
 			ap->alphachr[n] = -1;
 		}
 		ap->low_val_char = 0;
-		ap->high_val_char = 255;
+		ap->high_val_char = maxchar - 1;
 		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
 			pos++;
-			if (count > 255
+			// TODO: alphabets 255 elements
+			if (count >= maxchar
 			 || x == NULL) {
 				unvals = pos;
 				break;
@@ -3907,14 +3910,11 @@ validate_alphabet (cb_tree alphabet)
 				if (!count) {
 					ap->low_val_char = lower;
 				}
-				/* regression in NATIONAL literals as
-				   thpose are unfinished; would be fine
-				   with national alphabet in general */
-				if (lower < 0 || lower > 255) {
+				if (lower < 0 || lower >= maxchar) {
 					unvals = pos;
 					continue;
 				}
-				if (upper < 0 || upper > 255) {
+				if (upper < 0 || upper >= maxchar) {
 					unvals = pos;
 					continue;
 				}
@@ -3953,14 +3953,11 @@ validate_alphabet (cb_tree alphabet)
 					if (!CB_CHAIN (ls)) {
 						lastval = val;
 					}
-					/* regression in NATIONAL literals as
-					   those are unfinished; would be fine
-					   with national alphabet in general */
-					if (val < 0 || val > 255) {
+					if (val < 0 || val >= maxchar) {
 						unvals = pos;
 						continue;
 					}
-					n = (unsigned char)val;
+					n = val;
 					if (values[n] != -1) {
 						dupvals[n] = n;
 						dupls = 1;
@@ -3983,7 +3980,7 @@ validate_alphabet (cb_tree alphabet)
 					unvals = pos;
 					continue;
 				}
-				n = (unsigned char)lastval;
+				n = lastval;
 				if (values[n] != -1) {
 					dupvals[n] = n;
 					dupls = 1;
@@ -4047,7 +4044,7 @@ validate_alphabet (cb_tree alphabet)
 					unvals = pos;
 					continue;
 				}
-				n = (unsigned char) lastval;
+				n = lastval;
 				if (values[n] != -1) {
 					dupls = 1;
 				}
@@ -4064,7 +4061,7 @@ validate_alphabet (cb_tree alphabet)
 				// just to see in the changes
 				char		dup_vals[256];
 				i = 0;
-				for (n = 0; n < 256; n++) {
+				for (n = 0; n < maxchar; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
 							i += sprintf (dup_vals + i, ", ...");
@@ -4075,10 +4072,12 @@ validate_alphabet (cb_tree alphabet)
 						}
 						if (isprint (n)) {
 							dup_vals[i++] = (char)n;
-						} else {
+						} else if(maxchar == 256){
 							i += sprintf (dup_vals + i, "x'%02x'", n);
+						} else{
+							i += sprintf (dup_vals + i, "x'%04x'", n);
 						}
-					};
+					}
 				}
 				dup_vals[i] = 0;
 				cb_error_x (alphabet,
@@ -4091,7 +4090,7 @@ validate_alphabet (cb_tree alphabet)
 					ap->name, pos);
 			}
 			ap->low_val_char = 0;
-			ap->high_val_char = 255;
+			ap->high_val_char = maxchar - 1;
 			return;
 		}
 		/* Calculate HIGH-VALUE */
@@ -4099,11 +4098,11 @@ validate_alphabet (cb_tree alphabet)
 		/* HIGH-VALUE is the last one */
 		/* Otherwise if HIGH-VALUE has been specified, find the highest */
 		/* value that has not been used */
-		if (count == 256) {
+		if (count == maxchar) {
 			ap->high_val_char = lastval;
-		} else if (values[255] != -1) {
+		} else if (values[maxchar - 1] != -1) {
 			ap->high_val_char = 0;
-			for (n = 254; n > 0; n--) {
+			for (n = maxchar - 2; n > 0; n--) {
 				if (values[n] == -1) {
 					ap->high_val_char = n;
 					break;
@@ -4112,8 +4111,8 @@ validate_alphabet (cb_tree alphabet)
 		}
 
 		/* Get rest of code set */
-		for (n = tableval; n < 256; ++n) {
-			for (i = 0; i < 256; ++i) {
+		for (n = tableval; n < maxchar; ++n) {
+			for (i = 0; i < maxchar; ++i) {
 				if (charvals[i] < 0) {
 					charvals[i] = 0;
 					ap->alphachr[n] = i;
@@ -4123,7 +4122,7 @@ validate_alphabet (cb_tree alphabet)
 		}
 
 		/* Fill in missing characters */
-		for (n = 0; n < 256; n++) {
+		for (n = 0; n < maxchar; n++) {
 			if (ap->values[n] < 0) {
 				ap->values[n] = tableval++;
 			}

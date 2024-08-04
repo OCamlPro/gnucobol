@@ -1909,7 +1909,7 @@ AT_DATA([prog3.cob], [
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS
                     'A' THROUGH 'Z', x'00' thru x'05'.
-           ALPHABET ALPHABET-2
+           ALPHABET ALPHABET-2 FOR NATIONAL
                     n'A' also n'B' ALSO n'f',
                     n'g' also n'G', n'1' thru n'9'.
        END PROGRAM prog3.
@@ -1925,7 +1925,7 @@ AT_DATA([prog3.cob], [
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS
                     'A' THROUGH 'Z', x'00' thru x'05'.
-           ALPHABET ALPHABET-2 IS
+           ALPHABET ALPHABET-2 FOR NATIONAL IS 
                     n'A' ALSO n'f',
                     n'g' also n'G'.
        END PROGRAM prog3b.
@@ -1938,7 +1938,8 @@ AT_DATA([prog3.cob], [
        OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1    x'00' thru x'05'.
-           ALPHABET ALPHABET-2 IS n'g' also n'G', n'1' thru n'9'.
+           ALPHABET ALPHABET-2 NATIONAL IS 
+                    n'g' also n'G', n'1' thru n'9'.
        END PROGRAM prog3c.
 
        IDENTIFICATION DIVISION.
@@ -1949,7 +1950,7 @@ AT_DATA([prog3.cob], [
        OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS 'A' THROUGH 'Z'.
-           ALPHABET ALPHABET-2   n'A' also n'B', n'1' thru n'9'.
+           ALPHABET ALPHABET-2 NATIONAL n'A' also n'B', n'1' thru n'9'.
        END PROGRAM prog3d.
 
        IDENTIFICATION DIVISION.
@@ -1999,7 +2000,7 @@ AT_DATA([prog3.cob], [
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS
                     'A', 'C', x'05'.
-           ALPHABET ALPHABET-2
+           ALPHABET ALPHABET-2 NATIONAL
                     n'A', n'1' thru n'9'.
        END PROGRAM prog3h.
 
@@ -2015,7 +2016,7 @@ AT_DATA([prog3.cob], [
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS
                     'a' THROUGH 'z'.
-           ALPHABET ALPHABET-2
+           ALPHABET ALPHABET-2 NATIONAL
                     n'B', n'C'; n'g' also n'G'.
        END PROGRAM prog3i.
 
@@ -2028,10 +2029,29 @@ AT_DATA([prog3.cob], [
                         COLLATING SEQUENCE
                           NATIONAL     ALPHABET-2.
        SPECIAL-NAMES.
-           ALPHABET ALPHABET-2
+           ALPHABET ALPHABET-2 NATIONAL
                     n'B', n'C'; n'g' also n'G'.
        END PROGRAM prog3j.
 ])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog4.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        PROGRAM COLLATING SEQUENCE IS ALPHABET-1,
+                                                      ALPHABET-2.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'A' THROUGH 'Z', x'00' thru x'05'.
+           ALPHABET ALPHABET-2
+                    n'A' also n'B' ALSO n'f',
+                    n'g' also n'G', n'1' thru n'9'.
+       END PROGRAM prog4.
+])
+
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: duplicate character values in alphabet 'TESTME': x'00', A, B
@@ -2044,10 +2064,14 @@ AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog3.cob], [0], [],
 [prog3.cob:9: warning: NATIONAL COLLATING SEQUENCE is not implemented
 prog3.cob:25: warning: NATIONAL COLLATING SEQUENCE is not implemented
 prog3.cob:39: warning: NATIONAL COLLATING SEQUENCE is not implemented
-prog3.cob:50: warning: NATIONAL COLLATING SEQUENCE is not implemented
-prog3.cob:99: warning: NATIONAL COLLATING SEQUENCE is not implemented
-prog3.cob:114: warning: NATIONAL COLLATING SEQUENCE is not implemented
-prog3.cob:130: warning: NATIONAL COLLATING SEQUENCE is not implemented
+prog3.cob:51: warning: NATIONAL COLLATING SEQUENCE is not implemented
+prog3.cob:100: warning: NATIONAL COLLATING SEQUENCE is not implemented
+prog3.cob:115: warning: NATIONAL COLLATING SEQUENCE is not implemented
+prog3.cob:131: warning: NATIONAL COLLATING SEQUENCE is not implemented
+])
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog4.cob], [1], [],
+[prog4.cob:9: warning: NATIONAL COLLATING SEQUENCE is not implemented
+prog4.cob:13: error: invalid character values in alphabet 'ALPHABET-2', starting at position 3
 ])
 AT_CLEANUP
 
