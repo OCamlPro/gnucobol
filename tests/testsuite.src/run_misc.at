@@ -895,7 +895,7 @@ AT_DATA([prog.cob], [
            MOVE ZERO TO X(2) X(4) X(6) X(8)
            SET ADDRESS OF X-ALL TO ADDRESS OF X(1)
            IF X-ALL NOT = " 0 0 0 0AA"
-              DISPLAY X-ALL UPON SYSERR
+              DISPLAY X-ALL UPON SYSERR.
            STOP RUN.
 ])
 
@@ -913,20 +913,48 @@ AT_DATA([prog2.cob], [
        LINKAGE SECTION.
        01 X-ALL         PIC X(10).
        PROCEDURE        DIVISION.
+           MOVE ZERO TO X(2) X(4) X(6) X(8)
+           INITIALIZE   X(1) X(3) X(5) X(7)
+           SET ADDRESS OF X-ALL TO ADDRESS OF X(1)
+           IF X-ALL NOT = " 0 0 0 0AA"
+              DISPLAY X-ALL UPON SYSERR.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-ec=bound -o baddy2 prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./baddy2], [0], [], [])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:12: error: subscript of 'X' out of bounds: 6
+note: current maximum subscript for 'X': 5
+])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog3.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 XX PIC 99 VALUE 5.
+       01 X             PIC X OCCURS 0 TO 10
+                        DEPENDING ON XX VALUE "A".
+       LINKAGE SECTION.
+       01 X-ALL         PIC X(10).
+       PROCEDURE        DIVISION.
            INITIALIZE   X(1) X(3) X(5) X(7)
            MOVE ZERO TO X(2) X(4) X(6) X(8)
            SET ADDRESS OF X-ALL TO ADDRESS OF X(1)
            IF X-ALL NOT = " 0 0 0 0AA"
-              DISPLAY X-ALL UPON SYSERR
+              DISPLAY X-ALL UPON SYSERR.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=bound -o baddy prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./baddy], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=bound -o baddy3 prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./baddy3], [0], [], [])
 
-AT_CHECK([$COMPILE prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:13: error: subscript of 'X' out of bounds: 6
+AT_CHECK([$COMPILE prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [1], [],
+[libcob: prog3.cob:12: error: subscript of 'X' out of bounds: 7
 note: current maximum subscript for 'X': 5
 ])
 
@@ -994,11 +1022,10 @@ AT_DATA([prog.cob], [
        01 X-X           PIC XXXX VALUE "0001".
        01 X-9           PIC 9999 COMP VALUE 1.
        PROCEDURE        DIVISION.
-         IF X-X = X-9
-            STOP RUN
-         END-IF.
-         DISPLAY "NG" NO ADVANCING
-         END-DISPLAY
+         IF X-X NOT = X-9
+            DISPLAY "NG X-X <> X-9".
+         IF X-9 NOT = X-X
+            DISPLAY "NG X-9 <> X-X".
          STOP RUN.
 ])
 
@@ -2020,14 +2047,14 @@ AT_DATA([prog.cob], [
            INSPECT X TALLYING TAL FOR CHARACTERS
                      BEFORE INITIAL " ".
            IF TAL NOT = 3
-              DISPLAY TAL.
+              DISPLAY "1: should be 3 but is " TAL.
 
            MOVE 0 TO TAL.
            MOVE " ABC" TO X.
            INSPECT X TALLYING TAL FOR CHARACTERS
                      BEFORE INITIAL " ".
            IF TAL NOT = 0
-              DISPLAY TAL.
+              DISPLAY "2: should be 0 but is " TAL.
 
            STOP RUN.
 ])
@@ -2061,6 +2088,42 @@ AT_DATA([prog.cob], [
                      AFTER INITIAL " ".
            IF TAL NOT = 3
               DISPLAY TAL.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT TALLYING BEFORE and AFTER])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "ABC ".
+       01 TAL           PIC 999 VALUE 0.
+       01 MSG           PIC X(256) VALUE SPACES.
+       PROCEDURE        DIVISION.
+           MOVE 0 TO TAL.
+           INSPECT X TALLYING TAL FOR CHARACTERS
+                     BEFORE INITIAL " "
+                     AFTER   " ".
+           IF TAL NOT = 0
+              DISPLAY "1: should be 0 but is " TAL.
+
+      *> checking for no match, includes bug #865
+           MOVE 0 TO TAL.
+           INSPECT MSG TALLYING TAL FOR CHARACTERS
+               AFTER INITIAL "<"
+               BEFORE INITIAL "</".
+           IF TAL NOT = 0
+              DISPLAY "2: should be 0 but is " TAL.
 
            STOP RUN.
 ])
@@ -3929,6 +3992,42 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SORT: table sort with default COLLATING SEQUENCE])
+AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 Z  PIC X(10)  VALUE "d4b2e1a3c5".
+       01 G             REDEFINES Z.
+         02 TBL         OCCURS 10.
+           03 X         PIC X.
+       PROCEDURE        DIVISION.
+           SORT TBL ASCENDING KEY X.
+      >>IF   EXPECT-ORDER  =  'ASCII'
+           IF G NOT = "12345abcde"
+      >>ELIF EXPECT-ORDER  =  'EBCDIC'
+           IF G NOT = "abcde12345"
+      >>ELSE           *>  =  'NATIVE'
+           IF NOT G = "12345abcde" OR "abcde12345"
+      >>END-IF
+              DISPLAY G END-DISPLAY
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ascii -DEXPECT-ORDER=ASCII -o ascii prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ascii], [0], [], [])
+AT_CHECK([$COMPILE -fdefault-colseq=ebcdic -DEXPECT-ORDER=EBCDIC -o ebcdic prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
+AT_CHECK([$COMPILE -fdefault-colseq=native -DEXPECT-ORDER=NATIVE -o native prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./native], [0], [], [])
 
 AT_CLEANUP
 
@@ -9931,8 +10030,66 @@ AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([CALL with directory])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  MYRTN  PIC X(9) VALUE "DIR/SUB".
+
+       PROCEDURE DIVISION.
+      *> doesn't exist there...
+           CALL "SUB" USING '0'
+              ON EXCEPTION CONTINUE.
+      *> go by variable
+           CALL MYRTN     USING 'X'.
+           CALL "DIR/SUB" USING 'Y'.
+      *> as it is already loaded - should work as-is
+           CALL "SUB" USING 'Z'.
+           CANCEL "SUB"
+      *> the following will only show if physical cancel is not off...
+           CALL "SUB" USING '0'
+              ON EXCEPTION CONTINUE.
+           STOP RUN.
+])
+
+AT_DATA([sub.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "SUB".
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x  PIC X.
+
+       PROCEDURE DIVISION USING x.
+           DISPLAY "SUB GOT " X.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([mkdir DIR], [0], [], [])
+AT_CHECK([$COMPILE_MODULE sub.cob -o DIR/SUB.$COB_MODULE_EXT], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SUB GOT X
+SUB GOT Y
+SUB GOT Z
+SUB GOT 0
+], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+[SUB GOT X
+SUB GOT Y
+SUB GOT Z
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([C-API (param based)])
-AT_KEYWORDS([CALL api])
+AT_KEYWORDS([runmisc CALL api])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -10287,7 +10444,7 @@ AT_CLEANUP
 
 
 AT_SETUP([C-API (field based)])
-AT_KEYWORDS([CALL api])
+AT_KEYWORDS([runmisc CALL api])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -11379,7 +11536,7 @@ AT_CLEANUP
 
 
 AT_SETUP([PROGRAM-ID / CALL literal/variable with spaces])
-AT_KEYWORDS([CALL])
+AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -11586,10 +11743,13 @@ AT_DATA([prog.cob], [
        77  SBIN        PIC S9(8) BINARY.
        77  UNUP        PIC  9(8).
        77  SNUP        PIC S9(8).
+       77  UCHR        BINARY-CHAR UNSIGNED.
+       77  SCHR        BINARY-CHAR SIGNED.
 
        01  TSTREC.
-           05  TSTX PIC X(4) OCCURS 3 TIMES.
-           05  TSTY PIC X(4) OCCURS 3 TIMES.
+           05       PIC X(4) OCCURS 300 TIMES VALUE ZERO.
+           05  TSTX PIC X(4) OCCURS   3 TIMES.
+           05  TSTY PIC X(4) OCCURS 300 TIMES.
 
        PROCEDURE DIVISION.
            MOVE ALL 'A' TO TSTX(1).
@@ -11611,20 +11771,27 @@ AT_DATA([prog.cob], [
       * The following would often core dump
            MOVE 0 TO UBIN.
            DISPLAY "UBIN: " UBIN " is :" TSTY(UBIN) ":" UPON CONSOLE.
-           MOVE 'xxx'   TO TSTY(UBIN).
+           MOVE 'yyy'   TO TSTY(UBIN).
            MOVE 1 TO UBIN.
            DISPLAY "UBIN: " UBIN " is :" TSTY(UBIN) ":" UPON CONSOLE.
+           MOVE 0 TO UCHR.
+           DISPLAY "UCHR: " UCHR " is :" TSTY(UCHR) ":" UPON CONSOLE.
+           MOVE -1 TO SCHR.
+           DISPLAY "SCHR: " SCHR " is :" TSTY(SCHR) ":" UPON CONSOLE.
+           MOVE 'zzz' TO TSTY (129).
+           MOVE 129 TO UCHR.
+           DISPLAY "UCHR: " UCHR " is :" TSTY(UCHR) ":" UPON CONSOLE.
            STOP RUN.
 ])
 
 # Safe run with runtime checks
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:23: error: subscript of 'TSTY' out of bounds: 0
+[libcob: prog.cob:26: error: subscript of 'TSTY' out of bounds: 0
 ])
 
 # Runtime checks disable, subscript may be zero or even negative
-AT_CHECK([$COBC -x prog.cob -o prog_unsafe], [0], [], [])
+AT_CHECK([$COBC -x -g -fsource-location prog.cob -o prog_unsafe], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog_unsafe], [0],
 [UNUP: 00000000 is :CCCC:
 SNUP: +00000000 is :CCCC:
@@ -11633,6 +11800,9 @@ SBIN: -00000001 is :BBBB:
 SBIN: -00000001 is :xxx :
 UBIN: 00000000 is :CCCC:
 UBIN: 00000001 is :1111:
+UCHR: 000 is :yyy :
+SCHR: -001 is :xxx :
+UCHR: 129 is :zzz :
 ], [])
 
 AT_CLEANUP

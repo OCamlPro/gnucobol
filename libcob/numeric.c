@@ -1172,7 +1172,6 @@ static void
 cob_decimal_set_display (cob_decimal *d, cob_field *f)
 {
 	unsigned char	*data;
-	unsigned char	*p;
 	size_t		size;
 	int		sign;
 	cob_uli_t	n;
@@ -1192,34 +1191,60 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	}
 	sign = COB_GET_SIGN (f);
 	/* Skip leading zeros (also invalid space/low-value) */
-	while (size > 1 && (*data & 0x0FU) == 0) {
+	while (size > 1 && COB_D2I (*data) == 0) {
 		size--;
 		data++;
 	}
 
 	/* Set value */
-	n = 0;
 
 #ifdef	COB_LI_IS_LL
 	if (size < 20) {
 #else
 	if (size < 10) {
 #endif
-		while (size--) {
-			if (n) {
-				n *= 10;
-			}
-			n += COB_D2I (*data);
+		/* note: we skipped leading zeros above, so n > 0 afterwards */
+		n = COB_D2I (*data);
+		data++;
+		while (--size) {
+			n = n * 10
+			  + COB_D2I (*data);
 			data++;
 		}
 		mpz_set_ui (d->value, n);
-	} else {
-		p = cob_fast_malloc (size + 1U);
-		for (; n < size; ++n) {
-			p[n] = (data[n] & 0x0FU) + '0';
+
+	} else if (size <= COB_MAX_DIGITS) {
+
+		char p[COB_MAX_DIGITS + 1];
+		for (n = 0; n < size; ++n) {
+			p[n] = COB_I2D (COB_D2I (data[n]));
 		}
 		p[size] = 0;
 		mpz_set_str (d->value, (char *)p, 10);
+
+	} else if (size <= COB_MAX_INTERMEDIATE_FLOATING_SIZE) {
+
+		/* Note: we can get here for example when resolving
+		   a decimal from huge internal fields like the
+		   numeric functions sin/asin/... which have 96 digits
+		   or during computations with division */
+		char p[COB_MAX_INTERMEDIATE_FLOATING_SIZE + 1];
+		for (n = 0; n < size; ++n) {
+			p[n] = COB_I2D (COB_D2I (data[n]));
+		}
+		p[size] = 0;
+		mpz_set_str (d->value, (char *)p, 10);
+
+	} else {
+
+		/* Note: we get very seldom get here, commonly for
+		   computations with functions like cob_intr_variance */
+		char	*p = cob_fast_malloc (size + 1U);
+		for (n = 0; n < size; ++n) {
+			p[n] = COB_I2D (COB_D2I (data[n]));
+		}
+		p[size] = 0;
+		mpz_set_str (d->value, p, 10);
 		cob_free (p);
 	}
 
@@ -1609,16 +1634,12 @@ static void
 cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 {
 	cob_uli_t	adj;
-	int		sign;
-	int		scale;
+	const int	sign = mpz_sgn (d->value);
+	const int	scale = COB_FIELD_SCALE (f);
 
-	sign = mpz_sgn (d->value);
-	/* Returns 0 when value is 0 */
-	if (!sign) {
-		return;
-	}
-	scale = COB_FIELD_SCALE(f);
-	if (scale >= d->scale) {
+	/* Nothing to do when value is 0 or when target has ge scale */
+	if (!sign
+	 || scale >= d->scale) {
 		return;
 	}
 
@@ -2342,48 +2363,94 @@ cob_sub_int (cob_field *f, const int n, const int opt)
 int
 cob_cmp_int (cob_field *f1, const int n)
 {
+	int sign;
 	cob_decimal_set_field (&cob_d1, f1);
-	mpz_set_si (cob_d2.value, (cob_sli_t)n);
-	cob_d2.scale = 0;
-	return cob_decimal_cmp (&cob_d1, &cob_d2);
+	sign = mpz_sgn (cob_d1.value);
+	if (sign == 0) {
+		return -n;
+	} else if (sign == 1) {
+		if (n <= 0) return 1;
+	} else {
+		if (n >= 0) return -1;
+	}
+	mpz_set_si (cob_d2.value, n);
+	if (cob_d1.scale < 0) {
+		shift_decimal (&cob_d1, -cob_d1.scale);
+	} else if (cob_d1.scale > 0) {
+#if 0	/* if we ever add a "cob_equ_int"
+		   then this is to be added  there */
+		if (has_decimal_places (cob_d1)) {
+			return 1;
+		}
+#endif
+		shift_decimal (&cob_d2, cob_d1.scale);
+	}
+	return mpz_cmp (cob_d1.value, cob_d2.value);
 }
 
 int
 cob_cmp_uint (cob_field *f1, const unsigned int n)
 {
+	int sign;
 	cob_decimal_set_field (&cob_d1, f1);
-	mpz_set_ui (cob_d2.value, (cob_uli_t)n);
-	cob_d2.scale = 0;
-	return cob_decimal_cmp (&cob_d1, &cob_d2);
+	sign = mpz_sgn (cob_d1.value);
+	if (sign == 0) {
+		return -n;
+	} else if (sign == 1) {
+		if (n <= 0) return 1;
+	} else {
+		return -1;
+	}
+	mpz_set_ui (cob_d2.value, n);
+	if (cob_d1.scale < 0) {
+		shift_decimal (&cob_d1, -cob_d1.scale);
+	} else if (cob_d1.scale > 0) {
+		shift_decimal (&cob_d2, cob_d1.scale);
+	}
+	return mpz_cmp (cob_d1.value, cob_d2.value);
 }
 
 int
 cob_cmp_llint (cob_field *f1, const cob_s64_t n)
 {
+	int sign;
+	cob_decimal_set_field (&cob_d1, f1);
+	sign = mpz_sgn (cob_d1.value);
+	if (sign == 0) {
+		return -n;
+	} else if (sign == 1) {
+		if (n <= 0) return 1;
+	} else {
+		if (n >= 0) return -1;
+	}
 #ifdef	COB_LI_IS_LL
 	mpz_set_si (cob_d2.value, (cob_sli_t)n);
 #else
-	cob_u64_t	uval;
-	cob_u32_t	negative;
-
-	if (n < 0) {
-		negative = 1;
-		uval = (cob_u64_t)-n;
-	} else {
-		negative = 0;
-		uval = (cob_u64_t)n;
-	}
-	mpz_set_ui (cob_d2.value, (cob_uli_t)(uval >> 32));
-	mpz_mul_2exp (cob_d2.value, cob_d2.value, 32);
-	mpz_add_ui (cob_d2.value, cob_d2.value, (cob_uli_t)(uval & 0xFFFFFFFFU));
-	if (negative) {
-		mpz_neg (cob_d2.value, cob_d2.value);
+	{
+		cob_u64_t	uval;
+		cob_u32_t	negative;
+	
+		if (n < 0) {
+			negative = 1;
+			uval = (cob_u64_t)-n;
+		} else {
+			negative = 0;
+			uval = (cob_u64_t)n;
+		}
+		mpz_set_ui (cob_d2.value, (cob_uli_t)(uval >> 32));
+		mpz_mul_2exp (cob_d2.value, cob_d2.value, 32);
+		mpz_add_ui (cob_d2.value, cob_d2.value, (cob_uli_t)(uval & 0xFFFFFFFFU));
+		if (negative) {
+			mpz_neg (cob_d2.value, cob_d2.value);
+		}
 	}
 #endif
-
-	cob_d2.scale = 0;
-	cob_decimal_set_field (&cob_d1, f1);
-	return cob_decimal_cmp (&cob_d1, &cob_d2);
+	if (cob_d1.scale < 0) {
+		shift_decimal (&cob_d1, -cob_d1.scale);
+	} else if (cob_d1.scale > 0) {
+		shift_decimal (&cob_d2, cob_d1.scale);
+	}
+	return mpz_cmp (cob_d1.value, cob_d2.value);
 }
 
 #ifdef COB_FLOAT_DELTA
@@ -2489,12 +2556,13 @@ cob_cmp_packed (cob_field *f, const cob_s64_t val)
 		}
 	}
 	if (n != last_packed_val) {
+		/* otherwise we just leave the already packed value as-is */
 		last_packed_val = n;
 		memset (packed_value, 0, sizeof(packed_value));
 		if (n) {
 			p = &packed_value[19];
 			if (!COB_FIELD_NO_SIGN_NIBBLE (f)) {
-				*p =  (n % 10) << 4;
+				*p = (n % 10) << 4;
 				p--;
 				n /= 10;
 			}

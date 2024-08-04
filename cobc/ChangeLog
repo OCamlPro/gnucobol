@@ -1,4 +1,14 @@
 
+2024-08-04  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2022-12-21:
+	* codegen.c (add_field_cache): added the actual field as argument
+	  in addition to the founder, as more information is actually
+	  needed to determine which cache to use
+	Adjustments to merge 2022-12-12:
+	* codegen.c (emit_one_sym): output NULL as data storage
+	  and set is_internal flag to 1 for TYPEDEF
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (cb_file), parser.y: organization and access_mode as enums
@@ -25,15 +35,15 @@
 
 	* cobc.c,cobc.h: Added cb_max_binary to hold max digits allowed in binary
 					data field and cb_max_compx for max length of COMP-X
-	* field.c: Change to use cb_max_binary & cb_max_compx instead of constants 
+	* field.c: Change to use cb_max_binary & cb_max_compx instead of constants
 				For COMP-N it has data in 'native' byte order
-	* tree.c: Change to use cb_max_binary instead of constant 
-	* typeck.c: Change to use cb_max_binary instead of constant 
+	* tree.c: Change to use cb_max_binary instead of constant
+	* typeck.c: Change to use cb_max_binary instead of constant
 
 2023-01-20  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Verify INDEXED BY variables in PERFORM VARYING
-	* typeck.c: Add cb_emit_check_index to warn if SET constant value is 
+	* typeck.c: Add cb_emit_check_index to warn if SET constant value is
 	            out of bounds
 	* codeoptim.c: Fix cob_check_subscript_inline for min subscript value
 
@@ -43,18 +53,95 @@
 	* codegen.c: Verify that EXTERNAL variables have 'ename'
 	* field.c (copy_into_field): If EXTERNAL set 'ename'
 
-2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+2022-12-21  Samuel Belondrade <samuel.belondrade@atos.net>
 
-	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
+	* codegen.c (output_base): fix undeclared variable with REDEFINE GLOBAL
+	  [bugs:#777]
+
+2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initialize_to_value): fix bad generation for VALUE size
+	  greater than field size, see bug #777
+
+2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_move): fix bug #643 add check for SET literal TO val
+
+2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cb_warn_opt_val, get_warn_opt_value, set_warn_opt_value), cobc.h:
+	  renamed cb_warn_opt_val to warn_opt_val and keep local, provide typed
+	  functions to get/set the internal option with the "real" type for
+	  improved type checks and internal cobc debugging
+	* cobc.c, error.c, field.c, parser.y, pplex.l, tree.c, typeck.c: adjusted
+	  to use new get_warn_opt_value / set_warn_opt_value functions
+	* codegen.c (output_index): fix bug #832 binary-char unsigned not usable
+	  as subscript
+
+2022-12-12 Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initialize): added missing generation of runtime checks
+	  for INITIALIZE (again?)
+	* typeck.c (cb_build_move): optimized (=identical) generation for MOVE no
+	  matter if runtime checks are enabled or not (speed + identical behavior)
+	* codegen.c (output_initial_values): don't do any init for TYPEDEFs,
+	  as these are only prototypes and otherwise lead to actual storage
+	  (and useless init)
+	* codegen.c (output_display_fields): don't dump TYPEDEFs
+
+2022-12-09  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR 426 Default collation option
+	* flag.def, cobc.c (process_command_line): add new default-colseq flag
+	* tree.h, parser.y (cb_deciph_default_colseq_name): new helper function
+	* parser.y (build_default_colseq, setup_default_colseq, setup_program):
+	  initialize default collating sequence for programs when the
+	  default-colseq flag is not NATIVE
+
+2022-12-08 Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (items_have_same_data_clauses): fix handling for ANY LENGTH
+	  parameters, fixing bug #851
+	* parser.y: fixes for prototype checking
+	* typeck.c: work on warning messages for prototype checking
+	* typeck.c (error_if_signatures_differ): add check for ENTRY-CONVENTION
+	* typeck.c (cb_validate_program_environment): fixed bad test of warning
+	  option for CLASS check
+	* typeck.c (cb_emit_sort_init): minor refactoring
+	* typeck.c (cb_build_ppointer), tree.c (cb_name_1): added missing
+	  handling for prototype
+	* codegen.c (output_param): added handling for prototype name,
+	  returning its name as literal
+
+2022-12-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.h (struct cb_replace_src, struct cb_replace_list, struct
+	  cb_turn_list, cb_turn_list, struct list_error, struct list_replace)
+	  (struct list_skip, struct list_files), tree.h (enum cb_replace): move
+	  internal struct and symbol declarations to tree.h, and adapt some
+	  structures for strict partial text replacement
+	* cobc.c (print_replace_text, print_replace_main), pplex.l
+	  (set_print_replace_list, ppecho), ppparse.y (ppp_replace_src,
+	  ppp_replace_list_add): handle strict partial text replacement, enabled
+	  unless dialect option partial-replace-when-literal-src
+	  (formerly partial-replacing-with-literal) is "skip"
 
 2022-12-06 Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (validate_redefines): check for target not to have ANY LENGTH
 
+2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
+
 2022-12-03 Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c: check SOURCE_DATE_EPOCH once, if set parse via libcob
 	  to use as compile timestamp
+	* cobc.c (set_compile_date_tm): extracted from set_listing_date
+	* cobc.c (set_compile_date): execute set_compile_date_tm on each setting
+	* codegen.c (output_gnucobol_defines): use pre-set compile timestamp
+	  instead if re-setting them
 
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -777,7 +864,7 @@
 2022-02-10  Samuel Belondrade <samuel.belondrade@atos.net>
 
 	* pplex.l (ppecho, ppecho_replace): add a loop to check all data queue
-	  after a partial match [bugs:#778]
+	  after a partial match bug #778
 
 2022-02-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -923,12 +1010,12 @@
 	* parser.y: Interim Changes to handle multiple VARYING clauses
 				for a REPORT (More to come)
 	* codegen.c: Handle report VARYING clause as a list
-	* field.c:  Allow multiple VALUES when in REPORT section 
+	* field.c:  Allow multiple VALUES when in REPORT section
 
 2021-12-18  Ron Norman <rjn@inglenet.com>
 
 	* tree.h: Add extern cobc_in_data_division
-	* tree.c: Clear cobc_in_data_division 
+	* tree.c: Clear cobc_in_data_division
 	* scanner.l: Check for typedef variable and return TYPEDEF_NAME
 	* parser.y: Changes to look for TYPEDEF_NAME
 

@@ -466,7 +466,7 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 	}
 
 	/* Checks for redefinition */
-	if (cb_warn_opt_val[cb_warn_redefinition]
+	if (get_warn_opt_value (cb_warn_redefinition)
 	 && r->word->count > 1 && !r->flag_filler_ref) {
 		if (f->level == 01 || f->level == 77) {
 			redefinition_warning (name, NULL);
@@ -1806,7 +1806,7 @@ validate_elem_value (struct cb_field * const f)
 	}
 
 	/* ISO+IEC+1989-2002: 13.16.42.2-10 */
-	if (cb_warn_opt_val[cb_warn_ignored_initial_val] != COBC_WARN_DISABLED) {
+	if (get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
 		const cb_tree		x = CB_TREE (f);
 		const struct cb_field	*p;
 		for (p = f; p; p = p->parent) {
@@ -3199,8 +3199,8 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 	case CB_CATEGORY_NUMERIC:
 		if (CB_LITERAL_P (*val)) {
 			const struct cb_literal* lit = CB_LITERAL (*val);
-			char* p = (char*)lit->data;
-			char* end = p + lit->size - 1;
+			char *p = (char*)lit->data;
+			char *end = p + lit->size - 1;
 			/* note: literal data has no sign or decimal period any more */
 			if (*end == '0') {
 				while (p < end && *p == '0') p++;
@@ -3265,7 +3265,7 @@ validate_field_value_list (cb_tree values, struct cb_field* f)
 	}
 	if (no_relevant_value
 	 && !ret) {
-#if 0 /* this idea was nice, but we need a pointer for
+#if 0 /* this idea was nice, but we need a hint for
          INITIALIZE BY VALUE, so don't drop the value; otherwise
          fails "752. run_misc.at:10849: dump feature with NULL address ..." */
 		/* if deemed that no value is necessary: drop that completely */
@@ -3301,7 +3301,7 @@ validate_field_value (struct cb_field *f)
 					if (!ret_single) {
 						/* possible cleanup for value */
 						if (cleanup_field_value (f, &x)) {
-#if 0 /* this idea was nice, but we need a pointer for
+#if 0 /* this idea was nice, but we need a hint for
          INITIALIZE BY VALUE, so don't drop the value; otherwise
          fails "752. run_misc.at:10849: dump feature with NULL address ..." */
 							/* if deemed that no value is necessary: drop that completely */

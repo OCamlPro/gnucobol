@@ -10,6 +10,10 @@
 	* atlocal.in: fix COB_LDFLAGS to not be reset but prefixed
 	* atlocal_win, atlocal_valgrind: updated from atlocal.in
 
+2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win, atlocal_valgrind: added COB_MODULE_EXT
+
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win: do not disable PDCurses screenio

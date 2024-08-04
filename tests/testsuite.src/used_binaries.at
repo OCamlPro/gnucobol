@@ -241,7 +241,7 @@ AT_DATA([sub/copy/PROC.cpy],[
 
 AT_CHECK([$COBC -I sub/copy prog.cob -o prog.c], [0], [], [])
 AT_CHECK([$COBC -I sub/copy prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
-AT_CHECK([$COBC -I sub/copy prog.$COB_OBJECT_EXT -o prog])
+AT_CHECK([$COBC -I sub/copy prog.$COB_OBJECT_EXT -o prog.$COB_MODULE_EXT])
 AT_CHECK([$COBCRUN prog], [0], [bluBb], [])
 AT_CHECK([$COBC -I sub/copy -x prog.cob -o prog.c], [0], [], [])
 AT_CHECK([$COBC -I sub/copy -x prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
