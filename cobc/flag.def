@@ -86,7 +86,7 @@ CB_FLAG_NQ (1, "sqlschema", 11,		/* stored in cb_sqldb_schema */
 CB_FLAG_NQ (0, "ec", 14,
 	_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
       "                        sets -fsource-location"))
-CB_FLAG_NQ (0, "no-ec", 15,
+CB_FLAG_NQ (0, "no-ec", 17,
 	_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"))
 
 CB_FLAG_NQ (1, "ebcdic-table", 16, /* cf cconv.h for all available tables */
@@ -95,6 +95,10 @@ CB_FLAG_NQ (1, "ebcdic-table", 16, /* cf cconv.h for all available tables */
 	  "                        * restricted-gc: translation from restricted ASCII only\n"
 	  "                        * ibm: translation to restricted ASCII as per IBM\n"
 	  "                        * gcos: translation to extended ASCII as per GCOS7"))
+
+CB_FLAG_NQ (1, "default-colseq", 15,
+	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"
+	  "                        * default: NATIVE"))
 
 /* Binary flags */
 

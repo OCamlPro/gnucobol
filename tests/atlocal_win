@@ -139,7 +139,8 @@ export COB_MSG_FORMAT
 # note: kept intended to ease merge from atlocal.in
 
 	COB_OBJECT_EXT="$(grep COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
-	COB_EXE_EXT="$(grep COB_EXE_EXT info.out | cut -d: -f2 | cut -b2-)"
+	COB_EXE_EXT=".exe"
+	COB_MODULE_EXT="dll"
 
 	if test $(grep -i -c "little-endian" info.out) = 0; then
 		COB_BIGENDIAN="yes"
@@ -208,7 +209,7 @@ rm -rf info.out
 # NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
 export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
 export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
-export COB_OBJECT_EXT COB_EXE_EXT
+export COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
 # to ensure that no external COB_SCHEMA_DIR is polluted: set to local
 COB_SCHEMA_DIR="." && export COB_SCHEMA_DIR
