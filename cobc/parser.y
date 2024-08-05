@@ -928,8 +928,8 @@ program_init_without_program_id (void)
 
 	current_section = NULL;
 	current_paragraph = NULL;
-	l = cb_build_alphanumeric_literal (demangle_name,
-		strlen (demangle_name));
+	l = cb_build_literal_by_category (demangle_name,
+		strlen (demangle_name), CB_CATEGORY_ALPHANUMERIC);
 	current_program->program_name = (char *)CB_LITERAL (l)->data;
 	current_program->program_id
 		= cb_build_program_id (current_program->program_name, 0);
@@ -5523,24 +5523,24 @@ assign_clause:
   {
 	if (assign_device == CB_ASSIGN_DISPLAY_DEVICE) {
 		current_file->assign =
-			cb_build_alphanumeric_literal ("stdout", (size_t)6);
+			cb_build_literal_by_category ("stdout", (size_t)6, CB_CATEGORY_ALPHANUMERIC);
 		current_file->special = COB_SELECT_STDOUT;
 	} else if (assign_device == CB_ASSIGN_KEYBOARD_DEVICE) {
 		current_file->assign =
-			cb_build_alphanumeric_literal ("stdin", (size_t)5);
+			cb_build_literal_by_category ("stdin", (size_t)5, CB_CATEGORY_ALPHANUMERIC);
 		current_file->special = COB_SELECT_STDIN;
 	} else if (assign_device == CB_ASSIGN_PRINTER_DEVICE) {
 		current_file->organization = COB_ORG_LINE_SEQUENTIAL;
 		current_file->assign =
-			cb_build_alphanumeric_literal ("PRINTER", (size_t)7);
+			cb_build_literal_by_category ("PRINTER", (size_t)7, CB_CATEGORY_ALPHANUMERIC);
 	} else if (assign_device == CB_ASSIGN_PRINTER_1_DEVICE) {
 		current_file->organization = COB_ORG_LINE_SEQUENTIAL;
 		current_file->assign =
-			cb_build_alphanumeric_literal ("PRINTER-1", (size_t)9);
+			cb_build_literal_by_category ("PRINTER-1", (size_t)9, CB_CATEGORY_ALPHANUMERIC);
 	} else if (assign_device == CB_ASSIGN_PRINT_DEVICE) {
 		current_file->organization = COB_ORG_LINE_SEQUENTIAL;
 		current_file->assign =
-			cb_build_alphanumeric_literal ("LPT1", (size_t)4);
+			cb_build_literal_by_category ("LPT1", (size_t)4, CB_CATEGORY_ALPHANUMERIC);
 	} else if (assign_device == CB_ASSIGN_LINE_SEQ_DEVICE
 		   || assign_device == CB_ASSIGN_GENERAL_DEVICE) {
 		current_file->flag_fileid = 1;
@@ -7480,15 +7480,15 @@ constant_expression_list:
 
 constant_expression:
   lit_or_length			{ $$ = $1; }
-| TOK_OPEN_PAREN		{ $$ = cb_build_alphanumeric_literal ("(", 1); }
-| TOK_CLOSE_PAREN		{ $$ = cb_build_alphanumeric_literal (")", 1); }
-| TOK_PLUS			{ $$ = cb_build_alphanumeric_literal ("+", 1); }
-| TOK_MINUS			{ $$ = cb_build_alphanumeric_literal ("-", 1); }
-| TOK_MUL			{ $$ = cb_build_alphanumeric_literal ("*", 1); }
-| TOK_DIV			{ $$ = cb_build_alphanumeric_literal ("/", 1); }
-| AND				{ $$ = cb_build_alphanumeric_literal ("&", 1); }
-| OR				{ $$ = cb_build_alphanumeric_literal ("|", 1); }
-| EXPONENTIATION		{ $$ = cb_build_alphanumeric_literal ("^", 1); }
+| TOK_OPEN_PAREN		{ $$ = cb_build_literal_by_category ("(", 1, CB_CATEGORY_ALPHANUMERIC); }
+| TOK_CLOSE_PAREN		{ $$ = cb_build_literal_by_category (")", 1, CB_CATEGORY_ALPHANUMERIC); }
+| TOK_PLUS			{ $$ = cb_build_literal_by_category ("+", 1, CB_CATEGORY_ALPHANUMERIC); }
+| TOK_MINUS			{ $$ = cb_build_literal_by_category ("-", 1, CB_CATEGORY_ALPHANUMERIC); }
+| TOK_MUL			{ $$ = cb_build_literal_by_category ("*", 1, CB_CATEGORY_ALPHANUMERIC); }
+| TOK_DIV			{ $$ = cb_build_literal_by_category ("/", 1, CB_CATEGORY_ALPHANUMERIC); }
+| AND				{ $$ = cb_build_literal_by_category ("&", 1, CB_CATEGORY_ALPHANUMERIC); }
+| OR				{ $$ = cb_build_literal_by_category ("|", 1, CB_CATEGORY_ALPHANUMERIC); }
+| EXPONENTIATION		{ $$ = cb_build_literal_by_category ("^", 1, CB_CATEGORY_ALPHANUMERIC); }
 ;
 
 _data_description_clause_sequence:

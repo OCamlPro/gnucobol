@@ -3714,7 +3714,7 @@ output_param (cb_tree x, int id)
 		if (CB_PROTOTYPE_P (r->value)) {
 			const char *name = CB_PROTOTYPE (r->value)->ext_name;
 			const size_t len = strlen (name);
-			cb_tree lit = cb_build_alphanumeric_literal (name, len);
+			cb_tree lit = cb_build_literal_by_category (name, len, CB_CATEGORY_ALPHANUMERIC);
 			output_param (lit, 0);
 			break;
 		}

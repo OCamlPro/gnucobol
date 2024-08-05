@@ -1127,8 +1127,8 @@ get_ml_name (cb_tree record, cb_tree name_list, enum cb_ml_type type)
 		}
 	}
 
-	return cb_build_alphanumeric_literal (cb_name (record),
-					      strlen (cb_name (record)));
+	return cb_build_literal_by_category (cb_name (record),
+					      strlen (cb_name (record)), CB_CATEGORY_ALPHANUMERIC);
 }
 
 static enum cb_ml_type
@@ -2803,7 +2803,7 @@ cb_build_gcos_literal(const void *data, const size_t size)
 }
 
 cb_tree
-cb_build_alphanumeric_literal (const void *data, const size_t size)
+cb_build_literal_by_category (const void *data, const size_t size, int category)
 {
 	cb_tree			l;
 
@@ -2998,7 +2998,6 @@ cb_build_UTF8_literal (const void *data, const size_t size)
 
 	return l;
 }
-
 
 cb_tree
 cb_concat_literals (const cb_tree x1, const cb_tree x2)
@@ -4483,7 +4482,7 @@ cb_build_symbolic_chars (const cb_tree sym_list, const cb_tree alphabet)
 			buff[0] = (unsigned char)n;
 		}
 		buff[1] = 0;
-		x2 = cb_build_alphanumeric_literal (buff, (size_t)1);
+		x2 = cb_build_literal_by_category (buff, (size_t)1, CB_CATEGORY_ALPHANUMERIC);
 		CB_LITERAL (x2)->all = 1;
 		x = cb_build_constant (CB_VALUE (l), x2);
 		CB_FIELD (x)->flag_item_78 = 1;
@@ -5023,8 +5022,8 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		f->organization = COB_ORG_LINE_SEQUENTIAL;
 	}
 	if (f->flag_fileid && !f->assign) {
-		f->assign = cb_build_alphanumeric_literal (f->name,
-							   strlen (f->name));
+		f->assign = cb_build_literal_by_category (f->name,
+							   strlen (f->name), CB_CATEGORY_ALPHANUMERIC);
 	}
 
 	/* associate records to file (separate and first for being able

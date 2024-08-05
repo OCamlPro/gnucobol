@@ -993,7 +993,7 @@ H#[0-9A-Za-z]+ {
 		cbp = lookup_intrinsic (yytext, 0);
 		if (cbp) {
 			if (cobc_in_repository) {
-				yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
+				yylval = cb_build_literal_by_category (yytext, (size_t)yyleng, CB_CATEGORY_ALPHANUMERIC);
 				RETURN_TOK (FUNCTION_NAME);
 			}
 			if (functions_are_all) {
@@ -1028,7 +1028,7 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (PROGRAM_NAME);
 		} else {
-			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
+			yylval = cb_build_literal_by_category (yytext, (size_t)yyleng, CB_CATEGORY_ALPHANUMERIC);
 			RETURN_TOK (LITERAL);
 		}
 	}
@@ -1718,7 +1718,7 @@ scan_z (const char *text, const char *type)
 			_("%s literals must contain at least one character"),
 			type);
 		error_literal (type, "", 0);
-		yylval = cb_build_alphanumeric_literal ("", 1);
+		yylval = cb_build_literal_by_category ("", 1, CB_CATEGORY_ALPHANUMERIC);
 		RETURN_TOK (LITERAL);
 	}
 	if ((unsigned long)(curr_len - 1) > cb_lit_length) {
@@ -1738,7 +1738,7 @@ scan_z (const char *text, const char *type)
 	plex_buff[curr_len - 1] = 0;
 
 	/* Count is correct here as the trailing quote is now a null */
-	yylval = cb_build_alphanumeric_literal (plex_buff, curr_len);
+	yylval = cb_build_literal_by_category (plex_buff, curr_len, CB_CATEGORY_ALPHANUMERIC);
 	if (type[0] == 'L') {
 		CB_LITERAL(yylval)->llit = 1;
 	}
@@ -2398,7 +2398,7 @@ scan_define_options (const char *text)
 		}
 		*q = 0;
 		size -= 2;
-		x = cb_build_alphanumeric_literal (s + 1, size);
+		x = cb_build_literal_by_category (s + 1, size, CB_CATEGORY_ALPHANUMERIC);
 	} else {
 		/* Get sign */
 		sign = get_sign (*s);
