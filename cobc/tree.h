@@ -2106,15 +2106,11 @@ extern cb_tree			cb_build_alphanumeric_for_figurative_constant(const void *,
 									const size_t);
 extern cb_tree 			cb_build_gcos_literal (const void *,
 							  const size_t);
-extern cb_tree			cb_build_alphanumeric_literal (const void *,
-							       const size_t);
-extern cb_tree			cb_build_national_literal (const void *,
-							       const size_t);
+extern cb_tree			cb_build_literal_by_category (const void *,
+							       const size_t, int category);
 extern cb_tree			cb_build_numsize_literal (const void *,
 							  const size_t,
 							  const int);
-extern cb_tree			cb_build_UTF8_literal (const void *,
-							  const size_t);
 extern cb_tree			cb_concat_literals (const cb_tree,
 						    const cb_tree);
 

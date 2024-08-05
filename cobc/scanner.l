@@ -988,7 +988,7 @@ H#[0-9A-Za-z]+ {
 		cbp = lookup_intrinsic (yytext, 0);
 		if (cbp) {
 			if (cobc_in_repository) {
-				yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
+				yylval = cb_build_literal_by_category (yytext, (size_t)yyleng, CB_CATEGORY_ALPHANUMERIC);
 				RETURN_TOK (FUNCTION_NAME);
 			}
 			if (functions_are_all) {
@@ -1023,7 +1023,7 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (PROGRAM_NAME);
 		} else {
-			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
+			yylval = cb_build_literal_by_category (yytext, (size_t)yyleng, CB_CATEGORY_ALPHANUMERIC);
 			RETURN_TOK (LITERAL);
 		}
 	}
@@ -1512,26 +1512,26 @@ read_literal (const char mark, const enum cb_literal_type type)
 	plex_buff[i] = 0;
 	switch (type) {
     case CB_LITERAL_U:
-        yylval = cb_build_UTF8_literal(plex_buff, i);
+        yylval = cb_build_literal_by_category(plex_buff, i, CB_CATEGORY_UTF8);
         break;
     case CB_LITERAL_N:
         if (cb_verify(cb_national_literals, _("national literal"))) {
             CB_UNFINISHED(_("national literal"));
         }
-        yylval = cb_build_national_literal(plex_buff, i);
+        yylval = cb_build_literal_by_category(plex_buff, i,CB_CATEGORY_NATIONAL);
         break;
     case CB_LITERAL_NC:
         if (cb_verify(cb_nationalc_literals, _("national-character literal"))) {
             CB_UNFINISHED(_("national literal"));
         }
-        yylval = cb_build_national_literal(plex_buff, i);
+        yylval = cb_build_literal_by_category(plex_buff, i, CB_CATEGORY_NATIONAL);
         break;
     default:
 		if(cb_gcos_ebcdic_literals){
 			yylval = cb_build_gcos_literal(plex_buff, i);
 		}
 		else{
-        	yylval = cb_build_alphanumeric_literal(plex_buff, i);
+        	yylval = cb_build_literal_by_category(plex_buff, i, CB_CATEGORY_ALPHANUMERIC);
 		}
 		break;
 	}
@@ -1624,12 +1624,15 @@ scan_x (const char *text, const char *type)
 	        plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	if(type[0] == 'X' || type[0] == 'U'){
+	switch(type[0]){
+	case 'X':
+	case 'U':
 		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up 
 		to full bytes in case of odd digits */
 		result_len = (curr_len + 1) / 2;
-	} else if (type[0] == 'B') {
-		result_len = curr_len * 4; // boolean characters B -> 1110
+		break;
+	case 'B':
+		result_len = curr_len * 4; /* boolean characters B -> 1110 */
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
@@ -1641,7 +1644,8 @@ scan_x (const char *text, const char *type)
 				(unsigned long) result_len, 64);
 			error_literal (type, plex_buff, literal_error++);
 		}
-	} else {
+		break;
+	default:
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
 			memset (plex_buff, 0, 5);
@@ -1650,7 +1654,9 @@ scan_x (const char *text, const char *type)
 		} else {
 			CB_UNFINISHED (_("national literal"));
 		}
+		break;
 	}
+
 	if (unlikely(result_len > cb_lit_length)) {
         	error_literal(type, plex_buff, literal_error++);
         }
@@ -1719,7 +1725,7 @@ scan_z (const char *text, const char *type)
 			_("%s literals must contain at least one character"),
 			type);
 		error_literal (type, "", 0);
-		yylval = cb_build_alphanumeric_literal ("", 1);
+		yylval = cb_build_literal_by_category ("", 1, CB_CATEGORY_ALPHANUMERIC);
 		RETURN_TOK (LITERAL);
 	}
 	if ((unsigned long)(curr_len - 1) > cb_lit_length) {
@@ -1739,7 +1745,7 @@ scan_z (const char *text, const char *type)
 	plex_buff[curr_len - 1] = 0;
 
 	/* Count is correct here as the trailing quote is now a null */
-	yylval = cb_build_alphanumeric_literal (plex_buff, curr_len);
+	yylval = cb_build_literal_by_category (plex_buff, curr_len, CB_CATEGORY_ALPHANUMERIC);
 	if (type[0] == 'L') {
 		CB_LITERAL(yylval)->llit = 1;
 	}
@@ -2399,7 +2405,7 @@ scan_define_options (const char *text)
 		}
 		*q = 0;
 		size -= 2;
-		x = cb_build_alphanumeric_literal (s + 1, size);
+		x = cb_build_literal_by_category (s + 1, size, CB_CATEGORY_ALPHANUMERIC);
 	} else {
 		/* Get sign */
 		sign = get_sign (*s);

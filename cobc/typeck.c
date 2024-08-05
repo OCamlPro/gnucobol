@@ -1515,7 +1515,7 @@ cb_build_register_when_compiled (const char *name, const char *definition)
 	}
 #endif
 	cb_build_constant_register (cb_build_reference (name),
-		cb_build_alphanumeric_literal (buff, lit_size));
+		cb_build_literal_by_category (buff, lit_size, CB_CATEGORY_ALPHANUMERIC));
 }
 
 /* save external definition that is able to be parsed for later */
@@ -1699,7 +1699,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 			} else if (p2 == p) {
 				/* plain alphanumeric literal */
 				if (current_program) {
-					lit = cb_build_alphanumeric_literal (p + 1, sep - 1 - p);
+					lit = cb_build_literal_by_category (p + 1, sep - 1 - p, CB_CATEGORY_ALPHANUMERIC);
 				}
 				memset (p, ' ', sep - p);
 			} else {
@@ -2031,7 +2031,7 @@ cb_set_intr_when_compiled (void)
 	} else {
 		snprintf (buff + 16, (size_t)6, "00000");
 	}
-	cb_intr_whencomp = cb_build_alphanumeric_literal (buff, (size_t)21);
+	cb_intr_whencomp = cb_build_literal_by_category (buff, (size_t)21, CB_CATEGORY_ALPHANUMERIC);
 }
 
 /* check program-id literal and trim, if necessary */
@@ -2224,7 +2224,7 @@ build_external_assignment_name (cb_tree name)
 	}
 
 	/* Convert the EXTERNAL name into literal */
-	return cb_build_alphanumeric_literal (name_ptr, strlen (name_ptr));
+	return cb_build_literal_by_category (name_ptr, strlen (name_ptr),  CB_CATEGORY_ALPHANUMERIC);
 }
 
 /* build name for ASSIGN, to be resolved later as we don't have any
@@ -2254,7 +2254,7 @@ cb_build_assignment_name (struct cb_file *cfile, cb_tree name)
 		const char	*name_ptr = CB_NAME (name);
 		/* handle name as literal if it matches the file name */
 		if (strcmp (name_ptr, cfile->name) == 0) {
-			return cb_build_alphanumeric_literal (name_ptr, strlen (name_ptr));
+			return cb_build_literal_by_category (name_ptr, strlen (name_ptr), CB_CATEGORY_ALPHANUMERIC);
 		}
 		current_program->reference_list =
 			cb_list_add (current_program->reference_list, name);
@@ -2879,7 +2879,7 @@ cb_build_const_from (cb_tree x)
 	if (p->deftype == PLEX_DEF_NUM) {
 		return cb_build_numeric_literal (0, p->value, 0);
 	} else {
-		return cb_build_alphanumeric_literal (p->value, (size_t)strlen(p->value));
+		return cb_build_literal_by_category (p->value, (size_t)strlen(p->value), CB_CATEGORY_ALPHANUMERIC);
 	}
 }
 
@@ -3839,12 +3839,12 @@ cb_validate_collating (cb_tree collating_sequence)
 		return 0;
 	}
 	if (CB_ALPHABET_NAME (x)->low_val_char) {
-		cb_low = cb_build_alphanumeric_literal ("\0", (size_t)1);
+		cb_low = cb_build_literal_by_category ("\0", (size_t)1, CB_CATEGORY_ALPHANUMERIC);
 		CB_LITERAL(cb_low)->data[0] = (unsigned char)CB_ALPHABET_NAME (x)->low_val_char;
 		CB_LITERAL(cb_low)->all = 1;
 	}
 	if (CB_ALPHABET_NAME (x)->high_val_char != 255){
-		cb_high = cb_build_alphanumeric_literal ("\0", (size_t)1);
+		cb_high = cb_build_literal_by_category ("\0", (size_t)1, CB_CATEGORY_ALPHANUMERIC);
 		CB_LITERAL(cb_high)->data[0] = (unsigned char)CB_ALPHABET_NAME (x)->high_val_char;
 		CB_LITERAL(cb_high)->all = 1;
 	}
@@ -7907,7 +7907,7 @@ emit_accept_external_form (cb_tree x)
 		if (f->external_form_identifier) {
 			ext_form_id = f->external_form_identifier;
 		} else {
-			ext_form_id = cb_build_alphanumeric_literal (f->name, strlen (f->name));
+			ext_form_id = cb_build_literal_by_category (f->name, strlen (f->name), CB_CATEGORY_ALPHANUMERIC);
 		}
 		if (f->flag_occurs) {
 			for (i = 1; i <= f->occurs_max; i++) {
@@ -7974,8 +7974,8 @@ emit_display_external_form (cb_tree x)
 			if (f_ref_field->external_form_identifier) {
 				ext_form_id = f_ref_field->external_form_identifier;
 				} else {
-				ext_form_id = cb_build_alphanumeric_literal (f_ref_field->name,
-								   strlen (f_ref_field->name));
+				ext_form_id = cb_build_literal_by_category (f_ref_field->name,
+								   strlen (f_ref_field->name), CB_CATEGORY_ALPHANUMERIC);
 				}
 #if 0 /* TODO: implement CGI runtime, see Patch #27 */
 			cb_emit (CB_BUILD_FUNCALL_2 ("cob_cgi_addTplVar", ext_form_id, f_ref));
@@ -9744,7 +9744,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 			if (f->external_form_identifier) {
 				m = f->external_form_identifier;
 			} else {
-				m = cb_build_alphanumeric_literal (f->name, strlen(f->name));
+				m = cb_build_literal_by_category (f->name, strlen(f->name), CB_CATEGORY_ALPHANUMERIC);
 			}
 #if 0 /* TODO: implement CGI runtime, see Patch #27 */
 			cb_emit (CB_BUILD_FUNCALL_1 ("cob_cgi_renderTpl", m));
@@ -11118,7 +11118,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	int			dst_size_mod;
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
-	int class;
+	int class = CB_TREE_CLASS(src);
 
 
 	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
@@ -11564,7 +11564,6 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				class = CB_TREE_CLASS(src);
 				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
 				i /= COB_NATIONAL_SIZE;
 				if( size < i ) {
@@ -11668,7 +11667,6 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				class = CB_TREE_CLASS(src);
 				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
 				if( size < i ) {
 					size = (signed int)i;

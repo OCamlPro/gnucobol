@@ -1127,8 +1127,8 @@ get_ml_name (cb_tree record, cb_tree name_list, enum cb_ml_type type)
 		}
 	}
 
-	return cb_build_alphanumeric_literal (cb_name (record),
-					      strlen (cb_name (record)));
+	return cb_build_literal_by_category (cb_name (record),
+					      strlen (cb_name (record)), CB_CATEGORY_ALPHANUMERIC);
 }
 
 static enum cb_ml_type
@@ -2803,16 +2803,39 @@ cb_build_gcos_literal(const void *data, const size_t size)
 }
 
 cb_tree
-cb_build_alphanumeric_literal (const void *data, const size_t size)
+cb_build_literal_by_category (const void *data, const size_t size, int category)
 {
 	cb_tree			l;
 
 #ifdef HAVE_ICONV_H
-	size_t outsize = size;
-	void * outdata = malloc(outsize);
+	size_t outsize;
+	void * outdata;
+	iconv_t iconv_type;
+
+	switch(category){
+	case CB_CATEGORY_ALPHANUMERIC:
+	case CB_CATEGORY_ALPHANUMERIC_EDITED:
+		outsize = size;
+		iconv_type = cb_iconv.alphanumeric;
+		break;
+	case CB_CATEGORY_NATIONAL:
+	case CB_CATEGORY_NATIONAL_EDITED:
+		outsize = size*2;
+		iconv_type = cb_iconv.national;
+		break;
+	case CB_CATEGORY_UTF8:
+		iconv_type = cb_iconv.utf8;
+		outsize = 4*size;
+		break;
+	default:
+		cobc_err_msg(_("iconv_open failed"));
+		break;
+	}
+
+	outdata = malloc(outsize);
 	memset(outdata, ' ', outsize);
-	
-	if(cb_iconv.alphanumeric == (iconv_t)-1) {
+
+	if(iconv_type == (iconv_t)-1) {
 		cobc_err_msg(_("iconv_open failed"));
 	} else{
 		size_t inbytesleft = size;
@@ -2821,7 +2844,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		char *inbuf = (char *)data;
 		char * outbuf = (char *)outdata;
 		
-		size_t convResult = iconv(cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		size_t convResult = iconv(iconv_type, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
 			switch (errno) {
 			case E2BIG:
@@ -2841,115 +2864,14 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 		}
 
 		outsize -= outbytesleft;
-	}
-	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, outdata, outsize));
-    free(outdata);
-#else
-    l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
-#endif
-
-    l->source_file = cb_source_file;
-    l->source_line = cb_source_line;
-
-    return l;
-}
-
-cb_tree
-cb_build_national_literal (const void *data, const size_t size)
-{
-	cb_tree			l;
-	
-#ifdef HAVE_ICONV_H
-	size_t outsize = size*2;
-	void * outdata = malloc(outsize);
-	memset(outdata, ' ', outsize);
-	
-	if(cb_iconv.national == (iconv_t)-1) {
-		cobc_err_msg(_("iconv_open failed"));
-	} else{
-		size_t inbytesleft = size;
-		size_t outbytesleft = outsize;
-
-		char *inbuf = (char *)data;
-		char * outbuf = (char *)outdata;
-		
-		size_t convResult = iconv(cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-		if(convResult == (size_t)-1) {
-			switch (errno) {
-			case E2BIG:
-				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
-				break;
-			case EILSEQ:
-				cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
-				break;
-			case EINVAL:
-				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
-				break;
-			default:
-				cobc_err_msg(_("iconv failed: Unknown error"));
-				break;
-			}
-	    }
-
-        outsize -= outbytesleft;
-    }
-
-    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
-    free(outdata);
-#else
-    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, size));
-#endif
-
-    l->source_file = cb_source_file;
-    l->source_line = cb_source_line;
-
-    return l;
-}
-
-cb_tree
-cb_build_UTF8_literal (const void *data, const size_t size)
-{
-	cb_tree			l;
-
-#ifdef HAVE_ICONV_H
-	size_t outsize = size*4;
-	void * outdata = malloc(outsize);
-	memset(outdata, ' ', outsize);
-
-	if(cb_iconv.utf8 == (iconv_t)-1) {
-		cobc_err_msg(_("iconv_open failed"));
-	} else{
-		size_t inbytesleft = size;
-		size_t outbytesleft = outsize;
-
-		char *inbuf = (char *)data;
-		char * outbuf = (char *)outdata;
-		
-		size_t convResult = iconv(cb_iconv.utf8, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-		if(convResult == (size_t)-1) {
-			switch (errno) {
-			case E2BIG:
-				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
-				break;
-			case EILSEQ:
-				cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
-				break;
-			case EINVAL:
-				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
-				break;
-			default:
-				cobc_err_msg(_("iconv failed: Unknown error"));
-				break;
-			}
+		if(category == CB_CATEGORY_UTF8){
+			outdata = cobc_realloc(outdata, outsize); /* Resize the outdata to the actual size for the case fo utf8 */
 		}
-
-		outsize -= outbytesleft;
-		outdata = cobc_realloc(outdata, outsize); // Resize the outdata to the actual size
 	}
-	l = CB_TREE (build_literal (CB_CATEGORY_UTF8, outdata, outsize));
+	l = CB_TREE (build_literal (category, outdata, outsize));
     free(outdata);
 #else
-    l = CB_TREE (build_literal (CB_CATEGORY_UTF8, data, size));
+    l = CB_TREE (build_literal (category, data, size));
 #endif
 
     l->source_file = cb_source_file;
@@ -2957,7 +2879,6 @@ cb_build_UTF8_literal (const void *data, const size_t size)
 
     return l;
 }
-
 
 cb_tree
 cb_concat_literals (const cb_tree x1, const cb_tree x2)
@@ -4442,7 +4363,7 @@ cb_build_symbolic_chars (const cb_tree sym_list, const cb_tree alphabet)
 			buff[0] = (unsigned char)n;
 		}
 		buff[1] = 0;
-		x2 = cb_build_alphanumeric_literal (buff, (size_t)1);
+		x2 = cb_build_literal_by_category (buff, (size_t)1, CB_CATEGORY_ALPHANUMERIC);
 		CB_LITERAL (x2)->all = 1;
 		x = cb_build_constant (CB_VALUE (l), x2);
 		CB_FIELD (x)->flag_item_78 = 1;
@@ -4982,8 +4903,8 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		f->organization = COB_ORG_LINE_SEQUENTIAL;
 	}
 	if (f->flag_fileid && !f->assign) {
-		f->assign = cb_build_alphanumeric_literal (f->name,
-							   strlen (f->name));
+		f->assign = cb_build_literal_by_category (f->name,
+							   strlen (f->name), CB_CATEGORY_ALPHANUMERIC);
 	}
 
 	/* associate records to file (separate and first for being able
