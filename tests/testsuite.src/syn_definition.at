@@ -2049,6 +2049,8 @@ AT_DATA([prog4.cob], [
            ALPHABET ALPHABET-2
                     n'A' also n'B' ALSO n'f',
                     n'g' also n'G', n'1' thru n'9'.
+           ALPHABET ALPHABET-3
+                    n'A' also n'C', n'B' thru N'D'.
        END PROGRAM prog4.
 ])
 
@@ -2072,6 +2074,7 @@ prog3.cob:131: warning: NATIONAL COLLATING SEQUENCE is not implemented
 AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog4.cob], [1], [],
 [prog4.cob:9: warning: NATIONAL COLLATING SEQUENCE is not implemented
 prog4.cob:13: error: invalid character values in alphabet 'ALPHABET-2', starting at position 3
+prog4.cob:16: error: invalid character values in alphabet 'ALPHABET-3', starting at position 2
 ])
 AT_CLEANUP
 
