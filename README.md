@@ -1,3 +1,6 @@
+THIS IS ONLY A PRELIMINARY VERSION, IT NEEDS NOT TO BE REVIEWED NOW AS IT WON'T BE MERGED FOR THE MOMENT
+
+
 [GnuCOBOL](https://www.gnu.org/software/gnucobol/) is a free
 COBOL compiler licensed under the GNU Public License (GPL).  
 It implements a substantial part of the COBOL 85,
