@@ -993,7 +993,7 @@ H#[0-9A-Za-z]+ {
 		cbp = lookup_intrinsic (yytext, 0);
 		if (cbp) {
 			if (cobc_in_repository) {
-				yylval = cb_build_literal_by_category (yytext, (size_t)yyleng, CB_CATEGORY_ALPHANUMERIC);
+				yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 				RETURN_TOK (FUNCTION_NAME);
 			}
 			if (functions_are_all) {
@@ -1028,7 +1028,7 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (PROGRAM_NAME);
 		} else {
-			yylval = cb_build_literal_by_category (yytext, (size_t)yyleng, CB_CATEGORY_ALPHANUMERIC);
+			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 			RETURN_TOK (LITERAL);
 		}
 	}
@@ -1619,15 +1619,12 @@ scan_x (const char *text, const char *type)
 	        plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	switch(type[0]){
-	case 'X':
-	case 'U':
+	if(type[0] == 'X' || type[0] == 'U'){
 		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up 
 		to full bytes in case of odd digits */
 		result_len = (curr_len + 1) / 2;
-		break;
-	case 'B':
-		result_len = curr_len * 4; /* boolean characters B -> 1110 */
+	} else if (type[0] == 'B') {
+		result_len = curr_len * 4; // boolean characters B -> 1110
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
@@ -1647,9 +1644,7 @@ scan_x (const char *text, const char *type)
 			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
 			RETURN_TOK (LITERAL);
 		}
-		break;
 	}
-
 	if (unlikely(result_len > cb_lit_length)) {
 		error_literal(type, plex_buff, literal_error++);
 	}
@@ -1718,7 +1713,7 @@ scan_z (const char *text, const char *type)
 			_("%s literals must contain at least one character"),
 			type);
 		error_literal (type, "", 0);
-		yylval = cb_build_literal_by_category ("", 1, CB_CATEGORY_ALPHANUMERIC);
+		yylval = cb_build_alphanumeric_literal ("", 1);
 		RETURN_TOK (LITERAL);
 	}
 	if ((unsigned long)(curr_len - 1) > cb_lit_length) {
@@ -1738,7 +1733,7 @@ scan_z (const char *text, const char *type)
 	plex_buff[curr_len - 1] = 0;
 
 	/* Count is correct here as the trailing quote is now a null */
-	yylval = cb_build_literal_by_category (plex_buff, curr_len, CB_CATEGORY_ALPHANUMERIC);
+	yylval = cb_build_alphanumeric_literal (plex_buff, curr_len);
 	if (type[0] == 'L') {
 		CB_LITERAL(yylval)->llit = 1;
 	}
@@ -2398,7 +2393,7 @@ scan_define_options (const char *text)
 		}
 		*q = 0;
 		size -= 2;
-		x = cb_build_literal_by_category (s + 1, size, CB_CATEGORY_ALPHANUMERIC);
+		x = cb_build_alphanumeric_literal (s + 1, size);
 	} else {
 		/* Get sign */
 		sign = get_sign (*s);

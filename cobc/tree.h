@@ -2111,6 +2111,8 @@ extern cb_tree			cb_build_national_literal (const void *,
 extern cb_tree			cb_build_numsize_literal (const void *,
 							  const size_t,
 							  const int);
+extern cb_tree			cb_build_UTF8_literal (const void *,
+							  const size_t);
 extern cb_tree			cb_concat_literals (const cb_tree,
 						    const cb_tree);
 
