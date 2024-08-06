@@ -2168,7 +2168,7 @@ struct cb_program *
 cb_build_program (struct cb_program *last_program, const int nest_level)
 {
 	struct cb_program	*p;
-	struct cb_program	*q;
+	struct cb_program	*q;a
 
 	if (!last_program) {
 		toplev_count = 0;

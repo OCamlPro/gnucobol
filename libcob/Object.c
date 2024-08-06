@@ -71,7 +71,7 @@ void cb_class_new_field(struct cobol_class *myclass,
             */
 }
 
-int cb_interface_nconformew(cob_interface *my_interface, cob_class *my_class)
+int cb_interface_conform(cob_interface *my_interface, cob_class *my_class)
 {
    for (int i = 0; i < my_interface->size; i++){
       if(ht_search(my_class->tmv,my_interface->method_list[i]) != NULL){
@@ -90,8 +90,7 @@ struct cobol_object *cb_object_new(struct cobol_class *myclass,
    struct cobol_object *new_object = (struct cobol_object *)
        malloc(sizeof(struct cobol_object) + myclass->ft_size * sizeof(struct _cob_field));
    new_object->my_class = myclass;
-   /* allocation d'un objet de la class [myclass] et
-           appel du constructeur */
+   /* allocation d'un objet de la class [myclass] */
 }
 
 cobol_method cb_object_method(struct cobol_object *self,
@@ -100,7 +99,7 @@ cobol_method cb_object_method(struct cobol_object *self,
    meth_table *tmv = self->my_class->tmv;
    return ht_search(tmv, method_name);
 
-   /* */ /* retourne le pointeur sur la méthode [method_name] dans
+          /* retourne le pointeur sur la méthode [method_name] dans
             l'objet [self]. Si le pointeur retourné n'est pas NULL,
             il peut être utilisé pour appeler la méthode. */
 }
@@ -109,6 +108,6 @@ char *cb_object_field(struct cobol_object *self,
                       const char *field_name)
 
 {
-   /* */ /* retourne le pointeur sur la zone de mémoire de [self]
-            contenant la variable d'instance [field_name] */
+   /*les champs étant propre à chaque classe, l'accès 
+   à ces champs se fera directement à la compilation*/
 }

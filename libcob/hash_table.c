@@ -3,8 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include "hash_table.h"
-#include "prime.h"
-#include "OOModule.h"
+#include "Object.h"
 
 
 

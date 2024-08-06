@@ -2747,6 +2747,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_EVALUATE		"END-EVALUATE"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
+%token END_INTERFACE "END INTERFACE"
 %token END_JSON			"END-JSON"
 %token END_METHOD    "END METHOD"
 %token END_MODIFY		"END-MODIFY"
@@ -2855,6 +2856,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FUNCTION_NAME		"intrinsic function name"
 %token FUNCTION_POINTER		"FUNCTION-POINTER"
 %token GENERATE
+%token GET
 %token GIVING
 %token GLOBAL
 %token GO
@@ -2900,6 +2902,8 @@ set_record_size (cb_tree min, cb_tree max)
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
+%token INTERFACE
+%token INTERFACE_ID
 %token IMPLEMENTS
 %token INPUT
 %token INPUT_OUTPUT		"INPUT-OUTPUT"
@@ -2915,6 +2919,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INVALID_KEY		"INVALID KEY"
 %token INVOKE
 %token IS
+%token IS_FINAL "IS FINAL"
 %token ITEM
 %token ITEM_TEXT		"ITEM-TEXT"
 %token ITEM_TO_ADD		"ITEM-TO_ADD"
@@ -2991,6 +2996,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token METHOD
 %token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
@@ -3649,6 +3655,7 @@ source_element:
 | program_prototype
 | function_prototype
 | class_definition
+| interface_definition
 ;
 
 simple_prog:
@@ -3672,6 +3679,13 @@ program_definition:
      The _end_program_list above is used for allowing an end marker
      in a program which contains a nested program.
   */
+;
+
+interface_definition:
+  _identification_header
+  interface_id_paragraph
+  _interface_body
+  end_interface
 ;
 
 class_definition:
@@ -3767,6 +3781,10 @@ end_class:
 
 end_method:
   END_METHOD
+  end_program_name _dot
+
+end_interface:
+  END_INTERFACE
   end_program_name _dot
 
 
@@ -3974,6 +3992,14 @@ _factory_object_body:
 ;
 
 
+/*INTERFACE body*/
+
+_interface_body:
+  _options_paragraph
+  _environment_division
+  _OO_procedure_division
+;
+
 
 
 /* PROGRAM body */
@@ -4026,7 +4052,6 @@ class_id_header TOK_DOT program_id_name _as_literal _is_final _inherits TOK_DOT 
 
 
 factory_paragraph:
-
   _identification_header
   FACTORY TOK_DOT 
   _implements
@@ -4038,21 +4063,24 @@ object_paragraph:
   _implements
 ;
 
-method_id_header:
-  METHOD_ID
-;
 
 method_id_paragraph:
-  method_id_header 
+  METHOD_ID 
   method_name_or_get_set
   _override
   _is_final
 ;
 
 method_name_or_get_set:
-  
+  /*TO DO*/
 ;
 
+
+interface_id_paragraph:
+  INTERFACE_ID program_id_name _as_literal _inherits /*_using_class*/ TOK_DOT
+
+
+;
 
 program_id_header:
   PROGRAM_ID
@@ -4145,9 +4173,11 @@ _as_literal:
 ;
 
 _is_final:
-	/**empty*/
-	| _is FINAL
+  /*empty*/
+| _is FINAL
 ;
+
+
 
 _override:
   /*empty*/
@@ -4158,6 +4188,8 @@ _override:
 _inherits:
 	/*empty*/
 	| INHERITS _from
+  PROGRAM_NAME
+  
 ;
 
 
@@ -4366,7 +4398,7 @@ _configuration_paragraphs:
 configuration_paragraphs:
   configuration_paragraph
 | configuration_paragraphs configuration_paragraph
-;
+; 
 
 configuration_paragraph:
   source_computer_paragraph
@@ -7668,7 +7700,40 @@ data_description_clause:
   {
 	CB_PENDING ("VALIDATE");
   }
+| property_clause
+| is_final_property_subclause
 ;
+
+
+
+/*PROPERTY clause*/
+
+property_clause:
+ PROPERTY
+  _with_no_get_set
+;
+
+is_final_property_subclause:
+  _is FINAL
+;
+
+
+
+
+_with_no_get_set:
+/*empty*/
+| _with
+    NO 
+    get_or_set
+;
+
+get_or_set:
+  GET 
+| SET
+;
+
+
+
 
 
 /* REDEFINES clause */
@@ -7741,6 +7806,7 @@ same_as_clause:
    as this rule does not exist with MF!]) */
 
 typedef_clause:
+  
   _is TYPEDEF _strong
   {
 	if (current_field->flag_is_typedef) {
@@ -7764,6 +7830,9 @@ typedef_clause:
 	}
   }
 ;
+
+
+
 
 _strong:
 | STRONG
