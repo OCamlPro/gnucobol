@@ -6,6 +6,9 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
+** New runtime configuraiton COB_HIDE_CURSOR, allows to hide the cursor during
+   extended ScreenIO operations
+
 ** cobc now checks for binary files and early exit parsing those;
    the error output for format errors (for example invalid indicator column)
    is now limitted to 5 per source file
