@@ -1624,11 +1624,14 @@ scan_x (const char *text, const char *type)
 	        plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	if(type[0] == 'X' || type[0] == 'U'){
+	switch(type[0]){
+	case 'X':
+	case 'U':
 		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up 
 		to full bytes in case of odd digits */
 		result_len = (curr_len + 1) / 2;
-	} else if (type[0] == 'B') {
+		break;
+	case 'B':
 		result_len = curr_len * 4; // boolean characters B -> 1110
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
 			yylval = cb_build_numeric_literal (0, "0", 0);
@@ -1641,7 +1644,8 @@ scan_x (const char *text, const char *type)
 				(unsigned long) result_len, 64);
 			error_literal (type, plex_buff, literal_error++);
 		}
-	} else {
+		break;
+	default:
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
 			memset (plex_buff, 0, 5);
@@ -1650,10 +1654,12 @@ scan_x (const char *text, const char *type)
 		} else {
 			CB_UNFINISHED (_("national literal"));
 		}
+		break;
 	}
+
 	if (unlikely(result_len > cb_lit_length)) {
         	error_literal(type, plex_buff, literal_error++);
-        }
+    }
 
 	// Input conversion
 	if (type[0] == 'B') {
