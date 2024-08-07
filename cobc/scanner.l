@@ -1528,7 +1528,7 @@ read_literal (const char mark, const enum cb_literal_type type)
         break;
     default:
 		if(cb_gcos_ebcdic_literals){
-			yylval = cb_build_gcos_literal(plex_buff, i);
+			yylval = cb_build_literal_by_category(plex_buff, i, CB_CATEGORY_ALPHANUMERIC);
 		}
 		else{
         	yylval = cb_build_alphanumeric_literal(plex_buff, i);
