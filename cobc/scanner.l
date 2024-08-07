@@ -1627,7 +1627,7 @@ scan_x (const char *text, const char *type)
 		result_len = (curr_len + 1) / 2;
 		break;
 	case 'B':
-		result_len = curr_len * 4; // boolean characters B -> 1110
+		result_len = curr_len * 4; /* boolean characters B -> 1110 */
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
