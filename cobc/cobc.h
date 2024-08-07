@@ -276,7 +276,7 @@ enum cb_sub_check {
 struct cb_text_list {
 	struct cb_text_list	*next;			/* next pointer */
 	struct cb_text_list	*last;
-	const char		*text;
+	char			*text;
 };
 
 /* Structure for extended filenames */
@@ -475,8 +475,10 @@ extern FILE			*cb_src_list_file;
 extern FILE			*cb_depend_file;
 extern struct cb_text_list	*cb_depend_list;
 extern struct cb_text_list	*cb_copy_list;
-extern struct cb_text_list	*cb_include_file_list;
+extern struct cb_text_list	*cb_include_file_list; /* global */
+extern struct cb_text_list	*cb_include_file_list_directive; /* temporary */
 extern struct cb_text_list	*cb_include_list;
+extern struct cb_text_list *cb_include_file_list_directive;
 extern struct cb_text_list	*cb_intrinsic_list;
 extern struct cb_text_list	*cb_extension_list;
 extern struct cb_text_list	*cb_static_call_list;
