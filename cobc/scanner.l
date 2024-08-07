@@ -1619,11 +1619,14 @@ scan_x (const char *text, const char *type)
 	        plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	if(type[0] == 'X' || type[0] == 'U'){
+	switch(type[0]){
+	case 'X':
+	case 'U':
 		/* characters, two half-bytes (hex) = 1 byte, add 1 halfbyte to round up 
 		to full bytes in case of odd digits */
 		result_len = (curr_len + 1) / 2;
-	} else if (type[0] == 'B') {
+		break;
+	case 'B':
 		result_len = curr_len * 4; // boolean characters B -> 1110
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
 			yylval = cb_build_numeric_literal (0, "0", 0);
@@ -1644,7 +1647,9 @@ scan_x (const char *text, const char *type)
 			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
 			RETURN_TOK (LITERAL);
 		}
+		break;
 	}
+
 	if (unlikely(result_len > cb_lit_length)) {
 		error_literal(type, plex_buff, literal_error++);
 	}
