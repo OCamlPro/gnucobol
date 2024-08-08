@@ -1,4 +1,9 @@
 
+2024-08-08  Remi Bertrand-Hardy <remi.bhardy@gmail.com>
+
+	* parser.y : added syntax rules for object-oriented COBOL
+	* reserved.c : added token for object-oriented COBOL
+
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): fixed currency scale counting logic
