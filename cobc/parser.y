@@ -7743,7 +7743,8 @@ data_description_clause:
 	CB_PENDING ("VALIDATE");
   }
 | property_clause
-| is_final_property_subclause
+| is_final_property_subclause /* Not clean, here to prevent conflict with other 
+								subclause starting by IS such as typedef*/
 ;
 
 
