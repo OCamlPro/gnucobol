@@ -3726,7 +3726,7 @@ _method_definition_list :
 
 function_definition:
   _identification_header
-	function_id_paragraph
+  function_id_paragraph
   _program_body
   end_function
 ;
