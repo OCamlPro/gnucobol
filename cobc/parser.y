@@ -4424,7 +4424,7 @@ _configuration_paragraphs:
 configuration_paragraphs:
   configuration_paragraph
 | configuration_paragraphs configuration_paragraph
-; 
+;
 
 configuration_paragraph:
   source_computer_paragraph
@@ -7747,7 +7747,6 @@ data_description_clause:
 ;
 
 
-
 /*PROPERTY clause*/
 
 property_clause:
@@ -7758,9 +7757,6 @@ property_clause:
 is_final_property_subclause:
   _is FINAL
 ;
-
-
-
 
 _with_no_get_set:
 /*empty*/
@@ -7773,10 +7769,6 @@ get_or_set:
   GET 
 | SET
 ;
-
-
-
-
 
 /* REDEFINES clause */
 
@@ -7848,7 +7840,6 @@ same_as_clause:
    as this rule does not exist with MF!]) */
 
 typedef_clause:
-  
   _is TYPEDEF _strong
   {
 	if (current_field->flag_is_typedef) {
@@ -7872,9 +7863,6 @@ typedef_clause:
 	}
   }
 ;
-
-
-
 
 _strong:
 | STRONG
@@ -8529,7 +8517,7 @@ usage:
 	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
-  ;
+;
 
 _to_program_type:
   /* empty */		{ $$ = NULL; }
@@ -11884,6 +11872,7 @@ statement:
 | initiate_statement
 | inquire_statement
 | inspect_statement
+/*TODO invoke_statement*/
 | json_generate_statement
 | json_parse_statement
 | merge_statement
@@ -13169,7 +13158,7 @@ call_not_on_exception:
   NOT_ON_EXCEPTION statement_list
   {
 	$$ = $2;
-  }			
+  }
 ;
 
 _end_call:
@@ -13183,19 +13172,6 @@ _end_call:
 	TERMINATOR_CLEAR ($-2, CALL);
   }
 ;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* CANCEL statement */
