@@ -2881,11 +2881,22 @@ cb_build_national_literal (const void *data, const size_t size)
 
         outsize -= outbytesleft;
     }
-
     l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
     free(outdata);
 #else
-    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, size));
+ 	/* poor-man's conversion iso-8859 -> utf-16le */
+    /* "!a0" = x'21613000' -> nx'21006100300000' */
+    size_t outsize = size * 2;
+    unsigned char *outdata = malloc(outsize);
+    const unsigned char *indata = (const unsigned char *)data;
+    size_t i, j;
+
+    for (i = 0, j = 0; i < size; i++, j += 2) {
+        outdata[j] = indata[i];
+        outdata[j + 1] = 0;
+    }
+
+    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, outsize));
 #endif
 
     l->source_file = cb_source_file;
