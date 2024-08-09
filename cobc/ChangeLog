@@ -1,4 +1,9 @@
 
+2024-08-08  Remi Bertrand-Hardy <remi.bhardy@gmail.com>
+
+	* parser.y : added syntax rules for object-oriented COBOL
+	* reserved.c : added token for object-oriented COBOL
+
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): added logic to find the valid floating
@@ -20,6 +25,8 @@
 	  depending on dialect setting "incorrect-conf-sec-order"
 	* reserved.c: make MENU context-sensitive
 	* reserved.c, parser.y: added MODAL + MODELESS to acu extension windows
+
+
 
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
