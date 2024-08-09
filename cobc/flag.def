@@ -68,6 +68,11 @@ CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 20, CB_FLAG_GETOPT_MAX_ERRORS,
 	  "                        * default: 20\n"
 	  "                        * if <number> is 0, there's no limit"))
 
+CB_FLAG_RQ (cb_source_encode, 1, "source-encode", 0, CB_FLAG_GETOPT_SOURCE_ENCODE, 
+	_("  -fsource-encode=[encoding]\tdefine the source file encoding\n"
+	  "                        * default: UTF-8"))
+
+
 /* Flags with required parameter and no associated variable */
 
 CB_FLAG_NQ (1, "intrinsics", CB_FLAG_GETOPT_INTRINSICS,
