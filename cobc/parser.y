@@ -23,7 +23,7 @@
 
 %defines
 %verbose
-%error-verbose
+%define parse.error verbose
 
 %{
 #include "config.h"
@@ -2601,6 +2601,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CHARACTERS
 %token CHECK_BOX		"CHECK-BOX"
 %token CLASS
+%token CLASS_ID
 %token CLASSIFICATION
 %token CLASS_NAME		"class-name"
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
@@ -2737,6 +2738,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_ACCEPT		"END-ACCEPT"
 %token END_ADD  		"END-ADD"
 %token END_CALL 		"END-CALL"
+%token END_CLASS		"END CLASS"
 %token END_COMPUTE		"END-COMPUTE"
 %token END_COLOR		"END-COLOR"
 %token END_DELETE		"END-DELETE"
@@ -2745,7 +2747,9 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_EVALUATE		"END-EVALUATE"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
+%token END_INTERFACE "END INTERFACE"
 %token END_JSON			"END-JSON"
+%token END_METHOD    "END METHOD"
 %token END_MODIFY		"END-MODIFY"
 %token END_MULTIPLY		"END-MULTIPLY"
 %token END_PERFORM		"END-PERFORM"
@@ -2852,6 +2856,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FUNCTION_NAME		"intrinsic function name"
 %token FUNCTION_POINTER		"FUNCTION-POINTER"
 %token GENERATE
+%token GET
 %token GIVING
 %token GLOBAL
 %token GO
@@ -2893,9 +2898,13 @@ set_record_size (cb_tree min, cb_tree max)
 %token INDEX
 %token INDEXED
 %token INDICATE
+%token INHERITS
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
+%token INTERFACE
+%token INTERFACE_ID
+%token IMPLEMENTS
 %token INPUT
 %token INPUT_OUTPUT		"INPUT-OUTPUT"
 %token INQUIRE
@@ -2908,7 +2917,9 @@ set_record_size (cb_tree min, cb_tree max)
 %token INTRINSIC
 %token INVALID			/* remark: not used here */
 %token INVALID_KEY		"INVALID KEY"
+%token INVOKE
 %token IS
+%token IS_FINAL "IS FINAL"
 %token ITEM
 %token ITEM_TEXT		"ITEM-TEXT"
 %token ITEM_TO_ADD		"ITEM-TO_ADD"
@@ -2985,6 +2996,8 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token METHOD
+%token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
@@ -3080,6 +3093,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
 %token OVERLINE
+%token OVERRIDE
 %token PACKED_DECIMAL		"PACKED-DECIMAL"
 %token PADDING
 %token PASCAL
@@ -3641,6 +3655,8 @@ source_element:
 | function_definition
 | program_prototype
 | function_prototype
+| class_definition
+| interface_definition
 ;
 
 simple_prog:
@@ -3666,12 +3682,59 @@ program_definition:
   */
 ;
 
+interface_definition:
+  _identification_header
+  interface_id_paragraph
+  _interface_body
+  end_interface
+;
+
+class_definition:
+	_identification_header
+	class_id_paragraph
+	_class_body
+	end_class
+
+;
+
+method_definition:
+  _identification_header
+  method_id_paragraph
+  _program_body 
+  end_method
+;
+
+method_definition_list : 
+  method_definition
+| method_definition_list method_definition
+;
+
+_method_definition_list : 
+  /*empty*/
+| method_definition_list
+;
+
 function_definition:
   _identification_header
-  function_id_paragraph
+	function_id_paragraph
   _program_body
   end_function
 ;
+
+
+_object_definition:
+/*empty*/
+| object_paragraph
+  _factory_object_body
+	END OBJECT TOK_DOT
+;
+
+factory_definition:
+  factory_paragraph
+  _factory_object_body
+	END FACTORY TOK_DOT
+;
+
 
 _end_program_list:
   /* empty (still do cleanup) */
@@ -3711,6 +3774,20 @@ end_function:
 	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
   }
 ;
+
+end_class:
+	END_CLASS 
+	end_program_name _dot
+;
+
+end_method:
+  END_METHOD
+  end_program_name _dot
+
+end_interface:
+  END_INTERFACE
+  end_program_name _dot
+
 
 /* Program prototype */
 
@@ -3877,6 +3954,55 @@ _default_display_clause:
   }
 ;
 
+
+/*CLASS body*/
+
+_class_body:
+  _options_paragraph
+	_environment_division
+	factory_definition
+	_object_definition
+|_options_paragraph
+	_environment_division
+	_object_definition
+;
+
+
+
+_implements:
+/*empty*/
+| IMPLEMENTS 
+  identifier
+;
+
+
+_factory_object_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment (current_program);
+  }
+  _data_division
+  {
+	/* note:
+	   we also validate all references we found so far here */
+	cb_validate_program_data (current_program);
+	within_typedef_definition = 0;
+  }
+  _OO_procedure_division
+;
+
+
+/*INTERFACE body*/
+
+_interface_body:
+  _options_paragraph
+  _environment_division
+  _OO_procedure_division
+;
+
+
+
 /* PROGRAM body */
 
 _program_body:
@@ -3914,6 +4040,47 @@ identification_header:
 
 identification_or_id:
   IDENTIFICATION | ID
+;
+
+
+class_id_header:
+	CLASS_ID
+;
+
+class_id_paragraph:
+class_id_header TOK_DOT program_id_name _as_literal _is_final _inherits TOK_DOT /*_using_class*/ 
+;
+
+
+factory_paragraph:
+  _identification_header
+  FACTORY TOK_DOT 
+  _implements
+;
+
+object_paragraph:
+  _identification_header
+  OBJECT TOK_DOT
+  _implements
+;
+
+
+method_id_paragraph:
+  METHOD_ID 
+  method_name_or_get_set
+  _override
+  _is_final
+;
+
+method_name_or_get_set:
+  /*TO DO*/
+;
+
+
+interface_id_paragraph:
+  INTERFACE_ID program_id_name _as_literal _inherits /*_using_class*/ TOK_DOT
+
+
 ;
 
 program_id_header:
@@ -4005,6 +4172,27 @@ _as_literal:
   /* empty */			{ $$ = NULL; }
 | AS LITERAL			{ $$ = $2; }
 ;
+
+_is_final:
+  /*empty*/
+| _is FINAL
+;
+
+
+
+_override:
+  /*empty*/
+| OVERRIDE
+;
+
+
+_inherits:
+	/*empty*/
+	| INHERITS _from
+  PROGRAM_NAME
+  
+;
+
 
 _program_type:
   /* empty */			{ $$ = NULL; }
@@ -4220,7 +4408,7 @@ _configuration_paragraphs:
 configuration_paragraphs:
   configuration_paragraph
 | configuration_paragraphs configuration_paragraph
-;
+; 
 
 configuration_paragraph:
   source_computer_paragraph
@@ -5337,8 +5525,8 @@ input_output_section:
 ;
 
 input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
-input_output_header:
-  input_output SECTION _dot
+ _input_output_header:
+| input_output SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_INPUT_OUTPUT_SECTION;
@@ -7538,7 +7726,40 @@ data_description_clause:
   {
 	CB_PENDING ("VALIDATE");
   }
+| property_clause
+| is_final_property_subclause
 ;
+
+
+
+/*PROPERTY clause*/
+
+property_clause:
+ PROPERTY
+  _with_no_get_set
+;
+
+is_final_property_subclause:
+  _is FINAL
+;
+
+
+
+
+_with_no_get_set:
+/*empty*/
+| _with
+    NO 
+    get_or_set
+;
+
+get_or_set:
+  GET 
+| SET
+;
+
+
+
 
 
 /* REDEFINES clause */
@@ -7611,6 +7832,7 @@ same_as_clause:
    as this rule does not exist with MF!]) */
 
 typedef_clause:
+  
   _is TYPEDEF _strong
   {
 	if (current_field->flag_is_typedef) {
@@ -7634,6 +7856,9 @@ typedef_clause:
 	}
   }
 ;
+
+
+
 
 _strong:
 | STRONG
@@ -8288,7 +8513,7 @@ usage:
 	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
-;
+  ;
 
 _to_program_type:
   /* empty */		{ $$ = NULL; }
@@ -11020,6 +11245,13 @@ procedure_division:
   }
 ;
 
+
+_OO_procedure_division:
+  /*empty*/
+|  PROCEDURE DIVISION
+  _method_definition_list
+;
+
 _procedure_using_chaining:
   /* empty */
   {
@@ -11636,7 +11868,6 @@ statement:
 | initiate_statement
 | inquire_statement
 | inspect_statement
-/* | TODO: invoke_statement */
 | json_generate_statement
 | json_parse_statement
 | merge_statement
@@ -12922,7 +13153,7 @@ call_not_on_exception:
   NOT_ON_EXCEPTION statement_list
   {
 	$$ = $2;
-  }
+  }			
 ;
 
 _end_call:
@@ -12936,6 +13167,19 @@ _end_call:
 	TERMINATOR_CLEAR ($-2, CALL);
   }
 ;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* CANCEL statement */

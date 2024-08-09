@@ -636,7 +636,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "CLASS",			0, 0, CLASS,			/* 2002 */
 				0, 0
   },
-  { "CLASS-ID",			0, 0, -1,			/* 2002 */
+  { "CLASS-ID",			0, 0, CLASS_ID,			/* 2002 */
 				0, 0
   },
   { "CLASSIFICATION",		0, 1, CLASSIFICATION,		/* 2002 (C/S) */
@@ -1558,7 +1558,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "IGNORING",			0, 1, IGNORING,			/* 2002 (C/S) */
 				0, CB_CS_READ
   },
-  { "IMPLEMENTS",		0, 1, -1,			/* 2002 (C/S) */
+  { "IMPLEMENTS",		0, 1, IMPLEMENTS,			/* 2002 (C/S) */
 				0, 0
 	/* FIXME: 2014 Context-sensitive to FACTORY and OBJECT paragraph */
   },
@@ -1577,7 +1577,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INDICATE",			0, 0, INDICATE,			/* 2002 */
 				0, 0
   },
-  { "INHERITS",			0, 0, -1,			/* 2002 */
+  { "INHERITS",			0, 0, INHERITS,			/* 2002 */
 				0, 0
   },
   { "INITIAL",			0, 0, TOK_INITIAL,		/* 2002 */
@@ -1613,10 +1613,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INSTALLATION",			0, 1, INSTALLATION,			/* 85 (later: C/S) */
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
-  { "INTERFACE",		0, 0, -1,			/* 2002 */
+  { "INTERFACE",		0, 0, INTERFACE,			/* 2002 */
 				0, 0
   },
-  { "INTERFACE-ID",		0, 0, -1,			/* 2002 */
+  { "INTERFACE-ID",		0, 0, INTERFACE_ID,			/* 2002 */
 				0, 0
   },
   { "INTERMEDIATE",		0, 1, INTERMEDIATE,		/* 2014 (C/S) */
@@ -1632,7 +1632,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INVALID",			0, 0, INVALID,			/* 2002 */
 				0, 0
   },
-  { "INVOKE",			0, 0, -1,			/* 2002 */
+  { "INVOKE",			0, 0, INVOKE,			/* 2002 */
 				0, 0
   },
   { "IS",			0, 0, IS,			/* 2002 */
@@ -1864,10 +1864,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MESSAGE-TAG",			0, 0, -1,			/* COBOL 2023 MCS */
 				0, 0
   },
-  { "METHOD",			0, 0, -1,			/* 2002 */
+  { "METHOD",			0, 0, METHOD,			/* 2002 */
 				0, 0
   },
-  { "METHOD-ID",		0, 0, -1,			/* 2002 */
+  { "METHOD-ID",		0, 0, METHOD_ID,			/* 2002 */
 				0, 0
   },
   { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */
@@ -2125,7 +2125,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "OVERLINE",			0, 0, OVERLINE,			/* Extension */
 				0, 0
   },
-  { "OVERRIDE",			0, 0, -1,			/* 2002 */
+  { "OVERRIDE",			0, 0, OVERRIDE,			/* 2002 */
 				0, 0
   },
   { "PACKED-DECIMAL",		0, 0, PACKED_DECIMAL,		/* 2002 */
