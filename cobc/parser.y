@@ -23,7 +23,7 @@
 
 %defines
 %verbose
-%define parse.error verbose
+%error-verbose
 
 %{
 #include "config.h"
@@ -3417,6 +3417,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token V
 %token VALID
 %token VALIDATE
+%token VAL_STATUS		"VAL-STATUS"
 %token VALIDATE_STATUS	"VALIDATE-STATUS"
 %token VALIDATING
 %token VALUE
@@ -3685,6 +3686,9 @@ program_definition:
 interface_definition:
   _identification_header
   interface_id_paragraph
+  {
+	CB_PENDING("INTERFACE-ID")
+  }
   _interface_body
   end_interface
 ;
@@ -3692,6 +3696,9 @@ interface_definition:
 class_definition:
 	_identification_header
 	class_id_paragraph
+	{
+		CB_PENDING("CLASS-ID")
+	}
 	_class_body
 	end_class
 
@@ -3700,6 +3707,9 @@ class_definition:
 method_definition:
   _identification_header
   method_id_paragraph
+  {
+	CB_PENDING("METHOD-ID")
+  }
   _program_body 
   end_method
 ;
@@ -3725,12 +3735,18 @@ function_definition:
 _object_definition:
 /*empty*/
 | object_paragraph
+{
+	CB_PENDING("OBJECT")
+}
   _factory_object_body
 	END OBJECT TOK_DOT
 ;
 
 factory_definition:
   factory_paragraph
+  {
+	CB_PENDING("FACTORY")
+  }
   _factory_object_body
 	END FACTORY TOK_DOT
 ;
