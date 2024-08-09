@@ -341,7 +341,6 @@ struct cb_iconv_t{
 	char source[100];
 	char alphanumeric_source[100];
 };
-#endif
 
 extern struct cb_iconv_t cb_iconv;
 #endif
