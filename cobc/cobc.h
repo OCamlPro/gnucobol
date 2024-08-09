@@ -337,10 +337,12 @@ struct cb_iconv_t{
     iconv_t alphanumeric;
     iconv_t national;
 	iconv_t utf8;
+	char source[100];
 };
-#endif
 
 extern struct cb_iconv_t cb_iconv;
+#endif
+
 
 /* Listing structures and externals */
 

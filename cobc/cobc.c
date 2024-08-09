@@ -116,6 +116,8 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_ADD_PHONY     24
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
+#define CB_FLAG_GETOPT_SOURCE_ENCODE        27
+
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -330,6 +332,12 @@ int cb_flag_alt_ebcdic = 0;
 #ifdef HAVE_ICONV_H
 // call the struct cb_iconv
 struct cb_iconv_t cb_iconv;
+
+static void 
+initialize_cb_iconv() {
+	strncpy(cb_iconv.source, "UTF-8", sizeof(cb_iconv.source) - 1);
+    cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+}
 #endif
 
 
@@ -3961,6 +3969,32 @@ process_command_line (const int argc, char **argv)
 				cb_fold_call = COB_FOLD_LOWER;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-ffold-call");
+			}
+			break;
+
+		case CB_FLAG_GETOPT_SOURCE_ENCODE:
+			/* -fsource-encode=encoding*/
+			const char* valid_encodings[] = {
+				"UTF-8",
+				"ASCII",
+				"ISO-8859-1",
+				"ISO-8859-15"
+			};
+			int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
+			int encoding_valid = 0;
+			for (int i = 0; i < num_encodings; i++) {
+				if (strcmp(cob_optarg, valid_encodings[i]) == 0) {
+					encoding_valid = 1;
+					break;
+				}
+			}
+			if (encoding_valid) {
+#ifdef HAVE_ICONV_H
+				strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
+    			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+#endif
+			} else {
+				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
 			}
 			break;
 
@@ -9145,11 +9179,9 @@ begin_setup_internal_and_compiler_env (void)
 {
 	char			*p;
 	
-	// initialize the iconv struct
+	/* initialize the default source encoding */
 #ifdef HAVE_ICONV_H
-	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", "UTF-8");
-	cb_iconv.national = iconv_open("UTF-16LE", "UTF-8");
-	cb_iconv.utf8 = iconv_open("UTF-8", "ISO-8859-15");
+	initialize_cb_iconv();
 #endif
 	
 	/* register signal handlers from cobc */
@@ -9455,6 +9487,14 @@ main (int argc, char **argv)
 
 	/* Process command line arguments */
 	iargs = process_command_line (argc, argv);
+
+/* initialize the iconv struct after reading the command line*/
+#ifdef HAVE_ICONV_H
+	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
+	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
+	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);
+#endif
+
 
 	if (fatal_startup_error) {
 		cobc_err_msg (_("please check environment variables as noted above"));
