@@ -1,3 +1,7 @@
+2024-08-08  Remi Bertrand-Hardy <remi.bhardy@gmail.com>
+
+	* added Object.c Object.h hash_table.c and hash_table.h to
+	  provide necessary functions to implement objects in GnuCOBOL. 
 
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
