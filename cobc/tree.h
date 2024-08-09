@@ -199,6 +199,7 @@ enum cb_tag {
 #define CB_CONV_THUNK_16	(1 << 5)
 #define CB_CONV_STDCALL		(1 << 6)
 #define CB_CONV_COBOL	(1 << 15)
+#define CB_CONV_JAVA    (1 << 16)
 #define CB_CONV_C	(0)
 #define CB_CONV_PASCAL	(CB_CONV_L_TO_R | CB_CONV_CALLEE_STACK)
 

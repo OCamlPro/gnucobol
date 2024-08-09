@@ -1287,6 +1287,13 @@ struct cob_call_struct {
 	cob_call_union		cob_cstr_cancel;	/* Cancel entry */
 };
 
+typedef struct __cob_java_static_method cob_java_handle;
+
+COB_EXPIMP cob_java_handle* cob_resolve_java (const char *class_name,
+		  const char* method_name,
+		  const char *type_signature);
+COB_EXPIMP void cob_call_java (const cob_java_handle *method_handle);
+
 /* Screen structure */
 typedef struct __cob_screen {
 	struct __cob_screen	*next;		/* Pointer to next */

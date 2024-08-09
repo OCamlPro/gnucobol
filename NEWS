@@ -20,7 +20,7 @@ NEWS - user visible changes				-*- outline -*-
 
 
 * New GnuCOBOL features
-
+** Initial support for Java interoperability through JNI (new optional dependency JDK)
 ** file handling: added backends for ODBC (so far PostgrSQL, MySQL, SQLite,
    MSSQL) and OCI, along with new directory COB_SCHEMA_DIR containing the
    necessary internal schema files to match the file definition to the

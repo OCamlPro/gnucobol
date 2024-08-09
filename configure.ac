@@ -113,6 +113,8 @@ AH_TEMPLATE([WITH_JSON], [JSON handler])
 AH_TEMPLATE([WITH_CJSON], [Use cJSON library/source as JSON handler])
 AH_TEMPLATE([WITH_JSON_C], [Use JSON-C library as JSON handler])
 
+AH_TEMPLATE([WITH_JNI], [Support for Java calls through JNI])
+
 AH_TEMPLATE([COB_EXPORT_DYN], [Compile/link option for exporting symbols])
 AH_TEMPLATE([COB_PIC_FLAGS], [Compile/link option for PIC code])
 AH_TEMPLATE([COB_DEBUG_FLAGS], [Compile/link option for debugging])
@@ -482,7 +484,6 @@ AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
 AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
-
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -933,7 +934,23 @@ AS_IF([test "$with_xml2" = "yes" -o "$with_xml2" = "check"], [
 	LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"
 ])
 
-
+# Check for JNI
+AC_ARG_WITH([java],
+            [AS_HELP_STRING([--without-java],
+                            [disable Java Interoperability])])
+AS_IF([test X$with_java != Xno], [
+    AX_JNI_INCLUDE_DIR
+    AS_IF([test "$JNI_INCLUDE_DIRS" = ""], [
+      AC_MSG_WARN([JNI include directory not found, disabling Java interoperability])
+    ], [
+		for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
+		do
+			CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
+		done
+		AC_DEFINE([WITH_JNI], [1])
+		cob_have_jni=yes
+	])
+])
 
 # Checks for cjson/json-c.
 AC_MSG_NOTICE([Checks for JSON handler])
@@ -2569,6 +2586,8 @@ AM_CONDITIONAL([COB_MAKE_OCI_LIB], [test "$cob_gen_oci" = "yes"])
 AM_CONDITIONAL([COB_MAKE_LMDB_LIB], [test "$cob_gen_lmdb" = "yes"])
 
 AM_CONDITIONAL([LOCAL_CJSON],[test "$USE_JSON" = "local"])
+
+AM_CONDITIONAL([COB_HAVE_JNI], [test "$cob_have_jni" = "yes"])
 
 unset COB_USES_GCC
 unset COB_USES_GCC_NO_ICC
