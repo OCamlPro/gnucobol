@@ -543,6 +543,40 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
+AT_SETUP([TESTING UTF-8 LITERALS])
+AT_KEYWORDS([functions literal UTF-8])
+
+AT_DATA([prog.cob], [
+      IDENTIFICATION   DIVISION.
+      PROGRAM-ID.      prog.
+      DATA             DIVISION.
+      WORKING-STORAGE  SECTION.
+      01  HEXX         PIC X(35).
+         88 HEXX-FILLER VALUE ALL "-".
+      PROCEDURE        DIVISION.
+      MAIN-PROCEDURE.
+         PERFORM DO-CHECK.
+         GOBACK.
+
+      DO-CHECK.
+         SET  HEXX-FILLER TO TRUE
+         STRING FUNCTION HEX-OF (U"Hello") 
+               DELIMITED BY SIZE INTO HEXX.
+         IF HEXX NOT = "48656C6C6F-------------------------"
+            DISPLAY "UNEXPECTED HEX-VALUE OF U'Hello': " HEXX.
+
+         SET  HEXX-FILLER TO TRUE
+         STRING FUNCTION HEX-OF (U"€€") 
+               DELIMITED BY SIZE INTO HEXX.
+         IF HEXX NOT = "AC20AC20-----------"
+            DISPLAY "UNEXPECTED HEX-VALUE OF U'€€': " HEXX.
+])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
 
 AT_SETUP([UTF-8 literals (explicit source encode)])
 AT_KEYWORDS([literal functions hex-of])
