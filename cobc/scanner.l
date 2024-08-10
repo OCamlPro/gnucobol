@@ -53,6 +53,11 @@
 #undef	YY_BUF_SIZE
 #define	YY_BUF_SIZE		32768
 
+#define	YY_SKIP_YYWRAP
+static int yywrap (void) {
+	return 1;
+}
+
 #define YY_INPUT(buf,result,max_size)				\
 	{							\
 		if (fgets (buf, (int)max_size, yyin) == NULL) { \
@@ -116,7 +121,7 @@
 		return last_token;		\
 	} ONCE_COB
 
-#define SET_LOCATION(x)                         \
+#define SET_LOCATION(x)						 \
 	do {					\
 		(x)->source_file = cb_source_file;		\
 		(x)->source_line = cb_source_line;		\
@@ -348,8 +353,8 @@ AREA_A		"#AREA_A"\n
 			*p1 = 0;
 			cb_source_file = cobc_parse_strdup (p2);
 			/* FIXME: only place where strol is used, replace by cobc internal
-			          function for base 10 (found in cobc.c already) and base 16,
-			          remove from configure.ac */
+					  function for base 10 (found in cobc.c already) and base 16,
+					  remove from configure.ac */
 			cb_source_line = (int)strtol (yytext + 5, NULL, 10) - 1;
 		}
 	}
@@ -827,7 +832,7 @@ H#[0-9A-Za-z]+ {
 		RETURN_TOK (INVALID_KEY);
 	} else {
 		/* note: INVALID is a reserved word in all dialects,
-		         otherwise we'd lookup and return WORD as necessary */
+				 otherwise we'd lookup and return WORD as necessary */
 		RETURN_TOK (INVALID);
 	}
 }
@@ -881,11 +886,11 @@ H#[0-9A-Za-z]+ {
 	if (cobc_in_xml_generate_body || cobc_in_json_generate_body) {
 		/*
 		  Using the standard SUPPRESS token in JSON/XML GENERATE causes
-                  a shift/reduce error - the SUPPRESS could be the start of the
+				  a shift/reduce error - the SUPPRESS could be the start of the
 		  SUPPRESS clause or the start of a SUPPRESS statement. While we
 		  could alter shift precedence to get the result we implement
 		  here (viz. assuming the SUPPRESS belongs to JSON/XML GENERATE),
-                  our current style is for bison to run with no errors.
+				  our current style is for bison to run with no errors.
 		*/
 		RETURN_TOK (SUPPRESS_XML);
 	} else {
@@ -944,10 +949,10 @@ H#[0-9A-Za-z]+ {
 	char name[10];
 
 	/* FIXME: move the code for filling "name" here and first
-	          check with "lookup_system_name (name) != NULL"
-	          if we actually want to do this,
-	          otherwise return 2 (!) WORD tokens (by adding a queue
-	          of tokens to be returned)
+			  check with "lookup_system_name (name) != NULL"
+			  if we actually want to do this,
+			  otherwise return 2 (!) WORD tokens (by adding a queue
+			  of tokens to be returned)
 	*/
 	if (cobc_in_procedure) {
 		 /* unput characters */
@@ -984,7 +989,7 @@ H#[0-9A-Za-z]+ {
 
 	/* Check Intrinsic FUNCTION name without keyword */
 	if ((cobc_in_procedure && (functions_are_all || cb_intrinsic_list ||
-	     current_program->function_spec_list)) || cobc_in_repository) {
+		 current_program->function_spec_list)) || cobc_in_repository) {
 		cbp = lookup_intrinsic (yytext, 0);
 		if (cbp) {
 			if (cobc_in_repository) {
@@ -1111,7 +1116,7 @@ H#[0-9A-Za-z]+ {
 				SET_LOCATION (yylval);
 			} else {
 				/* Note: we cannot do this for cb_zero and friends,
-				         as those have sepcial meanings and are checked
+						 as those have sepcial meanings and are checked
 						 by tree comparision only */
 				yylval = x;
 			}
@@ -1167,7 +1172,7 @@ H#[0-9A-Za-z]+ {
 	cb_warning (COBC_WARN_FILLER, _("ignoring redundant ."));
 
 #if 0 /* it seems there is no case because of the consume above where
-         the last token would be a dot */
+		 the last token would be a dot */
 	if (last_token != TOK_DOT) {
 		yylval = NULL;
 		RETURN_TOK (TOK_DOT);
@@ -1184,7 +1189,7 @@ H#[0-9A-Za-z]+ {
 	   CHECKME: switching to this would make parsing of decimals
 	   easier - how do other compilers handle this? */
 #if 0 /* it seems there is no case because of the consume above where
-         the last token would be a dot, _possibly_ EOF? */
+		 the last token would be a dot, _possibly_ EOF? */
 	if (last_token != TOK_DOT) {
 		yylval = NULL;
 		RETURN_TOK (TOK_DOT);
@@ -1346,7 +1351,7 @@ error_literal (const char *type, const char *literal, int literal_error)
 static cob_u8_t
 scan_ebcdic_char (int c)
 {
-	char buff[10];	       /* Arbitrary limit, mostly for error-reporting */
+	char buff[10];		   /* Arbitrary limit, mostly for error-reporting */
 #ifndef COB_EBCDIC_MACHINE
 	static  cob_u8_t ebcdic_to_ascii[256] ;
 	static  int ebcdic_to_ascii_initialized = 0 ;
@@ -1416,8 +1421,8 @@ read_literal (const char mark, const enum cb_literal_type type)
 			if (c == mark) {
 				if (ebcdic_flag == CB_SYM_EBCDIC_AFTER_SEP) {
 					cb_error (
-						    _("extraneous separator ',' at end "
-						      "of symbolic EBCDIC characters"));
+							_("extraneous separator ',' at end "
+							  "of symbolic EBCDIC characters"));
 				}
 				ebcdic_flag = CB_SYM_EBCDIC_INACTIVE;
 			} else if ('0' <= c && c <= '9') {
@@ -1429,13 +1434,13 @@ read_literal (const char mark, const enum cb_literal_type type)
 				/* extra commas are not allowed */
 				if (ebcdic_flag == CB_SYM_EBCDIC_AFTER_SEP)
 					cb_error (
-					    _("extraneous character ',' in sequence "
-					      "of symbolic EBCDIC characters"));
+						_("extraneous character ',' in sequence "
+						  "of symbolic EBCDIC characters"));
 				ebcdic_flag = CB_SYM_EBCDIC_AFTER_SEP;
 			} else {
 				/* other chars are invalid */
 				cb_error (_("invalid character '%c' in sequence "
-					    "of symbolic EBCDIC characters"), c);
+						"of symbolic EBCDIC characters"), c);
 				ebcdic_flag = CB_SYM_EBCDIC_ACTIVE;
 			} 
 			continue;
@@ -1489,18 +1494,18 @@ read_literal (const char mark, const enum cb_literal_type type)
 
 	/* FIXME: Exact behavior should depend on level of support:
 	    * "OK"      => standard behavior, e.g. normal items filled with spaces/
-	                   zeros, DYNAMIC LENGTH items made empty
-	    * "warning" => current implementation, interpret '' as SPACE/ZERO
-	    * "ignore"  => assume a space without warning; make sure zero length
-	                   items work everywhere (should do as we support zero
-	                   lengths via ODO items already)
+					   zeros, DYNAMIC LENGTH items made empty
+		* "warning" => current implementation, interpret '' as SPACE/ZERO
+		* "ignore"  => assume a space without warning; make sure zero length
+					   items work everywhere (should do as we support zero
+					   lengths via ODO items already)
 	*/
 	if (!i) {
 		cb_verify (cb_zero_length_lit, _("zero-length literal"));
 		cb_warning (COBC_WARN_FILLER,
- 			    ( type == CB_LITERAL_N || type == CB_LITERAL_NC ) ?
-			    _("national literal has zero length; a SPACE will be assumed") :
-			    _("alphanumeric literal has zero length; a SPACE will be assumed")
+ 				( type == CB_LITERAL_N || type == CB_LITERAL_NC ) ?
+				_("national literal has zero length; a SPACE will be assumed") :
+				_("alphanumeric literal has zero length; a SPACE will be assumed")
 			);
 		/* note: space gets UTF-16 converted down below */
 		plex_buff[i++] = ' ';
@@ -1511,32 +1516,43 @@ read_literal (const char mark, const enum cb_literal_type type)
 	/* build literal with given size */
 	plex_buff[i] = 0;
 	switch (type) {
-    case CB_LITERAL_U:
-        yylval = cb_build_UTF8_literal(plex_buff, i);
-        break;
-    case CB_LITERAL_N:
-        if (cb_verify(cb_national_literals, _("national literal"))) {
-            CB_UNFINISHED(_("national literal"));
-        }
-        yylval = cb_build_national_literal(plex_buff, i);
-        break;
-    case CB_LITERAL_NC:
-        if (cb_verify(cb_nationalc_literals, _("national-character literal"))) {
-            CB_UNFINISHED(_("national literal"));
-        }
-        yylval = cb_build_national_literal(plex_buff, i);
-        break;
-    default:
+	case CB_LITERAL_U:
+		yylval = cb_build_UTF8_literal(plex_buff, i);
+		break;
+	case CB_LITERAL_N:
+		cb_verify(cb_national_literals, _("national literal"));
+		yylval = cb_build_national_literal(plex_buff, i);
+		break;
+	case CB_LITERAL_NC:
+		cb_verify(cb_nationalc_literals, _("national-character literal"));
+		yylval = cb_build_national_literal(plex_buff, i);
+		break;
+	default:
 		if(cb_gcos_ebcdic_literals){
 			yylval = cb_build_literal_by_category(plex_buff, i, CB_CATEGORY_ALPHANUMERIC);
 		}
 		else{
-        	yylval = cb_build_alphanumeric_literal(plex_buff, i);
+			yylval = cb_build_alphanumeric_literal(plex_buff, i);
 		}
 		break;
 	}
 }
 
+/* helper function to build a literal with a given category 
+   using the original build_literal function */
+static cb_tree 
+build_national_or_alpha_literal_by_category(int category, const char *text, size_t len) 
+{	
+	struct cb_literal *lit = build_literal(category, text, len);
+
+	cb_tree l;
+	l = CB_TREE(lit);
+
+	l->source_file = cb_source_file;
+	l->source_line = cb_source_line;
+
+	return l;	
+}
 
 /*
  * The function takes two parameters, the input string and its type(X,
@@ -1558,40 +1574,22 @@ read_literal (const char mark, const enum cb_literal_type type)
  * returns the token LITERAL along with thye parsed literal value
  * stored in yyval
  */
-
-
-// helper function to build a literal with a given category 
-// using the original build_literal function
-static cb_tree 
-build_national_or_alpha_literal_by_category(int category, const char *text, size_t len) 
-{	
-	struct cb_literal *lit = build_literal(category, text, len);
-
-	cb_tree l;
-	l = CB_TREE(lit);
-
-	l->source_file = cb_source_file;
-	l->source_line = cb_source_line;
-
-	return l;	
-}
-
 static int
 scan_x (const char *text, const char *type)
 {
-    	size_t curr_len = strlen(text) - 1;
-    	size_t result_len;
-    	int literal_error = 0;
-		size_t required_size;
-		size_t i;
-		enum cb_category category;
+	size_t curr_len = strlen(text) - 1;
+	size_t result_len;
+	int literal_error = 0;
+	size_t required_size;
+	size_t i;
+	enum cb_category category;
 
 
-	// handle zero length literal case
+	/* handle zero length literal case */
 	if (curr_len == 0) {
-	    /* CHECKME: should this always be active or only with x"" ? */
-	    	(void)cb_verify (cb_zero_length_lit, _("zero-length literal"));
-	    	cb_warning (COBC_WARN_FILLER,
+		/* CHECKME: should this always be active or only with x"" ? */
+			(void)cb_verify (cb_zero_length_lit, _("zero-length literal"));
+			cb_warning (COBC_WARN_FILLER,
 				_("hexadecimal literal has zero length; X'00' will be assumed"));
 		memset (plex_buff, 0, 5);
 		switch (type[0]) {
@@ -1601,11 +1599,11 @@ scan_x (const char *text, const char *type)
 			break;
 		case 'X':
 		case 'U':
-			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, plex_buff, 1);
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_ALPHANUMERIC, " ", 1);
 			break;
 		case 'N':
 			(void)cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"));
-			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
+			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, "\x20\x00", COB_NATIONAL_SIZE);
 			break;
 		default:
 			break;
@@ -1613,15 +1611,15 @@ scan_x (const char *text, const char *type)
 		RETURN_TOK (LITERAL);
 	}
 
-	// ensure buffers don't get too big
+	/* ensure buffers don't get too big */
 	if (curr_len > (size_t)cb_lit_length + 1) {
-                curr_len = cb_lit_length + 1;
+		curr_len = cb_lit_length + 1;
 	}
 	required_size = curr_len + 1;
 	if (unlikely (required_size > plex_size)) {
-	        plex_size = required_size;
-	        cobc_free (plex_buff);
-	        plex_buff = cobc_malloc (plex_size);
+		plex_size = required_size;
+		cobc_free (plex_buff);
+		plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
 	switch(type[0]){
@@ -1637,7 +1635,7 @@ scan_x (const char *text, const char *type)
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
 		}
-		// GnuCOBOL currently only support 64 bit booleans
+		/* GnuCOBOL currently only support 64 bit booleans */
 		if (unlikely (result_len > 64)) {
 			snprintf (err_msg, COB_MINI_MAX,
 				_("literal length %lu exceeds %u characters"),
@@ -1646,71 +1644,69 @@ scan_x (const char *text, const char *type)
 		}
 		break;
 	default:
-		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
+		result_len = curr_len / (COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
 			memset (plex_buff, 0, 5);
 			yylval = build_national_or_alpha_literal_by_category(CB_CATEGORY_NATIONAL, plex_buff, COB_NATIONAL_SIZE);
 			RETURN_TOK (LITERAL);
-		} else {
-			CB_UNFINISHED (_("national literal"));
 		}
 		break;
 	}
 
 	if (unlikely(result_len > cb_lit_length)) {
-        	error_literal(type, plex_buff, literal_error++);
-    }
-
-	// Input conversion
-	if (type[0] == 'B') {
-		// hex boolean
-        	cob_u64_t val = 0;
-        	if (sscanf(text, "%" SCNx64, &val) != 1) {
-				snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal-boolean literal"));
-				sprintf(plex_buff, "%.2s", text);
-				error_literal(type, plex_buff, literal_error++);
-        	}
-			plex_buff[curr_len] = '\0';
-        	sprintf((char *)plex_buff, CB_FMT_LLU, val);
-        	yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
-    } else {
-			// hex alphanumeric or national
-			i = 0;
-        	for (; i < curr_len; i += 2) {
-				unsigned int byte;
-				int nchar = 0;
-				int nout = sscanf(text + i, "%2x%n", &byte, &nchar);
-				if ( !( nout == 1 && nchar == 2) ) {
-					snprintf(plex_buff, 3, "%.2s", text + i);
-					// case of nchar is 1 (not total failure or total success)
-					if(nchar == 1){
-						snprintf(plex_buff, 2, "%c", text[i]);
-						snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
-						if (cb_relaxed_syntax_checks && result_len == 1) {
-							error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
-						} else {
-							error_literal(type, plex_buff, literal_error++);
-						}
-					}
-					for(;nchar < 2; nchar++, i++) { 
-						if( !isxdigit(text[i])) {
-							snprintf(err_msg, COB_MINI_MAX,  _("literal contains invalid character '%c'"), text[i]);
-							error_literal(type, plex_buff, literal_error++);
-						}
-				    }  
-					break;
-				}
-				plex_buff[i / 2] = (cob_u8_t)byte;  //recheck 4
-       		}	
-			if (type[0] == 'N') {
-				category = CB_CATEGORY_NATIONAL;
-			} else {
-				category = CB_CATEGORY_ALPHANUMERIC;
-			}
-			yylval = build_national_or_alpha_literal_by_category(category, plex_buff, result_len);
+		error_literal(type, plex_buff, literal_error++);
 	}
 
-    RETURN_TOK(LITERAL);
+	/* Input conversion */
+	if (type[0] == 'B') {
+		/* hex boolean */
+		cob_u64_t val = 0;
+		if (sscanf(text, "%" SCNx64, &val) != 1) {
+			snprintf(err_msg, COB_MINI_MAX, _("invalid hexadecimal-boolean literal"));
+			sprintf(plex_buff, "%.2s", text);
+			error_literal(type, plex_buff, literal_error++);
+		}
+		plex_buff[curr_len] = '\0';
+		sprintf((char *)plex_buff, CB_FMT_LLU, val);
+		yylval = cb_build_numeric_literal(0, (const void *)plex_buff, 0);
+	} else {
+		/* hex alphanumeric or national */
+		i = 0;
+		for (; i < curr_len; i += 2) {
+			unsigned int byte;
+			int nchar = 0;
+			int nout = sscanf(text + i, "%2x%n", &byte, &nchar);
+			if ( !( nout == 1 && nchar == 2) ) {
+				snprintf(plex_buff, 3, "%.2s", text + i);
+				/* case of nchar is 1 (not total failure or total success) */
+				if(nchar == 1){
+					snprintf(plex_buff, 2, "%c", text[i]);
+					snprintf(err_msg, COB_MINI_MAX, _("literal does not have an even number of digits"));
+					if (cb_relaxed_syntax_checks && result_len == 1) {
+						error_literal(type, plex_buff, literal_error++ == 0 ? -1 : 1);
+					} else {
+						error_literal(type, plex_buff, literal_error++);
+					}
+				}
+				for(;nchar < 2; nchar++, i++) { 
+					if( !isxdigit(text[i])) {
+						snprintf(err_msg, COB_MINI_MAX,  _("literal contains invalid character '%c'"), text[i]);
+						error_literal(type, plex_buff, literal_error++);
+					}
+				}  
+				break;
+			}
+			plex_buff[i / 2] = (cob_u8_t)byte;
+		}	
+		if (type[0] == 'N') {
+			category = CB_CATEGORY_NATIONAL;
+		} else {
+			category = CB_CATEGORY_ALPHANUMERIC;
+		}
+		yylval = build_national_or_alpha_literal_by_category(category, plex_buff, result_len);
+	}
+
+	RETURN_TOK(LITERAL);
 }
 
 static int
@@ -1834,9 +1830,9 @@ static int
 scan_b (const char *text, const char *type)
 {
 	/* FIXME: COBOL 2014 allows up to 8,192 boolean characters
-	          COBOL 2002 allows up to   160 boolean characters
-	          --> both identical to "literal-length" maximum
-	          GnuCOBOL currently only supports 64 boolean characters,
+			  COBOL 2002 allows up to   160 boolean characters
+			  --> both identical to "literal-length" maximum
+			  GnuCOBOL currently only supports 64 boolean characters,
 			  more need a different storage
 	*/
 
@@ -1857,7 +1853,7 @@ scan_b (const char *text, const char *type)
 		if (curr_len == 1) {
 			cb_verify (cb_zero_length_lit, _("zero-length literal"));
 			cb_warning (COBC_WARN_FILLER,
-				    _("boolean literal has zero length; B'0' will be assumed"));
+					_("boolean literal has zero length; B'0' will be assumed"));
 		}
 		if (curr_len <= 1) {
 			/* FIXME: we should really build a boolean literal... */
@@ -2086,9 +2082,9 @@ significand_is_zero (const char *int_part, const char *dec_part)
 #if COB_FLOAT_DIGITS_MAX != 36
 #error COB_FLOAT_DIGITS_MAX adjustment needed, common.h must match scanner.l
 #endif
-#define COB_FLOAT_DIGITS_CHCK_MAX    38 /* incl. sign and comma */
+#define COB_FLOAT_DIGITS_CHCK_MAX	38 /* incl. sign and comma */
 #define COB_FLOAT_DIGITS_STR_WIDTH   39
-#define COB_FLOAT_DIGITS_STR_MAX     40
+#define COB_FLOAT_DIGITS_STR_MAX	 40
 
 #define COB_FLOAT_DIGITS_WIDTH	"%" CB_XSTRINGIFY(COB_FLOAT_DIGITS_STR_WIDTH)
 
@@ -2147,7 +2143,7 @@ scan_floating_numeric (const char *text)
 		significand_int[0] = 0;
 		strcpy (significand_dec, significand_pos + 1);
 #if 0 /* note: we ignore compiler warnings for possible "missing NULL-terminator 
-               here as we know that sscanf handles the correct with */
+			   here as we know that sscanf handles the correct with */
 		significand_dec[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
 	} else {
 	/* silencing some warnings */
@@ -2200,7 +2196,7 @@ scan_floating_numeric (const char *text)
 			}
 
 			/* "The maximum permitted value and minimum permitted value of
-			    the exponent is implementor-defined" */
+				the exponent is implementor-defined" */
 			/* Exponent range -383  thru +384  for FLOAT-DECIMAL-16 */
 			/* Exponent range -6143 thru +6144 for FLOAT-DECIMAL-34 */
 			if (!(-6143 <= exponent && exponent <= 6144)) {
