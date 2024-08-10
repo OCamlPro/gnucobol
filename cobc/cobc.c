@@ -335,7 +335,7 @@ struct cb_iconv_t cb_iconv;
 
 static void 
 initialize_cb_iconv() {
-	strncpy(cb_iconv.source, "UTF-8", sizeof(cb_iconv.source) - 1);
+	strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
     cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
 }
 #endif
@@ -9488,14 +9488,6 @@ main (int argc, char **argv)
 	/* Process command line arguments */
 	iargs = process_command_line (argc, argv);
 
-/* initialize the iconv struct after reading the command line*/
-#ifdef HAVE_ICONV_H
-	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
-	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
-	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);
-#endif
-
-
 	if (fatal_startup_error) {
 		cobc_err_msg (_("please check environment variables as noted above"));
 		cobc_abort_terminate (0);
@@ -9608,6 +9600,14 @@ main (int argc, char **argv)
 	cobc_init_codegen ();
 	cobc_init_tree ();
 #endif
+
+/* initialize the iconv struct after reading the command line*/
+#ifdef HAVE_ICONV_H
+	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
+	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
+	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);
+#endif
+
 
 	/* Process input files */
 
