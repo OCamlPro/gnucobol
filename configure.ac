@@ -638,7 +638,7 @@ dnl AC_CHECK_HEADERS([whcar.h malloc.h])
 AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h stdint.h inttypes.h iconv.h])
+AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h stdint.h inttypes.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.

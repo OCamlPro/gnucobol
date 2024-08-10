@@ -329,8 +329,7 @@ cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
 int cb_flag_alt_ebcdic = 0;
 
-#ifdef HAVE_ICONV_H
-// call the struct cb_iconv
+#ifdef HAVE_ICONV
 struct cb_iconv_t cb_iconv;
 
 static void 
@@ -3974,7 +3973,7 @@ process_command_line (const int argc, char **argv)
 
 		case CB_FLAG_GETOPT_SOURCE_ENCODE:
 			/* -fsource-encode=encoding*/
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 			/*iconv will return an error if the encoding is invalid */
 			strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
 			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
@@ -9184,7 +9183,7 @@ begin_setup_internal_and_compiler_env (void)
 	char			*p;
 	
 	/* initialize the default source encoding */
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 	initialize_cb_iconv();
 #endif
 	
@@ -9606,7 +9605,7 @@ main (int argc, char **argv)
 #endif
 
 /* initialize the iconv struct after reading the command line*/
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
 	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
 	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);

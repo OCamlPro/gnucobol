@@ -31,7 +31,7 @@
 #endif
 #include <stdio.h>	/* for FILE* */
 	
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 #include <iconv.h>
 #endif
 
@@ -331,8 +331,8 @@ enum cobc_name_type {
 };
 
 
+#ifdef HAVE_ICONV
 /* Structure for a iconv conversion */
-#ifdef HAVE_ICONV_H
 struct cb_iconv_t{
     iconv_t alphanumeric;
     iconv_t national;

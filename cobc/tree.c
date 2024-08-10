@@ -2795,10 +2795,9 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
 
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 	size_t outsize = size;
 	void * outdata = malloc(outsize);
-	memset(outdata, ' ', outsize);
 	
 	if(cb_iconv.alphanumeric == (iconv_t)-1) {
 		cobc_err_msg(_("iconv_open failed"));
@@ -2847,10 +2846,9 @@ cb_build_national_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
 	
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 	size_t outsize = size*2;
 	void * outdata = malloc(outsize);
-	memset(outdata, ' ', outsize);
 	
 	if(cb_iconv.national == (iconv_t)-1) {
 		cobc_err_msg(_("iconv_open failed"));
@@ -2909,8 +2907,14 @@ cb_tree
 cb_build_UTF8_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
-
-#ifdef HAVE_ICONV_H
+ 	if(strcmp(cb_iconv.source, "UTF-8") == 0) {
+		l = CB_TREE (build_literal (CB_CATEGORY_UTF8, data, size));
+		l->source_file = cb_source_file;
+		l->source_line = cb_source_line;
+		return l;
+	}
+#ifdef HAVE_ICONV
+{
 	size_t outsize = size*4;
 	void * outdata = malloc(outsize);
 	memset(outdata, ' ', outsize);
@@ -2947,6 +2951,7 @@ cb_build_UTF8_literal (const void *data, const size_t size)
 	}
 	l = CB_TREE (build_literal (CB_CATEGORY_UTF8, outdata, outsize));
     free(outdata);
+}
 #else
     l = CB_TREE (build_literal (CB_CATEGORY_UTF8, data, size));
 #endif
