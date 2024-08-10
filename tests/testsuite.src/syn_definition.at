@@ -1935,7 +1935,7 @@ AT_DATA([prog3.cob], [
        OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS 'A' THROUGH 'Z'.
-           ALPHABET ALPHABET-2   n'A' also n'B', n'1' thru n'9'.
+           ALPHABET ALPHABET-2 NATIONAL n'A' also n'B', n'1' thru n'9'.
        END PROGRAM prog3d.
 
        IDENTIFICATION DIVISION.
