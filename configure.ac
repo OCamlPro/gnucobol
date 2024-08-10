@@ -659,6 +659,18 @@ fi
 CFLAGS="$curr_cflags"
 
 
+dnl Add --enable-code-coverage and test for code-coverage tools if enabled
+AX_CODE_COVERAGE
+
+if test "$COB_USES_GCC_NO_ICC" != yes -a "$enable_code_coverage" = yes; then
+	AC_MSG_ERROR([Code coverage checks are only usable with GCC!])
+fi
+
+
+dnl set PKG_CONFIG to use (cross-compile aware)
+PKG_PROG_PKG_CONFIG
+
+
 # more things to save...
 AC_CACHE_SAVE
 
@@ -720,18 +732,6 @@ else
 	  *) LIBCOB_LIBS="$LIBCOB_LIBS $MATH_LIBS" ;;
 	esac
 fi
-
-
-dnl Add --enable-code-coverage and test for code-coverage tools if enabled
-AX_CODE_COVERAGE
-
-if test "$COB_USES_GCC_NO_ICC" != yes -a "$enable_code_coverage" = yes; then
-	AC_MSG_ERROR([Code coverage checks are only usable with GCC!])
-fi
-
-
-dnl set PKG_CONFIG to use (cross-compile aware)
-PKG_PROG_PKG_CONFIG
 
 
 # Checks for gmp.
@@ -908,6 +908,23 @@ AC_CHECK_LIB([$with_math], [__gmp_get_memory_functions],
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
 
+AC_ARG_WITH([iconv],
+  [AS_HELP_STRING([--with-iconv],
+    [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
+  [],
+  [with_iconv=check])
+
+if test "$with_iconv" = yes -o "$with_iconv" = check; then
+  AM_ICONV
+  if test "$with_iconv" = yes && test "$am_cv_func_iconv" != yes; then
+    AC_MSG_ERROR([iconv library requested but not found])
+  fi
+  if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LIBICONV"
+    LIBCOB_LIBS="$LIBCOB $LIBICONV"
+  fi
+fi
+
 
 dnl
 dnl Configure options part II (needing compilation)
@@ -915,7 +932,7 @@ dnl
 
 AC_ARG_WITH([xml2],
   [AS_HELP_STRING([--with-xml2],
-    [(GnuCOBOL) Use libxml2 as XML handler (default)])],
+    [(GnuCOBOL) Use libxml2 as XML handler (default: check)])],
   [],
   [with_xml2=check])
 
@@ -2559,6 +2576,7 @@ else
   AC_MSG_NOTICE([ Dynamic loading:                             Libtool])
 fi
 AC_MSG_NOTICE([ Use gettext for international messages:      ${USE_NLS}])
+AC_MSG_NOTICE([ Use iconv for character encoding:            ${am_cv_func_iconv_summary}])
 AC_MSG_NOTICE([ Use fcntl for file locking:                  ${ac_cv_func_fcntl}])
 AC_MSG_NOTICE([ Use math multiple precision library:         ${with_math}])
 case "$USE_CURSES" in

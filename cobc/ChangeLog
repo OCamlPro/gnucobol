@@ -1,4 +1,17 @@
 
+2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_alphabet_name_definition): cater for national alphabet
+	* typeck.c (validate_alphabet): speedup for alphabet checks
+	* pplex.l (ppopen_get_file): explicit check for UTF16/UTF32 and
+	  hint to use iconv
+	  
+2024-08-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_alphabet), tree.h (cb_alphabet_name): cater for
+	  national alphabets with increased size (max. 65535 instead of 255)
+	* typeck.c (validate_alphabet): check that alphabet and literal types match
+	  
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): added logic to find the valid floating
@@ -32,6 +45,11 @@
 2024-06-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): fixed currency digit counting logic
+
+2024-05-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_compile)[_MSC_VER]: adjustment for compile
+	  from assembler source
 
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 

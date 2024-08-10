@@ -102,7 +102,7 @@ XML Support
 
 Support for GENERATE XML is provided by:
 
-*   [libxml2](http://xmlsoft.org)
+*   [libxml2](https://xmlsoft.org)
 
     libxml2 is distributed under MIT License.
 
@@ -119,3 +119,15 @@ Support for GENERATE JSON is provided by *one* of the following:
 
     JSON-C is distributed under Expat License.
 
+
+charachter encoding support
+----------------------------
+
+Support for partial character encoding is provided directly,
+full support for national and utf8 literals and data, as well as
+utf8 source encoding needs an implementation of the iconv API.
+If this is not provided by libc, it is provided by:
+
+*   [libiconv](https://www.gnu.org/software/libiconv/)
+
+    GNU libiconv is distributed under GNU Lesser General Public License.

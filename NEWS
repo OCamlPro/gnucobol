@@ -76,6 +76,10 @@ NEWS - user visible changes				-*- outline -*-
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
    honors NCURSES_LIBS and NCURSES_CFLAGS
 
+** configure now checks for iconv and accepts --with-iconv/--without-iconv;
+   this is used for character encoding support, which otherwise is only provided
+   partially
+
 ** use the "default" -shared flag to build dynamic libraries on macOS
    so as to fix testuite issues with recent macOS versions
 

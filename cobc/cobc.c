@@ -2153,7 +2153,7 @@ cobc_check_action (const char *name)
 		char	temp_buff[COB_MEDIUM_BUFF];
 
 		snprintf (temp_buff, (size_t)COB_MEDIUM_MAX,
-			  "%s%s%s", save_temps_dir, SLASH_STR, name);
+			  "%s%c%s", save_temps_dir, SLASH_CHAR, name);
 		temp_buff[COB_MEDIUM_MAX] = 0;
 		/* Remove possible target file - ignore return */
 		(void)unlink (temp_buff);
@@ -2186,9 +2186,9 @@ clean_up_intermediates (struct filename *fn, const int status)
 	}
 	if (fn->need_preprocess
 	 && (status
-		||  cb_compile_level > CB_LEVEL_PREPROCESS
-		|| (cb_compile_level == CB_LEVEL_PREPROCESS
-		    && save_temps && !save_temps_dir))) {
+	  ||  cb_compile_level > CB_LEVEL_PREPROCESS
+	  || (cb_compile_level == CB_LEVEL_PREPROCESS
+	   && save_temps && !save_temps_dir))) {
 		cobc_check_action (fn->preprocess);
 	}
 	/* CHECKME: we had reports of unexpected intermediate
@@ -2200,8 +2200,8 @@ clean_up_intermediates (struct filename *fn, const int status)
 
 	if (fn->need_translate
 	 && (status
-		||  cb_compile_level > CB_LEVEL_TRANSLATE
-		|| (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
+	  ||  cb_compile_level > CB_LEVEL_TRANSLATE
+	  || (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
 		cobc_check_action (fn->translate);
 		cobc_check_action (fn->trstorage);
 		if (fn->localfile) {
@@ -8181,7 +8181,6 @@ process_translate (struct filename *fn)
 }
 
 /* Create single-element assembly source */
-
 static int
 process_compile (struct filename *fn)
 {
@@ -8241,7 +8240,6 @@ process_compile (struct filename *fn)
 }
 
 /* Create single-element assembled object */
-
 static int
 process_assemble (struct filename *fn)
 {
@@ -8443,7 +8441,6 @@ process_module_direct (struct filename *fn)
 }
 
 /* Create single-element loadable object */
-
 static int
 process_module (struct filename *fn)
 {
@@ -8541,7 +8538,6 @@ process_module (struct filename *fn)
 }
 
 /* Create multi-element loadable object */
-
 static int
 process_library (struct filename *l)
 {
@@ -8660,7 +8656,6 @@ process_library (struct filename *l)
 }
 
 /* Create executable */
-
 static int
 process_link (struct filename *l)
 {
