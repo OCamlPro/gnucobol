@@ -4024,7 +4024,7 @@ validate_alphabet (cb_tree alphabet)
 						unvals = pos;
 						continue;
 					}
-					n = val;
+					n = (unsigned char)val;
 					if (values[n] != -1) {
 						dupvals[n] = n;
 						dupls = 1;
@@ -4047,7 +4047,7 @@ validate_alphabet (cb_tree alphabet)
 					unvals = pos;
 					continue;
 				}
-				n = lastval;
+				n = (unsigned char)lastval;
 				if (values[n] != -1) {
 					dupvals[n] = n;
 					dupls = 1;
@@ -4117,7 +4117,7 @@ validate_alphabet (cb_tree alphabet)
 					unvals = pos;
 					continue;
 				}
-				n = lastval;
+				n = (unsigned char) lastval;
 				if (values[n] != -1) {
 					dupls = 1;
 				}
@@ -4132,7 +4132,7 @@ validate_alphabet (cb_tree alphabet)
 			if (dupls) {
 				char		dup_val_str[256];
 				i = 0;
-				for (n = 0; n < maxchar; n++) {
+				for (n = 0; n < 256; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
 							i += sprintf (dup_val_str + i, ", ...");
@@ -4148,7 +4148,7 @@ validate_alphabet (cb_tree alphabet)
 						} else {
 							i += sprintf (dup_val_str + i, "x'%02x'", n);
 						}
-					};
+					}
 				}
 				dup_val_str[i] = 0;
 				cb_error_x (alphabet,
