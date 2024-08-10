@@ -9548,14 +9548,6 @@ main (int argc, char **argv)
 	/* Process command line arguments */
 	iargs = process_command_line (argc, argv);
 
-/* initialize the iconv struct after reading the command line*/
-#ifdef HAVE_ICONV_H
-	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
-	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
-	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);
-#endif
-
-
 	if (fatal_startup_error) {
 		cobc_err_msg (_("please check environment variables as noted above"));
 		cobc_abort_terminate (0);
