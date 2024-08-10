@@ -2035,8 +2035,6 @@ AT_DATA([prog4.cob], [
            ALPHABET ALPHABET-2
                     n'A' also n'B' ALSO n'f',
                     n'g' also n'G', n'1' thru n'9'.
-           ALPHABET ALPHABET-3
-                    n'A' also n'C', n'B' thru N'D'.
        END PROGRAM prog4.
 ])
 
