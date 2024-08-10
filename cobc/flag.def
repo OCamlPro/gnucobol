@@ -70,7 +70,7 @@ CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 20, CB_FLAG_GETOPT_MAX_ERRORS,
 
 CB_FLAG_RQ (cb_source_encode, 1, "source-encode", 0, CB_FLAG_GETOPT_SOURCE_ENCODE, 
 	_("  -fsource-encode=[encoding]\tdefine the source file encoding\n"
-	  "                        * default: UTF-8"))
+	  "                        * default: ISO-8859-15"))
 
 
 /* Flags with required parameter and no associated variable */
