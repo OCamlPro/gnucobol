@@ -333,7 +333,6 @@ enum cobc_name_type {
 
 #ifdef HAVE_ICONV
 /* Structure for a iconv conversion */
-#ifdef HAVE_ICONV_H
 struct cb_iconv_t{
     iconv_t alphanumeric;
     iconv_t national;

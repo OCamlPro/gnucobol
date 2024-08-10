@@ -1577,9 +1577,12 @@ build_national_or_alpha_literal_by_category(int category, const char *text, size
 static int
 scan_x (const char *text, const char *type)
 {
-    	size_t curr_len = strlen(text) - 1;
-    	size_t result_len;
-    	int literal_error = 0;
+	size_t curr_len = strlen(text) - 1;
+	size_t result_len;
+	int literal_error = 0;
+	size_t required_size;
+	size_t i;
+	enum cb_category category;
 
 
 	/* handle zero length literal case */
@@ -1608,15 +1611,15 @@ scan_x (const char *text, const char *type)
 		RETURN_TOK (LITERAL);
 	}
 
-	// ensure buffers don't get too big
+	/* ensure buffers don't get too big */
 	if (curr_len > (size_t)cb_lit_length + 1) {
-                curr_len = cb_lit_length + 1;
+		curr_len = cb_lit_length + 1;
 	}
 	required_size = curr_len + 1;
 	if (unlikely (required_size > plex_size)) {
-	        plex_size = required_size;
-	        cobc_free (plex_buff);
-	        plex_buff = cobc_malloc (plex_size);
+		plex_size = required_size;
+		cobc_free (plex_buff);
+		plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
 	switch(type[0]){
