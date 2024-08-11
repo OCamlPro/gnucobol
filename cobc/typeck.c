@@ -3987,11 +3987,12 @@ validate_alphabet (cb_tree alphabet)
 					ap->low_val_char = get_value (X);
 				}
 				for (ls = x; ls; ls = CB_CHAIN (ls)) {
+					int val;
 					X = CB_VALUE (ls);
 					if (!is_alphabet_matching_literal_type (X, is_national_alphabet)) {
 						continue;
 					}
-					int val = get_value (X);
+					val = get_value (X);
 					if (!CB_CHAIN (ls)) {
 						lastval = val;
 					}
