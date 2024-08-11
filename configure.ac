@@ -921,7 +921,7 @@ if test "$with_iconv" = yes -o "$with_iconv" = check; then
   fi
   if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
     PROGRAMS_LIBS="$PROGRAMS_LIBS $LIBICONV"
-    LIBCOB_LIBS="$LIBCOB $LIBICONV"
+    LIBCOB_LIBS="$LIBCOB_LIBS $LIBICONV"
   fi
 fi
 

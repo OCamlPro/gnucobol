@@ -6,6 +6,7 @@
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: new option --with-iconv
+	* m4/iconv.m4: updated to current version from gnulib
 
 2024-05-14  David Declerck <david.declerck@ocamlpro.com>
 
