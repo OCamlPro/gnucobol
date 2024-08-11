@@ -3992,10 +3992,7 @@ process_command_line (const int argc, char **argv)
 					break;
 				}
 			}
-			if (encoding_valid) {
-				strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
-				cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
-			} else {
+			if (!encoding_valid) {
 				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
 			}
 #endif

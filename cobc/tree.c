@@ -2907,13 +2907,13 @@ cb_tree
 cb_build_UTF8_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
- 	if(strcmp(cb_iconv.source, "UTF-8") == 0) {
+#ifdef HAVE_ICONV
+	if(strcmp(cb_iconv.source, "UTF-8") == 0) {
 		l = CB_TREE (build_literal (CB_CATEGORY_UTF8, data, size));
 		l->source_file = cb_source_file;
 		l->source_line = cb_source_line;
 		return l;
 	}
-#ifdef HAVE_ICONV
 {
 	size_t outsize = size*4;
 	void * outdata = malloc(outsize);
