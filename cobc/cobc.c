@@ -52,6 +52,11 @@
 #include <io.h>
 #endif
 
+
+#ifdef	HAVE_LANGINFO_CODESET
+#include <langinfo.h>
+#endif
+
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -334,8 +339,22 @@ struct cb_iconv_t cb_iconv;
 
 static void 
 initialize_cb_iconv() {
+	char * encoding;
+#ifdef HAVE_LANGINFO_CODESET
+    setlocale(LC_ALL, "");
+    encoding = nl_langinfo(CODESET);
+
+    if (encoding != NULL && strlen(encoding) > 0) {
+        strncpy(cb_iconv.source, encoding, sizeof(cb_iconv.source) - 1);
+        cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+    } else {
+        strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
+        cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+    }
+#else
 	strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
     cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+#endif
 }
 #endif
 
