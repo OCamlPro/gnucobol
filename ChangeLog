@@ -1,4 +1,13 @@
 
+2024-08-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* DEPENDENCIES, NEWS: document usage of libiconv
+
+2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new option --with-iconv
+	* m4/iconv.m4: updated to current version from gnulib
+
 2024-05-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: update flags for building dynamic libraries on macOS

@@ -6,9 +6,9 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
-** cobc now checks for binary files and early exit parsing those;
-   the error output for format errors (for example invalid indicator column)
-   is now limitted to 5 per source file
+** cobc now checks for binary and multi-byte encoded files and early exit
+   parsing those; the error output for format errors (for example invalid
+   indicator column) is now limitted to 5 per source file
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)
@@ -75,6 +75,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
    honors NCURSES_LIBS and NCURSES_CFLAGS
+
+** configure now checks for iconv and accepts --with-iconv/--without-iconv;
+   this is used for character encoding support, which otherwise is only provided
+   partially
 
 ** use the "default" -shared flag to build dynamic libraries on macOS
    so as to fix testuite issues with recent macOS versions

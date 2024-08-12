@@ -3828,46 +3828,76 @@ cb_validate_collating (cb_tree collating_sequence)
 	return 0;
 }
 
+static int alphabet_valid;
+
+static int
+is_alphabet_matching_literal_type (cb_tree x, int is_national_alphabet)
+{
+	if ((is_national_alphabet && x->category != CB_CATEGORY_NATIONAL)
+	 || (!is_national_alphabet && x->category == CB_CATEGORY_NATIONAL)) {
+		if (alphabet_valid) {
+			const char *type = is_national_alphabet ? "national" : "alphanumeric";
+			cb_error_x (x,
+				_("only literals of type %s allowed for %s alphabet"),
+				type, type);
+			alphabet_valid = 0;
+		}
+		return 0;
+	}
+	return 1;
+}
+
 static void
 validate_alphabet (cb_tree alphabet)
 {
+	register unsigned int		n;
 	struct cb_alphabet_name *ap = CB_ALPHABET_NAME (alphabet);
-	unsigned int		n;
+	const int is_national_alphabet = ap->alphabet_target == CB_ALPHABET_NATIONAL;
+	const int maxchar = is_national_alphabet
+						? COB_MAX_CHAR_NATIONAL : COB_MAX_CHAR_ALPHANUMERIC;
+	const int memsize = (maxchar + 1) * sizeof(int);
+
+	ap->values = cobc_parse_malloc (memsize);
+	ap->alphachr = cobc_parse_malloc (memsize);
 
 	/* Native */
 	if (ap->alphabet_type == CB_ALPHABET_NATIVE) {
-		for (n = 0; n < 256; n++) {
-			ap->values[n] = n;
-			ap->alphachr[n] = n;
+		register int	*entry = ap->values;
+		for (n = 0; n < COB_MAX_CHAR_ALPHANUMERIC + 1; n++) {
+			*entry = n;
+			entry++;
 		}
 		return;
 	}
 
 	/* ASCII */
 	if (ap->alphabet_type == CB_ALPHABET_ASCII) {
-		for (n = 0; n < 256; n++) {
+		register int	*entry = ap->values;
+		for (n = 0; n < COB_MAX_CHAR_ALPHANUMERIC + 1; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-			ap->values[n] = (int)cob_refer_ascii[n];
-			ap->alphachr[n] = (int)cob_refer_ascii[n];
+			*entry = (int)cob_refer_ascii[n];
 #else
-			ap->values[n] = n;
-			ap->alphachr[n] = n;
+			*entry = n;
 #endif
+			entry++;
 		}
+		memcpy (ap->alphachr, ap->values, memsize);
 		return;
 	}
 
 	/* EBCDIC */
 	if (ap->alphabet_type == CB_ALPHABET_EBCDIC) {
-		for (n = 0; n < 256; n++) {
+		register int	*entry = ap->values;
+		for (n = 0; n < COB_MAX_CHAR_ALPHANUMERIC + 1; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-			ap->values[n] = n;
-			ap->alphachr[n] = n;
+			*entry = n;
 #else
-			ap->values[n] = (int)cob_refer_ebcdic[n];
-			ap->alphachr[n] = (int)cob_refer_ebcdic[n];
+			*entry = (int)cob_refer_ebcdic[n];
 #endif
+			entry++;
 		}
+		
+		memcpy (ap->alphachr, ap->values, memsize);
 		return;
 	}
 
@@ -3879,42 +3909,46 @@ validate_alphabet (cb_tree alphabet)
 		int			lastval = 0, tableval = 0;
 		int			pos = 0;
 		int			i;
-		int			values[256];
-		int			charvals[256];
-		int			dupvals[256];
+		int			*values = malloc (memsize);
+		int			*charvals = malloc (memsize);
+		int			*dupvals = malloc (memsize);
 
-		for (n = 0; n < 256; n++) {
-			values[n] = -1;
-			charvals[n] = -1;
-			dupvals[n] = -1;
-			ap->values[n] = -1;
-			ap->alphachr[n] = -1;
-		}
+		memset (values, -1, memsize);
+		memcpy (charvals, values, memsize);
+		memcpy (dupvals, values, memsize);
+
+		memcpy (ap->values, values, memsize);
+		memcpy (ap->alphachr, values, memsize);
+
 		ap->low_val_char = 0;
-		ap->high_val_char = 255;
+		ap->high_val_char = maxchar;
+
+		alphabet_valid = 1;
+
 		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
 			pos++;
-			if (count > 255
+			if (count > maxchar
 			 || x == NULL) {
 				unvals = pos;
 				break;
 			}
 			if (CB_PAIR_P (x)) {		/* X THRU Y */
-				int lower = get_value (CB_PAIR_X (x));
-				int upper = get_value (CB_PAIR_Y (x));
+				cb_tree X = CB_PAIR_X (x);
+				cb_tree Y = CB_PAIR_Y (x);
+				int lower = get_value (X);
+				int upper = get_value (Y);
+				if (!is_alphabet_matching_literal_type (X, is_national_alphabet)
+				 || !is_alphabet_matching_literal_type (Y, is_national_alphabet)) {
+				 	continue;
+				}
+
 				lastval = upper;
 				if (!count) {
 					ap->low_val_char = lower;
 				}
-				/* regression in NATIONAL literals as
-				   thpose are unfinished; would be fine
-				   with national alphabet in general */
-				if (lower < 0 || lower > 255) {
-					unvals = pos;
-					continue;
-				}
-				if (upper < 0 || upper > 255) {
+				if ((lower < 0 || lower > maxchar)
+				 || (upper < 0 || upper > maxchar)) {
 					unvals = pos;
 					continue;
 				}
@@ -3944,23 +3978,29 @@ validate_alphabet (cb_tree alphabet)
 					}
 				}
 			} else if (CB_LIST_P (x)) {		/* X ALSO Y ... */
-				cb_tree			ls;
+				cb_tree		ls;
+				cb_tree		X = CB_VALUE (x);
+				if (!is_alphabet_matching_literal_type (X, is_national_alphabet)) {
+					continue;
+				}
 				if (!count) {
-					ap->low_val_char = get_value (CB_VALUE (x));
+					ap->low_val_char = get_value (X);
 				}
 				for (ls = x; ls; ls = CB_CHAIN (ls)) {
-					int val = get_value (CB_VALUE (ls));
+					int val;
+					X = CB_VALUE (ls);
+					if (!is_alphabet_matching_literal_type (X, is_national_alphabet)) {
+						continue;
+					}
+					val = get_value (X);
 					if (!CB_CHAIN (ls)) {
 						lastval = val;
 					}
-					/* regression in NATIONAL literals as
-					   those are unfinished; would be fine
-					   with national alphabet in general */
-					if (val < 0 || val > 255) {
+					if (val < 0 || val > maxchar) {
 						unvals = pos;
 						continue;
 					}
-					n = (unsigned char)val;
+					n = val;
 					if (values[n] != -1) {
 						dupvals[n] = n;
 						dupls = 1;
@@ -3979,11 +4019,11 @@ validate_alphabet (cb_tree alphabet)
 				if (!count) {
 					ap->low_val_char = lastval;
 				}
-				if (lastval < 0 || lastval > 255) {
+				if (lastval < 0 || lastval > maxchar) {
 					unvals = pos;
 					continue;
 				}
-				n = (unsigned char)lastval;
+				n = lastval;
 				if (values[n] != -1) {
 					dupvals[n] = n;
 					dupls = 1;
@@ -3993,14 +4033,16 @@ validate_alphabet (cb_tree alphabet)
 				ap->alphachr[tableval] = n;
 				ap->values[n] = tableval++;
 				count++;
-			} else if (CB_LITERAL_P (x)) {		/* Non-numeric Literal */
+			} else if (CB_LITERAL_P (x)) {		/* Non-numeric Literal (single or sequence) */
 				int size = (int)CB_LITERAL (x)->size;
 				unsigned char *data = CB_LITERAL (x)->data;
-				if (!count) {
-					ap->low_val_char = data[0];
+				if (!is_alphabet_matching_literal_type (x, is_national_alphabet)) {
+					continue;
 				}
-				lastval = data[size - 1];
 				if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL) {
+					if (!count) {
+						ap->low_val_char = data[0];
+					}
 					for (i = 0; i < size; i++) {
 						n = data[i];
 						if (values[n] != -1) {
@@ -4018,10 +4060,10 @@ validate_alphabet (cb_tree alphabet)
 						/* assuming we have UTF16BE here */
 						if (data[i] == 0) {
 						/* only checking lower entries, all others,
-							which are currently only possible with
-							national-hex literals are not checked
-							TODO: add a list of values for those and
-							iterate over the list */
+						   which are currently only possible with
+						   national-hex literals are not checked
+						   TODO: add a list of values for those and
+						   iterate over the list */
 							n = data[++i];
 							if (values[n] != -1) {
 								dupvals[n] = n;
@@ -4035,19 +4077,23 @@ validate_alphabet (cb_tree alphabet)
 							n = n * 255 + data[i];
 						}
 						ap->alphachr[tableval++] = n;
+						if (!count) {
+							ap->low_val_char = n;
+						}
 						count++;
 					}
 				}
+				lastval = n;
 			} else {	/* CHECKME and doc here */
 				lastval = get_value (x);
 				if (!count) {
 					ap->low_val_char = lastval;
 				}
-				if (lastval < 0 || lastval > 255) {
+				if (lastval < 0 || lastval > maxchar) {
 					unvals = pos;
 					continue;
 				}
-				n = (unsigned char) lastval;
+				n = lastval;
 				if (values[n] != -1) {
 					dupls = 1;
 				}
@@ -4060,29 +4106,30 @@ validate_alphabet (cb_tree alphabet)
 		}
 		if (dupls || unvals) {
 			if (dupls) {
-				/* FIXME: can't handle UTF8 / NATIONAL values */
-				char		dup_vals[256];
+				char		dup_val_str[256];
 				i = 0;
 				for (n = 0; n < 256; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
-							i += sprintf (dup_vals + i, ", ...");
+							i += sprintf (dup_val_str + i, ", ...");
 							break;
 						}
 						if (i) {
-							i += sprintf (dup_vals + i, ", ");
+							i += sprintf (dup_val_str + i, ", ");
 						}
-						if (isprint (n)) {
-							dup_vals[i++] = (char)n;
+						if (n > COB_MAX_CHAR_ALPHANUMERIC) {
+							i += sprintf (dup_val_str + i, "x'%04x'", n);
+						} else if (isprint (n)) {
+							dup_val_str[i++] = (char)n;						
 						} else {
-							i += sprintf (dup_vals + i, "x'%02x'", n);
+							i += sprintf (dup_val_str + i, "x'%02x'", n);
 						}
 					};
 				}
-				dup_vals[i] = 0;
+				dup_val_str[i] = 0;
 				cb_error_x (alphabet,
 					_("duplicate character values in alphabet '%s': %s"),
-					ap->name, dup_vals);
+					ap->name, dup_val_str);
 			}
 			if (unvals) {
 				cb_error_x (alphabet,
@@ -4091,18 +4138,18 @@ validate_alphabet (cb_tree alphabet)
 			}
 			ap->low_val_char = 0;
 			ap->high_val_char = 255;
-			return;
+			goto val_ex;
 		}
 		/* Calculate HIGH-VALUE */
 		/* If all 256 values have been specified, */
 		/* HIGH-VALUE is the last one */
 		/* Otherwise if HIGH-VALUE has been specified, find the highest */
 		/* value that has not been used */
-		if (count == 256) {
+		if (count == maxchar + 1) {
 			ap->high_val_char = lastval;
-		} else if (values[255] != -1) {
+		} else if (values[maxchar] != -1) {
 			ap->high_val_char = 0;
-			for (n = 254; n > 0; n--) {
+			for (n = maxchar - 1; n > 0; n--) {
 				if (values[n] == -1) {
 					ap->high_val_char = n;
 					break;
@@ -4111,23 +4158,40 @@ validate_alphabet (cb_tree alphabet)
 		}
 
 		/* Get rest of code set */
-		for (n = tableval; n < 256; ++n) {
-			for (i = 0; i < 256; ++i) {
-				if (charvals[i] < 0) {
-					charvals[i] = 0;
-					ap->alphachr[n] = i;
-					break;
+		{
+			register int	*entry = charvals;
+			i = 0;
+			for (n = tableval; n <= maxchar; ++n) {
+				while (i <= maxchar) {
+					if (*entry == -1) {
+						*entry = 0;
+						ap->alphachr[n] = i;
+						/* increase start for next iteration and leave current one */
+						entry++;
+						i++;
+						break;
+					}
+					entry++;
+					i++;
 				}
+			}
+
+			/* Fill in missing characters */
+			entry = ap->values;
+			for (n = 0; n <= maxchar; n++) {
+				if (*entry == -1) {
+					*entry = tableval++;
+				}
+				entry++;
 			}
 		}
 
-		/* Fill in missing characters */
-		for (n = 0; n < 256; n++) {
-			if (ap->values[n] < 0) {
-				ap->values[n] = tableval++;
-			}
-		}
+	val_ex:	
+		free (values);
+		free (charvals);
+		free (dupvals);
 	}
+
 }
 
 static void
@@ -10511,11 +10575,11 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 		return cb_list_add (l, CB_BUILD_FUNCALL_0 ("cob_inspect_finish"));
 	}
 
-#if 0	/* Simon: unfinished prototype, get back to it later */
+#if 0	/* Simon: unfinished prototype, get back to it later, but only for not-national */
 	if (tag_x == tag_y) {
 		switch (tag_x) {
 		case CB_TAG_LITERAL:
-			{
+			if (x->category != CB_CATEGORY_NATIONAL) {
 				unsigned char conv_tab[256];
 				const struct cb_literal *lit_x = CB_LITERAL (x);
 				const unsigned char *conv_to = (tag_y == CB_TAG_CONST)
@@ -10560,7 +10624,7 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 					/* use the existing and configurable translation table */
 					return cb_list_add (l,
 						CB_BUILD_FUNCALL_1 ("cob_inspect_translating", CB_TREE (alph_y)));
-				} else {
+				} else if (alph_x->alphabet_target == CB_ALPHABET_ALPHANUMERIC) {
 
 					// TODO: create conversion tab
 					struct cb_alphabet_name *alph_conv;
