@@ -341,16 +341,23 @@ static void
 initialize_cb_iconv() {
 	char * encoding;
 #ifdef HAVE_LANGINFO_CODESET
-    setlocale(LC_ALL, "");
-    encoding = nl_langinfo(CODESET);
+	char * locale = setlocale(LC_CTYPE, "");
+	if( ! locale  ) {
+		const char *name = getenv("LC_CTYPE");
+		cobc_err_msg ("additional cast error was raised during name lookup");
 
-    if (encoding != NULL && strlen(encoding) > 0) {
-        strncpy(cb_iconv.source, encoding, sizeof(cb_iconv.source) - 1);
-        cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
-    } else {
-        strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
-        cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
-    }
+  	}
+	else{
+		encoding = nl_langinfo(CODESET);
+
+		if (encoding != NULL && *encoding > 0) {
+			strncpy(cb_iconv.source, encoding, sizeof(cb_iconv.source) - 1);
+			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+		} else {
+			strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
+			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+		}
+	}
 #else
 	strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
     cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
