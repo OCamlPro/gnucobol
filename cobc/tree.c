@@ -2894,7 +2894,7 @@ cb_build_national_literal (const void *data, const size_t size)
         outdata[j + 1] = 0;
     }
 
-    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, outsize));
+    l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
 #endif
 
     l->source_file = cb_source_file;
