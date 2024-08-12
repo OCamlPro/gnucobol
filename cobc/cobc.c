@@ -343,9 +343,7 @@ initialize_cb_iconv() {
 #ifdef HAVE_LANGINFO_CODESET
 	char * locale = setlocale(LC_CTYPE, "");
 	if( ! locale  ) {
-		const char *name = getenv("LC_CTYPE");
-		cobc_err_msg ("additional cast error was raised during name lookup");
-
+		cobc_err_msg ("could not set locale");
   	}
 	else{
 		encoding = nl_langinfo(CODESET);
