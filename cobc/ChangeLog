@@ -76,6 +76,13 @@
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
 	  adjusted size of precedence table and gave proper precedence to U
 
+2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+	* cobc.c: added the locale option to specify the source file encoding if not specified with command line argument 
+
+2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+	* cobc.h, cobc.c, flag.def: added command line argument for setting
+	  source file encoding
+
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_alphabet_name_definition): cater for national alphabet
@@ -93,10 +100,9 @@
 2024-08-1 Ahmed Maher<ahmed.maher.ahmed.309@gmail.com>
 
 	* scanner.l, cobc.h, cobc.c, tree.c: added guards around iconv.h header and
-	used it around the usages of the headers functions
-	* tree.c: created a new function cb_build_utf8_literal for UTF-8 literals
-	* scanner.l: changed read_literal funtion to handle the utf8 literals
-	reading 
+	  used it around the usages of the headers functions
+	* tree.c (cb_build_utf8_literal): new function for UTF-8 literals
+	* scanner.l (read_literal): changed to handle the utf8 literal reading 
 
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
