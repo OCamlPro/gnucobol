@@ -4027,7 +4027,6 @@ process_command_line (const int argc, char **argv)
 			} else {
 				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
 			}
-#endif
 			break;
 		}
 
