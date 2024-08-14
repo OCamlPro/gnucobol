@@ -3997,11 +3997,6 @@ process_command_line (const int argc, char **argv)
 
 		case CB_FLAG_GETOPT_SOURCE_ENCODE:
 			/* -fsource-encode=encoding*/
-#ifdef HAVE_ICONV
-			/*iconv will return an error if the encoding is invalid */
-			strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
-			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
-#else
 			const char* valid_encodings[] = {
 				"UTF-8",
 				"ASCII",
@@ -4016,10 +4011,14 @@ process_command_line (const int argc, char **argv)
 					break;
 				}
 			}
-			if (!encoding_valid) {
+			if (encoding_valid) {
+#ifdef HAVE_ICONV
+				strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
+				cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+#endif
+			}else{
 				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
 			}
-#endif
 			break;
 
 		case CB_FLAG_GETOPT_TTITLE: {
