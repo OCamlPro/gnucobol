@@ -77,9 +77,12 @@
 	  adjusted size of precedence table and gave proper precedence to U
 
 2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
-	* cobc.c: added the locale option to specify the source file encoding if not specified with command line argument 
+
+	* cobc.c: added the locale option to specify the source 
+	  file encoding if not specified with command line argument 
 
 2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
 	* cobc.h, cobc.c, flag.def: added command line argument for setting
 	  source file encoding
 
