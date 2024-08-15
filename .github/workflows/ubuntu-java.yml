@@ -3,6 +3,8 @@ name: Ubuntu with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
+  push:
+    branches: [ more-ci-updates ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -14,16 +16,14 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-        include:
-          - os: ubuntu-latest
-            skip_test: true
+          - ubuntu-20.04
 
     runs-on: ${{ matrix.os }}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install packages
         run: |
@@ -36,9 +36,8 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Installing Java prerequisite
-        # TODO
         run: |
-          true
+          true                  # nothing to do
 
       - name: bootstrap
         run: |
@@ -72,10 +71,10 @@ jobs:
           echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
 
       - name: Upload config.log
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config.log
+          name: config-${{ matrix.os }}.log
           path: _build/config.log
 
       - name: make
@@ -95,11 +94,11 @@ jobs:
           make --jobs=$(($(nproc)+1)) distcheck TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
 
       - name: Upload testsuite.log
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           # Assume there's only one directory matching `_build/gnucobol-*`:
-          name: testsuite.log
+          name: testsuite-${{ matrix.os }}.log
           path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
 
       # - name: Upload dist tarball
