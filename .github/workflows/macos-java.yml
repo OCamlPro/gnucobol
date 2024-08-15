@@ -13,7 +13,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
+          - macos-latest        # = macos-14 on 2024-08-14
+          - macos-12            # without tests
+          # - macos-13          # nope (autogen fails weirdly)
 
     runs-on: ${{ matrix.os }}
 
@@ -28,8 +30,10 @@ jobs:
       - name: Install packages
         run: |
           brew install pkg-config automake libtool help2man texinfo bison berkeley-db@4 json-c
-          echo "LDFLAGS=-L/opt/homebrew/opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I/opt/homebrew/opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
+          BREW_PREFIX="$(brew --prefix)"
+          echo "BREW_PREFIX=$BREW_PREFIX" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$BREW_PREFIX/opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$BREW_PREFIX/opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
 
       - name: Set git user
         run: |
@@ -60,12 +64,12 @@ jobs:
           cd _build
           export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
           # TODO: add --with-java once available
-          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol YACC="/opt/homebrew/opt/bison/bin/bison" PKG_CONFIG="/opt/homebrew/opt/pkg-config/bin/pkg-config"
+          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol YACC="$BREW_PREFIX/opt/bison/bin/bison" PKG_CONFIG="$BREW_PREFIX/opt/pkg-config/bin/pkg-config"
 
       - name: Upload config.log
         uses: actions/upload-artifact@v4
         with:
-          name: config.log
+          name: config-${{ matrix.os }}.log
           path: _build/config.log
         if: failure()
 
@@ -84,10 +88,11 @@ jobs:
       - name: Upload install.log
         uses: actions/upload-artifact@v4
         with:
-          name: install.log
+          name: install-${{ matrix.os }}.log
           path: _build/install.log
 
       - name: check
+        if: matrix.os == 'macos-latest'
         run: |
           sed -i '' \
               -e '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL \+ KEYCHECK\])/a\
@@ -107,7 +112,7 @@ jobs:
 
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: matrix.os == 'macos-latest' && failure()
         with:
-          name: testsuite.log
+          name: testsuite-${{ matrix.os }}.log
           path: _build/tests/testsuite.log
