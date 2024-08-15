@@ -3,6 +3,7 @@
 /po/en@quot.po
 /po/*.gmo
 /po/POTFILES
+/po/Makevars.template
 
 # Exclude autoconf/automake parts
 /aclocal.m4
