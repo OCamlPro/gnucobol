@@ -3,8 +3,8 @@ name: Ubuntu with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
-  push:
-    branches: [ more-ci-updates ]
+  # push:
+  #   branches: [ java-interop ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
