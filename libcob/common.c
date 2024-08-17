@@ -503,6 +503,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_SCREEN_EXCEPTIONS", "screen_exceptions", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_extended_status)},
 	{"COB_TIMEOUT_SCALE", "timeout_scale", 	"0", 	timeopts, GRP_SCREEN, ENV_UINT, SETPOS (cob_timeout_scale)},
 	{"COB_INSERT_MODE", "insert_mode", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_insert_mode)},
+	{"COB_HIDE_CURSOR", "hide_cursor", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_hide_cursor)},
 	{"COB_MOUSE_FLAGS", "mouse_flags", "1", NULL, GRP_SCREEN, ENV_UINT, SETPOS (cob_mouse_flags)},
 	{"MOUSE_FLAGS", "mouse_flags", NULL, NULL, GRP_HIDE, ENV_UINT, SETPOS (cob_mouse_flags)},
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
@@ -8080,7 +8081,8 @@ set_config_val (char *value, int pos)
 		if (data == (char *)&cobsetptr->cob_debugging_mode) {
 			/* Copy variables from settings (internal) to global structure, each time */
 			cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
-		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
+		} else if (data == (char *)&cobsetptr->cob_insert_mode
+		        || data == (char *)&cobsetptr->cob_hide_cursor) {
 			cob_settings_screenio ();
 		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
 			cob_switch[11 + 'D' - 'A'] = (int)numval;
