@@ -11,41 +11,43 @@ tasks:
     sudo apt update && sudo apt upgrade -y
     sudo apt install -y build-essential libgmp-dev libdb-dev libjson-c-dev ncurses-dev libxml2-dev \
          automake libtool flex bison help2man texinfo \
-         lcov
+         lcov \
+         clangd bear
     # sudo apt install gettext texlive-base  # for make dist (po/*, doc/gnucobol.pdf)
     gp sync-done system-prepare
 
 - name: building GnuCOBOL
   init: |
-    mkdir -p $GITPOD_REPO_ROOTS/_build
-    cd $GITPOD_REPO_ROOTS/_build
+    mkdir -p $GITPOD_REPO_ROOTS/build
+    cd $GITPOD_REPO_ROOTS/build
     gp sync-await system-prepare
     ../autogen.sh
-    ../configure --enable-cobc-internal-checks --enable-debug --enable-code-coverage
-    make --jobs=$(nproc)
+    ../configure --enable-cobc-internal-checks --enable-debug --enable-code-coverage \
+         CC="gcc -std=c89" CPPFLAGS="-Werror=declaration-after-statement"
+    bear -- make --jobs=$(nproc)
   command: |
-    cd $GITPOD_REPO_ROOTS/_build
+    cd $GITPOD_REPO_ROOTS/build
     gp sync-done build-finish
 
 - name: running GnuCOBOL tests with coverage
   command: |
     gp sync-await build-finish
-    cd $GITPOD_REPO_ROOTS/_build
+    cd $GITPOD_REPO_ROOTS/build
     half_jobs=$(( $(nproc) / 2 ))
     nice make --jobs=${half_jobs} check-code-coverage TESTSUITEFLAGS="--jobs=${half_jobs}"
 
 - name: running NIST85 tests
   command: |
     gp sync-await build-finish
-    cd $GITPOD_REPO_ROOTS/_build
+    cd $GITPOD_REPO_ROOTS/build
     half_jobs=$(( $(nproc) / 2 ))
     nice make -C tests/cobol85 --jobs=${half_jobs} test
 
-# disabled as the download takes too long
+# disabled as running that is really onbly useful after several adjustments
 #- name: running GnuCOBOL distribution tests with testuite
 #  command: |
 #    gp sync-await build-finish
-#    cd $GITPOD_REPO_ROOTS/_build
+#    cd $GITPOD_REPO_ROOTS/build
 #    half_jobs=$(( $(nproc) / 2 ))
 #    nice make --jobs=${half_jobs} distcheck TESTSUITEFLAGS="--jobs=${half_jobs}"
 
@@ -58,3 +60,4 @@ vscode:
     - tenninebt.vscode-koverage
     - meronz.manpages
     - webfreak.debug
+    - OCamlPro.SuperBOL
