@@ -87,6 +87,7 @@ Welcome to the GnuCOBOL @value{VERSION} manual.
 * Customize::                   Customizing the compiler
 * Optimize::                    Optimizing your program
 * Debug::                       Debugging your program
+* Encoding Handling::           Support different encoding according to literal type
 * Profiling::                   Profiling your program
 * Extensions::                  Non-standard extensions
 * System Routines::             Additional routines
@@ -157,6 +158,12 @@ Debug
 * Memory Dumps::                Memory Dumps
 * Core Dumps::                  Core Dumps
 * Trace::                       Tracing execution
+
+Encoding handling
+
+* Literal types and encodings:: Understanding different literal types
+* Internal conversions::        How GnuCOBOL handles encoding conversions
+* Source file encoding::        Handling different input scenarios
 
 Profiling
 * Profiling options::           Profiling options
@@ -1783,7 +1790,7 @@ machine.  Set the config option @code{binary-byteorder} to
 In addition, setting the option @code{binary-size} to @code{2-4-8} or
 @code{1-2-4-8} is more efficient than others.
 
-@node Debug, Profiling, Optimize, Top
+@node Debug, Encoding Handling, Optimize, Top
 @chapter Debug
 
 @menu
@@ -1840,7 +1847,95 @@ To inspecting the reason for the abort check the content of the variable
 @section Tracing execution
 Tracing program execution, either in general or in specific parts can be enabled.
 
+@node Encoding Handling, Profiling, Debug, Top
+@chapter Encoding Handling
 
+This chapter describes the handling of GnuCOBOL to different encodings for literals according to the type of the literal
+
+@menu
+* Literal types and encodings::   Understanding different literal types
+* Internal conversions::          How GnuCOBOL handles encoding conversions
+* Source file encoding::          Handling different input scenarios
+@end menu
+
+@node Literal types and encodings
+@section Literal types and encodings
+
+GnuCOBOL supports various types of literals with different internal encodings:
+
+@itemize @bullet
+@item Alphanumeric literals: Stored as ISO-8859-15
+@item National literals: Stored as UTF-16
+@item UTF-8 literals: Stored as UTF-8
+@end itemize
+
+Here's an example demonstrating the different literal types:
+
+@example
+---- encoding_example.cob -------------------------
+
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. encoding-example.
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+ 01 alphanumeric-var PIC X(10) VALUE "Hello".
+ 01 national-var PIC N(10) VALUE N"こんにちは".
+ 01 utf8-var PIC U(10) VALUE U"أهلا".
+ PROCEDURE DIVISION.
+ DISPLAY "Alphanumeric: " alphanumeric-var.
+ DISPLAY "National: " national-var.
+ DISPLAY "UTF-8: " utf8-var.
+ STOP RUN.
+ 
+-------------------------------------------------
+@end example
+
+
+@node Internal conversions
+@section Internal conversions
+
+GnuCOBOL implements internal conversions to ensure proper handling of different literal types:
+
+@itemize @bullet
+@item Alphanumeric literals are read and stored as ISO-8859-15
+@item UTF-8 literals are read and stored as UTF-8.
+@item National literals are converted to and stored as UTF-16.
+@end itemize
+
+These conversions ensure compliance with the COBOL standard while optimizing storage and maintaining compatibility with legacy code.
+
+@node Source file encoding
+@section Source file encoding
+
+GnuCOBOL addresses two main scenarios for source file encoding:
+
+@enumerate
+@item Single-byte encoded source files (e.g., ISO-8859-15):
+@itemize @bullet
+@item Alphanumeric literals are interpreted as ISO-8859-15
+@item UTF-8 literals are converted to UTF-8
+@item National literals are converted to UTF-16
+@end itemize
+
+@item UTF-8 encoded source files:
+@itemize @bullet
+@item Alphanumeric literals are converted to ISO-8859-15
+@item UTF-8 literals are correctly interpreted
+@item National literals are converted to UTF-16
+@end itemize
+@end enumerate
+
+To specify the source file encoding, use the @option{-fsource-encode} compiler option:
+
+@example
+$ cobc -x -fsource-encode=ISO-8859-15 my_program.cob
+@end example
+
+@strong{Note:} The conversion process described above fully works only if the system has the iconv library installed. If iconv is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
+
+This ensures that GnuCOBOL correctly interprets the source file and performs the necessary conversions for different literal types.
+
+By implementing these encoding handling features, GnuCOBOL aims to improve compliance with the COBOL standard and enhance support for modern Unicode encodings, while maintaining compatibility with legacy COBOL code.
 
 @exampleindent 0
 
