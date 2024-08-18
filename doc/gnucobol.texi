@@ -1886,7 +1886,7 @@ Here's an example demonstrating the different literal types:
  DISPLAY "National: " national-var.
  DISPLAY "UTF-8: " utf8-var.
  STOP RUN.
- 
+
 -------------------------------------------------
 @end example
 
@@ -1931,11 +1931,9 @@ To specify the source file encoding, use the @option{-fsource-encode} compiler o
 $ cobc -x -fsource-encode=ISO-8859-15 my_program.cob
 @end example
 
-@strong{Note:} The conversion process described above fully works only if the system has the iconv library installed. If iconv is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
-
 This ensures that GnuCOBOL correctly interprets the source file and performs the necessary conversions for different literal types.
 
-By implementing these encoding handling features, GnuCOBOL aims to improve compliance with the COBOL standard and enhance support for modern Unicode encodings, while maintaining compatibility with legacy COBOL code.
+@strong{Note:} The conversion process described above fully works only if the system has the iconv library installed. If iconv is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
 
 @exampleindent 0
 
