@@ -75,29 +75,16 @@ jobs:
       - name: Build GnuCOBOL
         shell: msys2 {0}
         run: |
-          cd _build
-          make --jobs=$(($(nproc)+1))
-
-      - name: Install GnuCOBOL
-        shell: msys2 {0}
-        run: |
-          cd _build
-          make install
-          find /opt/cobol > install.log
-
-      - name: Upload install-${{ matrix.target }}.log
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-${{ matrix.target }}.log
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/install.log
+          make -C _build --jobs=$(($(nproc)+1))
 
       - name: Run testuite
         shell: msys2 {0}
         run: |
-          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
-          cd _build/tests
-          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-          make test
+          sed '/AT_SETUP(\[temporary path invalid\])/a \
+                AT_SKIP_IF(\[true\])' \
+              -i tests/testsuite.src/used_binaries.at
+          make -C _build/tests check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make -C _build/tests test
 
       - name: Upload testsuite-${{ matrix.target }}.log
         uses: actions/upload-artifact@v4
@@ -105,11 +92,22 @@ jobs:
           name: testsuite-${{ matrix.target }}.log
           path: ${{ env.GITHUB_WORKSPACE }}/_build/tests/testsuite.log
 
+      - name: Install GnuCOBOL
+        shell: msys2 {0}
+        run: |
+          make -C _build install
+          find /opt/cobol > _build/install.log
+
+      - name: Upload install-${{ matrix.target }}.log
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-${{ matrix.target }}.log
+          path: ${{ env.GITHUB_WORKSPACE }}/_build/install.log
+
       - name: Package GnuCOBOL
         shell: msys2 {0}
         run: |
-          cd _build
-          make distmingw
+          make -C _build distmingw
 
       - name: Upload GnuCOBOL_mingw-${{ matrix.target }}
         uses: actions/upload-artifact@v4
