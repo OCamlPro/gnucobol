@@ -4001,7 +4001,8 @@ process_command_line (const int argc, char **argv)
 				"UTF-8",
 				"ASCII",
 				"ISO-8859-1",
-				"ISO-8859-15"
+				"ISO-8859-15",
+				"CP1525"
 			};
 			int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
 			int encoding_valid = 0;
