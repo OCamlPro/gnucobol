@@ -95,6 +95,9 @@ jobs:
           make -C _build check                                        \
                          TESTSUITEFLAGS="--recheck --verbose"
 
+      # Note: NIST tests are not performed by this CI workflow: they
+      # do not involve any Java interoperability feature.
+
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4
         if: failure()

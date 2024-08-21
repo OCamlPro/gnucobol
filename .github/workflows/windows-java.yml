@@ -103,11 +103,4 @@ jobs:
       - name: install
         run: |
           make -C _build install
-          find /opt/cobol > _build/install.log
         shell: msys2 {0}
-
-      - name: Upload install.log
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-${{matrix.sys}}.log
-          path: _build/install.log
