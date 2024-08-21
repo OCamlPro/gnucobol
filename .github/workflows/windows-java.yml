@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ java-interop ]
   push:
-    branches: [ java-interop-ci4windows ]
+    branches: [ java-interop-ci4windows-x ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -13,21 +13,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
-
-    runs-on: ${{ matrix.os }}
+        include:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: mingw32, env: i686 }
+          - { sys: ucrt64,  env: ucrt-x86_64 }
+          - { sys: clang64, env: clang-x86_64 }
+    runs-on: windows-latest
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install packages
+      - name: System setup
         uses: msys2/setup-msys2@v2
         with:
+          msystem: ${{matrix.sys}}
           update: true
-          install: autoconf automake libtool make mingw-w64-x86_64-ncurses mingw-w64-x86_64-libxml2 mingw-w64-x86_64-cjson mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
+          install: autoconf automake libtool make flex bison help2man texinfo
+                   gmp-devel gettext-devel
+                   mingw-w64-${{matrix.env}}-cc
+                   mingw-w64-${{matrix.env}}-gmp
+                   mingw-w64-${{matrix.env}}-gettext-runtime
+                   mingw-w64-${{matrix.env}}-ncurses
 
       - name: Set git user
         run: |
@@ -49,7 +57,6 @@ jobs:
       - name: configure
         run: |
           cd _build
-          echo "$PATH"
           java_home="$(cygpath -u "$JAVA_HOME")"
           # thanks @revelator & @GitMensch ;-)
           # (cf https://github.com/msys2/MINGW-packages/discussions/8056)
@@ -58,6 +65,9 @@ jobs:
                        --enable-hardening \
                        --prefix /opt/cobol/gnucobol \
                        --exec-prefix /opt/cobol/gnucobol \
+                       --without-indexed \
+                       --without-json \
+                       --without-xml2 \
                        --with-java \
                        JAVA_HOME="$java_home" \
                        JAVA="$java_home/bin/java" \
@@ -68,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config-${{ matrix.os }}.log
+          name: config-${{matrix.sys}}.log
           path: _build/config.log
 
       - name: make
@@ -89,7 +99,7 @@ jobs:
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4
         with:
-          name: testsuite-${{ matrix.os }}.log
+          name: testsuite-${{matrix.sys}}.log
           path: _build/tests/testsuite.log
 
       - name: install
@@ -101,5 +111,5 @@ jobs:
       - name: Upload install.log
         uses: actions/upload-artifact@v4
         with:
-          name: install-${{ matrix.os }}.log
+          name: install-${{matrix.sys}}.log
           path: _build/install.log
