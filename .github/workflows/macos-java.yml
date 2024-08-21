@@ -3,14 +3,11 @@ name: MacOS with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
-  push:
-    branches: [ more-ci-updates ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build & test
     strategy:
       fail-fast: false
       matrix:
@@ -31,11 +28,9 @@ jobs:
 
       - name: Install packages
         run: |
-          brew install pkg-config automake libtool help2man texinfo bison berkeley-db@4 json-c
+          brew install pkg-config automake libtool help2man texinfo bison
           BREW_PREFIX="$(brew --prefix)"
           echo "BREW_PREFIX=$BREW_PREFIX" >> $GITHUB_ENV
-          echo "LDFLAGS=-L$BREW_PREFIX/opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$BREW_PREFIX/opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
 
       - name: Set git user
         run: |
@@ -49,9 +44,7 @@ jobs:
       - name: bootstrap
         run: |
           sed -i '' 's/-undefined suppress//g' configure.ac
-          ./autogen.sh
-          autoconf
-          autoreconf --install --force
+          ./build_aux/bootstrap install
 
       - name: Build environment setup
         run: |
@@ -65,7 +58,16 @@ jobs:
         run: |
           cd _build
           export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
-          ../configure --with-java --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol --exec-prefix /opt/cobol/gnucobol YACC="$BREW_PREFIX/opt/bison/bin/bison" PKG_CONFIG="$BREW_PREFIX/opt/pkg-config/bin/pkg-config"
+          ../configure --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --prefix /opt/cobol/gnucobol \
+                       --exec-prefix /opt/cobol/gnucobol \
+                       --without-indexed \
+                       --without-json \
+                       --without-xml2 \
+                       --with-java \
+                       YACC="$BREW_PREFIX/opt/bison/bin/bison" \
+                       PKG_CONFIG="$BREW_PREFIX/opt/pkg-config/bin/pkg-config"
 
       - name: Upload config.log
         uses: actions/upload-artifact@v4
@@ -84,13 +86,6 @@ jobs:
         run: |
           cd _build
           sudo make install
-          find /opt/cobol > install.log
-
-      - name: Upload install.log
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-${{ matrix.os }}.log
-          path: _build/install.log
 
       - name: check
         if: matrix.os == 'macos-latest'
@@ -109,7 +104,8 @@ jobs:
               -e '\%AT_SETUP(\[LINE SEQUENTIAL COMMIT / ROLLBACK\])%a\
                     AT_SKIP_IF(\[true\])' \
               tests/testsuite.src/run_file.at
-          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4

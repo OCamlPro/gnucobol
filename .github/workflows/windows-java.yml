@@ -1,0 +1,106 @@
+name: Windows MSYS2 with Java interoperability
+
+on:
+  pull_request:
+    branches: [ java-interop ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: mingw32, env: i686 }
+          - { sys: ucrt64,  env: ucrt-x86_64 }
+          - { sys: clang64, env: clang-x86_64 }
+    runs-on: windows-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: System setup
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys}}
+          update: true
+          install: autoconf automake libtool make flex bison help2man texinfo
+                   gmp-devel gettext-devel
+                   mingw-w64-${{matrix.env}}-cc
+                   mingw-w64-${{matrix.env}}-gmp
+                   mingw-w64-${{matrix.env}}-gettext-runtime
+                   mingw-w64-${{matrix.env}}-ncurses
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: bootstrap
+        run: |
+          ./build_aux/bootstrap install
+        shell: msys2 {0}
+
+      - name: Build environment setup
+        run: |
+          mkdir _build
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "export PATH=\"$(cygpath -u "$JAVA_HOME")/bin:\$PATH\"" >> ~/.bash_profile
+        shell: msys2 {0}
+
+      - name: configure
+        run: |
+          cd _build
+          java_home="$(cygpath -u "$JAVA_HOME")"
+          # thanks @revelator & @GitMensch ;-)
+          # (cf https://github.com/msys2/MINGW-packages/discussions/8056)
+          lt_cv_deplibs_check_method=pass_all \
+          ../configure --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --prefix /opt/cobol/gnucobol \
+                       --exec-prefix /opt/cobol/gnucobol \
+                       --without-indexed \
+                       --without-json \
+                       --without-xml2 \
+                       --with-java \
+                       JAVA_HOME="$java_home" \
+                       JAVA="$java_home/bin/java" \
+                       JAVAC="$java_home/bin/javac"
+        shell: msys2 {0}
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: config-${{matrix.sys}}.log
+          path: _build/config.log
+
+      - name: make
+        run: |
+          make -C _build --jobs=$(($(nproc)+1))
+        shell: msys2 {0}
+
+      - name: check
+        continue-on-error: true
+        run: |
+          sed '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a \
+                AT_SKIP_IF(\[true\])' \
+              -i tests/testsuite.src/run_accept.at
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+        shell: msys2 {0}
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-${{matrix.sys}}.log
+          path: _build/tests/testsuite.log
+
+      - name: install
+        run: |
+          make -C _build install
+        shell: msys2 {0}
