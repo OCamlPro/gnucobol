@@ -159,6 +159,12 @@ Debug
 * Core Dumps::                  Core Dumps
 * Trace::                       Tracing execution
 
+Encoding handling
+
+* Literal types and encodings:: Understanding different literal types
+* Internal conversions::        How GnuCOBOL handles encoding conversions
+* Source file encoding::        Handling different input scenarios
+
 Profiling
 * Profiling options::           Profiling options
 * Profiling results::           Profiling results
@@ -1850,6 +1856,7 @@ This chapter describes the handling of GnuCOBOL to different encodings for liter
 * Literal types and encodings::   Understanding different literal types
 * Internal conversions::          How GnuCOBOL handles encoding conversions
 * Source file encoding::          Handling different input scenarios
+* Good Practices::                Best practices for encoding handling
 @end menu
 
 @node Literal types and encodings
@@ -1929,7 +1936,7 @@ $ cobc -x -fsource-encode=ISO-8859-15 my_program.cob
 
 This ensures that GnuCOBOL correctly interprets the source file and performs the necessary conversions for different literal types.
 
-By implementing these encoding handling features, GnuCOBOL aims to improve compliance with the COBOL standard and enhance support for modern Unicode encodings, while maintaining compatibility with legacy COBOL code.
+@strong{Note:} The conversion process described above fully works only if the system has the iconv library installed. If iconv is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
 
 @exampleindent 0
 
