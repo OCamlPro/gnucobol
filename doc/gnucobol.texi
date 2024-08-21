@@ -164,7 +164,7 @@ Encoding handling
 * Literal types and encodings:: Understanding different literal types
 * Internal conversions::        How GnuCOBOL handles encoding conversions
 * Source file encoding::        Handling different input scenarios
-* Good practices::              Best practices for encoding handling
+* Good Practices::              Best practices for encoding handling
 
 Profiling
 * Profiling options::           Profiling options
@@ -1965,7 +1965,7 @@ While GnuCOBOL automatically converts national literals to UTF-16, this conversi
 
 @end enumerate
 
-By following these good practices, you can ensure your GnuCOBOL programs correctly handle the various encoding scenarios they may encounter
+By following these practices, you can ensure your GnuCOBOL programs correctly handle the various encoding scenarios they may encounter.
 
 @exampleindent 0
 
