@@ -164,6 +164,7 @@ Encoding handling
 * Literal types and encodings:: Understanding different literal types
 * Internal conversions::        How GnuCOBOL handles encoding conversions
 * Source file encoding::        Handling different input scenarios
+* Good practices::              Best practices for encoding handling
 
 Profiling
 * Profiling options::           Profiling options
@@ -1856,6 +1857,7 @@ This chapter describes the handling of GnuCOBOL to different encodings for liter
 * Literal types and encodings::   Understanding different literal types
 * Internal conversions::          How GnuCOBOL handles encoding conversions
 * Source file encoding::          Handling different input scenarios
+* Good Practices::                Best practices for encoding handling
 @end menu
 
 @node Literal types and encodings
@@ -1934,6 +1936,36 @@ $ cobc -x -fsource-encode=ISO-8859-15 my_program.cob
 This ensures that GnuCOBOL correctly interprets the source file and performs the necessary conversions for different literal types.
 
 @strong{Note:} The conversion process described above fully works only if the system has the iconv library installed. If iconv is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
+
+@node Good Practices
+@section Good Practices
+
+When working with different encodings in GnuCOBOL, it's important to follow good practices to ensure your programs handle encoding correctly and consistently. Here are some recommended practices:
+@enumerate
+@item Understand the big picture:
+GnuCOBOL supports various literal types (alphanumeric, national, UTF-8) with different internal encodings (ISO-8859-15, UTF-16, UTF-8). It automatically handles the necessary conversions to ensure compliance with the COBOL standard and maintain compatibility with legacy code.
+
+@item Leverage automatic encoding detection:
+GnuCOBOL will automatically detect the source file encoding in two ways:
+
+@itemize @bullet
+@item If the source file has a Byte Order Mark (BOM), GnuCOBOL will use that to determine the encoding.
+@item If no BOM is present, GnuCOBOL will use the current locale setting to determine the source file encoding.
+@end itemize
+
+@item Specify the source encoding explicitly:
+If you need to override the automatically detected source file encoding, you can use the @option{-fsource-encode} compiler option to specify the correct encoding:
+@example
+$ cobc -x -fsource-encode=ISO-8859-15 my_program.cob
+@end example
+This ensures GnuCOBOL correctly interprets the source file and performs the necessary conversions for different literal types.
+
+@item Handle national literals carefully:
+While GnuCOBOL automatically converts national literals to UTF-16, this conversion process relies on the availability of the iconv library. If iconv is not installed, national literals will be converted manually by appending UTF-16 space characters, which may result in incorrect encoding for some characters. Ensure iconv is available on your system for the best handling of national literals.
+
+@end enumerate
+
+By following these good practices, you can ensure your GnuCOBOL programs correctly handle the various encoding scenarios they may encounter
 
 @exampleindent 0
 
