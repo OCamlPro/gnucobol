@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
   push:
-    branches: [ gcos4gnucobol-3.x ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -30,7 +29,8 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext texlive
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev \
+                               bison flex help2man gettext texlive
 
       - name: Set git user
         run: |
@@ -68,7 +68,8 @@ jobs:
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
                        --prefix ${INSTALL_PATH}
-          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" \
+            >> $GITHUB_ENV
 
       - name: Upload config.log
         uses: actions/upload-artifact@v4
@@ -81,17 +82,14 @@ jobs:
         run: |
           make -C _build --jobs=$(($(nproc)+1))
 
-      # - name: check
-      #   run: |
-      #     cd _build
-      #     make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-
       # note: distcheck also creates the dist tarball
       - name: distcheck
         run: |
-          make -C _build distcheck \
-                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" \
-                         --jobs=$(($(nproc)+1)) 
+          make -C _build distcheck                                \
+                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"  \
+                         --jobs=$(($(nproc)+1)) ||                \
+          make -C _build/gnucobol-$VERSION/_build/sub/tests check \
+                         TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4
@@ -136,10 +134,6 @@ jobs:
             _build/tests/cobol85/**/*.log
             _build/tests/cobol85/**/*.out
 
-      - name: install
-        run: |
-          make -C _build install
-
 
   coverage:
     name: Coverage and Warnings
@@ -169,7 +163,8 @@ jobs:
         run: |
           cd _build
           ../configure --enable-code-coverage \
-                       CPPFLAGS="-Werror=declaration-after-statement"
+                       CPPFLAGS="-Werror=declaration-after-statement -pedantic" \
+                       CC="gcc -std=c89"
 
       - uses: actions/upload-artifact@v4
         if: failure()

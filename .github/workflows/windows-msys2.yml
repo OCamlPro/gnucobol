@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
   push:
-    branches: [ gcos4gnucobol-3.x ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -13,15 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
-        arch:
-          - x64
-        target:
-          - debug
-          - release
-
-    runs-on: ${{ matrix.os }}
+        include:
+          - { os: windows-latest, target: release, sys: mingw64, env: x86_64       }
+          - { os: windows-latest, target: debug,   sys: mingw64, env: x86_64       }
+          - { os: windows-latest, target: debug,   sys: ucrt64,  env: ucrt-x86_64  }
+          - { os: windows-latest, target: debug,   sys: clang64, env: clang-x86_64 }
+          # - { target: debug,   sys: mingw32, env: i686         }
+    runs-on: ${{matrix.os}}
 
     steps:
 
@@ -44,19 +41,24 @@ jobs:
             echo CFGOPT="--enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
           }
 
-      - name: Install MSYS2 packages
+      - name: Install packages
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          msystem: ucrt64
-          install: autoconf automake libtool make mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-libxml2 mingw-w64-ucrt-x86_64-cjson mingw-w64-ucrt-x86_64-db mingw-w64-ucrt-x86_64-gmp libdb-devel mingw-w64-ucrt-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
+          msystem: ${{matrix.sys}}
+          install: autoconf automake libtool make flex bison help2man texinfo
+                   mingw-w64-${{matrix.env}}-cc
+                   mingw-w64-${{matrix.env}}-gmp                 gmp-devel
+                   mingw-w64-${{matrix.env}}-gettext-runtime gettext-devel
+                   mingw-w64-${{matrix.env}}-ncurses
+                   mingw-w64-${{matrix.env}}-libxml2
+                   mingw-w64-${{matrix.env}}-cjson
+                   mingw-w64-${{matrix.env}}-db                libdb-devel
 
       - name: Bootstrap GnuCOBOL
         shell: msys2 {0}
         run: |
-          ./autogen.sh
-          autoconf
-          autoreconf --install --force
+          ./build_aux/bootstrap install
 
       - name: Configure GnuCOBOL
         shell: msys2 {0}
@@ -65,11 +67,11 @@ jobs:
           cd _build
           ../configure $CFGOPT --with-db --prefix=/opt/cobol/gnucobol
 
-      - name: Upload config-${{ matrix.target }}.log
+      - name: Upload config-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config-${{ matrix.target }}.log
+          name: config-${{matrix.sys}}-${{matrix.target}}.log
           path: ${{ env.GITHUB_WORKSPACE }}/_build/config.log
 
       - name: Build GnuCOBOL
@@ -83,34 +85,25 @@ jobs:
           sed '/AT_SETUP(\[temporary path invalid\])/a \
                 AT_SKIP_IF(\[true\])' \
               -i tests/testsuite.src/used_binaries.at
-          make -C _build/tests check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-          make -C _build/tests test
+          make -C _build/tests checkall \
+                               --jobs=$(($(nproc)+1)) \
+                               TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build/tests check \
+                               TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.target }}.log
+      - name: Upload testsuite-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4
         with:
-          name: testsuite-${{ matrix.target }}.log
+          name: testsuite-${{matrix.sys}}-${{matrix.target}}.log
           path: ${{ env.GITHUB_WORKSPACE }}/_build/tests/testsuite.log
-
-      - name: Install GnuCOBOL
-        shell: msys2 {0}
-        run: |
-          make -C _build install
-          find /opt/cobol > _build/install.log
-
-      - name: Upload install-${{ matrix.target }}.log
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-${{ matrix.target }}.log
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/install.log
 
       - name: Package GnuCOBOL
         shell: msys2 {0}
         run: |
           make -C _build distmingw
 
-      - name: Upload GnuCOBOL_mingw-${{ matrix.target }}
+      - name: Upload GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
         uses: actions/upload-artifact@v4
         with:
-          name: GnuCOBOL_mingw-${{ matrix.target }}
+          name: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
           path: ${{ env.GITHUB_WORKSPACE }}/_build/${{ env.DISTDIR }}
