@@ -3,6 +3,7 @@ name: Ubuntu with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
+  push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -67,9 +68,11 @@ jobs:
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
                        --prefix ${INSTALL_PATH} \
+                       --disable-nls \
                        --without-indexed \
                        --without-json \
                        --without-xml2 \
+                       --without-curses \
                        --with-java
           echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
 
@@ -88,11 +91,13 @@ jobs:
         run: |
           make -C _build distcheck                                    \
                          TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"      \
-                         DISTCHECK_CONFIGURE_FLAGS="--without-indexed \
+                         DISTCHECK_CONFIGURE_FLAGS="--disable-nls     \
+                                                    --without-indexed \
                                                     --without-json    \
                                                     --without-xml2    \
+                                                    --without-curses  \
                                                     --with-java" ||   \
-          make -C _build check                                        \
+          make -C _build/gnucobol-$VERSION/_build/sub/tests check     \
                          TESTSUITEFLAGS="--recheck --verbose"
 
       # Note: NIST tests are not performed by this CI workflow: they

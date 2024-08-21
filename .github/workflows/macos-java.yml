@@ -3,6 +3,7 @@ name: MacOS with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
+  push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
