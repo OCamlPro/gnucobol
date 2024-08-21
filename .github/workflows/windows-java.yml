@@ -3,8 +3,6 @@ name: Windows MSYS2 with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
-  push:
-    branches: [ java-interop-ci4windows-x ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
