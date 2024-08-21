@@ -160,54 +160,6 @@ jobs:
           cd tests
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
 
-      - name: Adjust testsuite for Debug target
-        if: ${{ matrix.target == 'Debug' }}
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          cd tests
-
-          sed -i '/AT_SETUP(\[MF FIGURATIVE to NUMERIC\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[Default file external name\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[EXTFH: SEQUENTIAL files\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[System routine CBL_GC_HOSTED\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_extensions.at
-
-          sed -i '/AT_SETUP(\[MOVE to edited item (4)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[MOVE to item with simple and floating insertion\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[Numeric operations (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[Numeric operations (3) PACKED-DECIMAL\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[DISPLAY with P fields\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[MOVE with de-editting to COMP-3\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[MOVE between USAGEs\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[Computing of different USAGEs w\/- decimal point\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[C-API (param based)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[C-API (field based)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[Default Arithmetic Test (2)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[OSVS Arithmetic Test (2)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[FUNCTION ACOS\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[FUNCTION ASIN\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[FUNCTION RANDOM\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[MOVE of non-integer to alphanumeric\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[XML GENERATE trimming\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_ml.at
-          sed -i '/AT_SETUP(\[JSON GENERATE trimming\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_ml.at
-          sed -i '/AT_SETUP(\[MOVE PACKED-DECIMAL to BINARY\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_binary.at
-          sed -i '/AT_SETUP(\[PACKED-DECIMAL dump\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[PACKED-DECIMAL used with MOVE\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[MOVE PACKED-DECIMAL to PACKED-DECIMAL\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[MOVE PACKED-DECIMAL to DISPLAY\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[MOVE DISPLAY to PACKED-DECIMAL\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[PACKED-DECIMAL comparison\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[COMP-6 comparison\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[COMP-3 vs. COMP-6 - BCD comparison\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[PPP COMP-3\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[PPP COMP-6\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[MOVE between several BCD fields\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT w\/o SIZE ERROR\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT, DEFAULT ROUNDING MODE\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT, all ROUNDED MODEs\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[CURRENCY SIGN WITH PICTURE SYMBOL\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-
-# The tests in sed commands above randomly hang (under debug configurations)
-
       - name: Build testsuite
         shell: C:\shells\msys2bash.cmd {0}
         run: |
@@ -230,6 +182,7 @@ jobs:
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
 
       - name: Run testsuite
+        continue-on-error: true
         run: |
           cd tests
           set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"

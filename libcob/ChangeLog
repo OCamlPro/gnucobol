@@ -1,4 +1,9 @@
 
+2024-08-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode
+	  to disable Windows error popups and redirect them to stderr
+
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* move.c (optimized_move_display_to_edited): fixed small bug

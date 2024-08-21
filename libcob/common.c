@@ -11223,3 +11223,31 @@ void cob_cleanup_thread ()
 {
 	cob_exit_strings ();
 }
+
+#ifdef _MSC_VER
+
+#include <debugapi.h>
+#include <crtdbg.h>
+
+BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+	COB_UNUSED (hinstDLL);
+	COB_UNUSED (lpReserved);
+
+	if (fdwReason == DLL_PROCESS_ATTACH) {
+	/* Programs compiled with MSVC will by default display a popup
+	   window on some errors. In general, we do not want that,
+	   so we disable them, unless explicitly requested. */
+	if (!IsDebuggerPresent() && !getenv ("DEBUG_POPUPS_WANTED")) {
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	}
+    }
+    return TRUE;
+}
+
+#endif
