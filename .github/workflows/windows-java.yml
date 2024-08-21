@@ -3,6 +3,7 @@ name: Windows MSYS2 with Java interoperability
 on:
   pull_request:
     branches: [ java-interop ]
+  push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -32,8 +33,6 @@ jobs:
                    gmp-devel gettext-devel
                    mingw-w64-${{matrix.env}}-cc
                    mingw-w64-${{matrix.env}}-gmp
-                   mingw-w64-${{matrix.env}}-gettext-runtime
-                   mingw-w64-${{matrix.env}}-ncurses
 
       - name: Set git user
         run: |
@@ -45,15 +44,9 @@ jobs:
           ./build_aux/bootstrap install
         shell: msys2 {0}
 
-      - name: Build environment setup
-        run: |
-          mkdir _build
-          echo "JAVA_HOME=$JAVA_HOME"
-          echo "export PATH=\"$(cygpath -u "$JAVA_HOME")/bin:\$PATH\"" >> ~/.bash_profile
-        shell: msys2 {0}
-
       - name: configure
         run: |
+          mkdir _build
           cd _build
           java_home="$(cygpath -u "$JAVA_HOME")"
           # thanks @revelator & @GitMensch ;-)
@@ -63,9 +56,11 @@ jobs:
                        --enable-hardening \
                        --prefix /opt/cobol/gnucobol \
                        --exec-prefix /opt/cobol/gnucobol \
+                       --disable-nls \
                        --without-indexed \
                        --without-json \
                        --without-xml2 \
+                       --without-curses \
                        --with-java \
                        JAVA_HOME="$java_home" \
                        JAVA="$java_home/bin/java" \
@@ -87,9 +82,6 @@ jobs:
       - name: check
         continue-on-error: true
         run: |
-          sed '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a \
-                AT_SKIP_IF(\[true\])' \
-              -i tests/testsuite.src/run_accept.at
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
           make -C _build check TESTSUITEFLAGS="--recheck --verbose"
         shell: msys2 {0}
@@ -99,8 +91,3 @@ jobs:
         with:
           name: testsuite-${{matrix.sys}}.log
           path: _build/tests/testsuite.log
-
-      - name: install
-        run: |
-          make -C _build install
-        shell: msys2 {0}
