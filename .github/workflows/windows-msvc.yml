@@ -82,6 +82,7 @@ jobs:
         run: |
           C:\Tools\VS2008\VCExpress\Ixpvc.exe /x:%temp%\vc_express_main /q
           msiexec /i "%temp%\vc_express_main\vs_setup.msi" /qn /l*v "%temp%\vc_express_main.log" VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qn
+          type "%temp%\vc_express_main.log"
 
       - name: Setup environment
         shell: pwsh
