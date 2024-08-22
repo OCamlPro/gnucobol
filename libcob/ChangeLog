@@ -1,4 +1,16 @@
 
+2024-08-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode
+	  to disable Windows error popups and redirect them to stderr
+
+2024-08-17  Ammar Almorsi <ammaralmorsi@gmail.com>
+
+	FR #474: add runtime configuration to hide cursor for extended screenio
+	* common.c, coblocal.h (cob_settings): added boolean COB_HIDE_CURSOR
+	* screenio.c (cob_settings_screenio): implemented runtime config to hide
+	  the cursor
+
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* move.c (optimized_move_display_to_edited): fixed small bug

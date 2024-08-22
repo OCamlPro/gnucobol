@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
    Chuck Haatvedt
 
@@ -161,7 +161,6 @@ static int			accept_cursor_y;
 static int			accept_cursor_x;
 static int			pending_accept;
 static int			got_sys_char;
-static unsigned int	curr_setting_insert_mode = INT_MAX;
 #ifdef HAVE_MOUSEMASK
 static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
@@ -5008,21 +5007,22 @@ cob_settings_screenio (void)
 		return;
 	}
 
-	/* Extended ACCEPT status returns */
-	if (cobsetptr->cob_extended_status == 0) {
-		cobsetptr->cob_use_esc = 0;
+	/* requesting cursor type depending on both settings, 0 = hide,
+	   1 = vertical bar cursor, 2 = square cursor; note: the cursor change
+	   may not have an effect in all curses implementations / terminals */
+	{
+		static unsigned int	prev_cursor_mode = UINT_MAX; 
+		const unsigned int new_cursor_mode
+			= (COB_HIDE_CURSOR)?0U:((COB_INSERT_MODE)?1U:2U);
+		if (prev_cursor_mode != new_cursor_mode) {
+			(void) curs_set (new_cursor_mode);
+			prev_cursor_mode = new_cursor_mode;
+		}
 	}
 
-	if (curr_setting_insert_mode != COB_INSERT_MODE) {
-		/* Depending on insert mode set vertical bar cursor (on)
-		   or square cursor (off) - note: the cursor change may has no
-		   effect in all curses implementations / terminals */
-		if (COB_INSERT_MODE == 0) {
-			(void)curs_set (2);	/* set square cursor */
-		} else {
-			(void)curs_set (1);	/* set vertical bar cursor */
-		}
-		curr_setting_insert_mode = COB_INSERT_MODE;
+	/* extended ACCEPT status returns */
+	if (cobsetptr->cob_extended_status == 0) {
+		cobsetptr->cob_use_esc = 0;
 	}
 
 #ifdef HAVE_MOUSEINTERVAL

@@ -503,6 +503,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_SCREEN_EXCEPTIONS", "screen_exceptions", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_extended_status)},
 	{"COB_TIMEOUT_SCALE", "timeout_scale", 	"0", 	timeopts, GRP_SCREEN, ENV_UINT, SETPOS (cob_timeout_scale)},
 	{"COB_INSERT_MODE", "insert_mode", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_insert_mode)},
+	{"COB_HIDE_CURSOR", "hide_cursor", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_hide_cursor)},
 	{"COB_MOUSE_FLAGS", "mouse_flags", "1", NULL, GRP_SCREEN, ENV_UINT, SETPOS (cob_mouse_flags)},
 	{"MOUSE_FLAGS", "mouse_flags", NULL, NULL, GRP_HIDE, ENV_UINT, SETPOS (cob_mouse_flags)},
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
@@ -8080,7 +8081,8 @@ set_config_val (char *value, int pos)
 		if (data == (char *)&cobsetptr->cob_debugging_mode) {
 			/* Copy variables from settings (internal) to global structure, each time */
 			cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
-		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
+		} else if (data == (char *)&cobsetptr->cob_insert_mode
+		        || data == (char *)&cobsetptr->cob_hide_cursor) {
 			cob_settings_screenio ();
 		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
 			cob_switch[11 + 'D' - 'A'] = (int)numval;
@@ -11223,3 +11225,31 @@ void cob_cleanup_thread ()
 {
 	cob_exit_strings ();
 }
+
+#ifdef _MSC_VER
+
+#include <debugapi.h>
+#include <crtdbg.h>
+
+BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+	COB_UNUSED (hinstDLL);
+	COB_UNUSED (lpReserved);
+
+	if (fdwReason == DLL_PROCESS_ATTACH) {
+	/* Programs compiled with MSVC will by default display a popup
+	   window on some errors. In general, we do not want that,
+	   so we disable them, unless explicitly requested. */
+	if (!IsDebuggerPresent() && !getenv ("DEBUG_POPUPS_WANTED")) {
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	}
+    }
+    return TRUE;
+}
+
+#endif
