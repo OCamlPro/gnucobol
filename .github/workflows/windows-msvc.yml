@@ -139,7 +139,7 @@ jobs:
 
       - name: Install WinFlexBison
         if: steps.restore-flexbison.outputs.cache-hit != 'true'
-        shell: pwsh
+        shell: powershell
         run: |
           Invoke-WebRequest -Uri $env:FLEXBISON -OutFile flexbison.zip
           Expand-Archive flexbison.zip -DestinationPath flexbison
