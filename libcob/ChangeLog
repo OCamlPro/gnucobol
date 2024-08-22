@@ -1,4 +1,9 @@
 
+2024-08-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode
+	  to disable Windows error popups and redirect them to stderr
+
 2024-08-17  Ammar Almorsi <ammaralmorsi@gmail.com>
 
 	FR #474: add runtime configuration to hide cursor for extended screenio
