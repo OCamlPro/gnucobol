@@ -65,6 +65,7 @@ jobs:
 
       - name: Download VS2008 ISO using BitsTransfer if not cached
         if: steps.cache-vs2008.outputs.cache-hit != 'true'
+        shell: powershell
         run: |
           Import-Module BitsTransfer
           Start-BitsTransfer -Source "$env:VS2008ISO" -Destination "C:\Tools\VS2008ExpressWithSP1ENUX1504728.iso"
@@ -139,7 +140,7 @@ jobs:
 
       - name: Install WinFlexBison
         if: steps.restore-flexbison.outputs.cache-hit != 'true'
-        shell: powershell
+        shell: pwsh
         run: |
           Invoke-WebRequest -Uri $env:FLEXBISON -OutFile flexbison.zip
           Expand-Archive flexbison.zip -DestinationPath flexbison
