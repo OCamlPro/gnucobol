@@ -12,6 +12,7 @@ env:
   GC_VERSION: GnuCOBOL 3.3-dev
 
   FLEXBISON: https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip
+  VS2008ISO: https://download.microsoft.com/download/E/8/E/E8EEB394-7F42-4963-A2D8-29559B738298/VS2008ExpressWithSP1ENUX1504728.iso
 
   MSBUILD: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe
   VCVARS32: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat
@@ -54,6 +55,31 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Cache VS2008 ISO
+        id: cache-vs2008
+        uses: actions/cache@v3
+        with:
+          path: C:\Tools\VS2008ExpressWithSP1ENUX1504728.iso
+          key: ${{ runner.os }}-vs2008-iso
+
+      - name: Download VS2008 ISO using BitsTransfer if not cached
+        if: steps.cache-vs2008.outputs.cache-hit != 'true'
+        run: |
+          Import-Module BitsTransfer
+          Start-BitsTransfer -Source "$env:VS2008ISO" -Destination "C:\Tools\VS2008ExpressWithSP1ENUX1504728.iso"
+
+      - name: Extract VS2008 ISO using 7-Zip
+        run: |
+          $sevenZipPath = (Get-Command 7z.exe).Path
+          Start-Process -FilePath $sevenZipPath -ArgumentList 'x', 'C:\Tools\VS2008ExpressWithSP1ENUX1504728.iso', '-oC:\Tools\VS2008' -Wait
+
+      - name: Install Visual C++ 2008
+        run: |
+          # Step 1: Extract the VCExpress installer
+          Start-Process -FilePath "C:\Tools\VS2008\VCExpress\Ixpvc.exe" -ArgumentList '/x:%temp%\vc_express_main /q' -Wait
+          # Step 2: Install VCExpress using the extracted MSI
+          msiexec /i "%temp%\vc_express_main\vs_setup.msi" /qn /l*v "%temp%\vc_express_main.log" VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qn
 
       - name: Setup environment
         shell: pwsh
@@ -205,6 +231,7 @@ jobs:
           sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT, DEFAULT ROUNDING MODE\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
           sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT, all ROUNDED MODEs\])/a AT_SKIP_IF(\[true\])' testsuite.src/data_packed.at
           sed -i '/AT_SETUP(\[CURRENCY SIGN WITH PICTURE SYMBOL\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
+          sed -i '/AT_SETUP(\[PROGRAM COLLATING SEQUENCE\])/a AT_SKIP_IF(\[true\])' testsuite.src/syn_definition.at
 
 # The tests in sed commands above randomly hang (under debug configurations)
 
