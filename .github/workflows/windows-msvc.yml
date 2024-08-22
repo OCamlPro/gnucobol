@@ -14,7 +14,7 @@ env:
   FLEXBISON: https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip
   VS2008ISO: https://download.microsoft.com/download/E/8/E/E8EEB394-7F42-4963-A2D8-29559B738298/VS2008ExpressWithSP1ENUX1504728.iso
 
-  VCVARS2008: C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\Tools\vcvars32.bat
+  VCVARS2008: C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\Tools\vsvars32.bat
 
   MSBUILD: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe
   VCVARS32: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat
@@ -82,7 +82,6 @@ jobs:
         run: |
           C:\Tools\VS2008\VCExpress\Ixpvc.exe /x:%temp%\vc_express_main /q
           msiexec /i "%temp%\vc_express_main\vs_setup.msi" /qn /l*v "%temp%\vc_express_main.log" VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qn
-          type "%temp%\vc_express_main.log"
 
       - name: Setup environment
         shell: pwsh
@@ -180,6 +179,7 @@ jobs:
           where cl
           where msbuild
           msbuild .\vs2008\GnuCOBOL.sln /m /p:Platform=${{ matrix.arch }} /p:Configuration=${{ matrix.target }}
+          call makedist.cmd
 
       - name: Install MSYS2 packages
         shell: C:\shells\msys2bash.cmd {0}
