@@ -58,6 +58,14 @@ jobs:
           echo "JAVA_HOME=$(PWD)/jdk8u422-b05" >> ~/.bash_profile
         shell: msys2 {0}
 
+      - name: Select Java 21
+        if: matrix.sys != 'mingw32'
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_21_X64"
+          echo "JAVA_HOME='$(cygpath -u "$JAVA_HOME_21_X64")'" \
+            >> ~/.bash_profile
+        shell: msys2 {0}
+
       - name: Set git user
         run: |
           git config --global user.name github-actions
