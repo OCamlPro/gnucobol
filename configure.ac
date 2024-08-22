@@ -969,16 +969,33 @@ AS_IF([test "x$with_java" != "xno"], [
 		    if test -d "$_dir/server"; then
 			JNI_LIBS="$JNI_LIBS -L$_dir/server"
 		    fi
+		    if test -d "$_dir/client"; then
+			JNI_LIBS="$JNI_LIBS -L$_dir/client"
+		    fi
 		done
 		curr_LIBS="$LIBS"
-		LIBS="$LIBS $JNI_LIBS"
-		AC_CHECK_LIB([jvm], [JNI_CreateJavaVM], [
+		curr_CPPFLAGS="$CPPFLAGS"
+		LIBS="$LIBS $JNI_LIBS -ljvm"
+		CPPFLAGS="$CPPFLAGS $JNI_CPPFLAGS"
+		AC_MSG_CHECKING([if -ljvm brings JNI symbols])
+		AC_LINK_IFELSE([
+		  AC_LANG_SOURCE([[
+		    #include <jni.h>
+		    void main (void) {
+		       (void) JNI_CreateJavaVM (NULL, NULL, NULL);
+		    }
+		  ]])
+		], [
+		        AC_MSG_RESULT([yes])
 			AC_DEFINE([WITH_JNI], [1])
 			JNI_LDFLAGS="$JNI_LIBS"
 			JNI_LIBS="-ljvm"
 			cob_has_jni=yes
+		], [
+		        AC_MSG_RESULT([no])
 		])
 		LIBS="$curr_LIBS"
+		CPPFLAGS="$curr_CPPFLAGS"
 	])
 ])
 AS_IF([test "x$with_java" = "xyes" -a "x$cob_has_jni" != "xyes"], [
