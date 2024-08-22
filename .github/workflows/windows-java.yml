@@ -34,6 +34,38 @@ jobs:
                    mingw-w64-${{matrix.env}}-cc
                    mingw-w64-${{matrix.env}}-gmp
 
+      - name: Check x86 openjdk8 (hotspot)
+        if: matrix.sys == 'mingw32'
+        uses: actions/cache@v4
+        id: openjdk8
+        with:
+          path: openjdk8.zip
+          key: openjdk8
+          save-always: true
+
+      - name: Download x86 openjdk8 (hotspot)
+        if: matrix.sys == 'mingw32' && steps.openjdk8.outputs.cache-hit != 'true'
+        run: |
+           wget -O openjdk8.zip \
+              "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jdk_x86-32_windows_hotspot_8u422b05.zip"
+        shell: msys2 {0}
+
+      - name: Unzip x86 openjdk8 (hotspot)
+        if: matrix.sys == 'mingw32'
+        run: |
+          "/c/Program Files/7-Zip/7z.exe" x openjdk8.zip
+          echo "JAVA_HOME=$(PWD)/jdk8u422-b05"
+          echo "JAVA_HOME=$(PWD)/jdk8u422-b05" >> ~/.bash_profile
+        shell: msys2 {0}
+
+      - name: Select Java 21
+        if: matrix.sys != 'mingw32'
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_21_X64"
+          echo "JAVA_HOME='$(cygpath -u "$JAVA_HOME_21_X64")'" \
+            >> ~/.bash_profile
+        shell: msys2 {0}
+
       - name: Set git user
         run: |
           git config --global user.name github-actions
