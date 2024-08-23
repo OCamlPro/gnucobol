@@ -25,6 +25,7 @@
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
+#include "common.h"
 #include "libcob.h"
 #include "coblocal.h"
 
@@ -77,19 +78,23 @@ resolve_java (const char		*class_name,
 	}
 
 	cls = (*env)->FindClass(env, jni_class_name);
-	free(jni_class_name);
+	cob_free(jni_class_name);
 	if (!cls) {
+		cob_runtime_error(_("Java class '%s' not found"), class_name);
 		return NULL;
 	}
 
 	mid = (*env)->GetStaticMethodID(env, cls, method_name, method_signature);
 	if (!mid) {
+		cob_runtime_error(_("Java method '%s' with signature '%s' not found in class '%s'"), 
+                          method_name, method_signature, class_name);
 		(*env)->DeleteLocalRef(env, cls);
 		return NULL;
 	}
 
 	handle = (cob_java_handle*)cob_malloc(sizeof(cob_java_handle));
 	if (!handle) {
+		cob_runtime_error(_("Memory allocation failed for Java method handle"));
 		(*env)->DeleteLocalRef(env, cls);
 		return NULL;
 	}
