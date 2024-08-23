@@ -1,17 +1,22 @@
 
+2024-08-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
+	  adjusted size of precedence table and gave proper precedence to U
+
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_alphabet_name_definition): cater for national alphabet
 	* typeck.c (validate_alphabet): speedup for alphabet checks
 	* pplex.l (ppopen_get_file): explicit check for UTF16/UTF32 and
 	  hint to use iconv
-	  
+
 2024-08-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (validate_alphabet), tree.h (cb_alphabet_name): cater for
 	  national alphabets with increased size (max. 65535 instead of 255)
 	* typeck.c (validate_alphabet): check that alphabet and literal types match
-	  
+
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): added logic to find the valid floating
