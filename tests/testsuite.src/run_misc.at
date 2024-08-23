@@ -4073,6 +4073,38 @@ AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([SEARCH ALL with non-0xff HIGH-VALUE])
+AT_KEYWORDS([runmisc default-colseq])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TAB.
+         02 TAB-ELT   OCCURS 3
+                      ASCENDING KEY TAB-KEY
+                      INDEXED BY TI.
+           05 TAB-KEY PIC X.
+       PROCEDURE DIVISION.
+           MOVE HIGH-VALUE TO TAB
+           MOVE "1" TO TAB-ELT (1)
+      *    DISPLAY "|" TAB "|"
+           SEARCH ALL TAB-ELT
+              AT END
+                 DISPLAY '"1" NOT FOUND'
+              WHEN TAB-KEY (TI) = "1"
+                 CONTINUE
+           END-SEARCH
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 -fdefault-colseq=EBCDIC prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([PIC ZZZ-, ZZZ+])
 AT_KEYWORDS([runmisc editing])
 
