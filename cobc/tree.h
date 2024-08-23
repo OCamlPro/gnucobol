@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -565,7 +565,8 @@ struct cb_next_elem {
 	struct cb_next_elem	*next;
 };
 
-/* FIXME: HAVE_FUNC should be checked via configure and the others be a fallback (note: currently only used in trunk [debug.c]) */
+/* FIXME: HAVE_FUNC should be checked via configure and the others be a fallback
+          (note: currently only used in trunk [debug.c]) */
 #if defined(NO_HAVE_FUNC)
   #define CURRENT_FUNCTION "unknown"
 #elif defined(_MSC_VER)
@@ -1109,6 +1110,29 @@ enum cb_assign_type {
 	CB_ASSIGN_EXT_FILE_NAME_REQUIRED	/* require ASSIGN external-file-name */
 };
 
+/* placed here as necessary typys are defined above */
+#define	CB_CONFIG_ANY(type,var,name,doc)	\
+extern type			var;
+#define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
+extern unsigned int		var;
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
+extern int		var;
+#define	CB_CONFIG_STRING(var,name,doc)	\
+extern const char		*var;
+#define	CB_CONFIG_BOOLEAN(var,name,doc)	\
+extern int				var;
+#define	CB_CONFIG_SUPPORT(var,name,doc)	\
+extern enum				cb_support var;
+
+#include "config.def"
+
+#undef	CB_CONFIG_ANY
+#undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
+#undef	CB_CONFIG_STRING
+#undef	CB_CONFIG_BOOLEAN
+#undef	CB_CONFIG_SUPPORT
+
 struct cb_file {
 	struct cb_tree_common	common;			/* Common values */
 	const char		*name;			/* Original name */
@@ -1260,7 +1284,7 @@ enum cb_binary_op_op {
 	BOP_SHIFT_L 	= 'l',	/* ( x << y ) */
 	BOP_SHIFT_R 	= 'r',	/* ( x >> y ) */
 	BOP_SHIFT_LC	= 'c',	/* ( x << y circular-shift) */
-	BOP_SHIFT_RC	= 'd',	/* ( x >> y circular-shift ) */
+	BOP_SHIFT_RC	= 'd'	/* ( x >> y circular-shift ) */
 };
 
 enum cb_binary_op_flag {
@@ -1573,7 +1597,7 @@ struct cb_list {
 	cb_tree			chain;		/* Next in list */
 	cb_tree			value;		/* Reference to item(s) */
 	cb_tree			purpose;	/* Purpose */
-	int			sizes;		/* BY VALUE SIZE */
+	int 			sizes;		/* BY VALUE SIZE */
 };
 
 #define CB_LIST(x)	(CB_TREE_CAST (CB_TAG_LIST, struct cb_list, x))
@@ -1642,7 +1666,7 @@ extern void		plex_action_directive (const enum cb_directive_action,
 enum cb_replace {
 	CB_REPLACE_ALL		= 0,
 	CB_REPLACE_LEADING	= 1,
-	CB_REPLACE_TRAILING	= 2,
+	CB_REPLACE_TRAILING	= 2
 };
 
 /* Strict/loose source text replacement structure */
@@ -2799,7 +2823,7 @@ extern int		cobc_has_areacheck_directive (const char *directive);
 enum cb_colseq {
 	CB_COLSEQ_NATIVE,
 	CB_COLSEQ_ASCII,
-	CB_COLSEQ_EBCDIC,
+	CB_COLSEQ_EBCDIC
 };
 
 extern enum cb_colseq cb_default_colseq;

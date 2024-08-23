@@ -1,4 +1,12 @@
 
+2024-08-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: only check for compilers that don't define __GNUC__
+	  if it isn't defined;
+	  add check for _MSC_VER and add ERRWARN case for it;
+	  cache-check (gc_cv_long_literals) for long literal support,
+	  defining HAVE_LONG_LITERALS
+
 2024-08-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* DEPENDENCIES, NEWS: document usage of libiconv

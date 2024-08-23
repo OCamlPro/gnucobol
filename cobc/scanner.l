@@ -45,6 +45,7 @@
 %option noyyset_lloc
 %option noyyget_debug
 %option noyyset_debug
+
 %{
 
 #undef	YY_READ_BUF_SIZE
@@ -85,14 +86,21 @@ static int yywrap (void) {
 #include <ctype.h>
 #include <limits.h>
 
+#if 0 /* part of "standard defines" included in flex template */
+#include <stdio.h>
 #include <string.h>
+#endif
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
+#if 0 /* already included by cobc.h */
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
-#else
+#endif
+#endif
+
+#ifndef HAVE_UNISTD_H
 #define	YY_NO_UNISTD_H	1
 #endif
 
@@ -100,16 +108,16 @@ static int yywrap (void) {
 #include "cobc.h"
 #include "tree.h"
 
+#define YYSTYPE			cb_tree
+#define _PARSER_H	/* work around bad Windows SDK header */
+#include "parser.h"
+
 /* ignore unused functions here as flex generates unused ones */
 #ifdef	__GNUC__
 #if	defined (__clang__) || __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
 #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 #endif
-
-#define YYSTYPE			cb_tree
-#define _PARSER_H	/* work around bad Windows SDK header */
-#include "parser.h"
 
 #define RETURN_TOK(expr)			\
 	do {					\
@@ -146,7 +154,7 @@ enum cb_literal_type {
 	CB_LITERAL_DEFAULT,
 	CB_LITERAL_U,  /* UTF-8, work-in-progress */
 	CB_LITERAL_N,
-	CB_LITERAL_NC,
+	CB_LITERAL_NC
 };
 
 enum cb_sym_ebcdic_state {
@@ -884,11 +892,11 @@ H#[0-9A-Za-z]+ {
 	if (cobc_in_xml_generate_body || cobc_in_json_generate_body) {
 		/*
 		  Using the standard SUPPRESS token in JSON/XML GENERATE causes
-                  a shift/reduce error - the SUPPRESS could be the start of the
+		  a shift/reduce error - the SUPPRESS could be the start of the
 		  SUPPRESS clause or the start of a SUPPRESS statement. While we
 		  could alter shift precedence to get the result we implement
 		  here (viz. assuming the SUPPRESS belongs to JSON/XML GENERATE),
-                  our current style is for bison to run with no errors.
+		  our current style is for bison to run with no errors.
 		*/
 		RETURN_TOK (SUPPRESS_XML);
 	} else {
@@ -986,8 +994,10 @@ H#[0-9A-Za-z]+ {
 	cb_check_word_length ((unsigned int)yyleng, yytext);
 
 	/* Check Intrinsic FUNCTION name without keyword */
-	if ((cobc_in_procedure && (functions_are_all || cb_intrinsic_list ||
-	     current_program->function_spec_list)) || cobc_in_repository) {
+	if ( cobc_in_repository
+	 || (cobc_in_procedure
+	   && (functions_are_all || cb_intrinsic_list
+	    || current_program->function_spec_list))) {
 		cbp = lookup_intrinsic (yytext, 0);
 		if (cbp) {
 			if (cobc_in_repository) {
@@ -1115,7 +1125,7 @@ H#[0-9A-Za-z]+ {
 			} else {
 				/* Note: we cannot do this for cb_zero and friends,
 				         as those have sepcial meanings and are checked
-						 by tree comparision only */
+				         by tree comparision only */
 				yylval = x;
 			}
 			RETURN_TOK (LITERAL);
@@ -1349,7 +1359,7 @@ error_literal (const char *type, const char *literal, int literal_error)
 static cob_u8_t
 scan_ebcdic_char (int c)
 {
-	char buff[10];	       /* Arbitrary limit, mostly for error-reporting */
+	char buff[10];		/* Arbitrary limit, mostly for error-reporting */
 #ifndef COB_EBCDIC_MACHINE
 	static  cob_u8_t ebcdic_to_ascii[256] ;
 	static  int ebcdic_to_ascii_initialized = 0 ;
@@ -1366,7 +1376,7 @@ scan_ebcdic_char (int c)
 			  buff, "(1..256)");
 		return '?';
 	}
-        c--; // in ordinal, i.e. 1..256 -> 0..255
+	c--; /* in ordinal, i.e. 1..256 -> 0..255 */
 #ifdef COB_EBCDIC_MACHINE
 	return (cob_u8_t) c;
 #else
@@ -1847,7 +1857,7 @@ scan_b (const char *text, const char *type)
 	          COBOL 2002 allows up to   160 boolean characters
 	          --> both identical to "literal-length" maximum
 	          GnuCOBOL currently only supports 64 boolean characters,
-			  more need a different storage
+	          more need a different storage
 	*/
 
 	size_t		curr_len;
@@ -2160,7 +2170,7 @@ scan_floating_numeric (const char *text)
                here as we know that sscanf handles the correct with */
 		significand_dec[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
 	} else {
-	/* silencing some warnings */
+		/* silencing some warnings */
 		significand_int[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
 		significand_dec[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
 #endif

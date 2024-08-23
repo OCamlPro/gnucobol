@@ -197,6 +197,10 @@ static const char		*excp_current_paragraph = NULL;
 static struct cb_program	*current_prog = NULL;    /* program in codegen (only) */
 
 static const struct cb_label		*last_section = NULL;
+
+#ifndef HAVE_LONG_LITERALS
+#undef GEN_SINGLE_MEMCPY
+#endif
 #ifdef	GEN_SINGLE_MEMCPY
 static unsigned char		*litbuff = NULL;
 static int			litsize = 0;
@@ -5156,8 +5160,13 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 
 	/* if the literal is at least as long as the target, we can use
 	   either a single memset or a single memcpy; check if the former
-	   is possible because it only consists of the same character */
-	if (l->size >= size) {
+	   is possible because it only consists of the same character;
+	   exception: if the literal is too big, then go to "smaller" case */
+	if (l->size >= size
+#ifndef HAVE_LONG_LITERALS
+	 && size <= 509 /* C90 limit, handled below */
+#endif
+	) {
 		size_t first_pos = 0;
 		size_t last_pos = size;
 		/* we only care about the part that will be set in the target
@@ -5194,20 +5203,25 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		return;
 	}
 
-	/* literal is smaller than target, so space-padding is needed */
+	/* literal is smaller than target, so space-padding is needed,
+	   or is of identical size but too big */
 	{
+		#define split_size 500 /* max C90: 509 */
 		const unsigned int padlen = size - l->size;
 		const unsigned int padstart =
 			f->flag_justified && cb_initial_justify ? 0 : l->size;
 		const unsigned int litstart =
 			f->flag_justified && cb_initial_justify ? padlen : 0;
-#if !defined (GEN_SINGLE_MEMCPY)
-		if (size < 128) {
-			/* for "common" small fields - generate a single memcpy
-			   from a string - we use a local buffer to set that up */
-			unsigned char litbuff[128];
+
+		/* for "common" small fields - always generate a single memcpy
+		   from a string - we use a local buffer to set that up */
+		if (size < split_size) {
+			unsigned char litbuff[split_size];
 			memcpy (litbuff + litstart, l->data, l->size);
-			memset (litbuff + padstart, ' ', padlen);
+			if (padlen) {
+				/* FIXME: national literal needs national space */
+				memset (litbuff + padstart, ' ', padlen);
+			}
 			output_prefix ();
 			output ("memcpy (");
 			output_data (x);
@@ -5215,30 +5229,13 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			output_string (litbuff, size, l->llit);
 			output (", %d);", size);
 			output_newline ();
-		} else {
-			/* otherwise: memcpy for the data, memset for padding */
-			output_prefix ();
-			output ("memcpy (");
-			output_data (x);
-			if (litstart) {
-				output (" + %u", litstart);
-			}
-			output (", ");
-			output_string (l->data, l->size, l->llit);
-			output (", %d);", l->size);
-			output_newline ();
-			output_prefix ();
-			output ("memset (");
-			output_data (x);
-			if (padstart) {
-				output (" + %u", padstart);
-			}
-			output (", ' ', %u);", padlen);
-			output_newline ();
-		}	
-#else /* GEN_SINGLE_MEMCPY follows */
+			return;
+		}
+
+		/* otherwise: memcpy for the data, memset for padding */
+#ifdef GEN_SINGLE_MEMCPY	/* not possible for !HAVE_LONG_LITERALS */
 		/* construct buffer with full content including space-padding,
-		   allowing us to generate a single memcpy */
+		   allowing us to generate a single memcpy increas compiler memory footprint */
 		if (size > litsize) {
 			litsize = size + 128;
 			if (litbuff) {
@@ -5249,7 +5246,10 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		}
 
 		memcpy (litbuff + litstart, l->data, l->size);
-		memset (litbuff + padstart, ' ', padlen);
+		if (padlen) {
+			/* FIXME: national literal needs national space */
+			memset (litbuff + padstart, ' ', padlen);
+		}
 
 		buffchar = *(litbuff + size - 1);
 		n = 0;
@@ -5266,14 +5266,76 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			offset = 0;
 		}
 
-		/* undocumented optimization (?) or taking care
-		   for some old compiler's limits (?);
-		   note: if this is about readability / max line length,
-		   then splitting only the output of litbuff to multiple
-		   lines would be enough */
 		{
+			/* splitting to multiple lines for readability */
 			cob_u32_t		inci = 0;
-			for (; size > 509; size -= 509, inci += 509) {
+			cob_u32_t		size_left = size;
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			output (", ");
+			for (; size_left > split_size; size_left -= split_size, inci += split_size) {
+				if (inci) {
+					output_prefix ();
+					output ("       ");
+				}
+				output_string (litbuff + inci, split_size, l->llit);
+				output_newline ();
+			}
+			if (size_left) {
+				output_prefix ();
+				if (inci) {
+					output_prefix ();
+					output ("       ");
+				}
+				output_string (litbuff + inci, size_left, l->llit);
+			}
+			output (", %d);", size);
+			output_newline ();
+		}
+
+		if (offset) {
+			output_prefix ();
+			output ("memset (");
+			output_data (x);
+			output (" + %d, %u, %d);", offset, (unsigned int)buffchar, n);
+			output_newline ();
+		}
+
+#else /* !GEN_SINGLE_MEMCPY follows */
+		 {
+			cob_u32_t		inci = litstart;
+#ifdef HAVE_LONG_LITERALS
+			/* splitting to multiple lines for readability */
+			cob_u32_t		size_left = l->size;
+			output_prefix ();
+			output ("memcpy (");
+			output_data (x);
+			if (litstart) {
+				output (" + %u", litstart);
+			}
+			output (", ");
+			for (; size_left > split_size; size_left -= split_size, inci += split_size) {
+				if (inci) {
+					output_prefix ();
+					output ("       ");
+				}
+				output_string (l->data + inci, split_size, l->llit);
+				output_newline ();
+			}
+			if (size_left) {
+				output_prefix ();
+				if (inci) {
+					output_prefix ();
+					output ("       ");
+				}
+				output_string (l->data + inci, size_left, l->llit);
+			}
+			output (", %d);", size);
+			output_newline ();
+#else
+			/* C90 limit of 509 forces us to do multiple memcpy() */
+			for (; size > split_size; size -= split_size, inci += split_size) {
 				output_prefix ();
 				output ("memcpy (");
 				output_data (x);
@@ -5282,8 +5344,8 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 				} else {
 					output (" + %u, ", inci);
 				}
-				output_string (litbuff + inci, 509, l->llit);
-				output (", 509);");
+				output_string (l->data + inci, split_size, l->llit);
+				output (", %u);", split_size);
 				output_newline ();
 			}
 			output_prefix ();
@@ -5294,19 +5356,25 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			} else {
 				output (" + %u, ", inci);
 			}
-			output_string (litbuff + inci, size, l->llit);
+			output_string (l->data + inci, size, l->llit);
 			output (", %d);", size);
 			output_newline ();
-		}
+			/* we may ended here because of "size too big" - then there's no padding */
+			if (!padlen) {
+				return;
+			}
+#endif
 
-		if (offset) {
+			/* FIXME: national literal needs national space */
 			output_prefix ();
 			output ("memset (");
 			output_data (x);
-			output (" + %d, %u, %d);",
-				offset, (unsigned int)buffchar, n);
+			if (padstart) {
+				output (" + %u", padstart);
+			}
+			output (", ' ', %u);", padlen);
 			output_newline ();
-		}
+		}	
 #endif	/* GEN_SINGLE_MEMCPY */
 	}
 }

@@ -1,4 +1,22 @@
 
+2024-08-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, fileio.c: new typedef cob_extfh_func and use in extfh
+	  functions - the signature itself is unchanged
+	* fileio.c (cob_file_sort_giving_extfh): fix type warnings
+	* common.h (cob_cleanup_thread), common.c: fixed type definition
+	* common.h (cob_ns_time): changed from unsigned long long to cob_u64_t
+	* profiling.c (cob_prof_print_line): adjusted format to match cob_ns_time
+	* intrinsic.c (setup_cob_pi, setup_cob_sqrt_tw, setup_cob_log_half),
+	  common.c (COB_SPACES_ALPHABETIC) [!HAVE_LONG_LITERALS]:
+	  limit literals to < 509 if not supported, dropping perforance/precision
+	* coblocal.h (COB_CHK_PARMS), common.c, screenio.c, fileio.c: adjusted
+	  macro definition and use for an explicit string at first position
+	  to fix preprocessor warnings with included $ signs
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore)
+	  [!WITH_EXTENDED_SCREENIO]: fix unused parameter warnings
+	* coblocal.h: include config.h for self-defined context
+
 2024-08-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode

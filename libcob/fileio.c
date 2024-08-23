@@ -7187,7 +7187,7 @@ cob_sys_open_file (unsigned char *file_name, unsigned char *file_access,
 	COB_UNUSED (file_lock);
 	COB_UNUSED (file_dev);
 
-	COB_CHK_PARMS (CBL_OPEN_FILE, 5);
+	COB_CHK_PARMS ("CBL_OPEN_FILE", 5);
 
 #ifdef	WORDS_BIGENDIAN
 	/* if value is passed as numeric literal, it becomes an 'int' so value is in 4th byte */
@@ -7220,7 +7220,7 @@ cob_sys_create_file (unsigned char *file_name, unsigned char *file_access,
 	 * @param: file_dev : not implemented, set 0
 	 */
 
-	COB_CHK_PARMS (CBL_CREATE_FILE, 5);
+	COB_CHK_PARMS ("CBL_CREATE_FILE", 5);
 
 #ifdef	WORDS_BIGENDIAN
 	/* if value is passed as numeric literal, it becomes an 'int' so value is in 4th byte */
@@ -7258,7 +7258,7 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	int		fd;
 	int		len;
 
-	COB_CHK_PARMS (CBL_READ_FILE, 5);
+	COB_CHK_PARMS ("CBL_READ_FILE", 5);
 
 	memcpy (&fd, file_handle, 4);
 	if ((*flags & 0x80) != 0) {
@@ -7309,7 +7309,7 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 
 	COB_UNUSED (flags);
 
-	COB_CHK_PARMS (CBL_WRITE_FILE, 5);
+	COB_CHK_PARMS ("CBL_WRITE_FILE", 5);
 
 	memcpy (&fd, file_handle, 4);
 	memcpy (&off, file_offset, 8);
@@ -7334,7 +7334,7 @@ cob_sys_close_file (unsigned char *file_handle)
 {
 	int	fd;
 
-	COB_CHK_PARMS (CBL_CLOSE_FILE, 1);
+	COB_CHK_PARMS ("CBL_CLOSE_FILE", 1);
 
 	memcpy (&fd, file_handle, 4);
 	return close (fd);
@@ -7347,7 +7347,7 @@ cob_sys_flush_file (unsigned char *file_handle)
 {
 	int	fd;
 
-	COB_CHK_PARMS (CBL_FLUSH_FILE, 1);
+	COB_CHK_PARMS ("CBL_FLUSH_FILE", 1);
 
 	memcpy (&fd, file_handle, sizeof (int));
 	return fdcobsync (fd);
@@ -7361,7 +7361,7 @@ cob_sys_delete_file (unsigned char *file_name)
 
 	COB_UNUSED (file_name);
 
-	COB_CHK_PARMS (CBL_DELETE_FILE, 1);
+	COB_CHK_PARMS ("CBL_DELETE_FILE", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return -1;
@@ -7395,7 +7395,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	COB_UNUSED (fname1);
 	COB_UNUSED (fname2);
 
-	COB_CHK_PARMS (CBL_COPY_FILE, 2);
+	COB_CHK_PARMS ("CBL_COPY_FILE", 2);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return -1;
@@ -7459,7 +7459,7 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 
 	COB_UNUSED (file_name);
 
-	COB_CHK_PARMS (CBL_CHECK_FILE_EXIST, 2);
+	COB_CHK_PARMS ("CBL_CHECK_FILE_EXIST", 2);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]
 	 || !COB_MODULE_PTR->cob_procedure_params[1]) {
@@ -7525,7 +7525,7 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 	COB_UNUSED (fname1);
 	COB_UNUSED (fname2);
 
-	COB_CHK_PARMS (CBL_RENAME_FILE, 2);
+	COB_CHK_PARMS ("CBL_RENAME_FILE", 2);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return -1;
@@ -7568,7 +7568,7 @@ cob_sys_get_current_dir (const int flags, const int dir_length,
 	int	dir_size;
 	int	has_space;
 
-	COB_CHK_PARMS (CBL_GET_CURRENT_DIR, 3);
+	COB_CHK_PARMS ("CBL_GET_CURRENT_DIR", 3);
 
 	if (dir_length < 1) {
 		return 128;
@@ -7610,7 +7610,7 @@ cob_sys_create_dir (unsigned char *dir)
 
 	COB_UNUSED (dir);
 
-	COB_CHK_PARMS (CBL_CREATE_DIR, 1);
+	COB_CHK_PARMS ("CBL_CREATE_DIR", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return -1;
@@ -7633,7 +7633,7 @@ cob_sys_change_dir (unsigned char *dir)
 
 	COB_UNUSED (dir);
 
-	COB_CHK_PARMS (CBL_CHANGE_DIR, 1);
+	COB_CHK_PARMS ("CBL_CHANGE_DIR", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return -1;
@@ -7656,7 +7656,7 @@ cob_sys_delete_dir (unsigned char *dir)
 
 	COB_UNUSED (dir);
 
-	COB_CHK_PARMS (CBL_DELETE_DIR, 1);
+	COB_CHK_PARMS ("CBL_DELETE_DIR", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return -1;
@@ -7676,7 +7676,7 @@ cob_sys_mkdir (unsigned char *dir)
 {
 	int		ret;
 
-	COB_CHK_PARMS (C$MAKEDIR, 1);
+	COB_CHK_PARMS ("C$MAKEDIR", 1);
 
 	ret = cob_sys_create_dir (dir);
 	if (ret < 0) {
@@ -7693,7 +7693,7 @@ cob_sys_chdir (unsigned char *dir, unsigned char *status)
 
 	COB_UNUSED (status);
 
-	COB_CHK_PARMS (C$CHDIR, 2);
+	COB_CHK_PARMS ("C$CHDIR", 2);
 
 	ret = cob_sys_change_dir (dir);
 	if (ret < 0) {
@@ -7713,7 +7713,7 @@ cob_sys_copyfile (unsigned char *fname1, unsigned char *fname2,
 	/* RXW - Type is not yet evaluated */
 	COB_UNUSED (file_type);
 
-	COB_CHK_PARMS (C$COPY, 3);
+	COB_CHK_PARMS ("C$COPY", 3);
 
 	if (cobglobptr->cob_call_params < 3) {
 		return 128;
@@ -7739,7 +7739,7 @@ cob_sys_file_info (unsigned char *file_name, unsigned char *file_info)
 
 	COB_UNUSED (file_name);
 
-	COB_CHK_PARMS (C$FILEINFO, 2);
+	COB_CHK_PARMS ("C$FILEINFO", 2);
 
 	if (cobglobptr->cob_call_params < 2
 	 || !COB_MODULE_PTR->cob_procedure_params[0]) {
@@ -7804,7 +7804,7 @@ cob_sys_file_delete (unsigned char *file_name, unsigned char *file_type)
 	/* RXW - Type is not yet evaluated */
 	COB_UNUSED (file_type);
 
-	COB_CHK_PARMS (C$DELETE, 2);
+	COB_CHK_PARMS ("C$DELETE", 2);
 
 	if (cobglobptr->cob_call_params < 2 ||
 	    !COB_MODULE_PTR->cob_procedure_params[0]) {
@@ -8419,7 +8419,7 @@ cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 }
 
 /* SORT/MERGE: add all records from GIVING file 'data_file' to 'sort_file',
-	 with optional external file handler 'callfh' */
+   with optional external file handler 'callfh' */
 void
 cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
 	int (*callfh)(unsigned char *opcode, FCD3 *fcd))
@@ -8467,12 +8467,11 @@ cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
 	}
 }
 
-
 /* SORT/MERGE: WRITE all records from 'sort_file' to all USING files 'fbase',
-	 with using their optional external file handlers 'callfh' */
+   with using their optional external file handlers 'callfh' */
 static void
 cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
-	cob_file **fbase, int (**callfh)(unsigned char *opcode, FCD3 *fcd))
+	cob_file **fbase, cob_extfh_func *callfh)
 {
 	/* FIXME: on each error the appropriate USAGE AFTER EXCEPTION/ERROR must be called;
 	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
@@ -8618,29 +8617,29 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 }
 
 /* SORT: WRITE all records from 'sort_file' to all passed USING files,
-	 with using their optional external file handlers */
+   with using their optional external file handlers */
 void
 cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 {
 	cob_file	**fbase;
-	int 	(**callfh)(unsigned char *opcode, FCD3 *fcd);
+	cob_extfh_func *callfh;
 	va_list		args;
 	size_t		i, i_fh;
 
 	fbase = cob_malloc (varcnt * sizeof (cob_file *));
-	callfh = cob_malloc (varcnt * sizeof (void *));
+	callfh = cob_malloc (varcnt * sizeof (cob_extfh_func));
 	i_fh = 0;
 	va_start (args, varcnt);
 	for (i = 0; i < varcnt; i += 2) {
 		fbase[i_fh] = va_arg (args, cob_file *);
-		callfh[i_fh++] = va_arg (args, void *);
+		callfh[i_fh++] = va_arg (args, cob_extfh_func);
 	}
 	va_end (args);
 	cob_file_sort_giving_internal (sort_file, i_fh, fbase, callfh);
 }
 
 /* SORT: close of internal sort file 'f' and deallocation
-	 of temporary storage */
+   of temporary storage */
 void
 cob_file_sort_close (cob_file *f)
 {
@@ -9753,9 +9752,8 @@ save_fcd_status (FCD3 *fcd, int sts)
  * OPEN file
  */
 void
-cob_extfh_open (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
+cob_extfh_open (cob_extfh_func callfh, cob_file *f,
+	const int mode, const int sharing, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -9792,9 +9790,8 @@ cob_extfh_open (
  * CLOSE file
  */
 void
-cob_extfh_close (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
+cob_extfh_close (cob_extfh_func callfh, cob_file *f,
+	cob_field *fnstatus, const int opt, const int remfil)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -9860,9 +9857,8 @@ cob_extfh_close (
  * START
  */
 void
-cob_extfh_start (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, const int cond, cob_field *key, cob_field *keysize, cob_field *fnstatus)
+cob_extfh_start (cob_extfh_func callfh, cob_file *f,
+	const int cond, cob_field *key, cob_field *keysize, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -9903,42 +9899,41 @@ cob_extfh_start (
  * READ
  */
 void
-cob_extfh_read (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
+cob_extfh_read (cob_extfh_func callfh, cob_file *f,
+	cob_field *key, cob_field *fnstatus, const int read_opts)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
 	int	recn;
-	int	keyn,keylen,partlen;
+	int	keyn, keylen, partlen;
 
 	fcd = find_fcd (f, 1);
 	STCOMPX4 (read_opts, fcd->opt);
-	if(key == NULL) {
+	if (key == NULL) {
 		if((read_opts & COB_READ_PREVIOUS)) {
-			STCOMPX2(OP_READ_PREV, opcode);
+			STCOMPX2 (OP_READ_PREV, opcode);
 		} else {
-			STCOMPX2(OP_READ_SEQ, opcode);
+			STCOMPX2 (OP_READ_SEQ, opcode);
 		}
 		if(f->organization == COB_ORG_RELATIVE) {
 			memset (fcd->relKey, 0, sizeof (fcd->relKey));
 			recn = cob_get_int (f->keys[0].field);
 			STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
 			if (f->access_mode != COB_ACCESS_SEQUENTIAL)
-				STCOMPX2(OP_READ_RAN, opcode);
+				STCOMPX2 (OP_READ_RAN, opcode);
 		}
-	} else if(f->organization == COB_ORG_INDEXED) {
+	} else if (f->organization == COB_ORG_INDEXED) {
 		keyn = cob_findkey (f, key, &keylen, &partlen);
-		STCOMPX2(keyn, fcd->refKey);
-		STCOMPX2(keylen, fcd->effKeyLen);
-		STCOMPX2(OP_READ_RAN, opcode);
-	} else if(f->organization == COB_ORG_RELATIVE) {
+		STCOMPX2 (keyn, fcd->refKey);
+		STCOMPX2 (keylen, fcd->effKeyLen);
+		STCOMPX2 (OP_READ_RAN, opcode);
+	} else if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (key);
-		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
-		STCOMPX2(OP_READ_RAN, opcode);
+		STCOMPX4 (recn, LSUCHAR(fcd->relKey+4));
+		STCOMPX2 (OP_READ_RAN, opcode);
 	} else {
-		STCOMPX2(OP_READ_SEQ, opcode);
+		STCOMPX2 (OP_READ_SEQ, opcode);
 	}
 
 	(void)callfh (opcode, fcd);
@@ -9949,22 +9944,21 @@ cob_extfh_read (
  * READ next
  */
 void
-cob_extfh_read_next (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *fnstatus, const int read_opts)
+cob_extfh_read_next (cob_extfh_func callfh, cob_file *f,
+	cob_field *fnstatus, const int read_opts)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
 	int	recn;
 
 	fcd = find_fcd (f, 1);
-	STCOMPX4(read_opts, fcd->opt);
-	if((read_opts & COB_READ_PREVIOUS)) {
-		STCOMPX2(OP_READ_PREV, opcode);
+	STCOMPX4 (read_opts, fcd->opt);
+	if ((read_opts & COB_READ_PREVIOUS)) {
+		STCOMPX2 (OP_READ_PREV, opcode);
 	} else {
-		STCOMPX2(OP_READ_SEQ, opcode);
+		STCOMPX2 (OP_READ_SEQ, opcode);
 	}
-	if(f->organization == COB_ORG_RELATIVE) {
+	if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (f->keys[0].field);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
@@ -9977,18 +9971,17 @@ cob_extfh_read_next (
  * WRITE
  */
 void
-cob_extfh_write (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus, const unsigned int check_eop)
+cob_extfh_write (cob_extfh_func callfh, cob_file *f,
+	cob_field *rec, const int opt, cob_field *fnstatus, const unsigned int check_eop)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
 	int	recn;
 
 	fcd = find_fcd (f, 1);
-	STCOMPX2(OP_WRITE, opcode);
-	STCOMPX2(check_eop, fcd->eop);
-	STCOMPX4(opt, fcd->opt);
+	STCOMPX2 (OP_WRITE, opcode);
+	STCOMPX2 (check_eop, fcd->eop);
+	STCOMPX4 (opt, fcd->opt);
 	if (f->variable_record) {
 		f->record->size = (size_t)cob_get_int (f->variable_record);
 		if (unlikely(f->record->size > rec->size)) {
@@ -10013,9 +10006,8 @@ cob_extfh_write (
  * REWRITE
  */
 void
-cob_extfh_rewrite (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
+cob_extfh_rewrite (cob_extfh_func callfh, cob_file *f,	
+	cob_field *rec, const int opt, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -10046,9 +10038,7 @@ cob_extfh_rewrite (
  * DELETE
  */
 void
-cob_extfh_delete (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *fnstatus)
+cob_extfh_delete (cob_extfh_func callfh, cob_file *f, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -10078,7 +10068,7 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 {
 	FCD3 *fcd = (FCD3 *) fcd_ptr;
 
-	COB_CHK_PARMS (EXTFH, 2);
+	COB_CHK_PARMS ("EXTFH", 2);
 
 	if (cobglobptr->cob_call_params < 2
 	 || !COB_MODULE_PTR->cob_procedure_params[0]

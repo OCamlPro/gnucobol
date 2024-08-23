@@ -1682,7 +1682,7 @@ COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
 
-COB_EXPIMP void		cob_cleanup_thread ();
+COB_EXPIMP void		cob_cleanup_thread (void);
 
 /* General functions */
 
@@ -2613,24 +2613,23 @@ COB_EXPIMP void cob_rollback	(void);
 /* functions in fileio.c for the MF style EXTFH interface */
 COB_EXPIMP int	EXTFH		(unsigned char *opcode, FCD3 *fcd);
 
-COB_EXPIMP void	cob_extfh_open		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, const int, const int, cob_field *);
-COB_EXPIMP void cob_extfh_close		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int, const int);
-COB_EXPIMP void cob_extfh_read		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_read_next	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_rewrite	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int, cob_field *);
-COB_EXPIMP void cob_extfh_delete	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *);
-COB_EXPIMP void cob_extfh_start		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, const int, cob_field *,
-					cob_field *, cob_field *);
-COB_EXPIMP void cob_extfh_write		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int,
-				 	cob_field *, const unsigned int);
+typedef		int (*cob_extfh_func)(unsigned char *, FCD3 *);
+
+COB_EXPIMP void	cob_extfh_open		(cob_extfh_func callfh, cob_file *,
+					const int, const int, cob_field *);
+COB_EXPIMP void cob_extfh_close		(cob_extfh_func callfh, cob_file *,
+					cob_field *, const int, const int);
+COB_EXPIMP void cob_extfh_read		(cob_extfh_func callfh, cob_file *,
+					cob_field *, cob_field *, const int);
+COB_EXPIMP void cob_extfh_read_next	(cob_extfh_func callfh, cob_file *,
+					cob_field *, const int);
+COB_EXPIMP void cob_extfh_rewrite	(cob_extfh_func callfh, cob_file *,
+					cob_field *, const int, cob_field *);
+COB_EXPIMP void cob_extfh_delete	(cob_extfh_func callfh, cob_file *, cob_field *);
+COB_EXPIMP void cob_extfh_start		(cob_extfh_func callfh, cob_file *,
+					const int, cob_field *, cob_field *, cob_field *);
+COB_EXPIMP void cob_extfh_write		(cob_extfh_func callfh, cob_file *,
+					cob_field *, const int, cob_field *, const unsigned int);
 COB_EXPIMP void cob_file_fcd_adrs		(cob_file *, void *);
 COB_EXPIMP void cob_file_fcdkey_adrs	(cob_file *, void *);
 
@@ -2958,7 +2957,7 @@ typedef	char *		cobchar_t;
 
 
 /* Type to store nanoseconds */
-typedef unsigned long long cob_ns_time;
+typedef cob_u64_t cob_ns_time;
 
 enum cob_prof_procedure_kind {
 	COB_PROF_PROCEDURE_MODULE,

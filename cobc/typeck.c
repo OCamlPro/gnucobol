@@ -12360,9 +12360,9 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 			buff[i] = l->data[i % l->size];
 		}
 		return CB_BUILD_FUNCALL_3 ("memcpy",
-					   CB_BUILD_CAST_ADDRESS (dst),
-					   cb_build_string (buff, (size_t)f->size),
-					   CB_BUILD_CAST_LENGTH (dst));
+						CB_BUILD_CAST_ADDRESS (dst),
+						cb_build_string (buff, (size_t)f->size),
+						CB_BUILD_CAST_LENGTH (dst));
 	}
 
 	if (cat == CB_CATEGORY_NUMERIC_EDITED

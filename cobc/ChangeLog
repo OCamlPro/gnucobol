@@ -1,4 +1,17 @@
 
+2024-08-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (setup_cob_pi, setup_cob_sqrt_tw, setup_cob_log_half),
+	  typeck.c (COB_SPACES_ALPHABETIC) [!HAVE_LONG_LITERALS]:
+	  limit generation to < 509 if not supported, dropping perforance/precision
+
+	* tree.h, cobc.h: moved dialect variables to tree.h as it defines the used
+	  types above to prevent forward declarations not allowed by ISO
+	* parser.y, replace.c, scanner.l, tree.h, cobc.h: dropped trailing comma
+	  from some of our enum definitions for strict ISO compat
+	* pplex.l, scanner.l: reordered includes and dropped unneeded ones
+	* cobc.h: include config.h for self-defined context
+	  
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_alphabet_name_definition): cater for national alphabet

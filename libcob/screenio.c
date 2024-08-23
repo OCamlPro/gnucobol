@@ -4763,7 +4763,7 @@ cob_sys_get_csr_pos (unsigned char *fld)
 	int	ccol;
 #endif
 
-	COB_CHK_PARMS (CBL_GET_CSR_POS, 1);
+	COB_CHK_PARMS ("CBL_GET_CSR_POS", 1);
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
@@ -4802,7 +4802,7 @@ cob_sys_get_char (unsigned char *fld)
 	int ret;
 #endif
 
-	COB_CHK_PARMS (CBL_READ_KBD_CHAR, 1);
+	COB_CHK_PARMS ("CBL_READ_KBD_CHAR", 1);
 	/* note: screen init done in called cob_get_char */
 
 #ifdef	WITH_EXTENDED_SCREENIO
@@ -4845,7 +4845,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 	int	ccol;
 #endif
 
-	COB_CHK_PARMS (CBL_SET_CSR_POS, 1);
+	COB_CHK_PARMS ("CBL_SET_CSR_POS", 1);
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
@@ -4875,7 +4875,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 int
 cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 {
-	COB_CHK_PARMS (CBL_GET_SCR_SIZE, 2);
+	COB_CHK_PARMS ("CBL_GET_SCR_SIZE", 2);
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
@@ -4895,7 +4895,7 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 int
 cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 {
-	COB_CHK_PARMS (CBL_SET_SCR_SIZE, 2);
+	COB_CHK_PARMS ("CBL_SET_SCR_SIZE", 2);
 	init_cob_screen_if_needed ();
 
 #if !defined (WITH_EXTENDED_SCREENIO) || !defined (HAVE_RESIZE_TERM)
@@ -4916,61 +4916,62 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 #endif
 }
 
-		/* save the current stdscr screen to a file */
+/* CBL_GC_SCR_DUMP - save the current stdscr screen to a file */
 int
-cob_sys_scr_dump(unsigned char *parm)
+cob_sys_scr_dump (unsigned char *parm)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
-	int	result;
+	int 	result;
 	FILE	*filep;
 	const char *filename = cob_get_param_str_buffered (1);
 
-	COB_CHK_PARMS (CBL_GC_SCR_DUMP, 1);
+	COB_CHK_PARMS ("CBL_GC_SCR_DUMP", 1);
 	init_cob_screen_if_needed ();
 
-	if (filename && (filep = fopen(filename, "wb")) != NULL)
+	if (filename && (filep = fopen (filename, "wb")) != NULL)
 	{
-		refresh();
-		result = putwin(stdscr, filep);
-		fclose(filep);
+		refresh ();
+		result = putwin (stdscr, filep);
+		fclose (filep);
 		return result;
 	}
 
 	return ERR;
 #else
+	COB_UNUSED (parm);
 	return -1;
 #endif
 
 }
 
 
-		/* restore the current stdscr screen from a file */
-int cob_sys_scr_restore(unsigned char *parm)
+/*  CBL_GC_SCR_RESTORE - restore the current stdscr screen from a file */
+int cob_sys_scr_restore (unsigned char *parm)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
-	int	result;
+	int 	result;
 	FILE	*filep;
 	const char	*filename = cob_get_param_str_buffered (1);
 
-	COB_CHK_PARMS (CBL_GC_SCR_RESTORE, 1);
+	COB_CHK_PARMS ("CBL_GC_SCR_RESTORE", 1);
 	init_cob_screen_if_needed ();
 
-	if (filename && (filep = fopen(filename, "rb")) != NULL)
+	if (filename && (filep = fopen (filename, "rb")) != NULL)
 	{
-		WINDOW *replacement = getwin(filep);
-		fclose(filep);
+		WINDOW *replacement = getwin (filep);
+		fclose (filep);
 
-		if (replacement)
-		{
-			result = overwrite(replacement, stdscr);
-			refresh();
-			delwin(replacement);
+		if (replacement) {
+			result = overwrite (replacement, stdscr);
+			refresh ();
+			delwin (replacement);
 			return result;
 		}
 	}
 
 	return ERR;
 #else
+	COB_UNUSED (parm);
 	return -1;
 #endif
 

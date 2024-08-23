@@ -23,6 +23,8 @@
 #ifndef CB_COBC_H
 #define CB_COBC_H
 
+#include "config.h"
+
 /* inclusion of common.h to get type definitions and some macros
    TODO: move those out of common.h to a second installed header
          and include that here */
@@ -105,7 +107,7 @@ enum cb_format {
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
-	CB_FORMAT_AUTO, 	/* Auto-detect format */
+	CB_FORMAT_AUTO 	/* Auto-detect format */
 };
 #define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
 #define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
@@ -269,7 +271,7 @@ enum cb_dpc_in_data_options {
 enum cb_sub_check {
 	CB_SUB_CHECK_FULL,
 	CB_SUB_CHECK_MAX,
-	CB_SUB_CHECK_RECORD,	/* PENDING */
+	CB_SUB_CHECK_RECORD	/* PENDING */
 };
 
 /* Generic text list structure */
@@ -546,28 +548,6 @@ extern void		cobc_print_usage_warnings (void);
 extern void		cobc_print_usage_flags (void);
 
 /* config.c */
-
-#define	CB_CONFIG_ANY(type,var,name,doc)	\
-extern type			var;
-#define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
-extern unsigned int		var;
-#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
-extern int		var;
-#define	CB_CONFIG_STRING(var,name,doc)	\
-extern const char		*var;
-#define	CB_CONFIG_BOOLEAN(var,name,doc)	\
-extern int				var;
-#define	CB_CONFIG_SUPPORT(var,name,doc)	\
-extern enum				cb_support var;
-
-#include "config.def"
-
-#undef	CB_CONFIG_ANY
-#undef	CB_CONFIG_INT
-#undef	CB_CONFIG_SINT
-#undef	CB_CONFIG_STRING
-#undef	CB_CONFIG_BOOLEAN
-#undef	CB_CONFIG_SUPPORT
 
 extern int		cb_load_std (const char *);
 extern int		cb_config_entry (char *, const char *, const int);

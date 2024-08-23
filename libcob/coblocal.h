@@ -26,6 +26,8 @@
    exported to user space
 */
 
+#include "config.h"
+
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
 #endif
@@ -228,7 +230,7 @@ Note: also defined together with __clang__ in both frontends:
 
 #ifdef	COB_PARAM_CHECK
 #define	COB_CHK_PARMS(x,z)	\
-	cob_parameter_check (#x, z)
+	cob_parameter_check (x, z)
 #else
 #define	COB_CHK_PARMS(x,z)
 #endif

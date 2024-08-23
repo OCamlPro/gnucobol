@@ -486,7 +486,7 @@ cob_prof_print_line (
 			case 'T':
 			case 't':
 				if (info){
-					fprintf (file, "%lld", time);
+					fprintf (file, CB_FMT_LLU, time);
 				} else {
 					fputs ("time-ns", file);
 				}

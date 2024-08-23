@@ -3710,6 +3710,9 @@ AT_DATA([prog.cob], [
        77  ELE5                        PIC X(1003)
                    VALUE 'RRR' JUSTIFIED RIGHT.
 
+       77  ELEF                        PIC X(10)
+                   VALUE 'ISEVERYTHINGRIGHT' JUSTIFIED RIGHT.
+
        PROCEDURE DIVISION.
 
            >>IF JUSTIFY EQUAL 'JUSTIFY'
@@ -3742,6 +3745,10 @@ AT_DATA([prog.cob], [
            IF ELE5 (1:1000) NOT EQUAL SPACES
            OR ELE5 (1001:)  NOT EQUAL "RRR"
                DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
+           END-IF.
+
+           IF ELEF       NOT EQUAL "THINGRIGHT"
+               DISPLAY 'ELEF NOT INITIALIZED CORRECTLY ' ELEF
            END-IF.
 
            IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
@@ -3840,6 +3847,10 @@ AT_DATA([prog.cob], [
                DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
            END-IF.
 
+           IF ELEF       NOT EQUAL "ISEVERYTHI"
+               DISPLAY 'ELEF NOT INITIALIZED CORRECTLY ' ELEF
+           END-IF.
+
            IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '
                DISPLAY 'ARR-FLD1 (2) NOT INITIALIZED CORRECTLY'
            END-IF.
@@ -3921,9 +3932,11 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -std=ibm -DJUSTIFY=JUSTIFY -o prog  prog.cob], [0], [], [])
+# -Wno-others to not warn for "value size exceeds data size" as
+# we explicit check the results here
+AT_CHECK([$COMPILE -Wno-others -std=cobol2014 -DJUSTIFY=OFF prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([$COMPILE -std=cobol2014 -DJUSTIFY=OFF -o prog  prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-others -std=ibm -DJUSTIFY=JUSTIFY prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -4757,7 +4770,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CALL C with callback, PROCEDURE DIVISION EXTERN])
-AT_KEYWORDS([runmisc extensions CALL-CONVENTION])
+AT_KEYWORDS([runmisc extensions CALL-CONVENTION callback])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4795,19 +4808,18 @@ AT_DATA([prog.cob], [
 ])
 
 AT_DATA([cprog.c], [[
-#include <stdio.h>
 #include <libcob.h>
+typedef		int (*my_cob_func)(char *, int, char *);
 
 COB_EXT_EXPORT int
-cprog (void *cb)
+cprog (my_cob_func cb)
 {
    char *p1;
    int  p2 = 42;
    char *p3 = "CALLBACK";
 
    p1 = p3;
-   ((int (*)(char *, int, char *))cb)(p1, p2, p3);
-   return 0;
+   return cb (p1, p2, p3);
 }
 ]])
 
@@ -4871,19 +4883,18 @@ AT_DATA([prog.cob], [
 ])
 
 AT_DATA([cprog.c], [[
-#include <stdio.h>
 #include <libcob.h>
+typedef		int (*my_cob_func)(char *, int, char *);
 
 COB_EXT_EXPORT int
-cprog (void *cb)
+cprog (my_cob_func cb)
 {
    char *p1;
    int  p2 = 42;
    char *p3 = "CALLBACK";
 
    p1 = p3;
-   ((int (*)(char *, int, char *))cb)(p1, p2, p3);
-   return 0;
+   return cb (p1, p2, p3);
 }
 ]])
 
@@ -5010,7 +5021,7 @@ main (int argc, char **argv)
 
    /* call COBOL program (initialization missing)
       note: COBOL program terminates the program by STOP RUN */
-   (void)callee (p1, p2);
+   return callee (p1, p2);
 }
 ]])
 

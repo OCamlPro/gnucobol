@@ -7739,6 +7739,76 @@ AT_CHECK([COB_SET_DEBUG=1 $COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([MOVE ALL])
+AT_KEYWORDS([])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+       01  FLDX50   PIC X(1000).
+       01  FLD9     PIC 9(20).
+
+       PROCEDURE DIVISION.
+       MAIN-LINE.
+
+           MOVE ALL "9" TO FLD9
+           IF  FLD9 (  1:6) = "999999"
+           AND FLD9 ( 15:6) = "999999"
+                CONTINUE
+           ELSE DISPLAY "!   9 " FLD9    (  1:6) "-" FLD9 ( 15:6).
+           IF  FLD9         = ALL "9"
+                CONTINUE
+           ELSE DISPLAY "! ALL 9 " FLD9  (  1:6) "-" FLD9 ( 15:6).
+
+           MOVE ALL "1234" TO FLD9
+           IF  FLD9   (  1:6) = "123412"
+           AND FLD9   ( 15:6) = "341234"
+                CONTINUE
+           ELSE DISPLAY "!9 1234 " FLD9 (  1:6) "-" FLD9 (15:6).
+           IF  FLD9         = ALL "9"
+                CONTINUE
+           ELSE DISPLAY "!9 ALL 1234 " FLD9  (  1:6) "-" FLD9 ( 15:6).
+
+           MOVE ALL "X" TO FLDX50
+           IF  FLDX50 (  1:6) = "XXXXXX"
+           AND FLDX50 (995:6) = "XXXXXX"
+                CONTINUE
+           ELSE DISPLAY "!   X " FLDX50 (  1:6) "-" FLDX50 (995:6).
+
+           MOVE ALL "1234" TO FLDX50
+           IF  FLDX50 (  1:6) = "123412"
+           AND FLDX50 (995:6) = "341234"
+                CONTINUE
+           ELSE DISPLAY "! 1234 " FLDX50 (  1:6) "-" FLDX50 (995:6).
+
+           MOVE ALL
+                     "123456789a123456789b123456789c123456789d123456789e
+      -              "123456789f123456789g132456789h123456789i123456789j
+      -      "123456789k123456789l123456789m123456789n" TO FLDX50
+           IF  FLDX50 (  1:6) = "123456"
+           AND FLDX50 (995:6) = "56789g"
+                CONTINUE
+           ELSE DISPLAY "!  12a " FLDX50 (  1:6) "-" FLDX50 (995:6).
+           IF  FLDX50  = ALL
+                     "123456789a123456789b123456789c123456789d123456789e
+      -              "123456789f123456789g132456789h123456789i123456789j
+      -              "123456789k123456789l123456789m123456789n"
+                CONTINUE
+           ELSE DISPLAY "! ALL  12a " FLDX50 (  1:6) "-" FLDX50 (995:6).
+
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Simple Expressions with figurative constants])
 AT_KEYWORDS([expression conditional])
 

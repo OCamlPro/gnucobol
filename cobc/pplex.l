@@ -49,6 +49,7 @@
 %option noyyset_debug
 
 %{
+
 #undef	YY_READ_BUF_SIZE
 #define	YY_READ_BUF_SIZE	32768
 #undef	YY_BUF_SIZE
@@ -74,20 +75,27 @@ static void insert_copy_arg (void);
 	copy_list_pointer = cb_copy_list;				\
 	insert_copy_arg ();
 
-
 #include "config.h"
 
-#ifdef	HAVE_UNISTD_H
-#include <unistd.h>
-#else
-#define	YY_NO_UNISTD_H	1
-#endif
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#if 0 /* part of "standard defines" included in flex template */
+#include <stdio.h>
 #include <string.h>
+#endif
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
+#endif
+
+#if 0 /* already included by cobc.h */
+#ifdef	HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#endif
+
+#ifndef HAVE_UNISTD_H
+#define	YY_NO_UNISTD_H	1
 #endif
 
 #define	COB_IN_PPLEX	1

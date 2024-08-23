@@ -254,12 +254,16 @@
 #define SPACE_16	"                "
 #define SPACE_64	SPACE_16 SPACE_16 SPACE_16 SPACE_16
 #define SPACE_256	SPACE_64 SPACE_64 SPACE_64 SPACE_64
+#ifndef HAVE_LONG_LITERALS
+const char *COB_SPACES_ALPHABETIC = SPACE_256 SPACE_64 SPACE_64 SPACE_64;
+#else
 #define SPACE_1024	SPACE_256 SPACE_256 SPACE_256 SPACE_256
 const char *COB_SPACES_ALPHABETIC = SPACE_1024;
-#undef SPACE_16
-#undef SPACE_64
-#undef SPACE_256
 #undef SPACE_1024
+#endif
+#undef SPACE_256
+#undef SPACE_64
+#undef SPACE_16
 #define ZERO_16 	"0000000000000000"
 #define ZERO_64 	ZERO_16 ZERO_16 ZERO_16 ZERO_16
 #define ZERO_256	ZERO_64 ZERO_64 ZERO_64 ZERO_64
@@ -6159,7 +6163,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 	unsigned char	priority = 0;
 	int			(**p)(void);
 
-	COB_CHK_PARMS (CBL_EXIT_PROC, 2);
+	COB_CHK_PARMS ("CBL_EXIT_PROC", 2);
 
 #if 0	/* TODO: take care of ACU variant:
 	   pptr is not an already resolved entry point
@@ -6283,7 +6287,7 @@ cob_sys_error_proc (const void *dispo, const void *pptr)
 	const unsigned char	*x;
 	int			(**p) (char *s);
 
-	COB_CHK_PARMS (CBL_ERROR_PROC, 2);
+	COB_CHK_PARMS ("CBL_ERROR_PROC", 2);
 
 #if 0	/* TODO: take care of ACU variant:
 	   pptr is not an already resolved entry point
@@ -6359,7 +6363,7 @@ cob_sys_runtime_error_proc (const void *err_flags, const void *err_msg)
 {
 	const char *msg = (const char*)err_msg;
 
-	COB_CHK_PARMS (CBL_RUNTIME_ERROR, 2);
+	COB_CHK_PARMS ("CBL_RUNTIME_ERROR", 2);
 	COB_UNUSED (err_flags);
 
 	if (msg && msg[0]) {
@@ -6375,7 +6379,7 @@ cob_sys_runtime_error_proc (const void *err_flags, const void *err_msg)
 int
 cob_sys_system (const void *cmdline)
 {
-	COB_CHK_PARMS (SYSTEM, 1);
+	COB_CHK_PARMS ("SYSTEM", 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
 		const char *cmd = cmdline;
@@ -6465,7 +6469,7 @@ cob_sys_hosted (void *p, const void *var)
 	cob_u8_ptr		data = p;
 	size_t			i;
 
-	COB_CHK_PARMS (CBL_GC_HOSTED, 2);
+	COB_CHK_PARMS ("CBL_GC_HOSTED", 2);
 
 	if (!data) {
 		return 1;
@@ -6523,7 +6527,7 @@ cob_sys_and (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_AND, 3);
+	COB_CHK_PARMS ("CBL_AND", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6541,7 +6545,7 @@ cob_sys_or (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_OR, 3);
+	COB_CHK_PARMS ("CBL_OR", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6559,7 +6563,7 @@ cob_sys_nor (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_NOR, 3);
+	COB_CHK_PARMS ("CBL_NOR", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6577,7 +6581,7 @@ cob_sys_xor (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_XOR, 3);
+	COB_CHK_PARMS ("CBL_XOR", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6597,7 +6601,7 @@ cob_sys_imp (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_IMP, 3);
+	COB_CHK_PARMS ("CBL_IMP", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6618,7 +6622,7 @@ cob_sys_nimp (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_NIMP, 3);
+	COB_CHK_PARMS ("CBL_NIMP", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6638,7 +6642,7 @@ cob_sys_eq (const void *p1, void *p2, const int length)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_EQ, 3);
+	COB_CHK_PARMS ("CBL_EQ", 3);
 
 	if (length <= 0) {
 		return 0;
@@ -6656,7 +6660,7 @@ cob_sys_not (void *p1, const int length)
 	cob_u8_ptr	data_1 = p1;
 	size_t		n;
 
-	COB_CHK_PARMS (CBL_NOT, 2);
+	COB_CHK_PARMS ("CBL_NOT", 2);
 
 	if (length <= 0) {
 		return 0;
@@ -6675,7 +6679,7 @@ cob_sys_xf4 (void *p1, const void *p2)
 	const cob_u8_ptr	data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_XF4, 2);
+	COB_CHK_PARMS ("CBL_XF4", 2);
 
 	*data_1 = 0;
 	for (n = 0; n < 8; ++n) {
@@ -6692,7 +6696,7 @@ cob_sys_xf5 (const void *p1, void *p2)
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
-	COB_CHK_PARMS (CBL_XF5, 2);
+	COB_CHK_PARMS ("CBL_XF5", 2);
 
 	for (n = 0; n < 8; ++n) {
 		data_2[n] = (*data_1 & (1 << (7 - n))) ? 1 : 0;
@@ -6883,7 +6887,7 @@ cob_sys_toupper (void *p1, const int length)
 	cob_u8_ptr	data = p1;
 	size_t		n;
 
-	COB_CHK_PARMS (CBL_TOUPPER, 2);
+	COB_CHK_PARMS ("CBL_TOUPPER", 2);
 
 	if (length > 0) {
 		for (n = 0; n < (size_t)length; ++n) {
@@ -6899,7 +6903,7 @@ cob_sys_tolower (void *p1, const int length)
 	cob_u8_ptr	data = p1;
 	size_t		n;
 
-	COB_CHK_PARMS (CBL_TOLOWER, 2);
+	COB_CHK_PARMS ("CBL_TOLOWER", 2);
 
 	if (length > 0) {
 		for (n = 0; n < (size_t)length; ++n) {
@@ -6986,7 +6990,7 @@ int
 cob_sys_oc_nanosleep (const void *data)
 {
 	COB_UNUSED (data);
-	COB_CHK_PARMS (CBL_GC_NANOSLEEP, 1);
+	COB_CHK_PARMS ("CBL_GC_NANOSLEEP", 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
 		cob_s64_t nsecs
@@ -7004,7 +7008,7 @@ int
 cob_sys_sleep (const void *data)
 {
 	COB_UNUSED (data);
-	COB_CHK_PARMS (C$SLEEP, 1);
+	COB_CHK_PARMS ("C$SLEEP", 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
 		cob_s64_t	nanoseconds
@@ -7157,7 +7161,7 @@ cob_sys_return_args (void *data)
 {
 	COB_UNUSED (data);
 
-	COB_CHK_PARMS (C$NARG, 1);
+	COB_CHK_PARMS ("C$NARG", 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
 		cob_set_int (COB_MODULE_PTR->cob_procedure_params[0],
@@ -7172,7 +7176,7 @@ cob_sys_calledby (void *data)
 	size_t		size;
 	size_t		msize;
 
-	COB_CHK_PARMS (C$CALLEDBY, 1);
+	COB_CHK_PARMS ("C$CALLEDBY", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		/* TO-DO: check what ACU ccbl/runcbl returns,
@@ -7199,7 +7203,7 @@ cob_sys_parameter_size (void *data)
 
 	COB_UNUSED (data);
 
-	COB_CHK_PARMS (C$PARAMSIZE, 1);
+	COB_CHK_PARMS ("C$PARAMSIZE", 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
 		n = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]);
@@ -7245,7 +7249,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	COB_UNUSED (lo);
 	COB_UNUSED (so);
 
-	COB_CHK_PARMS (CBL_GC_GETOPT, 6);
+	COB_CHK_PARMS ("CBL_GC_GETOPT", 6);
 
 	/* Read in sizes of some parameters */
 	if (COB_MODULE_PTR->cob_procedure_params[1]) {
@@ -7382,7 +7386,7 @@ cob_sys_printable (void *p1, ...)
 	cob_u8_ptr		data;
 	char		*previous_locale = NULL;
 
-	COB_CHK_PARMS (CBL_GC_PRINTABLE, 1);
+	COB_CHK_PARMS ("CBL_GC_PRINTABLE", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return 0;
@@ -7431,7 +7435,7 @@ cob_sys_justify (void *p1, ...)
 	size_t		n;
 	size_t		shifting;
 
-	COB_CHK_PARMS (C$JUSTIFY, 1);
+	COB_CHK_PARMS ("C$JUSTIFY", 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return 0;
@@ -11221,7 +11225,7 @@ init_statement_list (void)
 }
 #endif
 
-void cob_cleanup_thread ()
+void cob_cleanup_thread (void)
 {
 	cob_exit_strings ();
 }
