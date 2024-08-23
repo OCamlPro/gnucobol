@@ -11228,7 +11228,6 @@ void cob_cleanup_thread ()
 
 #ifdef _MSC_VER
 
-#include <debugapi.h>
 #include <crtdbg.h>
 
 BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
