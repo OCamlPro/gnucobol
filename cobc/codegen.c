@@ -7093,6 +7093,10 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 static void
 output_java_call (struct cb_call *p)
 {
+	if (p->args != NULL || p->call_returning != NULL) {
+    	CB_PENDING ("Java method call with parameters or return values");
+    	COBC_ABORT ();
+	}
 	char* full_name = (char *)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`)*/
 	char* class_and_method_name = full_name + 5;
 	char *last_dot;
@@ -7106,10 +7110,6 @@ output_java_call (struct cb_call *p)
 	}
 
 	last_dot = strrchr(class_and_method_name, '.');
-	if (last_dot == NULL) {
-		cobc_err_msg (_("malformed call '%s' to a Java method"), class_and_method_name);
-		COBC_ABORT ();
-	}
 
 	*last_dot = '\0';
 	method_name = last_dot + 1;

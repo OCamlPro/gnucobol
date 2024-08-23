@@ -12255,9 +12255,18 @@ call_body:
 	if (CB_LITERAL_P ($3)) {
 		/* Check for "Java." prefix and set call convention */
 		char* s = (char *)CB_LITERAL ($3)->data;
-	        if (strncasecmp("Java.", s, 5) == 0) {
-		        call_conv = CB_CONV_JAVA;
-                }
+		if (strncasecmp("Java.", s, 5) == 0) {
+			call_conv = CB_CONV_JAVA;
+		}
+		/* Check for malformed Java method names */
+		char* class_and_method_name = s + 5;
+		if (strchr(class_and_method_name, '.') == NULL) {
+			cb_error_x ($3, _("malformed Java method name '%s', expected format 'Java.ClassName.methodName'"), s);
+		}
+		/* Check for unsupported Java method calls with parameters or return values */
+		if($7 != NULL || $8 != NULL) {
+			CB_PENDING("Java method calls with parameters or return values");
+		}
 		cb_check_conformance ($3, $7, $8);
 	} else if (CB_REFERENCE_P ($3)) {
 		cb_tree	ref = cb_ref ($3);
