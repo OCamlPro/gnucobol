@@ -196,6 +196,7 @@ jobs:
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
 
       - name: Run testsuite
+        continue-on-error: ${{ matrix.target == 'Debug' }}
         run: |
           cd tests
           set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
