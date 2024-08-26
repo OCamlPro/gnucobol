@@ -40,8 +40,8 @@ jobs:
         target:
           - debug
           - release
-
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
 
     steps:
 
