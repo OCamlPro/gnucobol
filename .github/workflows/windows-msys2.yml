@@ -19,6 +19,7 @@ jobs:
           - { os: windows-latest, target: debug,   sys: clang64, env: clang-x86_64 }
           # - { target: debug,   sys: mingw32, env: i686         }
     runs-on: ${{matrix.os}}
+    timeout-minutes: 45
 
     steps:
 
