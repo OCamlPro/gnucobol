@@ -13,12 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-        include:
-          - os: ubuntu-latest
-            skip_test: true
-
+        os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -37,7 +32,7 @@ jobs:
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
 
-      - name: bootstrap
+      - name: Bootstrap
         run: |
           ./build_aux/bootstrap
 
@@ -62,7 +57,7 @@ jobs:
           echo "TERM=$TERM" >> $GITHUB_ENV
           echo "INSTALL_PATH=$(pwd)/_install" >> $GITHUB_ENV
 
-      - name: configure
+      - name: Configure
         run: |
           cd _build
           ../configure --enable-cobc-internal-checks \
@@ -78,12 +73,12 @@ jobs:
           name: config-${{ matrix.os }}.log
           path: _build/config.log
 
-      - name: make
+      - name: Build
         run: |
           make -C _build --jobs=$(($(nproc)+1))
 
       # note: distcheck also creates the dist tarball
-      - name: distcheck
+      - name: Build distribution archive & run tests
         run: |
           make -C _build distcheck                                \
                          TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"  \
@@ -107,27 +102,30 @@ jobs:
           if-no-files-found: error
           retention-days: 0
 
-      - name: Cache newcob.val.Z
-        uses: actions/cache@v3
+      - name: Cache newcob.val.tar.gz
+        uses: actions/cache@v4
         id: newcob
         with:
-          path: _build/tests/cobol85/newcob.val.Z.cached
+          path: tests/cobol85/newcob.val.tar.gz.cached
           key: newcob
+          save-always: true
 
-      - name: Download newcob.val.Z
+      - name: Download newcob.val.tar.gz
         if: steps.newcob.outputs.cache-hit != 'true'
         run: |
-          cd _build/tests/cobol85
-          make newcob.val.Z
-          ln -f newcob.val.Z newcob.val.Z.cached
+          make -C _build/tests/cobol85 newcob.val.tar.gz
+          ln   -f _build/tests/cobol85/newcob.val.tar.gz        \
+                         tests/cobol85/newcob.val.tar.gz.cached
 
       - name: NIST85 Test Suite
         run: |
-          cd _build/tests/cobol85
-          ln -f newcob.val.Z.cached newcob.val.Z
-          make EXEC85 && make --jobs=$(($(nproc)+1)) test
+          ln   -f        tests/cobol85/newcob.val.tar.gz.cached           \
+                         tests/cobol85/newcob.val.tar.gz
+          make -C _build/tests/cobol85 EXEC85 test \
+                                       --jobs=$(($(nproc)+1))
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload NIST85 Test Suite results
+        uses: actions/upload-artifact@v4
         with:
           name: NIST85 results on ${{ matrix.os }}
           path: |
@@ -140,7 +138,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # note: less dependencies as we don't generate a dist tarball, one additional for lcov
       - name: Install dependencies
@@ -148,7 +147,7 @@ jobs:
           sudo apt-get install automake libtool libdb5.3-dev libxml2-dev \
                                libcjson-dev bison flex help2man gettext lcov
 
-      - name: bootstrap
+      - name: Bootstrap
         run: |
           ./build_aux/bootstrap
 
@@ -162,40 +161,80 @@ jobs:
       # _another_ CI run
       #
       # TODO: try and pass -pedantic via CPPFLAGS
-      - name: configure
+      - name: Configure
         run: |
           cd _build
           ../configure --enable-code-coverage \
                        CPPFLAGS="-Werror=declaration-after-statement" \
                        CC="gcc -std=c89"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload config.log
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: config-${{ matrix.os }}.log
           path: _build/config.log
 
-      - name: make
+      - name: Build
         run: |
           make -C _build --jobs=$(($(nproc)+1))
 
-      - name: coverage
+      - name: Coverage
         run: |
-          make -C _build check-code-coverage \
+          # make -C _build check-code-coverage # <- (ignores errors)
+          make -C _build check \
                          TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make -C _build code-coverage-capture \
+                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: testsuite-${{ matrix.os }}.log
           path: _build/tests/testsuite.log
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ matrix.os }}
-          path: _build/GnuCOBOL-**-coverage/
+          path: _build/GnuCOBOL-**-coverage
 
-      - uses: codecov/codecov-action@v2
+      - name: Cache newcob.val.tar.gz
+        uses: actions/cache@v4
+        id: newcob
+        with:
+          path: tests/cobol85/newcob.val.tar.gz.cached
+          key: newcob
+          save-always: true
+
+      - name: Download newcob.val.tar.gz
+        if: steps.newcob.outputs.cache-hit != 'true'
+        run: |
+          make -C _build/tests/cobol85 newcob.val.tar.gz
+          ln   -f _build/tests/cobol85/newcob.val.tar.gz        \
+                         tests/cobol85/newcob.val.tar.gz.cached
+
+      - name: Extended coverage
+        run: |
+          ln   -f        tests/cobol85/newcob.val.tar.gz.cached           \
+                         tests/cobol85/newcob.val.tar.gz
+          make -C _build/tests/cobol85 EXEC85 test                        \
+                         --jobs=$(($(nproc)+1))                           \
+                         --keep-going
+          make -C _build code-coverage-capture                            \
+                         CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
+                         CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
+                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
+
+      - name: Upload extended coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: extended-coverage-${{ matrix.os }}
+          path: _build/extended-coverage
+
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v2
         with:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: _build
