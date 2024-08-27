@@ -56,7 +56,6 @@ jobs:
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
                        --prefix /opt/cobol/gnucobol-gcos \
-                       --exec-prefix /opt/cobol/gnucobol-gcos
 
       - name: Upload config.log
         uses: actions/upload-artifact@v4
@@ -69,8 +68,9 @@ jobs:
         run: |
           make -C _build --jobs=$((${NPROC}+1))
 
-# make install must be done before make check, otherwise execution of
-# generated COBOL files fail for a missing /usr/local/lib/libcob.dylib
+      # make install must be done before make check, otherwise
+      # execution of generated COBOL files fail for a missing
+      # /usr/local/lib/libcob.dylib
       - name: make install
         run: |
           sudo make -C _build install
@@ -84,7 +84,8 @@ jobs:
 
       - name: check
         run: |
-          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          make -C _build check \
+                         TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
 
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4
