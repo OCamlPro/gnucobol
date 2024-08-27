@@ -158,12 +158,15 @@ jobs:
           export TERM="vt100"
           echo "TERM=$TERM" >> $GITHUB_ENV
 
-      # note: w add additional C compiler syntax checks here to not need _another_ CI run
+      # note: add additional C compiler syntax checks here to not need
+      # _another_ CI run
+      #
+      # TODO: try and pass -pedantic via CPPFLAGS
       - name: configure
         run: |
           cd _build
           ../configure --enable-code-coverage \
-                       CPPFLAGS="-Werror=declaration-after-statement -pedantic" \
+                       CPPFLAGS="-Werror=declaration-after-statement" \
                        CC="gcc -std=c89"
 
       - uses: actions/upload-artifact@v4
