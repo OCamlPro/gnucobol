@@ -1,4 +1,8 @@
 
+2024-08-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* Makefile.am: stop downloading "newcob.val.Z" from out-dated URL
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* report.pl: place stderr from test runs into .out file
