@@ -94,22 +94,24 @@ jobs:
           name: testsuite-${{ matrix.os }}.log
           path: _build/tests/testsuite.log
 
-      - name: Cache newcob.val.Z
-        uses: actions/cache@v3
+      - name: Cache newcob.val.tar.gz
+        uses: actions/cache@v4
         id: newcob
         with:
-          path: _build/tests/cobol85/newcob.val.Z.cached
+          path: tests/cobol85/newcob.val.tar.gz.cached
           key: newcob
+          save-always: true
 
-      - name: Download newcob.val.Z
+      - name: Download newcob.val.tar.gz
         if: steps.newcob.outputs.cache-hit != 'true'
         run: |
-          cd _build/tests/cobol85
-          make newcob.val.Z
-          ln -f newcob.val.Z newcob.val.Z.cached
+          make -C _build/tests/cobol85 newcob.val.tar.gz
+          ln   -f _build/tests/cobol85/newcob.val.tar.gz        \
+                         tests/cobol85/newcob.val.tar.gz.cached
 
       - name: NIST85 Test Suite
         run: |
-          cd _build/tests/cobol85
-          ln -f newcob.val.Z.cached newcob.val.Z
-          make EXEC85 && make --jobs=$(($(nproc)+1)) test
+          ln   -f        tests/cobol85/newcob.val.tar.gz.cached \
+                         tests/cobol85/newcob.val.tar.gz
+          make -C _build/tests/cobol85 EXEC85 test              \
+                         --jobs=$(($(nproc)+1))
