@@ -169,11 +169,13 @@ diff-summary:
 	@diff $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
 	@echo Done
 
-newcob.val.Z:
-	@echo "Trying to download newcob.val.Z..."
-	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
-	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
-	 ($(RM) $@; echo "Downloading $@ failed"; false)
+# Note: $(URL_NEWCOB_Z) is out-dated and simply grabs an HTML file
+# without error.
+# newcob.val.Z:
+# 	@echo "Trying to download newcob.val.Z..."
+#	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
+#	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
+#	 ($(RM) $@; echo "Downloading $@ failed"; false)
 
 newcob.val.tar.gz:
 	@echo "Trying to download newcob.val.tar.gz..."
