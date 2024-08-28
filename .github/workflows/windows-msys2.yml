@@ -111,8 +111,15 @@ jobs:
         run: |
           make -C _build distmingw
 
-      - name: Upload GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
+      - name: Tar GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
+        shell: msys2 {0}
+        run: |
+          cd _build
+          tar -cvf ../GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar \
+                   "${{ env.DISTDIR }}"
+
+      - name: Upload GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
         uses: actions/upload-artifact@v4
         with:
-          name: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/${{ env.DISTDIR }}
+          name: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
+          path: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
