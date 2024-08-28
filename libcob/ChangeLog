@@ -1,4 +1,10 @@
 
+2024-08-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* intrinsics.c (cob_intr_random), move.c (cob_move_display_to_packed):
+	  make casts with loss of data explicit using masking to silence
+	  the MSVC runtime error checker
+
 2024-08-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode

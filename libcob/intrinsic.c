@@ -5462,11 +5462,7 @@ cob_intr_random (const int params, ...)
 	cob_field	*f;
 	va_list		args;
 	double		val;
-#ifdef DISABLE_GMP_RANDOM
-	unsigned int		seed = 0;
-#else
-	unsigned long		seed = 0;
-#endif
+	unsigned long	seed = 0;
 	cob_field_attr	attr;
 	cob_field	field;
 
@@ -5478,7 +5474,11 @@ cob_intr_random (const int params, ...)
 		if (specified_seed < 0) {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		} else {
+#ifdef _WIN32
+			seed = (unsigned long)(specified_seed & 0xFFFFFFFF);
+#else
 			seed = (unsigned long)specified_seed;
+#endif
 		}
 		rand_needs_seeding++;
 #ifdef DISABLE_GMP_RANDOM
@@ -5490,8 +5490,12 @@ cob_intr_random (const int params, ...)
 		   note: we need an explicit integer cast to get around some warnings,
 		   but then need a matching size to get around others...*/
  #ifdef COB_64_BIT_POINTER
-		seed = get_seconds_past_midnight ()
-		     * (((cob_s64_t)COB_MODULE_PTR) & 0xFFFFF);
+		seed = (get_seconds_past_midnight ()
+  #ifdef _WIN32
+		     * (((cob_s64_t)COB_MODULE_PTR) & 0xFFFFF)) & 0xFFFFFFFF;
+  #else
+		     * (((cob_s64_t)COB_MODULE_PTR) & 0xFFFFF));
+  #endif
  #else
 		seed = get_seconds_past_midnight ()
 			* (((cob_s32_t)COB_MODULE_PTR) & 0xFFFF);

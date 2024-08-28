@@ -11877,6 +11877,7 @@ CAPI (void *p1, ...)
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
+   fflush(stdout);
    for (k=1; k <= nargs; k++) {
       type   = cob_get_param_type (k);
       digits = cob_get_param_digits (k);
@@ -12112,6 +12113,7 @@ CAPI (void *p1, ...)
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
+   fflush(stdout);
    for (k=1; k <= nargs; k++) {
       cob_field *fld = cob_get_param_field (k, "CAPI");
       type   = cob_get_field_type (fld);
