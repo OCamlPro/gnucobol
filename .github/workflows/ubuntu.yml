@@ -108,6 +108,7 @@ jobs:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
           save-always: true
+          enableCrossOsArchive: true
 
       - name: NIST85 Test Suite
         run: |
@@ -196,6 +197,7 @@ jobs:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
           save-always: true
+          enableCrossOsArchive: true
 
       - name: Extended coverage
         run: |
