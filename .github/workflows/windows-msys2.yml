@@ -80,6 +80,14 @@ jobs:
         run: |
           make -C _build --jobs=$(($(nproc)+1))
 
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          save-always: true
+          enableCrossOsArchive: true
+
       - name: Run testuite
         shell: msys2 {0}
         run: |
