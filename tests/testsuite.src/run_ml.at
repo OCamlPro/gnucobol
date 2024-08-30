@@ -45,6 +45,13 @@ AT_DATA([prog.cob], [
            05 name          PIC X(10) value "Someone".
            05 dept          PIC X(10) value "Marketing".
 
+       01  NSTD.
+           05  ATT1 pic x(4) value "ATT1".
+           05  CHLD1.
+               10  NSTD_ATT1 pic x(9) value "NSTD_ATT1".
+               10  NSTD_ATT2 pic x(9) value "NSTD_ATT2".
+           05  ATT2 pic x(4) value "ATT2".
+
        PROCEDURE            DIVISION.
            XML GENERATE out
                FROM rec
@@ -115,6 +122,14 @@ AT_DATA([prog.cob], [
                      '<dept>Marketing</dept>'-
                      '</employee>'
                DISPLAY 'Test 10 failed: ' FUNCTION TRIM (out)
+           END-IF
+           .
+
+           XML GENERATE out FROM NSTD WITH ATTRIBUTES
+           IF out <> '<NSTD ATT1="ATT1" ATT2="ATT2">'-
+                     '<CHLD1 NSTD_ATT1="NSTD_ATT1" '-
+                     'NSTD_ATT2="NSTD_ATT2"/></NSTD>'
+               DISPLAY 'Test 11 failed: ' FUNCTION TRIM (out)
            END-IF
            .
 ])
