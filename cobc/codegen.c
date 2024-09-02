@@ -120,6 +120,7 @@ struct field_list {
 struct call_list {
 	struct call_list	*next;
 	const char		*call_name;
+	const char 		*method_sig;
 };
 
 #define COB_RETURN_INT		0
@@ -397,17 +398,18 @@ lookup_source (const char *p)
 }
 
 static void
-lookup_java_call(const char *p)
+lookup_java_call(const char *p, const char *signature)
 {
 	struct call_list *clp;
 
 	for (clp = call_java_cache; clp; clp = clp->next) {
-		if (strcmp (p, clp->call_name) == 0) {
+		if (strcmp (p, clp->call_name) == 0 && strcmp(signature, clp->method_sig) == 0) {
 			return;
 		}
 	}
 	clp = cobc_parse_malloc (sizeof (struct call_list));
 	clp->call_name = p;
+	clp->method_sig = signature;
 	clp->next = call_java_cache;
 	call_java_cache = clp;
 }
@@ -7098,9 +7100,9 @@ output_java_call (struct cb_call *p)
 	char *last_dot;
 	char *method_name;
 	const char *class_name;
-	char method_signature[256] = "(";
+	char method_signature[2048] = "(";
 	char* mangled;
-	struct cb_tree *ptr;
+	struct cb_tree_common *ptr;
 
 	mangled = strdup(class_and_method_name);
 	for (size_t i = 0; i < strlen(mangled) + 1; i++) {
@@ -7110,43 +7112,31 @@ output_java_call (struct cb_call *p)
 	last_dot = strrchr(class_and_method_name, '.');
 	if (last_dot == NULL) {
 		cobc_err_msg (_("malformed call '%s' to a Java method"), class_and_method_name);
-		COBC_ABORT ();
+		return;
 	}
 
 	*last_dot = '\0';
 	method_name = last_dot + 1;
 	class_name = class_and_method_name;
 
-    for(ptr = p->args; ptr != NULL; ptr = ptr->next) {
+	for (int i = 0; (ptr = ((struct cb_tree_common **)p->args)[i]) != NULL; i++) {
         switch(CB_TREE_TAG(ptr)) {
             case CB_TAG_INTEGER:
                 strcat(method_signature, "I"); 
                 break;
-            case CB_TAG_LONG:
-                strcat(method_signature, "J");
-                break;
-            case CB_TAG_FLOAT:
+            case CB_USAGE_FLOAT:
                 strcat(method_signature, "F");
                 break;
-            case CB_TAG_DOUBLE:
+            case CB_USAGE_DOUBLE:
                 strcat(method_signature, "D"); 
                 break;
-            case CB_TAG_BOOLEAN:
+            case CB_CLASS_BOOLEAN:
                 strcat(method_signature, "Z");
-                break;
-            case CB_TAG_BYTE:
-                strcat(method_signature, "B");
-                break;
-            case CB_TAG_SHORT:
-                strcat(method_signature, "S");
-                break;
-            case CB_TAG_CHAR:
-                strcat(method_signature, "C"); 
                 break;
             case CB_TAG_STRING:
                 strcat(method_signature, "Ljava/lang/String;"); 
                 break;
-            case CB_TAG_OBJECT: 
+            case CB_USAGE_OBJECT: 
                 strcat(method_signature, "Ljava/lang/Object;"); 
                 break;
             case CB_TAG_LITERAL:
@@ -7156,64 +7146,56 @@ output_java_call (struct cb_call *p)
                     strcat(method_signature, "Ljava/lang/String;");
                 }
                 break;
-            case CB_TAG_ARRAY:
-                switch(CB_TREE_TAG(CB_TREE(ptr)->next)) {
-                    case CB_TAG_INTEGER:
-                        strcat(method_signature, "[I"); 
-                        break;
-                    case CB_TAG_LONG:
-                        strcat(method_signature, "[J"); 
-                        break;
-                    case CB_TAG_FLOAT:
-                        strcat(method_signature, "[F"); 
-                        break;
-                    case CB_TAG_DOUBLE:
-                        strcat(method_signature, "[D");
-                        break;
-                    case CB_TAG_BOOLEAN:
-                        strcat(method_signature, "[Z"); 
-                        break;
-                    case CB_TAG_BYTE:
-                        strcat(method_signature, "[B"); 
-                        break;
-                    case CB_TAG_SHORT:
-                        strcat(method_signature, "[S"); 
-                        break;
-                    case CB_TAG_CHAR:
-                        strcat(method_signature, "[C");
-                        break;
-                    case CB_TAG_STRING:
-                        strcat(method_signature, "[Ljava/lang/String;"); 
-                        break;
-                    case CB_TAG_OBJECT:
-                        strcat(method_signature, "[Ljava/lang/Object;"); 
-                        break;
-                    default:
-                        cobc_err_msg(_("Unsupported array type in Java method call"));
-                        COBC_ABORT();
-                }
-                break;
-            default:
-                cobc_err_msg(_("Unsupported argument type in Java method call"));
-                COBC_ABORT();
-        }
+        	case CB_TAG_LIST:
+				{
+					struct cb_tree_common **list_elements = (struct cb_tree_common **) ptr;
+					for (int j = 0; list_elements[j] != NULL; j++) {
+						switch (CB_TREE_TAG(list_elements[j])) {
+							case CB_TAG_INTEGER:
+								strcat(method_signature, "[I"); 
+								break;
+							case CB_USAGE_FLOAT:
+								strcat(method_signature, "[F");
+								break;
+							case CB_USAGE_DOUBLE:
+								strcat(method_signature, "[D");
+								break;
+							case CB_CLASS_BOOLEAN:
+								strcat(method_signature, "[Z"); 
+								break;
+							case CB_TAG_STRING:
+								strcat(method_signature, "[Ljava/lang/String;"); 
+								break;
+							case CB_USAGE_OBJECT:
+								strcat(method_signature, "[Ljava/lang/Object;"); 
+								break;
+							default:
+								cobc_err_msg(_("Unsupported array type in Java method call"));
+								COBC_ABORT();
+						}
+					}
+				}
+				break;
+			default:
+				cobc_err_msg(_("Unsupported argument type in Java method call"));
+				COBC_ABORT();
+		}
     }
 
 	strcat(method_signature, ")V");
 
-	lookup_java_call(mangled);
+	lookup_java_call(mangled, method_signature);
 	output_line("if (call_java_%s == NULL)", mangled);
 	output_block_open();
 
 	output_prefix();
 	output_line("call_java_%s = ", mangled);
-	output("cob_resolve_java(\"%s\", \"%s\", \"()V\");", class_name, method_name, method_signature);
+	output("cob_resolve_java(\"%s\", \"%s\", \"%s\", \"()V\");", class_name, method_name, method_signature);
 	output_newline ();
 	output_prefix ();
 	output_line("cob_call_java(call_java_%s);\n", mangled);
 	output_newline();
 	output_block_close();
-	cobc_free(mangled);
 }
 
 static void
