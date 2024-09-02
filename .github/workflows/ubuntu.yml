@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [ gc4 ]
   push:
-    branches: [ gc4 ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -19,9 +18,6 @@ jobs:
         isam:
           - db
           - visam
-        include:
-          - os: ubuntu-latest
-            skip_test: true
 
     runs-on: ${{ matrix.os }}
 
@@ -38,7 +34,8 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext texlive
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev \
+                               bison flex help2man gettext texlive
 
       - name: Installing VISAM prerequisite
         if: ${{ matrix.isam == 'visam' }}
@@ -53,7 +50,7 @@ jobs:
           echo "LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
 
-      - name: bootstrap
+      - name: Bootstrap
         run: |
           ./build_aux/bootstrap
 
@@ -78,41 +75,43 @@ jobs:
           echo "TERM=$TERM" >> $GITHUB_ENV
           echo "INSTALL_PATH=$(pwd)/_install" >> $GITHUB_ENV
 
-      - name: configure
+      - name: Configure
         run: |
           cd _build
-          ../configure --with-${{ matrix.isam }} --with-indexed=${{ matrix.isam }} --enable-cobc-internal-checks --enable-hardening --prefix ${INSTALL_PATH}
-          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
+          ../configure --with-${{ matrix.isam }} \
+                       --with-indexed=${{ matrix.isam }} \
+                       --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --prefix ${INSTALL_PATH}
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" \
+            >> $GITHUB_ENV
 
-      - name: Upload config-${{ matrix.isam }}.log
+      - name: Upload config-${{ matrix.os }}-${{ matrix.isam }}.log
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config-${{ matrix.isam }}.log
+          name: config-${{ matrix.os }}-${{ matrix.isam }}.log
           path: _build/config.log
 
-      - name: make
+      - name: Build
         run: |
-          cd _build
-          make --jobs=$(($(nproc)+1))
-
-      # - name: check
-      #   run: |
-      #     cd _build
-      #     make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make -C _build --jobs=$(($(nproc)+1))
 
       # note: distcheck also creates the dist tarball
-      - name: distcheck
+      - name: Build distribution archive & run tests
         run: |
-          cd _build
-          make --jobs=$(($(nproc)+1)) distcheck TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make -C _build distcheck                                \
+                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"  \
+                         --jobs=$(($(nproc)+1)) ||                \
+          make -C _build/gnucobol-$VERSION/_build/sub/tests check \
+                         TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.isam }}.log
+      - name: Upload testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           # Assume there's only one directory matching `_build/gnucobol-*`:
-          name: testsuite-${{ matrix.isam }}.log
+          name: testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
           path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
 
       - name: Upload dist tarball
@@ -123,37 +122,26 @@ jobs:
           if-no-files-found: error
           retention-days: 0
 
-      - name: Cache newcob.val.Z
+      - name: Cache newcob.val
         uses: actions/cache@v4
-        id: newcob
         with:
-          path: _build/tests/cobol85/newcob.val.Z.cached
-          key: newcob-${{ matrix.isam }}
-
-      - name: Download newcob.val.Z
-        if: steps.newcob.outputs.cache-hit != 'true'
-        run: |
-          cd _build/tests/cobol85
-          make newcob.val.Z
-          ln -f newcob.val.Z newcob.val.Z.cached
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          save-always: true
+          enableCrossOsArchive: true
 
       - name: NIST85 Test Suite
         run: |
-          cd _build/tests/cobol85
-          ln -f newcob.val.Z.cached newcob.val.Z
-          make EXEC85 && make --jobs=$(($(nproc)+1)) test
+          make -C _build/tests/cobol85 EXEC85 test \
+                                       --jobs=$(($(nproc)+1))
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload NIST85 Test Suite results
+        uses: actions/upload-artifact@v4
         with:
-          name: NIST85 results (${{ matrix.isam }})
+          name: NIST85 results on ${{ matrix.os }} (${{ matrix.isam }})
           path: |
             _build/tests/cobol85/**/*.log
             _build/tests/cobol85/**/*.out
-
-      - name: install
-        run: |
-          cd _build
-          make install
 
 
   coverage:
@@ -161,14 +149,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # note: less dependencies as we don't generate a dist tarball, one additional for lcov
       - name: Install dependencies
         run: |
-          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext lcov
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev \
+                       libcjson-dev bison flex help2man gettext lcov
 
-      - name: bootstrap
+      - name: Bootstrap
         run: |
           ./build_aux/bootstrap
 
@@ -178,44 +168,78 @@ jobs:
           export TERM="vt100"
           echo "TERM=$TERM" >> $GITHUB_ENV
 
-      # note: w add additional C compiler syntax checks here to not need _another_ CI run
-      - name: configure
+      # note: w add additional C compiler syntax checks here to not need
+      # _another_ CI run
+      #
+      # TODO: try and pass -pedantic via CPPFLAGS
+      - name: Configure
         run: |
           cd _build
-          ../configure --enable-code-coverage CPPFLAGS="-Werror=declaration-after-statement"
+          ../configure --enable-code-coverage \
+                       CPPFLAGS="-Werror=declaration-after-statement" \
+                       CC="gcc -std=c89"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload config-${{ matrix.os }}-${{ matrix.isam }}.log
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config.log
+          name: config-${{ matrix.os }}-${{ matrix.isam }}.log
           path: _build/config.log
 
-      - name: make
+      - name: Build
         run: |
-          cd _build
-          make --jobs=$(($(nproc)+1))
+          make -C _build --jobs=$(($(nproc)+1))
 
-      - name: coverage
+      - name: Coverage
         run: |
-          cd _build
-          make check-code-coverage TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          # make -C _build check-code-coverage # <- (ignores errors)
+          make -C _build check \
+                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make -C _build code-coverage-capture \
+                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: testsuite.log
+          name: testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
           path: _build/tests/testsuite.log
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage
+          name: coverage-${{ matrix.os }}-${{ matrix.isam }}
           path: _build/GnuCOBOL-**-coverage/
 
-      - uses: codecov/codecov-action@v2
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          save-always: true
+          enableCrossOsArchive: true
+
+      - name: Extended coverage
+        run: |
+          make -C _build/tests/cobol85 EXEC85 test                        \
+                         --jobs=$(($(nproc)+1))                           \
+                         --keep-going
+          make -C _build code-coverage-capture                            \
+                         CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
+                         CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
+                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
+
+      - name: Upload extended coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: extended-coverage-${{ matrix.os }}-${{ matrix.isam }}
+          path: _build/extended-coverage
+
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v2
         with:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: _build
           # Shall fail until we have a working account on codecov.io
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
-

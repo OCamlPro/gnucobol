@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [ gc4 ]
   push:
-    branches: [ gc4 ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -13,17 +12,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
-        isam:
-          - db  # Purely informative
-        arch:
-          - x64  # Purely informative
-        target:
-          - debug
-          - release
+        include:
+          - { os: windows-latest, isam: db, target: release, sys: mingw64, env: x86_64       }
+          - { os: windows-latest, isam: db, target: debug,   sys: mingw64, env: x86_64       }
+          - { os: windows-latest, isam: db, target: debug,   sys: ucrt64,  env: ucrt-x86_64  }
+          - { os: windows-latest, isam: db, target: debug,   sys: clang64, env: clang-x86_64 }
+          # - { target: debug,   sys: mingw32, env: i686         }
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
 
     steps:
 
@@ -46,19 +43,24 @@ jobs:
             echo CFGOPT="--enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
           }
 
-      - name: Install MSYS2 packages
+      - name: Install packages
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          msystem: ucrt64
-          install: autoconf automake libtool make mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-libxml2 mingw-w64-ucrt-x86_64-cjson mingw-w64-ucrt-x86_64-db mingw-w64-ucrt-x86_64-gmp libdb-devel mingw-w64-ucrt-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
+          msystem: ${{matrix.sys}}
+          install: autoconf automake libtool make flex bison help2man texinfo
+                   mingw-w64-${{matrix.env}}-cc
+                   mingw-w64-${{matrix.env}}-gmp                 gmp-devel
+                   mingw-w64-${{matrix.env}}-gettext-runtime gettext-devel
+                   mingw-w64-${{matrix.env}}-ncurses
+                   mingw-w64-${{matrix.env}}-libxml2
+                   mingw-w64-${{matrix.env}}-cjson
+                   mingw-w64-${{matrix.env}}-db                libdb-devel
 
       - name: Bootstrap GnuCOBOL
         shell: msys2 {0}
         run: |
-          ./autogen.sh
-          autoconf
-          autoreconf --install --force
+          ./build_aux/bootstrap install
 
       - name: Configure GnuCOBOL
         shell: msys2 {0}
@@ -67,56 +69,60 @@ jobs:
           cd _build
           ../configure $CFGOPT --with-db --with-indexed=db --prefix=/opt/cobol/gnucobol
 
-      - name: Upload config-${{ matrix.target }}.log
+      - name: Upload config-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config-${{ matrix.target }}.log
+          name: config-${{matrix.sys}}-${{matrix.target}}.log
           path: ${{ env.GITHUB_WORKSPACE }}/_build/config.log
 
       - name: Build GnuCOBOL
         shell: msys2 {0}
         run: |
-          cd _build
-          make --jobs=$(($(nproc)+1))
+          make -C _build --jobs=$(($(nproc)+1))
 
-      - name: Install GnuCOBOL
-        shell: msys2 {0}
-        run: |
-          cd _build
-          make install
-          find /opt/cobol > install.log
-
-      - name: Upload install-${{ matrix.target }}.log
-        uses: actions/upload-artifact@v4
+      - name: Cache newcob.val
+        uses: actions/cache@v4
         with:
-          name: install-${{ matrix.target }}.log
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/install.log
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          save-always: true
+          enableCrossOsArchive: true
 
       - name: Run testuite
         continue-on-error: true
         shell: msys2 {0}
         run: |
-          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
-          sed -i '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_accept.at
-          cd _build/tests
-          make check
-          make test
+          sed '/AT_SETUP(\[temporary path invalid\])/a \
+                AT_SKIP_IF(\[true\])' -i tests/testsuite.src/used_binaries.at
+          sed '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a \
+                AT_SKIP_IF(\[true\])' -i tests/testsuite.src/run_accept.at
+          make -C _build/tests checkall \
+                               --jobs=$(($(nproc)+1)) \
+                               TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build/tests check \
+                               TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.target }}.log
+      - name: Upload testsuite-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4
         with:
-          name: testsuite-${{ matrix.target }}.log
+          name: testsuite-${{matrix.sys}}-${{matrix.target}}.log
           path: ${{ env.GITHUB_WORKSPACE }}/_build/tests/testsuite.log
 
       - name: Package GnuCOBOL
         shell: msys2 {0}
         run: |
-          cd _build
-          make distmingw
+          make -C _build distmingw
 
-      - name: Upload GnuCOBOL_mingw-${{ matrix.target }}
+      - name: Tar GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
+        shell: msys2 {0}
+        run: |
+          cd _build
+          tar -cvf ../GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar \
+                   "${{ env.DISTDIR }}"
+
+      - name: Upload GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
         uses: actions/upload-artifact@v4
         with:
-          name: GnuCOBOL_mingw-${{ matrix.target }}
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/${{ env.DISTDIR }}
+          name: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
+          path: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar

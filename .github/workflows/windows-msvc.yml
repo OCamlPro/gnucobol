@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [ gc4 ]
   push:
-    branches: [ gc4 ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -46,6 +45,7 @@ jobs:
           - Release
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
 
     steps:
 
@@ -161,20 +161,6 @@ jobs:
         run: |
           cd tests
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-
-      - name: Adjust testsuite for Debug target
-        if: ${{ matrix.target == 'Debug' }}
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          cd tests
-          sed -i '/AT_SETUP(\[ASSIGN DYNAMIC with data item in LINKAGE\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[SEQUENTIAL basic I\/O\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[EXTERNAL RELATIVE file])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[Concatenated Files])/a AT_SKIP_IF(\[true\])' testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[FUNCTION RANDOM])/a AT_SKIP_IF(\[true\])' testsuite.src/run_functions.at
-
-# The tests in sed commands above randomly hang (under debug configurations)
 
       - name: Build testsuite
         shell: C:\shells\msys2bash.cmd {0}

@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [ gc4 ]
   push:
-    branches: [ gc4 ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -45,6 +44,7 @@ jobs:
           - release
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
 
     steps:
 
@@ -96,7 +96,7 @@ jobs:
           bash -lc "cd %MINGW_BISON_VERS% && ./configure --prefix=/mingw && make"
           bash -lc "cd %MINGW_BISON_VERS% && make install"
 
-      # Note: actually unavailable, so skip (works with the GMP alredy provided)
+      # Note: actually unavailable, so skip (works with the GMP already provided)
       # - name: Install GMP
       #   if: steps.restore-msys.outputs.cache-hit != 'true'
       #   run: |
