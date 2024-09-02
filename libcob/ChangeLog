@@ -1,9 +1,28 @@
 
+2024-08-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* intrinsics.c (cob_intr_random), move.c (cob_move_display_to_packed):
+	  make casts with loss of data explicit using masking to silence
+	  the MSVC runtime error checker
+
+2024-08-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode
+	  to disable Windows error popups and redirect them to stderr
+
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2022-12-21:
 	* common.h (cob_symbol): added an is_internal flag
 	* common.c (cob_dump_symbols): skip symbols marked is_internal in dump
+	* call.c (cache_preload, cob_resolve_internal): runtime warning if
+	  (pre)loading from existing path does not work
+	* (cache_preload): runtime warning if preloading from existing path
+	  does not work
+	* call.c (cob_try_preload): runtime warning if preloading of
+	  requested module does not work
+	* (cob_resolve_internal): runtime warning if loading module from
+	  existing path or resolving requested entry point does not work
 
 2024-07-25  David Declerck <david.declerck@ocamlpro.com>
 
@@ -11,7 +30,7 @@
 	  adjusted to use cob_open_mode where possible while
 	  merging 2022-10-04
 
-2023-07-12  Simon Sobisch <simonsobisch@gnu.org>
+2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_binar): C89 fix
 
@@ -74,11 +93,33 @@
 	* screenio.c: renamed max_pairs_available as this is defined on HPUX
 	* common.c (check_current_date): fixed bad snprintf size
 
+2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_cmp_uint, cob_cmp_llint): prevent some overflows
+
+2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c [!COB_EXPERIMENTAL]: disable "new" status 0P via preprocessor
+	  to inspect later for either include as COB_LS_VALIDATE=PRINT or drop
+
+2022-12-13 David Declerck <david.declerck@ocamlpro.com>
+
+	* conv.c: file moved from cobc to libcob
+	* common.h: declare the new API for collating sequences
+
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (inspect_find_data): added missing area check bug #865
 	* strings.c (inspect_common_no_replace, inspect_common_replacing,
 	  is_marked): minor refactoring for optimization hints
+
+2022-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (get_config_val, set_config_val, translate_boolean_to_int):
+	  allow "boolean" values to be set to a third value via enum,
+	  new enum "never" used for COB_PHYSICAL_CANCEL (and prepared: "not_set"),
+	  to prevent unloading, which is useful for analysis tools like callgrind
+	  or perf to keep all symbols until end of the COBOL process
 
 2022-12-08  Ron Norman <rjn@inglenet.com>
 
@@ -187,7 +228,29 @@
 	  by checking sign/zero and reduced number of decimal shifting
 	  dynamic allocation
 	* move.c (store_common_region): minor optimization
-	* move.c:
+	* move.c (cob_move_display_to_edited): several optimizations, the
+	  biggest one stays open, needing adjusted function call from cobc
+
+2022-11-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: include common.h (for cob_ types) and stdio.h (for FILE)
+	* common.h: include stddef.h for size_t
+	* fileo.c (save_status): rewritten to care for any sucessful completion
+	  (status 0x) instead of only on status 00 to not set an exception and
+	  to sync if COB_SYNC is active
+
+2022-11-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_hard_failure, cob_hard_failure_internal),
+	  call.c (cob_exit_call): skip unloading of modules for COB_CORE_ON_ERROR=2
+	  to keep symbols in coredumps using cob_physical_cancel=-1 internally
+	* call.c (close_and_free_module_list): extracted from cob_exit_call
+	* fileio.c (lineseq_read): use the locale setup for printable check in
+	  sequential data verification instead of libcob's internal one
+	* fileio.c: for line sequential data verification only call isprint when
+	  cob_ls_validate > 1 (not configurable), use new macro IS_NOT_PRINTABLE
+	  for this check and execute it on both read and (re)write, resulting in
+	  status 0P now, fixed call of isprint on EBCDIC machines
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2237,7 +2300,7 @@
 
 2019-12-27  Ron Norman <rjn@inglenet.com>
 
-	* common.h: Added cob_file.curkey to record recent file index 
+	* common.h: Added cob_file.curkey to record recent file index
 	* fileio.c: cob_read_next will check for records returned with
 	            a key that has all SUPPRESS character and skip the
 				record. This will handle old VBISAM, ODBC & OCI
@@ -2282,9 +2345,9 @@
 
 2019-11-18  Ron Norman <rjn@inglenet.com>
 
-	* common.h,fileio.c,fextfh.c,fbdb.c: Updates to support 
-	        SET ... TO ADDRESS OF FH--FCD OF file
-	        SET ... TO ADDRESS OF FH--KEYDEF OF file
+	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support
+	   SET ... TO ADDRESS OF FH--FCD OF file     and
+	   SET ... TO ADDRESS OF FH--KEYDEF OF file
 
 2019-11-14  Ron Norman <rjn@inglenet.com>
 
@@ -2294,10 +2357,10 @@
 
 2019-11-14  Ron Norman <rjn@inglenet.com>
 
-	* coblocal.h: 
+	* coblocal.h:
 	* common.c: Add runtime options COB_FILE_DICTIONARY &
 				COB_FILE_DICTIONARY_PATH
-	* fileio.h: 
+	* fileio.h:
 	* fileio.c: Clean up of code to write/read file format information
 	            default is 'asgname.dd'
 				Support for COB_FILE_DICTIONARY_PATH is not implemented
@@ -2322,7 +2385,7 @@
 2019-10-26  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: work on handling file definition parameters in IO_filename
-	          RELATIVE file at end-of-file now returns status 10 
+	          RELATIVE file at end-of-file now returns status 10
 			  when ACCESS SEQUENTIAL, otherwise status 23
 
 2019-10-25  Ron Norman <rjn@inglenet.com>
@@ -6642,6 +6705,10 @@
 	* common.h (cob_config_lookup): Declared.
 	* call.c (dynamic_reloading): Renamed from cob_dynamic_reloading.
 	  (cob_init_call): Initialize 'dynamic_reloading'.
+
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
+
+	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
 Copyright 2002-2024 Free Software Foundation, Inc.

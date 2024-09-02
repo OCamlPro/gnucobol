@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "cobc.h"
+#include "tree.h"	/* for COB_INTERNAL_XREF */
 
 void
 cobc_print_usage (char * prog)
@@ -129,6 +130,8 @@ cobc_print_usage_common_options (void)
 	puts (_("  --list-system         display system routines"));
 	puts (_("  --save-temps[=<dir>]  save intermediate files\n"
 	        "                        * default: current directory"));
+	puts (_("  -MT <target>          set/add target file used in dependency list"));
+	puts (_("  -MF <file>            place dependency list into <file>"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
 	putchar ('\n');
 }

@@ -183,8 +183,11 @@ static void	check_listing		(const char *, const unsigned int);
 static void	skip_to_eol		(void);
 static void	count_newlines		(const char *);
 static void	display_finish		(void);
-static void	set_print_replace_list	(struct cb_replace_list *list);
+static void	set_print_replace_list	(struct cb_replace_list *);
 static void	get_new_listing_file	(void);
+
+static struct cb_text_list	*pp_text_list_add (struct cb_text_list *,
+					 const char *, const size_t);
 
 %}
 
@@ -1162,9 +1165,6 @@ int
 ppopen (const char *name, struct cb_replace_list *replacing_list)
 {
 	struct copy_info	*current_copy_info;
-#if 0
-	char			*s;
-#endif
 	char			*dname;
 	cb_tree x = NULL;
 
@@ -1235,6 +1235,11 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 		cb_current_file->name = cobc_strdup (name);
 	}
 
+	/* Add to dependency list */
+	if (cb_depend_file) {
+		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
+	}
+
 	/* Preserve the current buffer */
 	current_copy_info = cobc_malloc (sizeof (struct copy_info));
 	current_copy_info->file = cb_source_file;
@@ -1272,9 +1277,13 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	dname = cobc_strdup (name);
 	current_copy_info->dname = dname;
 #if 0	/* Simon: better adjust the output where needed */
-	for (s = dname; *s; ++s) {
-		if (*s == '\\') {
-			*s = '/';
+	{
+		char *s = dname;
+		while (*s) {
+			if (*s == '\\') {
+				*s = '/';
+			}
+			s++;
 		}
 	}
 #endif

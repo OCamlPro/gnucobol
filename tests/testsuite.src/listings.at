@@ -3487,13 +3487,13 @@ error: P must be at start or end of PICTURE string
 error: V cannot follow a P which is after the decimal point
 000058         01  missing-symbols.
 000059             03  PIC B(5).
-error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
      + and *; or at least two of the set +, - and the currency symbol
 000060             03  PIC +.
-error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
      + and *; or at least two of the set +, - and the currency symbol
 000061             03  PIC $.
-error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
      + and *; or at least two of the set +, - and the currency symbol
 000062
 000063         01  str-constant CONSTANT "hello".
@@ -3687,9 +3687,9 @@ prog.cob:55: error: a leading currency symbol cannot follow 9
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
-prog.cob:59: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:60: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:61: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
 prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
 prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned

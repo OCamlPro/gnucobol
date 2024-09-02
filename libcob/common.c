@@ -345,6 +345,8 @@ static const char *setting_group[] = {" hidden setting ", "CALL configuration",
 					"System configuration"};
 
 static struct config_enum lwrupr[] = {{"LOWER", "1"}, {"UPPER", "2"}, {"not set", "0"}, {NULL, NULL}};
+static struct config_enum notset[] = {{"not set", "!"}, {NULL, NULL}};
+static struct config_enum never[] = {{"never", "!"}, {NULL, NULL}};
 static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALSE", "9"}, {"BEEP", "0"}, {NULL, NULL}};
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
@@ -401,7 +403,7 @@ static const char *not_set;
  */
 static struct config_tbl gc_conf[] = {
 	{"COB_LOAD_CASE", "load_case", 		"0", 	lwrupr, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (name_convert)},
-	{"COB_PHYSICAL_CANCEL", "physical_cancel", 	"0", 	NULL, GRP_CALL, ENV_BOOL, SETPOS (cob_physical_cancel)},
+	{"COB_PHYSICAL_CANCEL", "physical_cancel", 	"0", 	never, GRP_CALL, ENV_BOOL | ENV_ENUMVAL, SETPOS (cob_physical_cancel)},
 	{"default_cancel_mode", "default_cancel_mode", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"LOGICAL_CANCELS", "logical_cancels", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
@@ -458,7 +460,7 @@ static struct config_tbl gc_conf[] = {
 	{"STRIP_TRAILING_SPACES","strip_trailing_spaces",NULL,NULL,GRP_HIDE,ENV_BOOL|ENV_NOT,SETPOS(cob_ls_fixed)},
 	{"COB_LS_SPLIT","ls_split",				"1",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
 	{"COB_LS_INSTAB","ls_instab",			"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_instab)},
-	{"COB_LS_NULLS","ls_nulls",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
+	{"COB_LS_NULLS","ls_nulls",				"not set",notset,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
 	{"COB_LS_VALIDATE","ls_validate",		"1",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
 	{"COB_SHARE_MODE","share_mode",			"none",shareopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_share_mode)},
 	{"COB_RETRY_MODE","retry_mode",			"none",retryopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_retry_mode)},
@@ -3207,9 +3209,11 @@ handle_core_on_error ()
 			core_on_error = COB_D2I (env_val[0]);
 		}
 	}
+	/* explicit create a coredump file */
 	if (core_on_error == 3) {
 		int ret = create_dumpfile ();
 		if (ret) {
+			/* creation did not work, set to "internally 4" */
 			if (cob_initialized) {
 				cobsetptr->cob_core_on_error = 4;
 			}
@@ -3231,6 +3235,10 @@ cob_hard_failure ()
 {
 	unsigned int core_on_error = handle_core_on_error ();
 	if (core_on_error != 4) {
+		if (core_on_error == 2 && cob_initialized) {
+			/* prevent unloading modules */
+			cobsetptr->cob_physical_cancel = -1;
+		}
 		call_exit_handlers_and_terminate ();
 	}
 	exit_code = -1;
@@ -3262,6 +3270,10 @@ cob_hard_failure_internal (const char *prefix)
 	fprintf (stderr, "\n");
 	core_on_error = handle_core_on_error ();
 	if (core_on_error != 4) {
+		if (core_on_error == 2 && cob_initialized) {
+			/* prevent unloading modules */
+			cobsetptr->cob_physical_cancel = -1;
+		}
 		call_exit_handlers_and_terminate ();
 	}
 	exit_code = -2;
@@ -3343,7 +3355,7 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 
 	/* Check module pointer */
 	if (!*module) {
-		struct cob_alloc_module* mod_ptr;
+		struct cob_alloc_module *mod_ptr;
 
 		*module = cob_cache_malloc (sizeof (cob_module));
 		/* Add to list of all modules activated */
@@ -3351,12 +3363,16 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 		mod_ptr->cob_pointer = *module;
 		mod_ptr->next = cob_module_list;
 		cob_module_list = mod_ptr;
-	} else if (entry == 0
-		&& !cobglobptr->cob_call_from_c) {
-		int		k = 0;
-		cob_module	*mod;
+	} else
+	if (entry == 0
+	 && !cobglobptr->cob_call_from_c) {
+		register int		k = 0;
+		register cob_module	*mod;
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (*module == mod) {
+				/* CHECKME: can we move this in 4.x to the generated program
+				   to be done _before_ executing cob_module_global_enter using
+				   a _static_ variable ? */
 				if (cobglobptr->cob_stmt_exception) {
 					/* CALL has ON EXCEPTION so return to caller */
 					cob_set_exception (COB_EC_PROGRAM_RECURSIVE_CALL);
@@ -3366,11 +3382,13 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 				cob_module_err = mod;
 				cob_fatal_error (COB_FERROR_RECURSIVE);
 			}
-			if (k++ == MAX_MODULE_ITERS) {
+			/* LCOV_EXCL_START */
+			if (k++ == MAX_MODULE_ITERS) {	/* prevent endless loop in case of broken list */
 				/* not translated as highly unexpected */
 				cob_runtime_warning ("max module iterations exceeded, possible broken chain");
 				break;
 			}
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -3428,6 +3446,10 @@ cob_module_free (cob_module **module)
 	}
 
 	cob_module_clean (*module);
+
+	/* TODO: consider storing the last entry and a prev pointer
+	   to optimize for the likely case of "program added last is removed"
+	   instead of checking _all_ previous entries */
 	prv = NULL;
 	/* Remove from list of all modules activated */
 	for (ptr = cob_module_list; ptr; ptr = ptr->next) {
@@ -4643,7 +4665,7 @@ static set_cob_time_from_localtime (time_t curtime,
 	static time_t last_time = 0;
 	static struct cob_time last_cobtime;
 	
-	// FIXME: on reseting appropriate locale set last_time_no_sec = 0
+	/* FIXME: on reseting appropriate locale set last_time_no_sec = 0 */
 	if (curtime == last_time) {
 		memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
 		return;
@@ -7723,7 +7745,8 @@ translate_boolean_to_int (const char *ptr)
 	if (*(ptr + 1) == 0 && isdigit ((unsigned char)*ptr)) {
 		return atoi (ptr);		/* 0 or 1 */
 	} else
-	if (strcasecmp (ptr, "not set") == 0) {
+	/* pre-translated boolean "never" - not set" */
+	if (strcmp (ptr, "!") == 0) {
 		return -1;
 	} else
 	if (strcasecmp (ptr, "true") == 0
@@ -7771,7 +7794,8 @@ set_config_val (char *value, int pos)
 			}
 		}
 		if ((data_type & ENV_ENUM || data_type & ENV_ENUMVAL)	/* Must be one of the 'enum' values */
-		 && gc_conf[pos].enums[i].match == NULL) {
+		 && gc_conf[pos].enums[i].match == NULL
+		 && (!(data_type & ENV_BOOL))) {
 			conf_runtime_error_value (ptr, pos);
 			fprintf (stderr, _("should be one of the following values: %s"), "");
 			for (i = 0; gc_conf[pos].enums[i].match != NULL; i++) {
@@ -7790,7 +7814,31 @@ set_config_val (char *value, int pos)
 		}
 	}
 
-	if ((data_type & ENV_UINT) 				/* Integer data, unsigned */
+	if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
+		numval = translate_boolean_to_int (ptr);
+
+		if (numval != -1
+		 && numval != 1
+		 && numval != 0) {
+			conf_runtime_error_value (ptr, pos);
+			conf_runtime_error (1, _("should be one of the following values: %s"), "true, false");
+			return 1;
+		}
+		if ((data_type & ENV_NOT)) {	/* Negate logic for actual setting */
+			numval = !numval;
+		}
+		set_value (data, data_len, numval);
+		if ((data_type & ENV_RESETS)) {	/* Additional setup needed */
+			if (strcmp(gc_conf[pos].env_name, "COB_SET_DEBUG") == 0) {
+				/* Copy variables from settings (internal) to global structure, each time */
+				cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
+			}
+		}
+		if (strcmp (gc_conf[pos].env_name, "COB_INSERT_MODE") == 0) {
+			cob_settings_screenio ();
+		}
+
+	} else if ((data_type & ENV_UINT) 				/* Integer data, unsigned */
 	 || (data_type & ENV_SINT) 				/* Integer data, signed */
 	 || (data_type & ENV_SIZE) ) {				/* Size: integer with K, M, G */
 		char sign = 0;
@@ -7799,7 +7847,7 @@ set_config_val (char *value, int pos)
 		 || *ptr == '+') {
 			if ((data_type & ENV_SINT) == 0) {
 				conf_runtime_error_value (ptr, pos);
-				conf_runtime_error (1, _("should be unsigned")); // cob_runtime_warning
+				conf_runtime_error (1, _("should be unsigned")); /* cob_runtime_warning */
 				return 1;
 			}
 			sign = *ptr;
@@ -7880,30 +7928,6 @@ set_config_val (char *value, int pos)
 		 || strcmp (gc_conf[pos].env_name, "COB_MOUSE_INTERVAL") == 0
 #endif
 			) {
-			cob_settings_screenio ();
-		}
-
-	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
-		numval = translate_boolean_to_int (ptr);
-
-		if (numval != -1
-		 && numval != 1
-		 && numval != 0) {
-			conf_runtime_error_value (ptr, pos);
-			conf_runtime_error (1, _("should be one of the following values: %s"), "true, false");
-			return 1;
-		}
-		if ((data_type & ENV_NOT)) {	/* Negate logic for actual setting */
-			numval = !numval;
-		}
-		set_value (data, data_len, numval);
-		if ((data_type & ENV_RESETS)) {	/* Additional setup needed */
-			if (strcmp(gc_conf[pos].env_name, "COB_SET_DEBUG") == 0) {
-				/* Copy variables from settings (internal) to global structure, each time */
-				cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
-			}
-		}
-		if (strcmp (gc_conf[pos].env_name, "COB_INSERT_MODE") == 0) {
 			cob_settings_screenio ();
 		}
 
@@ -8009,7 +8033,27 @@ get_config_val (char *value, int pos, char *orgvalue)
 
 	strcpy (value, _("unknown"));
 	orgvalue[0] = 0;
-	if (data_type & ENV_UINT) {				/* Integer data, unsigned */
+
+	if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
+		numval = get_value (data, data_len);
+		if (numval == -1) {
+			if (gc_conf[pos].enums == never) {
+				strcpy (value, "never");
+			} else {
+				strcpy (value, _("not set"));
+			}
+		} else {
+			if ((data_type & ENV_NOT)) {
+				numval = !numval;
+			}
+			if (numval) {
+				strcpy (value, _("yes"));
+			} else {
+				strcpy (value, _("no"));
+			}
+		}
+
+	} else if (data_type & ENV_UINT) {				/* Integer data, unsigned */
 		numval = get_value (data, data_len);
 		sprintf (value, CB_FMT_LLU, numval);
 
@@ -8040,21 +8084,6 @@ get_config_val (char *value, int pos, char *orgvalue)
 			}
 		} else {
 			sprintf (value, CB_FMT_LLD, numval);
-		}
-
-	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
-		numval = get_value (data, data_len);
-		if (numval == -1) {
-			strcpy (value, _("not set"));
-		} else {
-			if ((data_type & ENV_NOT)) {
-				numval = !numval;
-			}
-			if (numval) {
-				strcpy (value, _("yes"));
-			} else {
-				strcpy (value, _("no"));
-			}
 		}
 
 	/* TO-DO: Consolidate copy-and-pasted code! */
@@ -10484,7 +10513,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 					source_file, source_line);
 			if (mod->frame_ptr) {
 				struct cob_frame_ext *perform_ptr = mod->frame_ptr;
-				int frame_max = 512; /* from -fstack-size */
+				int frame_max = 512; /* max from -fstack-size */
 				while (frame_max--) {
 					const unsigned int ffile_num = COB_GET_FILE_NUM (perform_ptr->module_stmt);
 					const unsigned int fline = COB_GET_LINE_NUM (perform_ptr->module_stmt);
@@ -11290,4 +11319,31 @@ init_statement_list (void)
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
 }
+#endif
+
+#ifdef _MSC_VER
+
+#include <crtdbg.h>
+
+BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+	COB_UNUSED (hinstDLL);
+	COB_UNUSED (lpReserved);
+
+	if (fdwReason == DLL_PROCESS_ATTACH) {
+	/* Programs compiled with MSVC will by default display a popup
+	   window on some errors. In general, we do not want that,
+	   so we disable them, unless explicitly requested. */
+	if (!IsDebuggerPresent() && !getenv ("DEBUG_POPUPS_WANTED")) {
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	}
+    }
+    return TRUE;
+}
+
 #endif

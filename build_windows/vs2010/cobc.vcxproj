@@ -187,7 +187,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\cobc\cobc.c" />
-    <ClCompile Include="..\..\cobc\cconv.c" />
     <ClCompile Include="..\..\cobc\codegen.c" />
     <ClCompile Include="..\..\cobc\codeoptim.c" />
     <ClCompile Include="..\..\cobc\config.c" />
@@ -333,7 +332,6 @@
     <ClInclude Include="..\config.h" />
     <ClInclude Include="..\..\libcob.h" />
     <ClInclude Include="..\..\tarstamp.h" />
-    <ClInclude Include="..\..\cobc\cconv.h" />
     <ClInclude Include="..\..\cobc\cobc.h" />
     <ClInclude Include="..\..\cobc\tree.h" />
     <ClInclude Include="..\..\cobc\parser.h" />

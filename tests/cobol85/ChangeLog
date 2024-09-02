@@ -1,7 +1,17 @@
 
+2024-08-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* Makefile.am: stop downloading "newcob.val.Z" from out-dated URL
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* report.pl: place stderr from test runs into .out file
+
+2022-12-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: ensure to not create half-baked module directories,
+	  added "modules" to .PHONY target; always set COB_UNIX_LF for
+	  executing EXEC85 to be identical to the later testsuite run
 
 2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -2540,9 +2540,9 @@ extern void		cb_emit_return (cb_tree, cb_tree);
 
 extern void		cb_emit_rollback (void);
 
-extern void		cb_emit_search (cb_tree, cb_tree,
+extern cb_tree		cb_emit_search (cb_tree, cb_tree,
 					cb_tree, cb_tree);
-extern void		cb_emit_search_all (cb_tree, cb_tree,
+extern cb_tree		cb_emit_search_all (cb_tree, cb_tree,
 					    cb_tree, cb_tree);
 
 extern void		cb_emit_setenv (cb_tree, cb_tree);
@@ -2641,7 +2641,7 @@ extern void		cb_check_definition_matches_prototype (struct cb_program *);
 extern void		ylex_clear_all (void);
 extern void		ylex_call_destroy (void);
 
-/* cobc.c */
+/* cobc.c, help.c */
 #ifndef COB_EXTERNAL_XREF
 #define COB_INTERNAL_XREF
 #endif

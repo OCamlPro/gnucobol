@@ -1,4 +1,9 @@
 
+2024-08-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
+	  adjusted size of precedence table and gave proper precedence to U
+
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2022-12-21:
@@ -8,6 +13,10 @@
 	Adjustments to merge 2022-12-12:
 	* codegen.c (emit_one_sym): output NULL as data storage
 	  and set is_internal flag to 1 for TYPEDEF
+	* codegen.c (output_assign, output_if, output_debug_item): extracted
+	  from output_stmt
+	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
+	  functions, now returning the tree that was emitted
 
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -53,19 +62,65 @@
 	* codegen.c: Verify that EXTERNAL variables have 'ename'
 	* field.c (copy_into_field): If EXTERNAL set 'ename'
 
+2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (short_options): removed -R which was only dropped from evaluation
+	  in 2016-09-24; fixing bug #758
+
+2022-12-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, cobc.h, pplex.l (ppopen), help.c: restored -MT and -MF options
+	  as they were available in GnuCOBOL 1.1 (adjusted to current code)
+	* cobc.c (process_command_line): handle multiple -MT options like GCC
+	* ChangeLog: integrated cobpp ChangeLog entries and added some
+	  historic changes from VCS log/diff
+
+2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_standard_includes): don't include stdio.h in
+	  generated programs
+
 2022-12-21  Samuel Belondrade <samuel.belondrade@atos.net>
 
 	* codegen.c (output_base): fix undeclared variable with REDEFINE GLOBAL
 	  [bugs:#777]
 
+2022-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_validate_labels): don't warn on GO TO own SECTION
+
+2022-12-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c: initial support for PIC U, for now handled as alphanumeric with
+	  size * 4
+	* scanner.l: minimal parsing for utf-8 literals
+	* reserved.c, cobc.h (CB_CS_USAGE), parser.y: parsing for USAGE UTF-8
+	  and the related BYTE-LENGTH clause
+	* field.c, tree.c, typeck.c: minimal adjustments for PIC U
+
 2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_initialize_to_value): fix bad generation for VALUE size
 	  greater than field size, see bug #777
+	* codegen.c (output_label, output_label_c): extracted from output_stmt
+	* codegen.c (output_label_c): added output of C labels for paragraphs
+	  using prefix PARAGRAPH and, to make them distinct, its label id as suffix
+	* codegen.c (output_search_all, output_search_whens): if no AT END position
+	  token is available, use the start token instead
+	* typeck.c (cb_emit_search, cb_emit_search_all), tree.h: return created
+	  search tree
+	* parser.y (_end_search): if search has no AT END create an implicit one
+	  at END-SEARCH for better trace and debugging
 
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (validate_move): fix bug #643 add check for SET literal TO val
+
+2022-12-13 David Declerck <david.declerck@ocamlpro.com>
+
+	* conv.c, conv.h: files moved from cobc to libcob
+	* codegen.c: use the new libcob API for collating sequences
+	* flag.def: change "ebcdic-table" to a flag with associated variable
 
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -7340,6 +7395,10 @@
 	* error.c: remove special warnings for lvl-78
 	* pplex.l [_WIN32]: check for UTF-8 BOM in source files and skip it
 
+201?-??-??  Roger While <simrw@sim-basis.de>
+
+	* cobc.c, cobc.h, pplex.l (ppopen): removed -MT and -MF options
+
 2009-??-??  Roger While <simrw@sim-basis.de>
 
 	* parser.y, reserved.c, tree.c, tree.h, codegen.c: full support of ANSI 85
@@ -9310,6 +9369,22 @@
 
 	* cobc.c: Use _WIN32 instead of __CYGWIN__ or __MINGW32__.
 
+2004-02-16  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
+
+	* pplex.l, ppparse.y: improved text manipulation
+
+2004-02-13  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
+
+	* pplex.l: literal concatenation fix
+
+2004-02-06  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
+
+	* pplex.l, ppparse.y: parse (and ignore) COPY SUPPRESS PRINTING
+
+2003-05-26  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
+
+	* pplex.l (ppcopy), pparse.y, cobc.c, cobc.h: split ppcopy from ppopen
+
 2003-05-21  Keisuke Nishida  <knishida@netlab.jp>
 
 	* tree.h (cb_class, cb_category): New enums.
@@ -9346,19 +9421,52 @@
 
 	* flag.def: New file.
 
+2003-04-18  Keisuke Nishida  <knishida@netlab.jp>
+
+	integrate cobcpp into cobc
+	* pplex.l: renamed and adjusted from cobpp/scanner.l
+	* pparse.y: renamed and adjusted from cobpp/parser.y
+	* cobc.h: definitions from scanner.h
+	* Makefile.am, cobc.c: adjusted
+
+2003-04-02  Keisuke Nishida  <knishida@netlab.jp>
+
+	* pparse.y <- cobpp/parser.y, pplex.l <- cobpp/scanner.l: support for
+	  SOURCE FORMAT compiler directive
+
+2003-03-26  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobpp.h (COBPP_DEFAULT_TAB_WIDTH): New macro.
+	  (COBPP_DEFAULT_TEXT_COLUMN): New macro.
+	  (COBPP_FORMAT_UNKNOWN): Removed.
+	  (COBPP_FORMAT_SEMI_FIXED): Removed.
+
+	* cobpp.c (short_options): New option `C'.  Remove `D'.
+	  (long_options): "debug" is replaced by "-fdebugging-line".
+	  "-Wtrailing-line" is replaced by "-Wcolumn-overflow".
+
+	* cobpp.h, cobpp.c (cobpp_text_column): New variable.
+	* pplex.l <- cobpp/scanner.l (read_line): Use it to cater for first 6 chars
+
+	* cobpp.c (main): Do not infer the source format.
+
+2003-01-24  Keisuke Nishida  <knishida@netlab.jp>
+
+	* pplex.l <- cobpp/scanner.l (open_buffer): open copy file in "rb" mode
+	  to avoid seek error on MinGW.  (Thanks to peg@coboler.com)
+
 2002-11-01  Keisuke Nishida  <knishida@netlab.jp>
 
-	* parser.y (resolve_predefined_names): Call recursively.
+	* parser.y (resolve_predefined_names): call recursively
+	* tree.h (YYLTYPE): moved from parser.y
+	* pplex.l <- cobpp/scanner.l (read_line): check newline at the end of file;
+	  check column 7 before post-column 72
 
-	* tree.h (YYLTYPE): Moved from parser.y.
 
 2002-10-30  Keisuke Nishida  <knishida@netlab.jp>
 
 	* inline.c (output_search): Move index to variable.
 	* inline.c (output_search_all): Unified 'cmp' variable.
-
-2002-10-30  Keisuke Nishida  <knishida@netlab.jp>
-
 	* codegen.c (output_perform_until): Merge 'output_perform_before'
 	  and 'output_perform_after'.
 	  (output_perform): Call 'output_perform_until'.
@@ -9373,6 +9481,11 @@
 	  (output_perform_call): Don't use global_label.
 	  (codegen): Merge codegen_1.  Traverse the tree only once.
 
+2002-10-07  Keisuke Nishida  <knishida@netlab.jp>
+
+	* pplex.l <- cobpp/scanner.l (read_line): Inhibit column 72 warnings after
+	  4 times
+
 2002-10-06  Keisuke Nishida  <knishida@netlab.jp>
 
 	* Integrate numeric expressions and conditional expressions.
@@ -9381,9 +9494,6 @@
 	* tree.c (make_expr): Build conditional as well.
 	  (make_cond, make_negative): Removed.
 	* codegen.c, inline.c, parser.y: Updated.
-
-2002-10-06  Keisuke Nishida  <knishida@netlab.jp>
-
 	* tree.h (cobc_evaluate): Removed.
 	* tree.c (make_evaluate): Removed.
 	* codegen.c (output_tree): Do not handle cobc_evaluate.
@@ -9409,7 +9519,7 @@
 
 2002-09-30  Keisuke Nishida  <knishida@netlab.jp>
 
-	* cobc.h (COBC_PACKAGE): Use PACKAGE_NAME.
+	* cobc.h (COBC_PACKAGE), cobpp.h (COBPP_PACKAGE): Use PACKAGE_NAME
 
 2002-09-29  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9423,20 +9533,20 @@
 2002-09-24  Keisuke Nishida  <knishida@netlab.jp>
 
 	* scanner.l: Do not support single-quoted strings.
-
-2002-09-24  Keisuke Nishida  <knishida@netlab.jp>
-
+	* pplex.l <- cobpp/scanner.l: Do not support single-quoted strings.
 	* codegen.c (codegen_1): Do not support non-computed-goto jump.
+	* pplex.l <- cobpp/scanner.l (display_line): Removed.
+	  (yyinput): Append multiple LF's during concatenating lines.
 
 2002-09-24  Keisuke Nishida  <knishida@netlab.jp>
 
 	* tree.h (cobc_parameter): Renamed from cobc_generic.
-	All files updated.
+	  All files updated.
 
 2002-09-24  Keisuke Nishida  <knishida@netlab.jp>
 
 	* inline.c (output_call_statement): Output the pointer to the
-	content length for COBC_CALL_BY_LENGTH.
+	  content length for COBC_CALL_BY_LENGTH.
 
 2002-09-23  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9445,15 +9555,20 @@
 2002-09-17  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cobc.c (probe_source_format): Removed.
-	(preprocess): Don't set source format.
-	(process_command_line): Set cobpp flags here.
-
-2002-09-17  Keisuke Nishida  <knishida@netlab.jp>
-
+	  (preprocess): Don't set source format.
+	  (process_command_line): Set cobpp flags here.
+	* pparse.y <- cobpp/parser.y (yywarn): New function.
+	* cobpp.h (COBPP_FORMAT_UNKNOWN): New macro.
+	* cobpp.h, cobpp.c (cobpp_source_format_inferred): New variable.
+	* cobpp.c (cobpp_source_format): Default to COBPP_FORMAT_UNKNOWN.
+	  (main): Infer source format here
+	* cobpp.h, cobpp.c (cobpp_warn_trailing_line): New variables.
+	* pplex.l <- cobpp/scanner.l (read_line): Show warnings for over column 72.
 	* tree.h (COBC_CALL_BY_LENGTH): New macro.
 	* reserved.c (reserved_words): Add LENGTH.
 	* parser.y (call_mode): Add CONTENT LENGTH.
 	* inline.c (output_call_statement): Handle COBC_CALL_BY_LENGTH.
+	* cobpp: Rename all `cob_*' to `cobpp_*'.
 
 2002-09-13  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9464,17 +9579,15 @@
 2002-09-12  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cobc.c (temp_name): Call GetTempFileName with 3rd argument 0.
-	Call DeleteFile to remove the temporary file.
-
-2002-09-12  Keisuke Nishida  <knishida@netlab.jp>
-
+	  Call DeleteFile to remove the temporary file.
 	* parser.y (validate_field_tree): Validate groups not having PICTURE.
-	(validate_field_tree): Create PICTURE of INDEX here, not in USAGE.
+	  (validate_field_tree): Create PICTURE of INDEX here, not in USAGE.
 
 2002-09-09  Keisuke Nishida  <knishida@netlab.jp>
 
 	* parser.y (ambiguous_error): display all fields with the same name.
-	(occurs_index): Use undefined_word.  Set cobc_location.
+	  (occurs_index): Use undefined_word.  Set cobc_location.
+	* pplex.l <- cobpp/scanner.l (read_line): Don't use fgets.
 
 2002-08-29  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9483,7 +9596,7 @@
 2002-08-28  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cobc.c (terminate): Renamed from 'error'.
-	(temp_name): Use GetTempPath on MinGW environment.
+	  (temp_name): Use GetTempPath on MinGW environment.
 
 2002-08-20  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9494,10 +9607,16 @@
 	* reserved.c (reserved_words): Removed the tokens above.
 	* scanner.h, scanner.l (cobc_skip_comment): Removed.
 	* scanner.l: Don't handle the case of cobc_skip_comment.
-
-2002-08-20  Keisuke Nishida  <knishida@netlab.jp>
-
+	* pplex.l <- cobpp/scanner.l: Better implementation of line connection.
+	  Comments in IDENTIFICATION DIVISION are skipped here.
 	* cobc.c: New option -semi-fixed.
+
+2002-08-12  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobpp.h (COB_FORMAT_SEMI_FIXED): New macro.
+	* cobpp.c (long_options): New option `semi-fixed'.
+	* pplex.l <- cobpp/scanner.l (yyinput): Support semi-fixed.
+	  Skip comments and debugging lines here.
 
 2002-08-02  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9506,29 +9625,23 @@
 2002-08-01  Keisuke Nishida  <knishida@netlab.jp>
 
 	* parser.y, reserved.c: SORT and MERGE support.
-
-2002-08-01  Keisuke Nishida  <knishida@netlab.jp>
-
 	* tree.h (cobc_key): Define 'dir' as int.
-	Use COB_ASCENDING or COB_DESCENDING for this.
+	  Use COB_ASCENDING or COB_DESCENDING for this.
 	* inline.c (output_search_all): Updated.
 	* parser.y (ascending_or_descending): Updated.
-
-2002-08-01  Keisuke Nishida  <knishida@netlab.jp>
-
 	* parser.y (occurs_clause): Use predefined_name for DEPENDING ON.
-	(record_depending): Set 'record_depending' directly.
+	  (record_depending): Set 'record_depending' directly.
 
 2002-07-31  Keisuke Nishida  <knishida@netlab.jp>
 
 	* codegen.h (cobc_program_spec): Renamed from 'program_spec'.
 	* parser.y (program_spec): Updated.
 	* codegen.c: (output_switch): New variable.
-	(output, output_newline, output_prefix, output_line): Updated.
-	(loop_counter, loop_counter_max): New variables.
-	(codegen_1): Renamed from codegen.  Set counter variables.
-	(codegen): New function.
-	(output_perform): Use loop_counter.
+	  (output, output_newline, output_prefix, output_line): Updated.
+	  (loop_counter, loop_counter_max): New variables.
+	  (codegen_1): Renamed from codegen.  Set counter variables.
+	  (codegen): New function.
+	  (output_perform): Use loop_counter.
 
 2002-07-31  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9541,48 +9654,36 @@
 2002-07-26  Keisuke Nishida  <knishida@netlab.jp>
 
 	* parser.y: Accept SD clause.
-
-2002-07-26  Keisuke Nishida  <knishida@netlab.jp>
-
 	* tree.c (make_word): Take constant and duplicate the name.
 
 2002-07-22  Keisuke Nishida  <knishida@netlab.jp>
 
 	* parser.y (FUNCTION_NAME): Defined as the string type.
 	* scanner.l (FUNCTION_STATE): Set value for FUNCTION_NAME.
-
-2002-07-22  Keisuke Nishida  <knishida@netlab.jp>
-
 	* parser.y (display_with_no_advancing): Fixed port number.
 
 2002-07-08  Keisuke Nishida  <knishida@netlab.jp>
 
 	* codegen.c (output_field): Support literals.
-	(output_file_name): Output ASSIGN clause.
+	  (output_file_name): Output ASSIGN clause.
 	* parser.y (open_list): Call "cob_open" without file name.
-
-2002-07-08  Keisuke Nishida  <knishida@netlab.jp>
-
 	* codegen.c (output_field): New function.
-	(output_file_name): Use it.
+	  (output_file_name): Use it.
 
 2002-07-05  Keisuke Nishida  <knishida@netlab.jp>
 
 	* parser.y (screen_description): Set default line/column.
 	* codegen.c (output_screen_definition): Updated.
-	Handle COB_SCREEN_TYPE_ATTRIBUTE.
+	  Handle COB_SCREEN_TYPE_ATTRIBUTE.
 
 2002-07-04  Keisuke Nishida  <knishida@netlab.jp>
 
 	* codegen.c (output_file_name): Rename 'cob_file_desc' to 'cob_file'.
-
-2002-07-04  Keisuke Nishida  <knishida@netlab.jp>
-
 	* codegen.c (output_field_definition): New arguments 'gen_data'
-	and 'gen_filler'.
-	(output_file_name, codegen): Updated.
+	  and 'gen_filler'.
+	  (output_file_name, codegen): Updated.
 	* parser.y (screen_option): Set LINE/COLUMN flags appropriately.
-	(screen_plus_minus): PLUS/MINUS flags.
+	  (screen_plus_minus): PLUS/MINUS flags.
 
 2002-07-03  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9591,36 +9692,33 @@
 2002-07-01  Keisuke Nishida  <knishida@netlab.jp>
 
 	* tree.h (cobc_field): New members: f.screen, screen_line,
-	screen_column, screen_from, screen_to, and screen_flag.
+	  screen_column, screen_from, screen_to, and screen_flag.
 	* codegen.h (screen_storage): New members: enable_screen and
-	screen_storage.
+	  screen_storage.
 	* codegen.c (output_screen_definition): New function.
-	(output_tree): Output screen data.
-	(codegen): Output screen definition.
+	  (output_tree): Output screen data.
+	  (codegen): Output screen definition.
 	* parser.y (special_name): Add CURSOR and CRT STATUS.
-	(screen_section): New rules.
-	(accept_statement, display_statement): Support screen data.
+	  (screen_section): New rules.
+	  (accept_statement, display_statement): Support screen data.
 	* reserved.c (reserved_words): Add related tokens.
 
 2002-06-26  Keisuke Nishida  <knishida@netlab.jp>
 
 	* tree.c (compute_size): Handle SIGN SEPARATE only for numeric fields.
 	* parser.y (validate_field): Don't throw error for multiple redefines.
-
-2002-06-26  Keisuke Nishida  <knishida@netlab.jp>
-
 	* cobc.c, cobc.h (cobc_flags): New variable.
-	(LINK_STATIC, LINK_DYNAMIC): Removed.
-	(cobc_main_flag, cobc_debug_flag, cobc_verbose_flag)
-	(cobc_optimize_flag, cobc_failsafe_flag, cobc_link_style): Removed.
+	  (LINK_STATIC, LINK_DYNAMIC): Removed.
+	  (cobc_main_flag, cobc_debug_flag, cobc_verbose_flag)
+	  (cobc_optimize_flag, cobc_failsafe_flag, cobc_link_style): Removed.
 	* codegen.c (codegen, output_expr, output_line_directive): Updated.
 	* inline.c (output_call_statement): Updated.
 
 2002-06-24  Keisuke Nishida  <knishida@netlab.jp>
 
 	* parser.y (delete_statement, read_statement, start_statement)
-	(write_statement): set $$ instead of current_file_name.
-	(at_end, opt_invalid_key): Updated.
+	  (write_statement): set $$ instead of current_file_name.
+	  (at_end, opt_invalid_key): Updated.
 
 2002-06-18  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9630,40 +9728,28 @@
 
 	* inline.c, inline.h (output_call_statement): Take st1 and st2.
 	* parser.y (call_mode): Renamed from 'current_call_mode'.
-	(call_statement): Updated and clean up.
+	  (call_statement): Updated and clean up.
 
 2002-06-11  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cobc.c (process_module): Use COB_MODULE_EXT.
-	Don't use -soname.
-
-2002-06-11  Keisuke Nishida  <knishida@netlab.jp>
-
+	  Don't use -soname.
 	* codegen.c: Use 'cob_alnum_desc' where appropriate.
-
-2002-06-11  Keisuke Nishida  <knishida@netlab.jp>
-
 	* codegen.c (output_field_definition): Output NULL for
-	cob_field.desc when it is a group.
-
-2002-06-11  Keisuke Nishida  <knishida@netlab.jp>
-
+	  cob_field.desc when it is a group.
 	* codegen.c, inline.c: Updated for the change in libcob that
-	moved the 'size' field from cob_field_desc to cob_field.
+	  moved the 'size' field from cob_field_desc to cob_field.
 
 2002-06-09  Keisuke Nishida  <knishida@netlab.jp>
 
 	* tree.h (cobc_field): New member 'in_redefines'.
 	* parser.y (validate_field): Set 'in_redefines' and validate REDEFINES.
-	Display error if a field under REDEFINES has VALUE clause.
-	(init_field): Inherit the 'in_redefines' flag.
-
-2002-06-09  Keisuke Nishida  <knishida@netlab.jp>
-
+	  Display error if a field under REDEFINES has VALUE clause.
+	  (init_field): Inherit the 'in_redefines' flag.
 	* tree.c (make_tree, make_picture, make_word): Use memset to
-	initialize the memory allocated.
-	(make_literal, make_field, make_file_name, make_label_name_nodef)
-	(make_perform): Let make_tree initialize the memory by zero.
+	  initialize the memory allocated.
+	  (make_literal, make_field, make_file_name, make_label_name_nodef)
+	  (make_perform): Let make_tree initialize the memory by zero.
 
 2002-06-08  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9673,19 +9759,19 @@
 	* codegen.c (codegen): Updated.
 	* parser.y (procedure_using): Don't show -m warning.
 
+2002-06-07  Keisuke Nishida  <knishida@netlab.jp>
+
+	* pparse.y <- cobpp/parser.y (copy_statement, copy_in, copy_replacing):
+	  Support "COPY ... IN/OF ..." syntax.
+	* pplex.l <- cobpp/scanner.l, scanner.h (include_copybook): Take a library name.
+
 2002-06-06  Keisuke Nishida  <knishida@netlab.jp>
 
 	* inline.c (search_set_keys): Dont check syntax error.
 	* parser.y (search_statement): Check syntax error here.
 	* parser.y (resolve_predefined_name): Return filler on error.
-
-2002-06-06  Keisuke Nishida  <knishida@netlab.jp>
-
 	* codegen.c (codegen): Always generate program function,
-	putting main() at the end.
-
-2002-06-06  Keisuke Nishida  <knishida@netlab.jp>
-
+	  putting main() at the end.
 	* cobc.c (process_command_line, print_usage): Activate -g.
 
 2002-06-05  Keisuke Nishida  <knishida@netlab.jp>
@@ -9697,40 +9783,38 @@
 	* codegen.c (output_perform_call): New function.
 	* codegen.c (output_perform_once): Use 'output_perform_call'.
 	* inline.c (output_file_handler): Use 'output_perform_call'. Cleanup.
-
-2002-06-04  Keisuke Nishida  <knishida@netlab.jp>
-
+	* cobpp/Makefile.am (cobpp_CFLAGS): -I$(top_srcdir), not -I$(top_srcdir)/lib.
+	* cobpp.c, pplex.l <- cobpp/scanner.l: Updated.
 	* Makefile.am (cobc_CFLAGS): -I$(top_srcdir), not -I$(top_srcdir)/lib.
 	* cobc.c, parser.y, scanner.l: Updated.
 
 2002-06-03  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cobc.c (init_environment): Recognize COB_LDADD.
-
-2002-06-03  Keisuke Nishida  <knishida@netlab.jp>
-
+	* cobpp/Makefile.am (cobpp_LDADD): Add libsupport.a here.
+	  (cobpp_LIBS): Removed.
 	* Makefile.am: Add libsupport.a to cobc_LDADD, removed cobc_LIBS
 
 2002-05-31  Keisuke Nishida  <knishida@netlab.jp>
 
 	* functions.h: Removed.
 	* tree.h (cobc_call): New field 'name' and 'func'.  Remove 'tag'.
-	(make_call): Exported
-	(make_call_0, make_call_1, make_call_2, make_call_3, make_call_4):
-	Defined as macros.
-	(make_inline_0, make_inline_1, make_inline_2, make_inline_3,
-	make_inline_4, make_call_1_list): New macros.
+	  (make_call): Exported
+	  (make_call_0, make_call_1, make_call_2, make_call_3, make_call_4):
+	  Defined as macros.
+	  (make_inline_0, make_inline_1, make_inline_2, make_inline_3,
+	  make_inline_4, make_call_1_list): New macros.
 	* tree.c (make_call): Updated and Exported.
-	(make_call_0,make_call_1,make_call_2,make_call_3,make_call_4): Removed.
+	  (make_call_0,make_call_1,make_call_2,make_call_3,make_call_4): Removed.
 	* inline.c, codegen.h: (output_goto, output_goto_depending,
-	output_move, output_initialize, output_initialize_replacing,
-	output_display, output_search, output_search_all,
-	output_call_statement): Exported.
+	  output_move, output_initialize, output_initialize_replacing,
+	  output_display, output_search, output_search_all,
+	  output_call_statement): Exported.
 	* codegen.c, codegen.h: Don't include functions.h.
 	* codegen.c (output_call): Updated.
 	* parser.y: Updated.
-	(push_call_1_list, push_inline_0, push_inline_1, push_inline_2,
-	push_inline_3, push_inline_4): New macros.
+	  (push_call_1_list, push_inline_0, push_inline_1, push_inline_2,
+	  push_inline_3, push_inline_4): New macros.
 	* Makefile.am (cobc_SOURCES): Updated.
 
 2002-05-31  Keisuke Nishida  <knishida@netlab.jp>
@@ -9738,16 +9822,10 @@
 	* Display index name with the error message.
 	* codegen.c (output_refmod_offset, output_length)
 	* codegen.c (output_field_definition): Updated.
-
-2002-05-31  Keisuke Nishida  <knishida@netlab.jp>
-
 	* tree.c, tree.h (cobc_return_code): New variable.
 	* parser.y (call_returning): Move RETURN-CODE to RETURNING field.
 	* inline.c (output_move_index): New function.
 	* inline.c (output_call_statement): Don't take ret.
-
-2002-05-31  Keisuke Nishida  <knishida@netlab.jp>
-
 	* codegen.c (output_expr): Give field name to cob_check_numeric.
 	* codegen.c (output_field_definition): No longer output field name.
 
@@ -9756,28 +9834,42 @@
 	* parser.y (expr_item_list): Better source location.
 	* codegen.c (output_compare): Take additional argument for better
 	  source location.
-	* codegen.c (output_condition): Updated.
-	* inline.c (output_search_all): Updated.
-
-2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
-
+	* codegen.c (output_condition), inline.c (output_search_all): Updated.
 	* codegen.c (output_recursive): Process top-level redefinition.
-
-2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
-
 	* Keep field names at run-time.
 	* codegen.c (output_field_definition): Output field name.
 
 2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cobc.c: Rename 'COB_LDADD' to 'COB_LIBS'
-
-2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
-
 	* cobc.c (cobc_verbose_flag): New variable.
 	* cobc.c (short_options, long_options): New option -v and --verbose.
 	* cobc.c (process_command_line): Handle -v option.
 	* cobc.h (cobc_verbose_flag): Declared.
+
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobc.c, parser.y, scanner.l, Makefile.am, cobpp/Makefile.am,
+	  cobpp/cobpp.c, cobpp/cobpp.h, ppparse.y <- cobpp/parser.y,
+	  pplex.l <- cobpp/scanner.l, cobpp/scanner.h: gettextized,
+	  improved message handling
+	* cobc.c, cobpp/cobpp.c: call of bindtextdomain and other NLS calls
+
+2002-05-02  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobc.c, cobpp/cobpp.c, cobpp/cobpp.h: changed source format options
+	  -X to --fixed and -F (X/Open free format) to --free
+	* cobpp/cobpp.h (print_usage): fixed help output for -MF and -MT
+
+2002-02-12  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobc.c, cobpp/cobpp.c: renamed -M to -MF, added -MT to adjust target name
+
+2002-01-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobpp.c, cobpp.h, pplex.l <- cobpp/scanner.l, cobc.c: add -M option to
+	  place dependency list (copybooks) into dependency file for make
+	* cobc.c: cleanup for passing arguments to cobpp
 
 
 Copyright 2002-2022 Free Software Foundation, Inc.

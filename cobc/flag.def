@@ -89,7 +89,7 @@ CB_FLAG_NQ (0, "ec", 14,
 CB_FLAG_NQ (0, "no-ec", 17,
 	_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"))
 
-CB_FLAG_NQ (1, "ebcdic-table", 16, /* cf cconv.h for all available tables */
+CB_FLAG_RQ (cb_ebcdic_table, 1, "ebcdic-table", 0, 16, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
 	  "                        * default: translation to extended ASCII as per MF\n"
 	  "                        * restricted-gc: translation from restricted ASCII only\n"

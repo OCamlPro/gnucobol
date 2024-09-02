@@ -194,6 +194,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libcob\cconv.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libcob\cobcapi.c"
 				>
 			</File>

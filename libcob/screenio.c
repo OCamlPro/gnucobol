@@ -2064,7 +2064,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			mevent.bstate &= cob_mask_accept;
 			if (mevent.bstate != 0) {
 				global_return = mouse_to_exception_code (mevent.bstate);
-				cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+				cob_move_cursor (mline, mcolumn);	/* move cursor to pass position */
 				goto screen_return;
 			}
 			continue;
@@ -3015,7 +3015,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 				mevent.bstate &= cob_mask_accept;
 				if (mevent.bstate != 0) {
 					fret = mouse_to_exception_code (mevent.bstate);
-					cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+					cob_move_cursor (mline, mcolumn);	/* move cursor to pass position */
 					goto field_return;
 				}
 			}
@@ -3257,7 +3257,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 			mevent.bstate &= cob_mask_accept;
 			if (mevent.bstate != 0) {
 				fret = mouse_to_exception_code (mevent.bstate);
-				cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+				cob_move_cursor (mline, mcolumn);	/* move cursor to pass position */
 				goto field_return;
 			}
 			continue;

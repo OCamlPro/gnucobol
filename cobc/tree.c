@@ -59,6 +59,7 @@
 #define PIC_ALPHANUMERIC_EDITED	(PIC_ALPHANUMERIC | PIC_EDITED)
 #define PIC_NUMERIC_EDITED	(PIC_NUMERIC | PIC_EDITED)
 #define PIC_FLOATING_EDITED	(PIC_NUMERIC | PIC_NUMERIC_FLOATING | PIC_EDITED)
+#define PIC_UTF8			(PIC_ALPHANUMERIC)	/* TODO: handle separately */
 #define PIC_NATIONAL_EDITED	(PIC_NATIONAL | PIC_EDITED)
 
 /* Local variables */
@@ -2858,7 +2859,7 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 	 && (x1->category != CB_CATEGORY_NATIONAL)
 	 && (x1->category != CB_CATEGORY_BOOLEAN)) {
 		cb_error_x (x1,
-			_("only alphanumeric, national or boolean literals may be concatenated"));
+			_("only alphanumeric, utf-8, national or boolean literals may be concatenated"));
 		return cb_error_node;
 	}
 
@@ -3003,14 +3004,14 @@ find_floating_insertion_str (const cob_pic_symbol *str,
 
 /* Number of character types in picture strings */
 /*
-  The 25 character types are:
-  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+  The 26 character types are:
+  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  U  N  E
   0           -  - DB        *  *  -  -           X
   /
   Duplicates indicate floating/non-floating insertion symbols and/or left/right
   of decimal point positon.
 */
-#define CB_PIC_CHAR_TYPES 25
+#define CB_PIC_CHAR_TYPES 26
 #define CB_FIRST_NON_P_DIGIT_CHAR_TYPE 9
 #define CB_LAST_NON_P_DIGIT_CHAR_TYPE 15
 #define CB_PIC_S_CHAR_TYPE 18
@@ -3106,11 +3107,14 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 	case '1':
 		return 22;
 
-	case 'N':
+	case 'U':
 		return 23;
 
-	case 'E':
+	case 'N':
 		return 24;
+
+	case 'E':
+		return 25;
 
 	default:
 		if (current_sym->symbol == current_program->currency_symbol) {
@@ -3200,8 +3204,10 @@ get_char_type_description (const int idx)
 	case 22:
 		return "1";
 	case 23:
-		return "N";
+		return "U";
 	case 24:
+		return "N";
+	case 25:
 		return "E";
 	default:
 		return NULL;
@@ -3237,35 +3243,36 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	  manual.
 	*/
 	/*
-		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  U  N  E
 		  0           -  - DB        *  *  -  -           X
 		  /
 	*/
-	/* B */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0 },
-	/* , */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
-	/* . */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* + */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-	/* + */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* + */	{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
-	/* C */	{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
-	/* $ */	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* $ */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
-	/* Z */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* Z */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
-	/* + */	{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* + */	{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-	/* $ */	{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* $ */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-	/* 9 */	{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1 },
-	/* X */	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-	/* L */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* S */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-	/* V */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
-	/* P */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
-	/* P */	{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0 },
-	/* 1 */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-	/* N */	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-	/* E */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* B */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0 },
+	/* , */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+	/* . */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* + */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+	/* + */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* + */	{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 },
+	/* C */	{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 },
+	/* $ */	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* $ */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 },
+	/* Z */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* Z */	{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+	/* + */	{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* + */	{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+	/* $ */	{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* $ */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+	/* 9 */	{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1 },
+	/* X */	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* L */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* S */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	/* V */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0 },
+	/* P */	{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0 },
+	/* P */	{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0 },
+	/* 1 */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+	/* U */	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+	/* N */	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
+	/* E */	{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	};
 	int		error_emitted[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {{ 0 }};
 	int		chars_seen[CB_PIC_CHAR_TYPES] = { 0 };
@@ -3593,12 +3600,12 @@ repeat:
 				case 'X':
 				case 'A':
 					if (paren_num + delta > INT_MAX) {
-						paren_num = INT_MAX - delta;
+						paren_num = (cob_s64_t)INT_MAX - delta;
 					}
 					break;
 				case 'N':
 					if (paren_num * 2 + delta > INT_MAX) {
-						paren_num = (INT_MAX - delta) / 2;
+						paren_num = ((cob_s64_t)INT_MAX - delta) / 2;
 					}
 					break;
 				default:
@@ -3635,6 +3642,16 @@ repeat:
 		case 'X':
 			category |= PIC_ALPHANUMERIC;
 			x_digits += n;
+			break;
+
+		case 'U':
+			/* this is only a hack and wrong,
+			   adding UTF-8 type woll need a separate
+			   PIC, but this will need handling in both
+			   the compiler and the runtime, so fake as
+			   ALPHANUMERIC for now */
+			category |= PIC_UTF8;
+			x_digits += n * 4;
 			break;
 
 		case 'N':
@@ -3854,6 +3871,9 @@ repeat:
 		if (c == 'N') {
 			size += n * (COB_NATIONAL_SIZE - 1);
 		}
+		if (c == 'U') {
+			size += n * (4 - 1);
+		}
 
 		/* Store in the buffer */
 		pic_buff[idx].symbol = c;
@@ -3874,7 +3894,7 @@ repeat:
 		error_detected = 1;
 	}
 	if (digits == 0 && x_digits == 0) {
-		cb_error (_("PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; "
+		cb_error (_("PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; "
 					"or at least two of the set +, - and the currency symbol"));
 		error_detected = 1;
 	}
@@ -7299,7 +7319,7 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 			if (result != CB_CATEGORY_NATIONAL) {
 				cb_error (_("FUNCTION %s has invalid argument"),
 					cbp->name);
-				cb_error (_("either all arguments or none should be if type %s"), "NATIONAL");
+				cb_error (_("either all arguments or none should be of type %s"), "NATIONAL");
 				return cbp->category;
 			}
 		} else if (result != CB_CATEGORY_ALPHANUMERIC) {
@@ -7593,10 +7613,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 				if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
 					/* CHECKME: why don't we just check the category?
 					   Maybe needs to enforce field validation (see cb_build_length) */
-					if ( fld->pic
-					 && (fld->pic->category == CB_CATEGORY_NATIONAL
-					  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)) {
-						len /= COB_NATIONAL_SIZE;
+					if (fld->pic) {
+						if (fld->pic->category == CB_CATEGORY_NATIONAL
+						 || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED) {
+							len /= COB_NATIONAL_SIZE;
+						} else if (fld->pic->orig && fld->pic->orig[0] == 'U') {
+							len /= 4;
+						}
 					}
 				}
 				sprintf (buff, "%d", len);

@@ -48,6 +48,11 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 #define HAVE_FMEMOPEN 1
 #endif
 
+/* Force symbol exports */
+#define COB_LIB_EXPIMP
+#include "common.h"
+#include "coblocal.h"
+
 /*	NOTE - The following variable should be uncommented when
 	it is known that dlopen(NULL) is borked.
 	This is known to be true for some PA-RISC HP-UX 11.11 systems.
@@ -89,12 +94,12 @@ lt_dlsym (HMODULE hmod, const char *p)
 #define	lt_dlexit()
 #define lt_dlhandle	HMODULE
 
-#if	0	/* RXWRXW - dlerror */
+#if	1	/* RXWRXW - dlerror */
 static char	errbuf[64];
 static char *
 lt_dlerror (void)
 {
-	sprintf(errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
+	sprintf (errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
 	return errbuf;
 }
 #endif
@@ -124,11 +129,6 @@ lt_dlerror (void)
 #endif
 
 #include "sysdefines.h"
-
-/* Force symbol exports */
-#define	COB_LIB_EXPIMP
-#include "common.h"
-#include "coblocal.h"
 
 #define	COB_MAX_COBCALL_PARMS	16
 #define	CALL_BUFF_SIZE		256U
@@ -478,12 +478,14 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 		return;
 	}
 
-	lt_dlclose (p->handle);
+	if (cobsetptr->cob_physical_cancel != -1) {
+		lt_dlclose (p->handle);
 
-	dynptr = base_dynload_ptr;
-	for (; dynptr; dynptr = dynptr->next) {
-		if (dynptr->handle == p->handle) {
-			dynptr->handle = NULL;
+		dynptr = base_dynload_ptr;
+		for (; dynptr; dynptr = dynptr->next) {
+			if (dynptr->handle == p->handle) {
+				dynptr->handle = NULL;
+			}
 		}
 	}
 
@@ -620,11 +622,14 @@ cache_preload (const char *path)
 	}
 
 	if (access (path, R_OK) != 0) {
+		/* note: not reasonable to warn here as we test for multiple paths that way */
 		return 0;
 	}
 
 	libhandle = lt_dlopen (path);
 	if (!libhandle) {
+		cob_runtime_warning (
+			_("preloading from existing path '%s' failed; %s"), path, lt_dlerror());
 		return 0;
 	}
 
@@ -925,6 +930,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			set_resolve_error (module_type);
 			return NULL;
 		}
+		lt_dlerror ();	/* clear last error conditions */
 		handle = lt_dlopen (call_filename_buff);
 		if (handle != NULL) {
 			/* Candidate for future calls */
@@ -940,6 +946,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 			  "entry point '%s' not found", (const char *)s);
 		set_resolve_error (module_type);
+		/* lt_dlerror will now give either the message from lt_dlopen or lt_dlym */
+		cob_runtime_warning (
+			_("loading from existing path '%s' failed; %s"),
+			call_filename_buff, lt_dlerror ());
 		return NULL;
 	}
 	for (i = 0; i < resolve_size; ++i) {
@@ -953,6 +963,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		}
 		call_filename_buff[COB_NORMAL_MAX] = 0;
 		if (access (call_filename_buff, R_OK) == 0) {
+			lt_dlerror ();	/* clear last error conditions */
 			handle = lt_dlopen (call_filename_buff);
 			if (handle != NULL) {
 				/* Candidate for future calls */
@@ -968,6 +979,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 				  "entry point '%s' not found", (const char *)s);
 			set_resolve_error (module_type);
+			/* lt_dlerror will now give either the message from lt_dlopen or lt_dlym */
+			cob_runtime_warning (
+				_("loading from existing path '%s' failed; %s"),
+				call_filename_buff, lt_dlerror ());
 			return NULL;
 		}
 	}
@@ -1768,12 +1783,29 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 }
 #endif
 
+static void
+close_and_free_module_list (struct struct_handle ** module_list_ptr)
+{
+	struct struct_handle	*h = *module_list_ptr;
+
+	while (h) {
+		struct struct_handle *j = h;
+		if (h->path) {
+			cob_free ((void*)h->path);
+		}
+		if (h->handle
+		 && cobsetptr->cob_physical_cancel != -1) {
+			lt_dlclose (h->handle);
+		}
+		h = h->next;
+		cob_free (j);
+	}
+	*module_list_ptr = NULL;
+}
+
 void
 cob_exit_call (void)
 {
-	struct struct_handle	*h;
-	struct struct_handle	*j;
-
 	if (call_filename_buff) {
 		cob_free (call_filename_buff);
 		call_filename_buff = NULL;
@@ -1819,34 +1851,13 @@ cob_exit_call (void)
 		}
 		call_table = NULL;
 	}
-
-	for (h = base_preload_ptr; h;) {
-		j = h;
-		if (h->path) {
-			cob_free ((void *)h->path);
-		}
-		if (h->handle) {
-			lt_dlclose (h->handle);
-		}
-		h = h->next;
-		cob_free (j);
-	}
-	base_preload_ptr = NULL;
-	for (h = base_dynload_ptr; h;) {
-		j = h;
-		if (h->path) {
-			cob_free ((void *)h->path);
-		}
-		if (h->handle) {
-			lt_dlclose (h->handle);
-		}
-		h = h->next;
-		cob_free (j);
-	}
-	base_dynload_ptr = NULL;
+	close_and_free_module_list (&base_preload_ptr);
+	close_and_free_module_list (&base_dynload_ptr);
 
 #if	!defined(_WIN32) && !defined(USE_LIBDL)
-	lt_dlexit ();
+	if (cobsetptr->cob_physical_cancel != -1) {
+		lt_dlexit ();
+	}
 #if	0	/* RXWRXW - ltdl leak */
 #ifndef	COB_BORKED_DLOPEN
 	/* Weird - ltdl leaks mainhandle - This appears to work but .. */
@@ -1889,7 +1900,12 @@ size_t cob_try_preload (const char* module_name)
 		}
 	}
 	/* If not found, try just using the name as-is */
-	return cache_preload (module_name);
+	ret = cache_preload (module_name);
+
+	if (ret == 0) {
+		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
+	}
+	return ret;
 #endif
 }
 

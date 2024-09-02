@@ -21,9 +21,9 @@
 
 bin_PROGRAMS = cobc
 cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.c parser.y scanner.c	\
-	config.c reserved.c error.c tree.c tree.h cconv.c cconv.h	\
-	field.c typeck.c codegen.c help.c sqlxfdgen.c config.def	\
-	flag.def warning.def codeoptim.def ppparse.def codeoptim.c
+	config.c reserved.c error.c tree.c tree.h field.c typeck.c      \
+	codegen.c help.c sqlxfdgen.c config.def	flag.def warning.def    \
+	codeoptim.def ppparse.def codeoptim.c
 
 #cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.l parser.y scanner.l config.c
 

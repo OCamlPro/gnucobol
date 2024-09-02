@@ -1430,9 +1430,13 @@ some (void)
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE module.c], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+# the warning itself is very system specific, so disable it,
+# then run again checking only for the warning
+AT_CHECK([COB_DISABLE_WARNINGS=1 $COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:6: error: entry point 'module' not found
 ])
+AT_CHECK([$COBCRUN_DIRECT ./prog 2> err.log], [1], [], [])
+AT_CHECK([$GREP "libcob: prog.cob:6: warning: " err.log], [0], ignore, [])
 
 AT_CLEANUP
 
@@ -1726,6 +1730,10 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 121<
 ])
 AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=NEVER $COBCRUN_DIRECT ./prog], [0],
 [12<
 121<
 ])
