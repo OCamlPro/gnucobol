@@ -184,10 +184,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\cobc\cconv.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\cobc\cobc.c"
 				>
 			</File>
@@ -337,10 +333,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\cobc\cconv.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\cobc\cobc.h"
 				>

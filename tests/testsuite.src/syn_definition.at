@@ -337,7 +337,7 @@ AT_CLEANUP
 
 
 AT_SETUP([GO TO sections and foreign paragraphs])
-AT_KEYWORDS([definition procedures])
+AT_KEYWORDS([definition procedures section paragraph])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -346,6 +346,8 @@ AT_DATA([prog.cob], [
        S-1 SECTION.
            GO TO S-2.
        E-1.
+           IF FUNCTION SECONDS-PAST-MIDNIGHT = 10
+              GO TO S-1.  *> check that go to its own section is not warned
 
        S-2 SECTION.
            GO TO E-3.
@@ -363,8 +365,8 @@ AT_CHECK([$COBC -fsyntax-only -Wall -Werror=goto-section prog.cob], [1], [],
 [prog.cob: in section 'S-1':
 prog.cob:6: error: GO TO SECTION 'S-2' [[-Werror=goto-section]]
 prog.cob: in section 'S-2':
-prog.cob:10: warning: GO TO paragraph 'E-3' which is defined in another SECTION [[-Wgoto-different-section]]
-prog.cob:14: note: 'E-3 IN S-3' defined here [[-Wgoto-different-section]]
+prog.cob:12: warning: GO TO paragraph 'E-3' which is defined in another SECTION [[-Wgoto-different-section]]
+prog.cob:16: note: 'E-3 IN S-3' defined here [[-Wgoto-different-section]]
 ])
 AT_CLEANUP
 
@@ -1611,9 +1613,9 @@ prog.cob:55: error: a leading currency symbol cannot follow 9
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
-prog.cob:59: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:60: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:61: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
 prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
 prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
@@ -1689,9 +1691,9 @@ prog.cob:55: error: a leading currency symbol cannot follow 9
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
-prog.cob:59: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:60: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:61: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
 prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
 prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
@@ -1720,7 +1722,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:2: error: 'P' is not defined
 prog.cob:2: error: invalid PICTURE character ''
-prog.cob:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:2: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:2: error: PROGRAM-ID header missing
 prog.cob:2: error: PROCEDURE DIVISION header missing
 prog.cob:2: error: syntax error, unexpected PICTURE

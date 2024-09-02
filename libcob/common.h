@@ -22,6 +22,8 @@
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
 
+#include <stddef.h>		/* for size_t */
+
 /* Only define cob_decimal if we have the necessary mpz_t from gmp.h/mpir.h
    (or can self-define it from mp.h) */
 #if !defined (__GMP_H__)
@@ -989,7 +991,10 @@ enum cob_open_mode {
 #define COB_READ_MASK		\
 	(COB_READ_NEXT | COB_READ_PREVIOUS | COB_READ_FIRST | COB_READ_LAST)
 
-/* I-O status */
+/* I-O status - TODO: these should have internal only values; and then
+   map later to an i-o status "per dialect", inluding alphanumeric 0x
+   and 9/123 status values,
+   will be move to fileio.h in 4.x on remove of OC extfh */
 
 #define COB_STATUS_00_SUCCESS				0
 #define COB_STATUS_02_SUCCESS_DUPLICATE		2
@@ -997,6 +1002,9 @@ enum cob_open_mode {
 #define COB_STATUS_05_SUCCESS_OPTIONAL		5
 #define COB_STATUS_06_READ_TRUNCATE			6
 #define COB_STATUS_07_SUCCESS_NO_UNIT		7
+#ifdef COB_EXPERIMENTAL
+#define COB_STATUS_0P_NOT_PRINTABLE			8
+#endif
 #define COB_STATUS_09_READ_DATA_BAD			9
 #define COB_STATUS_10_END_OF_FILE			10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14
@@ -3015,5 +3023,24 @@ COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_hex_of (cob_field*);
 COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
+
+/************************/
+/* Functions in cconv.c */
+/************************/
+
+/* Return the name corresponding to an internal collation id,
+   or NULL if such id is unknown. */
+
+COB_EXPIMP const char *
+cob_get_collation_name (int);
+
+/* Retrieve the EBCDIC and ASCII collating sequences for the given
+   collation name, and return its internal id, or -1 if such name
+   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
+   arguments may be NULL if one (or both) of the tables is not
+   needed (you may only care for the return value). */
+
+COB_EXPIMP int
+cob_get_collation_by_name (const char *, const cob_u8_t **, const cob_u8_t **);
 
 #endif	/* COB_COMMON_H */

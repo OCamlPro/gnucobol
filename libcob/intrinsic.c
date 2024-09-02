@@ -3951,7 +3951,7 @@ cob_intr_hex_to_char (cob_field *srcfield)
 
 	if (size * 2 != srcfield->size) {
 		/* posibly raise nonfatal exception here -> we only process the valid ones */
-		// size--;
+		/* size--; */
 	}
 
 	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
@@ -5517,11 +5517,7 @@ cob_intr_random (const int params, ...)
 	cob_field	*f;
 	va_list		args;
 	double		val;
-#ifdef DISABLE_GMP_RANDOM
-	unsigned int		seed = 0;
-#else
-	unsigned long		seed = 0;
-#endif
+	unsigned long	seed = 0;
 	cob_field_attr	attr;
 	cob_field	field;
 
@@ -5533,7 +5529,11 @@ cob_intr_random (const int params, ...)
 		if (specified_seed < 0) {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		} else {
+#ifdef _WIN32
+			seed = (unsigned long)(specified_seed & 0xFFFFFFFF);
+#else
 			seed = (unsigned long)specified_seed;
+#endif
 		}
 		rand_needs_seeding++;
 #ifdef DISABLE_GMP_RANDOM
@@ -5542,7 +5542,11 @@ cob_intr_random (const int params, ...)
 #else
 	} else if (rand_needs_seeding) {
 		/* first invocation without explicit seed, use a random one */
+#ifdef _WIN32
+		seed = (get_seconds_past_midnight () * (long)COB_MODULE_PTR) & 0xFFFFFFFF;
+#else
 		seed = get_seconds_past_midnight () * (long)COB_MODULE_PTR;
+#endif
 		rand_needs_seeding = 2;
 #endif
 	}

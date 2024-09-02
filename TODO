@@ -169,7 +169,11 @@ l_exit:
 As a third alternative we can just add a flag that says
 "assume I never go out of a section".
 
+4.3 optimizing cob_move_display_to_edited
 
+This function is relative often called in production systems and
+re-calculates the picture on runtime, which the compiler already
+did - pass this information along with the call.
 
 5 Debugging support
 
@@ -185,8 +189,55 @@ access the COBOL data at debugging time.
 Note: GnuCOBOL 3 implemented this partially, using extensions
 near full GDB support is already possible.
 
+GnuCOBOL 4 provides this quite complete at runtime, too.
+
+
 6 Better user manual
 
 Yes, we should, for now: refer to the GnuCOBOL Programmer's Guide
 https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
+
+7 Issues raised during forward-porting of 3.x patches
+
+7.1 General issues
+
+- Decide what to do about gcdiff, especially under MSVC
+
+- Correctly implement delay-loading under MSVC
+
+- Possibly drop usage of external cobxref
+
+- Fix any remaining failed test case
+
+- Rework the context-sensitive reserved words handling (or use a bigger type)
+
+7.2 CHECKMEs, TODOs and #if-0'ed code
+
+- Investigate the two CHECKMEs about bdb_close_cursor in fbdb.c:ix_bdb_write_internal
+
+- Investigate the CHECKMEs in typeck.c:validate_move and in particular why it was necessary to add CB_LITERAL_P (checks to add in parser)
+
+- Investigate the CHECKME about the need for comma in move.c:cob_move_display_to_edited (first in GC 3.x)
+
+- Investigate the CHECKME about moving cob_set_exception call in common.c:cob_module_global_enter
+
+- Check the TODO about cb_default_byte in codegen.c:output_initialize
+
+- Make status an enum instead of an int in fileio.c:cob_file_save_status as per TODO
+
+- Move the IO status codes from common.h to fileio.h as per TODO
+
+- Check the #if-0'ed code in field.c:validate_field_value
+
+- Check the #if-0'ed code for setting last_exception_source in common.c:cob_set_exception
+
+- Check the #if-0'ed code about EOP exception in fileio.c:cob_file_save_status
+
+7.3 Other issues
+
+- Investigate the need to define READ_WRITE_NEEDS_FLUSH under MacOS ("LINE SEQUENTIAL COMMIT / ROLLBACK" test fails if not defined)
+
+- Check if should use strcpy or memcpy with computed max-length for file_open_name in fileio.c:cob_open
+
+- Check what we should do about the casts used to remove const on open_mode in fileio.c and others (eg. in cob_file_open)

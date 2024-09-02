@@ -13,6 +13,10 @@
 	* makedist.cmd: first addition for CI output
 	* version_cobc.rc, version_libcob.rc: updated date + rev
 
+2022-12-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general for libcob+cobc: handle move of cconv module
+
 2022-10-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version_cobfile.rc: new file

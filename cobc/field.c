@@ -1238,7 +1238,7 @@ validate_any_length_item (struct cb_field *f)
 	} else if (f->pic->category != CB_CATEGORY_ALPHANUMERIC
 			&& f->pic->category != CB_CATEGORY_NATIONAL
 			&& f->pic->category != CB_CATEGORY_BOOLEAN) {
-		cb_error_x (x, _("'%s' ANY LENGTH must be PIC X, PIC N or PIC 1"),
+		cb_error_x (x, _("'%s' ANY LENGTH must be PIC X, PIC U, PIC N or PIC 1"),
 			  f->name);
 	}
 	/*

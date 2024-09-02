@@ -37,7 +37,7 @@ while (<IN>) {
 	if (/^      \*HEADER,([^,]*),([^, ]*)(,([^,]*),([^, ]*))?/) {
 		my ($type, $prog, $subt, $subr) = ($1, $2, $4, $5);
 		$output = $type;
-		my $module = $moddir;
+		my $module = $moddir; # overwritten later in case of copybook
 		my $name = '';
 		if ($subt) {
 			if ($subt eq "SUBPRG") {

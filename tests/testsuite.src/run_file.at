@@ -9885,6 +9885,7 @@ doOpenFile(
    printf("EXFTH did %s; Status=%c%c; File now %s\n",
        opmsg, fcd->fileStatus[0], fcd->fileStatus[1],
        (fcd->openMode & OPEN_NOT_OPEN) ? "Closed" : "Open");
+   fflush(stdout);
    return sts;
 }
 
@@ -9939,6 +9940,7 @@ TSTFH (unsigned char *opCodep, FCD3 *fcd)
    sts = EXTFH(opCodep, fcd);
    printf("EXFTH did %s; Status=%c%c\n", txtOpCode(opCode),
        fcd->fileStatus[0], fcd->fileStatus[1]);
+   fflush(stdout);
    return sts;
 }
 

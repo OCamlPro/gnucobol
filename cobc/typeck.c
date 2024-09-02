@@ -75,11 +75,6 @@ struct expr_node {
 
 #define dpush(x)		CB_ADD_TO_CHAIN (x, decimal_stack)
 
-#define cb_emit(x) \
-	current_statement->body = cb_list_add (current_statement->body, x)
-#define cb_emit_list(l) \
-	current_statement->body = cb_list_append (current_statement->body, l)
-
 /* Global variables */
 
 cb_tree				cb_debug_item;
@@ -1223,6 +1218,20 @@ invalid:
 invliteral:
 	cb_error_x (x, _("positive numeric integer is required here"));
 	return cb_error_node;
+}
+
+static COB_INLINE COB_A_INLINE cb_tree
+cb_emit (cb_tree x)
+{
+	current_statement->body = cb_list_add (current_statement->body, x);
+	return x;
+}
+
+static COB_INLINE COB_A_INLINE cb_tree
+cb_emit_list (cb_tree l)
+{
+	current_statement->body = cb_list_append (current_statement->body, l);
+	return l;
 }
 
 static void
@@ -2753,7 +2762,6 @@ cb_build_identifier (cb_tree x, const int subchk)
 	}
 
 	/* Reference modification check */
-	pseudosize = f->size;
 #if 0 /* CHECKME: if active, then one test fails (field), if not another (group)...
                   it seems both are different checks, do we need a flag? */
 	if (cb_reference_bounds_check == CB_WARNING
@@ -2765,7 +2773,11 @@ cb_build_identifier (cb_tree x, const int subchk)
 	}
 #endif
 	if (f->usage == CB_USAGE_NATIONAL ) {
-		pseudosize = pseudosize / 2;
+		pseudosize = f->size / 2;
+	} else if (f->pic && f->pic->orig && f->pic->orig[0] == 'U') {
+		pseudosize = f->size / 4;
+	} else {
+		pseudosize = f->size;
 	}
 	if (r->offset) {
 		/* Compile-time check */
@@ -4356,7 +4368,8 @@ validate_alphabet (cb_tree alphabet)
 		if (count == 256) {
 			ap->high_val_char = lastval;
 		} else if (values[255] != -1) {
-			for (n = 254; n >= 0; n--) {
+			ap->high_val_char = 0;
+			for (n = 254; n > 0; n--) {
 				if (values[n] == -1) {
 					ap->high_val_char = n;
 					break;
@@ -5404,8 +5417,10 @@ cb_validate_labels (struct cb_program *prog)
 
 				/* check for warning options "house-rules" relevant for later optimizations */
 				if (label->flag_section) {
-					cb_warning_x (cb_warn_goto_section, x,
-						"GO TO SECTION '%s'", label->name);
+					if (label != current_section) {
+						cb_warning_x (cb_warn_goto_section, x,
+							"GO TO SECTION '%s'", label->name);
+					}
 				} else if (label->section != current_section) {
 					char qualified_name[COB_MAX_WORDLEN * 2 + 4 + 1];
 					cb_warning_x (cb_warn_goto_different_section, x,
@@ -10868,7 +10883,7 @@ cb_check_overlapping (struct cb_field *src_f, struct cb_field *dst_f,
 		/* Check for same parent field */
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 6011) // cb_field_founder always returns a valid pointer
+#pragma warning(disable: 6011) /* cb_field_founder always returns a valid pointer */
 #endif
 		ff1 = cb_field_founder (src_f);
 		ff2 = cb_field_founder (dst_f);
@@ -13103,7 +13118,7 @@ error_if_invalid_file_from_clause_literal (cb_tree literal)
 	if (!(category == CB_CATEGORY_ALPHANUMERIC
 	   || category == CB_CATEGORY_NATIONAL
 	   || category == CB_CATEGORY_BOOLEAN)) {
-		cb_error_x (literal, _("literal in FROM clause must be alphanumeric, national or boolean"));
+		cb_error_x (literal, _("literal in FROM clause must be alphanumeric, utf-8, national or boolean"));
 		return 1;
 	}
 
@@ -13417,45 +13432,50 @@ cb_search_ready (const cb_tree table)
 	}
 }
 
-void
+cb_tree
 cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 {
+	cb_tree		search;
+
 	if (cb_validate_one (table)
 	 || cb_validate_one (varying)
 	 || whens == cb_error_node) {
-		return;
+		return NULL;
 	}
 
 	whens = cb_list_reverse (whens);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	cb_emit (cb_build_search (0, table, varying, at_end, whens));
+	search = cb_emit (cb_build_search (0, table, varying, at_end, whens));
 	cb_search_ready (NULL);
+	return search;
 }
 
-void
+cb_tree
 cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 {
 	cb_tree		x;
 	cb_tree		stmt_lis;
+	cb_tree		search;
 
 	if (cb_validate_one (table)
 	 || when == cb_error_node) {
-		return;
+		return NULL;
 	}
 	x = cb_build_search_all (table, when);
 	if (!x) {
-		return;
+		return NULL;
 	}
 
 	stmt_lis = cb_check_needs_break (stmts);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	cb_emit (cb_build_search (1, table, NULL, at_end,
-				  cb_build_if (x, stmt_lis, NULL, STMT_WHEN)));
+	x = cb_build_if (x, stmt_lis, NULL, STMT_WHEN);
+	search = cb_emit (cb_build_search (1, table, NULL, at_end, x));
 	cb_search_ready (NULL);
+	return search;
 }
 
 /* SET statement */
@@ -14857,8 +14877,9 @@ error_if_not_alnum_or_national (cb_tree ref, const char *name)
 {
 	if (!  (CB_TREE_CATEGORY (ref) == CB_CATEGORY_ALPHANUMERIC
 	     || CB_TREE_CATEGORY (ref) == CB_CATEGORY_NATIONAL)) {
+		/* note: at least with Enterprise COBOL utf8 is explicit forbidden here */
 		cb_error_x (ref, _("%s must be alphanumeric or national"), name);
-	        return 1;
+		return 1;
 	} else {
 		return 0;
 	}

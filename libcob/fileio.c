@@ -41,6 +41,10 @@
 #include <dlfcn.h>
 #endif
 
+#if defined (COB_EXPERIMENTAL) && defined (HAVE_LOCALE_H)
+#include <locale.h>
+#endif
+
 #ifdef	HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -3345,37 +3349,27 @@ void
 cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 {
 	int	k, indent = 15;
+	int	skip_exn = 0;
 
+	/* TODO: internally let status be an enum (also in internal storage);
+	   and then map here to an i-o status "per dialect",
+	   inluding alphanumeric 0x and 9/123 status values */
 	file_globptr->cob_error_file = f;
 	if (status == 0) {
 		memset (f->file_status, '0', (size_t)2);
-		/* EOP is non-fatal therefore 00 status but needs exception */
-		if (eop_status == 0) {
-			file_globptr->cob_exception_code = 0;
-		} else {
-#if 0 /* correct thing to do, but then also needs to have codegen adjusted
-         --> module-incompatibility --> 4.x */
-			cob_set_exception (eop_status);
-#else
-			cob_set_exception (COB_EC_I_O_EOP);
+#ifdef COB_EXPERIMENTAL
+	} else if (status == COB_STATUS_0P_NOT_PRINTABLE) {
+		memcpy (f->file_status, "0P", (size_t)2);
 #endif
-			eop_status = 0;
-		}
-		if ((f->file_features & COB_FILE_SYNC)) {
-			cob_file_sync (f);
-		}
 	} else if (status == 94 && chk_filename_spaces) {	/* File Name error */
+		skip_exn = 1;
 		f->file_status[0] = '9';
 		f->file_status[1] = 4;
-		if (fnstatus) {
-			memcpy (fnstatus->data, f->file_status, (size_t)2);
-		}
 	} else if (f->file_status[0] == '9'
 		 	&& f->file_status[1] == 4) {	/* File name error */
-		if (fnstatus) {
-			memcpy (fnstatus->data, f->file_status, (size_t)2);
-		}
+		skip_exn = 1;
 	} else if (status > COB_STATUS_BASE) {
+		skip_exn = 1;
 		if (delete_file_status) {
 			delete_file_status = 0;
 			cob_set_exception (COB_EC_DELETE_FILE);
@@ -3414,17 +3408,36 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 			break;
 		}
 	} else {
+		f->file_status[0] = (unsigned char)COB_I2D (status / 10);
+		f->file_status[1] = (unsigned char)COB_I2D (status % 10);
+	}
+	if (fnstatus) {
+		memcpy (fnstatus->data, f->file_status, (size_t)2);
+	}
+	if (f->file_status[0] == '0'
+	 && (!delete_file_status || status == 0)) {
+		/* EOP is non-fatal therefore 00 status but needs exception */
+		if (eop_status == 0) {
+			file_globptr->cob_exception_code = 0;
+		} else {
+#if 0 /* correct thing to do, but then also needs to have codegen adjusted
+         --> module-incompatibility --> 4.x */
+			cob_set_exception (eop_status);
+#else
+			cob_set_exception (COB_EC_I_O_EOP);
+#endif
+			eop_status = 0;
+		}
+		if ((f->file_features & COB_FILE_SYNC)) {
+			cob_file_sync (f);
+		}
+	} else if (!skip_exn) {
 		if (delete_file_status) {
 			delete_file_status = 0;
 			cob_set_exception (COB_EC_DELETE_FILE);
 		} else {
 			cob_set_exception (status_exception[status / 10]);
 		}
-		f->file_status[0] = (unsigned char)COB_I2D (status / 10);
-		f->file_status[1] = (unsigned char)COB_I2D (status % 10);
-	}
-	if (fnstatus) {
-		memcpy (fnstatus->data, f->file_status, (size_t)2);
 	}
 
 	if (f->trace_io
@@ -4504,7 +4517,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 #ifdef _WIN32
 		fmode = "rb+";
 #else
-		if (!cobsetptr->cob_unix_lf) {
+		if (!file_setptr->cob_unix_lf) {
 			fmode = "r+";
 		} else {
 			fmode = "rb+";
@@ -5125,6 +5138,14 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 #define IS_BAD_CHAR(x) (x < ' ' && x != COB_CHAR_BS && x != COB_CHAR_ESC \
 					 && x != COB_CHAR_FF && x != COB_CHAR_SI && x != COB_CHAR_TAB)
 
+#if defined (COB_EXPERIMENTAL)
+#ifdef COB_EBCDIC_MACHINE
+#define IS_NOT_PRINTABLE(x)	(x > 0x40 && !isprint (x))
+#else
+#define IS_NOT_PRINTABLE(x)	(x > 0x7E && !isprint (x))
+#endif
+#endif
+
 static int
 lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 {
@@ -5133,6 +5154,16 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 	size_t		i = 0;
 	int		n;
 	int		sts = COB_STATUS_00_SUCCESS;
+
+#if defined (COB_EXPERIMENTAL) && defined (HAVE_SETLOCALE)
+	char	*previous_locale = NULL;
+
+	if (file_setptr->cob_ls_validate
+	 && file_globptr->cob_locale_ctype) {
+		previous_locale = setlocale (LC_CTYPE, NULL);
+		setlocale (LC_CTYPE, file_globptr->cob_locale_ctype);
+	}
+#endif
 
 	COB_UNUSED (a);
 	COB_UNUSED (read_opts);
@@ -5152,7 +5183,8 @@ again:
 				if (open_next (f)) {
 					goto again;
 				}
-				return COB_STATUS_10_END_OF_FILE;
+				sts = COB_STATUS_10_END_OF_FILE;
+				goto End;
 			} else {
 				break;
 			}
@@ -5178,20 +5210,26 @@ again:
 		}
 		if ((f->file_features & COB_FILE_LS_VALIDATE)
 		 && !f->nconvert_fields) {
-			if ((IS_BAD_CHAR (n)
-			  || (n > 0x7E && !isprint(n)))) {
+			if (IS_BAD_CHAR (n)) {
 				sts = COB_STATUS_09_READ_DATA_BAD;
+#if defined (COB_EXPERIMENTAL)
+			} else if (file_setptr->cob_ls_validate > 1
+			        && IS_NOT_PRINTABLE (n)) {
+				sts = COB_STATUS_0P_NOT_PRINTABLE;
+#endif
 			}
 		} else if ((f->file_features & COB_FILE_LS_NULLS)) {
 			if (n == 0) {
 				n = getc (fp);
 				/* NULL-Encoded -> should be less than a space */
 				if (n == EOF || (unsigned char)n >= ' ') {
-					return COB_STATUS_71_BAD_CHAR;
+					sts = COB_STATUS_71_BAD_CHAR;
+					goto End;
 				}
 			/* Not NULL-Encoded, may not be less than a space */
 			} else if (!f->nconvert_fields && (unsigned char)n < ' ') {
-				return COB_STATUS_71_BAD_CHAR;
+				sts = COB_STATUS_71_BAD_CHAR;
+				goto End;
 			}
 		} else
 		if (n == COB_CHAR_TAB
@@ -5250,9 +5288,15 @@ again:
 			unsigned char *p;
 			for (p = to_conv.data; p < conv_end; p++) {
 				n = *p = f->code_set_read[*p];
-				if ((IS_BAD_CHAR (n)
-				 || (n > 0x7E && !isprint (n)))) {
-					sts = COB_STATUS_09_READ_DATA_BAD;
+				if (f->file_features & COB_FILE_LS_VALIDATE) {
+					if (IS_BAD_CHAR (n)) {
+						sts = COB_STATUS_09_READ_DATA_BAD;
+#if defined (COB_EXPERIMENTAL) && defined (HAVE_SETLOCALE)
+					} else if (file_setptr->cob_ls_validate > 1
+							&& IS_NOT_PRINTABLE (n)) {
+						sts = COB_STATUS_0P_NOT_PRINTABLE;
+#endif
+					}
 				}
 			}
 		}
@@ -5266,6 +5310,12 @@ again:
 #ifdef READ_WRITE_NEEDS_FLUSH
 	if (f->open_mode == COB_OPEN_I_O) {	/* Required on some systems */
 		fflush (fp);
+	}
+#endif
+End:
+#if defined (COB_EXPERIMENTAL) && defined (HAVE_SETLOCALE)
+	if (previous_locale) {
+		setlocale (LC_CTYPE, previous_locale);
 	}
 #endif
 	return sts;
@@ -6702,7 +6752,7 @@ cob_file_external_addr (const char *exname,
 {
 	cob_file	**epfl = cob_external_addr (exname, sizeof (cob_file *));
 
-	if (cobglobptr->cob_initial_external) {
+	if (file_globptr->cob_initial_external) {
 		/* if the pointer was setup the first time:
 		   allocate the file and store the address for next request */
 		cob_file_malloc (pfl, pky, nkeys, linage);
@@ -7286,6 +7336,9 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	case COB_STATUS_04_SUCCESS_INCOMPLETE:
 	case COB_STATUS_06_READ_TRUNCATE:
 	case COB_STATUS_09_READ_DATA_BAD:
+#if defined (COB_EXPERIMENTAL)
+	case COB_STATUS_0P_NOT_PRINTABLE:
+#endif
 		f->flag_first_read = 0;
 		f->flag_read_done = 1;
 		f->flag_end_of_file = 0;
@@ -7325,7 +7378,7 @@ is_suppressed_key_value (cob_file *f, const int idx)
 		for (pos = 0;
 			 pos < (int)f->keys[idx].field->size
 		  && f->keys[idx].field->data[pos] == (unsigned char)f->keys[idx].char_suppress;
-			 pos++); 
+			 pos++);
 		/* All SUPPRESS char ? */
 		if (pos == f->keys[idx].field->size) {
 			return 1;
@@ -7423,6 +7476,9 @@ Again:
 	case COB_STATUS_04_SUCCESS_INCOMPLETE:
 	case COB_STATUS_06_READ_TRUNCATE:
 	case COB_STATUS_09_READ_DATA_BAD:
+#if defined (COB_EXPERIMENTAL)
+	case COB_STATUS_0P_NOT_PRINTABLE:
+#endif
 		/* If record has suppressed key, skip it */
 		/* This is to catch CISAM, old VBISAM, ODBC & OCI */
 		if (f->organization == COB_ORG_INDEXED) {
@@ -7470,14 +7526,14 @@ get_code_set_converted_data (cob_file *f)
 
 	if (f->nconvert_fields) {
 		/* CODE-SET FOR - convert specific areas only */
-		const unsigned char* rec_end = converted_copy + size;
+		const unsigned char *rec_end = converted_copy + size;
 		size_t ic;
 		memcpy (converted_copy, real_rec_data, size);
 		for (ic = 0; ic < f->nconvert_fields; ic++) {
 			const cob_field to_conv = f->convert_field[ic];
-			const unsigned char* to_conv_end = to_conv.data + to_conv.size;
-			const unsigned char* conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
-			unsigned char* p;
+			const unsigned char *to_conv_end = to_conv.data + to_conv.size;
+			const unsigned char *conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+			unsigned char *p;
 			for (p = to_conv.data; p < conv_end; p++) {
 				*p = f->sort_collating[*p];
 			}
@@ -7570,16 +7626,42 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 		   not part of the record [= fixed length] */
 		const size_t size = lineseq_size (f);
 		/* early pre-validation for data we'd otherwise convert */
-		if (cobsetptr->cob_ls_validate
+		if (file_setptr->cob_ls_validate
 		 && !f->flag_line_adv
 		 && f->sort_collating) {
 			const unsigned char *p = f->record->data;
 			size_t i;
-			for (i = 0; i < size; ++i, ++p) {
-				if (IS_BAD_CHAR (*p)) {
-					cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+			if (f->file_features & COB_FILE_LS_VALIDATE) {
+				for (i = 0; i < size; ++i, ++p) {
+					if (IS_BAD_CHAR (*p)) {
+						cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+						return;
+					}
+				}
+			} else {
+#if !defined (COB_EXPERIMENTAL)
+				for (i = 0; i < size; ++i, ++p) {
+					if (IS_BAD_CHAR (*p)) {
+						cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+						return;
+					}
+				}
+#else
+				int sts = 0;
+				for (i = 0; i < size; ++i, ++p) {
+					if (IS_BAD_CHAR (*p)) {
+						cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+						return;
+					}
+					if (IS_NOT_PRINTABLE (*p)) {
+						sts = COB_STATUS_0P_NOT_PRINTABLE;
+					}
+				}
+				if (sts != 0) {
+					cob_file_save_status (f, fnstatus, COB_STATUS_0P_NOT_PRINTABLE);
 					return;
 				}
+#endif
 			}
 		}
 		f->record->size = size;
@@ -7595,7 +7677,7 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 		}
 		f->record->data = converted_copy;
 		cob_file_save_status (f, fnstatus,
-			     fileio_funcs[get_io_ptr (f)]->write (&file_api, f, opt));
+				      fileio_funcs[get_io_ptr (f)]->write (&file_api, f, opt));
 		f->record->data = real_rec_data;
 		cob_free (converted_copy);
 
@@ -7689,7 +7771,40 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 		/* Re-Determine the size to be written (done here so possible
 		   CODE-SET conversions do not convert trailing spaces when
 		   not part of the record [= fixed length] */
-		f->record->size = lineseq_size (f);
+		size_t size = lineseq_size (f);
+		/* early pre-validation for data we'd otherwise convert */
+		if (file_setptr->cob_ls_validate
+		 && !f->flag_line_adv
+		 && f->sort_collating) {
+			const unsigned char *p = f->record->data;
+			size_t i;
+			if (f->file_features & COB_FILE_LS_VALIDATE) {
+				for (i = 0; i < size; ++i, ++p) {
+					if (IS_BAD_CHAR (*p)) {
+						cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+						return;
+					}
+				}
+#if defined (COB_EXPERIMENTAL)
+			} else {
+				int sts = 0;
+				for (i = 0; i < size; ++i, ++p) {
+					if (IS_BAD_CHAR (*p)) {
+						cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+						return;
+					}
+					if (IS_NOT_PRINTABLE (*p)) {
+						sts = COB_STATUS_0P_NOT_PRINTABLE;
+					}
+				}
+				if (sts != 0) {
+					cob_file_save_status (f, fnstatus, COB_STATUS_0P_NOT_PRINTABLE);
+					return;
+				}
+#endif
+			}
+		}
+		f->record->size = size;
 	}
 
 	/* CODE-SET conversion (rewrite from converted shadow-copy) */

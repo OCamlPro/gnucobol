@@ -50,7 +50,7 @@
 #ifndef EDEADLK
 #ifdef EDEADLOCK		/* SCO name for EDEADLK */
 #define EDEADLK EDEADLOCK
-#else 
+#else
 #define EDEADLK 99
 #endif
 #endif

@@ -59,7 +59,10 @@ PRE_INST_ENV = "$(abs_top_builddir)/pre-inst-env"
 # MAKEFLAGS = --no-print-directory
 
 # targets that are only logical targets instead of files
-.PHONY: test test-local diff-summary diff summary.log $(MODULES_RUN) unpack-Z unpack-gz
+.PHONY: test test-local test-local-compat \
+	diff-summary diff summary.log \
+	modules $(MODULES_RUN) \
+	unpack-Z unpack-gz
 
 NC_RUN: NC
 	@cd NC && $(MAKE) -k $(SINGLE_TARGET)
@@ -165,11 +168,13 @@ diff-summary:
 	@diff $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
 	@echo Done
 
-newcob.val.Z:
-	@echo "Trying to download newcob.val.Z..."
-	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
-	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
-	 ($(RM) $@; echo "Downloading $@ failed"; false)
+# Note: $(URL_NEWCOB_Z) is out-dated and simply grabs an HTML file
+# without error.
+# newcob.val.Z:
+# 	@echo "Trying to download newcob.val.Z..."
+#	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
+#	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
+#	 ($(RM) $@; echo "Downloading $@ failed"; false)
 
 newcob.val.tar.gz:
 	@echo "Trying to download newcob.val.tar.gz..."
@@ -227,17 +232,17 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	else \
 		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
 	fi; \
-	cd $@ && $(PRE_INST_ENV) ../EXEC85$(EXEEXT)
-	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@
+	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) $(abs_builddir)/$@ && false)
+	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) $(abs_builddir)/$@ && false)
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
-	@export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`"  && \
+	@(export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`" && \
 	 $(SED) -e 's/##MODULE##/'"$@"'/'            \
 	        -e 's|##COB85DIR##|'$(abs_srcdir)'|' \
 	        -e 's|##DIFF_FLAGS##|'"$(DIFF_FLAGS)"'|' \
 	        -e 's|##PERL##|'"$(PERL)"'|' \
 	        -e 's|##TESTS##|'"` echo $$CBL_LIST | $(SED) -e 's/\.CBL//g'`"'|' \
 	        -e 's|##TESTS_LOCAL##|'"`echo $$CBL_LIST | $(SED) -e 's/\.CBL/-local/g'`"'|' \
-	    $(srcdir)/Makefile.module.in > $@/Makefile
+	    $(srcdir)/Makefile.module.in > $@/Makefile) || ($(RM) $(abs_builddir)/$@ && false)
 	@echo "Finished module directory $@."
 
 EXEC85.cob: newcob.val

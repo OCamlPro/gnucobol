@@ -37,7 +37,7 @@ AM_LDFLAGS = $(COB_FIX_LIB) $(COB_FIX_LIBTOOL) -no-undefined
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c fsqlxfd.c fextfh.c focextfh.c  mlio.c \
 	call.c cobcapi.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
-	coblocal.h cobinternal.h system.def sysdefines.h fileio.h
+	coblocal.h cconv.c cobinternal.h system.def sysdefines.h fileio.h
 
 # note: currently misses libsupport...
 libcob_la_LIBADD = $(LIBCOB_LIBS) $(CODE_COVERAGE_LIBS)
