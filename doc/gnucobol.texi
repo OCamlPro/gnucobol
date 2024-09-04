@@ -1867,8 +1867,30 @@ GnuCOBOL supports various types of literals with different internal encodings:
 
 @itemize @bullet
 @item Alphanumeric literals: Stored as ISO-8859-15
+@itemize @minus
+@item Ensures compatibility with legacy COBOL systems that rely on single-byte encodings
+@item Optimized for storage and processing efficiency
+@item Maintains COBOL's tradition of using single-byte character sets
+@item Provides consistent performance for traditional string operations
+@item Simplifies data alignment with byte sizing
+@end itemize
+
 @item National literals: Stored as UTF-16
+@itemize @minus
+@item Complies with the COBOL standard, supporting full Unicode
+@item Fixed-width encoding aligns with COBOL's structured data handling requirements
+@item Optimized for non-Latin scripts, likw Chinese, and Japanese
+@item Compatible with systems that have been updated for Unicode support
+@item Enhances performance for specific string operations involving multi-byte characters
+@end itemize
+
 @item UTF-8 literals: Stored as UTF-8
+@itemize @minus
+@item Logically stored as UTF-8 encoded characters, ensuring that the encoding remains consistent throughout processing
+@item Variable-width encoding providing full support for Unicode
+@item Facilitates integration with modern systems, ensuring that COBOL applications can interact with contemporary environments
+@item Retains backward compatibility with ASCII
+@end itemize
 @end itemize
 
 Here's an example demonstrating the different literal types:
@@ -1937,7 +1959,7 @@ $ cobc -x -fsource-encode=ISO-8859-15 my_program.cob
 
 This ensures that GnuCOBOL correctly interprets the source file and performs the necessary conversions for different literal types.
 
-@strong{Note:} The conversion process described above fully works only if the system has the iconv library installed. If iconv is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
+@strong{Note:} The conversion process described above fully works only if the system has the @code{iconv} library installed. If it is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
 
 @node Good Practices
 @section Good Practices
