@@ -1,8 +1,4 @@
 
-2024-08-30  Ammar Almorsi <ammaralmorsi@gmail.com>
-	* testsuite.src/run_ml.at: Added new test case to verify the correct
-	  generation of nested XML attributes
-
 2024-08-03  David Declerck <david.declerck@ocamlpro.com>
 
 	* testsuite.src/run_file.at, testsuite.src/run_misc.at:
