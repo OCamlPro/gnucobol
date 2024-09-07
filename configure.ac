@@ -908,6 +908,42 @@ AC_CHECK_LIB([$with_math], [__gmp_get_memory_functions],
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
 
+# Checks for gettext.
+
+case $host_os in
+  darwin* | rhapsody*)
+	;;
+  *)
+	gt_cv_func_CFPreferencesCopyAppValue=no
+	gt_cv_func_CFLocaleCopyCurrent=no
+	;;
+esac
+
+dnl  Simon: removed, use --disable-nls instead
+dnl # Disable for Cygwin
+dnl AC_MSG_CHECKING([for __CYGWIN__])
+dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+dnl 	#ifndef __CYGWIN__
+dnl 	# error macro not defined
+dnl 	#endif]])],
+dnl 	[enable_nls=no
+dnl 	 AC_MSG_RESULT([yes])],
+dnl 	[AC_MSG_RESULT([no])])
+
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.19.8])
+if test "x$LTLIBINTL" != x; then
+  if test "x$PROGRAMS_LIBS" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBINTL"
+  else
+    PROGRAMS_LIBS="$LTLIBINTL"
+  fi
+  LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
+fi
+
+# Checks for internationalization stuff
+AM_LANGINFO_CODESET
+
 AC_ARG_WITH([iconv],
   [AS_HELP_STRING([--with-iconv],
     [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
@@ -1274,17 +1310,6 @@ dnl   [])
 AC_CHECK_FUNCS([fdatasync sigaction fmemopen])
 AC_CHECK_DECLS([fdatasync])	# also check for declaration, missing on MacOS...
 AC_CHECK_DECLS([fmemopen])	# also check for declaration, missing on AIX...
-
-# Checks for gettext.
-
-case $host_os in
-  darwin* | rhapsody*)
-	;;
-  *)
-	gt_cv_func_CFPreferencesCopyAppValue=no
-	gt_cv_func_CFLocaleCopyCurrent=no
-	;;
-esac
 
 # Checks for ncurses/pdcurses/curses.
 AC_MSG_NOTICE([Checks for curses ...])
@@ -1974,32 +1999,6 @@ if test "$gc_cv_attribute_constructor" = yes; then
 	AC_DEFINE([HAVE_ATTRIBUTE_CONSTRUCTOR], [1])
 fi
 CFLAGS="$curr_cflags"
-
-dnl  Simon: removed, use --disable-nls instead
-dnl # Disable for Cygwin
-dnl AC_MSG_CHECKING([for __CYGWIN__])
-dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-dnl 	#ifndef __CYGWIN__
-dnl 	# error macro not defined
-dnl 	#endif]])],
-dnl 	[enable_nls=no
-dnl 	 AC_MSG_RESULT([yes])],
-dnl 	[AC_MSG_RESULT([no])])
-
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.19.8])
-if test "x$LTLIBINTL" != x; then
-  if test "x$PROGRAMS_LIBS" != x; then
-    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBINTL"
-  else
-    PROGRAMS_LIBS="$LTLIBINTL"
-  fi
-  LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
-fi
-
-# Checks for internationalization stuff
-dnl currently not directly used: AM_ICONV
-AM_LANGINFO_CODESET
 
 # Check for perl, used for "make test"
 #AM_MISSING_PROG(PERL, perl) --> only use for tools that generate something
