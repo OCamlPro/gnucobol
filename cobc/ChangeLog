@@ -76,6 +76,11 @@
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
 	  adjusted size of precedence table and gave proper precedence to U
 
+2024-08-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, codegen.c, tree.c: fixed C89 errors
+	* typeck.c (trimmed_size, is_blank): minor refactorings
+	  
 2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
 
 	* cobc.c: added the locale option to specify the source 

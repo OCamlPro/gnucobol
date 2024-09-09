@@ -3995,8 +3995,8 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_SOURCE_ENCODE:
-			/* -fsource-encode=encoding*/
+		case CB_FLAG_GETOPT_SOURCE_ENCODE: {
+			/* -fsource-encode=encoding */
 			const char* valid_encodings[] = {
 				"UTF-8",
 				"ASCII",
@@ -4004,9 +4004,9 @@ process_command_line (const int argc, char **argv)
 				"ISO-8859-15",
 				"CP1525"
 			};
-			int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
-			int encoding_valid = 0;
-			for (int i = 0; i < num_encodings; i++) {
+			const int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
+			int i, encoding_valid = 0;
+			for (i = 0; i < num_encodings; i++) {
 				if (strcmp(cob_optarg, valid_encodings[i]) == 0) {
 					encoding_valid = 1;
 					break;
@@ -4017,10 +4017,11 @@ process_command_line (const int argc, char **argv)
 				strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
 				cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
 #endif
-			}else{
+			} else {
 				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
 			}
 			break;
+		}
 
 		case CB_FLAG_GETOPT_TTITLE: {
 			/* -fttitle=<title> : Title for listing */

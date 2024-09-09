@@ -2419,7 +2419,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 		}
 		return;
 	}
-	
+
 	if (!r->offset) {
 		/* no more checks needed */
 		return;
@@ -2462,7 +2462,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 	} else {
 		length = adjusted_at_runtime;
 	}
-	
+
 	if (CB_LITERAL_P (r->offset)) {
 		offset = cb_get_int (r->offset);
 		if (offset < 1) {
@@ -2490,7 +2490,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 			cb_warning_x (cb_warn_filler, x,
 				_("suspicious reference-modification: always using max. length"));
 		}
-	}	
+	}
 
 	/* Run-time check */
 	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
@@ -3919,7 +3919,7 @@ validate_alphabet (cb_tree alphabet)
 #endif
 			entry++;
 		}
-		
+
 		memcpy (ap->alphachr, ap->values, memsize);
 		return;
 	}
@@ -4144,7 +4144,7 @@ validate_alphabet (cb_tree alphabet)
 						if (n > COB_MAX_CHAR_ALPHANUMERIC) {
 							i += sprintf (dup_val_str + i, "x'%04x'", n);
 						} else if (isprint (n)) {
-							dup_val_str[i++] = (char)n;						
+							dup_val_str[i++] = (char)n;
 						} else {
 							i += sprintf (dup_val_str + i, "x'%02x'", n);
 						}
@@ -4210,7 +4210,7 @@ validate_alphabet (cb_tree alphabet)
 			}
 		}
 
-	val_ex:	
+	val_ex:
 		free (values);
 		free (charvals);
 		free (dupvals);
@@ -5924,7 +5924,7 @@ build_expr_finish (void)
 {
 	cb_tree pos;
 	struct cb_tree_common err_pos;
-	
+
 	/* Reduce all (prio of token 0 is smaller than all other ones) */
 	(void)build_expr_reduce (0);
 
@@ -6834,7 +6834,7 @@ cb_build_optim_cond (struct cb_binary_op *p)
 		}
 	}
 #endif
-	
+
 	/* if the field is DISPLAY and the right side either a literal, a constant (ZERO)
 	   or also a DISPLAY field, then no need to convert the field(s) to an integer */
 	if (f->usage == CB_USAGE_DISPLAY) {
@@ -10635,7 +10635,7 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 						cb_build_alphanumeric_literal (conv_tab, 256)));
 			}
 			break;
-		case CB_TAG_REFERENCE: 
+		case CB_TAG_REFERENCE:
 			if (CB_ALPHABET_NAME_P (cb_ref (x))
 			 && CB_ALPHABET_NAME_P (cb_ref (y))) {
 				const struct cb_alphabet_name *alph_x = CB_ALPHABET_NAME (cb_ref (x));
@@ -11060,45 +11060,50 @@ is_floating_point_usage (const enum cb_usage usage)
 		|| usage == CB_USAGE_FP_DEC128;
 }
 
-
-static int 
-is_blank( unsigned char *s, int class ) {
+/* checks if current buffer "s" points to a single blank
+   according to "class", returns nonzero, if this is the case */
+static int
+is_blank (unsigned char *s, enum cb_class class) {
 	static const char national[] = { 0x20, 0x00 };
-	static const char alpha[] = { 0x20 };
-	
-	switch(class) {
+	static const char alpha[] = { ' ' };
+
+	switch (class) {
 		case CB_CLASS_NATIONAL:
-			if( 0 == memcmp( s, national, sizeof(national) ) ) 
+			if( 0 == memcmp( s, national, sizeof(national) ) )
 				return sizeof(national);
 			break;
-		case CB_CLASS_ALPHANUMERIC: 
-			if( 0 == memcmp( s, alpha, sizeof(alpha) ) ) 
+		case CB_CLASS_ALPHANUMERIC:
+			if( 0 == memcmp( s, alpha, sizeof(alpha) ) )
 				return sizeof(alpha);
 			break;
-    }
+		/* LCOV_EXCL_START */
+		default:
+			cobc_err_msg ("unexpected class: %d", (int)class);
+			COBC_ABORT();
+		/* LCOV_EXCL_STOP */
+	}
 	return 0;
 }
 
 /*
- * s is input string, converted to the destination's encoding. 
+ * s is input string, converted to the destination's encoding.
  * len is the computed length of s.
  * Compute the length of s, minus leading or trailing blanks,
- * according to whether or not the destination is right-justified. 
+ * according to whether or not the destination is right-justified.
  */
-
-static size_t 
-trimmed_size(unsigned char *s, size_t len, int right_justified, int class) {
-	int size = len;
+static size_t
+trimmed_size (unsigned char *s, size_t len, int right_justified, enum cb_class class) {
+	const int inc_size = class == CB_CLASS_NATIONAL? COB_NATIONAL_SIZE : 1;
+	const int inc = (right_justified? 1 : -1) * inc_size;
+	int i, size = len;
 	unsigned char *p = s;
-	int dir = right_justified? 1 : -1;
-        int inc = class == CB_CLASS_NATIONAL? COB_NATIONAL_SIZE : 1;
-        
-	if( ! right_justified && len > 2 ) p += len - inc; 
 
-	for( int i=0; i < len; i += inc ) {
-		if( (inc = is_blank(p, class)) == 0 ) break;
-		size -= inc ;
-		p += dir * inc;
+	if( ! right_justified && len > 2 ) p += len - inc_size;
+
+	for (i=0; i < len; i += inc_size ) {
+		if (!is_blank (p, class)) break;
+		size -= inc_size ;
+		p += inc;
 	}
 	return size;
 }
@@ -11559,7 +11564,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
 				size /= COB_NATIONAL_SIZE;
 			}
-			if (size > 0	
+			if (size > 0
 			 && l->size > 0
 			 && !fdst->flag_any_length) {
 				/* check the real size */

@@ -5208,20 +5208,20 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			unsigned char litbuff[128];
 			memcpy (litbuff + litstart, l->data, l->size);
 
-			if(l->common.category == CB_CATEGORY_NATIONAL || l->common.category == CB_CATEGORY_NATIONAL_EDITED){
-				// Calculate the number of bytes to pad (multiply by 2 for UTF-16)
-				size_t padbytes = padlen * 2;
+			if (l->common.category == CB_CATEGORY_NATIONAL || l->common.category == CB_CATEGORY_NATIONAL_EDITED){
+				/* Calculate the number of bytes to pad (multiply by 2 for UTF-16) */
+				const size_t padbytes = padlen * 2;
+				size_t i;
 
-				// Get a pointer to the starting position for padding
+				/* Get a pointer to the starting position for padding */
 				unsigned char *padptr = litbuff + padstart;
 
-				// Pad the rest of the string with UTF-16 space character
-				for (size_t i = 0; i < padbytes; i += 2) {
+				/* Pad the rest of the string with UTF-16 space character */
+				for (i = 0; i < padbytes; i += 2) {
 					padptr[i] = 0x20;    
 					padptr[i + 1] = 0x00; 
 				}
-			}
-			else{
+			} else{
 				memset (litbuff + padstart, ' ', padlen);
 			}
 
