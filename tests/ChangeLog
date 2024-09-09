@@ -1,4 +1,16 @@
 
+2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* run_prog_manual.sh.in:  adding testrunner tmux as alternative
+	  to screen; allow to override the deduced test runner by environment
+	  variable TESTRUNNER; new option to call with parameter "attach" and
+	  "kill" for either attaching to or killing test runner sessions in
+	  screen/tmux; enhance portability and use abs_builddir
+	* run_prog_manual.sh.in (_test_with_screen): use separate SCREENDIR
+	  to ensure using system defaults and work around WSL regressions
+	* run_prog_manual.sh.in (_test_with_cmd): work around cmd quoting
+	  by using a dynamically created sub command file
+
 2024-08-03  David Declerck <david.declerck@ocamlpro.com>
 
 	* testsuite.src/run_file.at, testsuite.src/run_misc.at:

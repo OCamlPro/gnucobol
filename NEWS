@@ -86,6 +86,10 @@ NEWS - user visible changes				-*- outline -*-
 ** use the "default" -shared flag to build dynamic libraries on macOS
    so as to fix testuite issues with recent macOS versions
 
+** "make checkmanual" was extended to be also usable with tmux and
+   allows to override the test runner and to attach for screen/tmux sessions,
+   see README for further details
+
 * Known issues in 3.x
 
 ** testsuite:
