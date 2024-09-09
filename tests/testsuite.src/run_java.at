@@ -65,3 +65,19 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 # TODO: should fail!
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 AT_CLEANUP
+
+AT_SETUP([CALL Java with malformed method name])
+AT_KEYWORDS([extensions jni malformed])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.InvalidName"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [1], [], [stderr])
+AT_CLEANUP
