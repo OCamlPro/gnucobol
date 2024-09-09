@@ -7100,6 +7100,7 @@ output_java_call (struct cb_call *p)
 	char *last_dot;
 	char *method_name;
 	const char *class_name;
+	char return_type_signature[32];
 	char method_signature[2048] = "(";
 	char* mangled;
 	struct cb_tree_common *ptr;
@@ -7146,34 +7147,50 @@ output_java_call (struct cb_call *p)
                     strcat(method_signature, "Ljava/lang/String;");
                 }
                 break;
-        	case CB_TAG_LIST:
-				{
-					struct cb_tree_common **list_elements = (struct cb_tree_common **) ptr;
-					for (int j = 0; list_elements[j] != NULL; j++) {
-						switch (CB_TREE_TAG(list_elements[j])) {
-							case CB_TAG_INTEGER:
-								strcat(method_signature, "[I"); 
-								break;
-							case CB_USAGE_FLOAT:
-								strcat(method_signature, "[F");
-								break;
-							case CB_USAGE_DOUBLE:
-								strcat(method_signature, "[D");
-								break;
-							case CB_CLASS_BOOLEAN:
-								strcat(method_signature, "[Z"); 
-								break;
-							case CB_TAG_STRING:
-								strcat(method_signature, "[Ljava/lang/String;"); 
-								break;
-							case CB_USAGE_OBJECT:
-								strcat(method_signature, "[Ljava/lang/Object;"); 
-								break;
-							default:
-								cobc_err_msg(_("Unsupported array type in Java method call"));
-								COBC_ABORT();
-						}
-					}
+				case CB_TAG_LIST:
+                {
+                    struct cb_tree_common **list_elements = (struct cb_tree_common **) ptr;
+                    int array_dimension = 1; 
+
+                    while (list_elements != NULL) {
+                        struct cb_tree_common **inner_list = NULL;
+                        for (int j = 0; list_elements[j] != NULL; j++) {
+                            if (CB_TREE_TAG(list_elements[j]) == CB_TAG_LIST) {
+                                array_dimension++;
+                                inner_list = (struct cb_tree_common **) list_elements[j];
+                            } else {
+                                switch (CB_TREE_TAG(list_elements[j])) {
+                                    case CB_TAG_INTEGER:
+                                        strcat(method_signature, "[I");
+                                        break;
+                                    case CB_USAGE_FLOAT:
+                                        strcat(method_signature, "[F");
+                                        break;
+                                    case CB_USAGE_DOUBLE:
+                                        strcat(method_signature, "[D");
+                                        break;
+                                    case CB_CLASS_BOOLEAN:
+                                        strcat(method_signature, "[Z");
+                                        break;
+                                    case CB_TAG_STRING:
+                                        strcat(method_signature, "[Ljava/lang/String;");  
+                                        break;
+                                    case CB_USAGE_OBJECT:
+                                        strcat(method_signature, "[Ljava/lang/Object;");  
+                                        break;
+                                    default:
+                                        cobc_err_msg(_("Unsupported array element type in Java method call"));
+                                        COBC_ABORT();
+                                }
+                            }
+                        }
+                        list_elements = inner_list;
+                    }
+
+					if (array_dimension > 2) {
+                        cobc_err_msg(_("Unsupported array dimension: %d"), array_dimension);
+                        COBC_ABORT();
+                    }
 				}
 				break;
 			default:
@@ -7181,6 +7198,38 @@ output_java_call (struct cb_call *p)
 				COBC_ABORT();
 		}
     }
+
+	if (p->call_returning == NULL) {
+		strcat(method_signature, ")V");
+		strcpy(return_type_signature, "void");
+	} else {
+		switch(CB_TREE_TAG(p->call_returning)) {
+			case CB_TAG_INTEGER:
+				strcat(method_signature, ")I");
+				strcpy(return_type_signature, "jint");
+				break;
+			case CB_TAG_STRING:
+				strcat(method_signature, ")Ljava/lang/String;");
+				strcpy(return_type_signature, "jstring");
+				break;
+			case CB_USAGE_FLOAT:
+				strcat(method_signature, ")F");
+				strcpy(return_type_signature, "jfloat");
+				break;
+			case CB_USAGE_DOUBLE:
+				strcat(method_signature, ")D");
+				strcpy(return_type_signature, "jdouble");
+				break;
+			case CB_CLASS_BOOLEAN:
+				strcat(method_signature, ")Z");
+				strcpy(return_type_signature, "jboolean");
+				break;
+			default:
+				strcat(method_signature, ")V");
+				strcpy(return_type_signature, "void");
+				break;
+		}
+	}
 
 	strcat(method_signature, ")V");
 

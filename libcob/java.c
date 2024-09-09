@@ -79,11 +79,15 @@ resolve_java (const char		*class_name,
 	cls = (*env)->FindClass(env, jni_class_name);
 	free(jni_class_name);
 	if (!cls) {
+		(*env)->ExceptionDescribe(env);
+		(*env)->ExceptionClear(env);
 		return NULL;
 	}
 
 	mid = (*env)->GetStaticMethodID(env, cls, method_name, method_signature);
 	if (!mid) {
+		(*env)->ExceptionDescribe(env);
+		(*env)->ExceptionClear(env);
 		(*env)->DeleteLocalRef(env, cls);
 		return NULL;
 	}
