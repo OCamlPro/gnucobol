@@ -11564,7 +11564,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
 				size /= COB_NATIONAL_SIZE;
 			}
-			if (size > 0	
+			if (size > 0
 			 && l->size > 0
 			 && !fdst->flag_any_length) {
 				/* check the real size */
