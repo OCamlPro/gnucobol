@@ -1533,6 +1533,7 @@ validate_pic (struct cb_field *f)
 		 && (f->usage == CB_USAGE_BINARY
 		  || f->usage == CB_USAGE_FLOAT
 		  || f->usage == CB_USAGE_DOUBLE
+		  || f->usage == CB_USAGE_LONG_DOUBLE
 		  || f->usage == CB_USAGE_UNSIGNED_SHORT
 		  || f->usage == CB_USAGE_SIGNED_SHORT
 		  || f->usage == CB_USAGE_UNSIGNED_INT
@@ -2548,6 +2549,10 @@ setup_parameters (struct cb_field *f)
 		f->pic = cb_build_picture ("S9(7)V9(8)");
 		f->pic->flag_is_calculated = 1;
 		break;
+	case CB_USAGE_LONG_DOUBLE:
+		f->pic = cb_build_picture ("S9(19)V9(19)");
+		f->pic->flag_is_calculated = 1;
+		break;
 	case CB_USAGE_DOUBLE:
 		f->pic = cb_build_picture ("S9(17)V9(17)");
 		f->pic->flag_is_calculated = 1;
@@ -3108,7 +3113,7 @@ unbounded_again:
 			f->size = sizeof (double);
 			break;
 		case CB_USAGE_LONG_DOUBLE:
-			f->size = 16;
+			f->size = 16;	/* sizeof (long double) */
 			break;
 		case CB_USAGE_FP_BIN32:
 			f->size = 4;
@@ -3693,6 +3698,8 @@ cb_get_usage_string (const enum cb_usage usage)
 	case CB_USAGE_DOUBLE:
 		return "COMP-2";
 		/* return "FLOAT-LONG"; */
+	case CB_USAGE_LONG_DOUBLE:
+		return "FLOAT-EXTENDED";
 	case CB_USAGE_INDEX:
 		return "INDEX";
 	case CB_USAGE_NATIONAL:
@@ -3737,8 +3744,6 @@ cb_get_usage_string (const enum cb_usage usage)
 		return "FLOAT-BINARY-64";
 	case CB_USAGE_FP_BIN128:
 		return "FLOAT-BINARY-128";
-	case CB_USAGE_LONG_DOUBLE:
-		return "FLOAT-EXTENDED";
 	case CB_USAGE_HNDL:
 		return "HANDLE";
 	case CB_USAGE_HNDL_WINDOW:

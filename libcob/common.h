@@ -34,7 +34,6 @@ typedef __mpz_struct mpz_t[1];
 #endif
 #endif
 
-
 /* General type defines */
 #define	cob_c8_t		char
 #define	cob_s8_t		signed char
@@ -1172,6 +1171,9 @@ enum cob_statement {
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
+#define COB_XML_PARSE_XMLNSS	(1U << 0)
+#define COB_XML_PARSE_NATIONAL	(1U << 1)
+
 /* Structure/union declarations */
 
 
@@ -1185,7 +1187,7 @@ typedef struct __cob_pic_symbol {
 /* Field attribute structure */
 
 typedef struct __cob_field_attr {
-	unsigned short		type;		/* Field type */
+	unsigned short		type;		/* Field type [TODO GC4: enum] */
 	unsigned short		digits;		/* Digit count */
 	signed short		scale;		/* Field scale */
 	unsigned short		flags;		/* Field flags */
@@ -1940,6 +1942,7 @@ COB_EXPIMP void	cob_accept_day_of_week		(cob_field *);
 COB_EXPIMP void	cob_accept_environment		(cob_field *);
 COB_EXPIMP void	cob_accept_exception_status	(cob_field *);
 COB_EXPIMP void	cob_accept_time			(cob_field *);
+COB_EXPIMP void	cob_accept_microsecond_time (cob_field *);
 COB_EXPIMP void	cob_accept_user_name		(cob_field *);
 COB_EXPIMP void	cob_display_command_line	(cob_field *);
 COB_EXPIMP void	cob_display_environment		(const cob_field *);
@@ -2149,9 +2152,9 @@ COB_EXPIMP void		cob_move_ibm	(void *, void *, const int);
 COB_EXPIMP void		cob_init_table	(void *, const size_t, const size_t);
 COB_EXPIMP void		cob_set_int	(cob_field *, const int);
 COB_EXPIMP int		cob_get_int	(cob_field *);
-COB_EXPIMP void		cob_set_llint   (cob_field *, cob_s64_t, cob_s64_t);
-COB_EXPIMP void		cob_set_llcon   (cob_field *, cob_s64_t);
-COB_EXPIMP void		cob_set_compx   (cob_field *, cob_s64_t);
+COB_EXPIMP void		cob_set_llint   (cob_field *, cob_s64_t, const cob_s64_t);
+COB_EXPIMP void		cob_set_llcon   (cob_field *, const cob_s64_t);
+COB_EXPIMP void		cob_set_compx   (cob_field *, const cob_s64_t);
 COB_EXPIMP cob_s64_t	cob_get_llint	(cob_field *);
 COB_EXPIMP void		cob_alloc_move(cob_field *, cob_field *, const int);
 /*************************************************************************/
@@ -3028,19 +3031,13 @@ COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
 /* Functions in cconv.c */
 /************************/
 
-/* Return the name corresponding to an internal collation id,
-   or NULL if such id is unknown. */
-
-COB_EXPIMP const char *
-cob_get_collation_name (int);
-
-/* Retrieve the EBCDIC and ASCII collating sequences for the given
-   collation name, and return its internal id, or -1 if such name
-   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
-   arguments may be NULL if one (or both) of the tables is not
-   needed (you may only care for the return value). */
+/* Load a file that contains a mapping from EBCDIC to ASCII characters
+   and fill the given conversion tables accordingly. Return 0 on
+   success or -1 on error (file unknown or containing invalid data).
+   The `ebcdic_to_ascii' and `ascii_to_ebcdic' arguments may be NULL
+   if one (or both) of the tables is not needed. */
 
 COB_EXPIMP int
-cob_get_collation_by_name (const char *, const cob_u8_t **, const cob_u8_t **);
+cob_load_collation (const char *, cob_u8_t *, cob_u8_t *);
 
 #endif	/* COB_COMMON_H */

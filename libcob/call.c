@@ -1989,4 +1989,3 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	call_buffer = cob_fast_malloc ((size_t)CALL_BUFF_SIZE);
 	call_lastsize = CALL_BUFF_SIZE;
 }
-

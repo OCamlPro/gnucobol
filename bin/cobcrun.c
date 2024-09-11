@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2004-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -97,7 +97,7 @@ cobcrun_print_version (void)
 	}
 
 	printf ("cobcrun (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
@@ -192,30 +192,28 @@ cobcrun_initial_module (char *module_argument)
 {
 	char	*pathname, *filename;
 	char	env_space[COB_MEDIUM_BUFF], *envptr;
+
 	/* FIXME: split in two functions (one setting module, one setting path)
 	          after allowing module with path in COB_PRE_LOAD */
 
-	/* LCOV_EXCL_START */
-	if (!module_argument) {
-		/* never reached (getopt ensures that we have an argument),
-		   just in to keep the analyzer happy, so msg untranslated */
-		return "missing argument";
-	/* LCOV_EXCL_STOP */
-	} else if (module_argument[0] == 0) {
+	/* note: getopt ensures that we have an argument, but it may be empty */
+	if (module_argument[0] == 0) {
 		return "";	/* used as "no further information" */
 	}
 
 #if 0	/* CHECKME: Do we want that validation here or handle it? */
 	if (strchr (module_argument, PATHSEP_CHAR)) {
-		return ("should not contain '%c'", PATHSEP_CHAR);
+		static char [COB_MINI_BUFF] buff;
+		snprintf (buff, COB_MINI_MAX, _("should not contain '%c'"), PATHSEP_CHAR);
+		return buff;
 	}
 #endif
 
 	/* See if we have a /dir/path/module, or a /dir/path/ or a module (no slash) */
 	cobcrun_split_path_file (&pathname, &filename, module_argument);
 	if (*pathname) {
-		/* TODO: check content, see libcob/common.h */
-		envptr = getenv ("COB_LIBRARY_PATH");
+		/* TODO: check content, see libcob/common.c/h to raise error message */
+		envptr = cob_getenv_direct ("COB_LIBRARY_PATH");
 		if (envptr
 		 && strlen (envptr) + strlen (pathname) + 1 < COB_MEDIUM_MAX) {
 			memset (env_space, 0, COB_MEDIUM_BUFF);
@@ -230,8 +228,8 @@ cobcrun_initial_module (char *module_argument)
 	cob_free((void *)pathname);
 
 	if (*filename) {
-		/* TODO: check content, see libcob/common.h */
-		envptr = getenv ("COB_PRE_LOAD");
+		/* TODO: check content, see libcob/common.c/h to raise error message */
+		envptr = cob_getenv_direct ("COB_PRE_LOAD");
 		if (envptr
 		 && strlen (envptr) + strlen (filename) + 1 < COB_MEDIUM_MAX) {
 			memset (env_space, 0, COB_MEDIUM_BUFF);
@@ -258,7 +256,7 @@ process_command_line (int argc, char *argv[])
 	
 	cob_setup_env (argv[0]);
 #if defined (_WIN32) || defined (__DJGPP__)
-	if (!getenv ("POSIXLY_CORRECT")) {
+	if (!cob_getenv_direct ("POSIXLY_CORRECT")) {
 		/* Translate command line arguments from DOS/WIN to UNIX style */
 		int argnum = 0;
 		while (++argnum < argc) {

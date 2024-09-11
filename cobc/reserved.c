@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -165,32 +165,32 @@ static struct system_name_struct	system_name_table[] = {
 	{"SWITCH 24",		CB_SWITCH_NAME,  CB_SWITCH_24, CB_FEATURE_DISABLED},
 	{"SWITCH 25",		CB_SWITCH_NAME,  CB_SWITCH_25, CB_FEATURE_DISABLED},
 	{"SWITCH 26",		CB_SWITCH_NAME,  CB_SWITCH_26, CB_FEATURE_DISABLED},
-	{"SWITCH A",		CB_SWITCH_NAME,  CB_SWITCH_1, CB_FEATURE_DISABLED},
-	{"SWITCH B",		CB_SWITCH_NAME,  CB_SWITCH_2, CB_FEATURE_DISABLED},
-	{"SWITCH C",		CB_SWITCH_NAME,  CB_SWITCH_3, CB_FEATURE_DISABLED},
-	{"SWITCH D",		CB_SWITCH_NAME,  CB_SWITCH_4, CB_FEATURE_DISABLED},
-	{"SWITCH E",		CB_SWITCH_NAME,  CB_SWITCH_5, CB_FEATURE_DISABLED},
-	{"SWITCH F",		CB_SWITCH_NAME,  CB_SWITCH_6, CB_FEATURE_DISABLED},
-	{"SWITCH G",		CB_SWITCH_NAME,  CB_SWITCH_7, CB_FEATURE_DISABLED},
-	{"SWITCH H",		CB_SWITCH_NAME,  CB_SWITCH_8, CB_FEATURE_DISABLED},
-	{"SWITCH I",		CB_SWITCH_NAME,  CB_SWITCH_9, CB_FEATURE_DISABLED},
-	{"SWITCH J",		CB_SWITCH_NAME,  CB_SWITCH_10, CB_FEATURE_DISABLED},
-	{"SWITCH K",		CB_SWITCH_NAME,  CB_SWITCH_11, CB_FEATURE_DISABLED},
-	{"SWITCH L",		CB_SWITCH_NAME,  CB_SWITCH_12, CB_FEATURE_DISABLED},
-	{"SWITCH M",		CB_SWITCH_NAME,  CB_SWITCH_13, CB_FEATURE_DISABLED},
-	{"SWITCH N",		CB_SWITCH_NAME,  CB_SWITCH_14, CB_FEATURE_DISABLED},
-	{"SWITCH O",		CB_SWITCH_NAME,  CB_SWITCH_15, CB_FEATURE_DISABLED},
-	{"SWITCH P",		CB_SWITCH_NAME,  CB_SWITCH_16, CB_FEATURE_DISABLED},
-	{"SWITCH Q",		CB_SWITCH_NAME,  CB_SWITCH_17, CB_FEATURE_DISABLED},
-	{"SWITCH R",		CB_SWITCH_NAME,  CB_SWITCH_18, CB_FEATURE_DISABLED},
-	{"SWITCH S",		CB_SWITCH_NAME,  CB_SWITCH_19, CB_FEATURE_DISABLED},
-	{"SWITCH T",		CB_SWITCH_NAME,  CB_SWITCH_20, CB_FEATURE_DISABLED},
-	{"SWITCH U",		CB_SWITCH_NAME,  CB_SWITCH_21, CB_FEATURE_DISABLED},
-	{"SWITCH V",		CB_SWITCH_NAME,  CB_SWITCH_22, CB_FEATURE_DISABLED},
-	{"SWITCH W",		CB_SWITCH_NAME,  CB_SWITCH_23, CB_FEATURE_DISABLED},
-	{"SWITCH X",		CB_SWITCH_NAME,  CB_SWITCH_24, CB_FEATURE_DISABLED},
-	{"SWITCH Y",		CB_SWITCH_NAME,  CB_SWITCH_25, CB_FEATURE_DISABLED},
-	{"SWITCH Z",		CB_SWITCH_NAME,  CB_SWITCH_26, CB_FEATURE_DISABLED},
+	{"SWITCH A",		CB_SWITCH_NAME,  CB_SWITCH_11, CB_FEATURE_DISABLED},
+	{"SWITCH B",		CB_SWITCH_NAME,  CB_SWITCH_12, CB_FEATURE_DISABLED},
+	{"SWITCH C",		CB_SWITCH_NAME,  CB_SWITCH_13, CB_FEATURE_DISABLED},
+	{"SWITCH D",		CB_SWITCH_NAME,  CB_SWITCH_14, CB_FEATURE_DISABLED},
+	{"SWITCH E",		CB_SWITCH_NAME,  CB_SWITCH_15, CB_FEATURE_DISABLED},
+	{"SWITCH F",		CB_SWITCH_NAME,  CB_SWITCH_16, CB_FEATURE_DISABLED},
+	{"SWITCH G",		CB_SWITCH_NAME,  CB_SWITCH_17, CB_FEATURE_DISABLED},
+	{"SWITCH H",		CB_SWITCH_NAME,  CB_SWITCH_18, CB_FEATURE_DISABLED},
+	{"SWITCH I",		CB_SWITCH_NAME,  CB_SWITCH_19, CB_FEATURE_DISABLED},
+	{"SWITCH J",		CB_SWITCH_NAME,  CB_SWITCH_20, CB_FEATURE_DISABLED},
+	{"SWITCH K",		CB_SWITCH_NAME,  CB_SWITCH_21, CB_FEATURE_DISABLED},
+	{"SWITCH L",		CB_SWITCH_NAME,  CB_SWITCH_22, CB_FEATURE_DISABLED},
+	{"SWITCH M",		CB_SWITCH_NAME,  CB_SWITCH_23, CB_FEATURE_DISABLED},
+	{"SWITCH N",		CB_SWITCH_NAME,  CB_SWITCH_24, CB_FEATURE_DISABLED},
+	{"SWITCH O",		CB_SWITCH_NAME,  CB_SWITCH_25, CB_FEATURE_DISABLED},
+	{"SWITCH P",		CB_SWITCH_NAME,  CB_SWITCH_26, CB_FEATURE_DISABLED},
+	{"SWITCH Q",		CB_SWITCH_NAME,  CB_SWITCH_27, CB_FEATURE_DISABLED},
+	{"SWITCH R",		CB_SWITCH_NAME,  CB_SWITCH_28, CB_FEATURE_DISABLED},
+	{"SWITCH S",		CB_SWITCH_NAME,  CB_SWITCH_29, CB_FEATURE_DISABLED},
+	{"SWITCH T",		CB_SWITCH_NAME,  CB_SWITCH_30, CB_FEATURE_DISABLED},
+	{"SWITCH U",		CB_SWITCH_NAME,  CB_SWITCH_31, CB_FEATURE_DISABLED},
+	{"SWITCH V",		CB_SWITCH_NAME,  CB_SWITCH_32, CB_FEATURE_DISABLED},
+	{"SWITCH W",		CB_SWITCH_NAME,  CB_SWITCH_33, CB_FEATURE_DISABLED},
+	{"SWITCH X",		CB_SWITCH_NAME,  CB_SWITCH_34, CB_FEATURE_DISABLED},
+	{"SWITCH Y",		CB_SWITCH_NAME,  CB_SWITCH_35, CB_FEATURE_DISABLED},
+	{"SWITCH Z",		CB_SWITCH_NAME,  CB_SWITCH_36, CB_FEATURE_DISABLED},
 	{"UPSI-0",		CB_SWITCH_NAME,  CB_SWITCH_0, CB_FEATURE_DISABLED},
 	{"UPSI-1",		CB_SWITCH_NAME,  CB_SWITCH_1, CB_FEATURE_DISABLED},
 	{"UPSI-2",		CB_SWITCH_NAME,  CB_SWITCH_2, CB_FEATURE_DISABLED},
@@ -340,10 +340,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ANYCASE",			0, 0, -1,			/* 2002 */
 				0, 0
   },
-  { "ANUM",			0, 1, -1,			/* 202x (C/S) */
+  { "ANUM",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_CONVERT
   },
-  { "APPLY",			0, 1, APPLY,			/* 202x (C/S) */
+  { "APPLY",			0, 1, APPLY,			/* 2023 (C/S) */
 				0, CB_CS_I_O_CONTROL
   },
   { "ARE",			0, 0, ARE,			/* 2002 */
@@ -416,16 +416,16 @@ static struct cobc_reserved default_reserved_words[] = {
   { "B-XOR",			0, 0, B_XOR,			/* 2002 */
 				0, 0
   },
-  { "B-SHIFT-L",			0, 0, B_SHIFT_L,	/* 202x */
+  { "B-SHIFT-L",			0, 0, B_SHIFT_L,	/* 2023 */
 				0, 0
   },
-  { "B-SHIFT-LC",			0, 0, B_SHIFT_LC,			/* 202x */
+  { "B-SHIFT-LC",			0, 0, B_SHIFT_LC,			/* 2023 */
 				0, 0
   },
-  { "B-SHIFT-R",			0, 0, B_SHIFT_R,	/* 202x */
+  { "B-SHIFT-R",			0, 0, B_SHIFT_R,	/* 2023 */
 				0, 0
   },
-  { "B-SHIFT-RC",			0, 0, B_SHIFT_RC,			/* 202x */
+  { "B-SHIFT-RC",			0, 0, B_SHIFT_RC,			/* 2023 */
 				0, 0
   },
   { "BACKGROUND-COLOR",		0, 1, BACKGROUND_COLOR,		/* 2002 (C/S) */
@@ -440,7 +440,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "BACKGROUND-STANDARD",		0, 0, BACKGROUND_STANDARD,		/* ACU extension */
 				0, 0
   },
-  { "BACKWARD",			0, 1, BACKWARD,			/* 202x (C/S) */
+  { "BACKWARD",			0, 1, BACKWARD,			/* 2023 (C/S) */
 				0, CB_CS_INSPECT
   },
   { "BAR",			1, 1, BAR,			/* ACU extension */
@@ -539,10 +539,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "BY",			0, 0, BY,			/* 2002 */
 				0, 0
   },
-  { "BYTE",			0, 1, -1,			/* 202x (C/S) */
+  { "BYTE",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_CONVERT
   },
-  { "BYTES",			0, 0, -1,			/* 202x (C/S) */
+  { "BYTES",			0, 0, -1,			/* 2023 (C/S) */
 				0, 0
   },
   { "BYTE-LENGTH",		0, 1, BYTE_LENGTH,		/* 2002 (C/S) */
@@ -710,7 +710,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "COMMAND-LINE",		0, 0, COMMAND_LINE,		/* Extension */
 				0, 0
   },
-  { "COMMIT",			0, 0, COMMIT,			/* Extension, 202x */
+  { "COMMIT",			0, 0, COMMIT,			/* Extension, 2023 */
 				0, 0
   },
   { "COMMON",			0, 0, COMMON,			/* 2002 */
@@ -851,7 +851,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "CURRENCY",			0, 0, CURRENCY,			/* 2002 */
 				0, 0
   },
-  { "CURRENT",			0, 1, -1,			/* 202x (C/S) */
+  { "CURRENT",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_MODULE_NAME
   },
   { "CURSOR",			0, 0, CURSOR,			/* 2002 */
@@ -1037,7 +1037,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ECHO",			0, 0, ECHO,			/* Extension */
 				0, 0
   },
-  { "EDITING",			0, 0, -1,			/* 202x */
+  { "EDITING",			0, 0, -1,			/* 2023 */
 				0, 0
   },
   { "EGI",			0, 0, EGI,			/* Communication Section */
@@ -1118,7 +1118,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "END-READ",			0, 0, END_READ,			/* 2002 */
 				0, 0
   },
-  { "END-RECEIVE",		0, 0, END_RECEIVE,		/* Communication Section, 202x MCS */
+  { "END-RECEIVE",		0, 0, END_RECEIVE,		/* Communication Section, 2023 MCS */
 				0, 0
   },
   { "END-RETURN",		0, 0, END_RETURN,		/* 2002 */
@@ -1130,7 +1130,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "END-SEARCH",		0, 0, END_SEARCH,		/* 2002 */
 				0, 0
   },
-  { "END-SEND",		0, 0, END_SEND,		/* 202x MCS */
+  { "END-SEND",		0, 0, END_SEND,		/* 2023 MCS */
 				0, 0
   },
   { "END-START",		0, 0, END_START,		/* 2002 */
@@ -1323,7 +1323,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "FINAL",			0, 0, FINAL,			/* 2002 */
 				0, 0
   },
-  { "FINALLY",			0, 0, -1,			/* 202x local exceptions */
+  { "FINALLY",			0, 0, -1,			/* 2023 local exceptions */
 				0, 0
   },
   { "FINISH-REASON",		0, 1, FINISH_REASON,		/* ACU extension */
@@ -1372,7 +1372,7 @@ static struct cobc_reserved default_reserved_words[] = {
 #endif
   /* note: may be set as alias for FLOAT-LONG to enable compilation,
            the actual precision seems to be compiler (version) specific */
-  { "FLOAT-EXTENDED",		0, 0, -1,			/* 2002 */
+  { "FLOAT-EXTENDED",		0, 0, FLOAT_EXTENDED,		/* 2002 */
 				0, 0
   },
   { "FLOAT-INFINITY",		0, 0, -1,			/* 2014 */
@@ -1510,7 +1510,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "HELP-ID",			0, 1, HELP_ID,			/* ACU extension */
 				0, CB_CS_SCREEN
   },
-  { "HEX",			0, 1, -1,			/* 202x (C/S) */
+  { "HEX",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_CONVERT
   },
   { "HIDDEN-DATA",		0, 1, HIDDEN_DATA,		/* ACU extension */
@@ -1797,7 +1797,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "LOCALE",			0, 0, LOCALE,			/* 2002 */
 				0, 0
   },
-  { "LOCATION",			0, 1, -1,			/* 202x local exceptions */
+  { "LOCATION",			0, 1, -1,			/* 2023 local exceptions */
 				0, CB_CS_PERFORM
   },
   { "LOCK",			0, 0, LOCK,			/* 2002 */
@@ -1861,10 +1861,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
   },
-  { "MESSAGE",			0, 0, MESSAGE,			/* Communication Section, COBOL 202x MCS */
+  { "MESSAGE",			0, 0, MESSAGE,			/* Communication Section, COBOL 2023 MCS */
 				0, 0
   },
-  { "MESSAGE-TAG",			0, 0, -1,			/* COBOL 202x MCS */
+  { "MESSAGE-TAG",			0, 0, -1,			/* COBOL 2023 MCS */
 				0, 0
   },
   { "METHOD",			0, 0, -1,			/* 2002 */
@@ -1872,6 +1872,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "METHOD-ID",		0, 0, -1,			/* 2002 */
 				0, 0
+  },
+  { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */
+				0, CB_CS_ACCEPT 
   },
   { "MIN-VAL",		0, 1, MIN_VAL,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1913,7 +1916,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "NAMESPACE-PREFIX",		0, 1, NAMESPACE_PREFIX,		/* IBM extension */
 				0, CB_CS_XML_GENERATE
   },
-  { "NAT",			0, 1, -1,			/* 202x (C/S) */
+  { "NAT",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_CONVERT
   },
   { "NATIONAL",			0, 0, NATIONAL,			/* 2002 */
@@ -2195,8 +2198,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "POP-UP",			0, 1, POP_UP,			/* ACU extension */
 				0, CB_CS_DISPLAY
   },
-  { "POS",			0, 0, POS,			/* ACU extension for AT POSITION */
-	  0, 0
+  { "POS",			0, 1, POS,			/* ACU extension for AT POSITION */
+	  0, CB_CS_ACCEPT | CB_CS_DISPLAY
   },
   { "POSITION",			0, 0, POSITION,			/* 85 */
 				0, 0
@@ -2329,10 +2332,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "READERS",			0, 1, READERS,		/* ACU extension */
 				0, CB_CS_OPEN
   },
-  { "RECEIVE",			1, 0, RECEIVE,			/* Communication Section, 202x MCS */
+  { "RECEIVE",			1, 0, RECEIVE,			/* Communication Section, 2023 MCS */
 				0, 0
   },
-  { "RECEIVED",			1, 0, RECEIVED,			/* 202x MCS */
+  { "RECEIVED",			1, 0, RECEIVED,			/* 2023 MCS */
 				0, 0
   },
   { "RECORD",			0, 0, RECORD,			/* 2002 */
@@ -2495,7 +2498,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "RIMMED",			0, 1, RIMMED,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "ROLLBACK",			0, 0, ROLLBACK,			/* Extension, 202x */
+  { "ROLLBACK",			0, 0, ROLLBACK,			/* Extension, 2023 */
 				0, 0
   },
   { "ROUNDED",			0, 0, ROUNDED,			/* 2002 */
@@ -2594,7 +2597,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SELF-ACT",			0, 1, SELF_ACT,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "SEND",			0, 0, SEND,			/* Communication Section, 202x MCS */
+  { "SEND",			0, 0, SEND,			/* Communication Section, 2023 MCS */
 				0, 0
   },
   { "SENTENCE",			0, 0, SENTENCE,			/* 2002 */
@@ -2606,8 +2609,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SEPARATION",			0, 1, SEPARATION,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "SEQUENCE",			0, 0, SEQUENCE,			/* 2002 */
-				0, 0
+  { "SEQUENCE",			1, 0, SEQUENCE,			/* 2002 */
+				CB_CS_ALPHABET /* hack to allow code-names */, 0
   },
   { "SEQUENTIAL",		0, 0, SEQUENTIAL,		/* 2002 */
 				0, 0
@@ -2700,7 +2703,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SQUARE",			0, 1, SQUARE,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "STACK",			0, 1, -1,			/* 202x (C/S) */
+  { "STACK",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_MODULE_NAME
   },
   { "STANDARD",			0, 0, STANDARD,			/* 2002 */
@@ -2894,7 +2897,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "TOP",			0, 0, TOP,			/* 2002 */
 				0, 0
   },
-  { "TOP-LEVEL",			0, 1, -1,			/* 202x (C/S) */
+  { "TOP-LEVEL",			0, 1, -1,			/* 2023 (C/S) */
 				0, CB_CS_MODULE_NAME
   },
   { "TOWARD-GREATER",		0, 1, TOWARD_GREATER,		/* 2014 (C/S) */
@@ -3167,7 +3170,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "XML-SCHEMA",		0, 1, XML_SCHEMA,		/* IBM extension */
 				0, CB_CS_SPECIAL_NAMES
   },
-  { "XOR",		0, 0, -1,			/* 202x */
+  { "XOR",		0, 0, -1,			/* 2023 */
 				0, 0
   },
   { "Y",			0, 1, Y,			/* ACU extension */
@@ -3281,7 +3284,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_NUMERIC, 0
   },
-  /* COBOL 202x */
+  /* COBOL 2023 */
   { "BASECONVERT",				"cob_intr_baseconvert",
 					CB_INTR_BASECONVERT, FUNCTION_NAME,
 					CB_FEATURE_NOT_IMPLEMENTED,	3, 3,
@@ -3326,7 +3329,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	2, 2,
 					CB_CATEGORY_NUMERIC, 0
   },
-  /* COBOL 202x */
+  /* COBOL 2023 */
   { "CONCAT",			"cob_intr_concatenate",
 					CB_INTR_CONCATENATE, CONCATENATE_FUNC,
 					CB_FEATURE_ACTIVE,	-1, 1,
@@ -3354,7 +3357,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	2, 1,
 					CB_CATEGORY_ALPHANUMERIC, 1
   },
-  /* COBOL 202x */
+  /* COBOL 2023 */
   { "CONVERT",				"cob_intr_convert",
 					CB_INTR_CONVERT, FUNCTION_NAME,
 					CB_FEATURE_NOT_IMPLEMENTED,	3, 3,
@@ -3452,7 +3455,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_NUMERIC, 0
   },
-  /* COBOL 202x */
+  /* COBOL 2023 */
   { "FIND-STRING",		"cob_intr_find_string",
 					CB_INTR_FIND_STRING, FUNCTION_NAME,
 					CB_FEATURE_NOT_IMPLEMENTED,	2, 7,
@@ -3646,7 +3649,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	0, 0,
 					CB_CATEGORY_ALPHANUMERIC, 0
   },
-  /* COBOL 202x */
+  /* COBOL 2023 */
   { "MODULE-NAME",			"cob_intr_module_name",
 					CB_INTR_MODULE_NAME, FUNCTION_NAME,
 					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
@@ -3795,7 +3798,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_NUMERIC, 0
   },
-  /* GnuCOBOL (added incompatible to COBOL 202x CCP 1.3) */
+  /* GnuCOBOL (added incompatible to COBOL 2023 CCP 1.3) */
   { "SUBSTITUTE",			"cob_intr_substitute",
 					CB_INTR_SUBSTITUTE, SUBSTITUTE_FUNC,
 					CB_FEATURE_ACTIVE,	-1, 3,

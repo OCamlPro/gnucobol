@@ -1944,7 +1944,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -fassign-clause=external prog.cob], [0], [], [])
-AT_CAPTURE_FILE(./whatever)
+AT_CAPTURE_FILE([whatever])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_DATA([reference],
 [hi
@@ -1956,7 +1956,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([diff reference whatever], [0], [], [])
 
 AT_CHECK([$COMPILE -fassign-clause=dynamic prog.cob], [0], [], [])
-AT_CAPTURE_FILE(./out.txt)
+AT_CAPTURE_FILE([out.txt])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([diff reference out.txt], [0], [], [])
 
@@ -5887,7 +5887,7 @@ AT_DATA([prog.cob], [
 ])
 
 
-AT_CAPTURE_FILE(./TEST-FILE)
+AT_CAPTURE_FILE([TEST-FILE])
 
 AT_DATA([reference],
 [Record 1.
@@ -6022,7 +6022,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CAPTURE_FILE(./TEST-FILE)
+AT_CAPTURE_FILE([TEST-FILE])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
@@ -10248,7 +10248,7 @@ AT_CHECK([TESTOUT=TEST-OUT $COBCRUN_DIRECT ./prog], [0],
 ], [])
 
 
-AT_CAPTURE_FILE(./TEST-OUT)
+AT_CAPTURE_FILE([TEST-OUT])
 
 # note: currently with the same behaviour as MF
 #       (ignoring minimal record length for line-sequential)
@@ -10450,7 +10450,7 @@ SEQEXTFH: ENDING.
 ], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference],
 [THERE IS LITTLE LAMB
@@ -12011,7 +12011,7 @@ Listing TESTOUT   .
 ])
 
 
-AT_CAPTURE_FILE(./TEST-OUT)
+AT_CAPTURE_FILE([TEST-OUT])
 
 AT_DATA([reference],
 [  1

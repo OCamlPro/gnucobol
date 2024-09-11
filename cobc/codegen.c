@@ -1665,11 +1665,11 @@ lookup_attr (const int type, const cob_u32_t digits, const int scale,
 
 	/* Search attribute cache */
 	for (l = attr_cache; l; l = l->next) {
-		if (type == l->type &&
-		    digits == l->digits &&
-		    scale == l->scale &&
-		    flags == l->flags &&
-		    pic_id == l->pic_id) {
+		if (type == l->type
+		 && digits == l->digits
+		 && scale == l->scale
+		 && flags == l->flags
+		 && pic_id == l->pic_id) {
 			return l->id;
 		}
 	}
@@ -1779,8 +1779,8 @@ output_attr (const cb_tree x)
 				case CB_USAGE_COMP_6:
 					flags |= COB_FLAG_NO_SIGN_NIBBLE;
 					break;
-				case CB_USAGE_DOUBLE:
 				case CB_USAGE_FLOAT:
+				case CB_USAGE_DOUBLE:
 				case CB_USAGE_LONG_DOUBLE:
 				case CB_USAGE_FP_BIN32:
 				case CB_USAGE_FP_BIN64:
@@ -3147,48 +3147,43 @@ output_colseq_table_field (const char * field_name, const char * table_name)
 static void
 output_collating_tables (void)
 {
+	cob_u8_t ebcdic_to_ascii[256];
+	cob_u8_t ascii_to_ebcdic[256];
+
+	/* Load the collating tables if needed */
+	if (gen_ascii_ebcdic || gen_ebcdic_ascii) {
+		if (cob_load_collation (cb_ebcdic_table,
+					gen_ebcdic_ascii ? ebcdic_to_ascii : NULL,
+					gen_ascii_ebcdic ? ascii_to_ebcdic : NULL) < 0) {
+			cobc_err_exit (_("invalid parameter: %s"), "-febcdic-table");
+		}
+	}
+
 	if (gen_native) {
 		output_storage ("\n/* NATIVE table */\n");
 		output_colseq_table ("cob_native", NULL);
 		if (gen_native > 1) {
-			output_colseq_table_field("f_native", "cob_native");
+			output_colseq_table_field ("f_native", "cob_native");
 		}
 		output_storage ("\n");
 	}
 
 	if (gen_ascii_ebcdic) {
 		output_storage ("\n/* ASCII to EBCDIC table */\n");
-		output_storage ("static const cob_u8_t *\tcob_ascii_ebcdic = NULL;\n");
+		output_colseq_table ("cob_ascii_ebcdic", ascii_to_ebcdic);
 		if (gen_ascii_ebcdic > 1) {
-			output_colseq_table_field("f_ascii_ebcdic", "NULL");
+			output_colseq_table_field ("f_ascii_ebcdic", "cob_ascii_ebcdic");
 		}
 		output_storage ("\n");
 	}
 
 	if (gen_ebcdic_ascii) {
 		output_storage ("\n/* EBCDIC to ASCII table */\n");
-		output_storage ("static const cob_u8_t *\tcob_ebcdic_ascii = NULL;\n");
+		output_colseq_table ("cob_ebcdic_ascii", ebcdic_to_ascii);
 		if (gen_ebcdic_ascii > 1) {
-			output_colseq_table_field("f_ebcdic_ascii", "NULL");
+			output_colseq_table_field ("f_ebcdic_ascii", "cob_ebcdic_ascii");
 		}
 		output_storage ("\n");
-	}
-}
-
-static void
-output_init_collating_tables (void)
-{
-	if ((gen_ascii_ebcdic > 0) || (gen_ebcdic_ascii > 0)) {
-		output_line ("cob_get_collation_by_name(\"%s\", %s, %s);",
-				cob_get_collation_name(cb_ebcdic_table),
-				(gen_ebcdic_ascii > 0) ? "&cob_ebcdic_ascii" : "NULL",
-				(gen_ascii_ebcdic > 0) ? "&cob_ascii_ebcdic" : "NULL");
-		if (gen_ascii_ebcdic > 1) {
-			output_line("f_ascii_ebcdic.data = (cob_u8_ptr)cob_ascii_ebcdic;");
-		}
-		if (gen_ebcdic_ascii > 1) {
-			output_line("f_ebcdic_ascii.data = (cob_u8_ptr)cob_ebcdic_ascii;");
-		}
 	}
 }
 
@@ -4096,14 +4091,14 @@ output_param (cb_tree x, int id)
 		switch (abp->alphabet_type) {
 		case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
-			gen_ebcdic_ascii = 1;
+			gen_ebcdic_ascii |= 1;
 			output ("cob_ebcdic_ascii");
 			break;
 #endif
 			/* Fall through for ASCII */
 		case CB_ALPHABET_NATIVE:
 			if (current_prog->collating_sequence) {
-				gen_native = 1;
+				gen_native |= 1;
 				output ("cob_native");
 			} else {
 				output ("NULL");
@@ -4112,7 +4107,7 @@ output_param (cb_tree x, int id)
 		case CB_ALPHABET_EBCDIC:
 #ifdef	COB_EBCDIC_MACHINE
 			if (current_prog->collating_sequence) {
-				gen_native = 1;
+				gen_native |= 1;
 				output ("cob_native");
 			} else {
 				output ("NULL");
@@ -4248,18 +4243,18 @@ output_param (cb_tree x, int id)
 			switch (rbp->alphabet_type) {
 			case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
-				gen_ebcdic_ascii = 2;
+				gen_ebcdic_ascii |= 2;
 				output ("&f_ebcdic_ascii");
 				break;
 #endif
 			/* Fall through for ASCII */
 			case CB_ALPHABET_NATIVE:
-				gen_native = 2;
+				gen_native |= 2;
 				output ("&f_native");
 				break;
 			case CB_ALPHABET_EBCDIC:
 #ifdef	COB_EBCDIC_MACHINE
-				gen_native = 2;
+				gen_native |= 2;
 				output ("&f_native");
 #else
 				output ("&f_ascii_ebcdic");
@@ -5390,14 +5385,13 @@ output_initialize_fp (cb_tree x, struct cb_field *f)
 }
 
 static void
-output_initialize_uniform (cb_tree x, const int c, const int size)
+output_initialize_uniform (cb_tree x, const unsigned char cc, const int size)
 {
 	struct cb_field		*f = cb_code_field (x);
-	const unsigned char cc = c;
 
 	/* REPORT lines are cleared to SPACES */
 	if (f->storage == CB_STORAGE_REPORT
-	 && c == ' ') {
+	 && cc == ' ') {
 		return;
 	}
 
@@ -6000,7 +5994,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					} else {
 						size = ff->offset + ff->size - last_field->offset;
 					}
-					output_initialize_uniform (c, last_char, size);
+					output_initialize_uniform (c, (unsigned char)last_char, size);
 				}
 				break;
 			}
@@ -6054,7 +6048,6 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 						init = ' ';
 					}
 					if (init != -1) {
-						cb_tree c = cb_build_field_reference (f, NULL);
 						cb_tree stmt = CB_BUILD_FUNCALL_3 ("memset",
 							CB_BUILD_CAST_ADDRESS (c),
 							cb_int (init), cb_int (f->size * f->occurs_max));
@@ -6193,7 +6186,7 @@ output_initialize (struct cb_initialize *p)
 		case INITIALIZE_DEFAULT:
 			c = initialize_uniform_char (f, p);
 			if (c != -1) {
-				output_initialize_uniform (p->var, c, f->occurs_max);
+				output_initialize_uniform (p->var, (unsigned char)c, f->occurs_max);
 				output_initialize_chaining (f, p);
 				return;
 			}
@@ -6238,7 +6231,7 @@ output_initialize (struct cb_initialize *p)
 	case INITIALIZE_DEFAULT:
 		c = initialize_uniform_char (f, p);
 		if (c != -1) {
-			output_initialize_uniform (p->var, c, f->size);
+			output_initialize_uniform (p->var, (unsigned char)c, f->size);
 			output_initialize_chaining (f, p);
 			return;
 		}
@@ -7699,11 +7692,19 @@ output_set_attribute (const struct cb_field *f, cob_flags_t val_on,
 static void
 output_xml_parse (struct cb_xml_parse *p)
 {
+	int flags = 0;
+	if (cb_xml_parse_xmlss) {
+		flags &= COB_XML_PARSE_XMLNSS;
+	}
+	if (p->returning_national && current_prog->xml_ntext) {
+		flags &= COB_XML_PARSE_NATIONAL;
+	}
+
 	output_block_open ();
 	output_line ("void *xml_state = NULL;");
 	output_prefix ();
 	output ("cob_set_int ("),
-	output_param (current_program->xml_code, 0);
+	output_param (CB_TREE (current_program->xml_code), 0);
 	output (", 0);");
 	output_newline ();
 
@@ -7719,7 +7720,7 @@ output_xml_parse (struct cb_xml_parse *p)
 	output_param (p->encoding, 1);
 	output (", ");
 	output_param (p->validating, 2);
-	output (", %d, &xml_state)) break;", p->returning_national);
+	output (", %d, &xml_state)) break;", flags);
 
 	/* COBOL callback function -> PROCESSING PROCEDURE */
 	/* note: automatic source reference */
@@ -9586,6 +9587,11 @@ output_stmt (cb_tree x)
 			}
 			last_line = x->source_line;
 			skip_line_num = 0;
+#if 0		/* pass reference; needs adjustment in error.c to
+			   say "codegen" instead of "compile" */
+			cb_source_file = x->source_file;
+			cb_source_line = x->source_line;
+#endif
 		}
 
 		if (!p->file) {
@@ -10150,13 +10156,13 @@ output_file_initialization (struct cb_file *f)
 		case CB_ALPHABET_ASCII:
 			alph_read = "cob_ascii_ebcdic";
 			alph_write = "cob_ebcdic_ascii";
-			gen_ebcdic_ascii = 1;
+			gen_ebcdic_ascii |= 1;
 			gen_ascii_ebcdic |= 1;
 			break;
 		case CB_ALPHABET_EBCDIC:
 			alph_read = "cob_ebcdic_ascii";
 			alph_write = "cob_ascii_ebcdic";
-			gen_ebcdic_ascii = 1;
+			gen_ebcdic_ascii |= 1;
 			gen_ascii_ebcdic |= 1;
 			break;
 		/* case CB_ALPHABET_CUSTOM: */
@@ -11912,21 +11918,18 @@ static void
 output_module_register_init (cb_tree reg, const char *name)
 {
 	if (!reg) {
+		output_line ("module->%s = NULL;", name);
 		return;
 	}
 
 	if (CB_REFERENCE_P (reg)) {
 		reg = cb_ref (reg);
-		if (CB_FIELD_P (reg) && !CB_FIELD (reg)->count) {
-			return;
-		}
-	} else {
-		struct cb_field *field = CB_FIELD (reg);
-		if (!field->count) {
-			return;
-		}
-		reg = cb_build_field_reference (field, NULL);
 	}
+	if (CB_FIELD_P (reg) && !CB_FIELD (reg)->count) {
+		output_line ("module->%s = NULL;", name);
+		return;
+	}
+
 	output_prefix ();
 	output ("module->%s = ", name);
 	output_param (reg, -1);
@@ -12050,8 +12053,6 @@ output_module_init_function (struct cb_program *prog)
 		output_line ("module->module_sources = NULL;");
 	}
 
-        output_init_collating_tables();
-
 	output_block_close ();
 	output_newline ();
 }
@@ -12076,18 +12077,18 @@ output_module_init_non_static (struct cb_program *prog)
 	   of module local registers to cob_module structure */
 	output_module_register_init (prog->cursor_pos, "cursor_pos");
 
-	output_module_register_init (prog->xml_code, "xml_code");
-	output_module_register_init (prog->xml_event, "xml_event");
-	output_module_register_init (prog->xml_information, "xml_information");
-	output_module_register_init (prog->xml_namespace, "xml_namespace");
-	output_module_register_init (prog->xml_namespace_prefix, "xml_namespace_prefix");
-	output_module_register_init (prog->xml_nnamespace, "xml_nnamespace");
-	output_module_register_init (prog->xml_nnamespace_prefix, "xml_nnamespace_prefix");
-	output_module_register_init (prog->xml_ntext, "xml_ntext");
-	output_module_register_init (prog->xml_text, "xml_text");
+	output_module_register_init (CB_TREE (prog->xml_code), "xml_code");
+	output_module_register_init (CB_TREE (prog->xml_event), "xml_event");
+	output_module_register_init (CB_TREE (prog->xml_information), "xml_information");
+	output_module_register_init (CB_TREE (prog->xml_namespace), "xml_namespace");
+	output_module_register_init (CB_TREE (prog->xml_namespace_prefix), "xml_namespace_prefix");
+	output_module_register_init (CB_TREE (prog->xml_nnamespace), "xml_nnamespace");
+	output_module_register_init (CB_TREE (prog->xml_nnamespace_prefix), "xml_nnamespace_prefix");
+	output_module_register_init (CB_TREE (prog->xml_ntext), "xml_ntext");
+	output_module_register_init (CB_TREE (prog->xml_text), "xml_text");
 
-	output_module_register_init (prog->json_code, "json_code");
-	output_module_register_init (prog->json_status, "json_status");
+	output_module_register_init (CB_TREE (prog->json_code), "json_code");
+	output_module_register_init (CB_TREE (prog->json_status), "json_status");
 }
 
 static void
@@ -13552,7 +13553,7 @@ cancel_end:
 				seen = 1;
 				output_line ("/* Clear Decimal Constant values */");
 			}
-			output_line ("cob_decimal_clear(%s%d);", CB_PREFIX_DEC_CONST, m->id);
+			output_line ("cob_decimal_clear (%s%d);", CB_PREFIX_DEC_CONST, m->id);
 			output_line ("%s%d = NULL;", CB_PREFIX_DEC_CONST, m->id);
 		}
 	}

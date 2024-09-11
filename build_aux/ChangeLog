@@ -5,6 +5,10 @@
 	* pre-inst-env.in: don't quote include and lib path as this breaks
 	  MSYS builds
 
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: use of $TMPDIR instead of /tmp
+
 2022-12-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* create_mingw_bindist.sh: optional installation of locales and manpages;

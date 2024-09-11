@@ -1889,17 +1889,17 @@ struct cb_program {
 	cb_tree			apply_commit;		/* APPLY COMMIT file- and data-items */
 	cb_tree			cursor_pos;		/* CURSOR */
 	cb_tree			crt_status;		/* CRT STATUS */
-	cb_tree			xml_code;		/* XML-CODE */
-	cb_tree			xml_event;		/* XML-EVENT */
-	cb_tree			xml_information;	/* XML-INFORMATION */
-	cb_tree			xml_namespace;		/* XML-NAMESPACE */
-	cb_tree			xml_nnamespace;		/* XML-NNAMESPACE */
-	cb_tree			xml_namespace_prefix;	/* XML-NAMESPACE-PREFIX */
-	cb_tree			xml_nnamespace_prefix;	/* XML-NNAMESPACE-PREFIX */
-	cb_tree			xml_ntext;		/* XML-NTEXT */
-	cb_tree			xml_text;		/* XML-TEXT */
-	cb_tree			json_code;		/* JSON-CODE */
-	cb_tree			json_status;		/* JSON-STATUS */
+	struct cb_field	*xml_code;		/* XML-CODE */
+	struct cb_field	*xml_event;		/* XML-EVENT */
+	struct cb_field	*xml_information;	/* XML-INFORMATION */
+	struct cb_field	*xml_namespace;		/* XML-NAMESPACE */
+	struct cb_field	*xml_nnamespace;		/* XML-NNAMESPACE */
+	struct cb_field	*xml_namespace_prefix;	/* XML-NAMESPACE-PREFIX */
+	struct cb_field	*xml_nnamespace_prefix;	/* XML-NNAMESPACE-PREFIX */
+	struct cb_field	*xml_ntext;		/* XML-NTEXT */
+	struct cb_field	*xml_text;		/* XML-TEXT */
+	struct cb_field	*json_code;		/* JSON-CODE */
+	struct cb_field	*json_status;		/* JSON-STATUS */
 	cb_tree			returning;		/* RETURNING */
 	struct cb_label		*all_procedure;		/* DEBUGGING */
 	struct cb_call_xref	call_xref;		/* CALL Xref list */
@@ -2438,7 +2438,7 @@ extern void		cb_emit_accept_date_yyyymmdd (cb_tree);
 extern void		cb_emit_accept_day (cb_tree);
 extern void		cb_emit_accept_day_yyyyddd (cb_tree);
 extern void		cb_emit_accept_day_of_week (cb_tree);
-extern void		cb_emit_accept_time (cb_tree);
+extern void		cb_emit_accept_time (cb_tree, int);
 extern void		cb_emit_accept_command_line (cb_tree);
 extern void		cb_emit_accept_environment (cb_tree);
 extern void		cb_emit_accept_mnemonic (cb_tree, cb_tree);

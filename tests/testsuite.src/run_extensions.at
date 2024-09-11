@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -3431,7 +3431,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -fsystem-name="sw1, SwItCh\ b, SWITCH\ 25" \
 -fsystem-name=SWITCH-32 -fsystem-name="SWITCH\ Z" -fsystem-name=USW-31 prog.cob], [0], [], [])
-AT_CHECK([COB_SWITCH_2=1 COB_SWITCH_26=1 COB_SWITCH_31=1 COB_SWITCH_32=1 ./prog], [0],
+AT_CHECK([COB_SWITCH_12=1 COB_SWITCH_36=1 COB_SWITCH_31=1 COB_SWITCH_32=1 ./prog], [0],
 [OFF ON OFF OFF ON ON ON], [])
 
 AT_CLEANUP
@@ -5219,6 +5219,164 @@ Error-Message:   prog.cob:20: module 'Tilt' not found
 AT_CLEANUP
 
 
+AT_SETUP([System routine x'91' functions 46-47])
+AT_KEYWORDS([extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MYFILE ASSIGN "MYFILE"
+           ORGANIZATION LINE SEQUENTIAL
+           FILE STATUS IS FSTAT.
+
+       DATA DIVISION.
+
+       FILE SECTION.
+       FD  MYFILE.
+       01  MYRECORD.
+           10  MYFIELD  PIC 99 COMP-4.
+
+       WORKING-STORAGE SECTION.
+       01   FSTAT       PIC XX.
+       01   RES         PIC X USAGE COMP-X.
+       01   FUN_WR      PIC X USAGE COMP-X.
+       01   FUN_RD      PIC X USAGE COMP-X.
+
+       PROCEDURE DIVISION.
+           SET ENVIRONMENT "COB_LS_VALIDATE" TO "FALSE".
+           SET ENVIRONMENT "COB_LS_NULLS"    TO "FALSE".
+
+           MOVE 46 TO FUN_WR.
+           MOVE 46 TO FUN_RD.
+           PERFORM PTEST.
+
+           MOVE 46 TO FUN_WR.
+           MOVE 47 TO FUN_RD.
+           PERFORM PTEST.
+
+           MOVE 47 TO FUN_WR.
+           MOVE 47 TO FUN_RD.
+           PERFORM PTEST.
+
+           MOVE 47 TO FUN_WR.
+           MOVE 46 TO FUN_RD.
+           PERFORM PTEST.
+
+           STOP RUN.
+
+       PTEST.
+           MOVE 31 TO MYFIELD.
+
+           OPEN OUTPUT MYFILE.
+           CALL X"91" USING RES FUN_WR MYFILE.
+           WRITE MYRECORD.
+           CLOSE MYFILE.
+
+           OPEN INPUT MYFILE.
+           CALL X"91" USING RES FUN_RD MYFILE.
+           READ MYFILE.
+           IF FSTAT = "71" THEN
+              DISPLAY "READ ERROR"
+           ELSE
+              DISPLAY "READ " MYFIELD
+           END-IF.
+           CLOSE MYFILE.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[READ 31
+READ 00
+READ 31
+READ ERROR
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([System routine x'91' functions 48-49])
+AT_KEYWORDS([extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MYFILE ASSIGN "MYFILE"
+           ORGANIZATION LINE SEQUENTIAL
+           FILE STATUS IS FSTAT.
+
+       DATA  DIVISION.
+
+       FILE SECTION.
+       FD  MYFILE.
+       01  MYRECORD.
+           10  MYFIELD  PIC X(17).
+
+       WORKING-STORAGE SECTION.
+       01   FSTAT       PIC XX.
+       01   RES         PIC X USAGE COMP-X.
+       01   FUN_WR      PIC X USAGE COMP-X.
+       01   FUN_RD      PIC X USAGE COMP-X.
+
+       PROCEDURE DIVISION.
+           SET ENVIRONMENT "COB_LS_VALIDATE" TO "FALSE".
+           SET ENVIRONMENT "COB_LS_INSTAB"   TO "FALSE".
+
+           MOVE 48 TO FUN_WR.
+           MOVE 48 TO FUN_RD.
+           PERFORM PTEST.
+
+           MOVE 48 TO FUN_WR.
+           MOVE 49 TO FUN_RD.
+           PERFORM PTEST.
+
+           MOVE 49 TO FUN_WR.
+           MOVE 49 TO FUN_RD.
+           PERFORM PTEST.
+
+           MOVE 49 TO FUN_WR.
+           MOVE 48 TO FUN_RD.
+           PERFORM PTEST.
+
+           STOP RUN.
+
+       PTEST.
+           MOVE FUNCTION CONCATENATE("A", X"09", "B     C") TO MYFIELD.
+
+           OPEN OUTPUT MYFILE.
+           CALL X"91" USING RES FUN_WR MYFILE.
+           WRITE MYRECORD.
+           CLOSE MYFILE.
+
+           OPEN INPUT MYFILE.
+           CALL X"91" USING RES FUN_RD MYFILE.
+           READ MYFILE.
+           IF FSTAT = "71" THEN
+              DISPLAY "READ ERROR"
+           ELSE
+              DISPLAY "READ '" MYFIELD "'"
+           END-IF.
+           CLOSE MYFILE.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[READ 'A       B       C'
+READ 'A	B	C            '
+READ 'A	B     C        '
+READ 'A       B     C  '
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([DISPLAY DIRECTIVE and $DISPLAY])
 AT_KEYWORDS([extensions])
 
@@ -5927,7 +6085,7 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01 FLOATS.
-         03 FLOAT-BINARY-32  USAGE COMPUTATIONAL-9 VALUE -4.2E+1.
+         03 FLOAT-BINARY-32  USAGE COMPUTATIONAL-9  VALUE -4.2E+1.
          03 FLOAT-BINARY-64  USAGE COMPUTATIONAL-10 VALUE 0.0.
          03 FLOAT-BINARY-128 USAGE COMPUTATIONAL-15 VALUE 1.0.
 
@@ -5941,12 +6099,12 @@ AT_DATA([prog.cob], [
            DISPLAY FLOAT-BINARY-64
 
         *> NOTE: FLOAT-BINARY-128 is only syntax-checked as support for
-        *> 128bit floating-point is still partial
+        *> 128bit floating-point is still partial / "processor dependent"
 
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=gcos-strict prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=gcos-strict prog.cob -Wno-unfinished], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [-42
 0

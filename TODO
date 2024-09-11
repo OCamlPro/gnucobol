@@ -228,6 +228,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Move the IO status codes from common.h to fileio.h as per TODO
 
+- Make field type an enum instead of a short in common.h:cob_field_attr as per TODO
+
 - Check the #if-0'ed code in field.c:validate_field_value
 
 - Check the #if-0'ed code for setting last_exception_source in common.c:cob_set_exception

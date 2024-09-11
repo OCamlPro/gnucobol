@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -344,11 +344,12 @@ check_non_area_a (cb_tree stmt) {
 /* Collating sequences */
 
 /* Known collating sequences/alphabets */
-enum {
+enum cb_colseq {
 	CB_COLSEQ_NATIVE,
 	CB_COLSEQ_ASCII,
 	CB_COLSEQ_EBCDIC,
-} cb_default_colseq = CB_COLSEQ_NATIVE;
+};
+enum cb_colseq cb_default_colseq = CB_COLSEQ_NATIVE;
 
 /* Decipher character conversion table names */
 int cb_deciph_default_colseq_name (const char * const name)
@@ -365,8 +366,8 @@ int cb_deciph_default_colseq_name (const char * const name)
 	return 0;
 }
 
-static void
-build_default_colseq (const char *alphabet_name,
+static cb_tree
+build_colseq_tree (const char *alphabet_name,
 		      int alphabet_type,
 		      int alphabet_target)
 {
@@ -375,27 +376,31 @@ build_default_colseq (const char *alphabet_name,
 	alpha = CB_ALPHABET_NAME (cb_build_alphabet_name (name));
 	alpha->alphabet_type = alphabet_type;
 	alpha->alphabet_target = alphabet_target;
-	default_collation = name;
+	return name;
 }
 
-static void
-setup_default_colseq (void)
+static cb_tree
+build_colseq (enum cb_colseq colseq)
 {
-	switch (cb_default_colseq) {
+	switch (colseq) {
 	case CB_COLSEQ_NATIVE:
-		default_collation = NULL;
-		break;
+		return NULL;
 	case CB_COLSEQ_ASCII:
-		build_default_colseq ("ASCII",
+		return build_colseq_tree ("ASCII",
 				      CB_ALPHABET_ASCII,
 				      CB_ALPHABET_ALPHANUMERIC);
-		break;
 	case CB_COLSEQ_EBCDIC:
-		build_default_colseq ("EBCDIC",
+		return build_colseq_tree ("EBCDIC",
 				      CB_ALPHABET_EBCDIC,
 				      CB_ALPHABET_ALPHANUMERIC);
-		break;
+	/* LCOV_EXCL_START */
+	default:
+		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
+			"build_colseq", "colseq");
+		COBC_ABORT ();
 	}
+	/* LCOV_EXCL_STOP */
+
 }
 
 
@@ -1013,6 +1018,25 @@ check_conf_section_order (const cob_flags_t part)
 
 #undef MESSAGE_LEN
 
+/* check if a given register is available; if it is,
+   enforce code generation and add a
+   "receiving" entry for it when xref is requested */
+static void
+cb_set_register_receiving (struct cb_field *reg_field, int mandatory)
+{
+	if (!reg_field) {
+		if (mandatory) {
+			cb_error ("missing register definition");
+		}
+		return;
+	}
+	reg_field->count++;
+
+	if (cb_listing_xref) {
+		cobc_xref_set_receiving (CB_TREE (reg_field));
+	}
+}
+
 static enum cb_handler_type
 get_handler_type_from_statement (struct cb_statement *statement)
 {
@@ -1321,7 +1345,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 	}
 
 	/* Initalize default COLLATING SEQUENCE */
-	setup_default_colseq ();
+	default_collation = build_colseq (cb_default_colseq);
 
 	begin_scope_of_program_name (current_program);
 
@@ -2826,6 +2850,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
 %token MNEMONIC_NAME		"Mnemonic name"
@@ -5692,6 +5717,22 @@ alphabet_name:
 		$$ = cb_error_node;
 	}
   }
+| STANDARD_1
+  {
+	$$ = build_colseq (CB_COLSEQ_NATIVE);
+  }
+| STANDARD_2
+  {
+	$$ = build_colseq (CB_COLSEQ_ASCII);
+  }
+| EBCDIC
+  {
+	$$ = build_colseq (CB_COLSEQ_EBCDIC);
+  }
+| ASCII	/* concerning the standard: a code-name */
+  {
+	$$ = build_colseq (CB_COLSEQ_ASCII);
+  }
 ;
 
 /* FILE STATUS clause */
@@ -7065,6 +7106,14 @@ con_source:
   {
 	$$ = cb_int ((int)sizeof(double));
   }
+| long_double
+  {
+#if 1 /* fixed-sized as in field.c */
+	$$ = cb_int (16);
+#else
+	$$ = cb_int ((int)sizeof(long double));
+#endif
+  }
 | fp32_usage
   {
 	$$ = cb_int4;
@@ -7100,7 +7149,6 @@ fp64_usage:
 fp128_usage:
   FLOAT_BINARY_128
 | FLOAT_DECIMAL_34
-| FLOAT_EXTENDED
 ;
 
 pointer_len:
@@ -7796,6 +7844,11 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_DOUBLE);
   }
+| long_double
+  {
+	check_and_set_usage (CB_USAGE_LONG_DOUBLE);
+	CB_UNFINISHED ("FLOAT-EXTENDED");
+  }
 | COMP_3
   {
 	check_and_set_usage (CB_USAGE_PACKED);
@@ -8062,7 +8115,11 @@ _only:
 
 double_usage:
   COMP_2
-| FLOAT_LONG	/* alias from DOUBLE (ACU) in reserved.c */
+| FLOAT_LONG	/* noted: aliased to DOUBLE (ACU) in reserved.c */
+;
+
+long_double:
+  FLOAT_EXTENDED
 ;
 
 _font_name:
@@ -11576,7 +11633,11 @@ accept_body:
   }
 | identifier FROM TIME
   {
-	cb_emit_accept_time ($1);
+	cb_emit_accept_time ($1, 0);
+  }
+| identifier FROM MICROSECOND_TIME
+  {
+	cb_emit_accept_time ($1, 1);
   }
 | identifier FROM USER NAME
   {
@@ -14861,7 +14922,7 @@ json_generate_statement:
 	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
 	cobc_cs_check = CB_CS_JSON_GENERATE;
-	cobc_xref_set_receiving (current_program->json_code);
+	cb_set_register_receiving (current_program->json_code, 1);
   }
   json_generate_body
   _end_json
@@ -14921,8 +14982,8 @@ json_parse_statement:
   {
 	begin_statement (STMT_JSON_PARSE, TERM_JSON);
 	CB_PENDING ("JSON PARSE");
-	cobc_xref_set_receiving (current_program->json_code);
-	cobc_xref_set_receiving (current_program->json_status);
+	cb_set_register_receiving (current_program->json_code, 1);
+	cb_set_register_receiving (current_program->json_status, 1);
   }
   json_parse_body
   _end_json
@@ -15917,12 +15978,12 @@ send_body_mcs:
    FIXME - workaround end */
   RETURNING message_tag_data_item
   {
-	CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 2023 MCS");
   }
 /* FIXME later: too many conflicts here
 | _to message_tag_data_item from_identifier _send_raising _common_exception_phrases
   {
-	CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 2023 MCS");
   }
    FIXME - workaround end */
 ;
@@ -17277,7 +17338,7 @@ xml_generate_statement:
 	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
 	cobc_cs_check = CB_CS_XML_GENERATE;
-	cobc_xref_set_receiving (current_program->xml_code);
+	cb_set_register_receiving (current_program->xml_code, 1);
   }
   xml_generate_body
   _end_xml
@@ -17565,16 +17626,18 @@ xml_parse_statement:
 	begin_statement (STMT_XML_PARSE, TERM_XML);
 	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
-	cobc_xref_set_receiving (current_program->xml_code);
-	cobc_xref_set_receiving (current_program->xml_event);
-	cobc_xref_set_receiving (current_program->xml_text);
-	cobc_xref_set_receiving (current_program->xml_ntext);
+	cb_set_register_receiving (current_program->xml_code, 1);
+	cb_set_register_receiving (current_program->xml_event, 1);
+	cb_set_register_receiving (current_program->xml_text, 1);
+	cb_set_register_receiving (current_program->xml_ntext, 0);
 	if (cb_xml_parse_xmlss) {
-		cobc_xref_set_receiving (current_program->xml_information);
-		cobc_xref_set_receiving (current_program->xml_namespace);
-		cobc_xref_set_receiving (current_program->xml_namespace_prefix);
-		cobc_xref_set_receiving (current_program->xml_nnamespace);
-		cobc_xref_set_receiving (current_program->xml_nnamespace_prefix);
+		cb_set_register_receiving (current_program->xml_namespace, 1);
+		cb_set_register_receiving (current_program->xml_namespace_prefix, 1);
+		cb_set_register_receiving (current_program->xml_nnamespace, 1);
+		cb_set_register_receiving (current_program->xml_nnamespace_prefix, 1);
+	}
+	if (cb_xml_parse_xmlss) {
+		cb_set_register_receiving (current_program->xml_information, 0);
 	}
   }
   xml_parse_body

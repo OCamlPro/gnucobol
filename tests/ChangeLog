@@ -6,6 +6,11 @@
 	  under MSVC Release, by forcing a flush of stdout with
 	  fflush and using cob_free instead of free in C codes
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/configuration.at: test reading translation
+	  tables from an external file
+
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: prefer config.status replacement over environment var

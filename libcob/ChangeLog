@@ -1,4 +1,9 @@
 
+2024-08-04  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2020-06-20:
+	* common.c (cob_sys_x91): activated functions 46-49
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* intrinsics.c (cob_intr_random), move.c (cob_move_display_to_packed):
@@ -80,18 +85,105 @@
 2023-02-19  Ron Norman <rjn@inglenet.com>
 
 	* move.c: For large fields use 'cob_decimal_setget_fld'
-	* numeric.c: Added support for large BINARY/COMP-X/COMP-N 
+	* numeric.c: Added support for large BINARY/COMP-X/COMP-N
 	* termio.c: Updated 'bin_digits' table for larger fields
 	* common.h: Removed  define  COB_MAX_COMPX
+
+2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cconv.c (cob_skip_blanks): prefer isspace over isblank, which is not
+	  available in every system
+	* common.c (conf_runtime_error, conf_runtime_error_value): as static
+	* mlio.c (xml_parse): c89 fix
+
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	* cconv.c: add a cob_load_collation function to load collating sequences
+	  from files ; cobc uses this function to create tables that are embedded
+	  in the generated code, and we also we make it available in libcob so
+	  that external tools that make use of the library can use this feature
+	* common.h: declare the API for loading collating sequences from files
 
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (internal_nanosleep): fix missing identifier (broken merge)
 
+2023-01-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c: include limits.h for INT_MAX
+	* numeric.c (cob_decimal_add, cob_decimal_sub): only check for zero if
+	  scale differs
+	* numeric.c (cob_decimal_mul): removed check for zero as mpz_mul does this
+	  on its own
+
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10, cob_pow_10_uli)
+	  [!PREFER_MPZ_MUL]: use integer multiplication for scaling, as this
+	  has proven to be a bit faster than multiplication on pre-calculated mpz
+	* numeric.c (cob_cmp_packed): optimized for speed
+	* intrinsic.c (at_cr_or_db): fixed to do case-insensitive check
+	* intrinsic.c (cob_intr_hex_to_char): minor speedup by switch to pointer
+	  arithmetic (fixing compiler warning)
+
+2023-01-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_set_packed): speedup (of ~8%) by handling
+	  fields with less than 20 digits via integer computation instead
+	  of GMP
+	* numeric.c (cob_decimal_set_display): minor speedup by switching
+	  to pointer arithmetic
+	* numeric.c, common.c: applied 2022-05-30 changes for sign
+	* numeric.c: applied 2022-05-30 changes for shift_decimal
+	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10): extracted identical
+	  code to inline functions
+	* numeric.c (cob_s32_pow, cob_s64_pow): use of register type
+
 2023-01-15  Ron Norman <rjn@inglenet.com>
 
 	* screenio.c: renamed max_pairs_available as this is defined on HPUX
 	* common.c (check_current_date): fixed bad snprintf size
+
+2023-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: minor refactoring to reduce duplicated code
+
+2023-01-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_cmp): fix stack-use-after-scope for comparisons of unsigned
+	  numeric with non-numeric field
+
+2023-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_accept_date, cob_accept_date_yyyymmdd, cob_accept_day,
+	  cob_accept_day_yyyyddd, cob_accept_time, cob_accept_microsecond_time):
+	  use binary intermediate field instead of numeric edited, replacing
+	  "expensive" sprintf calls and multiple de-editing/editing to max. one
+	  minimal editing (via move.c)
+	* common.c (cob_move_to_group_as_alnum): new function to handle MOVE to
+	  group as MOVE to alphanumeric field, used in functions above
+	* common.c (cob_display_arg_number, cob_accept_arg_number, cob_cmp),
+	  move.c (indirect_move, cob_set_int, cob_set_llint, cob_get_int,
+	  cob_get_llint): minor refactoring to use COB_FIELD_INIT
+	* common.c (check_current_date, cob_get_current_datetime),
+	  coblocal.h (cob_settings->cob_time_constant_is_calculated):
+	  skip expensive call to localtime + mktime if COB_CURRENT_DATE is
+	  set and "complete", by doing it already for the constant
+	* move.c: integration of changes from 2022-04-08
+	* move.c (cob_get_int, cob_get_llint): use of constant binary attributes
+
+2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_is_numeric), move.c (cob_move, cob_move_fp_to_fp),
+	  numeric.c: more additions for COB_TYPE_NUMERIC_L_DOUBLE, basic use now
+	  works as expected
+	* common.c (print_version): welcome 2023
+	* common.c (check_current_date): only skip one - or / in COB_CURRENT_DATE
+	* common.c (cob_sys_x91, set_config_val): integrated changes originally
+	  done 2020-06-20 (!)
+	* common.c, common.h: dropped ENV_RESETS and compare data pointer instead
+	  of the name for all configurations that need additional setup
+	* common.c (cob_sys_x91): activated function 35
 
 2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -104,7 +196,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c: file moved from cobc to libcob
+	* cconv.c: file moved from cobc to libcob
 	* common.h: declare the new API for collating sequences
 
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
@@ -185,6 +277,8 @@
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c,fisam.c: Add code to handle ISAM index compression settings
+	* common.h: XML mode defines
+	* mlio.c: adjustments for register handling in XML parse stubs
 
 2022-11-25  Ron Norman <rjn@inglenet.com>
 
@@ -202,6 +296,11 @@
 	* intrinsic.c (cob_intr_random) [!DISABLE_GMP_RANDOM]:
 	  switched initial default-seed from "system dependent"
 	  (mostly always zero) to a random seed
+
+2022-11-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, termio.c (cob_display_common): more additions for
+	  currently inactive COB_TYPE_NUMERIC_L_DOUBLE
 
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -571,6 +670,13 @@
 
 	* numeric.c (num_byte_memcpy): removed, callers adjusted to
 	  use memcpy instead
+	* numeric.c: adjusted to distinguish "field_sign" (a flag) from
+	  "sign" (a GMP return to show negative/zero/positive), and check
+	  the later with explicit -1 / 1
+	* common.c: adjusted to check for sign as explicit -1/1
+	* numeric.c: check for "gmp sign == 0" and skip some computations early
+	* numeric.c (shift_decimal): moved checks for "shift by zero" out to
+	  callers as already done in many places
 
 2022-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -642,10 +748,14 @@
 	* strings.c (cob_inspect_init, cob_inspect_characters, is_marked): use of
 	  the now definitive check "did we mark anything" instead of checking all
 	  marker bytes by testing for "inspect_mark[inspect_mark_min] != 0"
-	* strings.c (is_marked): check for possible/definitel overlap of
+	* strings.c (is_marked): check for possible/definite overlap of
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+	* move.c: add const_bin_attr, add COB_FLAG_REAL_BINARY to const_binll_attr
+	* move.c, common.h: new function cob_set_llint
+	* move.c (cob_set_int): use const_bin_attr instead of setting it up
+	  each time as this function is used quite often in generated code
 
 2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1085,6 +1195,7 @@
 	  (cob_intr_bit_to_char)
 	* common.c: renamed (cob_memcpy) to (cob_move_intermediate) and
 	  postponed handling of target size to cob_move
+	* common.c, common.h: implemented (cob_accept_microsecond_time)
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1396,6 +1507,8 @@
 	* move.c: use of COB_D2I for conversions
 	  and restore previous one afterwards
 	* move.c (store_common_region): minor refactoring
+	* numeric.c, common.c: clear use and separation of "sign" (GMP view) vs.
+	  "flag_sign" (field attribute) vs. "has_negative_sign"
 
 2021-02-08  Ron Norman <rjn@inglenet.com>
 
@@ -1935,7 +2048,7 @@
 	   4. entering sign jumps to sign;
 	   5. create (hopefully) nice insert behaviour for numbers: cursor on
 	      integral digits inserts to right, cursor on decimal digits inserts
-          to left
+	      to left.
 
 2020-07-19  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -2016,14 +2129,24 @@
 	* fileio.c: Set COB_EC_DELETE_FILE as required
 	* fextfh.c: Prepare for cob_delete_file given 'override' option
 
+2020-06-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sys_x91): implemented / prepared all documented MF function
+	  codes for x'91' library
+	  * 11+12: allow accessing debug switch along to "programmable 0-7"
+	  * 13+14: allow accessing "runtime switches 1-26" (as A-Z),
+	    in case of A/N/T: set related runtime setting
+	  * 15: prepared for program lookup
+	  * 35: prepared for DOS EXEC call
+	  * 46-49: prepared for file specific setting LS_NULLS/LS_TABS
+	  * 69: prepared for directory search
+	* common.c (set_config_val): set switches D/N/T depending on other settings
+
 2020-06-20  Ron Norman <rjn@inglenet.com>
 
 	* common.h: add mapkey to cob_file
-	* fileio.c,fisam.c: Fix to handle old VBISAM that does not support 
-	            sparse indexes
-
-2020-06-20  Ron Norman <rjn@inglenet.com>
-
+	* fileio.c,fisam.c: Fix to handle old VBISAM that does not support
+	  sparse indexes
 	* fisam.c,fbdb.c: Fix to return status 21 instead of 22 when OPEN OUTPUT
 
 2020-06-18  Ron Norman <rjn@inglenet.com>
@@ -2055,7 +2178,7 @@
 
 	* fileio.c (cob_key_def): Fixed bug #645 problem with updating
 	  key definitions from data dictionary file (BDB, old VBISAM)
-				
+
 2020-06-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobgetopt.c: nearly redo the copy of GnuCOBOL's getopt implementation
@@ -3314,7 +3437,7 @@
 
 	* common.h: add flag_debug_trace to the cob_module
 	* common.c: check flag_debug_trace to verify module
-	  was compiled with -debug and/or -ftrace[all] and only
+	  was compiled with --debug and/or -ftrace[all] and only
 	  record trace information if compiled with the option
 
 2017-10-11  Simon Sobisch <simonsobisch@gnu.org>
@@ -4637,8 +4760,9 @@
 
 2014-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.c, common.h: Rewriting cob_sig_handler, printing caught signal to
-	  stderr, adding cob_reg_sighnd for registration of external signal handling
+	* common.c, common.h: Rewriting cob_sig_handler, printing signal caught
+	  to stderr, adding cob_reg_sighnd for registration of external signal
+	  handling
 
 2014-01-17  Ron Norman <rjn@inglenet.com>
 

@@ -123,6 +123,7 @@ const char		*cob_schema_dir = NULL;
 FILE			*cb_storage_file = NULL;
 FILE			*cb_listing_file = NULL;
 FILE			*cb_depend_file = NULL;
+const char		*cb_ebcdic_table = NULL;
 
 /* Listing structures and externals */
 
@@ -186,6 +187,9 @@ unsigned int	cobc_gen_listing = 0;
 unsigned int	cb_correct_program_order = 0;
 
 cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
+
+int cb_flag_alt_ebcdic = 0;
+
 
 /* Basic memory structure */
 struct cobc_mem_struct {
@@ -314,14 +318,16 @@ static enum compile_level cb_compile_level = 0;
 
 static int		iargs;
 
-static size_t		cobc_flag_module = 0;
-static size_t		cobc_flag_library = 0;
-static size_t		cobc_flag_run = 0;
+static int		cobc_flag_module = 0;
+static int		cobc_flag_library = 0;
+static int		cobc_flag_run = 0;
 static char		*cobc_run_args = NULL;
-static size_t		save_temps = 0;
-static size_t		save_all_src = 0;
-static size_t		save_c_src = 0;
+static int		save_temps = 0;
+static int		save_all_src = 0;
+static signed int	save_c_src = 0;
 static signed int	verbose_output = 0;
+static int		cb_coverage_enabled = 0;
+
 
 static unsigned int		cb_listing_linecount;
 static int		cb_listing_eject = 0;
@@ -482,6 +488,7 @@ static const struct option long_options[] = {
 	{"A",			CB_RQ_ARG, NULL, 'A'},
 	{"MT",			CB_RQ_ARG, NULL, '!'},
 	{"MF",			CB_RQ_ARG, NULL, '@'},
+	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
 	{"use-extfh",		CB_RQ_ARG, NULL, 9},	/* this is used by COBOL-IT; Same is -fcallfh= */
@@ -496,7 +503,6 @@ static const struct option long_options[] = {
 	{"Werror",		CB_OP_ARG, NULL, 'Z'},
 	{"Wno-error",		CB_OP_ARG, NULL, 'z'},
 	{"tlines",		CB_RQ_ARG, NULL, '*'},
-	{"tsymbols",		CB_NO_ARG, &cb_listing_symbols, 1},	/* kept for backwards-compatibility in 3.x */
 
 #define	CB_FLAG(var,print_help,name,doc)			\
 	{"f" name,		CB_NO_ARG, &var, 1},	\
@@ -585,7 +591,6 @@ static const struct option long_options[] = {
 
 /* Prototype */
 DECLNORET static void COB_A_NORETURN	cobc_early_exit (int);
-DECLNORET static void COB_A_NORETURN	cobc_err_exit (const char *, ...) COB_A_FORMAT12;
 static void	free_list_file		(struct list_files *);
 static void	print_program	(struct list_files *, int);
 static void	set_standard_title	(void);
@@ -593,6 +598,7 @@ static void	print_program_header	(void);
 static void	print_program_data	(const char *);
 static void	print_program_trailer	(void);
 static void	print_program_listing	(void);
+static void print_with_overflow (char *, char *);
 static int	process			(const char *);
 
 /* cobc functions */
@@ -1795,7 +1801,7 @@ cobc_early_exit (int ret_code)
 	exit (ret_code);
 }
 
-DECLNORET static void COB_A_NORETURN
+DECLNORET void COB_A_NORETURN
 cobc_err_exit (const char *fmt, ...)
 {
 	va_list		ap;
@@ -1977,9 +1983,13 @@ clean_up_intermediates (struct filename *fn, const int status)
 		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
 		cobc_check_action (fn->preprocess);
 	}
+	/* CHECKME: we had reports of unexpected intermediate
+	   files on the dist - it is very likely rooted in this
+	   early exit --> recheck its use */
 	if (save_c_src) {
 		return;
 	}
+
 	if (fn->need_translate
 	 && (status
 		||  cb_compile_level > CB_LEVEL_TRANSLATE
@@ -2290,7 +2300,7 @@ static void
 cobc_print_version (void)
 {
 	printf ("cobc (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
@@ -3255,6 +3265,12 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 
+    /* enabled coverage includes specifying COBOL source lines,
+	   may be disabled manually if needed */
+	if (cb_coverage_enabled) {
+		cb_flag_c_line_directives = 1;
+	}
+
 	/* dump implies extra information (may still be disabled later) */
 	if (cb_flag_dump != COB_DUMP_NONE) {
 		cb_flag_source_location = 1;
@@ -3687,10 +3703,7 @@ process_command_line (const int argc, char **argv)
 
 		case 16:
 			/* -febcdic-table=<cconv-table> */
-			cb_ebcdic_table = cob_get_collation_by_name (cob_optarg, NULL, NULL);
-			if (cb_ebcdic_table < 0) {
-				cobc_err_exit (COBC_INV_PAR, "-febcdic-table");
-			}
+			cb_ebcdic_table = cobc_main_strdup (cob_optarg);
 			break;
 
 		case 15:
@@ -3965,6 +3978,12 @@ process_command_line (const int argc, char **argv)
 			cobc_early_exit (EXIT_FAILURE);
 		}
 		cobc_early_exit (EXIT_SUCCESS);
+	}
+
+	/* Set the default collating table if not specified */
+	if (cb_ebcdic_table == NULL) {
+		cb_ebcdic_table = cobc_main_strdup (
+			cb_flag_alt_ebcdic ? "alternate" : "default");
 	}
 
 	/* Exit on missing options */
@@ -4370,7 +4389,7 @@ process_filename (const char *filename)
 	if (output_name && cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_strdup (output_name);
 	} else
-	if (save_temps
+	if (save_temps || cb_coverage_enabled
 	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_stradd_dup (fbasename, "." COB_OBJECT_EXT);
 	} else
@@ -5372,7 +5391,6 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	case CB_USAGE_INDEX:
 	case CB_USAGE_LENGTH:
 	case CB_USAGE_OBJECT:
-	case CB_USAGE_LONG_DOUBLE:
 	case CB_USAGE_FP_BIN32:
 	case CB_USAGE_FP_BIN64:
 	case CB_USAGE_FP_BIN128:
@@ -5407,8 +5425,9 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 
 	/* set picture for everything, possibly add USAGE */
 	if (field->usage == CB_USAGE_BINARY
-	 || field->usage == CB_USAGE_FLOAT
-	 || field->usage == CB_USAGE_DOUBLE
+	 || field->usage == CB_USAGE_FLOAT		/* calculated pic */
+	 || field->usage == CB_USAGE_DOUBLE		/* calculated pic */
+	 || field->usage == CB_USAGE_LONG_DOUBLE	/* calculated pic */
 	 || field->usage == CB_USAGE_PACKED
 	 || field->usage == CB_USAGE_COMP_5
 	 || field->usage == CB_USAGE_COMP_6
@@ -6154,7 +6173,30 @@ print_program_trailer (void)
 	}
 
 	set_listing_header_none();
-	print_program_data ("");
+	if (cb_listing_cmd) {
+		char cmd_line [COB_MEDIUM_BUFF];
+		int i;
+
+		pd_off = 0;
+		for (i = 0; i < cb_saveargc; i++) {
+			int offset = snprintf (cmd_line + pd_off, COB_MEDIUM_MAX - pd_off,
+				"%s ", cb_saveargv[i]);
+			if (offset < COB_MEDIUM_MAX
+			 && offset >= 0) {	/* snprintf returns -1 in MSVC and on HPUX if max is reached */
+				pd_off += offset;
+			} else {
+				pd_off = COB_MEDIUM_MAX + 1;
+				break;
+			}
+		}
+		cmd_line[pd_off - 1] = 0;
+		force_new_page_for_next_line ();
+		print_program_data (_("command line:"));
+		print_with_overflow ((char *)"  ", cmd_line);
+		print_break = 0;
+	} else {
+		print_program_data ("");
+	}
 	if (print_break) {
 		print_program_data ("");
 	}
@@ -6162,7 +6204,11 @@ print_program_trailer (void)
 	/* Print error/warning summary (this note may be always included later)
 	   and/or be replaced to be the secondary title of the listing */
 	if (cb_listing_error_head && cb_listing_with_messages) {
-		force_new_page_for_next_line ();
+		if (!cb_listing_cmd) {
+			force_new_page_for_next_line ();
+		} else {
+			print_program_data ("");
+		}
 		print_program_data (_("Error/Warning summary:"));
 		print_program_data ("");
 	}
@@ -6586,35 +6632,45 @@ print_free_line (const int line_num, char pch, char *line)
 }
 
 static void
+print_with_overflow (char *prefix, char *content)
+{
+	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
+	int offset;
+
+	offset = snprintf (print_data, max_chars_on_line, "%s%s", prefix, content);
+	if (offset >= 0) {	/* snprintf returns -1 in MS and on HPUX if max is reached */
+		pd_off = offset;
+	} else {
+		pd_off = max_chars_on_line;
+		print_data[max_chars_on_line - 1] = 0;
+	}
+	if (pd_off >= max_chars_on_line) {
+		size_t prefix_offset;
+		/* trim "current line" on last space */
+		pd_off = strlen (print_data) - 1;
+		while (pd_off && !isspace ((unsigned char)print_data[pd_off])) {
+			pd_off--;
+		}
+		print_data[pd_off] = '\0';
+		print_program_data (print_data);
+		prefix_offset = strlen (prefix);
+		pd_off = strlen (print_data) - prefix_offset;
+		if (prefix_offset < 2) prefix_offset = 2;
+		memset (print_data, ' ', prefix_offset - 1);
+		snprintf (print_data + prefix_offset - 2, max_chars_on_line, "%c%s", '+', content + pd_off);
+	}
+	print_program_data (print_data);
+}
+
+static void
 print_errors_for_line (const struct list_error * const first_error,
 		       const int line_num)
 {
 	const struct list_error	*err;
-	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
-	size_t msg_off;
 
 	for (err = first_error; err && err->line <= line_num; err = err->next) {
 		if (err->line == line_num) {
-			pd_off = snprintf (print_data, max_chars_on_line, "%s%s", err->prefix, err->msg);
-			if (pd_off == -1) {	/* snprintf returns -1 in MS and on HPUX if max is reached */
-				pd_off = max_chars_on_line;
-				print_data[max_chars_on_line - 1] = 0;
-			}
-			if (pd_off >= max_chars_on_line) {
-				/* trim on last space */
-				pd_off = strlen (print_data) - 1;
-				while (pd_off && !isspace ((unsigned char)print_data[pd_off])) {
-					pd_off--;
-				}
-				print_data[pd_off] = '\0';
-				print_program_data (print_data);
-				msg_off = strlen (err->prefix);
-				pd_off = strlen (print_data) - msg_off;
-				if (msg_off < 2) msg_off = 2;
-				memset (print_data, ' ', msg_off - 1);
-				snprintf (print_data + msg_off - 2, max_chars_on_line, "%c%s", '+', err->msg + pd_off);
-			}
-			print_program_data (print_data);
+			print_with_overflow (err->prefix, err->msg);
 		}
 	}
 }
@@ -8156,10 +8212,18 @@ process_module_direct (struct filename *fn)
 #endif
 	ret = process (cobc_buffer);
 #ifdef	COB_STRIP_CMD
-	if (strip_output && ret == 0) {
-		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
-		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
-		ret = process (cobc_buffer);
+	if (ret == 0) {
+#ifdef __SUNPRO_C
+		if (cb_coverage_enabled) {
+			sprintf (cobc_buffer, "uncover \"%s\"", name);
+			ret = process (cobc_buffer);
+		}
+#endif
+		if (strip_output) {
+			cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
+			sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
+			ret = process (cobc_buffer);
+		}
 	}
 #endif
 #else	/* _MSC_VER */
@@ -8699,7 +8763,14 @@ finish_setup_compiler_env (void)
 		}
 #endif
 	}
+	if (cb_coverage_enabled) {
+		COBC_ADD_STR (cobc_cflags, " --coverage", NULL, NULL);
+		COBC_ADD_STR (cobc_ldflags, " --coverage", NULL, NULL);
+	}
 #elif defined(_MSC_VER)
+	if (cb_coverage_enabled) {
+		COBC_ADD_STR (cobc_cflags, " /Zi", NULL, NULL);
+	}
 	/* MSC stuff reliant upon verbose option */
 	switch (verbose_output) {
 	case 0:
@@ -8810,8 +8881,8 @@ begin_setup_internal_and_compiler_env (void)
 	/* Initialize variables */
 	begin_setup_compiler_env ();
 
-	set_const_cobc_build_stamp();
-	set_cobc_defaults();
+	set_const_cobc_build_stamp ();
+	set_cobc_defaults ();
 
 	output_name = NULL;
 
@@ -8821,7 +8892,7 @@ begin_setup_internal_and_compiler_env (void)
 #endif
 
 	/* Enable default I/O exceptions without source locations */
-	cobc_deciph_ec("EC-I-O", 1U);
+	cobc_deciph_ec ("EC-I-O", 1U);
 	cb_flag_source_location = 0;
 
 #ifndef	HAVE_DESIGNATED_INITS

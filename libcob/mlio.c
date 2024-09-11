@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2022 Free Software Foundation, Inc.
+   Copyright (C) 2018-2023 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -152,7 +152,7 @@ get_xml_code (void)
 	return cob_get_int (COB_MODULE_PTR->xml_code);
 }
 
-/* set special registers XML-EVENT, if available */
+/* set special register XML-EVENT */
 static void
 set_xml_event (const char *data)
 {
@@ -162,7 +162,7 @@ set_xml_event (const char *data)
 	COB_MODULE_PTR->xml_event->size = strlen (data);
 }
 
-/* set special registers XML-TEXT / XML-NTEXT, if available
+/* set special registers XML-TEXT / XML-NTEXT
    the size is calculated if not explicit specified (size -> -1) */
 static void
 set_xml_text (const int ntext, const void *data, size_t size)
@@ -177,8 +177,11 @@ set_xml_text (const int ntext, const void *data, size_t size)
 		COB_MODULE_PTR->xml_text->data = (unsigned char *) "";
 		COB_MODULE_PTR->xml_text->size = 0;
 	} else {
-		COB_MODULE_PTR->xml_ntext->data = (unsigned char *) "";
-		COB_MODULE_PTR->xml_ntext->size = 0;
+		/* XML-NTEXT and other XML-N... special registers are not available with ACUCOBOL */
+		if (COB_MODULE_PTR->xml_ntext) {
+			COB_MODULE_PTR->xml_ntext->data = (unsigned char *) "";
+			COB_MODULE_PTR->xml_ntext->size = 0;
+		}
 		COB_MODULE_PTR->xml_text->data = (unsigned char *) data;
 		COB_MODULE_PTR->xml_text->size = size != -1 ? size : strlen (data);
 	}
@@ -1030,16 +1033,22 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 
 	/* no state yet ? first call */
 	if (*saved_state == NULL) {
+		/* no field */
+		if (!in) {
+#if 0	/* seems like a codegen error, which should not happen */
+			set_xml_exception (XML_INTERNAL_ERROR);
+			set_xml_event (EVENT_EXCEPTION);
+			set_xml_text (0, "", 0);
+			return -1;
+#else
+			cob_fatal_error (COB_FERROR_CODEGEN);
+#endif
+		}
 		*saved_state = cob_malloc (sizeof (struct xml_state));
 	}
 
 	state = (struct xml_state *)*saved_state;
 
-	/* no field */
-	if (!in) {
-		set_xml_exception (XML_INTERNAL_ERROR);
-		cob_fatal_error (COB_FERROR_CODEGEN);
-	}
 	/* LINKAGE or BASED item without data */
 	if (!in->data) {
 		state->last_xml_code = XML_INTERNAL_ERROR;
@@ -1305,14 +1314,14 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 				set_xml_exception (XML_PARSE_ERROR_MISC_COMPAT);
 			}
 			set_xml_event (EVENT_EXCEPTION);
-			set_xml_text (flags && 0x01, "", 0);
+			set_xml_text (0, "", 0);
 			return;
 		}
 		set_xml_event (EVENT_START_OF_DOCUMENT);
 		if (COB_MODULE_PTR->xml_mode == COB_XML_XMLNSS) {
-			set_xml_text (flags && 0x01, "", 0);
+			set_xml_text (0, "", 0);
 		} else {
-			set_xml_text (flags && 0x01, in->data, in->size);
+			set_xml_text (flags & COB_XML_PARSE_NATIONAL, in->data, in->size);
 		}
 		state->state = XML_PARSER_JUST_STARTED;
 		return;
@@ -1340,7 +1349,7 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	cob_add_exception (COB_EC_IMP_FEATURE_MISSING);
 	set_xml_event (EVENT_EXCEPTION);
 	/* in case of EXCEPTIONs - should have a pointer to the text already parsed */
-	set_xml_text (flags && 0x01, "" , 0);
+	set_xml_text (flags & COB_XML_PARSE_NATIONAL, "" , 0);
 	state->state = XML_PARSER_HAD_FATAL_ERROR;
 }
 

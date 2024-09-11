@@ -26,6 +26,8 @@ NEWS - user visible changes				-*- outline -*-
    necessary internal schema files to match the file definition to the
    database table
 
+** new experimental file handler LMDB (is slow compared to all others)
+
 ** Added support for V-ISAM which is a rewrite of VB-ISAM but V-ISAM supports
    both C-ISAM and VB-ISAM format files at run time. No need to pre-configure
    which file format is to be used. In fact both file formats may be used
@@ -38,7 +40,10 @@ NEWS - user visible changes				-*- outline -*-
    available handlers and use the first applicable - or none, which removes
    the need to specify --without-db
 
-** new experimental file handler LMDB (is slow compared to all others)
+** fileio related configuration can now be made specific to an ASSIGN name
+   (including the new option to choose a file handler for creation of
+    indexed files), and partially can be also toggled by the system library x'91',
+   see the manual / runtime.cfg for more details
 
 ** delay-load of libraries (so far for ORGANIZATION INDEXED, planned: XML,
    JSON, SCREENIO)
@@ -49,7 +54,7 @@ NEWS - user visible changes				-*- outline -*-
 * runtime checks: previously conditions missed the generation of runtime checks,
   leading to possible out-of-bounds or null-access there, this was fixed
 
-* The old OpenCOBOL EXTFH interface built in via --with-seqra-extfh 
+* The old OpenCOBOL EXTFH interface built in via --with-seqra-extfh
 *     and --with-index-extfh is obsolete and will be removed in the
 *     next major release
 
@@ -62,7 +67,7 @@ NEWS - user visible changes				-*- outline -*-
   COBOL dialect if -std= is not provided at compile time. If unspecified the
   default is 'default'
 
-* new configure option --with-file-format=mf lets to build into the compiler 
+* new configure option --with-file-format=mf lets to build into the compiler
   the default file format. If not provided then the old GnuCOBOL 3 format files
   are used and for Variable length SEQUENTIAL or RELATIVE files the file is
   not portable across different platforms.
@@ -85,9 +90,9 @@ Open Plans:
 * "indent" run
 * ...
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  GnuCOBOL 3.2
- GnuCOBOL 3.2 preview (20221022)
 
 * New GnuCOBOL features
 
@@ -129,6 +134,8 @@ Open Plans:
 ** Initial "testing support" of CODE-SET clause to convert between ASCII and
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
+** Initial "testing support" of FLOAT-EXTENDED (long double type)
+
 ** minimal "parsing support" for USAGE UTF-8 and UTF-8 literals
 
 ** Support to exit the runtime from COBOL as hard error (including possible
@@ -139,6 +146,8 @@ Open Plans:
    of COBOL modules, both on CANCEL and on process exit, which is useful for
    analysis tools like callgrind or perf to keep all symbols until the end of
    the COBOL process
+
+** the system function x'91' was extended to support more functions
 
 ** TODO - More to document, possibly after rc-1
 
@@ -217,6 +226,11 @@ Open Plans:
    of the color-number, leading to a previous value of 21 (which was ignored
    until now) being interpreted as 5, see FR #387
 
+** the programmable runtime switches "SWITCH A" through "SWITCH Z" internally
+   used 1-26 and now use 11-36 to be able to combine then with switches 0-7;
+   if you set those via COB_SWITCH environment variables you need to adjust
+   their numbers
+
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially
@@ -268,16 +282,18 @@ Open Plans:
 
 ** the new -febcdic-table option enables one to specify the
    translation table used when dealing with EBCDIC codeset;
-   available tables are:
+   these translation tables are stored as new configuration files with
+   an extension of ".ttbl", currently available tables are:
 
-   DEFAULT		translation to extended ASCII as per MF
-   RESTRICTED-GC	translation from restricted ASCII only
-   IBM			translation to restricted ASCII as per IBM
-   GCOS			translation to extended ASCII as per GCOS7
+   default    translation to extended ASCII as per MF
+   alternate  translation from restricted ASCII only
+   ebcdic500_ascii7bit   EBCDIC 500 <-> 7-bit ASCII as per IBM
+   ebcdic500_ascii8bit   EBCDIC 500 <-> 8-bit ASCII as per GCOS7
+   ebcdic500_latin1      EBCDIC 500 <-> latin-1 as per iconv
 
    This option supersedes the -falternate-ebcdic flag (still available
    for backwards compatibility), which is equivalent to
-   -febcdic-table=restricted-gc.
+   -febcdic-table=alternate.
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
@@ -336,6 +352,12 @@ Open Plans:
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
+
+** new compiler command line option -ftcmd to enable printing of the command
+   line in the source listing
+
+** new compiler command line option --coverage to instrument binaries
+   for coverage checks
 
 ** the command line options -MT and -MF, which are used for creating a
    dependency list (used copybooks) to be used for inclusion in Makefiles
@@ -430,7 +452,8 @@ Open Plans:
 	MOVE and comparisions (especially with enabled runtime checks, to
 	  optimize those a re-compile is needed)
 	CALL data-item, and first time for each CALL
-	ACCEPT DATE/TIME/DAY and datetime related FUNCTIONs
+	ACCEPT DATE/TIME/DAY, most if numeric items are accepted
+	datetime related FUNCTIONs
 	runtime checks for use of LINKAGE/BASED fields and/or
 	  subscripts/reference-modification (re-compile needed)
 	general: execution of programs generated with -fsource-location
@@ -452,6 +475,8 @@ Open Plans:
   requests are raised)
 
 ** use of old non-GMP randomizer for FUNCTION RANDOM
+
+** undocumented option -tsymbols, which was replaced by -ftsymbols in 3.0
 
 
 * Known issues in 3.2 (and 3.1)
