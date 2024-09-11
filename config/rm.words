@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021,2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -248,7 +248,7 @@ reserved:	INSTALLATION
 reserved:	INTO
 reserved:	INVALID
 reserved:	IS
-reserved:	JUST
+reserved:	JUST=JUSTIFIED
 reserved:	JUSTIFIED
 reserved:	KEY
 reserved:	LABEL

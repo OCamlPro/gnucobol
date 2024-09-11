@@ -451,6 +451,8 @@ extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
 
+extern const char		*cb_ebcdic_table;
+
 /* Functions */
 
 /* cobc.c */
@@ -483,6 +485,8 @@ extern char			*cobc_elided_strcpy (char *, const char *, const size_t, const int
 DECLNORET extern void		cobc_abort (const char *,
 					    const int) COB_A_NORETURN;
 DECLNORET extern void		cobc_abort_terminate (const int) COB_A_NORETURN;
+
+DECLNORET extern void		cobc_err_exit (const char *, ...) COB_A_FORMAT12 COB_A_NORETURN;
 
 
 extern size_t			cobc_check_valid_name (const char *,

@@ -49,6 +49,19 @@
 	* tree.c: Change to use cb_max_binary instead of constant
 	* typeck.c: Change to use cb_max_binary instead of constant
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	FR #429: option to specify conversion table via translation table file
+	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
+	* codegen.c: generate code using the external table
+
+2023-01-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	fixed bug #704: ANY LENGTH cannot have ref-mod, POS not context-sensitive
+	* typeck.c (cb_build_identifier): skip compile-time check for length
+	  on ANY LENGTH items
+	* reserved.c (POS): now C/S to DISPLAY + ACCEPT with default wordlist
+
 2023-01-20  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Verify INDEXED BY variables in PERFORM VARYING
@@ -56,11 +69,35 @@
 	            out of bounds
 	* codeoptim.c: Fix cob_check_subscript_inline for min subscript value
 
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (cb_default_colseq, build_default_colseq, setup_default_colseq):
+	  adjusted for general use, fixing Bug #861
+	* parser.y (alphabet_name): added code-set names, building a collation
+	* reserved.c (SEQUENCE): setting CB_CS_ALPHABET to allow code-name parsing
+	* parser.y, reserved.c: changed reference from 202x to 2023
+
 2023-01-15  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: Make sure the 'schema' directory is created for -fsql
 	* codegen.c: Verify that EXTERNAL variables have 'ename'
 	* field.c (copy_into_field): If EXTERNAL set 'ename'
+
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, flag.def, help.c: added option --coverage internally setting
+	  -fgen-c-line-directive, ensuring to write object file with original name,
+	  passing appropriate flags to C compiler (GCC, LLVM, MSVC, Sun Solaris)
+	* codegen.c (output_initialize_uniform): siwtched to take an unsigned char
+	* tree.c: minor refactoring
+
+2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, field.c, parser.y, reserved.c: adjustment for FLOAT-EXTENDED /
+	  CB_USAGE_LONG_DOUBLE, basic use now works as expected,
+	  enabled as UNFINISHED
+	* cobc.c (cobc_print_version): welcome 2023
+	* reserved.c: integrated changes originally done 2020-06-20 (!)
 
 2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -118,7 +155,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c, conv.h: files moved from cobc to libcob
+	* cconv.c, cconv.h: files moved from cobc to libcob
 	* codegen.c: use the new libcob API for collating sequences
 	* flag.def: change "ebcdic-table" to a flag with associated variable
 
@@ -229,6 +266,12 @@
 	* field.c (validate_elem_value): explicit check that non-occurs item has
 	  only a single value
 	* parser.y (value_clause): improved parsing for table-format
+
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h, typeck.c, parser.y, codegen.c: module-locale registers
+	  referenced as cb_field
+	* codegen.c: pass XML mode to module
 
 2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -1352,6 +1395,10 @@
 	  as register and in this case unreserve overlapping reserved words
 	* tree.c (cb_build_intrinsic), tree.h, reserved.c:
 	  implement BIT-OF and BIT-TO-CHAR functions
+	* parser.y, reserved.c: implemented ACCEPT FROM MICROSECOND-TIME (ACU)
+	* typeck.c (cb_emit_accept_time), tree.h: codegen of
+	  cob_accept_microsecond_time upon request and for std == ACU with
+	  big enough fields
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2212,6 +2259,11 @@
 	* field.c, tree.h, parser.y (occurs_key_field): new function in field.c:
 	  cb_build_full_field_reference, extracted and simplified from parser.y
 
+2020-06-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c: moved switches A-Z from 1-26 to 11-36 to allow them to
+	  be used together with 0-7 (mf compat)
+
 2020-06-20  Edward Hart <edward.dan.hart@gmail.com>
 
 	* parser.y (emit_entry): added parameter for main program as pending
@@ -2223,7 +2275,6 @@
 	  parameters' were not cached when the unrelated local_field_cache was
 	  empty.
 	* codegen.c: minor refactoring of duplicated code.
-
 
 2020-06-17  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -9872,7 +9923,7 @@
 	* cobc.c: cleanup for passing arguments to cobpp
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

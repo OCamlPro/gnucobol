@@ -1992,7 +1992,15 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	return 0;
 }
 
-static cb_tree
+static COB_INLINE COB_A_INLINE struct cb_field *
+cb_build_generic_register_field (const char *name, const char *external_definition)
+{
+	struct cb_field *field = NULL;
+	cb_build_generic_register (name, external_definition, &field);
+	return field;
+}
+
+static struct cb_field *
 cb_build_register_internal_code (const char* name, const char* definition)
 {
 	cb_tree tfield;
@@ -2021,7 +2029,7 @@ cb_build_register_internal_code (const char* name, const char* definition)
 	field->flag_internal_register = 1;
 	field->level = 77;
 
-	return tfield;
+	return field;
 }
 
 
@@ -2059,87 +2067,47 @@ cb_build_single_register (const char *name, const char *definition)
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-CODE")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->xml_code = tfield;
-		}
+		current_program->xml_code = cb_build_register_internal_code (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-EVENT")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_event = CB_TREE (field);
-		}
+		current_program->xml_event = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-INFORMATION")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->xml_information = tfield;
-		}
+		current_program->xml_information = cb_build_register_internal_code (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-TEXT")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_text = CB_TREE (field);
-		}
+		current_program->xml_text = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NTEXT")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_ntext = CB_TREE (field);
-		}
+		current_program->xml_ntext = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NAMESPACE")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_namespace = CB_TREE (field);
-		}
+		current_program->xml_namespace = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NNAMESPACE")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_nnamespace = CB_TREE (field);
-		}
+		current_program->xml_nnamespace = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NAMESPACE-PREFIX")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_namespace_prefix = CB_TREE (field);
-		}
+		current_program->xml_namespace_prefix = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NNAMESPACE-PREFIX")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_nnamespace_prefix = CB_TREE (field);
-		}
+		current_program->xml_nnamespace_prefix = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "JSON-CODE")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->json_code = tfield;
-		}
+		current_program->json_code =  cb_build_register_internal_code (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "JSON-STATUS")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->json_status = tfield;
-		}
+		current_program->json_status = cb_build_register_internal_code (name, definition);
 		return;
 	}
 
@@ -2829,7 +2797,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 			/* FIXME: needs to be supported for zero length literals */
 			if (length < 1) {
 				cb_error_x (x, _("length must be greater than zero"));
-			} else if (length > pseudosize) {
+			} else if (!f->flag_any_length && length > pseudosize) {
 				if (cb_reference_bounds_check == CB_WARNING) {
 					cb_warning_x (cb_warn_additional, x, _("length of '%s' out of bounds: %d"),
 						    name, length);
@@ -5031,9 +4999,12 @@ cb_validate_program_data (struct cb_program *prog)
 		if (x == cb_error_node) {
 			prog->cursor_pos = NULL;
 		} else if (CB_FIELD(x)->size != 6 && CB_FIELD(x)->size != 4) {
-			cb_error_x (prog->cursor_pos, _("'%s' CURSOR must be 4 or 6 characters long"),
+			cb_error_x (prog->cursor_pos,
+					_("'%s' CURSOR must be 4 or 6 characters long"),
 				    cb_name (prog->cursor_pos));
 			prog->cursor_pos = NULL;
+		} else {
+			prog->cursor_pos = x;
 		}
 	}
 	if (prog->crt_status) {
@@ -5117,7 +5088,7 @@ cb_validate_program_data (struct cb_program *prog)
 					xerr = x;
 					cb_error_x (x,
 					    _("'%s' OCCURS DEPENDING ON field item invalid here"),
-						    p->sister->name);
+						p->sister->name);
 				}
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
@@ -6326,7 +6297,9 @@ build_store_option (cb_tree x, cb_tree round_opt)
 	f = CB_FIELD_PTR (x);
 	usage = f->usage;
 #if	0	/* RXWRXW - FP */
-	if (usage == CB_USAGE_DOUBLE || usage == CB_USAGE_FLOAT) {
+	if (usage == CB_USAGE_LONG_DOUBLE
+	 || usage == CB_USAGE_DOUBLE
+	 || usage == CB_USAGE_FLOAT) {
 		/* Rounding on FP is useless */
 		opt = 0;
 	} else {
@@ -8498,7 +8471,7 @@ cb_emit_accept_day_of_week (cb_tree var)
 }
 
 void
-cb_emit_accept_time (cb_tree var)
+cb_emit_accept_time (cb_tree var, int with_microseconds)
 {
 	if (cb_validate_one (var)) {
 		return;
@@ -8506,7 +8479,19 @@ cb_emit_accept_time (cb_tree var)
 	if (cb_listing_xref) {
 		cobc_xref_set_receiving (var);
 	}
-	cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept_time", var));
+
+	if (!with_microseconds && cb_std_define == CB_STD_ACU) {
+		/* for ACU: automatically use high-precision with big enough fields */
+		const struct cb_field	*f = CB_FIELD_PTR (var);
+		if (f->size >= 12) {	/* FIXME: should also work with binary -> digits/scale */
+			with_microseconds = 1;
+		}
+	}
+	if (with_microseconds) {
+		cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept_microsecond_time", var));
+	} else {
+		cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept_time", var));
+	}
 }
 
 void
@@ -10883,7 +10868,7 @@ cb_check_overlapping (struct cb_field *src_f, struct cb_field *dst_f,
 		/* Check for same parent field */
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 6011) /* cb_field_founder always returns a valid pointer */
+#pragma warning(disable: 6011)  /* cb_field_founder always returns a valid pointer */
 #endif
 		ff1 = cb_field_founder (src_f);
 		ff2 = cb_field_founder (dst_f);
@@ -12717,6 +12702,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 	}
 
 	cb_emit_incompat_data_checks (src);
+	/* CHECKME: this is way to much to cater for sum field */
 	src = cb_check_sum_field (src);
 
 	tempval = 0;
@@ -12763,7 +12749,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					if (CB_REFERENCE (x)->offset != NULL
 					 && CB_LITERAL_P (CB_REFERENCE (x)->offset)) {
 						lt = CB_LITERAL (CB_REFERENCE (x)->offset);
-						bgnpos = atoi((const char*)lt->data);
+						bgnpos = atoi ((const char *)lt->data);
 					}
 					if (bgnpos >= 1
 					 && p->storage != CB_STORAGE_LINKAGE
@@ -15500,8 +15486,9 @@ cb_emit_xml_parse (cb_tree data, cb_tree proc,
 	ref = cb_ref (data);
 	if (CB_FIELD_P (ref)) {
 		struct cb_field * field = CB_FIELD (ref);
-		/* type checks here */
-		cb_emit (cb_build_xml_parse (data, proc, returning_national,
+		/* TODO: type checks here */
+		cb_emit (cb_build_xml_parse (data, proc,
+			returning_national | (field->usage == CB_USAGE_NATIONAL),
 			encoding, validation));
 	} else {
 	}

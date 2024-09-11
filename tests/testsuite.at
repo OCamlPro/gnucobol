@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -16,7 +16,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
-AT_COPYRIGHT([Test cases Copyright (C) 2022 Free Software Foundation, Inc.
+AT_COPYRIGHT([Test cases Copyright (C) 2023 Free Software Foundation, Inc.
 
 Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 Ron Norman, Brian Tiffin, Dave Pitts])

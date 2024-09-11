@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2018,2021-2022 Free Software Foundation, Inc.
+# Copyright (C) 2016-2018,2021-2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -114,7 +114,7 @@ reserved:	COMPUTATIONAL-5=COMP-5
 reserved:	COMPUTE
 reserved:	CONFIGURATION
 reserved:	CONTAINS
-reserved:	CONTENT
+reserved:	CONTENT-OF    # V6.4 IBM intrinsic function extension conflicting to GC one
 reserved:	CONTINUE
 reserved:	CONTROL
 reserved:	CONTROLS
@@ -270,9 +270,7 @@ reserved:	IS
 reserved:	JAVA
 reserved:	JNIENVPTR        # note: this is a register, move as soon as supported
 reserved:	JSON
-reserved:	JSON-CODE        # note: this is a register, move as soon as supported
-reserved:	JSON-STATUS      # note: this is a register, move as soon as supported
-reserved:	JUST
+reserved:	JUST=JUSTIFIED
 reserved:	JUSTIFIED
 reserved:	KANJI
 reserved:	KEY
@@ -526,15 +524,7 @@ reserved:	XML
 reserved:	XML-DECLARATION*      # note: not included in IBMs reserved words
          	                      #       list, but as a phrase to be parsed
          	                      #       for XML GENERATE
-reserved:	XML-EVENT             # note: this is a register, move as soon as supported
-reserved:	XML-INFORMATION       # note: this is a register, move as soon as supported
-reserved:	XML-NAMESPACE         # note: this is a register, move as soon as supported
-reserved:	XML-NAMESPACE-PREFIX  # note: this is a register, move as soon as supported
-reserved:	XML-NNAMESPACE        # note: this is a register, move as soon as supported
-reserved:	XML-NNAMESPACE-PREFIX # note: this is a register, move as soon as supported
-reserved:	XML-NTEXT             # note: this is a register, move as soon as supported
 reserved:	XML-SCHEMA
-reserved:	XML-TEXT              # note: this is a register, move as soon as supported
 reserved:	YYYYDDD*
 reserved:	YYYYMMDD*
 reserved:	ZERO
@@ -547,7 +537,8 @@ not-register:	DIALECT-ALL
 register:	"ADDRESS\ OF"
 register:	DEBUG-ITEM
 # register:	JNIENVPTR
-# register:	JSON-CODE
+register:	JSON-CODE
+register:	JSON-STATUS
 register:	"LENGTH\ OF"
 # register:	LINAGE-COUNTER
 register:	RETURN-CODE
@@ -562,15 +553,14 @@ register:	SORT-RETURN
 register:	TALLY
 register:	WHEN-COMPILED
 register:	XML-CODE
-# register:	XML-EVENT
-# register:	XML-INFORMATION
-# register:	XML-NAMESPACE
-# register:	XML-NAMESPACE-PREFIX
-# register:	XML-NNAMESPACE
-# register:	XML-NNAMESPACE-PREFIX
-# register:	XML-NTEXT
-# register:	XML-TEXT
-
+register:	XML-EVENT
+register:	XML-INFORMATION
+register:	XML-NAMESPACE
+register:	XML-NAMESPACE-PREFIX
+register:	XML-NNAMESPACE
+register:	XML-NNAMESPACE-PREFIX
+register:	XML-NTEXT
+register:	XML-TEXT
 
 # list of system names:
 not-system-name:	DIALECT-ALL-SWITCHES
@@ -582,7 +572,6 @@ system-name:	UPSI-4
 system-name:	UPSI-5
 system-name:	UPSI-6
 system-name:	UPSI-7
-
 
 # disable all functions
 not-intrinsic-function:	DIALECT-ALL
@@ -600,6 +589,8 @@ intrinsic-function:	CHAR
 intrinsic-function:	COMBINED-DATETIME
 #intrinsic-function:	CONTENT-OF       # IBM extension - different than GnuCOBOL one
 reserved:	CONTENT-OF                   # to raise error message
+# intrinsic-function:	CONTENT-OF    # IBM extension conflicting to GC one to
+#                                       create a temporary copy    
 intrinsic-function:	CURRENT-DATE
 intrinsic-function:	DATE-OF-INTEGER
 intrinsic-function:	DATE-TO-YYYYMMDD

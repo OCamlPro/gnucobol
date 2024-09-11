@@ -3,7 +3,7 @@
 # Bootstrap gnucobol package from checked-out sources
 # Note:  call as ./autogen.sh if you don't have readlink -f
 #
-# Copyright (C) 2019, 2022 Free Software Foundation, Inc.
+# Copyright (C) 2019,2022,2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.

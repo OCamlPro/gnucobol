@@ -1772,7 +1772,7 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 		/* If not found, use as is, possibly including the dollar character */
 		if ((p = cob_chk_file_env (f, src)) != NULL) {
 			strncpy (file_open_name, p, (size_t)COB_FILE_MAX);
-			/* Note: ACU specifies: "repeated until variable can't be resolved" 
+			/* Note: ACU specifies: "repeated until variable can't be resolved"
 			   we don't apply this and will not in the future
 			   [recursion is only one of the problems] */
 			if (looks_absolute (src)) {
@@ -7223,7 +7223,7 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 }
 
 void
-cob_start (cob_file *f, const int cond, cob_field *key, 
+cob_start (cob_file *f, const int cond, cob_field *key,
 						cob_field *keysize, cob_field *fnstatus)
 {
 	int		ret;
@@ -7315,7 +7315,7 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	/* Sequential read at the end of file is an error */
 	if (key == NULL) {
 		f->last_operation = COB_LAST_READ_SEQ;
-		if (f->flag_end_of_file 
+		if (f->flag_end_of_file
 		 && !(read_opts & COB_READ_PREVIOUS)) {
 			cob_file_save_status (f, fnstatus, COB_STATUS_46_READ_ERROR);
 			return;
@@ -7638,15 +7638,14 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 						return;
 					}
 				}
+#if defined (COB_EXPERIMENTAL)
 			} else {
-#if !defined (COB_EXPERIMENTAL)
 				for (i = 0; i < size; ++i, ++p) {
 					if (IS_BAD_CHAR (*p)) {
 						cob_file_save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
 						return;
 					}
 				}
-#else
 				int sts = 0;
 				for (i = 0; i < size; ++i, ++p) {
 					if (IS_BAD_CHAR (*p)) {
@@ -8254,7 +8253,7 @@ cob_sys_create_file (unsigned char *file_name, unsigned char *file_access,
 		     unsigned char *file_lock, unsigned char *file_dev,
 		     unsigned char *file_handle)
 {
-	int		p_lock, p_dev;	
+	int		p_lock, p_dev;
 	COB_UNUSED (file_access);
 	COB_UNUSED (file_lock);
 	COB_UNUSED (file_dev);

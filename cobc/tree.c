@@ -1443,10 +1443,6 @@ cb_tree_category (cb_tree x)
 		if (f->children) {
 			/* CHECKME: may should be alphabetic/national/... depending on the content */
 			x->category = CB_CATEGORY_ALPHANUMERIC;
-		} else if (f->usage == CB_USAGE_POINTER && f->level != 88) {
-			x->category = CB_CATEGORY_DATA_POINTER;
-		} else if (f->usage == CB_USAGE_PROGRAM_POINTER && f->level != 88) {
-			x->category = CB_CATEGORY_PROGRAM_POINTER;
 		} else {
 			switch (f->level) {
 			case 66:
@@ -1463,8 +1459,11 @@ cb_tree_category (cb_tree x)
 			default:
 				if (f->usage == CB_USAGE_COMP_X)
 					x->category = CB_CATEGORY_NUMERIC;
-				else
-				if (f->pic) {
+				else if (f->usage == CB_USAGE_POINTER) {
+					x->category = CB_CATEGORY_DATA_POINTER;
+				} else if (f->usage == CB_USAGE_PROGRAM_POINTER) {
+					x->category = CB_CATEGORY_PROGRAM_POINTER;
+				} else if (f->pic) {
 					x->category = f->pic->category;
 				/* FIXME: Hack for CGI to not abort */
 				} else if (f->flag_is_external_form) {
@@ -1559,11 +1558,11 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 			return COB_TYPE_NUMERIC_FLOAT;
 		case CB_USAGE_DOUBLE:
 			return COB_TYPE_NUMERIC_DOUBLE;
+		case CB_USAGE_LONG_DOUBLE:
+			return COB_TYPE_NUMERIC_L_DOUBLE;
 		case CB_USAGE_PACKED:
 		case CB_USAGE_COMP_6:
 			return COB_TYPE_NUMERIC_PACKED;
-		case CB_USAGE_LONG_DOUBLE:
-			return COB_TYPE_NUMERIC_L_DOUBLE;
 		case CB_USAGE_FP_BIN32:
 			return COB_TYPE_NUMERIC_FP_BIN32;
 		case CB_USAGE_FP_BIN64:
@@ -1635,7 +1634,7 @@ cb_fits_int (const cb_tree x)
 		} else {
 			s = "2147483647";
 		}
-		if (memcmp (p, s, (size_t)10) > 0) {
+		if (memcmp (p, s, 10U) > 0) {
 			return 0;
 		}
 		return 1;
@@ -1721,7 +1720,7 @@ cb_fits_long_long (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (memcmp (p, s, (size_t)19) > 0) {
+		if (memcmp (p, s, 19U) > 0) {
 			return 0;
 		}
 		return 1;
@@ -1834,7 +1833,7 @@ cb_get_int (const cb_tree x)
 	if (l->scale < 0) {
 		size = size - l->scale;
 	}
-	check_lit_length(size, (const char *)l->data + i);
+	check_lit_length (size, (const char *)l->data + i);
 
 	/* Check numeric literal length matching requested output type */
 #if INT_MAX >= 9223372036854775807
@@ -1844,7 +1843,7 @@ cb_get_int (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (size > 19U || memcmp (&l->data[i], s, (size_t)19) > 0) {
+		if (size > 19U || memcmp (&l->data[i], s, 19U) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return INT_MAX;
 		}
@@ -1856,7 +1855,7 @@ cb_get_int (const cb_tree x)
 		} else {
 			s = "2147483647";
 		}
-		if (size > 10U || memcmp (&l->data[i], s, (size_t)10) > 0) {
+		if (size > 10U || memcmp (&l->data[i], s, 10U) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return INT_MAX;
 		}
@@ -1918,7 +1917,7 @@ cb_get_long_long (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (size > 19U || memcmp (&(l->data[i]), s, (size_t)19) > 0) {
+		if (size > 19U || memcmp (&(l->data[i]), s, 19U) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return LLONG_MAX;
 		}
@@ -1968,7 +1967,7 @@ cb_get_u_long_long (const cb_tree x)
 	/* Check numeric literal length matching requested output type */
 	if (size >= 20U) {
 		s = "18446744073709551615";
-		if (size > 20U || memcmp (&(l->data[i]), s, (size_t)20) > 0) {
+		if (size > 20U || memcmp (&(l->data[i]), s, 20U) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return ULLONG_MAX;
 		}

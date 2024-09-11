@@ -84,7 +84,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [RH
 PH
@@ -166,7 +166,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [
 
@@ -235,7 +235,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [
 
@@ -316,7 +316,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [])
 
@@ -374,7 +374,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT=./report.txt $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [hello                          <--->
 goodbye                        <--->
@@ -443,7 +443,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT=./report.txt $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [hello                          <--->
 world                          <--->
@@ -633,7 +633,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                          C U S T O M E R  C H A R G E  R E P O R T
 
@@ -987,7 +987,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                          C U S T O M E R  C H A R G E  R E P O R T                      PAGE     1
 
@@ -1358,7 +1358,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                          C U S T O M E R  C H A R G E  R E P O R T                      PAGE     1
 
@@ -1724,7 +1724,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                          C U S T O M E R  C H A R G E  R E P O R T                      PAGE     1
 
@@ -2075,7 +2075,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                          D I S T R I C T   S A L E S   R E P O R T                      PAGE     1
 
@@ -2801,7 +2801,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                                      C E N T U R Y   M E D I C A L   C E N T E R
                                   Q U A R T E R L Y   P A Y R O L L   R E G I S T E R                         PAGE     1
@@ -3070,7 +3070,7 @@ AT_CHECK([DD_STUDENT=./inp_data DD_REPORT1=./report.txt \
 $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference],
 [         1         2         3         4         5         6         7
@@ -3223,7 +3223,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_STUDENT="./inp_data" DD_REPORT1="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [
 
@@ -3491,7 +3491,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_CUSTORD="./inp_data" DD_REPORT2="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                                           CUSTOMER ORDER REPORT
           Time:    14:30:12                                                                  Page          1
@@ -3756,7 +3756,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_STUDREC="./inp_data" DD_REPORT3="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                                                            PAGE    1
 
@@ -3950,7 +3950,7 @@ AT_CHECK([$COMPILE -std=cobol2002 -fassign-ext-dyn=ok prog.cob ], [0], [],
 AT_CHECK([DD_INVFILE="./inp_data" DD_REPORT4="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [
                                                  INVENTORY REPORT
@@ -4108,7 +4108,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_DUPDTL=./report.txt $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [HEADING SAVE-ITEM
 A        1st Detail
@@ -4247,7 +4247,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_PRINTOUT=./report.txt $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [         1         2         3         4         5
 12345678901234567890123456789012345678901234567890
@@ -4460,8 +4460,8 @@ AT_CHECK([DD_PRINTOUT=./report_lit.txt \
 $COBCRUN_DIRECT ./progl], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report_var.txt)
-AT_CAPTURE_FILE(./report_lit.txt)
+AT_CAPTURE_FILE([report_var.txt])
+AT_CAPTURE_FILE([report_lit.txt])
 
 AT_DATA([reference],
 [Hi-Q:          1         2         3         4         5
@@ -4608,7 +4608,7 @@ $COBCRUN_DIRECT ./prog], [0], [Hello World
 ], [])
 
 
-AT_CAPTURE_FILE(./tstdmrp.txt)
+AT_CAPTURE_FILE([tstdmrp.txt])
 
 AT_DATA([reference],
 [Hi-Q:          1         2         3         4         5
@@ -4681,7 +4681,7 @@ AT_CHECK([DD_PRINTOUT=./report.txt $COBCRUN_DIRECT ./prog], [0], [],
 ])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [hello                          <--->
 goodbye                        <--->
@@ -4744,7 +4744,7 @@ libcob: prog.cob:31: warning: implicit CLOSE of report-file ('PRINTOUT')
 ])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [])
 
@@ -4798,7 +4798,7 @@ libcob: prog.cob:30: warning: implicit CLOSE of report-file ('PRINTOUT')
 ])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [])
 
@@ -5101,7 +5101,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([DD_TEMPFILE=./inp_data DD_REPORTFILE=./report.txt $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page    1
 Region:    MW
@@ -9318,7 +9318,7 @@ AT_CHECK([DD_INFILE=./inp_data DD_OREPORT=./report.txt \
 $COBCRUN_DIRECT ./prog], [0], [], [])
 
 
-AT_CAPTURE_FILE(./report.txt)
+AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [                           STARK TECHNOLOGIES MONTHLY REPORT
                     --------------------------------------------------
@@ -9522,7 +9522,7 @@ Hello World 4
 ], [])
 
 
-AT_CAPTURE_FILE(./tstdmrp.txt)
+AT_CAPTURE_FILE([tstdmrp.txt])
 
 AT_DATA([reference], [VarQ: H        1         2         3         4         5  Page   1
 VarQ: 123456789b123456789c123456789d123456789e123456789f

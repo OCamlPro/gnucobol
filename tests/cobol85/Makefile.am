@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2002-2012, 2015-2022 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -49,10 +49,11 @@ EXTRA_DIST = EXEC85.conf.in expand.pl report.pl summary.pl summary.txt \
 #CLEANFILES = EXEC85$(EXEEXT) summary.log
 
 COBC = $(PRE_INST_ENV) cobc$(EXEEXT)
+COBC_FLAGS = -std=cobol85 -debug $(COBOL_FLAGS)
+
 CURL_FLAGS = 
 WGET_FLAGS = -t1 -T5
 DIFF_FLAGS = @DIFF_FLAGS@
-COBC_FLAGS = -std=cobol85 -debug
 
 PRE_INST_ENV = "$(abs_top_builddir)/pre-inst-env"
 
@@ -268,4 +269,4 @@ EXEC85.cob: newcob.val
 EXEC85$(EXEEXT): EXEC85.cob
 	@echo "Compiling EXEC85 program"
 	@if test -f "EXEC85.cob"; then EXEC_SRC="EXEC85.cob"; else EXEC_SRC="$(srcdir)/EXEC85.cob"; fi; \
-	 $(COBC) $(COBOL_FLAGS) -x "$$EXEC_SRC"
+	 $(COBC) $(COBC_FLAGS) -x "$$EXEC_SRC"

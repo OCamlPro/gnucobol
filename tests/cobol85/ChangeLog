@@ -7,6 +7,10 @@
 
 	* report.pl: place stderr from test runs into .out file
 
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: pass appropriate flags to cobc for compiling
+
 2022-12-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: ensure to not create half-baked module directories,

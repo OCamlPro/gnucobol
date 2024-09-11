@@ -2344,7 +2344,7 @@ badprog.cob:12: error: elementary item expected
 ])
 
 AT_CAPTURE_FILE([symbols.lst])
-AT_CHECK([$COMPILE_ONLY -std=mf-strict -t symbols.lst -tsymbols -fno-tsource -fno-tmessages -tlines=0 prog.cob],
+AT_CHECK([$COMPILE_ONLY -std=mf-strict -t symbols.lst -ftsymbols -fno-tsource -fno-tmessages -tlines=0 prog.cob],
 [0], [], [])
 
 AT_DATA([prog.lst],
@@ -2391,12 +2391,9 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 ])
 
-
 #AT_CHECK([$UNIFY_LISTING symbols.lst symbols.lis once], [0], [], [])
+#AT_CHECK([diff prog.lst symbols.lis], [0], [], [])
 AT_CHECK([gcdiff prog.lst symbols.lst], [0], [], [])
-
-
-
 
 AT_CLEANUP
 

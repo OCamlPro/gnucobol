@@ -57,6 +57,7 @@ make check
 %doc AUTHORS ChangeLog
 %doc NEWS README THANKS
 %doc DEPENDENCIES HACKING
+%doc README.md DEPENDENCIES.md
 %{_bindir}/cobc
 %{_bindir}/cobcrun
 %{_bindir}/cob-config
@@ -65,6 +66,7 @@ make check
 %{_infodir}/gnucobol.info*
 %{_mandir}/man1/cobc.1.*
 %{_mandir}/man1/cobcrun.1.*
+%{_mandir}/man1/cob-config.1.*
 
 %files -n libcob
 %license COPYING.LESSER

@@ -175,7 +175,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: error: invalid VALUE clause
 prog.cob:7: warning: numeric value is expected
 prog.cob:8: warning: value size exceeds data size
@@ -257,7 +257,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: error: data item not signed
 prog.cob:7: error: data item not signed
 ])
@@ -284,7 +284,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: warning: alphanumeric value is expected
 prog.cob:7: error: invalid VALUE clause
 prog.cob:8: warning: value does not fit the picture string
