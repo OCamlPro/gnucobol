@@ -48,24 +48,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([CALL Java static void (void) (missing)])
-AT_KEYWORDS([extensions jni])
-
-AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       PROCEDURE        DIVISION.
-           CALL "Java.Test.missingMethod"
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# TODO: should fail!
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
-AT_CLEANUP
-
 AT_SETUP([CALL Java with malformed method name])
 AT_KEYWORDS([extensions jni malformed])
 
@@ -79,5 +61,52 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [1], [], [stderr])
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:5: error: malformed Java method name 'Java.InvalidName', expected format 'Java.ClassName.methodName'
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) (missing class)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.isAMissingClass"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:5: error: Java class 'Test' not found
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) (missing method)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([Test.java], [
+public class Test {}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.missingMethod"
+           STOP RUN.
+])
+
+AT_CHECK([$JAVAC Test.java], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:5: error: Java method 'missingMethod' with signature '()V' not found in class 'Test'
+])
 AT_CLEANUP

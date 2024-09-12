@@ -81,7 +81,7 @@ resolve_java (const char		*class_name,
 	cob_free(jni_class_name);
 	if (!cls) {
 		cob_runtime_error(_("Java class '%s' not found"), class_name);
-		return NULL;
+		cob_hard_failure ();
 	}
 
 	mid = (*env)->GetStaticMethodID(env, cls, method_name, method_signature);
@@ -89,14 +89,14 @@ resolve_java (const char		*class_name,
 		cob_runtime_error(_("Java method '%s' with signature '%s' not found in class '%s'"), 
                           method_name, method_signature, class_name);
 		(*env)->DeleteLocalRef(env, cls);
-		return NULL;
+		cob_hard_failure ();
 	}
 
 	handle = (cob_java_handle*)cob_malloc(sizeof(cob_java_handle));
 	if (!handle) {
 		cob_runtime_error(_("Memory allocation failed for Java method handle"));
 		(*env)->DeleteLocalRef(env, cls);
-		return NULL;
+		cob_hard_failure ();
 	}
 
 	handle->cls = (*env)->NewGlobalRef(env, cls);
