@@ -631,7 +631,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED file invalid key items])
-AT_KEYWORDS([record ALTERNATE split])
+AT_KEYWORDS([record ALTERNATE split collation])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -658,6 +658,32 @@ AT_DATA([prog.cob], [
                         RECORD KEY    IS NOT-HERE-KEY
                            SOURCE     IS NOT-IN-FILE1
                                          NOT-IN-FILE2.
+       SELECT TEST-CSQ1 ASSIGN TO 'FILE-TEST-COSQ1'
+                        ORGANIZATION  IS INDEXED
+                        ACCESS MODE   IS DYNAMIC
+                        RECORD    KEY IS TEST-P5
+                        ALTERNATE KEY IS TEST-P6
+                        ALTERNATE KEY IS TEST-P7
+                        COLLATING SEQUENCE IS EBCDIC
+                        COLLATING SEQUENCE OF TEST-P7 IS EBCDIC.
+       SELECT TEST-CSQ2 ASSIGN TO 'FILE-TEST-COSQ2'
+                        ORGANIZATION  IS INDEXED
+                        ACCESS MODE   IS DYNAMIC
+                        RECORD    KEY IS TEST-P8
+                        COLLATING SEQUENCE            IS EBCDIC    *> unused
+                        COLLATING SEQUENCE OF TEST-P8 IS EBCDIC.
+       SELECT TEST-CSQ3 ASSIGN TO 'FILE-TEST-COSQ3'
+                        ORGANIZATION  IS INDEXED
+                        ACCESS MODE   IS DYNAMIC
+                        RECORD    KEY IS SPLIT-KEY1 = TEST-P9 TEST-P10
+                        ALTERNATE KEY IS SPLIT-KEY2 = TEST-P9 TEST-P11
+                        COLLATING SEQUENCE               IS EBCDIC *> should not warn
+                        COLLATING SEQUENCE OF SPLIT-KEY2 IS EBCDIC.*> should not warn
+       SELECT TEST-CSQ4 ASSIGN TO 'FILE-TEST-COSQ4'
+                        ORGANIZATION  IS INDEXED
+                        ACCESS MODE   IS DYNAMIC
+                        RECORD    KEY IS SPLIT-KEY3 = TEST-P12
+                        COLLATING SEQUENCE OF SPLIT-KEY1 IS EBCDIC.
        DATA             DIVISION.
        FILE             SECTION.
        FD TEST-SOME.
@@ -670,6 +696,23 @@ AT_DATA([prog.cob], [
        FD TEST-MORE.
        01  MORE-REC.
            05 MORE-DATA PIC X(4).
+       FD TEST-CSQ1.
+       01  CSQ1-REC.
+           05 TEST-P5   PIC 9(2) BINARY.
+           05 TEST-P6   PIC 9(2) BINARY.
+           05 TEST-P7   PIC X(2).
+       FD TEST-CSQ2.
+       01  CSQ2-REC.
+           05 TEST-P8   PIC 9(2) BINARY.
+           05 TEST-P8X  PIC X(2).
+       FD TEST-CSQ3.
+       01  CSQ3-REC.
+           05 TEST-P9   PIC 9(2) BINARY.
+           05 TEST-P10  PIC 9(2) BINARY.
+           05 TEST-P11  PIC X(2).
+       FD TEST-CSQ4.
+       01  CSQ4-REC.
+           05 TEST-P12  PIC 9(2) BINARY.
        WORKING-STORAGE  SECTION.
        77  TEST-P2   PIC S9(4) COMP.
        77  TEST-P3   PIC S9(5) COMP-3.
@@ -681,13 +724,23 @@ AT_DATA([prog.cob], [
 
 # FIXME: "is not defined" should be changed in "is not defined in file ..."
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:10: error: 'TEST-P2' is not defined
+[prog.cob:33: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:33: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:39: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:39: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:46: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:46: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:51: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:10: error: 'TEST-P2' is not defined
 prog.cob:11: error: 'TEST-P1' is not defined
 prog.cob:12: error: 'TEST-P3' is not defined
 prog.cob:18: error: 'NOT-THERE' is not defined
 prog.cob:13: error: invalid KEY item 'SOME-REC', not in file 'TEST-FILE'
 prog.cob:24: error: 'NOT-IN-FILE1' is not defined
 prog.cob:20: error: invalid KEY item 'NOT-HERE-KEY', not in file 'TEST-MORE'
+prog.cob:32: warning: COLLATING SEQUENCE is ignored for non-alphanumeric key 'TEST-P5'
+prog.cob:32: warning: COLLATING SEQUENCE is ignored for non-alphanumeric key 'TEST-P6'
+prog.cob:39: warning: COLLATING SEQUENCE is ignored for non-alphanumeric key 'TEST-P8'
 prog.cob:25: error: 'NOT-IN-FILE2' is not defined
 ])
 

@@ -4781,6 +4781,21 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 			}
 		}
 	}
+
+	/* check collating sequence is not ignored */
+	if (CB_TREE_CLASS (k) != CB_CLASS_ALPHANUMERIC) {
+		cb_tree colseq = (cbak == NULL)
+			? f->collating_sequence_key
+			: cbak->collating_sequence_key;
+		if (colseq == NULL) {
+			colseq = f->collating_sequence;
+		}
+		if (colseq != NULL) {
+			cb_warning_x (COBC_WARN_FILLER, CB_TREE(colseq),
+				      _("COLLATING SEQUENCE is ignored for non-alphanumeric"
+					" key '%s'"), k->name);
+		}
+	}
 }
 
 void
