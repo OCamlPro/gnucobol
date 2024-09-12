@@ -9341,11 +9341,11 @@ output_indexed_file_key_colseq (const struct cb_file *f, const struct cb_alt_key
 {
 	const cb_tree	key = ak ? ak->key : f->key;
 	const cb_tree	key_col = ak ? ak->collating_sequence_key : f->collating_sequence_key;
-	const int	type = cb_tree_type (key, cb_code_field (key));
 	cb_tree		col = NULL;
 
-	/* We only apply a collating sequence if the key is alphanumeric / display */
-	if ((type & COB_TYPE_ALNUM) || (type == COB_TYPE_NUMERIC_DISPLAY)) {
+	/* We only apply a collating sequence if the key is of class alphanumeric;
+	   Warned in `validate_indexed_key_field`. */
+	if (CB_TREE_CLASS (key) == CB_CLASS_ALPHANUMERIC) {
 		col = key_col ? key_col : f->collating_sequence;
 #if 0	/* TODO: this should be done for national, when available */
 	} else if (type & COB_TYPE_NATIONAL) {

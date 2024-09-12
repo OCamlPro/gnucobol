@@ -12781,6 +12781,103 @@ AT_CHECK([diff reference_ebcdic_ascii prog8.out], [0], [], [])
 AT_CLEANUP
 
 
+
+AT_SETUP([INDEXED file with collation on group key])
+AT_KEYWORDS([runfile WRITE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05   MY-KEY.
+             10 MY-KEY-1 PIC X.
+             10 MY-KEY-2 PIC X.
+           05  MY-DATA   PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "111" TO MY-REC WRITE MY-REC
+           MOVE "AA2" TO MY-REC WRITE MY-REC
+           MOVE "223" TO MY-REC WRITE MY-REC
+           MOVE "BB4" TO MY-REC WRITE MY-REC
+           MOVE "335" TO MY-REC WRITE MY-REC
+           MOVE "CC6" TO MY-REC WRITE MY-REC
+           MOVE "447" TO MY-REC WRITE MY-REC
+           MOVE "DD8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE LOW-VALUES TO MY-KEY
+           START MY-FILE KEY >= MY-KEY
+             INVALID KEY
+               DISPLAY "INVALID KEY"
+             NOT INVALID KEY
+               PERFORM UNTIL EXIT
+                 READ MY-FILE NEXT
+                    AT END
+                       EXIT PERFORM
+                    NOT AT END
+                       DISPLAY MY-REC
+                 END-READ
+               END-PERFORM
+           END-START.
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout],
+[ASCII:
+111
+223
+335
+447
+AA2
+BB4
+CC6
+DD8
+EBCDIC:
+AA2
+BB4
+CC6
+DD8
+111
+223
+335
+447
+])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii], [0])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic], [0])
+
+# This is, so far, only supported by the BDB backend
+AT_CHECK([test "$COB_HAS_ISAM" = "db"], [0], [], [],
+# Previous test "failed" --> other ISAM, skip the test
+[AT_CHECK([true])],
+
+# Previous test "passed" --> using BDB, perform the actual test
+[AT_CHECK([
+  echo "ASCII:"  && $COBCRUN_DIRECT ./ascii && \
+  echo "EBCDIC:" && $COBCRUN_DIRECT ./ebcdic
+], [0], [expout])		# <- compare stdout with exiting `expout`
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([INDEXED file numeric keys ordering])
 AT_KEYWORDS([runfile])
 

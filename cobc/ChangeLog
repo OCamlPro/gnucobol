@@ -4,6 +4,8 @@
 	* tree.c (validate_indexed_key_field): warn about ignored collating
 	  sequence for non-alphanumeric keys (considers only primary keys and file
 	  collating sequence for now)
+	* codegen.c (output_indexed_file_key_colseq): assign collating sequence
+	  for any key of alphanumeric class
 
 2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
