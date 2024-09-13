@@ -10,6 +10,10 @@
 	  to ensure using system defaults and work around WSL regressions
 	* run_prog_manual.sh.in (_test_with_cmd): work around cmd quoting
 	  by using a dynamically created sub command file
+	* atlocal.in (set_utf8_locale): new function for the testsuite
+	  enabling tests to either run with UTF8 locale or skip
+	* atlocal.in: use configure-setup for the grep binary
+	* atlocal_win: updated to current atlocal.in
 
 2024-08-03  David Declerck <david.declerck@ocamlpro.com>
 
