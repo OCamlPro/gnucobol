@@ -52,6 +52,12 @@
 	* typeck.c (cb_emit_move, cb_emit_set_to): do not check for incompatible
 	  data if no receiver field is of category numeric or numeric edited
 
+2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, codegen.c, tree.c: fixed C89 errors
+	* typeck.c (trimmed_size, is_blank): minor refactorings
+	* typeck.c: provide the original buffer if encoding cannot be applied
+
 2024-09-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_emit_accept): always check position
@@ -80,7 +86,7 @@
 
 	* cobc.c, codegen.c, tree.c: fixed C89 errors
 	* typeck.c (trimmed_size, is_blank): minor refactorings
-	  
+
 2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
 
 	* cobc.c: added the locale option to specify the source 

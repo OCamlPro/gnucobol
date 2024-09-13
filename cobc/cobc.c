@@ -341,20 +341,19 @@ static void
 initialize_cb_iconv() {
 	char * encoding;
 #ifdef HAVE_LANGINFO_CODESET
-	char * locale = setlocale(LC_CTYPE, "");
+	char * locale = setlocale (LC_CTYPE, "");
 	if( ! locale  ) {
 		cobc_err_msg ("could not set locale");
+		return;
   	}
-	else{
-		encoding = nl_langinfo(CODESET);
+	encoding = nl_langinfo(CODESET);
 
-		if (encoding != NULL && *encoding > 0) {
-			strncpy(cb_iconv.source, encoding, sizeof(cb_iconv.source) - 1);
-			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
-		} else {
-			strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
-			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
-		}
+	if (encoding != NULL && *encoding > 0) {
+		strncpy (cb_iconv.source, encoding, sizeof(cb_iconv.source) - 1);
+		cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+	} else {
+		strncpy (cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
+		cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
 	}
 #else
 	strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
@@ -3995,10 +3994,16 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
+
+
+			/* -fsource-encode-alphanumeric=encoding */
+
+
 		case CB_FLAG_GETOPT_SOURCE_ENCODE: {
 			/* -fsource-encode=encoding */
 			const char* valid_encodings[] = {
 				"UTF-8",
+				"UTF8",
 				"ASCII",
 				"ISO-8859-1",
 				"ISO-8859-15",
@@ -9629,6 +9634,8 @@ main (int argc, char **argv)
 /* initialize the iconv struct after reading the command line*/
 #ifdef HAVE_ICONV
 	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
+	/* move iconv_open check here */
+
 	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
 	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);
 #endif

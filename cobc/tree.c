@@ -2797,40 +2797,44 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 
 #ifdef HAVE_ICONV
 	size_t outsize = size;
-	void * outdata = malloc(outsize);
+	void * outdata = cobc_malloc (outsize);
 	
-	if(cb_iconv.alphanumeric == (iconv_t)-1) {
-		cobc_err_msg(_("iconv_open failed"));
-	} else{
+	if (cb_iconv.alphanumeric == (iconv_t)-1) {
+		cobc_err_msg (_("iconv_open failed"));
+	} else {
 		size_t inbytesleft = size;
 		size_t outbytesleft = outsize;
 
 		char *inbuf = (char *)data;
 		char * outbuf = (char *)outdata;
 		
-		size_t convResult = iconv(cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		size_t convResult = iconv (cb_iconv.alphanumeric, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 		if(convResult == (size_t)-1) {
 			switch (errno) {
 			case E2BIG:
-				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
+				cobc_err_msg (_("iconv failed: Insufficient output buffer space"));
 				break;
 			case EILSEQ:
-				cobc_err_msg(_("iconv failed: Invalid multibyte sequence in the input"));
+				cobc_err_msg (_("iconv failed: Invalid multibyte sequence in the input"));
 				break;
 			case EINVAL:
-				cobc_err_msg(_("iconv failed: Incomplete multibyte sequence in the input"));
+				cobc_err_msg (_("iconv failed: Incomplete multibyte sequence in the input"));
 				break;
 			default:
-				cobc_err_msg(_("iconv failed: Unknown error"));
+				cobc_err_msg (_("iconv failed: Unknown error"));
 				break;
 			}
-
+			cobc_free (outdata);
+			l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
+			l->source_file = cb_source_file;
+			l->source_line = cb_source_line;
+			return l;
 		}
 
 		outsize -= outbytesleft;
 	}
 	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, outdata, outsize));
-	free(outdata);
+	cobc_free (outdata);
 #else
 	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
 #endif
@@ -2847,20 +2851,20 @@ cb_build_national_literal (const void *data, const size_t size)
 	cb_tree			l;
 	
 #ifdef HAVE_ICONV
-	size_t outsize = size*2;
-	void * outdata = malloc(outsize);
+	size_t outsize = size * COB_NATIONAL_SIZE;
+	void * outdata = cobc_malloc (outsize);
 	
-	if(cb_iconv.national == (iconv_t)-1) {
-		cobc_err_msg(_("iconv_open failed"));
-	} else{
+	if (cb_iconv.national == (iconv_t)-1) {
+		cobc_err_msg (_("iconv_open failed"));
+	} else {
 		size_t inbytesleft = size;
 		size_t outbytesleft = outsize;
 
 		char *inbuf = (char *)data;
-		char * outbuf = (char *)outdata;
+		char *outbuf = (char *)outdata;
 		
-		size_t convResult = iconv(cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-		if(convResult == (size_t)-1) {
+		size_t convResult = iconv (cb_iconv.national, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+		if (convResult == (size_t)-1) {
 			switch (errno) {
 			case E2BIG:
 				cobc_err_msg(_("iconv failed: Insufficient output buffer space"));
@@ -2875,17 +2879,17 @@ cb_build_national_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Unknown error"));
 				break;
 			}
+		} else {
+			outsize -= outbytesleft;
+			outdata = cobc_realloc (outdata, outsize); /* Resize the outdata to the actual size */
 		}
 
-		outsize -= outbytesleft;
 	}
-	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
-	free(outdata);
 #else
 	/* poor-man's conversion iso-8859 -> utf-16le */
 	/* "!a0" = x'21613000' -> nx'21006100300000' */
-	size_t outsize = size * 2;
-	unsigned char *outdata = malloc(outsize);
+	size_t outsize = size * COB_NATIONAL_SIZE;
+	unsigned char *outdata = cobc_malloc(outsize);
 	const unsigned char *indata = (const unsigned char *)data;
 	size_t i, j;
 
@@ -2893,9 +2897,9 @@ cb_build_national_literal (const void *data, const size_t size)
 		outdata[j] = indata[i];
 		outdata[j + 1] = 0;
 	}
-
-	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
 #endif
+	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, outdata, outsize));
+	cobc_free (outdata);
 
 	l->source_file = cb_source_file;
 	l->source_line = cb_source_line;
@@ -2916,11 +2920,11 @@ cb_build_UTF8_literal (const void *data, const size_t size)
 	}
 	{
 		size_t outsize = size * 4;
-		void * outdata = malloc (outsize);
-		memset(outdata, ' ', outsize);
+		void * outdata = cobc_malloc (outsize);
+		memset (outdata, ' ', outsize);
 
 		if (cb_iconv.utf8 == (iconv_t)-1) {
-			cobc_err_msg(_("iconv_open failed"));
+			cobc_err_msg (_("iconv_open failed"));
 		} else {
 			size_t inbytesleft = size;
 			size_t outbytesleft = outsize;
@@ -2944,13 +2948,13 @@ cb_build_UTF8_literal (const void *data, const size_t size)
 					cobc_err_msg (_("iconv failed: Unknown error"));
 					break;
 				}
+			} else {
+				outsize -= outbytesleft;
+				outdata = cobc_realloc (outdata, outsize); /* Resize the outdata to the actual size */
 			}
-
-			outsize -= outbytesleft;
-			outdata = cobc_realloc (outdata, outsize); /* Resize the outdata to the actual size */
 		}
 		l = CB_TREE (build_literal (CB_CATEGORY_UTF8, outdata, outsize));
-		free (outdata);
+		cobc_free (outdata);
 	}
 #else
 	l = CB_TREE (build_literal (CB_CATEGORY_UTF8, data, size));
