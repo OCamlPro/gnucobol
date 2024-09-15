@@ -58,6 +58,8 @@ GREP=@GREP@
 SED=@SED@
 export AWK GREP SED
 
+JAVAC=@JAVAC@
+
 # be sure to use the English messages
 LC_ALL=C
 export LC_ALL
@@ -218,6 +220,7 @@ if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	COB_HAS_XML2="@COB_HAS_XML2@"
 	COB_HAS_JSON="@COB_HAS_JSON@"
 	COB_HAS_CURSES="@COB_HAS_CURSES@"
+	COB_HAS_JNI="@COB_HAS_JNI@"
 else
 
 	COB_OBJECT_EXT="$(grep COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
@@ -255,6 +258,11 @@ else
 		COB_HAS_JSON="yes"
 	else
 		COB_HAS_JSON="no"
+	fi
+	if test $(grep -i -c "Java interoperability.*disabled" info.out) = 0; then
+		COB_HAS_JNI="yes"
+	else
+		COB_HAS_JNI="no"
 	fi
 	# see note below
 	if test $(grep -i -c " screen .*disabled" info.out) = 0; then

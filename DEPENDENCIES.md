@@ -119,3 +119,13 @@ Support for GENERATE JSON is provided by *one* of the following:
 
     JSON-C is distributed under Expat License.
 
+JNI Support
+------------
+
+Support for JNI (Java Native Interface) is provided by:
+
+* [Java Development Kit (JDK)](https://openjdk.java.net/) 8 or later.
+
+    The JDK is distributed under various open-source licenses depending on the vendor and version. Common licenses include the GNU General Public License (GPL) and the Oracle Binary Code License Agreement.
+
+    To enable JNI support, ensure that the JDK is installed on your system, and set the appropriate environment variables (e.g., JAVA_HOME) to point to the JDK installation directory.

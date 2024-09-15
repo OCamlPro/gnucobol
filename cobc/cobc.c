@@ -2620,6 +2620,12 @@ cobc_print_info (void)
 
 	cobc_var_print (_("JSON library"),		_(WITH_JSON), 0);
 
+#ifdef WITH_JNI
+	cobc_var_print (_("Java interoperability"),	_("enabled"), 0);
+#else
+	cobc_var_print (_("Java interoperability"),	_("disabled"), 0);
+#endif
+
 #ifdef COB_DEBUG_LOG
 	cobc_var_print ("DEBUG_LOG",		_("enabled"), 0);
 #endif

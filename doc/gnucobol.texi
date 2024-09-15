@@ -2211,6 +2211,7 @@ For a complete list of supported system routines,
 * CBL_GC_NANOSLEEP::            Sleep for nanoseconds
 * CBL_GC_FORK::                 Fork the current COBOL process to a new one
 * CBL_GC_WAITPID::              Wait for a system process to end
+* Java Integration::            Interfacing with Java through JNI
 @end menu
 
 @node CBL_GC_GETOPT
@@ -2573,6 +2574,45 @@ is not available on the current system.
         MOVE 0 TO RETURN-CODE
         DISPLAY 'CBL_GC_WAITPID ended with status: ' WAIT-STS
         END-DISPLAY
+@end example
+
+@node Java Integration
+@section Java Integration
+@cindex Java, JNI, method calls
+
+GnuCOBOL now supports integration with Java through the Java Native Interface (JNI). This allows COBOL programs to call Java methods directly.
+
+@subsection Supported Method Calls
+Currently, only void Java methods with no parameters are supported. Method calls that do not conform to this restriction will result in an error at compile-time.
+
+@subsection Setting Up Java Integration
+To use Java integration, you need to set the `JAVA_HOME` environment variable to point to your Java installation. Additionally, ensure that your `PATH` includes the Java binaries.
+
+@subsection Error Handling
+Any attempt to call Java methods with parameters or expecting return values will result in a compile-time error. The GnuCOBOL compiler will issue a warning if the method name does not follow the `Java.ClassName.methodName` format.
+
+@subsection Known Limitations
+Currently, GnuCOBOL supports only void methods without parameters. Future updates will address these limitations to provide broader Java integration capabilities.
+
+@subsection Example Usage
+Here is an example of a COBOL program calling a Java method:
+
+@example
+   IDENTIFICATION DIVISION.
+   PROGRAM-ID. SampleJavaCall.
+   PROCEDURE DIVISION.
+       CALL "Java.com.example.HelloWorld.printMessage".
+       STOP RUN.
+@end example
+
+Ensure the class `com.example.HelloWorld` is in your classpath and that `printMessage` is a static void method with no parameters.
+
+@subsection Environment Variables
+Set the following environment variables to enable Java integration:
+
+@example
+export JAVA_HOME=/path/to/java
+export PATH=$JAVA_HOME/bin:$PATH
 @end example
 
 @node Appendices
