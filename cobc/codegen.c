@@ -147,7 +147,7 @@ static struct literal_list	*literal_cache = NULL;
 static struct field_list	*field_cache = NULL;
 static struct field_list	*local_field_cache = NULL;
 static struct call_list		*call_cache = NULL;
-static struct call_list	*call_java_cache = NULL;
+static struct call_list		*call_java_cache = NULL;
 static struct call_list		*func_call_cache = NULL;
 static struct static_call_list	*static_call_cache = NULL;
 static struct base_list		*base_cache = NULL;
@@ -7091,6 +7091,28 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 }
 
 static void
+output_exception_handling(struct cb_call *p)
+{
+    if (p->stmt1) {
+        output_line("cob_glob_ptr->cob_stmt_exception = 1;");
+        output_line("COB_RESET_EXCEPTION(0);");
+    } else {
+        output_line("cob_glob_ptr->cob_stmt_exception = 0;");
+    }
+
+    output_line("if ((cob_glob_ptr->cob_exception_code & 0xff00) != 0) {");
+    output_block_open();
+
+    if (p->stmt1) {
+        output_stmt(p->stmt1);  
+    } else if (p->stmt2) {
+        output_stmt(p->stmt2);
+	}
+    output_block_close();
+    output_line("COB_RESET_EXCEPTION(0);");
+}
+
+static void
 output_java_call (struct cb_call *p)
 {
 	if (p->args != NULL || p->call_returning != NULL) {
@@ -7127,6 +7149,7 @@ output_java_call (struct cb_call *p)
 	output_line("cob_call_java(call_java_%s);\n", mangled);
 	output_newline();
 	output_block_close();
+	output_exception_handling(p);
 }
 
 static void
@@ -7160,6 +7183,7 @@ output_call (struct cb_call *p)
 
 	if (p->convention & CB_CONV_JAVA) {
 		output_java_call(p);
+		output_exception_handling(p);
 		return;
 	}
 

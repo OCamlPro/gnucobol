@@ -37,6 +37,9 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
            CALL "Java.Test.printHelloWorld"
+               NOT ON EXCEPTION
+                   DISPLAY "Java call worked"
+           END-CALL
            STOP RUN.
 ])
 
@@ -108,5 +111,24 @@ AT_CHECK([$JAVAC Test.java], [0], [], [])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:5: error: Java method 'missingMethod' with signature '()V' not found in class 'Test'
+])
+AT_CLEANUP
+
+AT_SETUP([CALL Java static void (void) (missing class with ON EXCEPTION)])
+AT_KEYWORDS([extensions jni exception])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.isAMissingClass"
+               ON EXCEPTION
+                   DISPLAY "java call not successful"
+           END-CALL
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [java call not successful
 ])
 AT_CLEANUP

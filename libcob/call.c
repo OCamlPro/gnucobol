@@ -2108,6 +2108,11 @@ cob_resolve_java (const char *class_name,
 
 void
 cob_call_java (const cob_java_handle *method_handle) {
+    if (method_handle == NULL) {
+        cob_runtime_error(_("Invalid Java method handle: NULL"));
+        cob_add_exception(COB_EC_ARGUMENT);
+        return;
+    }
 #if WITH_JNI
 	if (java_api == NULL) {
 		cob_runtime_error (_("Java interoperability module cannot be loaded: %s"),
@@ -2116,9 +2121,8 @@ cob_call_java (const cob_java_handle *method_handle) {
 	}
 	return java_api->cob_call (method_handle);
 #else
+{
 	static int first_java = 1;
-
-	COB_UNUSED (method_handle);
 
 	if (first_java) {
 		first_java = 0;
@@ -2129,5 +2133,6 @@ cob_call_java (const cob_java_handle *method_handle) {
 	set_json_exception (JSON_INTERNAL_ERROR);
 #endif
 	cob_add_exception (COB_EC_IMP_FEATURE_DISABLED);
+}
 #endif
 }
