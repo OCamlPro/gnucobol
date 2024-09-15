@@ -115,9 +115,39 @@ call_java (const cob_java_handle *method_handle)
 	(*env)->CallStaticVoidMethod(env,
 				     method_handle->cls,
 				     method_handle->mid, NULL);
-	if ((*env)->ExceptionCheck(env)) {
-		(*env)->ExceptionDescribe(env);
-		(*env)->ExceptionClear(env);
+	jthrowable exception = (*env)->ExceptionOccurred(env);
+	if(exception) {
+		jclass throwable = (*env)->FindClass(env, "java/lang/Throwable");
+		jmethodID getMessage = (*env)->GetMethodID(env, 
+								throwable, "getMessage", "()Ljava/lang/String;");
+		if(getMessage != NULL) {
+			jstring message = (jstring)(*env)->CallObjectMethod(env, exception, getMessage); 
+			const char *messageChars = (*env)->GetStringUTFChars(env, message, NULL);
+			cob_runtime_error(_("Java exception: %s"), messageChars);
+			(*env)->ReleaseStringUTFChars(env, message, messageChars);
+			(*env)->DeleteLocalRef(env, message);
+		}
+		jclass stringWriter = (*env)->FindClass(env, "java/io/StringWriter");
+		jclass printWriter = (*env)->FindClass(env, "java/io/PrintWriter");
+		jobject stringWriterObj = (*env)->NewObject(env, 
+										stringWriter, 
+										(*env)->GetMethodID(env, stringWriter, "<init>", "()V"));
+		jobject printWriterObj = (*env)->NewObject(env, 
+										printWriter, 
+										(*env)->GetMethodID(env, printWriter, "<init>", "(Ljava/io/Writer;)V"), 
+										stringWriterObj);
+		jmethodID printStackTrace = (*env)->GetMethodID(env, throwable, "printStackTrace", "(Ljava/io/PrintWriter;)V");
+		(*env)->CallVoidMethod(env, exception, printStackTrace, printWriter);
+		jmethodID toString = (*env)->GetMethodID(env, stringWriter, "toString", "()Ljava/lang/String;");
+		jstring stackTrace = (jstring)(*env)->CallObjectMethod(env, stringWriterObj, toString);
+		const char *stackTraceChars = (*env)->GetStringUTFChars(env, stackTrace, NULL);
+		cob_runtime_error(_("Java stack trace: %s"), stackTraceChars);
+		
+		(*env)->ReleaseStringUTFChars(env, stackTrace, stackTraceChars);
+		(*env)->DeleteLocalRef(env, stackTrace);
+		(*env)->DeleteLocalRef(env, stringWriterObj);
+		(*env)->DeleteLocalRef(env, printWriterObj);
+		(*env)->DeleteLocalRef(env, exception);
 	}
 }
 
