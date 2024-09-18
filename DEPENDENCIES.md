@@ -120,7 +120,7 @@ Support for GENERATE JSON is provided by *one* of the following:
     JSON-C is distributed under Expat License.
 
 
-charachter encoding support
+character encoding support
 ----------------------------
 
 Support for partial character encoding is provided directly,

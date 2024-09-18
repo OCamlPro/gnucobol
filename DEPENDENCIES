@@ -137,7 +137,7 @@ The following libraries ARE required WHEN :
 
     JSON-C is distributed under Expat License.
 
-5) charachter encoding support is needed and iconv is not provided
+5) character encoding support is needed and iconv is not provided
    as part of libc
 
     BOTH runtime AND development components required.
