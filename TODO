@@ -3,6 +3,17 @@ GnuCOBOL TODO						-*- outline -*-
 The following is only a part of the things to do; many more
 can be found in the issue trackers.
 
+myscreenio 
+
+conditional if defined on local prototypes configure with --without-curses
+
+add libcob changelog change all curses functions to use new static window pointer "mywin"
+and for curses functions which implicitly use stdscr use the window specific version of 
+the function specifying "mywin".
+
+replace refresh with refresh_mywin to reposition cursor from window relative position to screen relative positon
+
+check for possible unneeded if at line 3709
 
 1 Pending requests
 
