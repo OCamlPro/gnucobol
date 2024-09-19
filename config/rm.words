@@ -31,114 +31,114 @@
 # ignored if GnuCOBOL uses that word as a reserved word.
 #   Entries of the form word-1=word-2 define word-1 as an alias for default
 # reserved word word-2. No spaces are allowed around the equal sign.
-reserved:	ACCEPT
-reserved:	ACCESS
-reserved:	ADD
-reserved:	ADDRESS
-reserved:	ADVANCING
-reserved:	AFTER
-reserved:	ALL
-reserved:	ALPHABET
-reserved:	ALPHABETIC
-reserved:	ALPHABETIC-LOWER
-reserved:	ALPHABETIC-UPPER
-reserved:	ALPHANUMERIC
-reserved:	ALPHANUMERIC-EDITED
-reserved:	ALSO
-reserved:	ALTER
-reserved:	ALTERNATE
-reserved:	AND
-reserved:	ANY
-reserved:	ARE
-reserved:	AREA
-reserved:	AREAS
-reserved:	AS
-reserved:	ASCENDING
-reserved:	ASSIGN
-reserved:	AT
-reserved:	AUTHOR
-reserved:	AUTO*
-reserved:	AUTO-SKIP*=AUTO
-reserved:	AUTOMATIC*
-reserved:	BACKGROUND*=BACKGROUND-COLOR
-reserved:	BACKGROUND-COLOR*
-reserved:	BEEP=BELL
-reserved:	BEFORE
-reserved:	BELL
-reserved:	BINARY
-reserved:	BINARY-SEQUENTIAL*
-reserved:	BLANK
-reserved:	BLINK
-reserved:	BLOCK
-reserved:	BOTTOM
-reserved:	BY
-reserved:	CALL
-reserved:	CANCEL
-reserved:	CASE-INSENSITIVE*
-reserved:	CASE-SENSITIVE*
-reserved:	CD
-reserved:	CENTURY-DATE
-reserved:	CENTURY-DAY
-reserved:	CHARACTER
-reserved:	CHARACTERS
-reserved:	CLASS
-reserved:	CLOCK-UNITS
-reserved:	CLOSE
-reserved:	CODE
-reserved:	CODE-SET
-reserved:	COL
-reserved:	COLLATING
-reserved:	COLUMN
-reserved:	COMMA
-reserved:	COMMON
-reserved:	COMMUNICATION
-reserved:	COMP
-reserved:	COMP-1
-reserved:	COMP-3
-reserved:	COMP-4
-reserved:	COMP-5
-reserved:	COMP-6
-reserved:	COMPUTATIONAL=COMP
-reserved:	COMPUTATIONAL-1=COMP-1
-reserved:	COMPUTATIONAL-3=COMP-3
-reserved:	COMPUTATIONAL-4=COMP-4
-reserved:	COMPUTATIONAL-5=COMP-5
-reserved:	COMPUTATIONAL-6=COMP-6
-reserved:	COMPUTE
-reserved:	CONFIGURATION
-reserved:	CONTAINS
-reserved:	CONTENT
-reserved:	CONTINUE
-reserved:	CONTROL
-reserved:	COBOL
-reserved:	CONVERT
-reserved:	CONVERTING
-reserved:	COPY
-reserved:	CORR=CORRESPONDING
-reserved:	CORRESPONDING
-reserved:	COUNT
-reserved:	COUNT-MAX
-reserved:	COUNT-MIN
-reserved:	CRT*
-reserved:	CURRENCY
-reserved:	CURSOR
-reserved:	CYCLE*
-reserved:	DATA
-reserved:	DATA-POINTER
-reserved:	DATE
-reserved:	DATE-AND-TIME
-reserved:	DATE-COMPILED
-reserved:	DATE-WRITTEN
-reserved:	DAY
-reserved:	DAY-AND-TIME
+reserved: ACCEPT
+reserved: ACCESS
+reserved: ADD
+reserved: ADDRESS
+reserved: ADVANCING
+reserved: AFTER
+reserved: ALL
+reserved: ALPHABET
+reserved: ALPHABETIC
+reserved: ALPHABETIC-LOWER
+reserved: ALPHABETIC-UPPER
+reserved: ALPHANUMERIC
+reserved: ALPHANUMERIC-EDITED
+reserved: ALSO
+reserved: ALTER
+reserved: ALTERNATE
+reserved: AND
+reserved: ANY
+reserved: ARE
+reserved: AREA
+reserved: AREAS
+reserved: AS
+reserved: ASCENDING
+reserved: ASSIGN
+reserved: AT
+reserved: AUTHOR
+reserved: AUTO*
+reserved: AUTO-SKIP*=AUTO
+reserved: AUTOMATIC*
+reserved: BACKGROUND*=BACKGROUND-COLOR
+reserved: BACKGROUND-COLOR*
+reserved: BEEP=BELL
+reserved: BEFORE
+reserved: BELL
+reserved: BINARY
+reserved: BINARY-SEQUENTIAL*
+reserved: BLANK
+reserved: BLINK
+reserved: BLOCK
+reserved: BOTTOM
+reserved: BY
+reserved: CALL
+reserved: CANCEL
+reserved: CASE-INSENSITIVE*
+reserved: CASE-SENSITIVE*
+reserved: CD
+reserved: CENTURY-DATE
+reserved: CENTURY-DAY
+reserved: CHARACTER
+reserved: CHARACTERS
+reserved: CLASS
+reserved: CLOCK-UNITS
+reserved: CLOSE
+reserved: CODE
+reserved: CODE-SET
+reserved: COL
+reserved: COLLATING
+reserved: COLUMN
+reserved: COMMA
+reserved: COMMON
+reserved: COMMUNICATION
+reserved: COMP
+reserved: COMP-1
+reserved: COMP-3
+reserved: COMP-4
+reserved: COMP-5
+reserved: COMP-6
+reserved: COMPUTATIONAL=COMP
+reserved: COMPUTATIONAL-1=COMP-1
+reserved: COMPUTATIONAL-3=COMP-3
+reserved: COMPUTATIONAL-4=COMP-4
+reserved: COMPUTATIONAL-5=COMP-5
+reserved: COMPUTATIONAL-6=COMP-6
+reserved: COMPUTE
+reserved: CONFIGURATION
+reserved: CONTAINS
+reserved: CONTENT
+reserved: CONTINUE
+reserved: CONTROL
+reserved: COBOL
+reserved: CONVERT
+reserved: CONVERTING
+reserved: COPY
+reserved: CORR=CORRESPONDING
+reserved: CORRESPONDING
+reserved: COUNT
+reserved: COUNT-MAX
+reserved: COUNT-MIN
+reserved: CRT*
+reserved: CURRENCY
+reserved: CURSOR
+reserved: CYCLE*
+reserved: DATA
+reserved: DATA-POINTER
+reserved: DATE
+reserved: DATE-AND-TIME
+reserved: DATE-COMPILED
+reserved: DATE-WRITTEN
+reserved: DAY
+reserved: DAY-AND-TIME
 # note: the following words are reserved but cannot be used - DEBUGGING module not supported
-reserved:	DEBUG-CONTENTS
-reserved:	DEBUG-ITEM
-reserved:	DEBUG-LINE
-reserved:	DEBUG-NAME
-reserved:	DEBUG-SUB-1
-reserved:	DEBUG-SUB-2
-reserved:	DEBUG-SUB-3
+reserved: DEBUG-CONTENTS
+reserved: DEBUG-ITEM
+reserved: DEBUG-LINE
+reserved: DEBUG-NAME
+reserved: DEBUG-SUB-1
+reserved: DEBUG-SUB-2
+reserved: DEBUG-SUB-3
 # end of not included DEBUGGING module
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
@@ -222,7 +222,7 @@ reserved:	GLOBAL
 reserved:	GO
 reserved:	GOBACK
 reserved:	GREATER
-reserved:	HIGH
+reserved:	HIGH=HIGHLIGHT
 reserved:	HIGH-VALUE
 reserved:	HIGH-VALUES=HIGH-VALUE
 reserved:	HIGHEST-VALUE			# SPECIAL-REGISTER
@@ -266,7 +266,7 @@ reserved:	LINE-SEQUENTIAL*
 reserved:	LINES
 reserved:	LINKAGE
 reserved:	LOCK
-reserved:	LOW
+reserved:	LOW=LOWLIGHT
 reserved:	LOW-VALUE
 reserved:	LOW-VALUES=LOW-VALUE
 reserved:	LOWEST-VALUE		# SPECIAL-REGISTER
@@ -445,90 +445,90 @@ reserved:	ZEROS=ZERO
 # registered more "unused" words because these are reserved words in
 # unsupported modules of ANSI 85 or other COBOL dialects:
 
-reserved:	CF
-reserved:	CH
-reserved:	CONTROLS
-reserved:	DE
-reserved:	DETAIL
-reserved:	FINAL
-reserved:	FUNCTION
-reserved:	GENERATE
-reserved:	GROUP
-reserved:	HEADING
-reserved:	INITIATE
-reserved:	LIMIT
-reserved:	LINE-COUNTER
-reserved:	PAGE-COUNTER
-reserved:	PF
-reserved:	PH
-reserved:	PROCEDURES
-reserved:	RD
-reserved:	RECORDING
-reserved:	REFERENCES
-reserved:	REPORT
-reserved:	REPORTING
-reserved:	REPORTS
-reserved:	RESET
-reserved:	RF
-reserved:	RH
-reserved:	SUM
-reserved:	TERMINATE
-reserved:	TYPE
-reserved:	VARIABLE
+reserved: CF
+reserved: CH
+reserved: CONTROLS
+reserved: DE
+reserved: DETAIL
+reserved: FINAL
+reserved: FUNCTION
+reserved: GENERATE
+reserved: GROUP
+reserved: HEADING
+reserved: INITIATE
+reserved: LIMIT
+reserved: LINE-COUNTER
+reserved: PAGE-COUNTER
+reserved: PF
+reserved: PH
+reserved: PROCEDURES
+reserved: RD
+reserved: RECORDING
+reserved: REFERENCES
+reserved: REPORT
+reserved: REPORTING
+reserved: REPORTS
+reserved: RESET
+reserved: RF
+reserved: RH
+reserved: SUM
+reserved: TERMINATE
+reserved: TYPE
+reserved: VARIABLE
 
 
 # list of registers:
 # TO-DO: Should PROCEDURE-NAME [IN|OF] {PARAGRAPH|PROCEDURE|SECTION} be a register?
-not-register:	DIALECT-ALL	# disable all registers, specify used below
-# register:	"ADDRESS\ IN"
-register:	"ADDRESS\ OF"
-# register:	"COUNT-MAX\ IN"
-# register:	"COUNT-MAX\ OF"
-# register:	"COUNT-MIN\ IN"
-# register:	"COUNT-MIN\ OF"
-# register:	"COUNT\ IN"
-# register:	"COUNT\ OF"
-register:	DEBUG-ITEM
-# register:	"HIGHEST-VALUE\ IN"
-# register:	"HIGHEST-VALUE\ OF"
-# register:	"INITIAL-VALUE\ IN"
-# register:	"INITIAL-VALUE\ OF"
-# register:	"LENGTH\ IN"
-register:	"LENGTH\ OF"
-# register:	"LINAGE-COUNTER\ IN"
-# register:	"LINAGE-COUNTER\ OF"
-# register:	"LOWEST-VALUE\ IN"
-# register:	"LOWEST-VALUE\ OF"
-# register:	"MAX-VALUE\ IN"
-# register:	"MAX-VALUE\ OF"
-# register:	"MIN-VALUE\ IN"
-# register:	"MIN-VALUE\ OF"
-# register:	PROGRAM-ID
-register:	RETURN-CODE
-register:	WHEN-COMPILED
+not-register: DIALECT-ALL # disable all registers, specify used below
+# register: "ADDRESS\ IN"
+register: "ADDRESS\ OF"
+# register: "COUNT-MAX\ IN"
+# register: "COUNT-MAX\ OF"
+# register: "COUNT-MIN\ IN"
+# register: "COUNT-MIN\ OF"
+# register: "COUNT\ IN"
+# register: "COUNT\ OF"
+register: DEBUG-ITEM
+# register: "HIGHEST-VALUE\ IN"
+# register: "HIGHEST-VALUE\ OF"
+# register: "INITIAL-VALUE\ IN"
+# register: "INITIAL-VALUE\ OF"
+# register: "LENGTH\ IN"
+register: "LENGTH\ OF"
+# register: "LINAGE-COUNTER\ IN"
+# register: "LINAGE-COUNTER\ OF"
+# register: "LOWEST-VALUE\ IN"
+# register: "LOWEST-VALUE\ OF"
+# register: "MAX-VALUE\ IN"
+# register: "MAX-VALUE\ OF"
+# register: "MIN-VALUE\ IN"
+# register: "MIN-VALUE\ OF"
+# register: PROGRAM-ID
+register: RETURN-CODE
+register: WHEN-COMPILED
 
 
 # list of system names:
-not-system-name:	DIALECT-ALL-SWITCHES
-system-name:	SWITCH-1
-system-name:	SWITCH-2
-system-name:	SWITCH-3
-system-name:	SWITCH-4
-system-name:	SWITCH-5
-system-name:	SWITCH-6
-system-name:	SWITCH-7
-system-name:	SWITCH-8
-system-name:	UPSI-0
-system-name:	UPSI-1
-system-name:	UPSI-2
-system-name:	UPSI-3
-system-name:	UPSI-4
-system-name:	UPSI-5
-system-name:	UPSI-6
-system-name:	UPSI-7
+not-system-name:  DIALECT-ALL-SWITCHES
+system-name:  SWITCH-1
+system-name:  SWITCH-2
+system-name:  SWITCH-3
+system-name:  SWITCH-4
+system-name:  SWITCH-5
+system-name:  SWITCH-6
+system-name:  SWITCH-7
+system-name:  SWITCH-8
+system-name:  UPSI-0
+system-name:  UPSI-1
+system-name:  UPSI-2
+system-name:  UPSI-3
+system-name:  UPSI-4
+system-name:  UPSI-5
+system-name:  UPSI-6
+system-name:  UPSI-7
 
-system-name:	CONSOLE
+system-name:  CONSOLE
 
 
 # Intrinsic Functions - explicit not supported by RM-COBOL
-not-intrinsic-function:	DIALECT-ALL
+not-intrinsic-function: DIALECT-ALL
