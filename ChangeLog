@@ -1,4 +1,8 @@
 
+2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* README: add documentation for "make checkmanual"
+
 2024-08-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* DEPENDENCIES, NEWS: document usage of libiconv

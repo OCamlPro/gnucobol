@@ -9,6 +9,10 @@
 	* cob-config.in: echo in same order as arguments; add missing
 	  arguments (--bindir,--libdir,--datadir,--mandir,--includedir)
 
+2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: use libcob's cob_getenv_direct instead of getenv
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: minor validation - check for empty parameters

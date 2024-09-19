@@ -88,12 +88,32 @@ If the the COBOL85 testsuite is not already in the build- or source-tree,
 `make test` will download it.  For details see tests/cobol85/README.
 
 ** NOTE **
-   The language interpreter "perl" is required to run COBOL85 tests.
+   The language interpreter `perl` is required to run COBOL85 tests.
 
 
  If you want to run both testsuites you can run
  
  *  `make checkall`
+
+
+ You may also optionally perform a series of semi-manual tests to
+ verify a working extended screenio.
+ 
+ *  `make checkmanual`
+
+ The test execution is automatic but the user needs to check for
+ the expected result. See `tests/run_prog_manual.sh` for tweaking the
+ test runner used (which is otherwise deduced from the environment),
+ either in that script or via TESTRUNNER environment variable.
+
+** NOTE **
+   The semi-manual tests need either `xterm`, GNU `screen` or `tmux`
+   installed and will run within a detached `cmd.exe` on MSYS based
+   systems otherwise.
+   For running with screen or tmux execute the following from
+   a separate terminal, directly after running the testsuite:
+   `tests/run_prog_manual.sh attach`
+   ... and leave that using `exit` at the end of the tests
 
 Installation
 ============
