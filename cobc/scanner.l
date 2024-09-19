@@ -85,6 +85,7 @@ static int yywrap (void) {
 #include <ctype.h>
 #include <limits.h>
 
+#include <stdio.h>
 #include <string.h>
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
@@ -1366,7 +1367,7 @@ scan_ebcdic_char (int c)
 			  buff, "(1..256)");
 		return '?';
 	}
-        c--; // in ordinal, i.e. 1..256 -> 0..255
+        c--; /* in ordinal, i.e. 1..256 -> 0..255 */
 #ifdef COB_EBCDIC_MACHINE
 	return (cob_u8_t) c;
 #else

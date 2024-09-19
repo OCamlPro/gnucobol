@@ -85,6 +85,7 @@ static void insert_copy_arg (void);
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdio.h>
 #include <string.h>
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>

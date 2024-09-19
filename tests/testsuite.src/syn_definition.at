@@ -2878,3 +2878,72 @@ prog.cob:6: error: 'DEPTHDR' is not defined
 
 AT_CLEANUP
 
+
+AT_SETUP([POINTER TO typedef-name])
+AT_KEYWORDS([POINTER TYPEDEF])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 data-type PIC X(10) USAGE DISPLAY IS TYPEDEF.
+       01 data-ptr1 USAGE POINTER data-type.
+       01 data-ptr2 USAGE POINTER TO data-type.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION-POINTER TO function-name])
+AT_KEYWORDS([FUNCTION-POINTER])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 fun-ptr1 USAGE FUNCTION-POINTER FUNCTION random.
+       01 fun-ptr2 USAGE FUNCTION-POINTER TO FUNCTION random.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([PROGRAM-POINTER TO program-prototype])
+AT_KEYWORDS([PROGRAM-POINTER PROTOTYPE])
+
+# currently fails -> investigate
+AT_XFAIL_IF([true])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. prog-proto IS PROTOTYPE.
+       PROCEDURE DIVISION.
+       END PROGRAM prog-proto.
+
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+       PROGRAM prog-proto.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 prog-ptr1 USAGE PROGRAM-POINTER prog-proto.
+       01 prog-ptr2 USAGE PROGRAM-POINTER TO prog-proto.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob ], [0], [], [])
+AT_CLEANUP
