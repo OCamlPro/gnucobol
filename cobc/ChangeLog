@@ -133,8 +133,6 @@
 	  of file paths. -fcopybook-deps also forces -E, -foneline-deps,
 	  -MT=copybooks, disables errors on missing copybooks and removes
 	  output on stdout.
-	* error.c (print_error_prefix): add cobc_slashify to replace backslashes
-	  by slashes, only if COB_IS_RUNNING_IN_TESTMODE is set.
         * typeck.c (check_argument_conformance): check that param is well defined
 	  to prevent a segfault
 

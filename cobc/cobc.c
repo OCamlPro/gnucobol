@@ -9311,16 +9311,12 @@ process_file (struct filename *fn, int status)
 		}
 
 		for (l = cb_depend_list; l; l = l->next) {
-			char* filename = cobc_slashify (l->text);
-			fprintf (file, " %s%s", filename, l->next ? sep : "\n\n");
-			cobc_free (filename);
+			fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
 		}
 		/* These lines should only be added with -MP */
 		if (cb_depend_add_phony){
 			for (l = cb_depend_list; l; l = l->next) {
-				char* filename = cobc_slashify (l->text);
-				fprintf (file, "%s:\n", filename);
-				cobc_free (filename);
+				fprintf (file, "%s:\n", l->text);
 			}
 		}
 		if (!cb_depend_file){

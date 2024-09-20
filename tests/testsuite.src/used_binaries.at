@@ -372,28 +372,13 @@ AT_DATA([prog.cob], [
            EXIT PROGRAM.
 ])
 
-AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE prog.cob 2> compiler.output], [0], [],
-[],[
-    # On Windows, we get a failure from gcc, so the binary is not created, the stderr is mixed and exit code is 1.
-    AT_CHECK([grep libcob: compiler.output], [0], [libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
+AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE prog.cob], [0], [],
+[libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
 ])
-  ],
-  [
-    AT_CHECK([cat compiler.output], [0], [libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE prog.cob], [0], [],
+[libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
 ])
-    AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-  ])
-
-AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE prog.cob 2> compiler.output], [0], [],
-[],[
-    AT_CHECK([grep libcob: compiler.output], [0], [libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
-])
-  ],
-  [
-    AT_CHECK([cat compiler.output], [0], [libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
-])
-  ])
-
 # TMPDIR is only checked when actually needed which is currently only the case
 # for SORT
 #AT_CHECK([TMPDIR="./prog.cob" $COBCRUN_DIRECT ./prog], [0], [OK],
@@ -1072,16 +1057,15 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
 ]])
 
 AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
-AT_CAPTURE_FILE([compiler.output])
 
-AT_CHECK([echo "$PWD/prog.cob:7: error: CRUD.CPY: No such file or directory" > expected.output])
-AT_CHECK([echo "$PWD/prog.cob:6: warning: numeric value is expected" >> expected.output])
-AT_CHECK([echo "$PWD/prog.cob:14: warning: ignoring redundant ." >> expected.output])
-AT_CAPTURE_FILE([expected.output])
-
-AT_CHECK([[cat compiler.output | tr '[:upper:]' '[:lower:]' | tr -d ':/\\' > compiler.output2]])
-AT_CHECK([[cat expected.output | tr '[:upper:]' '[:lower:]' | tr -d ':/\\' > expected.output2]])
-AT_CHECK([diff compiler.output2 expected.output2])
+# note: -fdiagnostics-absolute-paths will show the realpath,
+#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
+#       but the _return_path function from atlocal may adjust that
+AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
+[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
+DIR/prog.cob:6: warning: numeric value is expected
+DIR/prog.cob:14: warning: ignoring redundant .
+], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
 
 AT_CLEANUP
 
@@ -1091,13 +1075,13 @@ AT_SETUP([check include header file])
 
 AT_DATA([filec.h], [
 /* COB_EXT_IMPORT will be defined by libcob.h up-front */
-COB_EXT_IMPORT void rename  (const char *, const char*);
+COB_EXT_IMPORT void f (char *, long);
 ])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           CALL "rename" USING "Hello".
+           CALL "f" USING "Hello".
 ])
 
 # dynamic call - program seems correct
@@ -1111,8 +1095,10 @@ AT_DATA([prog2.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
        PROCEDURE        DIVISION.
-           CALL "rename" USING "Hello" "Hello2" RETURNING NOTHING.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
 ])
 
 # note: we likely need to build an import library for some environments
@@ -1143,22 +1129,22 @@ AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call prog2.cob -o pr
 # * putting RETURNING NOTHING is not supported
 # * putting RETURNING OMITTED is ok, but triggers a warning (see stderr)
 
-AT_DATA([rename.copy], [
+AT_DATA([f.copy], [
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. rename PROTOTYPE.
+       PROGRAM-ID. f PROTOTYPE.
        DATA DIVISION.
        LINKAGE SECTION.
        01  a PIC X(20).
-       01  b PIC X(20).
-       PROCEDURE DIVISION USING a b RETURNING OMITTED.
-       END PROGRAM rename.
+       01  b BINARY-C-LONG.
+       PROCEDURE DIVISION USING a BY VALUE b RETURNING OMITTED.
+       END PROGRAM f.
 ])
 
-AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "rename.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
+AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
 [prog2.cob:8: warning: unexpected RETURNING item
 ], [
   # Previous test "failed" --> retry with import library
-  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "rename.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
+  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
 )
 
 AT_CLEANUP
@@ -1193,7 +1179,7 @@ AT_DATA([sub/COPY3.CPY], [])
 AT_CHECK([$COMPILE_ONLY prog.cob])
 
 AT_CHECK([$COMPILE_ONLY -M prog.cob prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
@@ -1210,7 +1196,7 @@ prog.COB_OBJECT_EXT: \
 
 AT_CHECK([$COMPILE_ONLY -M -MF prog.dep prog.cob])
 
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" prog.dep], [0],
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
@@ -1220,13 +1206,13 @@ AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" prog.dep], [0],
 ])
 
 AT_CHECK([$COMPILE_ONLY -M -fcopybook-deps prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: COPY1 COPY2 sub/COPY3
 
 ])
 
 AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_MODULE_EXT/prog.COB_MODULE_EXT/g" compiler.output], [0],
+AT_CHECK([$SED "s/prog.$COB_MODULE_EXT/prog.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_MODULE_EXT: \
  prog.cob \
  COPY1.CPY \
@@ -1238,7 +1224,8 @@ AT_CHECK([$SED "s/prog.$COB_MODULE_EXT/prog.COB_MODULE_EXT/g" compiler.output], 
 AT_CHECK([test -f prog.c], [1])
 AT_CHECK([test -f prog.o], [1])
 
-AT_CHECK([$COMPILE_ONLY -M -MQ '$(target)#toto' prog.cob], [0],
+AT_CHECK([$COMPILE_ONLY -M -MQ '$(target)#toto' prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.output], [0],
 [$$(target)\#toto: \
  prog.cob \
  COPY1.CPY \
@@ -1252,7 +1239,7 @@ AT_CAPTURE_FILE([prog.d])
 
 AT_CHECK([$COMPILE -MD prog.cob])
 
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" prog.d], [0],
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.d], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
@@ -1265,7 +1252,7 @@ AT_CHECK([$COMPILE -MD -o sub/prog.exe  prog.cob])
 
 AT_CHECK([test -f sub/prog.exe])
 
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" sub/prog.d], [0],
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" sub/prog.d], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
@@ -1276,9 +1263,7 @@ AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" sub/prog.d], [0],
 
 AT_CHECK([rm sub/COPY3.CPY])
 
-AT_CHECK([$COMPILE_ONLY -M prog.cob > compiler.output], [1], [],
-[prog.cob:12: error: sub/COPY3: No such file or directory
-])
+AT_CHECK([$COMPILE_ONLY -M prog.cob > compiler.output 2> compiler.error], [1], [], [])
 
 AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: \
@@ -1288,8 +1273,12 @@ AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], 
 
 ])
 
+AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.error], [0],
+[prog.cob:12: error: sub/COPY3: No such file or directory
+])
+
 AT_CHECK([$COMPILE_ONLY -M -MG prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \

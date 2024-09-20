@@ -62,42 +62,11 @@ size_t				cb_msg_style;
 
 DECLNORET static void		cobc_too_many_errors (void) COB_A_NORETURN;
 
-static int is_test = -1;
-
-/* Returns a copy of the argument with backslashes replaced by slashes
-in filenames, only if COB_IS_RUNNING_IN_TESTMODE. This mode simplifies
-the test of outputs, as they will be similar on Unix and Windows.
-*/
-char *
-cobc_slashify (const char *src)
-{
-	if (is_test < 0)
-		is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
-
-	if (is_test){
-		int i;
-		int len = strlen (src);
-		char *dst = cobc_malloc (len+1);
-		for (i=0; i<len; i++){
-			char c = src[i];
-			if ( c == '\\' )
-				dst[i] = '/';
-			else
-				dst[i] = c;
-		}
-		dst[i] = 0;
-		return dst;
-	} else
-		return cobc_strdup (src);
-}
-
 static void
 print_error_prefix (const char *file, int line, const char *prefix)
 {
 	if (file) {
 		char *absfile = NULL ;
-		char *tmpfile = cobc_slashify (file);
-		file = tmpfile;
 		if (cb_diagnostics_absolute_paths
 		 && strcmp (file, COB_DASH) != 0
 		 && file[0] != '/'
@@ -131,7 +100,6 @@ print_error_prefix (const char *file, int line, const char *prefix)
 			fprintf (stderr, "%s:%d: ", file, line);
 		}
 		if (absfile) cobc_free (absfile);
-		cobc_free (tmpfile);
 	}
 	if (prefix) {
 		fprintf (stderr, "%s", prefix);
