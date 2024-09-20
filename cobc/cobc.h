@@ -669,6 +669,8 @@ DECLNORET extern void		cobc_terminate_exit (const char *, const char *) COB_A_NO
 
 extern void		cobc_set_listing_header_code (void);
 
+extern char *		cobc_slashify (const char *);
+
 /* reserved.c */
 extern struct reserved_word_list	*cobc_user_res_list;
 

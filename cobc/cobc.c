@@ -9431,10 +9431,14 @@ main (int argc, char **argv)
 		struct cb_text_list	*l;
 		fprintf (cb_depend_file, "%s: \\\n", cb_depend_target);
 		for (l = cb_depend_list; l; l = l->next) {
-			fprintf (cb_depend_file, " %s%s\n", l->text, l->next ? " \\" : "\n");
+			char *filename = cobc_slashify (l->text);
+			fprintf (cb_depend_file, " %s%s\n", filename, l->next ? " \\" : "\n");
+			cobc_free (filename);
 		}
 		for (l = cb_depend_list; l; l = l->next) {
-			fprintf (cb_depend_file, "%s:\n", l->text);
+			char *filename = cobc_slashify (l->text);
+			fprintf (cb_depend_file, "%s:\n", filename);
+			cobc_free (filename);
 		}
 		fclose (cb_depend_file);
 	}

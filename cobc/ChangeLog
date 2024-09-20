@@ -114,6 +114,11 @@
 	* codegen.c: handle profiling code generation under the
 	  cb_flag_prof guard
 
+2024-03-15  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* error.c (print_error_prefix): add cobc_slashify to replace backslashes
+	  by slashes, only if COB_IS_RUNNING_IN_TESTMODE is set.
+
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
 	* parser.y (screen_value_clause): replaced basic literals by literals

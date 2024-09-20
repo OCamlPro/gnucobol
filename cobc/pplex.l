@@ -1299,7 +1299,7 @@ ppopen_get_file (const char *name)
 	ppin = fopen (name, "rb");
 #endif
 	if (!ppin) {
-		cb_error ("%s: %s", name, cb_get_strerror ());
+		cb_error ("%s: %s", cobc_slashify (name), cb_get_strerror ());
 		/* Note: postpone error exit as we need the saved buffers later on */
 		return 0;
 	}
@@ -1728,7 +1728,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		/* ensure to have errno from name as specified, not from another file */
 		(void)access (plexbuff1, R_OK);
 		/* pass file error as we have no more places to check */
-		cb_error ("%s: %s", plexbuff1, cb_get_strerror ());
+		cb_error ("%s: %s", cobc_slashify (plexbuff1), cb_get_strerror ());
 	}
 
 	/* On COPY, open error restore old file */
