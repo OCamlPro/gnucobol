@@ -2411,7 +2411,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		int		cursor_clause_line;
 		int		cursor_clause_col;
 		get_cursor_from_program (&cursor_clause_line, &cursor_clause_col);
-		if (cursor_clause_line > 0) {
+		if (cursor_clause_line >= 0) {
 			int		fld_index = find_field_by_pos (initial_curs, cursor_clause_line, cursor_clause_col);
 			if (fld_index >= 0) {
 				curr_index = fld_index;
