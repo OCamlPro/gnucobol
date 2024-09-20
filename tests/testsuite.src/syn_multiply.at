@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2018, 2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2018, 2020, 2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While
 ## 
 ## This file is part of GnuCOBOL.
@@ -47,13 +47,13 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: '456' is not a numeric name
-prog.cob:11: error: 'literal "a"' is not a numeric value
+prog.cob:11: error: 'literal "a"' is not numeric
 prog.cob:12: error: 'literal "b"' is not a numeric name
-prog.cob:13: error: 'X-X' is not a numeric value
+prog.cob:13: error: 'X-X' is not numeric
 prog.cob:14: error: 'X-09' is not a numeric name
-prog.cob:15: error: 'X-09' is not a numeric value
+prog.cob:15: error: 'X-09' is not numeric
 prog.cob:16: error: 'X-X' is not a numeric name
 ])
 
@@ -83,16 +83,16 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: '789' is not a numeric or numeric-edited name
-prog.cob:11: error: 'literal "a"' is not a numeric value
-prog.cob:11: error: 'literal "b"' is not a numeric value
+prog.cob:11: error: 'literal "a"' is not numeric
+prog.cob:11: error: 'literal "b"' is not numeric
 prog.cob:12: error: 'literal "c"' is not a numeric or numeric-edited name
-prog.cob:13: error: 'X-X' is not a numeric value
-prog.cob:14: error: 'X-09' is not a numeric value
+prog.cob:13: error: 'X-X' is not numeric
+prog.cob:14: error: 'X-09' is not numeric
 prog.cob:15: error: 'X-X' is not a numeric or numeric-edited name
-prog.cob:16: error: 'X-09' is not a numeric value
-prog.cob:16: error: 'X-X' is not a numeric value
+prog.cob:16: error: 'X-09' is not numeric
+prog.cob:16: error: 'X-X' is not numeric
 ])
 
 AT_CLEANUP
@@ -120,10 +120,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
-[prog.cob:10: error: 'literal "a"' is not a numeric value
-prog.cob:14: error: 'literal "a"' is not a numeric value
-prog.cob:14: error: 'literal "b"' is not a numeric value
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:10: error: 'literal "a"' is not numeric
+prog.cob:14: error: 'literal "a"' is not numeric
+prog.cob:14: error: 'literal "b"' is not numeric
 ])
 
 AT_CLEANUP

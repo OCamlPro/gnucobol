@@ -58,7 +58,7 @@ COMPILE_MODULE="${COBC} -m ${FLAGS}"
 # test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
 
-# unset option if not internally set in this script
+# unset option if not internally set in this script - or external
 _unset_option () {
 	if test "$1" != "COB_CONFIG_DIR" \
 	     -a "$1" != "COB_COPY_DIR" \
@@ -67,7 +67,8 @@ _unset_option () {
 	     -a "$1" != "COB_CFLAGS" \
 	     -a "$1" != "COB_LDFLAGS" \
 	     -a "$1" != "COB_LIBS" \
-	     -a "$1" != "COB_UNIX_LF"; then
+	     -a "$1" != "COB_UNIX_LF" \
+	     -a "$1" != "OS"; then
 		unset $1
 	fi
 }
@@ -88,6 +89,9 @@ _return_path () {
 		fi
 	fi
 }
+
+# Note: we explicit do not set COB_ON_CYGWIN here,
+# as this is file is about running non-cygwin binaries
 
 # Fix for testcases where cobc uses win32 paths internally
 PATHSEP=";"

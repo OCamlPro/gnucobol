@@ -1,4 +1,8 @@
 
+2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fr.po, tr.po: updated translation from TP
+
 2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tr.po, LINGUAS: added Turkish provided by translation project
@@ -104,7 +108,7 @@
 	* new folder - created with gettextize
 
 
-Copyright 2002,2010,2011,2014-2018 Free Software Foundation, Inc.
+Copyright 2002,2010,2011,2014-2018,2020,2022-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

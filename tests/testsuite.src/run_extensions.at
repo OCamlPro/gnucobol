@@ -133,7 +133,7 @@ AT_KEYWORDS([extensions])
 # FIXME: the type of octal literals must be context-sensitive, see below
 # currently hard-wired as numeric (may be switched in scanner.l to alphanumeric)
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -1497,7 +1497,7 @@ Read SEQ 04, DEP-X = 03 & DEP-Y = 10, TSTREC len:101
 ], [])
 
 
-AT_CAPTURE_FILE(./SEQODO)
+AT_CAPTURE_FILE([SEQODO])
 
 AT_DATA([reference],
 [010205Howdy 1 2<>  01***Abcde. 344502***Abcde. 4556<>
@@ -2228,6 +2228,7 @@ AT_CHECK([test -e TESTFILE], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([CALL unusual PROGRAM-ID.])
 AT_KEYWORDS([extensions])
 
@@ -2292,6 +2293,7 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [P1P2P3P4])
 
 AT_CLEANUP
 
+
 AT_SETUP([CALL / GOBACK with LOCAL-STORAGE])
 AT_KEYWORDS([extensions])
 
@@ -2334,7 +2336,8 @@ AT_DATA([prog_b.cob], [
 
 AT_CHECK([$COMPILE prog_a.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog_b.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog_a], [0], [entered prog_b
+AT_CHECK([$COBCRUN_DIRECT ./prog_a], [0],
+[entered prog_b
 exiting prog_b
 back in prog_a
 ], [])
@@ -3151,7 +3154,7 @@ AT_KEYWORDS([extensions])
 # We should add an according test and change the test here after cleanup,
 # officially documenting the "ASSIGN clause not necessary for SORT FILES"
 # extension and enable it only with a conf entry (set only in default.conf).
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([TEST-FILE],
 [9
@@ -4562,7 +4565,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog4 --static --dynamic --usage=boringandtoolongtex
 # Return code 1 is sufficient as proof of hard return (as wanted).
 AT_CHECK([$COMPILE prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5 --static], [1], [],
-[libcob: prog5.cob:37: error: Call to CBL_GC_GETOPT with wrong longoption size.
+[libcob: prog5.cob:37: error: call to CBL_GC_GETOPT with wrong longoption size
 ])
 
 AT_CLEANUP
@@ -6753,5 +6756,45 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -freserved=EXAMINE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([GCOS literals with EBCDIC symbols (run)])
+AT_KEYWORDS([extensions])
+
+AT_DATA([prog.cob], [[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(11).
+       01 T             PIC 9.
+       01 S             USAGE COMP-1 VALUE ZERO.
+       PROCEDURE        DIVISION.
+           MOVE 1 TO T
+           MOVE ""135,151,151"bar"195,194,234"" TO X
+           IF X NOT EQUAL "foobarBAZ" PERFORM SHOW.
+
+           MOVE 2 TO T
+           MOVE "  "135,151,151"bar"195 194"Z" TO X
+           IF X NOT EQUAL "  foobarBAZ" PERFORM SHOW.
+
+           MOVE 3 TO T
+           MOVE ' '135 151,151'bar'195,194'Z' TO X
+           IF X NOT EQUAL " foobarBAZ" PERFORM SHOW.
+
+           MOVE 4 TO T
+           MOVE ""75,80,91"" TO X
+           IF X NOT EQUAL "[!]" PERFORM SHOW.
+
+           STOP RUN S.
+       SHOW.
+           DISPLAY "EBCDIC LIT " T " FAILED: X = """ X """"
+           MOVE 1 TO S.
+]])
+
+AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 
 AT_CLEANUP

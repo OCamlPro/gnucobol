@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -361,7 +361,8 @@ cb_warning_internal (const enum cb_warn_opt opt, const char *fmt, va_list ap)
 		return pref;
 	}
 	if (pref == COBC_WARN_AS_ERROR) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -394,7 +395,8 @@ cb_error_always (const char *fmt, ...)
 	if (sav_lst_file) {
 		return;
 	}
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -428,7 +430,8 @@ cb_error_internal (const char *fmt, va_list ap)
 	if (ignore_error && pref != COBC_WARN_AS_ERROR) {
 		warningcount++;
 	} else {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	}
@@ -460,7 +463,8 @@ cb_perror (const int config_error, const char *fmt, ...)
 	va_end (ap);
 
 
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -491,7 +495,8 @@ cb_plex_warning (const enum cb_warn_opt opt, const size_t sline, const char *fmt
 		return;
 	}
 	if (pref == COBC_WARN_AS_ERROR) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -511,7 +516,8 @@ cb_plex_error (const size_t sline, const char *fmt, ...)
 	if (sav_lst_file) {
 		return;
 	}
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -621,7 +627,8 @@ configuration_error (const char *fname, const int line,
 		return;
 	}
 
-	if (++errorcount > cb_max_errors) {
+	errorcount++;
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		cobc_too_many_errors ();
 	}
 }
@@ -644,7 +651,8 @@ cb_warning_x_internal (const enum cb_warn_opt opt, cb_tree x, const char *fmt, v
 		return pref;
 	}
 	if (pref == COBC_WARN_AS_ERROR) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -689,7 +697,8 @@ cb_warning_dialect_x (const enum cb_support tag, cb_tree x, const char *fmt, ...
 		return ret;
 	}
 	if (tag == CB_ERROR || tag == CB_UNCONFORMABLE) {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	} else {
@@ -801,7 +810,8 @@ cb_error_x_internal (cb_tree x, const char *fmt, va_list ap)
 	if (ignore_error && pref != COBC_WARN_AS_ERROR) {
 		warningcount++;
 	} else {
-		if (++errorcount > cb_max_errors) {
+		errorcount++;
+		if (cb_max_errors && errorcount > cb_max_errors) {
 			cobc_too_many_errors ();
 		}
 	}
@@ -860,8 +870,11 @@ cb_syntax_check_x (cb_tree x, const char *fmt, ...)
 }
 
 /**
- * verify if the given compiler option is supported by the current std/configuration
+ * verify if the given compiler option is supported by the current
+ * std/configuration/command line options;
  * \param	x	tree whose position is used for raising warning/errors
+ * \param	tag	feature checked
+ * \param	feature	text variant, used for warning/error messages
  * \return	1 = ok/warning/obsolete, 0 = skip/ignore/error/unconformable
  */
 unsigned int
@@ -915,8 +928,12 @@ cb_verify_x (const cb_tree x, const enum cb_support tag, const char *feature)
 }
 
 /**
- * verify if the given compiler option is supported by the current std/configuration
- * current position is used for raising warning/errors
+ * verify if the given compiler option is supported by the current
+ * std/configuration/command line options;
+ * current position is used for raising warning/errors,
+ * 
+ * \param	tag	feature checked
+ * \param	feature	text variant, used for warning/error messages
  * \returns	1 = ok/warning/obsolete, 0 = skip/ignore/error/unconformable
  */
 unsigned int

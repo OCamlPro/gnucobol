@@ -896,7 +896,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "DATA-COLUMNS",		0, 1, DATA_COLUMNS,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "DATA-POINTER",		0, 0, -1,			/* 2002 */
+  { "DATA-POINTER",		0, 0, DATA_POINTER,			/* 2002 */
 				0, 0
   },
   { "DATA-TYPES",		0, 1, DATA_TYPES,		/* ACU extension */
@@ -981,6 +981,9 @@ static struct cobc_reserved default_reserved_words[] = {
     				0, CB_CS_OPEN
   },
   { "DISPLAY",			1, 0, DISPLAY,			/* 2002 */
+				0, 0
+  },
+  { "DISPLAY-1",			0, 0, DISPLAY_1,			/* extension for DBCS - PIC G / B */
 				0, 0
   },
   { "DISPLAY-COLUMNS",		0, 1, DISPLAY_COLUMNS,		/* ACU extension */
@@ -1432,7 +1435,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "FUNCTION-ID",		0, 0, FUNCTION_ID,		/* 2002 */
 				0, 0
   },
-  { "FUNCTION-POINTER",		0, 0, -1,			/* 2014 */
+  { "FUNCTION-POINTER",		0, 0, FUNCTION_POINTER,			/* 2014 */
 				0, 0
   },
   { "GENERATE",			0, 0, GENERATE,			/* 2002 */
@@ -2155,7 +2158,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "PARSE",			0, 1, PARSE,			/* IBM extension */
    				0, 0
   },
-  {"PASCAL",			0, 1, PASCAL,			/* Extension: implicit defined CALL-CONVENTION */
+  { "PASCAL",			0, 1, PASCAL,			/* Extension: implicit defined CALL-CONVENTION */
 				0, CB_CS_CALL | CB_CS_OPTIONS
   },
   { "PASSWORD",			0, 1, PASSWORD,			/* IBM extension */
@@ -4159,7 +4162,7 @@ is_invalid_word (const char *word, const int size, const int space_allowed,
 
 	{
 		size_t i = 0;
-		while (i < size) {
+		while (i < (size_t)size) {
 			const char c = res_toupper(word[i++]);
 			if ((c >= 'A' && c <= 'Z')
 			 || (c >= '0' && c <= '9')
@@ -4167,7 +4170,7 @@ is_invalid_word (const char *word, const int size, const int space_allowed,
 				continue;
 			}
 			if (c == ' ' && space_allowed) {
-				if (i == 1 || word[i-2] != ' ') {
+				if (i == 1 || word[i - 2] != ' ') {
 					continue;
 				}
 			}

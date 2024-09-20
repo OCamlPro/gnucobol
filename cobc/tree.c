@@ -837,7 +837,8 @@ make_intrinsic_typed (cb_tree name, const struct cb_intrinsic_table *cbp,
 		case CB_TAG_INTRINSIC:
 			break;
 		default:
-			cb_error (_("FUNCTION %s has invalid/not supported arguments - tag %d"),
+			/* untranslated until used, then with a better string than "tag %d" */
+			cb_error ("FUNCTION '%s' has invalid/not supported arguments - tag %d",
 				cbp->name, CB_TREE_TAG(l));
 			return cb_error_node;
 		}
@@ -1573,8 +1574,15 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 			return COB_TYPE_NUMERIC_FP_DEC64;
 		case CB_USAGE_FP_DEC128:
 			return COB_TYPE_NUMERIC_FP_DEC128;
-		case CB_USAGE_BIT:	/* FIXME: is neither numeric nor "cobc"-boolean */
+		/* FIXME: is neither numeric nor "cobc"-boolean */
+		case CB_USAGE_BIT:
 			return COB_TYPE_BOOLEAN;
+		case CB_USAGE_NATIONAL:
+#if 0	/* FIXME: both are wrong... but numeric possibly best for "unfinished" */
+			return COB_TYPE_NATIONAL_EDITED;
+#else
+			return COB_TYPE_NUMERIC_DISPLAY;
+#endif
 		/* LCOV_EXCL_START */
 		default:
 			cobc_err_msg (_("unexpected numeric USAGE: %d"),
@@ -3292,7 +3300,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	for (s = str; s->symbol != '\0'; ++s) {
 		/* Perform the check twice if a character is repeated, e.g. to detect 9VV. */
 		repeated = s->times_repeated > 1;
-		for (i = 0; i < 1 + repeated; ++i) {
+		for (i = 0; i <= repeated; ++i) {
 			k++;
 			idx = char_to_precedence_idx (str, s,
 						      first_floating_sym,
@@ -3301,8 +3309,9 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 						      non_p_digits_seen);
 			if (idx == -1) {
 				continue;
-			} else if (CB_FIRST_NON_P_DIGIT_CHAR_TYPE <= idx &&
-				   idx <= CB_LAST_NON_P_DIGIT_CHAR_TYPE) {
+			}
+			if (idx >= CB_FIRST_NON_P_DIGIT_CHAR_TYPE
+			 && idx <= CB_LAST_NON_P_DIGIT_CHAR_TYPE) {
 				non_p_digits_seen = 1;
 			}
 
@@ -3403,10 +3412,6 @@ get_number_in_parentheses (const unsigned char ** p,
 	const unsigned char	*close_paren = *p + 1;
 	const unsigned char	*c;
 	int			contains_name;
-	size_t			name_length;
-	char			*name_buff;
-	cb_tree			item;
-	cb_tree			item_value;
 
 	while (*close_paren != ')' && *close_paren)	++close_paren;
 
@@ -3442,48 +3447,53 @@ get_number_in_parentheses (const unsigned char ** p,
 	}
 
 	if (contains_name) {
-		/* Copy name */
+		size_t			name_length;
+		char			*name_buff;
+		cb_tree			item;
+		struct cb_field *f = NULL;
+		struct cb_literal *l = NULL;
+
+		/* Copy name, CHECKME: Shouldn't we limit that - and can use
+		   a fixed-buffer here instead? */
 		name_length = close_paren - open_paren;
-		name_buff = cobc_parse_malloc (name_length);
+		name_buff = cobc_malloc (name_length);
 		memcpy (name_buff, open_paren + 1, name_length - 1);
 		name_buff[name_length - 1] = '\0';
-
-		/* TODO: check if name_buf contains a valid user-defined name or not */
 
 		/* Build reference to name */
 		item = cb_ref (cb_build_reference (name_buff));
 
 		if (item == cb_error_node) {
 			*error_detected = 1;
+			cobc_free (name_buff);
 			return 1;
-		} else if (!(CB_FIELD_P (item) && CB_FIELD (item)->flag_item_78)) {
+		}
+		if (CB_FIELD_P (item)) {
+			f = CB_FIELD (item);
+		}
+		if (!(f && f->flag_item_78)) {
 			cb_error (_("'%s' is not a constant-name"), name_buff);
 			*error_detected = 1;
+			cobc_free (name_buff);
 			return 1;
 		}
 
-		item_value = CB_FIELD (item)->values;
-		if (!CB_NUMERIC_LITERAL_P (item_value)) {
-			cb_error (_("'%s' is not a numeric literal"), name_buff);
+		if (CB_NUMERIC_LITERAL_P (f->values)) {
+			l = CB_LITERAL (f->values);
+		}
+
+		if (!l
+		 || l->scale != 0
+		 || l->sign != 0) {
+			cb_error (_("'%s' is not an unsigned positive integer"), name_buff);
 			*error_detected = 1;
-			return 1;
-		} else if (CB_LITERAL (item_value)->scale != 0) {
-			cb_error (_("'%s' is not an integer"), name_buff);
-			*error_detected = 1;
-			return 1;
-		} else if (CB_LITERAL (item_value)->sign != 0) {
-			cb_error (_("'%s' is not unsigned"), name_buff);
-			*error_detected = 1;
+			cobc_free (name_buff);
 			return 1;
 		}
 
-		cobc_parse_free (name_buff);
-
-		return get_pic_number_from_str (CB_LITERAL (item_value)->data,
-						error_detected);
+		return get_pic_number_from_str (l->data, error_detected);
 	} else {
-		return get_pic_number_from_str (open_paren + 1,
-						error_detected);
+		return get_pic_number_from_str (open_paren + 1, error_detected);
 	}
 }
 
@@ -3612,7 +3622,7 @@ repeat:
 					paren_num = 99999;
 				}
 			}
-			n += paren_num - 1;
+			n += (int)paren_num - 1;
 		}
 		if (category & PIC_NUMERIC_FLOATING) {
 			if (c != '9') {
@@ -7316,7 +7326,7 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 		/* check for national match */
 		if (arg_cat == CB_CATEGORY_NATIONAL) {
 			if (result != CB_CATEGORY_NATIONAL) {
-				cb_error (_("FUNCTION %s has invalid argument"),
+				cb_error (_("FUNCTION '%s' has invalid argument"),
 					cbp->name);
 				cb_error (_("either all arguments or none should be of type %s"), "NATIONAL");
 				return cbp->category;

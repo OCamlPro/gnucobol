@@ -49,8 +49,10 @@ cobc_print_usage (char * prog)
 	          "or (preferably) use the issue tracker via the home page."),
 			"bug-gnucobol@gnu.org");
 	putchar ('\n');
-	puts (_("GnuCOBOL home page: <https://www.gnu.org/software/gnucobol/>"));
-	puts (_("General help using GNU software: <https://www.gnu.org/gethelp/>"));
+	printf (_("GnuCOBOL home page: <%s>"), "https://www.gnu.org/software/gnucobol/");
+	putchar ('\n');
+	printf (_("General help using GNU software: <%s>"), "https://www.gnu.org/gethelp/");
+	putchar ('\n');
 }
 
 void
@@ -84,13 +86,14 @@ cobc_print_usage_common_options (void)
 	        "                        see configuration files in directory config"));
 	puts (_("  -F, --free            use free source format (alias for -fformat=free)"));
 	puts (_("  --fixed               use fixed source format (default; alias for\n"
-		"                        -fformat=fixed)"));
+	        "                        -fformat=fixed)"));
 	puts (_("  -O, -O2, -O3, -Os     enable optimization"));
 	puts (_("  -O0                   disable optimization"));
 	puts (_("  -g                    enable C compiler debug and stack check"));
 	puts (_("  -d, --debug           enable all run-time error checking,\n"
 	        "                        equal to -fstack-check -fec=EC-ALL"));
-	/* duplicated here from flags.def to place it next to -debug */
+	/* "duplicated" from flags.def where output is suppressed and untranslated,
+	   to place it next to --debug in the help output */
 	puts (_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
 	        "                        see --list-exceptions for the possible values,\n"
 	        "                        sets -fsource-location"));

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -315,7 +315,7 @@ cob_get_s64_param (int n)
 		return -1;
 	}
 	cbl_data = f->data;
-	size = f->size;
+	size     = (int)f->size;
 
 	switch (f->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
@@ -364,7 +364,7 @@ cob_get_u64_param (int n)
 	}
 
 	cbl_data = f->data;
-	size    = f->size;
+	size     = (int)f->size;
 	switch (COB_MODULE_PTR->cob_procedure_params[n - 1]->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		return cob_get_u64_pic9 (cbl_data, size);
@@ -610,13 +610,15 @@ cob_put_s64_param (int n, cob_s64_t val)
 	}
 
 	if (COB_FIELD_CONSTANT (f)) {
+		char buff[20];
+		sprintf (buff, CB_FMT_LLD, val);
 		cob_runtime_warning_external ("cob_put_s64_param", 1,
-			_("attempt to over-write constant parameter %d with " CB_FMT_LLD),
-			n, val);
+			_("attempt to over-write constant parameter %d with '%s'"),
+			n, buff);
 		return;
 	}
 	cbl_data = f->data;
-	size = f->size;
+	size     = (int)f->size;
 	switch (f->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		cob_put_s64_pic9 (val, cbl_data, size);
@@ -666,13 +668,15 @@ cob_put_u64_param (int n, cob_u64_t val)
 	}
 
 	if (COB_FIELD_CONSTANT (f)) {
+		char buff[20];
+		sprintf (buff, CB_FMT_LLD, val);
 		cob_runtime_warning_external ("cob_put_u64_param", 1,
-			_("attempt to over-write constant parameter %d with " CB_FMT_LLD),
-			n, val);
+			_("attempt to over-write constant parameter %d with '%s'"),
+			n, buff);
 		return;
 	}
 	cbl_data = f->data;
-	size = f->size;
+	size     = (int)f->size;
 	switch (f->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		cob_put_u64_pic9 (val, cbl_data, size);

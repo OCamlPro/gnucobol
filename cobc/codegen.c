@@ -1318,7 +1318,7 @@ output_data (cb_tree x)
 						if (o_slide) {
 							for (o = o_slide; o; o = o->children) {
 								if (o->depending) {
-									output (" + (%d * ", o->size);
+									output (" + (%dLL * ", o->size);
 									output_integer (o->depending);
 									output (")");
 								}
@@ -1331,7 +1331,7 @@ output_data (cb_tree x)
 								output ("%d * ", f->step_count);
 							} else
 							if (f->size != 1) {
-								output ("%d * ", f->size);
+								output ("%dLL * ", f->size);
 							}
 						}
 						if (cb_odoslide
@@ -1357,7 +1357,7 @@ output_data (cb_tree x)
 		if (r->check
 		 && did_check) {
 			--inside_check;
-			output(")");	/* End expression */
+			output (")");	/* End expression */
 		}
 		break;
 	}
@@ -3692,7 +3692,7 @@ output_long_integer (cb_tree x)
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_zero) {
-			output ("0");
+			output (CB_FMT_LLD_F, 0LL);
 		} else if (x == cb_null) {
 			output ("(cob_u8_ptr)NULL");
 		} else {
@@ -3708,7 +3708,7 @@ output_long_integer (cb_tree x)
 			output ("%d", CB_INTEGER (x)->val);
 		}
 #else
-		output ("%d", CB_INTEGER (x)->val);
+		output (CB_FMT_LLD_F, (cob_s64_t)CB_INTEGER (x)->val);
 #endif
 		break;
 	case CB_TAG_LITERAL:
@@ -3928,18 +3928,23 @@ output_long_integer (cb_tree x)
 static void
 output_index (cb_tree x)
 {
+	/* note: integers and literals _must_ be positive */
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_INTEGER:
-		output ("%d", CB_INTEGER (x)->val - 1);
+		output ("%dLL", CB_INTEGER (x)->val - 1);
 		break;
 	case CB_TAG_LITERAL:
-		output ("%d", cb_get_int (x) - 1);
+		output ("%dLL", cb_get_int (x) - 1);
 		break;
 	default:
-		/* note: the index may be negative and of big or small type;
-		   as we only support integer values cast to signed integer
-		   to be able to safely subtract 1 to get the C index */
-		output ("((cob_s32_t)(");
+		/* note: the index stored in a variable may be negative and of big
+		   or small type; while we officially only support integer values
+		   people use(d) UNBOUNDED or "OCCURS 1 / OCCURS 2" tables in LINKAGE
+		   with bounds checks disabled, to map memmory with small records in
+		   huge numbers; so cast to signed long integer to be able to safely
+		   subtract 1 to get the C index (even when it is zero) while
+		   preserving the value of huge integer values */
+		output ("((cob_s64_t)(");
 		output_integer (x);
 		output (") - 1)");
 		break;
@@ -9338,8 +9343,8 @@ output_label (const struct cb_label *lp)
 			CB_PREFIX_LABEL, CB_LABEL (lp->exit_label)->id);
 	}
 
-	if (cb_flag_trace
-	 || cobc_wants_debug) {
+	if (cb_flag_source_location
+	 || cb_flag_trace) {
 		output_section_info (lp);
 	}
 	last_line = -1;	/* force generation of source location */
@@ -11816,7 +11821,6 @@ output_initial_values (struct cb_field *f)
 			continue;
 		}
 		x = cb_build_field_reference (p, NULL);
-		output_line ("/* initialize field %s */", p->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, 0, 0));
 		output_newline ();
 	}

@@ -78,9 +78,25 @@
 	* fileio.c (cob_file_sort_options), common.h: new function to pass more
 	  options, so far only used to set flag_merge
 
+2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_beyond_exit), common.h: fix prototype to match strings
+	* numeric.c (cob_decimal_get_packed): removed code for "huge packed" fields
+	  as we don't have packed fields with more than 38 digits
+
+2023-02-24  Ron Norman <rjn@inglenet.com>
+
+	* move.c (cob_get_s64_pic9) [COB_EBCDIC_MACHINE]: fix negative sign lookup
+
 2023-02-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c: Changes to speed up COMP-3 handling
+
+2023-02-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, numeric.c: explicit check result of mpz_sgn to 0/!0/1/-1
+	* intrinsic.c (cob_intr_random): fix binary end for implicit seed
+	* intrinsic.c (numval): minor optimization for invalid numeric
 
 2023-02-19  Ron Norman <rjn@inglenet.com>
 
@@ -89,6 +105,52 @@
 	* termio.c: Updated 'bin_digits' table for larger fields
 	* common.h: Removed  define  COB_MAX_COMPX
 
+2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c, common.c: handle HAVE_JSON_C_JSON_H
+	* intrinsic.c (split_around_t): explicit terminate snprintf
+	* termio.c (pretty_display_numeric): fix GCC warning with {{ 0 }}
+	* termio.c (display_alnum_dump): slightly rewritten to fix compiler
+	  warnings
+	* cconv.c (cob_load_collation), common.c, intrinisic.c (cob_intr_random),
+	  termio.c: minor adjustments to fix compiler warnings
+
+2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_get_packed, cob_decimal_get_display):
+	  fix use of mpz_cmp to compare >= 0 (also fixing use on MPIR)
+	* numeric.c (cob_set_packed_int): fix negative sign
+	* move.c (packed_get_long_long): fix sign regression introduced 2023-01-28
+	* move.c (own_byte_memcpy): removed and replaced replaced by memcpy
+	* move.c (cob_packed_get_sign): removed, inlined code in callers
+	* move.c (cob_decimal_get_display): rewritten
+	* move.c (store_common_region): requesting use of registers
+	* move.c (cob_move_packed_to_display): rewritten for performance
+	* move.c (cob_move): prevent conversion to and from cob_decimal for
+	  unscaled COB_TYPE_NUMERIC_PACKED, by direct write from integer
+	  to packed using (cob_set_packed_int)
+	* move.c (packed_get_long_long): performance improvements
+	* move.c (cob_packed_get_int): minor performance improvements
+	* move.c (packed_get_long_long, display_get_long_long): dropped "cob_"
+	  prefix as those are local-only functions
+	* move.c (cob_get_int, cob_get_llint): handle negative scale for binary
+	  fields
+
+2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_packed_get_sign): move check for COB_FIELD_NO_SIGN_NIBBLE
+	  to callers, minor refactoring
+	* numeric.c (cob_decimal_set_packed, cob_decimal_set_display): minor
+	  performance improvements
+	* numeric.c (cob_decimal_get_packed, cob_decimal_get_display): rewritten
+	  to use local buffer and remainder instead of allocating huge string to
+	  just peak at the end
+	* common.c (cob_move_packed_to_display, cob_packed_get_int,
+	  cob_packed_get_long_long): minor performance improvements and similar
+	  code to numeric.c
+	* intrinisic.c (calculate_start_end_for_numval): only skip leading spaces
+	  and zeros, but not leading low-values
+
 2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cconv.c (cob_skip_blanks): prefer isspace over isblank, which is not
@@ -96,7 +158,7 @@
 	* common.c (conf_runtime_error, conf_runtime_error_value): as static
 	* mlio.c (xml_parse): c89 fix
 
-2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+2023-01-23  David Declerck <david.declerck@ocamlpro.com>
 
 	* cconv.c: add a cob_load_collation function to load collating sequences
 	  from files ; cobc uses this function to create tables that are embedded
@@ -115,6 +177,11 @@
 	  scale differs
 	* numeric.c (cob_decimal_mul): removed check for zero as mpz_mul does this
 	  on its own
+
+2023-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c->cobcapi.c (cob_put_s64_param, cob_put_u64_param): switched to common msgid
+	* common.c (cob_sys_getopt_long_long): lower-case msgid
 
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -194,7 +261,7 @@
 	* fileio.c [!COB_EXPERIMENTAL]: disable "new" status 0P via preprocessor
 	  to inspect later for either include as COB_LS_VALIDATE=PRINT or drop
 
-2022-12-13 David Declerck <david.declerck@ocamlpro.com>
+2022-12-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* cconv.c: file moved from cobc to libcob
 	* common.h: declare the new API for collating sequences
