@@ -44,10 +44,18 @@
 	* rm-strict.conf: enable indirect-redefines as this was added
 	  with later RM-COBOL versions
 
+2023-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add ebcdic-symbolic-characters
+
 2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* gcos.words: remove alias VALUES=VALUE, to correctly parse
 	  "VALUES ARE"
+
+2023-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* default.conf: change default source reference-format to 'auto'
 
 2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
 
