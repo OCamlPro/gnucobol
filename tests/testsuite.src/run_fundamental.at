@@ -3366,8 +3366,11 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5) COMP-3.
        01  FELD3        PIC 9(1)V9(1)  COMP-3.
        01  FELD4        PIC S9(1)      COMP-3.
-       01  FELD5        PIC 9(10)v9(9) COMP-3.
+       01  FELD4b       PIC S9(4)      COMP-3.
+       01  FELD5        PIC 9(9)v9(9)  COMP-3.
+       01  FELD5b       PIC 9(18)      COMP-3.
        01  FELD6        PIC 9(8)v9(20) COMP-3.
+       01  FELD6b       PIC s9(8)9(20)  COMP-3.
        01  FILLER       USAGE BINARY-INT VALUE 0.
            88 DO-DISP   VALUE 0.
            88 NO-DISP   VALUE 1.
@@ -3524,10 +3527,20 @@ AT_DATA([prog.cob], [
            IF FELD4  NOT = -3
               DISPLAY "Test 28 " FELD4.
 
+           MOVE -2 TO FELD4b
+           ADD -1 TO FELD4b
+           IF FELD4b  NOT = -3
+              DISPLAY "Test 28b " FELD4b.
+
            MOVE 2 TO FELD4
            SUBTRACT 1 FROM FELD4
            IF FELD4  NOT = 1
               DISPLAY "Test 29 " FELD4.
+
+           MOVE 2 TO FELD4b
+           SUBTRACT 1 FROM FELD4b
+           IF FELD4b NOT = 1
+              DISPLAY "Test 29b " FELD4b.
 
            MOVE 2 TO FELD4
            SUBTRACT -1 FROM FELD4
@@ -3584,26 +3597,57 @@ AT_DATA([prog.cob], [
            IF FELD4  NOT = 1
               DISPLAY "Test 40 " FELD4.
 
-      *>   test with 19 digits (last implied zero by field)
+      *>   test with 18 digits (last implied zero by field)
       *>   -> maximum cob_u64_t for separate code branch
+           MOVE 123456789.01234567 TO FELD5
+           ADD 2 TO FELD5
+           IF FELD5  NOT = 123456791.01234567
+              DISPLAY "Test 41 ADD " FELD5.
            MOVE 123456789.01234567 TO FELD5
            SUBTRACT -2 FROM FELD5
            IF FELD5  NOT = 123456791.01234567
-              DISPLAY "Test 41 " FELD5.
+              DISPLAY "Test 41 SUBTRACT " FELD5.
+
+      *>   now testing optimized functions (only used for non-scaled)
+           MOVE 12345678901234567 TO FELD5b
+           ADD 18518518351851850 TO FELD5b
+           IF FELD5b  NOT = 30864197253086417
+              DISPLAY "Test 41b ADD " FELD5b.
+           MOVE 30864197253086417 TO FELD5b
+           SUBTRACT 18518518351851850 FROM FELD5b
+           IF FELD5b  NOT = 12345678901234567
+              DISPLAY "Test 41b SUBTRACT " FELD5b.
 
       *>   tests with more than 19 digits for separate code branch
       *>   -> last 8 digits with implied zero by field
            MOVE 12345678.123456901234 TO FELD6
            ADD -2.1 TO FELD6
            IF FELD6  NOT = 12345676.023456901234
-              DISPLAY "Test 42a " FELD6.
+              DISPLAY "Test 42 ADD " FELD6.
+           MOVE 12345678.123456901234 TO FELD6
+           SUBTRACT 2.1 FROM FELD6
+           IF FELD6  NOT = 12345676.023456901234
+              DISPLAY "Test 42 SUBTRACT " FELD6.
 
       *>   -> first 8 digits with implied zero by field,
       *>      last 4 digits truncated
            MOVE .123456789012345678901234 TO FELD6
            ADD 1.8 TO FELD6
            IF FELD6  NOT = 1.9234567890123456789
-              DISPLAY "Test 42b " FELD6.
+              DISPLAY "Test 43 " FELD6.
+
+      *>   now testing optimized functions (only used for non-scaled)
+           MOVE 7123456789012345670 TO FELD6b
+           ADD  1800000000000000000 TO FELD6b
+           IF FELD6b  NOT = 8923456789012345670
+              DISPLAY "Test 43b ADD " FELD6b.
+           IF FELD6b  = -8923456789012345670
+              DISPLAY "Test 43b2 ADD " FELD6b.
+           MULTIPLY FELD6b BY -1 GIVING FELD6b
+           IF FELD6b  NOT = -8923456789012345670
+              DISPLAY "Test 43c NEGATIVE " FELD6b.
+           IF FELD6b  = 8923456789012345670
+              DISPLAY "Test 43c2 NEGATIVE " FELD6b.
 ])
 
 AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
@@ -5468,7 +5512,7 @@ AT_KEYWORDS([fundamental DEBUGGING])
 #        which is generally fine, but not for "nested" statements
 #        where DEBUG-ITEM contains wrong data and the
 #        debugging procedure is called too late
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5669,7 +5713,7 @@ AT_DATA([prog.cob], [
 
       *>   Test with DISPLAY on error
            SET  NO-DISP    TO TRUE
-      *>   minimal side-test for performance comparisions
+      *>   minimal side-test for performance comparisons
            PERFORM DO-CHECK 20000 TIMES
            GOBACK.
 

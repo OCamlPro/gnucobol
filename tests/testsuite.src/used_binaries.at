@@ -156,11 +156,9 @@ AT_CHECK([$COBC -Wall -fsyntax-only prog2.cob], [1], [],
 prog2.cob:6: warning: numeric value is expected [[-Wothers]]
 ])
 
-AT_CHECK([$COBC -fsyntax-only -fmax-errors=0 prog2.cob], [97], [],
+AT_CHECK([$COBC -fsyntax-only -fmax-errors=0 prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
-cobc: too many errors [[-fmax-errors=0]]
-
-cobc: aborting compile of prog2.cob at line 7 (unknown: unknown)
+prog2.cob:6: warning: numeric value is expected [[-Wothers]]
 ])
 
 AT_CHECK([$COBC -fsyntax-only -Wfatal-errors prog2.cob], [97], [],
@@ -276,13 +274,25 @@ AT_CAPTURE_FILE([prog.d])
 AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
 AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], ignore, [])
 AT_CHECK([$GREP ' prog.i:'             prog.d], [0], ignore, [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [],
-  # Previous test "failed" --> no entry with slash available, check backslash
-  AT_CHECK([$GREP 'sub\copy\PROC.cpy'  prog.d], [0], ignore, []))
-AT_CHECK([$GREP 'sub/PROCE.cpy'        prog.d], [0], ignore, [])
-AT_CHECK([$GREP 'sub/PROCE.cpy'        prog.d], [0], ignore, [],
-  # Previous test "failed" --> no entry with slash available, check backslash
-  AT_CHECK([$GREP 'sub\PROCE'          prog.d], [0], ignore, []))
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
+  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], ignore, [])
+  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], ignore, [])
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], ignore, [])
+  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], ignore, [])
+], [
+  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], ignore, [])
+  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], ignore, [])
+  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], ignore, [])
+  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], ignore, [])
+])
+
+# test again with trailing slash which should not result in different files
+AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this test
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], ignore, [])
+])
 
 AT_CLEANUP
 

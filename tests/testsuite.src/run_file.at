@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
 ## Brian Tiffin, Joe Robbins, Edward Hart
 ##
@@ -186,7 +186,8 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-[echo "Test" > ./nosubhere]
+AT_DATA([nosubhere], [Test
+])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -371,7 +372,8 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [STATUS OPENO 35
 ], [])
-[echo "Test" > ./nosubhere]
+AT_DATA([nosubhere], [Test
+])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [STATUS OPENO 30
 ], [])
@@ -6643,7 +6645,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -6709,7 +6713,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open i-o file1 with lock.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -6777,7 +6783,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -6845,7 +6853,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -6917,7 +6927,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open i-o file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7274,7 +7286,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7348,7 +7362,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1 with lock.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7425,7 +7441,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7502,7 +7520,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7581,7 +7601,9 @@ AT_DATA([prog1.cob], [
            open output file1.
            close file1.
            open input file1.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7672,7 +7694,9 @@ AT_DATA([prog1.cob], [
            read file1.
            if fs not = "00"
               display "FAILED 1::r fs=" fs.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7763,7 +7787,9 @@ AT_DATA([prog1.cob], [
            rewrite file1-rec.
            if fs not = "00"
               display "FAILED 1::rw fs=" fs.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -7850,7 +7876,9 @@ AT_DATA([prog1.cob], [
            read file1 with lock.
            if fs not = "00"
               display "FAILED 1::r fs=" fs.
-           accept os-check from environment "OS".
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
            if os-check = spaces
              accept os-check from environment "OS_NAME".
            inspect os-check converting "werfdosin" to "WERFDOSIN".
@@ -26582,9 +26610,13 @@ AT_DATA([prog.cob], [
       *>> fileio-sort currently returns constant length records
              MOVE 1-rsz(ix-1) TO rsz
       *>> END-OF-DETOUR
-             IF (1-rsz(ix-1) <> rsz) or
-                (1-rec(ix-1) <> file2-rec)
-                DISPLAY "FAILED"
+             IF (1-rsz(ix-1) <> rsz)
+                DISPLAY "FAILED Test " ix-1 ": "
+                        1-rsz(ix-1) " <> " rsz
+             END-IF
+             IF (1-rec(ix-1) <> file2-rec)
+                DISPLAY "FAILED Test " ix-1 ": " 
+                        1-rec(ix-1) " <> " file2-rec
              END-IF
           END-PERFORM.
           CLOSE file2.

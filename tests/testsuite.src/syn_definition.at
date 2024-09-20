@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2016-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2016-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -1024,7 +1024,7 @@ AT_SETUP([Redefinition of label and variable names])
 AT_KEYWORDS([definition])
 
 # currently failing, see FR #260
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -1293,7 +1293,7 @@ AT_KEYWORDS([definition])
 # be either handled as an "internal" function call with c/s reserved words or
 # new codegen branch for "set variable on use" which would allow register handling
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        IDENTIFICATION   DIVISION.
@@ -1616,9 +1616,9 @@ prog.cob:57: error: V cannot follow a P which is after the decimal point
 prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
-prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
-prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
+prog.cob:67: error: 'STR-CONSTANT' is not an unsigned positive integer
+prog.cob:68: error: 'FLOAT-CONSTANT' is not an unsigned positive integer
+prog.cob:69: error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 prog.cob:86: warning: USAGE BIT is not implemented
@@ -1694,9 +1694,9 @@ prog.cob:57: error: V cannot follow a P which is after the decimal point
 prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
-prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
-prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
+prog.cob:67: error: 'STR-CONSTANT' is not an unsigned positive integer
+prog.cob:68: error: 'FLOAT-CONSTANT' is not an unsigned positive integer
+prog.cob:69: error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 prog.cob:86: warning: USAGE BIT is not implemented
@@ -1992,7 +1992,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 ])
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:8: error: 'TESTNO' is not defined
-prog2.cob:8: error: 'TESTNO' is not an alphabet name
+prog2.cob:8: error: 'TESTNO' is not an alphabet-name
 ])
 AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog3.cob], [0], [],
 [prog3.cob:9: warning: NATIONAL COLLATING SEQUENCE is not implemented
@@ -2207,6 +2207,9 @@ AT_DATA([prog.cob], [
              05 GRP-AMOUNT     USAGE CALCULUS.
        01 USER-VAR             USAGE USER-TYPE.
 
+       01 PROC                 USAGE PROGRAM-POINTER IS TYPEDEF.
+       77 MY-PROC              USAGE PROC VALUE NULL.
+
        PROCEDURE DIVISION.
            DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
            DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
@@ -2214,6 +2217,8 @@ AT_DATA([prog.cob], [
            DISPLAY OUTPUT-NAME
            MOVE -123.45 TO AMOUNT
            MOVE AMOUNT  TO GRP-AMOUNT (1)
+           IF MY-PROC = NULL
+              SET MY-PROC TO ADDRESS OF PROGRAM "prog".
            GOBACK.
 ])
 
@@ -2314,6 +2319,7 @@ prog.cob:26: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:30: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:32: error: USAGE type-name does not conform to COBOL 2002
 prog.cob:33: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:36: error: USAGE type-name does not conform to COBOL 2002
 ])
 AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY progstd.cob], [0], [], [])
@@ -2344,10 +2350,15 @@ badprog.cob:12: error: elementary item expected
 ])
 
 AT_CAPTURE_FILE([symbols.lst])
+
 AT_CHECK([$COMPILE_ONLY -std=mf-strict -t symbols.lst -ftsymbols -fno-tsource -fno-tmessages -tlines=0 prog.cob],
 [0], [], [])
 
-AT_DATA([prog.lst],
+AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [], [
+
+# Previous test "failed" --> 32 bit
+
+AT_DATA([prog-32.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
 
 SIZE  TYPE           LVL  NAME                           PICTURE
@@ -2388,12 +2399,70 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 01818 GROUP          01   USER-VAR                       USER-TYPE
 
+00004 POINTER        01   PROC                           PROGRAM-POINTER
+
+00004 POINTER        77   MY-PROC                        PROC
+
 
 ])
 
-#AT_CHECK([$UNIFY_LISTING symbols.lst symbols.lis once], [0], [], [])
-#AT_CHECK([diff prog.lst symbols.lis], [0], [], [])
-AT_CHECK([gcdiff prog.lst symbols.lst], [0], [], [])
+AT_CHECK([gcdiff prog-32.lst symbols.lst], [0], [], [])
+
+] , [
+
+# Previous test "passed" --> 64 bit
+
+AT_DATA([prog-64.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+SIZE  TYPE           LVL  NAME                           PICTURE
+
+      WORKING-STORAGE SECTION
+
+00050 ALPHANUMERIC   01   AUSGABE-FILE-NAME-T            X(50)
+
+00004 NUMERIC        01   SOME-VERY-LONG-TYPEDEF-NAME    9999
+
+00008 GROUP          01   AUSGABE-FILE-NAME-2T
+00004 NUMERIC        05   FILLER                         9999
+00004 NUMERIC        05   DETAIL-NO                      SOME-VERY-LONG-TYPEDE...
+
+00108 GROUP          01   MESSAGE-TEXT-2T
+00050 ALPHANUMERIC   02   AUSGABE-FILE-NAME              AUSGABE-FILE-NAME-T
+00004 GROUP          02   FILLER, REDEFINES AUSGABE-FILE-NAME
+00004 NUMERIC        05   FILLER                         9999
+00008 GROUP          02   AUSGABE-FILE-NAME-2            AUSGABE-FILE-NAME-2T
+00050 ALPHANUMERIC   02   FILLER                         AUSGABE-FILE-NAME-T
+
+00108 GROUP          01   MESSAGE-TEXT-2                 MESSAGE-TEXT-2T EXTERNAL
+
+00004 NUMERIC        77   OUTPUT-NAME                    SOME-VERY-LONG-TYPEDE... GLOBAL
+
+00008 GROUP          01   Z-MESSAGE-T2                   AUSGABE-FILE-NAME-2T
+
+00108 GROUP          01   Z-MESSAGE-T3
+00108 GROUP          49   MT3                            MESSAGE-TEXT-2T
+00108 GROUP          49   MT3-REN                        MESSAGE-TEXT-2T, REDEFINES MT3
+
+00018 NUMERIC        77   CALCULUS                       S9(15)V9(03)
+
+01818 GROUP          01   USER-TYPE
+00018 NUMERIC        02   AMOUNT                         CALCULUS
+01800 GROUP          02   FILLER                         OCCURS 100
+00018 NUMERIC        05   GRP-AMOUNT                     CALCULUS
+
+01818 GROUP          01   USER-VAR                       USER-TYPE
+
+00008 POINTER        01   PROC                           PROGRAM-POINTER
+
+00008 POINTER        77   MY-PROC                        PROC
+
+
+])
+
+AT_CHECK([gcdiff prog-64.lst symbols.lst], [0], [], [])
+
+])
 
 AT_CLEANUP
 
@@ -2402,7 +2471,7 @@ AT_SETUP([LIKE clause])
 AT_KEYWORDS([definition EXTERNAL GLOBAL])
 
 # work in progress
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2701,3 +2770,72 @@ prog.cob:6: error: 'DEPTHDR' is not defined
 
 AT_CLEANUP
 
+
+AT_SETUP([POINTER TO typedef-name])
+AT_KEYWORDS([POINTER TYPEDEF])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 data-type PIC X(10) USAGE DISPLAY IS TYPEDEF.
+       01 data-ptr1 USAGE POINTER data-type.
+       01 data-ptr2 USAGE POINTER TO data-type.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION-POINTER TO function-name])
+AT_KEYWORDS([FUNCTION-POINTER])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 fun-ptr1 USAGE FUNCTION-POINTER FUNCTION random.
+       01 fun-ptr2 USAGE FUNCTION-POINTER TO FUNCTION random.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([PROGRAM-POINTER TO program-prototype])
+AT_KEYWORDS([PROGRAM-POINTER PROTOTYPE])
+
+# currently fails -> investigate
+AT_XFAIL_IF([true])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. prog-proto IS PROTOTYPE.
+       PROCEDURE DIVISION.
+       END PROGRAM prog-proto.
+
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+       PROGRAM prog-proto.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 prog-ptr1 USAGE PROGRAM-POINTER prog-proto.
+       01 prog-ptr2 USAGE PROGRAM-POINTER TO prog-proto.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [0], [], [])
+AT_CLEANUP

@@ -589,6 +589,16 @@
 /* #undef HAVE_ISFINITE */
 #endif
 
+/* Define to 1 if you have the <json-c/json.h> header file. */
+#if CONFIGURED_JSON == JSON_C
+#define HAVE_JSON_C_JSON_H 1
+#else
+/* #undef HAVE_JSON_C_JSON_H */
+#endif
+
+/* Define to 1 if you have the <json.h> header file. */
+/* #undef HAVE_JSON_H */
+
 /* Define to 1 if you have the <isintstd.h> header file. */
 #if CONFIGURED_ISAM == DISAM
 #define HAVE_ISINTSTD_H 1
@@ -788,13 +798,6 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
-
-/* Define to 1 if you have the <sys/wait.h> header file. */
-#if defined(__ORANGEC__)
-#define HAVE_SYS_WAIT_H 1
-#else
-/* #undef HAVE_SYS_WAIT_H */
-#endif
 
 /* Has timezone variable */
 /* note: MSC and ORANGEC have it as _timezone */

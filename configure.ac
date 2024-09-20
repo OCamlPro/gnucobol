@@ -54,25 +54,71 @@ AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
 
+# In general: don't export/setenv but pass as option to configure
+#             this has the benefit that re-runs will take the same and "sudo"
+#             or later "make" (possibly as different user) will use the same
+#             set of tools
 # Note for SUN Solaris (gcc)
-#  option to configure/export/setenv: CC=gcc -m64 --libdir=/usr/local/lib/sparcv9
+#  options to configure: CC="gcc -m64" --libdir=/usr/local/lib/sparcv9
 # or:
-#  option to configure/export/setenv: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
+#  options to configure: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
-#  option to configure/export/setenv: CC=gcc -maix64
+#  options to configure: CC="gcc -maix64" / CC="xlc -q64"
 # or:
-#  option to configure/export/setenv: CFLAGS=-maix64 and LDFLAGS=-maix64
+#  options to configure: CFLAGS=-maix64 and LDFLAGS=-maix64
 # Note: AIX commonly uses -Lpath like GNU/Linux would use -Lpath -Rpath
 
-if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
-	if test -f /usr/ccs/bin/ar; then
-		AR="/usr/ccs/bin/ar -X64"
-	else
-		AR="ar -X64"
+if test "x$OBJECT_MODE" = x; then
+	echo "$CC $CFLAGS" | grep ' -maix32' 1>/dev/null 2>&1
+	check1=$?
+	echo "$CC $CFLAGS" | grep ' -q32'    1>/dev/null 2>&1
+	check2=$?
+	if test $check1 -eq 0 -o $check2 -eq 0; then
+		OBJECT_MODE=32 # for libtool
 	fi
-	NM="/usr/ccs/bin/nm -X64 -B"
+	echo "$CC $CFLAGS" | grep ' -maix64' 1>/dev/null 2>&1
+	check1=$?
+	echo "$CC $CFLAGS" | grep ' -q64'    1>/dev/null 2>&1
+	check2=$?
+	if test $check1 -eq 0 -o $check2 -eq 0; then
+		OBJECT_MODE=64 # for libtool
+	fi
+	unset check1
+	unset check2
+fi
+
+if test "$OBJECT_MODE" = "64"; then
+	if test "x$AR" = x; then
+		if test -f /usr/ccs/bin/ar; then
+			AR="/usr/ccs/bin/ar -X64"
+		else
+			AR="ar -X64"
+		fi
+	fi
+	if test "x$NM" = x; then
+		if test -f /usr/ccs/bin/nm; then
+			NM="/usr/ccs/bin/nm -X64 -B"
+		else
+			NM="nm -X64 -B"
+		fi
+	fi
+elif test "$OBJECT_MODE" = "32"; then
+	if test "x$AR" = x; then
+		if test -f /usr/ccs/bin/ar; then
+			AR="/usr/ccs/bin/ar -X32"
+		else
+			AR="ar -X32"
+		fi
+	fi
+	if test "x$NM" = x; then
+		if test -f /usr/ccs/bin/nm; then
+			NM="/usr/ccs/bin/nm -X32 -B"
+		else
+			NM="nm -X32 -B"
+		fi
+	fi
 fi
 
 dnl We don't want to have the full list of automatic defines from automake,
@@ -460,7 +506,6 @@ case "$DIFF_FLAGS" in
    fi
   ;;
 esac
-AC_SUBST(DIFF_FLAGS)
 
 # Stop tests for C++ and Fortran
 AC_DEFUN([AC_PROG_F77], [])
@@ -1021,12 +1066,12 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 		AC_CHECK_HEADERS([cJSON.h], [],
 			[AC_CHECK_HEADERS([cjson/cJSON.h], [],
 			[if test "$with_json" = "cjson"; then
-			    AC_MSG_ERROR([Headers for libcjson are required for --with-json, you may adjust CJSON_CFLAGS])
+			    AC_MSG_ERROR([Headers for libcjson are required for --with-json=cjson, you may adjust CJSON_CFLAGS])
 			 else
 				AC_MSG_WARN([Headers for libcjson missing, you may adjust CJSON_CFLAGS or put cJSON sources in "libcob"])
 			 fi]
 		)])
-		if test "x$ac_cv_header_cJSON_h" = "xyes" -o "x$ac_cv_header_cjson_cJSON_h" = "xyes"; then
+		AS_IF([test "x$ac_cv_header_cJSON_h" = "xyes" -o "x$ac_cv_header_cjson_cJSON_h" = "xyes"], [
 			AC_MSG_CHECKING([if linking against libcjson with "$CJSON_LIBS" works])
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([
 			 [#if defined HAVE_CJSON_CJSON_H
@@ -1049,7 +1094,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 			   else
 			     AC_MSG_WARN([cJSON library not found, you may adjust CJSON_LIBS])
 			   fi])
-		fi
+		])
 	], [
 		AC_MSG_NOTICE([using local cJSON: $with_cjson_local])
 		USE_JSON="local"
@@ -1058,7 +1103,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"
 ])
 
-AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = "check"],  [
+AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = "check"], [
 	CPPFLAGS="$curr_cppflags"
 	PKG_CHECK_MODULES([JSON_C], [json-c], [], [#
 	])
@@ -1071,14 +1116,26 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = "check"],  [
 	  JSON_C_LIBS="-ljson-c"
 	fi
 	LIBS="$LIBS $JSON_C_LIBS"
-	AC_CHECK_HEADER([json.h], [
+	AC_CHECK_HEADERS([json.h], [],
+		[AC_CHECK_HEADERS([json-c/json.h], [],
+		[if test "$with_json" = "json-c"; then
+		    AC_MSG_ERROR([Headers for libjson-c are required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
+		 else
+			AC_MSG_WARN([Headers for libjson-c missing, you may adjust JSON_C_CFLAGS])
+		 fi]
+	)])
+	AS_IF([test "x$ac_cv_header_json_h" = "xyes" -o "x$ac_cv_header_json_c_json_h" = "xyes"], [
 	 AC_MSG_CHECKING([if linking against libjson-c with "$JSON_C_LIBS" works])
 	 AC_LINK_IFELSE([AC_LANG_PROGRAM([
-	 [#include <json.h>]],
-	  [[#if (JSON_C_MAJOR_VERSION * 100 + JSON_C_MINOR_VERSION) < 12
-           	#error Needs at least json-c 0.12
-		#endif
-		json_c_version ();]])],
+	  [#if defined (HAVE_JSON_C_JSON_H)
+	   #include <json-c/json.h>
+	   #elif defined (HAVE_JSON_H)
+	   #include <json.h>
+	   #endif
+	   #if (JSON_C_MAJOR_VERSION * 100 + JSON_C_MINOR_VERSION) < 12
+	   	#error Needs at least json-c 0.12
+	   #endif]],
+	   [[json_c_version ();]])],
 	  [AC_MSG_RESULT([yes])
 	   AC_DEFINE([WITH_JSON_C], [1])
 	   USE_JSON=json-c
@@ -1719,6 +1776,9 @@ dnl		AC_MSG_ERROR([sqlcli1.h, sqlca.h, and sqludf.h are required for ODBC (DB2)]
   fi ],
 [])
 
+AC_ARG_VAR([OCI_CFLAGS], [compiler flags necessary to preprocess/compile for Oracle OCI])
+AC_ARG_VAR([OCI_LIBS], [linker flags for Oracle OCI, overriding automatic lookup])
+
 AC_ARG_WITH([oci],
 [AS_HELP_STRING([--with-oci],
   [Optionally use Oracle OCI for INDEXED/RELATIVE I/O])],
@@ -1815,8 +1875,7 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 			}
 			return 1;]])],
 			[AC_DEFINE([WITH_DB], [1])
-			cob_gen_bdb=yes
-			break],
+			cob_gen_bdb=yes],
 			[],
 			[])
 		else
@@ -1824,7 +1883,8 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 			# prefer library with version number included as some systems link against wrong version
 			# of the library and to not break when a newer BDB version is installed, see bug #100
 			COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | sed -e 's/\.//' -e 's/\-//')
-			for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db \
+			for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db$COB_BDB_HEADER_CLEAN \
+				db-$COB_BDB_HEADER_MAJOR db$COB_BDB_HEADER_MAJOR db \
 				libdb$COB_BDB_HEADER libdb$COB_BDB_HEADER_CLEAN  # for common Win32 versions...
 			do
 				LIBS="$test_libs -l$cobdb"
@@ -1873,8 +1933,13 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 		fi
 	fi
 	unset COB_BDB_HEADER
+	unset COB_BDB_HEADER_MAJOR
+	unset COB_BDB_HEADER_MINOR
 	LIBS="$curr_libs"
 fi
+
+AC_ARG_VAR([LMDB_CFLAGS], [compiler flags necessary to preprocess/compile for LMDB])
+AC_ARG_VAR([LMDB_LIBS], [linker flags for LMDB, overriding automatic lookup])
 
 AC_ARG_WITH([lmdb],
 [AS_HELP_STRING([--with-lmdb],
@@ -2643,28 +2708,7 @@ AC_SUBST([COB_LIBRARY_PATH])
 AC_SUBST([COB_OBJECT_EXT])
 AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
-AC_SUBST([QUOTE_INCLUDE_FLAG])
-AC_SUBST([COBC_CPPFLAGS])
-AC_SUBST([PROGRAMS_LIBS])
-AC_SUBST([LIBCOB_LIBS])
-AC_SUBST([LIBCOB_CPPFLAGS])
 AC_SUBST([LIBCOB_VER])
-AC_SUBST([CISAM_LIBS])
-AC_SUBST([DISAM_LIBS])
-AC_SUBST([VBISAM_LIBS])
-AC_SUBST([VISAM_LIBS])
-AC_SUBST([ODBC_LIBS])
-AC_SUBST([OCI_LIBS])
-AC_SUBST([BDB_LIBS])
-AC_SUBST([LMDB_LIBS])
-AC_SUBST([CISAM_CFLAGS])
-AC_SUBST([DISAM_CFLAGS])
-AC_SUBST([VBISAM_CFLAGS])
-AC_SUBST([VISAM_CFLAGS])
-AC_SUBST([ODBC_CFLAGS])
-AC_SUBST([OCI_CFLAGS])
-AC_SUBST([BDB_CFLAGS])
-AC_SUBST([LMDB_CFLAGS])
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])

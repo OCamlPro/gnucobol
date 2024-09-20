@@ -409,7 +409,7 @@ name: "Empty Conf"
 ])
 
 # check if incomplete configuration result in error
-AT_CHECK([$COMPILE_ONLY -fmax-errors=134 -conf=test.conf prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=0 -conf=test.conf prog.cob], [1], [],
 [configuration error:
 test.conf: missing definitions:
 	no definition of 'reserved-words'
@@ -505,6 +505,7 @@ test.conf: missing definitions:
 	no definition of 'national-character-literals'
 	no definition of 'hp-octal-literals'
 	no definition of 'acu-literals'
+	no definition of 'ebcdic-symbolic-characters'
 	no definition of 'word-continuation'
 	no definition of 'not-exception-before-exception'
 	no definition of 'accept-display-extensions'
@@ -658,11 +659,11 @@ AT_SETUP([runtime configuration: entries])
 AT_KEYWORDS([configuration misc])
 
 AT_CHECK([echo "$PATHSEP"], [0], [;
-], [],
+], [], [
 
 # Previous test "failed" --> PATHSEP isn't ;
 
-AT_DATA([defunc.cfg], [
+  AT_DATA([defunc.cfg], [
 novar
 physical_cancel notwithme
 load_case  insensitive
@@ -675,7 +676,7 @@ trace_file /tmp:/temp
 ])
 
 # conf entries must be clean
-AT_CHECK([$COBCRUN -c defunc.cfg --runtime-conf], [1], [],
+  AT_CHECK([$COBCRUN -c defunc.cfg --runtime-conf], [1], [],
 [configuration error:
 defunc.cfg:2: unknown configuration tag 'novar'
 defunc.cfg:3: invalid value 'notwithme' for configuration tag 'physical_cancel';
@@ -693,12 +694,12 @@ defunc.cfg:9: WARNING - 'sort_chunk' without a value - ignored!
 defunc.cfg:10: invalid value '/tmp:/temp' for configuration tag 'trace_file';
 	should not contain ':'
 ])
-
+]
 ,
-
+[
 # Previous test "passed" --> PATHSEP is ;
 
-AT_DATA([defunc.cfg], [
+  AT_DATA([defunc.cfg], [
 novar
 physical_cancel notwithme
 load_case  insensitive
@@ -711,7 +712,7 @@ trace_file C:\tmp;C:\temp
 ])
 
 # conf entries must be clean
-AT_CHECK([$COBCRUN -c defunc.cfg --runtime-conf], [1], [],
+  AT_CHECK([$COBCRUN -c defunc.cfg --runtime-conf], [1], [],
 [configuration error:
 defunc.cfg:2: unknown configuration tag 'novar'
 defunc.cfg:3: invalid value 'notwithme' for configuration tag 'physical_cancel';
@@ -729,7 +730,7 @@ defunc.cfg:9: WARNING - 'sort_chunk' without a value - ignored!
 defunc.cfg:10: invalid value 'C:\tmp;C:\temp' for configuration tag 'trace_file';
 	should not contain ';'
 ])
-
+]
 )
 
 AT_CLEANUP

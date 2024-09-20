@@ -82,6 +82,7 @@ enum cb_format {
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
+	CB_FORMAT_AUTO, 	/* Auto-detect format */
 };
 #define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
 #define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
@@ -564,8 +565,8 @@ extern enum cb_format	cobc_get_source_format (void) COB_A_PURE;
 extern int		cobc_get_indicator_column (void) COB_A_PURE;
 extern int		cobc_get_text_column (void) COB_A_PURE;
 extern int		cobc_get_indicator (void) COB_A_PURE;
-extern int		cobc_get_margin_a (int indicator_width) COB_A_PURE;
-extern int		cobc_get_margin_b (int indicator_width) COB_A_PURE;
+extern int		cobc_get_margin_a (const int indicator_width) COB_A_PURE;
+extern int		cobc_get_margin_b (const int indicator_width) COB_A_PURE;
 
 /* parser (in scanner.l, parser.y) */
 #if	!defined (COB_IN_SCANNER ) && !defined (COB_IN_PPLEX) && \
@@ -624,6 +625,8 @@ extern char *		cb_get_strerror (void);
 extern void		cb_add_error_to_listing (const char *, int, const char *, char *);
 DECLNORET extern void		flex_fatal_error (const char *, const char *,
 					 const int) COB_A_NORETURN;
+
+extern void		cobc_set_listing_header_code (void);
 
 /* reserved.c */
 extern struct reserved_word_list	*cobc_user_res_list;

@@ -6,6 +6,21 @@
 	  under MSVC Release, by forcing a flush of stdout with
 	  fflush and using cob_free instead of free in C codes
 
+2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* testsuite.src/syn_literals.at: move syntax checks on literals
+	  from syn_misc.at to a new file syn_literals.at
+
+2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_valgrind, atlocal_win: do not unset OS
+	  as this is an external var we need to keep for win32
+	* atlocal_valgrind, atlocal_win: added notes for things we
+	  explicit don't want to do
+	* testsuite.src/run_file.at: skip OS recognition on cygwin
+	* testsuite.src/run_misc.at: fix linking/dlopen issue happening
+	  on some systems (mostly win32) in test CALL RETURNING POINTER
+
 2023-01-23 David Declerck <david.declerck@ocamlpro.com>
 
 	* testsuite.src/configuration.at: test reading translation

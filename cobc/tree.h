@@ -2302,7 +2302,7 @@ extern void			cb_list_exceptions (void);
 extern void			cb_list_registers (void);
 extern void			cb_list_system_routines (void);
 extern int			cb_list_map (cb_tree (*) (cb_tree), cb_tree);
-extern void			cb_memcpy_upper (char *, const char * const, size_t);
+extern void			cb_memcpy_upper (char *, const char *, size_t);
 
 /* error.c */
 extern cb_tree			get_cb_error_node (void);
@@ -2340,7 +2340,7 @@ extern void		output_xfd_file (struct cb_file *);
 /* field.c */
 extern size_t		cb_needs_01;
 extern int		cb_get_level (cb_tree);
-extern cb_tree		cb_build_field_tree (cb_tree, cb_tree, struct cb_field *,
+extern cb_tree		cb_build_field_tree (const int, cb_tree, struct cb_field *,
 					     enum cb_storage, struct cb_file *,
 					     const int);
 extern cb_tree		cb_build_full_field_reference (struct cb_field *);
@@ -2487,7 +2487,6 @@ extern void		cb_emit_divide (cb_tree, cb_tree,
 extern void		cb_emit_evaluate (cb_tree, cb_tree);
 
 extern void		cb_emit_goto (cb_tree, cb_tree);
-extern void		cb_emit_goto_entry (cb_tree, cb_tree);
 extern void		cb_emit_exit (const unsigned int);
 
 extern void		cb_emit_if (cb_tree, cb_tree, cb_tree);

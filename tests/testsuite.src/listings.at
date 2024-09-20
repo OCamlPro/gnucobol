@@ -1,4 +1,4 @@
-## Copyright (C) 2015-2022 Free Software Foundation, Inc.
+## Copyright (C) 2015-2023 Free Software Foundation, Inc.
 ## Written by Dave Pitts, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -21,7 +21,7 @@
 AT_SETUP([Minimal lines per listing pages])
 AT_KEYWORDS([listing symbols options])
 
-# note: 2.2 did not use a minmal length,
+# note: 2.2 did not use a minimal length,
 # a typo like -tlines=2 loops forever
 
 AT_CAPTURE_FILE([prog.lst])
@@ -299,10 +299,10 @@ AT_DATA([copy.inc], [
 ])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION. 
+       IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
-       WORKING-STORAGE  SECTION. 
+       WORKING-STORAGE  SECTION.
        01 GET-VALUE.
        COPY "copy.inc" REPLACING ==TEST-VAR==     BY ==TEST-AVR==
                                  == 02 TEST-EE == BY == 02 TEST-FF ==.
@@ -332,10 +332,10 @@ AT_DATA([copy.inc], [
 ])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION. 
+       IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
-       WORKING-STORAGE  SECTION. 
+       WORKING-STORAGE  SECTION.
        01 GET-VALUE.
        COPY "copy.inc" REPLACING
           LEADING ==TEST-VAR==     BY ==TEST-AVR==
@@ -367,10 +367,10 @@ AT_DATA([copy2.inc], [
 ])
 
 AT_DATA([prog2.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog2.
        DATA DIVISION.
-       WORKING-STORAGE SECTION. 
+       WORKING-STORAGE SECTION.
        01 GET-VALUE.
        COPY "copy2.inc"
            REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
@@ -402,10 +402,10 @@ AT_DATA([copy3.inc], [
 ])
 
 AT_DATA([prog3.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog3.
        DATA DIVISION.
-       WORKING-STORAGE SECTION. 
+       WORKING-STORAGE SECTION.
        01 GET-VALUE.
        COPY "copy3.inc"
            REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
@@ -1559,7 +1559,7 @@ prog.cob:6: warning: numeric value is expected
 
 AT_CHECK([gcdiff prog16.lst prog.lst], [0], [], [])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fmax-errors=0 prog.cob], [97], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -Wfatal-errors prog.cob], [97], [], [ignore])
 
 AT_DATA([prog17.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -2539,7 +2539,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 0 errors in compilation group
 ])
 
-[AT_CHECK([gcdiff prog17-32.lst prog.lst], [0], [], [])]
+AT_CHECK([gcdiff prog17-32.lst prog.lst], [0], [], [])
 
 ,
 
@@ -2648,7 +2648,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 0 errors in compilation group
 ])
 
-[AT_CHECK([gcdiff prog17-64.lst prog.lst], [0], [], [])]
+AT_CHECK([gcdiff prog17-64.lst prog.lst], [0], [], [])
 
 )
 
@@ -3588,11 +3588,11 @@ error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
 000065         01  signed-constant CONSTANT -1.
 000066         01  invalid-constant.
 000067             03  PIC X(str-constant).
-error: 'STR-CONSTANT' is not a numeric literal
+error: 'STR-CONSTANT' is not an unsigned positive integer
 000068             03  PIC X(float-constant).
-error: 'FLOAT-CONSTANT' is not an integer
+error: 'FLOAT-CONSTANT' is not an unsigned positive integer
 000069             03  PIC X(signed-constant).
-error: 'SIGNED-CONSTANT' is not unsigned
+error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 000070             03  PIC X(unseen-constant).
 error: 'UNSEEN-CONSTANT' is not defined
 000071
@@ -3629,7 +3629,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 00000 ALPHANUMERIC   01   empty-pic                      INVALID
 
-00077 ALPHANUMERIC   01   too-long-pic                   XXXXXXXXXXXXXXXXXXXXXXX
+00077 ALPHANUMERIC   01   too-long-pic                   XXXXXXXXXXXXXXXXXXXX...
 
 00000 ALPHANUMERIC   01   too-long-pic2                  INVALID
 
@@ -3705,7 +3705,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00005 NUMERIC        03   FILLER                         +(5)P(3)
 00005 NUMERIC        03   FILLER                         ++.++
 00005 NUMERIC        03   FILLER                         $(INTEGER-CONSTANT)
-00049 NUMERIC        03   FILLER                         $$$$$$$$$$$$$$$$$$$$$$$
+00049 NUMERIC        03   FILLER                         $$$$$$$$$$$$$$$$$$$$...
 
 00008 GROUP          01   PC-COLOR-BACKGROUND-TABLE
 00001 NUMERIC        05   BIT-BACKGROUND-BLACK           1(8)
@@ -3777,9 +3777,9 @@ prog.cob:57: error: V cannot follow a P which is after the decimal point
 prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
-prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
-prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
+prog.cob:67: error: 'STR-CONSTANT' is not an unsigned positive integer
+prog.cob:68: error: 'FLOAT-CONSTANT' is not an unsigned positive integer
+prog.cob:69: error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 
@@ -6211,7 +6211,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 prog.cob], [0], [], [])
 
 AT_DATA([prog1.lst],
-[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY 
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
 
 LINE    PG/LN  A...B............................................................
 

@@ -18,7 +18,6 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #include "config.h"
 
 #ifndef	_GNU_SOURCE
@@ -314,7 +313,7 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 		fprintf (fp, "(Inf)");
 		return;
 	}
-	if (!mpz_sgn (d->value)) {
+	if (mpz_sgn (d->value) == 0) {
 		fprintf (fp, "0E0");
 		return;
 	}
@@ -491,11 +490,10 @@ cob_decimal_adjust (cob_decimal *d, mpz_t max_value, int min_exp, int max_exp)
 static int
 cob_decimal_get_ieee64dec (cob_decimal *d, cob_field *f, const int opt)
 {
-	int		sign;
 	cob_u64_t	expo;
 	cob_u64_t	data;
+	const int	sign = mpz_sgn (d->value);
 
-	sign = mpz_sgn (d->value);
 	if (sign == 0) {
 		memset (f->data, 0, (size_t)8);
 		return 0;
@@ -611,9 +609,8 @@ cob_decimal_get_ieee128dec (cob_decimal *d, cob_field *f, const int opt)
 {
 	cob_u64_t	expo;
 	cob_u64_t	data[2];
-	int		sign;
+	const int	sign = mpz_sgn (d->value);
 
-	sign = mpz_sgn (d->value);
 	if (sign == 0) {
 		memset (f->data, 0, (size_t)16);
 		return 0;
@@ -844,13 +841,11 @@ cob_decimal_get_double (cob_decimal *d)
 static COB_INLINE COB_A_INLINE int
 cob_packed_get_sign (const cob_field *f)
 {
-	unsigned char *p;
-
-	if (!COB_FIELD_HAVE_SIGN (f) || COB_FIELD_NO_SIGN_NIBBLE (f)) {
-		return 0;
+	if (COB_FIELD_HAVE_SIGN (f)) {
+		const unsigned char p = *(f->data + f->size - 1);
+		return ((p & 0x0F) == 0x0D) ? -1 : 1;
 	}
-	p = f->data + f->size - 1;
-	return ((*p & 0x0FU) == 0x0DU) ? -1 : 1;
+	return 0;
 }
 
 #if	0	/* RXWRXW - Buggy */
@@ -918,12 +913,12 @@ cob_add_packed (cob_field *f, int val, const int opt)
 		memcpy (savedata, f->data, f->size);
 	}
 
-	sign = cob_packed_get_sign (f);
-
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
+		sign = 0;
 		msn = COB_FIELD_SCALE (f) % 2;
 		tval = msn;
 	} else {
+		sign = cob_packed_get_sign (f);
 		msn = 1 - (COB_FIELD_SCALE (f) % 2);
 		tval = 1 - (COB_FIELD_SCALE(f) % 2);
 	}
@@ -1030,7 +1025,6 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	int		digits, sign, nibtest;
 
 	p = f->data;
-	digits = COB_FIELD_DIGITS (f);
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		sign = 0;
 		endp = p + f->size;
@@ -1041,6 +1035,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		nibtest = 0;
 	}
 
+	digits = COB_FIELD_DIGITS (f);
 	if (digits % 2 == nibtest) {
 		byteval = *p++ & 0x0F;
 	} else {
@@ -1082,7 +1077,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 			if ( (endp - p) > 2) {
 				mpz_mul_ui (d->value, d->value, 10000UL);
 				mpz_add_ui (d->value, d->value,
-							pack_to_bin [*p] * 100 + pack_to_bin [*(p + 1)]);
+					    pack_to_bin [*p] * 100 + pack_to_bin [*(p + 1)]);
 				p++;
 				nonzero = 1;
 				continue;
@@ -1122,20 +1117,20 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	size_t	size;
 	int 	i, diff, last;
 	const int		sign = mpz_sgn (d->value);
-	const int		digits = COB_FIELD_DIGITS (f);
+	int		digits;
 
 	/* check for value zero (allows early exit) and handle sign */
 	if (sign == 0) {
 		cob_set_packed_zero (f);
 		return 0;
 	}
-
-	/* Build string */
 	if (sign == -1) {
 		mpz_abs (d->value, d->value);
 	}
+
 	/* Build string, note: we can't check the decimal size with
 	   mpz_sizeinbase, as its result is "either exact or one too big" */
+	digits = COB_FIELD_DIGITS (f);
 
 	/* get divisor that would overflow */
 	cob_pow_10 (cob_mexp, digits);
@@ -1201,7 +1196,7 @@ void
 cob_set_packed_int (cob_field *f, const int val)
 {
 	unsigned char	*p;
-	size_t		sign;
+	int		sign;
 	cob_u32_t	n;
 
 	if (val == 0) {
@@ -1248,13 +1243,10 @@ cob_set_packed_int (cob_field *f, const int val)
 static void
 cob_decimal_set_display (cob_decimal *d, cob_field *f)
 {
-	unsigned char	*data;
-	size_t		size;
+	register unsigned char	*data = COB_FIELD_DATA (f);
+	register size_t		size = COB_FIELD_SIZE (f);
 	int		sign;
-	cob_uli_t	n;
 
-	data = COB_FIELD_DATA (f);
-	size = COB_FIELD_SIZE (f);
 	/* TODO: document special cases here */
 	if (*data == 255) {
 		cob_pow_10 (d->value, size);
@@ -1267,9 +1259,11 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 		d->scale = COB_FIELD_SCALE (f);
 		return;
 	}
+
 	sign = COB_GET_SIGN (f);
+
 	/* Skip leading zeros (also invalid space/low-value) */
-	while (size > 1 && COB_D2I (*data) == 0) {
+	while (size > 1 && (COB_D2I (*data) == 0)) {
 		size--;
 		data++;
 	}
@@ -1278,7 +1272,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 
 	if (size < MAX_LI_DIGITS_PLUS_1) {
 		/* note: we skipped leading zeros above, so n > 0 afterwards */
-		n = COB_D2I (*data);
+		register cob_uli_t	n = COB_D2I (*data);
 		data++;
 		while (--size) {
 			n = n * 10
@@ -1294,32 +1288,43 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 		   numeric functions sin/asin/... which have 96 digits
 		   or during computations with division;
 		   as we do integrate the big buffer there's no
-		   use in having an extra branch for COB_MAX_DIGITS */
+		   use in having an extra branch for COB_MAX_DIGITS
+		   other than the security part */
 		char buff[COB_MAX_INTERMEDIATE_FLOATING_SIZE + 1];
-		register char *pp = buff, *end = buff + size;
-		while (pp < end) {
-			*pp++ = COB_I2D (COB_D2I (*data++));
+		if (COB_FIELD_SIZE (f) <= COB_MAX_DIGITS) {
+			/* original field size hints at likely user-defined
+			   field, which may include invalid data */
+			register char *pp = buff, *end = buff + size;
+			while (pp < end) {
+				*pp++ = COB_I2D (COB_D2I (*data++));
+			}
+			*pp = 0;
+		} else {
+			/* bigger fields _must_ be _internal_ so there's no
+			   need to handle invalid data via COB_D2I + COB_I2D
+			   and we can copy as-is */
+			memcpy (buff, data, size);
+			buff[size] = 0;
 		}
-		*pp = 0;
 		mpz_set_str (d->value, (char *)buff, 10);
 
 	} else {
 
 		/* Note: we get very seldom get here, commonly for
 		   computations with functions like cob_intr_variance;
+		   these fields _must_ be _internal_ so there's no
+		   need to handle invalid data via COB_D2I + COB_I2D
+		   and we can copy as-is;
 		   this code has shown to be faster than mpz ui multiplication */
 		char	*buff = cob_fast_malloc (size + 1U);
-		register char *pp = buff, *end = buff + size;
-		while (pp < end) {
-			*pp++ = COB_I2D (COB_D2I (*data++));
-		}
-		*pp = 0;
+		memcpy (buff, data, size);
+		buff[size] = 0;
 		mpz_set_str (d->value, buff, 10);
 		cob_free (buff);
 	}
 
 	/* Set sign and scale */
-	if (sign == -1 && mpz_sgn (d->value)) {
+	if (sign == -1) {
 		mpz_neg (d->value, d->value);
 	}
 	d->scale = COB_FIELD_SCALE (f);
@@ -1329,51 +1334,78 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 static int
 cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 {
-	unsigned char	*data;
-	char		*p;
-	size_t		size;
-	int		diff;
-	int		sign;
+	unsigned char	*data = COB_FIELD_DATA (f);
+	const int		sign = mpz_sgn (d->value);
+	const int		fsize = COB_FIELD_SIZE (f);
+	char	buff[COB_MAX_BINARY + 1];
 
-	data = COB_FIELD_DATA (f);
-	/* Build string */
-	sign = mpz_sgn (d->value);
+	/* check for value zero (allows early exit) and handle sign */
 	if (sign == 0) {
-		/* Value is 0 */
-		memset (data, '0', COB_FIELD_SIZE (f));
-		COB_PUT_SIGN (f, sign);
+		memset (data, '0', fsize);
+		COB_PUT_SIGN (f, 0);
 		return 0;
 	}
 	if (sign == -1) {
 		mpz_abs (d->value, d->value);
 	}
-	p = mpz_get_str (NULL, 10, d->value);
-	size = strlen (p);
+	/* Build string, note: we can't check the decimal size with
+	   mpz_sizeinbase, as its result is "either exact or one too big" */
 
-	/* Store number */
-	diff = (int)(COB_FIELD_SIZE (f) - size);
-	if (diff < 0) {
+	/* huge data, only for internal operations like intrinsic functions */
+	if (fsize > COB_MAX_BINARY) {
+		char *p = mpz_get_str (NULL, 10, d->value);
+		const size_t size = strlen (p);
+		const size_t diff = (size_t)fsize - size;
+		if (diff < 0) {
+			/* Overflow */
+			cob_set_exception (COB_EC_SIZE_OVERFLOW);
+
+			/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
+			   then throw an exception */
+			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+				cob_gmp_free (p);
+				return cobglobptr->cob_exception_code;
+			}
+
+			/* Other size, truncate digits */
+			memcpy (data, p - diff, fsize);
+		} else {
+			/* No overflow */
+			memset (data, '0', diff);
+			memcpy (data + diff, p, size);
+		}
+
+		cob_gmp_free (p);
+		COB_PUT_SIGN (f, sign);
+		return 0;
+	}
+
+	/* get divisor that would overflow */
+	cob_pow_10 (cob_mexp, fsize);
+	/* check if it is >= what we have */
+	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
 		cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
 		/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
 		   then throw an exception */
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			cob_gmp_free (p);
 			return cobglobptr->cob_exception_code;
 		}
-
-		/* Other size, truncate digits */
-		memcpy (data, p - diff, COB_FIELD_SIZE (f));
+		/* Other size, truncate digits, using the remainder */
+		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
+		(void) mpz_get_str (buff, 10, cob_mexp);
+		memcpy (data, buff, fsize);
 	} else {
-		/* No overflow */
-		memset (data, '0', (size_t)diff);
-		memcpy (data + diff, p, size);
+		/* No overflow, so get string data and fill with zero */
+		size_t		size, diff;
+		(void) mpz_get_str (buff, 10, d->value);
+		size = strlen (buff);
+		diff = (size_t)fsize - size;
+		memset (data, '0', diff);
+		memcpy (data + diff, buff, size);
 	}
-
-	cob_gmp_free (p);
 	COB_PUT_SIGN (f, sign);
-
 	return 0;
 }
 
@@ -1490,7 +1522,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		field_sign = 1;
 	} else {
 		field_sign = 0;
-		if (mpz_sgn (d->value) < 0) {
+		if (mpz_sgn (d->value) == -1) {
 			mpz_abs (d->value, d->value);
 		}
 	}
@@ -1725,8 +1757,8 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 	const int	sign = mpz_sgn (d->value);
 	const int	scale = COB_FIELD_SCALE (f);
 
-	/* Nothing to do when value is 0 or when target has ge scale */
-	if (!sign
+	/* Nothing to do when value is 0 or when target has GE scale */
+	if (sign == 0
 	 || scale >= d->scale) {
 		return;
 	}
@@ -1741,7 +1773,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 		adj = d->scale - scale;
 		cob_pow_10 (cob_mpzt, adj);
 		mpz_tdiv_r (cob_mpzt2, d->value, cob_mpzt);
-		if (mpz_sgn (cob_mpzt2)) {
+		if (mpz_sgn (cob_mpzt2) != 0) {
 			/* Not exact number */
 			if (sign == -1) {
 				mpz_sub (d->value, d->value, cob_mpzt);
@@ -1761,7 +1793,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 				shift_decimal (d, n);
 			}
 		}
-		if (!mpz_sgn (cob_mpzt2)) {
+		if (mpz_sgn (cob_mpzt2) == 0) {
 			return;
 		}
 		if (sign == 1) {
@@ -1774,7 +1806,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 		adj = d->scale - scale;
 		cob_pow_10 (cob_mpzt, adj);
 		mpz_tdiv_r (cob_mpzt2, d->value, cob_mpzt);
-		if (mpz_sgn (cob_mpzt2)) {
+		if (mpz_sgn (cob_mpzt2) != 0) {
 			/* Not exact number */
 			if (sign == 1) {
 				mpz_add (d->value, d->value, cob_mpzt);
@@ -1785,7 +1817,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 		adj = d->scale - scale;
 		cob_pow_10 (cob_mpzt, adj);
 		mpz_tdiv_r (cob_mpzt2, d->value, cob_mpzt);
-		if (mpz_sgn (cob_mpzt2)) {
+		if (mpz_sgn (cob_mpzt2) != 0) {
 			/* Not exact number */
 			if (sign == -1) {
 				mpz_sub (d->value, d->value, cob_mpzt);
@@ -1803,7 +1835,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 				shift_decimal (d, n);
 			}
 		}
-		if (!mpz_sgn (cob_mpzt)) {
+		if (mpz_sgn (cob_mpzt) == 0) {
 			adj = mpz_tdiv_ui (d->value, 100UL);
 			switch (adj) {
 			case 5:
@@ -2536,7 +2568,8 @@ cob_cmp_int (cob_field *f1, const int n)
 int
 cob_cmp_uint (cob_field *f1, const unsigned int n)
 {
-	int sign;
+	int sign;	/* no const as we need the decimal set before */
+
 	cob_decimal_set_field (&cob_d1, f1);
 	sign = mpz_sgn (cob_d1.value);
 	if (sign == 0) {
@@ -2559,7 +2592,8 @@ cob_cmp_uint (cob_field *f1, const unsigned int n)
 int
 cob_cmp_llint (cob_field *f1, const cob_s64_t n)
 {
-	int sign;
+	int sign;	/* no const as we need the decimal set before */
+
 	cob_decimal_set_field (&cob_d1, f1);
 	sign = mpz_sgn (cob_d1.value);
 	if (sign == 0) {
@@ -2683,7 +2717,11 @@ cob_cmp_packed (cob_field *f, const cob_s64_t val)
 	int			sign;
 	register size_t			size;
 
-	sign = cob_packed_get_sign (f);
+	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
+		sign = 0;
+	} else {
+		sign = cob_packed_get_sign (f);
+	}
 	/* Field positive, value negative */
 	if (sign != -1 && val < 0) {
 		return 1;

@@ -1221,8 +1221,8 @@ cobc_plex_strdup (const char *dupstr)
    if the size of 'src' is too long only its last/last bytes are copied and an
    eliding "..." is placed in front or at end depending on 'elide_at_end' */
 char *
-cobc_elided_strcpy (char *dest, const char* src,
-		const size_t max_size, int elide_at_end)
+cobc_elided_strcpy (char *dest, const char *src,
+		const size_t max_size, const int elide_at_end)
 {
 	const size_t size = strlen (src);
 
@@ -1974,7 +1974,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 			lf->local_fp = NULL;
 		}
 	}
-	if (save_all_src) {
+	if (save_all_src && !save_temps_dir) {
 		return;
 	}
 	if (fn->need_preprocess
@@ -2855,9 +2855,6 @@ set_compile_level_from_file_extension (const char *filename)
 	}
 }
 
-#ifdef	_MSC_VER
-/* MSC has issues with trailing slashes, which are auto-added in shell/cmd,
-   we're removing them here to provide the same behaviour */
 static void
 remove_trailing_slash (char *data)
 {
@@ -2866,7 +2863,6 @@ remove_trailing_slash (char *data)
 		*path_end = 0;
 	}
 }
-#endif
 
 /* process command line options */
 static int
@@ -3094,7 +3090,7 @@ process_command_line (const int argc, char **argv)
 			if (cob_optarg) {
 				n = cobc_deciph_optarg (cob_optarg, 0);
 				if (n == -1) {
-					cobc_err_exit (COBC_INV_PAR, "-verbose");
+					cobc_err_exit (COBC_INV_PAR, "--verbose");
 				}
 				verbose_output = n;
 			} else {
@@ -3104,13 +3100,13 @@ process_command_line (const int argc, char **argv)
 
 		case '$':
 			/* -std=<xx> : Specify dialect */
-			if (strlen (cob_optarg) > COB_MINI_MAX) {
+			if (strlen (cob_optarg) > (COB_MINI_MAX - 6)) {
 				cobc_err_exit (COBC_INV_PAR, "-std");
 			}
 			for (n=0; cob_optarg[n] != 0 && cob_optarg[n] != '-'; n++)
 				ext[n] = toupper(cob_optarg[n]);
 			ext[n] = 0;
-			cb_dialect = cobc_strdup (ext); 
+			cb_dialect = cobc_strdup (ext);
 			snprintf (cob_std_conf, sizeof(cob_std_conf), "%s.conf", cob_optarg);
 			num_std++;
 			break;
@@ -3559,6 +3555,7 @@ process_command_line (const int argc, char **argv)
 				cobc_err_exit (COBC_INV_PAR, "-D");
 			}
 			if (!cb_strcasecmp (cob_optarg, "ebug")) {
+				/* note: we explicit leave the "typo" -debug in here as that's too similar to -Debug */
 				cobc_err_msg (_("warning: assuming '%s' is a DEFINE - did you intend to use -debug?"),
 						cob_optarg);
 			}
@@ -3595,6 +3592,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'I':
 			/* -I <xx> : Include/copy directory */
+			remove_trailing_slash (cob_optarg);
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "-I");
 			}
@@ -3602,22 +3600,40 @@ process_command_line (const int argc, char **argv)
 				struct stat		st;
 				if (stat (cob_optarg, &st) != 0
 				 || !(S_ISDIR (st.st_mode))) {
+					if (verbose_output) {
+						cobc_err_msg (COBC_INV_PAR, "-I");
+						cobc_err_msg (_("ignoring nonexistent directory \"%s\""),
+							cob_optarg);
+					}
 					break;
 				}
 			}
 #ifdef	_MSC_VER
-			remove_trailing_slash (cob_optarg);
 			COBC_ADD_STR (cobc_include, " /I\"", cob_optarg, "\"");
 #elif	defined (__WATCOMC__)
 			COBC_ADD_STR (cobc_include, " -i\"", cob_optarg, "\"");
 #else
 			COBC_ADD_STR (cobc_include, " -I\"", cob_optarg, "\"");
 #endif
+#if defined (_WIN32) || defined (__DJGPP__)
+			{
+				const size_t len = strlen (cob_optarg);
+				size_t o;
+				const char from = '/';
+				const char to = '\\';
+				for (o = 0; o < len; o++) {
+					if (cob_optarg[o] == from) {
+						cob_optarg[o] = to;
+					}
+				}
+			}
+#endif
 			CB_TEXT_LIST_ADD (cb_include_list, cob_optarg);
 			break;
 
 		case 'L':
 			/* -L <xx> : Directory for library search */
+			remove_trailing_slash (cob_optarg);
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "-L");
 			}
@@ -3625,11 +3641,14 @@ process_command_line (const int argc, char **argv)
 				struct stat		st;
 				if (stat (cob_optarg, &st) != 0
 				 || !(S_ISDIR (st.st_mode))) {
-					break;
+					if (verbose_output) {
+						cobc_err_msg (COBC_INV_PAR, "-L");
+						cobc_err_msg (_("ignoring nonexistent directory \"%s\""),
+							cob_optarg);
+					}
 				}
 			}
 #ifdef	_MSC_VER
-			remove_trailing_slash (cob_optarg);
 			COBC_ADD_STR (cobc_lib_paths, " /LIBPATH:\"", cob_optarg, "\"");
 #else
 			COBC_ADD_STR (cobc_lib_paths, " -L\"", cob_optarg, "\"");
@@ -4009,15 +4028,15 @@ process_command_line (const int argc, char **argv)
 #endif
 	/* TODO: add -M and -MD (breaking change "per GCC" already announced) */
 	if (cb_depend_file && !cb_depend_target) {
-		cobc_err_exit (_("-MT must be given to specify target file"));
 		fclose (cb_depend_file);
 		cb_depend_file = NULL;
+		cobc_err_exit (_("-MT must be given to specify target file"));
 	}
 
 	/* debug: Turn on all exception conditions
 	   -> drop note about this after hanling exit_option and general problems */
 	if (cobc_wants_debug && verbose_output > 1) {
-		fputs (_ ("all runtime checks are enabled"), stderr);
+		fputs (_("all runtime checks are enabled"), stderr);
 		fputc ('\n', stderr);
 	}
 
@@ -4174,11 +4193,13 @@ restore_program_list_order (void)
 }
 
 static void
-process_env_copy_path (const char *p)
+process_env_copy_path (const char *env)
 {
+	const char	*p = getenv (env);
 	char		*value;
 	char		*token;
 	struct stat	st;
+	int	had_error = 0;
 
 	if (p == NULL || !*p || *p == ' ') {
 		return;
@@ -4191,12 +4212,20 @@ process_env_copy_path (const char *p)
 	token = strtok (value, PATHSEP_STR);
 	while (token) {
 		const char *path = token;
-		/* special case (MF-compat): empty evaluates to "." */
+		/* special case (MF-compat): empty evaluates to "."
+		   TODO: recheck if this is only a "relative to the source"
+		         issue, if yes then drop this after its implementation */
 		if (*path == 0) {
 			path = ".";
 		}
 		if (!stat (path, &st) && (S_ISDIR (st.st_mode))) {
 			CB_TEXT_LIST_CHK (cb_include_list, path);
+		} else if (verbose_output) {
+			if (!had_error) {
+				cobc_err_msg (COBC_INV_PAR, env);
+			}
+			had_error = 1;
+			cobc_err_msg (_("ignoring nonexistent directory \"%s\""), path);
 		}
 		token = strtok (NULL, PATHSEP_STR);
 	}
@@ -4563,7 +4592,9 @@ process_run (const char *name)
 	const char	*buffer;
 
 	if (cb_compile_level < CB_LEVEL_MODULE) {
+		fputs ("cobc: ", stderr);
 		fputs (_("nothing for -j to run"), stderr);
+		fputc ('\n', stderr);
 		fflush (stderr);
 		return 0;
 	}
@@ -5045,6 +5076,7 @@ preprocess (struct filename *fn)
 {
 	const char		*sourcename;
 	struct cb_exception	save_exception_table[COB_EC_MAX];
+	const size_t exception_table_size = sizeof (struct cb_exception) * COB_EC_MAX;
 	int			save_source_format, save_fold_copy, save_fold_call;
 	int			save_ref_mod_zero_length;
 #ifndef COB_INTERNAL_XREF
@@ -5075,6 +5107,7 @@ preprocess (struct filename *fn)
 	} else {
 		sourcename = fn->source;
 	}
+	save_source_format = cobc_get_source_format ();
 	if (ppopen (sourcename, NULL) != 0) {
 		cobc_terminate (sourcename);
 	}
@@ -5102,8 +5135,7 @@ preprocess (struct filename *fn)
 	ppparse_clear_vars (cb_define_list);
 
 	/* Save default exceptions and flags in case program directives change them */
-	memcpy(save_exception_table, cb_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
-	save_source_format = cobc_get_source_format ();
+	memcpy (save_exception_table, cb_exception_table, exception_table_size);
 	save_fold_copy = cb_fold_copy;
 	save_fold_call = cb_fold_call;
 	save_ref_mod_zero_length = cb_ref_mod_zero_length;
@@ -5112,7 +5144,7 @@ preprocess (struct filename *fn)
 	ppparse ();
 
 	/* Restore default exceptions and flags */
-	memcpy(cb_exception_table, save_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
+	memcpy (cb_exception_table, save_exception_table, exception_table_size);
 	cobc_set_source_format (save_source_format);
 	cb_fold_copy = save_fold_copy;
 	cb_fold_call = save_fold_call;
@@ -5190,8 +5222,8 @@ preprocess (struct filename *fn)
 /* Routines to generate program listing */
 
 
-static void
-set_listing_header_code (void)
+void
+cobc_set_listing_header_code (void)
 {
 	strcpy (cb_listing_header, "LINE    ");
 	if (! CB_SF_FREE (cb_listing_file_struct->source_format)) {
@@ -5407,7 +5439,9 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	case CB_USAGE_CONTROL:
 		return 0;
 	case CB_USAGE_POINTER:
-	case CB_USAGE_PROGRAM_POINTER:
+	/* case CB_USAGE_DATA_POINTER: */
+	/* case CB_USAGE_FUNCTION_POINTER: */
+	/* case CB_USAGE_PROGRAM_POINTER: */
 		if (cb_list_datamap) {
 			strcpy (picture, "POINTER");
 			return 1;
@@ -5461,6 +5495,18 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		}
 		memcpy (picture, picture_usage, usage_len + 1);
 		return 1;
+	} else if (field->flag_is_pointer) {
+#if 0	/* TODO: ADD */
+		if (field->usage == CB_USAGE_DATA_POINTER) {
+			strcpy (picture, "DATA-POINTER");
+		} else if (field->usage == CB_USAGE_FUNCTION_POINTER) {
+			strcpy (picture, "FUNCTION-POINTER");
+		} else
+#endif
+		if (field->usage == CB_USAGE_PROGRAM_POINTER) {
+			strcpy (picture, "PROGRAM-POINTER");
+		}
+		return 1;
 	} else if (field->flag_any_numeric) {
 		strcpy (picture, "9 ANY NUMERIC");
 		return 1;
@@ -5471,7 +5517,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		if (!field->pic) {
 			return 0;
 		}
-		snprintf (picture, picture_len, "%s", field->pic->orig);
+		cobc_elided_strcpy (picture, field->pic->orig, picture_len - 1, 1);
 		return 1;
 	}
 }
@@ -6278,10 +6324,10 @@ print_program_trailer (void)
 		print_program_data (print_data);
 		break;
 	}
-	if (errorcount > cb_max_errors) {
+	if (cb_max_errors && errorcount > cb_max_errors) {
 		snprintf (print_data, CB_PRINT_LEN,
 			_("Too many errors in compilation group: %d maximum errors"),
-			cb_max_errors);
+			cb_max_errors != -1 ? cb_max_errors : 0);
 		print_program_data (print_data);
 	}
 	force_new_page_for_next_line ();
@@ -8914,8 +8960,8 @@ finish_setup_internal_env (void)
 	CB_TEXT_LIST_ADD (cb_extension_list, "");
 
 	/* Process COB_COPY_DIR and COBCPY environment variables */
-	process_env_copy_path (getenv ("COB_COPY_DIR"));
-	process_env_copy_path (getenv ("COBCPY"));
+	process_env_copy_path ("COB_COPY_DIR");
+	process_env_copy_path ("COBCPY");
 
 	/* Add default COB_COPY_DIR directory */
 	CB_TEXT_LIST_CHK (cb_include_list, cob_getenv_value ("COB_COPY_DIR"));
@@ -8967,7 +9013,6 @@ process_file (struct filename *fn, int status)
 		cb_listing_page = 0;
 		cobc_elided_strcpy (cb_listing_filename, fn->source,
 			sizeof (cb_listing_filename), 0);
-		set_listing_header_code ();
 	}
 
 	if (cb_compile_level >= CB_LEVEL_PREPROCESS
@@ -8979,7 +9024,10 @@ process_file (struct filename *fn, int status)
 		if (fn->has_error) {
 			cb_flag_syntax_only = 1;
 		}
-	}
+	} else
+		if (cb_src_list_file) {
+			cobc_set_listing_header_code ();
+		}
 
 	if (cobc_list_file) {
 		putc ('\n', cb_listing_file);
@@ -9070,6 +9118,12 @@ main (int argc, char **argv)
 
 	cb_saveargc = argc;
 	cb_saveargv = argv;
+
+	/* This value is used when setting the format in FIXED mode in
+	   pplex, but it might happen that the value has not yet been
+	   initialized in the configuration file.
+	*/
+	cb_config_text_column = 72;
 
 	/* Process command line arguments */
 	iargs = process_command_line (argc, argv);
