@@ -102,6 +102,7 @@ jobs:
 
       - name: Upload testsuite-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4
+        if: failure()
         with:
           name: testsuite-${{matrix.sys}}-${{matrix.target}}.log
           path: ${{ env.GITHUB_WORKSPACE }}/_build/tests/testsuite.log
