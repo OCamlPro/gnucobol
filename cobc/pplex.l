@@ -160,7 +160,6 @@ static int	fill_continued_alnums = 1; /* whether continued alphanumeric
 					      spaces up to text column */
 static int	emit_area_a_tokens = 0;
 
-
 static char	display_msg[PPLEX_BUFF_LEN];
 
 static struct copy_info		*copy_stack = NULL;
@@ -1656,7 +1655,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
 	}
 
-	if (cb_depend_output && cb_flag_copybook_deps){
+	if (cb_depend_output && cb_flag_copybook_deps) {
 
 		if (lib) {
 			snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
@@ -2821,6 +2820,12 @@ pp_text_list_add (struct cb_text_list *list, const char *text,
 {
 	struct cb_text_list	*p;
 	void			*tp;
+
+	for (p = list; p; p = p->next) {
+		if (!strcmp(text, p->text)) {
+			return list;
+		}
+	}
 
 	p = cobc_plex_malloc (sizeof (struct cb_text_list));
 	tp = cobc_plex_malloc (size + 1);

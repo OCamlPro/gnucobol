@@ -143,6 +143,7 @@ cobc_print_usage_common_options (void)
 	puts (_("  -MG                   output missing dependencies without complaining"));
 	puts (_("  -MD                   output dependencies in .d files while compiling"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
+	puts (_("  -fcopybook-deps       output copybook names as dependencies"));
 	putchar ('\n');
 }
 

@@ -65,12 +65,8 @@ NEWS - user visible changes				-*- outline -*-
 ** New option -fdefault-file-colseq to specify the default
    file collating sequence
 
-** New dependency options: output COPY dependencies of COBOL files with
-   -M to only print dependencies without compiling, -MD to print
-   dependencies which compiling, -MP to add phony -targets, MQ to
-   quote Makefile-specific characters and -MG to keep -missing
-   copybooks. More specific is -fcopybook-deps to print only dependency
-   names as they appear after COPY instead of the exact filename.
+** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
+   to a file (see "Dependencies options" in the GnuCOBOL manual)
 
 * More notable changes
 

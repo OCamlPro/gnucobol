@@ -1151,86 +1151,100 @@ AT_CLEANUP
 
 
 AT_SETUP([output dependencies])
+# AT_KEYWORDS([])
 
 AT_CAPTURE_FILE([compiler.output])
-# AT_KEYWORDS([])
+
 AT_DATA([prog.cob], [
-        IDENTIFICATION DIVISION.
-        PROGRAM-ID. prog.
-        DATA DIVISION.
-        WORKING-STORAGE SECTION.
-	COPY COPY1.
-        PROCEDURE DIVISION.
-        MAIN-PROC SECTION.
-        00.
-        COPY COPY2.
-        END-PROC  SECTION.
-        COPY COPY3 in "sub".
-        EX.
-            STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY COPY1.
+       PROCEDURE DIVISION.
+       MAIN-PROC SECTION.
+       00.
+       COPY COPY3.
+       COPY COPY3.CPY.
+       END-PROC  SECTION.
+       COPY COPY4 in "sub".
+       EX.
+           STOP RUN.
 ])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       PROCEDURE DIVISION.
+       COPY COPY3.
+           STOP RUN.
+])
+
 
 AT_CHECK([mkdir -p sub])
-AT_DATA([COPY1.CPY], [])
-AT_DATA([COPY2.CPY], [       DISPLAY "Hello".
+AT_DATA([COPY1.CPY], [       COPY COPY2.
 ])
-AT_DATA([sub/COPY3.CPY], [])
+AT_DATA([COPY2.CPY], [])
+AT_DATA([COPY3.CPY], [       DISPLAY "Hello".
+])
+AT_DATA([sub/COPY4.CPY], [])
 
-AT_CHECK([$COMPILE_ONLY prog.cob])
+AT_CHECK([$COMPILE prog.cob])
 
-AT_CHECK([$COMPILE_ONLY -M prog.cob prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+AT_CHECK([$COMPILE -M prog.cob prog2.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT:/.COB_OBJECT_EXT:/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
-prog.COB_OBJECT_EXT: \
- prog.cob \
- COPY1.CPY \
- COPY2.CPY \
- sub/COPY3.CPY
+prog2.COB_OBJECT_EXT: \
+ prog2.cob \
+ COPY3.CPY
 
 ])
 
-AT_CHECK([$COMPILE_ONLY -M -MF prog.dep prog.cob])
-
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
+AT_CHECK([$COMPILE -M -MF prog.dep prog.cob])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
 ])
 
-AT_CHECK([$COMPILE_ONLY -M -fcopybook-deps prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
-[prog.COB_OBJECT_EXT: COPY1 COPY2 sub/COPY3
+AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
 
 ])
 
 AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_MODULE_EXT/prog.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+AT_CHECK([$SED "s/\.$COB_MODULE_EXT/.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_MODULE_EXT: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
 ])
 
 AT_CHECK([test -f prog.c], [1])
 AT_CHECK([test -f prog.o], [1])
 
-AT_CHECK([$COMPILE_ONLY -M -MQ '$(target)#toto' prog.cob > compiler.output], [0])
+AT_CHECK([$COMPILE -M -MQ '$(target)#toto' prog.cob > compiler.output], [0])
 AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.output], [0],
 [$$(target)\#toto: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
 ])
 
@@ -1238,54 +1252,55 @@ AT_CHECK([rm -f prog.d])
 AT_CAPTURE_FILE([prog.d])
 
 AT_CHECK([$COMPILE -MD prog.cob])
-
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.d], [0],
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.d], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
 ])
 
 AT_CHECK([$COMPILE -MD -o sub/prog.exe  prog.cob])
-
 AT_CHECK([test -f sub/prog.exe])
-
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" sub/prog.d], [0],
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" sub/prog.d], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
 ])
 
-AT_CHECK([rm sub/COPY3.CPY])
+AT_CHECK([rm sub/COPY4.CPY])
 
-AT_CHECK([$COMPILE_ONLY -M prog.cob > compiler.output 2> compiler.error], [1], [], [])
-
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g" compiler.output], [0],
+AT_CHECK([$COMPILE -M prog.cob > compiler.output 2> compiler.error], [1], [], [])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
- COPY2.CPY
+ COPY2.CPY \
+ COPY3.CPY
 
 ])
 
 AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.error], [0],
-[prog.cob:12: error: sub/COPY3: No such file or directory
+[prog.cob:13: error: sub/COPY4: No such file or directory
 ])
 
 AT_CHECK([$COMPILE_ONLY -M -MG prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/prog.$COB_OBJECT_EXT/prog.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
 [prog.COB_OBJECT_EXT: \
  prog.cob \
  COPY1.CPY \
  COPY2.CPY \
- sub/COPY3.CPY
+ COPY3.CPY \
+ sub/COPY4.CPY
 
 ])
+
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
         PROGRAM-ID. prog.
