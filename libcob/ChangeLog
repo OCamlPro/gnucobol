@@ -1,4 +1,8 @@
 
+2024-09-20  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_screen_get_all) fixed Bug #990
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* intrinsics.c (cob_intr_random), move.c (cob_move_display_to_packed):
