@@ -5802,7 +5802,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	struct cb_reference	*rl;
 
 	/* LCOV_EXCL_START */
-	if (!CB_REFERENCE_P(x)) {
+	if (!CB_REFERENCE_P (x)) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 			"compare_field_literal", "x");
 		COBC_ABORT ();
@@ -5863,9 +5863,9 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 			alph_lit = 1;
 			/* note: zero_val not checked in this case */
 			break;
-				}
+		}
 		if (l->data[j] != '0') {
-				zero_val = 0;
+			zero_val = 0;
 		}
 	}
 
@@ -5879,7 +5879,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 		 if (lit_length > refmod_length) {
 			copy_file_line (e, CB_TREE(l), NULL);
 			if (get_warn_opt_value (cb_warn_constant_expr)
-			&& !was_prev_warn (e->source_line, 2)) {
+			 && !was_prev_warn (e->source_line, 2)) {
 				if (lit_length > f->size) {
 					cb_warning_x (cb_warn_constant_expr, e,
 							_("literal '%.38s' is longer than '%s'"),
@@ -5896,6 +5896,9 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 					return cb_false;
 				case '~':
 					return cb_true;
+				default:
+					/* nothing to do for constant folding */
+					break;
 				}
 			}
 		}
@@ -5953,16 +5956,21 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	 && fscale < scale) {
 		copy_file_line (e, CB_TREE(l), NULL);
 		if (get_warn_opt_value (cb_warn_constant_expr)
-		&& !was_prev_warn (e->source_line, 4)) {
+		 && !was_prev_warn (e->source_line, 4)) {
 			cb_warning_x (cb_warn_constant_expr, e,
 						_("literal '%s' has more decimals than '%s'"),
 						display_literal (lit_disp, l, lit_start, l->scale), f->name);
 		}
-		switch (op) {
-		case '=':
-			return cb_false;
-		case '~':
-			return cb_true;
+		if (cb_constant_folding) {
+			switch (op) {
+			case '=':
+				return cb_false;
+			case '~':
+				return cb_true;
+			default:
+				/* nothing to do for constant folding */
+				break;
+			}
 		}
 	}
 
@@ -6000,20 +6008,28 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				_("literal '%s' has more digits than '%s'"),
 				display_literal (lit_disp, l, lit_start, l->scale), f->name);
 		}
-		switch (op) {
-		case '=':
-			return cb_false;
-		case '~':
-			return cb_true;
-		}
-		if (category == CB_CATEGORY_NUMERIC) {
+		if (cb_constant_folding) {
 			switch (op) {
-			case '>':
-			case ']':
+			case '=':
 				return cb_false;
-			case '<':
-			case '[':
+			case '~':
 				return cb_true;
+			default:
+				/* nothing to do for constant folding */
+				break;
+			}
+			if (category == CB_CATEGORY_NUMERIC) {
+				switch (op) {
+				case '>':
+				case ']':
+					return cb_false;
+				case '<':
+				case '[':
+					return cb_true;
+				default:
+					/* nothing to do for constant folding */
+					break;
+				}
 			}
 		}
 
@@ -6026,7 +6042,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	 *       be dependent on compiler configuration flags;
 	 *       therefore we don't set cb_true/cb_false here
 	 */
-	if (get_warn_opt_value (cb_warn_constant_expr)
+	if (get_warn_opt_value (cb_warn_constant_expr) != COBC_WARN_DISABLED
 	 && (op == '<' || op == '[' || op == '>' || op == ']')) {
 		copy_file_line (e, CB_TREE(l), NULL);
 
@@ -6054,11 +6070,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				default:
 					break;
 				}
-				/* comparison with negative literal */
+			/* comparison with negative literal */
 			} else if (l->sign < 0) {
 				switch (op) {
-				case '<':
 				case '[':
+				case '<':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may not be %s %s"),
@@ -6066,8 +6082,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 							display_literal (lit_disp, l, lit_start, l->scale));
 					}
 					break;
-				case '>':
 				case ']':
+				case '>':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may always be %s %s"),
@@ -6099,8 +6115,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				/* all fine */
 			} else if (l->sign < 0) {
 				switch (op) {
-				case '<':
 				case '[':
+				case '<':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may not be %s %s"),
@@ -6124,8 +6140,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				}
 			} else {
 				switch (op) {
-				case '>':
 				case ']':
+				case '>':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may not be %s %s"),
@@ -6182,7 +6198,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 
 	if (op == '@'
 	 && y == NULL
-	 && CB_NUMERIC_LITERAL_P(x) )	/* Parens around a Numeric Literal */
+	 && CB_NUMERIC_LITERAL_P (x) )	/* Parens around a Numeric Literal */
 		return x;
 
 	/* Simon: just ignore here as we already created
@@ -6221,20 +6237,21 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		 * then resolve the value here at compile time -> "constant folding"
 		 */
 		if (cb_constant_folding
-		&&  CB_NUMERIC_LITERAL_P(x)
-		&&  CB_NUMERIC_LITERAL_P(y)) {
-			xl = CB_LITERAL(x);
-			yl = CB_LITERAL(y);
+		 && CB_NUMERIC_LITERAL_P (x)
+		 && CB_NUMERIC_LITERAL_P (y)) {
+			xl = CB_LITERAL (x);
+			yl = CB_LITERAL (y);
 			xscale = xl->scale;
 			yscale = yl->scale;
 
-			if (cb_arithmetic_osvs 
+			if (cb_arithmetic_osvs
 			 && (xl->scale != 0 || yl->scale == 0)) {
 				/* Do not fold with decimals for OSVS */
 				cb_set_dmax (xscale);
 				cb_set_dmax (yscale);
-				if (op == '*') 
+				if (op == '*') {
 					cb_set_dmax (xscale + yscale);
+				}
 			} else
 			if (xl->llit == 0
 			 && xl->size >= (unsigned int)xl->scale
@@ -6243,9 +6260,13 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			 && xl->all == 0
 			 && yl->all == 0) {
 				xval = atoll((const char*)xl->data);
-				if(xl->sign == -1) xval = -xval;
+				if (xl->sign == -1) {
+					xval = -xval;
+				}
 				yval = atoll((const char*)yl->data);
-				if(yl->sign == -1) yval = -yval;
+				if (yl->sign == -1) {
+					yval = -yval;
+				}
 				cb_set_dmax (xscale);
 				cb_set_dmax (yscale);
 				rscale = 0;
@@ -6273,7 +6294,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 						yscale--;
 					}
 					rscale = xscale;
-					if((xval % yval) == 0) {
+					if ((xval % yval) == 0) {
 						rslt = xval / yval;
 					}
 				}
@@ -6303,7 +6324,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					/* only calculate simple integer numerics */
 					if (xl->scale != 0 || yl->scale != 0)
 						break;
-					if((xval % yval) == 0) {
+					if ((xval % yval) == 0) {
 						sprintf(result, CB_FMT_LLD, xval / yval);
 						return cb_build_numeric_literal (0, result, rscale);
 					}
@@ -6314,8 +6335,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					 || yl->scale != 0
 					 || yval < 0)
 						break;
-					if(yval == 0
-					|| xval == 1) {
+					if (yval == 0
+					 || xval == 1) {
 						strcpy(result,"1");
 					} else {
 						rslt = xval;
@@ -6331,8 +6352,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			}
 		} else
 		if (cb_constant_folding
-		 && CB_NUMERIC_LITERAL_P(y)) {
-			yl = CB_LITERAL(y);
+		 && CB_NUMERIC_LITERAL_P (y)) {
+			yl = CB_LITERAL (y);
 			if (yl->scale == 0) {
 				yval = atoll((const char*)yl->data);
 				if ((op == '+' || op == '-') 
@@ -6388,8 +6409,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			return cb_error_node;
 		}
 		if (cb_constant_folding
-		&&  CB_NUMERIC_LITERAL_P(x)
-		&&  CB_NUMERIC_LITERAL_P(y)) {
+		&&  CB_NUMERIC_LITERAL_P (x)
+		&&  CB_NUMERIC_LITERAL_P (y)) {
 			xl = CB_LITERAL(x);
 			yl = CB_LITERAL(y);
 			if (xl->scale == 0
@@ -6423,13 +6444,13 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case ']':
 		rel_bin_op = 1;
 		/* Relational operators */
-		if ((CB_REF_OR_FIELD_P (x)) &&
-		    CB_FIELD_PTR (x)->level == 88) {
+		if ((CB_REF_OR_FIELD_P (x))
+		 && CB_FIELD_PTR (x)->level == 88) {
 			cb_error_x (e, _("invalid expression"));
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (y)) &&
-		    CB_FIELD_PTR (y)->level == 88) {
+		if ((CB_REF_OR_FIELD_P (y))
+		 && CB_FIELD_PTR (y)->level == 88) {
 			cb_error_x (e, _("invalid expression"));
 			return cb_error_node;
 		}
@@ -6437,16 +6458,16 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		if (x == cb_zero) {
 			xl = CB_LITERAL(cb_zero_lit);
 			xl->common.source_line = prev_expr_line = cb_exp_line;
-		} else if (CB_LITERAL_P(x)) {
-			xl = CB_LITERAL(x);
+		} else if (CB_LITERAL_P (x)) {
+			xl = CB_LITERAL (x);
 		} else {
 			xl = NULL;
 		}
 		if (y == cb_zero) {
 			yl = CB_LITERAL(cb_zero_lit);
 			yl->common.source_line = prev_expr_line = cb_exp_line;
-		} else if (CB_LITERAL_P(y)) {
-			yl = CB_LITERAL(y);
+		} else if (CB_LITERAL_P (y)) {
+			yl = CB_LITERAL (y);
 		} else {
 			yl = NULL;
 		}
@@ -6464,12 +6485,12 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 
 		if (CB_REF_OR_FIELD_P (y)
 		 && CB_FIELD_PTR (y)->usage == CB_USAGE_DISPLAY
-		 && (CB_LITERAL_P(x) || x == cb_zero)
+		 && (CB_LITERAL_P (x) || x == cb_zero)
 		 && xl->all == 0) {
 			relop = compare_field_literal (e, 1, y, op, xl);
 		} else if (CB_REF_OR_FIELD_P (x)
 		 && CB_FIELD_PTR (x)->usage == CB_USAGE_DISPLAY
-		 && (CB_LITERAL_P(y) || y == cb_zero)
+		 && (CB_LITERAL_P (y) || y == cb_zero)
 		 && yl->all == 0) {
 			relop = compare_field_literal (e, 0, x, op, yl);
 		/*
@@ -6556,10 +6577,10 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		 * then resolve the value here at compile time -> "constant folding"
 		 */
 		} else if (cb_constant_folding
-		 && CB_LITERAL_P(x)
-		 && CB_LITERAL_P(y)
-		 && !CB_NUMERIC_LITERAL_P(x)
-		 && !CB_NUMERIC_LITERAL_P(y)) {
+		 && CB_LITERAL_P (x)
+		 && CB_LITERAL_P (y)
+		 && !CB_NUMERIC_LITERAL_P (x)
+		 && !CB_NUMERIC_LITERAL_P (y)) {
 			copy_file_line (e, y, x);
 			xl = CB_LITERAL(x);
 			yl = CB_LITERAL(y);
@@ -6570,12 +6591,12 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					break;
 				}
 			}
-			if(xl->data[i] == 0
-			&& yl->data[j] == ' ') {
+			if (xl->data[i] == 0
+			 && yl->data[j] == ' ') {
 				while (yl->data[j] == ' ') j++;
 			} else
-			if(xl->data[i] == ' '
-			&& yl->data[j] == 0) {
+			if (xl->data[i] == ' '
+			 && yl->data[j] == 0) {
 				while (xl->data[i] == ' ') i++;
 			}
 			switch (op) {
