@@ -1,4 +1,14 @@
 
+2024-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: In preparation for Multiple Window support
+	  added static WINDOW pointer "mywin", all curses functions
+	  which either implicitly or explicitly referenced the
+	  stdscr WINDOW pointer were changed to use the window
+	  specific functions using mywin except the getch function
+	  remains unchanged. The wgetch function caused the mouse
+	  not to be recognized.
+
 2024-09-20  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_screen_get_all) fixed Bug #990
