@@ -283,7 +283,7 @@ AT_DATA([prog.cob], [
            IF PIC-9-SIGNED-DECIMAL <= -099.990 CONTINUE.
            IF PIC-9-SIGNED-DECIMAL <= -099.991 CONTINUE.
            IF 99                   > XX CONTINUE.
-      *>   IF XX               NOT < 99 CONTINUE. - TODO: false positive
+           IF XX               NOT < 99 CONTINUE.
            IF NOT XX               < 99 CONTINUE.
 
            STOP RUN.

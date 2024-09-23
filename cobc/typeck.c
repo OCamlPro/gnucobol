@@ -5814,6 +5814,7 @@ expr_reduce (int token)
 					}
 					if (new_token != 0) {
 						op = new_token;
+						cb_next_binary_op_flag = cb_next_binary_op_flag == 0 ? BOP_OPERANDS_SWAPPED : 0;
 						expr_index -= 1;
 					}
 				}
@@ -5959,8 +5960,8 @@ cb_expr_shift (int token, cb_tree value)
 		}
 
 		/* Unary sign */
-		if ((TOKEN (-1) == '+' || TOKEN (-1) == '-') &&
-		    TOKEN (-2) != 'x') {
+		if ((TOKEN (-1) == '+' || TOKEN (-1) == '-')
+		 &&  TOKEN (-2) != 'x') {
 			if (TOKEN (-1) == '-') {
 				value = cb_build_binary_op (cb_zero, '-', value);
 			}
@@ -7471,6 +7472,7 @@ cb_build_cond (cb_tree x)
 			if (CB_FUNCALL_P(ret) && !strcmp(CB_FUNCALL(ret)->name, "$:")) {
 				break;
 			}
+			cb_next_binary_op_flag = p->flag;
 			ret = cb_build_binary_op (ret, p->op, p->y);
 			if (CB_VALID_TREE (ret)) {
 				CB_BINARY_OP (ret)->flag = p->flag;
