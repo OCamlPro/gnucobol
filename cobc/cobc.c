@@ -7896,6 +7896,7 @@ process_translate (struct filename *fn)
 		/* If processing raised errors set syntax-only flag to not
 		   loose the information "no codegen occurred" */
 		cb_flag_syntax_only = 1;
+		cb_flag_fast_compare = 0;
 		return 1;
 	}
 	if (cb_flag_syntax_only) {
@@ -9023,6 +9024,7 @@ process_file (struct filename *fn, int status)
 		/* If preprocessing raised errors go on but only check syntax */
 		if (fn->has_error) {
 			cb_flag_syntax_only = 1;
+			cb_flag_fast_compare = 0;
 		}
 	} else
 		if (cb_src_list_file) {
@@ -9156,6 +9158,7 @@ main (int argc, char **argv)
 			cobc_flag_module = 1;
 		}
 	} else {
+		cb_flag_fast_compare = 0;
 		cb_compile_level = CB_LEVEL_TRANSLATE;
 		cobc_flag_main = 0;
 		cobc_flag_module = 0;

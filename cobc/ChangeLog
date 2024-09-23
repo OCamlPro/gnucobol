@@ -268,6 +268,17 @@
 	  search tree
 	* parser.y (_end_search): if search has no AT END create an implicit one
 	  at END-SEARCH for better trace and debugging
+	* flag.def, typeck.c: new option "fast-compare" (cb_flag_fast_compare,
+	  defaulting to on) to disable old and new optimizations
+	* cobc.c: disable cb_flag_fast_compare for -fsyntax-only and on compiler
+	  errors to improve parsing time
+	* tree.c (cb_fits_int, cb_fits_long_long): constant ZERO fits both
+	  integer types
+	* tree.c (cb_field_size): return FIELD_SIZE_UNKNOWN for constants and
+	  fields with ANY LENGTH
+	* typeck.c (cb_build_cond_default, cb_build_cond_fields): extracted
+	  from cb_build_cond
+
 
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
 

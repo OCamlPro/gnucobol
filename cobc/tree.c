@@ -1692,6 +1692,9 @@ cb_fits_int (const cb_tree x)
 	case CB_TAG_INTEGER:
 		return 1;
 	default:
+		if (x == cb_zero) {
+			return 1;
+		}
 		return 0;
 	}
 }
@@ -1777,6 +1780,9 @@ cb_fits_long_long (const cb_tree x)
 	case CB_TAG_INTEGER:
 		return 1;
 	default:
+		if (x == cb_zero) {
+			return 1;
+		}
 		return 0;
 	}
 }
@@ -4268,22 +4274,24 @@ cb_field_add (struct cb_field *f, struct cb_field *p)
 int
 cb_field_size (const cb_tree x)
 {
-	struct cb_reference	*r;
-	struct cb_field		*f;
 
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_LITERAL:
 		return CB_LITERAL (x)->size;
-	case CB_TAG_FIELD:
-		f = CB_FIELD (x);
+	case CB_TAG_FIELD: {
+		const struct cb_field *f = CB_FIELD (x);
+		if (f->flag_any_length) {
+			return FIELD_SIZE_UNKNOWN;
+		}
 		if (f->usage == CB_USAGE_COMP_X
 		 && f->compx_size > 0) {
 			return f->compx_size;
 		}
-		return CB_FIELD (x)->size;
-	case CB_TAG_REFERENCE:
-		r = CB_REFERENCE (x);
-		f = CB_FIELD (r->value);
+		return f->size;
+	}
+	case CB_TAG_REFERENCE: {
+		const struct cb_reference	*r = CB_REFERENCE (x);
+		const struct cb_field		*f = CB_FIELD (r->value);
 		if (r->length) {
 			if (CB_LITERAL_P (r->length)) {
 				return cb_get_int (r->length);
@@ -4296,12 +4304,18 @@ cb_field_size (const cb_tree x)
 			} else {
 				return FIELD_SIZE_UNKNOWN;
 			}
+		} else if (f->flag_any_length) {
+			return FIELD_SIZE_UNKNOWN;
 		} else if (f->usage == CB_USAGE_COMP_X
 			 && f->compx_size > 0) {
 			return f->compx_size;
 		} else {
 			return f->size;
 		}
+	}
+	case CB_TAG_CONST:
+		/* depends on its actual usage */
+		return FIELD_SIZE_UNKNOWN;
 
 	/* LCOV_EXCL_START */
 	default:
