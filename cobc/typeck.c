@@ -2603,9 +2603,10 @@ cb_build_identifier (cb_tree x, const int subchk)
 	}
 
 	for (l = r->subs; l; l = CB_CHAIN (l)) {
-		if (CB_BINARY_OP_P (CB_VALUE (l))) {
+		cb_tree val = CB_VALUE (l);
+		if (CB_BINARY_OP_P (val)) {
 			/* Set special flag for codegen */
-			CB_BINARY_OP(CB_VALUE(l))->flag = 1;
+			CB_BINARY_OP (val)->flag = BOP_RESOLVE_AS_INTEGER;
 		}
 	}
 
@@ -7341,6 +7342,8 @@ swap_condition_operands (struct cb_binary_op *p)
 {
 	cb_tree y = p->x;
 
+	p->flag = BOP_OPERANDS_SWAPPED;
+
 	p->x = p->y;
 	p->y = y;
 
@@ -7439,6 +7442,9 @@ cb_build_cond (cb_tree x)
 				break;
 			}
 			ret = cb_build_binary_op (ret, p->op, p->y);
+			if (CB_VALID_TREE (ret)) {
+				CB_BINARY_OP (ret)->flag = p->flag;
+			}
 		}
 		if (ret != cb_true && ret != cb_false) {
 			cb_copy_source_reference (ret, x);
