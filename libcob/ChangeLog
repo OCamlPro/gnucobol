@@ -206,6 +206,10 @@
 	  code to inline functions
 	* numeric.c (cob_s32_pow, cob_s64_pow): use of register type
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* statement.def (STMT_INIT_STORAGE): new internal statement
+
 2023-01-15  Ron Norman <rjn@inglenet.com>
 
 	* screenio.c: renamed max_pairs_available as this is defined on HPUX

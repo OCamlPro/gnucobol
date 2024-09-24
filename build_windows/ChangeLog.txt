@@ -13,6 +13,10 @@
 	* makedist.cmd: first addition for CI output
 	* version_cobc.rc, version_libcob.rc: updated date + rev
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* version_cobc.rc, version_libcob.rc: updated date + rev
+
 2022-12-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general for libcob+cobc: handle move of cconv module
@@ -43,7 +47,7 @@
 
 2021-11-06  Simon Sobisch <simonsobisch@gnu.org>
 
-	* config.h.in: moved references to PACKACAGE_defines after the define,
+	* config.h.in: moved references to PACKAGE_defines after the define,
 	  fixing dist builds since 2020-10-27
 	* makedist.cmd: explicit search for "define PACKAGE_define" which fixes the
 	  multiple results
@@ -346,7 +350,7 @@
 	  version_libcob.rc, version_cobcrun.rc provided by Simon)
 
 
-Copyright 2014-2021 Free Software Foundation, Inc.
+Copyright 2014-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

@@ -61,7 +61,7 @@ AC_CONFIG_FILES([tests/run_prog_manual.sh],
 # Note for SUN Solaris (gcc)
 #  options to configure: CC="gcc -m64" --libdir=/usr/local/lib/sparcv9
 # or:
-#  options to configure: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
+#  options to configure: CFLAGS=-m64 LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
 # Hack for AIX 64 bit (gcc)
 # Required -

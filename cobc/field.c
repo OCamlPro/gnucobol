@@ -3220,7 +3220,7 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		if (*val == cb_zero
 		 && !f->flag_internal_register
-		 && cb_default_byte == -1
+		 && cb_default_byte == CB_DEFAULT_BYTE_INIT
 		 && ( f->storage == CB_STORAGE_WORKING
 		   || f->storage == CB_STORAGE_LOCAL)
 		 && !f->flag_sign_separate) {
@@ -3241,7 +3241,8 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		if (*val == cb_space
 		 && !f->flag_internal_register
-		 && (cb_default_byte == -1 || cb_default_byte == ' ')
+		 && ( cb_default_byte == CB_DEFAULT_BYTE_INIT
+		   || cb_default_byte == ' ')
 		 && ( f->storage == CB_STORAGE_WORKING
 		   || f->storage == CB_STORAGE_LOCAL)
 		 && !f->children) {
