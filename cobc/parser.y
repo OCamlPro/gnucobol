@@ -8420,8 +8420,14 @@ occurs_index_list:
 occurs_index:
   unqualified_word
   {
+	const enum cb_storage	storage = current_field->storage;
 	$$ = cb_build_index ($1, cb_int1, 1U, current_field);
-	CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
+	if (storage == CB_STORAGE_LOCAL) {
+		CB_FIELD_PTR ($$)->storage = CB_STORAGE_LOCAL;
+		CB_FIELD_PTR ($$)->index_type = CB_INT_INDEX;
+	} else {
+		CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
+	}
   }
 ;
 
@@ -8916,7 +8922,9 @@ _local_storage_section:
   _record_description_list
   {
 	if ($5) {
-		current_program->local_storage = CB_FIELD ($5);
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->local_storage, CB_FIELD ($5));
 	}
   }
 ;
@@ -8935,7 +8943,9 @@ _linkage_section:
   _record_description_list
   {
 	if ($5) {
-		current_program->linkage_storage = CB_FIELD ($5);
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->linkage_storage, CB_FIELD ($5));
 	}
   }
 ;
@@ -9729,7 +9739,9 @@ _screen_section:
   {
 	if (description_field) {
 		get_finalized_description_tree ();
-		current_program->screen_storage = description_field;
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->screen_storage, description_field);
 		current_program->flag_screen = 1;
 	}
 	cobc_cs_check = 0;

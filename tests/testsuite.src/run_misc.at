@@ -345,6 +345,57 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [abc000], [])
 AT_CLEANUP
 
 
+AT_SETUP([LOCAL-STORAGE (3)])
+AT_KEYWORDS([runmisc OCCURS INDEX INDEXED])
+
+# Note: this tests undefined behaviour, because the initial value
+#       of index values are undefined, but should be identical in principle
+#       for LS/WS, and in the standard explicit "... is treated as a static
+#       item [for WS] and as an automatic item [for LS]"; see bug #794
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 DISP-VALS.
+          05 DISP-VAL   PIC 9 VALUE 0.
+          05 DISP-IDX   PIC 9 VALUE 0.
+       01 WRK-X.
+          05 WRK-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY WRK-IDX.
+       LOCAL-STORAGE    SECTION.
+       01 LCL-X.
+          05 LCL-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY LCL-IDX.
+       PROCEDURE        DIVISION.
+           DISPLAY SPACE WITH NO ADVANCING.
+           ADD 1 to WRK-VAR(1) WRK-IDX,
+                    LCL-VAR(1) LCL-IDX.
+           SET  DISP-IDX TO WRK-IDX.
+           MOVE WRK-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING.
+           SET  DISP-IDX TO LCL-IDX.
+           MOVE LCL-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING.
+           GOBACK.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       PROCEDURE        DIVISION.
+           CALL "callee".
+           CALL "callee".
+           CALL "callee".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1212 2312 3412], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([EXTERNAL data item])
 AT_KEYWORDS([runmisc])
 
