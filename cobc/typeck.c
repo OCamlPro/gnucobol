@@ -1055,16 +1055,31 @@ cb_emit_list (cb_tree l)
 	return l;
 }
 
+static COB_INLINE COB_A_INLINE int
+cb_tree_is_numeric_ref_or_field (cb_tree x, int include_numeric_edited) {
+	int cat;
+	if (!x || !CB_REF_OR_FIELD_P (x)) {
+		return 0;
+	}
+	cat = CB_TREE_CATEGORY (x);
+	return (cat == CB_CATEGORY_NUMERIC
+	     || (include_numeric_edited && cat == CB_CATEGORY_NUMERIC_EDITED));
+}
+
+static int
+cb_tree_list_has_numeric_ref_or_field (cb_tree l) {
+	for (l;
+	     l && !cb_tree_is_numeric_ref_or_field (CB_VALUE (l), 1);
+	     l = CB_CHAIN (l));
+	return (l != NULL);
+}
+
 static void
 cb_emit_incompat_data_checks (cb_tree x)
 {
 	struct cb_field		*f;
 
-	if (!x || x == cb_error_node) {
-		return;
-	}
-	if (!CB_REF_OR_FIELD_P (x)
-	 || CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC) {
+	if (!cb_tree_is_numeric_ref_or_field (x, 0)) {
 		return;
 	}
 	f = CB_FIELD_PTR (x);
@@ -12884,8 +12899,11 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		return;
 	}
 
-	/* validate / fix-up source, if requested */
-	cb_emit_incompat_data_checks (src);
+	/* validate / fix-up source, if at least one receiver is of category
+	   numeric */
+	if (cb_tree_list_has_numeric_ref_or_field (dsts)) {
+		cb_emit_incompat_data_checks (src);
+	}
 
 	/* FIXME: this is way to much to cater for sum field */
 	src = cb_check_sum_field (src);
@@ -13725,8 +13743,11 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 		return;
 	}
 
-	/* validate / fix-up source, if requested */
-	cb_emit_incompat_data_checks (src);
+	/* validate / fix-up source, if at least one receiver is of category
+	   numeric */
+	if (cb_tree_list_has_numeric_ref_or_field (vars)) {
+		cb_emit_incompat_data_checks (src);
+	}
 
 	/* Emit statements. */
 	for (l = vars; l; l = CB_CHAIN (l)) {

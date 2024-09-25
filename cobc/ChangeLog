@@ -1,4 +1,13 @@
 
+2024-09-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* typeck.c (cb_tree_is_numeric_ref_or_field)
+	  (cb_tree_list_has_numeric_ref_or_field): new helper functions to check
+	  whether a given item is of category numeric (edited or not)
+	* typeck.c (cb_emit_incompat_data_checks): use new helper function
+	* typeck.c (cb_emit_move, cb_emit_set_to): do not check for incompatible
+	  data if no receiver field is of category numeric or numeric edited
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
