@@ -8198,7 +8198,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 	 && next) {
 		cb_tree	xn;
 		/* Check all INDEXED BY variables used in VARYING */
-		for (xn = l; xn; xn = CB_CHAIN (xn)) {
+		for (xn = l; xn; xn = NULL /*CB_CHAIN (xn)*/) {
 			struct cb_field		*q;
 			f = CB_FIELD_PTR (CB_PERFORM_VARYING(CB_VALUE (xn))->name);
 			if (!f->flag_indexed_by) continue;
