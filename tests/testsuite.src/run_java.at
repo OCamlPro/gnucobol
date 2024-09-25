@@ -1,0 +1,67 @@
+## Copyright (C) 2024 Free Software Foundation, Inc.
+## Written by Nicolas Berthier, Vedant Tewari
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+### Java interoperability tests
+
+AT_SETUP([CALL Java static void (void)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([Test.java], [
+public class Test {
+   public static void printHelloWorld () {
+      System.out.println ("Hello world!");
+   }
+}
+])
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.printHelloWorld"
+           STOP RUN.
+])
+
+AT_CHECK([$JAVAC Test.java], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello world!
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) (missing)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.missingMethod"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# TODO: should fail!
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+AT_CLEANUP

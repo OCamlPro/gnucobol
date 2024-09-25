@@ -1,4 +1,8 @@
 
+2024-08-14  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c (cobc_print_info): added note for Java interoperability
+
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2022-12-21:
