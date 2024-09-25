@@ -7100,8 +7100,8 @@ output_java_call (struct cb_call *p)
 	char *last_dot;
 	char *method_name;
 	const char *class_name;
-	char return_type_signature[32];
-	char method_signature[2048] = "(";
+	char return_type_signature[COB_MINI_BUFF];
+	char method_signature[COB_NORMAL_BUFF] = "(";
 	char* mangled;
 	struct cb_tree_common *ptr;
 
@@ -7122,29 +7122,44 @@ output_java_call (struct cb_call *p)
 
 	for (int i = 0; (ptr = ((struct cb_tree_common **)p->args)[i]) != NULL; i++) {
         switch(CB_TREE_TAG(ptr)) {
-            case CB_TAG_INTEGER:
-                strcat(method_signature, "I"); 
-                break;
+            case CB_TAG_INTEGER: {
+				struct cb_picture* pic = CB_FIELD(ptr)->pic;
+				if (pic) {
+					int n = pic->digits;
+					if (CB_FIELD(ptr)->usage == CB_USAGE_COMP_5) {
+						if (n >= 1 && n <= 4) {
+							strncat(method_signature, "S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+						} else if (n >= 5 && n <= 9) {
+							strncat(method_signature, "I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+						} else if (n >= 10 && n <= 18) {
+							strncat(method_signature, "J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+						}
+					} else if (CB_FIELD(ptr)->usage == CB_USAGE_PACKED || CB_FIELD(ptr)->usage == CB_USAGE_DISPLAY) {
+						strncat(method_signature, "Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					}
+				}
+				break;
+       		}
             case CB_USAGE_FLOAT:
-                strcat(method_signature, "F");
+                strncat(method_signature, "F", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                 break;
             case CB_USAGE_DOUBLE:
-                strcat(method_signature, "D"); 
+                strncat(method_signature, "D", COB_NORMAL_BUFF - strlen(method_signature) - 1); 
                 break;
             case CB_CLASS_BOOLEAN:
-                strcat(method_signature, "Z");
+                strncat(method_signature, "Z", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                 break;
             case CB_TAG_STRING:
-                strcat(method_signature, "Ljava/lang/String;"); 
+                strncat(method_signature, "Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                 break;
             case CB_USAGE_OBJECT: 
-                strcat(method_signature, "Ljava/lang/Object;"); 
+                strncat(method_signature, "Ljava/lang/Object;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                 break;
             case CB_TAG_LITERAL:
                 if(CB_TREE_CATEGORY(ptr) == CB_CATEGORY_NUMERIC) {
-                    strcat(method_signature, "I"); 
+                    strncat(method_signature, "I", COB_NORMAL_BUFF - strlen(method_signature) - 1); 
                 } else if(CB_TREE_CATEGORY(ptr) == CB_CATEGORY_ALPHANUMERIC) {
-                    strcat(method_signature, "Ljava/lang/String;");
+                    strncat(method_signature, "Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                 }
                 break;
 				case CB_TAG_LIST:
@@ -7160,23 +7175,38 @@ output_java_call (struct cb_call *p)
                                 inner_list = (struct cb_tree_common **) list_elements[j];
                             } else {
                                 switch (CB_TREE_TAG(list_elements[j])) {
-                                    case CB_TAG_INTEGER:
-                                        strcat(method_signature, "[I");
-                                        break;
+                                    case CB_TAG_INTEGER: {
+										struct cb_picture* pic = CB_FIELD(list_elements[j])->pic;
+										if (pic) {
+											int n = pic->digits;
+											if (CB_FIELD(list_elements[j])->usage == CB_USAGE_COMP_5) {
+												if (n >= 1 && n <= 4) {
+													strncat(method_signature, "[S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+												} else if (n >= 5 && n <= 9) {
+													strncat(method_signature, "[I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+												} else if (n >= 10 && n <= 18) {
+													strncat(method_signature, "[J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+												}
+											} else if (CB_FIELD(list_elements[j])->usage == CB_USAGE_PACKED || CB_FIELD(list_elements[j])->usage == CB_USAGE_DISPLAY) {
+												strncat(method_signature, "[Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+											}
+										}
+										break;
+									}
                                     case CB_USAGE_FLOAT:
-                                        strcat(method_signature, "[F");
+                                        strncat(method_signature, "[F", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                                         break;
                                     case CB_USAGE_DOUBLE:
-                                        strcat(method_signature, "[D");
+                                        strncat(method_signature, "[D", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                                         break;
                                     case CB_CLASS_BOOLEAN:
-                                        strcat(method_signature, "[Z");
+                                        strncat(method_signature, "[Z", COB_NORMAL_BUFF - strlen(method_signature) - 1);
                                         break;
                                     case CB_TAG_STRING:
-                                        strcat(method_signature, "[Ljava/lang/String;");  
+                                        strncat(method_signature, "[Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);  
                                         break;
                                     case CB_USAGE_OBJECT:
-                                        strcat(method_signature, "[Ljava/lang/Object;");  
+                                        strncat(method_signature, "[Ljava/lang/Object;", COB_NORMAL_BUFF - strlen(method_signature) - 1);  
                                         break;
                                     default:
                                         cobc_err_msg(_("Unsupported array element type in Java method call"));
@@ -7186,46 +7216,58 @@ output_java_call (struct cb_call *p)
                         }
                         list_elements = inner_list;
                     }
-
-					if (array_dimension > 2) {
-                        cobc_err_msg(_("Unsupported array dimension: %d"), array_dimension);
-                        COBC_ABORT();
-                    }
 				}
 				break;
 			default:
-				cobc_err_msg(_("Unsupported argument type in Java method call"));
 				COBC_ABORT();
 		}
     }
 
 	if (p->call_returning == NULL) {
-		strcat(method_signature, ")V");
+		strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 		strcpy(return_type_signature, "void");
 	} else {
 		switch(CB_TREE_TAG(p->call_returning)) {
-			case CB_TAG_INTEGER:
-				strcat(method_signature, ")I");
-				strcpy(return_type_signature, "jint");
+			case CB_TAG_INTEGER: {
+				struct cb_picture* pic = CB_FIELD(p->call_returning)->pic;
+				if (pic) {
+					int n = pic->digits;
+					if (CB_FIELD(p->call_returning)->usage == CB_USAGE_COMP_5) {
+						if (n >= 1 && n <= 4) {
+							strncat(method_signature, ")S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+							strcpy(return_type_signature, "jshort");
+						} else if (n >= 5 && n <= 9) {
+							strncat(method_signature, ")I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+							strcpy(return_type_signature, "jint");
+						} else if (n >= 10 && n <= 18) {
+							strncat(method_signature, ")J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+							strcpy(return_type_signature, "jlong");
+						}
+					} else if (CB_FIELD(p->call_returning)->usage == CB_USAGE_PACKED || CB_FIELD(p->call_returning)->usage == CB_USAGE_DISPLAY) {
+						strncat(method_signature, ")Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+						strcpy(return_type_signature, "jobject");
+					}
+				}
 				break;
+			}
 			case CB_TAG_STRING:
-				strcat(method_signature, ")Ljava/lang/String;");
+				strncat(method_signature, ")Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 				strcpy(return_type_signature, "jstring");
 				break;
 			case CB_USAGE_FLOAT:
-				strcat(method_signature, ")F");
+				strncat(method_signature, ")F", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 				strcpy(return_type_signature, "jfloat");
 				break;
 			case CB_USAGE_DOUBLE:
-				strcat(method_signature, ")D");
+				strncat(method_signature, ")D", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 				strcpy(return_type_signature, "jdouble");
 				break;
 			case CB_CLASS_BOOLEAN:
-				strcat(method_signature, ")Z");
+				strncat(method_signature, ")Z", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 				strcpy(return_type_signature, "jboolean");
 				break;
 			default:
-				strcat(method_signature, ")V");
+				strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 				strcpy(return_type_signature, "void");
 				break;
 		}
