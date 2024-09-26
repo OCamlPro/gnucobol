@@ -11193,3 +11193,1003 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([Power exception case])
+AT_KEYWORDS([POWER])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . power_excep.
+      *>----------------------------------------------------------------
+      *> This program test the case where a^b raise exception 
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 EXPONENT  PIC S9(09)V9999  COMP-3 .
+       01 FIELD-01  PIC S9(09)V9999  COMP-3 .
+       01 RESULT    PIC S9(15)V9(10) COMP-3 .
+
+      *>
+       PROCEDURE DIVISION .
+      *> --------------------------------------------------------------
+      *>      Exponent  = 0 ^ 0
+      *> --------------------------------------------------------------
+      *> 
+      *>  Exponent 0 with field = 0
+      *> 
+           MOVE 0       TO FIELD-01 .
+           MOVE 0       TO EXPONENT .
+
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      CONTINUE                                  
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 1: 0 ^ 0 should size error'
+           END-COMPUTE .
+           IF FIELD-01 NOT = 0
+           THEN
+               DISPLAY 'Case 1 : nbr have been changed'
+           END-IF .
+           IF EXPONENT NOT = 0
+           THEN
+               DISPLAY 'Case 1 : exponent have been changed'
+           END-IF .
+      *> 
+      *> --------------------------------------------------------------
+      *> Zero raised to a negative number 
+      *> --------------------------------------------------------------
+      *> 
+      *>  Exponent < 0 with field = 0
+      *> 
+           MOVE 0  TO FIELD-01 .
+           MOVE -5 TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      CONTINUE                                 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 2 : 0 ^ Negative should size error'
+           END-COMPUTE .
+           IF EXPONENT NOT = -5
+           THEN
+               DISPLAY 'Case 2 : exponent have been changed'
+           END-IF .
+      *> 
+           MOVE 0     TO FIELD-01 .
+           MOVE -5.23 TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      CONTINUE                                 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 3 : 0 ^ Negative should size error'
+           END-COMPUTE .
+           IF EXPONENT NOT = -5.23
+           THEN
+               DISPLAY 'Case 3 : exponent have been changed'
+           END-IF .
+      *> 
+      *> --------------------------------------------------------------
+      *>  A negative number raised to a fractional power
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -3  TO FIELD-01 .
+           MOVE 1.4 TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 4 : should size error'
+                      ' negative number raised to non integer'
+           END-COMPUTE .
+           IF EXPONENT NOT = 1.4
+           THEN
+               DISPLAY 'Case 4 : exponent have been changed'
+           END-IF .
+      *> 
+           MOVE -54321.9 TO FIELD-01 .
+           MOVE 1.23     TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT 
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 5 : should size error'
+                   ' negative non integer number raised to non integer'
+           END-COMPUTE .
+           IF EXPONENT NOT = 1.23
+           THEN
+               DISPLAY 'Case 5 : exponent have been changed'
+           END-IF .
+      *> 
+           MOVE -3   TO FIELD-01 .
+           MOVE -1.4 TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 6 : should size error'
+                      ' negative number raised to non integer'
+           END-COMPUTE .
+           IF EXPONENT NOT = -1.4
+           THEN
+               DISPLAY 'Case 6 : exponent have been changed'
+           END-IF .
+      *> 
+           MOVE -54321.9  TO FIELD-01 .
+           MOVE -1.23     TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT 
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 7 : should size error'
+                   ' negative non integer number raised to non integer'
+           END-COMPUTE .
+           IF EXPONENT NOT = -1.23
+           THEN
+               DISPLAY 'Case 7 : exponent have been changed'
+           END-IF .
+      *> 
+           MOVE -1        TO FIELD-01 .
+           MOVE -1.23     TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT 
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY 'Case 8 : should size error'
+                   ' negative non integer number raised to non integer'
+           END-COMPUTE .
+           IF EXPONENT NOT = -1.23
+           THEN
+               DISPLAY 'Case 8 : exponent have been changed'
+           END-IF .
+      *> 
+           STOP RUN .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Power a^b with a > 0])
+AT_KEYWORDS([POWER])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . pow_nb_pos  .
+      *>----------------------------------------------------------------
+      *> 
+      *> Test program for a^b where a > 0   
+      *>
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 EXPONENT  PIC S9(10)V9999  COMP-3 .
+       01 FIELD-01  PIC S9(20)V9999  COMP-3 .
+       01 RESULT    PIC S9(25)V9(10) COMP-3 .
+       01 EXPO-INT  PIC S9(01)       COMP-3.
+
+      *>
+       PROCEDURE DIVISION .
+      *>-------------------
+      *>
+           PERFORM TEST-EXPONENT-POS .
+      *>
+           PERFORM TEST-EXPONENT-NEG .
+      *>
+           PERFORM TEST-NBR-ZERO     .
+      *>
+           PERFORM TEST-POWER-ONE    .
+      *>
+           GOBACK .
+      *>
+       TEST-EXPONENT-POS.
+      *>-----------------
+      *> 
+      *> --------------------------------------------------------------
+      *>      Positive integer exponent Nbr Integer             
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 25  TO FIELD-01 .
+           MOVE 7   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 6103515625
+                      THEN
+                         DISPLAY '1.1 Result <' 
+                                 RESULT '> != 6103515625'
+                      END-IF
+           END-COMPUTE .
+           IF EXPONENT NOT = 7    
+           THEN
+               DISPLAY 'Case 1.1 : exponent have been changed'
+           END-IF .
+      *> 
+      *> --------------------------------------------------------------
+      *>      Positive integer exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 25.1234 TO FIELD-01 .
+           MOVE 7       TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.2 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 6317552954.0721344578     
+                      THEN
+                         DISPLAY '1.2 Result <' 
+                                 RESULT '> != 6317552954.0721344578'
+                      END-IF
+           END-COMPUTE .
+           IF EXPONENT NOT = 7    
+           THEN
+               DISPLAY 'Case 1.2 : exponent have been changed'
+           END-IF .
+      *> --------------------------------------------------------------
+      *>      Positive rational exponent  Nbr integer                   
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 12      TO FIELD-01 .
+           MOVE 2.2345  TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.3 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 257.8876200820
+                      THEN
+                         DISPLAY '1.3 Result <' 
+                                 RESULT '> != 257.8876200820'
+                      END-IF
+           END-COMPUTE .
+           IF EXPONENT NOT = 2.2345    
+           THEN
+               DISPLAY 'Case 1.3 : exponent have been changed'
+           END-IF .
+      *> 
+      *> --------------------------------------------------------------
+      *>      Positive Rational exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 25.1234  TO FIELD-01 .
+           MOVE 7.5678   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.4 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 39401559716.7732993207
+                      THEN
+                         DISPLAY '1.4 Result <' 
+                                 RESULT '> != 39401559716.7732993207'
+                      END-IF
+           END-COMPUTE .
+           IF EXPONENT NOT = 7.5678   
+           THEN
+               DISPLAY 'Case 1.4 : exponent have been changed'
+           END-IF .
+      *> 
+      *> --------------------------------------------------------------
+      *>      Positive Rational exponent Nbr Rational between 0 and 1            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 0.1234   TO FIELD-01 .
+           MOVE 3.5678   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.5 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0005727884
+                      THEN
+                         DISPLAY '1.5 Result <' 
+                                 RESULT '> != 0.0005727884'
+                      END-IF
+           END-COMPUTE .
+           IF EXPONENT NOT = 3.5678   
+           THEN
+               DISPLAY 'Case 1.5 : exponent have been changed'
+           END-IF .
+      *> 
+      *> --------------------------------------------------------------
+      *>  exponent between 0 and 1  Nbr Rational between 0 and 1            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 0.1234   TO FIELD-01 .
+           MOVE 0.5678   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.6 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.3048237121
+                      THEN
+                         DISPLAY '1.6 Result <' 
+                                 RESULT '> != 0.3048237121'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  SQRT                                                              
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 1.5      TO FIELD-01 .
+           MOVE 0.5      TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.7 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 1.2247448713
+                      THEN
+                         DISPLAY '1.7 Result <' 
+                                 RESULT '> != 1.2247448713'
+                      END-IF
+           END-COMPUTE .
+      *>
+       TEST-EXPONENT-NEG.
+      *>-----------------
+      *> 
+      *> --------------------------------------------------------------
+      *>       Nbr Integer exponent integer             
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 23  TO FIELD-01 .
+           MOVE -3  TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0000821895
+                      THEN
+                         DISPLAY '2.1 Result <' 
+                                 RESULT '> != 0.0000821895'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>   integer exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 5.1234 TO FIELD-01 .
+           MOVE -7     TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.2 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0000107917
+                      THEN
+                         DISPLAY '2.2 Result <' 
+                                 RESULT '> != 0.0000107917'
+                      END-IF
+           END-COMPUTE .
+      *> --------------------------------------------------------------
+      *>      rational exponent  Nbr integer                   
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 12       TO FIELD-01 .
+           MOVE -2.2345  TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.3 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0038776580
+                      THEN
+                         DISPLAY '2.3 Result <' 
+                                 RESULT '> != 0.0038776580'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>      Positive Rational exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 2.5123    TO FIELD-01 .
+           MOVE -7.5678   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.4 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0009382939
+                      THEN
+                         DISPLAY '2.4 Result <' 
+                                 RESULT '> != 0.0009382939'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> Rational exponent Nbr Rational between 0 and 1            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 0.1234   TO FIELD-01 .
+           MOVE -3.5678  TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.5 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 1745.8453609145
+                      THEN
+                         DISPLAY '2.5 Result <' 
+                                 RESULT '> != 1745.8453609145'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  exponent between -1 and 0 Nbr Rational between 0 and 1            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 0.1234    TO FIELD-01 .
+           MOVE -0.5678   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.6 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 3.2805846790
+                      THEN
+                         DISPLAY '2.6 Result <' 
+                                 RESULT '> != 3.2805846790'
+                      END-IF
+           END-COMPUTE .
+      *> 
+       TEST-NBR-ZERO.
+      *>-------------
+      *> --------------------------------------------------------------
+      *>  exponent positive integer 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 0         TO FIELD-01 .
+           MOVE 12        TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '3.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0             
+                      THEN
+                         DISPLAY '3.1 Result <' 
+                                 RESULT '> != 0'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  exponent genative integer 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 0         TO FIELD-01 .
+           MOVE 12.1234   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '3.2 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0             
+                      THEN
+                         DISPLAY '3.2 Result <' 
+                                 RESULT '> != 0'
+                      END-IF
+           END-COMPUTE .
+      *> 
+       TEST-POWER-ONE.
+      *>--------------
+      *> 
+           MOVE 1234.567  TO FIELD-01 .
+           MOVE 1         TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '4.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT =1234.567       
+                      THEN
+                         DISPLAY '4.1 Result <' 
+                                 RESULT '> != 1234.567'
+                      END-IF
+           END-COMPUTE .
+      *> 
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([Power a^b with a < 0])
+AT_KEYWORDS([POWER])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . pow_nb_neg  .
+      *>----------------------------------------------------------------
+      *> 
+      *> Test program for a^b where a < 0   
+      *>
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 EXPONENT  PIC S9(10)V9999  COMP-3 .
+       01 FIELD-01  PIC S9(20)V9999  COMP-3 .
+       01 RESULT    PIC S9(25)V9(10) COMP-3 .
+
+      *>
+       PROCEDURE DIVISION .
+      *>-------------------
+      *>
+           PERFORM TEST-EXPONENT-POS .
+      *>
+           PERFORM TEST-EXPONENT-NEG .
+      *>
+           PERFORM TEST-POWER-ONE    .
+      *>
+           GOBACK .
+      *>
+       TEST-EXPONENT-POS.
+      *>-----------------
+      *> 
+      *> --------------------------------------------------------------
+      *>  Odd integer exponent Nbr Integer             
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -25  TO FIELD-01 .
+           MOVE 7   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = -6103515625
+                      THEN
+                         DISPLAY '1.1 Result <' 
+                                 RESULT '> != -6103515625'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  even integer exponent Nbr Integer             
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -25  TO FIELD-01 .
+           MOVE 6   TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.2 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 244140625
+                      THEN
+                         DISPLAY '1.2 Result <' 
+                                 RESULT '> != 244140625'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  odd Positive integer exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -25.1234 TO FIELD-01 .
+           MOVE 7       TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.3 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = -6317552954.0721344578     
+                      THEN
+                         DISPLAY '1.3 Result <' 
+                                 RESULT '> != -6317552954.0721344578'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  even Positive integer exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -25.1234 TO FIELD-01 .
+           MOVE 6       TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '1.4 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 251460907.1253148243
+                      THEN
+                         DISPLAY '1.4 Result <' 
+                                 RESULT '> != 251460907.1253148243'
+                      END-IF
+           END-COMPUTE .
+      *> 
+       TEST-EXPONENT-NEG.
+      *>-----------------
+      *> 
+      *> --------------------------------------------------------------
+      *>  Odd Nbr Integer exponent integer             
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -23 TO FIELD-01 .
+           MOVE -3  TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = -0.0000821895
+                      THEN
+                         DISPLAY '2.1 Result <' 
+                                 RESULT '> != -0.0000821895'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> Even integer exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -23    TO FIELD-01 .
+           MOVE -4     TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.2 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0000035734
+                      THEN
+                         DISPLAY '2.2 Result <' 
+                                 RESULT '> != 0.0000035734'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  Odd Nbr Rational exponent integer             
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -23.1234 TO FIELD-01 .
+           MOVE -3       TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.3 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = -0.0000808807
+                      THEN
+                         DISPLAY '2.3 Result <' 
+                                 RESULT '> != -0.0000808807'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> Even integer exponent Nbr Rational            
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -23.1234 TO FIELD-01 .
+           MOVE -4       TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '2.4 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0000034977
+                      THEN
+                         DISPLAY '2.4 Result <' 
+                                 RESULT '> != 0.0000034977'
+                      END-IF
+           END-COMPUTE .
+      *> 
+       TEST-POWER-ONE.
+      *>--------------
+      *> 
+           MOVE -234.567  TO FIELD-01 .
+           MOVE 1         TO EXPONENT .
+           COMPUTE RESULT = FIELD-01 ** EXPONENT
+                   ON SIZE ERROR
+                      DISPLAY '3.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT =-234.567       
+                      THEN
+                         DISPLAY '3.1 Result <' 
+                                 RESULT '> != -234.567'
+                      END-IF
+           END-COMPUTE .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+AT_SETUP([Power size error and limits cases])
+AT_KEYWORDS([POWER])
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . power .
+      *>----------------------------------------------------------------
+      *> 
+      *> Test program test limits for power computing
+      *>
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 EXPO-INT  PIC S9(31)       COMP-3 .
+       01 EXPO-DEC  PIC S9(10)V9999   COMP-3 .
+       01 FIELD-02  PIC S9(04)V9(20) COMP-3 .
+       01 FIELD-03  PIC S9(01)V9(37) COMP-3 .
+       01 RESULT    PIC S9(21)V9(10) COMP-3 .
+       01 RESULT-HUDGE    PIC S9(38) COMP-3 .
+       01 RESULT-MIN      PIC S9V9(37) COMP-3 .
+       01 FIELD-HUDGE     PIC S9(35)V9(02) COMP-3 .
+       01 FIELD-MAX       PIC S9(38)  COMP-3 .
+       01 EXPO-MIN        PIC S9(01)V9(37)  COMP-3 .
+
+      *>
+       PROCEDURE DIVISION .
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 1.000000001 TO FIELD-02  .
+           MOVE 4294967297  TO EXPO-INT  .
+           COMPUTE RESULT = FIELD-02 ** EXPO-INT   
+                   ON SIZE ERROR
+                      DISPLAY '1 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 73.3298161433
+                      THEN
+                        DISPLAY 
+                        '1: Result <' RESULT '> != 73.3298161433'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -1.1         TO FIELD-02 .
+           MOVE -111         TO EXPO-INT  .
+           COMPUTE RESULT = FIELD-02 ** EXPO-INT 
+                   ON SIZE ERROR
+                      DISPLAY '2 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = -0.0000254338
+                      THEN
+                        DISPLAY 
+                        '2: Result <' RESULT '> != -0.0000254338'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -1.1         TO FIELD-02 .
+           MOVE -112         TO EXPO-INT  .
+           COMPUTE RESULT = FIELD-02 ** EXPO-INT   
+                   ON SIZE ERROR
+                      DISPLAY '3 : Should not size error'
+                   NOT ON SIZE ERROR
+                      IF RESULT NOT = 0.0000231216
+                      THEN
+                        DISPLAY 
+                        '3: Result <' RESULT '> != 00.0000231216'
+                      END-IF
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 18446744073709551619 TO FIELD-HUDGE.
+           MOVE 2            TO EXPO-INT  .
+           COMPUTE RESULT-HUDGE = FIELD-HUDGE ** EXPO-INT   
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY '4: Result SHOULD SIZE ERROR'
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -18446744073709551619 TO FIELD-HUDGE.
+           MOVE 2                     TO EXPO-INT  .
+           COMPUTE RESULT-HUDGE = FIELD-HUDGE ** EXPO-INT   
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                      DISPLAY '5: SHOULD SIZE ERROR'           
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 1.0001       TO FIELD-02           .
+           MOVE 18446744073709551619 TO EXPO-INT   .
+           COMPUTE RESULT-HUDGE = FIELD-02 ** EXPO-INT   
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                        DISPLAY '6: SHOULD SIZE ERROR'           
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>  
+           MOVE -123.456     TO FIELD-02           .
+           MOVE -18446744073709551619 TO EXPO-INT   .
+           COMPUTE RESULT-HUDGE = FIELD-02 ** EXPO-INT   
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                        DISPLAY '7: SHOULD SIZE ERROR'           
+                        display 'RES = ' RESULT-HUDGE
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>   
+           MOVE -1.0000000000000000000000000000000000001 TO FIELD-03 .
+           MOVE -9223372036854776134 TO EXPO-INT .
+           COMPUTE RESULT-MIN   = FIELD-03 ** EXPO-INT   
+                   ON SIZE ERROR
+                      DISPLAY '8 : Should not size error'
+                   NOT ON SIZE ERROR
+                        IF RESULT-MIN NOT = 
+                           0.9999999999999999990776627963145223870
+                        THEN
+                            DISPLAY 
+                              '8: Result <' RESULT-MIN 
+                         '> != 0.9999999999999999990776627963145223870'
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *>   
+           MOVE -1.0000000000000000000000000000000000001 TO FIELD-03 .
+           MOVE -9223372036854776135 TO EXPO-INT .
+           COMPUTE RESULT-MIN   = FIELD-03 ** EXPO-INT   
+                   ON SIZE ERROR
+                      DISPLAY '8.1 : Should not size error'
+                   NOT ON SIZE ERROR
+                        IF RESULT-MIN NOT = 
+                          -0.9999999999999999990776627963145223869
+                        THEN
+                            DISPLAY 
+                              '8.1: Result <' RESULT-MIN 
+                         '> != 0.9999999999999999990776627963145223869'
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 99999999999999999999999999999999999999 TO FIELD-MAX .
+           MOVE 1.0000000000000000000000000000000000001 TO EXPO-MIN .
+           COMPUTE RESULT-HUDGE  = FIELD-MAX ** EXPO-MIN   
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                        DISPLAY '9: SHOULD SIZE ERROR'           
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 35 TO FIELD-02  .
+           MOVE 26.1234 TO EXPO-DEC .
+           COMPUTE RESULT-HUDGE  = FIELD-02  ** EXPO-DEC   
+                   ON SIZE ERROR
+                      CONTINUE 
+                   NOT ON SIZE ERROR
+                        DISPLAY '10: SHOULD SIZE ERROR'           
+           END-COMPUTE .
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE 35.1234 TO FIELD-02  .
+           MOVE 0  TO EXPO-DEC .
+           COMPUTE RESULT-HUDGE  = FIELD-02  ** EXPO-DEC   
+                   ON SIZE ERROR
+                        DISPLAY '11: SHOULD NOT SIZE ERROR'           
+                   NOT ON SIZE ERROR
+                      CONTINUE 
+           END-COMPUTE .
+           IF RESULT-HUDGE NOT = 1
+           THEN
+               DISPLAY '11: RESULT <' RESULT-HUDGE '> != 1'
+           END-IF .          
+      *> 
+      *> --------------------------------------------------------------
+      *> 
+           MOVE -53.1234 TO FIELD-02  .
+           MOVE 0  TO EXPO-DEC .
+           COMPUTE RESULT-HUDGE  = FIELD-02  ** EXPO-DEC   
+                   ON SIZE ERROR
+                        DISPLAY '12: SHOULD NOT SIZE ERROR'           
+                   NOT ON SIZE ERROR
+                      CONTINUE 
+           END-COMPUTE .
+           IF RESULT-HUDGE NOT = 1
+           THEN
+               DISPLAY '12: RESULT <' RESULT-HUDGE '> != 1'
+           END-IF .          
+      *> 
+           STOP RUN .
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+AT_SETUP([Power size error and limits cases 2])
+AT_KEYWORDS([POWER])
+AT_DATA([prog.cob], [ 
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . tstpow  .
+      *>----------------------------------------------------------------
+      *>
+      *> Test program test limits for power computing
+      *>
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 EXPONENT  PIC 9(38)        COMP-3 .
+       01 FIELD-01  PIC S9(1)V9(37)  COMP-3 .
+       01 RESULT    PIC S9(38)        COMP-3 .
+
+      *>
+       PROCEDURE DIVISION .
+      *>-------------------
+      *>
+           move 6.1896581 to field-01 .
+           move 48 to exponent .
+           compute result = field-01 ** exponent
+             on size error
+                 display '1: Should not size error'
+             not on size error
+      *              12345678901234567890123456789012345678
+                  if result not = 
+                     99999931049445726660449493948965344047
+                  then
+                      display '1: result <'
+                           result
+                         '> != 99999931049445726660449493948965344047'
+           end-compute .
+      *>
+           move 6.1896582 to field-01 .
+           move 48 to exponent .
+           compute result = field-01 ** exponent
+             on size error
+                 continue
+             not on size error
+                 display '2: Should size error'
+           end-compute .
+      *>
+           move 1.0000000000000000047432887442980750246  to field-01 .
+           move 18446744073709551616 to exponent .
+           compute result = field-01 ** exponent
+             on size error
+                 display '3: Should not size error'
+             not on size error
+                 if result NOT = 99999999999999999882232070383165808731
+                 THEN
+                     DISPLAY '3: result <'
+                        result
+                     '> != 99999999999999999882232070383165808731'
+                 END-IF 
+           end-compute .
+      *>
+           move -1.0000000000000000047432887442980750246  to field-01 .
+           move 18446744073709551616 to exponent .
+           compute result = field-01 ** exponent
+             on size error
+                 display '4: Should not size error'
+             not on size error
+                 if result NOT = 99999999999999999882232070383165808731
+                 THEN
+                     DISPLAY '4: result <'
+                        result
+                     '> != 99999999999999999882232070383165808731'
+                 END-IF 
+           end-compute .
+      *>
+           move -1.0000000000000000047432887442980750244  to field-01 .
+           move 18446744073709551617 to exponent .
+           compute result = field-01 ** exponent
+             on size error
+                 display '5: Should not size error'
+             not on size error
+                 if result NOT = 
+                                -99999999999999999987626063338782279407
+                 THEN
+                     DISPLAY '5: result <'
+                        result
+                     '> != -99999999999999999987626063338782279407'
+                 END-IF 
+           end-compute .
+      *>
+           GOBACK .
+      *>
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
