@@ -1038,8 +1038,22 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	digits = COB_FIELD_DIGITS (f);
 	if (digits % 2 == nibtest) {
 		byteval = *p++ & 0x0F;
+		if (byteval == 0) {
+			/* Skip leading ZEROs */
+			while (p < endp
+			 && *p == 0x00) {
+				digits -= 2;
+				p++;
+			}
+		}
 	} else {
 		byteval = 0;
+		/* Skip leading ZEROs */
+		while (p < endp
+		 && *p == 0x00) {
+			digits -= 2;
+			p++;
+		}
 	}
 	if (byteval == 0) {
 		while (p < endp
@@ -2746,9 +2760,7 @@ insert_packed_aligned (
 		*(ptr_byte1 + len1 - 1) &= 0xF0;	/* clear sign nibble */
 	}
 
-	if (nibble_cntr == 0) {
-		compare_len = len1 + byte_cntr;
-	} else {
+	if (nibble_cntr != 0) {
 
 		/* shift the complete filled buffer one nibble left */
 #ifdef ALTERNATIVE_PACKED_SWAP	/* should work portably, but is around 20% slower */
@@ -2798,6 +2810,8 @@ insert_packed_aligned (
 
 #endif
 		compare_len = len1 + byte_cntr + nibble_cntr;
+	} else {
+		compare_len = len1 + byte_cntr;
 	}
 
 	/* insert data2 into initialized buffer at the end */
