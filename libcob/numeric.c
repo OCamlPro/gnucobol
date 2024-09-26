@@ -2749,7 +2749,6 @@ insert_packed_aligned (
 	if (nibble_cntr == 0) {
 		compare_len = len1 + byte_cntr;
 	} else {
-		compare_len = len1 + byte_cntr + nibble_cntr;
 
 		/* shift the complete filled buffer one nibble left */
 #ifdef ALTERNATIVE_PACKED_SWAP	/* should work portably, but is around 20% slower */
@@ -2798,6 +2797,7 @@ insert_packed_aligned (
 		} while (shift_cntr > 0);
 
 #endif
+		compare_len = len1 + byte_cntr + nibble_cntr;
 	}
 
 	/* insert data2 into initialized buffer at the end */
