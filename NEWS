@@ -25,6 +25,14 @@ NEWS - user visible changes				-*- outline -*-
 
   more work in progress
 
+* Changes that potentially effect recompilation of existing programs:
+
+** runtime checks for invalid numerical data in emitter fields of MOVE or SET
+   statements are now performed only when at least one receiver field
+   is of category numeric or numeric-edited.  This enables programming
+   patterns where invalid numerical data (e.g, SPACES) encode "absent"
+   data
+
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
