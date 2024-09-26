@@ -3603,6 +3603,9 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 	} else {
 		arg_field = NULL;
 	}
+	if (!CB_FIELD_P(param)) {
+		return;
+	}
 	param_field = CB_FIELD_PTR(CB_VALUE(param));
 
 	/*

@@ -1,4 +1,9 @@
 
+2024-09-26  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+        * typeck.c (check_argument_conformance): check that param is well defined
+	  to prevent a segfault
+
 2024-09-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* typeck.c (cb_tree_is_numeric_ref_or_field)
