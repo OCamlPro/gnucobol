@@ -12786,6 +12786,9 @@ AT_KEYWORDS([runfile WRITE READ EBCDIC])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
+# This is, so far, only supported by the BDB backend
+AT_XFAIL_IF([test "$COB_HAS_ISAM" != "db"])
+
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
@@ -12862,17 +12865,10 @@ DD8
 AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii], [0])
 AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic], [0])
 
-# This is, so far, only supported by the BDB backend
-AT_CHECK([test "$COB_HAS_ISAM" = "db"], [0], [], [],
-# Previous test "failed" --> other ISAM, skip the test
-[AT_CHECK([true])],
-
-# Previous test "passed" --> using BDB, perform the actual test
-[AT_CHECK([
+AT_CHECK([
   echo "ASCII:"  && $COBCRUN_DIRECT ./ascii && \
   echo "EBCDIC:" && $COBCRUN_DIRECT ./ebcdic
-], [0], [expout])		# <- compare stdout with exiting `expout`
-])
+], [0], [expout])	    # <- compare stdout with existing `expout`
 
 AT_CLEANUP
 
