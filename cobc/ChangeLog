@@ -36,6 +36,11 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* reserved.c (get_user_specified_reserved_word): add check for
+	  context sensitivity in aliases
+
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_cond_fields): optimize comparison between field and
