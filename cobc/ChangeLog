@@ -6,6 +6,8 @@
 	  collating sequence for now)
 	* codegen.c (output_indexed_file_key_colseq): assign collating sequence
 	  for any key of alphanumeric class
+	* parser.y: adjust position of messages about unfinished KEY or FILE
+	  COLLATING SEQUENCE
 
 2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -724,11 +724,11 @@ AT_DATA([prog.cob], [
 
 # FIXME: "is not defined" should be changed in "is not defined in file ..."
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:33: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+[prog.cob:32: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
 prog.cob:33: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
-prog.cob:39: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:38: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
 prog.cob:39: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
-prog.cob:46: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
+prog.cob:45: warning: handling of FILE COLLATING SEQUENCE is unfinished; implementation is likely to be changed
 prog.cob:46: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
 prog.cob:51: warning: handling of KEY COLLATING SEQUENCE is unfinished; implementation is likely to be changed
 prog.cob:10: error: 'TEST-P2' is not defined
