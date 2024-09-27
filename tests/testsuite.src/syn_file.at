@@ -738,9 +738,9 @@ prog.cob:18: error: 'NOT-THERE' is not defined
 prog.cob:13: error: invalid KEY item 'SOME-REC', not in file 'TEST-FILE'
 prog.cob:24: error: 'NOT-IN-FILE1' is not defined
 prog.cob:20: error: invalid KEY item 'NOT-HERE-KEY', not in file 'TEST-MORE'
-prog.cob:32: warning: COLLATING SEQUENCE is ignored for non-alphanumeric key 'TEST-P5'
-prog.cob:32: warning: COLLATING SEQUENCE is ignored for non-alphanumeric key 'TEST-P6'
-prog.cob:39: warning: COLLATING SEQUENCE is ignored for non-alphanumeric key 'TEST-P8'
+prog.cob:66: warning: FILE COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'TEST-P5'
+prog.cob:67: warning: FILE COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'TEST-P6'
+prog.cob:39: warning: KEY COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'TEST-P8'
 prog.cob:25: error: 'NOT-IN-FILE2' is not defined
 ])
 
