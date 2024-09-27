@@ -36,6 +36,19 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond_fields): optimize comparison between field and
+	  ZEROES up to COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+
+2023-02-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_set_to): generate runtime check for SET source
+	  at most one time
+	* cobc.c (process_filename) [_WIN32 __GNUC__]: pass .dll input files
+	  to linker (GCC MinGW extension to drop need of link libraries)
+	* cobc.c (xref_files_and_their_records, xref_labels): minor refactoring
+
 2023-02-26  Ron Norman <rjn@inglenet.com>
 
 	* field.c: Emit warning if COMP-X has PIC S9 as COMP-X is always unsigned
