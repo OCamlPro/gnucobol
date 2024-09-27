@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85/##MODULE##
 #
-# Copyright (C) 2002-2012, 2015-2020,2022 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2020, 2022-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -47,8 +47,8 @@ all-local:
         $(TESTS) $(TESTS_LOCAL) \
         clean-log clean-db clean-debug clean-bin
 
-# note: we use autotest setup files atconfig and atlocal to use the same
-#       test environment as in the testsuite
+# note: these targets use the autotest setup files atconfig and atlocal which
+#       ensures to use the same test environment as in the testsuite
 
 test:
 	@. ../../atconfig && . ../../atlocal && $(MAKE) $@-local
@@ -71,6 +71,8 @@ test-O-local:
 	@echo "Performing tests (optimized) for module directory ##MODULE##"
 	@$(PERL) ##COB85DIR##/report.pl -O
 
+# TODO: use option similar to automake making the lib target conditional on
+# its existence via @HAS_LIBS@ which we'd sed away
 libs:
 	@if test -d lib; then                                                        \
 	 . ../../atconfig && . ../../atlocal && $(MAKE) $@-local; \
@@ -84,6 +86,8 @@ libs-local:
 	fi
 
 $(TESTS): libs
+
+$(TESTS):
 	@. ../../atconfig && . ../../atlocal && $(MAKE) $@-local
 
 $(TESTS_LOCAL): libs-local
