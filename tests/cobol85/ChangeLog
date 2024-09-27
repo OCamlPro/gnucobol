@@ -1,7 +1,12 @@
 
-2024-08-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefile.am: stop downloading "newcob.val.Z" from out-dated URL
+	* summary.pl: compute total duration and modules executed,
+	  output those to stderr at the end; close file handles
+	* Makefile.am (summary.out): new target depending on summary.log
+	* Makefile.am (summary.log): catch stderr of summary.pl into
+	  summary.out file and output that on stdout
+	* Makefile.am (URL_NEWCOB_Z): replaced by web archive URL
 
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -61,7 +66,7 @@
 
 2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefil.module.in: don't pass additional params to atlocal
+	* Makefile.module.in: don't pass additional params to atlocal
 	* report.pl: now exporting at_group for more useful valgrind log names
 
 2020-10-16  Simon Sobisch <simonsobisch@gnu.org>
@@ -400,7 +405,7 @@
 	* SQ.txt, summary.txt : We now pass the LINAGE tests
 
 
-Copyright 2005-2010,2015-2020,2022-2023 Free Software Foundation, Inc.
+Copyright 2005-2010,2015-2020,2022-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

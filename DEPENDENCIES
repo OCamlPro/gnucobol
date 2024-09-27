@@ -151,6 +151,14 @@ The following libraries ARE required WHEN :
    utf8 source encoding needs an implementation of the iconv API.
 
 
+6) The NIST COBOL85 testsuite sould be used for verification;
+   the test runner "make test" REQUIRES:
+
+  o Perl >= 5.0005  - https://www.perl.org
+
+    Perl is licensed under its Artistic License, or the GNU General Public License (GPL). 
+
+
 See HACKING if you wish to hack the GnuCOBOL source or build directly
 from version control as this includes the list of additional tools
 necessary for this task.

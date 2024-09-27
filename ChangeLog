@@ -1,4 +1,8 @@
 
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* DEPENDENCIES: added perl for running NIST85
+
 2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* README: add documentation for "make checkmanual"
