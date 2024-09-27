@@ -22,7 +22,11 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
+# note: old environments only have autoconf 2.69 or even (old msys) 2.67
+#       just do a "make dist" on a modern system and get the taball back
+#       to the ancient one... (which would likely also not have the necessary
+#       automake package either)
+AC_PREREQ([2.70])
 
 AC_INIT([GnuCOBOL],
 	[3.3-dev],
@@ -541,6 +545,9 @@ dnl CHECKME: do we want disable-static (mind libsupport)
 dnl          if yes then drop AM_PROG_AR + build_aux/ar-lib
 LT_INIT([dlopen win32-dll])
 
+dnl We declare %noyywrap in the lexer files so we use the noyywrap
+dnl option here to skip the search for that function.
+AC_PROG_LEX([noyywrap])
 AX_PROG_FLEX
 AX_PROG_BISON
 

@@ -1,4 +1,9 @@
 
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+    * plex.l, scanner.l: use noyywrap option instead of manually
+	  defining related code parts
+
 2024-09-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* typeck.c (cb_tree_is_numeric_ref_or_field)

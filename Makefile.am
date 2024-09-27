@@ -166,9 +166,18 @@ vcs-update:
 	distbin distbin-gzip distbin-bzip2 distbin-lzip distbin-xz
 
 test: all
-	cd tests && $(MAKE) $(AM_MAKEFLAGS) test
+	cd tests && $(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) test
 checkmanual: all
-	cd tests && $(MAKE) $(AM_MAKEFLAGS) checkmanual
+	cd tests && $(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) checkmanual
 
 checkall: check test
-
+	
+@CODE_COVERAGE_ENABLED_TRUE@checkmanual-code-coverage:
+@CODE_COVERAGE_ENABLED_TRUE@	-$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -k checkmanual
+@CODE_COVERAGE_ENABLED_TRUE@	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture
+@CODE_COVERAGE_ENABLED_FALSE@checkmanual-code-coverage: check-code-coverage
+	
+@CODE_COVERAGE_ENABLED_TRUE@checkall-code-coverage:
+@CODE_COVERAGE_ENABLED_TRUE@	-$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -k checkall
+@CODE_COVERAGE_ENABLED_TRUE@	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture
+@CODE_COVERAGE_ENABLED_FALSE@checkall-code-coverage: check-code-coverage
