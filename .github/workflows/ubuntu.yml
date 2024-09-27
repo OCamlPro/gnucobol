@@ -1,26 +1,25 @@
 name: Ubuntu Workflow
 
 on:
+
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
   push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
+
 jobs:
+
   build:
     name: Build, test and provide nightly
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Install packages
         run: |
           sudo apt-get update
@@ -31,6 +30,10 @@ jobs:
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Bootstrap
         run: |
@@ -70,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config-${{ matrix.os }}.log
+          name: config-${{ matrix.os }}-${{ github.job }}.log
           path: _build/config.log
 
       - name: Build
@@ -91,7 +94,7 @@ jobs:
         if: failure()
         with:
           # Assume there's only one directory matching `_build/gnucobol-*`:
-          name: testsuite-${{ matrix.os }}.log
+          name: testsuite-${{ matrix.os }}-${{ github.job }}.log
           path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
 
       - name: Upload dist tarball
@@ -118,10 +121,92 @@ jobs:
       - name: Upload NIST85 Test Suite results
         uses: actions/upload-artifact@v4
         with:
-          name: NIST85 results on ${{ matrix.os }}
+          name: NIST85 results on ${{ matrix.os }}-${{ github.job }}
           path: |
+            _build/tests/cobol85/summary.*
             _build/tests/cobol85/**/*.log
             _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
+
+  minmal_build:
+    name: Build and test with minimal dependencies
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+    needs: build
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libgmp-dev
+
+      - name: Get CI dist tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: gnucobol-ci source distribution
+
+      - name: Build environment setup
+        run: |
+          tar -xvf gnucobol*.tar.*  --strip-components=1
+          mkdir _build
+
+      - name: Configure
+        run: |
+          cd _build
+          ../configure --disable-dependency-tracking \
+                       --without-db --without-curses \
+                       --without-xml2 --without-json \
+                       --without-iconv --disable-nls
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: config-${{ matrix.os }}-${{ github.job }}.log
+          path: _build/config.log
+
+      - name: Build
+        run: |
+          make -C _build --jobs=$(($(nproc)+1))
+
+      - name: run internal tests
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: testsuite-${{ matrix.os }}-${{ github.job }}.log
+          path: _build/tests/testsuite.log
+
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          save-always: true
+          enableCrossOsArchive: true
+
+      - name: NIST85 Test Suite
+        run: |
+          make -C _build/tests/cobol85 EXEC85 test \
+                                       --jobs=$(($(nproc)+1))
+
+      - name: Upload NIST85 Test Suite results
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.os }}-${{ github.job }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
 
 
   coverage:
@@ -163,7 +248,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: config-${{ matrix.os }}.log
+          name: config-${{ matrix.os }}-${{ github.job }}.log
           path: _build/config.log
 
       - name: Build
@@ -182,13 +267,13 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: testsuite-${{ matrix.os }}.log
+          name: testsuite-${{ matrix.os }}-${{ github.job }}.log
           path: _build/tests/testsuite.log
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.os }}
+          name: coverage
           path: _build/GnuCOBOL-**-coverage
 
       - name: Cache newcob.val
@@ -212,7 +297,7 @@ jobs:
       - name: Upload extended coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: extended-coverage-${{ matrix.os }}
+          name: extended-coverage
           path: _build/extended-coverage
 
       - name: Upload coverage to codecov
@@ -223,4 +308,3 @@ jobs:
           # Shall fail until we have a working account on codecov.io
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
-
