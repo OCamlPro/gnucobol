@@ -11,7 +11,7 @@
 
        DO-CHECK.
           SET  HEXX-FILLER TO TRUE
-          STRING FUNCTION HEX-OF (N"â‚¬â‚¬") 
+          STRING FUNCTION HEX-OF (N"¤¤") 
                 DELIMITED BY SIZE INTO HEXX.
           IF HEXX NOT = "AC20AC20---------------------------"
-             DISPLAY "UNEXPECTED HEX-VALUE OF N'â‚¬â‚¬': " HEXX.
+             DISPLAY "UNEXPECTED HEX-VALUE OF N'¤¤': " HEXX.

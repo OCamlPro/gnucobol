@@ -340,8 +340,8 @@ struct cb_iconv_t cb_iconv;
 
 static void 
 initialize_cb_iconv() {
-	char * encoding;
 #ifdef HAVE_LANGINFO_CODESET
+	char * encoding;
 	char * locale = setlocale (LC_CTYPE, "");
 	if( ! locale  ) {
 		cobc_err_msg ("could not set locale");
