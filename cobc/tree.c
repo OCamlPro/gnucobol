@@ -2795,10 +2795,19 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 {
 	cb_tree			l;
 
+
 #ifdef HAVE_ICONV
 	size_t outsize = size;
 	void * outdata = cobc_malloc (outsize);
 	
+	/* check if there is a command line input for the alphanumeric*/
+	if(strcmp(cb_iconv.alphanumeric_source, "NONE") == 0){
+		l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
+		l->source_file = cb_source_file;
+		l->source_line = cb_source_line;
+		return l;
+	}
+
 	if (cb_iconv.alphanumeric == (iconv_t)-1) {
 		cobc_err_msg (_("iconv_open failed"));
 	} else {
@@ -2879,6 +2888,11 @@ cb_build_national_literal (const void *data, const size_t size)
 				cobc_err_msg(_("iconv failed: Unknown error"));
 				break;
 			}
+			cobc_free (outdata);
+			l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, size));
+			l->source_file = cb_source_file;
+			l->source_line = cb_source_line;
+			return l;
 		} else {
 			outsize -= outbytesleft;
 			outdata = cobc_realloc (outdata, outsize); /* Resize the outdata to the actual size */
@@ -2948,6 +2962,11 @@ cb_build_UTF8_literal (const void *data, const size_t size)
 					cobc_err_msg (_("iconv failed: Unknown error"));
 					break;
 				}
+				cobc_free (outdata);
+				l = CB_TREE (build_literal (CB_CATEGORY_UTF8, data, size));
+				l->source_file = cb_source_file;
+				l->source_line = cb_source_line;
+				return l;
 			} else {
 				outsize -= outbytesleft;
 				outdata = cobc_realloc (outdata, outsize); /* Resize the outdata to the actual size */
