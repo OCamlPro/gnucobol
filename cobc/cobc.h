@@ -338,6 +338,7 @@ struct cb_iconv_t{
     iconv_t national;
 	iconv_t utf8;
 	char source[100];
+	char alphanumeric_source[100];
 };
 
 extern struct cb_iconv_t cb_iconv;

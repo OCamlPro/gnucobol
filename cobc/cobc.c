@@ -122,6 +122,7 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
 #define CB_FLAG_GETOPT_SOURCE_ENCODE        27
+#define CB_FLAG_GETOPT_ALPHANUMERIC_ENCODE  28
 
 
 /* Info display limits */
@@ -359,6 +360,11 @@ initialize_cb_iconv() {
 	strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
     cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
 #endif
+	/* set the alphanumeric_source encoding to a default value 
+	to avoid converting in cb_build_alphanumeric 
+	if it didn't change by the command line*/
+	strncpy (cb_iconv.alphanumeric_source, "NONE", sizeof(cb_iconv.alphanumeric_source) - 1);
+	cb_iconv.alphanumeric_source[sizeof(cb_iconv.alphanumeric_source) - 1] = '\0';
 }
 #endif
 
@@ -3995,10 +4001,6 @@ process_command_line (const int argc, char **argv)
 			break;
 
 
-
-			/* -fsource-encode-alphanumeric=encoding */
-
-
 		case CB_FLAG_GETOPT_SOURCE_ENCODE: {
 			/* -fsource-encode=encoding */
 			const char* valid_encodings[] = {
@@ -4024,6 +4026,34 @@ process_command_line (const int argc, char **argv)
 #endif
 			} else {
 				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
+			}
+			break;
+		}
+
+
+		/* -falphanumeric-encode */
+		case CB_FLAG_GETOPT_ALPHANUMERIC_ENCODE:{
+			const char* valid_encodings[] = {
+				"ASCII",
+				"ISO-8859-1",
+				"ISO-8859-15",
+				"CP1525"
+			};
+			const int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
+			int i, encoding_valid = 0;
+			for (i = 0; i < num_encodings; i++) {
+				if (strcmp(cob_optarg, valid_encodings[i]) == 0) {
+					encoding_valid = 1;
+					break;
+				}
+			}
+			if (encoding_valid) {
+#ifdef HAVE_ICONV
+				strncpy(cb_iconv.alphanumeric_source, cob_optarg, sizeof(cb_iconv.alphanumeric_source) - 1);
+				cb_iconv.alphanumeric_source[sizeof(cb_iconv.alphanumeric_source) - 1] = '\0';
+#endif
+			} else {
+				cobc_err_exit(COBC_INV_PAR, "-falphanumeric-encode");
 			}
 			break;
 		}
@@ -9633,7 +9663,7 @@ main (int argc, char **argv)
 
 /* initialize the iconv struct after reading the command line*/
 #ifdef HAVE_ICONV
-	cb_iconv.alphanumeric = iconv_open("ISO-8859-15", cb_iconv.source);
+	cb_iconv.alphanumeric = iconv_open(cb_iconv.alphanumeric_source, cb_iconv.source);
 	/* move iconv_open check here */
 
 	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
