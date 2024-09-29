@@ -626,31 +626,12 @@ AT_KEYWORDS([literal functions hex-of])
 
 # TODO: move this to iso885915.cob in the file system
 #       add to tests/Makefile.am for distribution
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       01  HEXX         PIC X(35).
-          88 HEXX-FILLER VALUE ALL "-".
-       PROCEDURE        DIVISION.
-       MAIN-PROCEDURE.
-          PERFORM DO-CHECK.
-          GOBACK.
-
-       DO-CHECK.
-          SET  HEXX-FILLER TO TRUE
-          STRING FUNCTION HEX-OF (N"€€") 
-                DELIMITED BY SIZE INTO HEXX.
-          IF HEXX NOT = "AC20AC20---------------------------"
-             DISPLAY "UNEXPECTED HEX-VALUE OF N'€€': " HEXX.
-])
 
 # we do override the source encoding here as the testsuite runs with LC_ALL=C,
 # which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
 # while the testsuite content is UTF8
 AT_CHECK([$COMPILE -fsource-encode=ISO-8859-15 "${abs_top_srcdir}/tests/testsuite.src/iso885915.cob"], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./iso885915], [0], [], [])
 
 AT_CLEANUP
 
