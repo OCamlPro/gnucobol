@@ -4023,7 +4023,7 @@ validate_alphabet (cb_tree alphabet)
 						unvals = pos;
 						continue;
 					}
-					n = (unsigned char)val;
+					n = val;
 					if (values[n] != -1) {
 						dupvals[n] = n;
 						dupls = 1;
@@ -4046,7 +4046,7 @@ validate_alphabet (cb_tree alphabet)
 					unvals = pos;
 					continue;
 				}
-				n = (unsigned char)lastval;
+				n = lastval;
 				if (values[n] != -1) {
 					dupvals[n] = n;
 					dupls = 1;
@@ -4116,7 +4116,7 @@ validate_alphabet (cb_tree alphabet)
 					unvals = pos;
 					continue;
 				}
-				n = (unsigned char) lastval;
+				n = lastval;
 				if (values[n] != -1) {
 					dupls = 1;
 				}
