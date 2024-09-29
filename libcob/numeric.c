@@ -1676,7 +1676,7 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 	}
 #endif
 
-#ifndef COB_32_BIT_LONG
+#elif !defined (COB_32_BIT_LONG)
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		mpz_set_si (d->value, cob_binary_get_sint64 (f));
 	} else {
