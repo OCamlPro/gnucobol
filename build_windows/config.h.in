@@ -306,10 +306,6 @@
 #define COB_LIBS         "libcob.l"
 #endif
 
-
-/* long int is long long */
-/* #undef COB_LI_IS_LL */
-
 /* Module extension */
 #define COB_MODULE_EXT "dll"
 

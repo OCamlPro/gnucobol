@@ -1056,7 +1056,8 @@ cb_emit_list (cb_tree l)
 }
 
 static COB_INLINE COB_A_INLINE int
-cb_tree_is_numeric_ref_or_field (cb_tree x, int include_numeric_edited) {
+cb_tree_is_numeric_ref_or_field (cb_tree x, int include_numeric_edited)
+{
 	int cat;
 	if (!x || !CB_REF_OR_FIELD_P (x)) {
 		return 0;
@@ -1067,8 +1068,9 @@ cb_tree_is_numeric_ref_or_field (cb_tree x, int include_numeric_edited) {
 }
 
 static int
-cb_tree_list_has_numeric_ref_or_field (cb_tree l) {
-	for (l;
+cb_tree_list_has_numeric_ref_or_field (cb_tree l)
+{
+	for (;
 	     l && !cb_tree_is_numeric_ref_or_field (CB_VALUE (l), 1);
 	     l = CB_CHAIN (l));
 	return (l != NULL);
@@ -3939,6 +3941,7 @@ validate_alphabet (cb_tree alphabet)
 		ap->high_val_char = maxchar;
 
 		alphabet_valid = 1;
+		n = 0;	/* keep analyzer happy */
 
 		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
@@ -8258,7 +8261,9 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	if (cb_listing_xref) {
 		cobc_xref_set_receiving (var);
 	}
-
+	if (cb_validate_one (pos)) {
+		return;
+	}
 	if (attr_ptr) {
 		fgc = attr_ptr->fgc;
 		bgc = attr_ptr->bgc;
@@ -8270,8 +8275,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		cursor = attr_ptr->cursor;
 		color = attr_ptr->color;
 		disp_attrs = attr_ptr->dispattrs;
-		if (cb_validate_one (pos)
-		 || cb_validate_one (fgc)
+		if (cb_validate_one (fgc)
 		 || cb_validate_one (bgc)
 		 || cb_validate_one (scroll)
 		 || cb_validate_one (timeout)

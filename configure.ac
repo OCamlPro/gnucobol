@@ -174,7 +174,6 @@ AH_TEMPLATE([COB_EXE_EXT], [Executable extension])
 AH_TEMPLATE([COB_KEYWORD_INLINE], [Keyword for inline])
 AH_TEMPLATE([COB_NO_SELFOPEN], [Can not dlopen self])
 AH_TEMPLATE([COB_COMPUTED_GOTO], [Compilation of computed gotos works])
-AH_TEMPLATE([COB_LI_IS_LL], [long int is long long])
 AH_TEMPLATE([COB_32_BIT_LONG], [long int is 32 bits])
 AH_TEMPLATE([COB_64_BIT_POINTER], [Pointers are longer than 32 bits])
 AH_TEMPLATE([WITH_CURSES], [curses library for extended SCREEN I/O])
@@ -999,7 +998,7 @@ AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	  XML2_LIBS="-lxml2"
 	fi
 	LIBS="$LIBS $LIBCOB_LIBS_extern $XML2_LIBS"
-	# note: PKG_CONFIG and xml2-config set -I /path/to/libxml2 which contains a "libxml" folder where
+	# note: PKG_CONFIG and xml2-config set -I/path/to/libxml2 which contains a "libxml" folder where
 	#       all the files we look for are included
 	for header in xmlwriter xmlversion uri parser tree; do
 		AC_CHECK_HEADER([libxml/$header.h], [],
@@ -1080,8 +1079,8 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	with_cjson_local=no
 	AS_IF([test -e ./libcob/cJSON.c],
 	  [AC_MSG_CHECKING([whether linking of ./libcob/cJSON.c works])
-	   CPPFLAGS="$curr_cppflags -I./libcob"
-	   LIBS="$LIBS $LIBCOB_LIBS_extern"
+	   CPPFLAGS="$curr_cppflags -I./libcob $CJSON_CFLAGS"
+	   LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		               [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1098,8 +1097,8 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	if test "$with_cjson_local" = no; then
 	  AS_IF([test -e "$srcdir/libcob/cJSON.c"],
 	    [AC_MSG_CHECKING([whether linking of "$srcdir/libcob/cJSON.c" works])
-	     CPPFLAGS="$curr_cppflags -I\"$srcdir/libcob\""
-	     LIBS="$LIBS $LIBCOB_LIBS_extern"
+	     CPPFLAGS="$curr_cppflags -I$srcdir/libcob $CJSON_CFLAGS"
+	     LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		                 [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1108,7 +1107,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 		                   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
-	      with_cjson_local="yes (in \"$srcdir/libcob\")"],
+	      with_cjson_local="yes (in $srcdir/libcob)"],
 	     [AC_MSG_RESULT([no])]
 	     )
 	     LIBS="$curr_libs"]
@@ -1932,11 +1931,6 @@ AC_CHECK_SIZEOF(long int)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(void *)
-
-AC_MSG_CHECKING([whether size of long int = size of long long])
-AS_IF([test "$ac_cv_sizeof_long_int" = "$ac_cv_sizeof_long_long"],
-	[AC_DEFINE([COB_LI_IS_LL], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
 
 AC_MSG_CHECKING([whether long is 32 bits])
 AS_IF([test "$ac_cv_sizeof_long" = 4],

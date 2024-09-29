@@ -2704,7 +2704,7 @@ cobc_print_info (void)
 	cobc_var_print ("64bit-mode",	_("no"), 0);
 #endif
 
-#ifdef	COB_LI_IS_LL
+#ifndef	COB_32_BIT_LONG
 	cobc_var_print ("BINARY-C-LONG",	_("8 bytes"), 0);
 #else
 	cobc_var_print ("BINARY-C-LONG",	_("4 bytes"), 0);
@@ -2797,7 +2797,7 @@ cobc_def_dump_opts (const char *opt, const int on)
 	int 	dump_to_set;
 	cb_old_trace = 0;			/* Use new methods */
 
-	if (!cb_strcasecmp (opt, "ALL")) {
+	if (!opt || !cb_strcasecmp (opt, "ALL")) {
 		if (on) {
 			cb_flag_dump = COB_DUMP_ALL;
 		} else {
@@ -3287,7 +3287,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case CB_FLAG_GETOPT_DUMP:
-			/* -fdump=<scope> : Add sections for dump code generation */
+			/* -fdump[=<scope>] : Add sections for dump code generation */
 			cobc_def_dump_opts (cob_optarg, 1);
 			break;
 

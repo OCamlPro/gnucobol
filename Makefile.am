@@ -166,9 +166,9 @@ vcs-update:
 	distbin distbin-gzip distbin-bzip2 distbin-lzip distbin-xz
 
 test: all
-	cd tests && $(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) test
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C tests test
 checkmanual: all
-	cd tests && $(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) checkmanual
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C tests checkmanual
 
 checkall: check test
 	

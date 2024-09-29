@@ -29,14 +29,10 @@
 #endif
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#ifdef	HAVE_STRINGS_H
-#include <strings.h>
-#endif
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -277,7 +273,7 @@ const int	MAX_MODULE_ITERS = 10240;
 
 struct cob_alloc_module {
 	struct cob_alloc_module	*next;		/* Pointer to next */
-	void			*cob_pointer;	/* Pointer to malloced space */
+	cob_module 		*cob_mod_ptr;	/* Pointer to malloced module space */
 };
 
 /* EXTERNAL structure */
@@ -785,7 +781,7 @@ cob_exit_common_modules (void)
 	   - currently used for: decimals -
 	   and remove it from the internal module list */
 	for (ptr = cob_module_list; ptr; ptr = nxt) {
-		mod = ptr->cob_pointer;
+		mod = ptr->cob_mod_ptr;
 		nxt = ptr->next;
 		if (mod && mod->module_cancel.funcint) {
 			mod->module_active = 0;
@@ -3247,7 +3243,7 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 		*module = cob_cache_malloc (sizeof (cob_module));
 		/* Add to list of all modules activated */
 		mod_ptr = cob_malloc (sizeof (struct cob_alloc_module));
-		mod_ptr->cob_pointer = *module;
+		mod_ptr->cob_mod_ptr = *module;
 		mod_ptr->next = cob_module_list;
 		cob_module_list = mod_ptr;
 #if 0 /* cob_call_name_hash and cob_call_from_c are rw-branch only features
@@ -3329,7 +3325,7 @@ cob_module_free (cob_module **module)
 	prv = NULL;
 	/* Remove from list of all modules activated */
 	for (ptr = cob_module_list; ptr; ptr = ptr->next) {
-		if (ptr->cob_pointer == *module) {
+		if (ptr->cob_mod_ptr == *module) {
 			if (prv == NULL) {
 				cob_module_list = ptr->next;
 			} else {
@@ -3341,7 +3337,8 @@ cob_module_free (cob_module **module)
 		prv = ptr;
 	}
 
-#if 0 /* cob_module->param_buf and cob_module->param_field are rw-branch only features
+#if 0 /* cob_module->param_buf and cob_module->param_field are
+         trunk (previously rw-branch) only features
          for now - TODO: activate on merge of r1547 */
 	&& !cobglobptr->cob_call_from_c
 	if ((*module)->param_buf != NULL)
@@ -9769,7 +9766,7 @@ print_info_detailed (const int verbose)
 	var_print ("64bit-mode", 	_("no"), "", 0);
 #endif
 
-#ifdef	COB_LI_IS_LL
+#ifndef	COB_32_BIT_LONG
 	var_print ("BINARY-C-LONG", 	_("8 bytes"), "", 0);
 #else
 	var_print ("BINARY-C-LONG", 	_("4 bytes"), "", 0);
@@ -11221,7 +11218,8 @@ init_statement_list (void)
 }
 #endif
 
-void cob_cleanup_thread ()
+void
+cob_cleanup_thread (void)
 {
 	cob_exit_strings ();
 }
