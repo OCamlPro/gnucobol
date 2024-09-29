@@ -4084,6 +4084,34 @@ process_command_line (const int argc, char **argv)
 			break;
 		}
 
+
+		/* -falphanumeric-encode */
+		case CB_FLAG_GETOPT_ALPHANUMERIC_ENCODE:{
+			const char* valid_encodings[] = {
+				"ASCII",
+				"ISO-8859-1",
+				"ISO-8859-15",
+				"CP1525"
+			};
+			const int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
+			int i, encoding_valid = 0;
+			for (i = 0; i < num_encodings; i++) {
+				if (strcmp(cob_optarg, valid_encodings[i]) == 0) {
+					encoding_valid = 1;
+					break;
+				}
+			}
+			if (encoding_valid) {
+#ifdef HAVE_ICONV
+				strncpy(cb_iconv.alphanumeric_source, cob_optarg, sizeof(cb_iconv.alphanumeric_source) - 1);
+				cb_iconv.alphanumeric_source[sizeof(cb_iconv.alphanumeric_source) - 1] = '\0';
+#endif
+			} else {
+				cobc_err_exit(COBC_INV_PAR, "-falphanumeric-encode");
+			}
+			break;
+		}
+
 		case CB_FLAG_GETOPT_TTITLE: {
 			/* -fttitle=<title> : Title for listing */
 			const size_t len = strlen (cob_optarg);
