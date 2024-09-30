@@ -1,4 +1,5 @@
-## Copyright (C) 2003-2012, 2015-2018, 2020-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2015-2018, 2020-2021, 2023 Free Software
+## Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ## 
 ## This file is part of GnuCOBOL.
@@ -98,20 +99,23 @@ AT_DATA([prog.cob], [
        01 Y-A           PIC A.
        01 Y-X           PIC X.
        01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
        01 Y-9           PIC 9.
        01 Y-09          PIC 09.
        PROCEDURE        DIVISION.
            MOVE X TO Y-A.
            MOVE X TO Y-X.
            MOVE X TO Y-BX.
+           MOVE X TO Y-N.
            MOVE X TO Y-9.
            MOVE X TO Y-09.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:16: error: invalid MOVE statement
-prog.cob:17: error: invalid MOVE statement
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:18: error: invalid MOVE statement
+prog.cob:19: error: invalid MOVE statement
 ])
 
 AT_CLEANUP
@@ -129,18 +133,21 @@ AT_DATA([prog.cob], [
        01 Y-A           PIC A.
        01 Y-X           PIC X.
        01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
        01 Y-9           PIC 9.
        01 Y-09          PIC 09.
        PROCEDURE        DIVISION.
            MOVE X TO Y-A.
            MOVE X TO Y-X.
            MOVE X TO Y-BX.
+           MOVE X TO Y-N.
            MOVE X TO Y-9.
            MOVE X TO Y-09.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -157,20 +164,23 @@ AT_DATA([prog.cob], [
        01 Y-A           PIC A.
        01 Y-X           PIC X.
        01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
        01 Y-9           PIC 9.
        01 Y-09          PIC 09.
        PROCEDURE        DIVISION.
            MOVE X TO Y-A.
            MOVE X TO Y-X.
            MOVE X TO Y-BX.
+           MOVE X TO Y-N.
            MOVE X TO Y-9.
            MOVE X TO Y-09.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:16: error: invalid MOVE statement
-prog.cob:17: error: invalid MOVE statement
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:18: error: invalid MOVE statement
+prog.cob:19: error: invalid MOVE statement
 ])
 
 AT_CLEANUP
@@ -188,19 +198,22 @@ AT_DATA([prog.cob], [
        01 Y-A           PIC A.
        01 Y-X           PIC X.
        01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
        01 Y-9           PIC 9.
        01 Y-09          PIC 09.
        PROCEDURE        DIVISION.
            MOVE X TO Y-A.
            MOVE X TO Y-X.
            MOVE X TO Y-BX.
+           MOVE X TO Y-N.
            MOVE X TO Y-9.
            MOVE X TO Y-09.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:13: error: invalid MOVE statement
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:14: error: invalid MOVE statement
 ])
 
 AT_CLEANUP
@@ -218,21 +231,25 @@ AT_DATA([prog.cob], [
        01 Y-A           PIC A.
        01 Y-X           PIC X.
        01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
        01 Y-9           PIC 9.
        01 Y-09          PIC 09.
        PROCEDURE        DIVISION.
            MOVE X TO Y-A.
            MOVE X TO Y-X.
            MOVE X TO Y-BX.
+           MOVE X TO Y-N.
            MOVE X TO Y-9.
            MOVE X TO Y-09.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:13: error: invalid MOVE statement
-prog.cob:14: error: invalid MOVE statement
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:14: error: invalid MOVE statement
 prog.cob:15: error: invalid MOVE statement
+prog.cob:16: error: invalid MOVE statement
+prog.cob:17: error: invalid MOVE statement
 ])
 
 AT_CLEANUP
@@ -250,19 +267,100 @@ AT_DATA([prog.cob], [
        01 Y-A           PIC A.
        01 Y-X           PIC X.
        01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
+       01 Y-0N          PIC 0N.
        01 Y-9           PIC 9.
        01 Y-09          PIC 09.
        PROCEDURE        DIVISION.
            MOVE X TO Y-A.
            MOVE X TO Y-X.
            MOVE X TO Y-BX.
+           MOVE X TO Y-N.
+           MOVE X TO Y-0N.
            MOVE X TO Y-9.
            MOVE X TO Y-09.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:13: error: invalid MOVE statement
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:15: error: invalid MOVE statement
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE national TO x])
+AT_KEYWORDS([move])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC N.
+       01 Y-A           PIC A.
+       01 Y-X           PIC X.
+       01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
+       01 Y-0N          PIC 0N.
+       01 Y-9           PIC 9.
+       01 Y-09          PIC 09.
+       PROCEDURE        DIVISION.
+           MOVE X TO Y-A.
+           MOVE X TO Y-X.
+           MOVE X TO Y-BX.
+           MOVE X TO Y-N.
+           MOVE X TO Y-0N.
+           MOVE X TO Y-9.
+           MOVE X TO Y-09.
+           STOP RUN.
+])
+
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:15: error: invalid MOVE statement
+prog.cob:16: error: invalid MOVE statement
+prog.cob:17: error: invalid MOVE statement
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE national-edited TO x])
+AT_KEYWORDS([move editing national])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC 0N.
+       01 Y-A           PIC A.
+       01 Y-X           PIC X.
+       01 Y-BX          PIC BX.
+       01 Y-N           PIC N.
+       01 Y-0N          PIC 0N.
+       01 Y-9           PIC 9.
+       01 Y-09          PIC 09.
+       PROCEDURE        DIVISION.
+           MOVE X TO Y-A.
+           MOVE X TO Y-X.
+           MOVE X TO Y-BX.
+           MOVE X TO Y-N.
+           MOVE X TO Y-0N.
+           MOVE X TO Y-9.
+           MOVE X TO Y-09.
+           STOP RUN.
+])
+
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:15: error: invalid MOVE statement
+prog.cob:16: error: invalid MOVE statement
+prog.cob:17: error: invalid MOVE statement
+prog.cob:20: error: invalid MOVE statement
+prog.cob:21: error: invalid MOVE statement
 ])
 
 AT_CLEANUP

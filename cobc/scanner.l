@@ -1601,7 +1601,7 @@ scan_x (const char *text, const char *type)
 		} else if (type[0] != 'N') {
 			yylval = cb_build_alphanumeric_literal (plex_buff, 1);
 		} else {
-			yylval = cb_build_national_literal (plex_buff, 1);
+			yylval = cb_build_national_literal (plex_buff, COB_NATIONAL_SIZE);
 		}
 		RETURN_TOK (LITERAL);
 	}
@@ -1639,7 +1639,7 @@ scan_x (const char *text, const char *type)
 	} else /* type N */ {
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
-			yylval = cb_build_national_literal ("", 1);
+			yylval = cb_build_national_literal ("", COB_NATIONAL_SIZE);
 			RETURN_TOK (LITERAL);
 		} else {
 			CB_UNFINISHED (_("national literal"));
