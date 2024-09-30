@@ -477,7 +477,7 @@ static const struct option long_options[] = {
 	{"std",			CB_RQ_ARG, NULL, '$'},
 	{"conf",		CB_RQ_ARG, NULL, '&'},
 	{"debug",		CB_NO_ARG, NULL, 'd'},
-	{"ext",			CB_RQ_ARG, NULL, 'e'},
+	{"ext",			CB_RQ_ARG, NULL, 'e'},	/* note: kept *undocumented* until GC4, will be changed to '.' */
 	{"free",		CB_NO_ARG, NULL, 'F'},	/* note: not assigned directly as this is only valid for */
 	{"fixed",		CB_NO_ARG, NULL, 'f'},	/*       `int` and sizeof(enum) isn't always sizeof (int) */
 	{"static",		CB_NO_ARG, &cb_flag_static_call, 1},
@@ -989,9 +989,9 @@ cobc_main_stradd_dup (const char *str1, const char *str2)
 void *
 cobc_main_realloc (void *prevptr, const size_t size)
 {
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 	struct cobc_mem_struct	*m;
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1033,8 +1033,8 @@ cobc_main_realloc (void *prevptr, const size_t size)
 void
 cobc_main_free (void *prevptr)
 {
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 
 	prev = NULL;
 	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
@@ -1105,9 +1105,9 @@ cobc_parse_strdup (const char *dupstr)
 void *
 cobc_parse_realloc (void *prevptr, const size_t size)
 {
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 	struct cobc_mem_struct	*m;
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1149,8 +1149,8 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 void
 cobc_parse_free (void *prevptr)
 {
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 
 	prev = NULL;
 	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
@@ -3672,7 +3672,8 @@ process_command_line (const int argc, char **argv)
 #endif
 			break;
 
-		case 'e':
+		case 'e':	/* until GC 4 we keep (undocumented) 'e',
+			     	   but that's reserved for possible --error-log */
 			/* -ext <xx> : Add an extension suffix */
 			if (strlen (cob_optarg) > 15U) {
 				cobc_err_exit (COBC_INV_PAR, "--ext");
