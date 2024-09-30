@@ -1426,9 +1426,9 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:8: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
-prog.cob:12: warning: hexadecimal literal has zero length; X'00' will be assumed
+# unfinished national
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:12: warning: hexadecimal literal has zero length; X'00' will be assumed
 prog.cob:13: error: invalid H literal: ''
 prog.cob:13: note: H literals must contain at least one character
 prog.cob:14: error: invalid Z literal: ''
@@ -1436,14 +1436,12 @@ prog.cob:14: note: Z literals must contain at least one character
 prog.cob:15: error: invalid L literal: ''
 prog.cob:15: note: L literals must contain at least one character
 prog.cob:16: warning: national literal has zero length; a SPACE will be assumed
-prog.cob:16: warning: handling of national literal is unfinished; implementation is likely to be changed
 prog.cob:17: warning: hexadecimal literal has zero length; X'00' will be assumed
 prog.cob:18: warning: boolean literal has zero length; B'0' will be assumed
 prog.cob:19: warning: hexadecimal literal has zero length; X'00' will be assumed
 ])
-AT_CHECK([$COMPILE_ONLY -fzero-length-literals=error prog.cob], [1], [],
-[prog.cob:8: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
-prog.cob:12: error: zero-length literal used
+AT_CHECK([$COMPILE_ONLY -fzero-length-literals=error -Wno-unfinished prog.cob], [1], [],
+[prog.cob:12: error: zero-length literal used
 prog.cob:12: warning: hexadecimal literal has zero length; X'00' will be assumed
 prog.cob:13: error: invalid H literal: ''
 prog.cob:13: note: H literals must contain at least one character
@@ -1453,7 +1451,6 @@ prog.cob:15: error: invalid L literal: ''
 prog.cob:15: note: L literals must contain at least one character
 prog.cob:16: error: zero-length literal used
 prog.cob:16: warning: national literal has zero length; a SPACE will be assumed
-prog.cob:16: warning: handling of national literal is unfinished; implementation is likely to be changed
 prog.cob:17: error: zero-length literal used
 prog.cob:17: warning: hexadecimal literal has zero length; X'00' will be assumed
 prog.cob:18: error: zero-length literal used

@@ -5713,7 +5713,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET SOURCEFORMAT syntax checks])
-AT_KEYWORDS([misc extensions directives])
+AT_KEYWORDS([misc extensions source directives])
 
 AT_DATA([prog.cob], [
        *> Valid
