@@ -24,6 +24,10 @@
 	* typeck.c (cb_emit_accept): always check position
 	* cobc.c, flag.def: make scope optional for -fdump
 
+2024-09-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* pplex.l (cb_text_list): prevent duplicates
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
@@ -138,6 +142,16 @@
 	  (passed to cb_build_goto)
 	* codegen.c: handle profiling code generation under the
 	  cb_flag_prof guard
+
+2024-03-15  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, help.c, pplex.l: add new flags to output dependencies following
+	  gcc: -M to output deps only, -MD to output deps while compiling (in
+	  .d files), -MP to output phony targets, -MG to keep missing copybooks,
+	  -MQ <target> to Makefile-quote target ; add -fcopybook-deps to
+	  output only copybook names instead of file paths. -fcopybook-deps
+	  also forces -E, -foneline-deps, -MT=copybooks, disables errors on
+	  missing copybooks and removes output on stdout
 
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 

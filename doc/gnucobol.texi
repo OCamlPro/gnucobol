@@ -121,6 +121,7 @@ Compiler options
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
+* Dependencies options::        Dependencies options
 * Miscellaneous::               Miscellaneous
 
 Multiple sources
@@ -291,6 +292,7 @@ A complete list of options can be displayed by using the option @option{--help}.
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
+* Dependencies options::        Dependencies options
 * Miscellaneous::               Miscellaneous
 @end menu
 
@@ -978,6 +980,43 @@ Optimize for size. Optimizer will favour code size over execution speed.
 
 @item -fnotrunc
 Do not truncate binary fields according to PICTURE.
+
+@end table
+
+@node Dependencies options
+@subsection Dependencies options
+
+Dependencies are files containing the content included by @code{COPY}
+statements. These options are usually used by build systems to extract
+dependencies from COBOL files. The dependencies can then be used to
+decide when a file should be recompiled or not.
+
+@table @code
+
+@item -M
+Output dependency list in Makefile format on stdout. Stop after
+preprocessing the file and do not generate any other files.
+
+@item -MT <target>
+Set/add target file used in dependency list
+
+@item -MQ <target>
+Same as -MT but with Makefile-quoting of the target
+
+@item -MF <file>
+Specify a filename <file> where to output dependencies
+
+@item -MP
+Create phony targets for all dependencies
+
+@item -MG
+Output missing dependencies without complaining
+
+@item -MD
+Output dependencies in .d files while compiling
+
+@item -fcopybook-deps
+Output dependencies as copybook names instead of file names
 
 @end table
 
