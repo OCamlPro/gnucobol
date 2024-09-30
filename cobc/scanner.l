@@ -24,6 +24,7 @@
 %option case-insensitive
 %option never-interactive
 %option nodefault
+%option noyywrap
 
 %option noyy_scan_buffer
 %option noyy_scan_bytes
@@ -51,11 +52,6 @@
 #define	YY_READ_BUF_SIZE	32768
 #undef	YY_BUF_SIZE
 #define	YY_BUF_SIZE		32768
-
-#define	YY_SKIP_YYWRAP
-static int yywrap (void) {
-    return 1;
-}
 
 #define YY_INPUT(buf,result,max_size)				\
 	{							\

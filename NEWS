@@ -65,6 +65,9 @@ NEWS - user visible changes				-*- outline -*-
 ** New option -fdefault-file-colseq to specify the default
    file collating sequence
 
+** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
+   to a file (see "Dependencies options" in the GnuCOBOL manual)
+
 * More notable changes
 
 ** execution times were significantly reduced for the following:

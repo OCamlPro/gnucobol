@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -21,6 +21,8 @@
 
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
+
+#pragma once
 
 #include <stddef.h>		/* for size_t */
 
@@ -1682,7 +1684,7 @@ COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
 
-COB_EXPIMP void		cob_cleanup_thread ();
+COB_EXPIMP void		cob_cleanup_thread (void);
 
 /* General functions */
 

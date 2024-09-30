@@ -1,4 +1,22 @@
 
+2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: drop COB_LI_IS_LL in favor of existing COB_32_BIT_LONG
+	* configure.ac (cjson=local): use CJSON_CFLAGS and CJSON_LIBS also for
+	  this case, fix include not to use quotes
+
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: require autoconf 2.70 and drop check for lex-library with
+	  noyywrap option for AC_PROG_LEX
+	* HACKING: document dependencies autoconf 2.70 and automake 1.16 and
+	  several smaller text updates
+	* Makefile.am (checkmanual-code-coverage, checkall-code-coverage): new
+	  targets removing the need to do that manually
+	* build_aux/ltmain.sh, m4/libtool.m4, m4/ltoptions.m4, m4/ltversion.m4:
+	  update libtool from 2.46 to 2.53, dropping all manual patches
+	* DEPENDENCIES: added perl for running NIST85
+
 2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* README: add documentation for "make checkmanual"

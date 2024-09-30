@@ -843,7 +843,7 @@ adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 				continue;
 			}
 
-			/* normal attribute - apply and go on*/
+			/* normal attribute - apply and go on */
 			if (control_attr->cobflag != 0) {
 				if (no_indicator == 0) {
 					*attr |= control_attr->cobflag;
@@ -3300,10 +3300,10 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 	       cob_field *fgc, cob_field *bgc, cob_field *fscroll,
 	       cob_field *size_is, cob_field *control, cob_field *color)
 {
-	int	sline;
-	int	scolumn;
-	int	size_display, fsize;
-	int	status;
+	int 	sline;
+	int 	scolumn;
+	int 	size_display, fsize;
+	int 	status;
 	char	fig_const;	/* figurative constant character */
 
 	/* LCOV_EXCL_START */

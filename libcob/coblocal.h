@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -21,6 +21,8 @@
 
 #ifndef COB_LOCAL_H
 #define COB_LOCAL_H
+
+#pragma once
 
 /* We use this file to define/prototype things that should not be
    exported to user space

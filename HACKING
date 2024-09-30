@@ -16,18 +16,18 @@ following extra packages need to be installed with versions equal or greater.
 If you build from VCS the tools in the first 4 lists are always needed.
 
 For running "autogen.sh" (necessary after VCS checkout) / reconfigure:
-  o autoconf 2.64
-  o automake 1.13
-  o libtool 2.2.6
+  o autoconf 2.70
+  o automake 1.16
+  o libtool 2.2.6 (2.5.3 highly+ suggested, can be easily installed locally)
   o m4 1.4.12
 
-If you modify top-level configure.ac or Makefile.am in any directory then
-you will need to run "autoreconf -I m4" to regenerate the necessary files.
+If you modify top-level configure.ac or Makefile.am in any directory and rerun
+"make", the build system will regenerate the necessary files.
 
-If you want to update to a newer automake/libtool version or get errors
-about wrong version numbers in m4 run "autoreconf -vfi -I m4" instead.
+If you want to update to a different automake/libtool version or get errors
+about wrong version numbers in m4 run "autogen.sh install" instead.
 
-For compiling (when changing flex/bison sources):
+For compiling (when changing pparser/scanner sources):
   o Bison 2.3     (will be changed to 3.6 with GnuCOBOL 4)
   o Flex 2.5.35
 
@@ -108,4 +108,4 @@ OR                               # if you want to compare with an
 There should be no difference shown as long as the "old version" passed
 the same tests as the new version - given the example above: there was
 no support for REPORT WRITER in 2.2 so there would be an expected failure
-of the RW tests).
+of the RW tests.
