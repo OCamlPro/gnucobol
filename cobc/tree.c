@@ -4783,7 +4783,8 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 	}
 
 	/* check collating sequence is not ignored */
-	if (CB_TREE_CLASS (k) != CB_CLASS_ALPHANUMERIC) {
+	if (get_warn_opt_value (cb_warn_filler) != COBC_WARN_DISABLED
+	 && CB_TREE_CLASS (k) != CB_CLASS_ALPHANUMERIC) {
 		const char *source = "KEY";
 		cb_tree colseq = (cbak == NULL)
 			? f->collating_sequence_key
