@@ -5,7 +5,8 @@
 	  sequence for non-alphanumeric keys (considers only primary keys and file
 	  collating sequence for now)
 	* codegen.c (output_indexed_file_key_colseq): assign collating sequence
-	  for any key of alphanumeric class
+	  for any key of alphanumeric class, and preliminary handing of NATIONAL
+	  collations
 	* parser.y: adjust position of messages about unfinished KEY or FILE
 	  COLLATING SEQUENCE
 

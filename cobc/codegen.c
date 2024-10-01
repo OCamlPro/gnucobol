@@ -9347,10 +9347,8 @@ output_indexed_file_key_colseq (const struct cb_file *f, const struct cb_alt_key
 	   Warned in `validate_indexed_key_field`. */
 	if (CB_TREE_CLASS (key) == CB_CLASS_ALPHANUMERIC) {
 		col = key_col ? key_col : f->collating_sequence;
-#if 0	/* TODO: this should be done for national, when available */
-	} else if (type & COB_TYPE_NATIONAL) {
-		col = key_col_n ? key_col_n : f->collating_sequence_n;
-#endif
+	} else if (CB_TREE_CLASS (key) == CB_CLASS_NATIONAL) {
+		col = f->collating_sequence_n;
 	}
 
 	output_prefix ();
