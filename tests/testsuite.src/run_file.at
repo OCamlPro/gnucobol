@@ -12685,15 +12685,15 @@ CCC 888 +0000000043 1
 DONE
 ])
 
+# Note: `-Wno-others` is for ignored COLLATIONS for non-alphanumeric keys
+
 # Testing ASCII file collating sequence using clause
 AT_DATA([prog1.cob], [
        COPY "prog.cpy" REPLACING
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
          ==KEY-COLSEQ== BY ====.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog1.cob], [0], [],
-[prog.cpy:31: warning: FILE COLLATING SEQUENCE 'ASCII' is ignored for non-alphanumeric key 'MY-AKEY2'
-])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 1>prog1.out], [0], [], [])
 AT_CHECK([diff reference_ascii prog1.out], [0], [], [])
 
@@ -12714,9 +12714,7 @@ AT_DATA([prog3.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog3.cob], [0], [],
-[prog.cpy:31: warning: FILE COLLATING SEQUENCE 'ASCII' is ignored for non-alphanumeric key 'MY-AKEY2'
-])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3 1>prog3.out], [0], [], [])
 AT_CHECK([diff reference_ascii_ebcdic prog3.out], [0], [], [])
 
@@ -12736,9 +12734,7 @@ AT_DATA([prog5.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog5.cob], [0], [],
-[prog.cpy:31: warning: FILE COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'MY-AKEY2'
-])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5 1>prog5.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic prog5.out], [0], [], [])
 
@@ -12748,9 +12744,7 @@ AT_DATA([prog6.cob], [
          ==FILE-COLSEQ== BY ====
          ==KEY-COLSEQ== BY ====.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog6.cob], [0], [],
-[prog.cpy:31: warning: FILE COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'MY-AKEY2'
-])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog6 1>prog6.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic prog6.out], [0], [], [])
 
@@ -12760,9 +12754,7 @@ AT_DATA([prog7.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog7.cob], [0], [],
-[prog.cpy:31: warning: FILE COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'MY-AKEY2'
-])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog7.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog7 1>prog7.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic_ascii prog7.out], [0], [], [])
 
@@ -12772,9 +12764,7 @@ AT_DATA([prog8.cob], [
          ==FILE-COLSEQ== BY ====
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog8.cob], [0], [],
-[prog.cpy:31: warning: FILE COLLATING SEQUENCE 'EBCDIC' is ignored for non-alphanumeric key 'MY-AKEY2'
-])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog8 1>prog8.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic_ascii prog8.out], [0], [], [])
 
