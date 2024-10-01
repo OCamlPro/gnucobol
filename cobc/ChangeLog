@@ -1,4 +1,15 @@
 
+2024-10-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* tree.c (validate_indexed_key_field): warn about ignored collating
+	  sequence for non-alphanumeric keys (considers only primary keys and file
+	  collating sequence for now)
+	* codegen.c (output_indexed_file_key_colseq): assign collating sequence
+	  for any key of alphanumeric class, and preliminary handing of NATIONAL
+	  collations
+	* parser.y: adjust position of messages about unfinished KEY or FILE
+	  COLLATING SEQUENCE
+
 2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_print_info): drop COB_LI_IS_LL
@@ -6,7 +17,7 @@
 
 2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
-    * plex.l, scanner.l: use noyywrap option instead of manually
+	* plex.l, scanner.l: use noyywrap option instead of manually
 	  defining related code parts
 	* typeck.c (cb_tree_list_has_numeric_ref_or_field): cleanup
 
