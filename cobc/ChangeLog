@@ -1,4 +1,10 @@
 
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (output_line_directive): extracted from other places and
+	  extended to output compile from stdin as <stdin>
+	* codegen.c (output_cobol_info): output compile from stdin as <stdin>
+
 2024-10-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* tree.c (validate_indexed_key_field): warn about ignored collating

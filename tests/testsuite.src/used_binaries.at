@@ -948,6 +948,10 @@ AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [],
 )
 AT_CHECK([$COBCRUN_DIRECT ./a.out], [0], [], [])
 
+AT_CHECK([echo "program-id.test." | $COMPILE_MODULE -free -E -], [0],
+[#line 1 "<stdin>"
+program-id.test.
+], [])
 
 
 AT_CLEANUP
