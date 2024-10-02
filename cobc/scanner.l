@@ -115,6 +115,7 @@ static int yywrap (void) {
 #define RETURN_TOK(expr)			\
 	do {					\
 		last_yylval = yylval;		\
+		second_last_token = last_token;		\
 		last_token = (expr);		\
 		return last_token;		\
 	} ONCE_COB
@@ -156,8 +157,12 @@ enum cb_sym_ebcdic_state {
 };
 
 /* Local variables */
-static cb_tree			last_yylval;
-static int			last_token;
+
+/* local history */
+static cb_tree			last_yylval;	/* for repeating the last token*/
+static enum yytokentype			last_token;
+static enum yytokentype			second_last_token;	/* for history purposes */
+
 static struct cb_level_78	*top_78_ptr = NULL;
 static struct cb_level_78	*const_78_ptr = NULL;
 static struct cb_level_78	*lev_78_ptr = NULL;
@@ -168,8 +173,6 @@ static char			*pic_buff2 = NULL;
 static size_t			plex_size;
 static size_t			pic1_size;
 static size_t			pic2_size;
-static unsigned int		last_token_is_dot = 0;
-static unsigned int		integer_is_label = 0;
 static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
 
@@ -215,14 +218,6 @@ AREA_A		"#AREA_A"\n
 		return last_token;
 	}
 
-	/* We treat integer literals immediately after '.' as labels;
-	   that is, they must be level numbers or section names. */
-	if (last_token_is_dot) {
-		integer_is_label = 1;
-		last_token_is_dot = 0;
-	} else {
-		integer_is_label = 0;
-	}
 	cobc_in_area_a = 0;
 %}
 
@@ -414,7 +409,6 @@ AREA_A		"#AREA_A"\n
 
 [''""] {
 	/* String literal */
-	cobc_force_literal = 0;
 	read_literal (yytext[0], CB_LITERAL_DEFAULT);
 	RETURN_TOK (LITERAL);
 }
@@ -422,13 +416,11 @@ AREA_A		"#AREA_A"\n
 X"\'"[^''\n]*"\'" |
 X"\""[^""\n]*"\"" {
 	/* X string literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_x (yytext + 2, "X"));
 }
 
 N[''""] {
-	/* N national string literal */
-	cobc_force_literal = 0;
+	/* N national string (UTF16) literal */
 	/* TODO: national string - needs different handling */
 	read_literal (yytext [1], CB_LITERAL_N);
 	RETURN_TOK (LITERAL);
@@ -437,7 +429,6 @@ N[''""] {
 NC[''""] {
 	/* NC national character string literal (extension, but
 	   same handling as COBOL 2002 national string literal) */
-	cobc_force_literal = 0;
 	/* TODO: national string - needs different handling */
 	read_literal (yytext [2], CB_LITERAL_NC);
 	RETURN_TOK (LITERAL);
@@ -446,13 +437,11 @@ NC[''""] {
 NX"\'"[^''\n]*"\'" |
 NX"\""[^""\n]*"\"" {
 	/* NX string literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_x (yytext + 3, "NX"));
 }
 
 U[''""] {
-	/* N national string literal */
-	cobc_force_literal = 0;
+	/* UTF8 string literal */
 	/* TODO: utf8 string - needs different handling */
 	read_literal (yytext [1], CB_LITERAL_U);
 	RETURN_TOK (LITERAL);
@@ -461,42 +450,36 @@ U[''""] {
 UX"\'"[^''\n]*"\'" |
 UX"\""[^""\n]*"\"" {
 	/* UX string literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_x (yytext + 3, "UX"));
 }
 
 Z"\'"[^''\n]*"\'" |
 Z"\""[^""\n]*"\"" {
 	/* Z string literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_z (yytext + 2, "Z"));
 }
 
 L"\'"[^''\n]*"\'" |
 L"\""[^""\n]*"\"" {
 	/* L string literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_z (yytext + 2, "L"));
 }
 
 H"\'"[^''\n]*"\'" |
 H"\""[^""\n]*"\"" {
 	/* H hexadecimal/numeric literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_h (yytext + 2, "H"));
 }
 
 B"\'"[^''\n]*"\'" |
 B"\""[^""\n]*"\"" {
 	/* B boolean/numeric literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_b (yytext + 2, "B"));
 }
 
 BX"\'"[^''\n]*"\'" |
 BX"\""[^""\n]*"\"" {
 	/* BX boolean hexadecimal string literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_x (yytext + 3, "BX"));
 }
 
@@ -507,19 +490,16 @@ B#[0-9]+ {
 	  they are processed.
 	*/
 	/* ACUCOBOL binary numeric literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_b (yytext + 2, "B#"));
 }
 
 O#[0-9]+ {
 	/* ACUCOBOL octal numeric literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_o (yytext + 2, "O#"));
 }
 
 %[0-9]+ {
 	/* HP-COBOL octal numeric literal */
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_o (yytext + 1, "%"));
 }
 
@@ -528,7 +508,6 @@ H#[0-9A-Za-z]+ {
 	/* ACUCOBOL hexadecimal numeric literal */
 	char type[3] = "x#";
 	type[0] = yytext [0];
-	cobc_force_literal = 0;
 	RETURN_TOK (scan_h (yytext + 2, type));
 }
 
@@ -538,7 +517,7 @@ H#[0-9A-Za-z]+ {
 }
 
 \) {
-	if (inside_bracket > 0) {
+	if (inside_bracket) {
 		inside_bracket--;
 	}
 	RETURN_TOK (TOK_CLOSE_PAREN);
@@ -547,8 +526,9 @@ H#[0-9A-Za-z]+ {
 [0-9][0-9]? {
 	int	value;
 
-	cobc_force_literal = 0;
-	if (integer_is_label || cobc_in_area_a) {
+	/* We treat integer literals immediately after '.' as labels;
+	   that is, they must be level numbers or section names. */
+	if (last_token == TOK_DOT || cobc_in_area_a) {
 		yylval = cb_build_reference (yytext);
 
 		if (!cobc_in_procedure) {
@@ -590,8 +570,9 @@ H#[0-9A-Za-z]+ {
 
 [0-9]+ {
 
-	cobc_force_literal = 0;
-	if (integer_is_label || cobc_in_area_a) {
+	/* We treat integer literals immediately after '.' as labels;
+	   that is, they must be level numbers or section names. */
+	if (last_token == TOK_DOT || cobc_in_area_a) {
 		/* Integer label */
 		yylval = cb_build_reference (yytext);
 		if (cobc_in_area_a) {
@@ -618,7 +599,7 @@ H#[0-9A-Za-z]+ {
 	/* Ignore */
 }
 
-<*>;+ {
+<*>;+[ ]* {
 	if (inside_bracket) {
 		RETURN_TOK (SEMI_COLON);
 	}
@@ -640,7 +621,7 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (scan_numeric (yytext));
 }
 
-<DECIMAL_IS_PERIOD>,+ {
+<DECIMAL_IS_PERIOD>,+[ ]* {
 	if (inside_bracket) {
 		RETURN_TOK (COMMA_DELIM);
 	}
@@ -666,6 +647,13 @@ H#[0-9A-Za-z]+ {
 	unput (',');
 }
 
+<DECIMAL_IS_COMMA>,[ ]+ {
+	if (inside_bracket) {
+		RETURN_TOK (COMMA_DELIM);
+	}
+	/* Ignore */
+}
+
 <DECIMAL_IS_COMMA>, {
 	if (inside_bracket) {
 		RETURN_TOK (COMMA_DELIM);
@@ -674,13 +662,11 @@ H#[0-9A-Za-z]+ {
 }
 
 "END"[ ,;\n]+"PROGRAM"/[ .,;\n] {
-	cobc_force_literal = 1;
 	count_lines (yytext);
 	RETURN_TOK (END_PROGRAM);
 }
 
 "END"[ ,;\n]+"FUNCTION"/[ .,;\n] {
-	cobc_force_literal = 1;
 	count_lines (yytext);
 	RETURN_TOK (END_FUNCTION);
 }
@@ -1015,7 +1001,6 @@ H#[0-9A-Za-z]+ {
 	struct cb_text_list		*tlp;
 	cb_tree				x;
 	cb_tree				l;
-	struct cb_program		*program;
 
 	cb_check_word_length ((unsigned int)yyleng, yytext);
 
@@ -1051,9 +1036,11 @@ H#[0-9A-Za-z]+ {
 	}
 
 	/* Bail early for (END) PROGRAM-ID when not a literal */
-	if (cobc_force_literal) {
+	if  ((second_last_token == PROGRAM_ID  && last_token == TOK_DOT)
+	  || (second_last_token == FUNCTION_ID && last_token == TOK_DOT)
+	  ||  last_token == END_PROGRAM
+	  ||  last_token == END_FUNCTION) {
 		/* Force PROGRAM-ID / END PROGRAM */
-		cobc_force_literal = 0;
 		if (cb_fold_call) {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (PROGRAM_NAME);
@@ -1110,7 +1097,7 @@ H#[0-9A-Za-z]+ {
 
 	/* Check user programs */
 	if (cobc_in_id) {
-		program = cb_find_defined_program_by_name (yytext);
+		const struct cb_program	*program = cb_find_defined_program_by_name (yytext);
 		if (program) {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (PROGRAM_NAME);
@@ -1214,16 +1201,41 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (EXPONENTIATION);
 }
 
-"."([ \n]*".")* {
-	if (last_token_is_dot || strlen (yytext) > 1) {
-		cb_warning (COBC_WARN_FILLER, _("ignoring redundant ."));
-	}
+"."([ \n]*".")+ {
+	/* note: according to the COBOL standard that is wrong as
+	   a dot is only TOK_DOT if it is followed by [ \n] or EOF
+	   CHECKME: switching to this would make parsing of decimals
+	   easier - how do other compilers handle this? */
+	/* note: we explicit consume multiple . here to get the right position */
+	cb_warning (COBC_WARN_FILLER, _("ignoring redundant ."));
 
-	if (!last_token_is_dot) {
-		last_token_is_dot = 1;
+#if 0 /* it seems there is no case because of the consume above where
+         the last token would be a dot */
+	if (last_token != TOK_DOT) {
 		yylval = NULL;
 		RETURN_TOK (TOK_DOT);
 	}
+#else
+	yylval = NULL;
+	RETURN_TOK (TOK_DOT);
+#endif
+}
+
+"." {
+	/* note: according to the COBOL standard that is wrong as
+	   a dot is only TOK_DOT if it is followed by [ \n] or EOF
+	   CHECKME: switching to this would make parsing of decimals
+	   easier - how do other compilers handle this? */
+#if 0 /* it seems there is no case because of the consume above where
+         the last token would be a dot, _possibly_ EOF? */
+	if (last_token != TOK_DOT) {
+		yylval = NULL;
+		RETURN_TOK (TOK_DOT);
+	}
+#else
+	yylval = NULL;
+	RETURN_TOK (TOK_DOT);
+#endif
 }
 
 "&" {
@@ -1326,11 +1338,9 @@ H#[0-9A-Za-z]+ {
 <<EOF>> {
 	/* At EOF - Clear variables */
 	clear_constants ();
-	last_token_is_dot = 0;
+	last_token = second_last_token = 0;
 	cobc_in_area_a = 0;
-	integer_is_label = 0;
 	inside_bracket = 0;
-	cobc_force_literal = 0;
 	yyterminate ();
 }
 
@@ -2016,7 +2026,6 @@ scan_o (const char *text, const char *type)
 #if 0	/* activate to have all %literals to be alphanumeric */
 		char xbuff[19];
 		sprintf ((char *)&xbuff, "'%X'", (unsigned int)val);
-		cobc_force_literal = 0;
 		RETURN_TOK (scan_x ((const char *)&xbuff + 1, "X"));
 #endif
 	}
