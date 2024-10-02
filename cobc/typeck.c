@@ -15622,3 +15622,29 @@ cb_emit_json_generate (cb_tree out, cb_tree from, cb_tree count,
 	cb_emit (CB_BUILD_FUNCALL_4 ("cob_json_generate_new", out, CB_TREE (tree),
 				     count, cb_int (decimal_point)));
 }
+
+void
+cb_emit_ingnoring_nested_line (struct cb_field *f)
+{
+	if ((f->report_flag & COB_REPORT_LINE)
+	&& f->children
+	&& (f->children->report_flag & COB_REPORT_LINE)) {
+		cb_warning (COBC_WARN_FILLER,
+			_("ignoring nested LINE %s %d"),
+			(f->report_flag & COB_REPORT_LINE_PLUS)?"PLUS":"",
+			f->report_line);
+		f->report_line = 0;
+		f->report_flag &= ~COB_REPORT_LINE_PLUS;
+		f->report_flag &= ~COB_REPORT_LINE;
+	}
+}
+
+void
+cb_not_referenced_in_report (int bfound, struct cb_report *p, const char *name)
+{
+	if (!bfound) {
+		cb_warning (COBC_WARN_FILLER,
+			_("control field %s is not referenced in report"), name);
+		p->controls = NULL;
+	}
+}

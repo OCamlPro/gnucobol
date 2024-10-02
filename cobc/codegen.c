@@ -10023,71 +10023,71 @@ output_report_control (struct cb_report *p, int id, cb_tree ctl, cb_tree nx)
 	int	i, bfound, prvid, seq;
 
 	x = CB_VALUE (ctl);
-	s = cb_code_field(x);
+	s = cb_code_field (x);
 	if(nx) {
-		output_report_control(p, id, nx, CB_CHAIN(nx));
+		output_report_control (p, id, nx, CB_CHAIN (nx));
 	}
-	output_local("/* Report %s: CONTROL %s */\n",p->name,s->name);
+
+	output_local ("/* Report %s: CONTROL %s */\n",p->name,s->name);
 	prvid = 0;
-	for(i = 0; i < p->num_lines; i++) {
-		if(p->line_ids[i]->report_control) {
+	for (i = 0; i < p->num_lines; i++) {
+		if (p->line_ids[i]->report_control) {
 			struct cb_field *c = cb_code_field (p->line_ids[i]->report_control);
-			if(c == s) {
+			if (c == s) {
 				f = p->line_ids[i];
-				if(f->report_flag & COB_REPORT_CONTROL_HEADING) {
-					output_local("/* CONTROL HEADING: %s */\n",s->name);
-				} else if(f->report_flag & COB_REPORT_CONTROL_FOOTING) {
-					output_local("/* CONTROL FOOTING: %s */\n",s->name);
+				if (f->report_flag & COB_REPORT_CONTROL_HEADING) {
+					output_local ("/* CONTROL HEADING: %s */\n",s->name);
+				} else if (f->report_flag & COB_REPORT_CONTROL_FOOTING) {
+					output_local ("/* CONTROL FOOTING: %s */\n",s->name);
 				}
-				output_local("static cob_report_control_ref %s%d = {",
+				output_local ("static cob_report_control_ref %s%d = {",
 						CB_PREFIX_REPORT_REF,p->line_ids[i]->id);
-				if(prvid == 0) {
+				if (prvid == 0) {
 					output_local("NULL,");
 				} else {
-					output_local("&%s%d,",CB_PREFIX_REPORT_REF,prvid);
+					output_local ("&%s%d,",CB_PREFIX_REPORT_REF,prvid);
 				}
-				output_local("&%s%d",CB_PREFIX_REPORT_LINE,p->line_ids[i]->id);
-				output_local("};\n");
+				output_local ("&%s%d",CB_PREFIX_REPORT_LINE,p->line_ids[i]->id);
+				output_local ("};\n");
 				prvid = p->line_ids[i]->id;
 			}
 		}
 	}
 	output_local ("static cob_report_control   %s%d_%d\t= {", CB_PREFIX_REPORT_CONTROL,id,s->id);
 	if(nx) {
-		output_local("&%s%d_%d,",CB_PREFIX_REPORT_CONTROL,id,cb_code_field(CB_VALUE(nx))->id);
+		output_local ("&%s%d_%d,",CB_PREFIX_REPORT_CONTROL,id,cb_code_field(CB_VALUE(nx))->id);
 	} else {
-		output_local("NULL,");
+		output_local ("NULL,");
 	}
 	output_local ("\"%s\",",s->name);
-	output_local("&%s%d,NULL,NULL",CB_PREFIX_FIELD,s->id);
+	output_local ("&%s%d,NULL,NULL",CB_PREFIX_FIELD,s->id);
 	bfound = 0;
 	/* CB_PREFIX_REPORT_REF */
-	for(i= p->num_lines-1; i >= 0; i--) {
-		if(p->line_ids[i]->report_control) {
+	for (i = p->num_lines-1; i >= 0; i--) {
+		if (p->line_ids[i]->report_control) {
 			struct cb_field *c = cb_code_field (p->line_ids[i]->report_control);
 			if(c == s) {
 				bfound = 1;
-				output_local(",&%s%d",CB_PREFIX_REPORT_REF,p->line_ids[i]->id);
+				output_local (",&%s%d",CB_PREFIX_REPORT_REF,p->line_ids[i]->id);
 				break;
 			}
 		}
 	}
-	if(!bfound) {
-		printf("Control field %s is not referenced in report\n",s->name);
-		output_local(",NULL");
+	if (!bfound) {
+		output_local (",NULL");
 	}
 	seq = i = 0;
 	for (l = p->controls; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
-		f = cb_code_field(x);
+		f = cb_code_field (x);
 		i++;
 		if(s == f) {
 			seq = i;
 			break;
 		}
 	}
-	output_local(",%d,0,0,0,0",seq);
-	output_local("};\n");
+	output_local (",%d,0,0,0,0",seq);
+	output_local ("};\n");
 }
 
 static void
@@ -10366,16 +10366,7 @@ output_report_define_lines (int top, struct cb_field *f, struct cb_report *r)
 		sprintf (fname, "%s of ", f->name);
 	}
 	output_local("\n/* %s%s ",fname,r->name);
-	if ((f->report_flag & COB_REPORT_LINE)
-	&& f->children
-	&& (f->children->report_flag & COB_REPORT_LINE)) {
-		printf("Warning: Ignoring nested LINE %s %d\n",
-			(f->report_flag & COB_REPORT_LINE_PLUS)?"PLUS":"",
-			f->report_line);
-		f->report_line = 0;
-		f->report_flag &= ~COB_REPORT_LINE_PLUS;
-		f->report_flag &= ~COB_REPORT_LINE;
-	}
+	cb_emit_ingnoring_nested_line (f);
 	if (f->report_flag & COB_REPORT_LINE)
 		output_local("LINE %s %d ",
 			(f->report_flag & COB_REPORT_LINE_PLUS)?"PLUS":"",
@@ -10588,28 +10579,58 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 }
 
 static void
+check_reference_in_report (struct cb_report *p, cb_tree ctl, cb_tree nx)
+{
+	if (nx) {
+		check_reference_in_report (p, nx, CB_CHAIN (nx));
+	}
+
+	struct cb_field *s;
+	cb_tree	x;
+	int bfound = 0;
+	int	i;
+
+	x = CB_VALUE (ctl);
+	s = cb_code_field (x);
+	for (i = p->num_lines-1; i >= 0; i--) {
+		if (p->line_ids[i]->report_control) {
+			struct cb_field *c = cb_code_field (p->line_ids[i]->report_control);
+			if (c == s) {
+				bfound = 1;
+				break;
+			}
+		}
+	}
+	cb_not_referenced_in_report (bfound, p, s->name);
+}
+
+static void
 output_report_definition (struct cb_report *p, struct cb_report *n)
 {
 	int	i;
 	struct cb_field *s = NULL;
 	cb_tree	l;
 
-	output_local("\n");
-	for(i= p->num_lines - 1; i >= 0; i--) {
+	output_local ("\n");
+	if (p->controls) {
+		check_reference_in_report (p, p->controls, CB_CHAIN (p->controls));
+	}
+	for (i = p->num_lines - 1; i >= 0; i--) {
 		if(p->line_ids[i]->level == 1)
 			output_report_define_lines(1,p->line_ids[i], p);
 	}
 	output_local ("\n");
-	if(p->controls) {
+
+	if (p->controls) {
 		for (l = p->controls; l; l = CB_CHAIN (l)) {
-			s = cb_code_field(l);
+			s = cb_code_field (l);
 			s->count++;
 		}
-		output_report_control(p,++r_ctl_id,p->controls,CB_CHAIN(p->controls));
+		output_report_control (p,++r_ctl_id,p->controls,CB_CHAIN(p->controls));
 		output_local ("\n");
 	}
 	sum_prv = 0;
-	for (i= p->num_lines - 1; i >= 0; i--) {
+	for (i = p->num_lines - 1; i >= 0; i--) {
 		if (p->line_ids[i]->level == 1) {
 			output_report_sum_counters (1, p->line_ids[i], p);
 		}
