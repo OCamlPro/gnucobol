@@ -2727,7 +2727,7 @@ cob_get_last_exception_name (void)
 	}
 	for (n = EXCEPTION_TAB_SIZE - 1; n != 0; --n) {
 		if ((last_exception_code & cob_exception_tab_code[n])
-			== cob_exception_tab_code[n]) {
+		 == cob_exception_tab_code[n]) {
 			return cob_exception_tab_name[n];
 		}
 	}
@@ -2808,7 +2808,6 @@ cob_set_exception (const int id)
 			}
 #endif
 		}
-		/* if no current module is available fall-through */
 	} else {
 		cobglobptr->cob_got_exception = 0;
 #if 0	/* consider addition for 4.x */
@@ -4373,8 +4372,8 @@ cob_is_numeric (const cob_field *f)
 			int		sign;
 			/* Check digits */
 			for (i = 0; i < f->size - 1; ++i) {
-				if ((f->data[i] & 0xF0) > 0x90 ||
-					(f->data[i] & 0x0F) > 0x09) {
+				if ((f->data[i] & 0xF0) > 0x90
+				 || (f->data[i] & 0x0F) > 0x09) {
 					return 0;
 				}
 			}
@@ -4397,8 +4396,8 @@ cob_is_numeric (const cob_field *f)
 				if (sign == 0x0C || sign == 0x0D) {
 					return 1;
 				}
-				if (COB_MODULE_PTR->flag_host_sign &&
-					sign == 0x0F) {
+				if (COB_MODULE_PTR->flag_host_sign
+				 && sign == 0x0F) {
 					return 1;
 				}
 			} else if (sign == 0x0F) {
