@@ -9681,14 +9681,17 @@ print_version (void)
 
 	set_cob_build_stamp (cob_build_stamp);
 
-	printf ("libcob (%s) %s.%d\n",
-		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
-	printf (_("License LGPLv3+: GNU LGPL version 3 or later <%s>"), "https://gnu.org/licenses/lgpl.html");
+	printf ("libcob %s%s.%d\n",
+		PKGVERSION, PACKAGE_VERSION, PATCH_LEVEL);
+	puts ("Copyright (C) 2024 Free Software Foundation, Inc.");
+	printf (_("License LGPLv3+: GNU LGPL version 3 or later <%s>"),
+		"https://gnu.org/licenses/lgpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 	        "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
-	printf (_("Written by %s"), "Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Edward Hart");
+	putchar ('\n');
+	printf (_("Written by %s"), "Keisuke Nishida, Roger While, "
+		"Ron Norman, Simon Sobisch, Edward Hart");
 	putchar ('\n');
 
 	/* TRANSLATORS: This msgid is intended as the "Packaged" msgid, %s expands to date and time */

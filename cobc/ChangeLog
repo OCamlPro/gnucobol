@@ -4,6 +4,12 @@
 	* pplex.l (output_line_directive): extracted from other places and
 	  extended to output compile from stdin as <stdin>
 	* codegen.c (output_cobol_info): output compile from stdin as <stdin>
+	* cobc.c (cobc_print_version, cobc_print_shortversion,
+	  process_command_line): build and package data only shown in verbose mode
+	  which does not output the verbose "process" calls by default;
+	  PACKAGE_NAME may now be overwritten by PKGVERSION (new configure option)
+	* help.c (cobc_print_usage): handle PACKAGE_BUGREPORT_URL as
+	  alternative to mailing list, now resolved by PACKAGE_BUGREPORT
 
 2024-10-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -1336,7 +1342,7 @@
 	* codegen.c (output_perform_call): use statement reference to generate
 	  separate comment for PERFORM procedure or USE procedure
 	* flag.def, codegen.c: new -fsection-exit-check
-	  (cb_flag_section_exit_check) and -fimplicit-goback-check 
+	  (cb_flag_section_exit_check) and -fimplicit-goback-check
 	  (cb_flag_implicit_goback_check)
 	* tree.h (cb_progam), parser.y (perform_procedure): add and set
 	   perform_thru_list for internal checks
@@ -2385,7 +2391,7 @@
 
 2021-01-25  Simon Sobisch <simonsobisch@gnu.org>
 
-	* reserved.c: fixed context attribute of acu-extension POS 
+	* reserved.c: fixed context attribute of acu-extension POS
 	* parser.y, reserved.c, tree.h, cobc.h: added acu-extension
 	  MOVE WITH CONVERSION as PENDING
 
@@ -2416,7 +2422,7 @@
 
 	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
 	  instead of actual value via cb_warn_opt_val
-	
+
 2020-12-09  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: now calls cob_get_sig_name from common.c to get signal name
@@ -2432,7 +2438,7 @@
 	* typeck.c (syntax_check_ml_gen_name_list): additional parameter is_xml
 	  to distinguish between XML and JSON generation (messages, possible rules)
 	* typeck.c (syntax_check_ml_gen_name_list): check of NAME ... IS OMITTED
-	
+
 2020-12-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	bug #571 revised:
@@ -2661,7 +2667,7 @@
 2020-10-12  Ron Norman <rjn@inglenet.com>
 
 	* typeck.c: Flag internal variables with 'flag_real_binary'
-	* codegen.c: Emit USAGE INDEX and internal binary variables 
+	* codegen.c: Emit USAGE INDEX and internal binary variables
 	  as COB_TYPE_NUMERIC_COMP5
 
 2020-10-06  Simon Sobisch <simonsobisch@gnu.org>
@@ -3143,8 +3149,8 @@
 
 2020-02-10  Ron Norman <rjn@inglenet.com>
 
-	* cobc.c, cobc.h, codegen.c, help.c, warning.def: 
-		Add new define CB_ERRWARNDEF
+	* cobc.c, cobc.h, codegen.c, help.c, warning.def:
+	  Add new define CB_ERRWARNDEF
 
 2020-02-05  Ron Norman <rjn@inglenet.com>
 
@@ -3313,7 +3319,7 @@
 2019-09-15  Ron Norman <rjn@inglenet.com>
 
 	* cobc.h: For HPUX set COB_ALLOW_UNALIGNED as undefined
-	* typeck.c: Emit ADD/SUBTRACT shortcut for COMP-5 only 
+	* typeck.c: Emit ADD/SUBTRACT shortcut for COMP-5 only
 	            if COB_ALLOW_UNALIGNED defined
 	* tree.h: Revert 'lock_mode' back to an 'int'
 	* codegen.c: Changes for 'lock_mode' being an 'int'
@@ -7335,7 +7341,7 @@
 2015-04-27  Ron Norman <rjn@inglenet.com>
 
 	* config.c: don't store configuration values additional to the setting
-	
+
 2015-04-14  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c codegen.c common.h tree.h parser.y typeck.c:

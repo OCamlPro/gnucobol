@@ -37,9 +37,11 @@ AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
 Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
+
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -57,6 +59,50 @@ AC_CONFIG_FILES([pre-inst-env:build_aux/pre-inst-env.in],
 AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
+
+dnl Support the --with-pkgversion configure option,
+dnl inspired from GCC's ACX_PKGVERSION.
+AC_ARG_WITH([pkgversion],
+  [AS_HELP_STRING([--with-pkgversion=PKG],
+    [Use PKG in the version string in place of "$PACKAGE_NAME"])],
+  [case "$withval" in
+    yes)	AC_MSG_ERROR([package version not specified]) ;;
+    no)		PKGVERSION= ;;
+    *)		PKGVERSION="($withval) " ;;
+  esac],
+  [PKGVERSION="($PACKAGE_NAME) "])
+
+# AC_SUBST(PKGVERSION)
+AC_DEFINE_UNQUOTED([PKGVERSION], ["$PKGVERSION"], [PKG version string])
+
+
+dnl Support the --with-bugurl configure option,
+dnl inspired from GCC's ACX_BUGURL.
+AC_ARG_WITH([bugurl],
+  [AS_HELP_STRING([--with-bugurl=URL],
+    [Direct users to URL to report a bug, instead of mailing list])],
+  [case "$withval" in
+    yes)	AC_MSG_ERROR([bug URL not specified]) ;;
+    no)		BUGURL= ;;
+    *)		BUGURL="$withval" ;;
+  esac],
+  [ # BUGURL="$PACKAGE_BUGREPORT"
+  ])
+
+  case ${BUGURL} in
+  "")
+    # REPORT_BUGS_TO=
+    # REPORT_BUGS_TEXI=
+    ;;
+  *)
+	AC_DEFINE_UNQUOTED([PACKAGE_BUGREPORT_URL], ["<$BUGURL>"], [Bug URL instead of mailing list])
+    # REPORT_BUGS_TO="<$BUGURL>"
+    # REPORT_BUGS_TEXI=@uref{`echo "$BUGURL" | sed 's/@/@@/g'`}
+    ;;
+  esac;
+  # AC_SUBST(REPORT_BUGS_TO)
+  # AC_SUBST(REPORT_BUGS_TEXI)
+
 
 # In general: don't export/setenv but pass as option to configure
 #             this has the benefit that re-runs will take the same and "sudo"

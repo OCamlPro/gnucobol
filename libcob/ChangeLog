@@ -1,4 +1,9 @@
 
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version): PACKAGE_NAME may now be overwritten
+	  by PKGVERSION (new configure option)
+
 2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c, common.c (print_info_detailed): drop COB_LI_IS_LL
