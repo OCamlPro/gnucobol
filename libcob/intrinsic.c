@@ -488,18 +488,20 @@ setup_cob_log_ten (void)
 static void
 make_field_entry (cob_field *f)
 {
-	unsigned char		*s;
 	struct calc_struct	*calc_temp;
+	unsigned char		*s;
 
 	calc_temp = calc_base + curr_entry;
 	curr_field = &calc_temp->calc_field;
 	if (f->size > calc_temp->calc_size) {
+		/* set new temporary field data, storing its size */
 		if (curr_field->data) {
 			cob_free (curr_field->data);
 		}
 		calc_temp->calc_size = f->size + 1;
 		s = cob_malloc (f->size + 1U);
 	} else {
+		/* reuse last temporary field data */
 		s = curr_field->data;
 		memset (s, 0, f->size);
 	}
@@ -2622,15 +2624,19 @@ test_char (const char wanted, const char *str, int *offset)
 }
 
 static COB_INLINE COB_A_INLINE int
-test_digit (const unsigned char ch, int *offset)
-{
-	return test_char_cond (isdigit (ch), offset);
-}
-
-static COB_INLINE COB_A_INLINE int
 test_char_in_range (const char min, const char max, const char ch, int *offset)
 {
 	return test_char_cond (min <= ch && ch <= max, offset);
+}
+
+static COB_INLINE COB_A_INLINE int
+test_digit (const unsigned char ch, int *offset)
+{
+#if 0	/* note: as isdigit is locale-aware (slower and not what we want), we use the range instead */
+	return test_char_cond (isdigit (ch), offset);
+#else
+	return test_char_in_range ('0', '9', ch, offset);
+#endif
 }
 
 static int test_millenium (const char *date, int *offset, int *millenium)
@@ -3914,19 +3920,24 @@ cob_intr_bit_to_char (cob_field *srcfield)
 cob_field *
 cob_intr_hex_of (cob_field *srcfield)
 {
-	cob_field	field;
+	const char hex_val[] = "0123456789ABCDEF";
+
 	/* FIXME later: srcfield may be of category national - or later bit... */
 	const size_t		size = srcfield->size * 2;
-	size_t		i, j;
+	cob_field	field;
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
-	for (i = j = 0; i < srcfield->size; ++i) {
-		char buff[3];
-		sprintf (buff, "%02X", srcfield->data[i]);
-		curr_field->data[j++] = buff[0];
-		curr_field->data[j++] = buff[1];
+	{
+		register unsigned char *ret_pos = curr_field->data;
+		register unsigned char *src_pos = srcfield->data;
+		const unsigned char *src_end = src_pos + srcfield->size;
+
+		while (src_pos < src_end) {
+			*ret_pos++ = hex_val[(*src_pos >> 4) & 0xF];
+			*ret_pos++ = hex_val[*src_pos++ & 0xF];
+		}
 	}
 	return curr_field;
 }
@@ -3937,7 +3948,7 @@ cob_intr_hex_to_char (cob_field *srcfield)
 	cob_field	field;
 	const size_t		size = srcfield->size / 2;
 	const unsigned char *end = srcfield->data + size * 2;
-	unsigned char *hex_char, *p;
+	register unsigned char *hex_char, *p;
 
 	if (size * 2 != srcfield->size) {
 		/* possibly raise nonfatal exception here -> we only process the valid ones */
@@ -3950,29 +3961,29 @@ cob_intr_hex_to_char (cob_field *srcfield)
 
 	p = srcfield->data;
 	while (p < end) {
-		unsigned char src, dst;
-		src = *p++;
-		if (src >= 'A' && src <= 'F') {
-			dst = src - 'A' + 10;
-		} else if (src >= 'a' && src <= 'f') {
-			dst = src - 'a' + 10;
-		} else if (isdigit (src)) {
-			dst = COB_D2I (src);
+		unsigned char dst;
+		if (*p >= '0' && *p <= '9') {
+			dst = COB_D2I (*p);
+		} else if (*p >= 'A' && *p <= 'F') {
+			dst = *p - 'A' + 10;
+		} else if (*p >= 'a' && *p <= 'f') {
+			dst = *p - 'a' + 10;
 		} else {
 			dst = 0;
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
+		p++;
 		dst *= 16;
-		src = *p++;
-		if (src >= 'A' && src <= 'F') {
-			dst = dst + src - 'A' + 10;
-		} else if (src >= 'a' && src <= 'f') {
-			dst = dst + src - 'a' + 10;
-		} else if (isdigit (src)) {
-			dst = dst + COB_D2I (src);
+		if (*p >= '0' && *p <= '9') {
+			dst = dst + COB_D2I (*p);
+		} else if (*p >= 'A' && *p <= 'F') {
+			dst = dst + *p - 'A' + 10;
+		} else if (*p >= 'a' && *p <= 'f') {
+			dst = dst + *p - 'a' + 10;
 		} else {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
+		p++;
 		*hex_char++ = dst;
 	}
 	return curr_field;
@@ -5925,9 +5936,10 @@ cob_intr_locale_date (const int offset, const int length,
 		p = srcfield->data;
 		indate = 0;
 		for (len = 0; len < 8; ++len, ++p) {
-			if (isdigit (*p)) {
-				indate *= 10;
-				indate += COB_D2I (*p);
+			/* note: as isdigit is locale-aware (slower and not what we want),
+			   we use a range check instead */
+			if (*p >= '0' && *p <= '9') {
+				indate = indate * 10 + COB_D2I (*p);
 			} else {
 				goto derror;
 			}
@@ -6036,9 +6048,10 @@ cob_intr_locale_time (const int offset, const int length,
 		p = srcfield->data;
 		indate = 0;
 		for (len = 0; len < 6; ++len, ++p) {
-			if (isdigit (*p)) {
-				indate *= 10;
-				indate += COB_D2I (*p);
+			/* note: as isdigit is locale-aware (slower and not what we want),
+			   we use a range check instead */
+			if (*p >= '0' && *p <= '9') {
+				indate = indate * 10 + COB_D2I (*p);
 			} else {
 				goto derror;
 			}
@@ -7238,7 +7251,6 @@ cob_init_intrinsic (cob_global *lptr)
 		calc_temp->calc_field.size = 256;
 		calc_temp->calc_size = 256;
 	}
-
 
 	/* mpf_init2 length = ceil (log2 (10) * strlen (x)) */
 

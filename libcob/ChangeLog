@@ -78,6 +78,16 @@
 	* fileio.c (cob_file_sort_options), common.h: new function to pass more
 	  options, so far only used to set flag_merge
 
+2023-04-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (test_digit, cob_intr_hex_to_char, cob_intr_locale_date,
+	  cob_intr_locale_time), move.c (cob_move_alphanum_to_display,
+	  cob_get_s64_pic9): prefer range check over isdigit for improved speed
+	* numeric.c (cob_decimal_get_packed): use COB_D2I instead of subtracting
+	* intrinsic.c (cob_intr_hex_to_char): minor refactoring for speedup
+	* intrinsic.c (cob_intr_hex_of): rewritten to use hex value table instead
+	  of sprintf, saving around 80% of cpu instructions
+
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c, common.h: new external field + define COB_ZEROES_ALPHABETIC /

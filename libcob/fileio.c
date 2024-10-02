@@ -7118,6 +7118,17 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 		return;
 	}
 
+	/* Check for _bad_ quotes */
+	if (file_open_name[0] == '"'
+	 || file_open_name[0] == '\'') {
+		const size_t len = strlen (file_open_name) - 1;
+		if (len == 0
+		 || file_open_name[len] != file_open_name[0]) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
+			return;
+		}
+	}
+
 	if (file_open_name[0] == 0) {
 		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
