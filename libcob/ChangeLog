@@ -3,6 +3,17 @@
 
 	* common.c (print_version): PACKAGE_NAME may now be overwritten
 	  by PKGVERSION (new configure option)
+	* common.c (cob_sig_handler): fixed early exit from signal handler
+	  in case of errors during write to stderr, adjusted macros accordingly
+	* common.c (cob_sig_handler): flush stdout+stderr for fixed set of signals
+	  where this is known to work
+	* common.c (cob_reg_sighnd): if signal handler is enabled from outside the
+	  COBOL runtime (like via cobc), do the initialization of the internal signal
+	  text table (was empty before)
+	* common.c (cob_sig_handler): early exit for SIGPIPE without output if
+	  signal handler is used without any COBOL modules active (like via cobc)
+	* common.c (cob_sig_handler): fixed coding error that led to missing output
+	  of catched signal name
 
 2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
 

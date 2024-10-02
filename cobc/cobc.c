@@ -2502,7 +2502,13 @@ cobc_sig_handler (int sig)
 	int ret = 0;
 #endif
 
-	cobc_abort_msg ();
+#ifdef SIGPIPE
+	if (sig == SIGPIPE) ret = 1;
+#endif
+	
+	if (!ret) {
+		cobc_abort_msg ();
+	}
 #if defined (SIGINT) || defined (SIGQUIT) || defined (SIGTERM) || defined (SIGPIPE)
 #ifdef SIGINT
 	if (sig == SIGINT) ret = 1;
@@ -2512,9 +2518,6 @@ cobc_sig_handler (int sig)
 #endif
 #ifdef SIGTERM
 	if (sig == SIGTERM) ret = 1;
-#endif
-#ifdef SIGPIPE
-	if (sig == SIGPIPE) ret = 1;
 #endif
 
 	/* LCOV_EXCL_START */

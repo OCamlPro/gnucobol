@@ -10,6 +10,7 @@
 	  PACKAGE_NAME may now be overwritten by PKGVERSION (new configure option)
 	* help.c (cobc_print_usage): handle PACKAGE_BUGREPORT_URL as
 	  alternative to mailing list, now resolved by PACKAGE_BUGREPORT
+	* cobc.c (cobc_sig_handler): skip abort message for SIGPIPE
 
 2024-10-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

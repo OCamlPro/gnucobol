@@ -1021,15 +1021,29 @@ set_source_location (const char **file, unsigned int *line)
 }
 
 /* write integer to stderr using fixed buffer */
+#define write_to_stderr_or_true_int(i) \
+	(write (STDERR_FILENO, ss_itoa_buf, ss_itoa_u10 (i)) == -1)
 #define write_to_stderr_or_return_int(i) \
-	if (write (STDERR_FILENO, ss_itoa_buf, ss_itoa_u10 (i)) == -1) return
+	if (write_to_stderr_or_true_int (i)) return
+#define write_to_stderr_until_error_int(i, err) \
+	if (!err) err = write_to_stderr_or_true_int (i)
+
 /* write char array (constant C string) to stderr */
+#define write_to_stderr_or_true_arr(ch_arr) \
+	(write (STDERR_FILENO, ch_arr, sizeof (ch_arr) - 1) == -1)
 #define write_to_stderr_or_return_arr(ch_arr) \
-	if (write (STDERR_FILENO, ch_arr, sizeof (ch_arr) - 1) == -1) return
+	if (write_to_stderr_or_true_arr (ch_arr)) return
+#define write_to_stderr_until_error_arr(ch_arr,err) \
+	if (!err) err = write_to_stderr_or_true_arr (ch_arr)
+
 /* write string to stderr, byte count computed with strlen,
    str is evaluated twice */
+#define write_to_stderr_or_true_str(str) \
+	(write (STDERR_FILENO, str, strlen (str)) == -1)
 #define write_to_stderr_or_return_str(str) \
-	if (write (STDERR_FILENO, str, strlen (str)) == -1) return
+	if (write_to_stderr_or_true_str (str)) return
+#define write_to_stderr_until_error_str(str,err) \
+	if (!err) err = write_to_stderr_or_true_str (str)
 
 /* write integer to fileno using fixed buffer */
 #define write_or_return_int(fileno,i) \
@@ -1114,6 +1128,7 @@ cob_sig_handler (int sig)
 	const char *msg;
 	char signal_text[COB_MINI_BUFF] = { 0 };
 	size_t str_len;
+	int write_err = 0;
 
 #if	defined (HAVE_SIGACTION) && !defined (SA_RESETHAND)
 	struct sigaction	sa;
@@ -1131,11 +1146,38 @@ cob_sig_handler (int sig)
 	sig_is_handled = 1;
 #endif
 
-#if 0	/* We do not generally flush whatever we may have in our streams
-     	   as stdio is not signal-safe;
-		   we _may_ do this if not SIGSEGV/SIGBUS/SIGABRT */
-	fflush (stdout);
-	fflush (stderr);
+
+	/* We do not generally flush whatever we may have in our streams
+	   as stdio is not signal-safe;
+	   we _may_ do this if not SIGSEGV/SIGBUS/SIGABRT (but as we don't know
+	   if all of those are defined we only flush on a positive list)*/
+	switch (sig) {
+	case -1:
+#ifdef	SIGPIPE
+	case SIGPIPE:
+#endif
+#ifdef	SIGTERM
+	case SIGTERM:
+#endif
+#ifdef	SIGINT
+	case SIGINT:
+#endif
+#ifdef	SIGHUP
+	case SIGHUP:
+#endif
+		fflush (stderr);
+		fflush (stdout);
+		break;
+	default:
+		break;
+	}
+
+#ifdef	SIGPIPE
+	/* early exit for non-active COBOL runtime */
+	if (sig == SIGPIPE
+	 && !cob_initialized) {
+		goto exit_handler;
+	}
 #endif
 
 	signal_name = cob_get_sig_name (sig);
@@ -1143,9 +1185,9 @@ cob_sig_handler (int sig)
 	if (signal_name == signals[NUM_SIGNALS].shortname) {
 		/* not translated as it is a very unlikely error case */
 		signal_name = signals[NUM_SIGNALS].description;	/* translated unknown */
-		write_to_stderr_or_return_arr ("\ncob_sig_handler caught not handled signal: ");
-		write_to_stderr_or_return_int (sig);
-		write_to_stderr_or_return_arr ("\n");
+		write_to_stderr_until_error_arr ("\ncob_sig_handler caught not handled signal: ", write_err);
+		write_to_stderr_until_error_int (sig, write_err);
+		write_to_stderr_until_error_arr ("\n", write_err);
 	}
 	/* LCOV_EXCL_STOP */
 
@@ -1182,29 +1224,33 @@ cob_sig_handler (int sig)
 #endif
 	cob_exit_screen ();
 
-	write_to_stderr_or_return_arr ("\n");
-	cob_get_source_line ();
-	output_source_location ();
+	write_to_stderr_until_error_arr ("\n", write_err);
+	if (!write_err) {
+		cob_get_source_line ();
+		output_source_location ();
 
-	msg = cob_get_sig_description (sig);
-	write_to_stderr_or_return_str (msg);
+		msg = cob_get_sig_description (sig);
+		write_to_stderr_until_error_str (msg, write_err);
+	}
 
-	/* setup "signal %s" */
-	str_len = strlen (signal_msgid);
-	memcpy (signal_text, signal_msgid, str_len++);
-	signal_text[str_len] = ' ';
-	memcpy (signal_text + str_len, signal_name, strlen (signal_name));
+	if (!write_err) {
+		/* setup "signal %s" */
+		str_len = strlen (signal_msgid);
+		memcpy (signal_text, signal_msgid, str_len);
+		signal_text[str_len++] = ' ';
+		memcpy (signal_text + str_len, signal_name, strlen (signal_name));
 
-	write_to_stderr_or_return_arr (" (");
-	write_to_stderr_or_return_str (signal_text);
-	write_to_stderr_or_return_arr (")\n\n");
+		write_to_stderr_until_error_arr (" (", write_err);
+		write_to_stderr_until_error_str (signal_text, write_err);
+		write_to_stderr_until_error_arr (")\n\n", write_err);
+	}
 
 	if (cob_initialized) {
 		if (abort_reason[0] == 0) {
 			memcpy (abort_reason, signal_text, COB_MINI_BUFF);
 #if 0	/* Is there a use in this message ?*/
-			write_to_stderr_or_return_str (abnormal_termination_msgid);
-			write_to_stderr_or_return_arr ("\n");
+			write_to_stderr_until_error_str (abnormal_termination_msgid, write_err);
+			write_to_stderr_until_error_arr ("\n", write_err);
 #endif
 		}
 	}
@@ -1235,6 +1281,7 @@ cob_sig_handler (int sig)
 		break;
 	}
 
+exit_handler:
 	/* call external signal handler if registered */
 	if (cob_ext_sighdl != NULL) {
 		(*cob_ext_sighdl) (sig);
@@ -3842,6 +3889,7 @@ cob_reg_sighnd (void (*sighnd) (int))
 {
 	if (!cob_initialized) {
 		cob_set_signal ();
+		cob_init_sig_descriptions ();
 	}
 	cob_ext_sighdl = sighnd;
 }
@@ -8832,7 +8880,6 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 	if (!cobsetptr->cob_display_warn) {
 		return;
 	}
-	if (!(caller_name && *caller_name)) caller_name = "unknown caller";
 
 	/* Prefix */
 	if (cob_reference) {
@@ -8843,7 +8890,10 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 	} else {
 		fprintf (stderr, "libcob: ");
 	}
+	
 	fprintf (stderr, _("warning: "));
+
+	if (!(caller_name && *caller_name)) caller_name = "unknown caller";
 	fprintf (stderr, "%s: ", caller_name);
 
 	/* Body */
