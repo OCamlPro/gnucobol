@@ -88,15 +88,18 @@ jobs:
           save-always: true
           enableCrossOsArchive: true
 
+      - name: Run NIST
+        shell: msys2 {0}
+        run: |
+          make -C _build/tests test --jobs=$(($(nproc)+1)) TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+
       - name: Run testuite
         shell: msys2 {0}
         run: |
           sed '/AT_SETUP(\[temporary path invalid\])/a \
                 AT_SKIP_IF(\[true\])' \
               -i tests/testsuite.src/used_binaries.at
-          make -C _build/tests checkall \
-                               --jobs=$(($(nproc)+1)) \
-                               TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build/tests check
           make -C _build/tests check \
                                TESTSUITEFLAGS="--recheck --verbose"
 

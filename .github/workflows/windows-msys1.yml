@@ -17,6 +17,7 @@ env:
   MSYSTEM: MINGW32
   MSYSPKGS: msys-m4 msys-flex msys-coreutils msys-help2man
 
+  MINGW_AUTOCONF_VERS: autoconf-2.70
   MINGW_BISON_VERS: bison-3.0.1
   MINGW_GMP_VERS: gmp-6.3.0
   MINGW_BDB_VERS: db-6.0.19.NC
@@ -84,6 +85,15 @@ jobs:
         if: steps.restore-msys.outputs.cache-hit != 'true'
         run: |
           bash -lc "mingw-get install %MSYSPKGS%"
+
+      - name: Install Autoconf 2.70
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://ftpmirror.gnu.org/autoconf/%MINGW_AUTOCONF_VERS%.tar.gz -o %MINGW_AUTOCONF_VERS%.tar.gz
+          tar -xvzf %MINGW_AUTOCONF_VERS%.tar.gz
+          bash -lc "cd %MINGW_AUTOCONF_VERS% && ./configure"
+          bash -lc "cd %MINGW_AUTOCONF_VERS% && make"
+          bash -lc "cd %MINGW_AUTOCONF_VERS% && make install"
 
       - name: Install Bison 3.0
         if: steps.restore-msys.outputs.cache-hit != 'true'
