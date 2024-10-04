@@ -18,7 +18,6 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "libcob/common.h"
 #include "tarstamp.h"
 #include "config.h"
 
