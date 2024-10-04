@@ -582,10 +582,11 @@ AT_DATA([prog.cob], [
            .
 ])
 
+# extra quoting here as we received a bug report of something adding a leading (
 AT_CHECK([$COMPILE -Wno-pending prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected Literal, expecting PHYSICAL or )
+[[prog.cob:7: error: syntax error, unexpected Literal, expecting PHYSICAL or )
 prog.cob:8: error: a non-numeric literal is expected here
 prog.cob:9: error: a non-numeric literal is expected here
-])
+]])
 
 AT_CLEANUP
