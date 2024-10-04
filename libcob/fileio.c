@@ -20,6 +20,7 @@
 
 
 #include "config.h"
+#include "libcob/common.h"
 
 #define _LFS64_LARGEFILE		1
 #define _LFS64_STDIO			1
@@ -8768,7 +8769,6 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	 cobsetpr-values with type ENV_PATH or ENV_STR
 	 like bdb_home and cob_file_path are taken care in cob_exit_common()!
 */
-
 const char *implicit_close_of_msgid = NULL;
 
 void
@@ -8777,7 +8777,8 @@ cob_exit_fileio_msg_only (void)
 	struct file_list	*l;
 	static int output_done = 0;
 
-	if (output_done) {
+	if (output_done
+	 || (cobsetptr && !cobsetptr->cob_display_warn)) {
 		return;
 	}
 	output_done = 1;
@@ -8788,8 +8789,10 @@ cob_exit_fileio_msg_only (void)
 		 && l->file->open_mode != COB_OPEN_LOCKED
 		 && !l->file->flag_nonexistent
 		 && !COB_FILE_SPECIAL (l->file)) {
-			cob_runtime_warning_ss (implicit_close_of_msgid,
-				cob_get_filename_print (l->file, 0));
+			if (cob_runtime_warning_ss (implicit_close_of_msgid,
+				cob_get_filename_print (l->file, 0))) {
+				return;
+			}
 		}
 	}
 }
