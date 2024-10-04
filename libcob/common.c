@@ -1021,7 +1021,7 @@ set_source_location (const char **file, unsigned int *line)
 
 /* writes data to fd, returns either the initial size or -1 in case of error */
 static COB_INLINE cob_s64_t
-write_until_fail (int fd, const void *data, size_t size)
+write_until_fail (int fd, const char *data, size_t size)
 {
 	register cob_s64_t size_to_write = size;
 	while (size_to_write > 0) {
