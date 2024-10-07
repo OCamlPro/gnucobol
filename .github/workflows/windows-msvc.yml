@@ -1,8 +1,8 @@
-name: Windows MSVC (build only)
+name: Windows MSVC
 
 on:
-  pull_request:
-    branches: [ gc4 ]
+  #pull_request:
+  #  branches: [ gc4 ]
   push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
@@ -44,10 +44,10 @@ jobs:
 
     steps:
 
-      - name: Set git user
-        run: |
-          git config --global user.name github-actions
-          git config --global user.email github-actions-bot@users.noreply.github.com
+      # - name: Set git user
+      #   run: |
+      #     git config --global user.name github-actions
+      #     git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -151,44 +151,6 @@ jobs:
         run: |
           pacman --needed --noconfirm -S $MSYSPKGS
 
-      - name: Adjust testsuite
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          cd tests
-
-          sed -i '/AT_SETUP(\[Compare FLOAT-LONG with floating-point literal\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[Numeric operations (3) PACKED-DECIMAL\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[Numeric operations (7)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[integer arithmetic on floating-point var\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_fundamental.at
-          sed -i '/AT_SETUP(\[FLOAT-DECIMAL w\/o SIZE ERROR\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[FLOAT-SHORT \/ FLOAT-LONG w\/o SIZE ERROR\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[FLOAT-LONG with SIZE ERROR\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[FUNCTION ANNUITY\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[FUNCTION INTEGER\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[FUNCTION MOD (valid)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[FUNCTION SECONDS-FROM-FORMATTED-TIME\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_functions.at
-          sed -i '/AT_SETUP(\[GCOS floating-point usages\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[BINARY: 64bit unsigned arithmetic notrunc\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/data_binary.at
-          sed -i '/AT_SETUP(\[DISPLAY: ADD and SUBTRACT w\/o SIZE ERROR\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/data_display.at
-          sed -i '/AT_SETUP(\[DISPLAY: ADD and SUBTRACT, all ROUNDED MODEs\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/data_display.at
-          sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT w\/o SIZE ERROR\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[BCD ADD and SUBTRACT, all ROUNDED MODEs\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/data_packed.at
-          sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-
-        # Skip two tests that behave differently (fail or hand) under MSVC Debug
-        # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
-        #   of the C runtime while the generated module is linked with the release version
-        # - PROGRAM COLLATING SEQUENCE: fails because of a data loss in a cast, due
-        #   to lack of specific handling of LOW/HIGH-VALUE for NATIONAL alphabets
-        #   (see typeck.c:cb_validate_collating)
-      - name: Adjust testsuite for Debug target
-        if: ${{ matrix.target == 'Debug' }}
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          cd tests
-          sed -i '/AT_SETUP(\[System routine CBL_GC_HOSTED\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[PROGRAM COLLATING SEQUENCE\])/a AT_SKIP_IF(\[true\])' testsuite.src/syn_definition.at
-
       - name: Build testsuite
         shell: C:\shells\msys2bash.cmd {0}
         run: |
@@ -216,6 +178,24 @@ jobs:
           # sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
           sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
+          # sed -i '/run_fundamental/{N;/Compare FLOAT-LONG with floating-point litera/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_fundamental/{N;/Numeric operations (3) PACKED-DECIMAL/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_fundamental/{N;/Numeric operations (7)/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_fundamental/{N;/integer arithmetic on floating-point var/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_misc/{N;/FLOAT-DECIMAL w\/o SIZE ERROR/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_misc/{N;/FLOAT-SHORT \/ FLOAT-LONG w\/o SIZE ERROR/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_misc/{N;/FLOAT-LONG with SIZE ERROR/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_functions/{N;/FUNCTION ANNUITY/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_functions/{N;/FUNCTION INTEGER/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_functions/{N;/FUNCTION MOD (valid)/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_functions/{N;/FUNCTION SECONDS-FROM-FORMATTED-TIME/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_extensions/{N;/GCOS floating-point usages/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/data_binary/{N;/BINARY: 64bit unsigned arithmetic notrunc/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/data_display/{N;/DISPLAY: ADD and SUBTRACT w\/o SIZE ERROR/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/data_display/{N;/DISPLAY: ADD and SUBTRACT, all ROUNDED MODEs/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/data_packed/{N;/BCD ADD and SUBTRACT w\/o SIZE ERROR/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/data_packed/{N;/BCD ADD and SUBTRACT, all ROUNDED MODEs/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+
         # Fail two tests that behave differently under MSVC Debug
         # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
         #   of the C runtime while the generated module is linked with the release version
@@ -226,20 +206,21 @@ jobs:
         if: ${{ matrix.target == 'Debug' }}
         shell: C:\shells\msys2bash.cmd {0}
         run: |
+          #sed -i '/run_extensions/{N;/System routine CBL_GC_HOSTED/{N;N;N;N;s/traceon/traceon; echo \"workflow:1d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
+          #sed -i '/syn_definition/{N;/PROGRAM COLLATING SEQUENCE/{N;N;N;N;s/traceon/traceon; echo \"workflow:2d\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite
           sed -i '/run_extensions/{N;/System routine CBL_GC_HOSTED/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
           sed -i '/syn_definition/{N;/PROGRAM COLLATING SEQUENCE/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
 
       - name: Run testsuite
-        continue-on-error: true
+        shell: cmd
         run: |
-          set CL=/I "${{ env.VCPKG_ROOT }}\installed\${{ matrix.arch }}-windows\include"
+          set CL=
           call "%VCVARS%"
-          pushd ..\bin
-          cobc -x gcdiff.c
-          popd
+          set
           set MSYS2_PATH_TYPE=inherit
           cd tests
-          C:\shells\msys2bash.cmd -c "./testsuite || ./testsuite --recheck --verbose"
+          C:\shells\msys2bash.cmd -c ". atconfig && . atlocal && cd ../bin && cobc -vvv -x gcdiff.c"
+          C:\shells\msys2bash.cmd -c "./testsuite --jobs=2 || ./testsuite --recheck --verbose"
 
       - name: Upload testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
         uses: actions/upload-artifact@v4
@@ -260,7 +241,6 @@ jobs:
           7z.exe a -r -mx=9 dependencies-${{ matrix.arch }}.7z "%VCPKG_EXPORT_DIR%"
 
           echo wrap up GnuCBOBOL binary package
-          rem set CL=
           cmd /C build_windows\makedist.cmd ${{ matrix.target }} <NUL
           
       - name: Upload dependencies

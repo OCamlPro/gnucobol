@@ -1,9 +1,9 @@
-name: Windows MSYS2 (build only)
+name: Windows MSYS2
 
 on:
-  pull_request:
-    branches: [ gc4 ]
-  push:
+  #pull_request:
+  #  branches: [ gc4 ]
+  #push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -184,7 +184,7 @@ jobs:
           # and the later only with 2 jobs
           # make -C _build/tests checkall TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
           make -C _build/tests check TESTSUITEFLAGS="--jobs=2" || \
-          make -C _build/tests check TESTSUITEFLAGS="--recheck --verbose"
+           make -C _build/tests check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload testsuite-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4
