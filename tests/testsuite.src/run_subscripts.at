@@ -631,7 +631,7 @@ AT_DATA([prog.cob], [
            END-PERFORM.
            STOP RUN.
            END PROGRAM prog.
-       
+
        IDENTIFICATION DIVISION.
        PROGRAM-ID. SUBN.
        DATA DIVISION.
@@ -660,7 +660,7 @@ Number is +0000000003
 +01: A: Freddy  .
 +02: B: Barney  .
 +03: C: Wilma   .
-], [libcob: prog.cob:80: error: subscript of 'MYMRK' out of bounds: 4
+], [libcob: prog.cob:73: error: subscript of 'MYMRK' out of bounds: 4
 note: current maximum subscript for 'MYMRK': 3
 ])
 

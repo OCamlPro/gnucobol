@@ -1,4 +1,10 @@
 
+2024-10-07  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2023-01-16:
+	* codegen.c (output_perform_until): fix index bound checking
+	  to make it work with code merged from 3.x
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
