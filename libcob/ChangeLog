@@ -78,11 +78,42 @@
 	* fileio.c (cob_file_sort_options), common.h: new function to pass more
 	  options, so far only used to set flag_merge
 
+2023-04-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	performance adjustments for HEX-OF and HEX-TO-CHAR
+	* intrinsic.c (test_digit, cob_intr_hex_to_char, cob_intr_locale_date,
+	  cob_intr_locale_time), move.c (cob_move_alphanum_to_display,
+	  cob_get_s64_pic9): prefer range check over isdigit for improved speed
+	* numeric.c (cob_decimal_get_packed): use COB_D2I instead of subtracting
+	* intrinsic.c (cob_intr_hex_to_char): minor refactoring for speedup
+	* intrinsic.c (cob_intr_hex_of): rewritten to use hex value table instead
+	  of sprintf, saving around 80% of cpu instructions
+
+	performance adjustments for location code compatibility for old modules
+	* common.c (get_stmt_from_name): extracted from cob_set_location and
+	  cob_trace_stmt to remove duplication
+	* common.c (get_stmt_from_name): rewritten to store the last statements,
+	  which heavily reduces the use of strcmp and the hashing function
+	* common.c (do_trace_statement): extracted from cob_trace_statement
+
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new external field + define COB_ZEROES_ALPHABETIC /
+	  COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+	* common.c (compare_zeroes): new function for common comparison to ZERO
+	* common.c (compare_character): fix issue with not comparing last bytes
+
+2023-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (field_accept): minor refactoring to not update
+	  COB_TERM_BUFF for ACCEPT OMITTED
+
 2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_check_beyond_exit), common.h: fix prototype to match strings
 	* numeric.c (cob_decimal_get_packed): removed code for "huge packed" fields
 	  as we don't have packed fields with more than 38 digits
+	* numeric.c (cob_pow_10): unsigned parameter, fixing some overflows in GMP
 
 2023-02-24  Ron Norman <rjn@inglenet.com>
 
@@ -91,6 +122,12 @@
 2023-02-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c: Changes to speed up COMP-3 handling
+
+2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_set_packed): backport and extend optimization
+	  from 4.x by Ron - now skipping initial zeros and for huge fields handle
+	  4 digits at once
 
 2023-02-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -105,6 +142,11 @@
 	* termio.c: Updated 'bin_digits' table for larger fields
 	* common.h: Removed  define  COB_MAX_COMPX
 
+2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_bcd_cmp, packed_is_negative, decimal_convert_scale,
+	  insert_packed_aligned): finished
+
 2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c, common.c: handle HAVE_JSON_C_JSON_H
@@ -114,6 +156,14 @@
 	  warnings
 	* cconv.c (cob_load_collation), common.c, intrinisic.c (cob_intr_random),
 	  termio.c: minor adjustments to fix compiler warnings
+	* fileio.c (copy_fcd_to_file)->fextfh.c: fixed memory issues with
+	  writing to assign and select name
+	* fileio.c (save_status): don't synch directly after open or close
+	* fileio.c (cob_file_open), (open_next): include binary in open flags if
+	  cobsetptr->cob_unix_lf is set
+	* fileio.c (open_next): set binary file mode, minor refactoring
+	* fileio.c (cob_file_close) [_WIN32]: don't try to unlock invalid file
+	  handles; mark file descriptor as closed when file handle was closed
 
 2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -135,6 +185,22 @@
 	  prefix as those are local-only functions
 	* move.c (cob_get_int, cob_get_llint): handle negative scale for binary
 	  fields
+
+2023-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (packed_is_negative): new function to ignore any sign nibbles
+	  but "negative 0x0d"; only handle as negative if non-zero
+	* numeric.c (cob_cmp_packed): refactored (partially moved code out to
+	  cmp_packed_intern) and performance-improved
+	* numeric.c (cob_bcd_cmp, decimal_convert_scale, insert_packed_aligned),
+	  common.h: new functions for direct compare of BCD fields without the
+	  overhead to convert to integer
+	* numeric.c (cob_numeric_cmp), coblocal.h (COB_ATTR_INIT_A,
+	  COB_FIELD_INIT_F): use best possible comparison instead of expensive
+	  fallback to cob_decimal; note: this also applies to num. keys in SORT
+	* coblocal.h: request to always inline cob_min_int / cob_max_int
+	* common.h [_MSC_VER]: disabled "internal" byteswap routines, instead use
+	  generic ones as they work as expected
 
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -206,6 +272,10 @@
 	  code to inline functions
 	* numeric.c (cob_s32_pow, cob_s64_pow): use of register type
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* statement.def (STMT_INIT_STORAGE): new internal statement
+
 2023-01-15  Ron Norman <rjn@inglenet.com>
 
 	* screenio.c: renamed max_pairs_available as this is defined on HPUX
@@ -260,6 +330,20 @@
 
 	* fileio.c [!COB_EXPERIMENTAL]: disable "new" status 0P via preprocessor
 	  to inspect later for either include as COB_LS_VALIDATE=PRINT or drop
+
+2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new external field + define
+	  COB_SPACES_ALPHABETIC / COB_SPACES_ALPHABETIC_BYTE_LENGTH
+	* common.c: split sort_compare to variant with and without collation,
+	  using direct memcmp for the later
+	* common.c (compare_spaces, compare_character): new function used for
+	  comparison of data without collation using memcmp in doubled areas
+	  instead of looping over every character
+	* common.c (cob_cmp_alnum, cob_cmp_all): use direct memcmp and new
+	  functions if no collation was specified
+	* common.c (common_cmpc, common_cmps): always use collation as all
+	  callers left in pass it (and otherwise call the new functions)
 
 2022-12-13  David Declerck <david.declerck@ocamlpro.com>
 
@@ -390,7 +474,7 @@
 	* numeric.c: refactoring of bit-wise functions for readability
 	* numeric.c (cob_decimal_set_display): prefer local buffer over
 	  dynamic allocation
-	* numeric.c (cob_cmp_int, cob_cmp_uint, cob_cmp_llint): pre-comparision
+	* numeric.c (cob_cmp_int, cob_cmp_uint, cob_cmp_llint): pre-comparison
 	  by checking sign/zero and reduced number of decimal shifting
 	  dynamic allocation
 	* move.c (store_common_region): minor optimization

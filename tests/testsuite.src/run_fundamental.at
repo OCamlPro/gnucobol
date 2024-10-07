@@ -5699,7 +5699,8 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  FLDX     PIC X        VALUE 'X'.
        01  FLDXX    PIC XX       VALUE SPACES.
-       01  FLDX500  PIC X(500)   VALUE 'X5'.
+       01  FLDX50   PIC X(50)    VALUE 'X50'.
+       01  FLDX500  PIC X(500)   VALUE 'X500'.
        01  FLDX32K  PIC X(32000) VALUE 'X'.
        01  FLD1     PIC X        VALUE '1'.
        01  FLD1X    PIC X(32000) VALUE '1'.
@@ -5982,16 +5983,47 @@ AT_DATA([prog.cob], [
            ELSE                        DISPLAY '! "X" > ALL "XX"'.
            IF ALL "XX" NOT > FLDX      CONTINUE
            ELSE                        DISPLAY '! ALL "XX" <= "X"'.
+
+      *> special check for ZERO-optimization and extra spaces
+           MOVE ALL ZERO TO FLDX500 FLDX50
+           MOVE "1"      TO FLDX500 (500:1) FLDX50(50:1)
+           IF FLDX50     >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" > ZERO'.
+           IF FLDX50     <  ZERO       DISPLAY '  "000...01" < ZERO!'.
+           IF FLDX50     >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" >= ZERO'.
+           IF FLDX50     <= ZERO       DISPLAY '  "000...01" <= ZERO!'.
+
+           IF ZERO       <  FLDX50     CONTINUE
+           ELSE                        DISPLAY '! ZERO < "000...01"'.
+           IF ZERO       >  FLDX50     DISPLAY '  ZERO > "000...01"!'.
+           IF ZERO       <= FLDX50     CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "000...01"'.
+           IF ZERO       >= FLDX50     DISPLAY '  ZERO >= "000...01"!'.
+
+           IF FLDX500    >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" > ZERO'.
+           IF FLDX500    <  ZERO       DISPLAY '  "000...01" < ZERO!'.
+           IF FLDX500    >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" >= ZERO'.
+           IF FLDX500    <= ZERO       DISPLAY '  "000...01" <= ZERO!'.
+
+           IF ZERO       <  FLDX500    CONTINUE
+           ELSE                        DISPLAY '! ZERO < "000...01"'.
+           IF ZERO       >  FLDX500    DISPLAY '  ZERO > "000...01"!'.
+           IF ZERO       <= FLDX500    CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "000...01"'.
+           IF ZERO       >= FLDX500    DISPLAY '  ZERO >= "000...01"!'.
 ])
 
 AT_CHECK([$COMPILE prog.cob -Wno-constant-expression], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
-AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
-#AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
-#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 

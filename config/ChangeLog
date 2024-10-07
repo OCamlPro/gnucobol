@@ -4,6 +4,11 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2023-03-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* rm-strict.conf: enable line-col-zero-default per RM-COBOL Language
+	  Reference for POSITION with implied zero
+
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* rm-strict.conf: enable indirect-redefines as this was added
@@ -42,6 +47,10 @@
 
 	* gcos.words: complete update
 	* general: added  missing alias JUST=JUSTIFIED
+
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* realia-strict.conf: change defaultbyte from space to zero
 
 2022-12-07  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -829,7 +838,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2022,2024 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

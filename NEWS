@@ -306,12 +306,15 @@ Open Plans:
    affected programs (with OCCURS DEPENDING ON) or compile with additional
    -fno-odoslide to get the same results as with older GnuCOBOL versions
 
-** the compile flag -fdefaultbyte was moved to a dialect configuration,
+** the compile flag -fdefaultbyte (initializarion for data-items without
+   an explicit VALUE) was moved to a dialect configuration;
    while -fdefaultbyte still works as before it is now implied as binary
-   zero with -std=ibm/mvs/bs2000, space for -std=mf/acu/rm/realia, and
+   zero with -std=ibm/mvs/bs2000/realia, space for -std=mf/acu/rm, and
    no defined initialization for -std=cobol85/cobol2002/cobol2014/xopen,
-   it is unchanged for -std=default (initialize to PICTURE/USAGE)
-   for compatibility to previous behavior compile with -fdefaultbyte=init
+   it is unchanged for -std=default (initialize to PICTURE/USAGE);
+   for compatibility to previous behavior compile with -fdefaultbyte=init;
+   note that initialization for INDEXED BY items honors the defaultbyte
+   configuration now, too
 
 ** the dialect configuration option larger-redefines-ok was changed to
    a support option larger-redefines; if specified on the command-line

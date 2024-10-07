@@ -3220,7 +3220,7 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		if (*val == cb_zero
 		 && !f->flag_internal_register
-		 && cb_default_byte == -1
+		 && cb_default_byte == CB_DEFAULT_BYTE_INIT
 		 && ( f->storage == CB_STORAGE_WORKING
 		   || f->storage == CB_STORAGE_LOCAL)
 		 && !f->flag_sign_separate) {
@@ -3228,7 +3228,27 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		break;
 	case CB_CATEGORY_NATIONAL:
-		/* FIXME: Fall-through, but should handle national space */
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal *lit = CB_LITERAL (*val);
+			char *p = (char*)lit->data;
+			char *end = p + lit->size - 1;
+			if (lit->size % COB_NATIONAL_SIZE != 0) {
+				break;
+			}
+			if (*end == ' ') {
+				while (p < end && p[0] == 0x00 && p[1] == ' ') p += 2;
+				if (p == end) *val = cb_space;
+			}
+		}
+		if (*val == cb_space
+		 && !f->flag_internal_register
+		 && ( cb_default_byte == CB_DEFAULT_BYTE_INIT)
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->children) {
+			return 1;
+		}
+		break;
 	case CB_CATEGORY_ALPHANUMERIC:
 		if (CB_LITERAL_P (*val)) {
 			const struct cb_literal *lit = CB_LITERAL (*val);
@@ -3241,7 +3261,8 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		if (*val == cb_space
 		 && !f->flag_internal_register
-		 && (cb_default_byte == -1 || cb_default_byte == ' ')
+		 && ( cb_default_byte == CB_DEFAULT_BYTE_INIT
+		   || cb_default_byte == ' ')
 		 && ( f->storage == CB_STORAGE_WORKING
 		   || f->storage == CB_STORAGE_LOCAL)
 		 && !f->children) {
@@ -3790,6 +3811,7 @@ cb_is_figurative_constant (const cb_tree x)
 		|| x == cb_norm_high
 		|| x == cb_quote
 		|| (CB_REFERENCE_P (x)
+		 && CB_REFERENCE (x)->subs == NULL
 		 && CB_REFERENCE (x)->flag_all);
 }
 

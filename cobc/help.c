@@ -118,9 +118,9 @@ cobc_print_usage_common_options (void)
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
 	puts (_("  -L <directory>        add <directory> to library search path"));
 	puts (_("  -l <lib>              link the library <lib>"));
+	puts (_("  -K <entry>            generate CALL to <entry> as static"));
 	puts (_("  -D <define>           define <define> for COBOL compilation"));
 	puts (_("  -A <options>          add <options> to the C compile phase"));
-	puts (_("  -Q <options>          add <options> to the C link phase"));
 	puts (_("  -Q <options>          add <options> to the C link phase"));
 	puts (_("  --coverage            instrument generated binaries for coverage"));
 	puts (_("  --conf=<file>         user-defined dialect configuration; see -std"));

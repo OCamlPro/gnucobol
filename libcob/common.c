@@ -183,6 +183,24 @@
 #define COB_MAX_ALLOC_SIZE COB_MAX_FIELD_SIZE
 #endif
 
+/* Global variables */
+#define SPACE_16	"                "
+#define SPACE_64	SPACE_16 SPACE_16 SPACE_16 SPACE_16
+#define SPACE_256	SPACE_64 SPACE_64 SPACE_64 SPACE_64
+#define SPACE_1024	SPACE_256 SPACE_256 SPACE_256 SPACE_256
+const char *COB_SPACES_ALPHABETIC = SPACE_1024;
+#undef SPACE_16
+#undef SPACE_64
+#undef SPACE_256
+#undef SPACE_1024
+#define ZERO_16 	"0000000000000000"
+#define ZERO_64 	ZERO_16 ZERO_16 ZERO_16 ZERO_16
+#define ZERO_256	ZERO_64 ZERO_64 ZERO_64 ZERO_64
+const char *COB_ZEROES_ALPHABETIC = ZERO_256;
+#undef ZERO_16
+#undef ZERO_64
+#undef ZERO_256
+
 struct cob_alloc_cache {
 	struct cob_alloc_cache	*next;		/* Pointer to next */
 	void			*cob_pointer;	/* Pointer to malloced space */
@@ -1751,8 +1769,8 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 }
 
 /* compare up to 'size' characters from buffer 'p'
-   against a single character 'c',
-   optionally using collation 'col' */
+   to a single character 'c',
+   using collation 'col' */
 static int
 common_cmpc (const unsigned char *p, const unsigned int c,
 	     const size_t size, const unsigned char *col)
@@ -1760,54 +1778,99 @@ common_cmpc (const unsigned char *p, const unsigned int c,
 	register const unsigned char *end = p + size;
 	int			ret;
 
-	if (col) {
-		const unsigned char c_col = col[c];
-		while (p < end) {
-			if ((ret = col[*p] - c_col) != 0) {
-				return ret;
-			}
-			p++;
+	const unsigned char c_col = col[c];
+	while (p < end) {
+		if ((ret = col[*p] - c_col) != 0) {
+			return ret;
 		}
-	} else {
-		while (p < end) {
-			if ((ret = *p - c) != 0) {
-				return ret;
-			}
-			p++;
-		}
+		p++;
 	}
 	return 0;
 }
 
+/* compare up to 'size' characters in 's1' to 's2'
+   using collation 'col' */
 static int
 common_cmps (const unsigned char *s1, const unsigned char *s2,
 	     const size_t size, const unsigned char *col)
 {
 	register const unsigned char *end = s1 + size;
 	int			ret;
-
-	if (col) {
-		while (s1 < end) {
-			if ((ret = col[*s1] - col[*s2]) != 0) {
-				return ret;
-			}
-			s1++, s2++;
+	while (s1 < end) {
+		if ((ret = col[*s1] - col[*s2]) != 0) {
+			return ret;
 		}
-	} else {
-		while (s1 < end) {
-			if ((ret = *s1 - *s2) != 0) {
-				return ret;
-			}
-			s1++, s2++;
-		}
+		s1++, s2++;
 	}
 	return 0;
 }
 
+/* compare up to 'size' characters in 'data' to characters
+   in 'c' with size 'compare_size' */
+static int
+compare_character (const unsigned char *data, size_t size,
+	const unsigned char *c, size_t compare_size)
+{
+	int 		ret;
+
+	/* compare date with compare-data up to max compare-size */
+	if ((ret = memcmp (data, c, compare_size)) != 0) {
+		return ret;
+	}
+
+	/* first bytes in "data" are identical to "compare-data",
+	   so use first bytes of "data" for next comparisons,
+	   increasing it up to the complete data-size */
+	{
+		register const unsigned char	*p;	/* position to compare from */
+		size -= compare_size;
+
+		while (size > compare_size) {
+			p = data + compare_size;
+			if ((ret = memcmp (p, data, compare_size)) != 0) {
+				return ret;
+			}
+			size -= compare_size;
+			compare_size *= 2;
+		}
+		if (size > 0) {
+			p = data + compare_size;
+			return memcmp (p, data, size);
+		}
+	}
+
+	return 0;
+}
+
+/* compare up to 'size' characters in 'data' to spaces */
+static int
+compare_spaces (const unsigned char *data, size_t size)
+{
+	if (size <= COB_SPACES_ALPHABETIC_BYTE_LENGTH) {
+		return memcmp (data, COB_SPACES_ALPHABETIC, size);
+	}
+	return compare_character (data, size,
+		(const unsigned char *)COB_SPACES_ALPHABETIC,
+		COB_SPACES_ALPHABETIC_BYTE_LENGTH);
+}
+
+/* compare up to 'size' characters in 'data' to zeroes */
+static int
+compare_zeroes (const unsigned char *data, size_t size)
+{
+	if (size <= COB_ZEROES_ALPHABETIC_BYTE_LENGTH) {
+		return memcmp (data, COB_ZEROES_ALPHABETIC, size);
+	}
+	return compare_character (data, size,
+		(const unsigned char *)COB_ZEROES_ALPHABETIC,
+		COB_ZEROES_ALPHABETIC_BYTE_LENGTH);
+}
+
+/* compare content of field 'f1' to repeated content of 'f2' */
 static int
 cob_cmp_all (cob_field *f1, cob_field *f2)
 {
-	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
+	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
 	unsigned char		*data;
 	unsigned char		buff[COB_MAX_DIGITS + 1];
 
@@ -1824,55 +1887,124 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 		data = f1->data;
 	}
 
-	/* check for IF VAR = ALL "9" */
-	if (f2->size == 1) {
-		return common_cmpc (data, f2->data[0], f1->size, s);
+	/* check without collation */
+	if (col == NULL) {
+		if (f2->size == 1) {
+			if (f2->data[0] == ' ') {
+				/* check for IF VAR = [ALL] SPACE[S] */
+				return compare_spaces (f1->data, f1->size);
+			}
+			if (f2->data[0] == '0') {
+				/* check for IF VAR = [ALL] ZERO[ES] */
+				return compare_zeroes (f1->data, f1->size);
+			}
+		}
+		/* check for IF VAR = ALL ... / HIGH-VALUE / ... */
+		if (f1->size > f2->size) {
+			return compare_character (f1->data, f1->size, f2->data, f2->size);
+		} else {
+			return compare_character (f1->data, f1->size, f2->data, f1->size);
+		}
 	}
 
-	/* check for IF VAR = ALL "AB" ... */
-	{
+	/* check with collation */
+	if (f2->size == 1) {
+		/* check for IF VAR = ALL "9" / IF VAR = ZERO */
+		return common_cmpc (data, f2->data[0], f1->size, col);
+	} else {
+		/* check for IF VAR = ALL "AB" ... */
 		size_t		size = f1->size;
-		int			ret;
-
+		int 		ret;
 		while (size >= f2->size) {
-			if ((ret = common_cmps (data, f2->data, f2->size, s)) != 0) {
+			if ((ret = common_cmps (data, f2->data, f2->size, col)) != 0) {
 				return ret;
 			}
 			size -= f2->size;
 			data += f2->size;
 		}
 		if (size > 0) {
-			return common_cmps (data, f2->data, size, s);
+			return common_cmps (data, f2->data, size, col);
 		}
 	}
-
 	return 0;
 }
 
+/* compare content of field 'f1' to content of 'f2', space padded,
+   using the optional collating sequence of the program */
 static int
 cob_cmp_alnum (cob_field *f1, cob_field *f2)
 {
-	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
+	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
 	const size_t	min = (f1->size < f2->size) ? f1->size : f2->size;
 	int		ret;
 
-	/* Compare common substring */
-	if ((ret = common_cmps (f1->data, f2->data, min, s)) != 0) {
-		return ret;
-	}
+	if (col == NULL) {		/* check without collation */
 
-	/* Compare the rest (if any) with spaces */
-	if (f1->size > f2->size) {
-		return common_cmpc (f1->data + min, ' ', f1->size - min, s);
-	} else if (f1->size < f2->size) {
-		return -common_cmpc (f2->data + min, ' ', f2->size - min, s);
+		/* Compare common substring */
+		if ((ret = memcmp (f1->data, f2->data, min)) != 0) {
+			return ret;
+		}
+
+		/* Compare the rest (if any) with spaces */
+		if (f1->size > f2->size) {
+			const size_t spaces_to_test = f1->size - min;
+			return compare_spaces (f1->data + min, spaces_to_test);
+		} else if (f1->size < f2->size) {
+			const size_t spaces_to_test = f2->size - min;
+			return -compare_spaces (f2->data + min, spaces_to_test);
+		}
+	
+	} else {		/* check with collation */
+
+		/* Compare common substring */
+		if ((ret = common_cmps (f1->data, f2->data, min, col)) != 0) {
+			return ret;
+		}
+
+		/* Compare the rest (if any) with spaces */
+		if (f1->size > f2->size) {
+			const size_t spaces_to_test = f1->size - min;
+			return common_cmpc (f1->data + min, ' ', spaces_to_test, col);
+		} else if (f1->size < f2->size) {
+			const size_t spaces_to_test = f2->size - min;
+			return -common_cmpc (f2->data + min, ' ', spaces_to_test, col);
+		}
+
 	}
 
 	return 0;
 }
 
+/* comparision of all key fields for SORT (without explicit collation)
+   in records pointed to by 'data1' and 'data2' */
 static int
 sort_compare (const void *data1, const void *data2)
+{
+	size_t		i;
+	int		res;
+	cob_field	f1;
+	cob_field	f2;
+
+	for (i = 0; i < sort_nkeys; ++i) {
+		f1 = f2 = *sort_keys[i].field;
+		f1.data = (unsigned char *)data1 + sort_keys[i].offset;
+		f2.data = (unsigned char *)data2 + sort_keys[i].offset;
+		if (COB_FIELD_IS_NUMERIC (&f1)) {
+			res = cob_numeric_cmp (&f1, &f2);
+		} else {
+			res = memcmp (f1.data, f2.data, f1.size);
+		}
+		if (res != 0) {
+			return (sort_keys[i].tf_ascending == COB_ASCENDING) ? res : -res;
+		}
+	}
+	return 0;
+}
+
+/* comparision of all key fields for SORT (with explicit collation)
+   in records pointed to by 'data1' and 'data2' */
+static int
+sort_compare_collate (const void *data1, const void *data2)
 {
 	size_t		i;
 	int		res;
@@ -2595,7 +2727,7 @@ cob_get_last_exception_name (void)
 	}
 	for (n = EXCEPTION_TAB_SIZE - 1; n != 0; --n) {
 		if ((last_exception_code & cob_exception_tab_code[n])
-			== cob_exception_tab_code[n]) {
+		 == cob_exception_tab_code[n]) {
 			return cob_exception_tab_name[n];
 		}
 	}
@@ -2676,7 +2808,6 @@ cob_set_exception (const int id)
 			}
 #endif
 		}
-		/* if no current module is available fall-through */
 	} else {
 		cobglobptr->cob_got_exception = 0;
 #if 0	/* consider addition for 4.x */
@@ -4241,8 +4372,8 @@ cob_is_numeric (const cob_field *f)
 			int		sign;
 			/* Check digits */
 			for (i = 0; i < f->size - 1; ++i) {
-				if ((f->data[i] & 0xF0) > 0x90 ||
-					(f->data[i] & 0x0F) > 0x09) {
+				if ((f->data[i] & 0xF0) > 0x90
+				 || (f->data[i] & 0x0F) > 0x09) {
 					return 0;
 				}
 			}
@@ -4265,8 +4396,8 @@ cob_is_numeric (const cob_field *f)
 				if (sign == 0x0C || sign == 0x0D) {
 					return 1;
 				}
-				if (COB_MODULE_PTR->flag_host_sign &&
-					sign == 0x0F) {
+				if (COB_MODULE_PTR->flag_host_sign
+				 && sign == 0x0F) {
 					return 1;
 				}
 			} else if (sign == 0x0F) {
@@ -4367,7 +4498,11 @@ cob_table_sort_init_key (cob_field *field, const int flag,
 void
 cob_table_sort (cob_field *f, const int n)
 {
-	qsort (f->data, (size_t) n, f->size, sort_compare);
+	if (sort_collate) {
+		qsort (f->data, (size_t) n, f->size, sort_compare_collate);
+	} else {
+		qsort (f->data, (size_t) n, f->size, sort_compare);
+	}
 	cob_free (sort_keys);
 }
 
@@ -5908,12 +6043,10 @@ cob_allocate (unsigned char **dataptr, cob_field *retptr,
 void
 cob_free_alloc (unsigned char **ptr1, unsigned char *ptr2)
 {
-	struct cob_alloc_cache	*cache_ptr;
-	struct cob_alloc_cache	*prev_ptr;
+	struct cob_alloc_cache	*cache_ptr = cob_alloc_base;
+	struct cob_alloc_cache	*prev_ptr = cob_alloc_base;
 
 	cobglobptr->cob_exception_code = 0;
-	cache_ptr = cob_alloc_base;
-	prev_ptr = cob_alloc_base;
 	if (ptr1 && *ptr1) {
 		void	*vptr1;
 		vptr1 = *ptr1;
@@ -9708,7 +9841,7 @@ print_info_detailed (const int verbose)
 	   may interfer with other output */
 #if defined (COB_GEN_SCREENIO)
 	mouse_support = get_screenio_and_mouse_info
-	((char*)&screenio_info, sizeof (screenio_info), verbose);
+		((char*)&screenio_info, sizeof (screenio_info), verbose);
 #else
 	snprintf ((char *)&screenio_info, sizeof(screenio_info) - 1,
 		"%s", _("disabled"));
