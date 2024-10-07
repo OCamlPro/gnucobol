@@ -33,15 +33,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
         arch:
           - x86
           - x64
         target:
           - Debug
           - Release
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     timeout-minutes: 45
 
     steps:
@@ -57,12 +55,12 @@ jobs:
       - name: Setup environment
         shell: pwsh
         run: |
-          echo GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
+          echo GITHUB_WORKSPACE=${{ env.GITHUB_WORKSPACE }} >> $env:GITHUB_ENV
           If ("${{ matrix.arch }}" -eq "x86") {
             echo VCVARS=$env:VCVARS32 >> $env:GITHUB_ENV
             echo VCPKGS=$env:VCPKGS32 >> $env:GITHUB_ENV
             echo ARCHDIR=Win32 >> $env:GITHUB_ENV
-          } Else {
+          } else {
             echo VCVARS=$env:VCVARS64 >> $env:GITHUB_ENV
             echo VCPKGS=$env:VCPKGS64 >> $env:GITHUB_ENV
             echo ARCHDIR=x64 >> $env:GITHUB_ENV
@@ -78,24 +76,24 @@ jobs:
             ${{ env.VCPKG_ROOT }}/packages
 
       - name: Bootstrap VCPKG
-        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
         run: |
-          cd /d %VCPKG_ROOT%
-          vcpkg update
+          cd /d ${{ env.VCPKG_ROOT }}
           git pull
           cmd /C .\bootstrap-vcpkg.bat -disableMetrics
+          vcpkg update
 
       - name: Integrate VCPKG
         run: |
+          cd /d ${{ env.VCPKG_ROOT }}
           vcpkg integrate install
 
       - name: Install VCPKG packages
         if: steps.restore-vcpkg.outputs.cache-hit != 'true'
         run: |
+          cd /d ${{ env.VCPKG_ROOT }}
           vcpkg install %VCPKGS%
 
       - name: Save VCPKG cache
-        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           key: cache-vcpkg-${{ matrix.arch }}-${{ matrix.target }}
@@ -108,7 +106,7 @@ jobs:
         id: restore-flexbison
         with:
           key: cache-flexbison-${{ matrix.arch }}-${{ matrix.target }}
-          path: ${{ env.GITHUB_WORKSPACE }}/flexbison
+          path: flexbison
 
       - name: Install WinFlexBison
         if: steps.restore-flexbison.outputs.cache-hit != 'true'
@@ -122,56 +120,36 @@ jobs:
         uses: actions/cache/save@v4
         with:
           key: cache-flexbison-${{ matrix.arch }}-${{ matrix.target }}
-          path: ${{ env.GITHUB_WORKSPACE }}/flexbison
+          path: flexbison
 
       - name: Configure GnuCOBOL
         shell: pwsh
         run: |
           cd build_windows
-          Get-Content -Path 'config.h.in' | ForEach-Object { $_ `
+          (('#define COB_MAIN_DIR "' + $env:GITHUB_WORKSPACE + '"') -replace '\\', '\\') + "`r`n" +  `
+          ((Get-Content -Path 'config.h.in' | ForEach-Object { $_ `
               -replace '(#define\s+CONFIGURED_ISAM)\s.+$', '$1   BDB' `
               -replace '(#define\s+CONFIGURED_CURSES)\s.+$', '$1 PDCURSES' `
               -replace '(#define\s+CONFIGURED_XML)\s.+$', '$1    XML2' `
               -replace '(#define\s+CONFIGURED_JSON)\s.+$', '$1   CJSON_CJSON' `
-            } | Set-Content -Path 'config.h'
+              -replace '"\(" PACKAGE_NAME "\) "', '"(GnuCOBOL-CI ${{ matrix.target }}) "' `
+            })  -join "`r`n"  ) | Set-Content -Path 'config.h'
           & .\maketarstamp.ps1 > tarstamp.h
 
       - name: Generate parser
         run: |
-          cd build_windows
           set PATH=%GITHUB_WORKSPACE%\flexbison;%PATH%
-          cmd /C .\makebisonflex.cmd <NUL
+          cmd /C build_windows\makebisonflex.cmd <NUL
 
       - name: Build GnuCOBOL
         run: |
           cd build_windows
-          set CL=/DCOB_MAIN_DIR=\"%GITHUB_WORKSPACE:\=\\%\"
           "%MSBUILD%" .\vs2019\GnuCOBOL.sln /m /p:Platform=${{ matrix.arch }} /p:Configuration=${{ matrix.target }}
 
       - name: Install MSYS2 packages
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           pacman --needed --noconfirm -S $MSYSPKGS
-
-      - name: Adjust testsuite
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          cd tests
-          sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_misc.at
-
-        # Skip two tests that behave differently (fail or hand) under MSVC Debug
-        # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
-        #   of the C runtime while the generated module is linked with the release version
-        # - PROGRAM COLLATING SEQUENCE: fails because of a data loss in a cast, due
-        #   to lack of specific handling of LOW/HIGH-VALUE for NATIONAL alphabets
-        #   (see typeck.c:cb_validate_collating)
-      - name: Adjust testsuite for Debug target
-        if: ${{ matrix.target == 'Debug' }}
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          cd tests
-          sed -i '/AT_SETUP(\[System routine CBL_GC_HOSTED\])/a AT_SKIP_IF(\[true\])' testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[PROGRAM COLLATING SEQUENCE\])/a AT_SKIP_IF(\[true\])' testsuite.src/syn_definition.at
 
       - name: Build testsuite
         shell: C:\shells\msys2bash.cmd {0}
@@ -194,30 +172,63 @@ jobs:
           sed 's/x64\/Debug/${{ env.ARCHDIR }}\/${{ matrix.target }}/g' atlocal_win > atlocal
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
 
+      - name: Adjust testsuite
+        shell: C:\shells\msys2bash.cmd {0}
+        run: |
+          # sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
+          sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
+
+        # Fail two tests that behave differently under MSVC Debug
+        # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
+        #   of the C runtime while the generated module is linked with the release version
+        # - PROGRAM COLLATING SEQUENCE: fails because of a data loss in a cast, due
+        #   to lack of specific handling of LOW/HIGH-VALUE for NATIONAL alphabets
+        #   (see typeck.c:cb_validate_collating)
+      - name: Adjust testsuite for Debug target
+        if: ${{ matrix.target == 'Debug' }}
+        shell: C:\shells\msys2bash.cmd {0}
+        run: |
+          sed -i '/run_extensions/{N;/System routine CBL_GC_HOSTED/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
+          sed -i '/syn_definition/{N;/PROGRAM COLLATING SEQUENCE/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
+
       - name: Run testsuite
         run: |
-          cd tests
-          set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
+          set CL=/I "${{ env.VCPKG_ROOT }}\installed\${{ matrix.arch }}-windows\include"
           call "%VCVARS%"
           set MSYS2_PATH_TYPE=inherit
+          cd tests
           C:\shells\msys2bash.cmd -c "./testsuite || ./testsuite --recheck --verbose"
 
       - name: Upload testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
         with:
           name: testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
-          path: ${{ env.GITHUB_WORKSPACE }}/tests/testsuite.log
+          path: tests/testsuite.log
 
-      # - name: Package GnuCOBOL
-      #   run: |
-      #     cd build_windows
-      #     set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
-      #     call "%VCVARS%"
-      #     cmd /C .\makedist.cmd <NUL
+      - name: Package GnuCOBOL and dependencies
+        run: |
+          echo exporting dependencies
+          vcpkg.exe export %VCPKGS% --raw
+          pushd C:\vcpkg\vcpkg-export-*
+          set VCPKG_EXPORT_DIR=%CD%
+          popd
 
-      # - name: Upload distribution
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: GnuCOBOL_3.3-dev_${{ matrix.arch }}-${{ matrix.target }}.7z
-      #     path: ${{ env.GITHUB_WORKSPACE }}/GnuCOBOL_3.3-dev_vs_bin.7z
+          echo wrap up dependencies for separate download
+          7z.exe a -r -mx=9 dependencies-${{ matrix.arch }}.7z "%VCPKG_EXPORT_DIR%"
+
+          echo wrap up GnuCBOBOL binary package
+          rem set CL=
+          cmd /C build_windows\makedist.cmd ${{ matrix.target }} <NUL
+          
+      - name: Upload dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: VCPKG ${{ matrix.arch }}-${{ matrix.target }} dependencies
+          path: dependencies-${{ matrix.arch }}.7z
+          
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: GnuCOBOL bin ${{ matrix.arch }}-${{ matrix.target }}
+          path: build_windows/GnuCOBOL_*.7z
