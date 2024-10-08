@@ -686,6 +686,10 @@ struct cb_string {
 #define CB_STRING(x)	(CB_TREE_CAST (CB_TAG_STRING, struct cb_string, x))
 #define CB_STRING_P(x)	(CB_TREE_TAG (x) == CB_TAG_STRING)
 
+
+#define COB_MAX_CHAR_ALPHANUMERIC	(unsigned int)(0xFF)
+#define COB_MAX_CHAR_NATIONAL	(unsigned int)(0xFFFF)
+
 /* Alphabet-name */
 
 struct cb_alphabet_name {
@@ -697,8 +701,8 @@ struct cb_alphabet_name {
 	enum cb_alphabet_type		alphabet_type;	/* ALPHABET type */
 	int			low_val_char;	/* LOW-VALUE */
 	int			high_val_char;	/* HIGH-VALUE */
-	int			values[256];	/* Collating values */
-	int			alphachr[256];	/* Actual values */
+	int			*values;		/* Collating values */
+	int			*alphachr;		/* Actual values */
 };
 
 #define CB_ALPHABET_NAME(x)	(CB_TREE_CAST (CB_TAG_ALPHABET_NAME, struct cb_alphabet_name, x))

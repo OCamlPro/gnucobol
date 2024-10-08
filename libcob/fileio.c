@@ -921,19 +921,24 @@ bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 {
 	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA (k1);
 	COB_UNUSED (db);
-
+#ifdef USE_BDB_KEYDIFF /* flag passed with CPPFLAGS */
+	return cob_cmp_strings (k1->data, k2->data, (size_t)k1->size, (size_t)k2->size, col);
+#else
 	/* LCOV_EXCL_START */
 	if (col == NULL) {
 		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
+		cob_hard_failure ();
 	}
 	if (k1->size != k2->size) {
 		cob_runtime_error ("bdb_bt_compare was given keys of different length");
+		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
 #if DB_VERSION_MAJOR >= 6
 	locp = NULL;	/* docs: must be set to NULL or corruption can occur ... */
 #endif
 	return indexed_key_compare (k1->data, k2->data, k2->size, col);
+#endif /* USE_BDB_KEYDIFF */
 }
 
 #endif	/* WITH_DB */
@@ -1819,12 +1824,17 @@ cob_fd_file_open (cob_file *f, char *filename,
 		HANDLE osHandle = (HANDLE)_get_osfhandle (fd);
 		if (osHandle != INVALID_HANDLE_VALUE) {
 			DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-			OVERLAPPED fromStart = {0};
+			OVERLAPPED fromStart = { 0 };
 			if (mode != COB_OPEN_INPUT) flags |= LOCKFILE_EXCLUSIVE_LOCK;
 			if (!LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
-				f->open_mode = COB_OPEN_CLOSED;
-				close (fd);
-				return COB_STATUS_61_FILE_SHARING;
+				DWORD err = GetLastError ();
+				/* normally that return value would not happen, we use it to
+				   work around call errors happening on MSYS */
+				if (err != ERROR_INVALID_FUNCTION) {
+					f->open_mode = COB_OPEN_CLOSED;
+					close (fd);
+					return COB_STATUS_61_FILE_SHARING;
+				}
 			}
 		}
 	}
@@ -2082,10 +2092,15 @@ cob_file_open (cob_file *f, char *filename,
 				OVERLAPPED fromStart = {0};
 				if (mode != COB_OPEN_INPUT) flags |= LOCKFILE_EXCLUSIVE_LOCK;
 				if (!LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
-					f->open_mode = COB_OPEN_CLOSED;
-					f->fd = -1;
-					fclose (fp);
-					return COB_STATUS_61_FILE_SHARING;
+					DWORD err = GetLastError ();
+					/* normally that return value would not happen, we use it to
+					   work around call errors happening on MSYS */
+					if (err != ERROR_INVALID_FUNCTION) {
+						f->open_mode = COB_OPEN_CLOSED;
+						fclose (fp);
+						f->fd = -1;
+						return COB_STATUS_61_FILE_SHARING;
+					}
 				}
 			}
 		}
@@ -4672,9 +4687,14 @@ dobuild:
 				if (f->keys[i].tf_duplicates) {
 					p->db[i]->set_flags (p->db[i], DB_DUP);
 				}
+				/* TODO: add national compare function later */
+#ifdef USE_BDB_KEYDIFF
+				p->db[i]->set_bt_compare(p->db[i], bdb_bt_compare);
+#else
 				if (f->keys[i].collating_sequence) {
 					p->db[i]->set_bt_compare(p->db[i], bdb_bt_compare);
 				}
+#endif
 			}
 		} else {
 			handle_created = 0;
@@ -7064,7 +7084,7 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 /* System routines */
 
 /* stores the field's rtrimmed string content into a fresh allocated
-	 string, which later needs to be passed to cob_free */
+   string, which later needs to be passed to cob_free */
 static void *
 cob_str_from_fld (const cob_field *f)
 {
@@ -7094,7 +7114,7 @@ cob_str_from_fld (const cob_field *f)
 	}
 
 	while (data <= end) {
-#if 0	/* Quotes in file */
+#if 0	/* Quotes in file, per MF, stopping at first space outside */
 		if (*data == '"') {
 			quote_switch = !quote_switch;
 			data++;

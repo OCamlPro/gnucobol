@@ -1172,6 +1172,40 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([MOVE of invalid data from numeric to alphanumeric item])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 X-NUM                 PIC 9.
+       77 X-ALN REDEFINES X-NUM PIC X.
+       77 Y-ALN                 PIC X.
+       77 Z-NUM                 PIC +9,9.
+       77 Z-ALN REDEFINES Z-NUM PIC XX.
+       77 T-ALN                 PIC XX.
+       PROCEDURE DIVISION.
+       MAIN.
+           MOVE SPACES TO X-ALN
+           MOVE X-NUM  TO Y-ALN
+	   IF Y-ALN NOT EQUAL " " THEN
+	      DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
+	   END-IF
+           MOVE SPACES TO Z-ALN
+           MOVE Z-NUM  TO T-ALN
+	   IF T-ALN NOT EQUAL "  " THEN
+	      DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
+	   END-IF
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 ## CALL statement
 
 AT_SETUP([Dynamic call with static linking])
@@ -7486,6 +7520,7 @@ dump (unsigned char *data)
   for (i = 0; i < 4; i++)
     printf ("%02X", data[i]);
   puts (" .");
+  fflush(stdout);
   return 0;
 }
 ]])
@@ -11876,6 +11911,7 @@ CAPI (void *p1, ...)
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
+   fflush(stdout);
    for (k=1; k <= nargs; k++) {
       type   = cob_get_param_type (k);
       digits = cob_get_param_digits (k);
@@ -12111,6 +12147,7 @@ CAPI (void *p1, ...)
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
+   fflush(stdout);
    for (k=1; k <= nargs; k++) {
       cob_field *fld = cob_get_param_field (k, "CAPI");
       type   = cob_get_field_type (fld);

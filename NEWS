@@ -10,21 +10,32 @@ NEWS - user visible changes				-*- outline -*-
    Source previously processed may need to be ajusted to be processed by
    GnuCOBOL 3.3.
 
-** cobc now checks for binary files and early exit parsing those;
-   the error output for format errors (for example invalid indicator column)
-   is now limitted to 5 per source file
+** cobc now checks for binary and multi-byte encoded files and early exit
+   parsing those; the error output for format errors (for example invalid
+   indicator column) is now limitted to 5 per source file
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)
 
-** Support for time profiling of modules, sections, paragraphs, entries
+** support for time profiling of modules, sections, paragraphs, entries
    and external CALLs. This feature is activated by compiling the modules
    to be profiled with -fprof, and then executing the code with environment
    variable COB_PROF_ENABLE. The output is stored in a CSV file. Further
    customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
    COB_PROF_FORMAT
 
+** new runtime configuraiton COB_HIDE_CURSOR, allows to hide the cursor during
+   extended ScreenIO operations
+
   more work in progress
+
+* Changes that potentially effect recompilation of existing programs:
+
+** runtime checks for invalid numerical data in emitter fields of MOVE or SET
+   statements are now performed only when at least one receiver field
+   is of category numeric or numeric-edited.  This enables programming
+   patterns where invalid numerical data (e.g, SPACES) encode "absent"
+   data
 
 * Important Bugfixes
 
@@ -61,6 +72,9 @@ NEWS - user visible changes				-*- outline -*-
 ** New option -fdefault-file-colseq to specify the default
    file collating sequence
 
+** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
+   to a file (see "Dependencies options" in the GnuCOBOL manual)
+
 * More notable changes
 
 ** execution times were significantly reduced for the following:
@@ -83,8 +97,16 @@ NEWS - user visible changes				-*- outline -*-
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
    honors NCURSES_LIBS and NCURSES_CFLAGS
 
+** configure now checks for iconv and accepts --with-iconv/--without-iconv;
+   this is used for character encoding support, which otherwise is only provided
+   partially
+
 ** use the "default" -shared flag to build dynamic libraries on macOS
    so as to fix testuite issues with recent macOS versions
+
+** "make checkmanual" was extended to be also usable with tmux and
+   allows to override the test runner and to attach for screen/tmux sessions,
+   see README for further details
 
 * Known issues in 3.x
 

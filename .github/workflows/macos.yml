@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
   push:
-    branches: [ gcos4gnucobol-3.x ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,7 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
+          # - macos-latest-large  # macos 14, amd64
+          - macos-latest        # macos 14, arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -20,9 +22,8 @@ jobs:
       - name: Configure git
         run: git config --global core.symlinks false
 
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install packages
         run: |
@@ -39,9 +40,7 @@ jobs:
 
       - name: bootstrap
         run: |
-          ./autogen.sh
-          autoconf
-          autoreconf --install --force
+          ./build_aux/bootstrap install
 
       - name: Build environment setup
         run: |
@@ -53,62 +52,71 @@ jobs:
       - name: configure
         run: |
           cd _build
-          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
-
-      - name: Upload config.log
-        uses: actions/upload-artifact@v3
-        with:
-          name: config.log
-          path: _build/config.log
-        if: failure()
+          ../configure --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --prefix /opt/cobol/gnucobol-gcos \
 
       - name: make
         run: |
-          cd _build
-          make --jobs=$((${NPROC}+1))
+          make -C _build --jobs=$((${NPROC}+1))
 
-# make install must be done before make check, otherwise execution of
-# generated COBOL files fail for a missing /usr/local/lib/libcob.dylib
+      - name: Upload config.log
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-${{ matrix.os }}.log
+          path: _build/config.log
+        if: failure()
+
+      # make install must be done before make check, otherwise
+      # execution of generated COBOL files fail for a missing
+      # /usr/local/lib/libcob.dylib
       - name: make install
         run: |
-          cd _build
-          sudo make install
-          find /opt/cobol > install.log
+          sudo make -C _build install
+          find /opt/cobol > _build/install.log
 
       - name: Upload install.log
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: install.log
+          name: install-${{ matrix.os }}.log
           path: _build/install.log
 
       - name: check
         run: |
-          cd _build
-          make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          make -C _build check \
+                         TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
 
       - name: Upload testsuite.log
-        uses: actions/upload-artifact@v3
-        if: failure()
+        uses: actions/upload-artifact@v4
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
         with:
-          name: testsuite.log
+          name: testsuite-${{ matrix.os }}.log
           path: _build/tests/testsuite.log
 
-      - name: Cache newcob.val.Z
-        uses: actions/cache@v3
-        id: newcob
+      - name: Cache newcob.val
+        uses: actions/cache@v4
         with:
-          path: _build/tests/cobol85/newcob.val.Z.cached
-          key: newcob
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          save-always: true
+          enableCrossOsArchive: true
 
-      - name: Download newcob.val.Z
-        if: steps.newcob.outputs.cache-hit != 'true'
-        run: |
-          cd _build/tests/cobol85
-          make newcob.val.Z
-          ln -f newcob.val.Z newcob.val.Z.cached
+#      - name: NIST85 Test Suite
+#        run: |
+#          make -C _build/tests/cobol85 EXEC85 test              \
+#                         --jobs=$((${NPROC}+1))
 
-      - name: NIST85 Test Suite
+      - name: Run NIST85 testsuite
         run: |
-          cd _build/tests/cobol85
-          ln -f newcob.val.Z.cached newcob.val.Z
-          make EXEC85 && make --jobs=$(($(nproc)+1)) test
+          make -C _build/tests test --jobs=$((${NPROC}+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.os }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt

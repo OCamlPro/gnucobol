@@ -1287,6 +1287,9 @@ output_data (cb_tree x)
 			output (")->data");
 		}
 		break;
+	case CB_TAG_DIRECT:
+		output ("%s", CB_DIRECT (x)->line);
+		break;
 	/* LCOV_EXCL_START */
 	default:
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
@@ -9345,16 +9348,14 @@ output_indexed_file_key_colseq (const struct cb_file *f, const struct cb_alt_key
 {
 	const cb_tree	key = ak ? ak->key : f->key;
 	const cb_tree	key_col = ak ? ak->collating_sequence_key : f->collating_sequence_key;
-	const int	type = cb_tree_type (key, cb_code_field (key));
 	cb_tree		col = NULL;
 
-	/* We only apply a collating sequence if the key is alphanumeric / display */
-	if ((type & COB_TYPE_ALNUM) || (type == COB_TYPE_NUMERIC_DISPLAY)) {
+	/* We only apply a collating sequence if the key is of class alphanumeric;
+	   Warned in `validate_indexed_key_field`. */
+	if (CB_TREE_CLASS (key) == CB_CLASS_ALPHANUMERIC) {
 		col = key_col ? key_col : f->collating_sequence;
-#if 0	/* TODO: this should be done for national, when available */
-	} else if (type & COB_TYPE_NATIONAL) {
-		col = key_col_n ? key_col_n : f->collating_sequence_n;
-#endif
+	} else if (CB_TREE_CLASS (key) == CB_CLASS_NATIONAL) {
+		col = f->collating_sequence_n;
 	}
 
 	output_prefix ();
@@ -10715,6 +10716,11 @@ output_report_init (struct cb_report *rep)
 static void
 output_alphabet_name_definition (struct cb_alphabet_name *p)
 {
+	const int is_national_alphabet = p->alphabet_target == CB_ALPHABET_NATIONAL;
+	const int maxchar = is_national_alphabet
+						? COB_MAX_CHAR_NATIONAL : COB_MAX_CHAR_ALPHANUMERIC;
+	const int size = is_national_alphabet
+						? (COB_MAX_CHAR_NATIONAL + 1) * COB_NATIONAL_SIZE : COB_MAX_CHAR_ALPHANUMERIC + 1;
 	int		i;
 
 	if (p->alphabet_type != CB_ALPHABET_CUSTOM) {
@@ -10722,22 +10728,33 @@ output_alphabet_name_definition (struct cb_alphabet_name *p)
 	}
 
 	/* Output the table */
-	output_local ("static const unsigned char %s%s[256] = {\n",
-		      CB_PREFIX_SEQUENCE, p->cname);
-	for (i = 0; i < 256; i++) {
-		if (i == 255) {
-			output_local (" %d", p->values[i]);
+	output_local ("static const unsigned char %s%s[%d] = {\n",
+		      CB_PREFIX_SEQUENCE, p->cname, size);
+	i = 0;
+	for (i = 0; ; i++) {
+		if (is_national_alphabet) {
+			/* FIXME: this isn't tested at all and likely needs
+			   adjustments in the runtime */
+			output_local (" 0x%02x, 0x%02x",
+				(p->values[i] >> 8) & 0xFF, p->values[i] & 0xFF);
 		} else {
-			output_local (" %d,", p->values[i]);
+			output_local (" %d", p->values[i]);
+		}
+		if (i == maxchar) {
+			output_local ("};\n");
+			break;
 		}
 		if (i % 16 == 15) {
-			output_local ("\n");
+			output_local (",\n");
+		} else {
+			output_local (",");
 		}
 	}
-	output_local ("};\n");
-	i = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
-	output_local ("static cob_field %s%s = { 256, (cob_u8_ptr)%s%s, &%s%d };\n",
+	i = lookup_attr (is_national_alphabet ? COB_TYPE_NATIONAL : COB_TYPE_ALPHANUMERIC,
+			0, 0, 0, NULL, 0);
+	output_local ("static cob_field %s%s = { %d, (cob_u8_ptr)%s%s, &%s%d };\n",
 		CB_PREFIX_FIELD, p->cname,
+		size,
 		CB_PREFIX_SEQUENCE, p->cname,
 		CB_PREFIX_ATTR, i);
 	output_local ("\n");

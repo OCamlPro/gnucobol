@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -25,6 +25,7 @@
 %option prefix="pp"
 
 %option stack
+%option noyywrap
 
 %option noyy_top_state
 %option noyy_scan_buffer
@@ -54,11 +55,6 @@
 #undef	YY_BUF_SIZE
 #define	YY_BUF_SIZE		32768
 
-#define	YY_SKIP_YYWRAP
-static int ppwrap (void) {
-	return 1;
-}
-
 static void insert_copy_arg (void);
 
 #define	PPLEX_BUFF_LEN		512
@@ -85,6 +81,7 @@ static void insert_copy_arg (void);
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdio.h>
 #include <string.h>
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
@@ -1267,8 +1264,8 @@ is_fixed_indicator (char c){
 	}
 }
 
-/* open file with the specified 'name', then check for BOM (skipped) and if
-   in reference-format "auto" also for "likely free-format" */
+/* open file with the specified 'name', then check for BOM (utf-8 skipped, utf16/32 errored)
+   and if in reference-format "auto" also for "likely free-format" */
 static FILE *
 ppopen_get_file (const char *name)
 {
@@ -1303,7 +1300,7 @@ ppopen_get_file (const char *name)
 		loc.source_file = name;
 		loc.source_line = -1;
 		cb_error_x (&loc, _("recursive inclusion"));
-		return 0;		
+		return 0;
 		}
 	}
 
@@ -1332,6 +1329,32 @@ ppopen_get_file (const char *name)
 		} else
 		/* check for binary */
 		if (nread > 5) {
+			const char *enc = NULL;
+			if (buffer[0] == 0xFF && buffer[1] == 0xFE) {
+				if (buffer[2] == 0x00 && buffer[3] == 0x00) {
+					enc = "UTF-32LE";
+				} else {
+					enc = "UTF-16LE";
+				}
+			} else if (buffer[0] == 0xFE && buffer[1] == 0xFF) {
+				enc = "UTF-16BE";
+			} else if (buffer[0] == 0x00 && buffer[1] == 0x00
+			        && buffer[2] == 0xFE && buffer[3] == 0xFF) {
+				enc = "UTF-32BE";
+			}
+			if (enc) {
+				/* unsupported encoding */
+				fclose (ppin);
+				ppin = NULL;
+				cb_note (COB_WARNOPT_NONE, 0, _("try \"iconv -f %s -t UTF-8 '%s' -o 'out%c%s'"),
+					enc, name, SLASH_CHAR, name);
+				if (cb_source_line == 0) {
+					/* if this is a "main" source, terminate with an error */
+					cobc_terminate_exit (name, _("source file has unsupported encoding"));
+				}
+				cb_error ("%s: %s", name, _("source file has unsupported encoding"));
+				return 0;
+			}
 #if 0
 			if ((buffer[0] == 0x7F && buffer[1] == 0x45 && buffer[2] == 0x4C
 			  && buffer[3] == 0x46 && (buffer[4] & 0xF0) == 0x00	/* ELF */)
@@ -1451,7 +1474,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* add opened file to dependency list */
-	if (cb_depend_file) {
+	if (cb_depend_output && !cb_flag_copybook_deps) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
@@ -1644,6 +1667,20 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
 	}
 
+	if (cb_depend_output && cb_flag_copybook_deps) {
+
+		if (lib) {
+			snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
+				lib, SLASH_CHAR, name);
+			plexbuff1[COB_SMALL_MAX] = 0;
+		} else {
+			strcpy (plexbuff1, name);
+		}
+		cb_depend_list =
+			pp_text_list_add (cb_depend_list, plexbuff1,
+					  strlen (plexbuff1));
+	}
+
 	/* TODO: open with path relative to the current file's path,
 	         if any (applies both to with and without "lib") */
 
@@ -1714,10 +1751,23 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		}
 		/* otherwise fall-trough to error handling */
 	} else {
-		/* ensure to have errno from name as specified, not from another file */
-		(void)access (plexbuff1, R_OK);
-		/* pass file error as we have no more places to check */
-		cb_error ("%s: %s", plexbuff1, cb_get_strerror ());
+		/* do not output error if looking only for copybook deps */
+		if (!cb_flag_copybook_deps){
+
+			/* add opened file to dependency list */
+			if (cb_depend_output && cb_depend_keep_missing) {
+				const char *depname = cobc_plex_stradd (plexbuff1, cb_extension_list->text);
+
+				cb_depend_list = pp_text_list_add (cb_depend_list, depname, strlen (depname));
+			} else {
+
+				/* ensure to have errno from name as specified, not from another file */
+				(void)access (plexbuff1, R_OK);
+				/* pass file error as we have no more places to check */
+				cb_error ("%s: %s",
+					  plexbuff1, cb_get_strerror ());
+			}
+		}
 	}
 
 	/* On COPY, open error restore old file */
@@ -2313,7 +2363,7 @@ start:
 	if (buff[n - 1] != '\n') {
 		/* FIXME: cb_source_line is one too low when CB_FORMAT_FREE is used
 		   [but only during ppinput() in pplex.l ?]
-		   Workaround for now: Temporary newline_count + 1
+		   Workaround for now: temporary newline_count + 1
 		*/
 		if (source_format == CB_FORMAT_FREE) {
 			if (line_overflow == 0) {
@@ -2782,6 +2832,12 @@ pp_text_list_add (struct cb_text_list *list, const char *text,
 {
 	struct cb_text_list	*p;
 	void			*tp;
+
+	for (p = list; p; p = p->next) {
+		if (!strcmp(text, p->text)) {
+			return list;
+		}
+	}
 
 	p = cobc_plex_malloc (sizeof (struct cb_text_list));
 	tp = cobc_plex_malloc (size + 1);

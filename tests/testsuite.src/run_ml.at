@@ -362,7 +362,7 @@ AT_KEYWORDS([extensions])
 
 AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
 
-# TO-DO: Add support for IBM/COBOL 2002 edited floating point (e.g. PIC 9(3)E+99).
+# TO-DO: Add support for IBM/COBOL 2002 edited floating point, e.g. PIC 9(3)E+99.
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

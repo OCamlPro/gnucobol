@@ -121,6 +121,7 @@ Compiler options
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
+* Dependencies options::        Dependencies options
 * Miscellaneous::               Miscellaneous
 
 Multiple sources
@@ -291,6 +292,7 @@ A complete list of options can be displayed by using the option @option{--help}.
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
+* Dependencies options::        Dependencies options
 * Miscellaneous::               Miscellaneous
 @end menu
 
@@ -542,7 +544,8 @@ between paragraphs and sections.
 Warnings are diagnostic messages that report constructions that are not inherently
 erroneous but that are risky or suggest there may have been an error.
 
-The following options do not enable specific warnings but control the kinds of diagnostics produced by @command{cobc}.
+The following options do not enable specific warnings but control the kinds of
+diagnostics produced by @command{cobc}.
 
 @table @code
 @item -fsyntax-only
@@ -617,9 +620,10 @@ and that are easy to avoid (or modify to prevent the warning).@*
 The list of warning flags turned on by this option is shown in @option{--help}.
 
 @item -Wextra, -W
-Enable every possible warning that is not dialect specific.  This includes more information
-than @option{-Wall} would normally provide.@*
-(This option used to be called @option{-W}. The older name is still supported, but the newer name is more descriptive.)
+Enable every possible warning that is not dialect specific.  This includes more
+information than @option{-Wall} would normally provide.@*
+(This option used to be called @option{-W}. The older name is still supported,
+but the newer name is more descriptive.)
 
 @item -W@var{warning}
 Enable single warning @var{warning}.
@@ -631,7 +635,8 @@ Disable single warning @var{warning}.
 Warn if archaic features are used, such as continuation lines or the @code{NEXT SENTENCE} statement.
 
 @item -Wcall-params
-Warn if non-01/77-level items are used as arguments in a @code{CALL} statement. This is @emph{not} set with @option{-Wall}.
+Warn if non-01/77-level items are used as arguments in a @code{CALL} statement.
+This is @emph{not} set with @option{-Wall}.
 
 @item -Wcolumn-overflow
 Warn if text after column 72 in FIXED format. This is @emph{not} set with @option{-Wall}.
@@ -783,8 +788,9 @@ Compiler uses the given @var{dialect} to determine the reserved words.
 User-defined dialect configuration.
 
 @item -febcdic-table=@var{cconv-table}/@var{file}
-EBCDIC/ASCII translation table to use; either read from @var{file}, or one of the existing @var{cconv-table}
-from the configuration directory (see @code{cobc --info}) which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
+EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
+the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})
+which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
 See the @file{default.ttbl} file for detailed information about the format.
 
 @end table
@@ -976,6 +982,43 @@ Optimize for size. Optimizer will favour code size over execution speed.
 
 @item -fnotrunc
 Do not truncate binary fields according to PICTURE.
+
+@end table
+
+@node Dependencies options
+@subsection Dependencies options
+
+Dependencies are files containing the content included by @code{COPY}
+statements. These options are usually used by build systems to extract
+dependencies from COBOL files. The dependencies can then be used to
+decide when a file should be recompiled or not.
+
+@table @code
+
+@item -M
+Output dependency list in Makefile format on stdout. Stop after
+preprocessing the file and do not generate any other files.
+
+@item -MT <target>
+Set/add target file used in dependency list
+
+@item -MQ <target>
+Same as -MT but with Makefile-quoting of the target
+
+@item -MF <file>
+Specify a filename <file> where to output dependencies
+
+@item -MP
+Create phony targets for all dependencies
+
+@item -MG
+Output missing dependencies without complaining
+
+@item -MD
+Output dependencies in .d files while compiling
+
+@item -fcopybook-deps
+Output dependencies as copybook names instead of file names
 
 @end table
 

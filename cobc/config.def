@@ -381,7 +381,7 @@ CB_CONFIG_SUPPORT (cb_numeric_value_for_edited_item, "numeric-value-for-edited-i
 	_("numeric literals in VALUE clause of numeric-edited items"))
 
 CB_CONFIG_SUPPORT (cb_incorrect_conf_sec_order, "incorrect-conf-sec-order",
-	_("incorrect order of CONFIGURATION SECTION paragraphs")) /* OpenCOBOL/GnuCOBOL extension */
+	_("incorrect order of CONFIGURATION SECTION and its paragraphs")) /* MF extension */
 
 CB_CONFIG_SUPPORT (cb_define_constant_directive, "define-constant-directive",
 	_("allow >> DEFINE CONSTANT var AS literal")) /* OpenCOBOL/GnuCOBOL extension */

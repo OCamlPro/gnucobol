@@ -630,7 +630,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 	while ((p < p_end) && (q <= q_end))
 	{
-			*q = (unsigned char) (*p << 4)  /* -> dropping the higher bits = no use in COB_D2I */
+			*q = (unsigned char) ((*p << 4) & 0xF0)  /* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
 			p = p + 2;
 				q++;
@@ -644,7 +644,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 	if ((p == p_end) && (q <= q_end))
 	{
-			*q = (unsigned char) (*p << 4) & 0xF0;
+			*q = (unsigned char) ((*p << 4) & 0xF0);
 	}
 
 	COB_PUT_SIGN_ADJUSTED (f1, sign);
@@ -1148,13 +1148,13 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					sign_position   = dst;
 					dst++;
 					break;
-				} else if (prev_float_char == NULL) {
+				} else if (prev_float_char == NULL && !have_decimal_point) {
 					*dst = c;
 					prev_float_char = dst;
 					sign_position   = dst;
 					dst++;
 					break;
-				} else if ((*src == '0') && (suppress_zero)) {
+				} else if (*src == '0' && suppress_zero && !have_decimal_point) {
 					*prev_float_char = ' ';
 					prev_float_char = dst;
 					sign_position   = dst;
@@ -1164,7 +1164,10 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					break;
 				} else {
 					*dst = *src;
-					is_zero = suppress_zero = 0;
+					if (*src != '0') {
+						is_zero = 0;
+						suppress_zero = 0;
+					}
 					dst++;
 					src++;
 					break;
@@ -1194,6 +1197,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'V':
+				have_decimal_point = 1;
 				break;
 
 			case '0':
@@ -1458,9 +1462,9 @@ indirect_move (void (*func) (cob_field *src, cob_field *dst),
 	cob_field_attr	attr;
 	size_t      temp_size;
 	unsigned short   digits;
-	unsigned char buff[COB_MAX_DIGITS + 1] = { 0 };
 
 	if (COB_FIELD_TYPE(dst) == COB_TYPE_NUMERIC_EDITED) {
+		unsigned char buff[COB_MAX_DIGITS + 1] = { 0 };
 		temp_size = COB_FIELD_DIGITS(dst) + 1;
 		digits = (unsigned short)temp_size - 1;
 		if (COB_FIELD_HAVE_SIGN(dst)) {

@@ -29,14 +29,10 @@
 #endif
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#ifdef	HAVE_STRINGS_H
-#include <strings.h>
-#endif
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -277,7 +273,7 @@ const int	MAX_MODULE_ITERS = 10240;
 
 struct cob_alloc_module {
 	struct cob_alloc_module	*next;		/* Pointer to next */
-	void			*cob_pointer;	/* Pointer to malloced space */
+	cob_module 		*cob_mod_ptr;	/* Pointer to malloced module space */
 };
 
 /* EXTERNAL structure */
@@ -503,6 +499,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_SCREEN_EXCEPTIONS", "screen_exceptions", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_extended_status)},
 	{"COB_TIMEOUT_SCALE", "timeout_scale", 	"0", 	timeopts, GRP_SCREEN, ENV_UINT, SETPOS (cob_timeout_scale)},
 	{"COB_INSERT_MODE", "insert_mode", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_insert_mode)},
+	{"COB_HIDE_CURSOR", "hide_cursor", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_hide_cursor)},
 	{"COB_MOUSE_FLAGS", "mouse_flags", "1", NULL, GRP_SCREEN, ENV_UINT, SETPOS (cob_mouse_flags)},
 	{"MOUSE_FLAGS", "mouse_flags", NULL, NULL, GRP_HIDE, ENV_UINT, SETPOS (cob_mouse_flags)},
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
@@ -784,7 +781,7 @@ cob_exit_common_modules (void)
 	   - currently used for: decimals -
 	   and remove it from the internal module list */
 	for (ptr = cob_module_list; ptr; ptr = nxt) {
-		mod = ptr->cob_pointer;
+		mod = ptr->cob_mod_ptr;
 		nxt = ptr->next;
 		if (mod && mod->module_cancel.funcint) {
 			mod->module_active = 0;
@@ -1975,16 +1972,14 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 	return ret;
 }
 
-/* compare content of field 'f1' to content of 'f2', space padded,
-   using the optional collating sequence of the program */
-static int
-cob_cmp_alnum (cob_field *f1, cob_field *f2)
+/* compare string 'data1' to string 'data2', of size 'size1' and 'size2'
+   respectively, space padded, using a given collating sequence */
+int
+cob_cmp_strings (
+	unsigned char* data1, unsigned char* data2,
+	size_t size1, size_t size2,
+	const unsigned char *col)
 {
-	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
-	const unsigned char	*data1 = COB_FIELD_DATA (f1);
-	const unsigned char	*data2 = COB_FIELD_DATA (f2);
-	const size_t		size1 = COB_FIELD_SIZE (f1);
-	const size_t		size2 = COB_FIELD_SIZE (f2);	
 	const size_t	min = (size1 < size2) ? size1 : size2;
 	int		ret;
 
@@ -2023,6 +2018,20 @@ cob_cmp_alnum (cob_field *f1, cob_field *f2)
 	}
 
 	return 0;
+}
+
+/* compare content of field 'f1' to content of 'f2', space padded,
+   using the optional collating sequence of the program */
+static int
+cob_cmp_alnum (cob_field *f1, cob_field *f2)
+{
+	return cob_cmp_strings (
+		(unsigned char *)COB_FIELD_DATA (f1),
+		(unsigned char *)COB_FIELD_DATA (f2),
+		COB_FIELD_SIZE (f1),
+		COB_FIELD_SIZE (f2),
+		COB_MODULE_PTR->collating_sequence
+	);
 }
 
 /* comparision of all key fields for SORT (without explicit collation)
@@ -3234,7 +3243,7 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 		*module = cob_cache_malloc (sizeof (cob_module));
 		/* Add to list of all modules activated */
 		mod_ptr = cob_malloc (sizeof (struct cob_alloc_module));
-		mod_ptr->cob_pointer = *module;
+		mod_ptr->cob_mod_ptr = *module;
 		mod_ptr->next = cob_module_list;
 		cob_module_list = mod_ptr;
 #if 0 /* cob_call_name_hash and cob_call_from_c are rw-branch only features
@@ -3316,7 +3325,7 @@ cob_module_free (cob_module **module)
 	prv = NULL;
 	/* Remove from list of all modules activated */
 	for (ptr = cob_module_list; ptr; ptr = ptr->next) {
-		if (ptr->cob_pointer == *module) {
+		if (ptr->cob_mod_ptr == *module) {
 			if (prv == NULL) {
 				cob_module_list = ptr->next;
 			} else {
@@ -3328,7 +3337,8 @@ cob_module_free (cob_module **module)
 		prv = ptr;
 	}
 
-#if 0 /* cob_module->param_buf and cob_module->param_field are rw-branch only features
+#if 0 /* cob_module->param_buf and cob_module->param_field are
+         trunk (previously rw-branch) only features
          for now - TODO: activate on merge of r1547 */
 	&& !cobglobptr->cob_call_from_c
 	if ((*module)->param_buf != NULL)
@@ -8068,7 +8078,8 @@ set_config_val (char *value, int pos)
 		if (data == (char *)&cobsetptr->cob_debugging_mode) {
 			/* Copy variables from settings (internal) to global structure, each time */
 			cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
-		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
+		} else if (data == (char *)&cobsetptr->cob_insert_mode
+		        || data == (char *)&cobsetptr->cob_hide_cursor) {
 			cob_settings_screenio ();
 		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
 			cob_switch[11 + 'D' - 'A'] = (int)numval;
@@ -9755,7 +9766,7 @@ print_info_detailed (const int verbose)
 	var_print ("64bit-mode", 	_("no"), "", 0);
 #endif
 
-#ifdef	COB_LI_IS_LL
+#ifndef	COB_32_BIT_LONG
 	var_print ("BINARY-C-LONG", 	_("8 bytes"), "", 0);
 #else
 	var_print ("BINARY-C-LONG", 	_("4 bytes"), "", 0);
@@ -11205,4 +11216,37 @@ init_statement_list (void)
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
 }
+#endif
+
+void
+cob_cleanup_thread (void)
+{
+	cob_exit_strings ();
+}
+
+#ifdef _MSC_VER
+
+#include <crtdbg.h>
+
+BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+	COB_UNUSED (hinstDLL);
+	COB_UNUSED (lpReserved);
+
+	if (fdwReason == DLL_PROCESS_ATTACH) {
+	/* Programs compiled with MSVC will by default display a popup
+	   window on some errors. In general, we do not want that,
+	   so we disable them, unless explicitly requested. */
+	if (!IsDebuggerPresent() && !getenv ("DEBUG_POPUPS_WANTED")) {
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	}
+    }
+    return TRUE;
+}
+
 #endif
