@@ -223,7 +223,7 @@ AREA_A		"#AREA_A"\n
 	cobc_in_area_a = 0;
 %}
 
-<*>^[ ]?"#CALLFH".*\n {
+<*>^"#CALLFH".*\n {
 	if (current_program) {
 		const char	*p1;
 		char		*p2;
@@ -246,11 +246,11 @@ AREA_A		"#AREA_A"\n
 }
 
 
-<*>^[ ]?"#DEFLIT".*\n {
+<*>^"#DEFLIT".*\n {
 	scan_define_options (yytext);
 }
 
-<*>^[ ]?"#ADDRSV".*\n {
+<*>^"#ADDRSV".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -258,25 +258,25 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#ADDSYN-STD".*\n {
+<*>^"#ADDSYN-STD".*\n {
 	add_synonym (1, 0);
 }
-<*>^[ ]?"#ADDSYN".*\n {
+<*>^"#ADDSYN".*\n {
 	add_synonym (0, 0);
 }
 
-<*>^[ ]?"#MAKESYN".*\n {
+<*>^"#MAKESYN".*\n {
 	make_synonym ();
  }
 
-<*>^[ ]?"#OVERRIDE-STD".*\n {
+<*>^"#OVERRIDE-STD".*\n {
 	add_synonym (1, 1);
 }
-<*>^[ ]?"#OVERRIDE".*\n {
+<*>^"#OVERRIDE".*\n {
 	add_synonym (0, 1);
 }
 
-<*>^[ ]?"#REMOVE-STD".*\n {
+<*>^"#REMOVE-STD".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -289,7 +289,7 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#REMOVE".*\n {
+<*>^"#REMOVE".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -297,19 +297,19 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#REFMOD_ZERO "[0-9]\n {
+<*>^"#REFMOD_ZERO "[0-9]\n {
 	cb_ref_mod_zero_length = (yytext[13] - '0');
 }
 
-<*>^[ ]?"#ODOSLIDE "[0-1]\n {
+<*>^"#ODOSLIDE "[0-1]\n {
 	cb_odoslide = (yytext[10] - '0');
 }
 
-<*>^[ ]?"#ASSIGN "[0-9]\n {
+<*>^"#ASSIGN "[0-9]\n {
 	cb_assign_type_default = (enum cb_assign_type)(yytext[8] - '0');
 }
 
-<*>^[ ]?"#TURN".*\n {
+<*>^"#TURN".*\n {
 	struct cb_turn_list	*l;
 
 	for (l = cb_turn_list; l && l->line != -1; l = l->next);
@@ -318,15 +318,15 @@ AREA_A		"#AREA_A"\n
 	}
 }
 
-<*>^[ ]?"#AREACHECK"\n {
+<*>^"#AREACHECK"\n {
 	cobc_areacheck = 1;
 }
 
-<*>^[ ]?"#NOAREACHECK"\n {
+<*>^"#NOAREACHECK"\n {
 	cobc_areacheck = 0;
 }
 
-<*>^[ ]?"#INCLUDE".*/\n {
+<*>^"#INCLUDE".*/\n {
 	cb_include_file_list_directive = scan_list_add (
 		cb_include_file_list_directive,
 		yytext + 9

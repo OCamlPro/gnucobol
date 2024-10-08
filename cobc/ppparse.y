@@ -1377,7 +1377,8 @@ imp_directive:
   /* GnuCOBOL 3.3 extension */
   INCLUDE
   {
-	ppparse_error (_("Missing argument for IMP INCLUDE directive"));
+	cb_error (_("invalid %s directive"), "IMP INCLUDE");
+	yyerrok;
   }
 | INCLUDE imp_include_sources
   {
