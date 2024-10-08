@@ -8447,7 +8447,7 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
-[prog2.cob:2: error: Missing argument for IMP INCLUDE directive
+[prog2.cob:2: error: invalid IMP INCLUDE directive
 ])
 
 AT_CLEANUP
@@ -8464,6 +8464,10 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE --save-temps -E -o prog.i prog.cob], [0], [], [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.i], [0], ignore, [])
 
 AT_CLEANUP

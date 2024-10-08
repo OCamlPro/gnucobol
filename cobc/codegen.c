@@ -1834,7 +1834,6 @@ output_gnucobol_defines (const char *formatted_date)
 
 	{
 		struct cb_text_list *l;
-		struct cb_text_list *last = NULL;
 		for (l = cb_include_file_list; l; l = l->next) {
 			if (l->text[0] == '<') {
 				output_line ("#include %s", l->text);
@@ -1844,11 +1843,6 @@ output_gnucobol_defines (const char *formatted_date)
 		}
 
 		for (l = cb_include_file_list_directive; l; l = l->next) {
-			if (last != NULL) {
-				cobc_free (last->text);
-				cobc_free (last);
-			}
-			last = l;
 			if (l->text[0] == '<') {
 				output_line ("#include %s", l->text);
 			} else {
