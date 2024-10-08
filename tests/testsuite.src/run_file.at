@@ -9102,7 +9102,6 @@ TSTFH (unsigned char *opCodep, FCD3 *fcd)
 static char *           /* Return Text name of function */
 txtOpCode(int opCode)
 {
-   static char tmp[32];
    switch (opCode) {
    case OP_OPEN_INPUT:     return "OPEN_IN";
    case OP_OPEN_OUTPUT:       return "OPEN_OUT";
@@ -9154,8 +9153,11 @@ txtOpCode(int opCode)
    case OP_WRITE_AFTER_TAB:   return "WRITE_AFTER_TAB";
    case OP_WRITE_AFTER_PAGE:  return "WRITE_AFTER_PAGE";
    }
-   sprintf(tmp, "Func 0x%02X:", opCode);
-   return tmp;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Func 0x%02X", opCode);
+      return wrk;
+   }
 }
 ]])
 

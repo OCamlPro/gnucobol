@@ -1,4 +1,9 @@
 
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new options --with-pkgversion=PKG and --with-bugurl=URL
+	  see NEWS, currently only used in version and help output
+
 2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: drop COB_LI_IS_LL in favor of existing COB_32_BIT_LONG

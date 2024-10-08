@@ -44,14 +44,20 @@ cobc_print_usage (char * prog)
 
 	cobc_print_usage_dialect ();
 
-	putchar ('\n');
+#ifndef PACKAGE_BUGREPORT_URL
 	printf (_("Report bugs to: %s\n"
 	          "or (preferably) use the issue tracker via the home page."),
-			"bug-gnucobol@gnu.org");
+			PACKAGE_BUGREPORT);
 	putchar ('\n');
-	printf (_("GnuCOBOL home page: <%s>"), "https://www.gnu.org/software/gnucobol/");
+#else
+	puts (_("For bug reporting instructions, please see:"));
+	printf ("%s.\n", PACKAGE_BUGREPORT_URL);
+#endif
+	printf (_("GnuCOBOL home page: <%s>"),
+		"https://www.gnu.org/software/gnucobol/");
 	putchar ('\n');
-	printf (_("General help using GNU software: <%s>"), "https://www.gnu.org/gethelp/");
+	printf (_("General help using GNU software: <%s>"),
+		"https://www.gnu.org/gethelp/");
 	putchar ('\n');
 }
 

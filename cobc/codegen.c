@@ -5354,7 +5354,11 @@ output_initialize_to_default (struct cb_field *f, cb_tree x)
 static void
 output_c_info (void)
 {
-	/* note: output name is already escaped for C string */
+	/* note: output name is already escaped for C string;
+	   output name cannot be COB_DASH as we generate the headers "on the fly" and
+	   would have to place everything into temporary files (which would have a name)
+	   and after we're finished cat those to stdout; or adjust to first generate the
+	   headers (in memory) and output them instead of the #include */
 	output ("#line %d \"%s\"", output_line_number + 1, output_name);
 	output_newline ();
 }
@@ -5364,12 +5368,17 @@ output_cobol_info (cb_tree x)
 {
 	const char	*p = x->source_file;
 	output ("#line %d \"", x->source_line);
+
+    if (strcmp (p, COB_DASH)) {
 	/* escape COBOL file name for C string */
-	while (*p) {
-		if (*p == '\\') {
-			output ("%c",'\\');
+		while (*p) {
+			if (*p == '\\') {
+				output ("%c", '\\');
+			}
+			output ("%c", *p++);
 		}
-		output ("%c",*p++);
+	} else {
+		output ("<stdin>");
 	}
 	output ("\"");
 	output_newline ();

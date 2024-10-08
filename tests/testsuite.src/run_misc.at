@@ -11866,7 +11866,6 @@ AT_DATA([cmod.c], [[
 static char *
 getType (int type, int byvalue)
 {
-   static char wrk[24];
    switch (type) {
 #if 1
    case COB_TYPE_GROUP:           return "Group";
@@ -11897,28 +11896,30 @@ getType (int type, int byvalue)
    case COB_TYPE_NATIONAL:        return "N";
 #endif
    }
-   sprintf (wrk,"Type %04X",type);
-   return wrk;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Type 0x%04X", type);
+      return wrk;
+   }
 }
 
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val = 0;
-   char     *str;
-   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80], pic[30];	/* note: maximum _theoretical_ size */
+   const int nargs = cob_get_num_params();
+   int       k;
+   cob_s64_t val = 0;
 
-   nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
-   fflush(stdout);
+   fflush (stdout);
    for (k=1; k <= nargs; k++) {
-      type   = cob_get_param_type (k);
-      digits = cob_get_param_digits (k);
-      scale  = cob_get_param_scale (k);
-      size   = cob_get_param_size (k);
-      sign   = cob_get_param_sign (k);
-      byvalue = cob_get_param_constant(k);
+      int  type    = cob_get_param_type (k);
+      int  digits  = cob_get_param_digits (k);
+      int  scale   = cob_get_param_scale (k);
+      int  size    = cob_get_param_size (k);
+      int  sign    = cob_get_param_sign (k);
+      int  byvalue = cob_get_param_constant(k);
       printf (" %d: %-8s ", k, getType (type, byvalue));
       if (byvalue) {
          printf ("BY VALUE     ");
@@ -11926,27 +11927,31 @@ CAPI (void *p1, ...)
          printf ("BY REFERENCE ");
       }
       if (type == COB_TYPE_ALPHANUMERIC) {
-         sprintf (pic, "X(%d)", size);
-         str = cob_get_picx_param (k, NULL, 0);
+         char     *str = cob_get_picx_param (k, NULL, 0);
+         snprintf (pic, sizeof(pic), "X(%d)", size);
          printf ("%-11s '%s'", pic, str);
          cob_free ((void*)str);
          cob_put_picx_param (k, "Bye!");
       } else if (type == COB_TYPE_NATIONAL) {
-         sprintf (pic, "N(%d)", size); /* FIXME */
+         snprintf (pic, sizeof(pic), "N(%d)", size); /* FIXME */
          printf ("exchange of national data is not supported yet");
       } else if (type == COB_TYPE_GROUP) {
-         sprintf (pic, "(%d)", size);
-         str = cob_get_grp_param (k, NULL, 0);
+         char     *str = cob_get_grp_param (k, NULL, 0);
+         snprintf (pic, sizeof(pic), "(%d)", size);
          printf ("%-11s '%.*s'", pic, size, str);
          cob_free ((void*)str);
-         memset (wrk,' ',sizeof(wrk));
-         memcpy (wrk,"Bye-Bye Birdie!",15);
+         memset (wrk, ' ',sizeof(wrk));
+         memcpy (wrk, "Bye-Bye Birdie!", 15);
          cob_put_grp_param (k, wrk, sizeof(wrk));
       } else if (type == COB_TYPE_NUMERIC_EDITED) {
          if (scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          val = cob_get_s64_param (k);
          printf ("%-11s %lld ",pic,val);
@@ -11957,9 +11962,13 @@ CAPI (void *p1, ...)
          printf (" to %.*s",size,wrk);
       } else {
          if(scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          val = cob_get_s64_param (k);
          printf ("%-11s %lld", pic, val);
@@ -12046,7 +12055,7 @@ AT_CLEANUP
 
 
 AT_SETUP([C-API (field based)])
-AT_KEYWORDS([runmisc CALL api])
+AT_KEYWORDS([runmisc CALL api field])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12102,7 +12111,6 @@ AT_DATA([cmod.c], [[
 static char *
 getType (int type, int byvalue)
 {
-   static char wrk[24];
    switch (type) {
 #if 1
    case COB_TYPE_GROUP:           return "Group";
@@ -12133,73 +12141,82 @@ getType (int type, int byvalue)
    case COB_TYPE_NATIONAL:        return "N";
 #endif
    }
-   sprintf (wrk,"Type %04X",type);
-   return wrk;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Type 0x%04X", type);
+      return wrk;
+   }
 }
 
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val;
-   char     *str;
-   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   const int nargs = cob_get_num_params();
+   int       k;
 
-   nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
-   fflush(stdout);
+   fflush (stdout);
    for (k=1; k <= nargs; k++) {
       cob_field *fld = cob_get_param_field (k, "CAPI");
-      type   = cob_get_field_type (fld);
-      digits = cob_get_field_digits (fld);
-      scale  = cob_get_field_scale (fld);
-      size   = cob_get_field_size (fld);
-      sign   = cob_get_field_sign (fld);
-      byvalue = cob_get_field_constant (fld);
+      char *str    = (char *) cob_get_field_str_buffered (fld);
+      int  type    = cob_get_field_type (fld);
+      int  digits  = cob_get_field_digits (fld);
+      int  scale   = cob_get_field_scale (fld);
+      int  size    = cob_get_field_size (fld);
+      int  sign    = cob_get_field_sign (fld);
+      int  byvalue = cob_get_field_constant (fld);
       printf (" %d: %-8s ", k, getType (type, byvalue));
       if (byvalue) {
          printf ("BY VALUE     ");
       } else {
          printf ("BY REFERENCE ");
       }
-      str = (char *) cob_get_field_str_buffered (fld);
       if (type == COB_TYPE_ALPHANUMERIC) {
-         sprintf (pic, "X(%d)", size);
+         snprintf (pic, sizeof(pic),  "X(%d)", size);
          printf ("%-11s '%s'", pic, str);
          cob_put_field_str (fld, "Bye!");
       } else if (type == COB_TYPE_NATIONAL) {
-         sprintf (pic,"N(%d)",size); /* FIXME */
+         snprintf (pic, sizeof(pic), "N(%d)", size); /* FIXME */
          printf ("exchange of national data is not supported yet");
       } else if (type == COB_TYPE_GROUP) {
-         sprintf (pic,"(%d)",size);
+         snprintf (pic, sizeof(pic), "(%d)",size);
          printf ("%-11s '%.*s'",pic,size,str);
          cob_put_field_str (fld, "Bye-Bye Birdie!");
       } else if (type == COB_TYPE_NUMERIC_EDITED) {
+         cob_s64_t   val = cob_get_s64_param (k);
          if (scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          printf ("%-11s %s ",pic,str);
-         val = cob_get_s64_param (k);
          val = val + 130;
          val = -val;
          cob_put_s64_param (k, val);
          str = (char *) cob_get_field_str (fld, wrk, 78);
          printf (" to %.*s",size,wrk);
       } else {
+         cob_s64_t   val = cob_get_s64_param (k);
          if(scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          printf ("%-11s %s", pic, str);
-         val = cob_get_s64_param (k);
-         sprintf (wrk, "%lld", val + 3);
+         snprintf (wrk, sizeof(wrk),  "%lld", val + 3);
          cob_put_field_str (fld, wrk);
       }
       printf (";\n");
-      fflush(stdout);
+      fflush (stdout);
    }
    return 0;
 }

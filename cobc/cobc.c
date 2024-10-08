@@ -2502,7 +2502,13 @@ cobc_sig_handler (int sig)
 	int ret = 0;
 #endif
 
-	cobc_abort_msg ();
+#ifdef SIGPIPE
+	if (sig == SIGPIPE) ret = 1;
+#endif
+	
+	if (!ret) {
+		cobc_abort_msg ();
+	}
 #if defined (SIGINT) || defined (SIGQUIT) || defined (SIGTERM) || defined (SIGPIPE)
 #ifdef SIGINT
 	if (sig == SIGINT) ret = 1;
@@ -2512,9 +2518,6 @@ cobc_sig_handler (int sig)
 #endif
 #ifdef SIGTERM
 	if (sig == SIGTERM) ret = 1;
-#endif
-#ifdef SIGPIPE
-	if (sig == SIGPIPE) ret = 1;
 #endif
 
 	/* LCOV_EXCL_START */
@@ -2535,27 +2538,31 @@ cobc_sig_handler (int sig)
 static void
 cobc_print_version (void)
 {
-	printf ("cobc (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
+	printf ("cobc %s%s.%d\n", PKGVERSION, PACKAGE_VERSION, PATCH_LEVEL);
 	puts ("Copyright (C) 2024 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 	        "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
+	putchar ('\n');
 	printf (_("Written by %s"), "Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Edward Hart");
 	putchar ('\n');
-	printf (_("Built     %s"), cb_cobc_build_stamp);
-	putchar ('\n');
-	printf (_("Packaged  %s"), COB_TAR_DATE);
-	putchar ('\n');
-	printf ("%s %s", _("C version"), GC_C_VERSION_PRF GC_C_VERSION);
-	putchar ('\n');
+	if (verbose_output) {
+		putchar ('\n');
+		printf (_("Built     %s"), cb_cobc_build_stamp);
+		putchar ('\n');
+		printf (_("Packaged  %s"), COB_TAR_DATE);
+		putchar ('\n');
+		printf ("%s %s", _("C version"), GC_C_VERSION_PRF GC_C_VERSION);
+		putchar ('\n');
+	}
 }
 
 static void
 cobc_print_shortversion (void)
 {
-	printf ("cobc (%s) %s.%d\n",
-		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
+	printf ("cobc %s%s.%d\n",
+		PKGVERSION, PACKAGE_VERSION, PATCH_LEVEL);
 	printf (_("Built     %s"), cb_cobc_build_stamp);
 	putchar ('\t');
 	printf (_("Packaged  %s"), COB_TAR_DATE);
@@ -3189,7 +3196,10 @@ process_command_line (const int argc, char **argv)
 			/* --version */
 			cobc_print_version ();
 			if (verbose_output) {
-				puts ("\n");
+				/* temporarily reduce verbosity for not necessarily showing the process */
+				const int verbose_output_sav = verbose_output--;
+
+				putchar ('\n');
 				fflush (stdout);
 #ifdef _MSC_VER
 				process ("cl.exe");
@@ -3203,7 +3213,8 @@ process_command_line (const int argc, char **argv)
 				snprintf (cobc_buffer, cobc_buffer_size, "%s --version", cobc_cc);
 #endif
 #if (defined(__GNUC__) && !defined(__INTEL_COMPILER))
-				if (verbose_output > 2) {
+				if (verbose_output > 1) {
+					verbose_output--;
 					snprintf (cobc_buffer, cobc_buffer_size, "%s -v", cobc_cc);
 				}
 #endif
@@ -3212,6 +3223,7 @@ process_command_line (const int argc, char **argv)
 				cobc_free (cobc_buffer);
 				cobc_buffer = NULL;
 #endif
+				verbose_output = verbose_output_sav;
 			}
 			cobc_early_exit (EXIT_SUCCESS);
 

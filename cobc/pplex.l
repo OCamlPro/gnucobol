@@ -1617,6 +1617,16 @@ cb_copy_find_file (char *name, int has_ext)
 }
 
 static COB_INLINE COB_A_INLINE void
+output_line_directive (FILE *stream)
+{
+    if (strcmp (cb_source_file, COB_DASH)) {
+		fprintf (yyout, "#line %d \"%s\"\n", cb_source_line, cb_source_file);
+	} else {
+		fprintf (yyout, "#line %d \"<stdin>\"\n", cb_source_line);
+	}
+}
+
+static COB_INLINE COB_A_INLINE void
 output_pending_newlines (FILE *stream)
 {
 	if (echo_newline > 9) {
@@ -1624,7 +1634,7 @@ output_pending_newlines (FILE *stream)
 		   long comment blocks, for example from EXEC SQL preparsers),
 		   so generate source directive from the already adjusted static vars
 		   instead of spitting out possibly hundreds of empty lines */
-		fprintf (stream, "\n#line %d \"%s\"\n", cb_source_line, cb_source_file);
+		output_line_directive (stream);
 		echo_newline = 0;
 	} else {
 		while (echo_newline > 1) {
@@ -1756,7 +1766,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 
 	/* On COPY, open error restore old file */
 	cb_current_file = old_list_file;
-	fprintf (yyout, "#line %d \"%s\"\n", cb_source_line, cb_source_file);
+	output_line_directive (yyout);
 	return -1;
 }
 
@@ -2120,7 +2130,8 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 	/* Reset file/line */
 	cb_source_line = line;
 	cb_source_file = file;
-	fprintf (yyout, "#line %d \"%s\"\n", line, file);
+	
+    output_line_directive (yyout);
 	/* Switch buffer */
 	yy_switch_to_buffer (buffer);
 }
