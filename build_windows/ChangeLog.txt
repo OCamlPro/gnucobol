@@ -1,4 +1,8 @@
 
+2024-10-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* set_env_vs_dist: supporting space-included paths (not recommended)
+
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* makedist.cmd: cater for new different library names
@@ -315,7 +319,7 @@
 
 	* update for subfolder vc10
 
-2014-07-07  Philipp Böhme <phi.boehme@googlemail.com>
+2014-07-07  Philipp Bï¿½hme <phi.boehme@googlemail.com>
 
 	* minor bugfix (tpyos) for subfolder vc12
 
@@ -326,7 +330,7 @@
 	* updated all project files
 	* added subfolder vc11
 
-2014-06-20  Philipp Böhme <phi.boehme@googlemail.com>
+2014-06-20  Philipp Bï¿½hme <phi.boehme@googlemail.com>
 
 	* added project files - subfolders: vc7, vc8, vc9, vc10, vc12 
 	  (original project files and resource files version_cobc.rc,

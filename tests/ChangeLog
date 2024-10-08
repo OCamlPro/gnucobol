@@ -1,4 +1,11 @@
 
+2024-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: export new definition COB_ON_WINDOWS
+	  to allow the testsuite skipping/failing tests
+	* run_prog_manual.sh.in: fix extranous $COBCRUN for all test runners
+	* run_prog_manual.sh.in (xterm): use all parameters, not only the first
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win: allow overriding COB_CC during tests

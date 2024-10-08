@@ -359,9 +359,8 @@ AT_CLEANUP
 AT_SETUP([temporary path invalid])
 AT_KEYWORDS([cobc runmisc])
 
-# Note: may be either removed completely as there was a report about
-#       this test "failing" - or skipped as this very often fails for
-#       WIN32 builds
+# Note: we skip this as it often fails for WIN32 builds but sometimes works
+AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -1379,7 +1378,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog| head -n 2], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog | head -n 2], [0],
 [1
 2
 ], [])
@@ -1389,6 +1388,11 @@ AT_CLEANUP
 
 AT_SETUP([signal handling SIGTERM in COBOL])
 AT_KEYWORDS([runmisc stack stacktrace])
+
+# this is portable in all posix environments, but not on Win32;
+# note: cygwin-compiled programs handle cygwin-sent SIGTERM as expected
+# CTRL+C does raise a SIGINT, but only when executed from "within" the program
+AT_XFAIL_IF([test "$COB_ON_WINDOWS" = "yes"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
