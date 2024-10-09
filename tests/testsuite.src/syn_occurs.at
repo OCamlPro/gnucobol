@@ -620,3 +620,115 @@ $GREP "prog.cob:11: error: numeric literal '9223372036854775808' exceeds limit"]
 
 AT_CLEANUP
 
+
+AT_SETUP([SET to out-of-range literal])
+#AT_KEYWORDS([SET])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X           PIC X OCCURS 10 INDEXED I.
+       01 LVL-01-CST    CONSTANT 12.
+       78 LVL-78-CST    VALUE 13.
+       PROCEDURE        DIVISION.
+           SET I TO ZERO.
+           SET I TO 11.
+           SET I TO LVL-01-CST.
+           SET I TO LVL-78-CST.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fopt-check-subscript-set prog.cob], [0], [],
+[prog.cob:11: warning: SET I TO 0 is out of bounds
+prog.cob:12: warning: SET I TO 11 is out of bounds
+prog.cob:13: warning: SET I TO 12 is out of bounds
+prog.cob:14: warning: SET I TO 13 is out of bounds
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([SET index])
+#AT_KEYWORDS([SET])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  BINB   PIC 9(9) COMP-5 VALUE 42.
+       01  NIDX   PIC S99.
+       01  MYIDX  USAGE IS INDEX.
+       01  MAXIDX PIC 9999 VALUE 3 COMP-5.
+       01  TBL.
+           05  FILLER PIC X(8) VALUE "Fred".
+           05  FILLER PIC X(8) VALUE "Barney".
+           05  FILLER PIC X(8) VALUE "Wilma".
+           05  FILLER PIC X(8) VALUE "Betty".
+       01  FILLER REDEFINES TBL.
+           05  MYNAME PIC X(8) OCCURS 4 INDEXED BY IB1.
+       01  TBL2.
+           05  MYMRK  PIC X(3)
+               OCCURS 2 TO 5 DEPENDING ON MAXIDX
+               INDEXED BY IB2.
+       PROCEDURE DIVISION.
+           MOVE 5 TO MAXIDX
+           SET NIDX TO IB1.
+           DISPLAY "Initial value: " NIDX.
+           SET IB2 TO 0.2.
+           SET IB2 TO "fred".
+           SET IB2 TO 10.
+           MOVE "A:" TO MYMRK (1)
+           MOVE "B:" TO MYMRK (2)
+           MOVE "C:" TO MYMRK (3)
+           MOVE "D:" TO MYMRK (4)
+           MOVE "E:" TO MYMRK (5)
+           MOVE 3 TO MAXIDX.
+           SET IB1 TO 2.
+           SET MYIDX TO IB1.
+           SET IB1 TO 1.
+           SET MYIDX TO IB1.
+           SET IB1, IB2 TO 4.
+           SET IB2 TO MAXIDX.
+           SET IB1, IB2 UP BY 1.
+           SET IB1 TO 3.
+           SET MYIDX TO IB1.
+           MOVE -1 TO NIDX
+           SET IB1 TO NIDX.
+           SET IB1 TO -9.
+           SET IB1 TO 300.
+           MOVE 400 TO IB1.
+           PERFORM VARYING IB1 FROM 1 BY 1 UNTIL IB1 > MAXIDX
+               SET IB2   TO IB1
+               SET NIDX  TO IB1
+               SET MYIDX TO IB1
+               DISPLAY NIDX ": " MYMRK (IB2) MYNAME (IB1) "."
+               IF MYNAME (NIDX) = "Fred"
+                  MOVE "Freddy" TO MYNAME (NIDX)
+               END-IF
+           END-PERFORM.
+           PERFORM VARYING IB2 FROM 1 BY 1 UNTIL IB2 > 4
+               SET IB1   TO IB2
+               SET NIDX  TO IB1
+               SET MYIDX TO IB1
+               DISPLAY NIDX ": " MYMRK (IB2) MYNAME (IB1) "."
+               IF MYNAME (IB1) = "Fred"
+                  MOVE "Freddy" TO MYNAME (IB1)
+               END-IF
+           END-PERFORM.
+           STOP RUN.
+           END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -fopt-check-subscript-set prog.cob], [1], [], [prog.cob:25: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:26: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:27: warning: SET IB2 TO 10 is out of bounds
+prog.cob:45: warning: SET IB1 TO -9 is out of bounds
+prog.cob:46: warning: SET IB1 TO 300 is out of bounds
+])
+
+AT_CLEANUP
+

@@ -691,8 +691,8 @@ prog.cob:14: warning: MOVE of figurative constant QUOTE to numeric item is archa
 prog.cob:15: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:17: warning: numeric value is expected
-prog.cob:19: error: invalid SET statement
-prog.cob:20: error: invalid SET statement
+prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in COBOL 2002
 prog.cob:24: warning: MOVE of figurative constant QUOTE to numeric item is archaic in COBOL 2002
 prog.cob:25: warning: numeric value is expected
@@ -708,8 +708,8 @@ prog.cob:14: warning: MOVE of figurative constant QUOTE to numeric item is archa
 prog.cob:15: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:17: warning: numeric value is expected
-prog.cob:19: error: invalid SET statement
-prog.cob:20: error: invalid SET statement
+prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in IBM COBOL (lax)
 prog.cob:24: warning: MOVE of figurative constant QUOTE to numeric item is archaic in IBM COBOL (lax)
 prog.cob:25: warning: numeric value is expected
@@ -724,8 +724,8 @@ prog.cob:13: warning: source is non-numeric - substituting zero
 prog.cob:14: warning: source is non-numeric - substituting zero
 prog.cob:15: warning: source is non-numeric - substituting zero
 prog.cob:17: warning: source is non-numeric - substituting zero
-prog.cob:19: error: invalid SET statement
-prog.cob:20: error: invalid SET statement
+prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: source is non-numeric - substituting zero
 prog.cob:24: warning: source is non-numeric - substituting zero
 prog.cob:25: warning: source is non-numeric - substituting zero
@@ -741,8 +741,8 @@ prog.cob:14: warning: MOVE of figurative constant to numeric item is archaic in 
 prog.cob:15: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:17: warning: numeric value is expected
-prog.cob:19: error: invalid SET statement
-prog.cob:20: error: invalid SET statement
+prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in GnuCOBOL
 prog.cob:24: warning: MOVE of figurative constant QUOTE to numeric item is obsolete in GnuCOBOL
 prog.cob:24: warning: MOVE of figurative constant to numeric item is archaic in GnuCOBOL
