@@ -3169,12 +3169,12 @@ process_command_line (const int argc, char **argv)
 				fflush (stdout);
 				process ("link.exe");
 #else
-				cobc_buffer_size = strlen (cobc_cc) + 11;
+				cobc_buffer_size = strlen (cobc_cc) + 13;
 				cobc_buffer = cobc_malloc (cobc_buffer_size);
-				snprintf (cobc_buffer, cobc_buffer_size, "%s --help", cobc_cc);
+				snprintf (cobc_buffer, cobc_buffer_size, "\"%s\" --help", cobc_cc);
 #if (defined(__GNUC__) && !defined(__INTEL_COMPILER)) || defined(__TINYC__)
 				if (verbose_output > 1) {
-					snprintf (cobc_buffer, cobc_buffer_size, "%s -v --help", cobc_cc);
+					snprintf (cobc_buffer, cobc_buffer_size, "\"%s\" -v --help", cobc_cc);
 				}
 #endif
 				cobc_buffer[cobc_buffer_size] = 0;
@@ -3195,16 +3195,16 @@ process_command_line (const int argc, char **argv)
 				process ("cl.exe");
 				puts ("\n");
 #else
-				cobc_buffer_size = strlen (cobc_cc) + 11;
+				cobc_buffer_size = strlen (cobc_cc) + 13;
 				cobc_buffer = cobc_malloc (cobc_buffer_size);
 #if defined(__TINYC__)
-				snprintf (cobc_buffer, cobc_buffer_size, "%s -v", cobc_cc);
+				snprintf (cobc_buffer, cobc_buffer_size, "\"%s\" -v", cobc_cc);
 #else
-				snprintf (cobc_buffer, cobc_buffer_size, "%s --version", cobc_cc);
+				snprintf (cobc_buffer, cobc_buffer_size, "\"%s\" --version", cobc_cc);
 #endif
 #if (defined(__GNUC__) && !defined(__INTEL_COMPILER))
 				if (verbose_output > 2) {
-					snprintf (cobc_buffer, cobc_buffer_size, "%s -v", cobc_cc);
+					snprintf (cobc_buffer, cobc_buffer_size, "\"%s\" -v", cobc_cc);
 				}
 #endif
 				cobc_buffer[cobc_buffer_size - 1] = 0;
@@ -8348,8 +8348,8 @@ process_compile (struct filename *fn)
 #ifdef	_MSC_VER
 	/* TODO: we likely need to call ml.exe / ml64.exe */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
-		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
+		"\"%s\" /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
+		"\"%s\" /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include, name,
 			fn->object, fn->translate);
 	if (verbose_output > 1) {
@@ -8358,16 +8358,16 @@ process_compile (struct filename *fn)
 		return process_filtered (cobc_buffer, fn);
 	}
 #elif defined(__WATCOMC__)
-	sprintf (cobc_buffer, "%s -fe=\"%s\" -s %s %s %s", cobc_cc, name,
+	sprintf (cobc_buffer, "\"%s\" -fe=\"%s\" -s %s %s %s", cobc_cc, name,
 			cobc_cflags, cobc_include, fn->translate);
 	return process (cobc_buffer);
 #else
 	/* TODO: check ORANGEC options */
 	if (!cb_flag_main) {
-		sprintf (cobc_buffer, "%s -S -o \"%s\" %s %s %s \"%s\"", cobc_cc, name,
+		sprintf (cobc_buffer, "\"%s\" -S -o \"%s\" %s %s %s \"%s\"", cobc_cc, name,
 			cobc_cflags, cobc_include, COB_PIC_FLAGS, fn->translate);
 	} else {
-		sprintf (cobc_buffer, "%s -S -o \"%s\" %s %s \"%s\"", cobc_cc, name,
+		sprintf (cobc_buffer, "\"%s\" -S -o \"%s\" %s %s \"%s\"", cobc_cc, name,
 			cobc_cflags, cobc_include, fn->translate);
 	}
 	return process(cobc_buffer);
@@ -8397,8 +8397,8 @@ process_assemble (struct filename *fn)
 
 #ifdef	_MSC_VER
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /c %s %s /Od /MDd /Zi /FR /Fo\"%s\" \"%s\"" :
-		"%s /c %s %s     /MD          /Fo\"%s\" \"%s\"",
+		"\"%s\" /c %s %s /Od /MDd /Zi /FR /Fo\"%s\" \"%s\"" :
+		"\"%s\" /c %s %s     /MD          /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include,
 			fn->object, fn->translate);
 	if (verbose_output > 1) {
@@ -8408,7 +8408,7 @@ process_assemble (struct filename *fn)
 	}
 #elif defined(__OS400__)
 	file_stripext ((char *) fn->object);
-	sprintf (cobc_buffer, "%s -c %s %s -o %s %s",
+	sprintf (cobc_buffer, "\"%s\" -c %s %s -o %s %s",
 		 cobc_cc, cobc_cflags, cobc_include,
 		 fn->object, fn->translate);
 	ret = process (cobc_buffer);
@@ -8416,11 +8416,11 @@ process_assemble (struct filename *fn)
 #elif defined(__WATCOMC__)
 	if (cb_compile_level == CB_LEVEL_MODULE
 	 || cb_compile_level == CB_LEVEL_LIBRARY) {
-		sprintf (cobc_buffer, "%s -c %s %s %s -fe=\"%s\" \"%s\"",
+		sprintf (cobc_buffer, "\"%s\" -c %s %s %s -fe=\"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 COB_PIC_FLAGS, fn->object, fn->translate);
 	} else {
-		sprintf (cobc_buffer, "%s -c %s %s -fe=\"%s\" \"%s\"",
+		sprintf (cobc_buffer, "\"%s\" -c %s %s -fe=\"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 fn->object, fn->translate);
 	}
@@ -8430,12 +8430,12 @@ process_assemble (struct filename *fn)
 	if (cb_compile_level == CB_LEVEL_MODULE
 	 || cb_compile_level == CB_LEVEL_LIBRARY
 	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
-		sprintf (cobc_buffer, "%s -c %s %s %s -o \"%s\" \"%s\"",
+		sprintf (cobc_buffer, "\"%s\" -c %s %s %s -o \"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 COB_PIC_FLAGS, fn->object, fn->translate);
 	} else {
 		/* Only for CB_LEVEL_EXECUTABLE */
-		sprintf (cobc_buffer, "%s -c %s %s -o \"%s\" \"%s\"",
+		sprintf (cobc_buffer, "\"%s\" -c %s %s -o \"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 fn->object, fn->translate);
 	}
@@ -8517,12 +8517,12 @@ process_module_direct (struct filename *fn)
 
 #ifndef	_MSC_VER
 #ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s %s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s %s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
 		 cobc_cc, cobc_cflags, cobc_include, COB_SHARED_OPT,
 		 COB_PIC_FLAGS, COB_EXPORT_DYN, name,
 		 fn->translate, cobc_ldflags, cobc_lib_paths, cobc_libs);
 #else
-	sprintf (cobc_buffer, "%s %s %s %s %s %s -o \"%s\" \"%s\" %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s %s %s %s %s -o \"%s\" \"%s\" %s %s %s",
 		 cobc_cc, cobc_cflags, cobc_include, COB_SHARED_OPT,
 		 COB_PIC_FLAGS, COB_EXPORT_DYN, name,
 		 fn->translate, cobc_ldflags, cobc_lib_paths, cobc_libs);
@@ -8545,8 +8545,8 @@ process_module_direct (struct filename *fn)
 #endif
 #else	/* _MSC_VER */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s %s %s /Od /MDd /LDd /Zi /FR /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s" :
-		"%s %s %s     /MD  /LD          /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s",
+		"\"%s\" %s %s /Od /MDd /LDd /Zi /FR /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s" :
+		"\"%s\" %s %s     /MD  /LD          /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s",
 			cobc_cc, cobc_cflags, cobc_include, exe_name, name,
 			fn->translate,
 			manilink, cobc_ldflags, cobc_lib_paths, cobc_libs);
@@ -8625,11 +8625,11 @@ process_module (struct filename *fn)
 
 #ifndef	_MSC_VER
 #ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
 		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS, COB_EXPORT_DYN,
 		 name, fn->object, cobc_ldflags, cobc_lib_paths, cobc_libs);
 #else
-	sprintf (cobc_buffer, "%s %s %s %s -o \"%s\" \"%s\" %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s %s %s -o \"%s\" \"%s\" %s %s %s",
 		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS, COB_EXPORT_DYN,
 		 name, fn->object, cobc_ldflags, cobc_lib_paths, cobc_libs);
 #endif
@@ -8643,8 +8643,8 @@ process_module (struct filename *fn)
 #endif
 #else	/* _MSC_VER */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /Od /MDd /LDd /Zi /FR /Fe\"%s\" \"%s\" %s %s %s %s" :
-		"%s     /MD  /LD          /Fe\"%s\" \"%s\" %s %s %s %s",
+		"\"%s\" /Od /MDd /LDd /Zi /FR /Fe\"%s\" \"%s\" %s %s %s %s" :
+		"\"%s\"     /MD  /LD          /Fe\"%s\" \"%s\" %s %s %s %s",
 		cobc_cc, exe_name, fn->object,
 		manilink, cobc_ldflags, cobc_libs, cobc_lib_paths);
 	if (verbose_output > 1) {
@@ -8737,12 +8737,12 @@ process_library (struct filename *l)
 
 #ifndef	_MSC_VER
 #ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s %s %s -fe=\"%s\" %s %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s %s %s -fe=\"%s\" %s %s %s %s",
 		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS,
 		 COB_EXPORT_DYN, name, cobc_objects_buffer,
 		 cobc_ldflags, cobc_lib_paths, cobc_libs);
 #else
-	sprintf (cobc_buffer, "%s %s %s %s -o \"%s\" %s %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s %s %s -o \"%s\" %s %s %s %s",
 		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS,
 		 COB_EXPORT_DYN, name, cobc_objects_buffer,
 		 cobc_ldflags, cobc_lib_paths, cobc_libs);
@@ -8757,8 +8757,8 @@ process_library (struct filename *l)
 #endif
 #else	/* _MSC_VER */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /Od /MDd /LDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
-		"%s     /MD  /LD          /Fe\"%s\" %s %s %s %s %s",
+		"\"%s\" /Od /MDd /LDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
+		"\"%s\"     /MD  /LD          /Fe\"%s\" %s %s %s %s %s",
 		cobc_cc, exe_name, cobc_objects_buffer,
 		manilink, cobc_ldflags, cobc_lib_paths, cobc_libs);
 	if (verbose_output > 1) {
@@ -8859,11 +8859,11 @@ process_link (struct filename *l)
 
 #ifndef	_MSC_VER
 #ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s -fe=\"%s\" %s %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s -fe=\"%s\" %s %s %s %s",
 		 cobc_cc, COB_EXPORT_DYN, name, cobc_objects_buffer,
 		 cobc_ldflags, cobc_lib_paths, cobc_libs);
 #else
-	sprintf (cobc_buffer, "%s %s -o \"%s\" %s %s %s %s",
+	sprintf (cobc_buffer, "\"%s\" %s -o \"%s\" %s %s %s %s",
 		 cobc_cc, COB_EXPORT_DYN, name, cobc_objects_buffer,
 		 cobc_ldflags, cobc_lib_paths, cobc_libs);
 #endif
@@ -8898,8 +8898,8 @@ process_link (struct filename *l)
 #endif
 #else	/* _MSC_VER */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /Od /MDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
-		"%s     /MD          /Fe\"%s\" %s %s %s %s %s",
+		"\"%s\" /Od /MDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
+		"\"%s\"     /MD          /Fe\"%s\" %s %s %s %s %s",
 		cobc_cc, exe_name, cobc_objects_buffer,
 		manilink, cobc_ldflags, cobc_lib_paths, cobc_libs);
 	if (verbose_output > 1) {
