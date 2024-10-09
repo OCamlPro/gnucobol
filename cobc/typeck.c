@@ -2710,6 +2710,13 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 				/* Run-time check for all non-literals */
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+					if (cb_flag_check_subscript_set
+					 && CB_REF_OR_FIELD_P (sub)) {
+						/* Skip check_subscript; Now done on SET/PERFORM */
+						if (CB_FIELD_PTR (sub)->flag_indexed_by) {
+							continue;
+						}
+					}
 					if (cb_subscript_check != CB_SUB_CHECK_MAX
 					 && p->depending && p->depending != cb_error_node) {
 						cb_tree		e1;
@@ -13738,9 +13745,58 @@ cb_check_set_to (cb_tree vars, cb_tree x, const int emit_error)
 }
 
 void
+cb_emit_check_index (cb_tree vars, int hasval, int setval)
+{
+	cb_tree		l, v;
+	struct cb_field *f, *p;
+	for (l = vars; l; l = CB_CHAIN (l)) {
+		v = CB_VALUE (l);
+		if (!CB_REF_OR_FIELD_P (v)) continue;
+		f = CB_FIELD_PTR (v);
+		if (!f->flag_indexed_by) continue;
+		if (!f->index_qual) continue;
+		p = f->index_qual;
+		if (p->depending) {
+			if (hasval) {
+				if (setval > p->occurs_max
+				 || setval < p->occurs_min) {
+					cb_warning_x (COBC_WARN_FILLER, l,
+						      _("SET %s TO %d is out of bounds"),
+						      f->name, setval);
+					cb_emit (CB_BUILD_FUNCALL_1 ("cob_set_exception",
+								     cb_int (COB_EC_RANGE_INDEX)));
+				}
+				if (setval >= p->occurs_min) continue;
+			}
+#if 0 /* COBOL standard says do not check for SET */
+			cb_emit (CB_BUILD_FUNCALL_4 ("cob_check_subscript",
+				 cb_build_cast_int (v), cb_build_cast_int (p->depending),
+				 CB_BUILD_STRING0 (f->name), cb_int1));
+#endif
+		} else
+		if (hasval
+		 && setval >= p->occurs_min
+		 && setval <= p->occurs_max) {
+			continue;	/* Checks OK at compile time */
+		} else {
+			if (hasval) {
+				cb_warning_x (COBC_WARN_FILLER, l,
+					      _("SET %s TO %d is out of bounds"), f->name, setval);
+			}
+#if 0 /* COBOL standard says do not check for SET */
+			cb_emit (CB_BUILD_FUNCALL_4 ("cob_check_subscript",
+				 cb_build_cast_int (v), cb_int (p->occurs_max),
+				 CB_BUILD_STRING0 (f->name), cb_int0));
+#endif
+		}
+	}
+}
+
+void
 cb_emit_set_to (cb_tree vars, cb_tree src)
 {
 	cb_tree	l;
+	int		hasval, setval;
 
 	/* Emit statements only if targets have the correct class. */
 	if (cb_check_set_to (vars, src, 1)) {
@@ -13756,6 +13812,23 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 	/* Emit statements. */
 	for (l = vars; l; l = CB_CHAIN (l)) {
 		cb_emit (cb_build_move (src, CB_VALUE (l)));
+	}
+
+	hasval = setval = 0;
+	if (CB_LITERAL_P (src)) {
+		if (CB_NUMERIC_LITERAL_P (src)) {
+			if (CB_LITERAL (src)->scale != 0) {
+				cb_warning_x (COBC_WARN_FILLER, src, _("SET TO should be an integer"));
+			}
+			setval = cb_get_int (src);
+			hasval = 1;
+		}
+	} else if (src == cb_zero) {
+		hasval = 1;
+	}
+	if (cb_flag_check_subscript_set
+	 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+		cb_emit_check_index (vars, hasval, setval);
 	}
 }
 
@@ -13898,6 +13971,7 @@ cb_emit_set_to_fcdkey (cb_tree vars, cb_tree x)
 void
 cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 {
+	cb_tree vars = l;
 	if (cb_validate_one (x)
 	 || cb_validate_list (l)) {
 		return;
@@ -13909,6 +13983,9 @@ cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 		} else {
 			cb_emit (cb_build_sub (target, x, cb_int0));
 		}
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_RANGE_INDEX)) {
+		cb_emit_check_index (vars, 0, 0);
 	}
 }
 
