@@ -14781,7 +14781,7 @@ AT_CHECK([$COMPILE prog.cob -o prog], [0], [],
 [prog.cob:16: warning: overlapping MOVE may produce unpredictable results
 ])
 
-AT_CHECK([./prog], [0], [00000
+AT_CHECK([./prog], [0], [01234
 ])
 
 AT_CLEANUP
