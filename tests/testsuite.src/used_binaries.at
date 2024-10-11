@@ -359,9 +359,8 @@ AT_CLEANUP
 AT_SETUP([temporary path invalid])
 AT_KEYWORDS([cobc runmisc])
 
-# Note: may be either removed completely as there was a report about
-#       this test "failing" - or skipped as this very often fails for
-#       WIN32 builds
+# Note: we skip this as it often fails for WIN32 builds but sometimes works
+AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -948,6 +947,10 @@ AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [],
 )
 AT_CHECK([$COBCRUN_DIRECT ./a.out], [0], [], [])
 
+AT_CHECK([echo "program-id.test." | $COMPILE_MODULE -free -E -], [0],
+[#line 1 "<stdin>"
+program-id.test.
+], [])
 
 
 AT_CLEANUP
@@ -1351,4 +1354,95 @@ AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
 
 AT_CLEANUP
 
+
+AT_SETUP([signal handling SIGPIPE cobc])
+AT_KEYWORDS([runmisc])
+
+# the runtime is not initialized, so we get out without any error message in libcob
+# and we also don't raise anything in cobc either
+AT_CHECK([$COBC --help | head], [0], [ignore], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGPIPE in COBOL])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       00. DISPLAY '1'. DISPLAY '2'. DISPLAY '3'. DISPLAY '4'.
+           DISPLAY '5'. DISPLAY '6'. DISPLAY '7'. DISPLAY '8'.
+       EX. STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog | head -n 2], [0],
+[1
+2
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGTERM in COBOL])
+AT_KEYWORDS([runmisc stack stacktrace])
+
+# this is portable in all posix environments, but not on Win32;
+# note: cygwin-compiled programs handle cygwin-sent SIGTERM as expected
+# CTRL+C does raise a SIGINT, but only when executed from "within" the program
+AT_XFAIL_IF([test "$COB_ON_WINDOWS" = "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. 'prog'.
+       PROCEDURE DIVISION.
+       00. DISPLAY '1'.
+           CALL 'wait'. DISPLAY '2'.
+       EX. STOP RUN.
+       END PROGRAM 'prog'.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. 'wait'.
+       PROCEDURE DIVISION.
+       00. PERFORM DO-WAIT.
+       EX. GOBACK.
+       DO-WAIT. CONTINUE AFTER 10 SECONDS.
+       END PROGRAM 'wait'.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# note: the stack trace, while enabled per default, is globally disabled in the testsuite
+AT_CHECK([$COBCRUN_DIRECT ./prog & cobpid=$!
+sleep 6
+kill -15 $cobpid], [0],
+[1
+],
+[
+prog.cob:14: termination (signal SIGTERM)
+
+])
+AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" & cobpid=$!
+sleep 6
+kill -15 $cobpid], [0],
+[1
+],
+[
+prog.cob:14: termination (signal SIGTERM)
+
+
+ Last statement of "wait" was CONTINUE AFTER
+	DO-WAIT at prog.cob:14
+	00 at prog.cob:12
+	ENTRY wait at prog.cob:12
+ Last statement of "prog" was CALL
+	00 at prog.cob:6
+	ENTRY prog at prog.cob:5
+ Started by ./prog
+	a
+	b c
+])
+
+AT_CLEANUP
 

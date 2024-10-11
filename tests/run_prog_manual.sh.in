@@ -69,7 +69,7 @@ TITLE="GnuCOBOL Manual Test Run - $DESC"
 _test_with_xterm () {
    xterm -T "$TITLE" \
         -fa 'Liberation Mono' -fs 14 \
-        -e "sh -c \"(\$COBCRUN_DIRECT $1 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
+        -e "sh -c \"(\$* 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
 }
 
 
@@ -92,7 +92,7 @@ _test_with_screen () {
   fi
   # run actual test in screen session
   screen -S "GCTESTS" -X title "$TITLE"
-  screen -S "GCTESTS" -X exec ... sh -c "cd \"$PWD\" && ($COBCRUN_DIRECT $* 2>./syserr.log && echo $? > ./result) || echo 1 > ./result"
+  screen -S "GCTESTS" -X exec ... sh -c "cd \"$PWD\" && ($* 2>./syserr.log && echo $? > ./result) || echo 1 > ./result"
 }
 _attach_to_screen () {
   test -d "$SCREENDIR" && (screen -r "GCTESTS" ; true) && exit
@@ -119,7 +119,7 @@ _test_with_tmux () {
   fi
   # run actual test in screen session
   tmux rename-window -t "=GCTESTS:0" "$TITLE"
-  tmux send-keys -t "=GCTESTS:0" "sh -c \"cd \\\"$PWD\\\" && ($COBCRUN_DIRECT $* 2>./syserr.log && echo $? > ./result) || echo 1 > ./result; echo\"" C-m
+  tmux send-keys -t "=GCTESTS:0" "sh -c \"cd \\\"$PWD\\\" && ($* 2>./syserr.log && echo $? > ./result) || echo 1 > ./result; echo\"" C-m
 }
 _attach_to_tmux () {
   tmux attach -t "=GCTESTS:0"
@@ -133,7 +133,7 @@ _kill_tmux () {
 _test_with_cmd () {
   # run cmd to start a detached cmd (via cmd's start), and execute the tests there,
   # to work around quoting issues we create a sub-cmd
-  echo "$COBCRUN_DIRECT $(echo $* | tr '/' '\\') 2>syserr.log & echo !errorlevel! >result" > run_manual.cmd
+  echo "$(echo $* | tr '/' '\\') 2>syserr.log & echo !errorlevel! >result" > run_manual.cmd
   cmd.exe /c "start \"$TITLE\" /wait cmd /v:on /c run_manual.cmd"
   #if test -f ./syserr.log; then
   #  dos2unix -q ./syserr.log

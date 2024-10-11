@@ -94,6 +94,13 @@ NEWS - user visible changes				-*- outline -*-
    this is used for character encoding support, which otherwise is only provided
    partially
 
+** configure now accepts --with-bugurl=URL which can be used to output a link
+   to an external or local URL (like file://) instead of the bug mailing list
+
+** configure now accepts --with-pkgversion=PKG which can be used to customize
+   the version output with a free-standing string (like revision number or
+   package manager version)
+
 ** use the "default" -shared flag to build dynamic libraries on macOS
    so as to fix testuite issues with recent macOS versions
 
