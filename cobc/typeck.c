@@ -13461,7 +13461,9 @@ cb_emit_check_index (cb_tree vars, int hasval, int setval)
 				 || setval < p->occurs_min) {
 					cb_warning_x (COBC_WARN_FILLER, l,
 							_("SET %s TO %d is out of bounds"), f->name, setval);
-					cb_emit (CB_BUILD_FUNCALL_1("cob_set_exception", cb_int(COB_EC_RANGE_INDEX)));
+#if 0 /* FIXME: add back as option, because not conforming to ISO */
+					cb_emit (CB_BUILD_FUNCALL_1 ("cob_set_exception", cb_int (COB_EC_RANGE_INDEX)));
+#endif
 				}
 				if (setval >= p->occurs_min) continue;
 			}
@@ -13584,12 +13586,10 @@ cb_emit_set_to (cb_tree vars, cb_tree x)
 		cb_emit_incompat_data_checks (x);
 		cb_emit (cb_build_move (x, CB_VALUE (l)));
 	}
+
 	hasval = setval = 0;
 	if (CB_LITERAL_P (x)) {
 		if (CB_NUMERIC_LITERAL_P (x)) {
-			if (CB_LITERAL(x)->scale != 0) {
-				cb_warning_x (COBC_WARN_FILLER, x, _("SET TO should be an integer"));
-			}
 			setval = cb_get_int (x);
 			hasval = 1;
 		}
