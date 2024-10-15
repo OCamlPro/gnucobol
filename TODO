@@ -230,6 +230,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Make field type an enum instead of a short in common.h:cob_field_attr as per TODO
 
+- Add back the #if-0'ed code in codegen.c:output_perform_until and typeck.c: cb_emit_check_index; as this is not ISO-compliant it should have a dedicated option; also ensure it works well with the new dialect config introduced in 5087
+
 - Check the #if-0'ed code in field.c:validate_field_value
 
 - Check the #if-0'ed code for setting last_exception_source in common.c:cob_set_exception
