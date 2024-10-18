@@ -243,6 +243,18 @@
 #define SLASH_STR	"\\"
 #endif
 
+#if defined (__CYGWIN__)
+#define LIB_PRF		"cyg"
+#else
+#define LIB_PRF		"lib"
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define LIB_SUF		"-1." COB_MODULE_EXT
+#else
+#define LIB_SUF		"." COB_MODULE_EXT
+#endif
+
 #ifdef __DJGPP__
 #define HAVE_8DOT3_FILENAMES
 #endif

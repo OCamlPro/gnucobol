@@ -1,4 +1,8 @@
 
+2024-08-14  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* testsuite.src/run_java.at: new testsuite for Java interoperability
+
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: prefer config.status replacement over environment var

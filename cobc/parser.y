@@ -12253,6 +12253,10 @@ call_body:
 
 	/* Check parameter conformance, if we can work out what is being called. */
 	if (CB_LITERAL_P ($3)) {
+		/* Check for "Java." prefix and set call convention */
+		if (strncasecmp("Java.", (char *)CB_LITERAL ($3)->data, 5) == 0) {
+			call_conv = CB_CONV_JAVA;
+		}
 		cb_check_conformance ($3, $7, $8);
 	} else if (CB_REFERENCE_P ($3)) {
 		cb_tree	ref = cb_ref ($3);
