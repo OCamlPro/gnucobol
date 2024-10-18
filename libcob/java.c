@@ -43,18 +43,24 @@ jvm_load (void) {
     /* JDK/JRE 6 VM initialization arguments */
     JavaVMInitArgs args;
     JavaVMOption* options;
-    args.version = JNI_VERSION_1_6;
-    const char *classpath = getenv("CLASSPATH");
+	const char *classpath;
+	size_t option_len;
+	char option_buffer[1024];
+
+	args.version = JNI_VERSION_1_6;
+    char *classpath = getenv("CLASSPATH");
     if (classpath == NULL) {
         classpath = "";
     }
     /* inline */
     args.nOptions = 1;
-    size_t option_len = strlen("-Djava.class.path=") + strlen(classpath) + 1;
-    options = (JavaVMOption*)cob_malloc(sizeof(JavaVMOption) * 1);
-    options[0].optionString = (char*)cob_malloc(option_len);
-    strcpy(options[0].optionString, "-Djava.class.path=");
-    strcat(options[0].optionString, classpath);
+    option_len = strlen("-Djava.class.path=") + strlen(classpath) + 1;
+    if (option_len > sizeof(option_buffer)) {
+        return -1;
+    }
+	strcpy(option_buffer, "-Djava.class.path=");
+    strcat(option_buffer, classpath);
+	options[0].optionString = option_buffer;
     args.options = options;
     args.ignoreUnrecognized = 1;
     /* loading and initializing a Java VM, returning as JNI interface */
@@ -71,17 +77,18 @@ resolve_java (const char		*class_name,
 	cob_java_handle *handle;
 
 	char *jni_class_name = strdup(class_name);
-	for (char *p = jni_class_name; *p; ++p) {
-		if (*p == '.') {
-			*p = '_';
-		}
-	}
+    for (char *p = jni_class_name; *p; ++p) {
+        if (*p == '.') {
+            *p = '/';
+        }
+    }
 
 	cls = (*env)->FindClass(env, jni_class_name);
 	cob_free(jni_class_name);
 	if (!cls) {
 		cob_runtime_error(_("Java class '%s' not found"), class_name);
-		cob_hard_failure ();
+		cob_add_exception(COB_EC_FUNCTION_NOT_FOUND);
+        return NULL;
 	}
 
 	mid = (*env)->GetStaticMethodID(env, cls, method_name, method_signature);
@@ -89,14 +96,16 @@ resolve_java (const char		*class_name,
 		cob_runtime_error(_("Java method '%s' with signature '%s' not found in class '%s'"), 
                           method_name, method_signature, class_name);
 		(*env)->DeleteLocalRef(env, cls);
-		cob_hard_failure ();
+		cob_add_exception(COB_EC_OO_METHOD);
+        return NULL;
 	}
 
 	handle = (cob_java_handle*)cob_malloc(sizeof(cob_java_handle));
 	if (!handle) {
 		cob_runtime_error(_("Memory allocation failed for Java method handle"));
 		(*env)->DeleteLocalRef(env, cls);
-		cob_hard_failure ();
+		cob_add_exception(COB_EC_STORAGE_NOT_AVAIL);
+        return NULL;
 	}
 
 	handle->cls = (*env)->NewGlobalRef(env, cls);

@@ -7125,11 +7125,14 @@ output_java_call (struct cb_call *p)
 	char *method_name;
 	const char *class_name;
 	char* mangled;
+	size_t i;
 
 	mangled = strdup(class_and_method_name);
-	for (size_t i = 0; i < strlen(mangled) + 1; i++) {
+	for (i = 0; i < strlen(mangled) + 1; i++) {
 		mangled[i] = (mangled[i] == '.') ? '_' : mangled[i];
 	}
+
+	lookup_java_call(mangled);
 
 	last_dot = strrchr(class_and_method_name, '.');
 
@@ -7137,19 +7140,17 @@ output_java_call (struct cb_call *p)
 	method_name = last_dot + 1;
 	class_name = class_and_method_name;
 
-	lookup_java_call(mangled);
 	output_line("if (call_java_%s == NULL)", mangled);
 	output_block_open();
 
-	output_prefix();
-	output_line("call_java_%s = ", mangled);
-	output("cob_resolve_java(\"%s\", \"%s\", \"()V\");", class_name, method_name);
-	output_newline ();
-	output_prefix ();
+	output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"()V\");", mangled, class_name, method_name);
 	output_line("cob_call_java(call_java_%s);\n", mangled);
 	output_newline();
 	output_block_close();
 	output_exception_handling(p);
+
+	cobc_free((char*) mangled);
+
 }
 
 static void
