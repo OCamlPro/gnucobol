@@ -1,4 +1,4 @@
-#
+
 # Makefile gnucobol/cobc
 #
 # Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
@@ -23,7 +23,7 @@ bin_PROGRAMS = cobc
 cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.c parser.y scanner.c config.c \
 	reserved.c error.c tree.c tree.h field.c typeck.c codegen.c help.c \
 	config.def flag.def warning.def codeoptim.def ppparse.def \
-	codeoptim.c replace.c dump_tree.c dump_tree_gen.c
+	codeoptim.c replace.c dump_tree.c 
 
 #cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.l parser.y scanner.l config.c
 
@@ -73,4 +73,4 @@ dump_tree.$(OBJEXT): $(top_srcdir)/cobc/dump_tree_gen.c
 .PHONY: update-dump-tree
 
 update-dump-tree:
-	ctypes2json --generic -I $(top_srcdir)/cobc -I $(top_srcdir)/lib > $(top_srcdir)/cobc/dump_tree_gen.c
+	ctypes2json -I $(top_srcdir)/cobc -I $(top_srcdir)/lib > $(top_srcdir)/cobc/dump_tree_gen.c
