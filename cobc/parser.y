@@ -16221,7 +16221,7 @@ set_to:
   {
 	cb_emit_set_to_fcdkey ($1, $7);
   }
-| target_x_list TO x
+| target_x_list TO x_numeric_or_pointer
   {
 	cb_emit_set_to ($1, $3);
   }
@@ -16230,6 +16230,53 @@ set_to:
 	cb_emit_move (cb_build_length ($5), $1);
   }
 ;
+
+x_numeric_or_pointer:
+  identifier
+  {
+	switch (cb_tree_class ($1)) {
+	case CB_CLASS_INDEX:
+	case CB_CLASS_POINTER:
+	case CB_CLASS_NUMERIC:
+		$$ = $1;
+		break;
+	default:
+		if ($1 != cb_error_node) {
+			cb_error_x ($1, _("an integer, INDEX, or a POINTER is expected here"));
+		}
+		$$ = cb_error_node;
+	}
+  }
+| literal
+  {
+	switch (cb_tree_class ($1)) {
+	case CB_CLASS_INDEX:
+	case CB_CLASS_POINTER:
+	case CB_CLASS_NUMERIC:
+		if (!(CB_NUMERIC_LITERAL_P ($1)
+		 && (CB_LITERAL ($1))->scale != 0)) {
+			$$ = $1;
+			break;
+		}
+		/* fall through */
+	default:
+		if ($1 != cb_error_node) {
+			cb_error_x ($1, _("an integer, INDEX, or a POINTER is expected here"));
+		}
+		$$ = cb_error_node;
+	}
+  }
+| ADDRESS _of prog_or_entry alnum_or_id
+  {
+	$$ = cb_build_ppointer ($4);
+  }
+| ADDRESS _of identifier_1
+  {
+	$$ = cb_build_address (check_not_88_level ($3));
+  }
+;
+
+
 
 /* SET name ... UP/DOWN BY expr */
 

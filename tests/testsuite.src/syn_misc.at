@@ -6057,7 +6057,7 @@ prog.cob:27: error: condition-name not allowed here: 'val-i1'
 prog.cob:29: error: condition-name not allowed here: 'vnum-1'
 prog.cob:30: error: condition-name not allowed here: 'vnum-1'
 prog.cob:31: error: condition-name not allowed here: 'vnum-2'
-prog.cob:33: error: condition-name not allowed here: 'val-i1'
+prog.cob:33: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:34: error: condition-name not allowed here: 'val-i2'
 prog.cob:32: error: 'val-i1 (MAIN SECTION:)' is not a procedure name
 ])

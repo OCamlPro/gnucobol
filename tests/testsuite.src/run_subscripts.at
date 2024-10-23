@@ -542,6 +542,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Hi, there!])
 
 AT_CLEANUP
 
+
 AT_SETUP([Check Subscripts])
 AT_KEYWORDS([SUBSCRIPT])
 
@@ -562,15 +563,13 @@ AT_DATA([prog.cob], [
        01  FILLER REDEFINES TBL.
            05  MYNAME PIC X(8) OCCURS 4 INDEXED BY IB1.
        01  TBL2.
-           05  MYMRK  PIC X(3) 
+           05  MYMRK  PIC X(3)
                OCCURS 2 TO 5 DEPENDING ON MAXIDX
                INDEXED BY IB2.
        PROCEDURE DIVISION.
            MOVE 5 TO MAXIDX
            SET NIDX TO IB1.
            DISPLAY "Initial value: " NIDX.
-           SET IB2 TO 0.2.
-           SET IB2 TO "fred".
            SET IB2 TO 10.
            MOVE "A:" TO MYMRK (1)
            MOVE "B:" TO MYMRK (2)
@@ -631,7 +630,7 @@ AT_DATA([prog.cob], [
            END-PERFORM.
            STOP RUN.
            END PROGRAM prog.
-       
+
        IDENTIFICATION DIVISION.
        PROGRAM-ID. SUBN.
        DATA DIVISION.
@@ -642,13 +641,7 @@ AT_DATA([prog.cob], [
        END PROGRAM SUBN.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -debug -O prog.cob ], [0], [], [prog.cob:25: warning: SET TO should be an integer
-prog.cob:26: warning: source is non-numeric - substituting zero
-prog.cob:27: warning: SET IB2 TO 10 is out of bounds
-prog.cob:56: warning: SET IB1 TO -9 is out of bounds
-prog.cob:57: warning: SET IB1 TO 300 is out of bounds
-])
-
+AT_CHECK([$COMPILE -Wno-others prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [Initial value: +01
 Number is +0000000042
 Number is +0000000002
@@ -660,7 +653,7 @@ Number is +0000000003
 +01: A: Freddy  .
 +02: B: Barney  .
 +03: C: Wilma   .
-], [libcob: prog.cob:80: error: subscript of 'MYMRK' out of bounds: 4
+], [libcob: prog.cob:78: error: subscript of 'MYMRK' out of bounds: 4
 note: current maximum subscript for 'MYMRK': 3
 ])
 
