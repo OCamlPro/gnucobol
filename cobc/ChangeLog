@@ -1,4 +1,13 @@
 
+2024-10-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (output_perform_until): improve PERFORM bounds
+	  checking (disabled for now)
+	* typeck.c (cb_emit_set_to): remove check for integer
+	  literal (now done in parser)
+	* parser.y (set_to, x_numeric_or_pointer): check that the
+	  argument to SET TO is an index, a pointer, or an integer
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
