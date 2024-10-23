@@ -40,6 +40,7 @@
 #define	COB_IN_PARSER	1
 #include "cobc.h"
 #include "tree.h"
+#include "libcob/coblocal.h"
 
 #define _PARSER_H	/* work around bad Windows SDK header */
 
@@ -151,7 +152,6 @@ unsigned int			cobc_in_procedure = 0;
 unsigned int			cobc_in_data_division = 0;
 unsigned int			cobc_in_usage = 0;
 unsigned int			cobc_in_repository = 0;
-unsigned int			cobc_force_literal = 0;
 unsigned int			cobc_cs_check = 0;
 unsigned int			cobc_allow_program_name = 0;
 unsigned int			cobc_in_xml_generate_body = 0;
@@ -468,8 +468,8 @@ begin_implicit_statement (void)
 
 # if 0 /* activate only for debugging purposes for attribs
 	FIXME: Replace by DEBUG_LOG function */
-static
-void print_bits (cob_flags_t num)
+static void
+print_bits (cob_flags_t num)
 {
 	unsigned int 	size = sizeof (cob_flags_t);
 	unsigned int	max_pow = 1 << (size * 8 - 1);
@@ -486,16 +486,16 @@ void print_bits (cob_flags_t num)
 
 /* functions for storing current position and
    assigning it to a cb_tree after its parsing is finished */
-static COB_INLINE
-void backup_current_pos (void)
+static COB_INLINE void
+backup_current_pos (void)
 {
 	backup_source_file = cb_source_file;
 	backup_source_line = cb_source_line;
 }
 
 #if 0 /* currently not used */
-static COB_INLINE
-void set_pos_from_backup (cb_tree x)
+static COB_INLINE void
+set_pos_from_backup (cb_tree x)
 {
 	x->source_file = backup_source_file;
 	x->source_line = backup_source_line;
@@ -537,7 +537,9 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 	for (l = current_program->entry_list; l; l = CB_CHAIN (l)) {
 		struct cb_label *check = CB_LABEL (CB_PURPOSE (l));
 		if (strcmp (name, check->name) == 0) {
-			cb_error_x (CB_TREE (current_statement),
+			cb_error_x (current_statement
+					? CB_TREE (current_statement)
+					: CB_TREE (current_program),
 				    _("ENTRY '%s' duplicated"), name);
 		}
 	}
@@ -550,7 +552,7 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 
 	current_program->entry_list =
 		cb_list_append (current_program->entry_list,
-				CB_BUILD_PAIR (label, CB_BUILD_PAIR(entry_conv, using_list)));
+				CB_BUILD_PAIR (label, CB_BUILD_PAIR (entry_conv, using_list)));
 }
 
 /* Main entry point and the number of its main parameters */
@@ -801,9 +803,10 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
 				cb_error (_("OCCURS TO must be greater than OCCURS FROM"));
+				current_field->occurs_max = current_field->occurs_min;
 			}
 		} else {
-			current_field->occurs_max = 0;
+			current_field->occurs_max = 0;	/* UNBOUNDED */
 		}
 	} else {
 		current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
@@ -812,6 +815,17 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			cb_verify (cb_odo_without_to, _("OCCURS DEPENDING ON without TO phrase"));
 		}
 	}
+	/* LCOV_EXCL_START */
+	if (current_field->occurs_max > COB_MAX_FIELD_SIZE) {
+		/* testing here to give an early error; unlikely to be reached
+		   with 64bit compilers so no own msgid for now; should be added
+		   when the maximum field size is changed to be configurable */
+		cb_error_x (CB_TREE (current_field),
+			_("'%s' cannot be larger than %d bytes"),
+			current_field->name, COB_MAX_FIELD_SIZE);
+		current_field->occurs_min = current_field->occurs_max = 1;
+	}
+	/* LCOV_EXCL_STOP */
 }
 
 static void
@@ -1118,7 +1132,6 @@ clear_initial_values (void)
 	cobc_in_procedure = 0;
 	cobc_in_data_division = 0;
 	cobc_in_repository = 0;
-	cobc_force_literal = 0;
 	cobc_in_xml_generate_body = 0;
 	cobc_in_json_generate_body = 0;
 	non_const_word = 0;
@@ -1219,7 +1232,8 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 	/* Remove any subprograms */
 	l = CB_LIST (defined_prog_list);
 	while (l) {
-		if (CB_PROGRAM (l->value)->nested_level > program->nested_level) {
+		const struct cb_program *lprog = CB_PROGRAM (l->value);
+		if (lprog->nested_level > program->nested_level) {
 			remove_program_name (l, prev);
 		} else {
 			prev = l;
@@ -1235,11 +1249,11 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 	if (!program->flag_common) {
 		l = CB_LIST (defined_prog_list);
 		while (l) {
+			const struct cb_program *lprog = CB_PROGRAM (l->value);
 			/* The nested_level check is for the pathological case
 			   where two nested programs have the same name */
-			if (0 == strcmp (program->orig_program_id,
-			         CB_PROGRAM (l->value)->orig_program_id)
-			    && program->nested_level == CB_PROGRAM (l->value)->nested_level) {
+			if (program->nested_level == lprog->nested_level
+			 && !strcmp (program->orig_program_id, lprog->orig_program_id)) {
 				remove_program_name (l, prev);
 				if (prev && prev->chain != NULL) {
 					l = CB_LIST (prev->chain);
@@ -1260,6 +1274,17 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 }
 
 static void
+setup_registers (void)
+{
+	backup_source_file = cb_source_file;
+	cb_source_file = "register-definition";
+	cb_set_intr_when_compiled ();
+	cb_build_registers ();
+	cb_add_external_defined_registers ();
+	cb_source_file = backup_source_file;
+}
+
+static void
 setup_program_start (void)
 {
 	if (setup_from_identification) {
@@ -1276,29 +1301,31 @@ setup_program_start (void)
 }
 
 static int
-setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const int prototype)
+setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, const int prototype)
 {
 	const char	*external_name = NULL;
 
 	setup_program_start ();
 
-	/* finish last program/function */
-	if (!first_prog) {
+	if (first_prog) {
+		/* in this case we had setup an "empty" current_program
+		   along with registers before (on start) and now only "add"
+		   to that */
+		first_prog = 0;
+	} else {
+		/* finish last program/function */
 		if (!current_program->flag_validated) {
 			current_program->flag_validated = 1;
 			cb_validate_program_body (current_program);
 		}
 
+		/* setup new */
 		clear_initial_values ();
 		current_program = cb_build_program (current_program, depth);
 		if (depth) {
 			build_words_for_nested_programs();
 		}
-		cb_set_intr_when_compiled ();
-		cb_build_registers ();
-		cb_add_external_defined_registers ();
-	} else {
-		first_prog = 0;
+		setup_registers ();
 	}
 
 	/* set internal name */
@@ -1307,6 +1334,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 	} else {
 		current_program->program_name = CB_NAME (id);
 	}
+
 	stack_progid[depth] = current_program->program_name;
 	current_program->prog_type = type;
 	current_program->flag_prototype = prototype;
@@ -3296,6 +3324,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token WHEN_XML			"WHEN"
 %token WIDTH
 %token WIDTH_IN_CELLS		"WIDTH-IN-CELLS"
+%token WINAPI
 %token WINDOW
 %token WITH
 %token WORD			"Identifier"
@@ -3448,17 +3477,14 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
-	clear_initial_values ();
 	defined_prog_list = NULL;
 	cobc_cs_check = 0;
 	main_flag_set = 0;
 
+	clear_initial_values ();
 	current_program = cb_build_program (NULL, 0);
 
-	backup_source_file = cb_source_file;
-	cb_set_intr_when_compiled ();
-	cb_build_registers ();
-	cb_add_external_defined_registers ();
+	setup_registers ();
   }
   compilation_group
   {
@@ -4313,7 +4339,7 @@ repository_name:
 | PROGRAM WORD _as_literal
   {
 	  if ($2 != cb_error_node
-	      && cb_verify (cb_program_prototypes, _("PROGRAM phrase"))) {
+	   && cb_verify (cb_program_prototypes, _("PROGRAM phrase"))) {
 		setup_prototype ($2, $3, COB_MODULE_TYPE_PROGRAM, 0);
 	}
   }
@@ -4428,17 +4454,19 @@ mnemonic_choices:
 		if (CB_SYSTEM_NAME(save_tree)->token != CB_FEATURE_CONVENTION) {
 			cb_error_x (save_tree, _("invalid %s clause"), "SPECIAL NAMES");
 		} else if (CB_VALID_TREE ($3)) {
+			const char *name = CB_NAME ($3);
 			CB_SYSTEM_NAME(save_tree)->value = $1;
 			cb_define ($3, save_tree);
 			CB_CHAIN_PAIR (current_program->mnemonic_spec_list,
 					$3, save_tree);
 			/* remove non-standard context-sensitive words when identical to mnemonic */
-			if (cb_strcasecmp (CB_NAME($3), "EXTERN" ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "STDCALL") == 0
-			 || cb_strcasecmp (CB_NAME($3), "STATIC" ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "C"      ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "PASCAL" ) == 0) {
-				remove_context_sensitivity (CB_NAME($3), CB_CS_CALL);
+			if (cb_strcasecmp (name, "EXTERN" ) == 0
+			 || cb_strcasecmp (name, "STDCALL") == 0
+			 || cb_strcasecmp (name, "WINAPI") == 0
+			 || cb_strcasecmp (name, "STATIC" ) == 0
+			 || cb_strcasecmp (name, "C"      ) == 0
+			 || cb_strcasecmp (name, "PASCAL" ) == 0) {
+				remove_context_sensitivity (name, CB_CS_CALL);
 			}
 		}
 	}
@@ -7914,6 +7942,7 @@ usage:
   }
 | INDEX
   {
+	/* TODO: second type which is 0-based, depending on dialect option */
 	check_and_set_usage (CB_USAGE_INDEX);
   }
 | PACKED_DECIMAL
@@ -8417,8 +8446,16 @@ occurs_index_list:
 occurs_index:
   unqualified_word
   {
-	$$ = cb_build_index ($1, cb_int1, 1U, current_field);
-	CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
+	const enum cb_storage	storage = current_field->storage;
+	const cb_tree init_val = cb_default_byte == CB_DEFAULT_BYTE_INIT
+	                       ? cb_int1 : NULL;
+	$$ = cb_build_index ($1, init_val, 1U, current_field);
+	if (storage == CB_STORAGE_LOCAL) {
+		CB_FIELD_PTR ($$)->storage = CB_STORAGE_LOCAL;
+		CB_FIELD_PTR ($$)->index_type = CB_INT_INDEX;
+	} else {
+		CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
+	}
   }
 ;
 
@@ -8913,7 +8950,9 @@ _local_storage_section:
   _record_description_list
   {
 	if ($5) {
-		current_program->local_storage = CB_FIELD ($5);
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->local_storage, CB_FIELD ($5));
 	}
   }
 ;
@@ -8932,7 +8971,9 @@ _linkage_section:
   _record_description_list
   {
 	if ($5) {
-		current_program->linkage_storage = CB_FIELD ($5);
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->linkage_storage, CB_FIELD ($5));
 	}
   }
 ;
@@ -9726,7 +9767,9 @@ _screen_section:
   {
 	if (description_field) {
 		get_finalized_description_tree ();
-		current_program->screen_storage = description_field;
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->screen_storage, description_field);
 		current_program->flag_screen = 1;
 	}
 	cobc_cs_check = 0;
@@ -10976,13 +11019,13 @@ procedure_param_list:
 procedure_param:
   _procedure_type _size_optional _procedure_optional WORD _acu_size
   {
-	cb_tree		x;
-	struct cb_field	*f;
-
-	x = cb_build_identifier ($4, 0);
-	if ($3 == cb_int1 && CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-		f = CB_FIELD (cb_ref (x));
-		f->flag_is_pdiv_opt = 1;
+	cb_tree		x = cb_build_identifier ($4, 0);
+	if ($3 == cb_int1
+	 && CB_VALID_TREE (x)) {
+		cb_tree fx = cb_ref (x);
+		if (fx != cb_error_node) {
+			CB_FIELD (fx)->flag_is_pdiv_opt = 1;
+		}
 	}
 
 	$$ = CB_BUILD_PAIR (cb_int (call_mode), x);
@@ -11433,10 +11476,8 @@ statement_list:
 
 statements:
   {
-	cb_tree label;
-
 	if (!current_section) {
-		label = cb_build_reference ("MAIN SECTION");
+		cb_tree label = cb_build_reference ("MAIN SECTION");
 		current_section = CB_LABEL (cb_build_label (label, NULL));
 		current_section->flag_section = 1;
 		current_section->flag_dummy_section = 1;
@@ -11446,12 +11487,12 @@ statements:
 		emit_statement (CB_TREE (current_section));
 	}
 	if (!current_paragraph) {
-		label = cb_build_reference ("MAIN PARAGRAPH");
+		cb_tree label = cb_build_reference ("MAIN PARAGRAPH");
 		current_paragraph = CB_LABEL (cb_build_label (label, NULL));
-		CB_TREE (current_paragraph)->source_file
-			= CB_TREE (current_section)->source_file;
-		CB_TREE (current_paragraph)->source_line
-			= CB_TREE (current_section)->source_line;
+		current_paragraph->common.source_file
+			= current_section->common.source_file;
+		current_paragraph->common.source_line
+			= current_section->common.source_line;
 		current_paragraph->flag_declaratives = !!in_declaratives;
 		current_paragraph->flag_skip_label = !!skip_statements;
 		current_paragraph->flag_dummy_paragraph = 1;
@@ -12472,6 +12513,10 @@ mnemonic_conv:
 | STDCALL	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
   {
 	$$ = cb_int (CB_CONV_STDCALL);
+  }
+| WINAPI	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
+  {
+	$$ = cb_int (CB_CONV_STDCALL | CB_CONV_STATIC_LINK);
   }
 | C	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
   {
@@ -20103,8 +20148,9 @@ scope_terminator:
 _dot:
   TOK_DOT
 | {
-	if (! cb_verify (cb_missing_period, _("optional period")))
+	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
+	}
   }
 ;
 
@@ -20112,8 +20158,9 @@ _dot_or_else_end_of_file_control:
   TOK_DOT
 | _file_control_end_delimiter
   {
-	if (! cb_verify (cb_missing_period, _("optional period")))
+	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
+	}
 	cobc_repeat_last_token = 1;
   }
 ;
@@ -20132,8 +20179,9 @@ _dot_or_else_end_of_file_description:
 | level_number_in_area_a
 | _file_description_end_delimiter
   {
-	if (! cb_verify (cb_missing_period, _("optional period")))
+	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
+	}
 	cobc_repeat_last_token = 1;
   }
 ;
@@ -20152,8 +20200,9 @@ _dot_or_else_end_of_record_description:
 | level_number_in_area_a
 | _record_description_end_delimiter
   {
-	if (! cb_verify (cb_missing_period, _("optional period")))
+	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
+	}
 	cobc_repeat_last_token = 1;
   }
 ;
@@ -20172,8 +20221,9 @@ _dot_or_else_area_a:		/* in PROCEDURE DIVISION */
   TOK_DOT
 | TOKEN_EOF
   {
-	if (! cb_verify (cb_missing_period, _("optional period")))
+	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
+	}
   }
 | WORD_IN_AREA_A
   {

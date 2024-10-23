@@ -145,19 +145,23 @@
 #define	COB_128_OR_EXTEND	COB_U64_C(0x0002000000000000)
 
 /* Field/attribute initializers */
-#define COB_FIELD_INIT(x,y,z)	do { \
+#define COB_FIELD_INIT_F(field,x,y,z)	do { \
 	field.size = x; \
 	field.data = y; \
 	field.attr = z; \
 	} ONCE_COB
+#define COB_FIELD_INIT(x,y,z)	\
+	COB_FIELD_INIT_F(field,x,y,z)
 
-#define COB_ATTR_INIT(u,v,x,y,z)	do { \
+#define COB_ATTR_INIT_A(attr,u,v,x,y,z)	do { \
 	attr.type = u; \
 	attr.digits = v; \
 	attr.scale = x; \
 	attr.flags = y; \
 	attr.pic = z; \
 	} ONCE_COB
+#define COB_ATTR_INIT(u,v,x,y,z) \
+	COB_ATTR_INIT_A(attr,u,v,x,y,z)
 
 #define COB_GET_SIGN(f)		\
 	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f) : 0)
@@ -365,9 +369,10 @@ struct config_tbl {
 
 /* max sizes */
 
-/* Maximum bytes in a single/group field,
-   which doesn't contain UNBOUNDED items */
-   /* TODO: add compiler configuration for limiting this */
+/* Maximum bytes in a single/group field and for OCCURS,
+   which doesn't contain UNBOUNDED items,
+   along with maximum number of OCCURS;
+   TODO: add compiler configuration for limiting this */
 #ifndef COB_64_BIT_POINTER
 #define	COB_MAX_FIELD_SIZE	268435456
 #else
@@ -485,14 +490,14 @@ COB_EXPIMP char * cob_str_case_str (char *, const char *);
 
 /* static inline of smaller helpers */
 
-static COB_INLINE int
+static COB_INLINE COB_A_INLINE int
 cob_min_int (const int x, const int y)
 {
 	if (x < y) return x;
 	return y;
 }
 
-static COB_INLINE int
+static COB_INLINE COB_A_INLINE int
 cob_max_int (const int x, const int y)
 {
 	if (x > y) return x;

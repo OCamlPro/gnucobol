@@ -1183,13 +1183,125 @@ is_fixed_indicator (char c){
 	}
 }
 
+/* open file with the specified 'name', then check for BOM (skipped) and if
+   in reference-format "auto" also for "likely free-format" */
+static FILE *
+ppopen_get_file (const char *name)
+{
+	struct copy_info	*current_copy_info;
+
+	/* special case stdin;
+	   note that we cannot handle BOM or deduce source format in this case
+	   as rewind() clears the input buffer if used on stdin (and output in
+	   console has normally no BOM at all), therefore compile from stdin
+	   _has to_ specify free format if needed (or, more reasonable, use a CDF
+	   directive to specify that) */
+	if (strcmp (name, COB_DASH) == 0) {
+		return stdin;
+	}
+
+	/* check for recursive inclusion */
+	for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
+		/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
+		*         ideally open first, then check if we have the same physical file
+		*         (would also fix recursion check for symlinked files) */
+		if (!strcmp (name, current_copy_info->dname)) {
+			struct cb_tree_common	loc;
+			for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
+				int		line;
+				if (current_copy_info->prev) {
+					line = current_copy_info->prev->line;
+				} else {
+					line = cb_source_line;
+				}
+				cb_inclusion_note (current_copy_info->dname, line);
+			}
+			loc.source_file = name;
+			loc.source_line = -1;
+			cb_error_x (&loc, _("recursive inclusion"));
+			return 0;
+		}
+	}
+
+	/* try to open the file with the given name */
+#ifdef	__OS400__
+	ppin = fopen (name, "r");
+#else
+	ppin = fopen (name, "rb");
+#endif
+	if (!ppin) {
+		cb_error ("%s: %s", name, cb_get_strerror ());
+		/* Note: postpone error exit as we need the saved buffers later on */
+		return 0;
+	}
+
+	/* Check for BOM and, if source-format was not specified, also for free-form */
+	{
+		int fseek_to = 0 ;
+#define COBC_LOOKAHEAD 20
+		unsigned char buffer[COBC_LOOKAHEAD];
+		int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
+
+		/* check for and skip UTF-8 BOM */
+		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
+			fseek_to = 3;
+		}
+
+		/* try to deduce source format */
+		if (source_format == CB_FORMAT_AUTO) {
+			int pos = fseek_to;
+			/* if indicator is wrong on first line with source, switch to free format */
+			/* skip empty lines */
+			char last_pos_7 = ' ';
+			int amount_of_0a_seen = 0;
+			int line_pos = 0;
+			while (nread - pos > 7) {
+				switch (buffer[pos]) {
+				case '\r':
+					break;
+				case '\n':
+					amount_of_0a_seen++;
+					line_pos = 0;
+					break;
+				case '\t':
+					buffer[pos] = ' ';
+					line_pos++;
+					while (line_pos % cb_tab_width != 0) {
+						line_pos++;
+					}
+					break;
+				default:
+					line_pos++;
+					break;
+				}
+				if (line_pos >= 7) {
+					last_pos_7 = buffer[pos];
+					break;
+				}
+				pos++;
+			}
+			/* check tab or indicator */
+			if (!is_fixed_indicator (last_pos_7)) {
+				struct cb_tree_common	loc;
+				loc.source_file = name;
+				loc.source_line = 1 + amount_of_0a_seen;
+				loc.source_column = 7;
+				cb_note_x (COB_WARNOPT_NONE, &loc, _("free format detected"));
+				(void)cobc_deciph_source_format ("FREE");
+			}
+		}
+		fseek (ppin, fseek_to, SEEK_SET);
+	}
+
+	return ppin;
+}
+
 /* open file (source or coypbook) for further processing */
 int
 ppopen (const char *name, struct cb_replace_list *replacing_list)
 {
 	struct copy_info	*current_copy_info;
 	char			*dname;
-	cb_tree x = NULL;
 
 	if (ppin) {
 		for (; newline_count > 0; newline_count--) {
@@ -1197,106 +1309,39 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 		}
 	}
 
-	/* Open copy/source file, or use stdin */
-	if (strcmp (name, COB_DASH) == 0) {
-		ppin = stdin;
-	} else {
-		for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
-			/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
-			*         ideally open first, then check if we have thy physical same file
-			*         (could also fix symlinked files) */
-			if (!strcmp (name, current_copy_info->dname)) {
-				struct cb_tree_common xc;
-				x = &xc;
-				for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
-					int		line;
-					if (current_copy_info->prev) {
-						line = current_copy_info->prev->line;
-					} else {
-						line = cb_source_line;
-					}
-					cb_inclusion_note (current_copy_info->dname, line);
-				}
-				x->source_file = name;
-				x->source_line = -1;
-				cb_error_x (x, _("recursive inclusion"));
-				break;
-			}
+	/* open copy/source file, or use stdin */
+	ppin = ppopen_get_file (name);
 
-		}
-		if (!x) {
-#ifdef	__OS400__
-			ppin = fopen (name, "r");
-#else
-			ppin = fopen (name, "rb");
-#endif
-		} else {
-			ppin = 0;
-		}
-	}
-
-	if (!ppin && !x) {
-		cb_error ("%s: %s", name, cb_get_strerror ());
-		/* Note: postpone error exit as we need the saved buffers later on */
-	}
-
-	/* Check for BOM - *not* for input from stdin as rewind() clears the input
-	  buffer if used on stdin and output in console has normally no BOM at all */
-	if (ppin && strcmp (name, COB_DASH) != 0) {
-		int fseek_to = 0 ;
-#define COBC_LOOKAHEAD 20
-		unsigned char buffer[COBC_LOOKAHEAD];
-		int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
-		int pos = 0;
-		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
-			fseek_to = 3;
-			pos = 3;
-		}
-		if (source_format == CB_FORMAT_AUTO){
-			/* If indicator is wrong on first line, switch to free format */
-			/* skip empty lines */
-			int amount_of_0a_seen = 0;
-			while (nread-pos > 7 && (buffer[pos] == '\r' || buffer[pos] == '\n')){
-				if (buffer[pos] == '\n') amount_of_0a_seen++;
-				pos++;
-			}
-			/* check tab or indicator */
-			if ( nread-pos > 7 && buffer[pos] != '\t' && !is_fixed_indicator (buffer[pos+6]) ){
-				struct cb_tree_common	loc;
-				loc.source_file = name;
-				loc.source_line = 1 + amount_of_0a_seen;
-				loc.source_column = 7;
-				cb_note_x (COB_WARNOPT_NONE, &loc, _("free format detected"));
-				(void) cobc_deciph_source_format ("FREE");
-			}
-		}
-		fseek(ppin, fseek_to, SEEK_SET);
-	}
-
-	if (source_format==CB_FORMAT_AUTO)
+	/* note: detection of free format in ppopen_get_file above (not for stdin) */
+	if (source_format == CB_FORMAT_AUTO) {
 		cobc_set_source_format (CB_FORMAT_FIXED);
+	}
 
-	if (cb_current_file){
-		if (cb_current_file->source_format==CB_FORMAT_AUTO)
-			cb_current_file->source_format=cobc_get_source_format ();
-		/* This is delayed until after format detection */
+	/* store listing information if requested */
+	if (cb_current_file) {
+		if (cb_current_file->source_format == CB_FORMAT_AUTO) {
+			cb_current_file->source_format = cobc_get_source_format ();
+		}
+		/* this must be delayed until after format detection */
 		cobc_set_listing_header_code ();
 		/* Save name for listing */
-		if (!cb_current_file->name)
+		if (!cb_current_file->name) {
 			cb_current_file->name = cobc_strdup (name);
+		}
+		cb_current_file->copy_line = cb_source_line;
 	}
 
-	/* Add to dependency list */
+	/* add opened file to dependency list */
 	if (cb_depend_file) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
-	/* Preserve the current buffer */
+	/* preserve the current buffer */
 	current_copy_info = cobc_malloc (sizeof (struct copy_info));
 	current_copy_info->file = cb_source_file;
 	current_copy_info->buffer = YY_CURRENT_BUFFER;
 
-	/* Save variables */
+	/* save variables */
 	current_copy_info->replacing = current_replace_list;
 	current_copy_info->line = cb_source_line;
 	current_copy_info->quotation_mark = quotation_mark;
@@ -1309,11 +1354,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 	copy_stack = current_copy_info;
 
-	if (cb_current_file) {
-		cb_current_file->copy_line = cb_source_line;
-	}
-
-	/* Set replacing list */
+	/* set replacing list */
 	if (replacing_list) {
 		if (current_replace_list) {
 			replacing_list->last->next = current_replace_list;
@@ -1339,11 +1380,13 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 #endif
 
-	/* Switch to new buffer */
+	/* switch to new buffer */
 	switch_to_buffer (1, dname, yy_create_buffer (ppin, YY_BUF_SIZE));
 
 	/* postponed errror handling */
-	if (!ppin) return -1;
+	if (!ppin) {
+		return -1;
+	}
 	return 0;
 }
 
@@ -2610,8 +2653,11 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	struct cb_text_list		*save_ptr_text_queue;
 	int				status, save_status;
 
+#if 0	/* Simon: disabled until found necessary, as this takes together with frwite
+		   a big part of the parsing phase of cobc, increasing the IO cost by numbers */
 	/* ensure nothing is in the stream buffer */
 	fflush (ppout);
+#endif
 
 	/* Check for replacement text before outputting */
 	if (alt_space) {

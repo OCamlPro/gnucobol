@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2009-2013, 2018-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2013, 2018-2021,2023 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -34,9 +34,16 @@ CB_OPTIM_DEF (COB_NOP)
 
 CB_OPTIM_DEF (COB_POINTER_MANIP)
 CB_OPTIM_DEF (COB_GET_NUMDISP)
+#if 0	/* libcob's optimized version is not slower, so drop that */
 CB_OPTIM_DEF (COB_CMP_PACKED_INT)
 CB_OPTIM_DEF (COB_GET_PACKED_INT)
+CB_OPTIM_DEF (COB_GET_PACKED_INT64)
+#endif
+
+/* note: the additions are also used for substract by wrapping
+         the second part in -(x) */
 CB_OPTIM_DEF (COB_ADD_PACKED_INT)
+CB_OPTIM_DEF (COB_ADD_PACKED_INT64)
 
 CB_OPTIM_DEF (COB_CMP_ALIGN_U16)
 CB_OPTIM_DEF (COB_CMP_ALIGN_S16)

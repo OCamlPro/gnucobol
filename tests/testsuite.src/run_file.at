@@ -4846,14 +4846,14 @@ AT_DATA([prog.cob], [
        P0101.
            ADD 1 TO Z.
        END DECLARATIVES.
+      * some comments here
+      * to mimic real world programs
        MP01 SECTION.
        MP0101.
            OPEN INPUT TEST-FILE.
            PERFORM P0101.
            IF Z NOT = 2
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -4895,10 +4895,8 @@ AT_DATA([prog.cob], [
            OPEN  INPUT  TEST-FILE.
            PERFORM P01 THRU P02.
            IF Z NOT = 3
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
-           STOP RUN.
+              DISPLAY Z.
+           GOBACK.
 ])
 
 # disabling the check for "something leaves the section" - as this is

@@ -403,11 +403,16 @@ AT_DATA([prog.cob], [
            IF S1-32D <>  S2-32D DISPLAY "S1-32D <> S2-32D".
            IF S2-32D >=  S4-32D DISPLAY "S2-32D >= S4-32D".
            IF S3-32D >=  S4-32D DISPLAY "S3-32D >= S4-32D".
-           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# also check "not optimized during codegen",
+# which leads to other code-paths
+AT_CHECK([$COMPILE -fno-fast-compare -C -o progalt.c prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progalt.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progalt], [0], [], [])
 
 AT_CLEANUP
 
@@ -608,6 +613,12 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
+# also check "not optimized during codegen",
+# which leads to other code-paths
+AT_CHECK([$COMPILE -fno-fast-compare -C -o progalt.c prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progalt.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progalt], [0], [], [])
+
 AT_CLEANUP
 
 
@@ -743,6 +754,12 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
+# also check "not optimized during codegen",
+# which leads to other code-paths
+AT_CHECK([$COMPILE -fno-fast-compare -C -o progalt.c prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progalt.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progalt], [0], [], [])
+
 AT_CLEANUP
 
 
@@ -840,6 +857,12 @@ AT_DATA([prog.cob], [
                10  PZ-02               PIC S9(38)      COMP-3.
            05  PZ-03-X.
                10  PZ-03               PIC S9(38)      COMP-3.
+           05  PZ-04-X.
+               10  PZ-04               PIC S9(38)      COMP-3.
+           05  PZ-05-X.
+               10  PZ-05               PIC S9(38)      COMP-3.
+           05  PZ-06-X.
+               10  PZ-06               PIC S9(38)      COMP-3.
 
        01  FILLER       USAGE BINARY-INT VALUE 0.
            88 DO-DISP   VALUE 0.
@@ -999,14 +1022,24 @@ AT_DATA([prog.cob], [
       *    SETTING UP DATA FOR COMPARE WITH NEGATIVE PACKED ZERO
 
            MOVE LOW-VALUES             TO PZ-01-X.
-           MOVE LOW-VALUES             TO PZ-02-X.
+           MOVE LOW-VALUES             TO PZ-02-X
            MOVE X'0C'                  TO PZ-02-X(20:1).
-           MOVE LOW-VALUES             TO PZ-03-X.
+           MOVE LOW-VALUES             TO PZ-03-X
            MOVE X'0D'                  TO PZ-03-X(20:1).
+           MOVE LOW-VALUES             TO PZ-04-X
+           MOVE X'10'                  TO PZ-04-X(1:1).
+           MOVE X'0D'                  TO PZ-04-X(20:1).
+           MOVE LOW-VALUES             TO PZ-05-X
+           MOVE X'010D'                TO PZ-05-X(19:2).
+           MOVE LOW-VALUES             TO PZ-06-X
+           MOVE X'1D'                  TO PZ-06-X(20:1).
 
            IF PZ-01 <> PZ-02  DISPLAY "PZ-01 <> PZ-02".
            IF PZ-01 <> PZ-03  DISPLAY "PZ-01 <> PZ-03".
            IF PZ-02 <> PZ-03  DISPLAY "PZ-02 <> PZ-03".
+           IF PZ-02 <= PZ-04  DISPLAY "PZ-02 <= PZ-04".
+           IF PZ-02 <= PZ-05  DISPLAY "PZ-02 <= PZ-05".
+           IF PZ-02 <= PZ-06  DISPLAY "PZ-02 <= PZ-05".
       *
            IF U4-32D <>  UP-32D DISPLAY "U4-32D <> UP-32D".
            IF U4-32D <>  SP-32D DISPLAY "U4-32D <> SP-32D".
@@ -1015,6 +1048,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# also check "not optimized during codegen",
+# which leads to other code-paths
+AT_CHECK([$COMPILE -fno-fast-compare -C -o progalt.c prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progalt.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progalt], [0], [], [])
 
 AT_CLEANUP
 

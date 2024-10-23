@@ -3428,7 +3428,9 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 #endif
 			eop_status = 0;
 		}
-		if ((f->file_features & COB_FILE_SYNC)) {
+		if ((f->file_features & COB_FILE_SYNC)
+		 && f->last_operation != COB_LAST_OPEN
+		 && f->open_mode != COB_OPEN_CLOSED) {
 			cob_file_sync (f);
 		}
 	} else if (!skip_exn) {
@@ -4240,22 +4242,24 @@ cob_fd_file_open (cob_file *f, char *filename,
 	if ((ret=set_file_lock(f, filename, mode)) != 0)
 		return ret;
 	f->record_off = -1;
-#if 0	/* Simon: disabled, this function is expected to not use a file */
+#if 0	/* Simon: disabled, this function is expected to not use a FILE* */
 	{
-		const char *fmode;
+		const char *fopen_flags;
 		if (mode == COB_OPEN_INPUT) {
-			fmode = "r";
+			fopen_flags = "r";
 		} else if (mode == COB_OPEN_I_O) {
 			if (nonexistent)
-				fmode = "w+";
+				fopen_flags = "w+";
 			else
-				fmode = "r+";
+				fopen_flags = "r+";
 		} else if (mode == COB_OPEN_EXTEND) {
-			fmode = "";
+			fopen_flags = "";
 		} else {
-			fmode = "w";
+			fopen_flags = "w";
 		}
-		f->file = (void*)fdopen(f->fd, fmode);
+		/* note: _if_ this is activated (which likely needs adjustments in
+		         other places) then also handle cobsetptr->cob_unix_lf */
+		f->file = (void*)fdopen(f->fd, fopen_flags);
 	}
 #endif
 	if (f->flag_optional && nonexistent) {
@@ -4486,7 +4490,6 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		}
 	}
 
-	fmode = NULL;
 	/* Open the file */
 	switch (mode) {
 	case COB_OPEN_INPUT:
@@ -4544,6 +4547,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		break;
 	/* LCOV_EXCL_START */
 	default:
+		fmode = NULL;
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_open");
 		cob_fatal_error (COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
@@ -4688,10 +4692,10 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 				COB_CHECKED_WRITE (f->fd, "\n", 1);
 			}
 		}
-#ifdef	HAVE_FCNTL
 		/* Unlock the file */
 		if (f->fd >= 0
 		 && !f->flag_is_pipe) {
+#ifdef	HAVE_FCNTL
 			struct flock lock;
 			memset ((void *)&lock, 0, sizeof (struct flock));
 			lock.l_type = F_UNLCK;
@@ -4702,14 +4706,13 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 			if (fcntl (f->fd, F_SETLK, &lock) == -1) {
 				cob_runtime_warning ("issue during unlock (%s), errno: %d", "cob_file_close", errno);
 			}
-		}
 #elif defined _WIN32
-		{
-			HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
-			if (osHandle != INVALID_HANDLE_VALUE) {
+			{
+				HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
 				/* CHECKME: Should this use UnlockFileEx ? */
-				if (!UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
-#if 0 /* CHECKME - What is the correct thing to do here? */
+				if (osHandle != INVALID_HANDLE_VALUE
+				 && !UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
+#if 0					/* CHECKME - What is the correct thing to do here? */
 					const DWORD last_error = GetLastError ();
 					if (last_error != 158) {	/* no locked region */
 						/* not translated as "testing only" */
@@ -4719,8 +4722,8 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 #endif
 				}
 			}
-		}
 #endif
+		}
 		/* Close the file */
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			if (f->flag_is_pipe) {
@@ -4728,7 +4731,7 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 					if (f->file)
 						fclose (f->file);
 					if (f->fileout
-					 && f->fileout != f->file) 
+					 && f->fileout != f->file)
 						fclose (f->fileout);
 #if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 					{
@@ -4765,7 +4768,10 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 			if (f->file != NULL) {
 				fclose ((FILE *)f->file);
 				f->file = NULL;
+#ifdef _WIN32
+				/* at least on MSVC that closes the underlying file descriptor, too */
 				f->fd = -1;
+#endif
 			}
 #endif
 		} else {
@@ -4802,37 +4808,57 @@ open_next (cob_file *f)
 {
 	if (f->flag_is_concat
 	 && *f->nxt_filename != 0) {
-		char	*nx = strchr(f->nxt_filename,file_setptr->cob_concat_sep[0]);
+		char	*nx = strchr (f->nxt_filename,file_setptr->cob_concat_sep[0]);
+		int fmode = O_BINARY;	/* without this ftell does not work on some systems */
+
+#ifdef _WIN32	/* win32 seems to resolve the file descriptor from the file handler
+		   on fclose - and then aborts because it was closed directly before */
+		if (f->file) {
+			fclose (f->file);
+		} else {
+			close (f->fd);
+		}
+#else
 		close (f->fd);
 		if (f->file) {
 			fclose (f->file);
 		}
-		f->fd = -1;
-		f->file = NULL;
+#endif
+		if (f->open_mode == COB_OPEN_I_O) {
+			fmode |= O_RDWR;
+		} else {
+			fmode |= O_RDONLY;
+		}
 		if (nx) {
 			*nx = 0;
-			if (f->open_mode == COB_OPEN_I_O)
-				f->fd = open (f->nxt_filename, O_RDWR);
-			else
-				f->fd = open (f->nxt_filename, O_RDONLY);
+			f->fd = open (f->nxt_filename, fmode);
 			f->nxt_filename = nx + 1;
 		} else {
-			if (f->open_mode == COB_OPEN_I_O)
-				f->fd = open (f->nxt_filename, O_RDWR);
-			else
-				f->fd = open (f->nxt_filename, O_RDONLY);
+			f->fd = open (f->nxt_filename, fmode);
 			f->flag_is_concat = 0;
 			if (f->org_filename) {
 				cob_free (f->org_filename);
 				f->org_filename = NULL;
 			}
 		}
-		if (f->fd != -1) {
-			if (f->open_mode == COB_OPEN_INPUT) {
-				f->file = (void*)fdopen(f->fd, "r");
+		if (f->fd == -1) {
+			f->file = NULL;
+		} else {
+			const char *fopen_flags;
+			if (cobsetptr->cob_unix_lf) {
+				if (f->open_mode == COB_OPEN_INPUT) {
+					fopen_flags = "rb";
+				} else {
+					fopen_flags = "rb+";
+				}
 			} else {
-				f->file = (void*)fdopen(f->fd, "r+");
+				if (f->open_mode == COB_OPEN_INPUT) {
+					fopen_flags = "r";
+				} else {
+					fopen_flags = "r+";
+				}
 			}
+			f->file = (void*)fdopen(f->fd, fopen_flags);
 			return 1;
 		}
 	}
@@ -5176,6 +5202,9 @@ again:
 	if (!f->flag_is_pipe) {
 		f->record_off = ftell (fp);	/* Save position at start of line */
 	}
+	/* Note: at least on Win32 the offset resolved does only return the right values
+	   when file was opened in binary mode -> cob_unix_lf; as an alternative
+	   we could increment the record_off field on each read/write */
 	for (; ;) {
 		n = getc (fp);
 		if (n == EOF) {
@@ -5550,6 +5579,7 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	psize = size;
 	slotlen = curroff - f->record_off - 1;
 	if ((f->file_features & COB_FILE_LS_CRLF)) {
+		/* CHECKME: likely also needed if not opened with unix-lf */
 		slotlen--;
 	}
 	if ((f->file_features & COB_FILE_LS_NULLS)
@@ -7086,6 +7116,17 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 #endif
 		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
+	}
+
+	/* Check for _bad_ quotes */
+	if (file_open_name[0] == '"'
+	 || file_open_name[0] == '\'') {
+		const size_t len = strlen (file_open_name) - 1;
+		if (len == 0
+		 || file_open_name[len] != file_open_name[0]) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
+			return;
+		}
 	}
 
 	if (file_open_name[0] == 0) {
@@ -9791,7 +9832,8 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	file_open_buff = runtime_buffer + (3 * COB_FILE_BUFF);
 
 	/* TRANSLATORS: This msgid is concatenated with a filename;
-	   setup translation to allow this to be followed on the right side. */
+	   setup translation to allow this to be followed on the right side,
+	   if necessary use a colon or hyphen */
 	implicit_close_of_msgid = _("implicit CLOSE of ");
 
 	file_api.glbptr = file_globptr = lptr;
