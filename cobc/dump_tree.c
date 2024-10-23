@@ -1,7 +1,6 @@
 /*
- Copyright (C) 2001-2023 Free Software Foundation, Inc.
- Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
- Edward Hart, Fabrice Le Fessant
+ Copyright (C) 2023-2024 Free Software Foundation, Inc.
+ Written by Fabrice Le Fessant
 
  This file is part of GnuCOBOL.
 

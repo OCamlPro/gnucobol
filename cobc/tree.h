@@ -2257,7 +2257,7 @@ extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
 					   const enum cob_statement,
 					   const unsigned int);
 
-extern cb_tree	        cb_build_literal (enum cb_category,
+extern struct cb_literal *build_literal (enum cb_category,
 					   const void *, const size_t);
 
 extern cb_tree		cb_build_system_name (const enum cb_system_name_category,

@@ -1340,8 +1340,8 @@ cb_to_cname (const char *s)
 	return copy;
 }
 
-static
-struct cb_literal *build_literal (const enum cb_category category, const void *data,
+struct cb_literal *
+build_literal (const enum cb_category category, const void *data,
 	       const size_t size)
 {
 	struct cb_literal *p;
@@ -1351,13 +1351,6 @@ struct cb_literal *build_literal (const enum cb_category category, const void *d
 	p->size = size;
 	memcpy (p->data, data, size);
 	return p;
-}
-
-cb_tree
-cb_build_literal (const enum cb_category category, const void *data,
-	       const size_t size)
-{
-	return CB_TREE(build_literal(category, data, size));
 }
 
 char *
@@ -1385,7 +1378,7 @@ cb_exhbit_literal (cb_tree x)
 	s = cobc_parse_malloc (tlen + 4);
 	memcpy (s, tmp, tlen);
 	memcpy (s + tlen, " = ", 4);
-	return cb_build_literal (CB_CATEGORY_ALPHANUMERIC, s, tlen + 3);
+	return CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, s, tlen + 3));
 }
 
 enum cb_category

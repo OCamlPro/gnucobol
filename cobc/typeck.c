@@ -4691,7 +4691,7 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 #if 0
 	p->count++;
 #endif
-	x = cb_build_literal (CB_CATEGORY_ALPHANUMERIC, assign_name, strlen (assign_name));
+	x = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, assign_name, strlen (assign_name)));
 	p->values = CB_LIST_INIT (x);
 	CB_FIELD_ADD (prog->working_storage, p);
 }
@@ -4763,7 +4763,7 @@ validate_assign_name (struct cb_file * const f,
 	p = check_level_78 (CB_NAME (assign));
 	if (p) {
 		char *c = (char *)CB_LITERAL (p->values)->data;
-		f->assign = cb_build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c));
+		f->assign = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c)));
 		return;
 	}
 

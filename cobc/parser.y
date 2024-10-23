@@ -12957,7 +12957,7 @@ cancel_body:
 | ALL
   {
 	const char *all_name = "CANCEL ALL";
-	cb_tree all = cb_build_literal (CB_CATEGORY_ALPHANUMERIC, all_name, strlen (all_name));
+	struct cb_literal *all = build_literal (CB_CATEGORY_ALPHANUMERIC, all_name, strlen (all_name));
 	cb_emit_cancel (all);
   }
 ;
