@@ -8320,8 +8320,6 @@ process_translate (struct filename *fn)
 		}
 	}
 
-	if (!dump_ast_to_file)
-		dump_ast_to_file = getenv("COB_DUMP_AST");
 	if (dump_ast_to_file)
 		cb_dump_ast_to_file (current_program, dump_ast_to_file, dump_ast_flags);
 

@@ -229,11 +229,8 @@ void set_flags (const char* flags)
 
 void cb_dump_ast_to_file (struct cb_program *prog, const char *filename, const char* flags)
 {
-	char *env;
 	int close_fd = 1;
 
-	env = getenv ("COB_DUMP_AST_FLAGS");
-	if (env) set_flags (env);
 	if (flags) set_flags (flags);
 
 	if (!strcmp(filename, COB_DASH)){
