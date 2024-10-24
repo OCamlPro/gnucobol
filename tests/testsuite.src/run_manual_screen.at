@@ -3667,3 +3667,149 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
+
+AT_SETUP([ACCEPT SCREEN TIMEOUT])
+AT_KEYWORDS([crt status cursor])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       REPLACE ==:BCOL:== BY ==BACKGROUND-COLOR==; ==:FCOL:== BY
+                                              ==FOREGROUND-COLOR==.
+      ** *************************************************************
+      **
+      ** *************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    PROG.
+      * GnuCOBOL sample
+       ENVIRONMENT   DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           CRT STATUS IS WCRT-STATUS.
+           CURSOR     IS WCURSORROWCOL.
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       77 K-ENTER         PIC 9(04) VALUE 0000.
+       77 K-TIMEOUT      PIC 9(04) VALUE 8001.
+
+       01 WCRT-STATUS     PIC 9(04) VALUE ZERO.
+       01  WCURSORROWCOL  PIC 9(06) VALUE 000000.
+       01  REDEFINES WCURSORROWCOL .
+           05 WCURSORROW  PIC 9(03).
+           05 WCURSORCOL  PIC 9(03).
+       01 BLACK        CONSTANT AS 00.
+       01 BLUE         CONSTANT AS 01.
+       01 GREEN        CONSTANT AS 02.
+       01 CYAN         CONSTANT AS 03.
+       01 RED          CONSTANT AS 04.
+       01 MAGENTA      CONSTANT AS 05.
+      *                                   old color code as yellow
+       01 BROWN        CONSTANT AS 06.
+      *                                   or Light Gray
+       01 WHITE        CONSTANT AS 07.
+      *                                   or Dark Gray
+       01 GREY         CONSTANT AS 08.
+      *                                   same color code as Grey
+       01 LIGHTBLACK   CONSTANT AS 08.
+       01 LIGHTBLUE    CONSTANT AS 09.
+       01 LIGHTGREEN   CONSTANT AS 10.
+       01 LIGHTCYAN    CONSTANT AS 11.
+       01 LIGHTRED     CONSTANT AS 12.
+       01 LIGHTMAGENTA CONSTANT AS 13.
+       01 PINK         CONSTANT AS 13.
+       01 YELLOW       CONSTANT AS 14.
+       01 LIGHTWHITE   CONSTANT AS 15.
+
+
+
+       01 W-VAR-SELECTION.
+           02 W-DATA   PIC X(8).
+           02 W-REPLY  PIC X(01).
+               88 SUCCESS    VALUE 'Y', 'y'.
+
+
+       SCREEN SECTION.
+
+       01 SCREEN-SELECTION.
+           02 LINE 06  COL 05 :FCOL: BLACK :BCOL: CYAN
+               VALUE 'TIMEOUT TEST - ENTER 4 CHARACTERS OF DATA'  &
+                   ' AND PAUSE UNTIL TIME CHANGES'.
+           02 LINE 07  COL 05 :FCOL: BLACK :BCOL: CYAN
+               VALUE ' THEN ENTER 4 MORE CHARACTERS OF DATA'      &
+                   ' AND PAUSE UNTIL TIME CHANGES'.
+           02 LINE 08  COL 05 :FCOL: BLACK :BCOL: CYAN
+               VALUE ' THEN AFTER THE TIME CHANGES '              &
+                   ' ENTER A Y IN THE REPY LINE IF THE DATA '     &
+                   ' IS CORRECT'.
+
+           02 LINE 15  COL 20 VALUE 'Data Entry:'.
+           02 LINE + 2 COL 20 VALUE 'Reply:'.
+           02 LINE 15  COL 40 PIC A(08) AUTO-SKIP USING W-DATA
+                                                         HIGHLIGHT.
+           02 LINE + 2 COL 40 PIC X     AUTO-SKIP USING W-REPLY
+                                                         HIGHLIGHT.
+
+       PROCEDURE DIVISION.
+
+       MAIN-LOOP.
+           DISPLAY SCREEN-SELECTION
+           CALL 'TIMEDISP'
+
+           PERFORM WITH TEST AFTER UNTIL WCRT-STATUS <> K-TIMEOUT
+               ACCEPT  SCREEN-SELECTION WITH TIMEOUT 1
+                       ON EXCEPTION CALL 'TIMEDISP'
+               END-ACCEPT
+           END-PERFORM.
+
+           IF SUCCESS AND WCRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+
+           GOBACK.
+
+      ** *************************************************************
+      *
+      ** *************************************************************
+       ID DIVISION.
+       PROGRAM-ID. TIMEDISP.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SWITCH                       PIC X.
+       01 BLUE       CONSTANT AS 01.
+       01 RED        CONSTANT AS 04.
+       01 CYAN       CONSTANT AS 03.
+       01 WHITE      CONSTANT AS 07.
+       01 WDAY       PIC 9(08).
+       01 WTIME      PIC 9(08).
+       01 DATE-TIME  PIC X(19).
+       PROCEDURE DIVISION.
+           ACCEPT WDAY  FROM DATE YYYYMMDD
+           ACCEPT WTIME FROM TIME
+           STRING WDAY(1:4)  '.' WDAY(5:2)  '.' WDAY(7:2) ' '
+                  WTIME(1:2) ':' WTIME(3:2) ':' WTIME(5:2) DELIMITED BY
+                                                SIZE INTO DATE-TIME
+           IF SWITCH EQUAL 'N'
+               DISPLAY DATE-TIME AT 002061 :BCOL: CYAN :FCOL: WHITE
+                                                        END-DISPLAY
+               MOVE 'Y'                TO SWITCH
+           ELSE
+               DISPLAY DATE-TIME AT 002061 :BCOL: RED  :FCOL: WHITE
+                                                        END-DISPLAY
+               MOVE 'N'                TO SWITCH
+           END-IF.
+        CONTINUE.
+       ENDPROGRAM.
+        GOBACK.
+       END PROGRAM TIMEDISP.
+
+       END PROGRAM PROG.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
