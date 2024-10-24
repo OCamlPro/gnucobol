@@ -116,8 +116,8 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_ADD_PHONY     24
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
-#define CB_FLAG_DUMP_TREE                   27
-#define CB_FLAG_DUMP_TREE_FLAGS             28
+#define CB_FLAG_DUMP_AST                    27
+#define CB_FLAG_DUMP_AST_FLAGS              28
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -465,8 +465,8 @@ static int		save_all_src = 0;
 static signed int	save_c_src = 0;
 static signed int	verbose_output = 0;
 static int		cb_coverage_enabled = 0;
-static char*		dump_tree_to_file = NULL;
-static char*		dump_tree_flags = NULL;
+static char*		dump_ast_to_file = NULL;
+static char*		dump_ast_flags = NULL;
 static int		cob_optimize = 0;
 
 
@@ -3777,18 +3777,18 @@ process_command_line (const int argc, char **argv)
 			break;
 		case CB_FLAG_GETOPT_DEPEND_OUTPUT_FILE: /* -MF <file> */
 			cb_depend_filename = cobc_strdup(cob_optarg);
-		case CB_FLAG_DUMP_TREE:
-			if (dump_tree_to_file)
-				cobc_main_free (dump_tree_to_file);
-			dump_tree_to_file = cobc_main_strdup (cob_optarg);
+		case CB_FLAG_DUMP_AST:
+			if (dump_ast_to_file)
+				cobc_main_free (dump_ast_to_file);
+			dump_ast_to_file = cobc_main_strdup (cob_optarg);
 			break;
-		case CB_FLAG_DUMP_TREE_FLAGS:
-			if (dump_tree_flags){
-				char* old = dump_tree_flags;
-				dump_tree_flags = cobc_main_stradd_dup(dump_tree_flags, cob_optarg);
+		case CB_FLAG_DUMP_AST_FLAGS:
+			if (dump_ast_flags){
+				char* old = dump_ast_flags;
+				dump_ast_flags = cobc_main_stradd_dup(dump_ast_flags, cob_optarg);
 				cobc_main_free (old);
 			} else {
-				dump_tree_flags = cobc_main_strdup (cob_optarg);
+				dump_ast_flags = cobc_main_strdup (cob_optarg);
 			}
 			break;
 
@@ -8320,10 +8320,10 @@ process_translate (struct filename *fn)
 		}
 	}
 
-	if (!dump_tree_to_file)
-		dump_tree_to_file = getenv("COB_DUMP_TREE");
-	if (dump_tree_to_file)
-		cb_dump_tree_to_file (current_program, dump_tree_to_file, dump_tree_flags);
+	if (!dump_ast_to_file)
+		dump_ast_to_file = getenv("COB_DUMP_AST");
+	if (dump_ast_to_file)
+		cb_dump_ast_to_file (current_program, dump_ast_to_file, dump_ast_flags);
 
 	/* Translate to C */
 	codegen (current_program, fn->translate);

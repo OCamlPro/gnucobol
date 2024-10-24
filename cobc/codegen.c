@@ -14040,7 +14040,6 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		}
 	}
 
-	/* output the procedure division code */
 	output_internal_function (prog, prog->parameter_list);
 
 	if (!prog->next_program) {

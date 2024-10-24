@@ -23,7 +23,7 @@ bin_PROGRAMS = cobc
 cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.c parser.y scanner.c config.c \
 	reserved.c error.c tree.c tree.h field.c typeck.c codegen.c help.c \
 	config.def flag.def warning.def codeoptim.def ppparse.def \
-	codeoptim.c replace.c dump_tree.c
+	codeoptim.c replace.c dump_ast.c
 
 #cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.l parser.y scanner.l config.c
 
@@ -40,7 +40,7 @@ COBC = cobc$(EXEEXT)
 # sources that needs to be built *before* any other file
 # note: we actually want their header files...
 BUILT_SOURCES = ppparse.c parser.c
-EXTRA_DIST = pplex.l scanner.l ppparse.h parser.h dump_tree_gen.c
+EXTRA_DIST = pplex.l scanner.l ppparse.h parser.h dump_ast_gen.c
 
 MAINTAINERCLEANFILES = pplex.c scanner.c ppparse.h parser.h cobc.1
 CLEANFILES = parser.output ppparse.output
@@ -68,9 +68,7 @@ endif
 .l.c:
 	LC_CTYPE=C $(LEX) -o$@ $<
 
-dump_tree.$(OBJEXT): $(top_srcdir)/cobc/dump_tree_gen.c
-
 .PHONY: update-dump-tree
 
 update-dump-tree:
-	ctypes2json -I $(top_srcdir)/cobc -I $(top_srcdir)/lib > $(top_srcdir)/cobc/dump_tree_gen.c
+	ctypes-gen --gnucobol -I $(top_srcdir)/cobc -I $(top_srcdir)/lib > $(top_srcdir)/cobc/dump_ast_gen.c

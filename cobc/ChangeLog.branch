@@ -1,11 +1,8 @@
 
-	* cobc.c, dump_tree.c: new options to dump the AST in text format:
-	  --dump-tree=<file>, and --dump-tree-flags=<flags>. Format is
-	  either OCaml (for files with .ml extension) or JSON. If file
-	  ends with '/', then it is expected to be a directory and the
-	  file will be generated with the program id as name. Flags are
-	  '+/-' for enable/disable, 'c' for cb_common, 'l' for locations,
-	  't' for types, 'p' for pointers, 'i' for indentation, 'n' for
-	  newlines, 'A' for all infos, 'O' for OCaml format, 'J' for
-	  JSON format, 'm' for message. Env variables COB_DUMP_TREE and
-	  COB_DUMP_TREE_FLAGS can also be used to set these flags.
+	* Makefile.am, cobc.c, dump_ast.c: new options to dump the AST in
+	text format: --dump-ast=<file>, and
+	--dump-ast-flags=<flags>. Format is not standard for now, because
+	it is only for debugging the AST. Flags are prefixed with '+/-'
+	for enable/disable, 'i' for indentation, 'z' for zero/null
+	fields. Env variables COB_DUMP_AST and COB_DUMP_AST_FLAGS can also
+	be used to set these flags.
