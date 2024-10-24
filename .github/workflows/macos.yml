@@ -1,9 +1,9 @@
-name: MacOS
+name: MacOS Workflow 4
 
 on:
-  pull_request:
-    branches: [ gc4 ]
-  push:
+  #pull_request:
+  #  branches: [ gc4 ]
+  # push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -25,11 +25,6 @@ jobs:
 
       - name: Configure git
         run: git config --global core.symlinks false
-
-      - name: Set git user
-        run: |
-          git config --global user.name github-actions
-          git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,72 +54,76 @@ jobs:
 
       - name: bootstrap
         run: |
-          sed -i '' 's/-undefined suppress//g' configure.ac
+          sed -i '' 's/-undefined suppress//g' configure.ac  # TODO drop
           ./build_aux/bootstrap install
 
       - name: Build environment setup
         run: |
-          mkdir _build
           echo "NPROC=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
           export TERM="vt100"
           echo "TERM=$TERM" >> $GITHUB_ENV
 
       - name: configure
         run: |
+          mkdir _build
           cd _build
-          export CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
-          export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
           ../configure --with-${{ matrix.isam }} \
                        --with-indexed=${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
-                       --prefix /opt/cobol/gnucobol
-
-      - name: Upload config-${{ matrix.os }}-${{ matrix.isam }}.log
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: config-${{ matrix.os }}-${{ matrix.isam }}.log
-          path: _build/config.log
+                       --prefix /opt/cobol/gnucobol4 \
+                       CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS" \
+                       CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
 
       - name: make
         run: |
           make -C _build --jobs=$((${NPROC}+1))
 
-      # make install must be done before make check, otherwis
+      - name: Upload config.log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: config.log ${{ matrix.os }}-${{ matrix.isam }}
+          path: _build/config.log
+
+      # make install must be done before make check, otherwise
       # execution of generated COBOL files fail for a missing
       # /usr/local/lib/libcob.dylib
       - name: make install
         run: |
           sudo make -C _build install
-          find /opt/cobol > _build/install.log
+          # find /opt/cobol > _build/install.log
 
-      - name: Upload install-${{ matrix.os }}-${{ matrix.isam }}.log
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-${{ matrix.os }}-${{ matrix.isam }}.log
-          path: _build/install.log
+      #- name: Upload install.log
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: install.log ${{ matrix.os }}-${{ matrix.isam }}
+      #    path: _build/install.log
+
+      - name: adjust test expectations for non V-ISAM
+        if: ${{ matrix.isam != 'visam' }}
+        run: |
+          sed -i '' '/run_file/{N;/INDEXED file SUPPRESS WHEN ALL/{N;s/at_xfail=no/at_xfail=yes/;};}' tests/testsuite
+          sed -i '' '/run_file/{N;/EXTFH: using ISAM callback/{N;s/at_xfail=no/at_xfail=yes/;};}' tests/testsuite
+          # marks all of those as expected failures
+          #sed -i '' '/run_file/{N;/trace feature/{N;N;N;N;s/traceon/traceon; echo "workflow:3">"$at_check_line_file"; at_fn_check_skip 77/;};}' tests/testsuite
+          #sed -i '' '/run_file/{N;/trace feature with subroutine/{N;N;N;N;s/traceon/traceon; echo "workflow:4">"$at_check_line_file"; at_fn_check_skip 77/;};}' tests/testsuite
+          #sed -i '' '/run_file/{N;/trace feature with indexed EXTFH/{N;N;N;N;s/traceon/traceon; echo "workflow:5">"$at_check_line_file"; at_fn_check_skip 77/;};}' tests/testsuite
+          sed -i '' '/run_file/{N;/trace feature/{N;s/at_xfail=no/at_xfail=yes/;};}' tests/testsuite
+
+          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))" || \
+            make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: check
         run: |
-          sed -i '' '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL \+ KEYCHECK\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[EXTFH: using ISAM callback\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature with subroutine\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature with indexed EXTFH\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          make -C _build check \
-                         TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))" || \
+            make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Upload internal Test Suite results
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
         with:
-          name: testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: testsuite.log ${{ matrix.os }}-${{ matrix.isam }}
           path: _build/tests/testsuite.log
 
       - name: Cache newcob.val
@@ -135,7 +134,17 @@ jobs:
           save-always: true
           enableCrossOsArchive: true
 
-      - name: NIST85 Test Suite
+      - name: Run NIST85 testsuite
         run: |
-          make -C _build/tests/cobol85 EXEC85 test              \
-                         --jobs=$((${NPROC}+1))
+          make -C _build/tests test --jobs=$((${NPROC}+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.os }}-${{ matrix.isam }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
