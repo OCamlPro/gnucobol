@@ -1827,6 +1827,8 @@ struct nested_list {
 	struct cb_program	*nested_prog;
 };
 
+#define CB_MAX_GLOBAL_HANDLERS 5
+
 struct cb_program {
 	struct cb_tree_common	common;		/* Common values */
 
@@ -1878,7 +1880,7 @@ struct cb_program {
 	struct cb_field		*report_storage;	/* REPORT */
 	cb_tree			local_file_list;	/* Local files */
 	cb_tree			global_file_list;	/* Global files */
-	struct handler_struct	global_handler[5];	/* Global handlers */
+	struct handler_struct	global_handler[CB_MAX_GLOBAL_HANDLERS];	/* Global handlers */
 	cb_tree			collating_sequence;	/* COLLATING */
 	cb_tree			collating_sequence_n;	/* COLLATING FOR NATIONAL*/
 	cb_tree			classification;		/* CLASSIFICATION */
@@ -2255,7 +2257,7 @@ extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
 					   const enum cob_statement,
 					   const unsigned int);
 
-struct cb_literal	*build_literal (enum cb_category,
+extern struct cb_literal *build_literal (enum cb_category,
 					   const void *, const size_t);
 
 extern cb_tree		cb_build_system_name (const enum cb_system_name_category,
@@ -2606,6 +2608,10 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 						const int, cb_tree, cb_tree);
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
+
+extern void cb_dump_ast_to_file (struct cb_program *prog,
+				    const char *filename,
+				    const char *flags);
 
 #ifdef	COB_TREE_DEBUG
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
