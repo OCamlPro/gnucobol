@@ -2609,7 +2609,7 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
 
-extern void cb_dump_tree_to_file (struct cb_program *prog,
+extern void cb_dump_ast_to_file (struct cb_program *prog,
 				    const char *filename,
 				    const char *flags);
 
