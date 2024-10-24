@@ -1833,16 +1833,23 @@ output_gnucobol_defines (const char *formatted_date)
 	output_line ("#define  COB_MODULE_TIME\t\t%d", i);
 
 	{
-		struct cb_text_list *l = cb_include_file_list ;
-		for (;l;l=l->next){
-			if (l->text[0] == '<'){
+		struct cb_text_list *l;
+		for (l = cb_include_file_list; l; l = l->next) {
+			if (l->text[0] == '<') {
+				output_line ("#include %s", l->text);
+			} else {
+				output_line ("#include \"%s\"", l->text);
+			}
+		}
+
+		for (l = cb_include_file_list_directive; l; l = l->next) {
+			if (l->text[0] == '<') {
 				output_line ("#include %s", l->text);
 			} else {
 				output_line ("#include \"%s\"", l->text);
 			}
 		}
 	}
-
 }
 
 /* CALL cache */
