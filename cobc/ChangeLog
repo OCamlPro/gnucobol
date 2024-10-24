@@ -45,6 +45,11 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_field): emit call to cob_move_bcd for two
+	  BCD fields without negative scale
+
 2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l: dropped last_token_is_dot and integer_is_label by checking
@@ -66,6 +71,11 @@
 	* pplex.l (ppopen_get_file): extracted from ppopen and minor refactor
 	* pplex.l (ppecho): disabled performance-dropping fflush until found
 	  necessary
+
+2023-04-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond, cb_emit_divide, cb_build_move_literal):
+	  minor refactoring
 
 2023-03-29  Simon Sobisch <simonsobisch@gnu.org>
 

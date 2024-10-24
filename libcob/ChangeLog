@@ -54,6 +54,22 @@
 	* common.h [__MINGW32__]: drop ancient redefinition of
 	  strcasecmp and strncasecmp
 
+2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 with tuning
+	  for even more speed by using best matching types and refactoring
+	* common.h: added cob_move_bcd as external function declaration
+	* move.c (cob_move): add call to cob_move_bcd for fields without negative
+	  scale
+	* common.c (cob_is_numeric, cob_is_alpha, cob_is_upper, cob_is_lower,
+	  cob_check_numeric, cob_check_numdisp, cob_correct_numeric):
+	  prefer pointer arithmetic to arrays
+	* common.c (cob_is_numeric, cob_check_numdisp, cob_set_date_from_epoch,
+	  set_config_val, translate_boolean_to_int): prefer range check over
+	  isdigit and COB_D2I over atoi
+	* numeric.c (cob_decimal_get_packed): set by optimized integer routine
+	  when possible
+
 2024-03-10  Alfredo Tupone <tupone@gentoo.org>
 
 	* common.c: add missing include libxml/parser.h
@@ -95,6 +111,13 @@
 	* common.c (get_stmt_from_name): rewritten to store the last statements,
 	  which heavily reduces the use of strcmp and the hashing function
 	* common.c (do_trace_statement): extracted from cob_trace_statement
+
+2023-03-28  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+
+	* numeric.c (cob_shift_left_nibble, cob_shift_right_nibble): variants of
+	  insert_packed_aligned for cob_move_bcd
+	* numeric.c (cob_move_bcd): added for highly improved BCD MOVE,
+	  saving more than 50% cpu cycles
 
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
