@@ -841,10 +841,11 @@ cb_syntax_check (const char *fmt, ...)
 	enum cb_warn_val ret;
 	va_list ap;
 	va_start (ap, fmt);
-	if (cb_relaxed_syntax_checks)
+	if (cb_relaxed_syntax_checks) {
 		ret = cb_warning_internal (COBC_WARN_FILLER, fmt, ap);
-	else
+	} else {
 		ret = cb_error_internal (fmt, ap);
+	}
 	va_end (ap);
 	return cb_relaxed_syntax_checks ? ret != COBC_WARN_DISABLED : 0;
 }
@@ -861,10 +862,11 @@ cb_syntax_check_x (cb_tree x, const char *fmt, ...)
 	enum cb_warn_val ret;
 	va_list ap;
 	va_start (ap, fmt);
-	if (cb_relaxed_syntax_checks)
+	if (cb_relaxed_syntax_checks) {
 		ret = cb_warning_x_internal (COBC_WARN_FILLER, x, fmt, ap);
-	else
+	} else {
 		ret = cb_error_x_internal (x, fmt, ap);
+	}
 	va_end (ap);
 	return cb_relaxed_syntax_checks ? ret != COBC_WARN_DISABLED : 0;
 }

@@ -1202,6 +1202,12 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
+# also check "not optimized during codegen",
+# which leads to other code-paths
+AT_CHECK([$COMPILE -fno-fast-compare -C -o progalt.c prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progalt.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progalt], [0], [], [])
+
 AT_CLEANUP
 
 
@@ -1254,7 +1260,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COMP-4 Truncate])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([binary numeric])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
