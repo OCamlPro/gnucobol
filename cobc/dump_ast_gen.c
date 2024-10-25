@@ -36,8 +36,8 @@ static void init_ptr_table ()
     ptr_table = (void**) calloc (ptr_table_size, sizeof (void*) );
     num_table = (int*)   calloc (ptr_table_size, sizeof (int) );
   } else {
-    bzero (ptr_table, ptr_table_size * sizeof(void*) );
-    bzero (num_table, ptr_table_size * sizeof(int) );
+    memset (ptr_table, 0, ptr_table_size * sizeof(void*) );
+    memset (num_table, 0, ptr_table_size * sizeof(int) );
     ptr_table_used = 0;
   }
 }

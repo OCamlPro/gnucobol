@@ -237,7 +237,6 @@ void cb_dump_ast_to_file (struct cb_program *prog, const char *filename, const c
 		close_fd = 0;
 		fd = stdout;
 	} else {
-		int len = strlen (filename);
 		struct stat st;
 		if (!stat (filename, &st)) unlink(filename);
 		fd = fopen (filename, "w");

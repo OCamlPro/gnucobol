@@ -1118,7 +1118,7 @@ cobc_main_strdup (const char *dupstr)
 }
 
 /* returns a fresh allocated copy of the concatenation from str1 + str2 */
-char *
+static char *
 cobc_main_stradd_dup (const char *str1, const char *str2)
 {
 	char	*p;
