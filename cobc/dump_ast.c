@@ -52,8 +52,6 @@ static void print_int_array (int indent, int n, int * tab);
 
 #define PRINT_NULL(indent,ty)			\
 	fprintf (fd, "NULL")
-#define PRINT_ENUM_TY(s)                                  \
- /*   const char* ty = s */
 #define PRINT_ENUM(indent,ty,s)                           \
 	fprintf (fd, "%s", s)
 #define PRINT_ENUM_UNKNOWN(indent,ty,s)                   \
@@ -106,6 +104,11 @@ static void print_size_t (int indent, size_t x)
 static void print_int (int indent, int x)
 {
 	fprintf (fd, "%d", x);
+}
+
+static void print_long_long_ptr0 (int indent, long long x)
+{
+	fprintf (fd, "%lld", x);
 }
 
 static void print_char (int indent, char x)

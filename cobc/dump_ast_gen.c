@@ -101,7 +101,6 @@ static int is_known_ptr (void *ptr)
 
 
 static void print_enum_cb_tag (int indent, enum cb_tag x){
-   PRINT_ENUM_TY("enum cb_tag");
    const char *s = NULL;
    switch (x){
 
@@ -210,7 +209,6 @@ static void print_enum_cb_tag (int indent, enum cb_tag x){
 }
 
 static void print_enum_cb_category (int indent, enum cb_category x){
-   PRINT_ENUM_TY("enum cb_category");
    const char *s = NULL;
    switch (x){
 
@@ -402,7 +400,6 @@ static void print_struct_cb_alphabet_name_ptr (int indent, struct cb_alphabet_na
 }
 
 static void print_enum_cb_alphabet_target (int indent, enum cb_alphabet_target x){
-   PRINT_ENUM_TY("enum cb_alphabet_target");
    const char *s = NULL;
    switch (x){
 
@@ -419,7 +416,6 @@ static void print_enum_cb_alphabet_target (int indent, enum cb_alphabet_target x
 }
 
 static void print_enum_cb_alphabet_type (int indent, enum cb_alphabet_type x){
-   PRINT_ENUM_TY("enum cb_alphabet_type");
    const char *s = NULL;
    switch (x){
 
@@ -698,7 +694,6 @@ static void print_struct_cb_system_name_ptr (int indent, struct cb_system_name *
 }
 
 static void print_enum_cb_system_name_category (int indent, enum cb_system_name_category x){
-   PRINT_ENUM_TY("enum cb_system_name_category");
    const char *s = NULL;
    switch (x){
 
@@ -2234,7 +2229,6 @@ static void print_struct_cb_ml_generate_tree_ptr (int indent, struct cb_ml_gener
 }
 
 static void print_enum_cb_ml_type (int indent, enum cb_ml_type x){
-   PRINT_ENUM_TY("enum cb_ml_type");
    const char *s = NULL;
    switch (x){
 
@@ -2398,7 +2392,6 @@ static void print_struct_cb_ml_generate_tree (int indent, int ptr_uid, struct cb
 }
 
 static void print_enum_cob_module_type (int indent, enum cob_module_type x){
-   PRINT_ENUM_TY("enum cob_module_type");
    const char *s = NULL;
    switch (x){
 
@@ -2523,7 +2516,6 @@ static void print_struct_cob_prof_procedure_ptr (int indent, struct cob_prof_pro
 }
 
 static void print_enum_cob_prof_procedure_kind (int indent, enum cob_prof_procedure_kind x){
-   PRINT_ENUM_TY("enum cob_prof_procedure_kind");
    const char *s = NULL;
    switch (x){
 
@@ -4089,7 +4081,6 @@ static void print_struct_cb_list (int indent, int ptr_uid, struct cb_list *ptr){
 }
 
 static void print_enum_cob_file_org (int indent, enum cob_file_org x){
-   PRINT_ENUM_TY("enum cob_file_org");
    const char *s = NULL;
    switch (x){
 
@@ -4116,7 +4107,6 @@ static void print_enum_cob_file_org (int indent, enum cob_file_org x){
 }
 
 static void print_enum_cob_file_access_mode (int indent, enum cob_file_access_mode x){
-   PRINT_ENUM_TY("enum cob_file_access_mode");
    const char *s = NULL;
    switch (x){
 
@@ -4137,7 +4127,6 @@ static void print_enum_cob_file_access_mode (int indent, enum cob_file_access_mo
 }
 
 static void print_enum_cb_assign_type (int indent, enum cb_assign_type x){
-   PRINT_ENUM_TY("enum cb_assign_type");
    const char *s = NULL;
    switch (x){
 
@@ -5589,7 +5578,6 @@ static void print_struct_cb_report (int indent, int ptr_uid, struct cb_report *p
 }
 
 static void print_enum_cb_index_type (int indent, enum cb_index_type x){
-   PRINT_ENUM_TY("enum cb_index_type");
    const char *s = NULL;
    switch (x){
 
@@ -5610,7 +5598,6 @@ static void print_enum_cb_index_type (int indent, enum cb_index_type x){
 }
 
 static void print_enum_cb_storage (int indent, enum cb_storage x){
-   PRINT_ENUM_TY("enum cb_storage");
    const char *s = NULL;
    switch (x){
 
@@ -5639,7 +5626,6 @@ static void print_enum_cb_storage (int indent, enum cb_storage x){
 }
 
 static void print_enum_cb_usage (int indent, enum cb_usage x){
-   PRINT_ENUM_TY("enum cb_usage");
    const char *s = NULL;
    switch (x){
 
@@ -6464,7 +6450,7 @@ static void print_struct_cb_field (int indent, int ptr_uid, struct cb_field *ptr
 
     PRINT_STRUCT_FIELD_BEGIN(indent,screen_flag);
 
-          // TODO: long&long 
+    print_long_long_ptr0 (indent+2, ptr->screen_flag);
 
     PRINT_STRUCT_FIELD_END(indent);
 
@@ -7120,7 +7106,6 @@ static void print_struct_cb_reference_ptr (int indent, struct cb_reference *ptr)
 }
 
 static void print_enum_cob_statement (int indent, enum cob_statement x){
-   PRINT_ENUM_TY("enum cob_statement");
    const char *s = NULL;
    switch (x){
 
@@ -7653,7 +7638,6 @@ static void print_struct_cb_binary_op_ptr (int indent, struct cb_binary_op *ptr)
 }
 
 static void print_enum_cb_binary_op_op (int indent, enum cb_binary_op_op x){
-   PRINT_ENUM_TY("enum cb_binary_op_op");
    const char *s = NULL;
    switch (x){
 
@@ -7714,7 +7698,6 @@ static void print_enum_cb_binary_op_op (int indent, enum cb_binary_op_op x){
 }
 
 static void print_enum_cb_binary_op_flag (int indent, enum cb_binary_op_flag x){
-   PRINT_ENUM_TY("enum cb_binary_op_flag");
    const char *s = NULL;
    switch (x){
 
@@ -7911,7 +7894,6 @@ static void print_struct_cb_cast_ptr (int indent, struct cb_cast *ptr){
 }
 
 static void print_enum_cb_cast_type (int indent, enum cb_cast_type x){
-   PRINT_ENUM_TY("enum cb_cast_type");
    const char *s = NULL;
    switch (x){
 
@@ -8009,7 +7991,6 @@ static void print_struct_cb_intrinsic_table_ptr (int indent, struct cb_intrinsic
 }
 
 static void print_enum_cb_intr_enum (int indent, enum cb_intr_enum x){
-   PRINT_ENUM_TY("enum cb_intr_enum");
    const char *s = NULL;
    switch (x){
 
@@ -8250,7 +8231,6 @@ static void print_enum_cb_intr_enum (int indent, enum cb_intr_enum x){
 }
 
 static void print_enum_cb_feature_mode (int indent, enum cb_feature_mode x){
-   PRINT_ENUM_TY("enum cb_feature_mode");
    const char *s = NULL;
    switch (x){
 
@@ -9024,7 +9004,6 @@ static void print_struct_cb_perform_ptr (int indent, struct cb_perform *ptr){
 }
 
 static void print_enum_cb_perform_type (int indent, enum cb_perform_type x){
-   PRINT_ENUM_TY("enum cb_perform_type");
    const char *s = NULL;
    switch (x){
 
@@ -9320,7 +9299,7 @@ static void print_struct_cb_attr_struct (int indent, int ptr_uid, struct cb_attr
 
     PRINT_STRUCT_FIELD_BEGIN(indent,dispattrs);
 
-          // TODO: long&long 
+    print_long_long_ptr0 (indent+2, ptr->dispattrs);
 
     PRINT_STRUCT_FIELD_END(indent);
 
@@ -9331,7 +9310,6 @@ static void print_struct_cb_attr_struct (int indent, int ptr_uid, struct cb_attr
 }
 
 static void print_enum_cb_handler_type (int indent, enum cb_handler_type x){
-   PRINT_ENUM_TY("enum cb_handler_type");
    const char *s = NULL;
    switch (x){
 
@@ -9742,7 +9720,7 @@ static void print_struct_cb_set_attr (int indent, int ptr_uid, struct cb_set_att
 
     PRINT_STRUCT_FIELD_BEGIN(indent,val_on);
 
-          // TODO: long&long 
+    print_long_long_ptr0 (indent+2, ptr->val_on);
 
     PRINT_STRUCT_FIELD_END(indent);
 
@@ -9752,7 +9730,7 @@ static void print_struct_cb_set_attr (int indent, int ptr_uid, struct cb_set_att
 
     PRINT_STRUCT_FIELD_BEGIN(indent,val_off);
 
-          // TODO: long&long 
+    print_long_long_ptr0 (indent+2, ptr->val_off);
 
     PRINT_STRUCT_FIELD_END(indent);
 
@@ -10208,7 +10186,6 @@ static void print_struct_cb_ml_suppress_clause_ptr (int indent, struct cb_ml_sup
 }
 
 static void print_enum_cb_ml_suppress_target (int indent, enum cb_ml_suppress_target x){
-   PRINT_ENUM_TY("enum cb_ml_suppress_target");
    const char *s = NULL;
    switch (x){
 
@@ -10227,7 +10204,6 @@ static void print_enum_cb_ml_suppress_target (int indent, enum cb_ml_suppress_ta
 }
 
 static void print_enum_cb_ml_suppress_category (int indent, enum cb_ml_suppress_category x){
-   PRINT_ENUM_TY("enum cb_ml_suppress_category");
    const char *s = NULL;
    switch (x){
 
