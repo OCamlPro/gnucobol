@@ -2228,6 +2228,7 @@ validate_elementary_item (struct cb_field *f)
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-CHAR", 2, 1);
 		f->flag_real_binary = 1;
+		f->flag_binary_char = 1;
 		break;
 	case CB_USAGE_SIGNED_SHORT:
 		f->usage = CB_USAGE_COMP_5;
@@ -2248,6 +2249,7 @@ validate_elementary_item (struct cb_field *f)
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-CHAR", 2, 0);
 		f->flag_real_binary = 1;
+		f->flag_binary_char = 1;
 		break;
 	case CB_USAGE_UNSIGNED_SHORT:
 		f->usage = CB_USAGE_COMP_5;
@@ -2562,7 +2564,7 @@ compute_binary_size (struct cb_field *f, const int size)
 			   (size <= 9) ? 4 : (size <= 18) ? 8 : 16);
 		return;
 	case CB_BINARY_SIZE_2_4_8:
-		if (f->flag_real_binary && size <= 2) {
+		if (f->flag_binary_char) {
 			f->size = 1;
 		} else {
 			f->size = ((size <= 4) ? 2 :
