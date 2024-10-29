@@ -132,3 +132,38 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [java call not successful
 ])
 AT_CLEANUP
+
+AT_SETUP([CALL Java static void (void) in a package])
+AT_KEYWORDS([extensions jni package])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([testpackage/Test.java], [
+package testpackage;
+public class Test {
+   public static void printHelloPackage () {
+      System.out.println("Hello from package!");
+   }
+}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.testpackage.Test.printHelloPackage"
+               NOT ON EXCEPTION
+                   DISPLAY "Java call to package class worked"
+           END-CALL
+           STOP RUN.
+])
+
+AT_CHECK([mkdir -p testpackage])
+AT_CHECK([$JAVAC testpackage/Test.java], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello from package!
+Java call to package class worked
+])
+
+AT_CLEANUP

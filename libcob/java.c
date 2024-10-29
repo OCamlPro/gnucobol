@@ -45,7 +45,7 @@ jvm_load (void) {
     JavaVMOption* options;
 	const char *classpath;
 	size_t option_len;
-	char option_buffer[1024];
+	char option_buffer[COB_NORMAL_BUFF];
 
 	args.version = JNI_VERSION_1_6;
     char *classpath = getenv("CLASSPATH");
@@ -77,12 +77,6 @@ resolve_java (const char		*class_name,
 	cob_java_handle *handle;
 
 	char *jni_class_name = strdup(class_name);
-    for (char *p = jni_class_name; *p; ++p) {
-        if (*p == '.') {
-            *p = '/';
-        }
-    }
-
 	cls = (*env)->FindClass(env, jni_class_name);
 	cob_free(jni_class_name);
 	if (!cls) {

@@ -7113,44 +7113,51 @@ output_exception_handling(struct cb_call *p)
 }
 
 static void
-output_java_call (struct cb_call *p)
+output_java_call(struct cb_call *p)
 {
-	if (p->args != NULL || p->call_returning != NULL) {
-    	CB_PENDING ("Java method call with parameters or return values");
-    	COBC_ABORT ();
-	}
-	char* full_name = (char *)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`)*/
-	char* class_and_method_name = full_name + 5;
-	char *last_dot;
-	char *method_name;
-	const char *class_name;
-	char* mangled;
-	size_t i;
+    if (p->args != NULL || p->call_returning != NULL) {
+        CB_PENDING("Java method call with parameters or return values");
+        COBC_ABORT();
+    }
 
-	mangled = strdup(class_and_method_name);
-	for (i = 0; i < strlen(mangled) + 1; i++) {
-		mangled[i] = (mangled[i] == '.') ? '_' : mangled[i];
-	}
+    char* full_name = (char*)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`) */
+    char* class_and_method_name = full_name + 5;
+    char *last_dot;
+    char *method_name;
+    const char *class_name;
+    char* mangled;
 
-	lookup_java_call(mangled);
+    // Directly duplicate the class_and_method_name
+    mangled = strdup(class_and_method_name);
+    if (!mangled) {
+        cobc_err_msg(_("Memory allocation failed for mangled name"));
+        COBC_ABORT();
+    }
 
-	last_dot = strrchr(class_and_method_name, '.');
+    lookup_java_call(mangled);
 
-	*last_dot = '\0';
-	method_name = last_dot + 1;
-	class_name = class_and_method_name;
+    last_dot = strrchr(class_and_method_name, '.');
 
-	output_line("if (call_java_%s == NULL)", mangled);
-	output_block_open();
+    if (last_dot == NULL) {
+        cobc_err_msg(_("malformed call '%s' to a Java method"), class_and_method_name);
+        cobc_free(mangled);
+        return;
+    }
 
-	output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"()V\");", mangled, class_name, method_name);
-	output_line("cob_call_java(call_java_%s);\n", mangled);
-	output_newline();
-	output_block_close();
-	output_exception_handling(p);
+    *last_dot = '\0';
+    method_name = last_dot + 1;
+    class_name = class_and_method_name;
 
-	cobc_free((char*) mangled);
+    output_line("if (call_java_%s == NULL)", mangled);
+    output_block_open();
 
+    output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"()V\");", mangled, class_name, method_name);
+    output_line("cob_call_java(call_java_%s);\n", mangled);
+    output_newline();
+    output_block_close();
+    output_exception_handling(p);
+
+    cobc_free(mangled);
 }
 
 static void
