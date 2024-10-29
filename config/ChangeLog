@@ -1,4 +1,8 @@
 
+2024-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: change binary-size from 1-2-4-8 to 2-4-8
+
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 
 	FR #474: add runtime configuration to hide cursor for extended screenio

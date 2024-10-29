@@ -1630,27 +1630,28 @@ output_attr (const cb_tree x)
 				if (f->flag_binary_swap) {
 					flags |= COB_FLAG_BINARY_SWAP;
 				}
-				if (f->flag_real_binary) {
+				if (f->flag_real_binary
+				 || f->usage == CB_USAGE_COMP_5) {
 					flags |= COB_FLAG_REAL_BINARY;
 				}
 				if (f->flag_is_pointer) {
 					flags |= COB_FLAG_IS_POINTER;
 				}
-				if (cb_binary_truncate &&
-				    f->usage == CB_USAGE_BINARY &&
-				    !f->flag_real_binary) {
+				if (cb_binary_truncate
+				 && f->usage == CB_USAGE_BINARY
+				 && !f->flag_real_binary) {
 					flags |= COB_FLAG_BINARY_TRUNC;
 				}
 
-				if (type == COB_TYPE_NUMERIC_BINARY
-				 && f->usage == CB_USAGE_INDEX) {
-					flags |= COB_FLAG_REAL_BINARY;
-					type = COB_TYPE_NUMERIC_COMP5;
-				} else
-				if (type == COB_TYPE_NUMERIC_BINARY
-				 && (f->flag_binary_swap || f->flag_real_binary)
-				 && (f->flag_indexed_by || f->index_type || f->flag_internal_register)) {
-					type = COB_TYPE_NUMERIC_COMP5;
+				if (type == COB_TYPE_NUMERIC_BINARY) {
+					if (f->usage == CB_USAGE_INDEX) {
+						flags |= COB_FLAG_REAL_BINARY;
+						type = COB_TYPE_NUMERIC_COMP5;
+					} else
+					if ((f->flag_binary_swap || f->flag_real_binary)
+					 && (f->flag_indexed_by || f->index_type || f->flag_internal_register)) {
+						type = COB_TYPE_NUMERIC_COMP5;
+					}
 				}
 				switch (f->usage) {
 				case CB_USAGE_COMP_6:

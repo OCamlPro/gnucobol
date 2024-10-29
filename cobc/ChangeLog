@@ -1,4 +1,12 @@
 
+2024-10-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	BUG #1000: Wrong binary size computed for COMP-5 PIC 9
+	and PIC 99 when binary-size=2-4-8
+	* field.c (validate_elementary_item): only set flag_real_binary for
+	  BINARY-CHAR/BINARY-SHORT/BINARY-LONG/BINARY-DOUBLE
+	* codegenc (output_attr): generate COB_FLAG_REAL_BINARY also for COMP-5
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (output_line_directive): extracted from other places and

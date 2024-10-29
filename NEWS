@@ -33,6 +33,18 @@ NEWS - user visible changes				-*- outline -*-
    patterns where invalid numerical data (e.g, SPACES) encode "absent"
    data
 
+** #1000: dialects without support of single byte binary data
+   will now generate at least 2 bytes of storage for COMP-5 elements; this
+   applies to all non-standard dialects but GnuCOBOL (default) and Micro Focus;
+   that changes the group length of records containing elements with less than
+   3 digits and also passes different sizes via CALL, which may need program
+   adjustments.
+
+** -std=acu / -std=acu-strict now generate BINARY and COMP-5 with at least
+   2 bytes of storage; the comment for #NNN above applies; if you want
+   to still use the sizes used since GnuCOBOL 2.2 with those dialects:
+   add -fbinary-size=1-2-4-8 to your compile options
+
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
