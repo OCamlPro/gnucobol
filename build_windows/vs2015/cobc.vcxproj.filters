@@ -63,6 +63,9 @@
     <ClCompile Include="..\..\cobc\typeck.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cobc\dump_ast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cobc\parser.c">
       <Filter>Auto Generated Files\Source Files</Filter>
     </ClCompile>
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\cobc\warning.def">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\cobc\dump_ast_gen.c">
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\cobc\ChangeLog" />
