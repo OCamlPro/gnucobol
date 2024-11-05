@@ -7100,7 +7100,7 @@ output_exception_handling(struct cb_call *p)
         output_line("cob_glob_ptr->cob_stmt_exception = 0;");
     }
 
-    output_line("if ((cob_glob_ptr->cob_exception_code & 0xff00) != 0) {");
+    output_line("if ((cob_glob_ptr->cob_exception_code & 0xff00) != 0) ");
     output_block_open();
 
     if (p->stmt1) {
@@ -7133,6 +7133,8 @@ output_java_call(struct cb_call *p)
         COBC_ABORT();
     }
 
+    last_dot = strrchr (mangled, '.');
+    *last_dot = '_';
     lookup_java_call(mangled);
 
     char* last_dot = strrchr(class_and_method_name, '.');
@@ -7143,9 +7145,9 @@ output_java_call(struct cb_call *p)
     output_line("if (call_java_%s == NULL)", mangled);
     output_block_open();
 
-    output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"()V\");", mangled, class_name, method_name);
-    output_line("cob_call_java(call_java_%s);\n", mangled);
-    output_newline();
+    output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"()V\");",
+		mangled, class_name, method_name);
+    output_line("cob_call_java(call_java_%s);", mangled);
     output_block_close();
     output_exception_handling(p);
 }
