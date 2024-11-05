@@ -4079,6 +4079,12 @@ AT_KEYWORDS([runmisc default-colseq])
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  TAB.
@@ -4099,7 +4105,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 -fdefault-colseq=EBCDIC prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -15303,19 +15309,17 @@ AT_DATA([prog1.cob], [
                256 THRU 193.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 LV-ORD PIC 999.
        01 LV     PIC X.
-       88 IS-LV VALUE LOW-VALUE.
-       01 HV-ORD PIC 999.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
        01 HV     PIC X.
-       88 IS-HV VALUE HIGH-VALUE.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
        PROCEDURE DIVISION.
            MOVE LOW-VALUE TO LV.
            MOVE HIGH-VALUE TO HV.
-           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
-           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
-           DISPLAY "LOW-VALUE: " LV-ORD
-                 " HIGH-VALUE: " HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL
+                 " HIGH-VALUE: " HV-VAL.
            IF LV = LOW-VALUE AND IS-LV
              DISPLAY "LOW-VALUE OK"
            ELSE
@@ -15341,7 +15345,7 @@ AT_DATA([prog1.cob], [
 
 AT_CHECK([$COMPILE prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
-[LOW-VALUE: 064 HIGH-VALUE: 193
+[LOW-VALUE: 063 HIGH-VALUE: 192
 LOW-VALUE OK
 HIGH-VALUE OK
 X > LOW-VALUE
@@ -15360,19 +15364,17 @@ AT_DATA([prog2.cob], [
                65.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 LV-ORD PIC 999.
        01 LV     PIC X.
-       88 IS-LV VALUE LOW-VALUE.
-       01 HV-ORD PIC 999.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
        01 HV     PIC X.
-       88 IS-HV VALUE HIGH-VALUE.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
        PROCEDURE DIVISION.
            MOVE LOW-VALUE TO LV.
            MOVE HIGH-VALUE TO HV.
-           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
-           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
-           DISPLAY "LOW-VALUE: " LV-ORD
-                 " HIGH-VALUE: " HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL
+                 " HIGH-VALUE: " HV-VAL.
            IF LV = LOW-VALUE AND IS-LV
              DISPLAY "LOW-VALUE OK"
            ELSE
@@ -15398,7 +15400,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
-[LOW-VALUE: 065 HIGH-VALUE: 256
+[LOW-VALUE: 064 HIGH-VALUE: 255
 LOW-VALUE OK
 HIGH-VALUE OK
 X > LOW-VALUE
@@ -15416,19 +15418,17 @@ AT_DATA([prog3.cob], [
            ALPHABET alpha-ebcdic IS EBCDIC.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 LV-ORD PIC 999.
        01 LV     PIC X.
-       88 IS-LV VALUE LOW-VALUE.
-       01 HV-ORD PIC 999.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
        01 HV     PIC X.
-       88 IS-HV VALUE HIGH-VALUE.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
        PROCEDURE DIVISION.
            MOVE LOW-VALUE TO LV.
            MOVE HIGH-VALUE TO HV.
-           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
-           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
-           DISPLAY "LOW-VALUE: " LV-ORD
-                 " HIGH-VALUE: " HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL
+                 " HIGH-VALUE: " HV-VAL.
            IF LV = LOW-VALUE AND IS-LV
              DISPLAY "LOW-VALUE OK"
            ELSE
@@ -15454,7 +15454,7 @@ AT_DATA([prog3.cob], [
 
 AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
-[LOW-VALUE: 001 HIGH-VALUE: 160
+[LOW-VALUE: 000 HIGH-VALUE: 159
 LOW-VALUE OK
 HIGH-VALUE OK
 X > LOW-VALUE
@@ -15466,19 +15466,17 @@ AT_DATA([prog4.cob], [
        PROGRAM-ID. prog.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 LV-ORD PIC 999.
        01 LV     PIC X.
-       88 IS-LV VALUE LOW-VALUE.
-       01 HV-ORD PIC 999.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
        01 HV     PIC X.
-       88 IS-HV VALUE HIGH-VALUE.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
        PROCEDURE DIVISION.
            MOVE LOW-VALUE TO LV.
            MOVE HIGH-VALUE TO HV.
-           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
-           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
-           DISPLAY "LOW-VALUE: " LV-ORD
-                 " HIGH-VALUE: " HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL
+                 " HIGH-VALUE: " HV-VAL.
            IF LV = LOW-VALUE AND IS-LV
              DISPLAY "LOW-VALUE OK"
            ELSE
@@ -15504,7 +15502,7 @@ AT_DATA([prog4.cob], [
 
 AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog4.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
-[LOW-VALUE: 001 HIGH-VALUE: 160
+[LOW-VALUE: 000 HIGH-VALUE: 159
 LOW-VALUE OK
 HIGH-VALUE OK
 X > LOW-VALUE
@@ -15522,19 +15520,17 @@ AT_DATA([prog5.cob], [
            ALPHABET alpha-ebcdic IS EBCDIC.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 LV-ORD PIC 999.
        01 LV     PIC X.
-       88 IS-LV VALUE LOW-VALUE.
-       01 HV-ORD PIC 999.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
        01 HV     PIC X.
-       88 IS-HV VALUE HIGH-VALUE.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
        PROCEDURE DIVISION.
            MOVE LOW-VALUE TO LV.
            MOVE HIGH-VALUE TO HV.
-           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
-           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
-           DISPLAY "P1 LOW-VALUE: " LV-ORD
-                 " HIGH-VALUE: " HV-ORD.
+           DISPLAY "P1 LOW-VALUE: " LV-VAL
+                 " HIGH-VALUE: " HV-VAL.
            IF LV = LOW-VALUE AND IS-LV
              DISPLAY "LOW-VALUE OK"
            ELSE
@@ -15568,19 +15564,17 @@ AT_DATA([prog5.cob], [
            ALPHABET alpha-ascii IS ASCII.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01 LV-ORD PIC 999.
        01 LV     PIC X.
-       88 IS-LV VALUE LOW-VALUE.
-       01 HV-ORD PIC 999.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
        01 HV     PIC X.
-       88 IS-HV VALUE HIGH-VALUE.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
        PROCEDURE DIVISION.
            MOVE LOW-VALUE TO LV.
            MOVE HIGH-VALUE TO HV.
-           MOVE FUNCTION ORD (LOW-VALUE) TO LV-ORD.
-           MOVE FUNCTION ORD (HIGH-VALUE) TO HV-ORD.
-           DISPLAY "P2 LOW-VALUE: " LV-ORD
-                 " HIGH-VALUE: " HV-ORD.
+           DISPLAY "P2 LOW-VALUE: " LV-VAL
+                 " HIGH-VALUE: " HV-VAL.
            IF LV = LOW-VALUE AND IS-LV
              DISPLAY "LOW-VALUE OK"
            ELSE
@@ -15607,12 +15601,12 @@ AT_DATA([prog5.cob], [
 
 AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5], [0],
-[P1 LOW-VALUE: 001 HIGH-VALUE: 160
+[P1 LOW-VALUE: 000 HIGH-VALUE: 159
 LOW-VALUE OK
 HIGH-VALUE OK
 X > LOW-VALUE
 X < HIGH-VALUE
-P2 LOW-VALUE: 001 HIGH-VALUE: 256
+P2 LOW-VALUE: 000 HIGH-VALUE: 255
 LOW-VALUE OK
 HIGH-VALUE OK
 X > LOW-VALUE

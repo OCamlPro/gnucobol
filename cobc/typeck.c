@@ -3750,19 +3750,6 @@ get_value (cb_tree x)
 	}
 }
 
-void
-load_collating_tables (void)
-{
-	static int coltab_loaded = 0;
-	if (coltab_loaded) {
-		return;
-	}
-	if (cob_load_collation (cb_ebcdic_table, ebcdic_to_ascii, ascii_to_ebcdic) < 0) {
-		cobc_err_exit (_("invalid parameter: %s"), "-febcdic-table");
-	}
-	coltab_loaded = 1;
-}
-
 static int
 cb_validate_collating (struct cb_program *prog, cb_tree collating_sequence)
 {
@@ -3781,33 +3768,40 @@ cb_validate_collating (struct cb_program *prog, cb_tree collating_sequence)
 
 #ifdef COB_EBCDIC_MACHINE
 	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_ASCII) {
-		load_collating_tables ();
                 prog->low_value = ascii_to_ebcdic[0x00];
                 prog->high_value = ascii_to_ebcdic[0xff];
 #else
 	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_EBCDIC) {
-		load_collating_tables ();
                 prog->low_value = ebcdic_to_ascii[0x00];
                 prog->high_value = ebcdic_to_ascii[0xff];
 #endif
 	} else if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_CUSTOM) {
-		prog->low_value = (unsigned char)CB_ALPHABET_NAME (x)->low_val_char;
-		prog->high_value = (unsigned char)CB_ALPHABET_NAME (x)->high_val_char;
+		if (CB_ALPHABET_NAME (x)->alphabet_target == CB_ALPHABET_ALPHANUMERIC) {
+			prog->low_value = (cob_u8_t)CB_ALPHABET_NAME (x)->low_val_char;
+			prog->high_value = (cob_u8_t)CB_ALPHABET_NAME (x)->high_val_char;
+		} else /* CB_ALPHABET_NATIONAL */ {
+			prog->low_value_n = (cob_u16_t)CB_ALPHABET_NAME (x)->low_val_char;
+			prog->high_value_n = (cob_u16_t)CB_ALPHABET_NAME (x)->high_val_char;
+		}
 	} else {
 		return 0;
 	}
 
-	if (prog->low_value) {
-		cb_low = cb_build_alphanumeric_literal ("\0", (size_t)1);
-		CB_LITERAL(cb_low)->data[0] = prog->low_value;
-		CB_LITERAL(cb_low)->all = 1;
+	if (CB_ALPHABET_NAME (x)->alphabet_target == CB_ALPHABET_ALPHANUMERIC) {
+		if (prog->low_value) {
+			cb_low = cb_build_alphanumeric_literal ("\0", (size_t)1);
+			CB_LITERAL(cb_low)->data[0] = prog->low_value;
+			CB_LITERAL(cb_low)->all = 1;
+		}
+		if (prog->high_value != 255){
+			cb_high = cb_build_alphanumeric_literal ("\0", (size_t)1);
+			CB_LITERAL(cb_high)->data[0] = prog->high_value;
+			CB_LITERAL(cb_high)->all = 1;
+		}
+	} else /* CB_ALPHABET_NATIONAL */ {
+		/* TODO: LOW/HIGH-VALUE for national */
 	}
 
-	if (prog->high_value != 255){
-		cb_high = cb_build_alphanumeric_literal ("\0", (size_t)1);
-		CB_LITERAL(cb_high)->data[0] = prog->high_value;
-		CB_LITERAL(cb_high)->all = 1;
-	}
 	return 0;
 }
 
@@ -3860,7 +3854,6 @@ validate_alphabet (cb_tree alphabet)
 		register int	*entry = ap->values;
 		for (n = 0; n < COB_MAX_CHAR_ALPHANUMERIC + 1; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-			load_collating_tables ();
 			*entry = (int)ascii_to_ebcdic[n];
 #else
 			*entry = n;
@@ -3885,7 +3878,6 @@ validate_alphabet (cb_tree alphabet)
 #ifdef	COB_EBCDIC_MACHINE
 			*entry = n;
 #else
-			load_collating_tables ();
 			*entry = (int)ebcdic_to_ascii[n];
 #endif
 			entry++;

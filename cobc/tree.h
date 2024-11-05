@@ -1918,6 +1918,8 @@ struct cb_program {
 	unsigned char	numeric_separator;		/* ',' or '.' */
 	cob_u8_t	low_value;			/* Low-value for this program */
 	cob_u8_t	high_value;			/* High-value for this program */
+	cob_u16_t	low_value_n;			/* National Low-value */
+	cob_u16_t	high_value_n;			/* National High-value  */
 	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;

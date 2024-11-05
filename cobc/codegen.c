@@ -2659,12 +2659,6 @@ output_colseq_table_field (const char * field_name, const char * table_name)
 static void
 output_collating_tables (void)
 {
-
-	/* Load the collating tables if needed */
-	if (gen_ascii_ebcdic || gen_ebcdic_ascii) {
-		load_collating_tables ();
-	}
-
 	if (gen_native) {
 		output_storage ("\n/* NATIVE table */\n");
 		output_colseq_table ("cob_native", NULL);
