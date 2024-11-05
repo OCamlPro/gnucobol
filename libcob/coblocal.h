@@ -480,6 +480,8 @@ COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
 COB_EXPIMP int cob_ncase_cmp (char *, const char *, unsigned );
 COB_EXPIMP char * cob_str_case_str (char *, const char *);
 
+COB_EXPIMP int		cob_jni_init (cob_java_api *api);
+
 /* static inline of smaller helpers */
 
 static COB_INLINE int
