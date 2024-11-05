@@ -2201,8 +2201,10 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	p->decimal_point = '.';
 	p->currency_symbol = '$';
 	p->numeric_separator = ',';
-	p->low_value = '\0';
-	p->high_value = '\xff';
+	p->low_value = 0;
+	p->high_value = 255;
+	p->low_value_n = 0;
+	p->high_value_n = 65535;
 	if (cb_call_extfh) {
 		p->extfh = cobc_parse_strdup (cb_call_extfh);
 	}
