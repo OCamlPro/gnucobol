@@ -4079,6 +4079,12 @@ AT_KEYWORDS([runmisc default-colseq])
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  TAB.
@@ -4099,7 +4105,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 -fdefault-colseq=EBCDIC prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
