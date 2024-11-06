@@ -397,7 +397,7 @@ lookup_source (const char *p)
 }
 
 static void
-lookup_java_call(const char *p)
+lookup_java_call (const char *p)
 {
 	struct call_list *clp;
 
@@ -407,7 +407,7 @@ lookup_java_call(const char *p)
 		}
 	}
 	clp = cobc_parse_malloc (sizeof (struct call_list));
-	clp->call_name = p;
+	clp->call_name = cobc_parse_strdup (p);
 	clp->next = call_java_cache;
 	call_java_cache = clp;
 }
@@ -7091,65 +7091,56 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 }
 
 static void
-output_exception_handling(struct cb_call *p)
+output_exception_handling (struct cb_call *p)
 {
-    if (p->stmt1) {
-        output_line("cob_glob_ptr->cob_stmt_exception = 1;");
-        output_line("COB_RESET_EXCEPTION(0);");
-    } else {
-        output_line("cob_glob_ptr->cob_stmt_exception = 0;");
-    }
-
-    output_line("if ((cob_glob_ptr->cob_exception_code & 0xff00) != 0) ");
-    output_block_open();
-
-    if (p->stmt1) {
-        output_stmt(p->stmt1);  
-    } else if (p->stmt2) {
-        output_stmt(p->stmt2);
+	if (p->stmt1) {
+		output_line ("cob_glob_ptr->cob_stmt_exception = 1;");
+		output_line ("COB_RESET_EXCEPTION(0);");
+	} else {
+		output_line ("cob_glob_ptr->cob_stmt_exception = 0;");
 	}
-    output_block_close();
-    output_line("COB_RESET_EXCEPTION(0);");
+
+	output_line ("if ((cob_glob_ptr->cob_exception_code & 0xff00) != 0) ");
+	output_block_open ();
+
+	if (p->stmt1) {
+		output_stmt (p->stmt1);
+	} else if (p->stmt2) {
+		output_stmt (p->stmt2);
+	}
+	output_block_close ();
+	output_line ("COB_RESET_EXCEPTION(0);");
 }
 
 static void
-output_java_call(struct cb_call *p)
+output_java_call (struct cb_call *p)
 {
-    if (p->args != NULL || p->call_returning != NULL) {
-        CB_PENDING("Java method call with parameters or return values");
-        COBC_ABORT();
-    }
+	char		*class_and_method_name, *last_dot, *c;
+	const char	*class_name, *method_name;
+	char		mangled[COB_NORMAL_BUFF];
 
-    char* full_name = (char*)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`) */
-    char* class_and_method_name = full_name + 5;
-    char *method_name;
-    const char *class_name;
-    char* mangled;
+	/* Assume "Java." prefix (enforced in `parser.y`, rule `call_body`) */
+	class_and_method_name = (char*)CB_LITERAL(p->name)->data + 5;
 
-    // Directly duplicate the class_and_method_name
-    mangled = strdup(class_and_method_name);
-    if (!mangled) {
-        cobc_err_msg(_("Memory allocation failed for mangled name"));
-        COBC_ABORT();
-    }
+	strncpy (mangled, class_and_method_name, COB_NORMAL_MAX);
+	for (c = mangled; *c; c++) {
+		if (*c == '.') *c = '_';
+	}
+	lookup_java_call (mangled);
 
-    last_dot = strrchr (mangled, '.');
-    *last_dot = '_';
-    lookup_java_call(mangled);
+	last_dot = strrchr (class_and_method_name, '.');
+	*last_dot = '\0';
+	method_name = last_dot + 1;
+	class_name = class_and_method_name;
 
-    char* last_dot = strrchr(class_and_method_name, '.');
-    *last_dot = '\0';
-    method_name = last_dot + 1;
-    class_name = class_and_method_name;
+	output_line ("if (call_java_%s == NULL)", mangled);
+	output_block_open ();
+	output_line ("call_java_%s = cob_resolve_java (\"%s\", \"%s\", \"()V\");",
+		     mangled, class_name, method_name);
+	output_line ("cob_call_java (call_java_%s);", mangled);
+	output_block_close ();
 
-    output_line("if (call_java_%s == NULL)", mangled);
-    output_block_open();
-
-    output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"()V\");",
-		mangled, class_name, method_name);
-    output_line("cob_call_java(call_java_%s);", mangled);
-    output_block_close();
-    output_exception_handling(p);
+	output_exception_handling (p);
 }
 
 static void

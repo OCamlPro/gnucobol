@@ -129,7 +129,6 @@ lt_dlerror (void)
 static lt_dlhandle jvm_handle = NULL;
 #else
 /* Using libltdl, no need to preload. */
-# define JVM_PRELOAD 0
 #endif
 
 #include "sysdefines.h"
@@ -1855,7 +1854,7 @@ cob_exit_call (void)
 	}
 	base_dynload_ptr = NULL;
 
-#if JVM_PRELOAD
+#ifdef JVM_PRELOAD
 	if (jvm_handle) {
 		lt_dlclose (jvm_handle);
 		jvm_handle = NULL;
@@ -1993,6 +1992,8 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 
 /* Java API handling */
 
+#ifdef WITH_JNI
+
 /* "Standard" path suffixes to the dynamically loadable JVM library, from
    "typical" JAVA_HOME. */
 const char* const path_to_jvm[] = {
@@ -2003,7 +2004,11 @@ const char* const path_to_jvm[] = {
 #else
 # define JVM_FILE "libjvm." COB_MODULE_EXT
 	"/lib/server",
+	"/jre/lib/server",
+	"/jre/lib/" COB_JAVA_ARCH "/server",
 	"/lib/client",
+	"/jre/lib/client",
+	"/jre/lib/" COB_JAVA_ARCH "/client",
 #endif
 	NULL,
 };
@@ -2040,13 +2045,14 @@ init_jvm_search_dirs (void) {
 		break;
 #else
 		/* Append to search path. */
+		int success;
 # warning On some systems, JAVA_HOME-based lookup via `libltdl` does not work
 		if (snprintf (jvm_path, (size_t)COB_FILE_MAX, "%s%s",
 			      java_home, path_suffix) == 0) {
 			continue;
 		}
 		DEBUG_LOG ("call", ("appending '%s' to load path: ", jvm_path));
-		int success = lt_dladdsearchdir (jvm_path);
+		success = lt_dladdsearchdir (jvm_path);
 		DEBUG_LOG ("call", ("%s\n", success == 0 ? "success" : "failed"));
 #endif
 	}
@@ -2091,6 +2097,8 @@ cob_init_java (void) {
 	jinit (java_api);
 	return 0;
 }
+
+#endif	/* WITH_JNI */
 
 cob_java_handle*
 cob_resolve_java (const char *class_name,

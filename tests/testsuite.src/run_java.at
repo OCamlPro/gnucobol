@@ -32,6 +32,7 @@ public class Test {
    }
 }
 ])
+
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -47,25 +48,7 @@ AT_CHECK([$JAVAC Test.java], [0], [], [])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Hello world!
-])
-AT_CLEANUP
-
-
-AT_SETUP([CALL Java with malformed method name])
-AT_KEYWORDS([extensions jni malformed])
-
-AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       PROCEDURE        DIVISION.
-           CALL "Java.InvalidName"
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [1], [],
-[prog.cob:5: error: malformed Java method name 'Java.InvalidName', expected format 'Java.ClassName.methodName'
+Java call worked
 ])
 AT_CLEANUP
 
@@ -114,6 +97,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 ])
 AT_CLEANUP
 
+
 AT_SETUP([CALL Java static void (void) (missing class with ON EXCEPTION)])
 AT_KEYWORDS([extensions jni exception])
 
@@ -133,11 +117,13 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [java call not successful
 ])
 AT_CLEANUP
 
+
 AT_SETUP([CALL Java static void (void) in a package])
 AT_KEYWORDS([extensions jni package])
 
 AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
 
+AT_CHECK([mkdir -p testpackage])
 AT_DATA([testpackage/Test.java], [
 package testpackage;
 public class Test {
@@ -158,7 +144,6 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([mkdir -p testpackage])
 AT_CHECK([$JAVAC testpackage/Test.java], [0], [], [])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],

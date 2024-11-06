@@ -25,8 +25,8 @@
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
+#include "config.h"
 #include "common.h"
-#include "libcob.h"
 #include "coblocal.h"
 
 /* Declarations */
@@ -38,32 +38,29 @@ typedef struct __cob_java_static_method {
 	jmethodID	mid;
 } cob_java_handle;
 
+/* Only exported symbol: */
+int		cob_jni_init (cob_java_api *api);
+
 static int			/* non-zero means there's an error */
 jvm_load (void) {
 	/* JDK/JRE 6 VM initialization arguments */
-	JavaVMInitArgs args;
-	JavaVMOption* options = { 0, };
-	const char *classpath;
-	size_t option_len;
-	char option_buffer[COB_NORMAL_BUFF];
+	JavaVMInitArgs	args;
+	JavaVMOption	options[1];
+	const char	*classpath;
+	char		cp_buffer[COB_MEDIUM_BUFF];
 
 	args.version = JNI_VERSION_1_6;
-	classpath = getenv ("CLASSPATH");
-	if (classpath == NULL) {
-		classpath = "";
-	}
-	args.nOptions = 1;
-	option_len = strlen("-Djava.class.path=") + strlen(classpath) + 1;
-	if (option_len > sizeof(option_buffer)) {
-		return -1;
-	}
-	strcpy(option_buffer, "-Djava.class.path=");
-	strcat(option_buffer, classpath);
-	options[0].optionString = option_buffer;
 	args.options = options;
-	args.ignoreUnrecognized = 1;
-	/* loading and initializing a Java VM, returning as JNI interface */
-	return JNI_CreateJavaVM(&jvm, (void**)&env, &args);
+	args.nOptions = 0;
+	args.ignoreUnrecognized = JNI_FALSE;
+
+	if ((classpath = getenv ("CLASSPATH")) != NULL) {
+		snprintf (cp_buffer, COB_MEDIUM_MAX,
+			  "-Djava.class.path=%s", classpath);
+		options[args.nOptions++].optionString = cp_buffer;
+	}
+
+	return JNI_CreateJavaVM (&jvm, (void**)&env, &args);
 }
 
 static

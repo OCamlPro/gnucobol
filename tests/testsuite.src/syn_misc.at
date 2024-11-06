@@ -9531,3 +9531,19 @@ pgm1.cob:18: error: start of statement in Area A
 
 AT_CLEANUP
 
+
+AT_SETUP([CALL Java with malformed method name])
+AT_KEYWORDS([extensions jni malformed])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.InvalidName"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:5: error: malformed Java method name 'Java.InvalidName', expected format 'Java.ClassName.methodName'
+])
+AT_CLEANUP

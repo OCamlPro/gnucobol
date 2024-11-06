@@ -152,6 +152,8 @@ dnl done via AC_CHECK_FUNCS: AH_TEMPLATE([HAVE_RAISE], [Has raise function])
 AH_TEMPLATE([HAVE_FINITE_IEEEFP_H],
 	[Declaration of finite function in ieeefp.h instead of math.h])
 
+AH_TEMPLATE([COB_JAVA_ARCH], [Java platform architecture])
+
 dnl preparation for cross-compilation
 AC_ARG_PROGRAM
 
@@ -951,6 +953,11 @@ AS_IF([test "x$with_java" != "xno"], [
 		AC_MSG_NOTICE([Given Java home: ${JAVA_HOME}])
 	fi
 
+	dnl Note: One more hack needed to properly locate libjvm with
+	dnl early versions of openjdk (1.8 at least).
+	JAVA_ARCH="$( $JAVA -XshowSettings:properties -version 2>&1 >/dev/null | \
+		      $SED -e '/^[ ]*os.arch/!d' -e 's/.*=[ ]*//' )"
+
 	dnl Note: AX_PROG_JAVAC might find a `javac` binary that does
 	dnl not match the version of `$JAVA` found above, so we set
 	dnl its path manually.
@@ -962,15 +969,17 @@ AS_IF([test "x$with_java" != "xno"], [
 		for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS; do
 		    JNI_CPPFLAGS="$JNI_CPPFLAGS -I$JNI_INCLUDE_DIR"
 		done
-		for _dir in "${JAVA_HOME}/jre/lib" "${JAVA_HOME}/lib"; do
+		for _dir in "${JAVA_HOME}/jre/lib" \
+			    "${JAVA_HOME}/jre/lib/${JAVA_ARCH}" \
+			    "${JAVA_HOME}/lib"; do
 		    if test -d "$_dir"; then
 			JNI_LIBS="$JNI_LIBS -L$_dir"
-		    fi
-		    if test -d "$_dir/server"; then
-			JNI_LIBS="$JNI_LIBS -L$_dir/server"
-		    fi
-		    if test -d "$_dir/client"; then
-			JNI_LIBS="$JNI_LIBS -L$_dir/client"
+			if test -d "$_dir/server"; then
+				JNI_LIBS="$JNI_LIBS -L$_dir/server"
+			fi
+			if test -d "$_dir/client"; then
+				JNI_LIBS="$JNI_LIBS -L$_dir/client"
+			fi
 		    fi
 		done
 		curr_LIBS="$LIBS"
@@ -988,6 +997,7 @@ AS_IF([test "x$with_java" != "xno"], [
 		], [
 		        AC_MSG_RESULT([yes])
 			AC_DEFINE([WITH_JNI], [1])
+			AC_DEFINE_UNQUOTED([COB_JAVA_ARCH], ["$JAVA_ARCH"])
 			JNI_LDFLAGS="$JNI_LIBS"
 			JNI_LIBS="-ljvm"
 			cob_has_jni=yes

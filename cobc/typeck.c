@@ -3921,7 +3921,7 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 
 void
 cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
-		   cb_tree returning)
+		      cb_tree returning)
 {
 	struct cb_program	*program = NULL;
 	cb_tree			l;
@@ -3950,8 +3950,12 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 		if (last_dot == NULL) {
 			cobc_err_msg(_("Malformed Java method name '%s'"), class_and_method_name);
 			return;
-        }
-    }
+		}
+		if (using_list != NULL || returning != NULL) {
+			CB_PENDING ("Java method call with parameters or return values");
+			COBC_ABORT ();
+		}
+	}
 
 	/*
 	  Check each parameter is conformant: has right type, has right
