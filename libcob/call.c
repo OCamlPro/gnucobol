@@ -2074,7 +2074,7 @@ cob_init_java (void) {
 
 	java_api = cob_malloc (sizeof (cob_java_api));
 	if (java_api == NULL) {
-		return 1;
+		goto error;
 	}
 
 	module_errmsg[0] = 0;
@@ -2092,10 +2092,15 @@ cob_init_java (void) {
 		   should follow. */
 		cob_free (java_api);
 		java_api = NULL;
-		return 1;
+		goto error;
 	}
 	jinit (java_api);
 	return 0;
+
+ error:
+	cob_runtime_error (_("Java interoperability module cannot be loaded: %s"),
+			   module_errmsg);
+	return 1;
 }
 
 #endif	/* WITH_JNI */
@@ -2116,31 +2121,28 @@ cob_resolve_java (const char *class_name,
 
 void
 cob_call_java (const cob_java_handle *method_handle) {
-    if (method_handle == NULL) {
-        cob_runtime_error(_("Invalid Java method handle: NULL"));
-        cob_add_exception(COB_EC_ARGUMENT);
-        return;
-    }
-#if WITH_JNI
-	if (java_api == NULL) {
-		cob_runtime_error (_("Java interoperability module cannot be loaded: %s"),
-				   module_errmsg);
+	if (method_handle == NULL) {
+		cob_runtime_error (_("Invalid Java method handle: NULL"));
+		cob_add_exception (COB_EC_ARGUMENT);
 		return;
 	}
-	return java_api->cob_call (method_handle);
-#else
-{
-	static int first_java = 1;
-
-	if (first_java) {
-		first_java = 0;
-		cob_runtime_warning (_("runtime is not configured to support %s"),
-				     "JNI");
+#if WITH_JNI
+	if (java_api == NULL && cob_init_java ()) {
+		return;
 	}
+	java_api->cob_call (method_handle);
+#else
+	{
+		static int first_java = 1;
+		if (first_java) {
+			first_java = 0;
+			cob_runtime_warning (_("runtime is not configured to support %s"),
+					     "JNI");
+		}
 #if 0	/* TODO: if there is a register in Java-interop, then set it */
-	set_json_exception (JSON_INTERNAL_ERROR);
+		set_json_exception (JSON_INTERNAL_ERROR);
 #endif
-	cob_add_exception (COB_EC_IMP_FEATURE_DISABLED);
-}
+		cob_add_exception (COB_EC_IMP_FEATURE_DISABLED);
+	}
 #endif
 }
