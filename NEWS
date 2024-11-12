@@ -20,6 +20,8 @@ NEWS - user visible changes				-*- outline -*-
 
 
 * New GnuCOBOL features
+** Initial support for Java interoperability through JNI (optional dependency JDK): Java Interoperability: Added initial support for calling   
+   Java methods from COBOL programs via the Java Native Interface (JNI). This feature currently supports static Java methods with no parameters, while handling parameters and return values will be introduced in future updates. The system detects missing Java classes and malformed method names and provides proper error handling. COBOL developers can now use ON EXCEPTION and NOT ON EXCEPTION clauses with Java calls. JNI support is an optional feature that requires the Java Development Kit (JDK) to be installed on the system. Use the --with-java configure option to enable it, and ensure that the JAVA_HOME environment variable is set at runtime to locate the JDK. Without JNI, the runtime will function as usual but Java-related COBOL calls (e.g., CALL "Java.<Class>.<Method>") will not be available
 
 ** file handling: added backends for ODBC (so far PostgrSQL, MySQL, SQLite,
    MSSQL) and OCI, along with new directory COB_SCHEMA_DIR containing the

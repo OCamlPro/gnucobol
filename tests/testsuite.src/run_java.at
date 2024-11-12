@@ -1,0 +1,154 @@
+## Copyright (C) 2024 Free Software Foundation, Inc.
+## Written by Nicolas Berthier, Vedant Tewari
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+### Java interoperability tests
+
+AT_SETUP([CALL Java static void (void)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([Test.java], [
+public class Test {
+   public static void printHelloWorld () {
+      System.out.println ("Hello world!");
+   }
+}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.printHelloWorld"
+               NOT ON EXCEPTION
+                   DISPLAY "Java call worked"
+           END-CALL
+           STOP RUN.
+])
+
+AT_CHECK([$JAVAC Test.java], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello world!
+Java call worked
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) (missing class)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.isAMissingClass"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:5: error: Java class 'Test' not found
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) (missing method)])
+AT_KEYWORDS([extensions jni])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_DATA([Test.java], [
+public class Test {}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.missingMethod"
+           STOP RUN.
+])
+
+AT_CHECK([$JAVAC Test.java], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:5: error: Java method 'missingMethod' with signature '()V' not found in class 'Test'
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) (missing class with ON EXCEPTION)])
+AT_KEYWORDS([extensions jni exception])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.Test.isAMissingClass"
+               ON EXCEPTION
+                   DISPLAY "java call not successful"
+           END-CALL
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [java call not successful
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL Java static void (void) in a package])
+AT_KEYWORDS([extensions jni package])
+
+AT_SKIP_IF([test "$COB_HAS_JNI" = "no"])
+
+AT_CHECK([mkdir -p testpackage])
+AT_DATA([testpackage/Test.java], [
+package testpackage;
+public class Test {
+   public static void printHelloPackage () {
+      System.out.println("Hello from package!");
+   }
+}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "Java.testpackage.Test.printHelloPackage"
+               NOT ON EXCEPTION
+                   DISPLAY "Java call to package class worked"
+           END-CALL
+           STOP RUN.
+])
+
+AT_CHECK([$JAVAC testpackage/Test.java], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello from package!
+Java call to package class worked
+])
+
+AT_CLEANUP

@@ -3921,7 +3921,7 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 
 void
 cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
-		   cb_tree returning)
+		      cb_tree returning, int call_conv)
 {
 	struct cb_program	*program = NULL;
 	cb_tree			l;
@@ -3931,6 +3931,24 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	int			num_params;
 	const struct cb_field	*prog_returning_field;
 	const struct cb_field	*call_returning_field;
+
+	if (call_conv == CB_CONV_JAVA && CB_LITERAL_P (prog_ref)) {
+		char	*full_name, *class_and_method_name, *dot;
+		full_name = (char *)CB_LITERAL(prog_ref)->data;
+		class_and_method_name = full_name + 5;
+		dot = strchr (class_and_method_name, '.');
+		if (dot == NULL) {
+			cb_error_x (prog_ref, _("malformed Java method name '%s', "
+				    "expected format 'Java.ClassName.methodName'"),
+				    full_name);
+			return;
+		}
+		if (using_list != NULL || returning != NULL) {
+			CB_PENDING ("Java method call with parameters or return values");
+			COBC_ABORT ();
+		}
+		return;
+	}
 
 	/* Try to get the program referred to by prog_ref. */
 	program = try_get_program (prog_ref);

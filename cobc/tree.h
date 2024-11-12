@@ -199,6 +199,7 @@ enum cb_tag {
 #define CB_CONV_THUNK_16	(1 << 5)
 #define CB_CONV_STDCALL		(1 << 6)
 #define CB_CONV_COBOL	(1 << 15)
+#define CB_CONV_JAVA    (1 << 16)
 #define CB_CONV_C	(0)
 #define CB_CONV_PASCAL	(CB_CONV_L_TO_R | CB_CONV_CALLEE_STACK)
 
@@ -2591,7 +2592,7 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
-extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree);
+extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree, int);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);

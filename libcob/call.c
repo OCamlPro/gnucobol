@@ -123,6 +123,14 @@ lt_dlerror (void)
 
 #endif
 
+#if defined (_WIN32) || defined (USE_LIBDL)
+/* Try pre-loading libjvm/jvm.dll if JAVA_HOME is set. */
+# define JVM_PRELOAD 1
+static lt_dlhandle jvm_handle = NULL;
+#else
+/* Using libltdl, no need to preload. */
+#endif
+
 #include "sysdefines.h"
 
 /* Force symbol exports */
@@ -785,7 +793,7 @@ cob_encode_program_id (const unsigned char *const name,
 	default:
 		break;
 	}
-	
+
 	return pos;
 }
 
@@ -1160,6 +1168,7 @@ cob_load_lib (const char *library, const char *entry, char *reason)
 	}
 #endif
 
+	DEBUG_LOG ("call", ("lt_dlopenlcl '%s'\n", library));
 	p = lt_dlopenlcl (library);
 	if (p) {
 		p = lt_dlsym (p, entry);
@@ -1275,7 +1284,7 @@ cob_module_clean (cob_module *m)
 {
 	struct call_hash	*p;
 	struct call_hash	**q;
-	
+
 #ifndef	COB_ALT_HASH
 	const char		*entry;
 
@@ -1845,6 +1854,13 @@ cob_exit_call (void)
 	}
 	base_dynload_ptr = NULL;
 
+#ifdef JVM_PRELOAD
+	if (jvm_handle) {
+		lt_dlclose (jvm_handle);
+		jvm_handle = NULL;
+	}
+#endif
+
 #if	!defined(_WIN32) && !defined(USE_LIBDL)
 	lt_dlexit ();
 #if	0	/* RXWRXW - ltdl leak */
@@ -1974,3 +1990,159 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	call_lastsize = CALL_BUFF_SIZE;
 }
 
+/* Java API handling */
+
+#ifdef WITH_JNI
+
+/* "Standard" path suffixes to the dynamically loadable JVM library, from
+   "typical" JAVA_HOME. */
+const char* const path_to_jvm[] = {
+#if defined(_WIN32) || defined(__CYGWIN__)
+# define JVM_FILE "jvm.dll"
+	"\\jre\\bin\\server",
+	"\\jre\\bin\\client",
+#else
+# define JVM_FILE "libjvm." COB_MODULE_EXT
+	"/lib/server",
+	"/jre/lib/server",
+	"/jre/lib/" COB_JAVA_ARCH "/server",
+	"/lib/client",
+	"/jre/lib/client",
+	"/jre/lib/" COB_JAVA_ARCH "/client",
+#endif
+	NULL,
+};
+
+static void
+init_jvm_search_dirs (void) {
+	const char	*java_home;
+	const char	*path_suffix = NULL;
+	char		jvm_path[COB_FILE_MAX];
+	unsigned int	i = 0;
+
+	if ((java_home = getenv ("JAVA_HOME")) == NULL) {
+		DEBUG_LOG ("call", ("JAVA_HOME is not defined\n"));
+		return;
+	}
+
+	DEBUG_LOG ("call", ("JAVA_HOME='%s'\n", java_home));
+
+	while ((path_suffix = path_to_jvm[i++]) != NULL) {
+#if JVM_PRELOAD
+		/* Lookup libjvm.so/jvm.dll */
+		if (snprintf (jvm_path, (size_t)COB_FILE_MAX, "%s%s%c%s",
+			      java_home, path_suffix,
+			      SLASH_CHAR, JVM_FILE) == 0) {
+			continue;
+		}
+		if (access (jvm_path, F_OK) != 0) {
+			DEBUG_LOG ("call", ("'%s': not found\n", jvm_path));
+			continue;
+		}
+		DEBUG_LOG ("call", ("preloading '%s': ", jvm_path));
+		jvm_handle = lt_dlopen (jvm_path);
+		DEBUG_LOG ("call", ("%s\n", jvm_handle != NULL ? "success" : "failed"));
+		break;
+#else
+		/* Append to search path. */
+		int success;
+# warning On some systems, JAVA_HOME-based lookup via `libltdl` does not work
+		if (snprintf (jvm_path, (size_t)COB_FILE_MAX, "%s%s",
+			      java_home, path_suffix) == 0) {
+			continue;
+		}
+		DEBUG_LOG ("call", ("appending '%s' to load path: ", jvm_path));
+		success = lt_dladdsearchdir (jvm_path);
+		DEBUG_LOG ("call", ("%s\n", success == 0 ? "success" : "failed"));
+#endif
+	}
+}
+
+#define LIBCOBJNI_MODULE_NAME (LIB_PRF "cobjni" LIB_SUF)
+#define LIBCOBJNI_ENTRY_NAME "cob_jni_init"
+
+typedef void (*java_init_func) (cob_java_api*);
+
+static cob_java_api	*java_api;
+static char		module_errmsg[256];
+
+static int
+cob_init_java (void) {
+	java_init_func		jinit;
+
+	init_jvm_search_dirs ();
+
+	java_api = cob_malloc (sizeof (cob_java_api));
+	if (java_api == NULL) {
+		goto error;
+	}
+
+	module_errmsg[0] = 0;
+	jinit = (java_init_func) cob_load_lib (LIBCOBJNI_MODULE_NAME,
+					       LIBCOBJNI_ENTRY_NAME,
+					       module_errmsg);
+	if (jinit == NULL) {
+		/* recheck with libcob */
+		jinit = cob_load_lib ("libcob-5",
+				      LIBCOBJNI_ENTRY_NAME,
+				      NULL);
+	}
+	if (jinit == NULL) {
+		/* Error message will be reported in the `cob_call_java` that
+		   should follow. */
+		cob_free (java_api);
+		java_api = NULL;
+		goto error;
+	}
+	jinit (java_api);
+	return 0;
+
+ error:
+	cob_runtime_error (_("Java interoperability module cannot be loaded: %s"),
+			   module_errmsg);
+	return 1;
+}
+
+#endif	/* WITH_JNI */
+
+cob_java_handle*
+cob_resolve_java (const char *class_name,
+		  const char *method_name,
+		  const char *method_signature) {
+#if WITH_JNI
+	if (java_api == NULL && cob_init_java ()) {
+		return NULL;
+	}
+	return java_api->cob_resolve (class_name, method_name, method_signature);
+#else
+	return NULL;
+#endif
+}
+
+void
+cob_call_java (const cob_java_handle *method_handle) {
+	if (method_handle == NULL) {
+		cob_runtime_error (_("Invalid Java method handle: NULL"));
+		cob_add_exception (COB_EC_ARGUMENT);
+		return;
+	}
+#if WITH_JNI
+	if (java_api == NULL && cob_init_java ()) {
+		return;
+	}
+	java_api->cob_call (method_handle);
+#else
+	{
+		static int first_java = 1;
+		if (first_java) {
+			first_java = 0;
+			cob_runtime_warning (_("runtime is not configured to support %s"),
+					     "JNI");
+		}
+#if 0	/* TODO: if there is a register in Java-interop, then set it */
+		set_json_exception (JSON_INTERNAL_ERROR);
+#endif
+		cob_add_exception (COB_EC_IMP_FEATURE_DISABLED);
+	}
+#endif
+}

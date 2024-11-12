@@ -1,4 +1,19 @@
 
+2024-08-22  Vedant Tewari <vedanttewari541@gmail.com>
+        * cobc/codegen.c Added error handling to restrict Java method calls to void methods without parameters or return values
+        * cobc/parser.y Implemented detection of malformed Java method names during parsing. Added checks for unsupported method calls with parameters or return values
+        * java.c Enhanced error handling with `cob_runtime_error` for missing classes
+
+2024-08-14  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* common.c (print_info_detailed): added note for Java interoperability
+
+2024-06-12  Vedant Tewari <vedanttewari541@gmail.com>
+
+        * Makefile.am Updated to include JNI-related files
+        * common.h Added internal state for JNI support
+        * java.c Implemented JNI support for GnuCOBOL
+
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2022-12-21:

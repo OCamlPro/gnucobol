@@ -113,6 +113,8 @@ AH_TEMPLATE([WITH_JSON], [JSON handler])
 AH_TEMPLATE([WITH_CJSON], [Use cJSON library/source as JSON handler])
 AH_TEMPLATE([WITH_JSON_C], [Use JSON-C library as JSON handler])
 
+AH_TEMPLATE([WITH_JNI], [Support for Java calls through JNI])
+
 AH_TEMPLATE([COB_EXPORT_DYN], [Compile/link option for exporting symbols])
 AH_TEMPLATE([COB_PIC_FLAGS], [Compile/link option for PIC code])
 AH_TEMPLATE([COB_DEBUG_FLAGS], [Compile/link option for debugging])
@@ -149,6 +151,8 @@ AH_TEMPLATE([HAVE_MP_GET_MEMORY_FUNCTIONS], [Do we have mp_get_memory_functions 
 dnl done via AC_CHECK_FUNCS: AH_TEMPLATE([HAVE_RAISE], [Has raise function])
 AH_TEMPLATE([HAVE_FINITE_IEEEFP_H],
 	[Declaration of finite function in ieeefp.h instead of math.h])
+
+AH_TEMPLATE([COB_JAVA_ARCH], [Java platform architecture])
 
 dnl preparation for cross-compilation
 AC_ARG_PROGRAM
@@ -482,7 +486,6 @@ AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
 AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
-
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -933,7 +936,81 @@ AS_IF([test "$with_xml2" = "yes" -o "$with_xml2" = "check"], [
 	LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"
 ])
 
+# Check for JNI
+AC_ARG_WITH([java],
+	    [AS_HELP_STRING([--without-java],
+			    [disable Java Interoperability])])
+cob_has_jni=no
+AS_IF([test "x$with_java" != "xno"], [
+	dnl Find `java` and $JAVA_HOME (we need the latter to locate libjvm).
+	dnl AX_CHECK_JAVA_HOME dnl (<- does not appear to work properly)
+	AX_PROG_JAVA
+	if test "x$JAVA_HOME" = x; then
+		JAVA_HOME="$( $JAVA -XshowSettings:properties -version 2>&1 >/dev/null | \
+			      $SED -e '/^[ ]*java.home/!d' -e 's/.*=[ ]*//' )"
+		AC_MSG_NOTICE([Found Java home: ${JAVA_HOME}])
+	else
+		AC_MSG_NOTICE([Given Java home: ${JAVA_HOME}])
+	fi
 
+	dnl Note: One more hack needed to properly locate libjvm with
+	dnl early versions of openjdk (1.8 at least).
+	JAVA_ARCH="$( $JAVA -XshowSettings:properties -version 2>&1 >/dev/null | \
+		      $SED -e '/^[ ]*os.arch/!d' -e 's/.*=[ ]*//' )"
+
+	dnl Note: AX_PROG_JAVAC might find a `javac` binary that does
+	dnl not match the version of `$JAVA` found above, so we set
+	dnl its path manually.
+	JAVAC="$JAVA_HOME/bin/javac"
+	AX_PROG_JAVAC_WORKS
+
+	AX_JNI_INCLUDE_DIR
+	AS_IF([test "$JNI_INCLUDE_DIRS" != ""], [
+		for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS; do
+		    JNI_CPPFLAGS="$JNI_CPPFLAGS -I$JNI_INCLUDE_DIR"
+		done
+		for _dir in "${JAVA_HOME}/jre/lib" \
+			    "${JAVA_HOME}/jre/lib/${JAVA_ARCH}" \
+			    "${JAVA_HOME}/lib"; do
+		    if test -d "$_dir"; then
+			JNI_LIBS="$JNI_LIBS -L$_dir"
+			if test -d "$_dir/server"; then
+				JNI_LIBS="$JNI_LIBS -L$_dir/server"
+			fi
+			if test -d "$_dir/client"; then
+				JNI_LIBS="$JNI_LIBS -L$_dir/client"
+			fi
+		    fi
+		done
+		curr_LIBS="$LIBS"
+		curr_CPPFLAGS="$CPPFLAGS"
+		LIBS="$LIBS $JNI_LIBS -ljvm"
+		CPPFLAGS="$CPPFLAGS $JNI_CPPFLAGS"
+		AC_MSG_CHECKING([if -ljvm brings JNI symbols])
+		AC_LINK_IFELSE([
+		  AC_LANG_SOURCE([[
+		    #include <jni.h>
+		    void main (void) {
+		       (void) JNI_CreateJavaVM (NULL, NULL, NULL);
+		    }
+		  ]])
+		], [
+		        AC_MSG_RESULT([yes])
+			AC_DEFINE([WITH_JNI], [1])
+			AC_DEFINE_UNQUOTED([COB_JAVA_ARCH], ["$JAVA_ARCH"])
+			JNI_LDFLAGS="$JNI_LIBS"
+			JNI_LIBS="-ljvm"
+			cob_has_jni=yes
+		], [
+		        AC_MSG_RESULT([no])
+		])
+		LIBS="$curr_LIBS"
+		CPPFLAGS="$curr_CPPFLAGS"
+	])
+])
+AS_IF([test "x$with_java" = "xyes" -a "x$cob_has_jni" != "xyes"], [
+	AC_MSG_ERROR([Java interoperability requested, but JNI was not found])
+])
 
 # Checks for cjson/json-c.
 AC_MSG_NOTICE([Checks for JSON handler])
@@ -2570,6 +2647,8 @@ AM_CONDITIONAL([COB_MAKE_LMDB_LIB], [test "$cob_gen_lmdb" = "yes"])
 
 AM_CONDITIONAL([LOCAL_CJSON],[test "$USE_JSON" = "local"])
 
+AM_CONDITIONAL([COB_HAS_JNI], [test "$cob_has_jni" = "yes"])
+
 unset COB_USES_GCC
 unset COB_USES_GCC_NO_ICC
 unset COB_USES_ICC_ONLY
@@ -2660,6 +2739,11 @@ AC_SUBST([OCI_CFLAGS])
 AC_SUBST([BDB_CFLAGS])
 AC_SUBST([LMDB_CFLAGS])
 
+AC_SUBST([JAVAC])
+AC_SUBST([JNI_LIBS])
+AC_SUBST([JNI_LDFLAGS])
+AC_SUBST([JNI_CPPFLAGS])
+
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])
 
@@ -2683,6 +2767,7 @@ AC_SUBST([COB_HAS_OCEXTFH])
 AC_SUBST([COB_HAS_CURSES])
 AC_SUBST([COB_HAS_XML2])
 AC_SUBST([COB_HAS_JSON])
+AC_SUBST([COB_HAS_JNI])
 AC_SUBST([COB_HAS_64_BIT_POINTER])
 AC_SUBST([COB_PATCH_LEVEL], [$with_patch_level]) # needed for bin/cob-config
 
@@ -2803,5 +2888,7 @@ case "$USE_JSON" in
     AC_MSG_NOTICE([ Used for JSON I/O:                           ${USE_JSON}])
 	;;
 esac
+
+AC_MSG_NOTICE([ Build with Java interoperability:            ${cob_has_jni}])
 
 unset DEFINE_DL

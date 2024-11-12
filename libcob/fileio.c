@@ -314,18 +314,6 @@ static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
 	&not_available_funcs
 };
 
-#if defined (__CYGWIN__)
-#define LIB_PRF		"cyg"
-#else
-#define LIB_PRF		"lib"
-#endif
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define LIB_SUF		"-1." COB_MODULE_EXT
-#else
-#define LIB_SUF		"." COB_MODULE_EXT
-#endif
-
 static struct {
 	int		loaded;			/* Module is loaded and ready */
 	int		config;			/* Module was configured into compiler */
@@ -9824,4 +9812,3 @@ cob_fork_fileio (cob_global *lptr, cob_settings *sptr)
 		}
 	}
 }
-

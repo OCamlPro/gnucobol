@@ -1,4 +1,10 @@
 
+2024-08-14  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c (cobc_print_info): added note for Java interoperability
+	* typeck.c, tree.h (cb_check_conformance): pass call convention to deal
+	  with calls of Java methods
+
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2022-12-21:
