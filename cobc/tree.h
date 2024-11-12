@@ -2592,7 +2592,7 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
-extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree);
+extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree, int);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);

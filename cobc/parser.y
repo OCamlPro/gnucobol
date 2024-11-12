@@ -12257,13 +12257,13 @@ call_body:
 		if (strncasecmp("Java.", (char *)CB_LITERAL ($3)->data, 5) == 0) {
 			call_conv = CB_CONV_JAVA;
 		}
-		cb_check_conformance ($3, $7, $8);
+		cb_check_conformance ($3, $7, $8, call_conv);
 	} else if (CB_REFERENCE_P ($3)) {
 		cb_tree	ref = cb_ref ($3);
 		if ((CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78)
 		 || CB_PROGRAM_P (ref)
 		 || CB_PROTOTYPE_P (ref)) {
-			cb_check_conformance ($3, $7, $8);
+			cb_check_conformance ($3, $7, $8, call_conv);
 		}
 	}
 
