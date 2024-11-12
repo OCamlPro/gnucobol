@@ -7115,9 +7115,8 @@ output_exception_handling (struct cb_call *p)
 static void
 output_java_call (struct cb_call *p)
 {
-	char		*class_and_method_name, *last_dot, *c;
-	const char	*class_name, *method_name;
-	char		mangled[COB_NORMAL_BUFF];
+	char	*class_and_method_name, *class_name, *method_name, *last_dot, *c;
+	char	mangled[COB_NORMAL_BUFF];
 
 	/* Assume "Java." prefix (enforced in `parser.y`, rule `call_body`) */
 	class_and_method_name = (char*)CB_LITERAL(p->name)->data + 5;
@@ -7132,6 +7131,9 @@ output_java_call (struct cb_call *p)
 	*last_dot = '\0';
 	method_name = last_dot + 1;
 	class_name = class_and_method_name;
+	for (c = class_name; *c; c++) {
+		if (*c == '.') *c = '/';
+	}
 
 	output_line ("if (call_java_%s == NULL)", mangled);
 	output_block_open ();
