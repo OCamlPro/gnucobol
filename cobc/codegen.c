@@ -7122,7 +7122,6 @@ output_java_call(struct cb_call *p)
 
     char* full_name = (char*)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`) */
     char* class_and_method_name = full_name + 5;
-    char *last_dot;
     char *method_name;
     const char *class_name;
     char* mangled;
@@ -7136,14 +7135,7 @@ output_java_call(struct cb_call *p)
 
     lookup_java_call(mangled);
 
-    last_dot = strrchr(class_and_method_name, '.');
-
-    if (last_dot == NULL) {
-        cobc_err_msg(_("malformed call '%s' to a Java method"), class_and_method_name);
-        cobc_free(mangled);
-        return;
-    }
-
+    char* last_dot = strrchr(class_and_method_name, '.');
     *last_dot = '\0';
     method_name = last_dot + 1;
     class_name = class_and_method_name;
@@ -7156,8 +7148,6 @@ output_java_call(struct cb_call *p)
     output_newline();
     output_block_close();
     output_exception_handling(p);
-
-    cobc_free(mangled);
 }
 
 static void

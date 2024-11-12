@@ -3943,6 +3943,16 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 		return;
 	}
 
+	if (CB_LITERAL_P(prog_ref)) {
+		char *full_name = (char *)CB_LITERAL(prog_ref)->data;
+		char *class_and_method_name = full_name + 5;
+		char *last_dot = strrchr(class_and_method_name, '.');
+		if (last_dot == NULL) {
+			cobc_err_msg(_("Malformed Java method name '%s'"), class_and_method_name);
+			return;
+        }
+    }
+
 	/*
 	  Check each parameter is conformant: has right type, has right
 	  REFERENCE/VALUE phrase, has right length, etc.
