@@ -7121,159 +7121,52 @@ output_java_call (struct cb_call *p)
 	class_name = class_and_method_name;
 
 	for (int i = 0; (ptr = ((struct cb_tree_common **)p->args)[i]) != NULL; i++) {
-        switch(CB_TREE_TAG(ptr)) {
-            case CB_TAG_INTEGER: {
-				struct cb_picture* pic = CB_FIELD(ptr)->pic;
-				if (pic) {
-					int n = pic->digits;
-					if (CB_FIELD(ptr)->usage == CB_USAGE_COMP_5) {
-						if (n >= 1 && n <= 4) {
-							strncat(method_signature, "S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-						} else if (n >= 5 && n <= 9) {
-							strncat(method_signature, "I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-						} else if (n >= 10 && n <= 18) {
-							strncat(method_signature, "J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-						}
-					} else if (CB_FIELD(ptr)->usage == CB_USAGE_PACKED || CB_FIELD(ptr)->usage == CB_USAGE_DISPLAY) {
-						strncat(method_signature, "Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+        if (CB_TREE_TAG(ptr) == CB_TAG_INTEGER) {
+			struct cb_picture* pic = CB_FIELD(ptr)->pic;
+			if (pic) {
+				int n = pic->digits;
+				if (CB_FIELD(ptr)->usage == CB_USAGE_COMP_5) {
+					if (n >= 1 && n <= 4) {
+						strncat(method_signature, "S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					} else if (n >= 5 && n <= 9) {
+						strncat(method_signature, "I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					} else if (n >= 10 && n <= 18) {
+						strncat(method_signature, "J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 					}
+				} else if (CB_FIELD(ptr)->usage == CB_USAGE_PACKED || CB_FIELD(ptr)->usage == CB_USAGE_DISPLAY) {
+					strncat(method_signature, "Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 				}
-				break;
-       		}
-            case CB_USAGE_FLOAT:
-                strncat(method_signature, "F", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                break;
-            case CB_USAGE_DOUBLE:
-                strncat(method_signature, "D", COB_NORMAL_BUFF - strlen(method_signature) - 1); 
-                break;
-            case CB_CLASS_BOOLEAN:
-                strncat(method_signature, "Z", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                break;
-            case CB_TAG_STRING:
-                strncat(method_signature, "Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                break;
-            case CB_USAGE_OBJECT: 
-                strncat(method_signature, "Ljava/lang/Object;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                break;
-            case CB_TAG_LITERAL:
-                if(CB_TREE_CATEGORY(ptr) == CB_CATEGORY_NUMERIC) {
-                    strncat(method_signature, "I", COB_NORMAL_BUFF - strlen(method_signature) - 1); 
-                } else if(CB_TREE_CATEGORY(ptr) == CB_CATEGORY_ALPHANUMERIC) {
-                    strncat(method_signature, "Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                }
-                break;
-				case CB_TAG_LIST:
-                {
-                    struct cb_tree_common **list_elements = (struct cb_tree_common **) ptr;
-                    int array_dimension = 1; 
-
-                    while (list_elements != NULL) {
-                        struct cb_tree_common **inner_list = NULL;
-                        for (int j = 0; list_elements[j] != NULL; j++) {
-                            if (CB_TREE_TAG(list_elements[j]) == CB_TAG_LIST) {
-                                array_dimension++;
-                                inner_list = (struct cb_tree_common **) list_elements[j];
-                            } else {
-                                switch (CB_TREE_TAG(list_elements[j])) {
-                                    case CB_TAG_INTEGER: {
-										struct cb_picture* pic = CB_FIELD(list_elements[j])->pic;
-										if (pic) {
-											int n = pic->digits;
-											if (CB_FIELD(list_elements[j])->usage == CB_USAGE_COMP_5) {
-												if (n >= 1 && n <= 4) {
-													strncat(method_signature, "[S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-												} else if (n >= 5 && n <= 9) {
-													strncat(method_signature, "[I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-												} else if (n >= 10 && n <= 18) {
-													strncat(method_signature, "[J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-												}
-											} else if (CB_FIELD(list_elements[j])->usage == CB_USAGE_PACKED || CB_FIELD(list_elements[j])->usage == CB_USAGE_DISPLAY) {
-												strncat(method_signature, "[Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-											}
-										}
-										break;
-									}
-                                    case CB_USAGE_FLOAT:
-                                        strncat(method_signature, "[F", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                                        break;
-                                    case CB_USAGE_DOUBLE:
-                                        strncat(method_signature, "[D", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                                        break;
-                                    case CB_CLASS_BOOLEAN:
-                                        strncat(method_signature, "[Z", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-                                        break;
-                                    case CB_TAG_STRING:
-                                        strncat(method_signature, "[Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);  
-                                        break;
-                                    case CB_USAGE_OBJECT:
-                                        strncat(method_signature, "[Ljava/lang/Object;", COB_NORMAL_BUFF - strlen(method_signature) - 1);  
-                                        break;
-                                    default:
-                                        cobc_err_msg(_("Unsupported array element type in Java method call"));
-                                        COBC_ABORT();
-                                }
-                            }
-                        }
-                        list_elements = inner_list;
-                    }
-				}
-				break;
-			default:
-				COBC_ABORT();
+			}
 		}
     }
 
 	if (p->call_returning == NULL) {
 		strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
 		strcpy(return_type_signature, "void");
-	} else {
-		switch(CB_TREE_TAG(p->call_returning)) {
-			case CB_TAG_INTEGER: {
-				struct cb_picture* pic = CB_FIELD(p->call_returning)->pic;
-				if (pic) {
-					int n = pic->digits;
-					if (CB_FIELD(p->call_returning)->usage == CB_USAGE_COMP_5) {
-						if (n >= 1 && n <= 4) {
-							strncat(method_signature, ")S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-							strcpy(return_type_signature, "jshort");
-						} else if (n >= 5 && n <= 9) {
-							strncat(method_signature, ")I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-							strcpy(return_type_signature, "jint");
-						} else if (n >= 10 && n <= 18) {
-							strncat(method_signature, ")J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-							strcpy(return_type_signature, "jlong");
-						}
-					} else if (CB_FIELD(p->call_returning)->usage == CB_USAGE_PACKED || CB_FIELD(p->call_returning)->usage == CB_USAGE_DISPLAY) {
-						strncat(method_signature, ")Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-						strcpy(return_type_signature, "jobject");
-					}
+	} else if (CB_TREE_TAG(p->call_returning) == CB_TAG_INTEGER) {
+		struct cb_picture* pic = CB_FIELD(p->call_returning)->pic;
+		if (pic) {
+			int n = pic->digits;
+			if (CB_FIELD(p->call_returning)->usage == CB_USAGE_COMP_5) {
+				if (n >= 1 && n <= 4) {
+					strncat(method_signature, ")S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					strcpy(return_type_signature, "jshort");
+				} else if (n >= 5 && n <= 9) {
+					strncat(method_signature, ")I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					strcpy(return_type_signature, "jint");
+				} else if (n >= 10 && n <= 18) {
+					strncat(method_signature, ")J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					strcpy(return_type_signature, "jlong");
 				}
-				break;
+			} else if (CB_FIELD(p->call_returning)->usage == CB_USAGE_PACKED || CB_FIELD(p->call_returning)->usage == CB_USAGE_DISPLAY) {
+				strncat(method_signature, ")Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+				strcpy(return_type_signature, "jobject");
 			}
-			case CB_TAG_STRING:
-				strncat(method_signature, ")Ljava/lang/String;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-				strcpy(return_type_signature, "jstring");
-				break;
-			case CB_USAGE_FLOAT:
-				strncat(method_signature, ")F", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-				strcpy(return_type_signature, "jfloat");
-				break;
-			case CB_USAGE_DOUBLE:
-				strncat(method_signature, ")D", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-				strcpy(return_type_signature, "jdouble");
-				break;
-			case CB_CLASS_BOOLEAN:
-				strncat(method_signature, ")Z", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-				strcpy(return_type_signature, "jboolean");
-				break;
-			default:
-				strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
-				strcpy(return_type_signature, "void");
-				break;
 		}
+	} else {
+		strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+		strcpy(return_type_signature, "void");
 	}
-
-	strcat(method_signature, ")V");
 
 	lookup_java_call(mangled, method_signature);
 	output_line("if (call_java_%s == NULL)", mangled);
@@ -7282,8 +7175,8 @@ output_java_call (struct cb_call *p)
 	output_prefix();
 	output_line("call_java_%s = ", mangled);
 	output("cob_resolve_java(\"%s\", \"%s\", \"%s\", \"()V\");", class_name, method_name, method_signature);
-	output_newline ();
-	output_prefix ();
+	output_newline();
+	output_prefix();
 	output_line("cob_call_java(call_java_%s);\n", mangled);
 	output_newline();
 	output_block_close();
