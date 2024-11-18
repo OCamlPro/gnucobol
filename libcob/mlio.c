@@ -26,9 +26,8 @@
 #include <ctype.h>
 #include <stdio.h>
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #if defined (WITH_XML2)
@@ -363,6 +362,8 @@ get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 	cob_field       edited_field;
 	char		*dp_pos;
 	void		*num;
+
+	/* TODO: add test cases with PPP99 and 9PPP to verify it works "as expected" */
 
 	/* Initialize attribute for nicely edited version of f */
 	attr.type = COB_TYPE_NUMERIC_EDITED;

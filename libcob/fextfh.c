@@ -973,9 +973,9 @@ cob_extfh_close (
 	COB_UNUSED (remfil);
 
 	f->last_operation = COB_LAST_CLOSE;
-	fcd = find_fcd(f);
-	STCOMPX4(opt, fcd->opt);
-	STCOMPX2(OP_CLOSE, opcode);
+	fcd = find_fcd (f);
+	STCOMPX4 (opt, fcd->opt);
+	STCOMPX2 (OP_CLOSE, opcode);
 
 	/* Keep table of 'fcd' created */
 	(void)callfh (opcode, fcd);
@@ -1368,6 +1368,9 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 #if !COB_64_BIT_POINTER
 	if (fcd->fcdVer == FCD2_VER) {
 		int		rtnsts;
+#if 0
+		int		opcd;
+#endif
 		FCD2 *fcd2 = (FCD2 *) fcd;
 
 		fcd = fcd2_to_fcd3 (fcd2);
@@ -1379,6 +1382,18 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		rtnsts = EXTFH3 (opcode, fcd);
 		/* Convert FCD3 back to FCD2 format */
 		fcd3_to_fcd2 (fcd, fcd2);
+
+#if 0
+		if (*opcode == 0xFA) {
+			opcd = 0xFA00 + opcode[1];
+		} else {
+			opcd = opcode[1];
+		}
+
+		if (opcd == OP_CLOSE) {
+ 			free_fcd2 (fcd2);
+ 		}
+#endif
 
 		return rtnsts;
 	}

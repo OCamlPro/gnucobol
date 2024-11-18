@@ -79,9 +79,8 @@
 #endif
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #ifdef	HAVE_CURSES_FREEALL

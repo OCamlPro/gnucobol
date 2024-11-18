@@ -1751,7 +1751,8 @@ output_attr (const cb_tree x)
 				if (f->flag_binary_swap) {
 					flags |= COB_FLAG_BINARY_SWAP;
 				}
-				if (f->flag_real_binary) {
+				if (f->flag_real_binary
+				 || f->usage == CB_USAGE_COMP_5) {
 					flags |= COB_FLAG_REAL_BINARY;
 				}
 				if (f->flag_is_pointer) {
@@ -1794,10 +1795,9 @@ output_attr (const cb_tree x)
 					break;
 				}
 
-				id = lookup_attr (type,
-					f->pic->flag_has_p ? f->pic->real_digits : f->pic->digits,
-					f->pic->scale, flags,
-					f->pic->str, f->pic->lenstr);
+				id = lookup_attr (type, f->pic->digits,
+						  f->pic->scale, flags,
+						  f->pic->str, f->pic->lenstr);
 				break;
 			}
 		}
@@ -7590,7 +7590,7 @@ output_call (struct cb_call *p)
 			lookup_call (name_str);
 			callname = s;
 
-			output_line ("if (call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel)", name_str);
+			output_line ("if (call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel == 1)", name_str);
 			output_block_open ();
 			output_prefix ();
 
@@ -13365,10 +13365,17 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_newline ();
 
 	/* Check matching version */
-	if (!prog->nested_level) {
+#if !defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+#ifdef _WIN32
+	if (prog->flag_main)	/* otherwise we generate that in DllMain*/
+#else
+	if (!prog->nested_level)
+#endif
+	{
 		output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
 		output_newline ();
 	}
+#endif
 
 	/* Resolve user functions */
 	for (clp = func_call_cache; clp; clp = clp->next) {
@@ -14496,6 +14503,31 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	output_function_prototypes (prog);
 }
 
+/* Check matching version via constructor attribute / DllMain */
+static void output_so_load_version_check (struct cb_program *prog)
+{
+#if defined (HAVE_ATTRIBUTE_CONSTRUCTOR)
+	output_line ("static void gc_module_so_init () __attribute__ ((constructor));");
+	output_line ("static void gc_module_so_init ()");
+	output_block_open ();
+	output_line ("cob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+	output_block_close ();
+	output_newline ();
+#elif defined (_WIN32)
+	if (!prog->flag_main) {
+		output_line ("#include \"windows.h\"");
+		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);");
+		output_line ("BOOL WINAPI DllMain (HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)");
+		output_block_open ();
+		output_line ("if (fdwReason == DLL_PROCESS_ATTACH)");
+		output_line ("\tcob_check_version (COB_SOURCE_FILE, COB_PACKAGE_VERSION, COB_PATCH_LEVEL);");
+		output_line ("return TRUE;");
+		output_block_close ();
+		output_newline ();
+	}
+#endif
+}
+
 void
 codegen_internal (struct cb_program *prog, const int subsequent_call)
 {
@@ -14560,6 +14592,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		output ("/* Functions */");
 		output_newline ();
 		output_newline ();
+		output_so_load_version_check (prog);
 	}
 
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION) {

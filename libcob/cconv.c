@@ -26,9 +26,8 @@
 #include <string.h>
 #include <ctype.h>
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "sysdefines.h"
 #include "coblocal.h"
 
@@ -76,13 +75,12 @@ cob_load_collation (const char *col_name,
 	int			line;
 	size_t		n, i;
 	FILE		*f;
-	const char	*config_dir;
 	char		filename[COB_FILE_BUFF];
 	const char	*last_err_name = NULL;
 
 	if (col_name[0] == '.' || col_name[0] == SLASH_CHAR
 #ifdef _WIN32
-	 || col_name[0] != '\0' && col_name[1] == ':'
+	 || (col_name[0] != '\0' && col_name[1] == ':')
 #endif
 	   ) {
 		/* If it's a path, use it as-is, including trailing NUL */
@@ -93,7 +91,7 @@ cob_load_collation (const char *col_name,
 		memcpy (filename, col_name, n);
 	} else {
 		/* Otherwise, prepend the config dir and append the .ttbl suffix */
-		config_dir = getenv ("COB_CONFIG_DIR");
+		const char	*config_dir = getenv ("COB_CONFIG_DIR");
 		if (config_dir == NULL) {
 			config_dir = COB_CONFIG_DIR;
 		}
@@ -140,7 +138,8 @@ cob_load_collation (const char *col_name,
 		cob_runtime_error (_("error reading translation table '%s'"), col_name);
 		fclose (f);
 		return -1;
-	} else if (feof (f) && i != 256 && i != 512) {
+	}
+	if (feof (f) && i != 256 && i != 512) {
 		if (i < 256) {
 			cob_runtime_error (_("not enough data in translation table '%s'"), col_name);
 		} else {
