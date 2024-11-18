@@ -3,17 +3,17 @@ image: gitpod/workspace-c
 
 tasks:
 
-- name: setup coding environment on Ubuntu 20.04
+- name: setup coding environment on Ubuntu 22.04
   before: |
     # note: sadly we need this to be done every time as only /workspace is kept, but linked
     #       against those dependencies; and also we do want to recompile after adjustments
     #       this can all be dropped as soon as we would use a prepared docker
     sudo apt update && sudo apt upgrade -y
     sudo apt install -y build-essential libgmp-dev libdb-dev libjson-c-dev ncurses-dev libxml2-dev \
-         automake libtool flex bison help2man texinfo \
+         automake libtool flex bison help2man gettext texinfo \
          lcov \
          clangd bear
-    # sudo apt install gettext texlive-base  # for make dist (po/*, doc/gnucobol.pdf)
+    # sudo apt install texlive-base  # for make dist (doc/gnucobol.pdf)
     gp sync-done system-prepare
 
 - name: building GnuCOBOL

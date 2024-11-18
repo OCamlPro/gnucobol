@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -21,6 +21,8 @@
 
 #ifndef COB_LOCAL_H
 #define COB_LOCAL_H
+
+#pragma once
 
 /* We use this file to define/prototype things that should not be
    exported to user space
@@ -575,7 +577,7 @@ COB_HIDDEN char		*cob_int_to_formatted_bytestring	(int, char*);
 COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
-COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
+COB_HIDDEN int		cob_runtime_warning_ss (const char *, const char *);
 
 
 DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;

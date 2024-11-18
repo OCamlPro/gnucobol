@@ -7559,7 +7559,7 @@ AT_DATA([prog.cob], [
 AT_CAPTURE_FILE([prog.c])
 
 AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
-  $COMPILE -C -fdump=all -w prog.cob], [0], [])
+  $COMPILE -C -fdump -w prog.cob], [0], [])
 # TODO: only execute this piece when extended $GREP works
 AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 77], [0],
 [  P_dump:

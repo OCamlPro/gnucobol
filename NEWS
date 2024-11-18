@@ -25,6 +25,14 @@ NEWS - user visible changes				-*- outline -*-
 
   more work in progress
 
+* Changes that potentially effect recompilation of existing programs:
+
+** runtime checks for invalid numerical data in emitter fields of MOVE or SET
+   statements are now performed only when at least one receiver field
+   is of category numeric or numeric-edited.  This enables programming
+   patterns where invalid numerical data (e.g, SPACES) encode "absent"
+   data
+
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
@@ -57,6 +65,9 @@ NEWS - user visible changes				-*- outline -*-
 ** New option -fdefault-file-colseq to specify the default
    file collating sequence
 
+** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
+   to a file (see "Dependencies options" in the GnuCOBOL manual)
+
 * More notable changes
 
 ** execution times were significantly reduced for the following:
@@ -83,8 +94,19 @@ NEWS - user visible changes				-*- outline -*-
    this is used for character encoding support, which otherwise is only provided
    partially
 
+** configure now accepts --with-bugurl=URL which can be used to output a link
+   to an external or local URL (like file://) instead of the bug mailing list
+
+** configure now accepts --with-pkgversion=PKG which can be used to customize
+   the version output with a free-standing string (like revision number or
+   package manager version)
+
 ** use the "default" -shared flag to build dynamic libraries on macOS
    so as to fix testuite issues with recent macOS versions
+
+** "make checkmanual" was extended to be also usable with tmux and
+   allows to override the test runner and to attach for screen/tmux sessions,
+   see README for further details
 
 * Known issues in 3.x
 

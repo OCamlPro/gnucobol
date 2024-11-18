@@ -120,7 +120,7 @@ Support for GENERATE JSON is provided by *one* of the following:
     JSON-C is distributed under Expat License.
 
 
-charachter encoding support
+character encoding support
 ----------------------------
 
 Support for partial character encoding is provided directly,
@@ -131,3 +131,12 @@ If this is not provided by libc, it is provided by:
 *   [libiconv](https://www.gnu.org/software/libiconv/)
 
     GNU libiconv is distributed under GNU Lesser General Public License.
+
+
+NIST COBOL85 testsuite
+----------------------------
+To be able to run `make test`:
+
+*   [Perl](https://www.perl.org) >= 5.0005
+
+    Perl is licensed under its Artistic License, or the GNU General Public License (GPL). 

@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2002-2012, 2015-2023 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2024 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -24,22 +24,28 @@
 
 RM = rm -rf
 
-MODULES_ALL = NC SM IC SQ RL ST SG OB IF RW DB IX DBNOIX CM
+MODULES_ALL = NC SQ IX IF ST IC RL SM SG OB DB DBNOIX RW CM
 
 # currently untested modules: CM
+# note: MODULES should be kept in order to not change the order
+#       in the summary files;
+#       MODULES_RUN is kept in descending order of runtime duration
+#       to allow faster builds with multiple jobs
 if COB_MAKE_IX
 MODULES = NC SM IC SQ RL ST SG OB IF RW DB IX
-MODULES_RUN = NC_RUN SM_RUN IC_RUN SQ_RUN RL_RUN \
-	ST_RUN SG_RUN OB_RUN IF_RUN RW_RUN DB_RUN IX_RUN
+MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
+	IC_RUN RL_RUN SM_RUN SG_RUN OB_RUN DB_RUN RW_RUN
 SUMMARY = summary.txt
 else
 MODULES = NC SM IC SQ RL ST SG OB IF RW DBNOIX
-MODULES_RUN = NC_RUN SM_RUN IC_RUN SQ_RUN RL_RUN \
-	ST_RUN SG_RUN OB_RUN IF_RUN RW_RUN DBNOIX_RUN
+MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
+	IC_RUN RL_RUN SM_RUN SG_RUN OB_RUN DBNOIX_RUN RW_RUN
 SUMMARY = summarynoix.txt
 endif
 
-URL_NEWCOB_Z = https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
+# currently down, leading to se<rver error with HTTPS, broken redirection on HTTP
+#URL_NEWCOB_Z = https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
+URL_NEWCOB_Z = https://web.archive.org/web/20240322143655if_/https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
 URL_NEWCOB_TAR_GZ = https://gnucobol.sourceforge.io/files/newcob.val.tar.gz
 
 EXTRA_DIST = EXEC85.conf.in expand.pl report.pl summary.pl summary.txt \
@@ -146,9 +152,12 @@ test-local-compat:
 # FIXME: as some make implementations don't support .PHONY (POSIX 2021)
 # and we don't need it: add all depdencies below (MODULES -> report.txt)
 # then remove the rm of the file below
-summary.log:
+summary.log: duration.log
 	@echo "Computing total test results..."
-	@$(PERL) "$(srcdir)/summary.pl" $(MODULES) > $@
+	@$(PERL) "$(srcdir)/summary.pl" $(MODULES) 1> $@ 2>summary.out
+	@cat summary.out
+
+summary.out: summary.log
 
 diff:
 	@echo "Comparing test results for each module"
@@ -169,13 +178,11 @@ diff-summary:
 	@diff $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
 	@echo Done
 
-# Note: $(URL_NEWCOB_Z) is out-dated and simply grabs an HTML file
-# without error.
-# newcob.val.Z:
-# 	@echo "Trying to download newcob.val.Z..."
-#	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
-#	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
-#	 ($(RM) $@; echo "Downloading $@ failed"; false)
+newcob.val.Z:
+	@echo "Trying to download newcob.val.Z..."
+	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
+	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
+	 ($(RM) $@; echo "Downloading $@ failed"; false)
 
 newcob.val.tar.gz:
 	@echo "Trying to download newcob.val.tar.gz..."

@@ -22,7 +22,6 @@ jobs:
       - name: Configure git
         run: git config --global core.symlinks false
 
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -57,16 +56,16 @@ jobs:
                        --enable-hardening \
                        --prefix /opt/cobol/gnucobol-gcos \
 
+      - name: make
+        run: |
+          make -C _build --jobs=$((${NPROC}+1))
+
       - name: Upload config.log
         uses: actions/upload-artifact@v4
         with:
           name: config-${{ matrix.os }}.log
           path: _build/config.log
         if: failure()
-
-      - name: make
-        run: |
-          make -C _build --jobs=$((${NPROC}+1))
 
       # make install must be done before make check, otherwise
       # execution of generated COBOL files fail for a missing
@@ -89,7 +88,7 @@ jobs:
 
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
         with:
           name: testsuite-${{ matrix.os }}.log
           path: _build/tests/testsuite.log
@@ -102,7 +101,22 @@ jobs:
           save-always: true
           enableCrossOsArchive: true
 
-      - name: NIST85 Test Suite
+#      - name: NIST85 Test Suite
+#        run: |
+#          make -C _build/tests/cobol85 EXEC85 test              \
+#                         --jobs=$((${NPROC}+1))
+
+      - name: Run NIST85 testsuite
         run: |
-          make -C _build/tests/cobol85 EXEC85 test              \
-                         --jobs=$((${NPROC}+1))
+          make -C _build/tests test --jobs=$((${NPROC}+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.os }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt

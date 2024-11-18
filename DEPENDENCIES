@@ -137,7 +137,7 @@ The following libraries ARE required WHEN :
 
     JSON-C is distributed under Expat License.
 
-5) charachter encoding support is needed and iconv is not provided
+5) character encoding support is needed and iconv is not provided
    as part of libc
 
     BOTH runtime AND development components required.
@@ -149,6 +149,14 @@ The following libraries ARE required WHEN :
    Note: Support for partial character encoding is provided directly,
    full support for national and utf8 literals and data, as well as
    utf8 source encoding needs an implementation of the iconv API.
+
+
+6) The NIST COBOL85 testsuite sould be used for verification;
+   the test runner "make test" REQUIRES:
+
+  o Perl >= 5.0005  - https://www.perl.org
+
+    Perl is licensed under its Artistic License, or the GNU General Public License (GPL). 
 
 
 See HACKING if you wish to hack the GnuCOBOL source or build directly

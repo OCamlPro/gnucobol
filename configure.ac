@@ -22,7 +22,11 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
+# note: old environments only have autoconf 2.69 or even (old msys) 2.67
+#       just do a "make dist" on a modern system and get the taball back
+#       to the ancient one... (which would likely also not have the necessary
+#       automake package either)
+AC_PREREQ([2.70])
 
 AC_INIT([GnuCOBOL],
 	[3.3-dev],
@@ -33,9 +37,11 @@ AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
 Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
+
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -53,6 +59,50 @@ AC_CONFIG_FILES([pre-inst-env:build_aux/pre-inst-env.in],
 AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
+
+dnl Support the --with-pkgversion configure option,
+dnl inspired from GCC's ACX_PKGVERSION.
+AC_ARG_WITH([pkgversion],
+  [AS_HELP_STRING([--with-pkgversion=PKG],
+    [Use PKG in the version string in place of "$PACKAGE_NAME"])],
+  [case "$withval" in
+    yes)	AC_MSG_ERROR([package version not specified]) ;;
+    no)		PKGVERSION= ;;
+    *)		PKGVERSION="($withval) " ;;
+  esac],
+  [PKGVERSION="($PACKAGE_NAME) "])
+
+# AC_SUBST(PKGVERSION)
+AC_DEFINE_UNQUOTED([PKGVERSION], ["$PKGVERSION"], [PKG version string])
+
+
+dnl Support the --with-bugurl configure option,
+dnl inspired from GCC's ACX_BUGURL.
+AC_ARG_WITH([bugurl],
+  [AS_HELP_STRING([--with-bugurl=URL],
+    [Direct users to URL to report a bug, instead of mailing list])],
+  [case "$withval" in
+    yes)	AC_MSG_ERROR([bug URL not specified]) ;;
+    no)		BUGURL= ;;
+    *)		BUGURL="$withval" ;;
+  esac],
+  [ # BUGURL="$PACKAGE_BUGREPORT"
+  ])
+
+  case ${BUGURL} in
+  "")
+    # REPORT_BUGS_TO=
+    # REPORT_BUGS_TEXI=
+    ;;
+  *)
+	AC_DEFINE_UNQUOTED([PACKAGE_BUGREPORT_URL], ["<$BUGURL>"], [Bug URL instead of mailing list])
+    # REPORT_BUGS_TO="<$BUGURL>"
+    # REPORT_BUGS_TEXI=@uref{`echo "$BUGURL" | sed 's/@/@@/g'`}
+    ;;
+  esac;
+  # AC_SUBST(REPORT_BUGS_TO)
+  # AC_SUBST(REPORT_BUGS_TEXI)
+
 
 # In general: don't export/setenv but pass as option to configure
 #             this has the benefit that re-runs will take the same and "sudo"
@@ -170,7 +220,6 @@ AH_TEMPLATE([COB_EXE_EXT], [Executable extension])
 AH_TEMPLATE([COB_KEYWORD_INLINE], [Keyword for inline])
 AH_TEMPLATE([COB_NO_SELFOPEN], [Can not dlopen self])
 AH_TEMPLATE([COB_COMPUTED_GOTO], [Compilation of computed gotos works])
-AH_TEMPLATE([COB_LI_IS_LL], [long int is long long])
 AH_TEMPLATE([COB_32_BIT_LONG], [long int is 32 bits])
 AH_TEMPLATE([COB_64_BIT_POINTER], [Pointers are longer than 32 bits])
 AH_TEMPLATE([WITH_CURSES], [curses library for extended SCREEN I/O])
@@ -541,6 +590,9 @@ dnl CHECKME: do we want disable-static (mind libsupport)
 dnl          if yes then drop AM_PROG_AR + build_aux/ar-lib
 LT_INIT([dlopen win32-dll])
 
+dnl We declare %noyywrap in the lexer files so we use the noyywrap
+dnl option here to skip the search for that function.
+AC_PROG_LEX([noyywrap])
 AX_PROG_FLEX
 AX_PROG_BISON
 
@@ -908,6 +960,42 @@ AC_CHECK_LIB([$with_math], [__gmp_get_memory_functions],
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
 
+# Checks for gettext.
+
+case $host_os in
+  darwin* | rhapsody*)
+	;;
+  *)
+	gt_cv_func_CFPreferencesCopyAppValue=no
+	gt_cv_func_CFLocaleCopyCurrent=no
+	;;
+esac
+
+dnl  Simon: removed, use --disable-nls instead
+dnl # Disable for Cygwin
+dnl AC_MSG_CHECKING([for __CYGWIN__])
+dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+dnl 	#ifndef __CYGWIN__
+dnl 	# error macro not defined
+dnl 	#endif]])],
+dnl 	[enable_nls=no
+dnl 	 AC_MSG_RESULT([yes])],
+dnl 	[AC_MSG_RESULT([no])])
+
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.19.8])
+if test "x$LTLIBINTL" != x; then
+  if test "x$PROGRAMS_LIBS" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBINTL"
+  else
+    PROGRAMS_LIBS="$LTLIBINTL"
+  fi
+  LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
+fi
+
+# Checks for internationalization stuff
+AM_LANGINFO_CODESET
+
 AC_ARG_WITH([iconv],
   [AS_HELP_STRING([--with-iconv],
     [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
@@ -956,7 +1044,7 @@ AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	  XML2_LIBS="-lxml2"
 	fi
 	LIBS="$LIBS $LIBCOB_LIBS_extern $XML2_LIBS"
-	# note: PKG_CONFIG and xml2-config set -I /path/to/libxml2 which contains a "libxml" folder where
+	# note: PKG_CONFIG and xml2-config set -I/path/to/libxml2 which contains a "libxml" folder where
 	#       all the files we look for are included
 	for header in xmlwriter xmlversion uri parser tree; do
 		AC_CHECK_HEADER([libxml/$header.h], [],
@@ -1037,8 +1125,8 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	with_cjson_local=no
 	AS_IF([test -e ./libcob/cJSON.c],
 	  [AC_MSG_CHECKING([whether linking of ./libcob/cJSON.c works])
-	   CPPFLAGS="$curr_cppflags -I./libcob"
-	   LIBS="$LIBS $LIBCOB_LIBS_extern"
+	   CPPFLAGS="$curr_cppflags -I./libcob $CJSON_CFLAGS"
+	   LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		               [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1055,8 +1143,8 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	if test "$with_cjson_local" = no; then
 	  AS_IF([test -e "$srcdir/libcob/cJSON.c"],
 	    [AC_MSG_CHECKING([whether linking of "$srcdir/libcob/cJSON.c" works])
-	     CPPFLAGS="$curr_cppflags -I\"$srcdir/libcob\""
-	     LIBS="$LIBS $LIBCOB_LIBS_extern"
+	     CPPFLAGS="$curr_cppflags -I$srcdir/libcob $CJSON_CFLAGS"
+	     LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		                 [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1065,7 +1153,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 		                   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
-	      with_cjson_local="yes (in \"$srcdir/libcob\")"],
+	      with_cjson_local="yes (in $srcdir/libcob)"],
 	     [AC_MSG_RESULT([no])]
 	     )
 	     LIBS="$curr_libs"]
@@ -1134,7 +1222,7 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = check], [
 	  JSON_C_LIBS="-ljson-c"
 	fi
 	LIBS="$LIBS $LIBCOB_LIBS_extern $JSON_C_LIBS"
-	AC_CHECK_HEADERS([json.h json-c/json.h], [break],
+	AC_CHECK_HEADERS([json-c/json.h json.h], [break],
 		[if test "$with_json" = "json-c"; then
 		    AC_MSG_ERROR([header for libjson-c is required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
 		 else
@@ -1274,17 +1362,6 @@ dnl   [])
 AC_CHECK_FUNCS([fdatasync sigaction fmemopen])
 AC_CHECK_DECLS([fdatasync])	# also check for declaration, missing on MacOS...
 AC_CHECK_DECLS([fmemopen])	# also check for declaration, missing on AIX...
-
-# Checks for gettext.
-
-case $host_os in
-  darwin* | rhapsody*)
-	;;
-  *)
-	gt_cv_func_CFPreferencesCopyAppValue=no
-	gt_cv_func_CFLocaleCopyCurrent=no
-	;;
-esac
 
 # Checks for ncurses/pdcurses/curses.
 AC_MSG_NOTICE([Checks for curses ...])
@@ -1901,11 +1978,6 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(void *)
 
-AC_MSG_CHECKING([whether size of long int = size of long long])
-AS_IF([test "$ac_cv_sizeof_long_int" = "$ac_cv_sizeof_long_long"],
-	[AC_DEFINE([COB_LI_IS_LL], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
-
 AC_MSG_CHECKING([whether long is 32 bits])
 AS_IF([test "$ac_cv_sizeof_long" = 4],
 	[AC_DEFINE([COB_32_BIT_LONG], [1]) AC_MSG_RESULT([yes])],
@@ -1974,32 +2046,6 @@ if test "$gc_cv_attribute_constructor" = yes; then
 	AC_DEFINE([HAVE_ATTRIBUTE_CONSTRUCTOR], [1])
 fi
 CFLAGS="$curr_cflags"
-
-dnl  Simon: removed, use --disable-nls instead
-dnl # Disable for Cygwin
-dnl AC_MSG_CHECKING([for __CYGWIN__])
-dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-dnl 	#ifndef __CYGWIN__
-dnl 	# error macro not defined
-dnl 	#endif]])],
-dnl 	[enable_nls=no
-dnl 	 AC_MSG_RESULT([yes])],
-dnl 	[AC_MSG_RESULT([no])])
-
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.19.8])
-if test "x$LTLIBINTL" != x; then
-  if test "x$PROGRAMS_LIBS" != x; then
-    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBINTL"
-  else
-    PROGRAMS_LIBS="$LTLIBINTL"
-  fi
-  LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
-fi
-
-# Checks for internationalization stuff
-dnl currently not directly used: AM_ICONV
-AM_LANGINFO_CODESET
 
 # Check for perl, used for "make test"
 #AM_MISSING_PROG(PERL, perl) --> only use for tools that generate something

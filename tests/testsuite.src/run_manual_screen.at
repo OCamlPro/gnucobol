@@ -1138,7 +1138,7 @@ AT_DATA([prog.cob], [
        77  CMAGENTA     PIC 9(05) COMP-5 VALUE 6.
        77  CYELLOW      PIC 9(05) COMP-5 VALUE 7.
        77  CWHITE       PIC 9(05) COMP-5 VALUE 8.
-       
+
        77  LIN          PIC 99    COMP-5.
 
        01  scr1 PIC X(80)
@@ -1248,7 +1248,7 @@ AT_DATA([prog.cob], [[
                                       & "BCOLOR=BLACK,".
        77  CWHITE       PIC X(99) VALUE "FCOLOR=WHITE, "
                                       & "BCOLOR=BLACK, ".
-       
+
        77  LIN          PIC 99    COMP-5.
 
        01  scr1 PIC X(75)
@@ -1300,7 +1300,7 @@ AT_DATA([prog.cob], [[
       *
            ADD  2 TO LIN
            PERFORM dspcol
-           MOVE "REVERSE," TO 
+           MOVE "REVERSE," TO
                CBLACK (40:), CBLUE (40:), CGREEN (40:), CCYAN (40:),
                CRED (40:), CMAGENTA (40:), CYELLOW (40:), CWHITE (40:)
            ADD  1 TO LIN
@@ -1312,12 +1312,12 @@ AT_DATA([prog.cob], [[
            ADD  1 TO LIN
            DISPLAY scr9 AT LINE LIN COL 2
       *
-           MOVE "HIGHLIGHT,NO REVERSE" TO 
+           MOVE "HIGHLIGHT,NO REVERSE" TO
                CBLACK (50:), CBLUE (50:), CGREEN (50:), CCYAN (50:),
                CRED (50:), CMAGENTA (50:), CYELLOW (50:), CWHITE (50:)
            ADD  1 TO LIN
            PERFORM dspcol
-           MOVE "NO HIGH, BLINK" TO 
+           MOVE "NO HIGH, BLINK" TO
                CBLACK (60:), CBLUE (60:), CGREEN (60:), CCYAN (60:),
                CRED (60:), CMAGENTA (60:), CYELLOW (60:), CWHITE (60:)
            MOVE 12 TO LIN
@@ -1359,7 +1359,7 @@ AT_DATA([prog.cob], [[
        WORKING-STORAGE  SECTION.
        01  success-flag PIC X VALUE 'Y'.
            88  success  VALUE 'Y', 'y'.
-       
+
        77  LIN-START    PIC 99    COMP-5.
        77  LIN          PIC 99    COMP-5.
 
@@ -3600,3 +3600,70 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([CURSOR position in line 1])
+AT_KEYWORDS([screen])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    PROG.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           CURSOR IS CURSOR-POSITION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+       01  CURSOR-POSITION.
+           05 CSR-ROW-NUMBER                 PIC 9(03) VALUE 001.
+           05 CSR-COL-NUMBER                 PIC 9(03) VALUE 005.
+
+       01  WORK-FIELDS.
+           05 IN-ID                          PIC X(09) VALUE SPACES.
+           05 TRAN-ID                        PIC X(03) VALUE 'ABC'.
+
+       01  SUCCESS-FLAG PIC X VALUE 'Y'.
+           88  SUCCESS  VALUE 'y', 'Y'.
+
+       SCREEN SECTION.
+
+       01  EMPLOYEE-SCREEN
+              BACKGROUND-COLOR IS 0
+              FOREGROUND-COLOR IS 7.
+
+           05 LINE 01 COL 01  AUTO           PIC X(03) USING
+              TRAN-ID.
+           05 LINE 01 COL 04                 PIC X(01) VALUE
+              ','.
+           05 LINE 01 COL 05  AUTO           PIC X(09) USING
+              IN-ID.
+
+           05  LINE 5 VALUE 'cursor should be '
+               & 'at line 1 and column 5'.
+           05  LINE 6 VALUE 'go to line 10 '
+               & 'and enter an "y" or "n" '.
+           05  LINE 10 PIC X, REQUIRED USING success-flag.
+
+       PROCEDURE DIVISION.
+
+           DISPLAY EMPLOYEE-SCREEN.
+           ACCEPT  EMPLOYEE-SCREEN.
+
+           IF SUCCESS AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF.
+
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
