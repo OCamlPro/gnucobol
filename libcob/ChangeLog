@@ -1,7 +1,16 @@
 
-2024-11-18  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-	* screenio.c added new functions for multiple window support.
+
+2024-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: minor refactoring including move of
+	  return code out of PPARM_FLD
+	* screenio.c (cob_sys_window): when function not available and in
+	  testmode, return 77 so test is skipped
+
+2024-11-01  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: added new functions for multiple window support;
 	  also added new static variables to support panel functions
 	  and a static array to store information about the panels
 	  which have been created.

@@ -2180,13 +2180,11 @@ COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
-COB_EXPIMP int		cob_sys_scr_dump  (unsigned char *);
-COB_EXPIMP int		cob_sys_scr_restore  (unsigned char *);
-#ifdef COB_EXPERIMENTAL
-COB_EXPIMP int		cob_sys_window  (void *);
-#endif
+COB_EXPIMP int		cob_sys_scr_dump	(unsigned char *);
+COB_EXPIMP int		cob_sys_scr_restore	(unsigned char *);
+COB_EXPIMP int		cob_sys_window		(unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
-COB_EXPIMP int		cob_get_text 		(char *, int);
+COB_EXPIMP int		cob_get_text		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);
 COB_EXPIMP int		cob_get_scr_lines	(void);
 COB_EXPIMP int		cob_sys_get_csr_pos	(unsigned char *);
@@ -2868,8 +2866,8 @@ COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
 COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
-COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
-COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_of (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
 
 /************************/
 /* Functions in cconv.c */

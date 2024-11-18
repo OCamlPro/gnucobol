@@ -47,12 +47,11 @@
       *>* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
       *>                                                              *
       *>   This copy member is used to call the Multiple Window       *
-      *>   CBL_GC_WINDOW functions. Note that in addition to          *
-      *>   checking the WP-WINDOW-RETURN-CODE field you should        *
-      *>   also check the COBOL RETURN-CODE as these functions        *
-      *>   only work when in extended i/o mode. See the               *
-      *>   Programmers Guide for more information on the use of       *
-      *>   these functions.                                           *
+      *>   CBL_GC_WINDOW functions. Note that the return value        *
+      *>   is passed via the COBOL RETURN-CODE; also note that these  *
+      *>   functions only work when in extended i/o mode.             *
+      *>   See the Programmers Guide for more information on the use  *
+      *>   of these functions.                                        *
       *>                                                              *
       *>* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -74,7 +73,12 @@
            05  WP-WINDOW-FG-COLOR          PIC 9(09) COMP-5.
            05  WP-WINDOW-BG-COLOR          PIC 9(09) COMP-5.
            05  WP-WINDOW-HIDDEN            PIC 9(09) COMP-5.
-           05  WP-WINDOW-RETURN-CODE       PIC 9(09) COMP-5.
+
+      *> RETURN-CODE value
+       01  WP-WINDOW-RETURN-CODE       PIC 9(09) COMP-5.
+               88  WP-UNSUPPORTED              VALUE -1.
+               88  WP-DISABLED                 VALUE -2.
+               88  WP-BAD-PARAMETER-LEN        VALUE -8.
                88  WP-OK                       VALUE 0.
                88  WP-START-Y-EXCEEDS-MAX      VALUE 2.
                88  WP-START-X-EXCEEDS-MAX      VALUE 4.

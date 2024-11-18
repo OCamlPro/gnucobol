@@ -3842,14 +3842,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
-      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-      *                                                               *
-      *    NEW WINDOW FUNCTIONS.                                      *
-      *                                                               *
-      *     CBL_GC_WINDOW                                             *
-      *                                                               *
-      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
        01 BLACK   CONSTANT AS 0.
        01 BLUE    CONSTANT AS 1.
        01 GREEN   CONSTANT AS 2.
@@ -3953,26 +3945,12 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                           REVERSE-VIDEO  FOREGROUND-COLOR WHITE.
                                          *>BACKGROUND-COLOR BLACK.
 
-      *>    05 LINE   7 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
-      *>    05 LINE + 1 COLUMN 61 ERASE EOL.
       *> ***************************************************************
        PROCEDURE DIVISION.
 
            MOVE ZERO                   TO CNTR.
       *    DISPLAY ' ' AT LINE 1 COLUMN 1.
            CALL 'CBL_GC_SET_SCR_SIZE' USING 50, 80.
-
-      *    ACCEPT
-      *        OMITTED
-      *        LINE 16 COLUMN 1
-      *    END-ACCEPT.
-
 
            DISPLAY ' YOU WILL SEE 4 WINDOWS OF ALTERNATING COLORS ' &
                'WAIT UNTIL THE END TO ANSWER-TEXT PROMPT'
@@ -3998,7 +3976,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                    MOVE 3              TO WP-WINDOW-BG-COLOR
                END-IF
                MOVE ZERO               TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                SET WP-MODE-NEW-WINDOW  TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
                CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
@@ -4020,7 +3997,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                ADD +1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
                MOVE 1                  TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                SET WP-MODE-HIDE-WINDOW TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
                CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
@@ -4039,7 +4015,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                ADD -1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
                MOVE ZERO               TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                SET WP-MODE-SHOW-WINDOW TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
                CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
@@ -4066,7 +4041,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                MOVE CNTR-ROW           TO WP-WINDOW-START-ROW
                MOVE CNTR-COL           TO WP-WINDOW-START-COL
                MOVE 0                  TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                SET WP-MODE-MOVE-WINDOW TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
                CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
@@ -4075,7 +4049,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                MOVE 0                  TO WP-WINDOW-START-ROW
                MOVE 0                  TO WP-WINDOW-START-COL
                MOVE 0                  TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
                SET WP-MODE-TOP-WINDOW  TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
@@ -4099,7 +4072,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                ADD +1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
                MOVE 1                  TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                SET WP-MODE-BOTTOM-WINDOW  TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
                CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
@@ -4117,7 +4089,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                ADD +1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
                MOVE 1                  TO WP-WINDOW-HIDDEN
-               MOVE ZERO               TO WP-WINDOW-RETURN-CODE
                SET WP-MODE-DELETE-WINDOW  TO TRUE
                PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
                CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
@@ -4147,15 +4118,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                IF RETURN-CODE NOT EQUAL ZERO
       D            DISPLAY 'RETURN CODE IS ==> ' RETURN-CODE
       D                UPON SYSERR
-                   MOVE 1              TO RETURN-CODE
-                   GOBACK
-               END-IF.
-
-               IF WP-WINDOW-RETURN-CODE NOT EQUAL ZERO
-      D            DISPLAY 'WP-WINDOW-RETURN-CODE IS ==> '
-      D                WP-WINDOW-RETURN-CODE
-      D                UPON SYSERR
-                   MOVE 1              TO RETURN-CODE
                    GOBACK
                END-IF.
 
