@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2014, 2016-2019, 2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2014, 2016-2019, 2022-2024 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -43,7 +43,10 @@ COB_SYSTEM_GEN ("CBL_GET_CSR_POS",	1, 1, cob_sys_get_csr_pos)
 COB_SYSTEM_GEN ("CBL_GET_CURRENT_DIR",	3, 3, cob_sys_get_current_dir)
 COB_SYSTEM_GEN ("CBL_GET_SCR_SIZE",	2, 2, cob_sys_get_scr_size)
 COB_SYSTEM_GEN ("CBL_GC_SCR_DUMP", 1, 1, cob_sys_scr_dump)
-COB_SYSTEM_GEN ("CBL_GC_SCR_RESTORE",  1, 1, cob_sys_scr_restore)
+COB_SYSTEM_GEN ("CBL_GC_SCR_RESTORE", 1, 1, cob_sys_scr_restore)
+#ifdef COB_EXPERIMENTAL
+COB_SYSTEM_GEN ("CBL_GC_WINDOW", 1, 1, cob_sys_window)
+#endif
 COB_SYSTEM_GEN ("CBL_IMP",		3, 3, cob_sys_imp)
 COB_SYSTEM_GEN ("CBL_NIMP",		3, 3, cob_sys_nimp)
 COB_SYSTEM_GEN ("CBL_NOR",		3, 3, cob_sys_nor)

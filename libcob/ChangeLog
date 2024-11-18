@@ -1,4 +1,17 @@
 
+2024-11-18  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c added new functions for multiple window support.
+	  also added new static variables to support panel functions
+	  and a static array to store information about the panels
+	  which have been created.
+		cob_sys_window
+		check_panel_parm
+		cob_update_all_windows
+		refresh_mywin
+	* common.h: added cob_sys_window
+	* system.def: added system library call CBL_GC_WINDOW
+
 2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_screen_get_all): fixed Bug #999

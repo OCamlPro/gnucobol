@@ -1052,6 +1052,8 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 34) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 35) /* used for syntax checking */
 #define COB_SCREEN_GRID			((cob_flags_t)1 << 36) /* used for syntax checking */
+#define COB_SCREEN_POPUP_CREATE	((cob_flags_t)1 << 61)
+#define COB_SCREEN_POPUP_REMOVE	((cob_flags_t)1 << 62)
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -2180,6 +2182,9 @@ COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_scr_dump  (unsigned char *);
 COB_EXPIMP int		cob_sys_scr_restore  (unsigned char *);
+#ifdef COB_EXPERIMENTAL
+COB_EXPIMP int		cob_sys_window  (void *);
+#endif
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
 COB_EXPIMP int		cob_get_text 		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);

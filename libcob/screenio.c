@@ -42,7 +42,33 @@
 #include <io.h>
 #endif
 
-#if defined (HAVE_NCURSESW_NCURSES_H)
+#if defined (HAVE_NCURSESW_PANEL_H)
+#include <ncursesw/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_NCURSES_PANEL_H)
+#include <ncurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_PDCURSES_PANEL_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <pdcurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_XCURSES_PANEL_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_PANEL_H)
+#define PDC_NCMOUSE	/* see comment above */
+#include <panel.h>
+#ifndef PDC_MOUSE_MOVED
+#undef PDC_NCMOUSE
+#endif
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_NCURSESW_NCURSES_H)
 #include <ncursesw/ncurses.h>
 #define WITH_EXTENDED_SCREENIO
 #elif defined (HAVE_NCURSESW_CURSES_H)
@@ -146,13 +172,15 @@ static cob_settings		*cobsetptr;
 static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 static struct cob_inp_struct	*cob_base_inp;
-static size_t			totl_index;
-static size_t			cob_has_color;
+static size_t		totl_index;
+static size_t		cob_has_color;
 static int			global_return;
 static int			cob_current_y;
 static int			cob_current_x;
-static short			fore_color	/* "const" default foreground (pair 0 on init) */;
-static short			back_color	/* "const" default background (pair 0 on init) */;
+static short		fore_color	/* "const" default foreground (pair 0 on init) */;
+static short		back_color	/* "const" default background (pair 0 on init) */;
+static short		stdscr_fore_color	/* "const" default foreground (pair 0 on init) */;
+static short		stdscr_back_color	/* "const" default background (pair 0 on init) */;
 static int			origin_y;
 static int			origin_x;
 static int			display_cursor_y;
@@ -161,7 +189,89 @@ static int			accept_cursor_y;
 static int			accept_cursor_x;
 static int			pending_accept;
 static int			got_sys_char;
+static int			save_cursor_x = 0;
+static int			save_cursor_y = 0;
 static WINDOW		*mywin;
+
+#ifdef WITH_PANELS
+#define MAX_PANELS				20
+#define CBL_NEW_WINDOW			1
+#define CBL_DELETE_WINDOW		2
+#define CBL_MOVE_WINDOW			3
+#define CBL_SHOW_WINDOW			4
+#define CBL_HIDE_WINDOW			5
+#define CBL_TOP_WINDOW			6
+#define CBL_BOTTOM_WINDOW		7
+#define CBL_LIST_WINDOW			8
+
+typedef struct	__PARM_FLD
+	{
+		int 		mode;
+		int 		pan_number;
+		int 		starty;
+		int 		startx;
+		int 		win_rows;
+		int 		win_cols;
+		int			fg_color;
+		int			bg_color;
+		int 		hidden;
+		int 		ret_code;
+	} PARM_FLD, 	*PPARM_FLD;
+
+typedef struct	__LIST_FLD
+	{
+		short		pan_position;
+		short 		pan_number;
+		short 		starty;
+		short 		startx;
+		short 		win_rows;
+		short 		win_cols;
+		short		input_fg_color;
+		short		input_bg_color;
+		short 		hidden;
+	} LIST_FLD, 	*PLIST_FLD;
+
+typedef struct	__PANEL_ENTRY
+	{
+		PANEL		*pan;
+		WINDOW		*win;
+		int 		starty;
+		int 		startx;
+		int 		win_rows;
+		int 		win_cols;
+		int 		hidden;
+		short		fg_color;
+		short		bg_color;
+		int			input_fg_color;
+		int			input_bg_color;
+		int 		pan_number;
+	} PANEL_ENTRY,		*PPANEL_ENTRY;
+
+	static PANEL_ENTRY	my_panels[MAX_PANELS] =
+	{ { NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20 } };
+
+
+#endif
+
 #ifdef HAVE_MOUSEMASK
 static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
@@ -170,6 +280,19 @@ static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 /* Local function prototypes */
 
 static int cob_screen_init	(void);
+
+#ifdef WITH_PANELS
+void cob_update_all_windows (void);
+int check_panel_parm  (PPARM_FLD parm);
+int cob_new_window    (PPARM_FLD parm);
+int cob_move_window   (PPARM_FLD parm);
+int cob_show_window   (PPARM_FLD parm);
+int cob_hide_window   (PPARM_FLD parm);
+int cob_delete_window (PPARM_FLD parm);
+int cob_top_window    (PPARM_FLD parm);
+int cob_bottom_window (PPARM_FLD parm);
+int cob_list_window   (PLIST_FLD list);
+#endif
 
 /* Local functions */
 
@@ -301,6 +424,21 @@ handle_status (const int fret, const enum screen_statement stmt)
 
 #ifdef	WITH_EXTENDED_SCREENIO
 
+static COB_INLINE COB_A_INLINE void
+refresh_mywin (WINDOW *curr_win)
+{
+	int		pos_y, pos_x;
+
+	if (curr_win != stdscr) {
+		getyx (curr_win, pos_y, pos_x);
+		if (wmouse_trafo (curr_win, &pos_y, &pos_x, 1)) {
+			move (pos_y, pos_x);
+		}
+	}
+
+	wrefresh (curr_win);
+}
+
 static void
 cob_beep (void)
 {
@@ -372,7 +510,7 @@ static short
 cob_get_color_pair (const short fg_color, const short bg_color)
 {
 	/* default color (defined from terminal, read during init ) */
-	if (fg_color == fore_color && bg_color == back_color) {
+	if (fg_color == stdscr_fore_color && bg_color == stdscr_back_color) {
 		return 0;
 	}
 	/* reserved color "all black", defined during init */
@@ -1084,6 +1222,8 @@ cob_screen_init (void)
 	if (has_colors ()) {
 		start_color ();
 		pair_content ((short)0, &fore_color, &back_color);
+		stdscr_fore_color = fore_color;
+		stdscr_back_color = back_color;
 		/* fix bad settings of the terminal on start */
 		if (fore_color == back_color) {
 			if (fore_color == COLOR_BLACK) {
@@ -1847,7 +1987,7 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 		accept_cursor_x = column + f->size;
 	}
 
-	wrefresh (mywin);
+	refresh_mywin (mywin);
 }
 
 static COB_INLINE COB_A_INLINE int
@@ -2450,7 +2590,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			default_prompt_char = COB_CH_UL;
 		}
 
-		wrefresh (mywin);
+		refresh_mywin (mywin);
 		errno = 0;
 		wtimeout (mywin, accept_timeout);
 		keyp = getch ();
@@ -2736,6 +2876,12 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		{
 			int mline = mevent.y;
 			int mcolumn = mevent.x;
+			/* translate mouse position from stdscr to current window;
+			   error if outside current window */
+			if (!wmouse_trafo (mywin, &mline, &mcolumn, 0)) {
+				cob_beep ();
+				continue;
+			}
 			/* handle depending on state */
 			if (mevent.bstate & BUTTON1_PRESSED
 			 && COB_MOUSE_FLAGS & 1) {
@@ -2911,7 +3057,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		cob_beep ();
 	}
 screen_return:
-	wrefresh (mywin);
+	refresh_mywin (mywin);
 }
 
 static int
@@ -2986,7 +3132,7 @@ cob_screen_moveyx (cob_screen *s)
 		}
 
 		cob_move_cursor (line, column);
-		wrefresh (mywin);
+		refresh_mywin (mywin);
 		cob_current_y = line;
 		cob_current_x = column;
 	}
@@ -3190,7 +3336,7 @@ screen_display (cob_screen *s, const int line, const int column)
 		pending_accept = 1;
 	}
 	cob_screen_iterate (s);
-	wrefresh (mywin);
+	refresh_mywin (mywin);
 }
 
 static int
@@ -3339,7 +3485,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		scrollok (mywin, 1);
 		wscrl (mywin, sline);
 		scrollok (mywin, 0);
-		wrefresh (mywin);
+		refresh_mywin (mywin);
 	}
 
 	sline = line;
@@ -3387,7 +3533,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		}
 		cob_move_cursor (sline, 0);
 	}
-	wrefresh (mywin);
+	refresh_mywin (mywin);
 }
 
 static void
@@ -3451,7 +3597,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		scrollok (mywin, 1);
 		wscrl (mywin, keyp);
 		scrollok (mywin, 0);
-		wrefresh (mywin);
+		refresh_mywin (mywin);
 	}
 	cobglobptr->cob_exception_code = 0;
 
@@ -3619,7 +3765,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Cursor to current column. */
 			cob_move_cursor (cline, ccolumn);
 			/* Refresh screen. */
-			wrefresh (mywin);
+			refresh_mywin (mywin);
 		}
 		errno = 0;
 
@@ -4117,7 +4263,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		memset (COB_TERM_BUFF, ' ', size_accept);
 #endif
 	}
-	wrefresh (mywin);
+	refresh_mywin (mywin);
 }
 
 static void
@@ -4381,7 +4527,7 @@ cob_sys_clear_screen (void)
 	init_cob_screen_if_needed ();
 
 	wclear (mywin);
-	wrefresh (mywin);
+	refresh_mywin (mywin);
 	cob_current_y = 0;
 	cob_current_x = 0;
 	return 0;
@@ -4397,14 +4543,14 @@ cob_screen_set_mode (const cob_u32_t smode)
 
 	if (!smode) {
 		if (cobglobptr->cob_screen_initialized) {
-			wrefresh (mywin);
+			refresh_mywin (mywin);
 			def_prog_mode ();
 			endwin ();
 		}
 	} else {
 		if (cobglobptr->cob_screen_initialized) {
 			reset_prog_mode ();
-			wrefresh (mywin);
+			refresh_mywin (mywin);
 		} else {
 			cob_screen_init ();
 		}
@@ -4545,8 +4691,20 @@ cob_exit_screen (void)
 		wclear (mywin);
 		cob_move_to_beg_of_last_line ();
 #endif
+#ifdef WITH_PANELS
+		for (;;) {
+			PANEL *ptr_pan = ceiling_panel (NULL);
+			if (ptr_pan) {
+				mywin = panel_window (ptr_pan);
+				del_panel (ptr_pan);
+				delwin (mywin);
+			} else {
+				break;
+			}
+		}
+#endif
 		endwin (); /* ends curses' terminal mode */
-		delwin (mywin);	/* free storage related to screen not active */
+		delwin (stdscr);	/* free storage related to screen not active */
 #ifdef	HAVE_CURSES_FREEALL
 		/* cleanup storage that would otherwise be shown
 		   to be "still reachable" with valgrind */
@@ -5123,4 +5281,683 @@ cob_init_screenio (cob_global *lptr, cob_settings *sptr)
 	}
 
 	cob_settings_screenio ();
+}
+
+/* These functions are only defined if we have PANELS */
+
+#ifdef WITH_PANELS
+
+/* Check the parms used for the panel functions */
+int
+check_panel_parm (PPARM_FLD parm)
+{
+	if (mywin == stdscr) {
+		getyx (stdscr, save_cursor_y, save_cursor_x);
+		stdscr_fore_color = fore_color;
+		stdscr_back_color = back_color;
+	}
+	
+	parm->ret_code = 0;
+	switch (parm->mode) {
+		case CBL_NEW_WINDOW:
+			if (parm->starty > COB_MAX_Y_COORD)
+				parm->ret_code = 2;
+			if (parm->startx > COB_MAX_X_COORD)
+				parm->ret_code = 4;
+			if (parm->win_rows > COB_MAX_Y_COORD)
+				parm->ret_code = 6;
+			if (parm->win_cols > COB_MAX_X_COORD)
+				parm->ret_code = 7;
+			if (parm->bg_color < 0 || parm->bg_color > 15)
+				parm->ret_code = 8;
+			if (parm->fg_color < 0 || parm->fg_color > 15)
+				parm->ret_code = 9;
+			if (parm->fg_color == parm->bg_color)
+				parm->ret_code = 11;
+			break;
+		case CBL_DELETE_WINDOW:
+			if (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)
+				parm->ret_code = 10;
+			break;
+		case CBL_MOVE_WINDOW:
+			if (parm->starty > COB_MAX_Y_COORD)
+				parm->ret_code = 2;
+			if (parm->startx > COB_MAX_X_COORD)
+				parm->ret_code = 4;
+			if (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)
+				parm->ret_code = 10;
+			break;
+		case CBL_HIDE_WINDOW:
+			if (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)
+				parm->ret_code = 10;
+			if (parm->hidden != 1 )
+				parm->ret_code = 12;
+			break;
+		case CBL_SHOW_WINDOW:
+			if (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)
+				parm->ret_code = 10;
+			if (parm->hidden != 0 )
+				parm->ret_code = 14;
+			break;
+		case CBL_TOP_WINDOW:
+			if (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)
+				parm->ret_code = 16;
+			break;
+		case CBL_BOTTOM_WINDOW:
+			if (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)
+				parm->ret_code = 18;
+			break;
+	}
+
+	return parm->ret_code;
+}
+
+/*	this function updates all the windows which are not hidden 
+	and then does the final "doupdate" to update the physical screen */
+void
+cob_update_all_windows (void)
+{
+	PANEL			*ptr_pan;
+	WINDOW			*ptr_win;
+
+	/* first get the top panel */
+
+	ptr_pan =ceiling_panel(NULL);
+
+	if (!ptr_pan) {
+		mywin = stdscr;
+		refresh_mywin (mywin);
+		doupdate ();
+		return;
+	}
+
+	update_panels();
+
+	for(;ptr_pan;) {
+		ptr_win = panel_window (ptr_pan);
+		wnoutrefresh(ptr_win);
+		ptr_pan = panel_below(ptr_pan);
+	}
+
+	refresh_mywin (mywin);
+	doupdate();
+}
+
+#endif
+
+/* CBL_GC_WINDOW - window functions */
+#ifdef COB_EXPERIMENTAL
+int
+cob_sys_window (unsigned char *a)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	cob_field		*f1 = cob_get_param_field (1, "ANYPGM");
+	PPARM_FLD		parm;
+	PLIST_FLD		list;
+	int				ret;
+
+	COB_CHK_PARMS (CBL_GC_NEW_WINDOW, 1);
+	init_cob_screen_if_needed ();
+
+	if (f1->size == MAX_PANELS * sizeof (LIST_FLD)) {
+		list = a;
+		return (cob_list_window(list));
+	}
+
+	if (f1->size == sizeof (PARM_FLD)) {
+		parm = a;
+		ret = check_panel_parm(parm);
+		switch (ret) {
+			case 99:
+				return	 -4;
+				break;
+			case 0:
+				break;
+			default:
+				parm->ret_code = ret;
+				return -1;
+				break;
+		}
+	} else {
+		return	-8;
+	}
+
+	switch (parm->mode) {
+		case CBL_NEW_WINDOW:
+			return (cob_new_window (parm));
+			break;
+		case CBL_DELETE_WINDOW:
+			return (cob_delete_window (parm));
+			break;
+		case CBL_MOVE_WINDOW:
+			return (cob_move_window (parm));
+			break;
+		case CBL_HIDE_WINDOW:
+			return (cob_hide_window (parm));
+			break;
+		case CBL_SHOW_WINDOW:
+			return (cob_show_window (parm));
+			break;
+		case CBL_TOP_WINDOW:
+			return (cob_top_window (parm));
+			break;
+		case CBL_BOTTOM_WINDOW:
+			return (cob_bottom_window (parm));
+			break;
+		default:
+			parm->ret_code = 44;
+			return -1;
+			break;
+	}
+#endif
+
+}
+#endif
+
+
+
+/* NEW_WINDOW - create a new panel / window pair */
+int
+cob_new_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	pan_first = &my_panels[0];
+	PPANEL_ENTRY	pan_last = &my_panels[MAX_PANELS];
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+	WINDOW			*ptr_win;
+	short			fg_color;
+	short			bg_color;
+	short			color_pr;
+
+	init_cob_screen_if_needed ();
+
+	/* find empty slot in panel array */
+
+	for(ptr_pan_entry = pan_first; ptr_pan_entry <= pan_last; ptr_pan_entry++) {
+		if (ptr_pan_entry->pan == NULL)
+			break;
+	}
+
+	/* if no empty slot exists then set error code */
+
+	if (ptr_pan_entry > pan_last) {
+		parm->ret_code = 20;
+		return -1;
+	}
+
+	ptr_win = newwin(parm->win_rows,
+					parm->win_cols,
+					parm->starty - 1,
+					parm->startx - 1);
+	if (!ptr_win) {
+		parm->ret_code = 22;
+		return -1;
+	}
+
+	ptr_pan = new_panel(ptr_win);
+	if (!ptr_pan) {
+		parm->ret_code = 24;
+		return -1;
+	}
+
+	cob_to_curses_color (parm->fg_color, &fg_color);
+	cob_to_curses_color (parm->bg_color, &bg_color);
+
+	parm->pan_number = ptr_pan_entry->pan_number;
+	ptr_pan_entry->pan = ptr_pan;
+	ptr_pan_entry->win = ptr_win;
+	ptr_pan_entry->win_rows = parm->win_rows;
+	ptr_pan_entry->win_cols = parm->win_cols;
+	ptr_pan_entry->startx = parm->startx - 1;
+	ptr_pan_entry->starty = parm->starty - 1;
+	ptr_pan_entry->hidden = 0;
+
+	if (set_panel_userptr (ptr_pan, ptr_pan_entry)) {
+		parm->ret_code = 26;
+		return -1;
+	}
+
+	mywin = ptr_win;
+
+	if (cobsetptr->cob_legacy) {
+		fg_color |= (parm->fg_color & 8);
+		bg_color |= (parm->bg_color & 8);
+	}
+	ptr_pan_entry->fg_color = fg_color;
+	ptr_pan_entry->bg_color = bg_color;
+	ptr_pan_entry->input_fg_color = parm->fg_color;
+	ptr_pan_entry->input_bg_color = parm->bg_color;
+	color_pr = cob_get_color_pair(fg_color, bg_color);
+	wbkgd (mywin ,COLOR_PAIR(color_pr));
+	werase(mywin);
+	fore_color = fg_color;
+	back_color = bg_color;
+	cob_update_all_windows ();
+	return 0;
+#endif
+}
+
+/* MOVE_WINDOW - move the panel within stdscr */
+int
+cob_move_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+
+	init_cob_screen_if_needed ();
+
+	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	if (!ptr_pan_entry->pan) {
+		parm->ret_code = 28;
+		return -1;
+	}
+
+	ptr_pan = ptr_pan_entry->pan;
+
+	if (!panel_hidden(ptr_pan_entry->pan)) {
+		parm->ret_code = 40;
+		return -1;
+	}
+
+	if (move_panel (ptr_pan,
+			parm->starty - 1,
+			parm->startx - 1) ) {
+		parm->ret_code = 29;
+		return -1;
+	}
+
+	ptr_pan_entry->startx = parm->startx - 1;
+	ptr_pan_entry->starty = parm->starty - 1;
+
+	ptr_pan = ceiling_panel(NULL);
+	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_rows = ptr_pan_entry->win_rows;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->hidden = ptr_pan_entry->hidden;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	cob_update_all_windows ();
+	return 0;
+#endif
+}
+
+/* SHOW_WINDOW - show the panel within stdscr */
+
+int
+cob_show_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+
+	init_cob_screen_if_needed ();
+
+	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	if (!ptr_pan_entry->pan) {
+		parm->ret_code = 28;
+		return -1;
+	}
+
+	if (panel_hidden(ptr_pan_entry->pan)) {
+		parm->ret_code = 42;
+		return -1;
+	}
+
+	ptr_pan = ptr_pan_entry->pan;
+
+	if (show_panel(ptr_pan)) {
+		parm->ret_code = 30;
+		return -1;
+	}
+
+	ptr_pan_entry->hidden = 0;
+
+	ptr_pan = ceiling_panel(NULL);
+	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_rows = ptr_pan_entry->win_rows;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->hidden = ptr_pan_entry->hidden;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	cob_update_all_windows ();
+	return 0;
+#endif	
+}
+
+/* HIDE_WINDOW - hide the panel within stdscr */
+int
+cob_hide_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+
+	init_cob_screen_if_needed ();
+
+	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	if (!ptr_pan_entry->pan) {
+		parm->ret_code = 28;
+		return -1;
+	}
+
+	ptr_pan = ptr_pan_entry->pan;
+
+	if (!panel_hidden(ptr_pan_entry->pan)) {
+		parm->ret_code = 40;
+		return -1;
+	}
+
+	if (hide_panel(ptr_pan)) {
+		parm->ret_code = 32;
+		return -1;
+	}
+
+	ptr_pan_entry->hidden = 1;
+
+	/*	note the following is needed in case the top panel
+		was hidden. then the next panel will be on top */
+
+	ptr_pan = ceiling_panel(NULL);
+
+	if (ptr_pan) {
+		mywin = panel_window (ptr_pan);
+		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+		fore_color = ptr_pan_entry->fg_color;
+		back_color = ptr_pan_entry->bg_color;
+	} else {
+		mywin = stdscr;
+		move(save_cursor_y, save_cursor_x);
+		fore_color = stdscr_fore_color;
+		back_color = stdscr_back_color;
+	}
+
+	parm->win_rows = ptr_pan_entry->win_rows;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->hidden = ptr_pan_entry->hidden;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	cob_update_all_windows ();
+	return 0;
+#endif
+}
+
+
+/* TOP_WINDOW - top the panel within stdscr */
+int
+cob_top_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+
+	init_cob_screen_if_needed ();
+
+	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	if (!ptr_pan_entry->pan) {
+		parm->ret_code = 28;
+		return -1;
+	}
+
+	ptr_pan = ptr_pan_entry->pan;
+
+	if (!panel_hidden(ptr_pan_entry->pan)) {
+		parm->ret_code = 40;
+		return -1;
+	}
+
+	if (top_panel(ptr_pan)) {
+		parm->ret_code = 34;
+		return -1;
+	}
+
+	ptr_pan = ceiling_panel(NULL);
+	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_rows = ptr_pan_entry->win_rows;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->hidden = ptr_pan_entry->hidden;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	cob_update_all_windows ();
+	return 0;
+#endif
+}
+
+
+/* BOTTOM_WINDOW - top the panel within stdscr */
+int
+cob_bottom_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+
+	init_cob_screen_if_needed ();
+
+	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	if (!ptr_pan_entry->pan) {
+		parm->ret_code = 28;
+		return -1;
+	}
+
+	ptr_pan = ptr_pan_entry->pan;
+
+	if (!panel_hidden(ptr_pan_entry->pan)) {
+		parm->ret_code = 40;
+		return -1;
+	}
+
+	if (bottom_panel(ptr_pan)) {
+		parm->ret_code = 35;
+		return -1;
+	}
+
+	ptr_pan = ceiling_panel(NULL);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+	mywin = panel_window (ptr_pan);
+	parm->pan_number = ptr_pan_entry->pan_number;
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_rows = ptr_pan_entry->win_rows;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->hidden = ptr_pan_entry->hidden;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	cob_update_all_windows ();
+	return 0;
+#endif
+}
+
+/* DELETE_WINDOW - delete the panel within stdscr */
+int
+cob_delete_window (PPARM_FLD parm)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+
+	init_cob_screen_if_needed ();
+
+	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	if (!ptr_pan_entry->pan) {
+		parm->ret_code = 28;
+		return -1;
+	}
+
+	if (!panel_hidden(ptr_pan_entry->pan)) {
+		show_panel( ptr_pan_entry->pan);
+	}
+
+	if (del_panel(ptr_pan_entry->pan)) {
+		parm->ret_code = 38;
+	}
+
+	if (delwin(ptr_pan_entry->win)) {
+		parm->ret_code = 36;
+	}
+
+	if (parm->ret_code) {
+		return -1;
+	}
+
+	ptr_pan_entry->pan = NULL;
+	ptr_pan_entry->win = NULL;
+	ptr_pan_entry->win_rows = 0;
+	ptr_pan_entry->win_cols = 0;
+	ptr_pan_entry->startx = 0;
+	ptr_pan_entry->starty = 0;
+	ptr_pan_entry->hidden = 0;
+	ptr_pan_entry->fg_color = 0;
+	ptr_pan_entry->bg_color = 7;
+	ptr_pan_entry->input_fg_color = 0;
+	ptr_pan_entry->input_bg_color = 7;
+
+	ptr_pan = ceiling_panel(NULL);
+
+	if (ptr_pan) {
+		mywin = panel_window (ptr_pan);
+		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+		fore_color = ptr_pan_entry->fg_color;
+		back_color = ptr_pan_entry->bg_color;
+	} else {
+		mywin = stdscr;
+		move(save_cursor_y, save_cursor_x);
+		fore_color = stdscr_fore_color;
+		back_color = stdscr_back_color;
+	}
+
+	parm->win_rows = ptr_pan_entry->win_rows;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->hidden = ptr_pan_entry->hidden;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	cob_update_all_windows ();
+	return 0;
+#endif
+}
+
+
+/* LIST_WINDOW - list all of the windows */
+int
+cob_list_window (PLIST_FLD list)
+{
+
+#ifndef WITH_PANELS
+	COB_UNUSED (a);
+	return -1;
+#else
+
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+	int				depth, loop;
+
+	depth = 1;
+	memset(list, 0, MAX_PANELS * sizeof(LIST_FLD));
+	ptr_pan = ceiling_panel(NULL);
+
+	while (ptr_pan) {
+		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr(ptr_pan);
+		list->pan_position = depth;
+		list->pan_number = ptr_pan_entry->pan_number;
+		list->win_rows = ptr_pan_entry->win_rows;
+		list->win_cols = ptr_pan_entry->win_cols;
+		list->startx = ptr_pan_entry->startx + 1;
+		list->starty = ptr_pan_entry->starty + 1;
+		list->hidden = ptr_pan_entry->hidden;
+		list->input_fg_color = ptr_pan_entry->input_fg_color;
+		list->input_bg_color = ptr_pan_entry->input_bg_color;
+		list++;
+		depth++;
+		ptr_pan = panel_below (ptr_pan);
+	}
+	ptr_pan_entry = &my_panels[0];
+
+	for(loop = 0; loop < MAX_PANELS; loop++, ptr_pan_entry++) {
+		if (ptr_pan_entry->hidden) {
+			list->pan_position = 0;
+			list->pan_number = ptr_pan_entry->pan_number;
+			list->win_rows = ptr_pan_entry->win_rows;
+			list->win_cols = ptr_pan_entry->win_cols;
+			list->startx = ptr_pan_entry->startx + 1;
+			list->starty = ptr_pan_entry->starty + 1;
+			list->hidden = ptr_pan_entry->hidden;
+			list->input_fg_color = ptr_pan_entry->input_fg_color;
+			list->input_bg_color = ptr_pan_entry->input_bg_color;
+			list++;
+		}
+	}
+	return 0;
+#endif
 }
