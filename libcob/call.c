@@ -48,9 +48,8 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 #define HAVE_FMEMOPEN 1
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 /*	NOTE - The following variable should be uncommented when

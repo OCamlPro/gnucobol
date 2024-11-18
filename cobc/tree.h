@@ -809,10 +809,11 @@ struct cb_picture {
 	enum cb_category	category;	/* Field category */
 	cob_u32_t		digits;		/* Number of digit places */
 	int			scale;		/* 1/10^scale */
+#if 0 /* currently unused */
 	cob_u32_t		real_digits;	/* Real number of digits */
+#endif
 	cob_u32_t		have_sign;	/* Have 'S' */
 	unsigned int flag_is_calculated	: 1;	/* is calculated */
-	unsigned int flag_has_p	: 1;	/* Has PPs in PICTURE */
 	unsigned int variable_length	: 1;	/* Starts with 'L' */
 };
 

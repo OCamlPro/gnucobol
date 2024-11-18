@@ -3,6 +3,25 @@
 
 	* configure.ac: replace AC_ARG_VAR by AC_SUBST where appropriate
 
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: update flags for building dynamic libraries on macOS
+	  (helps fixing testsuite issues on recent macOS versions)
+
+2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: try to error on warnings during checks, cleanup of resulting
+	  unexpected test failures
+	* configure.ac: drop deprecated-non-prototype warning in clang
+	* configure.ac: add LIBCOB_LIBS while checking for libraries
+	* configure.ac: added check for HAVE_ATTRIBUTE_CONSTRUCTOR
+
+2023-04-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: pass --enable-debug to autoconf generated files as
+	  COB_ENABLE_DEBUG, currently used for running extra test cycles in
+	  the test suite
+
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: allow specification of XML2_CONFIG (only used if

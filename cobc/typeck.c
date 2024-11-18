@@ -2606,25 +2606,23 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 	/* CHECKME: do we need the field founder to decide?  LINKAGE and flag_item_based
 	            should be available in 'f' already ... */
-	if (current_statement && !suppress_data_exceptions &&
-	    (CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL) ||
-	     CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED))) {
+	if (current_statement && !suppress_data_exceptions
+	 && ( CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL)
+	   || CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED))) {
 		p = cb_field_founder (f);
 		if (p->redefines) {
 			p = p->redefines;
 		}
+		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
+		 && p->storage == CB_STORAGE_LINKAGE
+		 && p->flag_is_pdiv_parm
 #if 0
 		/* note: we can only ignore the check for fields with flag_is_pdiv_opt
 		   when we check for COB_EC_PROGRAM_ARG_MISMATCH in all entry points
 		   and this check is currently completely missing... */
-		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
-		 && p->storage == CB_STORAGE_LINKAGE && p->flag_is_pdiv_parm
-		 && !(p->flag_is_pdiv_opt && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)) {
-#else
-		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
-		 && p->storage == CB_STORAGE_LINKAGE
-		 && p->flag_is_pdiv_parm) {
+		 && !(p->flag_is_pdiv_opt && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH))
 #endif
+		 ) {
 			cb_add_null_check ("cob_check_linkage", p, f);
 			optimize_defs[COB_CHK_LINKAGE] = 1;
 		} else
@@ -6123,7 +6121,6 @@ cb_expr_finish (void)
 
 	expr_expand (&expr_stack[3].value);
 	if (expr_stack[3].token != 'x') {
-		/* TODO: Add test case for this to syn_misc.at invalid expression */
 		cb_error_x (expr_stack[3].value, _("invalid expression"));
 		return cb_error_node;
 	}
@@ -7509,8 +7506,6 @@ swap_condition_operands (struct cb_binary_op *p)
 cb_tree
 cb_build_cond (cb_tree x)
 {
-	struct cb_field		*f;
-	struct cb_binary_op	*p;
 	cb_tree			ret;
 
 	if (x == cb_error_node) {
@@ -7546,16 +7541,16 @@ cb_build_cond (cb_tree x)
 	case CB_TAG_FUNCALL:
 		return x;
 	case CB_TAG_REFERENCE:
-		if (!CB_FIELD_P (cb_ref (x))) {
-			ret = cb_build_cond (cb_ref (x));
+	{
+		cb_tree r = cb_ref (x);
+		if (!CB_FIELD_P (r)) {
+			ret = cb_build_cond (r);
 			cb_copy_source_reference (ret, x);
 			return ret;
 		}
 
-		f = CB_FIELD_PTR (x);
-
 		/* Level 88 condition */
-		if (f->level == 88) {
+		if (CB_FIELD_PTR (x)->level == 88) {
 			/* Build an 88 condition at every occurrence */
 			/* as it may be subscripted */
 			ret = cb_build_cond (build_cond_88 (x));
@@ -7564,8 +7559,10 @@ cb_build_cond (cb_tree x)
 		}
 
 		break;
+	}
 	case CB_TAG_BINARY_OP:
-		p = CB_BINARY_OP (x);
+	{
+		struct cb_binary_op	*p = CB_BINARY_OP (x);
 		if (!p->x || p->x == cb_error_node) {
 			return cb_error_node;
 		}
@@ -7604,6 +7601,7 @@ cb_build_cond (cb_tree x)
 			cb_copy_source_reference (ret, x);
 		}
 		return ret;
+	}
 	default:
 		break;
 	}
@@ -7712,7 +7710,6 @@ cb_end_statement (void)
 static cb_tree
 cb_build_optim_add (cb_tree v, cb_tree n)
 {
-
 	if (CB_REF_OR_FIELD_P (v)) {
 		const struct cb_field	*f = CB_FIELD_PTR (v);
 		if (cb_is_integer_field(f)
@@ -7813,7 +7810,6 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 static cb_tree
 cb_build_optim_sub (cb_tree v, cb_tree n)
 {
-
 	if (CB_REF_OR_FIELD_P (v)) {
 		const struct cb_field	*f = CB_FIELD_PTR (v);
 		if (cb_is_integer_field(f)
@@ -10033,7 +10029,8 @@ cb_build_display_name (cb_tree x)
 	return cb_error_node;
 }
 
-/* DIVIDE statement */
+/* DIVIDE statement - with REMAINDER
+   other variants are handled in cb_emit_arithmetic -> cb_build_div */
 
 void
 cb_emit_divide (cb_tree dividend, cb_tree divisor, cb_tree quotient,
@@ -10042,14 +10039,12 @@ cb_emit_divide (cb_tree dividend, cb_tree divisor, cb_tree quotient,
 	cb_tree quotient_field, remainder_field;
 
 	if (cb_validate_one (dividend)
-	 || cb_validate_one (divisor)) {
-		return;
-	}
-
-	if (cb_validate_one (CB_VALUE(quotient))
+	 || cb_validate_one (divisor)
+	 || cb_validate_one (CB_VALUE(quotient))
 	 || cb_validate_one (CB_VALUE(remainder))) {
 		return;
 	}
+
 	quotient_field = cb_check_numeric_edited_name (CB_VALUE(quotient));
 	remainder_field = cb_check_numeric_edited_name (CB_VALUE(remainder));
 
@@ -11263,12 +11258,10 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 {
 	struct cb_field		*fdst = CB_FIELD_PTR (dst);
 	struct cb_literal	*l = CB_LITERAL (src);
-	int			most_significant = -999;
-	int			least_significant = 999;
+	int			leftmost_significant, most_significant, least_significant;
 	size_t			i;
 	cob_s64_t		val;
 	cb_tree			loc = src->source_line ? src : dst;
-	unsigned char		*p;
 
 	/* Numeric literal */
 	if (l->all) {
@@ -11279,24 +11272,32 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 		return MOVE_OK;
 	}
 
-	/* Compute the most significant figure place */
-	for (i = 0; i < l->size; i++) {
+	/* Compute the most significant figure place
+	   in relatation to the decimal point (negative = decimal position) */
+	for (leftmost_significant = 0; leftmost_significant < l->size; leftmost_significant++) {
+		if (l->data[leftmost_significant] != '0') {
+			break;
+		}
+	}
+	if (leftmost_significant == l->size) {
+		most_significant = -999;
+	} else {
+		most_significant = l->size - l->scale - leftmost_significant;
+		if (most_significant < 1) most_significant--;
+	}
+
+	/* Compute the least significant figure place
+	   in relatation to the decimal point (negative = decimal position) */
+	for (i = l->size - 1; i != 0; i--) {
 		if (l->data[i] != '0') {
 			break;
 		}
 	}
-	if (i != l->size) {
-		most_significant = (int) (l->size - l->scale - i - 1);
-	}
-
-	/* Compute the least significant figure place */
-	for (i = 0; i < l->size; i++) {
-		if (l->data[l->size - i - 1] != '0') {
-			break;
-		}
-	}
-	if (i != l->size) {
-		least_significant = (int)i - l->scale;
+	if (i == 0) {
+		least_significant = 999;
+	} else {
+		least_significant = (l->size - l->scale) - i;
+		if (least_significant < 1) least_significant--;
 	}
 
 	/* Value check */
@@ -11328,18 +11329,23 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 		}
 		/* Fall-through */
 	case CB_CATEGORY_NUMERIC:
-		if (fdst->pic->scale < 0) {
+	{
+		const struct cb_picture *pic = fdst->pic;
+		if (pic->scale < 0) {
 			/* Check for PIC 9(n)P(m) */
-			if (least_significant < -fdst->pic->scale) {
+			if (least_significant <= -pic->scale) {
+				/* 12300 (3) <= 99PPP (- -3) */
 				return MOVE_VALUE_NOT_FIT_PIC;
 			}
-		} else if (fdst->pic->scale > fdst->pic->size) {
+		} else if (pic->scale > pic->digits) {
 			/* Check for PIC P(n)9(m) */
-			if (most_significant >= fdst->pic->size - fdst->pic->scale) {
+			if (most_significant > pic->digits - pic->scale - 1) {
+				/* .00123 (-3) > PPP99 (-4 [2 - 5 - 1]) */
 				return MOVE_VALUE_NOT_FIT_PIC;
 			}
 		}
 		break;
+	}
 	case CB_CATEGORY_ALPHABETIC:
 		if (is_value) {
 			return MOVE_ALNUM_EXPECTED;
@@ -11370,144 +11376,111 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 	/* Size check */
 	if (fdst->flag_real_binary
 	    || (  !cb_binary_truncate
-		  && fdst->pic->scale == 0
+		  && fdst->pic->scale <= 0
 		  && (  fdst->usage == CB_USAGE_COMP_5
 			 || fdst->usage == CB_USAGE_COMP_X
 			 || fdst->usage == CB_USAGE_COMP_N
 			 || fdst->usage == CB_USAGE_BINARY))) {
-		int	binln;
-		p = l->data;
-		for (i = 0; i < l->size; i++) {
-			if (l->data[i] != '0') {
-				p = &l->data[i];
-				break;
-			}
-		}
-		i = l->size - i;
-		binln = (int)fdst->size;
-		if (fdst->pic->flag_has_p) {
-			if (fdst->pic->digits < 3)
-				binln = 1;
-			else if (fdst->pic->digits < 5)
-				binln = 2;
-			else if (fdst->pic->digits < 7)
-				binln = 3;
-			else if (fdst->pic->digits < 10)
-				binln = 4;
-			else if (fdst->pic->digits < 13)
-				binln = 5;
-			else
-				binln = fdst->pic->digits;
-		}
-		switch (binln) {
-		case 1:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
+
+		i = l->size - leftmost_significant;
+		if (i <= 19) {
 			val = cb_get_long_long (src);
+		} else if (fdst->size < 8) {
+			return MOVE_NUMERIC_LIT_OVERFLOW;
+		} else {
+			val = 0;
+		}
+		/* handle negative scale aka 999PPP */
+		if (fdst->pic->scale < 0) {
+			int j = fdst->pic->scale;
+			i += j;
+			while (j != 0) {
+				val /= 10;
+				j++;
+			}
+		}
+
+		switch (fdst->size) {
+		case 1:
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-128) 
-				 || val > COB_S64_C(127)) {
+				if (val < COB_S64_C (-128)
+				 || val > COB_S64_C (127)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(255)) {
+				if (val > COB_S64_C (255)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
 			break;
 		case 2:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
-			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-32768) ||
-				    val > COB_S64_C(32767)) {
+				if (val < COB_S64_C (-32768) ||
+				    val > COB_S64_C (32767)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(65535)) {
+				if (val > COB_S64_C (65535)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
 			break;
 		case 3:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
-			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-8388608) 
-				 || val > COB_S64_C(8388607)) {
+				if (val < COB_S64_C (-8388608)
+				 || val > COB_S64_C (8388607)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(16777215)) {
+				if (val > COB_S64_C (16777215)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
 			break;
 		case 4:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
-			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-2147483648) 
-				 || val > COB_S64_C(2147483647)) {
+				if (val < COB_S64_C (-2147483648)
+				 || val > COB_S64_C (2147483647)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(4294967295)) {
+				if (val > COB_S64_C (4294967295)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
 			break;
 		case 5:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
-			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-549755813888) 
-				 || val > COB_S64_C(549755813887)) {
+				if (val < COB_S64_C (-549755813888)
+				 || val > COB_S64_C (549755813887)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(1099511627775)) {
+				if (val > COB_S64_C (1099511627775)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
 			break;
 		case 6:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
-			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-140737488355328) 
-				 || val > COB_S64_C(140737488355327)) {
+				if (val < COB_S64_C (-140737488355328)
+				 || val > COB_S64_C (140737488355327)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(281474976710655)) {
+				if (val > COB_S64_C (281474976710655)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
 			break;
 		case 7:
-			if (i > cb_max_binary) {
-				return MOVE_NUMERIC_LIT_OVERFLOW;
-			}
-			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-36028797018963968) 
-				 || val > COB_S64_C(36028797018963967)) {
+				if (val < COB_S64_C (-36028797018963968)
+				 || val > COB_S64_C (36028797018963967)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (val > COB_S64_C(72057594037927935)) {
+				if (val > COB_S64_C (72057594037927935)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
@@ -11521,9 +11494,10 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 				if (i == 19
-				 && memcmp (p, l->sign ? "9223372036854775808" :
-					    "9223372036854775807",
-					    (size_t)19) > 0) {
+				 && memcmp (l->data + leftmost_significant,
+					    l->sign ? "9223372036854775808" :
+						      "9223372036854775807",
+					    19) > 0) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -11534,7 +11508,9 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 				if (i == 20
-				 && memcmp (p, "18446744073709551615", (size_t)20) > 0) {
+				 && memcmp (l->data + leftmost_significant,
+					    "18446744073709551615",
+					    20) > 0) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
@@ -11551,7 +11527,7 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 	} else {
 		*size = fdst->pic->digits;
 	}
-	if (most_significant >= *size) {
+	if (most_significant > *size) {
 		*size = -1;
 		return MOVE_GENERAL_OVERFLOW;
 	}
@@ -12804,11 +12780,11 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		if (f->pic->scale < 0) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
-		val = cb_get_int (src);
 		n = f->pic->scale - l->scale;
 		if ((l->size + n) > 9) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
+		val = cb_get_int (src);
 		for (; n > 0; n--) {
 			val *= 10;
 		}
@@ -12835,13 +12811,10 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 static cb_tree
 cb_build_move_field (cb_tree src, cb_tree dst)
 {
-	struct cb_field	*src_f;
-	struct cb_field	*dst_f;
+	const struct cb_field	*src_f = CB_FIELD_PTR (src);
+	const struct cb_field	*dst_f = CB_FIELD_PTR (dst);
 	int		src_size;
 	int		dst_size;
-
-	src_f = CB_FIELD_PTR (src);
-	dst_f = CB_FIELD_PTR (dst);
 
 	if (dst_f->flag_any_length || src_f->flag_any_length) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
@@ -12908,6 +12881,17 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 		}
 	}
 
+	if ( (src_f->usage == CB_USAGE_PACKED
+	   || src_f->usage == CB_USAGE_COMP_6)
+	  && (dst_f->usage == CB_USAGE_PACKED
+	   || dst_f->usage == CB_USAGE_COMP_6)) {
+		/* TODO: add handling of negative scales to cob_move_bcd */
+		if (src_f->pic->scale >= 0
+		 && dst_f->pic->scale >= 0) {
+			return CB_BUILD_FUNCALL_2 ("cob_move_bcd", src, dst);
+		}
+	}
+
 	return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 }
 
@@ -12947,7 +12931,7 @@ cb_build_move (cb_tree src, cb_tree dst)
 	}
 
 	if (current_program->flag_report) {
-		/* FIXME: too much for SUM field */
+		/* FIXME: way too much for SUM field */
 		src = cb_check_sum_field (src);
 		dst = cb_check_sum_field (dst);
 	}

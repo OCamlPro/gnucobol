@@ -2260,9 +2260,6 @@ validate_elementary_item (struct cb_field *f)
 		f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 0);
 		f->flag_real_binary = 1;
 		break;
-	case CB_USAGE_COMP_5:
-		f->flag_real_binary = 1;
-		break;
 	default:
 		break;
 	}
@@ -2569,15 +2566,15 @@ setup_parameters (struct cb_field *f)
 		f->pic->flag_is_calculated = 1;
 		break;
 
-	case CB_USAGE_COMP_5:
 	case CB_USAGE_COMP_N:
+		f->flag_real_binary = 1;
+	case CB_USAGE_COMP_5:
 		if (f->pic 
 		 && f->pic->orig
 		 && f->pic->orig[0] == 'X') {
 			f->usage = CB_USAGE_COMP_X;
 			f->pic->have_sign = 0;
 		}
-		f->flag_real_binary = 1;
 		/* Fall-through */
 	case CB_USAGE_COMP_X:
 		if (f->pic
