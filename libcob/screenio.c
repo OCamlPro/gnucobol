@@ -5868,7 +5868,7 @@ cob_sys_window (unsigned char *mode_ext, unsigned char *fld)
 			return 44;
 	}
 
-#else
+#else	/* WITH_PANELS */
 	if (getenv ("COB_IS_RUNNING_IN_TESTMODE")) {
 		return 77;	/* let testsuite skip related tests */
 	}
@@ -5879,6 +5879,7 @@ cob_sys_window (unsigned char *mode_ext, unsigned char *fld)
 #else /* COB_EXPERIMENTAL */
 	COB_UNUSED (mode_ext);
 	COB_UNUSED (fld);
+#ifdef WITH_PANELS
 	COB_UNUSED (sys_window_new);
 	COB_UNUSED (sys_window_delete);
 	COB_UNUSED (sys_window_move);
@@ -5887,6 +5888,7 @@ cob_sys_window (unsigned char *mode_ext, unsigned char *fld)
 	COB_UNUSED (sys_window_top);
 	COB_UNUSED (sys_window_bottom);
 	COB_UNUSED (sys_window_list);
+#endif
 	if (getenv ("COB_IS_RUNNING_IN_TESTMODE")) {
 		return 77;	/* let testsuite skip related tests */
 	}

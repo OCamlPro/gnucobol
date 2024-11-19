@@ -2839,21 +2839,21 @@ or list multiple windows if your installation supports CURSES & PANELS.
 Note windows have depth like a stack of cards on a flat table. Each window
 has its contents independent of any other window. All of the writes to
 the console are directed to the window on top of the deck of windows.
-Note that you need to check the COBOL RETURN-CODE and the WP-RETURN-CODE
-after calling CBL_GC_WINDOW.
 
-Parameters: the WP-PARM.CPY copy member is used for all calls except
-the LIST function which uses the WP-LIST.CPY copy member. See the 
-programmers guide for more information about the required parameters 
-which need to be used for the different function modes
-Returns: COBOL RETURN-CODE and WP-RETURN-CODE (except for LIST function).
-The non-zero RETURN-CODE is used to indicate either that PANEL functions
-are not available in your installation of GNUCOBOL or the parm that you
-used is not the correct length.
+Parameters: the gcwindow.cpy copy member defines all parameters for this
+function. All commands but the the LIST command uses the same secondary
+parameter @code{WP-WINDOW-PARMS}, the LIST command uses @code{WL-WINDOW-LIST} instead.
+
+TODO explain the parameters
+
+Returns: COBOL RETURN-CODE contains general error code (like not available
+PANEL function in the curses runtime library) and specific problems depending
+on the parameters, zero means "no error".
+You can use @code{RETURNING WP-WINDOW-RETURN-CODE} to use the condition-names
+for more detailed error handling, otherwise use those as reference.
 
 @example
-        see the programmers guide for a sample program as it is a 
-        bit too large to include here.
+        TODO
 @end example
 
 @node Appendices

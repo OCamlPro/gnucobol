@@ -1527,8 +1527,10 @@ if test "x$CURSES_LIBS" = x; then
     AC_CHECK_LIB([curses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
-  if test "x$PANEL_LIBS" = x; then
-    AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+  if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
+	if test "x$PANEL_LIBS" = x; then
+		AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+	fi
   fi
 fi
 if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
