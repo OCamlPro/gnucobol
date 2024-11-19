@@ -1,7 +1,20 @@
 
 
 
-2024-10-04  Simon Sobisch <simonsobisch@gnu.org>
+2024-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_sys_window), system.def, common.h:
+	  command as separate first argument
+	* screenio.c [WITH_PANELS]: more refactoring including:
+	  variable amount of elements for LIST command;
+	  parameter struture changes from int to short;
+	  new commands get+set attributes;
+	  hidden now attribute in the flags instead of separate element,
+	  preparation for new attributes wrap + scroll;
+	  reverse panel_hidden return code handling
+	* screenio.c (cob_exit_screen): always use stdscr for exit message
+
+2024-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [WITH_PANELS]: minor refactoring including move of
 	  return code out of PPARM_FLD

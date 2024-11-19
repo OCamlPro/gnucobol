@@ -3816,32 +3816,25 @@ AT_CLEANUP
 
 
 AT_SETUP([system function CBL_GC_WINDOW])
-AT_KEYWORDS([screen])
+AT_KEYWORDS([screen extensions window])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
 AT_DATA([prog.cob], [
-GNU    >>SOURCE FORMAT IS FIXED
-COBOL *> ***************************************************************
-      *> DATE:      20200630
-      *> LICENSE:   PUBLIC DOMAIN
-COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
-      *> TECTONICS: COBC -X GNUCOBOL-COLOURS.COB
-      *> ***************************************************************
+       >>SOURCE FORMAT IS FIXED
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. SAMPLE.
+       PROGRAM-ID. prog.
 
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
       *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
        OBJECT-COMPUTER. IBM-PC.
 
-       REPOSITORY.
-           FUNCTION ALL INTRINSIC.
-
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
+      *> TODO: if possible drop colors all together from this test or use
+      *>       reverse-video; if not replace with screenio.cpy
        01 BLACK   CONSTANT AS 0.
        01 BLUE    CONSTANT AS 1.
        01 GREEN   CONSTANT AS 2.
@@ -3854,19 +3847,19 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
        77  ANSWER-TEXT                 PIC X.
 
        01  SW-EVEN                     PIC X       VALUE 'N'.
-       01  CNTR                        PIC S9(9)   COMP-5  VALUE +0.
-       01  CNTR-ROW                    PIC S9(9)   COMP-5  VALUE +0.
-       01  CNTR-COL                    PIC S9(9)   COMP-5  VALUE +0.
+       01  CNTR                        USAGE BINARY-SHORT  VALUE +0.
+       01  CNTR-LINE                   USAGE BINARY-SHORT  VALUE +0.
+       01  CNTR-COL                    USAGE BINARY-SHORT  VALUE +0.
 
        01  CURSOR-LOCN-BUFFER.
-           05 CURSOR-LINE          USAGE BINARY-CHAR UNSIGNED.
-           05 CURSOR-COLUMN        USAGE BINARY-CHAR UNSIGNED.
+           05 CURSOR-LINE              USAGE BINARY-CHAR UNSIGNED.
+           05 CURSOR-COLUMN            USAGE BINARY-CHAR UNSIGNED.
 
-       01  TMP.
-           05  TMP-LINE                PIC 9(4)    COMP-5.
-           05  TMP-COLUMN              PIC 9(4)    COMP-5.
+      D01  TMP.
+      D    05  TMP-LINE                PIC 9(4)    COMP-5.
+      D    05  TMP-COLUMN              PIC 9(4)    COMP-5.
 
-           COPY 'gcwindow'.
+       COPY 'gcwindow'.
            
        SCREEN SECTION.
        01 GNUCOBOL-COLOURS.
@@ -3962,9 +3955,9 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
 
            PERFORM 4  TIMES
                ADD +5                  TO CNTR
-               MOVE CNTR               TO WP-WINDOW-START-ROW
+               MOVE CNTR               TO WP-WINDOW-START-LINE
                MOVE CNTR               TO WP-WINDOW-START-COL
-               MOVE 20                 TO WP-WINDOW-ROWS
+               MOVE 20                 TO WP-WINDOW-LINES
                MOVE 60                 TO WP-WINDOW-COLUMNS
                IF SW-EVEN EQUAL 'Y'
                    MOVE 'N'            TO SW-EVEN
@@ -3975,14 +3968,14 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                    MOVE 0              TO WP-WINDOW-FG-COLOR
                    MOVE 3              TO WP-WINDOW-BG-COLOR
                END-IF
-               MOVE ZERO               TO WP-WINDOW-HIDDEN
-               SET WP-MODE-NEW-WINDOW  TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
-               PERFORM 3000-LIST-WINDOWS THRU 3000-EXIT
-               PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
+               MOVE ZERO               TO WP-WINDOW-FLAGS
+               SET WP-MODE-NEW         TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+               PERFORM 2000-WINDOW-CSR-POS
                DISPLAY GNUCOBOL-COLOURS
-               PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
+               PERFORM 2000-WINDOW-CSR-POS
                CALL "C$SLEEP" USING 1
            END-PERFORM.
 
@@ -3996,11 +3989,11 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
            PERFORM 4  TIMES
                ADD +1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
-               MOVE 1                  TO WP-WINDOW-HIDDEN
-               SET WP-MODE-HIDE-WINDOW TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
-               PERFORM 3000-LIST-WINDOWS THRU 3000-EXIT
+               MOVE WP-FLAG-HIDDEN     TO WP-WINDOW-FLAGS
+               SET WP-MODE-HIDE        TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
                CALL "C$SLEEP" USING 1
            END-PERFORM.
 
@@ -4014,18 +4007,18 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
            PERFORM 4  TIMES
                ADD -1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
-               MOVE ZERO               TO WP-WINDOW-HIDDEN
-               SET WP-MODE-SHOW-WINDOW TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
-               PERFORM 3000-LIST-WINDOWS THRU 3000-EXIT
+               MOVE ZERO               TO WP-WINDOW-FLAGS
+               SET WP-MODE-SHOW        TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
                CALL "C$SLEEP" USING 1
-               PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
+               PERFORM 2000-WINDOW-CSR-POS
            END-PERFORM.
 
            MOVE ZERO                   TO CNTR.
            MOVE 10                     TO CNTR-COL.
-           MOVE 10                     TO CNTR-ROW.
+           MOVE 10                     TO CNTR-LINE.
 
       D    DISPLAY ' '                       UPON SYSERR
       D    DISPLAY ' STARTING MOVE WINDOWS ' UPON SYSERR
@@ -4033,26 +4026,26 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
       D    DISPLAY ' '                       UPON SYSERR
 
            PERFORM 4  TIMES
-               PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
+               PERFORM 2000-WINDOW-CSR-POS
                ADD +1                  TO CNTR
-               ADD +2                  TO CNTR-ROW
+               ADD +2                  TO CNTR-LINE
                ADD +2                  TO CNTR-COL
                MOVE CNTR               TO WP-WINDOW-NUMBER
-               MOVE CNTR-ROW           TO WP-WINDOW-START-ROW
+               MOVE CNTR-LINE          TO WP-WINDOW-START-LINE
                MOVE CNTR-COL           TO WP-WINDOW-START-COL
-               MOVE 0                  TO WP-WINDOW-HIDDEN
-               SET WP-MODE-MOVE-WINDOW TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
-               PERFORM 3000-LIST-WINDOWS THRU 3000-EXIT
+               MOVE 0                  TO WP-WINDOW-FLAGS
+               SET WP-MODE-MOVE        TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
                MOVE CNTR               TO WP-WINDOW-NUMBER
-               MOVE 0                  TO WP-WINDOW-START-ROW
+               MOVE 0                  TO WP-WINDOW-START-LINE
                MOVE 0                  TO WP-WINDOW-START-COL
-               MOVE 0                  TO WP-WINDOW-HIDDEN
-               PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
-               SET WP-MODE-TOP-WINDOW  TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               PERFORM 2000-WINDOW-CSR-POS THRU 2000-EXIT
+               MOVE 0                  TO WP-WINDOW-FLAGS
+               PERFORM 2000-WINDOW-CSR-POS
+               SET WP-MODE-TOP         TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               PERFORM 2000-WINDOW-CSR-POS
                CALL "C$SLEEP" USING 1
            END-PERFORM.
 
@@ -4071,11 +4064,11 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
            PERFORM 4  TIMES
                ADD +1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
-               MOVE 1                  TO WP-WINDOW-HIDDEN
-               SET WP-MODE-BOTTOM-WINDOW  TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
-               PERFORM 3000-LIST-WINDOWS THRU 3000-EXIT
+               MOVE WP-FLAG-HIDDEN     TO WP-WINDOW-FLAGS
+               SET WP-MODE-BOTTOM      TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
       *        CALL "C$SLEEP" USING 1
            END-PERFORM.
 
@@ -4088,11 +4081,11 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
            PERFORM 4  TIMES
                ADD +1                  TO CNTR
                MOVE CNTR               TO WP-WINDOW-NUMBER
-               MOVE 1                  TO WP-WINDOW-HIDDEN
-               SET WP-MODE-DELETE-WINDOW  TO TRUE
-               PERFORM 1000-WINDOW-FUNCTION THRU 1000-EXIT
-               CALL 'CBL_GC_WINDOW' USING WL-WINDOW-LIST
-               PERFORM 3000-LIST-WINDOWS THRU 3000-EXIT
+               MOVE WP-FLAG-HIDDEN     TO WP-WINDOW-FLAGS
+               SET WP-MODE-DELETE         TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
       *        CALL "C$SLEEP" USING 1
            END-PERFORM.
 
@@ -4114,21 +4107,19 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
 
        1000-WINDOW-FUNCTION.
 
-               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-PARMS.
-               IF RETURN-CODE NOT EQUAL ZERO
-      D            DISPLAY 'RETURN CODE IS ==> ' RETURN-CODE
-      D                UPON SYSERR
-                   GOBACK
-               END-IF.
+           CALL 'CBL_GC_WINDOW' USING WP-WINDOW-MODE WP-WINDOW-PARMS.
+           IF RETURN-CODE NOT EQUAL ZERO
+      D        DISPLAY 'RETURN CODE IS ==> ' RETURN-CODE
+      D            UPON SYSERR
+               GOBACK
+           END-IF.
 
-
-       1000-EXIT.  EXIT.
 
        2000-WINDOW-CSR-POS.
 
            CALL "CBL_GET_CSR_POS" USING CURSOR-LOCN-BUFFER.
-           COMPUTE TMP-LINE = CURSOR-LINE + 1.
-           COMPUTE TMP-COLUMN = CURSOR-COLUMN + 1.
+      D    COMPUTE TMP-LINE = CURSOR-LINE + 1.
+      D    COMPUTE TMP-COLUMN = CURSOR-COLUMN + 1.
       D    DISPLAY ' WINDOW ==> ' WP-WINDOW-NUMBER
       D        '   CURSOR POSITION IS LINE '
       D        TMP-LINE
@@ -4136,7 +4127,6 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
       D        TMP-COLUMN
       D        UPON SYSERR.
 
-       2000-EXIT.  EXIT.
 
        3000-LIST-WINDOWS.
 
@@ -4148,20 +4138,18 @@ COLORS*> PURPOSE:   SHOW THE GNUCOBOL DEFAULT COLOUR PALETTE
                END-IF
       D        DISPLAY ' DEPTH => ' WL-DEPTH               (WL-INDEX)
       D            ' NUMBER => ' WL-WINDOW-NUMBER          (WL-INDEX)
-      D            ' POS ROW => ' WL-WINDOW-POSITION-ROW   (WL-INDEX)
+      D            ' POS ROW => ' WL-WINDOW-POSITION-LINE  (WL-INDEX)
       D            ' POS COL => ' WL-WINDOW-POSITION-COL   (WL-INDEX)
-      D            ' WIN ROW => ' WL-WINDOW-SIZE-ROW       (WL-INDEX)
-      D            ' WIN COL => ' WL-WINDOW-SIZE-COL       (WL-INDEX)
+      D            ' WIN ROW => ' WL-WINDOW-SIZE-LINES     (WL-INDEX)
+      D            ' WIN COL => ' WL-WINDOW-SIZE-COLS      (WL-INDEX)
       D            ' FG => '  WL-WINDOW-FG-COLOR           (WL-INDEX)
       D            ' BG => '  WL-WINDOW-BG-COLOR           (WL-INDEX)
-      D            ' HIDDEN => '  WL-WINDOW-HIDDEN         (WL-INDEX)
+      D            ' FLAGS => '  WL-WINDOW-FLAGS           (WL-INDEX)
       D            UPON SYSERR
                SET WL-INDEX            UP BY +1
            END-PERFORM.
       D    DISPLAY '   =========> END LISTING WINDOWS ' UPON SYSERR.
 
-       3000-EXIT.  EXIT.
-           END PROGRAM SAMPLE.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
