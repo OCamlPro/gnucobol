@@ -456,8 +456,9 @@ Open Plans:
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
-** the call-stack on error / in the dump file now contains all parameters given
-   to the program via command line options, if any
+** numeric DISPLAY can store and may contain a positive zero after arithmetic,
+   PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
+   numeric comparisions to ZERO / 0 / +0 / -0 will all be identical
 
 ** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
