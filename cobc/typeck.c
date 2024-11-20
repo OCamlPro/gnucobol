@@ -8391,30 +8391,6 @@ get_line_and_column_from_pos (const cb_tree pos, cb_tree * const line_or_pos,
 	}
 }
 
-static void
-cb_gen_field_accept (cb_tree var, cb_tree pos, cb_tree fgc, cb_tree bgc,
-		     cb_tree scroll, cb_tree timeout, cb_tree prompt,
-		     cb_tree size_is, cob_flags_t disp_attrs)
-{
-	cb_tree		line = NULL;
-	cb_tree		column = NULL;
-
-	if (!pos) {
-		cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-					      var, NULL, NULL, fgc, bgc, scroll,
-					      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
-	} else if (CB_LIST_P (pos)) {
-		get_line_and_column_from_pos (pos, &line, &column);
-		cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-					      var, line, column, fgc, bgc, scroll,
-					      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
-	} else if (valid_screen_pos (pos)) {
-		cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-					      var, pos, NULL, fgc, bgc, scroll,
-					      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
-	}
-}
-
 static COB_INLINE COB_A_INLINE int
 line_col_zero_is_supported (void)
 {
@@ -8424,18 +8400,99 @@ line_col_zero_is_supported (void)
 		|| cb_accept_display_extensions == CB_OBSOLETE;
 }
 
+static void
+emit_field_accept_display (const enum cob_statement stmt,
+	cb_tree x, cob_flags_t disp_attrs,
+	cb_tree pos, cb_tree fgc, cb_tree bgc, cb_tree scroll,
+	cb_tree timeout, cb_tree prompt, cb_tree size_is,
+	cb_tree control, cb_tree color, cb_tree cursor)
+{
+	cb_tree	params[CB_BUILD_FUNCALL_MAX - 3] = { 0 };
+	char	param_ids[CB_BUILD_FUNCALL_MAX - 3] = { 0 };
+	unsigned char parnum = 0;
+	cb_tree	parameter_ids = NULL;
+
+	if (!pos) {
+		/* no position to pass */
+	} else if (CB_LIST_P (pos)) {
+		/* AT LINE/COL */
+		cb_tree		line = NULL;
+		cb_tree		column = NULL;
+		get_line_and_column_from_pos (pos, &line, &column);
+		if (line) {
+			param_ids[parnum] = 'l';
+			params[parnum++] = line;
+		}
+		if (column) {
+			param_ids[parnum] = 'c';
+			params[parnum++] = column;
+		}
+	} else if (valid_screen_pos (pos)) {
+		/* AT POS */
+		param_ids[parnum] = 'p';
+		params[parnum++] = pos;
+	}
+	if (fgc) {
+		param_ids[parnum] = 'f';
+		params[parnum++] = fgc;
+	}
+	if (bgc) {
+		param_ids[parnum] = 'b';
+		params[parnum++] = bgc;
+	}
+	if (scroll) {
+		param_ids[parnum] = 's';
+		params[parnum++] = scroll;
+	}
+	if (timeout) {
+		param_ids[parnum] = 't';
+		params[parnum++] = timeout;
+	}
+	if (prompt) {
+		param_ids[parnum] = 'P';
+		params[parnum++] = prompt;
+	}
+	if (size_is) {
+		param_ids[parnum] = 'S';
+		params[parnum++] = size_is;
+	}
+	if (control) {
+		param_ids[parnum] = 'C';
+		params[parnum++] = control;
+	}
+	if (color) {
+		param_ids[parnum] = 'L';
+		params[parnum++] = color;
+	}
+	if (cursor) {
+		param_ids[parnum] = 'R';
+		params[parnum++] = cursor;
+	}
+	if (parnum) {
+		parameter_ids = cb_build_string (cobc_parse_strdup (param_ids), parnum);
+	}
+	cb_emit (cb_build_funcall (
+		stmt == STMT_ACCEPT ? "cob_accept_field" : "cob_display_field",
+		parnum + 3, x, cb_flags_t (disp_attrs), parameter_ids, 
+		params[0], params[1], params[2], params[3], params[4], params[5],
+		params[6], params[7], params[8], params[9], params[10]));
+}
+
 void
 cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 {
-	cb_tree		line;
-	cb_tree		column;
-	cb_tree		fgc;
-	cb_tree		bgc;
-	cb_tree		scroll;
-	cb_tree		timeout;
-	cb_tree		prompt;
-	cb_tree		size_is;	/* WITH SIZE IS */
-	cob_flags_t		disp_attrs;
+	cb_tree		line = NULL;
+	cb_tree		column = NULL;
+	cb_tree		fgc = NULL;
+	cb_tree		bgc = NULL;
+	cb_tree		scroll = NULL;
+	cb_tree		timeout = NULL;
+	cb_tree		prompt = NULL;
+	cb_tree		size_is = NULL;		/* WITH SIZE IS */
+	cb_tree		control = NULL;		/* variable named attributes */
+	cb_tree		color = NULL;		/* variable numeric added attributes */
+	cb_tree		cursor = NULL;		/* CURSOR (position within the field) */
+	cob_flags_t		disp_attrs = 0;
 
 	if (current_program->flag_screen) {
 #ifndef WITH_EXTENDED_SCREENIO
@@ -8460,6 +8517,9 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		timeout = attr_ptr->timeout;
 		prompt = attr_ptr->prompt;
 		size_is = attr_ptr->size_is;
+		control = attr_ptr->control;
+		cursor = attr_ptr->cursor;
+		color = attr_ptr->color;
 		disp_attrs = attr_ptr->dispattrs;
 		if (cb_validate_one (pos)
 		 || cb_validate_one (fgc)
@@ -8467,17 +8527,12 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		 || cb_validate_one (scroll)
 		 || cb_validate_one (timeout)
 		 || cb_validate_one (prompt)
-		 || cb_validate_one (size_is)) {
+		 || cb_validate_one (size_is)
+		 || cb_validate_one (control)
+		 || cb_validate_one (cursor)
+		 || cb_validate_one (color)) {
 			return;
 		}
-	} else {
-		fgc = NULL;
-		bgc = NULL;
-		scroll = NULL;
-		timeout = NULL;
-		prompt = NULL;
-		size_is = NULL;
-		disp_attrs = 0;
 	}
 
 	if (prompt) {
@@ -8541,22 +8596,20 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 			}
 			gen_screen_ptr = 0;
 			output_screen_to (CB_FIELD (cb_ref (var)), 0);
-		} else {
-			if (var == cb_null) {
-				var = NULL;
-			}
-			if (pos || fgc || bgc || scroll || disp_attrs) {
-				cb_gen_field_accept (var, pos, fgc, bgc, scroll,
-						     timeout, prompt, size_is, disp_attrs);
-			} else {
-				cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-							      var, NULL, NULL, fgc, bgc,
-							      scroll, timeout, prompt,
-							      size_is, cb_flags_t (disp_attrs)));
-			}
+			return;
 		}
-	} else if (pos || fgc || bgc || scroll || disp_attrs
-			|| timeout || prompt || size_is) {
+	}
+
+	if (var == cb_null) {
+		var = NULL;
+	}
+	if (disp_attrs || pos || fgc || bgc || scroll
+	 || timeout || prompt || size_is
+	 || control || color || cursor) {
+		emit_field_accept_display (STMT_ACCEPT, var, disp_attrs,
+				pos, fgc, bgc, scroll, timeout, prompt,
+				size_is, control, color, cursor);
+
 		/* Bump ref count to force CRT STATUS field generation
 		   and include it in cross-reference */
 		if (current_program->crt_status) {
@@ -8565,15 +8618,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if (var == cb_null) {
-			var = NULL;
-		}
-		cb_gen_field_accept (var, pos, fgc, bgc, scroll,
-				     timeout, prompt, size_is, disp_attrs);
 	} else {
-		if (var == cb_null) {
-			var = NULL;
-		}
 		cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept", var));
 	}
 }
@@ -9427,19 +9472,23 @@ cb_emit_delete_file (cb_tree file)
 
 
 static int
-validate_attrs (cb_tree pos, cb_tree fgc, cb_tree bgc, cb_tree scroll, cb_tree size_is)
+validate_attrs (cb_tree pos, cb_tree fgc, cb_tree bgc, cb_tree scroll,
+		cb_tree size_is, cb_tree control, cb_tree color)
 {
 	return 	cb_validate_one (pos)
 		|| cb_validate_one (fgc)
 		|| cb_validate_one (bgc)
 		|| cb_validate_one (scroll)
-		|| cb_validate_one (size_is);
+		|| cb_validate_one (size_is)
+		|| cb_validate_one (control)
+		|| cb_validate_one (color);
 }
 
 static void
 initialize_attrs (const struct cb_attr_struct * const attr_ptr,
 		  cb_tree * const fgc, cb_tree * const bgc,
 		  cb_tree * const scroll, cb_tree * const size_is,
+		  cb_tree * const control, cb_tree * const color,
 		  cob_flags_t * const dispattrs)
 {
 	if (attr_ptr) {
@@ -9447,12 +9496,16 @@ initialize_attrs (const struct cb_attr_struct * const attr_ptr,
 		*bgc = attr_ptr->bgc;
 		*scroll = attr_ptr->scroll;
 		*size_is = attr_ptr->size_is;
+		*control = attr_ptr->control;
+		*color = attr_ptr->color;
 		*dispattrs = attr_ptr->dispattrs;
 	} else {
 		*fgc = NULL;
 		*bgc = NULL;
 		*scroll = NULL;
 		*size_is = NULL;
+		*control = NULL;
+		*color = NULL;
 		*dispattrs = 0;
 	}
 }
@@ -9468,6 +9521,8 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	cb_tree		bgc;
 	cb_tree		scroll;
 	cb_tree		size_is;	/* WITH SIZE IS */
+	cb_tree		control;	/* CONTROL VALUE numeric added window attributes */
+	cb_tree		color;		/* COLOR numeric added attributes */
 	cob_flags_t		disp_attrs;
 	int ret = 0;
 
@@ -9480,8 +9535,9 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	}
 
 	/* Validate line_column and the attributes */
-	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs);
-	if (validate_attrs (line_column, fgc, bgc, scroll, size_is)) {
+	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is,
+			&control, &color, &disp_attrs);
+	if (validate_attrs (line_column, fgc, bgc, scroll, size_is, control, color)) {
 		ret++;
 	}
 
@@ -9499,6 +9555,8 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	}
 
 #if 0 /* TODO, likely as multiple functions */
+	/* note that CONTROL VALUE in WINDOW related statements 
+	   is different from CONTROL, which is not available for DISPLAY WINDOW */
 	cb_emit (CB_BUILD_FUNCALL_2 ("cob_display_window", own_handle, upon_handle));
 #endif
 }
@@ -9561,6 +9619,7 @@ cb_emit_destroy (cb_tree controls)
 
 /* DISPLAY statement */
 
+/* DISPLAY ... UPON ENVIRONMENT NAME */
 void
 cb_emit_env_name (cb_tree value)
 {
@@ -9570,6 +9629,7 @@ cb_emit_env_name (cb_tree value)
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_display_environment", value));
 }
 
+/* DISPLAY ... UPON ENVIRONMENT VALUE */
 void
 cb_emit_env_value (cb_tree value)
 {
@@ -9579,6 +9639,7 @@ cb_emit_env_value (cb_tree value)
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_display_env_value", value));
 }
 
+/* DISPLAY ... UPON ARGUMENT-NUMBER */
 void
 cb_emit_arg_number (cb_tree value)
 {
@@ -9588,6 +9649,7 @@ cb_emit_arg_number (cb_tree value)
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_display_arg_number", value));
 }
 
+/* DISPLAY ... UPON COMMAND-LINE */
 void
 cb_emit_command_line (cb_tree value)
 {
@@ -9718,21 +9780,6 @@ process_special_values (cb_tree value, cb_tree * const size_is, cob_flags_t * co
 	}
 }
 
-static void
-emit_field_display (const cb_tree x, const cb_tree pos, const cb_tree fgc,
-		    const cb_tree bgc, const cb_tree scroll,
-		    const cb_tree size_is, const cob_flags_t disp_attrs)
-{
-	cb_tree	line_or_pos = NULL;
-	cb_tree	column = NULL;
-
-	get_line_and_column_from_pos (pos, &line_or_pos, &column);
-	cb_emit (CB_BUILD_FUNCALL_8 ("cob_field_display",
-				     x, line_or_pos, column, fgc, bgc,
-				     scroll, size_is,
-				     cb_flags_t (disp_attrs)));
-}
-
 static cb_tree
 get_integer_literal_pair (const char *value)
 {
@@ -9830,14 +9877,16 @@ emit_default_field_display_for_all_but_last (cb_tree values, cb_tree size_is,
 		disp_attrs = 0;
 		process_special_values (x, &size_is, &disp_attrs);
 
-		emit_field_display (x, pos, NULL, NULL, NULL, NULL, disp_attrs);
+		emit_field_accept_display (STMT_DISPLAY, x, disp_attrs,
+			pos, NULL, NULL, NULL, NULL, NULL,
+			size_is, NULL, NULL,  NULL);
 	}
 }
 
 static void
 emit_field_display_for_last (cb_tree values, cb_tree line_column, cb_tree fgc,
 			     cb_tree bgc, cb_tree scroll, cb_tree size_is,
-			     cob_flags_t disp_attrs,
+			     cb_tree control, cb_tree color, cob_flags_t disp_attrs,
 			     const int is_first_display_list)
 {
 	cb_tree		l;
@@ -9865,8 +9914,9 @@ emit_field_display_for_last (cb_tree values, cb_tree line_column, cb_tree fgc,
 	}
 
 	process_special_values (last_elt, &size_is, &disp_attrs);
-	emit_field_display (last_elt, line_column, fgc, bgc, scroll, size_is,
-			    disp_attrs);
+	emit_field_accept_display (STMT_DISPLAY, last_elt, disp_attrs,
+		line_column, fgc, bgc, scroll, NULL, NULL,
+		size_is, control, color, NULL);
 }
 
 void
@@ -9879,6 +9929,8 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	cb_tree		bgc;
 	cb_tree		scroll;
 	cb_tree		size_is;	/* WITH SIZE IS */
+	cb_tree		control;	/* CONTROL IS variable-named attributes */
+	cb_tree		color;		/* COLOR variable numeric added attributes */
 	cob_flags_t		disp_attrs;
 	cb_tree		m;
 	struct cb_field	*f = NULL;
@@ -9886,7 +9938,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	/* Validate upon and values */
 	if (upon == cb_error_node
 	 || cb_validate_list (values)
-	 || validate_types_of_display_values (CB_LIST(values))) {
+	 || validate_types_of_display_values (CB_LIST (values))) {
 		return;
 	}
 	if (current_statement->ex_handler == NULL
@@ -9894,8 +9946,9 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	  	current_statement->handler_type = NO_HANDLER;
 
 	/* Validate line_column and the attributes */
-	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs);
-	if (validate_attrs (line_column, fgc, bgc, scroll, size_is)) {
+	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is,
+			&control, &color, &disp_attrs);
+	if (validate_attrs (line_column, fgc, bgc, scroll, size_is, control, color)) {
 		return;
 	}
 
@@ -9905,7 +9958,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 
 		/* CGI: DISPLAY external-form */
 		/* TODO: CHECKME, see Patch #27 */
-		m = CB_LIST(values)->value;
+		m = CB_LIST (values)->value;
 		if (CB_REF_OR_FIELD_P (m)) {
 			f = CB_FIELD_PTR (m);
 		}
@@ -9948,7 +10001,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 									 is_first_display_list);
 		}
 		emit_field_display_for_last (values, line_column, fgc, bgc,
-					     scroll, size_is, disp_attrs,
+					     scroll, size_is, control, color, disp_attrs,
 					     is_first_display_list);
 
 		break;
@@ -12469,10 +12522,11 @@ cob_put_sign_ascii (unsigned char *p)
 }
 #endif
 
+/* does an EBCDIC overpunch with the expected character values */
 static void
 cob_put_sign_ebcdic (unsigned char *p, const int sign)
 {
-	if (sign < 0) {
+	if (sign == -1) {
 		switch (*p) {
 		case '0':
 			*p = (unsigned char)'}';
@@ -12505,7 +12559,7 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 			*p = (unsigned char)'R';
 			return;
 		default:
-			/* What to do here */
+			/* What to do here? */
 			*p = (unsigned char)'}';
 			return;
 		}
@@ -12551,21 +12605,16 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 static cb_tree
 cb_build_move_literal (cb_tree src, cb_tree dst)
 {
-	struct cb_literal	*l;
-	struct cb_field		*f;
+	const struct cb_literal	*l = CB_LITERAL (src);
+	const struct cb_field		*f = CB_FIELD_PTR (dst);
+	const enum cb_category	cat = CB_TREE_CATEGORY (dst);
+
 	unsigned char		*buff;
-	unsigned char		*p;
-	enum cb_category	cat;
+	unsigned char		bbyte;
 	struct cb_reference	*r;
 	int			i;
-	int			diff;
 	int			val;
 	int			n;
-	unsigned char		bbyte;
-
-	l = CB_LITERAL (src);
-	f = CB_FIELD_PTR (dst);
-	cat = CB_TREE_CATEGORY (dst);
 
 	if (f->flag_any_length) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
@@ -12627,15 +12676,14 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 	if ((  cat == CB_CATEGORY_NUMERIC
 	    && f->usage == CB_USAGE_DISPLAY
 	    && f->pic->scale == l->scale
-	    && !f->flag_sign_leading
-	    && !f->flag_sign_separate
-	    && !f->flag_blank_zero)
+	    && !f->flag_sign_separate)
 	 || ( (cat == CB_CATEGORY_ALPHABETIC || cat == CB_CATEGORY_ALPHANUMERIC)
 		&& f->size < (int) (l->size + 16)
 		&& !cb_field_variable_size (f))) {
+		const int	diff = (int) (f->size - l->size);
 		buff = cobc_parse_malloc ((size_t)f->size);
-		diff = (int) (f->size - l->size);
 		if (cat == CB_CATEGORY_NUMERIC) {
+			unsigned char		*p;
 			if (diff <= 0) {
 				memcpy (buff, l->data - diff, (size_t)f->size);
 			} else {
@@ -12651,22 +12699,38 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 				}
 			}
 			if (f->pic->have_sign) {
-				p = &buff[f->size - 1];
+				if (f->flag_sign_leading) {
+					p = buff;
+				} else {
+					p = buff + f->size - 1;
+				}
+#if 0	/* Simon: negative zero back by disabling the following code
+´                 included without documentation by Roger in 2.0 */
 				if (!n) {
 					/* Zeros */
 					/* EBCDIC - store sign otherwise nothing */
 					if (cb_ebcdic_sign) {
 						cob_put_sign_ebcdic (p, 1);
 					}
-				} else if (cb_ebcdic_sign) {
+				} else 
+#endif
+				if (cb_ebcdic_sign) {
 					cob_put_sign_ebcdic (p, l->sign);
-				} else if (l->sign < 0) {
+				} else
+				if (l->sign == -1) {
 #ifdef	COB_EBCDIC_MACHINE
 					cob_put_sign_ascii (p);
 #else
 					*p += 0x40;
 #endif
 				}
+			}
+			if (f->flag_blank_zero && !n) {
+				cobc_parse_free (buff);
+				return CB_BUILD_FUNCALL_3 ("memset",
+						   CB_BUILD_CAST_ADDRESS (dst),
+						   cb_int (' '),
+						   CB_BUILD_CAST_LENGTH (dst));
 			}
 		} else {
 			if (f->flag_justified) {
@@ -12734,6 +12798,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 			val /= 10;
 		}
 		if (val == 0) {
+			/* binary cannot store negative zero */
 			return cb_build_move_num_zero (dst);
 		}
 		if (val < 0 && !f->pic->have_sign) {

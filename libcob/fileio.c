@@ -6917,7 +6917,7 @@ cob_pre_open (cob_file *f)
 	/* Obtain the file name */
 	if (f->assign != NULL
 	 && f->assign->data != NULL) {
-		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX, CCM_NONE);
 
 		f->flag_file_map = 1;
 		cob_chk_file_mapping (f, NULL);
@@ -6969,7 +6969,7 @@ cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkfile)
 	f->cur_rec_num = 0;
 	if (f->assign != NULL
 	 && f->assign->data != NULL) {
-		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+		cob_field_to_string (f->assign, file_open_name, COB_FILE_MAX, CCM_NONE);
 	}
 
 	cob_set_file_defaults (f);
@@ -8132,7 +8132,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	}
 
 	/* Obtain the file name */
-	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+	cob_field_to_string (f->assign, file_open_name, COB_FILE_MAX, CCM_NONE);
 	cob_chk_file_mapping (f, NULL);
 	if (f->file_status[0] > '0') {
 		cob_file_save_status (f, fnstatus,
@@ -9707,9 +9707,9 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
 	size_t offset = 0, len;
 	/* Obtain the file name */
-	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX);
+	cob_field_to_string (file->assign, file_open_env, COB_FILE_MAX, CCM_NONE);
 	if (show_resolved_name) {
-		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
+		strncpy (file_open_name, file_open_env, COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_chk_file_mapping (file, NULL);
 	}

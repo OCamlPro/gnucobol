@@ -328,9 +328,8 @@ error:
 static void
 cob_move_display_to_display (cob_field *f1, cob_field *f2)
 {
-	int	sign;
+	const int	sign = COB_GET_SIGN (f1);
 
-	sign = COB_GET_SIGN (f1);
 	store_common_region (f2, COB_FIELD_DATA (f1), COB_FIELD_SIZE (f1),
 			     COB_FIELD_SCALE (f1), 0);
 
@@ -341,25 +340,22 @@ cob_move_display_to_display (cob_field *f1, cob_field *f2)
 static void
 cob_move_display_to_alphanum (cob_field *f1, cob_field *f2)
 {
-	unsigned char	*data1;
-	unsigned char	*data2;
-	size_t		size1;
-	size_t		size2;
-	int		sign;
+	unsigned char	*data1 = COB_FIELD_DATA (f1);
+	unsigned char	*data2 = f2->data;
+	const size_t		size1 = COB_FIELD_SIZE (f1);
+	size_t		size2 = f2->size;
+	/* note: can't use the "adjust" variant here as we don't convert to digit;
+	   CHECKME for using a buffer instead of original data or intermediate_move */
+	const int		sign = COB_GET_SIGN (f1);
 	int		diff;
 	int		zero_size;
 
-	data1 = COB_FIELD_DATA (f1);
-	size1 = COB_FIELD_SIZE (f1);
-	sign = COB_GET_SIGN (f1);
 	if (COB_FIELD_SCALE (f1) < 0) {
 		/* Scaling */
 		zero_size = (int)-COB_FIELD_SCALE (f1);
 	} else {
 		zero_size = 0;
 	}
-	data2 = f2->data;
-	size2 = f2->size;
 	if (COB_FIELD_JUSTIFIED (f2)) {
 		/* Justified right */
 		if (zero_size) {
@@ -434,11 +430,11 @@ cob_move_alphanum_to_alphanum (cob_field *f1, cob_field *f2)
 
 /* Binary Coded Decimal (BCD) - PACKED-DECIMAL (COMP-3) and COMP-6 */
 
-static void
+void
 cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 {
 	unsigned char	*data1 = COB_FIELD_DATA (f1);
-	const int		sign = COB_GET_SIGN (f1);
+	const int		sign = COB_GET_SIGN_ADJUST (f1);
 	const short		scale1 = COB_FIELD_SCALE (f1);
 	const short		scale2 = COB_FIELD_SCALE (f2);
 	unsigned short	 	digits1;
@@ -467,14 +463,14 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	/* skip not available positions */
 	p = data1 + (digits1 - scale1) - (digits2 - scale2);
 	while (p < data1) {
-		p++; i++;
+		p++; i++;	/* note: both p and i are digits */
 	}
 
 	/* zero out target, then transfer data */
 	memset (f2->data, 0, f2->size);
 	{
 		register unsigned char	*q = f2->data + i / 2;
-		const unsigned int i_end = digits2 + i;
+		const unsigned int i_end = digits2 + 1;
 		/* FIXME: get rid of that, adjust i_end accordingly and always end at sign byte */
 		const unsigned char *p_end = data1 + digits1;
 
@@ -486,13 +482,28 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		   we'll read 1 byte "too much = after" from the DISPLAY data;
 		   it is believed that this won't raise a SIGBUS anywhere, but we will need to "clean"
 		   the half-byte before setting the sign */
-		for (; i < i_end && p < p_end; ++i, q++, p += 2) {
-			*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
-			    + COB_D2I (*(p + 1));
+
+		/* check for necessary loop (until we not need the p_end check) */
+		if (i_end - i < (unsigned int)(p_end - p + 1) / 2) {
+			while (i <= i_end) {
+				*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+					+ COB_D2I (*(p + 1));
+				q++;
+				p += 2;
+				i += 2;
+			}
+		} else {
+			while (p < p_end) {
+				*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+					+ COB_D2I (*(p + 1));
+				q++;
+				p += 2;
+			}
 		}
 	}
 
-	COB_PUT_SIGN (f1, sign);
+	COB_PUT_SIGN_ADJUSTED (f1, sign);
+
 	if (COB_FIELD_NO_SIGN_NIBBLE (f2)) {
 		return;
 	}
@@ -500,14 +511,14 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	p = f2->data + f2->size - 1;	/* TODO: ending at the sign byte means we can drop that */
 	if (!COB_FIELD_HAVE_SIGN (f2)) {
 		*p |= 0x0F;
-	} else if (sign == -1) {
+	} else if (sign < 0) {
 		*p = (*p & 0xF0) | 0x0D;
 	} else {
 		*p = (*p & 0xF0) | 0x0C;
 	}
 }
 
-static void
+void
 cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 {
 	unsigned char	buff[COB_MAX_DIGITS + 1];
@@ -540,7 +551,6 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 	} else {
 		/* Unpack PACKED-DECIMAL / COMP-3 to integer */
 		const size_t offset = 1 - digits % 2;
-		int		sign;
 		if (offset == 1) {
 			*b++ = COB_I2D (*d++ & 0x0F);
 		}
@@ -549,11 +559,10 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 			*b++ = COB_I2D (*d++ & 0x0F);
 		}
 		*b++ = COB_I2D (*d >> 4);
-		sign = ((*d & 0x0F) == 0x0D) ? -1 : 1;
 
 		/* Store */
 		store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1), 1);
-		COB_PUT_SIGN (f2, sign);
+		COB_PUT_SIGN (f2, ((*d & 0x0F) == 0x0D) ? -1 : 1);
 	}
 
 }
@@ -654,12 +663,12 @@ cob_move_binary_to_binary (cob_field *f1, cob_field *f2)
 static void
 cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 {
-	const int		sign = COB_GET_SIGN (f1);
 	const unsigned char	*data1 = COB_FIELD_DATA (f1);
 	const size_t		size1 = COB_FIELD_SIZE (f1);
 	unsigned short target_digits;
 	cob_u64_t	val;
 	size_t		i, size;
+	int		sign;
 
 	if (f1->size > 18
 	 || f2->size > sizeof (val)) {	/* Large Binary field */
@@ -683,10 +692,10 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 			target_digits = scale > 0 ? digits : digits + scale;
 		}
 		if (target_digits > size) {
-			target_digits = size;
+			target_digits = (unsigned short)size;
 		}
 	} else {
-		target_digits = size;
+		target_digits = (unsigned short)size;
 	}
 
 	/* Skip leading zeros (and zero-like-data like space/low-value) */
@@ -708,6 +717,7 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 		return;
 	}
 
+	sign = COB_GET_SIGN_ADJUST (f1);
 	for ( ; i < size; ++i) {
 		if (i < size1) {
 			val = val * 10 + COB_D2I (data1[i]);
@@ -728,7 +738,7 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 		cob_binary_mset_uint64 (f2, val);
 	}
 
-	COB_PUT_SIGN (f1, sign);
+	COB_PUT_SIGN_ADJUSTED (f1, sign);
 }
 
 static void
@@ -788,6 +798,9 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 	unsigned char	*max = min + COB_FIELD_SIZE (f1);
 	unsigned char	*end = f2->data + f2->size;
 	unsigned char	*decimal_point = NULL;
+	/* note: can't use the "adjust" variant here as we don't convert to digit
+	   to explicit keep invalid data "as is";
+	   CHECKME for using a buffer instead of original data */
 	const int		sign = COB_GET_SIGN (f1);
 	int		neg = (sign < 0) ? 1 : 0;
 	int		count = 0;
@@ -815,7 +828,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 	unsigned char	*last_fixed_insertion_pos = NULL;
 	unsigned char   last_fixed_insertion_char = '\0';
 
-	/* Count the number of digit places before decimal point */
+	/* Setup counters (only before decimal point) */
 	/*
 	  TO-DO: This is computed in cb_build_picture; add computed results to
 	  cb_field / new overlay cb_field_edited and use those.
@@ -845,7 +858,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 		}
 	}
 
-	/* now go on after the decimal point */
+	/* now insert data to destination */
 	src = max - COB_FIELD_SCALE (f1) - count;
 	if(COB_FIELD_PIC (f2) == NULL) {
 		/* There is no PIC present so assume all PIC 9s */
@@ -868,7 +881,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 			case '9':
 				x = (min <= src && src < max) ? *src++ : (src++, '0');
 				if (x != '0') {
-					is_zero = suppress_zero = 0;
+					is_zero = 0;
 				}
 				suppress_zero = 0;
 				trailing_sign = 1;
@@ -1213,6 +1226,8 @@ cob_move_alphanum_to_edited (cob_field *f1, cob_field *f2)
 	unsigned char	*dst = f2->data;
 	unsigned char	*src = COB_FIELD_DATA (f1);
 	const unsigned char	*max = src + COB_FIELD_SIZE (f1);
+	/* note: can't use the "adjust" variant here as we don't convert to digit;
+	   CHECKME for using a buffer instead of original data or intermediate_move */
 	const int	sign = COB_GET_SIGN (f1);
 
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
@@ -1237,6 +1252,7 @@ cob_move_alphanum_to_edited (cob_field *f1, cob_field *f2)
 			}
 		}
 	}
+
 	COB_PUT_SIGN (f1, sign);
 }
 
@@ -1558,7 +1574,7 @@ cob_move (cob_field *src, cob_field *dst)
 							val /= cob_exp10_ll[diff_scale];
 						}
 						if (val >= INT_MIN && val <= INT_MAX) {
-							cob_set_packed_int (dst, val);
+							cob_set_packed_int (dst, (int)val);
 							return;
 						}
 					}
@@ -1985,7 +2001,7 @@ cob_display_get_int (cob_field *f)
 {
 	const short	scale = COB_FIELD_SCALE (f);
 	const unsigned char	*data = COB_FIELD_DATA (f);
-	const int		sign = COB_GET_SIGN (f);
+	const int		sign = COB_GET_SIGN_ADJUST (f);
 	size_t		size = COB_FIELD_SIZE (f);
 	size_t		i;
 	int		val = 0;
@@ -2013,7 +2029,7 @@ cob_display_get_int (cob_field *f)
 		val = -val;
 	}
 
-	COB_PUT_SIGN (f, sign);
+	COB_PUT_SIGN_ADJUSTED (f, sign);
 	return val;
 }
 
@@ -2022,7 +2038,7 @@ display_get_long_long (cob_field *f)
 {
 	const short	scale = COB_FIELD_SCALE (f);
 	const unsigned char	*data = COB_FIELD_DATA (f);
-	const int		sign = COB_GET_SIGN (f);
+	const int		sign = COB_GET_SIGN_ADJUST (f);
 	size_t		size = COB_FIELD_SIZE (f);
 	size_t		i;
 	cob_s64_t	val = 0;
@@ -2050,7 +2066,7 @@ display_get_long_long (cob_field *f)
 		val = -val;
 	}
 
-	COB_PUT_SIGN (f, sign);
+	COB_PUT_SIGN_ADJUSTED (f, sign);
 	return val;
 }
 
@@ -2871,7 +2887,7 @@ cob_get_picx (void *cbl_data, size_t len, void *char_field, size_t num_chars)
 }
 
 void
-cob_put_picx( void *cbl_data, size_t len, void *string)
+cob_put_picx (void *cbl_data, size_t len, void *string)
 {
 	size_t	i, j;
 	cob_u8_t	*p = cbl_data;

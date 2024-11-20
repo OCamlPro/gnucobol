@@ -204,7 +204,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		char	assign_to[COB_FILE_BUFF];
 		size_t	fnlen;
 		if (f->assign) {
-			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX);
+			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX, CCM_NONE);
 		} else if (f->select_name) {
 			strncpy (assign_to, f->select_name, COB_FILE_MAX);
 			assign_to[COB_FILE_MAX] = 0;

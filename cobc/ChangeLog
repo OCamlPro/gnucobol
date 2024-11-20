@@ -50,6 +50,69 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_check_valid_name): allow leading underscore,
+	  prevent leading hyphen
+	* scanner.l (error_literal): change parameter literal_error to unsigned
+	  and raise only a warning for negative values, adjust callers
+	* scanner.l (scan_x): internally handle odd numbers of x'' literals,
+	  raise only a warning if the size is 1 and relaxed-syntax is active
+	* parser.y (data_description): improve error handling in DATA DIVISION
+	  to raise less errors and create "validated invalid" fields
+
+2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_build_field_tree), parser.y: copy SCREEN SECTION
+	  attributes from parent - instead of doing it in the parser
+	* parser.y (validate_screen_attributes): extracted duplicate code
+	* typeck.c (emit_field_accept_display): new function extracted
+	  from (cb_emit_accept), handling both DISPLAY and ACCEPT
+	* typeck.c (cob_field_display): dropped, replaced in the callers
+	  by call to (emit_field_accept_display) for not generating a call to
+	  fixed-attribute "cob_field_display" but to the varargs
+	  function "cob_display_field"
+	* codegen.c (output_screen_init), codeoptim.c (COB_SET_SCREEN):
+	  generate screen init not as separate function "cob_set_screen" but
+	  as macro "COB_SET_SCREEN" (there's no need or use to put all
+	  attributes on the stack)
+
+2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_funcall): backup and restore adjusted static fields,
+	  minor refactoring
+	* codegen.c (output_funcall_item): extracted from (output_funcall)
+	* typeck.c (cb_emit_accept): dropped cb_gen_field_accept and don't generate
+	  call to fixed-attribute "cob_field_accept", instead generate a call to
+	  the varargs function "cob_accept_field" with passing only the attributes
+	  that are set (including the new CONTROL, COLOR and CURSOR)
+
+2023-05-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_funcall), tree.h (struct cb_funcall): defined
+	  max. parameters for internal function calls as CB_BUILD_FUNCALL_MAX
+	  and increased it to 14
+
+	FR #189 + FR #355 - runtime-adjustable attributes for extended screenio
+	* tree.h (cb_field): new attributes screen_control and screen_color
+	* tree.h (cb_attr_struct): new attributes control, color and cursor
+	* parser.y, typeck.c (validate_attrs, cb_emit_accept, cb_emit_display,
+	  emit_field_display_for_last): add complete parsing for CONTROL,
+	  COLOR and CURSOR and set/read new attributes as appropriate
+	* parser.y: pass COB_SCREEN_CONV to runtime (currently not handled)
+
+2023-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_resolve_redefines): fix #881 wrong REDEFINES error on
+	  fields with redefinition
+
+2023-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_literal): restore writing of negative zero
+	  (DISPLAY overpunched), that was removed undocumented with 2.0
+	* typeck.c (cb_build_move_literal): optimized output for literals to
+	  fields with BLANK WHEN ZERO and SIGN LEADING
+
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_so_load_version_check): new function to generate

@@ -475,10 +475,10 @@ cob_inspect_init_common (cob_field *var)
 	if (COB_FIELD_HAVE_SIGN (var) && !COB_FIELD_SIGN_SEPARATE(var)) {
 		/* it is allowed to TRANSFORM / INSPECT a numeric display signed element;
 		   if it isn't stored separately we need to "remove" it here and add it back
-		   in inspect_finish */
+		   in inspect_finish; note: we only handle NUMERIC DISPLAY here */
 		inspect_var_copy = *var;
 		inspect_var = &inspect_var_copy;
-		inspect_sign = cob_real_get_sign (var);
+		inspect_sign = cob_real_get_sign (var, 0);
 	} else {
 		inspect_var = NULL;
 	}

@@ -247,3 +247,5 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 - Check if should use strcpy or memcpy with computed max-length for file_open_name in fileio.c:cob_open
 
 - Check what we should do about the casts used to remove const on open_mode in fileio.c and others (eg. in cob_file_open)
+
+- Investigate failed manual tests "CRT STATUS clause" and "X/Open CRT STATUS clause" (see r4180)
