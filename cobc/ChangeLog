@@ -50,6 +50,11 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: disable unreached code removement with -O0, but keep it
+	  unchanged for -g
+
 2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (control_source): allow both an alphanumeric identifier or
