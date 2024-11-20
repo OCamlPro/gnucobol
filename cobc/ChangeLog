@@ -50,6 +50,11 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: allow expressions for screen related clauses
+	  COL, LINE, LINES, SIZE, COLOR
+
 2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
