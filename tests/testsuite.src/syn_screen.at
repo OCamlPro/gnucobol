@@ -313,7 +313,8 @@ AT_CLEANUP
 
 # ToDo: add all clauses, maybe split into multiple tests
 AT_SETUP([Screen clauses])
-AT_KEYWORDS([screen])
+AT_KEYWORDS([FULL REQUIRED LEFTLINE RIGHTLINE
+OVERLINE UNDERLINE GRID])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -323,16 +324,15 @@ AT_DATA([prog.cob], [
        01  foo          PIC X.
        SCREEN           SECTION.
        01  scr.
-           03  a        PIC X TO foo FULL, LEFTLINE, OVERLINE, REQUIRED,
+           03  a        PIC X TO foo FULL, REQUIRED,
+                        LEFTLINE, RIGHTLINE, OVERLINE, UNDERLINE,
                         GRID.
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:9: warning: LEFTLINE is not implemented
-prog.cob:9: warning: OVERLINE is not implemented
-prog.cob:10: warning: GRID is not implemented
+[prog.cob:11: warning: GRID is not implemented
 ])
 
 AT_CLEANUP
