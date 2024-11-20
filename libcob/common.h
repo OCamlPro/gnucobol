@@ -1063,18 +1063,20 @@ enum cob_open_mode {
 
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
-	 COB_STORE_TRUNC_ON_OVERFLOW)
+	 COB_STORE_TRUNC_ON_OVERFLOW | COB_STORE_NO_SIZE_ERROR)
 
 /* Screen attribute defines */
 
-#define COB_SCREEN_BLACK		0
-#define COB_SCREEN_BLUE			1
-#define COB_SCREEN_GREEN		2
-#define COB_SCREEN_CYAN			3
-#define COB_SCREEN_RED			4
-#define COB_SCREEN_MAGENTA		5
-#define COB_SCREEN_YELLOW		6
-#define COB_SCREEN_WHITE		7
+enum cob_colors {
+	COB_SCREEN_BLACK	= 0,
+	COB_SCREEN_BLUE		= 1,
+	COB_SCREEN_GREEN	= 2,
+	COB_SCREEN_CYAN		= 3,
+	COB_SCREEN_RED		= 4,
+	COB_SCREEN_MAGENTA	= 5,
+	COB_SCREEN_YELLOW	= 6,
+	COB_SCREEN_WHITE	= 7
+};
 
 typedef cob_s64_t cob_flags_t;
 
@@ -1108,11 +1110,12 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_EMULATE_NL		((cob_flags_t)1 << 27)
 #define COB_SCREEN_UPPER		((cob_flags_t)1 << 28)
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
-#define COB_SCREEN_GRID			((cob_flags_t)1 << 30)
+#define COB_SCREEN_CONV			((cob_flags_t)1 << 30)
 /*#define COB_SCREEN_reserved		((cob_flags_t)1 << 31) /+ reserved for next flag used in screenio */
 #define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_GRID			((cob_flags_t)1 << 35) /* used for syntax checking */
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1468,7 +1471,9 @@ struct cob_func_loc {
 	int			save_num_params;
 };
 
-/* File connector */
+
+/** File connector **/
+
 
 /* Key structure */
 
@@ -2066,7 +2071,7 @@ struct cob_time
 
 /* note: these are internal (cobc/libcob -> libcob) only functions */
 COB_EXPIMP struct cob_time cob_get_current_date_and_time	(void);	/* returning datetime without nanos */
-COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, const char *);
+COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, unsigned const char *);
 
 COB_EXPIMP void cob_sleep_msec (const unsigned int);
 
@@ -2310,6 +2315,8 @@ COB_EXPIMP void		cob_screen_display	(cob_screen *, cob_field *,
 COB_EXPIMP void		cob_screen_accept	(cob_screen *, cob_field *,
 					 cob_field *, cob_field *,
 					 const int);
+COB_EXPIMP void		cob_accept_field	(cob_field *, const cob_flags_t, const char *, ...);
+COB_EXPIMP void		cob_display_field	(cob_field *, const cob_flags_t, const char *, ...);
 COB_EXPIMP void		cob_field_display	(cob_field *, cob_field *, cob_field *,
 					 cob_field *, cob_field *, cob_field *,
 					 cob_field *, const cob_flags_t);

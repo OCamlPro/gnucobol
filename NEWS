@@ -423,6 +423,11 @@ Open Plans:
    previous versions; sources with *leading* P never worked correct before,
    and *must* be recompiled after upgrading
 
+** since its addition to GnuCOBOL ROUNDING MODE PROHIBITED just prevented
+   rounding; its behaviour changed to match the specification by doing that,
+   raising EC-SIZE-TRUNCATION and changed: not adjust the target field if
+   rounding would be necessary to store the data
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like

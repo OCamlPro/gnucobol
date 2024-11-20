@@ -83,10 +83,129 @@
 	* fileio.c (cob_file_sort_options), common.h: new function to pass more
 	  options, so far only used to set flag_merge
 
+2023-05-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_screen_attr): always parse COBOL and curses color value
+	* screenio.c (cob_to_curses_color): signature changed - operate on integer
+	  to be reusable for CONTROL handling,
+	  separate return value instead of setting the default color
+	* screenio.c (adjust_attr_from_extended_color): new function directly
+	  handling the attribute adjustment, replaced (has_extended_color)
+	* screenio.c (handle_control_field_color, get_cob_color_from_color_value):
+	  new functions to get COBOL color number from text and handling it
+	* common.h (cob_colors): changed color defines to enum
+	* move.c: fix some compiler warnings by explicit casts
+	* fix non-constant aggregate initializer for dynamic field/attr/pic
+
+2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (adjust_attr_from_color_field,
+	  adjust_attr_from_control_field): new functions to adjust screenio
+	  attributes during runtime via COLOR and CONTROL fields
+	  (later function mostly a stub with minimal "parsing" so far)
+	* screenio.c (cob_screen_attr): refactor to read colors first, allowing
+	  later override via new functions
+	* screenio.c (cob_screen_set_mode, cob_screen_line_col): minor refactoring
+
+2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cconv.c (cob_field_to_string): moved from common.c
+	* cconv.c (cob_init_cconv), coblocal.h, common.c: added
+	* cconv.c (cob_toupper, cob_tolower, cob_init_cconv), coblocal.h:
+	  included (copy from cobc/reserved.c)
+	* coblocal.h (enum cob_case_modifier): new enum to select case-adjustment
+	* cconv.c (cob_field_to_string), coblocal.h: adjusted function signature,
+	  allowing for optional change of case during copy and returning the size
+	  to process or negative error values in case of "no data to process"
+	* cconv.c (cob_field_to_string): return error if truncating would be
+	  necessary
+	* reportio.c, intrinsic.c, fileio.c->fextfh.c,fsqlxfd.c, common.c, call.c: adjusted for new
+	  signature of cob_field_to_string
+	* intrinsic.c (locale_time, cob_intr_locale_date, cob_intr_locale_compare):
+	  always use full locale string passed, error handling improved
+	* common.c (cob_set_locale, cob_get_environment, cob_display_env_value):
+	  use local buffer, error handling improved
+
+	FR #189 + FR #355 - runtime-adjustable attributes for extended screenio
+	* screenio.c (cob_accept_field, cob_display_field), common.h: new vararg
+	  functions to take variable attribute fields, including the new fields
+	  CONTROL, COLOR and CURSOR
+	* screenio.c (field_accept): added cursor parameter and handle it for both
+	  "initial cursor position" and - if it isn't a constant - also for "exit
+	  cursor position", count max-pos on input allowing position to last
+	  position if CURSOR is outside of the data
+	* screenio.c (field_accept, field_display, cob_screen_attr): added color
+	  and control parameters
+	* common.h: COB_SCREEN_CONV new attribute, moved "parsing only" attribute
+	  COB_SCREEN_GRID to higher number
+
+2023-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	cleanup for handling ASCII/EBCDIC sign overpunch
+	* common.c (cob_get_sign_ebcdic) [COB_EBCDIC_MACHINE]: direct check of
+	  sign nibble
+	* common.c (cob_get_sign_ebcdic) [!COB_EBCDIC_MACHINE]: adjusted handling
+	  of invalid data
+	* common.c (cob_real_get_sign), coblocal.h: additional argument to specify
+	  if data has to be always unpunched (old behavior) or only for systems
+	  not matching the sign (e. g. non-ebcdic machine with ebcdic-sign) where
+	  unpunch is needed to get the numeric data (otherwise we already get it
+	  by bit-masking); added new macros COB_GET_SIGN_ADJUST and
+	  COB_PUT_SIGN_ADJUSTED that use this to only overwrite data when necessary
+	* common.c (cob_cmp_all, cob_cmp_alnum),
+	  move.c (cob_move_display_to_packed, cob_move_display_to_binary,
+	  cob_display_get_int, display_get_long_long),
+	  numeric.c (cob_decimal_set_display, cob_display_add_int): use of
+	  COB_GET_SIGN_ADJUST / COB_PUT_SIGN_ADJUSTED for better performance and
+	  less "changing read-only source data"
+	* common.c (cob_cmp_all, cob_cmp_alnum): handle numeric fields with
+	  SIGN LEADING SEPARATE correctly, minor optimization by reading the
+	  data/size pointer only once
+
+2023-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add, cob_addsub_optimized): also use (cob_add_bcd) if the
+	  added/subtracted field is one of the usages DISPLAY/COMP-5/BINARY as
+	  converting this to BCD and using this function is much faster than
+	  converting everything to cob_decimal first, then using the fast GMP
+	  compute, then converting the cob_decimal to BCD back
+	* move.c (cob_move_display_to_packed, cob_move_packed_to_display),
+	  coblocal.h: make functions accessible within libcob
+	* move.c (cob_move_display_to_packed): performance adjustment by moving a
+	  check out of a loop
+
+2023-04-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add_bcd): don't execute rounding if COB_STORE_TRUNCATION
+	  is requested
+	* numeric.c (cob_add_bcd): combined some code paths for less duplication
+	* numeric.c (handle_bcd_rounding): extracted from (cob_add_bcd) to remove
+	  code duplication and allow code flow to be followed easier
+
+2023-04-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (explain_field_type): distinguish COMP-6 and unsigned packed
+	  from PACKED-DECIMAL
+	* (check_current_date): switched to iterating over COB_CURENT_DATE
+	  by pointer
+	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 for BCD ADD
+	  with tuning for even more speed by using best matching types and
+	  refactoring, calling the new cob_add_bcd internally from
+	  (cob_add, cob_sub) if all fields are BCD
+	* numeric.c (cob_add_bcd, check_overflow_fix_final_sign): fix handling
+	  for COB_STORE_KEEP_ON_OVERFLOW and edge-case bugs
+
 2023-04-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
 	  simplify code, following idea by of Chuck Haatveet
+	* common.c (cob_is_numeric): speedup by using new macro IS_INVALID_BCD_DATA
+	  which uses the new lookup table b2i
+	* common.c: new macros IS_VALID_DIGIT_DATA / IS_INVALID_DIGIT_DATA added
+	  and used
+	* numeric.c (cob_decimal_do_round, cob_decimal_get_field): fix
+	  COB_STORE_PROHIBITED to not overwrite target data and always raise an
+	  exception if rounding would be necessary
 
 2023-04-26  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -100,11 +219,13 @@
 	* move.c (store_common_region): speedup by not re-validating data if caller
 	  already provides that; adjusted callers to specify that
 	* common.c (cob_sys_hosted): prefer memcmp over strncmp with known size
+	* common.c (, cob_sys_hosted): handling timezone functions
 
 2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 with tuning
-	  for even more speed by using best matching types and refactoring
+	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 for BCD MOVE
+	  with tuning for even more speed by using best matching types and
+	  refactoring
 	* common.h: added cob_move_bcd as external function declaration
 	* move.c (cob_move): add call to cob_move_bcd for fields without negative
 	  scale
@@ -177,6 +298,9 @@
 	* numeric.c (cob_shift_left_nibble, cob_shift_right_nibble): variants of
 	  insert_packed_aligned for cob_move_bcd
 	* numeric.c (cob_move_bcd): added for highly improved BCD MOVE,
+	  saving more than 50% cpu cycles
+	* numeric.c (cob_add_bcd, check_overflow_fix_final_sign,
+	  count_leading_zeros): added for highly improved BCD ADD,
 	  saving more than 50% cpu cycles
 
 2023-03-27  Simon Sobisch <simonsobisch@gnu.org>
