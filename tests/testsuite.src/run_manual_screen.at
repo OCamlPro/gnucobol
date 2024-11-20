@@ -1220,10 +1220,6 @@ AT_SETUP([field BACKGROUND- / FOREGROUND-COLOUR via CONTROL])
 AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
 COLOR COLOUR REVERSED HIGHLIGHT BLINK])
 
-# Currently unfinished in libcob only
-AT_XFAIL_IF([true])
-
-
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
 AT_DATA([prog.cob], [
@@ -1235,23 +1231,23 @@ AT_DATA([prog.cob], [
            88  success  VALUE 'Y', 'y'.
 
       * ACU: "=", names only
-       77  CBLACK       PIC X(99) VALUE "FGCOLOR=BLACK, "
-                                      & "BGCOLOR=WHITE,".
-       77  CBLUE        PIC X(99) VALUE "FGCOLOR=BLUE  , "
-                                      & "BGCOLOR=BLACK,".
+       77  CBLACK       PIC X(99) VALUE "FCOLOR=BLACK, "
+                                      & "BCOLOR=WHITE,".
+       77  CBLUE        PIC X(99) VALUE "FCOLOR=BLUE  , "
+                                      & "BCOLOR=BLACK,".
       * MF: "IS" or "=" or " ", also extended color numbers
-       77  CGREEN       PIC X(99) VALUE "FGCOLOR IS GREEN, "
-                                      & "BGCOLOR BLACK,".
-       77  CCYAN        PIC X(99) VALUE "FGCOLOR  =CYAN, "
-                                      & "BGCOLOR= BLACK, ".
-       77  CRED         PIC X(99) VALUE "FGCOLOR=RED, "
-                                      & "BGCOLOR=BLACK, ".
-       77  CMAGENTA     PIC X(99) VALUE "FGCOLOR=MAGENTA, "
-                                      & "BGCOLOR=BLACK,".
-       77  CYELLOW      PIC X(99) VALUE "FGCOLOR = 6, "
-                                      & "BGCOLOR=BLACK,".
-       77  CWHITE       PIC X(99) VALUE "FGCOLOR=WHITE, "
-                                      & "BGCOLOR=BLACK, ".
+       77  CGREEN       PIC X(99) VALUE "FCOLOR IS GREEN, "
+                                      & "BCOLOR BLACK,".
+       77  CCYAN        PIC X(99) VALUE "FCOLOR  =CYAN, "
+                                      & "BCOLOR= BLACK, ".
+       77  CRED         PIC X(99) VALUE "FCOLOR=RED "
+                                      & "BCOLOR=BLACK, ".
+       77  CMAGENTA     PIC X(99) VALUE "FCOLOR=MAGENTA, "
+                                      & "BCOLOR=BLACK,".
+       77  CYELLOW      PIC X(99) VALUE "FCOLOR = 6, "
+                                      & "BCOLOR=BLACK,".
+       77  CWHITE       PIC X(99) VALUE "FCOLOR=WHITE, "
+                                      & "BCOLOR=BLACK, ".
        
        77  LIN          PIC 99    COMP-5.
 
@@ -1323,7 +1319,7 @@ AT_DATA([prog.cob], [
            DISPLAY scrwhite LINE LIN COL 77, CONTROL CWHITE.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [ignore])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
