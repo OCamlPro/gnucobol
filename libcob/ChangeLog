@@ -1,4 +1,10 @@
 
+2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_screen_get_all): fixed Bug #999
+	  directly position to the cursor position within the
+	  field according to CURSOR clause
+
 2024-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_sig_handler): moved call of cob_exit_screen_from_signal
