@@ -1,4 +1,13 @@
 
+2024-11-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed
+	  Bug #1008: regression in move to numeric edited
+	  items with insertion symbols B, 0 and /
+	* move.c (optimized_move_display_to_edited): minor refactoring
+	* system.def, move.c: added definition for COBOL2025
+	  COB_EC_DATA_NULL + COB_EC_DATA_TRUNCATION (currently not used)
+
 2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_screen_get_all): fixed Bug #999
