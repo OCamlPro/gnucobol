@@ -2269,9 +2269,6 @@ validate_elementary_item (struct cb_field *f)
 		f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 0);
 		f->flag_real_binary = 1;
 		break;
-	case CB_USAGE_COMP_5:
-		f->flag_real_binary = 1;
-		break;
 	default:
 		break;
 	}
@@ -2516,8 +2513,6 @@ setup_parameters (struct cb_field *f)
 		break;
 
 	case CB_USAGE_COMP_5:
-		f->flag_real_binary = 1;
-		/* Fall-through */
 	case CB_USAGE_COMP_X:
 	case CB_USAGE_COMP_N:
 		if (f->pic->category == CB_CATEGORY_ALPHANUMERIC) {

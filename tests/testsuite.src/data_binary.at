@@ -2265,3 +2265,460 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([Fixed BINARY size])
+AT_KEYWORDS([binary])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY. FUNCTION BYTE-LENGTH INTRINSIC.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-BCS  BINARY-CHAR    SIGNED.
+       01 WS-BCU  BINARY-CHAR    UNSIGNED.
+       01 WS-BSS  BINARY-SHORT   SIGNED.
+       01 WS-BSU  BINARY-SHORT   UNSIGNED.
+       01 WS-BLS  BINARY-LONG    SIGNED.
+       01 WS-BLU  BINARY-LONG    UNSIGNED.
+       01 WS-BDS  BINARY-DOUBLE  SIGNED.
+       01 WS-BDU  BINARY-DOUBLE  UNSIGNED.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           IF BYTE-LENGTH(WS-BCS) <> 1
+               DISPLAY "BAD BINARY-CHAR SIGNED".
+           IF BYTE-LENGTH(WS-BCU) <> 1
+               DISPLAY "BAD BINARY-CHAR UNSIGNED".
+           IF BYTE-LENGTH(WS-BSS) <> 2
+               DISPLAY "BAD BINARY-SHORT SIGNED".
+           IF BYTE-LENGTH(WS-BSU) <> 2
+               DISPLAY "BAD BINARY-SHORT UNSIGNED".
+           IF BYTE-LENGTH(WS-BLS) <> 4
+               DISPLAY "BAD BINARY-LONG SIGNED".
+           IF BYTE-LENGTH(WS-BLU) <> 4
+               DISPLAY "BAD BINARY-LONG UNSIGNED".
+           IF BYTE-LENGTH(WS-BDS) <> 8
+               DISPLAY "BAD BINARY-DOUBLE SIGNED".
+           IF BYTE-LENGTH(WS-BDU) <> 8
+               DISPLAY "BAD BINARY-DOUBLE UNSIGNED".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wno-constant-expression -fbinary-size=1-2-4-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-constant-expression -fbinary-size=2-4-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-constant-expression -fbinary-size=1--8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([COMP-5 binary size])
+AT_KEYWORDS([binary])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY. FUNCTION BYTE-LENGTH INTRINSIC.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 WS-1    PIC V9(1)     COMP-5.
+       01 WS-2    PIC V9(2)     COMP-5.
+       01 WS-3    PIC V9(3)     COMP-5.
+       01 WS-4    PIC V9(4)     COMP-5.
+       01 WS-5    PIC V9(5)     COMP-5.
+       01 WS-6    PIC V9(6)     COMP-5.
+       01 WS-7    PIC V9(7)     COMP-5.
+       01 WS-8    PIC V9(8)     COMP-5.
+       01 WS-9    PIC V9(9)     COMP-5.
+       01 WS-10   PIC V9(10)    COMP-5.
+       01 WS-11   PIC V9(11)    COMP-5.
+       01 WS-12   PIC V9(12)    COMP-5.
+       01 WS-13   PIC V9(13)    COMP-5.
+       01 WS-14   PIC V9(14)    COMP-5.
+       01 WS-15   PIC V9(15)    COMP-5.
+       01 WS-16   PIC V9(16)    COMP-5.
+       01 WS-17   PIC V9(17)    COMP-5.
+       01 WS-18   PIC V9(18)    COMP-5.
+
+       01 WS-P1   PIC VPP9(1)   COMP-5.
+       01 WS-P2   PIC VPP9(2)   COMP-5.
+       01 WS-P3   PIC VPP9(3)   COMP-5.
+       01 WS-P4   PIC VPP9(4)   COMP-5.
+       01 WS-P5   PIC VPP9(5)   COMP-5.
+       01 WS-P6   PIC VPP9(6)   COMP-5.
+       01 WS-P7   PIC VPP9(7)   COMP-5.
+       01 WS-P8   PIC VPP9(8)   COMP-5.
+       01 WS-P9   PIC VPP9(9)   COMP-5.
+       01 WS-P10  PIC VPP9(10)  COMP-5.
+       01 WS-P11  PIC VPP9(11)  COMP-5.
+       01 WS-P12  PIC VPP9(12)  COMP-5.
+       01 WS-P13  PIC VPP9(13)  COMP-5.
+       01 WS-P14  PIC VPP9(14)  COMP-5.
+       01 WS-P15  PIC VPP9(15)  COMP-5.
+       01 WS-P16  PIC VPP9(16)  COMP-5.
+       01 WS-P17  PIC VPP9(17)  COMP-5.
+       01 WS-P18  PIC VPP9(18)  COMP-5.
+
+       01 WS-S1   PIC SV9(1)    COMP-5.
+       01 WS-S2   PIC SV9(2)    COMP-5.
+       01 WS-S3   PIC SV9(3)    COMP-5.
+       01 WS-S4   PIC SV9(4)    COMP-5.
+       01 WS-S5   PIC SV9(5)    COMP-5.
+       01 WS-S6   PIC SV9(6)    COMP-5.
+       01 WS-S7   PIC SV9(7)    COMP-5.
+       01 WS-S8   PIC SV9(8)    COMP-5.
+       01 WS-S9   PIC SV9(9)    COMP-5.
+       01 WS-S10  PIC SV9(10)   COMP-5.
+       01 WS-S11  PIC SV9(11)   COMP-5.
+       01 WS-S12  PIC SV9(12)   COMP-5.
+       01 WS-S13  PIC SV9(13)   COMP-5.
+       01 WS-S14  PIC SV9(14)   COMP-5.
+       01 WS-S15  PIC SV9(15)   COMP-5.
+       01 WS-S16  PIC SV9(16)   COMP-5.
+       01 WS-S17  PIC SV9(17)   COMP-5.
+       01 WS-S18  PIC SV9(18)   COMP-5.
+
+       01 WS-SP1  PIC SVPP9(1)  COMP-5.
+       01 WS-SP2  PIC SVPP9(2)  COMP-5.
+       01 WS-SP3  PIC SVPP9(3)  COMP-5.
+       01 WS-SP4  PIC SVPP9(4)  COMP-5.
+       01 WS-SP5  PIC SVPP9(5)  COMP-5.
+       01 WS-SP6  PIC SVPP9(6)  COMP-5.
+       01 WS-SP7  PIC SVPP9(7)  COMP-5.
+       01 WS-SP8  PIC SVPP9(8)  COMP-5.
+       01 WS-SP9  PIC SVPP9(9)  COMP-5.
+       01 WS-SP10 PIC SVPP9(10) COMP-5.
+       01 WS-SP11 PIC SVPP9(11) COMP-5.
+       01 WS-SP12 PIC SVPP9(12) COMP-5.
+       01 WS-SP13 PIC SVPP9(13) COMP-5.
+       01 WS-SP14 PIC SVPP9(14) COMP-5.
+       01 WS-SP15 PIC SVPP9(15) COMP-5.
+       01 WS-SP16 PIC SVPP9(16) COMP-5.
+       01 WS-SP17 PIC SVPP9(17) COMP-5.
+       01 WS-SP18 PIC SVPP9(18) COMP-5.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "V9(1):     " BYTE-LENGTH (WS-1).
+           DISPLAY "V9(2):     " BYTE-LENGTH (WS-2).
+           DISPLAY "V9(3):     " BYTE-LENGTH (WS-3).
+           DISPLAY "V9(4):     " BYTE-LENGTH (WS-4).
+           DISPLAY "V9(5):     " BYTE-LENGTH (WS-5).
+           DISPLAY "V9(6):     " BYTE-LENGTH (WS-6).
+           DISPLAY "V9(7):     " BYTE-LENGTH (WS-7).
+           DISPLAY "V9(8):     " BYTE-LENGTH (WS-8).
+           DISPLAY "V9(9):     " BYTE-LENGTH (WS-9).
+           DISPLAY "V9(10):    " BYTE-LENGTH (WS-10).
+           DISPLAY "V9(11):    " BYTE-LENGTH (WS-11).
+           DISPLAY "V9(12):    " BYTE-LENGTH (WS-12).
+           DISPLAY "V9(13):    " BYTE-LENGTH (WS-13).
+           DISPLAY "V9(14):    " BYTE-LENGTH (WS-14).
+           DISPLAY "V9(15):    " BYTE-LENGTH (WS-15).
+           DISPLAY "V9(16):    " BYTE-LENGTH (WS-16).
+           DISPLAY "V9(17):    " BYTE-LENGTH (WS-17).
+           DISPLAY "V9(18):    " BYTE-LENGTH (WS-18).
+
+           DISPLAY "VPP9(1):   " BYTE-LENGTH (WS-P1).
+           DISPLAY "VPP9(2):   " BYTE-LENGTH (WS-P2).
+           DISPLAY "VPP9(3):   " BYTE-LENGTH (WS-P3).
+           DISPLAY "VPP9(4):   " BYTE-LENGTH (WS-P4).
+           DISPLAY "VPP9(5):   " BYTE-LENGTH (WS-P5).
+           DISPLAY "VPP9(6):   " BYTE-LENGTH (WS-P6).
+           DISPLAY "VPP9(7):   " BYTE-LENGTH (WS-P7).
+           DISPLAY "VPP9(8):   " BYTE-LENGTH (WS-P8).
+           DISPLAY "VPP9(9):   " BYTE-LENGTH (WS-P9).
+           DISPLAY "VPP9(10):  " BYTE-LENGTH (WS-P10).
+           DISPLAY "VPP9(11):  " BYTE-LENGTH (WS-P11).
+           DISPLAY "VPP9(12):  " BYTE-LENGTH (WS-P12).
+           DISPLAY "VPP9(13):  " BYTE-LENGTH (WS-P13).
+           DISPLAY "VPP9(14):  " BYTE-LENGTH (WS-P14).
+           DISPLAY "VPP9(15):  " BYTE-LENGTH (WS-P15).
+           DISPLAY "VPP9(16):  " BYTE-LENGTH (WS-P16).
+           DISPLAY "VPP9(17):  " BYTE-LENGTH (WS-P17).
+           DISPLAY "VPP9(18):  " BYTE-LENGTH (WS-P18).
+
+           DISPLAY "SV9(1):    " BYTE-LENGTH (WS-S1).
+           DISPLAY "SV9(2):    " BYTE-LENGTH (WS-S2).
+           DISPLAY "SV9(3):    " BYTE-LENGTH (WS-S3).
+           DISPLAY "SV9(4):    " BYTE-LENGTH (WS-S4).
+           DISPLAY "SV9(5):    " BYTE-LENGTH (WS-S5).
+           DISPLAY "SV9(6):    " BYTE-LENGTH (WS-S6).
+           DISPLAY "SV9(7):    " BYTE-LENGTH (WS-S7).
+           DISPLAY "SV9(8):    " BYTE-LENGTH (WS-S8).
+           DISPLAY "SV9(9):    " BYTE-LENGTH (WS-S9).
+           DISPLAY "SV9(10):   " BYTE-LENGTH (WS-S10).
+           DISPLAY "SV9(11):   " BYTE-LENGTH (WS-S11).
+           DISPLAY "SV9(12):   " BYTE-LENGTH (WS-S12).
+           DISPLAY "SV9(13):   " BYTE-LENGTH (WS-S13).
+           DISPLAY "SV9(14):   " BYTE-LENGTH (WS-S14).
+           DISPLAY "SV9(15):   " BYTE-LENGTH (WS-S15).
+           DISPLAY "SV9(16):   " BYTE-LENGTH (WS-S16).
+           DISPLAY "SV9(17):   " BYTE-LENGTH (WS-S17).
+           DISPLAY "SV9(18):   " BYTE-LENGTH (WS-S18).
+
+           DISPLAY "SVPP9(1):  " BYTE-LENGTH (WS-SP1).
+           DISPLAY "SVPP9(2):  " BYTE-LENGTH (WS-SP2).
+           DISPLAY "SVPP9(3):  " BYTE-LENGTH (WS-SP3).
+           DISPLAY "SVPP9(4):  " BYTE-LENGTH (WS-SP4).
+           DISPLAY "SVPP9(5):  " BYTE-LENGTH (WS-SP5).
+           DISPLAY "SVPP9(6):  " BYTE-LENGTH (WS-SP6).
+           DISPLAY "SVPP9(7):  " BYTE-LENGTH (WS-SP7).
+           DISPLAY "SVPP9(8):  " BYTE-LENGTH (WS-SP8).
+           DISPLAY "SVPP9(9):  " BYTE-LENGTH (WS-SP9).
+           DISPLAY "SVPP9(10): " BYTE-LENGTH (WS-SP10).
+           DISPLAY "SVPP9(11): " BYTE-LENGTH (WS-SP11).
+           DISPLAY "SVPP9(12): " BYTE-LENGTH (WS-SP12).
+           DISPLAY "SVPP9(13): " BYTE-LENGTH (WS-SP13).
+           DISPLAY "SVPP9(14): " BYTE-LENGTH (WS-SP14).
+           DISPLAY "SVPP9(15): " BYTE-LENGTH (WS-SP15).
+           DISPLAY "SVPP9(16): " BYTE-LENGTH (WS-SP16).
+           DISPLAY "SVPP9(17): " BYTE-LENGTH (WS-SP17).
+           DISPLAY "SVPP9(18): " BYTE-LENGTH (WS-SP18).
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fbinary-size=1-2-4-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[V9(1):     1
+V9(2):     1
+V9(3):     2
+V9(4):     2
+V9(5):     4
+V9(6):     4
+V9(7):     4
+V9(8):     4
+V9(9):     4
+V9(10):    8
+V9(11):    8
+V9(12):    8
+V9(13):    8
+V9(14):    8
+V9(15):    8
+V9(16):    8
+V9(17):    8
+V9(18):    8
+VPP9(1):   1
+VPP9(2):   1
+VPP9(3):   2
+VPP9(4):   2
+VPP9(5):   4
+VPP9(6):   4
+VPP9(7):   4
+VPP9(8):   4
+VPP9(9):   4
+VPP9(10):  8
+VPP9(11):  8
+VPP9(12):  8
+VPP9(13):  8
+VPP9(14):  8
+VPP9(15):  8
+VPP9(16):  8
+VPP9(17):  8
+VPP9(18):  8
+SV9(1):    1
+SV9(2):    1
+SV9(3):    2
+SV9(4):    2
+SV9(5):    4
+SV9(6):    4
+SV9(7):    4
+SV9(8):    4
+SV9(9):    4
+SV9(10):   8
+SV9(11):   8
+SV9(12):   8
+SV9(13):   8
+SV9(14):   8
+SV9(15):   8
+SV9(16):   8
+SV9(17):   8
+SV9(18):   8
+SVPP9(1):  1
+SVPP9(2):  1
+SVPP9(3):  2
+SVPP9(4):  2
+SVPP9(5):  4
+SVPP9(6):  4
+SVPP9(7):  4
+SVPP9(8):  4
+SVPP9(9):  4
+SVPP9(10): 8
+SVPP9(11): 8
+SVPP9(12): 8
+SVPP9(13): 8
+SVPP9(14): 8
+SVPP9(15): 8
+SVPP9(16): 8
+SVPP9(17): 8
+SVPP9(18): 8
+], [])
+
+AT_CHECK([$COMPILE -fbinary-size=2-4-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[V9(1):     2
+V9(2):     2
+V9(3):     2
+V9(4):     2
+V9(5):     4
+V9(6):     4
+V9(7):     4
+V9(8):     4
+V9(9):     4
+V9(10):    8
+V9(11):    8
+V9(12):    8
+V9(13):    8
+V9(14):    8
+V9(15):    8
+V9(16):    8
+V9(17):    8
+V9(18):    8
+VPP9(1):   2
+VPP9(2):   2
+VPP9(3):   2
+VPP9(4):   2
+VPP9(5):   4
+VPP9(6):   4
+VPP9(7):   4
+VPP9(8):   4
+VPP9(9):   4
+VPP9(10):  8
+VPP9(11):  8
+VPP9(12):  8
+VPP9(13):  8
+VPP9(14):  8
+VPP9(15):  8
+VPP9(16):  8
+VPP9(17):  8
+VPP9(18):  8
+SV9(1):    2
+SV9(2):    2
+SV9(3):    2
+SV9(4):    2
+SV9(5):    4
+SV9(6):    4
+SV9(7):    4
+SV9(8):    4
+SV9(9):    4
+SV9(10):   8
+SV9(11):   8
+SV9(12):   8
+SV9(13):   8
+SV9(14):   8
+SV9(15):   8
+SV9(16):   8
+SV9(17):   8
+SV9(18):   8
+SVPP9(1):  2
+SVPP9(2):  2
+SVPP9(3):  2
+SVPP9(4):  2
+SVPP9(5):  4
+SVPP9(6):  4
+SVPP9(7):  4
+SVPP9(8):  4
+SVPP9(9):  4
+SVPP9(10): 8
+SVPP9(11): 8
+SVPP9(12): 8
+SVPP9(13): 8
+SVPP9(14): 8
+SVPP9(15): 8
+SVPP9(16): 8
+SVPP9(17): 8
+SVPP9(18): 8
+], [])
+
+AT_CHECK([$COMPILE -fbinary-size=1--8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[V9(1):     1
+V9(2):     1
+V9(3):     2
+V9(4):     2
+V9(5):     3
+V9(6):     3
+V9(7):     3
+V9(8):     4
+V9(9):     4
+V9(10):    5
+V9(11):    5
+V9(12):    5
+V9(13):    6
+V9(14):    6
+V9(15):    7
+V9(16):    7
+V9(17):    8
+V9(18):    8
+VPP9(1):   1
+VPP9(2):   1
+VPP9(3):   2
+VPP9(4):   2
+VPP9(5):   3
+VPP9(6):   3
+VPP9(7):   3
+VPP9(8):   4
+VPP9(9):   4
+VPP9(10):  5
+VPP9(11):  5
+VPP9(12):  5
+VPP9(13):  6
+VPP9(14):  6
+VPP9(15):  7
+VPP9(16):  7
+VPP9(17):  8
+VPP9(18):  8
+SV9(1):    1
+SV9(2):    1
+SV9(3):    2
+SV9(4):    2
+SV9(5):    3
+SV9(6):    3
+SV9(7):    4
+SV9(8):    4
+SV9(9):    4
+SV9(10):   5
+SV9(11):   5
+SV9(12):   6
+SV9(13):   6
+SV9(14):   6
+SV9(15):   7
+SV9(16):   7
+SV9(17):   8
+SV9(18):   8
+SVPP9(1):  1
+SVPP9(2):  1
+SVPP9(3):  2
+SVPP9(4):  2
+SVPP9(5):  3
+SVPP9(6):  3
+SVPP9(7):  4
+SVPP9(8):  4
+SVPP9(9):  4
+SVPP9(10): 5
+SVPP9(11): 5
+SVPP9(12): 6
+SVPP9(13): 6
+SVPP9(14): 6
+SVPP9(15): 7
+SVPP9(16): 7
+SVPP9(17): 8
+SVPP9(18): 8
+], [])
+
+AT_CLEANUP
