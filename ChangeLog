@@ -8,6 +8,10 @@
 	* configure.ac: update flags for building dynamic libraries on macOS
 	  (helps fixing testsuite issues on recent macOS versions)
 
+2023-05-25  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* configure.ac: added test for HAVE_RESIZE_TERM function
+
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: try to error on warnings during checks, cleanup of resulting
@@ -187,7 +191,7 @@
 	* general: revert change 2019-06-05 - all header files that are included
 	  from the system use <include.h>, "local.h" is used otherwise with the
 	  exceptions of to-be-installed headers which include files that have a
-	  local reference to each other after installation (common.h + 
+	  local reference to each other after installation (common.h +
 	  and exceptions.def)
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
@@ -201,7 +205,7 @@
 
 	* configure.ac: use `dnl` comments in all places that are not intended be
 	  included in the generated configure script, fixing spurious warnings
-	  about potentially undefined macros; 
+	  about potentially undefined macros;
 	* configure.ac: copyright notice in generated script
 	* m4/libtool.m4: updated from libtool, with additions for netbsd from Debian
 	  (Debian 993872) and Johan Anderholm (patch #39)
@@ -362,7 +366,7 @@
 
 2020-10-23  Simon Sobisch <simonsobisch@gnu.org>
 
-	* configure.ac: version check for json-c/cJSON "poor man's check" 
+	* configure.ac: version check for json-c/cJSON "poor man's check"
 
 2020-10-06  Simon Sobisch <simonsobisch@gnu.org>
 
