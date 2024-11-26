@@ -1,5 +1,11 @@
+	
+2024-07-12  Vedant Tewari <vedanttewari541@gmail.com>
 
-2023-02-25  Ron Norman <rjn@inglenet.com> 
+	* ax_prog_java.m4: Added macro for jni check
+	* ax_jni_include_dir.m4: Added macro for jni check
+    	* configure.ac: added support for Java interoperability through JNI
+
+2023-02-25  Ron Norman <rjn@inglenet.com>
 
 	* configure.ac: Add check for  sys/time.h
 

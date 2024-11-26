@@ -3985,6 +3985,50 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 		}
 	}
 
+	/* Additional conformance checks for Java method calls */
+    for (l = using_list; l; l = CB_CHAIN(l)) {
+        struct cb_tree_common *arg = (struct cb_tree_common *)CB_VALUE(l);
+        
+        /* Ensure only field identifiers are used */
+        if (CB_TREE_TAG(arg) == CB_TAG_LITERAL || CB_TREE_TAG(arg) == CB_TAG_FUNCALL) {
+            cobc_err_msg(_("Invalid argument type in Java method call. Only field identifiers are allowed."));
+            COBC_ABORT();
+        }
+        
+        /* Check for unsupported array element types and dimensions */
+        if (CB_TREE_TAG(arg) == CB_TAG_LIST) {
+            int array_dimension = 1;
+            struct cb_tree_common **list_elements = (struct cb_tree_common **)arg;
+            while (list_elements != NULL) {
+                struct cb_tree_common **inner_list = NULL;
+                for (int j = 0; list_elements[j] != NULL; j++) {
+                    if (CB_TREE_TAG(list_elements[j]) == CB_TAG_LIST) {
+                        array_dimension++;
+                        inner_list = (struct cb_tree_common **)list_elements[j];
+                    } else {
+                        switch (CB_TREE_TAG(list_elements[j])) {
+                            case CB_TAG_INTEGER:
+                            case CB_USAGE_FLOAT:
+                            case CB_USAGE_DOUBLE:
+                            case CB_CLASS_BOOLEAN:
+                            case CB_TAG_STRING:
+                            case CB_USAGE_OBJECT:
+                                break;
+                            default:
+                                cobc_err_msg(_("Unsupported array element type in Java method call"));
+                                COBC_ABORT();
+                        }
+                    }
+                }
+                list_elements = inner_list;
+            }
+            if (array_dimension > 2) {
+                cobc_err_msg(_("Unsupported array dimension: %d"), array_dimension);
+                COBC_ABORT();
+            }
+        }
+    }
+
 	/* Check RETURNING item. */
 
 	if (returning && program->returning) {
@@ -15478,7 +15522,6 @@ cb_emit_xml_parse (cb_tree data, cb_tree proc,
 #endif
 	ref = cb_ref (data);
 	if (CB_FIELD_P (ref)) {
-		struct cb_field * field = CB_FIELD (ref);
 		/* type checks here */
 		cb_emit (cb_build_xml_parse (data, proc, returning_national,
 			encoding, validation));

@@ -1,8 +1,8 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2023 Free Software Foundation, Inc.
-# Written by Keisuke Nishida, Roger While, Simon Sobisch
+# Copyright (C) 2003-2012, 2014, 2017-2024 Free Software Foundation, Inc.
+# Written by Keisuke Nishida, Roger While, Simon Sobisch, Vedant Tewari
 #
 # This file is part of GnuCOBOL.
 #
@@ -125,8 +125,18 @@ else
 lib_lm =
 endif
 
+if COB_HAS_JNI
+lib_jni = libcobjni.la
+libcobjni_la_LIBADD = libcob.la $(JNI_LIBS)
+libcobjni_la_SOURCES = java.c
+libcobjni_la_LDFLAGS = $(AM_LDFLAGS) $(JNI_LDFLAGS) -version-info 1:0:0
+libcobjni_la_CFLAGS = $(AM_CFLAGS) $(JNI_CPPFLAGS)
+else
+lib_jni =
+endif
+
 lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
-	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
+	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm) $(lib_jni)
 
 EXTRA_DIST = fisam.c
 pkgincludedir = $(includedir)/libcob

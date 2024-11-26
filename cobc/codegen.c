@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2003-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
-   Edward Hart
+   Edward Hart, Vedant Tewari
 
    This file is part of GnuCOBOL.
 
@@ -120,6 +120,7 @@ struct field_list {
 struct call_list {
 	struct call_list	*next;
 	const char		*call_name;
+	const char 		*method_sig;
 };
 
 #define COB_RETURN_INT		0
@@ -147,6 +148,7 @@ static struct literal_list	*literal_cache = NULL;
 static struct field_list	*field_cache = NULL;
 static struct field_list	*local_field_cache = NULL;
 static struct call_list		*call_cache = NULL;
+static struct call_list	*call_java_cache = NULL;
 static struct call_list		*func_call_cache = NULL;
 static struct static_call_list	*static_call_cache = NULL;
 static struct base_list		*base_cache = NULL;
@@ -393,6 +395,23 @@ lookup_source (const char *p)
 	stp->next = source_cache;
 	source_cache = stp;
 	return source_id++;
+}
+
+static void
+lookup_java_call(const char *p, const char *signature)
+{
+	struct call_list *clp;
+
+	for (clp = call_java_cache; clp; clp = clp->next) {
+		if (strcmp (p, clp->call_name) == 0 && strcmp(signature, clp->method_sig) == 0) {
+			return;
+		}
+	}
+	clp = cobc_parse_malloc (sizeof (struct call_list));
+	clp->call_name = p;
+	clp->method_sig = signature;
+	clp->next = call_java_cache;
+	call_java_cache = clp;
 }
 
 static void
@@ -1976,6 +1995,11 @@ output_call_cache (void)
 	call_cache = call_list_reverse (call_cache);
 	for (call = call_cache; call; call = call->next) {
 		output_local ("static cob_call_union\tcall_%s;\n",
+			      call->call_name);
+	}
+	call_java_cache = call_list_reverse (call_java_cache);
+	for (call = call_java_cache; call; call = call->next) {
+		output_local ("static cob_java_handle*\tcall_java_%s;\n",
 			      call->call_name);
 	}
 	func_call_cache = call_list_reverse (func_call_cache);
@@ -7069,6 +7093,99 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 }
 
 static void
+output_java_call (struct cb_call *p)
+{
+	char* full_name = (char *)CB_LITERAL(p->name)->data;
+	char* class_and_method_name = full_name + 5;
+	char *last_dot;
+	char *method_name;
+	const char *class_name;
+	char return_type_signature[COB_MINI_BUFF];
+	char method_signature[COB_NORMAL_BUFF] = "(";
+	char mangled[COB_NORMAL_BUFF] = "";
+	struct cb_tree_common *ptr;
+
+	last_dot = strrchr(class_and_method_name, '.');
+	if (last_dot == NULL) {
+		cobc_err_msg(_("malformed call '%s' to a Java method"), class_and_method_name);
+		return;
+	}
+
+	*last_dot = '\0';
+	method_name = last_dot + 1;
+	class_name = class_and_method_name;
+
+	for (int i = 0; (ptr = ((struct cb_tree_common **)p->args)[i]) != NULL; i++) {
+		if (CB_TREE_TAG(ptr) == CB_TAG_INTEGER) {
+			struct cb_picture* pic = CB_FIELD(ptr)->pic;
+			if (pic) {
+				int n = pic->digits;
+				if (CB_FIELD(ptr)->usage == CB_USAGE_COMP_5) {
+					if (n >= 1 && n <= 4) {
+						strncat(method_signature, "S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					} else if (n >= 5 && n <= 9) {
+						strncat(method_signature, "I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					} else if (n >= 10 && n <= 18) {
+						strncat(method_signature, "J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					}
+				} else if (CB_FIELD(ptr)->usage == CB_USAGE_PACKED || CB_FIELD(ptr)->usage == CB_USAGE_DISPLAY) {
+					strncat(method_signature, "Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+				}
+			}
+		}
+	}
+
+	if (p->call_returning == NULL) {
+		strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+		strcpy(return_type_signature, "void");
+	} else if (CB_TREE_TAG(p->call_returning) == CB_TAG_INTEGER) {
+		struct cb_picture* pic = CB_FIELD(p->call_returning)->pic;
+		if (pic) {
+			int n = pic->digits;
+			if (CB_FIELD(p->call_returning)->usage == CB_USAGE_COMP_5) {
+				if (n >= 1 && n <= 4) {
+					strncat(method_signature, ")S", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					strcpy(return_type_signature, "jshort");
+				} else if (n >= 5 && n <= 9) {
+					strncat(method_signature, ")I", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					strcpy(return_type_signature, "jint");
+				} else if (n >= 10 && n <= 18) {
+					strncat(method_signature, ")J", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+					strcpy(return_type_signature, "jlong");
+				}
+			} else if (CB_FIELD(p->call_returning)->usage == CB_USAGE_PACKED || CB_FIELD(p->call_returning)->usage == CB_USAGE_DISPLAY) {
+				strncat(method_signature, ")Ljava/math/BigDecimal;", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+				strcpy(return_type_signature, "jobject");
+			}
+		}
+	} else {
+		strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
+		strcpy(return_type_signature, "void");
+	}
+
+	strncat(mangled, class_and_method_name, COB_NORMAL_BUFF - strlen(mangled) - 1);
+	strncat(mangled, "_", COB_NORMAL_BUFF - strlen(mangled) - 1);
+	strncat(mangled, method_name, COB_NORMAL_BUFF - strlen(mangled) - 1);
+	strncat(mangled, method_signature, COB_NORMAL_BUFF - strlen(mangled) - 1);
+
+	for (char *c = mangled; *c; c++) {
+		if (*c == '.' || *c == ',' || *c == ' ' || *c == '(' || *c == ')') {
+			*c = '_';
+		}
+	}
+
+	lookup_java_call(mangled, class_and_method_name, method_signature);
+
+	output_line("if (call_java_%s == NULL)", mangled);
+	output_block_open();
+	output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"%s\");", mangled, class_name, method_name, method_signature);
+	output_line("cob_call_java(call_java_%s);", mangled);
+	output_block_close();
+
+	output_exception_handling(p);
+}
+
+static void
 output_call (struct cb_call *p)
 {
 	cb_tree				x;
@@ -7096,6 +7213,11 @@ output_call (struct cb_call *p)
 		ret_ptr = 1;
 	}
 	system_call = NULL;
+
+	if (p->convention & CB_CONV_JAVA) {
+		output_java_call(p);
+		return;
+	}
 
 #ifdef	_WIN32
 	if (p->convention & CB_CONV_STDCALL) {

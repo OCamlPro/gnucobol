@@ -9631,6 +9631,12 @@ print_info_detailed (const int verbose)
 	var_print (_("JSON library"), 		_("disabled"), "", 0);
 #endif
 
+#ifdef WITH_JNI
+	var_print (_("Java interoperability"),	_("enabled"), "", 0);
+#else
+	var_print (_("Java interoperability"),	_("disabled"), "", 0);
+#endif
+
 	var_print (_("extended screen I/O"),	(char*)&screenio_info, "", 0);
 	var_print (_("mouse support"),		mouse_support, "", 0);
 
