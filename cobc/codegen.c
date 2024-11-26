@@ -7095,24 +7095,19 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 static void
 output_java_call (struct cb_call *p)
 {
-	char* full_name = (char *)CB_LITERAL(p->name)->data; /* Assume java.prefix (enforced in `parser.y`, rule `call_body`)*/
+	char* full_name = (char *)CB_LITERAL(p->name)->data;
 	char* class_and_method_name = full_name + 5;
 	char *last_dot;
 	char *method_name;
 	const char *class_name;
 	char return_type_signature[COB_MINI_BUFF];
 	char method_signature[COB_NORMAL_BUFF] = "(";
-	char* mangled;
+	char mangled[COB_NORMAL_BUFF] = "";
 	struct cb_tree_common *ptr;
-
-	mangled = strdup(class_and_method_name);
-	for (size_t i = 0; i < strlen(mangled) + 1; i++) {
-		mangled[i] = (mangled[i] == '.') ? '_' : mangled[i];
-	}
 
 	last_dot = strrchr(class_and_method_name, '.');
 	if (last_dot == NULL) {
-		cobc_err_msg (_("malformed call '%s' to a Java method"), class_and_method_name);
+		cobc_err_msg(_("malformed call '%s' to a Java method"), class_and_method_name);
 		return;
 	}
 
@@ -7121,7 +7116,7 @@ output_java_call (struct cb_call *p)
 	class_name = class_and_method_name;
 
 	for (int i = 0; (ptr = ((struct cb_tree_common **)p->args)[i]) != NULL; i++) {
-        if (CB_TREE_TAG(ptr) == CB_TAG_INTEGER) {
+		if (CB_TREE_TAG(ptr) == CB_TAG_INTEGER) {
 			struct cb_picture* pic = CB_FIELD(ptr)->pic;
 			if (pic) {
 				int n = pic->digits;
@@ -7138,7 +7133,7 @@ output_java_call (struct cb_call *p)
 				}
 			}
 		}
-    }
+	}
 
 	if (p->call_returning == NULL) {
 		strncat(method_signature, ")V", COB_NORMAL_BUFF - strlen(method_signature) - 1);
@@ -7168,18 +7163,26 @@ output_java_call (struct cb_call *p)
 		strcpy(return_type_signature, "void");
 	}
 
-	lookup_java_call(mangled, method_signature);
+	strncat(mangled, class_and_method_name, COB_NORMAL_BUFF - strlen(mangled) - 1);
+	strncat(mangled, "_", COB_NORMAL_BUFF - strlen(mangled) - 1);
+	strncat(mangled, method_name, COB_NORMAL_BUFF - strlen(mangled) - 1);
+	strncat(mangled, method_signature, COB_NORMAL_BUFF - strlen(mangled) - 1);
+
+	for (char *c = mangled; *c; c++) {
+		if (*c == '.' || *c == ',' || *c == ' ' || *c == '(' || *c == ')') {
+			*c = '_';
+		}
+	}
+
+	lookup_java_call(mangled, class_and_method_name, method_signature);
+
 	output_line("if (call_java_%s == NULL)", mangled);
 	output_block_open();
-
-	output_prefix();
-	output_line("call_java_%s = ", mangled);
-	output("cob_resolve_java(\"%s\", \"%s\", \"%s\", \"()V\");", class_name, method_name, method_signature);
-	output_newline();
-	output_prefix();
-	output_line("cob_call_java(call_java_%s);\n", mangled);
-	output_newline();
+	output_line("call_java_%s = cob_resolve_java(\"%s\", \"%s\", \"%s\");", mangled, class_name, method_name, method_signature);
+	output_line("cob_call_java(call_java_%s);", mangled);
 	output_block_close();
+
+	output_exception_handling(p);
 }
 
 static void
