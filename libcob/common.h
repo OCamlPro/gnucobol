@@ -1339,6 +1339,8 @@ typedef struct __cob_module {
 	const char		*paragraph_name;		/* name of current active pagagraph */
 	enum cob_statement	statement;		/* statement currently executed */
 
+	unsigned char		flag_normalize_bcd;	/* Should BCD be normalized on-the-fly ? */
+
 } cob_module;
 
 
