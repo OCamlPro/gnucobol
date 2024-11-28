@@ -1,4 +1,9 @@
 
+2024-12-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def: new normalize-bcd dialect option
+	* codegen.c (output_module_init_function): initialize flag_normalize_bcd
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (output_line_directive): extracted from other places and
