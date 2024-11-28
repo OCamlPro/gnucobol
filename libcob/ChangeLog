@@ -43,6 +43,15 @@
 	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
 	  with X/Open Curses function panel_below()
 
+2024-12-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h: new flag_normalize_bcd field in cob_module
+	* common.c, coblocal.h (cob_get_sign_from_alnum): new function
+	  to retrieve the "sign" of an ALPHANUMERIC field
+	* move.c (cob_move_alphanum_to_display),
+	  numeric.c (cob_decimal_set_display): perform BCD
+	  normalization when flag_normalize_bcd is set
+
 2024-11-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* move.c (optimized_move_display_to_edited): minor refactoring

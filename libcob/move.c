@@ -309,6 +309,7 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 	const unsigned char	*e2 = s2 + COB_FIELD_SIZE (f2);
 	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
 	const unsigned char	num_sep = COB_MODULE_PTR->numeric_separator;
+	unsigned char	last;
 	int		sign;
 	int		count;
 	int		size;
@@ -325,21 +326,35 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 
 	/* Check for sign */
 	sign = 0;
-	if (s1 != e1) {
-		if (*s1 == '+' || *s1 == '-') {
-			sign = (*s1++ == '+') ? 1 : -1;
+	if (!COB_MODULE_PTR->flag_normalize_bcd) {
+		if (s1 != e1) {
+			if (*s1 == '+' || *s1 == '-') {
+				sign = (*s1++ == '+') ? 1 : -1;
+			}
 		}
+	} else {
+		last = f1->data[f1->size - 1];
+		sign = cob_get_sign_from_alnum (f1);
 	}
 
 	/* Count the number of digits before decimal point */
 	count = 0;
 	{
 		register unsigned char	*p;
-		for (p = s1; p < e1 && *p != dec_pt; ++p) {
+		if (!COB_MODULE_PTR->flag_normalize_bcd) {
+			for (p = s1; p < e1 && *p != dec_pt; ++p) {
 			/* note: as isdigit is locale-aware (slower and not what we want),
 			   we use a range check instead */
-			if (*p >= '0' && *p <= '9') {
-				++count;
+				if (*p >= '0' && *p <= '9') {
+					++count;
+				}
+			}
+		} else {
+			for (p = s1; p < e1 && *p != dec_pt; ++p) {
+				const char d = COB_D2I (*p);
+				if (d >= 0 && d <= 9) {
+					++count;
+				}
 			}
 		}
 	}
@@ -349,34 +364,70 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 	if (count < size) {
 		s2 += size - count;
 	} else {
-		while (count-- > size) {
-			while (*s1 < '0' || *s1 > '9') {
+		if (!COB_MODULE_PTR->flag_normalize_bcd) {
+			while (count-- > size) {
+				while (*s1 < '0' || *s1 > '9') {
+					s1++;
+				}
 				s1++;
 			}
-			s1++;
+		} else {
+			while (count-- > size) {
+				char d;
+				do {
+					d = COB_D2I (*s1++);
+				} while (d < 0 || d > 9);
+			}
 		}
 	}
 
 	/* Move */
 	count = 0;
-	for (; s1 < e1 && s2 < e2; ++s1) {
-		if (*s1 >= '0' && *s1 <= '9') {
-			*s2++ = *s1;
-		} else if (*s1 == dec_pt) {
-			if (count++ > 0) {
+	if (!COB_MODULE_PTR->flag_normalize_bcd) {
+		for (; s1 < e1 && s2 < e2; ++s1) {
+			if (*s1 >= '0' && *s1 <= '9') {
+				*s2++ = *s1;
+			} else if (*s1 == dec_pt) {
+				if (count++ > 0) {
+					goto error;
+				}
+			} else if (!(isspace (*s1) || *s1 == num_sep)) {
 				goto error;
 			}
-		} else if (!(isspace (*s1) || *s1 == num_sep)) {
-			goto error;
+		}
+	} else {
+		for (; s1 < e1 && s2 < e2; ++s1) {
+			const char d = COB_D2I (*s1);
+			if (d >= 0 && d <= 9) {
+#ifndef	COB_EBCDIC_MACHINE
+				*s2++ = (d | 0x30);
+#else
+				*s2++ = (d | 0xF0);
+#endif
+			} else if (*s1 == dec_pt) {
+				if (count++ > 0) {
+					goto error;
+				}
+			} else if (!(isspace (*s1) || *s1 == num_sep)) {
+				goto error;
+			}
 		}
 	}
 
 	COB_PUT_SIGN (f2, sign);
+	if (COB_MODULE_PTR->flag_normalize_bcd
+	 && !COB_FIELD_CONSTANT (f1)) {
+		f1->data[f1->size - 1] = last;
+	}
 	return;
 
 error:
 	memset (f2->data, '0', f2->size);
 	COB_PUT_SIGN (f2, 0);
+	if (COB_MODULE_PTR->flag_normalize_bcd
+	 && !COB_FIELD_CONSTANT (f1)) {
+		f1->data[f1->size - 1] = last;
+	}
 }
 
 static void
