@@ -15251,3 +15251,105 @@ AT_CHECK([$COMPILE prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([On-the-fly BCD normalization on MOVE from ALPHANUMERIC])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC-ALNUM     PIC X(10)  VALUE "ABC456789}".
+       01 DST-NUMDISP   PIC S9(10).
+       01 DST-NUMEDIT   PIC +9B999B999B999.
+       01 DST-PACK      PIC S9(10) PACKED-DECIMAL.
+       01 DST-BIN       PIC S9(10) BINARY.
+       01 DST-BINC                 BINARY-CHAR SIGNED.
+       01 DST-BINS                 BINARY-SHORT SIGNED.
+       01 DST-BINL                 BINARY-LONG SIGNED.
+       01 DST-BIND                 BINARY-DOUBLE SIGNED.
+       01 DST-COMP5     PIC S9(10) COMP-5.
+       01 DST-COMP6     PIC  9(10) COMP-6.
+       01 DST-COMPX     PIC 9(10)  COMP-X.
+       01 DST-COMPN     PIC 9(10)  COMP-N.
+       01 DST-FLTSHORT             FLOAT-SHORT.
+       01 DST-FLTLONG              FLOAT-LONG.
+       01 DST-INDEX                INDEX.
+       01 FILLER        BINARY-INT VALUE 0.
+          88 DO-DISP               VALUE 0.
+          88 NO-DISP               VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP DISPLAY==.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
+           SET NO-DISP TO TRUE
+           PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
+           GOBACK.
+
+       DO-CHECK.
+           IF SRC-ALNUM NOT NUMERIC DISPLAY "NOT NUMERIC".
+
+           DISPLAY "SRC-ALNUM        : '" SRC-ALNUM "'".
+
+           MOVE SRC-ALNUM TO DST-NUMDISP.
+           DISPLAY " -> DST-NUMDISP  : '" DST-NUMDISP "'".
+           MOVE SRC-ALNUM TO DST-NUMEDIT.
+           DISPLAY " -> DST-NUMEDIT  : '" DST-NUMEDIT "'".
+           MOVE SRC-ALNUM TO DST-PACK.
+           DISPLAY " -> DST-PACK     : '" DST-PACK "'".
+           MOVE SRC-ALNUM TO DST-BIN.
+           DISPLAY " -> DST-BIN      : '" DST-BIN "'".
+
+           MOVE SRC-ALNUM TO DST-BINC.
+           DISPLAY " -> DST-BINC     : '" DST-BINC "'".
+           MOVE SRC-ALNUM TO DST-BINS.
+           DISPLAY " -> DST-BINS     : '" DST-BINS "'".
+           MOVE SRC-ALNUM TO DST-BINL.
+           DISPLAY " -> DST-BINL     : '" DST-BINL "'".
+           MOVE SRC-ALNUM TO DST-BIND.
+           DISPLAY " -> DST-BIND     : '" DST-BIND "'".
+
+           MOVE SRC-ALNUM TO DST-COMP5.
+           DISPLAY " -> DST-COMP5    : '" DST-COMP5 "'".
+           MOVE SRC-ALNUM TO DST-COMP6.
+           DISPLAY " -> DST-COMP6    : '" DST-COMP6 "'".
+           MOVE SRC-ALNUM TO DST-COMPX.
+           DISPLAY " -> DST-COMPX    : '" DST-COMPX "'".
+           MOVE SRC-ALNUM TO DST-COMPN.
+           DISPLAY " -> DST-COMPN    : '" DST-COMPN "'".
+
+           MOVE SRC-ALNUM TO DST-FLTSHORT.
+           DISPLAY " -> DST-FLTSHORT : '" DST-FLTSHORT "'".
+           MOVE SRC-ALNUM TO DST-FLTLONG.
+           DISPLAY " -> DST-FLTLONG  : '" DST-FLTLONG "'".
+
+           MOVE SRC-ALNUM TO DST-INDEX.
+           DISPLAY " -> DST-INDEX    : '" DST-INDEX "'".
+])
+
+AT_CHECK([$COMPILE -fsign=EBCDIC -fnormalize-bcd prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[NOT NUMERIC
+SRC-ALNUM        : 'ABC456789}'
+ -> DST-NUMDISP  : '-1234567890'
+ -> DST-NUMEDIT  : '-1 234 567 890'
+ -> DST-PACK     : '-1234567890'
+ -> DST-BIN      : '-1234567890'
+ -> DST-BINC     : '+046'
+ -> DST-BINS     : '-00722'
+ -> DST-BINL     : '-1234567890'
+ -> DST-BIND     : '-00000000001234567890'
+ -> DST-COMP5    : '-00000000001234567890'
+ -> DST-COMP6    : '1234567890'
+ -> DST-COMPX    : '1234567890'
+ -> DST-COMPN    : '1234567890'
+ -> DST-FLTSHORT : '-1.2345679E+9'
+ -> DST-FLTLONG  : '-1234567890'
+ -> DST-INDEX    : '-1234567890'
+])
+
+AT_CLEANUP
