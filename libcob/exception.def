@@ -122,6 +122,15 @@ COB_EXCEPTION  (0305, COB_EC_DATA_OVERFLOW,
 COB_EXCEPTION  (0306, COB_EC_DATA_PTR_NULL,
 		"EC-DATA-PTR-NULL", 1)
 
+/* Attempt to use a null valued data item in a context where not permitted (COBOL2025) */
+COB_EXCEPTION  (0307, COB_EC_DATA_NULL,
+		"EC-DATA-NULL", 1)
+
+/* A non-space or significant-digit was truncated during MOVE (COBOL2025) */
+COB_EXCEPTION  (0308, COB_EC_DATA_TRUNCATION,
+		"EC-DATA-TRUNCATION", 0)
+
+
 
 /* EXTERNAL item mismatch (COBOL 202x) */
 COB_EXCEPTION  (1900, COB_EC_EXTERNAL,
