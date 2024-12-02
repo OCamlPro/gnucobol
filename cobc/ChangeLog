@@ -138,6 +138,12 @@
 	  compiler aborts on broken expressions, bugs #933, #938 and #966
 	* typeck.c: minor refactoring within functions
 
+2024-04-25  Boris Eng <boris.eng@ocamlpro.com>
+
+	* pplex.l, ppparse.y, scanner.l, cobc.h, codegen.c:
+	  new >>IMP INCLUDE directive to include one or multiple header files in
+	  the generated C code (same behavior as the --include compiler option)
+
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* replace.c: optimize speed and memory usage. For speed, we add two
