@@ -1,4 +1,13 @@
 
+2024-12-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h: new flag_normalize_bcd field in cob_module
+	* common.c, coblocal.h (cob_get_sign_from_alnum): new function
+	  to retrieve the "sign" of an ALPHANUMERIC field
+	* move.c (cob_move_alphanum_to_display),
+	  numeric.c (cob_decimal_set_display): perform BCD
+	  normalization when flag_normalize_bcd is set
+
 2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_screen_get_all): fixed Bug #999
