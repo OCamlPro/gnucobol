@@ -707,7 +707,9 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fopt-check-subscript-set prog.cob], [0], [],
+[prog.cob:9: warning: SET I TO 0 is out of bounds
+])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -3978,7 +3980,7 @@ AT_DATA([prog.cob], [
        01 KK            PIC X.
        PROCEDURE        DIVISION.
            SORT TBL ASCENDING KEY K.
-           SET KK TO "3"
+           MOVE "3" TO KK
            SEARCH ALL TBL
               AT END
                  DISPLAY KK " NOT FOUND"
