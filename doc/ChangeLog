@@ -1,4 +1,8 @@
 
+2024-10-30  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+
+	* gnucobol.texi: document new multiple window function
+
 2024-03-15  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* gnucobol.texi: document new dependencies options
@@ -283,7 +287,7 @@
 	* gnucobol.texi: new section "Extensions" to document FR #37
 	  WITH SIZE for ACCEPT/DISPLAY field
 
-2014-14-04  Philipp Böhme <phi.boehme@googlemail.com>
+2014-14-04  Philipp Bï¿½hme <phi.boehme@googlemail.com>
 
 	* gnucobol.texi: Added documentation for CBL_OC_GETOPT
 

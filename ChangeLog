@@ -1,4 +1,9 @@
 
+2024-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added logic to check for PANEL support which
+	  is required for the new multiple window support
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: new options --with-pkgversion=PKG and --with-bugurl=URL

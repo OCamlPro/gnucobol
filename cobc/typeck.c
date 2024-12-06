@@ -46,6 +46,11 @@
 	defined (HAVE_PDCURSES_CURSES_H) || \
 	defined (HAVE_XCURSES_H) || \
 	defined (HAVE_XCURSES_CURSES_H) || \
+	defined (HAVE_NCURSESW_PANEL_H) || \
+	defined (HAVE_NCURSES_PANEL_H) || \
+	defined (HAVE_PDCURSES_PANEL_H) || \
+	defined (HAVE_XCURSES_PANEL_H) || \
+	defined (HAVE_PANEL_H) || \
 	defined (HAVE_CURSES_H)
 #define WITH_EXTENDED_SCREENIO
 #endif

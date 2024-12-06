@@ -1,4 +1,49 @@
 
+2024-11-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): minor refactoring
+	* exception.def, move.c: added definition for COBOL2025
+	  COB_EC_DATA_NULL + COB_EC_DATA_TRUNCATION (currently not used)
+
+2024-11-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed
+	  Bug #1008: regression in move to numeric edited
+	  items with insertion symbols B, 0 and /
+
+2024-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_sys_window), system.def, common.h:
+	  command as separate first argument
+	* screenio.c [WITH_PANELS]: more refactoring including:
+	  variable amount of elements for LIST command;
+	  parameter struture changes from int to short;
+	  new commands get+set attributes;
+	  hidden now attribute in the flags instead of separate element,
+	  preparation for new attributes wrap + scroll;
+	  reverse panel_hidden return code handling
+	* screenio.c (cob_exit_screen): always use stdscr for exit message
+
+2024-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: minor refactoring including move of
+	  return code out of PPARM_FLD
+	* screenio.c (cob_sys_window): when function not available and in
+	  testmode, return 77 so test is skipped
+
+2024-11-01  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: added new functions for multiple window support;
+	  also added new static variables to support panel functions
+	  and a static array to store information about the panels
+	  which have been created.
+		cob_sys_window
+		check_panel_parm
+		cob_update_all_windows
+		refresh_mywin
+	* common.h: added cob_sys_window
+	* system.def: added system library call CBL_GC_WINDOW
+
 2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (cob_screen_get_all): fixed Bug #999

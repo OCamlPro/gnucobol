@@ -156,6 +156,19 @@ store_common_region (cob_field *f, const unsigned char *data,
 	const int	hf2 = fsize + lf2;
 	const int	gcf = cob_min_int (hf1, hf2);
 
+#if 0 /* TODO: globally add support for COB_EC_DATA_TRUNCATION */
+	const unsigned char *p = data;
+	const unsigned char *end = data + hf1 - gcf;
+	while (p < end) {
+		if ((COB_FIELD_IS_NUMERIC (f) && (*p != '0'))
+		 || (COB_FIELD_IS_ANY_ALNUM (f) && (*p != ' '))) {
+			cob_set_exception (COB_EC_DATA_TRUNCATION);
+			break;
+		}
+		++p;
+	}
+#endif
+
 	/* the target may have leading/trailing additional zeroes
 	   and in rare cases, we may be out of scale competely;
 	   we pre-set all positions as this saves a bunch of
@@ -1011,18 +1024,15 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 	int   suppress_zero = 1;
 	int   have_decimal_point = 0;
 	int   have_check_protect = 0;
-	int   n;
 	int   cntr_currency = 0;
-	int   cntr_sign_neg = 0;
-	int   cntr_sign_pos = 0;
+	int   cntr_sign = 0;
 	unsigned char pad = ' ';
 	unsigned char c;
 	unsigned char float_char = 0x00;
-	const unsigned char dec_symbol = COB_MODULE_PTR->decimal_point == ','
-																 ? ',' : '.';
+	const unsigned char dec_symbol = COB_MODULE_PTR->decimal_point == ',' ? ',' : '.';
 	const unsigned char currency = COB_MODULE_PTR->currency_symbol;
 
-#if 1	/* Sanity check to ensure that the data types of both the fields have the 
+#ifndef NDEBUG	/* Sanity check to ensure that the data types of both the fields have the
 		   correct attributes, if not then something is brokend and needs to be fixed  */
 	if (!(COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_EDITED
 	 && COB_FIELD_DIGITS (f1) == COB_FIELD_DIGITS (f2)
@@ -1048,21 +1058,17 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
 		c = p->symbol;
-		n = p->times_repeated;
 		if ((c == '9')
 		 || (c == 'Z')
 		 || (c == '*')
 		 || (c == 'C')
 		 || (c == 'D')) {
 			break;
-		} else if (c == '-') {
-			cntr_sign_neg += n;
-			if (cntr_sign_neg > 1) break;
-		} else if (c == '+') {
-			cntr_sign_pos += n;
-			if (cntr_sign_pos > 1) break;
+		} else if ((c == '-') || (c == '+')) {
+			cntr_sign += p->times_repeated;
+			if (cntr_sign > 1) break;
 		} else if (c == currency) {
-			cntr_currency += n;
+			cntr_currency += p->times_repeated;
 			if (cntr_currency > 1) break;
 		}
 	}
@@ -1079,30 +1085,38 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 	}
 
 	/* first check for BLANK WHEN ZERO attribute */
-	if (COB_FIELD_BLANK_ZERO(f2)) {
-		for(; (src <= src_end) ; src++) {
+	if (COB_FIELD_BLANK_ZERO (f2)) {
+		for (; (src <= src_end) ; src++) {
 			if (*src != '0') break;
 		}
 		if (src > src_end) {
-			memset(dst, (int)' ', (size_t)f2->size);
+			memset (dst, (int)' ', (size_t)f2->size);
 			return;
 		}
 		src = f1->data;
 	}
 
-	if (COB_FIELD_HAVE_SIGN(f1))
+	if (COB_FIELD_HAVE_SIGN (f1)) {
 		neg = (*src_end == '-') ? 1 : 0;
+	}
 
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
+		int n;
 		c = p->symbol;
-		n = p->times_repeated;
-		if (c == 'P')
+		if (c == 'P') {
 			continue;
-		for (; n > 0; n--) {
+		}
+		if (c == 'V') {
+			have_decimal_point = 1;
+			continue;
+		}
+		for (n = p->times_repeated; n > 0; n--) {
+#ifndef NDEBUG
 			if (dst >= dst_end) {
 				cob_runtime_error ("optimized_move_display_to_edited: overflow in destination field");
 				break;
 			}
+#endif
 			switch (c) {
 
 			case '9':
@@ -1121,8 +1135,9 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				if (*src != '0') {
 					is_zero = suppress_zero = 0;
 				} else {
-					if (suppress_zero && (!have_decimal_point))
+					if (suppress_zero && (!have_decimal_point)) {
 						*dst = pad;
+					}
 				}
 				src++;
 				dst++;
@@ -1134,8 +1149,9 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				if (*src != '0') {
 					is_zero = suppress_zero = 0;
 				} else {
-					if (suppress_zero && (!have_decimal_point))
+					if (suppress_zero && (!have_decimal_point)) {
 						*dst = pad;
+					}
 				}
 				src++;
 				dst++;
@@ -1184,11 +1200,13 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 							*dst = *prev_float_char;
 							*prev_float_char = pad;
 							prev_float_char = dst;
-							if (*dst == '-' || *dst == '+')
+							if (*dst == '-' || *dst == '+') {
 								sign_position = dst;
+							}
 						}
-						else
+						else {
 							*dst = pad;
+						}
 					} else {
 						*dst = c;
 					}
@@ -1197,12 +1215,20 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'V':
-				have_decimal_point = 1;
 				break;
 
 			case '0':
 			case '/':
-				*dst = c;
+				if (suppress_zero && prev_float_char) {
+					*dst = *prev_float_char;
+					*prev_float_char = pad;
+					prev_float_char = dst;
+					if (*dst != currency) {
+						sign_position = dst;
+					}
+				} else {
+					*dst = c;
+				}
 				dst++;
 				break;
 
@@ -1211,6 +1237,9 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					*dst = *prev_float_char;
 					*prev_float_char = pad;
 					prev_float_char = dst;
+					if (*dst != currency) {
+						sign_position = dst;
+					}
 				} else if (have_check_protect) {
 					*dst = pad;
 				} else {
@@ -1283,36 +1312,36 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 
 		/* if we have not printed any digits set destination to spaces and return */
 
-	if (suppress_zero){
-		if (pad == '*'){
-			for(dst = f2->data; dst < dst_end; dst++) {
-				if (*dst != dec_symbol){
+	if (suppress_zero) {
+		if (pad == '*') {
+			for (dst = f2->data; dst < dst_end; dst++) {
+				if (*dst != dec_symbol) {
 					*dst = '*';
 				}
 			}
 		} else {
-			memset(f2->data, ' ', f2->size);
+			memset (f2->data, ' ', f2->size);
 			return;
 		}
 	}
 
-	if (sign_position == NULL)
+	if (sign_position == NULL) {
 		return;
+	}
 
-	if ((neg) && (*sign_position == '+')){
+	if ((neg) && (*sign_position == '+')) {
 		*sign_position = (is_zero) ? '+' : '-';
 		return;
 	}
 
-	if ((neg) && (*sign_position == '-')){
+	if ((neg) && (*sign_position == '-')) {
 		*sign_position = (is_zero) ? ' ' : '-';
 		return;
-				}
+	}
 
-
-	if ((*sign_position == '-') && (!neg))
+	if ((*sign_position == '-') && (!neg)) {
 		*sign_position = ' ';
-
+	}
 }
 
 

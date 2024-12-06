@@ -1424,12 +1424,17 @@ if test "x$CURSES_LIBS" = x; then
         ac_cv_lib_ncursesw_initscr=yes
       ])
     ])
+    if test "x$PANEL_LIBS" = x; then
+      PKG_CHECK_MODULES([PANEL], [panelw], [ac_cv_lib_panelw_new_panel=yes], [
+        AC_CHECK_LIB([panelw], [new_panel], [PANEL_LIBS=-lpanelw])
+      ])
+    fi
   fi
 fi
 if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
   CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
   dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
-  AC_CHECK_HEADERS([ncursesw/ncurses.h ncursesw/curses.h ncurses.h],
+  AC_CHECK_HEADERS([ncursesw/panel.h ncursesw/ncurses.h ncursesw/curses.h panel.h ncurses.h],
     [USE_CURSES="ncursesw"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1461,12 +1466,17 @@ if test "x$CURSES_LIBS" = x; then
         ac_cv_lib_ncurses_initscr=yes
       ])
     ])
+    if test "x$PANEL_LIBS" = x; then
+      PKG_CHECK_MODULES([PANEL], [panel], [ac_cv_lib_panel_new_panel=yes], [
+        AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+      ])
+    fi
   fi
 fi
 
 if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
   CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
-  AC_CHECK_HEADERS([ncurses/ncurses.h ncurses/curses.h ncurses.h],
+  AC_CHECK_HEADERS([ncurses/panel.h ncurses/ncurses.h ncurses/curses.h panel.h ncurses.h],
     [USE_CURSES="ncurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1484,7 +1494,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([pdcurses.h curses.h],
+  AC_CHECK_HEADERS([panel.h pdcurses.h curses.h],
     [USE_CURSES="pdcurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1502,7 +1512,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "xcurses" -o "x$ac_cv_lib_XCurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([xcurses/curses.h xcurses.h],
+  AC_CHECK_HEADERS([xcurses/panel.h xcurses/curses.h xcurses.h],
     [USE_CURSES="xcurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1516,6 +1526,11 @@ if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
     AC_CHECK_LIB([curses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+  fi
+  if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
+	if test "x$PANEL_LIBS" = x; then
+		AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+	fi
   fi
 fi
 if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
@@ -1541,8 +1556,8 @@ case "$USE_CURSES" in
 	;;
   *curses*)
 	AC_DEFINE_UNQUOTED([WITH_CURSES], ["$USE_CURSES"])
-	LIBCOB_LIBS="$LIBCOB_LIBS $CURSES_LIBS"
-	LIBCOB_CPPFLAGS="$CURSES_CFLAGS $LIBCOB_CPPFLAGS"
+	LIBCOB_LIBS="$LIBCOB_LIBS $CURSES_LIBS $PANEL_LIBS"
+	LIBCOB_CPPFLAGS="$CURSES_CFLAGS $PANEL_CFLAGS $LIBCOB_CPPFLAGS"
 	;;
 esac
 
