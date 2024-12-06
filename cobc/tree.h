@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -370,11 +370,13 @@ enum cb_usage {
 /* Cast type */
 enum cb_cast_type {
 	CB_CAST_INTEGER = 0,		/* 0 */
-	CB_CAST_LONG_INT,		/* 1 */
-	CB_CAST_ADDRESS,		/* 2 */
-	CB_CAST_ADDR_OF_ADDR,		/* 3 */
-	CB_CAST_LENGTH,			/* 4 */
-	CB_CAST_PROGRAM_POINTER		/* 5 */
+	CB_CAST_NEGATIVE_INTEGER,		/* 1 */
+	CB_CAST_LONG_INT,		/* 2 */
+	CB_CAST_NEGATIVE_LONG_INT,		/* 3 */
+	CB_CAST_ADDRESS,		/* 4 */
+	CB_CAST_ADDR_OF_ADDR,		/* 5 */
+	CB_CAST_LENGTH,			/* 6 */
+	CB_CAST_PROGRAM_POINTER		/* 7 */
 };
 
 /* Intrinsic functions */
@@ -516,10 +518,10 @@ enum cb_index_type {
 struct cobc_reserved {
 	const char	*name;		/* Word */
 	unsigned short	nodegen;	/* Statement with END-xxx */
-	unsigned short	context_sens;	/* Context sensitive */
+	unsigned short	context_sens;	/* Context sensitive (needed for user-amendmends) */
 	int		token;		/* Token */
-	unsigned int	context_set;	/* Set context sensitive */
-	unsigned int	context_test;	/* Test context sensitive */
+	unsigned int	context_set;	/* context sensitive value set */
+	unsigned int	context_test;	/* context sensitive value tested */
 };
 
 /* Basic common tree structure */
@@ -807,10 +809,11 @@ struct cb_picture {
 	enum cb_category	category;	/* Field category */
 	cob_u32_t		digits;		/* Number of digit places */
 	int			scale;		/* 1/10^scale */
+#if 0 /* currently unused */
 	cob_u32_t		real_digits;	/* Real number of digits */
+#endif
 	cob_u32_t		have_sign;	/* Have 'S' */
 	unsigned int flag_is_calculated	: 1;	/* is calculated */
-	unsigned int flag_has_p	: 1;	/* Has PPs in PICTURE */
 	unsigned int variable_length	: 1;	/* Starts with 'L' */
 };
 
@@ -892,6 +895,8 @@ struct cb_field {
 	cb_tree			screen_foreg;	/* FOREGROUND */
 	cb_tree			screen_backg;	/* BACKGROUND */
 	cb_tree			screen_prompt;	/* PROMPT */
+	cb_tree			screen_control;	/* CONTROL identifier (variable named attributes) */
+	cb_tree			screen_color;	/* COLOR identifier (variable bit-shifted attributes) */
 	cb_tree			report_source;	/* SOURCE field */
 	cb_tree			report_from;	/* SOURCE field subscripted; so MOVE to report_source */
 	cb_tree			report_sum_counter;/* SUM counter */
@@ -1034,6 +1039,10 @@ struct cb_field {
 
 #define CB_FIELD_PTR(x)		\
 	(CB_REFERENCE_P (x) ? CB_FIELD (cb_ref (x)) : CB_FIELD (x))
+
+/* special values for cb_default_byte */
+#define CB_DEFAULT_BYTE_INIT	-1	/* init by PICTURE/USAGE; INDEXED BY as 1 */
+#define CB_DEFAULT_BYTE_NONE	-2	/* no explicit init at all */
 
 /* Index */
 
@@ -1264,30 +1273,44 @@ struct cb_reference {
 
 /* Binary operation */
 
-/*
-  '+'	x + y
-  '-'	x - y
-  '*'	x * y
-  '/'	x / y
-  '^'	x ** y
-  '='	x = y
-  '>'	x > y
-  '<'	x < y
-  '['	x <= y
-  ']'	x >= y
-  '~'	x != y
-  '!'	not x
-  '&'	x and y
-  '|'	x or y
-  '@'	( x )
-*/
+enum cb_binary_op_op {
+	BOP_INVALID = 0,	/* operation on invalid elements */
+	BOP_PLUS	= '+',	/* x + y */
+	BOP_MINUS	= '-',	/* x - y */
+	BOP_MULT	= '*',	/* x * y */
+	BOP_DIV		= '/',	/* x / y */
+	BOP_POW 	= '^',	/* x ** y */
+	BOP_EQ		= '=',	/* x = y */
+	BOP_GT		= '>',	/* x > y */
+	BOP_LT		= '<',	/* x < y */
+	BOP_LE		= '[',	/* x <= y */
+	BOP_GE		= ']',	/* x >= y */
+	BOP_NE		= '~',	/* x != y */
+	BOP_NOT		= '!',	/* not x */
+	BOP_AND		= '&',	/* x and y */
+	BOP_OR		= '|',	/* x or y */
+	BOP_PARENS	= '@',	/* ( x ) */
+	BOP_BITWISE_NOT	= 'n',	/* ~ ( x ) */
+	BOP_BITWISE_AND	= 'a',	/* ( x & y ) */
+	BOP_BITWISE_OR	= 'o',	/* ( x | y ) */
+	BOP_BITWISE_XOR	= 'e',	/* ( x ^ y ) */
+	BOP_SHIFT_L 	= 'l',	/* ( x << y ) */
+	BOP_SHIFT_R 	= 'r',	/* ( x >> y ) */
+	BOP_SHIFT_LC	= 'c',	/* ( x << y circular-shift) */
+	BOP_SHIFT_RC	= 'd',	/* ( x >> y circular-shift ) */
+};
+
+enum cb_binary_op_flag {
+	BOP_RESOLVE_AS_INTEGER = 1,
+	BOP_OPERANDS_SWAPPED = 2
+};
 
 struct cb_binary_op {
 	struct cb_tree_common	common;		/* Common values */
 	cb_tree			x;		/* LHS */
 	cb_tree			y;		/* RHS */
-	int			op;		/* Operation */
-	unsigned int		flag;		/* Special usage */
+	enum cb_binary_op_op	op;		/* Operation */
+	enum cb_binary_op_flag 	flag;		/* Special usage */
 };
 
 #define CB_BINARY_OP(x)		(CB_TREE_CAST (CB_TAG_BINARY_OP, struct cb_binary_op, x))
@@ -1295,10 +1318,11 @@ struct cb_binary_op {
 
 /* Function call */
 
+#define CB_BUILD_FUNCALL_MAX 14
 struct cb_funcall {
 	struct cb_tree_common	common;		/* Common values */
 	const char		*name;		/* Function name */
-	cb_tree			argv[11];	/* Function arguments */
+	cb_tree			argv[CB_BUILD_FUNCALL_MAX];	/* Function arguments */
 	int			argc;		/* Number of arguments */
 	int			varcnt;		/* Variable argument count */
 	unsigned int		screenptr;	/* SCREEN usage */
@@ -1374,8 +1398,8 @@ struct cb_initialize {
 	cb_tree			var;			/* Field */
 	cb_tree			val;			/* ALL (cb_true) or category (cb_int) TO VALUE */
 	cb_tree			rep;			/* Replacing */
+	enum cob_statement	statement;	/* INITIALIZE statement */
 	unsigned char		flag_default;		/* Default */
-	unsigned char		flag_init_statement;	/* INITIALIZE statement */
 	unsigned char		flag_no_filler_init;	/* No FILLER initialize */
 	unsigned char		padding;		/* Padding */
 };
@@ -1508,6 +1532,9 @@ struct cb_attr_struct {
 	cb_tree			timeout;	/* TIMEOUT */
 	cb_tree			prompt;		/* PROMPT */
 	cb_tree			size_is;	/* [PROTECTED] SIZE [IS] */
+	cb_tree			control;		/* CONTROL [IS] (named attributes) */
+	cb_tree			color;		/* CONTROL (bit-shifted attributes) */
+	cb_tree			cursor;		/* CURSOR */
 	cob_flags_t		dispattrs;	/* Attributes */
 };
 
@@ -1995,7 +2022,8 @@ struct cb_ml_suppress_clause {
 	enum cb_ml_suppress_category	category;
 };
 
-#define CB_ML_SUPPRESS(x)	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS, struct cb_ml_suppress_clause, x))
+#define CB_ML_SUPPRESS(x)	\
+	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS, struct cb_ml_suppress_clause, x))
 #define CB_ML_SUPPRESS_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_SUPPRESS)
 
 struct cb_ml_suppress_checks {
@@ -2003,7 +2031,8 @@ struct cb_ml_suppress_checks {
 	struct cb_ml_generate_tree	*tree;
 };
 
-#define CB_ML_SUPPRESS_CHECKS(x)	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS_CHECKS, struct cb_ml_suppress_checks, x))
+#define CB_ML_SUPPRESS_CHECKS(x)	\
+	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS_CHECKS, struct cb_ml_suppress_checks, x))
 #define CB_ML_SUPPRESS_CHECKS_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_SUPPRESS_CHECKS)
 
 /* DISPLAY type */
@@ -2162,8 +2191,10 @@ extern void			cb_set_system_names (void);
 extern cb_tree			cb_ref (cb_tree);
 extern cb_tree			cb_try_ref (cb_tree);
 
-extern cb_tree			cb_build_binary_op (cb_tree, const int,
-						    cb_tree);
+extern enum cb_binary_op_flag		cb_next_binary_op_flag;	/* hack for cb_build_binary_op */
+
+extern cb_tree			cb_build_binary_op (cb_tree,
+						    const enum cb_binary_op_op, cb_tree);
 extern cb_tree			cb_build_binary_list (cb_tree, const int);
 
 extern cb_tree			cb_build_funcall (const char *, const int,
@@ -2172,7 +2203,8 @@ extern cb_tree			cb_build_funcall (const char *, const int,
 						  const cb_tree, const cb_tree,
 						  const cb_tree, const cb_tree,
 						  const cb_tree, const cb_tree,
-						  const cb_tree);
+						  const cb_tree, const cb_tree,
+						  const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_cast (const enum cb_cast_type,
 					       const cb_tree);
@@ -2243,7 +2275,7 @@ extern cb_tree		cb_build_schema_name (cb_tree);
 extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
 					   const cb_tree,
 					   const unsigned int,
-					   const unsigned int,
+					   const enum cob_statement,
 					   const unsigned int);
 
 struct cb_literal	*build_literal (enum cb_category,
@@ -2277,7 +2309,6 @@ extern unsigned int	cobc_in_procedure;
 extern unsigned int	cobc_in_data_division;
 extern unsigned int	cobc_in_usage;
 extern unsigned int	cobc_in_repository;
-extern unsigned int	cobc_force_literal;
 extern unsigned int	cobc_cs_check;
 extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
@@ -2413,7 +2444,7 @@ extern void		cb_terminate_cond (void);
 extern void		cb_true_side (void);
 extern void		cb_false_side (void);
 extern void		cb_end_statement (void);
-extern const char		*explain_operator (const int);
+extern const char		*explain_operator (const enum cb_binary_op_op);
 extern const char		*enum_explain_storage (const enum cb_storage storage);
 
 extern void		cb_emit_arithmetic (cb_tree, const int, cb_tree);
@@ -2667,51 +2698,63 @@ extern int		cobc_has_areacheck_directive (const char *directive);
 
 #define CB_BUILD_FUNCALL_0(f)					\
 	cb_build_funcall (f, 0, NULL, NULL, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_1(f,a1)				\
 	cb_build_funcall (f, 1, a1, NULL, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_2(f,a1,a2)				\
 	cb_build_funcall (f, 2, a1, a2, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_3(f,a1,a2,a3)				\
 	cb_build_funcall (f, 3, a1, a2, a3, NULL, NULL, NULL,	\
-			  NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_4(f,a1,a2,a3,a4)			\
 	cb_build_funcall (f, 4, a1, a2, a3, a4, NULL,		\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_5(f,a1,a2,a3,a4,a5)			\
 	cb_build_funcall (f, 5, a1, a2, a3, a4, a5,		\
-			  NULL, NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_6(f,a1,a2,a3,a4,a5,a6)			\
 	cb_build_funcall (f, 6, a1, a2, a3, a4, a5, a6,		\
-			  NULL, NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_7(f,a1,a2,a3,a4,a5,a6,a7)		\
 	cb_build_funcall (f, 7, a1, a2, a3, a4, a5, a6, a7,	\
-			  NULL, NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_8(f,a1,a2,a3,a4,a5,a6,a7,a8)		\
 	cb_build_funcall (f, 8, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  NULL, NULL, NULL)
+			  NULL, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_9(f,a1,a2,a3,a4,a5,a6,a7,a8,a9)	\
 	cb_build_funcall (f, 9, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  a9, NULL, NULL)
+			  a9, NULL, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_10(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)		\
 	cb_build_funcall (f, 10, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  a9, a10, NULL)
+			  a9, a10, NULL, NULL, NULL, NULL)
 
 #define CB_BUILD_FUNCALL_11(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)	\
 	cb_build_funcall (f, 11, a1, a2, a3, a4, a5, a6, a7, a8,	\
-			  a9, a10, a11)
+			  a9, a10, a11, NULL, NULL, NULL)
+
+#define CB_BUILD_FUNCALL_12(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a11,a12)	\
+	cb_build_funcall (f, 9, a1, a2, a3, a4, a5, a6, a7, a8,	\
+			  a9, a10, a11, a12, NULL, NULL)
+
+#define CB_BUILD_FUNCALL_13(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13)	\
+	cb_build_funcall (f, 10, a1, a2, a3, a4, a5, a6, a7, a8,	\
+			  a9, a10, a11, a12, a13, NULL)
+
+#define CB_BUILD_FUNCALL_14(f,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14)	\
+	cb_build_funcall (f, 11, a1, a2, a3, a4, a5, a6, a7, a8,	\
+			  a9, a10, a11, a12, a13, a14)
 
 /* Miscellaneous defines */
 

@@ -56,29 +56,22 @@ cob_gen_optim (const enum cb_optim val)
 	switch (val) {
 
 	case COB_SET_SCREEN:
-		output_storage ("static void COB_NOINLINE");
-		output_storage ("cob_set_screen (cob_screen *s, cob_screen *next,");
-		output_storage ("		cob_screen *prev, cob_screen *child, cob_screen *parent,");
-		output_storage ("		cob_field *field, cob_field *value,");
-		output_storage ("		cob_field *line, cob_field *column,");
-		output_storage ("		cob_field *foreg, cob_field *backg, cob_field *prompt,");
-		output_storage ("		const int type, const int occurs, const int attr)");
-		output_storage ("{");
-		output_storage ("	s->next = next;");
-		output_storage ("	s->prev = prev;");
-		output_storage ("	s->child = child;");
-		output_storage ("	s->parent = parent;");
-		output_storage ("	s->field = field;");
-		output_storage ("	s->value = value;");
-		output_storage ("	s->line = line;");
-		output_storage ("	s->column = column;");
-		output_storage ("	s->foreg = foreg;");
-		output_storage ("	s->backg = backg;");
-		output_storage ("	s->prompt = prompt;");
-		output_storage ("	s->type = type;");
-		output_storage ("	s->occurs = occurs;");
-		output_storage ("	s->attr = attr;");
-		output_storage ("}");
+		output_storage ("#define COB_SET_SCREEN(s,typ,att,nxt,prv,chld,p,fld,val,l,c,fg,bg,prmpt,occ) \\");
+		output_storage ("do{	s.next = nxt;     \\");
+		output_storage ("	s.prev = prv;     \\");
+		output_storage ("	s.child = chld;   \\");
+		output_storage ("	s.parent = p;     \\");
+		output_storage ("	s.field = fld;    \\");
+		output_storage ("	s.value = val;    \\");
+		output_storage ("	s.line = l;       \\");
+		output_storage ("	s.column = c;     \\");
+		output_storage ("	s.foreg = fg;     \\");
+		output_storage ("	s.backg = bg;     \\");
+		output_storage ("	s.prompt = prmpt; \\");
+		output_storage ("	s.type = typ;     \\");
+		output_storage ("	s.occurs = occ;   \\");
+		output_storage ("	s.attr = att;     \\");
+		output_storage ("} ONCE_COB");
 		return;
 
 	case COB_SET_REPORT:
@@ -314,6 +307,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("}");
 		return;
 
+#if 0	/* libcob's optimized version is not slower, so drop that */
 	case COB_CMP_PACKED_INT:
 		output_storage ("static int COB_NOINLINE");
 		output_storage ("cob_cmp_packed_int (const cob_field *f, const cob_s64_t n)");
@@ -328,8 +322,8 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("		val = val * 10");
 		output_storage ("		    + (*p++ & 0x0f);");
 		output_storage ("	}");
-		output_storage ("	val *= 10;");
-		output_storage ("	val += *p >> 4;");
+		output_storage ("	val = val * 10");
+		output_storage ("	    + (*p >> 4);");
 		output_storage ("	if ((*p & 0x0f) == 0x0d) {");
 		output_storage ("		val = -val;");
 		output_storage ("	}");
@@ -351,14 +345,38 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("		val = val * 10");
 		output_storage ("		    + (*p++ & 0x0f);");
 		output_storage ("	}");
-		output_storage ("	val *= 10;");
-		output_storage ("	val += *p >> 4;");
+		output_storage ("	val = val * 10");
+		output_storage ("	    + (*p >> 4);");
 		output_storage ("	if ((*p & 0x0f) == 0x0d) {");
 		output_storage ("		val = -val;");
 		output_storage ("	}");
 		output_storage ("	return val;");
 		output_storage ("}");
 		return;
+
+	case COB_GET_PACKED_INT64:
+		output_storage ("static cob_s64_t COB_NOINLINE");
+		output_storage ("cob_get_packed_int64 (const cob_field *f)");
+		output_storage ("{");
+		output_storage ("	register unsigned char		*p = f->data;");
+		output_storage ("	const register unsigned char	*p_end = p + f->size - 1;");
+		output_storage ("	register cob_s64_t	val = 0;");
+
+		output_storage ("	while (p < p_end) {");
+		output_storage ("		val = val * 10");
+		output_storage ("		    + (*p >> 4);");
+		output_storage ("		val = val * 10");
+		output_storage ("		    + (*p++ & 0x0f);");
+		output_storage ("	}");
+		output_storage ("	val = val * 10");
+		output_storage ("	    + (*p >> 4);");
+		output_storage ("	if ((*p & 0x0f) == 0x0d) {");
+		output_storage ("		val = -val;");
+		output_storage ("	}");
+		output_storage ("	return val;");
+		output_storage ("}");
+		return;
+#endif
 
 	case COB_ADD_PACKED_INT:
 		output_storage ("static int COB_NOINLINE");
@@ -369,6 +387,51 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	int		carry = 0;");
 		output_storage ("	int		n;");
 		output_storage ("	int		inc;");
+
+		output_storage ("	if (val == 0) {");
+		output_storage ("		return 0;");
+		output_storage ("	}");
+		output_storage ("	p = f->data + f->size - 1;");
+		output_storage ("	if ((*p & 0x0f) == 0x0d) {");
+		output_storage ("		if (val > 0) {");
+		output_storage ("			return cob_add_int (f, val, 0);");
+		output_storage ("		}");
+		output_storage ("		n = -val;");
+		output_storage ("	} else {");
+		output_storage ("		if (val < 0) {");
+		output_storage ("			return cob_add_int (f, val, 0);");
+		output_storage ("		}");
+		output_storage ("		n = val;");
+		output_storage ("	}");
+		output_storage ("	inc = (*p >> 4) + (n %% 10);");
+		output_storage ("	n /= 10;");
+		output_storage ("	carry = inc / 10;");
+		output_storage ("	*p = ((inc %% 10) << 4) | (*p & 0x0f);");
+		output_storage ("	p--;");
+
+		output_storage ("	for (size = 0; size < f->size - 1; ++size, --p) {");
+		output_storage ("		if (!carry && !n) {");
+		output_storage ("			break;");
+		output_storage ("		}");
+		output_storage ("		inc = ((*p >> 4) * 10) + (*p & 0x0f) + carry + (n %% 100);");
+		output_storage ("		carry = inc / 100;");
+		output_storage ("		n /= 100;");
+		output_storage ("		inc %%= 100;");
+		output_storage ("		*p = ((inc / 10) << 4) | (inc %% 10);");
+		output_storage ("	}");
+		output_storage ("	return 0;");
+		output_storage ("}");
+		return;
+
+	case COB_ADD_PACKED_INT64:
+		output_storage ("static int COB_NOINLINE");
+		output_storage ("cob_add_packed_int64 (cob_field *f, const cob_s64_t val)");
+		output_storage ("{");
+		output_storage ("	register unsigned char	*p;");
+		output_storage ("	size_t		size;");
+		output_storage ("	cob_s64_t	carry = 0;");
+		output_storage ("	cob_s64_t	n;");
+		output_storage ("	cob_s64_t	inc;");
 
 		output_storage ("	if (val == 0) {");
 		output_storage ("		return 0;");

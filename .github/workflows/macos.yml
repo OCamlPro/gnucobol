@@ -54,7 +54,6 @@ jobs:
 
       - name: bootstrap
         run: |
-          sed -i '' 's/-undefined suppress//g' configure.ac  # TODO drop
           ./build_aux/bootstrap install
 
       - name: Build environment setup

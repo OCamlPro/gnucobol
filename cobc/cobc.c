@@ -477,7 +477,7 @@ static const struct option long_options[] = {
 	{"std",			CB_RQ_ARG, NULL, '$'},
 	{"conf",		CB_RQ_ARG, NULL, '&'},
 	{"debug",		CB_NO_ARG, NULL, 'd'},
-	{"ext",			CB_RQ_ARG, NULL, 'e'},
+	{"ext",			CB_RQ_ARG, NULL, '.'},
 	{"free",		CB_NO_ARG, NULL, 'F'},	/* note: not assigned directly as this is only valid for */
 	{"fixed",		CB_NO_ARG, NULL, 'f'},	/*       `int` and sizeof(enum) isn't always sizeof (int) */
 	{"static",		CB_NO_ARG, &cb_flag_static_call, 1},
@@ -989,9 +989,9 @@ cobc_main_stradd_dup (const char *str1, const char *str2)
 void *
 cobc_main_realloc (void *prevptr, const size_t size)
 {
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 	struct cobc_mem_struct	*m;
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1033,8 +1033,8 @@ cobc_main_realloc (void *prevptr, const size_t size)
 void
 cobc_main_free (void *prevptr)
 {
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 
 	prev = NULL;
 	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
@@ -1105,9 +1105,9 @@ cobc_parse_strdup (const char *dupstr)
 void *
 cobc_parse_realloc (void *prevptr, const size_t size)
 {
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 	struct cobc_mem_struct	*m;
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1149,8 +1149,8 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 void
 cobc_parse_free (void *prevptr)
 {
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 
 	prev = NULL;
 	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
@@ -1407,7 +1407,7 @@ cobc_bcompare (const void *p1, const void *p2)
 enum name_error_reason {
 	INVALID_LENGTH = 1,
 	EMPTY_NAME,
-	SPACE_UNDERSCORE_FIRST_CHAR,
+	SPACE_HYPHEN_FIRST_CHAR,
 	GNUCOBOL_PREFIX,
 	C_KEYWORD,
 	CONTAINS_DIRECTORY_SEPARATOR
@@ -1427,8 +1427,8 @@ cobc_error_name (const char *name, const enum cobc_name_type type,
 	case EMPTY_NAME:
 		s = _(" - name cannot be empty");
 		break;
-	case SPACE_UNDERSCORE_FIRST_CHAR:
-		s = _(" - name cannot begin with space or underscore");
+	case SPACE_HYPHEN_FIRST_CHAR:
+		s = _(" - name cannot begin with space or hyphen");
 		break;
 	case GNUCOBOL_PREFIX:
 		s = _(" - name cannot begin with 'cob_' or 'COB_'");
@@ -1498,8 +1498,8 @@ cobc_check_valid_name (const char *name, const enum cobc_name_type prechk)
 	/* missing check (here): encoded length > internal buffer,
 	   see cob_encode_program_id */
 
-	if (*name == '_' || *name == ' ') {
-		cobc_error_name (name, prechk, SPACE_UNDERSCORE_FIRST_CHAR);
+	if (*name == '-' || *name == ' ') {
+		cobc_error_name (name, prechk, SPACE_HYPHEN_FIRST_CHAR);
 		return 1;
 	}
 
@@ -2119,14 +2119,15 @@ set_compile_date (void)
 {
 	static int sde_todo = 0;
 	if (sde_todo == 0) {
-		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		unsigned char  *s = (unsigned char *) getenv ("SOURCE_DATE_EPOCH");
 		sde_todo = 1;
 		if (s && *s) {
 			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
 				set_compile_date_tm ();
 				return;
 			}
-			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			cobc_err_msg (_("environment variable '%s' has invalid content"),
+				"SOURCE_DATE_EPOCH");
 			if (!cb_flag_syntax_only) {
 				cb_source_file = NULL;
 				cobc_abort_terminate (0);
@@ -2761,7 +2762,6 @@ file_stripext (char *buff)
 static char *
 file_basename (const char *filename, const char *strip_ext)
 {
-	const char	*p;
 	const char	*startp;
 	const char	*endp;
 	size_t		len;
@@ -2775,19 +2775,23 @@ file_basename (const char *filename, const char *strip_ext)
 	/* LCOV_EXCL_STOP */
 
 	/* Remove directory name */
-	startp = NULL;
-	for (p = filename; *p; p++) {
-		if (*p == '/' || *p == '\\') {
-			startp = p;
+	startp = strrchr (filename, '/');
+#if defined(_WIN32) || defined(__CYGWIN__)
+	{
+		const char *slash = strrchr (filename, '\\');
+		if (slash
+		 && (!startp || startp < slash)) {
+			startp = slash;
 		}
 	}
+#endif
 	if (startp) {
 		startp++;
 	} else {
 		startp = filename;
 	}
 
-	/* Remove extension */
+	/* Remove extension (= after last '.') */
 	if (!strip_ext || strcmp (strip_ext, COB_BASENAME_KEEP_EXT)) {
 		endp = strrchr (filename, '.');
 	} else {
@@ -3672,7 +3676,7 @@ process_command_line (const int argc, char **argv)
 #endif
 			break;
 
-		case 'e':
+		case '.':
 			/* -ext <xx> : Add an extension suffix */
 			if (strlen (cob_optarg) > 15U) {
 				cobc_err_exit (COBC_INV_PAR, "--ext");
@@ -4337,6 +4341,9 @@ process_filename (const char *filename)
 	    cb_strcasecmp (extension, COB_OBJECT_EXT) == 0
 #if	defined(_WIN32)
 	 || cb_strcasecmp (extension, "lib") == 0
+#if defined (__GNUC__)
+	|| cb_strcasecmp (extension, "dll") == 0
+#endif
 #endif
 #if	!defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
 	 || cb_strcasecmp (extension, "a") == 0
@@ -6012,12 +6019,12 @@ xref_files_and_their_records (cb_tree file_list_p)
 	cb_tree	l;
 
 	for (l = file_list_p; l; l = CB_CHAIN (l)) {
+		struct cb_file *file = CB_FILE (CB_VALUE (l));
 		pd_off = sprintf (print_data, "%-30.30s %-6u ",
-			 CB_FILE (CB_VALUE (l))->name,
-			 CB_FILE (CB_VALUE (l))->common.source_line);
-		xref_print (&CB_FILE (CB_VALUE (l))->xref, XREF_FILE, NULL);
-		if (CB_FILE (CB_VALUE (l))->record) {
-			(void)xref_fields (CB_FILE (CB_VALUE (l))->record);
+			 file->name, file->common.source_line);
+		xref_print (&file->xref, XREF_FILE, NULL);
+		if (file->record) {
+			(void)xref_fields (file->record);
 		}
 		print_program_data ("");
 	}
@@ -6038,15 +6045,14 @@ xref_fields_in_section (struct cb_field *first_field_in_section)
 }
 
 static int
-xref_labels (cb_tree label_list_p)
+xref_labels (cb_tree statements)
 {
-	cb_tree	l;
 	char	label_type = ' ';
-	struct cb_label *lab;
-
-	for (l = label_list_p; l; l = CB_CHAIN (l)) {
-		if (CB_LABEL_P(CB_VALUE(l))) {
-			lab = CB_LABEL (CB_VALUE (l));
+	cb_tree	l;
+	for (l = statements; l; l = CB_CHAIN (l)) {
+		cb_tree stmt = CB_VALUE (l);
+		if (CB_LABEL_P (stmt)) {
+			struct cb_label *lab = CB_LABEL (stmt);
 			if (lab->xref.skip) {
 				continue;
 			}
@@ -7896,6 +7902,7 @@ process_translate (struct filename *fn)
 		/* If processing raised errors set syntax-only flag to not
 		   loose the information "no codegen occurred" */
 		cb_flag_syntax_only = 1;
+		cb_flag_fast_compare = 0;
 		return 1;
 	}
 	if (cb_flag_syntax_only) {
@@ -9023,6 +9030,7 @@ process_file (struct filename *fn, int status)
 		/* If preprocessing raised errors go on but only check syntax */
 		if (fn->has_error) {
 			cb_flag_syntax_only = 1;
+			cb_flag_fast_compare = 0;
 		}
 	} else
 		if (cb_src_list_file) {
@@ -9156,6 +9164,7 @@ main (int argc, char **argv)
 			cobc_flag_module = 1;
 		}
 	} else {
+		cb_flag_fast_compare = 0;
 		cb_compile_level = CB_LEVEL_TRANSLATE;
 		cobc_flag_main = 0;
 		cobc_flag_module = 0;

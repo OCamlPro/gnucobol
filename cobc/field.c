@@ -458,8 +458,8 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		}
 	}
 	if (last_field) {
-		if (last_field->level == 77 && f->level != 01 &&
-			f->level != 77 && f->level != 66 && f->level != 88) {
+		if (last_field->level == 77 && f->level != 01
+		 && f->level != 77 && f->level != 66 && f->level != 88) {
 			cb_error_x (name, _("level number must begin with 01 or 77"));
 			return cb_error_node;
 		}
@@ -476,8 +476,9 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 				if (!CB_FIELD_P (x)
 				 || CB_FIELD (x)->level == 01
 				 || CB_FIELD (x)->level == 77
-				 || (last_field && last_field->level == f->level
-				  && last_field->parent == CB_FIELD (x)->parent)) {
+				 || ( last_field
+				   && f->level == last_field->level
+				   && CB_FIELD (x)->parent == last_field->parent)) {
 					redefinition_warning (name, x);
 					break;
 				}
@@ -582,6 +583,13 @@ same_level:
 		if (f->level <= 66) {
 			f->flag_volatile = parent->flag_volatile;
 		}
+		if (f->storage == CB_STORAGE_SCREEN) {
+			f->screen_foreg   = parent->screen_foreg;
+			f->screen_backg   = parent->screen_backg;
+			f->screen_prompt  = parent->screen_prompt;
+			f->screen_control = parent->screen_control;
+			f->screen_color   = parent->screen_color;
+		}
 	}
 
 	if (storage == CB_STORAGE_FILE 
@@ -645,7 +653,7 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 	         parent using strcasecmp */
 	for (items = r->word->items; items; items = CB_CHAIN (items)) {
 		const cb_tree value = CB_VALUE (items);
-		if (CB_FIELD_P (value)) {
+		if (value != x && CB_FIELD_P (value)) {
 			candidate = value;
 			/* we want to get the last, so no "break" here */
 		}
@@ -716,6 +724,8 @@ copy_children (struct cb_field *child, struct cb_field *target,
 		level_child = child->level;
 	} else {
 		level_child = level + 1;
+		/* ensure that we don't set the "virtual level number" to one of
+		   the "special" level numbers */
 		if (level_child == 66 || level_child == 78 || level_child == 88) {
 			level_child++;
 		} else if (level_child == 77) {
@@ -893,7 +903,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 			target->pic = cb_build_picture (source->pic->orig);
 		}
 	} else {
-		struct cb_picture* new_pic = NULL;
+		struct cb_picture *new_pic = NULL;
 		int modifier = cb_get_int (target->like_modifier);
 		if (modifier) {
 			switch (target->usage) {
@@ -2260,9 +2270,6 @@ validate_elementary_item (struct cb_field *f)
 		f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 0);
 		f->flag_real_binary = 1;
 		break;
-	case CB_USAGE_COMP_5:
-		f->flag_real_binary = 1;
-		break;
 	default:
 		break;
 	}
@@ -2569,15 +2576,15 @@ setup_parameters (struct cb_field *f)
 		f->pic->flag_is_calculated = 1;
 		break;
 
-	case CB_USAGE_COMP_5:
 	case CB_USAGE_COMP_N:
+		f->flag_real_binary = 1;
+	case CB_USAGE_COMP_5:
 		if (f->pic 
 		 && f->pic->orig
 		 && f->pic->orig[0] == 'X') {
 			f->usage = CB_USAGE_COMP_X;
 			f->pic->have_sign = 0;
 		}
-		f->flag_real_binary = 1;
 		/* Fall-through */
 	case CB_USAGE_COMP_X:
 		if (f->pic
@@ -3220,7 +3227,7 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		if (*val == cb_zero
 		 && !f->flag_internal_register
-		 && cb_default_byte == -1
+		 && cb_default_byte == CB_DEFAULT_BYTE_INIT
 		 && ( f->storage == CB_STORAGE_WORKING
 		   || f->storage == CB_STORAGE_LOCAL)
 		 && !f->flag_sign_separate) {
@@ -3228,7 +3235,27 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		break;
 	case CB_CATEGORY_NATIONAL:
-		/* FIXME: Fall-through, but should handle national space */
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal *lit = CB_LITERAL (*val);
+			char *p = (char*)lit->data;
+			char *end = p + lit->size - 1;
+			if (lit->size % COB_NATIONAL_SIZE != 0) {
+				break;
+			}
+			if (*end == ' ') {
+				while (p < end && p[0] == 0x00 && p[1] == ' ') p += 2;
+				if (p == end) *val = cb_space;
+			}
+		}
+		if (*val == cb_space
+		 && !f->flag_internal_register
+		 && ( cb_default_byte == CB_DEFAULT_BYTE_INIT)
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->children) {
+			return 1;
+		}
+		break;
 	case CB_CATEGORY_ALPHANUMERIC:
 		if (CB_LITERAL_P (*val)) {
 			const struct cb_literal *lit = CB_LITERAL (*val);
@@ -3241,7 +3268,8 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		if (*val == cb_space
 		 && !f->flag_internal_register
-		 && (cb_default_byte == -1 || cb_default_byte == ' ')
+		 && ( cb_default_byte == CB_DEFAULT_BYTE_INIT
+		   || cb_default_byte == ' ')
 		 && ( f->storage == CB_STORAGE_WORKING
 		   || f->storage == CB_STORAGE_LOCAL)
 		 && !f->children) {
@@ -3425,7 +3453,9 @@ cb_validate_88_item (struct cb_field *f)
 		for (l = f->values; l; l = CB_CHAIN (l)) {
 			cb_tree x = CB_VALUE (l);
 			/* for list A THRU C, X, Z we have another list */
-			if (CB_LIST_P (x)) x = CB_VALUE (x);
+			if (CB_LIST_P (x)) {
+				x = CB_VALUE (x);
+			}
 			if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC) {
 				if (CB_CONST_P (x)) x = CB_TREE (f);
 				cb_error_x (x, _("literal type does not match numeric data type"));
@@ -3790,6 +3820,7 @@ cb_is_figurative_constant (const cb_tree x)
 		|| x == cb_norm_high
 		|| x == cb_quote
 		|| (CB_REFERENCE_P (x)
+		 && CB_REFERENCE (x)->subs == NULL
 		 && CB_REFERENCE (x)->flag_all);
 }
 

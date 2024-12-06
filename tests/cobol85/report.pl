@@ -1,7 +1,7 @@
 #
 # gnucobol/tests/cobol85/report.pl
 #
-# Copyright (C) 2001-2012, 2016-2022 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2016-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -44,7 +44,8 @@ my $compile_module;
 my $force_cobcrun = 0;
 
 my $cobc = $ENV{"COBC"};
-my $cobol_flags= $ENV{"COBOL_FLAGS"};
+my $cobol_flags = $ENV{"COBOL_FLAGS"};
+my $cobol_default_flags = "-std=cobol85 --debug";
 my $cobcrun = $ENV{"COBCRUN"};
 my $cobcrun_direct = $ENV{"COBCRUN_DIRECT"};
 
@@ -59,14 +60,14 @@ if (defined $opt) {
 	}
 }
 
-if (defined $opt) {
-	$opt = "-std=cobol85 $opt"
-} else {
-	$opt = "-std=cobol85"
+if (defined $cobol_flags ) {
+	$cobol_default_flags = "$cobol_default_flags $cobol_flags"
 }
 
-if (defined $cobol_flags ) {
-	$opt = "$cobol_flags $opt"
+if (defined $opt) {
+	$opt = "$cobol_default_flags $opt"
+} else {
+	$opt = $cobol_default_flags
 }
 
 if (defined $cobc) {
@@ -216,15 +217,24 @@ $no_output{IF402M} = 1;
 
 $cobc_flags{SM206A} = "-fdebugging-line";
 
-# Programs that won't run correctly with enabled runtime checks
-# TODO for later: only deactivate specific checks by -fno-ec-...
-my %no_debug;
-$no_debug{DB101A} = 1;
-$no_debug{DB104A} = 1;
-$no_debug{DB201A} = 1;
-$no_debug{DB202A} = 1;
-$no_debug{DB203A} = 1;
-$no_debug{DB204A} = 1;
+# skip reasonable warning for unclean code
+$cobc_flags{IC115A} = "-Wno-goto-section";
+
+# skip specific runtime checks as needed
+
+# the following failed in previous versions with --debug,
+# but don't do any more
+
+# MOVE from PIC S9999 SEPARATE with "expected" value of SPACES to a target
+# of X(5) - RECHECK: is a conversion and therefore check needed?
+$cobc_flags{DB201A} = "-fno-ec=data-incompatible";
+
+# 2.2 generated DEBUG-LINE as numeric - but it always was X(6)
+#$cobc_flags{DB101A} = "-fno-ec=data-incompatible";
+#$cobc_flags{DB104A} = "-fno-ec=data-incompatible";
+#$cobc_flags{DB202A} = "-fno-ec=data-incompatible";
+#$cobc_flags{DB203A} = "-fno-ec=data-incompatible";
+#$cobc_flags{DB204A} = "-fno-ec=data-incompatible";
 
 # Programs that need to be "visual" inspected
 # NC113M: inspected additional to normal tests for output of hex values
@@ -281,12 +291,20 @@ printf LOG_TIME ("Total       %8.4f\n\n", ($global_end - $global_start));
 
 sub compile_lib {
 	my $in = $_[0];
+	my $in_clean = substr($in,4);
+	$in_clean =~ s/\.CBL//;
+
 	# export identifier in at_group (originally for autotest)
 	# (mainly for use with external tools like valgrind)
-	$ENV{"at_group"} = "NIST_lib_" + substr($in,3);
-	print "$compile_module $in\n";
+	$ENV{"at_group"} = "NIST_lib_" + $in_clean;
+	
+	my $compile_current = $compile_module;
+	if ($cobc_flags{$in_clean}) {
+		$compile_current = "$compile_current $cobc_flags{$in_clean}";
+	}
+	print "$compile_current $in\n";
 	my $local_start = time;
-	$ret = system ("$TRAP $compile_module $in");
+	$ret = system ("$TRAP $compile_current $in");
 	if ($ret != 0) {
 		if (($ret >> 8) == 77) {
 			die "Interrupted\n";
@@ -338,9 +356,6 @@ sub run_test {
 	}
 	if ($exe =~ /^SM/) {
 		$compile_current = "$compile_current -I ../copy";
-	}
-	if (!$no_debug{$exe}) {
-		$compile_current = "$compile_current -debug";
 	}
 	$compile_current = "$compile_current $in";
 	if ($raw_input{$exe}) {

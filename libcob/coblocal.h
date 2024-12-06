@@ -145,24 +145,33 @@
 #define	COB_128_OR_EXTEND	COB_U64_C(0x0002000000000000)
 
 /* Field/attribute initializers */
-#define COB_FIELD_INIT(x,y,z)	do { \
+#define COB_FIELD_INIT_F(field,x,y,z)	do { \
 	field.size = x; \
 	field.data = y; \
 	field.attr = z; \
 	} ONCE_COB
+#define COB_FIELD_INIT(x,y,z)	\
+	COB_FIELD_INIT_F(field,x,y,z)
 
-#define COB_ATTR_INIT(u,v,x,y,z)	do { \
+#define COB_ATTR_INIT_A(attr,u,v,x,y,z)	do { \
 	attr.type = u; \
 	attr.digits = v; \
 	attr.scale = x; \
 	attr.flags = y; \
 	attr.pic = z; \
 	} ONCE_COB
+#define COB_ATTR_INIT(u,v,x,y,z) \
+	COB_ATTR_INIT_A(attr,u,v,x,y,z)
 
 #define COB_GET_SIGN(f)		\
-	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f) : 0)
+	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f, 0) : 0)
+#define COB_GET_SIGN_ADJUST(f)		\
+	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f, 1) : 0)
 #define COB_PUT_SIGN(f,s)	\
 	do { if (COB_FIELD_HAVE_SIGN (f)) cob_real_put_sign (f, s); } ONCE_COB
+#define COB_PUT_SIGN_ADJUSTED(f,s)	\
+	do { if (s == -2) cob_real_put_sign (f, -1); \
+	     else if (s == 2) cob_real_put_sign (f, 1); } ONCE_COB
 
 #ifdef	COB_PARAM_CHECK
 #define	COB_CHK_PARMS(x,z)	\
@@ -220,7 +229,7 @@ typedef struct __cob_settings {
 	unsigned int	cob_time_constant_is_calculated;	/* constant contains full date vars */
 
 	/* call.c */
-	unsigned int	cob_physical_cancel;
+	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;
@@ -365,9 +374,10 @@ struct config_tbl {
 
 /* max sizes */
 
-/* Maximum bytes in a single/group field,
-   which doesn't contain UNBOUNDED items */
-   /* TODO: add compiler configuration for limiting this */
+/* Maximum bytes in a single/group field and for OCCURS,
+   which doesn't contain UNBOUNDED items,
+   along with maximum number of OCCURS;
+   TODO: add compiler configuration for limiting this */
 #ifndef COB_64_BIT_POINTER
 #define	COB_MAX_FIELD_SIZE	268435456
 #else
@@ -390,6 +400,7 @@ struct config_tbl {
 COB_EXPIMP const char * cob_io_version	(const int, const int);
 COB_EXPIMP const char * cob_io_name		(const int);
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
+COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_reportio	(cob_global *, cob_settings *);
@@ -430,7 +441,7 @@ COB_HIDDEN void		cob_exit_mlio		(void);
 COB_HIDDEN FILE		*cob_create_tmpfile	(const char *);
 COB_HIDDEN int		cob_check_numval_f	(const cob_field *);
 
-COB_HIDDEN int		cob_real_get_sign	(cob_field *);
+COB_HIDDEN int		cob_real_get_sign	(cob_field *, const int);
 COB_HIDDEN void		cob_real_put_sign	(cob_field *, const int);
 
 #ifndef COB_WITHOUT_DECIMAL
@@ -441,6 +452,8 @@ COB_HIDDEN void		cob_decimal_get_mpf (mpf_t, const cob_decimal *);
 COB_HIDDEN void		cob_decimal_setget_fld	(cob_field *, cob_field *,
 						 const int);
 COB_HIDDEN void		cob_decimal_move_temp	(cob_field *, cob_field *);
+COB_HIDDEN void		cob_move_display_to_packed (cob_field *, cob_field *);
+COB_HIDDEN void		cob_move_packed_to_display (cob_field *, cob_field *);
 
 COB_HIDDEN void		cob_display_common	(const cob_field *, FILE *);
 COB_HIDDEN void		cob_print_ieeedec	(const cob_field *, FILE *);
@@ -455,9 +468,19 @@ COB_HIDDEN void		cob_add_exception (const int);
 COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
-COB_EXPIMP void		cob_field_to_string	(const cob_field *, void *,
-						 const size_t);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
+
+enum cob_case_modifier {
+	CCM_NONE,
+	CCM_LOWER,
+	CCM_UPPER,
+	CCM_LOWER_LOCALE,
+	CCM_UPPER_LOCALE
+};
+COB_HIDDEN unsigned char	cob_toupper (const unsigned char);
+COB_HIDDEN unsigned char	cob_tolower (const unsigned char);
+COB_EXPIMP int		cob_field_to_string	(const cob_field *, void *,
+						 const size_t, const enum cob_case_modifier target_case);
 
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
 COB_HIDDEN char	*cob_strndup		(const char *, const size_t);
@@ -485,14 +508,14 @@ COB_EXPIMP char * cob_str_case_str (char *, const char *);
 
 /* static inline of smaller helpers */
 
-static COB_INLINE int
+static COB_INLINE COB_A_INLINE int
 cob_min_int (const int x, const int y)
 {
 	if (x < y) return x;
 	return y;
 }
 
-static COB_INLINE int
+static COB_INLINE COB_A_INLINE int
 cob_max_int (const int x, const int y)
 {
 	if (x > y) return x;

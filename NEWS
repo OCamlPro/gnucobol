@@ -76,6 +76,8 @@ NEWS - user visible changes				-*- outline -*-
   where the old default GnuCOBOL data files could be unusable if copied between
   systems of different hardware architecture.
 
+** use the "default" -shared flag to build dynamic libraries on macOS
+   so as to fix testuite issues with recent macOS versions
 
   ** dialect option to allow ref-mod with zero-length (active with -std=default),
      with runtime checks enabled; also set by directives
@@ -306,12 +308,15 @@ Open Plans:
    affected programs (with OCCURS DEPENDING ON) or compile with additional
    -fno-odoslide to get the same results as with older GnuCOBOL versions
 
-** the compile flag -fdefaultbyte was moved to a dialect configuration,
+** the compile flag -fdefaultbyte (initializarion for data-items without
+   an explicit VALUE) was moved to a dialect configuration;
    while -fdefaultbyte still works as before it is now implied as binary
-   zero with -std=ibm/mvs/bs2000, space for -std=mf/acu/rm/realia, and
+   zero with -std=ibm/mvs/bs2000/realia, space for -std=mf/acu/rm, and
    no defined initialization for -std=cobol85/cobol2002/cobol2014/xopen,
-   it is unchanged for -std=default (initialize to PICTURE/USAGE)
-   for compatibility to previous behavior compile with -fdefaultbyte=init
+   it is unchanged for -std=default (initialize to PICTURE/USAGE);
+   for compatibility to previous behavior compile with -fdefaultbyte=init;
+   note that initialization for INDEXED BY items honors the defaultbyte
+   configuration now, too
 
 ** the dialect configuration option larger-redefines-ok was changed to
    a support option larger-redefines; if specified on the command-line
@@ -414,6 +419,15 @@ Open Plans:
 ** several bugs in COPY REPLACING / REPLACING were fixed along with adding
    support for exensions related to REPLACING LEADING / TRAILING
 
+** for PICTURE P several fixes were made, so results may vary compared with
+   previous versions; sources with *leading* P never worked correct before,
+   and *must* be recompiled after upgrading
+
+** since its addition to GnuCOBOL ROUNDING MODE PROHIBITED just prevented
+   rounding; its behaviour changed to match the specification by doing that,
+   raising EC-SIZE-TRUNCATION and changed: not adjust the target field if
+   rounding would be necessary to store the data
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -513,6 +527,11 @@ Open Plans:
    or discussion board to share your comments on this topic, keeping in mind
    that this has to take both mathematical and "C compiler portability" into
    account)
+
+** variables containing PICTURE symbol P may lead to wrong results in rare
+   cases (especially screenio) - please send a bug report if you catch a case;
+   since GC 3.2 rc3 all arithmetic operations and MOVE are believed to be
+   correct
 
 ** features that are known to not be portable to every environment yet
    (especially when using a different compiler than GCC)

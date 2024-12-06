@@ -34,8 +34,7 @@
 #endif
 #include <math.h>
 
-/* Force symbol exports, include decimal definitions */
-#define	COB_LIB_EXPIMP
+/* include decimal definitions, allowing their use in common.h later */
 #ifdef	HAVE_GMP_H
 #include <gmp.h>
 #elif defined HAVE_MPIR_H
@@ -43,7 +42,9 @@
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
-#include "common.h"
+
+/* include internal and external libcob definitions, forcing exports */
+#define	COB_LIB_EXPIMP
 #include "coblocal.h"
 
 /* Note we include the Cygwin version of windows.h here */
@@ -488,18 +489,20 @@ setup_cob_log_ten (void)
 static void
 make_field_entry (cob_field *f)
 {
-	unsigned char		*s;
 	struct calc_struct	*calc_temp;
+	unsigned char		*s;
 
 	calc_temp = calc_base + curr_entry;
 	curr_field = &calc_temp->calc_field;
 	if (f->size > calc_temp->calc_size) {
+		/* set new temporary field data, storing its size */
 		if (curr_field->data) {
 			cob_free (curr_field->data);
 		}
 		calc_temp->calc_size = f->size + 1;
 		s = cob_malloc (f->size + 1U);
 	} else {
+		/* reuse last temporary field data */
 		s = curr_field->data;
 		memset (s, 0, f->size);
 	}
@@ -1792,10 +1795,9 @@ static int
 locale_time (const int hours, const int minutes, const int seconds,
 	     cob_field *locale_field, char *buff)
 {
-	char		*deflocale = NULL;
+	int 	deflocale = 0;
 	struct tm	tstruct;
 	char		buff2[LOCTIME_BUFSIZE] =  { '\0' };
-	char		locale_buff[COB_SMALL_BUFF] =  { '\0' };
 
 	/* Initialize tstruct to given time */
 	memset ((void *)&tstruct, 0, sizeof(struct tm));
@@ -1804,18 +1806,18 @@ locale_time (const int hours, const int minutes, const int seconds,
 	tstruct.tm_sec = seconds;
 
 	if (locale_field) {
-		if (locale_field->size >= COB_SMALL_BUFF) {
+		char		locale_buff[COB_MINI_BUFF];
+		deflocale = cob_field_to_string (locale_field, locale_buff,
+				COB_MINI_MAX, CCM_NONE);
+		if (deflocale < 1) {
 			return 1;
 		}
-		cob_field_to_string (locale_field, locale_buff,
-				     (size_t)COB_SMALL_MAX);
-		deflocale = locale_buff;
-		(void) setlocale (LC_TIME, deflocale);
+		(void) setlocale (LC_TIME, locale_buff);
 	}
 
 	/* Get strftime format string for locale */
 	memset (buff2, 0, LOCTIME_BUFSIZE);
-	snprintf(buff2, LOCTIME_BUFSIZE - 1, "%s", nl_langinfo(T_FMT));
+	snprintf (buff2, LOCTIME_BUFSIZE - 1, "%s", nl_langinfo (T_FMT));
 
 	/* Set locale if not done yet */
 	if (deflocale) {
@@ -1832,10 +1834,8 @@ locale_time (const int hours, const int minutes, const int seconds,
 	     cob_field *locale_field, char *buff)
 {
 	size_t		len;
-	unsigned char	*p;
 	LCID		localeid = LOCALE_USER_DEFAULT;
 	SYSTEMTIME	syst;
-	char		locale_buff[COB_SMALL_BUFF] = { '\0' };
 
 	/* Initialize syst with given time */
 	memset ((void *)&syst, 0, sizeof(syst));
@@ -1845,13 +1845,13 @@ locale_time (const int hours, const int minutes, const int seconds,
 
 	/* Get specified locale */
 	if (locale_field) {
-		if (locale_field->size >= COB_SMALL_BUFF) {
-			return 1;
-		}
-		cob_field_to_string (locale_field, locale_buff,
-				     COB_SMALL_MAX);
-
-		/* Null-terminate last char of the locale string */
+		char		locale_buff[COB_MINI_BUFF];
+		int flen = cob_field_to_string (locale_field, locale_buff,
+					COB_MINI_MAX, CCM_NONE);
+#if 0	/* re-null-terminate last char (first space/comma/...)
+		   of the locale string
+		   -> Simon: Why? We already have it rtrimmed */
+		unsigned char	*p;
 		for (p = (unsigned char *)locale_buff; *p; ++p) {
 			if (isalnum((int)*p) || *p == '_') {
 				continue;
@@ -1859,10 +1859,14 @@ locale_time (const int hours, const int minutes, const int seconds,
 			break;
 		}
 		*p = 0;
+#endif
+		if (flen < 1) {
+			return 1;
+		}
 
 		/* Find locale ID */
 		for (len = 0; len < WINLOCSIZE; ++len) {
-			if (!strcmp(locale_buff, wintable[len].winlocalename)) {
+			if (!strcmp (locale_buff, wintable[len].winlocalename)) {
 				localeid = wintable[len].winlocaleid;
 				break;
 			}
@@ -2622,15 +2626,19 @@ test_char (const char wanted, const char *str, int *offset)
 }
 
 static COB_INLINE COB_A_INLINE int
-test_digit (const unsigned char ch, int *offset)
-{
-	return test_char_cond (isdigit (ch), offset);
-}
-
-static COB_INLINE COB_A_INLINE int
 test_char_in_range (const char min, const char max, const char ch, int *offset)
 {
 	return test_char_cond (min <= ch && ch <= max, offset);
+}
+
+static COB_INLINE COB_A_INLINE int
+test_digit (const unsigned char ch, int *offset)
+{
+#if 0	/* note: as isdigit is locale-aware (slower and not what we want), we use the range instead */
+	return test_char_cond (isdigit (ch), offset);
+#else
+	return test_char_in_range ('0', '9', ch, offset);
+#endif
 }
 
 static int test_millenium (const char *date, int *offset, int *millenium)
@@ -3914,19 +3922,24 @@ cob_intr_bit_to_char (cob_field *srcfield)
 cob_field *
 cob_intr_hex_of (cob_field *srcfield)
 {
-	cob_field	field;
+	const char hex_val[] = "0123456789ABCDEF";
+
 	/* FIXME later: srcfield may be of category national - or later bit... */
 	const size_t		size = srcfield->size * 2;
-	size_t		i, j;
+	cob_field	field;
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
-	for (i = j = 0; i < srcfield->size; ++i) {
-		char buff[3];
-		sprintf (buff, "%02X", srcfield->data[i]);
-		curr_field->data[j++] = buff[0];
-		curr_field->data[j++] = buff[1];
+	{
+		register unsigned char *ret_pos = curr_field->data;
+		register unsigned char *src_pos = srcfield->data;
+		const unsigned char *src_end = src_pos + srcfield->size;
+
+		while (src_pos < src_end) {
+			*ret_pos++ = hex_val[(*src_pos >> 4) & 0xF];
+			*ret_pos++ = hex_val[*src_pos++ & 0xF];
+		}
 	}
 	return curr_field;
 }
@@ -3937,7 +3950,7 @@ cob_intr_hex_to_char (cob_field *srcfield)
 	cob_field	field;
 	const size_t		size = srcfield->size / 2;
 	const unsigned char *end = srcfield->data + size * 2;
-	unsigned char *hex_char, *p;
+	register unsigned char *hex_char, *p;
 
 	if (size * 2 != srcfield->size) {
 		/* possibly raise nonfatal exception here -> we only process the valid ones */
@@ -3950,29 +3963,29 @@ cob_intr_hex_to_char (cob_field *srcfield)
 
 	p = srcfield->data;
 	while (p < end) {
-		unsigned char src, dst;
-		src = *p++;
-		if (src >= 'A' && src <= 'F') {
-			dst = src - 'A' + 10;
-		} else if (src >= 'a' && src <= 'f') {
-			dst = src - 'a' + 10;
-		} else if (isdigit (src)) {
-			dst = COB_D2I (src);
+		unsigned char dst;
+		if (*p >= '0' && *p <= '9') {
+			dst = COB_D2I (*p);
+		} else if (*p >= 'A' && *p <= 'F') {
+			dst = *p - 'A' + 10;
+		} else if (*p >= 'a' && *p <= 'f') {
+			dst = *p - 'a' + 10;
 		} else {
 			dst = 0;
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
+		p++;
 		dst *= 16;
-		src = *p++;
-		if (src >= 'A' && src <= 'F') {
-			dst = dst + src - 'A' + 10;
-		} else if (src >= 'a' && src <= 'f') {
-			dst = dst + src - 'a' + 10;
-		} else if (isdigit (src)) {
-			dst = dst + COB_D2I (src);
+		if (*p >= '0' && *p <= '9') {
+			dst = dst + COB_D2I (*p);
+		} else if (*p >= 'A' && *p <= 'F') {
+			dst = dst + *p - 'A' + 10;
+		} else if (*p >= 'a' && *p <= 'f') {
+			dst = dst + *p - 'a' + 10;
 		} else {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
+		p++;
 		*hex_char++ = dst;
 	}
 	return curr_field;
@@ -5900,17 +5913,15 @@ cob_intr_locale_date (const int offset, const int length,
 	int		month;
 	int		year;
 #ifdef	HAVE_LANGINFO_CODESET
-	unsigned char	*p;
-	char		*deflocale = NULL;
+	int 	deflocale = 0;
 	struct tm	tstruct;
 	char		buff2[128];
 #else
-	unsigned char	*p;
 	LCID		localeid = LOCALE_USER_DEFAULT;
 	SYSTEMTIME	syst;
 #endif
 	char		buff[128];
-	char		locale_buff[COB_SMALL_BUFF];
+	char		locale_buff[COB_MINI_BUFF];
 #endif
 
 	cobglobptr->cob_exception_code = 0;
@@ -5919,15 +5930,17 @@ cob_intr_locale_date (const int offset, const int length,
 	if (COB_FIELD_IS_NUMERIC (srcfield)) {
 		indate = cob_get_int (srcfield);
 	} else {
+		unsigned char *p;
 		if (srcfield->size < 8) {
 			goto derror;
 		}
 		p = srcfield->data;
 		indate = 0;
 		for (len = 0; len < 8; ++len, ++p) {
-			if (isdigit (*p)) {
-				indate *= 10;
-				indate += COB_D2I (*p);
+			/* note: as isdigit is locale-aware (slower and not what we want),
+			   we use a range check instead */
+			if (*p >= '0' && *p <= '9') {
+				indate = indate * 10 + COB_D2I (*p);
 			} else {
 				goto derror;
 			}
@@ -5954,16 +5967,15 @@ cob_intr_locale_date (const int offset, const int length,
 	tstruct.tm_mon = month;
 	tstruct.tm_mday = days;
 	if (locale_field) {
-		if (locale_field->size >= COB_SMALL_BUFF) {
+		deflocale = cob_field_to_string (locale_field, locale_buff,
+				COB_MINI_MAX, CCM_NONE);
+		if (deflocale < 1) {
 			goto derror;
 		}
-		cob_field_to_string (locale_field, locale_buff,
-				     (size_t)COB_SMALL_MAX);
-		deflocale = locale_buff;
-		(void) setlocale (LC_TIME, deflocale);
+		(void) setlocale (LC_TIME, locale_buff);
 	}
 	memset (buff2, 0, sizeof(buff2));
-	snprintf(buff2, sizeof(buff2) - 1, "%s", nl_langinfo(D_FMT));
+	snprintf(buff2, sizeof(buff2) - 1, "%s", nl_langinfo (D_FMT));
 	if (deflocale) {
 		(void) setlocale (LC_ALL, cobglobptr->cob_locale);
 	}
@@ -5974,21 +5986,25 @@ cob_intr_locale_date (const int offset, const int length,
 	syst.wMonth = (WORD)month;
 	syst.wDay = (WORD)days;
 	if (locale_field) {
-		if (locale_field->size >= COB_SMALL_BUFF) {
-			goto derror;
-		}
-		cob_field_to_string (locale_field, locale_buff,
-						COB_SMALL_MAX);
-		locale_buff[COB_SMALL_MAX] = 0; /* silence warnings */
+		int flen = cob_field_to_string (locale_field, locale_buff,
+				     COB_MINI_MAX, CCM_NONE);
+#if 0	/* re-null-terminate last char (first space/comma/...)
+		   of the locale string
+		   -> Simon: Why? We already have it rtrimmed */
+		unsigned char *p;
 		for (p = (unsigned char *)locale_buff; *p; ++p) {
-			if (isalnum(*p) || *p == '_') {
+			if (isalnum((int)*p) || *p == '_') {
 				continue;
 			}
 			break;
 		}
 		*p = 0;
+#endif
+		if (flen < 1) {
+			goto derror;
+		}
 		for (len = 0; len < WINLOCSIZE; ++len) {
-			if (!strcmp(locale_buff, wintable[len].winlocalename)) {
+			if (!strcmp (locale_buff, wintable[len].winlocalename)) {
 				localeid = wintable[len].winlocaleid;
 				break;
 			}
@@ -6036,9 +6052,10 @@ cob_intr_locale_time (const int offset, const int length,
 		p = srcfield->data;
 		indate = 0;
 		for (len = 0; len < 6; ++len, ++p) {
-			if (isdigit (*p)) {
-				indate *= 10;
-				indate += COB_D2I (*p);
+			/* note: as isdigit is locale-aware (slower and not what we want),
+			   we use a range check instead */
+			if (*p >= '0' && *p <= '9') {
+				indate = indate * 10 + COB_D2I (*p);
 			} else {
 				goto derror;
 			}
@@ -6337,15 +6354,11 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 		|| !COB_FIELD_BINARY_TRUNC (srcfield)) {
 			expo = (cob_uli_t)((COB_FIELD_SIZE (srcfield) * 8U) - 1U);
 			mpz_ui_pow_ui (d1.value, 2UL, expo);
-			mpz_neg (d1.value, d1.value);
-			d1.scale = COB_FIELD_SCALE (srcfield);
-			cob_alloc_field (&d1);
-			(void)cob_decimal_get_field (&d1, curr_field, 0);
-			break;
+		} else {
+			expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
+			mpz_ui_pow_ui (d1.value, 10UL, expo);
+			mpz_sub_ui (d1.value, d1.value, 1UL);
 		}
-		expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
-		mpz_ui_pow_ui (d1.value, 10UL, expo);
-		mpz_sub_ui (d1.value, d1.value, 1UL);
 		mpz_neg (d1.value, d1.value);
 		d1.scale = COB_FIELD_SCALE (srcfield);
 		cob_alloc_field (&d1);
@@ -6415,14 +6428,10 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 				expo--;
 			}
 			mpz_ui_pow_ui (d1.value, 2UL, expo);
-			mpz_sub_ui (d1.value, d1.value, 1UL);
-			d1.scale = COB_FIELD_SCALE (srcfield);
-			cob_alloc_field (&d1);
-			(void)cob_decimal_get_field (&d1, curr_field, 0);
-			break;
+		} else {
+			expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
+			mpz_ui_pow_ui (d1.value, 10UL, expo);
 		}
-		expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
-		mpz_ui_pow_ui (d1.value, 10UL, expo);
 		mpz_sub_ui (d1.value, d1.value, 1UL);
 		d1.scale = COB_FIELD_SCALE (srcfield);
 		cob_alloc_field (&d1);
@@ -6464,7 +6473,7 @@ cob_intr_locale_compare (const int params, ...)
 	unsigned char	*p;
 	unsigned char	*p1;
 	unsigned char	*p2;
-	char		*deflocale;
+	int 		deflocale = 0;
 	size_t		size;
 	size_t		size2;
 	int		ret;
@@ -6487,8 +6496,6 @@ cob_intr_locale_compare (const int params, ...)
 	make_field_entry (&field);
 
 #ifdef	HAVE_STRCOLL
-	deflocale = NULL;
-
 	size = f1->size;
 	size2 = size;
 	for (p = f1->data + size - 1U; p != f1->data; --p) {
@@ -6512,14 +6519,14 @@ cob_intr_locale_compare (const int params, ...)
 	memcpy (p2, f2->data, size2);
 
 	if (locale_field) {
-		if (!locale_field->size) {
+		char		locale_buff[COB_MINI_BUFF];
+		deflocale = cob_field_to_string (locale_field, locale_buff,
+			COB_MINI_MAX, CCM_NONE);
+		if (deflocale < 1) {
 			goto derror;
 		}
 #ifdef	HAVE_SETLOCALE
-		deflocale = cob_malloc (locale_field->size + 1U);
-		cob_field_to_string (locale_field, deflocale,
-				     (size_t)(locale_field->size + 1U));
-		(void) setlocale (LC_COLLATE, deflocale);
+		(void) setlocale (LC_COLLATE, locale_buff);
 #else
 		goto derror;
 #endif
@@ -6539,7 +6546,6 @@ cob_intr_locale_compare (const int params, ...)
 #ifdef	HAVE_SETLOCALE
 	if (deflocale) {
 		(void) setlocale (LC_ALL, cobglobptr->cob_locale);
-		cob_free (deflocale);
 	}
 #endif
 
@@ -7238,7 +7244,6 @@ cob_init_intrinsic (cob_global *lptr)
 		calc_temp->calc_field.size = 256;
 		calc_temp->calc_size = 256;
 	}
-
 
 	/* mpf_init2 length = ceil (log2 (10) * strlen (x)) */
 

@@ -1062,7 +1062,7 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize, in
 		&& fl->xfdname[0] > ' ') {
 		fname = (char*)fl->xfdname;
 	} else if (fl->assign) {
-		cob_field_to_string (fl->assign, asgname, (size_t)255);
+		cob_field_to_string (fl->assign, asgname, (size_t)255, CCM_NONE);
 		if ((p = strrchr(asgname, SLASH_CHAR)) != NULL)
 			fname = p + 1;
 		else

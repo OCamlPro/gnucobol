@@ -204,7 +204,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		char	assign_to[COB_FILE_BUFF];
 		size_t	fnlen;
 		if (f->assign) {
-			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX);
+			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX, CCM_NONE);
 		} else if (f->select_name) {
 			strncpy (assign_to, f->select_name, COB_FILE_MAX);
 			assign_to[COB_FILE_MAX] = 0;
@@ -564,8 +564,9 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 		}
 	} else if(fcd->fileOrg == ORG_RELATIVE) {
 		f->organization = COB_ORG_RELATIVE;
-		if (f->keys == NULL)
+		if (f->keys == NULL) {
 			f->keys = cob_cache_malloc(sizeof(cob_file_key));
+		}
 		if (f->keys[0].field == NULL) {
 			f->keys[0].field = cob_cache_malloc(sizeof(cob_field));
 			f->keys[0].field->data = cob_cache_malloc (4);
@@ -628,25 +629,29 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 	/* build select name from assign value, if missing */
 	if (f->select_name == NULL
 	 && f->assign != NULL) {
+		const int	max_size = ((int)f->assign->size > 48)
+					 ? 48 : (int)f->assign->size;
 		char	fdname[49];
 		char	*origin = (char*)f->assign->data;
 		/* limit filename to last element after
 		   path separator, when specified */
-		for (k=(int)f->assign->size - 1; k; k--) {
+		for (k = max_size - 1; k; k--) {
 			if (f->assign->data[k] == SLASH_CHAR
 #ifdef	_WIN32
 			 || f->assign->data[k] == '/'
 #endif
 			) {
-				origin = (char*)&f->assign->data[k+1];
+				origin = (char *)f->assign->data + k + 1;
 				break;
 			}
 		}
-		/* now copy that until the first space/low-value (max 48) as upper-case */
-		for (k=0; origin[k] && origin[k] > ' ' && k < 48; k++) {
+		/* now copy that until the first space/low-value up to
+		   max_size as upper-case */
+		for (k = 0; origin[k] && origin[k] > ' ' && k < max_size; k++) {
 			fdname[k] = (char)toupper((int)origin[k]);
 		}
 		fdname[k] = 0;
+		k++;	/* copy with trailing NUL */
 		/* we don't necessarily know later if we built the name ourself,
 		   so we need to cache the storage */
 		f->select_name = cob_cache_malloc (k);
@@ -968,9 +973,9 @@ cob_extfh_close (
 	COB_UNUSED (remfil);
 
 	f->last_operation = COB_LAST_CLOSE;
-	fcd = find_fcd(f);
-	STCOMPX4(opt, fcd->opt);
-	STCOMPX2(OP_CLOSE, opcode);
+	fcd = find_fcd (f);
+	STCOMPX4 (opt, fcd->opt);
+	STCOMPX2 (OP_CLOSE, opcode);
 
 	/* Keep table of 'fcd' created */
 	(void)callfh (opcode, fcd);
@@ -1363,6 +1368,9 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 #if !COB_64_BIT_POINTER
 	if (fcd->fcdVer == FCD2_VER) {
 		int		rtnsts;
+#if 0
+		int		opcd;
+#endif
 		FCD2 *fcd2 = (FCD2 *) fcd;
 
 		fcd = fcd2_to_fcd3 (fcd2);
@@ -1374,6 +1382,18 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		rtnsts = EXTFH3 (opcode, fcd);
 		/* Convert FCD3 back to FCD2 format */
 		fcd3_to_fcd2 (fcd, fcd2);
+
+#if 0
+		if (*opcode == 0xFA) {
+			opcd = 0xFA00 + opcode[1];
+		} else {
+			opcd = opcode[1];
+		}
+
+		if (opcd == OP_CLOSE) {
+ 			free_fcd2 (fcd2);
+ 		}
+#endif
 
 		return rtnsts;
 	}
@@ -1391,7 +1411,7 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 
 	int	opcd,sts,opts,eop,k;
 	unsigned char	fnstatus[2];	/* storage for local file status field */
-	unsigned char	keywrk[80];
+	unsigned char	keywrk[80]; 	/* key data used for IDX, if not passed */
 	char fname[COB_FILE_MAX];
 	/* different cob_fields as some ABI functions operate on those */
 	cob_field fs[1];
@@ -1420,7 +1440,7 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 		COB_MODULE_PTR = cob_malloc( sizeof(cob_module) );
 		COB_MODULE_PTR->module_name = "GnuCOBOL-fileio";
 		COB_MODULE_PTR->module_source = "GnuCOBOL-fileio";
-		COB_MODULE_PTR->module_formatted_date = "2021/10/03 12:01:20";
+		COB_MODULE_PTR->module_formatted_date = "2023/02/06 12:01:20";
 	}
 
 	if (*opcode == 0xFA) {
@@ -1482,10 +1502,12 @@ org_handling:
 		if (opcd == OP_GETINFO) {
 			if (fcd->fnamePtr) {
 				k = strlen(fcd->fnamePtr);
-				if (k > LDCOMPX2(fcd->fnameLen))
+				if (k > LDCOMPX2(fcd->fnameLen)) {
 					k = LDCOMPX2(fcd->fnameLen);
-				while (k > 0 && fcd->fnamePtr[k-1] == ' ')
+				}
+				while (k > 0 && fcd->fnamePtr[k-1] == ' ') {
 					--k;
+				}
 				memcpy (fname, fcd->fnamePtr, k);
 				fname[k] = 0;
 				f->flag_auto_type = 1;

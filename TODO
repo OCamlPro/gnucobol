@@ -212,6 +212,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Rework the context-sensitive reserved words handling (or use a bigger type)
 
+- Add --error-list -e to cobc
+
 7.2 CHECKMEs, TODOs and #if-0'ed code
 
 - Investigate the two CHECKMEs about bdb_close_cursor in fbdb.c:ix_bdb_write_internal
@@ -230,6 +232,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Make field type an enum instead of a short in common.h:cob_field_attr as per TODO
 
+- Add back the #if-0'ed code in codegen.c:output_perform_until and typeck.c: cb_emit_check_index; as this is not ISO-compliant it should have a dedicated option; also ensure it works well with the new dialect config introduced in 5087
+
 - Check the #if-0'ed code in field.c:validate_field_value
 
 - Check the #if-0'ed code for setting last_exception_source in common.c:cob_set_exception
@@ -243,3 +247,5 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 - Check if should use strcpy or memcpy with computed max-length for file_open_name in fileio.c:cob_open
 
 - Check what we should do about the casts used to remove const on open_mode in fileio.c and others (eg. in cob_file_open)
+
+- Investigate failed manual tests "CRT STATUS clause" and "X/Open CRT STATUS clause" (see r4180)

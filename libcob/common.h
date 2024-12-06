@@ -252,15 +252,16 @@ typedef __mpz_struct mpz_t[1];
 
 #endif
 
-#elif defined(_MSC_VER)
-
+#elif 0 && defined(_MSC_VER)	
+/* shown to not work correctly in some cases, so fall-back
+   to our generic inline version, which works */ 
 #define COB_BSWAP_16(val) (_byteswap_ushort (val))
 #define COB_BSWAP_32(val) (_byteswap_ulong (val))
 #define COB_BSWAP_64(val) (_byteswap_uint64 (val))
 
 #elif defined(__ORANGEC__)
 
-#define COB_BSWAP_16(val) (COB_BSWAP_16_CONSTANT (val))
+#define COB_BSWAP_16(val) (__builtin_bswap16 (val))
 #define COB_BSWAP_32(val) (__builtin_bswap32 (val))
 #define COB_BSWAP_64(val) (__builtin_bswap64 (val))
 
@@ -585,7 +586,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 /* Maximum length of COBOL program names */
 #define	COB_MAX_NAMELEN		31
 
-/* Maximum number of subscripts */
+/* Maximum number of subscripts;
+   TODO: add compiler configuration for limiting this */
 #define COB_MAX_SUBSCRIPTS	16
 
 /* Memory size for sorting */
@@ -1057,20 +1059,24 @@ enum cob_open_mode {
 #define COB_STORE_TOWARD_LESSER		(1 << 10)
 #define COB_STORE_TRUNCATION		(1 << 11)
 
+#define COB_STORE_NO_SIZE_ERROR		(1 << 15)
+
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
-	 COB_STORE_TRUNC_ON_OVERFLOW)
+	 COB_STORE_TRUNC_ON_OVERFLOW | COB_STORE_NO_SIZE_ERROR)
 
 /* Screen attribute defines */
 
-#define COB_SCREEN_BLACK		0
-#define COB_SCREEN_BLUE			1
-#define COB_SCREEN_GREEN		2
-#define COB_SCREEN_CYAN			3
-#define COB_SCREEN_RED			4
-#define COB_SCREEN_MAGENTA		5
-#define COB_SCREEN_YELLOW		6
-#define COB_SCREEN_WHITE		7
+enum cob_colors {
+	COB_SCREEN_BLACK	= 0,
+	COB_SCREEN_BLUE		= 1,
+	COB_SCREEN_GREEN	= 2,
+	COB_SCREEN_CYAN		= 3,
+	COB_SCREEN_RED		= 4,
+	COB_SCREEN_MAGENTA	= 5,
+	COB_SCREEN_YELLOW	= 6,
+	COB_SCREEN_WHITE	= 7
+};
 
 typedef cob_s64_t cob_flags_t;
 
@@ -1104,11 +1110,12 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_EMULATE_NL		((cob_flags_t)1 << 27)
 #define COB_SCREEN_UPPER		((cob_flags_t)1 << 28)
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
-#define COB_SCREEN_GRID			((cob_flags_t)1 << 30)
+#define COB_SCREEN_CONV			((cob_flags_t)1 << 30)
 /*#define COB_SCREEN_reserved		((cob_flags_t)1 << 31) /+ reserved for next flag used in screenio */
 #define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_GRID			((cob_flags_t)1 << 35) /* used for syntax checking */
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1464,7 +1471,9 @@ struct cob_func_loc {
 	int			save_num_params;
 };
 
-/* File connector */
+
+/** File connector **/
+
 
 /* Key structure */
 
@@ -2062,7 +2071,7 @@ struct cob_time
 
 /* note: these are internal (cobc/libcob -> libcob) only functions */
 COB_EXPIMP struct cob_time cob_get_current_date_and_time	(void);	/* returning datetime without nanos */
-COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, const char *);
+COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, unsigned const char *);
 
 COB_EXPIMP void cob_sleep_msec (const unsigned int);
 
@@ -2115,6 +2124,7 @@ COB_EXPIMP void	cob_check_beyond_exit (const char *);
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
+COB_EXPIMP int	cob_bcd_cmp		(cob_field *, cob_field *);
 
 /*******************************/
 /* Functions in strings.c */
@@ -2142,6 +2152,12 @@ COB_EXPIMP void cob_unstring_delimited	(cob_field *, const cob_u32_t);
 COB_EXPIMP void cob_unstring_into	(cob_field *, cob_field *, cob_field *);
 COB_EXPIMP void cob_unstring_tallying	(cob_field *);
 COB_EXPIMP void cob_unstring_finish	(void);
+
+COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
+#define COB_SPACES_ALPHABETIC_BYTE_LENGTH 1024
+
+COB_EXPIMP const char *COB_ZEROES_ALPHABETIC;	/* PIC X/A/U ZEROES */
+#define COB_ZEROES_ALPHABETIC_BYTE_LENGTH 256
 
 /*******************************/
 /*   Functions in move.c       */
@@ -2236,6 +2252,8 @@ COB_EXPIMP int	cob_cmp_float		(cob_field *, cob_field *);
 COB_EXPIMP void	cob_set_packed_zero	(cob_field *);
 COB_EXPIMP void	cob_set_packed_int	(cob_field *, const int);
 
+COB_EXPIMP void	cob_move_bcd		(cob_field *, cob_field *);
+
 COB_EXPIMP void	cob_decimal_alloc	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_push	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_pop		(const cob_u32_t, ...);
@@ -2297,6 +2315,8 @@ COB_EXPIMP void		cob_screen_display	(cob_screen *, cob_field *,
 COB_EXPIMP void		cob_screen_accept	(cob_screen *, cob_field *,
 					 cob_field *, cob_field *,
 					 const int);
+COB_EXPIMP void		cob_accept_field	(cob_field *, const cob_flags_t, const char *, ...);
+COB_EXPIMP void		cob_display_field	(cob_field *, const cob_flags_t, const char *, ...);
 COB_EXPIMP void		cob_field_display	(cob_field *, cob_field *, cob_field *,
 					 cob_field *, cob_field *, cob_field *,
 					 cob_field *, const cob_flags_t);
@@ -2630,7 +2650,7 @@ typedef struct __fcd2 {
 #define fileDef		_fileDef.ptr_name		/* EXTFH: pointer to filedef */
 #define dfSortPtr	_dfSortPtr.ptr_name		/* EXTFH: pointer to DFSORT */
 
-#define LSUCHAR(f)	((unsigned char*)(f))
+#define LSUCHAR(f)	((unsigned char *)(f))
 /* xxCOMPXn : Big Endian Binary data */
 #define LDCOMPX2(f)	((((f)[0] << 8 ) & 0xFF00) | ((f)[1] & 0xFF))
 #define LDCOMPX4(f)	((((f)[0] << 24 ) & 0xFF000000) | (((f)[1] << 16 ) & 0xFF0000) | (((f)[2] << 8 ) & 0xFF00) | ((f)[3] & 0xFF))

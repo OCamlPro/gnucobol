@@ -40,9 +40,8 @@
 #define SIGINT 2
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 /* Local variables */
@@ -64,37 +63,45 @@ static const cob_field_attr	const_alpha_attr =
 static void
 display_numeric (cob_field *f, FILE *fp)
 {
-	int		i;
-	unsigned short	digits;
-	signed short	scale;
-	int		size;
-	cob_field_attr	attr;
-	cob_field	temp;
+	const unsigned short	digits = COB_FIELD_DIGITS (f);
+	const signed short	scale = COB_FIELD_SCALE (f);
+	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
+	const int		size
+		= digits
+		+ ((scale < 0) ? scale : 0)	/* subtract scale when negative */
+		+ has_sign;
 
-	digits = COB_FIELD_DIGITS (f);
-	scale = COB_FIELD_SCALE (f);
-	size = digits + (COB_FIELD_HAVE_SIGN (f) ? 1 : 0);
+	/* minimal validation */
 	if (size >= COB_MEDIUM_MAX) {
 		fputs (_("(Not representable)"), fp);
 		return;
 	}
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, digits, scale, 0, NULL);
-	temp.size = size;
-	temp.data = COB_TERM_BUFF;
-	temp.attr = &attr;
-	if (COB_FIELD_HAVE_SIGN (f)) {
-		attr.flags = COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE;
-		if (COB_FIELD_SIGN_LEADING (f) ||
-		    COB_FIELD_TYPE (f) != COB_TYPE_NUMERIC_DISPLAY) {
-			attr.flags |= COB_FLAG_SIGN_LEADING;
+
+	/* conversion to internal USAGE DISPLAY with SIGN SEPERATE */
+	{
+		cob_field	field;
+		cob_field_attr	attr;
+		COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, digits, COB_FIELD_SCALE (f), 0, NULL);
+		if (has_sign) {
+			attr.flags = COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE;
+			if (COB_FIELD_SIGN_LEADING (f) ||
+				COB_FIELD_TYPE (f) != COB_TYPE_NUMERIC_DISPLAY) {
+				attr.flags |= COB_FLAG_SIGN_LEADING;
+			}
 		}
+		COB_FIELD_INIT (size, COB_TERM_BUFF, &attr);
+
+		cob_move (f, &field);
 	}
 
-	cob_move (f, &temp);
-	for (i = 0; i < size; ++i) {
-		unsigned char chr = temp.data[i];
-		if (putc (chr, fp) != chr) {
-			break;
+	/* output of data to viewport */
+	{
+		register unsigned char *q = COB_TERM_BUFF;
+		const unsigned char *end = q + size;
+		for ( ; q < end; ++q) {
+			if (putc (*q, fp) != *q) {
+				break;
+			}
 		}
 	}
 }
@@ -102,30 +109,37 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
-	unsigned short		digits = COB_FIELD_DIGITS (f);
+	unsigned short	digits;
 	const signed short	scale = COB_FIELD_SCALE (f);
-	int			size = digits + !!COB_FIELD_HAVE_SIGN (f) + !!scale;
+	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
+	int		size;
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
-	cob_pic_symbol	*p;
+	cob_pic_symbol	*p = pic;
+
+	digits = COB_FIELD_DIGITS (f);
+	if (scale == 0) {		/* PIC 999 */
+		size = digits + has_sign;
+	} else if (scale < 0) {	/* PIC P99 */
+		size = digits + has_sign;
+	} else {
+		if (digits < scale) {
+			digits = scale;	/* PIC PP9*/
+		} else {
+			/* PIC 9v99 */
+		}
+		size = digits + has_sign + 1;
+	}
 
 	if (size > COB_MEDIUM_MAX) {
 		fputs (_("(Not representable)"), fp);
 		return;
 	}
-	if (scale < 0) {
-		digits -= scale;
-		size = digits + !!COB_FIELD_HAVE_SIGN (f);
-	} else if (digits < scale) {
-		digits = scale;
-		size = digits + !!COB_FIELD_HAVE_SIGN (f) + 1;
-	}
-	p = pic;
 
-	if (COB_FIELD_HAVE_SIGN (f)) {
+	if (has_sign) {
 		if (COB_FIELD_SIGN_SEPARATE (f)
-		 && !COB_FIELD_SIGN_LEADING(f)) {
+		 && !COB_FIELD_SIGN_LEADING (f)) {
 			/* done later */
 		} else {
 			p->symbol = '+';
@@ -152,9 +166,9 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		p->times_repeated = digits;
 		++p;
 	}
-	if (COB_FIELD_HAVE_SIGN (f)) {
+	if (has_sign) {
 		if (COB_FIELD_SIGN_SEPARATE (f)
-		 && !COB_FIELD_SIGN_LEADING(f)) {
+		 && !COB_FIELD_SIGN_LEADING (f)) {
 			p->symbol = '+';
 			p->times_repeated = 1;
 			++p;
@@ -163,22 +177,26 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 	p->symbol = '\0';
 
 	{
-		unsigned char	*q = COB_TERM_BUFF;
-		const unsigned char *end = q + size;
-		cob_field_attr	attr;
-		cob_field	temp;
-		temp.size = size;
-		temp.data = q;
-		temp.attr = &attr;
-		COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale, 0,
-			(const cob_pic_symbol*)pic);
+		/* conversion to internal USAGE DISPLAY EDITED */
+		{
+			cob_field	field;
+			cob_field_attr	attr;
+			COB_FIELD_INIT (size, COB_TERM_BUFF, &attr);
+			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale, 0,
+				(const cob_pic_symbol*)pic);
 
-		cob_move (f, &temp);
-		while (q != end) {
-			const int chr = *q++;
-			if (chr == 0	/* pretty-display stops here */
-			 || putc (chr, fp) != chr) {
-				break;
+			cob_move (f, &field);
+		}
+
+		/* output of data to viewport */
+		{
+			register unsigned char *q = COB_TERM_BUFF;
+			const unsigned char *end = q + size;
+			for ( ; q < end; ++q) {
+				if (*q == 0	/* pretty-display stops here */
+				 || putc (*q, fp) != *q) {
+					break;
+				}
 			}
 		}
 	}
@@ -215,20 +233,18 @@ clean_double (char *wrk)
 		return;
 	}
 
-	if (strcmp(wrk,"-NAN") == 0
-	 || strcmp(wrk,"-NaNQ") == 0
-	 || strcmp(wrk,"-NaN") == 0
-	 || strcmp(wrk,"NAN") == 0
-	 || strcmp(wrk,"NaNQ") == 0) {
-		strcpy(wrk,"NaN");
+	if (strcmp (wrk,"-NAN") == 0
+	 || strcmp (wrk,"-NaNQ") == 0
+	 || strcmp (wrk,"-NaN") == 0
+	 || strcmp (wrk,"NAN") == 0
+	 || strcmp (wrk,"NaNQ") == 0) {
+		strcpy (wrk,"NaN");
 	}
 }
 
 void
 cob_display_common (const cob_field *f, FILE *fp)
 {
-
-
 	if (f->size == 0) {
 		return;
 	}
@@ -282,20 +298,24 @@ cob_display_common (const cob_field *f, FILE *fp)
 			fprintf (fp, "%x%x", *p >> 4, *p & 0xF);
 		}
 		return;
-	} else if (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_COMP5) {
-		cob_print_realbin (f, fp, f->attr->digits);
-		return;
-	} else if (COB_FIELD_REAL_BINARY(f)
-	        || (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_BINARY
-	         && !COB_MODULE_PTR->flag_pretty_display)) {
-		cob_print_realbin (f, fp, bin_digits[f->size]);
-		return;
-	} else if (COB_FIELD_IS_NUMERIC (f)) {
+	}
+	if (COB_FIELD_IS_NUMERIC (f)) {
+		/* CHECKME: consider to check for pretty-printing first */
+		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_COMP5) {
+			cob_print_realbin (f, fp, f->attr->digits);
+			return;
+		}
+		if ( COB_FIELD_REAL_BINARY (f)
+		 || (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_BINARY
+		   && !COB_MODULE_PTR->flag_pretty_display)) {
+			cob_print_realbin (f, fp, bin_digits[f->size]);
+			return;
+		}
 		if (COB_MODULE_PTR->flag_pretty_display) {
 			pretty_display_numeric ((cob_field *)f, fp);
-		} else {
-			display_numeric ((cob_field *)f, fp);
+			return;
 		}
+		display_numeric ((cob_field *)f, fp);
 		return;
 	}
 	display_alnum (f, fp);

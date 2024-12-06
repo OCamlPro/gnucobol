@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -341,6 +341,90 @@ AT_CHECK([$COMPILE_MODULE callee2.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [abc000], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LOCAL-STORAGE (3)])
+AT_KEYWORDS([runmisc OCCURS INDEX INDEXED])
+
+# Note: this tests undefined behaviour, because the initial value
+#       of index-names are undefined per standard; where they are
+#       explicit defined to be "... treated as a static item [for WS]
+#       and as an automatic item [for LS]"; see bug #794
+#       for GnuCOBOL that is defined depending on dialect options
+#       init-indexed-by and defaultbyte
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 DISP-VALS.
+          05 DISP-VAL   PIC 9 VALUE 0.
+          05 DISP-IDX   PIC 9 VALUE 0.
+       01 WRK-X.
+          05 WRK-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY WRK-IDX.
+       LOCAL-STORAGE    SECTION.
+       01 LCL-X.
+          05 LCL-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY LCL-IDX.
+       PROCEDURE        DIVISION.
+           DISPLAY SPACE WITH NO ADVANCING UPON SYSOUT.
+           ADD  1 TO WRK-VAR(1) LCL-VAR(1)
+           SET  WRK-IDX, LCL-IDX UP BY 1
+           SET  DISP-IDX TO WRK-IDX.
+           MOVE WRK-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING UPON SYSOUT.
+           SET  DISP-IDX TO LCL-IDX.
+           MOVE LCL-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING UPON SYSOUT.
+           GOBACK.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       PROCEDURE        DIVISION.
+           CALL "callee".
+           CALL "callee".
+           CALL "callee".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1212 2312 3412], [])
+AT_CHECK([$COMPILE_MODULE -fdefaultbyte=0 callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1111 2211 3311], [])
+
+# note: this is the tested MF result (INDEXED BY are USAGE COMP 9(08), 0-based !):
+#AT_CHECK([$COMPILE_MODULE -std=mf-strict callee.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1018 2117 3216], [])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 DISP-VALS.
+          05 DISP-VAL   PIC 9 VALUE 0.
+          05 DISP-IDX   PIC 9 VALUE 0.
+       01 WRK-X.
+          05 WRK-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY WRK-IDX.
+       PROCEDURE        DIVISION.
+           DISPLAY SPACE WITH NO ADVANCING UPON SYSOUT.
+           ADD  1 TO WRK-VAR(1)
+           SET  WRK-IDX UP BY 1
+           SET  DISP-IDX TO WRK-IDX.
+           MOVE WRK-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING UPON SYSOUT.
+           GOBACK.
+])
+
+
+AT_CHECK([$COMPILE_MODULE -std=acu-strict callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 19 20 31], [])
+# note: tested result with 2 byte: AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 15 26 37], [])
 
 AT_CLEANUP
 
@@ -964,10 +1048,8 @@ AT_DATA([prog.cob], [
        01 X             PIC X(6) VALUE "123   ".
        PROCEDURE        DIVISION.
            IF X(1:3) NUMERIC
-              STOP RUN
-           END-IF.
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+              STOP RUN.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -989,9 +1071,7 @@ AT_DATA([prog.cob], [
          02 X           PIC X OCCURS 1 INDEXED BY I.
        PROCEDURE        DIVISION.
          IF I < (I + 2)
-           DISPLAY "OK" NO ADVANCING
-           END-DISPLAY
-         END-IF.
+           DISPLAY "OK" NO ADVANCING.
          STOP RUN.
 ])
 
@@ -1040,17 +1120,12 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE x"0000" TO X (2:2)
            IF X-NUM NUMERIC
-              DISPLAY "low-value is numeric" UPON SYSERR
-              END-DISPLAY
-           END-IF
+              DISPLAY "low-value is numeric" UPON SYSERR.
            MOVE x"01" TO X (3:1)
            IF X-NUM NUMERIC
-              DISPLAY "SOH is numeric" UPON SYSERR
-              END-DISPLAY
-           END-IF
+              DISPLAY "SOH is numeric" UPON SYSERR.
            MOVE X-NUM TO NUM
            DISPLAY "test over"
-           END-DISPLAY
       *
            GOBACK.
 ])
@@ -1066,12 +1141,9 @@ AT_DATA([prog2.cob], [
        PROCEDURE        DIVISION.
            MOVE x"0A" TO X (2:1)
            IF X-NUM NUMERIC
-              DISPLAY "bad prog"
-              END-DISPLAY
-           END-IF
+              DISPLAY "bad prog".
            MOVE X-NUM TO NUM
            DISPLAY "test over"
-           END-DISPLAY
       *
            GOBACK.
 ])
@@ -1082,7 +1154,7 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:20: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
+[libcob: prog.cob:16: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
 ])
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
@@ -1091,8 +1163,8 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog2], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:15: error: 'X-NUM' (Type: PACKED-DECIMAL) not numeric: '0x000a123f'
-])
+[[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL (unsigned)) not numeric: '0x000a123f'
+]])
 
 AT_CLEANUP
 
@@ -3370,7 +3442,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=default -Wno-truncate prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [TST5-2 :096, Length: 1
 TST5-3 :04096, Length: 2
@@ -5601,9 +5673,11 @@ AT_DATA([prog.cob], [
        MAIN.
       *    Test with DISPLAY on error
            PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
            SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
            PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
            GOBACK.
 
        DO-CHECK.
@@ -6013,6 +6087,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+#AT_CHECK([$COMPILE -fno-fast-math prog.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -6496,6 +6576,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+#AT_CHECK([$COMPILE -fno-fast-math prog.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -8846,6 +8932,10 @@ AT_DATA([prog.cob], [
            MOVE "$$"    TO FLD-5-4 (5)
            MOVE "Something else!" TO FLD-1-X (5).
       *
+      *    "the initial value of an index-name at runtime is undefined"
+      *    Old OpenCOBOL/GnuCOBOL did that as "1"
+           SET TAB-ADR-IND           TO 1.
+      *
            SET P2 TO NULL
            SET ADDRESS OF A-TABLE TO NULL
            MOVE ALL ZEROES TO A-TABLE (1: (LENGTH OF A-TABLE)).
@@ -8861,7 +8951,7 @@ $COBCRUN_DIRECT ./prog "param 1" param 'param 3'], [1],
 GRP-3:***ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
 ],
-[libcob: prog.cob:102: error: BASED/LINKAGE item 'A-TABLE' has NULL address
+[libcob: prog.cob:106: error: BASED/LINKAGE item 'A-TABLE' has NULL address
 
 dump written to dumpall.txt
 ])
@@ -8871,7 +8961,7 @@ AT_CAPTURE_FILE([dumpall.txt])
 AT_DATA([reference], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of "prog" was MOVE at line 102 of prog.cob
+ Last statement of "prog" was MOVE at line 106 of prog.cob
 	ENTRY prog at prog.cob:75
  Started by ./prog
 	param 1
@@ -9690,6 +9780,43 @@ END OF DUMP - prog
 ])
 
 AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([PROGRAM-ID / CALL with hyphen and underscore])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           CALL "_SUB-PROG_NOW" USING 'X'.
+           STOP RUN.
+])
+
+AT_DATA([sub.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "_SUB-PROG_NOW".
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x  PIC X.
+
+       PROCEDURE DIVISION USING x.
+       MAIN.
+            DISPLAY "SUB GOT " X.
+            GOBACK.
+])
+
+AT_CHECK([$COMPILE_MODULE sub.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([COB_PRE_LOAD=sub $COBCRUN_DIRECT ./prog], [0], 
+[SUB GOT X
+], [])
 
 AT_CLEANUP
 
@@ -10985,8 +11112,11 @@ AT_DATA([caller.cob], [
        PROCEDURE DIVISION.
        MAIN-LINE.
 
+           PERFORM DO-CHECK
+       >> IF CHECK-PERF IS DEFINED
       *>   minimal side-test for performance comparisons
            PERFORM DO-CHECK 10000 TIMES
+       >> END-IF
            DISPLAY 'DONE' UPON SYSERR WITH NO ADVANCING
            GOBACK.
 
@@ -11111,7 +11241,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Numeric MOVE with/without -fbinary-truncate])
-AT_KEYWORDS([runmisc size])
+AT_KEYWORDS([runmisc size binary-truncate])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
@@ -11119,7 +11249,7 @@ AT_DATA([prog.cob], [
 
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
-       01  x PIC 9(4) COMP.
+       01  x PIC 9(4)  COMP.
 
        PROCEDURE       DIVISION.
            MOVE 30000 TO x
@@ -11136,6 +11266,9 @@ AT_DATA([prog.cob], [
            .
        check-x-val     SECTION.
            EVALUATE x
+               WHEN 30000
+                   DISPLAY "x IS 30000"
+
                WHEN >= 10000
                    DISPLAY "x >= 10000"
 
@@ -11148,6 +11281,7 @@ AT_DATA([prog.cob], [
            .
        END PROGRAM prog.
 ])
+
 
 AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:10: warning: value size exceeds data size
@@ -11162,10 +11296,18 @@ x IS ZERO
 
 AT_CHECK([$COMPILE -fno-binary-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[x >= 10000
-x >= 10000
-x >= 10000
+[x IS 30000
+x IS 30000
+x IS 30000
 ])
+
+AT_CHECK([$COMPILE -fno-binary-truncate -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[x IS 30000
+x IS 30000
+x IS 30000
+])
+
 
 AT_CLEANUP
 
@@ -11380,6 +11522,9 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
        MAIN.
+      *>   "the initial value of an index-name at runtime is undefined"
+      *>   Old OpenCOBOL/GnuCOBOL did that as "1"
+           SET REC-NAME-IDX          TO 1.
            MOVE 'A-F-GEN-LEDGER-ZGL' TO REC-NAME.
            PERFORM FINDIT.
            MOVE 'JUNK' TO REC-NAME.
@@ -13108,7 +13253,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob -w], [0], [], [])
+# Note: this program errors without constant folding, but that is
+#       checked in syn_misc.at already; we explicit specify the remove
+#       of folded constants option allowing to run with COBOL_FLAGS=-g
+AT_CHECK([$COMPILE prog.cob -fconstant-folding -fremove-unreachable -w], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [A: OK VAR-LEN > 16 AND VAR-LEN < 200
@@ -17346,7 +17494,6 @@ AT_DATA([prog.cob], [
        01 variable usage signed-int value 0.
           88 a-one value 1.
           88 a-two value 2.
-       LINKAGE SECTION.
        PROCEDURE DIVISION.
       *> bug #702, "pow"-call in generated program
            display n(n**0+ 1:) with no advancing.
@@ -17364,6 +17511,148 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [9-9succeeded
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([compare numeric DISPLAY SPACE with ZERO])
+AT_KEYWORDS([runmisc expression])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TST-VARS.
+           03 TST-NUMBER         PIC  9(6).
+           03 TST-NUMBER-SIGNED  PIC S9(6).
+           03 TST-DECIMAL        PIC  9(2)V9(4).
+           03 TST-DECIMAL-SIGNED PIC S9(2)V9(4).
+       77     ZERO-DECIMAL       PIC  9(2)V9(4) VALUE ZERO.
+       77     ZERO-NUMBER        PIC  9(6)      VALUE ZERO.
+
+       PROCEDURE DIVISION.
+           MOVE SPACES TO TST-VARS
+
+           IF TST-NUMBER > 0
+              DISPLAY "TST-NUMBER IS > 0".
+           IF TST-NUMBER NOT = 0
+              DISPLAY "TST-NUMBER IS NOT 0".
+           IF TST-NUMBER < 0
+              DISPLAY "TST-NUMBER IS < 0".
+
+           IF TST-NUMBER-SIGNED > 0
+              DISPLAY "TST-NUMBER-SIGNED IS > 0".
+           IF TST-NUMBER-SIGNED NOT = 0
+              DISPLAY "TST-NUMBER-SIGNED IS NOT 0".
+           IF TST-NUMBER-SIGNED < 0
+              DISPLAY "TST-NUMBER-SIGNED IS < 0".
+
+           IF TST-DECIMAL > 0
+              DISPLAY "TST-DECIMAL IS > 0".
+           IF TST-DECIMAL NOT = 0
+              DISPLAY "TST-DECIMAL IS NOT 0".
+           IF TST-DECIMAL < 0
+              DISPLAY "TST-DECIMAL IS < 0".
+
+           IF TST-DECIMAL-SIGNED > 0
+              DISPLAY "TST-DECIMAL-SIGNED IS > 0".
+           IF TST-DECIMAL-SIGNED NOT = 0
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT 0".
+           IF TST-DECIMAL-SIGNED < 0
+              DISPLAY "TST-DECIMAL-SIGNED IS < 0".
+
+           IF TST-NUMBER > ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS > ZERO-NUMBER".
+           IF TST-NUMBER NOT = ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS NOT ZERO-NUMBER".
+           IF TST-NUMBER < ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS < ZERO-NUMBER".
+
+           IF TST-NUMBER-SIGNED > ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS > ZERO-NUMBER".
+           IF TST-NUMBER-SIGNED NOT = ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS NOT ZERO-NUMBER".
+           IF TST-NUMBER-SIGNED < ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS < ZERO-NUMBER".
+
+           IF TST-DECIMAL > ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS > ZERO-NUMBER".
+           IF TST-DECIMAL NOT = ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS NOT ZERO-NUMBER".
+           IF TST-DECIMAL < ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS < ZERO-NUMBER".
+
+           IF TST-DECIMAL-SIGNED > ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS > ZERO-NUMBER".
+           IF TST-DECIMAL-SIGNED NOT = ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT ZERO-NUMBER".
+           IF TST-DECIMAL-SIGNED < ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS < ZERO-NUMBER".
+
+           IF TST-NUMBER > ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS > ZERO-DECIMAL".
+           IF TST-NUMBER NOT = ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS NOT ZERO-DECIMAL".
+           IF TST-NUMBER < ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS < ZERO-DECIMAL".
+
+           IF TST-NUMBER-SIGNED > ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS > ZERO-DECIMAL".
+           IF TST-NUMBER-SIGNED NOT = ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS NOT ZERO-DECIMAL".
+           IF TST-NUMBER-SIGNED < ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS < ZERO-DECIMAL".
+
+           IF TST-DECIMAL > ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS > ZERO-DECIMAL".
+           IF TST-DECIMAL NOT = ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS NOT ZERO-DECIMAL".
+           IF TST-DECIMAL < ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS < ZERO-DECIMAL".
+
+           IF TST-DECIMAL-SIGNED > ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS > ZERO-DECIMAL".
+           IF TST-DECIMAL-SIGNED NOT = ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT ZERO-DECIMAL".
+           IF TST-DECIMAL-SIGNED < ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS < ZERO-DECIMAL".
+
+           GOBACK.
+])
+
+# dropping "fast compare" does an internal numeric compare, where invalid data
+# in USAGE DISPLAY is converted (onlysecond half-byte used) and leading SPACE
+# is skipped in general
+AT_CHECK([$COMPILE -Wno-constant-expression -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# with "fast compare" enabled, the same PIC+USAGE leads to memcmp, therefore the
+# result differs with invalid data; note: the exact "difference" is unportable
+AT_CHECK([$COMPILE -Wno-constant-expression prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[TST-NUMBER IS NOT 0
+TST-NUMBER IS < 0
+TST-NUMBER IS NOT ZERO-NUMBER
+TST-NUMBER IS < ZERO-NUMBER
+TST-DECIMAL IS NOT ZERO-DECIMAL
+TST-DECIMAL IS < ZERO-DECIMAL
+], [])
+
+# result with MF would be:
+# TST-NUMBER IS NOT 0
+# TST-NUMBER IS < 0
+# TST-NUMBER-SIGNED IS NOT 0
+# TST-NUMBER-SIGNED IS < 0
+# TST-NUMBER IS NOT ZERO-NUMBER
+# TST-NUMBER IS < ZERO-NUMBER
+# TST-NUMBER-SIGNED IS NOT ZERO-NUMBER
+# TST-NUMBER-SIGNED IS < ZERO-NUMBER
+# TST-DECIMAL IS NOT ZERO-DECIMAL
+# TST-DECIMAL IS < ZERO-DECIMAL
+# TST-DECIMAL-SIGNED IS NOT ZERO-DECIMAL
+# TST-DECIMAL-SIGNED IS < ZERO-DECIMAL
+# CHECKME: Do we want to mimic that with -std=mf?
 
 AT_CLEANUP
 
@@ -17585,3 +17874,4 @@ note: TooHigh3 has version 4.0.1.2
 ], [])
 
 AT_CLEANUP
+
