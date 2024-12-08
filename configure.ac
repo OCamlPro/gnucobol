@@ -1593,7 +1593,7 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <xcurses/panel.h>
 	#elif defined (HAVE_PANEL_H)
 	#include <panel.h>
-	#if defined (HAVE_NCURSESW_NCURSES_H)
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1630,7 +1630,7 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <xcurses/panel.h>
 	#elif defined (HAVE_PANEL_H)
 	#include <panel.h>
-	#if defined (HAVE_NCURSESW_NCURSES_H)
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1667,7 +1667,7 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <xcurses/panel.h>
 	#elif defined (HAVE_PANEL_H)
 	#include <panel.h>
-	#if defined (HAVE_NCURSESW_NCURSES_H)
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1704,7 +1704,7 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <xcurses/panel.h>
 	#elif defined (HAVE_PANEL_H)
 	#include <panel.h>
-	#if defined (HAVE_NCURSESW_NCURSES_H)
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1741,7 +1741,7 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <xcurses/panel.h>
 	#elif defined (HAVE_PANEL_H)
 	#include <panel.h>
-	#if defined (HAVE_NCURSESW_NCURSES_H)
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1778,7 +1778,7 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <xcurses/panel.h>
 	#elif defined (HAVE_PANEL_H)
 	#include <panel.h>
-	#if defined (HAVE_NCURSESW_NCURSES_H)
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
