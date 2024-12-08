@@ -4029,7 +4029,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--copy");
 			}
-			CB_TEXT_LIST_ADD (cb_copy_list, cobc_strdup (cob_optarg));
+			CB_TEXT_LIST_ADD (cb_copy_list, cob_optarg);
 			break;
 
 		case CB_FLAG_GETOPT_INCLUDE_FILE:
@@ -4038,7 +4038,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--include");
 			}
-			CB_TEXT_LIST_ADD (cb_include_file_list, cobc_strdup (cob_optarg));
+			CB_TEXT_LIST_ADD (cb_include_file_list, cob_optarg);
 			cb_flag_c_decl_for_static_call = 0;
 			break;
 

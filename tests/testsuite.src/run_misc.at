@@ -14168,6 +14168,7 @@ AT_KEYWORDS([runmisc CALL bounds exceptions])
 # note: this check is likely unportable and therefore will likely be adjusted/skipped,
 #       mainly because the memory layout of consecutive variables is not guaranteed;
 #       it is expected to raise a crash if C bound checking is enabled
+AT_SKIP_IF([test $($COBC --info | $GREP -c sanitize) != 0])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION DIVISION.
