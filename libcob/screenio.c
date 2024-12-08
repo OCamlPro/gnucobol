@@ -5525,7 +5525,7 @@ sys_window_hide (PPARM_FLD parm)
 		back_color = ptr_pan_entry->bg_color;
 	} else {
 		mywin = stdscr;
-		move(save_cursor_y, save_cursor_x);
+		move (save_cursor_y, save_cursor_x);
 		fore_color = stdscr_fore_color;
 		back_color = stdscr_back_color;
 	}
