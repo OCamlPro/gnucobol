@@ -4692,7 +4692,7 @@ cob_exit_screen (void)
 #endif
 #ifdef WITH_PANELS
 		for (;;) {
-			PANEL *ptr_pan = ceiling_panel (NULL);
+			PANEL *ptr_pan = panel_below (NULL);
 			if (ptr_pan) {
 				mywin = panel_window (ptr_pan);
 				del_panel (ptr_pan);
@@ -5292,7 +5292,7 @@ static void
 update_all_windows (void)
 {
 	/* first get the top panel */
-	PANEL	*ptr_pan = ceiling_panel (NULL);
+	PANEL	*ptr_pan = panel_below (NULL);
 
 	if (!ptr_pan) {
 		mywin = stdscr;
@@ -5423,7 +5423,7 @@ sys_window_move (PPARM_FLD parm)
 
 	/* CHECKME: why do we use the top panel here, when we moved
 	   another panel before ?!? */
-	ptr_pan = ceiling_panel (NULL);
+	ptr_pan = panel_below (NULL);
 
 	mywin = panel_window (ptr_pan);
 #if 0 /* to be tested */
@@ -5472,7 +5472,7 @@ sys_window_show (PPARM_FLD parm)
 
 	ptr_pan_entry->flags = ~SYS_WIN_FLAG_HIDDEN;
 
-	ptr_pan = ceiling_panel (NULL);
+	ptr_pan = panel_below (NULL);
 	mywin = panel_window (ptr_pan);
 	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
 	fore_color = ptr_pan_entry->fg_color;
@@ -5516,7 +5516,7 @@ sys_window_hide (PPARM_FLD parm)
 	/*	note the following is needed in case the top panel
 		was hidden. then the next panel will be on top */
 
-	ptr_pan = ceiling_panel (NULL);
+	ptr_pan = panel_below (NULL);
 
 	if (ptr_pan) {
 		mywin = panel_window (ptr_pan);
@@ -5562,7 +5562,7 @@ sys_window_top (PPARM_FLD parm)
 		return 34;
 	}
 
-	ptr_pan = ceiling_panel (NULL);
+	ptr_pan = panel_below (NULL);
 	mywin = panel_window (ptr_pan);
 	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
 	fore_color = ptr_pan_entry->fg_color;
@@ -5600,9 +5600,9 @@ sys_window_bottom (PPARM_FLD parm)
 		return 35;
 	}
 
-	ptr_pan = ceiling_panel (NULL);
-	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+	ptr_pan = panel_below (NULL);
 	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
 	parm->pan_number = ptr_pan_entry->pan_number;
 	fore_color = ptr_pan_entry->fg_color;
 	back_color = ptr_pan_entry->bg_color;
@@ -5654,7 +5654,7 @@ sys_window_delete (PPARM_FLD parm)
 	ptr_pan_entry->input_fg_color = 0;
 	ptr_pan_entry->input_bg_color = 7;
 
-	ptr_pan = ceiling_panel (NULL);
+	ptr_pan = panel_below (NULL);
 
 	if (ptr_pan) {
 		mywin = panel_window (ptr_pan);
@@ -5698,7 +5698,7 @@ sys_window_list (PLIST_FLD list, size_t amount)
 
 	/* find the depth of all the active windows,
 	   starting at ceiling (top of deck) and work down... */
-	ptr_pan = ceiling_panel (NULL);
+	ptr_pan = panel_below (NULL);
 	while (ptr_pan && depth <= amount) {
 		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
 		list->pan_position = depth;
