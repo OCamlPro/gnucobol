@@ -1,4 +1,8 @@
 
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix check for curses functions if panel headers are found
+
 2024-10-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: added logic to check for PANEL support which

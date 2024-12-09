@@ -1583,7 +1583,17 @@ fi
 if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	AC_MSG_CHECKING([for curses color_set function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1593,6 +1603,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1604,7 +1620,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses resize_term function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1614,6 +1640,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1625,7 +1657,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses define_key function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1635,6 +1677,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1646,7 +1694,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses mouseinterval function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1656,6 +1714,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1667,7 +1731,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses has_mouse function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1677,6 +1751,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1688,7 +1768,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses mousemask function and mmask_t])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1698,6 +1788,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[

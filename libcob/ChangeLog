@@ -1,4 +1,9 @@
 
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
+	  with X/Open Curses function panel_below()
+
 2024-11-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* move.c (optimized_move_display_to_edited): minor refactoring

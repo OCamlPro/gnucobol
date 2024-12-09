@@ -1,4 +1,8 @@
 
+2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line): fix leak for --copy and -include parsing
+
 2024-10-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* typeck.c: define [WITH_EXTENDED_SCREENIO] for any curses headers
