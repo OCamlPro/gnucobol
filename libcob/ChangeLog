@@ -4,6 +4,12 @@
 	* fileio.c: fixed Bug #1032 by always using global thread-static variable
 	  bdb_app_data pointer to access the collating sequence function
 
+2024-12-09  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed additional bug
+	  reported with bug #1008: BLANK WHEN ZERO not working on signed
+	  NUMERIC-EDITED fields
+
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()

@@ -1084,13 +1084,16 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			}
 	}
 
-	/* first check for BLANK WHEN ZERO attribute */
+	/* first check for BLANK WHEN ZERO attribute	*/
+	/* Note that if the src field is signed then we	*/
+	/* scan for one less byte			*/
 	if (COB_FIELD_BLANK_ZERO (f2)) {
-		for (; (src <= src_end) ; src++) {
+		const unsigned char *check_end = COB_FIELD_HAVE_SIGN (f1) && COB_FIELD_SIGN_SEPARATE (f1) ? src_end - 1 : src_end;
+		for (; (src <= check_end) ; src++) {
 			if (*src != '0') break;
 		}
-		if (src > src_end) {
-			memset (dst, (int)' ', (size_t)f2->size);
+		if (src > check_end) {
+			memset (dst, ' ', f2->size);
 			return;
 		}
 		src = f1->data;
