@@ -7376,7 +7376,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([Numeric MOVE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7386,7 +7386,7 @@ AT_DATA([prog.cob], [
        01  NUM9    PIC 9(6).
        PROCEDURE DIVISION.
            MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
+           DISPLAY "NUM9 value SPACES is " NUM9 (1:) "." UPON SYSOUT
            MOVE LOW-VALUES TO NUM9
            IF NUM9 = LOW-VALUES
               DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT

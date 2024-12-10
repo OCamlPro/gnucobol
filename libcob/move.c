@@ -1014,12 +1014,13 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 	register unsigned char  *dst = f2->data;
 	register unsigned char  *src = f1->data;
 	const cob_pic_symbol  *p;
-	unsigned char *src_end = src + f1->size - 1;
+	unsigned char *src_last = src + f1->size - 1;
 	unsigned char *dst_end = f2->data + f2->size;
+	const int	sign = COB_GET_SIGN (f1);
 
 	unsigned char *prev_float_char = NULL;
 	unsigned char *sign_position   = NULL;
-	int   neg = 0;
+	const int   neg = (sign < 0) ? 1 : 0;
 	int   is_zero = 1;
 	int   suppress_zero = 1;
 	int   have_decimal_point = 0;
@@ -1036,10 +1037,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 		   correct attributes, if not then something is brokend and needs to be fixed  */
 	if (!(COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_EDITED
 	 && COB_FIELD_DIGITS (f1) == COB_FIELD_DIGITS (f2)
-	 && COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2)
-	 && COB_FIELD_HAVE_SIGN (f1) == COB_FIELD_HAVE_SIGN (f2)
-	 && ((COB_FIELD_HAVE_SIGN (f1) && (!COB_FIELD_SIGN_LEADING (f1) && COB_FIELD_SIGN_SEPARATE (f1)))
-			|| !COB_FIELD_HAVE_SIGN (f1)))) {
+	 && COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2))) {
 		cob_runtime_error ("optimized_move_display_to_edited: invalid argument");
 	}
 #endif
@@ -1084,23 +1082,25 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			}
 	}
 
+	if (COB_FIELD_HAVE_SIGN (f1) && COB_FIELD_SIGN_SEPARATE (f1) && COB_FIELD_SIGN_LEADING (f1)) {
+		src++;
+	}
+
 	/* first check for BLANK WHEN ZERO attribute	*/
 	/* Note that if the src field is signed then we	*/
 	/* scan for one less byte			*/
 	if (COB_FIELD_BLANK_ZERO (f2)) {
-		const unsigned char *check_end = COB_FIELD_HAVE_SIGN (f1) && COB_FIELD_SIGN_SEPARATE (f1) ? src_end - 1 : src_end;
-		for (; (src <= check_end) ; src++) {
-			if (*src != '0') break;
+		unsigned char *check = src;
+		unsigned char *check_end = COB_FIELD_HAVE_SIGN (f1) && COB_FIELD_SIGN_SEPARATE (f1) && !COB_FIELD_SIGN_LEADING (f1) ? src_last - 1 : src_last;
+		for (; (check <= check_end) ; check++) {
+			if (COB_D2I (*check) != 0) break;
 		}
-		if (src > check_end) {
+		if (check > check_end) {
 			memset (dst, ' ', f2->size);
+			/* Restore the source sign */
+			COB_PUT_SIGN (f1, sign);
 			return;
 		}
-		src = f1->data;
-	}
-
-	if (COB_FIELD_HAVE_SIGN (f1)) {
-		neg = (*src_end == '-') ? 1 : 0;
 	}
 
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
@@ -1114,6 +1114,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			continue;
 		}
 		for (n = p->times_repeated; n > 0; n--) {
+			unsigned int src_num = COB_D2I (*src);
 #ifndef NDEBUG
 			if (dst >= dst_end) {
 				cob_runtime_error ("optimized_move_display_to_edited: overflow in destination field");
@@ -1124,8 +1125,8 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 
 			case '9':
 				suppress_zero = 0;
-				*dst = *src;
-				if (*src != '0') {
+				*dst = COB_I2D (src_num);
+				if (src_num != 0) {
 					is_zero = 0;
 				}
 				src++;
@@ -1133,9 +1134,9 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'Z':
-				*dst = *src;
+				*dst = COB_I2D (src_num);
 				pad = ' ';
-				if (*src != '0') {
+				if (src_num != 0) {
 					is_zero = suppress_zero = 0;
 				} else {
 					if (suppress_zero && (!have_decimal_point)) {
@@ -1147,9 +1148,9 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case '*':
-				*dst = *src;
+				*dst = COB_I2D (src_num);
 				have_check_protect = 1;
-				if (*src != '0') {
+				if (src_num != 0) {
 					is_zero = suppress_zero = 0;
 				} else {
 					if (suppress_zero && (!have_decimal_point)) {
@@ -1173,7 +1174,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					sign_position   = dst;
 					dst++;
 					break;
-				} else if (*src == '0' && suppress_zero && !have_decimal_point) {
+				} else if (src_num == 0 && suppress_zero && !have_decimal_point) {
 					*prev_float_char = ' ';
 					prev_float_char = dst;
 					sign_position   = dst;
@@ -1182,8 +1183,8 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					src++;
 					break;
 				} else {
-					*dst = *src;
-					if (*src != '0') {
+					*dst = COB_I2D (src_num);
+					if (src_num != 0) {
 						is_zero = 0;
 						suppress_zero = 0;
 					}
@@ -1276,7 +1277,9 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					cob_runtime_error ("optimized_move_display_to_edited: invalid PIC character %c", c);
 					*dst = '?';    /* Invalid PIC */
 					break;
-				} else if (c != float_char) {
+				} else
+				/* LCOV_EXCL_STOP */
+				if (c != float_char) {
 						*dst = c;
 						dst++;
 						break;
@@ -1285,7 +1288,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 						prev_float_char = dst;
 						dst++;
 						break;
-				} else if ((*src == '0') && (suppress_zero) && (!have_decimal_point)) {
+				} else if ((src_num == 0) && (suppress_zero) && (!have_decimal_point)) {
 						*prev_float_char = ' ';
 						prev_float_char = dst;
 						*dst = c;
@@ -1293,8 +1296,8 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 						src++;
 						break;
 				} else {
-						*dst = *src;
-						if (*src != '0') {
+						*dst = COB_I2D (src_num);
+						if (src_num != 0) {
 							is_zero = 0;
 							suppress_zero = 0;
 						}
@@ -1302,18 +1305,20 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 						src++;
 						break;
 				}
-				/* LCOV_EXCL_STOP */
-			} /* END OF SWITCH STATEMENT */
-		}   /* END OF INNER FOR LOOP   */
-	}     /* END OF OUTER FOR LOOP   */
+			}
+		}
+	}
 
-			 /************************************************************/
-			 /*  after the edited string is built from the mask          */
-			 /*  then the sign mask has to be adjusted according to      */
-			 /*  the actual sign of the data.                            */
-			 /************************************************************/
+	/* Restore the source sign */
+	COB_PUT_SIGN (f1, sign);
 
-		/* if we have not printed any digits set destination to spaces and return */
+	/************************************************************/
+	/*  after the edited string is built from the mask          */
+	/*  then the sign mask has to be adjusted according to      */
+	/*  the actual sign of the data.                            */
+	/************************************************************/
+
+	/* if we have not printed any digits set destination to spaces and return */
 
 	if (suppress_zero) {
 		if (pad == '*') {
@@ -1689,15 +1694,12 @@ cob_move (cob_field *src, cob_field *dst)
 			cob_move_display_to_binary (src, dst);
 			return;
 		case COB_TYPE_NUMERIC_EDITED:
-			if (COB_FIELD_DIGITS(src) == COB_FIELD_DIGITS(dst)
-			 && COB_FIELD_SCALE(src) == COB_FIELD_SCALE(dst)
-			 && COB_FIELD_HAVE_SIGN(src) == COB_FIELD_HAVE_SIGN(dst)
-			 && ((COB_FIELD_HAVE_SIGN(src) && (!COB_FIELD_SIGN_LEADING(src) && COB_FIELD_SIGN_SEPARATE (src)))
-				|| COB_FIELD_HAVE_SIGN(src) == 0)) {
-				optimized_move_display_to_edited(src, dst);
+			if (COB_FIELD_DIGITS (src) == COB_FIELD_DIGITS (dst)
+			 && COB_FIELD_SCALE (src) == COB_FIELD_SCALE (dst)) {
+				optimized_move_display_to_edited (src, dst);
 			} else {
 				indirect_move (cob_move_display_to_display, src, dst,
-					(size_t)(COB_FIELD_DIGITS(src)),
+					(size_t)(COB_FIELD_DIGITS (src)),
 					COB_FIELD_SCALE (src));
 			}
 			return;
