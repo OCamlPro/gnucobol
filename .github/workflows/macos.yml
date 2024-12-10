@@ -54,6 +54,7 @@ jobs:
           cd _build
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
+                       --with-curses=ncurses \
                        --prefix /opt/cobol/gnucobol-gcos \
 
       - name: make
