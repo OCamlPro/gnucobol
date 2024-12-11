@@ -690,15 +690,15 @@ static unsigned int	bdb_lock_id = 0;
 	key.data = fld->data;			\
 	key.size = (cob_dbtsize_t) fld->size
 
-#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 0))
-#define DBT_SET_APP_DATA(key,data)	((key)->app_data = (data))
-#define DBT_GET_APP_DATA(key)		((key)->app_data)
-#else
+// #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 0))
+// #define DBT_SET_APP_DATA(key,data)	((key)->app_data = (data))
+// #define DBT_GET_APP_DATA(key)		((key)->app_data)
+// #else
 /* Workaround for older BDB versions that do not have app_data in DBT */
 static void		*bdb_app_data = NULL;
 #define DBT_SET_APP_DATA(key,data)	((void)(key), bdb_app_data = (data))
 #define DBT_GET_APP_DATA(key)		((void)(key), bdb_app_data)
-#endif
+// #endif
 
 struct indexed_file {
 	DB		**db;		/* Database handlers */

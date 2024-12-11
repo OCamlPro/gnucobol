@@ -14653,3 +14653,100 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2 > prog2.txt])
 AT_CHECK([diff expected.txt prog2.txt])
 
 AT_CLEANUP
+
+AT_SETUP([DELETE WITH COLLATING SEQUENCE])
+AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. READDEL.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+           SELECT READDEL ASSIGN EXTERNAL READDEL
+             ORGANIZATION INDEXED
+             ACCESS MODE DYNAMIC
+             RECORD KEY READDEL-KEY
+             FILE STATUS STA-READDEL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  READDEL.
+       01  READDEL-REC.
+        02 READDEL-KEY.
+           05 READDEL-KEY-NUM   PIC S9(15).
+        02 READDEL-VALUE.
+           05 READDEL-STRING    PIC X(10).
+           05 READDEL-NUM       PIC S9(27) OCCURS 10 TIMES.
+      *>
+
+      *>----------------------*
+       WORKING-STORAGE SECTION.
+      *>----------------------*
+
+       01 STA-READDEL PIC X(2).
+       01 END-READDEL PIC 9(1).
+       01 WS-COUNT PIC S9(2) VALUE 0.
+
+      *>------------------*
+       PROCEDURE DIVISION.
+      *>------------------*
+           MOVE 0 TO END-READDEL.
+           OPEN OUTPUT READDEL.
+           PERFORM 20 TIMES
+             MOVE WS-COUNT TO READDEL-KEY-NUM
+             MOVE "READDELNUM" TO READDEL-STRING
+             MOVE WS-COUNT TO READDEL-NUM(1)
+             MOVE WS-COUNT TO READDEL-NUM(2)
+             MOVE WS-COUNT TO READDEL-NUM(3)
+             MOVE WS-COUNT TO READDEL-NUM(4)
+             MOVE WS-COUNT TO READDEL-NUM(5)
+             MOVE WS-COUNT TO READDEL-NUM(6)
+             MOVE WS-COUNT TO READDEL-NUM(7)
+             MOVE WS-COUNT TO READDEL-NUM(8)
+             MOVE WS-COUNT TO READDEL-NUM(9)
+             MOVE WS-COUNT TO READDEL-NUM(10)
+             WRITE READDEL-REC
+               INVALID KEY
+                 DISPLAY "INVALID KEY " READDEL-KEY
+                 STOP RUN
+             END-WRITE
+             ADD 1 TO WS-COUNT
+           END-PERFORM.
+           CLOSE READDEL.
+           MOVE LOW-VALUE TO READDEL-KEY.
+           OPEN I-O READDEL.
+           START READDEL KEY IS > READDEL-KEY
+             INVALID KEY
+               DISPLAY "ERR START READDEL=" STA-READDEL
+               MOVE 1 TO END-READDEL
+           END-START.
+           PERFORM UNTIL END-READDEL = 1
+             READ READDEL NEXT RECORD
+               AT END
+                 MOVE 1 TO END-READDEL
+               NOT AT END
+                 DISPLAY "READ KEY=" READDEL-KEY
+                 DELETE READDEL
+                   INVALID KEY
+                     DISPLAY "ERR DELETE KEY=" READDEL-KEY
+                             " / STATUS=" STA-READDEL
+                    NOT INVALID
+                      DISPLAY "DELETE OK KEY=" READDEL-KEY
+                 END-DELETE
+             END-READ
+           END-PERFORM.
+           CLOSE READDEL.
+           STOP RUN.
+
+
+])
+
+AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
+AT_CHECK([timeout 10 $COBCRUN_DIRECT ./prog])
+
+AT_CLEANUP
