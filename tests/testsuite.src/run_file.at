@@ -14730,13 +14730,10 @@ AT_DATA([prog.cob], [
                AT END
                  MOVE 1 TO END-READDEL
                NOT AT END
-                 DISPLAY "READ KEY=" READDEL-KEY
                  DELETE READDEL
                    INVALID KEY
                      DISPLAY "ERR DELETE KEY=" READDEL-KEY
                              " / STATUS=" STA-READDEL
-                    NOT INVALID
-                      DISPLAY "DELETE OK KEY=" READDEL-KEY
                  END-DELETE
              END-READ
            END-PERFORM.
@@ -14747,6 +14744,6 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
-AT_CHECK([timeout 10 $COBCRUN_DIRECT ./prog])
+AT_CHECK([$COBCRUN_DIRECT ./prog])
 
 AT_CLEANUP
