@@ -1,7 +1,8 @@
+
 2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* fileio.c: Always use `bdb_app_data` global variable to save the
-	pointer to the collating sequence function
+	  pointer to the collating sequence function
 
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 

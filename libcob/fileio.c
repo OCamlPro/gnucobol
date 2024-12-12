@@ -690,13 +690,14 @@ static unsigned int	bdb_lock_id = 0;
 	key.data = fld->data;			\
 	key.size = (cob_dbtsize_t) fld->size
 
-/* #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 0))
- #define DBT_SET_APP_DATA(key,data)	((key)->app_data = (data))
- #define DBT_GET_APP_DATA(key)		((key)->app_data)
- #else
-*/
-/* Workaround for older BDB versions that do not have app_data in DBT */
-static void		*bdb_app_data = NULL;
+/* #if DB_VERSION_MAJOR >= 6 *//* while the fields are part of DBT since 4.1, it wasn't
+                             made part of the public API before 6.0 (DB_VERSION_FAMILY 12);
+                             older versions overwrite that, see bug NNN */
+/* #define DBT_SET_APP_DATA(key,data)	((key)->app_data = (data))
+#define DBT_GET_APP_DATA(key)		((key)->app_data)
+#else */
+/* Used to save the collating sequence function, see bug 1032 */
+COB_TLS void		*bdb_app_data = NULL;
 #define DBT_SET_APP_DATA(key,data)	((void)(key), bdb_app_data = (data))
 #define DBT_GET_APP_DATA(key)		((void)(key), bdb_app_data)
 /* #endif */
