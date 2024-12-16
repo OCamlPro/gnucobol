@@ -1,4 +1,9 @@
 
+2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* fileio.c: fixed Bug #1032 by always using global thread-static variable
+	  bdb_app_data pointer to access the collating sequence function
+
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
