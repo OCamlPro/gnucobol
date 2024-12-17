@@ -21,6 +21,7 @@
 
 
 #include "config.h"
+#include "libcob/common.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13743,8 +13744,10 @@ cb_check_set_to (cb_tree vars, cb_tree x, const int emit_error)
 }
 
 void
-cb_emit_check_index (cb_tree vars, int hasval, int setval)
+cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 {
+	const int emit_exception = cb_flag_check_subscript_set
+		&& CB_EXCEPTION_ENABLE(COB_EC_BOUND_SUBSCRIPT);
 	cb_tree		l, v;
 	struct cb_field *f, *p;
 	for (l = vars; l; l = CB_CHAIN (l)) {
@@ -13761,8 +13764,10 @@ cb_emit_check_index (cb_tree vars, int hasval, int setval)
 					cb_warning_x (COBC_WARN_FILLER, l,
 						      _("SET %s TO %d is out of bounds"),
 						      f->name, setval);
-					cb_emit (CB_BUILD_FUNCALL_1 ("cob_set_exception",
-								     cb_int (COB_EC_RANGE_INDEX)));
+					if (emit_exception) {
+						cb_emit (CB_BUILD_FUNCALL_1 ("cob_set_exception",
+									     cb_int (COB_EC_RANGE_INDEX)));
+					}
 				}
 				if (setval >= p->occurs_min) continue;
 			}
@@ -13813,7 +13818,7 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 	}
 	if (cb_flag_check_subscript_set
 	 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
-		cb_emit_check_index (vars, hasval, setval);
+		cb_check_valid_set_index (vars, hasval, setval);
 	}
 }
 
@@ -13970,7 +13975,7 @@ cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 		}
 	}
 	if (CB_EXCEPTION_ENABLE (COB_EC_RANGE_INDEX)) {
-		cb_emit_check_index (vars, 0, 0);
+		cb_check_valid_set_index (vars, 0, 0);
 	}
 }
 

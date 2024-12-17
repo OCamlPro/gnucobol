@@ -664,29 +664,20 @@ AT_DATA([prog.cob], [
        01  MYIDX  USAGE IS INDEX.
        01  MAXIDX PIC 9999 VALUE 3 COMP-5.
        01  TBL.
-           05  FILLER PIC X(8) VALUE "Fred".
-           05  FILLER PIC X(8) VALUE "Barney".
-           05  FILLER PIC X(8) VALUE "Wilma".
-           05  FILLER PIC X(8) VALUE "Betty".
-       01  FILLER REDEFINES TBL.
-           05  MYNAME PIC X(8) OCCURS 4 INDEXED BY IB1.
+           05  MYNAME PIC X(8) OCCURS 4
+                INDEXED BY IB1
+                VALUES ARE "Fred" "Barney" "Wilma" "Betty".
        01  TBL2.
            05  MYMRK  PIC X(3)
                OCCURS 2 TO 5 DEPENDING ON MAXIDX
-               INDEXED BY IB2.
+               INDEXED BY IB2
+               VALUES ARE "A:" "B:" "C:" "D:" "E:".
        PROCEDURE DIVISION.
-           MOVE 5 TO MAXIDX
            SET NIDX TO IB1.
            DISPLAY "Initial value: " NIDX.
            SET IB2 TO 0.2.
            SET IB2 TO "fred".
            SET IB2 TO 10.
-           MOVE "A:" TO MYMRK (1)
-           MOVE "B:" TO MYMRK (2)
-           MOVE "C:" TO MYMRK (3)
-           MOVE "D:" TO MYMRK (4)
-           MOVE "E:" TO MYMRK (5)
-           MOVE 3 TO MAXIDX.
            SET IB1 TO 2.
            SET MYIDX TO IB1.
            SET IB1 TO 1.
@@ -723,11 +714,11 @@ AT_DATA([prog.cob], [
            END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fopt-check-subscript-set prog.cob], [1], [], [prog.cob:25: error: an integer, INDEX, or a POINTER is expected here
-prog.cob:26: error: an integer, INDEX, or a POINTER is expected here
-prog.cob:27: warning: SET IB2 TO 10 is out of bounds
-prog.cob:45: warning: SET IB1 TO -9 is out of bounds
-prog.cob:46: warning: SET IB1 TO 300 is out of bounds
+AT_CHECK([$COMPILE_ONLY -fopt-check-subscript-set prog.cob], [1], [], [prog.cob:22: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:23: error: an integer, INDEX, or a POINTER is expected here
+prog.cob:24: warning: SET IB2 TO 10 is out of bounds
+prog.cob:36: warning: SET IB1 TO -9 is out of bounds
+prog.cob:37: warning: SET IB1 TO 300 is out of bounds
 ])
 
 AT_CLEANUP

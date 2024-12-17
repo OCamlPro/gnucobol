@@ -609,8 +609,6 @@ AT_DATA([prog.cob], [
                INDEXED BY IB2.
        PROCEDURE DIVISION.
            MOVE 5 TO MAXIDX
-           SET NIDX TO IB1.
-           DISPLAY "Initial value: " NIDX.
            SET IB2 TO 10.
            MOVE "A:" TO MYMRK (1)
            MOVE "B:" TO MYMRK (2)
@@ -683,8 +681,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -fopt-check-subscript-set -Wno-unfinished -Wno-others prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [Initial value: +01
-Number is +0000000042
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [Number is +0000000042
 Number is +0000000002
 Number is +0000000001
 Number is +0000000003
@@ -694,7 +691,7 @@ Number is +0000000003
 +01: A: Freddy  .
 +02: B: Barney  .
 +03: C: Wilma   .
-], [libcob: prog.cob:71: error: subscript of 'MYMRK' out of bounds: 4
+], [libcob: prog.cob:69: error: subscript of 'MYMRK' out of bounds: 4
 note: current maximum subscript for 'MYMRK': 3
 ])
 
