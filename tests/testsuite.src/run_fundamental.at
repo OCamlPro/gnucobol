@@ -6977,6 +6977,263 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([BLANK WHEN ZERO with NUMERIC-EDITED])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  W-X  PIC -ZZZBZZ9,99 BLANK WHEN ZERO.
+       01  W-Y  PIC  ZZZBZZ9,99 BLANK WHEN ZERO.
+       01  W-Z  PIC +ZZZBZZ9,99 BLANK WHEN ZERO.
+       01  L    PIC S9(8) SIGN LEADING.
+       01  T    PIC S9(8) SIGN TRAILING.
+       01  LS   PIC S9(8) SIGN LEADING SEPARATE.
+       01  TS   PIC S9(8) SIGN TRAILING SEPARATE.
+       PROCEDURE DIVISION.
+
+           DISPLAY "FROM SIGN LEADING".
+
+           MOVE 0 TO L.
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO L.
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO L.
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO L.
+           MOVE L TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO L.
+           MOVE L TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO L.
+           MOVE L TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO L.
+           MOVE L TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO L.
+           MOVE L TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO L.
+           MOVE L TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "FROM SIGN TRAILING".
+
+           MOVE 0 TO T.
+           MOVE T TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO T.
+           MOVE T TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO T.
+           MOVE T TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO T.
+           MOVE T TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO T.
+           MOVE T TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO T.
+           MOVE T TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO T.
+           MOVE T TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO T.
+           MOVE T TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO T.
+           MOVE T TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "FROM SIGN LEADING SEPARATE".
+
+           MOVE 0 TO LS.
+           MOVE LS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO LS.
+           MOVE LS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO LS.
+           MOVE LS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO LS.
+           MOVE LS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO LS.
+           MOVE LS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO LS.
+           MOVE LS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO LS.
+           MOVE LS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO LS.
+           MOVE LS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO LS.
+           MOVE LS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "FROM SIGN TRAILING SEPARATE".
+
+           MOVE 0 TO TS.
+           MOVE TS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO TS.
+           MOVE TS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO TS.
+           MOVE TS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO TS.
+           MOVE TS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO TS.
+           MOVE TS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO TS.
+           MOVE TS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO TS.
+           MOVE TS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO TS.
+           MOVE TS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO TS.
+           MOVE TS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "EXTRA FROM SIGN LEADING SEPARATE".
+
+           MOVE 0 TO L.
+           MOVE SPACES TO L(1:3).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE "A" TO L(8:1).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 1234 TO L.
+           MOVE SPACES TO L(1:3).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE "A" TO L(8:1).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-ec=DATA-INCOMPATIBLE prog.cob], [0], [], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[FROM SIGN LEADING
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+FROM SIGN TRAILING
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+FROM SIGN LEADING SEPARATE
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+FROM SIGN TRAILING SEPARATE
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+EXTRA FROM SIGN LEADING SEPARATE
+ ===>           <===
+ ===>       0,01<===
+ ===>      12,34<===
+ ===>      12,31<===
+])
+
+AT_CLEANUP
+
+
+
 AT_SETUP([MULTIPLY BY literal in INITIAL program])
 AT_KEYWORDS([decimal constants fundamental])
 
