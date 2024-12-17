@@ -8464,10 +8464,22 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
 AT_CHECK([$COMPILE --save-temps -E -o prog.i prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -C prog.cob prog2.cob], [0], [], [])
 AT_CHECK([$GREP "#INCLUDE file1.h"   prog.i], [0], ignore, [])
 AT_CHECK([$GREP "#INCLUDE file2.h"   prog.i], [0], ignore, [])
 AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.i], [0], ignore, [])
 AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.c], [1], ignore, [])
 
 AT_CLEANUP

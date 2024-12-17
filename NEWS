@@ -6,13 +6,9 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
-** the leading space for all internal directives is removed in the lexer.
-   Source previously processed may need to be ajusted to be processed by
-   GnuCOBOL 3.3.
-
-** cobc now checks for binary files and early exit parsing those;
-   the error output for format errors (for example invalid indicator column)
-   is now limitted to 5 per source file
+** cobc now checks for binary and multi-byte encoded files and early exit
+   parsing those; the error output for format errors (for example invalid
+   indicator column) is now limitted to 5 per source file
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)

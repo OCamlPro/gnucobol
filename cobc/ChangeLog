@@ -149,9 +149,12 @@
 
 2024-04-25  Boris Eng <boris.eng@ocamlpro.com>
 
-	* pplex.l, ppparse.y, scanner.l, cobc.h, codegen.c:
-	  new >>IMP INCLUDE directive to include one or multiple header files in
-	  the generated C code (same behavior as the --include compiler option)
+	FR #176: "Implementation of GC directive to include .h (c/c++) files"
+	* pplex.l, ppparse.y, cobc.h, codegen.c: new >>IMP INCLUDE directive to
+	  include one or multiple header files in the generated C code (same behavior
+	  as the --include but with one directive per file)
+	* scanner.l: the leading space for all internal directives is removed in the
+	  lexer. Source previously preprocessed may need to be adjusted
 
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
