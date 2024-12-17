@@ -1168,9 +1168,6 @@ AT_CHECK([$COMPILE_MODULE -I . -fstatic-call prog3.cob], [0], [], [], [
   AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -L. -lfilec prog3.cob], [0], ignore, ignore)]
 )
 
-# static build with correct function signature
-# AT_CHECK([$COBC -m -I . -fstatic-call prog3.cob], [0], [], [])
-
 AT_CLEANUP
 
 
