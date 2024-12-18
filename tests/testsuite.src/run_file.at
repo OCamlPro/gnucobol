@@ -8284,10 +8284,11 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTFH: Indexed with FH--FCD])
-# promoted on 2024-12-18T16:10
 AT_KEYWORDS([runfile EXTFH FCDREG FH--KEYDEF isam])
-AT_SKIP_IF([[test "$COB_HAS_ISAM" = "no"]])
-AT_DATA([prog.cob],[
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
 
        PROGRAM-ID. prog.
@@ -8799,29 +8800,33 @@ AT_DATA([prog.cob],[
            END-IF.
            CLOSE TSPFILE.
 ])
+
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
 AT_CAPTURE_FILE([prog.out])
+
 AT_CHECK([$COBCRUN_DIRECT ./prog 1>prog.out], [0], [], [])
-AT_DATA([reference],[Other Flags 032.
+
+AT_DATA([reference], [Other Flags 032.
 File has 0003 keys.
 Key def  0112 bytes.
 File assigned is 'mytstisam'
 *** Dump FCD before changes
-Key1 has 001 parts, Offset 062 Flags 00 Comp 00 Sparse  .
+Key1 has 001 parts, Offset 062 Flags 000 Comp 000 Sparse  .
       Pos 000000000 Len 000000008
-Key2 has 002 parts, Offset 072 Flags 00 Comp 00 Sparse  .
+Key2 has 002 parts, Offset 072 Flags 000 Comp 000 Sparse  .
       Pos 000000109 Len 000000010
       Pos 000000144 Len 000000008
-Key3 has 002 parts, Offset 092 Flags 00 Comp 00 Sparse  .
+Key3 has 002 parts, Offset 092 Flags 000 Comp 000 Sparse  .
       Pos 000000156 Len 000000008
       Pos 000000164 Len 000000008
 *** Dump FCD after changes
-Key1 has 001 parts, Offset 062 Flags 00 Comp 00 Sparse  .
+Key1 has 001 parts, Offset 062 Flags 000 Comp 000 Sparse  .
       Pos 000000000 Len 000000008
-Key2 has 002 parts, Offset 072 Flags 64 Comp 00 Sparse  .
+Key2 has 002 parts, Offset 072 Flags 064 Comp 000 Sparse  .
       Pos 000000109 Len 000000010
       Pos 000000144 Len 000000008
-Key3 has 002 parts, Offset 092 Flags 66 Comp 00 Sparse *.
+Key3 has 002 parts, Offset 092 Flags 066 Comp 000 Sparse *.
       Pos 000000156 Len 000000008
       Pos 000000164 Len 000000008
 Loading sample file 'myextisam'
@@ -8876,34 +8881,18 @@ Key: OLD00000 is OLD TYME PIZZA MFG. CO.   Disk=8470    .
 Key: PRE00000 is PRESTIGE OFFICE FURNITURE Disk=8470    .
 Hit End of File after 11
 ])
-AT_CHECK([diff reference prog.out], [1], [6c6
-< Key1 has 001 parts, Offset 062 Flags 00 Comp 00 Sparse  .
----
-> Key1 has 001 parts, Offset 062 Flags 000 Comp 000 Sparse  .
-8c8
-< Key2 has 002 parts, Offset 072 Flags 00 Comp 00 Sparse  .
----
-> Key2 has 002 parts, Offset 072 Flags 000 Comp 000 Sparse  .
-11c11
-< Key3 has 002 parts, Offset 092 Flags 00 Comp 00 Sparse  .
----
-> Key3 has 002 parts, Offset 092 Flags 000 Comp 000 Sparse  .
-15c15
-< Key1 has 001 parts, Offset 062 Flags 00 Comp 00 Sparse  .
----
-> Key1 has 001 parts, Offset 062 Flags 000 Comp 000 Sparse  .
-17c17
-< Key2 has 002 parts, Offset 072 Flags 64 Comp 00 Sparse  .
----
-> Key2 has 002 parts, Offset 072 Flags 064 Comp 000 Sparse  .
-20c20
-< Key3 has 002 parts, Offset 092 Flags 66 Comp 00 Sparse *.
----
-> Key3 has 002 parts, Offset 092 Flags 066 Comp 000 Sparse *.
-], [])
+
+AT_CHECK([diff reference prog.out], [0], [], [])
+
+# verify that all of this works with wrapping to EXTFH calls
+# and that those don't trash the FH--FCD allocated memory
+
 AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
+
 AT_CHECK([diff reference prog.out], [0], [], [])
+
+
 AT_CLEANUP
 
 
@@ -10914,9 +10903,9 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTFH: reading two files with one FCD])
-# promoted on 2024-12-18T16:10
 AT_KEYWORDS([runfile EXTFH])
-AT_DATA([prog.cob],[
+
+AT_DATA([prog.cob], [
        IDENTIFICATION          DIVISION.
       ****************************************************************
        PROGRAM-ID.             prog.
@@ -11059,8 +11048,11 @@ AT_DATA([prog.cob],[
        MAIN-EXT.
            STOP RUN.
 ])
+
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OPEN STATUS:0/048
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[OPEN STATUS:0/048
 READ NEXT STATUS:0/048
 DATA:SEQ01     -
 READ NEXT STATUS:0/048
@@ -11087,6 +11079,7 @@ READ NEXT STATUS:1/048
 DATA:          -
 CLOSE STATUS:0/048
 ], [])
+
 AT_CLEANUP
 
 
@@ -12841,11 +12834,14 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED file with collation on group key])
-# promoted on 2024-12-18T16:10
 AT_KEYWORDS([runfile WRITE READ EBCDIC])
-AT_SKIP_IF([[test "$COB_HAS_ISAM" = "no"]])
-AT_XFAIL_IF([[test "$COB_HAS_ISAM" != "db"]])
-AT_DATA([prog.cob],[
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+# This is, so far, only supported by the BDB backend
+AT_XFAIL_IF([test "$COB_HAS_ISAM" != "db"])
+
+AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        ENVIRONMENT DIVISION.
@@ -12895,7 +12891,9 @@ AT_DATA([prog.cob],[
 
            STOP RUN.
 ])
-AT_DATA([expout],[ASCII:
+
+AT_DATA([expout],
+[ASCII:
 111
 223
 335
@@ -12914,39 +12912,26 @@ DD8
 335
 447
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii], [0])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic], [0])
+
 AT_CHECK([
   echo "ASCII:"  && $COBCRUN_DIRECT ./ascii && \
   echo "EBCDIC:" && $COBCRUN_DIRECT ./ebcdic
-], [0], [ASCII:
-111
-223
-335
-447
-AA2
-BB4
-CC6
-DD8
-EBCDIC:
-AA2
-BB4
-CC6
-DD8
-111
-223
-335
-447
-])
+], [0], [expout])	    # <- compare stdout with existing `expout`
+
 AT_CLEANUP
 
 
 # Note: codegen only for now
 AT_SETUP([INDEXED file with NATIONAL collation])
-# promoted on 2024-12-18T16:10
 AT_KEYWORDS([runfile])
-AT_SKIP_IF([[test "$COB_HAS_ISAM" = "no"]])
-AT_DATA([prog.cob],[
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        ENVIRONMENT DIVISION.
@@ -12978,10 +12963,16 @@ AT_DATA([prog.cob],[
 
            STOP RUN.
 ])
-AT_DATA([expout],[])
-AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [prog.cob:11: warning: NATIONAL COLLATING SEQUENCE is not implemented
+
+AT_DATA([expout], [])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [],
+[prog.cob:11: warning: NATIONAL COLLATING SEQUENCE is not implemented
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [expout])
+
 AT_CLEANUP
 
 
