@@ -1,4 +1,10 @@
 
+2024-12-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
+	  is overwritten, by restoring the *_copy fields that were removed
+	  with the change on 2024-02-26
+
 2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* fileio.c: fixed Bug #1032 by always using global thread-static variable
@@ -296,6 +302,7 @@
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
 
