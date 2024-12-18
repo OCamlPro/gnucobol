@@ -59,7 +59,7 @@ size_t			cb_needs_01 = 0;
 
 static struct cb_field	*last_real_field = NULL;
 static int		occur_align_size = 0;
-static const unsigned char	pic_digits[] = { 2, 4, 7, 9, 12, 14, 16, 18 };
+static const unsigned char	pic_digits[] = { 3, 5, 8, 10, 13, 15, 17, 19 };
 #define CB_MAX_OPS	32
 static int			op_pos = 1, op_val_pos;
 static char			op_type	[CB_MAX_OPS+1];
@@ -2518,9 +2518,16 @@ setup_parameters (struct cb_field *f)
 	case CB_USAGE_COMP_5:
 		f->flag_real_binary = 1;
 		/* Fall-through */
-	case CB_USAGE_COMP_X:
 	case CB_USAGE_COMP_N:
-		if (f->pic->category == CB_CATEGORY_ALPHANUMERIC) {
+		if (f->pic
+		&& f->pic->orig
+		&& f->pic->orig[0] == 'X') {
+			f->usage = CB_USAGE_COMP_X;
+		}
+	case CB_USAGE_COMP_X:
+		if (f->pic->category == CB_CATEGORY_ALPHANUMERIC
+		&& f->usage == CB_USAGE_COMP_X) {
+			f->compx_size = f->size = f->pic->size;
 			if (f->pic->size > 8) {
 				f->pic = cb_build_picture ("9(36)");
 			} else {
@@ -2951,8 +2958,6 @@ unbounded_again:
 					switch (c->usage) {
 					case CB_USAGE_BINARY:
 					case CB_USAGE_COMP_5:
-					case CB_USAGE_COMP_X:
-					case CB_USAGE_COMP_N:
 					case CB_USAGE_FLOAT:
 					case CB_USAGE_DOUBLE:
 					case CB_USAGE_LONG_DOUBLE:
@@ -2984,6 +2989,9 @@ unbounded_again:
 					case CB_USAGE_POINTER:
 					case CB_USAGE_PROGRAM_POINTER:
 						align_size = sizeof (void *);
+						break;
+					case CB_USAGE_COMP_X:
+					case CB_USAGE_COMP_N:
 						break;
 					default:
 						break;
@@ -3061,6 +3069,10 @@ unbounded_again:
 
 		switch (f->usage) {
 		case CB_USAGE_COMP_X:
+			if (f->compx_size > 0) {
+				size = f->compx_size;
+				break;
+			}
 		case CB_USAGE_COMP_N:
 			if (f->pic->category == CB_CATEGORY_ALPHANUMERIC) {
 				break;

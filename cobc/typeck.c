@@ -916,6 +916,13 @@ cb_check_numeric_name (cb_tree x)
 		return x;
 	}
 
+	if (CB_REFERENCE_P (x)
+	&& CB_FIELD_P (cb_ref (x))) {
+		const struct cb_field *f = CB_FIELD_PTR (x);
+		if (f->usage == CB_USAGE_COMP_X)
+			return x;
+	}
+
 	cb_error_x (x, _("'%s' is not a numeric name"), cb_name (x));
 	return cb_error_node;
 }
@@ -935,6 +942,14 @@ cb_check_numeric_edited_name (cb_tree x)
 		if (cat == CB_CATEGORY_NUMERIC
 		 || cat == CB_CATEGORY_NUMERIC_EDITED
 		 || cat == CB_CATEGORY_FLOATING_EDITED) {
+			return x;
+		}
+	}
+
+	if (CB_REFERENCE_P(x)
+	&& CB_FIELD_P(cb_ref(x))) {
+		const struct cb_field *f = CB_FIELD_PTR (x);
+		if (f->usage == CB_USAGE_COMP_X) {
 			return x;
 		}
 	}
@@ -11224,6 +11239,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			switch (CB_TREE_CATEGORY (dst)) {
 			case CB_CATEGORY_ALPHANUMERIC:
 			case CB_CATEGORY_ALPHANUMERIC_EDITED:
+				if (fdst->usage == CB_USAGE_COMP_X) {
+					break;
+				}
 				if (is_value
 				 || l->scale != 0
 				 || l->size != fdst->size) {

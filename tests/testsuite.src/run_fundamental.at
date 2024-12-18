@@ -11565,3 +11565,41 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([DISPLAY COMP-X values])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 W-X                  PIC X COMP-X VALUE 99.
+       01 W-Y                  PIC X COMP-X VALUE 128.
+       01 W-Z                  PIC X VALUE "z".
+       01 W-ZR  REDEFINES W-Z  PIC X COMP-X.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY FUNCTION BYTE-LENGTH (W-X).
+           DISPLAY FUNCTION BYTE-LENGTH (W-Y).
+           DISPLAY FUNCTION BYTE-LENGTH (W-ZR).
+           DISPLAY W-X.
+           DISPLAY W-Y.
+           DISPLAY W-ZR.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1
+1
+1
+099
+128
+122
+], [])
+
+AT_CLEANUP

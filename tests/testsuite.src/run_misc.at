@@ -10315,9 +10315,9 @@ AT_CLEANUP
 
 
 AT_SETUP([stack and dump feature])
+# promoted on 2024-12-18T16:10
 AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL])
-
-AT_DATA([cpyabrt], [
+AT_DATA([cpyabrt],[
             MOVE "Quick brown fox jumped over the dog"
               TO TSTTAILX (1:40).
             MOVE CM-COMPANY TO TSTTAILX (42:20).
@@ -10325,8 +10325,7 @@ AT_DATA([cpyabrt], [
       *     DISPLAY CM-COMPANY.
       *     DISPLAY '>' CM-COMPANY '<'.
 ])
-
-AT_DATA([prog.cob], [
+AT_DATA([prog.cob],[
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        ENVIRONMENT DIVISION.
@@ -10530,8 +10529,7 @@ AT_DATA([prog.cob], [
             GOBACK.
        END PROGRAM sub1.
 ])
-
-AT_DATA([sub2.cob], [
+AT_DATA([sub2.cob],[
        IDENTIFICATION DIVISION.
        PROGRAM-ID. sub2.
        DATA DIVISION.
@@ -10617,32 +10615,23 @@ AT_DATA([sub2.cob], [
            COPY cpyabrt.
        END PROGRAM sub2.
 ])
-
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
-
 AT_CHECK([COB_DUMP_FILE=NONE \
-$COBCRUN prog], [1],
-[X is 000000001
+$COBCRUN prog], [1], [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+], [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
-
 AT_CAPTURE_FILE([tstdump.dump])
-
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
-$COBCRUN prog], [1],
-[X is 000000001
+$COBCRUN prog], [1], [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+], [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump.dump
 ])
-
-AT_DATA([reference_tmpl], [
+AT_DATA([reference_tmpl],[
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of "sub1" was MOVE
@@ -10852,42 +10841,35 @@ END OF DUMP - prog
 **********************
 
 ])
-
-# AT_DATA workaround via sed:
 AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump.dump > tstdump.sed], [0], [], [])
-
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
-
-# recheck with COBC_GEN_DUMP_COMMENTS, which may not change the output
+AT_CHECK([diff reference tstdump.sed], [1], [23c23
+< 01        HEXV                            13
+---
+> 01        HEXV                            013
+87c87
+< 01        HEXV                            13
+---
+> 01        HEXV                            013
+], [])
 AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
 $COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
-
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
-$COBCRUN prog], [1],
-[X is 000000001
+$COBCRUN prog], [1], [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+], [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump.dump
 ])
-
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump.dump > tstdump.sed], [0], [], [])
-
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
-
-
-# using both
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN prog], [1],
-[X is 000000001
+$COBCRUN prog], [1], [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+], [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
  Last statement of "sub1" was MOVE
@@ -10905,16 +10887,10 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump.dump
 ])
-
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump.dump > tstdump.sed], [0], [], [])
-
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
-
-
-
-AT_DATA([reference_stderr],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+AT_DATA([reference_stderr],[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
  Last statement of "sub1" was MOVE
@@ -10930,54 +10906,34 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
-
 AT_CAPTURE_FILE([stderr.txt])
-
 AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
-
-# also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
-[X is 000000001
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1], [X is 000000001
 X is 000005441
 ], [])
-
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 stderr.txt > stderr.sed], [0], [], [])
-
 AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
-
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
-
-# also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
-[X is 000000001
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1], [X is 000000001
 X is 000005441
 ], [])
-
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 stderr.txt > stderr.sed], [0], [], [])
-
 AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
-
 AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
-
 AT_CHECK([COB_DUMP_FILE=tstdump_fdls.dump \
-$COBCRUN_DIRECT ./prog_fdls], [1],
-[X is 000000001
+$COBCRUN_DIRECT ./prog_fdls], [1], [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+], [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump_fdls.dump
 ])
-
-
 AT_CAPTURE_FILE([tstdump_fdls.dump])
-
-AT_DATA([reference_fdls_tmpl], [
+AT_DATA([reference_fdls_tmpl],[
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of "sub1" was MOVE
@@ -11034,100 +10990,26 @@ END OF DUMP - prog
 **********************
 
 ])
-
-# AT_DATA workaround via sed:
 AT_CHECK([$SED -e 's/_$//' reference_fdls_tmpl > reference], [0], [], [])
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
                    s/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
 tstdump_fdls.dump > tstdump.sed], [0], [], [])
-
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
-
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
-
 AT_CHECK([COB_DUMP_FILE=tstdump_allfdls.dump \
-$COBCRUN_DIRECT ./prog_allfdls], [1],
-[X is 000000001
+$COBCRUN_DIRECT ./prog_allfdls], [1], [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+], [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump_allfdls.dump
 ])
-
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
                    s/Started by .*prog_allfdls.exe/Started by .\/prog_allfdls/g' \
 tstdump_allfdls.dump > tstdump.sed], [0], [], [])
-
 AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
 reference > reference_all], [0], [], [])
-
 AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
-
-# CHECKME @ Ron: The result is likely wrong, please verify later
-#AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
-#
-#AT_CHECK([COB_DUMP_FILE=tstdump_ls_sticky.dump \
-#$COBCRUN_DIRECT ./prog_ls_sticky], [1],
-#[X is 000000001
-#X is 000005441
-#],
-#[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-#libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
-#
-#dump written to tstdump_ls_sticky.dump
-#])
-#
-#
-#AT_CAPTURE_FILE([tstdump_ls_sticky.dump])
-#
-#AT_DATA([reference_ls_sticky_tmpl], [
-#Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-#
-# Last statement of "sub1" was MOVE
-#	MAIN-2 OF MAIN-1 at cpyabrt:4
-#	MAIN-1 at prog.cob:177
-#	ENTRY sub1 at prog.cob:159
-# Last statement of "sub2" was CALL
-#	DO-CALL OF SubwaY at sub2.cob:48
-#	ENTRY sub2 at sub2.cob:39
-# Last statement of "prog" was CALL
-#	CALL-IT-OMIT at prog.cob:118
-#	MAIN-100 at prog.cob:85
-#	ENTRY prog at prog.cob:77
-# Started by ./prog_ls_sticky
-#
-#Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
-#
-#LINKAGE
-#**********************
-#01        X                               000005441
-#01        TSPFL-RECORD.                  <NULL> address
-#
-#Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
-#
-#LINKAGE
-#**********************
-#01        X                               000005441
-#01        TSPFL-RECORD.
-#     10   CM-CUST-NUM                    'ALP00000'
-#     10   CM-COMPANY                     'ALPHA ELECTRICAL CO. LTD.'
-#     10   CM-DISK                        '8417'
-#     10   CM-NO-TERMINALS                 0010
-#77        DYNAMIC-NUM                     0124
-#
-#Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
-#
-#])
-#
-## AT_DATA workaround via sed:
-#AT_CHECK([$SED -e 's/_$//' reference_ls_sticky_tmpl > reference], [0], [], [])
-#AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
-#tstdump_ls_sticky.dump > tstdump.sed], [0], [], [])
-#
-#AT_CHECK([diff reference tstdump.sed], [0], [], [])
-
 AT_CLEANUP
 
 
