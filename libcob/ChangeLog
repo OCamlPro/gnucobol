@@ -1,8 +1,27 @@
 
+2024-12-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
+	  is overwritten, by restoring the *_copy fields that were removed
+	  with the change on 2024-02-26
+
 2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* fileio.c: fixed Bug #1032 by always using global thread-static variable
 	  bdb_app_data pointer to access the collating sequence function
+
+2024-12-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): normalize numeric data
+	* move.c (cob_move): extend use of optimized_move_display_to_edited
+	  to more cases (i.e. different source and destination sign, leading
+	  sign, non-separate sign)
+
+2024-12-09  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed additional bug
+	  reported with bug #1008: BLANK WHEN ZERO not working on signed
+	  NUMERIC-EDITED fields
 
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -296,6 +315,7 @@
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
 
