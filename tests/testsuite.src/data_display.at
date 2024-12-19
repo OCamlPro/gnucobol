@@ -29025,3 +29025,40 @@ AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([DISPLAY: ADD and SUBTRACT with negative numbers])
+AT_KEYWORDS([display])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+       FUNCTION HEX-OF INTRINSIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 PZ PIC S9 VALUE +0.
+       77 M6 PIC S9 VALUE -6.
+       77 X  PIC S9 VALUE -0.
+       77 Y  PIC S9 VALUE -0.
+       77 Z  PIC S9 VALUE +0.
+       PROCEDURE DIVISION.
+           ADD      PZ TO   X.
+           DISPLAY "X(1:) = " X(1:).
+           SUBTRACT PZ FROM Y.
+           DISPLAY "Y(1:) = " Y(1:).
+           ADD      M6 TO   Z.
+           DISPLAY "Z(1:) = " Z(1:).
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[X(1:) = p
+Y(1:) = p
+Z(1:) = v
+])
+
+AT_CLEANUP

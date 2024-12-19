@@ -3543,7 +3543,12 @@ cob_add_int (cob_field *f, const int n, const int opt)
 	}
 #endif
 	/* n is single digit value added to positive field */
-	if (n > -10
+	if (
+#if 0 /* CHECKME: this does not work for negative numbers */
+	    n > -10
+#else
+	    n > 0
+#endif
 	 && n < 10
 	 && COB_FIELD_SCALE (f) == 0) {
 		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_PACKED

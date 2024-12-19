@@ -7728,11 +7728,13 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 {
 	if (CB_REF_OR_FIELD_P (v)) {
 		const struct cb_field	*f = CB_FIELD_PTR (v);
+#if 0 /* CHECKME: this breaks FLD0370B in data_display.at ADD/SUB w/o SIZE ERROR */
 		if (cb_is_integer_field(f)
 		 && cb_is_integer_expr (n)
 		 && cb_binary_truncate) {
 			return cb_build_assign (v, cb_build_binary_op (v, '+', n));
 		}
+#endif
 		if (!f->pic
 		 ||  f->pic->scale ) {
 			return CB_BUILD_FUNCALL_3 ("cob_add_int", v,
@@ -7805,6 +7807,13 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 				return CB_BUILD_FUNCALL_2 ("cob_add_packed_int64",
 					v, cb_build_cast_llint (n));
 			}
+		}
+		/* we may want negative/positive zero,
+		   which prevents a direct integer calculation */
+		if ((f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_DISPLAY)
+		 && (f->pic && f->pic->have_sign)) {
+			return CB_BUILD_FUNCALL_3 ("cob_add_int", v,
+						   cb_build_cast_int (n), cb_int0);
 		}
 		if (CB_NUMERIC_LITERAL_P (n)
 		 && (f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_DISPLAY)
@@ -7910,7 +7919,13 @@ cb_build_optim_sub (cb_tree v, cb_tree n)
 					v, n_negative);
 			}
 		}
-#if 0 /* CHECKME: this breaks FLD0370B in data_display.at ADD/SUB w/o SIZE ERROR */
+		/* we may want negative/positive zero,
+		   which prevents a direct integer calculation */
+		if ((f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_DISPLAY)
+		 && (f->pic && f->pic->have_sign)) {
+			return CB_BUILD_FUNCALL_3 ("cob_sub_int", v,
+						   cb_build_cast_int (n), cb_int0);
+		}
 		if (CB_NUMERIC_LITERAL_P (n)
 		 && (f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_DISPLAY)
 		 && (f->pic && f->pic->scale == 0)
@@ -7923,7 +7938,6 @@ cb_build_optim_sub (cb_tree v, cb_tree n)
 		 && cb_is_integer_expr (n)) {
 			return cb_build_assign (v, cb_build_binary_op (v, '-', n));
 		}
-#endif
 	}
 	return CB_BUILD_FUNCALL_3 ("cob_sub_int", v,
 				   cb_build_cast_int (n), cb_int0);
