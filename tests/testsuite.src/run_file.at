@@ -11696,6 +11696,187 @@ REWRITE 00006: RECORD-6            00000000061234567890 .
 AT_CLEANUP
 
 
+AT_SETUP([EXTFH: reading two files with one FCD])
+AT_KEYWORDS([runfile EXTFH])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION          DIVISION.
+      ****************************************************************
+       PROGRAM-ID.             prog.
+      *AUTHOR.                 TOKYO-SYSTEM-HOUSE.
+      *DATE-WRITTEN.           2023/02/28.
+      ****************************************************************
+       ENVIRONMENT             DIVISION.
+      ****************************************************************
+       INPUT-OUTPUT            SECTION.
+       FILE-CONTROL.
+           SELECT  F-SEQ-FILE  ASSIGN          TO    "F-SEQ"
+                               ORGANIZATION    IS    SEQUENTIAL
+                               FILE STATUS     IS    F-SEQ-STATUS.
+           SELECT  F-TXT-FILE  ASSIGN          TO    "F-TXT"
+                               ORGANIZATION    IS    LINE SEQUENTIAL
+                               FILE STATUS     IS    F-TXT-STATUS.
+      ****************************************************************
+       DATA                    DIVISION.
+      ****************************************************************
+       FILE                    SECTION.
+       FD  F-SEQ-FILE.
+       01  F-SEQ-RECORD.
+         03  F-SEQ-DATA        PIC X(5).
+       FD  F-TXT-FILE.
+       01  F-TXT-RECORD.
+         03  F-TXT-DATA        PIC X(10).
+       WORKING-STORAGE         SECTION.
+       01  F-SEQ-STATUS        PIC X(2).
+       01  F-TXT-STATUS        PIC X(2).
+
+       01  OPCODE              PIC X(2).
+       78  OP-QUERY-FILE       VALUE X"0006".
+       78  OP-OPEN-INPUT       VALUE X"fa00".
+       78  OP-OPEN-OUTPUT      VALUE X"fa01".
+       78  OP-OPEN-I-O         VALUE X"fa02".
+       78  OP-WRITE            VALUE X"faf3".
+       78  OP-RELEASE          VALUE X"faf3".
+       78  OP-REWRITE          VALUE X"faf4".
+       78  OP-READ-NEXT        VALUE X"faf5".
+       78  OP-START-EQUAL      VALUE X"fae9".
+       78  OP-CLOSE            VALUE X"fa80".
+
+       01  FCD.
+           COPY "xfhfcd3.cpy".
+       01  EX-FILENAME         PIC X(260).
+       01  EX-RECORD-BUFFER    PIC X(32767).
+      ****************************************************************
+       PROCEDURE               DIVISION.
+      ****************************************************************
+       MAIN-RTN.
+      *    CREATE FILE
+           OPEN OUTPUT F-SEQ-FILE.
+           MOVE "SEQ01" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ02" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ03" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ04" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           MOVE "SEQ05" TO F-SEQ-DATA.
+           WRITE F-SEQ-RECORD.
+           CLOSE F-SEQ-FILE.
+           OPEN OUTPUT F-TXT-FILE.
+           MOVE "TXTA123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           MOVE "TXTB123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           MOVE "TXTC123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           MOVE "TXTD123456" TO F-TXT-DATA.
+           WRITE F-TXT-RECORD.
+           CLOSE F-TXT-FILE.
+
+      *    SET FCD
+           MOVE LOW-VALUES TO FCD.
+           MOVE FCD--VERSION-NUMBER   TO FCD-VERSION.
+           SET  FCD-FILENAME-ADDRESS  TO ADDRESS OF EX-FILENAME.
+           MOVE 80                    TO FCD-NAME-LENGTH.
+           SET FCD-RECORD-ADDRESS     TO ADDRESS OF EX-RECORD-BUFFER.
+
+      *    OPEN first file
+           MOVE fcd--sequential-org   TO FCD-ORGANIZATION.
+           MOVE "F-SEQ"               TO EX-FILENAME.
+           MOVE OP-OPEN-INPUT         TO OPCODE.
+           MOVE FCD--DYNAMIC-ACCESS   TO FCD-ACCESS-MODE.
+           MOVE 5                     TO FCD-CURRENT-REC-LEN.
+           MOVE 5                     TO FCD-MIN-REC-LENGTH.
+           MOVE 5                     TO FCD-MAX-REC-LENGTH.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "OPEN STATUS:"
+                            FCD-STATUS-KEY-1 "/" FCD-STATUS-KEY-2.
+
+      *    READ RECORD
+           MOVE OP-READ-NEXT          TO OPCODE.
+           MOVE "00" TO FCD-FILE-STATUS.
+           PERFORM UNTIL FCD-STATUS-KEY-1 NOT = "0"
+               MOVE SPACE                 TO EX-RECORD-BUFFER
+               CALL "EXTFH" USING OPCODE, FCD
+               DISPLAY "READ NEXT STATUS:"
+                            FCD-STATUS-KEY-1 "/" FCD-STATUS-KEY-2
+               DISPLAY "DATA:" EX-RECORD-BUFFER(1:10) '-'
+           END-PERFORM.
+
+      *    CLOSE FILE
+           MOVE OP-CLOSE              TO OPCODE.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "CLOSE STATUS:"
+                            FCD-STATUS-KEY-1 "/" FCD-STATUS-KEY-2.
+
+      *    OPEN second file
+           MOVE fcd--line-sequential-org   TO FCD-ORGANIZATION.
+           MOVE "F-TXT"               TO EX-FILENAME.
+           MOVE OP-OPEN-INPUT         TO OPCODE.
+           MOVE FCD--DYNAMIC-ACCESS   TO FCD-ACCESS-MODE.
+           MOVE 10                    TO FCD-CURRENT-REC-LEN.
+           MOVE 10                    TO FCD-MIN-REC-LENGTH.
+           MOVE 10                    TO FCD-MAX-REC-LENGTH.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "OPEN STATUS:"
+                            FCD-STATUS-KEY-1 "/" FCD-STATUS-KEY-2.
+
+      *    READ RECORD
+           MOVE OP-READ-NEXT          TO OPCODE.
+           MOVE "00" TO FCD-FILE-STATUS.
+           PERFORM UNTIL FCD-STATUS-KEY-1 NOT = "0"
+               MOVE SPACE                 TO EX-RECORD-BUFFER
+               CALL "EXTFH" USING OPCODE, FCD
+               DISPLAY "READ NEXT STATUS:"
+                            FCD-STATUS-KEY-1 "/" FCD-STATUS-KEY-2
+               DISPLAY "DATA:" EX-RECORD-BUFFER(1:10) '-'
+           END-PERFORM.
+
+      *    CLOSE FILE
+           MOVE OP-CLOSE              TO OPCODE.
+           CALL "EXTFH" USING OPCODE, FCD.
+           DISPLAY "CLOSE STATUS:"
+                            FCD-STATUS-KEY-1 "/" FCD-STATUS-KEY-2.
+
+       MAIN-EXT.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[OPEN STATUS:0/0
+READ NEXT STATUS:0/0
+DATA:SEQ01     -
+READ NEXT STATUS:0/0
+DATA:SEQ02     -
+READ NEXT STATUS:0/0
+DATA:SEQ03     -
+READ NEXT STATUS:0/0
+DATA:SEQ04     -
+READ NEXT STATUS:0/0
+DATA:SEQ05     -
+READ NEXT STATUS:1/0
+DATA:          -
+CLOSE STATUS:0/0
+OPEN STATUS:0/0
+READ NEXT STATUS:0/0
+DATA:TXTA123456-
+READ NEXT STATUS:0/0
+DATA:TXTB123456-
+READ NEXT STATUS:0/0
+DATA:TXTC123456-
+READ NEXT STATUS:0/0
+DATA:TXTD123456-
+READ NEXT STATUS:1/0
+DATA:          -
+CLOSE STATUS:0/0
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([EXTFH: auto-conversion FCD2 <-> FCD3 on 32bit])
 AT_SKIP_IF([test "$COB_HAS_64_BIT_POINTER" = "yes"])
 AT_KEYWORDS([runfile EXTFH])

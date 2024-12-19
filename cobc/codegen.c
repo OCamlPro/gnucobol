@@ -5885,11 +5885,16 @@ output_init_comment_and_source_ref (struct cb_field *f)
 {
 	/* output comment and source location for each field */
 	output_line ("/* initialize field %s */", f->name);
+#ifndef	NO_INIT_SOURCE_LOC	/* allow user to not output these;
+	note: this will lead to a COBOL step never land in the
+	      DATA DIVISION; it will also lead to not be able to list
+	      copybooks in there to be visible to the debugger */
 	if (cb_flag_c_line_directives && f->common.source_line) {
 		output_cobol_info (CB_TREE (f));
 		output_line ("cob_nop ();");
 		output_c_info ();
 	}
+#endif
 }
 
 static void

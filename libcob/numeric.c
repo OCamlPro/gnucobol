@@ -1335,6 +1335,9 @@ cob_set_packed_int (cob_field *f, const int val)
 static void
 cob_decimal_set_display (cob_decimal *d, cob_field *f)
 {
+	/* Note: handling invalid data - as we do - leads to a performance
+	   decrease of > 8% */
+
 	register unsigned char	*data = COB_FIELD_DATA (f);
 	register size_t		size = COB_FIELD_SIZE (f);
 	const int	sign = COB_GET_SIGN_ADJUST (f);
@@ -2276,6 +2279,50 @@ cob_addsub_optimized (cob_field *f1, cob_field *f2,
 				return 1;
 			}
 		}
+#if 0	/* on heavy computations this is (only) ~3% faster, with
+    	   move_display_to_packed taking nearly 30%; come back later */
+	} else
+	if (f1_type == COB_TYPE_NUMERIC_DISPLAY) {
+		const unsigned short f1_digits = COB_FIELD_DIGITS (f1);
+		if (f1_digits <= COB_MAX_DIGITS) {
+			cob_field	field1;
+			cob_field_attr	attr1;
+			unsigned char buff1[COB_MAX_DIGITS / 2 + 1];
+			COB_FIELD_INIT_F (field1, f1_digits / 2 + 1, buff1, &attr1);
+			COB_ATTR_INIT_A (attr1, COB_TYPE_NUMERIC_PACKED, f1_digits,
+				COB_FIELD_SCALE (f1), COB_FLAG_HAVE_SIGN, NULL);
+			if (f2_type == COB_TYPE_NUMERIC_PACKED) {
+				cob_move_display_to_packed (f1, &field1);
+				cob_add_bcd (&field1, f2, &field1, opt, stmt);
+				cob_move_packed_to_display (&field1, f1);
+				return 1;
+			} else {
+				const unsigned short f2_digits = COB_FIELD_DIGITS (f2);
+				if ((f2_type == COB_TYPE_NUMERIC_DISPLAY
+				   && f2_digits <= COB_MAX_DIGITS)
+				 || f2_type == COB_TYPE_NUMERIC_BINARY
+				 || f2_type == COB_TYPE_NUMERIC_COMP5) {
+					cob_field	field2;
+					cob_field_attr	attr2;
+					unsigned char buff2[COB_MAX_DIGITS / 2 + 1];
+					COB_FIELD_INIT_F (field2, f2_digits / 2 + 1, buff2, &attr2);
+					COB_ATTR_INIT_A (attr2, COB_TYPE_NUMERIC_PACKED, f2_digits,
+						COB_FIELD_SCALE (f2), COB_FLAG_HAVE_SIGN, NULL);
+					cob_move_display_to_packed (f1, &field1);
+					if (f2_type == COB_TYPE_NUMERIC_DISPLAY) {
+						cob_move_display_to_packed (f2, &field2);
+					} else {
+						/* wrapper handling P and other things */
+						cob_move (f2, &field2);
+					}
+					cob_move (f2, &field2);
+					cob_add_bcd (&field1, &field2, &field1, opt, stmt);
+					cob_move_packed_to_display (&field1, f1);
+					return 1;
+				}
+			}
+		}
+#endif
 	}
 
 	/* no optimization done, execute ADD/SUBTRACT in the caller */
@@ -2871,6 +2918,7 @@ check_overflow_and_set_sign (cob_field *f, const int opt,
 				/* check and set last leading digit if needed */
 				*(buff + 48 - f->size) &= 0x0F;
 			}
+#if 0	/* keep negative zero */
 			if (!final_positive
 			 && COB_FIELD_HAVE_SIGN (f)) {
 				/* check for all zero after truncation - have that as positive */
@@ -2884,6 +2932,7 @@ check_overflow_and_set_sign (cob_field *f, const int opt,
 					}
 				}
 			}
+#endif
 		}
 	}
 
@@ -3494,7 +3543,12 @@ cob_add_int (cob_field *f, const int n, const int opt)
 	}
 #endif
 	/* n is single digit value added to positive field */
-	if (n > -10
+	if (
+#if 0 /* CHECKME: this does not work for negative numbers */
+	    n > -10
+#else
+	    n > 0
+#endif
 	 && n < 10
 	 && COB_FIELD_SCALE (f) == 0) {
 		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_PACKED

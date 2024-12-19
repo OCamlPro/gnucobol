@@ -50,6 +50,64 @@
 	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
 	* help.c (cobc_print_usage_dialect): extended -fregister help
 
+2023-05-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_init_comment_and_source_ref) [NO_INIT_SOURCE_LOC]:
+	  option to skip generating the source location in DATA DIVISION
+
+2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.y (is_subordinate_to): start with parent, not field
+
+2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: allow expressions for screen related clauses
+	  COL, LINE, LINES, SIZE, COLOR
+
+2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
+	* parser.y: drop PENDING from OVERLINE and LEFTLINE
+
+2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: disable unreached code removement with -O0, but keep it
+	  unchanged for -g
+	* field.c (validate_field_1): moved check for duplicate report LINE and
+	  "OCCURS with multi COLUMNs" here, originally found in (compute_size)
+	* field.c (get_max_int_val): new function to get the highest algebraic
+	  integer value
+	* field.c (compute_size): limit internal computed maximum for UNBOUNDED
+	  item to the maximum value that can be stored in its DEPENDING on item
+	* field.c (compute_size): set items that are too big to a fixed value
+	  to return eraly on follow-up checks
+	* field.c (compute_size): disabled check for missing PIC for NATIONAL
+	  and BCD USAGE
+	* tree.c (cb_field_variable_address), tree.h: disabled unused function
+	* tree.c (cb_field_has_unbounded), tree.h: new function checking both
+	  field and any of the child elements to be UNBOUNDED
+	* typeck.c (cb_validate_program_data): validate DEPENDING ON to be numeric
+	* typeck.c (cb_build_identifier): skip compile-time checks for ref-mod
+	  on UNBOUNDED items as size is not known; for runtime calculate the max.
+	  length for ref-mod using the ODO
+	* parser.y (occurs_clause): don't set flag_unbounded in parent
+	* cobc.c (print_fields): don't output (wrong) size for group items with
+	  OCCURS UNBOUNDED sub-fields
+
+2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (control_source): allow both an alphanumeric identifier or
+	  literal for use with CONTROL phrase
+	* parser.y: adjust a bunch of terminals to match the internal name with
+	  leading underscore as optional
+
+2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (set_category, set_category_from_usage): changed argument types
+	  from int to their matching enum
+	* tree.c (cb_build_prototype), parser.y (setup_prototype),
+	  tree.h (struct cb_prototype): use matching enum
+
 2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_valid_name): allow leading underscore,
@@ -323,6 +381,8 @@
 	* parser.y (usage_clause_screen_report), typeck.c (validate_usage): have
 	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
 	  removing the need to check for bad USAGE later
+	* parser.y (display_erase, display_pos_specifier): pass display attributes
+	  to codegen
 
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 

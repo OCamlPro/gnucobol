@@ -1987,7 +1987,7 @@ struct cb_prototype {
 	const char		*name;
 	/* External name of the prototype/definition */
 	const char		*ext_name;
-	int			type;
+	enum cob_module_type		type;
 };
 
 #define CB_PROTOTYPE(x)		(CB_TREE_CAST (CB_TAG_PROTOTYPE, struct cb_prototype, x))
@@ -2102,6 +2102,7 @@ extern int			cb_tree_type (const cb_tree,
 					      const struct cb_field *);
 extern int			cb_category_is_alpha (cb_tree);
 extern int			cb_category_is_national (cb_tree);
+extern int			cb_field_has_unbounded (struct cb_field *);
 extern int			cb_fits_int (const cb_tree);
 extern int			cb_fits_long_long (const cb_tree);
 extern int			cb_get_int (const cb_tree);
@@ -2166,7 +2167,9 @@ extern int				cb_field_size (const cb_tree x);
 #define FIELD_SIZE_UNKNOWN -1
 extern struct cb_field		*cb_field_founder (const struct cb_field * const);
 extern struct cb_field		*cb_field_variable_size (const struct cb_field *);
+#if 0	/* unused */
 extern unsigned int		cb_field_variable_address (const struct cb_field *);
+#endif
 extern int			cb_field_subordinate (const struct cb_field *,
 						      const struct cb_field *);
 
@@ -2216,7 +2219,7 @@ extern cb_tree			cb_build_assign (const cb_tree, const cb_tree);
 extern cb_tree			cb_build_intrinsic (cb_tree, cb_tree,
 						    cb_tree, const int);
 extern cb_tree			cb_build_prototype (const cb_tree,
-						    const cb_tree, const int);
+						    const cb_tree, const enum cob_module_type);
 extern cb_tree			cb_build_any_intrinsic (cb_tree);
 
 extern cb_tree			cb_build_search (const int,
