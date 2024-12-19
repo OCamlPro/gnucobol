@@ -63,6 +63,7 @@ struct cob_inspect_state {
 	size_t			      size;
 	cob_u32_t		      replacing;	/* marker about current operation being INSPECT REPLACING */
 	int			          sign;
+	cob_field			  var_copy;	/* use a copy to account for overwritten temporary field, see cob_inspect_init_common_intern */
 	enum inspect_type type;
 };
 
@@ -70,6 +71,9 @@ struct cob_string_state {
 	cob_field		*dst;
 	cob_field		*ptr;
 	cob_field		*dlm;
+	cob_field		dst_copy;	/* use a copy to account for overwritten temporary field, see cob_string_init_intern */
+	cob_field		ptr_copy;	/* use a copy to account for overwritten temporary field, see cob_string_init_intern */
+	cob_field		dlm_copy;	/* use a copy to account for overwritten temporary field, see cob_string_delimited_intern */
 	int		    	offset;	/* value associated with WITH POINTER clauses */
 };
 
@@ -81,6 +85,8 @@ struct cob_unstring_state {
                                          the maximum needed (amount of DELIMITED BY),
                                          actual size of dlm_list is calculated by
                                          dlm_list_size * sizeof(dlm_struct) */
+	cob_field	    src_copy;	/* use a copy to account for overwritten temporary field, see cob_unstring_init_intern */
+	cob_field	    ptr_copy;	/* use a copy to account for overwritten temporary field, see cob_unstring_init_intern */
 	int                 offset;
 	unsigned int        count;
 	unsigned int        ndlms;
@@ -507,7 +513,11 @@ cob_inspect_init_common_intern (struct cob_inspect_state *st, cob_field *var)
 		/* it is allowed to TRANSFORM / INSPECT a numeric display signed element;
 		   if it isn't stored separately we need to "remove" it here and add it back
 		   in inspect_finish; note: we only handle NUMERIC DISPLAY here */
-		st->var = var;
+		/* var may be a temporary field (created from refmod or indexing),
+		   which might be overwritten between subsequent calls to the
+                   different cob_inspect_* functions */
+		st->var_copy = *var;
+		st->var = &st->var_copy;
 		st->sign = cob_real_get_sign (var, 0);
 	} else {
 		st->var = NULL;
@@ -918,8 +928,16 @@ cob_inspect_finish (void)
 static void
 cob_string_init_intern (struct cob_string_state *st, cob_field *dst, cob_field *ptr)
 {
-	st->dst = dst;
-	st->ptr = ptr;
+	/* dst and ptr may be temporary fields (created from refmod or indexing),
+	   which might be overwritten between subsequent calls to the
+	   different cob_string_* functions */
+	st->dst_copy = *dst;
+	st->dst = &st->dst_copy;
+	st->ptr = NULL;
+	if (ptr) {
+		st->ptr_copy = *ptr;
+		st->ptr = &st->ptr_copy;
+	}
 	st->offset = 0;
 	cobglobptr->cob_exception_code = 0;
 
@@ -939,8 +957,12 @@ cob_string_init (cob_field *dst, cob_field *ptr)
 static void
 cob_string_delimited_intern (struct cob_string_state *st, cob_field *dlm)
 {
+	/* dlm may be a temporary field (created from refmod or indexing),
+	   which might be overwritten between subsequent calls to the
+	   different cob_string_* functions */
 	if (dlm) {
-		st->dlm = dlm;
+		st->dlm_copy = *dlm;
+		st->dlm = &st->dlm_copy;
 	} else {
 		st->dlm = NULL;
 	}
@@ -1026,8 +1048,16 @@ cob_unstring_init_intern (
 	const size_t num_dlm
 )
 {
-	st->src = src;
-	st->ptr = ptr;
+	/* src and ptr may be temporary fields (created from refmod or indexing),
+	   which might be overwritten between subsequent calls to the
+	   different cob_unstring_* functions */
+	st->src_copy = *src;
+	st->src = &st->src_copy;
+	st->ptr = NULL;
+	if (ptr) {
+		st->ptr_copy = *ptr;
+		st->ptr = &st->ptr_copy;
+	}
 
 	st->offset = 0;
 	st->count = 0;
