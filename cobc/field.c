@@ -2524,6 +2524,7 @@ setup_parameters (struct cb_field *f)
 		&& f->pic->orig[0] == 'X') {
 			f->usage = CB_USAGE_COMP_X;
 		}
+		/* Fall-through */
 	case CB_USAGE_COMP_X:
 		if (f->pic->category == CB_CATEGORY_ALPHANUMERIC
 		&& f->usage == CB_USAGE_COMP_X) {
