@@ -10594,7 +10594,7 @@ WORKING-STORAGE
 **********************
 77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
-01        HEXV                            13
+01        HEXV                            013
 01        TEST-BASED.                    <NULL> address
 01        TEST-ALLOCED.
   05      TEST-ALLOCED-SUB1              ALL SPACES
@@ -10658,7 +10658,7 @@ WORKING-STORAGE
 **********************
 77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
-01        HEXV                            13
+01        HEXV                            013
 01        IDX                             000000000
 01        TSTREC.
   05      TSTDEP                         'XXX'
@@ -15130,5 +15130,53 @@ AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([display all characters of COMP-X])
+#AT_KEYWORDS([display comp-x])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 W-X                  PIC X COMP-X VALUE 99.
+       01 W-Y                  PIC X COMP-X VALUE 128.
+       01 W-Z                  PIC X VALUE "z".
+       01 W-ZR  REDEFINES W-Z  PIC X COMP-X.
+       01 W-A                  PIC XX COMP-X VALUE 256.
+       01 W-B                  PIC XX COMP-X VALUE 64046.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY FUNCTION BYTE-LENGTH (W-X).
+           DISPLAY FUNCTION BYTE-LENGTH (W-Y).
+           DISPLAY FUNCTION BYTE-LENGTH (W-ZR).
+           DISPLAY FUNCTION BYTE-LENGTH (W-A).
+           DISPLAY FUNCTION BYTE-LENGTH (W-B).
+           DISPLAY W-X.
+           DISPLAY W-Y.
+           DISPLAY W-ZR.
+           DISPLAY W-A.
+           DISPLAY W-B.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1
+1
+1
+2
+2
+099
+128
+122
+00256
+64046
+], [])
 
 AT_CLEANUP
