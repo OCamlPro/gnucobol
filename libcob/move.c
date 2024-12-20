@@ -1198,7 +1198,6 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 						break;
 					}
 				}
-
 			case '.':
 			case ',':
 				if (c == dec_symbol) {
