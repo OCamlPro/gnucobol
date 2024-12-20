@@ -15253,49 +15253,79 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 AT_CLEANUP
 
 
-AT_SETUP([display all characters of COMP-X])
-#AT_KEYWORDS([display comp-x])
+AT_SETUP([PICTURE COMP-X])
+AT_KEYWORDS([Numeric])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-
-       DATA DIVISION.
+       DATA  DIVISION.
        WORKING-STORAGE SECTION.
-
-       01 W-X                  PIC X COMP-X VALUE 99.
-       01 W-Y                  PIC X COMP-X VALUE 128.
-       01 W-Z                  PIC X VALUE "z".
-       01 W-ZR  REDEFINES W-Z  PIC X COMP-X.
-       01 W-A                  PIC XX COMP-X VALUE 256.
-       01 W-B                  PIC XX COMP-X VALUE 64046.
+       01  TST.
+           05 BVAL  PIC 9999 BINARY VALUE 512.
+           05 XVAL  PIC XX COMP-X VALUE 512.
+              88 XLOW  VALUE   0 THRU 256.
+              88 XHIGH VALUE 257 THRU 65536.
+           05 VAL9  PIC 99999 COMP-X VALUE 1024.
+              88 LOW9  VALUE   0 THRU 256.
+              88 HIGH9 VALUE 257 THRU 65536.
+           05 XVAL2 PIC XX COMP-X VALUE 16706.
+           05 XVALX REDEFINES XVAL2 PIC XX.
+           05 YVALX PIC XX VALUE 'A '.
+           05 YVAL2 REDEFINES YVALX PIC XX COMP-X.
 
        PROCEDURE DIVISION.
-       MAIN.
-           DISPLAY FUNCTION BYTE-LENGTH (W-X).
-           DISPLAY FUNCTION BYTE-LENGTH (W-Y).
-           DISPLAY FUNCTION BYTE-LENGTH (W-ZR).
-           DISPLAY FUNCTION BYTE-LENGTH (W-A).
-           DISPLAY FUNCTION BYTE-LENGTH (W-B).
-           DISPLAY W-X.
-           DISPLAY W-Y.
-           DISPLAY W-ZR.
-           DISPLAY W-A.
-           DISPLAY W-B.
+           DISPLAY " XVAL is " XVAL ";  Length is " LENGTH OF XVAL.
+           DISPLAY " VAL9 is " VAL9 ";  Length is " LENGTH OF VAL9.
+           MOVE 10240 TO XVAL.
+           DISPLAY " XVAL is " XVAL ";  Length is " LENGTH OF XVAL.
+           DISPLAY "XVAL2 is " XVAL2 "; Length is " LENGTH OF XVAL2.
+           DISPLAY "XVALX is " XVALX "; Length is " LENGTH OF XVALX.
+           ADD 1 TO XVAL2.
+           DISPLAY "XVALX is " XVALX " after +1;".
+           COMPUTE XVAL2 = XVAL2 / 256 + 8192.
+           DISPLAY "XVALX is " XVALX " after / 256 + 8192;".
+           MOVE 'DE'       TO XVALX.
+           DISPLAY "Numeric: " XVAL2 " is char " XVALX.
+           MOVE ZERO       TO YVAL2.
+           MOVE 'D'        TO YVALX (1:1)
+           MOVE LOW-VALUES TO YVALX (2:1)
+           SUBTRACT YVAL2 FROM XVAL2.
+           MOVE ' '        TO YVALX (1:1)
+           MOVE LOW-VALUES TO YVALX (2:1)
+           ADD YVAL2 TO XVAL2.
+           DISPLAY "Numeric: " XVAL2 " is char " XVALX.
+           MOVE 0 TO XVAL.
+           ADD 10240 TO XVAL.
+           IF XVAL = 10240
+               DISPLAY "XVAL is " XVAL
+           ELSE
+               DISPLAY "XVAL is not 10240 but " XVAL
+           END-IF.
+           MOVE 0 TO BVAL.
+           ADD 10240 TO BVAL.
+           IF BVAL = 0240
+               DISPLAY "BVAL is " BVAL
+           ELSE
+               DISPLAY "BVAL is not 0240 but " BVAL
+           END-IF.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1
-1
-1
-2
-2
-099
-128
-122
-00256
-64046
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([./prog], [0], [ XVAL is 00512;  Length is 2
+ VAL9 is 01024;  Length is 3
+ XVAL is 10240;  Length is 2
+XVAL2 is 16706; Length is 2
+XVALX is AB; Length is 2
+XVALX is AC after +1;
+XVALX is  A after / 256 + 8192;
+Numeric: 17477 is char DE
+Numeric: 08261 is char  E
+XVAL is 10240
+BVAL is 0240
 ], [])
 
 AT_CLEANUP
+
