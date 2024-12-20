@@ -327,6 +327,10 @@
 				RelativePath="..\..\cobc\typeck.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\cobc\dump_ast.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -391,6 +395,10 @@
 			</File>
 			<File
 				RelativePath="..\..\cobc\warning.def"
+				>
+			</File>
+			<File
+				RelativePath="..\..\cobc\dump_ast_gen.c"
 				>
 			</File>
 		</Filter>
