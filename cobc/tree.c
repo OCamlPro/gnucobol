@@ -1300,10 +1300,18 @@ set_ml_attrs_and_children (struct cb_field *record, const int children_are_attrs
 			continue;
 		}
 
-		child_tree_or_null = cb_build_ml_tree (child, 0,
-							children_are_attrs,
-							name_list, type_list,
-							suppress_list);
+		if (child->children) {
+			child_tree_or_null = cb_build_ml_tree (child, children_are_attrs,
+								0,
+								name_list, type_list,
+								suppress_list);
+		} else {
+			child_tree_or_null = cb_build_ml_tree (child, 0,
+								children_are_attrs,
+								name_list, type_list,
+								suppress_list);
+		}
+
 		if (!child_tree_or_null) {
 			continue;
 		}
