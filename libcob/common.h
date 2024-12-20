@@ -331,7 +331,9 @@ typedef __mpz_struct mpz_t[1];
 
 #define strncasecmp		_strnicmp
 #define strcasecmp		_stricmp
+#if _MSC_VER < 1900
 #define snprintf		_snprintf
+#endif
 #define getpid			_getpid
 #define access			_access
 #define popen			_popen
