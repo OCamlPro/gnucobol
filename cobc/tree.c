@@ -1533,6 +1533,9 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 	switch (CB_TREE_CATEGORY (x)) {
 	case CB_CATEGORY_ALPHABETIC:
 	case CB_CATEGORY_ALPHANUMERIC:
+		if (f->usage == CB_USAGE_COMP_X) {
+			return COB_TYPE_NUMERIC_BINARY;
+		}
 		return COB_TYPE_ALPHANUMERIC;
 	case CB_CATEGORY_ALPHANUMERIC_EDITED:
 		return COB_TYPE_ALPHANUMERIC_EDITED;
