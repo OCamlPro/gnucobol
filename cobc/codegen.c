@@ -1801,6 +1801,7 @@ static void
 output_gnucobol_defines (const char *formatted_date)
 {
 	int	i;
+	struct cb_text_list *l;
 
 	if (!strrchr (cb_source_file, '\\')
 	 && !strrchr (cb_source_file, '"')) {
@@ -1832,7 +1833,6 @@ output_gnucobol_defines (const char *formatted_date)
 		current_compile_tm.tm_sec;
 	output_line ("#define  COB_MODULE_TIME\t\t%d", i);
 
-	struct cb_text_list *l;
 	for (l = cb_include_file_list; l; l = l->next) {
 		if (l->text[0] == '<') {
 			output_line ("#include %s", l->text);
