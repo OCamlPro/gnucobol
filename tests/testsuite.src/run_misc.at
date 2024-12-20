@@ -15132,3 +15132,27 @@ AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([MOVE to NUMERIC-EDITED safety])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  PIC 9(5)    VALUE 12345.
+       01 Y  PIC 9(5)CR.
+       PROCEDURE DIVISION.
+           MOVE X TO Y.
+           IF Y(1:) NOT = "12345" THEN
+             DISPLAY "EXPECTED '12345'"
+             DISPLAY "GOT      '" Y(1:) "'"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
