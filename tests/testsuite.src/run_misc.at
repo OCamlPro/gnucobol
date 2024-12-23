@@ -15226,3 +15226,28 @@ AT_CHECK([$COMPILE prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([DISPLAY FLOAT])
+AT_KEYWORDS([FLOAT-SHORT FLOAT-LONG COMP-1 COMP-2])
+
+# Note: each COBOL environment has a different output format for floats;
+# here we only check for internal consistency (support for other
+# formats might be considered for addition if widely requested)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  FLOAT-SHORT  VALUE 0.000012345.
+       01 Y  FLOAT-LONG   VALUE 0.000012345.
+       PROCEDURE DIVISION.
+           DISPLAY X SPACE Y WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
+
+AT_CLEANUP
