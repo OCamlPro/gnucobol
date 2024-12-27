@@ -57,6 +57,11 @@
 #include <langinfo.h>
 #endif
 
+
+#ifdef	HAVE_LANGINFO_CODESET
+#include <langinfo.h>
+#endif
+
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
