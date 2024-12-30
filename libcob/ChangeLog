@@ -1,4 +1,9 @@
 
+2024-12-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* termio.c (clean_double): skip more than a single leading
+	  zero in exponent display
+
 2024-12-18  David Declerck <david.declerck@ocamlpro.com>
 
 	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
