@@ -1,4 +1,9 @@
 
+2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
+	  used for info output to include panel header definitions and XCurses
+
 2024-12-23  David Declerck <david.declerck@ocamlpro.com>
 
 	* termio.c (clean_double): skip more than a single leading
@@ -1487,7 +1492,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  cob_add_exception
 	* screenio.c (handle_status): pass type of statement to raise
 	  either COB_EC_IMP_ACCEPT or COB_EC_IMP_DISPLAY
-	* screenio.c (handle_status, cob_set_crt3_status) [!COB_GEN_SCREENIO]:
+	* screenio.c (handle_status, cob_set_crt3_status) [!WITH_EXTENDED_SCREENIO]:
 	  unconditionally defined those functions and finally return error
 	  status and nonfatal exception along with a warning on accept if the
 	  runtime is not configured for extended screenio
@@ -2654,7 +2659,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2019-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (cob_settings_screenio): moved out of COB_GEN_SCREENIO
+	* screenio.c (cob_settings_screenio): moved out of WITH_EXTENDED_SCREENIO
 
 2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3421,7 +3426,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: moved cob_sys_get_char and added parts for !COB_GEN_SCREENIO
+	* screenio.c: moved cob_sys_get_char and added parts for !WITH_EXTENDED_SCREENIO
 
 2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3586,7 +3591,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-02-07  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: [!COB_GEN_SCREENIO] fixed zero_line_col_allowed
+	* screenio.c: [!WITH_EXTENDED_SCREENIO] fixed zero_line_col_allowed
 	  missing / superfluous in function declarations
 
 2017-02-06  Ron Norman <rjn@inglenet.com>
@@ -4532,7 +4537,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2010-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (!COB_GEN_SCREENIO): Make cob_sys_sound_bell usable via
+	* screenio.c (!WITH_EXTENDED_SCREENIO): Make cob_sys_sound_bell usable via
 	  cob_speaker_beep
 	* common.c:  Add possibility to disable the bell via
 	  COB_BELL=NO/NONE/0/OFF (currently only the first char is checked)
