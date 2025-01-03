@@ -1,5 +1,15 @@
 
-2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
+2025-01-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (build_evaluate, cb_check_needs_break): fix a bug where
+	  EVALUATE fails in profiling mode. The reason was that a check for
+	  a last GOTO statement is not correctly written, because it was
+	  actually checking either a GOTO or not a statement, which was
+	  evaluates to true for instructions added by profiling. Fixed by
+	  checking only that the last statement is a GOTO. Also modify
+	  cb_check_needs_break that uses the same code.
+
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_command_line): fix leak for --copy and -include parsing
 
