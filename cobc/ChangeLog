@@ -1,4 +1,10 @@
 
+2025-01-06  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX
+	  also for INDEXED BY appaering in LINKAGE SECTION, otherwise
+	  the variable is not added to the local include file
+
 2025-01-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* typeck.c (build_evaluate, cb_check_needs_break): fix a bug where
