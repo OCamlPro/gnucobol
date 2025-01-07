@@ -9,6 +9,11 @@
 	* termio.c (clean_double): skip more than a single leading
 	  zero in exponent display
 
+2024-12-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_start_internal): improve handling of partial
+	  keys, to ensure BDB always compares keys of identical length
+
 2024-12-18  David Declerck <david.declerck@ocamlpro.com>
 
 	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT

@@ -3098,6 +3098,66 @@ rewriting key: 98651234
 AT_CLEANUP
 
 
+AT_SETUP([INDEXED START with partial key and collating sequence])
+AT_KEYWORDS([runfile READ WRITE START])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F-DATA ASSIGN TO EXTERNAL fdata
+             ORGANIZATION INDEXED
+             ACCESS MODE DYNAMIC
+             RECORD KEY R-KEY
+             FILE STATUS F-STATUS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD F-DATA.
+       01 R-DATA.
+         05 R-KEY.
+           10 R-SUBKEY-1  PIC X(3).
+           10 R-SUBKEY-2  PIC X(2).
+         05 R-NUM         PIC 99.
+       WORKING-STORAGE SECTION.
+       01 F-STATUS  PIC X(2)  VALUE SPACE.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT F-DATA.
+           MOVE "ABC12" TO R-KEY.
+           MOVE 1 TO R-NUM.
+           WRITE R-DATA.
+           MOVE "DEF34" TO R-KEY.
+           MOVE 2 TO R-NUM.
+           WRITE R-DATA.
+           MOVE "GHI56" TO R-KEY.
+           MOVE 3 TO R-NUM.
+           WRITE R-DATA.
+           CLOSE F-DATA.
+           OPEN INPUT F-DATA.
+           MOVE SPACES TO R-KEY.
+           MOVE "DEF" TO R-SUBKEY-1.
+           START F-DATA KEY >= R-SUBKEY-1.
+           DISPLAY "START STATUS: " F-STATUS.
+           READ F-DATA NEXT.
+           DISPLAY "READ STATUS: " F-STATUS.
+           DISPLAY "READ " R-KEY ", " R-NUM.
+           CLOSE F-DATA.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[START STATUS: 00
+READ STATUS: 00
+READ DEF34, 02
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([WRITE + REWRITE FILE name])
 AT_KEYWORDS([runfile RELATIVE COB_SYNC])
 
