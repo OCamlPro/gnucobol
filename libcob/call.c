@@ -63,71 +63,79 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 static cob_settings		*cobsetptr = NULL;
 
 #ifdef	_WIN32
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <io.h>	/* for access */
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <io.h>	/* for access */
+	static void *
+	lt_dlsym (HMODULE hmod, const char *p)
+	{
+		union {
+			FARPROC		modaddr;
+			void		*voidptr;
+		} modun;
 
-static HMODULE
-lt_dlopen (const char *x)
-{
-	if (x == NULL) {
-		return GetModuleHandle (NULL);
+		modun.modaddr = GetProcAddress(hmod, p);
+		return modun.voidptr;
 	}
-	return LoadLibrary(x);
-}
 
-static void *
-lt_dlsym (HMODULE hmod, const char *p)
-{
-	union {
-		FARPROC		modaddr;
-		void		*voidptr;
-	} modun;
+	#define lt_dlclose(x)	FreeLibrary(x)
+	#define	lt_dlinit()
+	#define	lt_dlexit()
+	#define lt_dlhandle	HMODULE
 
-	modun.modaddr = GetProcAddress(hmod, p);
-	return modun.voidptr;
-}
+	#if	1	/* RXWRXW - dlerror */
+	static char	errbuf[64];
+	static char *
+	lt_dlerror (void)
+	{
+		sprintf (errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
+		return errbuf;
+	}
+#endif
+#elif	defined(USE_LIBDL)
+	/* note: only defined in configure when HAVE_DLFCN_H is true and dlopen can be linked */
+	#include <dlfcn.h>
 
-#define lt_dlclose(x)	FreeLibrary(x)
-#define	lt_dlinit()
-#define	lt_dlexit()
-#define lt_dlhandle	HMODULE
-
-#if	1	/* RXWRXW - dlerror */
-static char	errbuf[64];
-static char *
-lt_dlerror (void)
-{
-	sprintf (errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
-	return errbuf;
-}
+	#define lt_dlsym(x,y)	dlsym(x, y)
+	#define lt_dlclose(x)	dlclose(x)
+	#define lt_dlerror()	dlerror()
+	#define	lt_dlinit()
+	#define	lt_dlexit()
+	#define lt_dlhandle	void *
+#else
+	#include <ltdl.h>
 #endif
 
+static void* cob_dlopen(const char* filename) {
+#ifdef _WIN32
+	if (filename == NULL) {
+		return GetModuleHandle (NULL);
+	}
+	return LoadLibrary(filename);
 #elif	defined(USE_LIBDL)
-/* note: only defined in configure when HAVE_DLFCN_H is true and dlopen can be linked */
-#include <dlfcn.h>
-
-#define lt_dlsym(x,y)	dlsym(x, y)
-#define lt_dlclose(x)	dlclose(x)
-#define lt_dlerror()	dlerror()
-#define	lt_dlinit()
-#define	lt_dlexit()
-#define lt_dlhandle	void *
-
-static void* lt_dlopen(const char* filename) {
 	int flags = cobsetptr->cob_load_global 
 		? RTLD_LAZY | RTLD_GLOBAL
 		: RTLD_LAZY | RTLD_LOCAL;
 
 	return dlopen(filename, flags);
+#else
+	lt_dladvise advise;
+    lt_dladvise_init(&advise);
+
+    if (cobsetptr->cob_load_global) {
+        lt_dladvise_global(&advise);
+    } else {
+        lt_dladvise_local(&advise);
+    }
+
+    void* handle = lt_dlopenadvise(filename, advise);
+    lt_dladvise_destroy(&advise); // Clean up advise object
+    return handle;
+#endif
 }
 
-#else
-
-#include <ltdl.h>
-
-#endif
+#define lt_dlopen(x) cob_dlopen(x) // TODO: Remove this!
 
 #define	COB_MAX_COBCALL_PARMS	16
 #define	CALL_BUFF_SIZE		256U
