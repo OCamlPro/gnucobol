@@ -522,6 +522,9 @@ static struct config_tbl gc_conf[] = {
 	/* checked before configuration load if set from environment in cob_common_init() */
 	{"COB_UNIX_LF", "unix_lf", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_unix_lf)},
 #endif
+#ifndef _WIN32
+	{"COB_LOAD_GLOBAL", "load_global", "1", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
+#endif
 	{"USERNAME", "username", 			NULL, 	NULL, GRP_SYSENV, ENV_STR, SETPOS (cob_user_name)},	/* default set in cob_init() */
 	{"LOGNAME", "logname", 			NULL, 	NULL, GRP_HIDE, ENV_STR, SETPOS (cob_user_name)},
 #if !defined (_WIN32) || defined (__MINGW32__) /* cygwin does not define _WIN32 */

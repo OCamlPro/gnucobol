@@ -60,6 +60,8 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 	https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading_libraries
 */
 
+static cob_settings		*cobsetptr = NULL;
+
 #ifdef	_WIN32
 
 #define WIN32_LEAN_AND_MEAN
@@ -106,13 +108,25 @@ lt_dlerror (void)
 /* note: only defined in configure when HAVE_DLFCN_H is true and dlopen can be linked */
 #include <dlfcn.h>
 
-#define lt_dlopen(x)	dlopen(x, RTLD_LAZY | RTLD_GLOBAL)
 #define lt_dlsym(x,y)	dlsym(x, y)
 #define lt_dlclose(x)	dlclose(x)
 #define lt_dlerror()	dlerror()
 #define	lt_dlinit()
 #define	lt_dlexit()
 #define lt_dlhandle	void *
+
+void* lt_dlopen(const char* filename) {
+	
+	if (cobsetptr == NULL || cobsetptr->cob_load_global == NULL) {
+		// TODO: What to do when cobsetptr is null?
+	}
+
+	if (cobsetptr->cob_load_global) {
+		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL);
+	} else {
+		return dlopen(filename, RTLD_LAZY | RTLD_GLOBAL);
+	}
+}
 
 #else
 
@@ -158,7 +172,6 @@ static struct struct_handle	*base_preload_ptr;
 static struct struct_handle	*base_dynload_ptr;
 
 static cob_global		*cobglobptr = NULL;
-static cob_settings		*cobsetptr = NULL;
 
 static char			**resolve_path;
 static char			*resolve_error;

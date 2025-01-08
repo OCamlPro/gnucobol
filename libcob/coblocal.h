@@ -372,6 +372,8 @@ typedef struct __cob_settings {
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */
+
+	int		cob_load_global; /* Wether dlopen should use the global or local namespace */
 } cob_settings;
 
 
