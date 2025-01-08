@@ -117,7 +117,7 @@ lt_dlerror (void)
 
 void* lt_dlopen(const char* filename) {
 	
-	if (cobsetptr == NULL || cobsetptr->cob_load_global == NULL) {
+	if (cobsetptr == NULL) {
 		// TODO: What to do when cobsetptr is null?
 	}
 
