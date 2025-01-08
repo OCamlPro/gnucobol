@@ -1224,8 +1224,8 @@ get_suppress_cond (cb_tree record, enum cb_ml_type type,
 	cb_tree suppress_cond = NULL;
 
 	if (!record) {
-		/* TO-DO: Output check that all child elements are suppressed */
-		/* TO-DO: Move this check to the callee? */
+		/* TODO: Output check that all child elements are suppressed */
+		/* TODO: Move this check to the callee? */
 		return NULL;
 	}
 
@@ -1389,8 +1389,8 @@ cb_tree_category (cb_tree x)
 	struct cb_reference	*r;
 	struct cb_field		*f;
 
-	if (x == cb_error_node) {
-		return (enum cb_category)0;
+	if (CB_INVALID_TREE (x)) {
+		return CB_CATEGORY_UNKNOWN;
 	}
 
 	/* LCOV_EXCL_START */
@@ -1608,6 +1608,17 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 #ifndef _MSC_VER
 	return 0;	/* LCOV_EXCL_LINE */
 #endif
+}
+
+/* check if field or any of the child elements has UNBOUNDED */
+int
+cb_field_has_unbounded (struct cb_field *f)
+{
+	if (f->flag_unbounded) {
+		return 1;
+	}
+	f = cb_field_variable_size (f);
+	return (f && f->flag_unbounded);
 }
 
 int
@@ -3062,7 +3073,7 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 			return 1;
 		}
 
-		/* To-do: Allow floating-point PICTURE strings */
+		/* TODO: Allow floating-point PICTURE strings */
 	/* case '+': */
 		/* Exponent symbol */
 		/* return 3; */
@@ -4341,6 +4352,7 @@ cb_field_size (const cb_tree x)
 	/* LCOV_EXCL_STOP */
 }
 
+/* returns the record field (level 01) of 'f' */
 struct cb_field *
 cb_field_founder (const struct cb_field * const f)
 {
@@ -4353,6 +4365,10 @@ cb_field_founder (const struct cb_field * const f)
 	return (struct cb_field *)ff;
 }
 
+/* returns the first field that has an ODO below 'f', if any
+   note: per standard there would be only 0 or 1 of those, but mind
+   the supported extensions that allow nested ODO as well as
+   the fact that 'f' may have an ODO on its own */
 struct cb_field *
 cb_field_variable_size (const struct cb_field *f)
 {
@@ -4373,26 +4389,26 @@ cb_field_variable_size (const struct cb_field *f)
 	return NULL;
 }
 
+#if 0	/* unused */
+/* check if field 'f' has a variable address (one of the fields
+   before the current one has a DEPENDING ON)  */
 unsigned int
-cb_field_variable_address (const struct cb_field *fld)
+cb_field_variable_address (const struct cb_field *f)
 {
-	const struct cb_field		*p;
-	const struct cb_field		*f;
-
-	f = fld;
+	const struct cb_field	*p;
 	for (p = f->parent; p; f = f->parent, p = f->parent) {
 		for (p = p->children; p != f; p = p->sister) {
-			if (p->depending ||
-			    (!p->flag_picture_l && cb_field_variable_size (p))) {
+			if (p->depending
+			 || (!p->flag_picture_l && cb_field_variable_size (p))) {
 				return 1;
 			}
 		}
 	}
 	return 0;
 }
+#endif
 
-/* Check if field 'pfld' is subordinate to field 'f' */
-
+/* check if field 'pfld' is subordinate to field 'f' */
 int
 cb_field_subordinate (const struct cb_field *pfld, const struct cb_field *f)
 {
@@ -4865,7 +4881,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 			r->rcsz = maxsz;
 	}
 
-	/* Insure report record size is set large enough */
+	/* ensure report record size is set large enough */
 	for (k=0; k < 2; k++) {
 		for (p = records; p; p = p->sister) {
 			if (p->storage != CB_STORAGE_REPORT)
@@ -5423,7 +5439,7 @@ cb_finalize_cd (struct cb_cd *cd, struct cb_field *records)
 	}
 
 	for (p = records; p; p = p->sister) {
-		/* TO-DO: Check record size is exactly 87 chars */
+		/* TODO: Check record size is exactly 87 chars */
 
 		p->cd = cd;
 		if (p != cd->record) {
@@ -7328,7 +7344,7 @@ warn_if_no_definition_seen_for_prototype (const struct cb_prototype *proto)
 
 cb_tree
 cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
-		    const int type)
+		    const enum cob_module_type type)
 {
 	struct cb_prototype	*prototype;
 
@@ -7385,13 +7401,13 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 	cb_tree			arg;
 	int argnum = 0;
 
-	for (l = args; l; l = CB_CHAIN(l)) {
+	for (l = args; l; l = CB_CHAIN (l)) {
 
 		argnum++;
 		if (argnum < check_from) continue;
 		if (check_to && argnum > check_to) break;
 
-		arg = CB_VALUE(l);
+		arg = CB_VALUE (l);
 		arg_cat = cb_tree_category (arg);
 
 		if (arg_cat == CB_CATEGORY_NATIONAL_EDITED) {

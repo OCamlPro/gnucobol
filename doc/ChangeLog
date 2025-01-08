@@ -1,4 +1,18 @@
 
+2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gnucobol.texi: document warning and optimization options
+	  related to unreachable code; add node on core dumps
+
+2023-01-31  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* gnucobol.texi: include format auto-detection
+
+2023-01-25  David Declerck <david.declerck@ocamlpro.com>
+
+	* gnucobol.texi: document usage of translation tables via
+	  -febcdic-table at compile time and as API via cob_load_collation
+
 2022-11-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* gnucobol.texi: X/Open free-form format allows lines of up to 255

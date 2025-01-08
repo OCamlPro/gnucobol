@@ -441,7 +441,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	unsigned short		digits2;
 	register unsigned int	i;
 
-	unsigned char	*p;
+	register unsigned char	*p;
 
 	/* 99P -> 3 digits, scale -1 --> real digits are less */
 	if (scale1 >= 0) {
@@ -472,7 +472,9 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		register unsigned char	*q = f2->data + i / 2;
 		const unsigned int i_end = digits2 + 1;
 		/* FIXME: get rid of that, adjust i_end accordingly and always end at sign byte */
-		const unsigned char *p_end = data1 + digits1;
+		const unsigned char *f2_end = f2->data + f2->size - 1;
+		const unsigned char *p_end_calc = data1 + digits1;
+		const unsigned char *p_end = p_end_calc > f2_end ? f2_end : p_end_calc;
 
 		if ((i % 2) == 1) {
 			*q++ = COB_D2I (*p++);
@@ -665,20 +667,17 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 {
 	const unsigned char	*data1 = COB_FIELD_DATA (f1);
 	const size_t		size1 = COB_FIELD_SIZE (f1);
+	const size_t	size = size1 - COB_FIELD_SCALE (f1) + COB_FIELD_SCALE (f2);
+	cob_u64_t		val = 0;
+	size_t		i;
+	int			sign;
 	unsigned short target_digits;
-	cob_u64_t	val;
-	size_t		i, size;
-	int		sign;
 
 	if (f1->size > 18
 	 || f2->size > sizeof (val)) {	/* Large Binary field */
 	 	cob_decimal_setget_fld (f1, f2, 0);
 		return;
 	}
-
-	/* Get value */
-	val = 0;
-	size = size1 - COB_FIELD_SCALE (f1) + COB_FIELD_SCALE (f2);
 
 	/* truncate on request - by adjusting start position */
 	if (COB_FIELD_BINARY_TRUNC (f2)) {
@@ -699,7 +698,7 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 	}
 
 	/* Skip leading zeros (and zero-like-data like space/low-value) */
-	for (i = size - target_digits; i < size; ++i) {
+	for (i = size - target_digits; i < size1; ++i) {
 		if (COB_D2I (data1[i]) != 0) {
 			break;
 		}
@@ -717,6 +716,7 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 		return;
 	}
 
+	/* Get value */
 	sign = COB_GET_SIGN_ADJUST (f1);
 	for ( ; i < size; ++i) {
 		if (i < size1) {

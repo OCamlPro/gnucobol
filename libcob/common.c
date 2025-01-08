@@ -368,8 +368,8 @@ static unsigned char   b2i[256]=
 /* note: use of table d2i was tested and seen to be
    slower for checking validity/invalidity
    and only 0.2% faster for GET_D2I than COB_D2I */
-#define IS_INVALID_DIGIT_DATA(c)	(c < '0' || c > '9')	/* not valid digits '0' - '9' */
-#define IS_VALID_DIGIT_DATA(c)	(c >= '0' && c <= '9')	/* valid digits '0' - '9' */
+#define IS_INVALID_DIGIT_DATA(c)	((unsigned char)(c - '0') > 9)	/* not valid digits '0' - '9' */
+#define IS_VALID_DIGIT_DATA(c)	((unsigned char)(c - '0') <= 9)	/* valid digits '0' - '9' */
 
 /* Runtime exit handling */
 static struct exit_handlerlist {

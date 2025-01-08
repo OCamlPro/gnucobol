@@ -979,8 +979,8 @@ AT_SETUP([OCCURS UNBOUNDED (2)])
 AT_KEYWORDS([extensions runsubscripts DEPENDING odo subscripts])
 
 # note: the following example is from IBM's Language Reference
-#       for Enterprise COBOL for z/OS 6.1, but with fixed use
-#       of old-size (+ removing some binary zeros for output)
+#       for Enterprise COBOL for z/OS 6.4,
+#       (+ removing some binary zeros for output)
 
 AT_DATA([ALLOC.cob], [
        ID DIVISION.
@@ -994,8 +994,6 @@ AT_DATA([ALLOC.cob], [
         77  OLD-SIZE     PIC 9(8) BINARY.
         77  DISP-SIZE    PIC 9(8).
         77  VPTR  POINTER.
-        77  VPTR2 POINTER.
-        77  VPTR3 POINTER.
 
         LINKAGE       SECTION.
 
@@ -1012,7 +1010,7 @@ AT_DATA([ALLOC.cob], [
 
       *>    DISPLAY 'Starting testcase ALLOC'
 
-           SET VPTR VPTR2 VPTR3 To NULL
+           SET VPTR To NULL
 
       *************************************************************
       *  Allocate a table with 20 elements
@@ -1061,21 +1059,15 @@ AT_DATA([ALLOC.cob], [
 
              SET ADDRESS OF VARGRP TO VPTR
              MOVE NUM-ELEMENTS TO OBJ
+             move SIZE-NEEDED  to old-size
 
            Else                     *> If already have a table, doing re-size
       *********************************************************************
       * Re-size it!
-      * First, allocate space for data save area  and move data in
+      * First, map BUFFER on current table
       *********************************************************************
 
-             ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED RETURNING VPTR2
-             SET ADDRESS OF BUFFER TO VPTR2
-             MOVE VARGRP TO BUFFER(1:SIZE-NEEDED)
-             inspect BUFFER(3:SIZE-NEEDED - 3) 
-                     replacing all x'00' by space
-             DISPLAY 'BUFFER     = "' BUFFER(170:66) '"'
-             DISPLAY '             "' BUFFER(226:66) '"'
-             move size-needed to old-size
+             SET ADDRESS OF BUFFER TO VPTR
 
       *********************************************************************
       * Calculate new size from NUM-ElEMENTS
@@ -1085,39 +1077,39 @@ AT_DATA([ALLOC.cob], [
 
              MOVE SIZE-NEEDED TO DISP-SIZE
              display 'Re-allocation, using ' DISP-SIZE ' bytes.'
-      *>     ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED RETURNING VPTR3
+      *>     ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED RETURNING VPTR
              if size-needed < 2097152
                 ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED
                                                 loc 24
-                                                RETURNING VPTR3
+                                                RETURNING VPTR
              else
                 ALLOCATE SIZE-NEEDED CHARACTERS INITIALIZED
                                                 loc 31
-                                                RETURNING VPTR3
+                                                RETURNING VPTR
              end-if
 
       *************************************************************
       * Move data from data save area to new larger table
       *************************************************************
-             SET ADDRESS OF VARGRP TO VPTR3
+             SET ADDRESS OF VARGRP TO VPTR
              MOVE NUM-ELEMENTS TO OBJ
              MOVE BUFFER(1:old-size) TO VARGRP
+             move SIZE-NEEDED  to old-size
       *************************************************************
-      * Free the original table and temp copy
-      *************************************************************
-             FREE VPTR  VPTR2
-             SET VPTR TO VPTR2
+      * Free the original table
+      ************************************************************
+             SET VPTR TO ADDRESS OF BUFFER
+             FREE VPTR
              .
 ])
 
+# FIXME: move the "LOC" from above to a syntax test, then drop the -w
 AT_CHECK([$COMPILE -std=ibm-strict -w ALLOC.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./ALLOC], [0],
 [First allocation, using 00000322 bytes.
 VARTAB(12) = "9999        0000"
 VARTAB(17) = "0000HI MOM  0000"
-BUFFER     = "         9999        0000                                         "
-             "                                 0000HI MOM  0000                 "
 Re-allocation, using 00000482 bytes.
 VARTAB(12) = "9999        0000"
 VARTAB(17) = "0000HI MOM  0000"

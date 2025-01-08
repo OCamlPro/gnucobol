@@ -2499,6 +2499,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "RIGHT-JUSTIFY",		0, 0, -1,			/* Extension */
 				0, 0
   },
+  { "RIGHTLINE",			0, 0, RIGHTLINE,		/* GC Extension mapping LEFTLINE extension */
+				0, 0
+  },
   { "RIMMED",			0, 1, RIMMED,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
