@@ -228,6 +228,15 @@ Open Plans:
    of the color-number, leading to a previous value of 21 (which was ignored
    until now) being interpreted as 5, see FR #387
 
+** extended screen io with single-fields: runtime-adjustable attributes by
+   support of extension clauses COLOR and CONTROL for ACCEPT and DISPLAY
+   statements, see FR #189 + FR #355; note: while COLOR and CONTROL are parsed
+   for SCREEN SECTION they are ignored at runtime
+
+** extended screen io with single-fields: the ACCEPT statement now supports
+   the extension CURSOR clause, additional to the standard-defined
+   CONTROL phrase in SPECIAL-NAMES
+
 ** the programmable runtime switches "SWITCH A" through "SWITCH Z" internally
    used 1-26 and now use 11-36 to be able to combine then with switches 0-7;
    if you set those via COB_SWITCH environment variables you need to adjust
@@ -250,17 +259,17 @@ Open Plans:
 
 * Changes to the COBOL compiler (cobc) options:
 
-** new -fformat dialect option, and extended SOURCE FORMAT directives, with
-   the following newly supported reference-formats (in addition to
-   FIXED/FREE):
+** new -fformat dialect option, and extended SOURCE FORMAT directives,
+   with the following newly supported reference-formats (in addition
+   to FIXED/FREE):
 
-   COBOL85              Fixed-form format with enforcement of Area A
-   COBOLX		GCOS 7 extended format
-   CRT			ICOBOL Free-form format
-   TERMINAL		ACUCOBOL-GT Terminal format
-   VARIABLE		Micro Focus Variable Fixed-form format
-   XCARD		ICOBOL xCard (extended card) format
-   XOPEN		X/Open Free-form format
+   COBOL85      Fixed-form format with enforcement of Area A
+   COBOLX       GCOS 7 extended format
+   CRT          ICOBOL Free-form format
+   TERMINAL     ACUCOBOL-GT Terminal format
+   VARIABLE     Micro Focus Variable Fixed-form format
+   XCARD        ICOBOL xCard (extended card) format
+   XOPEN        X/Open Free-form format
 
    These formats come with Area A enforcement (except for XOPEN), that
    checks whether division, section, and paragraph names start in Area
@@ -331,7 +340,7 @@ Open Plans:
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
 
-** the option -g does not longer imply -fsource-location; but it auto-includes
+** the option -g does no longer imply -fsource-location; but it auto-includes
    references to the COBOL-paragraphs to further ease source level debugging
 
 ** -fsource-location generates source references to copyboooks in DATA
@@ -341,6 +350,11 @@ Open Plans:
 ** new flag -fstack-extended (implied with --debug and --dump) to include
    the origin of entrypoints and PERFORM, this is used for the internal
    stack trace on abort and can be used for improved source level debugging
+
+** the option -g does no longer imply -fno-remove-unreachable; if you want to
+   keep those in you need to explicit specify this
+
+** the option -O0 now implies -fno-remove-unreachable
 
 ** new options to ensure structured code-flow:
    -fsection-exit-check to ensure sections don't "fall through" (are always
@@ -442,8 +456,9 @@ Open Plans:
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
-** the call-stack on error / in the dump file now contains all parameters given
-   to the program via command line options, if any
+** numeric DISPLAY can store and may contain a positive zero after arithmetic,
+   PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
+   numeric comparisions to ZERO / 0 / +0 / -0 will all be identical
 
 ** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
@@ -484,6 +499,10 @@ Open Plans:
 	general: execution of programs generated with -fsource-location
 	  (implied with --debug and -fec), especially when many "simple"
 	  statements or lot of sections/paragraphs are used (re-compile needed)
+
+* New system functions
+
+  CBL_GC_SET_SCR_SIZE  option to resize extended screen
 
 * New build features
 

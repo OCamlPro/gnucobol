@@ -170,8 +170,8 @@
 #define COB_PUT_SIGN(f,s)	\
 	do { if (COB_FIELD_HAVE_SIGN (f)) cob_real_put_sign (f, s); } ONCE_COB
 #define COB_PUT_SIGN_ADJUSTED(f,s)	\
-	do { if (s == -2) cob_real_put_sign (f, -1); \
-	     else if (s == 2) cob_real_put_sign (f, 1); } ONCE_COB
+	do { if (s == -2 || s == 2) { if (s == 2) cob_real_put_sign (f, 1); \
+	     else cob_real_put_sign (f, -1); }} ONCE_COB
 
 #ifdef	COB_PARAM_CHECK
 #define	COB_CHK_PARMS(x,z)	\

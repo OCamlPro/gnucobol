@@ -152,6 +152,7 @@ Debug
 * Debug options::               Debug options
 * Debugger::                    Source Level Debugger
 * Memory Dumps::                Memory Dumps
+* Core Dumps::                  Core Dumps
 * Trace::                       Tracing execution
 
 Extensions
@@ -631,8 +632,12 @@ Warn about the lack of scope terminator END-XXX. This is @emph{not} set with @op
 @item -Wtruncate
 Warn on possible field truncation. This is @emph{not} set with @option{-Wall}.
 
+@item -Wconstant-expression
+@item -Wconstant-numlit-expression
+Warn about expressions that always resolve to true/false and therefore lead to unreachable code.
+
 @item -Wunreachable
-Warn if statements are unreachable. This is @emph{not} set with @option{-Wall}.
+Warn if statements are likely unreachable. This is @emph{not} set with @option{-Wall}.
 
 @item -Wadditional
 Enable warnings that don't have an own warning flag.
@@ -1620,10 +1625,16 @@ These options enable optimization at both translation
 (from COBOL to C) and compilation (C to assembly) levels.
 
 Currently, there is no difference between these optimization options at
-the translation level.
+the translation level other than @option{-O0} disabling constant folding of
+expressions and disabling removement of unreachable code.
 
 The option @option{-O}, @option{-Os} or @option{-O2} is passed to the
 C compiler as is and used for C level optimization.
+
+Additional the options @option{-fremove-unreachable} and  @option{-fconstant-folding}
+may be used to adjust handling of these parts; note that constant-folding is a dialect
+specific option and that both options have an effect on the detail of checks done
+to unreachable code.
 
 @node Optimize call
 @section Optimize call
@@ -1654,6 +1665,7 @@ In addition, setting the option @code{binary-size} to @code{2-4-8} or
 * Debug options::               Debug options
 * Debugger::                    Source Level Debugger
 * Memory Dumps::                Memory Dumps
+* Core Dumps::                  Core Dumps
 * Trace::                       Tracing execution
 @end menu
 
@@ -1688,6 +1700,16 @@ be executed in case of runtime errors or handling of different signals.
 They can also be requested via C interface.
 
 Only modules that are explicit enabled for dump code will output their data.
+
+@node Core Dumps
+@section Core Dumps
+By default GnuCOBOL catches signals that normally may create core-dumps.
+To disable this or to even explicit raise SIGABRT on runtime errors or to
+directly generate core-dumps through libcob, see the runtime varialbes
+@code{COB_CORE_ON_ERROR} and @code{COB_CORE_FILENAME}.
+To inspecting the reason for the abort check the content of the variable
+@code{runtime_err_str} in the generated dump file.
+@footnote{The usability of coredumps depends on your operating system.}
 
 @node Trace
 @section Tracing execution

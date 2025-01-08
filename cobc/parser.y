@@ -798,7 +798,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
 					cb_note (COBC_WARN_FILLER, 0,
 						 _("maximum number of occurrences assumed to be exact number"));
-					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
+					current_field->occurs_min = 1; /* as done by IBM + MF */
 				}
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
@@ -809,7 +809,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			current_field->occurs_max = 0;	/* UNBOUNDED */
 		}
 	} else {
-		current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
+		current_field->occurs_min = 1; /* as done by IBM + MF */
 		current_field->occurs_max = cb_get_int (occurs_min);
 		if (current_field->depending) {
 			cb_verify (cb_odo_without_to, _("OCCURS DEPENDING ON without TO phrase"));
@@ -952,7 +952,7 @@ check_headers_present (const cob_flags_t lev1, const cob_flags_t lev2,
 }
 
 /*
-  TO-DO: Refactor header checks - have several header_checks: division_header,
+  TODO: Refactor header checks - have several header_checks: division_header,
   section_header, paragraph_header, sentence_type
 */
 static void
@@ -1333,7 +1333,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 		current_program->program_name = (char *)CB_LITERAL (id)->data;
 	} else {
 		current_program->program_name = CB_NAME (id);
-	}
+	}	
 
 	stack_progid[depth] = current_program->program_name;
 	current_program->prog_type = type;
@@ -1572,7 +1572,7 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 
 static void
 setup_prototype (cb_tree prototype_name, cb_tree ext_name,
-		  const int type, const int is_current_element)
+		  const enum cob_module_type type, const int is_current_element)
 {
 	cb_tree	prototype;
 	int	name_redefinition_allowed;
@@ -2271,15 +2271,13 @@ error_if_different_display_type (struct cb_list *l, cb_tree local_upon_value,
 static void
 error_if_not_usage_display_or_nonnumeric_lit (cb_tree x)
 {
-	const int	is_numeric_literal = CB_NUMERIC_LITERAL_P (x);
-	const int	is_field_with_usage_not_display =
-		CB_REFERENCE_P (x) && CB_FIELD (cb_ref (x))
-		&& CB_FIELD (cb_ref (x))->usage != CB_USAGE_DISPLAY;
-
-	if (is_numeric_literal) {
+	if (CB_NUMERIC_LITERAL_P (x)) {
 		cb_error_x (x, _("%s is not an alphanumeric literal"), CB_LITERAL (x)->data);
-	} else if (is_field_with_usage_not_display) {
-		cb_error_x (x, _("'%s' is not USAGE DISPLAY"), cb_name (x));
+	} else if (CB_REFERENCE_P (x) && CB_FIELD_P (cb_ref (x))) {
+		const struct cb_field *f = CB_FIELD (cb_ref (x));
+		if (f->usage != CB_USAGE_DISPLAY) {
+			cb_error_x (x, _ ("'%s' is not USAGE DISPLAY"), cb_name (x));
+		}
 	}
 }
 
@@ -3153,6 +3151,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RH
 %token RIGHT
 %token RIGHT_ALIGN		"RIGHT-ALIGN"
+%token RIGHTLINE
 %token RIMMED
 %token ROLLBACK
 %token ROUNDED
@@ -5355,8 +5354,8 @@ file_control_entry:
 ;
 
 _select_clauses_or_error:
-  _select_clause_sequence _dot_or_else_end_of_file_control
-| error _dot_or_else_end_of_file_control
+  _select_clause_sequence dot_or_else_end_of_file_control
+| error dot_or_else_end_of_file_control
   {
 	yyerrok;
   }
@@ -6220,8 +6219,8 @@ i_o_control_header:
 ;
 
 _i_o_control_entries:
-| i_o_control_list _dot_or_else_end_of_file_control
-| i_o_control_list error _dot_or_else_end_of_file_control
+| i_o_control_list dot_or_else_end_of_file_control
+| i_o_control_list error dot_or_else_end_of_file_control
   {
 	yyerrok;
   }
@@ -6481,8 +6480,8 @@ file_description_entry:
 		}
 	}
   }
-  _file_description_clause_sequence _dot_or_else_end_of_file_description
-| file_type error _dot_or_else_end_of_file_description
+  _file_description_clause_sequence dot_or_else_end_of_file_description
+| file_type error dot_or_else_end_of_file_description
   {
 	yyerrok;
   }
@@ -6901,7 +6900,7 @@ communication_description_entry:
 				 current_program->cd_list);
 	} else {
 		current_cd = NULL;
-		/* TO-DO: Is this necessary? */
+		/* TODO: Is this necessary? */
 		if (current_program->cd_list) {
 			current_program->cd_list
 				= CB_CHAIN (current_program->cd_list);
@@ -6910,7 +6909,7 @@ communication_description_entry:
 	check_duplicate = 0;
   }
   _communication_description_clause_sequence
-  _dot_or_else_end_of_communication_description
+  dot_or_else_end_of_communication_description
 ;
 
 _communication_description_clause_sequence:
@@ -7002,7 +7001,7 @@ unnamed_i_o_cd_clauses:
 working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
 | working_storage SECTION
-  _dot_or_else_end_of_record_description
+  dot_or_else_end_of_record_description
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -7035,8 +7034,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description _dot_or_else_end_of_record_description
-| record_description_list data_description _dot_or_else_end_of_record_description
+  data_description dot_or_else_end_of_record_description
+| record_description_list data_description dot_or_else_end_of_record_description
 ;
 
 data_description:
@@ -8376,9 +8375,12 @@ occurs_clause:
   DEPENDING _on reference _occurs_keys_and_indexed
   {
 	current_field->flag_unbounded = 1;
+#if 0 /* Why should we do this? If this is relevant then it likely needs to be done
+	   either to the field founder or to the complete list of parents up to it. */
 	if (current_field->parent) {
 		current_field->parent->flag_unbounded = 1;
 	}
+#endif
 	current_field->depending = $7;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -8492,7 +8494,7 @@ occurs_key_field:
 	for (l = $4; l; l = CB_CHAIN (l)) {
 		CB_PURPOSE (l) = $1;
 		ref = CB_VALUE (l);
-		if (CB_VALID_TREE(ref)) {
+		if (CB_VALID_TREE (ref)) {
 			CB_REFERENCE (ref)->chain = rchain;
 		}
 	}
@@ -9095,7 +9097,7 @@ report_description:
 	check_duplicate = 0;
   }
   _report_description_options
-  _dot_or_else_end_of_report_description
+  dot_or_else_end_of_report_description
   _report_group_description_list
   {
 	$$ = get_finalized_description_tree ();
@@ -9111,7 +9113,7 @@ report_description:
 
 _report_description_options:
 | _report_description_options report_description_option
-| error _dot_or_else_end_of_report_description
+| error dot_or_else_end_of_report_description
   {
 	yyerrok;
   }
@@ -9360,11 +9362,11 @@ report_group_description_entry:
 		description_field = current_field;
 	}
   }
-  _report_group_options _dot_or_else_end_of_report_group_description
+  _report_group_options dot_or_else_end_of_report_group_description
   {
 	  build_sum_counter (current_report, current_field);
   }
-| level_number error _dot_or_else_end_of_report_group_description
+| level_number error dot_or_else_end_of_report_group_description
   {
 	yyerrok;
 	check_pic_duplicate = 0;
@@ -10016,7 +10018,6 @@ screen_option:
 | OVERLINE
   {
 	set_screen_attr ("OVERLINE", COB_SCREEN_OVERLINE);
-	CB_PENDING ("OVERLINE");
   }
 | GRID
   {
@@ -10026,7 +10027,10 @@ screen_option:
 | LEFTLINE
   {
 	set_screen_attr ("LEFTLINE", COB_SCREEN_LEFTLINE);
-	CB_PENDING ("LEFTLINE");
+  }
+| RIGHTLINE
+  {
+	set_screen_attr ("RIGHTLINE", COB_SCREEN_RIGHTLINE);
   }
 | AUTO
   {
@@ -10100,7 +10104,7 @@ screen_option:
 	current_field->screen_color = $3;
 	CB_PENDING ("COLOR clause (SCREEN)");	/* no place in cob_screen */
   }
-| CONTROL _is display_identifier
+| CONTROL _is control_source
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_24, &check_duplicate);
 	current_field->screen_control = $3;
@@ -11927,7 +11931,7 @@ at_line_column:
 				&check_line_col_duplicate);
 
 	if ((CB_LITERAL_P ($2) && cb_get_int ($2) == 0) || $2 == cb_zero) {
-		cb_verify (cb_accept_display_extensions, "COLUMN 0");
+		cb_verify_x ($2, cb_accept_display_extensions, "COLUMN 0");
 	}
 
 	if (!line_column) {
@@ -11949,17 +11953,15 @@ at_line_column:
 ;
 
 line_number:
-  LINE _number num_id_or_lit
+  LINE _number exp
   {
-	/* FIXME: arithmetic expression should be possible, too, only numeric literals! */
 	$$ = $3;
   }
 ;
 
 column_number:
-  column_or_col_or_position_or_pos _number num_id_or_lit
+  column_or_col_or_position_or_pos _number exp
   {
-	/* FIXME: arithmetic expression should be possible, too, only numeric literals! */
 	$$ = $3;
   }
 ;
@@ -12000,17 +12002,15 @@ accp_attr:
 	check_repeated ("BLINK", SYN_CLAUSE_8, &check_duplicate);
 	set_dispattr (COB_SCREEN_BLINK);
   }
-| COLOR _is num_id_or_lit
+| COLOR _is exp
   {
-	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("COLOR", SYN_CLAUSE_30, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
   }
-| CONTROL _is display_identifier
+| CONTROL _is control_source
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_31, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
-	CB_UNFINISHED ("CONTROL clause");
   }
 | CONVERSION
   {
@@ -12045,6 +12045,11 @@ accp_attr:
   {
 	check_repeated ("LEFTLINE", SYN_CLAUSE_12, &check_duplicate);
 	set_dispattr (COB_SCREEN_LEFTLINE);
+  }
+| RIGHTLINE
+  {
+	check_repeated ("RIGHTLINE", SYN_CLAUSE_12, &check_duplicate);
+	set_dispattr (COB_SCREEN_RIGHTLINE);
   }
 | LOWER
   {
@@ -12103,6 +12108,11 @@ accp_attr:
 	check_repeated ("OVERLINE", SYN_CLAUSE_16, &check_duplicate);
 	set_dispattr (COB_SCREEN_OVERLINE);
   }
+| UNDERLINE
+  {
+	check_repeated ("UNDERLINE", SYN_CLAUSE_22, &check_duplicate);
+	set_dispattr (COB_SCREEN_UNDERLINE);
+  }
 | PROMPT _character _is id_or_lit
   {
 	/* Note: CHARACTER optional in ACUCOBOL, required by others */
@@ -12135,11 +12145,6 @@ accp_attr:
 	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("SIZE", SYN_CLAUSE_21, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $4, NULL, NULL, NULL);
-  }
-| UNDERLINE
-  {
-	check_repeated ("UNDERLINE", SYN_CLAUSE_22, &check_duplicate);
-	set_dispattr (COB_SCREEN_UNDERLINE);
   }
 | NO update_default
   {
@@ -13318,7 +13323,8 @@ display_erase:
   }
   _with_display_attr
   {
-	cb_emit_display (CB_LIST_INIT (cb_space), cb_null, cb_int1, line_column, NULL, 1, FIELD_ON_SCREEN_DISPLAY);
+	cb_emit_display (CB_LIST_INIT (cb_space), cb_null, cb_int1, line_column,
+		current_statement->attr_ptr, 1, FIELD_ON_SCREEN_DISPLAY);
   }
 ;
 
@@ -13327,7 +13333,8 @@ display_pos_specifier:
             would allow combination of multiple formats ...*/
   field_or_literal_or_erase_with_pos_specifier _with_display_attr
   {
-	cb_emit_display ($1, cb_null, cb_int1, line_column, NULL, 1, FIELD_ON_SCREEN_DISPLAY);
+	cb_emit_display ($1, cb_null, cb_int1, line_column,
+		current_statement->attr_ptr, 1, FIELD_ON_SCREEN_DISPLAY);
   }
 ;
 
@@ -13542,7 +13549,7 @@ display_window_clauses:
           SCREEN is optional(=implied) for ERASE here */
 display_window_clause:
   pop_up_or_handle	/* DISPLAY WINDOW actually only takes POP-UP */
-| LINES num_id_or_lit
+| LINES exp
   {
 	/* TODO: store */
   }
@@ -13639,11 +13646,10 @@ disp_attr:
 	check_repeated ("COLOR", SYN_CLAUSE_21, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
   }
-| CONTROL _is display_identifier
+| CONTROL _is control_source
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_22, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
-	CB_UNFINISHED ("CONTROL clause");
   }
 | CONVERSION
   {
@@ -13709,7 +13715,7 @@ disp_attr:
 	check_repeated ("REVERSE-VIDEO", SYN_CLAUSE_14, &check_duplicate);
 	set_dispattr (COB_SCREEN_REVERSE);
   }
-| SIZE _is num_id_or_lit
+| SIZE _is exp
   {
 	check_repeated ("SIZE", SYN_CLAUSE_15, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL, NULL);
@@ -13743,6 +13749,11 @@ disp_attr:
 				   "SCROLL DOWN", COB_SCREEN_SCROLL_DOWN,
 				   "SCROLL UP", COB_SCREEN_SCROLL_UP);
   }
+;
+
+control_source:
+  display_identifier	{ $$ = $1; }
+| alphanumeric_literal	{ $$ = $1; }
 ;
 
 _end_display:
@@ -17140,7 +17151,7 @@ use_file_exception:
 		current_section->flag_declarative_exit = 1;
 		current_section->flag_real_label = 1;
 		current_section->flag_skip_label = 0;
-		/* TO-DO: Use cobc_ec_turn? */
+		/* TODO: Use cobc_ec_turn? */
 		CB_EXCEPTION_ENABLE (COB_EC_I_O) = 1;
 		if (use_global_ind) {
 			current_section->flag_global = 1;
@@ -19091,6 +19102,18 @@ arith_nonzero_x:
   }
 ;
 
+alphanumeric_literal:
+  LITERAL
+  {
+	if (CB_TREE_CATEGORY ($1) != CB_CATEGORY_ALPHANUMERIC) {
+		cb_error_x ($1, _("an alphanumeric literal is expected here"));
+		$$ = cb_error_node;
+	} else {
+		$$ = $1;
+	}
+  }
+;
+
 numeric_literal:
   LITERAL
   {
@@ -20178,9 +20201,9 @@ _dot:
   }
 ;
 
-_dot_or_else_end_of_file_control:
+dot_or_else_end_of_file_control:
   TOK_DOT
-| _file_control_end_delimiter
+| file_control_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20198,10 +20221,10 @@ level_number_in_area_a:
   }
 ;
 
-_dot_or_else_end_of_file_description:
+dot_or_else_end_of_file_description:
   TOK_DOT
-| level_number_in_area_a
-| _file_description_end_delimiter
+| level_number_in_area_a	/* repeats last token */
+| file_description_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20210,19 +20233,19 @@ _dot_or_else_end_of_file_description:
   }
 ;
 
-_dot_or_else_end_of_communication_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_communication_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_report_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_report_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_report_group_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_report_group_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_record_description:
+dot_or_else_end_of_record_description:
   TOK_DOT
-| level_number_in_area_a
-| _record_description_end_delimiter
+| level_number_in_area_a	/* repeats last token */
+| record_description_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20231,15 +20254,14 @@ _dot_or_else_end_of_record_description:
   }
 ;
 
-_file_control_end_delimiter:
+file_control_end_delimiter:
   SELECT | I_O_CONTROL | DATA | PROCEDURE;
 
-_file_description_end_delimiter:
-  LEVEL_NUMBER | TOK_FILE | PROCEDURE;
+file_description_end_delimiter:
+  TOK_FILE | PROCEDURE;
 
-_record_description_end_delimiter:
-  LEVEL_NUMBER | PROCEDURE | COMMUNICATION | LOCAL_STORAGE
-| LINKAGE | REPORT | SCREEN;
+record_description_end_delimiter:
+  PROCEDURE | COMMUNICATION | LOCAL_STORAGE | LINKAGE | REPORT | SCREEN;
 
 _dot_or_else_area_a:		/* in PROCEDURE DIVISION */
   TOK_DOT
