@@ -490,6 +490,9 @@ static struct config_tbl gc_conf[] = {
 	{"LOGICAL_CANCELS", "logical_cancels", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
+#ifndef _WIN32
+	{"COB_LOAD_GLOBAL", "load_global", "0", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
+#endif
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
 	{"COB_DISABLE_WARNINGS", "disable_warnings", "0", 	NULL, GRP_MISC, ENV_BOOL | ENV_NOT, SETPOS (cob_display_warn)},
@@ -521,9 +524,6 @@ static struct config_tbl gc_conf[] = {
 #ifdef  _WIN32
 	/* checked before configuration load if set from environment in cob_common_init() */
 	{"COB_UNIX_LF", "unix_lf", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_unix_lf)},
-#endif
-#ifndef _WIN32
-	{"COB_LOAD_GLOBAL", "load_global", "0", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
 #endif
 	{"USERNAME", "username", 			NULL, 	NULL, GRP_SYSENV, ENV_STR, SETPOS (cob_user_name)},	/* default set in cob_init() */
 	{"LOGNAME", "logname", 			NULL, 	NULL, GRP_HIDE, ENV_STR, SETPOS (cob_user_name)},
