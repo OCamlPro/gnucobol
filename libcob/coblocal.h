@@ -300,6 +300,7 @@ typedef struct __cob_settings {
 
 	/* call.c */
 	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
+	unsigned int	cob_load_global; /* Wether dlopen should use the global or local namespace */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;
@@ -372,8 +373,6 @@ typedef struct __cob_settings {
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */
-
-	int		cob_load_global; /* Wether dlopen should use the global or local namespace */
 } cob_settings;
 
 
