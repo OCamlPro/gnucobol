@@ -115,17 +115,12 @@ lt_dlerror (void)
 #define	lt_dlexit()
 #define lt_dlhandle	void *
 
-void* lt_dlopen(const char* filename) {
-	
-	if (cobsetptr == NULL) {
-		// TODO: What to do when cobsetptr is null?
-	}
+static void* lt_dlopen(const char* filename) {
+	int flags = cobsetptr->cob_load_global 
+		? RTLD_LAZY | RTLD_GLOBAL
+		: RTLD_LAZY | RTLD_LOCAL;
 
-	if (cobsetptr->cob_load_global) {
-		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL);
-	} else {
-		return dlopen(filename, RTLD_LAZY | RTLD_GLOBAL);
-	}
+	return dlopen(filename, flags);
 }
 
 #else
