@@ -87,6 +87,12 @@ NEWS - user visible changes				-*- outline -*-
    $b for executable basename, $d for date in YYYYMMDD format, $t for time
    in HHMMSS format (before, only $$ was available for pid)
 
+** introduction of the COB_LOAD_GLOBAL boolean flag, which determines whether
+   the symbols of dynamically loaded shared libraries are made available
+   globally to other shared objects or remain confined locally. Previously,
+   this behavior depended on the underlying platform, where the default was
+   often "global." The default behavior is now explicitly set to "local."
+
 * New build features
 
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
