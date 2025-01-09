@@ -585,9 +585,20 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 		base_preload_ptr = preptr;
 	}
 #else
-	COB_UNUSED (last_elem);
-	preptr->next = base_preload_ptr;
-	base_preload_ptr = preptr;
+	// Use the same logic as above in case the cob_load_global is set to local
+	if (!cobsetptr->cob_load_global) {
+		if (last_elem) {
+			last_elem->next = preptr;
+		} else {
+			preptr->next = NULL;
+			base_preload_ptr = preptr;
+		}
+	} else {
+		COB_UNUSED (last_elem);
+		preptr->next = base_preload_ptr;
+		base_preload_ptr = preptr;
+	}
+
 #endif
 
 	if (!cobsetptr->cob_preload_str) {
@@ -620,6 +631,9 @@ cache_preload (const char *path)
 		/* Save last element of preload list */
 		if (!preptr->next) last_elem = preptr;
 #endif
+		if(!cobsetptr->cob_load_global) {
+			if (!preptr->next) last_elem = preptr;
+		}
 	}
 
 	/* Check for duplicate in already loaded programs;
