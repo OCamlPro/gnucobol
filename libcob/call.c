@@ -60,9 +60,8 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 	https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading_libraries
 */
 
-
-
 #ifdef	_WIN32
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <io.h>	/* for access */
@@ -93,6 +92,7 @@ lt_dlerror (void)
 	return errbuf;
 }
 #endif
+
 #elif	defined(USE_LIBDL)
 /* note: only defined in configure when HAVE_DLFCN_H is true and dlopen can be linked */
 #include <dlfcn.h>
@@ -103,8 +103,11 @@ lt_dlerror (void)
 #define	lt_dlinit()
 #define	lt_dlexit()
 #define lt_dlhandle	void *
+
 #else
+
 #include <ltdl.h>
+
 #endif
 
 #define	COB_MAX_COBCALL_PARMS	16
