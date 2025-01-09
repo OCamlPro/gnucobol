@@ -66,15 +66,6 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 #include <windows.h>
 #include <io.h>	/* for access */
 
-static HMODULE
-lt_dlopen (const char *x)
-{
-	if (x == NULL) {
-		return GetModuleHandle (NULL);
-	}
-	return LoadLibrary(x);
-}
-
 static void *
 lt_dlsym (HMODULE hmod, const char *p)
 {
@@ -106,7 +97,6 @@ lt_dlerror (void)
 /* note: only defined in configure when HAVE_DLFCN_H is true and dlopen can be linked */
 #include <dlfcn.h>
 
-#define lt_dlopen(x)	dlopen(x, RTLD_LAZY | RTLD_GLOBAL)
 #define lt_dlsym(x,y)	dlsym(x, y)
 #define lt_dlclose(x)	dlclose(x)
 #define lt_dlerror()	dlerror()
@@ -287,6 +277,33 @@ static int last_entry_is_working_directory (const char *buff, const char *pstr)
 		return 1;
 	}
 	return 0;
+}
+
+static void* cob_dlopen(const char* filename) {
+#ifdef _WIN32
+	if (filename == NULL) {
+		return GetModuleHandle (NULL);
+	}
+	return LoadLibrary(filename);
+#elif	defined(USE_LIBDL)
+	int flags = cobsetptr->cob_load_global 
+		? RTLD_LAZY | RTLD_GLOBAL
+		: RTLD_LAZY | RTLD_LOCAL;
+
+	return dlopen(filename, flags);
+#else
+	lt_dladvise advise;
+    lt_dladvise_init(&advise);
+
+    if (cobsetptr->cob_load_global) {
+        lt_dladvise_global(&advise);
+    } else {
+        lt_dladvise_local(&advise);
+    }
+
+    void* handle = lt_dlopenadvise(filename, advise);
+    return handle;
+#endif
 }
 
 /* resolves the actual library path used from
@@ -624,7 +641,7 @@ cache_preload (const char *path)
 		return 0;
 	}
 
-	libhandle = lt_dlopen (path);
+	libhandle = cob_dlopen (path);
 	if (!libhandle) {
 		cob_runtime_warning (
 			_("preloading from existing path '%s' failed; %s"), path, lt_dlerror());
@@ -870,7 +887,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 	for (p = call_filename_buff; *p; ++p) {
 		*p = (cob_u8_t)toupper(*p);
 	}
-	handle = lt_dlopen (call_filename_buff);
+	handle = cob_dlopen (call_filename_buff);
 	if (handle != NULL) {
 		/* Candidate for future calls */
 		cache_dynload (call_filename_buff, handle);
@@ -913,7 +930,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			return NULL;
 		}
 		lt_dlerror ();	/* clear last error conditions */
-		handle = lt_dlopen (call_filename_buff);
+		handle = cob_dlopen (call_filename_buff);
 		if (handle != NULL) {
 			/* Candidate for future calls */
 			cache_dynload (call_filename_buff, handle);
@@ -946,7 +963,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		call_filename_buff[COB_NORMAL_MAX] = 0;
 		if (access (call_filename_buff, R_OK) == 0) {
 			lt_dlerror ();	/* clear last error conditions */
-			handle = lt_dlopen (call_filename_buff);
+			handle = cob_dlopen (call_filename_buff);
 			if (handle != NULL) {
 				/* Candidate for future calls */
 				cache_dynload (call_filename_buff, handle);
@@ -1650,7 +1667,7 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	   saves a check for exported functions in every CALL
 	*/
 	if (check_mainhandle) {
-		mainhandle = lt_dlopen (NULL);
+		mainhandle = cob_dlopen (NULL);
 	} else {
 		mainhandle = NULL;
 	}
