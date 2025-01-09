@@ -1,4 +1,10 @@
 
+2025-01-08  Florian Schmidt <florian.schmidt.1994@icloud.com>
+
+	* libcob/call.c, libcob/coblocal.h, libcob/common.c: Introduce a flag
+	  COB_LOAD_GLOBAL (load_global) to toggle if the symbols of CALLed 
+	  programs should be made available in the global namespace
+
 2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* fileio.c: fixed Bug #1032 by always using global thread-static variable
