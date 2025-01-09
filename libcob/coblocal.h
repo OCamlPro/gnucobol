@@ -300,7 +300,7 @@ typedef struct __cob_settings {
 
 	/* call.c */
 	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
-	unsigned int	cob_load_global; /* Wether dlopen should use the global or local namespace */
+	unsigned int	cob_load_global; /* hint for dynamic linker to make symbols available 0=global, 1=local */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;
