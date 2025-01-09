@@ -1,4 +1,8 @@
 
+2025-01-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* cbrunt.tex.gen: fix for missing "@end verbatim"
+
 2024-10-30  Chuck Haatvedt <chuck.haatvedt@gmail.com>
 
 	* gnucobol.texi: document new multiple window function
