@@ -161,6 +161,10 @@ static char			*call_filename_buff;
 static lt_dlhandle		mainhandle;
 #endif
 
+#if !defined(_WIN32) && !defined(USE_LIBDL)
+static lt_dladvise advise = NULL;
+#endif
+
 static size_t			call_lastsize;
 static size_t			resolve_size = 0;
 static unsigned int		cob_jmp_primed;
@@ -292,14 +296,18 @@ static void* cob_dlopen(const char* filename) {
 
 	return dlopen(filename, flags);
 #else
-	lt_dladvise advise;
-    lt_dladvise_init(&advise);
+    if (advise != NULL) {
+		int error;
+		if (cobsetptr->cob_load_global) {
+        	error = lt_dladvise_global(&advise);
+    	} else {
+        	error = lt_dladvise_local(&advise);
+    	}
 
-    if (cobsetptr->cob_load_global) {
-        lt_dladvise_global(&advise);
-    } else {
-        lt_dladvise_local(&advise);
-    }
+		if (error) {
+			cob_runtime_warning("set link loader hint failed; %s", lt_dlerror());
+		}
+	}
 
     void* handle = lt_dlopenadvise(filename, advise);
     return handle;
@@ -1575,6 +1583,17 @@ cob_exit_call (void)
 #endif
 #endif
 
+#if !defined(_WIN32) && !defined(USE_LIBDL) 
+	if (advise != NULL) {
+		int error = lt_dladvise_destroy(&advise);
+		if (error) {
+			const char * msg = lt_dlerror();
+			/* not translated as highly unlikely */
+			cob_runtime_warning (
+				"destroying link loader advise failed; %s", lt_dlerror());
+		}
+	}
+#endif
 }
 
 /* try to load specified module from all entries in COB_LIBRARY_PATH
@@ -1661,6 +1680,15 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	cob_set_library_path ();
 
 	lt_dlinit ();
+
+#if !defined(_WIN32) && !defined(USE_LIBDL)
+	int error = lt_dladvise_init(&advise);
+	if (error) {
+		/* not translated as highly unlikely */
+		cob_runtime_warning (
+ 			"init link loader advise failed; %s", lt_dlerror());
+	}
+#endif
 
 #ifndef	COB_BORKED_DLOPEN
 	/* only set main handle if not started by cobcrun as this
