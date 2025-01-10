@@ -68,6 +68,10 @@
 	* fisam.c: Updated to set index field type for 'short' & 'int'
 	  Enabled support for variable length records is using V-ISAM/D-ISAM
 
+2023-06-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (libcob_la_LDFLAGS): updated version-info - ABI fixed for 3.2
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fsqlxfd.c (cob_findkey_attr), fileio.c, fisam.c: extracted identical
@@ -79,6 +83,36 @@
 	  COB_EC_SORT_MERGE_FILE_OPEN when applicable
 	* fileio.c (cob_copy_check, cob_file_sort_submit, cob_file_sort_retrieve):
 	  pass most matching argument type instead of the structures containing it
+	* fileio.c (cob_file_sort_using_extfh, cob_file_sort_giving_extfh),
+	  common.h: new functions, using EXTFH functions to read/write the data
+	* fileio.c (update_fcd_to_file)->fextfh.c: set exception for non-digit returns,
+	  handle EOP flag (only usable if the internal EXTFH function was used)
+	* fileio.c (cob_extfh_close)->fextfh.c: handle close options, most important:
+	  CLOSE REEL (as that does not actually close the file)
+	* fileio.c (EXTFH3)->fextfh.c: handle OP_CLOSE_REEL to leave the file open
+	* fileio.c (EXTFH3)->fextfh.c: handle "read direct" opcodes for now as "read random"
+	* fileio.c (EXTFH3)->fextfh.c: setup intermediate record only for WRITE/REWRITE as
+	  it isn't used otherwise
+	* fileio.c (update_key_from_fcd)->fextfh.c: extracted from EXTFH3
+	* fileio.c (update_key_from_fcd)->fextfh.c: only handle (logical) key field as split
+	  keys are all handled in io functions and otherwise not found there
+	* fileio.c (find_fcd, cob_extfh_close)->fextfh.c: specify free handling by parameter,
+	  new value "-1" is used if FCD was created by ADDRESS OF FH--FCD,
+	  otherwise it is lost on first CLOSE
+	* fileio.c->fextfh.c: disable setting of record min/max size outside of OPEN,
+	  disable setting of record size in some places
+
+2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: minor refactoring for SORT related functions,
+	  mostly reducing scope of variables
+	* fileio.c (cob_file_sort_using): early exit for errors during OPEN
+	* fileio.c (cob_file_sort_giving): one-time setting of WRITE options
+	  after OPEN instead of doing it before every WRITE
+	* fileio.c (cob_file_sort_giving): don't try to WRITE to or CLOSE files
+	  where OPEN OUTPUT was not successful
+	* fileio.c (cob_file_sort_giving): skip GIVING file on WRITE errors,
+	  early exit if no GIVING file left
 	* fileio.c (cobsort): new attribute flag_merge
 	* fileio.c (cob_file_sort_options), common.h: new function to pass more
 	  options, so far only used to set flag_merge

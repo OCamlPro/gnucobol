@@ -2129,8 +2129,8 @@ LINE    PG/LN  A...B............................................................
 GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0002
 
 command line:
-  cobc -std=default -q -std=default -Wall -fno-tmessages -fsyntax-only -t
-+ prog.lst -fno-tsymbols -ftcmd prog.cob
+  cobc -std=default -fdiagnostics-plain-output -q -std=default -Wall
++ -fno-tmessages -fsyntax-only -t prog.lst -fno-tsymbols -ftcmd prog.cob
 ])
 
 #AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])

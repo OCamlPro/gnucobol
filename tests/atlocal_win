@@ -49,7 +49,7 @@ unset LANG
 
 # workaround to adjust the testsuite later:
 # FLAGS="-debug -Wall ${COBOL_FLAGS}"
-COBC="${COBC} -std=default"
+COBC="${COBC} -std=default -fdiagnostics-plain-output"
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
