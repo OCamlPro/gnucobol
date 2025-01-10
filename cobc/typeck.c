@@ -73,6 +73,15 @@ struct expr_node {
 #define START_STACK_SIZE	32
 #define TOKEN(offset)		(expr_stack[expr_index + offset].token)
 #define VALUE(offset)		(expr_stack[expr_index + offset].value)
+/* Expressions are stored in the stack, starting at position 3,
+   because we keep 3 zeroes above the top of the stack: the algorithm
+   uses the 3 preceeding entries before the current expr_index to
+   compare the priority of the current operator with the operator of
+   the expression on the left, so these 3 initial entries must be zero
+   (and zero has the lowest priority, so it forces reduction of all
+   other operators on its right).
+*/
+#define TOPSTACK                3
 #define FMT_LEN cb_pretty_display ? "%d" : "%010d"
 
 #define dpush(x)		CB_ADD_TO_CHAIN (x, decimal_stack)
@@ -5683,7 +5692,7 @@ cb_copy_source_reference (cb_tree target, cb_tree x)
 /* Expressions */
 
 static void
-cb_expr_init (void)
+build_expr_init (void)
 {
 	if (initialized == 0) {
 		initialized = 1;
@@ -5695,8 +5704,7 @@ cb_expr_init (void)
 	}
 	expr_op = 0;
 	expr_lh = NULL;
-	/* First three entries are dummies */
-	expr_index = 3;
+	expr_index = TOPSTACK;
 }
 
 static int
@@ -5756,12 +5764,16 @@ expr_chk_cond (cb_tree expr_1, cb_tree expr_2)
 	return is_ptr_1 ^ is_ptr_2;
 }
 
+/* Reduce expressions of the left of 'token' that have higher priority */
 static int
-expr_reduce (int token)
+build_expr_reduce (int token)
 {
 	/* Example:
-	 * index: -3  -2  -1   0
-	 * token: 'x' '*' 'x' '+' ...
+	 * index: -3  -2  -1   0      (relative position to expr_index)
+	 * token: 'x' '*' 'x' '+'
+	 becomes
+	 * index:  -3   -2            (and then, expr_index -= 2)
+	 * token: 'x*x' '+'
 	 */
 
 	while (expr_prio[TOKEN (-2)] <= expr_prio[token]) {
@@ -5946,7 +5958,7 @@ expr_reduce (int token)
 }
 
 static void
-cb_expr_shift_sign (const int op)
+build_expr_shift_sign (const int op)
 {
 	int	have_not;
 
@@ -5956,7 +5968,7 @@ cb_expr_shift_sign (const int op)
 	} else {
 		have_not = 0;
 	}
-	(void)expr_reduce ('=');
+	(void)build_expr_reduce ('=');
 	if (TOKEN (-1) == 'x') {
 		VALUE (-1) = cb_build_binary_op (VALUE (-1), op, cb_zero);
 		if (have_not) {
@@ -5966,7 +5978,7 @@ cb_expr_shift_sign (const int op)
 }
 
 static void
-cb_expr_shift_class (const char *name)
+build_expr_shift_class (const char *name)
 {
 	int	have_not;
 
@@ -5976,7 +5988,7 @@ cb_expr_shift_class (const char *name)
 	} else {
 		have_not = 0;
 	}
-	(void)expr_reduce ('=');
+	(void)build_expr_reduce ('=');
 	if (TOKEN (-1) == 'x') {
 		VALUE (-1) = CB_BUILD_FUNCALL_1 (name, VALUE (-1));
 		if (have_not) {
@@ -5997,7 +6009,7 @@ binary_op_is_relational (const struct cb_binary_op * const op)
 }
 
 static void
-cb_expr_shift (int token, cb_tree value)
+build_expr_shift (int token, cb_tree value)
 {
 	switch (token) {
 	case 'M':
@@ -6006,7 +6018,7 @@ cb_expr_shift (int token, cb_tree value)
 		/* Sign ZERO condition */
 		if (value == cb_zero) {
 			if (TOKEN (-1) == 'x' || TOKEN (-1) == '!') {
-				cb_expr_shift_sign ('=');
+				build_expr_shift_sign ('=');
 				return;
 			}
 		}
@@ -6042,7 +6054,7 @@ cb_expr_shift (int token, cb_tree value)
 
 	case ')':
 		/* Enclosed by parentheses */
-		(void)expr_reduce (token);
+		(void)build_expr_reduce (token);
 		if (VALUE (-1)
 		 && CB_BINARY_OP_P (VALUE (-1))
 		 && binary_op_is_relational (CB_BINARY_OP (VALUE (-1)))) {
@@ -6059,7 +6071,7 @@ cb_expr_shift (int token, cb_tree value)
 				value = NULL;
 			}
 			expr_index -= 2;
-			cb_expr_shift ('x', value);
+			build_expr_shift ('x', value);
 			return;
 		}
 		break;
@@ -6077,7 +6089,7 @@ cb_expr_shift (int token, cb_tree value)
 
 	/* Reduce */
 	/* Catch invalid condition */
-	if (expr_reduce (token) > 0) {
+	if (build_expr_reduce (token) > 0) {
 		return;
 	}
 
@@ -6095,8 +6107,9 @@ cb_expr_shift (int token, cb_tree value)
 	expr_index++;
 }
 
+/* shortcut parentheses within the generated expression */
 static void
-expr_expand (cb_tree *x)
+build_expr_expand (cb_tree *x)
 {
 	struct cb_binary_op	*p;
 
@@ -6108,40 +6121,39 @@ start:
 			*x = p->x;
 			goto start;
 		}
-		expr_expand (&p->x);
+		build_expr_expand (&p->x);
 		if (p->y) {
-			expr_expand (&p->y);
+			build_expr_expand (&p->y);
 		}
 	}
 }
 
 static cb_tree
-cb_expr_finish (void)
+build_expr_finish (void)
 {
-	/* Reduce all */
-	(void)expr_reduce (0);
+	/* Reduce all (prio of token 0 is smaller than all other ones) */
+	(void)build_expr_reduce (0);
 
-	if (!expr_stack[3].value) {
+	if (!expr_stack[TOPSTACK].value) {
 		/* TODO: Add test case for this to syn_misc.at invalid expression */
 		cb_error (_("invalid expression"));
 		return cb_error_node;
 	}
 
-	SET_SOURCE(expr_stack[3].value, cb_source_file, cb_exp_line);
+	SET_SOURCE(expr_stack[TOPSTACK].value, cb_source_file, cb_exp_line);
 
-	if (expr_index != 4) {
-		/* TODO: Add test case for this to syn_misc.at invalid expression */
-		cb_error_x (expr_stack[3].value, _("invalid expression"));
+	if (expr_index != TOPSTACK+1) {
+		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression"));
 		return cb_error_node;
 	}
 
-	expr_expand (&expr_stack[3].value);
-	if (expr_stack[3].token != 'x') {
-		cb_error_x (expr_stack[3].value, _("invalid expression"));
+	build_expr_expand (&expr_stack[TOPSTACK].value);
+	if (expr_stack[TOPSTACK].token != 'x') {
+		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression"));
 		return cb_error_node;
 	}
 
-	return expr_stack[3].value;
+	return expr_stack[TOPSTACK].value;
 }
 
 cb_tree
@@ -6151,7 +6163,7 @@ cb_build_expr (cb_tree list)
 	struct cb_field	*f;
 	int	op, has_rel, has_con, has_var, bad_cond;
 
-	cb_expr_init ();
+	build_expr_init ();
 
 	/* Checkme: maybe add validate_list(l) here */
 
@@ -6161,32 +6173,32 @@ cb_build_expr (cb_tree list)
 		switch (op) {
 		case '9':
 			/* NUMERIC */
-			cb_expr_shift_class ("cob_is_numeric");
+			build_expr_shift_class ("cob_is_numeric");
 			has_rel = 1;
 			break;
 		case 'A':
 			/* ALPHABETIC */
-			cb_expr_shift_class ("cob_is_alpha");
+			build_expr_shift_class ("cob_is_alpha");
 			has_rel = 1;
 			break;
 		case 'L':
 			/* ALPHABETIC_LOWER */
-			cb_expr_shift_class ("cob_is_lower");
+			build_expr_shift_class ("cob_is_lower");
 			has_rel = 1;
 			break;
 		case 'U':
 			/* ALPHABETIC_UPPER */
-			cb_expr_shift_class ("cob_is_upper");
+			build_expr_shift_class ("cob_is_upper");
 			has_rel = 1;
 			break;
 		case 'P':
 			/* POSITIVE */
-			cb_expr_shift_sign ('>');
+			build_expr_shift_sign ('>');
 			has_rel = 1;
 			break;
 		case 'N':
 			/* NEGATIVE */
-			cb_expr_shift_sign ('<');
+			build_expr_shift_sign ('<');
 			has_rel = 1;
 			break;
 		case 'O':
@@ -6194,12 +6206,12 @@ cb_build_expr (cb_tree list)
 			if (current_statement) {
 				current_statement->null_check = NULL;
 			}
-			cb_expr_shift_class ("cob_is_omitted");
+			build_expr_shift_class ("cob_is_omitted");
 			has_rel = 1;
 			break;
 		case 'C':
 			/* CLASS */
-			cb_expr_shift_class (CB_CLASS_NAME (cb_ref (CB_VALUE (l)))->cname);
+			build_expr_shift_class (CB_CLASS_NAME (cb_ref (CB_VALUE (l)))->cname);
 			has_rel = 1;
 			break;
 		default:
@@ -6212,7 +6224,7 @@ cb_build_expr (cb_tree list)
 				if (CB_TREE_TAG (v) == CB_TAG_FUNCALL) {
 					has_rel = 1;
 				} else
-				if (CB_REF_OR_FIELD_P (v)) {
+                                if (CB_REF_OR_FIELD_P (v)) {
 					f = CB_FIELD_PTR (v);
 					if (f->level == 88) {
 						has_rel = 1;
@@ -6260,7 +6272,7 @@ cb_build_expr (cb_tree list)
 				}
 				cb_error_node->source_line = 0;	/* undo hack */
 			}
-			cb_expr_shift (op, v);
+			build_expr_shift (op, v);
 			break;
 		}
 	}
@@ -6269,7 +6281,7 @@ cb_build_expr (cb_tree list)
 		return cb_any;
 	}
 
-	return cb_expr_finish ();
+	return build_expr_finish ();
 }
 
 const char *
