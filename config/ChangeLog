@@ -4,6 +4,11 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* general: add option init-justify
+
 2023-03-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* rm-strict.conf: enable line-col-zero-default per RM-COBOL Language
