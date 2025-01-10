@@ -312,15 +312,8 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 	int		sign;
 	int		count;
 	int		size;
-	unsigned char *tmp_src_data = NULL;
 
 	/* Initialize */
-	if ( (s1 >= s2 && s1 < e2) || (s2 >= s1 && s2 < e1) ){
-		tmp_src_data = cob_malloc (f1->size);
-		memcpy (tmp_src_data, s1, f1->size);
-		s1 = tmp_src_data;
-		e1 = s1 + f1->size;
-	}
 	memset (f2->data, '0', f2->size);
 
 	/* Skip white spaces */
@@ -379,14 +372,11 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 	}
 
 	COB_PUT_SIGN (f2, sign);
-	if (tmp_src_data) cob_free (tmp_src_data);
 	return;
 
 error:
 	memset (f2->data, '0', f2->size);
 	COB_PUT_SIGN (f2, 0);
-	if (tmp_src_data) cob_free (tmp_src_data);
-	return;
 }
 
 static void

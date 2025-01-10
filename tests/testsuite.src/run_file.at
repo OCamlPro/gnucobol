@@ -14777,9 +14777,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob -o prog], [0], [],
-[prog.cob:16: warning: overlapping MOVE may produce unpredictable results
-])
+AT_CHECK([$COMPILE -fmove-ibm prog.cob -o prog], [0], [], [])
 
 AT_CHECK([./prog], [0], [01234
 ])
