@@ -37,6 +37,13 @@
 	* error.c, cobc.c (print_program_trailer), flag.def:
 	  implemented -fmax-errors=0 as unlimited
 
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* config.def: new dialect configuration option init-justify
+	* codegen.c (output_initialize_to_value): added support for right
+	  justification when cb_initial_justify is on
+
 2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* pplex.l (get_word): fix an overflow with words exceeding the
@@ -44,6 +51,32 @@
 	* pplex.l (is_condition_directive_clause)
 	(next_word_is_comment_paragraph_name): decrease stack storage
 	and optimize string comparisons
+
+2023-06-22  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y (setup_program, setup_default_collation)
+	  (program_init_without_program_id): properly record default collating
+	  sequence if required via -fdefault-colseq
+	* tree.c (cb_build_binary_op), typeck.c (cb_build_cond_default): inhibit
+	  -ffast-compare and -fconstant-folding for programs with a non-native
+	  collating sequence
+
+2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (cb_build_expr): fix bug #875 "V IS ZERO AND
+	... generate 'invalid conditional expression' error",
+	fix bug #880 error compiling abbreviated conditions in GC3.2 RC2
+        (NOT comparison should be translated to inversed comparison)
+
+2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
+	and comment algorithm
+
+2023-06-13  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* codegen.c (codegen): correctly set and unset `has_global_file`
+	  when entering/leaving nested sub-programs
 
 2023-06-09  Simon Sobisch <simonsobisch@gnu.org>
 

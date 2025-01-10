@@ -6504,16 +6504,20 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 	case ']':
 		rel_bin_op = 1;
 		/* Relational operators */
+#if 0	/* note: already tested in the parser with (check_not_88_level) */
 		if ((CB_REF_OR_FIELD_P (x))
 		 && CB_FIELD_PTR (x)->level == 88) {
-			cb_error_x (e, _("invalid expression"));
+			/* because this code is not active and the translation would be new,
+			   we don't have that gettextized */
+			cb_error_x (e, "invalid expression: conditional on the left of numeric operator");
 			return cb_error_node;
 		}
 		if ((CB_REF_OR_FIELD_P (y))
 		 && CB_FIELD_PTR (y)->level == 88) {
-			cb_error_x (e, _("invalid expression"));
+			cb_error_x (e, "invalid expression: conditional on the right of numeric operator");
 			return cb_error_node;
 		}
+#endif
 
 		if (x == cb_zero) {
 			xl = CB_LITERAL(cb_zero_lit);
@@ -6635,12 +6639,17 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		/*
 		 * If this is an operation between two literal strings
 		 * then resolve the value here at compile time -> "constant folding"
+		 *
+		 * TODO: build cob_fields and call cob_cmp from libcob.
 		 */
 		} else if (cb_constant_folding
 		 && CB_LITERAL_P (x)
 		 && CB_LITERAL_P (y)
 		 && !CB_NUMERIC_LITERAL_P (x)
 		 && !CB_NUMERIC_LITERAL_P (y)) {
+			const int colseq_p = CB_TREE_CLASS(x) == CB_CLASS_NATIONAL
+				? current_program->collating_sequence_n != NULL
+				: current_program->collating_sequence != NULL;
 			copy_file_line (e, y, x);
 			xl = CB_LITERAL(x);
 			yl = CB_LITERAL(y);
@@ -6677,6 +6686,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case '>':
+				if (colseq_p) break;
 				warn_type = 53;
 				if (xl->data[i] > yl->data[j]) {
 					relop = cb_true;
@@ -6685,6 +6695,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case '<':
+				if (colseq_p) break;
 				warn_type = 54;
 				if (xl->data[i] < yl->data[j]) {
 					relop = cb_true;
@@ -6693,6 +6704,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case ']':
+				if (colseq_p) break;
 				warn_type = 55;
 				if (xl->data[i] >= yl->data[j]) {
 					relop = cb_true;
@@ -6701,6 +6713,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				}
 				break;
 			case '[':
+				if (colseq_p) break;
 				warn_type = 56;
 				if (xl->data[i] <= yl->data[j]) {
 					relop = cb_true;
@@ -6733,7 +6746,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				cb_error_x (e, _("invalid expression: %s %s %s"),
 					llit, explain_operator (op), rlit);
 			} else {
-				cb_error_x (e, _("invalid expression"));
+				cb_error_x (e, _("invalid expression: boolean expected with logical operator"));
 			}
 			return cb_error_node;
 		}

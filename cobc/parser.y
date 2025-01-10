@@ -278,7 +278,6 @@ static cb_tree			xml_encoding;
 static int			with_xml_dec;
 static int			with_attrs;
 
-static cb_tree			default_collation;
 static cb_tree			alphanumeric_collation;
 static cb_tree			national_collation;
 
@@ -894,6 +893,24 @@ check_relaxed_syntax (const cob_flags_t lev)
 }
 
 static void
+setup_default_collation (struct cb_program *program) {
+	switch (cb_default_colseq) {
+#ifdef COB_EBCDIC_MACHINE
+	case CB_COLSEQ_ASCII:
+#else
+	case CB_COLSEQ_EBCDIC:
+#endif
+		alphanumeric_collation = build_colseq (cb_default_colseq);
+		break;
+	default:
+		alphanumeric_collation = NULL;
+	}
+	national_collation = NULL; /* TODO: default national collation */
+	program->collating_sequence = alphanumeric_collation;
+	program->collating_sequence_n = national_collation;
+}
+
+static void
 program_init_without_program_id (void)
 {
 	cb_tree		l;
@@ -910,6 +927,7 @@ program_init_without_program_id (void)
 		main_flag_set = 1;
 		current_program->flag_main = cobc_flag_main;
 	}
+	setup_default_collation (current_program);
 	check_relaxed_syntax (COBC_HD_PROGRAM_ID);
 }
 
@@ -1373,7 +1391,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 	}
 
 	/* Initalize default COLLATING SEQUENCE */
-	default_collation = build_colseq (cb_default_colseq);
+	setup_default_collation (current_program);
 
 	begin_scope_of_program_name (current_program);
 
@@ -4257,9 +4275,6 @@ object_computer_sequence:
 
 program_collating_sequence:
   _collating SEQUENCE
-  {
-	alphanumeric_collation = national_collation = NULL;
-  }
   program_coll_sequence_values
 ;
 
@@ -5742,9 +5757,6 @@ collating_sequence_clause:
 
 collating_sequence:
   _collating SEQUENCE
-  {
-	alphanumeric_collation = national_collation = default_collation;
-  }
   coll_sequence_values
 ;
 
@@ -16523,9 +16535,6 @@ _sort_duplicates:
 
 _sort_collating:
   /* empty */
-  {
-	alphanumeric_collation = national_collation = default_collation;
-  }
 | collating_sequence
 ;
 

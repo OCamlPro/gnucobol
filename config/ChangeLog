@@ -1,8 +1,17 @@
 
+2025-01-10  David Declerck <david.declerck@ocamlpro.com>
+
+        * gcos-strict.conf: set init-justify to no after testing on GCOS
+
 2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
+
+2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	FR #439: dialect option to support justify for IBM compatibility
+	* general: add option init-justify
 
 2023-03-22  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -838,7 +847,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2024 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
