@@ -1,4 +1,8 @@
 
+2025-01-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* cbrunt.tex.gen: fix for missing "@end verbatim"
+
 2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* gnucobol.texi: document warning and optimization options
@@ -310,7 +314,7 @@
 	* open-cobol.texi (Customize): Add COB_LDADD, COB_CONFIG_FILE.
 
 
-Copyright 2002,2005,2009-2022 Free Software Foundation, Inc.
+Copyright 2002,2005,2009-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

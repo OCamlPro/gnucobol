@@ -1944,78 +1944,85 @@ is_cobol_word_char (const char c)
 	return c == '-' || c == '_' || isalnum (c);
 }
 
-static char *
-get_word (const char *str, char *word_buff)
+/* copies the next word in str to word_buff of size buff_len, and
+returns the length of the copy. If the word is longer than buff_len,
+returns 0. */
+static int
+get_word (const char *str, char *word_buff, size_t buff_len)
 {
-	char *ret = NULL;
+	int length = 0;
 	if (str) {
-		int length = COB_MAX_WORDLEN + 1;
 		while (*str == ' ' || *str == ',' || *str == ';') {
 			++str;
 		}
-		ret = word_buff;
-		while (is_cobol_word_char(*str)
-		    && length--) {
+		while (is_cobol_word_char(*str)){
+			if (length++ == buff_len) return 0;
 			*word_buff++ = (unsigned char)toupper((unsigned char)*str++);
 		}
-		if (length != 0) {
-			*word_buff = 0;
-		} else {
-			ret = NULL;
-		}
 	}
-	return ret;
+	return length;
 }
 
 static int
 is_condition_directive_clause (const char *buff)
 {
-	char word_buff[COB_MAX_WORDLEN + 1];
-	char *p;
+	char p[12]; /* size of maximal comparison, here END-EVALUATE */
+	int len;
+
 	if (buff[0] == '$') {
 		buff++;
 	} else if (buff[0] == '>' && buff[1] == '>') {
 		buff += 2;
 	}
-	p = get_word (buff, word_buff);
 
-	if (p == NULL) {
-		return 0;
+	len = get_word (buff, p, sizeof(p));
+	switch (len){
+	case 2:	return !memcmp (p, "IF", len);
+	case 3: return !memcmp (p, "END", len);
+	case 4: return     !memcmp (p, "ELSE", len)
+			|| !memcmp (p, "ELIF", len)
+			|| !memcmp (p, "WHEN", len);
+	case 6: return  !memcmp (p, "END-IF", len);
+	case 8: return  !memcmp (p, "EVALUATE", len);
+	case 12: return !memcmp (p, "END-EVALUATE", len);
 	}
-
-	return (strcmp (p, "IF") == 0
-		|| strcmp (p, "ELSE") == 0
-		|| strcmp (p, "END-IF") == 0
-		|| strcmp (p, "ELIF") == 0
-		|| strcmp (p, "END") == 0
-		|| strcmp (p, "EVALUATE") == 0
-		|| strcmp (p, "WHEN") == 0)
-		|| strcmp (p, "END-EVALUATE") == 0;
+	return 0;
 }
 
 static int
 next_word_is_comment_paragraph_name (const char *buff)
 {
-	char word_buff[COB_MAX_WORDLEN + 1];
-	const char	*p = get_word (buff, word_buff);
+	char p[13+1]; /* size of maximal comparison + 1, here
+			 DATE-MODIFIED.  We need +1 because we may
+			 have to add a terminating 0 to pass the
+			 string to cb_plex_verify(). */
+	int len;
 
-	if (!p) {
-		return 0;
+	if (cb_comment_paragraphs == CB_IGNORE) return 0;
+
+	len = get_word (buff, p, sizeof(p)-1);
+
+	switch (len){
+	case 6: if (memcmp (p, "AUTHOR", len)) return 0;
+		break;
+	case 7: if (memcmp (p, "REMARKS", len)) return 0;
+		break;
+	case 8: if (memcmp (p, "SECURITY", len)) return 0;
+		break;
+	case 12: if (   memcmp (p, "DATE-WRITTEN", len)
+		     && memcmp (p, "INSTALLATION", len)) return 0;
+		break;
+	case 13: if (   memcmp (p, "DATE-MODIFIED", len)
+		     && memcmp (p, "DATE-COMPILED", len)) return 0;
+		break;
+	default: return 0;
 	}
-	if (strcmp (p, "AUTHOR") == 0
-	 || strcmp (p, "DATE-WRITTEN") == 0
-	 || strcmp (p, "DATE-MODIFIED") == 0
-	 || strcmp (p, "DATE-COMPILED") == 0
-	 || strcmp (p, "INSTALLATION") == 0
-	 || strcmp (p, "REMARKS") == 0
-	 || strcmp (p, "SECURITY") == 0) {
-		if (cb_comment_paragraphs != CB_IGNORE) {
-			/* check so we get warnings / errors, but leave result unchanged */
-			cb_plex_verify (newline_count, cb_comment_paragraphs, p);
-			return 1;
-		}
-	}
-	return 0;
+	/* this part is reached only if a comparison above was successful */
+
+	/* check so we get warnings / errors, but leave result unchanged */
+	p[len] = 0;
+	cb_plex_verify (newline_count, cb_comment_paragraphs, p);
+	return 1;
 }
 
 

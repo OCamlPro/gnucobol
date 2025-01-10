@@ -14538,15 +14538,21 @@ cb_emit_sort_using (cb_tree file, cb_tree l)
 	}
 	/* LCOV_EXCL_STOP */
 	for (; l; l = CB_CHAIN (l)) {
-		cb_tree use_file = cb_ref (CB_VALUE (l));
-		if (CB_FILE (use_file)->organization == COB_ORG_SORT) {
+		cb_tree use_ref = cb_ref (CB_VALUE (l));
+		const struct cb_file *use_file = CB_FILE (use_ref);
+		if (use_file->organization == COB_ORG_SORT) {
 			cb_error_x (CB_TREE (current_statement),
 				    _("invalid %s parameter"),
 					current_statement->statement == STMT_MERGE ?
 					"MERGE USING" : "SORT USING");
 		}
-		cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_sort_using",
-			rtree, use_file));
+		if (use_file->extfh) {
+			cb_emit (CB_BUILD_FUNCALL_3 ("cob_file_sort_using_extfh",
+				rtree, use_ref, use_file->extfh));
+		} else {
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_sort_using",
+				rtree, use_ref));
+		}
 	}
 }
 
@@ -14564,6 +14570,9 @@ void
 cb_emit_sort_giving (cb_tree sd_file, cb_tree l)
 {
 	cb_tree		p;
+	cb_tree		extfh_list = NULL;
+	int 	has_extfh = 0;
+	const char *file_sort_giving_func;
 
 	if (cb_validate_list (l)) {
 		return;
@@ -14578,6 +14587,9 @@ cb_emit_sort_giving (cb_tree sd_file, cb_tree l)
 					"MERGE GIVING" : "SORT GIVING");
 
 		}
+		extfh_list = cb_list_add (extfh_list, CB_TREE (giving_file));
+		cb_list_add (extfh_list, giving_file->extfh);
+		has_extfh += (giving_file->extfh != NULL);
 	}
 	p = cb_ref (sd_file);
 	/* LCOV_EXCL_START */
@@ -14587,7 +14599,13 @@ cb_emit_sort_giving (cb_tree sd_file, cb_tree l)
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
-	p = CB_BUILD_FUNCALL_2 ("cob_file_sort_giving", p, l);
+	if (has_extfh) {
+		file_sort_giving_func = "cob_file_sort_giving_extfh";
+		l = extfh_list;
+	} else {
+		file_sort_giving_func = "cob_file_sort_giving";
+	}
+	p = CB_BUILD_FUNCALL_2 (file_sort_giving_func, p, l);
 	CB_FUNCALL(p)->varcnt = cb_list_length (l);
 	cb_emit (p);
 }

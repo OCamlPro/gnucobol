@@ -252,6 +252,12 @@ CB_FLAG (cb_listing_cmd, 1, "tcmd",
 CB_FLAG (cb_list_datamap, 1, "datamap",
 	_("  -fdatamap             specify symbols DATA MAP in listing"))
 
-CB_FLAG_ON (cb_diagnostic_show_option, 1, "diagnostics-show-option",
+CB_FLAG_ON (cb_diagnostics_show_option, 1, "diagnostics-show-option",
 	_("  -fno-diagnostics-show-option\tsuppress output of option that directly\n"
 	  "                        controls the diagnostic"))
+
+CB_FLAG_ON (cb_diagnostics_show_caret, 1, "diagnostics-show-caret",
+	_("  -fno-diagnostics-show-caret\tdo not display source context on warning/error diagnostic"))
+
+CB_FLAG_ON (cb_diagnostics_show_line_numbers, 1, "diagnostics-show-line-numbers",
+	_("  -fno-diagnostics-show-line-numbers\tsuppress display of line numbers in diagnostics"))

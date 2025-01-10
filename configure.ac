@@ -717,7 +717,7 @@ if test "x$LDFLAGS" != x; then
 fi
 
 # Current shared library version number for libcob
-LIBCOB_VER=5
+LIBCOB_VER=8
 
 # some math functions (fabs, isnan, isinf) are used in numeric.c
 # (all other computations are used from GMP)

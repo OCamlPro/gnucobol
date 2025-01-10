@@ -2868,7 +2868,10 @@ COB_EXPIMP void	cob_file_sort_init_key	(cob_file *, cob_field *,
 					 const int, const unsigned int);
 COB_EXPIMP void	cob_file_sort_close	(cob_file *);
 COB_EXPIMP void	cob_file_sort_using	(cob_file *, cob_file *);
+COB_EXPIMP void	cob_file_sort_using_extfh	(cob_file *, cob_file *,
+					 int (*callfh)(unsigned char *opcode, FCD3 *fcd));
 COB_EXPIMP void	cob_file_sort_giving	(cob_file *, const size_t, ...);
+COB_EXPIMP void	cob_file_sort_giving_extfh	(cob_file *, const size_t, ...);
 COB_EXPIMP void	cob_file_release	(cob_file *);
 COB_EXPIMP void	cob_file_return		(cob_file *);
 

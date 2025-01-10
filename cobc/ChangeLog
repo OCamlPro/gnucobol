@@ -37,6 +37,20 @@
 	* error.c, cobc.c (print_program_trailer), flag.def:
 	  implemented -fmax-errors=0 as unlimited
 
+2023-06-23  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (get_word): fix an overflow with words exceeding the
+	maximal size COB_MAX_WORDLEN
+	* pplex.l (is_condition_directive_clause)
+	(next_word_is_comment_paragraph_name): decrease stack storage
+	and optimize string comparisons
+
+2023-06-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c (print_error, diagnostics_show_caret): fix for C89 compat
+	* error.c (diagnostics_show_caret): trim trailing whitespace,
+	  remove printing empty lines before/after, print EOF, changed format
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (cb_file), parser.y: organization and access_mode as enums
@@ -47,8 +61,16 @@
 	  code-emitter to parser
 	* tree.h (cb_statement), parser.y, typeck.c: drop flag_merge,
 	  instead check by "statement == STMT_MERGE"
-	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* parser.y (_close_option): parse UNIT/REEL WITH NO REWIND,
+	  currently handled as if only UNIT/REEL would have been specified
 	* help.c (cobc_print_usage_dialect): extended -fregister help
+
+2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* typeck.c (cb_emit_sort_using, cb_emit_sort_giving): check if GIVING/USING
+	  files have an active EXTFH handler and generate calls to sort functions
+	  cob_file_sort_using_extfh / cob_file_sort_giving_extfh for those
 
 2023-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -62,7 +84,7 @@
 2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: allow expressions for screen related clauses
-	  COL, LINE, LINES, SIZE, COLOR
+	  COL, LINE, LINES, SIZE, COLOR, implementing FR #414
 
 2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -315,6 +337,20 @@
 				For COMP-N it has data in 'native' byte order
 	* tree.c: Change to use cb_max_binary instead of constant
 	* typeck.c: Change to use cb_max_binary instead of constant
+
+2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def (cb_diagnostics_show_caret), error.c
+	  (diagnostics_show_caret): add argument -fno-diagnostics-show-caret
+	  to disable the display of the source context of the error/warning,
+	  2 lines before and after the location; add argument
+	  -fno-diagnostics-show-line-numbers to disable printing of
+	  line numbers in carets; rename cb_diagnostic_show_option into
+	  cb_diagnostics_show_option to match the argument name.
+	* error.c (cb_error_kind): replace all occurrences of a
+	  error/warning/note string by a symbolic enum.
+	* cobc.c: new argument -fdiagnostics-plain-output to make
+	  output as plain as possible (disabling carets for example)
 
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 

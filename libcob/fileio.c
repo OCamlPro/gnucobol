@@ -170,7 +170,7 @@ cob_global	*file_globptr = NULL;
 cob_settings	*file_setptr = NULL;
 
 static unsigned int	delete_file_status = 0;
-static unsigned int	eop_status = 0;
+unsigned int		eop_status = 0;
 static unsigned int	check_eop_status = 0;
 
 static struct file_list	*file_cache = NULL;
@@ -8897,8 +8897,8 @@ static int
 sort_cmps (const unsigned char *s1, const unsigned char *s2, const size_t size,
 	   const unsigned char *col)
 {
-	size_t			i;
-	int			ret;
+	size_t		i;
+	int 		ret;
 
 	if (col) {
 		for (i = 0; i < size; ++i) {
@@ -8919,9 +8919,7 @@ sort_cmps (const unsigned char *s1, const unsigned char *s2, const size_t size,
 static COB_INLINE void
 unique_copy (unsigned char *s1, const unsigned char *s2)
 {
-	size_t	size;
-
-	size = sizeof (size_t);
+	size_t	size = sizeof (size_t);
 	do {
 		*s1++ = *s2++;
 	} while (--size);
@@ -8930,16 +8928,15 @@ unique_copy (unsigned char *s1, const unsigned char *s2)
 static int
 cob_file_sort_compare (struct cobitem *k1, struct cobitem *k2, void *pointer)
 {
-	cob_file	*f;
+	cob_file	*f = pointer;
 	int		i;
 	size_t		u1;
 	size_t		u2;
-	int		cmp;
-	cob_field	f1;
-	cob_field	f2;
 
-	f = pointer;
 	for (i = 0; i < (int)f->nkeys; ++i) {
+		int		cmp;
+		cob_field	f1;
+		cob_field	f2;
 		f1 = f2 = *(f->keys[i].field);
 		f1.data = k1->item + f->keys[i].offset;
 		f2.data = k2->item + f->keys[i].offset;
@@ -8980,7 +8977,6 @@ static struct cobitem *
 cob_new_item (struct cobsort *hp, const size_t size)
 {
 	struct cobitem		*q;
-	struct sort_mem_struct	*s;
 
 	COB_UNUSED (size);
 
@@ -8994,6 +8990,7 @@ cob_new_item (struct cobsort *hp, const size_t size)
 		return (void *)q;
 	}
 	if ((hp->mem_used + hp->alloc_size) > hp->mem_size) {
+		struct sort_mem_struct	*s;
 		s = cob_fast_malloc (sizeof (struct sort_mem_struct));
 		s->mem_ptr = cob_fast_malloc (hp->chunk_size);
 		s->next = hp->mem_base;
@@ -9018,9 +9015,9 @@ cob_new_item (struct cobsort *hp, const size_t size)
 FILE *
 cob_create_tmpfile (const char *ext)
 {
-	FILE		*fp;
-	char		*filename;
-	int		fd;
+	FILE	*fp;
+	char	*filename;
+	int 	fd;
 
 	filename = cob_malloc ((size_t)COB_FILE_BUFF);
 	cob_temp_name (filename, ext);
@@ -9062,37 +9059,35 @@ cob_get_sort_tempfile (struct cobsort *hp, const int n)
 static int
 cob_sort_queues (struct cobsort *hp)
 {
-	struct cobitem	*q;
-	int		source;
-	int		destination;
-	int		move;
-	int		n;
-	int		end_of_block[2];
+	int 	source = 0;
 
-	source = 0;
 	while (hp->queue[source + 1].count != 0) {
-		destination = source ^ 2;
+		int		destination  = source ^ 2;
 		hp->queue[destination].first = NULL;
 		hp->queue[destination].count = 0;
 		hp->queue[destination + 1].first = NULL;
 		hp->queue[destination + 1].count = 0;
 		for (;;) {
+			int		end_of_block[2];
 			end_of_block[0] = hp->queue[source].count == 0;
 			end_of_block[1] = hp->queue[source + 1].count == 0;
 			if (end_of_block[0] && end_of_block[1]) {
 				break;
 			}
 			while (!end_of_block[0] || !end_of_block[1]) {
+				struct cobitem	*q;
+				int 	move;
 				if (end_of_block[0]) {
 					move = 1;
 				} else if (end_of_block[1]) {
 					move = 0;
 				} else {
-					n = cob_file_sort_compare
+					const int	res
+					 = cob_file_sort_compare
 						(hp->queue[source].first,
 						hp->queue[source + 1].first,
 						hp->pointer);
-					move = n < 0 ? 0 : 1;
+					move = res < 0 ? 0 : 1;
 				}
 				q = hp->queue[source + move].first;
 				if (q->end_of_block) {
@@ -9121,9 +9116,8 @@ cob_sort_queues (struct cobsort *hp)
 static int
 cob_read_item (struct cobsort *hp, const int n)
 {
-	FILE	*fp;
+	FILE	*fp = hp->file[n].fp;
 
-	fp = hp->file[n].fp;
 	if (getc (fp) != 0) {
 		hp->queue[n].first->end_of_block = 1;
 	} else {
@@ -9141,12 +9135,10 @@ cob_read_item (struct cobsort *hp, const int n)
 static int
 cob_write_block (struct cobsort *hp, const int n)
 {
-	struct cobitem	*q;
-	FILE		*fp;
+	FILE	*fp = hp->file[hp->destination_file].fp;
 
-	fp = hp->file[hp->destination_file].fp;
 	for (;;) {
-		q = hp->queue[n].first;
+		struct cobitem	*q = hp->queue[n].first;
 		if (q == NULL) {
 			break;
 		}
@@ -9189,15 +9181,10 @@ cob_copy_check (cob_field *to_record, cob_field *from_record)
 static int
 cob_file_sort_process (struct cobsort *hp)
 {
-	int	i;
-	int	source;
-	int	destination;
-	int	n;
-	int	move;
-	int	res;
+	const int	n = cob_sort_queues (hp);
+	int 	source;
 
 	hp->retrieving = 1;
-	n = cob_sort_queues (hp);
 #if	0	/* RXWRXW - Cannot be true */
 	/* LCOV_EXCL_START */
 	if (n < 0) {
@@ -9214,10 +9201,13 @@ cob_file_sort_process (struct cobsort *hp)
 		return COBSORTFILEERR;
 	}
 	/* LCOV_EXCL_STOP */
-	for (i = 0; i < 4; ++i) {
-		hp->queue[i].first = hp->empty;
-		hp->empty = hp->empty->next;
-		hp->queue[i].first->next = NULL;
+	{
+		int	i;
+		for (i = 0; i < 4; ++i) {
+			hp->queue[i].first = hp->empty;
+			hp->empty = hp->empty->next;
+			hp->queue[i].first->next = NULL;
+		}
 	}
 	rewind (hp->file[0].fp);
 	rewind (hp->file[1].fp);
@@ -9231,7 +9221,7 @@ cob_file_sort_process (struct cobsort *hp)
 	/* LCOV_EXCL_STOP */
 	source = 0;
 	while (hp->file[source].count > 1) {
-		destination = source ^ 2;
+		int 	destination = source ^ 2;
 		hp->file[destination].count = 0;
 		hp->file[destination + 1].count = 0;
 		while (hp->file[source].count > 0) {
@@ -9249,14 +9239,16 @@ cob_file_sort_process (struct cobsort *hp)
 			} else {
 				hp->queue[source + 1].first->end_of_block = 1;
 			}
-			while (!hp->queue[source].first->end_of_block ||
-			       !hp->queue[source + 1].first->end_of_block) {
+			while (!hp->queue[source].first->end_of_block
+			    || !hp->queue[source + 1].first->end_of_block) {
+				int 	move;
 				if (hp->queue[source].first->end_of_block) {
 					move = 1;
 				} else if (hp->queue[source + 1].first->end_of_block) {
 					move = 0;
 				} else {
-					res = cob_file_sort_compare
+					const int	res
+					 = cob_file_sort_compare
 						(hp->queue[source].first,
 						hp->queue[source + 1].first,
 						hp->pointer);
@@ -9493,12 +9485,25 @@ cob_file_sort_init_key (cob_file *f, cob_field *field, const int flag,
 void
 cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 {
-	/* FIXME: on each error the approprate USAGE AFTER EXCEPTION/ERROR must be called;
+	cob_file_sort_using_extfh (sort_file, data_file, NULL);
+}
+
+/* SORT/MERGE: add all records from GIVING file 'data_file' to 'sort_file',
+   with optional external file handler 'callfh' */
+void
+cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
+	int (*callfh)(unsigned char *opcode, FCD3 *fcd))
+{
+	/* FIXME: on each error the appropriate USAGE AFTER EXCEPTION/ERROR must be called;
 	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
 	struct cobsort *hp = sort_file->file;
 	int 	ret;
 
-	cob_open (data_file, COB_OPEN_INPUT, 0, NULL);
+	if (callfh) {
+		cob_extfh_open (callfh, data_file, COB_OPEN_INPUT, 0, NULL);
+	} else {
+		cob_open (data_file, COB_OPEN_INPUT, 0, NULL);
+	}
 	if (data_file->file_status[0] != '0') {
 		if (data_file->file_status[0] == '4') {
 			cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
@@ -9506,7 +9511,11 @@ cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 		return;
 	}
 	for (;;) {
-		cob_read_next (data_file, NULL, COB_READ_NEXT);
+		if (callfh) {
+			cob_extfh_read_next (callfh, data_file, NULL, COB_READ_NEXT);
+		} else {
+			cob_read_next (data_file, NULL, COB_READ_NEXT);
+		}
 		if (data_file->file_status[0] != '0') {
 			break;
 		}
@@ -9516,30 +9525,37 @@ cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 			break;
 		}
 	}
-	cob_close (data_file, NULL, COB_CLOSE_NORMAL, 0);
+	if (callfh) {
+		cob_extfh_close (callfh, data_file, NULL, COB_CLOSE_NORMAL, 0);
+	} else {
+		cob_close (data_file, NULL, COB_CLOSE_NORMAL, 0);
+	}
 }
 
-/* SORT: WRITE all records from 'sort_file' to all passed USING files */
-void
-cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
+
+/* SORT/MERGE: WRITE all records from 'sort_file' to all USING files 'fbase',
+   with using their optional external file handlers 'callfh' */
+static void
+cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
+	cob_file **fbase, int (**callfh)(unsigned char *opcode, FCD3 *fcd))
 {
-	/* FIXME: on each error the approprate USAGE AFTER EXCEPTION/ERROR must be called;
+	/* FIXME: on each error the appropriate USAGE AFTER EXCEPTION/ERROR must be called;
 	   and for MF/IBM the check for sort_return == 16 when coming back to stop the SORT! */
 
 	struct cobsort *hp = sort_file->file;
-	cob_file	**fbase;
+	int 	*opt;
 	size_t		i;
-	va_list		args;
-	int		*opt;
-	int		ret;
+	int 	ret;
 
-	/* setup temporary arrays, OPEN OUTPUT all GIVING files and get write option */
-	fbase = cob_malloc (varcnt * sizeof (cob_file *));
-	opt = cob_malloc (varcnt * sizeof (int));
-	va_start (args, varcnt);
-	for (i = 0; i < varcnt; ++i) {
-		cob_file *using_file = fbase[i] = va_arg (args, cob_file *);
-		cob_open (using_file, COB_OPEN_OUTPUT, 0, NULL);
+	/* OPEN OUTPUT all GIVING files and get write option */
+	opt = cob_malloc (giving_cnt * sizeof (int));
+	for (i = 0; i < giving_cnt; ++i) {
+		cob_file *using_file = fbase[i];
+		if (callfh && callfh[i]) {
+			cob_extfh_open (callfh[i], using_file, COB_OPEN_OUTPUT, 0, NULL);
+		} else {
+			cob_open (using_file, COB_OPEN_OUTPUT, 0, NULL);
+		}
 		if (using_file->file_status[0] == '0') {
 			if (COB_FILE_SPECIAL (using_file)
 			 || using_file->organization == COB_ORG_LINE_SEQUENTIAL) {
@@ -9554,7 +9570,6 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 			opt[i] = -1;
 		}
 	}
-	va_end (args);
 
 	/* retrieve all records, WRITE each to every GIVING file */
 	for (;;) {
@@ -9577,7 +9592,7 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 		}
 
 		/* WRITE record to all GIVING files */
-		for (i = 0; i < varcnt; ++i) {
+		for (i = 0; i < giving_cnt; ++i) {
 			cob_file *using_file = fbase[i];
 			/* skip files which got a permanent error before */
 			if (opt[i] < 0) {
@@ -9585,7 +9600,11 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 			}
 			using_file->record->size = using_file->record_max;
 			cob_copy_check (using_file->record, sort_file->record);
-			cob_write (using_file, using_file->record, opt[i], NULL, 0);
+			if (callfh && callfh[i]) {
+				cob_extfh_write (callfh[i], using_file, using_file->record, opt[i], NULL, 0);
+			} else {
+				cob_write (using_file, using_file->record, opt[i], NULL, 0);
+			}
 			/* stop writing to this file if we got a permanent write error;
 			   note: other files are still written to; therefore
 			         SORT-RETURN 16 (early exit) is NOT set here */
@@ -9593,34 +9612,80 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 				int j;
 				opt[i] = -2;
 				/* early exit if no GIVING file left */
-				for (j = 0; j < varcnt; ++j) {
+				for (j = 0; j < giving_cnt; ++j) {
 					if (opt[i] >= 0) {
 						break;
 					}
 				}
-				if (j == varcnt) {
+				if (j == giving_cnt) {
 					break;
 				}
 			}
 		}
-		if (i != varcnt) {
+		if (i != giving_cnt) {
 			break;
 		}
 	}
 
 	/* all records processed - CLOSE all GIVING files */
-	for (i = 0; i < varcnt; ++i) {
+	for (i = 0; i < giving_cnt; ++i) {
 		cob_file *using_file = fbase[i];
 		/* skip files not opened */
 		if (opt[i] == -1) {
 			continue;
 		}
-		cob_close (using_file, NULL, COB_CLOSE_NORMAL, 0);
+		if (callfh && callfh[i]) {
+			cob_extfh_close (callfh[i], using_file, NULL, COB_CLOSE_NORMAL, 0);
+		} else {
+			cob_close (using_file, NULL, COB_CLOSE_NORMAL, 0);
+		}
 	}
 
 	/* cleanup temporary arrays */
 	cob_free (opt);
 	cob_free (fbase);
+	if (callfh) {
+		cob_free (callfh);
+	}
+}
+
+/* SORT: WRITE all records from 'sort_file' to all passed USING files */
+void
+cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
+{
+	cob_file	**fbase;
+	va_list		args;
+	size_t		i;
+
+	fbase = cob_malloc (varcnt * sizeof (cob_file *));
+	va_start (args, varcnt);
+	for (i = 0; i < varcnt; ++i) {
+		fbase[i] = va_arg (args, cob_file *);
+	}
+	va_end (args);
+	cob_file_sort_giving_internal (sort_file, varcnt, fbase, NULL);
+}
+
+/* SORT: WRITE all records from 'sort_file' to all passed USING files,
+   with using their optional external file handlers */
+void
+cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
+{
+	cob_file	**fbase;
+	int 	(**callfh)(unsigned char *opcode, FCD3 *fcd);
+	va_list		args;
+	size_t		i, i_fh;
+
+	fbase = cob_malloc (varcnt * sizeof (cob_file *));
+	callfh = cob_malloc (varcnt * sizeof (void *));
+	i_fh = 0;
+	va_start (args, varcnt);
+	for (i = 0; i < varcnt; i += 2) {
+		fbase[i_fh] = va_arg (args, cob_file *);
+		callfh[i_fh++] = va_arg (args, void *);
+	}
+	va_end (args);
+	cob_file_sort_giving_internal (sort_file, i_fh, fbase, callfh);
 }
 
 /* SORT: close of internal sort file 'f' and deallocation
