@@ -88,6 +88,7 @@
 
 static cob_global	*cobglobptr;
 
+/* translation table for integer 0-99 to BCD byte */
 static const unsigned char packed_bytes[] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
 	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
@@ -101,23 +102,44 @@ static const unsigned char packed_bytes[] = {
 	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99
 };
 
-static short pack_to_bin [256] = {
- 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
-10,11,12,13,14,15,16,17,18,19, 0, 0, 0, 0, 0, 0,
-20,21,22,23,24,25,26,27,28,29, 0, 0, 0, 0, 0, 0,
-30,31,32,33,34,35,36,37,38,39, 0, 0, 0, 0, 0, 0,
-40,41,42,43,44,45,46,47,48,49, 0, 0, 0, 0, 0, 0,
-50,51,52,53,54,55,56,57,58,59, 0, 0, 0, 0, 0, 0,
-60,61,62,63,64,65,66,67,68,69, 0, 0, 0, 0, 0, 0,
-70,71,72,73,74,75,76,77,78,79, 0, 0, 0, 0, 0, 0,
-80,81,82,83,84,85,86,87,88,89, 0, 0, 0, 0, 0, 0,
-90,91,92,93,94,95,96,97,98,99, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+/* translation table for BCD byte (2 digits) to integer;
+   identical defined in move.c */
+static const unsigned char pack_to_bin [] = {
+#if 1	/* invalid BCD nibbles as zero */
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   0,   0,   0,   0,   0,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,   0,   0,   0,   0,   0,   0,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,   0,   0,   0,   0,   0,   0,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,   0,   0,   0,   0,   0,   0,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,   0,   0,   0,   0,   0,   0,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,   0,   0,   0,   0,   0,   0,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,   0,   0,   0,   0,   0,   0,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,   0,   0,   0,   0,   0,   0,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,   0,   0,   0,   0,   0,   0,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
+#else	/* invalid BCD nibbles as translated since at least OC 1.1 */
+     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,
+    20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  25,
+    30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,
+    40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,
+    50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  65,
+    60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,
+    70,  71,  72,  73,  74,  75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,
+    80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+    90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104, 105,
+   100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
+   110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
+   120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135,
+   130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145,
+   140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
+   150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165
+#endif
 };
 
 static cob_decimal	cob_d1;
@@ -144,6 +166,9 @@ static cob_u64_t	i64_spaced_out;
 static unsigned char	packed_value[20];
 static cob_u64_t	last_packed_val;
 static int		cob_not_finite = 0;
+
+/* Function prototypes */
+static void cob_set_packed_u64 (cob_field * f, const cob_u64_t val, const int sign);
 
 void
 cob_gmp_free (void * ptr) {
@@ -329,12 +354,12 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 		scale--;
 	}
 	mza = mpz_get_str (NULL, 10, cob_mpzt2);
-	len = strlen (mza);
+	len = (int)strlen (mza);
 	if (len > 0
 	 && scale > 0
 	 && scale < len) {
 		fprintf (fp, "%.*s%c%.*s",
-			len-scale, mza, '.',
+			len - scale, mza, '.',
 			scale, mza + len - scale);
 	} else if (scale == 0) {
 		fprintf (fp, "%s", mza);
@@ -1033,21 +1058,13 @@ cob_set_packed_zero (cob_field *f)
 static void
 cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 {
-	register unsigned char	*p, *endp;
+	register unsigned char	*p = f->data;
+	const int nibtest = !!COB_FIELD_NO_SIGN_NIBBLE (f);
+	const unsigned char *endp = p + f->size - 1 + nibtest;
 	cob_uli_t	byteval;
-	int		digits, sign, nibtest;
-	const short scale = COB_FIELD_SCALE (f);
 
-	p = f->data;
-	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-		sign = 0;
-		endp = p + f->size;
-		nibtest = 1;
-	} else {
-		sign = cob_packed_get_sign (f);
-		endp = p + f->size - 1;
-		nibtest = 0;
-	}
+	const short scale = COB_FIELD_SCALE (f);
+	int 	digits;
 
 	if (scale >= 0) {
 		digits = COB_FIELD_DIGITS (f);
@@ -1055,7 +1072,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		/* 99P -> 3 digits, scale -1 */
 		digits = COB_FIELD_DIGITS (f) + scale;
 	}
-	if (digits % 2 == nibtest) {
+	if ((digits & 1) /* % 2 */ == nibtest) {
 		byteval = *p++ & 0x0F;
 		if (byteval == 0) {
 			/* Skip leading ZEROs */
@@ -1082,10 +1099,12 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		}
 	}
 	if (digits < MAX_LLI_DIGITS_PLUS_1) {
+		/* note: similar logic in move.c (packed_get_long_long, packed_get_int)
+		   so for all adjustments here - check there, too */
 		register cob_u64_t val = byteval;
 
 		for (; p < endp; p++) {
-			val = val * 100 + pack_to_bin [*p];
+			val = val * 100 + pack_to_bin[*p];
 		}
 
 		if (!nibtest) {
@@ -1102,26 +1121,32 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		/* note: an implementation similar to display - expanding to string,
 		   then convert to mpz from there - was tested and found to be slower */
 
+		const unsigned char *endp_4digits = endp - 1;
 		unsigned int	nonzero = !!byteval;
+
 		mpz_set_ui (d->value, byteval);
 
-		for (; p < endp; p++) {
-			/* when possible take 4 digits at once to reduce GMP calls */
-			if ( (endp - p) > 2) {
+		/* take 4 digits at once as long as possible to reduce GMP calls */
+		for (; p < endp_4digits; p += 2) {
+			if (nonzero) {
 				mpz_mul_ui (d->value, d->value, 10000UL);
-				mpz_add_ui (d->value, d->value,
-					    pack_to_bin [*p] * 100 + pack_to_bin [*(p + 1)]);
-				p++;
-				nonzero = 1;
-				continue;
 			}
+			mpz_add_ui (d->value, d->value,
+				    ( pack_to_bin[*p] * 100)
+				    + pack_to_bin[*(p + 1)]);
+			/* because of the zero-skipping we are always nonzero here */
+			nonzero = 1;
+		}
+		/* handling last digit + half-nibble */
+		if (p < endp) {
 			if (nonzero) {
 				mpz_mul_ui (d->value, d->value, 100);
 			}
 			if (*p) {
-				mpz_add_ui (d->value, d->value, pack_to_bin [*p]);
+				mpz_add_ui (d->value, d->value, pack_to_bin[*p]);
 				nonzero = 1;
 			}
+			p++;
 		}
 
 		if (!nibtest) {
@@ -1132,7 +1157,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		}
 	}
 
-	if (sign == -1) {
+	if (cob_packed_get_sign (f) == -1) {
 		mpz_neg (d->value, d->value);
 	}
 	d->scale = COB_FIELD_SCALE (f);
@@ -1152,13 +1177,15 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	unsigned int	size, diff;	/* packed fields are 38 digits max */
 	unsigned short		digits;
 
-	/* check for value zero (allows early exit) and handle sign */
-	if (sign == 0) {
+	/* handle sign and check for ZERO value (allows early exit) */
+	if (sign == 1) {
+		/* positive, nothing to do, most expected, so extra checked */
+	} else if (sign == -1) {
+		/* negative, switch */
+		mpz_abs (d->value, d->value);
+	} else /* sign == 0 */ {
 		cob_set_packed_zero (f);
 		return 0;
-	}
-	if (sign == -1) {
-		mpz_abs (d->value, d->value);
 	}
 
 	{
@@ -1192,9 +1219,8 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
 		/* integer setting, if possible */
-		if (mpz_fits_sint_p (cob_mexp)) {
-			const signed int val = mpz_get_si (cob_mexp) * sign;
-			cob_set_packed_int (f, val);
+		if (mpz_fits_ulong_p (cob_mexp)) {
+			cob_set_packed_u64 (f, mpz_get_ui (cob_mexp), sign);
 			return 0;
 		}
 		/* get truncated digits as string */
@@ -1203,9 +1229,8 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		         in which case mpz_get_str provides us with 12 */
 	} else {
 		/* integer setting, if possible */
-		if (mpz_fits_sint_p (d->value)) {
-			const signed int val = mpz_get_si (d->value) * sign;
-			cob_set_packed_int (f, val);
+		if (mpz_fits_ulong_p (d->value)) {
+			cob_set_packed_u64 (f, mpz_get_ui (d->value), sign);
 			return 0;
 		}
 
@@ -1264,27 +1289,13 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	return 0;
 }
 
-/* set the specified BCD field 'f' to the given integer 'val';
+/* set the specified BCD field 'f' to the given unsigned long 'val';
    note: the scale is ignored so has to be aligned up-front */
-void
-cob_set_packed_int (cob_field *f, const int val)
+static void
+cob_set_packed_u64 (cob_field *f, const cob_u64_t val, const int sign)
 {
 	register unsigned char	*p;
-	register cob_u32_t	n;
-	int		sign;
-
-	if (val == 0) {
-		cob_set_packed_zero (f);
-		return;
-	}
-
-	if (val < 0) {
-		n = (cob_u32_t)-val;
-		sign = -1;
-	} else {
-		n = (cob_u32_t)val;
-		sign = 1;
-	}
+	register cob_u64_t	n = val;
 
 	/* zero out storage; necessary as we stop below when reaching leading zero */
 	memset (f->data, 0, f->size);
@@ -1304,7 +1315,7 @@ cob_set_packed_int (cob_field *f, const int val)
 		p--;
 	}
 
-	/* set packed digits from end to front */
+	/* set packed digits from end to front, stopping when zero */
 	for (; n && p >= f->data; n /= 100, p--) {
 		*p = packed_bytes[n % 100];
 	}
@@ -1330,6 +1341,23 @@ cob_set_packed_int (cob_field *f, const int val)
 	}
 }
 
+/* set the specified BCD field 'f' to the given integer 'val';
+   note: the scale is ignored so has to be aligned up-front */
+void
+cob_set_packed_int (cob_field *f, const int val)
+{
+	if (val > 0) {
+		/* positive (most likely) */
+		cob_set_packed_u64 (f, (cob_u64_t)val, 1);
+	} else if (val != 0) {
+		/* negative */
+		cob_set_packed_u64 (f, (cob_u64_t)-val, -1);
+	} else /* val == 0 */ {
+		cob_set_packed_zero (f);
+	}
+	return;
+}
+
 /* DISPLAY */
 
 static void
@@ -1339,7 +1367,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	   decrease of > 8% */
 
 	register unsigned char	*data = COB_FIELD_DATA (f);
-	register size_t		size = COB_FIELD_SIZE (f);
+	register unsigned int	size = (unsigned int) COB_FIELD_SIZE (f);
 	const int	sign = COB_GET_SIGN_ADJUST (f);
 
 	/* TODO: document special cases here */
@@ -1441,7 +1469,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 {
 	unsigned char	*data = COB_FIELD_DATA (f);
 	const int		sign = mpz_sgn (d->value);
-	const int		fsize = COB_FIELD_SIZE (f);
+	const size_t	fsize = COB_FIELD_SIZE (f);
 	char	buff[COB_MAX_BINARY + 1];
 
 	/* check for value zero (allows early exit) and handle sign */
@@ -1460,7 +1488,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	if (fsize > COB_MAX_BINARY) {
 		char *p = mpz_get_str (NULL, 10, d->value);
 		const size_t size = strlen (p);
-		const size_t diff = (size_t)fsize - size;
+		const size_t diff = fsize - size;
 		if (diff < 0) {
 			/* Overflow */
 			if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
@@ -1488,7 +1516,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	}
 
 	/* get divisor that would overflow */
-	cob_pow_10 (cob_mexp, fsize);
+	cob_pow_10 (cob_mexp, (unsigned int) fsize);
 	/* check if it is >= what we have */
 	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
@@ -1514,7 +1542,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	{
 		size_t		size, diff;
 		size = strlen (buff);
-		diff = (size_t)fsize - size;
+		diff = fsize - size;
 		memset (data, '0', diff);
 		memcpy (data + diff, buff, size);
 	}
@@ -1617,12 +1645,6 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 	const int	field_sign = COB_FIELD_HAVE_SIGN (f);
 	const size_t	bitnum = (f->size * 8) - field_sign;
 	size_t			overflow;
-
-#if	!defined(COB_LI_IS_LL)
-	cob_s64_t		llval;
-	cob_u64_t		ullval;
-	unsigned int		lo;
-#endif
 
 	if (mpz_size (d->value) == 0) {
 		memset (f->data, 0, f->size);
@@ -1733,21 +1755,22 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 #else
 	if (f->size <= 4) {
 		if (!field_sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
-			cob_binary_set_uint64 (f, (cob_u64_t)mpz_get_ui (d->value));
+			cob_binary_set_uint64 (f, mpz_get_ui (d->value));
 		} else {
-			cob_binary_set_int64 (f, (cob_s64_t)mpz_get_si (d->value));
+			cob_binary_set_int64 (f, mpz_get_si (d->value));
 		}
 	} else {
+		unsigned int	lo;
 		mpz_fdiv_r_2exp (cob_mpzt, d->value, 32);
 		mpz_fdiv_q_2exp (d->value, d->value, 32);
-		lo = mpz_get_ui (cob_mpzt);
+		lo = (unsigned int) mpz_get_ui (cob_mpzt);
 
 		if (!field_sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
-			ullval = mpz_get_ui (d->value);
+			cob_u64_t	ullval = mpz_get_ui (d->value);
 			ullval = (ullval << 32) | lo;
 			cob_binary_set_uint64 (f, ullval);
 		} else {
-			llval = mpz_get_si (d->value);
+			cob_s64_t	llval = mpz_get_si (d->value);
 			llval = (llval << 32) | lo;
 			cob_binary_set_int64 (f, llval);
 		}
@@ -1881,9 +1904,9 @@ cob_print_realbin (const cob_field *f, FILE *fp, const int size)
 static int
 cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 {
-	cob_uli_t	adj;
 	const int	sign = mpz_sgn (d->value);
 	const int	scale = COB_FIELD_SCALE (f);
+	unsigned int	adj;	/* scale adjustment */
 
 	/* Nothing to do when value is 0 or when target has GE scale */
 	if (sign == 0
@@ -1963,7 +1986,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 			}
 		}
 		if (mpz_sgn (cob_mpzt) == 0) {
-			adj = mpz_tdiv_ui (d->value, 100UL);
+			adj = (unsigned int) mpz_tdiv_ui (d->value, 100UL);
 			switch (adj) {
 			case 5:
 			case 25:
@@ -3528,17 +3551,15 @@ cob_display_add_int (cob_field *f, int n, const int opt)
 int
 cob_add_int (cob_field *f, const int n, const int opt)
 {
-	int		scale;
-	register int		val, carry;
-	register unsigned char *p = f->data + f->size - 1;
-
+	const int type = COB_FIELD_TYPE (f);
 	if (n == 0) {
 		return 0;
 	}
 #if	0	/* RXWRXW - Buggy */
-	if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_PACKED) {
+	if (type == COB_TYPE_NUMERIC_PACKED) {
 		return cob_add_packed (f, n, opt);
-	} else if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_DISPLAY) {
+	}
+	if (type == COB_TYPE_NUMERIC_DISPLAY) {
 		return cob_display_add_int (f, n, opt);
 	}
 #endif
@@ -3551,6 +3572,8 @@ cob_add_int (cob_field *f, const int n, const int opt)
 #endif
 	 && n < 10
 	 && COB_FIELD_SCALE (f) == 0) {
+		register int	val, carry;
+		register unsigned char *p = f->data + f->size - 1;
 		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_PACKED
 		 && cob_packed_get_sign (f) >= 0
 		 && *(f->data) == 0x00) {
@@ -3635,18 +3658,18 @@ cob_add_int (cob_field *f, const int n, const int opt)
 	}
 
 	/* Not optimized */
-	cob_decimal_set_field (&cob_d1, f);
 
-	if (COB_FIELD_TYPE (f) >= COB_TYPE_NUMERIC_FLOAT
-	&&  COB_FIELD_TYPE (f) <= COB_TYPE_NUMERIC_FP_BIN128) {
+	if (type >= COB_TYPE_NUMERIC_FLOAT
+	 && type <= COB_TYPE_NUMERIC_FP_BIN128) {
 		mpz_set_si (cob_d2.value, (cob_sli_t) n);
+		cob_decimal_set_field (&cob_d1, f);
 		cob_d2.scale = 0;
 		cob_decimal_add (&cob_d1, &cob_d2);
 		return cob_decimal_get_field (&cob_d1, f, opt);
 	}
-	else {
-		scale = COB_FIELD_SCALE (f);
-		val = n;
+	{
+		int	scale = COB_FIELD_SCALE (f);
+		int	val = n;
 		if (scale < 0) {
 			/* PIC 9(n)P(m) */
 			if (-scale < 10) {
@@ -3661,6 +3684,7 @@ cob_add_int (cob_field *f, const int n, const int opt)
 				return 0;
 			}
 		}
+		cob_decimal_set_field (&cob_d1, f);
 		mpz_set_si (cob_d2.value, (cob_sli_t)val);
 		cob_d2.scale = 0;
 		if (scale > 0) {
