@@ -5718,6 +5718,14 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 
 	if ((int)l->size >= (int)size) {
 		memcpy (litbuff, l->data, (size_t)size);
+		if (f->flag_justified && cb_initial_justify) {
+			memcpy (litbuff, l->data + (size_t)l->size - (size_t)size, (size_t)size);
+		} else {
+			memcpy (litbuff, l->data, (size_t)size);
+		}
+	} else if (f->flag_justified && cb_initial_justify) {
+		memset (litbuff, ' ', (size_t)size - l->size);
+		memcpy (litbuff + l->size, l->data, (size_t)l->size);
 	} else {
 		memcpy (litbuff, l->data, (size_t)l->size);
 		memset (litbuff + l->size, ' ', (size_t)size - l->size);
@@ -14395,7 +14403,7 @@ codegen (struct cb_program *prog, const char *translate_name)
 {
 	const int set_xref = cb_listing_xref;
 	int subsequent_call = 0;
-
+	int has_global_file_level = 0 ;
 	codegen_init (prog, translate_name);
 
 	/* Temporarily disable cross-reference during C generation */
@@ -14407,11 +14415,20 @@ codegen (struct cb_program *prog, const char *translate_name)
 			break;
 		}
 		subsequent_call = 1;
+		/* set has_global_file if needed, only for sub-programs of this program */
 		if (current_program->flag_file_global
-		 && current_program->next_program->nested_level) {
-			has_global_file = 1;
+		 && current_program->next_program->nested_level >
+		    current_program->nested_level) {
+			if (!has_global_file) {
+				has_global_file = 1 ;
+				has_global_file_level = current_program->nested_level ;
+			}
 		} else {
-			has_global_file = 0;
+			if (has_global_file
+			 && current_program->next_program->nested_level <=
+			    has_global_file_level ){
+				has_global_file = 0 ;
+			}
 		}
 		current_program = current_program->next_program;
 	}

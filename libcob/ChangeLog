@@ -68,6 +68,33 @@
 	* fisam.c: Updated to set index field type for 'short' & 'int'
 	  Enabled support for variable length records is using V-ISAM/D-ISAM
 
+2023-06-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_set_packed): backport pack_to_bin change while
+	  adjusting its translation table for invalid BCD "digits" to yield the
+	  same result as before
+	* numeric.c (cob_decimal_set_packed): more optimizations for speed
+	* move.c (cob_packed_get_int, packed_get_long_long): apply optimizations
+	  from (cob_decimal_set_packed) including skipping leading zeros and
+	  pack_to_bin
+
+2023-06-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_set_packed_u64): extracted from cob_set_packed_int
+	  and extended, allowing to internally use bigger values without
+	  a double-check of the sign
+	* numeric.c (cob_decimal_get_packed): set by unsigned long when possible,
+	  instead of signed int (increasing from 9 to 19 digits for many systems)
+	* numeric.c (cob_decimal_get_display, cob_decimal_set_display,
+	  cob_decimal_do_round): fix compile warnings
+
+2023-06-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (get_screenio_and_mouse_info) [__PDCURSES__]:
+	  drop old version checks, set patch version
+	* common.c (cob_check_field_offset): new not-yet-active function
+	  for subscript check by offset like IBM (see FR #437)
+
 2023-06-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (libcob_la_LDFLAGS): updated version-info - ABI fixed for 3.2
@@ -292,6 +319,8 @@
 	* numeric.c (cob_decimal_do_round, cob_decimal_get_field): fix
 	  COB_STORE_PROHIBITED to not overwrite target data and always raise an
 	  exception if rounding would be necessary
+	* numeric.c (cob_decimal_get_packed, cob_set_packed_int): reordered check
+	  to most likely value (nonzero, positive) first
 
 2023-04-26  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -452,6 +481,11 @@
 	* termio.c (pretty_display_numeric): fix printing one byte after
 	  actual data
 	* termio.c (display_numeric): fix printing amount of P as leading zeroes
+
+2023-02-23  Ron Norman <rjn@inglenet.com>
+
+	* numeric.c (cob_decimal_set_packed): new lookup table pack_to_bin
+	  to translate two BCD digits at once for integer conversion
 
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
