@@ -8,6 +8,11 @@
 	* makedist.cmd: cater for new different library names
 	* version_cobc.rc, version_libcob.rc: updated date + rev
 
+2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general for cobc: include new replace.c
+	* version_cobc.rc: updated date + rev
+
 2023-06-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.h.in: updated for OrangeC 6.0.70.2

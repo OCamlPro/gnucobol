@@ -51,6 +51,9 @@
     <ClCompile Include="..\..\cobc\field.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cobc\replace.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cobc\reserved.c">
       <Filter>Source Files</Filter>
     </ClCompile>

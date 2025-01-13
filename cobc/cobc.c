@@ -471,7 +471,7 @@ static const char	*const cob_csyns[] = {
 
 #define COB_NUM_CSYNS	sizeof(cob_csyns) / sizeof(cob_csyns[0])
 
-static const char short_options[] = "hVivqECScbmxjdFOPgGwo:t:T:I:L:l:D:K:k:";
+static const char short_options[] = "hVivqECScbmxjdFOgGwo:P:t:T:I:L:l:D:K:k:";
 
 #define	CB_NO_ARG	no_argument
 #define	CB_RQ_ARG	required_argument
@@ -1239,6 +1239,50 @@ cobc_plex_strdup (const char *dupstr)
 	memcpy (p, dupstr, n);
 	return p;
 }
+
+/* Return a newly allocated zero-terminated string with only the first
+ * len chars of the first argument */
+void *
+cobc_plex_strsub (const char *s, const int len)
+{
+	void	*p;
+	int	n;
+
+	n = strlen (s);
+
+#ifdef	COB_TREE_DEBUG
+	/* LCOV_EXCL_START */
+	if ( len>n ) {
+		cobc_err_msg ("call to %s with bad argument len=%d>%d=strlen(s)",
+			      "cobc_plex_strsub", len, n);
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
+#endif
+
+	p = cobc_plex_malloc (len + 1);
+	memcpy (p, s, len);
+	return p;
+}
+
+/* Returns a newly allocated zero-terminated string containing the
+ * concatenation of str1 and str2. str1 and str2 may be freed
+ * afterwards.
+ */
+char *
+cobc_plex_stradd (const char *str1, const char *str2)
+{
+	char	*p;
+	size_t	m, n;
+
+	m = strlen (str1);
+	n = strlen (str2);
+	p = cobc_plex_malloc (m + n + 1);
+	memcpy (p, str1, m);
+	memcpy (p + m, str2, n);
+	return p;
+}
+
 
 /* variant of strcpy which copies max 'max_size' bytes from 'src' to 'dest',
    if the size of 'src' is too long only its last/last bytes are copied and an
@@ -9256,6 +9300,9 @@ main (int argc, char **argv)
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */
 	if (cobc_list_file) {
+		if (strcmp (cobc_list_file, COB_DASH) == 0) {
+			cb_listing_file = stdout;
+		} else
 		if (cb_unix_lf) {
 			cb_listing_file = fopen (cobc_list_file, "wb");
 		} else {
@@ -9344,7 +9391,10 @@ main (int argc, char **argv)
 	}
 
 	if (cobc_list_file) {
-		fclose (cb_listing_file);
+		if (cb_listing_file != stdout)
+			fclose (cb_listing_file);
+		else
+			fflush (stdout);
 		cb_listing_file = NULL;
 	}
 

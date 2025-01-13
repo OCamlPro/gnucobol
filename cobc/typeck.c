@@ -9096,8 +9096,7 @@ get_constant_call_name (cb_tree prog)
 void
 cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 	      cb_tree on_exception, cb_tree not_on_exception,
-	      cb_tree convention, cb_tree newthread, cb_tree handle,
-	      int call_line_number)
+	      cb_tree convention, cb_tree newthread, cb_tree handle)
 {
 	cb_tree				l;
 	cb_tree				check_list;
@@ -9360,12 +9359,12 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 			}
 		}
 		if (cb_listing_xref) {
-			cobc_xref_call (entry, call_line_number, 0, is_sys_call);
+			cobc_xref_call (entry, CB_TREE (current_statement)->source_line, 0, is_sys_call);
 		}
 	}
 	else if (cb_listing_xref && CB_REFERENCE_P(prog)) {
 		entry = CB_FIELD(CB_REFERENCE(prog)->value)->name;
-		cobc_xref_call (entry, call_line_number, 1, 0);
+		cobc_xref_call (entry, CB_TREE (current_statement)->source_line, 1, 0);
 	}
 
 	if (error_ind) {
@@ -11393,7 +11392,6 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 	struct cb_literal	*l = CB_LITERAL (src);
 	int			leftmost_significant, most_significant, least_significant;
 	size_t			i;
-	cob_s64_t		val;
 	cb_tree			loc = src->source_line ? src : dst;
 
 	/* Numeric literal */
@@ -11514,7 +11512,7 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			 || fdst->usage == CB_USAGE_COMP_X
 			 || fdst->usage == CB_USAGE_COMP_N
 			 || fdst->usage == CB_USAGE_BINARY))) {
-
+		cob_s64_t		val;
 		i = l->size - leftmost_significant;
 		if (i <= 19) {
 			val = cb_get_long_long (src);
