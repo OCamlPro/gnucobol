@@ -313,12 +313,16 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:11: error: syntax error, unexpected Identifier
+prog.cob:11: error: WHEN without imperative statement
 prog.cob:16: error: syntax error, unexpected Identifier
 prog.cob:24: error: syntax error, unexpected Literal
+prog.cob:24: error: WHEN without imperative statement
 prog.cob:30: error: syntax error, unexpected Identifier
+prog.cob:30: error: WHEN without imperative statement
 prog.cob:36: error: 'NOT-DEFINED' is not defined
 prog.cob:42: error: syntax error, unexpected ELSE
 prog.cob:42: error: syntax error, unexpected Identifier
+prog.cob:42: error: WHEN without imperative statement
 prog.cob:42: error: incomplete expression
 prog.cob:47: error: 'broken' is not defined
 ])

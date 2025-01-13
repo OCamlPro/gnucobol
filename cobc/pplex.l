@@ -160,30 +160,20 @@ static int	emit_area_a_tokens = 0;
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
-static struct cb_replace_list	*current_replace_list = NULL;
-static struct cb_replace_list	*save_current_replace = NULL;
-static struct cb_replace_list	*base_replace_list = NULL;
-
-static struct cb_text_list	*text_queue = NULL;
-static size_t			check_partial_match = 0;
-
 static struct copy_info		*copy_stack = NULL;
 
 static struct plex_stack	plex_cond_stack[PLEX_COND_DEPTH];
 
 /* Function declarations */
 static int	ppinput			(char *, const size_t);
-static void	ppecho			(const char *, const cob_u32_t,
-					 const int);
-static void	ppecho_direct			(const char *);
-static int	ppecho_replace		(struct cb_replace_list *);
+static void	ppecho                  (const char *text, const char *token );
+
 static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
 static void	check_listing		(const char *, const unsigned int);
 static void	skip_to_eol		(void);
 static void	count_newlines		(const char *);
 static void	display_finish		(void);
-static void	set_print_replace_list	(struct cb_replace_list *);
 static void	get_new_listing_file	(void);
 
 static struct cb_text_list	*pp_text_list_add (struct cb_text_list *,
@@ -205,7 +195,9 @@ MAYBE_AREA_A	[ ]?#?
 %x CALL_DIRECTIVE_STATE
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
+%x REPLACING_STATE
 %x PSEUDO_STATE
+%x REPLACE_STATE
 %x CONTROL_DIVISION_STATE
 %x SUBSTITUTION_SECTION_STATE
 %x SOURCE_DIRECTIVE_STATE
@@ -229,7 +221,7 @@ MAYBE_AREA_A	[ ]?#?
 	/* 2002+: inline comment */
 	#if	0	/* RXWRXW - Directive state */
 	if (YY_START != DIRECTIVE_STATE && YY_START != SET_DIRECTIVE_STATE) {
-		ppecho (" ", 0, 1);
+		ppecho (" ", NULL);
 	}
 	#endif
 }
@@ -489,7 +481,7 @@ MAYBE_AREA_A	[ ]?#?
 }
 
 "REPLACE"/[ ,;\n]		{
-	yy_push_state (COPY_STATE);
+	yy_push_state (REPLACE_STATE);
 	return REPLACE;
 }
 
@@ -519,7 +511,7 @@ MAYBE_AREA_A	[ ]?#?
 	   DEFAULT SECTION where compile-time defaults are specified. */
 	/* cf `ppparse.y`, grammar entry `program_with_control_division`, along
 	   with `parser.y`, entry `_control_division`. */
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 	yy_push_state (CONTROL_DIVISION_STATE);
 	return CONTROL_DIVISION;
 }
@@ -531,7 +523,7 @@ MAYBE_AREA_A	[ ]?#?
   }
   \. 			{
 	  /* Pass dots to the parser to handle DEFAULT SECTION. */
-	  ppecho (yytext, 0, (int)yyleng);
+	  ppecho (yytext, NULL);
 	  return DOT;
   }
 }
@@ -539,7 +531,7 @@ MAYBE_AREA_A	[ ]?#?
 <SUBSTITUTION_SECTION_STATE,
 CONTROL_DIVISION_STATE>{
   "REPLACE"	       {
-	  yy_push_state (COPY_STATE);
+	  yy_push_state (REPLACE_STATE);
 	  return REPLACE;
   }
 }
@@ -557,7 +549,7 @@ SUBSTITUTION_SECTION_STATE>{
 	  while (YY_START == CONTROL_DIVISION_STATE ||
 		 YY_START == SUBSTITUTION_SECTION_STATE)
 		  yy_pop_state ();
-	  ppecho (yytext, 0, (int)yyleng);
+	  ppecho (yytext, NULL);
   }
   [,;]?\n		{
 	  ECHO;
@@ -577,25 +569,25 @@ SUBSTITUTION_SECTION_STATE>
 		yy_pop_state ();
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 "PROGRAM-ID"/[ .,;\n]	{
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 "DIVISION"/[ .,;\n]	{
 	/* Disallow comment sentences/paragraphs */
 	comment_allowed = 0;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 "SECTION"/[ .,;\n]	{
 	/* Disallow comment sentences/paragraphs */
 	comment_allowed = 0;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 ^{MAYBE_AREA_A}[ ]*"EJECT"([ ]*\.)? |
@@ -644,43 +636,43 @@ SUBSTITUTION_SECTION_STATE>
 	/* Pick up early - Also activates debugging lines */
 	cb_verify (cb_debugging_mode, "DEBUGGING MODE");
 	cb_flag_debugging_line = 1;
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 [,;]?\n		{
-	ppecho ("\n", 0, 1);
+	ppecho ("\n", NULL);
 	cb_source_line++;
 }
 
 [;]?[ ]+	{
-	ppecho (" ", 1U, 1);
+	ppecho (" ", yytext);
 }
 
 [,]?[ ]+	{
 	if (inside_bracket) {
-		ppecho (", ", 0, 2);
+		ppecho (", ", NULL);
 	} else {
-		ppecho (" ", 1U, 1);
+		ppecho (" ", yytext);
 	}
 }
 
 "("		{
-	inside_bracket++;
-	ppecho ("(", 0, 1);
+        inside_bracket++;
+	ppecho (yytext, NULL);
 }
 
 ")"		{
 	if (inside_bracket) {
 		inside_bracket--;
 	}
-	ppecho (")", 0, 1);
+	ppecho (yytext, NULL);
 }
 
 {WORD} |
 {NUMRIC_LITERAL} |
 {ALNUM_LITERAL} |
 .		{
-	ppecho (yytext, 0, (int)yyleng);
+	ppecho (yytext, NULL);
 }
 
 <CALL_DIRECTIVE_STATE,
@@ -1022,27 +1014,66 @@ ENDIF_DIRECTIVE_STATE>{
 	return TEXT_NAME;
   }
   \. 			{
+	/* note: if we get into the REPLACING state, then
+	   that one handles the dot and pops this state */
 	yy_pop_state ();
 	return DOT;
   }
-  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
-  "("			{ return '('; }
-  ")"			{ return ')'; }
-  "BY"			{ return BY; }
+  /* for COPY IN/OF lib */
   "IN"			{ return IN; }
   "OF"			{ return OF; }
-  "OFF"			{ return OFF; }
+
   "SUPPRESS"		{ return SUPPRESS; }
   "PRINTING"		{ return PRINTING; }
-  "REPLACING"		{ return REPLACING; }
-  "LEADING"		{ return LEADING; }
-  "TRAILING"		{ return TRAILING; }
+  "REPLACING"		{ yy_push_state (REPLACING_STATE); return REPLACING; }
   "ALSO"		{ return ALSO; }
   "LAST"		{ return LAST; }
+
+  /* for error handling only, only used in REPLACING state */
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ return EQEQ; }
+  "BY"			{ return BY; }
+
   {WORD} |
   {NUMRIC_LITERAL} |
   {ALNUM_LITERAL} |
   .				{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+  }
+}
+
+<REPLACING_STATE>{
+  [,;]?\n		{
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  "BY"			{ return BY; }
+  \. 			{
+	  yy_pop_state ();
+	  yy_pop_state ();
+	  return DOT;
+  }
+  /* for qualification and subscripting */
+  "IN"			{ return IN; }
+  "OF"			{ return OF; }
+  "("			{ return '('; }
+  ")"			{ return ')'; }
+
+  /* for error handling only, only used in COPY state */
+  "REPLACING"		{ return REPLACING; }
+
+  {WORD} |
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL} |
+  .			{
 	pplval.s = cobc_plex_strdup (yytext);
 	return TOKEN;
   }
@@ -1074,6 +1105,40 @@ ENDIF_DIRECTIVE_STATE>{
   }
 }
 
+<REPLACE_STATE>{
+  [,;]?\n		{
+	ECHO;
+	check_listing (yytext, 0);
+	cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+  \. 			{
+	yy_pop_state ();
+	return DOT;
+  }
+  /* for qualification and subscripting */
+  "IN"			{ return IN; }
+  "OF"			{ return OF; }
+  "("			{ return '('; }
+  ")"			{ return ')'; }
+
+  "LEADING"		{ return LEADING; }
+  "TRAILING"		{ return TRAILING; }
+  "=="			{ yy_push_state (PSEUDO_STATE); return EQEQ; }
+  "BY"			{ return BY; }
+  "ALSO"		{ return ALSO; }
+  "LAST"		{ return LAST; }
+  "OFF"			{ return OFF; }
+
+  {WORD} |
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL} |
+  .				{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+  }
+}
+
 <<EOF>> {
 	struct copy_info *current_copy_info = copy_stack;
 
@@ -1097,10 +1162,7 @@ ENDIF_DIRECTIVE_STATE>{
 		newline_count = 0;
 		inside_bracket = 0;
 		comment_allowed = 1;
-		current_replace_list = NULL;
-		base_replace_list = NULL;
-		save_current_replace = NULL;
-		text_queue = NULL;
+                cb_free_replace ();
 		copy_stack = NULL;
 		quotation_mark = 0;
 		consecutive_quotation = 0;
@@ -1122,7 +1184,7 @@ ENDIF_DIRECTIVE_STATE>{
 			  current_copy_info->buffer);
 
 	/* Restore variables */
-	current_replace_list = current_copy_info->replacing;
+	cb_set_copy_replacing_list (current_copy_info->replacing);
 	quotation_mark = current_copy_info->quotation_mark;
 	cobc_set_source_format (current_copy_info->source_format);
 
@@ -1134,35 +1196,6 @@ ENDIF_DIRECTIVE_STATE>{
 %%
 
 /* Global functions */
-
-void
-pp_set_replace_list (struct cb_replace_list *list, const cob_u32_t is_pushpop)
-{
-	/* Handle REPLACE verb */
-	if (!list) {
-		/* REPLACE [LAST] OFF */
-		if (!is_pushpop) {
-			base_replace_list = NULL;
-			return;
-		}
-		if (!base_replace_list) {
-			return;
-		}
-		base_replace_list = base_replace_list->prev;
-		return;
-	}
-	/* REPLACE [ALSO] ... */
-	if (base_replace_list && is_pushpop) {
-		list->last->next = base_replace_list;
-		list->prev = base_replace_list;
-	} else {
-		list->prev = NULL;
-	}
-	base_replace_list = list;
-	if (cb_src_list_file) {
-		set_print_replace_list (list);
-	}
-}
 
 static int
 is_fixed_indicator (char c){
@@ -1201,23 +1234,23 @@ ppopen_get_file (const char *name)
 	/* check for recursive inclusion */
 	for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
 		/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
-		*         ideally open first, then check if we have the same physical file
-		*         (would also fix recursion check for symlinked files) */
+		          ideally open first, then check if we have the same physical file
+		          (would also fix recursion check for symlinked files) */
 		if (!strcmp (name, current_copy_info->dname)) {
-			struct cb_tree_common	loc;
-			for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
-				int		line;
-				if (current_copy_info->prev) {
-					line = current_copy_info->prev->line;
-				} else {
-					line = cb_source_line;
-				}
-				cb_inclusion_note (current_copy_info->dname, line);
+		struct cb_tree_common	loc;
+		for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
+			int		line;
+			if (current_copy_info->prev) {
+				line = current_copy_info->prev->line;
+			} else {
+				line = cb_source_line;
 			}
-			loc.source_file = name;
-			loc.source_line = -1;
-			cb_error_x (&loc, _("recursive inclusion"));
-			return 0;
+			cb_inclusion_note (current_copy_info->dname, line);
+		}
+		loc.source_file = name;
+		loc.source_line = -1;
+		cb_error_x (&loc, _("recursive inclusion"));
+		return 0;		
 		}
 	}
 
@@ -1300,6 +1333,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 {
 	struct copy_info	*current_copy_info;
 	char			*dname;
+	struct cb_replace_list *current_replace_list;
 
 	if (ppin) {
 		for (; newline_count > 0; newline_count--) {
@@ -1335,6 +1369,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* preserve the current buffer */
+	current_replace_list = cb_get_copy_replacing_list();
 	current_copy_info = cobc_malloc (sizeof (struct copy_info));
 	current_copy_info->file = cb_source_file;
 	current_copy_info->buffer = YY_CURRENT_BUFFER;
@@ -1358,9 +1393,9 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 			replacing_list->last->next = current_replace_list;
 			replacing_list->last = current_replace_list->last;
 		}
-		current_replace_list = replacing_list;
+		cb_set_copy_replacing_list (replacing_list);
 		if (cb_src_list_file) {
-			set_print_replace_list (replacing_list);
+			cb_set_print_replace_list (replacing_list);
 		}
 	}
 
@@ -1877,8 +1912,8 @@ get_new_listing_file (void)
 	cb_current_file = newfile;
 }
 
-static void
-set_print_replace_list (struct cb_replace_list *list)
+void
+cb_set_print_replace_list (struct cb_replace_list *list)
 {
 	struct cb_replace_list		*r;
 	const struct cb_text_list	*l;
@@ -1928,12 +1963,6 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 	fprintf (yyout, "#line %d \"%s\"\n", line, file);
 	/* Switch buffer */
 	yy_switch_to_buffer (buffer);
-}
-
-static COB_INLINE COB_A_INLINE int
-is_space_or_nl (const char c)
-{
-	return c == ' ' || c == '\n';
 }
 
 static COB_INLINE COB_A_INLINE int
@@ -2023,6 +2052,11 @@ next_word_is_comment_paragraph_name (const char *buff)
 	return 1;
 }
 
+static COB_INLINE COB_A_INLINE int
+is_space_or_nl (const char c)
+{
+	return c == ' ' || c == '\n';
+}
 
 /* FIXME: try to optimize as this function used 25-10% (according to callgrind)
    of the complete time spent in a sample run with
@@ -2625,7 +2659,7 @@ start:
 
 static struct cb_text_list *
 pp_text_list_add (struct cb_text_list *list, const char *text,
-		  const size_t size)
+		     const size_t size)
 {
 	struct cb_text_list	*p;
 	void			*tp;
@@ -2644,204 +2678,9 @@ pp_text_list_add (struct cb_text_list *list, const char *text,
 }
 
 static void
-ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
+ppecho (const char *text, const char *token)
 {
-	/* performance note (last verified with GnuCOBOL 2.2):
-	   while this function used 5% (according to callgrind)
-	   of the complete time spent in a sample run with
-	   -fsyntax-only on 880 production code files (2,500,000 LOC),
-	   3.8% of this time is spent in fwrite, therefore not much potential
-	   for optimization */
-
-	struct cb_replace_list		*save_ptr;
-	const char			*s;
-	struct cb_text_list		*save_ptr_text_queue;
-	int				status, save_status;
-
-#if 0	/* Simon: disabled until found necessary, as this takes together with frwite
-		   a big part of the parsing phase of cobc, increasing the IO cost by numbers */
-	/* ensure nothing is in the stream buffer */
-	fflush (ppout);
-#endif
-
-	/* Check for replacement text before outputting */
-	if (alt_space) {
-		s = yytext;
-	} else {
-		s = text;
-	}
-
-	if (text_queue == NULL && (text[0] == ' ' || text[0] == '\n')) {
-		/* No replacement */
-		fwrite (text, (size_t)textlen, (size_t)1, ppout);
-		/* TODO: instead of \n (empty line: set "needs source-loc" flag and
-		   before first non-empty line output a #line directive, saving
-		   quite some file io [keep 1 empty line]) */
-		if (cb_listing_file) {
-			check_listing (s, 0);
-		}
-		return;
-	}
-	if (!current_replace_list && !base_replace_list) {
-		/* Output queue */
-		for (; text_queue; text_queue = text_queue->next) {
-			fputs (text_queue->text, ppout);
-		}
-		fwrite (text, (size_t)textlen, (size_t)1, ppout);
-		if (cb_listing_file) {
-			check_listing (s, 0);
-		}
-		return;
-	}
-	if (!current_replace_list) {
-		current_replace_list = base_replace_list;
-		save_ptr = NULL;
-	} else {
-		current_replace_list->last->next = base_replace_list;
-		save_ptr = current_replace_list->last;
-	}
-
-	/* Do replacement */
-	text_queue = pp_text_list_add (text_queue, text, (size_t)textlen);
-
-	save_ptr_text_queue = text_queue;
-	status = ppecho_replace (save_ptr);
-	/* Search another replacement when have a Partial Match	in the last ppecho call */
-	if (check_partial_match && status != -1) {
-		save_status = status;
-		text_queue = save_ptr_text_queue;
-		while (text_queue && check_partial_match) {
-			if (is_space_or_nl (text_queue->text[0])) {
-				ppecho_direct (text_queue->text);
-				text_queue = text_queue->next;
-				continue;
-			}
-			status = ppecho_replace (save_ptr);
-			if (status > save_status) {
-				save_status = status;
-			}
-			if (text_queue) {
-				/* Write text_queue if is not replaced */
-				if (status != -1 && check_partial_match) {
-					ppecho_direct (text_queue->text);
-				}
-				text_queue = text_queue->next;
-			}
-		}
-		status = save_status;
-	}
-	/* Manage Partial Match */
-	if (status == -1) {
-		check_partial_match = save_ptr_text_queue != NULL;
-		return;
-	}
-	if (!status) {
-		current_replace_list = NULL;
-	} else {
-		save_ptr->next = NULL;
-	}
-
-	/* No match */
-	for (; text_queue; text_queue = text_queue->next) {
-		ppecho_direct (text_queue->text);
-	}
-}
-
-/* handle all kinds of COPY REPLACING and REPLACE */
-static int
-ppecho_replace (struct cb_replace_list *save_ptr)
-{
-	char				*temp_ptr;
-	size_t				size;
-	size_t				size2;
-	struct cb_text_list		*queue;
-	struct cb_text_list		*save_queue;
-	const struct cb_text_list	*lno;
-	struct cb_replace_list		*r;
-
-	save_queue = NULL;
-	size = 0;
-	size2 = 0;
-	for (r = current_replace_list; r; r = r->next) {
-		queue = text_queue;
-		/* The LEADING/TRAILING code looks peculiar as we use */
-		/* variables after breaking out of the loop BUT */
-		/* ppparse.y guarantees that we have only one token */
-		/* and therefore only one iteration of this loop */
-		for (lno = r->src->text_list; lno; lno = lno->next) {
-			if (is_space_or_nl (lno->text[0])) {
-				continue;
-			}
-			while (queue && is_space_or_nl (queue->text[0])) {
-				queue = queue->next;
-			}
-			if (queue == NULL) {
-				/* Partial match */
-				if (!save_ptr) {
-					current_replace_list = NULL;
-				} else {
-					save_ptr->next = NULL;
-				}
-				return -1;
-			}
-			if (r->src->lead_trail == CB_REPLACE_LEADING) {
-				/* Check leading text */
-				size = strlen (lno->text);
-				if ((r->src->strict && strlen (queue->text) == size)
-				 || strncasecmp (lno->text, queue->text, size)) {
-					/* No match */
-					break;
-				}
-				save_queue = queue;
-			} else if (r->src->lead_trail == CB_REPLACE_TRAILING) {
-				/* Check trailing text */
-				size = strlen (lno->text);
-				size2 = strlen (queue->text);
-				if (size2 < size
-				 || (r->src->strict && size2 == size)) {
-					/* No match */
-					break;
-				}
-				size2 -= size;
-				if (strncasecmp (lno->text, queue->text + size2, size)) {
-					/* No match */
-					break;
-				}
-				save_queue = queue;
-			} else if (strcasecmp (lno->text, queue->text)) {
-				/* No match */
-				break;
-			}
-			queue = queue->next;
-		}
-		if (lno == NULL) {
-			/* Match */
-			if (r->src->lead_trail == CB_REPLACE_TRAILING
-			 && save_queue /* <- silence warnings */) {
-				/* Non-matched part of original text */
-				fprintf (ppout, "%*.*s", (int)size2, (int)size2,
-					 save_queue->text);
-				if (cb_listing_file) {
-					temp_ptr = cobc_strdup (save_queue->text);
-					*(temp_ptr + size2) = 0;
-					check_listing (temp_ptr, 0);
-					cobc_free (temp_ptr);
-				}
-			}
-			for (lno = r->new_text; lno; lno = lno->next) {
-				ppecho_direct (lno->text);
-			}
-			if (r->src->lead_trail == CB_REPLACE_LEADING
-			 && save_queue /* <- silence warnings */) {
-				/* Non-matched part of original text */
-				ppecho_direct (save_queue->text + size);
-			}
-			check_partial_match = 0;
-			text_queue = queue;
-			continue;
-		}
-	}
-	return (save_ptr ? 1 : 0);
+	cb_ppecho_copy_replace (text, token);
 }
 
 static void
@@ -2882,12 +2721,11 @@ display_finish (void)
 	unput ('\n');
 }
 
-static void
-ppecho_direct (const char *text)
+void	cb_ppecho_direct (const char *text, const char *token )
 {
 	fputs (text, ppout);
 	if (cb_listing_file) {
-		check_listing (text, 0);
+		check_listing (token != NULL ? token : text, 0);
 	}
 }
 

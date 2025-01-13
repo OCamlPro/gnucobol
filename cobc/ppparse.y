@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2015-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2015-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -736,12 +736,12 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %token TERMINATOR	"end of line"
 
-%token <s> TOKEN		"Identifier or Literal"
+%token <s> TOKEN		"Word or Literal"
 %token <s> TEXT_NAME	"Text-Name"
 %token <s> VARIABLE_NAME	"Variable"
 %token <s> LITERAL		"Literal"
 
-%type <s>	copy_in
+%type <s>	_copy_in
 %type <s>	copy_source
 %type <s>	_literal
 
@@ -762,7 +762,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	ec_list
 %type <s>	unquoted_literal
 
-%type <r>	copy_replacing
+%type <r>	_copy_replacing
 %type <r>	replacing_list
 
 %type <ds>	object_id
@@ -812,11 +812,11 @@ statement_no_replace_list:
 
 statement:
   statement_no_replace
-| replace_statement DOT
+| replace_statement_with_dot
 ;
 
 statement_no_replace:
-  copy_statement DOT
+  copy_statement
 | directive TERMINATOR
 | listing_statement
 | CONTROL_STATEMENT control_options _dot TERMINATOR
@@ -1585,10 +1585,14 @@ condition_clause:
 ;
 
 copy_statement:
-  COPY copy_source copy_in copy_suppress copy_replacing
+  COPY copy_source _copy_in _copy_suppress _copy_replacing DOT
   {
 	fputc ('\n', ppout);
 	ppcopy ($2, $3, $5);
+  }
+| COPY error DOT
+  {
+	yyerrok;
   }
 ;
 
@@ -1613,7 +1617,7 @@ copy_source:
   }
 ;
 
-copy_in:
+_copy_in:
   /* nothing */
   {
 	$$ = NULL;
@@ -1629,11 +1633,12 @@ in_or_of:
 | OF
 ;
 
-copy_suppress:
+_copy_suppress:
+  /* nothing */
 | SUPPRESS _printing
 ;
 
-copy_replacing:
+_copy_replacing:
   /* nothing */
   {
 	$$ = NULL;
@@ -1644,14 +1649,22 @@ copy_replacing:
   }
 ;
 
+replace_statement_with_dot:
+  replace_statement DOT
+| replace_statement error DOT
+  {
+	yyerrok;
+  }
+;
+
 replace_statement:
   REPLACE _also replacing_list
   {
-	pp_set_replace_list ($3, $2);
+	cb_set_replace_list ($3, $2);
   }
 | REPLACE _last OFF
   {
-	pp_set_replace_list (NULL, $2);
+	cb_set_replace_list (NULL, $2);
   }
 ;
 
@@ -1682,6 +1695,24 @@ text_src:
 | identifier
   {
 	$$ = ppp_replace_src ($1, 0);
+/* CHECKME later (parser conflict)
+  }
+| IN
+  {
+	/ * as we need this word, which is valid as replacement,
+	   also for qualification, we need to explicit make it
+	   a word if given alone * /
+	$$ = ppp_list_add (NULL, "IN");
+	$$ = ppp_replace_src ($$, 0);
+  }
+| OF
+  {
+	/ * as we need this word, which is valid as replacement,
+	   also for qualification, we need to explicit make it
+	   a word if given alone * /
+	$$ = ppp_list_add (NULL, "OF");
+	$$ = ppp_replace_src ($$, 0);
+*/
   }
 ;
 
@@ -1697,6 +1728,20 @@ text_dst:
 | identifier
   {
 	$$ = $1;
+  }
+| IN
+  {
+	/* as we need this word, which is valid as replacement,
+	   also for qualification, we need to explicit make it
+	   a word if given alone */
+	$$ = ppp_list_add (NULL, "IN");
+  }
+| OF
+  {
+	/* as we need this word, which is valid as replacement,
+	   also for qualification, we need to explicit make it
+	   a word if given alone */
+	$$ = ppp_list_add (NULL, "OF");
   }
 ;
 

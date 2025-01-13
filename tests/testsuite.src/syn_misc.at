@@ -3371,6 +3371,7 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
 prog.cob: in paragraph 'MAIN':
 prog.cob:10: error: start of statement in Area A
 prog.cob:11: error: start of statement in Area A
+prog.cob:13: error: END-IF should not start in Area A
 prog.cob:14: error: start of statement in Area A
 prog.cob:15: error: separator period in Area A
 prog.cob: in section 'SEC-1':
@@ -4253,20 +4254,17 @@ AT_DATA([prog.cob], [
               'callee'
               WITH C LINKAGE
               .
-           GOBACK.
+           STOP RUN.
 ])
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
 ])
-# GOBACK does not belong to COBOL85 reserved words; the last line is
-# therefore an empty paragraph that does not start in Area A
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -freserved=EXTERN,C prog.cob], [1], [],
 [prog.cob:5: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
-prog.cob:12: error: 'GOBACK' should start in Area A
 ])
 AT_CLEANUP
 
@@ -5371,6 +5369,7 @@ AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option prog.cob], [1], [],
 [[prog.cob:11: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:13: warning: offset must be greater than zero [-Wignored-error]
 prog.cob:14: error: syntax error, unexpected IF
+prog.cob:14: error: IF without imperative statement
 ]])
 
 AT_CLEANUP
@@ -5542,26 +5541,26 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -w -fmissing-statement=error prog.cob], [1], [],
-[prog.cob:18: error: IF without imperative statement used
-prog.cob:23: error: IF without imperative statement used
-prog.cob:32: error: IF without imperative statement used
-prog.cob:33: error: IF without imperative statement used
-prog.cob:39: error: WHEN OTHER without imperative statement used
+[prog.cob:15: error: IF without imperative statement used
+prog.cob:20: error: IF without imperative statement used
+prog.cob:27: error: IF without imperative statement used
+prog.cob:25: error: IF without imperative statement used
+prog.cob:38: error: WHEN OTHER without imperative statement used
 prog.cob:42: error: inline PERFORM without imperative statement used
 prog.cob:47: error: WHEN without imperative statement used
-prog.cob:53: error: WHEN OTHER without imperative statement used
+prog.cob:52: error: WHEN OTHER without imperative statement used
 prog.cob:58: error: WHEN without imperative statement used
 ])
 
 AT_CHECK([$COMPILE_ONLY -fno-constant-folding -fmissing-statement=warning prog.cob], [0], [],
-[prog.cob:18: warning: IF without imperative statement used
-prog.cob:23: warning: IF without imperative statement used
-prog.cob:32: warning: IF without imperative statement used
-prog.cob:33: warning: IF without imperative statement used
-prog.cob:39: warning: WHEN OTHER without imperative statement used
+[prog.cob:15: warning: IF without imperative statement used
+prog.cob:20: warning: IF without imperative statement used
+prog.cob:27: warning: IF without imperative statement used
+prog.cob:25: warning: IF without imperative statement used
+prog.cob:38: warning: WHEN OTHER without imperative statement used
 prog.cob:42: warning: inline PERFORM without imperative statement used
 prog.cob:47: warning: WHEN without imperative statement used
-prog.cob:53: warning: WHEN OTHER without imperative statement used
+prog.cob:52: warning: WHEN OTHER without imperative statement used
 prog.cob:58: warning: WHEN without imperative statement used
 ])
 
@@ -7863,7 +7862,12 @@ AT_CLEANUP
 
 
 AT_SETUP([AREACHECK / NOAREACHECK directives])
-AT_KEYWORDS([misc directive])
+AT_KEYWORDS([misc directive CONTINUE])
+
+ # note: the following does an _extra_ check for the CONTINUE
+ # statement, as this internally is post-created (= on the next token)
+ # and therefore keeps its starting position "extra",
+ # see parser.y (begin_statement_at_tree_pos)
 
 AT_DATA([prog.cob], [
        $SET NO-AREA-CHECK
@@ -7876,19 +7880,23 @@ AT_DATA([prog.cob], [
        DISPLAY "SOMETHING".
        $SET AREA-CHECK
        MAIN-2 SECTION.
+           CONTINUE.
+       CONTINUE.
        DISPLAY "SOMETHING ELSE"
        STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
 [prog.cob: in section 'MAIN-2':
-prog.cob:12: error: start of statement in Area A
 prog.cob:13: error: start of statement in Area A
+prog.cob:14: error: start of statement in Area A
+prog.cob:15: error: start of statement in Area A
 ])
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -frelax-syntax-checks prog.cob], [0], [],
 [prog.cob: in section 'MAIN-2':
-prog.cob:12: warning: start of statement in Area A
 prog.cob:13: warning: start of statement in Area A
+prog.cob:14: warning: start of statement in Area A
+prog.cob:15: warning: start of statement in Area A
 ])
 
 AT_CLEANUP
