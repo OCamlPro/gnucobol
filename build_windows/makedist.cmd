@@ -120,7 +120,7 @@ if exist "%cob_source_path%doc\*.html" (
 
 echo Copying configuration files...
 mkdir config
-set "config_ext_list=conf conf-inc words cfg"
+set "config_ext_list=conf conf-inc words cfg ttbl"
 for %%f in (%config_ext_list%) do (
     copy "%cob_source_path%config\*.%%f"	config\	1>nul
 )
