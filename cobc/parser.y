@@ -11932,7 +11932,9 @@ at_line_column:
 
 	if (!line_column) {
 		line_column = CB_BUILD_PAIR ($2, cb_int0);
-	} else {
+	} else if (CB_PAIR_P (line_column)) {
+		/* note: if line_column is set but no pair, we already
+		   raised a conflict error as AT pos was used before */
 		CB_PAIR_X (line_column) = $2;
 	}
   }
@@ -11948,7 +11950,9 @@ at_line_column:
 
 	if (!line_column) {
 		line_column = CB_BUILD_PAIR (cb_int0, $2);
-	} else {
+	} else if (CB_PAIR_P (line_column)) {
+		/* note: if line_column is set but no pair, we already
+		   raised a conflict error as AT pos was used before */
 		CB_PAIR_Y (line_column) = $2;
 	}
   }

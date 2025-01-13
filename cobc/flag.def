@@ -40,23 +40,23 @@
 
 /* Flags with required parameter */
 
-CB_FLAG_RQ (cb_stack_size, 0, "stack-size", 255, 1,
+CB_FLAG_RQ (cb_stack_size, 0, "stack-size", 255, CB_FLAG_GETOPT_STACK_SIZE,
 	_("  -fstack-size=<number>\tdefine PERFORM stack size\n"
 	  "                       * default: 255"))
 
-CB_FLAG_RQ (cb_ebcdic_sign, 1, "sign", 0, 3,
+CB_FLAG_RQ (cb_ebcdic_sign, 1, "sign", 0, CB_FLAG_GETOPT_SIGN,
 	_("  -fsign=[ASCII|EBCDIC]\tdefine display sign representation\n"
 	  "                        * default: machine native"))
 
-CB_FLAG_RQ (cb_fold_copy, 1, "fold-copy", 0, 4,
+CB_FLAG_RQ (cb_fold_copy, 1, "fold-copy", 0, CB_FLAG_GETOPT_FOLD_COPY,
 	_("  -ffold-copy=[UPPER|LOWER]\tfold COPY subject to value\n"
 	  "                        * default: no transformation"))
 
-CB_FLAG_RQ (cb_fold_call, 1, "fold-call", 0, 5,
+CB_FLAG_RQ (cb_fold_call, 1, "fold-call", 0, CB_FLAG_GETOPT_FOLD_CALL,
 	_("  -ffold-call=[UPPER|LOWER]\tfold PROGRAM-ID, CALL, CANCEL subject to value\n"
 	  "                        * default: no transformation"))
 
-CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 128, 7,
+CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 128, CB_FLAG_GETOPT_MAX_ERRORS,
 	_("  -fmax-errors=<number>\tmaximum number of errors to report before\n"
 	  "                        compilation is aborted\n"
 	  "                        * default: 128\n"
@@ -64,38 +64,38 @@ CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 128, 7,
 
 /* Flags with required parameter and no associated variable */
 
-CB_FLAG_NQ (1, "intrinsics", 10,		/* added to cb_intrinsic_list */
+CB_FLAG_NQ (1, "intrinsics", CB_FLAG_GETOPT_INTRINSICS,	/* added to cb_intrinsic_list */
 	_("  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"
 	  "                        intrinsics to be used without FUNCTION keyword"))
 
-CB_FLAG_NQ (1, "dump", 8,
+/* note: suppressed help and no translation here to have it local to --debug
+         FIXME: find a better way to handle that */
+CB_FLAG_NQ (0, "ec", CB_FLAG_GETOPT_EC,
+	  "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
+      "                        sets -fsource-location")
+CB_FLAG_NQ (0, "no-ec", CB_FLAG_GETOPT_NO_EC,
+	  "  -fno-ec=<exception-name>\tdisable code generation for <exception-name>")
+
+CB_FLAG_NQ (1, "dump", CB_FLAG_GETOPT_DUMP,
 	_("  -fdump=<scope>        dump data fields on abort, <scope> may be\n"
 	  "                        a combination of: ALL, WS, LS, RD, FD, SC, LO"))
-CB_FLAG_OP (0, "no-dump", 13,
+CB_FLAG_OP (0, "no-dump", CB_FLAG_GETOPT_NO_DUMP,
 	_("  -fno-dump=<scope>     exclude data fields from dumping on abort, <scope> may\n"
 	  "                        be a combination of: ALL, WS, LS, RD, FD, SC, LO"))
 
 
-CB_FLAG_NQ (1, "callfh", 9,
+CB_FLAG_NQ (1, "callfh", CB_FLAG_GETOPT_CALLFH,
 	_("  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 	  "                        as external provided EXTFH interface module"))
 
-CB_FLAG_NQ (1, "sqlschema", 11,		/* stored in cb_sqldb_schema */
+CB_FLAG_NQ (1, "sqlschema", CB_FLAG_GETOPT_SQLSCHEMA,	/* stored in cb_sqldb_schema */
 	_("  -fsqlschema=<name>    define database schema name"))
 
-/* note: suppressed help and no translation here to have it local to --debug
-         FIXME: find a better way to handle that */
-CB_FLAG_NQ (0, "ec", 14,
-	  "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
-      "                        sets -fsource-location")
-CB_FLAG_NQ (0, "no-ec", 17,
-	  "  -fno-ec=<exception-name>\tdisable code generation for <exception-name>")
-
-CB_FLAG_NQ (1, "ebcdic-table", 16,
+CB_FLAG_NQ (1, "ebcdic-table", CB_FLAG_GETOPT_EBCDIC_TABLE,
 	_("  -febcdic-table=<cconv-table>/<file>\tEBCDIC/ASCII translation table\n"
 	  "                        * e.g. default, ebcdic500_latin1..."))
 
-CB_FLAG_NQ (1, "default-colseq", 15,
+CB_FLAG_NQ (1, "default-colseq", CB_FLAG_GETOPT_DEFAULT_COLSEQ,
 	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"
 	  "                        * default: NATIVE"))
 
@@ -229,13 +229,13 @@ CB_FLAG (cb_flag_c_labels, 1, "gen-c-labels",
 CB_FLAG (cb_mf_files, 1, "mf-files",
 	 _("  -fmf-files            Sequential & Relative files will match Micro Focus format"))
 
-CB_FLAG_RQ (cb_file_format, 1, "file-format", 0, 12,
+CB_FLAG_RQ (cb_file_format, 1, "file-format", 0, CB_FLAG_GETOPT_FILE_FORMAT,
 	_("  -ffile-format=[MF|GC]\tdefine default format for Sequential/Relative files\n"
 	  "                        * default: GC"))
 
 CB_FLAG_ON (cb_listing_with_header, 1, "theaders",
-	_("  -fno-theaders         suppress all headers and output of compilation\n"
-	  "                        options from listing while keeping page breaks"))
+	_("  -fno-theaders         suppress all headers from listing while keeping\n"
+	  "                        page breaks"))
 
 CB_FLAG_ON (cb_listing_with_source, 1, "tsource",
 	_("  -fno-tsource          suppress source from listing"))
@@ -251,6 +251,13 @@ CB_FLAG (cb_listing_cmd, 1, "tcmd",
 
 CB_FLAG (cb_list_datamap, 1, "datamap",
 	_("  -fdatamap             specify symbols DATA MAP in listing"))
+
+CB_FLAG_ON (cb_listing_with_timestamp, 1, "ttimestamp",
+	_("  -fno-ttimestamp       suppress timestamp in listing headers"))
+
+CB_FLAG_NQ (1, "ttitle", CB_FLAG_GETOPT_TTITLE,
+	_("  -fttitle=<title>      set listing title with '_' replaced by spaces;\n"
+	  "                        defaults to package name and version"))
 
 CB_FLAG_ON (cb_diagnostics_show_option, 1, "diagnostics-show-option",
 	_("  -fno-diagnostics-show-option\tsuppress output of option that directly\n"

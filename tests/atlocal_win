@@ -47,13 +47,17 @@ LC_ALL=C
 export LC_ALL
 unset LANG
 
+FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
-# FLAGS="-debug -Wall ${COBOL_FLAGS}"
+FLAGS="${FLAGS} -fno-diagnostics-show-option"
+
 COBC="${COBC} -std=default -fdiagnostics-plain-output"
-FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
+LISTING_FLAGS="-fttitle=GnuCOBOL_V.R.P -fno-ttimestamp"
+COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
+COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
 
 # test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"

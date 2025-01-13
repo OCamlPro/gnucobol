@@ -85,7 +85,7 @@ AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [0], [],
 ])
 AT_CHECK([$COMPILE_ONLY -std=realia-strict prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=mvs-strict prog.cob], [0], [],
-[prog.cob:4: warning: AUTHOR is obsolete in MVS/VM COBOL
+[prog.cob:4: warning: AUTHOR is obsolete in IBM COBOL for MVS & VM
 ])
 AT_CHECK([$COMPILE_ONLY -std=gcos-strict prog.cob], [0], [],
 [prog.cob:4: warning: AUTHOR is obsolete in GCOS
