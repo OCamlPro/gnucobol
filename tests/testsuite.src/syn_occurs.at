@@ -714,7 +714,8 @@ AT_DATA([prog.cob], [
            END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fopt-check-subscript-set prog.cob], [1], [], [prog.cob:22: error: an integer, INDEX, or a POINTER is expected here
+AT_CHECK([$COMPILE_ONLY -fopt-check-subscript-set prog.cob], [1], [],
+[prog.cob:22: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:24: warning: SET IB2 TO 10 is out of bounds
 prog.cob:36: warning: SET IB1 TO -9 is out of bounds

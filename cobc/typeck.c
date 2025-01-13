@@ -13743,7 +13743,7 @@ cb_check_set_to (cb_tree vars, cb_tree x, const int emit_error)
 	return error_found;
 }
 
-void
+static void
 cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 {
 	const int emit_exception = cb_flag_check_subscript_set
@@ -13752,10 +13752,14 @@ cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 	struct cb_field *f, *p;
 	for (l = vars; l; l = CB_CHAIN (l)) {
 		v = CB_VALUE (l);
-		if (!CB_REF_OR_FIELD_P (v)) continue;
+		if (!CB_REF_OR_FIELD_P (v)) {
+			continue;
+		}
 		f = CB_FIELD_PTR (v);
-		if (!f->flag_indexed_by) continue;
-		if (!f->index_qual) continue;
+		if (!f->flag_indexed_by
+		 || !f->index_qual) {
+			continue;
+		}
 		p = f->index_qual;
 		if (p->depending) {
 			if (hasval) {
@@ -13769,12 +13773,13 @@ cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 									     cb_int (COB_EC_RANGE_INDEX)));
 					}
 				}
-				if (setval >= p->occurs_min) continue;
+				if (setval >= p->occurs_min) {
+					continue;
+				}
 			}
-		} else
-		if (hasval
-		 && setval >= p->occurs_min
-		 && setval <= p->occurs_max) {
+		} else if (hasval
+			&& setval >= p->occurs_min
+			&& setval <= p->occurs_max) {
 			continue;	/* Checks OK at compile time */
 		} else {
 			if (hasval) {
@@ -13816,8 +13821,7 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 	} else if (src == cb_zero) {
 		hasval = 1;
 	}
-	if (cb_flag_check_subscript_set
-	 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+	if (cb_flag_check_subscript_set) {
 		cb_check_valid_set_index (vars, hasval, setval);
 	}
 }
@@ -13974,9 +13978,7 @@ cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 			cb_emit (cb_build_sub (target, x, cb_int0));
 		}
 	}
-	if (CB_EXCEPTION_ENABLE (COB_EC_RANGE_INDEX)) {
-		cb_check_valid_set_index (vars, 0, 0);
-	}
+	cb_check_valid_set_index (vars, 0, 0);
 }
 
 void
