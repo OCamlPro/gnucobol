@@ -14749,3 +14749,40 @@ AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog])
 
 AT_CLEANUP
+
+
+AT_SETUP([READ INTO NUMERIC FD RECORD])
+AT_KEYWORDS([move overlap])
+
+AT_DATA([testfile], [01234
+])
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS LINE SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC PIC 9(5).
+       PROCEDURE DIVISION.
+
+           OPEN INPUT MY-FILE.
+	   READ MY-FILE INTO MY-REC.
+	   DISPLAY MY-REC.
+           CLOSE MY-FILE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob -o prog], [0], [],
+[prog.cob:16: warning: overlapping MOVE may produce unpredictable results
+])
+
+AT_CHECK([./prog], [0], [00000
+])
+
+AT_CLEANUP
+
