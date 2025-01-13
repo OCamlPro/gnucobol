@@ -68,15 +68,17 @@ if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "@COB_ENABLE_DEBUG@" == 
    COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
 fi
 
+FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
-# FLAGS="-debug -Wall ${COBOL_FLAGS}"
-COBC="${COBC} -std=default"
-FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
+FLAGS="${FLAGS} -fno-diagnostics-show-option"
 
-COBC="${COBC} -fdiagnostics-plain-output"
+COBC="${COBC} -std=default -fdiagnostics-plain-output"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
+LISTING_FLAGS="-fttitle=GnuCOBOL_V.R.P -fno-ttimestamp"
+COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
+COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
 
 # get performance counters for compiler and/or runtime
 if test "x$PERFSUFFIX" != "x"; then

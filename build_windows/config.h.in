@@ -1,6 +1,6 @@
 
 /* config.h, tested with x86/x64 VS2008-2022
-   and OrangeC 6.0.50 (which ignores the lib comments) */
+   and OrangeC 6.0.70.2 (which ignores the lib comments) */
 
 #define NOISAM       0
 #define VISAM        1
@@ -284,7 +284,11 @@
 #undef COB_CFLAGS
 
 /* Compilation of computed gotos works */
+#if defined(__ORANGEC__)
+#define COB_COMPUTED_GOTO
+#else
 /* #undef COB_COMPUTED_GOTO */
+#endif
 
 /* default search path for copybooks */
 #define COB_CONFIG_DIR   COB_MAIN_DIR "\\config"
@@ -296,7 +300,7 @@
 #if defined(__ORANGEC__)
 #define COB_DEBUG_FLAGS "-g"
 #else
-#undef COB_DEBUG_FLAGS
+/* #undef COB_DEBUG_FLAGS */
 #endif
 
 /* Enable internal logging (Developers only!) */
@@ -312,7 +316,7 @@
 #if defined(__ORANGEC__)
 #define COB_EXPORT_DYN ""	/* needs to be specified for all but MSVC */
 #else
-#undef COB_EXPORT_DYN
+/* #undef COB_EXPORT_DYN */
 #endif
 
 /* Keyword for inline */
@@ -358,7 +362,7 @@
 #if defined(__ORANGEC__)
 #define COB_PIC_FLAGS ""	/* needs to be specified for all but MSVC */
 #else
-#undef COB_PIC_FLAGS
+/* #undef COB_PIC_FLAGS */
 #endif
 
 /* default search path for indexed schema definitions */
@@ -368,7 +372,7 @@
 #if defined(__ORANGEC__)
 #define COB_SHARED_OPT "/Wd"
 #else
-#undef COB_SHARED_OPT
+/* #undef COB_SHARED_OPT */
 #endif
 
 /* Strip command */
@@ -378,7 +382,7 @@
 #ifdef _DEBUG
 #define COB_TREE_DEBUG
 #else
-#undef COB_TREE_DEBUG
+/* #undef COB_TREE_DEBUG */
 #endif
 
 /* Define to 1 if translation of program messages to the user's native
@@ -484,10 +488,11 @@
 /* #undef HAVE_DEFINE_KEY */
 
 /* Has designated initializers */
-/* #undef HAVE_DESIGNATED_INITS */
 #if defined(_MSC_VER) && _MSC_VER >= 1800 /* = COB_USE_VC2013_OR_GREATER [which is defined later] */ \
  || defined(__ORANGEC__)
 #define HAVE_DESIGNATED_INITS 1
+#else
+/* #undef HAVE_DESIGNATED_INITS */
 #endif
 
 

@@ -4085,8 +4085,8 @@ AT_CHECK([$COBCRUN_DIRECT ./native], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([JUSTIED and VALUE clauses])
-AT_KEYWORDS([runmisc JUST INITIALIZE ibm])
+AT_SETUP([JUSTIFIED and VALUE clauses])
+AT_KEYWORDS([runmisc JUST RIGHT INITIALIZE ibm])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -4111,6 +4111,14 @@ AT_DATA([prog.cob], [
 
        77  ELE                         PIC X(10)
                    VALUE 'RIGHT' JUSTIFIED RIGHT.
+       77  ELE2                        PIC X(10)
+                   VALUE 'R' JUSTIFIED RIGHT.
+       77  ELE3                        PIC X(10)
+                   VALUE 'RRRRRRRRR' JUSTIFIED RIGHT.
+       77  ELE4                        PIC X(10)
+                   VALUE 'RRRRRRRRRR' JUSTIFIED RIGHT.
+       77  ELE5                        PIC X(1003)
+                   VALUE 'RRR' JUSTIFIED RIGHT.
 
        PROCEDURE DIVISION.
 
@@ -4120,13 +4128,30 @@ AT_DATA([prog.cob], [
                PERFORM 2000-JUSTIFY-IS-OFF   THRU 2000-EXIT.
            >>END-IF
 
+           IF ELE4 NOT EQUAL 'RRRRRRRRRR'
+               DISPLAY 'ELE4 NOT INITIALIZED CORRECTLY' ELE4
+           END-IF.
+
            STOP RUN.
 
 
        1000-JUSTIFY-IS-RIGHT.
 
            IF ELE NOT EQUAL '     RIGHT'
-               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY ' ELE
+           END-IF.
+
+           IF ELE2 NOT EQUAL '         R'
+               DISPLAY 'ELE2 NOT INITIALIZED CORRECTLY ' ELE2
+           END-IF.
+
+           IF ELE3 NOT EQUAL ' RRRRRRRRR'
+               DISPLAY 'ELE3 NOT INITIALIZED CORRECTLY ' ELE3
+           END-IF.
+
+           IF ELE5 (1:1000) NOT EQUAL SPACES
+           OR ELE5 (1001:)  NOT EQUAL "RRR"
+               DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
            END-IF.
 
            IF ARR-FLD1 (2) NOT EQUAL '     RIGHT'
@@ -4209,7 +4234,20 @@ AT_DATA([prog.cob], [
        2000-JUSTIFY-IS-OFF.
 
            IF ELE NOT EQUAL 'RIGHT     '
-               DISPLAY 'ELE NOT INITIALIZED CORRECTLY'
+               DISPLAY 'ELE NOT INITIALIZED CORRECTLY ' ELE
+           END-IF.
+
+           IF ELE2 NOT EQUAL 'R         '
+               DISPLAY 'ELE2 NOT INITIALIZED CORRECTLY ' ELE2
+           END-IF.
+
+           IF ELE3 NOT EQUAL 'RRRRRRRRR '
+               DISPLAY 'ELE3 NOT INITIALIZED CORRECTLY ' ELE3
+           END-IF.
+
+           IF ELE5 (1:3) NOT EQUAL "RRR"
+           OR ELE5 (4:)  NOT EQUAL SPACES
+               DISPLAY 'ELE5 NOT INITIALIZED CORRECTLY ' ELE5
            END-IF.
 
            IF ARR-FLD1 (2) NOT EQUAL 'RIGHT     '

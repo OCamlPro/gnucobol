@@ -148,7 +148,6 @@ static unsigned int		plex_nest_depth = 0;
 static int			quotation_mark = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
-static int			requires_new_line = 0;
 static enum cb_format		source_format = CB_FORMAT_AUTO;
 static int	indicator_column = 7;
 static int	text_column = 72;	   /* end of area B (in single-byte
@@ -1092,7 +1091,6 @@ ENDIF_DIRECTIVE_STATE>{
 		cobc_free (current_copy_info);
 		listing_line = 0;
 		requires_listing_line = 1;
-		requires_new_line = 0;
 		need_continuation = 0;
 		buffer_overflow = 0;
 		within_comment = 0;
@@ -2921,19 +2919,20 @@ check_listing (const char *text, const unsigned int comment)
 	}
 
 	if (requires_listing_line) {
-		if (requires_new_line) {
-			requires_new_line = 0;
-			putc ('\n', cb_listing_file);
-		}
 		fprintf (cb_listing_file, "%6d%c", ++listing_line, c);
 	}
 
 	if (requires_listing_line
-	 && source_format != CB_FORMAT_FREE
-	 && strlen (text) >= (size_t)indicator_column) {
-		s = &text[indicator_column - 1];
+	 && source_format != CB_FORMAT_FREE) {
+		if (strlen (text) >= (size_t)indicator_column) {
+			s = text + indicator_column - 1;
+		} else if (strchr (text, '\n')) {
+			s = "\n";	/* no sequence area, but line break */
+		} else {
+			s = "";	/* do not output sequence area */
+		}
 	} else {
-		s = "";		/* do not output sequence area */
+		s = text;
 	}
 	fputs (s, cb_listing_file);
 	if (strchr (text, '\n')) {
