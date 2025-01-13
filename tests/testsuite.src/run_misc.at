@@ -2949,6 +2949,76 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([STRING preserve source])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC.
+         10 SRC-X PIC X(3) VALUE "123".
+         10 SRC-Y PIC X(8) VALUE SPACES.
+       01 DST OCCURS 1.
+         10 DST-X PIC X(8) VALUE SPACES.
+       PROCEDURE DIVISION.
+           DISPLAY "SRC-Y BEFORE: '" SRC-Y "'".
+           STRING "DATA " SRC-X(1:3) INTO DST (1).
+           DISPLAY "SRC-Y AFTER:  '" SRC-Y "'".
+           DISPLAY "DST-X AFTER:  '" DST-X (1) "'".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SRC-Y BEFORE: '        '
+SRC-Y AFTER:  '        '
+DST-X AFTER:  'DATA 123'
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT preserve source])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC OCCURS 1.
+         10 SRC-X PIC S9(3) VALUE 123.
+         10 SRC-Y PIC S9(3) VALUE 456.
+       01 DST OCCURS 1.
+         10 DST-X PIC S9(7) VALUE -6540321.
+       PROCEDURE DIVISION.
+           DISPLAY "SRC-X BEFORE: '" SRC-X (1) "'".
+           DISPLAY "SRC-Y BEFORE: '" SRC-Y (1) "'".
+           DISPLAY "DST-X BEFORE: '" DST-X (1) "'".
+           INSPECT DST-X (1) REPLACING
+             LEADING "654" BY SRC-X (1)
+             ALL "321" BY SRC-Y (1).
+           DISPLAY "SRC-X AFTER: '" SRC-X (1) "'".
+           DISPLAY "SRC-Y AFTER: '" SRC-Y (1) "'".
+           DISPLAY "DST-X AFTER: '" DST-X (1) "'".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SRC-X BEFORE: '+123'
+SRC-Y BEFORE: '+456'
+DST-X BEFORE: '-6540321'
+SRC-X AFTER: '+123'
+SRC-Y AFTER: '+456'
+DST-X AFTER: '-1230456'
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([UNSTRING DELIMITED ALL LOW-VALUE])
 AT_KEYWORDS([runmisc])
 
@@ -7402,7 +7472,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([Numeric MOVE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7412,7 +7482,7 @@ AT_DATA([prog.cob], [
        01  NUM9    PIC 9(6).
        PROCEDURE DIVISION.
            MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
+           DISPLAY "NUM9 value SPACES is " NUM9 (1:) "." UPON SYSOUT
            MOVE LOW-VALUES TO NUM9
            IF NUM9 = LOW-VALUES
               DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
@@ -15156,5 +15226,54 @@ AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to NUMERIC-EDITED safety])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  PIC 9(5)    VALUE 12345.
+       01 Y  PIC 9(5)CR.
+       PROCEDURE DIVISION.
+           MOVE X TO Y.
+           IF Y(1:) NOT = "12345" THEN
+             DISPLAY "EXPECTED '12345'"
+             DISPLAY "GOT      '" Y(1:) "'"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY FLOAT])
+AT_KEYWORDS([FLOAT-SHORT FLOAT-LONG COMP-1 COMP-2])
+
+# Note: each COBOL environment has a different output format for floats;
+# here we only check for internal consistency (support for other
+# formats might be considered for addition if widely requested)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  FLOAT-SHORT  VALUE 0.000012345.
+       01 Y  FLOAT-LONG   VALUE 0.000012345.
+       PROCEDURE DIVISION.
+           DISPLAY X SPACE Y WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 
 AT_CLEANUP

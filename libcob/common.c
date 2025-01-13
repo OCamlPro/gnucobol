@@ -106,29 +106,67 @@
 #include <db.h>
 #endif
 
-#if defined (HAVE_NCURSESW_NCURSES_H)
-#include <ncursesw/ncurses.h>
-#define COB_GEN_SCREENIO
-#elif defined (HAVE_NCURSESW_CURSES_H)
-#include <ncursesw/curses.h>
-#define COB_GEN_SCREENIO
-#elif defined (HAVE_NCURSES_H)
-#include <ncurses.h>
-#define COB_GEN_SCREENIO
-#elif defined (HAVE_NCURSES_NCURSES_H)
-#include <ncurses/ncurses.h>
-#define COB_GEN_SCREENIO
-#elif defined (HAVE_PDCURSES_H)
+#if defined (HAVE_NCURSESW_PANEL_H)
+#include <ncursesw/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_NCURSES_PANEL_H)
+#include <ncurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_PDCURSES_PANEL_H)
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
-#include <pdcurses.h>
-#define COB_GEN_SCREENIO
-#elif defined (HAVE_CURSES_H)
+#include <pdcurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_XCURSES_PANEL_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_PANEL_H)
 #define PDC_NCMOUSE	/* see comment above */
-#include <curses.h>
-#define COB_GEN_SCREENIO
+#include <panel.h>
 #ifndef PDC_MOUSE_MOVED
 #undef PDC_NCMOUSE
 #endif
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_NCURSESW_NCURSES_H)
+#include <ncursesw/ncurses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_NCURSESW_CURSES_H)
+#include <ncursesw/curses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_NCURSES_H)
+#include <ncurses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_NCURSES_NCURSES_H)
+#include <ncurses/ncurses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_PDCURSES_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <pdcurses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_PDCURSES_CURSES_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <pdcurses/curses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_XCURSES_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_XCURSES_CURSES_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses/curses.h>
+#define WITH_EXTENDED_SCREENIO
+#elif defined (HAVE_CURSES_H)
+#define PDC_NCMOUSE	/* see comment above */
+#include <curses.h>
+#ifndef PDC_MOUSE_MOVED
+#undef PDC_NCMOUSE
+#endif
+#define WITH_EXTENDED_SCREENIO
 #endif
 
 #if defined (__PDCURSES__)
@@ -9373,7 +9411,7 @@ conf_runtime_error (const int finish_error, const char *fmt, ...)
 	}
 }
 
-#if defined (COB_GEN_SCREENIO)
+#if defined (WITH_EXTENDED_SCREENIO)
 /* resolve curses library related version information
    stores the information in the version_buffer parameter
    returns the mouse info */
@@ -9781,7 +9819,7 @@ print_info_detailed (const int verbose)
 	/* resolving screenio related information before anything else as this
 	   function will possibly run initscr + endwin and therefore
 	   may interfer with other output */
-#if defined (COB_GEN_SCREENIO)
+#if defined (WITH_EXTENDED_SCREENIO)
 	mouse_support = get_screenio_and_mouse_info
 		((char*)&screenio_info, sizeof (screenio_info), verbose);
 #else

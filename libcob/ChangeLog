@@ -5,10 +5,44 @@
 	  COB_LOAD_GLOBAL (load_global) to toggle if the symbols of CALLed 
 	  programs should be made available in the global namespace
 
+2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
+	  used for info output to include panel header definitions and XCurses
+
+2024-12-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* termio.c (clean_double): skip more than a single leading
+	  zero in exponent display
+
+2024-12-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_start_internal): improve handling of partial
+	  keys, to ensure BDB always compares keys of identical length
+
+2024-12-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
+	  is overwritten, by restoring the *_copy fields that were removed
+	  with the change on 2024-02-26
+
 2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* fileio.c: fixed Bug #1032 by always using global thread-static variable
 	  bdb_app_data pointer to access the collating sequence function
+
+2024-12-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): normalize numeric data
+	* move.c (cob_move): extend use of optimized_move_display_to_edited
+	  to more cases (i.e. different source and destination sign, leading
+	  sign, non-separate sign)
+
+2024-12-09  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed additional bug
+	  reported with bug #1008: BLANK WHEN ZERO not working on signed
+	  NUMERIC-EDITED fields
 
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -302,6 +336,7 @@
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
 
@@ -1468,7 +1503,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  cob_add_exception
 	* screenio.c (handle_status): pass type of statement to raise
 	  either COB_EC_IMP_ACCEPT or COB_EC_IMP_DISPLAY
-	* screenio.c (handle_status, cob_set_crt3_status) [!COB_GEN_SCREENIO]:
+	* screenio.c (handle_status, cob_set_crt3_status) [!WITH_EXTENDED_SCREENIO]:
 	  unconditionally defined those functions and finally return error
 	  status and nonfatal exception along with a warning on accept if the
 	  runtime is not configured for extended screenio
@@ -2635,7 +2670,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2019-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (cob_settings_screenio): moved out of COB_GEN_SCREENIO
+	* screenio.c (cob_settings_screenio): moved out of WITH_EXTENDED_SCREENIO
 
 2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3402,7 +3437,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: moved cob_sys_get_char and added parts for !COB_GEN_SCREENIO
+	* screenio.c: moved cob_sys_get_char and added parts for !WITH_EXTENDED_SCREENIO
 
 2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3567,7 +3602,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-02-07  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: [!COB_GEN_SCREENIO] fixed zero_line_col_allowed
+	* screenio.c: [!WITH_EXTENDED_SCREENIO] fixed zero_line_col_allowed
 	  missing / superfluous in function declarations
 
 2017-02-06  Ron Norman <rjn@inglenet.com>
@@ -4513,7 +4548,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2010-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (!COB_GEN_SCREENIO): Make cob_sys_sound_bell usable via
+	* screenio.c (!WITH_EXTENDED_SCREENIO): Make cob_sys_sound_bell usable via
 	  cob_speaker_beep
 	* common.c:  Add possibility to disable the bell via
 	  COB_BELL=NO/NONE/0/OFF (currently only the first char is checked)
