@@ -1,4 +1,8 @@
 
+2024-12-16 Simon Sobisch <simonsobisch@gnu.org>
+
+	* config/runtime.cfg: Add documentation for COB_LOAD_GLOBAL flag
+
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 
 	FR #474: add runtime configuration to hide cursor for extended screenio
