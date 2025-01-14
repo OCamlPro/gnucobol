@@ -21,7 +21,6 @@
 
 
 #include "config.h"
-#include "libcob/common.h"
 
 #include <stdio.h>
 #include <stdlib.h>
