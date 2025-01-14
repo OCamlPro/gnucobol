@@ -621,8 +621,9 @@ $GREP "prog.cob:11: error: numeric literal '9223372036854775808' exceeds limit"]
 AT_CLEANUP
 
 
+# FIXME: better placed in `syn_set.at`?
+
 AT_SETUP([SET to out-of-range literal])
-#AT_KEYWORDS([SET])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -652,7 +653,6 @@ AT_CLEANUP
 
 
 AT_SETUP([SET index])
-#AT_KEYWORDS([SET])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

@@ -13745,10 +13745,9 @@ cb_check_set_to (cb_tree vars, cb_tree x, const int emit_error)
 static void
 cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 {
-	const int emit_exception = cb_flag_check_subscript_set
-		&& CB_EXCEPTION_ENABLE(COB_EC_BOUND_SUBSCRIPT);
 	cb_tree		l, v;
 	struct cb_field *f, *p;
+
 	for (l = vars; l; l = CB_CHAIN (l)) {
 		v = CB_VALUE (l);
 		if (!CB_REF_OR_FIELD_P (v)) {
@@ -13767,7 +13766,8 @@ cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 					cb_warning_x (COBC_WARN_FILLER, l,
 						      _("SET %s TO %d is out of bounds"),
 						      f->name, setval);
-					if (emit_exception) {
+					if (cb_flag_check_subscript_set
+					 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
 						cb_emit (CB_BUILD_FUNCALL_1 ("cob_set_exception",
 									     cb_int (COB_EC_RANGE_INDEX)));
 					}
@@ -13780,11 +13780,9 @@ cb_check_valid_set_index (cb_tree vars, int hasval, int setval)
 			&& setval >= p->occurs_min
 			&& setval <= p->occurs_max) {
 			continue;	/* Checks OK at compile time */
-		} else {
-			if (hasval) {
-				cb_warning_x (COBC_WARN_FILLER, l,
-					      _("SET %s TO %d is out of bounds"), f->name, setval);
-			}
+		} else if (hasval) {
+			cb_warning_x (COBC_WARN_FILLER, l,
+				      _("SET %s TO %d is out of bounds"), f->name, setval);
 		}
 	}
 }
@@ -13793,7 +13791,6 @@ void
 cb_emit_set_to (cb_tree vars, cb_tree src)
 {
 	cb_tree	l;
-	int		hasval, setval;
 
 	/* Emit statements only if targets have the correct class. */
 	if (cb_check_set_to (vars, src, 1)) {
@@ -13811,16 +13808,16 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 		cb_emit (cb_build_move (src, CB_VALUE (l)));
 	}
 
-	hasval = setval = 0;
-	if (CB_LITERAL_P (src)) {
-		if (CB_NUMERIC_LITERAL_P (src)) {
-			setval = cb_get_int (src);
+	if (cb_flag_check_subscript_set) {
+		int hasval = 0, setval = 0;
+		if (CB_LITERAL_P (src)) {
+			if (CB_NUMERIC_LITERAL_P (src)) {
+				setval = cb_get_int (src);
+				hasval = 1;
+			}
+		} else if (src == cb_zero) {
 			hasval = 1;
 		}
-	} else if (src == cb_zero) {
-		hasval = 1;
-	}
-	if (cb_flag_check_subscript_set) {
 		cb_check_valid_set_index (vars, hasval, setval);
 	}
 }
