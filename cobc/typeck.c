@@ -11325,7 +11325,9 @@ enum move_outcome {
 	MOVE_NON_INTEGER_TO_ALNUM,
 	MOVE_NUMERIC_EXPECTED,
 	MOVE_ALNUM_EXPECTED,
+	MOVE_ALNUM_EXPECTED_STRICT,
 	MOVE_NATIONAL_EXPECTED,
+	MOVE_NATIONAL_EXPECTED_STRICT,
 	MOVE_VALUE_NOT_FIT_PIC,
 	MOVE_GENERAL_OVERFLOW,
 	MOVE_GENERAL_POSSIBLE_TRUNCATION,
@@ -11457,16 +11459,24 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			break;
 		}
 		if (is_value
-		 || l->scale == 0) {
+		 || l->scale != 0
+		 || l->size != fdst->size) {
 			return MOVE_ALNUM_EXPECTED;
+		}
+		if (l->size == fdst->size) {
+			return MOVE_ALNUM_EXPECTED_STRICT;
 		}
 		return MOVE_INVALID;
 
 	case CB_CATEGORY_NATIONAL:
 	case CB_CATEGORY_NATIONAL_EDITED:
 		if (is_value
-		 || l->scale == 0) {
+		 || l->scale != 0
+		 || l->size != fdst->size) {
 			return MOVE_NATIONAL_EXPECTED;
+		}
+		if (l->size == fdst->size) {
+			return MOVE_NATIONAL_EXPECTED_STRICT;
 		}
 		return MOVE_NON_INTEGER_TO_ALNUM;
 
@@ -12336,16 +12346,26 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		return 0;
 
 	case MOVE_NUMERIC_EXPECTED:
-		move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
+		move_warning (src, dst, is_value, cb_warn_typing, 0,
 			      _("numeric value is expected"));
 		return 0;
 
 	case MOVE_ALNUM_EXPECTED:
+		move_warning (src, dst, is_value, cb_warn_typing, 0,
+			      _("alphanumeric value is expected"));
+		return 0;
+
+	case MOVE_ALNUM_EXPECTED_STRICT:
 		move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
 			      _("alphanumeric value is expected"));
 		return 0;
 
 	case MOVE_NATIONAL_EXPECTED:
+		move_warning (src, dst, is_value, cb_warn_typing, 0,
+			      _("national value is expected"));
+		return 0;
+
+	case MOVE_NATIONAL_EXPECTED_STRICT:
 		move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
 			      _("national value is expected"));
 		return 0;

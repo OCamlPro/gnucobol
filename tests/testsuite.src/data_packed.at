@@ -1708,8 +1708,8 @@ AT_DATA([prog.cob], [
 #AT_CHECK([$COBC -x -std=mf -w -fpretty-display -debug prog.cob ], [0], [], [])
 
 # GC3 version
-# CHECKME: -Wno-strict-typing because of MOVE warning
-AT_CHECK([$COMPILE -Wno-strict-typing prog.cob], [0], [], [])
+# CHECKME: -Wno-typing because of MOVE warning
+AT_CHECK([$COMPILE -Wno-typing prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [MOVE 1P17: -100000000000000000 : 2.

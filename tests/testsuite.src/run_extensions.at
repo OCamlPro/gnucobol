@@ -5879,7 +5879,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            EXHIBIT CHANGED VAR-1 'X'
            MOVE ALL 'X' TO VAR-1
-           MOVE 123 TO VAR-1
+           STRING "123" DELIMITED BY SIZE INTO VAR-1
            EXHIBIT NAMED VAR-1 VAR-2 'Y'
            EXHIBIT VAR-2
            EXHIBIT RETURN-CODE TALLY 
@@ -5889,7 +5889,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -Wno-strict-typing -Wno-pending prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [         X
-VAR-1 = 123      VAR-2 = 000 Y
+VAR-1 = 123XXXXX VAR-2 = 000 Y
 VAR-2 = 000
 RETURN-CODE = +000000000 TALLY = 00000
 ])
