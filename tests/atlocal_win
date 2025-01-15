@@ -47,11 +47,15 @@ LC_ALL=C
 export LC_ALL
 unset LANG
 
+# define for performance checks (running code several thousand times)
+# comment manually if not needed
+COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
 FLAGS="${FLAGS} -fno-diagnostics-show-option"
 
-COBC="${COBC} -std=default -fdiagnostics-plain-output"
+COBC="${COBC} -std=default"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"

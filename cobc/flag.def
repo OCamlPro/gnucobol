@@ -81,7 +81,8 @@ CB_FLAG_NQ (1, "dump", CB_FLAG_GETOPT_DUMP,
 	  "                        a combination of: ALL, WS, LS, RD, FD, SC, LO"))
 CB_FLAG_OP (0, "no-dump", CB_FLAG_GETOPT_NO_DUMP,
 	_("  -fno-dump=<scope>     exclude data fields from dumping on abort, <scope> may\n"
-	  "                        be a combination of: ALL, WS, LS, RD, FD, SC, LO"))
+	  "                        be a combination of: ALL, WS, LS, RD, FD, SC, LO\n"
+	  "                        default if no scope specified: ALL"))
 
 
 CB_FLAG_NQ (1, "callfh", CB_FLAG_GETOPT_CALLFH,
@@ -130,7 +131,7 @@ CB_FLAG_ON (cb_flag_fast_math, 0, "fast-math",
 	_("  -ffast-math           Disables emitting faster arithmetic logic"))
 
 CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
-	_("  -fno-fast-compare     disables inline comparisions\n"))
+	_("  -fno-fast-compare     disables inline comparisions"))
 
 /* Normal flags */
 
@@ -173,6 +174,11 @@ CB_FLAG_ON (cb_flag_recursive_check, 1, "recursive-check",
 CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
 	  "                        * turned on by --debug/-g"))
+
+CB_FLAG_OP (1, "memory-check", CB_FLAG_MEMORY_CHECK,
+	_("  -fmemory-check=<scope>     checks for invalid writes to internal storage,\n"
+	  "                        <scope> may be one of: all, pointer, using, none\n"
+	  "                        * default: none, set to all by --debug"))
 
 CB_FLAG (cb_flag_section_exit_check, 1, "section-exit-check",
 	_("  -fsection-exit-check  check that code execution does not leave the scope of SECTIONs"))

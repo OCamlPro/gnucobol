@@ -1009,6 +1009,9 @@ struct cb_field {
 
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 
+	unsigned int flag_used_in_call : 1;	/* Is used in CALL (only set for level 01/77),
+							currently not set for EXTERNAL item or when in LOCAL-STORAGE / LINKAGE */
+
 	unsigned int flag_sql_binary	: 1;	/* Store field as BINARY */
 	unsigned int flag_sql_char	: 1;		/* Store field as CHAR */
 	unsigned int flag_sql_varchar : 1;		/* Store field as VARCHAR */
@@ -2670,6 +2673,13 @@ extern struct cb_field *chk_field_variable_size (struct cb_field *f);
 extern unsigned int	chk_field_variable_address (struct cb_field *fld);
 extern struct cb_field *cb_code_field (cb_tree x);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
+
+#define CB_MEMCHK_NONE	0
+#define CB_MEMCHK_POINTER	(1 << 0)
+#define CB_MEMCHK_USING 	(1 << 1)
+#define CB_MEMCHK_ALL	(CB_MEMCHK_POINTER | CB_MEMCHK_USING)
+extern int		cb_flag_memory_check;
+
 extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
 
 /* scanner.l */

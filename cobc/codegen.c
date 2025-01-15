@@ -137,6 +137,8 @@ struct base_list {
 	const char		*curr_prog;
 };
 
+/* variable set in cobc.c during option parsing, see tree.h */
+int		cb_flag_memory_check = 0;
 
 /* Local variables */
 
@@ -1972,6 +1974,14 @@ output_call_cache (void)
 	if (needs_unifunc) {
 		output_local ("cob_call_union\t\tcob_unifunc;\n");
 	}
+	if ((call_cache || func_call_cache)
+	 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
+		optimize_defs[COB_CHK_MEMORYFENCE] = 1;
+		/* note: we explicit do _not_ initialize it directly as that
+		   will more likely lead to a non-consecutive memory layout,
+		   which makes the whole purpose of the fence useless */
+		output_local ("static char\tcall_fence_pre[8];\n");
+	}
 	call_cache = call_list_reverse (call_cache);
 	for (call = call_cache; call; call = call->next) {
 		output_local ("static cob_call_union\tcall_%s;\n",
@@ -1981,6 +1991,10 @@ output_call_cache (void)
 	for (call = func_call_cache; call; call = call->next) {
 		output_local ("static cob_call_union\tfunc_%s;\n",
 			      call->call_name);
+	}
+	if ((call_cache || func_call_cache)
+	 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
+		output_local ("static char\tcall_fence_post[8];\n");
 	}
 	if (static_call_cache) {
 		const char			*convention_modifier;
@@ -2549,29 +2563,47 @@ output_local_base_cache (void)
 	ws_id++;
 	ws_used = 0;
 	for (blp = local_base_cache; blp; blp = blp->next) {
-		if (blp->f->index_type == CB_INT_INDEX) {
+		const struct cb_field *fld = blp->f;
+		if (fld->flag_used_in_call) {
+			if (fld->index_type != CB_INT_INDEX) {
+				output_local ("static ");
+			}
+#ifdef  HAVE_ATTRIBUTE_ALIGNED
+			output_local ("cob_u8_t	%s%d_fence_pre[8]%s;\n",
+				CB_PREFIX_BASE, fld->id, COB_ALIGN);
+#else
+			output_local ("%scob_u8_t%s	%s%d_fence_pre[8];\n",
+				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+				CB_PREFIX_BASE, fld->id);
+#endif
+			optimize_defs[COB_CHK_MEMORYFENCE] = 1;
+			/* note: we explicit do _not_ initialize it directly as that
+			   will more likely lead to a non-consecutive memory layout,
+			   which makes the whole purpose of the fence useless */
+		}
+		if (fld->index_type == CB_INT_INDEX) {
 			output_local ("int		%s%d;",
-				      CB_PREFIX_BASE, blp->f->id);
-		} else if (blp->f->index_type == CB_STATIC_INT_INDEX) {
+				      CB_PREFIX_BASE, fld->id);
+		} else if (fld->index_type == CB_STATIC_INT_INDEX) {
 			output_local ("static int	%s%d;",
-				      CB_PREFIX_BASE, blp->f->id);
-		} else if( !(blp->f->report_flag & COB_REPORT_REF_EMITTED)) {
+				      CB_PREFIX_BASE, fld->id);
+		} else if( !(fld->report_flag & COB_REPORT_REF_EMITTED)) {
 			if (!cb_align_record
-			 || blp->f->memory_size >= COB_MAX_CHAR_SIZE) {
+			 || fld->memory_size >= COB_MAX_CHAR_SIZE) {
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
 				output_local ("static cob_u8_t	%s%d[%d]%s;",
-						  CB_PREFIX_BASE, blp->f->id,
-						  blp->f->memory_size, COB_ALIGN);
+					      CB_PREFIX_BASE, fld->id,
+					      fld->memory_size, COB_ALIGN);
 #else
 #if defined(COB_ALIGN_PRAGMA_8)
-				output_local ("#pragma align 8 (%s%d)\n", CB_PREFIX_BASE, blp->f->id);
+				output_local ("#pragma align 8 (%s%d)\n", CB_PREFIX_BASE, fld->id);
 #endif
 				output_local ("static %scob_u8_t%s	%s%d[%d];",
-						  COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
-						  blp->f->id, blp->f->memory_size);
+					      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
+					      fld->id, fld->memory_size);
 #endif
 			} else {
-				fs = compute_align_size (blp->f->memory_size, 1);
+				fs = compute_align_size (fld->memory_size, 1);
 				if (ws_used + fs > COB_MAX_CHAR_SIZE) {
 					output_local_ws_group ();
 					ws_id++;
@@ -2579,11 +2611,24 @@ output_local_base_cache (void)
 				}
 
 				output_local ("#define %s%d\t(%s%d + %ld)",
-							CB_PREFIX_BASE, blp->f->id, CB_PREFIX_WS_GROUP, ws_id, (long)ws_used);
+					      CB_PREFIX_BASE, fld->id, CB_PREFIX_WS_GROUP, ws_id, (long)ws_used);
 				ws_used += fs;
 			}
 		}
-		output_local ("\t/* %s */\n", get_field_name (blp->f));
+		output_local ("\t/* %s */\n", get_field_name (fld));
+		if (fld->flag_used_in_call) {
+			if (fld->index_type != CB_INT_INDEX) {
+				output_local ("static ");
+			}
+#ifdef  HAVE_ATTRIBUTE_ALIGNED
+			output_local ("cob_u8_t	%s%d_fence_post[8]%s;\n",
+				CB_PREFIX_BASE, fld->id, COB_ALIGN);
+#else
+			output_local ("%scob_u8_t%s	%s%d_fence_post[8];\n",
+				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+				CB_PREFIX_BASE, fld->id);
+#endif
+		}
 	}
 
 	output_local_ws_group ();
@@ -2605,30 +2650,61 @@ output_nonlocal_base_cache (void)
 	base_cache = list_cache_sort (base_cache, &base_cache_cmp);
 
 	for (blp = base_cache; blp; blp = blp->next) {
+		const struct cb_field *fld = blp->f;
 		if (blp->curr_prog != prev_prog) {
 			prev_prog = blp->curr_prog;
 			output_storage ("\n/* PROGRAM-ID : %s */\n",
 					prev_prog);
 		}
 
-		if (blp->f->index_type != CB_NORMAL_INDEX) {
+		if (fld->flag_used_in_call) {
+#ifdef  HAVE_ATTRIBUTE_ALIGNED
+			output_storage ("static cob_u8_t	%s%d_fence_pre[8]%s;\n",
+				CB_PREFIX_BASE, fld->id, COB_ALIGN);
+#else
+#if defined(COB_ALIGN_PRAGMA_8)
+			output_storage ("#pragma align 8 (%s%d_fence_pre)\n", CB_PREFIX_BASE, fld->id);
+#endif
+			output_storage ("static %scob_u8_t%s	%s%d_fence_pre[8];\n",
+				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+				CB_PREFIX_BASE, fld->id);
+#endif
+			optimize_defs[COB_CHK_MEMORYFENCE] = 1;
+			/* note: we explicit do _not_ initialize it directly as that
+			   will more likely lead to a non-consecutive memory layout,
+			   which makes the whole purpose of the fence useless */
+		}
+		if (fld->index_type != CB_NORMAL_INDEX) {
 			output_storage ("static int	  %s%d;",
-					CB_PREFIX_BASE, blp->f->id);
+					CB_PREFIX_BASE, fld->id);
 		} else {
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
 			output_storage ("static cob_u8_t	%s%d[%d]%s;",
-				      CB_PREFIX_BASE, blp->f->id,
-				      blp->f->memory_size, COB_ALIGN);
+				      CB_PREFIX_BASE, fld->id,
+				      fld->memory_size, COB_ALIGN);
 #else
 #if defined(COB_ALIGN_PRAGMA_8)
-			output_storage ("#pragma align 8 (%s%d)\n", CB_PREFIX_BASE, blp->f->id);
+			output_storage ("#pragma align 8 (%s%d)\n", CB_PREFIX_BASE, fld->id);
 #endif
 			output_storage ("static %scob_u8_t%s	%s%d[%d];",
 				      COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_BASE,
-				      blp->f->id, blp->f->memory_size);
+				      fld->id, fld->memory_size);
 #endif
 		}
-		output_storage ("\t/* %s */\n", blp->f->name);
+		output_storage ("\t/* %s */\n", fld->name);
+		if (fld->flag_used_in_call) {
+#ifdef  HAVE_ATTRIBUTE_ALIGNED
+			output_storage ("static cob_u8_t	%s%d_fence_post[8]%s;\n",
+				CB_PREFIX_BASE, fld->id, COB_ALIGN);
+#else
+#if defined(COB_ALIGN_PRAGMA_8)
+			output_storage ("#pragma align 8 (%s%d_fence_post)\n", CB_PREFIX_BASE, fld->id);
+#endif
+			output_storage ("static %scob_u8_t%s	%s%d_fence_post[8];\n",
+				COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8,
+				CB_PREFIX_BASE, fld->id);
+#endif
+		}
 	}
 
 	output_storage ("\n/* End of data storage */\n\n");
@@ -4416,6 +4492,11 @@ output_param (cb_tree x, int id)
 			/* always convert function names to upper case */
 			func = cb_encode_program_id (CB_PROTOTYPE (l)->ext_name, 0, COB_FOLD_UPPER);
 			lookup_func_call (func);
+			if ((call_cache || func_call_cache)
+			 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
+				output ("(cob_check_fence (call_fence_pre, call_fence_post, %s, NULL), ",
+					cb_statement_enum_name[STMT_BEFORE_UDF]);
+			}
 			output ("func_%s.funcfld (&cob_dyn_%u", func, gen_dynamic);
 			gen_dynamic++;
 			if (ip->intr_field || ip->args) {
@@ -4477,6 +4558,11 @@ output_param (cb_tree x, int id)
 			if (CB_CHAIN (l)) {
 				output (", ");
 			}
+		}
+		if (ip->isuser
+		 && (call_cache || func_call_cache)
+		 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
+			output (")");
 		}
 		output (")");
 		break;
@@ -5861,6 +5947,7 @@ static void
 output_c_info (void)
 {
 	if (cb_flag_c_line_directives) {
+		/* note: output name is already escaped for C string */
 		output ("#line %d \"%s\"", output_line_number + 1, output_name);
 		output_newline ();
 	}
@@ -5886,7 +5973,7 @@ output_cobol_info (cb_tree x)
 		sprintf (q, "\"");
 	}
 	output ("#line %d \"", x->source_line);
-
+	/* escape COBOL file name for C string */
 	while (*p) {
 		if (*p == '\\') {
 			output ("%c",'\\');
@@ -7121,6 +7208,59 @@ output_field_constant (cb_tree x, int n, const char *flagname)
 	output_newline ();
 }
 
+/* output memory fence code for a given CALL 'p',
+   'stmt' specifies the before/after part */
+static void
+output_memory_check_call (struct cb_call *p, const enum cob_statement stmt)
+{
+	/* fencing for used BY REFERENCE fields,
+	   to prevent use of invalid data in the caller before the CALL and
+	   to check for overwrite in the caller after the CALL */
+	if (cb_flag_memory_check & CB_MEMCHK_USING) {
+		cb_tree x, l;
+		for (l = p->args; l; l = CB_CHAIN (l)) {
+			if (CB_PURPOSE_INT (l) != CB_CALL_BY_REFERENCE) {
+				continue;
+			}
+			x = CB_VALUE (l);
+			if (CB_REFERENCE_P (x)) {
+				x = cb_ref (x);
+			}
+			if (CB_FIELD_P (x)) {
+				const struct cb_field *fchck = cb_field_founder (CB_FIELD (x));
+				if (fchck->flag_used_in_call) {
+					if (stmt == STMT_BEFORE_CALL) {
+						output_line ("if (memcmp (%s%d_fence_pre, \"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\", 8) == 0) {",
+							CB_PREFIX_BASE, fchck->id);
+						output_indent_level += indent_adjust_level;
+						output_line ("memcpy (%s%d_fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8);",
+							CB_PREFIX_BASE, fchck->id);
+						output_line ("memcpy (%s%d_fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8);",
+							CB_PREFIX_BASE, fchck->id);
+						output_indent_level -= indent_adjust_level;
+						output_line ("} else {");
+						output_indent_level += indent_adjust_level;
+					}
+					output_line ("cob_check_fence (%s%d_fence_pre, %s%d_fence_post, %s, \"%s\");",
+						CB_PREFIX_BASE, fchck->id, CB_PREFIX_BASE, fchck->id,
+						cb_statement_enum_name[stmt],
+						fchck->name);
+					if (stmt == STMT_BEFORE_CALL) {
+						output_indent_level -= indent_adjust_level;
+						output_line ("}");
+					}
+				}
+			}
+		}
+	}
+	/* fencing for internal pointer, to prevent SIGSEGV on CALL out-of-bound-data-in-ptr */
+	if ((call_cache || func_call_cache)
+	 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
+		output_line ("cob_check_fence (call_fence_pre, call_fence_post, %s, NULL);",
+			cb_statement_enum_name[stmt]);
+	}
+}
+
 static void
 output_call (struct cb_call *p)
 {
@@ -7524,6 +7664,11 @@ output_call (struct cb_call *p)
 			CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
 	}
 
+	/* fence check before the CALL to ensure it works and gets untrashed 01/77 */
+	if (cb_flag_memory_check) {
+		output_memory_check_call (p, STMT_BEFORE_CALL);
+	}
+
 	/* Function name */
 	output_prefix ();
 	/* Special for program pointers */
@@ -7826,6 +7971,11 @@ output_call (struct cb_call *p)
 		}
 		output_block_close ();
 	}
+	/* fence check after the CALL (to hint at the callee trashing memory) */
+	if (cb_flag_memory_check) {
+		output_memory_check_call (p, STMT_CALL);
+	}
+	/* output of "NOT ON EXCEPTION" code */
 	if (p->stmt2) {
 		output_stmt (p->stmt2);
 	}
@@ -8585,8 +8735,8 @@ output_goto_1 (cb_tree x)
 			p = NULL;
 		}
 		for (; p; p = p->next) {
-			if (p->para->segment > 49 &&
-			    p->para->flag_alter) {
+			if (p->para->segment > 49
+			 && p->para->flag_alter) {
 				output_line ("label_%s%d = 0;",
 					     CB_PREFIX_LABEL, p->para->id);
 			}
@@ -8651,9 +8801,9 @@ output_goto (struct cb_goto *p)
 		for (l = p->target; l; l = CB_CHAIN (l)) {
 			cb_tree target = CB_VALUE (l);
 			cb_tree ref = cb_try_ref (target);
-			output_indent_level -= 2;
+			output_indent_level -= indent_adjust_level;
 			output_line ("case %d:", i++);
-			output_indent_level += 2;
+			output_indent_level += indent_adjust_level;
 			if (ref != cb_error_node) {
 				output_goto_1 (ref);
 			} else {
@@ -8843,14 +8993,14 @@ output_if (const struct cb_if *ip)
 			output_line ("else");
 		}
 		output_line ("{");
-		output_indent_level += 2;
+		output_indent_level += indent_adjust_level;
 		if (ip->statement == STMT_IF) {
 			output_line ("/* ELSE */");
 		} else {
 			output_line ("/* WHEN */");
 		}
 		output_stmt (ip->stmt2);
-		output_indent_level -= 2;
+		output_indent_level -= indent_adjust_level;
 		output_line ("}");
 	}
 }
@@ -12889,10 +13039,24 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				COBC_ABORT ();
 			}
 			/* LCOV_EXCL_STOP */
+#if 0	/* TODO: add data fence for LOCAL STORAGE */
+			if (f->flag_used_in_call) {
+				/* buffer for data fence */
+				local_mem += ((5 + COB_MALLOC_ALIGN) &
+					~COB_MALLOC_ALIGN);
+			}
+#endif
 			f->flag_local_storage = 1;
 			f->flag_local_alloced = 1;
 			f->mem_offset = local_mem;
 			local_mem += compute_align_size (f->memory_size, 16);
+#if 0	/* TODO: add data fence for LOCAL STORAGE */
+			if (f->flag_used_in_call) {
+				/* buffer for data fence */
+				local_mem += ((5 + COB_MALLOC_ALIGN) &
+					~COB_MALLOC_ALIGN);
+			}
+#endif
 		}
 	}
 
@@ -13210,10 +13374,23 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	/* Output source location as code */
 	if (cb_flag_source_location) {
-		l = CB_TREE (prog);
+		struct cb_tree_common	loc;
+		loc.source_file = prog->common.source_file;
+		loc.source_line = prog->last_source_line;
+		loc.source_column = 0;
+		output_newline ();
+		output_line ("/* Line: %-10d: last source line                  :%s */",
+			prog->last_source_line, prog->common.source_file);
+		if (cb_flag_c_line_directives) {
+			output_cobol_info (&loc);
+		}
 		output_line ("module->module_stmt = 0x%08X;",
 			COB_SET_LINE_FILE (prog->last_source_line,
-			  lookup_source (l->source_file)));
+			  lookup_source (prog->common.source_file)));
+		if (cb_flag_c_line_directives) {
+			output_c_info ();
+			output_line ("cob_nop ();");
+		}
 		output_newline ();
 	}
 
@@ -13415,6 +13592,15 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Module initialization */
 	if (!prog->flag_recursive) {
 		output_module_init (prog);
+	}
+
+	/* Setup up CANCEL callback */
+	if ((call_cache || func_call_cache)
+	 && (cb_flag_memory_check & CB_MEMCHK_POINTER)) {
+		output_line ("/* Initialize call-pointer memory fence */");
+		output_line ("memcpy (call_fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8);");
+		output_line ("memcpy (call_fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8);");
+		output_newline ();
 	}
 
 	/* Setup up CANCEL callback */

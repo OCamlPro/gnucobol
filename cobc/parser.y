@@ -51,13 +51,6 @@
 #define YYSTYPE			cb_tree
 #define yyerror(x)		cb_error_always ("%s", x)
 
-#define emit_statement(x) \
-do { \
-  if (!skip_statements) { \
-	CB_ADD_TO_CHAIN (x, current_program->exec_list); \
-  } \
-}  ONCE_COB
-
 #define push_expr(type, node) \
   current_expr = cb_build_list (cb_int (type), node, current_expr)
 
@@ -412,6 +405,14 @@ build_colseq (enum cb_colseq colseq)
 
 /* Statements */
 
+static COB_INLINE COB_A_INLINE void
+emit_statement (cb_tree x)
+{
+	if (!skip_statements) {
+		CB_ADD_TO_CHAIN (x, current_program->exec_list);
+	}
+}
+
 static void
 begin_statement_internal (enum cob_statement statement, const unsigned int term,
 	const char *file, const int line)
@@ -453,17 +454,23 @@ begin_statement_at_tree_pos (enum cob_statement statement, const unsigned int te
 	cobc_in_area_a = backup_in_area_a;
 }
 
-/* create a new statement with base attributes of current_statement
-   and set this as new current_statement */
+/* create a new statement with base attributes of real_statement, the
+   location of pos and set this as new current_statement */
 static void
-begin_implicit_statement (void)
+begin_implicit_statement (struct cb_statement* real_statement, cb_tree pos)
 {
 	struct cb_statement	*new_statement;
-	new_statement = cb_build_statement (current_statement->statement);
+	new_statement = cb_build_statement (real_statement->statement);
 	new_statement->common = current_statement->common;
 	new_statement->flag_in_debug = !!in_debugging;
 	new_statement->flag_implicit = 1;
-	current_statement->body = cb_list_add (current_statement->body,
+	if (pos){
+		cb_tree stmt_tree;
+		stmt_tree = CB_TREE (new_statement);
+		stmt_tree->source_file = pos->source_file;
+		stmt_tree->source_line = pos->source_line;
+	}
+	real_statement->body = cb_list_add (real_statement->body,
 					    CB_TREE (new_statement));
 	current_statement = new_statement;
 }
@@ -12953,15 +12960,21 @@ close_body:
 close_files:
   file_name _close_option
   {
-#if 0 /* CHECKME: likely not needed */
-	begin_implicit_statement ();
-#endif
+	/* We need to create a list with a CLOSE statement for every file
+	   within the current_statement instead of nesting them, which
+	   is what would happen if we don't save the current statement
+	   and restore it. */
+	struct cb_statement * saved_current_statement = current_statement ;
+	begin_implicit_statement (current_statement, $1);
 	cb_emit_close ($1, $2);
+	current_statement = saved_current_statement ;
   }
 | close_files file_name _close_option
   {
-	begin_implicit_statement ();
+	struct cb_statement * saved_current_statement = current_statement ;
+	begin_implicit_statement (current_statement, $2);
 	cb_emit_close ($2, $3);
+	current_statement = saved_current_statement ;
   }
 ;
 
@@ -13128,15 +13141,17 @@ delete_body:
 delete_file_list:
   file_name
   {
-#if 0 /* CHECKME: likely not needed */
-	begin_implicit_statement ();
-#endif
+	struct cb_statement * saved_current_statement = current_statement ;
+	begin_implicit_statement (current_statement, $1);
 	cb_emit_delete_file ($1);
+	current_statement = saved_current_statement ;
   }
 | delete_file_list file_name
   {
-	begin_implicit_statement ();
+	struct cb_statement * saved_current_statement = current_statement ;
+	begin_implicit_statement (current_statement, $2);
 	cb_emit_delete_file ($2);
+	current_statement = saved_current_statement ;
   }
 ;
 
@@ -14535,7 +14550,7 @@ generate_body:
   qualified_word
   {
 #if 0 /* CHECKME: likely not needed */
-	begin_implicit_statement ();
+	begin_implicit_statement (current_statement, $1);
 #endif
 	if ($1 != cb_error_node) {
 		cb_emit_generate ($1);
@@ -14789,7 +14804,7 @@ initiate_body:
   report_name
   {
 #if 0 /* CHECKME: likely not needed */
-	begin_implicit_statement ();
+	begin_implicit_statement (current_statement, $1);
 #endif
 	if ($1 != cb_error_node) {
 		cb_emit_initiate ($1);
@@ -14797,7 +14812,7 @@ initiate_body:
   }
 | initiate_body report_name
   {
-	begin_implicit_statement ();
+	begin_implicit_statement (current_statement, $2);
 	if ($2 != cb_error_node) {
 		cb_emit_initiate ($2);
 	}
@@ -15380,6 +15395,7 @@ open_file_entry:
 	cb_tree x;
 	cb_tree retry;
 	int	retry_times, retry_seconds, retry_forever;
+	struct cb_statement * top_statement = current_statement ;
 
 	if (($1 && $3) || ($1 && $6) || ($3 && $6)) {
 		cb_error_x (CB_TREE (current_statement),
@@ -15399,7 +15415,7 @@ open_file_entry:
 
 	for (l = $5; l; l = CB_CHAIN (l)) {
 		if (CB_VALID_TREE (CB_VALUE (l))) {
-			begin_implicit_statement ();
+			begin_implicit_statement (top_statement, CB_VALUE(l));
 			current_statement->retry = retry;
 			current_statement->flag_retry_times = retry_times;
 			current_statement->flag_retry_seconds = retry_seconds;
@@ -17075,7 +17091,7 @@ terminate_body:
   report_name
   {
 #if 0 /* CHECKME: likely not needed */
-	begin_implicit_statement ();
+	begin_implicit_statement (current_statement, $1);
 #endif
 	if ($1 != cb_error_node) {
 	    cb_emit_terminate ($1);
@@ -17083,7 +17099,7 @@ terminate_body:
   }
 | terminate_body report_name
   {
-	begin_implicit_statement ();
+	begin_implicit_statement (current_statement, $2);
 	if ($2 != cb_error_node) {
 		cb_emit_terminate ($2);
 	}

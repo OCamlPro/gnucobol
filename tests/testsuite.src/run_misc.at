@@ -14118,6 +14118,7 @@ ANY NUMERIC is   4510.66CR Length 0000000011
 
 AT_CLEANUP
 
+
 AT_SETUP([Test COBOL-C interface (2)])
 AT_KEYWORDS([CALL])
 
@@ -18009,18 +18010,18 @@ AT_DATA([prog.cob], [
            IF  T16-PRGM(VAR)
              = T15-PRGM(VAR2)
               DISPLAY 'WRONG RESULT OCCURS'.
-              
+
            IF  MYTAB(VAR:VAR2)
              = MYTAB(VAR2:VAR)
               DISPLAY 'WRONG RESULT REFMOD'.
-           
-            INITIALIZE mytab
 
-            GOBACK.
+           INITIALIZE mytab
+
+           GOBACK.
 ])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-# note: we mostly are interessted in a good codegen here...
+# note: we mostly are interested in a good codegen here...
 
 
 AT_DATA([prog2.cob], [
@@ -18047,7 +18048,7 @@ AT_DATA([prog2.cob], [
              = T15-PRGM(VAR2)
               DISPLAY 'WRONG RESULT OCCURS'.
 
-            GOBACK.
+           GOBACK.
 ])
 AT_CHECK([$COBC -x prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
@@ -18081,13 +18082,208 @@ AT_DATA([prog3.cob], [
              = MYTAB(VAR:VAR )
               DISPLAY 'WRONG RESULT REFMOD'.
 
-            GOBACK.
+           GOBACK.
 ])
 AT_CHECK([$COBC -x prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([$COBC -x --debug -o prog3b prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3b], [1], [],
 [libcob: prog3.cob:20: error: length of 'mytab' out of bounds: 99, maximum: 52
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([runtime check: write to internal storage (1)])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
+
+# note: this check is likely unportable and therefore will likely be adjusted/skipped,
+#       mainly because the memory layout of consecutive variables is not guaranteed;
+#       it is expected to raise a crash if C bound checking is enabled
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    caller.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 var                   PIC  X.
+       01 vars.
+          03 filler             PIC  X.
+          03 vars-field         PIC  X.
+
+       01 varg                  GLOBAL.
+          03 filler             PIC  X.
+          03 varg-field         PIC  X.
+       01 vare                  EXTERNAL.
+          03 filler             PIC  X.
+          03 vare-field         PIC  X.
+       01 varb                  BASED.
+          03 filler             PIC  X.
+          03 varb-field         PIC  X.
+       LINKAGE SECTION.
+       01 varl                  PIC  X.
+       01 varls.
+          03 filler             PIC  X.
+          03 varls-field        PIC  X.
+
+       PROCEDURE DIVISION.
+      *
+           CALL "callee" USING var
+      *    without the check this second call would SIGSEGV
+           CALL "callee" USING var
+
+      *    the following are mostly in to co-test the codegen
+           CALL "callee" USING vars
+           CALL "callee" USING varg
+           CALL "callee" USING vare
+           CALL "callee" USING varb
+           CALL "callee" USING varl
+           CALL "callee" USING varls
+           CALL "callee" USING vars-field
+           CALL "callee" USING varg-field
+           CALL "callee" USING vare-field
+           CALL "callee" USING varb-field
+           CALL "callee" USING varls-field
+
+           GOBACK.
+])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    callee.
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+
+       77 var                   PIC  X.
+       01 lrec.
+          03  lvar                  PIC  X(32).
+          03  lvar2                 PIC  X(32).
+
+       PROCEDURE DIVISION USING var.
+      *
+           SET ADDRESS OF lrec TO ADDRESS OF var
+           SET ADDRESS OF lrec DOWN BY 32
+           MOVE SPACES TO lrec
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:30: error: memory violation detected after CALL
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
+])
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([runtime check: write to internal storage (2)])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
+
+# PROG A (WS 16 bytes) has its WS overwritten and calls PROG B
+# because of the write outside of WS the internal storage is broken
+# and the call pointer contains an invalid address
+# note: this check is possibly unportable and therefore will likely be adjusted/skipped
+#       it is expected to raise a crash if C bound checking is enabled
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 DUMMY-STORAGE             PIC  X(128).
+
+       PROCEDURE DIVISION.
+      *    using the var so cobc cannot easily optimize that out
+           IF DUMMY-STORAGE (1:1) <> SPACE  INITIALIZE DUMMY-STORAGE.
+
+      *    We use a simple wrapper to make it _less_ likely that the
+      *    following "real test" SIGSEGVs during MOVE
+           CALL STATIC "progt".
+
+      *    we don't expect to ever get here - but this creates more
+      *    memory space to decrease the likelyness of a SIGSEGV more
+           CALL STATIC "dummy".
+
+           GOBACK.
+       END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    progt.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       77 PNT USAGE POINTER EXTERNAL.
+
+       01 REC.
+          03  VAR                   PIC  X.
+          03  VAR2                  PIC  X.
+
+       LINKAGE SECTION.
+       01 LREC.
+          03  LVAR                  PIC  X(64).
+          03  LVAR2                 PIC  X(64).
+
+       PROCEDURE DIVISION.
+      *    using a (not working) call prevents the C compiler
+      *    to know that we (do not) change the pointer variable
+      *    and therefore disallows it to check
+      *    "that points to VAR2, you only have 2 bytes" (done with gcc -O)
+           SET PNT TO ADDRESS OF VAR2.
+           CALL "notthere" USING PNT ON EXCEPTION CONTINUE.
+           SET ADDRESS OF LREC TO PNT.
+           MOVE SPACES TO LREC.
+
+           CALL "broken".
+
+           GOBACK.
+       END PROGRAM progt.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    dummy.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 DUMMY-STORAGE             PIC  X(128).
+
+       PROCEDURE DIVISION.
+      *    using the var so cobc cannot easily optimize that out
+           IF DUMMY-STORAGE (1:1) <> SPACE  INITIALIZE DUMMY-STORAGE.
+
+           GOBACK.
+       END PROGRAM dummy.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# skipping the (nonportable) test - hardened GCC SIGSEGVs on the bad MOVE,
+# clang use a different memory layout so we never actually break
+# the call-pointers
+AT_SKIP_IF([true])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:52: error: memory violation detected after INIT CALL
 ])
 
 AT_CLEANUP

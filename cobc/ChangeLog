@@ -37,6 +37,56 @@
 	* error.c, cobc.c (print_program_trailer), flag.def:
 	  implemented -fmax-errors=0 as unlimited
 
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (entry_statement): don't check parameter address
+	  directly on ENTRY, because it just assigns it
+	* codegen.c (output_internal_function, output_entry_function): moved
+	  setting of non-passed parameters to NULL to entry function as we only
+	  have ordinal CALL numbers available there; set BY VALUE parameters to
+	  zero instead of NULL
+	* codegen.c (output_field_no_target): extracted to reduce code duplication
+	* typeck.c (cb_emit_call): fixed skipping memory-fence generation for
+	  EXTERNAL/BASED sub-fields
+
+2023-07-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (cb_ppecho_direct, output_pending_newlines): output only up
+	  to 9 empty lines, for more empty lines in the preparsed output file
+	  generate a matching #line directive, this saves both space and serves
+	  as a workaround for an unclear scanner bug that may happen with huge
+	  amounts of empty lines
+	* pplex.l (switch_to_buffer): don't re-strdup the filename
+	* parser.y (emit_statement): changed from define to inline function
+	* codegen.c: complete output of program's end source location if requested
+	* scanner.l: handle line directive in any state
+
+2023-07-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y: fix code generation for OPEN/CLOSE with multiple
+	  filenames, where DECLARATIVES for all arguments were called when
+	  only one argument failed
+
+2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	check for internal memory bounds with new flag "memory-check"
+	* flag.def, cobc.c (cobc_deciph_memory_check), tree.h: new compile
+	  flag -fmemory-check, implied with --debug
+	* typeck.c (cb_emit_call), tree.h (cb_field): new field attribute
+	  flag_used_in_call
+	* codegen.c (output_local_base_cache, output_nonlocal_base_cache):
+	  generate fencing data fields for fields with flag_used_in_call
+	* codegen.c (output_call_cache): generate fencing data fields for
+	  cob_call_union fields (call pointers)
+	* codegen.c (output_memory_check_call): new function to output
+	  generate fencing data fields for flag_used_in_call
+	* codeoptim.def, codeoptim.c, codegen.c: new entry
+	  COB_CHK_MEMORYFENCE
+
+	additional
+	* codegen.c: only increment/decrement output_indent_level by
+	  indent_adjust_level
+
 2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	common preparser cleanup
@@ -2603,7 +2653,8 @@
 
 2020-09-27  Robert Dubner <rdubner-s@users.sf.net>
 
-	* codegen.c (output_cobol_info): emit doubled backslashes for source file
+	* codegen.c (output_cobol_info): emit doubled backslashes for source file,
+	  fixing bug #698 problem with #line directives
 
 2020-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3020,9 +3071,10 @@
 
 2020-04-26  Ron Norman <rjn@inglenet.com>
 
-	* codeoptim.def,codeoptim.c: New routines to convert DISPLAY into
-				binary values
-	* codegen.c: Use new get_numdisps/64/s64 routines
+	* codeoptim.def (COB_GET_NUMDISPS), codeoptim.c, codegen.c: new routine
+	  to convert signed DISPLAY into binary value;
+	* codeoptim.def (cob_get_numdisp, cob_get_numdisps): use of register
+	  attribute and skipping of leading zeroes
 	* typeck.c: Check for integer expression and emit faster arithmetic
 			code by using the C language to do the arithmetic
 	* flag.def: New flag -fno-fast-math to disable these changes
