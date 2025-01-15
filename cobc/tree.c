@@ -4352,7 +4352,8 @@ cb_field_size (const cb_tree x)
 	/* LCOV_EXCL_STOP */
 }
 
-/* returns the record field (level 01) of 'f' */
+/* returns the record field (level 01) of 'f', note that the
+   record field may still have a REDEFINES */
 struct cb_field *
 cb_field_founder (const struct cb_field * const f)
 {
@@ -4362,6 +4363,14 @@ cb_field_founder (const struct cb_field * const f)
 	while (ff->parent) {
 		ff = ff->parent;
 	}
+
+#if 0	/* CHECKME: is something like that needed? */
+	if (ff->level == 0
+	 && ff->sister
+	 && strstr (ff->name, " Record")) {	/* Skip to First 01 within FD */
+		ff = ff->sister;
+	}
+#endif
 	return (struct cb_field *)ff;
 }
 

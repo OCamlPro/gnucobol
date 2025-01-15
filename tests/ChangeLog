@@ -6,6 +6,16 @@
 	  under MSVC Release, by forcing a flush of stdout with
 	  fflush and using cob_free instead of free in C codes
 
+2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal_win: updated to current atlocal.in
+	* atlocal.in: include valgrind (memcheck, sgcheck) testing, enabled
+	  by specifying VGSUFFIX in the environment
+	* atlocal_valgrind: deleted
+	* Makefile.am (dist): distributing valgrind.supp (for use in the testsuite)
+	* Makefile.am (clean): clean folders created while running the testsuite
+	  though various tools
+
 2023-07-04  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* atlocal.in: add variables LISTING_FLAGS, COMPILE_LISTING and
@@ -16,7 +26,7 @@
 
 	* atlocal.in: to allow running some test parts thousands of time for
 	  performance checks without burning energy on every build, add define
-	  "CHECK-PERF" of one of PERFSUFFIX or CGSUFFIX are set,
+	  "CHECK-PERF" if one of PERFSUFFIX or CGSUFFIX are set,
 	  or if --enable-debug was specified during configure
 	* testsuite.src: adjusted several tests to use that option
 
@@ -849,7 +859,7 @@
 	* testsuite.src/*.at: Added check for cobc's exit code and stderr
 		where missing
 
-2014-14-04  Philipp Böhme <phi.boehme@googlemail.com>
+2014-14-04  Philipp BÃ¶hme <phi.boehme@googlemail.com>
 
 	* testsuite.src/run_extensions.at: Added tests for getopt.
 

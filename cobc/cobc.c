@@ -105,8 +105,9 @@ enum compile_level {
 #define	CB_FLAG_GETOPT_NO_DUMP         13
 #define	CB_FLAG_GETOPT_EBCDIC_TABLE    14
 #define	CB_FLAG_GETOPT_DEFAULT_COLSEQ  15
-#define CB_FLAG_GETOPT_SQLSCHEMA       16
-#define CB_FLAG_GETOPT_FILE_FORMAT     17
+#define	CB_FLAG_MEMORY_CHECK           16
+#define CB_FLAG_GETOPT_SQLSCHEMA       17
+#define CB_FLAG_GETOPT_FILE_FORMAT     18
 
 
 /* Info display limits */
@@ -1246,11 +1247,9 @@ void *
 cobc_plex_strsub (const char *s, const int len)
 {
 	void	*p;
-	int	n;
-
-	n = strlen (s);
 
 #ifdef	COB_TREE_DEBUG
+	int	n = strlen (s);
 	/* LCOV_EXCL_START */
 	if ( len>n ) {
 		cobc_err_msg ("call to %s with bad argument len=%d>%d=strlen(s)",
@@ -1854,6 +1853,42 @@ cobc_deciph_optarg (const char *p, const int allow_quote)
 		if (n > INT_MAX) return INT_MAX;
 	}
 	return (int)n;
+}
+
+/* decipher a value for the memory-check flag,
+   directly setting cb_flag_memory_check,
+   returns -1 on error */
+static int
+cobc_deciph_memory_check (const char *p)
+{
+	char buff[8] = { 0 };
+	const size_t	len = strlen (p);
+	size_t			i;
+
+	if (len > sizeof(buff)) {
+		return -1;
+	}
+	for (i = 0; i < len; ++i) {
+		buff[i] = cb_toupper (p[i]);
+	}
+
+	if (len == 3 && memcmp ("ALL", buff, 3) == 0) {
+		cb_flag_memory_check = CB_MEMCHK_ALL;
+		return 0;
+	}
+	if (len == 4 && memcmp ("NONE", buff, 4) == 0) {
+		cb_flag_memory_check = CB_MEMCHK_NONE;
+		return 0;
+	}
+	if (len == 5 && memcmp ("USING", buff, 5) == 0) {
+		cb_flag_memory_check = CB_MEMCHK_USING;
+		return 0;
+	}
+	if (len == 7 && memcmp ("POINTER", buff, 7) == 0) {
+		cb_flag_memory_check = CB_MEMCHK_POINTER;
+		return 0;
+	}
+	return -1;
 }
 
 /* exit to OS before processing a COBOL/C source file */
@@ -3265,6 +3300,7 @@ process_command_line (const int argc, char **argv)
 			cb_flag_stack_extended = 1;
 			cb_flag_stack_check = 1;
 			cb_flag_symbols = 1;
+			cb_flag_memory_check = CB_MEMCHK_ALL;
 			cobc_wants_debug = 1;
 			break;
 
@@ -3869,7 +3905,7 @@ process_command_line (const int argc, char **argv)
 			cobc_deciph_funcs (cob_optarg);
 			break;
 
-		case CB_FLAG_GETOPT_SQLSCHEMA: /* 16 */
+		case CB_FLAG_GETOPT_SQLSCHEMA: /* 17 */
 			/* -fsqlschema=<name> : Database schema name for XFD */
 			cb_sqldb_schema = cobc_main_strdup (cob_optarg);
 			cb_flag_sql_xfd = 1;
@@ -3892,7 +3928,7 @@ process_command_line (const int argc, char **argv)
 #endif
 			break;
 
-		case CB_FLAG_GETOPT_FILE_FORMAT: /* 17 */
+		case CB_FLAG_GETOPT_FILE_FORMAT: /* 18 */
 			/* -ffile-format=<name> : Default file format */
 			if (cb_strcasecmp (cob_optarg, "mf") == 0) {
 				cb_mf_files = 1;
@@ -3917,6 +3953,15 @@ process_command_line (const int argc, char **argv)
 			if (cobc_deciph_ec (cob_optarg, 0)) {
 				cobc_err_exit (COBC_INV_PAR, "-fno-ec");
 			};
+			break;
+
+		case CB_FLAG_MEMORY_CHECK: /* 16 */
+			/* -fmemory-check=<scope> :  */
+			if (!cob_optarg) {
+				cb_flag_memory_check = CB_MEMCHK_ALL;
+			} else if (cobc_deciph_memory_check (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-fmemory-check");
+			}
 			break;
 
 		case 'A':

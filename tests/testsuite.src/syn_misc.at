@@ -6676,7 +6676,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [1], [],
+AT_CHECK([$COBC -fdiagnostics-plain-output -x -std=mf -w prog.cob ], [1], [],
 [prog.cob:11: error: TSTGRP3 USAGE COMP-3 incompatible with COM3-FLD1 USAGE COMP
 prog.cob:15: error: TSTGRP3 USAGE COMP-3 incompatible with COM3-FLD3 USAGE DISPLAY
 prog.cob:18: error: TSTGRP3 USAGE COMP-3 incompatible with FILLER USAGE COMP-1

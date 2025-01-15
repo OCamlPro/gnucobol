@@ -65,14 +65,16 @@ unset LANG
 
 # define for performance checks (running code several thousand times)
 if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "@COB_ENABLE_DEBUG@" == yes; then
-   COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+	if test "x$VGSUFFIX" = "x"; then
+		COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+	fi
 fi
 
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
 FLAGS="${FLAGS} -fno-diagnostics-show-option"
 
-COBC="${COBC} -std=default -fdiagnostics-plain-output"
+COBC="${COBC} -std=default"
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
@@ -81,21 +83,21 @@ COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
 COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
 
 # get performance counters for compiler and/or runtime
-if test "x$PERFSUFFIX" != "x"; then
+if test "x${PERFSUFFIX}" != "x"; then
   export PATH="@abs_top_builddir@/cobc/.libs:@abs_top_builddir@/bin.libs:${PATH}"
   LOG_DIR="@abs_builddir@/perf"
   LOG_DIR_COMP="${LOG_DIR}/cobc"
   LOG_DIR_RUN="${LOG_DIR}/cobcrun"
   PERF="perf stat -e instructions --append"
+  # most reasonable: check actual COBOL runtime performance (only)
+  COBC="${COBC} -g"
   #mkdir -p "${LOG_DIR_COMP}"
   # COBC="${PERF} --output ${LOG_DIR_COMP}/${PERFSUFFIX}.log ${COBC} -O0"   # note: full check including C compiler!
   # COMPILE_ONLY="${PERF} --output ${LOG_DIR_COMP}/${PERFSUFFIX}.log ${COMPILE_ONLY}"  # more reasonable - checks cobc only, but misses codegen
-  # most reasonable: check actual COBOL runtime performance
-  COBC="${COBC} -g"
   mkdir -p "${LOG_DIR_RUN}"
   COBCRUN="${PERF} --output ${LOG_DIR_RUN}/${PERFSUFFIX}.log ${COBCRUN}"
   COBCRUN_DIRECT="${PERF} --output ${LOG_DIR_RUN}/${PERFSUFFIX}.log ${COBCRUN_DIRECT}"
-elif test "x$CGSUFFIX" != "x"; then
+elif test "x${CGSUFFIX}" != "x"; then
   export PATH="@abs_top_builddir@/cobc/.libs:@abs_top_builddir@/bin.libs:${PATH}"
   LOG_DIR="@abs_builddir@/callgrind/${CGSUFFIX}"
   LOG_DIR_COMP="${LOG_DIR}/cobc"
@@ -110,13 +112,65 @@ elif test "x$CGSUFFIX" != "x"; then
   CG_NAME=callgrind.out.${CG_PREFIX}
 
   # callgrind takes a while - so we only trace COBOL runtime by default
+  COBC="${COBC} -g"
   #mkdir -p "${LOG_DIR_COMP}"
   #COBC="${CG} --log-file=${LOG_DIR_COMP}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_COMP}/${CG_NAME} ${COBC}"
-  COBC="${COBC} -g"
   mkdir -p "${LOG_DIR_RUN}"
   CG_RUNTIME="${CG} --log-file=${LOG_DIR_RUN}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_RUN}/${CG_NAME} --dump-before=cob_terminate_routines"
   COBCRUN="${CG_RUNTIME} ${COBCRUN}"
   COBCRUN_DIRECT="${CG_RUNTIME} ${COBCRUN_DIRECT}"
+
+elif test "x${VGSUFFIX}" != "x"; then
+
+  # To check with valgrind:
+  # * ideally: reconfigure with `./configure --enable-debug & make`
+  # * if your system ships with valgrind suppression files (default.supp is always active) you likely
+  #   want to activate at least the suppressions below (adjusted to your directory);
+  #   some additional common suppressions (bash + BDB) are found in valgrind.supp and added by default
+  # * if you stumble over (other) system library errors you likely want to suppress some of them
+  #   --> re-run single tests with --gen-suppressions=yes # when it seems to be stuck press [Y]+[RETURN]...
+  #   --> inspect and modify the suppression file
+  #   --> add to $VG_SUPPR below (in "local" tests/atlocal)
+  # * choose below  (in "local" tests/atlocal) the valgrind tool you want to use and
+  #   choose if to run valgrind only for the compiler, runtime, or both
+  # * then run with `make check[all] VGSUFFIX (logs will be saved in valgrind/$VGSUFFIX
+
+  export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+  LOG_DIR="${abs_builddir}/valgrind/${VGSUFFIX}"
+  LOG_DIR_COMP="${LOG_DIR}/cobc"
+  LOG_DIR_RUN="${LOG_DIR}"
+  
+  if test "x$at_group" = "x"; then
+    at_group="valgrind"	# must be set as it is part of VG_PREFIX
+  fi
+  export at_group
+  VG_PREFIX="%q{at_group}_%p"
+  LOG_NAME=${VG_PREFIX}.log
+  
+  # if you stumble over system library errors you may want to suppress some of them
+  # re-run with --gen-suppressions=yes and then point to the file (after inspecting and
+  # modifying it via --suppressions=${abs_builddir}/local.supp)
+  #VG_SUPPR_DIR="/usr/lib/valgrind"
+  #VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/debian.supp ${VG_SUPPR}"
+  #VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/ncurses.supp ${VG_SUPPR}"
+  VG_SUPPR="--suppressions=${abs_srcdir}/valgrind.supp ${VG_SUPPR}"
+  # Note: other issue, not suppressible is that some COBOL storage is local
+  #       and can currently not be freed on STOP RUN (or abort).
+  #       It applies to the following elements in the local include files (prog.l*.h)
+  #       and dynamically allocated LOCAL-STORAGE (cob_loc_ptr), temporary decimals,
+  #       frame_stack, cob_procedure_params.
+
+  MEMCHECK="valgrind --tool=memcheck --read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all ${VG_SUPPR}"
+  SGCHECK="valgrind --tool=exp-sgcheck --read-var-info=yes ${VG_SUPPR}"
+
+  #COBC="${COBC} -g"
+  mkdir -p "${LOG_DIR_COMP}"
+  COBC="${MEMCHECK} --log-file=${LOG_DIR_COMP}/${LOG_NAME} ${COBC}"
+  
+  mkdir -p "${LOG_DIR_RUN}"
+  VG_RUNTIME="${MEMCHECK} --log-file=${LOG_DIR_RUN}/${LOG_NAME}"
+  COBCRUN="${VG_RUNTIME} ${COBCRUN}"
+  COBCRUN_DIRECT="${VG_RUNTIME} ${COBCRUN_DIRECT}"
 fi
 
 # Helper script to unify listings (replace version, date, time)

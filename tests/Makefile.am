@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2020, 2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2020, 2022-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -70,6 +70,7 @@ testsuite_manual_sources = \
 
 EXTRA_DIST = $(srcdir)/package.m4 \
 	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at \
+	$(srcdir)/valgrind.supp \
 	$(testsuite_sources) $(testsuite_manual_sources)
 
 DISTCLEANFILES = atconfig
@@ -98,7 +99,7 @@ prereq-manual: $(TESTSUITE_MANUAL) atlocal run_prog_manual.sh
 	@rm -rf testsuite_manual.dir
 
 clean-local:
-	rm -rf *.dir *.log *.out valgrind
+	rm -rf *.dir *.log *.out valgrind callgrind perf
 
 checkmanual: prereq-manual
 	@$(TESTSUITE_MANUAL) $(TESTSUITEFLAGS) || (rm -f testsuite_manual.dir/at-job-fifo; exit 1)

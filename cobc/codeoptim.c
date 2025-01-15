@@ -189,6 +189,21 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("#define cob_check_ref_mod_minimal" "\t" "cob_check_ref_mod_minimal_inline");
 		return;
 
+	case COB_CHK_MEMORYFENCE:
+		/* no need for an expensive function call (at least prevented if inline is honored)
+		   if we know the memory fence to be valid */
+		output_storage ("static void COB_INLINE COB_A_INLINE");
+		output_storage ("cob_check_fence_inline (const char *fence_pre, const char *fence_post,");
+		output_storage ("	const enum cob_statement stmt, const char *name)");
+		output_storage ("{");
+		output_storage ("	if (memcmp (fence_pre, \"\\xFF\\xFE\\xFD\\xFC\\xFB\\xFA\\xFF\", 8)");
+		output_storage ("	 || memcmp (fence_post, \"\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF\\xFA\", 8)) {");
+		output_storage ("		cob_check_fence (fence_pre, fence_post, stmt, name);");
+		output_storage ("	}");
+		output_storage ("}");
+		output_storage ("#define cob_check_fence" "\t" "cob_check_fence_inline");
+		return;
+
 	case COB_NOP:
 		/* cob_nop is only used to force something the optimizer does not remove
 		   to have "something" to call; a fast check (module is normally always set)
@@ -219,7 +234,11 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = 0;");
-
+		/* Improve performance by skipping leading ZEROs */
+		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
+		output_storage ("		if (*p > '0' && *p <= '9')");
+		output_storage ("			break;");
+		output_storage ("	}");
 			/* Improve performance by skipping leading ZEROs */
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
@@ -240,7 +259,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = size - 1;");
-
+		/* Improve performance by skipping leading ZEROs */
 		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");
