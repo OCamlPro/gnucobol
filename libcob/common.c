@@ -4689,7 +4689,7 @@ cob_check_subscript (const int i, const int max,
 }
 
 void
-cob_check_ref_mod (const char *name, const int abend, const int zero_allowed,
+cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_allowed,
 	const int size, const int offset, const int length)
 {
 	const int minimal_length = zero_allowed ? 0 : 1;
