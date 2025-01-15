@@ -508,23 +508,27 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	/* skip not available positions */
 	p = data1 + (digits1 - scale1) - (digits2 - scale2);
 	while (p < data1) {
-		p++; i++;	/* note: both p and i are digits */
+		p++; i++;	/* note: both p and i are about digits */
 	}
 
 	/* zero out target, then transfer data */
 	memset (f2->data, 0, f2->size);
 	{
 		register unsigned char	*q = f2->data + i / 2;
-		const unsigned int i_end = digits2 + 1;
-		/* FIXME: get rid of that, adjust i_end accordingly and always end at sign byte */
-		const unsigned char *f2_end = f2->data + f2->size - 1;
-		const unsigned char *p_end_calc = data1 + digits1;
-		const unsigned char *p_end = p_end_calc > f2_end ? f2_end : p_end_calc;
+		const unsigned int i_end = f2->size;
+		/* FIXME: get rid of that, adjust i_end to handle both truncation of the source to the right
+		   and zero-fill because of scale differences (zero-fill wa s already done) */
+		const unsigned char *p_end = data1 + digits1;
 
 		if (i % 2 == 1) {
 			*q++ = COB_D2I (*p++);
 			i++;
 		}
+
+		/* note: from this point on the variable "i" represents the target bytes,
+		   not the digits any more (therefore we divide by 2) */
+		i = i / 2;
+
 		/* note: for performance reasons we write "full bytes" only, this means that for COMP-3
 		   we'll read 1 byte "too much = after" from the DISPLAY data;
 		   it is believed that this won't raise a SIGBUS anywhere, but we will need to "clean"
@@ -532,12 +536,12 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 		/* check for necessary loop (until we not need the p_end check) */
 		if (i_end - i < (unsigned int)(p_end - p + 1) / 2) {
-			while (i <= i_end) {
+			while (i < i_end) {
 				*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
 				q++;
+				i++;
 				p += 2;
-				i += 2;
 			}
 		} else {
 			while (p < p_end) {
@@ -555,7 +559,9 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		return;
 	}
 
-	p = f2->data + f2->size - 1;	/* TODO: ending at the sign byte means we can drop that */
+	/* note: for zero-fill like MOVE 2.1 TO C3-9v9999 we only go to the second position and
+	   therefore have to set 'p' to the most-right place in the target field*/
+	p = f2->data + f2->size - 1;
 	if (!COB_FIELD_HAVE_SIGN (f2)) {
 		*p |= 0x0F;
 	} else if (sign < 0) {
@@ -1174,6 +1180,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 		/* Put sign or currency symbol at the beginning */
 		if (sign_symbol || curr_symbol) {
 			if (floating_insertion) {
+				/* use memrchr here as soon as gnulib is used */
 				for (dst = end - 1; dst > f2->data; --dst) {
 					if (*dst == ' ') {
 						break;

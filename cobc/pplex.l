@@ -2008,7 +2008,7 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 
 	/* Reset file/line */
 	cb_source_line = line;
-	cb_source_file = cobc_plex_strdup (file);
+	cb_source_file = file;
 	fprintf (yyout, "#line %d \"%s\"\n", line, file);
 	/* Switch buffer */
 	yy_switch_to_buffer (buffer);

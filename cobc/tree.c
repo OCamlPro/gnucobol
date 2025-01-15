@@ -336,11 +336,11 @@ lookup_word (struct cb_reference *p, const char *name)
 			len = COB_MAX_WORDLEN;
 #endif
 		}
-		for (i = 0; i < len; ++i) {
-			word[i] = (cob_u8_t)toupper ((unsigned char)name[i]);
+			for (i = 0; i < len; ++i) {
+				word[i] = (cob_u8_t)toupper ((unsigned char)name[i]);
+			}
+			word[i] = 0;
 		}
-		word[i] = 0;
-	}
 	val = word_hash (word);
 
 	/* Find an existing word */
@@ -1840,7 +1840,7 @@ cb_get_int (const cb_tree x)
 	int			val;
 
 	if (x == NULL || x == cb_error_node)	return 0;
-	if (CB_INTEGER_P(x)) return CB_INTEGER(x)->val;
+	if (CB_INTEGER_P (x)) return CB_INTEGER (x)->val;
 
 	/* LCOV_EXCL_START */
 	if (!CB_LITERAL_P (x)) {
@@ -1938,7 +1938,7 @@ cb_get_long_long (const cb_tree x)
 	if (l->scale < 0) {
 		size = size - l->scale;
 	}
-	check_lit_length(size, (const char *)l->data + i);
+	check_lit_length (size, (const char *)l->data + i);
 
 	/* Check numeric literal length matching requested output type */
 	if ( size >= 19U) {
@@ -3681,7 +3681,7 @@ repeat:
 
 		case 'U':
 			/* this is only a hack and wrong,
-			   adding UTF-8 type woll need a separate
+			   adding UTF-8 type will need a separate
 			   PIC, but this will need handling in both
 			   the compiler and the runtime, so fake as
 			   ALPHANUMERIC for now */
@@ -3691,7 +3691,7 @@ repeat:
 
 		case 'N':
 			if (!(category & PIC_NATIONAL)) {
-				category |= PIC_NATIONAL;
+			category |= PIC_NATIONAL;
 				CB_UNFINISHED ("USAGE NATIONAL");
 			}
 			x_digits += n * 2;
@@ -5859,8 +5859,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x,
 
 	f = CB_FIELD (cb_ref (x));
 	/* ensure the reference was validated as this
-		also calculates the reference' picture and size */
+	   also calculates the reference' picture and size */
 	if (!f->flag_is_verified) {
+		/* CHECKME: why are several fields not validated
+		   at this point? Note: level 66 are outside of the tree,
+		   but there are others... */
 		cb_validate_field (f);
 	}
 	if (f->flag_any_length
@@ -6906,9 +6909,15 @@ cb_build_cast (const enum cb_cast_type type, const cb_tree val)
 	struct cb_cast		*p;
 	enum cb_category	category;
 
-	if (type == CB_CAST_INTEGER) {
+	switch (type) {
+	case CB_CAST_INTEGER:
+	case CB_CAST_LONG_INT:
+	case CB_CAST_LENGTH:
+	case CB_CAST_NEGATIVE_INTEGER:
+	case CB_CAST_NEGATIVE_LONG_INT:
 		category = CB_CATEGORY_NUMERIC;
-	} else {
+		break;
+	default:
 		category = CB_CATEGORY_UNKNOWN;
 	}
 	p = make_tree (CB_TAG_CAST, category, sizeof (struct cb_cast));
@@ -7478,6 +7487,8 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	double				drslt, dval;
 	char				result[64];
 
+	const char *name = CB_NAME (func);
+
 	/* TODO: if all arguments are constants: build a cob_field,
 	   then call into libcob to get the value and from there the string representation
 	   inserting it here directly (-> numeric/alphanumeric/national constant,
@@ -7485,15 +7496,15 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	numargs = (int)cb_list_length (args);
 
 	if (isuser) {
-		if (refmod && CB_LITERAL_P(CB_PAIR_X(refmod)) &&
-		    cb_get_int (CB_PAIR_X(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), CB_NAME(func));
+		if (refmod && CB_LITERAL_P (CB_PAIR_X (refmod))
+		 && cb_get_int (CB_PAIR_X (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
-		if (refmod && CB_PAIR_Y(refmod) &&
-		    CB_LITERAL_P(CB_PAIR_Y(refmod)) &&
-		    cb_get_int (CB_PAIR_Y(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), CB_NAME(func));
+		if (refmod && CB_PAIR_Y (refmod)
+		 && CB_LITERAL_P (CB_PAIR_Y (refmod))
+		 && cb_get_int (CB_PAIR_Y (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
 		if (numargs > (int)current_program->max_call_param) {
@@ -7502,45 +7513,45 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		return make_intrinsic (func, &userbp, args, cb_int1, refmod, 1);
 	}
 
-	cbp = lookup_intrinsic (CB_NAME (func), 1);
+	cbp = lookup_intrinsic (name, 1);
 	if (!cbp || cbp->active == CB_FEATURE_DISABLED) {
-		cb_error_x (func, _("FUNCTION '%s' unknown"), CB_NAME (func));
+		cb_error_x (func, _("FUNCTION '%s' unknown"), name);
 		return cb_error_node;
 	}
 	if (cbp->active == CB_FEATURE_NOT_IMPLEMENTED) {
-		cb_error_x (func, _("FUNCTION '%s' is not implemented"),
-			    cbp->name);
+		cb_error_x (func, _("FUNCTION '%s' is not implemented"), name);
 		return cb_error_node;
 	}
 	if ((cbp->args == -1)) {
 		if (numargs < cbp->min_args) {
 			cb_error_x (func,
 				_("FUNCTION '%s' has wrong number of arguments"),
-				cbp->name);
+				name);
 			return cb_error_node;
 		}
 	} else {
 		if (numargs > cbp->args || numargs < cbp->min_args) {
 			cb_error_x (func,
 					_("FUNCTION '%s' has wrong number of arguments"),
-					cbp->name);
+					name);
 			return cb_error_node;
 		}
 	}
 	if (refmod) {
 		if (!cbp->refmod) {
-			cb_error_x (func, _("FUNCTION '%s' cannot have reference modification"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' cannot have reference modification"), name);
 			return cb_error_node;
 		}
 		/* TODO: better check needed, see typeck.c (cb_build_identifier) */
-		if (CB_LITERAL_P(CB_PAIR_X(refmod)) &&
-		    cb_get_int (CB_PAIR_X(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), cbp->name);
+		if (CB_LITERAL_P (CB_PAIR_X (refmod))
+		 && cb_get_int (CB_PAIR_X (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
-		if (CB_PAIR_Y(refmod) && CB_LITERAL_P(CB_PAIR_Y(refmod)) &&
-		    cb_get_int (CB_PAIR_Y(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), cbp->name);
+		if (CB_PAIR_Y (refmod)
+		 && CB_LITERAL_P (CB_PAIR_Y (refmod))
+		 && cb_get_int (CB_PAIR_Y (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
 	}
@@ -7809,7 +7820,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_TEST_DAY_YYYYDDD:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_NUMERIC) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7884,13 +7895,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		/* TODO: resolve for all (?) values */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		catg = cb_tree_category (x);
 		if (catg != CB_CATEGORY_NUMERIC &&
 		    catg != CB_CATEGORY_NUMERIC_EDITED) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7898,7 +7909,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_CONTENT_LENGTH:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_DATA_POINTER) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, NULL, 0);
@@ -7906,7 +7917,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_CONTENT_OF:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_DATA_POINTER) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, cb_int1, refmod, 0);
@@ -7928,7 +7939,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		 && !CB_LITERAL_P (x)) {
-			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7938,12 +7949,12 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		  &&!CB_LITERAL_P (x)) {
-			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		if (!cb_category_is_alpha (x)
 		 || cb_field_size(x) % 2 != 0) {
-			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7980,13 +7991,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_SUBSTITUTE:
 	case CB_INTR_SUBSTITUTE_CASE:
 		if ((numargs % 2) == 0) {
-			cb_error_x (func, _("FUNCTION '%s' has wrong number of arguments"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has wrong number of arguments"), name);
 			return cb_error_node;
 		}
 #if	0	/* RXWRXW - Substitute arg 1 */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid first argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid first argument"), name);
 			return cb_error_node;
 		}
 #endif
@@ -7996,7 +8007,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		}
 
 	default:
-		cb_error_x (func, _("FUNCTION '%s' unknown"), CB_NAME (func));
+		cb_error_x (func, _("FUNCTION '%s' unknown"), name);
 		return cb_error_node;
 	}
 }
