@@ -5164,28 +5164,28 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option prog.cob], [1], [],
 [[prog.cob:15: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:17: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:17: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:22: warning: expression '2' EQUALS '3' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:25: warning: expression '1' EQUALS '1' is always TRUE [-Wconstant-numlit-expression]
-prog.cob:29: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:29: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:30: warning: expression '1' EQUALS '1' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:35: warning: expression '1' EQUALS '1' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:36: warning: expression '2' EQUALS '1' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:38: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:38: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:41: warning: expression '1' EQUALS '3' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:41: warning: PERFORM FOREVER since UNTIL is always FALSE [-Wadditional]
 prog.cob:45: warning: expression '1' EQUALS '1' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:45: warning: PERFORM NEVER since UNTIL is always TRUE [-Wadditional]
-prog.cob:47: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:47: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:50: warning: expression '1' EQUALS '3' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:50: warning: PERFORM FOREVER since UNTIL is always FALSE [-Wadditional]
 prog.cob:54: warning: expression '1' EQUALS '1' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:54: warning: PERFORM ONCE since UNTIL is always TRUE [-Wadditional]
 prog.cob:59: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:61: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:61: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:62: warning: expression '115' GREATER THAN '16' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:71: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:73: error: offset must be greater than zero
+prog.cob:73: error: offset of 'var' out of bounds: -99
 prog.cob:74: warning: expression '115' GREATER THAN '16' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:82: warning: expression '15' EQUALS '115' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:85: warning: expression '115' EQUALS '15' is always FALSE [-Wconstant-numlit-expression]
@@ -5287,7 +5287,7 @@ AT_DATA([prog.cob], [
 #       and therefore cannot be raised earlier
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option prog.cob], [0], [],
 [[prog.cob:11: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:13: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:13: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:16: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:17: warning: 'notdefined' is not defined [-Wignored-error]
 prog.cob:20: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
@@ -5367,7 +5367,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option prog.cob], [1], [],
 [[prog.cob:11: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:13: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:13: warning: offset of 'var' out of bounds: -98 [-Wignored-error]
 prog.cob:14: error: syntax error, unexpected IF
 prog.cob:14: error: IF without imperative statement
 ]])
@@ -5454,7 +5454,7 @@ AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -C -fno-remove-unreachable pro
 [[prog.cob: in paragraph 'MAIN-10':
 prog.cob:17: warning: expression '115' GREATER THAN '16' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:17: warning: expression '115' LESS THAN '200' is always TRUE [-Wconstant-numlit-expression]
-prog.cob:20: error: offset must be greater than zero
+prog.cob:20: error: offset of 'VAR' out of bounds: -99
 prog.cob:23: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:35: warning: expression '3' EQUALS '7' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:60: warning: expression '115' LESS THAN '32' is always FALSE [-Wconstant-numlit-expression]
@@ -5465,7 +5465,7 @@ AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -C prog.cob], [0], [],
 [[prog.cob: in paragraph 'MAIN-10':
 prog.cob:17: warning: expression '115' GREATER THAN '16' is always TRUE [-Wconstant-numlit-expression]
 prog.cob:17: warning: expression '115' LESS THAN '200' is always TRUE [-Wconstant-numlit-expression]
-prog.cob:20: warning: offset must be greater than zero [-Wignored-error]
+prog.cob:20: warning: offset of 'VAR' out of bounds: -99 [-Wignored-error]
 prog.cob:23: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:35: warning: expression '3' EQUALS '7' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:60: warning: expression '115' LESS THAN '32' is always FALSE [-Wconstant-numlit-expression]

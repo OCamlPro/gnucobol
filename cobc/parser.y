@@ -5009,12 +5009,12 @@ class_item:
   }
 | class_value THRU class_value
   {
-	if (CB_TREE_CLASS ($1) != CB_CLASS_NUMERIC &&
-	    CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
+	if (CB_TREE_CLASS ($1) != CB_CLASS_NUMERIC
+	 && CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
 		cb_error (_("CLASS literal with THRU must have size 1"));
 	}
-	if (CB_TREE_CLASS ($3) != CB_CLASS_NUMERIC &&
-	    CB_LITERAL_P ($3) && CB_LITERAL ($3)->size != 1) {
+	if (CB_TREE_CLASS ($3) != CB_CLASS_NUMERIC
+	 && CB_LITERAL_P ($3) && CB_LITERAL ($3)->size != 1) {
 		cb_error (_("CLASS literal with THRU must have size 1"));
 	}
 	if (cb_literal_value ($1) <= cb_literal_value ($3)) {
@@ -19856,11 +19856,12 @@ class_value:
   {
 	if (cb_tree_category ($1) == CB_CATEGORY_NUMERIC) {
 		if (CB_LITERAL ($1)->sign || CB_LITERAL ($1)->scale) {
-			cb_error (_("integer value expected"));
+			cb_error_x ($1, _("integer value expected"));
 		} else {
 			int	n = cb_get_int ($1);
+			/* FIXME: national class has bigger "number of characters in its character set" */
 			if (n < 1 || n > 256) {
-				cb_error (_("invalid CLASS value"));
+				cb_error_x ($1, _("CLASS value %d outside of range for the used character set"), n);
 			}
 		}
 	}

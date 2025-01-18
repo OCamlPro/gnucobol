@@ -1077,7 +1077,9 @@ create_dumpfile (void)
 
 	ret = system (cmd);
 	if (ret) {
-		fprintf (stderr, "\nlibcob: requested coredump creation failed with status %d\n", ret);
+		fprintf (stderr, "\nlibcob: ");
+		fprintf (stderr, _("requested coredump creation failed with status %d"), ret);
+		fprintf (stderr, "\n\t%s\t%s\n", _("executing:"), (char *)cmd);
 	}
 	return ret;
 }
@@ -3145,7 +3147,7 @@ cob_trace_print (char *val)
 
 	/* note: only executed after cob_trace_prep (), so
 	         call to cob_get_source_line () already done */
-	for (i=0; cobsetptr->cob_trace_format[i] != 0; i++) {
+	for (i = 0; cobsetptr->cob_trace_format[i] != 0; i++) {
 		if (cobsetptr->cob_trace_format[i] == '%') {
 			i++;
 			switch (cobsetptr->cob_trace_format[i]) {
@@ -4523,16 +4525,13 @@ cob_check_fence (const char *fence_pre, const char *fence_post,
 {
 	if (memcmp (fence_pre, "\xFF\xFE\xFD\xFC\xFB\xFA\xFF", 8)
 	 || memcmp (fence_post, "\xFA\xFB\xFC\xFD\xFE\xFF\xFA", 8)) {
-		/* LCOV_EXCL_START */
 		if (name) {
-			/* note: reserved, currently not generated in libcob */
 			cob_runtime_error (_("memory violation detected for '%s' after %s"),
 				name, cob_statement_name[stmt]);
 		} else {
 			cob_runtime_error (_("memory violation detected after %s"),
 				cob_statement_name[stmt]);
 		}
-		/* LCOV_EXCL_STOP */
 		cob_hard_failure ();
 	}
 }
@@ -4689,7 +4688,7 @@ cob_check_subscript (const int i, const int max,
 }
 
 void
-cob_check_ref_mod (const char *name, const int abend, const int zero_allowed,
+cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_allowed,
 	const int size, const int offset, const int length)
 {
 	const int minimal_length = zero_allowed ? 0 : 1;
@@ -8513,8 +8512,14 @@ get_config_val (char *value, int pos, char *orgvalue)
 				 && gc_conf[pos].default_val != NULL
 				 && strcmp (value, gc_conf[pos].default_val) != 0) {
 					strcpy (orgvalue, value);
-				} 
-				strcpy (value, gc_conf[pos].enums[i].match);
+				}
+				/* insert either value or translated "not set" */
+				if (strcmp (gc_conf[pos].enums[i].match, "not set") == 0) {
+					snprintf (value, COB_MEDIUM_MAX, _("not set"));
+					value[COB_MEDIUM_MAX] = 0;	/* fix warning */
+				} else {
+					strcpy (value, gc_conf[pos].enums[i].match);
+				}
 				break;
 			}
 		}
@@ -8548,11 +8553,11 @@ cb_lookup_config (char *keyword)
 	int	i;
 	for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 		if (gc_conf[i].conf_name
-		&& strcasecmp (keyword, gc_conf[i].conf_name) == 0) {	/* Look for config file name */
+		 && strcasecmp (keyword, gc_conf[i].conf_name) == 0) {	/* Look for config file name */
 			break;
 		}
 		if (gc_conf[i].env_name
-		&& strcasecmp (keyword, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
+		 && strcasecmp (keyword, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
 			break;
 		}
 	}
@@ -8569,10 +8574,10 @@ cb_config_entry (char *buf, int line)
 
 	cob_source_line = line;
 
-	for (j= (int)strlen (buf); buf[j-1] == '\r' || buf[j-1] == '\n'; )	/* Remove CR LF */
+	for (j = (int)strlen (buf); buf[j-1] == '\r' || buf[j-1] == '\n'; )	/* Remove CR LF */
 		buf[--j] = 0;
 
-	for (i = 0; isspace ((unsigned char)buf[i]); i++);
+	for (i = 0; isspace ((unsigned char)buf[i]); i++); /* drop leading spaces */
 
 	for (j = 0; buf[i] != 0 && buf[i] != ':' && !isspace ((unsigned char)buf[i]) && buf[i] != '=' && buf[i] != '#'; )
 		keyword[j++] = buf[i++];

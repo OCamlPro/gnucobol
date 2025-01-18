@@ -226,35 +226,206 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X-99          PIC 99   USAGE PACKED-DECIMAL.
-       01 X-S99         PIC S99  USAGE PACKED-DECIMAL.
-       01 X-999         PIC 999  USAGE PACKED-DECIMAL.
-       01 X-S999        PIC S999 USAGE PACKED-DECIMAL.
-       01 C-P1234       PIC 9999  VALUE 1234.
+       78 FENCE         VALUE x'ABBAAB'.
+       01 FILLER.
+         05 FENCE-1     PIC XXX VALUE FENCE.
+         05 X-99        PIC 99    USAGE PACKED-DECIMAL.
+         05 FENCE-2     PIC XXX VALUE FENCE.
+         05 X-S99       PIC S99   USAGE PACKED-DECIMAL.
+         05 FENCE-3     PIC XXX VALUE FENCE.
+         05 X-999       PIC 999   USAGE PACKED-DECIMAL.
+         05 FENCE-4     PIC XXX VALUE FENCE.
+         05 X-S999      PIC S999  USAGE PACKED-DECIMAL.
+         05 FENCE-5     PIC XXX VALUE FENCE.
+         05 X-CALC      PIC S9(09)V9(09) USAGE PACKED-DECIMAL.
+         05 FENCE-6     PIC XXX VALUE FENCE.
+       01 C-P234        PIC 999   VALUE 234.
+       01 C-N234        PIC S999  VALUE -234.
+       01 C-P1234       PIC 9999  VALUE 234.
        01 C-N1234       PIC S9999 VALUE -1234.
        01 B-P1234       USAGE BINARY-LONG VALUE 1234.
        01 B-N1234       USAGE BINARY-LONG VALUE -1234.
        PROCEDURE        DIVISION.
            MOVE C-P1234 TO X-99
            DISPLAY X-99.
+           IF FENCE-1 NOT = FENCE
+             MOVE FENCE TO FENCE-1
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+
            MOVE C-P1234 TO X-S99
            DISPLAY X-S99.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
            MOVE C-P1234 TO X-999
            DISPLAY X-999.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
            MOVE C-P1234 TO X-S999
            DISPLAY X-S999.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
            MOVE C-N1234 TO X-99
            DISPLAY X-99.
+           IF FENCE-1 NOT = FENCE
+             MOVE FENCE TO FENCE-1
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+
            MOVE C-N1234 TO X-S99
            DISPLAY X-S99.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
            MOVE C-N1234 TO X-999
            DISPLAY X-999.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
            MOVE C-N1234 TO X-S999
            DISPLAY X-S999.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
            MOVE B-N1234 TO X-999
            DISPLAY X-999.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
            MOVE B-N1234 TO X-S999
            DISPLAY X-S999.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
+           MOVE C-P234  TO X-99
+           DISPLAY X-99.
+           IF FENCE-1 NOT = FENCE
+             MOVE FENCE TO FENCE-1
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+
+           MOVE C-P234  TO X-S99
+           DISPLAY X-S99.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
+           MOVE C-P234  TO X-999
+           DISPLAY X-999.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
+           MOVE C-P234  TO X-S999
+           DISPLAY X-S999.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
+           MOVE C-N234  TO X-99
+           DISPLAY X-99.
+           IF FENCE-1 NOT = FENCE
+             MOVE FENCE TO FENCE-1
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+
+           MOVE C-N234  TO X-S99
+           DISPLAY X-S99.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
+           MOVE C-N234  TO X-999
+           DISPLAY X-999.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
+           MOVE C-N234  TO X-S999
+           DISPLAY X-S999.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
+           MOVE ZERO  TO X-CALC
+           DISPLAY X-CALC.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+           IF FENCE-6 NOT = FENCE
+             MOVE FENCE TO FENCE-6
+             DISPLAY 'broken FENCE-6' UPON SYSERR.
+
+           MOVE 1     TO X-CALC
+           DISPLAY X-CALC.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+           IF FENCE-6 NOT = FENCE
+             MOVE FENCE TO FENCE-6
+             DISPLAY 'broken FENCE-6' UPON SYSERR.
+
            STOP RUN.
 ])
 
@@ -270,6 +441,16 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 -234
 234
 -234
+34
++34
+234
++234
+34
+-34
+234
+-234
++000000000.000000000
++000000001.000000000
 ])
 
 AT_CLEANUP
@@ -866,34 +1047,113 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X             PIC  99    USAGE PACKED-DECIMAL VALUE 0.
-       01 Y             PIC  99    USAGE PACKED-DECIMAL VALUE 9.
-       01 Z             PIC s9(20) USAGE PACKED-DECIMAL VALUE -55.
-       01 X-9           PIC 9      USAGE PACKED-DECIMAL.
-       01 X-99          PIC 99     USAGE PACKED-DECIMAL.
-       01 X-920         PIC 9(20)  USAGE PACKED-DECIMAL.
-       01 X-921         PIC 9(21)  USAGE PACKED-DECIMAL.
+       78 FENCE         VALUE x'ABBAAB'.
+       01 FILLER.
+         05 FENCE-A     PIC XXX VALUE FENCE.
+         05 X           PIC  99    USAGE PACKED-DECIMAL VALUE 0.
+         05 FENCE-B     PIC XXX VALUE FENCE.
+         05 Y           PIC  99    USAGE PACKED-DECIMAL VALUE 9.
+         05 Z           PIC s9(20) USAGE PACKED-DECIMAL VALUE -55.
+       01 FILLER.
+         05 FENCE-1     PIC XXX VALUE FENCE.
+         05 X-9         PIC 9     USAGE COMP-6.
+         05 FENCE-2     PIC XXX VALUE FENCE.
+         05 X-99        PIC 99    USAGE COMP-6.
+         05 FENCE-3     PIC XXX VALUE FENCE.
+         05 X-920       PIC 9(20) USAGE COMP-6.
+         05 FENCE-4     PIC XXX VALUE FENCE.
+         05 X-921       PIC 9(21) USAGE COMP-6.
+         05 FENCE-5     PIC XXX VALUE FENCE.
        01 B-99          USAGE BINARY-LONG UNSIGNED VALUE 99.
        01 B-999         USAGE BINARY-LONG UNSIGNED VALUE 123.
        PROCEDURE        DIVISION.
            COMPUTE X = 1
            IF X <>  1 DISPLAY "01 <" X ">".
+           IF FENCE-A NOT = FENCE
+             MOVE FENCE TO FENCE-A
+             DISPLAY 'broken FENCE-A' UPON SYSERR.
+           IF FENCE-B NOT = FENCE
+             MOVE FENCE TO FENCE-B
+             DISPLAY 'broken FENCE-B' UPON SYSERR.
+           
            COMPUTE X = Y
            IF X <>  9 DISPLAY "09 <" X ">".
+           IF FENCE-A NOT = FENCE
+             MOVE FENCE TO FENCE-A
+             DISPLAY 'broken FENCE-A' UPON SYSERR.
+           IF FENCE-B NOT = FENCE
+             MOVE FENCE TO FENCE-B
+             DISPLAY 'broken FENCE-B' UPON SYSERR.
+
            COMPUTE X = X + Y
            IF Z < -56 DISPLAY "-55 >= " Z.
+           IF FENCE-A NOT = FENCE
+             MOVE FENCE TO FENCE-A
+             DISPLAY 'broken FENCE-A' UPON SYSERR.
+           IF FENCE-B NOT = FENCE
+             MOVE FENCE TO FENCE-B
+             DISPLAY 'broken FENCE-B' UPON SYSERR.
+
       *>
+
            MOVE B-999 TO X-99
            IF X-99  <> 23 DISPLAY 'trunk 123 -> 99: 'X-99.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
            MOVE B-999 TO X-9
            IF X-9   <> 3  DISPLAY 'trunk 123 -> 9: ' X-9.
+           IF FENCE-1 NOT = FENCE
+             MOVE FENCE TO FENCE-1
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+
            MOVE B-99  TO X-99
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
            MOVE B-999 TO X-920
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
            MOVE X-99  TO X-921
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
            ADD  X-99  X-920 GIVING B-99.
            IF B-99  <> 222 DISPLAY '!222: ' B-99.
            IF X-920  > 124 DISPLAY '> 124 ' X-920.
            IF X-921  < 98  DISPLAY '< 98 '  X-921.
+
+           IF FENCE-1 NOT = FENCE
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
            STOP RUN.
 ])
 
@@ -1198,24 +1458,78 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X-9           PIC 9     USAGE COMP-6.
-       01 X-99          PIC 99    USAGE COMP-6.
-       01 X-920         PIC 9(20) USAGE COMP-6.
-       01 X-921         PIC 9(21) USAGE COMP-6.
+       78 FENCE         VALUE x'ABBAAB'.
+       01 FILLER.
+         05 FENCE-1     PIC XXX VALUE FENCE.
+         05 X-9         PIC 9     USAGE COMP-6.
+         05 FENCE-2     PIC XXX VALUE FENCE.
+         05 X-99        PIC 99    USAGE COMP-6.
+         05 FENCE-3     PIC XXX VALUE FENCE.
+         05 X-920       PIC 9(20) USAGE COMP-6.
+         05 FENCE-4     PIC XXX VALUE FENCE.
+         05 X-921       PIC 9(21) USAGE COMP-6.
+         05 FENCE-5     PIC XXX VALUE FENCE.
        01 B-99          USAGE BINARY-LONG UNSIGNED VALUE 99.
        01 B-999         USAGE BINARY-LONG UNSIGNED VALUE 123.
        PROCEDURE        DIVISION.
            MOVE B-999 TO X-99
            IF X-99  <> 23 DISPLAY 'trunk 123 -> 99: 'X-99.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
            MOVE B-999 TO X-9
            IF X-9   <> 3  DISPLAY 'trunk 123 -> 9: ' X-9.
+           IF FENCE-1 NOT = FENCE
+             MOVE FENCE TO FENCE-1
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+
            MOVE B-99  TO X-99
+           IF FENCE-2 NOT = FENCE
+             MOVE FENCE TO FENCE-2
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+
            MOVE B-999 TO X-920
+           IF FENCE-3 NOT = FENCE
+             MOVE FENCE TO FENCE-3
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+
            MOVE X-99  TO X-921
+           IF FENCE-4 NOT = FENCE
+             MOVE FENCE TO FENCE-4
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             MOVE FENCE TO FENCE-5
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+
            ADD  X-99  X-920 GIVING B-99.
            IF B-99  <> 222 DISPLAY '!222: ' B-99.
            IF X-920  > 124 DISPLAY '> 124 ' X-920.
            IF X-921  < 98  DISPLAY '< 98 '  X-921.
+
+           IF FENCE-1 NOT = FENCE
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-3 NOT = FENCE
+             DISPLAY 'broken FENCE-3' UPON SYSERR.
+           IF FENCE-4 NOT = FENCE
+             DISPLAY 'broken FENCE-4' UPON SYSERR.
+           IF FENCE-5 NOT = FENCE
+             DISPLAY 'broken FENCE-5' UPON SYSERR.
+             
            STOP RUN.
 ])
 
@@ -1641,13 +1955,19 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 XS.
-         05 X-1  PIC 999PPP COMP-3  VALUE 91000.
-         05 X-2  PIC 999PPP COMP-3  VALUE 92000.
-         05 X-3  PIC X VALUE "$".
-         05 X-4  PIC VPPP999 COMP-3 VALUE 0.000128.
-       01 D-1    PIC 999PPP  COMP-3 VALUE 95000.
-       01 D-2    PIC 9999PP  COMP-3 VALUE 193000.
+       78 FENCE         VALUE x'ABBAAB'.
+       01 FILLER.
+         05 FENCE-A          PIC XXX VALUE FENCE.
+         05 X-1  PIC 999PPP  COMP-6  VALUE 91000.
+         05 FENCE-B          PIC XXX VALUE FENCE.
+         05 X-2  PIC 999PPP  COMP-6  VALUE 92000.
+         05 FENCE-C          PIC XXX VALUE FENCE.
+         05 X-4  PIC VPPP999 COMP-6  VALUE 0.000128.
+         05 FENCE-D          PIC XXX VALUE FENCE.
+       01 FENCE-1            PIC XXX VALUE FENCE.
+       01 D-1    PIC 999PPP  COMP-6  VALUE 95000.
+       01 D-2    PIC 9999PP  COMP-6  VALUE 193000.
+       01 FENCE-2            PIC XXX VALUE FENCE.
        01  WRK-DS-LS-1P17-1 PIC S9P(17) SIGN LEADING SEPARATE
            CHARACTER VALUE  -100000000000000000.
        01  WRK-AE-3  PIC XBXXX/XXX/XXX/XXX/XXXBXX.
@@ -1701,6 +2021,20 @@ AT_DATA([prog.cob], [
            MULTIPLY 2 BY X-1 GIVING X-1.
            IF X-1 NOT = 62000
              DISPLAY "* 2 failed: " X-1.
+
+           IF FENCE-1 NOT = FENCE
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-A NOT = FENCE
+             DISPLAY 'broken FENCE-A' UPON SYSERR.
+           IF FENCE-B NOT = FENCE
+             DISPLAY 'broken FENCE-B' UPON SYSERR.
+           IF FENCE-C NOT = FENCE
+             DISPLAY 'broken FENCE-C' UPON SYSERR.
+           IF FENCE-D NOT = FENCE
+             DISPLAY 'broken FENCE-D' UPON SYSERR.
+
            STOP RUN.
 ])
 
@@ -1708,8 +2042,8 @@ AT_DATA([prog.cob], [
 #AT_CHECK([$COBC -x -std=mf -w -fpretty-display -debug prog.cob ], [0], [], [])
 
 # GC3 version
-# CHECKME: -Wno-strict-typing because of MOVE warning
-AT_CHECK([$COMPILE -Wno-strict-typing prog.cob], [0], [], [])
+# CHECKME: -Wno-typing because of MOVE warning
+AT_CHECK([$COMPILE -Wno-typing prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [MOVE 1P17: -100000000000000000 : 2.
@@ -1739,13 +2073,19 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 XS.
-         05 X-1  PIC 999PPP COMP-6  VALUE 91000.
-         05 X-2  PIC 999PPP COMP-6  VALUE 92000.
-         05 X-3  PIC X VALUE "$".
-         05 X-4  PIC VPPP999 COMP-6 VALUE 0.000128.
-       01 D-1    PIC 999PPP  COMP-6 VALUE 95000.
-       01 D-2    PIC 9999PP  COMP-6 VALUE 193000.
+       78 FENCE         VALUE x'ABBAAB'.
+       01 FILLER.
+         05 FENCE-A          PIC XXX VALUE FENCE.
+         05 X-1  PIC 999PPP  COMP-6  VALUE 91000.
+         05 FENCE-B          PIC XXX VALUE FENCE.
+         05 X-2  PIC 999PPP  COMP-6  VALUE 92000.
+         05 FENCE-C          PIC XXX VALUE FENCE.
+         05 X-4  PIC VPPP999 COMP-6  VALUE 0.000128.
+         05 FENCE-D          PIC XXX VALUE FENCE.
+       01 FENCE-1            PIC XXX VALUE FENCE.
+       01 D-1    PIC 999PPP  COMP-6  VALUE 95000.
+       01 D-2    PIC 9999PP  COMP-6  VALUE 193000.
+       01 FENCE-2            PIC XXX VALUE FENCE.
        PROCEDURE        DIVISION.
            DISPLAY "INIT X-1 : " X-1 " .".
            DISPLAY "INIT X-2 : " X-2 " .".
@@ -1779,6 +2119,20 @@ AT_DATA([prog.cob], [
            MULTIPLY 2 BY X-1 GIVING X-1.
            IF X-1 NOT = 62000
              DISPLAY "* 2 failed: " X-1.
+
+           IF FENCE-1 NOT = FENCE
+             DISPLAY 'broken FENCE-1' UPON SYSERR.
+           IF FENCE-2 NOT = FENCE
+             DISPLAY 'broken FENCE-2' UPON SYSERR.
+           IF FENCE-A NOT = FENCE
+             DISPLAY 'broken FENCE-A' UPON SYSERR.
+           IF FENCE-B NOT = FENCE
+             DISPLAY 'broken FENCE-B' UPON SYSERR.
+           IF FENCE-C NOT = FENCE
+             DISPLAY 'broken FENCE-C' UPON SYSERR.
+           IF FENCE-D NOT = FENCE
+             DISPLAY 'broken FENCE-D' UPON SYSERR.
+
            STOP RUN.
 ])
 
@@ -1814,7 +2168,11 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       77 RESULT        PIC 9(03) PACKED-DECIMAL.
+       78 FENCE         VALUE x'ABBAAB'.
+       01 FILLER.      
+         05 FENCE-A     PIC XXX VALUE FENCE.
+         05 RESULT      PIC 9(03) PACKED-DECIMAL.
+         05 FENCE-B     PIC XXX VALUE FENCE.
        PROCEDURE        DIVISION.
        MAIN.
       * internal arithmetic to DISPLAY
@@ -1847,6 +2205,11 @@ AT_DATA([prog.cob], [
            COMPUTE RESULT = 15 + RESULT + 2000 / RESULT
            IF RESULT NOT = 16
               DISPLAY "NOT [+20] 16: " RESULT.
+
+           IF FENCE-A NOT = FENCE
+             DISPLAY 'broken FENCE-A' UPON SYSERR.
+           IF FENCE-B NOT = FENCE
+             DISPLAY 'broken FENCE-B' UPON SYSERR.
 
            STOP RUN.
 ])
