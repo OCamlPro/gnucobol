@@ -172,10 +172,10 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	const int minimal_length = zero_allowed ? 0 : 1;");
 		output_storage ("	if (offset < 1 || length < minimal_length");
 		output_storage ("	 || offset + length - 1 > size) {");
-		output_storage ("		cob_check_ref_mod (name, abend, zero_allowed, size, offset, length);");
+		output_storage ("		cob_check_ref_mod_detailed (name, abend, zero_allowed, size, offset, length);");
 		output_storage ("	}");
 		output_storage ("}");
-		output_storage ("#define cob_check_ref_mod" "\t" "cob_check_ref_mod_inline");
+		output_storage ("#define cob_check_ref_mod_detailed" "\t" "cob_check_ref_mod_inline");
 		return;
 
 	case COB_CHK_REFMOD_MIN:

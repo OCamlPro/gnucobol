@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -22,7 +22,7 @@
 
 ## 8.4.2.3.3 General rules
 
-AT_SETUP([Static reference modification])
+AT_SETUP([Static reference-modification])
 AT_KEYWORDS([refmod])
 
 AT_DATA([prog.cob], [
@@ -54,7 +54,7 @@ d:d
 AT_CLEANUP
 
 
-AT_SETUP([Dynamic reference modification])
+AT_SETUP([Dynamic reference-modification])
 AT_KEYWORDS([refmod])
 
 AT_DATA([prog.cob], [
@@ -335,11 +335,11 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=BOUND-REF-MOD prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -w -fno-ec=BOUND-REF-MOD prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [cd.], [])
-AT_CHECK([$COMPILE -fno-ec=BOUND prog.cob -o progb], [0], [], [])
+AT_CHECK([$COMPILE -w -fno-ec=BOUND prog.cob -o progb], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./progb], [0], [cd.], [])
-AT_CHECK([$COMPILE prog.cob -o progc], [0], [], [])
+AT_CHECK([$COMPILE -w prog.cob -o progc], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./progc], [1], [],
 [libcob: prog.cob:13: error: length of 'y' out of bounds: 2, starting at: 3, maximum: 3
 ])
@@ -372,13 +372,13 @@ AT_DATA([prog2.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=BOUND-REF-MOD prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE -w -fno-ec=BOUND-REF-MOD prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [.ab.], [])
-AT_CHECK([$COMPILE -o prog2b prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE -w -o prog2b prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2b], [1], [.],
 [libcob: prog2.cob:20: error: length of 'y' out of bounds: 2, maximum: 1
 ])
-AT_CHECK([$COMPILE -fno-ref-mod-zero-length -o prog2c prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE -w -fno-ref-mod-zero-length -o prog2c prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2c], [1], [],
 [libcob: prog2.cob:13: error: length of 'y' out of bounds: 0
 ])
@@ -414,7 +414,7 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COBC -x -debug -std=mf prog.cob], [0], [], [])
+AT_CHECK([$COBC -w -x -debug -std=mf prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ !], [])
 
 AT_DATA([prog1.cob], [
@@ -436,7 +436,7 @@ AT_DATA([prog1.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COBC -x -std=mf prog1.cob], [0], [], [])
+AT_CHECK([$COBC -w -x -std=mf prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [1], [ !],
 [libcob: prog1.cob:16: error: length of 'y' out of bounds: 0
 ])
@@ -462,12 +462,12 @@ AT_DATA([prog2.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COBC -x -std=mf -DTEST-ZERO-LEN-REF-MOD prog2.cob], [0], [], [])
+AT_CHECK([$COBC -w -x -std=mf -DTEST-ZERO-LEN-REF-MOD prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 [libcob: prog2.cob:16: error: length of 'y' out of bounds: 0
 ])
 
-AT_CHECK([$COBC -x -std=mf -o prog2b prog2.cob], [0], [], [])
+AT_CHECK([$COBC -w -x -std=mf -o prog2b prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2b], [1], [],
 [libcob: prog2.cob:18: error: length of 'y' out of bounds: 2, maximum: 1
 ])
@@ -491,7 +491,7 @@ AT_DATA([prog3.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COBC -x -std=mf prog3.cob], [0], [], [])
+AT_CHECK([$COBC -w -x -std=mf prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3], [1], [],
 [libcob: prog3.cob:16: error: length of 'y' out of bounds: 2, maximum: 1
 ])

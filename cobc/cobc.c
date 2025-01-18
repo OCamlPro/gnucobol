@@ -622,7 +622,7 @@ static void	print_program_header	(void);
 static void	print_program_data	(const char *);
 static void	print_program_trailer	(void);
 static void	print_program_listing	(void);
-static void print_with_overflow (char *, char *);
+static void print_with_overflow (const char *, char *);
 static int	process			(const char *);
 
 /* cobc functions */
@@ -4195,14 +4195,28 @@ process_command_line (const int argc, char **argv)
 #endif
 
 	{
+		enum cb_warn_val check_warn;
+		/* TODO: handle group warnings, likely via option in warning.def */
+
 		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
-		/* TODO: handle group warnings */
-		const enum cb_warn_val detail_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
-		if (detail_warn != COBC_WARN_DISABLED_EXPL
-		 && detail_warn != COBC_WARN_ENABLED_EXPL) {
+		check_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
+		if (check_warn != COBC_WARN_DISABLED_EXPL
+		 && check_warn != COBC_WARN_ENABLED_EXPL) {
 			const enum cb_warn_val group_warn = get_warn_opt_value (cb_warn_constant_expr);
 			set_warn_opt_value (cb_warn_constant_numlit_expr, group_warn);
 		}
+		/* group with different main group: -Wstrict-typing (a -Wextra one) implies -Wtyping,
+		   (a -Wall one), and -Wno-typing implies -Wno-strict-typing */
+		check_warn = get_warn_opt_value (cb_warn_strict_typing);
+		if (check_warn == COBC_WARN_ENABLED_EXPL) {
+			set_warn_opt_value (cb_warn_typing, COBC_WARN_ENABLED_EXPL);
+		} else {
+			const enum cb_warn_val warn_type = get_warn_opt_value (cb_warn_typing);
+			if (warn_type == COBC_WARN_DISABLED_EXPL) {
+				set_warn_opt_value (cb_warn_strict_typing, COBC_WARN_DISABLED_EXPL);
+			}
+		}
+
 		/* set all explicit warning options to their later checked variants */
 #define CB_CHECK_WARNING(opt)  \
 		if (get_warn_opt_value (opt) == COBC_WARN_ENABLED_EXPL) {	\
@@ -5779,6 +5793,7 @@ print_88_values (struct cb_field *field)
 			"      %-14.14s %02d   %s",
 			"CONDITIONAL", f->level, f->name);
 		print_program_data (print_data);
+		/* CHECKME: Would it be useful or noise to print 88er values here? */
 	}
 }
 
@@ -5838,7 +5853,14 @@ print_fields (struct cb_field *top, int *found)
 			pd_off = sprintf (print_data, "%05d ", top->size);
 		}
 
-		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
+		if (top->flag_is_typedef) {
+			/* at least leave a hint on the TYPEDEF in symbol listing,
+			   note: for "ALPHANUMERIC" we have only 2 positions left, so "T " */
+			pd_off += sprintf (print_data + pd_off, "T %-12.12s ", type);
+		} else {
+			pd_off += sprintf (print_data + pd_off, "%-14.14s ", type);
+		}
+		pd_off += sprintf (print_data + pd_off, "%02d   ", top->level);
 
 		name_or_filler = check_filler_name (top);
 		if (got_picture) {
@@ -6158,6 +6180,12 @@ xref_fields (struct cb_field *top)
 			xref_print (&top->xref, XREF_FIELD, NULL);
 		}
 
+		/* enough, if we are a typedef, as its contents are only
+		   referenced through fields using this type */
+		if (top->flag_is_typedef) {
+			continue;
+		}
+
 		/* print xref for all assigned 88 validation entries */
 		if (top->validation) {
 			xref_88_values (top);
@@ -6402,7 +6430,7 @@ print_program_trailer (void)
 		cmd_line[pd_off - 1] = 0;
 		force_new_page_for_next_line ();
 		print_program_data (_("command line:"));
-		print_with_overflow ((char *)"  ", cmd_line);
+		print_with_overflow ("  ", cmd_line);
 		print_break = 0;
 	} else {
 		print_program_data ("");
@@ -6675,13 +6703,14 @@ line_has_listing_directive (char *line, const enum cb_format source_format, int 
 
 	token = get_directive_start (line, source_format);
 
-	if (token != NULL &&
-		!strncasecmp (token, "LISTING", 7)) {
+	if (token != NULL
+	 && !strncasecmp (token, "LISTING", 7)) {
 		token += 7;
 		*on_off = 1;
 		token = get_next_nonspace (token);
-		if (!strncasecmp (token, "OFF", 3))
+		if (!strncasecmp (token, "OFF", 3)) {
 			*on_off = 0;
+		}
 		return 1;
 	}
 	return 0;
@@ -6842,7 +6871,7 @@ print_free_line (const int line_num, char pch, char *line)
 }
 
 static void
-print_with_overflow (char *prefix, char *content)
+print_with_overflow (const char *prefix, char *content)
 {
 	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
 	int offset;
