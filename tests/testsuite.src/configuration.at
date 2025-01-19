@@ -331,7 +331,7 @@ AT_CHECK([$COMPILE_ONLY \
 -fstandard-define=99 prog.cob], [1], [],
 [configuration error:
 -fstandard-define=99: invalid value '99' for configuration tag 'standard-define';
-	maximum value: 10
+	maximum value: 9
 ])
 
 AT_CLEANUP
