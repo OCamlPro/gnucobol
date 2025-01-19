@@ -2918,8 +2918,6 @@ cb_build_national_literal (const void *data, const size_t size)
 	l->source_file = cb_source_file;
 	l->source_line = cb_source_line;
 
-	free(outdata);
-
 	return l;
 }
 
