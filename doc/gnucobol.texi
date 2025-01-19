@@ -1857,7 +1857,7 @@ This chapter describes the handling of GnuCOBOL to different encodings for liter
 * Literal types and encodings::   Understanding different literal types
 * Internal conversions::          How GnuCOBOL handles encoding conversions
 * Source file encoding::          Handling different input scenarios
-* Good Practices::                Best practices for encoding handling
+* Good practices::                Best practices for encoding handling
 @end menu
 
 @node Literal types and encodings
@@ -1961,8 +1961,8 @@ This ensures that GnuCOBOL correctly interprets the source file and performs the
 
 @strong{Note:} The conversion process described above fully works only if the system has the @code{iconv} library installed. If it is not available, National literals are converted manually by simply appending UTF-16 space characters. This may result in incorrect encoding for some characters.
 
-@node Good Practices
-@section Good Practices
+@node Good practices
+@section Good practices
 
 When working with different encodings in GnuCOBOL, it's important to follow good practices to ensure your programs handle encoding correctly and consistently. Here are some recommended practices:
 @enumerate
