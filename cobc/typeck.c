@@ -46,6 +46,11 @@
 	defined (HAVE_PDCURSES_CURSES_H) || \
 	defined (HAVE_XCURSES_H) || \
 	defined (HAVE_XCURSES_CURSES_H) || \
+	defined (HAVE_NCURSESW_PANEL_H) || \
+	defined (HAVE_NCURSES_PANEL_H) || \
+	defined (HAVE_PDCURSES_PANEL_H) || \
+	defined (HAVE_XCURSES_PANEL_H) || \
+	defined (HAVE_PANEL_H) || \
 	defined (HAVE_CURSES_H)
 #define WITH_EXTENDED_SCREENIO
 #endif
@@ -1055,16 +1060,33 @@ cb_emit_list (cb_tree l)
 	return l;
 }
 
+static COB_INLINE COB_A_INLINE int
+cb_tree_is_numeric_ref_or_field (cb_tree x, int include_numeric_edited)
+{
+	int cat;
+	if (!x || !CB_REF_OR_FIELD_P (x)) {
+		return 0;
+	}
+	cat = CB_TREE_CATEGORY (x);
+	return (cat == CB_CATEGORY_NUMERIC
+	     || (include_numeric_edited && cat == CB_CATEGORY_NUMERIC_EDITED));
+}
+
+static int
+cb_tree_list_has_numeric_ref_or_field (cb_tree l)
+{
+	for (;
+	     l && !cb_tree_is_numeric_ref_or_field (CB_VALUE (l), 1);
+	     l = CB_CHAIN (l));
+	return (l != NULL);
+}
+
 static void
 cb_emit_incompat_data_checks (cb_tree x)
 {
 	struct cb_field		*f;
 
-	if (!x || x == cb_error_node) {
-		return;
-	}
-	if (!CB_REF_OR_FIELD_P (x)
-	 || CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC) {
+	if (!cb_tree_is_numeric_ref_or_field (x, 0)) {
 		return;
 	}
 	f = CB_FIELD_PTR (x);
@@ -2119,9 +2141,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
 		} else {
-		(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
-					cb_word_length, word);
-	}
+			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+						cb_word_length, word);
+		}
 	}
 }
 
@@ -2921,7 +2943,7 @@ cb_build_const_start (struct cb_field *f, cb_tree x)
 		if (cb_field_variable_size (p)) {
 			cb_error (_("variable length item not allowed here"));
 			return cb_build_numeric_literal (0, "1", 0);
-	}
+		}
 	}
 	snprintf (buff, sizeof(buff), "%d", target->offset);
 	for (p = target; p; p = p->parent) {
@@ -3924,6 +3946,7 @@ validate_alphabet (cb_tree alphabet)
 		ap->high_val_char = maxchar;
 
 		alphabet_valid = 1;
+		n = 0;	/* keep analyzer happy */
 
 		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
@@ -8243,7 +8266,9 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	if (cb_listing_xref) {
 		cobc_xref_set_receiving (var);
 	}
-
+	if (cb_validate_one (pos)) {
+		return;
+	}
 	if (attr_ptr) {
 		fgc = attr_ptr->fgc;
 		bgc = attr_ptr->bgc;
@@ -8255,8 +8280,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		cursor = attr_ptr->cursor;
 		color = attr_ptr->color;
 		disp_attrs = attr_ptr->dispattrs;
-		if (cb_validate_one (pos)
-		 || cb_validate_one (fgc)
+		if (cb_validate_one (fgc)
 		 || cb_validate_one (bgc)
 		 || cb_validate_one (scroll)
 		 || cb_validate_one (timeout)
@@ -12884,8 +12908,11 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		return;
 	}
 
-	/* validate / fix-up source, if requested */
-	cb_emit_incompat_data_checks (src);
+	/* validate / fix-up source, if at least one receiver is of category
+	   numeric */
+	if (cb_tree_list_has_numeric_ref_or_field (dsts)) {
+		cb_emit_incompat_data_checks (src);
+	}
 
 	/* FIXME: this is way to much to cater for sum field */
 	src = cb_check_sum_field (src);
@@ -13725,8 +13752,11 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 		return;
 	}
 
-	/* validate / fix-up source, if requested */
-	cb_emit_incompat_data_checks (src);
+	/* validate / fix-up source, if at least one receiver is of category
+	   numeric */
+	if (cb_tree_list_has_numeric_ref_or_field (vars)) {
+		cb_emit_incompat_data_checks (src);
+	}
 
 	/* Emit statements. */
 	for (l = vars; l; l = CB_CHAIN (l)) {

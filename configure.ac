@@ -22,7 +22,11 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
+# note: old environments only have autoconf 2.69 or even (old msys) 2.67
+#       just do a "make dist" on a modern system and get the taball back
+#       to the ancient one... (which would likely also not have the necessary
+#       automake package either)
+AC_PREREQ([2.70])
 
 AC_INIT([GnuCOBOL],
 	[3.3-dev],
@@ -33,9 +37,11 @@ AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
 Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
+
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -53,6 +59,50 @@ AC_CONFIG_FILES([pre-inst-env:build_aux/pre-inst-env.in],
 AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
+
+dnl Support the --with-pkgversion configure option,
+dnl inspired from GCC's ACX_PKGVERSION.
+AC_ARG_WITH([pkgversion],
+  [AS_HELP_STRING([--with-pkgversion=PKG],
+    [Use PKG in the version string in place of "$PACKAGE_NAME"])],
+  [case "$withval" in
+    yes)	AC_MSG_ERROR([package version not specified]) ;;
+    no)		PKGVERSION= ;;
+    *)		PKGVERSION="($withval) " ;;
+  esac],
+  [PKGVERSION="($PACKAGE_NAME) "])
+
+# AC_SUBST(PKGVERSION)
+AC_DEFINE_UNQUOTED([PKGVERSION], ["$PKGVERSION"], [PKG version string])
+
+
+dnl Support the --with-bugurl configure option,
+dnl inspired from GCC's ACX_BUGURL.
+AC_ARG_WITH([bugurl],
+  [AS_HELP_STRING([--with-bugurl=URL],
+    [Direct users to URL to report a bug, instead of mailing list])],
+  [case "$withval" in
+    yes)	AC_MSG_ERROR([bug URL not specified]) ;;
+    no)		BUGURL= ;;
+    *)		BUGURL="$withval" ;;
+  esac],
+  [ # BUGURL="$PACKAGE_BUGREPORT"
+  ])
+
+  case ${BUGURL} in
+  "")
+    # REPORT_BUGS_TO=
+    # REPORT_BUGS_TEXI=
+    ;;
+  *)
+	AC_DEFINE_UNQUOTED([PACKAGE_BUGREPORT_URL], ["<$BUGURL>"], [Bug URL instead of mailing list])
+    # REPORT_BUGS_TO="<$BUGURL>"
+    # REPORT_BUGS_TEXI=@uref{`echo "$BUGURL" | sed 's/@/@@/g'`}
+    ;;
+  esac;
+  # AC_SUBST(REPORT_BUGS_TO)
+  # AC_SUBST(REPORT_BUGS_TEXI)
+
 
 # In general: don't export/setenv but pass as option to configure
 #             this has the benefit that re-runs will take the same and "sudo"
@@ -170,7 +220,6 @@ AH_TEMPLATE([COB_EXE_EXT], [Executable extension])
 AH_TEMPLATE([COB_KEYWORD_INLINE], [Keyword for inline])
 AH_TEMPLATE([COB_NO_SELFOPEN], [Can not dlopen self])
 AH_TEMPLATE([COB_COMPUTED_GOTO], [Compilation of computed gotos works])
-AH_TEMPLATE([COB_LI_IS_LL], [long int is long long])
 AH_TEMPLATE([COB_32_BIT_LONG], [long int is 32 bits])
 AH_TEMPLATE([COB_64_BIT_POINTER], [Pointers are longer than 32 bits])
 AH_TEMPLATE([WITH_CURSES], [curses library for extended SCREEN I/O])
@@ -541,6 +590,9 @@ dnl CHECKME: do we want disable-static (mind libsupport)
 dnl          if yes then drop AM_PROG_AR + build_aux/ar-lib
 LT_INIT([dlopen win32-dll])
 
+dnl We declare %noyywrap in the lexer files so we use the noyywrap
+dnl option here to skip the search for that function.
+AC_PROG_LEX([noyywrap])
 AX_PROG_FLEX
 AX_PROG_BISON
 
@@ -992,7 +1044,7 @@ AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	  XML2_LIBS="-lxml2"
 	fi
 	LIBS="$LIBS $LIBCOB_LIBS_extern $XML2_LIBS"
-	# note: PKG_CONFIG and xml2-config set -I /path/to/libxml2 which contains a "libxml" folder where
+	# note: PKG_CONFIG and xml2-config set -I/path/to/libxml2 which contains a "libxml" folder where
 	#       all the files we look for are included
 	for header in xmlwriter xmlversion uri parser tree; do
 		AC_CHECK_HEADER([libxml/$header.h], [],
@@ -1073,8 +1125,8 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	with_cjson_local=no
 	AS_IF([test -e ./libcob/cJSON.c],
 	  [AC_MSG_CHECKING([whether linking of ./libcob/cJSON.c works])
-	   CPPFLAGS="$curr_cppflags -I./libcob"
-	   LIBS="$LIBS $LIBCOB_LIBS_extern"
+	   CPPFLAGS="$curr_cppflags -I./libcob $CJSON_CFLAGS"
+	   LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		               [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1091,8 +1143,8 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	if test "$with_cjson_local" = no; then
 	  AS_IF([test -e "$srcdir/libcob/cJSON.c"],
 	    [AC_MSG_CHECKING([whether linking of "$srcdir/libcob/cJSON.c" works])
-	     CPPFLAGS="$curr_cppflags -I\"$srcdir/libcob\""
-	     LIBS="$LIBS $LIBCOB_LIBS_extern"
+	     CPPFLAGS="$curr_cppflags -I$srcdir/libcob $CJSON_CFLAGS"
+	     LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		                 [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1101,7 +1153,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 		                   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
-	      with_cjson_local="yes (in \"$srcdir/libcob\")"],
+	      with_cjson_local="yes (in $srcdir/libcob)"],
 	     [AC_MSG_RESULT([no])]
 	     )
 	     LIBS="$curr_libs"]
@@ -1170,7 +1222,7 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = check], [
 	  JSON_C_LIBS="-ljson-c"
 	fi
 	LIBS="$LIBS $LIBCOB_LIBS_extern $JSON_C_LIBS"
-	AC_CHECK_HEADERS([json.h json-c/json.h], [break],
+	AC_CHECK_HEADERS([json-c/json.h json.h], [break],
 		[if test "$with_json" = "json-c"; then
 		    AC_MSG_ERROR([header for libjson-c is required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
 		 else
@@ -1372,12 +1424,17 @@ if test "x$CURSES_LIBS" = x; then
         ac_cv_lib_ncursesw_initscr=yes
       ])
     ])
+    if test "x$PANEL_LIBS" = x; then
+      PKG_CHECK_MODULES([PANEL], [panelw], [ac_cv_lib_panelw_new_panel=yes], [
+        AC_CHECK_LIB([panelw], [new_panel], [PANEL_LIBS=-lpanelw])
+      ])
+    fi
   fi
 fi
 if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
   CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
   dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
-  AC_CHECK_HEADERS([ncursesw/ncurses.h ncursesw/curses.h ncurses.h],
+  AC_CHECK_HEADERS([ncursesw/panel.h ncursesw/ncurses.h ncursesw/curses.h panel.h ncurses.h],
     [USE_CURSES="ncursesw"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1409,12 +1466,17 @@ if test "x$CURSES_LIBS" = x; then
         ac_cv_lib_ncurses_initscr=yes
       ])
     ])
+    if test "x$PANEL_LIBS" = x; then
+      PKG_CHECK_MODULES([PANEL], [panel], [ac_cv_lib_panel_new_panel=yes], [
+        AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+      ])
+    fi
   fi
 fi
 
 if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
   CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
-  AC_CHECK_HEADERS([ncurses/ncurses.h ncurses/curses.h ncurses.h],
+  AC_CHECK_HEADERS([ncurses/panel.h ncurses/ncurses.h ncurses/curses.h panel.h ncurses.h],
     [USE_CURSES="ncurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1432,7 +1494,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([pdcurses.h curses.h],
+  AC_CHECK_HEADERS([panel.h pdcurses.h curses.h],
     [USE_CURSES="pdcurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1450,7 +1512,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "xcurses" -o "x$ac_cv_lib_XCurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([xcurses/curses.h xcurses.h],
+  AC_CHECK_HEADERS([xcurses/panel.h xcurses/curses.h xcurses.h],
     [USE_CURSES="xcurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -1464,6 +1526,11 @@ if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
     AC_CHECK_LIB([curses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+  fi
+  if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
+	if test "x$PANEL_LIBS" = x; then
+		AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+	fi
   fi
 fi
 if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
@@ -1489,8 +1556,8 @@ case "$USE_CURSES" in
 	;;
   *curses*)
 	AC_DEFINE_UNQUOTED([WITH_CURSES], ["$USE_CURSES"])
-	LIBCOB_LIBS="$LIBCOB_LIBS $CURSES_LIBS"
-	LIBCOB_CPPFLAGS="$CURSES_CFLAGS $LIBCOB_CPPFLAGS"
+	LIBCOB_LIBS="$LIBCOB_LIBS $CURSES_LIBS $PANEL_LIBS"
+	LIBCOB_CPPFLAGS="$CURSES_CFLAGS $PANEL_CFLAGS $LIBCOB_CPPFLAGS"
 	;;
 esac
 
@@ -1516,7 +1583,17 @@ fi
 if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	AC_MSG_CHECKING([for curses color_set function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1526,6 +1603,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1537,7 +1620,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses resize_term function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1547,6 +1640,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1558,7 +1657,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses define_key function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1568,6 +1677,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1579,7 +1694,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses mouseinterval function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1589,6 +1714,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1600,7 +1731,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses has_mouse function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1610,6 +1751,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1621,7 +1768,17 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 
 	AC_MSG_CHECKING([for curses mousemask function and mmask_t])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-	#ifdef HAVE_NCURSESW_NCURSES_H
+	#if defined (HAVE_NCURSESW_PANEL_H)
+	#include <ncursesw/panel.h>
+	#elif defined (HAVE_NCURSES_PANEL_H)
+	#include <ncurses/panel.h>
+	#elif defined (HAVE_PDCURSES_PANEL_H)
+	#include <pdcurses/panel.h>
+	#elif defined (HAVE_XCURSES_PANEL_H)
+	#include <xcurses/panel.h>
+	#elif defined (HAVE_PANEL_H)
+	#include <panel.h>
+	#elif defined (HAVE_NCURSESW_NCURSES_H)
 	#include <ncursesw/ncurses.h>
 	#elif defined (HAVE_NCURSESW_CURSES_H)
 	#include <ncursesw/curses.h>
@@ -1631,6 +1788,12 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	#include <ncurses/ncurses.h>
 	#elif defined (HAVE_PDCURSES_H)
 	#include <pdcurses.h>
+	#elif defined (HAVE_PDCURSES_CURSES_H)
+	#include <pdcurses/curses.h>
+	#elif defined (HAVE_XCURSES_H)
+	#include <xcurses.h>
+	#elif defined (HAVE_XCURSES_CURSES_H)
+	#include <xcurses/curses.h>
 	#elif defined (HAVE_CURSES_H)
 	#include <curses.h>
 	#endif]], [[
@@ -1925,11 +2088,6 @@ AC_CHECK_SIZEOF(long int)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(void *)
-
-AC_MSG_CHECKING([whether size of long int = size of long long])
-AS_IF([test "$ac_cv_sizeof_long_int" = "$ac_cv_sizeof_long_long"],
-	[AC_DEFINE([COB_LI_IS_LL], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
 
 AC_MSG_CHECKING([whether long is 32 bits])
 AS_IF([test "$ac_cv_sizeof_long" = 4],

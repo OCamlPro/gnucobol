@@ -1,4 +1,8 @@
 
+2024-09-30  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+
+	* gcwindow.cpy, Makefile.am: new copy for CBL_GC_WINDOW functions
+
 2021-09-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* xfhfcd3.cpy: Change PIC X(n) to PIC X COMP-X OCCURS n

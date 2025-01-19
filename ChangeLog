@@ -1,14 +1,35 @@
 
-2024-26-09  Denis Hugonnard-Roche <dhugonnard@yahoo.fr>
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
-	* intrinsic.c: Correct C++ comment style to C style
+	* configure.ac: fix check for curses functions if panel headers are found
 
-2024-25-09  Denis Hugonnard-Roche <dhugonnard@yahoo.fr>
+2024-10-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* intrinsic.c: recode cob_decimal_pow function
-	  in order to fix #924,#925 and #989
-	  fix macos compile error
-	* run_fundamental.at: add all the tests case for power function
+	* configure.ac: added logic to check for PANEL support which
+	  is required for the new multiple window support
+
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new options --with-pkgversion=PKG and --with-bugurl=URL
+	  see NEWS, currently only used in version and help output
+
+2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: drop COB_LI_IS_LL in favor of existing COB_32_BIT_LONG
+	* configure.ac (cjson=local): use CJSON_CFLAGS and CJSON_LIBS also for
+	  this case, fix include not to use quotes
+
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: require autoconf 2.70 and drop check for lex-library with
+	  noyywrap option for AC_PROG_LEX
+	* HACKING: document dependencies autoconf 2.70 and automake 1.16 and
+	  several smaller text updates
+	* Makefile.am (checkmanual-code-coverage, checkall-code-coverage): new
+	  targets removing the need to do that manually
+	* build_aux/ltmain.sh, m4/libtool.m4, m4/ltoptions.m4, m4/ltversion.m4:
+	  update libtool from 2.46 to 2.53, dropping all manual patches
+	* DEPENDENCIES: added perl for running NIST85
 
 2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -717,6 +717,7 @@ int
 cob_check_numval_f (const cob_field *srcfield)
 {
 	unsigned char	*p = srcfield->data;
+	const unsigned int	fsize = (unsigned int)srcfield->size;
 	size_t		plus_minus;
 	size_t		digits;
 	size_t		decimal_seen;
@@ -725,10 +726,10 @@ cob_check_numval_f (const cob_field *srcfield)
 	size_t		break_needed;
 	size_t		exponent;
 	size_t		e_plus_minus;
-	int		n;
+	unsigned int		n;
 	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
 
-	if (!srcfield->size) {
+	if (!fsize) {
 		return 1;
 	}
 
@@ -744,7 +745,7 @@ cob_check_numval_f (const cob_field *srcfield)
 	e_plus_minus = 0;
 
 	/* Check leading positions */
-	for (n = 0; n < (int)srcfield->size; ++n, ++p) {
+	for (n = 0; n < fsize; ++n, ++p) {
 		switch (*p) {
 		case '0':
 		case '1':
@@ -782,11 +783,11 @@ cob_check_numval_f (const cob_field *srcfield)
 		}
 	}
 
-	if (n == (int)srcfield->size) {
+	if (n == fsize) {
 		return n + 1;
 	}
 
-	for (; n < (int)srcfield->size; ++n, ++p) {
+	for (; n < fsize; ++n, ++p) {
 		switch (*p) {
 		case '0':
 		case '1':
@@ -1446,7 +1447,7 @@ calculate_start_end_for_numval (cob_field *srcfield,
 				unsigned char **pp, unsigned char **pp_end)
 {
 	unsigned char *p = srcfield->data;
-	unsigned char *p_end;
+	register unsigned char *p_end;
 
 	if (srcfield->size == 0 
 	 || p == NULL) {
@@ -1480,7 +1481,7 @@ enum numval_type {
 static cob_field *
 numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 {
-	unsigned char	*final_buff = NULL;
+	unsigned char	final_buff [COB_MAX_DIGITS + 1] = { 0 };
 	unsigned char	*p, *p_end;
 	unsigned char	*currency_data = NULL;
 	size_t		datasize;
@@ -1512,13 +1513,18 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	}
-	/* not wasting buffer space (COBOL2022: 35/34 max)... */
+	/* not wasting buffer space (COBOL2023: 35/34 max)... */
 	if (datasize > COB_MAX_DIGITS) {
+#ifdef INVALID_NUMVAL_IS_ZERO
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+		cob_alloc_set_field_uint (0);
+		return curr_field;
+#else
+		/* Should this truncate or raise an exception?
+		   What about COBOL2025 new max? */
 		datasize = COB_MAX_DIGITS;
+#endif
 	}
-
-	/* acquire temp buffer long enugh */
-	final_buff = cob_malloc (datasize + 1U);
 
 	sign = 0;
 	digits = 0;
@@ -1648,8 +1654,6 @@ game_over:
 			mpz_neg (d1.value, d1.value);
 		}
 	}
-
-	cob_free (final_buff);
 
 	if (exception) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);

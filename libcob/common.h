@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -21,6 +21,8 @@
 
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
+
+#pragma once
 
 #include <stddef.h>		/* for size_t */
 
@@ -1050,6 +1052,8 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 34) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 35) /* used for syntax checking */
 #define COB_SCREEN_GRID			((cob_flags_t)1 << 36) /* used for syntax checking */
+#define COB_SCREEN_POPUP_CREATE	((cob_flags_t)1 << 61)
+#define COB_SCREEN_POPUP_REMOVE	((cob_flags_t)1 << 62)
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1682,7 +1686,7 @@ COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
 
-COB_EXPIMP void		cob_cleanup_thread ();
+COB_EXPIMP void		cob_cleanup_thread (void);
 
 /* General functions */
 
@@ -2176,10 +2180,11 @@ COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
-COB_EXPIMP int		cob_sys_scr_dump  (unsigned char *);
-COB_EXPIMP int		cob_sys_scr_restore  (unsigned char *);
+COB_EXPIMP int		cob_sys_scr_dump	(unsigned char *);
+COB_EXPIMP int		cob_sys_scr_restore	(unsigned char *);
+COB_EXPIMP int		cob_sys_window		(unsigned char*, unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
-COB_EXPIMP int		cob_get_text 		(char *, int);
+COB_EXPIMP int		cob_get_text		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);
 COB_EXPIMP int		cob_get_scr_lines	(void);
 COB_EXPIMP int		cob_sys_get_csr_pos	(unsigned char *);
@@ -2861,8 +2866,8 @@ COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
 COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
-COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
-COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_of (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
 
 /************************/
 /* Functions in cconv.c */

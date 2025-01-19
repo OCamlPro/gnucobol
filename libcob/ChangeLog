@@ -1,12 +1,159 @@
 
-2024-09-26  Denis Hugonnard-Roce <dhugonnard@yahoo.fr>
+2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* intrinsic.c (cob_decimal_pow) Correct c++ comment style to C
-	comment style
+	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
+	  used for info output to include panel header definitions and XCurses
 
-2024-09-25  Denis Hugonnard-Roce <dhugonnard@yahoo.fr>
+2024-12-23  David Declerck <david.declerck@ocamlpro.com>
 
-	* intrinsic.c (cob_decimal_pow) fixed Bug #925,#925,#989
+	* termio.c (clean_double): skip more than a single leading
+	  zero in exponent display
+
+2024-12-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_start_internal): improve handling of partial
+	  keys, to ensure BDB always compares keys of identical length
+
+2024-12-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
+	  is overwritten, by restoring the *_copy fields that were removed
+	  with the change on 2024-02-26
+
+2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* fileio.c: fixed Bug #1032 by always using global thread-static variable
+	  bdb_app_data pointer to access the collating sequence function
+
+2024-12-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): normalize numeric data
+	* move.c (cob_move): extend use of optimized_move_display_to_edited
+	  to more cases (i.e. different source and destination sign, leading
+	  sign, non-separate sign)
+
+2024-12-09  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed additional bug
+	  reported with bug #1008: BLANK WHEN ZERO not working on signed
+	  NUMERIC-EDITED fields
+
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
+	  with X/Open Curses function panel_below()
+
+2024-11-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): minor refactoring
+	* exception.def, move.c: added definition for COBOL2025
+	  COB_EC_DATA_NULL + COB_EC_DATA_TRUNCATION (currently not used)
+
+2024-11-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed
+	  Bug #1008: regression in move to numeric edited
+	  items with insertion symbols B, 0 and /
+
+2024-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_sys_window), system.def, common.h:
+	  command as separate first argument
+	* screenio.c [WITH_PANELS]: more refactoring including:
+	  variable amount of elements for LIST command;
+	  parameter struture changes from int to short;
+	  new commands get+set attributes;
+	  hidden now attribute in the flags instead of separate element,
+	  preparation for new attributes wrap + scroll;
+	  reverse panel_hidden return code handling
+	* screenio.c (cob_exit_screen): always use stdscr for exit message
+
+2024-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: minor refactoring including move of
+	  return code out of PPARM_FLD
+	* screenio.c (cob_sys_window): when function not available and in
+	  testmode, return 77 so test is skipped
+
+2024-11-01  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: added new functions for multiple window support;
+	  also added new static variables to support panel functions
+	  and a static array to store information about the panels
+	  which have been created.
+		cob_sys_window
+		check_panel_parm
+		cob_update_all_windows
+		refresh_mywin
+	* common.h: added cob_sys_window
+	* system.def: added system library call CBL_GC_WINDOW
+
+2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_screen_get_all): fixed Bug #999
+	  directly position to the cursor position within the
+	  field according to CURSOR clause
+
+2024-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sig_handler): moved call of cob_exit_screen_from_signal
+	  from ss_terminate_routines here instead of calling cob_exit_screen
+	* common.c (cob_sig_handler, cob_stack_trace_internal,
+	  cob_runtime_warning_ss): now using an internal buffer to output data
+	  instead of potentially hundreds of small direct writes, output the
+	  complete buffer when half-full oir at the end
+	* common.c (get_source_location): renamed from output_source_location,
+	  now writing to a specified buffer, returning the length, instead of
+	  direct write to stderr
+	* common.c (output_procedure_stack_entry): use buffer instead of direct
+	  write to stderr, now returning the length
+	* common.c (write_until_fail, strcat_to_buf, intcat_to_buff): new helper
+	  functions
+	* common.c (cob_sig_handler): moved call of cob_exit_screen_from_signal
+	  from ss_terminate_routines here instead of calling cob_exit_screen
+	* common.c (cob_runtime_warning_ss), coblocal.h,
+	  fileio.c (cob_exit_fileio_msg_only): changed signature, now returning
+	  nonzero if write to stderr wasn't sucessfull
+	* common.c (cob_runtime_warning, cob_runtime_warning_external):
+	  use all buffered io again
+	* common.c (cob_load_config_file): fix format truncation warning by
+      explicit checking for it
+
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version): PACKAGE_NAME may now be overwritten
+	  by PKGVERSION (new configure option)
+	* common.c (cob_sig_handler): fixed early exit from signal handler
+	  in case of errors during write to stderr, adjusted macros accordingly
+	* common.c (cob_sig_handler): flush stdout+stderr for fixed set of signals
+	  where this is known to work
+	* common.c (cob_reg_sighnd): if signal handler is enabled from outside the
+	  COBOL runtime (like via cobc), do the initialization of the internal signal
+	  text table (was empty before)
+	* common.c (cob_sig_handler): early exit for SIGPIPE without output if
+	  signal handler is used without any COBOL modules active (like via cobc)
+	* common.c (cob_sig_handler): fixed coding error that led to missing output
+	  of catched signal name
+
+2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, common.c (print_info_detailed): drop COB_LI_IS_LL
+	  in favor of existing COB_32_BIT_LONG
+
+2024-09-25  Denis Hugonnard-Roche <dhugonnard@yahoo.fr>
+
+	* intrinsic.c (cob_decimal_pow): recode function in order to
+	  fix bugs #924, #925 and #989
+
+2024-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: In preparation for Multiple Window support
+	  added static WINDOW pointer "mywin", all curses functions
+	  which either implicitly or explicitly referenced the
+	  stdscr WINDOW pointer were changed to use the window
+	  specific functions using mywin except the getch function
+	  remains unchanged. The wgetch function caused the mouse
+	  not to be recognized.
 
 2024-09-20  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -29,6 +176,22 @@
 	* common.c, coblocal.h (cob_settings): added boolean COB_HIDE_CURSOR
 	* screenio.c (cob_settings_screenio): implemented runtime config to hide
 	  the cursor
+
+2024-08-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_fd_file_open) [_WIN32]: workaround for MinGW bug in locking
+
+2024-08-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, common.c (cob_cleanup_thread): fix declaration
+	* common.c: drop includes found in coblocal.h
+	* common.c (cob_alloc_module): changed type and name of cob_mod_ptr
+	* common.h, coblocal.h: added pragma once for better supporting clangd
+	  in single-file mode
+
+2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: speedup for NUMVAL related functions
 
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -83,10 +246,10 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-		fix errors caught by the Sanitizer functionality of GCC. This 
-		change did not resolve all of the issues found as some of them
-		were in Berkeley DB and some were intentional in the memory 
-		corruption logic which has been implemented in the runtime.
+	fix errors caught by the Sanitizer functionality of GCC. This 
+	change did not resolve all of the issues found as some of them
+	were in Berkeley DB and some were intentional in the memory 
+	corruption logic which has been implemented in the runtime.
 
 	* move.c (the cob_move_display_to_packed function was rewritten to 
 	  fix the out of bounds memory addressing issues and also to make
@@ -96,8 +259,8 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-		fix errors in filio.c when building with VISAM 2.2. This issue
-		occurred when using a partial key with a sequential read previous.
+	fix errors in filio.c when building with VISAM 2.2. This issue
+	occurred when using a partial key with a sequential read previous.
 
 	* fileio.c (indexed_start_internal), (indexed_start)
 	  and (indexed_read_next): added a new field, partial_key_length,
@@ -128,7 +291,7 @@
 
 2024-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
-	* coblocal.h (COB_TLS): add a new attribute for thread local static.
+	* coblocal.h (COB_TLS): add a new attribute for thread local static
 	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
 
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
@@ -166,11 +329,13 @@
 	* fileio.c (cob_path_to_absolute): extracted from insert
 	  and cob_set_main_argv0
 
-2024-03-10  Alfredo Tupone <tupone@gentoo.org>
+2024-01-31  Gwyn Ciesla <gwync@protonmail.com>
 
+	Bug #941 build issue
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
 
@@ -775,7 +940,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* termio.c (pretty_display_numeric): fix GCC warning with {{ 0 }}
 	* termio.c (display_alnum_dump): slightly rewritten to fix compiler
 	  warnings
-	* cconv.c (cob_load_collation), common.c, intrinisic.c (cob_intr_random),
+	* cconv.c (cob_load_collation), common.c, intrinsic.c (cob_intr_random),
 	  termio.c: minor adjustments to fix compiler warnings
 	* fileio.c (copy_fcd_to_file): fixed memory issues with writing to assign
 	  and select name
@@ -835,7 +1000,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* common.c (cob_move_packed_to_display, cob_packed_get_int,
 	  cob_packed_get_long_long): minor performance improvements and similar
 	  code to numeric.c
-	* intrinisic.c (calculate_start_end_for_numval): only skip leading spaces
+	* intrinsic.c (calculate_start_end_for_numval): only skip leading spaces
 	  and zeros, but not leading low-values
 
 2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
@@ -1135,8 +1300,8 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_debug_open, cob_trace_print), intrinsic.c
-	 (cob_intr_hex_to_char): prefer extending switch over use of topupper
-	* call.c, common.c, intrinisic.c, screenio.c: directly call toupper/tolower
+	  (cob_intr_hex_to_char): prefer extending switch over use of topupper
+	* call.c, common.c, intrinsic.c, screenio.c: directly call toupper/tolower
 	  without previous check of islower/isupper
 	* system.def, common.c (cob_sys_runtime_error_proc):
 	  implement CBL_RUNTIME_ERROR
@@ -1337,7 +1502,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  cob_add_exception
 	* screenio.c (handle_status): pass type of statement to raise
 	  either COB_EC_IMP_ACCEPT or COB_EC_IMP_DISPLAY
-	* screenio.c (handle_status, cob_set_crt3_status) [!COB_GEN_SCREENIO]:
+	* screenio.c (handle_status, cob_set_crt3_status) [!WITH_EXTENDED_SCREENIO]:
 	  unconditionally defined those functions and finally return error
 	  status and nonfatal exception along with a warning on accept if the
 	  runtime is not configured for extended screenio
@@ -2504,7 +2669,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2019-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (cob_settings_screenio): moved out of COB_GEN_SCREENIO
+	* screenio.c (cob_settings_screenio): moved out of WITH_EXTENDED_SCREENIO
 
 2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3271,7 +3436,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: moved cob_sys_get_char and added parts for !COB_GEN_SCREENIO
+	* screenio.c: moved cob_sys_get_char and added parts for !WITH_EXTENDED_SCREENIO
 
 2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3436,7 +3601,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-02-07  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: [!COB_GEN_SCREENIO] fixed zero_line_col_allowed
+	* screenio.c: [!WITH_EXTENDED_SCREENIO] fixed zero_line_col_allowed
 	  missing / superfluous in function declarations
 
 2017-02-06  Ron Norman <rjn@inglenet.com>
@@ -4382,7 +4547,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2010-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (!COB_GEN_SCREENIO): Make cob_sys_sound_bell usable via
+	* screenio.c (!WITH_EXTENDED_SCREENIO): Make cob_sys_sound_bell usable via
 	  cob_speaker_beep
 	* common.c:  Add possibility to disable the bell via
 	  COB_BELL=NO/NONE/0/OFF (currently only the first char is checked)

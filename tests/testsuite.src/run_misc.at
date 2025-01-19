@@ -1172,6 +1172,40 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([MOVE of invalid data from numeric to alphanumeric item])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 X-NUM                 PIC 9.
+       77 X-ALN REDEFINES X-NUM PIC X.
+       77 Y-ALN                 PIC X.
+       77 Z-NUM                 PIC +9,9.
+       77 Z-ALN REDEFINES Z-NUM PIC XX.
+       77 T-ALN                 PIC XX.
+       PROCEDURE DIVISION.
+       MAIN.
+           MOVE SPACES TO X-ALN
+           MOVE X-NUM  TO Y-ALN
+	   IF Y-ALN NOT EQUAL " " THEN
+	      DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
+	   END-IF
+           MOVE SPACES TO Z-ALN
+           MOVE Z-NUM  TO T-ALN
+	   IF T-ALN NOT EQUAL "  " THEN
+	      DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
+	   END-IF
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 ## CALL statement
 
 AT_SETUP([Dynamic call with static linking])
@@ -2910,6 +2944,76 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 2 passed
 3 passed
 4 passed
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([STRING preserve source])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC.
+         10 SRC-X PIC X(3) VALUE "123".
+         10 SRC-Y PIC X(8) VALUE SPACES.
+       01 DST OCCURS 1.
+         10 DST-X PIC X(8) VALUE SPACES.
+       PROCEDURE DIVISION.
+           DISPLAY "SRC-Y BEFORE: '" SRC-Y "'".
+           STRING "DATA " SRC-X(1:3) INTO DST (1).
+           DISPLAY "SRC-Y AFTER:  '" SRC-Y "'".
+           DISPLAY "DST-X AFTER:  '" DST-X (1) "'".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SRC-Y BEFORE: '        '
+SRC-Y AFTER:  '        '
+DST-X AFTER:  'DATA 123'
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT preserve source])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC OCCURS 1.
+         10 SRC-X PIC S9(3) VALUE 123.
+         10 SRC-Y PIC S9(3) VALUE 456.
+       01 DST OCCURS 1.
+         10 DST-X PIC S9(7) VALUE -6540321.
+       PROCEDURE DIVISION.
+           DISPLAY "SRC-X BEFORE: '" SRC-X (1) "'".
+           DISPLAY "SRC-Y BEFORE: '" SRC-Y (1) "'".
+           DISPLAY "DST-X BEFORE: '" DST-X (1) "'".
+           INSPECT DST-X (1) REPLACING
+             LEADING "654" BY SRC-X (1)
+             ALL "321" BY SRC-Y (1).
+           DISPLAY "SRC-X AFTER: '" SRC-X (1) "'".
+           DISPLAY "SRC-Y AFTER: '" SRC-Y (1) "'".
+           DISPLAY "DST-X AFTER: '" DST-X (1) "'".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SRC-X BEFORE: '+123'
+SRC-Y BEFORE: '+456'
+DST-X BEFORE: '-6540321'
+SRC-X AFTER: '+123'
+SRC-Y AFTER: '+456'
+DST-X AFTER: '-1230456'
 ], [])
 
 AT_CLEANUP
@@ -7342,7 +7446,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([Numeric MOVE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7352,7 +7456,7 @@ AT_DATA([prog.cob], [
        01  NUM9    PIC 9(6).
        PROCEDURE DIVISION.
            MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
+           DISPLAY "NUM9 value SPACES is " NUM9 (1:) "." UPON SYSOUT
            MOVE LOW-VALUES TO NUM9
            IF NUM9 = LOW-VALUES
               DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
@@ -11832,7 +11936,6 @@ AT_DATA([cmod.c], [[
 static char *
 getType (int type, int byvalue)
 {
-   static char wrk[24];
    switch (type) {
 #if 1
    case COB_TYPE_GROUP:           return "Group";
@@ -11863,28 +11966,30 @@ getType (int type, int byvalue)
    case COB_TYPE_NATIONAL:        return "N";
 #endif
    }
-   sprintf (wrk,"Type %04X",type);
-   return wrk;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Type 0x%04X", type);
+      return wrk;
+   }
 }
 
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val = 0;
-   char     *str;
-   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80], pic[30];	/* note: maximum _theoretical_ size */
+   const int nargs = cob_get_num_params();
+   int       k;
+   cob_s64_t val = 0;
 
-   nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
-   fflush(stdout);
+   fflush (stdout);
    for (k=1; k <= nargs; k++) {
-      type   = cob_get_param_type (k);
-      digits = cob_get_param_digits (k);
-      scale  = cob_get_param_scale (k);
-      size   = cob_get_param_size (k);
-      sign   = cob_get_param_sign (k);
-      byvalue = cob_get_param_constant(k);
+      int  type    = cob_get_param_type (k);
+      int  digits  = cob_get_param_digits (k);
+      int  scale   = cob_get_param_scale (k);
+      int  size    = cob_get_param_size (k);
+      int  sign    = cob_get_param_sign (k);
+      int  byvalue = cob_get_param_constant(k);
       printf (" %d: %-8s ", k, getType (type, byvalue));
       if (byvalue) {
          printf ("BY VALUE     ");
@@ -11892,27 +11997,31 @@ CAPI (void *p1, ...)
          printf ("BY REFERENCE ");
       }
       if (type == COB_TYPE_ALPHANUMERIC) {
-         sprintf (pic, "X(%d)", size);
-         str = cob_get_picx_param (k, NULL, 0);
+         char     *str = cob_get_picx_param (k, NULL, 0);
+         snprintf (pic, sizeof(pic), "X(%d)", size);
          printf ("%-11s '%s'", pic, str);
          cob_free ((void*)str);
          cob_put_picx_param (k, "Bye!");
       } else if (type == COB_TYPE_NATIONAL) {
-         sprintf (pic, "N(%d)", size); /* FIXME */
+         snprintf (pic, sizeof(pic), "N(%d)", size); /* FIXME */
          printf ("exchange of national data is not supported yet");
       } else if (type == COB_TYPE_GROUP) {
-         sprintf (pic, "(%d)", size);
-         str = cob_get_grp_param (k, NULL, 0);
+         char     *str = cob_get_grp_param (k, NULL, 0);
+         snprintf (pic, sizeof(pic), "(%d)", size);
          printf ("%-11s '%.*s'", pic, size, str);
          cob_free ((void*)str);
-         memset (wrk,' ',sizeof(wrk));
-         memcpy (wrk,"Bye-Bye Birdie!",15);
+         memset (wrk, ' ',sizeof(wrk));
+         memcpy (wrk, "Bye-Bye Birdie!", 15);
          cob_put_grp_param (k, wrk, sizeof(wrk));
       } else if (type == COB_TYPE_NUMERIC_EDITED) {
          if (scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          val = cob_get_s64_param (k);
          printf ("%-11s %lld ",pic,val);
@@ -11923,9 +12032,13 @@ CAPI (void *p1, ...)
          printf (" to %.*s",size,wrk);
       } else {
          if(scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          val = cob_get_s64_param (k);
          printf ("%-11s %lld", pic, val);
@@ -12012,7 +12125,7 @@ AT_CLEANUP
 
 
 AT_SETUP([C-API (field based)])
-AT_KEYWORDS([runmisc CALL api])
+AT_KEYWORDS([runmisc CALL api field])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12068,7 +12181,6 @@ AT_DATA([cmod.c], [[
 static char *
 getType (int type, int byvalue)
 {
-   static char wrk[24];
    switch (type) {
 #if 1
    case COB_TYPE_GROUP:           return "Group";
@@ -12099,73 +12211,82 @@ getType (int type, int byvalue)
    case COB_TYPE_NATIONAL:        return "N";
 #endif
    }
-   sprintf (wrk,"Type %04X",type);
-   return wrk;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Type 0x%04X", type);
+      return wrk;
+   }
 }
 
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val;
-   char     *str;
-   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   const int nargs = cob_get_num_params();
+   int       k;
 
-   nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
-   fflush(stdout);
+   fflush (stdout);
    for (k=1; k <= nargs; k++) {
       cob_field *fld = cob_get_param_field (k, "CAPI");
-      type   = cob_get_field_type (fld);
-      digits = cob_get_field_digits (fld);
-      scale  = cob_get_field_scale (fld);
-      size   = cob_get_field_size (fld);
-      sign   = cob_get_field_sign (fld);
-      byvalue = cob_get_field_constant (fld);
+      char *str    = (char *) cob_get_field_str_buffered (fld);
+      int  type    = cob_get_field_type (fld);
+      int  digits  = cob_get_field_digits (fld);
+      int  scale   = cob_get_field_scale (fld);
+      int  size    = cob_get_field_size (fld);
+      int  sign    = cob_get_field_sign (fld);
+      int  byvalue = cob_get_field_constant (fld);
       printf (" %d: %-8s ", k, getType (type, byvalue));
       if (byvalue) {
          printf ("BY VALUE     ");
       } else {
          printf ("BY REFERENCE ");
       }
-      str = (char *) cob_get_field_str_buffered (fld);
       if (type == COB_TYPE_ALPHANUMERIC) {
-         sprintf (pic, "X(%d)", size);
+         snprintf (pic, sizeof(pic),  "X(%d)", size);
          printf ("%-11s '%s'", pic, str);
          cob_put_field_str (fld, "Bye!");
       } else if (type == COB_TYPE_NATIONAL) {
-         sprintf (pic,"N(%d)",size); /* FIXME */
+         snprintf (pic, sizeof(pic), "N(%d)", size); /* FIXME */
          printf ("exchange of national data is not supported yet");
       } else if (type == COB_TYPE_GROUP) {
-         sprintf (pic,"(%d)",size);
+         snprintf (pic, sizeof(pic), "(%d)",size);
          printf ("%-11s '%.*s'",pic,size,str);
          cob_put_field_str (fld, "Bye-Bye Birdie!");
       } else if (type == COB_TYPE_NUMERIC_EDITED) {
+         cob_s64_t   val = cob_get_s64_param (k);
          if (scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          printf ("%-11s %s ",pic,str);
-         val = cob_get_s64_param (k);
          val = val + 130;
          val = -val;
          cob_put_s64_param (k, val);
          str = (char *) cob_get_field_str (fld, wrk, 78);
          printf (" to %.*s",size,wrk);
       } else {
+         cob_s64_t   val = cob_get_s64_param (k);
          if(scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          printf ("%-11s %s", pic, str);
-         val = cob_get_s64_param (k);
-         sprintf (wrk, "%lld", val + 3);
+         snprintf (wrk, sizeof(wrk),  "%lld", val + 3);
          cob_put_field_str (fld, wrk);
       }
       printf (";\n");
-      fflush(stdout);
+      fflush (stdout);
    }
    return 0;
 }
@@ -14117,6 +14238,7 @@ AT_KEYWORDS([runmisc CALL bounds exceptions])
 # note: this check is likely unportable and therefore will likely be adjusted/skipped,
 #       mainly because the memory layout of consecutive variables is not guaranteed;
 #       it is expected to raise a crash if C bound checking is enabled
+AT_SKIP_IF([test $($COBC --info | $GREP -c sanitize) != 0])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION DIVISION.
@@ -15078,5 +15200,54 @@ AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to NUMERIC-EDITED safety])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  PIC 9(5)    VALUE 12345.
+       01 Y  PIC 9(5)CR.
+       PROCEDURE DIVISION.
+           MOVE X TO Y.
+           IF Y(1:) NOT = "12345" THEN
+             DISPLAY "EXPECTED '12345'"
+             DISPLAY "GOT      '" Y(1:) "'"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY FLOAT])
+AT_KEYWORDS([FLOAT-SHORT FLOAT-LONG COMP-1 COMP-2])
+
+# Note: each COBOL environment has a different output format for floats;
+# here we only check for internal consistency (support for other
+# formats might be considered for addition if widely requested)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  FLOAT-SHORT  VALUE 0.000012345.
+       01 Y  FLOAT-LONG   VALUE 0.000012345.
+       PROCEDURE DIVISION.
+           DISPLAY X SPACE Y WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 
 AT_CLEANUP

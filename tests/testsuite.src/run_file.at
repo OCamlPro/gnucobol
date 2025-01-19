@@ -3098,6 +3098,66 @@ rewriting key: 98651234
 AT_CLEANUP
 
 
+AT_SETUP([INDEXED START with partial key and collating sequence])
+AT_KEYWORDS([runfile READ WRITE START])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F-DATA ASSIGN TO EXTERNAL fdata
+             ORGANIZATION INDEXED
+             ACCESS MODE DYNAMIC
+             RECORD KEY R-KEY
+             FILE STATUS F-STATUS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD F-DATA.
+       01 R-DATA.
+         05 R-KEY.
+           10 R-SUBKEY-1  PIC X(3).
+           10 R-SUBKEY-2  PIC X(2).
+         05 R-NUM         PIC 99.
+       WORKING-STORAGE SECTION.
+       01 F-STATUS  PIC X(2)  VALUE SPACE.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT F-DATA.
+           MOVE "ABC12" TO R-KEY.
+           MOVE 1 TO R-NUM.
+           WRITE R-DATA.
+           MOVE "DEF34" TO R-KEY.
+           MOVE 2 TO R-NUM.
+           WRITE R-DATA.
+           MOVE "GHI56" TO R-KEY.
+           MOVE 3 TO R-NUM.
+           WRITE R-DATA.
+           CLOSE F-DATA.
+           OPEN INPUT F-DATA.
+           MOVE SPACES TO R-KEY.
+           MOVE "DEF" TO R-SUBKEY-1.
+           START F-DATA KEY >= R-SUBKEY-1.
+           DISPLAY "START STATUS: " F-STATUS.
+           READ F-DATA NEXT.
+           DISPLAY "READ STATUS: " F-STATUS.
+           DISPLAY "READ " R-KEY ", " R-NUM.
+           CLOSE F-DATA.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[START STATUS: 00
+READ STATUS: 00
+READ DEF34, 02
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([WRITE + REWRITE FILE name])
 AT_KEYWORDS([runfile RELATIVE COB_SYNC])
 
@@ -9102,7 +9162,6 @@ TSTFH (unsigned char *opCodep, FCD3 *fcd)
 static char *           /* Return Text name of function */
 txtOpCode(int opCode)
 {
-   static char tmp[32];
    switch (opCode) {
    case OP_OPEN_INPUT:     return "OPEN_IN";
    case OP_OPEN_OUTPUT:       return "OPEN_OUT";
@@ -9154,8 +9213,11 @@ txtOpCode(int opCode)
    case OP_WRITE_AFTER_TAB:   return "WRITE_AFTER_TAB";
    case OP_WRITE_AFTER_PAGE:  return "WRITE_AFTER_PAGE";
    }
-   sprintf(tmp, "Func 0x%02X:", opCode);
-   return tmp;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Func 0x%02X", opCode);
+      return wrk;
+   }
 }
 ]])
 
@@ -12444,7 +12506,7 @@ AT_CLEANUP
 
 
 # This is, so far, only supported by the BDB backend
-AT_SETUP([INDEXED files under ASCII/EBCDIC collation])
+AT_SETUP([INDEXED file under ASCII/EBCDIC collation])
 AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
@@ -12685,13 +12747,15 @@ CCC 888 +0000000043 1
 DONE
 ])
 
+# Note: `-Wno-others` is for ignored COLLATIONS for non-alphanumeric keys
+
 # Testing ASCII file collating sequence using clause
 AT_DATA([prog1.cob], [
        COPY "prog.cpy" REPLACING
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
          ==KEY-COLSEQ== BY ====.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog1.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 1>prog1.out], [0], [], [])
 AT_CHECK([diff reference_ascii prog1.out], [0], [], [])
 
@@ -12712,7 +12776,7 @@ AT_DATA([prog3.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog3.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3 1>prog3.out], [0], [], [])
 AT_CHECK([diff reference_ascii_ebcdic prog3.out], [0], [], [])
 
@@ -12732,7 +12796,7 @@ AT_DATA([prog5.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog5.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5 1>prog5.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic prog5.out], [0], [], [])
 
@@ -12742,7 +12806,7 @@ AT_DATA([prog6.cob], [
          ==FILE-COLSEQ== BY ====
          ==KEY-COLSEQ== BY ====.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog6 1>prog6.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic prog6.out], [0], [], [])
 
@@ -12752,7 +12816,7 @@ AT_DATA([prog7.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog7.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog7.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog7 1>prog7.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic_ascii prog7.out], [0], [], [])
 
@@ -12762,9 +12826,152 @@ AT_DATA([prog8.cob], [
          ==FILE-COLSEQ== BY ====
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog8 1>prog8.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic_ascii prog8.out], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file with collation on group key])
+AT_KEYWORDS([runfile WRITE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+# This is, so far, only supported by the BDB backend
+AT_XFAIL_IF([test "$COB_HAS_ISAM" != "db"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05   MY-KEY.
+             10 MY-KEY-1 PIC X.
+             10 MY-KEY-2 PIC X.
+           05  MY-DATA   PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "111" TO MY-REC WRITE MY-REC
+           MOVE "AA2" TO MY-REC WRITE MY-REC
+           MOVE "223" TO MY-REC WRITE MY-REC
+           MOVE "BB4" TO MY-REC WRITE MY-REC
+           MOVE "335" TO MY-REC WRITE MY-REC
+           MOVE "CC6" TO MY-REC WRITE MY-REC
+           MOVE "447" TO MY-REC WRITE MY-REC
+           MOVE "DD8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE LOW-VALUES TO MY-KEY
+           START MY-FILE KEY >= MY-KEY
+             INVALID KEY
+               DISPLAY "INVALID KEY"
+             NOT INVALID KEY
+               PERFORM UNTIL EXIT
+                 READ MY-FILE NEXT
+                    AT END
+                       EXIT PERFORM
+                    NOT AT END
+                       DISPLAY MY-REC
+                 END-READ
+               END-PERFORM
+           END-START.
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout],
+[ASCII:
+111
+223
+335
+447
+AA2
+BB4
+CC6
+DD8
+EBCDIC:
+AA2
+BB4
+CC6
+DD8
+111
+223
+335
+447
+])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii], [0])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic], [0])
+
+AT_CHECK([
+  echo "ASCII:"  && $COBCRUN_DIRECT ./ascii && \
+  echo "EBCDIC:" && $COBCRUN_DIRECT ./ebcdic
+], [0], [expout])	    # <- compare stdout with existing `expout`
+
+AT_CLEANUP
+
+
+# Note: codegen only for now
+AT_SETUP([INDEXED file with NATIONAL collation])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY
+	       COLLATING SEQUENCE FOR NATIONAL IS ASCII.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-KEY  PIC N.
+           05  MY-DATA PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "11" TO MY-REC WRITE MY-REC
+           MOVE "A2" TO MY-REC WRITE MY-REC
+           MOVE "23" TO MY-REC WRITE MY-REC
+           MOVE "B4" TO MY-REC WRITE MY-REC
+           MOVE "35" TO MY-REC WRITE MY-REC
+           MOVE "C6" TO MY-REC WRITE MY-REC
+           MOVE "47" TO MY-REC WRITE MY-REC
+           MOVE "D8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout], [])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [],
+[prog.cob:11: warning: NATIONAL COLLATING SEQUENCE is not implemented
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [expout])
 
 AT_CLEANUP
 
@@ -14504,5 +14711,101 @@ AT_CHECK([$COMPILE prog2.cob])
 AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2 > prog2.txt])
 AT_CHECK([diff expected.txt prog2.txt])
+
+AT_CLEANUP
+
+
+AT_SETUP([DELETE WITH COLLATING SEQUENCE])
+AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. READDEL.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+           SELECT READDEL ASSIGN EXTERNAL READDEL
+             ORGANIZATION INDEXED
+             ACCESS MODE DYNAMIC
+             RECORD KEY READDEL-KEY
+             FILE STATUS STA-READDEL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  READDEL.
+       01  READDEL-REC.
+        02 READDEL-KEY.
+           05 READDEL-KEY-NUM   PIC S9(15).
+        02 READDEL-VALUE.
+           05 READDEL-STRING    PIC X(10).
+           05 READDEL-NUM       PIC S9(27) OCCURS 10 TIMES.
+      *>
+
+      *>----------------------*
+       WORKING-STORAGE SECTION.
+      *>----------------------*
+
+       01 STA-READDEL PIC X(2).
+       01 END-READDEL PIC 9(1).
+       01 WS-COUNT PIC S9(2) VALUE 0.
+
+      *>------------------*
+       PROCEDURE DIVISION.
+      *>------------------*
+           MOVE 0 TO END-READDEL.
+           OPEN OUTPUT READDEL.
+           PERFORM 20 TIMES
+             MOVE WS-COUNT TO READDEL-KEY-NUM
+             MOVE "READDELNUM" TO READDEL-STRING
+             MOVE WS-COUNT TO READDEL-NUM(1)
+             MOVE WS-COUNT TO READDEL-NUM(2)
+             MOVE WS-COUNT TO READDEL-NUM(3)
+             MOVE WS-COUNT TO READDEL-NUM(4)
+             MOVE WS-COUNT TO READDEL-NUM(5)
+             MOVE WS-COUNT TO READDEL-NUM(6)
+             MOVE WS-COUNT TO READDEL-NUM(7)
+             MOVE WS-COUNT TO READDEL-NUM(8)
+             MOVE WS-COUNT TO READDEL-NUM(9)
+             MOVE WS-COUNT TO READDEL-NUM(10)
+             WRITE READDEL-REC
+               INVALID KEY
+                 DISPLAY "INVALID KEY " READDEL-KEY
+                 STOP RUN
+             END-WRITE
+             ADD 1 TO WS-COUNT
+           END-PERFORM.
+           CLOSE READDEL.
+           MOVE LOW-VALUE TO READDEL-KEY.
+           OPEN I-O READDEL.
+           START READDEL KEY IS > READDEL-KEY
+             INVALID KEY
+               DISPLAY "ERR START READDEL=" STA-READDEL
+               MOVE 1 TO END-READDEL
+           END-START.
+           PERFORM UNTIL END-READDEL = 1
+             READ READDEL NEXT RECORD
+               AT END
+                 MOVE 1 TO END-READDEL
+               NOT AT END
+                 DELETE READDEL
+                   INVALID KEY
+                     DISPLAY "ERR DELETE KEY=" READDEL-KEY
+                             " / STATUS=" STA-READDEL
+                 END-DELETE
+             END-READ
+           END-PERFORM.
+           CLOSE READDEL.
+           STOP RUN.
+
+
+])
+
+AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog])
 
 AT_CLEANUP

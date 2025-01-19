@@ -1,4 +1,12 @@
 
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (cobcrun_print_version): build and package data only
+	  shown in verbose mode;
+	  PACKAGE_NAME may now be overwritten by PKGVERSION (new configure option)
+	* cobcrun.c (cobcrun_print_usage): handle PACKAGE_BUGREPORT_URL as
+	  alternative to mailing list, now resolved by PACKAGE_BUGREPORT
+
 2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cob-config.in: prevent warning to use datadir, but not datarootdir;
@@ -291,7 +299,7 @@
 	  then you can switch easily.
 
 
-Copyright 2004-2008,2010,2012,2014-2023 Free Software Foundation, Inc.
+Copyright 2004-2008,2010,2012,2014-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

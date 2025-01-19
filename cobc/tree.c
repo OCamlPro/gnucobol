@@ -1300,10 +1300,18 @@ set_ml_attrs_and_children (struct cb_field *record, const int children_are_attrs
 			continue;
 		}
 
-		child_tree_or_null = cb_build_ml_tree (child, 0,
-							children_are_attrs,
-							name_list, type_list,
-							suppress_list);
+		if (child->children) {
+			child_tree_or_null = cb_build_ml_tree (child, children_are_attrs,
+								0,
+								name_list, type_list,
+								suppress_list);
+		} else {
+			child_tree_or_null = cb_build_ml_tree (child, 0,
+								children_are_attrs,
+								name_list, type_list,
+								suppress_list);
+		}
+
 		if (!child_tree_or_null) {
 			continue;
 		}
@@ -4779,6 +4787,27 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 			} else {
 				cbak->collating_sequence_key = CB_PAIR_X (alpha_key);
 			}
+		}
+	}
+
+	/* check collating sequence is not ignored */
+	if (get_warn_opt_value (cb_warn_filler) != COBC_WARN_DISABLED
+	 && CB_TREE_CLASS (k) != CB_CLASS_ALPHANUMERIC) {
+		const char *source = "KEY";
+		cb_tree colseq = (cbak == NULL)
+			? f->collating_sequence_key
+			: cbak->collating_sequence_key;
+		cb_tree pos = colseq;
+		if (colseq == NULL) {
+			source = "FILE";
+			colseq = f->collating_sequence;
+			pos = key_ref;
+		}
+		if (colseq != NULL) {
+			cb_warning_x (COBC_WARN_FILLER, CB_TREE (pos),
+				      _("%s COLLATING SEQUENCE '%s' is ignored "
+					"for non-alphanumeric key '%s'"),
+				      source, CB_NAME (colseq), k->name);
 		}
 	}
 }

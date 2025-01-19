@@ -279,30 +279,6 @@ AT_CHECK([$GREP 'PARAGRAPH_00_l_4:'    prog.c], [0], ignore, [])
 AT_CHECK([$GREP 'PARAGRAPH_EX_l_7:'    prog.c], [0], ignore, [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb END], [])
 
-AT_CAPTURE_FILE([prog.d])
-AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], ignore, [])
-AT_CHECK([$GREP ' prog.i:'             prog.d], [0], ignore, [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
-  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
-  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], ignore, [])
-  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], ignore, [])
-], [
-  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], ignore, [])
-  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], ignore, [])
-])
-
-# test again with trailing slash which should not result in different files
-AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
-  # Previous test "failed" --> no entry with slash available, check backslash for this test
-  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], ignore, [])
-])
-
 AT_CLEANUP
 
 
@@ -383,9 +359,8 @@ AT_CLEANUP
 AT_SETUP([temporary path invalid])
 AT_KEYWORDS([cobc runmisc])
 
-# Note: may be either removed completely as there was a report about
-#       this test "failing" - or skipped as this very often fails for
-#       WIN32 builds
+# Note: we skip this as it often fails for WIN32 builds but sometimes works
+AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -972,6 +947,10 @@ AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [],
 )
 AT_CHECK([$COBCRUN_DIRECT ./a.out], [0], [], [])
 
+AT_CHECK([echo "program-id.test." | $COMPILE_MODULE -free -E -], [0],
+[#line 1 "<stdin>"
+program-id.test.
+], [])
 
 
 AT_CLEANUP
@@ -1172,3 +1151,298 @@ AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.co
 )
 
 AT_CLEANUP
+
+
+AT_SETUP([output dependencies])
+# AT_KEYWORDS([])
+
+AT_CAPTURE_FILE([compiler.output])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY COPY1.
+       PROCEDURE DIVISION.
+       MAIN-PROC SECTION.
+       00.
+       COPY COPY3.
+       COPY COPY3.CPY.
+       END-PROC  SECTION.
+       COPY COPY4 in "sub".
+       EX.
+           STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       PROCEDURE DIVISION.
+       COPY COPY3.
+           STOP RUN.
+])
+
+
+AT_CHECK([mkdir -p sub])
+AT_DATA([COPY1.CPY], [       COPY COPY2.
+])
+AT_DATA([COPY2.CPY], [])
+AT_DATA([COPY3.CPY], [       DISPLAY "Hello".
+])
+AT_DATA([sub/COPY4.CPY], [])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COMPILE -M prog.cob prog2.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT:/.COB_OBJECT_EXT:/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+prog2.COB_OBJECT_EXT: \
+ prog2.cob \
+ COPY3.CPY
+
+])
+
+AT_CHECK([$COMPILE -M -MF prog.dep prog.cob])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
+
+])
+
+AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_MODULE_EXT/.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_MODULE_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([test -f prog.c], [1])
+AT_CHECK([test -f prog.o], [1])
+
+AT_CHECK([$COMPILE -M -MQ '$(target)#toto' prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.output], [0],
+[$$(target)\#toto: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([rm -f prog.d])
+AT_CAPTURE_FILE([prog.d])
+
+AT_CHECK([$COMPILE -MD prog.cob])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.d], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([$COMPILE -MD -o sub/prog.exe  prog.cob])
+AT_CHECK([test -f sub/prog.exe])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" sub/prog.d], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([rm sub/COPY4.CPY])
+
+AT_CHECK([$COMPILE -M prog.cob > compiler.output 2> compiler.error], [1], [], [])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY
+
+])
+
+AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.error], [0],
+[prog.cob:13: error: sub/COPY4: No such file or directory
+])
+
+AT_CHECK([$COMPILE_ONLY -M -MG prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        MAIN-PROC SECTION.
+        00.
+        COPY PROC.
+        END-PROC  SECTION.
+        COPY PROCE in "sub".
+        EX.
+            STOP RUN.
+])
+
+AT_CHECK([mkdir -p sub/copy])
+AT_DATA([sub/copy/PROC.cpy], [
+           DISPLAY BLA NO ADVANCING.
+])
+AT_DATA([sub/PROCE.cpy], [
+           DISPLAY ' END' NO ADVANCING.
+])
+
+AT_CAPTURE_FILE([prog.d])
+AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -M -MP -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only])
+AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], [ignore])
+AT_CHECK([$GREP ' prog.i:'             prog.d], [0], [ignore])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
+  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], [ignore])
+  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], [ignore])
+], [
+  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], [ignore])
+  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], [ignore])
+])
+
+# test again with trailing slash which should not result in different files
+AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -M -MP -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this test
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], [ignore])
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGPIPE cobc])
+AT_KEYWORDS([runmisc])
+
+# the runtime is not initialized, so we get out without any error message in libcob
+# and we also don't raise anything in cobc either
+AT_CHECK([$COBC --help | head], [0], [ignore], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGPIPE in COBOL])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       00. DISPLAY '1'. DISPLAY '2'. DISPLAY '3'. DISPLAY '4'.
+           DISPLAY '5'. DISPLAY '6'. DISPLAY '7'. DISPLAY '8'.
+       EX. STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog | head -n 2], [0],
+[1
+2
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGTERM in COBOL])
+AT_KEYWORDS([runmisc stack stacktrace])
+
+# this is portable in all posix environments, but not on Win32;
+# note: cygwin-compiled programs handle cygwin-sent SIGTERM as expected
+# CTRL+C does raise a SIGINT, but only when executed from "within" the program
+AT_XFAIL_IF([test "$COB_ON_WINDOWS" = "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. 'prog'.
+       PROCEDURE DIVISION.
+       00. DISPLAY '1'.
+           CALL 'wait'. DISPLAY '2'.
+       EX. STOP RUN.
+       END PROGRAM 'prog'.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. 'wait'.
+       PROCEDURE DIVISION.
+       00. PERFORM DO-WAIT.
+       EX. GOBACK.
+       DO-WAIT. CONTINUE AFTER 10 SECONDS.
+       END PROGRAM 'wait'.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# note: the stack trace, while enabled per default, is globally disabled in the testsuite
+AT_CHECK([$COBCRUN_DIRECT ./prog & cobpid=$!
+sleep 6
+kill -15 $cobpid], [0],
+[1
+],
+[
+prog.cob:14: termination (signal SIGTERM)
+
+])
+AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" & cobpid=$!
+sleep 6
+kill -15 $cobpid], [0],
+[1
+],
+[
+prog.cob:14: termination (signal SIGTERM)
+
+
+ Last statement of "wait" was CONTINUE AFTER
+	DO-WAIT at prog.cob:14
+	00 at prog.cob:12
+	ENTRY wait at prog.cob:12
+ Last statement of "prog" was CALL
+	00 at prog.cob:6
+	ENTRY prog at prog.cob:5
+ Started by ./prog
+	a
+	b c
+])
+
+AT_CLEANUP
+

@@ -690,12 +690,14 @@ static unsigned int	bdb_lock_id = 0;
 	key.data = fld->data;			\
 	key.size = (cob_dbtsize_t) fld->size
 
-#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 0))
+#if 0 /* while the fields are part of DBT since 4.1, and were made part of the
+         public API with 6.0 (DB_VERSION_FAMILY 12) this field is not always
+         copied when passed to custom compare functions, see bug 1032 */
 #define DBT_SET_APP_DATA(key,data)	((key)->app_data = (data))
 #define DBT_GET_APP_DATA(key)		((key)->app_data)
 #else
-/* Workaround for older BDB versions that do not have app_data in DBT */
-static void		*bdb_app_data = NULL;
+/* Used to save the collating sequence function */
+COB_TLS void		*bdb_app_data = NULL;
 #define DBT_SET_APP_DATA(key,data)	((void)(key), bdb_app_data = (data))
 #define DBT_GET_APP_DATA(key)		((void)(key), bdb_app_data)
 #endif
@@ -791,7 +793,6 @@ bdb_setkey (cob_file *f, int idx)
 	struct indexed_file	*p = f->file;
 	int	len;
 
-	memset (p->savekey, 0, p->maxkeylen);
 	len = bdb_savekey (f, p->savekey, f->record->data, idx);
 	p->key.data = p->savekey;
 	p->key.size = (cob_dbtsize_t) len;
@@ -921,6 +922,9 @@ bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 {
 	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA (k1);
 	COB_UNUSED (db);
+#if DB_VERSION_MAJOR >= 6
+	locp = NULL;	/* docs: must be set to NULL or corruption can occur ... */
+#endif
 #ifdef USE_BDB_KEYDIFF /* flag passed with CPPFLAGS */
 	return cob_cmp_strings (k1->data, k2->data, (size_t)k1->size, (size_t)k2->size, col);
 #else
@@ -934,9 +938,6 @@ bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
-#if DB_VERSION_MAJOR >= 6
-	locp = NULL;	/* docs: must be set to NULL or corruption can occur ... */
-#endif
 	return indexed_key_compare (k1->data, k2->data, k2->size, col);
 #endif /* USE_BDB_KEYDIFF */
 }
@@ -1824,12 +1825,17 @@ cob_fd_file_open (cob_file *f, char *filename,
 		HANDLE osHandle = (HANDLE)_get_osfhandle (fd);
 		if (osHandle != INVALID_HANDLE_VALUE) {
 			DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-			OVERLAPPED fromStart = {0};
+			OVERLAPPED fromStart = { 0 };
 			if (mode != COB_OPEN_INPUT) flags |= LOCKFILE_EXCLUSIVE_LOCK;
 			if (!LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
-				f->open_mode = COB_OPEN_CLOSED;
-				close (fd);
-				return COB_STATUS_61_FILE_SHARING;
+				DWORD err = GetLastError ();
+				/* normally that return value would not happen, we use it to
+				   work around call errors happening on MSYS */
+				if (err != ERROR_INVALID_FUNCTION) {
+					f->open_mode = COB_OPEN_CLOSED;
+					close (fd);
+					return COB_STATUS_61_FILE_SHARING;
+				}
 			}
 		}
 	}
@@ -2087,10 +2093,15 @@ cob_file_open (cob_file *f, char *filename,
 				OVERLAPPED fromStart = {0};
 				if (mode != COB_OPEN_INPUT) flags |= LOCKFILE_EXCLUSIVE_LOCK;
 				if (!LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
-					f->open_mode = COB_OPEN_CLOSED;
-					f->fd = -1;
-					fclose (fp);
-					return COB_STATUS_61_FILE_SHARING;
+					DWORD err = GetLastError ();
+					/* normally that return value would not happen, we use it to
+					   work around call errors happening on MSYS */
+					if (err != ERROR_INVALID_FUNCTION) {
+						f->open_mode = COB_OPEN_CLOSED;
+						fclose (fp);
+						f->fd = -1;
+						return COB_STATUS_61_FILE_SHARING;
+					}
 				}
 			}
 		}
@@ -3897,7 +3908,10 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 
 	/* Search */
 	bdb_setkey (f, p->key_index);
-	p->key.size = (cob_dbtsize_t)partlen;		/* may be partial key */
+	if (partlen < fullkeylen) {
+		memset((char *)p->key.data + partlen, 0, fullkeylen - partlen);
+	}
+
 	/* The open cursor makes this function atomic */
 	if (p->key_index != 0) {
 		p->db[0]->cursor (p->db[0], NULL, &p->cursor[0], 0);
@@ -7074,7 +7088,7 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 /* System routines */
 
 /* stores the field's rtrimmed string content into a fresh allocated
-	 string, which later needs to be passed to cob_free */
+   string, which later needs to be passed to cob_free */
 static void *
 cob_str_from_fld (const cob_field *f)
 {
@@ -7104,7 +7118,7 @@ cob_str_from_fld (const cob_field *f)
 	}
 
 	while (data <= end) {
-#if 0	/* Quotes in file */
+#if 0	/* Quotes in file, per MF, stopping at first space outside */
 		if (*data == '"') {
 			quote_switch = !quote_switch;
 			data++;
@@ -8758,7 +8772,6 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	 cobsetpr-values with type ENV_PATH or ENV_STR
 	 like bdb_home and cob_file_path are taken care in cob_exit_common()!
 */
-
 const char *implicit_close_of_msgid = NULL;
 
 void
@@ -8767,7 +8780,8 @@ cob_exit_fileio_msg_only (void)
 	struct file_list	*l;
 	static int output_done = 0;
 
-	if (output_done) {
+	if (output_done
+	 || (cobsetptr && !cobsetptr->cob_display_warn)) {
 		return;
 	}
 	output_done = 1;
@@ -8778,8 +8792,10 @@ cob_exit_fileio_msg_only (void)
 		 && l->file->open_mode != COB_OPEN_LOCKED
 		 && !l->file->flag_nonexistent
 		 && !COB_FILE_SPECIAL (l->file)) {
-			cob_runtime_warning_ss (implicit_close_of_msgid,
-				cob_get_filename_print (l->file, 0));
+			if (cob_runtime_warning_ss (implicit_close_of_msgid,
+				cob_get_filename_print (l->file, 0))) {
+				return;
+			}
 		}
 	}
 }
