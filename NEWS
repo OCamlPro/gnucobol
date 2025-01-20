@@ -6,6 +6,9 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
+** support different literal encoding according to literal type (UTF-8 for U literals, 
+   UTF-16 for N literals, and ISO-8859-15 for Alphanumeric literals)
+
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
    indicator column) is now limitted to 5 per source file

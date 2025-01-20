@@ -1153,14 +1153,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:5: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:6: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:7: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:8: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:9: warning: national-character literal used
-prog.cob:9: warning: handling of national literal is unfinished; implementation is likely to be changed
+[prog.cob:9: warning: national-character literal used
 prog.cob:10: warning: national-character literal used
-prog.cob:10: warning: handling of national literal is unfinished; implementation is likely to be changed
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
@@ -1192,13 +1186,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:7: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:10: warning: handling of national literal is unfinished; implementation is likely to be changed
-prog.cob:10: error: invalid NX literal: 'GH'
+[prog.cob:10: error: invalid NX literal: 'GH'
 prog.cob:10: note: literal contains invalid character 'G'
 prog.cob:10: note: literal contains invalid character 'H'
-prog.cob:11: warning: handling of national literal is unfinished; implementation is likely to be changed
 prog.cob:11: error: invalid NX literal: '1'
 prog.cob:11: note: literal does not have an even number of digits
 ])
