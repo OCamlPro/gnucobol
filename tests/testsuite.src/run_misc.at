@@ -15509,5 +15509,28 @@ COUNTER:4
 COUNTER:5
 ], [])
 
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FORMAT="%m,%s,%p,%e,%w,%k,%n" COB_PROF_FILE="prof.csv" $COBCRUN_DIRECT ./prog],
+[0],
+[COUNTER:0
+COUNTER:1
+COUNTER:2
+COUNTER:3
+COUNTER:4
+COUNTER:5
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0], [program-id,section,paragraph,entry,location,kind,ncalls
+recurse,,,,prog.cob:18,PROGRAM,6
+recurse,MAIN SECTION,,,prog.cob:19,SECTION,6
+recurse,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:19,PARAGRAPH,6
+recurse,MAIN SECTION,MAIN PARAGRAPH,recurse,prog.cob:25,CALL,5
+prog,,,,prog.cob:7,PROGRAM,1
+prog,MAIN SECTION,,,prog.cob:8,SECTION,1
+prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:8,PARAGRAPH,1
+prog,MAIN SECTION,MAIN PARAGRAPH,recurse,prog.cob:9,CALL,1
+], [])
+
 AT_CLEANUP
 
