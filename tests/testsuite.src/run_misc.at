@@ -15254,11 +15254,11 @@ AT_CLEANUP
 
 
 AT_SETUP([profiling and codegen])
-AT_KEYWORDS([cobc EVALUATE])
+AT_KEYWORDS([EVALUATE])
 
-AT_DATA([main.cob], [
+AT_DATA([prog.cob], [
 IDENTIFICATION DIVISION.
-PROGRAM-ID. Main.
+PROGRAM-ID. PROG.
 
 DATA DIVISION.
 WORKING-STORAGE SECTION.
@@ -15271,7 +15271,7 @@ PROCEDURE DIVISION.
         CALL "TestRecurse" USING STR OFFSET
     END-PERFORM.
 
-END PROGRAM Main.
+END PROGRAM PROG.
 
 
 IDENTIFICATION DIVISION.
@@ -15295,9 +15295,9 @@ PROCEDURE DIVISION USING LK-STR LK-OFFSET.
 END PROGRAM TestRecurse.
 ])
 
-AT_CHECK([$COMPILE --free main.cob])
+AT_CHECK([$COMPILE --free prog.cob])
 
-AT_CHECK([$COBCRUN_DIRECT ./main], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [LK-OFFSET: 0000000001
 LK-OFFSET: 0000000002
 LK-OFFSET: 0000000003
@@ -15306,9 +15306,9 @@ LK-OFFSET: 0000000005
 LK-OFFSET: 0000000006
 ])
 
-AT_CHECK([$COMPILE --free -fprof main.cob])
+AT_CHECK([$COMPILE --free -fprof prog.cob])
 
-AT_CHECK([$COBCRUN_DIRECT ./main], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [LK-OFFSET: 0000000001
 LK-OFFSET: 0000000002
 LK-OFFSET: 0000000003
@@ -15316,9 +15316,9 @@ LK-OFFSET: 0000000004
 LK-OFFSET: 0000000005
 LK-OFFSET: 0000000006
 ])
-AT_DATA([main.cob], [
+AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. Main.
+       PROGRAM-ID. PROG.
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
@@ -15331,7 +15331,7 @@ AT_DATA([main.cob], [
                CALL "TestRecurse" USING STR OFFSET
            END-PERFORM.
 
-       END PROGRAM Main.
+       END PROGRAM PROG.
 
 
        IDENTIFICATION DIVISION.
@@ -15359,9 +15359,9 @@ AT_DATA([main.cob], [
        END PROGRAM TestRecurse.
 ])
 
-AT_CHECK([$COMPILE --free main.cob])
+AT_CHECK([$COMPILE --free prog.cob])
 
-AT_CHECK([$COBCRUN_DIRECT ./main], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [LK-OFFSET: 0000000001
 LK-OFFSET: 0000000002
 LK-OFFSET: 0000000003
@@ -15385,9 +15385,9 @@ LK-OFFSET: 0000000020
 LK-OFFSET: 0000000021
 ])
 
-AT_CHECK([$COMPILE --free -fprof main.cob])
+AT_CHECK([$COMPILE --free -fprof prog.cob])
 
-AT_CHECK([$COBCRUN_DIRECT ./main], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [LK-OFFSET: 0000000001
 LK-OFFSET: 0000000002
 LK-OFFSET: 0000000003
@@ -15412,3 +15412,102 @@ LK-OFFSET: 0000000021
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([INDEXED BY in LINKAGE])
+
+AT_KEYWORDS([runmisc OCCURS SEARCH])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+           01 LK-STR.
+              03 LK-CHR PIC X OCCURS 6 INDEXED BY LK-IDX.
+           01 LK-OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE        DIVISION USING LK-STR LK-OFFSET.
+           DISPLAY "LK-OFFSET: " LK-OFFSET.
+           SET LK-IDX TO LK-OFFSET.
+           SEARCH LK-CHR
+               AT END
+                   IF LK-OFFSET > 20
+                      GOBACK
+                   END-IF
+                   ADD 1 TO LK-OFFSET
+               WHEN LK-CHR (LK-IDX) = "."
+                   ADD 1 TO LK-OFFSET
+           END-SEARCH.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE SECTION.
+           01 STR PIC X(6) VALUE "..-..-".
+           01 OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE        DIVISION.
+           MOVE 1 TO OFFSET.
+           PERFORM UNTIL OFFSET > LENGTH OF STR
+               CALL "callee" USING STR OFFSET
+           END-PERFORM.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [LK-OFFSET: 0000000001
+LK-OFFSET: 0000000002
+LK-OFFSET: 0000000003
+LK-OFFSET: 0000000004
+LK-OFFSET: 0000000005
+LK-OFFSET: 0000000006
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling RECURSIVE CALL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-COUNTER PIC 9.
+       PROCEDURE DIVISION.
+           MOVE 0 TO WS-COUNTER.
+           CALL "recurse" USING WS-COUNTER.
+           STOP RUN.
+       END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. recurse IS RECURSIVE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 LK-COUNTER PIC 9.
+       PROCEDURE DIVISION USING LK-COUNTER.
+           DISPLAY "COUNTER:" LK-COUNTER.
+           EVALUATE LK-COUNTER
+              WHEN 5
+                EXIT PROGRAM
+              WHEN OTHER
+                ADD 1 TO LK-COUNTER
+                CALL "recurse" USING LK-COUNTER
+           END-EVALUATE.
+       END PROGRAM recurse.
+])
+
+AT_CHECK([$COMPILE --free -fprof prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [COUNTER:0
+COUNTER:1
+COUNTER:2
+COUNTER:3
+COUNTER:4
+COUNTER:5
+], [])
+
+AT_CLEANUP
+
