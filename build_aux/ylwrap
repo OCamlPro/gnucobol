@@ -1,9 +1,9 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2024-06-19.01; # UTC
+scriptversion=2017-09-16.17; # UTC
 
-# Copyright (C) 1996-2024 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 #
 # Written by Tom Tromey <tromey@cygnus.com>.
 #
@@ -66,6 +66,10 @@ case "$1" in
     echo "$0: No files given.  Try '$0 --help' for more information." 1>&2
     exit 1
     ;;
+  --basedir)
+    basedir=$2
+    shift 2
+    ;;
   -h|--h*)
     cat <<\EOF
 Usage: ylwrap [--help|--version] INPUT [OUTPUT DESIRED]... -- PROGRAM [ARGS]...
@@ -81,13 +85,11 @@ Wrapper for lex/yacc invocations, renaming files as desired.
 Any number of OUTPUT,DESIRED pairs may be used.
 
 Report bugs to <bug-automake@gnu.org>.
-GNU Automake home page: <https://www.gnu.org/software/automake/>.
-General help using GNU software: <https://www.gnu.org/gethelp/>.
 EOF
     exit $?
     ;;
   -v|--v*)
-    echo "ylwrap (GNU Automake) $scriptversion"
+    echo "ylwrap $scriptversion"
     exit $?
     ;;
 esac
@@ -237,7 +239,7 @@ exit $ret
 # Local Variables:
 # mode: shell-script
 # sh-indentation: 2
-# eval: (add-hook 'before-save-hook 'time-stamp)
+# eval: (add-hook 'write-file-hooks 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
 # time-stamp-time-zone: "UTC0"
