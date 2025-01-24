@@ -3,6 +3,16 @@
 
 	* cobfile.c, gcdiff.c: fixed some warnings about unsigned char
 
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cob-config.in: prevent warning to use datadir, but not datarootdir;
+	  allow abbreviated commands (blatantly copied from configure script)
+
+2023-07-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cob-config.in: echo in same order as arguments; add missing
+	  arguments (--bindir,--libdir,--datadir,--mandir,--includedir)
+
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobfile.c, gcdiff.c: fixed some warnings about signed char
@@ -10,11 +20,6 @@
 2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: use libcob's cob_getenv_direct instead of getenv
-
-2023-07-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-
-	* cob-config: echo in same order as arguments. Add missing
-	  arguments (--bindir,--libdir,--datadir,--mandir,--includedir)
 
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -349,7 +354,7 @@
 	  then you can switch easily.
 
 
-Copyright 2004-2008,2010,2012,2014-2022 Free Software Foundation, Inc.
+Copyright 2004-2008,2010,2012,2014-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

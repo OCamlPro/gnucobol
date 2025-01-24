@@ -5845,7 +5845,7 @@ print_fields (struct cb_field *top, int *found)
 			got_picture = set_picture (top, picture, picture_len);
 		}
 
-		if (top->flag_any_length || cb_field_has_unbounded (top)) {
+		if (top->flag_any_length || top->flag_above_unbounded) {
 			pd_off = sprintf (print_data, "????? ");
 		} else if (top->flag_occurs && !got_picture) {
 			pd_off = sprintf (print_data, "%05d ", top->size * top->occurs_max);

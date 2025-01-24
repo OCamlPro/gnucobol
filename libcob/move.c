@@ -551,6 +551,10 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 				p += 2;
 			}
 		}
+		/* clean bottom nibble if we packed one extra digit past the end of the input */
+		if (p > p_end) {
+			*(q - 1) &= 0xf0;
+		}
 	}
 
 	COB_PUT_SIGN_ADJUSTED (f1, sign);

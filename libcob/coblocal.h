@@ -383,6 +383,7 @@ struct config_tbl {
 #else
 #define	COB_MAX_FIELD_SIZE	2147483646
 #endif
+#define	COB_MAX_FIELD_SIZE_LINKAGE	(INT_MAX - 1)
 
 /* Maximum bytes in an unbounded table entry
    (IBM: old 999999998, current 999999999) */

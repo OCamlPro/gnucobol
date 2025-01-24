@@ -1002,7 +1002,7 @@ struct cb_field {
 	unsigned int flag_any_numeric	: 1;	/* Is ANY NUMERIC */
 	unsigned int flag_is_returning	: 1;	/* Is RETURNING item */
 	unsigned int flag_unbounded	: 1;	/* OCCURS UNBOUNDED */
-	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */
+	unsigned int flag_above_unbounded	: 1;	/* either OCCURS UNBOUNDED field or parent of it */
 	unsigned int flag_volatile	: 1;	/* VOLATILE */
 	unsigned int flag_constant	: 1;	/* Is 01 AS CONSTANT */
 	unsigned int flag_internal_constant	: 1;	/* Is an internally generated CONSTANT */
@@ -1033,6 +1033,7 @@ struct cb_field {
 
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
+	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -2105,7 +2106,6 @@ extern int			cb_tree_type (const cb_tree,
 					      const struct cb_field *);
 extern int			cb_category_is_alpha (cb_tree);
 extern int			cb_category_is_national (cb_tree);
-extern int			cb_field_has_unbounded (struct cb_field *);
 extern int			cb_fits_int (const cb_tree);
 extern int			cb_fits_long_long (const cb_tree);
 extern int			cb_get_int (const cb_tree);

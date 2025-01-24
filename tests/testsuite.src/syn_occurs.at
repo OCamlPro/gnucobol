@@ -195,6 +195,24 @@ AT_DATA([prog4.cob], [
        77 I             PIC X.
 ])
 
+AT_DATA([prog5.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G-1.
+         05 G-1-F1      PIC  X(002).
+         05 G-2.
+          07 G-3
+            OCCURS 1 TO 99999
+            DEPENDING ON     G-3-ELEMENTS
+            ASCENDING KEY IS G-4-KEY
+            INDEXED BY       IND.
+           10 G-4.
+             15 N       PIC  9(001).
+      *
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 ])
@@ -218,6 +236,120 @@ prog4.cob:8: error: 'I' is not numeric
 
 AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog4.cob], [1], [],
 [prog4.cob:8: error: 'I' is not numeric
+])
+
+AT_CHECK([$COMPILE_ONLY prog5.cob], [1], [],
+[prog5.cob:11: error: 'G-3-ELEMENTS' is not defined
+prog5.cob:12: error: 'G-4-KEY IN G-2 IN G-1' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([OCCURS UNBOUNDED])
+#AT_KEYWORDS([ibm])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE  SECTION.
+       01 G-1.
+          07 G-2-ELEMENTS   PIC 9(08).
+          07 G-2
+            OCCURS UNBOUNDED
+            DEPENDING ON    G-2-ELEMENTS.
+           10 X             PIC X.
+        PROCEDURE DIVISION USING G-1.
+           DISPLAY G-1.
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE  SECTION.
+       01 G-1.
+         05 G-1-F1          PIC X(22).
+         05 G-1-F2          PIC X(12).
+         05 G-2.
+          07 G-3-ELEMENTS   PIC 9(08).
+          07 G-3
+            OCCURS UNBOUNDED
+            DEPENDING ON    G-3-ELEMENTS.
+           10 G-4.
+             15 X           PIC  9(22).
+        PROCEDURE DIVISION USING G-1.
+           DISPLAY G-1.
+           GOBACK.
+])
+
+AT_DATA([bad.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G-1.
+          07 G-2-ELEMENTS   PIC 9(08).
+          07 G-2
+            OCCURS UNBOUNDED
+            DEPENDING ON    G-2-ELEMENTS.
+           10 X             PIC X.
+])
+
+AT_DATA([bad2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G-1.
+         05 G-1-F1          PIC X(22).
+         05 G-2.
+          07 G-3-ELEMENTS   PIC 9(08).
+          07 G-3
+             OCCURS UNBOUNDED.
+           10 G-4.
+             15 X           PIC  9(22).
+])
+
+AT_DATA([bad3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G-1.
+         05 G-1-F1          PIC X(22).
+         05 G-1-F2          PIC X(12).
+         05 G-2.
+          07 G-3
+            OCCURS UNBOUNDED
+            DEPENDING ON    G-3-ELEMENTS.
+           10 G-4.
+             15 X           PIC  9(22).
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [0], [], [])
+
+# TODO: opt to a different path, if UNBOUNDED is not reserved
+AT_CHECK([$COMPILE_ONLY -std=cobol2014  prog.cob], [1], [],
+[prog.cob:9: error: syntax error, unexpected Identifier, expecting UNBOUNDED
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY bad.cob], [1], [],
+[bad.cob:8: error: 'G-2' is not in LINKAGE SECTION
+])
+
+AT_CHECK([$COMPILE_ONLY bad2.cob], [1], [],
+[bad2.cob:11: error: syntax error, unexpected ., expecting DEPENDING
+])
+
+AT_CHECK([$COMPILE_ONLY bad3.cob], [1], [],
+[bad3.cob:10: error: 'G-3' is not in LINKAGE SECTION
+bad3.cob:12: error: 'G-3-ELEMENTS' is not defined
 ])
 
 AT_CLEANUP
