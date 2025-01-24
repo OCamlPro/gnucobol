@@ -244,26 +244,24 @@ token_list_add (WITH_DEPTH struct cb_token_list *list,
 		return p;
 	} else {
 		struct cb_token_list *cursor = list;
-		for(;cursor->next != NULL; cursor = cursor->next);
+		for (; cursor->next != NULL; cursor = cursor->next);
 		cursor->next = p;
 		return list;
 	}
 }
 
-
-
 static
-const void pop_token (WITH_DEPTH struct cb_replacement_state *repls,
+void pop_token (WITH_DEPTH struct cb_replacement_state *repls,
 		      const char **text, const char **token)
 {
-	const struct cb_token_list *q = repls->token_queue ;
+	const struct cb_token_list *q = repls->token_queue;
 	repls->token_queue = q->next ;
 #ifdef DEBUG_REPLACE_TRACE
 	fprintf (stderr, "%spop_token(%s) -> '%s'\n",
 		DEPTH, repls->name, q->text);
 #endif
-	if (text) *text = q->text ;
-	if (token) *token = q->token ;
+	if (text) *text = q->text;
+	if (token) *token = q->token;
 }
 
 static
@@ -417,7 +415,7 @@ void check_replace (WITH_DEPTH struct cb_replacement_state* repls,
 		replace_list = replace_list->next;
 
 		if (src->lead_trail == CB_REPLACE_LEADING
-		    || src->lead_trail == CB_REPLACE_TRAILING){
+		 || src->lead_trail == CB_REPLACE_TRAILING){
 			/* LEADING and TRAILING replacements are
 			 * different: they match only on one text, so
 			 * we just need one test to decide if it is a

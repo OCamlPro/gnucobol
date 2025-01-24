@@ -11289,7 +11289,7 @@ CAPI(void *p1, ...)
 {
    int      k,nargs,type,digits,scale,size,sign,byvalue,isright;
    cob_s64_t   val;
-   char     *str, wrk[80],pic[24];
+   char     *str, wrk[80],pic[30];
 
    nargs = cob_get_num_params();
    if ((k = cob_get_name_line (wrk, NULL)) > 0) {

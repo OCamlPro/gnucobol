@@ -2766,8 +2766,16 @@ AX_AC_DEFINE_RESOLVED([COB_SCHEMA_DIR],	[$COB_SCHEMA_DIR],	[default search path 
 dnl unused: AX_AC_DEFINE_RESOLVED([DATADIR],		[$datarootdir], 	[path for configuration files])
 AX_AC_DEFINE_RESOLVED([LOCALEDIR],		[$localedir], 		[path for locale-dependent data])
 
-dnl unused: AC_DEFINE_UNQUOTED([COBC_NAME],	["$(echo cobc    | $SED "$program_transform_name")"], [executable name for compiler])
-AC_DEFINE_UNQUOTED([COBCRUN_NAME],	["$(echo cobcrun | $SED "$program_transform_name")"], [executable name for module runner])
+# convert from "make" style to real command
+local_transform=$(echo "$program_transform_name" | $SED -e 's,\$\$,$,')
+
+dnl unused: cobc_name="$(echo cobc | $SED -e $local_transform)"
+dnl unused: AC_DEFINE_UNQUOTED([COBC_NAME],	["$cobc_name"], [executable name for compiler])
+dnl unused: unset cobc_name
+cobcrun_name="$(echo cobcrun | $SED -e $local_transform)"
+AC_DEFINE_UNQUOTED([COBCRUN_NAME],	["$cobcrun_name"], [executable name for module runner])
+unset cobcrun_name
+unset local_transform
 
 dnl informational only
 AC_DEFINE_UNQUOTED([COB_BLD_CC],		["$CC"],		[informational: compiler during compilation])

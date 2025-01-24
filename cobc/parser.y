@@ -781,9 +781,16 @@ setup_occurs (void)
 	}
 
 	if (current_field->flag_unbounded) {
-		if (current_field->storage != CB_STORAGE_LINKAGE) {
-			cb_error_x (CB_TREE(current_field), _("'%s' is not in LINKAGE SECTION"),
-				cb_name (CB_TREE(current_field)));
+		if (current_field->storage == CB_STORAGE_LINKAGE) {
+			struct cb_field *p = current_field;
+			while (p) {
+				p->flag_above_unbounded = 1;
+				p = p->parent;
+			}
+		} else {
+			cb_tree x = CB_TREE (current_field);
+			cb_error_x (x, _("'%s' is not in LINKAGE SECTION"), cb_name (x));
+			current_field->flag_above_unbounded = 1;
 		}
 	}
 
@@ -2306,6 +2313,23 @@ error_if_not_usage_display_or_nonnumeric_lit (cb_tree x)
 			cb_error_x (x, _ ("'%s' is not USAGE DISPLAY"), cb_name (x));
 		}
 	}
+}
+
+/* guarantees a reference to a validated field-reference (or cb_error_node) */
+static cb_tree
+validated_field_reference (cb_tree fld_ref)
+{
+	cb_tree ref = NULL;
+	if (CB_REFERENCE_P (fld_ref)) {
+		ref = cb_ref (fld_ref);
+		if (CB_FIELD_P (ref)) {
+			return fld_ref;
+		}
+	}
+	if (ref != cb_error_node) {
+		cb_error_x (fld_ref, _ ("'%s' is not a field"), cb_name (fld_ref));
+	}
+	return cb_error_node;
 }
 
 static void
@@ -8405,12 +8429,6 @@ occurs_clause:
   DEPENDING _on reference _occurs_keys_and_indexed
   {
 	current_field->flag_unbounded = 1;
-#if 0 /* Why should we do this? If this is relevant then it likely needs to be done
-	   either to the field founder or to the complete list of parents up to it. */
-	if (current_field->parent) {
-		current_field->parent->flag_unbounded = 1;
-	}
-#endif
 	current_field->depending = $7;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -19518,35 +19536,17 @@ identifier_or_file_name:
 identifier_field:
   identifier_1
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-
-	if (x && CB_FIELD_P (x)) {
-		$$ = $1;
-	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
-		$$ = cb_error_node;
-	}
+	$$ = validated_field_reference ($1);
   }
 ;
 
 identifier:
   identifier_1
   {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-	if (x && CB_FIELD_P (x)) {
+	cb_tree x = validated_field_reference ($1);
+	if (x != cb_error_node) {
 		$$ = cb_build_identifier ($1, 0);
 	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
 		$$ = cb_error_node;
 	}
   }

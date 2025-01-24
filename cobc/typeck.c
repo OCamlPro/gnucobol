@@ -2570,7 +2570,7 @@ cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 static void
 refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 {
-	const char *name = r->word->name;
+	const char	*name = r->word->name;
 	const int	adjusted_at_runtime = -1;
 	int			offset;
 	int			length;
@@ -2587,8 +2587,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 		return;
 	}
 
-	if (!r->offset
-	 || cb_is_field_unbounded (f)) {
+	if (!r->offset) {
 		/* no more checks needed */
 		return;
 	}
@@ -2615,7 +2614,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 			/* note: child elements under UNBOUNDED are not included! */
 			pseudosize = f->size;
 		}
-		if (cb_field_has_unbounded (f)) {
+		if (f->flag_above_unbounded) {
 			pseudosize *= -1;
 		}
 	}
@@ -2689,7 +2688,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 
 	/* Run-time check */
 	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
-		if (f->flag_any_length
+		if (pseudosize < 0	/* UNBOUNDED or ANY LENGTH */
 		 || cb_field_variable_size (f)
 		 || offset == adjusted_at_runtime
 		 || length == adjusted_at_runtime) {
@@ -2722,7 +2721,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 					f->flag_any_length ?
 					CB_BUILD_CAST_LENGTH (CB_TREE(f)) /* known via field.size */ :
 					pseudosize < 0 ?
-					CB_BUILD_CAST_LENGTH (x) /* needs to be runtime-calculated */ :
+					CB_BUILD_CAST_LENGTH (cb_build_field_reference (f, NULL)) /* needs to be runtime-calculated */ :
 					cb_int (pseudosize),
 					cb_build_cast_int (r->offset),
 					r->length ?
@@ -5113,6 +5112,8 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Resolve all references so far */
 	for (l = cb_list_reverse (prog->reference_list); l; l = CB_CHAIN (l)) {
 		cb_ref (CB_VALUE (l));
+		/* TODO: move allocation of prog->reference_list outside of parse_mem
+		         and free it here directly */
 	}
 
 	/* Check ODO items */
@@ -13946,6 +13947,11 @@ search_set_keys (struct cb_field *f, cb_tree x)
 		}
 	}
 
+	if (!CB_BINARY_OP_P (x)) {
+		cb_error_x (x, _("invalid SEARCH ALL condition"));
+		return 1;
+	}
+
 	p = CB_BINARY_OP (x);
 	switch (p->op) {
 	case '&':
@@ -13966,11 +13972,12 @@ search_set_keys (struct cb_field *f, cb_tree x)
 		if (CB_REF_OR_FIELD_P (p->y)) {
 			fldy = CB_FIELD_PTR (p->y);
 		}
+#if 0	/* validated in the parser */
 		if (!fldx && !fldy) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("invalid SEARCH ALL condition"));
+			cb_error_x (CB_TREE (p), _("invalid SEARCH ALL condition"));
 			return 1;
 		}
+#endif
 
 		for (i = 0; i < f->nkeys; ++i) {
 			if (fldx == CB_FIELD_PTR (f->keys[i].key)) {
@@ -13989,15 +13996,13 @@ search_set_keys (struct cb_field *f, cb_tree x)
 				}
 			}
 			if (i == f->nkeys) {
-				cb_error_x (CB_TREE (current_statement),
-					    _("invalid SEARCH ALL condition"));
+				cb_error_x (x, _("SEARCH ALL requires comparision of KEY field"));
 				return 1;
 			}
 		}
 		break;
 	default:
-		cb_error_x (CB_TREE (current_statement),
-			    _("invalid SEARCH ALL condition"));
+		cb_error_x (x, _("invalid SEARCH ALL condition"));
 		return 1;
 	}
 	return 0;
