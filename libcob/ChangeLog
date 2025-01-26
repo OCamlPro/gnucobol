@@ -140,6 +140,11 @@
 	* numeric.c, common.c (print_info_detailed): drop COB_LI_IS_LL
 	  in favor of existing COB_32_BIT_LONG
 
+2024-09-25  Denis Hugonnard-Roche <dhugonnard@yahoo.fr>
+
+	* intrinsic.c (cob_decimal_pow): recode function in order to
+	  fix bugs #924, #925 and #989
+
 2024-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c: In preparation for Multiple Window support
