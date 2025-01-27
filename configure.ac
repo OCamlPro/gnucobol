@@ -214,7 +214,9 @@ AC_ARG_ENABLE([debug],
 
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening, --disable-hardening],
-    [Enable GNU C "hardening" options: define _FORTIFY_SOURCE and use -fstack-protector.
+    [Enable GNU C "hardening" options: define _FORTIFY_SOURCE and use,
+	depending on the availability -fstack-protector-strong / -fstack-protector,
+	as well as -fstack-clash-protection.
 	If disabled, these are explicit removed from CFLAGS for building GnuCOBOL.
 	Defaults to "defined by CFLAGS".])],,
   [enable_hardening="unset"])
@@ -2391,11 +2393,25 @@ AS_IF([test "$enable_hardening" = yes], [
 			[CFLAGS="$curr_cflags"; cob_temp_flags=""; AC_MSG_RESULT([no])])
 		 ])
 	if test "x$cob_temp_flags" != x; then
-	   if test "x$COB_LDFLAGS" != x; then
-	      COB_LDFLAGS="$COB_LDFLAGS $cob_temp_flags"
-	   else
-	      COB_LDFLAGS="$cob_temp_flags"
-	   fi
+		if test "x$COB_LDFLAGS" != x; then
+		  COB_LDFLAGS="$COB_LDFLAGS $cob_temp_flags"
+		else
+		  COB_LDFLAGS="$cob_temp_flags"
+		fi
+		curr_cflags="$curr_cflags $cob_temp_flags"
+	fi
+	cob_temp_flags="-fstack-clash-protection"
+	CFLAGS="$curr_cflags $cob_temp_flags $ERRWARN"
+	AC_MSG_CHECKING([for $cob_temp_flags option])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],
+		[AC_MSG_RESULT([yes])],
+		[CFLAGS="$curr_cflags"; cob_temp_flags=""; AC_MSG_RESULT([no])])
+	if test "x$cob_temp_flags" != x; then
+		if test "x$COB_LDFLAGS" != x; then
+		  COB_LDFLAGS="$COB_LDFLAGS $cob_temp_flags"
+		else
+		  COB_LDFLAGS="$cob_temp_flags"
+		fi
 		CFLAGS="$curr_cflags $cob_temp_flags"
 	else
 		CFLAGS="$curr_cflags"
@@ -2504,6 +2520,7 @@ if test "$enable_hardening" = no; then
 	     -e 's/-fstack-protector-strong//g'		\
 	     -e 's/-fstack-protector-all//g'		\
 	     -e 's/-fstack-protector//g'		\
+	     -e 's/-fstack-clash-protection//g'		\
 	     )
 fi
 
