@@ -18362,13 +18362,13 @@ note: TooSmall2 has version 2.0.0
 ], [])
 
 AT_DATA([testdata.h], [[
-  { "TooSmall3", "3.2",    0 },
+  { "TooSmall3", "3.4",    0 },
 ]])
 AT_CHECK([$COMPILE -o small3 prog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./small3 2>small3.log], [1], [], [])
 AT_CHECK([$GREP -v "libcob has" small3.log], [0],
 [libcob: error: version mismatch
-note: TooSmall3 has version 3.2.0
+note: TooSmall3 has version 3.4.0
 ], [])
 
 AT_DATA([testdata.h], [[
