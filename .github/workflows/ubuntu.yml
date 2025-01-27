@@ -35,7 +35,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev \
-                               bison flex help2man gettext texlive
+                               bison flex help2man gettext texlive autopoint
 
       - name: Installing VISAM prerequisite
         if: ${{ matrix.isam == 'visam' }}
@@ -52,7 +52,7 @@ jobs:
 
       - name: Bootstrap
         run: |
-          ./build_aux/bootstrap
+          ./build_aux/bootstrap install
 
       # FIXME: With TERM="dumb" `make check` fails with:
       # ...
@@ -146,7 +146,7 @@ jobs:
 
   coverage:
     name: Coverage and Warnings
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
@@ -156,11 +156,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install automake libtool libdb5.3-dev libxml2-dev \
-                       libcjson-dev bison flex help2man gettext lcov
+                       libcjson-dev bison flex help2man gettext lcov autopoint
 
       - name: Bootstrap
         run: |
-          ./build_aux/bootstrap
+          ./build_aux/bootstrap install
 
       - name: Build environment setup
         run: |
