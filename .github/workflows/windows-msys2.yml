@@ -67,6 +67,7 @@ jobs:
         run: |
           mkdir _build
           cd _build
+          export CFLAGS="-Wno-unused-command-line-argument $CFLAGS"
           ../configure $CFGOPT --with-db --with-indexed=db --prefix=/opt/cobol/gnucobol
 
       - name: Upload config-${{matrix.sys}}-${{matrix.target}}.log

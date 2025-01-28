@@ -72,7 +72,7 @@ jobs:
         run: |
           cd _build
           export CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
-          export CFLAGS="-Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
+          export CFLAGS="-Wno-unused-command-line-argument -Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
           ../configure --with-${{ matrix.isam }} \
                        --with-indexed=${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
