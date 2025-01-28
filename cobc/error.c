@@ -553,7 +553,7 @@ cb_perror (const int config_error, const char *fmt, ...)
 	va_list ap;
 
 	if (config_error) {
-		configuration_error_head();
+		configuration_error_head ();
 	}
 
 	va_start (ap, fmt);
@@ -721,7 +721,7 @@ configuration_error (const char *fname, const int line,
 	putc ('\n', stderr);
 	fflush (stderr);
 
-	if (sav_lst_file) {
+	if (sav_lst_file || finish_error == 2) {
 		return;
 	}
 
@@ -1227,7 +1227,7 @@ ambiguous_error (cb_tree x)
 
 /* error routine for flex */
 void
-flex_fatal_error (const char *msg, const char * filename, const int line_num)
+flex_fatal_error (const char *msg, const char *filename, const int line_num)
 {
 	/* LCOV_EXCL_START */
 	cobc_err_msg (_("fatal error: %s"), msg);

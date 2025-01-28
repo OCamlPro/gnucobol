@@ -691,7 +691,6 @@ prog.cob:14: warning: MOVE of figurative constant QUOTE to numeric item is archa
 prog.cob:15: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:17: warning: numeric value is expected
-prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in COBOL 2002
@@ -709,7 +708,6 @@ prog.cob:14: warning: MOVE of figurative constant QUOTE to numeric item is archa
 prog.cob:15: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:17: warning: numeric value is expected
-prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in IBM COBOL (lax)
@@ -743,7 +741,6 @@ prog.cob:14: warning: MOVE of figurative constant to numeric item is archaic in 
 prog.cob:15: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:17: warning: numeric value is expected
-prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:19: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:20: error: an integer, INDEX, or a POINTER is expected here
 prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in GnuCOBOL

@@ -5579,8 +5579,8 @@ output_initialize_uniform (cb_tree x, struct cb_field *f,
 			output_size (x);
 			output (");");
 		} else if (!gen_init_working
-				&& (f->flag_unbounded || !(cb_complex_odo || cb_odoslide))
-				&& chk_field_variable_size (f) != NULL) {
+			 && (f->flag_unbounded || !(cb_complex_odo || cb_odoslide))
+			 && chk_field_variable_size (f) != NULL) {
 			out_odoslide_size (f);
 			output (");");
 		} else {

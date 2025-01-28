@@ -628,6 +628,8 @@ extern void		cb_add_error_to_listing (const char *, int, const char *, char *);
 DECLNORET extern void		flex_fatal_error (const char *, const char *,
 					 const int) COB_A_NORETURN;
 
+DECLNORET extern void		cobc_terminate_exit (const char *, const char *) COB_A_NORETURN;
+
 extern void		cobc_set_listing_header_code (void);
 
 /* reserved.c */
