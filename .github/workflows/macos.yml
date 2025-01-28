@@ -52,6 +52,7 @@ jobs:
       - name: configure
         run: |
           cd _build
+          export CFLAGS="-Wno-unused-command-line-argument $CFLAGS"
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
                        --with-curses=ncurses \
