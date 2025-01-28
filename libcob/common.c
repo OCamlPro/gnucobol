@@ -3881,6 +3881,25 @@ cob_real_get_sign (cob_field *f, const int adjust_ebcdic)
 	return 0;
 }
 
+/* get the "sign" from an alphanumeric field, as if the field
+   was numeric display with non-separate trailing sign */
+int
+cob_get_sign_from_alnum (cob_field *f)
+{
+	int sign;
+	cob_field_attr attr;
+	cob_field field;
+	COB_FIELD_INIT (COB_FIELD_SIZE (f), COB_FIELD_DATA (f), &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, COB_FIELD_SIZE (f), 0, COB_FLAG_HAVE_SIGN, NULL);
+	sign = cob_real_get_sign (&field, 0);
+	if (sign < 0) {
+		return -1;
+	} else if (sign > 0) {
+		return 1;
+	}
+	return 0;
+}
+
 /* store sign to DISPLAY/PACKED fields */
 void
 cob_real_put_sign (cob_field *f, const int sign)
