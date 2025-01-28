@@ -983,7 +983,7 @@ struct cb_field {
 	unsigned int flag_field		: 1;	/* Has been internally cached */
 	unsigned int flag_chained	: 1;	/* CHAINING item */
 	unsigned int flag_data_set	: 1;	/* The data address was set in entry code */
-	unsigned int flag_is_verified	: 1;	/* Has been verified */
+	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_is_c_long	: 1;	/* Is BINARY-C-LONG */
 	unsigned int flag_is_pdiv_parm	: 1;	/* Is PROC DIV USING */
 	unsigned int flag_is_pdiv_opt	: 1;	/* Is PROC DIV USING OPTIONAL */
@@ -1031,9 +1031,11 @@ struct cb_field {
 	unsigned int flag_occurs_multi_col: 1;	/* OCCURS and multi COLUMNs reported */
 	unsigned int flag_set_col_offset: 1;	/* offset was set based on COLUMN */
 
-	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */
+	unsigned int flag_is_verified	: 1;	/* Has been verified */
+
+	unsigned int flag_had_definition_note : 1;	/* had its defintion output */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1244,7 +1246,7 @@ struct cb_reference {
 	cb_tree			value;		/* Item referred to */
 	cb_tree			subs;		/* List of subscripts */
 	cb_tree			offset;		/* Reference mod offset */
-	cb_tree			length;		/* Reference mod length */
+	cb_tree			length;		/* Reference mod length, only set if offset set */
 	cb_tree			check;		/* Runtime checks */
 	enum cob_statement	statement;	/* statement that uses this reference */
 	struct cb_word		*word;		/* Pointer to word list */

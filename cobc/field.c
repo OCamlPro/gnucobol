@@ -1253,7 +1253,7 @@ create_implicit_picture (struct cb_field *f)
 	&& !f->flag_usage_defined) {
 		for (p = f->parent; p; p = p->parent) {
 			if (p->flag_usage_defined
-			&& (p->usage == CB_USAGE_FLOAT	
+			&& (p->usage == CB_USAGE_FLOAT
 			 || p->usage == CB_USAGE_DOUBLE
 			 || p->usage == CB_USAGE_POINTER
 			 || p->usage == CB_USAGE_INDEX)) {
@@ -2489,9 +2489,9 @@ validate_field_1 (struct cb_field *f)
 	int			sts = 0;
 
 	if (f->flag_invalid) {
-			return 1;
-		}
-			 
+		return 1;
+	}
+
 	x = CB_TREE (f);
 	if (f->level == 77) {
 		if (f->storage != CB_STORAGE_WORKING
@@ -2660,7 +2660,7 @@ setup_parameters (struct cb_field *f)
 	case CB_USAGE_COMP_N:
 		f->flag_real_binary = 1;
 	case CB_USAGE_COMP_5:
-		if (f->pic 
+		if (f->pic
 		 && f->pic->orig
 		 && f->pic->orig[0] == 'X') {
 			f->usage = CB_USAGE_COMP_X;
@@ -3001,7 +3001,7 @@ unbounded_again:
 				c->offset = c->redefines->offset;
 				compute_size (c);
 				/* Increase the size if redefinition is larger */
-				if (c->level != 66 
+				if (c->level != 66
 				 && c->size * c->occurs_max >
 				    c->redefines->size * c->redefines->occurs_max) {
 					if (cb_verify_x (CB_TREE (c), cb_larger_redefines, _("larger REDEFINES"))) {
@@ -3076,7 +3076,7 @@ unbounded_again:
 						if (c->size == 2
 						 || c->size == 4) {
 							align_size = c->size;
-						} else if (c->size == 8 
+						} else if (c->size == 8
 							|| c->size == 16) {
 							if (cb_binary_size == CB_BINARY_SIZE_2_4_8) {
 								if (c->usage == CB_USAGE_DOUBLE)
@@ -3365,8 +3365,8 @@ unbounded_again:
 		}
 	}
 
-	if (f->storage == CB_STORAGE_LOCAL 
-	 || f->storage == CB_STORAGE_LINKAGE 
+	if (f->storage == CB_STORAGE_LOCAL
+	 || f->storage == CB_STORAGE_LINKAGE
 	 || f->flag_item_based) {
 			/* Can not depend on the data being aligned */
 	} else
@@ -3594,8 +3594,8 @@ cb_validate_field (struct cb_field *f)
 	}
 
 	/* Set up parameters */
-	if (f->storage == CB_STORAGE_LOCAL 
-	 || f->storage == CB_STORAGE_LINKAGE 
+	if (f->storage == CB_STORAGE_LOCAL
+	 || f->storage == CB_STORAGE_LINKAGE
 	 || f->flag_item_based) {
 		f->flag_local = 1;
 	}
@@ -3632,7 +3632,7 @@ cb_validate_field (struct cb_field *f)
 			c->flag_is_global = 1;
 			if (c->count == 0)
 				c->count++;
-	}
+		}
 #else
 		for (c = f->children; c; c = c->sister) {
 			c->flag_is_global = 1;
