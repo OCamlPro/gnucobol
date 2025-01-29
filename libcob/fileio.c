@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -4725,71 +4725,56 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 #endif
 		}
 		/* Close the file */
-		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-			if (f->flag_is_pipe) {
-				if (f->file_pid) {
-					if (f->file)
-						fclose (f->file);
-					if (f->fileout
-					 && f->fileout != f->file)
-						fclose (f->fileout);
+		if (f->flag_is_pipe) {
+			if (f->file_pid) {
+				if (f->file) {
+					fclose (f->file);
+				}
+				if (f->fileout
+				 && f->fileout != f->file) {
+					fclose (f->fileout);
+				}
 #if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
-					{
-						int	sts;
-						errno = 0;
-						kill (f->file_pid, 0);
-						if (errno == ESRCH) {
-							waitpid (f->file_pid, &sts, WNOHANG);
-						}
-						else {
-							cob_sleep_msec (50);
-							kill (f->file_pid, SIGKILL);
-							cob_sleep_msec (50);
-							waitpid (f->file_pid, &sts, 0);
-						}
+				{
+					int	sts;
+					errno = 0;
+					kill (f->file_pid, 0);
+					if (errno == ESRCH) {
+						waitpid (f->file_pid, &sts, WNOHANG);
+					}
+					else {
+						cob_sleep_msec (50);
+						kill (f->file_pid, SIGKILL);
+						cob_sleep_msec (50);
+						waitpid (f->file_pid, &sts, 0);
+					}
 				}
 #elif defined (_WIN32)
-					{
-						char buff[COB_MINI_BUFF];
-						snprintf((char *)&buff, COB_MINI_MAX, "TASKKILL    /PID %d", f->file_pid);
-						system(buff);
-					}
-#endif
-				} else {
-					pclose ((FILE *)f->file);
+				{
+					char buff[COB_MINI_BUFF];
+					snprintf ((char *)&buff, COB_MINI_MAX, "TASKKILL    /PID %d", f->file_pid);
+					system (buff);
 				}
-				f->flag_is_pipe = 0;
-				f->file = f->fileout = NULL;
-				f->fd = f->fdout = -1;
-				f->file_pid = 0;
-				return COB_STATUS_00_SUCCESS;
-			}
-#ifdef _MSC_VER /* explicit only stream or fd close with this compiler */
-			if (f->file != NULL) {
-				fclose ((FILE *)f->file);
-				f->file = NULL;
-#ifdef _WIN32
-				/* at least on MSVC that closes the underlying file descriptor, too */
-				f->fd = -1;
 #endif
+			} else {
+				pclose ((FILE *)f->file);
 			}
-#endif
-		} else {
-			if (f->fd >= 0) {
-				close (f->fd);
-				f->fd = -1;
-#ifdef _MSC_VER
-				f->file = NULL;
-#endif
-			}
+			f->flag_is_pipe = 0;
+			f->file = f->fileout = NULL;
+			f->fd = f->fdout = -1;
+			f->file_pid = 0;
+			return COB_STATUS_00_SUCCESS;
 		}
-#ifndef _MSC_VER /* explicit disallowed there, is that the same for other compilers? */
 		if (f->file != NULL) {
+			/* This also closes the underlying fd */
 			fclose ((FILE *)f->file);
 			f->file = NULL;
 			f->fd = -1;
+		} else
+		if (f->fd >= 0) {
+			close (f->fd);
+			f->fd = -1;
 		}
-#endif
 		if (opt == COB_CLOSE_NO_REWIND) {
 			f->open_mode = COB_OPEN_CLOSED;
 			return COB_STATUS_07_SUCCESS_NO_UNIT;
