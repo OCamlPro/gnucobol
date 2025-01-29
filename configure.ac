@@ -2254,6 +2254,10 @@ else
 	CFLAGS="$curr_cflags"
 fi
 
+if test "$COB_USES_GCC_NO_ICC" = yes; then
+	CFLAGS="$CFLAGS -Wno-unused-command-line-argument"
+fi
+
 AS_IF([test "$enable_hardening" = yes], [
 	AC_MSG_NOTICE([Compile with hardening options])
 	# needs optimization
