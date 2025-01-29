@@ -94,7 +94,39 @@ Open Plans:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- GnuCOBOL 3.2
+ GnuCOBOL 3.3     (planned January 2023)
+
+ work in progress
+
+* New GnuCOBOL features
+
+** cobc now checks for binary files and early exit parsing those;
+   the error output for format errors (for example invalid indicator column)
+   is now limitted to 5 per source file
+
+  more work in progress
+
+* Important Bugfixes
+
+** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+
+* Changes to the COBOL compiler (cobc) options:
+
+** output of unlimited errors may be requested by -fmax-errors=0,
+   to stop compiliation at first error use -Wfatal-errors
+** default value for -fmax-errors was changed from 128 to 20
+
+* More notable changes
+
+** execution times were significantly reduced for the following:
+	INSPECT CONVERTING (and "simple" INSPECT REPLACING), in general
+	   and especially if both from and to are constants
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ GnuCOBOL 3.2     (20230728)
+ GnuCOBOL 3.2rc1  (20230118)
+ GnuCOBOL 3.2rc2  (20230210)
 
 * New GnuCOBOL features
 
@@ -436,7 +468,7 @@ Open Plans:
 
 ** the -P flag accepts - as argument for stdout
 
-* Important Bugfixes:
+* Important Bugfixes
 
 ** for dialects other than the GnuCOBOL default different reserved "alias" words
    were not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed

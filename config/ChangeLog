@@ -8,6 +8,10 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2023-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* rm-strict.conf (perform-osvs): enabled as noted in MF docs
+
 2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	FR #439: dialect option to support justify for IBM compatibility

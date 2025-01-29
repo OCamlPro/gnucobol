@@ -4150,6 +4150,9 @@ cob_fd_file_open (cob_file *f, char *filename,
 
 	errno = 0;
 	fd = open (filename, fdmode, fperms);
+	if (fd != -1) {
+		errno = 0;
+	}
 	ret = errno;
 
 	switch (ret) {
@@ -8250,9 +8253,10 @@ open_cbl_file (cob_u8_ptr file_name, int file_access,
 	cob_chk_file_mapping (NULL, NULL);
 
 	fd = open (file_open_name, flag, COB_FILE_MODE);
-	if (fd < 0) {
+	if (fd == -1) {
+		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		memset (file_handle, -1, (size_t)4);
-		return 35;
+		return ret;
 	}
 	memcpy (file_handle, &fd, (size_t)4);
 	return 0;
@@ -8466,9 +8470,9 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 
 	flag |= O_RDONLY;
 	fd1 = open (file_open_name, flag, 0);
-	if (fd1 < 0) {
+	if (fd1 == -1) {
 		cob_free (fn2);
-		return -1;
+		return errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 	}
 
 	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
@@ -8479,9 +8483,10 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	flag &= ~O_RDONLY;
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
 	fd2 = open (file_open_name, flag, COB_FILE_MODE);
-	if (fd2 < 0) {
+	if (fd2 == -1) {
+		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		close (fd1);
-		return -1;
+		return ret;
 	}
 
 	ret = 0;
@@ -9010,7 +9015,7 @@ cob_create_tmpfile (const char *ext)
 	fd = open (filename,
 		    O_CREAT | O_TRUNC | O_RDWR | O_BINARY | COB_OPEN_TEMPORARY,
 		    COB_FILE_MODE);
-	if (fd < 0) {
+	if (fd == -1) {
 		cob_free (filename);
 		return NULL;
 	}
@@ -9493,6 +9498,11 @@ cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
 		if (data_file->file_status[0] == '4') {
 			cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
 		}
+		if (hp->sort_return) {
+			*(int *)(hp->sort_return) = 16;	/* TODO: recheck with MF */
+		} else {
+			/* IBM doc: if not used then a runtime message is displayed */
+		}
 		return;
 	}
 	for (;;) {
@@ -9552,6 +9562,9 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 			if (using_file->file_status[0] == '4') {
 				cob_set_exception (COB_EC_SORT_MERGE_FILE_OPEN);
 			}
+			if (!hp->sort_return) {
+				/* IBM doc: if not used then a runtime message is displayed */
+			}
 			opt[i] = -1;
 		}
 	}
@@ -9596,6 +9609,9 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 			if (using_file->file_status[0] == '3') {
 				int j;
 				opt[i] = -2;
+				if (!hp->sort_return) {
+					/* IBM doc: if not used then a runtime message is displayed */
+				}
 				/* early exit if no GIVING file left */
 				for (j = 0; j < giving_cnt; ++j) {
 					if (opt[i] >= 0) {
@@ -9623,6 +9639,16 @@ cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 			cob_extfh_close (callfh[i], using_file, NULL, COB_CLOSE_NORMAL, 0);
 		} else {
 			cob_close (using_file, NULL, COB_CLOSE_NORMAL, 0);
+		}
+	}
+
+	/* if any error happened with the GIVING files update SORT-RETURN */
+	if (hp->sort_return) {
+		for (i = 0; i < giving_cnt; ++i) {
+			if (opt[i] < 0) {
+				*(int *)(hp->sort_return) = 16;
+				break;
+			}
 		}
 	}
 
@@ -9716,8 +9742,6 @@ cob_file_release (cob_file *f)
 		}
 		if (hp->sort_return) {
 			*(int *)(hp->sort_return) = 16;
-		} else {
-			/* IBM doc: if not used then a runtime message is displayed */
 		}
 		cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 	} else {
@@ -9743,8 +9767,6 @@ cob_file_return (cob_file *f)
 		}
 		if (hp->sort_return) {
 			*(int *)(hp->sort_return) = 16;
-		} else {
-			/* IBM doc: if not used then a runtime message is displayed */
 		}
 		cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 	} else {

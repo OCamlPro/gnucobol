@@ -3344,7 +3344,7 @@ AT_DATA([prog.cob], [
                OCCURS 8 TIMES            PIC 1(8) BIT.
 ])
 
-AT_CHECK([$COMPILE_LISTING0 -t prog.lst -ftsymbols -Wno-pending -Wno-unfinished -fword-continuation=ok prog.cob], [1], [], [ignore])
+AT_CHECK([$COMPILE_LISTING0 -t prog.lst -ftsymbols -Wno-pending -Wno-unfinished -fmax-errors=0 -fword-continuation=ok prog.cob], [1], [], [ignore])
 
 AT_DATA([expected.lst],
 [GnuCOBOL V.R.P               prog.cob

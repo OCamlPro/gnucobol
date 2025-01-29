@@ -4428,7 +4428,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  MYOCC        PIC 9(8) COMP VALUE 0.
+       01  MYOCC        PIC 9(8) VALUE 0.
        PROCEDURE        DIVISION.
        ASTART SECTION.
        A01.
@@ -4447,6 +4447,7 @@ AT_DATA([prog.cob], [
            END-IF.
        B99.
            EXIT.
+      *> expected without -fperform-osvs: fall through here _SHOULD_ abort with -fsection-exit-check
 ])
 
 AT_CHECK([$COMPILE -fperform-osvs prog.cob], [0], [], [])
@@ -7910,7 +7911,6 @@ AT_CHECK([$COMPILE -std=mf -fno-move-non-numeric-lit-to-numeric-is-zero prog.cob
 prog.cob:28: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:34: warning: numeric value is expected
-prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:52: warning: numeric value is expected
 prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
 ])
@@ -18362,13 +18362,13 @@ note: TooSmall2 has version 2.0.0
 ], [])
 
 AT_DATA([testdata.h], [[
-  { "TooSmall3", "3.2",    0 },
+  { "TooSmall3", "3.4",    0 },
 ]])
 AT_CHECK([$COMPILE -o small3 prog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./small3 2>small3.log], [1], [], [])
 AT_CHECK([$GREP -v "libcob has" small3.log], [0],
 [libcob: error: version mismatch
-note: TooSmall3 has version 3.2.0
+note: TooSmall3 has version 3.4.0
 ], [])
 
 AT_DATA([testdata.h], [[
