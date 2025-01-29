@@ -1,4 +1,10 @@
 
+2025-01-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_file_close): try to close the file stream
+	  first, close the file descriptor only if the stream is NULL
+	  (fixes assertions under MSVC debug)
+
 2024-11-06  David Declerck <david.declerck@ocamlpro.com>
 
 	Reverted change 2022-02-21 to integrate change
