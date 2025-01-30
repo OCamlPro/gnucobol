@@ -1,4 +1,4 @@
-name: Ubuntu
+name: Build, Test and provide Nightly (Ubuntu + MSYS1)
 
 on:
   pull_request:
@@ -9,17 +9,14 @@ on:
 
 jobs:
   build:
-    name: Build, test and provide nightly
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
         isam:
           - db
           - visam
-
-    runs-on: ${{ matrix.os }}
 
     steps:
 
@@ -31,94 +28,92 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup build environment
+        run: echo "TERM=vt100" >> $GITHUB_ENV
+
       - name: Install packages
         run: |
-          sudo apt-get update
-          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev \
-                               bison flex help2man gettext texlive autopoint
+          sudo apt -y update
+          sudo apt -y install autoconf automake make libtool flex bison \
+                              autopoint gettext help2man texinfo texlive \
+                              gcc libgmp-dev libncurses-dev \
+                              libdb-dev libxml2-dev libcjson-dev
 
-      - name: Installing VISAM prerequisite
+      - name: Install VISAM
         if: ${{ matrix.isam == 'visam' }}
         run: |
-          wget http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
           tar -xvzf visam-2.2.tar.Z
           cd visam-2.2
-          ./configure --prefix=/usr/local/visam-2.2 --enable-vbisamdefault
-          make
-          sudo make install
-          echo "CPATH=/usr/local/visam-2.2/include" >> $GITHUB_ENV
-          echo "LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
+          ./configure --prefix=/opt/visam --enable-vbisamdefault
+          make && sudo make install
+          echo "CPATH=/opt/visam/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
 
-      - name: Bootstrap
-        run: |
-          ./build_aux/bootstrap install
+      - name: Bootstrap GnuCOBOL
+        run: ./build_aux/bootstrap install
 
-      # FIXME: With TERM="dumb" `make check` fails with:
-      # ...
-      # 571: ACCEPT OMITTED (SCREEN)                         FAILED (run_accept.at:307)
-      # ...
-      # 693: ON EXCEPTION clause of DISPLAY                  FAILED (run_misc.at:6335)
-      # 695: LINE/COLUMN 0 exceptions                        FAILED (run_misc.at:6414)
-      # 694: EC-SCREEN-LINE-NUMBER and -STARTING-COLUMN      FAILED (run_misc.at:6376)
-      # ...
-      # Failure cases read: "Error opening terminal: unknown." on
-      # stderr, and exit with code 1.
-      #
-      # Another alternative is passing `--with-curses=no` to the
-      # configure script, yet distcheck does call configure too...
-      #
-      - name: Build environment setup
+      - name: Configure GnuCOBOL
         run: |
-          mkdir _build
-          export TERM="vt100"
-          echo "TERM=$TERM" >> $GITHUB_ENV
-          echo "INSTALL_PATH=$(pwd)/_install" >> $GITHUB_ENV
-
-      - name: Configure
-        run: |
-          cd _build
+          mkdir _build && cd _build
           ../configure --with-${{ matrix.isam }} \
                        --with-indexed=${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
-                       --enable-hardening \
-                       --prefix ${INSTALL_PATH}
-          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" \
-            >> $GITHUB_ENV
+                       --enable-hardening
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
 
-      - name: Upload config-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Upload config-${{ matrix.isam }}.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          name: config-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: config-${{ matrix.isam }}.log
           path: _build/config.log
-
-      - name: Build
-        run: |
-          make -C _build --jobs=$(($(nproc)+1))
 
       # note: distcheck also creates the dist tarball
       - name: Build distribution archive & run tests
         run: |
-          make -C _build distcheck                                \
-                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"  \
-                         --jobs=$(($(nproc)+1)) ||                \
-          make -C _build/gnucobol-$VERSION/_build/sub/tests check \
+          make -C _build distcheck --jobs=$(($(nproc)+1))           \
+                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build/gnucobol-$VERSION/_build/sub/tests check   \
                          TESTSUITEFLAGS="--recheck --verbose"
+          make -C _build --jobs=$(($(nproc)+1)) dist DIST_TARGETS="dist-gzip distwin-zip"
+          make -C _build --jobs=$(($(nproc)+1)) distbin DISTBIN_TARGETS="distbin-xz"
 
-      - name: Upload testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Upload testsuite-${{ matrix.isam }}.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          # Assume there's only one directory matching `_build/gnucobol-*`:
-          name: testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: testsuite-${{ matrix.isam }}.log
           path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
 
       - name: Upload dist tarball
+        if: ${{ matrix.isam != 'visam' }}
         uses: actions/upload-artifact@v4
         with:
-          name: gnucobol-ci source distribution (${{ matrix.isam }})
-          path: _build/gnucobol*.tar*
+          name: gnucobol-ci source distribution
+          path: _build/gnucobol*.tar.gz
+          if-no-files-found: error
+          retention-days: 0
+
+      - name: Upload dist tarball (Windows)
+        if: ${{ matrix.isam != 'visam' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gnucobol-ci windows source distribution
+          path: _build/gnucobol*.zip
+          if-no-files-found: error
+          retention-days: 0
+
+      - name: Upload test binaries
+        if: ${{ matrix.isam != 'visam' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gnucobol-ci binary distribution
+          path: _build/gnucobol*.tar.xz
           if-no-files-found: error
           retention-days: 0
 
@@ -127,88 +122,159 @@ jobs:
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
-          save-always: true
           enableCrossOsArchive: true
 
-      - name: NIST85 Test Suite
-        run: |
-          make -C _build/tests/cobol85 EXEC85 test \
-                                       --jobs=$(($(nproc)+1))
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$(($(nproc)+1))
 
       - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: NIST85 results on ${{ matrix.os }} (${{ matrix.isam }})
+          name: NIST85 results on ${{ matrix.isam }}
           path: |
+            _build/tests/cobol85/summary.*
             _build/tests/cobol85/**/*.log
             _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
+
+
+  minmal_build:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+
+    steps:
+
+      - name: Get CI dist tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: gnucobol-ci source distribution
+
+      - name: Extract CI dist tarball
+        run: tar -xvf gnucobol*.tar.* --strip-components=1
+
+      - name: Install packages
+        run: |
+          sudo apt -y update
+          sudo apt -y install make libtool gcc libgmp-dev
+          sudo apt -y remove flex bison
+
+      - name: Configure GnuCOBOL
+        run: |
+          mkdir _build && cd _build
+          ../configure --without-curses --without-db --without-xml2 \
+                       --without-json --without-iconv --disable-nls \
+                       --disable-dependency-tracking
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Upload config-minimal.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-minimal.log
+          path: _build/config.log
+
+      - name: Run testsuite
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+
+      - name: Upload testsuite-minimal.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-minimal.log
+          path: _build/tests/testsuite.log
+
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          enableCrossOsArchive: true
+
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$(($(nproc)+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on minimal
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
 
 
   coverage:
-    name: Coverage and Warnings
+    needs: build
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      # note: less dependencies as we don't generate a dist tarball, one additional for lcov
+      - name: Get CI dist tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: gnucobol-ci source distribution
+
+      - name: Extract CI dist tarball
+        run: tar -xvf gnucobol*.tar.* --strip-components=1
+
+      - name: Setup build environment
+        run: echo "TERM=vt100" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: |
-          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev \
-                       libcjson-dev bison flex help2man gettext lcov autopoint
+          sudo apt -y update
+          sudo apt -y install lcov make libtool \
+                              gcc libgmp-dev libncurses-dev \
+                              libdb-dev libxml2-dev libcjson-dev
 
-      - name: Bootstrap
+      # note: add additional C compiler syntax checks here to not need _another_ CI run
+      - name: Configure GnuCOBOL
         run: |
-          ./build_aux/bootstrap install
-
-      - name: Build environment setup
-        run: |
-          mkdir _build
-          export TERM="vt100"
-          echo "TERM=$TERM" >> $GITHUB_ENV
-
-      # note: w add additional C compiler syntax checks here to not need
-      # _another_ CI run
-      #
-      # TODO: try and pass -pedantic via CPPFLAGS
-      - name: Configure
-        run: |
-          cd _build
-          ../configure --enable-code-coverage \
+          mkdir _build && cd _build
+          ../configure --with-db --with-indexed=db \
+                       --enable-code-coverage \
                        CPPFLAGS="-Werror=declaration-after-statement" \
                        CC="gcc -std=c89"
 
-      - name: Upload config-${{ matrix.os }}-${{ matrix.isam }}.log
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: config-${{ matrix.os }}-${{ matrix.isam }}.log
-          path: _build/config.log
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
 
-      - name: Build
-        run: |
-          make -C _build --jobs=$(($(nproc)+1))
+      - name: Upload config-coverage.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-coverage.log
+          path: _build/config.log
 
       - name: Coverage
         run: |
           # make -C _build check-code-coverage # <- (ignores errors)
-          make -C _build check \
-                         TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
           make -C _build code-coverage-capture \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
-      - name: Upload testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Upload testsuite-coverage.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          name: testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: testsuite-coverage.log
           path: _build/tests/testsuite.log
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.os }}-${{ matrix.isam }}
+          name: coverage
           path: _build/GnuCOBOL-**-coverage/
 
       - name: Cache newcob.val
@@ -216,14 +282,11 @@ jobs:
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
-          save-always: true
           enableCrossOsArchive: true
 
       - name: Extended coverage
         run: |
-          make -C _build/tests/cobol85 EXEC85 test                        \
-                         --jobs=$(($(nproc)+1))                           \
-                         --keep-going
+          make -C _build test --jobs=$(($(nproc)+1)) --keep-going
           make -C _build code-coverage-capture                            \
                          CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
                          CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
@@ -232,7 +295,7 @@ jobs:
       - name: Upload extended coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: extended-coverage-${{ matrix.os }}-${{ matrix.isam }}
+          name: extended-coverage
           path: _build/extended-coverage
 
       - name: Upload coverage to codecov
@@ -243,3 +306,300 @@ jobs:
           # Shall fail until we have a working account on codecov.io
           fail_ci_if_error: false # optional (default = false)
           verbose: true # optional (default = false)
+
+
+  msys_build_test_createdist:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 40   # 30-35 min when building deps, 19-23 min when using cache
+
+    env:
+      MSYS_ROOT: C:\MinGW
+      MSYS_BIN: C:\MinGW\msys\1.0\bin
+
+      MSYSTEM: MINGW32
+      MSYSPKGS: msys-coreutils msys-patch
+
+      MSYS_URL:  https://www.arnoldtrembley.com/MinGW-bkup02.7z
+
+      # Note: MSYS1 cannot connect to https://gmplib.org, so using GNU mirror side instead
+      GMP_URL:   https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz
+      PDCM_URL:  https://github.com/Bill-Gray/PDCursesMod/archive/refs/tags/v4.4.0.tar.gz
+      BDB_URL:   https://download.oracle.com/berkeley-db/db-6.0.19.NC.tar.gz
+      BDBP_URL:  https://raw.githubusercontent.com/msys2/MINGW-packages/refs/heads/master/mingw-w64-db
+      XML2_URL:  https://github.com/GNOME/libxml2/archive/refs/tags/v2.8.0.tar.gz
+      CJSON_URL: https://raw.githubusercontent.com/DaveGamble/cJSON/v1.7.18
+
+    defaults:
+      run:
+        shell: cmd
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - debug
+          - release
+
+    steps:
+
+      - name: Get CI dist tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: gnucobol-ci source distribution
+
+      - name: Extract CI dist tarball
+        shell: bash
+        run: tar -xvf gnucobol*.tar.* --strip-components=1
+
+      - name: Setup build environment
+        shell: pwsh
+        run: |
+          echo $env:MSYS_BIN >> $env:GITHUB_PATH
+          echo HOME=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
+          If ("${{ matrix.target }}" -eq "release") {
+            echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
+            echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS" >> $env:GITHUB_ENV
+          } Else {
+            echo DISTDIR=GnuCOBOL_mingw_dbg >> $env:GITHUB_ENV
+            echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS-Debug --enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
+          }
+
+
+      - name: Restore MSYS1 cache
+        id: restore-msys
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-msys-${{ matrix.target }}
+          path: ${{ env.MSYS_ROOT }}
+
+      - name: Install MSYS1
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          curl -L %MSYS_URL% -o msys.7z
+          7z x msys.7z -o%MSYS_ROOT%
+
+      - name: Install MSYS1 packages
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: bash -lc "mingw-get install %MSYSPKGS%"
+
+      - name: Cleanup MSYS1 env
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        run: |
+          rmdir /Q /S %MSYS_ROOT%\docs
+          rmdir /Q /S %MSYS_ROOT%\var
+          del /Q %MSYS_ROOT%\bin\gdb.exe
+
+      - name: Save MSYS1 cache
+        if: steps.restore-msys.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-msys-${{ matrix.target }}
+          path: ${{ env.MSYS_ROOT }}
+
+
+      - name: Restore GMP cache
+        id: restore-gmp
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-msys-gmp-${{ matrix.target }}
+          path: gmp
+
+      - name: Build GMP
+        if: steps.restore-gmp.outputs.cache-hit != 'true'
+        run: |
+          curl -L %GMP_URL% -o gmp.tar.xz
+          mkdir gmp && tar -xvf gmp.tar.xz -C gmp --strip-components=1
+          bash -lc "cd gmp && ./configure --prefix=/mingw --enable-fat --enable-shared --disable-static ABI=32 CFLAGS=\"-Wno-attributes -Wno-ignored-attributes\""
+          bash -lc "make -C gmp --jobs=$(($(nproc)+1))"
+
+      - name: Install GMP
+        run: bash -lc "make -C gmp install"
+
+      - name: Save GMP cache
+        if: steps.restore-gmp.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-msys-gmp-${{ matrix.target }}
+          path: gmp
+
+
+      - name: Restore PDCursesMod cache
+        id: restore-pdcm
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-msys-pdcm-${{ matrix.target }}
+          path: pdcm
+
+      - name: Build PDCurses
+        if: steps.restore-pdcm.outputs.cache-hit != 'true'
+        run: |
+          curl -L %PDCM_URL% -o pdcm.tar.gz
+          mkdir pdcm && tar -xvf pdcm.tar.gz -C pdcm --strip-components=1
+          bash -lc "make -C pdcm/wincon --jobs=$(($(nproc)+1)) INFOEX=N CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          bash -lc "make -C pdcm/wingui --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          bash -lc "make -C pdcm/vt     --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll CFLAGS=\"-Wall -Wextra -pedantic -g -DPDCDEBUG -fPIC -DPDC_DLL_BUILD\""
+          echo #define CHTYPE_64 > pdcm\pdcurses.h
+          echo #define PDC_DLL_BUILD >> pdcm\pdcurses.h
+          echo #include "pdcurses/curses.h" >> pdcm\pdcurses.h
+
+      - name: Install PDCursesMod
+        run: |
+          set HOME=%HOME%\pdcm
+          bash -lc "install wincon/libpdcurses.dll.a /mingw/lib/"
+          bash -lc "install wincon/libpdcurses.dll /mingw/bin/"
+          rem The following three do not seem necessary (no failure if commented out)
+          bash -lc "install wincon/libpdcurses.dll /mingw/bin/libpdcurses-wincon.dll"
+          bash -lc "install wingui/libpdcurses.dll /mingw/bin/libpdcurses-wingui.dll"
+          bash -lc "install vt/libpdcurses.dll /mingw/bin/libpdcurses-vt.dll"
+          bash -lc "install -d /mingw/include/pdcurses"
+          bash -lc "install -m 0644 curses.h panel.h term.h /mingw/include/pdcurses/"
+          bash -lc "install -m 0644 pdcurses.h /mingw/include/"
+
+      - name: Save PDCursesMod cache
+        if: steps.restore-pdcm.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-msys-pdcm-${{ matrix.target }}
+          path: pdcm
+
+
+      - name: Restore BDB cache
+        id: restore-bdb
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-msys-bdb-${{ matrix.target }}
+          path: bdb
+
+      - name: Build BDB
+        if: steps.restore-bdb.outputs.cache-hit != 'true'
+        run: |
+          curl -L %BDB_URL%                                   -o bdb.tar.gz
+          curl -L %BDBP_URL%/0001-db-tls-m4-fix-pthread.patch -o db-tls-m4-fix-pthread.patch
+          curl -L %BDBP_URL%/mingw.patch                      -o mingw.patch
+          curl -L %BDBP_URL%/clang_cxx_11.patch               -o cx11.patch
+          mkdir bdb && tar -xvf bdb.tar.gz -C bdb --strip-components=1
+          sed -i 's/_tcsclen/_mbslen/' bdb\src\os_windows\os_stat.c
+          bash -lc "patch -d bdb -p1 -i ../db-tls-m4-fix-pthread.patch"
+          bash -lc "patch -d bdb -p1 -i ../mingw.patch"
+          bash -lc "patch -d bdb -p1 -i ../cx11.patch"
+          bash -lc "cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32"
+          bash -lc "make -C bdb/build_unix --jobs=$(($(nproc)+1))"
+
+      - name: Install BDB
+        run: bash -lc "make -C bdb/build_unix install"
+
+      - name: Save BDB cache
+        if: steps.restore-bdb.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-msys-bdb-${{ matrix.target }}
+          path: bdb
+
+
+      - name: Restore LibXML2 cache
+        id: restore-xml2
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-msys-xml2-${{ matrix.target }}
+          path: libxml2
+
+      - name: Build LibXML2
+        if: steps.restore-xml2.outputs.cache-hit != 'true'
+        run: |
+          curl -L %XML2_URL% -o libxml2.tar.gz
+          mkdir libxml2 && tar -xvf libxml2.tar.gz -C libxml2 --strip-components=1
+          bash -lc "cd libxml2 && ./autogen.sh && ./configure --prefix=/mingw --enable-debug"
+          bash -lc "make -C libxml2 --jobs=$(($(nproc)+1))"
+
+      - name: Install LibXML2
+        run: bash -lc "make -C libxml2 install"
+
+      - name: Save LibXML2 cache
+        if: steps.restore-xml2.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: cache-msys-xml2-${{ matrix.target }}
+          path: libxml2
+
+
+      - name: Download cJSON
+        run: curl -LO %CJSON_URL%/cJSON.{c,h} --output-dir libcob
+
+
+      - name: Configure GnuCOBOL
+        run: |
+          mkdir _build
+          bash -lc "cd _build && ../configure --with-db --with-indexed=db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% CPPFLAGS=-I../libcob LDFLAGS=-lintl"
+          rem  CPPFLAGS to be dropped after merging the adjustment in configure.ac
+
+      - name: Build GnuCOBOL
+        run: |
+          bash -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
+          rem  Note: the extra CPATH above is only required in debug builds
+          rem  (otherwise gcc invoked from cobc does not find libcob.h [pre-inst-env]), for some reason...
+
+      - name: Upload config-msys-${{ matrix.target }}.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-msys-${{ matrix.target }}.log
+          path: _build/config.log
+
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          enableCrossOsArchive: true
+
+      - name: Run NIST85 testsuite
+        # if we ever need to disable something in the tests: skip like here IF106A
+        # and later expect a failure
+        #   perl -pi -e 's/^# OBNC1M/\$skip{IF106A} = 1; # OBNC1M/' tests/cobol85/report.pl
+        #   bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd) || echo \"WARNING: NIST85 did not pass!\""
+        run: |
+          bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
+          rem  Note: the extra CPATH above is only required in debug builds
+          rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on msys-${{ matrix.target }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
+
+      - name: Adjust testsuite
+        run: |
+          cd tests\testsuite.src
+          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
+
+      - name: Run testsuite
+        continue-on-error: true
+        run: |
+          rem to work around regular hangs we run NIST first, then the internal
+          rem and the later only with 2 jobs -> --jobs does not seem to have any effect in this env
+          bash -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\" CPATH=$(pwd)"
+          rem  Note: the extra CPATH above is only required in debug builds
+          rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
+
+      - name: Upload testsuite-msys-${{ matrix.target }}.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-msys-${{ matrix.target }}.log
+          path: _build/tests/testsuite.log
+
+      - name: Package GnuCOBOL MinGW nightly
+        run: bash -lc "make -C _build distmingw"
+
+      - name: Upload GnuCOBOL_mingw-${{ matrix.target }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: GnuCOBOL_mingw-${{ matrix.target }}
+          path: _build/${{ env.DISTDIR }}
