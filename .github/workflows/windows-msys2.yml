@@ -1,4 +1,4 @@
-name: Windows MSYS2 (build only)
+name: Windows MSYS2 Workflow
 
 on:
   pull_request:
@@ -8,19 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { os: windows-latest, isam: db, target: release, sys: mingw64, env: x86_64       }
-          - { os: windows-latest, isam: db, target: debug,   sys: mingw64, env: x86_64       }
-          - { os: windows-latest, isam: db, target: debug,   sys: ucrt64,  env: ucrt-x86_64  }
-          - { os: windows-latest, isam: db, target: debug,   sys: clang64, env: clang-x86_64 }
-          # - { target: debug,   sys: mingw32, env: i686         }
-
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+  prepare:
+    runs-on: windows-latest
+    timeout-minutes: 10
 
     steps:
 
@@ -32,98 +22,179 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
+      - name: Install packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ucrt64
+          install: autoconf automake make libtool flex bison
+                   gettext gettext-devel help2man texinfo texinfo-tex
+                   mingw-w64-ucrt-x86_64-texlive-core
+                   mingw-w64-ucrt-x86_64-cc
+                   mingw-w64-ucrt-x86_64-gmp
+
+      - name: Bootstrap GnuCOBOL
+        shell: msys2 {0}
+        run: ./build_aux/bootstrap install
+
+      - name: Configure GnuCOBOL
+        shell: msys2 {0}
         run: |
-          echo GITHUB_WORKSPACE=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
+          mkdir _build && cd _build
+          ../configure --without-curses --without-db --without-xml2 --without-json
+
+      - name: Build GnuCOBOL source distribution
+        shell: msys2 {0}
+        run: |
+          # OSTYPE added on 2025-02-11 to fix texi2dvi bug
+          OSTYPE=msys make -C _build --jobs=$(($(nproc)+1))
+          OSTYPE=msys make -C _build --jobs=$(($(nproc)+1)) dist
+
+      - name: Upload config-dist.log
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: config-dist.log
+          path: _build/config.log
+
+      - name: Upload dist tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: gnucobol-ci source distribution msys2
+          path: _build/gnucobol*.tar.gz
+          if-no-files-found: error
+          retention-days: 0
+
+  build:
+    needs: prepare
+    runs-on: windows-latest
+    timeout-minutes: ${{ matrix.sys == 'clang64' && 35 || 20 }}
+    strategy:        # usually 13-15 min, except clang, which takes ~30 min
+      fail-fast: false
+      matrix:
+        include:
+          - { target: release, sys: mingw64, env: x86_64       }
+          - { target: debug,   sys: mingw64, env: x86_64       }
+          - { target: release, sys: ucrt64,  env: ucrt-x86_64  }
+          - { target: release, sys: clang64, env: clang-x86_64 }
+          - { target: release, sys: mingw32, env: i686         }
+
+    steps:
+
+      - name: Get CI dist tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: gnucobol-ci source distribution msys2
+
+      - name: Extract CI dist tarball
+        shell: bash
+        run: tar -xvf gnucobol*.tar.* --strip-components=1
+
+      - name: Setup build environment
+        shell: pwsh
+        run: |
           If ("${{ matrix.target }}" -eq "release") {
             echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
-            echo CFGOPT= >> $env:GITHUB_ENV
+            echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS2" >> $env:GITHUB_ENV
           } Else {
             echo DISTDIR=GnuCOBOL_mingw_dbg >> $env:GITHUB_ENV
-            echo CFGOPT="--enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
+            echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS2-Debug --enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
+          }
+          # Common options (dependencies)
+          echo CFGOPT="$env:CFGOPT --with-math=gmp --with-curses=ncursesw --with-xml2 --with-json=json-c" >> $env:GITHUB_ENV
+          # Conditional inclusion of --with-db (MSYS2 does not provide 32bit builds for BDB any more)
+          If ("${{ matrix.sys }}" -ne "mingw32") {
+            echo CFGOPT="$env:CFGOPT --with-db --with-indexed=db" >> $env:GITHUB_ENV
+          } Else {
+            echo CFGOPT="$env:CFGOPT --without-db" >> $env:GITHUB_ENV
           }
 
       - name: Install packages
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          msystem: ${{matrix.sys}}
-          install: autoconf automake libtool make flex bison help2man texinfo
-                   mingw-w64-${{matrix.env}}-cc
-                   mingw-w64-${{matrix.env}}-gmp                 gmp-devel
-                   mingw-w64-${{matrix.env}}-gettext-runtime gettext-devel
-                   mingw-w64-${{matrix.env}}-ncurses
-                   mingw-w64-${{matrix.env}}-libxml2
-                   mingw-w64-${{matrix.env}}-cjson
-                   mingw-w64-${{matrix.env}}-db                libdb-devel
+          msystem: ${{ matrix.sys }}
+          install: autoconf automake make libtool flex bison
+                   mingw-w64-${{ matrix.env }}-cc
+                   mingw-w64-${{ matrix.env }}-gmp
+                   mingw-w64-${{ matrix.env }}-ncurses
+                   mingw-w64-${{ matrix.env }}-libxml2
+                   mingw-w64-${{ matrix.env }}-json-c
 
-      - name: Bootstrap GnuCOBOL
-        shell: msys2 {0}
-        run: |
-          ./build_aux/bootstrap install
+      - name: Install BDB package
+        if: ${{ matrix.sys != 'mingw32' }}  # MSYS2 does not provide 32bit builds for it any more
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.sys }}
+          install: mingw-w64-${{ matrix.env }}-db
 
       - name: Configure GnuCOBOL
         shell: msys2 {0}
         run: |
-          mkdir _build
-          cd _build
-          export CFLAGS="-Wno-unused-command-line-argument $CFLAGS"
-          ../configure $CFGOPT --with-db --with-indexed=db --prefix=/opt/cobol/gnucobol
-
-      - name: Upload config-${{matrix.sys}}-${{matrix.target}}.log
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: config-${{matrix.sys}}-${{matrix.target}}.log
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/config.log
+          mkdir _build && cd _build
+          ../configure $CFGOPT CFLAGS="-Wno-parentheses-equality $CFLAGS"
 
       - name: Build GnuCOBOL
         shell: msys2 {0}
-        run: |
-          make -C _build --jobs=$(($(nproc)+1))
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Upload config-${{ matrix.sys }}-${{ matrix.target }}.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-${{ matrix.sys }}-${{ matrix.target }}.log
+          path: _build/config.log
 
       - name: Cache newcob.val
         uses: actions/cache@v4
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
-          save-always: true
           enableCrossOsArchive: true
 
-      - name: Run testuite
+      - name: Run NIST85 testsuite
+        shell: msys2 {0}
+        run: make -C _build test --jobs=$(($(nproc)+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.sys }}-${{ matrix.target }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
+
+      - name: Adjust testsuite
+        run: |
+          cd tests\testsuite.src
+          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
+
+      - name: Run testsuite
         continue-on-error: true
         shell: msys2 {0}
         run: |
-          sed '/AT_SETUP(\[temporary path invalid\])/a \
-                AT_SKIP_IF(\[true\])' -i tests/testsuite.src/used_binaries.at
-          sed '/AT_SETUP(\[ACCEPT OMITTED (SCREEN)\])/a \
-                AT_SKIP_IF(\[true\])' -i tests/testsuite.src/run_accept.at
-          make -C _build/tests checkall \
-                               --jobs=$(($(nproc)+1)) \
-                               TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
-          make -C _build/tests check \
-                               TESTSUITEFLAGS="--recheck --verbose"
+          # OSTYPE added on 2025-02-11 to fix texi2dvi bug
+          OSTYPE=msys make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          OSTYPE=msys make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{matrix.sys}}-${{matrix.target}}.log
+      - name: Upload testsuite-${{ matrix.sys }}-${{ matrix.target }}.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: testsuite-${{matrix.sys}}-${{matrix.target}}.log
-          path: ${{ env.GITHUB_WORKSPACE }}/_build/tests/testsuite.log
+          name: testsuite-${{ matrix.sys }}-${{ matrix.target }}.log
+          path: _build/tests/testsuite.log
 
-      - name: Package GnuCOBOL
+      - name: Package GnuCOBOL MinGW nightly
         shell: msys2 {0}
         run: |
           make -C _build distmingw
+          tar -cvf GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar _build/$DISTDIR
 
-      - name: Tar GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}
-        shell: msys2 {0}
-        run: |
-          cd _build
-          tar -cvf ../GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar \
-                   "${{ env.DISTDIR }}"
-
-      - name: Upload GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
+      - name: Upload GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar
         uses: actions/upload-artifact@v4
         with:
-          name: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
-          path: GnuCOBOL_mingw-${{matrix.sys}}-${{matrix.target}}.tar
+          name: GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar
+          path: GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar
