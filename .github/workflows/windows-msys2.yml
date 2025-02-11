@@ -3,7 +3,7 @@ name: Windows MSYS2 Workflow
 on:
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
-  push:
+  # temporary disabled  push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir _build
           cd _build
-          ../configure --without-db --without-curses --without-xml2 --without-json
+          ../configure --without-db --without-curses --without-xml2 --without-json CPPFLAGS="-D_spawnv=spawnv"
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
