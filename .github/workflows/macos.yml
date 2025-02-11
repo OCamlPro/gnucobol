@@ -1,4 +1,4 @@
-name: MacOS
+name: MacOS Workflow
 
 on:
   pull_request:
@@ -7,123 +7,124 @@ on:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
+env:
+  HOMEBREW_ROOT: /opt/homebrew/opt
+
 jobs:
   build:
+    #runs-on: macos-latest-large  # macos 14, amd64
+    runs-on: macos-latest        # macos 14, arm64
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        os:
-          # - macos-latest-large  # macos 14, amd64
-          - macos-latest        # macos 14, arm64
         isam:
           - db
           - visam
 
-    runs-on: ${{ matrix.os }}
-
     steps:
-
-      - name: Configure git
-        run: git config --global core.symlinks false
 
       - name: Set git user
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
 
+      # Why was this necessary ? Works fine without it...
+      # - name: Configure git
+      #   run: git config --global core.symlinks false
+
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup build environment
+        run: |
+          echo "TERM=vt100" >> $GITHUB_ENV
+          echo "NPROC=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
+
       - name: Install packages
         run: |
-          brew install pkg-config automake libtool help2man texinfo bison berkeley-db@4 json-c
-          opt="/opt/homebrew/opt"
-          echo "$opt/pkg-config/bin" >> $GITHUB_PATH
-          echo "$opt/bison/bin" >> $GITHUB_PATH
-          echo "LDFLAGS=-L$opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
+          brew update
+          brew install autoconf automake libtool bison \
+                       help2man texinfo \
+                       berkeley-db@4 json-c
+          echo "$HOMEBREW_ROOT/bison/bin" >> $GITHUB_PATH
+          echo "LDFLAGS=-L$HOMEBREW_ROOT/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$HOMEBREW_ROOT/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
 
-      - name: Installing VISAM prerequisite
+      - name: Install VISAM
         if: ${{ matrix.isam == 'visam' }}
         run: |
-          wget http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
           tar -xvzf visam-2.2.tar.Z
           cd visam-2.2
-          ./configure --prefix=/usr/local/visam-2.2 --enable-vbisamdefault
+          ./configure --prefix=/opt/visam --enable-vbisamdefault
           chmod u+x build_aux/install-sh
-          make
-          sudo make install
-          echo "CPATH=/usr/local/visam-2.2/include" >> $GITHUB_ENV
-          echo "LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=/usr/local/visam-2.2/lib" >> $GITHUB_ENV
+          make && sudo make install
+          echo "CPATH=/opt/visam/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
 
-      - name: bootstrap
-        run: |
-          ./build_aux/bootstrap install
+      - name: Bootstrap GnuCOBOL
+        run: ./build_aux/bootstrap install
 
-      - name: Build environment setup
+      - name: Configure GnuCOBOL
         run: |
-          mkdir _build
-          echo "NPROC=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
-          export TERM="vt100"
-          echo "TERM=$TERM" >> $GITHUB_ENV
-
-      - name: configure
-        run: |
-          cd _build
-          export CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
-          export CFLAGS="-Wno-unused-command-line-argument -Wno-deprecated-non-prototype -Wno-parentheses-equality $CFLAGS"
+          mkdir _build && cd _build
           ../configure --with-${{ matrix.isam }} \
                        --with-indexed=${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
-                       --prefix /opt/cobol/gnucobol
+                       --prefix=/opt/cobol/gnucobol \
+                       CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS" \
+                       CFLAGS="-Wno-unused-command-line-argument -Wno-parentheses-equality $CFLAGS"
 
-      - name: Upload config-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$((${NPROC}+1))
+
+      - name: Upload config-${{ matrix.isam }}.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          name: config-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: config-${{ matrix.isam }}.log
           path: _build/config.log
 
-      - name: make
-        run: |
-          make -C _build --jobs=$((${NPROC}+1))
-
-      # make install must be done before make check, otherwis
-      # execution of generated COBOL files fail for a missing
-      # /usr/local/lib/libcob.dylib
-      - name: make install
+      # make install must be done before make check, otherwise execution of
+      # generated COBOL files fail for a missing /usr/local/lib/libcob.dylib
+      - name: Install GnuCOBOL
         run: |
           sudo make -C _build install
           find /opt/cobol > _build/install.log
 
-      - name: Upload install-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Upload install-${{ matrix.isam }}.log
         uses: actions/upload-artifact@v4
         with:
-          name: install-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: install-${{ matrix.isam }}.log
           path: _build/install.log
 
-      - name: check
+      - name: Adjust testsuite
         run: |
-          sed -i '' '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL \+ KEYCHECK\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[EXTFH: using ISAM callback\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature with subroutine\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature with indexed EXTFH\])/a\
-          AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          make -C _build check \
-                         TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          cd tests/testsuite.src
+          sed -i '' '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL \+ KEYCHECK\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[EXTFH: using ISAM callback\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[trace feature\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[trace feature with subroutine\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[trace feature with indexed EXTFH\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
 
-      - name: Upload testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+      - name: Run testsuite
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+
+      - name: Upload testsuite-${{ matrix.isam }}.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          name: testsuite-${{ matrix.os }}-${{ matrix.isam }}.log
+          name: testsuite-${{ matrix.isam }}.log
           path: _build/tests/testsuite.log
 
       - name: Cache newcob.val
@@ -131,10 +132,18 @@ jobs:
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
-          save-always: true
           enableCrossOsArchive: true
 
-      - name: NIST85 Test Suite
-        run: |
-          make -C _build/tests/cobol85 EXEC85 test              \
-                         --jobs=$((${NPROC}+1))
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$((${NPROC}+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.isam }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
