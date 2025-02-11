@@ -5781,7 +5781,7 @@ AT_DATA([prog.cob], [
            MOVE FLD0498A        TO FLD0498C.
            MOVE FLD0499A        TO FLD0499C.
 
-       4000-COMPARE.
+      *4000-COMPARE.
 
            IF FLD0001C (1:)    NOT EQUAL XPC-FLD0001C
               DISPLAY 'FLD0001C ==> ' HEX-OF (FLD0001C)
@@ -10821,7 +10821,7 @@ AT_DATA([prog2.cob], [
            MOVE FLD0998A        TO FLD0998C.
            MOVE FLD0999A        TO FLD0999C.
 
-       4000-COMPARE.
+      *4000-COMPARE.
 
            IF FLD0500C (1:)    NOT EQUAL XPC-FLD0500C
               DISPLAY 'FLD0500C ==> ' HEX-OF (FLD0500C)

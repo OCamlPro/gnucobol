@@ -78,10 +78,54 @@
 	* fisam.c: Updated to set index field type for 'short' & 'int'
 	  Enabled support for variable length records is using V-ISAM/D-ISAM
 
+2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (alloc_figurative): optimized handling for SPACES and ZEROES
+	* strings.c (cob_inspect_translating), common.h: variant of
+	  cob_inspect_converting that is called with a pre-computed translation
+	  table (COBOL source using only constants)
+	* strings.c (cob_inspect_converting): replaced partial conversion table
+	  with full table, which saves a check on each replaced byte
+	* strings.c (cob_inspect_converting): also call cob_real_put_sign for
+	  early exits
+
+2023-09-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add_int): minor adjustment to scale handling
+	* numeric.c (packed_is_negative): optimized by memcmp instead of loop
+	* numeric.c (cob_decimal_get_display): fixed broken sign in
+	  diff calculation
+
+2023-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
+	  fix C RTS check raising overflow by replacing casting to char by "& 0xFF"
+	* cconv.c (cob_field_to_string): fix analyzer warnings
+
+2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* version.h: bump to 3.3
+
+2023-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_move_bcd): fix bug #904 unsigned to signed must write
+	  positive sign
+
+2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c, common.c: replace use of NCURSES_MOUSE_VERSION by
+	  HAVE_MOUSEMASK
+	* fileio.c (cob_file_sort_giving_internal): fix memory cleanup
+
 2023-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* move.c (cob_move_display_to_packed): fix data corruption caused
 	  by packing one extra digit from the input display field
+
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: only check -1 as invalid fd; return fileio status for
+	  invalid file state in CBL_ routines, instead of fixed -1 / 35
 
 2023-07-22  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -165,6 +209,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  otherwise it is lost on first CLOSE
 	* fileio.c->fextfh.c: disable setting of record min/max size outside of OPEN,
 	  disable setting of record size in some places
+	* fileio.c: adjusted setting of SORT-RETURN register
 
 2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -6502,7 +6547,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 2005-04-13  Keisuke Nishida  <knishida@opencobol.org>
 
 	* byteswap.h: #include <sys/types.h>.  Use u_int16_t, u_int32_t, and
-	u_int64_t instead of unsigned short, etc.
+	  u_int64_t instead of unsigned short, etc.
 
 2005-03-03  Roger While <simrw@sim-basis.de>
 

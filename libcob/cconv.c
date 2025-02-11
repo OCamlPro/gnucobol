@@ -107,8 +107,8 @@ cob_convert_hex_digit (char h)
 static int
 cob_convert_hex_byte (const char *h)
 {
-	int d1 = cob_convert_hex_digit (h[0]);
-	int d2 = cob_convert_hex_digit (h[1]);
+	const int d1 = cob_convert_hex_digit (h[0]);
+	const int d2 = cob_convert_hex_digit (h[1]);
 	if (d1 < 0 || d2 < 0) {
 		return -1;
 	} else {
@@ -325,17 +325,18 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 		break;
 	case CCM_LOWER_LOCALE:
 		while (data <= end) {
-			*s++ = tolower (*data++);
+			*s++ = (unsigned char)tolower (*data++);
 		}
 		break;
 	case CCM_UPPER_LOCALE:
 		while (data <= end) {
-			*s++ = toupper (*data++);
+			*s++ = (unsigned char)toupper (*data++);
 		}
 		break;
 	}
 	*s = 0;
-	return end + 1 - f->data;
+	/* note: we limit individual fields to be of size < INT_MAX in the compiler */
+	return (int)(end + 1 - f->data);
 }
 
 

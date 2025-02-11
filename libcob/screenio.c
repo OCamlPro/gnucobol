@@ -53,23 +53,15 @@
 #elif defined (HAVE_NCURSES_NCURSES_H)
 #include <ncurses/ncurses.h>
 #elif defined (HAVE_PDCURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
 #elif defined (HAVE_PDCURSES_CURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses/curses.h>
 #elif defined (HAVE_XCURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <xcurses.h>
 #elif defined (HAVE_XCURSES_CURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <xcurses/curses.h>
 #elif defined (HAVE_CURSES_H)
@@ -78,6 +70,12 @@
 #ifndef PDC_MOUSE_MOVED
 #undef PDC_NCMOUSE
 #endif
+#endif
+
+#if defined (__PDCURSES__)
+/* Note: PDC will internally define NCURSES_MOUSE_VERSION with
+   a recent version when PDC_NCMOUSE was defined;
+   for older version define manually! */
 #endif
 
 /* work around broken system headers or compile flags defining
@@ -99,7 +97,7 @@
 #ifdef	HAVE_CURSES_FREEALL
 extern void	_nc_freeall (void);
 #endif
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 static mmask_t 	cob_mask_accept;	/* mask that is returned to COBOL ACCEPT */
 static mmask_t 	cob_mask_routine;	/* mask that is returned to COBOL routines (reserved) */
 #if defined BUTTON5_PRESSED	/* added in NCURSES_MOUSE_VERSION 2 */
@@ -157,7 +155,7 @@ static int			accept_cursor_x;
 static int			pending_accept;
 static int			got_sys_char;
 static unsigned int	curr_setting_insert_mode = INT_MAX;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
 #endif
@@ -2141,7 +2139,7 @@ find_field_by_pos (const int initial_curs, const int line, const int column) {
 	return -1;
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 static int
 mouse_to_exception_code (mmask_t mask) {
 	int fret = -1;
@@ -2391,7 +2389,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 	int			integer_part_end;
 	char			sign;
 	int			fix_position = 0;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	MEVENT		mevent;
 #endif
 
@@ -2423,7 +2421,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		}
 	}
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	/* prevent warnings about not intialized structure */
 	memset (&mevent, 0, sizeof (MEVENT));
 #endif
@@ -2452,7 +2450,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			goto screen_return;
 		}
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 		/* get mouse event here, handle later */
 		if (keyp == KEY_MOUSE) {
 			getmouse (&mevent);
@@ -2716,7 +2714,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			/* Enter sign */
 			break;
 			
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 		case KEY_MOUSE:
 		{
 			int mline = mevent.y;
@@ -3404,7 +3402,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	int		status;
 	chtype		prompt_char;    /* prompt character */
 	chtype		default_prompt_char;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	MEVENT		mevent;
 #endif
 
@@ -3424,7 +3422,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 
 	origin_y = 0;
 	origin_x = 0;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	/* prevent warnings about not intialized structure */
 	memset (&mevent, 0, sizeof (MEVENT));
 #endif
@@ -3639,7 +3637,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			continue;
 		}
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 		/* get mouse event here, handle later */
 		if (keyp == KEY_MOUSE) {
 			getmouse (&mevent);
@@ -3725,7 +3723,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				/* End key. */
 				fret = 2015;
 				goto field_return;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 			case KEY_MOUSE:
 			{
 				int mline = mevent.y;
@@ -3952,7 +3950,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			cob_move_cursor (cline, ccolumn);
 			continue;
 			
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 		case KEY_MOUSE:
 		{
 			int mline = mevent.y;
@@ -4976,7 +4974,7 @@ cob_settings_screenio (void)
 #ifdef HAVE_MOUSEINTERVAL
 	mouseinterval (COB_MOUSE_INTERVAL);
 #endif
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	if (curr_setting_mouse_flags != COB_MOUSE_FLAGS) {
 		mmask_t 	mask_applied = cob_mask_routine;
 		if (COB_MOUSE_FLAGS) {

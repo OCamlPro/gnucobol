@@ -1481,19 +1481,19 @@ struct cob_func_loc {
 #define COB_MAX_KEYCOMP 16	/* max number of parts in a compound key (disam.h :: NPARTS ) */
 
 typedef struct __cob_file_key {
-	unsigned int	offset;			/* Offset of field within record */
-	short			len_suppress;	/* length of SUPPRESS "string" */
-	short			count_components;	/* 0..1::simple-key  2..n::split-key   */
-	unsigned char	keyn;			/* Index Number */
-	unsigned char	tf_duplicates;	/* WITH DUPLICATES (for RELATIVE/INDEXED) */
-									/* 0=NO DUPS, 1=DUPS OK, 2=NO DUPS precheck */
-	unsigned char	tf_ascending;	/* ASCENDING/DESCENDING (for SORT)*/
-	unsigned char	tf_suppress;	/* supress keys where all chars = char_suppress */
-	unsigned char	char_suppress;	/* key supression character  */
-	unsigned char	tf_compress;	/* $SET KEYCOMPRESS value */
-	cob_field		*field;			/* Key field (or SPLIT key save area) */
-	unsigned char	*str_suppress;	/* Complete SUPPRESS "string" */
-	cob_field	*component[COB_MAX_KEYCOMP];/* key-components iff split-key   */
+	unsigned int	offset;				/* Offset of field within record */
+	short		len_suppress;			/* length of SUPPRESS "string" */
+	short		count_components;		/* 0..1::simple-key  2..n::split-key   */
+	unsigned char	keyn;				/* Index Number */
+	unsigned char	tf_duplicates;			/* WITH DUPLICATES (for RELATIVE/INDEXED) */
+							/* 0=NO DUPS, 1=DUPS OK, 2=NO DUPS precheck */
+	unsigned char	tf_ascending;			/* ASCENDING/DESCENDING (for SORT) */
+	unsigned char	tf_suppress;			/* supress keys where all chars = char_suppress (for INDEXED) */
+	unsigned char	char_suppress;			/* key supression character (for INDEXED) */
+	unsigned char	tf_compress;			/* $SET KEYCOMPRESS value */
+	cob_field	*field;				/* Key field (or SPLIT key save area) */
+	unsigned char	*str_suppress;			/* Complete SUPPRESS "string" */
+	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
 #if 0	/* TODO (for file keys, not for SORT/MERGE) */
 	const unsigned char *collating_sequence;	/* COLLATING */
 #endif
@@ -2143,6 +2143,7 @@ COB_EXPIMP void cob_inspect_leading	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_first	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_trailing	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_converting	(const cob_field *, const cob_field *);
+COB_EXPIMP void cob_inspect_translating (const unsigned char *);
 COB_EXPIMP void cob_inspect_finish	(void);
 
 COB_EXPIMP void cob_string_init		(cob_field *, cob_field *);

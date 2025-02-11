@@ -200,7 +200,7 @@ static struct cb_replacement_state * replace_repls;
 static struct cb_replacement_state * copy_repls;
 
 /* forward definitions */
-static void ppecho_replace (WITH_DEPTH const char *text, const char* token);
+static COB_INLINE COB_A_INLINE void ppecho_replace (WITH_DEPTH const char *text, const char* token);
 static void do_replace (WITH_DEPTH struct cb_replacement_state* repls);
 static void check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls);
 static void check_replace_all (WITH_DEPTH struct cb_replacement_state *repls,
@@ -220,8 +220,7 @@ token_list_add (WITH_DEPTH struct cb_token_list *list,
    adding on the same head, other `last` fields in the middle of the
    list not being correctly updated...
  */
-static
-struct cb_token_list *
+static struct cb_token_list *
 token_list_add (WITH_DEPTH struct cb_token_list *list,
 		const char *text, const char *token)
 {
@@ -250,8 +249,8 @@ token_list_add (WITH_DEPTH struct cb_token_list *list,
 	}
 }
 
-static
-void pop_token (WITH_DEPTH struct cb_replacement_state *repls,
+static void
+pop_token (WITH_DEPTH struct cb_replacement_state *repls,
 		      const char **text, const char **token)
 {
 	const struct cb_token_list *q = repls->token_queue;
@@ -264,8 +263,8 @@ void pop_token (WITH_DEPTH struct cb_replacement_state *repls,
 	if (token) *token = q->token;
 }
 
-static
-void ppecho_switch (WITH_DEPTH struct cb_replacement_state *repls,
+static void
+ppecho_switch (WITH_DEPTH struct cb_replacement_state *repls,
 		    const char* text, const char* token)
 {
 #ifdef DEBUG_REPLACE_TRACE
@@ -283,8 +282,8 @@ void ppecho_switch (WITH_DEPTH struct cb_replacement_state *repls,
 	}
 }
 
-static
-void ppecho_switch_text_list (WITH_DEPTH struct cb_replacement_state *repls,
+static void
+ppecho_switch_text_list (WITH_DEPTH struct cb_replacement_state *repls,
 			 const struct cb_text_list *p)
 {
 #ifdef DEBUG_REPLACE_TRACE
@@ -298,8 +297,8 @@ void ppecho_switch_text_list (WITH_DEPTH struct cb_replacement_state *repls,
 }
 
 
-static
-void ppecho_switch_token_list (WITH_DEPTH struct cb_replacement_state *repls,
+static void
+ppecho_switch_token_list (WITH_DEPTH struct cb_replacement_state *repls,
 			 const struct cb_token_list *p)
 {
 #ifdef DEBUG_REPLACE_TRACE
@@ -312,8 +311,8 @@ void ppecho_switch_token_list (WITH_DEPTH struct cb_replacement_state *repls,
 	}
 }
 
-static
-int is_leading_or_trailing (WITH_DEPTH int leading,
+static int
+is_leading_or_trailing (WITH_DEPTH int leading,
 			    const char* src_text,
 			    const char* text,
 			    int strict)
@@ -342,8 +341,8 @@ int is_leading_or_trailing (WITH_DEPTH int leading,
 
 /* after a LEADING or TRAILING match, perform the replacement within
    the text, and pass the resulting new text to the next stream */
-static
-void ppecho_leading_or_trailing (WITH_DEPTH struct cb_replacement_state *repls,
+static void
+ppecho_leading_or_trailing (WITH_DEPTH struct cb_replacement_state *repls,
 				 int leading,
 				 const char *src_text,
 				 const char *text,
@@ -384,8 +383,8 @@ void ppecho_leading_or_trailing (WITH_DEPTH struct cb_replacement_state *repls,
  * * `replace_list`: the current list of possible replacements on check
  */
 
-static
-void check_replace (WITH_DEPTH struct cb_replacement_state* repls,
+static void
+check_replace (WITH_DEPTH struct cb_replacement_state* repls,
 		    const struct cb_replace_list *replace_list)
 {
 #ifdef DEBUG_REPLACE_TRACE
@@ -471,8 +470,8 @@ is_space_or_nl (const char c)
  * * `src` is the list of texts from the replacement to be matched
  * * `replace_list` is the next replacements to try in case of failure
  */
-static
-void check_replace_all (WITH_DEPTH
+static void
+check_replace_all (WITH_DEPTH
 			struct cb_replacement_state *repls,
 			const struct cb_text_list *new_text,
 			struct cb_token_list *texts,
@@ -553,8 +552,8 @@ void check_replace_all (WITH_DEPTH
 	}
 }
 
-static
-void check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls)
+static void
+check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls)
 {
 #ifdef DEBUG_REPLACE_TRACE
 	fprintf (stderr, "%scheck_replace_after_match(%s)\n",
@@ -574,8 +573,8 @@ void check_replace_after_match (WITH_DEPTH struct cb_replacement_state *repls)
   }
 }
 
-static
-void do_replace (WITH_DEPTH struct cb_replacement_state* repls)
+static void
+do_replace (WITH_DEPTH struct cb_replacement_state* repls)
 {
 #ifdef DEBUG_REPLACE_TRACE
 	fprintf (stderr, "%sdo_replace(%s)\n",DEPTH, repls->name);
@@ -599,34 +598,39 @@ void do_replace (WITH_DEPTH struct cb_replacement_state* repls)
 }
 
 /* Whether a word matches the definition of WORD in pplex.l */
-static
-int is_word (WITH_DEPTH const char* s) {
-	int i;
-	size_t len = strlen (s);
+static int
+is_word (WITH_DEPTH const char *s) {
+	for (;;) {
+		unsigned char c = (unsigned char) *s++;
 
-	for (i = 0; i<len ; i++) {
-		char c = s[i];
+		/* word character, just go on */
 		if (c == '_'
 		 || c == '-'
 		 || ( c >= '0' && c <= '9' )
 		 || ( c >= 'A' && c <= 'Z' )
 		 || ( c >= 'a' && c <= 'z' )
-		 || ( c >= 128 && c <= 255 ) ) {
-			/* word character, just go on */
-		} else {
-#ifdef DEBUG_REPLACE_TRACE
-			fprintf (stderr, "%sis_word('%s') -> 0\n", DEPTH, s);
-#endif
-			return 0;
+		 || ( c >= 128) ) {
+			continue;
 		}
-	}
+
+		/* end of string, no previous bad character -> is a word */
+		if (c == 0) {
 #ifdef DEBUG_REPLACE_TRACE
-	fprintf (stderr, "%sis_word('%s') -> 1\n", DEPTH, s);
+			fprintf (stderr, "%sis_word('%s') -> 1\n", DEPTH, s);
 #endif
-	return 1;
+			return 1;
+		}
+
+		/* string 's' contains non-word characters -> isn't a word */
+#ifdef DEBUG_REPLACE_TRACE
+		fprintf (stderr, "%sis_word('%s') -> 0\n", DEPTH, s);
+#endif
+		return 0;
+	}
 }
 
-static void add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
+static void
+add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
 			int prequeue, const char* text, const char* token
 	)
 {
@@ -690,7 +694,8 @@ static void add_text_to_replace (WITH_DEPTH struct cb_replacement_state *repls,
   stream). Use prequeue = 1 so that texts of the same kind are
   merged into a single text.
  */
-static void ppecho_replace (WITH_DEPTH const char *text, const char *token)
+static void
+ppecho_replace (WITH_DEPTH const char *text, const char *token)
 {
 #ifdef DEBUG_REPLACE
 	fprintf (stderr, "%sppecho_replace('%s')\n", DEPTH, text);
@@ -702,7 +707,8 @@ static void ppecho_replace (WITH_DEPTH const char *text, const char *token)
    pplex.l).  Use prequeue = 0 as texts of the same kind from the
    source file should not be merged.
  */
-void cb_ppecho_copy_replace (const char *text, const char *token)
+void
+cb_ppecho_copy_replace (const char *text, const char *token)
 {
 #ifdef DEBUG_REPLACE
 	fprintf (stderr, "cb_ppecho_copy_replace('%s')\n", text);
@@ -711,12 +717,11 @@ void cb_ppecho_copy_replace (const char *text, const char *token)
 }
 
 
-static
-struct cb_replacement_state * create_replacements (enum cb_ppecho ppecho)
+static struct cb_replacement_state *
+create_replacements (enum cb_ppecho ppecho)
 {
-	struct cb_replacement_state * s;
-
-	s = cobc_malloc (sizeof(struct cb_replacement_state));
+	struct cb_replacement_state *s
+		= cobc_malloc (sizeof(struct cb_replacement_state));
 
 	s->text_prequeue = NULL;
 	s->token_queue = NULL;
@@ -735,48 +740,46 @@ struct cb_replacement_state * create_replacements (enum cb_ppecho ppecho)
 	return s;
 }
 
-static void reset_replacements (struct cb_replacement_state * s)
+#if 0	/* no use in just setting the child elements to zero */
+static void
+reset_replacements (struct cb_replacement_state * s)
 {
 	s->text_prequeue = NULL;
 	s->token_queue = NULL;
-	s->replace_list = NULL ;
-        s->current_list = NULL ;
+	s->replace_list = NULL;
+	s->current_list = NULL ;
 }
-
-static
-void init_replace( void )
-{
-#ifdef DEBUG_REPLACE_TRACE
-	for(int i=0; i<MAX_DEPTH; i++) depth_buffer[i] = ' ';
-	depth_buffer[MAX_DEPTH]=0;
 #endif
-	copy_repls = create_replacements (CB_PPECHO_REPLACE);
-	replace_repls = create_replacements (CB_PPECHO_DIRECT);
-}
-
-static
-void reset_replace (void)
-{
-	reset_replacements (copy_repls);
-	reset_replacements (replace_repls);
-}
 
 /* Called by pplex.l at EOF of top file */
-void cb_free_replace( void )
+void
+cb_free_replace (void)
 {
-	reset_replace ();
+#if 0	/* no use in just setting the child elements to zero */
+	reset_replacements (copy_repls);
+	reset_replacements (replace_repls);
+#endif
+
 	cobc_free (copy_repls);
 	copy_repls = NULL;
+
 	cobc_free (replace_repls);
 	replace_repls = NULL;
 }
 
 /* Called by pplex.l when a new file is opened to save the previous
    stack of active copy-replacing */
-struct cb_replace_list *cb_get_copy_replacing_list (void)
+struct cb_replace_list *
+cb_get_copy_replacing_list (void)
 {
 	if (copy_repls == NULL) {
-		init_replace();
+#ifdef DEBUG_REPLACE_TRACE
+		int i;
+		for (i = 0; i < MAX_DEPTH; i++) depth_buffer[i] = ' ';
+		depth_buffer[MAX_DEPTH] = 0;
+#endif
+		copy_repls = create_replacements (CB_PPECHO_REPLACE);
+		replace_repls = create_replacements (CB_PPECHO_DIRECT);
 	}
 	return copy_repls->replace_list ;
 }
@@ -784,10 +787,11 @@ struct cb_replace_list *cb_get_copy_replacing_list (void)
 /* Called by pplex.l, either at the end of a file to restore the
 previous stack of active copy-replacing, or when a new file is open to
 set additional copy replacing */
-void cb_set_copy_replacing_list (struct cb_replace_list *list)
+void
+cb_set_copy_replacing_list (struct cb_replace_list *list)
 {
 	copy_repls->current_list = NULL;
-	copy_repls->replace_list = list ;
+	copy_repls->replace_list = list;
 #ifdef DEBUG_REPLACE
 	fprintf (stderr, "set_copy_replacing_list(\n");
 	for(;list != NULL; list=list->next){

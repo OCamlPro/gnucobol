@@ -186,6 +186,7 @@ AH_TEMPLATE([HAVE_RESIZE_TERM], [curses has resize_term function])
 AH_TEMPLATE([HAVE_DEFINE_KEY], [curses has define_key function])
 AH_TEMPLATE([HAVE_MOUSEINTERVAL], [curses has mouseinterval function])
 AH_TEMPLATE([HAVE_HAS_MOUSE], [curses has has_mouse function])
+AH_TEMPLATE([HAVE_MOUSEMASK], [curses has mousemask function and mmask_t definition])
 AH_TEMPLATE([HAVE_CURSES_FREEALL], [curses provides function to free all memory])
 AH_TEMPLATE([HAVE_USE_LEGACY_CODING], [ncurses has use_legacy_coding function])
 AH_TEMPLATE([HAVE_DESIGNATED_INITS], [Has designated initializers])
@@ -213,7 +214,9 @@ AC_ARG_ENABLE([debug],
 
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening, --disable-hardening],
-    [Enable GNU C "hardening" options: define _FORTIFY_SOURCE and use -fstack-protector.
+    [Enable GNU C "hardening" options: define _FORTIFY_SOURCE and use,
+	depending on the availability -fstack-protector-strong / -fstack-protector,
+	as well as -fstack-clash-protection.
 	If disabled, these are explicit removed from CFLAGS for building GnuCOBOL.
 	Defaults to "defined by CFLAGS".])],,
   [enable_hardening="unset"])
@@ -438,6 +441,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	# error macro not defined
 	#endif]])],
 	[COB_USES_CLANG_ONLY=yes
+	 CFLAGS="$CFLAGS -Wno-unused-command-line-argument"
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
 
@@ -1567,6 +1571,28 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	[AC_DEFINE([HAVE_HAS_MOUSE], [1]) AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])],
 	[])
+
+	AC_MSG_CHECKING([for curses mousemask function and mmask_t])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+	#ifdef HAVE_NCURSESW_NCURSES_H
+	#include <ncursesw/ncurses.h>
+	#elif defined (HAVE_NCURSESW_CURSES_H)
+	#include <ncursesw/curses.h>
+	#elif defined (HAVE_NCURSES_H)
+	#include <ncurses.h>
+	#elif defined (HAVE_NCURSES_NCURSES_H)
+	#include <ncurses/ncurses.h>
+	#elif defined (HAVE_PDCURSES_H)
+	#include <pdcurses.h>
+	#elif defined (HAVE_CURSES_H)
+	#include <curses.h>
+	#endif]], [[
+	mmask_t 	dummy =  { 0 };
+	mousemask (dummy, NULL);
+	]])],
+	[AC_DEFINE([HAVE_MOUSEMASK], [1]) AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])],
+	[])
 fi
 LIBS="$curr_libs $LIBCOB_LIBS"
 
@@ -2368,11 +2394,25 @@ AS_IF([test "$enable_hardening" = yes], [
 			[CFLAGS="$curr_cflags"; cob_temp_flags=""; AC_MSG_RESULT([no])])
 		 ])
 	if test "x$cob_temp_flags" != x; then
-	   if test "x$COB_LDFLAGS" != x; then
-	      COB_LDFLAGS="$COB_LDFLAGS $cob_temp_flags"
-	   else
-	      COB_LDFLAGS="$cob_temp_flags"
-	   fi
+		if test "x$COB_LDFLAGS" != x; then
+		  COB_LDFLAGS="$COB_LDFLAGS $cob_temp_flags"
+		else
+		  COB_LDFLAGS="$cob_temp_flags"
+		fi
+		curr_cflags="$curr_cflags $cob_temp_flags"
+	fi
+	cob_temp_flags="-fstack-clash-protection"
+	CFLAGS="$curr_cflags $cob_temp_flags $ERRWARN"
+	AC_MSG_CHECKING([for $cob_temp_flags option])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],
+		[AC_MSG_RESULT([yes])],
+		[CFLAGS="$curr_cflags"; cob_temp_flags=""; AC_MSG_RESULT([no])])
+	if test "x$cob_temp_flags" != x; then
+		if test "x$COB_LDFLAGS" != x; then
+		  COB_LDFLAGS="$COB_LDFLAGS $cob_temp_flags"
+		else
+		  COB_LDFLAGS="$cob_temp_flags"
+		fi
 		CFLAGS="$curr_cflags $cob_temp_flags"
 	else
 		CFLAGS="$curr_cflags"
@@ -2481,6 +2521,7 @@ if test "$enable_hardening" = no; then
 	     -e 's/-fstack-protector-strong//g'		\
 	     -e 's/-fstack-protector-all//g'		\
 	     -e 's/-fstack-protector//g'		\
+	     -e 's/-fstack-clash-protection//g'		\
 	     )
 fi
 
