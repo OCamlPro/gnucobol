@@ -27,10 +27,9 @@ jobs:
         with:
           update: true
           msystem: mingw64
-          install: autoconf automake libtool make flex bison help2man texinfo texinfo-tex
-                   mingw-w64-x86_64-cc
-                   mingw-w64-x86_64-gmp mingw-w64-x86_64-texlive-core
-                   mingw-w64-x86_64-gettext-runtime gettext-devel
+          install: autoconf automake libtool flex bison help2man texinfo texinfo-tex
+                   gcc gmp-devel
+                   gettext-devel
 
       - name: Bootstrap GnuCOBOL
         shell: msys2 {0}
