@@ -1,4 +1,8 @@
 
+2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.h: export init functions also for BDB + LMDB (see 2022-06-21)
+
 2025-01-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (cob_file_close): try to close the file stream
@@ -55,7 +59,7 @@
 	* fileio.c (apply_file_paths): extracted from cob_chk_file_mapping
 	  to factor out duplicated code
 
-2024-06-02  Simon Sobisch <simonsobisch@gnu.org>
+2024-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fisam.c (isam_read_next): use ISSTAT only for COB_WITH_STATUS_02,
 	  fixing compile errors with VBISAM
@@ -1193,6 +1197,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* Makefile.am: always build INDEXED handlers as separate libraries
 	* libcobvc.c, libcobvb.c, libcobci.c, libcobdi.c, fileio.h: simplified
+	* fileio.h: export init functions for indexed handlers
 	* fisam.c: spelling correction for D-ISAM and VBISAM
 	* fileio.c (cob_io_version), common.c: add "quiet" version
 	  to output only name
@@ -7386,7 +7391,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2024 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
