@@ -27,7 +27,7 @@ jobs:
         with:
           update: true
           msystem: mingw64
-          install: autoconf automake libtool flex bison help2man texinfo texinfo-tex
+          install: autoconf automake make libtool flex bison help2man texinfo texinfo-tex
                    gcc gmp-devel
                    gettext-devel
 
