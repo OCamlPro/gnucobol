@@ -76,7 +76,7 @@ jobs:
                        --enable-hardening \
                        --prefix=/opt/cobol/gnucobol \
                        CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS" \
-                       CFLAGS="-Wno-unused-command-line-argument -Wno-parentheses-equality $CFLAGS"
+                       CFLAGS="-Wno-parentheses-equality $CFLAGS"
 
       - name: Build GnuCOBOL
         run: make -C _build --jobs=$((${NPROC}+1))
