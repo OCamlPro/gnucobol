@@ -1,9 +1,18 @@
 
+2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix warning for \ in AC_CHECK_FUNCS by dropping them
+
 2025-02-11  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: add -Wno-unused-command-line-argument to CFLAGS under
 	  Clang, to prevent some features to be mistakenly detected as missing
 	  (in particular -Wno-pointer-sign and -fstack-clash-protection)
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: only check for IBM/OpenWatcom/Sun's C compilers if not
+	  running under GCC / clang
 
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1625,7 +1634,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2024 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
