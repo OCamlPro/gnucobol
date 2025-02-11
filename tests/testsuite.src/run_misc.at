@@ -4375,7 +4375,7 @@ AT_DATA([caller.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_MODULE CALLEE.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([COB_LOAD_GLOBAL=true ./caller], [0], [], [])
 AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0], [], [])
