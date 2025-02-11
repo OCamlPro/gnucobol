@@ -585,7 +585,7 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 		base_preload_ptr = preptr;
 	}
 #else
-	// Use the same logic as above in case the cob_load_global is set to local
+	/* Use the same logic as above in case the cob_load_global is set to local */
 	if (!cobsetptr->cob_load_global) {
 		if (last_elem) {
 			last_elem->next = preptr;
