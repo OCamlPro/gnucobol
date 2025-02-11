@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -200,10 +200,10 @@ COB_HIDDEN void cob_file_save_status	(cob_file *f, cob_field *fnstatus, const in
 COB_HIDDEN void cob_file_sync	(cob_file *f);
 
 #ifdef	WITH_DB
-void	cob_bdb_init_fileio (cob_file_api *);
+COB_EXPIMP void	cob_bdb_init_fileio (cob_file_api *);
 #endif
 #ifdef	WITH_LMDB
-void	cob_lmdb_init_fileio (cob_file_api *);
+COB_EXPIMP void	cob_lmdb_init_fileio (cob_file_api *);
 #endif
 
 COB_HIDDEN int cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen);
