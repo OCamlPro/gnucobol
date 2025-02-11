@@ -145,13 +145,17 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -Wno-constant-numlit-expression prog.cob], [0], [],
-[prog.cob:10: warning: offset of 'X' out of bounds: 0 [[-Wignored-error]]
-prog.cob:11: warning: length of 'X' out of bounds: 0 [[-Wignored-error]]
-prog.cob:12: warning: offset of 'X' out of bounds: 5 [[-Wadditional]]
-prog.cob:13: warning: length of 'X' out of bounds: 5 [[-Wadditional]]
-prog.cob:15: warning: CONVERTING operands differ in size [[-Wignored-error]]
+[[prog.cob:10: warning: offset of 'X' out of bounds: 0 [-Wignored-error]
+prog.cob:11: warning: length of 'X' out of bounds: 0 [-Wignored-error]
+prog.cob:12: warning: offset of 'X' out of bounds: 5 [-Wadditional]
+prog.cob:13: warning: length of 'X' out of bounds: 5 [-Wadditional]
+prog.cob:15: warning: CONVERTING operands incompatible [-Wignored-error]
+prog.cob:15: note: operands differ in size
+]])
+AT_CHECK([$COMPILE_ONLY -Wno-constant-numlit-expression -fno-constant-folding prog.cob], [1], [],
+[prog.cob:15: error: CONVERTING operands incompatible
+prog.cob:15: note: operands differ in size
 ])
-AT_CHECK([$COMPILE_ONLY -Wno-constant-numlit-expression -fno-constant-folding prog.cob], [0], [], [])
 
 AT_CLEANUP
 

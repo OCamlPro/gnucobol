@@ -1,16 +1,31 @@
 
+2025-02-11  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: add -Wno-unused-command-line-argument to CFLAGS under
+	  Clang, to prevent some features to be mistakenly detected as missing
+	  (in particular -Wno-pointer-sign and -fstack-clash-protection)
+
 2024-09-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: replace AC_ARG_VAR by AC_SUBST where appropriate
-
-2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
-
-	* configure.ac: fix for resolving COBCRUN_NAME
 
 2024-05-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: update flags for building dynamic libraries on macOS
 	  (helps fixing testsuite issues on recent macOS versions)
+
+2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: add -fstack-clash-protection to --enable-hardening[=no]
+
+2023-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac, NEWS: updated for 3.2
+	* configure.ac: check for mousemask and mmask_t
+
+2023-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix for resolving COBCRUN_NAME
 
 2023-05-25  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -1682,7 +1697,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

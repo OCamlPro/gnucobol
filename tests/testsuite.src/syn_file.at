@@ -1733,13 +1733,11 @@ prog.cob:13: note: 'f-rec' defined here as PIC 999999
 prog.cob:24: error: figurative constants not allowed in FROM clause
 prog.cob:24: error: literal in FROM clause must be alphanumeric, utf-8, national or boolean
 prog.cob:25: warning: numeric value is expected
-prog.cob:13: note: 'f-rec' defined here as PIC 999999
 ])
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
 [prog.cob:22: warning: numeric value is expected
 prog.cob:13: note: 'f-rec' defined here as PIC 999999
 prog.cob:25: warning: numeric value is expected
-prog.cob:13: note: 'f-rec' defined here as PIC 999999
 ])
 AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [0], [],
 [prog.cob:22: warning: source is non-numeric - substituting zero

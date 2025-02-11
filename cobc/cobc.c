@@ -2256,23 +2256,29 @@ set_listing_date (void)
 		  LISTING_TIMESTAMP_FORMAT, &current_compile_tm);
 }
 
-
-DECLNORET static void COB_A_NORETURN
-cobc_terminate (const char *str)
+void
+cobc_terminate_exit (const char *filename, const char *error)
 {
 	if (cb_src_list_file) {
 		set_listing_date ();
 		set_standard_title ();
 		cb_listing_linecount = cb_lines_per_page;
-		cobc_elided_strcpy (cb_listing_filename, str, sizeof (cb_listing_filename), 0);
+		cobc_elided_strcpy (cb_listing_filename, filename, sizeof (cb_listing_filename), 0);
 		print_program_header ();
 	}
-	cb_perror (0, "cobc: %s: %s", str, cb_get_strerror ());
+	cb_source_line = 0;	/* no context output for fatal open input/output errors */
+	cb_perror (0, "cobc: %s: %s", filename, error);
 	if (cb_src_list_file) {
 		print_program_trailer ();
 	}
 	cobc_clean_up (1);
 	exit (EXIT_FAILURE);
+}
+
+DECLNORET static void COB_A_NORETURN
+cobc_terminate (const char *filename)
+{
+	cobc_terminate_exit (filename, cb_get_strerror ());
 }
 
 static void
@@ -3284,6 +3290,10 @@ process_command_line (const int argc, char **argv)
 #ifdef COB_DEBUG_FLAGS
 			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
 #endif
+			if (copt == NULL) {
+				/* some compilers warn if not explicit passed, so default to -O0 for -g */
+				copt = CB_COPT_0;
+			}
 			break;
 
 		case 'G':

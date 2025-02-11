@@ -416,8 +416,6 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 	struct cb_reference	*r;
 	struct cb_field		*f;
 	struct cb_field		*p;
-	struct cb_field		*field_fill;
-	cb_tree			dummy_fill;
 	cb_tree			l;
 	cb_tree			x;
 	int			lv;
@@ -452,6 +450,7 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 	} else {
 		f->level = lv;
 	}
+	/* copy EXTERNAL / GLOBAL attribute from file to record */
 	if (storage == CB_STORAGE_FILE && fn && f->level == 01) {
 		if (fn->flag_external) {
 			f->flag_external = 1;
@@ -527,7 +526,8 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		last_field->children = f;
 		f->parent = last_field;
 	} else if (f->level == last_field->level) {
-		/* Same level */
+		/* Same level; note:
+		   last_field is a group if coming from "goto" */
 same_level:
 		last_field->sister = f;
 		f->parent = last_field->parent;
@@ -545,8 +545,8 @@ same_level:
 		/* always generate dummy filler field to prevent
 		   parsing of follow-on fields to fail the same way */
 		if (p) /* <- silence warnings */ {
-			dummy_fill = cb_build_filler ();
-			field_fill = CB_FIELD (cb_build_field (dummy_fill));
+			cb_tree			dummy_fill = cb_build_filler ();
+			struct cb_field	*field_fill = CB_FIELD (cb_build_field (dummy_fill));
 			field_fill->level = f->level;
 			field_fill->flag_filler = 1;
 			field_fill->storage = storage;
@@ -1253,7 +1253,7 @@ create_implicit_picture (struct cb_field *f)
 	&& !f->flag_usage_defined) {
 		for (p = f->parent; p; p = p->parent) {
 			if (p->flag_usage_defined
-			&& (p->usage == CB_USAGE_FLOAT	
+			&& (p->usage == CB_USAGE_FLOAT
 			 || p->usage == CB_USAGE_DOUBLE
 			 || p->usage == CB_USAGE_POINTER
 			 || p->usage == CB_USAGE_INDEX)) {
@@ -1568,7 +1568,7 @@ validate_pic (struct cb_field *f)
 		}
 		if (f->pic
 		 && f->pic->size > f->size)
-			f->size = f->pic->size;
+		f->size = f->pic->size;
 	}
 
 	/* ACUCOBOL/RM-COBOL-style COMP-1 ignores the PICTURE clause. */
@@ -2379,7 +2379,7 @@ validate_elementary_item (struct cb_field *f)
 				pstr->times_repeated = 1;
 				++pstr;
 			}
-		} 
+		}
 		x = CB_TREE (f);
 
 		switch (f->usage) {
@@ -2660,7 +2660,7 @@ setup_parameters (struct cb_field *f)
 	case CB_USAGE_COMP_N:
 		f->flag_real_binary = 1;
 	case CB_USAGE_COMP_5:
-		if (f->pic 
+		if (f->pic
 		 && f->pic->orig
 		 && f->pic->orig[0] == 'X') {
 			f->usage = CB_USAGE_COMP_X;
@@ -3001,7 +3001,7 @@ unbounded_again:
 				c->offset = c->redefines->offset;
 				compute_size (c);
 				/* Increase the size if redefinition is larger */
-				if (c->level != 66 
+				if (c->level != 66
 				 && c->size * c->occurs_max >
 				    c->redefines->size * c->redefines->occurs_max) {
 					if (cb_verify_x (CB_TREE (c), cb_larger_redefines, _("larger REDEFINES"))) {
@@ -3076,7 +3076,7 @@ unbounded_again:
 						if (c->size == 2
 						 || c->size == 4) {
 							align_size = c->size;
-						} else if (c->size == 8 
+						} else if (c->size == 8
 							|| c->size == 16) {
 							if (cb_binary_size == CB_BINARY_SIZE_2_4_8) {
 								if (c->usage == CB_USAGE_DOUBLE)
@@ -3365,8 +3365,8 @@ unbounded_again:
 		}
 	}
 
-	if (f->storage == CB_STORAGE_LOCAL 
-	 || f->storage == CB_STORAGE_LINKAGE 
+	if (f->storage == CB_STORAGE_LOCAL
+	 || f->storage == CB_STORAGE_LINKAGE
 	 || f->flag_item_based) {
 			/* Can not depend on the data being aligned */
 	} else
@@ -3594,8 +3594,8 @@ cb_validate_field (struct cb_field *f)
 	}
 
 	/* Set up parameters */
-	if (f->storage == CB_STORAGE_LOCAL 
-	 || f->storage == CB_STORAGE_LINKAGE 
+	if (f->storage == CB_STORAGE_LOCAL
+	 || f->storage == CB_STORAGE_LINKAGE
 	 || f->flag_item_based) {
 		f->flag_local = 1;
 	}

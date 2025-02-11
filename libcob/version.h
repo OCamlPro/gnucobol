@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2020-2022 Free Software Foundation, Inc.
+   Copyright (C) 2020-2023 Free Software Foundation, Inc.
    Written by Simon Sobisch
 
    This file is part of GnuCOBOL.

@@ -515,7 +515,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	memset (f2->data, 0, f2->size);
 	{
 		register unsigned char	*q = f2->data + i / 2;
-		const unsigned int i_end = f2->size;
+		const unsigned int i_end = (unsigned int)f2->size;	/* a packed field always has small size */
 		/* FIXME: get rid of that, adjust i_end to handle both truncation of the source to the right
 		   and zero-fill because of scale differences (zero-fill wa s already done) */
 		const unsigned char *p_end = data1 + digits1;
@@ -537,7 +537,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		/* check for necessary loop (until we not need the p_end check) */
 		if (i_end - i < (unsigned int)(p_end - p + 1) / 2) {
 			while (i < i_end) {
-				*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+				*q = ((*p << 4) & 0xFF) 	/* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
 				q++;
 				i++;
@@ -545,7 +545,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 			}
 		} else {
 			while (p < p_end) {
-				*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+				*q = ((*p << 4)	& 0xFF) 	/* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
 				q++;
 				p += 2;

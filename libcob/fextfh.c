@@ -42,8 +42,6 @@ static const cob_field_attr compx_attr = {COB_TYPE_NUMERIC_BINARY, 0, 0, 0, NULL
 static void copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall);
 static int	EXTFH3 (unsigned char *opcode, FCD3 *fcd);
 
-extern unsigned int		eop_status;
-
 /*
  * Free up allocated memory
  */
@@ -319,23 +317,12 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	if (wasOpen >= 0) {
 		const int status_code_1 = isdigit(fcd->fileStatus[0])
 			? COB_D2I (fcd->fileStatus[0]) : 9;
-		if (status_code_1 == 0) {
+		if (status_code_1 != 0
+		 || cob_last_exception_is (COB_EC_I_O_EOP)) {
 			/* EOP is non-fatal therefore 00 status but needs exception;
-			   note that this global variable is only set if GnuCOBOL is used
+			   note that the global exception is only set if GnuCOBOL is used
 			   as EXTFH, in every other case we currently can't set EOP;
 			   also note that fcd->lineCount is never read/set */
-			if (eop_status == 0) {
-				cobglobptr->cob_exception_code = 0;
-		} else {
-#if 0 /* correct thing to do, but then also needs to have codegen adjusted
-         --> module-incompatibility --> 4.x */
-				cob_set_exception (eop_status);
-#else
-				cob_set_exception (COB_EC_I_O_EOP);
-#endif
-				eop_status = 0;
-			}
-		} else {
 			cob_set_exception (status_exception[status_code_1]);
 		}
 		if (f->file_status) {

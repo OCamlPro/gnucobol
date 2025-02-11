@@ -235,18 +235,14 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = 0;");
 		/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
+		output_storage ("	for (n = 0; n < size; ++n) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");
-		output_storage ("	}");
-			/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
-		output_storage ("		if (*p > '0' && *p <= '9')");
-		output_storage ("	       break;");
+		output_storage ("		p++;");
 		output_storage ("	}");
 		output_storage ("	for (; n < size; ++n, ++p) {");
-		output_storage ("   	val = (val * 10)");
-		output_storage ("   	       + ((*p > '0' && *p <= '9') ? (*p - '0') : 0);");
+		output_storage ("		val = (val * 10)");
+		output_storage ("		    + ((*p > '0' && *p <= '9') ? (*p - '0') : 0);");
 		output_storage ("	}");
 		output_storage ("	return val;");
 		output_storage ("}");
@@ -260,20 +256,22 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = size - 1;");
 		/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
+		output_storage ("	for (n = 0; n < val; ++n) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");
+		output_storage ("		p++;");
 		output_storage ("	}");
 		output_storage ("	val = 0;");
-		output_storage ("	for (; n < size; ++n, ++p) {");
-		output_storage ("		val *= 10;");
-		output_storage ("		if (*p > '0' && *p <= '9') {");
-		output_storage ("		    val += (*p - '0');");
-		output_storage ("		} else if ((*p & 0x40) && (n + 1) == size) {");
-		output_storage ("		    val += (*p & 0x0F);");
-		output_storage ("		    val = -val;");
-		output_storage ("	    }");
-		output_storage ("	}");
+		output_storage ("       for (; n < size; ++n, ++p) {");
+		output_storage ("               val *= 10;");
+		output_storage ("               if (*p > '0' && *p <= '9') {");
+		output_storage ("                   val += (*p - '0');");
+		output_storage ("               } else if ((*p & 0x40) && (n + 1) == size) {");
+		output_storage ("                   val += (*p & 0x0F);");
+		output_storage ("                   val = -val;");
+		output_storage ("           }");
+		output_storage ("       }");
+
 		output_storage ("	return val;");
 		output_storage ("}");
 		return;
@@ -282,18 +280,18 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static cob_s64_t COB_INLINE COB_A_INLINE");
 		output_storage ("cob_get_numdisp64 (const void *data, const int size)");
 		output_storage ("{");
-		output_storage ("	register const unsigned char	*p;");
+		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register cob_s64_t 	val = 0;");
-		output_storage ("	p = (const unsigned char *)data;");
-			/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
+		/* Improve performance by skipping leading ZEROs */
+		output_storage ("	for (n = 0; n < size; ++n) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
-		output_storage ("	       break;");
+		output_storage ("			break;");
+		output_storage ("		p++;");
 		output_storage ("	}");
 		output_storage ("	for (; n < size; ++n, ++p) {");
-		output_storage ("   	val = (val * 10)");
-		output_storage ("   	       + ((*p > '0' && *p <= '9') ? (*p - '0') : 0);");
+		output_storage ("		val = (val * 10)");
+		output_storage ("		    + ((*p > '0' && *p <= '9') ? (*p - '0') : 0);");
 		output_storage ("	}");
 		output_storage ("	return val;");
 		output_storage ("}");
@@ -303,25 +301,25 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static cob_s64_t COB_INLINE COB_A_INLINE");
 		output_storage ("cob_get_numdisps64 (const void *data, const int size)");
 		output_storage ("{");
-		output_storage ("	register const unsigned char	*p;");
+		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register cob_s64_t	n;");
 		output_storage ("	register cob_s64_t	val = size - 1;");
-		output_storage ("	p = (const unsigned char *)data;");
-			/* Improve performance by skipping leading ZEROs */
-		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
+		/* Improve performance by skipping leading ZEROs */
+		output_storage ("	for (n = 0; n < val; ++n) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");
+		output_storage ("		p++;");
 		output_storage ("	}");
 		output_storage ("	val = 0;");
-		output_storage ("	for (; n < size; ++n, ++p) {");
-		output_storage ("		val *= 10;");
-		output_storage ("		if (*p > '0' && *p <= '9') {");
-		output_storage ("		    val += (*p - '0');");
-		output_storage ("		} else if ((*p & 0x40) && (n + 1) == size) {");
-		output_storage ("		    val += (*p & 0x0F);");
-		output_storage ("		    val = -val;");
-		output_storage ("	    }");
-		output_storage ("	}");
+		output_storage ("       for (; n < size; ++n, ++p) {");
+		output_storage ("               val *= 10;");
+		output_storage ("               if (*p > '0' && *p <= '9') {");
+		output_storage ("                   val += (*p - '0');");
+		output_storage ("               } else if ((*p & 0x40) && (n + 1) == size) {");
+		output_storage ("                   val += (*p & 0x0F);");
+		output_storage ("                   val = -val;");
+		output_storage ("           }");
+		output_storage ("       }");
 		output_storage ("	return val;");
 		output_storage ("}");
 		return;

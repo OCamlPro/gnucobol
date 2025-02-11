@@ -52,13 +52,15 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 #define COB_LIB_EXPIMP
 #include "coblocal.h"
 
-/*	NOTE - The following variable should be uncommented when
-	it is known that dlopen(NULL) is borked.
-	This is known to be true for some PA-RISC HP-UX 11.11 systems.
+/*	NOTE:
+	COB_BORKED_DLOPEN should be set with LIBCOB_CFFLAGS=-DCOB_BORKED_DLOPEN
+	when it is known that either dlopen(NULL) is borked or dlclose is a no-op.
+	The first is known to be true for some PA-RISC HP-UX 11.11 systems.
 	This is fixed with HP patch PHSS_28871. (There are newer but this
 	fixes dlopen/dlsym problems)
+	The second (no-op dlclose) is the case with musl, see 
+	https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading_libraries
 */
-/* #define COB_BORKED_DLOPEN */
 
 #ifdef	_WIN32
 
@@ -305,7 +307,6 @@ cob_set_library_path ()
 	char		*p;
 	char		*pstr;
 	size_t		i;
-	struct stat	st;
 
 	int 		flag;
 
@@ -396,9 +397,12 @@ cob_set_library_path ()
 
 		/* check if directory
 		   (note: entries like X:\ _must_ be specified with trailing slash !) */
-		if (stat (p, &st) || !(S_ISDIR (st.st_mode))) {
-			/* possibly raise a warning, maybe only if explicit asked */
-			continue;
+		{
+			struct stat	st;
+			if (stat (p, &st) || !(S_ISDIR (st.st_mode))) {
+				/* possibly raise a warning, maybe only if explicit asked */
+				continue;
+			}
 		}
 
 		/* remove trailing slash from entry (always added on use) */
