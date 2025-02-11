@@ -61,6 +61,16 @@
 
 	* pplex.l (cb_text_list): prevent duplicates
 
+2024-08-30  Ammar Almorsi <ammaralmorsi@gmail.com>
+
+	BUG #961: Nested Elements Mishandled Despite 'with attributes' Specification
+	* tree.c (set_ml_attrs_and_children): enhanced the function to handle
+	  the case where a child has attributes
+	* codegen.c (output_ml_suppress_checks): modified the starting point
+	  to start from the last attribute if present
+	* codegen.c (get_prev_ml_tree_entry): removed the fallback case to
+	  prevent infinite loops
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):

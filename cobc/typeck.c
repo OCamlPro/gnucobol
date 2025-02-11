@@ -2141,9 +2141,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
 		} else {
-		(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
-					cb_word_length, word);
-	}
+			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+						cb_word_length, word);
+		}
 	}
 }
 
@@ -2943,7 +2943,7 @@ cb_build_const_start (struct cb_field *f, cb_tree x)
 		if (cb_field_variable_size (p)) {
 			cb_error (_("variable length item not allowed here"));
 			return cb_build_numeric_literal (0, "1", 0);
-	}
+		}
 	}
 	snprintf (buff, sizeof(buff), "%d", target->offset);
 	for (p = target; p; p = p->parent) {
