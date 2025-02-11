@@ -46,7 +46,7 @@ jobs:
           # speeding up the dist - this is a "prepare" only step for this workflow only
           ../configure \
               --without-db --without-curses --without-xml2 --without-json --without-iconv \
-              --disable-dependency-tracking --disable-shared 
+              --disable-dependency-tracking
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
