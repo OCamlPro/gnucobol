@@ -39,14 +39,17 @@ jobs:
       - name: Configure GnuCOBOL
         shell: msys2 {0}
         run: |
-          mkdir _build
-          cd _build
-          ../configure --without-db --without-curses --without-xml2 --without-json
+          mkdir _build && cd _build
+          # build without any optional pacakges and without shared library for
+          # speeding up the dist - this is a "prepare" only step for this workflow only
+          ../configure \
+              --without-db --without-curses --without-xml2 --without-json --without-iconv \
+              --disable-dependency-tracking --disable-shared 
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
         run: |
-          make -C _build --jobs=$(($(nproc)+1)) CPPFLAGS="-D_spawnv=spawnv"
+          make -C _build --jobs=$(($(nproc)+1))
           make -C _build --jobs=$(($(nproc)+1)) dist
 
       - name: Upload config-dist.log
