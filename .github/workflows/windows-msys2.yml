@@ -41,12 +41,12 @@ jobs:
         run: |
           mkdir _build
           cd _build
-          ../configure --without-db --without-curses --without-xml2 --without-json CPPFLAGS="-D_spawnv=spawnv"
+          ../configure --without-db --without-curses --without-xml2 --without-json
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
         run: |
-          make -C _build --jobs=$(($(nproc)+1))
+          make -C _build --jobs=$(($(nproc)+1)) CPPFLAGS="-D_spawnv=spawnv"
           make -C _build --jobs=$(($(nproc)+1)) dist
 
       - name: Upload config-dist.log
