@@ -1,4 +1,10 @@
 
+2025-02-11  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: add -Wno-unused-command-line-argument to CFLAGS under
+	  Clang, to prevent some features to be mistakenly detected as missing
+	  (in particular -Wno-pointer-sign and -fstack-clash-protection)
+
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix check for curses functions if panel headers are found
