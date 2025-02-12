@@ -3394,6 +3394,7 @@ BVAL is 0240
 
 AT_CLEANUP
 
+
 AT_SETUP([PICTURE COMP-X (2)])
 AT_KEYWORDS([Numeric])
 
@@ -3459,6 +3460,7 @@ TSTB-34:9999999999999999999999990000000000, Length: 34
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Large BINARY, COMP-X])
 AT_KEYWORDS([Numeric])
@@ -8945,14 +8947,7 @@ AT_CHECK([gcdiff -U reference tstdump.dump], [0], [], [])
 
 
 
-AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
-
-# also checking that a dump file without anything to dump does not do anything
-AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
-[X is 000000001
-X is 000005441
-],
+AT_DATA([reference_stderr],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
@@ -8969,31 +8964,36 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
+
+AT_CAPTURE_FILE([stderr.txt])
+
+AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
+
+# also checking that a dump file without anything to dump does not do anything
+AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
+[X is 000000001
+X is 000005441
+], [])
+
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+stderr.txt > stderr.sed], [0], [], [])
+
+AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
 
 # also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
 [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+], [])
 
- Last statement of "sub1" was MOVE
-	MAIN-2 OF MAIN-1 at cpyabrt:4
-	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:159
- Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
- Last statement of "prog" was CALL
-	CALL-IT-OMIT at prog.cob:118
-	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:77
- Started by ./prog
-])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+stderr.txt > stderr.sed], [0], [], [])
+
+AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
@@ -9069,7 +9069,13 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff -U reference_fdls_tmpl tstdump_fdls.dump], [0], [], [])
+# AT_DATA workaround via sed:
+AT_CHECK([$SED -e 's/_$//' reference_fdls_tmpl > reference], [0], [], [])
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
+                   s/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
+tstdump_fdls.dump > tstdump.sed], [0], [], [])
+
+AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
 
@@ -9084,7 +9090,14 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump_allfdls.dump
 ])
 
-AT_CHECK([gcdiff -I'Started by' -U reference_fdls_tmpl tstdump_allfdls.dump], [0], [], [])
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
+                   s/Started by .*prog_allfdls.exe/Started by .\/prog_allfdls/g' \
+tstdump_allfdls.dump > tstdump.sed], [0], [], [])
+
+AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
+reference > reference_all], [0], [], [])
+
+AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 
 # CHECKME @ Ron: The result is likely wrong, please verify later
 #AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
@@ -9280,7 +9293,7 @@ dump written to dumpall.txt
 
 AT_CAPTURE_FILE([dumpall.txt])
 
-AT_DATA([reference], [
+AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
  Last statement of "prog" was MOVE at line 106 of prog.cob
@@ -9409,9 +9422,23 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff -U reference dumpall.txt], [0], [], [])
+# AT_DATA workaround via sed:
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g;
+                   s/Started by .*prog.exe/Started by .\/prog/g' \
+dumpall.txt > dumpall.sed], [0], [], [])
+
+AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
+# Previous test "failed" --> 32 bit
+  AT_CHECK([$SED -e 's/_$//; s/0x0000000000000000/0x00000000/' reference_tmpl > reference], [0], [], [])
+,
+# Previous test "passed" --> 64 bit
+  AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
+)
+
+AT_CHECK([diff reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Test dump feature (3)])
 AT_SKIP_IF(true)  # not reproducible everywhere
@@ -9523,6 +9550,7 @@ END OF DUMP - prog
 AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Test dump feature (4)])
 AT_KEYWORDS([Dump])
@@ -9973,6 +10001,7 @@ AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 #AT_CHECK([diff reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Test dump feature (5)])
 AT_KEYWORDS([Dump])
@@ -11242,6 +11271,7 @@ Ending now
 
 AT_CLEANUP
 
+
 AT_SETUP([C API Test JUST])
 AT_KEYWORDS([CALL])
 
@@ -11752,6 +11782,7 @@ libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are
 
 AT_CLEANUP
 
+
 AT_SETUP([OPTIONS paragraph, DEFAULT ROUNDED MODE])
 AT_KEYWORDS([runmisc])
 
@@ -11881,7 +11912,6 @@ B JUNK                           is invalid.
 ], [])
 
 AT_CLEANUP
-
 
 
 AT_SETUP([ZERO unsigned and negative binary subscript])
@@ -13749,6 +13779,7 @@ COST IS $18,536.23
 
 AT_CLEANUP
 
+
 AT_SETUP([Test PICTURE Edit mask (2)])
 AT_KEYWORDS([Numeric])
 
@@ -13890,6 +13921,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Pointer test was good
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Figurative constants to numeric field])
 AT_KEYWORDS([Numeric])
@@ -14215,6 +14247,7 @@ Leaving routine2
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([COBOL2002 SYNC])
 AT_KEYWORDS([Numeric])
@@ -14992,6 +15025,7 @@ ODO-TABLE(1) is 0000000012 and 012
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([IBM SYNC])
 AT_KEYWORDS([Numeric])
@@ -18393,3 +18427,62 @@ note: TooHigh3 has version 4.0.1.2
 
 AT_CLEANUP
 
+
+AT_SETUP([Decimal constants and programs in same source])
+AT_KEYWORDS([runmisc INITIAL CANCEL CALL])
+
+# this used to cause a SIGSEGV, see bug #917
+
+AT_DATA([prog.cpy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. :PROG-NAME: :PROG-KIND:.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 42.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           IF (X + Y) / 42.1 = 1
+               DISPLAY "OK" WITH NO ADVANCING.
+           EXIT PROGRAM.
+       END PROGRAM :PROG-NAME:.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 0.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           CALL "nested_init"
+           CALL "nonnested_init"
+           CALL "nested_noninit"
+           CANCEL "nested_noninit"
+           CALL "nonnested_noninit"
+           CANCEL "nonnested_noninit"
+           IF X + Y + 42.1 <> 0
+               DISPLAY "OK" WITH NO ADVANCING.
+           STOP RUN.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nested_init==
+                           ==:PROG-KIND:== BY ==INITIAL==.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nested_noninit==
+                           ==:PROG-KIND:== BY ====.
+       END PROGRAM prog.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nonnested_init==
+                           ==:PROG-KIND:== BY ==INITIAL==.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nonnested_noninit==
+                           ==:PROG-KIND:== BY ====.
+])
+
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN prog], [0], [OKOKOKOKOK], [])
+AT_CLEANUP

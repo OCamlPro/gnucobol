@@ -14,6 +14,10 @@
 	* configure.ac: update flags for building dynamic libraries on macOS
 	  (helps fixing testsuite issues on recent macOS versions)
 
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: add checks to allow using stdint.h and inttypes.h
+
 2023-08-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: add -fstack-clash-protection to --enable-hardening[=no]

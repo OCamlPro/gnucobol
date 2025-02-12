@@ -78,6 +78,38 @@
 	* fisam.c: Updated to set index field type for 'short' & 'int'
 	  Enabled support for variable length records is using V-ISAM/D-ISAM
 
+2023-12-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_terminate_routines, cob_call_with_exception_check):
+	  add a mechanism to postpone unloading of modules when using longjmp,
+	  as this is not safe on Windows (its implementation of longjmp
+	  performs stack-unwinding)
+
+2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* common.c (cob_get_strerror), coblocal.h: export as utility function
+	* common.c (cob_expand_env_string): fix potention buffer overflow
+
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h: use stdint.h and inttypes.h when available to
+	  define cob_s64_t, cob_u64_t and the various CB_FMT_ macros
+
+2023-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (lineseq_write, lineseq_rewrite): fix bug #918 partial broken
+	  COB_LS_VALIDATE by incrementing pointer outside of macro IS_BAD_CHAR
+
+2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	Fixing Bug #914 CLOSE LOCK abends program on OPEN
+	* fileio.c (cob_close, cob_unlock)->fileio.c,fextfh.c: handle CLOSE WITH LOCK files
+	* fileio.c (indexed_close)->fbdb.c,fisam.c: saveguard for broken state
+
+	Fixing Bug #913 DISPLAY and ACCEPT with simple attributes SIGSEGV
+	* screenio.c (cob_accept_field, cob_display_field): check for extended
+	  params to be passed before using them
+
 2023-09-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (alloc_figurative): optimized handling for SPACES and ZEROES
