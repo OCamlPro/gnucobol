@@ -1483,6 +1483,10 @@ ix_bdb_close (cob_file_api *a, cob_file *f, const int opt)
 	COB_UNUSED (a);
 	COB_UNUSED (opt);
 
+	if (p == NULL) {
+		/* should we raise COB_STATUS_42_NOT_OPEN ? */
+		return COB_STATUS_30_PERMANENT_ERROR;
+	}
 	if (bdb_env != NULL) {
 		bdb_unlock_all (f);
 		if (p->file_lock_set) {

@@ -101,13 +101,6 @@ struct attr_list {
 	cob_u32_t		flags;
 };
 
-struct literal_list {
-	struct literal_list	*next;
-	struct cb_literal	*literal;
-	int			id;
-	int			make_decimal;
-};
-
 struct field_list {
 	struct field_list	*next;
 	struct cb_field		*f;
@@ -346,8 +339,8 @@ cb_code_field (cb_tree x)
 	return CB_FIELD (x);
 }
 
-static char *
-get_field_name (struct cb_field *f)
+static const char *
+get_field_name (const struct cb_field *f)
 {
 	static char wrk[64];
 	if (memcmp (f->name, "FILLER ",7) == 0
@@ -355,7 +348,7 @@ get_field_name (struct cb_field *f)
 		sprintf (wrk,"Line %d",f->common.source_line);
 		return wrk;
 	}
-	return (char*)f->name;
+	return f->name;
 }
 
 static int
@@ -3346,8 +3339,32 @@ output_source_cache (void)
 
 /* Literal */
 
+/* Add the given literal to the list of "seen" decimal
+   constants in the given program "prog" */
+static void
+cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list *cached_literal)
+{
+	struct literal_list	*l;
+	for (l = prog->decimal_constants; l; l = l->next) {
+		if (cached_literal->id == l->id) {
+			return;
+		}
+	}
+
+	l = cobc_parse_malloc (sizeof (struct literal_list));
+	l->id = cached_literal->id;
+	l->literal = cached_literal->literal;
+	l->make_decimal = cached_literal->make_decimal;
+	l->next = prog->decimal_constants;
+	prog->decimal_constants = l;
+}
+
+/* Resolve literal "x" from the literal cache and return its id.
+   The literal is added to the literal cache if missing.
+   Additionally, if the literal is a decimal constant, it is
+   added to the list of "seen" decimal constant of program "prog". */
 int
-cb_lookup_literal (cb_tree x, int make_decimal)
+cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 {
 	struct cb_literal	*literal;
 	struct literal_list	*l;
@@ -3365,6 +3382,7 @@ cb_lookup_literal (cb_tree x, int make_decimal)
 			    (size_t)literal->size) == 0) {
 			if (make_decimal) {
 				l->make_decimal = 1;
+				cb_cache_program_decimal_constant (prog, l);
 			}
 			return l->id;
 		}
@@ -3384,6 +3402,9 @@ cb_lookup_literal (cb_tree x, int make_decimal)
 	l->make_decimal = make_decimal;
 	l->next = literal_cache;
 	literal_cache = l;
+	if (make_decimal) {
+		cb_cache_program_decimal_constant (prog, l);
+	}
 
 	return cb_literal_id++;
 }
@@ -3773,7 +3794,7 @@ output_long_integer (cb_tree x)
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_zero) {
-			output (CB_FMT_LLD_F, 0LL);
+			output (CB_FMT_LLD_F, COB_S64_C(0));
 		} else if (x == cb_null) {
 			output ("(cob_u8_ptr)NULL");
 		} else {
@@ -4283,10 +4304,10 @@ output_param (cb_tree x, int id)
 	}
 	case CB_TAG_LITERAL:
 		if (nolitcast) {
-			output ("&%s%d", CB_PREFIX_CONST, cb_lookup_literal (x, 0));
+			output ("&%s%d", CB_PREFIX_CONST, cb_lookup_literal (current_prog, x, 0));
 		} else {
 			output ("(cob_field *)&%s%d", CB_PREFIX_CONST,
-				cb_lookup_literal (x, 0));
+				cb_lookup_literal (current_prog, x, 0));
 		}
 		break;
 	case CB_TAG_FIELD:
@@ -11498,7 +11519,7 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 	}
 	output_local ("\"%s\",", fname);
 	if (CB_LITERAL_P (x)) {
-		output ("(cob_field *)&%s%d,", CB_PREFIX_CONST, cb_lookup_literal (x, 0));
+		output ("(cob_field *)&%s%d,", CB_PREFIX_CONST, cb_lookup_literal (current_prog, x, 0));
 	} else
 	if (x) {
 		output_local ("&%s%d,", CB_PREFIX_FIELD, cb_code_field(x)->id);
@@ -13668,20 +13689,18 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	}
 
 	seen = 0;
-	for (m = literal_cache; m; m = m->next) {
-		if (m->make_decimal) {
-			if (!seen) {
-				seen = 1;
-				output_line ("/* Set Decimal Constant values */");
-			}
-			output_line ("%s%d = &%s%d;", CB_PREFIX_DEC_CONST, m->id,
-				     CB_PREFIX_DEC_FIELD, m->id);
-			output_line ("cob_decimal_init (%s%d);", CB_PREFIX_DEC_CONST, m->id);
-			output_line ("cob_decimal_set_field (%s%d, (cob_field *)&%s%d);",
-				     CB_PREFIX_DEC_CONST, m->id,
-				     CB_PREFIX_CONST, m->id);
-			output_newline ();
+	for (m = prog->decimal_constants; m; m = m->next) {
+		if (!seen) {
+			seen = 1;
+			output_line ("/* Set Decimal Constant values */");
 		}
+		output_line ("%s%d = &%s%d;", CB_PREFIX_DEC_CONST, m->id,
+			     CB_PREFIX_DEC_FIELD, m->id);
+		output_line ("cob_decimal_init (%s%d);", CB_PREFIX_DEC_CONST, m->id);
+		output_line ("cob_decimal_set_field (%s%d, (cob_field *)&%s%d);",
+			     CB_PREFIX_DEC_CONST, m->id,
+			     CB_PREFIX_CONST, m->id);
+		output_newline ();
 	}
 	if (seen) {
 		output_newline ();
@@ -13887,15 +13906,13 @@ cancel_end:
 	output_newline ();
 	output_line ("P_clear_decimal:");
 	seen = 0;
-	for (m = literal_cache; m; m = m->next) {
-		if (m->make_decimal) {
-			if (!seen) {
-				seen = 1;
-				output_line ("/* Clear Decimal Constant values */");
-			}
-			output_line ("cob_decimal_clear (%s%d);", CB_PREFIX_DEC_CONST, m->id);
-			output_line ("%s%d = NULL;", CB_PREFIX_DEC_CONST, m->id);
+	for (m = prog->decimal_constants; m; m = m->next) {
+		if (!seen) {
+			seen = 1;
+			output_line ("/* Clear Decimal Constant values */");
 		}
+		output_line ("cob_decimal_clear (%s%d);", CB_PREFIX_DEC_CONST, m->id);
+		output_line ("%s%d = NULL;", CB_PREFIX_DEC_CONST, m->id);
 	}
 	if (seen) {
 		output_newline ();
@@ -14931,6 +14948,27 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		/* Switch to main storage file */
 		output_target = cb_storage_file;
 	}
+
+	/* Decimal constants */
+	{
+		struct literal_list* m = literal_cache;
+		int comment_gen = 0;
+		for (; m; m = m->next) {
+			if (m->make_decimal) {
+				if (!comment_gen) {
+					comment_gen = 1;
+					output_local ("\n/* Decimal constants */\n");
+				}
+				output_local ("static\tcob_decimal\t%s%d;\n",
+						CB_PREFIX_DEC_FIELD, m->id);
+				output_local ("static\tcob_decimal\t*%s%d = NULL;\n",
+						CB_PREFIX_DEC_CONST, m->id);
+			}
+		}
+		if (comment_gen) {
+			output_local ("\n");
+		}
+	}
 }
 
 void
@@ -14964,27 +15002,6 @@ codegen_finalize (void)
 				cob_gen_optim (optidx);
 				output_storage ("\n");
 			}
-		}
-	}
-
-	/* Decimal constants */
-	{
-		struct literal_list* m;
-		int comment_gen = 0;
-		for (m = literal_cache; m; m = m->next) {
-			if (m->make_decimal) {
-				if (!comment_gen) {
-					comment_gen = 1;
-					output_storage ("\n/* Decimal constants */\n");
-				}
-				output_storage ("static\tcob_decimal\t%s%d;\n",
-						CB_PREFIX_DEC_FIELD, m->id);
-				output_storage ("static\tcob_decimal\t*%s%d = NULL;\n",
-						CB_PREFIX_DEC_CONST, m->id);
-			}
-		}
-		if (comment_gen) {
-			output_storage ("\n");
 		}
 	}
 

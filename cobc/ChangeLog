@@ -36,6 +36,43 @@
 	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
 	  functions, now returning the tree that was emitted
 
+2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
+	  do not move object files and preprocess files when they were
+	  specified as an explicit target on the command line (-E, -c)
+
+2023-10-17  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #923: generated modules init/clear unused decimal constants
+	* codegen.c (literal_list): removal of the unused x field,
+	  and type moved to tree.h
+	* tree.h (struct cb_program): new decimal_constant field
+	  to store decimal constants used by the current program,
+	* codegen.c (cb_cache_program_decimal_constant): new function
+	  that adds constants used by the current program to the new
+	  decimal_constant field in struct cb_prog
+	* codegen.c (cb_lookup_literal): added the current program as
+	  argument to cb_lookup_literal to account for different
+	  usage contexts (parse/typecheck vs codegen)
+	* codegen.c (output_internal_function): iterate over
+	  prog->decimal_constants instead of literal_cache so as to only
+	  output decimal constants actually used by the current program
+	* typeck.c (decimal_expand, cb_build_cond_fields),
+	  codegen.c (output_param) : pass current_program to cb_lookup_literal
+
+	BUG #917: segfault on decimal constant after CANCEL on subprogram
+	* codegen.c (codegen_internal, codegen_finalize): move declaration
+	  of decimal constants from global storage to local storage
+
+2023-10-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* error.c (print_error_prefix), flag.def: new flag
+	  -fdiagnostics-absolute-paths to print the full path of
+	  a file for diagnostics; this flag can be activated if
+	  your editor and build system do not correctly work
+	  together to locate files from diagnostic output
+
 2023-09-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (literal_list): removed self-reference as tree
@@ -59,6 +96,7 @@
 
 2023-09-01  Simon Sobisch <simonsobisch@gnu.org>
 
+	FR #443: error handling for non-cobol "sources"
 	* pplex.l (ppopen_get_file): test for binary file and directly error out
 	* cobc.c (cobc_terminate_exit), cobc.h: split cobc_terminate and make
 	  the new function available

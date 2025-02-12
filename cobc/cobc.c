@@ -2082,7 +2082,8 @@ clean_up_intermediates (struct filename *fn, const int status)
 	if (fn->need_preprocess
 	 && (status
 		||  cb_compile_level > CB_LEVEL_PREPROCESS
-		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
+		|| (cb_compile_level == CB_LEVEL_PREPROCESS
+		    && save_temps && !save_temps_dir))) {
 		cobc_check_action (fn->preprocess);
 	}
 	/* CHECKME: we had reports of unexpected intermediate
@@ -2189,7 +2190,8 @@ cobc_clean_up (const int status)
 		if (fn->need_assemble
 		 && (status
 			||  cb_compile_level > CB_LEVEL_ASSEMBLE
-			|| (cb_compile_level == CB_LEVEL_ASSEMBLE && save_temps))) {
+			|| (cb_compile_level == CB_LEVEL_ASSEMBLE
+			    && save_temps && !save_temps_dir))) {
 			cobc_check_action (fn->object);
 		}
 		clean_up_intermediates (fn, status);
@@ -3632,6 +3634,8 @@ process_command_line (const int argc, char **argv)
 			/* -fdiagnostics-plain-output */
 			cb_diagnostics_show_caret = 0 ;
 			cb_diagnostics_show_line_numbers = 0;
+			/* in the future, may also disable urls,
+			   colors, text art, flow paths */
 			break;
 
 		case 'P':

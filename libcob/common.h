@@ -45,7 +45,34 @@ typedef __mpz_struct mpz_t[1];
 #define	cob_sli_t		long int
 #define	cob_uli_t		unsigned long int
 
-#if	defined(_WIN32) && !defined(__MINGW32__)
+/* If both stdint.h and inttypes.h from C99 are present, use them.
+   Note that recent Visual C++ (>= 2012) and most MinGW versions are
+   C99-compliant (even when MinGW uses the old MSVCRT, it provides
+   a printf compatiblity layer to support standard format strings). */
+#if defined(HAVE_STDINT_H) && defined(HAVE_INTTYPES_H)
+
+#include <stdint.h>
+#include <inttypes.h>
+
+#define	cob_s64_t		int64_t
+#define	cob_u64_t		uint64_t
+
+#define	COB_S64_C(x)		INT64_C(x)
+#define	COB_U64_C(x)		UINT64_C(x)
+
+#define	CB_FMT_LLD		"%"PRId64
+#define	CB_FMT_LLU		"%"PRIu64
+#define	CB_FMT_LLX		"%"PRIx64
+#define	CB_FMT_PLLD		"%+*.*"PRId64
+#define	CB_FMT_PLLU		"%*.*"PRIu64
+#define	CB_FMT_LLD_F		"COB_S64_C(%"PRId64")"
+#define	CB_FMT_LLU_F		"COB_U64_C(%"PRIu64")"
+
+/* If the compiler is not C99-compliant and is MSVC, then it is an old version
+   (stdint.h was introduced in Visual C++ 2010 and inttypes.h in 2012) ;
+   in this case we use the Microsoft-specific __int64 type and the
+   corresponding suffixes and format strings */
+#elif defined(_MSC_VER)
 
 #define	cob_s64_t		__int64
 #define	cob_u64_t		unsigned __int64
@@ -53,6 +80,37 @@ typedef __mpz_struct mpz_t[1];
 #define	COB_S64_C(x)		x ## I64
 #define	COB_U64_C(x)		x ## UI64
 
+#define	CB_FMT_LLD		"%I64d"
+#define	CB_FMT_LLU		"%I64u"
+#define	CB_FMT_LLX		"%I64x"
+#define	CB_FMT_PLLD		"%+*.*I64d"
+#define	CB_FMT_PLLU		"%*.*I64u"
+#define	CB_FMT_LLD_F		"COB_S64_C(%I64d)"
+#define	CB_FMT_LLU_F		"COB_U64_C(%I64u)"
+
+/* If the compiler is not C99-compliant and is MinGW, then it is a VERY old
+   MinGW-32 version (all MinGW-64 versions are C99-compliant) ; we use
+   the standard long long type and LL suffixes, however we have to use
+   the MSVCRT-specific format strings */
+#elif defined(__MINGW32__)
+
+#define	cob_s64_t		long long
+#define	cob_u64_t		unsigned long long
+
+#define	COB_S64_C(x)		x ## LL
+#define	COB_U64_C(x)		x ## ULL
+
+#define	CB_FMT_LLD		"%I64d"
+#define	CB_FMT_LLU		"%I64u"
+#define	CB_FMT_LLX		"%I64x"
+#define	CB_FMT_PLLD		"%+*.*I64d"
+#define	CB_FMT_PLLU		"%*.*I64u"
+#define	CB_FMT_LLD_F		"COB_S64_C(%I64d)"
+#define	CB_FMT_LLU_F		"COB_U64_C(%I64u)"
+
+/* Finally, if the compiler is not C99-compliant and is neither MSVC not MinGW,
+   then we assume it provides the long long type as an extension, with
+   the usual suffixes and format strings. */
 #else
 
 #define	cob_s64_t		long long
@@ -61,33 +119,13 @@ typedef __mpz_struct mpz_t[1];
 #define	COB_S64_C(x)		x ## LL
 #define	COB_U64_C(x)		x ## ULL
 
-#endif
-
-#if	defined(_WIN32)
-
-#define	CB_FMT_LLD		"%I64d"
-#define	CB_FMT_LLU		"%I64u"
-#define	CB_FMT_LLX		"%I64x"
-#define	CB_FMT_PLLD		"%+*.*I64d"
-#define	CB_FMT_PLLU		"%*.*I64u"
-
-#if defined (__MINGW32__)
-#define	CB_FMT_LLD_F		"%I64dLL"
-#define	CB_FMT_LLU_F		"%I64uULL"
-#else
-#define	CB_FMT_LLD_F		"%I64dI64"
-#define	CB_FMT_LLU_F		"%I64uUI64"
-#endif
-
-#else
-
 #define	CB_FMT_LLD		"%lld"
 #define	CB_FMT_LLU		"%llu"
 #define	CB_FMT_LLX		"%llx"
 #define	CB_FMT_PLLD		"%+*.*lld"
 #define	CB_FMT_PLLU		"%*.*llu"
-#define	CB_FMT_LLD_F		"%lldLL"
-#define	CB_FMT_LLU_F		"%lluULL"
+#define	CB_FMT_LLD_F		"COB_S64_C(%lld)"
+#define	CB_FMT_LLU_F		"COB_U64_C(%llu)"
 
 #endif
 

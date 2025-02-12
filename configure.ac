@@ -612,12 +612,12 @@ AC_CACHE_SAVE
 
 # Checks for header files.
 dnl entries only used from external includes -> likely no need to check here
-dnl AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
+dnl AC_CHECK_HEADERS([whcar.h malloc.h])
 # mandatory:
 AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
+AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h stdint.h inttypes.h sys/wait.h sys/sysmacros.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.

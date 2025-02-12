@@ -109,12 +109,18 @@ Open Plans:
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+** #918: COB_LS_VALIDATE (io status 09 and 71) partial broken
 
 * Changes to the COBOL compiler (cobc) options:
 
 ** output of unlimited errors may be requested by -fmax-errors=0,
    to stop compiliation at first error use -Wfatal-errors
 ** default value for -fmax-errors was changed from 128 to 20
+
+** New option -fdiagnostics-absolute-paths to print the full path of
+   a file for diagnostics; this flag can be activated if your editor and
+   build system do not correctly work together to locate files from
+   diagnostic output
 
 * More notable changes
 
