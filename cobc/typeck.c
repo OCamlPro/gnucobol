@@ -797,6 +797,7 @@ static cb_tree
 cb_check_needs_break (cb_tree stmt)
 {
 	cb_tree		l;
+	int  needs_a_break = 1 ;
 
 	/* Check if last statement is GO TO */
 	for (l = stmt; l; l = CB_CHAIN (l)) {
@@ -806,11 +807,14 @@ cb_check_needs_break (cb_tree stmt)
 	}
 	if (l && CB_VALUE (l) && CB_STATEMENT_P (CB_VALUE (l))) {
 		l = CB_STATEMENT(CB_VALUE(l))->body;
-		if (l && CB_VALUE (l) && !CB_GOTO_P (CB_VALUE(l))) {
-			/* Append a break */
-			l = cb_build_direct ("break;", 0);
-			return cb_list_add (stmt, l);
+		if (l && CB_VALUE (l) && CB_GOTO_P (CB_VALUE(l))) {
+			needs_a_break = 0;
 		}
+	}
+
+	if (needs_a_break){
+		l = cb_build_direct ("break;", 0);
+		return cb_list_add (stmt, l);
 	}
 	return stmt;
 }
@@ -10019,6 +10023,7 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree goto_end_label)
 		cb_source_line = old_line;
 
 	} else {
+		int need_end_goto = 1 ;
 		c2 = stmt;
 		/* Check if last statement is GO TO */
 		for (c3 = stmt; c3; c3 = CB_CHAIN (c3)) {
@@ -10028,10 +10033,13 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree goto_end_label)
 		}
 		if (c3 && CB_VALUE (c3) && CB_STATEMENT_P (CB_VALUE (c3))) {
 			c3 = CB_STATEMENT (CB_VALUE (c3))->body;
-			if (c3 && CB_VALUE (c3) && !CB_GOTO_P (CB_VALUE(c3))) {
-				/* Append the jump */
-				c2 = cb_list_add (stmt, goto_end_label);
+			if (c3 && CB_VALUE (c3) && CB_GOTO_P (CB_VALUE(c3))) {
+				need_end_goto = 0 ;
 			}
+		}
+		if (need_end_goto){
+			/* Append the jump */
+			c2 = cb_list_add (stmt, goto_end_label);
 		}
 		cb_emit (cb_build_if (cb_build_cond (c1), c2, NULL, STMT_WHEN));
 		build_evaluate (subject_list, CB_CHAIN (case_list), goto_end_label);

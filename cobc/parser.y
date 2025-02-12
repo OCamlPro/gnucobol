@@ -8569,7 +8569,8 @@ occurs_index:
 	const cb_tree init_val = cb_default_byte == CB_DEFAULT_BYTE_INIT
 	                       ? cb_int1 : NULL;
 	$$ = cb_build_index ($1, init_val, 1U, current_field);
-	if (storage == CB_STORAGE_LOCAL) {
+	if (storage == CB_STORAGE_LOCAL ||
+		storage == CB_STORAGE_LINKAGE) {
 		CB_FIELD_PTR ($$)->index_type = CB_INT_INDEX;
 	} else {
 		CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
