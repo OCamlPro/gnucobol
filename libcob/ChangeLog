@@ -95,6 +95,11 @@
 	* common.h: use stdint.h and inttypes.h when available to
 	  define cob_s64_t, cob_u64_t and the various CB_FMT_ macros
 
+2023-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (lineseq_write, lineseq_rewrite): fix bug #918 partial broken
+	  COB_LS_VALIDATE by incrementing pointer outside of macro IS_BAD_CHAR
+
 2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	Fixing Bug #914 CLOSE LOCK abends program on OPEN
