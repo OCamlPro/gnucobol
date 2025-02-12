@@ -6438,8 +6438,7 @@ cob_file_unlock (cob_file *f)
 		return;
 	}
 
-	if (f->open_mode != COB_OPEN_CLOSED
-	 && f->open_mode != COB_OPEN_LOCKED) {
+	if (f->open_mode != COB_OPEN_CLOSED) {
 		if (f->organization == COB_ORG_SORT) {
 			return;
 		}
