@@ -116,6 +116,7 @@ Compiler options
 * Build target::                Build target
 * Source format::               Source format
 * Warning options::             Warning options
+* Diagnostics options::         Diagnostics options
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
@@ -281,6 +282,7 @@ A complete list of options can be displayed by using the option @option{--help}.
 * Build target::                Build target
 * Source format::               Source format
 * Warning options::             Warning options
+* Diagnostics options::         Diagnostics options
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
@@ -649,6 +651,34 @@ Warn if statements are likely unreachable. This is @emph{not} set with @option{-
 
 @item -Wadditional
 Enable warnings that don't have an own warning flag.
+@end table
+
+@node Diagnostics options
+@subsection Diagnostics options
+
+The compiler provides some options to tune the way errors and warnings
+(diagnostics) are displayed to the user.
+
+@table @code
+
+@item -fdiagnostics-absolute-paths
+Print absolute paths in diagnostics. This option can be useful if your editor is not able
+to correctly locate relative paths in your project.
+
+@item -fdiagnostics-plain-output
+Make diagnostic output as plain as possible.
+
+@item -fno-diagnostics-show-option
+Suppress output of option that directly controls the diagnostic, on which
+warnings should be displayed.
+
+@item -fno-diagnostics-show-caret
+Do not display source context on warning/error diagnostic. By default, diagnostics
+contain an excerpt with two lines before and after the location.
+
+@item -fno-diagnostics-show-line-numbers
+Suppress display of line numbers in the source context in diagnostics
+
 @end table
 
 @node Configuration options

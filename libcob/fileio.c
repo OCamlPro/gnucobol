@@ -4667,7 +4667,8 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 		if ((f->flag_line_adv & COB_LINE_ADVANCE)
 		 && (f->file_features & COB_FILE_LS_CRLF)
 		 && f->last_write_mode != COB_LAST_WRITE_UNKNOWN) {
-			if (f->flag_needs_cr) {
+			if (f->flag_needs_cr
+			 && f->file) {
 				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
 				f->flag_needs_cr = 0;
 			}
@@ -4675,6 +4676,7 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			if (f->flag_needs_nl
 			 && f->file_format != COB_FILE_IS_MF
+			 && f->file
 			 && !(f->flag_select_features & COB_SELECT_LINAGE)) {
 				f->flag_needs_nl = 0;
 				putc ('\n', (FILE *)f->file);
@@ -5439,12 +5441,13 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 		}
 		if ((f->file_features & COB_FILE_LS_VALIDATE)
 		 && !f->sort_collating /* pre-validated */) {
-			size_t i;
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
 				if (IS_BAD_CHAR (*p)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
+				p++;
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else if ((f->file_features & COB_FILE_LS_NULLS)
@@ -5619,12 +5622,13 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	/* Write to the file */
 	if (size > 0) {
 		if ((f->file_features & COB_FILE_LS_VALIDATE)) {
-			size_t i;
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
 				if (IS_BAD_CHAR (*p)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
+				p++;
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else if ((f->file_features & COB_FILE_LS_NULLS)
@@ -6436,8 +6440,7 @@ cob_file_unlock (cob_file *f)
 		return;
 	}
 
-	if (f->open_mode != COB_OPEN_CLOSED
-	 && f->open_mode != COB_OPEN_LOCKED) {
+	if (f->open_mode != COB_OPEN_CLOSED) {
 		if (f->organization == COB_ORG_SORT) {
 			return;
 		}
@@ -7209,7 +7212,8 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 		cob_cache_del (f);
 	}
 
-	if (f->open_mode == COB_OPEN_CLOSED) {
+	if (f->open_mode == COB_OPEN_CLOSED
+	 || f->open_mode == COB_OPEN_LOCKED) {
 		cob_file_save_status (f, fnstatus, COB_STATUS_42_NOT_OPEN);
 		return;
 	}
@@ -7225,11 +7229,12 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 	}
 
 	if (f->flag_nonexistent) {
-		ret = COB_STATUS_00_SUCCESS;
-	} else {
-		ret = fileio_funcs[get_io_ptr (f)]->close (&file_api, f, opt);
+		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
+		f->open_mode = COB_OPEN_CLOSED;
+		return;
 	}
 
+	ret = fileio_funcs[get_io_ptr (f)]->close (&file_api, f, opt);
 	if (ret == COB_STATUS_00_SUCCESS) {
 		switch (opt) {
 		case COB_CLOSE_LOCK:

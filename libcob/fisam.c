@@ -1070,6 +1070,9 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mod
 		lmode = ISEXCLLOCK;
 		omode = ISINOUT;
 		break;
+	default:
+		/* CLOSED / LOCKED-CLOSED */
+		break;
 	}
 	fh = cob_malloc (sizeof (struct indexfile) +
 			 		((sizeof (struct keydesc)) * (f->nkeys + 1)));
@@ -1268,13 +1271,13 @@ dobuild:
 static int
 isam_close (cob_file_api *a, cob_file *f, const int opt)
 {
-	struct indexfile	*fh;
+	struct indexfile	*fh = f->file;
 
 	COB_UNUSED (opt);
 
-	fh = f->file;
 	if (fh == NULL) {
-		return COB_STATUS_00_SUCCESS;
+		/* should we raise COB_STATUS_42_NOT_OPEN ? */
+		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 	if (fh->isfd >= 0) {
 		isfullclose (fh->isfd);

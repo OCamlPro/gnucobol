@@ -80,7 +80,8 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 		memcpy (fcd->fileStatus, fnstatus, 2);
 	else if (f->file_status)
 		memcpy (fcd->fileStatus, f->file_status, 2);
-	if (f->open_mode == COB_OPEN_CLOSED)
+	if (f->open_mode == COB_OPEN_CLOSED
+	 || f->open_mode == COB_OPEN_LOCKED)
 		fcd->openMode = OPEN_NOT_OPEN;
 	else if( f->open_mode == COB_OPEN_INPUT)
 		fcd->openMode = OPEN_INPUT;
