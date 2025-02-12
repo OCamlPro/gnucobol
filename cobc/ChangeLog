@@ -157,6 +157,16 @@
 	  compiler aborts on broken expressions, bugs #933, #938 and #966
 	* typeck.c: minor refactoring within functions
 
+2024-04-25  Boris Eng <boris.eng@ocamlpro.com>
+
+	FR #176: "Implementation of GC directive to include .h (c/c++) files"
+	* pplex.l, ppparse.y, cobc.h, codegen.c (output_gnucobol_defines):
+	  new >>IMP INCLUDE directive to include one or multiple header files in the
+	  generated C code (same behavior as the --include but with one directive per
+	  file)
+	* scanner.l: the leading space for all internal directives is removed in the
+	  lexer. Source previously preprocessed may need to be adjusted
+
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* replace.c: optimize speed and memory usage. For speed, we add two
