@@ -127,7 +127,9 @@ AT_DATA([prog.cob], [
            CLOSE FILE-TBL
            IF WSFS NOT = "42"
               DISPLAY "STATUS CLOSE non-opened:" WSFS.
-           DELETE FILE-TBL
+      *
+      *    Note: MicroFocus _does_ delete the file and returns status 00 here
+           DELETE FILE FILE-TBL
            IF WSFS NOT = "38"
               DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
       *
@@ -211,7 +213,7 @@ AT_DATA([progb.cob], [
            CLOSE FILE-TBL
            IF WSFS NOT = "42"
               DISPLAY "STATUS CLOSE non-opened:" WSFS.
-           DELETE FILE-TBL
+           DELETE FILE FILE-TBL
            IF WSFS NOT = "38"
               DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
       *
@@ -219,7 +221,7 @@ AT_DATA([progb.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_module progb.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE progb.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
