@@ -6764,7 +6764,7 @@ decimal_expand (cb_tree d, cb_tree x)
 
 		if (CB_TREE_TAG (p->y) == CB_TAG_LITERAL
 		 && CB_TREE_CATEGORY (p->y) == CB_CATEGORY_NUMERIC) {
-			t = cb_build_decimal_literal (cb_lookup_literal(current_program, p->y, 1));
+			t = cb_build_decimal_literal (cb_lookup_literal (current_program, p->y, 1));
 			decimal_compute (p->op, d, t);
 		} else {
 			t = decimal_alloc ();
@@ -7436,7 +7436,7 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 		cb_tree	ret;
 		if (CB_TREE_TAG (right) == CB_TAG_LITERAL
 		 && CB_TREE_CATEGORY (right) == CB_CATEGORY_NUMERIC) {
-			d2 = cb_build_decimal_literal (cb_lookup_literal(right,1));
+			d2 = cb_build_decimal_literal (cb_lookup_literal (current_program, right, 1));
 			dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", left, d2));
 		} else {
 			d2 = decimal_alloc ();

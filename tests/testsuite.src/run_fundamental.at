@@ -5024,6 +5024,39 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([decimal constant with multiple programs])
+AT_KEYWORDS([fundamental EXTERNAL INITIAL])
+
+# see bug #923, generated modules init/clear unused decimal constants
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *> to ensure we don't optimize that away: EXTERNAL
+       01  X  PIC 9(2) EXTERNAL.
+       PROCEDURE DIVISION.
+           CALL "prog2"
+           IF X NOT NUMERIC
+              MOVE ZERO TO X.
+           IF X + 42 = 0
+               DISPLAY "BAD".
+           STOP RUN.
+       END PROGRAM prog.
+
+       PROGRAM-ID. prog2 INITIAL.
+       PROCEDURE DIVISION.
+           EXIT PROGRAM.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([debugging lines (not active)])
 AT_KEYWORDS([fundamental])
 

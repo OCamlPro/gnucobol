@@ -11519,7 +11519,7 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 	}
 	output_local ("\"%s\",", fname);
 	if (CB_LITERAL_P (x)) {
-		output ("(cob_field *)&%s%d,", CB_PREFIX_CONST, cb_lookup_literal (x, 0));
+		output ("(cob_field *)&%s%d,", CB_PREFIX_CONST, cb_lookup_literal (current_prog, x, 0));
 	} else
 	if (x) {
 		output_local ("&%s%d,", CB_PREFIX_FIELD, cb_code_field(x)->id);
