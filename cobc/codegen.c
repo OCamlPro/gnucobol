@@ -346,8 +346,8 @@ cb_code_field (cb_tree x)
 	return CB_FIELD (x);
 }
 
-static char *
-get_field_name (struct cb_field *f)
+static const char *
+get_field_name (const struct cb_field *f)
 {
 	static char wrk[64];
 	if (memcmp (f->name, "FILLER ",7) == 0
@@ -355,7 +355,7 @@ get_field_name (struct cb_field *f)
 		sprintf (wrk,"Line %d",f->common.source_line);
 		return wrk;
 	}
-	return (char*)f->name;
+	return f->name;
 }
 
 static int
