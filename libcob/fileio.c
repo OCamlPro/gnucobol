@@ -5441,12 +5441,13 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 		}
 		if ((f->file_features & COB_FILE_LS_VALIDATE)
 		 && !f->sort_collating /* pre-validated */) {
-			size_t i;
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
 				if (IS_BAD_CHAR (*p)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
+				p++;
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else if ((f->file_features & COB_FILE_LS_NULLS)
@@ -5621,12 +5622,13 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	/* Write to the file */
 	if (size > 0) {
 		if ((f->file_features & COB_FILE_LS_VALIDATE)) {
-			size_t i;
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
 				if (IS_BAD_CHAR (*p)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
+				p++;
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else if ((f->file_features & COB_FILE_LS_NULLS)
