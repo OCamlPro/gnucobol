@@ -83,7 +83,7 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 	if (f->open_mode == COB_OPEN_CLOSED
 	 || f->open_mode == COB_OPEN_LOCKED)
 		fcd->openMode = OPEN_NOT_OPEN;
-	else if( f->open_mode == COB_OPEN_INPUT)
+	else if (f->open_mode == COB_OPEN_INPUT)
 		fcd->openMode = OPEN_INPUT;
 	else if (f->open_mode == COB_OPEN_OUTPUT)
 		fcd->openMode = OPEN_OUTPUT;
@@ -277,13 +277,13 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 			STCOMPX2(keypos, kdb->key[idx].offset);
 			kdb->key[idx].keyFlags = 0;
 			kdb->key[idx].sparse = 0;
-			if(f->keys[idx].tf_duplicates)
+			if (f->keys[idx].tf_duplicates)
 				kdb->key[idx].keyFlags |= KEY_DUPS;
-			if(f->keys[idx].tf_suppress) {
+			if (f->keys[idx].tf_suppress) {
 				kdb->key[idx].keyFlags |= KEY_SPARSE;
 				kdb->key[idx].sparse = (unsigned char)f->keys[idx].char_suppress;
 			}
-			if(f->keys[idx].count_components <= 1) {
+			if (f->keys[idx].count_components <= 1) {
 				if (f->keys[idx].field == NULL)
 					continue;
 				STCOMPX2(1,kdb->key[idx].count);
@@ -330,19 +330,19 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 			memcpy (f->file_status, fcd->fileStatus, 2);
 		}
 		if (fnstatus) {
-			memcpy(fnstatus->data, fcd->fileStatus, 2);
+			memcpy (fnstatus->data, fcd->fileStatus, 2);
 		}
 	}
 	if (wasOpen > 0) {
-		if((fcd->openMode & OPEN_NOT_OPEN))
+		if ((fcd->openMode & OPEN_NOT_OPEN))
 			f->open_mode = COB_OPEN_CLOSED;
-		else if((fcd->openMode & 0x7f) == OPEN_INPUT)
+		else if ((fcd->openMode & 0x7f) == OPEN_INPUT)
 			f->open_mode = COB_OPEN_INPUT;
-		else if((fcd->openMode & 0x7f) == OPEN_OUTPUT)
+		else if ((fcd->openMode & 0x7f) == OPEN_OUTPUT)
 			f->open_mode = COB_OPEN_OUTPUT;
-		else if((fcd->openMode & 0x7f) == OPEN_EXTEND)
+		else if ((fcd->openMode & 0x7f) == OPEN_EXTEND)
 			f->open_mode = COB_OPEN_EXTEND;
-		else if((fcd->openMode & 0x7f) == OPEN_IO)
+		else if ((fcd->openMode & 0x7f) == OPEN_IO)
 			f->open_mode = COB_OPEN_I_O;
 	}
 	f->record_min = LDCOMPX4(fcd->minRecLen);
@@ -492,25 +492,25 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 {
 	int	k, min, max;
 
-	if((fcd->accessFlags & 0x7F) == ACCESS_SEQ)
+	if ((fcd->accessFlags & 0x7F) == ACCESS_SEQ)
 		f->access_mode = COB_ACCESS_SEQUENTIAL;
-	else if((fcd->accessFlags & 0x7F) == ACCESS_RANDOM)
+	else if ((fcd->accessFlags & 0x7F) == ACCESS_RANDOM)
 		f->access_mode = COB_ACCESS_RANDOM;
-	else if((fcd->accessFlags & 0x7F) == ACCESS_DYNAMIC)
+	else if ((fcd->accessFlags & 0x7F) == ACCESS_DYNAMIC)
 		f->access_mode = COB_ACCESS_DYNAMIC;
-	if((fcd->otherFlags & OTH_EXTERNAL))
+	if ((fcd->otherFlags & OTH_EXTERNAL))
 		f->flag_select_features |= COB_SELECT_EXTERNAL;
 	f->flag_optional = 0;
-	if((fcd->otherFlags & OTH_OPTIONAL))
+	if ((fcd->otherFlags & OTH_OPTIONAL))
 		f->flag_optional = 1;
-	if((fcd->otherFlags & OTH_NOT_OPTIONAL))
+	if ((fcd->otherFlags & OTH_NOT_OPTIONAL))
 		f->flag_optional = 0;
-	if((fcd->otherFlags & OTH_LINE_ADVANCE))
+	if ((fcd->otherFlags & OTH_LINE_ADVANCE))
 		f->flag_line_adv = 1;
 	else
 		f->flag_line_adv = 0;
 
-	if(fcd->fileOrg == ORG_INDEXED) {
+	if (fcd->fileOrg == ORG_INDEXED) {
 		f->organization = COB_ORG_INDEXED;
 		if (fcd->fileFormat == MF_FF_DEFAULT) {
 #ifdef WITH_INDEXED
@@ -542,9 +542,9 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 			f->io_routine = COB_IO_BDB;
 		else if (fcd->fileFormat == MF_FF_LMDB)
 			f->io_routine = COB_IO_LMDB;
-	} else if(fcd->fileOrg == ORG_SEQ) {
+	} else if (fcd->fileOrg == ORG_SEQ) {
 		f->organization = COB_ORG_SEQUENTIAL;
-	} else if(fcd->fileOrg == ORG_LINE_SEQ) {
+	} else if (fcd->fileOrg == ORG_LINE_SEQ) {
 		f->organization = COB_ORG_LINE_SEQUENTIAL;
 #ifdef	_WIN32
 		if (file_setptr->cob_unix_lf &&
@@ -569,7 +569,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 		if ((fcd->fstatusType & MF_FST_NoStripSpaces)) {
 			f->file_features |= COB_FILE_LS_FIXED;
 		}
-	} else if(fcd->fileOrg == ORG_RELATIVE) {
+	} else if (fcd->fileOrg == ORG_RELATIVE) {
 		f->organization = COB_ORG_RELATIVE;
 		if (f->keys == NULL) {
 			f->keys = cob_cache_malloc(sizeof(cob_file_key));
@@ -1108,26 +1108,26 @@ cob_extfh_read (
 	f->last_operation = COB_LAST_READ;
 	fcd = find_fcd (f, 1);
 	STCOMPX4 (read_opts, fcd->opt);
-	if(key == NULL) {
+	if (key == NULL) {
 		f->last_operation = COB_LAST_READ_SEQ;
-		if((read_opts & COB_READ_PREVIOUS)) {
+		if ((read_opts & COB_READ_PREVIOUS)) {
 			STCOMPX2(OP_READ_PREV, opcode);
 		} else {
 			STCOMPX2(OP_READ_SEQ, opcode);
 		}
-		if(f->organization == COB_ORG_RELATIVE) {
+		if (f->organization == COB_ORG_RELATIVE) {
 			memset (fcd->relKey, 0, sizeof (fcd->relKey));
 			recn = cob_get_int (f->keys[0].field);
 			STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
 			if (f->access_mode != COB_ACCESS_SEQUENTIAL)
 				STCOMPX2(OP_READ_RAN, opcode);
 		}
-	} else if(f->organization == COB_ORG_INDEXED) {
+	} else if (f->organization == COB_ORG_INDEXED) {
 		keyn = cob_findkey (f, key, &keylen, &partlen);
 		STCOMPX2(keyn, fcd->refKey);
 		STCOMPX2(keylen, fcd->effKeyLen);
 		STCOMPX2(OP_READ_RAN, opcode);
-	} else if(f->organization == COB_ORG_RELATIVE) {
+	} else if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (key);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
@@ -1155,12 +1155,12 @@ cob_extfh_read_next (
 	f->last_operation = COB_LAST_READ_SEQ;
 	fcd = find_fcd (f, 1);
 	STCOMPX4(read_opts, fcd->opt);
-	if((read_opts & COB_READ_PREVIOUS)) {
+	if ((read_opts & COB_READ_PREVIOUS)) {
 		STCOMPX2(OP_READ_PREV, opcode);
 	} else {
 		STCOMPX2(OP_READ_SEQ, opcode);
 	}
-	if(f->organization == COB_ORG_RELATIVE) {
+	if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (f->keys[0].field);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
@@ -1231,7 +1231,7 @@ cob_extfh_rewrite (
 	}
 	STCOMPX4(rec->size,fcd->curRecLen);
 	fcd->recPtr = rec->data;
-	if(f->organization == COB_ORG_RELATIVE) {
+	if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (f->keys[0].field);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));

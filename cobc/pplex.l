@@ -59,19 +59,21 @@ static int ppwrap (void) {
 	return 1;
 }
 
+static void insert_copy_arg (void);
+
 #define	PPLEX_BUFF_LEN		512
 #define YY_INPUT(buf,result,max_size)	result = ppinput (buf, max_size);
 #define	ECHO				fputs (yytext, yyout)
 
+/* The first --copy COPYBOOK is inserted using this macro. The next
+   ones will be inserted in <<EOF>>, when we come back to the toplevel
+   source file. */
 #define	YY_USER_INIT							\
-	if (!plexbuff1) {						\
-		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);	\
-	}								\
-	if (!plexbuff2) {						\
-		plexbuff2 = cobc_malloc ((size_t)COB_SMALL_BUFF);	\
-	}								\
 	requires_listing_line = 1;					\
-	comment_allowed = 1;
+	comment_allowed = 1;						\
+	copy_list_pointer = cb_copy_list;				\
+	insert_copy_arg ();
+
 
 #include "config.h"
 
@@ -182,6 +184,20 @@ static void	output_pending_newlines	(FILE *);
 
 static struct cb_text_list	*pp_text_list_add (struct cb_text_list *,
 					 const char *, const size_t);
+
+static struct cb_text_list *copy_list_pointer = NULL;
+
+static void insert_copy_arg (void)
+{
+	if (copy_list_pointer != NULL) {
+		int ret = ppcopy (copy_list_pointer->text, NULL, NULL);
+		if (ret < 0) { /* This should never happen, as we already test it before */
+			cobc_err_msg (_("fatal error: %s"), "could not find --copy argument");
+			cobc_abort_terminate (0);
+		}
+		copy_list_pointer = copy_list_pointer->next;
+	}
+}
 
 %}
 
@@ -1218,6 +1234,13 @@ ENDIF_DIRECTIVE_STATE>{
 	copy_stack = current_copy_info->next;
 	cobc_free (current_copy_info->dname);
 	cobc_free (current_copy_info);
+
+	/* Check whether we are back at the toplevel source file. In this case,
+	   check if there is a pending copy argument (--copy COPYBOOK) waiting
+	   to be inserted. */
+	if (copy_stack->next == NULL) {
+		insert_copy_arg();
+	}
 }
 
 %%
@@ -1493,6 +1516,10 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
 	const char		*extension = "";
 	struct stat st;
 
+	if (!plexbuff2) {
+		plexbuff2 = cobc_malloc ((size_t)COB_SMALL_BUFF);
+	}
+
 	for (;;) {
 		if (dir) {
 			snprintf (plexbuff2, (size_t)COB_SMALL_MAX, "%s%c%s%s",
@@ -1528,8 +1555,8 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
    each with all known copybook extensions:
    1 - as is
    2 - all known copybook directories */
-static const char *
-ppcopy_find_file (char *name, int has_ext)
+const char *
+cb_copy_find_file (char *name, int has_ext)
 {
 	const char *filename;
 	{
@@ -1605,6 +1632,10 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		cb_current_file->copy_line = cb_source_line;
 	}
 
+	if (!plexbuff1) {
+		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
+	}
+
 	/* TODO: open with path relative to the current file's path,
 	         if any (applies both to with and without "lib") */
 
@@ -1628,10 +1659,10 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 					snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
 						lib_env, SLASH_CHAR, name);
 					plexbuff1[COB_SMALL_MAX] = 0;
-					filename = ppcopy_find_file (plexbuff1, has_ext);
+					filename = cb_copy_find_file (plexbuff1, has_ext);
 				} else {
 					strcpy (plexbuff1, name);
-					filename = ppcopy_find_file (plexbuff1, has_ext);
+					filename = cb_copy_find_file (plexbuff1, has_ext);
 				}
 			}
 		}
@@ -1642,13 +1673,13 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 			snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
 				lib, SLASH_CHAR, name);
 			plexbuff1[COB_SMALL_MAX] = 0;
-			filename = ppcopy_find_file (plexbuff1, has_ext);
+			filename = cb_copy_find_file (plexbuff1, has_ext);
 		}
 
 		/* try without library name, if not resolved by env */
 		if (!filename && !lib_env) {
 			strcpy (plexbuff1, name);
-			filename = ppcopy_find_file (plexbuff1, has_ext);
+			filename = cb_copy_find_file (plexbuff1, has_ext);
 			if (filename) {
 				cb_plex_warning (COBC_WARN_FILLER, 0,
 					_("copybook not found in library '%s', library-name ignored"),
@@ -1664,7 +1695,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		}
 	} else {
 		strcpy (plexbuff1, name);
-		filename = ppcopy_find_file (plexbuff1, has_ext);
+		filename = cb_copy_find_file (plexbuff1, has_ext);
 	}
 
 	/* expected case: filename found */

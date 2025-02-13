@@ -499,7 +499,7 @@ bdb_lock_record (cob_file *f, const char *key, const unsigned int keylen)
 			break;
 		if (ret == DB_LOCK_DEADLOCK)
 			return COB_STATUS_52_DEAD_LOCK;
-		if(ret != DB_LOCK_NOTGRANTED) {
+		if (ret != DB_LOCK_NOTGRANTED) {
 			break;
 		}
 		if (retry > 0) {
@@ -585,7 +585,7 @@ bdb_test_record_lock (cob_file *f, const char *key, const unsigned int keylen)
 			break;
 		if (ret == DB_LOCK_DEADLOCK)
 			return COB_STATUS_52_DEAD_LOCK;
-		if(ret != DB_LOCK_NOTGRANTED) {
+		if (ret != DB_LOCK_NOTGRANTED) {
 			break;
 		}
 		if (retry > 0) {
@@ -609,7 +609,7 @@ bdb_test_record_lock (cob_file *f, const char *key, const unsigned int keylen)
 		}
 		ret = bdb_env->lock_put (bdb_env, &test_lock);/* Release lock just acquired */
 	}
-	if(ret == DB_LOCK_NOTGRANTED)
+	if (ret == DB_LOCK_NOTGRANTED)
 		return COB_STATUS_51_RECORD_LOCKED;
 	if (ret) {
 		cob_runtime_error (_("BDB (%s), error: %d %s"),
@@ -772,14 +772,9 @@ static int
 ix_bdb_write_internal (cob_file *f, const int rewrite, const int opt)
 {
 	struct indexed_file	*p = f->file;
-	cob_u32_t		i, len;
-	unsigned int		dupcnt = 0;
-	unsigned int		dupno = 0;
-	cob_u32_t		flags = 0;
-	int			close_cursor, ret;
-
-	close_cursor = bdb_open_cursor (f, 1);
-	ret = COB_STATUS_00_SUCCESS;
+	const int		close_cursor = bdb_open_cursor (f, 1);
+	cob_u32_t		i;
+	unsigned int            dupcnt = 0;
 
 	/* Check duplicate alternate keys */
 	if (!rewrite) {
@@ -808,16 +803,19 @@ ix_bdb_write_internal (cob_file *f, const int rewrite, const int opt)
 	/* Write secondary keys */
 	p->data = p->key;
 	for (i = 1; i < f->nkeys; ++i) {
+		cob_u32_t		flags, len;
+		int		ret;
 		if (rewrite && ! p->rewrite_sec_key[i]) {
 			continue;
 		}
-		if (bdb_suppresskey (f, i))
+		if (bdb_suppresskey (f, i)) {
 			continue;
+		}
 		bdb_setkey (f, i);
 		memset ((void *)&p->data, 0, sizeof (DBT));
 		if (f->keys[i].tf_duplicates) {
+			unsigned int	dupno = get_dupno (f, i);
 			flags =  0;
-			dupno = get_dupno (f, i);
 			dupno = COB_DUPSWAP (dupno);
 			if (dupno > dupcnt) {
 				dupcnt = dupno;
@@ -832,7 +830,6 @@ ix_bdb_write_internal (cob_file *f, const int rewrite, const int opt)
 			p->data.data = p->temp_key;
 			p->data.size = (cob_dbtsize_t)len;
 			flags = DB_NOOVERWRITE;
-			dupno = 0;
 		}
 		bdb_setkey (f, i);
 
@@ -1303,7 +1300,7 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_m
 	maxsize = p->primekeylen = db_keylen(f, 0);
 	for (i = 1; i < f->nkeys; ++i) {
 		j = db_keylen(f, i);
-		if( j > maxsize)
+		if (j > maxsize)
 			maxsize = j;
 	}
 	p->maxkeylen = maxsize;
@@ -1689,7 +1686,7 @@ ix_bdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			return COB_STATUS_10_END_OF_FILE;
 		}
 		/* Check if previously read data still exists */
-		p->key.size = (cob_dbtsize_t) db_keylen(f,p->key_index);
+		p->key.size = (cob_dbtsize_t) db_keylen (f, p->key_index);
 		p->key.data = p->last_readkey[p->key_index];
 		ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET);
 		if (!ret && p->key_index > 0) {
@@ -1748,7 +1745,7 @@ ix_bdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		if (nextprev == DB_FIRST || nextprev == DB_LAST) {
 			read_nextprev = 1;
 		} else {
-			p->key.size = (cob_dbtsize_t) db_keylen(f,p->key_index);
+			p->key.size = (cob_dbtsize_t) db_keylen (f, p->key_index);
 			p->key.data = p->last_readkey[p->key_index];
 			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET_RANGE);
 			/* ret != 0 possible, records may be deleted since last read */
@@ -1831,7 +1828,7 @@ ix_bdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			}
 			p->key.data = p->data.data;
 			p->key.size = p->primekeylen;
-			ret =  DB_GET (p->db[0], &p->key, &p->data, 0);
+			ret = DB_GET (p->db[0], &p->key, &p->data, 0);
 			if (ret != 0) {
 				bdb_close_index (f, p->key_index);
 				bdb_close_cursor (f);
@@ -1864,7 +1861,7 @@ ix_bdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			memcpy (p->last_readkey[0], p->key.data, (size_t)p->key.size);
 		} else {
 			memcpy (p->last_readkey[p->key_index], p->temp_key,
-				    db_keylen(f,p->key_index));
+				db_keylen(f,p->key_index));
 			memcpy (p->last_readkey[p->key_index + f->nkeys], p->key.data, p->primekeylen);
 			if (f->keys[p->key_index].tf_duplicates) {
 				p->last_dupno[p->key_index] = dupno;
@@ -1938,7 +1935,7 @@ ix_bdb_write (cob_file_api *a, cob_file *f, const int opt)
 	}
 	memcpy (p->last_key, p->key.data, (size_t)p->key.size);
 
-	ret =  ix_bdb_write_internal (f, 0, opt);
+	ret = ix_bdb_write_internal (f, 0, opt);
 	bdb_close_cursor (f);
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL
 	 && f->open_mode == COB_OPEN_OUTPUT
@@ -1971,7 +1968,7 @@ ix_bdb_delete (cob_file_api *a, cob_file *f)
 static int
 ix_bdb_rewrite (cob_file_api *a, cob_file *f, const int opt)
 {
-	int			ret;
+	int		ret;
 
 	COB_UNUSED (a);
 	if (f->flag_nonexistent) {
@@ -1994,8 +1991,9 @@ ix_bdb_rewrite (cob_file_api *a, cob_file *f, const int opt)
 
 	if (ret != COB_STATUS_00_SUCCESS) {
 		bdb_close_cursor (f);
-		if (ret == COB_STATUS_23_KEY_NOT_EXISTS)
+		if (ret == COB_STATUS_23_KEY_NOT_EXISTS) {
 			return COB_STATUS_21_KEY_INVALID;
+		}
 		return ret;
 	}
 
@@ -2046,7 +2044,7 @@ ix_bdb_file_unlock (cob_file_api *a, cob_file *f)
 			if (bdb_env != NULL && f->file) {
 				struct indexed_file	*p = f->file;
 				bdb_unlock_all (f);
-				if(p->file_lock_set) {
+				if (p->file_lock_set) {
 					bdb_env->lock_put (bdb_env, &p->bdb_file_lock);
 					p->file_lock_set = 0;
 				}
@@ -2062,7 +2060,7 @@ ix_bdb_fork (cob_file_api *a)
 {
 	COB_UNUSED (a);
 	bdb_lock_id = 0;
-	if(bdb_env) {
+	if (bdb_env) {
 		bdb_env->lock_id (bdb_env, &bdb_lock_id);
 		bdb_env->set_lk_detect (bdb_env, DB_LOCK_DEFAULT);
 	}
@@ -2073,7 +2071,7 @@ static void
 ix_bdb_exit_fileio (cob_file_api *a)
 {
 	COB_UNUSED (a);
-	if(record_lock_object) {
+	if (record_lock_object) {
 		cob_free (record_lock_object);
 		record_lock_object = NULL;
 	}
@@ -2088,7 +2086,7 @@ ix_bdb_exit_fileio (cob_file_api *a)
 		 && db_env_create (&bdb_env, 0) == 0) {
 			bdb_env->remove (bdb_env, bdb_home_dir, 0);
 		}
-		if(bdb_home_dir)
+		if (bdb_home_dir)
 			cob_free(bdb_home_dir);
 		bdb_home_dir = NULL;
 		bdb_env = NULL;

@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2014-2024 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -1087,3 +1087,82 @@ HOME/prog.cob:14: warning: ignoring redundant .
 
 AT_CLEANUP
 
+
+AT_SETUP([check include header file])
+#AT_KEYWORDS([cobc copy])
+
+AT_DATA([filec.h], [
+/* COB_EXT_IMPORT will be defined by libcob.h up-front */
+COB_EXT_IMPORT void f (char *, long);
+])
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello".
+])
+
+# dynamic call - program seems correct
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+
+# mismatch in function signature - we ignore the error output, as it depends
+# on the C compiler in use (and also stdout as some [MSVC] put errors there...)
+AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog.cob], [1], ignore, ignore)
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+# note: we likely need to build an import library for some environments
+AT_DATA([filec.c], [
+/* for COB_EXT_EXPORT */
+#include <libcob.h>
+COB_EXT_EXPORT void f (char *str, long num) {};
+])
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0], [], [])
+# cater for environments that do not use a lib prefix
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o filec.$COB_MODULE_EXT], [0], [], [])
+
+
+# static build with correct function signature
+AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog2.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call -L. -lfilec prog2.cob], [0], ignore, ignore)]
+)
+AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call prog2.cob -o prog2b], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call -L. -lfilec prog2.cob -o prog2b], [0], ignore, ignore)]
+)
+
+# We can use --copy to check a CALL against a prototype. However, this
+# feature is not fully supported by GnuCOBOL yet, so we get some
+# warnings. For exemple:
+# * not putting RETURNING triggers an error
+# * putting RETURNING NOTHING is not supported
+# * putting RETURNING OMITTED is ok, but triggers a warning (see stderr)
+
+AT_DATA([f.copy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. f PROTOTYPE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  a PIC X(20).
+       01  b BINARY-C-LONG.
+       PROCEDURE DIVISION USING a BY VALUE b RETURNING OMITTED.
+       END PROGRAM f.
+])
+
+AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
+[prog2.cob:8: warning: unexpected RETURNING item
+], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
+)
+
+AT_CLEANUP

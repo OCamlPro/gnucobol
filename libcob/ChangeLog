@@ -78,6 +78,12 @@
 	* fisam.c: Updated to set index field type for 'short' & 'int'
 	  Enabled support for variable length records is using V-ISAM/D-ISAM
 
+2024-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_keylen)->fisam.c: signature change to directly take the keydesc
+	* fileio.c [WITH_ANY_ISAM]->fisam.c: refactored to ease access to keydesc and keypart
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]->fisam.c: refactored
+
 2023-12-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_terminate_routines, cob_call_with_exception_check):
@@ -99,6 +105,20 @@
 
 	* fileio.c (lineseq_write, lineseq_rewrite): fix bug #918 partial broken
 	  COB_LS_VALIDATE by incrementing pointer outside of macro IS_BAD_CHAR
+
+2023-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_numdisp_cmp): adjusted
+	* numeric.c (cob_numeric_display_cmp_zero, cob_bcd_cmp_zero), common.h:
+	  new functions for optimized check of common compare
+	* numeric.c (cob_set_packed_u64): restore cleanup code for padding byte,
+	  but only execute it if we wrote to first data position
+
+2023-09-19  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* numeric.c (cob_numdisp_cmp): new version cob_numeric_display_cmp that
+	  does NOT do any conversion to integer formats, also it does not use any
+	  temporary buffers to do the compare which should improve its performance
 
 2023-09-15  Simon Sobisch <simonsobisch@gnu.org>
 

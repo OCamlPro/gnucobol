@@ -36,11 +36,33 @@
 	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
 	  functions, now returning the tree that was emitted
 
+2023-10-12  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, codegen.c: new option --include FILE, to #include
+	  additional files in the C generated code. Such files can be
+	  used to statically check the number of arguments in static
+	  calls, for example. The files are put into quotes, unless
+	  they start by '<'. Since C files are compiled in a temp dir,
+	  quoted files should be absolute paths. Implementing FR #176
+
+2023-10-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, pplex.l: new option --copy COPYBOOK, to include a COPYBOOK
+	  before reading the source file
+
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
 	  do not move object files and preprocess files when they were
 	  specified as an explicit target on the command line (-E, -c)
+
+2023-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_cond): generate calls to new functions
+	  for numeric zero compare for USAGE DISPLAY and PACKED, as well
+	  as comparison between two USAGE DISPLAY or USAGE DISPLAY to literal
+	* typeck.c (validate_move): internally change literals like 0.00
+	  to zero constant allowing use of optimized MOVE code
 
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
