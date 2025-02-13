@@ -257,12 +257,12 @@ static const char *isam_name = "xISAM";
 
 /* Return total length of the key */
 static int
-indexed_keylen (struct indexfile *fh, int idx)
+indexed_keylen (const struct keydesc *key)
 {
 	int totlen, part;
 	totlen = 0;
-	for (part = 0; part < fh->key[idx].k_nparts; part++) {
-		totlen += fh->key[idx].k_part[part].kp_leng;
+	for (part = 0; part < key->k_nparts; part++) {
+		totlen += key->k_part[part].kp_leng;
 	}
 	return totlen;
 }
@@ -272,16 +272,16 @@ indexed_keylen (struct indexfile *fh, int idx)
 static int
 indexed_savekey (struct indexfile *fh, unsigned char *data, int idx)
 {
-	int totlen, part;
-	totlen = 0;
+	const struct keydesc *key = &fh->key[idx];
+	int totlen = 0;
+	int part;
 	if (data == NULL) {
 		data = (unsigned char*)fh->recwrk;
 	}
-	for (part = 0; part < fh->key[idx].k_nparts; part++) {
-		memcpy (fh->savekey + totlen,
-			data  + fh->key[idx].k_part[part].kp_start,
-			fh->key[idx].k_part[part].kp_leng);
-		totlen += fh->key[idx].k_part[part].kp_leng;
+	for (part = 0; part < key->k_nparts; part++) {
+		const struct keypart *k_part = &key->k_part[part];
+		memcpy (fh->savekey + totlen, data + k_part->kp_start, k_part->kp_leng);
+		totlen += k_part->kp_leng;
 	}
 	return totlen;
 }
@@ -291,16 +291,16 @@ indexed_savekey (struct indexfile *fh, unsigned char *data, int idx)
 static int
 indexed_restorekey (struct indexfile *fh, unsigned char *data, int idx)
 {
+	const struct keydesc *key = &fh->key[idx];
 	int totlen, part;
 	totlen = 0;
 	if (data == NULL) {
 		data = (unsigned char*)fh->recwrk;
 	}
-	for (part = 0; part < fh->key[idx].k_nparts; part++) {
-		memcpy (data  + fh->key[idx].k_part[part].kp_start,
-			fh->savekey + totlen,
-			fh->key[idx].k_part[part].kp_leng);
-		totlen += fh->key[idx].k_part[part].kp_leng;
+	for (part = 0; part < key->k_nparts; part++) {
+		const struct keypart *k_part = &key->k_part[part];
+		memcpy (data + k_part->kp_start, fh->savekey + totlen, k_part->kp_leng);
+		totlen += k_part->kp_leng;
 	}
 	return totlen;
 }
@@ -310,20 +310,21 @@ indexed_restorekey (struct indexfile *fh, unsigned char *data, int idx)
 static int
 indexed_cmpkey (struct indexfile *fh, unsigned char *data, int idx, int partlen)
 {
-	int sts, part, totlen,cl;
+	const struct keydesc *key = &fh->key[idx];
+	int sts, part, totlen;
 	totlen = sts = 0;
 	if (partlen <= 0) {
-		partlen = indexed_keylen(fh, idx);
+		partlen = indexed_keylen (key);
 	}
-	for (part = 0; part < fh->key[idx].k_nparts && partlen > 0; part++) {
-		cl = partlen > fh->key[idx].k_part[part].kp_leng ? fh->key[idx].k_part[part].kp_leng : partlen;
-		sts = memcmp( data + fh->key[idx].k_part[part].kp_start,
-					fh->savekey + totlen, cl);
+	for (part = 0; part < key->k_nparts && partlen > 0; part++) {
+		const struct keypart *k_part = &key->k_part[part];
+		const int cl = partlen > k_part->kp_leng ? k_part->kp_leng : partlen;
+		sts = memcmp (data + k_part->kp_start, fh->savekey + totlen, cl);
 		if (sts != 0) {
 			return sts;
 		}
-		totlen += fh->key[idx].k_part[part].kp_leng;
-		partlen -= fh->key[idx].k_part[part].kp_leng;
+		totlen += k_part->kp_leng;
+		partlen -= k_part->kp_leng;
 	}
 	return sts;
 }
@@ -333,7 +334,7 @@ indexed_cmpkey (struct indexfile *fh, unsigned char *data, int idx, int partlen)
 static int
 indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 {
-	int	keylen,part,keytype;
+	int	keylen, part, keytype;
 	/* LCOV_EXCL_START */
 	if (key->count_components < 1) {
 		/* Should not happen as this was generated pre GC 3.0 */
@@ -367,9 +368,10 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 
 	keylen = 0;
 	for (part=0; part < key->count_components && part < max_keycomp; part++) {
-		kd->k_part[part].kp_start = key->component[part]->data - f->record->data;
-		kd->k_part[part].kp_leng = key->component[part]->size;
-		keylen += kd->k_part[part].kp_leng;
+		struct keypart *k_part = &kd->k_part[part];
+		k_part->kp_start = key->component[part]->data - f->record->data;
+		k_part->kp_leng = key->component[part]->size;
+		keylen += k_part->kp_leng;
 		keytype = CHARTYPE;
 		if (key->component[part]->attr->type == COB_TYPE_NUMERIC_FLOAT) {
 			keytype = FLOATTYPE;
@@ -409,11 +411,11 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 			}
 #endif
 		}
-		kd->k_part[part].kp_type = keytype;
+		k_part->kp_type = keytype;
 		if (key->tf_suppress) {
 #ifdef NULLKEY
 			kd->k_flags |= NULLKEY;
-			kd->k_part[part].kp_type = keytype | (key->char_suppress << 8);
+			k_part->kp_type = keytype | (key->char_suppress << 8);
 #else
 			f->flag_write_chk_dups = 1;
 			kd->k_flags = ISDUPS;
@@ -432,20 +434,16 @@ static int
 indexed_keycmp (struct keydesc *k1, struct keydesc *k2)
 {
 	int	part;
-	if (k1->k_flags != k2->k_flags) {
+	if (k1->k_flags  != k2->k_flags
+	 || k1->k_nparts != k2->k_nparts) {
 		return 1;
 	}
-	if (k1->k_nparts != k2->k_nparts) {
-		return 1;
-	}
-	for (part=0; part < k1->k_nparts; part++) {
-		if (k1->k_part[part].kp_start != k2->k_part[part].kp_start) {
-			return 1;
-		}
-		if (k1->k_part[part].kp_leng != k2->k_part[part].kp_leng) {
-			return 1;
-		}
-		if (k1->k_part[part].kp_type != k2->k_part[part].kp_type) {
+	for (part = 0; part < k1->k_nparts; part++) {
+		const struct keypart *k_part1 = &k1->k_part[part];
+		const struct keypart *k_part2 = &k2->k_part[part];
+		if (k_part1->kp_start != k_part2->kp_start
+		 || k_part1->kp_leng  != k_part2->kp_leng
+		 || k_part1->kp_type  != k_part2->kp_type) {
 			return 1;
 		}
 	}
@@ -581,14 +579,13 @@ freefh (struct indexfile *fh)
 static void
 restorefileposition (cob_file *f)
 {
-	struct indexfile	*fh;
-	struct keydesc		k0;
+	struct indexfile	*fh = f->file;
 	int		sverrno = ISERRNO;
 
-	fh = f->file;
-	memset ((void *)&k0, 0, sizeof (k0));
 	ISERRNO = 0;
 	if (fh->saverecnum >= 0) {
+		struct keydesc	*key = &fh->key[f->curkey];
+		struct keydesc	k0 = { 0 };
 		/* Record# of 'next' record in the index */
 		ISRECNUM = fh->saverecnum;
 		/* Switch to record number mode */
@@ -597,7 +594,7 @@ restorefileposition (cob_file *f)
 		ISERRNO = 0;
 		isread (fh->isfd, (void *)fh->recwrk, ISCURR);
 		/* Read by active key value */
-		isstart (fh->isfd, &fh->key[f->curkey], 0, (void *)fh->recwrk, ISGTEQ);
+		isstart (fh->isfd, key, 0, (void *)fh->recwrk, ISGTEQ);
 		isread (fh->isfd, (void *)fh->recwrk, ISGTEQ);
 		while (ISRECNUM != fh->saverecnum) {
 			/* Read back into position */
@@ -615,8 +612,9 @@ restorefileposition (cob_file *f)
 			}
 		}
 	} else if (fh->readdone && f->curkey == 0) {
+		struct keydesc *key = &fh->key[0];
 		indexed_restorekey(fh, NULL, 0);
-		isstart (fh->isfd, &fh->key[f->curkey], 0, (void *)fh->recwrk, ISGTEQ);
+		isstart (fh->isfd, key, 0, (void *)fh->recwrk, ISGTEQ);
 	}
 	ISERRNO = sverrno;
 }
@@ -714,7 +712,7 @@ isopen_retry(cob_file *f, char *filename, int mode)
 			(isam_setptr->cob_retry_times>0?isam_setptr->cob_retry_times:1);
 		interval = isam_setptr->cob_retry_seconds>0?isam_setptr->cob_retry_seconds:1;
 	}
-	if(retry > 0) {
+	if (retry > 0) {
 		retry = retry * interval * COB_RETRY_PER_SECOND ;
 		interval = 1000 / COB_RETRY_PER_SECOND ;
 	}
@@ -722,7 +720,7 @@ isopen_retry(cob_file *f, char *filename, int mode)
 	while(isfd < 0 && retry != 0) {
 		if (ISERRNO != EFLOCKED)
 			break;
-		if(retry > 0) {
+		if (retry > 0) {
 			retry--;
 			cob_sleep_msec(interval);
 		}
@@ -762,7 +760,7 @@ isread_retry(cob_file *f, void *data, int mode)
 			(isam_setptr->cob_retry_times>0?isam_setptr->cob_retry_times:1);
 		interval = isam_setptr->cob_retry_seconds>0?isam_setptr->cob_retry_seconds:1;
 	}
-	if(retry > 0) {
+	if (retry > 0) {
 		retry = retry * interval * COB_RETRY_PER_SECOND ;
 		interval = 1000 / COB_RETRY_PER_SECOND ;
 	}
@@ -779,7 +777,7 @@ isread_retry(cob_file *f, void *data, int mode)
 		 || retry == 0
 		 || sts == 0)
 			break;
-		if(retry > 0) {
+		if (retry > 0) {
 			retry--;
 			cob_sleep_msec(interval);
 		}
@@ -884,14 +882,12 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mod
 
 	struct indexfile	*fh, *fh2;
 	int			k;
-	int			ret,len,j;
+	int			ret, len, j;
 	int			omode, fmode, lmode, vmode;
 	int			dobld;
 	int			isfd;
 	int			checkvalue;
 	struct stat st;
-	struct keydesc		kd;
-	struct dictinfo		di;		/* Defined in (c|d|vb)isam.h */
 
 #if defined(WITH_CISAM)
 	f->io_routine = COB_IO_CISAM;
@@ -1075,20 +1071,21 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mod
 		break;
 	}
 	fh = cob_malloc (sizeof (struct indexfile) +
-			 		((sizeof (struct keydesc)) * (f->nkeys + 1)));
-	/* Copy index information */
-	for (k = 0; k < f->nkeys; ++k) {
-		len = indexed_keydesc(f, &fh->key[k], &f->keys[k]);
-		if (fh->lenkey < len) {
-			fh->lenkey = len;
-		}
-	}
-	for(k=0; k < MAXNUMKEYS; k++)
+			 ((sizeof (struct keydesc)) * (f->nkeys + 1)));
+	for (k = 0; k < MAXNUMKEYS; k++) {
 		fh->idxmap[k] = k;
+	}
 	ISERRNO = 0;
 	fh->lmode = 0;
 	if (dobld) {
 dobuild:
+		/* copy index information cob_file_key -> keydesc */
+		for (k = 0; k < f->nkeys; ++k) {
+			len = indexed_keydesc (f, &fh->key[k], &f->keys[k]);
+			if (fh->lenkey < len) {
+				fh->lenkey = len;
+			}
+		}
 		if (f->record_min != f->record_max) {
 			ISRECLEN = f->record_min;
 		}
@@ -1112,35 +1109,15 @@ dobuild:
 		}
 	} else {
 		if (lmode == ISAUTOLOCK
-		&& (f->lock_mode & COB_LOCK_MULTIPLE)) {
+		 && (f->lock_mode & COB_LOCK_MULTIPLE)) {
 			lmode = ISMANULOCK;
 		}
 		if (lmode == ISMANULOCK) {
 			fh->lmode = ISLOCK; 	/* fileio will handle Record locking */
 		}
 		isfd = isopen_retry (f, (char *)filename, omode | lmode | vmode);
-		if (isfd < 0) {
-			if (ISERRNO == EFLOCKED)
-				return COB_STATUS_61_FILE_SHARING;
-			if (f->flag_optional) {
-				if (mode == COB_OPEN_EXTEND
-				 || mode == COB_OPEN_I_O) {
-					dobld = 1;
-					ret = COB_STATUS_05_SUCCESS_OPTIONAL;
-					goto dobuild;
-				}
-				freefh (fh);
-				f->open_mode = (enum cob_open_mode)mode;
-				f->flag_end_of_file = 1;
-				f->flag_begin_of_file = 1;
-				if (f->flag_nonexistent) {
-					return COB_STATUS_00_SUCCESS;
-				}
-				f->flag_nonexistent = 1;
-				return COB_STATUS_05_SUCCESS_OPTIONAL;
-			}
-		} else {
-			memset(&di, 0, sizeof (di));
+		if (isfd >= 0) {
+			struct dictinfo		di = { 0 };		/* Defined in (c|d|vb)isam.h */
 			isindexinfo (isfd, (void *)&di, 0);
 			/* Mask off ISVARLEN */
 			fh->nkeys = di.di_nkeys & 0x7F;
@@ -1171,17 +1148,20 @@ dobuild:
 			if (!f->flag_keycheck) {
 				/* Copy real ISAM file key information */
 				for (k = 0; k < fh->nkeys && !ret; ++k) {
-					memset (&fh->key[k], 0, sizeof(struct keydesc));
-					isindexinfo (isfd, &fh->key[k], (int)(k+1));
-					if (fh->lenkey < indexed_keylen(fh, k)) {
-						fh->lenkey = indexed_keylen(fh, k);
+					struct keydesc	key = { 0 }; /* init to prevent analyzer warning */
+					isindexinfo (isfd, &key, (int)(k + 1));
+					len = indexed_keylen (&key);
+					if (fh->lenkey < len) {
+						fh->lenkey = len;
 					}
+					memcpy (&fh->key[k], &key, sizeof (struct keydesc));
 				}
 				/* Verify that COBOL keys defined match some real ISAM key */
 				for (j = 0; j < f->nkeys && !ret; ++j) {
-					indexed_keydesc(f, &kd, &f->keys[j]);
+					struct keydesc	kd = { 0 };
+					indexed_keydesc (f, &kd, &f->keys[j]);
 					for (k = 0; k < fh->nkeys; ++k) {
-						if (indexed_keycmp(&kd, &fh->key[k]) == 0) {
+						if (indexed_keycmp (&kd, &fh->key[k]) == 0) {
 							fh->idxmap[j] = k;
 							break;
 						}
@@ -1196,21 +1176,48 @@ dobuild:
 				}
 			} else {
 				for (k = 0; k < fh->nkeys && !ret; ++k) {
-					memset (&fh->key[k], 0, sizeof(struct keydesc));
-					isindexinfo (isfd, &fh->key[k], (int)(k+1));
-					if (fh->lenkey < indexed_keylen(fh, k)) {
-						fh->lenkey = indexed_keylen(fh, k);
-					}
-					/* Verify that COBOL keys match exactly to real ISAM keys */
-					len = indexed_keydesc(f, &kd, &f->keys[k]);
+					struct keydesc	kd = { 0 };
+					/* get key info from ISAM */
+					struct keydesc	key = { 0 }; /* init to prevent analyzer warning */
+					int len_key;
+					isindexinfo (isfd, &key, (int)(k + 1));
+					len = indexed_keylen (&key);
 					if (fh->lenkey < len) {
 						fh->lenkey = len;
 					}
-					if (indexed_keycmp(&kd, &fh->key[k]) != 0) {
+					/* get key info from cob_key */
+					len_key = indexed_keydesc (f, &kd, &f->keys[k]);
+					/* verify that COBOL keys match exactly to real ISAM keys */
+					if (len_key != len
+					 || indexed_keycmp (&kd, &key) != 0) {
 						ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
 						break;
 					}
+					/* store ISAM key definition */
+					memcpy (&fh->key[k], &key, sizeof (struct keydesc));
 				}
+			}
+		} else {	/* opening the file is not possible */
+			if (ISERRNO == EFLOCKED) {
+				freefh (fh);
+				return COB_STATUS_61_FILE_SHARING;
+			}
+			if (f->flag_optional) {
+				if (mode == COB_OPEN_EXTEND
+				 || mode == COB_OPEN_I_O) {
+					dobld = 1;
+					ret = COB_STATUS_05_SUCCESS_OPTIONAL;
+					goto dobuild;
+				}
+				freefh (fh);
+				f->open_mode = (enum cob_open_mode)mode;
+				f->flag_end_of_file = 1;
+				f->flag_begin_of_file = 1;
+				if (f->flag_nonexistent) {
+					return COB_STATUS_00_SUCCESS;
+				}
+				f->flag_nonexistent = 1;
+				return COB_STATUS_05_SUCCESS_OPTIONAL;
 			}
 		}
 	}
@@ -1293,13 +1300,13 @@ isam_close (cob_file_api *a, cob_file *f, const int opt)
 static int
 isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 {
-	struct indexfile	*fh;
+	struct indexfile	*fh = f->file;
 	int			k;
 	int			mode;
 	int			klen,fullkeylen,partlen;
 	int			savecond;
+	struct keydesc *keyd;
 
-	fh = f->file;
 	f->flag_read_done = 0;
 	f->flag_first_read = 0;
 	fh->readdone = 0;
@@ -1311,12 +1318,13 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
 	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
-	f->mapkey = k;
 	if (k < 0) {
 		fh->startfail = 1;
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
+	f->mapkey = k;
 	k = fh->idxmap[k];
+	keyd = &fh->key[k];
 	/* Use size of data field; This may indicate a partial key */
 	klen = partlen;
 	if (klen < 1 || klen > fullkeylen) {
@@ -1358,9 +1366,9 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	default:
 		return COB_STATUS_21_KEY_INVALID;
 	}
-	if (isstart (fh->isfd, &fh->key[k], klen, (void *)f->record->data, mode)) {
+	if (isstart (fh->isfd, keyd, klen, (void *)f->record->data, mode)) {
 		if (cond == COB_LE || cond == COB_LT) {
-			if (isstart (fh->isfd, &fh->key[k], klen, (void *)f->record->data, ISLAST)) {
+			if (isstart (fh->isfd, keyd, klen, (void *)f->record->data, ISLAST)) {
 				f->curkey = -1;
 				f->mapkey = -1;
 				fh->startcond = -1;
@@ -1394,10 +1402,10 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 			fh->startfail = 1;
 			return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
 		}
-		isstart (fh->isfd, &fh->key[k], klen, (void *)f->record->data, mode);
+		isstart (fh->isfd, keyd, klen, (void *)f->record->data, mode);
 	}
 	fh->startcond = savecond;
-	indexed_savekey(fh, f->record->data, k);
+	indexed_savekey (fh, f->record->data, k);
 	f->curkey = k;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
@@ -1476,7 +1484,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	fh->readdone = 1;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
-	indexed_savekey(fh, f->record->data, 0);
+	indexed_savekey (fh, f->record->data, 0);
 	fh->recnum = ISRECNUM;
 	get_isreclen (f);
 	return 0;
@@ -1564,7 +1572,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				case COB_GE:
 					domoveback = 0;
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) == 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						domoveback = 1;
 					}
@@ -1575,7 +1583,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				case COB_LE:
 					domoveback = 0;
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) == 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
@@ -1585,13 +1593,13 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 					break;
 				case COB_LT:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) >= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 					}
 					break;
 				case COB_GT:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) <= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) <= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
@@ -1649,12 +1657,12 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			} else {
 				switch (fh->startcond) {
 				case COB_LE:
-					if(indexed_cmpkey(fh, f->record->data, f->curkey, 0) > 0)
+					if (indexed_cmpkey (fh, f->record->data, f->curkey, 0) > 0)
 						domoveback = 1;
 					else
 						domoveback = 0;
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) == 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
@@ -1671,20 +1679,20 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 						break;
 					}
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) >= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						skip_read = ISPREV;
 					}
 					break;
 				case COB_GT:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) <= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) <= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
 				case COB_GE:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) < 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) < 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
@@ -1764,7 +1772,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	fh->readdone = 1;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
-	indexed_savekey(fh, f->record->data, 0);
+	indexed_savekey (fh, f->record->data, 0);
 	fh->recnum = ISRECNUM;
 	get_isreclen (f);
 
@@ -1776,13 +1784,13 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	 && f->curkey > 0
 	 && !f->flag_read_no_02
 	 && (fh->key[f->curkey].k_flags & ISDUPS)) {
-		indexed_savekey(fh, f->record->data, f->curkey);
+		indexed_savekey (fh, f->record->data, f->curkey);
 		fh->saverecnum = ISRECNUM;
 		isread (fh->isfd, (void *)fh->recwrk, skip_read);
 		ret = fisretsts (0);
 
 		if (ret == COB_STATUS_00_SUCCESS) {
-			if (indexed_cmpkey(fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
+			if (indexed_cmpkey (fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
 				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
 				ISSTAT1 = '0';
 				ISSTAT2 = '2';
@@ -1810,12 +1818,12 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	 && fh->readdir != 0
 	 && f->curkey > 0
 	 && (fh->key[f->curkey].k_flags & ISDUPS)) {
-		indexed_savekey(fh, f->record->data, f->curkey);
+		indexed_savekey (fh, f->record->data, f->curkey);
 		fh->saverecnum = ISRECNUM;
 		isread (fh->isfd, (void *)fh->recwrk, fh->readdir);
 		ret = fisretsts (0);
 		if (ret == COB_STATUS_00_SUCCESS) {
-			if (indexed_cmpkey(fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
+			if (indexed_cmpkey (fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
 				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
 			}
 			fh->duprecnum = fh->saverecnum;
@@ -1842,18 +1850,17 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 static int
 isam_write (cob_file_api *a, cob_file *f, const int opt)
 {
-	struct indexfile	*fh;
+	struct indexfile	*fh = f->file;
 	int			ret, retdup;
 
 	COB_UNUSED (a);
-	fh = f->file;
 	if (f->flag_nonexistent) {
 		return COB_STATUS_48_OUTPUT_DENIED;
 	}
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL
 	 && f->open_mode == COB_OPEN_OUTPUT
 	 && !f->flag_set_isam
-	 && indexed_cmpkey(fh, f->record->data, 0, 0) <= 0) {
+	 && indexed_cmpkey (fh, f->record->data, 0, 0) <= 0) {
 		return COB_STATUS_21_KEY_INVALID;
 	}
 	retdup = ret = COB_STATUS_00_SUCCESS;
@@ -1901,7 +1908,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 		}
 		ret = COB_CHECK_DUP (ret);
 	}
-	indexed_savekey(fh, f->record->data, 0);
+	indexed_savekey (fh, f->record->data, 0);
 
 	if (ret == COB_STATUS_00_SUCCESS
 	 && retdup != COB_STATUS_00_SUCCESS)
@@ -1964,7 +1971,8 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 {
 	struct indexfile	*fh;
 	int			k;
-	int			ret, retdup;
+	int			ret;
+	int			retdup = 0;
 #ifndef COB_WITH_STATUS_02
 	int			svky;
 #endif
@@ -1977,7 +1985,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	}
 
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL
-	&&  indexed_cmpkey(fh, f->record->data, 0, 0) != 0) {
+	 && indexed_cmpkey (fh, f->record->data, 0, 0) != 0) {
 		return COB_STATUS_21_KEY_INVALID;
 	}
 	if (fh->recorg == NULL) {
@@ -2014,26 +2022,26 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		if (fh->recorg != NULL)
 			memcpy (fh->recorg, fh->recwrk, f->record_max);
 		for (k = 0; k < f->nkeys && ret == COB_STATUS_00_SUCCESS; ++k) {
-			if (fh->key[k].k_flags & ISDUPS) {
+			struct keydesc *key = &fh->key[k];
+			if (key->k_flags & ISDUPS) {
 #ifndef COB_WITH_STATUS_02
 				if (f->flag_read_chk_dups
 				 && retdup == COB_STATUS_00_SUCCESS) {
 					/* If new record did not change this key then skip check */
-					indexed_savekey(fh, (void*)fh->recorg, k);
-					if (indexed_cmpkey(fh, (void *)f->record->data, k, 0) == 0) {
+					indexed_savekey (fh, (void*)fh->recorg, k);
+					if (indexed_cmpkey (fh, (void *)f->record->data, k, 0) == 0) {
 						continue;
 					}
 
 					memcpy (fh->recwrk, f->record->data, f->record_max);
 					indexed_savekey(fh, (void*)fh->recwrk, k);
-					isstart (fh->isfd, &fh->key[k], fh->key[k].k_len,
-							(void *)fh->recwrk, ISEQUAL);
+					isstart (fh->isfd, key, key->k_len, (void *)fh->recwrk, ISEQUAL);
 					while (ISERRNO == 0) {
 						if (isread (fh->isfd, (void *)fh->recwrk, ISNEXT))
 							break;
-						if(ISRECNUM == fh->duprecnum)
+						if (ISRECNUM == fh->duprecnum)
 							continue;
-						if (indexed_cmpkey(fh, (void *)fh->recwrk, k, 0) == 0) {
+						if (indexed_cmpkey (fh, (void *)fh->recwrk, k, 0) == 0) {
 							retdup = COB_STATUS_02_SUCCESS_DUPLICATE;
 							break;
 						}
@@ -2046,7 +2054,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			if (k > 0) {
 				memcpy (fh->recwrk, f->record->data, f->record_max);
 				ISERRNO = 0;
-				isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, (void *)fh->recwrk, ISEQUAL);
+				isstart (fh->isfd, key, key->k_len, (void *)fh->recwrk, ISEQUAL);
 				if (ISERRNO == 0
 				 && isread (fh->isfd, (void *)fh->recwrk, ISEQUAL) == 0
 				 && ISRECNUM != fh->recnum) {
@@ -2058,7 +2066,8 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		fh->duprecnum = 0;
 		if (ret == COB_STATUS_00_SUCCESS) {
 			memcpy (fh->recwrk, f->record->data, f->record_max);
-			isstart (fh->isfd, &fh->key[0], 0, (void *)fh->recwrk, ISEQUAL);
+			isstart (fh->isfd, &fh->key[0], fh->key[0].k_len,
+				(void *)fh->recwrk, ISEQUAL);
 			if (isread_retry (f, (void *)fh->recwrk, ISEQUAL | ISLOCK)) {
 				ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 			} else {
@@ -2076,7 +2085,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		 && retdup != COB_STATUS_00_SUCCESS)
 			ret = retdup;
 
-	} else {
+	} else {	/* Index is not active */
 
 		memcpy (fh->recwrk, f->record->data, f->record_max);
 		if (isread_retry (f, (void *)fh->recwrk, ISEQUAL | ISLOCK)) {

@@ -7050,7 +7050,7 @@ cb_build_optim_cond (struct cb_binary_op *p)
 	const char	*s;
 	size_t		n;
 	const cb_tree left = p->x;
-	const cb_tree right = p->y;
+	cb_tree right = p->y;
 	struct cb_field	*f = CB_REF_OR_FIELD_P (left)
 	               	   ? CB_FIELD_PTR (left) : NULL;
 
@@ -7072,8 +7072,17 @@ cb_build_optim_cond (struct cb_binary_op *p)
 		if (!cb_fits_long_long (right)) {
 			return NULL;
 		}
+		/* CHECKME: can we have a non-field left and field right? */
 		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", left,
 					    cb_build_cast_llint (right));
+	}
+
+	/* test for numeric zero literal */
+	if (CB_LITERAL_P (right)) {
+		struct cb_literal *l = CB_LITERAL (right);
+		if (memcmp (l->data, COB_ZEROES_ALPHABETIC, l->size) == 0) {
+			right = cb_zero;
+		}
 	}
 
 #if 0	/* TODO: if the right side is a literal: then build an ideal
@@ -7089,6 +7098,39 @@ cb_build_optim_cond (struct cb_binary_op *p)
 		}
 	}
 #endif
+
+	/* if the field is DISPLAY and the right side either a literal, a constant (ZERO)
+	   or also a DISPLAY field, then no need to convert the field(s) to an integer */
+	if (f->usage == CB_USAGE_DISPLAY) {
+		if (CB_REF_OR_FIELD_P (right)) {
+			 if (CB_FIELD_PTR (right)->usage == CB_USAGE_DISPLAY) {
+				return CB_BUILD_FUNCALL_2 ("cob_numeric_display_cmp", left, right);
+			}
+		} else
+		if (CB_LITERAL_P (right)) {
+			if (f->pic->scale
+			 || f->pic->digits >= 19
+			 || ( CB_LITERAL_P (right)
+			   && ( CB_LITERAL (right)->scale
+				 || CB_LITERAL (right)->size > 19))) {
+				return CB_BUILD_FUNCALL_2 ("cob_numeric_display_cmp", left, right);
+			}
+		} else
+		if (right == cb_zero) {
+			if (!f->flag_sign_separate
+			 && !f->flag_any_numeric
+			 && !cb_ebcdic_sign) {
+				return CB_BUILD_FUNCALL_1 ("cob_numeric_display_cmp_zero", left);
+			}
+			/* for simple fields an integer-comparision is fast and inlined, so
+			   we only use the DISPLAY compare if it is "complex" */
+			if (f->pic->scale
+			 || f->pic->digits >= 19) {
+				return CB_BUILD_FUNCALL_2 ("cob_numeric_display_cmp", left, right);
+			}
+		}
+	}
+
 	if (f->usage == CB_USAGE_PACKED
 	 || f->usage == CB_USAGE_COMP_6) {
 		if (CB_REF_OR_FIELD_P (right)) {
@@ -7106,6 +7148,9 @@ cb_build_optim_cond (struct cb_binary_op *p)
 					}
 				}
 			}
+		} else
+		if (right == cb_zero) {
+			return CB_BUILD_FUNCALL_1 ("cob_bcd_cmp_zero", left);
 		}
 	}
 
@@ -10801,8 +10846,8 @@ validate_inspect (cb_tree x, cb_tree y, const unsigned int replacing_or_converti
 		size2 = CB_LITERAL (y)->size;
 		break;
 	case CB_TAG_CONST:
-	/* note: in case of CONST (like SPACES or LOW-VALUES)
-	         the original size is used in libcob */
+		/* note: in case of CONST (like SPACES or LOW-VALUES)
+		         the original size is used in libcob */
 		/* Fall-through */
 	default:
 		size2 = 0;
@@ -11540,6 +11585,7 @@ enum move_outcome {
 	MOVE_INVALID,
 	MOVE_INVALID_NO_MESSAGE,
 	MOVE_SUBSTITUTING_ZERO,
+	MOVE_SUBSTITUTING_ZERO_SILENT,
 	MOVE_NUMERIC_LIT_OVERFLOW,
 	MOVE_NON_INTEGER_TO_ALNUM,
 	MOVE_NUMERIC_EXPECTED,
@@ -11651,23 +11697,24 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 	}
 	if (leftmost_significant == l->size) {
 		most_significant = -999;
+		least_significant = 999;
 	} else {
 		most_significant = l->size - l->scale - leftmost_significant;
 		if (most_significant < 1) most_significant--;
-	}
 
-	/* Compute the least significant figure place
-	   in relatation to the decimal point (negative = decimal position) */
-	for (i = l->size - 1; i != 0; i--) {
-		if (l->data[i] != '0') {
-			break;
+		/* Compute the least significant figure place
+		   in relatation to the decimal point (negative = decimal position) */
+		for (i = l->size - 1; i != 0; i--) {
+			if (l->data[i] != '0') {
+				break;
+			}
 		}
-	}
-	if (i == 0) {
-		least_significant = 999;
-	} else {
-		least_significant = (l->size - l->scale) - i;
-		if (least_significant < 1) least_significant--;
+		if (i == 0) {
+			least_significant = 999;
+		} else {
+			least_significant = l->size - l->scale - i;
+			if (least_significant < 1) least_significant--;
+		}
 	}
 
 	/* Value check */
@@ -11709,6 +11756,12 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 	case CB_CATEGORY_NUMERIC:
 	{
 		const struct cb_picture *pic = fdst->pic;
+		if (most_significant == -999
+		 && l->sign == 0) {
+			/* replace assignments of unsigned 000.0000 to a numeric value
+			   by optimized zero-move */
+			return MOVE_SUBSTITUTING_ZERO_SILENT;
+		}
 		if (pic->scale < 0) {
 			/* Check for PIC 9(n)P(m) */
 			if (least_significant <= -pic->scale) {
@@ -11753,12 +11806,12 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 
 	/* Size check */
 	if (fdst->flag_real_binary
-	    || (  !cb_binary_truncate
-		  && fdst->pic->scale <= 0
-		  && (  fdst->usage == CB_USAGE_COMP_5
-			 || fdst->usage == CB_USAGE_COMP_X
-			 || fdst->usage == CB_USAGE_COMP_N
-			 || fdst->usage == CB_USAGE_BINARY))) {
+	  || (  !cb_binary_truncate
+	     && fdst->pic->scale <= 0
+	     && (   fdst->usage == CB_USAGE_COMP_5
+		 || fdst->usage == CB_USAGE_COMP_X
+		 || fdst->usage == CB_USAGE_COMP_N
+		 || fdst->usage == CB_USAGE_BINARY))) {
 		cob_s64_t		val;
 		i = l->size - leftmost_significant;
 		if (i <= 19) {
@@ -12548,6 +12601,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	case MOVE_SUBSTITUTING_ZERO:
 		cb_warning_x (COBC_WARN_FILLER, loc,
 			      _("source is non-numeric - substituting zero"));
+		/* fall through */
+	case MOVE_SUBSTITUTING_ZERO_SILENT:
 		if (move_zero) {
 			*move_zero = 1;
 		}

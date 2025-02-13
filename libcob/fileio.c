@@ -1761,8 +1761,8 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 	src = file_open_name;
 
 	/* Simple case - No separators [note: this is also the ACU and Fujitsu way] */
-	if (!looks_absolute(src)
-	 && !has_directory_separator(src)) {
+	if (!looks_absolute (src)
+	 && !has_directory_separator (src)) {
 		/* Ignore leading dollar */
 		if (*src == '$') {
 			src++;

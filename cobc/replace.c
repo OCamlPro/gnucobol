@@ -193,6 +193,17 @@ STRING_OF_LIST(token)
 /* string_of_text_list (...) */
 STRING_OF_LIST(text)
 
+static void dump_replacement (struct cb_replacement_state* repls)
+{
+	fprintf (stderr, "dump_replacement('%s'):\n", repls->name);
+	struct cb_replace_list  *list = repls->replace_list ;
+	for (; list; list = list->next){
+		fprintf(stderr, "   replace: %s\n", string_of_text_list (list->src->text_list));
+		fprintf(stderr, "        by: %s\n", string_of_text_list (list->new_text));
+	}
+	fprintf (stderr, "=================================================================\n");
+}
+
 #endif /* DEBUG_REPLACE */
 
 /* global state */
@@ -759,7 +770,6 @@ cb_free_replace (void)
 	reset_replacements (copy_repls);
 	reset_replacements (replace_repls);
 #endif
-
 	cobc_free (copy_repls);
 	copy_repls = NULL;
 
@@ -772,6 +782,10 @@ cb_free_replace (void)
 struct cb_replace_list *
 cb_get_copy_replacing_list (void)
 {
+#ifdef DEBUG_REPLACE_TRACE
+	fprintf (stderr, "cb_get_copy_replacing_list()\n");
+#endif
+
 	if (copy_repls == NULL) {
 #ifdef DEBUG_REPLACE_TRACE
 		int i;
@@ -845,4 +859,7 @@ cb_set_replace_list (struct cb_replace_list *list, const int is_pushpop)
 	if (cb_src_list_file) {
 		cb_set_print_replace_list (list);
 	}
+#ifdef DEBUG_REPLACE_TRACE
+	dump_replacement (replace_repls);
+#endif
 }

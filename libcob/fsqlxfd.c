@@ -47,7 +47,7 @@ cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 			  && key->data == kf->data
 			  && key->size == kf->size)
 			 || (f->keys[k].component[0]->data == kf->data)) {
-				for (part=0; part < f->keys[k].count_components; part++) {
+				for (part = 0; part < f->keys[k].count_components; part++) {
 					*fullkeylen += f->keys[k].component[part]->size;
 				}
 				if (key
@@ -56,7 +56,7 @@ cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 				} else {
 					*partlen = *fullkeylen;
 				}
-				return (int)k;
+				return k;
 			}
 		}
 	}
@@ -127,7 +127,7 @@ db_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx, 
 	if (f->keys[idx].count_components > 0) {
 		totlen = 0;
 		for (part = 0; part < f->keys[idx].count_components && partlen > 0; part++) {
-			cl = (size_t)partlen > f->keys[idx].component[part]->size 
+			cl = (size_t)partlen > f->keys[idx].component[part]->size
 					? f->keys[idx].component[part]->size : (size_t)partlen;
 			sts = memcmp (keyarea + totlen,
 					record + (f->keys[idx].component[part]->data - f->record->data),
@@ -200,18 +200,6 @@ hex_dump (unsigned char *in, int len, char *out)
 	return rtn;
 }
 #endif
-
-static char *
-cob_get_strerror (void)
-{
-	static char  msg[1024];
-#ifdef HAVE_STRERROR
-	strncpy (msg, strerror (errno), sizeof(msg) - 1);
-#else
-	snprintf (msg, sizeof(msg) - 1, _("system error %d"), errno);
-#endif
-	return msg;
-}
 
 static char *
 getNum(char *p, int *val)

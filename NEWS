@@ -109,9 +109,22 @@ Open Plans:
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+** Padding bytes of BCD may store a non-truncated digit; while
+   this has no effect on calculations it can create problems on
+   later binary comparison of the field as well as on group MOVEs
 ** #918: COB_LS_VALIDATE (io status 09 and 71) partial broken
 
 * Changes to the COBOL compiler (cobc) options:
+
+** New option --copy COPYBOOK to load copybooks before parsing files. This
+   option can typically be used to perform replacements without modifying
+   the source code, or to add prototypes for external calls.
+
+** New option --include FILE.h to add a #include in the generated C file.
+   This option can typically be used to force the C compiler to check static
+   calls to externals. The files are put into quotes, unless they start by
+   '<'. Quoted files are expected to have absolute paths, as the C compiler
+   is called in a temp directory instead of the project directory.
 
 ** output of unlimited errors may be requested by -fmax-errors=0,
    to stop compiliation at first error use -Wfatal-errors
@@ -125,8 +138,55 @@ Open Plans:
 * More notable changes
 
 ** execution times were significantly reduced for the following:
+	comparison between a numeric DISPLAY variable to another or to a literal
+	comparison between numeric DISPLAY or BCD variable to zero
 	INSPECT CONVERTING (and "simple" INSPECT REPLACING), in general
 	   and especially if both from and to are constants
+
+* Known issues in 3.x
+
+** testsuite:
+  * if built with vbisam, cisam or disam, depending on the version used, some
+    tests will lead to UNEXPECTED PASS, while others may fail
+  * possibly failing tests (false positives):
+    * temporary path invalid
+    * compiler outputs (assembler)
+    * compile from stdin
+  * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
+    emulating a program kill)
+  * if build with -fsanitize, then some tests will fail; while we accept patches
+    to improve that, we don't consider the failing tests as bug in GnuCOBOL
+
+** the recent additions of ">> TURN" and "variable LIKE variable" may not work
+   as expected in all cases
+
+** floating-point comparison for equality may return unexpected results as it
+   involves a necessary tolerance; you may adjust the default tolerance of
+   0.0000001 by compiling GnuCOBOL for example with
+   LIBCOB_CPPFLAGS="-DCOB_FLOAT_DELTA=0.0000000000001";
+   we seek input for a reasonable default for GnuCOBOL 4 (use the mailing list
+   or discussion board to share your comments on this topic, keeping in mind
+   that this has to take both mathematical and "C compiler portability" into
+   account)
+
+** variables containing PICTURE symbol P may lead to wrong results in rare
+   cases (especially screenio) - please send a bug report if you catch a case;
+   since GC 3.2 rc3 all arithmetic operations and MOVE are believed to be
+   correct
+
+** features that are known to not be portable to every environment yet
+   (especially when using a different compiler than GCC)
+    * function with variable-length RETURNING item
+    * USAGE POINTER, which may need to be manually aligned
+
+** all versions of GnuCOBOL so far: EVALUATE evaluates all subjects on *each*
+   WHEN (the standard explicit requests a one-time evaluation of the subjects,
+   then comparing the value); to work around possible issues move more complex
+   subjects like variables with subscripts and reference-modification, as well
+   as calculated subjects and function calls to a temporary variable and use
+   this as subject for the EVALUATE
+
+For more known issues see the bug tracker.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -599,43 +659,6 @@ Open Plans:
 ** use of old non-GMP randomizer for FUNCTION RANDOM
 
 ** undocumented option -tsymbols, which was replaced by -ftsymbols in 3.0
-
-
-* Known issues in 3.2 (and 3.1)
-
-** testsuite:
-  * if built with vbisam, cisam or disam, depending on the version used, some
-    tests will lead to UNEXPECTED PASS, while others may fail
-  * possibly failing tests (false positives):
-    * temporary path invalid
-    * compiler outputs (assembler)
-    * compile from stdin
-  * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
-    emulating a program kill)
-  * if build with -fsanitize, then some tests will fail; while we accept patches
-    to improve that, we don't consider the failing tests as bug in GnuCOBOL
-
-** the recent additions of ">> TURN" and "variable LIKE variable" may not work
-   as expected in all cases
-
-** floating-point comparison for equality may return unexpected results as it
-   involves a necessary tolerance; you may adjust the default tolerance of
-   0.0000001 by compiling GnuCOBOL for example with
-   LIBCOB_CPPFLAGS="-DCOB_FLOAT_DELTA=0.0000000000001";
-   we seek input for a reasonable default for GnuCOBOL 4 (use the mailing list
-   or discussion board to share your comments on this topic, keeping in mind
-   that this has to take both mathematical and "C compiler portability" into
-   account)
-
-** variables containing PICTURE symbol P may lead to wrong results in rare
-   cases (especially screenio) - please send a bug report if you catch a case;
-   since GC 3.2 rc3 all arithmetic operations and MOVE are believed to be
-   correct
-
-** features that are known to not be portable to every environment yet
-   (especially when using a different compiler than GCC)
-    * function with variable-length RETURNING item
-    * USAGE POINTER, which may need to be manually aligned
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

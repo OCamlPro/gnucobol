@@ -1125,7 +1125,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 				mpz_mul_ui (d->value, d->value, 10000UL);
 			}
 			mpz_add_ui (d->value, d->value,
-				    ( pack_to_bin[*p] * 100)
+				    ( (int)pack_to_bin[*p] * 100)
 				    + pack_to_bin[*(p + 1)]);
 			/* because of the zero-skipping we are always nonzero here */
 			nonzero = 1;
@@ -1313,7 +1313,9 @@ cob_set_packed_u64 (cob_field *f, const cob_u64_t val, const int sign)
 		*p = packed_bytes[n % 100];
 	}
 
-	{
+	/* clean first half-byte to handle truncation
+	   as we may have stored 200 in S99's padding byte */
+	if (p <= f->data) {
 		const short	scale = COB_FIELD_SCALE (f);
 		short	digits;
 		if (scale >= 0) {
@@ -4087,6 +4089,250 @@ cob_bcd_cmp (cob_field *f1, cob_field *f2)
 }
 #endif
 
+#ifndef NO_DISPLAY_COMPARE
+static COB_INLINE COB_A_INLINE int
+compare_data (unsigned char *ptr1, unsigned char *ptr2, int len)
+{
+	unsigned char *ptr_end = ptr1 + len;
+
+	do {
+		const unsigned char p1 = COB_D2I (*ptr1);
+		const unsigned char p2 = COB_D2I (*ptr2);
+		if (p1 != p2) {
+			if (p1 > p2) {
+				return 1;
+			}
+			return -1;
+		}
+		ptr1++;
+		ptr2++;
+	} while (ptr1 != ptr_end);
+
+	return 0;
+}
+
+static int
+check_all_zero (unsigned char *ptr, int len)
+{
+	unsigned char *ptr_end = ptr + len;
+
+	do {
+		if (COB_D2I (*ptr++) != 0) {
+			return 0;
+		}
+	} while (ptr != ptr_end);
+
+	return 1;
+}
+
+int
+cob_numeric_display_cmp (cob_field *f1, cob_field *f2)
+{
+	int		compare_result, len;
+	int		f1_strt_offset, f1_end_offset;
+	int		f2_strt_offset, f2_end_offset;
+
+	/************************************************************/
+	/*  first we need to get the scale, data size and sign of   */
+	/*  each of the two cob fields. Note that if the signs are  */
+	/*  different, then we only need to find if either of the   */
+	/*  fields is non-zero.                                     */
+	/************************************************************/
+
+	const short 	scale1 = COB_FIELD_SCALE (f1);
+	const short 	scale2 = COB_FIELD_SCALE (f2);
+	/* numeric DISPLAY fields from a program are limited to COB_MAX_DIGITS,
+	   internal created numeric DISPLAY fields from intrinsic functions
+	   in intrinsic.c (cob_alloc_field, cob_decimal_move_temp) could
+	   _theoretically_ use up to SHRT_MAX */
+	const short 	size1 = (short)COB_FIELD_SIZE (f1);
+	const short 	size2 = (short)COB_FIELD_SIZE (f2);
+	unsigned char	*ptr_f1 = COB_FIELD_DATA (f1);
+	unsigned char	*ptr_f2 = COB_FIELD_DATA (f2);
+
+	const int	orig_sign1 = COB_GET_SIGN_ADJUST (f1);
+	const int	orig_sign2 = COB_GET_SIGN_ADJUST (f2);
+
+	int ret;
+
+	const int	sign1 = orig_sign1 >= 0 ? 1 :
+		check_all_zero (ptr_f1, size1) ? 1 : - 1;
+	const int	sign2 = orig_sign2 >= 0 ? 1 :
+		check_all_zero (ptr_f2, size2) ? 1 : -1;
+
+	if (sign1 != sign2) {
+		ret = sign1;
+		goto over;
+	}
+	/************************************************************/
+	/*  first we need to find the start and end of each field   */
+	/*  relative to the decimal point so that we can compare    */
+	/*  them correctly based on the position relative to the    */
+	/*  decimal point.                                          */
+	/*                                                          */
+	/*  the comparison of two fields containing display         */
+	/*  numeric data will result in one of three conditions     */
+	/*                                                          */
+	/*  one field will be a subset of the other.                */
+	/*  one field would intersect with the other.               */
+	/*  the fields would not intersect at all.                  */
+	/*                                                          */
+	/*  so these are the 3 conditions we need to check for.     */
+	/*  this will result in 3 compares being needed.            */
+	/************************************************************/
+
+	f1_strt_offset = size1 - scale1;
+	f1_end_offset = 0 - scale1;
+
+	f2_strt_offset = size2 - scale2;
+	f2_end_offset = 0 - scale2;
+
+	/************************************************************/
+	/*  the first compare will be to check the leading / pad    */
+	/*  positions in either of the fields to check if they are  */
+	/*  all zeros. if not then we don't need to compare any     */
+	/*  farther, we are done.                                   */
+	/************************************************************/
+
+
+	if (f1_strt_offset > f2_strt_offset) {
+		if (f2_strt_offset > f1_end_offset) {
+			if (!check_all_zero (ptr_f1, (f1_strt_offset - f2_strt_offset))) {
+				ret = sign1;
+				goto over;
+			}
+			ptr_f1 += (f1_strt_offset - f2_strt_offset);
+			f1_strt_offset -= (f1_strt_offset - f2_strt_offset);
+		} else {
+			if (!check_all_zero (ptr_f1, (f1_strt_offset - f1_end_offset))) {
+				ret = sign1;
+				goto over;
+			}
+			ptr_f1 += (f1_strt_offset - f1_end_offset);
+			f1_strt_offset -= (f1_strt_offset - f1_end_offset);
+		}
+	} else if (f2_strt_offset > f1_strt_offset) {
+		if (f1_strt_offset > f2_end_offset) {
+			if (!check_all_zero (ptr_f2, (f2_strt_offset - f1_strt_offset))) {
+				ret = -sign1;
+				goto over;
+			}
+			ptr_f2 += (f2_strt_offset - f1_strt_offset);
+			f2_strt_offset -= (f2_strt_offset - f1_strt_offset);
+		} else {
+			if (!check_all_zero (ptr_f2, (f2_strt_offset - f2_end_offset))) {
+				ret = -sign1;
+				goto over;
+			}
+			ptr_f2 += (f2_strt_offset - f2_end_offset);
+			f2_strt_offset -= (f2_strt_offset - f2_end_offset);
+		}
+	}
+
+	/************************************************************/
+	/*  the second would be to check the overlapping positions  */
+	/*  in both fields against each other. if they do not       */
+	/*  match then we can set the return code to indicate       */
+	/*  which is greater / lesser and we are done.              */
+	/************************************************************/
+
+	if (f1_strt_offset == f2_strt_offset) {
+		len = (f1_end_offset > f2_end_offset) ? (f1_strt_offset - f1_end_offset)
+			: (f2_strt_offset - f2_end_offset);
+		if (len > 0) {
+			compare_result = compare_data (ptr_f1, ptr_f2, len);
+			if (compare_result) {
+				ret = sign1 * compare_result;
+				goto over;
+			}
+			ptr_f1 += len;
+			f1_strt_offset -= len;
+			ptr_f2 += len;
+			f2_strt_offset -= len;
+		}
+	}
+
+	/************************************************************/
+	/*  if we have not exited yet that means that one of the    */
+	/*  fields have trailing positions to the right of the      */
+	/*  overlapping positions, so we have to check those for    */
+	/*  all zeros. then we are done.                            */
+	/************************************************************/
+
+	if (f1_end_offset < f2_end_offset) {
+		if (!check_all_zero (ptr_f1, (f1_strt_offset - f1_end_offset))) {
+			ret = sign1;
+			goto over;
+		}
+	} else if (f2_end_offset < f1_end_offset) {
+		if (!check_all_zero (ptr_f2, (f2_strt_offset - f2_end_offset))) {
+			ret = -sign1;
+			goto over;
+		}
+	}
+	ret = 0;
+
+over:
+	COB_PUT_SIGN_ADJUSTED (f1, orig_sign1);
+	COB_PUT_SIGN_ADJUSTED (f2, orig_sign2);
+	return ret;
+}
+# else
+
+int
+cob_numeric_display_cmp (cob_field *f1, cob_field *f2)
+{
+	/* Fallback: internal decimal compare (most expensive) */
+	cob_decimal_set_field (&cob_d1, f1);
+	cob_decimal_set_field (&cob_d2, f2);
+	return cob_decimal_cmp (&cob_d1, &cob_d2);
+}
+#endif
+
+/* compare USAGE DISPLAY numeric variable with no SIGN SEPARATE
+   and no invalid ebcdic overpunch to zero */
+int
+cob_numeric_display_cmp_zero (cob_field *f)
+{
+	unsigned char *ptr = f->data;
+	unsigned char *ptr_end = ptr + f->size;
+
+	do {
+		const unsigned char p = COB_D2I (*ptr);
+		if (p != 0) {
+			const char p_sign = *(ptr_end - 1) & 0xF0;
+			int sign = p_sign == 0x70 || p_sign == 0xD0 || p_sign == 0xB0
+			         ? -1 : 1;
+			return sign;
+		}
+		ptr++;
+	} while (ptr < ptr_end);
+
+	return 0;
+}
+
+/* compare BCD field to zero */
+int
+cob_bcd_cmp_zero (cob_field *f)
+{
+	unsigned char	nullbuff[(COB_MAX_DIGITS / 2) + 1] = { 0 };
+
+	if (COB_FIELD_NO_SIGN_NIBBLE(f)) {
+		if (memcmp (f->data, nullbuff, f->size)) {
+			return 1;
+		}
+	} else {
+		if (memcmp (f->data, nullbuff, f->size - 1)) {
+			return cob_packed_get_sign (f) == -1 ? -1 : 1;
+		}
+		/* nonzero if byte with sign nibble has content in data nibble */
+		if ((*(f->data + f->size - 1) & 0xF0) != 0) {
+			return cob_packed_get_sign (f) == -1 ? -1 : 1;
+		}
+	}
+	return 0;
+}
+
 int
 cob_numeric_cmp (cob_field *f1, cob_field *f2)
 {
@@ -4103,6 +4349,15 @@ cob_numeric_cmp (cob_field *f1, cob_field *f2)
 		}
 		/* CHECKME: possible create temporary bcd2 if only one is packed
 		   and the other isn't float - then compare as BCD */
+	}
+#endif
+
+#ifndef NO_DISPLAY_COMPARE
+	/* do numeric display compare if possible */
+	if (f1_type == COB_TYPE_NUMERIC_DISPLAY
+	 && f2_type == COB_TYPE_NUMERIC_DISPLAY) {
+		/* CHECKME: if not float then create a temporary display2 */
+		return cob_numeric_display_cmp (f1, f2);
 	}
 #endif
 
