@@ -5115,9 +5115,12 @@ validate_file (struct cb_file *f, cb_tree name)
 
 static void
 validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
-					cb_tree key, struct cb_key_component *component_list)
+					cb_tree key, struct cb_key_component *component_list,
+					struct cb_alt_key *cbak)
 {
 	cb_tree			key_ref;
+	cb_tree			l;
+
 	struct cb_field		*k;
 	struct cb_field		*p;
 	struct cb_field		*v;
@@ -5184,6 +5187,18 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 						  " needs to be at least %d"), f->record_min, k->name, field_end);
 		}
 	}
+
+	/* get key collating sequence, if any */
+	for (l = f->collating_sequence_keys; l; l = CB_CHAIN (l)) {
+		cb_tree alpha_key = CB_VALUE (l);
+		if (key_ref == cb_ref (CB_PAIR_Y (alpha_key))) {
+			if (cbak == NULL) {
+				f->collating_sequence_key = CB_PAIR_X (alpha_key);
+			} else {
+				cbak->collating_sequence_key = CB_PAIR_X (alpha_key);
+			}
+		}
+	}
 }
 
 void
@@ -5225,7 +5240,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		struct cb_alt_key	*cbak;
 		if (f->key) {
 			validate_indexed_key_field (f, records,
-				f->key, f->component_list);
+				f->key, f->component_list, NULL);
 		}
 		for (cbak = f->alt_key_list; cbak; cbak = cbak->next) {
 			if (f->flag_global) {
@@ -5235,7 +5250,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 				}
 			}
 			validate_indexed_key_field (f, records,
-				cbak->key, cbak->component_list);
+				cbak->key, cbak->component_list, cbak);
 		}
 	}
 
@@ -8066,6 +8081,38 @@ cb_build_ml_suppress_checks (struct cb_ml_generate_tree *tree)
 			     sizeof (struct cb_ml_suppress_checks));
 	check->tree = tree;
 	return CB_TREE (check);
+}
+
+
+enum cb_colseq cb_default_colseq = CB_COLSEQ_NATIVE;
+enum cb_colseq cb_default_file_colseq = CB_COLSEQ_NATIVE;
+
+/* Decipher character conversion table names */
+static int
+cb_deciph_colseq_name (const char * const name, enum cb_colseq *colseq)
+{
+	if (!cb_strcasecmp (name, "ASCII")) {
+		*colseq = CB_COLSEQ_ASCII;
+	} else if (!cb_strcasecmp (name, "EBCDIC")) {
+		*colseq = CB_COLSEQ_EBCDIC;
+	} else if (!cb_strcasecmp (name, "NATIVE")) {
+		*colseq = CB_COLSEQ_NATIVE;
+	} else {
+		return 1;
+	}
+	return 0;
+}
+
+int
+cb_deciph_default_colseq_name (const char * const name)
+{
+	return cb_deciph_colseq_name (name, &cb_default_colseq);
+}
+
+int
+cb_deciph_default_file_colseq_name (const char * const name)
+{
+	return cb_deciph_colseq_name (name, &cb_default_file_colseq);
 }
 
 

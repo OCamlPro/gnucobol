@@ -8,6 +8,10 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mf-strict.conf: set missing-statement to ok (according to MF tests)
+
 2023-09-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* rm-strict.conf (perform-osvs): enabled as noted in MF docs

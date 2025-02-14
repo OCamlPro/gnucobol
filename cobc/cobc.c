@@ -91,25 +91,26 @@ enum compile_level {
 	CB_LEVEL_EXECUTABLE	= 7
 };
 
-#define	CB_FLAG_GETOPT_STACK_SIZE       1
-#define	CB_FLAG_GETOPT_SIGN             3
-#define	CB_FLAG_GETOPT_FOLD_COPY        4
-#define	CB_FLAG_GETOPT_FOLD_CALL        5
-#define	CB_FLAG_GETOPT_TTITLE           6
-#define	CB_FLAG_GETOPT_MAX_ERRORS       7
-#define	CB_FLAG_GETOPT_DUMP             8
-#define	CB_FLAG_GETOPT_CALLFH           9
-#define	CB_FLAG_GETOPT_INTRINSICS      10
-#define	CB_FLAG_GETOPT_EC              11
-#define	CB_FLAG_GETOPT_NO_EC           12
-#define	CB_FLAG_GETOPT_NO_DUMP         13
-#define	CB_FLAG_GETOPT_EBCDIC_TABLE    14
-#define	CB_FLAG_GETOPT_DEFAULT_COLSEQ  15
-#define	CB_FLAG_GETOPT_MEMORY_CHECK    16
-#define	CB_FLAG_GETOPT_COPY_FILE       17
-#define	CB_FLAG_GETOPT_INCLUDE_FILE    18
-#define CB_FLAG_GETOPT_SQLSCHEMA       19
-#define CB_FLAG_GETOPT_FILE_FORMAT     20
+#define	CB_FLAG_GETOPT_STACK_SIZE            1
+#define	CB_FLAG_GETOPT_SIGN                  3
+#define	CB_FLAG_GETOPT_FOLD_COPY             4
+#define	CB_FLAG_GETOPT_FOLD_CALL             5
+#define	CB_FLAG_GETOPT_TTITLE                6
+#define	CB_FLAG_GETOPT_MAX_ERRORS            7
+#define	CB_FLAG_GETOPT_DUMP                  8
+#define	CB_FLAG_GETOPT_CALLFH                9
+#define	CB_FLAG_GETOPT_INTRINSICS           10
+#define	CB_FLAG_GETOPT_EC                   11
+#define	CB_FLAG_GETOPT_NO_EC                12
+#define	CB_FLAG_GETOPT_NO_DUMP              13
+#define	CB_FLAG_GETOPT_EBCDIC_TABLE         14
+#define	CB_FLAG_GETOPT_DEFAULT_COLSEQ       15
+#define	CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ  16
+#define	CB_FLAG_GETOPT_MEMORY_CHECK         17
+#define	CB_FLAG_GETOPT_COPY_FILE            18
+#define	CB_FLAG_GETOPT_INCLUDE_FILE         19
+#define	CB_FLAG_GETOPT_SQLSCHEMA            20
+#define	CB_FLAG_GETOPT_FILE_FORMAT          21
 
 
 /* Info display limits */
@@ -3865,6 +3866,13 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
+		case CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ: /* 16 */
+			/* -fdefault-file-colseq=<ASCII/EBCDIC/NATIVE> */
+			if (cb_deciph_default_file_colseq_name (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-fdefault-file-colseq");
+			}
+			break;
+
 		case CB_FLAG_GETOPT_FOLD_COPY: /* 4 */
 			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
@@ -3925,7 +3933,7 @@ process_command_line (const int argc, char **argv)
 			cobc_deciph_funcs (cob_optarg);
 			break;
 
-		case CB_FLAG_GETOPT_SQLSCHEMA: /* 19 */
+		case CB_FLAG_GETOPT_SQLSCHEMA: /* 20 */
 			/* -fsqlschema=<name> : Database schema name for XFD */
 			cb_sqldb_schema = cobc_main_strdup (cob_optarg);
 			cb_flag_sql_xfd = 1;
@@ -3948,7 +3956,7 @@ process_command_line (const int argc, char **argv)
 #endif
 			break;
 
-		case CB_FLAG_GETOPT_FILE_FORMAT: /* 20 */
+		case CB_FLAG_GETOPT_FILE_FORMAT: /* 21 */
 			/* -ffile-format=<name> : Default file format */
 			if (cb_strcasecmp (cob_optarg, "mf") == 0) {
 				cb_mf_files = 1;
@@ -3975,7 +3983,7 @@ process_command_line (const int argc, char **argv)
 			};
 			break;
 
-		case CB_FLAG_GETOPT_MEMORY_CHECK: /* 16 */
+		case CB_FLAG_GETOPT_MEMORY_CHECK: /* 17 */
 			/* -fmemory-check=<scope> :  */
 			if (!cob_optarg) {
 				cb_flag_memory_check = CB_MEMCHK_ALL;
@@ -3984,7 +3992,7 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_COPY_FILE: /* 17 */
+		case CB_FLAG_GETOPT_COPY_FILE: /* 18 */
 			/* --copy=<file> : COPY file at beginning */
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--copy");
@@ -3993,7 +4001,7 @@ process_command_line (const int argc, char **argv)
 					  cobc_strdup (cob_optarg));
 			break;
 
-		case CB_FLAG_GETOPT_INCLUDE_FILE: /* 18 */
+		case CB_FLAG_GETOPT_INCLUDE_FILE: /* 19 */
 			/* -include=<file.h> : add #include "file.h" to
 			   generated C file */
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {

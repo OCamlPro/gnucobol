@@ -10213,6 +10213,30 @@ output_key_components (struct cb_file* f, struct cb_key_component* key_component
 	output_newline ();
 }
 
+static cb_tree
+get_indexed_file_key_colseq (const struct cb_file *f, const struct cb_alt_key *ak)
+{
+	const cb_tree	key = ak ? ak->key : f->key;
+	const cb_tree	key_col = ak ? ak->collating_sequence_key : f->collating_sequence_key;
+	const int	type = cb_tree_type (key, cb_code_field (key));
+	cb_tree		col = NULL;
+
+	/* We only apply a collating sequence if the key is alphanumeric / display */
+	if ((type & COB_TYPE_ALNUM) || (type == COB_TYPE_NUMERIC_DISPLAY)) {
+		col = key_col ? key_col : f->collating_sequence;
+#if 0	/* TODO: this should be done for national, when available */
+	} else if (type & COB_TYPE_NATIONAL) {
+		col = key_col_n ? key_col_n : f->collating_sequence_n;
+#endif
+	}
+
+	if (col != NULL && CB_REFERENCE_P (col)) {
+		return cb_ref(col);
+	} else {
+		return NULL;
+	}
+}
+
 static void
 output_file_initialization (struct cb_file *f)
 {
@@ -10348,7 +10372,16 @@ output_file_initialization (struct cb_file *f)
 		}
 		output (", %d, 0, -1, NULL", f->flag_primary_dups);
 		output_key_components (f, f->component_list, 0);
-
+		if (f->organization == COB_ORG_INDEXED) {
+			cb_tree col = get_indexed_file_key_colseq (f, NULL);
+			if (col != NULL) {
+				output_prefix ();
+				output ("cob_file_set_key_extra (%s, 0, -1, -1, NULL, ", file_name);
+				output_param (col, -1);
+				output (");");
+				output_newline ();
+			}
+		}
 		for (l = f->alt_key_list; l; l = l->next) {
 			output_prefix ();
 			output ("cob_file_set_key (%s, %d, ", file_name, nkeys);
@@ -10371,6 +10404,16 @@ output_file_initialization (struct cb_file *f)
 				output (", -1, NULL");
 			}
 			output_key_components (f, l->component_list, nkeys);
+			if (f->organization == COB_ORG_INDEXED) {
+				cb_tree col = get_indexed_file_key_colseq (f, l);
+				if (col != NULL) {
+					output_prefix ();
+					output ("cob_file_set_key_extra (%s, %d, -1, -1, NULL, ", file_name, nkeys);
+					output_param (col, -1);
+					output (");");
+					output_newline ();
+				}
+			}
 			nkeys++;
 		}
 	}

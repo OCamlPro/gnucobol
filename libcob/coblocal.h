@@ -205,6 +205,20 @@
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
 #define	COB_USE_ESC		cobsetptr->cob_use_esc
 
+#if defined(COB_TLS)
+    /* already defined, for example as static to explicit disable TLS */
+#elif defined(_WIN32)
+    #define COB_TLS	__declspec(thread)
+#elif defined(__GNUC__) && (__GNUC__ >= 4) || defined(__clang__) || \
+      defined(__hpux) || defined(_AIX) || defined(__sun)
+    #define COB_TLS	static __thread
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    #include <threads.h>
+    #define COB_TLS	thread_local
+#else
+    #define COB_TLS	static	/* fallback definition */
+#endif
+
 /* Global settings structure */
 
 typedef struct __cob_settings {
@@ -470,7 +484,7 @@ COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
-COB_HIDDEN char*        cob_get_strerror (void);
+COB_EXPIMP char*        cob_get_strerror (void);
 
 enum cob_case_modifier {
 	CCM_NONE,
@@ -524,4 +538,6 @@ cob_max_int (const int x, const int y)
 	return y;
 }
 
+COB_EXPIMP int		cob_cmps	(const unsigned char *, const unsigned char *,
+					 const size_t, const unsigned char *);
 #endif	/* COB_LOCAL_H */

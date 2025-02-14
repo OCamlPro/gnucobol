@@ -1,4 +1,12 @@
 
+2025-04-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* fodbc.c (odbc_open), flmdb.c (lmdb_open), foci.c (oci_open):
+	  silence warnings by adding a default switch case to account
+	  for invalid file opening modes
+	* coblocal.h (cob_get_strerror): change from COB_HIDDEN to
+	  COB_EXPIMP so that other internal libraries may use it
+
 2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.h: export init functions also for BDB + LMDB (see 2022-06-21)
@@ -8,6 +16,11 @@
 	* fileio.c (cob_file_close): try to close the file stream
 	  first, close the file descriptor only if the stream is NULL
 	  (fixes assertions under MSVC debug)
+
+2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* fileio.c->fbdb.c: fixed Bug #1032 by always using global thread-static variable
+	  bdb_app_data pointer to access the collating sequence function
 
 2024-11-06  David Declerck <david.declerck@ocamlpro.com>
 
@@ -68,6 +81,7 @@
 
 	* common.h [__MINGW32__]: drop ancient redefinition of
 	  strcasecmp and strncasecmp
+	* fileio.c (bdb_bt_compare) [WITH_DB]->fbdb.c: cater for ABI break in BDB 12
 
 2024-03-10  Alfredo Tupone <tupone@gentoo.org>
 
@@ -77,6 +91,14 @@
 
 	* fisam.c: Updated to set index field type for 'short' & 'int'
 	  Enabled support for variable length records is using V-ISAM/D-ISAM
+
+2024-01-25  David Declerck <david.declerck@ocamlpro.com>
+
+	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files
+	* fileio.c (bdb_setkeycol, bdb_bt_compare, indexed_open, ...)->fbdb.c:
+	  take the file collating sequence into account when comparing keys
+	* common.c, coblocal.h: rename common_cmps to cob_cmps
+	  and make it available locally
 
 2024-01-19  Simon Sobisch <simonsobisch@gnu.org>
 
