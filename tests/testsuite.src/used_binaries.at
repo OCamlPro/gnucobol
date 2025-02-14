@@ -1079,10 +1079,12 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
 
 AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
 
-AT_CHECK([$SED -e "s|$PWD|HOME|" compiler.output], [0],
-[HOME/prog.cob:7: error: CRUD.CPY: No such file or directory
-HOME/prog.cob:6: warning: numeric value is expected
-HOME/prog.cob:14: warning: ignoring redundant .
+# note: -fdiagnostics-absolute-paths will show the realpath,
+#       so for MSYS/MSVC builds that will be x:\something\prog.cob
+AT_CHECK([$SED -e "s|$(_return_path "$(pwd)/prog.cob")|DIR/prog.cob|" compiler.output], [0],
+[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
+DIR/prog.cob:6: warning: numeric value is expected
+DIR/prog.cob:14: warning: ignoring redundant .
 ])
 
 AT_CLEANUP
@@ -1128,7 +1130,6 @@ COB_EXT_EXPORT void f (char *str, long num) {};
 AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0], [], [])
 # cater for environments that do not use a lib prefix
 AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o filec.$COB_MODULE_EXT], [0], [], [])
-
 
 # static build with correct function signature
 AT_CHECK([$COMPILE_MODULE --include $(_return_path "$(pwd)/filec.h") -fstatic-call prog2.cob], [0], [], [], [
