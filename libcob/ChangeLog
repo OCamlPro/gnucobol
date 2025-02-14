@@ -1,4 +1,12 @@
 
+2025-04-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* fodbc.c (odbc_open), flmdb.c (lmdb_open), foci.c (oci_open):
+	  silence warnings by adding a default switch case to account
+	  for invalid file opening modes
+	* coblocal.h (cob_get_strerror): change from COB_HIDDEN to
+	  COB_EXPIMP so that other internal libraries may use it
+
 2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.h: export init functions also for BDB + LMDB (see 2022-06-21)

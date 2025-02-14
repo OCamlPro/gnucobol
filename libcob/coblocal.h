@@ -470,7 +470,7 @@ COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
-COB_HIDDEN char*        cob_get_strerror (void);
+COB_EXPIMP char*        cob_get_strerror (void);
 
 enum cob_case_modifier {
 	CCM_NONE,

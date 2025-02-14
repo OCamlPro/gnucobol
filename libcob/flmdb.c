@@ -924,6 +924,11 @@ lmdb_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mod
 	case COB_OPEN_EXTEND:
 		p->db_flags |= MDB_CREATE;
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cob_runtime_error (_("invalid internal call of %s"), "indexed_open");
+		cob_fatal_error (COB_FERROR_CODEGEN);
+	/* LCOV_EXCL_STOP */
 	}
 
 	p->db              = cob_malloc(sizeof(MDB_dbi *) * f->nkeys);
