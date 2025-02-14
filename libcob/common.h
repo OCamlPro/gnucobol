@@ -1532,9 +1532,7 @@ typedef struct __cob_file_key {
 	cob_field	*field;				/* Key field (or SPLIT key save area) */
 	unsigned char	*str_suppress;			/* Complete SUPPRESS "string" */
 	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
-#if 0	/* TODO (for file keys, not for SORT/MERGE) */
-	const unsigned char *collating_sequence;	/* COLLATING */
-#endif
+	const unsigned char *collating_sequence;	/* COLLATING (for file keys, not for SORT/MERGE) */
 } cob_file_key;
 
 typedef struct cob_io_stat_s {

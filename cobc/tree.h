@@ -2416,6 +2416,7 @@ extern cb_tree		cb_debug_sub_3;
 extern cb_tree		cb_debug_contents;
 
 extern int		cb_deciph_default_colseq_name (const char *const);
+extern int		cb_deciph_default_file_colseq_name (const char *const);
 
 extern struct cb_program	*cb_build_program (struct cb_program *,
 						   const int);
@@ -2816,6 +2817,18 @@ extern int		cobc_has_areacheck_directive (const char *directive);
 #define CB_ADD_TO_CHAIN(x,y)		y = CB_BUILD_CHAIN (x, y)
 #define CB_CHAIN_PAIR(x,y,z)		x = cb_pair_add (x, y, z)
 #define CB_FIELD_ADD(x,y)		x = cb_field_add (x, y)
+
+enum cb_colseq {
+	CB_COLSEQ_NATIVE,
+	CB_COLSEQ_ASCII,
+	CB_COLSEQ_EBCDIC,
+};
+
+extern enum cb_colseq cb_default_colseq;
+extern enum cb_colseq cb_default_file_colseq;
+
+extern int	cb_deciph_default_colseq_name (const char * const name);
+extern int	cb_deciph_default_file_colseq_name (const char * const name);
 
 
 #endif /* CB_TREE_H */

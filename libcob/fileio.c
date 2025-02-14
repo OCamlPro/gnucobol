@@ -727,7 +727,7 @@ keycmp (char *keyword, const char *val)
 }
 
 /*
- * Write data file description to a string 
+ * Write data file description to a string
  */
 static void
 write_file_def (cob_file *f, char *out)
@@ -6681,14 +6681,14 @@ cob_file_set_key_extra (
 {
 	COB_UNUSED(compress);
 	COB_UNUSED(encrypt);
-	COB_UNUSED(collate);
 
 	if (keyn > (int)fl->nkeys
 	 || fl->flag_ready)
 		return;
-	if(password) {
+	if (password) {
 		/* Nothing implemented at this time */
 	}
+	fl->keys[keyn].collating_sequence = collate;
 }
 
 /*

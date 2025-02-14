@@ -367,7 +367,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 	/* LCOV_EXCL_STOP */
 
 	keylen = 0;
-	for (part=0; part < key->count_components && part < max_keycomp; part++) {
+	for (part = 0; part < key->count_components && part < max_keycomp; part++) {
 		struct keypart *k_part = &kd->k_part[part];
 		k_part->kp_start = key->component[part]->data - f->record->data;
 		k_part->kp_leng = key->component[part]->size;
