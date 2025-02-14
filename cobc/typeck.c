@@ -10644,7 +10644,7 @@ cb_emit_free (cb_tree vars)
 /* GO TO statement */
 
 void
-cb_emit_goto (cb_tree target, cb_tree depending)
+cb_emit_goto (cb_tree target, cb_tree depending, int flags)
 {
 	if (target == cb_error_node) {
 		return;
@@ -10656,14 +10656,14 @@ cb_emit_goto (cb_tree target, cb_tree depending)
 		/* GO TO procedure-name ...   DEPENDING ON numeric-identifier  and
 		   GO TO ENTRY entry-name ... DEPENDING ON numeric-identifier */
 		cb_emit_incompat_data_checks (depending);
-		cb_emit (cb_build_goto (target, depending));
+		cb_emit (cb_build_goto (target, depending, flags));
 	} else if (CB_CHAIN (target)) {
 			cb_error_x (CB_TREE (current_statement),
 				    _("GO TO with multiple procedure-names"));
 	} else {
 		/* GO TO procedure-name   and
 		   GO TO ENTRY entry-name */
-		cb_emit (cb_build_goto (CB_VALUE (target), NULL));
+		cb_emit (cb_build_goto (CB_VALUE (target), NULL, flags));
 	}
 }
 
@@ -10671,9 +10671,9 @@ void
 cb_emit_exit (const unsigned int goback)
 {
 	if (goback) {
-		cb_emit (cb_build_goto (cb_int1, NULL));
+		cb_emit (cb_build_goto (cb_int1, NULL, CB_GOTO_FLAG_NONE));
 	} else {
-		cb_emit (cb_build_goto (NULL, NULL));
+		cb_emit (cb_build_goto (NULL, NULL, CB_GOTO_FLAG_NONE));
 	}
 }
 

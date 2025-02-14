@@ -16,6 +16,10 @@
 
 	* rm-strict.conf (perform-osvs): enabled as noted in MF docs
 
+2023-09-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* runtime.cfg: add COB_PROF_FILE
+
 2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	FR #439: dialect option to support justify for IBM compatibility

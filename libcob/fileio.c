@@ -10058,3 +10058,29 @@ cob_fork_fileio (cob_global *lptr, cob_settings *sptr)
 	}
 }
 
+char *
+cob_path_to_absolute (const char *path)
+{
+	char *abs_path = NULL;
+	if (path) {
+#if	defined(HAVE_CANONICALIZE_FILE_NAME)
+		/* Returns malloced path or NULL */
+		abs_path = canonicalize_file_name (path);
+#elif	defined(HAVE_REALPATH)
+		char	*s;
+
+		s = cob_malloc ((size_t)COB_NORMAL_BUFF);
+		if (realpath (path, s) != NULL) {
+			abs_path = cob_strdup (s);
+		}
+		cob_free (s);
+#elif	defined	(_WIN32)
+		/* Returns malloced path or NULL */
+		abs_path = _fullpath (NULL, path, 1);
+#endif
+		if (!abs_path) {
+			abs_path = cob_strdup (path);
+		}
+	}
+	return abs_path;
+}
