@@ -187,6 +187,7 @@
     <ClCompile Include="..\..\libcob\mlio.c" />
     <ClCompile Include="..\..\libcob\move.c" />
     <ClCompile Include="..\..\libcob\numeric.c" />
+    <ClCompile Include="..\..\libcob\profiling.c" />
     <ClCompile Include="..\..\libcob\reportio.c" />
     <ClCompile Include="..\..\libcob\screenio.c" />
     <ClCompile Include="..\..\libcob\strings.c" />

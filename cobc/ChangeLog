@@ -1,4 +1,8 @@
 
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* flag.def: fix macro usage for MSVC
+
 2024-05-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (main): refactored to not need iterating via "iparams"
