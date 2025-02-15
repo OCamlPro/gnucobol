@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -28,7 +28,7 @@
 /* Normal binary flags (standard: on) */
 /* CB_FLAG_ON (var, help switch, name, help) */
 
-/* Flags with required parameter (standard: default)*/
+/* Flags with required parameter (standard: default) */
 /* CB_FLAG_RQ (var, help switch, name, default, getopt return, help) */
 
 /* Flags with required parameter and no associated variable */
@@ -104,16 +104,32 @@ CB_FLAG_NQ (1, "default-file-colseq", CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ,
 	_("  -fdefault-file-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default file collating sequence\n"
 	  "                        * default: NATIVE"))
 
-/* Binary flags */
+/* Binary flags, partially with suppressed help */
 
 CB_FLAG (cb_flag_sql_xfd, 1, "sql",
 	_("  -fsql                 process the XFD directives"))
 
-/* Flags with suppressed help */
-
-CB_FLAG (cb_flag_winmain, 0, "winmain",
+#if defined (_WIN32) || defined (__CYGWIN__)
+#define COB_SHOW 1
+#else
+#define COB_SHOW 0
+#endif
+CB_FLAG (cb_flag_winmain, COB_SHOW, "winmain",
 	_("  -fwinmain             generate WinMain instead of main when compiling\n"
 	  "                        as executable"))
+#undef COB_SHOW
+
+#ifdef HAVE_ATTRIBUTE_CONSTRUCTOR
+#define CB_FLAG_M CB_FLAG_ON
+#define COB_SHOW 1
+#else
+#define CB_FLAG_M CB_FLAG
+#define COB_SHOW 0
+#endif
+CB_FLAG_M (cb_flag_use_constructor, COB_SHOW, "use-constructor",
+	_("  -fuse-constructor     generate internal one-time code via constructor"))
+#undef CB_FLAG_M
+#undef COB_SHOW
 
 CB_FLAG (cb_flag_computed_goto, 0, "computed-goto",
 	_("  -fcomputed-goto       generate computed goto C statements"))
@@ -136,8 +152,6 @@ CB_FLAG_ON (cb_flag_fast_math, 0, "fast-math",
 
 CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
 	_("  -fno-fast-compare     disables inline comparisions"))
-
-/* Normal flags */
 
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"
@@ -281,3 +295,7 @@ CB_FLAG_ON (cb_diagnostics_show_line_numbers, 1, "diagnostics-show-line-numbers"
 
 CB_FLAG (cb_diagnostics_absolute_paths, 1, "diagnostics-absolute-paths",
 	_("  -fdiagnostics-absolute-paths\tprint absolute paths in diagnostics"))
+
+CB_FLAG (cb_flag_prof, 1, "prof",
+	_("  -fprof                enable profiling of the COBOL program"))
+

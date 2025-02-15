@@ -237,6 +237,7 @@ jobs:
           sudo apt -y install lcov make libtool \
                               gcc libgmp-dev libncurses-dev \
                               libdb-dev libxml2-dev libcjson-dev
+          sudo apt -y remove libreadline-dev
 
       # note: add additional C compiler syntax checks here to not need _another_ CI run
       - name: Configure GnuCOBOL

@@ -1965,7 +1965,7 @@ COB_EXPIMP void	cob_set_locale			(cob_field *, const int);
 COB_EXPIMP int 	cob_setenv		(const char *, const char *, int);
 COB_EXPIMP int 	cob_unsetenv		(const char *);
 COB_EXPIMP char	*cob_getenv_direct		(const char *);
-COB_EXPIMP char *cob_expand_env_string	(char *);
+COB_EXPIMP char *cob_expand_env_string	(const char *);
 COB_EXPIMP char	*cob_getenv			(const char *);
 COB_EXPIMP int	cob_putenv			(char *);
 COB_EXPIMP cob_field	*cob_function_return (cob_field *);
@@ -2917,6 +2917,8 @@ COB_EXPIMP void	cob_file_sort_giving_extfh	(cob_file *, const size_t, ...);
 COB_EXPIMP void	cob_file_release	(cob_file *);
 COB_EXPIMP void	cob_file_return		(cob_file *);
 
+COB_EXPIMP char * cob_path_to_absolute (const char *path);
+
 /***************************/
 /* Functions in reportio.c */
 /***************************/
@@ -3106,5 +3108,65 @@ COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
 
 COB_EXPIMP int
 cob_load_collation (const char *, cob_u8_t *, cob_u8_t *);
+
+
+/* Type to store nanoseconds */
+typedef unsigned long long cob_ns_time;
+
+enum cob_prof_procedure_kind {
+	COB_PROF_PROCEDURE_MODULE,
+	COB_PROF_PROCEDURE_SECTION,
+	COB_PROF_PROCEDURE_PARAGRAPH,
+	COB_PROF_PROCEDURE_ENTRY,
+	COB_PROF_PROCEDURE_CALL
+};
+
+struct cob_prof_procedure {
+	/* Name of the module or section or paragraph or entry */
+	const char		        *text;
+	/* File Location */
+	const char                      *file;
+	int                              line;
+	/* Index of the section record of this procedure. In the case
+	   of COB_PROF_PROCEDURE_ENTRY, the "section" field is in fact
+	   the paragraph, not the section */
+	int		                 section;
+	/* Kind of procedure. */
+	enum cob_prof_procedure_kind     kind;
+};
+
+/* Structure storing profiling information about each COBOL module */
+struct cob_prof_module {
+	/* Array of execution times */
+	cob_ns_time                     *total_times;
+	/* Array of execution counts */
+	unsigned int                    *called_count;
+	/* Array of current recursions per procedure  */
+	unsigned int                    *procedure_recursions;
+	/* Array of procedure descriptions */
+	struct cob_prof_procedure       *procedures ;
+	/* Number of procedures */
+	size_t                           procedure_count;
+};
+
+/* Function called to start profiling a COBOL module. Allocates the
+   cob_prof_module structure that will be used to store the counters and
+   times. */
+COB_EXPIMP struct cob_prof_module *cob_prof_init_module (
+	cob_module *module,
+	struct cob_prof_procedure  *procedure_names,
+	size_t      procedure_count);
+
+/* Functions used to instrument the generated C code and measure
+ * counters and times */
+COB_EXPIMP void cob_prof_enter_procedure  	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_exit_procedure   	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_enter_section  	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_exit_section   	(struct cob_prof_module *, int);
+
+/* Enter a paragraph in the middle, using an ENTRY statement */
+COB_EXPIMP void cob_prof_use_paragraph_entry	(struct cob_prof_module *, int, int);
+/* Exit a paragraph using a GO TO */
+COB_EXPIMP void cob_prof_goto			(struct cob_prof_module *);
 
 #endif	/* COB_COMMON_H */

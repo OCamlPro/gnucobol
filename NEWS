@@ -94,7 +94,7 @@ Open Plans:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- GnuCOBOL 3.3     (planned January 2023)
+ GnuCOBOL 3.3     (planned ASAP)
 
  work in progress
 
@@ -106,6 +106,13 @@ Open Plans:
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)
+
+** Support for time profiling of modules, sections, paragraphs, entries
+   and external CALLs. This feature is activated by compiling the modules
+   to be profiled with -fprof, and then executing the code with environment
+   variable COB_PROF_ENABLE. The output is stored in a CSV file. Further
+   customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
+   COB_PROF_FORMAT
 
   more work in progress
 
@@ -151,6 +158,17 @@ Open Plans:
 
 ** optimization of the two-pass preprocessing step of cobc: memory usage
    and performance should be back close to the ones of 3.1.
+
+* Changes in the COBOL runtime
+
+** more substitutions in environment variables: $f for executable filename,
+   $b for executable basename, $d for date in YYYYMMDD format, $t for time
+   in HHMMSS format (before, only $$ was available for pid)
+
+* New build features
+
+** configure now uses pkg-config/ncurses-config to search for ncurses and
+   honors NCURSES_LIBS and NCURSES_CFLAGS
 
 * Known issues in 3.x
 
