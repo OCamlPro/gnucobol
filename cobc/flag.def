@@ -109,7 +109,7 @@ CB_FLAG_NQ (1, "default-file-colseq", CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ,
 	  "                        * default: NATIVE"))
 
 /* Binary flags, partially with suppressed help */
-#ifdef _WIN32
+#if defined (_WIN32) || defined (__CYGWIN__)
 #define COB_SHOW 1
 #else
 #define COB_SHOW 0

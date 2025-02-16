@@ -152,7 +152,7 @@
 	  internally disabling it for generation of libraries/executable after
 	  first program as we only need that code once, fixing Win32 build errors
 	  and duplication warnings in other environments
-	* flag.def: don't suppress the help of -fwinmain under Win32
+	* flag.def: don't suppress the help of -fwinmain under Win32 and Cygwin
 	* typeck.c (build_expr_finish): use fallback error position token, fixing
 	  compiler aborts on broken expressions, bugs #933, #938 and #966
 	* typeck.c: minor refactoring within functions
