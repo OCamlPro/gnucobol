@@ -8,6 +8,10 @@
 	* makedist.cmd: cater for new different library names
 	* version_cobc.rc, version_libcob.rc: updated date + rev
 
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* general for libcob: add missing profiling.c
+
 2023-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general for cobc: include new replace.c

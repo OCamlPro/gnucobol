@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -32,7 +32,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision: 4925 $])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
@@ -544,6 +544,7 @@ AS_IF([test "x$LIBCOB_LIBS" != x], [
 		  [AC_MSG_RESULT([no])
 		   AC_MSG_FAILURE([cannot link with LIBCOB_LIBS="$LIBCOB_LIBS"])])
 ])
+LIBCOB_LIBS_extern="$LIBCOB_LIBS"
 
 AC_ARG_VAR([PROGRAMS_LIBS], [see LIBS, but only applied during generation of programs: cobc, cobcrun])
 AS_IF([test "x$PROGRAMS_LIBS" != x], [
@@ -566,7 +567,7 @@ LT_PREREQ([2.2])
 LT_PROG_RC
 
 AM_PROG_AR
-dnl CHECKME: do we want disable-static (mind libsupport) 
+dnl CHECKME: do we want disable-static (mind libsupport)
 dnl          if yes then drop AM_PROG_AR + build_aux/ar-lib
 LT_INIT([dlopen win32-dll])
 
@@ -807,7 +808,7 @@ AS_IF([test "$with_math" = gmp -o "$with_math" = check], [
 	if test -z "${GMP_LIBS+x}"; then
 	  GMP_LIBS="-lgmp"
 	fi
-	LIBS="$LIBS $LIBCOB_LIBS $GMP_LIBS"
+	LIBS="$LIBS $LIBCOB_LIBS_extern $GMP_LIBS"
 	AC_CHECK_HEADERS([gmp.h], [
 		AC_MSG_CHECKING([whether linking against libgmp with "$GMP_LIBS" works])
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <gmp.h>]],
@@ -841,7 +842,7 @@ AS_IF([test "$with_math" = mpir -o "$with_math" = check], [
 	if test -z "${MPIR_LIBS+x}"; then
 	  MPIR_LIBS="-lmpir"
 	fi
-	LIBS="$LIBS $LIBCOB_LIBS $MPIR_LIBS"
+	LIBS="$LIBS $LIBCOB_LIBS_extern $MPIR_LIBS"
 	AC_CHECK_HEADERS([mpir.h], [
 		AC_MSG_CHECKING([whether linking against libmpir with "$MPIR_LIBS" works])
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpir.h>]],
@@ -957,6 +958,7 @@ AC_ARG_WITH([xml2],
   [],
   [with_xml2=check])
 
+AC_ARG_VAR([XML2_CONFIG], [path to xml2-config utility, fallback for pkg-config])
 AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	PKG_CHECK_MODULES([XML2], [libxml-2.0], [], [
 	if test -z "${XML2_CFLAGS+x}" -o -z "${XML2_LIBS+x}"; then
@@ -975,7 +977,7 @@ AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	if test -z "${XML2_LIBS+x}"; then
 	  XML2_LIBS="-lxml2"
 	fi
-	LIBS="$LIBS $LIBCOB_LIBS $XML2_LIBS"
+	LIBS="$LIBS $LIBCOB_LIBS_extern $XML2_LIBS"
 	# note: PKG_CONFIG and xml2-config set -I /path/to/libxml2 which contains a "libxml" folder where
 	#       all the files we look for are included
 	for header in xmlwriter xmlversion uri parser tree; do
@@ -1058,7 +1060,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	AS_IF([test -e ./libcob/cJSON.c],
 	  [AC_MSG_CHECKING([whether linking of ./libcob/cJSON.c works])
 	   CPPFLAGS="$curr_cppflags -I./libcob"
-	   LIBS="$LIBS $LIBCOB_LIBS "
+	   LIBS="$LIBS $LIBCOB_LIBS_extern"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		               [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1076,7 +1078,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 	  AS_IF([test -e "$srcdir/libcob/cJSON.c"],
 	    [AC_MSG_CHECKING([whether linking of "$srcdir/libcob/cJSON.c" works])
 	     CPPFLAGS="$curr_cppflags -I\"$srcdir/libcob\""
-	     LIBS="$LIBS $LIBCOB_LIBS"
+	     LIBS="$LIBS $LIBCOB_LIBS_extern"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
 		                 [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
@@ -1103,7 +1105,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 		if test -z "${CJSON_LIBS+x}"; then
 		  CJSON_LIBS="-lcjson"
 		fi
-		LIBS="$LIBS $LIBCOB_LIBS $CJSON_LIBS"
+		LIBS="$LIBS $LIBCOB_LIBS_extern $CJSON_LIBS"
 		AC_CHECK_HEADERS([cJSON.h cjson/cJSON.h], [break],
 			[if test "$with_json" = "cjson"; then
 			    AC_MSG_ERROR([header for libcjson is required for --with-json=cjson, you may adjust CJSON_CFLAGS])
@@ -1153,7 +1155,7 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = check], [
 	if test -z "${JSON_C_LIBS+x}"; then
 	  JSON_C_LIBS="-ljson-c"
 	fi
-	LIBS="$LIBS $LIBCOB_LIBS $JSON_C_LIBS"
+	LIBS="$LIBS $LIBCOB_LIBS_extern $JSON_C_LIBS"
 	AC_CHECK_HEADERS([json.h json-c/json.h], [break],
 		[if test "$with_json" = "json-c"; then
 		    AC_MSG_ERROR([header for libjson-c is required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
@@ -1242,7 +1244,7 @@ AC_DEFINE_UNQUOTED([WITH_VARSEQ], [$with_varseq])
 
 
 curr_libs="$LIBS"
-LIBS="$curr_libs $LIBCOB_LIBS"
+LIBS="$curr_libs $LIBCOB_LIBS_extern"
 
 # Solaris has nanosleep in other libraries
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
@@ -1331,6 +1333,8 @@ AC_ARG_WITH([curses],
   esac],
   [USE_CURSES=check])
 
+CPPFLAGS="$CURSES_CFLAGS $curr_cppflags"
+
 if test "x$CURSES_LIBS" != x; then
 	LIBS="$CURSES_LIBS $LIBS"
 	AC_MSG_CHECKING([whether linking initscr works with CURSES_LIBS, given as "$CURSES_LIBS"])
@@ -1343,17 +1347,32 @@ if test "x$CURSES_LIBS" != x; then
 	AS_IF([test "$USE_CURSES" = check -o "$USE_CURSES" = no], [
 	  AC_MSG_ERROR([[explicit selection with --with-curses=ARG needed, as CURSES_LIBS is set]])
 	])
-	LIBS="$curr_libs $LIBCOB_LIBS"
+	LIBS="$curr_libs $LIBCOB_LIBS_extern"
 fi
 
 dnl note: when switching to $ncurses all checks are done correctly but no generation in config.h is done
+AC_ARG_VAR([NCURSES_CONFIG], [path to ncurses-config utility, fallback for pkg-config (ncursesw6-config, ncursesw5-config, ncurses6-config, ncurses5-config)])
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "ncursesw" -o "$USE_CURSES" = check; then
-    AC_CHECK_LIB([ncursesw], [initscr], [true],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+    PKG_CHECK_MODULES([NCURSES], [ncursesw], [ac_cv_lib_ncursesw_initscr=yes], [
+      AC_CHECK_PROGS([NCURSES_CONFIG], [ncursesw6-config ncursesw5-config], [no])
+      AS_IF([test "$NCURSES_CONFIG" = no], [
+        AC_CHECK_LIB([ncursesw], [initscr], [NCURSES_LIBS=-lncursesw],
+          [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+      ], [
+        if test "x$NCURSES_LIBS" = x; then
+           NCURSES_LIBS=`$NCURSES_CONFIG --libs`
+        fi
+        if test "x$NCURSES_CFLAGS" = x; then
+           NCURSES_CFLAGS=`$NCURSES_CONFIG --cflags`
+        fi
+        ac_cv_lib_ncursesw_initscr=yes
+      ])
+    ])
   fi
 fi
 if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
+  CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
   dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
   AC_CHECK_HEADERS([ncursesw/ncurses.h ncursesw/curses.h ncurses.h],
     [USE_CURSES="ncursesw"
@@ -1361,23 +1380,46 @@ if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; the
     [AS_IF([test "$USE_CURSES" != check],
        [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_LIBS" = x],
-    [CURSES_LIBS="-l$USE_CURSES"])
+    [CURSES_LIBS="$NCURSES_LIBS"])
+  AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_CFLAGS" = x],
+    [CURSES_CFLAGS="$NCURSES_CFLAGS"])
 fi
 
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = check; then
-    AC_CHECK_LIB([ncurses], [initscr], [true],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+    PKG_CHECK_MODULES([NCURSES], [ncurses], [ac_cv_lib_ncurses_initscr=yes], [
+      dnl note: dropping cached value from above if not found to trigger new check
+      if test "$ac_cv_prog_NCURSES_CONFIG" = "no"; then
+         unset NCURSES_CONFIG ac_cv_prog_NCURSES_CONFIG
+      fi
+      AC_CHECK_PROGS([NCURSES_CONFIG], [ncurses6-config ncurses5-config], [no])
+      AS_IF([test "$NCURSES_CONFIG" = no], [
+        AC_CHECK_LIB([ncurses], [initscr], [NCURSES_LIBS=-lncurses],
+          [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+      ], [
+        if test "x$NCURSES_LIBS" = x; then
+           NCURSES_LIBS=`$NCURSES_CONFIG --libs`
+        fi
+        if test "x$NCURSES_CFLAGS" = x; then
+           NCURSES_CFLAGS=`$NCURSES_CONFIG --cflags`
+        fi
+        ac_cv_lib_ncurses_initscr=yes
+      ])
+    ])
   fi
 fi
+
 if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
+  CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
   AC_CHECK_HEADERS([ncurses/ncurses.h ncurses/curses.h ncurses.h],
     [USE_CURSES="ncurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
        [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
-    [CURSES_LIBS="-l$USE_CURSES"])
+    [CURSES_LIBS="$NCURSES_LIBS"])
+  AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_CFLAGS" = x],
+    [CURSES_CFLAGS="$NCURSES_CFLAGS"])
 fi
 
 if test "x$CURSES_LIBS" = x; then
@@ -1445,10 +1487,12 @@ case "$USE_CURSES" in
   *curses*)
 	AC_DEFINE_UNQUOTED([WITH_CURSES], ["$USE_CURSES"])
 	LIBCOB_LIBS="$LIBCOB_LIBS $CURSES_LIBS"
+	LIBCOB_CPPFLAGS="$CURSES_CFLAGS $LIBCOB_CPPFLAGS"
 	;;
 esac
 
-LIBS="$LIBS $CURSES_LIBS"  # adding found curses libraries to look for functions
+LIBS="$curr_libs $LIBCOB_LIBS_extern $CURSES_LIBS"  # adding found curses libraries to look for functions
+
 if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     AC_MSG_CHECKING([for ncurses _nc_freeall function])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -1594,7 +1638,8 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	[AC_MSG_RESULT([no])],
 	[])
 fi
-LIBS="$curr_libs $LIBCOB_LIBS"
+LIBS="$curr_libs $LIBCOB_LIBS_extern"
+CPPFLAGS="$curr_cppflags"
 
 #
 ## Checks for indexed handlers
@@ -2497,7 +2542,7 @@ fi
 if test "$COB_USES_CLANG_ONLY" = yes; then
 	# don't warn if cobc uses arguments which aren't picked up (likely because of the translation phase)
 	COB_CFLAGS="$COB_CFLAGS -Qunused-arguments"
-	
+
 	# don't warn for untyped function call - only possible if the interal repository would be enforced
 	curr_cflags="$CFLAGS"
 	CFLAGS="$CFLAGS -Wdeprecated-non-prototype $ERRWARN"
@@ -2885,6 +2930,7 @@ AC_MSG_NOTICE([ CC                ${CC}])
 AC_MSG_NOTICE([ CFLAGS            ${CFLAGS}])
 AC_MSG_NOTICE([ LDFLAGS           ${LDFLAGS}])
 AC_MSG_NOTICE([ LIBCOB_LIBS       ${LIBCOB_LIBS}])
+AC_MSG_NOTICE([ LIBCOB_CPPFLAGS   ${LIBCOB_CPPFLAGS}])
 if test "x$PROGRAMS_LIBS" != x; then
   AC_MSG_NOTICE([ PROGRAMS_LIBS         ${PROGRAMS_LIBS}])
 fi

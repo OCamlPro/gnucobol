@@ -87,6 +87,7 @@ Welcome to the GnuCOBOL @value{VERSION} manual.
 * Customize::                   Customizing the compiler
 * Optimize::                    Optimizing your program
 * Debug::                       Debugging your program
+* Profiling::                   Profiling your program
 * Extensions::                  Non-standard extensions
 * System Routines::             Additional routines
 * Appendices::                  List of supported features and options,
@@ -155,6 +156,10 @@ Debug
 * Memory Dumps::                Memory Dumps
 * Core Dumps::                  Core Dumps
 * Trace::                       Tracing execution
+
+Profiling
+* Profiling options::           Profiling options
+* Profiling results::           Profiling results
 
 Extensions
 
@@ -1716,7 +1721,7 @@ machine.  Set the config option @code{binary-byteorder} to
 In addition, setting the option @code{binary-size} to @code{2-4-8} or
 @code{1-2-4-8} is more efficient than others.
 
-@node Debug, Extensions, Optimize, Top
+@node Debug, Profiling, Optimize, Top
 @chapter Debug
 
 @menu
@@ -1777,7 +1782,100 @@ Tracing program execution, either in general or in specific parts can be enabled
 
 @exampleindent 0
 
-@node Extensions, System Routines, Debug, Top
+@node Profiling, Extensions, Debug, Top
+@chapter Profiling COBOL
+@cindex Profiling
+@cindex Profiling your program
+
+@menu
+* Profiling options::           Profiling options
+* Profiling results::           Profiling results
+@end menu
+
+@node Profiling options
+@section Profiling options
+
+Profiling is enabled with the @code{-fprof} flag while compiling a
+COBOL module. Only modules that have been compiled with profiling
+enabled can be later profiled.
+
+Then executing your program with @env{COB_PROF_ENABLE=1} will
+automatically profile the module(s) and generate a CSV result file.
+Note that physical @code{CANCEL} is disabled when profiling is
+enabled, because some profiling information in the module needs to
+remain available until the end of the program.
+
+By default, this file is called
+@code{cob-prof-<program-id>-<pid>.csv}, but this name can be
+configured using @env{COB_PROF_FILE}.
+
+Some environment variables (and the corresponding options in the
+runtime configuration) can be used to tune the behavior of profiling
+during execution: @code{COB_PROF_FILE}, @code{COB_PROF_ENABLE}
+and @code{COB_PROF_MAX_DEPTH}, @code{COB_PROF_FORMAT}
+@pxref{Appendix I, Runtime Configuration, Runtime Configuration} for
+more information.
+
+
+@node Profiling results
+@section Profiling results
+@cindex Profiling results
+@cindex How to interpret the profiling results
+
+By default, the generated CSV file has 8 columns for each line (it can
+be customized with the @code{COB_PROF_FORMAT} environment/runtime
+configuration):
+
+@table @code
+
+@item program-id
+
+The program identifier of the module.
+
+@item section
+
+The name of the section. The time of a section is not computed
+directly, but as the sum of the time spent in its paragraphs.
+
+@item paragraph
+
+The name of the paragraph. If a section has no paragraph, or does not
+start with a paragraph, a default paragraph called
+@code{MAIN PARAGRAPH} is created.
+
+@item entry
+
+The name of the entry for @code{ENTRY} statements, or the name of the
+target for @code{CALL} statements. No time is associated with
+@code{ENTRY} statements, as the time is directly included in the
+including paragraph. However, the number of calls is still recorded.
+
+@item location
+
+The file and line number of the corresponding entry point (section or
+paragraph)
+
+@item kind
+
+The kind is either @code{PROGRAM}, @code{SECTION}, @code{PARAGRAPH},
+@code{CALL} or @code{ENTRY}.
+
+@item time-ns
+
+The time spent in the module/section/paragraph/call in nanoseconds
+
+@item time
+
+The time spent in the module/section/paragraph/call in a human
+readable form (currently, the time in seconds and milliseconds)
+
+@item ncalls
+
+The number of calls to this section/paragraph
+
+@end table
+
+@node Extensions, System Routines, Profiling, Top
 @chapter Non-standard extensions
 @cindex Extensions
 @cindex Non-standard extensions
