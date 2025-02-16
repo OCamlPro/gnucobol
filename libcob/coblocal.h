@@ -328,6 +328,10 @@ typedef struct __cob_settings {
 	FILE		*cob_dump_file;		/* FILE* to write DUMP information to */
 
 	char		*cob_dump_filename;	/* Place to write dump of variables */
+	char		*cob_prof_filename;	/* Place to write profiling data */
+	int		cob_prof_enable;	/* Whether profiling is enabled */
+	int		cob_prof_max_depth;	/* Max stack depth during profiling (255 by default) */
+	char		*cob_prof_format;	/* Format of prof CSV line */
 	int		cob_dump_width;		/* Max line width for dump */
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
@@ -424,6 +428,7 @@ COB_HIDDEN void		cob_init_cobcapi	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_intrinsic	(cob_global *);
 COB_HIDDEN void		cob_init_strings	(cob_global *);
 COB_HIDDEN void		cob_init_move		(cob_global *, cob_settings *);
+COB_HIDDEN void		cob_init_prof		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_screenio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_mlio		(cob_global * const);
 
@@ -501,6 +506,9 @@ COB_EXPIMP int		cob_field_to_string	(const cob_field *, void *,
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
 COB_HIDDEN char	*cob_strndup		(const char *, const size_t);
 
+/* Function called by the runtime at the end of execution to save the
+ * profiling information in a file. */
+COB_HIDDEN void cob_prof_end (void);
 
 enum cob_datetime_res {
 	DTR_DATE,
@@ -540,4 +548,10 @@ cob_max_int (const int x, const int y)
 
 COB_EXPIMP int		cob_cmps	(const unsigned char *, const unsigned char *,
 					 const size_t, const unsigned char *);
+
+COB_HIDDEN FILE *	cob_open_logfile (const char *filename);
+
+/* Whether we are in testsuite mode */
+COB_HIDDEN int is_test;
+
 #endif	/* COB_LOCAL_H */

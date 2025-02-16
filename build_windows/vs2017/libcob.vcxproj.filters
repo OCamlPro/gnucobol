@@ -81,6 +81,9 @@
     <ClCompile Include="..\..\libcob\cobcapi.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libcob\profiling.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\config.h">

@@ -1,4 +1,22 @@
 
+2024-05-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* flag.def: fix macro usage for MSVC
+
+2024-05-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (main): refactored to not need iterating via "iparams"
+	* flag.def (cb_flag_use_constructor), cobc.c (main), cobc.h,
+	  codegen.c (codegen_internal, output_so_load_version_check):
+	  new flag -fuse-constructor to override possible use of that feature;
+	  internally disabling it for generation of libraries/executable after
+	  first program as we only need that code once, fixing Win32 build errors
+	  and duplication warnings in other environments
+	* flag.def: don't suppress the help of -fwinmain under Win32 and Cygwin
+	* typeck.c (build_expr_finish): use fallback error position token, fixing
+	  compiler aborts on broken expressions, bugs #933, #938 and #966
+	* typeck.c: minor refactoring within functions
+
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* replace.c: optimize speed and memory usage. For speed, we add two
@@ -8,6 +26,25 @@
 	  ones passed internally from the copy-replacing stream to the
 	  replace stream) and we use a circular buffer for the temporary
 	  queue of tokens instead of a list.
+
+2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+            Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* parser.y: generate calls to "cob_prof_function_call" in the
+	  parsetree when profiling is unabled, when entering/leaving
+	  profiled blocks
+	* flag.def: add `-fprof` to enable profiling
+	* tree.h: add a flags field to cb_goto, add profiling
+	  fields to cb_program, add cb_prof_call enum and export
+	  cb_build_prof_call and cb_prof_procedure_fivision functions
+	* tree.c (cb_build_program): initialize the new profiling
+	  fields of the cb_program structure
+	* tree.c (cb_build_goto): add a "flags" argument
+	  (stored in the cb_program structure)
+	* typeck.c (cb_emit_goto): add a "flags" argument
+	  (passed to cb_build_goto)
+	* codegen.c: handle profiling code generation under the
+	  cb_flag_prof guard
 
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
@@ -10803,7 +10840,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2023 Free Software Foundation, Inc.
+Copyright 2001-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
