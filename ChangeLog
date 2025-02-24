@@ -1,3 +1,12 @@
+2022-03-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: improve CI setup
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* config, cobc/cobc.h: add support for GCOS 7 dialect (Bull), both
+	  a strict variant (config/gcos-strict.conf) and a variant with
+	  GNUCobol extensions (config/gcos.conf)
 
 2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -199,6 +208,10 @@
 
 	* configure.ac: dropped extra check for GCC as done internally
 
+2022-09-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: fix ubuntu CI setup
+
 2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: cleanup curses library check
@@ -215,6 +228,10 @@
 2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check for PDC_free_memory_allocations
+
+2022-07-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: fix handling of quotes in testuite artifact name
 
 2022-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -254,7 +271,7 @@
 2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: dropped obsolete AC_PROG_CC_STD, AC_HEADER_STDC as
-	  already included in AC_PROG_CC and assumed otherwise
+          already included in AC_PROG_CC and assumed otherwise
 
 2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
 

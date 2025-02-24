@@ -52,6 +52,11 @@
 #include <io.h>
 #endif
 
+
+#ifdef	HAVE_LANGINFO_CODESET
+#include <langinfo.h>
+#endif
+
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -116,6 +121,9 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_ADD_PHONY     24
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
+#define CB_FLAG_GETOPT_SOURCE_ENCODE        27
+#define CB_FLAG_GETOPT_ALPHANUMERIC_ENCODE  28
+
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -326,6 +334,39 @@ unsigned int	cb_correct_program_order = 0;
 cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
 int cb_flag_alt_ebcdic = 0;
+
+#ifdef HAVE_ICONV
+struct cb_iconv_t cb_iconv;
+
+static void 
+initialize_cb_iconv() {
+#ifdef HAVE_LANGINFO_CODESET
+	char * encoding;
+	char * locale = setlocale (LC_CTYPE, "");
+	if( ! locale  ) {
+		cobc_err_msg ("could not set locale");
+		return;
+  	}
+	encoding = nl_langinfo(CODESET);
+
+	if (encoding != NULL && *encoding > 0) {
+		strncpy (cb_iconv.source, encoding, sizeof(cb_iconv.source) - 1);
+		cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+	} else {
+		strncpy (cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
+		cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+	}
+#else
+	strncpy(cb_iconv.source, "ISO-8859-15", sizeof(cb_iconv.source) - 1);
+    cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+#endif
+	/* set the alphanumeric_source encoding to a default value 
+	to avoid converting in cb_build_alphanumeric 
+	if it didn't change by the command line*/
+	strncpy (cb_iconv.alphanumeric_source, "NONE", sizeof(cb_iconv.alphanumeric_source) - 1);
+	cb_iconv.alphanumeric_source[sizeof(cb_iconv.alphanumeric_source) - 1] = '\0';
+}
+#endif
 
 
 /* Basic memory structure */
@@ -3958,6 +3999,62 @@ process_command_line (const int argc, char **argv)
 				cobc_err_exit (COBC_INV_PAR, "-ffold-call");
 			}
 			break;
+
+		case CB_FLAG_GETOPT_SOURCE_ENCODE:
+			/* -fsource-encode=encoding*/
+			const char* valid_encodings[] = {
+				"UTF-8",
+				"UTF8",
+				"ASCII",
+				"ISO-8859-1",
+				"ISO-8859-15",
+				"CP1525"
+			};
+			const int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
+			int i, encoding_valid = 0;
+			for (i = 0; i < num_encodings; i++) {
+				if (strcmp(cob_optarg, valid_encodings[i]) == 0) {
+					encoding_valid = 1;
+					break;
+				}
+			}
+			if (encoding_valid) {
+#ifdef HAVE_ICONV
+				strncpy(cb_iconv.source, cob_optarg, sizeof(cb_iconv.source) - 1);
+				cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+#endif
+			} else {
+				cobc_err_exit(COBC_INV_PAR, "-fsource-encode");
+			}
+			break;
+
+
+		/* -falphanumeric-encode */
+		case CB_FLAG_GETOPT_ALPHANUMERIC_ENCODE:{
+			const char* valid_encodings[] = {
+				"ASCII",
+				"ISO-8859-1",
+				"ISO-8859-15",
+				"CP1525"
+			};
+			const int num_encodings = sizeof(valid_encodings) / sizeof(valid_encodings[0]);
+			int i, encoding_valid = 0;
+			for (i = 0; i < num_encodings; i++) {
+				if (strcmp(cob_optarg, valid_encodings[i]) == 0) {
+					encoding_valid = 1;
+					break;
+				}
+			}
+			if (encoding_valid) {
+#ifdef HAVE_ICONV
+				strncpy(cb_iconv.alphanumeric_source, cob_optarg, sizeof(cb_iconv.alphanumeric_source) - 1);
+				cb_iconv.alphanumeric_source[sizeof(cb_iconv.alphanumeric_source) - 1] = '\0';
+#endif
+			} else {
+				cobc_err_exit(COBC_INV_PAR, "-falphanumeric-encode");
+			}
+			break;
+		}
 
 		case CB_FLAG_GETOPT_TTITLE: {
 			/* -fttitle=<title> : Title for listing */
@@ -9139,7 +9236,12 @@ static void
 begin_setup_internal_and_compiler_env (void)
 {
 	char			*p;
-
+	
+	/* initialize the default source encoding */
+#ifdef HAVE_ICONV
+	initialize_cb_iconv();
+#endif
+	
 	/* register signal handlers from cobc */
 	cob_reg_sighnd (&cobc_sig_handler);
 
@@ -9556,6 +9658,16 @@ main (int argc, char **argv)
 	cobc_init_codegen ();
 	cobc_init_tree ();
 #endif
+
+/* initialize the iconv struct after reading the command line*/
+#ifdef HAVE_ICONV
+	cb_iconv.alphanumeric = iconv_open(cb_iconv.alphanumeric_source, cb_iconv.source);
+	/* move iconv_open check here */
+
+	cb_iconv.national = iconv_open("UTF-16LE", cb_iconv.source);
+	cb_iconv.utf8 = iconv_open("UTF-8", cb_iconv.source);
+#endif
+
 
 	/* Process input files */
 

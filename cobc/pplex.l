@@ -1326,6 +1326,10 @@ ppopen_get_file (const char *name)
 		/* check for and skip UTF-8 BOM */
 		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
 			fseek_to = 3;
+#ifdef HAVE_ICONV
+			strncpy(cb_iconv.source, "UTF-8", sizeof(cb_iconv.source) - 1);
+			cb_iconv.source[sizeof(cb_iconv.source) - 1] = '\0';
+#endif
 		} else
 		/* check for binary */
 		if (nread > 5) {
