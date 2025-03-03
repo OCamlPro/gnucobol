@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #ifdef HAVE_SYS_STAT_H
@@ -75,19 +74,19 @@ print_error_prefix (const char *file, int line, const char *prefix)
 		 && file[0] != '\\'
 		 && file[1] != ':'){
 			int filelen = strlen (file);
-			int dirlen = 256;
-			char *cwd ;
-			absfile = cobc_malloc( dirlen + 1 + filelen + 1 );
+			int dirlen = COB_MINI_BUFF;
+			char *cwd;
+			absfile = cobc_malloc (dirlen + 1 + filelen + 1);
 			cwd = getcwd (absfile, dirlen);
 			if (cwd != NULL ){
 #ifdef HAVE_SYS_STAT_H
 				struct stat st;
 #endif
 				dirlen = strlen (cwd);
-				absfile[dirlen] = '/';
-				memcpy (absfile+dirlen+1, file, filelen+1);
+				absfile[dirlen] = SLASH_CHAR;
+				memcpy (absfile + dirlen + 1, file, filelen + 1);
 #ifdef HAVE_SYS_STAT_H
-				if (!stat (absfile,&st))
+				if (!stat (absfile, &st))
 #endif
 				{
 					file = absfile;
@@ -122,12 +121,13 @@ diagnostics_show_caret (FILE *fd, const int line)
 	const int line_start = line > CARET_CONTEXT_LINES ? line - CARET_CONTEXT_LINES : 1;
 	const int line_end = line + CARET_CONTEXT_LINES;
 	const int max_pos = cb_diagnostics_show_line_numbers ? CARET_MAX_COLS - 5 : CARET_MAX_COLS;
-	char buffer[ CARET_MAX_COLS + 1 ];
+	unsigned char buffer[ CARET_MAX_COLS + 1 ];
 	int line_pos = 1;
 	int char_pos = 0;
 	int c = 0;
 	while (c != EOF) {
-		buffer[char_pos] = c = fgetc (fd);;
+		c = fgetc (fd);
+		buffer[char_pos] = c;
 		if (c == '\n' || c == EOF || char_pos == max_pos) {
 			if (line_pos >= line_start) {
 				/* prefix */
@@ -144,8 +144,8 @@ diagnostics_show_caret (FILE *fd, const int line)
 				     || buffer[char_pos] == '\t'
 				     || buffer[char_pos] == '\r'
 				     || buffer[char_pos] == '\n'
-				     || buffer[char_pos] == EOF
-					 || char_pos == max_pos)) {
+				     || buffer[char_pos] == (unsigned char)EOF
+				     || char_pos == max_pos)) {
 					buffer[char_pos--] = 0;
 				}
 				/* print it */

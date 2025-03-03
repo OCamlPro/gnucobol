@@ -1458,9 +1458,10 @@ typedef struct __cob_module {
 	const char	*gc_version;	/* module version */
 
 	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
-											   IBM may be different (_very_ likely for error codes);
-											   but the main difference is to "COMPAT" */
+		/* similar to XMLPARSE(XMLNSS) Micro Focus,
+		   IBM may be different (_very_ likely for error codes);
+		   but the main difference is to "COMPAT" */
+		#define COB_XML_XMLNSS		1
 
 	cob_field		function_return;	/* Copy of RETURNING field */
 	unsigned int	num_symbols;		/* Number of symbols in table */
@@ -2376,6 +2377,8 @@ COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_scr_dump  (unsigned char *);
+COB_EXPIMP int		cob_sys_scr_restore  (unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
 COB_EXPIMP int		cob_get_text 		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);
@@ -3123,30 +3126,30 @@ enum cob_prof_procedure_kind {
 
 struct cob_prof_procedure {
 	/* Name of the module or section or paragraph or entry */
-	const char		        *text;
+	const char				*text;
 	/* File Location */
-	const char                      *file;
-	int                              line;
+	const char				*file;
+	int 					line;
 	/* Index of the section record of this procedure. In the case
 	   of COB_PROF_PROCEDURE_ENTRY, the "section" field is in fact
 	   the paragraph, not the section */
-	int		                 section;
+	int 					section;
 	/* Kind of procedure. */
-	enum cob_prof_procedure_kind     kind;
+	enum cob_prof_procedure_kind	kind;
 };
 
 /* Structure storing profiling information about each COBOL module */
 struct cob_prof_module {
 	/* Array of execution times */
-	cob_ns_time                     *total_times;
+	cob_ns_time 				*total_times;
 	/* Array of execution counts */
-	unsigned int                    *called_count;
+	unsigned int				*called_count;
 	/* Array of current recursions per procedure  */
-	unsigned int                    *procedure_recursions;
+	unsigned int				*procedure_recursions;
 	/* Array of procedure descriptions */
-	struct cob_prof_procedure       *procedures ;
+	struct cob_prof_procedure	*procedures ;
 	/* Number of procedures */
-	size_t                           procedure_count;
+	size_t  			procedure_count;
 };
 
 /* Function called to start profiling a COBOL module. Allocates the
@@ -3154,13 +3157,13 @@ struct cob_prof_module {
    times. */
 COB_EXPIMP struct cob_prof_module *cob_prof_init_module (
 	cob_module *module,
-	struct cob_prof_procedure  *procedure_names,
-	size_t      procedure_count);
+	struct cob_prof_procedure	*procedure_names,
+	size_t		procedure_count);
 
 /* Functions used to instrument the generated C code and measure
  * counters and times */
-COB_EXPIMP void cob_prof_enter_procedure  	(struct cob_prof_module *, int);
-COB_EXPIMP void cob_prof_exit_procedure   	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_enter_procedure	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_exit_procedure 	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_enter_section  	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_exit_section   	(struct cob_prof_module *, int);
 

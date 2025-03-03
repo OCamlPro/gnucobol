@@ -67,15 +67,57 @@
 
 	* numeric.c (cob_decimal_set_binar): C89 fix
 
+2024-07-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) fixed C90 warnings
+	  Also fixed issue when build without curses
+	* move.c (indirect_move) fixed C90 warnings
+	* profiling.c (profile_setup_clock) fixed C90 warnings
+
+2024-06-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_sys_scr_dump, cob_sys_scr_restore) added new functions
+	* common.h added exports for the two new functions
+	* system.def: added as system library call CBL_GC_SCR_DUMP,
+	  CBL_GC_SCR_RESTORE
+
 2024-06-08  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (apply_file_paths): extracted from cob_chk_file_mapping
 	  to factor out duplicated code
 
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+		fix errors in fileio.c when building with VISAM 2.2. This issue
+		occurred when using a partial key with a sequential read previous.
+
+	* fileio.c (indexed_start_internal, indexed_start, indexed_read_next)->fisam.c:
+	  added a new field, partial_key_length,
+	  to the indexfile structure for use in these functions.
+	  This will allow the saved partial key to be used in the
+	  positioning logic.
+	* fileio.c (indexed_open)->fbdb.c:
+	  changed the BDB logic to return a status code of "35" when
+	  encountering a missing directory for OUTPUT on INDEXED file
+
 2024-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fisam.c (isam_read_next): use ISSTAT only for COB_WITH_STATUS_02,
 	  fixing compile errors with VBISAM
+
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* profiling.c: fix compile warnings
+
+2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_numeric_display_cmp_zero): fixed overflow compare
+	* cobgetopt.c, intrinsic.c, move.c, numeric.c, reportio.c, strings.c,
+	  termio.c: dropped headers ctype, errno and math where unused
+
+2024-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_accept_exception_status): fixed status 128
 
 2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -84,13 +126,13 @@
 	* fileio.c (bdb_bt_compare) [WITH_DB]->fbdb.c: cater for ABI break in BDB 12
 
 2024-03-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-	    Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+            Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
-	* Makefile.am: add `profiling.c` to sources
 	* profiling.c: implement profiling functions
 	  (time spent in each procedure of the program)
-	* common.c: add 4 environments variables COB_PROF_FILE,
-	  COB_PROF_MAX_DEPTH,COB_PROF_ENABLE and COB_PROF_FORMAT
+	* Makefile.am: add profiling.c to sources
+	* common.c: add runtime settings COB_PROF_FILE, COB_PROF_MAX_DEPTH,
+	  COB_PROF_ENABLE and COB_PROF_FORMAT
 	* common.c (cob_expand_env_string): add $b (executable basename),
 	  $f (executable filename), $d (date in yyyymmdd) and
 	  $t (time in hhmmss)
@@ -5402,15 +5444,13 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2014-06-17  Ron Norman <rjn@inglenet.com>
 
-	* parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
-
-2014-06-14  Ron Norman <rjn@inglenet.com>
-
-	* parser.y: Fixes for LINE|COL 0 to get error message
+	* reportio.c (limitCheck, limitCheckLine, limitCheckOneLine,
+	  cob_report_initiate): added check to verify PAGE LIMITS of report
+	* reportio.c (do_page_footing): adjusted write options
 
 2014-06-04  Eric Gallager <cooljeanius@users.sourceforge.net>
 
-	Makefile.am (install-data-hook): removed  [merged 2020-09-23]
+	* Makefile.am (install-data-hook): removed  [merged 2020-09-23]
 
 2014-05-20  Philipp Böhme <phi.boehme@googlemail.com>
 
@@ -5428,11 +5468,11 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2014-05-06  Philipp Böhme <phi.boehme@googlemail.com>
 
-	* common.c, common.h: Added print_runtime_env showing all environment values
+	* common.c, common.h: added print_runtime_env showing all environment values
 	  along with resolved variables used in libcob
-	  New string helper functions: cob_int_to_string, cob_strcat, cob_strjoin,
+	  new string helper functions: cob_int_to_string, cob_strcat, cob_strjoin,
 	  cob_int_to_formatted_bytestring
-	* call.c: Remove duplicates when resolving COB_LIBRARY_PATH
+	* call.c: remove duplicates when resolving COB_LIBRARY_PATH
 
 2014-04-25  Ron Norman <rjn@inglenet.com>
 

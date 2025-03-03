@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2017, 2019-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2017, 2019-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -553,13 +553,13 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	/* Check for reserved word tag, if requested */
 	if (fname == words_file) {
 		if (strcmp (buff, "reserved")
-		&&  strcmp (buff, "not-reserved")
-		&&  strcmp (buff, "intrinsic-function")
-		&&  strcmp (buff, "not-intrinsic-function")
-		&&  strcmp (buff, "system-name")
-		&&  strcmp (buff, "not-system-name")
-		&&  strcmp (buff, "register")
-		&&  strcmp (buff, "not-register")) {
+		 && strcmp (buff, "not-reserved")
+		 && strcmp (buff, "intrinsic-function")
+		 && strcmp (buff, "not-intrinsic-function")
+		 && strcmp (buff, "system-name")
+		 && strcmp (buff, "not-system-name")
+		 && strcmp (buff, "register")
+		 && strcmp (buff, "not-register")) {
 			configuration_error (fname, line, 1,
 				_("invalid configuration tag '%s' in word-list"), buff);
 			return -1;
@@ -591,7 +591,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		val = read_string (val);
 
 		if (strcmp (name, "include") == 0
-		||  strcmp (name, "includeif") == 0) {
+		 || strcmp (name, "includeif") == 0) {
 			/* Include another conf file */
 			s = cob_expand_env_string ((char *)val);
 			cobc_main_free ((void *) val);
@@ -799,7 +799,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			if (val[0] == '"' && val[1] != 0 && val[2] == '"' && val[3] == 0) {
 				cb_default_byte = val[1];
 				break;
-			} else
+			}
 			/* convert character to number (as quotes will commonly
 			   be removed when given on shell) */
 			if (val[1] == 0 && (val[0] < '0' || val[0] > '9')) {

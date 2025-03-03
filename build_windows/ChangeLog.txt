@@ -363,7 +363,7 @@
 	  version_libcob.rc, version_cobcrun.rc provided by Simon)
 
 
-Copyright 2014-2023 Free Software Foundation, Inc.
+Copyright 2014-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

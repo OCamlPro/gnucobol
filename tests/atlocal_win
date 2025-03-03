@@ -86,8 +86,8 @@ _unset_option () {
 # Note: not needed for running the testsuite with MSYS as this translates the path
 #       if MSYS_NO_PATHCONV=1 is not set
 _return_path () {
-	if test "$OSTYPE" = "cygwin"; then
-		cygpath -pw "$1"
+	if test "$OSTYPE" = "cygwin" -o x$MSYSTEM_CHOST != x; then
+		cygpath -pm "$1"
 	else
 		# check for WSL / Bash on Windows; ignore error messages (file not available)
 		if $(grep -q "Microsoft" /proc/sys/kernel/osrelease 2>/dev/null); then

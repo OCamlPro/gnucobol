@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2013, 2017-2024 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -21,11 +21,8 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
-#include <string.h>
-#include <ctype.h>
 
 #include "cobc.h"
 #include "tree.h"
