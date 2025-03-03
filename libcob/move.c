@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020, 2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edwart Hard
 
@@ -28,8 +28,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <ctype.h>
-#include <errno.h>
-#include <math.h>
 
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>

@@ -198,6 +198,7 @@ struct indexfile {
 	int		readdone;	/* A 'read' has been successfully done */
 	int		startiscur;	/* The 'start' record is current */
 	int		wrkhasrec;	/* 'recwrk' holds the next|prev record */
+	int		partial_key_length;	/* new field for partial key on START verb */
 	unsigned char idxmap[MAXNUMKEYS];
 	struct keydesc	key[1];		/* Table of key information */
 					/* keydesc is defined in (d|c|vb)isam.h */
@@ -1318,6 +1319,24 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
 	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
+
+	/************************************************************/
+	/*                                                          */
+	/*  here we are storing the partial key length in the       */
+	/*  indexfile structure so that the indexed read next       */
+	/*  functions can position the file based on the partial    */
+	/*  key length.                                             */
+	/*                                                          */
+	/*  note the indexed_cmpkey function expects a partial key  */
+	/*  length of zero if it is to use the full key length.     */
+	/*                                                          */
+	/************************************************************/
+
+	if (fullkeylen == partlen)
+			fh->partial_key_length  = 0;
+	else
+			fh->partial_key_length  = partlen;
+
 	if (k < 0) {
 		fh->startfail = 1;
 		return COB_STATUS_23_KEY_NOT_EXISTS;
@@ -1572,7 +1591,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				case COB_GE:
 					domoveback = 0;
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) == 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						domoveback = 1;
 					}
@@ -1583,7 +1602,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				case COB_LE:
 					domoveback = 0;
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) == 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
@@ -1593,13 +1612,13 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 					break;
 				case COB_LT:
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) >= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 					}
 					break;
 				case COB_GT:
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) <= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) <= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
@@ -1657,12 +1676,12 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			} else {
 				switch (fh->startcond) {
 				case COB_LE:
-					if (indexed_cmpkey (fh, f->record->data, f->curkey, 0) > 0)
+					if (indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) > 0)
 						domoveback = 1;
 					else
 						domoveback = 0;
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) == 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
@@ -1679,20 +1698,20 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 						break;
 					}
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) >= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						skip_read = ISPREV;
 					}
 					break;
 				case COB_GT:
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) <= 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) <= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
 				case COB_GE:
 					while (ISERRNO == 0
-					 && indexed_cmpkey (fh, f->record->data, f->curkey, 0) < 0) {
+					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) < 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;

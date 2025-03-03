@@ -70,10 +70,10 @@ call-overflow:				ok
 data-records-clause:			+obsolete
 debugging-mode:				ok
 use-for-debugging:			+obsolete
-listing-statements:			ok	# may be a user-defined word
-title-statement:			ok	# may be a user-defined word
+listing-statements:			ok		# may be a user-defined word
+title-statement:			ok		# may be a user-defined word
 entry-statement:			ok
-depending-on-not-fixed:		ok
+depending-on-not-fixed:			ok
 length-in-data-division:		yes
 goto-statement-without-name:		+obsolete
 label-records-clause:			+obsolete
@@ -92,9 +92,9 @@ stop-literal-statement:			+obsolete
 stop-identifier-statement:		ok
 same-as-clause:				ok
 type-to-clause:				ok
-usage-type:					ok
+usage-type:				ok
 synchronized-clause:			+ignore
-sync-left-right:			+ignore # better use "skip" here?
+sync-left-right:			+ignore		# better use "skip" here?
 special-names-clause:			+warning
 top-level-occurs-clause:		ok
 value-of-clause:			+obsolete
@@ -138,7 +138,7 @@ assign-using-variable:			ok
 assign-ext-dyn:				ok
 assign-disk-from:			ok
 vsam-status:				+ignore
-self-call-recursive:		skip
+self-call-recursive:			skip
 picture-l:				+warning
 
 

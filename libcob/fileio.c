@@ -5277,14 +5277,16 @@ again:
 			 && (f->file_features & COB_FILE_LS_SPLIT)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
-				off_t	k = 1;
+				long	k;
 				n = getc (fp);
 				if (n == '\r') {
 					n = getc (fp);
-					k++;
+					k = -2;
+				} else {
+					k = -1;
 				}
 				if (n != '\n') {
-					fseek (fp, -k, SEEK_CUR);
+					fseek (fp, k, SEEK_CUR);
 					if (!(COB_MODULE_PTR
 					 && COB_MODULE_PTR->flag_dialect == COB_DIALECT_MF))
 						sts = COB_STATUS_06_READ_TRUNCATE;
@@ -8489,7 +8491,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
 	fd2 = open (file_open_name, flag, COB_FILE_MODE);
 	if (fd2 == -1) {
-		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
+		ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		close (fd1);
 		return ret;
 	}

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2014, 2016-2020, 2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014, 2016-2020, 2022-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -26,7 +26,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/types.h>
 
 /* include internal and external libcob definitions, forcing exports */

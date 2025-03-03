@@ -1,7 +1,22 @@
 
+2024-06-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_compile): fix MSVC build command
+
+2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* replace.c: fix compile warnings and formatting
+
 2024-05-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* flag.def: fix macro usage for MSVC
+
+2024-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h: inclusion of cobc.h for types
+	* codeoptim.c, config.c, error.c, field.c, replace.c, reserved.c:
+	  dropped unused header ctype
+	* codeoptim.c: dropped unused headers stdlib and string
 
 2024-05-03  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -8110,7 +8125,11 @@
 
 2014-12-11  Ron Norman <rjn@inglenet.com>
 
-	* Fixes so WARNING is given if no DETAIL lines in a report
+	* fixes so WARNING is given if no DETAIL lines in a report
+
+2014-06-17  Ron Norman <rjn@inglenet.com>
+
+        * parser.y, tree.c, codegen.c: added check to verify PAGE LIMITS of report
 
 2014-06-16  Simon Sobisch <simonsobisch@gnu.org>
 

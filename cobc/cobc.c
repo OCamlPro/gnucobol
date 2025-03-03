@@ -2990,10 +2990,8 @@ static int
 process_command_line (const int argc, char **argv)
 {
 	struct cb_define_struct	*p;
-	size_t			osize;
 	int			c;
 	int			idx;
-	int			n;
 	int			exit_option = 0;
 	int			list_reserved = 0;
 	int			list_registers = 0;
@@ -3001,7 +2999,6 @@ process_command_line (const int argc, char **argv)
 	int			list_system_names = 0;
 	int			list_exceptions = 0;
 	int			list_system_routines = 0;
-	enum cob_exception_id	i;
 	char			ext[COB_MINI_BUFF];
 	char			*conf_label;	/* we want a dynamic address for error.c, not a static one */
 	char			*conf_entry;
@@ -3055,14 +3052,15 @@ process_command_line (const int argc, char **argv)
 					  long_options, &idx, 1)) >= 0) {
 		switch (c) {
 
-		case 7:
+		case CB_FLAG_GETOPT_MAX_ERRORS: {
 			/* -fmax-errors=<xx> : Maximum errors until abort */
-			n = cobc_deciph_optarg (cob_optarg, 0);
+			const int n = cobc_deciph_optarg (cob_optarg, 0);
 			if (n < 0) {
 				cobc_err_exit (COBC_INV_PAR, "-fmax-errors");
 			}
 			cb_max_errors = n;
 			break;
+		}
 
 		case '?':
 			/* Unknown option or ambiguous,
@@ -3209,7 +3207,7 @@ process_command_line (const int argc, char **argv)
 			/* output version information when running very verbose -vv */
 			/* pass verbose switch to invoked commands when running very very verbose -vvv */
 			if (cob_optarg) {
-				n = cobc_deciph_optarg (cob_optarg, 0);
+				const int n = cobc_deciph_optarg (cob_optarg, 0);
 				if (n == -1) {
 					cobc_err_exit (COBC_INV_PAR, "--verbose");
 				}
@@ -3219,8 +3217,9 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case '$':
+		case '$': {
 			/* -std=<xx> : Specify dialect */
+			int n;
 			if (strlen (cob_optarg) > (COB_MINI_MAX - 6)) {
 				cobc_err_exit (COBC_INV_PAR, "-std");
 			}
@@ -3231,6 +3230,7 @@ process_command_line (const int argc, char **argv)
 			snprintf (cob_std_conf, sizeof(cob_std_conf), "%s.conf", cob_optarg);
 			num_std++;
 			break;
+		}
 
 		case '&':
 			/* -conf=<xx> : Specify dialect configuration file */
@@ -3323,12 +3323,12 @@ process_command_line (const int argc, char **argv)
 			cobc_wants_debug = 1;
 			break;
 
-		case CB_FLAG_GETOPT_DUMP:  /* 8 */
+		case CB_FLAG_GETOPT_DUMP:
 			/* -fdump=<scope> : Add sections for dump code generation */
 			cobc_def_dump_opts (cob_optarg, 1);
 			break;
 
-		case CB_FLAG_GETOPT_NO_DUMP: /* 13 */
+		case CB_FLAG_GETOPT_NO_DUMP:
 			/* -fno-dump=<scope> : Suppress sections in dump code generation */
 			if (cob_optarg) {
 				cobc_def_dump_opts (cob_optarg, 0);
@@ -3357,6 +3357,7 @@ process_command_line (const int argc, char **argv)
 	} else
 	if (cb_config_name == NULL) {
 #ifdef	WITH_STD
+		int n;
 		strcpy(ext, WITH_STD);
 		for (n=0; ext[n] != 0; n++)
 			ext[n] = toupper(ext[n]);
@@ -3382,6 +3383,7 @@ process_command_line (const int argc, char **argv)
 
 	/* debug: Turn on all exception conditions */
 	if (cobc_wants_debug) {
+		enum cob_exception_id	i;
 		for (i = (enum cob_exception_id)1; i < COB_EC_MAX; ++i) {
 			CB_EXCEPTION_ENABLE (i) = 1;
 		}
@@ -3534,9 +3536,9 @@ process_command_line (const int argc, char **argv)
 			/* these options were processed in the first getopt-run */
 			break;
 
-		case 'o':
+		case 'o': {
 			/* -o : Output file */
-			osize = strlen (cob_optarg);
+			const size_t osize = strlen (cob_optarg);
 			if (osize > COB_SMALL_MAX) {
 				cobc_err_exit (_("invalid output file name"));
 			}
@@ -3548,6 +3550,7 @@ process_command_line (const int argc, char **argv)
 			/* Allocate buffer plus extension reserve */
 			output_name_buff = cobc_main_malloc (osize + 32U);
 			break;
+		}
 
 		case '0':
 			/* -O0 : disable optimizations (or at least minimize them) */
@@ -3834,16 +3837,17 @@ process_command_line (const int argc, char **argv)
 			CB_TEXT_LIST_ADD (cb_early_exit_list, cob_optarg);
 			break;
 
-		case CB_FLAG_GETOPT_STACK_SIZE: /* 1 */
+		case CB_FLAG_GETOPT_STACK_SIZE: {
 			/* -fstack-size=<xx> : Specify stack (perform) size */
-			n = cobc_deciph_optarg (cob_optarg, 0);
+			const int n = cobc_deciph_optarg (cob_optarg, 0);
 			if (n < 16 || n > 512) {
 				cobc_err_exit (COBC_INV_PAR, "-fstack-size");
 			}
 			cb_stack_size = n;
 			break;
+		}
 
-		case CB_FLAG_GETOPT_SIGN: /* 3 */
+		case CB_FLAG_GETOPT_SIGN:
 			/* -fsign=<ASCII/EBCDIC> : Specify display sign */
 			if (!cb_strcasecmp (cob_optarg, "EBCDIC")) {
 				cb_ebcdic_sign = 1;
@@ -3854,26 +3858,26 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_EBCDIC_TABLE: /* 14 */
+		case CB_FLAG_GETOPT_EBCDIC_TABLE:
 			/* -febcdic-table=<cconv-table> */
 			cb_ebcdic_table = cobc_main_strdup (cob_optarg);
 			break;
 
-		case CB_FLAG_GETOPT_DEFAULT_COLSEQ: /* 15 */
+		case CB_FLAG_GETOPT_DEFAULT_COLSEQ:
 			/* -fdefault-colseq=<ASCII/EBCDIC/NATIVE> */
 			if (cb_deciph_default_colseq_name (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fdefault-colseq");
 			}
 			break;
 
-		case CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ: /* 16 */
+		case CB_FLAG_GETOPT_DEFAULT_FILE_COLSEQ:
 			/* -fdefault-file-colseq=<ASCII/EBCDIC/NATIVE> */
 			if (cb_deciph_default_file_colseq_name (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fdefault-file-colseq");
 			}
 			break;
 
-		case CB_FLAG_GETOPT_FOLD_COPY: /* 4 */
+		case CB_FLAG_GETOPT_FOLD_COPY:
 			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_copy = COB_FOLD_UPPER;
@@ -3884,7 +3888,7 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_FOLD_CALL: /* 5 */
+		case CB_FLAG_GETOPT_FOLD_CALL:
 			/* -ffold-call=<UPPER/LOWER> : CALL/PROG-ID fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_call = COB_FOLD_UPPER;
@@ -3895,44 +3899,43 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_TTITLE: /* 6 */
+		case CB_FLAG_GETOPT_TTITLE: {
 			/* -fttitle=<title> : Title for listing */
-			{
-				const size_t len = strlen (cob_optarg);
-				size_t i;
-				if (cb_listing_with_title)
-					cobc_main_free (cb_listing_with_title);
-				cb_listing_with_title = cobc_main_strdup (cob_optarg);
-				for (i = 0; i < len; i++) {
-					if (cb_listing_with_title[i] == '_')
-						cb_listing_with_title[i] = ' ';
-				}
+			const size_t len = strlen (cob_optarg);
+			size_t i;
+			if (cb_listing_with_title)
+				cobc_main_free (cb_listing_with_title);
+			cb_listing_with_title = cobc_main_strdup (cob_optarg);
+			for (i = 0; i < len; i++) {
+				if (cb_listing_with_title[i] == '_')
+					cb_listing_with_title[i] = ' ';
 			}
 			break;
+		}
 
-		case CB_FLAG_GETOPT_MAX_ERRORS: /* 7 */
+		case CB_FLAG_GETOPT_MAX_ERRORS:
 			/* -fmax-errors=<xx> : Maximum errors until abort */
 			/* This option was processed in the first getopt-run */
 			break;
 
-		case CB_FLAG_GETOPT_DUMP: /* 8 */
+		case CB_FLAG_GETOPT_DUMP:
 			/* -fdump=<scope> : Add sections for dump code generation */
-		case CB_FLAG_GETOPT_NO_DUMP: /* 13 */
+		case CB_FLAG_GETOPT_NO_DUMP:
 			/* -fno-dump=<scope> : Suppress sections in dump code generation */
 			/* These options were all processed in the first getopt-run */
 			break;
 
-		case CB_FLAG_GETOPT_CALLFH: /* 9 */
+		case CB_FLAG_GETOPT_CALLFH:
 			/* -fcallfh=<func> : Function-name for EXTFH */
 			cb_call_extfh = cobc_main_strdup (cob_optarg);
 			break;
 
-		case CB_FLAG_GETOPT_INTRINSICS: /* 10 */
+		case CB_FLAG_GETOPT_INTRINSICS:
 			/* -fintrinsics=<xx> : Intrinsic name or ALL */
 			cobc_deciph_funcs (cob_optarg);
 			break;
 
-		case CB_FLAG_GETOPT_SQLSCHEMA: /* 20 */
+		case CB_FLAG_GETOPT_SQLSCHEMA:
 			/* -fsqlschema=<name> : Database schema name for XFD */
 			cb_sqldb_schema = cobc_main_strdup (cob_optarg);
 			cb_flag_sql_xfd = 1;
@@ -3955,7 +3958,7 @@ process_command_line (const int argc, char **argv)
 #endif
 			break;
 
-		case CB_FLAG_GETOPT_FILE_FORMAT: /* 21 */
+		case CB_FLAG_GETOPT_FILE_FORMAT:
 			/* -ffile-format=<name> : Default file format */
 			if (cb_strcasecmp (cob_optarg, "mf") == 0) {
 				cb_mf_files = 1;
@@ -3967,7 +3970,7 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_EC: /* 11 */
+		case CB_FLAG_GETOPT_EC:
 			/* -fec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW,
 			               also allows to skip the prefix e.g. BOUND-OVERFLOW */
 			if (cobc_deciph_ec (cob_optarg, 1U)) {
@@ -3975,15 +3978,15 @@ process_command_line (const int argc, char **argv)
 			};
 			break;
 
-		case CB_FLAG_GETOPT_NO_EC: /* 12 */
+		case CB_FLAG_GETOPT_NO_EC:
 			/* -fno-ec=<xx> : COBOL exception-name, e.g. EC-BOUND-OVERFLOW */
 			if (cobc_deciph_ec (cob_optarg, 0)) {
 				cobc_err_exit (COBC_INV_PAR, "-fno-ec");
 			};
 			break;
 
-		case CB_FLAG_GETOPT_MEMORY_CHECK: /* 17 */
-			/* -fmemory-check=<scope> :  */
+		case CB_FLAG_GETOPT_MEMORY_CHECK:
+			/* -fmemory-check=<scope> : extra memcmp for memory-guard */
 			if (!cob_optarg) {
 				cb_flag_memory_check = CB_MEMCHK_ALL;
 			} else if (cobc_deciph_memory_check (cob_optarg)) {
@@ -3991,7 +3994,7 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
-		case CB_FLAG_GETOPT_COPY_FILE: /* 18 */
+		case CB_FLAG_GETOPT_COPY_FILE:
 			/* --copy=<file> : COPY file at beginning */
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--copy");
@@ -3999,7 +4002,7 @@ process_command_line (const int argc, char **argv)
 			CB_TEXT_LIST_ADD (cb_copy_list, cobc_strdup (cob_optarg));
 			break;
 
-		case CB_FLAG_GETOPT_INCLUDE_FILE: /* 19 */
+		case CB_FLAG_GETOPT_INCLUDE_FILE:
 			/* -include=<file.h> : add #include "file.h" to
 			   generated C file */
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
@@ -4125,7 +4128,8 @@ process_command_line (const int argc, char **argv)
 
 		/* LCOV_EXCL_START */
 		default:
-			cobc_err_msg ("missing evaluation of command line option '%c'", c);	/* not translated as unlikely */
+			/* not translated as unlikely */
+			cobc_err_msg ("missing evaluation of command line option '%c'", c);
 			COBC_ABORT ();
 		/* LCOV_EXCL_STOP */
 
@@ -8301,6 +8305,9 @@ process_compile (struct filename *fn)
 		name = file_basename (fn->source, NULL);
 #ifndef	_MSC_VER
 		strcat (name, ".s");
+#else
+		/* earlier versions of msbuild don't recognize .s */
+		strcat (name, ".asm");
 #endif
 	}
 	size = strlen (name);
@@ -8315,11 +8322,12 @@ process_compile (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
+	/* TODO: we likely need to call ml.exe / ml64.exe */
 	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include, name,
-			name, fn->translate);
+			fn->object, fn->translate);
 	if (verbose_output > 1) {
 		return process (cobc_buffer);
 	} else {

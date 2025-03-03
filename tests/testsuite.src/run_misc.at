@@ -394,10 +394,14 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1212 2312 3412], [])
+
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.def.$COB_MODULE_EXT])
 AT_CHECK([$COMPILE_MODULE -fdefaultbyte=0 callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1111 2211 3311], [])
 
 # note: this is the tested MF result (INDEXED BY are USAGE COMP 9(08), 0-based !):
+#AT_CHECK([mv callee.$COB_MODULE_EXT callee.zero.$COB_MODULE_EXT])
 #AT_CHECK([$COMPILE_MODULE -std=mf-strict callee.cob], [0], [], [])
 #AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1018 2117 3216], [])
 
@@ -422,6 +426,7 @@ AT_DATA([callee.cob], [
 ])
 
 
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.old.$COB_MODULE_EXT])
 AT_CHECK([$COMPILE_MODULE -std=acu-strict callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 19 20 31], [])
 # note: tested result with 2 byte: AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 15 26 37], [])
@@ -8235,9 +8240,8 @@ AT_CHECK([$COBC callee2.cob], [0], [], [])
 AT_CHECK([$COBC -ftrace -w preload.cob], [0], [], [])
 AT_CHECK([$COBC -ftraceall preload2.cob], [0], [], [])
 AT_CHECK([$COBC -fsource-location -w callee2c.cob], [0], [], [])
-AT_CHECK([$COMPILE -o prog -ftraceall caller.cob], [0], [], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" \
- $COBCRUN_DIRECT ./prog], [0], [],
+AT_CHECK([$COBC -x -o prognew -ftraceall caller.cob], [0], [], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prognew], [0], [],
 [Source: 'caller.cob'
 Program-Id:  caller
 Program-Id:  caller                      MOVE                            Line:     15
@@ -18512,13 +18516,14 @@ AT_DATA([prog.cob], [
         PARA-0007.
             STOP RUN.
 ])
-AT_CAPTURE_FILE([prof-prog.csv])
 
 AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob: in section '1ST':
 prog.cob: in paragraph 'PARA-0003':
 prog.cob:11: warning: GO TO SECTION '2ND'
 ])
+
+AT_CAPTURE_FILE([prof-prog.csv])
 
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -18532,7 +18537,7 @@ AT_CHECK([COB_PROF_ENABLE=0 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog],
 
 # Specific test for $f, which is an absolute file name
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='$f-prof.csv' $COBCRUN_DIRECT ./prog], [0], [], [ignore])
-AT_CHECK([ls prog-prof.csv], [0], [ignore], [])
+AT_CHECK([ls prog$COB_EXE_EXT-prof.csv], [0], [ignore], [])
 
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$$-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0], [],
 [File prof-123456-prog.csv generated
@@ -18569,10 +18574,10 @@ AT_DATA([prog.cob], [
           DISPLAY "HELLO".
           DISPLAY "WORLD".
 ])
-AT_CAPTURE_FILE([prof.csv])
 
 AT_CHECK([$COMPILE -fprof prog.cob])
 
+AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
 WORLD
 ],
@@ -18601,10 +18606,10 @@ AT_DATA([prog.cob], [
         2ND.
           DISPLAY "WORLD".
 ])
-AT_CAPTURE_FILE([prof.csv])
 
 AT_CHECK([$COMPILE -fprof prog.cob])
 
+AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
 WORLD
 ],
@@ -18679,10 +18684,10 @@ AT_DATA([prog.cob], [
        END PROGRAM inside-program.
        END PROGRAM prog.
 ])
-AT_CAPTURE_FILE([prof.csv])
 
 AT_CHECK([$COMPILE -fprof prog.cob])
 
+AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
 [HELLO WORLD
 end iter
@@ -18721,16 +18726,18 @@ AT_DATA([prog1.cob], [
        01 PARAM PIC 9.
        01 CALL-NAME PIC X(10).
        PROCEDURE DIVISION.
-          MOVE 'prog2' TO CALL-NAME.
-          PERFORM CALL-PROG2
-             VARYING COUNTER FROM 0 BY 1
-             UNTIL COUNTER = 300.
-          GOBACK.
+      *>PROG.  test the non-standard "no main paragraph, but
+      *>       later using one" for its expected profiling output
+           MOVE 'prog2' TO CALL-NAME.
+           PERFORM CALL-PROG2
+              VARYING COUNTER FROM 0 BY 1
+              UNTIL COUNTER = 300.
+           GOBACK.
        CALL-PROG2.
-            MOVE 1 TO PARAM.
-            CALL "prog2" USING PARAM.
-            MOVE 2 TO PARAM.
-            CALL CALL-NAME USING PARAM.
+           MOVE 1 TO PARAM.
+           CALL "prog2" USING PARAM.
+           MOVE 2 TO PARAM.
+           CALL CALL-NAME USING PARAM.
        END PROGRAM prog1.
 ])
 AT_DATA([prog2.cob], [
@@ -18741,21 +18748,20 @@ AT_DATA([prog2.cob], [
        01 PARAM PIC 9.
        PROCEDURE DIVISION USING PARAM.
        DISPLAYER SECTION.
-          IF PARAM = 1
-             DISPLAY "X" NO ADVANCING
-	  ELSE
-	     PERFORM OTHER-DISPLAY.
-	  GOBACK.
+           IF PARAM = 1
+              DISPLAY "X" NO ADVANCING
+           ELSE
+              PERFORM OTHER-DISPLAY.
+           GOBACK.
        OTHER-DISPLAY SECTION.
-          DISPLAY "Y" NO ADVANCING.
+           DISPLAY "Y" NO ADVANCING.
        END PROGRAM prog2.
 ])
-AT_CAPTURE_FILE([prof.csv])
 
 AT_CHECK([$COMPILE -fprof prog1.cob])
-
 AT_CHECK([$COMPILE_MODULE prog2.cob])
 
+AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
 [XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
 [File prof.csv generated
@@ -18764,13 +18770,15 @@ AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0]
 AT_CHECK([cat prof.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog1,,,,prog1.cob:9,PROGRAM,1803000000,1.803 s,1
-prog1,MAIN SECTION,,,prog1.cob:10,SECTION,3301000000,3.301 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:10,PARAGRAPH,1801000000,1.801 s,1
-prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:15,PARAGRAPH,1500000000,1.500 s,300
-prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:17,CALL,300000000,0.300 s,300
-prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:19,CALL,300000000,0.300 s,300
+prog1,MAIN SECTION,,,prog1.cob:12,SECTION,3301000000,3.301 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:12,PARAGRAPH,1801000000,1.801 s,1
+prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:17,PARAGRAPH,1500000000,1.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:19,CALL,300000000,0.300 s,300
+prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:21,CALL,300000000,0.300 s,300
 ])
 
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv prog2.$COB_MODULE_EXT prog2.old.$COB_MODULE_EXT])
 AT_CHECK([$COMPILE_MODULE -fprof prog2.cob])
 
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
@@ -18786,11 +18794,11 @@ prog2,DISPLAYER,MAIN PARAGRAPH,,prog2.cob:8,PARAGRAPH,1200000000,1.200 s,600
 prog2,OTHER-DISPLAY,,,prog2.cob:14,SECTION,300000000,0.300 s,300
 prog2,OTHER-DISPLAY,MAIN PARAGRAPH,,prog2.cob:14,PARAGRAPH,300000000,0.300 s,300
 prog1,,,,prog1.cob:9,PROGRAM,4803000000,4.803 s,1
-prog1,MAIN SECTION,,,prog1.cob:10,SECTION,9301000000,9.301 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:10,PARAGRAPH,4801000000,4.801 s,1
-prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:15,PARAGRAPH,4500000000,4.500 s,300
-prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:17,CALL,1500000000,1.500 s,300
-prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:19,CALL,2100000000,2.100 s,300
+prog1,MAIN SECTION,,,prog1.cob:12,SECTION,9301000000,9.301 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:12,PARAGRAPH,4801000000,4.801 s,1
+prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:17,PARAGRAPH,4500000000,4.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:19,CALL,1500000000,1.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:21,CALL,2100000000,2.100 s,300
 ])
 
 AT_CLEANUP
@@ -18803,39 +18811,54 @@ AT_DATA([prog1.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog1.
        DATA DIVISION.
+       working-storage section.
+       01    os-check   pic x(7).
+         88 os-is-windows-or-dos values 'WINDOWS' 'FREEDOS'.
+       01  callee       pic x(8) value "./prog2".
+         88 callee-wdos value ".\prog2".
        PROCEDURE DIVISION.
-          CALL "SYSTEM" USING "./prog2"
-          GOBACK.
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
+           if os-check = spaces
+             accept os-check from environment "OS_NAME".
+           inspect os-check converting "werfdosin" to "WERFDOSIN".
+           if os-is-windows-or-dos
+             set callee-wdos to true.
+           call "SYSTEM" using callee.
+           if callee = space
+             call 'impossible'.
+           GOBACK.
 ])
 AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog2.
        PROCEDURE DIVISION.
        MAIN.
-          SET ENVIRONMENT "COB_PROF_FILE" TO "prof2.csv"
-	  PERFORM PARA 5 TIMES.
-	  GOBACK.
+           SET ENVIRONMENT "COB_PROF_FILE" TO "prof2.csv"
+           PERFORM PARA 5 TIMES.
+           GOBACK.
        PARA.
-          CONTINUE.
+           CONTINUE.
 ])
+AT_CHECK([$COMPILE_MODULE -fprof prog1.cob])
+AT_CHECK([$COMPILE -fprof prog2.cob])
+
 AT_CAPTURE_FILE([prof1.csv])
 AT_CAPTURE_FILE([prof2.csv])
 
-AT_CHECK([$COMPILE_MODULE -fprof prog1.cob])
-
-AT_CHECK([$COMPILE -fprof prog2.cob])
-
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv $COBCRUN ./prog1], [0], [],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv $COBCRUN prog1], [0], [],
 [File prof2.csv generated
 File prof1.csv generated
 ])
 
 AT_CHECK([cat prof1.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
-prog1,,,,prog1.cob:5,PROGRAM,5000000,0.005 s,1
-prog1,MAIN SECTION,,,prog1.cob:6,SECTION,3000000,0.003 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:6,PARAGRAPH,3000000,0.003 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,SYSTEM,prog1.cob:6,CALL,1000000,0.001 s,1
+prog1,,,,prog1.cob:10,PROGRAM,5000000,0.005 s,1
+prog1,MAIN SECTION,,,prog1.cob:11,SECTION,3000000,0.003 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:11,PARAGRAPH,3000000,0.003 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,SYSTEM,prog1.cob:19,CALL,1000000,0.001 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,impossible,prog1.cob:21,CALL,0,0.000 s,0
 ])
 
 AT_CHECK([cat prof2.csv], [0],
@@ -18885,16 +18908,18 @@ AT_DATA([callee.cob], [
        PROGRAM-ID. callee.
        PROCEDURE DIVISION.
        MAIN.
-	  PERFORM PARA 5 TIMES.
-	  GOBACK.
+           PERFORM PARA 5 TIMES.
+           GOBACK.
        PARA.
-          CONTINUE.
+           CONTINUE.
 ])
-AT_CAPTURE_FILE([prof.csv])
 
 AT_CHECK([$COMPILE caller.c])
 AT_CHECK([$COMPILE_MODULE -fprof callee.cob])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [], [File prof.csv generated
+
+AT_CAPTURE_FILE([prof.csv])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
+[File prof.csv generated
 ])
 
 AT_CLEANUP

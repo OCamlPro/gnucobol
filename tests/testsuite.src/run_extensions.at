@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -2710,7 +2710,39 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
 +000000002
 +000000003
 +000000004
-])
+], [])
+
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.old.$COB_MODULE_EXT])
+
+# no argument check leads to only check on use
+AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[+000000000
++000000001
++000000002
++000000003
++000000004
+], [])
+
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.nocheck.$COB_MODULE_EXT])
+
+# sticky linkage leads to only check on use
+AT_CHECK([$COMPILE_MODULE -fsticky-linkage callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[+000000000
++000000001
++000000002
++000000003
++000000004
+], [])
+
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.stick.$COB_MODULE_EXT])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+#[libcob: callee.cob:12: error: LINKAGE item X not passed by caller
+#])
 
 AT_CLEANUP
 
@@ -3099,7 +3131,16 @@ AT_DATA([hello.cob], [
 ])
 
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-# TODO: Doesn't work without sticky-linkage which is likely a bug!
+AT_CHECK([$COMPILE_MODULE -fentry-statement=ok hello.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[Hello, COBOL!
+Bye, COBOL!
+])
+
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv hello.$COB_MODULE_EXT hello.old.$COB_MODULE_EXT])
+
+# no difference expected with sticky linkage (but other codegen)
 AT_CHECK([$COMPILE_MODULE -fentry-statement=ok -fsticky-linkage hello.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
 [Hello, COBOL!

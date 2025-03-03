@@ -93,6 +93,7 @@
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
+#include "cobcapi.h"
 
 #ifdef	HAVE_CURSES_FREEALL
 extern void	_nc_freeall (void);
@@ -4923,6 +4924,64 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 		}
 	}
 	return 0;
+#endif
+}
+
+/* save the current stdscr screen to a file */
+int
+cob_sys_scr_dump(unsigned char *parm)
+{
+#ifdef	WITH_EXTENDED_SCREENIO
+	int	result;
+	FILE	*filep;
+	const char *filename = cob_get_param_str_buffered (1);
+
+	COB_CHK_PARMS (CBL_GC_SCR_DUMP, 1);
+	init_cob_screen_if_needed ();
+
+	if (filename && (filep = fopen(filename, "wb")) != NULL)
+	{
+		refresh();
+		result = putwin(stdscr, filep);
+		fclose(filep);
+		return result;
+	}
+
+	return ERR;
+#else
+	return -1;
+#endif
+}
+
+
+/* restore the current stdscr screen from a file */
+int cob_sys_scr_restore(unsigned char *parm)
+{
+#ifdef	WITH_EXTENDED_SCREENIO
+	int	result;
+	FILE	*filep;
+	const char	*filename = cob_get_param_str_buffered (1);
+
+	COB_CHK_PARMS (CBL_GC_SCR_RESTORE, 1);
+	init_cob_screen_if_needed ();
+
+	if (filename && (filep = fopen(filename, "rb")) != NULL)
+	{
+		WINDOW *replacement = getwin(filep);
+		fclose(filep);
+
+		if (replacement)
+		{
+			result = overwrite(replacement, stdscr);
+			refresh();
+			delwin(replacement);
+			return result;
+		}
+	}
+
+	return ERR;
+#else
+	return -1;
 #endif
 }
 

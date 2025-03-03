@@ -271,12 +271,14 @@ bdb_close_index (cob_file *f, int index)
 
 static int
 bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
-#if DB_VERSION_MAJOR >= 6 /* ABI break in BDB 6...) */
+#if DB_VERSION_MAJOR >= 6 /* ABI break in DB_VERSION_FAMILY 12 ... */
                 , size_t *locp
 #endif
 )
 {
-	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA(k1);
+	const unsigned char *col = (unsigned char *)DBT_GET_APP_DATA (k1);
+	COB_UNUSED (db);
+
 	/* LCOV_EXCL_START */
 	if (col == NULL) {
 		cob_runtime_error ("bdb_bt_compare was set but no collating sequence was stored in DBT");
@@ -1461,13 +1463,14 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_m
 			case DB_LOCK_NOTGRANTED:
 				return COB_STATUS_61_FILE_SHARING;
 			case ENOENT:
+			case ENOTDIR:
 				if (mode == COB_OPEN_EXTEND
 				 || mode == COB_OPEN_OUTPUT) {
 					return COB_STATUS_35_NOT_EXISTS;
 				}
 				if (f->flag_optional) {
 					if (mode == COB_OPEN_I_O) {
-						return COB_STATUS_30_PERMANENT_ERROR;
+						return COB_STATUS_35_NOT_EXISTS;
 					}
 					f->open_mode = (enum cob_open_mode)mode;
 					f->flag_nonexistent = 1;

@@ -24,6 +24,8 @@
 
 #include "../libcob/cobinternal.h"
 
+#include "cobc.h"			/* type definitions */
+
 #define CB_BEFORE		cb_int0
 #define CB_AFTER		cb_int1
 

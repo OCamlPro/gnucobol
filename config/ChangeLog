@@ -8,6 +8,10 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2024-07-11  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: fix minor alignment / tab issues
+
 2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	fixing bug #965

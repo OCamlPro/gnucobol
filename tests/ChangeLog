@@ -6,6 +6,10 @@
 	  under MSVC Release, by forcing a flush of stdout with
 	  fflush and using cob_free instead of free in C codes
 
+2024-06-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal_win: fix path-related issues in Windows builds
+
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal_win: updated to current atlocal.in
@@ -44,11 +48,6 @@
 	* testsuite.src/run_file.at: skip OS recognition on cygwin
 	* testsuite.src/run_misc.at: fix linking/dlopen issue happening
 	  on some systems (mostly win32) in test CALL RETURNING POINTER
-
-2023-01-23 David Declerck <david.declerck@ocamlpro.com>
-
-	* testsuite.src/configuration.at: test reading translation
-	  tables from an external file
 
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -101,16 +100,6 @@
 2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal_valgrind, atlocal_win: updated to match atlocal.in
-
-2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* general: fix area A in testsuite
-
-2022-03-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* testsuite.src/configuration.at, testsuite.at/syn_misc.at: new
-	  tests for sections and paragraphs that do not end with a period
-	* testsuite.src/run_misc.at: fix lines in trace test
 
 2022-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
