@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -3726,7 +3726,7 @@ get_value (cb_tree x)
 	} else if (x == cb_norm_low) {
 		return 0;
 	} else if (x == cb_norm_high) {
-		return 255;
+		return 0xff;
 	} else if (x == cb_null) {
 		return 0;
 	} else {
@@ -3751,7 +3751,7 @@ get_value (cb_tree x)
 }
 
 static int
-cb_validate_collating (struct cb_program *prog, cb_tree collating_sequence)
+cb_process_collating (struct cb_program *prog, cb_tree collating_sequence)
 {
 	cb_tree		x;
 
@@ -3766,16 +3766,7 @@ cb_validate_collating (struct cb_program *prog, cb_tree collating_sequence)
 		return 1;
 	}
 
-#ifdef COB_EBCDIC_MACHINE
-	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_ASCII) {
-                prog->low_value = ascii_to_ebcdic[0x00];
-                prog->high_value = ascii_to_ebcdic[0xff];
-#else
-	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_EBCDIC) {
-                prog->low_value = ebcdic_to_ascii[0x00];
-                prog->high_value = ebcdic_to_ascii[0xff];
-#endif
-	} else if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_CUSTOM) {
+	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_CUSTOM) {
 		if (CB_ALPHABET_NAME (x)->alphabet_target == CB_ALPHABET_ALPHANUMERIC) {
 			prog->low_value = (cob_u8_t)CB_ALPHABET_NAME (x)->low_val_char;
 			prog->high_value = (cob_u8_t)CB_ALPHABET_NAME (x)->high_val_char;
@@ -3783,7 +3774,19 @@ cb_validate_collating (struct cb_program *prog, cb_tree collating_sequence)
 			prog->low_value_n = (cob_u16_t)CB_ALPHABET_NAME (x)->low_val_char;
 			prog->high_value_n = (cob_u16_t)CB_ALPHABET_NAME (x)->high_val_char;
 		}
-	} else {
+	} else
+#ifdef COB_EBCDIC_MACHINE
+	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_ASCII) {
+                prog->low_value = ascii_to_ebcdic[0x00];
+                prog->high_value = ascii_to_ebcdic[0xff];
+	}
+#else
+	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_EBCDIC) {
+                prog->low_value = ebcdic_to_ascii[0x00];
+                prog->high_value = ebcdic_to_ascii[0xff];
+	}
+#endif
+	else {
 		return 0;
 	}
 
@@ -3793,7 +3796,7 @@ cb_validate_collating (struct cb_program *prog, cb_tree collating_sequence)
 			CB_LITERAL(cb_low)->data[0] = prog->low_value;
 			CB_LITERAL(cb_low)->all = 1;
 		}
-		if (prog->high_value != 255){
+		if (prog->high_value != 0xff) {
 			cb_high = cb_build_alphanumeric_literal ("\0", (size_t)1);
 			CB_LITERAL(cb_high)->data[0] = prog->high_value;
 			CB_LITERAL(cb_high)->all = 1;
@@ -3845,7 +3848,7 @@ validate_alphabet (cb_tree alphabet)
 			entry++;
 		}
 		ap->low_val_char = 0;
-		ap->high_val_char = 255;
+		ap->high_val_char = 0xff;
 		return;
 	}
 
@@ -3865,7 +3868,7 @@ validate_alphabet (cb_tree alphabet)
 		ap->high_val_char = ascii_to_ebcdic[0xff];
 #else
 		ap->low_val_char = 0;
-		ap->high_val_char = 255;
+		ap->high_val_char = 0xff;
 #endif
 		memcpy (ap->alphachr, ap->values, memsize);
 		return;
@@ -3884,7 +3887,7 @@ validate_alphabet (cb_tree alphabet)
 		}
 #ifdef	COB_EBCDIC_MACHINE
 		ap->low_val_char = 0;
-		ap->high_val_char = 255;
+		ap->high_val_char = 0xff;
 #else
 		ap->low_val_char = ebcdic_to_ascii[0x00];
 		ap->high_val_char = ebcdic_to_ascii[0xff];
@@ -4113,7 +4116,7 @@ validate_alphabet (cb_tree alphabet)
 						if (n > COB_MAX_CHAR_ALPHANUMERIC) {
 							i += sprintf (dup_val_str + i, "x'%04x'", n);
 						} else if (isprint (n)) {
-							dup_val_str[i++] = (char)n;						
+							dup_val_str[i++] = (char)n;
 						} else {
 							i += sprintf (dup_val_str + i, "x'%02x'", n);
 						}
@@ -4130,7 +4133,7 @@ validate_alphabet (cb_tree alphabet)
 					ap->name, pos);
 			}
 			ap->low_val_char = 0;
-			ap->high_val_char = 255;
+			ap->high_val_char = 0xff;
 			goto val_ex;
 		}
 		/* Calculate HIGH-VALUE */
@@ -4291,10 +4294,10 @@ cb_validate_program_environment (struct cb_program *prog)
 	}
 
 	/* Resolve the program collating sequences */
-	if (cb_validate_collating (prog, prog->collating_sequence)) {
+	if (cb_process_collating (prog, prog->collating_sequence)) {
 		prog->collating_sequence = NULL;
 	};
-	if (cb_validate_collating (prog, prog->collating_sequence_n)) {
+	if (cb_process_collating (prog, prog->collating_sequence_n)) {
 		prog->collating_sequence_n = NULL;
 	};
 
@@ -12142,7 +12145,7 @@ cb_build_move_high (cb_tree x)
 			return CB_BUILD_FUNCALL_2 ("cob_move", cb_high, x);
 		}
 		if (cb_high == cb_norm_high) {
-			return cb_build_memset (x, 255);
+			return cb_build_memset (x, 0xff);
 		}
 		/* Fall through */
 	default:
