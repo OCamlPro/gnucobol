@@ -4268,9 +4268,9 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 		} else if (p->argv[1] == cb_zero) {
 			output (") - '0')");
 		} else if (p->argv[1] == cb_low) {
-			output (") - %d)", current_prog->low_value);
+			output (") - 0x%02x)", current_prog->low_value);
 		} else if (p->argv[1] == cb_high) {
-			output (") - %d)", current_prog->high_value);
+			output (") - 0x%02x)", current_prog->high_value);
 		} else if (CB_LITERAL_P (p->argv[1])) {
 			output_char (") - ", CB_LITERAL (p->argv[1])->data[0], ")");
 		} else {
@@ -14149,11 +14149,8 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		}
 	}
 
-	/* Low and high values */
-	if (gen_figurative) {
-		output_low_value ();
-		output_high_value ();
-	}
+	output_low_value ();
+	output_high_value ();
 }
 
 void

@@ -117,7 +117,7 @@ static cob_field		str_cob_low;
 static COB_INLINE COB_A_INLINE void
 cob_update_low_value (void)
 {
-	if (COB_MODULE_PTR->collating_sequence != NULL) {
+	if (COB_MODULE_PTR && COB_MODULE_PTR->collating_sequence != NULL) {
 		str_cob_low.data = (cob_u8_ptr)&COB_MODULE_PTR->collating_sequence[0];
 	} else {
 		str_cob_low.data = (cob_u8_ptr)"\0";

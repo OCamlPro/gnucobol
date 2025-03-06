@@ -1034,7 +1034,7 @@ get_data_from_const (cb_tree const_val, unsigned char **data)
 	} else if (const_val == cb_norm_low) {
 		*data = (unsigned char *)"\0";
 	} else if (const_val == cb_norm_high) {
-		*data = (unsigned char *)"\255";
+		*data = (unsigned char *)"\xff";
 	} else if (const_val == cb_null) {
 		*data = (unsigned char *)"\0";
 	} else {
@@ -2202,9 +2202,9 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	p->currency_symbol = '$';
 	p->numeric_separator = ',';
 	p->low_value = 0;
-	p->high_value = 255;
+	p->high_value = 0xff;
 	p->low_value_n = 0;
-	p->high_value_n = 65535;
+	p->high_value_n = 0xffff;
 	if (cb_call_extfh) {
 		p->extfh = cobc_parse_strdup (cb_call_extfh);
 	}
@@ -4313,7 +4313,7 @@ cb_literal_value (cb_tree x)
 	} else if (x == cb_norm_low) {
 		return 0;
 	} else if (x == cb_norm_high) {
-		return 255;
+		return 0xff;
 	} else if (x == cb_null) {
 		return 0;
 	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
