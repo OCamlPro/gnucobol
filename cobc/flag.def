@@ -186,6 +186,9 @@ CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
 	  "                        * turned on by --debug/-g"))
 
+CB_FLAG (cb_flag_check_subscript_set, 1, "opt-check-subscript-set",
+	_("  -fopt-check-subscript-set  check subscript in PERFORM/SET"))
+
 CB_FLAG_OP (1, "memory-check", CB_FLAG_GETOPT_MEMORY_CHECK,
 	_("  -fmemory-check=<scope>     checks for invalid writes to internal storage,\n"
 	  "                        <scope> may be one of: all, pointer, using, none\n"
