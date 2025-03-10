@@ -203,6 +203,7 @@
     <ClCompile Include="..\..\cobc\reserved.c" />
     <ClCompile Include="..\..\cobc\tree.c" />
     <ClCompile Include="..\..\cobc\typeck.c" />
+    <ClCompile Include="..\..\cobc\dump_ast.c" />
     <ClCompile Include="..\..\cobc\parser.c" />
     <ClCompile Include="..\..\cobc\pplex.c" />
     <ClCompile Include="..\..\cobc\ppparse.c" />
@@ -290,6 +291,7 @@
     <None Include="..\..\cobc\flag.def" />
     <None Include="..\..\cobc\ppparse.def" />
     <None Include="..\..\cobc\warning.def" />
+    <None Include="..\..\cobc\dump_ast_gen.c" />
     <None Include="..\..\cobc\ChangeLog" />
     <None Include="..\..\config\acu-strict.conf" />
     <None Include="..\..\config\acu.conf" />
