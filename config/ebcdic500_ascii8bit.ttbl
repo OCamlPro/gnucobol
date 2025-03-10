@@ -26,7 +26,7 @@
 #
 # Note: the only differences with a "plain" EBCDIC 500 to 8-bit ASCII table
 # are that EBCDIC 6A (broken bar) is translated to ASCII 7C (vertical bar)
-# and EBCDIC BB (vertical bar) is translated to ASCII 1A (subtitution char).
+# and EBCDIC BB (vertical bar) is translated to ASCII E3 (unrelated character).
 # This seems to be the "usual" way of translating these characters.
 
 00 01 02 03 9C 09 86 7F 97 8D 8E 0B 0C 0D 0E 0F

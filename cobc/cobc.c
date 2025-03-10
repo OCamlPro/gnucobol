@@ -116,6 +116,7 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_ADD_PHONY     24
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
+#define CB_FLAG_GETOPT_GENTABLE             27
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -634,6 +635,7 @@ static const struct option long_options[] = {
 	{"MG",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_KEEP_MISSING},
 	{"MD",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE},
 	{"fcopybook-deps",	CB_NO_ARG, &cb_flag_copybook_deps, 1},
+	{"gentable",		CB_RQ_ARG, NULL, CB_FLAG_GETOPT_GENTABLE},
 	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
@@ -3407,6 +3409,19 @@ process_command_line (const int argc, char **argv)
 				cb_flag_dump = COB_DUMP_NONE;
 			}
 			break;
+
+		case CB_FLAG_GETOPT_GENTABLE: {
+			/* -gentable=<enc-from>,<enc-to> */
+			const char *from, *to;
+			int res;
+			from = strtok (cob_optarg, ",");
+			to = strtok (NULL, "");
+			if ((from == NULL) || (to == NULL)) {
+				cobc_err_exit (COBC_INV_PAR, "-gentable");
+			}
+			res = gentable (stdout, from, to);
+			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
+		}
 
 		default:
 			/* as we postpone most options simply skip everything other here */
