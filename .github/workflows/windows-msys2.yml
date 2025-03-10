@@ -43,8 +43,10 @@ jobs:
           mkdir _build && cd _build
           # this is a "prepare" only step for this workflow only, so build
           # without any optional packages as one-time build speeding up this part
+          #../configure --without-db --without-curses --without-xml2 --without-json \
+          #             --without-iconv --disable-dependency-tracking
           ../configure --without-db --without-curses --without-xml2 --without-json \
-                       --without-iconv --disable-dependency-tracking
+                       --disable-dependency-tracking
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
