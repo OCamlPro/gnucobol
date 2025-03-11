@@ -5,7 +5,7 @@
 # a not POSIX build (OrangeC or Visual Studio build for example)
 # in a POSIX environment (like MinGW or Cygwin, possibly WSL).
 #
-# Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -48,8 +48,8 @@ export LC_ALL
 unset LANG
 
 # define for performance checks (running code several thousand times)
-# comment manually if not needed
-COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+# uncomment manually if wanted, or set via environment
+# COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
 
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
@@ -90,11 +90,30 @@ _return_path () {
 		cygpath -pm "$1"
 	else
 		# check for WSL / Bash on Windows; ignore error messages (file not available)
-		if $(grep -q "Microsoft" /proc/sys/kernel/osrelease 2>/dev/null); then
+		if $($GREP -q "Microsoft" /proc/sys/kernel/osrelease 2>/dev/null); then
 			wslpath -w "$1"
 		else
 			echo "$1"
 		fi
+	fi
+}
+
+# as we run the testsuite in plain LC_ALL=C the system runs in a plain-as-possible environment;
+# in the case that we need UTF8 encoding within tests, we try to find out if a working UTF-8
+# locale is available, if not then we return with 77 which will skip the spßecific test needing it
+set_utf8_locale () {
+	# we need the locale binary to tell us how about the locales available
+	if [ -z "$(which locale)" ]; then
+		echo "Warning: no locale binary found."
+		exit 77  # return code for setting 
+	fi
+	unset LC_ALL
+	if [ -z "$LC_ALL" ]; then export LC_ALL=$(locale -a | $GREP -i -E "C\.utf.*8"     | head -n1); fi
+	if [ -z "$LC_ALL" ]; then export LC_ALL=$(locale -a | $GREP -i -E "en_US\.utf.*8" | head -n1); fi
+	if [ -z "$LC_ALL" ]; then export LC_ALL=$(locale -a | $GREP -i -E ".*\.utf.*8"    | head -n1); fi
+	if [ -z "$LC_ALL" ]; then
+		echo "Warning: no UTF-8 locale found."
+		exit 77
 	fi
 }
 
@@ -125,8 +144,8 @@ export COB_UNIX_LF
 COB_RUNTIME_CONFIG="$(_return_path "${abs_top_srcdir}/config/runtime_empty.cfg")"
 export COB_RUNTIME_CONFIG
 for cobenv in $(${LOCAL_ENV} ${COBCRUN} --runtime-conf \
-                 | grep " env:" | cut -d: -f2 | cut -d= -f1 \
-                 | grep -v "PATH" | grep -v "TERM"); \
+                 | $GREP " env:" | cut -d: -f2 | cut -d= -f1 \
+                 | $GREP -v "PATH" | $GREP -v "TERM"); \
 	do _unset_option $cobenv; \
 done
 
@@ -135,8 +154,8 @@ ${LOCAL_ENV} ${COBC} --verbose --info > info.out
 
 # ... and also unset for the compiler
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
-	for cobenv in $(grep "env:" info.out | cut -d: -f2 | cut -d= -f1 \
-	              | grep -v "PATH"); \
+	for cobenv in $($GREP "env:" info.out | cut -d: -f2 | cut -d= -f1 \
+	              | $GREP -v "PATH"); \
 		do _unset_option $cobenv; \
 	done
 fi
@@ -150,20 +169,20 @@ export COB_MSG_FORMAT
 # different flags checked in the testsuite
 # note: kept intended to ease merge from atlocal.in
 
-	COB_OBJECT_EXT="$(grep COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
+	COB_OBJECT_EXT="$($GREP COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
 	COB_EXE_EXT=".exe"
 	COB_MODULE_EXT="dll"
 
-	if test $(grep -i -c "little-endian" info.out) = 0; then
+	if test $($GREP -i -c "little-endian" info.out) = 0; then
 		COB_BIGENDIAN="yes"
 	else
 		COB_BIGENDIAN="no"
 	fi
-	COB_HAS_64_BIT_POINTER=$(grep "64bit-mode" info.out | cut -d: -f2 | cut -b2-)
+	COB_HAS_64_BIT_POINTER=$($GREP "64bit-mode" info.out | cut -d: -f2 | cut -b2-)
 
-	cob_indexed=$(grep -i "indexed file" info.out | cut -d: -f2)
+	cob_indexed=$($GREP -i "indexed file" info.out | cut -d: -f2)
 	if test "x$cob_indexed" = "x"; then
-		cob_indexed=$(grep ISAM info.out | cut -d: -f2)
+		cob_indexed=$($GREP ISAM info.out | cut -d: -f2)
 	fi
 	case "$cob_indexed" in
 	" disabled")	COB_HAS_ISAM="no";;
@@ -176,18 +195,18 @@ export COB_MSG_FORMAT
 	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
 	esac
 
-	if test $(grep -i -c "XML library.*disabled" info.out) = 0; then
+	if test $($GREP -i -c "XML library.*disabled" info.out) = 0; then
 		COB_HAS_XML2="yes"
 	else
 		COB_HAS_XML2="no"
 	fi
-	if test $(grep -i -c "JSON library.*disabled" info.out) = 0; then
+	if test $($GREP -i -c "JSON library.*disabled" info.out) = 0; then
 		COB_HAS_JSON="yes"
 	else
 		COB_HAS_JSON="no"
 	fi
 	# see note below
-	if test $(grep -i -c " screen .*disabled" info.out) = 0; then
+	if test $($GREP -i -c " screen .*disabled" info.out) = 0; then
 		COB_HAS_CURSES="yes"
 	else
 		COB_HAS_CURSES="no"
@@ -198,7 +217,7 @@ if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# "Redirection is not supported" (at least with PDCurses "wincon" port)
 	# --> disabling the tests for this feature
 	# ncurses is known to work as long as TERM is appropriate
-	if test $(grep -i -c "ncurses" info.out) != 0; then
+	if test $($GREP -i -c "ncurses" info.out) != 0; then
 		if test "x$MSYSTEM" != "x"; then
 			TERM=""
 		else
@@ -209,7 +228,7 @@ if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	else
 		# manual tests are executed in separate window
 		# and are visible - so no need to handle it there
-		echo "$at_help_all" | grep -q "run_manual_screen" 2>/dev/null
+		echo "$at_help_all" | $GREP -q "run_manual_screen" 2>/dev/null
 		if test $? -ne 0; then
 		   COB_HAS_CURSES="no"
 		fi
