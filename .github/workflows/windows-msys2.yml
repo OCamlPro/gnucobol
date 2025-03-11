@@ -68,8 +68,8 @@ jobs:
   build:
     needs: prepare
     runs-on: windows-latest
-    timeout-minutes: ${{ matrix.sys == 'clang64' && 35 || 20 }}
-    strategy:        # usually 13-15 min, except clang, which takes ~30 min
+    timeout-minutes: 15
+    strategy:
       fail-fast: false
       matrix:
         include:

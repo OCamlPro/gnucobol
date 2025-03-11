@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2018,2020-2023 Free Software Foundation, Inc.
+## Copyright (C) 2014-2018,2020-2024 Free Software Foundation, Inc.
 ## Written by Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -2747,7 +2747,7 @@ AT_CLEANUP
 
 
 AT_SETUP([END key])
-AT_KEYWORDS([END SIZE])
+AT_KEYWORDS([END SIZE position])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -2794,7 +2794,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INSERT key])
-AT_KEYWORDS([INSERT SIZE])
+AT_KEYWORDS([COB_INSERT_MODE SIZE])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -2842,8 +2842,68 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([cursor visibility])
+AT_KEYWORDS([COB_HIDE_CURSOR])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  success-flag PIC X VALUE 'Y'.
+           88  fail     VALUE 'N'.
+       01  ws-input     PIC X.
+           88  success  VALUE 'Y', 'y'.
+       PROCEDURE DIVISION.
+           DISPLAY "Type 'Y' if you see the cursor"
+               LINE 1 COLUMN 1.
+
+           ACCEPT WS-INPUT
+               LINE 1 COLUMN 50
+               WITH AUTO-SKIP
+                    UPDATE.
+           IF NOT success SET fail TO TRUE.
+
+           SET ENVIRONMENT 'COB_HIDE_CURSOR' TO 'TRUE'.
+
+           DISPLAY "Type 'Y' if you do not see the cursor"
+               LINE 3 COLUMN 1.
+
+           ACCEPT WS-INPUT
+               LINE 3 COLUMN 50
+               WITH AUTO-SKIP
+                    UPDATE.
+           IF NOT success SET fail TO TRUE.
+
+           SET ENVIRONMENT 'COB_INSERT_MODE' TO 'TRUE'.
+
+           DISPLAY "Type 'Y' if you still do not see the cursor"
+               LINE 5 COLUMN 1.
+
+           ACCEPT WS-INPUT
+               LINE 5 COLUMN 50
+               WITH AUTO-SKIP
+                    UPDATE.
+           IF NOT success SET fail TO TRUE.
+
+           IF fail
+               GOBACK RETURNING 1
+           ELSE
+               GOBACK RETURNING 0
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([BACKSPACE key])
-AT_KEYWORDS([BACKSPACE SIZE CURSOR])
+AT_KEYWORDS([SIZE CURSOR position])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -2898,7 +2958,7 @@ AT_CLEANUP
 
 
 AT_SETUP([DELETE key])
-AT_KEYWORDS([DELETE SIZE])
+AT_KEYWORDS([SIZE position])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 

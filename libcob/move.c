@@ -471,106 +471,199 @@ cob_move_alphanum_to_alphanum (cob_field *f1, cob_field *f2)
 void
 cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 {
-	unsigned char	*data1 = COB_FIELD_DATA (f1);
-	const int		sign = COB_GET_SIGN_ADJUST (f1);
-	const short		scale1 = COB_FIELD_SCALE (f1);
-	const short		scale2 = COB_FIELD_SCALE (f2);
-	const int 		target_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
-	unsigned short	 	digits1;
-	unsigned short		digits2;
-	register unsigned int	i;
 
-	register unsigned char	*p;
+	/************************************************************/
+	/*                                                          */
+	/*  The logic used by this function is to find the offset   */
+	/*  from the decimal point for first position in both the   */
+	/*  sending and receiving fields. Note that NO special      */
+	/*  logic is required to handle the presence of a "p" in    */
+	/*  the PICTURE clause.                                     */
+	/*                                                          */
+	/*  Once the offsets are found we can use the difference    */
+	/*  in the offsets to position the pointers in each of the  */
+	/*  fields.                                                 */
+	/*                                                          */
+	/*  If the offsets are the same then we can start packing   */
+	/*  starting at the beginning of both fields.               */
+	/*                                                          */
+	/*  If the offset of the sending field is greater than      */
+	/*  that of the receiving field then we need to adjust the  */
+	/*  position of the sending field point to the right by     */
+	/*  the difference in the offsets.                          */
+	/*                                                          */
+	/*  If the offset of the receiving field is greater than    */
+	/*  that of the sending field then the logic is a bit more  */
+	/*  complicated in that each time thru the packing loop we  */
+	/*  pack TWO DIGITS. So we divide the offset by 2 to        */
+	/*  adjust the position of the pointer to the packed field  */
+	/*  to the correct byte where the digit will be placed.     */
+	/*  Also we need to determine if the first digit to be      */
+	/*  packed will go into the HIGH ORDER nibble or the LOW    */
+	/*  ORDER nibble. If the difference in the offsets is ODD,  */
+	/*  then the first digit will need to go into the LOW       */
+	/*  ORDER nibble, so we set a switch for that.              */
+	/*                                                          */
+	/*  Before starting the packing loop we need to check if    */
+	/*  the first digit has to go into the LOW ORDER nibble,    */
+	/*  if so we need to do that first.                         */
+	/*                                                          */
+	/*  Also after completing the packing loop, we need to      */
+	/*  check if there is a digit left to be packed, if so we   */
+	/*  need to put it into the HIGH ORDER nibble of the next   */
+	/*  location in the receiving field.                        */
+	/*                                                          */
+	/*  Then we need to clear the PAD nibble if present and     */
+	/*  set the sign nibble if the receiving field is signed.   */
+	/*                                                          */
+	/************************************************************/
 
-	/* 99P -> 3 digits, scale -1 --> real digits are less */
-	if (scale1 >= 0) {
-		digits1 = COB_FIELD_DIGITS (f1);
-	} else {
-		digits1 = COB_FIELD_DIGITS (f1) + scale1;
-	}
-	if (scale2 >= 0) {
-		digits2 = COB_FIELD_DIGITS (f2);
-	} else {
-		digits2 = COB_FIELD_DIGITS (f2) + scale2;
-	}
+	const int     sign = COB_GET_SIGN_ADJUST (f1);
+	const short   scale1 = COB_FIELD_SCALE (f1);
+	const short   scale2 = COB_FIELD_SCALE (f2);
+	const int     target_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
+	unsigned int      f1_digits, f2_digits;
+	unsigned int      start_in_low_nibble = 0;
+	int               f1_offset, f2_offset;
 
-	if (target_no_sign_nibble) {
-		i = digits2 % 2;
-	} else {
-		i = 1 - digits2 % 2;
-	}
+	register unsigned char  *p, *p_end, *q, *q_end;
 
-	/* note: the overhead of checking for leading ZERO and zero-like data
-	   is higher than just setting it below - so not done here */
 
-	/* skip not available positions */
-	p = data1 + (digits1 - scale1) - (digits2 - scale2);
-	while (p < data1) {
-		p++; i++;	/* note: both p and i are about digits */
-	}
+			/************************************************************/
+			/*                                                          */
+			/*  Note that when calculating the offsets of the first     */
+			/*  position in each field we need to use the number of     */
+			/*  digits in the actual data field not the number of       */
+			/*  digits returned by the COB_FIELD_DIGITS function.       */
+			/*                                                          */
+			/*  Note that this logic works whether or not there is a    */
+			/*  "P" any where in the PICTURE clause.                    */
+			/*                                                          */
+			/************************************************************/
 
+	if (COB_FIELD_SIGN_SEPARATE (f1))
+			f1_digits = f1->size - 1;
+	else
+			f1_digits = f1->size;
+
+	p = COB_FIELD_DATA (f1);
+	p_end = p + f1_digits - 1;
+
+	f1_offset = f1_digits - scale1 - 1;
+
+
+	if (target_no_sign_nibble)
+			f2_digits = f2->size << 1;
+	else
+			f2_digits = (f2->size << 1) - 1;
+
+	q = f2->data;
+	q_end = q + f2->size - 1;
+
+	f2_offset = f2_digits - scale2 - 1;
+
+			/************************************************************/
+			/*                                                          */
+			/*  if the packed field has a sign nibble then the offset   */
+			/*  has to be one greater than the number of digits in      */
+			/*  both fields since the offset is the position in         */
+			/*  the receiving field                                     */
+			/*                                                          */
+			/************************************************************/
+
+			/************************************************************/
+			/*                                                          */
+			/*  At this point we are ready to position the pointers to  */
+			/*  the sending and receiving fields. Note that if the      */
+			/*  offsets are equal then no positioning is needed and we  */
+			/*  can just start packing data                             */
+			/*                                                          */
 	/* zero out target, then transfer data */
+			/*                                                          */
+			/************************************************************/
+
 	memset (f2->data, 0, f2->size);
+
+	if (f1_offset > f2_offset)
+			p = p + (f1_offset - f2_offset);
+	else if (f1_offset < f2_offset)
 	{
-		register unsigned char	*q = f2->data + i / 2;
-		const unsigned int i_end = (unsigned int)f2->size;	/* a packed field always has small size */
-		/* FIXME: get rid of that, adjust i_end to handle both truncation of the source to the right
-		   and zero-fill because of scale differences (zero-fill wa s already done) */
-		const unsigned char *p_end = data1 + digits1;
+			/************************************************************/
+			/*  if the difference in offsets is odd then the first      */
+			/*  digit will need to pack into the low order nibble       */
+			/*  otherwise it can start packing into the high order      */
+			/*  nibble                                                  */
+			/************************************************************/
+			if ((f2_offset - f1_offset) & 1)
+					start_in_low_nibble = 1;
+			q = q + ((f2_offset - f1_offset ) >> 1);
+	}
 
-		if (i % 2 == 1) {
-			*q++ = COB_D2I (*p++);
-			i++;
-		}
+			/************************************************************/
+			/*                                                          */
+			/*  Now both pointers have been set to start the packing    */
+			/*  of digits. Note that first we have to check to see if   */
+			/*  the first digit to be packed has to be positioned in    */
+			/*  the lower order nibble before we can start the packing  */
+			/*  loop                                                    */
+			/*                                                          */
+			/************************************************************/
 
-		/* note: from this point on the variable "i" represents the target bytes,
-		   not the digits any more (therefore we divide by 2) */
-		i = i / 2;
-
-		/* note: for performance reasons we write "full bytes" only, this means that for COMP-3
-		   we'll read 1 byte "too much = after" from the DISPLAY data;
-		   it is believed that this won't raise a SIGBUS anywhere, but we will need to "clean"
-		   the half-byte before setting the sign */
-
-		/* check for necessary loop (until we not need the p_end check) */
-		if (i_end - i < (unsigned int)(p_end - p + 1) / 2) {
-			while (i < i_end) {
-				*q = ((*p << 4) & 0xFF) 	/* -> dropping the higher bits = no use in COB_D2I */
-					+ COB_D2I (*(p + 1));
-				q++;
-				i++;
-				p += 2;
+	if (start_in_low_nibble && (p <= p_end) && (q <= q_end))
+	{
+			*q = (*p) & 0x0F;
+			q++;
+			p++;
 			}
-		} else {
-			while (p < p_end) {
-				*q = ((*p << 4)	& 0xFF) 	/* -> dropping the higher bits = no use in COB_D2I */
+
+			/************************************************************/
+			/*                                                          */
+			/*  Now we can start the packing loop !!                    */
+			/*                                                          */
+			/*  Note that we exit when the display pointer NOT LESS     */
+			/*  than the last digit in the sending field.               */
+			/*                                                          */
+			/************************************************************/
+
+	while ((p < p_end) && (q <= q_end))
+	{
+			*q = (unsigned char) (*p << 4)  /* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
+			p = p + 2;
 				q++;
-				p += 2;
-			}
-		}
-		/* clean bottom nibble if we packed one extra digit past the end of the input */
-		if (p > p_end) {
-			*(q - 1) &= 0xf0;
-		}
+	}
+
+			/************************************************************/
+			/*                                                          */
+			/*  Now we need to check if there is 1 digit left to pack   */
+			/*                                                          */
+			/************************************************************/
+
+	if ((p == p_end) && (q <= q_end))
+	{
+			*q = (unsigned char) (*p << 4) & 0xF0;
 	}
 
 	COB_PUT_SIGN_ADJUSTED (f1, sign);
+
+	if (COB_FIELD_DIGITS(f2) < f2_digits)
+	{
+			*(f2->data) &= 0x0f;
+	}
 
 	if (target_no_sign_nibble) {
 		return;
 	}
 
-	/* note: for zero-fill like MOVE 2.1 TO C3-9v9999 we only go to the second position and
-	   therefore have to set 'p' to the most-right place in the target field*/
-	p = f2->data + f2->size - 1;
 	if (!COB_FIELD_HAVE_SIGN (f2)) {
-		*p |= 0x0F;
+		*q_end |= 0x0F;
 	} else if (sign < 0) {
-		*p = (*p & 0xF0) | 0x0D;
+		*q_end = (*q_end & 0xF0) | 0x0D;
 	} else {
-		*p = (*p & 0xF0) | 0x0C;
+		*q_end = (*q_end & 0xF0) | 0x0C;
 	}
+
+	return;
 }
 
 void

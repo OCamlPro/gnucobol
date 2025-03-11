@@ -8,6 +8,11 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
+
+	FR #474: add runtime configuration to hide cursor for extended screenio
+	* runtime.cfg: add COB_HIDE_CURSOR
+
 2024-07-11  David Declerck <david.declerck@ocamlpro.com>
 
 	* general: fix minor alignment / tab issues

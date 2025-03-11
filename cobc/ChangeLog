@@ -1,4 +1,12 @@
 
+2024-07-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, config.def: rewrite ENVIRONMENT DIVISION parsing to allow
+	  non-standard order of CONFIGURATION and INPUT-OUTPUT sections,
+	  depending on dialect setting "incorrect-conf-sec-order"
+	* reserved.c: make MENU context-sensitive
+	* reserved.c, parser.y: added MODAL + MODELESS to acu extension windows
+
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (process_compile): fix MSVC build command

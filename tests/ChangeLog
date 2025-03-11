@@ -1,4 +1,10 @@
 
+2025-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2024-02-26:
+	* testsuite.src/backcomp.at: drop contents from 3.x as this
+	  only starts to be relevant after the first 4.0 release
+
 2024-08-03  David Declerck <david.declerck@ocamlpro.com>
 
 	* testsuite.src/run_file.at, testsuite.src/run_misc.at:
@@ -33,6 +39,11 @@
 	  "CHECK-PERF" if one of PERFSUFFIX or CGSUFFIX are set,
 	  or if --enable-debug was specified during configure
 	* testsuite.src: adjusted several tests to use that option
+
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* testsuite.at: added a new test suite to test the backward compatibility
+	  of strings functions (INSPECT, STRING, UNSTRING)
 
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -1225,7 +1236,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
