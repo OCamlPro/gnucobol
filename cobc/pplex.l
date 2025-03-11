@@ -25,6 +25,7 @@
 %option prefix="pp"
 
 %option stack
+%option noyywrap
 
 %option noyy_top_state
 %option noyy_scan_buffer
@@ -53,11 +54,6 @@
 #define	YY_READ_BUF_SIZE	32768
 #undef	YY_BUF_SIZE
 #define	YY_BUF_SIZE		32768
-
-#define	YY_SKIP_YYWRAP
-static int ppwrap (void) {
-	return 1;
-}
 
 static void insert_copy_arg (void);
 
