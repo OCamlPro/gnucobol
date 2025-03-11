@@ -2433,7 +2433,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ACUCOBOL USAGE HANDLE])
-AT_KEYWORDS([misc acu extensions reserved CALL DESTROY])
+AT_KEYWORDS([misc acu extensions reserved CALL DESTROY WINDOW MENU THREAD])
 
 # TODO: need a better test here
 # TODO: maybe add a compiler support configuration to provide better messages
@@ -2455,6 +2455,7 @@ AT_DATA([prog.cob], [
        77  unused-thread           handle    thread.
 
        77  mywindow          usage handle of window.
+       77  mymenu            usage handle of menu.
 
        77  nor-a-handle      usage handle bananas.
        77  neither-a-handle  usage handle of apes.
@@ -2499,22 +2500,23 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
-[prog.cob:19: error: unknown HANDLE type: bananas
-prog.cob:20: error: unknown HANDLE type: apes
-prog.cob:21: warning: HANDLE OF control-type is not implemented
+[prog.cob:18: warning: HANDLE OF MENU is not implemented
+prog.cob:20: error: unknown HANDLE type: bananas
+prog.cob:21: error: unknown HANDLE type: apes
+prog.cob:22: warning: HANDLE OF control-type is not implemented
 prog.cob: in paragraph 'MAIN':
-prog.cob:34: warning: THREAD is not implemented
-prog.cob:36: warning: THREAD is not implemented
-prog.cob:35: error: HANDLE must be either a generic or a THREAD HANDLE
-prog.cob:39: error: HANDLE must be either a generic or a THREAD HANDLE
-prog.cob:39: warning: STOP THREAD is replaced by STOP RUN
-prog.cob:44: warning: THREAD is not implemented
-prog.cob:46: warning: THREAD is not implemented
-prog.cob:45: error: HANDLE must be either a generic or a THREAD HANDLE
-prog.cob:51: warning: GRAPHICAL CONTROL is not implemented
-prog.cob:54: error: HANDLE item not allowed here: 'neither-a-handle'
-prog.cob:55: error: HANDLE item not allowed here: 'mywindow'
-prog.cob:56: error: HANDLE item not allowed here: 'mydir'
+prog.cob:35: warning: THREAD is not implemented
+prog.cob:37: warning: THREAD is not implemented
+prog.cob:36: error: HANDLE must be either a generic or a THREAD HANDLE
+prog.cob:40: error: HANDLE must be either a generic or a THREAD HANDLE
+prog.cob:40: warning: STOP THREAD is replaced by STOP RUN
+prog.cob:45: warning: THREAD is not implemented
+prog.cob:47: warning: THREAD is not implemented
+prog.cob:46: error: HANDLE must be either a generic or a THREAD HANDLE
+prog.cob:52: warning: GRAPHICAL CONTROL is not implemented
+prog.cob:55: error: HANDLE item not allowed here: 'neither-a-handle'
+prog.cob:56: error: HANDLE item not allowed here: 'mywindow'
+prog.cob:57: error: HANDLE item not allowed here: 'mydir'
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [1], [],
@@ -2522,18 +2524,19 @@ AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [1], [],
 prog.cob:14: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:15: error: syntax error, unexpected Identifier
 prog.cob:17: error: syntax error, unexpected Identifier
-prog.cob:19: error: 'handle' is not defined, but is a reserved word in another dialect
+prog.cob:18: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:20: error: syntax error, unexpected Identifier
 prog.cob:21: error: 'handle' is not defined, but is a reserved word in another dialect
+prog.cob:22: error: syntax error, unexpected Identifier
 prog.cob: in paragraph 'MAIN':
-prog.cob:35: error: 'handle IN mywindow' is not defined
-prog.cob:34: error: invalid expression: unfinished expression
-prog.cob:38: error: syntax error, unexpected END-PERFORM
-prog.cob:39: error: 'thread' is not defined, but is a reserved word in another dialect
-prog.cob:39: error: syntax error, unexpected Identifier
-prog.cob:44: error: syntax error, unexpected Identifier, expecting THREAD
-prog.cob:48: error: syntax error, unexpected END-CALL
-prog.cob:51: error: syntax error, unexpected Identifier
+prog.cob:36: error: 'handle IN mywindow' is not defined
+prog.cob:35: error: invalid expression: unfinished expression
+prog.cob:39: error: syntax error, unexpected END-PERFORM
+prog.cob:40: error: 'thread' is not defined, but is a reserved word in another dialect
+prog.cob:40: error: syntax error, unexpected Identifier
+prog.cob:45: error: syntax error, unexpected Identifier, expecting THREAD
+prog.cob:49: error: syntax error, unexpected END-CALL
+prog.cob:52: error: syntax error, unexpected Identifier
 ])
 
 AT_CLEANUP
@@ -2589,6 +2592,8 @@ AT_DATA([prog.cob], [
               FOREGROUND-COLOR 14.
            ACCEPT OMITTED
            DESTROY WINDOW-HANDLE
+           DISPLAY FLOATING WINDOW MODAL CENTERED TITLE IS "centered"
+           DISPLAY FLOATING WINDOW MODELESS RIGHT TITLE IS "correct"
       *
            STOP RUN.
 ])
@@ -2605,6 +2610,8 @@ prog.cob:28: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:33: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:38: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:44: warning: GRAPHICAL CONTROL is not implemented
+prog.cob:45: warning: GRAPHICAL WINDOW is not implemented
+prog.cob:46: warning: GRAPHICAL WINDOW is not implemented
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2619,6 +2626,8 @@ prog.cob:28: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:33: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:38: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:44: warning: GRAPHICAL CONTROL is not implemented
+prog.cob:45: warning: GRAPHICAL WINDOW is not implemented
+prog.cob:46: warning: GRAPHICAL WINDOW is not implemented
 ])
 
 AT_CLEANUP

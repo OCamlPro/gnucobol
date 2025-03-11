@@ -1,0 +1,47 @@
+## Copyright (C) 2024 Free Software Foundation, Inc.
+## Written by Boris Eng
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite for backward compatibility
+##
+## Tests in this file are used to check that the C code coming from COBOL
+## programs compiled with previous versions of GnuCOBOL are still executed
+## correctly with newer versions of the compiler.
+## It is useful when implementing new features in order to prevent the loss of
+## compatibility with programs compiled with previous versions.
+##
+## To add new tests,
+## 1. Choose a COBOL program;
+## 2. Compile it with GnuCOBOL 4.0 (minimal compatibility ensured) and the
+##    flags -Cx and -fno-computed-goto (to generated more portable C code).
+##    Additional flags may be added if needed.
+##    - If it does not work for compatibility reasons (unsupported feature),
+##      return to step 2 with the next version of the compiler;
+##    - If it does not work because of some unrecognized or conflicting code,
+##      it may be necessary to inline some functions (typically, specialized
+##      comparison functions such as cob_cmp_s32 which can be replaced by the
+##      general comparison function cob_cmp_int);
+## 3. For more convenience, if the generated program is prog.c, inline the
+##    headers by replacing #include "prog.c.h" and #include "prog.c.l.h"
+##    by the content of the files prog.c.h and prog.c.l.h respectively;
+## 4. Although not mandatory, it is wiser to polish the code by removing
+##    useless headers or portions of code.
+
+
+# Note: contents from 3.x dropped as this only starts
+#       to be relevant after the first 4.0 release
+

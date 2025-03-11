@@ -200,6 +200,7 @@
 #define	COB_BEEP_VALUE		cobsetptr->cob_beep_value
 #define	COB_TIMEOUT_SCALE	cobsetptr->cob_timeout_scale
 #define	COB_INSERT_MODE		cobsetptr->cob_insert_mode
+#define	COB_HIDE_CURSOR		cobsetptr->cob_hide_cursor
 #define	COB_EXTENDED_STATUS	cobsetptr->cob_extended_status
 #define	COB_MOUSE_FLAGS	cobsetptr->cob_mouse_flags
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
@@ -302,9 +303,9 @@ typedef struct __cob_settings {
 	unsigned int	cob_use_esc;		/* Check ESC key */
 	unsigned int	cob_timeout_scale;	/* timeout scale */
 	unsigned int	cob_insert_mode;	/* insert toggle, 0=off, 1=on */
+	unsigned int	cob_hide_cursor;	/* hide cursor, 0=visible, 1=hidden */
 	unsigned int	cob_exit_wait;		/* wait on program exit if no ACCEPT came after last DISPLAY */
 	const char		*cob_exit_msg;		/* message for cob_exit_wait */
-
 
 	/* reportio.c */
 	unsigned int 	cob_col_just_lrc;	/* Justify data in column LEFT/RIGHT/CENTER */
@@ -490,6 +491,9 @@ COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 COB_EXPIMP char*        cob_get_strerror (void);
+
+COB_HIDDEN int		cob_cmp_strings (unsigned char*, unsigned char*,
+						 size_t, size_t, const unsigned char*);
 
 enum cob_case_modifier {
 	CCM_NONE,

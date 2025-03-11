@@ -17,6 +17,17 @@
 	  first, close the file descriptor only if the stream is NULL
 	  (fixes assertions under MSVC debug)
 
+2024-12-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_start_internal)->fbdb.c: improve handling of partial
+	  keys, to ensure BDB always compares keys of identical length
+
+2024-12-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
+	  is overwritten, by restoring the *_copy fields that were removed
+	  with the change on 2024-02-26
+
 2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* fileio.c->fbdb.c: fixed Bug #1032 by always using global thread-static variable
@@ -26,11 +37,6 @@
 
 	Reverted change 2022-02-21 to integrate change
 	from GnuCOBOL 3.1 2023-04-04
-
-2024-08-04  David Declerck <david.declerck@ocamlpro.com>
-
-	Adjustments to merge 2020-06-20:
-	* common.c (cob_sys_x91): activated functions 46-49
 
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
@@ -42,6 +48,18 @@
 
 	* common.c (DllMain) [_MSC_VER]: added calls to _CrtSetReportMode
 	  to disable Windows error popups and redirect them to stderr
+
+2024-08-17  Ammar Almorsi <ammaralmorsi@gmail.com>
+
+	FR #474: add runtime configuration to hide cursor for extended screenio
+	* common.c, coblocal.h (cob_settings): added boolean COB_HIDE_CURSOR
+	* screenio.c (cob_settings_screenio): implemented runtime config to hide
+	  the cursor
+
+2024-08-04  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2020-06-20:
+	* common.c (cob_sys_x91): activated functions 46-49
 
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
@@ -63,6 +81,11 @@
 	  adjusted to use cob_open_mode where possible while
 	  merging 2022-10-04
 
+2024-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h (COB_TLS): add a new attribute for thread local static.
+	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
+
 2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_binar): C89 fix
@@ -73,6 +96,18 @@
 	  Also fixed issue when build without curses
 	* move.c (indirect_move) fixed C90 warnings
 	* profiling.c (profile_setup_clock) fixed C90 warnings
+
+2024-07-09  Boris Eng <boris.eng@ocamlpro.com>
+
+	* fileio.c (bdb_bt_compare, indexed_open)->fbdb.c: handle BDB keys of different
+	  length with a flag USE_BDB_KEYDIFF (passed with preparser flag CPPFLAGS)
+	* common.c (cob_cmp_strings), coblocal.h (cob_cmp_strings):
+	  extracted from (cob_cmp_alnum)
+
+2024-07-02  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* numeric.c (cob_add_bcd) fixed check for default ROUNDED option
+	  to resolve bug 934
 
 2024-06-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -85,6 +120,19 @@
 
 	* fileio.c (apply_file_paths): extracted from cob_chk_file_mapping
 	  to factor out duplicated code
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+		fix errors caught by the Sanitizer functionality of GCC. This
+		change did not resolve all of the issues found as some of them
+		were in Berkeley DB and some were intentional in the memory
+		corruption logic which has been implemented in the runtime.
+
+	* move.c (the cob_move_display_to_packed function was rewritten to
+	  fix the out of bounds memory addressing issues and also to make
+	  the code simpler.
+	* numeric.c (the function count_leading_zeros was changed to fix
+	  an out of bounds memory addressing issue
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -143,6 +191,11 @@
 2024-03-10  Alfredo Tupone <tupone@gentoo.org>
 
 	* common.c: add missing include libxml/parser.h
+
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	FR #488: using state structures instead of state vars for strings
+	* strings.c: moved static variables to structures
 
 2024-01-30  Ron Norman <rjn@inglenet.com>
 

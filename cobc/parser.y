@@ -2999,7 +2999,9 @@ set_record_size (cb_tree min, cb_tree max)
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
 %token MNEMONIC_NAME		"Mnemonic name"
+%token MODAL
 %token MODE
+%token MODELESS
 %token MODIFY
 %token MODULES
 %token MOVE
@@ -4183,8 +4185,21 @@ intermediate_rounding_choice:
 
 _environment_division:
   _environment_header
-  _configuration_section
-  _input_output_section
+  _environment_sections
+;
+
+_environment_sections:
+| configuration_section _input_output_section
+| input_output_section configuration_section
+  {
+#define MESSAGE_LEN 100
+	char			message[MESSAGE_LEN] = { '\0' };
+	snprintf (message, MESSAGE_LEN, _("%s incorrectly after %s"),
+			"CONFIGURATION SECTION", "INPUT-OUTPUT SECTION");
+	cb_verify (cb_incorrect_conf_sec_order, message);
+#undef MESSAGE_LEN
+  }
+| input_output_section
 ;
 
 _environment_header:
@@ -4201,13 +4216,9 @@ environment_header:
 
 /* CONFIGURATION SECTION */
 
-_configuration_section:
-  _configuration_header
-  _configuration_paragraphs
-;
-
-_configuration_header:
-| configuration_header
+configuration_section:
+  configuration_header _configuration_paragraphs
+| configuration_paragraphs
 ;
 
 configuration: CONFIGURATION { check_area_a_of ("CONFIGURATION SECTION"); };
@@ -5336,15 +5347,19 @@ top_clause:
 /* INPUT-OUTPUT SECTION */
 
 _input_output_section:
-  _input_output_header
-  _file_control_header
-  _file_control_sequence
-  _i_o_control
+| input_output_section
+;
+
+input_output_section:
+  input_output_header _file_control_header _file_control_sequence  _i_o_control
+| file_control_header _file_control_sequence  _i_o_control
+| file_control_sequence  _i_o_control
+| i_o_control
 ;
 
 input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
-_input_output_header:
-| input_output SECTION _dot
+input_output_header:
+  input_output SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_INPUT_OUTPUT_SECTION;
@@ -5354,7 +5369,10 @@ _input_output_header:
 /* FILE-CONTROL paragraph */
 
 _file_control_header:
-| FILE_CONTROL _dot
+| file_control_header
+;
+file_control_header:
+  FILE_CONTROL _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION, 0, 0);
@@ -5363,7 +5381,12 @@ _file_control_header:
 ;
 
 _file_control_sequence:
-| _file_control_sequence file_control_entry
+| file_control_sequence
+;
+
+file_control_sequence:
+  file_control_entry
+| file_control_sequence file_control_entry
 ;
 
 file_control_entry:
@@ -6266,7 +6289,11 @@ track_limit_clause:
 /* I-O-CONTROL paragraph */
 
 _i_o_control:
-| i_o_control_header _i_o_control_entries
+| i_o_control
+;
+
+i_o_control:
+  i_o_control_header _i_o_control_entries
   {
 	cobc_cs_check = 0;
   }
@@ -13690,10 +13717,16 @@ display_window_clause:
   }
 | at_line_column
 | _top_or_bottom _left_or_centered_or_right TITLE _is_equal x
+| modal_modeless
 | shadow
 | boxed
 | no_scroll_wrap
 | _with disp_attr
+;
+
+modal_modeless:
+  MODAL		{ /* TODO: set attribute */ }
+| MODELESS
 ;
 
 shadow:

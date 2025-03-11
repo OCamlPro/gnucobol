@@ -1858,8 +1858,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MEMORY",			0, 1, MEMORY,			/* 85 */
 				0, CB_CS_OBJECT_COMPUTER
   },
-  { "MENU",			0, 0, MENU,			/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+  { "MENU",			0, 1, MENU,			/* ACU extension */
+				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY | CB_CS_USAGE	 /* at least for MF: undocumented C/S */
   },
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
@@ -1885,8 +1885,14 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MINUS",			0, 0, MINUS,			/* 2002 */
 				0, 0
   },
+  { "MODAL",			0, 1, MODAL,			/* ACU extension */
+				0, CB_CS_DISPLAY | CB_CS_GRAPHICAL_CONTROL
+  },
   { "MODE",			0, 0, MODE,			/* 2002 */
 				0, 0
+  },
+  { "MODELESS",			0, 1, MODELESS,			/* ACU extension */
+				0, CB_CS_DISPLAY | CB_CS_GRAPHICAL_CONTROL
   },
   { "MODIFY",			1, 0, MODIFY,			/* ACU extension */
 				CB_CS_INQUIRE_MODIFY, 0
