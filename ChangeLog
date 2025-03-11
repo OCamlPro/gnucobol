@@ -5,6 +5,10 @@
 	  Clang, to prevent some features to be mistakenly detected as missing
 	  (in particular -Wno-pointer-sign and -fstack-clash-protection)
 
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* DEPENDENCIES: added perl for running NIST85
+
 2024-09-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: replace AC_ARG_VAR by AC_SUBST where appropriate
