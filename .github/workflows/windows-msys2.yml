@@ -40,15 +40,18 @@ jobs:
       - name: Configure GnuCOBOL
         shell: msys2 {0}
         run: |
-          mkdir _build
-          cd _build
-          ../configure --without-db --without-curses --without-xml2 --without-json
+          mkdir _build && cd _build
+          # this is a "prepare" only step for this workflow only, so build
+          # without any optional packages as one-time build speeding up this part
+          ../configure --without-db --without-curses --without-xml2 --without-json \
+                       --without-iconv --disable-dependency-tracking
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
         run: |
-          make -C _build --jobs=$(($(nproc)+1))
-          make -C _build --jobs=$(($(nproc)+1)) dist
+          # OSTYPE added on 2025-02-11 to fix texi2dvi bug
+          OSTYPE=msys make -C _build --jobs=$(($(nproc)+1))
+          OSTYPE=msys make -C _build --jobs=$(($(nproc)+1)) dist
 
       - name: Upload config-dist.log
         uses: actions/upload-artifact@v4
@@ -180,8 +183,9 @@ jobs:
           # to work around regular hangs we run NIST first, then the internal
           # and the later only with 2 jobs
           # make -C _build/tests checkall TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
-          make -C _build/tests check TESTSUITEFLAGS="--jobs=2" || \
-          make -C _build/tests check TESTSUITEFLAGS="--recheck --verbose"
+          # OSTYPE added on 2025-02-11 to fix texi2dvi bug
+          OSTYPE=msys make -C _build/tests check TESTSUITEFLAGS="--jobs=2" || \
+          OSTYPE=msys make -C _build/tests check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload testsuite-${{matrix.sys}}-${{matrix.target}}.log
         uses: actions/upload-artifact@v4

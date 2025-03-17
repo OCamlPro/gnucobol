@@ -741,6 +741,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token WITH
 %token LOCATION
 
+%token IMP_DIRECTIVE
+%token INCLUDE
+
 %token TERMINATOR	"end of line"
 
 %token <s> TOKEN		"Word or Literal"
@@ -768,6 +771,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_equality_list
 %type <l>	ec_list
 %type <s>	unquoted_literal
+%type <l>	imp_include_sources
 
 %type <r>	_copy_replacing
 %type <r>	replacing_list
@@ -838,6 +842,7 @@ directive:
 | TURN_DIRECTIVE turn_directive
 | LISTING_DIRECTIVE listing_directive
 | LEAP_SECOND_DIRECTIVE leap_second_directive
+| IMP_DIRECTIVE imp_directive
 | IF_DIRECTIVE
   {
 	current_cmd = PLEX_ACT_IF;
@@ -1366,6 +1371,34 @@ leap_second_directive:
 	CB_PENDING (_("LEAP-SECOND ON directive"));
   }
 | OFF
+;
+
+imp_directive:
+  /* GnuCOBOL 3.3 extension */
+  INCLUDE
+  {
+	cb_error (_("invalid %s directive"), "IMP INCLUDE");
+	yyerrok;
+  }
+| INCLUDE imp_include_sources
+  {
+	struct cb_text_list *p = $2;
+	while (p != NULL) {
+		fprintf (ppout, "#INCLUDE %s\n", p->text);
+		p = p->next;
+	}
+  }
+;
+
+imp_include_sources:
+  TOKEN
+  {
+	$$ = ppp_list_add (NULL, fix_filename ($1));
+  }
+| imp_include_sources TOKEN
+  {
+	$$ = ppp_list_add ($1, fix_filename ($2));
+  }
 ;
 
 turn_directive:

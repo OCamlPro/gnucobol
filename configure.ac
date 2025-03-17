@@ -113,6 +113,9 @@ AC_ARG_WITH([bugurl],
 # or:
 #  options to configure: CFLAGS=-m64 LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
+# Note for IBM (Mainfraime) on USS
+#  options to configure: CC="xlc -q64" CFLAGS="-qlanglvl=extc1x" OBJECT_MODE=64 AR=ar NM=nm
+#
 # Hack for AIX 64 bit (gcc)
 # Required -
 #  options to configure: CC="gcc -maix64" / CC="xlc -q64"
@@ -461,17 +464,31 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	# error macro not defined
 	#endif]])],
 	[COB_USES_CLANG_ONLY=yes
+	 CFLAGS="$CFLAGS -Wno-unused-command-line-argument"
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
 
-AC_MSG_CHECKING([for __xlc__])
+AS_IF([test "x$COB_USES_GCC$COB_USES_ICC_ONLY$COB_USES_CLANG_ONLY" = xnonono], [
+
+AC_MSG_CHECKING([for __IBMC__])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-	#ifndef __xlc__
+	#ifndef __IBMC__
 	# error macro not defined
 	#endif]])],
 	[COB_USES_XLC_ONLY=yes
 	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[
+AC_MSG_CHECKING([for __xlc__])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	 	#ifndef __xlc__
+	 	# error macro not defined
+	 	#endif]])],
+	 	[COB_USES_XLC_ONLY=yes
+	 	 AC_MSG_RESULT([yes])],
+	 	[AC_MSG_RESULT([no])])
+	])
+
+ AS_IF([test "x$COB_USES_XLC_ONLY" = xno], [
 
 AC_MSG_CHECKING([for __WATCOMC__])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
@@ -480,7 +497,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	#endif]])],
 	[COB_USES_WATCOMC_ONLY=yes
 	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for __SUNPRO_C])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
@@ -490,6 +507,13 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	[COB_USES_SUNPRO_C_ONLY=yes
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
+  ])
+
+ ])
+
+])
+
+
 
 curr_cflags="$CFLAGS"
 AC_CACHE_CHECK([how to error on warnings during configure checks], gc_cv_err_warn, [
@@ -673,9 +697,9 @@ AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$gc_cv_keyword_inline])
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp \
-	strchr strrchr strdup strstr strtol gettimeofday localeconv \
-	getexecname canonicalize_file_name popen raise readlink realpath \
+AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp
+	strchr strrchr strdup strstr strtol gettimeofday localeconv
+	getexecname canonicalize_file_name popen raise readlink realpath
 	setenv strcoll flockfile])
 
 # more things to save...
