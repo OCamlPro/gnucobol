@@ -792,7 +792,8 @@ User-defined dialect configuration.
 EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
 the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})
 which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
-See the @file{default.ttbl} file for detailed information about the format.
+See the @file{default.ttbl} file for detailed information about the format.@*
+You may use the @option{--gentable} option to build such tables.
 
 @end table
 
@@ -1049,6 +1050,9 @@ Save intermediate files (by default, in current directory).
 
 @item -fimplicit-init
 Do automatic initialization of the COBOL runtime system.
+
+@item --gentable=@var{enc-from},@var{enc-to}
+Build an EBCDIC/ASCII translation table between @var{enc-from} and @var{enc-to}.
 
 @end table
 

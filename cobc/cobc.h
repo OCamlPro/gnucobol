@@ -695,6 +695,6 @@ extern unsigned char	cb_toupper (const unsigned char);
 extern unsigned char	cb_tolower (const unsigned char);
 
 /* gentable.c */
-extern int		gentable (FILE *stream, const char *fromcode, const char *tocode);
+extern int		gentable (FILE *, const char *, const char *);
 
 #endif /* CB_COBC_H */
