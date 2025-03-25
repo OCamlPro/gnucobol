@@ -1,6 +1,6 @@
 /*
    Copyright (C) 2025 Free Software Foundation, Inc.
-   Written by David Declerck.
+   Written by David Declerck, Simon Sobisch.
 
    This file is part of GnuCOBOL.
 
@@ -52,16 +52,16 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 	char *ebcdic_ptr = ebcdic, *ascii_ptr = ascii;
 	size_t ascii_size = UCHAR_MAX + 1;
 	unsigned short i, nb_irreversible = 0;
-	iconv_t ic;
+
+	iconv_t ic = iconv_open (code_ascii, code_ebcdic);
+	if (ic == (iconv_t)-1) {
+		cb_error (_("conversion from %s to %s is not supported by your iconv implementation"),
+				code_ascii, code_ebcdic);
+		return -1;
+	}
 
 	for (i = 0; i <= UCHAR_MAX; ++i) {
 		ebcdic[i] = (char)i;
-	}
-
-	ic = iconv_open (code_ascii, code_ebcdic);
-	if (ic == (iconv_t)-1) {
-		cb_error (_("conversion from %s to %s is not supported by your iconv implementation"), code_ascii, code_ebcdic);
-		return -1;
 	}
 
 	/* Note: POSIX iconv performs an implementation-defined conversion when
@@ -87,7 +87,8 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 					--ascii_size;
 					++nb_irreversible;
 				} else {
-					cb_error (_("an error occurred after converting %ld characters"), (ebcdic_ptr - ebcdic));
+					cb_error (_("an error occurred after converting %ld characters"),
+							(ebcdic_ptr - ebcdic));
 					iconv_close (ic);
 					return -1;
 				}
@@ -107,7 +108,7 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 	output_table (stream, ascii);
 
 	fprintf (stream, "\n# %s to %s translation table\n\n", code_ascii, code_ebcdic);
-	if (nb_irreversible <= 0) {
+	if (nb_irreversible == 0) {
 		fprintf (stream, "# This translation being symmetric, the table is built from the previous one.\n\n");
 	} else {
 		/* Build the (partial) reverse translation table */
@@ -123,7 +124,9 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 		output_table (stream, ebcdic);
 		fprintf (stream, "\n");
 
-		cb_note (COB_WARNOPT_NONE, 0, _("%d non-reversible conversions were performed, you might want to review the generated table"), nb_irreversible);
+		cb_note (COB_WARNOPT_NONE, 0,
+			_("%d non-reversible conversions were performed, you might want to review the generated table"),
+			nb_irreversible);
 	}
 
 	return 0;
