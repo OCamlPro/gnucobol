@@ -3,7 +3,7 @@
 # Bootstrap gnucobol package from checked-out sources
 # Note:  call as ./bootstrap if you don't have readlink -f
 #
-# Copyright (C) 2017-2023 Free Software Foundation, Inc.
+# Copyright (C) 2017-2023, 2025 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -61,11 +61,11 @@ done
 
 if test "$1" = "install"; then
 
-  echo; echo "running autopoint..."
+  echo; echo "running autopoint to update gettext components..."
   ret=0
 
-#  (cd $MAINPATH; autopoint -f); ret=$?
-  (cd $MAINPATH; gettextize -f); ret=$?
+  (cd $MAINPATH; rm -f m4/gettext.m4; autopoint -f); ret=$?
+  #gettextize --no-changelog -f $MAINPATH; ret=$?
 
   if test $ret -ne 0; then
     echo; echo "ERROR, autopoint returned $ret - aborting bootstrap" && exit $ret
