@@ -40,7 +40,7 @@ jobs:
 
       - name: bootstrap
         run: |
-          ./build_aux/bootstrap install
+          ./autogen.sh install
 
       - name: Build environment setup
         run: |

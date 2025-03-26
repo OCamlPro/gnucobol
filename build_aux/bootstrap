@@ -59,6 +59,20 @@ for file in $scripts ; do
   fi
 done
 
+if test "$1" = "install"; then
+
+  echo; echo "running autopoint..."
+  ret=0
+
+#  (cd $MAINPATH; autopoint -f); ret=$?
+  (cd $MAINPATH; gettextize -f); ret=$?
+
+  if test $ret -ne 0; then
+    echo; echo "ERROR, autopoint returned $ret - aborting bootstrap" && exit $ret
+  fi
+
+fi
+
 echo; echo "running autoreconf..."
 ret=0
 
