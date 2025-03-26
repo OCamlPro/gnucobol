@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/cobc
 #
-# Copyright (C) 2003-2012, 2014-2021, 2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2021, 2024-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.

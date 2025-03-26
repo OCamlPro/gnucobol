@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -695,6 +695,6 @@ extern unsigned char	cb_toupper (const unsigned char);
 extern unsigned char	cb_tolower (const unsigned char);
 
 /* gentable.c */
-extern int		gentable (FILE *, const char *, const char *);
+extern int		gentable (FILE *, const char *, const char *, char);
 
 #endif /* CB_COBC_H */

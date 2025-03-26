@@ -66,7 +66,7 @@ together with a designated C compiler and linker.
 This manual corresponds to GnuCOBOL @value{VERSION}.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2002-2012, 2014-2024 Free Software Foundation, Inc.@*
+Copyright @copyright{} 2002-2012, 2014-2025 Free Software Foundation, Inc.@*
 Written by Keisuke Nishida, Roger While, Brian Tiffin, Simon Sobisch.
 
 @insertcopying
@@ -1051,8 +1051,9 @@ Save intermediate files (by default, in current directory).
 @item -fimplicit-init
 Do automatic initialization of the COBOL runtime system.
 
-@item --gentable=@var{enc-from},@var{enc-to}
-Build an EBCDIC/ASCII translation table between @var{enc-from} and @var{enc-to}.
+@item --gentable=@var{ebcdic-enc},@var{ascii-enc}[+]
+Build an EBCDIC/ASCII translation table between @var{ebcdic-enc} and @var{ascii-enc}, and exit.
+The translation might not be reversible: append + to arbitrarily make it reversible.
 
 @end table
 

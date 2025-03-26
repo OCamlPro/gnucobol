@@ -46,7 +46,7 @@ output_table (FILE *stream, const char *table)
 
 /* Build a pair of EBCDIC/ASCII translation tables using iconv */
 int
-gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
+gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char reversible)
 {
 	char ebcdic[UCHAR_MAX + 1], ascii[UCHAR_MAX + 1] = { 0 };
 	char *ebcdic_ptr = ebcdic, *ascii_ptr = ascii;
@@ -56,7 +56,7 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 	iconv_t ic = iconv_open (code_ascii, code_ebcdic);
 	if (ic == (iconv_t)-1) {
 		cb_error (_("conversion from %s to %s is not supported by your iconv implementation"),
-				code_ascii, code_ebcdic);
+				code_ebcdic, code_ascii);
 		return -1;
 	}
 
@@ -102,15 +102,8 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 
 	iconv_close (ic);
 
-	fprintf (stream, "# GnuCOBOL %s <-> %s translation tables\n", code_ebcdic, code_ascii);
+	if (nb_irreversible > 0) {
 
-	fprintf (stream, "\n# %s to %s translation table\n\n", code_ebcdic, code_ascii);
-	output_table (stream, ascii);
-
-	fprintf (stream, "\n# %s to %s translation table\n\n", code_ascii, code_ebcdic);
-	if (nb_irreversible == 0) {
-		fprintf (stream, "# This translation being symmetric, the table is built from the previous one.\n\n");
-	} else {
 		/* Build the (partial) reverse translation table */
 		memset (ebcdic, EBCDIC_SUBST_CHAR, UCHAR_MAX + 1);
 		for (i = 0; i <= UCHAR_MAX; ++i) {
@@ -121,12 +114,40 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
                    times, the loop above probably did not set it correctly */
 		ebcdic[(unsigned char)ASCII_SUBST_CHAR] = EBCDIC_SUBST_CHAR;
 
+		if (reversible != 0) {
+			/* If a reversible translation table is requested, we arbitrarily
+			   map together unused characters from both encodings */
+			unsigned short j = 0;
+			for (i = 0; i <= UCHAR_MAX; ++i) {
+				if ((ascii[i] == ASCII_SUBST_CHAR) && (i != EBCDIC_SUBST_CHAR)) {
+					while ((ebcdic[j] != EBCDIC_SUBST_CHAR) || (j == ASCII_SUBST_CHAR)) {
+						++j;
+					}
+					ascii[i] = (char)j;
+					ebcdic[j] = (char)i;
+				}
+			}
+			cb_note (COB_WARNOPT_NONE, 0,
+				_("%d non-reversible conversions were arbitrarily made reversible, you might want to review the generated table"),
+				nb_irreversible);
+		} else {
+			cb_note (COB_WARNOPT_NONE, 0,
+				_("%d non-reversible conversions were performed, you might want to review the generated table"),
+				nb_irreversible);
+		}
+	}
+
+	fprintf (stream, "# GnuCOBOL %s <-> %s translation tables\n", code_ebcdic, code_ascii);
+
+	fprintf (stream, "\n# %s to %s translation table\n\n", code_ebcdic, code_ascii);
+	output_table (stream, ascii);
+
+	fprintf (stream, "\n# %s to %s translation table\n\n", code_ascii, code_ebcdic);
+	if ((nb_irreversible == 0) || (reversible != 0)) {
+		fprintf (stream, "# This translation being symmetric, the table is built from the previous one.\n\n");
+	} else {
 		output_table (stream, ebcdic);
 		fprintf (stream, "\n");
-
-		cb_note (COB_WARNOPT_NONE, 0,
-			_("%d non-reversible conversions were performed, you might want to review the generated table"),
-			nb_irreversible);
 	}
 
 	return 0;
@@ -135,11 +156,12 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
 #else
 
 int
-gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii)
+gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char reversible)
 {
 	COB_UNUSED (stream);
 	COB_UNUSED (code_ebcdic);
 	COB_UNUSED (code_ascii);
+	COB_UNUSED (reversible);
 
 	cb_error (_("runtime is not configured to support %s"), "iconv");
 	cb_error (_("translation table generation is not available"));

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -3411,15 +3411,21 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case CB_FLAG_GETOPT_GENTABLE: {
-			/* -gentable=<enc-from>,<enc-to> */
-			const char *from, *to;
+			/* --gentable=<ebcdic-enc>,<ascii-enc>[+] */
+			char *code_ebcdic, *code_ascii, reversible = 0;
 			int res;
-			from = strtok (cob_optarg, ",");
-			to = strtok (NULL, "");
-			if ((from == NULL) || (to == NULL)) {
-				cobc_err_exit (COBC_INV_PAR, "-gentable");
+			size_t len;
+			code_ebcdic = strtok (cob_optarg, ",");
+			code_ascii = strtok (NULL, "");
+			if ((code_ebcdic == NULL) || (code_ascii == NULL)) {
+				cobc_err_exit (COBC_INV_PAR, "--gentable");
 			}
-			res = gentable (stdout, from, to);
+			len = strlen(code_ascii);
+			if (code_ascii[len - 1] == '+') {
+				reversible = 1;
+				code_ascii[len - 1] = '\0';
+			}
+			res = gentable (stdout, code_ebcdic, code_ascii, reversible);
 			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
 		}
 
