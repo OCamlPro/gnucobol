@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/bin
 #
-# Copyright (C) 2001-2012, 2014, 2017-2020 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2014, 2017-2020, 2024 Free Software Foundation, Inc.
 # Written by Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -46,18 +46,21 @@ MAINTAINERCLEANFILES = cobcrun.1
 HELPSOURCES_COBCRUN = cobcrun.c $(top_srcdir)/configure.ac
 HELPSOURCES_COBCONFIG = cob-config.in $(top_srcdir)/configure.ac
 HELP2MAN_OPTS = --info-page=$(PACKAGE)
+HELP2MAN_OPTS_COBCRUN = $(HELP2MAN_OPTS) -v "-qV" -n "starts the COBOL runtime environment with optional configuration and displays active configuration details"
+HELP2MAN_OPTS_COBCONFIG = $(HELP2MAN_OPTS) -n "prints configuration variables for libcob"
 
 if MAKE_HAS_PREREQ_ONLY
 cobcrun.1: $(HELPSOURCES_COBCRUN) | $(COBCRUN)
-	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) $(COBCRUN)
+	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS_COBCRUN) $(COBCRUN)
 else
 cobcrun.1: $(HELPSOURCES_COBCRUN)
-	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) $(COBCRUN)
+	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS_COBCRUN) $(COBCRUN)
 endif
 
 if MAKE_HAS_PREREQ_ONLY
 cob-config.1: $(HELPSOURCES_COBCONFIG) | ./cob-config
-	$(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) ./cob-config
+	$(HELP2MAN) --output=$@ $(HELP2MAN_OPTS_COBCONFIG) ./cob-config
 else
-	$(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) ./cob-config
+cob-config.1: $(HELPSOURCES_COBCONFIG)
+	$(HELP2MAN) --output=$@ $(HELP2MAN_OPTS_COBCONFIG) ./cob-config
 endif

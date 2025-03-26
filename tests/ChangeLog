@@ -1,4 +1,8 @@
 
+2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: adjusted to handle newer MSYS2's setting OSTYPE=cygwin
+
 2024-10-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win: export new definition COB_ON_WINDOWS
@@ -1173,7 +1177,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
