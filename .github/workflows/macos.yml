@@ -40,7 +40,7 @@ jobs:
 
       - name: bootstrap
         run: |
-          ./build_aux/bootstrap install
+          ./autogen.sh install
 
       - name: Build environment setup
         run: |
@@ -55,7 +55,7 @@ jobs:
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
                        --with-curses=ncurses \
-                       --prefix /opt/cobol/gnucobol-gcos \
+                       --prefix /opt/cobol/gnucobol-gcos
 
       - name: make
         run: |
