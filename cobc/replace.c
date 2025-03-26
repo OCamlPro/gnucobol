@@ -85,10 +85,6 @@
 #define DEBUG_REPLACE
 #endif
 
-#ifdef DEBUG_REPLACE
-#define DEBUG_REPLACE
-#endif
-
 /* BEGIN implementation of a queue of text and token pairs. The
    implementation could easily be translated to any other type of
    data.
