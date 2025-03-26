@@ -12109,6 +12109,11 @@ output_report_source_move (struct cb_report *rep)
 static void
 output_alphabet_name_definition (struct cb_alphabet_name *p)
 {
+	const int is_national_alphabet = p->alphabet_target == CB_ALPHABET_NATIONAL;
+	const int maxchar = is_national_alphabet
+						? COB_MAX_CHAR_NATIONAL : COB_MAX_CHAR_ALPHANUMERIC;
+	const int size = is_national_alphabet
+						? (COB_MAX_CHAR_NATIONAL + 1) * COB_NATIONAL_SIZE : COB_MAX_CHAR_ALPHANUMERIC + 1;
 	int		i;
 
 	if (p->alphabet_type != CB_ALPHABET_CUSTOM) {
@@ -12116,22 +12121,33 @@ output_alphabet_name_definition (struct cb_alphabet_name *p)
 	}
 
 	/* Output the table */
-	output_local ("static const unsigned char %s%s[256] = {\n",
-		      CB_PREFIX_SEQUENCE, p->cname);
-	for (i = 0; i < 256; i++) {
-		if (i == 255) {
-			output_local (" %d", p->values[i]);
+	output_local ("static const unsigned char %s%s[%d] = {\n",
+		      CB_PREFIX_SEQUENCE, p->cname, size);
+	i = 0;
+	for (i = 0; ; i++) {
+		if (is_national_alphabet) {
+			/* FIXME: this isn't tested at all and likely needs
+			   adjustments in the runtime */
+			output_local (" 0x%02x, 0x%02x",
+				(p->values[i] >> 8) & 0xFF, p->values[i] & 0xFF);
 		} else {
-			output_local (" %d,", p->values[i]);
+			output_local (" %d", p->values[i]);
+		}
+		if (i == maxchar) {
+			output_local ("};\n");
+			break;
 		}
 		if (i % 16 == 15) {
-			output_local ("\n");
+			output_local (",\n");
+		} else {
+			output_local (",");
 		}
 	}
-	output_local ("};\n");
-	i = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
-	output_local ("static cob_field %s%s = { 256, (cob_u8_ptr)%s%s, &%s%d };\n",
+	i = lookup_attr (is_national_alphabet ? COB_TYPE_NATIONAL : COB_TYPE_ALPHANUMERIC,
+			0, 0, 0, NULL, 0);
+	output_local ("static cob_field %s%s = { %d, (cob_u8_ptr)%s%s, &%s%d };\n",
 		CB_PREFIX_FIELD, p->cname,
+		size,
 		CB_PREFIX_SEQUENCE, p->cname,
 		CB_PREFIX_ATTR, i);
 	output_local ("\n");

@@ -1,4 +1,10 @@
 
+2024-09-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ar-lib, config.guess, config.rpath, config.sub, texinfo.tex: updated
+	  to recent versions from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
 2023-06-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.sub, texinfo.tex: updated to recent versions from
@@ -28,13 +34,13 @@
 
 	* bootstrap: drop tarstamp.h generation, done via make
 	* config.guess, config.sub: updated to recent versions from
-	  git.savannah.gnu.org/gitweb/?p=config.git
+	  https://git.savannah.gnu.org/cgit/config.git
 
 2022-06-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.guess, config.rpath, install-sh, mkinstalldirs, texinfo.tex:
 	  updated to recent versions from
-	  git.savannah.gnu.org/gitweb/?p=config.git
+	  https://git.savannah.gnu.org/cgit/config.git
 
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -54,7 +60,7 @@
 2022-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.sub, config.guess: updated to recent versions from
-	  git.savannah.gnu.org/gitweb/?p=config.git to solve build issues
+	  https://git.savannah.gnu.org/cgit/config.git to solve build issues
 	  on different machines
 
 2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
@@ -191,7 +197,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2023 Free Software Foundation, Inc.
+Copyright 2015-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

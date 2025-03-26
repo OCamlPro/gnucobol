@@ -76,9 +76,6 @@ NEWS - user visible changes				-*- outline -*-
   where the old default GnuCOBOL data files could be unusable if copied between
   systems of different hardware architecture.
 
-** use the "default" -shared flag to build dynamic libraries on macOS
-   so as to fix testuite issues with recent macOS versions
-
   ** dialect option to allow ref-mod with zero-length (active with -std=default),
      with runtime checks enabled; also set by directives
      REF-MOD-ZERO-LENGTH (COBOL202x) and SSRANGE (MF) as appropriate
@@ -100,9 +97,9 @@ Open Plans:
 
 * New GnuCOBOL features
 
-** cobc now checks for binary files and early exit parsing those;
-   the error output for format errors (for example invalid indicator column)
-   is now limitted to 5 per source file
+** cobc now checks for binary and multi-byte encoded files and early exit
+   parsing those; the error output for format errors (for example invalid
+   indicator column) is now limitted to 5 per source file
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)
@@ -172,6 +169,17 @@ Open Plans:
 
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
    honors NCURSES_LIBS and NCURSES_CFLAGS
+
+** configure now checks for iconv and accepts --with-iconv/--without-iconv;
+   this is used for character encoding support, which otherwise is only provided
+   partially
+
+** use the "default" -shared flag to build dynamic libraries on macOS
+   so as to fix testuite issues with recent macOS versions
+
+** "make checkmanual" was extended to be also usable with tmux and
+   allows to override the test runner and to attach for screen/tmux sessions,
+   see README for further details
 
 * Known issues in 3.x
 

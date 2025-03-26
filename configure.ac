@@ -22,7 +22,11 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
+# note: old environments only have autoconf 2.69 or even (old msys) 2.67
+#       just do a "make dist" on a modern system and get the taball back
+#       to the ancient one... (which would likely also not have the necessary
+#       automake package either)
+AC_PREREQ([2.70])
 
 AC_INIT([GnuCOBOL],
 	[4.0],
@@ -571,6 +575,9 @@ dnl CHECKME: do we want disable-static (mind libsupport)
 dnl          if yes then drop AM_PROG_AR + build_aux/ar-lib
 LT_INIT([dlopen win32-dll])
 
+dnl We declare %noyywrap in the lexer files so we use the noyywrap
+dnl option here to skip the search for that function.
+AC_PROG_LEX([noyywrap])
 AX_PROG_FLEX
 AX_PROG_BISON
 # only GNU Bison 3+ is supported, TODO: check for Bison 3+ here
@@ -691,6 +698,18 @@ fi
 CFLAGS="$curr_cflags"
 
 
+dnl Add --enable-code-coverage and test for code-coverage tools if enabled
+AX_CODE_COVERAGE
+
+if test "$COB_USES_GCC_NO_ICC" != yes -a "$enable_code_coverage" = yes; then
+	AC_MSG_ERROR([Code coverage checks are only usable with GCC!])
+fi
+
+
+dnl set PKG_CONFIG to use (cross-compile aware)
+PKG_PROG_PKG_CONFIG
+
+
 # more things to save...
 AC_CACHE_SAVE
 
@@ -755,18 +774,6 @@ else
 	  *) LIBCOB_LIBS="$LIBCOB_LIBS $MATH_LIBS" ;;
 	esac
 fi
-
-
-dnl Add --enable-code-coverage and test for code-coverage tools if enabled
-AX_CODE_COVERAGE
-
-if test "$COB_USES_GCC_NO_ICC" != yes -a "$enable_code_coverage" = yes; then
-	AC_MSG_ERROR([Code coverage checks are only usable with GCC!])
-fi
-
-
-dnl set PKG_CONFIG to use (cross-compile aware)
-PKG_PROG_PKG_CONFIG
 
 
 # Checks for gmp.
@@ -947,6 +954,59 @@ AC_CHECK_LIB([readline], [readline],
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
 
+# Checks for gettext.
+
+case $host_os in
+  darwin* | rhapsody*)
+	;;
+  *)
+	gt_cv_func_CFPreferencesCopyAppValue=no
+	gt_cv_func_CFLocaleCopyCurrent=no
+	;;
+esac
+
+dnl  Simon: removed, use --disable-nls instead
+dnl # Disable for Cygwin
+dnl AC_MSG_CHECKING([for __CYGWIN__])
+dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+dnl 	#ifndef __CYGWIN__
+dnl 	# error macro not defined
+dnl 	#endif]])],
+dnl 	[enable_nls=no
+dnl 	 AC_MSG_RESULT([yes])],
+dnl 	[AC_MSG_RESULT([no])])
+
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.19.8])
+if test "x$LTLIBINTL" != x; then
+  if test "x$PROGRAMS_LIBS" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBINTL"
+  else
+    PROGRAMS_LIBS="$LTLIBINTL"
+  fi
+  LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
+fi
+
+# Checks for internationalization stuff
+AM_LANGINFO_CODESET
+
+AC_ARG_WITH([iconv],
+  [AS_HELP_STRING([--with-iconv],
+    [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
+  [],
+  [with_iconv=check])
+
+if test "$with_iconv" = yes -o "$with_iconv" = check; then
+  AM_ICONV
+  if test "$with_iconv" = yes && test "$am_cv_func_iconv" != yes; then
+    AC_MSG_ERROR([iconv library requested but not found])
+  fi
+  if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LIBICONV"
+    LIBCOB_LIBS="$LIBCOB_LIBS $LIBICONV"
+  fi
+fi
+
 
 dnl
 dnl Configure options part II (needing compilation)
@@ -954,7 +1014,7 @@ dnl
 
 AC_ARG_WITH([xml2],
   [AS_HELP_STRING([--with-xml2],
-    [Use libxml2 as XML handler (default)])],
+    [Use libxml2 as XML handler (default: check)])],
   [],
   [with_xml2=check])
 
@@ -1296,17 +1356,6 @@ dnl   [])
 AC_CHECK_FUNCS([fdatasync sigaction fmemopen])
 AC_CHECK_DECLS([fdatasync])	# also check for declaration, missing on MacOS...
 AC_CHECK_DECLS([fmemopen])	# also check for declaration, missing on AIX...
-
-# Checks for gettext.
-
-case $host_os in
-  darwin* | rhapsody*)
-	;;
-  *)
-	gt_cv_func_CFPreferencesCopyAppValue=no
-	gt_cv_func_CFLocaleCopyCurrent=no
-	;;
-esac
 
 # Checks for ncurses/pdcurses/curses.
 AC_MSG_NOTICE([Checks for curses ...])
@@ -2293,32 +2342,6 @@ if test "$gc_cv_attribute_constructor" = yes; then
 fi
 CFLAGS="$curr_cflags"
 
-dnl  Simon: removed, use --disable-nls instead
-dnl # Disable for Cygwin
-dnl AC_MSG_CHECKING([for __CYGWIN__])
-dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-dnl 	#ifndef __CYGWIN__
-dnl 	# error macro not defined
-dnl 	#endif]])],
-dnl 	[enable_nls=no
-dnl 	 AC_MSG_RESULT([yes])],
-dnl 	[AC_MSG_RESULT([no])])
-
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.19.8])
-if test "x$LTLIBINTL" != x; then
-  if test "x$PROGRAMS_LIBS" != x; then
-    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBINTL"
-  else
-    PROGRAMS_LIBS="$LTLIBINTL"
-  fi
-  LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
-fi
-
-# Checks for internationalization stuff
-dnl currently not directly used: AM_ICONV
-AM_LANGINFO_CODESET
-
 # Check for perl, used for "make test"
 #AM_MISSING_PROG(PERL, perl) --> only use for tools that generate something
 AC_CHECK_PROG(PERL, perl, perl)
@@ -2958,6 +2981,7 @@ else
   AC_MSG_NOTICE([ Dynamic loading:                             Libtool])
 fi
 AC_MSG_NOTICE([ Use gettext for international messages:      ${USE_NLS}])
+AC_MSG_NOTICE([ Use iconv for character encoding:            ${am_cv_func_iconv_summary}])
 AC_MSG_NOTICE([ Use fcntl for file locking:                  ${ac_cv_func_fcntl}])
 AC_MSG_NOTICE([ Use math multiple precision library:         ${with_math}])
 case "$USE_CURSES" in

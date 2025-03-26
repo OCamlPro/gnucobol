@@ -1,4 +1,59 @@
 
+2024-11-06  David Declerck <david.declerck@ocamlpro.com>
+
+	Reverted change 2022-02-20 to integrate change
+	from GnuCOBOL 3.1 2023-04-04
+	* tree.h (cb_field): new flag_above_unbounded
+	* tree.c (cb_field_has_unbounded), tree.h: removed; use
+	  flag_above_unbounded in callers (typeck.c, cobc.c) instead
+	* parser.y (occurs_clause): set flag_above_unbounded in parents
+
+2024-10-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (output_perform_until): improve PERFORM bounds
+	  checking (disabled for now)
+	* typeck.c (cb_emit_set_to): remove check for integer
+	  literal (now done in parser)
+	* parser.y (set_to, x_numeric_or_pointer): check that the
+	  argument to SET TO is an index, a pointer, or an integer
+
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* plex.l, scanner.l: use noyywrap option instead of manually
+	  defining related code parts
+
+2024-08-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
+	  adjusted size of precedence table and gave proper precedence to U
+
+2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_alphabet_name_definition): cater for national alphabet
+	* typeck.c (validate_alphabet): speedup for alphabet checks
+	* pplex.l (ppopen_get_file): explicit check for UTF16/UTF32 and
+	  hint to use iconv
+
+2024-08-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_alphabet), tree.h (cb_alphabet_name): cater for
+	  national alphabets with increased size (max. 65535 instead of 255)
+	* typeck.c (validate_alphabet): check that alphabet and literal types match
+
+2024-08-04  David Declerck <david.declerck@ocamlpro.com>
+
+	Adjustments to merge 2022-12-21:
+	* codegen.c (add_field_cache): added the actual field as argument
+	  in addition to the founder, as more information is actually
+	  needed to determine which cache to use
+	Adjustments to merge 2022-12-12:
+	* codegen.c (emit_one_sym): output NULL as data storage
+	  and set is_internal flag to 1 for TYPEDEF
+	* codegen.c (output_assign, output_if, output_debug_item): extracted
+	  from output_stmt
+	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
+	  functions, now returning the tree that was emitted
+
 2024-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, config.def: rewrite ENVIRONMENT DIVISION parsing to allow
@@ -10,6 +65,11 @@
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (process_compile): fix MSVC build command
+
+2024-05-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_compile)[_MSC_VER]: adjustment for compile
+	  from assembler source
 
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -73,43 +133,6 @@
 
 	* parser.y (screen_value_clause): replaced basic literals by literals
 
-2024-11-06  David Declerck <david.declerck@ocamlpro.com>
-
-	Reverted change 2022-02-20 to integrate change
-	from GnuCOBOL 3.1 2023-04-04
-	* tree.h (cb_field): new flag_above_unbounded
-	* tree.c (cb_field_has_unbounded), tree.h: removed; use
-	  flag_above_unbounded in callers (typeck.c, cobc.c) instead
-	* parser.y (occurs_clause): set flag_above_unbounded in parents
-
-2024-10-23  David Declerck <david.declerck@ocamlpro.com>
-
-	* codegen.c (output_perform_until): improve PERFORM bounds
-	  checking (disabled for now)
-	* typeck.c (cb_emit_set_to): remove check for integer
-	  literal (now done in parser)
-	* parser.y (set_to, x_numeric_or_pointer): check that the
-	  argument to SET TO is an index, a pointer, or an integer
-
-2024-08-28  David Declerck <david.declerck@ocamlpro.com>
-
-	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
-	  adjusted size of precedence table and gave proper precedence to U
-
-2024-08-04  David Declerck <david.declerck@ocamlpro.com>
-
-	Adjustments to merge 2022-12-21:
-	* codegen.c (add_field_cache): added the actual field as argument
-	  in addition to the founder, as more information is actually
-	  needed to determine which cache to use
-	Adjustments to merge 2022-12-12:
-	* codegen.c (emit_one_sym): output NULL as data storage
-	  and set is_internal flag to 1 for TYPEDEF
-	* codegen.c (output_assign, output_if, output_debug_item): extracted
-	  from output_stmt
-	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
-	  functions, now returning the tree that was emitted
-
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
 	FR #459: support COLLATING SEQUENCE clause on SELECT / INDEXED files
@@ -123,33 +146,11 @@
 	  -fdefault-file-colseq flag to specify the default collating
 	  sequence to use for files without a collating sequence clause
 
-2023-10-12  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-
-	* cobc.c, codegen.c: new option --include FILE, to #include
-	  additional files in the C generated code. Such files can be
-	  used to statically check the number of arguments in static
-	  calls, for example. The files are put into quotes, unless
-	  they start by '<'. Since C files are compiled in a temp dir,
-	  quoted files should be absolute paths. Implementing FR #176
-
-2023-10-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-
-	* cobc.c, pplex.l: new option --copy COPYBOOK, to include a COPYBOOK
-	  before reading the source file
-
 2023-11-29  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (cobc_clean_up): when save-temps specifies a directory,
 	  do not move object files and preprocess files when they were
 	  specified as an explicit target on the command line (-E, -c)
-
-2023-09-20  Simon Sobisch <simonsobisch@gnu.org>
-
-	* typeck.c (cb_build_optim_cond): generate calls to new functions
-	  for numeric zero compare for USAGE DISPLAY and PACKED, as well
-	  as comparison between two USAGE DISPLAY or USAGE DISPLAY to literal
-	* typeck.c (validate_move): internally change literals like 0.00
-	  to zero constant allowing use of optimized MOVE code
 
 2023-10-17  David Declerck <david.declerck@ocamlpro.com>
 
@@ -174,6 +175,20 @@
 	* codegen.c (codegen_internal, codegen_finalize): move declaration
 	  of decimal constants from global storage to local storage
 
+2023-10-12  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, codegen.c: new option --include FILE, to #include
+	  additional files in the C generated code. Such files can be
+	  used to statically check the number of arguments in static
+	  calls, for example. The files are put into quotes, unless
+	  they start by '<'. Since C files are compiled in a temp dir,
+	  quoted files should be absolute paths. Implementing FR #176
+
+2023-10-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, pplex.l: new option --copy COPYBOOK, to include a COPYBOOK
+	  before reading the source file
+
 2023-10-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* error.c (print_error_prefix), flag.def: new flag
@@ -181,6 +196,14 @@
 	  a file for diagnostics; this flag can be activated if
 	  your editor and build system do not correctly work
 	  together to locate files from diagnostic output
+
+2023-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_cond): generate calls to new functions
+	  for numeric zero compare for USAGE DISPLAY and PACKED, as well
+	  as comparison between two USAGE DISPLAY or USAGE DISPLAY to literal
+	* typeck.c (validate_move): internally change literals like 0.00
+	  to zero constant allowing use of optimized MOVE code
 
 2023-09-12  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -358,13 +381,6 @@
 	  CB_FLAG_GETOPT_. Remove unused 'case 6:' for -fdefaultbyte that is
 	  now handled in config.c
 
-2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
-
-	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
-	  second equivalent token
-	* pplex.l, replace.c: move the preprocessing code performing
-	  COPY REPLACING and REPLACE from pplex.l to replace.c
-
 2023-07-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_char): extracted usage of disabled code for
@@ -385,6 +401,13 @@
 	  do not output sequence number of short lines,
 	  but keep its line break and the general output
 	* pplex.l: drop unused "requires_new_line" (added without use in OC2.0)
+
+2023-07-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l (ppecho, ppecho_direct): replace alt_space by passing a
+	  second equivalent token
+	* pplex.l, replace.c: move the preprocessing code performing
+	  COPY REPLACING and REPLACE from pplex.l to replace.c
 
 2023-07-01  Simon Sobisch <simonsobisch@gnu.org>
 
