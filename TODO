@@ -216,6 +216,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Check how to deal with IMPEXP in coblocal.h (should probably be in the "lib" directory as a static library to link with the other libraries)
 
+- Testsuite: run the DB and IX modules multiple times if configured for multiple backends
+
 7.2 CHECKMEs, TODOs and #if-0'ed code
 
 - Investigate the two CHECKMEs about bdb_close_cursor in fbdb.c:ix_bdb_write_internal
