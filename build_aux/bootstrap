@@ -61,14 +61,16 @@ done
 
 if test "$1" = "install"; then
 
-  echo; echo "running autopoint to update gettext components..."
+  echo; echo "running gettext to force updated gettext components..."
   ret=0
 
-  (cd $MAINPATH; rm -f m4/gettext.m4 m4/po.m4; autopoint -f); ret=$?
-  #gettextize --no-changelog -f $MAINPATH; ret=$?
+  # note: autopoint -f is already included as part of autoreconf -f
+  #(cd $MAINPATH; autopoint -f); ret=$?
+  #(cd $MAINPATH; rm -f m4/gettext.m4 m4/po.m4; autopoint -f); ret=$?
+  gettextize --no-changelog -f $MAINPATH; ret=$?
 
   if test $ret -ne 0; then
-    echo; echo "ERROR, autopoint returned $ret - aborting bootstrap" && exit $ret
+    echo; echo "ERROR, gettext returned $ret - aborting bootstrap" && exit $ret
   fi
 
 fi

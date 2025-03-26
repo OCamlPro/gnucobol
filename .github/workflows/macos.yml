@@ -59,7 +59,7 @@ jobs:
 
       - name: make
         run: |
-          make -C _build --jobs=$((${NPROC}+1))  || cat po/Makevars po/Makefile
+          make -C _build --jobs=$((${NPROC}+1))
 
       - name: Upload config.log
         uses: actions/upload-artifact@v4
