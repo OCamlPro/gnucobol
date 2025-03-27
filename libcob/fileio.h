@@ -20,6 +20,7 @@
 
 
 #include "config.h"
+#include "libcob/common.h"
 
 #define cobglobptr file_globptr
 #define cobsetptr file_setptr
