@@ -1052,8 +1052,12 @@ Save intermediate files (by default, in current directory).
 Do automatic initialization of the COBOL runtime system.
 
 @item --gentable=@var{ebcdic-enc},@var{ascii-enc}[+]
-Build an EBCDIC/ASCII translation table between @var{ebcdic-enc} and @var{ascii-enc}, and exit.
-The translation might not be reversible: characters with no equivalent in the other encoding are mapped to the substitution character, thus leaving unused characters in both encodings. Append + to make the translation reversible, by arbitrarily mapping together these unused characters.
+Build an EBCDIC/ASCII translation table between @var{ebcdic-enc} and
+@var{ascii-enc}, and exit.
+The translation might not be reversible: characters with no equivalent in the
+other encoding are mapped to the substitution character, thus leaving unused
+characters in both encodings. Append + to make the translation reversible,
+by arbitrarily mapping together these unused characters.
 
 @end table
 

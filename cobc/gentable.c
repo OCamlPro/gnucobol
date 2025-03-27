@@ -87,8 +87,8 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char re
 					--ascii_size;
 					++nb_irreversible;
 				} else {
-					cb_error (_("an error occurred after converting %ld characters (%d)"),
-							(ebcdic_ptr - ebcdic), errno);
+					cb_error (_("an error occurred after converting %ld characters"),
+							(ebcdic_ptr - ebcdic));
 					iconv_close (ic);
 					return -1;
 				}
