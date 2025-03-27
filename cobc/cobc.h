@@ -475,7 +475,9 @@ extern FILE			*cb_src_list_file;
 extern FILE			*cb_depend_file;
 extern int			cb_depend_output;
 extern int			cb_depend_keep_missing;
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 extern int			cb_flag_copybook_deps;
+#endif
 extern struct cb_text_list	*cb_depend_list;
 extern struct cb_text_list	*cb_copy_list;
 extern struct cb_text_list	*cb_include_file_list; /* global */

@@ -1,4 +1,9 @@
 
+2025-04-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_filename): ensure we don't keep the preprocessed
+	  file when using -M or -fcopybook-deps
+
 2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
 	* gentable.c: generate EBCDIC/ASCII translation tables
