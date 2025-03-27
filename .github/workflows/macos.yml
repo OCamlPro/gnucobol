@@ -65,7 +65,9 @@ jobs:
           echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
 
       - name: Bootstrap GnuCOBOL
-        run: ./build_aux/bootstrap install
+        run: |
+          ./build_aux/bootstrap install
+          gettextize -f
 
       - name: Configure GnuCOBOL
         run: |
