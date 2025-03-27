@@ -17,10 +17,57 @@
 	* parser.y (set_to, x_numeric_or_pointer): check that the
 	  argument to SET TO is an index, a pointer, or an integer
 
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (output_line_directive): extracted from other places and
+	  extended to output compile from stdin as <stdin>
+	* codegen.c (output_cobol_info): output compile from stdin as <stdin>
+	* cobc.c (cobc_print_version, cobc_print_shortversion,
+	  process_command_line): build and package data only shown in verbose mode
+	  which does not output the verbose "process" calls by default;
+	  PACKAGE_NAME may now be overwritten by PKGVERSION (new configure option)
+	* help.c (cobc_print_usage): handle PACKAGE_BUGREPORT_URL as
+	  alternative to mailing list, now resolved by PACKAGE_BUGREPORT
+
+2024-10-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* tree.c (validate_indexed_key_field): warn about ignored collating
+	  sequence for non-alphanumeric keys (considers only primary keys and file
+	  collating sequence for now)
+	* codegen.c (output_indexed_file_key_colseq): assign collating sequence
+	  for any key of alphanumeric class, and preliminary handing of NATIONAL
+	  collations
+	* parser.y: adjust position of messages about unfinished KEY or FILE
+	  COLLATING SEQUENCE
+
+2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_print_info): drop COB_LI_IS_LL
+	  in favor of existing COB_32_BIT_LONG
+
 2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* plex.l, scanner.l: use noyywrap option instead of manually
 	  defining related code parts
+	* typeck.c (cb_tree_list_has_numeric_ref_or_field): cleanup
+
+2024-09-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* typeck.c (cb_tree_is_numeric_ref_or_field)
+	  (cb_tree_list_has_numeric_ref_or_field): new helper functions to check
+	  whether a given item is of category numeric (edited or not)
+	* typeck.c (cb_emit_incompat_data_checks): use new helper function
+	* typeck.c (cb_emit_move, cb_emit_set_to): do not check for incompatible
+	  data if no receiver field is of category numeric or numeric edited
+
+2024-09-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_accept): always check position
+	* cobc.c, flag.def: make scope optional for -fdump
+
+2024-09-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* pplex.l (cb_text_list): prevent duplicates
 
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
@@ -128,6 +175,16 @@
 	  (passed to cb_build_goto)
 	* codegen.c: handle profiling code generation under the
 	  cb_flag_prof guard
+
+2024-03-15  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, help.c, pplex.l: add new flags to output dependencies following
+	  gcc: -M to output deps only, -MD to output deps while compiling (in
+	  .d files), -MP to output phony targets, -MG to keep missing copybooks,
+	  -MQ <target> to Makefile-quote target ; add -fcopybook-deps to
+	  output only copybook names instead of file paths. -fcopybook-deps
+	  also forces -E, -foneline-deps, -MT=copybooks, disables errors on
+	  missing copybooks and removes output on stdout
 
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
@@ -1320,7 +1377,7 @@
 	* codegen.c (output_perform_call): use statement reference to generate
 	  separate comment for PERFORM procedure or USE procedure
 	* flag.def, codegen.c: new -fsection-exit-check
-	  (cb_flag_section_exit_check) and -fimplicit-goback-check 
+	  (cb_flag_section_exit_check) and -fimplicit-goback-check
 	  (cb_flag_implicit_goback_check)
 	* tree.h (cb_progam), parser.y (perform_procedure): add and set
 	   perform_thru_list for internal checks
@@ -2590,7 +2647,7 @@
 	* sqlxfdgen.c: Verify supplied SQL column name has no conflicts
 				Fixes for COMP-6 fields
 				New options for the first XFD of a record.
-				KEEP FILLER - indicates to keep and morph the name 
+				KEEP FILLER - indicates to keep and morph the name
 					of FILLER fields, otherwise FILLER does not
 					go into the SQL table.
 				KEEP PREFIX - indicates to keep the common prefix
@@ -2897,7 +2954,7 @@
 2020-10-12  Ron Norman <rjn@inglenet.com>
 
 	* typeck.c: Flag internal variables with 'flag_real_binary'
-	* codegen.c: Emit USAGE INDEX and internal binary variables 
+	* codegen.c: Emit USAGE INDEX and internal binary variables
 	  as COB_TYPE_NUMERIC_COMP5
 
 2020-10-08  Ron Norman <rjn@inglenet.com>
@@ -3476,8 +3533,8 @@
 
 2020-02-10  Ron Norman <rjn@inglenet.com>
 
-	* cobc.c, cobc.h, codegen.c, help.c, warning.def: 
-		Add new define CB_ERRWARNDEF
+	* cobc.c, cobc.h, codegen.c, help.c, warning.def:
+	  Add new define CB_ERRWARNDEF
 
 2020-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -8046,7 +8103,6 @@
 	  And compile option -fno-ibmcomp effectively sets:
 	     binary-size: 1--8 & synchronized-clause: ignore
 	* config.c: don't store configuration values additional to the setting
-
 
 2015-04-28  Ron Norman <rjn@inglenet.com>
 

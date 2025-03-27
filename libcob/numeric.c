@@ -285,7 +285,7 @@ cob_decimal_clear (cob_decimal *d)
 void
 cob_decimal_set_ullint (cob_decimal *d, const cob_u64_t n)
 {
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_ui (d->value, (cob_uli_t)n);
 #else
 	mpz_set_ui (d->value, (cob_uli_t)(n >> 32));
@@ -299,7 +299,7 @@ cob_decimal_set_ullint (cob_decimal *d, const cob_u64_t n)
 void
 cob_decimal_set_llint (cob_decimal *d, const cob_s64_t n)
 {
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_si (d->value, (cob_sli_t)n);
 #else
 	cob_u64_t	uval;
@@ -368,7 +368,7 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 }
 
 #define MAX_LLI_DIGITS_PLUS_1 20
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 #define MAX_LI_DIGITS_PLUS_1  20
 #else
 #define MAX_LI_DIGITS_PLUS_1  10
@@ -410,7 +410,7 @@ const cob_uli_t cob_pow_10_uli_val[MAX_LI_DIGITS_PLUS_1] = {
 	, 10000000
 	, 100000000
 	, 1000000000UL
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	, 10000000000
 	, 100000000000
 	, 1000000000000
@@ -614,7 +614,7 @@ cob_decimal_set_ieee64dec (cob_decimal *d, const cob_field *f)
 		d->scale = 0;
 		return;
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_ui (d->value, data);
 #else
 	mpz_set_ui (d->value, (cob_uli_t)(data >> 32));
@@ -723,7 +723,7 @@ cob_decimal_set_ieee128dec (cob_decimal *d, const cob_field *f)
 		d->scale = 0;
 		return;
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_ui (d->value, COB_128_MSW(data));
 	mpz_mul_2exp (d->value, d->value, 64UL);
 	mpz_add_ui (d->value, d->value, COB_128_LSW(data));
@@ -1102,7 +1102,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 			val = val * 10
 				+ (*p >> 4);
 		}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 		mpz_set_ui (d->value, (cob_uli_t)val);
 #else
 		cob_decimal_set_ullint (d, val);
@@ -1593,7 +1593,7 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 		return;
 	}
 
-#if	defined(COB_LI_IS_LL)
+#if !defined (COB_32_BIT_LONG)
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		mpz_set_si (d->value, cob_binary_get_sint64 (f));
 	} else {
@@ -1743,7 +1743,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 			}
 		}
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	if (!field_sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
 		cob_binary_set_uint64 (f, mpz_get_ui (d->value));
 	} else {
@@ -3771,7 +3771,7 @@ cob_cmp_llint (cob_field *f1, const cob_s64_t n)
 	} else {
 		if (n >= 0) return -1;
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_si (cob_d2.value, (cob_sli_t)n);
 #else
 	{

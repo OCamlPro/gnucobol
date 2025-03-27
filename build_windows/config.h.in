@@ -338,10 +338,6 @@
 #define COB_LIBS         "libcob-5.l"
 #endif
 
-
-/* long int is long long */
-/* #undef COB_LI_IS_LL */
-
 /* Module extension */
 #define COB_MODULE_EXT "dll"
 
@@ -864,6 +860,9 @@
 /* path for locale-dependent data */
 #undef LOCALEDIR
 
+/* Define as const if the declaration of iconv() needs const. */
+/* #undef ICONV_CONST */
+
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 /* #undef LT_OBJDIR */
 
@@ -875,6 +874,9 @@
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "bug-gnucobol@gnu.org"
+
+/* Bug URL instead of mailing list */
+/* #undef PACKAGE_BUGREPORT_URL */
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "GnuCOBOL"
@@ -894,6 +896,8 @@
 /* Define a patch level (numeric, max. 8 digits) */
 #define PATCH_LEVEL COB_NUM_TAR_DATE
 
+/* PKG version string */
+#define PKGVERSION "(" PACKAGE_NAME ") "
 
 #ifdef MAKE_DIST
 #define COB_CFLAGS       "/I\"" COB_MAIN_DIR "\\include\""

@@ -5825,7 +5825,7 @@ collating_sequence_clause:
 	check_repeated ("COLLATING", SYN_CLAUSE_3, &check_duplicate);
 	current_file->collating_sequence = alphanumeric_collation;
 	current_file->collating_sequence_n = national_collation;
-	CB_UNFINISHED ("FILE COLLATING SEQUENCE"); /* only implemented for BDB */
+	CB_UNFINISHED_X (alphanumeric_collation, "FILE COLLATING SEQUENCE"); /* only implemented for BDB */
   }
 ;
 
@@ -5877,7 +5877,7 @@ collating_sequence_clause_key:
 	   and also attached to the correct key later, so just store in a list here: */
 	current_file->collating_sequence_keys =
 		cb_list_add(current_file->collating_sequence_keys, CB_BUILD_PAIR ($6, $4));
-	CB_UNFINISHED ("KEY COLLATING SEQUENCE"); /* only implemented for BDB */
+	CB_UNFINISHED_X ($6, "KEY COLLATING SEQUENCE"); /* only implemented for BDB */
   }
 ;
 

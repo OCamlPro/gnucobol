@@ -155,6 +155,7 @@ static int			accept_cursor_y;
 static int			accept_cursor_x;
 static int			pending_accept;
 static int			got_sys_char;
+static WINDOW		*mywin;
 #ifdef HAVE_MOUSEMASK
 static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
@@ -319,7 +320,7 @@ raise_ec_on_invalid_line_or_col (const int line, const int column)
 	int	max_y;
 	int	max_x;
 
-	getmaxyx (stdscr, max_y, max_x);
+	getmaxyx (mywin, max_y, max_x);
 	if (line < 0 || line >= max_y) {
 		cob_set_exception (COB_EC_SCREEN_LINE_NUMBER);
 	}
@@ -331,7 +332,7 @@ raise_ec_on_invalid_line_or_col (const int line, const int column)
 static int
 cob_move_cursor (const int line, const int column)
 {
-	int status = move (line, column);
+	int status = wmove (mywin, line, column);
 
 	if (status == ERR) {
 		raise_ec_on_invalid_line_or_col (line, column);
@@ -343,7 +344,7 @@ void
 cob_set_cursor_pos (int line, int column)
 {
 	init_cob_screen_if_needed ();
-	(void) move (line, column);
+	(void) wmove (mywin, line, column);
 }
 
 #if 0 /* currently unused */
@@ -353,9 +354,9 @@ cob_move_to_beg_of_last_line (void)
 	int	max_y;
 	int	max_x;
 
-	getmaxyx (stdscr, max_y, max_x);
+	getmaxyx (mywin, max_y, max_x);
 	/* We don't need to check for exceptions here; it will always be fine */
-	move (max_y, 0);
+	wmove (mywin, max_y, 0);
 
 	COB_UNUSED (max_x);
 }
@@ -408,11 +409,11 @@ cob_activate_color_pair (const short color_pair_number)
 	int ret;
 
 #ifdef	HAVE_COLOR_SET
-	ret = color_set (color_pair_number, NULL);
+	ret = wcolor_set (mywin, color_pair_number, NULL);
 #else
-	ret = attrset (COLOR_PAIR(color_pair_number));
+	ret = wattrset (mywin, COLOR_PAIR(color_pair_number));
 #endif
-	bkgdset (COLOR_PAIR(color_pair_number));
+	wbkgdset (mywin, COLOR_PAIR(color_pair_number));
 
 	return ret;
 }
@@ -837,7 +838,7 @@ adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 				continue;
 			}
 
-			/* normal attribute - apply and go on*/
+			/* normal attribute - apply and go on */
 			if (control_attr->cobflag != 0) {
 				if (no_indicator == 0) {
 					*attr |= control_attr->cobflag;
@@ -951,9 +952,9 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 #endif
 
 	/* apply attributes */
-	attrset (A_NORMAL);
+	wattrset (mywin, A_NORMAL);
 	if (styles != A_NORMAL) {
-		attron (styles);
+		wattron (mywin, styles);
 	}
 
 	/* apply colors */
@@ -970,24 +971,24 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	}
 	/* BLANK SCREEN colors the whole screen. */
 	if (attr & COB_SCREEN_BLANK_SCREEN) {
-		getyx (stdscr, line, column);
-		clear ();
+		getyx (mywin, line, column);
+		wclear (mywin);
 		cob_move_cursor (line, column);
 	}
 
 	if (stmt == DISPLAY_STATEMENT) {
 		/* BLANK LINE colors the whole line. */
 		if (attr & COB_SCREEN_BLANK_LINE) {
-			getyx (stdscr, line, column);
+			getyx (mywin, line, column);
 			cob_move_cursor (line, 0);
-			clrtoeol ();
+			wclrtoeol (mywin);
 			cob_move_cursor (line, column);
 		}
 		if (attr & COB_SCREEN_ERASE_EOL) {
-			clrtoeol ();
+			wclrtoeol (mywin);
 		}
 		if (attr & COB_SCREEN_ERASE_EOS) {
-			clrtobot ();
+			wclrtobot (mywin);
 		}
 	}
 	if (attr & COB_SCREEN_BELL) {
@@ -1049,6 +1050,14 @@ cob_screen_init (void)
 		cob_runtime_error (_("failed to initialize curses"));
 		return 1;
 	}
+
+	/* set mywin pointer to mywin pointer for future
+	   implementation of panels functionality
+	   Note that stdscr WINDOW pointer can not
+	   be altered as the keyboard and mouse
+	   still require this pointer */
+	mywin = stdscr;
+
 	cobglobptr->cob_screen_initialized = 1;
 #ifdef	HAVE_USE_LEGACY_CODING
 	use_legacy_coding (2);
@@ -1064,7 +1073,7 @@ cob_screen_init (void)
 #endif
 
 	cbreak ();
-	keypad (stdscr, 1);
+	keypad (mywin, 1);
 	nonl ();
 	noecho ();
 	if (has_colors ()) {
@@ -1109,8 +1118,8 @@ cob_screen_init (void)
 #endif
 		}
 	}
-	attrset (A_NORMAL);
-	getmaxyx (stdscr, COB_MAX_Y_COORD, COB_MAX_X_COORD);
+	wattrset (mywin, A_NORMAL);
+	getmaxyx (mywin, COB_MAX_Y_COORD, COB_MAX_X_COORD);
 
 	cob_settings_screenio ();
 
@@ -1312,7 +1321,7 @@ pass_cursor_to_program (void)
 		cob_field	*cursor_field = COB_MODULE_PTR->cursor_pos;
 		int		sline;
 		int		scolumn;
-		getyx (stdscr, sline, scolumn);
+		getyx (mywin, sline, scolumn);
 		sline++; scolumn++;	/* zero-based in curses */
 		if (COB_FIELD_IS_NUMERIC (cursor_field) &&
 			COB_FIELD_TYPE (cursor_field) != COB_TYPE_NUMERIC_DISPLAY) {
@@ -1410,8 +1419,8 @@ raise_ec_on_truncation (const int item_size)
 	int	max_y;
 	int	max_x;
 
-	getyx (stdscr, y, x);
-	getmaxyx (stdscr, max_y, max_x);
+	getyx (mywin, y, x);
+	getmaxyx (mywin, max_y, max_x);
 
 	if (x + item_size - 1 > max_x) {
 		cob_set_exception (COB_EC_SCREEN_ITEM_TRUNCATED);
@@ -1425,7 +1434,7 @@ static void
 cob_addnstr (const char *data, const int size)
 {
 	raise_ec_on_truncation (size);
-	addnstr (data, size);
+	waddnstr (mywin, data, size);
 }
 
 /* variant of cob_addnstr that outputs each character separately,
@@ -1441,182 +1450,182 @@ cob_addnstr_graph (const char *data, const int size)
 		switch (c) {
 		case 'j':	/* lower-right corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_LRCORNER);
+			wadd_wch (mywin, WACS_LRCORNER);
 #else
-			addch (ACS_LRCORNER);
+			waddch (mywin, ACS_LRCORNER);
 #endif
 			break;
 		case 'J':	/* lower-right corner, double */
 #if defined (WACS_D_LRCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_LRCORNER);
+			wadd_wch (mywin, WACS_D_LRCORNER);
 #elif defined (ACS_D_LRCORNER)
-			addch (ACS_D_LRCORNER);
+			waddch (mywin, ACS_D_LRCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'k':	/* upper-right corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_URCORNER);
+			wadd_wch (mywin, WACS_URCORNER);
 #else
-			addch (ACS_URCORNER);
+			waddch (mywin, ACS_URCORNER);
 #endif
 			break;
 		case 'K':	/* upper-right corner, double */
 #if defined (WACS_D_URCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_URCORNER);
+			wadd_wch (mywin, WACS_D_URCORNER);
 #elif defined (ACS_D_URCORNER)
-			addch (ACS_D_URCORNER);
+			waddch (mywin, ACS_D_URCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'm':	/* lower-left corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_LLCORNER);
+			wadd_wch (mywin, WACS_LLCORNER);
 #else
-			addch (ACS_LLCORNER);
+			waddch (mywin, ACS_LLCORNER);
 #endif
 			break;
 		case 'M':	/* lower-left corner, double */
 #if defined (WACS_D_LLCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_LLCORNER);
+			wadd_wch (mywin, WACS_D_LLCORNER);
 #elif defined (ACS_D_LLCORNER)
-			addch (ACS_D_LLCORNER);
+			waddch (mywin, ACS_D_LLCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'l':	/* upper-left corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_ULCORNER);
+			wadd_wch (mywin, WACS_ULCORNER);
 #else
-			addch (ACS_ULCORNER);
+			waddch (mywin, ACS_ULCORNER);
 #endif
 			break;
 		case 'L':	/* upper-left corner, double */
 #if defined (WACS_D_ULCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_ULCORNER);
+			wadd_wch (mywin, WACS_D_ULCORNER);
 #elif defined (ACS_D_ULCORNER)
-			addch (ACS_D_ULCORNER);
+			waddch (mywin, ACS_D_ULCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'n':	/* plus */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_PLUS);
+			wadd_wch (mywin, WACS_PLUS);
 #else
-			addch (ACS_PLUS);
+			waddch (mywin, ACS_PLUS);
 #endif
 			break;
 		case 'N':	/* plus, double */
 #if defined (WACS_D_PLUS) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_PLUS);
+			wadd_wch (mywin, WACS_D_PLUS);
 #elif defined (ACS_D_PLUS)
-			addch (ACS_D_PLUS);
+			waddch (mywin, ACS_D_PLUS);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'q':	/* horizontal line */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_HLINE);
+			wadd_wch (mywin, WACS_HLINE);
 #else
-			addch (ACS_HLINE);
+			waddch (mywin, ACS_HLINE);
 #endif
 			break;
 		case 'Q':	/* horizontal line, double */
 #if defined (WACS_D_HLINE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_HLINE);
+			wadd_wch (mywin, WACS_D_HLINE);
 #elif defined (ACS_D_HLINE)
-			addch (ACS_D_HLINE);
+			waddch (mywin, ACS_D_HLINE);
 #else
-			addch ((const chtype)'-');
+			waddch (mywin, (const chtype)'-');
 #endif
 			break;
 		case 'x':	/* vertical line */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_VLINE);
+			wadd_wch (mywin, WACS_VLINE);
 #else
-			addch (ACS_VLINE);
+			waddch (mywin, ACS_VLINE);
 #endif
 			break;
 		case 'X':	/* vertical line, double */
 #if defined (WACS_D_VLINE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_VLINE);
+			wadd_wch (mywin, WACS_D_VLINE);
 #elif defined (ACS_D_VLINE)
-			addch (ACS_D_VLINE);
+			waddch (mywin, ACS_D_VLINE);
 #else
-			addch ((const chtype)'|');
+			waddch (mywin, (const chtype)'|');
 #endif
 			break;
 		case 't':	/* left tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_LTEE);
+			wadd_wch (mywin, WACS_LTEE);
 #else
-			addch (ACS_LTEE);
+			waddch (mywin, ACS_LTEE);
 #endif
 			break;
 		case 'T':	/* left tee , double */
 #if defined (WACS_D_LTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_LTEE);
+			wadd_wch (mywin, WACS_D_LTEE);
 #elif defined (ACS_D_LTEE)
-			addch (ACS_D_LTEE);
+			waddch (mywin, ACS_D_LTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'u':	/* right tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_RTEE);
+			wadd_wch (mywin, WACS_RTEE);
 #else
-			addch (ACS_RTEE);
+			waddch (mywin, ACS_RTEE);
 #endif
 			break;
 		case 'U':	/* right tee , double */
 #if defined (WACS_D_RTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_RTEE);
+			wadd_wch (mywin, WACS_D_RTEE);
 #elif defined (ACS_D_RTEE)
-			addch (ACS_D_RTEE);
+			waddch (mywin, ACS_D_RTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'v':	/* bottom tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_BTEE);
+			wadd_wch (mywin, WACS_BTEE);
 #else
-			addch (ACS_BTEE);
+			waddch (mywin, ACS_BTEE);
 #endif
 			break;
 		case 'V':	/* bottom tee , double */
 #if defined (WACS_D_BTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_BTEE);
+			wadd_wch (mywin, WACS_D_BTEE);
 #elif defined (ACS_D_BTEE)
-			addch (ACS_D_BTEE);
+			waddch (mywin, ACS_D_BTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'w':	/* top tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_TTEE);
+			wadd_wch (mywin, WACS_TTEE);
 #else
-			addch (ACS_TTEE);
+			waddch (mywin, ACS_TTEE);
 #endif
 			break;
 		case 'W':	/* top tee , double */
 #if defined (WACS_D_TTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_TTEE);
+			wadd_wch (mywin, WACS_D_TTEE);
 #elif defined (ACS_D_TTEE)
-			addch (ACS_D_TTEE);
+			waddch (mywin, ACS_D_TTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		default:
-			addch ((const chtype)c);
+			waddch (mywin, (const chtype)c);
 		}
 	}
 }
@@ -1625,14 +1634,14 @@ static void
 cob_addch (const chtype c)
 {
 	raise_ec_on_truncation (1);
-	addch (c);
+	waddch (mywin, c);
 }
 
 /* Use only when raise_ec_on_truncation is called beforehand. */
 static void
 cob_addch_no_trunc_check (const chtype c)
 {
-	addch (c);
+	waddch (mywin, c);
 }
 
 static void
@@ -1833,7 +1842,7 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 		accept_cursor_x = column + f->size;
 	}
 
-	refresh ();
+	wrefresh (mywin);
 }
 
 static COB_INLINE COB_A_INLINE int
@@ -2020,7 +2029,7 @@ refresh_field (cob_screen *s)
 	int		y;
 	int		x;
 
-	getyx (stdscr, y, x);
+	getyx (mywin, y, x);
 	cob_screen_puts (s, s->field, cobsetptr->cob_legacy, ACCEPT_STATEMENT);
 	cob_move_cursor (y, x);
 }
@@ -2406,7 +2415,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		int		cursor_clause_line;
 		int		cursor_clause_col;
 		get_cursor_from_program (&cursor_clause_line, &cursor_clause_col);
-		if (cursor_clause_line > 0) {
+		if (cursor_clause_line >= 0) {
 			int		fld_index = find_field_by_pos (initial_curs, cursor_clause_line, cursor_clause_col);
 			if (fld_index >= 0) {
 				curr_index = fld_index;
@@ -2433,9 +2442,9 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			default_prompt_char = COB_CH_UL;
 		}
 
-		refresh ();
+		wrefresh (mywin);
 		errno = 0;
-		timeout (accept_timeout);
+		wtimeout (mywin, accept_timeout);
 		keyp = getch ();
 
 		/* FIXME: modularize (cob_screen_get_all, field_accept) and
@@ -2471,7 +2480,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			continue;
 		}
 
-		getyx (stdscr, cline, ccolumn);
+		getyx (mywin, cline, ccolumn);
 
 		switch (keyp) {
 		case KEY_ENTER:
@@ -2894,7 +2903,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		cob_beep ();
 	}
 screen_return:
-	refresh ();
+	wrefresh (mywin);
 }
 
 static int
@@ -2931,7 +2940,7 @@ cob_screen_moveyx (cob_screen *s)
 	if (s->line || s->column ||
 	    s->attr & (COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS |
 		       COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS)) {
-		getyx (stdscr, y, x);
+		getyx (mywin, y, x);
 		if (x < 0 || y < 0) {
 			/* not translated as "testing only" (should not happen) */
 			cob_runtime_warning ("negative values from getyx");
@@ -2969,7 +2978,7 @@ cob_screen_moveyx (cob_screen *s)
 		}
 
 		cob_move_cursor (line, column);
-		refresh ();
+		wrefresh (mywin);
 		cob_current_y = line;
 		cob_current_x = column;
 	}
@@ -3173,7 +3182,7 @@ screen_display (cob_screen *s, const int line, const int column)
 		pending_accept = 1;
 	}
 	cob_screen_iterate (s);
-	refresh ();
+	wrefresh (mywin);
 }
 
 static int
@@ -3286,10 +3295,10 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 	       cob_field *fgc, cob_field *bgc, cob_field *fscroll,
 	       cob_field *size_is, cob_field *control, cob_field *color)
 {
-	int	sline;
-	int	scolumn;
-	int	size_display, fsize;
-	int	status;
+	int 	sline;
+	int 	scolumn;
+	int 	size_display, fsize;
+	int 	status;
 	char	fig_const;	/* figurative constant character */
 	cob_field	char_temp;
 	unsigned char	space_buff[4];
@@ -3328,10 +3337,10 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		if (fattr & COB_SCREEN_SCROLL_DOWN) {
 			sline = -sline;
 		}
-		scrollok (stdscr, 1);
-		scrl (sline);
-		scrollok (stdscr, 0);
-		refresh ();
+		scrollok (mywin, 1);
+		wscrl (mywin, sline);
+		scrollok (mywin, 0);
+		wrefresh (mywin);
 	}
 
 	sline = line;
@@ -3379,7 +3388,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		}
 		cob_move_cursor (sline, 0);
 	}
-	refresh ();
+	wrefresh (mywin);
 }
 
 static void
@@ -3440,10 +3449,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		if (fattr & COB_SCREEN_SCROLL_DOWN) {
 			keyp = -keyp;
 		}
-		scrollok (stdscr, 1);
-		scrl (keyp);
-		scrollok (stdscr, 0);
-		refresh ();
+		scrollok (mywin, 1);
+		wscrl (mywin, keyp);
+		scrollok (mywin, 0);
+		wrefresh (mywin);
 	}
 	cobglobptr->cob_exception_code = 0;
 
@@ -3498,7 +3507,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				}
 			}
 			/* SIZE IS greater than field, blank out trailing screen */
-			if (size_accept > (int)f->size) {
+			if (size_accept > f->size) {
 				cob_addnch (size_accept - f->size, COB_CH_SP);
 			}
 			/* start position within the field, if specified (all 1-based) */
@@ -3524,11 +3533,11 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 
 					if (cursor_clause_line == sline
 					 && cursor_clause_col > scolumn
-					 && cursor_clause_col < scolumn + disp_size) {
+					 && cursor_clause_col < scolumn + (int)disp_size) {
 						cursor_off = cursor_clause_col - scolumn + 1;
 					}
 				}
-				move (sline, scolumn + cursor_off - 1);
+				wmove (mywin, sline, scolumn + cursor_off - 1);
 			}
 		}
 #if	0	/* RXWRXW - Screen update */
@@ -3553,14 +3562,14 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	}
 	count = 0;
 
-	timeout (get_accept_timeout (ftimeout));
+	wtimeout (mywin, get_accept_timeout (ftimeout));
 
 	/* Get characters from keyboard, processing each one. */
 	for (; ;) {
 		/* Show prompt characters. */
 		if (f) {
 			/* Get current line, column. */
-			getyx (stdscr, cline, ccolumn);
+			getyx (mywin, cline, ccolumn);
 			/* Trailing prompts. */
 			if (fattr & COB_SCREEN_NO_ECHO) {
 				prompt_char = COB_CH_SP;
@@ -3611,7 +3620,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Cursor to current column. */
 			cob_move_cursor (cline, ccolumn);
 			/* Refresh screen. */
-			refresh ();
+			wrefresh (mywin);
 		}
 		errno = 0;
 
@@ -3727,6 +3736,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			{
 				int mline = mevent.y;
 				int mcolumn = mevent.x;
+				if (!wmouse_trafo (mywin, &mline, &mcolumn, 0)) {
+					cob_beep ();
+					continue;
+				}
 				mevent.bstate &= cob_mask_accept;
 				if (mevent.bstate != 0) {
 					fret = mouse_to_exception_code (mevent.bstate);
@@ -3954,6 +3967,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		{
 			int mline = mevent.y;
 			int mcolumn = mevent.x;
+			if (!wmouse_trafo (mywin, &mline, &mcolumn, 0)) {
+				cob_beep ();
+				continue;
+			}
 			/* handle depending on state */
 			if (mevent.bstate & BUTTON1_PRESSED
 			 && COB_MOUSE_FLAGS & 1) {
@@ -4084,7 +4101,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	if (cursor) {
 		/* horizontal position stored in CURSOR clause */
 		if (!COB_FIELD_CONSTANT (cursor)) {
-			getyx (stdscr, cline, ccolumn);
+			getyx (mywin, cline, ccolumn);
 			if (cline == sline) {
 				cob_set_int (cursor, ccolumn + 1 - scolumn);
 			}
@@ -4101,7 +4118,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		memset (COB_TERM_BUFF, ' ', size_accept);
 #endif
 	}
-	refresh ();
+	wrefresh (mywin);
 }
 
 static void
@@ -4113,7 +4130,7 @@ field_accept_from_curpos (cob_field *f, cob_field *fgc,
 	size_t		ccolumn;
 
 	/* Get current line, column. */
-	getyx (stdscr, cline, ccolumn);
+	getyx (mywin, cline, ccolumn);
 
 	/* accept field */
 	field_accept (f, (cob_flags_t)fattr, cline, ccolumn, fgc, bgc,
@@ -4129,7 +4146,7 @@ field_display_at_curpos (cob_field *f,
 	size_t		ccolumn;
 
 	/* Get current line, column. */
-	getyx (stdscr, cline, ccolumn);
+	getyx (mywin, cline, ccolumn);
 
 	field_display (f, (cob_flags_t)fattr, cline, ccolumn,
 			fgc, bgc, fscroll, size_is, NULL, NULL);
@@ -4364,8 +4381,8 @@ cob_sys_clear_screen (void)
 {
 	init_cob_screen_if_needed ();
 
-	clear ();
-	refresh ();
+	wclear (mywin);
+	wrefresh (mywin);
 	cob_current_y = 0;
 	cob_current_x = 0;
 	return 0;
@@ -4381,14 +4398,14 @@ cob_screen_set_mode (const cob_u32_t smode)
 
 	if (!smode) {
 		if (cobglobptr->cob_screen_initialized) {
-			refresh ();
+			wrefresh (mywin);
 			def_prog_mode ();
 			endwin ();
 		}
 	} else {
 		if (cobglobptr->cob_screen_initialized) {
 			reset_prog_mode ();
-			refresh ();
+			wrefresh (mywin);
 		} else {
 			cob_screen_init ();
 		}
@@ -4526,11 +4543,11 @@ cob_exit_screen (void)
 		}
 		cobglobptr->cob_screen_initialized = 0;
 #if 0 /* CHECKME: Shouldn't be necessary */
-		clear ();
+		wclear (mywin);
 		cob_move_to_beg_of_last_line ();
 #endif
 		endwin (); /* ends curses' terminal mode */
-		delwin (stdscr);	/* free storage related to screen not active */
+		delwin (mywin);	/* free storage related to screen not active */
 #ifdef	HAVE_CURSES_FREEALL
 		/* cleanup storage that would otherwise be shown
 		   to be "still reachable" with valgrind */
@@ -4562,6 +4579,8 @@ cob_exit_screen_from_signal (int ss_only)
 #if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) \
  && (!defined (PDC_BUILD) || PDC_BUILD < 4305)
 	if (ss_only) return;
+#else
+	COB_UNUSED (ss_only);
 #endif
 
 	if (cobglobptr->cob_screen_initialized) {
@@ -4774,7 +4793,7 @@ cob_sys_get_csr_pos (unsigned char *fld)
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
-	getyx (stdscr, cline, ccol);
+	getyx (mywin, cline, ccol);
 	if (f && f->size == 4) {
 		/* group with sizes up to 64k (2 * 2 bytes)
 		   as used by Fujitsu (likely with a limit of
@@ -4873,7 +4892,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 		cline = fld[0];
 		ccol= fld[1];
 	}
-	return move (cline, ccol);
+	return wmove (mywin, cline, ccol);
 #else
 	COB_UNUSED (fld);
 	/* TODO: raise exception */
@@ -4926,9 +4945,9 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 #endif
 }
 
-/* save the current stdscr screen to a file */
+/* save the current mywin screen to a file */
 int
-cob_sys_scr_dump(unsigned char *parm)
+cob_sys_scr_dump (unsigned char *parm)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
 	int	result;
@@ -4938,23 +4957,24 @@ cob_sys_scr_dump(unsigned char *parm)
 	COB_CHK_PARMS (CBL_GC_SCR_DUMP, 1);
 	init_cob_screen_if_needed ();
 
-	if (filename && (filep = fopen(filename, "wb")) != NULL)
-	{
-		refresh();
-		result = putwin(stdscr, filep);
-		fclose(filep);
+	if (filename && (filep = fopen (filename, "wb")) != NULL) {
+		refresh ();
+		result = putwin (mywin, filep);
+		fclose (filep);
 		return result;
 	}
 
+	COB_UNUSED (parm);
 	return ERR;
 #else
+	COB_UNUSED (parm);
 	return -1;
 #endif
 }
 
 
-/* restore the current stdscr screen from a file */
-int cob_sys_scr_restore(unsigned char *parm)
+/* restore the current mywin screen from a file */
+int cob_sys_scr_restore (unsigned char *parm)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
 	int	result;
@@ -4964,22 +4984,22 @@ int cob_sys_scr_restore(unsigned char *parm)
 	COB_CHK_PARMS (CBL_GC_SCR_RESTORE, 1);
 	init_cob_screen_if_needed ();
 
-	if (filename && (filep = fopen(filename, "rb")) != NULL)
-	{
-		WINDOW *replacement = getwin(filep);
-		fclose(filep);
+	if (filename && (filep = fopen (filename, "rb")) != NULL) {
+		WINDOW *replacement = getwin (filep);
+		fclose (filep);
 
-		if (replacement)
-		{
-			result = overwrite(replacement, stdscr);
-			refresh();
-			delwin(replacement);
+		if (replacement) {
+			result = overwrite (replacement, mywin);
+			refresh ();
+			delwin (replacement);
 			return result;
 		}
 	}
 
+	COB_UNUSED (parm);
 	return ERR;
 #else
+	COB_UNUSED (parm);
 	return -1;
 #endif
 }

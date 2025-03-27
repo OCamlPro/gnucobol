@@ -1235,16 +1235,33 @@ cb_emit_list (cb_tree l)
 	return l;
 }
 
+static COB_INLINE COB_A_INLINE int
+cb_tree_is_numeric_ref_or_field (cb_tree x, int include_numeric_edited)
+{
+	int cat;
+	if (!x || !CB_REF_OR_FIELD_P (x)) {
+		return 0;
+	}
+	cat = CB_TREE_CATEGORY (x);
+	return (cat == CB_CATEGORY_NUMERIC
+	     || (include_numeric_edited && cat == CB_CATEGORY_NUMERIC_EDITED));
+}
+
+static int
+cb_tree_list_has_numeric_ref_or_field (cb_tree l)
+{
+	for (;
+	     l && !cb_tree_is_numeric_ref_or_field (CB_VALUE (l), 1);
+	     l = CB_CHAIN (l));
+	return (l != NULL);
+}
+
 static void
 cb_emit_incompat_data_checks (cb_tree x)
 {
 	struct cb_field		*f;
 
-	if (!x || x == cb_error_node) {
-		return;
-	}
-	if (!CB_REF_OR_FIELD_P (x)
-	 || CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC) {
+	if (!cb_tree_is_numeric_ref_or_field (x, 0)) {
 		return;
 	}
 	f = CB_FIELD_PTR (x);
@@ -4232,6 +4249,7 @@ validate_alphabet (cb_tree alphabet)
 		ap->high_val_char = maxchar;
 
 		alphabet_valid = 1;
+		n = 0;	/* keep analyzer happy */
 
 		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
@@ -8733,7 +8751,9 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	if (cb_listing_xref) {
 		cobc_xref_set_receiving (var);
 	}
-
+	if (cb_validate_one (pos)) {
+		return;
+	}
 	if (attr_ptr) {
 		fgc = attr_ptr->fgc;
 		bgc = attr_ptr->bgc;
@@ -8745,8 +8765,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		cursor = attr_ptr->cursor;
 		color = attr_ptr->color;
 		disp_attrs = attr_ptr->dispattrs;
-		if (cb_validate_one (pos)
-		 || cb_validate_one (fgc)
+		if (cb_validate_one (fgc)
 		 || cb_validate_one (bgc)
 		 || cb_validate_one (scroll)
 		 || cb_validate_one (timeout)
@@ -13647,8 +13666,11 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		return;
 	}
 
-	/* validate / fix-up source, if requested */
-	cb_emit_incompat_data_checks (src);
+	/* validate / fix-up source, if at least one receiver is of category
+	   numeric */
+	if (cb_tree_list_has_numeric_ref_or_field (dsts)) {
+		cb_emit_incompat_data_checks (src);
+	}
 
 	/* FIXME: this is way to much to cater for sum field */
 	src = cb_check_sum_field (src);
@@ -14563,8 +14585,11 @@ cb_emit_set_to (cb_tree vars, cb_tree src)
 		return;
 	}
 
-	/* validate / fix-up source, if requested */
-	cb_emit_incompat_data_checks (src);
+	/* validate / fix-up source, if at least one receiver is of category
+	   numeric */
+	if (cb_tree_list_has_numeric_ref_or_field (vars)) {
+		cb_emit_incompat_data_checks (src);
+	}
 
 	/* Emit statements. */
 	for (l = vars; l; l = CB_CHAIN (l)) {

@@ -38,6 +38,20 @@
 	Reverted change 2022-02-21 to integrate change
 	from GnuCOBOL 3.1 2023-04-04
 
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version): PACKAGE_NAME may now be overwritten
+	  by PKGVERSION (new configure option)
+
+2024-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, common.c (print_info_detailed): drop COB_LI_IS_LL
+	  in favor of existing COB_32_BIT_LONG
+
+2024-09-20  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_screen_get_all) fixed Bug #990
+
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* intrinsics.c (cob_intr_random), move.c (cob_move_display_to_packed):
@@ -55,6 +69,20 @@
 	* common.c, coblocal.h (cob_settings): added boolean COB_HIDE_CURSOR
 	* screenio.c (cob_settings_screenio): implemented runtime config to hide
 	  the cursor
+
+2024-08-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_fd_file_open) [_WIN32]: workaround for MinGW bug in locking
+
+2024-08-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, common.c (cob_cleanup_thread): fix declaration
+	* common.c: drop includes found in coblocal.h
+	* common.c (cob_alloc_module): changed type and name of cob_mod_ptr
+
+2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: speedup for NUMVAL related functions
 
 2024-08-04  David Declerck <david.declerck@ocamlpro.com>
 
@@ -75,6 +103,16 @@
 	* (cob_resolve_internal): runtime warning if loading module from
 	  existing path or resolving requested entry point does not work
 
+2024-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: In preparation for Multiple Window support
+	  added static WINDOW pointer "mywin", all curses functions
+	  which either implicitly or explicitly referenced the
+	  stdscr WINDOW pointer were changed to use the window
+	  specific functions using mywin except the getch function
+	  remains unchanged. The wgetch function caused the mouse
+	  not to be recognized.
+
 2024-07-25  David Declerck <david.declerck@ocamlpro.com>
 
 	* fbdb.c, fextfh.c, fisam.c, flmdb.c, focextfh.c, foci.c, fodbc.c:
@@ -83,7 +121,7 @@
 
 2024-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
-	* coblocal.h (COB_TLS): add a new attribute for thread local static.
+	* coblocal.h (COB_TLS): add a new attribute for thread local static
 	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
 
 2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
@@ -123,10 +161,10 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-		fix errors caught by the Sanitizer functionality of GCC. This
-		change did not resolve all of the issues found as some of them
-		were in Berkeley DB and some were intentional in the memory
-		corruption logic which has been implemented in the runtime.
+	fix errors caught by the Sanitizer functionality of GCC. This
+	change did not resolve all of the issues found as some of them
+	were in Berkeley DB and some were intentional in the memory
+	corruption logic which has been implemented in the runtime.
 
 	* move.c (the cob_move_display_to_packed function was rewritten to
 	  fix the out of bounds memory addressing issues and also to make
@@ -136,8 +174,8 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-		fix errors in fileio.c when building with VISAM 2.2. This issue
-		occurred when using a partial key with a sequential read previous.
+	fix errors in fileio.c when building with VISAM 2.2. This issue
+	occurred when using a partial key with a sequential read previous.
 
 	* fileio.c (indexed_start_internal, indexed_start, indexed_read_next)->fisam.c:
 	  added a new field, partial_key_length,
@@ -188,8 +226,9 @@
 	* fileio.c (cob_path_to_absolute): extracted from insert
 	  and cob_set_main_argv0
 
-2024-03-10  Alfredo Tupone <tupone@gentoo.org>
+2024-01-31  Gwyn Ciesla <gwync@protonmail.com>
 
+	Bug #941 build issue
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
@@ -787,7 +826,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* termio.c (pretty_display_numeric): fix GCC warning with {{ 0 }}
 	* termio.c (display_alnum_dump): slightly rewritten to fix compiler
 	  warnings
-	* cconv.c (cob_load_collation), common.c, intrinisic.c (cob_intr_random),
+	* cconv.c (cob_load_collation), common.c, intrinsic.c (cob_intr_random),
 	  termio.c: minor adjustments to fix compiler warnings
 	* fileio.c (copy_fcd_to_file)->fextfh.c: fixed memory issues with
 	  writing to assign and select name
@@ -847,7 +886,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* common.c (cob_move_packed_to_display, cob_packed_get_int,
 	  cob_packed_get_long_long): minor performance improvements and similar
 	  code to numeric.c
-	* intrinisic.c (calculate_start_end_for_numval): only skip leading spaces
+	* intrinsic.c (calculate_start_end_for_numval): only skip leading spaces
 	  and zeros, but not leading low-values
 
 2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
@@ -1168,8 +1207,8 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_debug_open, cob_trace_print), intrinsic.c
-	 (cob_intr_hex_to_char): prefer extending switch over use of topupper
-	* call.c, common.c, intrinisic.c, screenio.c: directly call toupper/tolower
+	  (cob_intr_hex_to_char): prefer extending switch over use of topupper
+	* call.c, common.c, intrinsic.c, screenio.c: directly call toupper/tolower
 	  without previous check of islower/isupper
 	* system.def, common.c (cob_sys_runtime_error_proc):
 	  implement CBL_RUNTIME_ERROR

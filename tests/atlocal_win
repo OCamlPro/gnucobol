@@ -27,7 +27,10 @@
 TEMPLATE="${abs_srcdir}/testsuite.src"
 
 COB_SRC_PATH="$(cd ${abs_srcdir}/.. ; pwd)"
-COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
+
+if test "${COB_WIN_BUILDPATH}" = ""; then
+   COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
+fi
 
 COBC="cobc.exe"
 COBCRUN="cobcrun.exe"
@@ -72,6 +75,7 @@ _unset_option () {
 	     -a "$1" != "COB_COPY_DIR" \
 	     -a "$1" != "COB_RUNTIME_CONFIG" \
 	     -a "$1" != "COB_LIBRARY_PATH" \
+	     -a "$1" != "COB_CC" \
 	     -a "$1" != "COB_CFLAGS" \
 	     -a "$1" != "COB_LDFLAGS" \
 	     -a "$1" != "COB_LIBS" \
@@ -166,9 +170,11 @@ export COB_STACKTRACE
 COB_MSG_FORMAT=GCC
 export COB_MSG_FORMAT
 
-# different flags checked in the testsuite
+# different variables used in the testsuite
 # note: kept intended to ease merge from atlocal.in
-
+	if test "$COB_CC" = ""; then
+	   COB_CC="$($GREP COBC_CC info.out | cut -d: -f2 | cut -b2-)"
+	fi
 	COB_OBJECT_EXT="$($GREP COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
 	COB_EXE_EXT=".exe"
 	COB_MODULE_EXT="dll"
@@ -240,7 +246,7 @@ rm -rf info.out
 # NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
 export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
 export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
-export COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
+export COB_CC COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
 # to ensure that no external COB_SCHEMA_DIR is polluted: set to local
 COB_SCHEMA_DIR="." && export COB_SCHEMA_DIR

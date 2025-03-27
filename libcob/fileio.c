@@ -3116,7 +3116,7 @@ lock_record(cob_file *f, unsigned int recnum, int forwrite, int *errsts)
 	osHandle = (HANDLE)_get_osfhandle (f->fd);
 	if (osHandle != INVALID_HANDLE_VALUE) {
 		DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-		OVERLAPPED fromStart = {0};
+		OVERLAPPED fromStart = { 0 };
 		if (forwrite) flags |= LOCKFILE_EXCLUSIVE_LOCK;
 		if (LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
 			*errsts = 0;
@@ -3209,9 +3209,15 @@ set_file_lock (cob_file *f, const char *filename, int open_mode)
 	}
 
 	lock_record (f, 0, lock_mode, &ret);
-	if (ret != 0) {
-		if(f->file)
-			fclose(f->file);
+	if (ret != 0
+#if defined _WIN32
+	/* normally that return value would not happen, we use it to
+	   work around call errors happening on MSYS */
+	 && GetLastError () != ERROR_INVALID_FUNCTION
+#endif
+	) {
+		if (f->file)
+			fclose (f->file);
 		else
 			close (f->fd);
 		f->fd = -1;

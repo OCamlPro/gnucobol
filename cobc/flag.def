@@ -76,9 +76,10 @@ CB_FLAG_NQ (0, "ec", CB_FLAG_GETOPT_EC,
 CB_FLAG_NQ (0, "no-ec", CB_FLAG_GETOPT_NO_EC,
 	  "  -fno-ec=<exception-name>\tdisable code generation for <exception-name>")
 
-CB_FLAG_NQ (1, "dump", CB_FLAG_GETOPT_DUMP,
+CB_FLAG_OP (1, "dump", CB_FLAG_GETOPT_DUMP,
 	_("  -fdump=<scope>        dump data fields on abort, <scope> may be\n"
-	  "                        a combination of: ALL, WS, LS, RD, FD, SC, LO"))
+	  "                        a combination of: ALL, WS, LS, RD, FD, SC, LO\n"
+	  "                        default if no scope specified: ALL"))
 CB_FLAG_OP (0, "no-dump", CB_FLAG_GETOPT_NO_DUMP,
 	_("  -fno-dump=<scope>     exclude data fields from dumping on abort, <scope> may\n"
 	  "                        be a combination of: ALL, WS, LS, RD, FD, SC, LO\n"
@@ -152,6 +153,8 @@ CB_FLAG_ON (cb_flag_fast_math, 0, "fast-math",
 
 CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
 	_("  -fno-fast-compare     disables inline comparisions"))
+
+/* Normal flags */
 
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"

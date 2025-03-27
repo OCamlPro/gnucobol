@@ -6038,7 +6038,11 @@ static void
 output_c_info (void)
 {
 	if (cb_flag_c_line_directives) {
-		/* note: output name is already escaped for C string */
+		/* note: output name is already escaped for C string;
+		   output name cannot be COB_DASH as we generate the headers "on the fly" and
+		   would have to place everything into temporary files (which would have a name)
+		   and after we're finished cat those to stdout; or adjust to first generate the
+		   headers (in memory) and output them instead of the #include */
 		output ("#line %d \"%s\"", output_line_number + 1, output_name);
 		output_newline ();
 	}
@@ -6064,12 +6068,17 @@ output_cobol_info (cb_tree x)
 		sprintf (q, "\"");
 	}
 	output ("#line %d \"", x->source_line);
+
+    if (strcmp (p, COB_DASH)) {
 	/* escape COBOL file name for C string */
-	while (*p) {
-		if (*p == '\\') {
-			output ("%c",'\\');
+		while (*p) {
+			if (*p == '\\') {
+				output ("%c", '\\');
+			}
+			output ("%c", *p++);
 		}
-		output ("%c",*p++);
+	} else {
+		output ("<stdin>");
 	}
 	output ("\"");
 	skip_line_num++;
@@ -10282,16 +10291,14 @@ get_indexed_file_key_colseq (const struct cb_file *f, const struct cb_alt_key *a
 {
 	const cb_tree	key = ak ? ak->key : f->key;
 	const cb_tree	key_col = ak ? ak->collating_sequence_key : f->collating_sequence_key;
-	const int	type = cb_tree_type (key, cb_code_field (key));
 	cb_tree		col = NULL;
 
-	/* We only apply a collating sequence if the key is alphanumeric / display */
-	if ((type & COB_TYPE_ALNUM) || (type == COB_TYPE_NUMERIC_DISPLAY)) {
+	/* We only apply a collating sequence if the key is of class alphanumeric;
+	   Warned in `validate_indexed_key_field`. */
+	if (CB_TREE_CLASS (key) == CB_CLASS_ALPHANUMERIC) {
 		col = key_col ? key_col : f->collating_sequence;
-#if 0	/* TODO: this should be done for national, when available */
-	} else if (type & COB_TYPE_NATIONAL) {
-		col = key_col_n ? key_col_n : f->collating_sequence_n;
-#endif
+	} else if (CB_TREE_CLASS (key) == CB_CLASS_NATIONAL) {
+		col = f->collating_sequence_n;
 	}
 
 	if (col != NULL && CB_REFERENCE_P (col)) {

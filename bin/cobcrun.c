@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2004-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -71,43 +71,47 @@ static const struct option long_options[] = {
 
 
 /**
- * Display cobcrun build and version date
+ * Display cobcrun version info, optional with build and version date
  */
 static void
 cobcrun_print_version (void)
 {
-	char	cob_build_stamp[COB_MINI_BUFF];
-	char	month[64];
-	int status, day, year;
-
-	/* Set up build time stamp */
-	memset (cob_build_stamp, 0, (size_t)COB_MINI_BUFF);
-	memset (month, 0, sizeof(month));
-	day = 0;
-	year = 0;
-	status = sscanf (__DATE__, "%63s %d %d", month, &day, &year);
-	/* LCOV_EXCL_START */
-	if (status != 3) {
-		snprintf (cob_build_stamp, (size_t)COB_MINI_MAX,
-			"%s %s", __DATE__, __TIME__);
-	/* LCOV_EXCL_STOP */
-	} else {
-		snprintf (cob_build_stamp, (size_t)COB_MINI_MAX,
-			  "%s %2.2d %4.4d %s", month, day, year, __TIME__);
-	}
-
-	printf ("cobcrun (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
-	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
+	printf ("cobcrun (%s) %s.%d\n",
+		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
+	puts ("Copyright (C) 2024 Free Software Foundation, Inc.");
+	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"),
+		"https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 	        "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
+	putchar ('\n');
 	printf (_("Written by %s"), "Roger While, Simon Sobisch, Brian Tiffin");
 	putchar ('\n');
-	printf (_("Built     %s"), cob_build_stamp);
-	putchar ('\n');
-	printf (_("Packaged  %s"), COB_TAR_DATE);
-	putchar ('\n');
+	if (verbose_output) {
+		char	cob_build_stamp[COB_MINI_BUFF];
+		char	month[64];
+		int status, day, year;
+
+		/* Set up build time stamp */
+		memset (cob_build_stamp, 0, (size_t)COB_MINI_BUFF);
+		memset (month, 0, sizeof(month));
+		day = 0;
+		year = 0;
+		status = sscanf (__DATE__, "%63s %d %d", month, &day, &year);
+		/* LCOV_EXCL_START */
+		if (status != 3) {
+			snprintf (cob_build_stamp, (size_t)COB_MINI_MAX,
+				"%s %s", __DATE__, __TIME__);
+		/* LCOV_EXCL_STOP */
+		} else {
+			snprintf (cob_build_stamp, (size_t)COB_MINI_MAX,
+				"%s %2.2d %4.4d %s", month, day, year, __TIME__);
+		}
+		printf (_("Built     %s"), cob_build_stamp);
+		putchar ('\n');
+		printf (_("Packaged  %s"), COB_TAR_DATE);
+		putchar ('\n');
+	}
 }
 
 /**
@@ -141,12 +145,20 @@ cobcrun_print_usage (char * prog)
 			"                                  and any basename to the module preload list\n"
 			"                                  (COB_LIBRARY_PATH and/or COB_PRELOAD)"));
 	putchar ('\n');
-	printf (_("Report bugs to: %s\n" 
-			  "or (preferably) use the issue tracker via the home page."), "bug-gnucobol@gnu.org");
+#ifndef PACKAGE_BUGREPORT_URL
+	printf (_("Report bugs to: %s\n"
+	          "or (preferably) use the issue tracker via the home page."),
+			PACKAGE_BUGREPORT);
 	putchar ('\n');
-	printf (_("GnuCOBOL home page: <%s>"), "https://www.gnu.org/software/gnucobol/");
+#else
+	puts (_("For bug reporting instructions, please see:"));
+	printf ("%s.\n", PACKAGE_BUGREPORT_URL);
+#endif
+	printf (_("GnuCOBOL home page: <%s>"),
+		"https://www.gnu.org/software/gnucobol/");
 	putchar ('\n');
-	printf (_("General help using GNU software: <%s>"), "https://www.gnu.org/gethelp/");
+	printf (_("General help using GNU software: <%s>"),
+		"https://www.gnu.org/gethelp/");
 	putchar ('\n');
 }
 

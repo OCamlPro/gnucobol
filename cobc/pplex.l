@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -1296,7 +1296,7 @@ ppopen_get_file (const char *name)
 		loc.source_file = name;
 		loc.source_line = -1;
 		cb_error_x (&loc, _("recursive inclusion"));
-		return 0;		
+		return 0;
 		}
 	}
 
@@ -1470,7 +1470,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* add opened file to dependency list */
-	if (cb_depend_file) {
+	if (cb_depend_output && !cb_flag_copybook_deps) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
@@ -1624,6 +1624,16 @@ cb_copy_find_file (char *name, int has_ext)
 }
 
 static COB_INLINE COB_A_INLINE void
+output_line_directive (FILE *stream)
+{
+    if (strcmp (cb_source_file, COB_DASH)) {
+		fprintf (yyout, "#line %d \"%s\"\n", cb_source_line, cb_source_file);
+	} else {
+		fprintf (yyout, "#line %d \"<stdin>\"\n", cb_source_line);
+	}
+}
+
+static COB_INLINE COB_A_INLINE void
 output_pending_newlines (FILE *stream)
 {
 	if (echo_newline > 9) {
@@ -1631,7 +1641,7 @@ output_pending_newlines (FILE *stream)
 		   long comment blocks, for example from EXEC SQL preparsers),
 		   so generate source directive from the already adjusted static vars
 		   instead of spitting out possibly hundreds of empty lines */
-		fprintf (stream, "\n#line %d \"%s\"\n", cb_source_line, cb_source_file);
+		output_line_directive (stream);
 		echo_newline = 0;
 	} else {
 		while (echo_newline > 1) {
@@ -1656,6 +1666,20 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 
 	if (!plexbuff1) {
 		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
+	}
+
+	if (cb_depend_output && cb_flag_copybook_deps) {
+
+		if (lib) {
+			snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
+				lib, SLASH_CHAR, name);
+			plexbuff1[COB_SMALL_MAX] = 0;
+		} else {
+			strcpy (plexbuff1, name);
+		}
+		cb_depend_list =
+			pp_text_list_add (cb_depend_list, plexbuff1,
+					  strlen (plexbuff1));
 	}
 
 	/* TODO: open with path relative to the current file's path,
@@ -1728,15 +1752,28 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		}
 		/* otherwise fall-trough to error handling */
 	} else {
-		/* ensure to have errno from name as specified, not from another file */
-		(void)access (plexbuff1, R_OK);
-		/* pass file error as we have no more places to check */
-		cb_error ("%s: %s", plexbuff1, cb_get_strerror ());
+		/* do not output error if looking only for copybook deps */
+		if (!cb_flag_copybook_deps){
+
+			/* add opened file to dependency list */
+			if (cb_depend_output && cb_depend_keep_missing) {
+				const char *depname = cobc_plex_stradd (plexbuff1, cb_extension_list->text);
+
+				cb_depend_list = pp_text_list_add (cb_depend_list, depname, strlen (depname));
+			} else {
+
+				/* ensure to have errno from name as specified, not from another file */
+				(void)access (plexbuff1, R_OK);
+				/* pass file error as we have no more places to check */
+				cb_error ("%s: %s",
+					  plexbuff1, cb_get_strerror ());
+			}
+		}
 	}
 
 	/* On COPY, open error restore old file */
 	cb_current_file = old_list_file;
-	fprintf (yyout, "#line %d \"%s\"\n", cb_source_line, cb_source_file);
+	output_line_directive (yyout);
 	return -1;
 }
 
@@ -2100,7 +2137,9 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 	/* Reset file/line */
 	cb_source_line = line;
 	cb_source_file = file;
-	fprintf (yyout, "#line %d \"%s\"\n", line, file);
+
+	output_line_directive (yyout);
+
 	/* Switch buffer */
 	yy_switch_to_buffer (buffer);
 }
@@ -2841,6 +2880,12 @@ pp_text_list_add (struct cb_text_list *list, const char *text,
 {
 	struct cb_text_list	*p;
 	void			*tp;
+
+	for (p = list; p; p = p->next) {
+		if (!strcmp(text, p->text)) {
+			return list;
+		}
+	}
 
 	p = cobc_plex_malloc (sizeof (struct cb_text_list));
 	tp = cobc_plex_malloc (size + 1);
