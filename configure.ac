@@ -984,6 +984,47 @@ AC_CHECK_LIB([$with_math], [__gmp_get_memory_functions],
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
 
+
+# Checks for internationalization stuff
+
+dnl check for iconv is also done for gettext and
+dnl the AC_REQUIRE used in the macro below lead to the check
+dnl be done outside of the "with_iconv" test, so we only can
+dnl revert its effects after the check if disabled.
+
+dnl Note that the AC_REQUIREd macros also output messages for
+dnl "how to run the C preprocessor" and "for egrep -e"
+
+AC_ARG_WITH([iconv],
+  [AS_HELP_STRING([--with-iconv],
+    [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
+  [],
+  [with_iconv=check])
+
+if test "$with_iconv" = no; then
+  am_cv_func_iconv_summary=disabled
+  am_cv_func_iconv=no
+fi
+
+AS_IF([test "$with_iconv" = yes -o "$with_iconv" = check], [
+  AM_ICONV
+  if test "$with_iconv" = yes && test "$am_cv_func_iconv" != yes; then
+    AC_MSG_ERROR([iconv library requested but not found])
+  fi
+  if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBICONV"
+    LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBICONV"
+    COBC_CPPFLAGS="$COBC_CPPFLAGS $INCICONV"
+    LIBCOB_CPPFLAGS="$LIBCOB_CPPFLAGS $INCICONV"
+  fi
+])
+
+if test "$with_iconv" = no; then
+  am_cv_func_iconv_summary=disabled
+fi
+
+AM_LANGINFO_CODESET
+
 # Checks for gettext.
 
 case $host_os in
@@ -1016,27 +1057,6 @@ if test "x$LTLIBINTL" != x; then
   fi
   LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
 fi
-
-# Checks for internationalization stuff
-AM_LANGINFO_CODESET
-
-AC_ARG_WITH([iconv],
-  [AS_HELP_STRING([--with-iconv],
-    [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
-  [],
-  [with_iconv=check])
-
-if test "$with_iconv" = yes -o "$with_iconv" = check; then
-  AM_ICONV
-  if test "$with_iconv" = yes && test "$am_cv_func_iconv" != yes; then
-    AC_MSG_ERROR([iconv library requested but not found])
-  fi
-  if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
-    PROGRAMS_LIBS="$PROGRAMS_LIBS $LIBICONV"
-    LIBCOB_LIBS="$LIBCOB_LIBS $LIBICONV"
-  fi
-fi
-
 
 dnl
 dnl Configure options part II (needing compilation)

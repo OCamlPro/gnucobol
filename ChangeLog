@@ -1,4 +1,9 @@
 
+2025-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix --without-iconv; use iconv includes, if necessary;
+	  use libtool link
+
 2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: support setting of PANEL_LIBS independent of CURSES_LIBS
