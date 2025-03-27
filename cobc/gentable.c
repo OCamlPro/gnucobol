@@ -87,8 +87,8 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char re
 					--ascii_size;
 					++nb_irreversible;
 				} else {
-					cb_error (_("an error occurred after converting %ld characters"),
-							(ebcdic_ptr - ebcdic));
+					cb_error (_("an error occurred after converting %ld characters (%d)"),
+							(ebcdic_ptr - ebcdic), errno);
 					iconv_close (ic);
 					return -1;
 				}
@@ -128,11 +128,11 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char re
 				}
 			}
 			cb_note (COB_WARNOPT_NONE, 0,
-				_("%d non-reversible conversions were arbitrarily made reversible, you might want to review the generated table"),
+				_("%d non-reversible conversions have been arbitrarily made reversible, you may want to check the generated table"),
 				nb_irreversible);
 		} else {
 			cb_note (COB_WARNOPT_NONE, 0,
-				_("%d non-reversible conversions were performed, you might want to review the generated table"),
+				_("%d non-reversible conversions have been performed, you may want to check the generated table"),
 				nb_irreversible);
 		}
 	}
@@ -144,7 +144,7 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char re
 
 	fprintf (stream, "\n# %s to %s translation table\n\n", code_ascii, code_ebcdic);
 	if ((nb_irreversible == 0) || (reversible != 0)) {
-		fprintf (stream, "# This translation being symmetric, the table is built from the previous one.\n\n");
+		fprintf (stream, "# As this translation is symmetrical, the table is built from the previous one.\n\n");
 	} else {
 		output_table (stream, ebcdic);
 		fprintf (stream, "\n");

@@ -48,4 +48,4 @@ D8 D9 DA DB DC DD DE DF E0 E1 E2 E3 E4 E5 E6 E7
 
 # 8-bit ASCII to EBCDIC 500 conversion table (GCOS7)
 #
-# This translation being symmetric, the table is built from the previous one.
+# As this translation is symmetrical, the table is built from the previous one.

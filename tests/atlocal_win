@@ -187,6 +187,12 @@ export COB_MSG_FORMAT
 	fi
 	COB_HAS_64_BIT_POINTER=$($GREP "64bit-mode" info.out | cut -d: -f2 | cut -b2-)
 
+	if test $($GREP -i -c "iconv support.*no" info.out) = 0; then
+		COB_HAS_ICONV="yes"
+	else
+		COB_HAS_ICONV="no"
+	fi
+
 	cob_indexed=$($GREP -i "indexed file" info.out | cut -d: -f2)
 	if test "x$cob_indexed" = "x"; then
 		cob_indexed=$($GREP ISAM info.out | cut -d: -f2)
@@ -245,7 +251,7 @@ fi
 rm -rf info.out
 
 # NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
-export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
+export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
 export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
 export COB_CC COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 

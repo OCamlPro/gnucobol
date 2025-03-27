@@ -2751,6 +2751,12 @@ cobc_print_info (void)
 	cobc_var_print (_("native EBCDIC"),	_("no"), 0);
 #endif
 
+#ifdef HAVE_ICONV
+	cobc_var_print (_("iconv support"),	_("yes"), 0);
+#else
+	cobc_var_print (_("iconv support"),	_("no"), 0);
+#endif
+
 	cobc_var_print (_("extended screen I/O"),	_(WITH_CURSES), 0);
 
 	snprintf (buff, sizeof(buff), "%d", WITH_VARSEQ);

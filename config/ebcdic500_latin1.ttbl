@@ -41,4 +41,4 @@ A2 A3 A5 B7 A9 A7 B6 BC BD BE AC 7C AF A8 B4 D7
 
 # Latin-1 to EBCDIC 500 translation table
 #
-# This translation being symmetric, the table is built from the previous one.
+# As this translation is symmetrical, the table is built from the previous one.

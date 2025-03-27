@@ -74,7 +74,7 @@ NEWS - user visible changes				-*- outline -*-
    to a file (see "Dependencies options" in the GnuCOBOL manual)
 
 ** New option --gentable to build EBCDIC/ASCII translation tables,
-   for use with the --febcdic-table option
+   for use with -febcdic-table
 
 * More notable changes
 
