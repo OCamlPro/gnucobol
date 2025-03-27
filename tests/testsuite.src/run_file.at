@@ -23181,7 +23181,7 @@ AT_CLEANUP
 
 
 # This is, so far, only supported by the BDB backend
-AT_SETUP([INDEXED files under ASCII/EBCDIC collation])
+AT_SETUP([INDEXED file under ASCII/EBCDIC collation])
 AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
@@ -23422,13 +23422,15 @@ CCC 888 +0000000043 1
 DONE
 ])
 
+# Note: `-Wno-others` is for ignored COLLATIONS for non-alphanumeric keys
+
 # Testing ASCII file collating sequence using clause
 AT_DATA([prog1.cob], [
        COPY "prog.cpy" REPLACING
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
          ==KEY-COLSEQ== BY ====.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog1.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 1>prog1.out], [0], [], [])
 AT_CHECK([diff reference_ascii prog1.out], [0], [], [])
 
@@ -23449,7 +23451,7 @@ AT_DATA([prog3.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog3.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3 1>prog3.out], [0], [], [])
 AT_CHECK([diff reference_ascii_ebcdic prog3.out], [0], [], [])
 
@@ -23469,7 +23471,7 @@ AT_DATA([prog5.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog5.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5 1>prog5.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic prog5.out], [0], [], [])
 
@@ -23479,7 +23481,7 @@ AT_DATA([prog6.cob], [
          ==FILE-COLSEQ== BY ====
          ==KEY-COLSEQ== BY ====.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog6 1>prog6.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic prog6.out], [0], [], [])
 
@@ -23489,7 +23491,7 @@ AT_DATA([prog7.cob], [
          ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished prog7.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog7.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog7 1>prog7.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic_ascii prog7.out], [0], [], [])
 
@@ -23499,9 +23501,152 @@ AT_DATA([prog8.cob], [
          ==FILE-COLSEQ== BY ====
          ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
 ])
-AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog8 1>prog8.out], [0], [], [])
 AT_CHECK([diff reference_ebcdic_ascii prog8.out], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file with collation on group key])
+AT_KEYWORDS([runfile WRITE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+# This is, so far, only supported by the BDB backend
+AT_XFAIL_IF([test "$COB_HAS_ISAM" != "db"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05   MY-KEY.
+             10 MY-KEY-1 PIC X.
+             10 MY-KEY-2 PIC X.
+           05  MY-DATA   PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "111" TO MY-REC WRITE MY-REC
+           MOVE "AA2" TO MY-REC WRITE MY-REC
+           MOVE "223" TO MY-REC WRITE MY-REC
+           MOVE "BB4" TO MY-REC WRITE MY-REC
+           MOVE "335" TO MY-REC WRITE MY-REC
+           MOVE "CC6" TO MY-REC WRITE MY-REC
+           MOVE "447" TO MY-REC WRITE MY-REC
+           MOVE "DD8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE LOW-VALUES TO MY-KEY
+           START MY-FILE KEY >= MY-KEY
+             INVALID KEY
+               DISPLAY "INVALID KEY"
+             NOT INVALID KEY
+               PERFORM UNTIL EXIT
+                 READ MY-FILE NEXT
+                    AT END
+                       EXIT PERFORM
+                    NOT AT END
+                       DISPLAY MY-REC
+                 END-READ
+               END-PERFORM
+           END-START.
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout],
+[ASCII:
+111
+223
+335
+447
+AA2
+BB4
+CC6
+DD8
+EBCDIC:
+AA2
+BB4
+CC6
+DD8
+111
+223
+335
+447
+])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii], [0])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic], [0])
+
+AT_CHECK([
+  echo "ASCII:"  && $COBCRUN_DIRECT ./ascii && \
+  echo "EBCDIC:" && $COBCRUN_DIRECT ./ebcdic
+], [0], [expout])	    # <- compare stdout with existing `expout`
+
+AT_CLEANUP
+
+
+# Note: codegen only for now
+AT_SETUP([INDEXED file with NATIONAL collation])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY
+	       COLLATING SEQUENCE FOR NATIONAL IS ASCII.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-KEY  PIC N.
+           05  MY-DATA PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "11" TO MY-REC WRITE MY-REC
+           MOVE "A2" TO MY-REC WRITE MY-REC
+           MOVE "23" TO MY-REC WRITE MY-REC
+           MOVE "B4" TO MY-REC WRITE MY-REC
+           MOVE "35" TO MY-REC WRITE MY-REC
+           MOVE "C6" TO MY-REC WRITE MY-REC
+           MOVE "47" TO MY-REC WRITE MY-REC
+           MOVE "D8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout], [])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [],
+[prog.cob:11: warning: NATIONAL COLLATING SEQUENCE is not implemented
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [expout])
 
 AT_CLEANUP
 

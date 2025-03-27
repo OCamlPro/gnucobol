@@ -22,6 +22,8 @@
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
 
+#pragma once
+
 #include <stddef.h>		/* for size_t */
 
 /* Only define cob_decimal if we have the necessary mpz_t from gmp.h/mpir.h
@@ -1929,7 +1931,7 @@ COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
 
-COB_EXPIMP void		cob_cleanup_thread ();
+COB_EXPIMP void		cob_cleanup_thread (void);
 
 /* General functions */
 

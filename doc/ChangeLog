@@ -3,6 +3,10 @@
 
 	* cbrunt.tex.gen: fix for missing "@end verbatim"
 
+2024-03-15  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* gnucobol.texi: document new dependencies options
+
 2023-09-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* gnucobol.texi: document the profiling feature
