@@ -5,7 +5,7 @@
 # a not POSIX build (OrangeC or Visual Studio build for example)
 # in a POSIX environment (like MinGW or Cygwin, possibly WSL).
 #
-# Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -124,7 +124,7 @@ set_utf8_locale () {
 }
 
 # Note: we explicit do not set COB_ON_CYGWIN here,
-# as this is file is about running non-cygwin binaries
+# as this file is about running non-cygwin binaries
     # Windows but not Cygwin
     COB_ON_WINDOWS=yes
     export COB_ON_WINDOWS
@@ -172,7 +172,7 @@ COB_MSG_FORMAT=GCC
 export COB_MSG_FORMAT
 
 # different variables used in the testsuite
-# note: kept intended to ease merge from atlocal.in
+# note: indentation retained to ease merge from atlocal.in
 	if test "$COB_CC" = ""; then
 	   COB_CC="$($GREP COBC_CC info.out | cut -d: -f2 | cut -b2-)"
 	fi
