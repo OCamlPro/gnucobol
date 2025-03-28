@@ -52,6 +52,12 @@
 	* typeck.c (cb_emit_move, cb_emit_set_to): do not check for incompatible
 	  data if no receiver field is of category numeric or numeric edited
 
+2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, codegen.c, tree.c: fixed C89 errors
+	* typeck.c (trimmed_size, is_blank): minor refactorings
+	* typeck.c: provide the original buffer if encoding cannot be applied
+
 2024-09-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_emit_accept): always check position
@@ -76,6 +82,21 @@
 	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
 	  adjusted size of precedence table and gave proper precedence to U
 
+2024-08-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, codegen.c, tree.c: fixed C89 errors
+	* typeck.c (trimmed_size, is_blank): minor refactorings
+
+2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
+	* cobc.c: added the locale option to specify the source 
+	  file encoding if not specified with command line argument 
+
+2024-08-10  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
+	* cobc.h, cobc.c, flag.def: added command line argument for setting
+	  source file encoding
+
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_alphabet_name_definition): cater for national alphabet
@@ -88,6 +109,14 @@
 	* typeck.c (validate_alphabet), tree.h (cb_alphabet_name): cater for
 	  national alphabets with increased size (max. 65535 instead of 255)
 	* typeck.c (validate_alphabet): check that alphabet and literal types match
+
+
+2024-08-1 Ahmed Maher<ahmed.maher.ahmed.309@gmail.com>
+
+	* scanner.l, cobc.h, cobc.c, tree.c: added guards around iconv.h header and
+	  used it around the usages of the headers functions
+	* tree.c (cb_build_utf8_literal): new function for UTF-8 literals
+	* scanner.l (read_literal): changed to handle the utf8 literal reading 
 
 2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -103,6 +132,10 @@
 	* tree.c (char_to_precedence_idx): changed to check penultimate and last
 	  symbols before the first and second symbols
 
+2024-07-27 Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
+	* scanner.l: refactor scan_x function
+
 2024-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, config.def: rewrite ENVIRONMENT DIVISION parsing to allow
@@ -111,9 +144,22 @@
 	* reserved.c: make MENU context-sensitive
 	* reserved.c, parser.y: added MODAL + MODELESS to acu extension windows
 
+
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* tree.c (cb_build_picture): fixed currency scale counting logic
+
+2024-07-09  Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+            James K. Lowden  <jklowden@symas.com>
+
+	* typeck.c: refactor validate_move function
+
+2024-07-06 Ahmed Maher <ahmed.maher.ahmed.309@gmail.com>
+
+	* tree.c: added encoding conversion support to cb_build_national_literal and
+	cb_build_alphanumeric_literal
+	* cobc.h: declared struct cb_iconv used for encoding conversion
+	* cobc.c: defined the struct cb_iconv with default values
 
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 

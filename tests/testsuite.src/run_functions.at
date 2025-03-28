@@ -499,7 +499,7 @@ AT_DATA([prog.cob], [
 
            SET  HEXX-FILLER TO TRUE
            STRING FUNCTION HEX-OF (n' ') DELIMITED BY SIZE INTO HEXX.
-           IF HEXX NOT = "0020------"
+           IF HEXX NOT = "2000------"
               DISPLAY "UNEXPECTED HEX-VALUE OF n' ': " HEXX.
 
        *>  FIXME: Failing with "3132------" -> missing padding
@@ -507,7 +507,7 @@ AT_DATA([prog.cob], [
        *>            and libcob issue at least for MOVE
        *>  SET  HEXX-FILLER TO TRUE
        *>  STRING FUNCTION HEX-OF (N9) DELIMITED BY SIZE INTO HEXX.
-       *>  IF HEXX NOT = "00310032--"
+       *>  IF HEXX NOT = "31003200--"
        *>     DISPLAY "UNEXPECTED HEX-VALUE OF N9: " HEXX.
 
        *>  FIXME: Failing with "00212020--" -> bad padding
@@ -515,7 +515,7 @@ AT_DATA([prog.cob], [
        *>            and libcob issue at least for MOVE
        *>  SET  HEXX-FILLER TO TRUE
        *>  STRING FUNCTION HEX-OF (NX) DELIMITED BY SIZE INTO HEXX.
-       *>  IF HEXX NOT = "00210020--"
+       *>  IF HEXX NOT = "21002000--"
        *>     DISPLAY "UNEXPECTED HEX-VALUE OF NX: " HEXX.
 
        *>  setting up test data:
@@ -539,6 +539,382 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UTF-8 literals (explicit source encode)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"Hello") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "48656C6C6F-------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'Hello': " HEXX.
+
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "E282ACE282AC-----------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UTF-8 literals (explicit setlocale)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"Hello") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "48656C6C6F-------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'Hello': " HEXX.
+
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "E282ACE282AC-----------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'€€': " HEXX.
+])
+
+# in this case we try to deduce and "any" utf8 locale to have this setup
+# for cobc's call to nl_langinfo
+# note: the function will execute with 77 and therefore "skip" the whole test
+# if deducing wasn't possible
+AT_CHECK([set_utf8_locale && $COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([single-byte encoding in UTF-8 literals])
+AT_KEYWORDS([literal functions hex-of])
+
+# TODO: move this to iso885915.cob in the file system
+#       add to tests/Makefile.am for distribution
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=ISO-8859-15 "${abs_top_srcdir}/tests/testsuite.src/iso885915.cob"], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./iso885915], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([utf8 encoding in alphanumeric literals (kept)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF ("€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "E282ACE282AC-----------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF '€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([utf8 data in alphanumeric literals (converted)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF ("€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "A4A4-------------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF '€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 -falphanumeric-encode=ISO-8859-15 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UTF-8 data in national literals])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (N"€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "AC20AC20---------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF N'€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UTF-8 literals (explicit source encode)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"Hello") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "48656C6C6F-------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'Hello': " HEXX.
+
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "E282ACE282AC-----------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UTF-8 literals (explicit setlocale)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"Hello") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "48656C6C6F-------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'Hello': " HEXX.
+
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (U"€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "E282ACE282AC-----------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF U'€€': " HEXX.
+])
+
+# in this case we try to deduce and "any" utf8 locale to have this setup
+# for cobc's call to nl_langinfo
+# note: the function will execute with 77 and therefore "skip" the whole test
+# if deducing wasn't possible
+AT_CHECK([set_utf8_locale && $COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([single-byte encoding in UTF-8 literals])
+AT_KEYWORDS([literal functions hex-of])
+
+# TODO: move this to iso885915.cob in the file system
+#       add to tests/Makefile.am for distribution
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=ISO-8859-15 "${abs_top_srcdir}/tests/testsuite.src/iso885915.cob"], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./iso885915], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([utf8 encoding in alphanumeric literals (kept)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF ("€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "E282ACE282AC-----------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF '€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([utf8 data in alphanumeric literals (converted)])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF ("€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "A4A4-------------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF '€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 -falphanumeric-encode=ISO-8859-15 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([UTF-8 data in national literals])
+AT_KEYWORDS([literal functions hex-of])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  HEXX         PIC X(35).
+          88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+       MAIN-PROCEDURE.
+          PERFORM DO-CHECK.
+          GOBACK.
+
+       DO-CHECK.
+          SET  HEXX-FILLER TO TRUE
+          STRING FUNCTION HEX-OF (N"€€") 
+                DELIMITED BY SIZE INTO HEXX.
+          IF HEXX NOT = "AC20AC20---------------------------"
+             DISPLAY "UNEXPECTED HEX-VALUE OF N'€€': " HEXX.
+])
+
+# we do override the source encoding here as the testsuite runs with LC_ALL=C,
+# which gets down to "ANSI_X3.4-1968" encoding from nl_langinfro;
+# while the testsuite content is UTF8
+AT_CHECK([$COMPILE -fsource-encode=UTF-8 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

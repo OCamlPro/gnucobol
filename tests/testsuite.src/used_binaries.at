@@ -48,6 +48,41 @@ AT_CHECK([$COBC --list-exceptions], [0], [ignore], [])
 AT_CLEANUP
 
 
+
+AT_SETUP([source encode command line])
+AT_KEYWORDS([checking source encoding option])
+
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC 9(2) VALUE 'A'.
+       COPY 'CRUD.CPY'.
+       PROCEDURE        DIVISION.
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           MOVE 12 TO TEST-VAR
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           STOP RUN.
+       COPY 'CRUD2.CPY'.
+])
+
+AT_CHECK([$COBC -fsource-encode=UTF-8 -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
+prog2.cob:6: warning: numeric value is expected [[-Wothers]]
+])
+
+AT_CHECK([$COBC -fsource-encode=UTF-89 -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
+[cobc: error: invalid parameter: -fsource-encode
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([compiler warnings])
 AT_KEYWORDS([runmisc cobc warning])
 
@@ -156,6 +191,18 @@ AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], 
 prog2.cob:15: error: CRUD2.CPY: No such file or directory
 prog2.cob:6: warning: numeric value is expected [[-Wothers]]
 ])
+
+
+AT_CHECK([$COBC -fsource-encode=UTF-8 -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
+prog2.cob:6: warning: numeric value is expected [[-Wothers]]
+])
+
+AT_CHECK([$COBC -fsource-encode=UTF-89 -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
+[cobc: error: invalid parameter: -fsource-encode
+])
+
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=0 -Wall prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory

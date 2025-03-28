@@ -1935,8 +1935,8 @@ AT_DATA([prog3.cob], [
        OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
        SPECIAL-NAMES.
            ALPHABET ALPHABET-1 IS 'A' THROUGH 'Z'.
-           ALPHABET ALPHABET-2 NATIONAL n'A' also n'B', n'1' thru n'9'.
-       END PROGRAM prog3d.
+           ALPHABET ALPHABET-2 NATIONAL n'A' also n'B', n'1' thru n'9'.       
+        END PROGRAM prog3d.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog3e.
@@ -2036,6 +2036,7 @@ AT_DATA([prog4.cob], [
            ALPHABET ALPHABET-2 FOR NATIONAL IS
                     nx'0000' thru nx'0005', N'A' THROUGH N'Z';
                     x'41' ALSO x'42', nx'00C1' ALSO x'C2'.
+       END PROGRAM prog4.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],

@@ -2418,7 +2418,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 		}
 		return;
 	}
-	
+
 	if (!r->offset) {
 		/* no more checks needed */
 		return;
@@ -2461,7 +2461,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 	} else {
 		length = adjusted_at_runtime;
 	}
-	
+
 	if (CB_LITERAL_P (r->offset)) {
 		offset = cb_get_int (r->offset);
 		if (offset < 1) {
@@ -2489,7 +2489,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 			cb_warning_x (cb_warn_filler, x,
 				_("suspicious reference-modification: always using max. length"));
 		}
-	}	
+	}
 
 	/* Run-time check */
 	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
@@ -3918,7 +3918,7 @@ validate_alphabet (cb_tree alphabet)
 #endif
 			entry++;
 		}
-		
+
 		memcpy (ap->alphachr, ap->values, memsize);
 		return;
 	}
@@ -4143,11 +4143,11 @@ validate_alphabet (cb_tree alphabet)
 						if (n > COB_MAX_CHAR_ALPHANUMERIC) {
 							i += sprintf (dup_val_str + i, "x'%04x'", n);
 						} else if (isprint (n)) {
-							dup_val_str[i++] = (char)n;						
+							dup_val_str[i++] = (char)n;
 						} else {
 							i += sprintf (dup_val_str + i, "x'%02x'", n);
 						}
-					};
+					}
 				}
 				dup_val_str[i] = 0;
 				cb_error_x (alphabet,
@@ -4209,7 +4209,7 @@ validate_alphabet (cb_tree alphabet)
 			}
 		}
 
-	val_ex:	
+	val_ex:
 		free (values);
 		free (charvals);
 		free (dupvals);
@@ -5923,7 +5923,7 @@ build_expr_finish (void)
 {
 	cb_tree pos;
 	struct cb_tree_common err_pos;
-	
+
 	/* Reduce all (prio of token 0 is smaller than all other ones) */
 	(void)build_expr_reduce (0);
 
@@ -6833,7 +6833,7 @@ cb_build_optim_cond (struct cb_binary_op *p)
 		}
 	}
 #endif
-	
+
 	/* if the field is DISPLAY and the right side either a literal, a constant (ZERO)
 	   or also a DISPLAY field, then no need to convert the field(s) to an integer */
 	if (f->usage == CB_USAGE_DISPLAY) {
@@ -8946,7 +8946,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 				x == cb_norm_high||
 				x == cb_quote) {
 				c = (char)get_value (x);
-				x = cb_build_alphanumeric_literal (&c, 1);
+				x = cb_build_literal_by_category(&c, 1, CB_CATEGORY_ALPHANUMERIC);
 			} else if (x == cb_zero) {
 				x = cb_build_numsize_literal ("0", 1, 0);
 			} else{
@@ -10634,7 +10634,7 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 						cb_build_alphanumeric_literal (conv_tab, 256)));
 			}
 			break;
-		case CB_TAG_REFERENCE: 
+		case CB_TAG_REFERENCE:
 			if (CB_ALPHABET_NAME_P (cb_ref (x))
 			 && CB_ALPHABET_NAME_P (cb_ref (y))) {
 				const struct cb_alphabet_name *alph_x = CB_ALPHABET_NAME (cb_ref (x));
@@ -11059,6 +11059,55 @@ is_floating_point_usage (const enum cb_usage usage)
 		|| usage == CB_USAGE_FP_DEC128;
 }
 
+/* checks if current buffer "s" points to a single blank
+   according to "class", returns nonzero, if this is the case */
+static int
+is_blank (unsigned char *s, enum cb_class class) {
+	static const char national[] = { 0x20, 0x00 };
+	static const char alpha[] = { ' ' };
+
+	switch (class) {
+		case CB_CLASS_NATIONAL:
+			if( 0 == memcmp( s, national, sizeof(national) ) )
+				return sizeof(national);
+			break;
+		case CB_CLASS_ALPHANUMERIC:
+			if( 0 == memcmp( s, alpha, sizeof(alpha) ) )
+				return sizeof(alpha);
+			break;
+		/* LCOV_EXCL_START */
+		default:
+			cobc_err_msg ("unexpected class: %d", (int)class);
+			COBC_ABORT();
+		/* LCOV_EXCL_STOP */
+	}
+	return 0;
+}
+
+/*
+ * s is input string, converted to the destination's encoding.
+ * len is the computed length of s.
+ * Compute the length of s, minus leading or trailing blanks,
+ * according to whether or not the destination is right-justified.
+ */
+static size_t
+trimmed_size (unsigned char *s, size_t len, int right_justified, enum cb_class class) {
+	const int inc_size = class == CB_CLASS_NATIONAL? COB_NATIONAL_SIZE : 1;
+	const int inc = (right_justified? 1 : -1) * inc_size;
+	int i, size = len;
+	unsigned char *p = s;
+
+	if( ! right_justified && len > 2 ) p += len - inc_size;
+
+	for (i=0; i < len; i += inc_size ) {
+		if (!is_blank (p, class)) break;
+		size -= inc_size ;
+		p += inc;
+	}
+	return size;
+}
+
+
 int
 validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_zero)
 {
@@ -11073,6 +11122,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	int			dst_size_mod;
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
+	int class = CB_TREE_CLASS(src);
+
 
 	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
 
@@ -11517,27 +11568,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				if (fdst->flag_justified) {
-					/* right justified: trim left */
-					for (i = 0; i != l->size; i += 2) {
-						if (l->data[i] != 0x00
-						 || l->data[i + 1] != ' ') {
-							break;
-						}
-					}
-					i = l->size - i;
-				} else {
-					/* normal field: trim right */
-					for (i = l->size - 1; i != 0; i -= 2) {
-						if (l->data[i] != ' '
-						 || l->data[i - 1] != 0x00) {
-							break;
-						}
-					}
-					i++;
-				}
+				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
 				i /= COB_NATIONAL_SIZE;
-				if ((int)i > size) {
+				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
 				}
@@ -11638,24 +11671,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
-				if (fdst->flag_justified) {
-					/* right justified: trim left */
-					for (i = 0; i != l->size; i++) {
-						if (l->data[i] != ' ') {
-							break;
-						}
-					}
-					i = l->size - i;
-				} else {
-					/* normal field: trim right */
-					for (i = l->size - 1; i != 0; i--) {
-						if (l->data[i] != ' ') {
-							break;
-						}
-					}
-					i++;
-				}
-				if ((int)i > size) {
+				i = trimmed_size( l->data, l->size, fdst->flag_justified, class);
+				if( size < i ) {
 					size = (signed int)i;
 					goto size_overflow;
 				}
