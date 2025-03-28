@@ -529,6 +529,41 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([XML GENERATE PICTURE P])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-999PPP               PIC 999PPP VALUE 123000.
+       01  WS-PPP999               PIC PPP999 VALUE 0.000123.
+
+       01  out                     PIC X(300).
+
+       PROCEDURE DIVISION.
+           XML GENERATE out FROM WS-999PPP
+           IF out <> '<WS-999PPP>123000</WS-999PPP>'
+               DISPLAY "Failed 1: " FUNCTION TRIM (out)
+           END-IF
+
+           XML GENERATE out FROM WS-PPP999
+           IF out <> '<WS-PPP999>0.000123</WS-PPP999>'
+               DISPLAY "Failed 2: " FUNCTION TRIM (out)
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+
 AT_SETUP([JSON GENERATE general])
 AT_KEYWORDS([extensions])
 
@@ -647,7 +682,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            JSON GENERATE short-str FROM valid-rec
                COUNT IN json-len
-           IF short-str <> '{"val'
+           IF short-str <> '{"val'            *> "
                    OR json-len <> 33
                    OR JSON-CODE <> 1
                DISPLAY "Failed 1: " short-str " " json-len " " JSON-CODE
@@ -906,4 +941,39 @@ AT_CHECK([$COMPILE  -fdpc-in-data=all prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [{"num":1,1}
 ])
+AT_CLEANUP
+
+
+AT_SETUP([JSON GENERATE PICTURE P])
+AT_KEYWORDS([extensions])
+
+AT_SKIP_IF([test "$COB_HAS_JSON" = "no"])
+
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-999PPP               PIC 999PPP VALUE 123000.
+       01  WS-PPP999               PIC PPP999 VALUE 0.000123.
+
+       01  out                     PIC X(300).
+
+       PROCEDURE DIVISION.
+           JSON GENERATE out FROM WS-999PPP
+           IF out <> '{"WS-999PPP":123000}'
+               DISPLAY "Failed 1: " FUNCTION TRIM (out)
+           END-IF
+
+           JSON GENERATE out FROM WS-PPP999
+           IF out <> '{"WS-PPP999":0.000123}'
+               DISPLAY "Failed 2: " FUNCTION TRIM (out)
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
