@@ -73,6 +73,9 @@ NEWS - user visible changes				-*- outline -*-
 ** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
    to a file (see "Dependencies options" in the GnuCOBOL manual)
 
+** New option --gentable to build EBCDIC/ASCII translation tables,
+   for use with -febcdic-table
+
 * More notable changes
 
 ** execution times were significantly reduced for the following:

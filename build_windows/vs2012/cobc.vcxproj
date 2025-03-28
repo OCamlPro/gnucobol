@@ -196,6 +196,7 @@
     <ClCompile Include="..\..\cobc\config.c" />
     <ClCompile Include="..\..\cobc\error.c" />
     <ClCompile Include="..\..\cobc\field.c" />
+    <ClCompile Include="..\..\cobc\gentable.c" />
     <ClCompile Include="..\..\cobc\help.c" />
     <ClCompile Include="..\..\cobc\replace.c" />
     <ClCompile Include="..\..\cobc\reserved.c" />

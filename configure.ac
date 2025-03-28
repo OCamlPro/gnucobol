@@ -1058,6 +1058,28 @@ if test "x$LTLIBINTL" != x; then
   LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBINTL"
 fi
 
+# Checks for internationalization stuff
+AM_LANGINFO_CODESET
+
+AC_ARG_WITH([iconv],
+  [AS_HELP_STRING([--with-iconv],
+    [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
+  [],
+  [with_iconv=check])
+
+if test "$with_iconv" = yes -o "$with_iconv" = check; then
+  AM_ICONV
+  if test "$with_iconv" = yes && test "$am_cv_func_iconv" != yes; then
+    AC_MSG_ERROR([iconv library requested but not found])
+  fi
+  if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LIBICONV"
+    LIBCOB_LIBS="$LIBCOB_LIBS $LIBICONV"
+  fi
+  with_iconv="$am_cv_func_iconv"
+fi
+
+
 dnl
 dnl Configure options part II (needing compilation)
 dnl
@@ -2608,6 +2630,12 @@ if test "x$lt_cv_dlopen_self" != xyes; then
 	AC_DEFINE([COB_NO_SELFOPEN], [1])
 fi
 
+if test "$with_iconv" = yes; then
+	COB_HAS_ICONV=yes
+else
+	COB_HAS_ICONV=no
+fi
+
 if test "$with_cisam" = yes; then
 	COB_HAS_ISAM=cisam
 elif test "$with_disam" = yes; then
@@ -2729,6 +2757,7 @@ AC_SUBST([COB_BIGENDIAN])
 dnl unused: AC_SUBST([COB_FIX_LIB])
 AC_SUBST([COB_FIX_LIBTOOL])
 
+AC_SUBST([COB_HAS_ICONV])
 AC_SUBST([COB_HAS_ISAM])
 AC_SUBST([COB_HAS_CURSES])
 AC_SUBST([COB_HAS_XML2])
