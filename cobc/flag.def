@@ -282,3 +282,12 @@ CB_FLAG (cb_diagnostics_absolute_paths, 1, "diagnostics-absolute-paths",
 CB_FLAG (cb_flag_prof, 1, "prof",
 	_("  -fprof                enable profiling of the COBOL program"))
 
+CB_FLAG_NQ (1, "dump-ast", CB_FLAG_DUMP_AST,
+	_("  -fdump-ast=<file>    dump parsed AST to <file>, format is JSON unless\n"
+	  "                        the file has a .ml extension for OCaml format."))
+
+CB_FLAG_NQ (1, "dump-ast-flags", CB_FLAG_DUMP_AST_FLAGS,
+	_("  -fdump-ast-flags=<flags>    set flags used when dumping the parsed AST\n"
+	  "                        '+/-' to enable/disable, 'l' for locations,\n"
+	  "                        't' for types, 'p' for pointers, 'i' for indent."))
+

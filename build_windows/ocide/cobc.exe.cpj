@@ -41,6 +41,7 @@
 				<FILE NAME="..\..\libcob\system.def" TITLE="system.def" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\tree.h" TITLE="tree.h" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\warning.def" TITLE="warning.def" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\dump_ast_gen.c" TITLE="dump_ast_gen.c" CLEAN="0"/>
 			</FOLDER>
 			<FOLDER TITLE="Resource Files">
 				<FILE NAME="..\version_cobc.rc" TITLE="version_cobc.rc" CLEAN="0"/>
@@ -89,6 +90,7 @@
 				<FILE NAME="..\..\cobc\replace.c" TITLE="replace.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\tree.c" TITLE="tree.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\typeck.c" TITLE="typeck.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\dump_ast.c" TITLE="dump_ast.c" CLEAN="0"/>`
 			</FOLDER>
 			<FILE NAME="..\..\cobc\ChangeLog" TITLE="ChangeLog" CLEAN="0"/>
 		</FILES>
