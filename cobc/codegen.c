@@ -7680,10 +7680,38 @@ static void
 output_perform_until (struct cb_perform *p, cb_tree l)
 {
 	struct cb_perform_varying	*v;
-	struct cb_field			*f;
 	cb_tree				next;
 
 	if (l == NULL) {
+		if (cb_flag_check_subscript_set
+		 && CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+			cb_tree	xn;
+			/* Check all INDEXED BY variables used in VARYING */
+			for (xn = p->varying; xn; xn = CB_CHAIN (xn)) {
+				v = CB_PERFORM_VARYING (CB_VALUE (xn));
+				if (v->name
+				 && CB_REF_OR_FIELD_P (v->name)) {
+					struct cb_field	*f = CB_FIELD_PTR (v->name);
+					if (f->flag_indexed_by
+					 && f->index_qual) {
+						f = f->index_qual;
+						output_prefix ();
+						output ("cob_check_subscript (");
+						output_integer (v->name);
+						output (", ");
+						if (f->depending) {
+							output_integer (f->depending);
+							output (", \"%s\", 1", f->name);
+						} else {
+							output ("%d, \"%s\", 0", f->occurs_max, f->name);
+						}
+						output (");");
+						output_newline ();
+					}
+				}
+			}
+		}
+
 		/* Perform body at the end */
 		output_perform_once (p);
 		return;
@@ -7700,7 +7728,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 			     CB_PERFORM_VARYING (CB_VALUE (next))->name);
 		/* DEBUG */
 		if (current_prog->flag_gen_debug) {
-			f = CB_FIELD (cb_ref (CB_PERFORM_VARYING (CB_VALUE (next))->name));
+			struct cb_field	*f = CB_FIELD (cb_ref (CB_PERFORM_VARYING (CB_VALUE (next))->name));
 			if (f->flag_field_debug) {
 				output_stmt (cb_build_debug (cb_debug_name,
 					     (const char *)f->name, NULL));
