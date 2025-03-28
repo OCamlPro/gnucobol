@@ -2405,7 +2405,13 @@ cobc_sig_handler (int sig)
 	int ret = 0;
 #endif
 
-	cobc_abort_msg ();
+#ifdef SIGPIPE
+	if (sig == SIGPIPE) ret = 1;
+#endif
+	
+	if (!ret) {
+		cobc_abort_msg ();
+	}
 #if defined (SIGINT) || defined (SIGQUIT) || defined (SIGTERM) || defined (SIGPIPE)
 #ifdef SIGINT
 	if (sig == SIGINT) ret = 1;
@@ -2415,9 +2421,6 @@ cobc_sig_handler (int sig)
 #endif
 #ifdef SIGTERM
 	if (sig == SIGTERM) ret = 1;
-#endif
-#ifdef SIGPIPE
-	if (sig == SIGPIPE) ret = 1;
 #endif
 
 	/* LCOV_EXCL_START */
@@ -4106,7 +4109,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--copy");
 			}
-			CB_TEXT_LIST_ADD (cb_copy_list, cobc_strdup (cob_optarg));
+			CB_TEXT_LIST_ADD (cb_copy_list, cob_optarg);
 			break;
 
 		case CB_FLAG_GETOPT_INCLUDE_FILE:
@@ -4115,7 +4118,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--include");
 			}
-			CB_TEXT_LIST_ADD (cb_include_file_list, cobc_strdup (cob_optarg));
+			CB_TEXT_LIST_ADD (cb_include_file_list, cob_optarg);
 			cb_flag_c_decl_for_static_call = 0;
 			break;
 

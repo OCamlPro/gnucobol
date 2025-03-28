@@ -6927,7 +6927,8 @@ AT_CLEANUP
 AT_SETUP([Long concatenated literal])
 AT_KEYWORDS([listing overflow])
 
-AT_DATA([prog.cob], [
+# extra quoting here as we received a bug report of something adding a leading (
+AT_DATA([prog.cob], [[
        >>SOURCE FORMAT IS FREE
 ID DIVISION.
 PROGRAM-ID. ED000MAIN IS INITIAL.
@@ -6949,10 +6950,11 @@ WORKING-STORAGE SECTION.
       "1234567890123456789012".
 PROCEDURE DIVISION.
     EXIT.
-])
+]])
 
+# extra quoting here as we received a bug report of something adding a leading (
 AT_CHECK([$COMPILE_LISTING0 -t- prog.cob], [0],
-[GnuCOBOL V.R.P               prog.cob
+[[GnuCOBOL V.R.P               prog.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -6994,7 +6996,7 @@ LINE    PG/LN  A...B............................................................
 
 0 warnings in compilation group
 0 errors in compilation group
-])
+]])
 
 AT_CLEANUP
 

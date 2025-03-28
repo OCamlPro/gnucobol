@@ -123,6 +123,9 @@ set_utf8_locale () {
 
 # Note: we explicit do not set COB_ON_CYGWIN here,
 # as this is file is about running non-cygwin binaries
+    # Windows but not Cygwin
+    COB_ON_WINDOWS=yes
+    export COB_ON_WINDOWS
 
 # Fix for testcases where cobc uses win32 paths internally
 PATHSEP=";"

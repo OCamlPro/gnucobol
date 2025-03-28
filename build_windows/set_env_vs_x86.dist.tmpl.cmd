@@ -36,4 +36,4 @@ if %errorlevel% equ 0 (
   set "stay_open=x"
 )
 
-call %~dp0gcvsvars.cmd %*
+call "%~dp0gcvsvars.cmd" %*

@@ -1,4 +1,8 @@
 
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line): fix leak for --copy and -include parsing
+
 2024-11-06  David Declerck <david.declerck@ocamlpro.com>
 
 	Reverted change 2022-02-20 to integrate change
@@ -28,6 +32,7 @@
 	  PACKAGE_NAME may now be overwritten by PKGVERSION (new configure option)
 	* help.c (cobc_print_usage): handle PACKAGE_BUGREPORT_URL as
 	  alternative to mailing list, now resolved by PACKAGE_BUGREPORT
+	* cobc.c (cobc_sig_handler): skip abort message for SIGPIPE
 
 2024-10-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -68,6 +73,16 @@
 2024-09-23  David Declerck <david.declerck@ocamlpro.com>
 
 	* pplex.l (cb_text_list): prevent duplicates
+
+2024-08-30  Ammar Almorsi <ammaralmorsi@gmail.com>
+
+	BUG #961: Nested Elements Mishandled Despite 'with attributes' Specification
+	* tree.c (set_ml_attrs_and_children): enhanced the function to handle
+	  the case where a child has attributes
+	* codegen.c (output_ml_suppress_checks): modified the starting point
+	  to start from the last attribute if present
+	* codegen.c (get_prev_ml_tree_entry): removed the fallback case to
+	  prevent infinite loops
 
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
