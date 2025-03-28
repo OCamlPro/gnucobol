@@ -3,6 +3,10 @@
 
 	* gcos-strict.conf: set init-justify to no after testing on GCOS
 
+2024-12-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add the normalize-bcd dialect option (active only for GCOS)
+
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 
 	FR #474: add runtime configuration to hide cursor for extended screenio
