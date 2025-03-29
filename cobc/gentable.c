@@ -23,6 +23,7 @@
 #include "tree.h" /* for cb_note */
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef HAVE_ICONV
 
@@ -82,6 +83,8 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char re
 			if (res == (size_t)-1) {
 				if (errno == EILSEQ) {
 					/* GNU iconv: an untranslatable character was met */
+					/* FIXME: when using the vcpkg port of GNU iconv under an
+					   MSVC debug build, the value of errno remains 0... */
 					*ascii_ptr = ASCII_SUBST_CHAR;
 					++ebcdic_ptr; ++ascii_ptr;
 					--ascii_size;
