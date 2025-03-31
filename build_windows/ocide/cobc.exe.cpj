@@ -82,6 +82,7 @@
 				<FILE NAME="..\..\cobc\config.c" TITLE="config.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\error.c" TITLE="error.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\field.c" TITLE="field.c" CLEAN="0"/>
+				<FILE NAME="..\..\cobc\gentable.c" TITLE="gentable.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\help.c" TITLE="help.c" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\parser.y" TITLE="parser.y" CLEAN="0"/>
 				<FILE NAME="..\..\cobc\ppparse.y" TITLE="ppparse.y" CLEAN="0"/>

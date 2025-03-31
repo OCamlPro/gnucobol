@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -116,6 +116,7 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_ADD_PHONY     24
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
+#define CB_FLAG_GETOPT_GENTABLE             27
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -634,6 +635,7 @@ static const struct option long_options[] = {
 	{"MG",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_KEEP_MISSING},
 	{"MD",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE},
 	{"fcopybook-deps",	CB_NO_ARG, &cb_flag_copybook_deps, 1},
+	{"gentable",		CB_RQ_ARG, NULL, CB_FLAG_GETOPT_GENTABLE},
 	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
@@ -2749,6 +2751,12 @@ cobc_print_info (void)
 	cobc_var_print (_("native EBCDIC"),	_("no"), 0);
 #endif
 
+#ifdef HAVE_ICONV
+	cobc_var_print (_("iconv support"),	_("yes"), 0);
+#else
+	cobc_var_print (_("iconv support"),	_("no"), 0);
+#endif
+
 	cobc_var_print (_("extended screen I/O"),	_(WITH_CURSES), 0);
 
 	snprintf (buff, sizeof(buff), "%d", WITH_VARSEQ);
@@ -3407,6 +3415,25 @@ process_command_line (const int argc, char **argv)
 				cb_flag_dump = COB_DUMP_NONE;
 			}
 			break;
+
+		case CB_FLAG_GETOPT_GENTABLE: {
+			/* --gentable=<ebcdic-enc>,<ascii-enc>[+] */
+			char *code_ebcdic, *code_ascii, reversible = 0;
+			int res;
+			size_t len;
+			code_ebcdic = strtok (cob_optarg, ",");
+			code_ascii = strtok (NULL, "");
+			if ((code_ebcdic == NULL) || (code_ascii == NULL)) {
+				cobc_err_exit (COBC_INV_PAR, "--gentable");
+			}
+			len = strlen(code_ascii);
+			if (code_ascii[len - 1] == '+') {
+				reversible = 1;
+				code_ascii[len - 1] = '\0';
+			}
+			res = gentable (stdout, code_ebcdic, code_ascii, reversible);
+			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
+		}
 
 		default:
 			/* as we postpone most options simply skip everything other here */

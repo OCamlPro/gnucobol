@@ -136,6 +136,15 @@ jobs:
             })  -join "`r`n"  ) | Set-Content -Path 'config.h'
           & .\maketarstamp.ps1 > tarstamp.h
 
+      - name: Disable iconv for debug builds
+        if: ${{ matrix.target == 'Debug' }}
+        shell: pwsh
+        run: |
+          cd build_windows
+          ((Get-Content -Path 'config.h' | ForEach-Object { $_ `
+              -replace '(#define\s+HAVE_ICONV)\s.+$', '/* #undef HAVE_ICONV */' `
+            })  -join "`r`n"  ) | Set-Content -Path 'config.h'
+
       - name: Generate parser
         run: |
           set PATH=%GITHUB_WORKSPACE%\flexbison;%PATH%
@@ -220,13 +229,13 @@ jobs:
           echo wrap up GnuCBOBOL binary package
           rem set CL=
           cmd /C build_windows\makedist.cmd ${{ matrix.target }} <NUL
-          
+
       - name: Upload dependencies
         uses: actions/upload-artifact@v4
         with:
           name: VCPKG ${{ matrix.arch }}-${{ matrix.target }} dependencies
           path: dependencies-${{ matrix.arch }}.7z
-          
+
       - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:

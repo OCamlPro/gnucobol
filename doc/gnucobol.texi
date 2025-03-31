@@ -66,7 +66,7 @@ together with a designated C compiler and linker.
 This manual corresponds to GnuCOBOL @value{VERSION}.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2002-2012, 2014-2024 Free Software Foundation, Inc.@*
+Copyright @copyright{} 2002-2012, 2014-2025 Free Software Foundation, Inc.@*
 Written by Keisuke Nishida, Roger While, Brian Tiffin, Simon Sobisch.
 
 @insertcopying
@@ -792,7 +792,8 @@ User-defined dialect configuration.
 EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
 the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})
 which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
-See the @file{default.ttbl} file for detailed information about the format.
+See the @file{default.ttbl} file for detailed information about the format.@*
+You may use the @option{--gentable} option to build such tables.
 
 @end table
 
@@ -1049,6 +1050,14 @@ Save intermediate files (by default, in current directory).
 
 @item -fimplicit-init
 Do automatic initialization of the COBOL runtime system.
+
+@item --gentable=@var{ebcdic-enc},@var{ascii-enc}[+]
+Build an EBCDIC/ASCII translation table between @var{ebcdic-enc} and
+@var{ascii-enc}, and exit.
+The translation might not be reversible: characters with no equivalent in the
+other encoding are mapped to the substitution character, thus leaving unused
+characters in both encodings. Append + to make the translation reversible,
+by arbitrarily mapping together these unused characters.
 
 @end table
 

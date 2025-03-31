@@ -1,4 +1,9 @@
 
+2025-03-26  David Declerck <david.declerck@ocamlpro.com>
+
+	* gentable.c: generate EBCDIC/ASCII translation tables
+	* cobc.c, help.c: new --gentable option
+
 2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (cobc.1): add description using help2man -n
@@ -10209,7 +10214,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2024 Free Software Foundation, Inc.
+Copyright 2001-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
