@@ -1261,7 +1261,7 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = check], [
 	  JSON_C_LIBS="-ljson-c"
 	fi
 	LIBS="$LIBS $LIBCOB_LIBS_extern $JSON_C_LIBS"
-	AC_CHECK_HEADERS([json.h json-c/json.h], [break],
+	AC_CHECK_HEADERS([json-c/json.h json.h], [break],
 		[if test "$with_json" = "json-c"; then
 		    AC_MSG_ERROR([header for libjson-c is required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
 		 else
