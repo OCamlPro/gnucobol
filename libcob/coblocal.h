@@ -531,7 +531,7 @@ COB_HIDDEN FILE			*cob_get_dump_file	(void);
 COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
-COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
+COB_HIDDEN int		cob_runtime_warning_ss (const char *, const char *);
 
 COB_EXPIMP int cob_ncase_cmp (char *, const char *, unsigned );
 COB_EXPIMP char * cob_str_case_str (char *, const char *);

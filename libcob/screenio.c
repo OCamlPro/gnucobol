@@ -2420,6 +2420,9 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			if (fld_index >= 0) {
 				curr_index = fld_index;
 				SET_FLD_AND_DATA_REFS (curr_index, sptr, s, sline, scolumn, right_pos, p);
+				if (scolumn != cursor_clause_col) {
+					p += cursor_clause_col - scolumn;
+				}
 				at_eof = 0;
 				cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, ACCEPT_STATEMENT);
 				cob_move_cursor (cursor_clause_line, cursor_clause_col);

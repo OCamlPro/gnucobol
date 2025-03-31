@@ -4116,8 +4116,6 @@ get_prev_ml_tree_entry (const struct cb_ml_generate_tree * const s)
 		} else {
 			return s->prev_sibling;
 		}
-	} else if (s->attrs) {
-		return get_last_attr (s);
 	} else if (s->parent) {
 		return s->parent;
 	} else {
@@ -9191,14 +9189,14 @@ output_ml_suppress_checks (struct cb_ml_suppress_checks * const suppress_checks)
 	struct cb_ml_generate_tree	*tree;
 
 	/*
-	  To resolve dependency problems, start from last child of last element.
+	  To resolve dependency problems, start from last child/attribute of last element.
 	*/
-	if (orig_tree->children) {
+	tree = orig_tree;
+	if (tree->children) {
 		tree = get_last_child (orig_tree);
-	} else if (orig_tree->attrs) {
+	}
+	if (tree->attrs) {
 		tree = get_last_attr (orig_tree);
-	} else {
-		tree = orig_tree;
 	}
 
 	for (;;) {
