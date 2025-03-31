@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -150,6 +150,8 @@ cobc_print_usage_common_options (void)
 	puts (_("  -MD                   output dependencies in .d files while compiling"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
 	puts (_("  -fcopybook-deps       output copybook names as dependencies"));
+	puts (_("  --gentable=<ebcdic-enc>,<ascii-enc>[+]\toutput a translation table between the\n"
+		"                        given encodings to stdout and exit"));
 	putchar ('\n');
 }
 
