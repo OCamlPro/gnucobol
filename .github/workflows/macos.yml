@@ -52,10 +52,13 @@ jobs:
       - name: configure
         run: |
           cd _build
+          /opt/homebrew/bin/pkg-config --list-all
+          /opt/homebrew/bin/pkg-config --print-provides ncursesw
+
           ../configure --enable-cobc-internal-checks \
                        --enable-hardening \
-                       --with-curses=ncurses \
                        --prefix /opt/cobol/gnucobol-gcos \
+                      PANEL_LIBS="-lpanel"
 
       - name: make
         run: |
