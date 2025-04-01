@@ -69,7 +69,7 @@ TITLE="GnuCOBOL Manual Test Run - $DESC"
 _test_with_xterm () {
    xterm -T "$TITLE" \
         -fa 'Liberation Mono' -fs 14 \
-        -e "sh -c \"(\$* 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
+        -e "sh -c \"($* 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
 }
 
 

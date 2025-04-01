@@ -179,6 +179,7 @@ System Routines
 * CBL_GC_NANOSLEEP              Sleep for nanoseconds
 * CBL_GC_FORK                   Fork the current COBOL process to a new one
 * CBL_GC_WAITPID                Wait for a system process to end
+* CBL_GC_WINDOW                 Multiple Window functions
 
 Appendices
 
@@ -2445,6 +2446,8 @@ For a complete list of supported system routines,
 * CBL_GC_NANOSLEEP::            Sleep for nanoseconds
 * CBL_GC_FORK::                 Fork the current COBOL process to a new one
 * CBL_GC_WAITPID::              Wait for a system process to end
+* CBL_GC_WINDOW::               Multiple Window functions
+
 @end menu
 
 @node CBL_GC_GETOPT
@@ -2807,6 +2810,32 @@ is not available on the current system.
         MOVE 0 TO RETURN-CODE
         DISPLAY 'CBL_GC_WAITPID ended with status: ' WAIT-STS
         END-DISPLAY
+@end example
+
+
+@node CBL_GC_WINDOW
+@section CBL_GC_WINDOW
+
+@code{CBL_GC_WINDOW} allows you to create, move, hide, show, top, bottom 
+or list multiple windows if your installation supports CURSES & PANELS. 
+Note windows have depth like a stack of cards on a flat table. Each window
+has its contents independent of any other window. All of the writes to
+the console are directed to the window on top of the deck of windows.
+
+Parameters: the gcwindow.cpy copy member defines all parameters for this
+function. All commands but the the LIST command uses the same secondary
+parameter @code{WP-WINDOW-PARMS}, the LIST command uses @code{WL-WINDOW-LIST} instead.
+
+TODO explain the parameters
+
+Returns: COBOL RETURN-CODE contains general error code (like not available
+PANEL function in the curses runtime library) and specific problems depending
+on the parameters, zero means "no error".
+You can use @code{RETURNING WP-WINDOW-RETURN-CODE} to use the condition-names
+for more detailed error handling, otherwise use those as reference.
+
+@example
+        TODO
 @end example
 
 @node Appendices

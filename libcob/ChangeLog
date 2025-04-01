@@ -17,6 +17,11 @@
 	  first, close the file descriptor only if the stream is NULL
 	  (fixes assertions under MSVC debug)
 
+2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
+	  used for info output to include panel header definitions and XCurses
+
 2024-12-20  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (indexed_start_internal)->fbdb.c: improve handling of partial
@@ -33,10 +38,54 @@
 	* fileio.c->fbdb.c: fixed Bug #1032 by always using global thread-static variable
 	  bdb_app_data pointer to access the collating sequence function
 
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
+	  with X/Open Curses function panel_below()
+
+2024-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_sys_window), system.def, common.h:
+	  command as separate first argument
+	* screenio.c [WITH_PANELS]: more refactoring including:
+	  variable amount of elements for LIST command;
+	  parameter struture changes from int to short;
+	  new commands get+set attributes;
+	  hidden now attribute in the flags instead of separate element,
+	  preparation for new attributes wrap + scroll;
+	  reverse panel_hidden return code handling
+	* screenio.c (cob_exit_screen): always use stdscr for exit message
+
+2024-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: minor refactoring including move of
+	  return code out of PPARM_FLD
+	* screenio.c (cob_sys_window): when function not available and in
+	  testmode, return 77 so test is skipped
+
 2024-11-06  David Declerck <david.declerck@ocamlpro.com>
 
 	Reverted change 2022-02-21 to integrate change
 	from GnuCOBOL 3.1 2023-04-04
+
+2024-11-01  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: added new functions for multiple window support;
+	  also added new static variables to support panel functions
+	  and a static array to store information about the panels
+	  which have been created.
+		cob_sys_window
+		check_panel_parm
+		cob_update_all_windows
+		refresh_mywin
+	* common.h: added cob_sys_window
+	* system.def: added system library call CBL_GC_WINDOW
+
+2024-10-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* cobc/typeck.c=>sysdefines.h: define [WITH_EXTENDED_SCREENIO]
+	  for any curses headers available, which now includes panel.h
+	  definitions
 
 2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -1466,7 +1515,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  cob_add_exception
 	* screenio.c (handle_status): pass type of statement to raise
 	  either COB_EC_IMP_ACCEPT or COB_EC_IMP_DISPLAY
-	* screenio.c (handle_status, cob_set_crt3_status) [!COB_GEN_SCREENIO]:
+	* screenio.c (handle_status, cob_set_crt3_status) [!WITH_EXTENDED_SCREENIO]:
 	  unconditionally defined those functions and finally return error
 	  status and nonfatal exception along with a warning on accept if the
 	  runtime is not configured for extended screenio
@@ -3609,7 +3658,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2019-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (cob_settings_screenio): moved out of COB_GEN_SCREENIO
+	* screenio.c (cob_settings_screenio): moved out of WITH_EXTENDED_SCREENIO
 
 2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -4419,7 +4468,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: moved cob_sys_get_char and added parts for !COB_GEN_SCREENIO
+	* screenio.c: moved cob_sys_get_char and added parts for !WITH_EXTENDED_SCREENIO
 
 2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -4634,7 +4683,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-02-07  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: [!COB_GEN_SCREENIO] fixed zero_line_col_allowed
+	* screenio.c: [!WITH_EXTENDED_SCREENIO] fixed zero_line_col_allowed
 	  missing / superfluous in function declarations
 
 2017-02-07  Ron Norman <rjn@inglenet.com>
@@ -5657,7 +5706,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2010-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (!COB_GEN_SCREENIO): Make cob_sys_sound_bell usable via
+	* screenio.c (!WITH_EXTENDED_SCREENIO): Make cob_sys_sound_bell usable via
 	  cob_speaker_beep
 	* common.c:  Add possibility to disable the bell via
 	  COB_BELL=NO/NONE/0/OFF (currently only the first char is checked)

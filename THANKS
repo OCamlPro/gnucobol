@@ -55,7 +55,8 @@ Sergey Kashyrin - For his work on:
 
 And continuing this amazing support:
 Arnold Trembley <arnold.trembley@att.net> - Win32 packaging and user support
-Chuck Haatvedt <chuck.haatvedt@gmail.com> - Work on optimized BCD handling
+Chuck Haatvedt <chuck.haatvedt@gmail.com> - Work on optimized BCD handling,
+   general numeric performance and screenio extensions like WCB
 Ludwin Janvier <lud.janvier@gmail.com> - patches for build/packaging issues
 Hans-Martin Rasch - Work on compiler syntax
 Michel Gouget - Work on syntax - IS
@@ -63,7 +64,7 @@ Bill Klein - The mainstay for COBOL questions
 Frank Swarbrick - Work on compiler syntax
 Warren Gay - For testing systems we didn't even know we supported!
    (e.g. old DEC Alpha systems)
-Fabrizio Calabretta - Work on the internal EXTFH interface
+Fabrizio Calabretta - Work on the OpenCOBOL internal EXTFH interface
 
 Gary L. Cutler <cutlergl@gmail.com> and Vincent B. Coen <vbcoen@gmail.com> for
 writing and maintaining the GnuCOBOL Programmer's Guide.
