@@ -12,6 +12,12 @@
 	  flag_above_unbounded in callers (typeck.c, cobc.c) instead
 	* parser.y (occurs_clause): set flag_above_unbounded in parents
 
+2024-10-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* typeck.c=>libcob/sysdefines.h: define [WITH_EXTENDED_SCREENIO]
+	  for any curses headers available, which now includes panel.h
+	  definitions
+
 2024-10-23  David Declerck <david.declerck@ocamlpro.com>
 
 	* codegen.c (output_perform_until): improve PERFORM bounds

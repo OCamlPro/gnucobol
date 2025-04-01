@@ -410,7 +410,7 @@
 /* Has __attribute__((pure)) */
 /* #undef HAVE_ATTRIBUTE_PURE */
 
-/* Define to 1 if you have the `canonicalize_file_name' function. */
+/* Define to 1 if you have the 'canonicalize_file_name' function. */
 #if defined(__ORANGEC__)
 #define HAVE_CANONICALIZE_FILE_NAME 1
 #else
@@ -471,11 +471,11 @@
    */
 /* #undef HAVE_DCGETTEXT */
 
-/* Define to 1 if you have the declaration of `fdatasync', and to 0 if you
+/* Define to 1 if you have the declaration of 'fdatasync', and to 0 if you
    don't. */
 #define HAVE_DECL_FDATASYNC 0
 
-/* Define to 1 if you have the declaration of `fmemopen', and to 0 if you
+/* Define to 1 if you have the declaration of 'fmemopen', and to 0 if you
    don't. */
 #if defined(__ORANGEC__)
 #define HAVE_DECL_FMEMOPEN 1
@@ -508,10 +508,10 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
-/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+/* Define to 1 if you don't have 'vprintf' but do have '_doprnt.' */
 /* #undef HAVE_DOPRNT */
 
-/* Define to 1 if you have the `fcntl' function. */
+/* Define to 1 if you have the 'fcntl' function. */
 #if defined(__ORANGEC__)
 #define HAVE_FCNTL 1
 #else
@@ -521,23 +521,23 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
-/* Define to 1 if you have the `fdatasync' function. */
+/* Define to 1 if you have the 'fdatasync' function. */
 /* #undef HAVE_FDATASYNC */
 
 /* Declaration of finite function in ieeefp.h instead of math.h */
 /* #undef HAVE_FINITE_IEEEFP_H */
 
-/* Define to 1 if you have the `flockfile' function. */
+/* Define to 1 if you have the 'flockfile' function. */
 #if defined(__ORANGEC__)
 #define HAVE_FLOCKFILE 1
 #else
 /* #undef HAVE_FLOCKFILE */
 #endif
 
-/* Define to 1 if you have the `fmemopen' function. */
+/* Define to 1 if you have the 'fmemopen' function. */
 /* #undef HAVE_FMEMOPEN */
 
-/* Define to 1 if you have the `getexecname' function. */
+/* Define to 1 if you have the 'getexecname' function. */
 #if defined(__ORANGEC__)
 #define HAVE_GETEXECNAME 1
 #else
@@ -547,7 +547,7 @@
 /* Define if the GNU gettext() function is already present or preinstalled. */
 /* #undef HAVE_GETTEXT */
 
-/* Define to 1 if you have the `gettimeofday' function. */
+/* Define to 1 if you have the 'gettimeofday' function. */
 #if defined(__ORANGEC__)
 #define HAVE_GETTIMEOFDAY 1
 #else
@@ -627,13 +627,13 @@
 /* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
 /* #undef HAVE_LANGINFO_CODESET */
 
-/* Define to 1 if you have the `posix4' library (-lposix4). */
+/* Define to 1 if you have the 'posix4' library (-lposix4). */
 /* #undef HAVE_LIBPOSIX4 */
 
-/* Define to 1 if you have the `rt' library (-lrt). */
+/* Define to 1 if you have the 'rt' library (-lrt). */
 /* #undef HAVE_LIBRT */
 
-/* Define to 1 if you have the `localeconv' function. */
+/* Define to 1 if you have the 'localeconv' function. */
 #define HAVE_LOCALECONV 1
 
 /* Define to 1 if you have the <locale.h> header file. */
@@ -642,13 +642,13 @@
 /* Define to 1 if you have the <ltdl.h> header file. */
 /* #undef HAVE_LTDL_H */
 
-/* Define to 1 if you have the `memmove' function. */
+/* Define to 1 if you have the 'memmove' function. */
 #define HAVE_MEMMOVE 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
-/* Define to 1 if you have the `memset' function. */
+/* Define to 1 if you have the 'memset' function. */
 #define HAVE_MEMSET 1
 
 /* curses has mouseinterval function */
@@ -684,31 +684,40 @@
 /* Define to 1 if you have the <ncursesw/ncurses.h> header file. */
 /* #undef HAVE_NCURSESW_NCURSES_H */
 
+/* Define to 1 if you have the <ncursesw/panel.h> header file. */
+/* #undef HAVE_NCURSESW_PANEL_H */
+
 /* Define to 1 if you have the <ncurses/curses.h> header file. */
 /* #undef HAVE_NCURSES_CURSES_H */
 
 /* Define to 1 if you have the <ncurses/ncurses.h> header file. */
 /* #undef HAVE_NCURSES_NCURSES_H */
 
-/* Define to 1 if you have the <oci.h> header file. */
-/* #undef HAVE_OCI_H */
+/* Define to 1 if you have the <ncurses/panel.h> header file. */
+/* #undef HAVE_NCURSES_PANEL_H */
+
+/* Define to 1 if you have the <panel.h> header file. */
+/* #undef HAVE_PANEL_H */
 
 /* Define to 1 if you have the <pdcurses.h> header file. */
 /* #undef HAVE_PDCURSES_H */
 
-/* Define to 1 if you have the `popen' function. */
+/* Define to 1 if you have the <oci.h> header file. */
+/* #undef HAVE_OCI_H */
+
+/* Define to 1 if you have the 'popen' function. */
 #define HAVE_POPEN 1
 
-/* Define to 1 if you have the `raise' function. */
+/* Define to 1 if you have the 'raise' function. */
 #define HAVE_RAISE 1
 
 /* Has readline function */
 /* #undef HAVE_READLINE */
 
-/* Define to 1 if you have the `readlink' function. */
+/* Define to 1 if you have the 'readlink' function. */
 /* #undef HAVE_READLINK */
 
-/* Define to 1 if you have the `realpath' function. */
+/* Define to 1 if you have the 'realpath' function. */
 #if defined(__ORANGEC__)
 #define HAVE_REALPATH 1
 #else
@@ -718,19 +727,19 @@
 /* curses has resize_term function */
 #define HAVE_RESIZE_TERM 1
 
-/* Define to 1 if you have the `setenv' function. */
-/* MSC does *NOT* have `setenv' (!)
-   But as the handling of the fallback `putenv' is different in POSIX and _MSC
-   (POSIX stores no duplicate of `putenv', where _MSC does), we pretend to
-   have support for `setenv' and define it in common.c using _putenv_s,
+/* Define to 1 if you have the 'setenv' function. */
+/* MSC does *NOT* have 'setenv' (!)
+   But as the handling of the fallback 'putenv' is different in POSIX and _MSC
+   (POSIX stores no duplicate of 'putenv', where _MSC does), we pretend to
+   have support for 'setenv' and define it in common.c using _putenv_s,
    omitting the override parameter
    ORANGEC provides the function */
 #define HAVE_SETENV 1
 
-/* Define to 1 if you have the `setlocale' function. */
+/* Define to 1 if you have the 'setlocale' function. */
 #define HAVE_SETLOCALE 1
 
-/* Define to 1 if you have the `sigaction' function. */
+/* Define to 1 if you have the 'sigaction' function. */
 #if defined(__ORANGEC__)
 #define HAVE_SIGACTION 1
 #else
@@ -740,7 +749,7 @@
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
 
-/* Define to 1 if the system has the type `sig_atomic_t'. */
+/* Define to 1 if the system has the type 'sig_atomic_t'. */
 #define HAVE_SIG_ATOMIC_T 1
 
 /* Define to 1 if you have the <sqlext.h> header file. */
@@ -763,19 +772,19 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
 
-/* Define to 1 if you have the `strcasecmp' function. */
+/* Define to 1 if you have the 'strcasecmp' function. */
 #define HAVE_STRCASECMP 1
 
-/* Define to 1 if you have the `strchr' function. */
+/* Define to 1 if you have the 'strchr' function. */
 #define HAVE_STRCHR 1
 
-/* Define to 1 if you have the `strcoll' function. */
+/* Define to 1 if you have the 'strcoll' function. */
 #define HAVE_STRCOLL 1
 
-/* Define to 1 if you have the `strdup' function. */
+/* Define to 1 if you have the 'strdup' function. */
 #define HAVE_STRDUP 1
 
-/* Define to 1 if you have the `strerror' function. */
+/* Define to 1 if you have the 'strerror' function. */
 #define HAVE_STRERROR 1
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -788,13 +797,13 @@
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
 
-/* Define to 1 if you have the `strrchr' function. */
+/* Define to 1 if you have the 'strrchr' function. */
 #define HAVE_STRRCHR 1
 
-/* Define to 1 if you have the `strstr' function. */
+/* Define to 1 if you have the 'strstr' function. */
 #define HAVE_STRSTR 1
 
-/* Define to 1 if you have the `strtol' function. */
+/* Define to 1 if you have the 'strtol' function. */
 #define HAVE_STRTOL 1
 
 /* Define to 1 if you have the `strtoll' function. */
@@ -848,7 +857,7 @@
 /* #undef HAVE_VISAM_H */
 #endif
 
-/* Define to 1 if you have the `vprintf' function. */
+/* Define to 1 if you have the 'vprintf' function. */
 #define HAVE_VPRINTF 1
 
 /* Define to 1 if you have the <xcurses/curses.h> header file. */
@@ -856,6 +865,9 @@
 
 /* Define to 1 if you have the <xcurses.h> header file. */
 /* #undef HAVE_XCURSES_H */
+
+/* Define to 1 if you have the <xcurses/panel.h> header file. */
+/* #undef HAVE_XCURSES_PANEL_H */
 
 /* path for locale-dependent data */
 #undef LOCALEDIR
@@ -942,7 +954,7 @@
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+/* Define to 1 if your <sys/time.h> declares 'struct tm'. */
 /* #undef TM_IN_SYS_TIME */
 
 /* Use system dynamic loader */
@@ -1122,8 +1134,8 @@
 # endif
 #endif
 
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
+/* Define to 1 if 'lex' declares 'yytext' as a 'char *' by default, not a
+   'char[]'. */
 #define YYTEXT_POINTER 1
 
 /* Define to 1 if on MINIX. */
@@ -1133,7 +1145,7 @@
    this defined. */
 /* #undef _POSIX_1_SOURCE */
 
-/* Define to 1 if you need to in order for `stat' and other things to work. */
+/* Define to 1 if you need to in order for 'stat' and other things to work. */
 /* #undef _POSIX_SOURCE */
 
 /* Define to 1 if on HPUX.  */
@@ -1141,10 +1153,10 @@
 /* # undef _XOPEN_SOURCE_EXTENDED */
 #endif
 
-/* Define to empty if `const' does not conform to ANSI C. */
+/* Define to empty if 'const' does not conform to ANSI C. */
 /* #undef const */
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define to 'unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
 
 #ifdef ENABLE_NLS

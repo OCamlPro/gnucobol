@@ -111,8 +111,10 @@ Open Plans:
    customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
    COB_PROF_FORMAT
 
-** new runtime configuraiton COB_HIDE_CURSOR, allows to hide the cursor during
+** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
+
+** added multiple window functionality with new system function CBL_GC_WINDOW
 
   more work in progress
 

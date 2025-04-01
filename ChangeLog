@@ -5,6 +5,15 @@
 	  Clang, to prevent some features to be mistakenly detected as missing
 	  (in particular -Wno-pointer-sign and -fstack-clash-protection)
 
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix check for curses functions if panel headers are found
+
+2024-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added logic to check for PANEL support which
+	  is required for the new multiple window support
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: new options --with-pkgversion=PKG and --with-bugurl=URL

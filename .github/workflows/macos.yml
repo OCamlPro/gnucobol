@@ -65,7 +65,9 @@ jobs:
           echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
 
       - name: Bootstrap GnuCOBOL
-        run: ./build_aux/bootstrap install
+        run: |
+          ./build_aux/bootstrap install
+          gettextize -f
 
       - name: Configure GnuCOBOL
         run: |
@@ -74,6 +76,7 @@ jobs:
                        --with-indexed=${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
+                       --with-curses=ncurses \
                        --prefix=/opt/cobol/gnucobol \
                        CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS" \
                        CFLAGS="-Wno-parentheses-equality $CFLAGS"
