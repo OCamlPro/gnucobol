@@ -4640,7 +4640,7 @@ process_filename (const char *filename)
 		fn->preprocess = cobc_main_strdup (output_name);
 	} else
 	if (save_all_src || save_temps
-	 || cb_compile_level == CB_LEVEL_PREPROCESS) {
+	 || (cb_compile_level == CB_LEVEL_PREPROCESS && !cb_depend_output_only)) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
@@ -9354,9 +9354,14 @@ process_file (struct filename *fn, int status)
 			fprintf (file, "%s:%s", basename, sep);
 		}
 
-		for (l = cb_depend_list; l; l = l->next) {
-			fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
+		if (cb_depend_list) {
+			for (l = cb_depend_list; l; l = l->next) {
+				fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
+			}
+		} else {
+			fprintf (file, "\n\n");
 		}
+
 		/* These lines should only be added with -MP */
 		if (cb_depend_add_phony) {
 			for (l = cb_depend_list; l; l = l->next) {
