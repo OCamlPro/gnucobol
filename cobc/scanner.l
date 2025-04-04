@@ -172,6 +172,8 @@ static size_t			pic2_size;
 static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
 
+struct cb_text_list	*cb_include_file_list_directive = NULL;
+
 /* Function declarations */
 static void	read_literal (const char, const enum cb_literal_type);
 static int	scan_x (const char *, const char *);
@@ -189,6 +191,7 @@ static void	copy_two_words_in_quotes (char ** const, char ** const);
 static void	add_synonym (const int, const int);
 static void	make_synonym (void);
 static void clear_constants (void);
+static struct cb_text_list *scan_list_add (struct cb_text_list *, const char *);
 
 %}
 
@@ -217,7 +220,7 @@ AREA_A		"#AREA_A"\n
 	cobc_in_area_a = 0;
 %}
 
-<*>^[ ]?"#CALLFH".*\n {
+<*>^"#CALLFH".*\n {
 	if (current_program) {
 		const char	*p1;
 		char		*p2;
@@ -239,7 +242,7 @@ AREA_A		"#AREA_A"\n
 	}
 }
 
-<*>^[ ]?"#XFD".*\n {
+<*>^"#XFD".*\n {
 	char	*p1;
 	char	*p2;
 	p1 = strchr (yytext, '"');
@@ -255,11 +258,11 @@ AREA_A		"#AREA_A"\n
 	}
 }
 
-<*>^[ ]?"#DEFLIT".*\n {
+<*>^"#DEFLIT".*\n {
 	scan_define_options (yytext);
 }
 
-<*>^[ ]?"#ADDRSV".*\n {
+<*>^"#ADDRSV".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -267,25 +270,25 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#ADDSYN-STD".*\n {
+<*>^"#ADDSYN-STD".*\n {
 	add_synonym (1, 0);
 }
-<*>^[ ]?"#ADDSYN".*\n {
+<*>^"#ADDSYN".*\n {
 	add_synonym (0, 0);
 }
 
-<*>^[ ]?"#MAKESYN".*\n {
+<*>^"#MAKESYN".*\n {
 	make_synonym ();
  }
 
-<*>^[ ]?"#OVERRIDE-STD".*\n {
+<*>^"#OVERRIDE-STD".*\n {
 	add_synonym (1, 1);
 }
-<*>^[ ]?"#OVERRIDE".*\n {
+<*>^"#OVERRIDE".*\n {
 	add_synonym (0, 1);
 }
 
-<*>^[ ]?"#REMOVE-STD".*\n {
+<*>^"#REMOVE-STD".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -298,7 +301,7 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#REMOVE".*\n {
+<*>^"#REMOVE".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -307,16 +310,16 @@ AREA_A		"#AREA_A"\n
 /* not merged yet
 }
 
-<*>^[ ]?"#REFMOD_ZERO "[0-9]\n {
+<*>^"#REFMOD_ZERO "[0-9]\n {
 	cb_ref_mod_zero_length = (yytext[13] - '0');
 */
 }
 
-<*>^[ ]?"#ODOSLIDE "[0-1]\n {
+<*>^"#ODOSLIDE "[0-1]\n {
 	cb_odoslide = (yytext[10] - '0');
 }
 
-<*>^[ ]?"#KEYCOMPRESS "[0-9]\n {
+<*>^"#KEYCOMPRESS "[0-9]\n {
 	if (isdigit (yytext[13]))
 		cb_keycompress_ready = atoi (&yytext[13]);
 	else
@@ -324,20 +327,11 @@ AREA_A		"#AREA_A"\n
 	cb_keycompress_pend = cb_source_line;
 }
 
-<*>^[ ]?"#ASSIGN "[0-9]\n {
+<*>^"#ASSIGN "[0-9]\n {
 	cb_assign_type_default = (enum cb_assign_type)(yytext[8] - '0');
-/* not merged yet
-<*>^[ ]?"#TURN".*\n {
-	struct cb_turn_list	*l;
-
-	for (l = cb_turn_list; l && l->line != -1; l = l->next);
-	if (l) {
-		l->line = cb_source_line;
-	}
-*/
 }
 
-<*>^[ ]?"#TURN".*\n {
+<*>^"#TURN".*\n {
 	struct cb_turn_list	*l;
 
 	for (l = cb_turn_list; l && l->line != -1; l = l->next);
@@ -346,12 +340,19 @@ AREA_A		"#AREA_A"\n
 	}
 }
 
-<*>^[ ]?"#AREACHECK"\n {
+<*>^"#AREACHECK"\n {
 	cobc_areacheck = 1;
 }
 
-<*>^[ ]?"#NOAREACHECK"\n {
+<*>^"#NOAREACHECK"\n {
 	cobc_areacheck = 0;
+}
+
+<*>^"#INCLUDE".*/\n {
+	cb_include_file_list_directive = scan_list_add (
+		cb_include_file_list_directive,
+		yytext + 9
+	);
 }
 
 <*>^{AREA_A}[ ]*/"." {
@@ -2634,6 +2635,22 @@ clear_constants (void)
 		cobc_free (p78);
 	}
 	top_78_ptr = NULL;
+}
+
+static struct cb_text_list *
+scan_list_add (struct cb_text_list *list, const char *text)
+{
+	struct cb_text_list	*p;
+
+	p = cobc_parse_malloc (sizeof (struct cb_text_list));
+	p->text = cobc_parse_strdup (text);
+	if (!list) {
+		p->last = p;
+		return p;
+	}
+	list->last->next = p;
+	list->last = p;
+	return list;
 }
 
 /* Global functions */
