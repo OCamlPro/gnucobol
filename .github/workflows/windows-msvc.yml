@@ -131,6 +131,15 @@ jobs:
             }) -join "`r`n") | Set-Content -Path 'config.h'
           & .\maketarstamp.ps1 > tarstamp.h
 
+      - name: Disable iconv for debug builds
+        if: ${{ matrix.target == 'Debug' }}
+        shell: pwsh
+        run: |
+          cd build_windows
+          ((Get-Content -Path 'config.h' | ForEach-Object { $_ `
+              -replace '(#define\s+HAVE_ICONV)\s.+$', '/* #undef HAVE_ICONV */' `
+            })  -join "`r`n"  ) | Set-Content -Path 'config.h'
+
       - name: Generate parser
         run: |
           set PATH=%GITHUB_WORKSPACE%\flexbison;%PATH%
