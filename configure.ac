@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -23,7 +23,7 @@ dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
 # note: old environments only have autoconf 2.69 or even (old msys) 2.67
-#       just do a "make dist" on a modern system and get the taball back
+#       just do a "make dist" on a modern system and get the tarball back
 #       to the ancient one... (which would likely also not have the necessary
 #       automake package either)
 AC_PREREQ([2.70])
@@ -36,7 +36,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision: 4925 $])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
 
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
