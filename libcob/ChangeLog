@@ -22,6 +22,11 @@
 	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
 	  used for info output to include panel header definitions and XCurses
 
+2024-12-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* termio.c (clean_double): skip more than a single leading
+	  zero in exponent display
+
 2024-12-20  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (indexed_start_internal)->fbdb.c: improve handling of partial

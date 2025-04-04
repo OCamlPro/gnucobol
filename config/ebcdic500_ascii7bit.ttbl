@@ -1,7 +1,7 @@
-# GnuCOBOL EBCDIC/ASCII translation tables
+# GnuCOBOL EBCDIC <-> ASCII translation tables
 #
 # Copyright (C) 2022,2023 Free Software Foundation, Inc.
-#  Written by Nicolas Berthier, Simon Sobisch, David Declerck
+# Written by Nicolas Berthier, Simon Sobisch, David Declerck
 #
 # This file is part of the GnuCOBOL runtime.
 #

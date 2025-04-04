@@ -627,7 +627,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 	while ((p < p_end) && (q <= q_end))
 	{
-			*q = (unsigned char) (*p << 4)  /* -> dropping the higher bits = no use in COB_D2I */
+			*q = (unsigned char) ((*p << 4) & 0xF0)  /* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
 			p = p + 2;
 				q++;
@@ -641,14 +641,14 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 	if ((p == p_end) && (q <= q_end))
 	{
-			*q = (unsigned char) (*p << 4) & 0xF0;
+			*q = (unsigned char) ((*p << 4) & 0xF0);
 	}
 
 	COB_PUT_SIGN_ADJUSTED (f1, sign);
 
 	if (COB_FIELD_DIGITS(f2) < f2_digits)
 	{
-			*(f2->data) &= 0x0f;
+			*(f2->data) &= 0x0F;
 	}
 
 	if (target_no_sign_nibble) {

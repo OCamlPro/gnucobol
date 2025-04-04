@@ -1,11 +1,15 @@
 
-2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
+2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
-	* version_cobc.rc, version_libcob.rc: updated date + rev
+	* general for cobc: include new gentable.c
 
 2024-10-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* set_env_vs_dist: supporting space-included paths (not recommended)
+
+2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* version_cobc.rc, version_libcob.rc: updated date + rev
 
 2024-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -367,7 +371,7 @@
 	  version_libcob.rc, version_cobcrun.rc provided by Simon)
 
 
-Copyright 2014-2024 Free Software Foundation, Inc.
+Copyright 2014-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
