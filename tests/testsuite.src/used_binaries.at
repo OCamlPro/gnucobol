@@ -1432,20 +1432,25 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 # note: the stack trace, while enabled per default, is globally disabled in the testsuite
-AT_CHECK([$COBCRUN_DIRECT ./prog & cobpid=$!
+AT_CHECK([$COBCRUN_DIRECT ./prog 2>stderr1 & cobpid=$!
 sleep 6
 kill -15 $cobpid], [0],
 [1
-],
+], [])
+
+AT_CHECK([cat stderr1], [0],
 [
 prog.cob:14: termination (signal SIGTERM)
 
 ])
-AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" & cobpid=$!
+
+AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" 2>stderr2 & cobpid=$!
 sleep 6
 kill -15 $cobpid], [0],
 [1
-],
+], [])
+
+AT_CHECK([cat stderr2], [0],
 [
 prog.cob:14: termination (signal SIGTERM)
 
