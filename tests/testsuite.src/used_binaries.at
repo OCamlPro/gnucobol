@@ -1469,6 +1469,7 @@ AT_SETUP([EBCDIC/ASCII table generation])
 AT_KEYWORDS([runmisc])
 
 AT_SKIP_IF([test "$COB_HAS_ICONV" = "no"])
+AT_SKIP_IF([test "$($COBC --gentable=IBM500,ASCII 2>&1)" = "error: conversion from IBM500 to ASCII is not supported by your iconv implementation"])
 
 AT_CHECK([$COBC --gentable=IBM500,ASCII], [0],
 [# GnuCOBOL IBM500 <-> ASCII translation tables
