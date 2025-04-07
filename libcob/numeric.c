@@ -1446,7 +1446,16 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 
 	register unsigned char	*data = COB_FIELD_DATA (f);
 	register unsigned int	size = (unsigned int) COB_FIELD_SIZE (f);
-	const int	sign = COB_GET_SIGN_ADJUST (f);
+	unsigned char	last;
+	int		sign;
+
+	if (COB_MODULE_PTR->flag_normalize_bcd
+	 && COB_FIELD_IS_ANY_ALNUM (f)) {
+		last = f->data[f->size - 1];
+		sign = cob_get_sign_from_alnum (f);
+	} else {
+		sign = COB_GET_SIGN_ADJUST (f);
+	}
 
 	/* TODO: document special cases here */
 	if (unlikely (*data == 255)) {
@@ -1540,7 +1549,12 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	}
 	d->scale = COB_FIELD_SCALE (f);
 
-	COB_PUT_SIGN_ADJUSTED (f, sign);
+	if (COB_MODULE_PTR->flag_normalize_bcd
+	 && COB_FIELD_IS_ANY_ALNUM (f)) {
+		f->data[f->size - 1] = last;
+	} else {
+		COB_PUT_SIGN_ADJUSTED (f, sign);
+	}
 }
 
 /* store value from decimal into field of type numeric DISPLAY */

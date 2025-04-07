@@ -11396,6 +11396,7 @@ output_module_init_function (struct cb_program *prog)
 	} else {
 		output_line ("module->module_sources = NULL;");
 	}
+	output_line ("module->flag_normalize_bcd = %d;", cb_normalize_bcd);
 
 	output_block_close ();
 	output_newline ();

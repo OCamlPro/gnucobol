@@ -12,6 +12,11 @@
 
 	* cobc.c (process_command_line): fix leak for --copy and -include parsing
 
+2024-12-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def: new normalize-bcd dialect option
+	* codegen.c (output_module_init_function): initialize flag_normalize_bcd
+
 2024-10-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* typeck.c: define [WITH_EXTENDED_SCREENIO] for any curses headers

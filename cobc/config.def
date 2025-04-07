@@ -203,6 +203,9 @@ CB_CONFIG_BOOLEAN (cb_areacheck, "areacheck",
 	  "                         * statements must not start in Area A; and\n"
 	  "                         * separator periods must not be within Area A"))
 
+CB_CONFIG_BOOLEAN (cb_normalize_bcd, "normalize-bcd",
+	_("normalize BCD on-the-fly"))
+
 /* Support flags */
 
 CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
