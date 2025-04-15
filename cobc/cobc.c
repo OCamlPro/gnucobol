@@ -261,7 +261,9 @@ int			cb_depend_output_only = 0;
 int			cb_depend_add_phony = 0;
 int			cb_depend_keep_missing = 0;
 int			cb_depend_target_auto = 0;
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 int			cb_flag_copybook_deps = 0;
+#endif
 
 /* set by option -fttitle=<title> */
 char                    *cb_listing_with_title = NULL;
@@ -634,7 +636,9 @@ static const struct option long_options[] = {
 	{"MP",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_ADD_PHONY},
 	{"MG",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_KEEP_MISSING},
 	{"MD",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE},
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 	{"fcopybook-deps",	CB_NO_ARG, &cb_flag_copybook_deps, 1},
+#endif
 	{"gentable",		CB_RQ_ARG, NULL, CB_FLAG_GETOPT_GENTABLE},
 	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
@@ -4193,6 +4197,7 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 	if (cb_flag_copybook_deps) {
 		/* same as -M, but only COPYBOOK names */
 		cb_depend_output = 1;
@@ -4201,6 +4206,7 @@ process_command_line (const int argc, char **argv)
 		cb_depend_add_phony = 0;
 		cb_compile_level = CB_LEVEL_PREPROCESS;
 	}
+#endif
 	if (!cb_depend_output &&
 	    (cb_depend_filename || cb_depend_add_phony || cb_depend_target
 	      || cb_depend_keep_missing)) {
@@ -4640,7 +4646,7 @@ process_filename (const char *filename)
 		fn->preprocess = cobc_main_strdup (output_name);
 	} else
 	if (save_all_src || save_temps
-	 || cb_compile_level == CB_LEVEL_PREPROCESS) {
+	 || (cb_compile_level == CB_LEVEL_PREPROCESS && !cb_depend_output_only)) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
@@ -9335,9 +9341,11 @@ process_file (struct filename *fn, int status)
 		const char *sep = " \\\n";
 		FILE *file = NULL;
 
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 		if (cb_flag_copybook_deps) {
 			sep = "";
 		}
+#endif
 		if (cb_depend_file) {
 			file = cb_depend_file;
 		} else {
@@ -9354,9 +9362,14 @@ process_file (struct filename *fn, int status)
 			fprintf (file, "%s:%s", basename, sep);
 		}
 
-		for (l = cb_depend_list; l; l = l->next) {
-			fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
+		if (cb_depend_list) {
+			for (l = cb_depend_list; l; l = l->next) {
+				fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
+			}
+		} else {
+			fprintf (file, "\n\n");
 		}
+
 		/* These lines should only be added with -MP */
 		if (cb_depend_add_phony) {
 			for (l = cb_depend_list; l; l = l->next) {

@@ -1226,6 +1226,7 @@ prog2.COB_OBJECT_EXT: \
  COPY3.CPY
 
 ])
+AT_CHECK([test -f prog.i], [1])
 
 AT_CHECK([$COMPILE -M -MF prog.dep prog.cob])
 AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
@@ -1237,12 +1238,14 @@ AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.de
  sub/COPY4.CPY
 
 ])
+AT_CHECK([test -f prog.i], [1])
 
-AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
-[prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
+# AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
+# AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+# [prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
 
-])
+# ])
+# AT_CHECK([test -f prog.i], [1])
 
 AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
 AT_CHECK([$SED "s/\.$COB_MODULE_EXT/.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
