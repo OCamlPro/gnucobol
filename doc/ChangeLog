@@ -1,4 +1,8 @@
 
+2025-03-26  David Declerck <david.declerck@ocamlpro.com>
+
+	* gnucobol.texi: document the new --gentable option
+
 2025-01-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* cbrunt.tex.gen: fix for missing "@end verbatim"

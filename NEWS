@@ -145,6 +145,9 @@ Open Plans:
    calls to externals. The files are put into quotes, unless they start by
    '<'. Quoted files are expected to have absolute paths, as the C compiler
    is called in a temp directory instead of the project directory.
+   The directive >>IMP INCLUDE "file.h", >>IMP INCLUDE "<file.h>",
+   >>IMP INCLUDE <file.h> or >>IMP INCLUDE file.h can be used as an alternative
+   to this compiler option.
 
 ** output of unlimited errors may be requested by -fmax-errors=0,
    to stop compiliation at first error use -Wfatal-errors
@@ -160,6 +163,9 @@ Open Plans:
 
 ** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
    to a file (see "Dependencies options" in the GnuCOBOL manual)
+
+** New option --gentable to build EBCDIC/ASCII translation tables,
+   for use with -febcdic-table
 
 * More notable changes
 

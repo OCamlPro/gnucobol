@@ -225,9 +225,15 @@ clean_double (char *wrk)
 	char *pos = strrchr (wrk, 'E');
 
 	if (pos) {
+		char *src;
 		pos += 2; /* skip E+ */
-		if (pos[0] == '0') {
-			memmove (pos, pos + 1, strlen (pos));
+		/* Skip leading zeroes */
+		/* Note: each COBOL environment has a different output format for floats;
+		   here we only check for internal consistency (support for other
+		   formats might be considered for addition if widely requested) */
+		for (src = pos; *src == '0'; ++src);
+		if (src != pos) {
+			memmove (pos, src, strlen (src) + 1);
 		}
 		return;
 	}

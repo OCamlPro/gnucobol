@@ -1,4 +1,10 @@
 
+2025-04-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (cob_move_display_to_packed), fileio.c (cob_file_set_key):
+	  make casts with loss of data explicit using masking to silence
+	  the MSVC runtime error checker
+
 2025-04-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* fodbc.c (odbc_open), flmdb.c (lmdb_open), foci.c (oci_open):
@@ -21,6 +27,11 @@
 
 	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
 	  used for info output to include panel header definitions and XCurses
+
+2024-12-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* termio.c (clean_double): skip more than a single leading
+	  zero in exponent display
 
 2024-12-20  David Declerck <david.declerck@ocamlpro.com>
 

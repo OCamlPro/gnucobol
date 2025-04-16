@@ -204,6 +204,7 @@ ALNUM_LITERAL_A	"\'"([^''\n]|("\'"[0-9][0-9, ]+"\'"))*"\'"
 ALNUM_LITERAL	{ALNUM_LITERAL_Q}|{ALNUM_LITERAL_A}
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
+RAW_SEQ		[^ \n]+
 
 AREA_A		[ ]?#
 MAYBE_AREA_A	[ ]?#?
@@ -227,6 +228,7 @@ MAYBE_AREA_A	[ ]?#?
 %x ALNUM_LITERAL_STATE
 %x CONTROL_STATEMENT_STATE
 %x DISPLAY_DIRECTIVE_STATE
+%x IMP_DIRECTIVE_STATE
 
 %%
 
@@ -358,6 +360,11 @@ MAYBE_AREA_A	[ ]?#?
 	BEGIN CALL_DIRECTIVE_STATE;
 	output_pending_newlines (ppout);
 	return CALL_DIRECTIVE;
+}
+
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"IMP"	{
+	BEGIN IMP_DIRECTIVE_STATE;
+	return IMP_DIRECTIVE;
 }
 
 ^{MAYBE_AREA_A}[ ]*">>"[ ]*\n		{
@@ -724,6 +731,7 @@ ELSE_DIRECTIVE_STATE,
 ENDIF_DIRECTIVE_STATE,
 ALNUM_LITERAL_STATE,
 CONTROL_STATEMENT_STATE,
+IMP_DIRECTIVE_STATE,
 COBOL_WORDS_DIRECTIVE_STATE>{
   \n			{
 	BEGIN INITIAL;
@@ -1000,6 +1008,14 @@ ENDIF_DIRECTIVE_STATE>{
   {WORD}		{
 	return GARBAGE;
   }
+}
+
+<IMP_DIRECTIVE_STATE>{
+  "INCLUDE"		{ return INCLUDE; }		/* GnuCOBOL 3.3 extension */
+  {RAW_SEQ}		{
+	pplval.s = cobc_plex_strdup (yytext);
+	return TOKEN;
+	}
 }
 
 <IF_DIRECTIVE_STATE>{
@@ -1470,7 +1486,11 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* add opened file to dependency list */
-	if (cb_depend_output && !cb_flag_copybook_deps) {
+	if (cb_depend_output
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
+	 && !cb_flag_copybook_deps
+#endif
+	) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
@@ -1668,6 +1688,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
 	}
 
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 	if (cb_depend_output && cb_flag_copybook_deps) {
 
 		if (lib) {
@@ -1681,6 +1702,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 			pp_text_list_add (cb_depend_list, plexbuff1,
 					  strlen (plexbuff1));
 	}
+#endif
 
 	/* TODO: open with path relative to the current file's path,
 	         if any (applies both to with and without "lib") */
@@ -1753,12 +1775,14 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		/* otherwise fall-trough to error handling */
 	} else {
 		/* do not output error if looking only for copybook deps */
-		if (!cb_flag_copybook_deps){
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
+		if (!cb_flag_copybook_deps)
+#endif
+		{
 
 			/* add opened file to dependency list */
 			if (cb_depend_output && cb_depend_keep_missing) {
 				const char *depname = cobc_plex_stradd (plexbuff1, cb_extension_list->text);
-
 				cb_depend_list = pp_text_list_add (cb_depend_list, depname, strlen (depname));
 			} else {
 

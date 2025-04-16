@@ -1,4 +1,11 @@
 
+2025-02-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: drop COB_ON_CYGWIN as it is set via atlocal for
+	  testsuite checks
+	* missing: updated to recent version from
+	  https://git.savannah.gnu.org/cgit/automake.git/tree/lib/
+
 2024-09-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ar-lib, config.guess, config.rpath, config.sub, texinfo.tex: updated
@@ -197,7 +204,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2024 Free Software Foundation, Inc.
+Copyright 2015-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

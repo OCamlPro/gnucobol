@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -118,6 +118,7 @@ enum compile_level {
 #define	CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
 #define	CB_FLAG_GETOPT_SQLSCHEMA            27
 #define	CB_FLAG_GETOPT_FILE_FORMAT          28
+#define CB_FLAG_GETOPT_GENTABLE             27
 
 
 /* Info display limits */
@@ -160,7 +161,9 @@ int			cb_depend_output_only = 0;
 int			cb_depend_add_phony = 0;
 int			cb_depend_keep_missing = 0;
 int			cb_depend_target_auto = 0;
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 int			cb_flag_copybook_deps = 0;
+#endif
 
 /* set by option -fttitle=<title> */
 char                    *cb_listing_with_title = NULL;
@@ -538,7 +541,10 @@ static const struct option long_options[] = {
 	{"MP",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_ADD_PHONY},
 	{"MG",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_KEEP_MISSING},
 	{"MD",			CB_NO_ARG, NULL, CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE},
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 	{"fcopybook-deps",	CB_NO_ARG, &cb_flag_copybook_deps, 1},
+#endif
+	{"gentable",		CB_RQ_ARG, NULL, CB_FLAG_GETOPT_GENTABLE},
 	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
@@ -2683,6 +2689,12 @@ cobc_print_info (void)
 	cobc_var_print (_("native character set"),	_("ASCII"), 0);
 #endif
 
+#ifdef HAVE_ICONV
+	cobc_var_print (_("iconv support"),	_("yes"), 0);
+#else
+	cobc_var_print (_("iconv support"),	_("no"), 0);
+#endif
+
 	cobc_var_print (_("extended screen I/O"),	_(WITH_CURSES), 0);
 
 	snprintf (buff, sizeof(buff), "%d", WITH_VARSEQ);
@@ -3445,6 +3457,25 @@ process_command_line (const int argc, char **argv)
 				cb_flag_dump = COB_DUMP_NONE;
 			}
 			break;
+
+		case CB_FLAG_GETOPT_GENTABLE: {
+			/* --gentable=<ebcdic-enc>,<ascii-enc>[+] */
+			char *code_ebcdic, *code_ascii, reversible = 0;
+			int res;
+			size_t len;
+			code_ebcdic = strtok (cob_optarg, ",");
+			code_ascii = strtok (NULL, "");
+			if ((code_ebcdic == NULL) || (code_ascii == NULL)) {
+				cobc_err_exit (COBC_INV_PAR, "--gentable");
+			}
+			len = strlen(code_ascii);
+			if (code_ascii[len - 1] == '+') {
+				reversible = 1;
+				code_ascii[len - 1] = '\0';
+			}
+			res = gentable (stdout, code_ebcdic, code_ascii, reversible);
+			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
+		}
 
 		default:
 			/* as we postpone most options simply skip everything other here */
@@ -4246,6 +4277,7 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 	if (cb_flag_copybook_deps) {
 		/* same as -M, but only COPYBOOK names */
 		cb_depend_output = 1;
@@ -4254,6 +4286,7 @@ process_command_line (const int argc, char **argv)
 		cb_depend_add_phony = 0;
 		cb_compile_level = CB_LEVEL_PREPROCESS;
 	}
+#endif
 	if (!cb_depend_output &&
 	    (cb_depend_filename || cb_depend_add_phony || cb_depend_target
 	      || cb_depend_keep_missing)) {
@@ -4706,7 +4739,7 @@ process_filename (const char *filename)
 		fn->preprocess = cobc_main_strdup (output_name);
 	} else
 	if (save_all_src || save_temps
-	 || cb_compile_level == CB_LEVEL_PREPROCESS) {
+	 || (cb_compile_level == CB_LEVEL_PREPROCESS && !cb_depend_output_only)) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
@@ -9426,9 +9459,11 @@ process_file (struct filename *fn, int status)
 		const char *sep = " \\\n";
 		FILE *file = NULL;
 
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 		if (cb_flag_copybook_deps) {
 			sep = "";
 		}
+#endif
 		if (cb_depend_file) {
 			file = cb_depend_file;
 		} else {
@@ -9445,9 +9480,14 @@ process_file (struct filename *fn, int status)
 			fprintf (file, "%s:%s", basename, sep);
 		}
 
-		for (l = cb_depend_list; l; l = l->next) {
-			fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
+		if (cb_depend_list) {
+			for (l = cb_depend_list; l; l = l->next) {
+				fprintf (file, " %s%s", l->text, l->next ? sep : "\n\n");
+			}
+		} else {
+			fprintf (file, "\n\n");
 		}
+
 		/* These lines should only be added with -MP */
 		if (cb_depend_add_phony) {
 			for (l = cb_depend_list; l; l = l->next) {

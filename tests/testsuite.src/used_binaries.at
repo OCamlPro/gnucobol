@@ -1080,7 +1080,7 @@ AT_CLEANUP
 
 
 AT_SETUP([check include header file])
-#AT_KEYWORDS([cobc copy])
+AT_KEYWORDS([cobc copy directive imp])
 
 AT_DATA([filec.h], [
 /* COB_EXT_IMPORT will be defined by libcob.h up-front */
@@ -1155,6 +1155,24 @@ AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.co
   AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
 )
 
+# additional check via directive
+AT_DATA([prog3.cob], [
+       >> IMP INCLUDE "filec.h"
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+# static build with correct function signature
+AT_CHECK([$COMPILE_MODULE -I . -fstatic-call prog3.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -L. -lfilec prog3.cob], [0], ignore, ignore)]
+)
+
 AT_CLEANUP
 
 
@@ -1213,6 +1231,7 @@ prog2.COB_OBJECT_EXT: \
  COPY3.CPY
 
 ])
+AT_CHECK([test -f prog.i], [1])
 
 AT_CHECK([$COMPILE -M -MF prog.dep prog.cob])
 AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
@@ -1224,12 +1243,14 @@ AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.de
  sub/COPY4.CPY
 
 ])
+AT_CHECK([test -f prog.i], [1])
 
-AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
-AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
-[prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
+# AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
+# AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+# [prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
 
-])
+# ])
+# AT_CHECK([test -f prog.i], [1])
 
 AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
 AT_CHECK([$SED "s/\.$COB_MODULE_EXT/.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
@@ -1419,20 +1440,27 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 # note: the stack trace, while enabled per default, is globally disabled in the testsuite
-AT_CHECK([$COBCRUN_DIRECT ./prog & cobpid=$!
+# note 2: we redirect stderr to a file and use that to check for the expected output, to avoid potential interferences in the output from the other commands
+AT_CHECK([$COBCRUN_DIRECT ./prog 2>stderr1 & cobpid=$!
 sleep 6
 kill -15 $cobpid], [0],
 [1
-],
+], [])
+
+AT_CHECK([cat stderr1], [0],
 [
 prog.cob:14: termination (signal SIGTERM)
 
 ])
-AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" & cobpid=$!
+
+# note 2: we redirect stderr to a file and use that to check for the expected output, to avoid potential interferences in the output from the other commands
+AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" 2>stderr2 & cobpid=$!
 sleep 6
 kill -15 $cobpid], [0],
 [1
-],
+], [])
+
+AT_CHECK([cat stderr2], [0],
 [
 prog.cob:14: termination (signal SIGTERM)
 
@@ -1451,3 +1479,91 @@ prog.cob:14: termination (signal SIGTERM)
 
 AT_CLEANUP
 
+
+AT_SETUP([EBCDIC/ASCII table generation])
+AT_KEYWORDS([runmisc])
+
+AT_SKIP_IF([test "$COB_HAS_ICONV" = "no"])
+
+AT_CHECK([$COBC --gentable=IBM500,ASCII], [0],
+[# GnuCOBOL IBM500 <-> ASCII translation tables
+
+# IBM500 to ASCII translation table
+
+00 01 02 03 1A 09 1A 7F 1A 1A 1A 0B 0C 0D 0E 0F
+10 11 12 13 1A 1A 08 1A 18 19 1A 1A 1C 1D 1E 1F
+1A 1A 1A 1A 1A 0A 17 1B 1A 1A 1A 1A 1A 05 06 07
+1A 1A 16 1A 1A 1A 1A 04 1A 1A 1A 1A 14 15 1A 1A
+20 1A 1A 1A 1A 1A 1A 1A 1A 1A 5B 2E 3C 28 2B 21
+26 1A 1A 1A 1A 1A 1A 1A 1A 1A 5D 24 2A 29 3B 5E
+2D 2F 1A 1A 1A 1A 1A 1A 1A 1A 1A 2C 25 5F 3E 3F
+1A 1A 1A 1A 1A 1A 1A 1A 1A 60 3A 23 40 27 3D 22
+1A 61 62 63 64 65 66 67 68 69 1A 1A 1A 1A 1A 1A
+1A 6A 6B 6C 6D 6E 6F 70 71 72 1A 1A 1A 1A 1A 1A
+1A 7E 73 74 75 76 77 78 79 7A 1A 1A 1A 1A 1A 1A
+1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 7C 1A 1A 1A 1A
+7B 41 42 43 44 45 46 47 48 49 1A 1A 1A 1A 1A 1A
+7D 4A 4B 4C 4D 4E 4F 50 51 52 1A 1A 1A 1A 1A 1A
+5C 1A 53 54 55 56 57 58 59 5A 1A 1A 1A 1A 1A 1A
+30 31 32 33 34 35 36 37 38 39 1A 1A 1A 1A 1A 1A
+
+# ASCII to IBM500 translation table
+
+00 01 02 03 37 2D 2E 2F 16 05 25 0B 0C 0D 0E 0F
+10 11 12 13 3C 3D 32 26 18 19 3F 27 1C 1D 1E 1F
+40 4F 7F 7B 5B 6C 50 7D 4D 5D 5C 4E 6B 60 4B 61
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 7A 5E 4C 7E 6E 6F
+7C C1 C2 C3 C4 C5 C6 C7 C8 C9 D1 D2 D3 D4 D5 D6
+D7 D8 D9 E2 E3 E4 E5 E6 E7 E8 E9 4A E0 5A 5F 6D
+79 81 82 83 84 85 86 87 88 89 91 92 93 94 95 96
+97 98 99 A2 A3 A4 A5 A6 A7 A8 A9 C0 BB D0 A1 07
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+
+], [note: 128 non-reversible conversions have been performed, you may want to check the generated table
+])
+
+AT_CHECK([$COBC --gentable=IBM500,ASCII+], [0],
+[# GnuCOBOL IBM500 <-> ASCII translation tables
+
+# IBM500 to ASCII translation table
+
+00 01 02 03 80 09 81 7F 82 83 84 0B 0C 0D 0E 0F
+10 11 12 13 85 86 08 87 18 19 88 89 1C 1D 1E 1F
+8A 8B 8C 8D 8E 0A 17 1B 8F 90 91 92 93 05 06 07
+94 95 16 96 97 98 99 04 9A 9B 9C 9D 14 15 9E 1A
+20 9F A0 A1 A2 A3 A4 A5 A6 A7 5B 2E 3C 28 2B 21
+26 A8 A9 AA AB AC AD AE AF B0 5D 24 2A 29 3B 5E
+2D 2F B1 B2 B3 B4 B5 B6 B7 B8 B9 2C 25 5F 3E 3F
+BA BB BC BD BE BF C0 C1 C2 60 3A 23 40 27 3D 22
+C3 61 62 63 64 65 66 67 68 69 C4 C5 C6 C7 C8 C9
+CA 6A 6B 6C 6D 6E 6F 70 71 72 CB CC CD CE CF D0
+D1 7E 73 74 75 76 77 78 79 7A D2 D3 D4 D5 D6 D7
+D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
+7B 41 42 43 44 45 46 47 48 49 E7 E8 E9 EA EB EC
+7D 4A 4B 4C 4D 4E 4F 50 51 52 ED EE EF F0 F1 F2
+5C F3 53 54 55 56 57 58 59 5A F4 F5 F6 F7 F8 F9
+30 31 32 33 34 35 36 37 38 39 FA FB FC FD FE FF
+
+# ASCII to IBM500 translation table
+
+# As this translation is symmetrical, the table is built from the previous one.
+
+], [note: 128 non-reversible conversions have been arbitrarily made reversible, you may want to check the generated table
+])
+
+AT_CHECK([$COBC --gentable=IBM500,UTF-8], [1], [],
+[error: an error occurred after converting 172 characters
+])
+
+AT_CHECK([$COBC --gentable=EBCDIC_XXX,ASCII_XXX], [1], [],
+[error: conversion from EBCDIC_XXX to ASCII_XXX is not supported by your iconv implementation
+])
+
+AT_CLEANUP

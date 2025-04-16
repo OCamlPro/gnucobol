@@ -6635,7 +6635,7 @@ cob_file_set_key (
 	fl->keys[keyn].tf_ascending = COB_ASCENDING;
 	fl->keys[keyn].field = key;
 	if (key != NULL)
-		fl->keys[keyn].offset = (unsigned int)(key->data - fl->record->data);
+		fl->keys[keyn].offset = (unsigned int)((key->data - fl->record->data) & UINT_MAX);
 	else
 		fl->keys[keyn].offset = 0;
 	cmprs = dups >> 8;
