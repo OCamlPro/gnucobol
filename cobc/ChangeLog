@@ -590,7 +590,6 @@
 	  instead check by "statement == STMT_MERGE"
 	* parser.y (_close_option): parse UNIT/REEL WITH NO REWIND,
 	  currently handled as if only UNIT/REEL would have been specified
-	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1747,6 +1746,25 @@
 	  from FUNCTION which size is commonly unknown (and use of intrinsic
 	  functions outside of PROCEDURE DIVISION is an extension already)
 	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
+
+2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, typeck.c: temporary adjust source reference when building
+	  registers to not point to an innocent source code
+	* tree.c (cb_build_picture, char_to_precedence_idx): cater for possible
+	  call without a current program
+	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree,
+	  as all but one caller directly use it that way
+	* field.c (cb_resolve_redefines): fixed reasonable compiler warning
+	* typeck.c (cb_build_generic_register): finished VALUE definition and
+	  checks, now handling numeric and alphanumeric literals (others prepared)
+	* typeck.c, parser.y, cobc.h: moved external_defined_fields_global and
+	  external_defined_fields_ws to the sole use: typeck.c
+	* typeck.c: first time support for creating registers unknown to cobc
+	  with configuration entry or -fregister, to allow this store the original
+	  pre-validated definition in the new struct external_defined_register
+	  and build the field when parsing for the program starts
+	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
 

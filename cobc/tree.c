@@ -3077,7 +3077,7 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 
 	case '.':
 	case ',':
-		if (current_sym->symbol == current_program->decimal_point) {
+		if (current_sym->symbol == (current_program ? current_program->decimal_point : '.')) {
 			return 2;
 		} else {
 			return 1;
@@ -3156,7 +3156,7 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 		return 25;
 
 	default:
-		if (current_sym->symbol == current_program->currency_symbol) {
+		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
 			      && current_sym <= last_floating_sym)) {
 				if (first_sym || second_sym) {
@@ -3564,6 +3564,9 @@ cb_build_picture (const char *str)
 	int			scale = 0;
 	int			n;
 	unsigned char		c;
+	const unsigned char	decimal_point = (current_program ? current_program->decimal_point : '.');
+	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
+
 	unsigned char		first_last_char = '\0';
 	unsigned char		second_last_char = '\0';
 
@@ -3745,7 +3748,7 @@ repeat:
 		case ',':
 		case '.':
 			category |= PIC_NUMERIC_EDITED;
-			if (c != current_program->decimal_point) {
+			if (c != decimal_point) {
 				break;
 			}
 			/* fall through */
@@ -3883,7 +3886,7 @@ repeat:
 			/* fall through */
 
 		default:
-			if (c == current_program->currency_symbol) {
+			if (c == currency_symbol) {
 				category |= PIC_NUMERIC_EDITED;
 				if (c_count == 0) {
 					digits += n - 1;
