@@ -121,7 +121,7 @@ Compiler options
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
-* Dependencies options::        Dependencies options
+* Automatic Prerequisites::     Automatic Prerequisites
 * Miscellaneous::               Miscellaneous
 
 Multiple sources
@@ -293,7 +293,7 @@ A complete list of options can be displayed by using the option @option{--help}.
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
-* Dependencies options::        Dependencies options
+* Automatic Prerequisites::     Automatic Prerequisites
 * Miscellaneous::               Miscellaneous
 @end menu
 
@@ -793,7 +793,8 @@ EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
 the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})
 which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
 See the @file{default.ttbl} file for detailed information about the format.@*
-You may use the @option{--gentable} option to build such tables.
+You may use the @option{--gentable} option to build such tables.@*
+Note that this option may affect LOW/HIGH-VALUE if using a non-native program collating sequence.
 
 @end table
 
@@ -987,8 +988,8 @@ Do not truncate binary fields according to PICTURE.
 
 @end table
 
-@node Dependencies options
-@subsection Dependencies options
+@node Automatic Prerequisites
+@subsection Automatic Prerequisites
 
 Dependencies are files containing the content included by @code{COPY}
 statements. These options are usually used by build systems to extract
@@ -1019,8 +1020,8 @@ Output missing dependencies without complaining
 @item -MD
 Output dependencies in .d files while compiling
 
-@item -fcopybook-deps
-Output dependencies as copybook names instead of file names
+@c @item -fcopybook-deps
+@c Output dependencies as copybook names instead of file names
 
 @end table
 

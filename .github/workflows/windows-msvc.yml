@@ -187,18 +187,14 @@ jobs:
           # sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
           sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
-        # Fail two tests that behave differently under MSVC Debug
+        # Fail tests that behave differently under MSVC Debug
         # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
         #   of the C runtime while the generated module is linked with the release version
-        # - PROGRAM COLLATING SEQUENCE: fails because of a data loss in a cast, due
-        #   to lack of specific handling of LOW/HIGH-VALUE for NATIONAL alphabets
-        #   (see typeck.c:cb_validate_collating)
       - name: Adjust testsuite for Debug target
         if: ${{ matrix.target == 'Debug' }}
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           sed -i '/run_extensions/{N;/System routine CBL_GC_HOSTED/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
-          sed -i '/syn_definition/{N;/PROGRAM COLLATING SEQUENCE/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
 
       - name: Run testsuite
         run: |

@@ -1,4 +1,11 @@
 
+2025-04-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_filename): ensure we don't keep the preprocessed
+	  file when using -M or -fcopybook-deps
+	* cobc.c, cobc.h, help.c, pplex.l: make -fcopybook-deps an experimental
+	  feature, activable with the EXPERIMENTAL_COPYBOOK_DEPS_OPTION flag
+
 2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
 	* gentable.c: generate EBCDIC/ASCII translation tables
@@ -214,6 +221,30 @@
 	  output only copybook names instead of file paths. -fcopybook-deps
 	  also forces -E, -foneline-deps, -MT=copybooks, disables errors on
 	  missing copybooks and removes output on stdout
+
+2024-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
+	* tree.h (cb_program): add low_value and high_value fields to hold
+	  the low and high values used by the program collating sequence
+	* tree.c (cb_build_program): initialize the low_value and
+	  high_value fields to reasonable default values
+	* typeck.c: replace hard-coded cob_refer_ascii and
+	  cob_refer_ebcdic by ebcdic_to_ascii and ascii_to_ebcdic
+	* typeck.c (cb_validate_collating): set the program's
+	  low_value and high_value fields
+	* typeck.c (validate_alphabet): use the new tables,
+	  set the alphabet's low and high values
+	* cobc.h: export the new symbols defined in typeck.c
+	* cobc.c (process_command_line): always load the collating table
+	* scanner.l (scan_ebcdic_char): remove code that loads and use a
+	  local collating table, use the table defined in typeck.c instead
+	* codegen.c: replace hard-coded 0 and 255 / 0xff contants with
+	  the low_value and high_value fields where appropriate
+	* codegen.c (output_low_value, output_high_value): move the
+	  cob_all_low and cob_all_high fields from global to local
+	* codegen.c (output_collating_tables): remove local tables and code
+	  that loads the tables, since they are now loaded from cobc.c
 
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
