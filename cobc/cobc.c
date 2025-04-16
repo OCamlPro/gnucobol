@@ -4263,6 +4263,10 @@ process_command_line (const int argc, char **argv)
 			cb_flag_alt_ebcdic ? "alternate" : "default");
 	}
 
+	if (cob_load_collation (cb_ebcdic_table, ebcdic_to_ascii, ascii_to_ebcdic) < 0) {
+		cobc_err_exit (_("invalid parameter: %s"), "-febcdic-table");
+	}
+
 	/* Exit on missing options */
 #ifdef COB_INTERNAL_XREF
 	if (cb_listing_xref && !cb_listing_outputfile) {
