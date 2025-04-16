@@ -1,4 +1,25 @@
 
+2025-04-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* typeck.c (cb_validate_collating): make casts with loss of data
+	  explicit using masking to silence the MSVC runtime error checker
+
+2025-04-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_filename): ensure we don't keep the preprocessed
+	  file when using -M or -fcopybook-deps
+	* cobc.c, cobc.h, help.c, pplex.l: make -fcopybook-deps an experimental
+	  feature, activable with the EXPERIMENTAL_COPYBOOK_DEPS_OPTION flag
+
+2025-03-26  David Declerck <david.declerck@ocamlpro.com>
+
+	* gentable.c: generate EBCDIC/ASCII translation tables
+	* cobc.c, help.c: new --gentable option
+
+2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (cobc.1): add description using help2man -n
+
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_command_line): fix leak for --copy and -include parsing
@@ -167,6 +188,16 @@
 	* typeck.c (build_expr_finish): use fallback error position token, fixing
 	  compiler aborts on broken expressions, bugs #933, #938 and #966
 	* typeck.c: minor refactoring within functions
+
+2024-04-25  Boris Eng <boris.eng@ocamlpro.com>
+
+	FR #176: "Implementation of GC directive to include .h (c/c++) files"
+	* pplex.l, ppparse.y, cobc.h, codegen.c (output_gnucobol_defines):
+	  new >>IMP INCLUDE directive to include one or multiple header files in the
+	  generated C code (same behavior as the --include but with one directive per
+	  file)
+	* scanner.l: the leading space for all internal directives is removed in the
+	  lexer. Source previously preprocessed may need to be adjusted
 
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -10967,7 +10998,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2024 Free Software Foundation, Inc.
+Copyright 2001-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

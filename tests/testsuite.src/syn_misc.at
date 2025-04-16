@@ -8336,3 +8336,72 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1])
 
 AT_CLEANUP
 
+
+AT_SETUP([IMP INCLUDE directive])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file.h"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE <file.h>
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_DATA([prog2.cob], [
+       >>IMP INCLUDE
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob:2: error: invalid IMP INCLUDE directive
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([IMP INCLUDE directive multiple files])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file1.h" file2.h <file3.h> "<file4.h>"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE --save-temps -E -o prog.i prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -C prog.cob prog2.cob], [0], [], [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.c], [1], ignore, [])
+
+AT_CLEANUP

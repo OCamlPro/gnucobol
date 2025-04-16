@@ -46,10 +46,11 @@ jobs:
           brew update
           brew install autoconf automake libtool bison \
                        help2man texinfo \
-                       berkeley-db@4 json-c
+                       berkeley-db@4 json-c libiconv
           echo "$HOMEBREW_ROOT/bison/bin" >> $GITHUB_PATH
-          echo "LDFLAGS=-L$HOMEBREW_ROOT/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$HOMEBREW_ROOT/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$HOMEBREW_ROOT/berkeley-db@4/lib -L$HOMEBREW_ROOT/libiconv/lib ${LDFLAGS}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$HOMEBREW_ROOT/berkeley-db@4/include -I$HOMEBREW_ROOT/libiconv/include ${CPPFLAGS}" >> $GITHUB_ENV
+
 
       - name: Install VISAM
         if: ${{ matrix.isam == 'visam' }}

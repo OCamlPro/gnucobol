@@ -1,4 +1,8 @@
 
+2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: adjusted to handle newer MSYS2's setting OSTYPE=cygwin
+
 2025-02-26  David Declerck <david.declerck@ocamlpro.com>
 
 	Adjustments to merge 2024-02-26:

@@ -1,4 +1,8 @@
 
+2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (cobconfig.1, cobcrun.1): add description using help2man -n
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c (cobcrun_print_version): build and package data only
