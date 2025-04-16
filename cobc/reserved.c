@@ -5186,13 +5186,16 @@ add_register (const char *name_and_definition, const char *fname, const int line
 	if (!special_register) {
 		if (!definition || *definition == 0) {
 			configuration_error (fname, line, 1,
-				_("special register %s is unknown, needs a definition"), name);
+				_("special register '%s' is unknown, needs a definition"), name);
 			return;
 		}
-#if 0	/* must be extended and tested before use... */
-		cb_build_generic_register (name, definition);
+#if 1	/* must be extended and tested before use... */
+		if (cb_build_generic_register (name, definition, NULL) != 0) {
+			configuration_error (fname, line, 1,
+				_("special register '%s' has a bad definition: %s"), name, definition);
+		}
 #else
-		configuration_error (fname, line, 1, _("special register %s is unknown"), name);
+		configuration_error (fname, line, 1, _("special register '%s' is unknown"), name);
 #endif
 		return;
 	}

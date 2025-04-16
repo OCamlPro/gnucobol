@@ -722,6 +722,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
+
 		} else if (strcmp (name, "binary-size") == 0) {
 			if (strcmp (val, "2-4-8") == 0) {
 				cb_binary_size = CB_BINARY_SIZE_2_4_8;
@@ -734,6 +735,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
+
 		} else if (strcmp (name, "binary-byteorder") == 0) {
 			if (strcmp (val, "native") == 0) {
 				cb_binary_byteorder = CB_BYTEORDER_NATIVE;
@@ -744,6 +746,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
+
 		} else if (strcmp (name, "screen-section-rules") == 0) {
 			if (strcmp (val, "acu") == 0) {
 				cb_screen_section_clauses = CB_ACU_SCREEN_RULES;
@@ -762,6 +765,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
+
 		} else if (strcmp (name, "dpc-in-data") == 0) {
 			if (strcmp (val, "none") == 0) {
 				cb_dpc_in_data = CB_DPC_IN_NONE;
@@ -776,6 +780,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
+
 		} else if (strcmp (name, "defaultbyte") == 0) {
 			if (strcmp (val, "init") == 0) {
 				/* generate default initialization per INITIALIZE rules */
@@ -800,8 +805,8 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				cb_default_byte = val[1];
 				break;
 			}
-			/* convert character to number (as quotes will commonly
-			   be removed when given on shell) */
+			/* convert character to number (convenience,
+			   as quotes will commonly be removed when given on shell) */
 			if (val[1] == 0 && (val[0] < '0' || val[0] > '9')) {
 				cb_default_byte = val[0];
 				break;
@@ -809,7 +814,8 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			/* just use decimal as character number */
 			config_table[i].min_value = 0;
 			config_table[i].max_value = 255;
-			/* fall through */
+			/* fall through to integer conversion */
+
 		} else if (strcmp (name, "format") == 0) {
 			if (cobc_deciph_source_format (val) != 0) {
 				invalid_value (fname, line, name, val, CB_SF_ALL_NAMES, 0, 0);
@@ -820,7 +826,8 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		/* for enums without a string value: set max_value and fall through to CB_INT */
 		} else if (strcmp (name, "standard-define") == 0) {
 			config_table[i].max_value = CB_STD_MAX - 1;
-			/* fall through */
+			/* fall through to integer conversion */
+
 		/* LCOV_EXCL_START */
 		} else {
 			/* note: internal error only (config.def doesn't match config.c),
@@ -829,6 +836,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			COBC_ABORT ();
 		}
 		/* LCOV_EXCL_STOP */
+		/* fall through */
 
 	case CB_INT:
 		/* check for number */

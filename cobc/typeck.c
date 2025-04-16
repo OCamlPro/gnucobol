@@ -1644,7 +1644,7 @@ static void cb_build_constant_register (cb_tree name, cb_tree value)
 {
 	cb_tree constant = cb_build_constant (name, value);
 	CB_FIELD (constant)->flag_internal_register = 1;
-	CB_FIELD_PTR (constant)->level = 77;
+	CB_FIELD (constant)->level = 77;
 }
 
 /* WHEN-COMPILED */
@@ -1759,7 +1759,6 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		cb_error ("missing definition for special register '%s'", name);
 		return 1;
 	}
-
 	def_len = strlen (external_definition);
 	if (def_len > COB_MINI_MAX) {
 		cb_error ("unexpected definition for special register '%s', "
@@ -2137,7 +2136,7 @@ cb_build_single_register (const char *name, const char *definition)
 
 	/* LCOV_EXCL_START */
 	/* This should never happen (and therefore doesn't get a translation) */
-	cb_error ("unexpected special register %s, defined as \"%s\"", name, definition);
+	cb_error ("unexpected special register '%s', defined as \"%s\"", name, definition);
 	COBC_ABORT();
 	/* LCOV_EXCL_STOP */
 }
