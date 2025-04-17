@@ -39,17 +39,42 @@ jobs:
                               gcc libgmp-dev libncurses-dev \
                               libdb-dev libxml2-dev libcjson-dev
 
+      - name: Restore VISAM cache
+        if: ${{ matrix.isam == 'visam' }}
+        id: restore-visam
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-visam
+          path: visam
+
+      - name: Build VISAM
+        if: ${{ matrix.isam == 'visam' &&
+                steps.restore-visam.outputs.cache-hit != 'true' }}
+        run: |
+          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          mkdir visam && tar -xvzf visam-2.2.tar.Z -C visam --strip-components=1
+          cd visam
+          ./configure --prefix=/opt/visam --enable-vbisamdefault \
+                      CFLAGS="-fstack-protector-strong -fstack-clash-protection -ggdb3 -fasynchronous-unwind-tables" \
+                      LDFLAGS="-fstack-protector-strong -fstack-clash-protection" \
+                      CPPFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2"
+          make --jobs=$(($(nproc)+1))
+
       - name: Install VISAM
         if: ${{ matrix.isam == 'visam' }}
         run: |
-          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
-          tar -xvzf visam-2.2.tar.Z
-          cd visam-2.2
-          ./configure --prefix=/opt/visam --enable-vbisamdefault
-          make && sudo make install
+          sudo make -C visam install
           echo "CPATH=/opt/visam/include" >> $GITHUB_ENV
           echo "LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+
+      - name: Save VISAM cache
+        if: ${{ matrix.isam == 'visam' &&
+                steps.restore-visam.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          key: cache-visam
+          path: visam
 
       - name: Bootstrap GnuCOBOL
         run: ./build_aux/bootstrap install
@@ -132,6 +157,132 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NIST85 results on ${{ matrix.isam }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
+
+
+  build_clang:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        isam:
+          - db
+          - visam
+
+    steps:
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup build environment
+        run: echo "TERM=vt100" >> $GITHUB_ENV
+
+      - name: Install packages
+        run: |
+          sudo apt -y update
+          sudo apt -y install autoconf automake make libtool flex bison \
+                              autopoint gettext help2man texinfo texlive \
+                              clang libgmp-dev libncurses-dev \
+                              libdb-dev libxml2-dev libcjson-dev
+
+      - name: Restore VISAM cache
+        if: ${{ matrix.isam == 'visam' }}
+        id: restore-visam
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-visam-clang
+          path: visam
+
+      - name: Build VISAM
+        if: ${{ matrix.isam == 'visam' &&
+                steps.restore-visam.outputs.cache-hit != 'true' }}
+        run: |
+          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          mkdir visam && tar -xvzf visam-2.2.tar.Z -C visam --strip-components=1
+          cd visam
+          ./configure --prefix=/opt/visam --enable-vbisamdefault \
+                      CC=clang \
+                      CFLAGS="-fstack-protector-strong -fstack-clash-protection -ggdb3 -fasynchronous-unwind-tables" \
+                      LDFLAGS="-fstack-protector-strong -fstack-clash-protection" \
+                      CPPFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2"
+          make --jobs=$(($(nproc)+1))
+
+      - name: Install VISAM
+        if: ${{ matrix.isam == 'visam' }}
+        run: |
+          sudo make -C visam install
+          echo "CPATH=/opt/visam/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+
+      - name: Save VISAM cache
+        if: ${{ matrix.isam == 'visam' &&
+                steps.restore-visam.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          key: cache-visam-clang
+          path: visam
+
+      - name: Bootstrap GnuCOBOL
+        run: ./build_aux/bootstrap install
+
+      - name: Configure GnuCOBOL
+        run: |
+          mkdir _build && cd _build
+          ../configure --with-${{ matrix.isam }} \
+                       --with-indexed=${{ matrix.isam }} \
+                       --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       CC=clang
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Upload config-clang-${{ matrix.isam }}.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-clang-${{ matrix.isam }}.log
+          path: _build/config.log
+
+      - name: Run testsuite
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+
+      - name: Upload testsuite-clang-${{ matrix.isam }}.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-clang-${{ matrix.isam }}.log
+          path: _build/tests/testsuite.log
+
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          enableCrossOsArchive: true
+
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$(($(nproc)+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on clang-${{ matrix.isam }}
           path: |
             _build/tests/cobol85/summary.*
             _build/tests/cobol85/**/*.log
