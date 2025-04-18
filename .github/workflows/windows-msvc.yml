@@ -30,6 +30,8 @@ defaults:
 
 jobs:
   build:
+    runs-on: windows-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -39,8 +41,6 @@ jobs:
         target:
           - Debug
           - Release
-    runs-on: windows-latest
-    timeout-minutes: 45
 
     steps:
 
@@ -52,15 +52,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup environment
+      - name: Setup build environment
         shell: pwsh
         run: |
-          echo GITHUB_WORKSPACE=${{ env.GITHUB_WORKSPACE }} >> $env:GITHUB_ENV
           If ("${{ matrix.arch }}" -eq "x86") {
             echo VCVARS=$env:VCVARS32 >> $env:GITHUB_ENV
             echo VCPKGS=$env:VCPKGS32 >> $env:GITHUB_ENV
             echo ARCHDIR=Win32 >> $env:GITHUB_ENV
-          } else {
+          } Else {
             echo VCVARS=$env:VCVARS64 >> $env:GITHUB_ENV
             echo VCPKGS=$env:VCPKGS64 >> $env:GITHUB_ENV
             echo ARCHDIR=x64 >> $env:GITHUB_ENV
@@ -77,21 +76,17 @@ jobs:
 
       - name: Bootstrap VCPKG
         run: |
-          cd /d ${{ env.VCPKG_ROOT }}
+          cd /d "%VCPKG_ROOT%"
           git pull
           cmd /C .\bootstrap-vcpkg.bat -disableMetrics
           vcpkg update
 
       - name: Integrate VCPKG
-        run: |
-          cd /d ${{ env.VCPKG_ROOT }}
-          vcpkg integrate install
+        run: vcpkg integrate install
 
       - name: Install VCPKG packages
         if: steps.restore-vcpkg.outputs.cache-hit != 'true'
-        run: |
-          cd /d ${{ env.VCPKG_ROOT }}
-          vcpkg install %VCPKGS%
+        run: vcpkg install %VCPKGS%
 
       - name: Save VCPKG cache
         uses: actions/cache/save@v4
@@ -133,7 +128,7 @@ jobs:
               -replace '(#define\s+CONFIGURED_XML)\s.+$', '$1    XML2' `
               -replace '(#define\s+CONFIGURED_JSON)\s.+$', '$1   CJSON_CJSON' `
               -replace '"\(" PACKAGE_NAME "\) "', '"(GnuCOBOL-CI ${{ matrix.target }}) "' `
-            })  -join "`r`n"  ) | Set-Content -Path 'config.h'
+            }) -join "`r`n") | Set-Content -Path 'config.h'
           & .\maketarstamp.ps1 > tarstamp.h
 
       - name: Disable iconv for debug builds
@@ -148,7 +143,7 @@ jobs:
       - name: Generate parser
         run: |
           set PATH=%GITHUB_WORKSPACE%\flexbison;%PATH%
-          cmd /C build_windows\makebisonflex.cmd <NUL
+          cmd /C .\build_windows\makebisonflex.cmd <NUL
 
       - name: Build GnuCOBOL
         run: |
@@ -157,8 +152,7 @@ jobs:
 
       - name: Install MSYS2 packages
         shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          pacman --needed --noconfirm -S $MSYSPKGS
+        run: pacman --needed --noconfirm -S $MSYSPKGS
 
       - name: Build testsuite
         shell: C:\shells\msys2bash.cmd {0}
@@ -198,42 +192,38 @@ jobs:
 
       - name: Run testsuite
         run: |
-          set CL=/I "${{ env.VCPKG_ROOT }}\installed\${{ matrix.arch }}-windows\include"
+          rem Needed so mpir.h can be found
+          set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
           call "%VCVARS%"
-          set MSYS2_PATH_TYPE=inherit
           cd tests
-          C:\shells\msys2bash.cmd -c "./testsuite || ./testsuite --recheck --verbose"
+          set MSYS2_PATH_TYPE=inherit
+          C:\shells\msys2bash.cmd -c "./testsuite --jobs=4 || ./testsuite --recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
+      - name: Upload testsuite.log
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
-        if: ${{ ! cancelled() }}  #-> always upload as build result documentation
         with:
           name: testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
           path: tests/testsuite.log
 
       - name: Package GnuCOBOL and dependencies
         run: |
-          echo exporting dependencies
-          vcpkg.exe export %VCPKGS% --raw
-          pushd C:\vcpkg\vcpkg-export-*
-          set VCPKG_EXPORT_DIR=%CD%
-          popd
-
-          echo wrap up dependencies for separate download
-          7z.exe a -r -mx=9 dependencies-${{ matrix.arch }}.7z "%VCPKG_EXPORT_DIR%"
-
-          echo wrap up GnuCBOBOL binary package
-          rem set CL=
-          cmd /C build_windows\makedist.cmd ${{ matrix.target }} <NUL
+          echo Export VCPKG dependencies
+          vcpkg export %VCPKGS% --raw --output=export
+          set VCPKG_EXPORT_DIR=%VCPKG_ROOT%\export
+          echo Wrap up VCPKG dependencies for separate download
+          7z a -r -mx=9 dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z "%VCPKG_EXPORT_DIR"
+          echo Wrap up GnuCOBOL binary package
+          cmd /C .\build_windows\makedist.cmd ${{ matrix.target }} <NUL
 
       - name: Upload dependencies
         uses: actions/upload-artifact@v4
         with:
-          name: VCPKG ${{ matrix.arch }}-${{ matrix.target }} dependencies
-          path: dependencies-${{ matrix.arch }}.7z
+          name: dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z
+          path: dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z
 
       - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:
-          name: GnuCOBOL bin ${{ matrix.arch }}-${{ matrix.target }}
+          name: GnuCOBOL-${{ matrix.arch }}-${{ matrix.target }}.7z
           path: build_windows/GnuCOBOL_*.7z
