@@ -8816,6 +8816,9 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump.dump
 ])
 
+# TODO: the first item of each WORKING-STORAGE section
+# in the dump below should be:
+# 77        RETURN-CODE                     +000000000
 AT_DATA([reference], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
@@ -9401,6 +9404,9 @@ dump written to dumpall.txt
 
 AT_CAPTURE_FILE([dumpall.txt])
 
+# TODO: the first item the WORKING-STORAGE section
+# in the dump below should be:
+# 77        RETURN-CODE                     +000000000
 AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 

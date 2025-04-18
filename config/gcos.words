@@ -509,8 +509,8 @@ reserved:	ZEROS=ZERO
 
 not-register:	DIALECT-ALL
 register:	"ADDRESS\ OF"
-register:	"DEBUG-ITEM"
-register:	"TALLY"
+register:	DEBUG-ITEM
+register:	TALLY
 # list of (non-standard) system names:
 # TODO: deactivate all, only activate what is supported
 #not-system-name:	DIALECT-ALL-SWITCHES

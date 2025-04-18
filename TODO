@@ -248,6 +248,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 7.3 Other issues
 
+- Make the RETURN-CODE internal register (and possibly others ?) available in the dump as in 3.x (see run_misc.at tests "stack and dump feature" and "dump feature with NULL address")
+
 - Investigate the need to define READ_WRITE_NEEDS_FLUSH under MacOS ("LINE SEQUENTIAL COMMIT / ROLLBACK" test fails if not defined)
 
 - Check if should use strcpy or memcpy with computed max-length for file_open_name in fileio.c:cob_open

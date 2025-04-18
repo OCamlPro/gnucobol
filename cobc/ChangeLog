@@ -1,4 +1,9 @@
 
+2025-04-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (output_funcall_typed): add an integer cast
+	  to work around warnings about extra parentheses
+
 2025-04-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* typeck.c (cb_validate_collating): make casts with loss of data
@@ -590,7 +595,6 @@
 	  instead check by "statement == STMT_MERGE"
 	* parser.y (_close_option): parse UNIT/REEL WITH NO REWIND,
 	  currently handled as if only UNIT/REEL would have been specified
-	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1748,7 +1752,39 @@
 	  functions outside of PROCEDURE DIVISION is an extension already)
 	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
 
-2022-07-14  Matthew Remacle <mattata@users.sf.net>
+2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, typeck.c: temporary adjust source reference when building
+	  registers to not point to an innocent source code
+	* tree.c (cb_build_picture, char_to_precedence_idx): cater for possible
+	  call without a current program
+	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree,
+	  as all but one caller directly use it that way
+	* field.c (cb_resolve_redefines): fixed reasonable compiler warning
+	* typeck.c (cb_build_generic_register): finished VALUE definition and
+	  checks, now handling numeric and alphanumeric literals (others prepared)
+	* typeck.c, parser.y, cobc.h: moved external_defined_fields_global and
+	  external_defined_fields_ws to the sole use: typeck.c
+	* typeck.c: first time support for creating registers unknown to cobc
+	  with configuration entry or -fregister, to allow this store the original
+	  pre-validated definition in the new struct external_defined_register
+	  and build the field when parsing for the program starts
+	* help.c (cobc_print_usage_dialect): extended -fregister help
+
+2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.c (cb_config_entry): fixed defaultbyte convenience option
+	* field.c (cb_build_full_field_reference): minimal refactoring
+	* reserved.c (add_register): enabled generic register generation
+	* tree.c (cb_build_intrinsic): minimal verification for FUNCTION SUBSTITUTE
+	* typeck.c: add field level 77 to any generated register (previously was 0),
+	  those now show up in the symbol and xref list and dump output if they are
+	  used (including GDB debugging extensions)
+	* typeck.c (cb_build_generic_register): now handles VALUE definition and
+	  checks for "able to parse complete definition"
+	* cobc.c: skip unreferenced special register in listing/xref
+
+2022-07-14  Matthew Remacle <mattata@users.sf.net
 
 	* tree.c (literal_for_diagnostic): fixed #844 stack-based buffer overflow
 
@@ -2628,13 +2664,17 @@
 
 	* tree.h [COB_EXTERNAL_XREF]: fixed define of no-op cobc_xref_call
 
+2021-02-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c, tree.c: fixed bug #707 SIGSEGV in dialect related messages
+
 2021-02-18  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: Changes to replace VB-CISAM with V-ISAM
 
 2021-02-17  Ron Norman <rjn@inglenet.com>
 
-	* sqlxfdgen.c: Always set size of rid_tablename to 8 
+	* sqlxfdgen.c: Always set size of rid_tablename to 8
 
 2021-02-16  Ron Norman <rjn@inglenet.com>
 
@@ -2657,7 +2697,7 @@
 
 2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
 
-	* cobc.h: remove unused cb_listing_files
+	* cobc.h: remove cb_listing_files...
 	* codeoptim.def, codeoptim.c, typeck.c (cb_build_identifier), cobc.c:
 	  new entries COB_CHK_LINKAGE, COB_CHK_BASED, COB_CHK_SUBSCRIPT,
 	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
@@ -2679,6 +2719,9 @@
 	* codegen.c (output_stmt): emit cob_nop in C labels to fix
 	  position in the generated assembler which was previously
 	  in the COBOL statement above the label
+	* codeoptim.def, codeoptim.c, typeck.c, cobc.c: optimized check for
+	  linkage and based items (local check prevents function call),
+	  similar optimized no-op
 
 2021-02-01  Ron Norman <rjn@inglenet.com>
 
@@ -2705,6 +2748,12 @@
 				KEEP PREFIX - indicates to keep the common prefix
 					of fields in the record. The default is to remove it.
 
+2021-01-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c: fixed context attribute of acu-extension POS
+	* parser.y, reserved.c, tree.h, cobc.h: added acu-extension
+	  MOVE WITH CONVERSION as PENDING
+
 2021-01-22  Ron Norman <rjn@inglenet.com>
 
 	* sqlxfdgen.c (get_col_name): Gives Warning when FILLER used
@@ -2715,6 +2764,10 @@
 	* sqlxfdgen.c (get_col_name): prevent internal "spaced" variable
 	  names like "FILLER 15" to generate invalid sql names
 	* cobc.c (cobc_print_version): welcome 2021
+
+2021-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_build_full_field_reference): fix bug #
 
 2020-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2729,6 +2782,7 @@
 2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_initialize_compound): special handling for OCCURS 1
+	* codegen.c (output_report_sum_control_field): adjusted for literal source
 
 2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
 

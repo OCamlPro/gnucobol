@@ -6041,6 +6041,7 @@ print_fields (struct cb_field *top, int *found)
 	const char	*name_or_filler;
 
 	for (; top; top = top->sister) {
+		/* hiding internal fields, when not referenced */
 		if (top->level == 0
 		 || (top->flag_internal_register && !top->count)) {
 			continue;
@@ -6382,11 +6383,9 @@ xref_fields (struct cb_field *top)
 	int		found = 0;
 
 	for (; top; top = top->sister) {
-		/* no entry for internal generated fields
-		   other than used special indexes */
+		/* hiding internal fields, when not referenced */
 		if (top->level == 0
-		 || (top->flag_internal_register && !top->count)
-		 || (top->index_type != CB_NORMAL_INDEX && !top->count)) {
+		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
 #if 0 /* FIXME: at least in the context of RW flag_filler is not set correct in

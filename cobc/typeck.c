@@ -1644,7 +1644,7 @@ static void cb_build_constant_register (cb_tree name, cb_tree value)
 {
 	cb_tree constant = cb_build_constant (name, value);
 	CB_FIELD (constant)->flag_internal_register = 1;
-	CB_FIELD_PTR (constant)->level = 77;
+	CB_FIELD (constant)->level = 77;
 }
 
 /* WHEN-COMPILED */
@@ -1759,7 +1759,6 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		cb_error ("missing definition for special register '%s'", name);
 		return 1;
 	}
-
 	def_len = strlen (external_definition);
 	if (def_len > COB_MINI_MAX) {
 		cb_error ("unexpected definition for special register '%s', "
@@ -1795,7 +1794,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		if (word_len == 7 && memcmp (word, "DISPLAY", 7) == 0) {
 			usage = CB_USAGE_DISPLAY;
 		} else {
-			/* FIXME: parse actual USAGE from temp */
+			/* FIXME: parse actual USAGE from word */
 			usage = CB_USAGE_BINARY;
 		}
 		field->usage = usage;
@@ -1829,7 +1828,6 @@ cb_build_generic_register (const char *name, const char *external_definition,
 			ret = 1;
 		}
 	}
-
 	/* CHECKME: Is PIC calculated from VALUE later on if empty? */
 
 	/* handle ANY LENGTH / ANY NUMERIC (automatic: read-only) */
@@ -1872,13 +1870,14 @@ cb_build_generic_register (const char *name, const char *external_definition,
 					"not parsed: VALUE %s", name, p);
 				ret = 1;
 				memset (p, ' ', strlen (p));
-		} else if (p2 == p) {
+			} else if (p2 == p) {
 				/* plain alphanumeric literal */
 				if (current_program) {
 					lit = cb_build_alphanumeric_literal (p + 1, sep - 1 - p);
 				}
 				memset (p, ' ', sep - p);
 			} else {
+
 				/* on the first run we don't add anything to the actual parse tree */
 #if 0			/* TODO: move literal building out of scanner.l and call here */
 				if (current_program) {
@@ -1891,7 +1890,6 @@ cb_build_generic_register (const char *name, const char *external_definition,
 				ret = 1;
 #endif
 				memset (p, ' ', sep - p);
-
 			}
 		} else {
 			word_len = extract_next_word_from_buffer (p, word);
@@ -2137,7 +2135,7 @@ cb_build_single_register (const char *name, const char *definition)
 
 	/* LCOV_EXCL_START */
 	/* This should never happen (and therefore doesn't get a translation) */
-	cb_error ("unexpected special register %s, defined as \"%s\"", name, definition);
+	cb_error ("unexpected special register '%s', defined as \"%s\"", name, definition);
 	COBC_ABORT();
 	/* LCOV_EXCL_STOP */
 }
@@ -2146,8 +2144,8 @@ cb_build_single_register (const char *name, const char *definition)
 void
 cb_build_registers (void)
 {
-	const char *name, *definition = NULL;
 
+	const char *name, *definition = NULL;
 	name = cb_register_list_get_first (&definition);
 	while (name) {
 		cb_build_single_register (name, definition);
