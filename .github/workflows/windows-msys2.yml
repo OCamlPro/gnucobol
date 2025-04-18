@@ -132,7 +132,7 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir _build && cd _build
-          ../configure $CFGOPT CFLAGS="-Wno-parentheses-equality $CFLAGS"
+          ../configure $CFGOPT
 
       - name: Build GnuCOBOL
         shell: msys2 {0}
