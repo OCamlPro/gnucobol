@@ -4960,7 +4960,7 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 				}
 			}
 		}
-		output (" (");
+		output (" (int)(");
 		output_integer (p->argv[0]);
 		switch ((int)(long)(p->argv[1])) {
 		case '=':	output(" == "); break;
