@@ -608,7 +608,7 @@ cb_build_full_field_reference (struct cb_field* field)
 	cb_tree ret = NULL;
 	cb_tree ref = NULL;
 
-	while (field) {
+	for (; field; field = field->parent) {
 		if (!field->flag_filler) {
 			cb_tree rchain = cb_build_reference (field->name);
 			if (ref) {
@@ -618,7 +618,6 @@ cb_build_full_field_reference (struct cb_field* field)
 			}
 			ref = rchain;
 		}
-		field = field->parent;
 	}
 
 	return ret;
@@ -3804,8 +3803,8 @@ error_if_invalid_type_in_renames_range (const struct cb_field * const item)
 	while (f) {
 		category = cb_tree_category (CB_TREE (f));
 		if (category == CB_CATEGORY_OBJECT_REFERENCE
-		    || category == CB_CATEGORY_DATA_POINTER
-		    || category == CB_CATEGORY_PROGRAM_POINTER) {
+		 || category == CB_CATEGORY_DATA_POINTER
+		 || category == CB_CATEGORY_PROGRAM_POINTER) {
 			cb_error_x (CB_TREE (item),
 				    _("RENAMES may not contain '%s' as it is a pointer or object reference"),
 				    cb_name (CB_TREE (f)));

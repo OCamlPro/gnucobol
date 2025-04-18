@@ -175,7 +175,7 @@ AT_DATA([prog.cob], [
               DISPLAY "%101 is not x""4100"" = Anull (ASCII) but "
                       ITEM-ALPHA
            END-IF
-           
+
 
            STOP RUN.
 ])
@@ -1253,7 +1253,7 @@ AT_DATA([prog.cob], [
            05   FILLER  PIC X(3).
        01  grp-3.
            05   FILLER  PIC X(3).
-           05   FLD-3   OCCURS 3 TIMES 
+           05   FLD-3   OCCURS 3 TIMES
                         VALUE ALL "ABC00XX".
                 15   FLD-3-2 PIC XXX.
                 15   FLD-3-3 PIC 99.
@@ -2754,15 +2754,15 @@ AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      callee.
        PROCEDURE        DIVISION.
-           ADD 1 TO TALLY END-ADD
-           CALL "nested" END-CALL
+           ADD  1 TO TALLY.
+           CALL "nested".
            STOP RUN.
 
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      nested.
        PROCEDURE        DIVISION.
-           DISPLAY tally END-DISPLAY
-           STOP RUN.
+           DISPLAY tally WITH NO ADVANCING.
+           GOBACK.
        END PROGRAM      nested.
 ])
 
@@ -2774,9 +2774,7 @@ prog.cob:12: error: 'tally' is not defined
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[00001
-])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [00001])
 
 AT_CLEANUP
 
@@ -5937,14 +5935,14 @@ AT_CLEANUP
 
 
 AT_SETUP([EXHIBIT statement])
-AT_KEYWORDS([extensions osvs])
+AT_KEYWORDS([extensions osvs SORt-RETURN TALLY])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       77 VAR-1         PIC X(8).
+       77 VAR-1         PIC X(8) VALUE SPACES.
        77 VAR-2         PIC 999.
        PROCEDURE        DIVISION.
            EXHIBIT CHANGED VAR-1 'X'
@@ -5952,16 +5950,16 @@ AT_DATA([prog.cob], [
            STRING "123" DELIMITED BY SIZE INTO VAR-1
            EXHIBIT NAMED VAR-1 VAR-2 'Y'
            EXHIBIT VAR-2
-           EXHIBIT RETURN-CODE TALLY 
+           EXHIBIT SORT-RETURN TALLY
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -Wno-strict-typing -Wno-pending prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mvs -Wno-strict-typing -Wno-pending prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [         X
 VAR-1 = 123XXXXX VAR-2 = 000 Y
 VAR-2 = 000
-RETURN-CODE = +000000000 TALLY = 00000
+SORT-RETURN = +000000000 TALLY = 00000
 ])
 
 AT_CLEANUP
