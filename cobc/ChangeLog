@@ -175,6 +175,10 @@
 
 	* cobc.c (process_compile): fix MSVC build command
 
+2024-06-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* tree.c (cb_build_picture): fixed currency digit counting logic
+
 2024-05-16  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (process_compile)[_MSC_VER]: adjustment for compile
