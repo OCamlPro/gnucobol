@@ -1123,7 +1123,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			continue;
 		}
 		for (n = p->times_repeated; n > 0; n--) {
-			unsigned int src_num = COB_D2I (*src);
+			unsigned int src_num;
 #ifndef NDEBUG
 			if (dst >= dst_end) {
 				cob_runtime_error ("optimized_move_display_to_edited: overflow in destination field");
@@ -1134,6 +1134,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 
 			case '9':
 				suppress_zero = 0;
+				src_num = COB_D2I (*src);
 				*dst = COB_I2D (src_num);
 				if (src_num != 0) {
 					is_zero = 0;
@@ -1143,6 +1144,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case 'Z':
+				src_num = COB_D2I (*src);
 				*dst = COB_I2D (src_num);
 				pad = ' ';
 				if (src_num != 0) {
@@ -1157,6 +1159,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 				break;
 
 			case '*':
+				src_num = COB_D2I (*src);
 				*dst = COB_I2D (src_num);
 				have_check_protect = 1;
 				if (src_num != 0) {
@@ -1183,23 +1186,26 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 					sign_position   = dst;
 					dst++;
 					break;
-				} else if (src_num == 0 && suppress_zero && !have_decimal_point) {
-					*prev_float_char = ' ';
-					prev_float_char = dst;
-					sign_position   = dst;
-					*dst = c;
-					dst++;
-					src++;
-					break;
 				} else {
-					*dst = COB_I2D (src_num);
-					if (src_num != 0) {
-						is_zero = 0;
-						suppress_zero = 0;
+					src_num = COB_D2I (*src);
+					if (src_num == 0 && suppress_zero && !have_decimal_point) {
+						*prev_float_char = ' ';
+						prev_float_char = dst;
+						sign_position   = dst;
+						*dst = c;
+						dst++;
+						src++;
+						break;
+					} else {
+						*dst = COB_I2D (src_num);
+						if (src_num != 0) {
+							is_zero = 0;
+							suppress_zero = 0;
+						}
+						dst++;
+						src++;
+						break;
 					}
-					dst++;
-					src++;
-					break;
 				}
 
 			case '.':
@@ -1297,14 +1303,16 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 						prev_float_char = dst;
 						dst++;
 						break;
-				} else if ((src_num == 0) && (suppress_zero) && (!have_decimal_point)) {
+				} else {
+					src_num = COB_D2I (*src);
+					if ((src_num == 0) && (suppress_zero) && (!have_decimal_point)) {
 						*prev_float_char = ' ';
 						prev_float_char = dst;
 						*dst = c;
 						dst++;
 						src++;
 						break;
-				} else {
+					} else {
 						*dst = COB_I2D (src_num);
 						if (src_num != 0) {
 							is_zero = 0;
@@ -1313,6 +1321,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 						dst++;
 						src++;
 						break;
+					}
 				}
 			}
 		}
