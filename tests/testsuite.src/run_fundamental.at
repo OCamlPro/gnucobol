@@ -1980,13 +1980,13 @@ AT_DATA([prog.cob], [
 
            MOVE 10                     TO identifier-1
            MOVE identifier-1           TO EX-13
-           IF EX-13 EQUAL "    $//00//10  "
+           IF EX-13 EQUAL "      $00//10  "
                MOVE "PASS"             TO MSG-1
-      D        DISPLAY "    $//00//10   IS WHAT I EXPECTED"
+      D        DISPLAY "      $00//10   IS WHAT I EXPECTED"
            ELSE
                ADD 1                   TO WS-COUNT
                MOVE "FAIL"             TO MSG-1
-               DISPLAY "EX-13.02 EXPECTING ==>'    $//00//10  '  "
+               DISPLAY "EX-13.02 EXPECTING ==>'      $00//10  '  "
                "WHAT I GOT WAS ==>'"
                EX-13 "'<=="
       D        DISPLAY "------------------" MSG-1
@@ -2506,6 +2506,121 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 >      -100<
 >    -1,000<
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to item with +, -, B, 0, / and ,])
+AT_KEYWORDS([fundamental edited editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 W-P4    PIC S9          VALUE +4.
+       01 W-M4    PIC S9          VALUE -4.
+       01 W-M     PIC -B-         VALUE SPACES.
+       01 W-P     PIC +B+         VALUE SPACES.
+
+       01 W-P123  PIC S9(3)       VALUE +123.
+       01 W-M123  PIC S9(3)       VALUE -123.
+       01 W-MM    PIC ---B--9     VALUE SPACES.
+       01 W-PP    PIC +++B++9     VALUE SPACES.
+
+       01 W-X     PIC -//00BB,,-  VALUE SPACES.
+
+       PROCEDURE DIVISION.
+           MOVE W-P4 TO W-M.
+           DISPLAY W-M.
+           MOVE W-M4 TO W-M.
+           DISPLAY W-M.
+           MOVE W-P4 TO W-P.
+           DISPLAY W-P.
+           MOVE W-M4 TO W-P.
+           DISPLAY W-P.
+
+           MOVE W-P123 TO W-MM.
+           DISPLAY W-MM.
+           MOVE W-M123 TO W-MM.
+           DISPLAY W-MM.
+           MOVE W-P123 TO W-PP.
+           DISPLAY W-PP.
+           MOVE W-M123 TO W-PP.
+           DISPLAY W-PP.
+
+           MOVE W-P4 TO W-X.
+           DISPLAY W-X.
+           MOVE W-M4 TO W-X.
+           DISPLAY W-X.
+
+           MOVE W-P123 TO W-X.
+           DISPLAY W-X.
+           MOVE W-M123 TO W-X.
+           DISPLAY W-X.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[  4
+ -4
+ +4
+ -4
+    123
+   -123
+   +123
+   -123
+         4
+        -4
+         3
+        -3
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to shorter edited item (truncation)])
+AT_KEYWORDS([fundamental edited editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 W-SRC1  PIC 999V99  VALUE 123.45.
+       01 W-SRC2  PIC 9999V9  VALUE 1234.5.
+       01 W-SRC3  PIC 99999V  VALUE 12345.
+       01 W-DST1  PIC ZZZV.
+       01 W-DST2  PIC ZZZZZV.
+
+       PROCEDURE DIVISION.
+           MOVE W-SRC1 TO W-DST1.
+           DISPLAY W-DST1.
+           MOVE W-SRC2 TO W-DST1.
+           DISPLAY W-DST1.
+           MOVE W-SRC3 TO W-DST1.
+           DISPLAY W-DST1.
+           MOVE W-SRC1 TO W-DST2.
+           DISPLAY W-DST2.
+           MOVE W-SRC2 TO W-DST2.
+           DISPLAY W-DST2.
+           MOVE W-SRC3 TO W-DST2.
+           DISPLAY W-DST2 WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[123
+234
+345
+  123
+ 1234
+12345])
 
 AT_CLEANUP
 
