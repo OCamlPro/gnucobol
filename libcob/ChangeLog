@@ -212,6 +212,12 @@
 	* (cob_resolve_internal): runtime warning if loading module from
 	  existing path or resolving requested entry point does not work
 
+2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed small bug
+	  in logic for floating sign symbol to the right of decimal_point
+	  or assumed decimal_point
+
 2024-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c: In preparation for Multiple Window support
