@@ -233,6 +233,11 @@
 	* coblocal.h (COB_TLS): add a new attribute for thread local static
 	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
 
+2024-07-13  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (indirect_move) fixed sanitizer warnings by moving
+	  one line of code
+
 2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_binar): C89 fix
