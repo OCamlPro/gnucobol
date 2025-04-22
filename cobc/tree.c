@@ -3898,7 +3898,11 @@ repeat:
 					digits += n;
 				}
 				if (v_count) {		/* Handle:  $$$.$$ */
-					scale += n;
+					if (c_count == 0) {
+						scale += n - 1;
+					} else {
+						scale += n;
+					}
 				}
 				c_count += n;
 				break;
