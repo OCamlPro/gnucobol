@@ -1063,7 +1063,7 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 
 	c = 0x00;
 
-	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
+	for (p = COB_FIELD_PIC (f2); p && p->symbol; ++p) {
 		c = p->symbol;
 		if ((c == '9')
 		 || (c == 'Z')
