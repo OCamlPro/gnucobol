@@ -44,7 +44,7 @@ jobs:
           # this is a "prepare" only step for this workflow only, so build
           # without any optional packages as one-time build speeding up this part
           ../configure --without-db --without-curses --without-xml2 --without-json \
-                       --without-iconv --disable-dependency-tracking
+                       --without-iconv --disable-dependency-tracking CFLAGS=--std=c17
 
       - name: Build GnuCOBOL Source Distribution
         shell: msys2 {0}
@@ -133,7 +133,7 @@ jobs:
           tar -xvf gnucobol*.tar.*  --strip-components=1
           mkdir _build
           cd _build
-          ../configure $CFGOPT
+          PATH="$PATH:/c/Program Files/Git/usr/bin" ../configure $CFGOPT CFLAGS=--std=c17
 
       - name: Build GnuCOBOL
         shell: msys2 {0}

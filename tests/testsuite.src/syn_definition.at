@@ -2514,7 +2514,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 ])
 
-AT_CHECK([diff prog-32.lst symbols.lst], [0], [], [])
+AT_CHECK([$DIFF prog-32.lst symbols.lst], [0], [], [])
 
 ] , [
 
@@ -2571,7 +2571,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 ])
 
-AT_CHECK([diff prog-64.lst symbols.lst], [0], [], [])
+AT_CHECK([$DIFF prog-64.lst symbols.lst], [0], [], [])
 
 ])
 

@@ -854,16 +854,16 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_DATA([reference],
 [hi
 ])
-AT_CHECK([diff reference whatever], [0], [], [])
+AT_CHECK([$DIFF reference whatever], [0], [], [])
 
 AT_CHECK([$COMPILE -fassign-clause=dynamic -fno-implicit-assign-dynamic-var prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([diff reference whatever], [0], [], [])
+AT_CHECK([$DIFF reference whatever], [0], [], [])
 
 AT_CHECK([$COMPILE -fassign-clause=dynamic prog.cob], [0], [], [])
 AT_CAPTURE_FILE([out.txt])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([diff reference out.txt], [0], [], [])
+AT_CHECK([$DIFF reference out.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -4323,7 +4323,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
-AT_CHECK([diff prog.cob prog3.cob], [0], [], [])
+AT_CHECK([$DIFF prog.cob prog3.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -4779,7 +4779,7 @@ Write 1: STATUS IS 00 LENGTH IS 009
 Write 2: STATUS IS 00 LENGTH IS 064
 ], [])
 
-AT_CHECK([diff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 # same check with dialect option (4.x feature)
 # AT_CHECK([$COMPILE -std=gc31 prog.cob], [0], [], [])
@@ -4798,7 +4798,7 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 # Write 2: STATUS IS 00 LENGTH IS 064
 # ], [])
 #
-# AT_CHECK([diff reference TEST-FILE], [0], [], [])
+# AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -4914,7 +4914,7 @@ AT_DATA([reference],
 Record 2................................
 ])
 
-AT_CHECK([diff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 # same check with dialect option (4.x feature)
 # AT_CHECK([$COMPILE -std=gc31 prog.cob], [0], [], [])
@@ -4934,7 +4934,7 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 # Write 2: STATUS IS 00 LENGTH IS 064
 # ], [])
 #
-# AT_CHECK([diff reference TEST-FILE], [0], [], [])
+# AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -5221,7 +5221,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
-AT_CHECK([diff mini-report reference-report], [0], [], [])
+AT_CHECK([$DIFF mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -5511,7 +5511,7 @@ AT_XFAIL_IF([true])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
-AT_CHECK([diff mini-report reference-report], [0], [], [])
+AT_CHECK([$DIFF mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -8882,7 +8882,7 @@ Key: PRE00000 is PRESTIGE OFFICE FURNITURE Disk=8470    .
 Hit End of File after 11
 ])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 # verify that all of this works with wrapping to EXTFH calls
 # and that those don't trash the FH--FCD allocated memory
@@ -8890,7 +8890,7 @@ AT_CHECK([diff reference prog.out], [0], [], [])
 AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 
 AT_CLEANUP
@@ -9484,7 +9484,7 @@ AT_DATA([reference],
  10
 ])
 
-AT_CHECK([diff reference TEST-OUT], [0], [], [])
+AT_CHECK([$DIFF reference TEST-OUT], [0], [], [])
 
 AT_CLEANUP
 
@@ -9677,7 +9677,7 @@ THE LAMB WAS GRAND AND A GRANDMA
 THE OLD EWE CHORTLED
 ])
 
-AT_CHECK([diff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -11444,7 +11444,7 @@ AT_DATA([reference],
  10
 ])
 
-AT_CHECK([diff reference TEST-OUT], [0], [], [])
+AT_CHECK([$DIFF reference TEST-OUT], [0], [], [])
 
 AT_CLEANUP
 
@@ -12495,12 +12495,12 @@ Ph=8787458374 Key: OLD00000 is OLD TYME PIZZA MFG. CO.  .
 Hit End of File
 ])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 AT_CLEANUP
 
@@ -12757,7 +12757,7 @@ AT_DATA([prog1.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 1>prog1.out], [0], [], [])
-AT_CHECK([diff reference_ascii prog1.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii prog1.out], [0], [], [])
 
 # Testing ASCII file collating sequence using flag
 AT_DATA([prog2.cob], [
@@ -12767,7 +12767,7 @@ AT_DATA([prog2.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2 1>prog2.out], [0], [], [])
-AT_CHECK([diff reference_ascii prog2.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii prog2.out], [0], [], [])
 
 
 # Testing ASCII file collating sequence + EBCDIC key collating sequence using clauses
@@ -12778,7 +12778,7 @@ AT_DATA([prog3.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3 1>prog3.out], [0], [], [])
-AT_CHECK([diff reference_ascii_ebcdic prog3.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii_ebcdic prog3.out], [0], [], [])
 
 # Testing ASCII file collating sequence using flag + EBCDIC key collating sequence using clause
 AT_DATA([prog4.cob], [
@@ -12788,7 +12788,7 @@ AT_DATA([prog4.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog4.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog4 1>prog4.out], [0], [], [])
-AT_CHECK([diff reference_ascii_ebcdic prog4.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii_ebcdic prog4.out], [0], [], [])
 
 # Testing EBCDIC file collating sequence using clause
 AT_DATA([prog5.cob], [
@@ -12798,7 +12798,7 @@ AT_DATA([prog5.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5 1>prog5.out], [0], [], [])
-AT_CHECK([diff reference_ebcdic prog5.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic prog5.out], [0], [], [])
 
 # Testing EBCDIC file collating sequence using flag
 AT_DATA([prog6.cob], [
@@ -12808,7 +12808,7 @@ AT_DATA([prog6.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog6 1>prog6.out], [0], [], [])
-AT_CHECK([diff reference_ebcdic prog6.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic prog6.out], [0], [], [])
 
 # Testing EBCDIC file collating sequence + ASCII key collating sequence using clauses
 AT_DATA([prog7.cob], [
@@ -12818,7 +12818,7 @@ AT_DATA([prog7.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog7.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog7 1>prog7.out], [0], [], [])
-AT_CHECK([diff reference_ebcdic_ascii prog7.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic_ascii prog7.out], [0], [], [])
 
 # Testing EBCDIC file collating sequence using flag + ASCII key collating sequence using clause
 AT_DATA([prog8.cob], [
@@ -12828,7 +12828,7 @@ AT_DATA([prog8.cob], [
 ])
 AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog8 1>prog8.out], [0], [], [])
-AT_CHECK([diff reference_ebcdic_ascii prog8.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic_ascii prog8.out], [0], [], [])
 
 AT_CLEANUP
 
@@ -14705,12 +14705,12 @@ DELETE FILES
 AT_CHECK([$COMPILE prog1.cob])
 AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 > prog1.txt])
-AT_CHECK([diff expected.txt prog1.txt])
+AT_CHECK([$DIFF expected.txt prog1.txt])
 
 AT_CHECK([$COMPILE prog2.cob])
 AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2 > prog2.txt])
-AT_CHECK([diff expected.txt prog2.txt])
+AT_CHECK([$DIFF expected.txt prog2.txt])
 
 AT_CLEANUP
 
