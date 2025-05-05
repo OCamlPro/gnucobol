@@ -1163,9 +1163,9 @@ AT_DATA([prog3.cob], [
 ])
 
 # static build with correct function signature
-AT_CHECK([$COMPILE_MODULE -I . -fstatic-call prog3.cob], [0], [], [], [
+AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -fno-gen-c-decl-static-call prog3.cob], [0], [], [], [
   # Previous test "failed" --> retry with import library
-  AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -L. -lfilec prog3.cob], [0], ignore, ignore)]
+  AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -L. -lfilec -fno-gen-c-decl-static-call prog3.cob], [0], ignore, ignore)]
 )
 
 AT_CLEANUP
