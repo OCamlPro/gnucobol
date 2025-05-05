@@ -823,7 +823,7 @@ cob_exit_common_modules (void)
 		nxt = ptr->next;
 		if (mod && mod->module_cancel.funcint) {
 			mod->module_active = 0;
-			cancel_func = mod->module_cancel.funcint;
+			cancel_func = (int (*)(const int))mod->module_cancel.funcint;
 			(void)cancel_func (-20);	/* Clear just decimals */
 		}
 		cob_free (ptr);
@@ -11029,7 +11029,7 @@ cob_dump_module (char *reason)
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (mod->module_cancel.funcint) {
 				int (*cancel_func)(const int);
-				cancel_func = mod->module_cancel.funcint;
+				cancel_func = (int (*)(const int))mod->module_cancel.funcint;
 
 				fprintf (fp, _("Dump Program-Id %s from %s compiled %s"),
 					mod->module_name, mod->module_source, mod->module_formatted_date);

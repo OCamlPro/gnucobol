@@ -183,7 +183,7 @@ static cob_field_attr	const_binull_attr =
 
 #undef	COB_SYSTEM_GEN
 #define	COB_SYSTEM_GEN(cob_name, pmin, pmax, c_name)	\
-	{ cob_name, 0, {(void *(*)(void *))c_name} },
+	{ cob_name, 0, {(void *(*)(void))c_name} },
 
 static struct system_table	system_tab[] = {
 #include "system.def"
@@ -458,7 +458,7 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 #pragma warning(suppress: 4113) /* funcint is a generic function prototype */
 	cancel_func = p->module->module_cancel.funcint;
 #else
-	cancel_func = p->module->module_cancel.funcint;
+	cancel_func = (int (*)(const int,  void *, void *, void *, void *))p->module->module_cancel.funcint;
 #endif
 	(void)cancel_func (-1, NULL, NULL, NULL, NULL);
 	p->module = NULL;
@@ -1290,7 +1290,7 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 #pragma warning(suppress: 4113) /* funcint is a generic function prototype */
 				cancel_func = s->cob_cstr_cancel.funcint;
 #else
-				cancel_func = s->cob_cstr_cancel.funcint;
+				cancel_func = (int (*)(const int,  void *, void *, void *, void *))s->cob_cstr_cancel.funcint;
 #endif
 				(void)cancel_func (-1, NULL, NULL, NULL,
 						   NULL);
@@ -1307,6 +1307,83 @@ cob_call (const char *name, const int argc, void **argv)
 	void			*pargv[MAX_CALL_FIELD_PARAMS] = { 0 };
 	cob_call_union		unifunc;
 	int			i;
+	int (*funcint) (
+			 void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 16
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 36
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 56
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 76
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 96
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 192
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+			);
 
 	/* LCOV_EXCL_START */
 	if (unlikely(!cobglobptr)) {
@@ -1337,7 +1414,84 @@ cob_call (const char *name, const int argc, void **argv)
 #else
 #error	"Invalid MAX_CALL_FIELD_PARAMS value"
 #endif
-	i =  unifunc.funcint (pargv[0], pargv[1], pargv[2], pargv[3]
+	funcint = (int (*)(
+			 void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 16
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 36
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 56
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 76
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 96
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 192
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+			))unifunc.funcint;
+	i =  funcint (pargv[0], pargv[1], pargv[2], pargv[3]
 				,pargv[4], pargv[5], pargv[6], pargv[7]
 				,pargv[8], pargv[9], pargv[10], pargv[11]
 				,pargv[12], pargv[13], pargv[14], pargv[15]
@@ -1381,6 +1535,7 @@ cob_call (const char *name, const int argc, void **argv)
 				,pargv[144], pargv[145], pargv[146], pargv[147]
 				,pargv[148], pargv[149], pargv[130], pargv[131]
 				,pargv[152], pargv[153], pargv[154], pargv[155]
+				,pargv[156], pargv[157], pargv[158], pargv[159]
 				,pargv[160], pargv[161], pargv[162], pargv[163]
 				,pargv[164], pargv[165], pargv[166], pargv[167]
 				,pargv[168], pargv[169], pargv[170], pargv[171]
