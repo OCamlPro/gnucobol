@@ -1805,6 +1805,7 @@ static void
 output_gnucobol_defines (const char *formatted_date)
 {
 	int	i;
+	struct cb_text_list *l;
 
 	if (!strrchr (cb_source_file, '\\')
 	 && !strrchr (cb_source_file, '"')) {
@@ -1836,17 +1837,23 @@ output_gnucobol_defines (const char *formatted_date)
 		current_compile_tm.tm_sec;
 	output_line ("#define  COB_MODULE_TIME\t\t%d", i);
 
-	{
-		struct cb_text_list *l = cb_include_file_list ;
-		for (;l;l=l->next){
-			if (l->text[0] == '<'){
-				output_line ("#include %s", l->text);
-			} else {
-				output_line ("#include \"%s\"", l->text);
-			}
+	for (l = cb_include_file_list; l; l = l->next) {
+		if (l->text[0] == '<') {
+			output_line ("#include %s", l->text);
+		} else {
+			output_line ("#include \"%s\"", l->text);
 		}
 	}
 
+	for (l = cb_include_file_list_directive; l; l = l->next) {
+		if (l->text[0] == '<') {
+			output_line ("#include %s", l->text);
+		} else {
+			output_line ("#include \"%s\"", l->text);
+		}
+	}
+
+	cb_include_file_list_directive = NULL;
 }
 
 /* CALL cache */
@@ -2519,11 +2526,11 @@ static void
 output_low_value (void)
 {
 	if (gen_figurative & CB_NEED_LOW) {
-		output ("static cob_field cob_all_low\t= ");
-		output ("{1, ");
-		output ("(cob_u8_ptr)\"\\0\", ");
-		output ("&cob_all_attr};");
-		output_newline ();
+		output_local ("static cob_field cob_all_low\t= ");
+		output_local ("{1, ");
+		output_local ("(cob_u8_ptr)\"\\x%02x\", ", current_prog->low_value);
+		output_local ("&cob_all_attr};");
+		output_local ("\n");
 	}
 }
 
@@ -2531,11 +2538,11 @@ static void
 output_high_value (void)
 {
 	if (gen_figurative & CB_NEED_HIGH) {
-		output ("static cob_field cob_all_high\t= ");
-		output ("{1, ");
-		output ("(cob_u8_ptr)\"\\xff\", ");
-		output ("&cob_all_attr};");
-		output_newline ();
+		output_local ("static cob_field cob_all_high\t= ");
+		output_local ("{1, ");
+		output_local ("(cob_u8_ptr)\"\\x%02x\", ", current_prog->high_value);
+		output_local ("&cob_all_attr};");
+		output_local ("\n");
 	}
 }
 
@@ -2619,8 +2626,6 @@ output_literals_figuratives_and_constants (void)
 
 	if (gen_figurative) {
 		output_newline ();
-		output_low_value ();
-		output_high_value ();
 		output_quote ();
 		output_space ();
 		output_zero ();
@@ -2658,18 +2663,6 @@ output_colseq_table_field (const char * field_name, const char * table_name)
 static void
 output_collating_tables (void)
 {
-	cob_u8_t ebcdic_to_ascii[256];
-	cob_u8_t ascii_to_ebcdic[256];
-
-	/* Load the collating tables if needed */
-	if (gen_ascii_ebcdic || gen_ebcdic_ascii) {
-		if (cob_load_collation (cb_ebcdic_table,
-					gen_ebcdic_ascii ? ebcdic_to_ascii : NULL,
-					gen_ascii_ebcdic ? ascii_to_ebcdic : NULL) < 0) {
-			cobc_err_exit (_("invalid parameter: %s"), "-febcdic-table");
-		}
-	}
-
 	if (gen_native) {
 		output_storage ("\n/* NATIVE table */\n");
 		output_colseq_table ("cob_native", NULL);
@@ -3489,8 +3482,6 @@ get_prev_ml_tree_entry (const struct cb_ml_generate_tree * const s)
 		} else {
 			return s->prev_sibling;
 		}
-	} else if (s->attrs) {
-		return get_last_attr (s);
 	} else if (s->parent) {
 		return s->parent;
 	} else {
@@ -4281,9 +4272,9 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 		} else if (p->argv[1] == cb_zero) {
 			output (") - '0')");
 		} else if (p->argv[1] == cb_low) {
-			output ("))");
+			output (") - 0x%02x)", current_prog->low_value);
 		} else if (p->argv[1] == cb_high) {
-			output (") - 255)");
+			output (") - 0x%02x)", current_prog->high_value);
 		} else if (CB_LITERAL_P (p->argv[1])) {
 			output_char (") - ", CB_LITERAL (p->argv[1])->data[0], ")");
 		} else {
@@ -5068,10 +5059,10 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 			output_figurative (x, f, ' ', init_occurs);
 			return;
 		} else if (value == cb_low) {
-			output_figurative (x, f, 0, init_occurs);
+			output_figurative (x, f, current_prog->low_value, init_occurs);
 			return;
 		} else if (value == cb_high) {
-			output_figurative (x, f, 255, init_occurs);
+			output_figurative (x, f, current_prog->high_value, init_occurs);
 			return;
 		} else if (value == cb_quote) {
 			if (cb_flag_apostrophe) {
@@ -8346,14 +8337,14 @@ output_ml_suppress_checks (struct cb_ml_suppress_checks * const suppress_checks)
 	struct cb_ml_generate_tree	*tree;
 
 	/*
-	  To resolve dependency problems, start from last child of last element.
+	  To resolve dependency problems, start from last child/attribute of last element.
 	*/
-	if (orig_tree->children) {
+	tree = orig_tree;
+	if (tree->children) {
 		tree = get_last_child (orig_tree);
-	} else if (orig_tree->attrs) {
+	}
+	if (tree->attrs) {
 		tree = get_last_attr (orig_tree);
-	} else {
-		tree = orig_tree;
 	}
 
 	for (;;) {
@@ -10814,9 +10805,9 @@ output_class_name_definition (struct cb_class_name *p)
 			} else if (x == cb_null) {
 				vals[0] = 1;
 			} else if (x == cb_low) {
-				vals[0] = 1;
+				vals[current_prog->low_value] = 1;
 			} else if (x == cb_high) {
-				vals[255] = 1;
+				vals[current_prog->high_value] = 1;
 			} else {
 				size = CB_LITERAL (x)->size;
 				data = CB_LITERAL (x)->data;
@@ -14161,6 +14152,9 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 			output_local ("\n");
 		}
 	}
+
+	output_low_value ();
+	output_high_value ();
 }
 
 void

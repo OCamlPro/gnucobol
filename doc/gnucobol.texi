@@ -66,7 +66,7 @@ together with a designated C compiler and linker.
 This manual corresponds to GnuCOBOL @value{VERSION}.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2002-2012, 2014-2024 Free Software Foundation, Inc.@*
+Copyright @copyright{} 2002-2012, 2014-2025 Free Software Foundation, Inc.@*
 Written by Keisuke Nishida, Roger While, Brian Tiffin, Simon Sobisch.
 
 @insertcopying
@@ -121,7 +121,7 @@ Compiler options
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
-* Dependencies options::        Dependencies options
+* Automatic Prerequisites::     Automatic Prerequisites
 * Miscellaneous::               Miscellaneous
 
 Multiple sources
@@ -293,7 +293,7 @@ A complete list of options can be displayed by using the option @option{--help}.
 * Configuration options::       Configuration options
 * Listing options::             Listing options
 * Debug switches::              Debug switches
-* Dependencies options::        Dependencies options
+* Automatic Prerequisites::     Automatic Prerequisites
 * Miscellaneous::               Miscellaneous
 @end menu
 
@@ -386,6 +386,8 @@ Add a @code{#include} @file{file.h} at the beginning of the generated
 C source file. The file name is put into quotes, unless it starts by
 @code{<}. Quoted files should be absolute paths, since C files are compiled
 in temporary directories.
+The directive @code{>>IMP INCLUDE "FILE.h"} or @code{>>IMP INCLUDE <FILE.h>}
+can be used as an alternative to this compiler option.
 The option also implies @option{-fno-gen-c-decl-static-call}.
 This option can be used to check function prototypes when
 static calls are used. When this option is used, the source file is
@@ -790,7 +792,9 @@ User-defined dialect configuration.
 EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
 the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})
 which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
-See the @file{default.ttbl} file for detailed information about the format.
+See the @file{default.ttbl} file for detailed information about the format.@*
+You may use the @option{--gentable} option to build such tables.@*
+Note that this option may affect LOW/HIGH-VALUE if using a non-native program collating sequence.
 
 @end table
 
@@ -984,8 +988,8 @@ Do not truncate binary fields according to PICTURE.
 
 @end table
 
-@node Dependencies options
-@subsection Dependencies options
+@node Automatic Prerequisites
+@subsection Automatic Prerequisites
 
 Dependencies are files containing the content included by @code{COPY}
 statements. These options are usually used by build systems to extract
@@ -1016,8 +1020,8 @@ Output missing dependencies without complaining
 @item -MD
 Output dependencies in .d files while compiling
 
-@item -fcopybook-deps
-Output dependencies as copybook names instead of file names
+@c @item -fcopybook-deps
+@c Output dependencies as copybook names instead of file names
 
 @end table
 
@@ -1047,6 +1051,14 @@ Save intermediate files (by default, in current directory).
 
 @item -fimplicit-init
 Do automatic initialization of the COBOL runtime system.
+
+@item --gentable=@var{ebcdic-enc},@var{ascii-enc}[+]
+Build an EBCDIC/ASCII translation table between @var{ebcdic-enc} and
+@var{ascii-enc}, and exit.
+The translation might not be reversible: characters with no equivalent in the
+other encoding are mapped to the substitution character, thus leaving unused
+characters in both encodings. Append + to make the translation reversible,
+by arbitrarily mapping together these unused characters.
 
 @end table
 

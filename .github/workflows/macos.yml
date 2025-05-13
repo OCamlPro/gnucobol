@@ -27,11 +27,11 @@ jobs:
 
       - name: Install packages
         run: |
-          brew install automake libtool help2man texinfo bison berkeley-db@4 json-c
+          brew install automake libtool help2man texinfo bison berkeley-db@4 json-c libiconv
           opt="/opt/homebrew/opt"
           echo "$opt/pkg-config/bin" >> $GITHUB_PATH
-          echo "LDFLAGS=-L$opt/berkeley-db@4/lib ${LDFLAGS}" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$opt/berkeley-db@4/include ${CPPFLAGS}" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$opt/berkeley-db@4/lib -L$opt/libiconv/lib ${LDFLAGS}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$opt/berkeley-db@4/include -I$opt/libiconv/include ${CPPFLAGS}" >> $GITHUB_ENV
 
       - name: Set git user
         run: |
@@ -41,6 +41,7 @@ jobs:
       - name: bootstrap
         run: |
           ./build_aux/bootstrap install
+          gettextize -f
 
       - name: Build environment setup
         run: |

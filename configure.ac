@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -23,7 +23,7 @@ dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
 # note: old environments only have autoconf 2.69 or even (old msys) 2.67
-#       just do a "make dist" on a modern system and get the taball back
+#       just do a "make dist" on a modern system and get the tarball back
 #       to the ancient one... (which would likely also not have the necessary
 #       automake package either)
 AC_PREREQ([2.70])
@@ -36,7 +36,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
 
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
@@ -112,6 +112,9 @@ AC_ARG_WITH([bugurl],
 #  options to configure: CC="gcc -m64" --libdir=/usr/local/lib/sparcv9
 # or:
 #  options to configure: CFLAGS=-m64 LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
+#
+# Note for IBM (Mainfraime) on USS
+#  options to configure: CC="xlc -q64" CFLAGS="-qlanglvl=extc1x" OBJECT_MODE=64 AR=ar NM=nm
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
@@ -461,17 +464,31 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	# error macro not defined
 	#endif]])],
 	[COB_USES_CLANG_ONLY=yes
+	 CFLAGS="$CFLAGS -Wno-unused-command-line-argument"
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
 
-AC_MSG_CHECKING([for __xlc__])
+AS_IF([test "x$COB_USES_GCC$COB_USES_ICC_ONLY$COB_USES_CLANG_ONLY" = xnonono], [
+
+AC_MSG_CHECKING([for __IBMC__])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-	#ifndef __xlc__
+	#ifndef __IBMC__
 	# error macro not defined
 	#endif]])],
 	[COB_USES_XLC_ONLY=yes
 	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[
+AC_MSG_CHECKING([for __xlc__])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	 	#ifndef __xlc__
+	 	# error macro not defined
+	 	#endif]])],
+	 	[COB_USES_XLC_ONLY=yes
+	 	 AC_MSG_RESULT([yes])],
+	 	[AC_MSG_RESULT([no])])
+	])
+
+ AS_IF([test "x$COB_USES_XLC_ONLY" = xno], [
 
 AC_MSG_CHECKING([for __WATCOMC__])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
@@ -480,7 +497,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	#endif]])],
 	[COB_USES_WATCOMC_ONLY=yes
 	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for __SUNPRO_C])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
@@ -490,6 +507,13 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	[COB_USES_SUNPRO_C_ONLY=yes
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
+  ])
+
+ ])
+
+])
+
+
 
 curr_cflags="$CFLAGS"
 AC_CACHE_CHECK([how to error on warnings during configure checks], gc_cv_err_warn, [
@@ -673,9 +697,9 @@ AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$gc_cv_keyword_inline])
 
 # Checks for library functions.
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp \
-	strchr strrchr strdup strstr strtol gettimeofday localeconv \
-	getexecname canonicalize_file_name popen raise readlink realpath \
+AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp
+	strchr strrchr strdup strstr strtol gettimeofday localeconv
+	getexecname canonicalize_file_name popen raise readlink realpath
 	setenv strcoll flockfile])
 
 # more things to save...
@@ -960,6 +984,47 @@ AC_CHECK_LIB([$with_math], [__gmp_get_memory_functions],
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
 
+
+# Checks for internationalization stuff
+
+dnl check for iconv is also done for gettext and
+dnl the AC_REQUIRE used in the macro below lead to the check
+dnl be done outside of the "with_iconv" test, so we only can
+dnl revert its effects after the check if disabled.
+
+dnl Note that the AC_REQUIREd macros also output messages for
+dnl "how to run the C preprocessor" and "for egrep -e"
+
+AC_ARG_WITH([iconv],
+  [AS_HELP_STRING([--with-iconv],
+    [(GnuCOBOL) Use iconv for character set conversion (default: check)])],
+  [],
+  [with_iconv=check])
+
+if test "$with_iconv" = no; then
+  am_cv_func_iconv_summary=disabled
+  am_cv_func_iconv=no
+fi
+
+AS_IF([test "$with_iconv" = yes -o "$with_iconv" = check], [
+  AM_ICONV
+  if test "$with_iconv" = yes && test "$am_cv_func_iconv" != yes; then
+    AC_MSG_ERROR([iconv library requested but not found])
+  fi
+  if test "$am_cv_func_iconv" = yes -a "x$LIBICONV" != x; then
+    PROGRAMS_LIBS="$PROGRAMS_LIBS $LTLIBICONV"
+    LIBCOB_LIBS="$LIBCOB_LIBS $LTLIBICONV"
+    COBC_CPPFLAGS="$COBC_CPPFLAGS $INCICONV"
+    LIBCOB_CPPFLAGS="$LIBCOB_CPPFLAGS $INCICONV"
+  fi
+])
+
+if test "$with_iconv" = no; then
+  am_cv_func_iconv_summary=disabled
+fi
+
+AM_LANGINFO_CODESET
+
 # Checks for gettext.
 
 case $host_os in
@@ -1011,6 +1076,7 @@ if test "$with_iconv" = yes -o "$with_iconv" = check; then
     PROGRAMS_LIBS="$PROGRAMS_LIBS $LIBICONV"
     LIBCOB_LIBS="$LIBCOB_LIBS $LIBICONV"
   fi
+  with_iconv="$am_cv_func_iconv"
 fi
 
 
@@ -1424,14 +1490,14 @@ if test "x$CURSES_LIBS" = x; then
         ac_cv_lib_ncursesw_initscr=yes
       ])
     ])
-    if test "x$PANEL_LIBS" = x; then
-      PKG_CHECK_MODULES([PANEL], [panelw], [ac_cv_lib_panelw_new_panel=yes], [
-        AC_CHECK_LIB([panelw], [new_panel], [PANEL_LIBS=-lpanelw])
-      ])
-    fi
   fi
 fi
 if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
+  if test "x$PANEL_LIBS" = x; then
+    PKG_CHECK_MODULES([PANEL], [panelw], [ac_cv_lib_panelw_new_panel=yes], [
+      AC_CHECK_LIB([panelw], [new_panel], [PANEL_LIBS=-lpanelw])
+    ])
+  fi
   CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
   dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
   AC_CHECK_HEADERS([ncursesw/panel.h ncursesw/ncurses.h ncursesw/curses.h panel.h ncurses.h],
@@ -1466,15 +1532,15 @@ if test "x$CURSES_LIBS" = x; then
         ac_cv_lib_ncurses_initscr=yes
       ])
     ])
-    if test "x$PANEL_LIBS" = x; then
-      PKG_CHECK_MODULES([PANEL], [panel], [ac_cv_lib_panel_new_panel=yes], [
-        AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
-      ])
-    fi
   fi
 fi
 
 if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
+  if test "x$PANEL_LIBS" = x; then
+    PKG_CHECK_MODULES([PANEL], [panel], [ac_cv_lib_panel_new_panel=yes], [
+      AC_CHECK_LIB([panel], [new_panel], [PANEL_LIBS=-lpanel])
+    ])
+  fi
   CPPFLAGS="$NCURSES_CFLAGS $CPPFLAGS"
   AC_CHECK_HEADERS([ncurses/panel.h ncurses/ncurses.h ncurses/curses.h panel.h ncurses.h],
     [USE_CURSES="ncurses"
@@ -2564,6 +2630,12 @@ if test "x$lt_cv_dlopen_self" != xyes; then
 	AC_DEFINE([COB_NO_SELFOPEN], [1])
 fi
 
+if test "$with_iconv" = yes; then
+	COB_HAS_ICONV=yes
+else
+	COB_HAS_ICONV=no
+fi
+
 if test "$with_cisam" = yes; then
 	COB_HAS_ISAM=cisam
 elif test "$with_disam" = yes; then
@@ -2685,6 +2757,7 @@ AC_SUBST([COB_BIGENDIAN])
 dnl unused: AC_SUBST([COB_FIX_LIB])
 AC_SUBST([COB_FIX_LIBTOOL])
 
+AC_SUBST([COB_HAS_ICONV])
 AC_SUBST([COB_HAS_ISAM])
 AC_SUBST([COB_HAS_CURSES])
 AC_SUBST([COB_HAS_XML2])
