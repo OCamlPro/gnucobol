@@ -1,4 +1,8 @@
 
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: testing working diff with the option to override by DIFF
+
 2025-03-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix --without-iconv; use iconv includes, if necessary;

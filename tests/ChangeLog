@@ -1,4 +1,10 @@
 
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal.in, atlocal_win, cobol85/Makefile.am,
+	  cobol85/Makefile.module.in, testsuite.src/*.at:
+	  use the new DIFF variable to invoke the diff command
+
 2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: adjusted to handle newer MSYS2's setting OSTYPE=cygwin
