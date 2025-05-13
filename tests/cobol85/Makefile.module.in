@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85/##MODULE##
 #
-# Copyright (C) 2002-2012, 2015-2020, 2022-2023 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2020, 2022-2023, 2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -23,6 +23,7 @@ TESTS = ##TESTS##
 TESTS_LOCAL = ##TESTS_LOCAL##
 
 RM = rm -rf
+DIFF = ##DIFF##
 DIFF_FLAGS = ##DIFF_FLAGS##
 
 PERL = ##PERL##
@@ -61,7 +62,7 @@ test-local:
 diff: report.txt
 	@echo
 	@echo "Comparing test results for module directory ##MODULE##"
-	@diff $(DIFF_FLAGS) ##COB85DIR##/##MODULE##.txt report.txt || true
+	@"$(DIFF)" $(DIFF_FLAGS) ##COB85DIR##/##MODULE##.txt report.txt || true
 
 test-O:
 	@. ../../atconfig && . ../../atlocal && $(MAKE) $@-local
@@ -93,7 +94,7 @@ $(TESTS):
 $(TESTS_LOCAL): libs-local
 	@echo "Running single test `echo $@ | sed -e 's|-.*||g'`"
 	@$(PERL) ##COB85DIR##/report.pl `echo $@ | sed -e 's|-.*||g'` 2>$@.log
-	@grep `echo $@ | sed -e 's|-.*||g'` ##COB85DIR##/##MODULE##.txt | diff - $@.log
+	@grep `echo $@ | sed -e 's|-.*||g'` ##COB85DIR##/##MODULE##.txt | "$(DIFF)" - $@.log
 	@rm -rf $@.log
 
 clean: clean-log clean-db clean-debug clean-bin

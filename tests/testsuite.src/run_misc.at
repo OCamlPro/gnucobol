@@ -10208,7 +10208,7 @@ Line:    572            CLOSE
 Line:    333            STOP RUN
 ])
 
-AT_CHECK([diff reference trace.txt], [0], [], [])
+AT_CHECK([$DIFF reference trace.txt], [0], [], [])
 
 AT_CHECK([$COMPILE -ftrace prog.cob -o prog_s], [0], [], [])
 
@@ -10348,7 +10348,7 @@ Paragraph: LISTFILE                        -    387
 
 AT_CAPTURE_FILE([trace_append.txt])
 
-AT_CHECK([diff reference_append trace_append.txt], [0], [], [])
+AT_CHECK([$DIFF reference_append trace_append.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -10897,7 +10897,7 @@ AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump.dump > tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 # recheck with COBC_GEN_DUMP_COMMENTS, which may not change the output
 AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
@@ -10917,7 +10917,7 @@ dump written to tstdump.dump
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump.dump > tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 
 # using both
@@ -10948,7 +10948,7 @@ dump written to tstdump.dump
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump.dump > tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 
 
@@ -10984,7 +10984,7 @@ X is 000005441
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 stderr.txt > stderr.sed], [0], [], [])
 
-AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
+AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
 
@@ -10998,7 +10998,7 @@ X is 000005441
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 stderr.txt > stderr.sed], [0], [], [])
 
-AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
+AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
@@ -11080,7 +11080,7 @@ AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS
                    s/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
 tstdump_fdls.dump > tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
 
@@ -11102,7 +11102,7 @@ tstdump_allfdls.dump > tstdump.sed], [0], [], [])
 AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
 reference > reference_all], [0], [], [])
 
-AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 
 # CHECKME @ Ron: The result is likely wrong, please verify later
 #AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
@@ -11165,7 +11165,7 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 #tstdump_ls_sticky.dump > tstdump.sed], [0], [], [])
 #
-#AT_CHECK([diff reference tstdump.sed], [0], [], [])
+#AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 AT_CLEANUP
 
@@ -11441,7 +11441,7 @@ AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
   AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
 )
 
-AT_CHECK([diff reference dumpall.sed], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 
@@ -13402,12 +13402,12 @@ This is sent to PRINTER PRINT
 This is also sent to PRINTER PRINT
 ])
 
-AT_CHECK([diff reference prt.log], [0], [], [],
+AT_CHECK([$DIFF reference prt.log], [0], [], [],
 
 # Previous test "failed" --> check if EOL of PIPE is the issue
 
 AT_CHECK([$SED -e 's/PIPE.\r/PIPE./g' prt.log > prt2.log], [0], [], [])
-AT_CHECK([diff reference prt2.log], [0], [], [])
+AT_CHECK([$DIFF reference prt2.log], [0], [], [])
 )
 
 AT_CAPTURE_FILE([punch.out])
@@ -13417,7 +13417,7 @@ AT_DATA([reference],
 This is also sent to SYSPUNCH PRINT
 ])
 
-AT_CHECK([diff reference punch.out], [0], [], [])
+AT_CHECK([$DIFF reference punch.out], [0], [], [])
 
 AT_CLEANUP
 

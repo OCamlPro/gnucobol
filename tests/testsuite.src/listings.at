@@ -77,7 +77,7 @@ AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=2 prog.cob], [0], [],
 ])
 
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
-AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+AT_CHECK([$DIFF expected.lst prog.lis], [0], [], [])
 
 AT_CLEANUP
 
@@ -1709,9 +1709,9 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
 AT_CHECK([$COMPILE $LISTING_FLAGS -t prog.lst -ftsymbols prog.cob], [0], [], [])
-AT_CHECK([diff prog20.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF prog20.lst prog.lst], [0], [], [])
 AT_CHECK([$COMPILE_LISTING -t prog2.lst -ftsymbols prog.cob], [0], [], [])
-AT_CHECK([diff prog20.lst prog2.lst], [0], [], [])
+AT_CHECK([$DIFF prog20.lst prog2.lst], [0], [], [])
 
 AT_CHECK([rm -f prog.lst prog2.lst], [0], [], [])
 
@@ -1776,9 +1776,9 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
 AT_CHECK([$COMPILE $LISTING_FLAGS -t prog.lst -ftsymbols progb.cob], [0], [], [])
-AT_CHECK([diff prog20b.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF prog20b.lst prog.lst], [0], [], [])
 AT_CHECK([$COMPILE_LISTING -t prog2.lst -ftsymbols progb.cob], [0], [], [])
-AT_CHECK([diff prog20b.lst prog2.lst], [0], [], [])
+AT_CHECK([$DIFF prog20b.lst prog2.lst], [0], [], [])
 
 AT_CHECK([rm -f prog.lst prog2.lst], [0], [], [])
 
@@ -1850,9 +1850,9 @@ progc.cob:13: error: syntax error, unexpected ., expecting DIVISION
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
 AT_CHECK([$COMPILE $LISTING_FLAGS -t prog.lst -ftsymbols progc.cob], [1], [], [ignore])
-AT_CHECK([diff prog20c.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF prog20c.lst prog.lst], [0], [], [])
 AT_CHECK([$COMPILE_LISTING -t prog2.lst -ftsymbols progc.cob], [1], [], [ignore])
-AT_CHECK([diff prog20c.lst prog2.lst], [0], [], [])
+AT_CHECK([$DIFF prog20c.lst prog2.lst], [0], [], [])
 
 AT_CLEANUP
 
@@ -2027,10 +2027,10 @@ prog-2.cob:16: warning: unreachable statement 'ACCEPT'
 # This tests whether codegen affects the listing.
 
 AT_CHECK([$COMPILE $LISTING_FLAGS -Wunreachable -t prog.lst -Xref -ftsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
-AT_CHECK([diff expected.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF expected.lst prog.lst], [0], [], [])
 
 AT_CHECK([$COMPILE_LISTING -Wunreachable -t prog.lst -Xref -ftsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
-AT_CHECK([diff expected.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF expected.lst prog.lst], [0], [], [])
 
 AT_CLEANUP
 
@@ -2307,12 +2307,12 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 ])
 
-AT_CHECK([diff prog15-1.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF prog15-1.lst prog.lst], [0], [], [])
 
 # verify that the symbol listing is identical if full codegen was done
 AT_CHECK([$COMPILE $LISTING_FLAGS -t prog2.lst -tlines=0 -fno-tsource -fno-tmessages -ftsymbols prog3.cob], [0], [], [])
 
-AT_CHECK([diff prog15-1.lst prog2.lst], [0], [], [])
+AT_CHECK([$DIFF prog15-1.lst prog2.lst], [0], [], [])
 
 AT_CLEANUP
 
@@ -2478,7 +2478,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 0 errors in compilation group
 ])
 
-AT_CHECK([diff prog17-32.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF prog17-32.lst prog.lst], [0], [], [])
 
 ,
 
@@ -2587,7 +2587,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 0 errors in compilation group
 ])
 
-AT_CHECK([diff prog17-64.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF prog17-64.lst prog.lst], [0], [], [])
 
 )
 
@@ -3666,7 +3666,7 @@ prog.cob:81: warning: uncommon parentheses
 50 errors in compilation group
 ])
 
-AT_CHECK([diff expected.lst prog.lst], [0])
+AT_CHECK([$DIFF expected.lst prog.lst], [0])
 
 AT_CLEANUP
 
