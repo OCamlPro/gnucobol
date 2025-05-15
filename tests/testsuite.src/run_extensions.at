@@ -1527,7 +1527,7 @@ AT_DATA([reference],
 040310Howdy 1 2 3<>  01***Abcdefghij. 34545656702***Abcdefghij. 45656767803***Abcdefghij. 567678789<>
 ])
 
-AT_CHECK([diff reference SEQODO], [0], [], [])
+AT_CHECK([$DIFF reference SEQODO], [0], [], [])
 
 AT_CLEANUP
 

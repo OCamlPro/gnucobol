@@ -652,6 +652,17 @@ AX_PROG_BISON
 dnl AC_PATH_PROG([BISON],[bison])
 dnl AX_PROG_BISON_VERSION([3.0.2],[],[ ... ])
 
+AC_CACHE_CHECK([for diff], [ac_cv_path_DIFF],
+  [AC_PATH_PROGS_FEATURE_CHECK([DIFF], [diff],
+    [[echo "x" > fx1 ; echo "x" > fx2 ; echo "y" > fy
+      "$ac_path_DIFF" fx1 fx2 >/dev/null ; res0=$?
+      "$ac_path_DIFF" fx1 fy >/dev/null ; res1=$?
+      rm -f fx1 fx2 fy
+      test $res0 = 0 -a $res1 = 1 \
+      && ac_cv_path_DIFF="$ac_path_DIFF" ac_path_DIFF_found=:]],
+    [AC_MSG_ERROR([could not find a working diff])])])
+AC_SUBST([DIFF], [$ac_cv_path_DIFF])
+
 AC_ARG_VAR(DIFF_FLAGS, arguments passed to diff)
 AC_MSG_CHECKING([for diff arguments])
 case "$DIFF_FLAGS" in
@@ -659,7 +670,7 @@ case "$DIFF_FLAGS" in
    AC_MSG_RESULT([specified as $DIFF_FLAGS])
   ;;
   *)
-   diff $DIFF_FLAGS --strip-trailing-cr --version 1>/dev/null  2>&1
+   "$DIFF" $DIFF_FLAGS --strip-trailing-cr --version 1>/dev/null  2>&1
    if test $? -eq 0; then
       if test -z "$DIFF_FLAGS"; then
          DIFF_FLAGS="--strip-trailing-cr"
