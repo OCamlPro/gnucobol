@@ -1,5 +1,5 @@
 /*
-	 Copyright (C) 2002-2012, 2014-2024 Free Software Foundation, Inc.
+	 Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
 	 Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
 	 This file is part of GnuCOBOL.
@@ -4393,19 +4393,39 @@ dobuild:
 		}
 		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
 				vmode | ISINOUT | ISEXCLLOCK);
-#if 0 /* activate on later merge of locking enhancements */
-		f->flag_file_lock = 1;
-#endif
-		if (ISERRNO == EEXIST
+
+		if (isfd < 0) {
+			if (ISERRNO == EFLOCKED) {
+				return COB_STATUS_61_FILE_SHARING;
+			}
+			if ((ISERRNO == EEXIST || ISERRNO == EBADARG)
 #if 1 /* CHECKME: guard added by Simon, needed ? */
-		 && omode == ISOUTPUT
+			 && omode == ISOUTPUT
 #endif
-		 && isfd < 0) {
-			/* Erase file and redo the 'isbuild' */
-			iserase ((void *)filename);
-			isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
+			) {
+				/* Erase file and redo the 'isbuild' */
+#if 0 /* TODO: activate on later merge of delete refactoring */
+				isam_file_delete (a, f, filename);
+#else
+				iserase ((void *)filename);
+#endif
+#ifdef	ISVARLEN
+				if (f->record_min != f->record_max) {
+					ISRECLEN = f->record_min;
+				}
+#endif
+				ISERRNO = 0;
+				isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
 					vmode | ISINOUT | ISEXCLLOCK);
-#if 0 /* activate on later merge of locking enhancements */
+#if 0 /* TODO: activate on later merge of locking enhancements */
+				f->flag_file_lock = 1;
+#endif
+			}
+			/* TODO: more checks in case isfd < 0,
+			   allowing better io status than 30,
+			   possibly setting extended error to ISERNO */
+#if 0 /* TODO: activate on later merge of locking enhancements */
+		} else {
 			f->flag_file_lock = 1;
 #endif
 		}
