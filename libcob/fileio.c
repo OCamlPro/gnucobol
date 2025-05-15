@@ -1619,7 +1619,7 @@ looks_absolute (char *src)
 	   because it begins with a slash (or win-disk-drive) */
 	if (src[0] == '/'
 	 || src[0] == SLASH_CHAR
-#if WIN32
+#ifdef _WIN32
 	 || src[1] == ':'
 #endif
 		) {
