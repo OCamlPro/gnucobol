@@ -16,12 +16,20 @@ tasks:
     # sudo apt install texlive-base  # for make dist (doc/gnucobol.pdf)
     gp sync-done system-prepare
 
-- name: building GnuCOBOL
+- name: preparing GnuCOBOL
   init: |
     mkdir -p $GITPOD_REPO_ROOTS/build
     cd $GITPOD_REPO_ROOTS/build
     gp sync-await system-prepare
     ../autogen.sh
+  command: |
+    cd $GITPOD_REPO_ROOTS/build
+    gp sync-done prepare-finish
+
+- name: building GnuCOBOL
+  init: |
+    cd $GITPOD_REPO_ROOTS/build
+    gp sync-await prepare-finish
     ../configure --enable-cobc-internal-checks --enable-debug --enable-code-coverage \
          CC="gcc -std=c89" CPPFLAGS="-Werror=declaration-after-statement"
     bear -- make --jobs=$(nproc)
@@ -35,6 +43,7 @@ tasks:
     cd $GITPOD_REPO_ROOTS/build
     half_jobs=$(( $(nproc) / 2 ))
     nice make --jobs=${half_jobs} check-code-coverage TESTSUITEFLAGS="--jobs=${half_jobs}"
+    gp sync-done test-finish
 
 - name: running NIST85 tests
   command: |
@@ -42,6 +51,8 @@ tasks:
     cd $GITPOD_REPO_ROOTS/build
     half_jobs=$(( $(nproc) / 2 ))
     nice make -C tests/cobol85 --jobs=${half_jobs} test
+    gp sync-done test85-finish
+
 
 # disabled as running that is really onbly useful after several adjustments
 #- name: running GnuCOBOL distribution tests with testuite
@@ -50,6 +61,63 @@ tasks:
 #    cd $GITPOD_REPO_ROOTS/build
 #    half_jobs=$(( $(nproc) / 2 ))
 #    nice make --jobs=${half_jobs} distcheck TESTSUITEFLAGS="--jobs=${half_jobs}"
+
+
+- name: building VISAM
+  init: |
+    mkdir -p $GITPOD_REPO_ROOTS/../isam
+    cd $GITPOD_REPO_ROOTS/..
+    curl -LO http://inglenet.ca/Products/GnuCOBOL/vbisam-2.2.tar.Z
+    tar -xvzf vbisam-2.2.tar.Z -C isam --strip-components=1
+
+    # curl -L https://sourceforge.net/projects/vbisam/files/vbisam2/vbisam-2.0.tar.gz/download -o vbisam-2.0.tar.gz
+    # tar -xvzf vbisam-2.0.tar.gz -C isam --strip-components=1
+    # sed -i s'/long long/off_t/' isam/vbisam.h 
+
+    cd isam
+    gp sync-await system-prepare
+    ./configure CFLAGS="-fstack-protector-strong -fstack-clash-protection -ggdb3 -fasynchronous-unwind-tables" \
+                LDFLAGS="-fstack-protector-strong -fstack-clash-protection" \
+                CPPFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2" --enable-debug
+    bear -- make --jobs=$(nproc)
+    sudo make install
+  command: |
+    gp sync-await prepare-finish
+    cd $GITPOD_REPO_ROOTS/../isam
+    gp sync-done build-finish-isam
+
+- name: building GnuCOBOL (ISAM)
+  init: |
+    mkdir -p $GITPOD_REPO_ROOTS/build-isam
+    cd $GITPOD_REPO_ROOTS/build-isam
+    gp sync-await build-finish-isam
+    ../configure --enable-cobc-internal-checks --enable-debug --with-vbisam \
+         CC="gcc -std=c89" CPPFLAGS="-Werror=declaration-after-statement" \
+         LIBCOB_LIBS=-Wl,-rpath,/usr/local/lib
+    bear -- make --jobs=$(nproc)
+  command: |
+    gp sync-await build-finish-isam
+    cd $GITPOD_REPO_ROOTS/build-isam
+    gp sync-done build-finish-isam
+
+- name: running GnuCOBOL tests (ISAM)
+  command: |
+    gp sync-await build-finish-isam
+    cd $GITPOD_REPO_ROOTS/build-isam
+    gp sync-await test-finish
+    half_jobs=$(( $(nproc) / 2 ))
+    nice make --jobs=${half_jobs} check TESTSUITEFLAGS="--jobs=${half_jobs}"
+    echo expected result in GnuCOBOL 3.x on GNU/Linux x86_64 with both RJN's VBISAM 2.2
+    echo          and with RWs VBISAM 2.0 (+ patch to set vbisam_off_t to off_t):
+    echo          894 971 972 failed, 953 954 955 956 957 passed unexpectedly
+
+- name: running NIST85 tests (ISAM)
+  command: |
+    gp sync-await build-finish-isam
+    cd $GITPOD_REPO_ROOTS/build-isam
+    gp sync-await test85-finish
+    half_jobs=$(( $(nproc) / 2 ))
+    nice make -C tests/cobol85 --jobs=${half_jobs} test
 
 vscode:
   extensions:
