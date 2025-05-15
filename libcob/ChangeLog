@@ -340,6 +340,12 @@
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
 
+2024-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
+	* strings.c: use the collating_sequence field of cob_module to
+	  determine the low value instead of the hard-coded constant "\0"
+
 2024-01-30  Ron Norman <rjn@inglenet.com>
 
 	* fisam.c: Updated to set index field type for 'short' & 'int'
