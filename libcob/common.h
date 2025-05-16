@@ -326,12 +326,14 @@ typedef __mpz_struct mpz_t[1];
 /* Disable certain warnings */
 /* Deprecated functions */
 #pragma warning(disable: 4996)
-/* Function declarations without parameter list */
-#pragma warning(disable: 4255)
 
 #define strncasecmp		_strnicmp
 #define strcasecmp		_stricmp
+#if !COB_USE_VC2015_OR_GREATER
+/* since VC2015 snprintf is C99 compatible,
+   we prefer that over the old MSVC version */
 #define snprintf		_snprintf
+#endif
 #define getpid			_getpid
 #define access			_access
 #define popen			_popen
