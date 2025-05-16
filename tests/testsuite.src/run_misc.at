@@ -4490,6 +4490,45 @@ AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([SEARCH ALL with non-0xff HIGH-VALUE])
+AT_KEYWORDS([runmisc default-colseq])
+
+# This originates from a coding pattern we've witnessed in a code base.
+# When using a collating sequence that loads to HIGH-VALUE not being 0xff
+# (typically EBCDIC-500 / Latin-1), this used to fail.
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TAB.
+         02 TAB-ELT   OCCURS 3
+                      ASCENDING KEY TAB-KEY
+                      INDEXED BY TI.
+           05 TAB-KEY PIC X.
+       PROCEDURE DIVISION.
+           MOVE ALL HIGH-VALUE TO TAB
+           MOVE "1" TO TAB-ELT (1)
+      *    DISPLAY "|" TAB "|"
+           SEARCH ALL TAB-ELT
+              AT END
+                 DISPLAY '"1" NOT FOUND'
+              WHEN TAB-KEY (TI) = "1"
+                 CONTINUE
+           END-SEARCH
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ASCII -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([PIC ZZZ-, ZZZ+])
 AT_KEYWORDS([runmisc editing])
 
@@ -9057,7 +9096,6 @@ dump written to tstdump.dump
 AT_CHECK([gcdiff -U reference tstdump.dump], [0], [], [])
 
 
-
 AT_DATA([reference_stderr],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
@@ -9090,7 +9128,7 @@ X is 000005441
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 stderr.txt > stderr.sed], [0], [], [])
 
-AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
+AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
 
@@ -9104,7 +9142,7 @@ X is 000005441
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 stderr.txt > stderr.sed], [0], [], [])
 
-AT_CHECK([diff reference_stderr stderr.sed], [0], [], [])
+AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
@@ -9186,7 +9224,7 @@ AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS
                    s/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
 tstdump_fdls.dump > tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
 
@@ -9208,7 +9246,7 @@ tstdump_allfdls.dump > tstdump.sed], [0], [], [])
 AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
 reference > reference_all], [0], [], [])
 
-AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 
 # CHECKME @ Ron: The result is likely wrong, please verify later
 #AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
@@ -9271,7 +9309,7 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 #tstdump_ls_sticky.dump > tstdump.sed], [0], [], [])
 #
-#AT_CHECK([diff reference tstdump.sed], [0], [], [])
+#AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 AT_CLEANUP
 
@@ -9549,7 +9587,7 @@ AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
   AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
 )
 
-AT_CHECK([diff reference dumpall.sed], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 
@@ -10112,7 +10150,7 @@ END OF DUMP - prog
 ])
 
 AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
-#AT_CHECK([diff reference dumpall.txt], [0], [], [])
+#AT_CHECK([$DIFF reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -13082,12 +13120,12 @@ This is sent to PRINTER PRINT
 This is also sent to PRINTER PRINT
 ])
 
-AT_CHECK([diff reference prt.log], [0], [], [],
+AT_CHECK([$DIFF reference prt.log], [0], [], [],
 
 # Previous test "failed" --> check if EOL of PIPE is the issue
 
 AT_CHECK([$SED -e 's/PIPE.\r/PIPE./g' prt.log > prt2.log], [0], [], [])
-AT_CHECK([diff reference prt2.log], [0], [], [])
+AT_CHECK([$DIFF reference prt2.log], [0], [], [])
 )
 
 AT_CAPTURE_FILE([punch.out])
@@ -13097,7 +13135,7 @@ AT_DATA([reference],
 This is also sent to SYSPUNCH PRINT
 ])
 
-AT_CHECK([diff reference punch.out], [0], [], [])
+AT_CHECK([$DIFF reference punch.out], [0], [], [])
 
 AT_CLEANUP
 
@@ -19073,5 +19111,340 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LOW/HIGH-VALUE when using non-native program collating sequence])
+AT_KEYWORDS([LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
+
+# See bug #948 - Comparison with HIGH-VALUE in presence of collating sequences
+
+AT_DATA([prog0.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               HIGH-VALUE QUOTE SPACE LOW-VALUE 'X'.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      * Note: we use hex values as we want the LOW and HIGH
+      * values before the collating sequence is applied
+       01 RAW-LV PIC X VALUE X"00".
+       01 RAW-HV PIC X VALUE X"FF".
+       PROCEDURE DIVISION.
+           IF NOT (RAW-HV < QUOTE) THEN
+             DISPLAY "RAW-HV > QUOTE" UPON SYSERR
+           END-IF.
+           IF NOT (QUOTE < SPACE) THEN
+             DISPLAY "QUOTE > SPACE" UPON SYSERR
+           END-IF.
+           IF NOT (SPACE < RAW-LV) THEN
+             DISPLAY "SPACE > RAW-LV" UPON SYSERR
+           END-IF.
+           IF NOT (RAW-LV < "X") THEN
+             DISPLAY "RAW-LV > X" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog0.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog0], [0], [], [])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               64 THRU 1
+               65 THRU 192
+               256 THRU 193.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
+[LOW-VALUE: 063 (064) HIGH-VALUE: 192 (193)], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               65.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[LOW-VALUE: 064 (065) HIGH-VALUE: 255 (256)], [])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
+[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (160)], [])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
+[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (160)], [])
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "P1 LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")".
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           CALL "prog2".
+           STOP RUN.
+       END PROGRAM prog1.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ascii.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ascii IS ASCII.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "P2 LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [0],
+[P1 LOW-VALUE: 000 (001) HIGH-VALUE: 159 (160)
+P2 LOW-VALUE: 000 (001) HIGH-VALUE: 255 (256)], [])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 IND PIC 9(02).
+       01 ENDX PIC X(01).
+       PROCEDURE DIVISION.
+           INITIALIZE ENDX.
+           PERFORM VARYING IND FROM 1 BY 1 UNTIL ENDX = HIGH-VALUE
+              DISPLAY IND " " WITH NO ADVANCING
+              IF IND = 9
+                 MOVE HIGH-VALUE TO ENDX
+              END-IF
+           END-PERFORM.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [0],
+[01 02 03 04 05 06 07 08 09 ], [])
 
 AT_CLEANUP

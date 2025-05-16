@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2002-2012, 2015-2024 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -59,6 +59,7 @@ COBC_FLAGS = -std=cobol85 -debug $(COBOL_FLAGS)
 
 CURL_FLAGS = 
 WGET_FLAGS = -t1 -T5
+DIFF = @DIFF@
 DIFF_FLAGS = @DIFF_FLAGS@
 
 PRE_INST_ENV = "$(abs_top_builddir)/pre-inst-env"
@@ -163,7 +164,7 @@ diff:
 	@echo "Comparing test results for each module"
 	@retd=0; for m in $(MODULES); do \
 		echo "diff $$m/report.txt..."; \
-		diff $(DIFF_FLAGS) "$(srcdir)/$$m.txt" "$$m/report.txt"; \
+		"$(DIFF)" $(DIFF_FLAGS) "$(srcdir)/$$m.txt" "$$m/report.txt"; \
 		ret=$$? && if test $$ret -gt $$retd; then retd=$$ret; fi \
 	done; \
 		if test $$retd -gt 1; then exit $$retd; fi
@@ -175,7 +176,7 @@ diff-summary:
 	$(MAKE) summary.log
 	@echo "Comparing total test results..."
 	@echo "diff $(SUMMARY)..."
-	@diff $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
+	@"$(DIFF)" $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
 	@echo Done
 
 newcob.val.Z:
@@ -246,6 +247,7 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	@(export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`" && \
 	 $(SED) -e 's/##MODULE##/'"$@"'/'            \
 	        -e 's|##COB85DIR##|'$(abs_srcdir)'|' \
+	        -e 's|##DIFF##|'"$(DIFF)"'|' \
 	        -e 's|##DIFF_FLAGS##|'"$(DIFF_FLAGS)"'|' \
 	        -e 's|##PERL##|'"$(PERL)"'|' \
 	        -e 's|##TESTS##|'"` echo $$CBL_LIST | $(SED) -e 's/\.CBL//g'`"'|' \

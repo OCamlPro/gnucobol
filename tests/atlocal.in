@@ -53,6 +53,13 @@ else
 	ABS_COBCRUN="$(which cobcrun)"
 fi
 
+# We need to define a diff function, because:
+# - we want autotest to use our custom diff command
+# - the DIFF variable might contain spaces
+diff() {
+  command "@DIFF@" @DIFF_FLAGS@ "$@"
+}
+DIFF=diff
 AWK=@AWK@
 GREP=@GREP@
 SED=@SED@

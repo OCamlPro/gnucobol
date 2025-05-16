@@ -793,7 +793,8 @@ EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
 the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})
 which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
 See the @file{default.ttbl} file for detailed information about the format.@*
-You may use the @option{--gentable} option to build such tables.
+You may use the @option{--gentable} option to build such tables.@*
+Note that this option may affect LOW/HIGH-VALUE if using a non-native program collating sequence.
 
 @end table
 
