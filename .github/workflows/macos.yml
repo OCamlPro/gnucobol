@@ -51,43 +51,43 @@ jobs:
           echo "LDFLAGS=-L$HOMEBREW_ROOT/berkeley-db@4/lib -L$HOMEBREW_ROOT/libiconv/lib ${LDFLAGS}" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$HOMEBREW_ROOT/berkeley-db@4/include -I$HOMEBREW_ROOT/libiconv/include ${CPPFLAGS}" >> $GITHUB_ENV
 
-      - name: Restore VISAM cache
+      - name: Restore VBISAM cache
         if: ${{ matrix.isam == 'vbisam' }}
-        id: restore-visam
+        id: restore-vbisam
         uses: actions/cache/restore@v4
         with:
-          key: cache-visam-macos
-          path: visam
+          key: cache-vbisam-macos
+          path: vbisam
 
-      - name: Build VISAM
+      - name: Build VBISAM
         if: ${{ matrix.isam == 'vbisam' &&
-                steps.restore-visam.outputs.cache-hit != 'true' }}
+                steps.restore-vbisam.outputs.cache-hit != 'true' }}
         run: |
           curl -LO http://inglenet.ca/Products/GnuCOBOL/vbisam-2.2.tar.Z
-          mkdir visam && tar -xvzf vbisam-2.2.tar.Z -C visam --strip-components=1
-          cd visam
-          ./configure --prefix=/opt/visam \
+          mkdir vbisam && tar -xvzf vbisam-2.2.tar.Z -C vbisam --strip-components=1
+          cd vbisam
+          ./configure --prefix=/opt/vbisam \
                       CFLAGS="-fstack-protector-strong -fstack-clash-protection -ggdb3 -fasynchronous-unwind-tables" \
                       LDFLAGS="-fstack-protector-strong -fstack-clash-protection" \
                       CPPFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2"
           chmod u+x build_aux/install-sh
           make --jobs=$(($(nproc)+1))
 
-      - name: Install VISAM
+      - name: Install VBISAM
         if: ${{ matrix.isam == 'vbisam' }}
         run: |
-          sudo make -C visam install
-          echo "CPATH=/opt/visam/include" >> $GITHUB_ENV
-          echo "LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+          sudo make -C vbisam install
+          echo "CPATH=/opt/vbisam/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=/opt/vbisam/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/opt/vbisam/lib" >> $GITHUB_ENV
 
-      - name: Save VISAM cache
+      - name: Save VBISAM cache
         if: ${{ matrix.isam == 'vbisam' &&
-                steps.restore-visam.outputs.cache-hit != 'true' }}
+                steps.restore-vbisam.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
-          key: cache-visam-macos
-          path: visam
+          key: cache-vbisam-macos
+          path: vbisam
 
       - name: Bootstrap GnuCOBOL
         run: |
@@ -126,7 +126,7 @@ jobs:
           name: install-${{ matrix.isam }}.log
           path: _build/install.log
 
-      - name: Adjust testsuite for VISAM
+      - name: Adjust testsuite for VBISAM
         if: ${{ matrix.isam == 'vbisam' }}
         run: |
           cd tests/testsuite.src
