@@ -182,18 +182,9 @@ jobs:
           sed 's/x64\/Debug/${{ env.ARCHDIR }}\/${{ matrix.target }}/g' atlocal_win > atlocal
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
 
-      - name: Build gcdiff
-        run: |
-          set PATH="%GITHUB_WORKSPACE%\build_windows\%ARCHDIR%\${{ matrix.target }}";%PATH%
-          call "%VCVARS%"
-          cd bin
-          cobc -x gcdiff.c
-
       - name: Run testsuite
         continue-on-error: true
         run: |
-          rem Needed for the testsuite to find gcdiff
-          set PATH="%GITHUB_WORKSPACE%\bin";%PATH%
           rem Needed for now because the paths compiled in have trailing slashes - cl.exe does not like that
           set COB_CFLAGS=/I"%GITHUB_WORKSPACE%" /I"%GITHUB_WORKSPACE%\build_windows"
           rem Needed so mpir.h can be found

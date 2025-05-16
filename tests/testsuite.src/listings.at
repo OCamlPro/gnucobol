@@ -45,7 +45,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_DATA([expected.lst],
-[GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
+[GnuCOBOL V.R.P          prog.cob             DDD MMM dd YYYY HH:MM:SS  Page 0001
 
 LINE    PG/LN  A...B............................................................
 
@@ -66,7 +66,7 @@ LINE    PG/LN  A...B............................................................
 000015             END-DISPLAY.
 000016             STOP RUN.
 
-GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0002
+GnuCOBOL V.R.P          prog.cob             DDD MMM dd YYYY HH:MM:SS  Page 0002
 
 0 warnings in compilation group
 0 errors in compilation group
@@ -76,7 +76,11 @@ AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=2 prog.cob], [0], [],
 [cobc: warning: 2 lines per listing page specified, using 20
 ])
 
-AT_CHECK([gcdiff expected.lst prog.lst], [0], [], [])
+AT_CHECK([$SED -e 's/GnuCOBOL ...../GnuCOBOL V.R.P/
+                   s/ ... ... .. .... ..:..:..  Page/ DDD MMM dd YYYY HH:MM:SS  Page/' \
+prog.lst > prog.sed], [0], [], [])
+
+AT_CHECK([$DIFF expected.lst prog.sed], [0], [], [])
 
 AT_CLEANUP
 
