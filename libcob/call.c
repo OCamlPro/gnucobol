@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023, 2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -454,12 +454,7 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 	 && *p->module->module_ref_count) {
 		nocancel = 1;
 	}
-#ifdef _MSC_VER
-#pragma warning(suppress: 4113) /* funcint is a generic function prototype */
-	cancel_func = p->module->module_cancel.funcint;
-#else
 	cancel_func = (int (*)(const int,  void *, void *, void *, void *))p->module->module_cancel.funcint;
-#endif
 	(void)cancel_func (-1, NULL, NULL, NULL, NULL);
 	p->module = NULL;
 
@@ -1286,12 +1281,8 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 	for (s = cs; s && s->cob_cstr_name; s++) {
 		if (!strcmp (entry, s->cob_cstr_name)) {
 			if (s->cob_cstr_cancel.funcvoid) {
-#ifdef _MSC_VER
-#pragma warning(suppress: 4113) /* funcint is a generic function prototype */
-				cancel_func = s->cob_cstr_cancel.funcint;
-#else
-				cancel_func = (int (*)(const int,  void *, void *, void *, void *))s->cob_cstr_cancel.funcint;
-#endif
+				cancel_func = (int (*)(const int,  void *, void *, void *, void *))
+				               s->cob_cstr_cancel.funcint;
 				(void)cancel_func (-1, NULL, NULL, NULL,
 						   NULL);
 			}
