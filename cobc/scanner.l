@@ -1400,10 +1400,6 @@ static cob_u8_t
 scan_ebcdic_char (int c)
 {
 	char buff[10];	       /* Arbitrary limit, mostly for error-reporting */
-#ifndef COB_EBCDIC_MACHINE
-	static  cob_u8_t ebcdic_to_ascii[256] ;
-	static  int ebcdic_to_ascii_initialized = 0 ;
-#endif
 	unsigned int j = 0;
 	do {
 		buff[j++] = (char)c;
@@ -1420,20 +1416,7 @@ scan_ebcdic_char (int c)
 #ifdef COB_EBCDIC_MACHINE
 	return (cob_u8_t) c;
 #else
-	if (!ebcdic_to_ascii_initialized ) {
-		if (cob_load_collation (cb_ebcdic_table, ebcdic_to_ascii, NULL) < 0) {
-			cb_error (_("invalid parameter: %s"), "-febcdic-table");
-			ebcdic_to_ascii_initialized = -1;
-		} else {
-			ebcdic_to_ascii_initialized = 1;
-		}
-	}
-
-	if (ebcdic_to_ascii_initialized > 0) {
-		return ebcdic_to_ascii[c];
-	} else {
-		return '?';
-	}
+	return ebcdic_to_ascii[c];
 #endif
 }
 

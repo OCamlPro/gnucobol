@@ -202,7 +202,7 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 7.1 General issues
 
-- Decide what to do about gcdiff, especially under MSVC
+- Decide what to do about gcdiff, especially under MSVC; replacing with $DIFF should be okay in most cases (possibly adding the -b/--ignore-trailing-space option); few cases require adjustment because of date/time output
 
 - Correctly implement delay-loading under MSVC
 

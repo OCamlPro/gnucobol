@@ -3128,7 +3128,7 @@ CREATE INDEX k1_tspfilex ON tspfilex (telephone,machine,rid_tspfilex);
 CREATE INDEX k2_tspfilex ON tspfilex (disk,dp_mgr,machine,rid_tspfilex);
 ])
 
-AT_CHECK([diff reference tspfilex.ddl], [0], [], [])
+AT_CHECK([$DIFF reference tspfilex.ddl], [0], [], [])
 
 
 AT_CAPTURE_FILE(./tspfilex.xd)

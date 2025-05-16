@@ -40,6 +40,7 @@ LOCAL_ENV=""
 PATH="${COB_WIN_BUILDPATH}:${PATH}"
 export PATH
 
+DIFF=diff
 AWK=awk
 GREP=grep
 SED=sed

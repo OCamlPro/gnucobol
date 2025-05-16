@@ -1557,7 +1557,7 @@ AT_CHECK([$COMPILE prog2.cob], [0], [],
 ])
 AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=dummyNotThere prog2.cob], [1], [],
 [libcob: error: can't open translation table 'dummyNotThere'
-prog2.cob:5: error: invalid parameter: -febcdic-table
+cobc: error: invalid parameter: -febcdic-table
 ])
 
 AT_CLEANUP

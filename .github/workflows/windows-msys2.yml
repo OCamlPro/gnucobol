@@ -41,7 +41,7 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir _build && cd _build
-          ../configure --without-curses --without-db --without-xml2 --without-json
+          ../configure --without-curses --without-db --without-xml2 --without-json CFLAGS=-std=c17
 
       - name: Build GnuCOBOL source distribution
         shell: msys2 {0}
@@ -132,7 +132,7 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir _build && cd _build
-          ../configure $CFGOPT CFLAGS="-Wno-parentheses-equality $CFLAGS"
+          PATH="$PATH:/c/Program Files/Git/usr/bin" ../configure $CFGOPT CFLAGS="-std=c17 -Wno-parentheses-equality $CFLAGS"
 
       - name: Build GnuCOBOL
         shell: msys2 {0}
