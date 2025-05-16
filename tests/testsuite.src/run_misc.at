@@ -8858,7 +8858,7 @@ dump written to tstdump.dump
 # TODO: the first item of each WORKING-STORAGE section
 # in the dump below should be:
 # 77        RETURN-CODE                     +000000000
-AT_DATA([reference], [
+AT_DATA([reference_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of "sub1" was MOVE
@@ -9066,7 +9066,11 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff -U reference tstdump.dump], [0], [], [])
+AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+tstdump.dump > tstdump.sed], [0], [], [])
+
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 # using both
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
@@ -9093,7 +9097,10 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump.dump
 ])
 
-AT_CHECK([gcdiff -U reference tstdump.dump], [0], [], [])
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+tstdump.dump > tstdump.sed], [0], [], [])
+
+AT_CHECK([$DIFF reference tstdump.sed], [0], [], [])
 
 
 AT_DATA([reference_stderr],
@@ -9699,7 +9706,7 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -10013,7 +10020,7 @@ dump written to dumpall.txt
 
 AT_CAPTURE_FILE(./dumpall.txt)
 
-AT_DATA([reference], [
+AT_DATA([reference_tmpl], [
 Module dump due to signal SIGSEGV
 
  Last statement of "sub2" was MOVE at line 3 of cpyabrt
@@ -10024,7 +10031,7 @@ Module dump due to signal SIGSEGV
 	ENTRY prog at prog.cob:91
  Started by ./prog
 
-Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
@@ -10056,12 +10063,12 @@ WORKING-STORAGE
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
        15 TSTX-2 (4,2..4) same as (1)
-  05      TSTTAIL1                        X
+  05      TSTTAIL1                        X  _
                                      1 x 5811
   05      TSTCOMP3                        58585
   05      TSTLONG                        'Quick brown fox jumped over the dog              Quick br'
                                       57:'own fox jumped over the dog'
-  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d
+  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d  _
                                      1 x 51756963 6B657220 67726579 20666F78 206A756D 70656420
                                           t h e    c o u g  a r   X  X X   X  X X X X  X X   X
                                     25 x 74686520 636F7567 61722058 58581158 58585858 58580758
@@ -10079,14 +10086,14 @@ WORKING-STORAGE
 LINKAGE
 **********************
 01        X                               0757.99
-01        TSP-RECORD
+01        TSP-RECORD                     _
  >>>> Dump of TSP-RECORD aborted! <<<< !!
 **********************
 
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 FD FLATFILE
 **********************
@@ -10149,8 +10156,11 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
-#AT_CHECK([$DIFF reference dumpall.txt], [0], [], [])
+AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+dumpall.txt > dumpall.sed], [0], [], [])
+
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 
@@ -10246,7 +10256,7 @@ Module dump due to module '' not found
 	ENTRY prog at prog.cob:23
  Started by ./prog
 
-Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
@@ -10264,7 +10274,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
@@ -10277,12 +10287,15 @@ WORKING-STORAGE
      10   CM-DISK                        '4TB'
      10   CM-NO-TERMINALS                 64.699997
 
-END OF DUMP - prog    
+END OF DUMP - prog
 **********************
 
 ])
 
-AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+dumpall.txt > dumpall.sed], [0], [], [])
+
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 

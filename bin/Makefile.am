@@ -20,12 +20,11 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 bin_SCRIPTS = cob-config
-bin_PROGRAMS = cobcrun gcdiff cobfile
+bin_PROGRAMS = cobcrun cobfile
 cobcrun_SOURCES = cobcrun.c
 dist_man_MANS = cobcrun.1 cob-config.1
 COBCRUN = cobcrun$(EXEEXT)
 
-gcdiff_sources = gcdiff.c
 cobfile_sources = cobfile.c
 
 COMMON_LIBS = $(top_builddir)/libcob/libcob.la \
@@ -35,7 +34,6 @@ COMMON_LIBS = $(top_builddir)/libcob/libcob.la \
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 cobcrun_LDADD = $(COMMON_LIBS)
-gcdiff_LDADD = $(COMMON_LIBS)
 cobfile_LDADD =$(COMMON_LIBS)
 
 # Add rules for code-coverage testing, as provided AX_CODE_COVERAGE
