@@ -1,4 +1,9 @@
 
+2025-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: slightly improve error handling,
+	  including partial hand-merge of changes from GC4
+
 2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
@@ -6592,7 +6597,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2024 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
