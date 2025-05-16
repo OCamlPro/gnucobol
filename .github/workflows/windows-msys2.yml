@@ -41,7 +41,10 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir _build && cd _build
-          ../configure --without-curses --without-db --without-xml2 --without-json CFLAGS=-std=c17
+          # this is a "prepare" only step for this workflow only, so build
+          # without any optional packages as one-time build speeding up this part
+          ../configure --without-curses --without-db --without-xml2 --without-json \
+                       --without-iconv --disable-dependency-tracking CFLAGS=-std=c17
 
       - name: Build GnuCOBOL source distribution
         shell: msys2 {0}
@@ -50,7 +53,7 @@ jobs:
           OSTYPE=msys make -C _build --jobs=$(($(nproc)+1))
           OSTYPE=msys make -C _build --jobs=$(($(nproc)+1)) dist
 
-      - name: Upload config-dist.log
+      - name: Upload config.log
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -132,13 +135,15 @@ jobs:
         shell: msys2 {0}
         run: |
           mkdir _build && cd _build
-          PATH="$PATH:/c/Program Files/Git/usr/bin" ../configure $CFGOPT CFLAGS="-std=c17 -Wno-parentheses-equality $CFLAGS"
+          # Note: we add the path to git-bash so that we can use the diff
+          # command it provides, to workaround a diff bug under the MSYS2 CI
+          PATH="$PATH:/c/Program Files/Git/usr/bin" ../configure $CFGOPT CFLAGS=-std=c17
 
       - name: Build GnuCOBOL
         shell: msys2 {0}
         run: make -C _build --jobs=$(($(nproc)+1))
 
-      - name: Upload config-${{ matrix.sys }}-${{ matrix.target }}.log
+      - name: Upload config.log
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
@@ -176,11 +181,13 @@ jobs:
         continue-on-error: true
         shell: msys2 {0}
         run: |
+          # to work around regular hangs we run NIST first, then the internal
+          # and the later only with 2 jobs
           # OSTYPE added on 2025-02-11 to fix texi2dvi bug
-          OSTYPE=msys make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          OSTYPE=msys make -C _build check TESTSUITEFLAGS="--jobs=2" || \
           OSTYPE=msys make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.sys }}-${{ matrix.target }}.log
+      - name: Upload testsuite.log
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
@@ -193,7 +200,7 @@ jobs:
           make -C _build distmingw
           tar -cvf GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar _build/$DISTDIR
 
-      - name: Upload GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar
+      - name: Upload GnuCOBOL_msys2.tar
         uses: actions/upload-artifact@v4
         with:
           name: GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar

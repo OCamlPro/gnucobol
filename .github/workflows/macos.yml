@@ -51,25 +51,51 @@ jobs:
           echo "LDFLAGS=-L$HOMEBREW_ROOT/berkeley-db@4/lib -L$HOMEBREW_ROOT/libiconv/lib ${LDFLAGS}" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$HOMEBREW_ROOT/berkeley-db@4/include -I$HOMEBREW_ROOT/libiconv/include ${CPPFLAGS}" >> $GITHUB_ENV
 
+      - name: Restore VISAM cache
+        if: ${{ matrix.isam == 'visam' }}
+        id: restore-visam
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-visam-macos
+          path: visam
+
+      - name: Build VISAM
+        if: ${{ matrix.isam == 'visam' &&
+                steps.restore-visam.outputs.cache-hit != 'true' }}
+        run: |
+          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          mkdir visam && tar -xvzf visam-2.2.tar.Z -C visam --strip-components=1
+          cd visam
+          ./configure --prefix=/opt/visam --enable-vbisamdefault \
+                      CFLAGS="-fstack-protector-strong -fstack-clash-protection -ggdb3 -fasynchronous-unwind-tables" \
+                      LDFLAGS="-fstack-protector-strong -fstack-clash-protection" \
+                      CPPFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2"
+          chmod u+x build_aux/install-sh
+          make --jobs=$(($(nproc)+1))
 
       - name: Install VISAM
         if: ${{ matrix.isam == 'visam' }}
         run: |
-          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
-          tar -xvzf visam-2.2.tar.Z
-          cd visam-2.2
-          ./configure --prefix=/opt/visam --enable-vbisamdefault
-          chmod u+x build_aux/install-sh
-          make && sudo make install
+          sudo make -C visam install
           echo "CPATH=/opt/visam/include" >> $GITHUB_ENV
           echo "LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=/opt/visam/lib" >> $GITHUB_ENV
+
+      - name: Save VISAM cache
+        if: ${{ matrix.isam == 'visam' &&
+                steps.restore-visam.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          key: cache-visam-macos
+          path: visam
 
       - name: Bootstrap GnuCOBOL
         run: |
           ./build_aux/bootstrap install
           gettextize -f
 
+      # Note: READ_WRITE_NEEDS_FLUSH is required, otherwise this test fails:
+      #           LINE SEQUENTIAL COMMIT / ROLLBACK (run_file.at)
       - name: Configure GnuCOBOL
         run: |
           mkdir _build && cd _build
@@ -79,13 +105,12 @@ jobs:
                        --enable-hardening \
                        --with-curses=ncurses \
                        --prefix=/opt/cobol/gnucobol \
-                       CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS" \
-                       CFLAGS="-Wno-parentheses-equality $CFLAGS"
+                       CPPFLAGS="-DREAD_WRITE_NEEDS_FLUSH $CPPFLAGS"
 
       - name: Build GnuCOBOL
         run: make -C _build --jobs=$((${NPROC}+1))
 
-      - name: Upload config-${{ matrix.isam }}.log
+      - name: Upload config.log
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
@@ -99,7 +124,7 @@ jobs:
           sudo make -C _build install
           find /opt/cobol > _build/install.log
 
-      - name: Upload install-${{ matrix.isam }}.log
+      - name: Upload install.log
         uses: actions/upload-artifact@v4
         with:
           name: install-${{ matrix.isam }}.log
@@ -124,7 +149,7 @@ jobs:
           make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))" || \
           make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
-      - name: Upload testsuite-${{ matrix.isam }}.log
+      - name: Upload testsuite.log
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
