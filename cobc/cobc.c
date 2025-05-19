@@ -2368,9 +2368,12 @@ set_compile_date (void)
 				cobc_abort_terminate (0);
 			}
 		}
+		sde_todo = 2;
 	}
-	current_compile_time = cob_get_current_date_and_time ();
-	set_compile_date_tm ();
+	if (sde_todo == 2) {
+		current_compile_time = cob_get_current_date_and_time ();
+		set_compile_date_tm ();
+	}
 }
 
 static void
