@@ -10701,7 +10701,7 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	ENTRY prog at prog.cob:77
  Started by prog
 
-Dump Program-Id sub1 from prog.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10765,7 +10765,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from sub2.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id sub2 from sub2.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10835,7 +10835,7 @@ LINKAGE
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 FD FLATFILE
 **********************
@@ -11025,7 +11025,7 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	ENTRY prog at prog.cob:77
  Started by ./prog_fdls
 
-Dump Program-Id sub1 from prog.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
 LINKAGE
 **********************
@@ -11035,7 +11035,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from sub2.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id sub2 from sub2.cob compiled Jan 25 2002 12:00:00
 
 LINKAGE
 **********************
@@ -11050,7 +11050,7 @@ LINKAGE
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 FD FLATFILE
 **********************
@@ -11126,14 +11126,14 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #	ENTRY prog at prog.cob:77
 # Started by ./prog_ls_sticky
 #
-#Dump Program-Id sub1 from prog.cob compiled Jan 24 2002 12:00:00
+#Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 #
 #LINKAGE
 #**********************
 #01        X                               000005441
 #01        TSPFL-RECORD.                  <NULL> address
 #
-#Dump Program-Id sub2 from sub2.cob compiled Jan 24 2002 12:00:00
+#Dump Program-Id sub2 from sub2.cob compiled Jan 25 2002 12:00:00
 #
 #LINKAGE
 #**********************
@@ -11145,7 +11145,7 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #     10   CM-NO-TERMINALS                 0010
 #77        DYNAMIC-NUM                     0124
 #
-#Dump Program-Id prog from prog.cob compiled Jan 24 2002 12:00:00
+#Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 #
 #])
 #
@@ -11296,7 +11296,7 @@ Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 	param
 	param 3
 
-Dump Program-Id prog from prog.cob compiled Jan 24 2002 12:00:00
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************

@@ -5034,7 +5034,7 @@ cob_set_date_from_epoch (struct cob_time *cb_time, const unsigned char *p)
 	seconds /= 60;
 	tmptr->tm_hour = seconds % 24;
 	seconds /= 24;
-	tmptr->tm_mday = (int)seconds;
+	tmptr->tm_mday = (int)seconds + 1; /* +1 because mday should be >= 1 */
 	tmptr->tm_isdst = -1;
 
 	/* normalize if needed (definitely for epoch, but also for example 30 Feb
