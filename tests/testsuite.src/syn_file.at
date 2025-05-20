@@ -2397,7 +2397,7 @@ AT_CLEANUP
 
 
 AT_SETUP([XFD directive and creation])
-AT_KEYWORDS([file cobc sql SUPPRESS WHEN])
+AT_KEYWORDS([file cobc sql SUPPRESS WHEN SOURCE_DATE_EPOCH])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -3090,7 +3090,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -Wno-unsupported -fsql prog.cob], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -Wno-unsupported -fsql prog.cob], [0], [], [])
 
 AT_CAPTURE_FILE(./tspfilex.ddl)
 
@@ -3133,7 +3134,7 @@ CREATE INDEX k2_tspfilex ON tspfilex (disk,dp_mgr,machine,rid_tspfilex);
 AT_CHECK([$DIFF reference tspfilex.ddl], [0], [], [])
 
 AT_DATA([reference],
-[# Generated on MMM DD YYYY HH:MM:SS from prog.cob
+[# Generated on Jan 25 2002 12:00:00 from prog.cob
 H,1,tspfilex,2,',','.',0,3
 D,1,'MMDDYYYY',8,1,0,,0,4:4,0:2,2:2,0:0,0:0,0:0,0:0,0:0
 D,2,'YYMMDDCC',8,1,0,,0,0:2,2:2,4:2,0:0,0:0,0:0,6:2,0:0
@@ -3184,10 +3185,7 @@ K,2,Y,Y,0x2A,disk,dp_mgr,machine,rid_tspfilex
 K,0,R,N,,rid_tspfilex
 ])
 
-AT_CHECK([$SED -e 's/Generated on ... .. .... ..:..:../Generated on MMM DD YYYY HH:MM:SS/g' \
-tspfilex.xd > tspfilex.sed], [0], [], [])
-
-AT_CHECK([$DIFF reference tspfilex.sed], [0], [], [])
+AT_CHECK([$DIFF reference tspfilex.xd], [0], [], [])
 
 AT_CLEANUP
 
