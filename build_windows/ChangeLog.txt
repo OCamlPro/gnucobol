@@ -1,4 +1,8 @@
 
+2025-05-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* version_gcdiff.rc: removed as no longer needed
+
 2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
 	* general for cobc: include new gentable.c

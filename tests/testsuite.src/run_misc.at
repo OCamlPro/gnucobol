@@ -9589,7 +9589,7 @@ AT_CLEANUP
 
 AT_SETUP([Test dump feature (3)])
 AT_SKIP_IF(true)  # not reproducible everywhere
-AT_KEYWORDS([Dump])
+AT_KEYWORDS([Dump SOURCE_DATE_EPOCH])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -9631,7 +9631,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL prog.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=dumpall.txt \
 $COBCRUN_DIRECT ./prog], [11], [Ready
@@ -9642,7 +9643,6 @@ prog.cob:37: attempt to reference invalid memory address (signal SIGSEGV)
 dump written to dumpall.txt
 ])
 
-
 AT_CAPTURE_FILE(./dumpall.txt)
 
 AT_DATA([reference], [
@@ -9651,7 +9651,7 @@ Module dump due to signal SIGSEGV
  Last statement of "prog" was at line 37 of prog.cob
  Started by ./prog
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -9694,15 +9694,18 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+dumpall.txt > dumpall.sed], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([Test dump feature (4)])
-AT_KEYWORDS([Dump])
+AT_KEYWORDS([Dump SOURCE_DATE_EPOCH])
 
-AT_DATA([./cpyabrt], [            MOVE "Quick brown fox jumped over the dog"
+AT_DATA([cpyabrt], [
+            MOVE "Quick brown fox jumped over the dog"
               TO TSTTAILX (1:40).
             MOVE TSP-RECORD TO TSTTAILX (42:20).
       *     DISPLAY ':' X ':'.
@@ -9991,27 +9994,27 @@ AT_DATA([prog.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CHECK([$COMPILE -debug -fdump=ALL prog.cob ], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -debug -fdump=ALL prog.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=dumpall.txt \
 $COBCRUN_DIRECT ./prog], [11], [sub1: X is 000000001 RECORD:Peek a boo!.
 sub2: X is +000004096 RECORD:ALP00000ALPHA ELECTRICAL CO. LTD.8417    0010.
 sub2: X is 0757.99 RECORD: Omitted.
 ], [
-cpyabrt:3: attempt to reference invalid memory address (signal SIGSEGV)
+cpyabrt:4: attempt to reference invalid memory address (signal SIGSEGV)
 
-libcob: cpyabrt:3: warning: implicit CLOSE of FLATFILE ('RELFIX')
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to dumpall.txt
 ])
-
 
 AT_CAPTURE_FILE(./dumpall.txt)
 
 AT_DATA([reference], [
 Module dump due to signal SIGSEGV
 
- Last statement of "sub2" was MOVE at line 3 of cpyabrt
+ Last statement of "sub2" was MOVE at line 4 of cpyabrt
 	ENTRY sub2 at prog.cob:238
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:135
@@ -10019,7 +10022,7 @@ Module dump due to signal SIGSEGV
 	ENTRY prog at prog.cob:91
  Started by ./prog
 
-Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id sub2 from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10051,12 +10054,12 @@ WORKING-STORAGE
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
        15 TSTX-2 (4,2..4) same as (1)
-  05      TSTTAIL1                        X
+  05      TSTTAIL1                        X  @&t@
                                      1 x 5811
   05      TSTCOMP3                        58585
   05      TSTLONG                        'Quick brown fox jumped over the dog              Quick br'
                                       57:'own fox jumped over the dog'
-  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d
+  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d  @&t@
                                      1 x 51756963 6B657220 67726579 20666F78 206A756D 70656420
                                           t h e    c o u g  a r   X  X X   X  X X X X  X X   X
                                     25 x 74686520 636F7567 61722058 58581158 58585858 58580758
@@ -10074,14 +10077,14 @@ WORKING-STORAGE
 LINKAGE
 **********************
 01        X                               0757.99
-01        TSP-RECORD
+01        TSP-RECORD                     @&t@
  >>>> Dump of TSP-RECORD aborted! <<<< !!
 **********************
 
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 FD FLATFILE
 **********************
@@ -10144,20 +10147,22 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
-#AT_CHECK([$DIFF reference dumpall.txt], [0], [], [])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+dumpall.txt > dumpall.sed], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([Test dump feature (5)])
-AT_KEYWORDS([Dump])
+AT_KEYWORDS([Dump SOURCE_DATE_EPOCH])
 
-AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
-      
+
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
        DATA  DIVISION.
@@ -10166,13 +10171,13 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
        77  UNUSED-VAR        VALUE  1          PICTURE 9(4).
        01  BIN                      PIC 9(9) BINARY VALUE 0.
        01  PACKD                    PIC 9(4)V99 COMP-3 VALUE 757.99.
-      
+
        01  TSPFL-RECORD.
-           10  CM-CUST-NUM      PICTURE X(8)  VALUE "RON00001". 
-           10  CM-COMPANY       PICTURE X(25) VALUE "IBS Canada". 
-           10  CM-DISK          PICTURE X(8)  VALUE "4TB". 
+           10  CM-CUST-NUM      PICTURE X(8)  VALUE "RON00001".
+           10  CM-COMPANY       PICTURE X(25) VALUE "IBS Canada".
+           10  CM-DISK          PICTURE X(8)  VALUE "4TB".
            10  CM-NO-TERMINALS  USAGE FLOAT.
-      
+
        PROCEDURE DIVISION.
 
        MAIN-100.
@@ -10185,7 +10190,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
 
        CALL-SUB-1 SECTION.
            CALL "sub1" USING bin, TSPFL-RECORD.
-       
+
            END PROGRAM prog.
 
        IDENTIFICATION DIVISION.
@@ -10197,11 +10202,11 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
        LINKAGE SECTION.
        01  X          PIC 9 ANY NUMERIC.
        01  TSP-RECORD.
-           10  CM-CUST-NUM                     PICTURE X(8). 
-           10  CM-COMPANY                      PICTURE X(25). 
-           10  CM-DISK                         PICTURE X(8). 
+           10  CM-CUST-NUM                     PICTURE X(8).
+           10  CM-COMPANY                      PICTURE X(25).
+           10  CM-DISK                         PICTURE X(8).
            10  CM-NO-TERMINALS                 USAGE FLOAT.
-       
+
        PROCEDURE DIVISION USING X, TSP-RECORD.
        MAIN-1 SECTION.
             PERFORM DMP-TIME.
@@ -10216,14 +10221,14 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
        END PROGRAM sub1.
 ])
 
-AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL prog.cob], [0], [], [])
 
 AT_CHECK([export COB_DUMP_FILE=dumpall.txt
-$COBCRUN_DIRECT ./prog], [1], [], [libcob: prog.cob:58: error: module '' not found
+$COBCRUN_DIRECT ./prog], [1], [], [libcob: prog.cob:59: error: module '' not found
 
 dump written to dumpall.txt
 ])
-
 
 AT_CAPTURE_FILE(./dumpall.txt)
 
@@ -10231,17 +10236,17 @@ AT_DATA([reference], [
 Module dump due to module '' not found
 
  Last statement of "sub1" was CALL
-	DMP-TIME1 OF MAIN-1 at prog.cob:58
-	DMP-TIME OF MAIN-1 at prog.cob:60
-	MAIN-1 at prog.cob:52
-	ENTRY sub1 at prog.cob:51
+	DMP-TIME1 OF MAIN-1 at prog.cob:59
+	DMP-TIME OF MAIN-1 at prog.cob:61
+	MAIN-1 at prog.cob:53
+	ENTRY sub1 at prog.cob:52
  Last statement of "prog" was CALL
-	CALL-SUB-1 at prog.cob:32
-	MAIN-100 at prog.cob:28
-	ENTRY prog at prog.cob:23
+	CALL-SUB-1 at prog.cob:33
+	MAIN-100 at prog.cob:29
+	ENTRY prog at prog.cob:24
  Started by ./prog
 
-Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10259,7 +10264,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10272,12 +10277,14 @@ WORKING-STORAGE
      10   CM-DISK                        '4TB'
      10   CM-NO-TERMINALS                 64.699997
 
-END OF DUMP - prog    
+END OF DUMP - prog
 **********************
 
 ])
 
-AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+dumpall.txt > dumpall.sed], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 

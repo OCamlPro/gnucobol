@@ -239,7 +239,6 @@ C    bin/Makefile.am	  modified here and again for 1396
 
 r1396
 --- Merging r1396 into '.':
-A    bin/gcdiff.c      ok
 
 r1398
 --- Merging r1398 into '.':
@@ -250,7 +249,6 @@ r1401
 U    AUTHORS	  	  ok
 C    bin/ChangeLog	  merged
 U    bin/cobcrun.c
-U    bin/gcdiff.c
 
 r1402
 --- Merging r1402 into '.':
@@ -261,18 +259,15 @@ r1402
    C build_windows/vc8		reverted
    C build_windows/vc9		reverted
 C    build_windows/ChangeLog.txt	merged
-A    build_windows/version_gcdiff.rc	ok
 
 r1404
 --- Merging r1403 through r1404 into '.':
 C    bin/ChangeLog
-U    bin/gcdiff.c
 dry-run produced above output, but actual merge showed no conflict. 
 
 r1405
 --- Merging r1404 through r1405 into '.':
 C    bin/ChangeLog	  merged
-U    bin/gcdiff.c	  ok
 
 r1410
 --- Merging r1410 into '.':
