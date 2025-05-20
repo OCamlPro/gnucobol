@@ -19,7 +19,10 @@
 ### GnuCOBOL Test Suite
 
 AT_SETUP([Minimal lines per listing pages])
-AT_KEYWORDS([listing symbols options])
+AT_KEYWORDS([listing symbols options SOURCE_DATE_EPOCH])
+
+# Note: we use SOURCE_DATE_EPOCH to have a predictable output in listings;
+# this also allows to test this feature at the same time
 
 # note: 2.2 did not use a minimal length,
 # a typo like -tlines=2 loops forever
@@ -45,7 +48,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_DATA([expected.lst],
-[GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
+[GnuCOBOL V.R.P          prog.cob             Sat Jan 25 2002 12:00:00  Page 0001
 
 LINE    PG/LN  A...B............................................................
 
@@ -66,17 +69,17 @@ LINE    PG/LN  A...B............................................................
 000015             END-DISPLAY.
 000016             STOP RUN.
 
-GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0002
+GnuCOBOL V.R.P          prog.cob             Sat Jan 25 2002 12:00:00  Page 0002
 
 0 warnings in compilation group
 0 errors in compilation group
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=2 prog.cob], [0], [],
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 $COMPILE_ONLY -fttitle=GnuCOBOL_V.R.P -t prog.lst -tlines=2 prog.cob], [0], [],
 [cobc: warning: 2 lines per listing page specified, using 20
 ])
 
-AT_CHECK([gcdiff expected.lst prog.lst], [0], [], [])
+AT_CHECK([$DIFF expected.lst prog.lst], [0], [], [])
 
 AT_CLEANUP
 

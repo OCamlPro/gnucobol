@@ -1,4 +1,9 @@
 
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_set_date_from_epoch): fix incorrect conversion
+	  of epoch (was off by one day)
+
 2025-04-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* move.c (cob_move_display_to_packed), fileio.c (cob_file_set_key):
