@@ -180,9 +180,6 @@ elif test "x${VGSUFFIX}" != "x"; then
   COBCRUN_DIRECT="${VG_RUNTIME} ${COBCRUN_DIRECT}"
 fi
 
-# Helper script to unify listings (replace version, date, time)
-UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
-
 # test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
 
