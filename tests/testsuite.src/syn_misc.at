@@ -1865,23 +1865,20 @@ AT_KEYWORDS([misc])
 # remark: some editors remove trailing spaces, the  workaround: add "_" and
 # remove it later via sed; AT_DATA would not do that when using double [[  ]]
 
-AT_DATA([prog_tmpl.cob], [
+AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.                                           																																																																																																																																		_
-       DATA             DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  _
+       CONFIGURATION SECTION.                                           																																																																																																																																		@&t@
+       DATA             DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @&t@
        WORKING-STORAGE  SECTION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   *> This is a real comment
        PROCEDURE        DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  This is commentary only
            CONTINUE.                                              *> comment after column 72
       *    This is a very long comment that exceeds column 72 but doesn't exceed 512 bytes, therefore not leading to a line overflow. As it is a comment line there is no "Source text after column 72" warning
            CONTINUE.                                                    CONTINUE.
-           CONTINUE.                                                                        _
+           CONTINUE.                                                                        @&t@
            STOP RUN.
 ])
-
-# AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/_$//' prog_tmpl.cob > prog.cob], [0], [], [])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fixed -Wextra prog.cob], [0], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]

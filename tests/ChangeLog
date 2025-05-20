@@ -1,4 +1,12 @@
 
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_misc.at, testsuite.src/syn_misc.at:
+	  reduce the use of sed by using SOURCE_DATE_EPOCH when possible
+	  and using @&t@ quadrigraphs in expected output with trailing spaces
+	* listing-sed.sh: removed as no longer needed
+	* atlocal.in, atlocal_win: remove the no longer needed UNIFY_LISTING variable
+
 2025-05-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* atlocal.in, atlocal_win, cobol85/Makefile.am,
