@@ -1,4 +1,9 @@
 
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (set_compile_date): fix SOURCE_DATE_EPOCH being
+	  ignored on subsequent invocations
+
 2025-04-18  David Declerck <david.declerck@ocamlpro.com>
 
 	* codegen.c (output_funcall_typed): add an integer cast
