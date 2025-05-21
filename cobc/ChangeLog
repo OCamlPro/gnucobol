@@ -1,4 +1,9 @@
 
+2025-05-21  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c: fix duplicate values for CB_FLAG_GETOPT_GENTABLE
+	  and CB_FLAG_GETOPT_SQLSCHEMA (fixes bug #1113)
+
 2025-05-20  David Declerck <david.declerck@ocamlpro.com>
 
 	* sqlxfdgen.c (output_xfd_file): fix to take

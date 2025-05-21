@@ -116,9 +116,9 @@ enum compile_level {
 #define	CB_FLAG_GETOPT_DEPEND_ADD_PHONY     24
 #define	CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define	CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
-#define	CB_FLAG_GETOPT_SQLSCHEMA            27
-#define	CB_FLAG_GETOPT_FILE_FORMAT          28
-#define CB_FLAG_GETOPT_GENTABLE             27
+#define	CB_FLAG_GETOPT_GENTABLE             27
+#define	CB_FLAG_GETOPT_SQLSCHEMA            28
+#define	CB_FLAG_GETOPT_FILE_FORMAT          29
 
 
 /* Info display limits */
