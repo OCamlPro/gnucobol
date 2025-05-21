@@ -10011,7 +10011,7 @@ dump written to dumpall.txt
 
 AT_CAPTURE_FILE(./dumpall.txt)
 
-AT_DATA([reference], [
+AT_DATA([reference_tmpl], [
 Module dump due to signal SIGSEGV
 
  Last statement of "sub2" was MOVE at line 4 of cpyabrt
@@ -10149,6 +10149,13 @@ END OF DUMP - prog
 
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 dumpall.txt > dumpall.sed], [0], [], [])
+AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
+# Previous test "failed" --> 32 bit
+  AT_CHECK([$SED -e 's/0x0000000003404d71/0x03404d71/' reference_tmpl > reference], [0], [], [])
+,
+# Previous test "passed" --> 64 bit
+  AT_CHECK([cp reference_tmpl reference], [0], [], [])
+)
 AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
@@ -10232,7 +10239,7 @@ dump written to dumpall.txt
 
 AT_CAPTURE_FILE(./dumpall.txt)
 
-AT_DATA([reference], [
+AT_DATA([reference_tmpl], [
 Module dump due to module '' not found
 
  Last statement of "sub1" was CALL
@@ -10284,6 +10291,13 @@ END OF DUMP - prog
 
 AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 dumpall.txt > dumpall.sed], [0], [], [])
+AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
+# Previous test "failed" --> 32 bit
+  AT_CHECK([$SED -e 's/0x0000000000000000/0x00000000/' reference_tmpl > reference], [0], [], [])
+,
+# Previous test "passed" --> 64 bit
+  AT_CHECK([cp reference_tmpl reference], [0], [], [])
+)
 AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
