@@ -202,8 +202,6 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 7.1 General issues
 
-- Decide what to do about gcdiff, especially under MSVC; replacing with $DIFF should be okay in most cases (possibly adding the -b/--ignore-trailing-space option); few cases require adjustment because of date/time output
-
 - Correctly implement delay-loading under MSVC
 
 - Possibly drop usage of external cobxref
@@ -217,6 +215,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 - Check how to deal with IMPEXP in coblocal.h (should probably be in the "lib" directory as a static library to link with the other libraries)
 
 - Testsuite: run the DB and IX modules multiple times if configured for multiple backends
+
+- Testuite: the report produced by test LINAGE and LINAGE-COUNTER sample (run_file.at) as trailing spaces in trunk, while it does not in 3.x; for now we use sed to strip the trailing spaces
 
 7.2 CHECKMEs, TODOs and #if-0'ed code
 

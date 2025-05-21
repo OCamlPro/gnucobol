@@ -252,17 +252,3 @@ target_include_directories(cobcrun PUBLIC
 )
 
 target_link_libraries(cobcrun cob)
-
-add_executable(gcdiff bin/gcdiff.c)
-
-set_property(TARGET gcdiff PROPERTY RUNTIME_OUTPUT_DIRECTORY bin)
-
-target_include_directories(gcdiff PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cobc>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/build_windows>
-)
-
-target_link_libraries(gcdiff cob)
-
-

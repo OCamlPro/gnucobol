@@ -83,7 +83,6 @@ ipch
 /bin/cobcrun
 /bin/cobcrun.1
 /bin/cobfile
-/bin/gcdiff
 /cobc/cobc
 /cobc/cobc.1
 /cobc/parser.c

@@ -1,4 +1,11 @@
 
+2025-05-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_file.at, testsuite.src/run_misc.at,
+	  testsuite.src/run_reportwriter.at, testsuite.src/syn_file.at:
+	  replace gcdiff invocations by $DIFF, making adjustments
+	  via SOURCE_DATE_EPOCH and sed when needed
+
 2025-05-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* testsuite.src/run_misc.at, testsuite.src/syn_misc.at:

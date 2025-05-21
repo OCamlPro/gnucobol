@@ -6573,7 +6573,11 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
-AT_CHECK([gcdiff mini-report reference-report], [0], [], [])
+# Note: there is a difference in the output compared to 3.x; trunk has trailing spaces
+# in the output, while 3.x does not. For now we tweak the produced output to look like
+# the one produced by 3.x so as to reduce the diff between the two branches.
+AT_CHECK([$SED -e 's/[[[:blank:]]][[[:blank:]]]*$//' mini-report > mini-report.sed], [0], [], [])
+AT_CHECK([$DIFF mini-report.sed reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -21311,7 +21315,7 @@ AT_DATA([reference],
 Record 2................................
 ])
 
-AT_CHECK([gcdiff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -21431,7 +21435,7 @@ AT_DATA([reference],
 Record 2................................
 ])
 
-AT_CHECK([gcdiff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -21551,7 +21555,7 @@ AT_DATA([reference],
 Record 2................................
 ])
 
-AT_CHECK([gcdiff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 

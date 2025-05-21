@@ -12,6 +12,4 @@ Distributed under GNU LGPL.
 was extracted from GLIB 2.2.2 and modified by Keisuke Nishida
 and Roger While. Distributed under GNU LGPL.
 
-* bin/gcdiff.c was written by Ron Norman
-
 * libcob/reportio.c was written by Ron Norman
