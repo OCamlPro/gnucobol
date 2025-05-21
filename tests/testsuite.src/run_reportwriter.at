@@ -113,7 +113,7 @@ PF
 RF
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -182,7 +182,7 @@ AT_DATA([reference], [
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -251,7 +251,7 @@ AT_DATA([reference], [
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -320,7 +320,7 @@ AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -381,7 +381,7 @@ goodbye                        <--->
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -453,7 +453,7 @@ goodbye                        <--->
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -769,7 +769,7 @@ CUST. NO.     CUST. NAME     DEPT.    ITEM NO.    ITEM COST
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -1123,7 +1123,7 @@ CUST. NO.     CUST. NAME     DEPT.    ITEM NO.    ITEM COST    DISCT. %    DISCT
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -1494,7 +1494,7 @@ CUST. NO.     CUST. NAME     DEPT.    ITEM NO.    ITEM COST    DISCT. %    DISCT
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -1794,7 +1794,7 @@ CUST. NO.     CUST. NAME                          ITEM COST                DISCT
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -2211,7 +2211,7 @@ AT_DATA([reference], [                          D I S T R I C T   S A L E S   R 
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -2937,7 +2937,7 @@ DEPARTMENT NUMBER:  25 MAINTENANCE
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -3105,7 +3105,7 @@ Ln  --ID--     --------Name--------   Major *-*      +Odd+  +Even+
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -3257,7 +3257,7 @@ AT_DATA([reference], [
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -3605,7 +3605,7 @@ AT_DATA([reference], [                                           CUSTOMER ORDER 
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -3835,7 +3835,7 @@ AT_DATA([reference], [                                                          
 
 ])
 #" <- fix code highlighting
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -4029,7 +4029,7 @@ AT_DATA([reference], [
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -4157,7 +4157,7 @@ C        3rd Detail 2
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -4261,7 +4261,7 @@ Tag1 *Tag2 **Tag1 *Tag2 **Tag1 *Tag2 **
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -4476,8 +4476,8 @@ Hi-Q:
 Hi-Q:
 ])
 
-AT_CHECK([gcdiff reference report_var.txt], [0])
-AT_CHECK([gcdiff reference report_lit.txt], [0])
+AT_CHECK([$DIFF reference report_var.txt], [0])
+AT_CHECK([$DIFF reference report_lit.txt], [0])
 
 AT_CLEANUP
 
@@ -4623,7 +4623,7 @@ Hi-Q:
 Hi-Q:
 ])
 
-AT_CHECK([gcdiff reference tstdmrp.txt], [0], [], [])
+AT_CHECK([$DIFF reference tstdmrp.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -4688,7 +4688,7 @@ goodbye                        <--->
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -4748,7 +4748,7 @@ AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -4802,7 +4802,7 @@ AT_CAPTURE_FILE([report.txt])
 
 AT_DATA([reference], [])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -9125,7 +9125,7 @@ IN150202   20150202                          OR150216          016  ITEM_NUMBER_
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -9387,7 +9387,7 @@ AT_DATA([reference], [                           STARK TECHNOLOGIES MONTHLY REPO
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -9556,7 +9556,7 @@ VarQ:
 VarQ:
 ])
 
-AT_CHECK([gcdiff reference tstdmrp.txt], [0], [], [])
+AT_CHECK([$DIFF reference tstdmrp.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -9951,7 +9951,7 @@ FOOTER PAGE#:  01                                                    42
 
 ])
 
-AT_CHECK([gcdiff reference report02.txt], [0], [], [])
+AT_CHECK([$DIFF reference report02.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -10047,7 +10047,7 @@ AT_DATA([reference], [1    1
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -10187,7 +10187,7 @@ GRAND TOTAL:           $00689.00  $00659.00  $01266.00
 
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0], [], [])
+AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -10342,7 +10342,7 @@ Tom 47    Bob 57    Joe 67       Ron 70   Happy! Happy! Ha
 
 ])
 
-AT_CHECK([gcdiff reference tstrwv.txt], [0], [], [])
+AT_CHECK([$DIFF reference tstrwv.txt], [0], [], [])
 
 AT_CLEANUP
 

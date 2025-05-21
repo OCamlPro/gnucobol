@@ -1,4 +1,8 @@
 
+2025-05-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* gcdiff.c: removed as no longer needed
+
 2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (cobconfig.1, cobcrun.1): add description using help2man -n
@@ -366,7 +370,7 @@
 	  then you can switch easily.
 
 
-Copyright 2004-2008,2010,2012,2014-2024 Free Software Foundation, Inc.
+Copyright 2004-2008,2010,2012,2014-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

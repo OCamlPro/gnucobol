@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014, 2016-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014, 2016-2023, 2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Joe Robbins,
 ## Edward Hart
 ##
@@ -3094,6 +3094,8 @@ AT_CHECK([$COMPILE -Wno-unsupported -fsql prog.cob], [0], [], [])
 
 AT_CAPTURE_FILE(./tspfilex.ddl)
 
+AT_CAPTURE_FILE(./tspfilex.xd)
+
 AT_DATA([reference], [DROP SEQUENCE   seq_tspfilex;
 CREATE SEQUENCE seq_tspfilex START WITH 1;
 DROP TABLE tspfilex;
@@ -3130,14 +3132,11 @@ CREATE INDEX k2_tspfilex ON tspfilex (disk,dp_mgr,machine,rid_tspfilex);
 
 AT_CHECK([$DIFF reference tspfilex.ddl], [0], [], [])
 
-
-AT_CAPTURE_FILE(./tspfilex.xd)
-
 AT_DATA([reference],
 [# Generated on MMM DD YYYY HH:MM:SS from prog.cob
 H,1,tspfilex,2,',','.',0,3
-D,1,'MMDDYYYY',8,1,0,,0,4:4,0:2,2:2,0:0,0:0,0:0,0:0
-D,2,'YYMMDDCC',8,1,0,,0,0:2,2:2,4:2,0:0,0:0,0:0,6:2
+D,1,'MMDDYYYY',8,1,0,,0,4:4,0:2,2:2,0:0,0:0,0:0,0:0,0:0
+D,2,'YYMMDDCC',8,1,0,,0,0:2,2:2,4:2,0:0,0:0,0:0,6:2,0:0
 F,0000,0008,20,0009,0,0,,10,custnum
 F,0008,0001,20,0002,0,0,,10,status
 F,0009,0025,20,0026,0,0,,10,company
@@ -3185,7 +3184,10 @@ K,2,Y,Y,0x2A,disk,dp_mgr,machine,rid_tspfilex
 K,0,R,N,,rid_tspfilex
 ])
 
-AT_CHECK([gcdiff reference tspfilex.xd], [0], [], [])
+AT_CHECK([$SED -e 's/Generated on ... .. .... ..:..:../Generated on MMM DD YYYY HH:MM:SS/g' \
+tspfilex.xd > tspfilex.sed], [0], [], [])
+
+AT_CHECK([$DIFF reference tspfilex.sed], [0], [], [])
 
 AT_CLEANUP
 
