@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019-2021 Free Software Foundation, Inc.
+   Copyright (C) 2019-2021,2025 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -1316,8 +1316,6 @@ output_xfd_file (struct cb_file *fl)
 	char	outname[COB_FILE_BUFF], tblname[64], time_stamp[32];
 	char	ridname[72];
 	FILE	*fx, *fs;
-	struct tm	*loctime;
-	time_t		sectime;
 	struct cb_field		*f;
 	struct cb_alt_key	*l;
 	struct cb_key_component *c;
@@ -1345,14 +1343,8 @@ output_xfd_file (struct cb_file *fl)
 		idx[sub] = 0;
 	sub = 0;
 	next_lbl = 1;
-	sectime = time (NULL);
-	loctime = localtime (&sectime);
-	if (loctime) {
-		strftime (time_stamp, (size_t)COB_MINI_MAX,
-			  		"%b %d %Y %H:%M:%S", loctime);
-	} else {
-		strcpy(time_stamp,"Time unknown");
-	}
+	strftime (time_stamp, (size_t)COB_MINI_MAX,
+				"%b %d %Y %H:%M:%S", &current_compile_tm);
 	if (fl->sql_name) {
 		strcpy(tblname,fl->sql_name);
 	} else if(fl->assign

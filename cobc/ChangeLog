@@ -1,4 +1,9 @@
 
+2025-05-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* sqlxfdgen.c (output_xfd_file): fix to take
+	  SOURCE_DATE_EPOCH into account
+
 2025-05-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (set_compile_date): fix SOURCE_DATE_EPOCH being
