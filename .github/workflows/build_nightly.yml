@@ -336,7 +336,93 @@ jobs:
             _build/tests/cobol85/**/duration.txt
 
 
-  minmal_build:
+  build_32_bit:
+    name: Build and test on 32-bit
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+
+    steps:
+
+      - name: Get CI dist tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: gnucobol-ci source distribution
+
+      - name: Extract CI dist tarball
+        run: tar -xvf gnucobol*.tar.* --strip-components=1
+
+      - name: Setup build environment
+        run: echo "TERM=vt100" >> $GITHUB_ENV
+
+      - name: Install packages
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt -y update
+          sudo apt -y install make libtool gcc-9-multilib \
+                              gcc-9 libgmp-dev:i386 libncurses-dev:i386 \
+                              libdb5.3-dev:i386 libxml2-dev:i386 libcjson-dev:i386
+          sudo apt -y remove flex bison
+
+      - name: Configure GnuCOBOL
+        run: |
+          mkdir _build && cd _build
+          ../configure --with-db \
+                       --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --prefix=/opt/gnucobol \
+                       CC="gcc-9 -m32" \
+                       CFLAGS="-fno-tree-coalesce-vars"
+          # Note: we pass -fno-tree-coalesce-vars to workaround a bug
+          # occurring with gcc on x86 at optimization level -O1
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Upload config.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-${{ github.job }}.log
+          path: _build/config.log
+
+      - name: Run testsuite
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+
+      - name: Upload testsuite.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-${{ github.job }}.log
+          path: _build/tests/testsuite.log
+
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          enableCrossOsArchive: true
+
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$(($(nproc)+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ github.job }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
+
+
+  build_minimal:
     name: Build and test with minimal dependencies
     needs: build
     runs-on: ubuntu-latest
