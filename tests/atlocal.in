@@ -70,6 +70,10 @@ LC_ALL=C
 export LC_ALL
 unset LANG
 
+# enforce UTC timezone
+TZ=UTC
+export TZ
+
 # define for performance checks (running code several thousand times)
 if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "@COB_ENABLE_DEBUG@" = yes; then
 	if test "x$VGSUFFIX" = "x"; then
