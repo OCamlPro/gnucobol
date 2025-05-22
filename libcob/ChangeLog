@@ -1,8 +1,8 @@
 
-2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+2025-05-22  David Declerck <david.declerck@ocamlpro.com>
 
-	* common.c (cob_set_date_from_epoch): fix incorrect conversion
-	  of epoch (was off by one day)
+	* common.c (cob_set_date_from_epoch): simplification, which
+	  also fixes incorrect conversion of epoch (was off by one day)
 
 2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
