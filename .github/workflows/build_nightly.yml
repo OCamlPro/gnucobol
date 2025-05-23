@@ -500,10 +500,7 @@ jobs:
   coverage:
     name: Coverage and Warnings
     needs: build
-# Since the latest Ubuntu image, lcov fails complaining about negative branch counts,
-# and using fprofile-update=atomic as suggested does not help, so use the previous image
-#    runs-on: ubuntu-latest
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -551,6 +548,8 @@ jobs:
           # make -C _build check-code-coverage # <- (ignores errors)
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
           make -C _build code-coverage-capture \
+                         CODE_COVERAGE_LCOV_SHOPTS_DEFAULT="--rc branch_coverage=1" \
+                         CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT="--rc branch_coverage=1" \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
       - name: Upload testsuite.log
@@ -576,7 +575,9 @@ jobs:
       - name: Extended coverage
         run: |
           make -C _build test --jobs=$(($(nproc)+1)) --keep-going
-          make -C _build code-coverage-capture                            \
+          make -C _build code-coverage-capture \
+                         CODE_COVERAGE_LCOV_SHOPTS_DEFAULT="--rc branch_coverage=1" \
+                         CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT="--rc branch_coverage=1" \
                          CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
                          CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
