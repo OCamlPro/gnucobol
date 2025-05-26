@@ -2358,6 +2358,7 @@ set_compile_date (void)
 		sde_todo = 1;
 		if (s && *s) {
 			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
+				current_compile_time.nanosecond = 0;
 				set_compile_date_tm ();
 				return;
 			}

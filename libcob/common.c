@@ -5023,7 +5023,10 @@ cob_set_date_from_epoch (struct cob_time *cb_time, const unsigned char *p)
 		return 1;
 	}
 
-        set_cob_time_from_localtime ((time_t)seconds, cb_time);
+	set_cob_time_from_localtime ((time_t)seconds, cb_time);
+	cb_time->nanosecond = -1;
+	cb_time->offset_known = 1;
+	cb_time->utc_offset = 0;
 
 	return 0;
 }
