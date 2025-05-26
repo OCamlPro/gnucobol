@@ -7907,7 +7907,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([Numeric MOVE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7917,7 +7917,7 @@ AT_DATA([prog.cob], [
        01  NUM9    PIC 9(6).
        PROCEDURE DIVISION.
            MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
+           DISPLAY "NUM9 value SPACES is " NUM9 (1:) "." UPON SYSOUT
            MOVE LOW-VALUES TO NUM9
            IF NUM9 = LOW-VALUES
               DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
@@ -14107,68 +14107,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Pointer test was good
 AT_CLEANUP
 
 
-AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       DATA  DIVISION.
-       WORKING-STORAGE SECTION.
-       01  NUM9    PIC 9(6).
-       PROCEDURE DIVISION.
-           MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
-           MOVE LOW-VALUES TO NUM9
-           IF NUM9 = LOW-VALUES
-              DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
-           ELSE
-              DISPLAY "9(6) Does NOT test OK for LOW-VALUES"
-                 UPON SYSOUT
-              IF NUM9 = ZERO
-                 DISPLAY "9(6) tests as ZERO instead of LOW-VALUES"
-                    UPON SYSOUT
-              END-IF
-           END-IF.
-           MOVE HIGH-VALUES TO NUM9
-           IF NUM9 = HIGH-VALUES
-              DISPLAY "9(6) tests OK for HIGH-VALUES" UPON SYSOUT
-           ELSE
-              DISPLAY "9(6) Does NOT test OK for HIGH-VALUES"
-                 UPON SYSOUT
-              IF NUM9 = ZERO
-                 DISPLAY "9(6) tests as ZERO instead of HIGH-VALUES"
-                    UPON SYSOUT
-              END-IF
-           END-IF.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE -std=mf prog.cob], [0], [],
-[prog.cob:8: warning: source is non-numeric - substituting zero
-prog.cob:10: warning: source is non-numeric - substituting zero
-prog.cob:21: warning: source is non-numeric - substituting zero
-])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[NUM9 value SPACES is 000000.
-9(6) Does NOT test OK for LOW-VALUES
-9(6) tests as ZERO instead of LOW-VALUES
-9(6) Does NOT test OK for HIGH-VALUES
-9(6) tests as ZERO instead of HIGH-VALUES
-], [])
-
-AT_CHECK([$COMPILE -std=acu prog.cob -o aprog], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./aprog], [0],
-[NUM9 value SPACES is       .
-9(6) tests OK for LOW-VALUES
-9(6) tests OK for HIGH-VALUES
-], [])
-
-AT_CLEANUP
-
-
 AT_SETUP([Test COBOL-C interface])
 AT_KEYWORDS([CALL])
 
@@ -19102,6 +19040,30 @@ AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to NUMERIC-EDITED safety])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  PIC 9(5)    VALUE 12345.
+       01 Y  PIC 9(5)CR.
+       PROCEDURE DIVISION.
+           MOVE X TO Y.
+           IF Y(1:) NOT = "12345" THEN
+             DISPLAY "EXPECTED '12345'"
+             DISPLAY "GOT      '" Y(1:) "'"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 

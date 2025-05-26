@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2016-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2016-2024 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -1614,10 +1614,8 @@ prog.cob:18: error: S may only occur once in a PICTURE string
 prog.cob:18: error: S must be at start of PICTURE string
 prog.cob:19: error: . may only occur once in a PICTURE string
 prog.cob:20: error: V may only occur once in a PICTURE string
-prog.cob:21: error: a trailing +/- sign cannot follow a leading +/- sign
-prog.cob:22: error: a leading +/- sign cannot follow a leading currency symbol
-prog.cob:22: error: a trailing currency symbol cannot follow a leading currency symbol
-prog.cob:22: error: a trailing +/- sign cannot follow a leading +/- sign
+prog.cob:21: error: floating '+' symbols cannot have a '9' between them
+prog.cob:22: error: floating '$' symbols cannot have a '9' between them
 prog.cob:24: error: invalid PICTURE character 'K'
 prog.cob:25: error: C must be followed by R
 prog.cob:26: error: D must be followed by B
@@ -1630,8 +1628,7 @@ prog.cob:32: error: parentheses must contain an unsigned integer
 prog.cob:34: error: . cannot follow a P which is after the decimal point
 prog.cob:35: error: . cannot follow V
 prog.cob:36: error: cannot have both Z and * in PICTURE string
-prog.cob:37: error: a trailing +/- sign cannot follow a floating +/- string which is before the decimal point
-prog.cob:37: error: a trailing +/- sign may only occur once in a PICTURE string
+prog.cob:37: error: only one of the symbols '-' , '+' or '$' may occur multiple times in a PICTURE string
 prog.cob:38: error: a Z or * which is before the decimal point cannot follow a floating currency symbol string which is before the decimal point
 prog.cob:39: error: a Z or * which is before the decimal point cannot follow a floating currency symbol string which is before the decimal point
 prog.cob:40: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
@@ -1641,12 +1638,8 @@ prog.cob:41: error: N cannot follow A or X
 prog.cob:42: error: a Z or * which is before the decimal point cannot follow A or X
 prog.cob:43: error: A or X cannot follow .
 prog.cob:44: error: A or X cannot follow S
-prog.cob:45: error: a leading +/- sign cannot follow B, 0 or /
-prog.cob:45: error: a leading +/- sign cannot follow a floating currency symbol string which is before the decimal point
-prog.cob:45: error: a leading +/- sign may only occur once in a PICTURE string
-prog.cob:45: error: a trailing +/- sign cannot follow a leading +/- sign
-prog.cob:45: error: a trailing +/- sign may only occur once in a PICTURE string
-prog.cob:46: error: a trailing +/- sign cannot follow a floating +/- string which is before the decimal point
+prog.cob:45: error: only one of the symbols '-' , '+' or '$' may occur multiple times in a PICTURE string
+prog.cob:46: error: floating '+' symbols cannot have a '9' between them
 prog.cob:47: error: CR or DB cannot follow a leading +/- sign
 prog.cob:48: error: CR or DB cannot follow a leading +/- sign
 prog.cob:50: error: a leading +/- sign cannot follow B, 0 or /
@@ -1654,7 +1647,7 @@ prog.cob:51: error: a leading +/- sign cannot follow 9
 prog.cob:52: error: B, 0 or / cannot follow CR or DB
 prog.cob:53: error: 9 cannot follow CR or DB
 prog.cob:54: error: a floating currency symbol string which is before the decimal point cannot follow 9
-prog.cob:55: error: a leading currency symbol cannot follow 9
+prog.cob:55: error: B, 0 or / cannot follow a trailing currency symbol
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
@@ -1692,10 +1685,8 @@ prog.cob:18: error: S may only occur once in a PICTURE string
 prog.cob:18: error: S must be at start of PICTURE string
 prog.cob:19: error: . may only occur once in a PICTURE string
 prog.cob:20: error: V may only occur once in a PICTURE string
-prog.cob:21: error: a trailing +/- sign cannot follow a leading +/- sign
-prog.cob:22: error: a leading +/- sign cannot follow a leading currency symbol
-prog.cob:22: error: a trailing currency symbol cannot follow a leading currency symbol
-prog.cob:22: error: a trailing +/- sign cannot follow a leading +/- sign
+prog.cob:21: error: floating '+' symbols cannot have a '9' between them
+prog.cob:22: error: floating '$' symbols cannot have a '9' between them
 prog.cob:24: error: invalid PICTURE character 'K'
 prog.cob:25: error: C must be followed by R
 prog.cob:26: error: D must be followed by B
@@ -1708,8 +1699,7 @@ prog.cob:32: error: parentheses must contain an unsigned integer
 prog.cob:34: error: . cannot follow a P which is after the decimal point
 prog.cob:35: error: . cannot follow V
 prog.cob:36: error: cannot have both Z and * in PICTURE string
-prog.cob:37: error: a trailing +/- sign cannot follow a floating +/- string which is before the decimal point
-prog.cob:37: error: a trailing +/- sign may only occur once in a PICTURE string
+prog.cob:37: error: only one of the symbols '-' , '+' or '$' may occur multiple times in a PICTURE string
 prog.cob:38: error: a Z or * which is before the decimal point cannot follow a floating currency symbol string which is before the decimal point
 prog.cob:39: error: a Z or * which is before the decimal point cannot follow a floating currency symbol string which is before the decimal point
 prog.cob:40: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
@@ -1719,12 +1709,8 @@ prog.cob:41: error: N cannot follow A or X
 prog.cob:42: error: a Z or * which is before the decimal point cannot follow A or X
 prog.cob:43: error: A or X cannot follow .
 prog.cob:44: error: A or X cannot follow S
-prog.cob:45: error: a leading +/- sign cannot follow B, 0 or /
-prog.cob:45: error: a leading +/- sign cannot follow a floating currency symbol string which is before the decimal point
-prog.cob:45: error: a leading +/- sign may only occur once in a PICTURE string
-prog.cob:45: error: a trailing +/- sign cannot follow a leading +/- sign
-prog.cob:45: error: a trailing +/- sign may only occur once in a PICTURE string
-prog.cob:46: error: a trailing +/- sign cannot follow a floating +/- string which is before the decimal point
+prog.cob:45: error: only one of the symbols '-' , '+' or '$' may occur multiple times in a PICTURE string
+prog.cob:46: error: floating '+' symbols cannot have a '9' between them
 prog.cob:47: error: CR or DB cannot follow a leading +/- sign
 prog.cob:48: error: CR or DB cannot follow a leading +/- sign
 prog.cob:50: error: a leading +/- sign cannot follow B, 0 or /
@@ -1732,7 +1718,7 @@ prog.cob:51: error: a leading +/- sign cannot follow 9
 prog.cob:52: error: B, 0 or / cannot follow CR or DB
 prog.cob:53: error: 9 cannot follow CR or DB
 prog.cob:54: error: a floating currency symbol string which is before the decimal point cannot follow 9
-prog.cob:55: error: a leading currency symbol cannot follow 9
+prog.cob:55: error: B, 0 or / cannot follow a trailing currency symbol
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
@@ -2115,10 +2101,10 @@ AT_DATA([prog.cob], [
        66  invalid-7   RENAMES j.
        66  invalid-8   RENAMES m THRU o.
        66  invalid-9   RENAMES b THRU m.
-       
+
        78  my-ext-const VALUE "123".
        66  invalid-ec   RENAMES my-ext-const.
-       
+
        01  my-std-const CONSTANT AS "123".
        66  invalid-sc   RENAMES my-std-const.
 
@@ -2191,7 +2177,7 @@ AT_DATA([prog.cob], [
              05 FILLER          PIC 9999.
              05 DETAIL-NO       PIC 9999.
          02 FILLER SAME AS AUSGABE-FILE-NAME.
-      
+
        77 OUTPUT-NAME SAME AS DETAIL-NO GLOBAL.
 
        01 Z-MESSAGE-T2 SAME AS AUSGABE-FILE-NAME-2.
@@ -2261,7 +2247,7 @@ AT_DATA([prog.cob], [
          02 FILLER                USAGE AUSGABE-FILE-NAME-T.
       *
        01  MESSAGE-TEXT-2 EXTERNAL USAGE MESSAGE-TEXT-2T.
-      
+
        77 OUTPUT-NAME USAGE SOME-VERY-LONG-TYPEDEF-NAME GLOBAL.
 
        01 Z-MESSAGE-T2 USAGE AUSGABE-FILE-NAME-2T.
@@ -2313,7 +2299,7 @@ AT_DATA([progstd.cob], [
          02 FILLER                TYPE AUSGABE-FILE-NAME-T.
       *
        01  MESSAGE-TEXT-2 EXTERNAL TYPE MESSAGE-TEXT-2T.
-      
+
        77 OUTPUT-NAME TYPE TO DETAIL-NO-T GLOBAL.
 
        01 Z-MESSAGE-T2 TYPE AUSGABE-FILE-NAME-2T.
@@ -2610,7 +2596,7 @@ AT_DATA([prog.cob], [
              05 FILLER PIC 9999.
              05 DETAIL-NO PIC 9999.
          02 FILLER LIKE AUSGABE-FILE-NAME.
-      
+
        77 OUTPUT-VAL     LIKE DETAIL-NO GLOBAL.
        77 OUTPUT-VAL-P1  LIKE DETAIL-NO (+1).
        77 OUTPUT-VAL-P1b LIKE DETAIL-NO (1).
@@ -2634,7 +2620,7 @@ AT_DATA([prog.cob], [
 #        PROGRAM-ID.      prog.
 #        DATA             DIVISION.
 #        WORKING-STORAGE  SECTION.
-# 
+#
 # ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -2825,7 +2811,7 @@ AT_DATA([prog.cob], [
            MOVE "Doe"  TO People-LastName
            WRITE STCK-REC
            CLOSE STCK-FILE
-           
+
            CALL "INNER-PROGRAM".
            GOBACK.
 

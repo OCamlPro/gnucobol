@@ -2269,6 +2269,7 @@ static unsigned int
 validate_elementary_item (struct cb_field *f)
 {
 	unsigned int	ret;
+	cb_tree		x;
 
 	ret = validate_usage (f);
 	if (f->flag_sign_clause) {
@@ -2294,6 +2295,7 @@ validate_elementary_item (struct cb_field *f)
 	ret |= validate_pic (f);
 
 	/* TODO: This is not validation and should be elsewhere. */
+	x = CB_TREE (f);
 	switch (f->usage) {
 	case CB_USAGE_DISPLAY:
 		if (current_program
@@ -2308,36 +2310,43 @@ validate_elementary_item (struct cb_field *f)
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-CHAR", 2, 1);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_SIGNED_SHORT:
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-SHORT", 4, 1);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_SIGNED_INT:
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-LONG", 9, 1);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_SIGNED_LONG:
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 1);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_UNSIGNED_CHAR:
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-CHAR", 2, 0);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_UNSIGNED_SHORT:
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-SHORT", 4, 0);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_UNSIGNED_INT:
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-LONG", 9, 0);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	case CB_USAGE_POINTER:
 		if (cb_numeric_pointer) {
@@ -2349,6 +2358,7 @@ validate_elementary_item (struct cb_field *f)
 		f->usage = CB_USAGE_COMP_5;
 		f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 0);
 		f->flag_real_binary = 1;
+		validate_field_clauses (x, f);
 		break;
 	default:
 		break;
@@ -2358,7 +2368,6 @@ validate_elementary_item (struct cb_field *f)
 	if (f->flag_blank_zero
 	 && f->pic
 	 && f->pic->category == CB_CATEGORY_NUMERIC) {
-		cb_tree x;
 		cob_pic_symbol	*pstr = NULL;
 		int		n = 0;
 		/* Reconstruct the picture string */
@@ -2377,74 +2386,6 @@ validate_elementary_item (struct cb_field *f)
 				pstr->times_repeated = 1;
 				++pstr;
 			}
-		}
-		x = CB_TREE (f);
-
-		switch (f->usage) {
-		default:
-			break;
-		case CB_USAGE_DISPLAY:
-			if (current_program->flag_trailing_separate
-			 && f->pic
-			 && f->pic->category == CB_CATEGORY_NUMERIC
-			 && !f->flag_sign_leading) {
-				f->flag_sign_separate = 1;
-			}
-			break;
-		case CB_USAGE_SIGNED_CHAR:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-CHAR", 2, 1);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_SIGNED_SHORT:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-SHORT", 4, 1);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_SIGNED_INT:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-LONG", 9, 1);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_SIGNED_LONG:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 1);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_UNSIGNED_CHAR:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-CHAR", 2, 0);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_UNSIGNED_SHORT:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-SHORT", 4, 0);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_UNSIGNED_INT:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-LONG", 9, 0);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_UNSIGNED_LONG:
-			f->usage = CB_USAGE_COMP_5;
-			f->pic = cb_build_binary_picture ("BINARY-DOUBLE", 18, 0);
-			f->flag_real_binary = 1;
-			validate_field_clauses (x, f);
-			break;
-		case CB_USAGE_BINARY:
-		case CB_USAGE_PACKED:
-		case CB_USAGE_BIT:
-			if (f->pic->category != CB_CATEGORY_NUMERIC) {
-				cb_error_x (x, _("'%s' PICTURE clause not compatible with USAGE"), cb_name (x));
-			}
 			pstr->symbol = '9';
 			pstr->times_repeated = (int)f->pic->digits - f->pic->scale;
 			++pstr;
@@ -2457,7 +2398,22 @@ validate_elementary_item (struct cb_field *f)
 			++pstr;
 
 			f->pic->size++;
-			break;
+		} else {
+			/* Size for genned string */
+			if (f->pic->have_sign) {
+				n = 2;
+			} else {
+				n = 1;
+		}
+			f->pic->str = cobc_parse_malloc ((size_t)n * sizeof(cob_pic_symbol));
+			pstr = f->pic->str;
+			if (f->pic->have_sign) {
+				pstr->symbol = '+';
+				pstr->times_repeated = 1;
+				++pstr;
+		}
+			pstr->symbol = '9';
+			pstr->times_repeated = f->pic->digits;
 		}
 		f->pic->lenstr = n;
 		f->pic->category = CB_CATEGORY_NUMERIC_EDITED;
