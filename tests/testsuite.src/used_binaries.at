@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2024 Free Software Foundation, Inc.
+## Copyright (C) 2014-2025 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -1475,10 +1475,31 @@ prog.cob:14: termination (signal SIGTERM)
 AT_CLEANUP
 
 
-AT_SETUP([EBCDIC/ASCII table generation])
+AT_SETUP([EBCDIC /ASCII table generation])
 AT_KEYWORDS([runmisc])
 
 AT_SKIP_IF([test "$COB_HAS_ICONV" = "no"])
+
+AT_CHECK([$COBC --gentable=EBCDIC_XXX,ASCII_XXX], [1], [],
+[error: conversion from EBCDIC_XXX to ASCII_XXX is not supported by your iconv implementation
+])
+
+
+AT_CHECK([$COBC --gentable=ISO8859-1,UTF-8], [1], [],
+[error: an error occurred after converting 192 characters
+],
+# Previous test "failed" --> possibly not available
+[AT_CHECK([$COBC --gentable=ISO8859-1,UTF-8], [1], [],
+[error: conversion from ISO8859-1 to UTF-8 is not supported by your iconv implementation
+])])
+
+
+# some environments don't have IBM-500 (like old MSYS and MSVC variants)
+# others don't support this conversion (like Solaris 11) - in this case
+# we skip the rest of the test
+AT_SKIP_IF([test "$($COBC --gentable=IBM500,ASCII 2>&1)" \
+ = "error: conversion from IBM500 to ASCII is not supported by your iconv implementation"])
+
 
 AT_CHECK([$COBC --gentable=IBM500,ASCII], [0],
 [# GnuCOBOL IBM500 <-> ASCII translation tables
@@ -1551,14 +1572,6 @@ D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
 # As this translation is symmetrical, the table is built from the previous one.
 
 ], [note: 128 non-reversible conversions have been arbitrarily made reversible, you may want to check the generated table
-])
-
-AT_CHECK([$COBC --gentable=IBM500,UTF-8], [1], [],
-[error: an error occurred after converting 172 characters
-])
-
-AT_CHECK([$COBC --gentable=EBCDIC_XXX,ASCII_XXX], [1], [],
-[error: conversion from EBCDIC_XXX to ASCII_XXX is not supported by your iconv implementation
 ])
 
 AT_CLEANUP

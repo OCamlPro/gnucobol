@@ -670,10 +670,10 @@ AC_CACHE_SAVE
 dnl entries only used from external includes -> likely no need to check here
 dnl AC_CHECK_HEADERS([whcar.h malloc.h])
 # mandatory:
-AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
+AC_CHECK_HEADERS([sys/types.h stddef.h fcntl.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h stdint.h inttypes.h])
+AC_CHECK_HEADERS([sys/time.h locale.h dlfcn.h stdint.h inttypes.h signal.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -2875,5 +2875,10 @@ case "$USE_JSON" in
     AC_MSG_NOTICE([ Used for JSON I/O:                           ${USE_JSON}])
 	;;
 esac
+
+if test "$ac_cv_header_signal_h" = "no"; then
+  AC_MSG_NOTICE([ Signal handling not available!])
+  AC_MSG_WARN([No cleanup on termination done, some tests will fail.])
+fi
 
 unset DEFINE_DL

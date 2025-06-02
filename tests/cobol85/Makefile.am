@@ -43,7 +43,7 @@ MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
 SUMMARY = summarynoix.txt
 endif
 
-# currently down, leading to se<rver error with HTTPS, broken redirection on HTTP
+# currently down, leading to server error with HTTPS, broken redirection on HTTP
 #URL_NEWCOB_Z = https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
 URL_NEWCOB_Z = https://web.archive.org/web/20240322143655if_/https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
 URL_NEWCOB_TAR_GZ = https://gnucobol.sourceforge.io/files/newcob.val.tar.gz

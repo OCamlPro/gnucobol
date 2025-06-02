@@ -101,7 +101,7 @@ static const cob_field_attr	const_alpha_attr =
 static const cob_field_attr	const_strall_attr =
 				{COB_TYPE_ALPHANUMERIC_ALL, 0, 0, 0, NULL};
 
-/* Static structures for backward compatibility */
+/* Static structures for string related statements */
 COB_TLS struct cob_inspect_state	share_inspect_state;
 COB_TLS struct cob_string_state		share_string_state;
 COB_TLS struct cob_unstring_state	share_unstring_state;
@@ -341,7 +341,7 @@ inspect_common_no_replace (
 		}
 		/* set the marker so we won't iterate over this area again */
 		if (n) {
-			set_inspect_mark (st, pos, last_marker);
+			set_inspect_mark (st, pos, last_marker + 1);
 		}
 	/* note: same code as for LEADING, moved out as we don't need to check
 	   LEADING for _every_ byte in that tight loop */
@@ -538,7 +538,6 @@ cob_inspect_init_common_intern (struct cob_inspect_state *st, cob_field *var)
 	st->data = COB_FIELD_DATA (var);
 	st->start = NULL;
 	st->end = NULL;
-	st->mark_size = 0;
 	st->repdata_size = 0;
 
 	cobglobptr->cob_exception_code = 0;
@@ -579,7 +578,7 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 	cob_inspect_start       (setting start/end)
 	cob_inspect_before        (optional, adjusting end)
 	cob_inspect_after         (optional, adjusting start)
-   one-time cob_inspect_converting/cob_inspect_translating (actual converstion) */
+   one-time cob_inspect_converting/cob_inspect_translating (actual conversion) */
 
 static void
 cob_inspect_init_converting_intern (struct cob_inspect_state *st, cob_field *var)
@@ -692,7 +691,7 @@ cob_inspect_characters_intern (struct cob_inspect_state *st, cob_field *f1)
 void
 cob_inspect_characters (cob_field *f1)
 {
-	cob_inspect_characters_intern(&share_inspect_state, f1);
+	cob_inspect_characters_intern (&share_inspect_state, f1);
 }
 
 static void

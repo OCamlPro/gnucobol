@@ -1,8 +1,41 @@
 
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
+	  now "supported" again (with missing cleanup on signal)
+	* common.c (cob_set_main_argv0) [!HAVE_REALPATH]: fix compile warning
+	* cconv.c (cob_load_collation): fix warning for sprintf
+
 2025-05-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_set_date_from_epoch): simplification, which
 	  also fixes incorrect conversion of epoch (was off by one day)
+
+2025-05-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: updated some defines for WIN32 compilers, especially
+	  for VC2015's availability of snprintf
+
+2025-05-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: some GC4 backport top improve
+	  io-status in case of errors
+
+2025-03-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c: move table SORT variables into the single thread-local
+	  structure (struct sort_state), prepared for module-local with 4.x
+	* common.c: more static variables as thread local via COB_TLS
+
+2025-02-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: prefer C21 _Thread_local specifier for COB_TLS (also for
+	  WIN32), dropping the need for threads.h for the previously used macro
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, common.c: handle [__xlc__] identical to [__IBMC__]
+	* common.c [!SIGPIPE]: fix warning about unused jump
 
 2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -48,6 +81,11 @@
 	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
 	  with X/Open Curses function panel_below()
 
+2024-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (mpz_get_ull, mpz_get_sll, cob_decimal_get_binary):
+	  prefer mpz_sgn over deprecated check for size
+
 2024-11-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* move.c (optimized_move_display_to_edited): minor refactoring
@@ -92,6 +130,10 @@
 		refresh_mywin
 	* common.h: added cob_sys_window
 	* system.def: added system library call CBL_GC_WINDOW
+
+2024-10-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (HELP2MAN_OPTS): use of -n
 
 2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -342,8 +384,8 @@
 2024-02-26  David Declerck <david.declerck@ocamlpro.com>
 
 	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
-	* strings.c: use the collating_sequence field of cob_module to
-	  determine the low value instead of the hard-coded constant "\0"
+	* strings.c (cob_update_low_value): new function to use cob_module's
+	  collating_sequence field for determining the low value instead of the hard-coded constant "\0"
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
@@ -6597,7 +6639,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2024 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
