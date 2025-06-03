@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2014, 2016-2019, 2022-2024 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2014, 2016-2019, 2022-2025 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -56,6 +56,10 @@ COB_SYSTEM_GEN ("CBL_TOLOWER",		2, 2, cob_sys_tolower)
 COB_SYSTEM_GEN ("CBL_TOUPPER",		2, 2, cob_sys_toupper)
 COB_SYSTEM_GEN ("CBL_WRITE_FILE",	5, 5, cob_sys_write_file)
 COB_SYSTEM_GEN ("CBL_XOR",		3, 3, cob_sys_xor)
+COB_SYSTEM_GEN ("CBL_OPEN_VFILE",	2, 2, cob_sys_open_vfile)
+COB_SYSTEM_GEN ("CBL_READ_VFILE",	4, 4, cob_sys_read_vfile)
+COB_SYSTEM_GEN ("CBL_WRITE_VFILE",	4, 4, cob_sys_write_vfile)
+COB_SYSTEM_GEN ("CBL_CLOSE_VFILE",	1, 1, cob_sys_close_vfile)
 
 COB_SYSTEM_GEN ("CBL_GC_FORK",		0, 0, cob_sys_fork)
 COB_SYSTEM_GEN ("CBL_GC_GETOPT",	6, 6, cob_sys_getopt_long_long)
@@ -70,6 +74,10 @@ COB_SYSTEM_GEN ("CBL_OC_NANOSLEEP",	1, 1, cob_sys_oc_nanosleep)
 COB_SYSTEM_GEN ("CBL_GC_SCR_DUMP", 1, 1, cob_sys_scr_dump)
 COB_SYSTEM_GEN ("CBL_GC_SCR_RESTORE", 1, 1, cob_sys_scr_restore)
 COB_SYSTEM_GEN ("CBL_GC_WINDOW", 2, 2, cob_sys_window)
+COB_SYSTEM_GEN ("CBL_GC_OPEN_VFILE64",	2, 2, cob_sys_open_vfile)
+COB_SYSTEM_GEN ("CBL_GC_READ_VFILE64",	4, 4, cob_sys_read_vfile2)
+COB_SYSTEM_GEN ("CBL_GC_WRITE_VFILE64",	4, 4, cob_sys_write_vfile2)
+COB_SYSTEM_GEN ("CBL_GC_CLOSE_VFILE64",	1, 1, cob_sys_close_vfile)
 COB_SYSTEM_GEN ("C$CALLEDBY",		1, 1, cob_sys_calledby)
 COB_SYSTEM_GEN ("C$CHDIR",		2, 2, cob_sys_chdir)
 COB_SYSTEM_GEN ("C$COPY",		3, 3, cob_sys_copyfile)

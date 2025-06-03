@@ -25,6 +25,22 @@ NEWS - user visible changes				-*- outline -*-
 
 ** added multiple window functionality with new system function CBL_GC_WINDOW
 
+** VFILE the CBL functions below provide functionality consistent with 
+	Microfocus / Fujitsu. A heap is NOT paged to a disk file. The CBL_GC 
+	functions are a GNUCOBOL extension to allow for access beyond the 
+	4 GB offset when using the 64 bit GNUCOBOL compiler
+	 
+** New system functions
+
+	CBL_CLOSE_VFILE				Closes a heap. 	
+	CBL_OPEN_VFILE				Opens a heap. 
+	CBL_READ_VFILE				Reads bytes from a heap; offset 4 byte binary
+	CBL_WRITE_VFILE				Writes bytes to a heap; offset 4 byte binary
+	CBL_GC_CLOSE_VFILE64		Closes a heap. 	
+	CBL_GC_OPEN_VFILE64			Opens a heap. 
+	CBL_GC_READ_VFILE64			Reads bytes from a heap; offset 8 byte binary 
+	CBL_GC_WRITE_VFILE64		Writes bytes to a heap; offset 8 byte binary
+
   more work in progress
 
 * Changes that potentially effect recompilation of existing programs:

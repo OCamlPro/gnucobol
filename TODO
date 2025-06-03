@@ -197,3 +197,6 @@ GnuCOBOL 4 provides this quite complete at runtime, too.
 Yes, we should, for now: refer to the GnuCOBOL Programmer's Guide
 https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
+For vfile routines: document return-codes per fileio.c and different 
+handling of cancel and heap-status variable used in CBL_OPEN_VFILE only
+and no use of backup file, limitation of i/o area length.

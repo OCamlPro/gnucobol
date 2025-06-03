@@ -2189,6 +2189,12 @@ COB_EXPIMP int		cob_get_scr_cols	(void);
 COB_EXPIMP int		cob_get_scr_lines	(void);
 COB_EXPIMP int		cob_sys_get_csr_pos	(unsigned char *);
 COB_EXPIMP int		cob_sys_set_csr_pos	(unsigned char *);
+COB_EXPIMP int		cob_sys_open_vfile	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_read_vfile	(cob_u16_t, cob_u32_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_write_vfile	(cob_u16_t, cob_u32_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_close_vfile	(cob_u16_t);
+COB_EXPIMP int		cob_sys_read_vfile2	(cob_u16_t, cob_u64_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_write_vfile2	(cob_u16_t, cob_u64_t, cob_u32_t, unsigned char*);
 
 /******************************************************************************
 *                                                                             *
