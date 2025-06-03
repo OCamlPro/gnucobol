@@ -164,43 +164,39 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
 
-/*		The following structures are added to support the 
-		heap functions 											*/
+/*  heap definitions  */
 
-	#define MAX_HEAP						512
-	#define EYE_BALL_SIZE					8
 
-/* =======> DEFINE ERROR CODES						*/
+/* heap error codes	*/
 
-	#define MAX_HEAPS_EXCEEDED				41
-	#define INSUFFICIENT_MEMORY				42
-	#define ERROR_BEFORE_RELATIVE_LOC_1		43
-	#define ERROR_OUT_OF_DATA_RANGE			44
-	#define HEAP_OUT_BOUNDS					45
-	#define MISSING_VFILE_OPEN				46
+#define MAX_HEAPS_EXCEEDED				41
+#define INSUFFICIENT_MEMORY				42
+#define ERROR_OUT_OF_DATA_RANGE			44	/* Note: we may drop this as it isn't compatible to MF/Fuji */
+#define HEAP_OUT_BOUNDS					45
 
-/* ======> note that the _SEG structure is
-			actually just the header of the
-			segment, the segment data
-			is located after the header
-			and is addressed via a void pointer					*/
+/* note that the _SEG_HDR structure is actually just the header of the segment,
+   the segment data is located after the header, is addressed via a void pointer */
 
-	typedef struct _SEG_HDR
-	{
-		char				eye_ball[EYE_BALL_SIZE];
-		cob_u16_t			heap_id;
-		struct _SEG_HDR		*ptr_prev_seg;
+   #define EYE_BALL_SIZE					8
+   
+   typedef struct _SEG_HDR
+   {
+	   #ifdef _DEBUG
+	   char				eye_ball[EYE_BALL_SIZE];
+	   #endif
+	   struct _SEG_HDR		*ptr_prev_seg;
 		struct _SEG_HDR		*ptr_next_seg;
-		cob_u32_t			seg_num;
-		cob_u32_t			seg_size;
 		cob_u32_t			seg_data_size;
 		cob_u64_t			seg_data_rel_start;
 		cob_u64_t			seg_data_rel_end;
 	}SEG_HDR,		*PSEG_HDR;
-
+	
 	typedef struct _HEAP_ENTRY
 	{
-		char			eye_ball[EYE_BALL_SIZE];
+		#ifdef _DEBUG
+		char				eye_ball[EYE_BALL_SIZE];
+		#endif
+		unsigned int	alloc_size;
 		cob_u16_t		heap_id;
 		PSEG_HDR		ptr_seg_first;
 		PSEG_HDR		ptr_seg_last;
@@ -208,40 +204,21 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 		cob_u64_t		total_alloc;
 		cob_u64_t		total_data_alloc;
 	}HEAP_ENTRY,	*PHEAP_ENTRY;
+	
+	/* TODO: make heap_array dynamic */
+	#define MAX_HEAP		512
+	/* list of available heaps for VFILE routines,
+	   note that these are explicit not thread-local
+	   but static over all threads */
+	static HEAP_ENTRY		heap_array[MAX_HEAP] = { 0 };
 
-
-	char					*ptr_char;
-	int						return_code;
-	int						last_error;
-	static FILE				*fptr_log;
-	static int				search_down;
-	static int				first_vopen = 1;
-	static int				first_time  = 1;
-	static int				vfile_read  = 0;
-	static unsigned int		default_alloc;
-
-	HEAP_ENTRY		heap_array[MAX_HEAP];
-	PHEAP_ENTRY		ptr_heap;
-	PSEG_HDR		ptr_seg;
-
-/*	prototypes for miscellaneous internal functions		*/
-
-	int create_first_segment(PHEAP_ENTRY ptr_a);
-	int get_new_segment(PHEAP_ENTRY ptr_a, PSEG_HDR ptr_b);
-	int locate_segment(cob_u16_t			heap,
-						cob_u64_t		data_loc,
-						cob_u32_t		data_len,
-						void			*data_buffer);
-	void get_default_alloc(void);
-
-
-#ifdef	WITH_ANY_ISAM
-
-/* Isam File handler packet */
-
-struct indexfile {
-	char		*filename;	/* ISAM data file name */
-	char		*savekey;	/* Area to save last primary key read */
+	#ifdef	WITH_ANY_ISAM
+	
+	/* Isam File handler packet */
+	
+	struct indexfile {
+		char		*filename;	/* ISAM data file name */
+		char		*savekey;	/* Area to save last primary key read */
 	char		*recwrk;	/* Record work/save area */
 	size_t		nkeys;		/* Actual keys in file */
 	int		isfd;		/* ISAM file number */
@@ -10930,27 +10907,67 @@ cob_path_to_absolute (const char *path)
 }
 
 /* ============================================ */
-/* Wrapper for CBL_OPEN_VFILE					*/
+/*                heap functions                */
 /* ============================================ */
 
-int
-cob_sys_open_vfile(unsigned char *a, unsigned char *b)
-{
 
+static int 
+create_first_segment (PHEAP_ENTRY ptr_heap)
+{
+	const unsigned int	data_size = ptr_heap->alloc_size - sizeof(SEG_HDR);
+	PSEG_HDR	ptr_seg = cob_fast_malloc (ptr_heap->alloc_size);
+
+	if (ptr_seg == NULL) {
+		return INSUFFICIENT_MEMORY;
+	}
+
+/*	====> first populate HEAP_ENTRY					*/
+
+	ptr_heap->ptr_seg_first	= ptr_seg;
+	ptr_heap->ptr_seg_last		= ptr_seg;
+	ptr_heap->seg_count			= 1;
+	ptr_heap->total_alloc		= ptr_heap->alloc_size;
+	ptr_heap->total_data_alloc  = data_size;
+
+/*	====> next populate SEG header info				*/
+
+	#ifdef _DEBUG
+	memcpy ((void *)&ptr_seg->eye_ball ,"SEGMENT ", EYE_BALL_SIZE);
+	#endif
+	ptr_seg->ptr_prev_seg		= NULL;
+	ptr_seg->ptr_next_seg		= NULL;
+	ptr_seg->seg_data_rel_start = 0;
+	ptr_seg->seg_data_rel_end	= data_size;
+
+	return 0;
+}
+
+/*  CBL_OPEN_VFILE */
+static int
+open_vfile (cob_u16_ptr heap_id, unsigned char status[2], const int gc_ext)
+{
+	PHEAP_ENTRY		ptr_heap;
 	cob_u16_t		heap;
 
-	return_code = 0;
+	int return_code;
+
+	if (cobglobptr->cob_call_params < 2
+	 || !COB_MODULE_PTR->cob_procedure_params[0]
+	 || !COB_MODULE_PTR->cob_procedure_params[1]
+	 || COB_MODULE_PTR->cob_procedure_params[0]->size != sizeof(cob_u16_t)
+	 || COB_MODULE_PTR->cob_procedure_params[1]->size != 2) {
+		cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
+		return 1;
+	}
 
 /*		if first vfile open then initial heap_array			*/
 
-	if (first_vopen == 1)
-	{
-		first_vopen = 0;
-		get_default_alloc();
+	if (heap_array[0].heap_id == 0) {
 		ptr_heap = &heap_array[0];
-		for(heap = 0; heap < MAX_HEAP; heap++, ptr_heap++)
-		{
-			memcpy((void *)&ptr_heap->eye_ball ,"HEAP ENT", EYE_BALL_SIZE);
+		for (heap = 0; heap < MAX_HEAP; heap++, ptr_heap++) {
+			#ifdef _DEBUG
+			memcpy ((void *)&ptr_heap->eye_ball ,"HEAP ENT", EYE_BALL_SIZE);
+			#endif
 			ptr_heap->heap_id			= heap + 1;
 			ptr_heap->ptr_seg_first	= NULL;
 			ptr_heap->ptr_seg_last	= NULL;
@@ -10963,293 +10980,132 @@ cob_sys_open_vfile(unsigned char *a, unsigned char *b)
 /*		find next available heap id				*/
 
 	ptr_heap = &heap_array[0];
-	for(heap = 0; heap < MAX_HEAP && ptr_heap->ptr_seg_first != NULL; ptr_heap++, heap++)
+	for (heap = 0;
+		heap < MAX_HEAP && ptr_heap->ptr_seg_first != NULL;
+		ptr_heap++, heap++)
 	{
 	}
-	if (heap < MAX_HEAP)
-	{
-	}
-	else
-	{
-		memcpy(b, "99", 2);
+
+	if (heap == MAX_HEAP) {
+		memcpy (status, "99", 2);
 		return MAX_HEAPS_EXCEEDED;
 	}
 
-	*(cob_u16_ptr)a = ptr_heap->heap_id;
-	memcpy(b, "00", 2);
-	return_code = create_first_segment(ptr_heap);
-
-	if (return_code != 0)
-		memcpy(b, "99", 2);
-
-	return return_code;
-}
-
-
-int
-cob_sys_read_vfile(cob_u16_t		a,
-					cob_u32_t	b,
-					cob_u32_t	c,
-					unsigned char *d)
-{
-	if (first_vopen == 1)
-		return MISSING_VFILE_OPEN;
-
-	vfile_read = 1;
-	return_code = locate_segment(a, (cob_u64_t)b, c, d);
-	return return_code;
-}
-
-
-int
-cob_sys_write_vfile(cob_u16_t	a,
-					cob_u32_t	b,
-					cob_u32_t	c,
-					unsigned char *d)
-{
-	if (first_vopen == 1)
-		return MISSING_VFILE_OPEN;
-
-	vfile_read = 0;
-	return_code = locate_segment(a, (cob_u64_t)b, c, d);
-	return return_code;
-}
-
-int
-cob_sys_read_vfile2(cob_u16_t	a,
-					cob_u64_t	b,
-					cob_u32_t	c,
-					unsigned char *d)
-{
-	if (first_vopen == 1)
-		return MISSING_VFILE_OPEN;
-
-	vfile_read = 1;
-	return_code = locate_segment(a, b, c, d);
-	return return_code;
-}
-
-
-int
-cob_sys_write_vfile2(cob_u16_t	a,
-					cob_u64_t	b,
-					cob_u32_t	c,
-					unsigned char *d)
-{
-	if (first_vopen == 1)
-		return MISSING_VFILE_OPEN;
-
-	vfile_read = 0;
-	return_code = locate_segment(a, b, c, d);
-	return return_code;
-}
-
-
-int
-cob_sys_close_vfile(cob_u16_t a)
-{
-	PSEG_HDR	ptr_seg_delete;
-	void		*ptr_void;
-	int			sub;
-	short		heap;
-
-	heap	= a;
-
-	if (first_vopen == 1)
-		return MISSING_VFILE_OPEN;
-
-	return_code = 0;
-
-	if ((heap > MAX_HEAP) || (heap == 0))
-	{
-		return HEAP_OUT_BOUNDS;
-	}
-
-
-/*	=====> first locate HEAP_ENTRY				*/
-
-	sub							= (int)(heap - 1);
-	ptr_void					= &heap_array[sub];
-	ptr_heap					= ptr_void;
-	ptr_seg						= ptr_heap->ptr_seg_first;
-
-	while (ptr_seg != NULL)
-	{
-		ptr_seg_delete	= ptr_seg;
-		ptr_seg			= ptr_seg->ptr_next_seg;
-		free(ptr_seg_delete);
-	}
-
-	ptr_heap->ptr_seg_first		= NULL;
-	ptr_heap->ptr_seg_last		= NULL;
-	ptr_heap->seg_count			= 0;
-	ptr_heap->total_alloc		= 0;
-	ptr_heap->total_data_alloc	= 0;
-	return return_code;
-}
-
-
-void
-get_default_alloc()
-{
-	if (sizeof(size_t) == 4) {
-		default_alloc = cobsetptr->cob_heap_memory;
+	*heap_id = heap + 1;
+	ptr_heap->alloc_size = gc_ext ? cobsetptr->cob_heap_memory_64 : cobsetptr->cob_heap_memory;
+	
+	return_code = create_first_segment (ptr_heap);
+	if (return_code == 0) {
+		memcpy (status, "00", 2);
 	} else {
-		default_alloc = cobsetptr->cob_heap_memory_64;
+		memcpy (status, "99", 2);
 	}
-}
-
-
-int 
-create_first_segment(PHEAP_ENTRY ptr_a)
-{
-	void		*ptr_malloc;
-	PSEG_HDR	ptr_seg;
-	int			data_size;
-
-	return_code = 0;
-	ptr_heap	= ptr_a;
-	data_size = default_alloc - sizeof(SEG_HDR);
-
-	ptr_malloc = cob_fast_malloc(default_alloc);
-
-	if (ptr_malloc == NULL)
-		return INSUFFICIENT_MEMORY;
-
-	ptr_seg = ptr_malloc;
-
-/*	====> first populate HEAP_ENTRY					*/
-
-	ptr_heap->ptr_seg_first	= ptr_seg;
-	ptr_heap->ptr_seg_last		= ptr_seg;
-	ptr_heap->seg_count			= 1;
-	ptr_heap->total_alloc		= default_alloc;
-	ptr_heap->total_data_alloc  = data_size;
-
-/*	====> next populate SEG header info				*/
-
-	memcpy((void *)&ptr_seg->eye_ball ,"SEGMENT ", EYE_BALL_SIZE);
-	ptr_seg->heap_id			= ptr_heap->heap_id;
-	ptr_seg->ptr_prev_seg		= NULL;
-	ptr_seg->ptr_next_seg		= NULL;
-	ptr_seg->seg_num			= 1;
-	ptr_seg->seg_size			= default_alloc;
-	ptr_seg->seg_data_size		= data_size;
-	ptr_seg->seg_data_rel_start = 0;
-	ptr_seg->seg_data_rel_end	= ptr_seg->seg_data_size;
 
 	return return_code;
 }
 
-
-int 
-get_new_segment(PHEAP_ENTRY ptr_a, PSEG_HDR ptr_seg_curr)
+/*  CBL_OPEN_VFILE */
+int
+cob_sys_open_vfile (unsigned char *heap_id, unsigned char *status)
 {
-	void		*ptr_malloc;
-	PSEG_HDR	ptr_seg;
-	int			data_size;
+	COB_CHK_PARMS (CBL_OPEN_VFILE, 2);
 
-	return_code = 0;
-	ptr_heap	= ptr_a;
-	data_size = default_alloc - sizeof(SEG_HDR);
+	return open_vfile ((cob_u16_ptr)heap_id, status, 0);
+}
 
-	ptr_malloc = cob_fast_malloc(default_alloc);
+/*  CBL_OPEN_VFILE64 */
+int
+cob_sys_open_vfile2 (unsigned char *heap_id, unsigned char *status)
+{
+	COB_CHK_PARMS (CBL_GC_OPEN_VFILE64, 2);
 
-	if (ptr_malloc == NULL)
+	return open_vfile ((cob_u16_ptr)heap_id, status, 1);
+}
+
+static int 
+get_new_segment (PHEAP_ENTRY ptr_heap, PSEG_HDR ptr_seg_curr)
+{
+	const unsigned int	data_size = ptr_heap->alloc_size - sizeof(SEG_HDR);
+	PSEG_HDR	ptr_seg = cob_fast_malloc (ptr_heap->alloc_size);
+
+	if (ptr_seg == NULL) {
 		return INSUFFICIENT_MEMORY;
-
-	ptr_seg = ptr_malloc;
+	}
 
 /*	====> first populate HEAP_ENTRY				*/
 
 	ptr_heap->ptr_seg_last		= ptr_seg;
 	ptr_heap->seg_count++;
-	ptr_heap->total_alloc		= (cob_u64_t)(default_alloc) * ptr_heap->seg_count;
-	ptr_heap->total_data_alloc  = (cob_u64_t)(data_size) * ptr_heap->seg_count;
+	ptr_heap->total_alloc		= ptr_heap->alloc_size * ptr_heap->seg_count;
+	ptr_heap->total_data_alloc  = data_size * ptr_heap->seg_count;
 
 /*	====> next populate new SEG header info		*/
 
-	memcpy((void *)&ptr_seg->eye_ball ,"SEGMENT ", EYE_BALL_SIZE);
-	ptr_seg->heap_id			= ptr_heap->heap_id;
+	#ifdef _DEBUG
+	memcpy ((void *)&ptr_seg->eye_ball, "SEGMENT ", EYE_BALL_SIZE);
+	#endif
 	ptr_seg->ptr_prev_seg		= ptr_seg_curr;
 	ptr_seg->ptr_next_seg		= NULL;
-	ptr_seg->seg_num			= ptr_seg_curr->seg_num + 1;
-	ptr_seg->seg_size			= default_alloc;
-	ptr_seg->seg_data_size		= data_size;
 	ptr_seg->seg_data_rel_start = ptr_seg_curr->seg_data_rel_end;
 	ptr_seg->seg_data_rel_end	= ptr_seg_curr->seg_data_rel_end + data_size;
 
-/*	====> next populate curr SEG header info	*/
-
+	/*	====> next populate curr SEG header info	*/
 	ptr_seg_curr->ptr_next_seg		= ptr_seg;
 
-	return return_code;
+	return 0;
 }
-
-
-int  
-locate_segment(cob_u16_t	a,
-					cob_u64_t	b,
-					cob_u32_t	c,
-					void		*data_buffer)
+	
+static int  
+locate_segment (cob_u16_t heap, cob_u64_t data_loc, cob_u32_t size, void *data_buffer, const int for_read)
 {
-	unsigned short  heap;
-	cob_u64_t		data_loc;
-	cob_u32_t		data_len;
 	void			*ptr_data;
 	void			*ptr_buffer;
-	void			*ptr_void;
 	cob_u32_t		move_len;
 	cob_u64_t		offset;
-	cob_u64_t		data_remain;
 	cob_u64_t		data_middle;
 	PHEAP_ENTRY		ptr_heap;
 	PSEG_HDR		ptr_seg;
-	int				sub;
 
-	return_code	= 0;
-
-	heap		= a;
-	data_loc	= b;
-	data_len	= c;
-
-	move_len	= data_len;
-	ptr_buffer  = data_buffer;
+	if (cobglobptr->cob_call_params < 4
+	 || !COB_MODULE_PTR->cob_procedure_params[3]
+	 || COB_MODULE_PTR->cob_procedure_params[3]->size < size) {
+		cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
+		return 1;
+	}
 
 /*	=====> first locate HEAP_ENTRY			*/
 
-	if (heap > MAX_HEAP || heap == 0)
-	{
-		fprintf(fptr_log, " heap out of bounds %03hu \n", heap);
+	if (heap > MAX_HEAP || heap == 0
+	 || heap_array[heap - 1].heap_id == 0) {
+		cob_runtime_warning ("heap out of bounds %u", heap);
+		return HEAP_OUT_BOUNDS;
+	}
+	
+	ptr_heap						= &heap_array[heap - 1];
+
+	/* verify that we actually initialized that heap */
+	if (!ptr_heap->ptr_seg_first) {
 		return HEAP_OUT_BOUNDS;
 	}
 
-	sub								= (int)(heap - 1);
-	ptr_void						= &heap_array[sub];
-	ptr_heap						= ptr_void;
 
-	if (ptr_heap->ptr_seg_first == NULL) {
-		fprintf(fptr_log, " heap id is not open %03hu \n", heap);
-		return MISSING_VFILE_OPEN;
-	}
-
-	if (vfile_read && (data_loc + (cob_u64_t)move_len) > ptr_heap->total_data_alloc) {
+	/* don't read after the data we already wrote - note  is writtn */
+	if (for_read
+	 && data_loc + size > ptr_heap->total_data_alloc) {
 		return ERROR_OUT_OF_DATA_RANGE;
 	}
 
-
+	move_len	= size;
+	ptr_buffer  = data_buffer;
 /*	=====> next check to see if the search should be from the
 			front of the linked list or the end of it			*/
 
 	data_middle	= ptr_heap->total_data_alloc>>2;
-	search_down	= 0;
-	ptr_seg		= ptr_heap->ptr_seg_first;
-
-	if (data_loc > data_middle)
-	{
-		search_down = 1;
-		if (search_down == 1)
-			ptr_seg	= ptr_heap->ptr_seg_last;
+	
+	if (data_loc < data_middle) {
+		ptr_seg	= ptr_heap->ptr_seg_first;
+	} else {
+		ptr_seg	= ptr_heap->ptr_seg_last;
 	}
 
 /*	=====> find the first segment with a matching range
@@ -11258,37 +11114,35 @@ locate_segment(cob_u16_t	a,
 	while ((data_loc < ptr_seg->seg_data_rel_start)
 		|| (data_loc > ptr_seg->seg_data_rel_end))
 	{
-		if (data_loc < ptr_seg->seg_data_rel_start)
-		{
-			if (ptr_seg->ptr_prev_seg != NULL)
-			{
-					ptr_seg = ptr_seg->ptr_prev_seg;
-			} else
-			{
-					return ERROR_BEFORE_RELATIVE_LOC_1;
+		if (data_loc < ptr_seg->seg_data_rel_start) {
+			ptr_seg = ptr_seg->ptr_prev_seg;
+			/* LCOV_EXCL_START */
+			if (!ptr_seg) {
+				cob_runtime_error (_("invalid internal call of %s"), __FUNCTION__);
+				cob_hard_failure_internal ("libcob");
 			}
-		} else if (data_loc > ptr_seg->seg_data_rel_end)
-		{
-			if (ptr_seg->ptr_next_seg != NULL)
-			{
-					ptr_seg = ptr_seg->ptr_next_seg;
-			} else
-			{
-					return_code = get_new_segment(ptr_heap, ptr_seg);
-					if (return_code != 0)
-						return return_code;
-					ptr_seg = ptr_heap->ptr_seg_last;
+			/* LCOV_EXCL_STOP */
+		} else if (data_loc > ptr_seg->seg_data_rel_end) {
+			ptr_seg = ptr_seg->ptr_next_seg;
+			if (!ptr_seg) {
+				int return_code = get_new_segment (ptr_heap, ptr_seg);
+				if (return_code != 0) {
+					return return_code;
+				}
+				ptr_seg = ptr_heap->ptr_seg_last;
 			}
 		}
 	}
 
 /*	====> FIND THE OFFSET IN THE CURRENT DATA AREA		*/
 
-	ptr_data = ptr_seg;
-	ptr_data = (char*)ptr_data + sizeof(SEG_HDR);
+	ptr_data = (char*)ptr_seg + sizeof(SEG_HDR);
 	offset = data_loc - ptr_seg->seg_data_rel_start;
 
-	if (offset > ptr_seg->seg_data_size) {
+	/* CHECKME: this validation leads to the while-loop being executed
+	   exactly one or two times; either drop it (and test that),
+	   or unroll the loop */
+	if (offset > ptr_heap->alloc_size - sizeof(SEG_HDR)) {
 		return ERROR_OUT_OF_DATA_RANGE;
 	}
 
@@ -11296,37 +11150,30 @@ locate_segment(cob_u16_t	a,
 
 	while (move_len > 0)
 	{
+		const cob_u64_t data_remain = ptr_heap->alloc_size - sizeof(SEG_HDR) - offset;
 		ptr_data = (char*)ptr_data + offset;
-		data_remain = ptr_seg->seg_data_size - offset;
-		if (data_remain >= move_len)
-		{
-			if (vfile_read == 1)
-			{
-					memcpy(ptr_buffer, ptr_data, move_len);
-			} else
-			{
-					memcpy(ptr_data, ptr_buffer, move_len);
+		if (data_remain >= move_len) {
+			if (for_read) {
+				memcpy (ptr_buffer, ptr_data, move_len);
+			} else {
+				memcpy (ptr_data, ptr_buffer, move_len);
 			}
 			move_len = 0;
-		} else
-		{
-			if (vfile_read == 1)
-			{
-					memcpy(ptr_buffer, ptr_data, data_remain);
-			} else
-			{
-					memcpy(ptr_data, ptr_buffer, data_remain);
+		} else {
+			if (for_read)  {
+				memcpy (ptr_buffer, ptr_data, data_remain);
+			} else {
+				memcpy (ptr_data, ptr_buffer, data_remain);
 			}
 			move_len = move_len - data_remain;
-			if (ptr_seg->ptr_next_seg != NULL)
-			{
+			if (ptr_seg->ptr_next_seg != NULL) {
 					ptr_seg = ptr_seg->ptr_next_seg;
-			} else
-			{
-					return_code = get_new_segment(ptr_heap, ptr_seg);
-					if (return_code != 0)
-						return return_code;
-					ptr_seg = ptr_seg->ptr_next_seg;
+			} else {
+				int return_code = get_new_segment (ptr_heap, ptr_seg);
+				if (return_code != 0) {
+					return return_code;
+				}
+				ptr_seg = ptr_seg->ptr_next_seg;
 			}
 			offset		= 0;
 			ptr_buffer  = (char*)ptr_buffer + data_remain;
@@ -11335,8 +11182,70 @@ locate_segment(cob_u16_t	a,
 		}
 	}
 
-	return return_code;
-
+	return 0;
 }
 
-	/* End of heap functions					*/
+int
+cob_sys_read_vfile (cob_u16_t heap, cob_u32_t offset, cob_u32_t size, unsigned char *data)
+{
+	COB_CHK_PARMS (CBL_READ_VFILE, 4);
+	return locate_segment (heap, offset, size, data, 1);
+}
+
+
+int
+cob_sys_write_vfile (cob_u16_t heap, cob_u32_t offset, cob_u32_t size, unsigned char *data)
+{
+	COB_CHK_PARMS (CBL_WRITE_VFILE, 4);
+	return locate_segment (heap, offset, size, data, 0);
+}
+
+int
+cob_sys_read_vfile2 (cob_u16_t heap, cob_u64_t offset, cob_u32_t size, unsigned char *data)
+{
+	COB_CHK_PARMS (CBL_GC_READ_VFILE64, 4);
+	return locate_segment (heap, offset, size, data, 1);
+}
+
+
+int
+cob_sys_write_vfile2 (cob_u16_t heap, cob_u64_t offset, cob_u32_t size, unsigned char *data)
+{
+	COB_CHK_PARMS (CBL_GC_WRITE_VFILE64, 4);
+	return locate_segment (heap, offset, size, data, 0);
+}
+
+
+int
+cob_sys_close_vfile (const cob_u16_t heap)
+{	
+	PHEAP_ENTRY		ptr_heap;
+	PSEG_HDR	ptr_seg;
+
+	COB_CHK_PARMS (CBL_CLOSE_VFILE, 1);
+
+	if (heap > MAX_HEAP || heap == 0
+	 || heap_array[heap - 1].heap_id == 0) {
+		return HEAP_OUT_BOUNDS;
+	}
+
+	ptr_heap					= &heap_array[heap - 1];
+	ptr_seg						= ptr_heap->ptr_seg_first;
+	
+	while (ptr_seg != NULL)
+	{
+		PSEG_HDR	ptr_seg_delete = ptr_seg;
+		ptr_seg			= ptr_seg->ptr_next_seg;
+		free (ptr_seg_delete);
+	}
+
+	ptr_heap->ptr_seg_first		= NULL;
+	ptr_heap->ptr_seg_last		= NULL;
+	ptr_heap->seg_count			= 0;
+	ptr_heap->total_alloc		= 0;
+	ptr_heap->total_data_alloc	= 0;
+
+	return 0;
+}
+
+/* End of heap functions					*/

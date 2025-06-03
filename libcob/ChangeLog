@@ -1,4 +1,18 @@
 
+2025-06-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	first VFILE update
+	* fileio.c: drop some debugging code, also fixing SIGSEGV on not opened
+	  debug logfile
+	* fileio.c: refactored, removing nearly all static vars on the way
+	* fileio.c, system.def, common.h: seperate internal function
+	  for CBL_GC_OPEN_VFILE64; now using the runtime setting for memory
+	  allocation depending on the heap's alloc size
+	* fileio.c (SEG_HDR, HEAP_ENTRY) [!_DEBUG]: only provide eyeball in
+	  debug builds
+	* fileio.c (SEG_HDR, HEAP_ENTRY): drop unused fields
+	* fileio.c: adjusted vfile functions per changes in SEG_HDR and HEAP_ENTRY
+
 2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
@@ -23,6 +37,8 @@
 
 2025-04-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
+	  new functions to support virtual heap
+	  CBL_ functions from Fujitsu and Microfocus COBOL compilers
 	* fileio.c (cob_sys_open_vfile,
 				cob_sys_read_vfile
 				cob_sys_read_vfile2,
@@ -33,8 +49,6 @@
 				create_first_segment,
 				get_new_segment,
 				locate_segment):
-	  new functions to support virtual heap
-	  CBL_ functions from Fujitsu and Microfocus COBOL compilers
 	  note that as CBL_GC extension we also support a 64 bit 
 	  version which allows for a VFILE to exceed the 4GB 
 	  limitation if memory is available
