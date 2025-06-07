@@ -16,6 +16,29 @@
 	* gentable.c: generate EBCDIC/ASCII translation tables
 	* cobc.c, help.c: new --gentable option
 
+2024-12-18  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* cobgen.c, field.c, tree.c, tree.h, typeck.c: Hand merge 2015-07-02
+	  about COMP-X.
+	* cobgen.c (output_size): use `compx_size` when usage is COMP-X
+	* cobgen.c (output_attr): override type to `COB_TYPE_NUMERIC_BINARY`
+	  when usage is `COMP-X`
+	* field.c: Increment `pic_digits` values by one
+	* field.c (setup_parameters): set the `compx_size` and override usage
+	  of `COMP-N` to `COMP-X` field when picture starts with `X`
+	* field.c (compute_size): leave `align_size` to 1 when usage is
+	  `COMP-x` and use `compx_size` to compute size of `COMP-X`
+	* tree.c (cb_tree_category): `COMP-X` is of category
+	  `CB_CATEGORY_NUMERIC`.
+	* tree.c (cb_field_size): size of `COMP-X` field and references is
+	  `compx_size`
+	* tree.h (struct cob_field): add `compx_size` to `cob_field`
+	* typeck.c (cb_check_numeric_name): `COMP-X` is numeric name
+	* typeck.c (cb_check_numeric_edited_name): `COMP-X` is numeric edited
+	  name
+	* typeck.c (validate_move): `COMP-x` is validated when dst is category
+	  `ALPHANUMERIC` or `ALPHANUMERIC-EDITED`.
+
 2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (cobc.1): add description using help2man -n
@@ -7368,6 +7391,11 @@
 
 	* codegen.c (output_size): Fix Bug #146 reference modification
 	  ignored ODO size
+
+2015-07-02  Ron Norman
+
+	* Fixes to tree.c, tree,h typeck.c field.c codegen.c to correctly
+	  handle COMP-X data fields. This now works the same as Micro Focus
 
 2015-06-12  Edward Hart <edward.dan.hart@gmail.com>
 

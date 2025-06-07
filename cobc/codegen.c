@@ -1344,6 +1344,8 @@ again:
 				}
 				output_integer (p->depending);
 				q = p;
+			} else if(q->usage == CB_USAGE_COMP_X && q->compx_size > 0) {
+				output ("%d", q->compx_size);
 			} else {
 				output ("%d", q->size);
 			}
@@ -1603,6 +1605,8 @@ output_attr (const cb_tree x)
 			id = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
 		} else {
 			int type = cb_tree_type (x, f);
+			if (f->usage == CB_USAGE_COMP_X)
+				type = COB_TYPE_NUMERIC_BINARY;
 			switch (type) {
 			case COB_TYPE_GROUP:
 			case COB_TYPE_ALPHANUMERIC:

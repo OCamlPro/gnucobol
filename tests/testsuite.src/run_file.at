@@ -8807,26 +8807,26 @@ AT_CAPTURE_FILE([prog.out])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog 1>prog.out], [0], [], [])
 
-AT_DATA([reference], [Other Flags 32.
+AT_DATA([reference], [Other Flags 032.
 File has 0003 keys.
 Key def  0112 bytes.
 File assigned is 'mytstisam'
 *** Dump FCD before changes
-Key1 has 001 parts, Offset 062 Flags 00 Comp 00 Sparse  .
+Key1 has 001 parts, Offset 062 Flags 000 Comp 000 Sparse  .
       Pos 000000000 Len 000000008
-Key2 has 002 parts, Offset 072 Flags 00 Comp 00 Sparse  .
+Key2 has 002 parts, Offset 072 Flags 000 Comp 000 Sparse  .
       Pos 000000109 Len 000000010
       Pos 000000144 Len 000000008
-Key3 has 002 parts, Offset 092 Flags 00 Comp 00 Sparse  .
+Key3 has 002 parts, Offset 092 Flags 000 Comp 000 Sparse  .
       Pos 000000156 Len 000000008
       Pos 000000164 Len 000000008
 *** Dump FCD after changes
-Key1 has 001 parts, Offset 062 Flags 00 Comp 00 Sparse  .
+Key1 has 001 parts, Offset 062 Flags 000 Comp 000 Sparse  .
       Pos 000000000 Len 000000008
-Key2 has 002 parts, Offset 072 Flags 64 Comp 00 Sparse  .
+Key2 has 002 parts, Offset 072 Flags 064 Comp 000 Sparse  .
       Pos 000000109 Len 000000010
       Pos 000000144 Len 000000008
-Key3 has 002 parts, Offset 092 Flags 66 Comp 00 Sparse *.
+Key3 has 002 parts, Offset 092 Flags 066 Comp 000 Sparse *.
       Pos 000000156 Len 000000008
       Pos 000000164 Len 000000008
 Loading sample file 'myextisam'
@@ -10997,7 +10997,7 @@ AT_DATA([prog.cob], [
            MOVE 5                     TO FCD-MAX-REC-LENGTH.
            CALL "EXTFH" USING OPCODE, FCD.
            DISPLAY "OPEN STATUS:"  
-                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+                                      FCD-FILE-STATUS.
 
       *    READ RECORD
            MOVE OP-READ-NEXT          TO OPCODE.
@@ -11006,7 +11006,7 @@ AT_DATA([prog.cob], [
                MOVE SPACE                 TO EX-RECORD-BUFFER
                CALL "EXTFH" USING OPCODE, FCD
                DISPLAY "READ NEXT STATUS:"
-                                      FCD-STATUS-KEY-1 "/" FCD-BINARY
+                                      FCD-FILE-STATUS
                DISPLAY "DATA:" EX-RECORD-BUFFER(1:10) '-'
            END-PERFORM.
 
@@ -11014,7 +11014,7 @@ AT_DATA([prog.cob], [
            MOVE OP-CLOSE              TO OPCODE.
            CALL "EXTFH" USING OPCODE, FCD.
            DISPLAY "CLOSE STATUS:"  
-                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+                                      FCD-FILE-STATUS.
 
       *    OPEN second file
            MOVE fcd--line-sequential-org   TO FCD-ORGANIZATION.
@@ -11026,7 +11026,7 @@ AT_DATA([prog.cob], [
            MOVE 10                    TO FCD-MAX-REC-LENGTH.
            CALL "EXTFH" USING OPCODE, FCD.
            DISPLAY "OPEN STATUS:"  
-                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+                                      FCD-FILE-STATUS.
 
       *    READ RECORD
            MOVE OP-READ-NEXT          TO OPCODE.
@@ -11035,7 +11035,7 @@ AT_DATA([prog.cob], [
                MOVE SPACE                 TO EX-RECORD-BUFFER
                CALL "EXTFH" USING OPCODE, FCD
                DISPLAY "READ NEXT STATUS:"
-                                      FCD-STATUS-KEY-1 "/" FCD-BINARY
+                                      FCD-FILE-STATUS
                DISPLAY "DATA:" EX-RECORD-BUFFER(1:10) '-'
            END-PERFORM.
 
@@ -11043,7 +11043,7 @@ AT_DATA([prog.cob], [
            MOVE OP-CLOSE              TO OPCODE.
            CALL "EXTFH" USING OPCODE, FCD.
            DISPLAY "CLOSE STATUS:"  
-                                      FCD-STATUS-KEY-1 "/" FCD-BINARY.
+                                      FCD-FILE-STATUS.
 
        MAIN-EXT.
            STOP RUN.
@@ -11052,32 +11052,32 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[OPEN STATUS:0/48
-READ NEXT STATUS:0/48
+[OPEN STATUS:00
+READ NEXT STATUS:00
 DATA:SEQ01     -
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:SEQ02     -
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:SEQ03     -
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:SEQ04     -
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:SEQ05     -
-READ NEXT STATUS:1/48
+READ NEXT STATUS:10
 DATA:          -
-CLOSE STATUS:0/48
-OPEN STATUS:0/48
-READ NEXT STATUS:0/48
+CLOSE STATUS:00
+OPEN STATUS:00
+READ NEXT STATUS:00
 DATA:TXTA123456-
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:TXTB123456-
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:TXTC123456-
-READ NEXT STATUS:0/48
+READ NEXT STATUS:00
 DATA:TXTD123456-
-READ NEXT STATUS:1/48
+READ NEXT STATUS:10
 DATA:          -
-CLOSE STATUS:0/48
+CLOSE STATUS:00
 ], [])
 
 AT_CLEANUP

@@ -914,6 +914,7 @@ struct cb_field {
 	int			size;		/* Field size */
 	int			level;		/* Level number */
 	int			memory_size;	/* Memory size */
+	int			compx_size;	/* Original COMP-X byte size */
 	int			offset;		/* Byte offset from 01 level */
 	int			occurs_min;	/* OCCURS <min> */
 	int			occurs_max;	/* OCCURS [... TO] <max> */

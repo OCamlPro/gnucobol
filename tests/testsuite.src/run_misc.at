@@ -10707,7 +10707,7 @@ WORKING-STORAGE
 **********************
 77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
-01        HEXV                            13
+01        HEXV                            013
 01        TEST-BASED.                    <NULL> address
 01        TEST-ALLOCED.
   05      TEST-ALLOCED-SUB1              ALL SPACES
@@ -10771,7 +10771,7 @@ WORKING-STORAGE
 **********************
 77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
-01        HEXV                            13
+01        HEXV                            013
 01        IDX                             000000000
 01        TSTREC.
   05      TSTDEP                         'XXX'
@@ -15224,8 +15224,8 @@ AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0
 [File prof.csv generated
 ])
 
-AT_CLEANUP
 
+AT_CLEANUP
 
 AT_SETUP([MOVE to NUMERIC-EDITED safety])
 
@@ -15272,6 +15272,83 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE COMP-X])
+AT_KEYWORDS([Numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TST.
+           05 BVAL  PIC 9999 BINARY VALUE 512.
+           05 XVAL  PIC XX COMP-X VALUE 512.
+              88 XLOW  VALUE   0 THRU 256.
+              88 XHIGH VALUE 257 THRU 65536.
+           05 VAL9  PIC 99999 COMP-X VALUE 1024.
+              88 LOW9  VALUE   0 THRU 256.
+              88 HIGH9 VALUE 257 THRU 65536.
+           05 XVAL2 PIC XX COMP-X VALUE 16706.
+           05 XVALX REDEFINES XVAL2 PIC XX.
+           05 YVALX PIC XX VALUE 'A '.
+           05 YVAL2 REDEFINES YVALX PIC XX COMP-X.
+
+       PROCEDURE DIVISION.
+           DISPLAY " XVAL is " XVAL ";  Length is " LENGTH OF XVAL.
+           DISPLAY " VAL9 is " VAL9 ";  Length is " LENGTH OF VAL9.
+           MOVE 10240 TO XVAL.
+           DISPLAY " XVAL is " XVAL ";  Length is " LENGTH OF XVAL.
+           DISPLAY "XVAL2 is " XVAL2 "; Length is " LENGTH OF XVAL2.
+           DISPLAY "XVALX is " XVALX "; Length is " LENGTH OF XVALX.
+           ADD 1 TO XVAL2.
+           DISPLAY "XVALX is " XVALX " after +1;".
+           COMPUTE XVAL2 = XVAL2 / 256 + 8192.
+           DISPLAY "XVALX is " XVALX " after / 256 + 8192;".
+           MOVE 'DE'       TO XVALX.
+           DISPLAY "Numeric: " XVAL2 " is char " XVALX.
+           MOVE ZERO       TO YVAL2.
+           MOVE 'D'        TO YVALX (1:1)
+           MOVE LOW-VALUES TO YVALX (2:1)
+           SUBTRACT YVAL2 FROM XVAL2.
+           MOVE ' '        TO YVALX (1:1)
+           MOVE LOW-VALUES TO YVALX (2:1)
+           ADD YVAL2 TO XVAL2.
+           DISPLAY "Numeric: " XVAL2 " is char " XVALX.
+           MOVE 0 TO XVAL.
+           ADD 10240 TO XVAL.
+           IF XVAL = 10240
+               DISPLAY "XVAL is " XVAL
+           ELSE
+               DISPLAY "XVAL is not 10240 but " XVAL
+           END-IF.
+           MOVE 0 TO BVAL.
+           ADD 10240 TO BVAL.
+           IF BVAL = 0240
+               DISPLAY "BVAL is " BVAL
+           ELSE
+               DISPLAY "BVAL is not 0240 but " BVAL
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([./prog], [0], [ XVAL is 00512;  Length is 2
+ VAL9 is 01024;  Length is 3
+ XVAL is 10240;  Length is 2
+XVAL2 is 16706; Length is 2
+XVALX is AB; Length is 2
+XVALX is AC after +1;
+XVALX is  A after / 256 + 8192;
+Numeric: 17477 is char DE
+Numeric: 08261 is char  E
+XVAL is 10240
+BVAL is 0240
+], [])
 
 AT_CLEANUP
 
