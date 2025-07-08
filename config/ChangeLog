@@ -3,9 +3,9 @@
 
 	* gcos-strict.conf: set init-justify to no after testing on GCOS
 
-2024-12-16 Simon Sobisch <simonsobisch@gnu.org>
+2024-12-16  Simon Sobisch <simonsobisch@gnu.org>
 
-	* config/runtime.cfg: Add documentation for COB_LOAD_GLOBAL flag
+	* config/runtime.cfg: add COB_LOAD_GLOBAL
 
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 

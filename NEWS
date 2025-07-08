@@ -94,7 +94,7 @@ NEWS - user visible changes				-*- outline -*-
    the symbols of dynamically loaded shared libraries are made available
    globally to other shared objects or remain confined locally. Previously,
    this behavior depended on the underlying platform, where the default was
-   often "global." The default behavior is now explicitly set to "local."
+   often "global." The default behavior is now explicitly set to "local".
 
 * New build features
 

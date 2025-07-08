@@ -4351,9 +4351,10 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE CALLEE.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_CASE=UPPER ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_CASE=UPPER $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([CALL/CANCEL with COB_LOAD_GLOBAL])
 AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_GLOBAL])
@@ -4377,10 +4378,11 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=true ./caller], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([ALLOCATE / FREE with BASED item (1)])
 AT_KEYWORDS([runmisc])

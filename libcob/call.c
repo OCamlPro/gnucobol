@@ -284,33 +284,38 @@ static int last_entry_is_working_directory (const char *buff, const char *pstr)
 }
 
 static void* cob_dlopen(const char* filename) {
-#ifdef _WIN32
+#if	defined (_WIN32)
 	if (filename == NULL) {
 		return GetModuleHandle (NULL);
 	}
 	return LoadLibrary(filename);
 #elif	defined(USE_LIBDL)
-	int flags = cobsetptr->cob_load_global 
+	const int flags = cobsetptr->cob_load_global 
 		? RTLD_LAZY | RTLD_GLOBAL
 		: RTLD_LAZY | RTLD_LOCAL;
 
 	return dlopen(filename, flags);
 #else
-    if (advise != NULL) {
+	if (advise != NULL) {
 		int error;
-		if (cobsetptr->cob_load_global) {
-        	error = lt_dladvise_global(&advise);
-    	} else {
-        	error = lt_dladvise_local(&advise);
-    	}
+		static int last_cob_load_global = -1;
 
-		if (error) {
-			cob_runtime_warning("set link loader hint failed; %s", lt_dlerror());
+		if (cobsetptr->cob_load_global != last_cob_load_global) {
+			last_cob_load_global = cobsetptr->cob_load_global
+
+			if (cobsetptr->cob_load_global) {
+				error = lt_dladvise_global (&advise);
+			} else {
+				error = lt_dladvise_local (&advise);
+			}
+
+			if (error) {
+				cob_runtime_warning ("set link loader hint failed; %s", lt_dlerror());
+			}
 		}
 	}
 
-    void* handle = lt_dlopenadvise(filename, advise);
-    return handle;
+	return lt_dlopenadvise (filename, advise);
 #endif
 }
 
@@ -1599,12 +1604,10 @@ cob_exit_call (void)
 
 #if !defined(_WIN32) && !defined(USE_LIBDL) 
 	if (advise != NULL) {
-		int error = lt_dladvise_destroy(&advise);
-		if (error) {
-			const char * msg = lt_dlerror();
+		if (lt_dladvise_destroy (&advise)) {
 			/* not translated as highly unlikely */
 			cob_runtime_warning (
-				"destroying link loader advise failed; %s", lt_dlerror());
+				"destroying link loader advise failed; %s", lt_dlerror ());
 		}
 	}
 #endif
