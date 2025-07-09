@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/cobc
 #
-# Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2021, 2024-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -23,7 +23,7 @@ bin_PROGRAMS = cobc
 cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.c parser.y scanner.c config.c \
 	reserved.c error.c tree.c tree.h field.c typeck.c codegen.c help.c \
 	config.def flag.def warning.def codeoptim.def ppparse.def \
-	codeoptim.c replace.c 
+	codeoptim.c replace.c gentable.c
 
 #cobc_SOURCES = cobc.c cobc.h ppparse.y pplex.l parser.y scanner.l config.c
 
@@ -56,13 +56,14 @@ CODE_COVERAGE_LCOV_OPTIONS =  --no-external
 
 HELPSOURCES = help.c config.def flag.def warning.def $(top_srcdir)/configure.ac
 HELP2MAN_OPTS = --info-page=$(PACKAGE)
+HELP2MAN_OPTS_COBC = $(HELP2MAN_OPTS) -n "GNU project COBOL compiler"
 
 if MAKE_HAS_PREREQ_ONLY
 cobc.1: $(HELPSOURCES) | $(COBC)
-	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) $(COBC)
+	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS_COBC) $(COBC)
 else
 cobc.1: $(HELPSOURCES)
-	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) $(COBC)
+	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS_COBC) $(COBC)
 endif
 
 .l.c:

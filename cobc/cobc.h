@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -475,7 +475,9 @@ extern FILE			*cb_src_list_file;
 extern FILE			*cb_depend_file;
 extern int			cb_depend_output;
 extern int			cb_depend_keep_missing;
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 extern int			cb_flag_copybook_deps;
+#endif
 extern struct cb_text_list	*cb_depend_list;
 extern struct cb_text_list	*cb_copy_list;
 extern struct cb_text_list	*cb_include_file_list; /* global */
@@ -625,6 +627,9 @@ extern int		yyparse (void);
 /* typeck.c */
 extern size_t		suppress_warn;	/* no warnings for internal generated stuff */
 
+extern cob_u8_t ebcdic_to_ascii[256];
+extern cob_u8_t ascii_to_ebcdic[256];
+
 /* error.c */
 #define CB_MSG_STYLE_GCC	0
 #define CB_MSG_STYLE_MSC	1U
@@ -693,5 +698,8 @@ extern void		activate_system_name (const char *, const char *, const int);
 extern int		cb_strcasecmp (const void *, const void *);
 extern unsigned char	cb_toupper (const unsigned char);
 extern unsigned char	cb_tolower (const unsigned char);
+
+/* gentable.c */
+extern int		gentable (FILE *, const char *, const char *, char);
 
 #endif /* CB_COBC_H */

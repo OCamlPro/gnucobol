@@ -1,4 +1,9 @@
 
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_set_date_from_epoch): fix incorrect conversion
+	  of epoch (was off by one day)
+
 2025-01-08  Florian Schmidt <florian.schmidt.1994@icloud.com>
 
 	* call.c (cob_dlopen): new function used instead of partially re-defining
@@ -344,6 +349,12 @@
 
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
+
+2024-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
+	* strings.c: use the collating_sequence field of cob_module to
+	  determine the low value instead of the hard-coded constant "\0"
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 

@@ -1474,7 +1474,11 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* add opened file to dependency list */
-	if (cb_depend_output && !cb_flag_copybook_deps) {
+	if (cb_depend_output
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
+	 && !cb_flag_copybook_deps
+#endif
+	) {
 		cb_depend_list = pp_text_list_add (cb_depend_list, name, strlen (name));
 	}
 
@@ -1677,6 +1681,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		plexbuff1 = cobc_malloc ((size_t)COB_SMALL_BUFF);
 	}
 
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
 	if (cb_depend_output && cb_flag_copybook_deps) {
 
 		if (lib) {
@@ -1690,6 +1695,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 			pp_text_list_add (cb_depend_list, plexbuff1,
 					  strlen (plexbuff1));
 	}
+#endif
 
 	/* TODO: open with path relative to the current file's path,
 	         if any (applies both to with and without "lib") */
@@ -1762,12 +1768,14 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		/* otherwise fall-trough to error handling */
 	} else {
 		/* do not output error if looking only for copybook deps */
-		if (!cb_flag_copybook_deps){
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
+		if (!cb_flag_copybook_deps)
+#endif
+		{
 
 			/* add opened file to dependency list */
 			if (cb_depend_output && cb_depend_keep_missing) {
 				const char *depname = cobc_plex_stradd (plexbuff1, cb_extension_list->text);
-
 				cb_depend_list = pp_text_list_add (cb_depend_list, depname, strlen (depname));
 			} else {
 

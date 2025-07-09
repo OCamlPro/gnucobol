@@ -23,7 +23,6 @@ SUBDIRS = cobol85
 
 TESTSUITE = $(srcdir)/testsuite
 TESTSUITE_MANUAL = $(srcdir)/testsuite_manual
-dist_check_SCRIPTS = listings-sed.sh
 
 dist_noinst_SCRIPTS = $(TESTSUITE) $(TESTSUITE_MANUAL)
 
@@ -72,7 +71,6 @@ testsuite_manual_sources = \
 
 EXTRA_DIST = $(srcdir)/package.m4 \
 	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at \
-	$(srcdir)/listings-sed.sh \
 	$(srcdir)/valgrind.supp \
 	$(testsuite_sources) $(testsuite_manual_sources)
 

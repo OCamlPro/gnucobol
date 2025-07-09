@@ -1,4 +1,18 @@
 
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: testing working diff with the option to override by DIFF
+
+2025-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix --without-iconv; use iconv includes, if necessary;
+	  use libtool link
+
+2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: support setting of PANEL_LIBS independent of CURSES_LIBS
+	* ABOUT-NLS, INSTALL: replaced by current versions
+
 2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix warning for \ in AC_CHECK_FUNCS by dropping them
@@ -13,6 +27,10 @@
 
 	* configure.ac: only check for IBM/OpenWatcom/Sun's C compilers if not
 	  running under GCC / clang
+
+2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (FILES_TO_BE_EXECUTABLE): added doc/cobcinfo.sh
 
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -76,4 +76,4 @@ E6 7E 73 74 75 76 77 78 79 7A AD A8 D4 5B D6 D7
 
 # "default" 8-bit ASCII to EBCDIC 1047 conversion table (likely MF)
 #
-# This translation being symmetric, the table is built from the previous one.
+# As this translation is symmetrical, the table is built from the previous one.

@@ -5,7 +5,7 @@
 # a not POSIX build (OrangeC or Visual Studio build for example)
 # in a POSIX environment (like MinGW or Cygwin, possibly WSL).
 #
-# Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -40,6 +40,7 @@ LOCAL_ENV=""
 PATH="${COB_WIN_BUILDPATH}:${PATH}"
 export PATH
 
+DIFF=diff
 AWK=awk
 GREP=grep
 SED=sed
@@ -64,9 +65,6 @@ COMPILE_MODULE="${COBC} -m ${FLAGS}"
 LISTING_FLAGS="-fttitle=GnuCOBOL_V.R.P -fno-ttimestamp"
 COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
 COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
-
-# Helper script to unify listings (replace version, date, time)
-UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
 
 # test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
@@ -124,7 +122,7 @@ set_utf8_locale () {
 }
 
 # Note: we explicit do not set COB_ON_CYGWIN here,
-# as this is file is about running non-cygwin binaries
+# as this file is about running non-cygwin binaries
     # Windows but not Cygwin
     COB_ON_WINDOWS=yes
     export COB_ON_WINDOWS
@@ -172,7 +170,7 @@ COB_MSG_FORMAT=GCC
 export COB_MSG_FORMAT
 
 # different variables used in the testsuite
-# note: kept intended to ease merge from atlocal.in
+# note: indentation retained to ease merge from atlocal.in
 	if test "$COB_CC" = ""; then
 	   COB_CC="$($GREP COBC_CC info.out | cut -d: -f2 | cut -b2-)"
 	fi
@@ -186,6 +184,12 @@ export COB_MSG_FORMAT
 		COB_BIGENDIAN="no"
 	fi
 	COB_HAS_64_BIT_POINTER=$($GREP "64bit-mode" info.out | cut -d: -f2 | cut -b2-)
+
+	if test $($GREP -i -c "iconv support.*no" info.out) = 0; then
+		COB_HAS_ICONV="yes"
+	else
+		COB_HAS_ICONV="no"
+	fi
 
 	cob_indexed=$($GREP -i "indexed file" info.out | cut -d: -f2)
 	if test "x$cob_indexed" = "x"; then
@@ -245,7 +249,7 @@ fi
 rm -rf info.out
 
 # NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
-export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
+export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
 export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
 export COB_CC COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
