@@ -4193,7 +4193,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4213,13 +4213,14 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD with entry points])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -4280,7 +4281,12 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./main-prog], [0],
+[12abc
+11
+xxxxx
+], [])
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
