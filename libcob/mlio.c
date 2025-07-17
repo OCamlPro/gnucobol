@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2020, 2022-2024 Free Software Foundation, Inc.
+   Copyright (C) 2018-2020, 2022-2025 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -40,6 +40,15 @@
 #include <libxml/xmlversion.h>
 #include <libxml/xmlwriter.h>
 #include <libxml/tree.h>
+
+#ifndef LIBXML_CONST_ERROR_PTR
+#if LIBXML_VERSION >= 21200
+#define LIBXML_CONST_ERROR_PTR	const xmlError *
+#else
+#define LIBXML_CONST_ERROR_PTR	xmlErrorPtr		/* use old ABI */
+#endif
+#endif
+ 
 #endif
 
 #if defined (WITH_CJSON)
@@ -1583,7 +1592,7 @@ xml_error_handling (struct xml_state *state, const xmlError *err) {
 }
 
 static void
-xml_error_handler (void *ctx, const xmlError *err) {
+xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 	struct xml_state *parse_state = ctx;
 	enum xml_parser_state state = parse_state->state;
 	static int last_error_code = 0;
