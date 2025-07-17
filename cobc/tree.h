@@ -749,7 +749,7 @@ struct cb_system_name {
 struct cb_schema_name {
 	struct cb_tree_common	common;		/* Common values */
 	const char		*name;		/* Original name */
-	const char		*data;		/* file name */
+	cb_tree		val;		/* file name, may be a literal or a data name, may be empty */
 };
 
 #define CB_SCHEMA_NAME(x)	(CB_TREE_CAST (CB_TAG_SCHEMA_NAME, struct cb_schema_name, x))

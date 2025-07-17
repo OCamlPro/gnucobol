@@ -1,4 +1,29 @@
 
+2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	initial (unfinished) support for XML PARSE
+	* fileio.c (cob_setup_filename), coblocal.h: extracted from other functions
+	  and made available for libcob
+	* fileio.c (open_cbl_file, cob_sys_rename_file, cob_sys_check_file_exist,
+	  cob_sys_copy_file, cob_sys_delete_file): use of cob_setup_filename
+	* statement.def (STMT_JSON_PARSE, STMT_XML_PARSE): fixed statement names
+	* statement.def, exeption.def, exception-io.def: dummy-definition
+	  of used macros as enum for lsp-supported editors
+	* common.h: new definitions COB_XML_COMPAT COB_XML_PARSE_VALIDATE_FILE
+	* mlio.c (xml_parse): register validation and error handlers,
+	  for validation from external XML schema, use cob_setup_filename so
+	  name mapping works identical to SELECT ASSIGN
+	* xmlevent.def, mlio.c, Makefile.am: extracted XML-EVENT values from mlio.c
+	* mlio.c: new enum cob_xml_event along with static structures
+	  xml_event_name and xml_event_name_len
+	* mlio.c (set_xml_namespace): new function setting namespace registers
+	* mlio.c: XML PARSE stub completely rewritten and now "functional what's
+	  implemented"; the logic is changed to first parse the XML data in
+	  chunks, creating internal events using registered SAX handlers into a
+	  queue, then iterating over this to create the events and setup the
+	  registers until the queue is empty; both the event data and the events
+	  are cached
+
 2025-06-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	first VFILE update

@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2020, 2022-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2020, 2022-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -23,6 +23,8 @@ lib_LTLIBRARIES = libcob.la
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
 	mlio.c coblocal.h cconv.c system.def profiling.c
+
+EXTRA_DIST = xmlevent.def
 
 if LOCAL_CJSON
 nodist_libcob_la_SOURCES = cJSON.c

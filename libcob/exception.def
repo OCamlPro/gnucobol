@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2015, 2018-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2015, 2018-2021, 2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -20,6 +20,13 @@
 
 
 /* COB_EXCEPTION (code, tag, name, fatal) */
+
+#ifndef COB_EXCEPTION
+	#define DUMMY_ENUM
+	#define	COB_EXCEPTION(code,tag,name,fatal) tag = 0x##code + sizeof(name) + fatal,
+	/* dummy-definition for lsp-supported editors */
+	enum exception_dummy {
+#endif
 
 
 /* All exceptions */
@@ -723,3 +730,9 @@ COB_EXCEPTION  (1700, COB_EC_JSON,
 COB_EXCEPTION  (1710, COB_EC_JSON_IMP,
 		"EC-JSON-IMP", 1)
 
+
+#ifdef DUMMY_ENUM
+	/* dummy-definition for lsp-supported editors */
+		DUMMY_END
+	};
+#endif
