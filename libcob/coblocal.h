@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -23,6 +23,12 @@
 #define COB_LOCAL_H
 
 #pragma once
+
+/* config inclusion for LSPs with file-only context;
+   should otherwise be included up-front */
+#ifndef COB_CONFIG_DIR
+#include "config.h"
+#endif
 
 /* We use this file to define/prototype things that should not be
    exported to user space
@@ -263,14 +269,13 @@ Note: also defined together with __clang__ in both frontends:
 
 #if defined(COB_TLS)
     /* already defined, for example as static to explicit disable TLS */
-#elif defined(_WIN32)
-    #define COB_TLS	__declspec(thread)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    #define COB_TLS	_Thread_local
 #elif defined(__GNUC__) && (__GNUC__ >= 4) || defined(__clang__) || \
       defined(__hpux) || defined(_AIX) || defined(__sun)
     #define COB_TLS	static __thread
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-    #include <threads.h>
-    #define COB_TLS	thread_local
+#elif defined(_WIN32)
+    #define COB_TLS	__declspec(thread)
 #else
     #define COB_TLS	static	/* fallback definition */
 #endif
@@ -322,6 +327,8 @@ typedef struct __cob_settings {
 	unsigned char	cob_concat_sep[4];	/* Concatenated sequential file name separator (+)*/
 	char 		*cob_file_path;
 	char		*bdb_home;
+	size_t		cob_heap_memory;		/* Memory segment for VFILE    */
+	size_t		cob_heap_memory_64;		/* Memory segment for VFILE 64 */
 	size_t		cob_sort_memory;
 	size_t		cob_sort_chunk;
 
@@ -457,6 +464,7 @@ COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
 COB_HIDDEN char		*cob_get_filename_print	(cob_file *, const int);
+COB_HIDDEN char		*cob_setup_filename		(const cob_field *);
 COB_HIDDEN void		cob_init_reportio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_call		(cob_global *, cob_settings *, const int);
 COB_HIDDEN void		cob_init_intrinsic	(cob_global *);

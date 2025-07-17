@@ -1,4 +1,9 @@
 
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: make signal.h optional again, even if this configuration
+	  will fail some tests
+
 2025-05-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: testing working diff with the option to override by DIFF

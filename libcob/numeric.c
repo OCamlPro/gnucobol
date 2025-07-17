@@ -213,16 +213,17 @@ mpz_set_sll (mpz_ptr dest, const cob_s64_t val)
 static cob_u64_t
 mpz_get_ull (const mpz_ptr src)
 {
-	size_t			size;
-
-	size = mpz_size (src);
-	if (!size) {
+#if	GMP_LIMB_BITS > 32
+	if (mpz_sgn (src) == 0) {
 		return 0;
 	}
-#if	GMP_LIMB_BITS > 32
 	return (cob_u64_t)src->_mp_d[0];
 #else
-	if (size < 2) {
+	const size_t	size = mpz_size (src);	/* depr. func! */
+	if (size == 0) {
+		return 0;
+	}
+	if (size == 1) {
 		return (cob_u64_t)src->_mp_d[0];
 	}
 	return (cob_u64_t)src->_mp_d[0] |
@@ -233,20 +234,20 @@ mpz_get_ull (const mpz_ptr src)
 static cob_s64_t
 mpz_get_sll (const mpz_ptr src)
 {
-	int			size;
+	const int		sign = mpz_sgn (src);
 	cob_u64_t		vtmp;
 
-	size = src->_mp_size;
-	if (!size) {
+	if (sign == 0) {
 		return 0;
 	}
 	vtmp = (cob_u64_t)src->_mp_d[0];
 #if	GMP_LIMB_BITS < 64
+	/* depr. func! */
 	if (mpz_size (src) > 1) {
 		vtmp |= (cob_u64_t)src->_mp_d[1] << GMP_NUMB_BITS;
 	}
 #endif
-	if (size > 0) {
+	if (sign == 1) {
 		return (cob_s64_t) vtmp & COB_MAX_LL;
 	}
 	return ~(((cob_s64_t) vtmp - 1LL) & COB_MAX_LL);
@@ -946,7 +947,7 @@ cob_decimal_get_double (cob_decimal *d)
 	double		v;
 
 	cob_not_finite = 0;
-	if (unlikely (mpz_size (d->value) == 0)) {
+	if (unlikely (mpz_sgn (d->value) == 0)) {
 		return 0.0;
 	}
 	cob_decimal_get_mpf (cob_mpft, d);
@@ -1721,19 +1722,20 @@ static int
 cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 {
 	const int	field_sign = COB_FIELD_HAVE_SIGN (f);
-	const size_t	bitnum = (f->size * 8) - field_sign;
+	const int	sign = mpz_sgn (d->value);
+	const size_t	bitnum = f->size * 8;
 	size_t			overflow;
 
-	if (unlikely (mpz_size (d->value) == 0)) {
+	if (unlikely (sign == 0)) {
 		memset (f->data, 0, f->size);
 		return 0;
 	}
 	overflow = 0;
 	if (!field_sign
-	 && mpz_sgn (d->value) == -1) {
+	 && sign == -1) {
 		mpz_abs (d->value, d->value);
 	}
-	if (unlikely (mpz_sizeinbase (d->value, 2) > bitnum)) {
+	if (unlikely (mpz_sizeinbase (d->value, 2) > bitnum - field_sign)) {
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
 			goto overflow;
 		}
@@ -1751,9 +1753,9 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 			mpz_tdiv_r (d->value, d->value, cob_mpze10[digits]);
 		} else {
 #if	0	/* RXWRXW - Fdiv sign */
-			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8) - field_sign);
+			mpz_fdiv_r_2exp (d->value, d->value, bitnum - field_sign);
 #endif
-			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
+			mpz_fdiv_r_2exp (d->value, d->value, bitnum);
 		}
 	} else if (opt && COB_FIELD_BINARY_TRUNC (f)) {
 		const short	scale = COB_FIELD_SCALE (f);
@@ -1775,7 +1777,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 				mpz_tdiv_r (d->value, d->value,
 					    cob_mpze10[digits]);
 			} else {
-				mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
+				mpz_fdiv_r_2exp (d->value, d->value, bitnum);
 			}
 		}
 	}

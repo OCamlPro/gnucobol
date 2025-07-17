@@ -1,4 +1,9 @@
 
+2025-04-22  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	* runtime.cfg: add runtime configuration COB_HEAP_MEMORY and
+	  COB_HEAP_MEMORY64 to support VFILES memory allocation
+
 2025-01-10  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf: set init-justify to no after testing on GCOS

@@ -48,7 +48,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_DATA([expected.lst],
-[GnuCOBOL V.R.P          prog.cob             Sat Jan 25 2002 12:00:00  Page 0001
+[GnuCOBOL V.R.P          prog.cob             Fri Jan 25 2002 12:00:00  Page 0001
 
 LINE    PG/LN  A...B............................................................
 
@@ -69,7 +69,7 @@ LINE    PG/LN  A...B............................................................
 000015             END-DISPLAY.
 000016             STOP RUN.
 
-GnuCOBOL V.R.P          prog.cob             Sat Jan 25 2002 12:00:00  Page 0002
+GnuCOBOL V.R.P          prog.cob             Fri Jan 25 2002 12:00:00  Page 0002
 
 0 warnings in compilation group
 0 errors in compilation group

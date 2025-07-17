@@ -1,4 +1,29 @@
 
+2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h, tree.h, replace.c, scanner.l: fixed enum and forward definitions
+	  for C89 compat
+
+2025-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	initial (unfinished) support for XML PARSE
+	* parser.y (schema_definition), tree.h (cb_schema_name): store reference
+	  for XML SCHEMA, allowing literals and words
+	* typeck.c (validate_assign_name, process_undefined_assign_name): handle
+	  XML SCHEMA references identical to SELECT ASSIGN, allowing external file
+	  references
+	* typeck.c (cb_validate_program_data): call validate_assign_name for each
+	  XML SCHEMA name
+	* codgen.c (output_xml_parse): pass flags to runtime (previously missing)
+	* codgen.c (output_param): handle XML SCHEMA names (previously crashing);
+	  do not overwrite data/size for internal ANY LENGTH registers, as those
+	  have to be setup by the runtime, not the generated code
+
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
+	  now "supported" again (with missing cleanup on signal)
+
 2025-05-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (set_compile_date): fix SOURCE_DATE_EPOCH being
@@ -15,6 +40,10 @@
 
 	* gentable.c: generate EBCDIC/ASCII translation tables
 	* cobc.c, help.c: new --gentable option
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: handle [__xlc__] identical to [__IBMC__]
 
 2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
 
