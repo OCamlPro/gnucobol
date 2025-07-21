@@ -6597,7 +6597,12 @@ cb_build_assign (const cb_tree var, const cb_tree val)
 
 	p = make_tree (CB_TAG_ASSIGN, CB_CATEGORY_UNKNOWN,
 		       sizeof (struct cb_assign));
-	p->var = var;
+	if (CB_FIELD_P (var)) {
+		struct cb_field *f = CB_FIELD (var);
+		p->var = cb_build_reference (f->name);
+	} else {
+		p->var = var;
+	}
 	p->val = val;
 	return CB_TREE (p);
 }
