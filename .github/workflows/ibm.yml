@@ -69,15 +69,6 @@ jobs:
         run: |
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
 
-          sed -i '/AT_SETUP(\[CALL C with callback, PROCEDURE DIVISION EXTERN\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[CALL C with callback, ENTRY-CONVENTION EXTERN\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
-          sed -i '/AT_SETUP(\[System routines for files\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[INDEXED file numeric keys ordering\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
-          sed -i '/AT_SETUP(\[CALL BY VALUE numeric literal with SIZE IS\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[CALL BY VALUE to C\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[EXHIBIT statement\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
-          sed -i '/AT_SETUP(\[EXAMINE TALLYING\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
-
       - name: Run testsuite
         run: |
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
