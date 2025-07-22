@@ -8690,8 +8690,10 @@ cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 	i_fh = 0;
 	va_start (args, varcnt);
 	for (i = 0; i < varcnt; i += 2) {
+		cob_call_union f;
 		fbase[i_fh] = va_arg (args, cob_file *);
-		callfh[i_fh++] = va_arg (args, void *);
+		f.funcvoid = va_arg (args, void *);
+		callfh[i_fh++] = (int (*)(unsigned char *, FCD3 *))f.funcint;
 	}
 	va_end (args);
 	cob_file_sort_giving_internal (sort_file, i_fh, fbase, callfh);
