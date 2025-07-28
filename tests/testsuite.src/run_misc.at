@@ -4947,9 +4947,11 @@ cprog (void *cb)
    char *p1;
    int  p2 = 42;
    char *p3 = "CALLBACK";
+   cob_call_union f;
+   f.funcvoid = cb;
 
    p1 = p3;
-   ((int (*)(char *, int, char *))cb)(p1, p2, p3);
+   ((int (*)(char *, int, char *))f.funcint)(p1, p2, p3);
    return 0;
 }
 ]])
@@ -5023,9 +5025,11 @@ cprog (void *cb)
    char *p1;
    int  p2 = 42;
    char *p3 = "CALLBACK";
+   cob_call_union f;
+   f.funcvoid = cb;
 
    p1 = p3;
-   ((int (*)(char *, int, char *))cb)(p1, p2, p3);
+   ((int (*)(char *, int, char *))f.funcint)(p1, p2, p3);
    return 0;
 }
 ]])

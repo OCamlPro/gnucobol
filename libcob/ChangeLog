@@ -1,4 +1,17 @@
 
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, fileio.c: new externalized typedef EXTFH_FUNC used in
+	  EXTFH function declarations
+	* fileio.c (cob_file_sort_giving_extfh): use of EXTFH_FUNC to remove
+	  pedantic warning about invalid cast from void pointer to function pointer
+	* common.c [!SIGFPE]: define per notes in gettext's old intdiv0.m4
+
+2025-07-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c: cater for libxml2 ABI break with LIBXML_VERSION >= 21200 by
+	  providing a check and definition of sax error handler with the old ABI
+
 2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	initial (unfinished) support for XML PARSE
@@ -59,6 +72,17 @@
 
 	* fileio.c (indexed_open) [WITH_ANY_ISAM]: some GC4 backport top improve
 	  io-status in case of errors
+
+2025-05-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (do_cancel_module, cob_cancel_field): fixed definition for
+	  cancel_func to not include too much parameters and added cast for C23
+
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* call.c (COB_SYSTEM_GEN): fixed pointer cast per GCC
+	* call.c (cob_call): explicit cast to function pointer with maximum
+	  possible arguments for C23 compat
 
 2025-04-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 

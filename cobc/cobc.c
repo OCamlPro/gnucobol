@@ -390,7 +390,7 @@ static struct cobc_mem_struct	*cobc_plexmem_base = NULL;
 static const char	*cobc_cc;		/* C compiler */
 static char		*cobc_cflags;		/* C compiler flags */
 #ifdef COB_DEBUG_FLAGS
-static const char		*cobc_debug_flags;		/* C debgging flags */
+static const char		*cobc_debug_flags;		/* C debugging flags */
 #else
 #ifndef	_MSC_VER
 #error		missing definition of COB_DEBUG_FLAGS
@@ -3389,13 +3389,14 @@ process_command_line (const int argc, char **argv)
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
 #endif
-#ifdef COB_DEBUG_FLAGS
+#ifdef COB_DEBUG_FLAGS	/* may be hardcoded for some compilers */
 			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
-#endif
+#else
 			if (copt == NULL) {
 				/* some compilers warn if not explicit passed, so default to -O0 for -g */
 				copt = CB_COPT_0;
 			}
+#endif
 			break;
 
 		case 'd':
@@ -9022,7 +9023,7 @@ set_cobc_defaults (void)
 		COBC_ADD_STR (cobc_ldflags, COB_LDFLAGS, NULL, NULL);
 	}
 
-#ifdef COB_DEBUG_FLAGS
+#ifdef COB_DEBUG_FLAGS	/* may be hardcoded for some compilers */
 	p = cobc_getenv ("COB_DEBUG_FLAGS");
 	if (p && *p) {
 		cobc_debug_flags = (const char *)p;

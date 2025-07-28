@@ -8681,7 +8681,7 @@ void
 cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 {
 	cob_file	**fbase;
-	int 	(**callfh)(unsigned char *opcode, FCD3 *fcd);
+	EXTFH_FUNC *callfh;
 	va_list		args;
 	size_t		i, i_fh;
 
@@ -8691,7 +8691,7 @@ cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 	va_start (args, varcnt);
 	for (i = 0; i < varcnt; i += 2) {
 		fbase[i_fh] = va_arg (args, cob_file *);
-		callfh[i_fh++] = va_arg (args, void *);
+		callfh[i_fh++] = va_arg (args, EXTFH_FUNC);
 	}
 	va_end (args);
 	cob_file_sort_giving_internal (sort_file, i_fh, fbase, callfh);
@@ -9813,9 +9813,8 @@ save_fcd_status (FCD3 *fcd, int sts)
  * OPEN file
  */
 void
-cob_extfh_open (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
+cob_extfh_open (EXTFH_FUNC callfh, cob_file *f,
+	const int mode, const int sharing, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -9852,9 +9851,8 @@ cob_extfh_open (
  * CLOSE file
  */
 void
-cob_extfh_close (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
+cob_extfh_close (EXTFH_FUNC callfh, cob_file *f,
+	cob_field *fnstatus, const int opt, const int remfil)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -9920,9 +9918,8 @@ cob_extfh_close (
  * START
  */
 void
-cob_extfh_start (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, const int cond, cob_field *key, cob_field *keysize, cob_field *fnstatus)
+cob_extfh_start (EXTFH_FUNC callfh, cob_file *f,
+	const int cond, cob_field *key, cob_field *keysize, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -9963,9 +9960,8 @@ cob_extfh_start (
  * READ
  */
 void
-cob_extfh_read (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
+cob_extfh_read (EXTFH_FUNC callfh, cob_file *f,
+	cob_field *key, cob_field *fnstatus, const int read_opts)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -10009,9 +10005,8 @@ cob_extfh_read (
  * READ next
  */
 void
-cob_extfh_read_next (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *fnstatus, const int read_opts)
+cob_extfh_read_next (EXTFH_FUNC callfh, cob_file *f,
+	cob_field *fnstatus, const int read_opts)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -10037,9 +10032,8 @@ cob_extfh_read_next (
  * WRITE
  */
 void
-cob_extfh_write (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus, const unsigned int check_eop)
+cob_extfh_write (EXTFH_FUNC callfh, cob_file *f,
+	cob_field *rec, const int opt, cob_field *fnstatus, const unsigned int check_eop)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -10073,9 +10067,8 @@ cob_extfh_write (
  * REWRITE
  */
 void
-cob_extfh_rewrite (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
+cob_extfh_rewrite (EXTFH_FUNC callfh, cob_file *f,
+	cob_field *rec, const int opt, cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;
@@ -10106,9 +10099,8 @@ cob_extfh_rewrite (
  * DELETE
  */
 void
-cob_extfh_delete (
-	int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-	cob_file *f, cob_field *fnstatus)
+cob_extfh_delete (EXTFH_FUNC callfh, cob_file *f,
+	cob_field *fnstatus)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;

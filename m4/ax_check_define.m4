@@ -17,13 +17,14 @@
 # LICENSE
 #
 #   Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
+#   Copyright (c) 2023 David Seifert
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 11
+#serial 12
 
 AU_ALIAS([AC_CHECK_DEFINED], [AC_CHECK_DEFINE])
 AC_DEFUN([AC_CHECK_DEFINE],[
@@ -63,8 +64,8 @@ AC_CACHE_CHECK([for $2], ac_var,
 dnl AC_LANG_FUNC_LINK_TRY
 [AC_LINK_IFELSE([AC_LANG_PROGRAM([$1
                 #undef $2
-                char $2 ();],[
-                char (*f) () = $2;
+                char $2 (void);],[
+                char (*f) (void) = $2;
                 return f != $2; ])],
                 [AS_VAR_SET(ac_var, yes)],
                 [AS_VAR_SET(ac_var, no)])])
