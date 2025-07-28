@@ -1,4 +1,9 @@
 
+2025-07-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_file_sort_giving_extfh): use cob_call_union to silence
+	  pedantic warning about invalid cast from pointer to pointer-to-function
+
 2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	initial (unfinished) support for XML PARSE

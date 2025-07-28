@@ -1,4 +1,9 @@
 
+2025-07-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (output_module_init_function): replace "module" by
+	  "module__" to avoid name clashes with COBOL programs named "module"
+
 2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h, tree.h, replace.c, scanner.l: fixed enum and forward definitions

@@ -3647,25 +3647,25 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA DIVISION.
        PROCEDURE        DIVISION.
-           CALL 'mod'
-           CALL 'modpart'
+           CALL 'module'
+           CALL 'modulepart'
            STOP RUN.
 ])
 
-AT_DATA([mod.cob], [
+AT_DATA([module.cob], [
        IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      mod.
+       PROGRAM-ID.      module.
        DATA DIVISION.
        PROCEDURE        DIVISION.
            DISPLAY 'A' WITH NO ADVANCING
            GOBACK.
-       ENTRY 'modpart'.
+       ENTRY 'modulepart'.
            DISPLAY 'B' WITH NO ADVANCING
            GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE mod.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE module.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [AB], [])
 
 AT_CLEANUP
