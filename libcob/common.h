@@ -2627,23 +2627,25 @@ COB_EXPIMP void cob_rollback	(void);
 /* functions in fileio.c for the MF style EXTFH interface */
 COB_EXPIMP int	EXTFH		(unsigned char *opcode, FCD3 *fcd);
 
-COB_EXPIMP void	cob_extfh_open		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, const int, const int, cob_field *);
-COB_EXPIMP void cob_extfh_close		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int, const int);
-COB_EXPIMP void cob_extfh_read		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_read_next	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_rewrite	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int, cob_field *);
-COB_EXPIMP void cob_extfh_delete	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *);
-COB_EXPIMP void cob_extfh_start		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, const int, cob_field *,
+typedef int (*EXTFH_FUNC)(unsigned char *opcode, FCD3 *fcd);
+
+COB_EXPIMP void	cob_extfh_open		(EXTFH_FUNC callfh, cob_file *,
+					const int, const int, cob_field *);
+COB_EXPIMP void cob_extfh_close		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int, const int);
+COB_EXPIMP void cob_extfh_read		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, cob_field *, const int);
+COB_EXPIMP void cob_extfh_read_next	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int);
+COB_EXPIMP void cob_extfh_rewrite	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int, cob_field *);
+COB_EXPIMP void cob_extfh_delete	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *);
+COB_EXPIMP void cob_extfh_start		(EXTFH_FUNC callfh, cob_file *,
+					const int, cob_field *,
 					cob_field *, cob_field *);
-COB_EXPIMP void cob_extfh_write		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int,
+COB_EXPIMP void cob_extfh_write		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int,
 				 	cob_field *, const unsigned int);
 COB_EXPIMP void cob_file_fcd_adrs		(cob_file *, void *);
 COB_EXPIMP void cob_file_fcdkey_adrs	(cob_file *, void *);

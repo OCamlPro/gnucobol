@@ -1,4 +1,9 @@
 
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.guess, config.sub, texinfo.tex: updated to recent versions from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
 2025-02-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pre-inst-env.in: drop COB_ON_CYGWIN as it is set via atlocal for
