@@ -144,6 +144,7 @@ struct static_call_list {
 	const char		*call_name;
 	int			convention;
 	int			return_type;
+	cb_tree			args;
 };
 
 struct base_list {
@@ -298,6 +299,8 @@ static void codegen_finalize (void);
 
 static void output_perform_once (struct cb_perform *);
 
+static void output_function_arg_types (cb_tree args);
+
 /* Local functions */
 
 static struct cb_field *
@@ -385,7 +388,7 @@ lookup_func_call (const char *p)
 }
 
 static void
-lookup_static_call (const char *p, int convention, int return_type)
+lookup_static_call (const char *p, int convention, int return_type, cb_tree args)
 {
 	struct static_call_list *sclp;
 
@@ -398,6 +401,7 @@ lookup_static_call (const char *p, int convention, int return_type)
 	sclp->call_name = p;
 	sclp->convention = convention;
 	sclp->return_type = return_type;
+	sclp->args = args;
 	sclp->next = static_call_cache;
 	static_call_cache = sclp;
 }
@@ -1890,6 +1894,8 @@ output_call_cache (void)
 	}
 	if (static_call_cache) {
 		const char			*convention_modifier;
+		FILE				*savetarget = output_target;
+		output_target = current_prog->local_include->local_fp;
 		static_call_cache = static_call_list_reverse (static_call_cache);
 		output_local ("/* Define external subroutines being called statically */\n");
 		for (static_call = static_call_cache; static_call;
@@ -1901,17 +1907,20 @@ output_call_cache (void)
 			}
 			output_local ("#ifndef %s\n", static_call->call_name);
 			if (static_call->return_type == COB_RETURN_NULL) {
-				output_local ("extern void %s%s ();\n", convention_modifier,
+				output_local ("extern void %s%s ", convention_modifier,
 					static_call->call_name);
 			} else if (static_call->return_type == COB_RETURN_ADDRESS_OF) {
-				output_local ("extern void * %s%s ();\n", convention_modifier,
+				output_local ("extern void * %s%s ", convention_modifier,
 					static_call->call_name);
 			} else {
-				output_local ("extern int %s%s ();\n", convention_modifier,
+				output_local ("extern int %s%s ", convention_modifier,
 					static_call->call_name);
 			}
+			output_function_arg_types (static_call->args);
+			output_local (";\n");
 			output_local ("#endif\n");
 		}
+		output_target = savetarget;
 	}
 	needs_unifunc = 0;
 }
@@ -3910,10 +3919,24 @@ output_param (cb_tree x, int id)
 					cb_statement_enum_name[STMT_BEFORE_UDF]);
 			}
 #if	0	/* RXWRXW Func */
-			output ("cob_user_function (func_%s, &cob_dyn_%u, ",
+			output ("cob_user_function (func_%s, &cob_dyn_%u",
 				func, gen_dynamic);
 #else
-			output ("func_%s.funcfld (&cob_dyn_%u",
+			output ("((cob_field *(*)(cob_field **");
+			if (ip->intr_field) {
+				output (", ");
+				if (ip->intr_field == cb_int0) {
+					output ("void *");
+				} else if (ip->intr_field == cb_int1) {
+					output ("unsigned int");
+				} else {
+					output ("cob_field *");
+				}
+			}
+			for (l = ip->args; l; l = CB_CHAIN (l)) {
+				output (", cob_field *");
+			}
+			output ("))func_%s.funcfld) (&cob_dyn_%u",
 				func, gen_dynamic);
 #endif
 			gen_dynamic++;
@@ -6593,6 +6616,87 @@ output_memory_check_call (struct cb_call *p, const enum cob_statement stmt)
 }
 
 static void
+output_function_arg_types (cb_tree args)
+{
+	cb_tree		x;
+	cb_tree		l;
+	cob_u32_t	n;
+
+	if (args) {
+		output ("(");
+	} else {
+		output ("(void)");
+	}
+	for (l = args, n = 1; l; l = CB_CHAIN (l), n++) {
+		x = CB_VALUE (l);
+		field_iteration = n - 1U;
+		switch (CB_PURPOSE_INT (l)) {
+		case CB_CALL_BY_REFERENCE:
+		case CB_CALL_BY_CONTENT:
+			output ("void *");
+			break;
+		case CB_CALL_BY_VALUE:
+			output_call_protocast (x, l);
+			break;
+		default:
+			break;
+		}
+		if (CB_CHAIN (l)) {
+			output (", ");
+		}
+	}
+	if (args) {
+		output (")");
+	}
+}
+
+static void
+output_function_cast (struct cb_call *p, size_t ret_ptr, const char *convention, const char *name_str)
+{
+	output_prefix ();
+	if (ret_ptr) {
+#ifdef	COB_NON_ALIGNED
+		output ("temptr");
+#else
+		output_integer (p->call_returning);
+#endif
+		output (" = ((void *(*)");
+	} else if (p->call_returning == cb_null) {
+		output ("((void (*)");
+	} else if (p->call_returning) {
+		output ("ret = ((int (*)");
+	} else if (p->convention & CB_CONV_NO_RET_UPD
+	        || !current_prog->cb_return_code) {
+		output ("((int (*)");
+	} else {
+		output_integer (current_prog->cb_return_code);
+		output (" = ((int (*)");
+	}
+	output_function_arg_types (p->args);
+	output(")");
+	if (p->call_returning == cb_null) {
+		if (name_str) {
+			output ("call_%s.funcnull%s", name_str, convention);
+		} else {
+			output ("cob_unifunc.funcnull%s", convention);
+		}
+	} else if (ret_ptr) {
+		if (name_str) {
+			output ("call_%s.funcptr%s", name_str, convention);
+		} else {
+			output ("cob_unifunc.funcptr%s", convention);
+		}
+	} else {
+		if (name_str) {
+			output ("call_%s.funcint%s", name_str, convention);
+		} else {
+			output ("cob_unifunc.funcint%s", convention);
+		}
+	}
+	output (")");
+}
+
+static void
 output_call (struct cb_call *p)
 {
 	cb_tree				x;
@@ -6955,25 +7059,7 @@ output_call (struct cb_call *p)
 		output_integer (p->name);
 		output (";");
 		output_newline ();
-		output_prefix ();
-		if (p->call_returning == cb_null) {
-			output ("cob_unifunc.funcnull");
-		} else if (ret_ptr) {
-#ifdef	COB_NON_ALIGNED
-			output ("temptr");
-#else
-			output_integer (p->call_returning);
-#endif
-			output (" = cob_unifunc.funcptr");
-		} else if (p->call_returning) {
-			output ("ret = cob_unifunc.funcint");
-		} else if (p->convention & CB_CONV_NO_RET_UPD
-		       ||  !current_prog->cb_return_code) {
-			output ("(void)cob_unifunc.funcint");
-		} else {
-			output_integer (current_prog->cb_return_code);
-			output (" = cob_unifunc.funcint");
-		}
+		output_function_cast (p, ret_ptr, "", NULL);
 	} else if (!dynamic_link) {
 		/* Static link */
 		if (p->call_returning != cb_null) {
@@ -7007,13 +7093,14 @@ output_call (struct cb_call *p)
 					nlp->nested_prog->toplev_count);
 			} else {
 				output ("%s", name_str);
-				if (cb_flag_c_decl_for_static_call) {
+				if (cb_flag_c_decl_for_static_call &&
+				    !cb_find_defined_program_by_name (name_str)) {
 					if (p->call_returning == cb_null) {
-						lookup_static_call (name_str, p->convention, COB_RETURN_NULL);
+						lookup_static_call (name_str, p->convention, COB_RETURN_NULL, p->args);
 					} else if (ret_ptr == 1) {
-						lookup_static_call (name_str, p->convention, COB_RETURN_ADDRESS_OF);
+						lookup_static_call (name_str, p->convention, COB_RETURN_ADDRESS_OF, p->args);
 					} else {
-						lookup_static_call (name_str, p->convention, COB_RETURN_INT);
+						lookup_static_call (name_str, p->convention, COB_RETURN_INT, p->args);
 					}
 				}
 			}
@@ -7031,7 +7118,7 @@ output_call (struct cb_call *p)
 
 			nlp = find_nested_prog_with_id (name_str);
 			if (nlp) {
-				output ("call_%s.funcint = %s_%d__;",
+				output ("call_%s.funcint = (int (*)(void))%s_%d__;",
 					name_str, name_str,
 					nlp->nested_prog->toplev_count);
 			} else {
@@ -7072,74 +7159,7 @@ output_call (struct cb_call *p)
 			output_line ("else");
 			output_block_open ();
 		}
-		output_prefix ();
-		/* call frame cast prototype */
-		if (ret_ptr) {
-#ifdef	COB_NON_ALIGNED
-			output ("temptr");
-#else
-			output_integer (p->call_returning);
-#endif
-			output (" = ((void *(*)");
-		} else if (p->call_returning == cb_null) {
-			output ("((void (*)");
-		} else if (p->call_returning) {
-			output ("ret = ((int (*)");
-		} else if (p->convention & CB_CONV_NO_RET_UPD
-		        || !current_prog->cb_return_code) {
-			output ("((int (*)");
-		} else {
-			output_integer (current_prog->cb_return_code);
-			output (" = ((int (*)");
-		}
-		if (p->args) {
-			output ("(");
-		} else {
-			output ("(void)");
-		}
-		for (l = p->args, n = 1; l; l = CB_CHAIN (l), n++) {
-			x = CB_VALUE (l);
-			field_iteration = n - 1U;
-			switch (CB_PURPOSE_INT (l)) {
-			case CB_CALL_BY_REFERENCE:
-			case CB_CALL_BY_CONTENT:
-				output ("void *");
-				break;
-			case CB_CALL_BY_VALUE:
-				output_call_protocast (x, l);
-				break;
-			default:
-				break;
-			}
-			if (CB_CHAIN (l)) {
-				output (", ");
-			}
-		}
-		if (p->args) {
-			output (")");
-		}
-		output(")");
-
-		if (p->call_returning == cb_null) {
-			if (name_str) {
-				output ("call_%s.funcnull%s", name_str, convention);
-			} else {
-				output ("cob_unifunc.funcnull%s", convention);
-			}
-		} else if (ret_ptr) {
-			if (name_str) {
-				output ("call_%s.funcptr%s", name_str, convention);
-			} else {
-				output ("cob_unifunc.funcptr%s", convention);
-			}
-		} else {
-			if (name_str) {
-				output ("call_%s.funcint%s", name_str, convention);
-			} else {
-				output ("cob_unifunc.funcint%s", convention);
-			}
-		}
-		output (")");
+		output_function_cast (p, ret_ptr, convention, name_str);
 	}
 
 	/* Arguments */

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023, 2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -1402,7 +1402,8 @@ cob_call (const char *name, const int argc, void **argv)
 	cobglobptr->cob_call_params = argc;
 	for (i = 0; i < argc; ++i) {
 		pargv[i] = argv[i];
-	}	funcint = (int (*)(
+	}
+	funcint = (int (*)(
 			 void *, void *, void *, void *
 			,void *, void *, void *, void *
 			,void *, void *, void *, void *
