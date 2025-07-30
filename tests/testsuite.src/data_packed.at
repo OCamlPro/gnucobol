@@ -2060,7 +2060,7 @@ AT_DATA([prog.cob], [
 ])
 
 # GC4 version
-#AT_CHECK([$COBC -x -std=mf -w -fpretty-display -debug prog.cob ], [0], [], [])
+#AT_CHECK([$COBC -x -std=mf -w -fpretty-display -debug prog.cob], [0], [], [])
 
 # GC3 version
 # CHECKME: -Wno-typing because of MOVE warning
@@ -2158,7 +2158,7 @@ AT_DATA([prog.cob], [
 ])
 
 # GC4 version
-#AT_CHECK([$COMPILE -std=mf -fpretty-display -debug prog.cob ], [0], [], [])
+#AT_CHECK([$COMPILE -std=mf -fpretty-display -debug prog.cob], [0], [], [])
 
 # GC3 version
 AT_CHECK([$COMPILE prog.cob], [0], [], [])

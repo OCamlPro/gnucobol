@@ -210,6 +210,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Rework the context-sensitive reserved words handling (or use a bigger type)
 
+- Replace checks for statement that still use cobc_cs_check to [current_}statement->statement
+
 - Add --error-list -e to cobc
 
 - Check how to deal with IMPEXP in coblocal.h (should probably be in the "lib" directory as a static library to link with the other libraries)

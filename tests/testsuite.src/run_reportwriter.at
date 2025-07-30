@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022, 2024 Free Software Foundation, Inc.
 ## Written by Ron Norman, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -3839,13 +3839,15 @@ AT_CHECK([$DIFF reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([Sample Inventory Report])
 AT_KEYWORDS([report runfile])
 
-AT_DATA([inp_data],[01Data Processing   02000500012388
-02Cow Milking       02000600054398
-03Grass Cutting     03000600054397
-03Lawn mowing       03000600054397
+AT_DATA([inp_data],
+[01Data Processing   020005000123880
+02Cow Milking       020006000543980
+03Grass Cutting     030006000543970
+03Lawn mowing       030006000543970
 ])
 
 AT_DATA([prog.cob], [
@@ -3943,7 +3945,7 @@ AT_DATA([prog.cob], [
        
 ])
 
-AT_CHECK([$COMPILE -std=cobol2002 -fassign-ext-dyn=ok prog.cob ], [0], [],
+AT_CHECK([$COMPILE -std=cobol2002 -fassign-ext-dyn=ok prog.cob], [0], [],
 [prog.cob:40: warning: duplicate LINE 2 ignored
 ])
 
@@ -9391,6 +9393,7 @@ AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
+
 AT_SETUP([Test Varying and Nested OCCURS])
 AT_KEYWORDS([REPORT])
 
@@ -9512,7 +9515,7 @@ AT_DATA([prog.cob], [
            MOVE "WAG2" TO TAG2 (1), TAG2 (2), TAG2 (3).
 ])
 
-AT_CHECK([$COMPILE -std=cobol2002 -debug prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=cobol2002 -debug prog.cob], [0], [], [])
 
 AT_CHECK([export PRINTOUT=tstdmrp.txt
 $COBCRUN_DIRECT ./prog], [0], [Hello World 1
@@ -9559,6 +9562,7 @@ VarQ:
 AT_CHECK([$DIFF reference tstdmrp.txt], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Testing BEFORE REPORTING])
 AT_KEYWORDS([REPORT])
@@ -9658,7 +9662,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [BEFORE DETAIL - SHOULD DISPLAY
 ==============================
@@ -9668,6 +9672,7 @@ BEFORE FINAL - SHOULD DISPLAY
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Test Control Heading])
 AT_KEYWORDS([REPORT])

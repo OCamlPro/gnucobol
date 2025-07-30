@@ -660,8 +660,8 @@ AT_SETUP([runtime configuration: entries])
 AT_KEYWORDS([configuration misc])
 
 AT_CHECK([echo "$PATHSEP"], [0], [;
-], [], [
-
+], [],
+[
 # Previous test "failed" --> PATHSEP isn't ;
 
   AT_DATA([defunc.cfg], [

@@ -259,7 +259,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
            END PROGRAM "SUB".
 ])
 
-AT_CHECK([cobc -x -std=mf -debug -Wall prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([./prog], [0], [COBOL: X is +000000009 and Y is 0000000010
 COBOL: X is +000001280 and Y is 0000000011
@@ -548,7 +548,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -1117,6 +1117,7 @@ VARTAB(17) = "0000HI MOM  0000"
 
 AT_CLEANUP
 
+
 AT_SETUP([INITIALIZE OCCURS UNBOUNDED])
 AT_KEYWORDS([extensions runsubscripts subscripts refmod exceptions ibm])
 
@@ -1304,7 +1305,7 @@ AT_DATA([prog.cob], [
            DISPLAY "GRP-5:" grp-5.
 ])
 
-AT_CHECK([$COMPILE -fodoslide prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -fodoslide prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [GRP-1:***ABCDE***
@@ -1636,6 +1637,7 @@ Length is 0000000134 with 02, 03, 01, 04, 00
 
 AT_CLEANUP
 
+
 AT_SETUP([DEPENDING ON with ODOSLIDE])
 AT_KEYWORDS([MOVE])
 
@@ -1767,7 +1769,8 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -std=default -fodoslide prog.cob ], [0], [], [prog.cob:36: warning: ODO-2 does not have a fixed location
+AT_CHECK([$COMPILE -fodoslide prog.cob], [0], [],
+[prog.cob:36: warning: ODO-2 does not have a fixed location
 ])
 
 AT_CHECK([./prog], [0], [********
@@ -1777,13 +1780,13 @@ DEP1=0
 DEP2=1
 DATA21(1)=B
 DATA3=CD
-TEST WITH ODO: 'A01BCD' Len:6
+TEST WITH ODO: 'A01BCD' Len:000000006
 ODO-DATA1=A.
 ODO-DEP1=0.
 ODO-DEP2=1.
 ODO-DATA21(1)=B.
 ODO-DATA3=CD.
-TEST WITH ODO: 'A12BCDEF' Len:8
+TEST WITH ODO: 'A12BCDEF' Len:000000008
 ODO-DATA1=A.
 ODO-DEP1=1.
 ODO-DEP2=2.
@@ -1791,7 +1794,7 @@ ODO-DATA11(1)=B.
 ODO-DATA21(1)=C.
 ODO-DATA21(2)=D.
 ODO-DATA3=EF.
-TEST WITH ODO: 'A23BCDEFGH' Len:10
+TEST WITH ODO: 'A23BCDEFGH' Len:000000010
 ODO-DATA1=A.
 ODO-DEP1=2.
 ODO-DEP2=3.
@@ -1891,9 +1894,10 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([cobc -x -std=ibm -w -fodoslide prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm -w -fodoslide prog.cob], [0], [], [])
 
-AT_CHECK([./prog], [0], [1. Pre CALL DATA :00005Hello00005BYE!!: LEN 0000000020
+AT_CHECK([./prog], [0],
+[1. Pre CALL DATA :00005Hello00005BYE!!: LEN 0000000020
 2. Pre CALL DATA :00003BYE00003Now: LEN 0000000016
 In subroutine, Clear
 In subroutine, Fill hdr
@@ -1971,9 +1975,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:*********************************************************************:
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[GRP-1:*********************************************************************:
 GRP-1:$$$Money01Money02Money03Money04Money05Money06Money07Money08Money09$$$:
 GRP-2:*******************************:
 GRP-2:$$$Money01Money02Money03Money04:
@@ -2047,15 +2052,17 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -fodoslide prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w -fodoslide prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:*******************************************************:
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[GRP-1:*******************************************************:
 GRP-1:$$$Money01Money02Money03Money04Money05Money06Money07$$$:
 GRP-2:*******************************:
 GRP-2:$$$Money01Money02Money03Money04:
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([INITIALIZE level 01 OCCURS])
 AT_KEYWORDS([extensions])
@@ -5964,6 +5971,7 @@ SORT-RETURN = +000000000 TALLY = 00000
 
 AT_CLEANUP
 
+
 AT_SETUP([Bit Operations])
 AT_KEYWORDS([BIT-WISE])
 
@@ -6039,9 +6047,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Test using PIC XX COMP-X
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Test using PIC XX COMP-X
 00002 B-OR  00004 is 00006
 00002 B-XOR 00003 is 00001
 00003 B-AND 00001 = 00001 TRUE
@@ -6116,9 +6125,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Using PIC XX COMP-X
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Using PIC XX COMP-X
  x#22 B-LEFT  x#05   is 01088
  x#22 B-RIGHT x#02   is 00008
  x#22 B-SHIFT-L x#05 is 01088

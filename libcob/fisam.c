@@ -718,7 +718,7 @@ isopen_retry(cob_file *f, char *filename, int mode)
 		interval = 1000 / COB_RETRY_PER_SECOND ;
 	}
 	isfd = isopen ((void *)filename, mode);
-	while(isfd < 0 && retry != 0) {
+	while (isfd < 0 && retry != 0) {
 		if (ISERRNO != EFLOCKED)
 			break;
 		if (retry > 0) {
@@ -782,7 +782,7 @@ isread_retry(cob_file *f, void *data, int mode)
 			retry--;
 			cob_sleep_msec(interval);
 		}
-	} while(sts != 0 && retry != 0);
+	} while (sts != 0 && retry != 0);
 	if (ISERRNO == ELOCKED
 	 || ISERRNO == EDEADLK
 	 || ISERRNO == EFLOCKED) {
@@ -1332,10 +1332,11 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	/*                                                          */
 	/************************************************************/
 
-	if (fullkeylen == partlen)
-			fh->partial_key_length  = 0;
-	else
-			fh->partial_key_length  = partlen;
+	if (fullkeylen == partlen) {
+		fh->partial_key_length  = 0;
+	} else {
+		fh->partial_key_length  = partlen;
+	}
 
 	if (k < 0) {
 		fh->startfail = 1;

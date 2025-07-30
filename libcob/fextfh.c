@@ -272,7 +272,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		}
 		keypos = (sizeof(KDB_KEY) * nkeys) + sizeof(KDB) - sizeof(kdb->key);
 		STCOMPX2(nkeys, kdb->nkeys);
-		for(idx=0; idx < nkeys; idx++) {
+		for (idx=0; idx < nkeys; idx++) {
 			key = (EXTKEY*)((char*)((char*)kdb) + keypos);
 			STCOMPX2(keypos, kdb->key[idx].offset);
 			kdb->key[idx].keyFlags = 0;
@@ -292,7 +292,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 				keypos = keypos + sizeof(EXTKEY);
 			} else {
 				STCOMPX2(f->keys[idx].count_components, kdb->key[idx].count);
-				for(k=0; k < (int)f->keys[idx].count_components; k++) {
+				for (k=0; k < (int)f->keys[idx].count_components; k++) {
 					key = (EXTKEY*)((char*)((char*)kdb) + keypos);
 					key->desc = 0;
 					key->type = 0;
@@ -900,13 +900,13 @@ update_record_and_keys_if_necessary (cob_file * f, FCD3 *fcd)
 		f->record->size = LDCOMPX4(fcd->curRecLen);
 		f->record->attr = &alnum_attr;
 #if 0	/* this disables some expected status 44
-		   (the min/max may only be set during OPEN) */
+	   (the min/max may only be set during OPEN) */
 		f->record_min = LDCOMPX4(fcd->minRecLen);
 		f->record_max = LDCOMPX4(fcd->maxRecLen);
 #endif
 #if 1	/* this disables some expected status 44
-		   and SIGSEGVs if the actual data is only
-		   curRecLen long (+ accessed longer) */
+	   and SIGSEGVs if the actual data is only
+	   curRecLen long (+ accessed longer) */
 		if (f->record->size < f->record_min)
 			f->record->size = f->record_min;
 		if (f->record->size > f->record_max)
@@ -964,8 +964,8 @@ cob_extfh_open (
 	/* Keep table of 'fcd' created */
 	sts = callfh (opcode, fcd);
 	if (f->file_status) {
-		if (memcmp(f->file_status,"00",2) == 0
-		 || memcmp(f->file_status,"05",2) == 0) {
+		if (memcmp (f->file_status,"00",2) == 0
+		 || memcmp (f->file_status,"05",2) == 0) {
 			fcd->openMode &= ~OPEN_NOT_OPEN;
 		}
 	} else {
@@ -1455,8 +1455,8 @@ update_key_from_fcd (cob_file *f, FCD3 *fcd, cob_field *kf)
 		 && f->keys[k].field) {
 			cob_field *key = f->keys[k].field;
 #if 0	/* the following sets up the _real_ key data,
-		   but the functions called afterwards look out for
-		   the "intermediate" key field; therefore leave as-is */
+	   but the functions called afterwards look out for
+	   the "intermediate" key field; therefore leave as-is */
 			kf->size = key->size;
 			kf->attr = key->attr;
 			if (f->keys[k].count_components <= 1) {
@@ -1648,8 +1648,8 @@ org_handling:
 	}
 
 #if 0	/* this disables some expected status 44
-		   and SIGSEGV if the actual data is only
-		   record_min long (+ accessed longer) */
+	   and SIGSEGV if the actual data is only
+	   record_min long (+ accessed longer) */
 	if (f->record
 	 && f->record->size < f->record_min) {
 		f->record->size = f->record_min;
@@ -1894,8 +1894,8 @@ org_handling:
 		}
 #endif
 #if 1	/* Simon: breaks status 44 and
-		   can lead to SIGSEGV if there's only curRecLen
-		   data available */
+	   can lead to SIGSEGV if there's only curRecLen
+	   data available */
 		if (rec->size < f->record_min) {
 			rec->size = f->record_min;
 		}
@@ -1921,8 +1921,8 @@ org_handling:
 		}
 #endif
 #if 1	/* Simon: breaks status 44 and
-		   can lead to SIGSEGV if there's only curRecLen
-		   data available */
+	   can lead to SIGSEGV if there's only curRecLen
+	   data available */
 		if (rec->size < f->record_min) {
 			rec->size = f->record_min;
 		}
@@ -1991,7 +1991,7 @@ org_handling:
 	default:
 		fcd->fileStatus[0] = '9';
 #if 0	/* MF seems to return 142 file not open, possibly only until opened;
-		   we use 100->invalid file operation */
+	   we use 100->invalid file operation */
 		fcd->fileStatus[1] = 142;
 #else
 		fcd->fileStatus[1] = 100;

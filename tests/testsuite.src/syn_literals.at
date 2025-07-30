@@ -579,10 +579,8 @@ AT_CHECK([$COMPILE_ONLY -t prog.lst prog.cob], [1], [],
 AT_CLEANUP
 
 
-
 AT_SETUP([literal too long])
 AT_KEYWORDS([misc literals literal-length continuation listing])
-
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -813,7 +811,6 @@ prog2.cob:43: note: literal length 8299 exceeds 8191 characters
 ])
 
 AT_CLEANUP
-
 
 
 AT_SETUP([numeric literals])

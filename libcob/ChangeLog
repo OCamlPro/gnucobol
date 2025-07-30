@@ -1,4 +1,9 @@
 
+2025-05-21  David Declerck <david.declerck@ocamlpro.com>
+
+	revert 2018-07-31 changes preferring normalization of
+	numeric DISPLAY data including 0x00
+
 2025-05-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_set_date_from_epoch): fix incorrect conversion
@@ -54,10 +59,35 @@
 	* fileio.c->fbdb.c: fixed Bug #1032 by always using global thread-static variable
 	  bdb_app_data pointer to access the collating sequence function
 
+2024-12-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): normalize numeric data
+	* move.c (cob_move): extend use of optimized_move_display_to_edited
+	  to more cases (i.e. different source and destination sign, leading
+	  sign, non-separate sign)
+
+2024-12-09  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed additional bug
+	  reported with bug #1008: BLANK WHEN ZERO not working on signed
+	  NUMERIC-EDITED fields
+
 2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
 	  with X/Open Curses function panel_below()
+
+2024-11-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): minor refactoring
+	* exception.def, move.c: added definition for COBOL2025
+	  COB_EC_DATA_NULL + COB_EC_DATA_TRUNCATION (currently not used)
+
+2024-11-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed
+	  Bug #1008: regression in move to numeric edited
+	  items with insertion symbols B, 0 and /
 
 2024-11-19  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -212,6 +242,12 @@
 	* (cob_resolve_internal): runtime warning if loading module from
 	  existing path or resolving requested entry point does not work
 
+2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed small bug
+	  in logic for floating sign symbol to the right of decimal_point
+	  or assumed decimal_point
+
 2024-07-27  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c: In preparation for Multiple Window support
@@ -233,6 +269,11 @@
 	* coblocal.h (COB_TLS): add a new attribute for thread local static
 	* common.h, common.c (cob_cleanup_thread): add a cleanup function for threads
 
+2024-07-13  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (indirect_move) fixed sanitizer warnings by moving
+	  one line of code
+
 2024-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_binar): C89 fix
@@ -243,6 +284,16 @@
 	  Also fixed issue when build without curses
 	* move.c (indirect_move) fixed C90 warnings
 	* profiling.c (profile_setup_clock) fixed C90 warnings
+
+2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	fix errors in cob_optimized_move_display_to_edited introduced
+	with changes at revision R5285. The errors showed up in the
+	NIST tests in group NC.
+
+	* move.c (optimized_move_display_to_edited): fixed bugs
+	  (indirect_move): fixed bug when calculating scale of
+	  the intermediate cob field
 
 2024-07-09  Boris Eng <boris.eng@ocamlpro.com>
 
@@ -294,6 +345,25 @@
 	* fileio.c (indexed_open)->fbdb.c:
 	  changed the BDB logic to return a status code of "35" when
 	  encountering a missing directory for OUTPUT on INDEXED file
+
+2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	fix errors in cob_move_display_to_edited and simplify the code
+	this was done by cloning the function to an optimized version
+	and making the changes to the calling functions to support it
+	Basically this involves changing the intermediate cob_field to
+	match the attributes of the target edited field instead of the
+	sending field.
+
+	* move.c (optimized_move_display_to_edited): added new function
+	  (cob_move): when move numeric-display to numeric-edited added logic
+	    to check if an indirect move is needed
+	  (indirect_move): when the destination field is numeric-edited and
+	    the function source is binary, packed or display then the attributes
+	    need to generated to match destination attributes instead of the
+	    source attributes
+	* termio.c (pretty_display_numeric), mlio.c (get_num):
+	  changed to use the attributes of the receiving field
 
 2024-05-23  Simon Sobisch <simonsobisch@gnu.org>
 

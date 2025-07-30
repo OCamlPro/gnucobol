@@ -52,6 +52,7 @@ prog.cob:16: warning: suspicious reference-modification: always using max. posit
 
 AT_CLEANUP
 
+
 AT_SETUP([invalid reference-modification])
 AT_KEYWORDS([refmod condition-name])
 
@@ -216,7 +217,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog.cob ], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog.cob], [1], [],
 [prog.cob:17: error: length of 'TSTTAIL2' out of bounds: 2
 prog.cob:18: error: length of 'TSTTAIL3' out of bounds: 8
 prog.cob:19: error: length of 'TSTTAIL3' out of bounds: 15

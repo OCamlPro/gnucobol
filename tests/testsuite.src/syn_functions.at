@@ -511,6 +511,7 @@ prog.cob:53: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
 
 AT_CLEANUP
 
+
 AT_SETUP([invalid formats w/ DECIMAL-POINT IS COMMA])
 AT_KEYWORDS([functions FORMATTED-TIME FORMATTED-DATETIME])
 

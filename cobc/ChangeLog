@@ -1,6 +1,11 @@
 
 2025-05-21  David Declerck <david.declerck@ocamlpro.com>
 
+	revert 2018-07-31 changes preferring normalization of
+	numeric DISPLAY data including 0x00
+
+2025-05-21  David Declerck <david.declerck@ocamlpro.com>
+
 	* cobc.c: fix duplicate values for CB_FLAG_GETOPT_GENTABLE
 	  and CB_FLAG_GETOPT_SQLSCHEMA (fixes bug #1113)
 
@@ -163,6 +168,20 @@
 	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
 	  functions, now returning the tree that was emitted
 
+2024-07-29  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* tree.c (cb_build_picture): added logic to find the valid floating
+	  symbol if one exists and pass that symbol to the downstream functions
+	* tree.c (valid_char_order): adjust the precedence in an ambigous
+	  where +$9 or 9$+ to identify the condition of the $ correctly
+	  to fix bug #935
+	* tree.c (find_floating_insertion_str): generate a compile error
+	  if an invalid symbol is found between the float symbols; this also
+	  allows the COBOL 2023 standard to be more closely followed for
+	  display numeric edited picture strings
+	* tree.c (char_to_precedence_idx): changed to check penultimate and last
+	  symbols before the first and second symbols
+
 2024-07-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, config.def: rewrite ENVIRONMENT DIVISION parsing to allow
@@ -171,9 +190,17 @@
 	* reserved.c: make MENU context-sensitive
 	* reserved.c, parser.y: added MODAL + MODELESS to acu extension windows
 
+2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* tree.c (cb_build_picture): fixed currency scale counting logic
+
 2024-06-19  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c (process_compile): fix MSVC build command
+
+2024-06-11  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* tree.c (cb_build_picture): fixed currency digit counting logic
 
 2024-05-16  David Declerck <david.declerck@ocamlpro.com>
 
