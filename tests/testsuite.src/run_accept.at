@@ -317,6 +317,8 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
 AT_SETUP([ACCEPT DATE / DAY and intrinsic functions (2)])
 AT_KEYWORDS([configuration FUNCTION INTEGER-OF-DATE DAY-OF-INTEGER COB_CURRENT_DATE])
 

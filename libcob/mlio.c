@@ -505,7 +505,7 @@ is_empty (const cob_field * const f)
 }
 
 /* strdup-like wrapper for get_trimmed_data, returns a pointer to
-	 fresh allocated memory pointing to a copy of the specified
+   fresh allocated memory pointing to a copy of the specified
    data with specified size as string (+ trailing NULL) */
 static void *
 copy_data_as_string (const char* data, const size_t size)
@@ -630,9 +630,9 @@ static void *
 get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 	 const char decimal_point)
 {
-	const size_t		num_integer_digits
+	const size_t	num_integer_digits
 		= cob_max_int (0, COB_FIELD_DIGITS (f) - COB_FIELD_SCALE (f));
-	const size_t		num_decimal_digits
+	const size_t	num_decimal_digits
 		= cob_max_int (0, COB_FIELD_SCALE (f));
 	cob_field_attr	attr;
 	cob_field       edited_field;

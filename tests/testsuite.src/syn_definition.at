@@ -2871,7 +2871,7 @@ AT_DATA([prog.cob], [
        USE BEFORE REPORTING DEPTHDR.
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [1], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob: in section 'DEPTHDRUSE':
 prog.cob:6: error: 'DEPTHDR' is not defined
 ])

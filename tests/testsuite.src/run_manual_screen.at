@@ -3538,6 +3538,7 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([simple ACCEPT field WITH UPDATE])
 AT_KEYWORDS([screen])
 
