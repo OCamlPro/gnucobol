@@ -6006,7 +6006,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 00 (e   )
 ])
 
-AT_CHECK([$COMPILE -std=default prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [00 (a   )
 00 (ab  )
@@ -15328,7 +15328,7 @@ AT_DATA([callsub.cob], [
        END PROGRAM callsub.
 ])
 
-AT_CHECK([$COMPILE_MODULE -m -o callsub callsub.cob ], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callsub.cob], [0], [], [])
 
 
 AT_DATA([prog.cob], [
@@ -19154,7 +19154,7 @@ AT_DATA([prog.cob], [
        END PROGRAM ZKEYBLCK.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fodoslide -fstatic-call prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fodoslide -fstatic-call prog.cob], [0], [], [])
 
 AT_CHECK([export TESTING=X
 $COBCRUN_DIRECT ./prog], [0], [**************** TEST 1 DELETE B6353 *****
@@ -19232,6 +19232,7 @@ FCD 17 STATUS: 00; File:B6353.VSM.
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([RELATIVE File Locking])
 AT_KEYWORDS([runfile])
@@ -23811,7 +23812,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1)  Good Delete File
 1a) Delete File Status: '00'
@@ -23883,7 +23884,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -std=default -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [1)  Good Delete File
@@ -24434,7 +24435,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Using Built-in INDEXED handler
@@ -24916,7 +24917,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [--- +++ *** +++ ---
 Loading Relative File
@@ -26479,6 +26480,7 @@ Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
 
 AT_CLEANUP
 
+
 AT_SETUP([SEQUENTIAL ADVANCING Record])
 AT_KEYWORDS([runfile])
 
@@ -27073,7 +27075,7 @@ AT_DATA([prog.cob], [
            CLOSE TSTDUPS.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fmf-files prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -fmf-files prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading data file Ascending.
 WRITE: GIB00007, Status: 02
@@ -27599,7 +27601,7 @@ AT_DATA([prog.cob], [
            CLOSE TSTDUPS.
 ])
 
-AT_CHECK([$COMPILE -std=default -ffile-format=gc prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading data file Ascending.
 WRITE: GIB00007, Status: 02
@@ -27791,7 +27793,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [a
 a
@@ -28625,7 +28627,9 @@ TRYING TO WRITE
 ERROR ON FILE-EXT
 EXITING NESTED-PROGRAM-1-2
 ], [])
+
 AT_CLEANUP
+
 
 AT_SETUP([OPEN / CLOSE with multiple filenames])
 AT_KEYWORDS([DECLARATIVES file error])
@@ -28762,7 +28766,8 @@ AT_CLEANUP
 AT_SETUP([DELETE WITH COLLATING SEQUENCE])
 AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
 
-AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. READDEL.

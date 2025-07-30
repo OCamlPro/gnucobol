@@ -602,7 +602,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-
 AT_SETUP([JSON GENERATE general])
 AT_KEYWORDS([extensions])
 

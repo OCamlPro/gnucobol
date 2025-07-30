@@ -1871,7 +1871,6 @@ prog.cob:22: error: REWRITE not allowed on REPORT files
 AT_CLEANUP
 
 
-
 AT_SETUP([SELECT without fd-name])
 AT_KEYWORDS([file])
 
@@ -2077,6 +2076,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([ACCESS RANDOM with ORG SEQUENTIAL])
 AT_KEYWORDS([file])

@@ -2980,69 +2980,49 @@ is_simple_insertion_char (const char c)
 
 /*
   Returns the first and last characters of a floating insertion string.
+  Returns a zero if no errors encountered or a 1 if an error is encountered.
 
-  A floating insertion string is made up of two adjacent +'s, -'s or currency
-  symbols to each other, optionally with simple insertion characters between them.
+  A floating insertion string is made up of two or more +'s, -'s or currency
+  symbols, optionally with simple insertion characters between them.
+
+  Note that the non punctuation characters are '.', ',', '/', V, B , 0
 */
-static void
+static int
 find_floating_insertion_str (const cob_pic_symbol *str,
 			     const cob_pic_symbol **first,
-			     const cob_pic_symbol **last)
+			     const cob_pic_symbol **last,
+			     const unsigned char float_char)
 {
-	const cob_pic_symbol	*last_non_simple_insertion = NULL;
-	char			floating_char = ' ';
 
-	*first = NULL;
-	*last = NULL;
+	int		non_punctuation_found = 0;
+	unsigned char	non_punctuation_char;
 
 	for (; str->symbol != '\0'; ++str) {
-		if (!*first
-		 && (str->symbol == '+'
-		  || str->symbol == '-'
-		  || (current_program && (str->symbol == current_program->currency_symbol)))) {
-			if (last_non_simple_insertion
-			 && last_non_simple_insertion->symbol == str->symbol) {
-				*first = last_non_simple_insertion;
-				floating_char = str->symbol;
-				continue;
-			} else if (str->times_repeated > 1) {
+		if (str->symbol == float_char) {
+			if (*first == NULL) {
 				*first = str;
-				floating_char = str->symbol;
-				continue;
+			} else {
+				if (non_punctuation_found) {
+					*first = NULL;
+					*last  = NULL;
+					cb_error (_("floating '%c' symbols cannot have a '%c' between them"), float_char, non_punctuation_char);
+					return 1;
+				}
 			}
-		}
-
-
-		if (!*first && !is_simple_insertion_char (str->symbol)) {
-			last_non_simple_insertion = str;
-		} else if (*first && !(is_simple_insertion_char (str->symbol)
-		                     || str->symbol == floating_char)) {
-			*last = str - 1;
-		        break;
-		}
-	}
-
-	if (str->symbol == '\0' && *first) {
-		*last = str - 1;
-		return;
-	} else if (! ( str->symbol == 'V'
-	            || (current_program && (str->symbol == current_program->decimal_point)))) {
-		return;
-	}
-
-	/*
-	  Check whether all digits after the decimal point are also part of the
-	  floating insertion string. If they are, set *last to the last
-	  character in the string.
-	*/
-	++str;
-	for (; str->symbol != '\0'; ++str) {
-		if (!(is_simple_insertion_char (str->symbol)
-		     || str->symbol == floating_char)) {
-			return;
+			*last = str;
+		} else if (*first
+			 && str->symbol != '.'
+			 && str->symbol != ','
+			 && str->symbol != 'V'
+			 && str->symbol != 'B'
+			 && str->symbol != '/'
+			 && str->symbol != '0') {
+			non_punctuation_found = 1;
+			non_punctuation_char = str->symbol;
 		}
 	}
-	*last = str - 1;
+
+	return 0;
 }
 
 /* Number of character types in picture strings */
@@ -3163,10 +3143,10 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
 			      && current_sym <= last_floating_sym)) {
-				if (first_sym || second_sym) {
-					return 7;
-				} else if (penultimate_sym || last_sym) {
+				if (penultimate_sym || last_sym) {
 					return 8;
+				} else if (first_sym || second_sym) {
+					return 7;
 				} else {
 					/* Fudge char type - will still result in error */
 					return 7;
@@ -3276,7 +3256,7 @@ emit_precedence_error (const int preceding_idx, const int following_idx)
 }
 
 static int
-valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
+valid_char_order (const cob_pic_symbol *str, const int s_char_seen, const unsigned char float_char)
 {
 	static int	precedence_table[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {
 	/*
@@ -3319,8 +3299,8 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	};
 	int		error_emitted[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {{ 0 }};
 	int		chars_seen[CB_PIC_CHAR_TYPES] = { 0 };
-	const cob_pic_symbol	*first_floating_sym;
-	const cob_pic_symbol	*last_floating_sym;
+	const cob_pic_symbol	*first_floating_sym = NULL;
+	const cob_pic_symbol	*last_floating_sym = NULL;
 	int		before_decimal_point = 1;
 	int		idx;
 	const cob_pic_symbol	*s;
@@ -3328,9 +3308,18 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	int		i,j,k;
 	int		non_p_digits_seen = 0;
 	int		error_detected = 0;
+	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
 
 	chars_seen[CB_PIC_S_CHAR_TYPE] = s_char_seen;
-	find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym);
+	if (float_char == 0xFF) {
+		cb_error (_("only one of the symbols '-' , '+' or '%c' may occur multiple times in a PICTURE string"), currency_symbol);
+		return 0;
+	}
+	if (float_char) {
+		if (find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym, float_char)) {
+			return 0;
+		}
+	}
 
 	k=0;
 	for (s = str; s->symbol != '\0'; ++s) {
@@ -3343,6 +3332,9 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 						      last_floating_sym,
 						      before_decimal_point,
 						      non_p_digits_seen);
+			if ((idx == 8) && ((s + 1)->symbol == '9') && ((s +2)->symbol == '\0')) {
+				idx = 7;
+			}
 			if (idx == -1) {
 				continue;
 			}
@@ -3557,6 +3549,10 @@ cb_build_picture (const char *str)
 	cob_u32_t		v_count = 0;
 	cob_u32_t		digits = 0;
 	cob_u32_t		digits_exponent = 0;
+	cob_u32_t		pos_count = 0;
+	cob_u32_t		neg_count = 0;
+	cob_u32_t		curency_count = 0;
+	cob_u32_t		float_count = 0;
 #if 0 /* currently unused */
 	cob_u32_t		real_digits = 0;
 #endif
@@ -3568,6 +3564,7 @@ cb_build_picture (const char *str)
 	int			scale = 0;
 	int			n;
 	unsigned char		c;
+	unsigned char		float_char;
 	const unsigned char	decimal_point = (current_program ? current_program->decimal_point : '.');
 	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
 
@@ -3601,7 +3598,7 @@ cb_build_picture (const char *str)
 		has_parens = 0;
 		c = *p;
 repeat:
-		/* early check for picture characters with mulitple characters */
+		/* early check for picture characters with multiple characters */
 		if ( (c == 'C' && p[1] == 'R')
 		  || (c == 'D' && p[1] == 'B')) {
 			p++;
@@ -3708,7 +3705,7 @@ repeat:
 
 		case 'N':
 			if (!(category & PIC_NATIONAL)) {
-			category |= PIC_NATIONAL;
+				category |= PIC_NATIONAL;
 				CB_UNFINISHED ("USAGE NATIONAL");
 			}
 			x_digits += n * 2;
@@ -3845,6 +3842,11 @@ repeat:
 
 		case '+':
 		case '-':
+			if (c == '+') {
+				pos_count += n;
+			} else {
+				neg_count += n;
+			}
 			category |= PIC_NUMERIC_EDITED;
 			digits += n;
 			if (s_edit_count == 0) {
@@ -3891,17 +3893,21 @@ repeat:
 
 		default:
 			if (c == currency_symbol) {
+				curency_count += n;
 				category |= PIC_NUMERIC_EDITED;
 				if (c_count == 0) {
 					digits += n - 1;
-					c_count = n - 1;
 				} else {
 					digits += n;
-					c_count += n;
 				}
 				if (v_count) {		/* Handle:  $$$.$$ */
-					scale += n;
+					if (c_count == 0) {
+						scale += n - 1;
+					} else {
+						scale += n;
+					}
 				}
+				c_count += n;
 				break;
 			}
 
@@ -3949,10 +3955,32 @@ repeat:
 	}
 	if (digits == 0 && x_digits == 0) {
 		cb_error (_("PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; "
-					"or at least two of the set +, - and the currency symbol"));
+			    "or at least two of the set +, - and the currency symbol"));
 		error_detected = 1;
 	}
-	if (!valid_char_order (pic_buff, s_char_seen)) {
+
+	float_char = 0x00;
+
+	if (pos_count > 1) {
+		float_char = '+';
+		float_count++;
+	}
+
+	if (neg_count > 1) {
+		float_char = '-';
+		float_count++;
+	}
+
+	if (curency_count > 1) {
+		float_char = currency_symbol;
+		float_count++;
+	}
+
+	if (float_count > 1) {
+		float_char = 0xFF;
+	}
+
+	if (!valid_char_order (pic_buff, s_char_seen, float_char)) {
 		error_detected = 1;
 	}
 
@@ -8015,7 +8043,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
 
-	/* mulitple, numeric only arguments */
+	/* multiple, numeric only arguments */
 	case CB_INTR_MEAN:
 	case CB_INTR_MEDIAN:
 	case CB_INTR_MIDRANGE:
@@ -8026,7 +8054,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_VARIANCE:
 		return make_intrinsic (func, cbp, args, cb_int1, NULL, 0);
 
-	/* mulitple, compatible only arguments */
+	/* multiple, compatible only arguments */
 	case CB_INTR_MAX:
 	case CB_INTR_MIN:
 		return make_intrinsic (func, cbp, args, cb_int1, NULL, 0);

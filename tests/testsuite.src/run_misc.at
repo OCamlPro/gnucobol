@@ -3552,9 +3552,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default -Wno-truncate prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [TST5-2 :096, Length: 1
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[TST5-2 :096, Length: 1
 TST5-3 :04096, Length: 2
 TST5-6 :0000004096, Length: 4
 TST5-8 :0000004096, Length: 4
@@ -3720,10 +3721,12 @@ int dumpln (unsigned char *data, int len)
 }
 ]])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fibmcomp prog.cob cmod.c ], [0], [], [prog.cob:81: warning: ignoring sign
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fibmcomp prog.cob cmod.c], [0], [],
+[prog.cob:81: warning: ignoring sign
 ])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [TST5-2 :04096, Length: 2
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[TST5-2 :04096, Length: 2
 TST5-3 :-04096, Length: 2
 TST5-6 :-0000004096, Length: 4
 TST5-8 :0000004096, Length: 4
@@ -7907,7 +7910,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([Numeric MOVE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7917,7 +7920,7 @@ AT_DATA([prog.cob], [
        01  NUM9    PIC 9(6).
        PROCEDURE DIVISION.
            MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
+           DISPLAY "NUM9 value SPACES is " NUM9 (1:) "." UPON SYSOUT
            MOVE LOW-VALUES TO NUM9
            IF NUM9 = LOW-VALUES
               DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
@@ -11576,9 +11579,10 @@ CAPI(void *p1, ...)
 }
 ]])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -debug prog.cob cmod.c ], [0], [], [])
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -debug prog.cob cmod.c], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Initial: 'Hello     '
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Initial: 'Hello     '
 Line 11: CALL with 1 parameters
      P1: X        BY REFERENCE X(10)       'Hello' RIGHT;
   After: '      Bye!'
@@ -14009,9 +14013,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [  DEPOSIT-AMT9 PIC -,---,--9.99 *
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[  DEPOSIT-AMT9 PIC -,---,--9.99 *
 + DEPOSIT-AMT9 IS      8,536.23 *
 0 DEPOSIT-AMT9 IS          0.00 *
 + DEPOSIT-AMT  PIC -,---,--Z.ZZ *
@@ -14102,68 +14107,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Pointer test was good
-], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       DATA  DIVISION.
-       WORKING-STORAGE SECTION.
-       01  NUM9    PIC 9(6).
-       PROCEDURE DIVISION.
-           MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
-           MOVE LOW-VALUES TO NUM9
-           IF NUM9 = LOW-VALUES
-              DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
-           ELSE
-              DISPLAY "9(6) Does NOT test OK for LOW-VALUES"
-                 UPON SYSOUT
-              IF NUM9 = ZERO
-                 DISPLAY "9(6) tests as ZERO instead of LOW-VALUES"
-                    UPON SYSOUT
-              END-IF
-           END-IF.
-           MOVE HIGH-VALUES TO NUM9
-           IF NUM9 = HIGH-VALUES
-              DISPLAY "9(6) tests OK for HIGH-VALUES" UPON SYSOUT
-           ELSE
-              DISPLAY "9(6) Does NOT test OK for HIGH-VALUES"
-                 UPON SYSOUT
-              IF NUM9 = ZERO
-                 DISPLAY "9(6) tests as ZERO instead of HIGH-VALUES"
-                    UPON SYSOUT
-              END-IF
-           END-IF.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE -std=mf prog.cob], [0], [],
-[prog.cob:8: warning: source is non-numeric - substituting zero
-prog.cob:10: warning: source is non-numeric - substituting zero
-prog.cob:21: warning: source is non-numeric - substituting zero
-])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[NUM9 value SPACES is 000000.
-9(6) Does NOT test OK for LOW-VALUES
-9(6) tests as ZERO instead of LOW-VALUES
-9(6) Does NOT test OK for HIGH-VALUES
-9(6) tests as ZERO instead of HIGH-VALUES
-], [])
-
-AT_CHECK([$COMPILE -std=acu prog.cob -o aprog], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./aprog], [0],
-[NUM9 value SPACES is       .
-9(6) tests OK for LOW-VALUES
-9(6) tests OK for HIGH-VALUES
 ], [])
 
 AT_CLEANUP
@@ -15129,7 +15072,7 @@ MY-ELEMENT-1 is 10 and 010
 MY-TABLE     is 12 and 012
 MY-TABLE(1)  is 12 and 012
 ODO-DATA a   is 60 and 060
-ODO-DATA b   is 60 and 060
+ODO-DATA b   is 000000060 and 060
 ODO-TABLE    is 12 and 012
 ODO-TABLE(1) is 12 and 012
 ], [])
@@ -17860,9 +17803,10 @@ AT_DATA([prog.cob], [
            
 ])
 
-AT_CHECK([$COMPILE -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx123x123x*****
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[x12xxx123x123x*****
 ], [])
 
 AT_CLEANUP
@@ -17907,9 +17851,9 @@ AT_DATA([prog.cob], [
            
 ])
 
-AT_CHECK([$COMPILE -std=mf -w -fibmcomp prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w -fibmcomp prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx1234xx1234x*****
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],[x12xxx1234xx1234x*****
 ], [])
 
 AT_CLEANUP
@@ -19102,6 +19046,30 @@ AT_CAPTURE_FILE([prof.csv])
 AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to NUMERIC-EDITED safety])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  PIC 9(5)    VALUE 12345.
+       01 Y  PIC 9(5)CR.
+       PROCEDURE DIVISION.
+           MOVE X TO Y.
+           IF Y(1:) NOT = "12345" THEN
+             DISPLAY "EXPECTED '12345'"
+             DISPLAY "GOT      '" Y(1:) "'"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 

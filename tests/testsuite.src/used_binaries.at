@@ -1074,7 +1074,8 @@ AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|D
 [DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
 DIR/prog.cob:6: warning: numeric value is expected
 DIR/prog.cob:14: warning: ignoring redundant .
-], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
+], [],
+[echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
 
 AT_CLEANUP
 

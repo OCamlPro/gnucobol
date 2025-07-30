@@ -108,10 +108,10 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
-	unsigned short	digits;
-	const signed short	scale = COB_FIELD_SCALE (f);
+	unsigned short		digits;
+	signed short		scale = COB_FIELD_SCALE (f);
 	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
-	int		size;
+	int			size;
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
@@ -161,17 +161,17 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		p->times_repeated = scale;
 		++p;
 	} else {
+		scale = 0;
 		p->symbol = '9';
 		p->times_repeated = digits;
 		++p;
 	}
-	if (has_sign) {
-		if (COB_FIELD_SIGN_SEPARATE (f)
-		 && !COB_FIELD_SIGN_LEADING (f)) {
-			p->symbol = '+';
-			p->times_repeated = 1;
-			++p;
-		}
+	if (has_sign
+	 && COB_FIELD_SIGN_SEPARATE (f)
+	 && !COB_FIELD_SIGN_LEADING (f)) {
+		p->symbol = '+';
+		p->times_repeated = 1;
+		++p;
 	}
 	p->symbol = '\0';
 
@@ -181,7 +181,8 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 			cob_field	field;
 			cob_field_attr	attr;
 			COB_FIELD_INIT (size, COB_TERM_BUFF, &attr);
-			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale, 0,
+			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale,
+				has_sign ? (COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE): 0,
 				(const cob_pic_symbol*)pic);
 
 			cob_move (f, &field);
@@ -192,8 +193,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 			register unsigned char *q = COB_TERM_BUFF;
 			const unsigned char *end = q + size;
 			for ( ; q < end; ++q) {
-				if (*q == 0	/* pretty-display stops here */
-				 || putc (*q, fp) != *q) {
+				if (putc (*q, fp) != *q) {
 					break;
 				}
 			}
@@ -1071,17 +1071,6 @@ cob_accept (cob_field *f)
 		}
 	}
 	cob_move (&temp, f);
-}
-
-/*
- * Move numeric value into working field with trailing NULs
- * Then 'pretty_display_numeric' will skip outputing the NULs
- */
-void
-cob_field_int_display (cob_field *i, cob_field *f)
-{
-	memset (f->data, 0, f->size);
-	sprintf ((char *)(f->data), "%d", *(int *)i->data);
 }
 
 void

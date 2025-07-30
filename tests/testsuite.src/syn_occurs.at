@@ -648,8 +648,8 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=mf prog.cob ], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -std=mf -fodoslide prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=mf -fodoslide prog.cob], [0], [], [])
 
 AT_CLEANUP
 

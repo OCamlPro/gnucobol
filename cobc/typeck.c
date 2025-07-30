@@ -3224,19 +3224,6 @@ cb_build_length (cb_tree x)
 	ftemp->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
 	cb_emit (cb_build_assign (temp, cb_build_length_1 (x)));
 
-	if (cb_pretty_display
-	 && cobc_cs_check == CB_CS_DISPLAY) {
-		z1 = cb_build_filler ();
-		z2 = cb_build_field_tree (0, z1, NULL, CB_STORAGE_WORKING, NULL, 1);
-		ftemp = CB_FIELD (z2);
-		ftemp->pic = cb_build_picture ("9(10)");
-		ftemp->flag_filler = 1;
-		ftemp->usage = CB_USAGE_DISPLAY;
-		ftemp->count++;
-		cb_validate_field (ftemp);
-		cb_emit (CB_BUILD_FUNCALL_2 ("cob_field_int_display", temp, z2));
-		return z1;
-	}
 	return temp;
 }
 

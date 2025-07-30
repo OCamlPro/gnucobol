@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2023 Free Software Foundation, Inc.
+   Copyright (C) 2018-2024 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -256,7 +256,7 @@ get_trimmed_data (const cob_field * const f,
 	if (len == 0) {
 		return (*strndup_func)(" ", 1);
 	}
-	
+
 	str = (char *)f->data;
 	if (COB_FIELD_JUSTIFIED (f)) {
 		for (; *str == ' ' && len > 1; ++str, --len);
@@ -354,9 +354,9 @@ static void *
 get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 	 const char decimal_point)
 {
-	size_t		num_integer_digits
+	const size_t	num_integer_digits
 		= cob_max_int (0, COB_FIELD_DIGITS (f) - COB_FIELD_SCALE (f));
-	size_t		num_decimal_digits
+	const size_t	num_decimal_digits
 		= cob_max_int (0, COB_FIELD_SCALE (f));
 	cob_field_attr	attr;
 	cob_field       edited_field;
@@ -365,9 +365,14 @@ get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 
 	/* Initialize attribute for nicely edited version of f */
 	attr.type = COB_TYPE_NUMERIC_EDITED;
-	attr.flags = COB_FLAG_JUSTIFIED;
-	attr.scale = COB_FIELD_SCALE (f);
-	attr.digits = COB_FIELD_DIGITS (f);
+	attr.flags = COB_FIELD_HAVE_SIGN (f) ?
+		(COB_FLAG_JUSTIFIED | COB_FLAG_HAVE_SIGN) :
+		(COB_FLAG_JUSTIFIED);
+	attr.scale = (COB_FIELD_SCALE (f) < 0) ? 0 : COB_FIELD_SCALE (f);
+	attr.digits = (unsigned short)(num_integer_digits + num_decimal_digits);
+	if (num_integer_digits == 0)
+		attr.digits++; 
+
 	attr.pic = get_pic_for_num_field (num_integer_digits,
 					  num_decimal_digits);
 

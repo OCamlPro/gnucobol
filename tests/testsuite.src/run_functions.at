@@ -4710,9 +4710,10 @@ AT_DATA([prog.cob], [
        END FUNCTION foo.
 ])
 
-AT_CHECK([cobc -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
 
-AT_CHECK([./prog], [0], [Begin recursive function test
+AT_CHECK([./prog], [0],
+[Begin recursive function test
 Step: 1, Arg: 5, '5'
 Step: 2, Arg: 4, '5'
 Step: 3, Arg: 3, '5'

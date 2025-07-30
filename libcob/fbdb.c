@@ -412,7 +412,7 @@ join_environment (cob_file_api *a)
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
 	bdb_env->set_msgfile (bdb_env, stderr);
 	if (a->file_paths) {
-		for(k=0; a->file_paths[k] != NULL; k++) {
+		for (k=0; a->file_paths[k] != NULL; k++) {
 			ret = bdb_env->set_data_dir (bdb_env, a->file_paths[k]);
 		}
 	}
@@ -579,8 +579,8 @@ bdb_lock_record (cob_file *f, const char *key, const unsigned int keylen)
 							(p->bdb_lock_max + COB_MAX_BDB_LOCKS) * sizeof(DB_LOCK));
 			p->bdb_lock_max += COB_MAX_BDB_LOCKS;
 		}
-		for(k = 0; k < p->bdb_lock_num; k++) {
-			if (memcmp(&p->bdb_record_lock, &p->bdb_locks[k], sizeof(DB_LOCK)) == 0) {
+		for (k = 0; k < p->bdb_lock_num; k++) {
+			if (memcmp (&p->bdb_record_lock, &p->bdb_locks[k], sizeof(DB_LOCK)) == 0) {
 				/* Move to end of lock table for later: bdb_unlock_last */
 				for (j=k;  j < p->bdb_lock_num; j++) {
 					memcpy (&p->bdb_locks[j], &p->bdb_locks[j+1], sizeof(DB_LOCK));
@@ -656,8 +656,8 @@ bdb_test_record_lock (cob_file *f, const char *key, const unsigned int keylen)
 
 	if (!ret) {
 		if (p->bdb_lock_num > 0) {
-			for(k = 0; k < p->bdb_lock_num; k++) {
-				if (memcmp(&test_lock, &p->bdb_locks[k], sizeof(DB_LOCK)) == 0) {
+			for (k = 0; k < p->bdb_lock_num; k++) {
+				if (memcmp (&test_lock, &p->bdb_locks[k], sizeof(DB_LOCK)) == 0) {
 					/* Move to end of lock table for later: bdb_unlock_last */
 					for (j=k;  j < p->bdb_lock_num; j++) {
 						memcpy (&p->bdb_locks[j], &p->bdb_locks[j+1], sizeof(DB_LOCK));

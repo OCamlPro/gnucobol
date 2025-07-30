@@ -290,7 +290,8 @@ AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [All INITIALIZE tests passed.
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[All INITIALIZE tests passed.
 ], [])
 
 AT_CLEANUP
@@ -595,6 +596,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([INITIALIZE big table with VALUE])
 AT_KEYWORDS([VALUE OCCURS nested])
 
@@ -778,7 +780,8 @@ AT_DATA([prog.cob], [
 #   -frelax-syntax-checks -w  to compile "VAR VALUES lit" (must be VALUE according to all COBOL standards)
 AT_CHECK([$COMPILE -fno-binary-truncate  -fcomplex-odo -frelax-syntax-checks -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Simple OCCURS with multi VALUES
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Simple OCCURS with multi VALUES
 01: jan has 31 days
 02: feb has 28 days
 03: mar has 31 days
@@ -815,9 +818,10 @@ Initialize VALUE inside OCCURS test
 01-02:  Apr, 30. May, 31. Jun, 30. <B>.
 ], [])
 
-AT_CHECK([$COBC -x -std=mf -fodoslide -w prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -fodoslide -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Simple OCCURS with multi VALUES
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Simple OCCURS with multi VALUES
 01: jan has 31 days
 02: feb has 28 days
 03: mar has 31 days
