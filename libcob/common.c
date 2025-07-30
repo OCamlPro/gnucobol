@@ -5243,9 +5243,7 @@ cob_get_current_datetime (const enum cob_datetime_res res)
 int
 cob_set_date_from_epoch (struct cob_time *cb_time, const unsigned char *p)
 {
-	struct tm	*tmptr;
-	time_t		t = 0;
-	long long	seconds = 0;
+	cob_s64_t	seconds = 0;
 
 	while (IS_VALID_DIGIT_DATA (*p)) {
 		seconds = seconds * 10 + COB_D2I (*p++);
@@ -5257,36 +5255,11 @@ cob_set_date_from_epoch (struct cob_time *cb_time, const unsigned char *p)
 		return 1;
 	}
 
-	/* allocate tmptr for epoch */
-	tmptr = localtime (&t);
-	/* set seconds, minutes, hours and big days */
-	tmptr->tm_sec = seconds % 60;
-	seconds /= 60;
-	tmptr->tm_min = seconds % 60;
-	seconds /= 60;
-	tmptr->tm_hour = seconds % 24;
-	seconds /= 24;
-	tmptr->tm_mday = (int)seconds + 1; /* +1 because mday should be >= 1 */
-	tmptr->tm_isdst = -1;
-
-	/* normalize if needed (definitely for epoch, but also for example 30 Feb
-		to be changed to correct march date),
-		set tm_wday, tm_yday and tm_isdst */
-	if (mktime (tmptr) == -1) {
-		return 1;
-	}
-
-	cb_time->year = tmptr->tm_year + 1900;
-	cb_time->month = tmptr->tm_mon + 1;
-	cb_time->day_of_month = tmptr->tm_mday;
-	cb_time->hour = tmptr->tm_hour;
-	cb_time->minute = tmptr->tm_min;
-	cb_time->second = tmptr->tm_sec;
+	set_cob_time_from_localtime ((time_t)seconds, cb_time);
 	cb_time->nanosecond = -1;
+	cb_time->offset_known = 1;
+	cb_time->utc_offset = 0;
 
-	cb_time->day_of_week = tmptr->tm_wday + 1;
-	cb_time->day_of_year = tmptr->tm_yday + 1;
-	cb_time->is_daylight_saving_time = tmptr->tm_isdst;
 	return 0;
 }
 

@@ -1,13 +1,13 @@
 
+2025-05-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_set_date_from_epoch): simplification, which
+	  also fixes incorrect conversion of epoch (was off by one day)
+
 2025-05-21  David Declerck <david.declerck@ocamlpro.com>
 
 	revert 2018-07-31 changes preferring normalization of
 	numeric DISPLAY data including 0x00
-
-2025-05-19  David Declerck <david.declerck@ocamlpro.com>
-
-	* common.c (cob_set_date_from_epoch): fix incorrect conversion
-	  of epoch (was off by one day)
 
 2025-04-07  David Declerck <david.declerck@ocamlpro.com>
 
