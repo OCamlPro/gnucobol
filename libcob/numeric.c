@@ -859,7 +859,7 @@ cob_decimal_get_double (cob_decimal *d)
 	double		v;
 
 	cob_not_finite = 0;
-	if (mpz_size (d->value) == 0) {
+	if (mpz_sgn (d->value) == 0) {
 		return 0.0;
 	}
 	cob_decimal_get_mpf (cob_mpft, d);
@@ -1640,20 +1640,21 @@ static int
 cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 {
 	const int	field_sign = COB_FIELD_HAVE_SIGN (f);
-	const size_t	bitnum = (f->size * 8) - field_sign;
+	const int	sign = mpz_sgn (d->value);
+	const size_t	bitnum = f->size * 8;
 	size_t			overflow;
 
-	if (mpz_size (d->value) == 0) {
+	if (sign == 0) {
 		memset (f->data, 0, f->size);
 		return 0;
 	}
 	overflow = 0;
 	if (!field_sign
-	 && mpz_sgn (d->value) == -1) {
+	 && sign == -1) {
 		mpz_abs (d->value, d->value);
 	}
 	if (f->size > sizeof(cob_u64_t)) {
-		int	neg;
+		int     neg;
 		size_t	size;
 		size_t	sizeb;
 		size_t	count;
@@ -1700,7 +1701,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		}
 		return 0;
 	}
-	if (mpz_sizeinbase (d->value, 2) > bitnum) {
+	if (mpz_sizeinbase (d->value, 2) > bitnum - field_sign) {
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
 			goto overflow;
 		}
@@ -1717,7 +1718,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 			}
 			mpz_tdiv_r (d->value, d->value, cob_mpze10[digits]);
 		} else {
-			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
+			mpz_fdiv_r_2exp (d->value, d->value, bitnum);
 		}
 	} else if (opt && COB_FIELD_BINARY_TRUNC (f)) {
 		const short	scale = COB_FIELD_SCALE (f);
@@ -1739,7 +1740,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 				mpz_tdiv_r (d->value, d->value,
 					    cob_mpze10[digits]);
 			} else {
-				mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
+				mpz_fdiv_r_2exp (d->value, d->value, bitnum);
 			}
 		}
 	}

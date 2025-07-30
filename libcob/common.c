@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -81,6 +81,10 @@
 
 #ifdef	HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+
+#ifndef	SIGABRT
+#define SIGABRT 6
 #endif
 #ifndef SIGFPE
 #ifndef NSIG
@@ -305,20 +309,25 @@ static const cob_field_attr	const_bin_nano_attr =
 				{COB_TYPE_NUMERIC_BINARY, 20, 9,
 				 COB_FLAG_HAVE_SIGN, NULL};
 
-static char			*cob_local_env = NULL;
-static int			current_arg = 0;
-static unsigned char		*commlnptr = NULL;
-static size_t			commlncnt = 0;
-static size_t			cob_local_env_size = 0;
+COB_TLS char			*cob_local_env = NULL;
+COB_TLS size_t			cob_local_env_size = 0;
+COB_TLS int			current_arg = 0;
+COB_TLS unsigned char		*commlnptr = NULL;
+COB_TLS size_t			commlncnt = 0;
 
 static struct cob_external	*basext = NULL;
 
-static size_t			sort_nkeys = 0;
-static cob_file_key		*sort_keys = NULL;
-static const unsigned char	*sort_collate = NULL;
+struct sort_state {
+	const unsigned char	*sort_collate;
+	size_t			sort_nkeys;
+	cob_file_key		*sort_keys;
+};
 
-static const char		*cob_source_file = NULL;
-static unsigned int		cob_source_line = 0;
+/* Static structure for table SORT */
+COB_TLS struct sort_state	*share_sort_state = NULL;
+
+COB_TLS const char		*cob_source_file = NULL;
+COB_TLS unsigned int		cob_source_line = 0;
 
 int				is_test = 0;
 
@@ -611,8 +620,8 @@ static struct config_tbl gc_conf[] = {
 #define NUM_CONFIG (sizeof (gc_conf) /sizeof (struct config_tbl) - 1)
 #define FUNC_NAME_IN_DEFAULT NUM_CONFIG + 1
 
-/* 
- * Table of 'signal' supported by this system 
+/*
+ * Table of 'signal' supported by this system
  */
 static struct signal_table {
 	short		sig;			/* Signal number */
@@ -1291,18 +1300,18 @@ cob_sig_handler (int sig)
 	buff[pos++] = ')';
 
 	buff[pos++] = '\n';
-	buff[pos++] = '\n';
-
 
 	if (cob_initialized) {
 		if (abort_reason[0] == 0) {
 			memcpy (abort_reason, signal_text, COB_MINI_BUFF);
-#if 0	/* Is there a use in this message ?*/
-			pos += strcat_to_buff (buff + pos, abnormal_termination_msgid);
+#if 0	/* Is there any use in this message ?*/
 			buff[pos++] = '\n';
+			pos += strcat_to_buff (buff + pos, abnormal_termination_msgid);
 #endif
 		}
 	}
+
+	buff[pos++] = '\n';
 	buff[pos] = 0;
 	write_until_fail (STDERR_FILENO, buff, pos);
 
@@ -1319,9 +1328,7 @@ cob_sig_handler (int sig)
 #ifdef	SIGBUS
 	case SIGBUS:
 #endif
-#ifdef	SIGABRT
 	case SIGABRT:
-#endif
 		if (cobsetptr && cobsetptr->cob_core_on_error != 0)  {
 			ss_terminate_routines ();
 			break;
@@ -1332,7 +1339,9 @@ cob_sig_handler (int sig)
 		break;
 	}
 
+#ifdef	SIGPIPE
 exit_handler:
+#endif
 	/* call external signal handler if registered */
 	if (cob_ext_sighdl != NULL) {
 		(*cob_ext_sighdl) (sig);
@@ -2136,7 +2145,7 @@ cob_cmp_strings (
 			const size_t spaces_to_test = size2 - min;
 			return -compare_spaces (data2 + min, spaces_to_test);
 		}
-	
+
 	} else {		/* check with collation */
 
 		/* Compare common substring */
@@ -2182,17 +2191,20 @@ sort_compare (const void *data1, const void *data2)
 	cob_field	f1;
 	cob_field	f2;
 
+	const size_t sort_nkeys = share_sort_state->sort_nkeys;
+
 	for (i = 0; i < sort_nkeys; ++i) {
-		f1 = f2 = *sort_keys[i].field;
-		f1.data = (unsigned char *)data1 + sort_keys[i].offset;
-		f2.data = (unsigned char *)data2 + sort_keys[i].offset;
+		const cob_file_key	sort_key = share_sort_state->sort_keys[i];
+		f1 = f2 = *sort_key.field;
+		f1.data = (unsigned char *)data1 + sort_key.offset;
+		f2.data = (unsigned char *)data2 + sort_key.offset;
 		if (COB_FIELD_IS_NUMERIC (&f1)) {
 			res = cob_numeric_cmp (&f1, &f2);
 		} else {
 			res = memcmp (f1.data, f2.data, f1.size);
 		}
 		if (res != 0) {
-			return (sort_keys[i].tf_ascending == COB_ASCENDING) ? res : -res;
+			return (sort_key.tf_ascending == COB_ASCENDING) ? res : -res;
 		}
 	}
 	return 0;
@@ -2208,17 +2220,20 @@ sort_compare_collate (const void *data1, const void *data2)
 	cob_field	f1;
 	cob_field	f2;
 
+	const size_t sort_nkeys = share_sort_state->sort_nkeys;
+
 	for (i = 0; i < sort_nkeys; ++i) {
-		f1 = f2 = *sort_keys[i].field;
-		f1.data = (unsigned char *)data1 + sort_keys[i].offset;
-		f2.data = (unsigned char *)data2 + sort_keys[i].offset;
+		const cob_file_key	sort_key = share_sort_state->sort_keys[i];
+		f1 = f2 = *sort_key.field;
+		f1.data = (unsigned char *)data1 + sort_key.offset;
+		f2.data = (unsigned char *)data2 + sort_key.offset;
 		if (COB_FIELD_IS_NUMERIC (&f1)) {
 			res = cob_numeric_cmp (&f1, &f2);
 		} else {
-			res = cob_cmps (f1.data, f2.data, f1.size, sort_collate);
+			res = cob_cmps (f1.data, f2.data, f1.size, share_sort_state->sort_collate);
 		}
 		if (res != 0) {
-			return (sort_keys[i].tf_ascending == COB_ASCENDING) ? res : -res;
+			return (sort_key.tf_ascending == COB_ASCENDING) ? res : -res;
 		}
 	}
 	return 0;
@@ -3084,7 +3099,7 @@ cob_realloc (void * optr, const size_t osize, const size_t nsize)
 
 	if (osize == nsize) {	/* No size change */
 		return optr;
-	} 
+	}
 	if (osize > nsize) {		/* Reducing size */
 		return realloc (optr, nsize);
 	}
@@ -3547,12 +3562,16 @@ cob_hard_failure ()
 		}
 		call_exit_handlers_and_terminate ();
 	}
+	/* the internal exit code can, in theory, also
+	   be queried by installed signal handlers */
 	exit_code = -1;
+
 #ifndef COB_WITHOUT_JMP
 	if (return_jmp_buffer_set) {
 		longjmp (return_jmp_buf, -1);
 	}
 #endif
+
 	/* if explicit requested for errors or
 	   an explicit manual coredump creation did
 	   not work raise an abort here */
@@ -4466,7 +4485,7 @@ cob_is_numeric (const cob_field *f)
 			register const unsigned char *p = f->data;
 			const unsigned char *end = p + f->size - 1;
 
-			/* Check sign */			
+			/* Check sign */
 			{
 				const char sign = *end & 0x0F;
 				if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
@@ -4592,34 +4611,39 @@ cob_is_lower (const cob_field *f)
 void
 cob_table_sort_init (const size_t nkeys, const unsigned char *collating_sequence)
 {
-	sort_nkeys = 0;
-	sort_keys = cob_malloc (nkeys * sizeof (cob_file_key));
-	if (collating_sequence) {
-		sort_collate = collating_sequence;
-	} else {
-		sort_collate = COB_MODULE_PTR->collating_sequence;
-	}
+	share_sort_state = cob_malloc (sizeof(struct sort_state));
+	share_sort_state->sort_collate = collating_sequence ? collating_sequence
+	                               : COB_MODULE_PTR->collating_sequence;
+	share_sort_state->sort_nkeys = 0;
+	share_sort_state->sort_keys = cob_malloc (nkeys * sizeof (cob_file_key));
+	/* TODO on merge to 4.x: consider to
+	   return sort_state;  ... or pass by reference -> dropping share_sort_state */
 }
 
 void
 cob_table_sort_init_key (cob_field *field, const int flag,
 			 const unsigned int offset)
 {
-	sort_keys[sort_nkeys].field = field;
-	sort_keys[sort_nkeys].tf_ascending = flag;
-	sort_keys[sort_nkeys].offset = offset;
-	sort_nkeys++;
+	/* TODO on merge to 4.x: add sort_state as parameter */
+	cob_file_key	*sort_key = &share_sort_state->sort_keys[share_sort_state->sort_nkeys++];
+	sort_key->field = field;
+	sort_key->tf_ascending = flag;
+	sort_key->offset = offset;
 }
 
 void
 cob_table_sort (cob_field *f, const int n)
 {
-	if (sort_collate) {
+	/* TODO on merge to 4.x: check if qsort_r is available, if yes pass sort_state,
+	   if not use share_sort_state and qsort */
+	if (share_sort_state->sort_collate) {
 		qsort (f->data, (size_t) n, f->size, sort_compare_collate);
 	} else {
 		qsort (f->data, (size_t) n, f->size, sort_compare);
 	}
-	cob_free (sort_keys);
+	cob_free (share_sort_state->sort_keys);
+	cob_free (share_sort_state);
+	share_sort_state = NULL;
 }
 
 /* Run-time error checking */
@@ -4985,7 +5009,7 @@ static set_cob_time_from_localtime (time_t curtime,
 
 	static time_t last_time = 0;
 	static struct cob_time last_cobtime;
-	
+
 	/* FIXME: on setting related locale set last_time = 0 */
 	if (curtime == last_time) {
 		memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
@@ -5767,6 +5791,8 @@ cob_accept_microsecond_time (cob_field *f)
 void
 cob_display_command_line (cob_field *f)
 {
+	/* FIXME: should raise (and codegen check) an exception
+	   if malloc is not possible */
 	if (commlnptr) {
 		cob_free (commlnptr);
 	}
@@ -5783,7 +5809,7 @@ cob_accept_command_line (cob_field *f)
 	size_t	size;
 	size_t	len;
 
-	if (commlncnt) {
+	if (commlnptr) {
 		cob_move_intermediate (f, commlnptr, commlncnt);
 		return;
 	}
@@ -6262,7 +6288,7 @@ check_valid_dir (const char *dir)
 #if 0
 	print_stat (dir, sb);
 #endif
-	
+
 	return 0;
 }
 
@@ -8527,7 +8553,7 @@ set_config_val (char *value, int pos)
 		str = cob_expand_env_string (value);
 		memcpy (data, &str, sizeof (char *));
 		if (data_loc == offsetof (cob_settings, cob_preload_str)) {
-			cobsetptr->cob_preload_str_set = cob_strdup(str);
+			cobsetptr->cob_preload_str_set = cob_strdup (str);
 		}
 
 		/* call internal routines that do post-processing */
@@ -9149,7 +9175,7 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 		cob_get_source_line ();
 		get_source_location (buff);
 		fprintf (stderr, "%s", buff);
-	}	
+	}
 	fprintf (stderr, _("warning: "));
 
 	if (!(caller_name && *caller_name)) caller_name = "unknown caller";
@@ -9562,7 +9588,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
-		break;		
+		break;
 	default:
 		/* internal rare error, no need for translation */
 		cob_runtime_error ("unknown failure: %d", fatal_error);
@@ -9732,7 +9758,7 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 	} else {
 		snprintf (buff, 55, _("%s, version %s"), WITH_CURSES, version_buffer);
 	}
-#if defined (RESOLVED_PDC_VER) 
+#if defined (RESOLVED_PDC_VER)
 	{
 		const int	chtype_val = (int)sizeof (chtype) * 8;
 		char	chtype_def[10] = { '\0' };
@@ -9921,7 +9947,7 @@ print_version_summary (void)
 	if(!cob_initialized)
 		cob_init_nomain (0, NULL);
 	set_cob_build_stamp (cob_build_stamp);
-	
+
 	printf ("%s %s (%s), ",
 		PACKAGE_NAME, libcob_version(), cob_build_stamp);
 
@@ -10529,7 +10555,7 @@ cob_call_with_exception_check (const char *name, const int argc, void **argv)
 	ret = setjmp (return_jmp_buf);
 	if (ret) {
 		return_jmp_buffer_set = 0;
-                /* Module unloading has been requested (after being postponed): perform it */
+		/* Module unloading has been requested (after being postponed): perform it */
 		if (module_unload == COB_REQUESTED) {
 			cob_exit_call ();
 			cob_exit_cobcapi ();
@@ -10538,7 +10564,7 @@ cob_call_with_exception_check (const char *name, const int argc, void **argv)
 		module_unload = COB_IMMEDIATE;
 		return ret;
 	}
-        /* Set module unloading to be postponed (until longjmp is performed) */
+	/* Set module unloading to be postponed (until longjmp is performed) */
 	module_unload = COB_POSTPONE;
 #endif
 	exit_code = cob_call (name, argc, argv);
@@ -10550,21 +10576,21 @@ cob_call_with_exception_check (const char *name, const int argc, void **argv)
 static
 void cob_set_main_argv0 (const int argc, char **argv)
 {
-	char		*s;
 #if	defined (HAVE_READLINK) || defined (HAVE_GETEXECNAME)
 	const char	*path;
 #endif
-	int		i;
 
 #ifdef _WIN32
-	s = cob_malloc ((size_t)COB_MEDIUM_BUFF);
-	i = GetModuleFileNameA (NULL, s, COB_MEDIUM_MAX);
-	if (i > 0 && i < COB_MEDIUM_BUFF) {
-		cobglobptr->cob_main_argv0 = cob_strdup (s);
+	{
+		char *s = cob_malloc ((size_t)COB_MEDIUM_BUFF);
+		int i = GetModuleFileNameA (NULL, s, COB_MEDIUM_MAX);
+		if (i > 0 && i < COB_MEDIUM_BUFF) {
+			cobglobptr->cob_main_argv0 = cob_strdup (s);
+			cob_free (s);
+			return;
+		}
 		cob_free (s);
-		return;
 	}
-	cob_free (s);
 #endif
 #ifdef HAVE_READLINK
 	if (!access ("/proc/self/exe", R_OK)) {
@@ -10577,8 +10603,8 @@ void cob_set_main_argv0 (const int argc, char **argv)
 		path = NULL;
 	}
 	if (path) {
-		s = cob_malloc ((size_t)COB_MEDIUM_BUFF);
-		i = (int)readlink (path, s, (size_t)COB_MEDIUM_MAX);
+		char *s = cob_malloc ((size_t)COB_MEDIUM_BUFF);
+		int i = (int)readlink (path, s, (size_t)COB_MEDIUM_MAX);
 		if (i > 0 && i < COB_MEDIUM_BUFF) {
 			s[i] = 0;
 			cobglobptr->cob_main_argv0 = cob_strdup (s);
@@ -10593,7 +10619,7 @@ void cob_set_main_argv0 (const int argc, char **argv)
 	path = getexecname ();
 	if (path) {
 #ifdef	HAVE_REALPATH
-		s = cob_malloc ((size_t)COB_MEDIUM_BUFF);
+		char *s = cob_malloc ((size_t)COB_MEDIUM_BUFF);
 		if (realpath (path, s) != NULL) {
 			cobglobptr->cob_main_argv0 = cob_strdup (s);
 		} else {
@@ -10634,7 +10660,7 @@ cob_init (const int argc, char **argv)
 
 #ifdef __GLIBC__
 	{
-		/* 
+		/*
 		 * GNU libc may write a stack trace to /dev/tty when malloc
 		 * detects corruption.  If LIBC_FATAL_STDERR_ is set to any
 		 * nonempty string, it writes to stderr instead. See:
@@ -10653,13 +10679,11 @@ cob_init (const int argc, char **argv)
 	cob_last_sfile = NULL;
 	commlnptr = NULL;
 	basext = NULL;
-	sort_keys = NULL;
-	sort_collate = NULL;
+	share_sort_state = NULL;
 	cob_source_file = NULL;
 	exit_hdlrs = NULL;
 	hdlrs = NULL;
 	commlncnt = 0;
-	sort_nkeys = 0;
 	cob_source_line = 0;
 	cob_local_env_size = 0;
 
@@ -10907,7 +10931,7 @@ cob_get_runtime_option (enum cob_runtime_option_switch opt)
 }
 
 /* output the COBOL-view of the stacktrace to the given target,
-   does an early exit if 'target' is NULL, 
+   does an early exit if 'target' is NULL,
    'target' is FILE *  and should be flushed before */
 void
 cob_stack_trace (void *target)
@@ -10975,7 +10999,7 @@ output_procedure_stack_entry (char *buff,
 	if (!section && !paragraph) {
 		return 0;
 	}
-	
+
 	buff[pos++] = '\n';
 	buff[pos++] = '\t';
 	if (section && paragraph) {
@@ -11863,14 +11887,14 @@ cob_debug_logger (const char *fmt, ...)
 }
 
 static int			/* Return TRUE if word is repeated 16 times */
-repeatWord(
+repeatWord (
 	char	*match,	/* 4 bytes to match */
 	char	*mem)	/* Memory area to match repeated value */
 {
-	if(memcmp(match, &mem[0], 4) == 0
-	&& memcmp(match, &mem[4], 4) == 0
-	&& memcmp(match, &mem[8], 4) == 0
-	&& memcmp(match, &mem[12], 4) == 0)
+	if (memcmp (match, &mem[0], 4) == 0
+	 && memcmp (match, &mem[4], 4) == 0
+	 && memcmp (match, &mem[8], 4) == 0
+	 && memcmp (match, &mem[12], 4) == 0)
 		return 1;
 	return 0;
 }

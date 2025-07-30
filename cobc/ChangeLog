@@ -1,4 +1,9 @@
 
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
+	  now "supported" again (with missing cleanup on signal)
+
 2025-05-21  David Declerck <david.declerck@ocamlpro.com>
 
 	revert 2018-07-31 changes preferring normalization of
@@ -40,6 +45,10 @@
 
 	* gentable.c: generate EBCDIC/ASCII translation tables
 	* cobc.c, help.c: new --gentable option
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: handle [__xlc__] identical to [__IBMC__]
 
 2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
 

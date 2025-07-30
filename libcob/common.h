@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -331,18 +331,15 @@ typedef __mpz_struct mpz_t[1];
 
 #define strncasecmp		_strnicmp
 #define strcasecmp		_stricmp
+#if !COB_USE_VC2015_OR_GREATER
+/* VC2015+ provides standard function with plain
+   name, old posix emulation with underscore */
 #define snprintf		_snprintf
+#endif
 #define getpid			_getpid
 #define access			_access
 #define popen			_popen
 #define pclose			_pclose
-/* MSDN says these are available since VC2005 #if COB_USE_VC2013_OR_GREATER
-only usable with COB_USE_VC2013_OR_GREATER */
-#define timezone		_timezone
-#define tzname			_tzname
-#define daylight		_daylight
-/* only usable with COB_USE_VC2013_OR_GREATER - End
-#endif */
 
 #if !COB_USE_VC2013_OR_GREATER
 #define atoll			_atoi64
@@ -367,16 +364,14 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define strcasecmp	stricmp
 #define _setmode	setmode
 #define _chdir		chdir
-#define timezone	_timezone
-#define tzname		_tzname
-#define daylight	_daylight
-#endif /* __BORLANDC__ */
+#endif
 
-#ifdef __ORANGEC__
+#if defined (_MSC_VER) || defined (__ORANGEC__) \
+ || defined (_UCRT) || defined (__BORLANDC__)
 #define timezone		_timezone
 #define tzname			_tzname
 #define daylight		_daylight
-#endif /* _ORANGEC__ */
+#endif
 
 #if	__SUNPRO_C
 /* Disable certain warnings */
@@ -416,10 +411,15 @@ only usable with COB_USE_VC2013_OR_GREATER */
 	#define COB_INLINE
 #endif
 
+/* note: we previously checked only for __xlc__, now only for __IBMC__ */
+#if defined (__xlc__) && !defined(__IBMC__)
+	#define __IBMC__ __xlc__
+#endif
+
 /* Also OK for icc which defines __GNUC__ */
 
 #if	 defined(__GNUC__) || \
-	(defined(__xlc__) && __IBMC__ >= 700  ) || \
+	(defined(__IBMC__) && __IBMC__ >= 700  ) || \
 	(defined(__HP_cc) && __HP_cc  >= 61000)
 #define	COB_A_NORETURN	__attribute__((noreturn))
 #define	COB_A_FORMAT12	__attribute__((format(printf, 1, 2)))
@@ -466,7 +466,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define	COB_A_COLD
 #endif
 
-#elif	defined(__xlc__) && __IBMC__ >= 700
+#elif	defined(__IBMC__) && __IBMC__ >= 700
 
 #define	COB_NOINLINE	__attribute__((noinline))
 #define	COB_A_INLINE	__attribute__((always_inline))
@@ -1407,7 +1407,7 @@ typedef struct __cob_module {
 	unsigned char		flag_pretty_display;	/* Pretty display */
 	unsigned char		flag_host_sign;		/* Host sign */
 
-	unsigned char		flag_no_phys_canc;	/* No physical cancel */
+	unsigned char		flag_no_phys_canc;	/* No physical cancel (constant by cobc)*/
 	unsigned char		flag_main;		/* Main module */
 	unsigned char		flag_fold_call;		/* Fold case */
 	unsigned char		flag_exit_program;	/* Exit after CALL */

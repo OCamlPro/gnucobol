@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2023 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2024 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -143,7 +143,7 @@ CODE_COVERAGE_BRANCH_COVERAGE=1
 CODE_COVERAGE_LCOV_OPTIONS =  --no-external
 
 #HELPSOURCES = $(top_srcdir)/bin/cobcrun.c $(top_srcdir)/configure.ac
-#HELP2MAN_OPTS = --info-page=$(PACKAGE) -specialflag
+#HELP2MAN_OPTS = --info-page=$(PACKAGE) -n "GnuCOBOL runtime library and API functions" -h "-special -flag"
 #if MAKE_HAS_PREREQ_ONLY
 #libcob.3: $(HELPSOURCES) | $(COBCRUN)
 #	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) $(COBCRUN)
