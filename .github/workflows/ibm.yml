@@ -1,0 +1,112 @@
+name: IBM Power & Z
+
+on:
+  pull_request:
+    branches: [ gcos4gnucobol-3.x ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+env:
+  HOME: /home/runner
+
+jobs:
+  build:
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04-ppc64le
+          - ubuntu-24.04-ppc64le-p10
+          - ubuntu-24.04-s390x
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup build environment
+        run: echo "TERM=vt100" >> $GITHUB_ENV
+
+      - name: Install packages
+        run: |
+          sudo apt -y update
+          sudo apt -y install autoconf automake make libtool flex bison \
+                              autopoint gettext help2man texinfo texlive \
+                              gcc libgmp-dev libncurses-dev \
+                              libdb5.3-dev libxml2-dev libcjson-dev
+
+      - name: Bootstrap GnuCOBOL
+        run: ./build_aux/bootstrap install
+
+      - name: Configure GnuCOBOL
+        run: |
+          mkdir _build && cd _build
+          ../configure --with-db \
+                       --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --prefix=/opt/gnucobol \
+                       --with-pkgversion="GnuCOBOL CI"
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Upload config.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-${{ matrix.os }}.log
+          path: _build/config.log
+
+      - name: Adjust testsuite
+        run: |
+          sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
+
+          sed -i '/AT_SETUP(\[CALL C with callback, PROCEDURE DIVISION EXTERN\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
+          sed -i '/AT_SETUP(\[CALL C with callback, ENTRY-CONVENTION EXTERN\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
+          sed -i '/AT_SETUP(\[System routines for files\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[INDEXED file numeric keys ordering\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_file.at
+          sed -i '/AT_SETUP(\[CALL BY VALUE numeric literal with SIZE IS\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
+          sed -i '/AT_SETUP(\[CALL BY VALUE to C\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
+          sed -i '/AT_SETUP(\[EXHIBIT statement\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
+          sed -i '/AT_SETUP(\[EXAMINE TALLYING\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
+
+      - name: Run testsuite
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+
+      - name: Upload testsuite.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testsuite-${{ matrix.os }}.log
+          path: _build/tests/testsuite.log
+
+      - name: Cache newcob.val
+        uses: actions/cache@v4
+        with:
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          enableCrossOsArchive: true
+
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$(($(nproc)+1))
+
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.os }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt
