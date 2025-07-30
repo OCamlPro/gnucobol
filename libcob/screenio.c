@@ -172,15 +172,15 @@ static cob_settings		*cobsetptr;
 static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 static struct cob_inp_struct	*cob_base_inp;
-static size_t		totl_index;
-static size_t		cob_has_color;
+static size_t			totl_index;
+static size_t			cob_has_color;
 static int			global_return;
 static int			cob_current_y;
 static int			cob_current_x;
-static short		fore_color	/* "const" default foreground (pair 0 on init) */;
-static short		back_color	/* "const" default background (pair 0 on init) */;
-static short		stdscr_fore_color	/* "const" default foreground (pair 0 on init) */;
-static short		stdscr_back_color	/* "const" default background (pair 0 on init) */;
+static short			fore_color	/* "const" default foreground (pair 0 on init) */;
+static short			back_color	/* "const" default background (pair 0 on init) */;
+static short			stdscr_fore_color	/* "const" default foreground (pair 0 on init) */;
+static short			stdscr_back_color	/* "const" default background (pair 0 on init) */;
 static int			origin_y;
 static int			origin_x;
 static int			display_cursor_y;
@@ -191,22 +191,22 @@ static int			pending_accept;
 static int			got_sys_char;
 static int			save_cursor_x = 0;
 static int			save_cursor_y = 0;
-static WINDOW		*mywin;
+static WINDOW			*mywin;
 
 #ifdef WITH_PANELS
-#define MAX_PANELS				20
+#define MAX_PANELS		20
 
 enum sys_win_mode {
-	SYS_WIN_NEW			= 'N',
+	SYS_WIN_NEW		= 'N',
 	SYS_WIN_DELETE		= 'D',
-	SYS_WIN_ATTR_GET			= 'G',
-	SYS_WIN_ATTR_CHANGE		= 'S',
-	SYS_WIN_MOVE	= 		'M',
-	SYS_WIN_SHOW			= 'V',
-	SYS_WIN_HIDE			= 'I',
-	SYS_WIN_TOP			= 'T',
+	SYS_WIN_ATTR_GET	= 'G',
+	SYS_WIN_ATTR_CHANGE	= 'S',
+	SYS_WIN_MOVE		= 'M',
+	SYS_WIN_SHOW		= 'V',
+	SYS_WIN_HIDE		= 'I',
+	SYS_WIN_TOP		= 'T',
 	SYS_WIN_BOTTOM		= 'B',
-	SYS_WIN_LIST			= 'L'
+	SYS_WIN_LIST		= 'L'
 };
 
 #define SYS_WIN_FLAG_HIDDEN 	(1 << 0)

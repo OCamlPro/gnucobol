@@ -1,21 +1,21 @@
 /*
-	 Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
-	 Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
+   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
-	 This file is part of GnuCOBOL.
+   This file is part of GnuCOBOL.
 
-	 The GnuCOBOL runtime library is free software: you can redistribute it
-	 and/or modify it under the terms of the GNU Lesser General Public License
-	 as published by the Free Software Foundation, either version 3 of the
-	 License, or (at your option) any later version.
+   The GnuCOBOL runtime library is free software: you can redistribute it
+   and/or modify it under the terms of the GNU Lesser General Public License
+   as published by the Free Software Foundation, either version 3 of the
+   License, or (at your option) any later version.
 
-	 GnuCOBOL is distributed in the hope that it will be useful,
-	 but WITHOUT ANY WARRANTY; without even the implied warranty of
-	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	 GNU Lesser General Public License for more details.
+   GnuCOBOL is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
 
-	 You should have received a copy of the GNU Lesser General Public License
-	 along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public License
+   along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
@@ -251,7 +251,7 @@ indexed_keylen (const struct keydesc *key)
 }
 
 /* Save key for given index into 'savekey'
-	 Return total length of the key */
+   Return total length of the key */
 static int
 indexed_savekey (struct indexfile *fh, unsigned char *data, int idx)
 {
@@ -270,7 +270,7 @@ indexed_savekey (struct indexfile *fh, unsigned char *data, int idx)
 }
 
 /* Copy key for given index from 'savekey' back to recwrk
-	 Return total length of the key */
+   Return total length of the key */
 static int
 indexed_restorekey (struct indexfile *fh, unsigned char *data, int idx)
 {
@@ -289,7 +289,7 @@ indexed_restorekey (struct indexfile *fh, unsigned char *data, int idx)
 }
 
 /* Compare key for given index 'savekey' to recwrk
-	 Return compare status */
+   Return compare status */
 static int
 indexed_cmpkey (struct indexfile *fh, unsigned char *data, int idx, int partlen)
 {
@@ -313,7 +313,7 @@ indexed_cmpkey (struct indexfile *fh, unsigned char *data, int idx, int partlen)
 }
 
 /* Build 'keydesc' from 'cob_file_key'
-	 Return total length of the key */
+   Return total length of the key */
 static int
 indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 {
@@ -377,7 +377,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 }
 
 /* Compare 'keydesc' to 'keydesc'
-	 Return 0 if equal, else 1 */
+   Return 0 if equal, else 1 */
 static int
 indexed_keycmp (struct keydesc *k1, struct keydesc *k2)
 {
@@ -777,7 +777,7 @@ struct indexed_file {
 };
 
 /* collation aware key comparision,
-	 currently only used for BDB, likely used in general later */
+   currently only used for BDB, likely used in general later */
 static int
 indexed_key_compare (const unsigned char *k1, const unsigned char *k2,
 		     size_t sz, const unsigned char *col)
@@ -808,7 +808,7 @@ bdb_keylen (cob_file *f, int idx)
 }
 
 /* Save key for given index from 'record' into 'keyarea',
-	 returns total length of the key */
+   returns total length of the key */
 static int
 bdb_savekey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx)
 {
@@ -848,7 +848,7 @@ bdb_setkey (cob_file *f, int idx)
 }
 
 /* Compare key for given index 'keyarea' to 'record'.
-	 returns compare status */
+   returns compare status */
 static int
 bdb_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx, int partlen)
 {
@@ -884,7 +884,7 @@ bdb_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx,
 }
 
 /* Is given key data all SUPPRESS char,
-	 returns 1 if key has all SUPPRESS char */
+   returns 1 if key has all SUPPRESS char */
 static int
 bdb_suppresskey (cob_file *f, int idx)
 {
@@ -964,7 +964,7 @@ bdb_close_index (cob_file *f, int index)
 static int
 bdb_bt_compare (DB *db, const DBT *k1, const DBT *k2
 #if DB_VERSION_MAJOR >= 6 /* ABI break in DB_VERSION_FAMILY 12 ... */
-								, size_t *locp
+		, size_t *locp
 #endif
 )
 {
@@ -1035,10 +1035,10 @@ dummy_start (cob_file *f, const int cond, cob_field *key)
 }
 
 /* Check for DD_xx, dd_xx, xx environment variables for a filename
-	 or a part specified with 'src';
-	 returns either the value or NULL if not found in the environment
-	 Note: MF only checks for xx if the variable started with a $,
-	     ACUCOBOL only checks for xx in general ... */
+   or a part specified with 'src';
+   returns either the value or NULL if not found in the environment
+   Note: MF only checks for xx if the variable started with a $,
+	 ACUCOBOL only checks for xx in general ... */
 static char *
 cob_chk_file_env (const char *src)
 {
@@ -1151,7 +1151,7 @@ looks_absolute (char *src)
 }
 
 /* checks for special ACUCOBOL-case: file that start with hyphen [note: -P not supported]
-	 no translation at all, name starts after first non-space */
+   no translation at all, name starts after first non-space */
 static int
 has_acu_hyphen (char *src)
 {
@@ -1492,7 +1492,7 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 			cobglobptr->cob_exception_code = 0;
 		} else {
 #if 0 /* correct thing to do, but then also needs to have codegen adjusted
-				 --> module-incompatibility --> 4.x */
+	 --> module-incompatibility --> 4.x */
 			cob_set_exception (eop_status);
 #else
 			cob_set_exception (COB_EC_I_O_EOP);
@@ -1515,7 +1515,7 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 /* Regular file */
 
 /* Translate errno status to COBOL status,
-	 Note: always sets either an error or the given default value */
+   Note: always sets either an error or the given default value */
 static int
 errno_cob_sts (const int default_status)
 {
@@ -2270,7 +2270,7 @@ open_next (cob_file *f)
 		int fmode = O_BINARY;	/* without this ftell does not work on some systems */
 
 #ifdef _WIN32	/* win32 seems to resolve the file descriptor from the file handler
-								 on fclose - and then aborts because it was closed directly before */
+		   on fclose - and then aborts because it was closed directly before */
 		if (f->file) {
 			fclose (f->file);
 		} else {
@@ -2328,8 +2328,8 @@ open_next (cob_file *f)
 
 
 /* Read record size into f->record->size
-	returns -1 if no data was read, zero for success and
-	and an io status otherwise */
+   returns -1 if no data was read, zero for success and
+   and an io status otherwise */
 static int set_sequential_variable_length (cob_file *f)
 {
 	int	bytesread;
@@ -2694,7 +2694,7 @@ again:
 			}
 		}
 #if 0	/* From trunk - CHECKME: When should this be done?
-				 Only for LS_VALIDATE / LS_NULLS? */
+	   Only for LS_VALIDATE / LS_NULLS? */
 		/* Skip NEW PAGE on reading */
 		if (n == '\f') {
 			continue;
@@ -3816,7 +3816,7 @@ get_dupno (cob_file *f, const cob_u32_t i)
 }
 
 /* read file with all alternate keys that don't allow duplicates
-	 to check if records exist already, returns 1 if true */
+   to check if records exist already, returns 1 if true */
 static int
 check_alt_keys (cob_file *f, const int rewrite)
 {
@@ -4680,7 +4680,7 @@ dobuild:
 	maxsize = p->primekeylen = bdb_keylen(f, 0);
 	for (i = 1; i < f->nkeys; ++i) {
 		j = bdb_keylen(f, i);
-		if( j > maxsize)
+		if (j > maxsize)
 			maxsize = j;
 	}
 	p->maxkeylen = maxsize;
@@ -4999,22 +4999,23 @@ indexed_start (cob_file *f, const int cond, cob_field *key)
 	}
 	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
 
-			 /************************************************************/
-			 /*                                                          */
-			 /*  here we are storing the partial key length in the       */
-			 /*  indexfile structure so that the indexed read next       */
-			 /*  functions can position the file based on the partial    */
-			 /*  key length.                                             */
-			 /*                                                          */
-			 /*  note the indexed_cmpkey function expects a partial key  */
-			 /*  length of zero if it is to use the full key length.     */
-			 /*                                                          */
-			 /************************************************************/
+	 /************************************************************/
+	 /*                                                          */
+	 /*  here we are storing the partial key length in the       */
+	 /*  indexfile structure so that the indexed read next       */
+	 /*  functions can position the file based on the partial    */
+	 /*  key length.                                             */
+	 /*                                                          */
+	 /*  note the indexed_cmpkey function expects a partial key  */
+	 /*  length of zero if it is to use the full key length.     */
+	 /*                                                          */
+	 /************************************************************/
 
-	if (fullkeylen == partlen)
+	if (fullkeylen == partlen) {
 			fh->partial_key_length  = 0;
-	else
+	} else {
 			fh->partial_key_length  = partlen;
+	}
 
 	if (k < 0) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
@@ -5309,7 +5310,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 				case COB_GE:
 					domoveback = 0;
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						domoveback = 1;
 					}
@@ -5320,7 +5321,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 				case COB_LE:
 					domoveback = 0;
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
@@ -5333,13 +5334,13 @@ indexed_read_next (cob_file *f, const int read_opts)
 					isread (fh->isfd, (void *)f->record->data, ISPREV);
 #endif
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) >= 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 					}
 					break;
 				case COB_GT:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) <= 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) <= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
@@ -5389,12 +5390,12 @@ indexed_read_next (cob_file *f, const int read_opts)
 			} else {
 				switch (fh->startcond) {
 				case COB_LE:
-					if(indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) > 0)
+					if (indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) > 0)
 						domoveback = 1;
 					else
 						domoveback = 0;
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
@@ -5404,19 +5405,19 @@ indexed_read_next (cob_file *f, const int read_opts)
 					break;
 				case COB_LT:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) >= 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 					}
 					break;
 				case COB_GT:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) <= 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) <= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
 				case COB_GE:
 					while (ISERRNO == 0
-					&& indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) < 0) {
+					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) < 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 					}
 					break;
@@ -7117,7 +7118,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 }
 
 /* Return index number for given key and set length attributes,
-	 storing resulting key field in file's last_key */
+   storing resulting key field in file's last_key */
 int
 cob_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
@@ -7431,7 +7432,7 @@ cob_sys_close_file (unsigned char *file_handle)
 }
 
 /* entry point and processing for library routine CBL_FLUSH_FILE
-	 (flush bytestream file handle, got from CBL_OPEN_FILE) */
+   (flush bytestream file handle, got from CBL_OPEN_FILE) */
 int
 cob_sys_flush_file (unsigned char *file_handle)
 {
@@ -7467,7 +7468,7 @@ cob_sys_delete_file (unsigned char *fname)
 }
 
 /* entry point and processing for library routine CBL_COPY_FILE,
-	 does a direct read + write of the complete file */
+   does a direct read + write of the complete file */
 int
 cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 {
@@ -8477,7 +8478,7 @@ cob_file_sort_using (cob_file *sort_file, cob_file *data_file)
 }
 
 /* SORT/MERGE: add all records from GIVING file 'data_file' to 'sort_file',
-	 with optional external file handler 'callfh' */
+   with optional external file handler 'callfh' */
 void
 cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
 	int (*callfh)(unsigned char *opcode, FCD3 *fcd))
@@ -8527,7 +8528,7 @@ cob_file_sort_using_extfh (cob_file *sort_file, cob_file *data_file,
 
 
 /* SORT/MERGE: WRITE all records from 'sort_file' to all USING files 'fbase',
-	 with using their optional external file handlers 'callfh' */
+   with using their optional external file handlers 'callfh' */
 static void
 cob_file_sort_giving_internal (cob_file *sort_file, const size_t giving_cnt,
 	cob_file **fbase, int (**callfh)(unsigned char *opcode, FCD3 *fcd))
@@ -8676,7 +8677,7 @@ cob_file_sort_giving (cob_file *sort_file, const size_t varcnt, ...)
 }
 
 /* SORT: WRITE all records from 'sort_file' to all passed USING files,
-	 with using their optional external file handlers */
+   with using their optional external file handlers */
 void
 cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 {
@@ -8698,7 +8699,7 @@ cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 }
 
 /* SORT: close of internal sort file 'f' and deallocation
-	 of temporary storage */
+   of temporary storage */
 void
 cob_file_sort_close (cob_file *f)
 {
@@ -8813,8 +8814,8 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 }
 
 /* Initialization/Termination
-	 cobsetpr-values with type ENV_PATH or ENV_STR
-	 like bdb_home and cob_file_path are taken care in cob_exit_common()!
+   cobsetpr-values with type ENV_PATH or ENV_STR
+   like bdb_home and cob_file_path are taken care in cob_exit_common()!
 */
 const char *implicit_close_of_msgid = NULL;
 
@@ -9020,7 +9021,7 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 	if (f->open_mode == COB_OPEN_CLOSED
 	 || f->open_mode == COB_OPEN_LOCKED)
 		fcd->openMode = OPEN_NOT_OPEN;
-	else if( f->open_mode == COB_OPEN_INPUT)
+	else if (f->open_mode == COB_OPEN_INPUT)
 		fcd->openMode = OPEN_INPUT;
 	else if (f->open_mode == COB_OPEN_OUTPUT)
 		fcd->openMode = OPEN_OUTPUT;
@@ -9046,18 +9047,18 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 		fcd->fileOrg = ORG_LINE_SEQ;
 		STCOMPX2(0, fcd->refKey);
 #if 0 /* Note: file specific features are 4.x only ... */
-		if((f->file_features & COB_FILE_LS_CRLF))
+		if ((f->file_features & COB_FILE_LS_CRLF))
 			fcd->fstatusType |= MF_FST_CRdelim;
-		if((f->file_features & COB_FILE_LS_NULLS))
+		if ((f->file_features & COB_FILE_LS_NULLS))
 			fcd->fstatusType |= MF_FST_InsertNulls;
-		if((f->file_features & COB_FILE_LS_FIXED))
+		if ((f->file_features & COB_FILE_LS_FIXED))
 			fcd->fstatusType |= MF_FST_NoStripSpaces;
 #else /* ... so we use the current global setting as info only */
-		if((cobsetptr->cob_ls_uses_cr))
+		if ((cobsetptr->cob_ls_uses_cr))
 			fcd->fstatusType |= MF_FST_CRdelim;
-		if((cobsetptr->cob_ls_nulls))
+		if ((cobsetptr->cob_ls_nulls))
 			fcd->fstatusType |= MF_FST_InsertNulls;
-		if((cobsetptr->cob_ls_fixed))
+		if ((cobsetptr->cob_ls_fixed))
 			fcd->fstatusType |= MF_FST_NoStripSpaces;
 #endif
 	} else if (f->organization == COB_ORG_RELATIVE) {
@@ -9130,10 +9131,10 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 	if ((f->lock_mode & COB_LOCK_EXCLUSIVE)
 	 || (f->lock_mode & COB_LOCK_OPEN_EXCLUSIVE))
 		fcd->lockMode = FCD_LOCK_EXCL_LOCK;
-	else if(f->lock_mode == COB_LOCK_MANUAL)
-		fcd->lockMode = FCD_LOCK_MANU_LOCK;
-	else if(f->lock_mode == COB_LOCK_AUTOMATIC)
-		fcd->lockMode = FCD_LOCK_AUTO_LOCK;
+	else if (f->lock_mode == COB_LOCK_MANUAL)
+		 fcd->lockMode = FCD_LOCK_MANU_LOCK;
+	else if (f->lock_mode == COB_LOCK_AUTOMATIC)
+		 fcd->lockMode = FCD_LOCK_AUTO_LOCK;
 	fcd->recPtr = f->record->data;
 	if (f->organization == COB_ORG_INDEXED) {
 		unsigned int	kdblen,idx,keypos,keycomp,k,nkeys;
@@ -9182,18 +9183,18 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		}
 		keypos = (sizeof (KDB_KEY) * nkeys) + sizeof (KDB) - sizeof (kdb->key);
 		STCOMPX2(nkeys, kdb->nkeys);
-		for(idx=0; idx < nkeys; idx++) {
+		for (idx=0; idx < nkeys; idx++) {
 			key = (EXTKEY*)((char*)((char*)kdb) + keypos);
 			STCOMPX2(keypos, kdb->key[idx].offset);
 			kdb->key[idx].keyFlags = 0;
 			kdb->key[idx].sparse = 0;
-			if(f->keys[idx].tf_duplicates)
+			if (f->keys[idx].tf_duplicates)
 				kdb->key[idx].keyFlags |= KEY_DUPS;
-			if(f->keys[idx].tf_suppress) {
+			if (f->keys[idx].tf_suppress) {
 				kdb->key[idx].keyFlags |= KEY_SPARSE;
 				kdb->key[idx].sparse = (unsigned char)f->keys[idx].char_suppress;
 			}
-			if(f->keys[idx].count_components <= 1) {
+			if (f->keys[idx].count_components <= 1) {
 				if (f->keys[idx].field == NULL)
 					continue;
 				STCOMPX2(1,kdb->key[idx].count);
@@ -9202,7 +9203,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 				keypos = keypos + sizeof (EXTKEY);
 			} else {
 				STCOMPX2(f->keys[idx].count_components, kdb->key[idx].count);
-				for(k=0; k < (int)f->keys[idx].count_components; k++) {
+				for (k=0; k < (int)f->keys[idx].count_components; k++) {
 					key = (EXTKEY*)((char*)((char*)kdb) + keypos);
 					key->desc = 0;
 					key->type = 0;
@@ -9243,15 +9244,15 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 		}
 	}
 	if (wasOpen > 0) {
-		if((fcd->openMode & OPEN_NOT_OPEN))
+		if ((fcd->openMode & OPEN_NOT_OPEN))
 			f->open_mode = 0;
-		else if((fcd->openMode & 0x7f) == OPEN_INPUT)
+		else if ((fcd->openMode & 0x7f) == OPEN_INPUT)
 			f->open_mode = COB_OPEN_INPUT;
-		else if((fcd->openMode & 0x7f) == OPEN_OUTPUT)
+		else if ((fcd->openMode & 0x7f) == OPEN_OUTPUT)
 			f->open_mode = COB_OPEN_OUTPUT;
-		else if((fcd->openMode & 0x7f) == OPEN_EXTEND)
+		else if ((fcd->openMode & 0x7f) == OPEN_EXTEND)
 			f->open_mode = COB_OPEN_EXTEND;
-		else if((fcd->openMode & 0x7f) == OPEN_IO)
+		else if ((fcd->openMode & 0x7f) == OPEN_IO)
 			f->open_mode = COB_OPEN_I_O;
 	}
 	f->record_min = LDCOMPX4(fcd->minRecLen);
@@ -9277,11 +9278,11 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 		}
 	}
 
-	if((fcd->lockMode & FCD_LOCK_EXCL_LOCK))
+	if ((fcd->lockMode & FCD_LOCK_EXCL_LOCK))
 		f->lock_mode = COB_LOCK_EXCLUSIVE;
-	else if((fcd->lockMode & FCD_LOCK_MANU_LOCK))
+	else if ((fcd->lockMode & FCD_LOCK_MANU_LOCK))
 		f->lock_mode = COB_LOCK_MANUAL;
-	else if((fcd->lockMode & FCD_LOCK_AUTO_LOCK))
+	else if ((fcd->lockMode & FCD_LOCK_AUTO_LOCK))
 		f->lock_mode = COB_LOCK_AUTOMATIC;
 
 }
@@ -9369,20 +9370,20 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 {
 	int	k, min, max;
 
-	if((fcd->accessFlags & 0x7F) == ACCESS_SEQ)
+	if ((fcd->accessFlags & 0x7F) == ACCESS_SEQ)
 		f->access_mode = COB_ACCESS_SEQUENTIAL;
-	else if((fcd->accessFlags & 0x7F) == ACCESS_RANDOM)
+	else if ((fcd->accessFlags & 0x7F) == ACCESS_RANDOM)
 		f->access_mode = COB_ACCESS_RANDOM;
-	else if((fcd->accessFlags & 0x7F) == ACCESS_DYNAMIC)
+	else if ((fcd->accessFlags & 0x7F) == ACCESS_DYNAMIC)
 		f->access_mode = COB_ACCESS_DYNAMIC;
-	if((fcd->otherFlags & OTH_EXTERNAL))
+	if ((fcd->otherFlags & OTH_EXTERNAL))
 		f->flag_select_features |= COB_SELECT_EXTERNAL;
 	f->flag_optional = 0;
-	if((fcd->otherFlags & OTH_OPTIONAL))
+	if ((fcd->otherFlags & OTH_OPTIONAL))
 		f->flag_optional = 1;
-	if((fcd->otherFlags & OTH_NOT_OPTIONAL))
+	if ((fcd->otherFlags & OTH_NOT_OPTIONAL))
 		f->flag_optional = 0;
-	if((fcd->otherFlags & OTH_LINE_ADVANCE))
+	if ((fcd->otherFlags & OTH_LINE_ADVANCE))
 		f->flag_line_adv = 1;
 	else
 		f->flag_line_adv = 0;
@@ -9395,11 +9396,11 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 	}
 #endif
 
-	if(fcd->fileOrg == ORG_INDEXED) {
+	if (fcd->fileOrg == ORG_INDEXED) {
 		f->organization = COB_ORG_INDEXED;
-	} else if(fcd->fileOrg == ORG_SEQ) {
+	} else if (fcd->fileOrg == ORG_SEQ) {
 		f->organization = COB_ORG_SEQUENTIAL;
-	} else if(fcd->fileOrg == ORG_LINE_SEQ) {
+	} else if (fcd->fileOrg == ORG_LINE_SEQ) {
 		f->organization = COB_ORG_LINE_SEQUENTIAL;
 #if 0 /* note file_features are a 4.x-only feature */
 #ifdef	_WIN32
@@ -9416,12 +9417,12 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 			f->file_features |= COB_FILE_LS_LF;
 		}
 #endif
-		if((fcd->fstatusType & MF_FST_InsertNulls))
+		if ((fcd->fstatusType & MF_FST_InsertNulls))
 			f->file_features |= COB_FILE_LS_NULLS;
-		if((fcd->fstatusType & MF_FST_NoStripSpaces))
+		if ((fcd->fstatusType & MF_FST_NoStripSpaces))
 			f->file_features |= COB_FILE_LS_FIXED;
 #endif
-	} else if(fcd->fileOrg == ORG_RELATIVE) {
+	} else if (fcd->fileOrg == ORG_RELATIVE) {
 		f->organization = COB_ORG_RELATIVE;
 		if (f->keys == NULL) {
 			f->keys = cob_cache_malloc(sizeof (cob_file_key));
@@ -9625,7 +9626,7 @@ free_fcd2 (FCD2 *fcd2)
 }
 
 /* Convert FCD2 into FCD3 format, note: explicit no checks here
-	 as those have to be in EXTFH3 / fileio later */
+   as those have to be in EXTFH3 / fileio later */
 static FCD3 *
 fcd2_to_fcd3 (FCD2 *fcd2)
 {
@@ -9970,25 +9971,25 @@ cob_extfh_read (EXTFH_FUNC callfh, cob_file *f,
 
 	fcd = find_fcd (f, 1);
 	STCOMPX4 (read_opts, fcd->opt);
-	if(key == NULL) {
-		if((read_opts & COB_READ_PREVIOUS)) {
+	if (key == NULL) {
+		if ((read_opts & COB_READ_PREVIOUS)) {
 			STCOMPX2(OP_READ_PREV, opcode);
 		} else {
 			STCOMPX2(OP_READ_SEQ, opcode);
 		}
-		if(f->organization == COB_ORG_RELATIVE) {
+		if (f->organization == COB_ORG_RELATIVE) {
 			memset (fcd->relKey, 0, sizeof (fcd->relKey));
 			recn = cob_get_int (f->keys[0].field);
 			STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
 			if (f->access_mode != COB_ACCESS_SEQUENTIAL)
 				STCOMPX2(OP_READ_RAN, opcode);
 		}
-	} else if(f->organization == COB_ORG_INDEXED) {
+	} else if (f->organization == COB_ORG_INDEXED) {
 		keyn = cob_findkey (f, key, &keylen, &partlen);
 		STCOMPX2(keyn, fcd->refKey);
 		STCOMPX2(keylen, fcd->effKeyLen);
 		STCOMPX2(OP_READ_RAN, opcode);
-	} else if(f->organization == COB_ORG_RELATIVE) {
+	} else if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (key);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
@@ -10014,12 +10015,12 @@ cob_extfh_read_next (EXTFH_FUNC callfh, cob_file *f,
 
 	fcd = find_fcd (f, 1);
 	STCOMPX4(read_opts, fcd->opt);
-	if((read_opts & COB_READ_PREVIOUS)) {
+	if ((read_opts & COB_READ_PREVIOUS)) {
 		STCOMPX2(OP_READ_PREV, opcode);
 	} else {
 		STCOMPX2(OP_READ_SEQ, opcode);
 	}
-	if(f->organization == COB_ORG_RELATIVE) {
+	if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (f->keys[0].field);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
@@ -10085,7 +10086,7 @@ cob_extfh_rewrite (EXTFH_FUNC callfh, cob_file *f,
 	}
 	STCOMPX4(rec->size,fcd->curRecLen);
 	fcd->recPtr = rec->data;
-	if(f->organization == COB_ORG_RELATIVE) {
+	if (f->organization == COB_ORG_RELATIVE) {
 		memset (fcd->relKey, 0, sizeof (fcd->relKey));
 		recn = cob_get_int (f->keys[0].field);
 		STCOMPX4(recn, LSUCHAR(fcd->relKey+4));
@@ -10124,7 +10125,7 @@ cob_extfh_delete (EXTFH_FUNC callfh, cob_file *f,
 }
 
 /* COBOL wrapper for EXTFH call to prevent warnings about FCD3 structure
-	 with additional checks */
+   with additional checks */
 int
 cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 {
@@ -10297,8 +10298,8 @@ update_key_from_fcd (cob_file *f, FCD3 *fcd, cob_field *kf)
 		 && f->keys[k].field) {
 			cob_field *key = f->keys[k].field;
 #if 0	/* the following sets up the _real_ key data,
-		   but the functions called afterwards look out for
-		   the "intermediate" key field; therefore leave as-is */
+	   but the functions called afterwards look out for
+	   the "intermediate" key field; therefore leave as-is */
 			kf->size = key->size;
 			kf->attr = key->attr;
 			if (f->keys[k].count_components <= 1) {
@@ -10479,8 +10480,8 @@ org_handling:
 	}
 
 #if 0	/* this disables some expected status 44
-		   and SIGSEGV if the actual data is only
-		   record_min long (+ accessed longer) */
+	   and SIGSEGV if the actual data is only
+	   record_min long (+ accessed longer) */
 	if (f->record
 	 && f->record->size < f->record_min) {
 		f->record->size = f->record_min;
@@ -10503,8 +10504,8 @@ org_handling:
 		STCOMPX4(f->record_max,fcd->curRecLen);
 		update_file_to_fcd (f, fcd, fnstatus);
 #if 0 /* Simon: general mapping needed, depending
-								on a compile time switch (also for other dialects)
-								--> no "single place extension" here */
+	 on a compile time switch (also for other dialects)
+	 --> no "single place extension" here */
 		if (f->organization == COB_ORG_INDEXED
 		 && memcmp (f->file_status, "61", 2) == 0) {/* 61 --> 9A for MF */
 			memcpy (fcd->fileStatus,"9A", 2);
@@ -10521,8 +10522,8 @@ org_handling:
 		}
 		update_file_to_fcd (f, fcd, fnstatus);
 #if 0 /* Simon: general mapping needed, depending
-								on a compile time switch (also for other dialects)
-								--> no "single place extension" here */
+	 on a compile time switch (also for other dialects)
+	 --> no "single place extension" here */
 		if (f->organization == COB_ORG_INDEXED
 		 && memcmp (f->file_status, "61", 2) == 0) {/* 61 --> 9A for MF */
 			memcpy (fcd->fileStatus,"9A", 2);
@@ -10540,8 +10541,8 @@ org_handling:
 		}
 		update_file_to_fcd (f, fcd, fnstatus);
 #if 0 /* Simon: general mapping needed, depending
-								on a compile time switch (also for other dialects)
-								--> no "single place extension" here */
+	 on a compile time switch (also for other dialects)
+	 --> no "single place extension" here */
 		if (f->organization == COB_ORG_INDEXED
 		 && memcmp (f->file_status, "61", 2) == 0) {/* 61 --> 9A for MF */
 			memcpy (fcd->fileStatus,"9A", 2);
@@ -10557,8 +10558,8 @@ org_handling:
 		}
 		update_file_to_fcd (f, fcd, fnstatus);
 #if 0 /* Simon: general mapping needed, depending
-								on a compile time switch (also for other dialects)
-								--> no "single place extension" here */
+	 on a compile time switch (also for other dialects)
+	 --> no "single place extension" here */
 		if (f->organization == COB_ORG_INDEXED
 		 && memcmp (f->file_status, "61", 2) == 0) {/* 61 --> 9A for MF */
 			memcpy (fcd->fileStatus,"9A", 2);
@@ -10738,8 +10739,8 @@ org_handling:
 		}
 #endif
 #if 1	/* Simon: breaks status 44 and
-		   can lead to SIGSEGV if there's only curRecLen
-		   data available */
+	   can lead to SIGSEGV if there's only curRecLen
+	   data available */
 		if (rec->size < f->record_min) {
 			rec->size = f->record_min;
 		}
@@ -10765,8 +10766,8 @@ org_handling:
 		}
 #endif
 #if 1	/* Simon: breaks status 44 and
-		   can lead to SIGSEGV if there's only curRecLen
-		   data available */
+	   can lead to SIGSEGV if there's only curRecLen
+	   data available */
 		if (rec->size < f->record_min) {
 			rec->size = f->record_min;
 		}
@@ -10835,7 +10836,7 @@ org_handling:
 	default:
 		fcd->fileStatus[0] = '9';
 #if 0	/* MF seems to return 142 file not open, possibly only until opened;
-		   we use 100->invalid file operation */
+	   we use 100->invalid file operation */
 		fcd->fileStatus[1] = 142;
 #else
 		fcd->fileStatus[1] = 100;
@@ -10881,7 +10882,7 @@ cob_path_to_absolute (const char *path)
 /* ============================================ */
 
 
-static int 
+static int
 create_first_segment (PHEAP_ENTRY ptr_heap)
 {
 	const unsigned int	data_size = ptr_heap->alloc_size - sizeof(SEG_HDR);
@@ -10963,7 +10964,7 @@ open_vfile (cob_u16_ptr heap_id, unsigned char status[2], const int gc_ext)
 
 	*heap_id = heap + 1;
 	ptr_heap->alloc_size = gc_ext ? cobsetptr->cob_heap_memory_64 : cobsetptr->cob_heap_memory;
-	
+
 	return_code = create_first_segment (ptr_heap);
 	if (return_code == 0) {
 		memcpy (status, "00", 2);
@@ -10992,7 +10993,7 @@ cob_sys_open_vfile2 (unsigned char *heap_id, unsigned char *status)
 	return open_vfile ((cob_u16_ptr)heap_id, status, 1);
 }
 
-static int 
+static int
 get_new_segment (PHEAP_ENTRY ptr_heap, PSEG_HDR ptr_seg_curr)
 {
 	const unsigned int	data_size = ptr_heap->alloc_size - sizeof(SEG_HDR);
@@ -11024,8 +11025,8 @@ get_new_segment (PHEAP_ENTRY ptr_heap, PSEG_HDR ptr_seg_curr)
 
 	return 0;
 }
-	
-static int  
+
+static int
 locate_segment (cob_u16_t heap, cob_u64_t data_loc, cob_u32_t size, void *data_buffer, const int for_read)
 {
 	void			*ptr_data;
@@ -11050,7 +11051,7 @@ locate_segment (cob_u16_t heap, cob_u64_t data_loc, cob_u32_t size, void *data_b
 		cob_runtime_warning ("heap out of bounds %u", heap);
 		return HEAP_OUT_BOUNDS;
 	}
-	
+
 	ptr_heap						= &heap_array[heap - 1];
 
 	/* verify that we actually initialized that heap */
@@ -11071,7 +11072,7 @@ locate_segment (cob_u16_t heap, cob_u64_t data_loc, cob_u32_t size, void *data_b
 			front of the linked list or the end of it			*/
 
 	data_middle	= ptr_heap->total_data_alloc>>2;
-	
+
 	if (data_loc < data_middle) {
 		ptr_seg	= ptr_heap->ptr_seg_first;
 	} else {
@@ -11188,7 +11189,7 @@ cob_sys_write_vfile2 (cob_u16_t heap, cob_u64_t offset, cob_u32_t size, unsigned
 
 int
 cob_sys_close_vfile (const cob_u16_t heap)
-{	
+{
 	PHEAP_ENTRY		ptr_heap;
 	PSEG_HDR	ptr_seg;
 
@@ -11201,7 +11202,7 @@ cob_sys_close_vfile (const cob_u16_t heap)
 
 	ptr_heap					= &heap_array[heap - 1];
 	ptr_seg						= ptr_heap->ptr_seg_first;
-	
+
 	while (ptr_seg != NULL)
 	{
 		PSEG_HDR	ptr_seg_delete = ptr_seg;
