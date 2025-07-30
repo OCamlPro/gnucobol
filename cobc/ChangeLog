@@ -1,4 +1,16 @@
 
+2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l, parser.y, reserved.c: use yyless to push part of scanned
+	  tokens back, used in case of multi-word scanning, if one or more scanned
+	  words are reserved: PICTURE SYMBOL, FROM CRT, SCREEN CONTROL,
+	  EVENT STATUS
+	* parser.y, scanner.l, reserved.c, cobc.h: READY, RESET and TRACE as
+	  reserved words (TRACE is C/S for std default), fixing bug #1130 while
+	  increasing portability (for dialects not reserving it), dropping
+	  special handling within the scanner and extra tokens in the parser
+	* ppparse.y, pplex.l: add (simple) handling for SET TRACE/NOTRACE
+
 2025-07-28  David Declerck <david.declerck@ocamlpro.com>
 
 	* codegen.c (output_module_init_function): replace "module" by
@@ -1004,7 +1016,7 @@
 2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (validate_alphabet): slightly rewritten to fix compiler warnings
-	* config.c, pparse.y (ppp_replace_list_add), reserved.c (is_invalid_word),
+	* config.c, ppparse.y (ppp_replace_list_add), reserved.c (is_invalid_word),
 	  tree.c, tree.h, typeck.c: minor adjustments to fix compiler warnings
 	* field.c (validate_multi_value, validate_elem_value),
 	  parser.y (setup_external_definition): fixed analyzer warnings by switching
@@ -1709,7 +1721,7 @@
 	* pplex.l: match and ignore editor folding $REGION statement
 	* pplex.l: output actual directive for @OPTIONS and PROCESS
 	* pplex.l: *CONTROL from col7+
-	* pparse.y: don't warn on *CONTROL as this adjust listing only
+	* ppparse.y: don't warn on *CONTROL as this adjust listing only
 	  and does not apply directly (possibly real handling later)
 
 2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
@@ -2714,7 +2726,7 @@
 	FR #390 ref-mod with zero-length
 	* config.def, typeck.c (cb_build_identifier): added cb_ref_mod_zero_length
 	  to allow reference-modification at compile-time with a length of zero
-	* pparse.y, pplex.l, scanner.l, cobc.c: added >> REF-MOD-ZERO-LENGTH and
+	* ppparse.y, pplex.l, scanner.l, cobc.c: added >> REF-MOD-ZERO-LENGTH and
 	  adjusted SSRANGE, now also supporting SSRANGE"1" and SSRANGE"3"
 
 2020-11-04  Simon Sobisch <simonsobisch@gnu.org>
@@ -3858,7 +3870,7 @@
 
 2018-11-22  Simon Sobisch <simonsobisch@gnu.org>
 
-	* pplex.l, pparse.y: FR #344 Support copybook and library names
+	* pplex.l, ppparse.y: FR #344 Support copybook and library names
 	  as text-names (not literals) with periods, always upper-cased
 	  if not requested otherwise by FOLD-CALL=LOWER
 
@@ -6913,7 +6925,7 @@
 2016-04-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: implement STOP RUN integer/identifier (RM/COBOL extension)
-	* parser.y, pparse.y: remove printf non literal spec warning.
+	* parser.y, ppparse.y: remove printf non literal spec warning.
 
 2016-04-24  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -9776,7 +9788,7 @@
 
 2003-05-26  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
 
-	* pplex.l (ppcopy), pparse.y, cobc.c, cobc.h: split ppcopy from ppopen
+	* pplex.l (ppcopy), ppparse.y, cobc.c, cobc.h: split ppcopy from ppopen
 
 2003-05-21  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9818,13 +9830,13 @@
 
 	integrate cobcpp into cobc
 	* pplex.l: renamed and adjusted from cobpp/scanner.l
-	* pparse.y: renamed and adjusted from cobpp/parser.y
+	* ppparse.y: renamed and adjusted from cobpp/parser.y
 	* cobc.h: definitions from scanner.h
 	* Makefile.am, cobc.c: adjusted
 
 2003-04-02  Keisuke Nishida  <knishida@netlab.jp>
 
-	* pparse.y <- cobpp/parser.y, pplex.l <- cobpp/scanner.l: support for
+	* ppparse.y <- cobpp/parser.y, pplex.l <- cobpp/scanner.l: support for
 	  SOURCE FORMAT compiler directive
 
 2003-03-26  Keisuke Nishida  <knishida@netlab.jp>
@@ -9950,7 +9962,7 @@
 	* cobc.c (probe_source_format): Removed.
 	  (preprocess): Don't set source format.
 	  (process_command_line): Set cobpp flags here.
-	* pparse.y <- cobpp/parser.y (yywarn): New function.
+	* ppparse.y <- cobpp/parser.y (yywarn): New function.
 	* cobpp.h (COBPP_FORMAT_UNKNOWN): New macro.
 	* cobpp.h, cobpp.c (cobpp_source_format_inferred): New variable.
 	* cobpp.c (cobpp_source_format): Default to COBPP_FORMAT_UNKNOWN.
@@ -10154,7 +10166,7 @@
 
 2002-06-07  Keisuke Nishida  <knishida@netlab.jp>
 
-	* pparse.y <- cobpp/parser.y (copy_statement, copy_in, copy_replacing):
+	* ppparse.y <- cobpp/parser.y (copy_statement, copy_in, copy_replacing):
 	  Support "COPY ... IN/OF ..." syntax.
 	* pplex.l <- cobpp/scanner.l, scanner.h (include_copybook): Take a library name.
 

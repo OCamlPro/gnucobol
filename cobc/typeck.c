@@ -13304,6 +13304,10 @@ cb_emit_read (cb_tree ref, cb_tree next, cb_tree into,
 void
 cb_emit_ready_trace (void)
 {
+	#if 0  /* note: at least Visual COBOL skips this statement
+	          if no tracing setup was done, we may do the same */
+	if (!cb_flag_trace) return;
+	#endif
 	cb_emit (CB_BUILD_FUNCALL_0 ("cob_ready_trace"));
 }
 

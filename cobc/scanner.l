@@ -657,33 +657,55 @@ H#[0-9A-Za-z]+ {
 }
 
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (PICTURE_SYMBOL);
+	if (lookup_reserved_word ("SYMBOL")) {
+		count_lines (yytext);
+		RETURN_TOK (PICTURE_SYMBOL);
+	} else {
+		/* push whitespace and SYMBOL back, return PICTURE */
+		yyless (yyleng - 7);
+		RETURN_TOK (PICTURE);
+	}
 }
 
 "FROM"[ ,;\n]+"CRT"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (FROM_CRT);
+	if (lookup_reserved_word ("CRT")) {
+		count_lines (yytext);
+		RETURN_TOK (FROM_CRT);
+	} else {
+		/* push whitespace and CRT back, return FROM */
+		yyless (yyleng - 4);
+		RETURN_TOK (FROM);
+	}
 }
 
 "SCREEN"[ ,;\n]+"CONTROL"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (SCREEN_CONTROL);
+	int has_screen = lookup_reserved_word ("SCREEN") != NULL;
+	if (has_screen
+	 && lookup_reserved_word ("CONTROL")) {
+		count_lines (yytext);
+		RETURN_TOK (SCREEN_CONTROL);
+	}
+	/* push whitespace and CONTROL back, return SCREEN or word */
+	yyless (yyleng - 6);
+	if (has_screen) {
+		RETURN_TOK (SCREEN);
+	} else {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (WORD);
+	}
 }
 
 "EVENT"[ ,;\n]+"STATUS"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (EVENT_STATUS);
-}
-
-"READY"[ ,;\n]+"TRACE"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (READY_TRACE);
-}
-
-"RESET"[ ,;\n]+"TRACE"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (RESET_TRACE);
+	/* STATUS is reserved in all dialects */
+	if (lookup_reserved_word ("EVENT")) {
+		count_lines (yytext);
+		RETURN_TOK (EVENT_STATUS);
+	} else {
+		/* push whitespace and STATUS back, return EVENT as word */
+		yyless (yyleng - 5 );
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (WORD);
+	}
 }
 
 "GREATER"[ ,;\n]+("THAN"[ ,;\n]+)?"OR"[ ,;\n]+"EQUAL"("S")?([ ,;\n]+"TO")?/[ .,;\n] {
@@ -810,14 +832,14 @@ H#[0-9A-Za-z]+ {
 
 "NOT"[ ,;\n]+("AT"[ ,;\n]+)?("END-OF-PAGE"|"EOP")/[ .,;\n] {
 	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
-	/* TODO: if END-OF-PAGE/EOP are not reserved -> directly return */
+	/* Note: they are reserved words in all dialects, so no check */
 	count_lines (yytext);
 	RETURN_TOK (NOT_EOP);
 }
 
 "AT"[ ,;\n]+("END-OF-PAGE"|"EOP")/[ .,;\n] {
 	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
-	/* TODO: if END-OF-PAGE/EOP are not reserved -> directly return */
+	/* Note: they are reserved words in all dialects, so no check */
 	count_lines (yytext);
 	RETURN_TOK (EOP);
 }
@@ -955,19 +977,13 @@ H#[0-9A-Za-z]+ {
 
 	/* FIXME: move the code for filling "name" here and first
 	          check with "lookup_system_name (name) != NULL"
-	          if we actually want to do this,
-	          otherwise return 2 (!) WORD tokens (by adding a queue
-	          of tokens to be returned)
+	          if we actually want to do this, otherwise use the code
+	          below to return one WORD token and push back the rest
 	*/
 	if (cobc_in_procedure) {
-		 /* unput characters */
+		 /* unput characters, return SWITCH as WORD */
+		yyless (6);
 		yylval = cb_build_reference ("SWITCH");
-		if (isdigit((unsigned char)yytext[yyleng-2])) {
-			unput (yytext[yyleng-1]);
-			unput (yytext[yyleng-2]);
-		} else {
-			unput (yytext[yyleng-1]);
-		}
 	} else {
 		 /* we need to return a single word, reverted later in parser.y */
 		strcpy (name, yytext);
@@ -978,6 +994,8 @@ H#[0-9A-Za-z]+ {
 }
 
 "LENGTH"[ ,;\n]+"OF"/[ .,;\n] {
+	/* FIXME: check for LENGTH OF register, otherwise return LENGTH,
+	   and push the rest back */
 	count_lines (yytext);
 	RETURN_TOK (LENGTH_OF);
 }

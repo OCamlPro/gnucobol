@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2015-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2015-2023, 2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -707,12 +707,14 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token NOODOSLIDE
 %token NOSPZERO
 %token NOSSRANGE
+%token NOTRACE
 /* OVERRIDE token defined above. */
 %token ODOSLIDE
 %token REMOVE
 %token SOURCEFORMAT
 %token SPZERO
 %token SSRANGE
+%token TRACE
 
 %token IF_DIRECTIVE
 %token ELSE_DIRECTIVE
@@ -896,6 +898,8 @@ set_directive:
 | set_directive set_choice
 ;
 
+/* FIXME: *all* of the choices below should be #PASSED to the scanner
+   and handled there */
 set_choice:
   CONSTANT VARIABLE_NAME LITERAL
   {
@@ -1047,6 +1051,11 @@ set_choice:
 
 	append_to_turn_list (txt, 0, 0);
   }
+| NOTRACE
+  {
+	cb_flag_traceall = 0;
+	cb_flag_trace = 0;
+  }
 | ODOSLIDE
   {
 	fprintf (ppout, "#ODOSLIDE 1\n");
@@ -1123,6 +1132,10 @@ set_choice:
 	} else {
 		ppp_error_invalid_option ("SSRANGE", p);
 	}
+  }
+| TRACE
+  {
+	cb_flag_trace = 1;	/* no traceall with Visual COBOL, leave untouched */
   }
 ;
 
