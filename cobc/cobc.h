@@ -82,7 +82,7 @@ enum cb_format {
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
-	CB_FORMAT_AUTO, 	/* Auto-detect format */
+	CB_FORMAT_AUTO 	/* Auto-detect format */
 };
 #define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
 #define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
@@ -227,6 +227,13 @@ enum cb_screen_clauses_rules {
 	CB_RM_SCREEN_RULES,
 	CB_STD_SCREEN_RULES,
 	CB_XOPEN_SCREEN_RULES
+};
+
+/* How to interpret identifiers in a file's ASSIGN clause */
+enum cb_assign_type {
+	CB_ASSIGN_VARIABLE_DEFAULT,		/* default to ASSIGN variable, where allowed by implicit-assign-dynamic-var */
+	CB_ASSIGN_VARIABLE_REQUIRED,		/* require ASSIGN variable */
+	CB_ASSIGN_EXT_FILE_NAME_REQUIRED	/* require ASSIGN external-file-name */
 };
 
 /* DECIMAL-POINT IS COMMA effect in XML/JSON GENERATE statements */

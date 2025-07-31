@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -248,8 +248,8 @@ struct cb_token_list {
 
 /* types */
 enum cb_ppecho {
-	CB_PPECHO_DIRECT  = 0, /* direct output */
-	CB_PPECHO_REPLACE = 1, /* output to REPLACE */
+	CB_PPECHO_DIRECT  = 0,	/* direct output */
+	CB_PPECHO_REPLACE = 1	/* output to REPLACE */
 };
 
 struct cb_replacement_state {
