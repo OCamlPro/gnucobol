@@ -12401,12 +12401,12 @@ output_module_init_function (struct cb_program *prog)
 	if (!prog->nested_level) {
 		output_line ("/* Initialize module structure for %s */",
 			prog->orig_program_id);
-		output_line ("static void %s_module_init (cob_module *module)",
+		output_line ("static void %s_module_init (cob_module *module__)",
 			prog->program_id);
 	} else {
 		output_line ("/* Initialize module structure for %s (nested %d) */",
 			prog->program_id, prog->toplev_count);
-		output_line ("static void %s_%d_module_init (cob_module *module)",
+		output_line ("static void %s_%d_module_init (cob_module *module__)",
 			prog->program_id, prog->toplev_count);
 	}
 	output_block_open ();
@@ -12429,57 +12429,57 @@ output_module_init_function (struct cb_program *prog)
 
 	recent_prog = prog;
 	/* Do not initialize next pointer, parameter list pointer + count */
-	output_line ("module->module_name = \"%s\";", prog->orig_program_id);
-	output_line ("module->module_formatted_date = COB_MODULE_FORMATTED_DATE;");
-	output_line ("module->module_source = COB_SOURCE_FILE;");
-	output_line ("module->gc_version = COB_PACKAGE_VERSION;");
+	output_line ("module__->module_name = \"%s\";", prog->orig_program_id);
+	output_line ("module__->module_formatted_date = COB_MODULE_FORMATTED_DATE;");
+	output_line ("module__->module_source = COB_SOURCE_FILE;");
+	output_line ("module__->gc_version = COB_PACKAGE_VERSION;");
 	if (!prog->nested_level) {
-		output_line ("module->module_entry.funcptr = (void *(*)())%s;",
+		output_line ("module__->module_entry.funcptr = (void *(*)())%s;",
 			     prog->program_id);
 		if (prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
-			output_line ("module->module_cancel.funcptr = NULL;");
+			output_line ("module__->module_cancel.funcptr = NULL;");
 		} else {
-			output_line ("module->module_cancel.funcptr = (void *(*)())%s_;",
+			output_line ("module__->module_cancel.funcptr = (void *(*)())%s_;",
 				     prog->program_id);
 		}
 	} else {
-		output_line ("module->module_entry.funcvoid = NULL;");
-		output_line ("module->module_cancel.funcvoid = NULL;");
+		output_line ("module__->module_entry.funcvoid = NULL;");
+		output_line ("module__->module_cancel.funcvoid = NULL;");
 	}
 
 	if (!cobc_flag_main && non_nested_count > 1) {
-		output_line ("module->module_ref_count = &cob_reference_count;");
+		output_line ("module__->module_ref_count = &cob_reference_count;");
 	} else {
-		output_line ("module->module_ref_count = NULL;");
+		output_line ("module__->module_ref_count = NULL;");
 	}
-	output_line ("module->module_path = &cob_module_path;");
-	output_line ("module->module_active = 0;");
-	output_line ("module->module_date = COB_MODULE_DATE;");
-	output_line ("module->module_time = COB_MODULE_TIME;");
-	output_line ("module->module_type = %u;", prog->prog_type);
-	output_line ("module->module_param_cnt = %u;", prog->num_proc_params);
+	output_line ("module__->module_path = &cob_module_path;");
+	output_line ("module__->module_active = 0;");
+	output_line ("module__->module_date = COB_MODULE_DATE;");
+	output_line ("module__->module_time = COB_MODULE_TIME;");
+	output_line ("module__->module_type = %u;", prog->prog_type);
+	output_line ("module__->module_param_cnt = %u;", prog->num_proc_params);
 #if 0 /* currently not checked anywhere, may use for void or more general type */
-	output_line ("module->module_returning = %u;", prog->flag_void ? 0 : 1);
+	output_line ("module__->module_returning = %u;", prog->flag_void ? 0 : 1);
 #endif
-	output_line ("module->ebcdic_sign = %d;", cb_ebcdic_sign);
-	output_line ("module->decimal_point = '%c';", prog->decimal_point);
-	output_line ("module->currency_symbol = '%c';", prog->currency_symbol);
-	output_line ("module->numeric_separator = '%c';", prog->numeric_separator);
-	output_line ("module->flag_filename_mapping = %d;", cb_filename_mapping);
-	output_line ("module->flag_binary_truncate = %d;", cb_binary_truncate);
-	output_line ("module->flag_pretty_display = %d;", cb_pretty_display);
-	output_line ("module->flag_host_sign = %d;", cb_host_sign);
-	output_line ("module->flag_no_phys_canc = %d;", no_physical_cancel);
-	output_line ("module->flag_main = %d;", cobc_flag_main);
-	output_line ("module->flag_fold_call = %d;", cb_fold_call);
-	output_line ("module->flag_dialect = COB_DIALECT_%s;", cb_dialect);
+	output_line ("module__->ebcdic_sign = %d;", cb_ebcdic_sign);
+	output_line ("module__->decimal_point = '%c';", prog->decimal_point);
+	output_line ("module__->currency_symbol = '%c';", prog->currency_symbol);
+	output_line ("module__->numeric_separator = '%c';", prog->numeric_separator);
+	output_line ("module__->flag_filename_mapping = %d;", cb_filename_mapping);
+	output_line ("module__->flag_binary_truncate = %d;", cb_binary_truncate);
+	output_line ("module__->flag_pretty_display = %d;", cb_pretty_display);
+	output_line ("module__->flag_host_sign = %d;", cb_host_sign);
+	output_line ("module__->flag_no_phys_canc = %d;", no_physical_cancel);
+	output_line ("module__->flag_main = %d;", cobc_flag_main);
+	output_line ("module__->flag_fold_call = %d;", cb_fold_call);
+	output_line ("module__->flag_dialect = COB_DIALECT_%s;", cb_dialect);
 	if (cb_mf_files
 	 && cb_std_define != CB_STD_85) {	/* Not if cobol85 test suite */
-		output_line ("module->flag_file_format = COB_FILE_IS_MF;");
+		output_line ("module__->flag_file_format = COB_FILE_IS_MF;");
 	} else {
-		output_line ("module->flag_file_format = COB_FILE_IS_DFLT;");
+		output_line ("module__->flag_file_format = COB_FILE_IS_DFLT;");
 	}
-	output_line ("module->flag_exit_program = 0;");
+	output_line ("module__->flag_exit_program = 0;");
 	{
 		int	opt = 0;
 		if (cb_flag_traceall) {
@@ -12495,17 +12495,17 @@ output_module_init_function (struct cb_program *prog)
 			opt |= COB_MODULE_DEBUG;
 		}
 #endif
-		output_line ("module->flag_debug_trace |= %d;", opt);
+		output_line ("module__->flag_debug_trace |= %d;", opt);
 	}
-	output_line ("module->flag_dump_sect = 0x%02X;", cb_flag_dump);
-	output_line ("module->flag_dump_ready = %u;", cb_flag_dump ? 1 : 0);
-	output_line ("module->xml_mode = %u;", cb_xml_parse_xmlss);
-	output_line ("module->module_stmt = 0;");
+	output_line ("module__->flag_dump_sect = 0x%02X;", cb_flag_dump);
+	output_line ("module__->flag_dump_ready = %u;", cb_flag_dump ? 1 : 0);
+	output_line ("module__->xml_mode = %u;", cb_xml_parse_xmlss);
+	output_line ("module__->module_stmt = 0;");
 	if (source_cache) {
-		output_line ("module->module_sources = %ssource_files;",
+		output_line ("module__->module_sources = %ssource_files;",
 			CB_PREFIX_STRING);
 	} else {
-		output_line ("module->module_sources = NULL;");
+		output_line ("module__->module_sources = NULL;");
 	}
 
 	output_block_close ();

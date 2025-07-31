@@ -9731,7 +9731,7 @@ void
 cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 {
 	cob_file	**fbase;
-	int 	(**callfh)(unsigned char *opcode, FCD3 *fcd);
+	EXTFH_FUNC *callfh;
 	va_list		args;
 	size_t		i, i_fh;
 
@@ -9741,7 +9741,7 @@ cob_file_sort_giving_extfh (cob_file *sort_file, const size_t varcnt, ...)
 	va_start (args, varcnt);
 	for (i = 0; i < varcnt; i += 2) {
 		fbase[i_fh] = va_arg (args, cob_file *);
-		callfh[i_fh++] = va_arg (args, void *);
+		callfh[i_fh++] = va_arg (args, EXTFH_FUNC);
 	}
 	va_end (args);
 	cob_file_sort_giving_internal (sort_file, i_fh, fbase, callfh);

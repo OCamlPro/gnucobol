@@ -38,13 +38,16 @@ EXTRA_DIST = gnucobol.spec DEPENDENCIES DEPENDENCIES.md README.md HACKING
 include $(top_srcdir)/aminclude_static.am
 
 clean-local: code-coverage-clean
-dist-clean-local: code-coverage-dist-clean
+distclean-local: code-coverage-dist-clean
 
 CODE_COVERAGE_BRANCH_COVERAGE=1
 CODE_COVERAGE_IGNORE_PATTERN= \
 	"*/cobc/pplex.c" "*/cobc/ppparse.c" "*/cobc/scanner.c" "*/cobc/parser.c" \
 	"*/cobc/config.def" "*/cobc/warning.def" \
 	"*/libcob/statement.def"
+# silence some warnings in lcov2
+CODE_COVERAGE_LCOV_OPTIONS_DEFAULT= \
+	--ignore-errors source --rc geninfo_unexecuted_blocks=1
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \

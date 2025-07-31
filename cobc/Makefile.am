@@ -49,7 +49,7 @@ CLEANFILES = parser.output ppparse.output
 include $(top_srcdir)/aminclude_static.am
 
 clean-local: code-coverage-clean
-dist-clean-local: code-coverage-dist-clean
+distclean-local: code-coverage-dist-clean
 
 CODE_COVERAGE_BRANCH_COVERAGE=1
 CODE_COVERAGE_LCOV_OPTIONS =  --no-external

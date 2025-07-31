@@ -16060,7 +16060,7 @@ all_children_ok_qualified_by_only (struct cb_field * const f,
 			return 0;
 		}
 		if (child->children
-		    && !all_children_ok_qualified_by_only (child, qualifier)) {
+		 && !all_children_ok_qualified_by_only (child, qualifier)) {
 			return 0;
 		}
 	}

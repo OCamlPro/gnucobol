@@ -87,10 +87,18 @@
 #define SIGABRT 6
 #endif
 #ifndef SIGFPE
+/* IRIX and AIX (when "xlc -qcheck" is used) yield signal SIGTRAP. */
+#if (defined (__sgi) || defined (_AIX)) && defined (SIGTRAP)
+#define SIGFPE	SIGTRAP
+/* Linux/SPARC yields signal SIGILL. */
+#elif defined (__sparc__) && defined (__linux__)
+#define SIGFPE	SIGILL
+#else
 #ifndef NSIG
 #define NSIG 240
 #endif
 #define SIGFPE NSIG + 1
+#endif
 #endif
 
 #ifdef	HAVE_LOCALE_H
@@ -234,6 +242,18 @@
 #endif
 
 /* Global variables */
+
+#define ZERO_16 	"0000000000000000"
+#define ZERO_64 	ZERO_16 ZERO_16 ZERO_16 ZERO_16
+#define ZERO_256	ZERO_64 ZERO_64 ZERO_64 ZERO_64
+const char *COB_ZEROES_ALPHABETIC = ZERO_256;
+#undef ZERO_16
+#undef ZERO_64
+#undef ZERO_256
+
+/* note: ancient compilers may only support a length of 509-1023 chars,
+   as soon as we actually see one, we can memset this var (for those) 
+   in the init function */
 #define SPACE_16	"                "
 #define SPACE_64	SPACE_16 SPACE_16 SPACE_16 SPACE_16
 #define SPACE_256	SPACE_64 SPACE_64 SPACE_64 SPACE_64
@@ -243,13 +263,6 @@ const char *COB_SPACES_ALPHABETIC = SPACE_1024;
 #undef SPACE_64
 #undef SPACE_256
 #undef SPACE_1024
-#define ZERO_16 	"0000000000000000"
-#define ZERO_64 	ZERO_16 ZERO_16 ZERO_16 ZERO_16
-#define ZERO_256	ZERO_64 ZERO_64 ZERO_64 ZERO_64
-const char *COB_ZEROES_ALPHABETIC = ZERO_256;
-#undef ZERO_16
-#undef ZERO_64
-#undef ZERO_256
 
 struct cob_alloc_cache {
 	struct cob_alloc_cache	*next;		/* Pointer to next */
@@ -844,7 +857,7 @@ cob_exit_common_modules (void)
 		nxt = ptr->next;
 		if (mod && mod->module_cancel.funcint) {
 			mod->module_active = 0;
-			cancel_func = mod->module_cancel.funcint;
+			cancel_func = (int (*)(const int))mod->module_cancel.funcint;
 			(void)cancel_func (-20);	/* Clear just decimals */
 		}
 		cob_free (ptr);
