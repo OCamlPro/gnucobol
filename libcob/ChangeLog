@@ -1,4 +1,18 @@
 
+2025-06-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	first VFILE update
+	* fileio.c: drop some debugging code, also fixing SIGSEGV on not opened
+	  debug logfile
+	* fileio.c: refactored, removing nearly all static vars on the way
+	* fileio.c, system.def, common.h: seperate internal function
+	  for CBL_GC_OPEN_VFILE64; now using the runtime setting for memory
+	  allocation depending on the heap's alloc size
+	* fileio.c (SEG_HDR, HEAP_ENTRY) [!_DEBUG]: only provide eyeball in
+	  debug builds
+	* fileio.c (SEG_HDR, HEAP_ENTRY): drop unused fields
+	* fileio.c: adjusted vfile functions per changes in SEG_HDR and HEAP_ENTRY
+
 2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
@@ -26,11 +40,28 @@
 	* fileio.c (indexed_open) [WITH_ANY_ISAM]: some GC4 backport top improve
 	  io-status in case of errors
 
-2025-04-07  David Declerck <david.declerck@ocamlpro.com>
+2025-04-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-	* move.c (cob_move_display_to_packed), fileio.c (cob_file_set_key):
-	  make casts with loss of data explicit using masking to silence
-	  the MSVC runtime error checker
+	  new functions to support virtual heap
+	  CBL_ functions from Fujitsu and Microfocus COBOL compilers
+	* fileio.c (cob_sys_open_vfile,
+				cob_sys_read_vfile
+				cob_sys_read_vfile2,
+				cob_sys_write_vfile,
+				cob_sys_write_vfile2,
+				cob_sys_close_vfile,
+				get_default_alloc,
+				create_first_segment,
+				get_new_segment,
+				locate_segment):
+	  note that as CBL_GC extension we also support a 64 bit 
+	  version which allows for a VFILE to exceed the 4GB 
+	  limitation if memory is available
+	* coblocal.h: added new variables to support runtime additions
+	  of heap memory for use with VFILES
+	* common.h, system.def: added new definitions for VFILES support
+	* common.c: (config_tbl gc_conf) added new entries for 
+	  VFILE default memory allocation size
 
 2025-04-14  David Declerck <david.declerck@ocamlpro.com>
 
@@ -39,6 +70,12 @@
 	  for invalid file opening modes
 	* coblocal.h (cob_get_strerror): change from COB_HIDDEN to
 	  COB_EXPIMP so that other internal libraries may use it
+
+2025-04-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (cob_move_display_to_packed), fileio.c (cob_file_set_key):
+	  make casts with loss of data explicit using masking to silence
+	  the MSVC runtime error checker
 
 2025-03-28  Simon Sobisch <simonsobisch@gnu.org>
 

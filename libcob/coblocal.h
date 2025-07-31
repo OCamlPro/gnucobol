@@ -294,6 +294,8 @@ typedef struct __cob_settings {
 	char 		*cob_file_path;
 	char		*bdb_home;
 	char		*lmdb_home;
+	size_t		cob_heap_memory;		/* Memory segment for VFILE    */
+	size_t		cob_heap_memory_64;		/* Memory segment for VFILE 64 */
 	size_t		cob_sort_memory;
 	size_t		cob_sort_chunk;
 

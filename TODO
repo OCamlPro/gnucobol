@@ -263,3 +263,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 - Check use of new integer optimization in cb_build_optim_sub and cb_build_optim_add - those may be slower than cob_add_packed_int/cob_add_packed_int64
 
 - If there's a reasonable performance benefit for the integer optimizations for BCD/DISPLAY: add an option -funsigned-zero which never stores a sign in those (or in one of those, depending on a perf stat result) to provide the option to still use this optimization
+
+
+For vfile routines: document return-codes per fileio.c and different 
+handling of cancel and heap-status variable used in CBL_OPEN_VFILE only
+and no use of backup file, limitation of i/o area length.

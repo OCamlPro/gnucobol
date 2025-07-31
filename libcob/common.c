@@ -602,6 +602,8 @@ static struct config_tbl gc_conf[] = {
     {"COB_DUPS_AHEAD","dups_ahead",     "default",dups_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dups),0,3},
     {"COB_SEQ_CONCAT_NAME","seq_concat_name","0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_concat_name)},
     {"COB_SEQ_CONCAT_SEP","seq_concat_sep","+",NULL,GRP_FILE,ENV_CHAR,SETPOS(cob_concat_sep),1},
+	{"COB_HEAP_MEMORY", "heap_memory", 	"1M", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_heap_memory), (16*1024), (64 * 1024 * 1024)},
+	{"COB_HEAP_MEMORY_64", "heap_memory_64", 	"64M", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_heap_memory_64), (256*1024), 4294967294UL /* max. guaranteed - 1 */},
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},
 #endif
