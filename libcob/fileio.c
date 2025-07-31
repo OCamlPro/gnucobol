@@ -1731,6 +1731,7 @@ apply_file_paths (char *src)
 	}
 }
 
+/* adjust static buffer file_open_name per applicable mapping rules */
 void
 cob_chk_file_mapping (cob_file *f, char *filename)
 {
@@ -8235,15 +8236,15 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 
 /* System routines */
 
-/* stores the parameter's content into a fresh allocated
+/* stores the field's content into a fresh allocated
    string, which later needs to be passed to cob_free */
 static void *
-cob_param_no_quotes (int n)
+cob_field_no_quotes (const cob_field *f)
 {
 	register unsigned char	*data, *s;
 	void		*mptr;
 
-	s = data = mptr = cob_get_picx_param (n, NULL, 0);
+	s = data = mptr = cob_get_picx (f->data, f->size, NULL, 0);
 	if (s == NULL) {
 		return NULL;
 	}
@@ -8259,19 +8260,45 @@ cob_param_no_quotes (int n)
 	return mptr;
 }
 
+/* stores the parameter's content into a fresh allocated
+   string, which later needs to be passed to cob_free */
+static void *
+cob_param_no_quotes (int n)
+{
+	cob_field *f = cob_get_param_field (n, "cob_param_no_quotes");
+	return cob_field_no_quotes(f);
+}
+
+/* set the name for the internal filename buffer
+   and apply filename mapping;
+   returns the pointer to the static buffer */
+char *
+cob_setup_filename (const cob_field *file_name)
+{
+	char	*fn = cob_field_no_quotes (file_name);
+	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
+	file_open_name[COB_FILE_MAX] = 0;
+	cob_free (fn);
+
+	cob_chk_file_mapping (NULL, NULL);
+
+	return file_open_name;
+}
+
 /* actual processing for CBL_OPEN_FILE and CBL_CREATE_FILE */
 static int
-open_cbl_file (cob_u8_ptr file_name, int file_access,
-	       	cob_u8_ptr file_handle, const int file_flags)
+open_cbl_file (cob_u8_ptr fname, int file_access,
+	       cob_u8_ptr file_handle, const int file_flags)
 {
-	char	*fn;
+	cob_field	*f;
+	const char	*file_name;
 	int	flag = O_BINARY;
 	int	fd;
 
-	COB_UNUSED (file_name);
+	COB_UNUSED (fname);
 
-	fn = cob_param_no_quotes (1);
-	if (fn == NULL) {
+	f = cob_get_param_field (1, "open_cbl_file");
+	if (f == NULL) {
 		memset (file_handle, -1, (size_t)4);
 		return -1;
 	}
@@ -8292,12 +8319,8 @@ open_cbl_file (cob_u8_ptr file_name, int file_access,
 			return -1;
 	}
 
-	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn);
-	cob_chk_file_mapping (NULL, NULL);
-
-	fd = open (file_open_name, flag, COB_FILE_MODE);
+	file_name = cob_setup_filename (f);
+	fd = open (file_name, flag, COB_FILE_MODE);
 	if (fd == -1) {
 		int ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		memset (file_handle, -1, (size_t)4);
@@ -8455,26 +8478,23 @@ cob_sys_flush_file (unsigned char *file_handle)
 
 /* entry point and processing for library routine CBL_DELETE_FILE */
 int
-cob_sys_delete_file (unsigned char *file_name)
+cob_sys_delete_file (unsigned char *fname)
 {
-	char	*fn;
+	cob_field	*f;
+	const char	*file_name;
 	int	ret;
 
-	COB_UNUSED (file_name);
+	COB_UNUSED (fname);
 
 	COB_CHK_PARMS (CBL_DELETE_FILE, 1);
 
-	fn = cob_param_no_quotes (1);
-	if (fn == NULL) {
+	f = cob_get_param_field (1, "cob_sys_delete_file");
+	if (f == NULL) {
 		return -1;
 	}
 
-	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn);
-	cob_chk_file_mapping (NULL, NULL);
-
-	ret = unlink (file_open_name);
+	file_name = cob_setup_filename (f);
+	ret = unlink (file_name);
 	if (ret) {
 		return 128;
 	}
@@ -8486,8 +8506,9 @@ cob_sys_delete_file (unsigned char *file_name)
 int
 cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 {
-	char	*fn1;
-	char	*fn2;
+	cob_field	*f1;
+	cob_field	*f2;
+	const char	*file_name;
 	int	flag = O_BINARY;
 	int	ret;
 	int	i;
@@ -8498,36 +8519,28 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 
 	COB_CHK_PARMS (CBL_COPY_FILE, 2);
 
-	fn1 = cob_param_no_quotes (1);
-	if (fn1 == NULL) {
+	f1 = cob_get_param_field (1, "cob_sys_copy_file");
+	if (f1 == NULL) {
 		return -1;
 	}
-	fn2 = cob_param_no_quotes (2);
-	if (fn2 == NULL) {
-		cob_free (fn1);
+	f2 = cob_get_param_field (2, "cob_sys_copy_file");
+	if (f2 == NULL) {
 		return -1;
 	}
 
-	strncpy (file_open_name, fn1, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn1);
-	cob_chk_file_mapping (NULL, NULL);
+	file_name = cob_setup_filename (f1);
 
 	flag |= O_RDONLY;
-	fd1 = open (file_open_name, flag, 0);
+	fd1 = open (file_name, flag, 0);
 	if (fd1 == -1) {
-		cob_free (fn2);
 		return errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 	}
 
-	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn2);
-	cob_chk_file_mapping (NULL, NULL);
+	file_name = cob_setup_filename (f2);
 
 	flag &= ~O_RDONLY;
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
-	fd2 = open (file_open_name, flag, COB_FILE_MODE);
+	fd2 = open (file_name, flag, COB_FILE_MODE);
 	if (fd2 == -1) {
 		ret = errno_cob_sts (COB_STATUS_35_NOT_EXISTS);
 		close (fd1);
@@ -8548,25 +8561,25 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 
 /* entry point and processing for library routine CBL_CHECK_FILE_EXIST */
 int
-cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
+cob_sys_check_file_exist (unsigned char *fname, unsigned char *file_info)
 {
-	char		*fn;
+	cob_field	*f;
+	const char	*file_name;
 	struct tm	*tm;
 	cob_s64_t	sz;
 	struct stat	st;
 	short		y;
 	short		d, m, hh, mm, ss;
 
-	COB_UNUSED (file_name);
+	COB_UNUSED (fname);
 
 	COB_CHK_PARMS (CBL_CHECK_FILE_EXIST, 2);
 
-	fn = cob_param_no_quotes (1);
-	if (fn == NULL) {
+	f = cob_get_param_field (1, "cob_sys_check_file_exist");
+	if (f == NULL) {
 		return -1;
 	}
 	if (cob_get_param_size(2) < 16) {
-		cob_free (fn);
 		cob_runtime_error (_("'%s' - File detail area is too short"), "CBL_CHECK_FILE_EXIST");
 #if 0 /* should be handled by the caller,
 		TODO: check for better return code (or the one from MF/ACU) */
@@ -8576,12 +8589,9 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 #endif
 	}
 
-	strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn);
-	cob_chk_file_mapping (NULL, NULL);
+	file_name = cob_setup_filename (f);
 
-	if (stat (file_open_name, &st) < 0) {
+	if (stat (file_name, &st) < 0) {
 		return 35;
 	}
 
@@ -8618,9 +8628,10 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 int
 cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 {
-	char	*fn1;
-	char	*fn2;
+	cob_field	*f1;
+	cob_field	*f2;
 	char	localbuff [COB_FILE_BUFF];
+	const char	*file_name;
 	int 	ret;
 
 	COB_UNUSED (fname1);
@@ -8628,30 +8639,22 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 
 	COB_CHK_PARMS (CBL_RENAME_FILE, 2);
 
-	fn1 = cob_param_no_quotes (1);
-	if (fn1 == NULL) {
+	f1 = cob_get_param_field (1, "cob_sys_rename_file");
+	if (f1 == NULL) {
 		return -1;
 	}
-	fn2 = cob_param_no_quotes (2);
-	if (fn2 == NULL) {
-		cob_free (fn1);
+	f2 = cob_get_param_field (2, "cob_sys_rename_file");
+	if (f2 == NULL) {
 		return -1;
 	}
 
-	strncpy (file_open_name, fn1, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn1);
-	cob_chk_file_mapping (NULL, NULL);
-
-	strncpy (localbuff, file_open_name, (size_t)COB_FILE_MAX);
+	file_name = cob_setup_filename (f1);
+	strncpy (localbuff, file_name, (size_t)COB_FILE_MAX);
 	localbuff[COB_FILE_MAX] = 0;
 
-	strncpy (file_open_name, fn2, (size_t)COB_FILE_MAX);
-	file_open_name[COB_FILE_MAX] = 0;
-	cob_free (fn2);
-	cob_chk_file_mapping (NULL, NULL);
+	file_name = cob_setup_filename (f2);
 
-	ret = rename (localbuff, file_open_name);
+	ret = rename (localbuff, file_name);
 	if (ret) {
 		return 128;
 	}
@@ -10339,7 +10342,7 @@ locate_segment (cob_u16_t heap, cob_u64_t data_loc, cob_u32_t size, void *data_b
 			ptr_seg = ptr_seg->ptr_prev_seg;
 			/* LCOV_EXCL_START */
 			if (!ptr_seg) {
-				cob_runtime_error (_("invalid internal call of %s"), __FUNCTION__);
+				cob_runtime_error (_("invalid internal call of %s"), "locate_segment");
 				cob_hard_failure_internal ("libcob");
 			}
 			/* LCOV_EXCL_STOP */

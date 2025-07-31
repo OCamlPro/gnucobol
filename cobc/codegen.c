@@ -4204,8 +4204,12 @@ output_param (cb_tree x, int id)
 		break;
 	}
 	case CB_TAG_LOCALE_NAME:
-		output_param (CB_LOCALE_NAME(x)->list, id);
+		output_param (CB_LOCALE_NAME (x)->list, id);
 		break;
+	case CB_TAG_SCHEMA_NAME:
+		output_param (CB_SCHEMA_NAME (x)->val, id);
+		break;
+
 	case CB_TAG_ALPHABET_NAME: {
 		const struct cb_alphabet_name	*abp = CB_ALPHABET_NAME (x);
 		switch (abp->alphabet_type) {
@@ -4445,7 +4449,8 @@ output_param (cb_tree x, int id)
 				output (", ");
 			}
 			if (f->flag_local
-			 && !f->flag_data_set) {
+			 && !f->flag_data_set
+			 && !(f->flag_internal_register && f->flag_any_length)) {
 					output ("COB_SET_DATA (%s%d, ",
 						CB_PREFIX_FIELD, f->id);
 					output_data (x);
@@ -8104,16 +8109,18 @@ output_set_attribute (const struct cb_field *f, cob_flags_t val_on,
 
 /* XML PARSE */
 
-
 static void
 output_xml_parse (struct cb_xml_parse *p)
 {
 	int flags = 0;
 	if (cb_xml_parse_xmlss) {
-		flags &= COB_XML_PARSE_XMLNSS;
+		flags |= COB_XML_PARSE_XMLNSS;
 	}
 	if (p->returning_national && current_prog->xml_ntext) {
-		flags &= COB_XML_PARSE_NATIONAL;
+		flags |= COB_XML_PARSE_NATIONAL;
+	}
+	if (p->validating && CB_SCHEMA_NAME_P (p->validating)) {
+		flags |= COB_XML_PARSE_VALIDATE_FILE;
 	}
 
 	output_block_open ();

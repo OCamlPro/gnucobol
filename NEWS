@@ -111,6 +111,12 @@ Open Plans:
    customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
    COB_PROF_FORMAT
 
+** initial support for XML PARSE
+   while this feature is not implemented fully and some events are not
+   implemented yet, we'd like you to test this feature already;
+   note that for the XML-EVENT EXCEPTION, the stored exception-values in
+   XML-CODE and XML-TEXT registers differ from other implementations
+
 ** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
 

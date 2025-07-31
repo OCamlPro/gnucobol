@@ -1223,6 +1223,7 @@ enum cob_statement {
 
 #define COB_XML_PARSE_XMLNSS	(1U << 0)
 #define COB_XML_PARSE_NATIONAL	(1U << 1)
+#define COB_XML_PARSE_VALIDATE_FILE	(1U << 2)
 
 /* Structure/union declarations */
 
@@ -1465,6 +1466,7 @@ typedef struct __cob_module {
 		/* similar to XMLPARSE(XMLNSS) Micro Focus,
 		   IBM may be different (_very_ likely for error codes);
 		   but the main difference is to "COMPAT" */
+		#define COB_XML_COMPAT 		0
 		#define COB_XML_XMLNSS		1
 
 	cob_field		function_return;	/* Copy of RETURNING field */

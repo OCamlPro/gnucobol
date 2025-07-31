@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -18,6 +18,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+EXTRA_DIST = xmlevent.def
 
 if LOCAL_CJSON
 nodist_libcob_la_SOURCES = cJSON.c
@@ -128,7 +130,7 @@ endif
 lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
 
-EXTRA_DIST = fisam.c
+EXTRA_DIST += fisam.c
 pkgincludedir = $(includedir)/libcob
 pkginclude_HEADERS = common.h version.h cobgetopt.h cobcapi.h \
 	exception.def exception-io.def statement.def
