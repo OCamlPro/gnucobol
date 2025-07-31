@@ -1562,6 +1562,7 @@ cb_build_register_number_parameters (const char *name, const char *definition)
 	}
 
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
+	/* note: this register needs to be local as it must keep the value in each recursive call */
 	CB_FIELD_PTR (field)->flag_no_init = 1;
 	CB_FIELD_PTR (field)->flag_local = 1;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
@@ -1714,6 +1715,15 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	field = CB_FIELD (cb_build_field (cb_build_reference (name)));
 	field->flag_is_global = (p != NULL);		/* any GLOBAL found ? */
 	field->level = 77;
+
+	/* handle BASED */
+#if 0	/* note: currently unused */
+	p = strstr (definition, "BASED");
+	if (p && (*(p + 5)  == ' ' || *(p + 5) == 0)) {
+		memset (p, ' ', 5);	/* remove from local copy */
+		field->flag_item_based = 1;
+	}
+#endif
 
 	/* handle USAGE */
 	p = strstr (definition, "USAGE ");
@@ -4943,6 +4953,8 @@ validate_file_status (cb_tree fs)
 	}
 }
 
+/* create an implicit defined variable for ASSIGN or XML SCHEMA,
+   with the given assign reference name and initial value */
 static void
 create_implicit_assign_dynamic_var (struct cb_program * const prog,
 				    cb_tree assign)
@@ -4963,17 +4975,27 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 	CB_FIELD_ADD (prog->working_storage, p);
 }
 
+/* handle file assign name, used in ASSIGN clause or XML SCHEMA,
+   that has no definition */
 static void
-process_undefined_assign_name (struct cb_file * const f,
+process_undefined_assign_name (cb_tree origin,
 			       struct cb_program * const prog)
 {
-	cb_tree	assign = f->assign;
-	cb_tree	l;
-	cb_tree	ll;
+	struct cb_file *f = NULL;
+	struct cb_schema_name *schema = NULL;
 
-	if (f->assign_type != CB_ASSIGN_VARIABLE_DEFAULT) {
-		/* An error is emitted later */
-		return;
+	cb_tree	assign;
+
+	if (CB_FILE_P (origin)) {
+		f = CB_FILE (origin);
+		if (f->assign_type != CB_ASSIGN_VARIABLE_DEFAULT) {
+			/* An error is emitted later */
+			return;
+		}
+		assign = f->assign;
+	} else {
+		schema = CB_SCHEMA_NAME (origin);
+		assign = schema->val;
 	}
 
 	/*
@@ -4981,9 +5003,13 @@ process_undefined_assign_name (struct cb_file * const f,
 	  name.
 	*/
 	if (cb_implicit_assign_dynamic_var) {
-		cb_verify_x (CB_TREE (f), cb_assign_variable, _("ASSIGN [TO] variable in SELECT"));
+		if (f) {
+			cb_verify_x (CB_TREE (f), cb_assign_variable,
+				_("ASSIGN [TO] variable in SELECT"));
+		}
 		create_implicit_assign_dynamic_var (prog, assign);
 	} else {
+		cb_tree	l;
 		/* Remove reference */
 		for (l = prog->reference_list;
 		     CB_VALUE (l) != assign && CB_VALUE (CB_CHAIN (l)) != assign;
@@ -4991,65 +5017,88 @@ process_undefined_assign_name (struct cb_file * const f,
 		if (CB_VALUE (l) == assign) {
 			prog->reference_list = CB_CHAIN (l);
 		} else {
-			ll = CB_CHAIN (CB_CHAIN (l));
+			cb_tree temp = CB_CHAIN (CB_CHAIN (l));
 			cobc_parse_free (CB_CHAIN (l));
-			CB_CHAIN (l) = ll;
+			CB_CHAIN (l) = temp;
 		}
 
 		/* Reinterpret word */
-		f->assign = build_external_assignment_name (assign);
+		l = build_external_assignment_name (assign);
+		if (f) {
+			f->assign = l;
+		} else {
+			schema->val = l;
+		}
 	}
 }
 
-/* Ensure ASSIGN name refers to a valid identifier */
+/* ensure file assign name, used in ASSIGN clause or XML SCHEMA,
+   refers to a valid identifier */
 static void
-validate_assign_name (struct cb_file * const f,
-		      struct cb_program * const prog)
+validate_assign_name (cb_tree origin, struct cb_program * const prog)
 {
-	cb_tree	assign = f->assign;
+	struct cb_file *f = NULL;
+	struct cb_schema_name *schema = NULL;
+
+	cb_tree	assign;
 	cb_tree	x;
-	struct cb_field	*p;
 
-	if (!assign) {
+	if (CB_FILE_P (origin)) {
+		f = CB_FILE (origin);
+		assign = f->assign;
+	} else {
+		schema = CB_SCHEMA_NAME (origin);
+		assign = schema->val;
+	}
+
+	if (!assign
+	 || !CB_REFERENCE_P (assign)) {
 		return;
 	}
 
-	if (!CB_REFERENCE_P (assign)) {
-		return;
-	}
-
-	/* Error if assign name is same as a file name */
-	for (x = prog->file_list; x; x = CB_CHAIN (x)) {
-		if (!strcmp (CB_FILE (CB_VALUE (x))->name,
-			     CB_NAME (assign))) {
-			redefinition_error (assign);
+	if (CB_FILE_P (origin)) {
+		/* Error if assign name is same as a file name */
+		for (x = prog->file_list; x; x = CB_CHAIN (x)) {
+			if (!strcmp (CB_FILE (CB_VALUE (x))->name,
+					CB_NAME (assign))) {
+				redefinition_error (assign);
+			}
 		}
 	}
 
 	/* If assign is a 78-level, change assign to the 78-level's literal. */
-	p = check_level_78 (CB_NAME (assign));
-	if (p) {
-		char *c = (char *)CB_LITERAL (p->values)->data;
-		assign = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c)));
-		f->assign = assign;
-		return;
+	{
+		struct cb_field	*p = check_level_78 (CB_NAME (assign));
+		if (p) {
+			char *c = (char *)CB_LITERAL (p->values)->data;
+			x = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c)));
+
+			if (f) {
+				f->assign = x;
+			} else {
+				schema->val = x;
+			}
+			return;
+		}
+
 	}
 
 	if (CB_WORD_COUNT (assign) == 0) {
-		process_undefined_assign_name (f, prog);
+		process_undefined_assign_name (origin, prog);
 	} else {
 		/*
 		  We now know we have a variable, so can validate whether it is
 		  is allowed
 		*/
-		if (f->flag_assign_no_keyword) {
+		if (f && f->flag_assign_no_keyword) {
 			cb_verify_x (CB_TREE (f), cb_assign_variable, _("ASSIGN variable"));
 		}
 
 		x = cb_ref (assign);
 		if (CB_FIELD_P (x) && CB_FIELD (x)->level == 88) {
-			cb_error_x (assign, _("ASSIGN data item '%s' is invalid"),
-				    CB_NAME (assign));
+			const char *msg = f ? _("ASSIGN data item '%s' is invalid")
+			                    : _("XML SCHEMA data item '%s' is invalid");
+			cb_error_x (assign, msg, CB_NAME (assign));
 		}
 	}
 }
@@ -5102,7 +5151,10 @@ cb_validate_program_data (struct cb_program *prog)
 
 	/* Build undeclared assignment names now */
 	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
-		validate_assign_name (CB_FILE (CB_VALUE (l)), prog);
+		validate_assign_name (CB_VALUE (l), prog);
+	}
+	for (l = prog->schema_name_list; l; l = CB_CHAIN (l)) {
+		validate_assign_name (CB_VALUE (l), prog);
 	}
 
 	if (prog->cursor_pos) {
@@ -11179,7 +11231,7 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 						cb_build_alphanumeric_literal (conv_tab, 256)));
 			}
 			break;
-		case CB_TAG_REFERENCE: 
+		case CB_TAG_REFERENCE:
 			if (CB_ALPHABET_NAME_P (cb_ref (x))
 			 && CB_ALPHABET_NAME_P (cb_ref (y))) {
 				const struct cb_alphabet_name *alph_x = CB_ALPHABET_NAME (cb_ref (x));
@@ -16008,7 +16060,7 @@ all_children_ok_qualified_by_only (struct cb_field * const f,
 			return 0;
 		}
 		if (child->children
-		    && !all_children_ok_qualified_by_only (child, qualifier)) {
+		 && !all_children_ok_qualified_by_only (child, qualifier)) {
 			return 0;
 		}
 	}

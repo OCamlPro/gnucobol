@@ -51,6 +51,10 @@ LC_ALL=C
 export LC_ALL
 unset LANG
 
+# enforce UTC timezone
+TZ=UTC
+export TZ
+
 # define for performance checks (running code several thousand times)
 # uncomment manually if wanted, or set via environment
 # COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"

@@ -701,10 +701,10 @@ AC_CACHE_SAVE
 dnl entries only used from external includes -> likely no need to check here
 dnl AC_CHECK_HEADERS([whcar.h malloc.h])
 # mandatory:
-AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
+AC_CHECK_HEADERS([sys/types.h stddef.h fcntl.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h stdint.h inttypes.h sys/wait.h sys/sysmacros.h])
+AC_CHECK_HEADERS([sys/time.h locale.h dlfcn.h stdint.h inttypes.h sys/wait.h sys/sysmacros.h signal.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -747,6 +747,8 @@ AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp
 # more things to save...
 AC_CACHE_SAVE
 
+CFLAGS="$curr_cflags $ERRWARN"
+
 # Check for timezone
 AC_CACHE_CHECK([for timezone variable access], gc_cv_time_timezone, [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
@@ -765,6 +767,7 @@ AC_CACHE_CHECK([for designated initializers], gc_cv_designated_inits, [
 	[[static const unsigned char valid_char[256] = {
 		@<:@'0'@:>@ = 1,
 		@<:@'1'@:>@ = 1 };
+	if (valid_char['0'] != 1) return 1;
 	]])],
 	[gc_cv_designated_inits=yes],
 	[gc_cv_designated_inits=no]
@@ -2596,14 +2599,12 @@ COB_EXPORT_DYN="$(eval echo $export_dynamic_flag_spec)"
 # FIXME: lt_prog_compiler_pic is not always correct, for example with occ
 COB_PIC_FLAGS=$(echo "$lt_prog_compiler_pic" | $SED -e 's/^ //')
 
-if test "$enable_cflags_setting" = yes; then
-	if test "$enable_hardening" != yes; then
-		# Remove -O2 option added by AC_PROG_CC and add -O0
-		if test "$enable_debug" = yes -o "$enable_code_coverage" = yes; then
-			CFLAGS=$(echo "$CFLAGS" | $SED -e 's/ *-O@<:@0-9a-zA-Z@:>@* */ /g' -e 's/ $//' -e 's/^ //')
-			if test "$COB_USES_GCC" = yes; then
-				CFLAGS="$CFLAGS -O0"
-			fi
+if test "$enable_cflags_setting" = yes -a "$enable_hardening" != yes; then
+	# Remove -O2 option added by AC_PROG_CC and add -O0
+	if test "$enable_debug" = yes -o "$enable_code_coverage" = yes; then
+		CFLAGS=$(echo "$CFLAGS" | $SED -e 's/ *-O@<:@0-9a-zA-Z@:>@* */ /g' -e 's/ $//' -e 's/^ //')
+		if test "$COB_USES_GCC" = yes; then
+			CFLAGS="$CFLAGS -O0"
 		fi
 	fi
 fi
@@ -3293,5 +3294,10 @@ case "$USE_JSON" in
     AC_MSG_NOTICE([ Used for JSON I/O:                           ${USE_JSON}])
 	;;
 esac
+
+if test "$ac_cv_header_signal_h" = "no"; then
+  AC_MSG_NOTICE([ Signal handling not available!])
+  AC_MSG_WARN([No cleanup on termination done, some tests will fail.])
+fi
 
 unset DEFINE_DL

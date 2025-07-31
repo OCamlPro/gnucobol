@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -157,7 +157,7 @@ enum inspect_rep_keyword {
 	INSPECT_REP_ALL,
 	INSPECT_REP_LEADING,
 	INSPECT_REP_FIRST,
-	INSPECT_REP_TRAILING,
+	INSPECT_REP_TRAILING
 };
 
 union examine_keyword {
@@ -165,13 +165,13 @@ union examine_keyword {
 	enum {
 		EXAMINE_TAL_ALL,
 		EXAMINE_TAL_LEADING,
-		EXAMINE_TAL_UNTIL_FIRST,
+		EXAMINE_TAL_UNTIL_FIRST
 	} tallying;
 	enum {
 		EXAMINE_REP_ALL,
 		EXAMINE_REP_LEADING,
 		EXAMINE_REP_FIRST,
-		EXAMINE_REP_UNTIL_FIRST,
+		EXAMINE_REP_UNTIL_FIRST
 	} replacing;
 };
 
@@ -5104,6 +5104,7 @@ xml_schema_clause:
 	if ($3) {
 		current_program->schema_name_list =
 			cb_list_add (current_program->schema_name_list, $3);
+		CB_SCHEMA_NAME ($3)->val = $4;
 	}
 	cobc_cs_check = 0;
   }
@@ -5111,19 +5112,7 @@ xml_schema_clause:
 
 schema_definition:
   literal
-  {
-	$$ = $0;
-	if ($0) {
-		CB_SCHEMA_NAME ($0)->data = (const char *) CB_LITERAL ($1)->data;
-	}
-  }
 | WORD
-  {
-	$$ = $0;
-	if ($0) {
-		CB_SCHEMA_NAME ($0)->data = CB_REFERENCE ($1)->word->name;
-	}
-  }
 ;
 
 /* CURRENCY SIGN clause */
@@ -18101,8 +18090,9 @@ schema_file_or_record_name:
   record_name  { $$ = $1; }
 | TOK_FILE WORD
   {
-	if (CB_SCHEMA_NAME_P (cb_ref ($2))) {
-		$$ = $2;
+	cb_tree x = cb_ref ($2);
+	if (CB_SCHEMA_NAME_P (x)) {
+		$$ = x;
 	} else {
 		cb_error_x ($2, _("'%s' is not a schema name"), CB_NAME ($2));
 		$$ = cb_error_node;

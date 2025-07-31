@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -769,7 +769,7 @@ struct cb_system_name {
 struct cb_schema_name {
 	struct cb_tree_common	common;		/* Common values */
 	const char		*name;		/* Original name */
-	const char		*data;		/* file name */
+	cb_tree			val;		/* file name, may be a literal or a data name, may be empty */
 };
 
 #define CB_SCHEMA_NAME(x)	(CB_TREE_CAST (CB_TAG_SCHEMA_NAME, struct cb_schema_name, x))
@@ -1144,13 +1144,6 @@ struct cb_alt_key {
 	struct cb_key_component	*component_list;	/* List of fields making up key */
 };
 
-/* How to interpret identifiers in a file's ASSIGN clause */
-enum cb_assign_type {
-	CB_ASSIGN_VARIABLE_DEFAULT,		/* default to ASSIGN variable, where allowed by implicit-assign-dynamic-var */
-	CB_ASSIGN_VARIABLE_REQUIRED,		/* require ASSIGN variable */
-	CB_ASSIGN_EXT_FILE_NAME_REQUIRED	/* require ASSIGN external-file-name */
-};
-
 struct cb_file {
 	struct cb_tree_common	common;			/* Common values */
 	const char		*name;			/* Original name */
@@ -1313,7 +1306,7 @@ enum cb_binary_op_op {
 	BOP_SHIFT_L 	= 'l',	/* ( x << y ) */
 	BOP_SHIFT_R 	= 'r',	/* ( x >> y ) */
 	BOP_SHIFT_LC	= 'c',	/* ( x << y circular-shift) */
-	BOP_SHIFT_RC	= 'd',	/* ( x >> y circular-shift ) */
+	BOP_SHIFT_RC	= 'd'	/* ( x >> y circular-shift ) */
 };
 
 enum cb_binary_op_flag {
@@ -1702,7 +1695,7 @@ extern void		plex_action_directive (const enum cb_directive_action,
 enum cb_replace {
 	CB_REPLACE_ALL		= 0,
 	CB_REPLACE_LEADING	= 1,
-	CB_REPLACE_TRAILING	= 2,
+	CB_REPLACE_TRAILING	= 2
 };
 
 /* Strict/loose source text replacement structure */
@@ -2880,7 +2873,7 @@ extern int		cobc_has_areacheck_directive (const char *directive);
 enum cb_colseq {
 	CB_COLSEQ_NATIVE,
 	CB_COLSEQ_ASCII,
-	CB_COLSEQ_EBCDIC,
+	CB_COLSEQ_EBCDIC
 };
 
 extern enum cb_colseq cb_default_colseq;

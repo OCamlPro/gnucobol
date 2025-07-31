@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -331,18 +331,15 @@ typedef __mpz_struct mpz_t[1];
 
 #define strncasecmp		_strnicmp
 #define strcasecmp		_stricmp
+#if !COB_USE_VC2015_OR_GREATER
+/* VC2015+ provides standard function with plain
+   name, old posix emulation with underscore */
 #define snprintf		_snprintf
+#endif
 #define getpid			_getpid
 #define access			_access
 #define popen			_popen
 #define pclose			_pclose
-/* MSDN says these are available since VC2005 #if COB_USE_VC2013_OR_GREATER
-only usable with COB_USE_VC2013_OR_GREATER */
-#define timezone		_timezone
-#define tzname			_tzname
-#define daylight		_daylight
-/* only usable with COB_USE_VC2013_OR_GREATER - End
-#endif */
 
 #if !COB_USE_VC2013_OR_GREATER
 #define atoll			_atoi64
@@ -367,16 +364,14 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define strcasecmp	stricmp
 #define _setmode	setmode
 #define _chdir		chdir
-#define timezone	_timezone
-#define tzname		_tzname
-#define daylight	_daylight
-#endif /* __BORLANDC__ */
+#endif
 
-#ifdef __ORANGEC__
+#if defined (_MSC_VER) || defined (__ORANGEC__) \
+ || defined (_UCRT) || defined (__BORLANDC__)
 #define timezone		_timezone
 #define tzname			_tzname
 #define daylight		_daylight
-#endif /* _ORANGEC__ */
+#endif
 
 #if	__SUNPRO_C
 /* Disable certain warnings */
@@ -416,10 +411,15 @@ only usable with COB_USE_VC2013_OR_GREATER */
 	#define COB_INLINE
 #endif
 
+/* note: we previously checked only for __xlc__, now only for __IBMC__ */
+#if defined (__xlc__) && !defined(__IBMC__)
+	#define __IBMC__ __xlc__
+#endif
+
 /* Also OK for icc which defines __GNUC__ */
 
 #if	 defined(__GNUC__) || \
-	(defined(__xlc__) && __IBMC__ >= 700  ) || \
+	(defined(__IBMC__) && __IBMC__ >= 700  ) || \
 	(defined(__HP_cc) && __HP_cc  >= 61000)
 #define	COB_A_NORETURN	__attribute__((noreturn))
 #define	COB_A_FORMAT12	__attribute__((format(printf, 1, 2)))
@@ -466,7 +466,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define	COB_A_COLD
 #endif
 
-#elif	defined(__xlc__) && __IBMC__ >= 700
+#elif	defined(__IBMC__) && __IBMC__ >= 700
 
 #define	COB_NOINLINE	__attribute__((noinline))
 #define	COB_A_INLINE	__attribute__((always_inline))
@@ -1223,6 +1223,7 @@ enum cob_statement {
 
 #define COB_XML_PARSE_XMLNSS	(1U << 0)
 #define COB_XML_PARSE_NATIONAL	(1U << 1)
+#define COB_XML_PARSE_VALIDATE_FILE	(1U << 2)
 
 /* Structure/union declarations */
 
@@ -1407,7 +1408,7 @@ typedef struct __cob_module {
 	unsigned char		flag_pretty_display;	/* Pretty display */
 	unsigned char		flag_host_sign;		/* Host sign */
 
-	unsigned char		flag_no_phys_canc;	/* No physical cancel */
+	unsigned char		flag_no_phys_canc;	/* No physical cancel (constant by cobc)*/
 	unsigned char		flag_main;		/* Main module */
 	unsigned char		flag_fold_call;		/* Fold case */
 	unsigned char		flag_exit_program;	/* Exit after CALL */
@@ -1465,6 +1466,7 @@ typedef struct __cob_module {
 		/* similar to XMLPARSE(XMLNSS) Micro Focus,
 		   IBM may be different (_very_ likely for error codes);
 		   but the main difference is to "COMPAT" */
+		#define COB_XML_COMPAT 		0
 		#define COB_XML_XMLNSS		1
 
 	cob_field		function_return;	/* Copy of RETURNING field */
@@ -2392,6 +2394,13 @@ COB_EXPIMP int		cob_get_scr_cols	(void);
 COB_EXPIMP int		cob_get_scr_lines	(void);
 COB_EXPIMP int		cob_sys_get_csr_pos	(unsigned char *);
 COB_EXPIMP int		cob_sys_set_csr_pos	(unsigned char *);
+COB_EXPIMP int		cob_sys_open_vfile	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_read_vfile	(cob_u16_t, cob_u32_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_write_vfile	(cob_u16_t, cob_u32_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_close_vfile	(cob_u16_t);
+COB_EXPIMP int		cob_sys_open_vfile2	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_read_vfile2	(cob_u16_t, cob_u64_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_write_vfile2	(cob_u16_t, cob_u64_t, cob_u32_t, unsigned char*);
 
 /******************************************************************************
 *                                                                             *
@@ -2858,23 +2867,26 @@ COB_EXPIMP void cob_unlock_file	(cob_file *, cob_field *);
 /* functions in fextfh.c which is the MF style EXTFH interface */
 /***************************************************************/
 COB_EXPIMP int	EXTFH		(unsigned char *, FCD3 *);
-COB_EXPIMP void	cob_extfh_open		(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, const enum cob_open_mode, const int, cob_field *);
-COB_EXPIMP void cob_extfh_close		(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, cob_field *, const int, const int);
-COB_EXPIMP void cob_extfh_read		(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, cob_field *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_read_next	(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_rewrite	(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, cob_field *, const int, cob_field *);
-COB_EXPIMP void cob_extfh_delete	(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, cob_field *);
-COB_EXPIMP void cob_extfh_start		(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, const int, cob_field *,
+
+typedef int (*EXTFH_FUNC)(unsigned char *opcode, FCD3 *fcd);
+
+COB_EXPIMP void cob_extfh_open		(EXTFH_FUNC callfh, cob_file *,
+					const enum cob_open_mode, const int, cob_field *);
+COB_EXPIMP void cob_extfh_close		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int, const int);
+COB_EXPIMP void cob_extfh_read		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, cob_field *, const int);
+COB_EXPIMP void cob_extfh_read_next	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int);
+COB_EXPIMP void cob_extfh_rewrite	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int, cob_field *);
+COB_EXPIMP void cob_extfh_delete	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *);
+COB_EXPIMP void cob_extfh_start		(EXTFH_FUNC callfh, cob_file *,
+					const int, cob_field *,
 					cob_field *, cob_field *);
-COB_EXPIMP void cob_extfh_write		(int (*callfh)(unsigned char *, FCD3 *),
-					cob_file *, cob_field *, const int,
+COB_EXPIMP void cob_extfh_write		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int,
 				 	cob_field *, const unsigned int);
 
 COB_EXPIMP void cob_file_fcd_adrs		(cob_file *, void *);

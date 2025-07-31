@@ -99,7 +99,7 @@ Open Plans:
 
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
-   indicator column) is now limitted to 5 per source file
+   indicator column) is now limited to 5 per source file
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)
@@ -111,10 +111,31 @@ Open Plans:
    customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
    COB_PROF_FORMAT
 
+** initial support for XML PARSE
+   while this feature is not implemented fully and some events are not
+   implemented yet, we'd like you to test this feature already;
+   note that for the XML-EVENT EXCEPTION, the stored exception-values in
+   XML-CODE and XML-TEXT registers differ from other implementations
+
 ** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
 
 ** added multiple window functionality with new system function CBL_GC_WINDOW
+
+** New system functions
+
+   CBL_OPEN_VFILE                  opens a "virtual file" (heap)
+   CBL_WRITE_VFILE                 writes bytes to heap; offset 4 byte binary
+   CBL_READ_VFILE                  reads bytes from heap; offset 4 byte binary
+   CBL_CLOSE_VFILE                 closes the heap handle
+   CBL_GC_OPEN_VFILE64             opens a "virtual file" (heap)
+   CBL_GC_WRITE_VFILE64            writes bytes to heap; offset 8 byte binary
+   CBL_GC_READ_VFILE64             reads bytes from heap; offset 8 byte binary
+   CBL_GC_CLOSE_VFILE64            closes the heap handle
+   The VFILE functions provide functionality consistent with Microfocus /
+   Fujitsu, but the heap is never paged to disk.
+   The VFILE64 functions are a GnuCOBOL extension to allow for access beyond the
+   4 GB offset when using the 64 bit environment.
 
   more work in progress
 
@@ -154,7 +175,7 @@ Open Plans:
    to this compiler option.
 
 ** output of unlimited errors may be requested by -fmax-errors=0,
-   to stop compiliation at first error use -Wfatal-errors
+   to stop compilation at first error use -Wfatal-errors
 ** default value for -fmax-errors was changed from 128 to 20
 
 ** New option -fdiagnostics-absolute-paths to print the full path of
@@ -205,7 +226,7 @@ Open Plans:
    package manager version)
 
 ** use the "default" -shared flag to build dynamic libraries on macOS
-   so as to fix testuite issues with recent macOS versions
+   so as to fix testsuite issues with recent macOS versions
 
 ** "make checkmanual" was extended to be also usable with tmux and
    allows to override the test runner and to attach for screen/tmux sessions,
@@ -279,8 +300,8 @@ For more known issues see the bug tracker.
 
 ** Support for additional $SET directives: ODOSLIDE
 
-** Support for the EXTFH interface was heavily improved, now also supporting
-   FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
+** Support for the EXTFH has been greatly enhanced and now includes support
+   for FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
    pointers and now supports - for 32-bit builds - an internal conversion
    between FCD2 and FCD3 for cases where existing programs are coded with FCD2
 
@@ -326,6 +347,19 @@ For more known issues see the bug tracker.
    (to binary zero) if the INITIALIZED clause was not specified,
    this isn't done anymore so if you need the memory to be initialized
    specify that explicit in the source and recompile
+
+** variable-length RECORD SEQUENTIAL files, data validation on READ:
+   the length of the record as stored in the file is now checked for correct
+   format and is then compared against the record size defined in the program;
+   if the minimal record size specified is bigger, then the data is only
+   written up to the record length for that record, the other data is
+   undefined and io status 04 returned; if the record length is bigger than
+   the record size the record from the file is truncated, io status 04 set
+   and the following READ will start at the next record;
+   additionally on OPEN the length of the first record is read and if it
+   isn't within the above rules, an io status 39 is returned; as the default
+   format "COB_VARSEQ_TYPE = 0" contains two NULL bytes this will likely
+   make most LINE SEQUENTIAL files not declared as this type fail on OPEN
 
 ** LINE SEQUENTIAL files, data validation: in case of bad printable data
    (less than SPACE) a READ may result in io status 09 and WRITE may error
@@ -568,6 +602,9 @@ For more known issues see the bug tracker.
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
+
+** new compiler command line option to output the exact version number
+   `cobc -dumpversion`
 
 ** new compiler command line option -ftcmd to enable printing of the command
    line in the source listing, -fno-timestamp to suppress printing of the time

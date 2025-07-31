@@ -1,4 +1,9 @@
 
+2025-05-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal.in, atlocal_win: set TZ=UTC globally
+	  to help get a reproducible output
+
 2025-05-20  David Declerck <david.declerck@ocamlpro.com>
 
 	* testsuite.src/run_file.at, testsuite.src/run_misc.at,

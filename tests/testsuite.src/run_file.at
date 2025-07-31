@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
 ## Brian Tiffin, Joe Robbins, Edward Hart
 ##
@@ -5578,6 +5578,982 @@ error opening file ...
 AT_CHECK([$COBCRUN_DIRECT ./prog sub/../prog.cob], [0],
 [RUN WITH sub/../prog.cob
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([VFILE system routines])
+AT_KEYWORDS([extensions runfile virtual heap
+CBL_OPEN_VFILE CBL_WRITE_VFILE CBL_READ_VFILE CBL_CLOSE_VFILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. VTEST005.
+      *AUTHOR.  CHUCK HAATVEDT
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+
+       OBJECT-COMPUTER. IBM-PC.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  HEAP-ID                    PIC 9(4) COMP-5.
+       01  RELATIVE-ADDRESS-IN-HEAP   PIC S9(9) COMP-5.
+       01  DATA-LENGTH                PIC S9(9) COMP-5.
+       01  HEAP-STATUS                PIC X(2).
+       01  STATUS-CODE                PIC S9(4) COMP-5.
+
+       01  PTR-HEAP                        USAGE POINTER.
+
+       01  CNTR-COUNTERS.
+           05  CNTR-HEAP                   PIC S9(9) COMP-5.
+           05  CNTR-RCD-WRITTEN            PIC S9(9) COMP-5.
+           05  CNTR-RCD-READ               PIC S9(9) COMP-5.
+           05  CNTR-RCD-LENGTH             PIC S9(9) COMP-5.
+           05  CNTR-RELATVIE-POS           PIC S9(9) COMP-5.
+
+       01  TIME-START.
+           05  TS-HH                       PIC 99.
+           05  TS-MM                       PIC 99.
+           05  TS-SS                       PIC 99.
+           05  TS-MS                       PIC 9(6).
+
+       01  TIME-WRITE.
+           05  TW-HH                       PIC 99.
+           05  TW-MM                       PIC 99.
+           05  TW-SS                       PIC 99.
+           05  TW-MS                       PIC 9(6).
+
+       01  TIME-READ.
+           05  TR-HH                       PIC 99.
+           05  TR-MM                       PIC 99.
+           05  TR-SS                       PIC 99.
+           05  TR-MS                       PIC 9(6).
+
+       01  TMP.
+           05  TMP-DOUBLE                  PIC S9(18) COMP-5.
+           05  TMP-MILLISECONDS            PIC S9(9) COMP-5.
+           05  TMP-NBR                     PIC S9(9) COMP-5.
+           05  TMP-KB                      PIC X(8).
+           05  TMP-DISPLAY                 PIC ZZZ,ZZZ,ZZ9.
+           05  TMP-DISPLAY-LONG            PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.
+
+       01  REC-BUFFER                      PIC X(100).
+
+       01  REC-RECORD-AREA.
+           05  FILLER                      PIC X(7)  VALUE 'HEAPID '.
+           05  REC-HEAP-ID                 PIC 9(3).
+           05  FILLER                      PIC X(8)  VALUE ' RECORD '.
+           05  REC-RCD-COUNT               PIC ZZZ,ZZZ,ZZ9.
+           05  FILLER                      PIC X     VALUE SPACE.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+
+
+       01  ENV-TEXT                        PIC X(256).
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+
+           DISPLAY 'COB_HEAP_MEMORY'       UPON ENVIRONMENT-NAME.
+           DISPLAY '16K'                   UPON ENVIRONMENT-VALUE.
+
+           DISPLAY 'COB_HEAP_MEMORY_64'    UPON ENVIRONMENT-NAME.
+           DISPLAY '256K'                  UPON ENVIRONMENT-VALUE.
+
+           MOVE ZERO                   TO CNTR-HEAP.
+           MOVE LENGTH OF REC-RECORD-AREA
+                                       TO DATA-LENGTH.
+      D    DISPLAY ' LENGTH OF DATA RECORD IS ' DATA-LENGTH.
+
+      D    ACCEPT TIME-START FROM MICROSECOND-TIME.
+
+           PERFORM WITH TEST AFTER
+               UNTIL CNTR-HEAP >= 1
+                  OR RETURN-CODE NOT EQUAL ZERO
+                   ADD +1              TO CNTR-HEAP
+                   PERFORM 2000-OPEN-VFILE THRU 2000-EXIT
+           END-PERFORM.
+
+           MOVE ZERO                   TO CNTR-RCD-WRITTEN.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-WRITTEN
+      D        IF CNTR-RCD-WRITTEN = 1311
+      D           CONTINUE
+      D        END-IF
+               PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-WRITE FROM MICROSECOND-TIME.
+
+           MOVE ZERO                   TO CNTR-RCD-READ.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-READ
+               PERFORM 5000-READ-VFILE THRU 5000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-READ  FROM MICROSECOND-TIME.
+
+      D    DISPLAY 'THIS IS THE TIME USED TO READ '
+      D        'AND WRITE 5,000,000 '
+      D        DATA-LENGTH ' BYTE SIZE'.
+      D
+      D    DISPLAY 'START TIME IS ==> '
+      D        TS-HH ':'
+      D        TS-MM ':'
+      D        TS-SS ':'
+      D        TS-MS.
+      D
+      D    DISPLAY 'WRITE TIME IS ==> '
+      D        TW-HH ':'
+      D        TW-MM ':'
+      D        TW-SS ':'
+      D        TW-MS.
+      D
+      D    DISPLAY ' READ TIME IS ==> '
+      D        TR-HH ':'
+      D        TR-MM ':'
+      D        TR-SS ':'
+      D        TR-MS.
+
+       0000-STOP.
+
+           GOBACK.
+
+       0000-EXIT.  EXIT.
+
+       2000-OPEN-VFILE.
+
+           CALL 'CBL_OPEN_VFILE'
+               USING BY REFERENCE HEAP-ID
+                     BY REFERENCE HEAP-STATUS.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP.
+
+      D    DISPLAY ' HEAP-ID IS ==> ' HEAP-ID.
+
+       2000-EXIT.  EXIT.
+       4000-WRITE-VFILE.
+
+      *    IF CNTR-RCD-WRITTEN = 11
+      *        COMPUTE RELATIVE-ADDRESS-IN-HEAP
+      *            = ((5                - 1) * DATA-LENGTH)
+      *        END-COMPUTE
+      *    ELSE
+               COMPUTE RELATIVE-ADDRESS-IN-HEAP
+                   = ((CNTR-RCD-WRITTEN - 1) * DATA-LENGTH)
+               END-COMPUTE
+      *    END-IF.
+               MOVE SPACES                 TO HEAP-STATUS
+               MOVE HEAP-ID                TO REC-HEAP-ID
+               MOVE CNTR-RCD-WRITTEN       TO REC-RCD-COUNT
+
+      D    DISPLAY ' '.
+      D    DISPLAY 'CNTR-RCD-WRITTEN IS '
+      D        CNTR-RCD-WRITTEN
+      D    DISPLAY 'RECORD WRITTEN AT OFFSET '
+      D        RELATIVE-ADDRESS-IN-HEAP
+      D    DISPLAY 'DATA LENGTH IS '
+      D        DATA-LENGTH
+      D    DISPLAY REC-RECORD-AREA (1:50).
+      D    DISPLAY ' '.
+
+      *    IF  CNTR-RCD-WRITTEN >= 1305
+      *    AND CNTR-RCD-WRITTEN <= 1329
+      *        DISPLAY ' IN CBL_WRITE_VFILE  '
+      *            'HEAP ID ' HEAP-ID
+      *            ' REL ADDR ' RELATIVE-ADDRESS-IN-HEAP
+      *            ' DATA LEN ' DATA-LENGTH
+      *    END-IF.
+
+           CALL "CBL_WRITE_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-RECORD-AREA.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-WRITTEN
+               GO TO 0000-STOP
+           END-IF.
+
+       4000-EXIT.  EXIT.
+
+
+       5000-READ-VFILE.
+
+           COMPUTE RELATIVE-ADDRESS-IN-HEAP
+               = ((CNTR-RCD-READ - 1) * DATA-LENGTH)
+           END-COMPUTE.
+
+           MOVE SPACES                 TO HEAP-STATUS.
+           MOVE HEAP-ID                TO REC-HEAP-ID.
+           MOVE CNTR-RCD-READ          TO REC-RCD-COUNT.
+
+           CALL "CBL_READ_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-BUFFER.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-READ
+               GO TO 0000-STOP
+           END-IF.
+
+           IF REC-RECORD-AREA NOT EQUAL REC-BUFFER
+               DISPLAY ' '
+               DISPLAY ' CORRUPT RECORD AT ' CNTR-RCD-READ
+               DISPLAY 'COMPARE RECORD .... THEN REC-BUFFER IN HEX'
+               DISPLAY '-------------------'
+               DISPLAY REC-RECORD-AREA  (1:50)
+               DISPLAY '-------------------'
+               DISPLAY REC-BUFFER       (1:50)
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (1:50))
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (51:50))
+               DISPLAY '-------------------'
+               DISPLAY ' '
+      *        GO TO 0000-STOP
+           END-IF.
+
+       5000-EXIT.  EXIT.
+
+
+       6000-CLOSE-VFILE-ALL.
+
+           MOVE ZERO                   TO HEAP-ID.
+
+           PERFORM 512 TIMES
+               ADD +1                  TO HEAP-ID
+               CALL 'CBL_CLOSE_VFILE'
+                   USING BY VALUE HEAP-ID
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_CLOSE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT HEAP ID '
+                       HEAP-ID
+                   GO TO 0000-STOP
+               END-IF
+           END-PERFORM.
+
+       6000-EXIT.  EXIT.
+
+
+       END PROGRAM VTEST005.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([VFILE system routines, GC extension])
+AT_KEYWORDS([extensions runfile virtual heap
+CBL_GC_OPEN_VFILE CBL_GC_WRITE_VFILE CBL_GC_READ_VFILE CBL_GC_CLOSE_VFILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. VTEST006.
+      *AUTHOR.  CHUCK HAATVEDT
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+
+       OBJECT-COMPUTER. IBM-PC.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  HEAP-ID                    PIC 9(4) COMP-5.
+       01  RELATIVE-ADDRESS-IN-HEAP   PIC S9(18) COMP-5.
+       01  DATA-LENGTH                PIC S9(9) COMP-5.
+       01  HEAP-STATUS                PIC X(2).
+       01  STATUS-CODE                PIC S9(4) COMP-5.
+
+       01  PTR-HEAP                        USAGE POINTER.
+
+       01  CNTR-COUNTERS.
+           05  CNTR-HEAP                   PIC S9(9) COMP-5.
+           05  CNTR-RCD-WRITTEN            PIC S9(9) COMP-5.
+           05  CNTR-RCD-READ               PIC S9(9) COMP-5.
+           05  CNTR-RCD-LENGTH             PIC S9(9) COMP-5.
+           05  CNTR-RELATVIE-POS           PIC S9(9) COMP-5.
+
+       01  TIME-START.
+           05  TS-HH                       PIC 99.
+           05  TS-MM                       PIC 99.
+           05  TS-SS                       PIC 99.
+           05  TS-MS                       PIC 9(6).
+
+       01  TIME-WRITE.
+           05  TW-HH                       PIC 99.
+           05  TW-MM                       PIC 99.
+           05  TW-SS                       PIC 99.
+           05  TW-MS                       PIC 9(6).
+
+       01  TIME-READ.
+           05  TR-HH                       PIC 99.
+           05  TR-MM                       PIC 99.
+           05  TR-SS                       PIC 99.
+           05  TR-MS                       PIC 9(6).
+
+       01  TMP.
+           05  TMP-DOUBLE                  PIC S9(18) COMP-5.
+           05  TMP-MILLISECONDS            PIC S9(9) COMP-5.
+           05  TMP-NBR                     PIC S9(9) COMP-5.
+           05  TMP-KB                      PIC X(8).
+           05  TMP-DISPLAY                 PIC ZZZ,ZZZ,ZZ9.
+           05  TMP-DISPLAY-LONG            PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.
+
+       01  REC-BUFFER                      PIC X(1000).
+
+       01  REC-RECORD-AREA.
+           05  FILLER                      PIC X(7)  VALUE 'HEAPID '.
+           05  REC-HEAP-ID                 PIC 9(3).
+           05  FILLER                      PIC X(8)  VALUE ' RECORD '.
+           05  REC-RCD-COUNT               PIC ZZZ,ZZZ,ZZ9.
+           05  FILLER                      PIC X     VALUE SPACE.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(900)
+                   VALUE LOW-VALUES.
+
+
+       01  ENV-TEXT                        PIC X(256).
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+
+           DISPLAY 'COB_HEAP_MEMORY'       UPON ENVIRONMENT-NAME.
+           DISPLAY '16K'                   UPON ENVIRONMENT-VALUE.
+
+           DISPLAY 'COB_HEAP_MEMORY_64'    UPON ENVIRONMENT-NAME.
+           DISPLAY '256K'                  UPON ENVIRONMENT-VALUE.
+
+           MOVE ZERO                   TO CNTR-HEAP.
+           MOVE LENGTH OF REC-RECORD-AREA
+                                       TO DATA-LENGTH.
+      D    DISPLAY ' LENGTH OF DATA RECORD IS ' DATA-LENGTH.
+
+      D    ACCEPT TIME-START FROM MICROSECOND-TIME.
+
+           PERFORM WITH TEST AFTER
+               UNTIL CNTR-HEAP >= 1
+                  OR RETURN-CODE NOT EQUAL ZERO
+                   ADD +1              TO CNTR-HEAP
+                   PERFORM 2000-OPEN-VFILE THRU 2000-EXIT
+           END-PERFORM.
+
+           MOVE ZERO                   TO CNTR-RCD-WRITTEN.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-WRITTEN
+      D        IF CNTR-RCD-WRITTEN = 1311
+      D           CONTINUE
+      D        END-IF
+               PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-WRITE FROM MICROSECOND-TIME.
+
+           MOVE ZERO                   TO CNTR-RCD-READ.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-READ
+               PERFORM 5000-READ-VFILE THRU 5000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-READ  FROM MICROSECOND-TIME.
+
+      D    DISPLAY 'THIS IS THE TIME USED TO READ '
+      D        'AND WRITE 5,000,000 '
+      D        DATA-LENGTH ' BYTE SIZE'.
+      D
+      D    DISPLAY 'START TIME IS ==> '
+      D        TS-HH ':'
+      D        TS-MM ':'
+      D        TS-SS ':'
+      D        TS-MS.
+      D
+      D    DISPLAY 'WRITE TIME IS ==> '
+      D        TW-HH ':'
+      D        TW-MM ':'
+      D        TW-SS ':'
+      D        TW-MS.
+      D
+      D    DISPLAY ' READ TIME IS ==> '
+      D        TR-HH ':'
+      D        TR-MM ':'
+      D        TR-SS ':'
+      D        TR-MS.
+
+       0000-STOP.
+
+           GOBACK.
+
+       0000-EXIT.  EXIT.
+
+       2000-OPEN-VFILE.
+
+           CALL 'CBL_OPEN_VFILE'
+               USING BY REFERENCE HEAP-ID
+                     BY REFERENCE HEAP-STATUS.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP.
+
+      D    DISPLAY ' HEAP-ID IS ==> ' HEAP-ID.
+
+       2000-EXIT.  EXIT.
+       4000-WRITE-VFILE.
+
+      *    IF CNTR-RCD-WRITTEN = 11
+      *        COMPUTE RELATIVE-ADDRESS-IN-HEAP
+      *            = ((5                - 1) * DATA-LENGTH)
+      *        END-COMPUTE
+      *    ELSE
+               COMPUTE RELATIVE-ADDRESS-IN-HEAP
+                   = ((CNTR-RCD-WRITTEN - 1) * DATA-LENGTH)
+               END-COMPUTE
+      *    END-IF.
+               MOVE SPACES                 TO HEAP-STATUS
+               MOVE HEAP-ID                TO REC-HEAP-ID
+               MOVE CNTR-RCD-WRITTEN       TO REC-RCD-COUNT
+
+      D    DISPLAY ' '.
+      D    DISPLAY 'CNTR-RCD-WRITTEN IS '
+      D        CNTR-RCD-WRITTEN
+      D    DISPLAY 'RECORD WRITTEN AT OFFSET '
+      D        RELATIVE-ADDRESS-IN-HEAP
+      D    DISPLAY 'DATA LENGTH IS '
+      D        DATA-LENGTH
+      D    DISPLAY REC-RECORD-AREA (1:50).
+      D    DISPLAY ' '.
+
+      *    IF  CNTR-RCD-WRITTEN >= 1305
+      *    AND CNTR-RCD-WRITTEN <= 1329
+      *        DISPLAY ' IN CBL_WRITE_VFILE  '
+      *            'HEAP ID ' HEAP-ID
+      *            ' REL ADDR ' RELATIVE-ADDRESS-IN-HEAP
+      *            ' DATA LEN ' DATA-LENGTH
+      *    END-IF.
+
+           CALL "CBL_GC_WRITE_VFILE64"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-RECORD-AREA.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-WRITTEN
+               GO TO 0000-STOP
+           END-IF.
+
+       4000-EXIT.  EXIT.
+
+
+       5000-READ-VFILE.
+
+           COMPUTE RELATIVE-ADDRESS-IN-HEAP
+               = ((CNTR-RCD-READ - 1) * DATA-LENGTH)
+           END-COMPUTE.
+
+           MOVE SPACES                 TO HEAP-STATUS.
+           MOVE HEAP-ID                TO REC-HEAP-ID.
+           MOVE CNTR-RCD-READ          TO REC-RCD-COUNT.
+
+           CALL "CBL_GC_READ_VFILE64"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-BUFFER.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-READ
+               GO TO 0000-STOP
+           END-IF.
+
+           IF REC-RECORD-AREA (1:100) NOT EQUAL REC-BUFFER (1:100)
+               DISPLAY ' '
+               DISPLAY ' CORRUPT RECORD AT ' CNTR-RCD-READ
+               DISPLAY 'COMPARE RECORD .... THEN REC-BUFFER IN HEX'
+               DISPLAY '-------------------'
+               DISPLAY REC-RECORD-AREA  (1:50)
+               DISPLAY '-------------------'
+               DISPLAY REC-BUFFER       (1:50)
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (1:50))
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (51:50))
+               DISPLAY '-------------------'
+               DISPLAY ' '
+      *        GO TO 0000-STOP
+           END-IF.
+
+       5000-EXIT.  EXIT.
+
+
+       6000-CLOSE-VFILE-ALL.
+
+           MOVE ZERO                   TO HEAP-ID.
+
+           PERFORM 512 TIMES
+               ADD +1                  TO HEAP-ID
+               CALL 'CBL_CLOSE_VFILE'
+                   USING BY VALUE HEAP-ID
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_CLOSE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT HEAP ID '
+                       HEAP-ID
+                   GO TO 0000-STOP
+               END-IF
+           END-PERFORM.
+
+       6000-EXIT.  EXIT.
+
+
+       END PROGRAM VTEST006.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([VFILE system routines, error handling])
+AT_KEYWORDS([extensions runfile virtual heap
+CBL_OPEN_VFILE CBL_WRITE_VFILE CBL_READ_VFILE CBL_CLOSE_VFILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. VTEST007.
+      *AUTHOR.  CHUCK HAATVEDT
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+
+       OBJECT-COMPUTER. IBM-PC.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+      *  VFILE RETURN-CODE ERRORS
+
+       78  MAX-HEAPS-EXCEEDED          VALUE  41.
+       78  ERROR-OUT-OF-DATA-RANGE     VALUE  44.
+       78  HEAP-OUT-BOUNDS             VALUE  45.
+
+       01  HEAP-ID                    PIC 9(4) COMP-5.
+       01  RELATIVE-ADDRESS-IN-HEAP   PIC S9(9) COMP-5.
+       01  DATA-LENGTH                PIC S9(9) COMP-5.
+       01  HEAP-STATUS                PIC X(2).
+       01  STATUS-CODE                PIC S9(4) COMP-5.
+
+       01  PTR-HEAP                        USAGE POINTER.
+
+       01  CNTR-COUNTERS.
+           05  CNTR-HEAP                   PIC S9(9) COMP-5.
+           05  CNTR-RCD-WRITTEN            PIC S9(9) COMP-5.
+           05  CNTR-RCD-READ               PIC S9(9) COMP-5.
+           05  CNTR-RCD-LENGTH             PIC S9(9) COMP-5.
+           05  CNTR-RELATVIE-POS           PIC S9(9) COMP-5.
+
+       01  TIME-START.
+           05  TS-HH                       PIC 99.
+           05  TS-MM                       PIC 99.
+           05  TS-SS                       PIC 99.
+           05  TS-MS                       PIC 9(6).
+
+       01  TIME-WRITE.
+           05  TW-HH                       PIC 99.
+           05  TW-MM                       PIC 99.
+           05  TW-SS                       PIC 99.
+           05  TW-MS                       PIC 9(6).
+
+       01  TIME-READ.
+           05  TR-HH                       PIC 99.
+           05  TR-MM                       PIC 99.
+           05  TR-SS                       PIC 99.
+           05  TR-MS                       PIC 9(6).
+
+       01  TMP.
+           05  TMP-DOUBLE                  PIC S9(18) COMP-5.
+           05  TMP-MILLISECONDS            PIC S9(9) COMP-5.
+           05  TMP-NBR                     PIC S9(9) COMP-5.
+           05  TMP-KB                      PIC X(8).
+           05  TMP-DISPLAY                 PIC ZZZ,ZZZ,ZZ9.
+           05  TMP-DISPLAY-LONG            PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.
+
+       01  REC-BUFFER                      PIC X(100).
+
+       01  REC-RECORD-AREA.
+           05  FILLER                      PIC X(7)  VALUE 'HEAPID '.
+           05  REC-HEAP-ID                 PIC 9(3).
+           05  FILLER                      PIC X(8)  VALUE ' RECORD '.
+           05  REC-RCD-COUNT               PIC ZZZ,ZZZ,ZZ9.
+           05  FILLER                      PIC X     VALUE SPACE.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+
+
+       01  ENV-TEXT                        PIC X(256).
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+
+           DISPLAY 'COB_HEAP_MEMORY'       UPON ENVIRONMENT-NAME.
+           DISPLAY '16K'                   UPON ENVIRONMENT-VALUE.
+
+           DISPLAY 'COB_HEAP_MEMORY_64'    UPON ENVIRONMENT-NAME.
+           DISPLAY '256K'                  UPON ENVIRONMENT-VALUE.
+
+           MOVE ZERO                   TO CNTR-HEAP.
+           MOVE LENGTH OF REC-RECORD-AREA
+                                       TO DATA-LENGTH.
+      D    DISPLAY ' LENGTH OF DATA RECORD IS ' DATA-LENGTH.
+
+      D    ACCEPT TIME-START FROM MICROSECOND-TIME.
+
+           PERFORM WITH TEST AFTER
+               UNTIL CNTR-HEAP >= 513
+                  OR RETURN-CODE NOT EQUAL ZERO
+                   ADD +1              TO CNTR-HEAP
+                   PERFORM 2000-OPEN-VFILE THRU 2000-EXIT
+           END-PERFORM.
+
+           PERFORM 6000-CLOSE-VFILE-ALL THRU 6000-EXIT.
+
+           MOVE +1                     TO CNTR-RCD-WRITTEN.
+           MOVE 44                     TO HEAP-ID.
+
+           PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+
+           MOVE +1                     TO CNTR-RCD-WRITTEN.
+           MOVE 999                    TO HEAP-ID.
+
+           PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+
+           MOVE +1                     TO CNTR-HEAP.
+           PERFORM 2000-OPEN-VFILE THRU 2000-EXIT.
+
+           MOVE ZERO                   TO CNTR-RCD-WRITTEN.
+
+           PERFORM 10        TIMES
+               ADD +1                  TO CNTR-RCD-WRITTEN
+      D        IF CNTR-RCD-WRITTEN = 1311
+      D            CONTINUE
+      D        END-IF
+               PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-WRITE FROM MICROSECOND-TIME.
+
+           MOVE ZERO                   TO CNTR-RCD-READ.
+
+           PERFORM 10        TIMES
+               ADD +1                  TO CNTR-RCD-READ
+               PERFORM 5000-READ-VFILE THRU 5000-EXIT
+           END-PERFORM.
+
+           MOVE 10000              TO CNTR-RCD-READ.
+           PERFORM 5000-READ-VFILE THRU 5000-EXIT
+
+           PERFORM 6000-CLOSE-VFILE-ALL THRU 6000-EXIT.
+
+      D    ACCEPT TIME-READ  FROM MICROSECOND-TIME.
+
+      D    DISPLAY 'THIS IS THE TIME USED TO READ '
+      D        'AND WRITE 5,000,000 '
+      D        DATA-LENGTH ' BYTE SIZE'.
+      D
+      D    DISPLAY 'START TIME IS ==> '
+      D        TS-HH ':'
+      D        TS-MM ':'
+      D        TS-SS ':'
+      D        TS-MS.
+      D
+      D    DISPLAY 'WRITE TIME IS ==> '
+      D        TW-HH ':'
+      D        TW-MM ':'
+      D        TW-SS ':'
+      D        TW-MS.
+      D
+      D    DISPLAY ' READ TIME IS ==> '
+      D        TR-HH ':'
+      D        TR-MM ':'
+      D        TR-SS ':'
+      D        TR-MS.
+
+       0000-STOP.
+
+           GOBACK.
+
+       0000-EXIT.  EXIT.
+
+       2000-OPEN-VFILE.
+
+           CALL 'CBL_OPEN_VFILE'
+               USING BY REFERENCE HEAP-ID
+                     BY REFERENCE HEAP-STATUS.
+
+           IF  CNTR-HEAP >  512
+           AND (RETURN-CODE NOT EQUAL MAX-HEAPS-EXCEEDED
+             OR HEAP-STATUS (1:1) EQUAL '0')
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP
+                   '  RETURN CODE IS --> '
+                   RETURN-CODE
+                   '  HEAP-STATUS IS --> '
+                   HEAP-STATUS
+           END-IF.
+
+           IF  CNTR-HEAP <= 512
+           AND (RETURN-CODE NOT EQUAL ZERO
+             OR HEAP-STATUS (1:1) NOT EQUAL '0')
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP
+                   '  RETURN CODE IS --> '
+                   RETURN-CODE
+                   '  HEAP-STATUS IS --> '
+                   HEAP-STATUS
+           END-IF.
+
+      D    DISPLAY ' HEAP-ID IS ==> ' HEAP-ID.
+
+       2000-EXIT.  EXIT.
+
+
+       4000-WRITE-VFILE.
+
+      *    IF CNTR-RCD-WRITTEN = 11
+      *        COMPUTE RELATIVE-ADDRESS-IN-HEAP
+      *            = ((5                - 1) * DATA-LENGTH)
+      *        END-COMPUTE
+      *    ELSE
+               COMPUTE RELATIVE-ADDRESS-IN-HEAP
+                   = ((CNTR-RCD-WRITTEN - 1) * DATA-LENGTH)
+               END-COMPUTE
+      *    END-IF.
+               MOVE SPACES                 TO HEAP-STATUS
+               MOVE HEAP-ID                TO REC-HEAP-ID
+               MOVE CNTR-RCD-WRITTEN       TO REC-RCD-COUNT
+
+      D    DISPLAY ' '.
+      D    DISPLAY 'CNTR-RCD-WRITTEN IS '
+      D        CNTR-RCD-WRITTEN
+      D    DISPLAY 'RECORD WRITTEN AT OFFSET '
+      D        RELATIVE-ADDRESS-IN-HEAP
+      D    DISPLAY 'DATA LENGTH IS '
+      D        DATA-LENGTH
+      D    DISPLAY REC-RECORD-AREA (1:50).
+      D    DISPLAY ' '.
+
+      *    IF  CNTR-RCD-WRITTEN >= 1305
+      *    AND CNTR-RCD-WRITTEN <= 1329
+      *        DISPLAY ' IN CBL_WRITE_VFILE  '
+      *            'HEAP ID ' HEAP-ID
+      *            ' REL ADDR ' RELATIVE-ADDRESS-IN-HEAP
+      *            ' DATA LEN ' DATA-LENGTH
+      *    END-IF.
+
+           CALL "CBL_WRITE_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-RECORD-AREA.
+
+           IF HEAP-ID EQUAL 999
+               IF RETURN-CODE EQUAL HEAP-OUT-BOUNDS
+                   GO TO 4000-EXIT
+               ELSE
+                   DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-WRITTEN
+                       ' HEAP-ID ==> '
+                       HEAP-ID
+      D            GO TO 0000-STOP
+               END-IF
+           END-IF.
+
+           IF HEAP-ID EQUAL 44
+               IF RETURN-CODE NOT EQUAL HEAP-OUT-BOUNDS
+                   DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-WRITTEN
+                       ' HEAP-ID ==> '
+                       HEAP-ID
+                   GO TO 0000-STOP
+               END-IF
+           ELSE
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-WRITTEN
+                       ' HEAP-ID ==> '
+                       HEAP-ID
+      D            GO TO 00000-STOP
+               END-IF
+           END-IF.
+
+       4000-EXIT.  EXIT.
+
+
+       5000-READ-VFILE.
+
+           COMPUTE RELATIVE-ADDRESS-IN-HEAP
+               = ((CNTR-RCD-READ - 1) * DATA-LENGTH)
+           END-COMPUTE.
+
+           MOVE SPACES                 TO HEAP-STATUS.
+           MOVE HEAP-ID                TO REC-HEAP-ID.
+           MOVE CNTR-RCD-READ          TO REC-RCD-COUNT.
+
+           CALL "CBL_READ_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-BUFFER.
+
+           IF CNTR-RCD-READ > 100
+      *>       Note: we may drop this as it isn't compatible to MF/Fuji
+               IF RETURN-CODE EQUAL ERROR-OUT-OF-DATA-RANGE
+                   GO TO 5000-EXIT
+               ELSE
+                   DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-READ
+                   GO TO 5000-EXIT
+               END-IF
+           ELSE
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-READ
+      D            GO TO 0000-STOP
+               END-IF
+           END-IF.
+
+           IF REC-RECORD-AREA NOT EQUAL REC-BUFFER
+               DISPLAY ' '
+               DISPLAY ' CORRUPT RECORD AT ' CNTR-RCD-READ
+               DISPLAY 'COMPARE RECORD .... THEN REC-BUFFER IN HEX'
+               DISPLAY '-------------------'
+               DISPLAY REC-RECORD-AREA  (1:50)
+               DISPLAY '-------------------'
+               DISPLAY REC-BUFFER       (1:50)
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (1:50))
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (51:50))
+               DISPLAY '-------------------'
+               DISPLAY ' '
+      *        GO TO 0000-STOP
+           END-IF.
+
+       5000-EXIT.  EXIT.
+
+
+       6000-CLOSE-VFILE-ALL.
+
+           MOVE ZERO                   TO HEAP-ID.
+
+           PERFORM 512 TIMES
+               ADD +1                  TO HEAP-ID
+               CALL 'CBL_CLOSE_VFILE'
+                   USING BY VALUE HEAP-ID
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_CLOSE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT HEAP ID '
+                       HEAP-ID
+      D            GO TO 0000-STOP
+               END-IF
+           END-PERFORM.
+
+       6000-EXIT.  EXIT.
+
+
+       END PROGRAM VTEST007.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: prog.cob:248: warning: heap out of bounds 999
+])
 
 AT_CLEANUP
 

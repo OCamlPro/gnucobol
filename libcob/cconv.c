@@ -149,7 +149,7 @@ cob_load_collation (const char *col_name,
 	   ) {
 		/* If it's a path, use it as-is, including trailing NUL */
 		n = strlen (col_name) + 1;
-		if (n >= sizeof (filename)) {
+		if (n >= COB_FILE_MAX) {
 			return -1;
 		}
 		memcpy (filename, col_name, n);
@@ -159,11 +159,10 @@ cob_load_collation (const char *col_name,
 		if (config_dir == NULL) {
 			config_dir = COB_CONFIG_DIR;
 		}
-		n = strlen (config_dir) + strlen (col_name) + 7; /* slash + .ttbl + NUL */
-		if (n >= sizeof (filename)) {
+		n = snprintf (filename, COB_FILE_MAX, "%s%c%s.ttbl", config_dir, SLASH_CHAR, col_name);
+		if (n >= COB_FILE_MAX) {
 			return -1;
 		}
-		sprintf (filename, "%s%c%s.ttbl", config_dir, SLASH_CHAR, col_name);
 	}
 
 	/* FIXME: use conf_runtime_error / adjusted cob_load_config_file later */

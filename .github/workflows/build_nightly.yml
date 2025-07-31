@@ -467,10 +467,7 @@ jobs:
   coverage:
     name: Coverage and Warnings
     needs: build
-# Since the latest Ubuntu image, lcov fails complaining about negative branch counts,
-# and using fprofile-update=atomic as suggested does not help, so use the previous image
-#    runs-on: ubuntu-latest
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:

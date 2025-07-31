@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2024 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -12161,8 +12161,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:26: error: subscript of 'TSTY' out of bounds: 0
 ])
 
-# Runtime checks disable, subscript may be zero or even negative
-AT_CHECK([$COBC -x -g -fsource-location prog.cob -o prog_unsafe], [0], [], [])
+# Runtime checks disabled, subscript may be zero or even negative
+AT_CHECK([$COMPILE -fno-ec=bound -o prog_unsafe prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog_unsafe], [0],
 [UNUP: 00000000 is :CCCC:
 SNUP: +00000000 is :CCCC:

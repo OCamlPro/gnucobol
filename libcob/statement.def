@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2022-2023, 2025 Free Software Foundation, Inc.
    Written by Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -19,12 +19,19 @@
 */
 
 /* COB_STATEMENT (name, string representation)
-   
+
    the order of these definitions may not change and new entries
    must always be added to the end, as those are used both as enums
    (cobc + libcob intern) _and_ as their integer values in generated
    modules: cob_trace_statement (STMT_ADD) -> cob_trace_statement (1)
 */
+
+#ifndef COB_STATEMENT
+	#define DUMMY_ENUM
+	#define COB_STATEMENT(name,string)	name = sizeof (string),
+	/* dummy-definition for lsp-supported editors */
+	enum statement_dummy {
+#endif
 
 COB_STATEMENT (STMT_ADD, "ADD")
 COB_STATEMENT (STMT_SUBTRACT, "SUBTRACT")
@@ -161,11 +168,18 @@ COB_STATEMENT (STMT_SERVICE, "SERVICE")
 COB_STATEMENT (STMT_TRANSFORM, "TRANSFORM")
 
 COB_STATEMENT (STMT_JSON_GENERATE, "JSON GENERATE")
-COB_STATEMENT (STMT_JSON_PARSE, "JSON GENERATE")
+COB_STATEMENT (STMT_JSON_PARSE, "JSON PARSE")
 
 COB_STATEMENT (STMT_XML_GENERATE, "XML GENERATE")
-COB_STATEMENT (STMT_XML_PARSE, "XML GENERATE")
+COB_STATEMENT (STMT_XML_PARSE, "XML PARSE")
 
 COB_STATEMENT (STMT_INIT_STORAGE, "INIT STORAGE")	/* codegen intern only */
 COB_STATEMENT (STMT_BEFORE_CALL, "INIT CALL")	/* codegen intern only (runtime checks) */
 COB_STATEMENT (STMT_BEFORE_UDF, "INIT UDF")	/* codegen intern only (runtime checks) */
+
+
+#ifdef DUMMY_ENUM
+	/* dummy-definition for lsp-supported editors */
+		DUMMY_END
+	};
+#endif

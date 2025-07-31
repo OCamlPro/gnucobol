@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2023 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -18,6 +18,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+EXTRA_DIST = xmlevent.def
 
 if LOCAL_CJSON
 nodist_libcob_la_SOURCES = cJSON.c
@@ -128,7 +130,7 @@ endif
 lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
 
-EXTRA_DIST = fisam.c
+EXTRA_DIST += fisam.c
 pkgincludedir = $(includedir)/libcob
 pkginclude_HEADERS = common.h version.h cobgetopt.h cobcapi.h \
 	exception.def exception-io.def statement.def
@@ -137,13 +139,13 @@ pkginclude_HEADERS = common.h version.h cobgetopt.h cobcapi.h \
 include $(top_srcdir)/aminclude_static.am
 
 clean-local: code-coverage-clean
-dist-clean-local: code-coverage-dist-clean
+distclean-local: code-coverage-dist-clean
 
 CODE_COVERAGE_BRANCH_COVERAGE=1
 CODE_COVERAGE_LCOV_OPTIONS =  --no-external
 
 #HELPSOURCES = $(top_srcdir)/bin/cobcrun.c $(top_srcdir)/configure.ac
-#HELP2MAN_OPTS = --info-page=$(PACKAGE) -specialflag
+#HELP2MAN_OPTS = --info-page=$(PACKAGE) -n "GnuCOBOL runtime library and API functions" -h "-special -flag"
 #if MAKE_HAS_PREREQ_ONLY
 #libcob.3: $(HELPSOURCES) | $(COBCRUN)
 #	"$(top_builddir)/pre-inst-env" $(HELP2MAN) --output=$@ $(HELP2MAN_OPTS) $(COBCRUN)
