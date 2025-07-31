@@ -1093,18 +1093,27 @@ dobuild:
 		vmode |= (omode | lmode | fmode);
 		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
 		if (isfd < 0) {
-			if (ISERRNO == EFLOCKED)
+			if (ISERRNO == EFLOCKED) {
 				return COB_STATUS_61_FILE_SHARING;
-			if ((ISERRNO == EEXIST || ISERRNO == EBADARG)) {
+			}
+			if ((ISERRNO == EEXIST || ISERRNO == EBADARG)
+#if 1 /* CHECKME: guard added by Simon, needed ? */
+			 && omode == ISOUTPUT
+#endif
+			) {
 				/* Erase file and redo the 'isbuild' */
 				isam_file_delete (a, f, filename);
+#if	ISVARLEN != 0
 				if (f->record_min != f->record_max) {
 					ISRECLEN = f->record_min;
 				}
+#endif
 				ISERRNO = 0;
 				isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
 				f->flag_file_lock = 1;
 			}
+			/* TODO: more checks in case isfd < 0,
+			   allowing better io status than 30 */
 		} else {
 			f->flag_file_lock = 1;
 		}

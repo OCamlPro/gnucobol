@@ -53,9 +53,9 @@
 #endif
 #define GC_C_VERSION	CB_XSTRINGIFY(__VERSION__)
 
-#elif	defined(__xlc__)
+#elif	defined(__IBMC__)	/* note: defined from __xlc__, if missing */
 #define GC_C_VERSION_PRF	"(IBM XL C/C++) "
-#define GC_C_VERSION	CB_XSTRINGIFY(__xlc__)
+#define GC_C_VERSION	CB_XSTRINGIFY(__IBMC__)
 
 #elif	defined(__SUNPRO_C)
 #define GC_C_VERSION_PRF	"(Sun C) "
@@ -142,7 +142,7 @@
 #define	CB_COPT_3	" -xO2"	/* CHECKME: Oracle docs are confusing, is -xO3 working? */
 #define	CB_COPT_S	" -xO1 -xspace"
 
-#elif	defined(__xlc__)
+#elif	defined(__IBMC__)	/* note: defined from __xlc__, if missing */
 #define	CB_COPT_0	" -O0"
 #define	CB_COPT_1	" -O"
 #define	CB_COPT_2	" -O2"

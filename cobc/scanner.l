@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 
@@ -143,7 +143,7 @@ enum cb_literal_type {
 	CB_LITERAL_DEFAULT,
 	CB_LITERAL_U,  /* UTF-8, work-in-progress */
 	CB_LITERAL_N,
-	CB_LITERAL_NC,
+	CB_LITERAL_NC
 };
 
 enum cb_sym_ebcdic_state {
