@@ -30,7 +30,7 @@
 #ifdef COB_NO_UNALIGNED_ATTRIBUTE
 #define UNALIGNED_ATTRIBUTE ""
 #else
-#define UNALIGNED_ATTRIBUTE "__unaligned "
+#define UNALIGNED_ATTRIBUTE ""
 #endif
 
 static void
