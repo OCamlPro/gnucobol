@@ -1565,6 +1565,440 @@ Length is +0000000134 with 02, 03, 01, 04, 00
 AT_CLEANUP
 
 
+
+
+
+
+AT_SETUP([DEPENDING ON with ODOSLIDE])
+AT_KEYWORDS([MOVE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+       DATA DIVISION.
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      *
+       01 WITHOUT-ODO.
+          02 DATA1   PIC X(1).
+          02 DEP1    PIC 9(1) VALUE 0.
+          02 DEP2    PIC 9(1) VALUE 0.
+          02 GROUP1  OCCURS 2 TIMES.
+             03 DATA11   PIC X(1).
+          02 GROUP2  OCCURS 3 TIMES.
+             03 DATA21   PIC X(1).
+          02 DATA3   PIC X(2).
+
+      *
+       01 WITH-ODO.
+          02 ODO-DATA1   PIC X(1).
+          02 ODO-DEP1    PIC 9(1) VALUE 0.
+          02 ODO-DEP2    PIC 9(1) VALUE 0.
+          02 ODO-GROUP1  OCCURS 0 TO 2 TIMES DEPENDING ON ODO-DEP1.
+             03 ODO-DATA11   PIC X(1).
+          02 ODO-GROUP2  OCCURS 0 TO 3 TIMES DEPENDING ON ODO-DEP2.
+             03 ODO-DATA21   PIC X(1).
+          02 ODO-DATA3   PIC X(2).
+
+       77 IX  PIC 9.
+       01 DAT.
+           02 ODO-1 PIC 9.
+           02 ODO-1-DATA OCCURS 1 TO 6 TIMES DEPENDING ON ODO-1
+                PIC 9.
+           02 ODO-2 PIC 9.
+           02 ODO-2-DATA OCCURS 1 TO 6 TIMES DEPENDING ON ODO-2
+                PIC 9.
+           02 ODO-3 PIC XXX.     
+          
+      ******************************************************************
+       PROCEDURE DIVISION.
+      ******************************************************************
+      *
+       TEST1.
+           MOVE "A01  B  CD" TO WITHOUT-ODO
+           DISPLAY "********"
+           DISPLAY "TEST WITHOUT ODO: '" WITHOUT-ODO "'"
+           DISPLAY "DATA1=" DATA1
+           DISPLAY "DEP1="  DEP1.
+           DISPLAY "DEP2="  DEP2
+           DISPLAY "DATA21(1)="  DATA21 (1)
+           DISPLAY "DATA3="  DATA3
+           .
+
+       TEST2.
+           MOVE "A01BCD" TO WITH-ODO 
+           DISPLAY "TEST WITH ODO: '" WITH-ODO 
+                   "' Len:" LENGTH OF WITH-ODO
+           DISPLAY "ODO-DATA1=" ODO-DATA1 "."
+           DISPLAY "ODO-DEP1="  ODO-DEP1 "."
+           DISPLAY "ODO-DEP2="  ODO-DEP2 "."
+           DISPLAY "ODO-DATA21(1)="  ODO-DATA21 (1) "."
+           DISPLAY "ODO-DATA3="  ODO-DATA3 "."
+
+           MOVE "12BCDEF" TO WITH-ODO (2:)
+           DISPLAY "TEST WITH ODO: '" WITH-ODO 
+                   "' Len:" LENGTH OF WITH-ODO
+           DISPLAY "ODO-DATA1=" ODO-DATA1 "."
+           DISPLAY "ODO-DEP1="  ODO-DEP1 "."
+           DISPLAY "ODO-DEP2="  ODO-DEP2 "."
+           DISPLAY "ODO-DATA11(1)="  ODO-DATA11 (1) "."
+           DISPLAY "ODO-DATA21(1)="  ODO-DATA21 (1) "."
+           DISPLAY "ODO-DATA21(2)="  ODO-DATA21 (2) "."
+           DISPLAY "ODO-DATA3="  ODO-DATA3 "."
+
+           MOVE "A23BCDEFGH" TO WITH-ODO (1:)
+           DISPLAY "TEST WITH ODO: '" WITH-ODO 
+                   "' Len:" LENGTH OF WITH-ODO.
+           DISPLAY "ODO-DATA1=" ODO-DATA1 "."
+           DISPLAY "ODO-DEP1="  ODO-DEP1 "."
+           DISPLAY "ODO-DEP2="  ODO-DEP2 "."
+           DISPLAY "ODO-DATA11(1)="  ODO-DATA11 (1) "."
+           DISPLAY "ODO-DATA11(2)="  ODO-DATA11 (2) "."
+           DISPLAY "ODO-DATA21(1)="  ODO-DATA21 (1) "."
+           DISPLAY "ODO-DATA21(2)="  ODO-DATA21 (2) "."
+           DISPLAY "ODO-DATA21(3)="  ODO-DATA21 (3) "."
+           DISPLAY "ODO-DATA3="  ODO-DATA3 "."
+           .
+
+       TEST3.
+           MOVE "A01" TO WITH-ODO (1:3)
+           MOVE "BCD" TO WITH-ODO (4:3)
+           DISPLAY "********"
+           DISPLAY "TEST WITH ODO, SEPERATED: '" WITH-ODO "'"
+           DISPLAY "ODO-DATA1=" ODO-DATA1 "."
+           DISPLAY "ODO-DEP1="  ODO-DEP1 "."
+           DISPLAY "ODO-DEP2="  ODO-DEP2 "."
+           DISPLAY "ODO-DATA21(1)="  ODO-DATA21 (1) "."
+           DISPLAY "ODO-DATA3="  ODO-DATA3 "."
+           .
+  
+
+           DISPLAY "********"
+           MOVE 2 TO ODO-1
+           MOVE 3 TO ODO-2
+           MOVE "End" TO ODO-3
+           PERFORM SHOW-ODO
+           MOVE 2 TO ODO-1
+           MOVE 6 TO ODO-2
+           MOVE "End" TO ODO-3
+           PERFORM SHOW-ODO
+           STOP RUN
+           .
+
+       SHOW-ODO.
+           PERFORM VARYING IX FROM 1 BY 1
+                     UNTIL IX > ODO-1
+               MOVE IX TO ODO-1-DATA (IX)
+           END-PERFORM
+           PERFORM VARYING IX FROM 1 BY 1
+                     UNTIL IX > ODO-2
+               MOVE IX TO ODO-2-DATA (IX)
+           END-PERFORM
+           DISPLAY "Slided ODO : '" DAT "'"
+           .
+])
+
+# AT_CHECK([$COMPILE -std=default -fodoslide prog.cob ], [0], [], [prog.cob:36: warning: ODO-2 does not have a fixed location
+# ])
+
+AT_CHECK([$COMPILE -std=default -fodoslide prog.cob ], [0], [], [ignore])
+
+AT_CHECK([./prog], [0], [********
+TEST WITHOUT ODO: 'A01  B  CD'
+DATA1=A
+DEP1=0
+DEP2=1
+DATA21(1)=B
+DATA3=CD
+TEST WITH ODO: 'A01BCD' Len:6
+ODO-DATA1=A.
+ODO-DEP1=0.
+ODO-DEP2=1.
+ODO-DATA21(1)=B.
+ODO-DATA3=CD.
+TEST WITH ODO: 'A12BCDEF' Len:8
+ODO-DATA1=A.
+ODO-DEP1=1.
+ODO-DEP2=2.
+ODO-DATA11(1)=B.
+ODO-DATA21(1)=C.
+ODO-DATA21(2)=D.
+ODO-DATA3=EF.
+TEST WITH ODO: 'A23BCDEFGH' Len:10
+ODO-DATA1=A.
+ODO-DEP1=2.
+ODO-DEP2=3.
+ODO-DATA11(1)=B.
+ODO-DATA11(2)=C.
+ODO-DATA21(1)=D.
+ODO-DATA21(2)=E.
+ODO-DATA21(3)=F.
+ODO-DATA3=GH.
+********
+TEST WITH ODO, SEPERATED: 'A01BCD'
+ODO-DATA1=A.
+ODO-DEP1=0.
+ODO-DEP2=1.
+ODO-DATA21(1)=B.
+ODO-DATA3=CD.
+********
+Slided ODO : '2123123End'
+Slided ODO : '2126123456End'
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DEPENDING ON with ODOSLIDE])
+AT_KEYWORDS([Subroutine])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01    WS-LINE.
+        03 WS-LINE-LEN PIC 9(5).
+        03 WS-LINE-TEXT.
+           04 WS-BYTE PIC X(1) OCCURS 1 TO 132 DEPENDING WS-LINE-LEN.
+        03 WS-LINE-LEN2 PIC 9(5).
+        03 WS-LINE-TEXT2.
+           04 WS-BYTE2 PIC X(1) OCCURS 1 TO 132 DEPENDING WS-LINE-LEN2.
+
+       PROCEDURE DIVISION.
+       A-MAIN SECTION.
+
+             MOVE 5 TO WS-LINE-LEN
+             MOVE 'Hello' TO WS-LINE-TEXT ( 1 : )
+             MOVE 5 TO WS-LINE-LEN2
+             MOVE 'BYE!!' TO WS-LINE-TEXT2 ( 1 : )
+             DISPLAY '1. Pre CALL DATA :' WS-LINE ': '
+                     'LEN ' LENGTH OF WS-LINE
+             MOVE '00003BYE00003Now..' TO WS-LINE
+             DISPLAY '2. Pre CALL DATA :' WS-LINE ': '
+                     'LEN ' LENGTH OF WS-LINE
+
+             CALL 'BUGSUB' USING WS-LINE
+
+             DISPLAY '3. Post CALL DATA :' WS-LINE-TEXT ': '
+                     'LEN ' LENGTH OF WS-LINE-TEXT
+
+             STOP RUN.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. BUGSUB.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01    WS-CON PIC X(8) VALUE '005Hello'.
+       01    WS-CON2 PIC X(15) VALUE '00009Hello Dog'.
+       LINKAGE SECTION.
+        01  GENERIC-AREA.
+           03 GENERIC-AREA-LEN PIC 9(5).
+           03 GENERIC-AREA-TEXT.
+              04 GEN-BYTE PIC X(1) OCCURS 1 TO 32000
+                    DEPENDING GENERIC-AREA-LEN.
+           03 GENERIC-AREA-LEN2 PIC 9(5).
+           03 GENERIC-AREA-TEXT2.
+              04 GEN-BYTE2 PIC X(1) OCCURS 1 TO 32000
+                    DEPENDING GENERIC-AREA-LEN2.
+
+       PROCEDURE DIVISION USING GENERIC-AREA.
+       A-MAIN SECTION.
+
+          DISPLAY 'In subroutine, Clear'
+          MOVE SPACES    TO GENERIC-AREA-TEXT
+          DISPLAY 'In subroutine, Fill hdr'
+          MOVE WS-CON2   TO GENERIC-AREA 
+          DISPLAY '4. Test Move DATA :' GENERIC-AREA ': '
+                     'LEN ' LENGTH OF GENERIC-AREA
+          DISPLAY 'In subroutine, Fill partial'
+          MOVE WS-CON    TO GENERIC-AREA (3:)
+          DISPLAY '5. Test Move DATA :' GENERIC-AREA ': '
+                     'LEN ' LENGTH OF GENERIC-AREA
+          MOVE 'Bye Bye' TO GENERIC-AREA-TEXT
+          MOVE 7 TO GENERIC-AREA-LEN
+          MOVE 'Bye Bye' TO GENERIC-AREA-TEXT
+          GOBACK.
+
+           END PROGRAM BUGSUB.
+       END PROGRAM prog.
+])
+
+AT_CHECK([cobc -x -std=ibm -w -fodoslide prog.cob ], [0], [], [])
+
+AT_CHECK([./prog], [0], [1. Pre CALL DATA :00005Hello00005BYE!!: LEN 0000000020
+2. Pre CALL DATA :00003BYE00003Now: LEN 0000000016
+In subroutine, Clear
+In subroutine, Fill hdr
+4. Test Move DATA :00009Hello Dog     : LEN 0000000019
+In subroutine, Fill partial
+5. Test Move DATA :00005Hello     : LEN 0000000015
+3. Post CALL DATA :Bye Bye: LEN 0000000007
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DEPENDING ON without ODOSLIDE])
+AT_KEYWORDS([OCCURS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+
+       77  C5    PIC 9(03)  VALUE 6.
+       01  GRP-1.
+           05   FLD-1-0 PIC X(3).
+           05   FLD-1.
+              10   FLD-1-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-1-2 PIC X(5) VALUE "Money".
+                15   FLD-1-3 PIC 99  VALUE 1.
+           05   FLD-1-X PIC X(3).
+       01  GRP-2.
+           05   FLD-2-0 PIC X(3).
+           05   FLD-2.
+              10   FLD-2-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-2-2 PIC X(5) VALUE "Money".
+                15   FLD-2-3 PIC 99  VALUE 1.
+
+       PROCEDURE DIVISION.
+           MOVE 7       TO C5
+           MOVE ALL "*" TO GRP-1
+           DISPLAY "GRP-1:" GRP-1 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-1
+           INITIALIZE FLD-1 ALL TO VALUE
+           MOVE 2       TO FLD-1-3 (2)
+           MOVE 3       TO FLD-1-3 (3)
+           MOVE 4       TO FLD-1-3 (4)
+           MOVE 5       TO FLD-1-3 (5)
+           MOVE 6       TO FLD-1-3 (6)
+           MOVE 7       TO FLD-1-3 (7)
+           MOVE 8       TO FLD-1-3 (8)
+           MOVE 9       TO FLD-1-3 (9)
+           MOVE 7       TO C5
+           MOVE ALL "$" TO FLD-1-0 FLD-1-X
+           DISPLAY "GRP-1:" GRP-1 ":".
+
+           MOVE 4       TO C5
+           MOVE ALL "*" TO GRP-2
+           DISPLAY "GRP-2:" GRP-2 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-2
+           INITIALIZE FLD-2 ALL TO VALUE
+           MOVE 2       TO FLD-2-3 (2)
+           MOVE 3       TO FLD-2-3 (3)
+           MOVE 4       TO FLD-2-3 (4)
+           MOVE 5       TO FLD-2-3 (5)
+           MOVE 6       TO FLD-2-3 (6)
+           MOVE 7       TO FLD-2-3 (7)
+           MOVE 8       TO FLD-2-3 (8)
+           MOVE 9       TO FLD-2-3 (9)
+           MOVE 4       TO C5
+           MOVE ALL "$" TO FLD-2-0
+           DISPLAY "GRP-2:" GRP-2 ":".
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:*********************************************************************:
+GRP-1:$$$Money01Money02Money03Money04Money05Money06Money07Money08Money09$$$:
+GRP-2:*******************************:
+GRP-2:$$$Money01Money02Money03Money04:
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DEPENDING ON with ODOSLIDE])
+AT_KEYWORDS([OCCURS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+
+       77  C5    PIC 9(03)  VALUE 6.
+       01  GRP-1.
+           05   FLD-1-0 PIC X(3).
+           05   FLD-1.
+              10   FLD-1-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-1-2 PIC X(5) VALUE "Money".
+                15   FLD-1-3 PIC 99  VALUE 1.
+           05   FLD-1-X PIC X(3).
+       01  GRP-2.
+           05   FLD-2-0 PIC X(3).
+           05   FLD-2.
+              10   FLD-2-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-2-2 PIC X(5) VALUE "Money".
+                15   FLD-2-3 PIC 99  VALUE 1.
+
+       PROCEDURE DIVISION.
+           MOVE 7       TO C5
+           MOVE ALL "*" TO GRP-1
+           DISPLAY "GRP-1:" GRP-1 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-1
+           INITIALIZE FLD-1 ALL TO VALUE
+           MOVE 2       TO FLD-1-3 (2)
+           MOVE 3       TO FLD-1-3 (3)
+           MOVE 4       TO FLD-1-3 (4)
+           MOVE 5       TO FLD-1-3 (5)
+           MOVE 6       TO FLD-1-3 (6)
+           MOVE 7       TO FLD-1-3 (7)
+           MOVE 8       TO FLD-1-3 (8)
+           MOVE 9       TO FLD-1-3 (9)
+           MOVE 7       TO C5
+           MOVE ALL "$" TO FLD-1-0 FLD-1-X
+           DISPLAY "GRP-1:" GRP-1 ":".
+
+           MOVE 4       TO C5
+           MOVE ALL "*" TO GRP-2
+           DISPLAY "GRP-2:" GRP-2 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-2
+           INITIALIZE FLD-2 ALL TO VALUE
+           MOVE 2       TO FLD-2-3 (2)
+           MOVE 3       TO FLD-2-3 (3)
+           MOVE 4       TO FLD-2-3 (4)
+           MOVE 5       TO FLD-2-3 (5)
+           MOVE 6       TO FLD-2-3 (6)
+           MOVE 7       TO FLD-2-3 (7)
+           MOVE 8       TO FLD-2-3 (8)
+           MOVE 9       TO FLD-2-3 (9)
+           MOVE 4       TO C5
+           MOVE ALL "$" TO FLD-2-0
+           DISPLAY "GRP-2:" GRP-2 ":".
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w -fodoslide prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:*******************************************************:
+GRP-1:$$$Money01Money02Money03Money04Money05Money06Money07$$$:
+GRP-2:*******************************:
+GRP-2:$$$Money01Money02Money03Money04:
+], [])
+
+AT_CLEANUP
+
+
+
+
+
+
+
+
 AT_SETUP([INITIALIZE level 01 OCCURS])
 AT_KEYWORDS([extensions])
 

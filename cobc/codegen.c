@@ -718,7 +718,7 @@ real_field_founder (const struct cb_field *f)
 	return (struct cb_field *)f;
 }
 
-static struct cb_field *
+struct cb_field *
 chk_field_variable_size (struct cb_field *f)
 {
 	if (!f->flag_vsize_done) {
