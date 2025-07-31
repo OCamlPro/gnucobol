@@ -2904,13 +2904,12 @@ is_simple_insertion_char (const char c)
 
 /*
   Returns the first and last characters of a floating insertion string.
-	Returns a zero if no errors encountered or a 1 if an error is encountered.
+  Returns a zero if no errors encountered or a 1 if an error is encountered.
 
-	A floating insertion string is made up of two or more +'s, -'s or currency
-	symbols, optionally with simple insertion characters between them.
-	
-	Note that the non punctuation characters are '.', ',', '/', V, B , 0
-	
+  A floating insertion string is made up of two or more +'s, -'s or currency
+  symbols, optionally with simple insertion characters between them.
+
+  Note that the non punctuation characters are '.', ',', '/', V, B , 0
 */
 static int
 find_floating_insertion_str (const cob_pic_symbol *str,
@@ -2919,7 +2918,7 @@ find_floating_insertion_str (const cob_pic_symbol *str,
 			     const unsigned char float_char)
 {
 
-	int	non_punctuation_found = 0;
+	int		non_punctuation_found = 0;
 	unsigned char	non_punctuation_char;
 
 	for (; str->symbol != '\0'; ++str) {
@@ -2935,13 +2934,13 @@ find_floating_insertion_str (const cob_pic_symbol *str,
 				}
 			}
 			*last = str;
-		} else if ( *first
-					&& str->symbol != '.'
-					&& str->symbol != ','
-					&& str->symbol != 'V'
-					&& str->symbol != 'B'
-					&& str->symbol != '/'
-					&& str->symbol != '0') {
+		} else if (*first
+			 && str->symbol != '.'
+			 && str->symbol != ','
+			 && str->symbol != 'V'
+			 && str->symbol != 'B'
+			 && str->symbol != '/'
+			 && str->symbol != '0') {
 			non_punctuation_found = 1;
 			non_punctuation_char = str->symbol;
 		}
@@ -3622,7 +3621,7 @@ repeat:
 
 		case 'N':
 			if (!(category & PIC_NATIONAL)) {
-			category |= PIC_NATIONAL;
+				category |= PIC_NATIONAL;
 				CB_UNFINISHED ("USAGE NATIONAL");
 			}
 			x_digits += n * 2;
@@ -3759,10 +3758,11 @@ repeat:
 
 		case '+':
 		case '-':
-			if (c == '+')
+			if (c == '+') {
 				pos_count += n;
-			else
+			} else {
 				neg_count += n;
+			}
 			category |= PIC_NUMERIC_EDITED;
 			digits += n;
 			if (s_edit_count == 0) {
@@ -3871,7 +3871,7 @@ repeat:
 	}
 	if (digits == 0 && x_digits == 0) {
 		cb_error (_("PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; "
-					"or at least two of the set +, - and the currency symbol"));
+			    "or at least two of the set +, - and the currency symbol"));
 		error_detected = 1;
 	}
 
@@ -3880,8 +3880,8 @@ repeat:
 	if (pos_count > 1) {
 		float_char = '+';
 		float_count++;
-	} 
-	
+	}
+
 	if (neg_count > 1) {
 		float_char = '-';
 		float_count++;
@@ -3890,10 +3890,11 @@ repeat:
 	if (curency_count > 1) {
 		float_char = currency_symbol;
 		float_count++;
-	} 
+	}
 
-	if (float_count > 1)
+	if (float_count > 1) {
 		float_char = 0xFF;
+	}
 
 	if (!valid_char_order (pic_buff, s_char_seen, float_char)) {
 		error_detected = 1;

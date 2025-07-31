@@ -2548,7 +2548,7 @@ AT_DATA([prog.cob], [
            Exit.
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [delete file
@@ -14123,7 +14123,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [a
 a
@@ -15557,7 +15557,9 @@ TRYING TO WRITE
 ERROR ON FILE-EXT
 EXITING NESTED-PROGRAM-1-2
 ], [])
+
 AT_CLEANUP
+
 
 AT_SETUP([OPEN / CLOSE with multiple filenames])
 AT_KEYWORDS([DECLARATIVES file error])

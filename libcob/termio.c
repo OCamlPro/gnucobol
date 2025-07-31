@@ -108,10 +108,10 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
-	unsigned short	digits;
-	signed short  scale = COB_FIELD_SCALE (f);
+	unsigned short		digits;
+	signed short		scale = COB_FIELD_SCALE (f);
 	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
-	int		size;
+	int			size;
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
@@ -187,7 +187,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 			cob_move (f, &field);
 		}
-		
+
 		/* output of data to viewport */
 		{
 			register unsigned char *q = COB_TERM_BUFF;

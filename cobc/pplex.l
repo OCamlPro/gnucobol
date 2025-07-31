@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -914,6 +914,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NO-SPZERO"	{
 	return NOSPZERO;
   }
+  "NOTRACE"	|
+  "NO-TRACE"	{
+	return NOTRACE;
+  }
   "ODOSLIDE"	{
 	return ODOSLIDE;
   }
@@ -928,6 +932,9 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "SPZERO"	{
 	return SPZERO;
+  }
+  "TRACE"	{
+	return TRACE;
   }
   "SOURCEFORMAT" |
   "SOURCE-FORMAT"	{

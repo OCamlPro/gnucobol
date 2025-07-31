@@ -3583,6 +3583,7 @@ prog.cob:31: error: wrong number of WHEN parameters
 
 AT_CLEANUP
 
+
 AT_SETUP([COBOL-WORDS directive])
 AT_KEYWORDS([misc reserved words])
 
@@ -3920,7 +3921,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [1], [],
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob], [1], [],
 [prog.cob: in paragraph 'MAIN-10':
 prog.cob:19: error: STRING item 'I-X' must be USAGE DISPLAY or NATIONAL
 prog.cob:19: error: STRING item 'I-B' must be USAGE DISPLAY or NATIONAL
@@ -4993,7 +4994,7 @@ prog.cob:9: error: missing left parenthesis
 prog.cob:10: error: '/' operator misplaced
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob ], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
 [prog.cob:6: error: 78 VALUE does not conform to IBM COBOL
 prog.cob:7: error: 78 VALUE does not conform to IBM COBOL
 prog.cob:8: error: 78 VALUE does not conform to IBM COBOL
@@ -5289,7 +5290,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob ], [0], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:15: warning: expression '115' EQUALS '200' is always FALSE
 prog.cob:16: warning: expression '200' EQUALS '115' is always FALSE
 prog.cob:17: warning: expression '200' EQUALS '315' is always FALSE
@@ -5657,6 +5658,7 @@ AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([CONSTANT LENGTH / BYTE-LENGTH])
 AT_KEYWORDS([misc])
@@ -8096,6 +8098,7 @@ prog.cob:15: warning: start of statement in Area A
 
 AT_CLEANUP
 
+
 AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
 AT_KEYWORDS([misc directive missing-periods])
 
@@ -8280,6 +8283,7 @@ pgm1.cob:18: error: start of statement in Area A
 
 AT_CLEANUP
 
+
 AT_SETUP([autodetect format])
 AT_KEYWORDS([cobc free fixed format])
 
@@ -8353,6 +8357,7 @@ AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed domfixed.cob], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([context sensitive alias])
 AT_KEYWORDS([misc context alias])

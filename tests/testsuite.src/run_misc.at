@@ -7762,7 +7762,7 @@ AT_CLEANUP
 AT_SETUP([READY TRACE / RESET TRACE])
 AT_KEYWORDS([runmisc -ftrace -ftraceall -fsource-location
 CALL RECURSIVE RETURN-CODE SEARCH
-COB_PHYSICAL_CANCEL COB_PRE_LOAD])
+COB_PHYSICAL_CANCEL COB_PRE_LOAD NOTRACE])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -8227,6 +8227,75 @@ Program-Id:  caller                      SEARCH VARYING                  Line:  
 Program-Id:  caller                      SEARCH VARYING                  Line:     61
 Program-Id:  caller                      AT END                          Line:     64
 Program-Id:  caller                      STOP RUN                        Line:     66
+])
+
+
+AT_DATA([mini.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      mini.
+       PROCEDURE        DIVISION.
+       SOME-SEC SECTION.
+       SOME-PAR.
+           READY TRACE
+           PERFORM OTHER-SEC
+           RESET TRACE
+           MOVE 0 TO RETURN-CODE.
+       END-PAR.
+           GOBACK.
+       OTHER-SEC SECTION.
+           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+       EX. EXIT.
+])
+# no trace code enabled, so not active, ignoring READY TRACE
+AT_CHECK([$COMPILE -std=mf mini.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./mini], [0], [], [])
+
+AT_DATA([minin.cob], [
+      $SET NOTRACE
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      minin.
+       PROCEDURE        DIVISION.
+       SOME-SEC SECTION.
+       SOME-PAR.
+           READY TRACE
+           PERFORM OTHER-SEC
+           RESET TRACE
+           MOVE 0 TO RETURN-CODE.
+       END-PAR.
+           GOBACK.
+       OTHER-SEC SECTION.
+           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+       EX. EXIT.
+])
+# even when externally enabled, trace code disabled locally, so not active
+AT_CHECK([$COMPILE -std=mf -ftraceall minin.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./minin], [0], [], [])
+
+AT_DATA([minit.cob], [
+      $SET TRACE
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      minit.
+       PROCEDURE        DIVISION.
+       SOME-SEC SECTION.
+       SOME-PAR.
+           READY TRACE
+           PERFORM OTHER-SEC
+           RESET TRACE
+           MOVE 0 TO RETURN-CODE.
+       END-PAR.
+           GOBACK.
+       OTHER-SEC SECTION.
+           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+       EX. EXIT.
+])
+
+# trace code enabled locally, so active, but only for sections/paragraphs
+AT_CHECK([$COMPILE -std=mf minit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./minit], [0], [],
+[Source: 'minit.cob'
+Program-Id:  minit 
+Program-Id:  minit              Section: OTHER-SEC                       Line:     14
+Program-Id:  minit            Paragraph: EX                              Line:     16
 ])
 
 AT_CLEANUP
@@ -12505,7 +12574,7 @@ AT_DATA([prog.cob], [
                          DBX-RECORD-CODE (REC-NAME-DBX) '.'.
 ])
 
-AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob ], [0], [],
+AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [],
 [prog.cob:26: warning: INDEXED should follow ASCENDING/DESCENDING
 ])
 
