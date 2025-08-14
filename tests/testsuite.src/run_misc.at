@@ -4351,7 +4351,7 @@ int main() {
 ])
 AT_CHECK([$COB_CC $COB_CFLAGS caller.c -ldl $COB_LIBS -o caller], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false COB_LIBRARY_PATH=".:$COB_LIBRARY_PATH" ./caller], [0], [Final count: 01000
+AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0], [Final count: 01000
 Final count: 01000
 Final count: 01000
 Final count: 01000
