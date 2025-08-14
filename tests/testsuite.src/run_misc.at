@@ -4291,6 +4291,9 @@ typedef hello_world_func (*cob_resolve_func)(char *);
 typedef void (*cob_tidy_func)(void);
 // Function to call COBOL shared library functions
 void *callCobol() {
+    fprintf(stderr, "Thread %ld: Debug info:\n", pthread_self());
+    system("echo \"Working directory: $(pwd)\"");
+    system("echo \"Files: $(ls -la * 2>/dev/null || echo 'No .so files')\"");
     const char *libCobPath = "libcob.so";
     // Use `dlmopen` to load a unique copy of the shared library in each thread
     void *libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
