@@ -4258,6 +4258,113 @@ AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [
 AT_CLEANUP
 
 
+AT_SETUP([COB_LOAD_GLOBAL=false allows cob_resolve and execution from parallel threads])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+       
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+       
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+           END-PERFORM
+           DISPLAY "Final count: " COUNTER
+           EXIT PROGRAM.
+
+])
+AT_DATA([caller.c], [
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h> // For POSIX threads
+#include <dlfcn.h>   // For dynamic library loading
+#include <unistd.h> 
+
+typedef int (*hello_world_func)(void);
+typedef void (*cob_init_func)(int, char **);
+typedef hello_world_func (*cob_resolve_func)(char *);
+typedef void (*cob_tidy_func)(void);
+// Function to call COBOL shared library functions
+void *callCobol() {
+    const char *libCobPath = "libcob.so";
+    // Use `dlmopen` to load a unique copy of the shared library in each thread
+    void *libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    if (!libCobHandle) {
+        fprintf(stderr, "Thread %ld: Failed to load libcob with dlmopen from %s: %s\n",
+                pthread_self(), libCobPath, dlerror());
+        return NULL;
+    }
+
+#define RESOLVE_SYMBOL(symbol, type) \
+    type symbol = (type) dlsym(libCobHandle, #symbol); \
+    if (!symbol) { \
+        fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
+                pthread_self(), #symbol, dlerror()); \
+        dlclose(libCobHandle); \
+        return NULL; \
+    }
+
+    // Resolve required symbols from the COBOL library
+    RESOLVE_SYMBOL(cob_init, cob_init_func);
+    RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
+    RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
+    cob_init(0, NULL);
+    hello_world_func hello_world = cob_resolve("PROG");
+    if (hello_world) {
+        hello_world(); // Call the COBOL function
+    } else {
+        fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
+    }
+    // Clean up COBOL resources
+    cob_tidy();
+    dlclose(libCobHandle);
+    return NULL;
+}
+// Thread function wrapper around `callCobol`
+void *threadFunction(void *arg) {
+    long threadId = (long)arg;
+    callCobol();
+    return NULL;
+}
+// Main function
+int main() {
+    const int numThreads = 10; // Number of threads to create
+    pthread_t threads[[numThreads]];
+    // Create multiple threads
+    for (long i = 0; i < numThreads; i++) {
+        if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
+            fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
+            return EXIT_FAILURE;
+        }
+    }
+    // Wait for all threads to finish
+    for (int i = 0; i < numThreads; i++) {
+        pthread_join(threads[[i]], NULL);
+    }
+    return EXIT_SUCCESS;
+}
+])
+AT_CHECK([$COB_CC $COB_CFLAGS caller.c -ldl $COB_LIBS -o caller], [0], [], [])
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=false COB_LIBRARY_PATH=".:$COB_LIBRARY_PATH" ./caller], [0], [Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+], [])
+
+AT_CLEANUP
+
 AT_SETUP([COB_PRE_LOAD with entry points])
 AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
