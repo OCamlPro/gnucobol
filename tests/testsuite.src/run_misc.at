@@ -4263,7 +4263,7 @@ AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. PROG.
+       PROGRAM-ID. prog.
        
        DATA DIVISION.
        WORKING-STORAGE SECTION.
@@ -4291,9 +4291,6 @@ typedef hello_world_func (*cob_resolve_func)(char *);
 typedef void (*cob_tidy_func)(void);
 // Function to call COBOL shared library functions
 void *callCobol() {
-    fprintf(stderr, "Thread %ld: Debug info:\n", pthread_self());
-    system("echo \"Working directory: $(pwd)\"");
-    system("echo \"Files: $(ls -la * 2>/dev/null || echo 'No .so files')\"");
     const char *libCobPath = "libcob.so";
     // Use `dlmopen` to load a unique copy of the shared library in each thread
     void *libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
@@ -4317,7 +4314,7 @@ void *callCobol() {
     RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
     RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
     cob_init(0, NULL);
-    hello_world_func hello_world = cob_resolve("PROG");
+    hello_world_func hello_world = cob_resolve("prog");
     if (hello_world) {
         hello_world(); // Call the COBOL function
     } else {
