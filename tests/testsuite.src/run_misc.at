@@ -4260,6 +4260,9 @@ AT_CLEANUP
 
 AT_SETUP([COB_LOAD_GLOBAL=false allows cob_resolve and execution from parallel threads])
 AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+# skip test for MSYS1 - we don't have pthread there
+# FIXME: make that test more portable
+AT_SKIP_IF([test "$OSTYPE" = "msys"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
