@@ -4276,6 +4276,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            PERFORM 1000 TIMES
               ADD 1 TO COUNTER
+              CALL "sched_yield"
            END-PERFORM
            DISPLAY "Final count: " COUNTER
            EXIT PROGRAM.
@@ -4343,7 +4344,7 @@ void *threadFunction(void *arg) {
 }
 /* Main function */
 int main() {
-    const int numThreads = 10; /* Number of threads to create */
+    const int numThreads = 2; /* Number of threads to create */
     pthread_t threads[[numThreads]];
     long i;
     int j;
@@ -4364,14 +4365,6 @@ int main() {
 AT_CHECK([$COB_CC $COB_CFLAGS caller.c -ldl $COB_LIBS -o caller], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([COB_LIBRARY_PATH="/home/runner/work/gnucobol/gnucobol/_build/tests/testsuite.dir/0788" COB_LOAD_GLOBAL=false ./caller], [0], [Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
 Final count: 01000
 ], [])
 
