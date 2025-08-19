@@ -4281,19 +4281,25 @@ AT_DATA([caller.c], [
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h> // For POSIX threads
-#include <dlfcn.h>   // For dynamic library loading
+#include <pthread.h> /* For POSIX threads */
+#include <dlfcn.h>   /* For dynamic library loading */
 #include <unistd.h> 
 
 typedef int (*hello_world_func)(void);
 typedef void (*cob_init_func)(int, char **);
 typedef hello_world_func (*cob_resolve_func)(char *);
 typedef void (*cob_tidy_func)(void);
-// Function to call COBOL shared library functions
+/* Function to call COBOL shared library functions */
 void *callCobol() {
     const char *libCobPath = "libcob.so";
-    // Use `dlmopen` to load a unique copy of the shared library in each thread
-    void *libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    void *libCobHandle;
+    cob_init_func cob_init;
+    cob_resolve_func cob_resolve;
+    cob_tidy_func cob_tidy;
+    hello_world_func hello_world;
+    
+    /* Use `dlmopen` to load a unique copy of the shared library in each thread */
+    libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
     if (!libCobHandle) {
         fprintf(stderr, "Thread %ld: Failed to load libcob with dlmopen from %s: %s\n",
                 pthread_self(), libCobPath, dlerror());
@@ -4301,7 +4307,7 @@ void *callCobol() {
     }
 
 #define RESOLVE_SYMBOL(symbol, type) \
-    type symbol = (type) dlsym(libCobHandle, #symbol); \
+    symbol = (type) dlsym(libCobHandle, #symbol); \
     if (!symbol) { \
         fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
                 pthread_self(), #symbol, dlerror()); \
@@ -4309,42 +4315,44 @@ void *callCobol() {
         return NULL; \
     }
 
-    // Resolve required symbols from the COBOL library
+    /* Resolve required symbols from the COBOL library */
     RESOLVE_SYMBOL(cob_init, cob_init_func);
     RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
     RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
     cob_init(0, NULL);
-    hello_world_func hello_world = cob_resolve("prog");
+    hello_world = cob_resolve("prog");
     if (hello_world) {
-        hello_world(); // Call the COBOL function
+        hello_world(); /* Call the COBOL function */
     } else {
         fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
     }
-    // Clean up COBOL resources
+    /* Clean up COBOL resources */
     cob_tidy();
     dlclose(libCobHandle);
     return NULL;
 }
-// Thread function wrapper around `callCobol`
+/* Thread function wrapper around `callCobol` */
 void *threadFunction(void *arg) {
     long threadId = (long)arg;
     callCobol();
     return NULL;
 }
-// Main function
+/* Main function */
 int main() {
-    const int numThreads = 10; // Number of threads to create
+    const int numThreads = 10; /* Number of threads to create */
     pthread_t threads[[numThreads]];
-    // Create multiple threads
-    for (long i = 0; i < numThreads; i++) {
+    long i;
+    int j;
+    /* Create multiple threads */
+    for (i = 0; i < numThreads; i++) {
         if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
             fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
             return EXIT_FAILURE;
         }
     }
-    // Wait for all threads to finish
-    for (int i = 0; i < numThreads; i++) {
-        pthread_join(threads[[i]], NULL);
+    /* Wait for all threads to finish */
+    for (j = 0; j < numThreads; j++) {
+        pthread_join(threads[[j]], NULL);
     }
     return EXIT_SUCCESS;
 }
