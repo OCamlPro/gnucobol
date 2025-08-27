@@ -4232,7 +4232,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4252,13 +4252,126 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
 
+AT_SETUP([COB_LOAD_GLOBAL=false allows cob_resolve and execution from parallel threads])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+# skip test for MSYS1 - we don't have pthread there
+# skip test for darwin - we don't have dlmopen there
+# FIXME: make that test more portable
+AT_SKIP_IF([test "$OSTYPE" = "msys" -o "${OSTYPE:0:6}" = "darwin"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+       
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield"
+           END-PERFORM
+           DISPLAY "Final count: " COUNTER
+           EXIT PROGRAM.
+
+])
+AT_DATA([caller.c], [
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h> /* For POSIX threads */
+#include <dlfcn.h>   /* For dynamic library loading */
+#include <unistd.h> 
+
+typedef int (*hello_world_func)(void);
+typedef void (*cob_init_func)(int, char **);
+typedef hello_world_func (*cob_resolve_func)(char *);
+typedef void (*cob_tidy_func)(void);
+/* Function to call COBOL shared library functions */
+void *callCobol() {
+    const char *libCobPath = "libcob.so";
+    void *libCobHandle;
+    cob_init_func cob_init;
+    cob_resolve_func cob_resolve;
+    cob_tidy_func cob_tidy;
+    hello_world_func hello_world;
+    
+    /* Use `dlmopen` to load a unique copy of the shared library in each thread */
+    libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    if (!libCobHandle) {
+        fprintf(stderr, "Thread %ld: Failed to load libcob with dlmopen from %s: %s\n",
+                pthread_self(), libCobPath, dlerror());
+        return NULL;
+    }
+
+#define RESOLVE_SYMBOL(symbol, type) \
+    symbol = (type) dlsym(libCobHandle, #symbol); \
+    if (!symbol) { \
+        fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
+                pthread_self(), #symbol, dlerror()); \
+        dlclose(libCobHandle); \
+        return NULL; \
+    }
+
+    /* Resolve required symbols from the COBOL library */
+    RESOLVE_SYMBOL(cob_init, cob_init_func);
+    RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
+    RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
+    cob_init(0, NULL);
+    hello_world = cob_resolve("prog");
+    if (hello_world) {
+        hello_world(); /* Call the COBOL function */
+    } else {
+        fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
+    }
+    /* Clean up COBOL resources */
+    cob_tidy();
+    dlclose(libCobHandle);
+    return NULL;
+}
+/* Thread function wrapper around `callCobol` */
+void *threadFunction(void *arg) {
+    long threadId = (long)arg;
+    callCobol();
+    return NULL;
+}
+/* Main function */
+int main() {
+    const int numThreads = 2; /* Number of threads to create */
+    pthread_t threads[[numThreads]];
+    long i;
+    int j;
+    /* Create multiple threads */
+    for (i = 0; i < numThreads; i++) {
+        if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
+            fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
+            return EXIT_FAILURE;
+        }
+    }
+    /* Wait for all threads to finish */
+    for (j = 0; j < numThreads; j++) {
+        pthread_join(threads[[j]], NULL);
+    }
+    return EXIT_SUCCESS;
+}
+])
+AT_CHECK([$COBC -x -ldl -lpthread caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([COB_LIBRARY_PATH="/home/runner/work/gnucobol/gnucobol/_build/tests/testsuite.dir/0788" COB_LOAD_GLOBAL=false ./caller], [0], [Final count: 01000
+Final count: 01000
+], [])
+
+AT_CLEANUP
+
 AT_SETUP([COB_PRE_LOAD with entry points])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -4319,7 +4432,12 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./main-prog], [0],
+[12abc
+11
+xxxxx
+], [])
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4390,7 +4508,35 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE CALLEE.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_CASE=UPPER ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_CASE=UPPER $COBCRUN_DIRECT ./caller], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL/CANCEL with COB_LOAD_GLOBAL])
+AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_GLOBAL])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       PROCEDURE        DIVISION.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       PROCEDURE        DIVISION.
+           CALL "callee"
+           END-CALL.
+           CANCEL "callee".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE caller.cob], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
