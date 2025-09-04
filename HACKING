@@ -109,3 +109,454 @@ There should be no difference shown as long as the "old version" passed
 the same tests as the new version - given the example above: there was
 no support for REPORT WRITER in 2.2 so there would be an expected failure
 of the RW tests.
+
+
+===================
+Coding Style Guide
+===================
+
+# General
+
+* Tabs are used for indentation
+* Tab stops are at every 8 columns from column 1
+* All names are in snake_case.
+* **D**on't **R**epeat **Y**ourself
+* Avoid writing functions longer than 2 screens (~70 lines)
+* Try to keep lines less than 80 characters long
+* Names should be as informative as possible; avoid variable names such
+  as `i`, `j`, `f`, `p`, etc. in all but the most trivial situations
+* Use `svn diff` to produce patches, rather than individually `diff`-ing
+  files, as they can be quickly applied using `svn patch`.
+
+# Common abbreviations
+Avoid using abbreviations, where possible. Especially avoid using multiple
+abbreviations in one name.
+
+	Abbreviation | Meaning
+	------------ | ----------
+	adv          | advancing
+	arg          | argument
+	attr         | attribute
+	backg        | background
+	bgc          | background-color
+	ch           | char(acter)
+	col          | column
+	conf         | configuration
+	cur(r)       | current
+	decl         | declarative
+	dir          | directory
+	div          | division
+	dst          | destination
+	dup(ed)      | duplicate(d)
+	env          | environment
+	err          | error
+	ex           | exception
+	ext          | external
+	f            | field/file
+	fgc          | foreground-color
+	fmt          | format
+	foreg        | foreground
+	gen          | generate
+	hex          | hexadecimal
+	idx          | index
+	init         | initialize
+	intr         | intrinsic
+	len          | length
+	lex          | lexer
+	lit          | literal
+	lst          | list
+	msg          | message
+	num          | number (of)
+	odo          | `OCCURS DEPENDING ON`
+	optim        | optimize
+	opt          | optimize
+	orig         | original
+	org          | original
+	p            | pointer
+	_p           | predicate
+	para         | paragraph
+	param        | parameter
+	prm          | parameter
+	proc         | procedure
+	prog         | program
+	ptr          | pointer
+	refmod       | reference modification
+	rep          | replacing/replacement
+	src          | source
+	stmt         | statement
+	str          | string
+	tbl          | table
+	temp         | temporary
+	val          | value
+	var(s)       | variable(s)
+	warn         | warning
+
+# C
+* Always use `/* C89 block */` comments
+* Comments are *preferred*  to be  be on their own line
+* Brace style is strict "One True Brace Style"
+```c
+/* Correct */
+if (x == 1) {
+	do_something ();
+} else {
+	do_something_else ();
+}
+
+/* Incorrect */
+if (x == 1) do_something ();
+if (x == 1)
+	do_something ();
+if (x == 1) { do_something (); }
+```
+ * Do not use assignments in `if` conditions
+ * In function declarations, the return type and the name go on separate lines
+ * Variables are declared at the beginning of the block using them
+ * Variable names in declaration should be aligned with a tab
+ * If possible, merge initialization into declaration
+ * One variable is declared per line when it includes the initialization, 
+   otherwise mulitple variables of the same type may be declared in one line
+ * reduce scope of vars where possible
+```c
+
+void
+incorrect (void)
+{
+	const char *str;
+  int x;
+
+	if (a == b) {
+		x = a;
+		do_something (&x);
+		struct cb_field *x_field = make_field (x);
+		str = to_string (x_field);
+	}
+	/* further use of str ... */
+}
+
+void
+correct (void)
+{
+	const char	*str = NULL;
+
+	if (a == b) {
+		int 			x = a;
+		struct cb_field	*x_field;
+
+		do_something (&x);
+		x_field = make_field (x);
+		str = to_string (x_field);
+	}
+	
+	/* further use of str ... */
+}
+```
+
+ * Macro names are in ANGRY_SNAKE_CASE.
+ * *`#undef` minor, local macros after last use*
+ * Global names in `cobc` are prefixed with:
+	* `cobc_`, if they are defined in `cobc.c`;
+	* `plex_`, if they are defined in `pplex.l`;
+	* `pp`, if they are defined in `ppparse.y`;
+	* `ylex_`, if they are defined in `scanner.l`;
+	* `yy`, if they are defined in `parser.y`;
+	* `cb_`, if they are an enum or constant from anywhere else;
+	* optionally `cb_`, for anything else.
+ * Global names in `libcob` are prefixed with `cob_`
+ * Spaces around arithmetic operators
+ * One space before (the first in a series of) an opening parenthesis
+
+```c
+/* Correct */
+if ((arr[x + 1] + 2) / 10 > 5) {
+	/* ... */
+}
+
+/* Incorrect */
+if( (arr[x+1]+2)/10 > 5 ) {
+	/* ... */
+}
+```
+ 
+ * *No space after casts*
+ * Fix all warnings before committing a patch.
+ * Use enums instead of lists of macros.
+
+## Memory Management
+ * Use project allocators: `cob_malloc`, `cob_free`, `cob_strdup`
+ * Nullify pointers after freeing only for non-local variables or variables\n   used later
+```c
+/* Correct - non-local variable */
+if (cobsetptr->cob_preload_str) {
+	cob_free ((void *)cobsetptr->cob_preload_str);
+	cobsetptr->cob_preload_str = NULL;
+}
+
+/* Correct - local variable used later */
+void
+some_function (void)
+{
+	char	*buffer;
+	
+	buffer = cob_malloc (size);
+	/* ... use buffer ... */
+	cob_free (buffer);
+	buffer = NULL;  /* Will be used again later */
+	/* ... more code that might use buffer ... */
+}
+
+/* Unnecessary - local variable at end of scope */
+void
+other_function (void)
+{
+	char	*temp;
+	
+	temp = cob_malloc (size);
+	/* ... use temp ... */
+	cob_free (temp);
+	/* No need to nullify - function ends */
+}
+```
+
+## Field Access Patterns
+ * Use consistent field data access macros
+```c
+/* Correct */
+const unsigned char	*data = COB_FIELD_DATA (field);
+const size_t		size = COB_FIELD_SIZE (field);
+
+/* Avoid direct access */
+const unsigned char	*data = field->data;  /* Don't do this */
+```
+
+## Static Function Organization
+ * Static functions before public functions
+ * Group related static functions together
+ * Use forward declarations only when needed for mutual recursion
+```c
+/* Static helper functions first */
+static int
+helper_function (const cob_field *field)
+{
+	/* ... */
+}
+
+static void
+another_helper (void)
+{
+	/* ... */
+}
+
+/* Public functions after */
+int
+cob_public_function (cob_field *field)
+{
+	return helper_function (field);
+}
+```
+
+## Const Correctness
+ * Use `const` for read-only parameters
+ * Use `const` for string literals and lookup tables
+ * Prefer `const char *` over `char *` when data won't be modified
+```c
+/* Function parameters */
+int
+cob_compare_fields (const cob_field *f1, const cob_field *f2)
+
+/* Lookup tables */
+static const struct optim_table	bin_compare_funcs[] = {
+	{ "cob_cmp_u8",		COB_CMP_U8 },
+	{ "cob_cmp_u16",	COB_CMP_U16 },
+	/* ... */
+};
+
+/* String handling */
+const char	*get_field_name (const cob_field *field);  /* Returns read-only */
+char		*format_field (cob_field *field);         /* Returns modifiable */
+```
+
+## Documentation Standards
+ * Document the purpose ("why"), not the implementation ("what")
+ * Use this format for complex functions:
+```c
+/*
+ * Brief function description
+ * 
+ * Parameters:
+ *   field - description of parameter
+ *   param - description of parameter
+ * 
+ * Returns:
+ *   description of return value, error conditions
+ * 
+ * Note: any important implementation details or side effects
+ */
+int
+cob_complex_function (const cob_field *field, const int param)
+{
+	/* ... */
+}
+```
+
+## Backwards Compatibility
+ * **Never change existing function signatures** in public APIs
+ * **Never remove public functions** - mark as deprecated instead
+ * **Never change behavior** of existing functions in ways that break\n   existing programs
+ * Add new functionality through:
+   * New functions with different names
+   * New optional parameters (with sensible defaults)
+   * New configuration options (defaulting to old behavior)
+ * Use `#ifdef` guards for new features that might not be available on\n   all systems
+ * Maintain ABI compatibility within major versions
+```c
+/* Correct - adding new function */
+int cob_new_feature (cob_field *field);
+
+/* Incorrect - changing existing function */
+int cob_existing_function (cob_field *field, int new_param);\n                                                    /* DON'T DO THIS */
+
+/* Correct - extending with optional behavior */
+int cob_existing_function_ex (cob_field *field, int options);
+
+/* Correct - deprecation pattern */
+#ifndef COB_WITHOUT_DEPRECATED
+int cob_old_function (cob_field *field) COB_DEPRECATED;
+#endif
+```
+
+# Bison
+
+* Optional syntax elements are prefixed with `_`.
+* Token are indented with *two spaces*. (Code is still indented with a tab.)
+
+```c
+hello_statement:
+  HELLO _world
+  {
+	cb_emit_hello ($2);
+  }
+;
+
+_world:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| WORLD
+  {
+	$$ = $1;
+  }
+;
+```
+
+# COBOL
+(For testsuite entries.)
+
+* Code is in fixed-format.
+* Environment division and procedure division code is indented by four spaces.
+* Reserved words and intrinsic function names are in uppercase.
+* *User-defined words can be in any case*
+* The words `DIVISION` and `SECTION` should be aligned
+* A data division which contains more than a few entries should align\n  their clauses
+* Tests should check that valid code is accepted and that invalid code\n  is rejected.
+* Short run tests may display the output of what they are testing and use\n  `AT_CHECK` to check that the output is correct
+* Longer tests may test the output inside the program and, if it is invalid,\n  indicate which check failed and how.
+```cobol
+       *> This example is from the TEST-NUMVAL-C test.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           IF FUNCTION TEST-NUMVAL-C ("+ 1")     NOT = 0
+              DISPLAY "Test 1  fail"
+              END-DISPLAY
+           END-IF.
+           IF FUNCTION TEST-NUMVAL-C (" + 1")    NOT = 0
+              DISPLAY "Test 2  fail"
+              END-DISPLAY
+           END-IF.
+           IF FUNCTION TEST-NUMVAL-C ("- 1")     NOT = 0
+              DISPLAY "Test 3  fail"
+              END-DISPLAY
+           END-IF.
+           *> ...
+```
+* In any case, a developer must be able to quickly find what is failing\n  from the `testsuite.log`.
+
+# ChangeLog entries
+
+* Please leave the empty line at the top of change logs as this helps\n  in merging.
+* Each major directory maintains its own ChangeLog with this format:
+
+~~~~
+YYYY-MM-DD  John Smith <johnsmith@whatever.org>
+
+	* file1.c (the_one_func_that_was_changed): moved check from the beginning
+	  to the end.
+	* file2.c, file3.h: refactored lots of things in lots of places.
+
+~~~~
+
+* Each bullet is indented with one tab.
+* **Special case**: `tests/ChangeLog` only documents structural changes (new test files, framework changes), not individual test case additions.
+
+# Multi-line Conditions
+
+Multi-line conditions use a special indentation pattern to align operators:
+
+```c
+/* Correct - tab + spaces to align operators */
+if ((gc_conf[i].data_type & ENV_STR)
+||  (gc_conf[i].data_type & ENV_FILE)
+||  (gc_conf[i].data_type & ENV_PATH)) {
+	/* body */
+}
+
+/* Another example */
+if (cobsetptr->cob_dump_file == cobsetptr->cob_trace_file
+ || cobsetptr->cob_dump_file == stderr) {
+	cobsetptr->cob_dump_file = NULL;
+}
+```
+
+The pattern is:
+1. First line: normal tab indentation + condition
+2. Continuation lines: tab indentation + spaces to align operators (`||`, `&&`) at same column
+3. Opening brace: same indentation as `if`
+
+# Function Structure
+
+Functions should follow this structure:
+
+```c
+static int
+cob_example_function (const cob_field *field, const int param)
+{
+	/* Variable declarations at start of block */
+	int		result;
+	size_t		size;
+	const char	*data;
+	
+	/* Input validation */
+	if (!field) {
+		return -1;
+	}
+	
+	/* Main logic with conditional compilation when needed */
+#ifdef HAVE_SOME_FEATURE
+	result = optimized_operation (field, param);
+#else
+	result = fallback_operation (field, param);
+#endif
+	
+	return result;
+}
+```
+
+Key points:
+* Return type and function name on separate lines
+* Variables declared at start of block, aligned with tabs
+* Logical grouping with comments
+* Consistent error handling patterns
