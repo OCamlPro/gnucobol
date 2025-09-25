@@ -531,6 +531,7 @@ static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALS
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
+static struct config_enum sighdlrregopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
 static char	varseq_dflt[8] = "0";
 static unsigned char min_conf_length = 0;
@@ -570,6 +571,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_TRACE_FILE", "trace_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_trace_filename)},
 	{"COB_TRACE_FORMAT", "trace_format",	"%P %S Line: %L", NULL, GRP_MISC, ENV_STR, SETPOS (cob_trace_format)},
 	{"COB_STACKTRACE", "stacktrace", 	"1", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_stacktrace)},
+	{"COB_SIGNAL_REGIME", "signal_regime", 	"0", 	sighdlrregopts, GRP_MISC, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_signal_regime)},
 	{"COB_CORE_ON_ERROR", "core_on_error", 	"0", 	coeopts, GRP_MISC, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_core_on_error)},
 	{"COB_CORE_FILENAME", "core_filename", 	"./core.libcob", 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_core_filename)},
 	{"COB_DUMP_FILE", "dump_file",		NULL,	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_dump_filename)},
@@ -1175,7 +1177,7 @@ create_dumpfile (void)
 
 
 #ifdef	HAVE_SIGNAL_H
-static void
+void
 cob_sig_handler (int sig)
 {
 	char buff [COB_MEDIUM_BUFF];
@@ -1519,9 +1521,16 @@ cob_set_signal (void)
 {
 #if	defined (HAVE_SIGNAL_H)
 	int k;
+	char *signal_regime;
 #ifdef	HAVE_SIGACTION
 	struct sigaction	sa;
 	struct sigaction	osa;
+
+	signal_regime = getenv ("COB_SIGNAL_REGIME");
+	if (*signal_regime == '2') {
+		/* Don't set any signal */
+		return;
+	}
 
 	memset (&sa, 0, sizeof (sa));
 	memset (&osa, 0, sizeof (osa));
@@ -1535,37 +1544,57 @@ cob_set_signal (void)
 
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			/* Take direct control of some hard errors */
-			if (signals[k].for_set == 2) {
-				(void)sigemptyset (&sa.sa_mask);
-				(void)sigaction (signals[k].sig, &sa, NULL);
-			} else {
-				/* for the others: only register if not configured
-				   from the OS side to be ignored */
+			if (*signal_regime == '1') {
+				/* Only take control if no handler is registered (=SIG_DFL) */
 				(void)sigaction (signals[k].sig, NULL, &osa);
-				if (osa.sa_handler != SIG_IGN) {
+				if (osa.sa_handler == SIG_DFL) {
 					(void)sigemptyset (&sa.sa_mask);
 					(void)sigaction (signals[k].sig, &sa, NULL);
 				}
-				/* CHECKME: how should we handle externally registered
-				            error handlers (handler != SIG_DFL)? */
+			} else {
+				/* Take direct control of some hard errors */
+				if (signals[k].for_set == 2) {
+					(void)sigemptyset (&sa.sa_mask);
+					(void)sigaction (signals[k].sig, &sa, NULL);
+				} else {
+					/* for the others: only register if not configured
+					from the OS side to be ignored */
+					if (osa.sa_handler != SIG_IGN) {
+						(void)sigemptyset (&sa.sa_mask);
+						(void)sigaction (signals[k].sig, &sa, NULL);
+					}
+				}
 			}
 		}
 	}
 #else	/* still defined (HAVE_SIGNAL_H) */
+	void (*ohdlr) (int);
+
+	signal_regime = getenv ("COB_SIGNAL_REGIME");
+	if (*signal_regime == '2') {
+		/* Don't set any signal */
+		return;
+	}
+
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			/* Take direct control of some hard errors */
-			if (signals[k].for_set == 2) {
-				(void)signal (signals[k].sig, cob_sig_handler);
-			} else {
-				/* for the others: only register if not configured
-				   from the OS side to be ignored */
-				if (signal (signals[k].sig, SIG_IGN) != SIG_IGN) {
-					(void)signal (signals[k].sig, cob_sig_handler);
+			if (*signal_regime == '1') {
+				/* Only take control if no handler is registered (=SIG_DFL) */
+				ohdlr = signal (signals[k].sig, cob_sig_handler);
+				if (ohdlr != SIG_DFL) {
+					(void)signal (signals[k].sig, ohdlr);
 				}
-				/* CHECKME: how should we handle externally registered
-				            error handlers (handler != SIG_DFL)? */
+			} else {
+				/* Take direct control of some hard errors */
+				if (signals[k].for_set == 2) {
+					(void)signal (signals[k].sig, cob_sig_handler);
+				} else {
+					/* for the others: only register if not configured
+					from the OS side to be ignored */
+					if (signal (signals[k].sig, SIG_IGN) != SIG_IGN) {
+						(void)signal (signals[k].sig, cob_sig_handler);
+					}
+				}
 			}
 		}
 	}
