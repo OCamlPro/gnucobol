@@ -1527,7 +1527,7 @@ cob_set_signal (void)
 	struct sigaction	osa;
 
 	signal_regime = getenv ("COB_SIGNAL_REGIME");
-	if (*signal_regime == '2') {
+	if (signal_regime && *signal_regime == '2') {
 		/* Don't set any signal */
 		return;
 	}
@@ -1544,7 +1544,7 @@ cob_set_signal (void)
 
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			if (*signal_regime == '1') {
+			if (signal_regime && *signal_regime == '1') {
 				/* Only take control if no handler is registered (=SIG_DFL) */
 				(void)sigaction (signals[k].sig, NULL, &osa);
 				if (osa.sa_handler == SIG_DFL) {
@@ -1571,14 +1571,14 @@ cob_set_signal (void)
 	void (*ohdlr) (int);
 
 	signal_regime = getenv ("COB_SIGNAL_REGIME");
-	if (*signal_regime == '2') {
+	if (signal && *signal_regime == '2') {
 		/* Don't set any signal */
 		return;
 	}
 
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			if (*signal_regime == '1') {
+			if (signal && *signal_regime == '1') {
 				/* Only take control if no handler is registered (=SIG_DFL) */
 				ohdlr = signal (signals[k].sig, cob_sig_handler);
 				if (ohdlr != SIG_DFL) {
