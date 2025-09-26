@@ -15737,3 +15737,159 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 ], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([COB_SIGNAL_REGIME={0,1} registers runtime signal handler])
+AT_KEYWORDS([runmisc COB_SIGNAL_REGIME])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 VAR1 PIC X(4) VALUE "TEST".
+       PROCEDURE DIVISION USING VAR1.
+           DISPLAY VAR1.
+           STOP RUN RETURNING 0.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+    /* for storing libcob return state */
+    int cob_ret;
+
+    /* for COBOL parameters */
+    void *cob_argv[1];
+    cob_argv[0] = NULL;
+
+    /* initialize the COBOL run-time library */
+    cob_init (0, NULL);
+
+    /* call COBOL program */
+    cob_ret = cob_call_with_exception_check ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check exit by signal handler */
+    if (cob_ret != -3) {
+        return 1;
+    }
+    
+    return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([COB_SIGNAL_REGIME=0 ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+AT_CHECK([COB_SIGNAL_REGIME=1 ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([COB_SIGNAL_REGIME={1,2} does not register runtime signal handler])
+AT_KEYWORDS([runmisc COB_SIGNAL_REGIME])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 VAR1 PIC X(4) VALUE "TEST".
+       PROCEDURE DIVISION USING VAR1.
+           DISPLAY VAR1.
+           STOP RUN RETURNING 0.
+])
+
+AT_DATA([caller.c], [[
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int signal_received = 0;
+
+void sig_handler(int signum)
+{
+    if (signum != SIGSEGV) {
+        exit (1);
+    }
+    signal_received = 1;
+    cob_sig_handler (signum);
+}
+
+int
+main (int argc, char **argv)
+{
+    /* for storing libcob return state */
+    int cob_ret;
+
+    /* for COBOL parameters */
+    void *cob_argv[1];
+
+    /* register custom signal handler */
+    (void)signal (SIGSEGV, sig_handler);
+
+    /* initialize the COBOL run-time library */
+    cob_init (0, NULL);
+
+    /* call COBOL program */
+    cob_argv[0] = NULL;
+    cob_ret = cob_call_with_exception_check ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check exit by signal handler */
+    if (cob_ret != -3) {
+        return 1;
+    }
+    
+    if (signal_received == 1) {
+        return 0;
+    }
+
+    return 1;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([COB_SIGNAL_REGIME=1 ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+AT_CHECK([COB_SIGNAL_REGIME=2 ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+
+AT_CLEANUP

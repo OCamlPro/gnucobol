@@ -1176,10 +1176,10 @@ create_dumpfile (void)
 }
 
 
-#ifdef	HAVE_SIGNAL_H
 void
 cob_sig_handler (int sig)
 {
+#ifdef	HAVE_SIGNAL_H
 	char buff [COB_MEDIUM_BUFF];
 	char signal_text[COB_MINI_BUFF];
 	const char *signal_name;
@@ -1371,8 +1371,9 @@ exit_handler:
          so exit in all other cases*/
 	exit (sig);
 #endif
-}
 #endif /* HAVE_SIGNAL_H */
+}
+
 
 /* Raise signal (run both internal and external handlers)
    may return, depending on the signal

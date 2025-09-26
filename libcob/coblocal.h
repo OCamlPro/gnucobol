@@ -377,7 +377,10 @@ typedef struct __cob_settings {
 	int		cob_prof_max_depth;	/* Max stack depth during profiling (255 by default) */
 	char		*cob_prof_format;	/* Format of prof CSV line */
 	int		cob_dump_width;		/* Max line width for dump */
-	unsigned int	cob_signal_regime;		/* Whether signal handler is registered */
+	unsigned int	cob_signal_regime;		/* signal handler registration strategy
+											   not directly used by the runtime instead read directly with getenv
+											   because it is required before the initialization of cob_settings
+											   captured here extra for runtime information purposes */
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */

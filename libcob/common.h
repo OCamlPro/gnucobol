@@ -1671,9 +1671,8 @@ struct cobjmp_buf {
 
 /*******************************/
 /* Functions in common.c */
-#ifdef HAVE_SIGNAL_H
+
 COB_EXPIMP void		cob_sig_handler (int);
-#endif
 COB_EXPIMP const char*	cob_get_sig_name (int);
 COB_EXPIMP const char*	cob_get_sig_description (int);
 COB_EXPIMP void		print_info	(void);

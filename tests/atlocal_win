@@ -192,6 +192,8 @@ if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	done
 fi
 
+HAVE_SIGNAL_H="@HAVE_SIGNAL_H@"
+
 COB_STACKTRACE=0
 export COB_STACKTRACE
 
