@@ -531,7 +531,7 @@ static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALS
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
-static struct config_enum sighdlrregopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {NULL, NULL}};
+static struct config_enum sighdlrregopts[] = {{"DEFAULT", "0"}, {"AVAILABLE", "1"}, {"IGNORE", "2"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
 static char	varseq_dflt[8] = "0";
 static unsigned char min_conf_length = 0;
@@ -1175,7 +1175,23 @@ create_dumpfile (void)
 	return ret;
 }
 
+/** \brief default signal handler of the runtime
 
+	In most cases when a signal is received, the signal handler is configured
+	to terminate the program after tidying up the runtime, unless an external
+	signal handler is registered. In such cases, the external handler is
+	invoked before the signal is raised again, which is then handled by the
+	default handler of the host operating system.
+
+	If the signal is received during a \ref cob_call_with_exception_check call,
+	the signal handler aborts the call and notifies that it has been aborted by
+	the signal handler.
+	
+	Additionaly, the signal handler can be configured to create a coredump when
+	a signal occurs. See \ref COB_CORE_ON_ERROR option for more details.
+
+	\param sig number of the signal
+ */
 void
 cob_sig_handler (int sig)
 {
@@ -1522,17 +1538,23 @@ cob_set_signal (void)
 {
 #if	defined (HAVE_SIGNAL_H)
 	int k;
-	char *signal_regime;
+	char *s;
+	char signal_regime;
 #ifdef	HAVE_SIGACTION
 	struct sigaction	sa;
 	struct sigaction	osa;
+#else
+	void (*ohdlr) (int);
+#endif
 
-	signal_regime = getenv ("COB_SIGNAL_REGIME");
-	if (signal_regime && *signal_regime == '2') {
+	s = getenv ("COB_SIGNAL_REGIME");
+	signal_regime = s ? *s : '0';
+	if (signal_regime == '2') {
 		/* Don't set any signal */
 		return;
 	}
 
+#ifdef HAVE_SIGACTION
 	memset (&sa, 0, sizeof (sa));
 	memset (&osa, 0, sizeof (osa));
 	sa.sa_handler = cob_sig_handler;
@@ -1545,7 +1567,7 @@ cob_set_signal (void)
 
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			if (signal_regime && *signal_regime == '1') {
+			if (signal_regime == '1') {
 				/* Only take control if no handler is registered (=SIG_DFL) */
 				(void)sigaction (signals[k].sig, NULL, &osa);
 				if (osa.sa_handler == SIG_DFL) {
@@ -1569,17 +1591,9 @@ cob_set_signal (void)
 		}
 	}
 #else	/* still defined (HAVE_SIGNAL_H) */
-	void (*ohdlr) (int);
-
-	signal_regime = getenv ("COB_SIGNAL_REGIME");
-	if (signal && *signal_regime == '2') {
-		/* Don't set any signal */
-		return;
-	}
-
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			if (signal && *signal_regime == '1') {
+			if (signal_regime == '1') {
 				/* Only take control if no handler is registered (=SIG_DFL) */
 				ohdlr = signal (signals[k].sig, cob_sig_handler);
 				if (ohdlr != SIG_DFL) {

@@ -15740,7 +15740,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COB_SIGNAL_REGIME={0,1} registers runtime signal handler])
-AT_KEYWORDS([runmisc COB_SIGNAL_REGIME])
+AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
 
@@ -15793,7 +15793,7 @@ main (int argc, char **argv)
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
-AT_CHECK([COB_SIGNAL_REGIME=0 ./caller], [0], [],
+AT_CHECK([COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
@@ -15808,7 +15808,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COB_SIGNAL_REGIME={1,2} does not register runtime signal handler])
-AT_KEYWORDS([runmisc COB_SIGNAL_REGIME])
+AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
 
@@ -15838,7 +15838,7 @@ int signal_received = 0;
 void sig_handler(int signum)
 {
     if (signum != SIGSEGV) {
-        exit (1);
+        exit (3);
     }
     signal_received = 1;
     cob_sig_handler (signum);
@@ -15875,13 +15875,13 @@ main (int argc, char **argv)
         return 0;
     }
 
-    return 1;
+    return 2;
 }
 ]])
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
-AT_CHECK([COB_SIGNAL_REGIME=1 ./caller], [0], [],
+AT_CHECK([COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
