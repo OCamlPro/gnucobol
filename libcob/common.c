@@ -1210,7 +1210,7 @@ cob_sig_handler (int sig)
 #ifdef	HAVE_RAISE
 		raise (sig);
 #else
-#ifdef HAVE_KILL
+#ifdef HAVE_SIGNAL_H
 		kill (getpid (), sig);
 #endif
 #endif
@@ -1293,7 +1293,7 @@ cob_sig_handler (int sig)
 	(void)sigaction (sig, &sa, NULL);
 #endif
 #else
-#ifdef HAVE_SIGNAL
+#ifdef HAVE_SIGNAL_H
 	(void)signal (sig, SIG_DFL);
 #endif
 #endif
@@ -1381,13 +1381,13 @@ exit_handler:
 		sig = SIGABRT;
 	}
 #endif
-#ifdef HAVE_SIGNAL
+#ifdef HAVE_SIGNAL_H
 	signal (sig, SIG_DFL);
 #endif
 #ifdef	HAVE_RAISE
 	raise (sig);
 #else
-#ifdef HAVE_KILL
+#ifdef HAVE_SIGNAL_H
 	kill (cob_sys_getpid (), sig);
 #endif
 #endif
