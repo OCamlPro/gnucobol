@@ -1195,7 +1195,6 @@ create_dumpfile (void)
 void
 cob_sig_handler (int sig)
 {
-#ifdef	HAVE_SIGNAL_H
 	char buff [COB_MEDIUM_BUFF];
 	char signal_text[COB_MINI_BUFF];
 	const char *signal_name;
@@ -1211,7 +1210,9 @@ cob_sig_handler (int sig)
 #ifdef	HAVE_RAISE
 		raise (sig);
 #else
+#ifdef HAVE_KILL
 		kill (getpid (), sig);
+#endif
 #endif
 		exit (sig);
 	}
@@ -1292,7 +1293,9 @@ cob_sig_handler (int sig)
 	(void)sigaction (sig, &sa, NULL);
 #endif
 #else
+#ifdef HAVE_SIGNAL
 	(void)signal (sig, SIG_DFL);
+#endif
 #endif
 	cob_exit_screen_from_signal (1);
 
@@ -1373,21 +1376,26 @@ exit_handler:
 #endif
 	/* if an explicit requested coredump could not
 	   be created - raise SIGABRT here */
+#ifdef SIGABRT
 	if (cobsetptr && cobsetptr->cob_core_on_error == 4) {
 		sig = SIGABRT;
 	}
+#endif
+#ifdef HAVE_SIGNAL
 	signal (sig, SIG_DFL);
+#endif
 #ifdef	HAVE_RAISE
 	raise (sig);
 #else
+#ifdef HAVE_KILL
 	kill (cob_sys_getpid (), sig);
 #endif
-
+#endif
+	
 #if 0 /* we don't necessarily want the OS to handle this,
          so exit in all other cases*/
 	exit (sig);
 #endif
-#endif /* HAVE_SIGNAL_H */
 }
 
 
@@ -1538,8 +1546,8 @@ cob_set_signal (void)
 {
 #if	defined (HAVE_SIGNAL_H)
 	int k;
-	char *s;
-	char signal_regime;
+	const char *s = getenv ("COB_SIGNAL_REGIME");
+	const char signal_regime = s ? *s : '0';
 #ifdef	HAVE_SIGACTION
 	struct sigaction	sa;
 	struct sigaction	osa;
@@ -1547,8 +1555,6 @@ cob_set_signal (void)
 	void (*ohdlr) (int);
 #endif
 
-	s = getenv ("COB_SIGNAL_REGIME");
-	signal_regime = s ? *s : '0';
 	if (signal_regime == '2') {
 		/* Don't set any signal */
 		return;
