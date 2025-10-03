@@ -9057,6 +9057,61 @@ output_assign (const struct cb_assign *ap)
 }
 
 static void
+output_size_exception_handler(const struct cb_statement *p) {
+	unsigned i;
+	const int enabled_size_ec[8] = {
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW),
+		CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+	};
+	unsigned exception_enabled = 0;
+	switch (p->statement) {
+		case STMT_ADD:
+		case STMT_SUBTRACT:
+		case STMT_MULTIPLY:
+		case STMT_DIVIDE:
+		case STMT_COMPUTE:
+			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)
+				|| CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+				output_ec_condition_for_handler (SIZE_ERROR_HANDLER);
+				output_block_open ();
+				output_line ("switch (cob_glob_ptr->cob_exception_code)");
+				output_block_open ();
+				for (i = 0; i < 8; i++) {
+					if (enabled_size_ec[i]) {
+						output_line(_("case %d:"), 0x1000 + i);
+						exception_enabled = 1;
+					}
+				}
+				if (exception_enabled) {
+					output_block_open ();
+					output_line ("if (cob_last_exception_fatal ())");
+					output_block_open ();
+					output_line ("cob_fatal_error(COB_FERROR_FATAL_EC);");
+					output_block_close ();
+					output_block_close ();
+				}
+				output_line("default: break;");
+				output_block_close ();
+				output_block_close ();
+			}
+		default:
+			break;
+	}
+}
+
+static void
 output_stmt (cb_tree x)
 {
 	stack_id = 0;
@@ -9173,6 +9228,13 @@ output_stmt (cb_tree x)
 				output_debug_stmts (debug_checks);
 			}
 		}
+
+		if (!p->ex_handler || (p->ex_handler && p->handler_type != SIZE_ERROR_HANDLER)) {
+			if (cb_flag_standard_exception) {
+				output_size_exception_handler(p);
+			}
+		}
+
 		break;
 	}
 	case CB_TAG_LABEL:

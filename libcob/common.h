@@ -801,7 +801,8 @@ enum cob_fatal_error {
 	COB_FERROR_FUNCTION,
 	COB_FERROR_FREE,
 	COB_FERROR_XML,
-	COB_FERROR_JSON
+	COB_FERROR_JSON,
+	COB_FERROR_FATAL_EC,
 };
 
 /* Exception identifier enumeration */
@@ -1614,13 +1615,15 @@ typedef struct __cob_global {
 	char			*cob_locale_time;	/* Initial locale */
 
 	int			cob_exception_code;	/* current exception code, in contrast to last_exception_code heavily changed */
+	int			cob_exception_id;	/* current exception id, to use with internal exceptions table */
 	int			cob_call_params;	/* Number of current arguments
 									   This is set to the actual number before a CALL
 									   and is stored directly on module entry to its
 									   cob_module structure within cob_module_enter().
 									*/
 	int			cob_initial_external;	/* First external ref */
-	unsigned int		last_exception_line;		/* Last exception: Program source line */
+	unsigned int		last_exception_line;	/* Last exception: Program source line */
+	unsigned int		last_exception_fatal;	/* Last exception: is fatal */
 	unsigned int		cob_got_exception;	/* Exception active (see last_exception) */
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
@@ -1682,6 +1685,7 @@ COB_EXPIMP void		print_runtime_conf	(void);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
+COB_EXPIMP int		cob_last_exception_fatal(void);
 
 COB_EXPIMP int		cob_last_exit_code	(void);
 COB_EXPIMP const char*	cob_last_runtime_error	(void);

@@ -18,6 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "common.h"
 #include "tarstamp.h"
 #include "config.h"
 
@@ -461,6 +462,14 @@ static const char		* const cob_exception_tab_name[] = {
 #undef	COB_EXCEPTION
 #define COB_EXCEPTION(code, tag, name, critical)	0x##code,
 static const int		cob_exception_tab_code[] = {
+	0,		/* COB_EC_ZERO */
+#include "exception.def"
+	0		/* COB_EC_MAX */
+};
+
+#undef	COB_EXCEPTION
+#define COB_EXCEPTION(code, tag, name, critical)	critical,
+static const int		cob_exception_tab_fatal[] = {
 	0,		/* COB_EC_ZERO */
 #include "exception.def"
 	0		/* COB_EC_MAX */
@@ -2493,6 +2502,7 @@ void
 cob_set_exception (const int id)
 {
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
+	cobglobptr->cob_exception_id = id;
 	last_exception_code = cobglobptr->cob_exception_code;
 
 	cobglobptr->last_exception_statement = STMT_UNKNOWN;
@@ -2548,6 +2558,12 @@ cob_set_exception (const int id)
 #endif
 		cobglobptr->last_exception_line = 0;
 	}
+}
+
+int
+cob_last_exception_fatal() {
+	return cobglobptr->cob_exception_id
+		&& cob_exception_tab_fatal[cobglobptr->cob_exception_id];
 }
 
 /* add to last exception, set if empty */
@@ -9352,6 +9368,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
+		break;
+	case COB_FERROR_FATAL_EC:
+		cob_runtime_error(_("unhandled fatal exception code: %s"),
+			cob_get_last_exception_name ());
 		break;
 	default:
 		/* internal rare error, no need for translation */
