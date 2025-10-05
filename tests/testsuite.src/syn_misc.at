@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2024 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -760,6 +760,19 @@ AT_DATA([prog.cob], [
            .
 ])
 
+AT_DATA([badfd.cob], [
+       FD  PRINT-FILE EXTERNAL.
+       01  PRINT-REC          PIC X(64).
+
+           GOBACK.
+])
+
+AT_DATA([data.cob], [
+       01  PRINT-REC          PIC X(64).
+
+           GOBACK.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:2: error: PROGRAM-ID header missing
 prog.cob:2: error: ENVIRONMENT DIVISION header missing
@@ -768,6 +781,22 @@ prog.cob:10: error: INPUT-OUTPUT SECTION header missing
 prog.cob:10: error: FILE-CONTROL header missing
 prog.cob:14: error: FILE SECTION header missing
 prog.cob:17: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY badfd.cob], [1], [],
+[badfd.cob:2: error: PROGRAM-ID header missing
+badfd.cob:2: error: 'PRINT-FILE' is not defined
+badfd.cob:2: error: 'PRINT-FILE' is not a file name
+badfd.cob:2: error: DATA DIVISION header missing
+badfd.cob:2: error: FILE SECTION header missing
+badfd.cob:5: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 data.cob], [1], [],
+[data.cob:2: error: PROGRAM-ID header missing
+data.cob:2: error: DATA DIVISION header missing
+data.cob:2: error: WORKING-STORAGE SECTION header missing
+data.cob:4: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
@@ -785,6 +814,30 @@ prog.cob:14: warning: FILE SECTION header missing
 prog.cob:14: note: FILE SECTION header assumed
 prog.cob:17: warning: PROCEDURE DIVISION header missing
 prog.cob:17: note: PROCEDURE DIVISION header assumed
+])
+
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks badfd.cob], [1], [],
+[badfd.cob:2: warning: PROGRAM-ID header missing
+badfd.cob:2: note: PROGRAM-ID header assumed
+badfd.cob:2: error: 'PRINT-FILE' is not defined
+badfd.cob:2: error: 'PRINT-FILE' is not a file name
+badfd.cob:2: warning: DATA DIVISION header missing
+badfd.cob:2: note: DATA DIVISION header assumed
+badfd.cob:2: warning: FILE SECTION header missing
+badfd.cob:2: note: FILE SECTION header assumed
+badfd.cob:5: warning: PROCEDURE DIVISION header missing
+badfd.cob:5: note: PROCEDURE DIVISION header assumed
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 -frelax-syntax-checks data.cob], [0], [],
+[data.cob:2: warning: PROGRAM-ID header missing
+data.cob:2: note: PROGRAM-ID header assumed
+data.cob:2: warning: DATA DIVISION header missing
+data.cob:2: note: DATA DIVISION header assumed
+data.cob:2: warning: WORKING-STORAGE SECTION header missing
+data.cob:2: note: WORKING-STORAGE SECTION header assumed
+data.cob:4: warning: PROCEDURE DIVISION header missing
+data.cob:4: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
