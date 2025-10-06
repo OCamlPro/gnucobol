@@ -7000,31 +7000,81 @@ static void
 print_with_overflow (const char *prefix, char *content)
 {
 	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
-	int offset;
+	size_t			prefix_len_raw;
+	size_t			prefix_len;
+	const char		*remaining;
+	unsigned int		allowed;
+	size_t			rlen;
+	size_t			breakpos;
 
-	offset = snprintf (print_data, max_chars_on_line, "%s%s", prefix, content);
-	if (offset >= 0) {	/* snprintf returns -1 in MS and on HPUX if max is reached */
-		pd_off = offset;
-	} else {
-		pd_off = max_chars_on_line;
-		print_data[max_chars_on_line - 1] = 0;
-	}
-	if (pd_off >= max_chars_on_line) {
-		size_t prefix_offset;
-		/* trim "current line" on last space */
-		pd_off = strlen (print_data) - 1;
-		while (pd_off && !isspace ((unsigned char)print_data[pd_off])) {
-			pd_off--;
-		}
-		print_data[pd_off] = '\0';
+	/* determine visual width for prefix and continuation alignment */
+	prefix_len_raw = strlen (prefix);
+	prefix_len = (prefix_len_raw < 2) ? 2 : prefix_len_raw;
+	remaining = content;
+
+	/* First line: print with original prefix */
+	allowed = (unsigned int)(max_chars_on_line - prefix_len);
+	rlen = strlen (remaining);
+	if (rlen <= allowed) {
+		(void)snprintf (print_data, max_chars_on_line, "%s%s", prefix, remaining);
+		pd_off = (int)strlen (print_data);
 		print_program_data (print_data);
-		prefix_offset = strlen (prefix);
-		pd_off = strlen (print_data) - prefix_offset;
-		if (prefix_offset < 2) prefix_offset = 2;
-		memset (print_data, ' ', prefix_offset - 1);
-		snprintf (print_data + prefix_offset - 2, max_chars_on_line, "%c%s", '+', content + pd_off);
+		return;
+	}
+	/* break at last space strictly within the allowed window */
+	breakpos = (allowed > 0) ? (allowed - 1) : 0;
+	while (breakpos > 0 && !isspace ((unsigned char)remaining[breakpos])) {
+		breakpos--;
+	}
+	if (breakpos == 0) {
+		/* no space found in window (or only at index 0), force break at allowed */
+		breakpos = allowed;
+	}
+	(void)snprintf (print_data, max_chars_on_line, "%s%.*s", prefix, (int)breakpos, remaining);
+	pd_off = (int)strlen (print_data);
+	while (pd_off > 0 && isspace ((unsigned char)print_data[pd_off - 1])) {
+		print_data[--pd_off] = '\0';
 	}
 	print_program_data (print_data);
+	/* advance to continuation without collapsing leading spaces */
+	remaining += breakpos;
+
+	/* Continuation lines: prefix is spaces with leading '+' aligned under content */
+	for (;;) {
+		char *out;
+		unsigned int content_cap;
+		/* build continuation prefix */
+		memset (print_data, ' ', prefix_len - 1);
+		out = print_data + prefix_len - 2;
+		allowed = (unsigned int)(max_chars_on_line - (prefix_len - 1));
+		/* capacity for content excludes the '+' itself */
+		content_cap = (allowed > 0) ? (allowed - 1) : 0;
+
+		rlen = strlen (remaining);
+		if (rlen <= content_cap) {
+			(void)snprintf (out, max_chars_on_line, "%c%s", '+', remaining);
+			pd_off = (int)strlen (print_data);
+			print_program_data (print_data);
+			break;
+		}
+
+		breakpos = (content_cap > 0) ? (content_cap - 1) : 0;
+		while (breakpos > 0 && !isspace ((unsigned char)remaining[breakpos])) {
+			breakpos--;
+		}
+		if (breakpos == 0) {
+			/* no space found in window (or only at index 0), force break at capacity */
+			breakpos = content_cap;
+		}
+		(void)snprintf (out, max_chars_on_line, "%c%.*s", '+', (int)breakpos, remaining);
+		pd_off = (int)strlen (print_data);
+		while (pd_off > 0 && isspace ((unsigned char)print_data[pd_off - 1])) {
+			print_data[--pd_off] = '\0';
+		}
+		print_program_data (print_data);
+		/* advance to next continuation without collapsing leading spaces */
+		remaining += breakpos;
+	}
 }
 
 static void
