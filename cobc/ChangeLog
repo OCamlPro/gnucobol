@@ -1,3 +1,13 @@
+2025-10-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_size_exception_handler): generate a check for a
+	size exception on statements that can raise them
+	* codegen.c (output_stmt): add a check for `ON SIZE ERROR` phrase, and
+	if not present and `-fstandard-exception` was set then generate a
+	check for enabled size exceptions
+	* flag.def: add the `standard-exception` flag, to allow standard
+	behavior of exceptions
+
 
 2025-12-04  Roger Bowler <rbowler@snipix.net>
 
