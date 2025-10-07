@@ -1,3 +1,9 @@
+2025-10-07  Unknown <unknown@arch-tower>
+
+	* testsuite.src/run_misc.at: add tests for fatal exceptions and
+	disabling the program failure when they are checked with conditional
+	phrase
+
 
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
