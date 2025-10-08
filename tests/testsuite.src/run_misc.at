@@ -2661,7 +2661,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -7487,7 +7487,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [EC-SIZE-OVERFLOW
 prog; ; 10
@@ -11774,7 +11774,7 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [],
 [prog.cob:10: warning: value size exceeds data size
 prog.cob:10: note: value is 30000
 prog.cob:7: note: 'x' defined here as PIC 9(4)
@@ -12782,7 +12782,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -12938,7 +12938,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -farithmetic-osvs prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE -farithmetic-osvs prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -14040,7 +14040,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
@@ -14071,7 +14071,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
@@ -15797,7 +15797,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fstandard-exception prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [], [libcob: prog.cob:10: error: unhandled fatal exception code: EC-SIZE-OVERFLOW
 ])
@@ -15819,7 +15819,7 @@ AT_DATA([prog1.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fstandard-exception prog1.cob], [0], [], [])
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
 [SIZE ERROR detected
 999

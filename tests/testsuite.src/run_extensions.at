@@ -5477,7 +5477,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -facu-literal=ok -fno-trunc prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE -facu-literal=ok -fno-trunc prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Test using PIC XX COMP-X
@@ -5556,7 +5556,7 @@ AT_DATA([prog.cob], [
 ])
 
 # also syntax-checking MF aliases...
-AT_CHECK([$COMPILE -std=mf -fno-trunc prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=EC-SIZE -std=mf -fno-trunc prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Using PIC XX COMP-X
