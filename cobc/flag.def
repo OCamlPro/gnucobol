@@ -82,11 +82,6 @@ CB_FLAG_NQ (0, "ec", CB_FLAG_GETOPT_EC,
 CB_FLAG_NQ (0, "no-ec", CB_FLAG_GETOPT_NO_EC,
 	  "  -fno-ec=<exception-name>\tdisable code generation for <exception-name>")
 
-CB_FLAG (cb_flag_standard_exception, 0, "standard-exception",
-	_("  -fstandard-exception  enable the standard behavoir of exception, \n"
-	  "                        terminating the program abnormally if a fatal\n"
-	  "                        exception is not handled in the program"))
-
 CB_FLAG_OP (1, "dump", CB_FLAG_GETOPT_DUMP,
 	_("  -fdump=<scope>        dump data fields on abort, <scope> may be\n"
 	  "                        a combination of: ALL, WS, LS, RD, FD, SC, LO\n"

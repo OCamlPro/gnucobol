@@ -1,8 +1,10 @@
 2025-10-07  Unknown <unknown@arch-tower>
 
-	* testsuite.src/run_misc.at: add tests for fatal exceptions and
-	disabling the program failure when they are checked with conditional
-	phrase
+	* testsuite.src/data_binary.at, testsuite.src/data_display.at,
+	testsuite.src/data_packed.at, testsuite.src/run_extenstions.at,
+	testsuite.src/run_fundamental.at testsuite.src/run_misc.at: add a
+	`-fno-ec=EC-SIZE` on tests that rely on a non standard exception
+	handling
 
 
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
