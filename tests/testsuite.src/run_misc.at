@@ -2661,7 +2661,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -7487,7 +7487,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [EC-SIZE-OVERFLOW
 prog; ; 10
@@ -11774,7 +11774,7 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [],
 [prog.cob:10: warning: value size exceeds data size
 prog.cob:10: note: value is 30000
 prog.cob:7: note: 'x' defined here as PIC 9(4)
@@ -12782,7 +12782,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -12938,7 +12938,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE -farithmetic-osvs prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size -farithmetic-osvs prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -14040,7 +14040,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
@@ -14071,7 +14071,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=EC-SIZE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
@@ -14080,7 +14080,7 @@ AT_SETUP([Constant Expressions])
 AT_KEYWORDS([runmisc condition expression])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
+       IDENTIFICATION DIVISION
        PROGRAM-ID. prog.
        DATA  DIVISION.
        WORKING-STORAGE SECTION.
@@ -15788,8 +15788,8 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01 LARGE-VALUE PIC 9(3) VALUE 999.
-       01 SMALL-VALUE PIC 9(3) VALUE 999.
-       01 RESULT      PIC 9(3) VALUE 999.
+       01 SMALL-VALUE PIC 9(3) VALUE 1.
+       01 RESULT      PIC 9(3).
        PROCEDURE DIVISION.
            ADD SMALL-VALUE TO LARGE-VALUE
                 GIVING RESULT.
@@ -15808,8 +15808,8 @@ AT_DATA([prog1.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01 LARGE-VALUE PIC 9(3) VALUE 999.
-       01 SMALL-VALUE PIC 9(3) VALUE 999.
-       01 RESULT      PIC 9(3) VALUE 999.
+       01 SMALL-VALUE PIC 9(3) VALUE 1.
+       01 RESULT      PIC 9(3).
        PROCEDURE DIVISION.
            ADD SMALL-VALUE TO LARGE-VALUE
                 GIVING RESULT
@@ -15822,8 +15822,133 @@ AT_DATA([prog1.cob], [
 AT_CHECK([$COMPILE prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
 [SIZE ERROR detected
-999
+000
 ], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LARGE-VALUE PIC 9(3) VALUE 999.
+       01 SMALL-VALUE PIC 9(3) VALUE 1.
+       01 RESULT      PIC 9(3).
+       PROCEDURE DIVISION.
+           COMPUTE LARGE-VALUE = LARGE-VALUE - (999 * SMALL-VALUE).
+           DIVIDE SMALL-VALUE BY LARGE-VALUE
+                GIVING RESULT.
+           DISPLAY RESULT.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1],
+[], [libcob: prog2.cob:11: error: unhandled fatal exception code: EC-SIZE-ZERO-DIVIDE
+])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LARGE-VALUE PIC 9(3) VALUE 999.
+       01 SMALL-VALUE PIC 9(3) VALUE 1.
+       01 RESULT      PIC 9(3).
+       PROCEDURE DIVISION.
+           COMPUTE LARGE-VALUE = LARGE-VALUE - SMALL-VALUE.
+           DIVIDE SMALL-VALUE BY LARGE-VALUE
+                GIVING RESULT
+                ON SIZE ERROR
+                    DISPLAY "SIZE ERROR detected".
+           DISPLAY RESULT.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
+[000
+], [])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TEST-VALUE       PIC S9.
+       PROCEDURE DIVISION.
+           COMPUTE TEST-VALUE ROUNDED MODE PROHIBITED
+                   = 2.49.
+           DISPLAY TEST-VALUE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [1],
+[], [libcob: prog4.cob:8: error: unhandled fatal exception code: EC-SIZE-TRUNCATION
+])
+
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 TEST-VALUE  PIC S9.
+       PROCEDURE DIVISION.
+           COMPUTE TEST-VALUE ROUNDED MODE PROHIBITED
+                   = 2.49
+                   ON SIZE ERROR
+                        DISPLAY "SIZE ERROR detected".
+           DISPLAY TEST-VALUE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [0],
+[SIZE ERROR detected
++0
+], [])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TEST-VALUE       PIC S9 VALUE 0.
+       PROCEDURE DIVISION.
+           COMPUTE TEST-VALUE
+                   = TEST-VALUE ** TEST-VALUE.
+           DISPLAY TEST-VALUE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [1],
+[], [libcob: prog6.cob:8: error: unhandled fatal exception code: EC-SIZE-EXPONENTIATION
+])
+
+AT_DATA([prog7.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TEST-VALUE       PIC S9 VALUE 0.
+       PROCEDURE DIVISION.
+           COMPUTE TEST-VALUE
+                   = TEST-VALUE ** TEST-VALUE
+                   ON SIZE ERROR
+                        DISPLAY "SIZE ERROR detected".
+           DISPLAY TEST-VALUE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog7.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog7], [0],
+[SIZE ERROR detected
++1
+], [])
+
+
 AT_CLEANUP
 
 
