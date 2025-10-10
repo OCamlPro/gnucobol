@@ -1406,6 +1406,96 @@ DISPLAY: 85 !=  BINARY : 217
 AT_CLEANUP
 
 
+# comp-5 byteorder
+
+AT_SETUP([COMP-5 byteorder])
+AT_KEYWORDS([binary comp-5 byteorder])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  X-P2   BINARY-SHORT UNSIGNED  VALUE 23456.
+       01  X-P3   BINARY-LONG UNSIGNED   VALUE 2345678901.
+       01  X-P4   BINARY-DOUBLE UNSIGNED VALUE 2345678901234567891.
+       01  X-P6   PIC 9(4) COMP-5        VALUE 23456.
+       01  X-P7   PIC 9(8) COMP-5        VALUE 2345678901.
+       01  X-P8   PIC 9(18) COMP-5       VALUE 2345678901234567891.
+       01  X-N2   BINARY-SHORT           VALUE -12345.
+       01  X-N3   BINARY-LONG            VALUE -1234567890.
+       01  X-N4   BINARY-DOUBLE          VALUE -1234567890123456789.
+       01  X-N6   PIC S9(4) COMP-5       VALUE -12345.
+       01  X-N7   PIC S9(8) COMP-5       VALUE -1234567890.
+       01  X-N8   PIC S9(18) COMP-5      VALUE -1234567890123456789.
+       PROCEDURE        DIVISION.
+           DISPLAY 'BINARY-SHORT UNSIGNED  ' FUNCTION HEX-OF(X-P2)
+           DISPLAY 'BINARY-LONG UNSIGNED   ' FUNCTION HEX-OF(X-P3)
+           DISPLAY 'BINARY-DOUBLE UNSIGNED ' FUNCTION HEX-OF(X-P4)
+           DISPLAY 'PIC 9(4) COMP-5        ' FUNCTION HEX-OF(X-P6)
+           DISPLAY 'PIC 9(8) COMP-5        ' FUNCTION HEX-OF(X-P7)
+           DISPLAY 'PIC 9(18) COMP-5       ' FUNCTION HEX-OF(X-P8)
+           DISPLAY 'BINARY-SHORT           ' FUNCTION HEX-OF(X-N2)
+           DISPLAY 'BINARY-LONG            ' FUNCTION HEX-OF(X-N3)
+           DISPLAY 'BINARY-DOUBLE          ' FUNCTION HEX-OF(X-N4)
+           DISPLAY 'PIC S9(4) COMP-5       ' FUNCTION HEX-OF(X-N6)
+           DISPLAY 'PIC S9(8) COMP-5       ' FUNCTION HEX-OF(X-N7)
+           DISPLAY 'PIC S9(18) COMP-5      ' FUNCTION HEX-OF(X-N8)
+           STOP RUN.
+])
+
+if test "x$COB_BIGENDIAN" = "xyes"; then
+AT_CHECK([true])
+else
+
+# COMP-5 BINARY-SHORT BINARY-LONG and BINARY-DOUBLE
+# are stored in native (little-endian) format,
+# even when binary-byteorder=big-endian is specified,
+# unless comp-5-uses-binary-byteorder is also specified
+AT_CHECK([$COMPILE -fbinary-size=2-4-8 \
+                   -fbinary-byteorder=big-endian \
+                   prog.cob -o prog3], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
+[BINARY-SHORT UNSIGNED  A05B
+BINARY-LONG UNSIGNED   3538D08B
+BINARY-DOUBLE UNSIGNED D30A376188868D20
+PIC 9(4) COMP-5        A05B
+PIC 9(8) COMP-5        3538D08B
+PIC 9(18) COMP-5       D30A376188868D20
+BINARY-SHORT           C7CF
+BINARY-LONG            2EFD69B6
+BINARY-DOUBLE          EB7E16820BEFDDEE
+PIC S9(4) COMP-5       C7CF
+PIC S9(8) COMP-5       2EFD69B6
+PIC S9(18) COMP-5      EB7E16820BEFDDEE
+])
+fi
+
+# COMP-5 BINARY-SHORT BINARY-LONG and BINARY-DOUBLE
+# are stored in big-endian format only when specifying both
+# binary-byteorder=big-endian and comp-5-uses-binary-byteorder
+AT_CHECK([$COMPILE -fbinary-size=2-4-8 \
+                   -fbinary-byteorder=big-endian \
+                   -fcomp-5-uses-binary-byteorder \
+                   prog.cob -o prog4], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
+[BINARY-SHORT UNSIGNED  5BA0
+BINARY-LONG UNSIGNED   8BD03835
+BINARY-DOUBLE UNSIGNED 208D868861370AD3
+PIC 9(4) COMP-5        5BA0
+PIC 9(8) COMP-5        8BD03835
+PIC 9(18) COMP-5       208D868861370AD3
+BINARY-SHORT           CFC7
+BINARY-LONG            B669FD2E
+BINARY-DOUBLE          EEDDEF0B82167EEB
+PIC S9(4) COMP-5       CFC7
+PIC S9(8) COMP-5       B669FD2E
+PIC S9(18) COMP-5      EEDDEF0B82167EEB
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([MOVE DISPLAY to BINARY])
 AT_KEYWORDS([fundamental PPP])
 
