@@ -2098,6 +2098,31 @@ command line:
 + -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob
 ])
 
+AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd -fdiagnostics-show-option -fdiagnostics-show-line-numbers -fdiagnostics-absolute-paths -fno-remove-unreachable prog.cob], [0],
+[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         FUNCTION-ID.     WITHPAR.
+000004         DATA             DIVISION.
+000005         LINKAGE          SECTION.
+000006         01 PAR-IN        PIC 9.
+000007         01 PAR-OUT       PIC 9.
+000008         PROCEDURE DIVISION USING PAR-IN RETURNING PAR-OUT.
+000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
+000010             GOBACK.
+000011         END FUNCTION WITHPAR.
+GnuCOBOL V.R.P          prog.cob                                        Page 0002
+
+command line:
+  cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
++ -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd
++ -fdiagnostics-show-option -fdiagnostics-show-line-numbers
++ -fdiagnostics-absolute-paths -fno-remove-unreachable prog.cob
+])
+
 AT_CLEANUP
 
 
