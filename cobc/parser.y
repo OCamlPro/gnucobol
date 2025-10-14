@@ -18134,6 +18134,19 @@ on_size_error_phrases:
   %prec SHIFT_PREFER
   {
 	/* no [NOT] ON SIZE ERROR is specified (= no explicit handling) */
+	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_ADDRESS)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_EXPONENTIATION)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_IMP)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_OVERFLOW)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_TRUNCATION)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_UNDERFLOW)
+		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_ZERO_DIVIDE))
+	{
+		current_statement->handler_type = SIZE_ERROR_HANDLER;
+		current_statement->ex_handler =
+			cb_build_direct("cob_fatal_exception (cob_glob_ptr->cob_exception_code);", 1);
+	}
   }
 | on_size_error _not_on_size_error
 | not_on_size_error _on_size_error
@@ -18141,6 +18154,22 @@ on_size_error_phrases:
 	if ($2) {
 		cb_verify (cb_not_exception_before_exception,
 			_("NOT SIZE ERROR before SIZE ERROR"));
+	} else if ($1 && $1 != cb_int1) {
+		/* One NOT ON SIZE ERROR, but no ON SIZE ERROR, so we need to
+		   check on exceptions */
+		if (CB_EXCEPTION_ENABLE(COB_EC_SIZE)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_ADDRESS)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_EXPONENTIATION)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_IMP)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_OVERFLOW)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_TRUNCATION)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_UNDERFLOW)
+			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_ZERO_DIVIDE))
+		{
+			current_statement->handler_type = SIZE_ERROR_HANDLER;
+				current_statement->ex_handler =
+				cb_build_direct("cob_fatal_exception (cob_glob_ptr->cob_exception_code);", 1);
+		}
 	}
   }
 ;
@@ -18176,6 +18205,7 @@ _not_on_size_error:
 not_on_size_error:
   NOT_SIZE_ERROR statement_list
   {
+	$$ = cb_int2;
 	current_statement->handler_type = SIZE_ERROR_HANDLER;
 	if (is_valid_statement_tree ($2)) {
 		current_statement->not_ex_handler = $2;

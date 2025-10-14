@@ -1,4 +1,4 @@
-2025-10-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+2025-11-10  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* codegen.c (output_size_exception_handler): generate a check for a
 	size exception on statements that can raise them

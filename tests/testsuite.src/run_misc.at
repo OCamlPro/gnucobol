@@ -11750,10 +11750,12 @@ AT_DATA([prog.cob], [
            PERFORM check-x-val
 
            COMPUTE x = 30000
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            MOVE ZERO TO x
            ADD 30000 TO x
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            GOBACK
@@ -12784,7 +12786,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -12904,7 +12906,7 @@ AT_DATA([prog.cob], [
            DISPLAY 'Subtract RSLT    IS ' RSLT.
            MOVE 0 TO RSLT
            ADD NUM-A NUM-C TO RSLT GIVING RSLTV1.
-           DISPLAY 'Add      RSLTv9  IS ' RSLTV1
+           DISPLAY 'Add      RSLTv9  IS ' RSLTV1.
            MULTIPLY NUM-A BY NUM-C GIVING RSLT.
            DISPLAY 'Multiply RSLT    IS ' RSLT.
            MULTIPLY RSLT BY NUM-C.
@@ -12940,7 +12942,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -farithmetic-osvs -fno-ec=size-overflow prog.cob], [0], [],
+AT_CHECK([$COMPILE -farithmetic-osvs -fno-ec=size prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -15805,7 +15807,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
-[], [libcob: prog.cob:10: error: unhandled fatal exception code: EC-SIZE-OVERFLOW
+[], [libcob: prog.cob:10: error: Fatal exception not handled: EC-SIZE-OVERFLOW
 ])
 
 AT_DATA([prog1.cob], [
@@ -15849,7 +15851,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1],
-[], [libcob: prog2.cob:11: error: unhandled fatal exception code: EC-SIZE-ZERO-DIVIDE
+[], [libcob: prog2.cob:11: error: Fatal exception not handled: EC-SIZE-ZERO-DIVIDE
 ])
 
 AT_DATA([prog3.cob], [
@@ -15890,7 +15892,7 @@ AT_DATA([prog4.cob], [
 
 AT_CHECK([$COMPILE prog4.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog4], [1],
-[], [libcob: prog4.cob:8: error: unhandled fatal exception code: EC-SIZE-TRUNCATION
+[], [libcob: prog4.cob:8: error: Fatal exception not handled: EC-SIZE-TRUNCATION
 ])
 
 
@@ -15930,7 +15932,7 @@ AT_DATA([prog6.cob], [
 
 AT_CHECK([$COMPILE prog6.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog6], [1],
-[], [libcob: prog6.cob:8: error: unhandled fatal exception code: EC-SIZE-EXPONENTIATION
+[], [libcob: prog6.cob:8: error: Fatal exception not handled: EC-SIZE-EXPONENTIATION
 ])
 
 AT_DATA([prog7.cob], [
@@ -15953,7 +15955,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog7], [0],
 [SIZE ERROR detected
 +1
 ], [])
-
 
 AT_CLEANUP
 

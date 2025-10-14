@@ -9056,7 +9056,7 @@ output_assign (const struct cb_assign *ap)
 	}
 }
 
-static void
+/* static void
 output_size_exception_handler(const struct cb_statement *p) {
 	unsigned i;
 	const int enabled_size_ec[8] = {
@@ -9109,7 +9109,7 @@ output_size_exception_handler(const struct cb_statement *p) {
 		default:
 			break;
 	}
-}
+} */
 
 static void
 output_stmt (cb_tree x)
@@ -9229,9 +9229,9 @@ output_stmt (cb_tree x)
 			}
 		}
 
-		if ((!p->ex_handler || (p->ex_handler && p->handler_type != SIZE_ERROR_HANDLER))) {
+		/* if ((!p->ex_handler || (p->ex_handler && p->handler_type != SIZE_ERROR_HANDLER))) {
 			output_size_exception_handler(p);
-		}
+		} */
 
 		break;
 	}

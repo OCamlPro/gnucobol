@@ -2087,6 +2087,7 @@ COB_EXPIMP cob_s64_t	cob_s64_pow (cob_s64_t, cob_s64_t);
 /* Functions in call.c */
 
 DECLNORET COB_EXPIMP void	cob_call_error		(void) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_fatal_exception	(const int) COB_A_NORETURN;
 COB_EXPIMP void		cob_field_constant (cob_field *f, cob_field *t, cob_field_attr *a, void *d);
 
 COB_EXPIMP void		cob_set_cancel		(cob_module *);
