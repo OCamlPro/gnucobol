@@ -9229,8 +9229,7 @@ output_stmt (cb_tree x)
 			}
 		}
 
-		if ((!p->ex_handler || (p->ex_handler && p->handler_type != SIZE_ERROR_HANDLER))
-			&& cb_fatal_exceptions_fail) {
+		if ((!p->ex_handler || (p->ex_handler && p->handler_type != SIZE_ERROR_HANDLER))) {
 			output_size_exception_handler(p);
 		}
 

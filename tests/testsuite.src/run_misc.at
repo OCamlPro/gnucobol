@@ -2653,15 +2653,17 @@ AT_DATA([prog.cob], [
        01  X            PIC 9(2) VALUE 0.
        01  Y            PIC 9(2) VALUE 0.
        PROCEDURE        DIVISION.
-           COMPUTE X = 100. *> this overflows which does not store a result
-           COMPUTE Y = 99.  *> and once in a time this result was not stored
+           COMPUTE X = 100 ON SIZE ERROR CONTINUE.
+           *> this overflows which does not store a result
+           COMPUTE Y = 99 ON SIZE ERROR CONTINUE.
+           *> and once in a time this result was not stored
            IF X NOT = 0 AND
               Y NOT = 99
               DISPLAY Y.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -7476,7 +7478,7 @@ AT_DATA([prog.cob], [
        01  x PIC 9.
 
        PROCEDURE DIVISION.
-           COMPUTE x = 10
+           COMPUTE x = 10 ON SIZE ERROR CONTINUE
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-LOCATION)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
@@ -7487,7 +7489,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [EC-SIZE-OVERFLOW
 prog; ; 10
@@ -11774,7 +11776,7 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [],
 [prog.cob:10: warning: value size exceeds data size
 prog.cob:10: note: value is 30000
 prog.cob:7: note: 'x' defined here as PIC 9(4)
@@ -12782,7 +12784,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -12938,7 +12940,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size -farithmetic-osvs prog.cob], [0], [],
+AT_CHECK([$COMPILE -farithmetic-osvs -fno-ec=size-overflow prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -14017,6 +14019,7 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
            DIVIDE x BY y GIVING y
+            ON SIZE ERROR CONTINUE.
            IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            NOT = 'EC-SIZE-ZERO-DIVIDE'
               DISPLAY 'Wrong/missing exception: '
@@ -14031,6 +14034,7 @@ AT_DATA([prog.cob], [
            END-IF
            MOVE 0 TO y
            COMPUTE y = x - 1 / y + 6.5
+            ON SIZE ERROR CONTINUE.
            IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            NOT = 'EC-SIZE-ZERO-DIVIDE'
               DISPLAY 'Wrong/missing exception: '
@@ -14040,7 +14044,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
@@ -14061,7 +14065,9 @@ AT_DATA([prog.cob], [
       *    raise exception checked in previous test
       *    as it may interfere with the expected exception
            DIVIDE x BY y GIVING y
+            ON SIZE ERROR CONTINUE.
            DIVIDE x BY 0.1 GIVING y
+            ON SIZE ERROR CONTINUE.
            IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            NOT = 'EC-SIZE-OVERFLOW'
               DISPLAY 'Wrong/missing exception: '
@@ -14071,7 +14077,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
@@ -14080,7 +14086,7 @@ AT_SETUP([Constant Expressions])
 AT_KEYWORDS([runmisc condition expression])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        DATA  DIVISION.
        WORKING-STORAGE SECTION.

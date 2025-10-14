@@ -1,13 +1,3 @@
-2025-10-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
-
-	* common.h, common.c: add `cob_exception_tab_fatal`, which informs
-	whether an exception is fatal or not
-	* common.h, common.c: add `cob_last_exception_fatal`, to check if the
-	last raised exception was fatal
-	* common.h, common.c: add enum member `COB_FERROR_FATAL_EC` for
-	`struct cob_fatal_error` which can be used when terminating the
-	program due to a fatal exception
-
 
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -46,6 +36,16 @@
 	* mlio.c [!WITH_XML2]: common use of xml events supporting that empty
 	  parsing and general handling of finished/not finished also when built
 	  without libxml2
+
+2025-11-10  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* common.h, common.c: add `cob_exception_tab_fatal`, which informs
+	whether an exception is fatal or not
+	* common.h, common.c: add `cob_last_exception_fatal`, to check if the
+	last raised exception was fatal
+	* common.h, common.c: add enum member `COB_FERROR_FATAL_EC` for
+	`struct cob_fatal_error` which can be used when terminating the
+	program due to a fatal exception
 
 2025-11-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
