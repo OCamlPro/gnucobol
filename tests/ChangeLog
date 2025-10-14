@@ -20,13 +20,16 @@
 
 	* Makefile.am [test/checkall]: check PERL before use
 
-2025-11-10  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* testsuite.src/data_binary.at, testsuite.src/data_display.at,
-	testsuite.src/data_packed.at, testsuite.src/run_extenstions.at,
-	testsuite.src/run_fundamental.at testsuite.src/run_misc.at: add a
-	`-fno-ec=EC-SIZE` on tests that rely on a non standard exception
-	handling
+	* atlocal.in (perf_stat, perf_record): moved calling of perf out to a
+	  function and added a second call for recording
+	* atlocal.in, atlocal_win: fixed quoting (2025-09-17 change)
+
+2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: quote local include and library directories
+	  to support the rare scenario of space-embedded paths, fixing #1142
 
 2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
 
