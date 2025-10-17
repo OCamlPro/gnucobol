@@ -1,3 +1,6 @@
+2025-10-17  Roger Bowler <rbowler@snipix.net>
+
+	* cob.c (print_with_overflow): Print multiple continuation lines on listing
 
 2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
