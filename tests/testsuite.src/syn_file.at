@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014, 2016-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014, 2016-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Joe Robbins,
 ## Edward Hart
 ##
@@ -21,7 +21,11 @@
 
 
 AT_SETUP([Missing SELECT])
-AT_KEYWORDS([file])
+AT_KEYWORDS([file FD SD])
+
+# note: we also check here that missing filenames don't raise
+#       missing file definition errors when using the records
+#       for those files later on (here with WRITE and RELEASE)
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -34,15 +38,22 @@ AT_DATA([prog.cob], [
        FILE SECTION.
        FD  file1.
        01  file1-rec PIC X.
+       SD  files.
+       01  files-rec.
+           05 sort-key PIC X.
        FD  file2.
        01  file2-rec PIC X.
        PROCEDURE DIVISION.
+           WRITE file1-rec.
+           RELEASE files.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: 'file1' is not defined
 prog.cob:10: error: 'file1' is not a file name
+prog.cob:12: error: 'files' is not defined
+prog.cob:12: error: 'files' is not a file name
 ])
 AT_CLEANUP
 
@@ -1165,7 +1176,7 @@ AT_DATA([prog.cob], [
            SELECT g, ASSIGN "g.dat", SEQUENTIAL.
            SELECT h, ASSIGN "h.dat", LINE SEQUENTIAL.
            SELECT i, ASSIGN "i.dat", SEQUENTIAL.
-           
+
        DATA DIVISION.
        FILE SECTION.
        FD  f CODE-SET A.
@@ -1399,6 +1410,56 @@ prog.cob:9: error: missing file description for FILE file-2
 prog.cob:10: error: 'file-2-key' is not defined
 ])
 
+AT_CLEANUP
+
+
+AT_SETUP([SORT files])
+AT_KEYWORDS([file SD FD])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT SRTFIL ASSIGN TO "SRTFIL"
+           ORGANIZATION LINE SEQUENTIAL.
+           SELECT STFILE ASSIGN TO "STFILE"
+           ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD SRTFIL.
+       01 SRTREC               PIC X(256).
+       SD STFILE.
+       01 STFREC               PIC X(256).
+       SD STFILE2.
+       01 STFREC2              PIC X(256).
+
+       PROCEDURE DIVISION.
+           SORT STFILE DESCENDING KEY SRTREC USING SRTFIL GIVING SRTFIL.
+           SORT STFILE DESCENDING KEY STFREC USING SRTFIL GIVING SRTFIL.
+           SORT SRTFIL DESCENDING KEY SRTREC USING STFILE GIVING STFILE.
+           RELEASE STFREC.
+           RETURN STFILE AT END CONTINUE.
+           RETURN STFREC AT END CONTINUE.
+           RELEASE SRTREC.
+           RETURN SRTFIL AT END CONTINUE.
+           RELEASE STFREC2.
+           RETURN STFILE2 AT END CONTINUE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:19: error: 'STFILE2' is not defined
+prog.cob:19: error: 'STFILE2' is not a file name
+prog.cob:25: error: must be an SD filename
+prog.cob:28: error: 'STFREC' is not a file name
+prog.cob:29: error: RELEASE not allowed on this record item
+prog.cob:30: error: must be an SD filename
+prog.cob:32: error: 'STFILE2' is not a file name
+])
 AT_CLEANUP
 
 
@@ -2264,6 +2325,73 @@ prog.cob:34: error: syntax error, unexpected ENCRYPTION
 prog.cob:38: error: syntax error, unexpected ALLOWING
 prog.cob:65: warning: WITH BULK-ADDITION is not implemented
 prog.cob:67: warning: WITH MASS-UPDATE is not implemented
+])
+AT_CLEANUP
+
+
+AT_SETUP([OSVS I/O extensions])
+AT_KEYWORDS([ibm file extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+           SELECT f ASSIGN "f.dat" SEQUENTIAL
+               FILE-LIMITS ARE 1 THRU 10, 100 THRU f-max
+               TRACK-AREA 100 CHARACTERS
+               TRACK-LIMIT 5 TRACKS.
+           SELECT g ASSIGN "g.dat" RELATIVE
+               RELATIVE KEY g-key
+               ACTUAL KEY g-actual-key.
+
+       I-O-CONTROL.
+           APPLY RECORD-OVERFLOW f, g
+           APPLY CORE-INDEX core-idx ON f
+           APPLY CYL-INDEX TO 5 ON f
+           APPLY CYL-OVERFLOW 10 TRACKS f
+           APPLY EXTENDED-SEARCH g
+           APPLY MASTER-INDEX TO 5 on g
+           APPLY WRITE-VERIFY f, g
+           APPLY REORG-CRITERIA f-rec, f
+           RERUN ON "g2.dat" EVERY END REEL g
+           .
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD  f.
+       01  f-rec        PIC X(100).
+
+       FD  g.
+       01  g-rec        PIC 9(10).
+
+       WORKING-STORAGE  SECTION.
+       01  core-idx     PIC 999.
+       01  f-max        PIC 9(5) VALUE 1000.
+       01  g-key        PIC 999.
+       01  g-actual-key PIC XXX.
+
+       PROCEDURE        DIVISION.
+           OPEN INPUT f DISP, INPUT g REREAD
+           .
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:10: warning: FILE-LIMIT is obsolete in GnuCOBOL
+prog.cob:10: warning: TRACK-AREA is obsolete in GnuCOBOL
+prog.cob:11: warning: TRACK-LIMIT is obsolete in GnuCOBOL
+prog.cob:14: warning: ACTUAL KEY is obsolete in GnuCOBOL
+prog.cob:18: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:19: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:20: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:21: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:22: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:23: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:24: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:25: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
+prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
+prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
 ])
 AT_CLEANUP
 
