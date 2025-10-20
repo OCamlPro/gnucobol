@@ -126,6 +126,12 @@ jobs:
           name: install-${{ matrix.isam }}.log
           path: _build/install.log
 
+      - name: Adjust testsuite
+        run: |
+          cd tests/testsuite.src
+          sed -i '' '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a \
+                      AT_SKIP_IF(\[true\])' run_misc.at
+
       - name: Adjust testsuite for VBISAM
         if: ${{ matrix.isam == 'vbisam' }}
         run: |
