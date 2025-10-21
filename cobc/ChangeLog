@@ -1,4 +1,27 @@
 
+2025-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (file_description_entry): create an unnamed file in case
+	  of broken SD/FD reference to ensure a valid tree for error-recovery,
+	  fixing bug #1151
+	* typeck.c (cb_emit_return): ensure a target of SD file
+	* tree.c (finalize_file): fix diagnostic position for non-supported
+	  file type
+	* parser.y (sort_merge_body): fix diagnostic position for SD check
+
+2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: combined header defines into enum cobc_hd and
+	  reordered per ISO, allowing to drop get_conf_section_part_order
+	* parser.y: SPECIAL-NAMES handling changed, making the header
+	  mandatory to not parse "starting words" as unknown mnemonic names
+	* parser.y: better parsing for missing headers, cobc
+	  can "compile" data copybooks in relaxed syntax mode now,
+	  currently only with source format COBOL85
+	* scanner.l: translate non-printable character for invalid symbols
+	* pplex.l: handle MS-DOS EOF and control code for file separator,
+	  currently consuming consecutive occurences as a single new-line
+
 2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l, parser.y, reserved.c: use yyless to push part of scanned

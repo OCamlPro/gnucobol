@@ -1,4 +1,9 @@
 
+2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: quote local include and library directories
+	  to support the rare scenario of space-embedded paths, fixing #1142
+
 2025-05-22  David Declerck <david.declerck@ocamlpro.com>
 
 	* atlocal.in, atlocal_win: set TZ=UTC globally
@@ -14,8 +19,7 @@
 
 2025-05-13  David Declerck <david.declerck@ocamlpro.com>
 
-	* atlocal.in, atlocal_win, cobol85/Makefile.am,
-	  cobol85/Makefile.module.in, testsuite.src/*.at:
+	* atlocal.in, atlocal_win, testsuite.src/*:
 	  use the new DIFF variable to invoke the diff command
 
 2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
