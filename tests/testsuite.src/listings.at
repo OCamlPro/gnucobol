@@ -1639,8 +1639,8 @@ error: syntax error, unexpected Identifier, expecting DYNAMIC or RANDOM or
 000013             DEPENDING ON
 000014             a-numeric-field-with-a-long-name-defined-in-the-file-section.
 error: RECORD DEPENDING item
-     + 'a-numeric-field-with-a-long-name-defined-in-the-file-section' should
-     + be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION
+     + 'a-numeric-field-with-a-long-name-defined-in-the-file-section' should be
+     + defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION
 000015         01  TESTFILE-RECORD.
 000016             02
 000017             a-numeric-field-with-a-long-name-defined-in-the-file-section
@@ -2181,7 +2181,9 @@ command line:
 + -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob
 ])
 
-AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd -fdiagnostics-show-option -fdiagnostics-show-line-numbers -fdiagnostics-absolute-paths -fno-remove-unreachable prog.cob], [0],
+AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only \
+-fno-tsymbols -fdiagnostics-show-option -t abcde -ftcmd -fdiagnostics-show-line-numbers \
+-fdiagnostics-absolute-paths -t- -fno-remove-unreachable prog.cob], [0],
 [GnuCOBOL V.R.P          prog.cob                                        Page 0001
 
 LINE    PG/LN  A...B............................................................
@@ -2201,9 +2203,9 @@ LINE    PG/LN  A...B............................................................
 
 command line:
   cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
-+ -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd
-+ -fdiagnostics-show-option -fdiagnostics-show-line-numbers
-+ -fdiagnostics-absolute-paths -fno-remove-unreachable prog.cob
++ -fno-tmessages -fsyntax-only -fno-tsymbols -fdiagnostics-show-option -t abcde
++ -ftcmd -fdiagnostics-show-line-numbers -fdiagnostics-absolute-paths -t-
++ -fno-remove-unreachable prog.cob
 ])
 
 AT_CLEANUP

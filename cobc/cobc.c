@@ -7056,7 +7056,7 @@ print_with_overflow (const char *prefix, char *content)
 			break;
 		}
 		/* look for last space strictly within the allowed window */
-		breakpos = (content_cap > 0) ? (content_cap - 1) : 0;
+		breakpos = content_cap;
 		while (breakpos > 0 && !isspace ((unsigned char)remaining[breakpos])) {
 			breakpos--;
 		}
