@@ -2121,7 +2121,7 @@ AT_CLEANUP
 
 
 AT_SETUP([command line])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([listing multiline])
 
 AT_CAPTURE_FILE([prog.lst])
 AT_DATA([prog.cob], [
@@ -3355,7 +3355,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Invalid PICTURE strings])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([listing multiline])
 
 AT_CAPTURE_FILE([prog.lst])
 
