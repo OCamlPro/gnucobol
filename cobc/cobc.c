@@ -6999,19 +6999,14 @@ print_free_line (const int line_num, char pch, char *line)
 static void
 print_with_overflow (const char *prefix, char *content)
 {
-	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
-	size_t			prefix_len_raw;
-	size_t			prefix_len;
+	const size_t		max_chars_on_line = cb_listing_wide ? 120 : 80;
+	const size_t		prefix_len_raw = strlen (prefix);
+	const size_t		prefix_len = (prefix_len_raw < 2) ? 2 : prefix_len_raw;
+	const size_t		allowed = max_chars_on_line - prefix_len;
+	char			*out = print_data + prefix_len - 2;
 	const char		*remaining;
-	unsigned int		allowed;
-	size_t			rlen;
+	size_t			rlen = strlen (content);
 	size_t			breakpos;
-
-	/* determine visual width for prefix and continuation alignment */
-	prefix_len_raw = strlen (prefix);
-	prefix_len = (prefix_len_raw < 2) ? 2 : prefix_len_raw;
-	allowed = (unsigned int)(max_chars_on_line - prefix_len);
-	rlen = strlen (content);
 
 	/* print entire content if it fits within the allowed window */
 	if (rlen <= allowed) {
@@ -7022,8 +7017,8 @@ print_with_overflow (const char *prefix, char *content)
 	}
 
 	/* break at last space strictly within the allowed window */
-	breakpos = (allowed > 0) ? (allowed - 1) : 0;
-	while (breakpos > 0 && !isspace ((unsigned char)content[breakpos])) {
+	breakpos = (allowed > 1) ? (allowed - 1) : 0;
+	while (breakpos && !isspace ((unsigned char)content[breakpos])) {
 		breakpos--;
 	}
 	if (breakpos == 0) {
@@ -7042,27 +7037,24 @@ print_with_overflow (const char *prefix, char *content)
 	rlen -= breakpos;
 
 	/* Continuation lines: prefix is spaces with leading '+' aligned under content */
-	allowed = (unsigned int)(max_chars_on_line - (prefix_len - 1));
-	char *out = print_data + prefix_len - 2;
-	unsigned int content_cap = (allowed > 0) ? (allowed - 1) : 0;
 	for (;;) {
 		/* build continuation prefix */
 		memset (print_data, ' ', prefix_len - 1);
 		/* print entire remaining content if it fits within the allowed window */
-		if (rlen <= content_cap) {
+		if (rlen <= allowed) {
 			(void)snprintf (out, max_chars_on_line, "%c%s", '+', remaining);
 			pd_off = (int)strlen (print_data);
 			print_program_data (print_data);
 			break;
 		}
 		/* look for last space strictly within the allowed window */
-		breakpos = content_cap;
-		while (breakpos > 0 && !isspace ((unsigned char)remaining[breakpos])) {
+		breakpos = allowed;
+		while (breakpos && !isspace ((unsigned char)remaining[breakpos])) {
 			breakpos--;
 		}
 		if (breakpos == 0) {
 			/* no space found in window (or only at index 0), force break at capacity */
-			breakpos = content_cap;
+			breakpos = allowed;
 		}
 		/* print continuation line with prefix */
 		(void)snprintf (out, max_chars_on_line, "%c%.*s", '+', (int)breakpos, remaining);
