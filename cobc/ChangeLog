@@ -1,4 +1,9 @@
 
+2025-10-21  Roger Bowler <rbowler@snipix.net>
+
+	* field.c (setup_parameters): set flag_binary_swap for COMP-5 fields
+	  when comp-5-uses-binary-byteorder dialect option is set
+
 2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l, parser.y, reserved.c: use yyless to push part of scanned
