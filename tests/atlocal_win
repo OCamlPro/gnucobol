@@ -113,7 +113,7 @@ set_utf8_locale () {
 	# we need the locale binary to tell us how about the locales available
 	if [ -z "$(which locale)" ]; then
 		echo "Warning: no locale binary found."
-		exit 77  # return code for setting 
+		exit 77  # return code for setting
 	fi
 	unset LC_ALL
 	if [ -z "$LC_ALL" ]; then export LC_ALL=$(locale -a | $GREP -i -E "C\.utf.*8"     | head -n1); fi
@@ -127,9 +127,9 @@ set_utf8_locale () {
 
 # Note: we explicit do not set COB_ON_CYGWIN here,
 # as this file is about running non-cygwin binaries
-    # Windows but not Cygwin
-    COB_ON_WINDOWS=yes
-    export COB_ON_WINDOWS
+	# Windows but not Cygwin
+	COB_ON_WINDOWS=yes
+	export COB_ON_WINDOWS
 
 # Fix for testcases where cobc uses win32 paths internally
 PATHSEP=";"
@@ -150,16 +150,23 @@ export COB_UNIX_LF
 # for runtime configuration ...
 COB_RUNTIME_CONFIG="$(_return_path "${abs_top_srcdir}/config/runtime_empty.cfg")"
 export COB_RUNTIME_CONFIG
-for cobenv in $("${LOCAL_ENV}" "${ABS_COBCRUN}" --runtime-conf \
-                 | $GREP " env:" | cut -d: -f2 | cut -d= -f1 \
-                 | $GREP -v "PATH" | $GREP -v "TERM"); \
+if [ -n "$LOCAL_ENV" ]; then
+	"$LOCAL_ENV" "${ABS_COBCRUN}" --runtime-conf  > info.out
+else
+	"${ABS_COBCRUN}" --runtime-conf  > info.out
+fi
+
+for cobenv in $( $GREP " env:" info.out | cut -d: -f2 | cut -d= -f1 \
+               | $GREP -v "PATH" | $GREP -v "TERM"); \
 	do _unset_option $cobenv; \
 done
 
-# prevent multiple calls by caching the output
-"${LOCAL_ENV}" "${ABS_COBC}" --verbose --info > info.out
-
 # ... and also unset for the compiler
+if [ -n "$LOCAL_ENV" ]; then
+	"$LOCAL_ENV" "${ABS_COBC}" --verbose --info > info.out
+else
+	"${ABS_COBC}" --verbose --info > info.out
+fi
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	for cobenv in $($GREP "env:" info.out | cut -d: -f2 | cut -d= -f1 \
 	              | $GREP -v "PATH"); \
