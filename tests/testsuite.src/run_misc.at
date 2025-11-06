@@ -15792,7 +15792,7 @@ main (int argc, char **argv)
 ]])
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
-AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 AT_CHECK([COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
@@ -15880,7 +15880,7 @@ main (int argc, char **argv)
 ]])
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
-AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 AT_CHECK([COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
