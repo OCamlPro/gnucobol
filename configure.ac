@@ -674,6 +674,8 @@ AC_CHECK_HEADERS([sys/types.h stddef.h fcntl.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
 AC_CHECK_HEADERS([sys/time.h locale.h dlfcn.h stdint.h inttypes.h signal.h])
+# optional for tests/atlocal:
+AC_CHECK_HEADER(pthread.h, [], [], [])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -1442,7 +1444,7 @@ dnl   [AC_DEFINE([HAVE_RAISE], [1]) AC_MSG_RESULT([yes])],
 dnl   [AC_MSG_RESULT([no])],
 dnl   [])
 
-AC_CHECK_FUNCS([fdatasync sigaction fmemopen])
+AC_CHECK_FUNCS([fdatasync sigaction fmemopen dlmopen])
 AC_CHECK_DECLS([fdatasync])	# also check for declaration, missing on MacOS...
 AC_CHECK_DECLS([fmemopen])	# also check for declaration, missing on AIX...
 
@@ -2761,6 +2763,8 @@ AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
 AC_SUBST([LIBCOB_CPPFLAGS])
 AC_SUBST([COB_ENABLE_DEBUG], [$enable_debug]) # needed for tests/atlocal
+AC_SUBST([HAVE_PTHREAD_H], ["$ac_cv_header_pthread_h"]) # needed for tests/atlocal
+AC_SUBST([HAVE_DLMOPEN], ["$ac_cv_func_dlmopen"]) # needed for tests/atlocal
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])

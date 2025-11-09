@@ -192,6 +192,9 @@ if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	done
 fi
 
+HAVE_PTHREAD_H="no"
+HAVE_DLMOPEN="no"
+
 COB_STACKTRACE=0
 export COB_STACKTRACE
 
