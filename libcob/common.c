@@ -10393,6 +10393,7 @@ cob_init (const int argc, char **argv)
 	basext = NULL;
 	share_sort_state = NULL;
 	cob_source_file = NULL;
+	strbuff = NULL;
 	exit_hdlrs = NULL;
 	hdlrs = NULL;
 	commlncnt = 0;
