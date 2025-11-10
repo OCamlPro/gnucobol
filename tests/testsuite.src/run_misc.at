@@ -15763,10 +15763,6 @@ AT_DATA([dummy.cob], [
 AT_DATA([caller.c], [[
 #include <libcob.h>
 
-#ifndef NULL
-#define NULL (void*)0
-#endif
-
 int
 main (int argc, char **argv)
 {
@@ -15818,7 +15814,7 @@ AT_CHECK([$COMPILE_MODULE -o libdummy1 dummy.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -o libdummy2 dummy.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -o libdummy3 dummy.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=libdummy1:libdummy2:libdummy3 $COBCRUN_DIRECT ./caller], [0],
+AT_CHECK([COB_PRE_LOAD="libdummy1"$PATHSEP"libdummy2"$PATHSEP"libdummy3" $COBCRUN_DIRECT ./caller], [0],
 [TEST1
 TEST2
 ], [])
