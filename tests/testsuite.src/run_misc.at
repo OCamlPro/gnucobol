@@ -15739,6 +15739,12 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+# This specifically tests a use-after-free issue where COB_PRE_LOAD caused 
+# leftover values from previous initializations to be used due to
+# cob_init/cob_tidy not resetting the buffer of cob_strcat, which is used
+# by cob_call when it preloads more than one library. It is also, however,
+# useful as a general test case to check if there is any leak between
+# cob_init/cob_tidy.
 AT_SETUP([Can reinitialize cleaned up runtime with COB_PRE_LOAD])
 AT_KEYWORDS([runmisc cob_init cob_call cob_tidy])
 
@@ -15812,9 +15818,8 @@ main (int argc, char **argv)
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -o libdummy1 dummy.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -o libdummy2 dummy.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -o libdummy3 dummy.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="libdummy1"$PATHSEP"libdummy2"$PATHSEP"libdummy3" $COBCRUN_DIRECT ./caller], [0],
+AT_CHECK([COB_PRE_LOAD="libdummy1"$PATHSEP"libdummy2" $COBCRUN_DIRECT ./caller], [0],
 [TEST1
 TEST2
 ], [])
