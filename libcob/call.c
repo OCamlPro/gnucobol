@@ -19,7 +19,6 @@
 */
 
 
-#include "common.h"
 #include "config.h"
 
 #ifndef	_GNU_SOURCE
@@ -565,7 +564,7 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 		cobsetptr->cob_preload_str = cob_strdup(path);
 	} else {
 		/* +1 to len for PATHSEP_CHAR */
-		int len = strlen (path) + strlen (cobsetptr->cob_preload_str) + 2;
+		const size_t len = strlen (path) + strlen (cobsetptr->cob_preload_str) + 2;
 		char *buff = (char *) cob_fast_malloc (len);
 		snprintf (buff, len, "%s%c%s", path, PATHSEP_CHAR,
 			cobsetptr->cob_preload_str);

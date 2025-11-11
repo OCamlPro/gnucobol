@@ -583,8 +583,6 @@ COB_HIDDEN FILE			*cob_get_dump_file	(void);
 COB_HIDDEN char		*cob_int_to_string		(int, char*);
 COB_HIDDEN char		*cob_int_to_formatted_bytestring	(int, char*);
 #endif
-COB_HIDDEN char		*cob_strcat		(char*, char*, int);
-COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
 COB_HIDDEN int		cob_runtime_warning_ss (const char *, const char *);
 

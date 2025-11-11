@@ -1,4 +1,10 @@
 
+2025-11-18	Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: remove strbuff variable and cob_strcat/cob_strjoin utilities
+	which were prone to memory corruption due to strbuff being a global
+	* coblocal.h: remove definitions of cob_strcat and cob_strjoin
+
 2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h [__GNUC__]: only use C11's _Thread_local for gcc 5+

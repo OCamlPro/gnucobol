@@ -18,6 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "common.h"
 #include "tarstamp.h"
 #include "config.h"
 
@@ -7701,7 +7702,7 @@ static void
 var_print (const char *msg, const char *val, const char *default_val,
 		const unsigned int format)
 {
-	char *val_buff;
+	char val_buff[COB_NORMAL_BUFF];
 
 #if 0 /* currently only format 0/1 used */
 	switch (format) {
@@ -7731,15 +7732,11 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format != 0 && val && default_val &&
 		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
-		char *dflt = _("(default)");
-		/* +1 to len for space */
-		int len = strlen (default_val) + strlen (dflt) + 2;
-		val_buff = (char *) cob_fast_malloc (len);
-		snprintf (val_buff, len, "%s %s", default_val, dflt);
+		snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+			_("(default)"));
+		val = val_buff;
 	} else if (!val && default_val) {
-		val_buff = cob_strdup (default_val);
-	} else {
-		val_buff = cob_strdup (val);
+		val = default_val;
 	}
 #else
 	if (format == 0) {
@@ -7756,15 +7753,11 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format == 1 && val && default_val &&
 		(val[0] == '0' || strcmp (val, default_val) == 0)) {
-		char *dflt = _("(default)");
-		/* +1 to len for space */
-		int len = strlen (default_val) + strlen (dflt) + 2;
-		val_buff = (char *) cob_fast_malloc (len);
-		snprintf (val_buff, len, "%s %s", default_val, dflt);
+		snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+			_("(default)"));
+		val = val_buff;
 	} else if (!val && default_val) {
-		val_buff = cob_strdup (default_val);
-	} else {
-		val_buff = cob_strdup (val);
+		val = default_val;
 	}
 #endif
 
@@ -7773,15 +7766,11 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format != 0 && val && default_val &&
 		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
-		char *dflt = _("(default)");
-		/* +1 to len for space */
-		int len = strlen (default_val) + strlen (dflt) + 2;
-		char *val_buff = (char *) cob_fast_malloc (len);
-		snprintf (val_buff, len, "%s %s", default_val, dflt);
+		snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+			_("(default)"));
+		val = val_buff;
 	} else if (!val && default_val) {
-		val_buff = cob_strdup (default_val);
-	} else {
-		val_buff = cob_strdup (val);
+		val = default_val;
 	}
 
 	if (val && strlen (val) <= CB_IVAL_SIZE) {
@@ -7797,7 +7786,7 @@ var_print (const char *msg, const char *val, const char *default_val,
 		char	*token;
 		size_t	n;
 
-		p = val_buff;
+		p = cob_strdup (val);
 
 		n = 0;
 		token = strtok (p, " ");
