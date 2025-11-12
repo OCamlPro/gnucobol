@@ -18,7 +18,6 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #include "config.h"
 
 #include <stdlib.h>
@@ -48,7 +47,12 @@
 #define LIBXML_CONST_ERROR_PTR	xmlErrorPtr		/* use old ABI */
 #endif
 #endif
- 
+
+#else
+/* libxml2 compatible definition to reduce the need for
+   even more conditional compile */
+typedef unsigned char xmlChar;
+#define xmlStrlen(s)	strlen((const char *)s)
 #endif
 
 #if defined (WITH_CJSON)
@@ -61,7 +65,8 @@
 #endif
 #elif defined (WITH_JSON_C)
 #if defined (HAVE_JSON_C_JSON_H)
-#include <json-c/json.h>
+#include <json-c/json_object.h>
+#include <json-c/linkhash.h>
 #elif defined (HAVE_JSON_H)
 #include <json.h>
 #else
@@ -103,6 +108,7 @@ enum xml_parser_state {
 	XML_PARSER_VALIDATION_SETUP_MEM,
 	XML_PARSER_JUST_STARTED,
 	XML_PARSER_DOCUMENT_START,
+	XML_PARSER_HAD_END_OF_DOCUMENT,
 	XML_PARSER_HAD_END_OF_INPUT,
 	XML_PARSER_FINE,
 	XML_PARSER_HAD_NONFATAL_ERROR,
@@ -175,6 +181,7 @@ struct xml_state {
 };
 
 enum json_code_status {
+	JSON_ALL_OK 		 = 0,
 	JSON_OUT_FIELD_TOO_SMALL = 1,
 	JSON_INTERNAL_ERROR = 500
 };
@@ -216,57 +223,18 @@ get_xml_code (void)
 static void
 set_xml_event (enum cob_xml_event event)
 {
-	/* note: it is up to the compiler to ensure that this constant
-	   is read-only (and therefore no overwriting of const data happens) */
-	COB_MODULE_PTR->xml_event->data = (unsigned char *)xml_event_name[event];
-	COB_MODULE_PTR->xml_event->size = xml_event_name_len[event];
-}
+	const size_t size1 = xml_event_name_len[event];
+	const unsigned char *data1 = (unsigned char *)xml_event_name[event];
 
+	/* note: it is up to the compiler to ensure that the register is setup
+	   and we only get here for GC 3.2+ modules which have it - verified
+	   in the initial run of cob_xml_parse */
 
-#if defined (WITH_XML2)
-/* add data to event buffer with given size;
-   returns -1 if buffer allocation is not possible */
-static int
-buffer_xml_event_data (struct xml_state *state, struct xml_event_data *event_data,
-		const void *data, size_t size)
-{
-	size_t buff_free_size = state->buff_len - state->buff_off;
-	void *next_buffer_pos = ((unsigned char *)state->buff) + state->buff_off;
+	const size_t size2 = 30;
+	unsigned char *data2 = COB_MODULE_PTR->xml_event->data;
 
-	event_data->data_ptr = next_buffer_pos;
-
-	/* most common: enough size in the buffer, so copy and finish */
-	if (size <= buff_free_size) {
-		memcpy (next_buffer_pos, data, size);
-		state->buff_off += size;
-		return 0;
-	}
-
-	/* otherwise: allocate new buffer with additional space, preserving existing data */
-	{
-		const size_t malloc_size = state->buff_off
-				+ size > COB_MINI_BUFF ? size : COB_MINI_BUFF;
-		void	*mptr = cob_fast_malloc (malloc_size);
-		if (mptr) {
-			if (state->buff_off) {
-				memcpy (mptr, state->buff, state->buff_off);
-			}
-			cob_free (state->buff);
-			state->buff = mptr;
-			state->buff_len = malloc_size;
-			memcpy (next_buffer_pos, data, size);
-			state->buff_off += size;
-			return 0;
-		}
-	}
-
-	/* if that did not work out, set whatever our buffer provides */
-	event_data->data_len = size = buff_free_size;
-	if (size) {
-		memcpy (next_buffer_pos, data, size);
-		state->buff_off += size;
-	}
-	return 1;
+	memcpy (data2, data1, size1);
+	memset (data2 + size1, ' ', size2 - size1);
 }
 
 /* provide event structure and does the setup in the state,
@@ -313,6 +281,60 @@ new_xml_event (struct xml_state *state,  enum cob_xml_event xml_event) {
 	}
 	state->event = event;
 	return event;
+}
+
+/* the following functions may be used with partially manual parsing
+   of XML (which could be useful for the testsuite), but are currently
+   only used for complete parsing via libxml2 */
+#if defined (WITH_XML2)
+
+
+/* add data to event buffer with given size;
+   returns -1 if buffer allocation is not possible */
+static int
+buffer_xml_event_data (struct xml_state *state, struct xml_event_data *event_data,
+		const void *data, size_t size)
+{
+	size_t buff_free_size = state->buff_len - state->buff_off;
+	void *next_buffer_pos = ((unsigned char *)state->buff) + state->buff_off;
+
+	event_data->data_ptr = next_buffer_pos;
+
+	/* most common: enough size in the buffer, so copy and finish */
+	if (size <= buff_free_size) {
+		memcpy (next_buffer_pos, data, size);
+		state->buff_off += size;
+		return 0;
+	}
+
+	/* otherwise: allocate new buffer with additional space, preserving existing data */
+	{
+		const size_t malloc_size = state->buff_off
+				+ size > COB_MINI_BUFF ? size : COB_MINI_BUFF;
+		void	*mptr = cob_fast_malloc (malloc_size);
+		/* CHECKME: we possibly want to handle out of memory to pass it to COBOL
+		   as XML error - but cob_fast_malloc / cob_malloc already abort the runtime
+		   in case of missing memory */
+		if (mptr) {
+			if (state->buff_off) {
+				memcpy (mptr, state->buff, state->buff_off);
+			}
+			cob_free (state->buff);
+			state->buff = mptr;
+			state->buff_len = malloc_size;
+			memcpy (next_buffer_pos, data, size);
+			state->buff_off += size;
+			return 0;
+		}
+	}
+
+	/* if that did not work out, set whatever our buffer provides */
+	event_data->data_len = size = buff_free_size;
+	if (size) {
+		memcpy (next_buffer_pos, data, size);
+		state->buff_off += size;
+	}
+	return 1;
 }
 
 /* add data to event buffer with given size (will be calculated if -1 is specified);
@@ -510,13 +532,43 @@ is_empty (const cob_field * const f)
 static void *
 copy_data_as_string (const char* data, const size_t size)
 {
-	char *ptr = cob_malloc (size + 1);
+	char *ptr = cob_fast_malloc (size + 1);
+#if 0	/* CHECKME: we possibly want to handle out of memory to pass it to COBOL
+		   as XML error - but cob_fast_malloc / cob_malloc already abort the runtime
+		   in case of missing memory */
 	if (!ptr) {
 		return NULL;
 	}
+#endif
 	memcpy (ptr, data, size);
 	ptr[size] = 0;
 	return (void *)ptr;
+}
+
+/* returns a pointer + lenght to given cob_field's data,
+   right trimmed with no JUSTIFIED RIGHT, left-trimmed otherwise,
+   returns pointer to single space if empty (or variable lenght zero) */
+static void
+get_trimmed_data_int (const cob_field * const f,
+	const char **data, int *out_len)
+{
+	char	*str = (char *)f->data;
+	int 	len = f->size;
+
+	if (len == 0) {
+		*out_len = 1;
+		*data = " ";
+		return;
+	}
+
+	if (COB_FIELD_JUSTIFIED (f)) {
+		for (; *str == ' ' && len > 1; ++str, --len);
+	} else {
+		for (; (str[len - 1] == ' ' || str[len - 1] == 0) && len > 1; --len);
+	}
+
+	*out_len = len;
+	*data = str;
 }
 
 /* returns a duplicate of the given cob_field's data,
@@ -526,19 +578,10 @@ static void *
 get_trimmed_data (const cob_field * const f,
 	void * (*strndup_func)(const char *, size_t))
 {
-	size_t	len = f->size;
-	char	*str;
+	int 	len;
+	const char	*str;
 
-	if (len == 0) {
-		return (*strndup_func)(" ", 1);
-	}
-
-	str = (char *)f->data;
-	if (COB_FIELD_JUSTIFIED (f)) {
-		for (; *str == ' ' && len > 1; ++str, --len);
-	} else {
-		for (; (str[len - 1] == ' ' || str[len - 1] == 0) && len > 1; --len);
-	}
+	get_trimmed_data_int (f, &str, &len);
 
 	return (*strndup_func)(str, len);
 }
@@ -597,14 +640,16 @@ is_valid_xml_name (const cob_field * const f)
 #if defined (WITH_XML2) || defined (WITH_CJSON) || defined (WITH_JSON_C)
 
 static cob_pic_symbol *
-get_pic_for_num_field (const size_t num_int_digits, const size_t num_dec_digits)
+get_pic_for_num_field (const unsigned short num_int_digits,
+			const unsigned short num_dec_digits)
 {
-	size_t	num_pic_symbols = (size_t)2 + (2 * !!num_dec_digits) + 1;
-	cob_pic_symbol	*pic = cob_malloc (num_pic_symbols * sizeof (cob_pic_symbol));
+	static cob_pic_symbol pic[2 + 2 + 1];
 	cob_pic_symbol	*symbol = pic;
 
+	/* note: we want a floating sign even for non-signed values
+	   as this allows to left-trim spaces afterwards */
 	symbol->symbol = '-';
-	symbol->times_repeated = cob_max_int ((int) num_int_digits, 1);
+	symbol->times_repeated = num_int_digits ? num_int_digits : 1;
 	++symbol;
 
 	symbol->symbol = '9';
@@ -617,7 +662,7 @@ get_pic_for_num_field (const size_t num_int_digits, const size_t num_dec_digits)
 		++symbol;
 
 		symbol->symbol = '9';
-		symbol->times_repeated = (int) num_dec_digits;
+		symbol->times_repeated = num_dec_digits;
 		++symbol;
 	}
 
@@ -627,58 +672,50 @@ get_pic_for_num_field (const size_t num_int_digits, const size_t num_dec_digits)
 }
 
 static void *
-get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
-	 const char decimal_point)
+get_num_int (cob_field * const f, const char decimal_point,
+	unsigned char *buffer, int *out_len)
 {
-	const size_t	num_integer_digits
+	unsigned char  	*p = buffer;
+	const unsigned short	num_integer_digits
 		= cob_max_int (0, COB_FIELD_DIGITS (f) - COB_FIELD_SCALE (f));
-	const size_t	num_decimal_digits
+	const unsigned short	num_decimal_digits
 		= cob_max_int (0, COB_FIELD_SCALE (f));
+	int 	len = (num_integer_digits ? (1 + num_integer_digits) : 2)
+			    + (num_decimal_digits ? (1 + num_decimal_digits) : 0);
+	const unsigned char mod_orig_decimal_point = COB_MODULE_PTR->decimal_point != decimal_point
+	                                           ? COB_MODULE_PTR->decimal_point : 0;
 	cob_field_attr	attr;
-	cob_field       edited_field;
-	char		*dp_pos;
-	void		*num;
+	cob_field   	edited_field = { .size = len, .data = p, .attr = &attr };
+
+	/* temporarily swap decimal point, if needed */
+	if (mod_orig_decimal_point) {
+		COB_MODULE_PTR->decimal_point = decimal_point;
+	}
 
 	/* Initialize attribute for nicely edited version of f */
 	attr.type = COB_TYPE_NUMERIC_EDITED;
-	attr.flags = COB_FIELD_HAVE_SIGN (f) ?
-		(COB_FLAG_JUSTIFIED | COB_FLAG_HAVE_SIGN) :
-		(COB_FLAG_JUSTIFIED);
+	attr.flags = (COB_FLAG_JUSTIFIED | COB_FIELD_HAVE_SIGN (f));
 	attr.scale = (COB_FIELD_SCALE (f) < 0) ? 0 : COB_FIELD_SCALE (f);
-	attr.digits = (unsigned short)(num_integer_digits + num_decimal_digits);
-	if (num_integer_digits == 0)
-		attr.digits++;
+	attr.digits = (num_integer_digits ? num_integer_digits : 1) + num_decimal_digits;
 
 	attr.pic = get_pic_for_num_field (num_integer_digits,
 					  num_decimal_digits);
 
-	/* Initialize field for nicely edited version */
-	edited_field.attr = &attr;
-	edited_field.size = cob_max_int (2, (int) num_integer_digits + 1);
-	if (num_decimal_digits) {
-		edited_field.size += 1 + num_decimal_digits;
-	}
-	edited_field.data = cob_malloc (edited_field.size);
-
-	/* Set field */
+	/* Set field (with expected decimal point as-needed) */
 	cob_move (f, &edited_field);
-
-	/* Replace decimal point in num with given decimal_point */
-	dp_pos = memchr (edited_field.data, COB_MODULE_PTR->decimal_point,
-			 edited_field.size);
-	if (dp_pos) {
-		*dp_pos = decimal_point;
+	if (mod_orig_decimal_point) {
+		COB_MODULE_PTR->decimal_point = mod_orig_decimal_point;
 	}
 
-	/* Trim output and clean up */
-	num = get_trimmed_data (&edited_field, strndup_func);
+	/* Trim output (we know the edited field will have at least one digit) 
+	   and provide a duplicate as we need it later */
+	for (; *p == ' '; ++p, --len);
+	p[len] = 0;
 
-	cob_free (edited_field.data);
-	cob_free ((void *) edited_field.attr->pic);
-
-	return num;
-
+	*out_len = len;
+	return p;
 }
+
 #endif
 
 #if defined (WITH_XML2)
@@ -724,16 +761,6 @@ get_xml_name (const cob_field * const f)
 		return name;
 	}
 }
-
-#define IF_NEG_RETURN_ELSE_COUNT(func)			\
-	do {						\
-		int	macro_status = (func);		\
-		if (macro_status < 0) {			\
-			return macro_status;			\
-		} else {				\
-			*count += macro_status;		\
-		}					\
-	} ONCE_COB
 
 static int
 generate_xml_from_tree (xmlTextWriterPtr, cob_ml_tree *, xmlChar *, xmlChar *,
@@ -800,13 +827,17 @@ generate_hex_attribute (xmlTextWriterPtr writer, cob_ml_attr *attr, unsigned int
 {
 	xmlChar	*hex_name;
 	xmlChar	*value;
+	int 	ret;
 
 	hex_name = get_name_with_hex_prefix (attr->name);
 	value = get_hex_xml_data (attr->value);
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterWriteAttribute (writer, hex_name, value));
+	ret = xmlTextWriterWriteAttribute (writer, hex_name, value);
 	xmlFree (hex_name);
 	xmlFree (value);
 
+	if (ret < 0) {
+		return ret;
+	}
 	return 0;
 }
 
@@ -815,13 +846,17 @@ generate_normal_attribute (xmlTextWriterPtr writer, cob_ml_attr *attr, unsigned 
 {
 	xmlChar	*name;
 	xmlChar	*value;
+	int 	ret;
 
 	name = get_xml_name (attr->name);
 	value = get_trimmed_xml_data (attr->value);
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterWriteAttribute (writer, name, value));
+	ret = xmlTextWriterWriteAttribute (writer, name, value);
 	xmlFree (name);
 	xmlFree (value);
 
+	if (ret < 0) {
+		return ret;
+	}
 	return 0;
 }
 
@@ -857,11 +892,14 @@ generate_hex_element (xmlTextWriterPtr writer, cob_ml_tree *tree,
 	xmlChar		*hex_name;
 	int		status;
 	xmlChar		*hex_value;
+	int 	ret;
 
 	hex_name = get_name_with_hex_prefix (tree->name);
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterStartElementNS (writer, x_ns_prefix,
-							       hex_name, x_ns));
+	ret = xmlTextWriterStartElementNS (writer, x_ns_prefix, hex_name, x_ns);
 	xmlFree (hex_name);
+	if (ret < 0) {
+		return ret;
+	}
 
 	status = generate_attributes (writer, tree->attrs, count);
 	if (status < 0) {
@@ -869,19 +907,18 @@ generate_hex_element (xmlTextWriterPtr writer, cob_ml_tree *tree,
 	}
 
 	hex_value = get_hex_xml_data (tree->content);
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterWriteString (writer, hex_value));
+	ret = xmlTextWriterWriteString (writer, hex_value);
 	xmlFree (hex_value);
+	if (ret < 0) {
+		return ret;
+	}
 
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterEndElement (writer));
+	ret = xmlTextWriterEndElement (writer);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
-}
-
-
-static xmlChar *
-get_xml_num (cob_field * const f, const char decimal_point)
-{
-	return get_num (f, &xmlCharStrndup_void, decimal_point);
 }
 
 static int
@@ -889,7 +926,7 @@ generate_content (xmlTextWriterPtr writer, cob_ml_tree *tree,
 		  const char decimal_point, unsigned int *count)
 {
 	cob_field	*content = tree->content;
-	xmlChar		*x_content;
+	int 	ret = 0;
 
 	if (COB_FIELD_IS_FP (content)) {
 		/* TO-DO: Implement! */
@@ -897,13 +934,32 @@ generate_content (xmlTextWriterPtr writer, cob_ml_tree *tree,
 		cob_set_exception (COB_EC_IMP_FEATURE_MISSING);
 		cob_fatal_error (COB_FERROR_XML);
 	} else if (COB_FIELD_IS_NUMERIC (content)) {
-		x_content = get_xml_num (content, decimal_point);
+		unsigned char	edited_data[COB_MAX_BINARY + 2];
+		int 	len = 0;
+		xmlChar		*x_content = get_num_int (tree->content, decimal_point, edited_data, &len);
+		ret = xmlTextWriterWriteRawLen (writer, x_content, len);
 	} else {
-		x_content = get_trimmed_xml_data (content);
+		int 	len;
+		const char	*p;
+		get_trimmed_data_int (tree->content, &p, &len);
+		/* for XML escape we need to pass a null-terminated string,
+		   so create a temporary buffer with that */
+		if (len < COB_SMALL_BUFF) {
+			xmlChar	x_content[COB_SMALL_BUFF];
+			memcpy (x_content, p, len);
+			x_content[len] = 0;
+			ret = xmlTextWriterWriteString (writer, x_content);
+		} else {
+			xmlChar	*x_content = copy_data_as_string (p, len);
+			memcpy (x_content, p, len);
+			ret = xmlTextWriterWriteString (writer, x_content);
+			cob_free (x_content);
+		}
 	}
 
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterWriteString (writer, x_content));
-	xmlFree (x_content);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -917,12 +973,15 @@ generate_normal_element (xmlTextWriterPtr writer, cob_ml_tree *tree,
 	int		status;
 	xmlChar		*x_name;
 	cob_ml_tree	*child;
+	int  	ret;
 
 	/* Start element */
 	x_name = get_xml_name (tree->name);
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterStartElementNS (writer, x_ns_prefix,
-							       x_name, x_ns));
+	ret = xmlTextWriterStartElementNS (writer, x_ns_prefix, x_name, x_ns);
 	xmlFree (x_name);
+	if (ret < 0) {
+		return ret;
+	}
 
 	status = generate_attributes (writer, tree->attrs, count);
 	if (status < 0) {
@@ -951,7 +1010,10 @@ generate_normal_element (xmlTextWriterPtr writer, cob_ml_tree *tree,
 	}
 
 	/* Complete element */
-	IF_NEG_RETURN_ELSE_COUNT (xmlTextWriterEndElement (writer));
+	ret = xmlTextWriterEndElement (writer);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -992,31 +1054,10 @@ generate_xml_from_tree (xmlTextWriterPtr writer, cob_ml_tree *tree,
 	}
 }
 
-#undef IF_NEG_RETURN_ELSE_COUNT
-
 #endif
 
 #if defined (WITH_CJSON) || defined (WITH_JSON_C)
 
-static void *
-json_strndup (const char *str, const size_t size)
-{
-	char	*dup = cob_malloc (size + 1);
-	memcpy (dup, str, size);
-	return dup;
-}
-
-static char *
-get_trimmed_json_data (const cob_field * const f)
-{
-	return (char *) get_trimmed_data (f, &json_strndup);
-}
-
-static char *
-get_json_num (cob_field * const f, const char decimal_point)
-{
-	return (char *) get_num (f, &json_strndup, decimal_point);
-}
 
 #if defined (WITH_CJSON)
 static int
@@ -1034,7 +1075,7 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, cJSON *out
 
 	/* NAME OF ... OMITTED to generate an anonymous JSON object */
 	if (tree->name != NULL) {
-		name = get_trimmed_json_data (tree->name);
+		name = get_trimmed_data (tree->name, &copy_data_as_string);
 	}
 	if (tree->children) {
 		if (name != NULL) {
@@ -1065,7 +1106,13 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, cJSON *out
 			cob_set_exception (COB_EC_IMP_FEATURE_MISSING);
 			cob_fatal_error (COB_FERROR_JSON);
 		} else if (COB_FIELD_IS_NUMERIC (tree->content)) {
-			content = get_json_num (tree->content, decimal_point);
+			unsigned char	edited_data[COB_MAX_BINARY + 3];	/* minus, comma, null */
+			const char *p;
+			int 	len;
+
+			p = get_num_int (tree->content, decimal_point, edited_data, &len);
+
+			content = copy_data_as_string (p, len);
 			/*
 			  We use AddRaw instead of AddNumber because a PIC 9(32)
 			  may not be representable using the double AddNumber
@@ -1076,7 +1123,7 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, cJSON *out
 				goto end;
 			}
 		} else {
-			content = (char *) get_trimmed_json_data (tree->content);
+			content = (char *) get_trimmed_data (tree->content, &copy_data_as_string);
 			if (!cJSON_AddStringToObject (out, name, content)) {
 				status = -1;
 				goto end;
@@ -1098,9 +1145,8 @@ static int
 generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, json_object *out)
 {
 	cob_ml_tree	*child;
-	char		*name = NULL;
-	char		*content = NULL;
-	int		status = 0;
+	const char 	*name = NULL;
+	int 	status = 0;
 	json_object	*children_json = NULL;
 
 	if (tree->is_suppressed) {
@@ -1109,7 +1155,13 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, json_objec
 
 	/* NAME OF ... OMITTED to generate an anonymous JSON object */
 	if (tree->name != NULL) {
-		name = get_trimmed_json_data (tree->name);
+		/* note: those "fields" are actual constants either from the variable name
+		   or from NAME OF ... IS literal; in the first case there are no spaces
+		   to trim and in the second case: JSON keys (per spec) may contain spaces anywhere,
+		   including at its start/end; if a user added them, it was likely on purpose,
+		   so no trimming here; also: in any case this is data that includes a trailing
+		   nul, so we can directly use it as a constant(!) C literal */
+		name = (const char 	*)tree->name->data;
 	}
 	if (tree->children) {
 		if (name != NULL) {
@@ -1125,7 +1177,8 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, json_objec
 			}
 		}
 		if (name != NULL) {
-			json_object_object_add (out, name, children_json);
+			json_object_object_add_ex (out, name, children_json,
+					JSON_C_OBJECT_ADD_CONSTANT_KEY);
 		}
 	} else if (tree->content) {
 		if (name == NULL) {
@@ -1139,28 +1192,28 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, json_objec
 			cob_set_exception (COB_EC_IMP_FEATURE_MISSING);
 			cob_fatal_error (COB_FERROR_JSON);
 		} else if (COB_FIELD_IS_NUMERIC (tree->content)) {
-			content = get_json_num (tree->content, decimal_point);
+			unsigned char	edited_data[COB_MAX_BINARY + 2];
+			int len = 0;
+			char *str = get_num_int (tree->content, decimal_point, edited_data, &len);
 			/*
 			  Since we're only going to serialise the JSON, we don't
 			  care how JSON-C represents it internally. So, we tell
 			  C-JSON the number is 0.0f.
 			*/
-			json_object_object_add (out, name,
-						json_object_new_double_s (0.0, content));
+			json_object_object_add_ex (out, name,
+					json_object_new_double_s (0.0, str),
+					JSON_C_OBJECT_ADD_CONSTANT_KEY);
 		} else {
-			content = get_trimmed_json_data (tree->content);
-			json_object_object_add (out, name,
-						json_object_new_string (content));
+			int 	len;
+			const char	*str;
+			get_trimmed_data_int (tree->content, &str, &len);
+			json_object_object_add_ex (out, name,
+					json_object_new_string_len (str, len),
+					JSON_C_OBJECT_ADD_CONSTANT_KEY);
 		}
 	}
 
  end:
-	if (content) {
-		cob_free (content);
-	}
-	if (name) {
-		cob_free (name);
-	}
 	return status;
 }
 #endif
@@ -1306,26 +1359,33 @@ cob_xml_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 
 static void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	const int flags, struct xml_state *state);
+static void xml_endDocument (void *);
 static void xml_free_parse_memory (struct xml_state *state);
 
-#if defined (WITH_XML2)
 static void xml_process_next_event (struct xml_state *state);
-#endif
 
 /* entry function for XML PARSE */
 int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		const int flags, void **saved_state)
 {
 	struct xml_state *state;
-	int xml_code = get_xml_code ();
-
-	/* initial setup of registers, ensuring they are available in the
-		processing procedure */
-	set_xml_text (0, "", 0);
-	set_xml_namespace (0, "", 0, NULL, 0);
+	int xml_code;
 
 	/* no state yet ? first call */
 	if (*saved_state == NULL) {
+		/* LCOV_EXCL_START */
+		/* codegen error: register not available / setup correctly */
+		if (!COB_MODULE_PTR->xml_code
+		 || !COB_MODULE_PTR->xml_event
+		 || COB_MODULE_PTR->xml_code->data == NULL
+		 || COB_MODULE_PTR->xml_event->data == NULL
+		/* XML event not of expected size - currently possible
+		   with manual register defintion; prefer speed (fixed-length) over
+		   adjustability in cobc for now as all implementations have that
+		   as X(30) and we only fill up to 29 chars */
+		 || COB_MODULE_PTR->xml_event->size != 30 ) {
+			cob_fatal_error (COB_FERROR_CODEGEN);
+		}
 		/* no field */
 		if (!in) {
 #if 0	/* seems like a codegen error, which should not happen */
@@ -1336,6 +1396,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 			cob_fatal_error (COB_FERROR_CODEGEN);
 #endif
 		}
+		/* LCOV_EXCL_STOP */
 		*saved_state = cob_malloc (sizeof (struct xml_state));
 		((struct xml_state *)*saved_state)->flags = flags;
 		xml_code = 0;
@@ -1343,15 +1404,17 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 
 	state = (struct xml_state *)*saved_state;
 
+	/* postponed loading of XML code to have codegen check (register setup)
+	   up front */
+	xml_code = get_xml_code ();
+
+	/* initial setup of registers, ensuring they are available
+	   in the processing procedure */
+	set_xml_text (0, "", 0);
+	set_xml_namespace (0, "", 0, NULL, 0);
+
 	/* LINKAGE or BASED item without data */
 	if (!in->data) {
-		state->last_xml_code = XML_INTERNAL_ERROR;
-		set_xml_exception (XML_INTERNAL_ERROR);
-		set_xml_event (EVENT_EXCEPTION);
-		return 0;
-	}
-	/* likely a separate error case: emtpy item */
-	if (is_empty (in)) {
 		state->last_xml_code = XML_INTERNAL_ERROR;
 		set_xml_exception (XML_INTERNAL_ERROR);
 		set_xml_event (EVENT_EXCEPTION);
@@ -1397,19 +1460,17 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		return 1;
 	}
 
-#if 0 /* CHECKME: likely can be deleted now */
 	/* we reached "end of input" (xmlss only?) and were not told to go on */
 	if (state->state == XML_PARSER_HAD_END_OF_INPUT) {
-		if (xml_code == 0) {
-			set_xml_event (EVENT_END_OF_DOCUMENT);
-			set_xml_code (0);
-			state->state = XML_PARSER_FINISHED;
-			return 1;
-		}
-		if (xml_code == 1) {
+		switch (xml_code) {
+		case 0:
+			xml_endDocument (state);
+			break;
+		case 1:
 			/* goes on with parsing */
 			xml_code = 0;
-		} else {
+			break;
+		default:
 			/* fatal runtime error,
 			   TODO: at least a runtime warning, likely runtime exit */
 			cob_set_exception (COB_EC_XML);
@@ -1418,7 +1479,16 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 			return 1;
 		}
 	}
-#endif
+
+	/* empty item = no error, just "no data any more" */
+	if (state->state != XML_PARSER_HAD_END_OF_DOCUMENT
+	 && state->state != XML_PARSER_FINISHED
+	 && is_empty (in)) {
+		set_xml_event (EVENT_END_OF_INPUT);
+		set_xml_code (XML_STMT_SUCCESSFULL);
+		state->state = XML_PARSER_HAD_END_OF_INPUT;
+		return 0;
+	}
 
 	if (xml_code != 0) {
 		/* note: -1 is handled above, also 1 where possible */
@@ -1441,7 +1511,6 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		return 1;
 	}
 
-#if defined (WITH_XML2)
 	if (state->event
 	 && state->event->event != EVENT_UNKNOWN) {
 		/* if there are still events in the queue -> get next one */
@@ -1450,12 +1519,21 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		/* do actual parsing */
 		xml_parse (in, encoding, validation, flags, state);
 	}
-#else
-	xml_parse (in, encoding, validation, flags, state);
-#endif
 
 	return 0;
 }
+
+
+static void
+set_xml_code_parsing_error (const int libxml2_err) {
+	int xml_err = 0x00000018 /* 24 COMP in split field per IBM doc */
+				+ (libxml2_err << 8); /* second part with error number */
+#ifdef WORDS_BIGENDIAN	/* CHECKME: is that correct? */
+	xml_err = COB_BSWAP_32 (xml_err);
+#endif
+	memcpy (COB_MODULE_PTR->xml_code->data, &xml_err, sizeof (int));
+}
+
 
 #if defined (WITH_XML2)
 
@@ -1567,16 +1645,6 @@ xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 }
 
 static void
-set_xml_code_parsing_error (const int libxml2_err) {
-	int xml_err = 0x00000018 /* 24 COMP in split field per IBM doc */
-				+ (libxml2_err << 8); /* second part with error number */
-#ifdef WORDS_BIGENDIAN	/* CHECKME: is that correct? */
-	xml_err = COB_BSWAP_32 (xml_err);
-#endif
-	memcpy (COB_MODULE_PTR->xml_code->data, &xml_err, sizeof (int));
-}
-
-static void
 xml_error_handling (struct xml_state *state, const xmlError *err) {
 	new_xml_event (state, EVENT_EXCEPTION);
 	add_xml_event_data (state, err->message, strlen (err->message), 1);
@@ -1620,7 +1688,7 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 		} else {
 			cob_runtime_warning (_("XML PARSE setup for VALIDATE FILE (%d): %s"),
 				err->code, err->message);
-		}		
+		}
 		set_xml_event (EVENT_EXCEPTION);
 		parse_state->last_xml_code = XML_PARSE_ERROR_FATAL;
 		parse_state->state = XML_PARSER_HAD_FATAL_ERROR;
@@ -1649,18 +1717,25 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 	last_error_code = err->code;
 }
 
-static void
-xml_startDocument (void *ctx) {
-	struct xml_state *state = ctx;
-	new_xml_event (state, EVENT_START_OF_DOCUMENT);
-	state->state = XML_PARSER_DOCUMENT_START;
-}
+#endif	/* WITH_XML2 */
 
 static void
 xml_endDocument (void *ctx) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_END_OF_DOCUMENT);
-	state->state = XML_PARSER_HAD_END_OF_INPUT;
+	state->state = XML_PARSER_HAD_END_OF_DOCUMENT;
+}
+
+/* the following functions may be partially used with
+   partially manual parsing (which could be useful for the testsuite),
+   but currently, they aren't */
+#if defined (WITH_XML2)
+
+static void
+xml_startDocument (void *ctx) {
+	struct xml_state *state = ctx;
+	new_xml_event (state, EVENT_START_OF_DOCUMENT);
+	state->state = XML_PARSER_DOCUMENT_START;
 }
 
 static void
@@ -1730,7 +1805,9 @@ xml_cdata (void *ctx, const xmlChar *content, int len) {
 	add_xml_event_data (state, content, len, 0);
 	new_xml_event (state, EVENT_END_OF_CDATA_SECTION);
 }
+#endif /* defined (WITH_XML2) */
 
+#if defined (WITH_XML2)
 /* actual handling of XML PARSE (not implemented yet) */
 void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		const int flags, struct xml_state *state)
@@ -1748,7 +1825,7 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		state->sax.startDocument = xml_startDocument;
 		state->sax.endDocument = xml_endDocument;
 		state->sax.comment = xml_comment;
-		
+
 		if (COB_MODULE_PTR->xml_mode == COB_XML_XMLNSS) {
 			state->sax.initialized = XML_SAX2_MAGIC;
 			state->sax.startElementNs = xml_startElementNs;
@@ -1901,6 +1978,8 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	xml_process_next_event (state);
 }
 
+#endif /* defined (WITH_XML2) */
+
 /* processing of parsed XML events from the queue */
 void
 xml_process_next_event (struct xml_state *state)
@@ -1943,7 +2022,7 @@ xml_process_next_event (struct xml_state *state)
 		state->state = XML_PARSER_FINE;
 		break;
 	case EVENT_END_OF_DOCUMENT:
-		state->state = XML_PARSER_FINISHED ;
+		state->state = XML_PARSER_FINISHED;
 		/* empty register */
 		break;
 
@@ -1969,6 +2048,7 @@ xml_process_next_event (struct xml_state *state)
 
 	case EVENT_END_OF_INPUT:
 		/* empty register */
+		state->state = XML_PARSER_HAD_END_OF_INPUT;
 		break;
 
 	case EVENT_EXCEPTION:
@@ -2001,6 +2081,8 @@ xml_process_next_event (struct xml_state *state)
 
 	set_xml_text (ntext, text_data , text_len);
 }
+
+#if defined (WITH_XML2)
 
 void xml_free_parse_memory (struct xml_state* state)
 {
@@ -2101,26 +2183,24 @@ cob_json_generate (cob_field *out, cob_ml_tree *tree, cob_field *count)
 }
 
 #if defined (WITH_CJSON) || defined (WITH_JSON_C)
+
+#if defined (WITH_JSON_C) && !defined(NO_JSON)
+	COB_TLS json_object	*json = NULL;
+#endif
 /* entry function for JSON GENERATE */
 void
 cob_json_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		   const char decimal_point)
 {
 	const char	*printed_json = NULL;
-	unsigned int	print_len = 0;
-	unsigned int	copy_len;
+	size_t	print_len = 0;
+	size_t	copy_len;
 	int	num_newlines = 0;
 	int	status = 0;
-#if defined (WITH_CJSON)
-	cJSON	*json;
-#elif defined (WITH_JSON_C)
-	json_object	*json = NULL;
-#endif
-
-	set_json_code (0);
 
 #if defined (WITH_CJSON)
-	json = cJSON_CreateObject ();
+	cJSON	*json = cJSON_CreateObject ();
+
 	if (!json) {
 		set_json_exception (JSON_INTERNAL_ERROR);
 		goto end;
@@ -2135,26 +2215,44 @@ cob_json_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 	/* TO-DO: Set cJSON to use cob_free in InitHook? */
 	printed_json = (const char *) cJSON_PrintUnformatted (json);
 
-#elif defined (WITH_JSON_C)
+	if (!printed_json) {
+		set_json_exception (JSON_INTERNAL_ERROR);
+		goto end;
+	}
+	print_len = strlen (printed_json);
 
+#elif defined (WITH_JSON_C)
+#if defined (JSON_CACHING_OFF)
 	json = json_object_new_object ();
+#else
+	if (json == NULL) {
+		json = json_object_new_object ();
+	} else {
+		/* before reusing (second+ iterations), remove all sub-elements,
+		   note: those used the main's print buffer, which stays allocated */
+		json_object_object_foreach (json, key, val) {
+			json_object_object_del (json, key);
+		}
+	}
+#endif
+
 	status = generate_json_from_tree (tree, decimal_point, json);
 	if (status < 0) {
 		set_json_exception (JSON_INTERNAL_ERROR);
 		goto end;
 	}
 
-	printed_json = json_object_to_json_string_ext (json, JSON_C_TO_STRING_PLAIN);
-#endif
-
+	printed_json = json_object_to_json_string_length (json,
+			JSON_C_TO_STRING_PLAIN, &print_len);
+	
 	if (!printed_json) {
 		set_json_exception (JSON_INTERNAL_ERROR);
 		goto end;
 	}
-
+#endif
+	
 	/* TO-DO: Duplication! */
-	print_len = strlen (printed_json);
-	copy_len = cob_min_int (print_len, (int) out->size);
+	copy_len = cob_min_int ((int) print_len, (int) out->size);
 	memcpy (out->data, printed_json, copy_len);
 	memset (out->data + copy_len, ' ', out->size - copy_len);
 	/* Remove trailing newlines */
@@ -2169,6 +2267,8 @@ cob_json_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		goto end;
 	}
 
+	set_json_code (0);
+
  end:
 #if defined (WITH_CJSON)
 	if (printed_json) {
@@ -2178,9 +2278,12 @@ cob_json_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		cJSON_Delete (json);
 	}
 #elif defined (WITH_JSON_C)
+#if defined (JSON_CACHING_OFF)
 	if (json) {
 		json_object_put (json);
+		json = NULL;
 	}
+#endif
 #endif
 	if (count) {
 		/* FIXME: COUNT IN may never be bigger than the field size! See above. */
@@ -2252,5 +2355,11 @@ cob_exit_mlio (void)
 {
 #if defined (WITH_XML2)
 	xmlCleanupParser ();
+#endif
+#if defined (WITH_JSON_C) && !defined (JSON_CACHING_OFF)
+	if (json) {
+	 	json_object_put (json);
+		json = NULL;
+	}
 #endif
 }

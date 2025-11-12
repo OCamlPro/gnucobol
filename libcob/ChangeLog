@@ -1,4 +1,39 @@
 
+2025-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	adjustments to XML PARSE
+	* mlio.c: validate XML-EVENT availability (only) during initial parse
+	  setup; memcpy event text directly to program-local storage instead of
+	  changing the register's data pointer;
+	  adjusted parsing to ensure an empty identifier is parsed correctly
+	* mlio.c [!WITH_XML2]: common use of xml events supporting that empty
+	  parsing and general handling of finished/not finished also when built
+	  without libxml2
+
+2025-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	first performance-tweaks for JSON GENERATE and XML GENERATE
+	* mlio.c: numeric conversions now use mostly local or static buffers
+	  instead of heavy dynamic memory allocation; temporary adjustment of
+	  the program's decimal point instead of post-changing the "print-data";
+	  trimming of COBOL-fields rewritten; reduce strlen/strcpy calls
+	* mlio.c [IF_NEG_RETURN_ELSE_COUNT]: replaced confusing macro use which
+	  led to memory leaks in error cases by plain code and correct free
+	* mlio.c (cob_json_generate_new, cob_exit_mlio) [WITH_JSON_C]: keep
+	  json-c's buffer for "serialized objects", doing so heavily improves
+	  frequent calls of JSON GENERATE, especially for bigger objects, 
+	  define JSON_CACHING_OFF to use the old behavior of dropping the cache
+	  at the end of the statement, otherwise it will be kept until runtime exit
+
+2025-10-310  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (optimized_move_display_to_edited): minor adjustment of sanity
+	  check
+
+2025-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* libcob.h: improved inclusion note, added IWYU pragma
+
 2025-09-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* intrinsic.c (cob_intr_char, cob_intr_ord): consider
