@@ -7731,8 +7731,11 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format != 0 && val && default_val &&
 		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
-		snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+		int len = snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
 			_("(default)"));
+		if (len < 0 || len >= COB_NORMAL_MAX) {
+			memcpy(val_buff + COB_NORMAL_MAX - 3, "...", 3 + 1);
+		}
 		val = val_buff;
 	} else if (!val && default_val) {
 		val = default_val;
@@ -7752,8 +7755,11 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format == 1 && val && default_val &&
 		(val[0] == '0' || strcmp (val, default_val) == 0)) {
-		snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+		int len = snprintf (val_buff, COB_NORMAL_MAX, "%s %s", default_val,
 			_("(default)"));
+		if (len < 0 || len >= COB_NORMAL_MAX) {
+			memcpy(val_buff + COB_NORMAL_MAX - 3, "...", 3 + 1);
+		}
 		val = val_buff;
 	} else if (!val && default_val) {
 		val = default_val;
@@ -7765,8 +7771,11 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format != 0 && val && default_val &&
 		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
-		snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+		int len = snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
 			_("(default)"));
+		if (len < 0 || len >= COB_NORMAL_MAX) {
+			memcpy(val_buff + COB_NORMAL_MAX - 3, "...", 3 + 1);
+		}
 		val = val_buff;
 	} else if (!val && default_val) {
 		val = default_val;
