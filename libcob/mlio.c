@@ -66,6 +66,11 @@ typedef unsigned char xmlChar;
 #elif defined (WITH_JSON_C)
 #if defined (HAVE_JSON_C_JSON_H)
 #include <json-c/json_object.h>
+/* we use the current  (0.16+ name), for older versions defining
+   it with the now deprecated name */
+#ifndef JSON_C_OBJECT_ADD_CONSTANT_KEY
+#define JSON_C_OBJECT_ADD_CONSTANT_KEY JSON_C_OBJECT_KEY_IS_CONSTANT
+#endif
 #include <json-c/linkhash.h>
 #elif defined (HAVE_JSON_H)
 #include <json.h>
