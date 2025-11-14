@@ -69,8 +69,29 @@ typedef unsigned char xmlChar;
 /* we use the current  (0.16+ name), for older versions defining
    it with the now deprecated name */
 #ifndef JSON_C_OBJECT_ADD_CONSTANT_KEY
+/* deprecated name and object function with flags exists since 0.13 */
+#ifdef JSON_C_OBJECT_KEY_IS_CONSTANT
 #define JSON_C_OBJECT_ADD_CONSTANT_KEY JSON_C_OBJECT_KEY_IS_CONSTANT
+#else
+/* For version 0.12 (minimal version supported),
+   redefine json_object_object_add_ex to ignore flags */
+#define json_object_object_add_ex(obj, key, val, opts) \
+	json_object_object_add (obj, key, val)
+
+static inline const char *
+json_object_to_json_string_length (struct json_object *obj,
+	int flags, size_t *length)
+{
+	const char *str = json_object_to_json_string_ext (obj, flags);
+	if (length) {
+		*length = str ? strlen(str) : 0;
+	}
+	return str;
+}
 #endif
+
+#endif /* JSON_C_OBJECT_ADD_CONSTANT_KEY */
+
 #include <json-c/linkhash.h>
 #elif defined (HAVE_JSON_H)
 #include <json.h>
@@ -712,7 +733,7 @@ get_num_int (cob_field * const f, const char decimal_point,
 		COB_MODULE_PTR->decimal_point = mod_orig_decimal_point;
 	}
 
-	/* Trim output (we know the edited field will have at least one digit) 
+	/* Trim output (we know the edited field will have at least one digit)
 	   and provide a duplicate as we need it later */
 	for (; *p == ' '; ++p, --len);
 	p[len] = 0;
@@ -2236,6 +2257,7 @@ cob_json_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		/* before reusing (second+ iterations), remove all sub-elements,
 		   note: those used the main's print buffer, which stays allocated */
 		json_object_object_foreach (json, key, val) {
+			COB_UNUSED (val);
 			json_object_object_del (json, key);
 		}
 	}
@@ -2249,13 +2271,13 @@ cob_json_generate_new (cob_field *out, cob_ml_tree *tree, cob_field *count,
 
 	printed_json = json_object_to_json_string_length (json,
 			JSON_C_TO_STRING_PLAIN, &print_len);
-	
+
 	if (!printed_json) {
 		set_json_exception (JSON_INTERNAL_ERROR);
 		goto end;
 	}
 #endif
-	
+
 	/* TO-DO: Duplication! */
 	copy_len = cob_min_int ((int) print_len, (int) out->size);
 	memcpy (out->data, printed_json, copy_len);

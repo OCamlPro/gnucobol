@@ -210,7 +210,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 	/* list of available heaps for VFILE routines,
 	   note that these are explicit not thread-local
 	   but static over all threads */
-	static HEAP_ENTRY		heap_array[MAX_HEAP] = { 0 };
+	static HEAP_ENTRY		heap_array[MAX_HEAP] = {{ 0 }};
 
 	#ifdef	WITH_ANY_ISAM
 	

@@ -133,7 +133,7 @@ enum cb_current_date {
 
 /* Context sensitive keyword defines (trigger words) */
 #define	CB_CS_ACCEPT			(1U << 0)	/* within ACCEPT statement */
-#define CB_CS_ALLOCATE			(1U << 1)	/* within ALLOCATE statement */
+#define	CB_CS_ALLOCATE			(1U << 1)	/* within ALLOCATE statement */
 #define	CB_CS_ALPHABET			(1U << 2)
 #define	CB_CS_ASSIGN			(1U << 3)
 #define	CB_CS_CALL			(1U << 4)	/* within CALL statement */
@@ -145,7 +145,7 @@ enum cb_current_date {
 #define	CB_CS_EXIT			(1U << 10)	/* within EXIT statement */
 #define	CB_CS_FROM			(1U << 11)
 #define	CB_CS_OCCURS			(1U << 12)
-#define CB_CS_OPTIONS			(1U << 13)
+#define	CB_CS_OPTIONS			(1U << 13)
 #define	CB_CS_PERFORM			(1U << 14)	/* within PERFORM statement */
 #define	CB_CS_PROGRAM_ID		(1U << 15)	/* within PROGRAM-ID definition */
 #define	CB_CS_READ			(1U << 16)	/* within READ statement */

@@ -1,4 +1,9 @@
 
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: prefer "inline" over "__inline" as the second raises
+	  spurious warnings about always_inline attribute with GCC15
+
 2025-10-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* README, README.md: replace logging instructions by more reasonable

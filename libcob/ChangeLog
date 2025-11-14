@@ -1,4 +1,9 @@
 
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h [__GNUC__]: only use C11's _Thread_local for gcc 5+
+	  as gcc 4 defines the C11 constant but does not fully support it
+
 2025-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	adjustments to XML PARSE

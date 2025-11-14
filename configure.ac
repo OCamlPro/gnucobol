@@ -686,7 +686,7 @@ AC_CHECK_TYPES([sig_atomic_t], [], [], [[#include <signal.h>]])
 dnl Note: Don't use AC_C_INLINE here. We need the value.
 
 AC_CACHE_CHECK([for inline keyword], gc_cv_keyword_inline, [
-  for gc_cv_keyword_inline in __inline __inline__ inline ""
+  for gc_cv_keyword_inline in inline __inline __inline__ ""
   do
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#ifndef __cplusplus
