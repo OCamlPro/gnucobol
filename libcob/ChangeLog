@@ -1,4 +1,50 @@
 
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h [__GNUC__]: only use C11's _Thread_local for gcc 5+
+	  as gcc 4 defines the C11 constant but does not fully support it
+
+2025-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	adjustments to XML PARSE
+	* mlio.c: validate XML-EVENT availability (only) during initial parse
+	  setup; memcpy event text directly to program-local storage instead of
+	  changing the register's data pointer;
+	  adjusted parsing to ensure an empty identifier is parsed correctly
+	* mlio.c [!WITH_XML2]: common use of xml events supporting that empty
+	  parsing and general handling of finished/not finished also when built
+	  without libxml2
+
+2025-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	first performance-tweaks for JSON GENERATE and XML GENERATE
+	* mlio.c: numeric conversions now use local or static buffers instead
+	  of numerous dynamic memory allocation; the program's decimal point is
+	  temporarily adjusted instead of changing the "print-data" after editing;
+	  trimming of COBOL-fields rewritten; overal reduce strlen/strcpy calls
+	* mlio.c [IF_NEG_RETURN_ELSE_COUNT]: replaced the use of this macro, which
+	  led to memory leaks in error cases, by plain code and correct free
+	* mlio.c [WITH_JSON_C]: prefer specific json.h over convenience one json.h
+	* mlio.c (generate_json_from_tree) [WITH_JSON_C]: use cobc generated names
+	  (either from the variable names or explicit literals) as-is, as they do
+	  not require additional trimming and are string constants in the module;
+	  this also has the benefit that we can now indicating to JSON-C that it
+	  does not need to strdup the keys
+	* mlio.c (cob_json_generate_new, cob_exit_mlio) [WITH_JSON_C]: keep
+	  JSON-C's buffer for "serialized objects", doing so heavily improves
+	  frequent calls of JSON GENERATE, especially for bigger objects,
+	  define JSON_CACHING_OFF to use the old behavior of dropping the cache
+	  at the end of the statement, otherwise it will be kept until runtime exit
+
+2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (optimized_move_display_to_edited): minor adjustment of sanity
+	  check
+
+2025-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* libcob.h: improved inclusion note, added IWYU pragma
+
 2025-09-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* intrinsic.c (cob_intr_char, cob_intr_ord): consider
@@ -105,13 +151,13 @@
 				create_first_segment,
 				get_new_segment,
 				locate_segment):
-	  note that as CBL_GC extension we also support a 64 bit 
-	  version which allows for a VFILE to exceed the 4GB 
+	  note that as CBL_GC extension we also support a 64 bit
+	  version which allows for a VFILE to exceed the 4GB
 	  limitation if memory is available
 	* coblocal.h: added new variables to support runtime additions
 	  of heap memory for use with VFILES
 	* common.h, system.def: added new definitions for VFILES support
-	* common.c: (config_tbl gc_conf) added new entries for 
+	* common.c: (config_tbl gc_conf) added new entries for
 	  VFILE default memory allocation size
 
 2025-03-28  Simon Sobisch <simonsobisch@gnu.org>
@@ -353,11 +399,11 @@
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	fix errors in cob_optimized_move_display_to_edited introduced
-	with changes at revision R5285. The errors showed up in the 
+	with changes at revision R5285. The errors showed up in the
 	NIST tests in group NC.
 
 	* move.c (optimized_move_display_to_edited): fixed bugs
-	  (indirect_move): fixed bug when calculating scale of 
+	  (indirect_move): fixed bug when calculating scale of
 	  the intermediate cob field
 
 2024-07-09  Boris Eng <boris.eng@ocamlpro.com>
@@ -381,15 +427,15 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-	fix errors caught by the Sanitizer functionality of GCC. This 
+	fix errors caught by the Sanitizer functionality of GCC. This
 	change did not resolve all of the issues found as some of them
-	were in Berkeley DB and some were intentional in the memory 
+	were in Berkeley DB and some were intentional in the memory
 	corruption logic which has been implemented in the runtime.
 
-	* move.c (the cob_move_display_to_packed function was rewritten to 
+	* move.c (the cob_move_display_to_packed function was rewritten to
 	  fix the out of bounds memory addressing issues and also to make
 	  the code simpler.
-	* numeric.c (the function count_leading_zeros was changed to fix 
+	* numeric.c (the function count_leading_zeros was changed to fix
 	  an out of bounds memory addressing issue
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
@@ -402,7 +448,7 @@
 	  to the indexfile structure for use in these functions.
 	  This will allow the saved partial key to be used in the
 	  positioning logic.
-	  Also the BDB logic was changed to return a status code of "35" 
+	  Also the BDB logic was changed to return a status code of "35"
 	  when encountering a missing directory for OUTPUT on INDEXED file.
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>

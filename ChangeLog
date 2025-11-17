@@ -1,4 +1,19 @@
 
+2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: prefer "inline" over "__inline" as the second raises
+	  spurious warnings about always_inline attribute with GCC15
+
+2025-10-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* README, README.md: replace logging instructions by more reasonable
+	  approaches and mention generated log files
+	* README: drop ldconfig note as it is not portable and commonly not neededy
+	* INSTALL: updated from
+	  https://cgit.git.savannah.gnu.org/cgit/gnulib.git/plain/doc
+	* DEPENDENCIES, DEPENDENCIES.md: reformatted, add libxml2 version and
+	  new website as well as fixing MIT/Expat ambiguity
+
 2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check timezone and designated initializers with -Werror

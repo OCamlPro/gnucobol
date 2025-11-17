@@ -67,7 +67,8 @@ Special requirements and further installation notes are listed below.
    as a parameter to the configure.
    Further parameters may be specified to affect
    include/library search paths.
-   Execute ./configure --help for further details.
+   Execute ./configure --help for further details and the list of
+   all configuration options.
 
 To generate/install GnuCOBOL :
 
@@ -91,25 +92,12 @@ To generate/install GnuCOBOL :
    "make install DESTDIR=<dir>".
    In those later cases you only need to have full access to <dir>.
 
-** NOTE **
-   On Linux systems, if you are installing for the
-   -first- time, you may need to run "ldconfig" (as root).
-   In fact, it does not hurt if you always do this.
-
-** NOTE **
-   On some Red Hat (Fedora) installations and
-   possibly other Linux distros, /usr/local/lib
-   is NOT automatically searched at runtime.
-   Edit /etc/ld.so.conf (or the equivalent file) and add
-   /usr/local/lib to the file.
-   Rerun "ldconfig".
-
 **************************************
 
 If you think you have a problem or just want to log
 the output of make then redirect the output with :
-    make 1>mymake.log 2>&1
-    make install 1>myinstall.log 2>&1
+    make 2>&1         | tee mymake.log
+    make install 2>&1 | tee myinstall.log
 
 **************************************
 
@@ -127,7 +115,8 @@ Tests
  To verify GnuCOBOL works before installing it, run the internal
  testsuite. Simply do
     make check
- This MUST succeed.  Please report any failures.
+ This MUST succeed.  Please report any failures, ideally with providing
+ the generated file tests/testsuite.log.
 
  You may optionally perform a series of COBOL85 tests.
     make test
@@ -141,6 +130,9 @@ Tests
    testsuite if it is neither in the build-tree nor source-tree.
    For details see tests/cobol85/README.
 
+ If this testsuite fails you may create a minimal log as follows:
+    make -C tests/cobol85 diff | tee test.log
+
  If you want to run both testsuites you can run
     make checkall
 
@@ -148,10 +140,13 @@ Tests
  You may also optionally perform a series of semi-manual tests to
  verify a working extended screenio.
     make checkmanual
+
  The test execution is automatic but the user needs to check for
  the expected result. See tests/run_prog_manual.sh for tweaking the
  test runner used (which is otherwise deduced from the environment),
  either in that script or via TESTRUNNER environment variable.
+
+ The results of those tests are recorded in tests/testsuite_manual.log.
 
 ** NOTE **
    The semi-manual tests need either "xterm", GNU "screen" or "tmux"

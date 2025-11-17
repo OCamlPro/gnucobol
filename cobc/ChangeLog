@@ -1,4 +1,10 @@
 
+2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_xml_parse): fixed xml state to be static-local
+	  to XML PARSE statement to fix out-of-scope memory trashing
+	* codegen.c (output_param): resolve reference value only once
+
 2025-10-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (file_description_entry): create an unnamed file in case
