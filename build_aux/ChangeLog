@@ -1,4 +1,9 @@
 
+2025-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: included return_path function and use
+	  it to ensure good paths for win32
+
 2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pre-inst-env.in: quote local include and library directories

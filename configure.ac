@@ -683,9 +683,12 @@ AC_TYPE_SIZE_T
 AC_STRUCT_TM
 AC_CHECK_TYPES([sig_atomic_t], [], [], [[#include <signal.h>]])
 
-dnl Note: Don't use AC_C_INLINE here. We need the value.
+dnl Note: Don't use AC_C_INLINE here. We need the value,
+dnl       get first warning-free supported value
 
 AC_CACHE_CHECK([for inline keyword], gc_cv_keyword_inline, [
+  curr_cflags="$CFLAGS"
+  CFLAGS="$curr_cflags $ERRWARN"
   for gc_cv_keyword_inline in inline __inline __inline__ ""
   do
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -702,9 +705,9 @@ AC_CACHE_CHECK([for inline keyword], gc_cv_keyword_inline, [
 		[],
 		[])
   done]
+  CFLAGS="$curr_cflags"
 )
 AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$gc_cv_keyword_inline])
-
 
 # Checks for library functions.
 AC_FUNC_VPRINTF

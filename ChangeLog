@@ -1,5 +1,5 @@
 
-2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: prefer "inline" over "__inline" as the second raises
 	  spurious warnings about always_inline attribute with GCC15
