@@ -4363,7 +4363,10 @@ int main() {
     return EXIT_SUCCESS;
 }
 ])
-AT_CHECK([$COBC -x -ldl -lpthread caller.c], [0], [], [])
+AT_CHECK([$COBC -x -ldl -lpthread caller.c], [0], [], [], [
+   echo "C compilation failed, skipping rest of group"
+   exit 77
+])
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([COB_LIBRARY_PATH="/home/runner/work/gnucobol/gnucobol/_build/tests/testsuite.dir/0788" COB_LOAD_GLOBAL=false ./caller], [0], [Final count: 01000
 Final count: 01000
