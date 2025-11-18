@@ -59,7 +59,6 @@ fi
 diff() {
   command "@DIFF@" @DIFF_FLAGS@ "$@"
 }
-export -f diff
 
 DIFF=diff
 AWK=@AWK@
@@ -103,7 +102,6 @@ perf_record() {
 	# drop --aio / -z if your system does not support that
 	perf record -q --aio -z --call-graph dwarf,4096 --output "${outfile}" "$@"
 }
-export -f perf_record
 
 perf_stat() {
 	local logdir="$1"; shift
@@ -111,7 +109,6 @@ perf_stat() {
 
 	perf stat -e instructions --append --output "${outfile}" "$@"
 }
-export -f perf_stat
 
 # get performance counters for compiler and/or runtime
 if test "x${PERFSUFFIX}" != "x"; then
@@ -243,7 +240,6 @@ _return_path () {
 	path="${path%\"}"
 	echo "$path"
 }
-export -f _return_path
 
 # as we run the testsuite in plain LC_ALL=C the system runs in a plain-as-possible environment;
 # in the case that we need UTF8 encoding within tests, we try to find out if a working UTF-8

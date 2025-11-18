@@ -24,12 +24,11 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-[ -z "${abs_top_srcdir}" ]  && abs_top_srcdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." > /dev/null && pwd )"
 TEMPLATE="${abs_top_srcdir}/tests/testsuite.src"
 
 COB_SRC_PATH="${abs_top_srcdir}"
 
-[ -z "${COB_WIN_BUILDPATH}" ]  && COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
+[ -z "${COB_WIN_BUILDPATH}" ] && COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
 
 COBC="cobc.exe"
 COBCRUN="cobcrun.exe"
@@ -40,9 +39,12 @@ PATH="${COB_WIN_BUILDPATH}:${PATH}"
 export PATH
 
 if ! command -v "${COBC}" >/dev/null 2>&1; then
-	echo missing ${COBC} in ${PATH}
+	echo "missing ${COBC} in ${PATH}"
 	return 1
 fi
+
+ABS_COBC="$(which ${COBC})"
+ABS_COBCRUN="$(which ${COBCRUN})"
 
 DIFF=diff
 AWK=awk
@@ -121,7 +123,6 @@ _return_path () {
 		fi
 	fi
 }
-export -f _return_path
 
 # as we run the testsuite in plain LC_ALL=C the system runs in a plain-as-possible environment;
 # in the case that we need UTF8 encoding within tests, we try to find out if a working UTF-8
