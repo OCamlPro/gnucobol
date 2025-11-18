@@ -4787,6 +4787,83 @@ note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' ou
 AT_CLEANUP
 
 
+AT_SETUP([can reinitialize cleaned up runtime in C])
+AT_KEYWORDS([runmisc cobcall cob_init cob_call cob_tidy])
+
+# tests memory corruptions caused by leftover global values from previous
+# initializations being used if cob_init/cob_tidy does not correctly reset the
+# global state of the runtime.
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 VAR1 PIC X(1) VALUE "X".
+       PROCEDURE DIVISION USING VAR1.
+           DISPLAY "TEST" VAR1.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.c], [[
+#include <libcob.h>
+
+int
+main (int argc, char **argv)
+{
+    /* for storing libcob return state */
+    int cob_ret;
+
+    /* for storing COBOL parameters */
+    void *cob_argv[1];
+    char cob_arg;
+
+    /* initialize the COBOL run-time library */
+    cob_init (0, NULL);
+
+    /* call COBOL program first time */
+    cob_arg = '1';
+    cob_argv[0] = &cob_arg;
+    cob_ret = cob_call ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check normal exit first time */
+    if (cob_ret != 0) {
+        return 1;
+    }
+
+    /* Reinitialize runtime */
+    cob_init (0, NULL);
+
+    /* call COBOL program second time */
+    cob_arg = '2';
+    cob_argv[0] = &cob_arg;
+    cob_ret = cob_call ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check normal exit second time */
+    if (cob_ret != 0) {
+      return 2;
+    }
+
+    return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[TEST1
+TEST2
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([CALL in from C, cob_call_params explicitly set])
 AT_KEYWORDS([runmisc])
 

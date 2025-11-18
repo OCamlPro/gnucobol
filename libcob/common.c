@@ -423,8 +423,6 @@ static char			cob_debug_modules[12][4] = {"", "", "", "", "", "", "", "", "", ""
 static char			*cob_debug_file_name = NULL;
 #endif
 
-static char			*strbuff = NULL;
-
 static int		cob_process_id = 0;
 static int		cob_temp_iteration = 0;
 
@@ -7699,71 +7697,12 @@ cob_int_to_formatted_bytestring (int i, char *number)
 }
 #endif
 
-/* concatenate two strings allocating a new one
-   and optionally free one of the strings
-   set str_to_free if the result is assigned to
-   one of the two original strings
-*/
-char *
-cob_strcat (char *str1, char *str2, int str_to_free)
-{
-	size_t		l;
-	char		*temp1, *temp2;
-
-	l = strlen (str1) + strlen (str2) + 1;
-
-	/*
-	 * If one of the parameter is the buffer itself,
-	 * we copy the buffer before continuing.
-	 */
-	if (str1 == strbuff) {
-		temp1 = cob_strdup (str1);
-	} else {
-		temp1 = str1;
-	}
-	if (str2 == strbuff) {
-		temp2 = cob_strdup (str2);
-	} else {
-		temp2 = str2;
-	}
-
-	if (strbuff) {
-		cob_free (strbuff);
-	}
-	strbuff = (char *) cob_fast_malloc (l);
-
-	sprintf (strbuff, "%s%s", temp1, temp2);
-	switch (str_to_free) {
-		case 1: cob_free (temp1);
-		        break;
-		case 2: cob_free (temp2);
-		        break;
-		default: break;
-	}
-	return strbuff;
-}
-
-char *
-cob_strjoin (char **strarray, int size, char *separator)
-{
-	char	*result;
-	int	i;
-
-	if (!strarray || size <= 0 || !separator) return NULL;
-
-	result = cob_strdup (strarray[0]);
-	for (i = 1; i < size; i++) {
-		result = cob_strcat (result, separator, 1);
-		result = cob_strcat (result, strarray[i], 1);
-	}
-
-	return result;
-}
-
 static void
 var_print (const char *msg, const char *val, const char *default_val,
 		const unsigned int format)
 {
+	char val_buff[COB_NORMAL_BUFF];
+
 #if 0 /* currently only format 0/1 used */
 	switch (format) {
 	case 0:
@@ -7792,9 +7731,12 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format != 0 && val && default_val &&
 		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
-		char dflt[40];
-		snprintf (dflt, 39, " %s", _("(default)"));
-		val = cob_strcat ((char *) default_val, dflt, 0);
+		int len = snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+			_("(default)"));
+		if (len < 0 || len >= COB_NORMAL_MAX) {
+			memcpy(val_buff + COB_NORMAL_MAX - 3, "...", 3 + 1);
+		}
+		val = val_buff;
 	} else if (!val && default_val) {
 		val = default_val;
 	}
@@ -7813,9 +7755,12 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format == 1 && val && default_val &&
 		(val[0] == '0' || strcmp (val, default_val) == 0)) {
-		char dflt[40];
-		snprintf (dflt, 39, " %s", _("(default)"));
-		val = cob_strcat ((char *) default_val, dflt, 0);
+		int len = snprintf (val_buff, COB_NORMAL_MAX, "%s %s", default_val,
+			_("(default)"));
+		if (len < 0 || len >= COB_NORMAL_MAX) {
+			memcpy(val_buff + COB_NORMAL_MAX - 3, "...", 3 + 1);
+		}
+		val = val_buff;
 	} else if (!val && default_val) {
 		val = default_val;
 	}
@@ -7826,9 +7771,12 @@ var_print (const char *msg, const char *val, const char *default_val,
 		return;
 	} else if (format != 0 && val && default_val &&
 		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
-		char dflt[40];
-		snprintf (dflt, 39, " %s", _("(default)"));
-		val = cob_strcat ((char *) default_val, dflt, 0);
+		int len = snprintf (val_buff, COB_NORMAL_BUFF, "%s %s", default_val,
+			_("(default)"));
+		if (len < 0 || len >= COB_NORMAL_MAX) {
+			memcpy(val_buff + COB_NORMAL_MAX - 3, "...", 3 + 1);
+		}
+		val = val_buff;
 	} else if (!val && default_val) {
 		val = default_val;
 	}
