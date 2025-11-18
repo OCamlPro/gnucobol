@@ -15,6 +15,11 @@
 	  file type
 	* parser.y (sort_merge_body): fix diagnostic position for SD check
 
+2025-10-17  Roger Bowler <rbowler@snipix.net>
+
+	* cobc.c (print_with_overflow): rewritten, now printing multiple
+	  continuation lines on listing
+
 2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: combined header defines into enum cobc_hd and
