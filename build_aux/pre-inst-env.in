@@ -58,7 +58,7 @@ LD_LIBRARY_PATH="@abs_top_builddir@/libcob/.libs:${LD_LIBRARY_PATH}"     # GNU/L
 DYLD_LIBRARY_PATH="@abs_top_builddir@/libcob/.libs:{$DYLD_LIBRARY_PATH}" # Mac OS
 SHLIB_PATH="@abs_top_builddir@/libcob/.libs:${SHLIB_PATH}"               # HP-UX
 LIBPATH="@abs_top_builddir@/libcob/.libs:${LIBPATH}"                     # AIX
-if test "x${COB_LIBRARY_PATH}" = x; then
+if [ -z "${COB_LIBRARY_PATH}" ]; then
    COB_LIBRARY_PATH="$(_return_path "@abs_top_builddir@/extras")"
 else
    # only in pre-inst case: prepend
@@ -74,9 +74,9 @@ export COB_LIBRARY_PATH
 if test "x${BASH_SOURCE}" != "x" -a "${BASH_SOURCE}" != "$0"; then
 	echo "This script should not be sourced but called instead!"
 else
-	if test "x$1" != "x"; then
-		exec "$@"
-	else
+	if [ -z "$1" ]; then
 		$SHELL
+	else
+		exec "$@"
 	fi
 fi
