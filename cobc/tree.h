@@ -2372,6 +2372,7 @@ extern cb_tree		cb_check_numeric_value (cb_tree);
 extern size_t		cb_check_index_or_handle_p (cb_tree x);
 extern void		cb_set_dmax (int scale);
 
+extern int	cb_is_field_unbounded (struct cb_field *);
 extern void		cb_set_intr_when_compiled (void);
 extern void		cb_build_registers (void);
 extern void		cb_add_external_defined_registers (void);
@@ -2630,6 +2631,7 @@ extern void		cob_gen_optim (const enum cb_optim);
 /* codegen.c */
 extern void		codegen (struct cb_program *, const char *);
 extern void		clear_local_codegen_vars (void);
+extern struct cb_field *chk_field_variable_size (struct cb_field *f);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
 

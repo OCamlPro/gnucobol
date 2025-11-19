@@ -874,6 +874,22 @@ cb_check_numeric_edited_name (cb_tree x)
 	return cb_error_node;
 }
 
+int
+cb_is_field_unbounded (struct cb_field *fld)
+{
+	struct cb_field         *f;
+
+	if (fld->flag_unbounded) {
+		return 1;
+	}
+	for (f = fld->children; f; f = f->sister) {
+		if (cb_is_field_unbounded (f)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 cb_tree
 cb_check_sum_field (cb_tree x)
 {
@@ -12927,8 +12943,12 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 	cb_tree		l;
 	cb_tree		x;
 	cb_tree		m;
+	cb_tree		svoff;
+	struct cb_literal	*lt;
+	struct cb_field	*f, *p;
 	unsigned int	tempval;
 	struct cb_reference	*r;
+	int		bgnpos;
 
 	if (cb_check_move (src, dsts, 1)) {
 		return;
@@ -12971,7 +12991,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 			continue;
 		}
 		if (!tempval) {
-#if 0 /* not yet merged revs 2603+2612 */
+#if 1 /* not yet merged revs 2603+2612 */
 			if (CB_REFERENCE_P (x)
 			 && CB_REFERENCE (x)->length == NULL
 			 && (cb_odoslide || cb_complex_odo)) {
