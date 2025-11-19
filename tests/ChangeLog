@@ -1,4 +1,9 @@
 
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* testsuite.src/run_misc.at: add tests for COB_SIGNAL_REGIME configuration
+	* atlocal.in, atlocal_win: pass HAVE_SIGNAL_H to the tests
+
 2025-11-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win: adjusted return_path function and its use

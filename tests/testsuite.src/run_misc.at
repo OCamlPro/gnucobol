@@ -15759,10 +15759,6 @@ AT_DATA([caller.c], [[
 #include <stdio.h>
 #include <libcob.h>
 
-#ifndef NULL
-#define NULL (void*)0
-#endif
-
 int
 main (int argc, char **argv)
 {
@@ -15774,14 +15770,22 @@ main (int argc, char **argv)
     cob_argv[0] = NULL;
 
     /* initialize the COBOL run-time library */
+    printf ("log0\n");
+    fflush(stdout);
     cob_init (0, NULL);
 
     /* call COBOL program */
+    printf ("log1\n");
+    fflush(stdout);
     cob_ret = cob_call_with_exception_check ("callee", 1, cob_argv);
 
     /* Clean up and terminate runtime */
+    printf ("log2\n");
+    fflush(stdout);
     cob_tidy ();
 
+    printf ("log3\n");
+    fflush(stdout);
     /* Check exit by signal handler */
     if (cob_ret != -3) {
         return 1;
@@ -15825,13 +15829,8 @@ AT_DATA([callee.cob], [
 
 AT_DATA([caller.c], [[
 #include <stdlib.h>
-#include <stdio.h>
 #include <signal.h>
 #include <libcob.h>
-
-#ifndef NULL
-#define NULL (void*)0
-#endif
 
 int signal_received = 0;
 

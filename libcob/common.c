@@ -1544,7 +1544,7 @@ cob_init_sig_descriptions (void)
 static void
 cob_set_signal (void)
 {
-#if	defined (HAVE_SIGNAL_H)
+#ifdef HAVE_SIGNAL_H
 	int k;
 	const char *s = getenv ("COB_SIGNAL_REGIME");
 	const char signal_regime = s ? *s : '0';

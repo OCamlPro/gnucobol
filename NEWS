@@ -29,6 +29,12 @@ NEWS - user visible changes				-*- outline -*-
 ** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
 
+** new runtime configuration COB_SIGNAL_REGIME, allows to skip registration of
+   the signal handler of GnuCOBOL. The registration can be skipped either for
+   all signals or for those that do already have a registered handler. This
+   configuration allows users to preserve their own signal handlers during the
+   initialization of the GnuCOBOL runtime.
+
 ** added multiple window functionality with new system function CBL_GC_WINDOW
 
 ** New system functions

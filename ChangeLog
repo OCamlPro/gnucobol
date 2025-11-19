@@ -1,14 +1,8 @@
 
-2025-11-19	Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
-	* common.c (cob_set_signal): add the enum COB_SIGNAL_REGIME to toggle
-	  whether signal handler registration should be skipped or only registered
-	  when there is no other external handler registered for the signal
-	* common.h: export cob_sig_handler for use by external signal handlers
-	* coblocal.h (cob_settings): add COB_SIGNAL_REGIME so that it can be
-	  displayed under cobcrun --runtime
-	* configure.ac, atlocal.in, atlocal_win: pass HAVE_SIGNAL_H to the tests to
-	  indicate whether signal.h exists
+	* configure.ac: pass HAVE_SIGNAL_H to the tests to indicate whether
+	  signal.h exists
 
 2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -25,7 +19,7 @@
 	* DEPENDENCIES, DEPENDENCIES.md: reformatted, add libxml2 version and
 	  new website as well as fixing MIT/Expat ambiguity
 
-2025-07-28	Simon Sobisch <simonsobisch@gnu.org>
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check timezone and designated initializers with -Werror
 	* m4/ax_code_coverage.m4, m4/ax_check_define.m4:
