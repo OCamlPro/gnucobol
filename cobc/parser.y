@@ -18144,8 +18144,7 @@ on_size_error_phrases:
 		|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_ZERO_DIVIDE))
 	{
 		current_statement->handler_type = SIZE_ERROR_HANDLER;
-		current_statement->ex_handler =
-			cb_build_direct("cob_fatal_exception (cob_glob_ptr->cob_exception_code);", 1);
+		current_statement->ex_handler = NULL;
 	}
   }
 | on_size_error _not_on_size_error
@@ -18167,8 +18166,7 @@ on_size_error_phrases:
 			|| CB_EXCEPTION_ENABLE(COB_EC_SIZE_ZERO_DIVIDE))
 		{
 			current_statement->handler_type = SIZE_ERROR_HANDLER;
-				current_statement->ex_handler =
-				cb_build_direct("cob_fatal_exception (cob_glob_ptr->cob_exception_code);", 1);
+			current_statement->ex_handler = NULL;
 		}
 	}
   }
