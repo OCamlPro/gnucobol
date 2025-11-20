@@ -1,4 +1,9 @@
 
+2025-11-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix linking order for PANEL_LIBS
+	* configure.ac: ignore CURSES_LIBS and PANEL_LIBS for --without-curses
+
 2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: prefer "inline" over "__inline" as the second raises
@@ -14,6 +19,13 @@
 	* DEPENDENCIES, DEPENDENCIES.md: reformatted, add libxml2 version and
 	  new website as well as fixing MIT/Expat ambiguity
 
+2025-10-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: test for __gmp_get_memory_functions with GMP_LIBS
+	  (manually passed or from pkg_config) instead of linking by library name
+	* configure.ac: improve check for clock_gettime to not -Werror on compilers
+	  testing its parameters
+
 2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check timezone and designated initializers with -Werror
@@ -21,7 +33,7 @@
 	  updated from autoconf-archive
 	* Makefile.am (CODE_COVERAGE_LCOV_OPTIONS_DEFAULT): silence some warnings
 	  in lcov2
-	
+
 	update gettext infrastructure from gnulib
     * m4/gettext.m4, m4/intlmacosx.m4, m4/progtest.m4: updated
 	* m4/build-to-host.m4, m4/host-cpu-c-abi.m4, m4/intl-thread-locale.m4:
@@ -47,6 +59,11 @@
 
 	* configure.ac: support setting of PANEL_LIBS independent of CURSES_LIBS
 	* ABOUT-NLS, INSTALL: replaced by current versions
+
+2025-02-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix output for --with-curses specified and no curses found
+	* configure.ac: better output for empty COB_EXE_EXT in summary
 
 2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
 
