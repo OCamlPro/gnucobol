@@ -29,6 +29,7 @@ TEMPLATE="${abs_top_srcdir}/tests/testsuite.src"
 COB_SRC_PATH="${abs_top_srcdir}"
 
 [ -z "${COB_WIN_BUILDPATH}" ] && COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
+WINDOWS_COMPILATION_TARGET="$(printf %s ${COB_WIN_BUILDPATH} | rev | cut -d '/' -f 1 | rev)"
 
 COBC="cobc.exe"
 COBCRUN="cobcrun.exe"

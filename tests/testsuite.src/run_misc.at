@@ -15743,6 +15743,11 @@ AT_SETUP([COB_SIGNAL_REGIME={0,1} registers runtime signal handler])
 AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+# In some environments (e.g. MSVC), Windows does not forward signals for
+# critical errors like segmentation faults to user-defined signal handler
+# when the target program/library is compiled under the debug target, which
+# breaks COB_SIGNAL_REGIME tests.
+AT_SKIP_IF([test "$WINDOWS_COMPILATION_TARGET" == "Debug"])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
@@ -15756,7 +15761,6 @@ AT_DATA([callee.cob], [
 ])
 
 AT_DATA([caller.c], [[
-#include <stdio.h>
 #include <libcob.h>
 
 int
@@ -15770,22 +15774,14 @@ main (int argc, char **argv)
     cob_argv[0] = NULL;
 
     /* initialize the COBOL run-time library */
-    printf ("log0\n");
-    fflush(stdout);
     cob_init (0, NULL);
 
     /* call COBOL program */
-    printf ("log1\n");
-    fflush(stdout);
     cob_ret = cob_call_with_exception_check ("callee", 1, cob_argv);
 
     /* Clean up and terminate runtime */
-    printf ("log2\n");
-    fflush(stdout);
     cob_tidy ();
 
-    printf ("log3\n");
-    fflush(stdout);
     /* Check exit by signal handler */
     if (cob_ret != -3) {
         return 1;
@@ -15815,6 +15811,7 @@ AT_SETUP([COB_SIGNAL_REGIME={1,2} does not register runtime signal handler])
 AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+AT_SKIP_IF([test "$WINDOWS_COMPILATION_TARGET" == "Debug"])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
