@@ -787,7 +787,7 @@ jobs:
           %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../db-tls-m4-fix-pthread.patch"
           %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../mingw.patch"
           %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../cx11.patch"
-          %MSYS_BIN%\bash -lc "export lt_cv_deplibs_check_method=${lt_cv_deplibs_check_method='pass_all'}; cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32 CPPFLAGS='-Wno-incompatible-pointer-types -Wno-old-style-definition'"
+          %MSYS_BIN%\bash -lc "lt_cv_deplibs_check_method=${lt_cv_deplibs_check_method='pass_all'}; cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32 CC=/mingw/bin/gcc CPPFLAGS='-Wno-incompatible-pointer-types -Wno-old-style-definition'"
           %MSYS_BIN%\bash -lc "make -C bdb/build_unix --jobs=$(($(nproc)+1))"
 
       - name: Install BDB
@@ -836,7 +836,7 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build
-          %MSYS_BIN%\bash -lc "cd _build && ../configure --with-db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% LDFLAGS=-lintl BDB_LIBS=/mingw/lib/libdb-6.0.dll.a"
+          %MSYS_BIN%\bash -lc "cd _build && ../configure --with-db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% LDFLAGS=-lintl"
 
       - name: Build GnuCOBOL
         run: |
