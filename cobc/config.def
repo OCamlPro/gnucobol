@@ -117,6 +117,9 @@ CB_CONFIG_BOOLEAN (cb_complex_odo, "complex-odo",
 CB_CONFIG_BOOLEAN (cb_odoslide, "odoslide",
 	_("adjust items following OCCURS DEPENDING (implies complex-odo)"))
 
+CB_CONFIG_BOOLEAN (cb_odo_redefines, "odo-in-redefines",
+	_("allow ODO in REDEFINES fields"))
+
 CB_CONFIG_BOOLEAN (cb_initial_justify, "init-justify",
 	_("applies JUSTIFY with VALUE clause"))
 

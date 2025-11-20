@@ -1417,14 +1417,22 @@ validate_redefines (const struct cb_field * const f)
 	}
 
 	/* Check variable occurrence */
-	if (f->depending
-	 || (!f->flag_picture_l && cb_field_variable_size (f))) {
-		cb_error_x (x, _("'%s' cannot be variable length"), f->name);
+	if (cb_odo_redefines) {
+		if (cb_field_variable_size(f->redefines) || f->depending) {
+			return;
+		}
 	}
+
 	if (!f->redefines->flag_picture_l && cb_field_variable_size (f->redefines)) {
 		cb_error_x (x, _("the original definition '%s' cannot be variable length"),
 			    f->redefines->name);
 	}
+
+	if (f->depending
+		|| (!f->flag_picture_l && cb_field_variable_size (f))) {
+		cb_error_x (x, _("'%s' cannot be variable length"), f->name);
+	}
+
 }
 
 /* Perform group-specific validation of f. */
