@@ -307,7 +307,7 @@ const char *COB_ZEROES_ALPHABETIC = ZERO_256;
 #undef ZERO_256
 
 /* note: ancient compilers may only support a length of 509-1023 chars,
-   as soon as we actually see one, we can memset this var (for those) 
+   as soon as we actually see one, we can memset this var (for those)
    in the init function */
 #define SPACE_16	"                "
 #define SPACE_64	SPACE_16 SPACE_16 SPACE_16 SPACE_16
@@ -529,6 +529,7 @@ static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALS
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
+static struct config_enum sighdlrregopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
 static char	varseq_dflt[8] = "0";
 static unsigned char min_conf_length = 0;
@@ -568,6 +569,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_TRACE_FILE", "trace_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_trace_filename)},
 	{"COB_TRACE_FORMAT", "trace_format",	"%P %S Line: %L", NULL, GRP_MISC, ENV_STR, SETPOS (cob_trace_format)},
 	{"COB_STACKTRACE", "stacktrace", 	"1", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_stacktrace)},
+	{"COB_SIGNAL_REGIME", "signal_regime", 	"0", 	sighdlrregopts, GRP_MISC, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_signal_regime)},
 	{"COB_CORE_ON_ERROR", "core_on_error", 	"0", 	coeopts, GRP_MISC, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_core_on_error)},
 	{"COB_CORE_FILENAME", "core_filename", 	"./core.libcob", 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_core_filename)},
 	{"COB_DUMP_FILE", "dump_file",		NULL,	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_dump_filename)},
@@ -666,9 +668,7 @@ static struct signal_table {
 #ifdef	SIGILL
 	{SIGILL,0,0,0,"SIGILL"},
 #endif
-#ifdef	SIGABRT
-	{SIGABRT,0,0,0,"SIGABRT"},
-#endif
+	{SIGABRT,0,0,0,"SIGABRT"},	/* always defined, if missing */
 #ifdef	SIGKILL
 	{SIGKILL,0,0,0,"SIGKILL"},
 #endif
@@ -1171,9 +1171,24 @@ create_dumpfile (void)
 	return ret;
 }
 
+/** \brief default signal handler of the runtime
 
-#ifdef	HAVE_SIGNAL_H
-static void
+	In most cases when a signal is received, the signal handler is configured
+	to terminate the program after tidying up the runtime, unless an external
+	signal handler is registered. In such cases, the external handler is
+	invoked before the signal is raised again, which is then handled by the
+	default handler of the host operating system.
+
+	If the signal is received during a \ref cob_call_with_exception_check call,
+	the signal handler aborts the call and notifies that it has been aborted by
+	the signal handler.
+
+	Additionaly, the signal handler can be configured to create a coredump when
+	a signal occurs. See \ref COB_CORE_ON_ERROR option for more details.
+
+	\param sig number of the signal
+ */
+void
 cob_sig_handler (int sig)
 {
 	char buff [COB_MEDIUM_BUFF];
@@ -1191,7 +1206,9 @@ cob_sig_handler (int sig)
 #ifdef	HAVE_RAISE
 		raise (sig);
 #else
+#ifdef HAVE_SIGNAL_H
 		kill (getpid (), sig);
+#endif
 #endif
 		exit (sig);
 	}
@@ -1272,7 +1289,9 @@ cob_sig_handler (int sig)
 	(void)sigaction (sig, &sa, NULL);
 #endif
 #else
+#ifdef HAVE_SIGNAL_H
 	(void)signal (sig, SIG_DFL);
+#endif
 #endif
 	cob_exit_screen_from_signal (1);
 
@@ -1356,11 +1375,15 @@ exit_handler:
 	if (cobsetptr && cobsetptr->cob_core_on_error == 4) {
 		sig = SIGABRT;
 	}
+#ifdef HAVE_SIGNAL_H
 	signal (sig, SIG_DFL);
+#endif
 #ifdef	HAVE_RAISE
 	raise (sig);
 #else
+#ifdef HAVE_SIGNAL_H
 	kill (cob_sys_getpid (), sig);
+#endif
 #endif
 
 #if 0 /* we don't necessarily want the OS to handle this,
@@ -1368,7 +1391,7 @@ exit_handler:
 	exit (sig);
 #endif
 }
-#endif /* HAVE_SIGNAL_H */
+
 
 /* Raise signal (run both internal and external handlers)
    may return, depending on the signal
@@ -1515,12 +1538,27 @@ cob_init_sig_descriptions (void)
 static void
 cob_set_signal (void)
 {
-#if	defined (HAVE_SIGNAL_H)
+#ifdef HAVE_SIGNAL_H
 	int k;
+	const char *s = getenv ("COB_SIGNAL_REGIME");
+	const char signal_regime = s ? *s : '0';
 #ifdef	HAVE_SIGACTION
 	struct sigaction	sa;
 	struct sigaction	osa;
+#else
+	void (*ohdlr) (int);
+#endif
 
+	if (signal_regime == '2') {
+		/* Don't set any signal */
+		return;
+	}
+
+	/* TODO: consider per-signal value, so _additional_ to the current one a list like
+	   15=1, 2=0, 2 (= handle 15 if no other handler setup, always handle signal 2,
+	   don't do anything for other signals) */
+
+#ifdef HAVE_SIGACTION
 	memset (&sa, 0, sizeof (sa));
 	memset (&osa, 0, sizeof (osa));
 	sa.sa_handler = cob_sig_handler;
@@ -1533,37 +1571,49 @@ cob_set_signal (void)
 
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			/* Take direct control of some hard errors */
-			if (signals[k].for_set == 2) {
-				(void)sigemptyset (&sa.sa_mask);
-				(void)sigaction (signals[k].sig, &sa, NULL);
-			} else {
-				/* for the others: only register if not configured
-				   from the OS side to be ignored */
+			if (signal_regime == '1') {
+				/* Only take control if no handler is registered (=SIG_DFL) */
 				(void)sigaction (signals[k].sig, NULL, &osa);
-				if (osa.sa_handler != SIG_IGN) {
+				if (osa.sa_handler == SIG_DFL) {
 					(void)sigemptyset (&sa.sa_mask);
 					(void)sigaction (signals[k].sig, &sa, NULL);
 				}
-				/* CHECKME: how should we handle externally registered
-				            error handlers (handler != SIG_DFL)? */
+			} else {
+				/* Take direct control of some hard errors */
+				if (signals[k].for_set == 2) {
+					(void)sigemptyset (&sa.sa_mask);
+					(void)sigaction (signals[k].sig, &sa, NULL);
+				} else {
+					/* for the others: only register if not configured
+					   from the OS side to be ignored */
+					if (osa.sa_handler != SIG_IGN) {
+						(void)sigemptyset (&sa.sa_mask);
+						(void)sigaction (signals[k].sig, &sa, NULL);
+					}
+				}
 			}
 		}
 	}
 #else	/* still defined (HAVE_SIGNAL_H) */
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
-			/* Take direct control of some hard errors */
-			if (signals[k].for_set == 2) {
-				(void)signal (signals[k].sig, cob_sig_handler);
-			} else {
-				/* for the others: only register if not configured
-				   from the OS side to be ignored */
-				if (signal (signals[k].sig, SIG_IGN) != SIG_IGN) {
-					(void)signal (signals[k].sig, cob_sig_handler);
+			if (signal_regime == '1') {
+				/* Only take control if no handler is registered (=SIG_DFL) */
+				ohdlr = signal (signals[k].sig, cob_sig_handler);
+				if (ohdlr != SIG_DFL) {
+					(void)signal (signals[k].sig, ohdlr);
 				}
-				/* CHECKME: how should we handle externally registered
-				            error handlers (handler != SIG_DFL)? */
+			} else {
+				/* Take direct control of some hard errors */
+				if (signals[k].for_set == 2) {
+					(void)signal (signals[k].sig, cob_sig_handler);
+				} else {
+					/* for the others: only register if not configured
+					   from the OS side to be ignored */
+					if (signal (signals[k].sig, SIG_IGN) != SIG_IGN) {
+						(void)signal (signals[k].sig, cob_sig_handler);
+					}
+				}
 			}
 		}
 	}
@@ -4268,7 +4318,6 @@ cob_table_sort_init (const size_t nkeys, const unsigned char *collating_sequence
 	share_sort_state->sort_keys = cob_malloc (nkeys * sizeof (cob_file_key));
 	/* TODO on merge to 4.x: consider to
 	   return sort_state;  ... or pass by reference -> dropping share_sort_state */
-								
 }
 
 void

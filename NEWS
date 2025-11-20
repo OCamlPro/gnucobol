@@ -23,11 +23,17 @@ NEWS - user visible changes				-*- outline -*-
 ** initial support for XML PARSE
    while this feature is not implemented fully and some events are not
    implemented yet, we'd like you to test this feature already;
-   note that for the XML-EVENT EXCEPTION, the stored exception-values in 
+   note that for the XML-EVENT EXCEPTION, the stored exception-values in
    XML-CODE and XML-TEXT registers differ from other implementations
 
 ** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
+
+** new runtime configuration COB_SIGNAL_REGIME, allows skipping registration of
+   the signal handler of GnuCOBOL
+   The registration can be skipped either for all signals or for those that do
+   already have a registered handler, allowing users to preserve their own
+   signal handlers during the initialization of the GnuCOBOL runtime.
 
 ** added multiple window functionality with new system function CBL_GC_WINDOW
 

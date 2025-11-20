@@ -4,6 +4,12 @@
 	* configure.ac: fix linking order for PANEL_LIBS
 	* configure.ac: ignore CURSES_LIBS and PANEL_LIBS for --without-curses
 
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* configure.ac: pass HAVE_SIGNAL_H to the tests to indicate whether
+	  signal.h exists
+	* NEWS: note about new runtime configuration option COB_SIGNAL_REGIME
+
 2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: prefer "inline" over "__inline" as the second raises
