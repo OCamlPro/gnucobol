@@ -2,7 +2,7 @@ name: MacOS Workflow
 
 on:
   pull_request:
-    branches: [ gc4 ]
+    branches: [ gitside-master ]
   push:
   # manual run in actions tab - for all branches
   workflow_dispatch:

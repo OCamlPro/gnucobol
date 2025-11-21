@@ -2,7 +2,7 @@ name: Build, Test and provide Nightly (Ubuntu + MSYS1)
 
 on:
   pull_request:
-    branches: [ gc4 ]
+    branches: [ gitside-master ]
   push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
