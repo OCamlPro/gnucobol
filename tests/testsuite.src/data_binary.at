@@ -2261,7 +2261,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

@@ -6311,7 +6311,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE dump.c])
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [05108855], [])
 
 AT_CLEANUP
@@ -6647,7 +6647,7 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size-zero-divide prog.cob], [0], [],
 [prog.cob:14: warning: divide by constant ZERO
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -7378,7 +7378,7 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size prog.cob])
+AT_CHECK([$COMPILE -fno-ec=size-zero-divide prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
