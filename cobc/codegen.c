@@ -8721,40 +8721,59 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 static void
 output_ec_size_handler (void)
 {
+
+	output_line ("if (unlikely ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x)"
+		     " && (cob_glob_ptr->cob_got_exception > 0))",
+		     CB_EXCEPTION_CODE (COB_EC_SIZE));
+	output_block_open();
+	int ec_checked = 0;
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_ADDRESS)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_ADDRESS));
 	}
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_EXPONENTIATION)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_EXPONENTIATION));
 	}
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_IMP)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_IMP));
 	}
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_OVERFLOW)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_OVERFLOW));
 	}
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_TRUNCATION)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_TRUNCATION));
 	}
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_UNDERFLOW)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_UNDERFLOW));
 	}
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_ZERO_DIVIDE)) {
+		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
 			"cob_fatal_exception (cob_glob_ptr->cob_exception_code);",
 			CB_EXCEPTION_CODE(COB_EC_SIZE_ZERO_DIVIDE));
+	}
+
+	output_block_close();
+
+	if (ec_checked) {
+		output_line("cob_reset_exception ();");
 	}
 	
 }
@@ -8762,15 +8781,18 @@ output_ec_size_handler (void)
 static void
 output_handler (const struct cb_statement *stmt)
 {
+	unsigned ex_handler = 0;
 	if (stmt->file) {
 		output_ferror_stmt (stmt);
 		return;
 	}
 
 	if (stmt->ex_handler) {
+		ex_handler = 1;
 		output_ec_condition_for_handler (stmt->handler_type);
 		output_block_open ();
 		output_stmt (stmt->ex_handler);
+		/* reset the exception after it is handled */
 		output_block_close ();
 		if (stmt->not_ex_handler) {
 			output_line ("else");
@@ -8783,6 +8805,9 @@ output_handler (const struct cb_statement *stmt)
 		output_block_open ();
 		output_stmt (stmt->not_ex_handler);
 		output_block_close ();
+	}
+	if (ex_handler) {
+		output_line("cob_reset_exception ();");
 	}
 }
 
@@ -9215,13 +9240,11 @@ output_stmt (cb_tree x)
 			}
 		}
 
-		if (p->handler_type == SIZE_ERROR_HANDLER && p->ex_handler == NULL) {
+		if (p->handler_type == SIZE_ERROR_HANDLER
+		     && p->ex_handler == NULL
+		     && p->not_ex_handler == NULL) {
 			output_ec_size_handler ();
 		}
-
-		/* if ((!p->ex_handler || (p->ex_handler && p->handler_type != SIZE_ERROR_HANDLER))) {
-			output_size_exception_handler(p);
-		} */
 
 		break;
 	}

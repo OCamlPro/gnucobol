@@ -6207,8 +6207,10 @@ build_store_option (cb_tree x, cb_tree round_opt)
 		if (current_statement->ex_handler) {
 			opt |= COB_STORE_KEEP_ON_OVERFLOW;
 		}
-	} else if (current_statement->handler_type != NO_HANDLER) {
-		/* There is a [NOT] ERROR/OVERFLOW/EXCEPTION - Set in parser */
+	} else if (current_statement->handler_type != NO_HANDLER
+		    && current_statement->ex_handler) {
+		/* There is a [NOT] ERROR/OVERFLOW/EXCEPTION and it is not
+		 * implied by the enabled exceptions - Set in parser */
 		opt |= COB_STORE_KEEP_ON_OVERFLOW;
 	} else if (usage == CB_USAGE_BINARY && cb_binary_truncate) {
 		/* Truncate binary field to digits in picture */

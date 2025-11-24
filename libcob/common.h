@@ -1624,7 +1624,7 @@ typedef struct __cob_global {
 	int			cob_initial_external;	/* First external ref */
 	unsigned int		last_exception_line;	/* Last exception: Program source line */
 	unsigned int		last_exception_fatal;	/* Last exception: is fatal */
-	unsigned int		cob_got_exception;	/* Exception active (see last_exception) */
+	int			cob_got_exception;	/* Exception active (see last_exception) */
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
 												/* screenio / termio */
@@ -1686,6 +1686,7 @@ COB_EXPIMP void		print_runtime_conf	(void);
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
 COB_EXPIMP int		cob_last_exception_fatal(void);
+COB_EXPIMP void		cob_reset_exception	(void);
 
 COB_EXPIMP int		cob_last_exit_code	(void);
 COB_EXPIMP const char*	cob_last_runtime_error	(void);

@@ -8,6 +8,15 @@
 	* fileio.c (cob_file_close): close file depending on internal state, not
 	  depending on file organization
 
+2025-11-24  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* common.h, common.c: add `cob_reset_exception` which disable an
+	  exception check after one was performed, but still allows the
+	  exception intrinsic functions to check for them
+	* common.h, common.c: add enum member `COB_FERROR_FATAL_EC` for
+	  `struct cob_fatal_error` which can be used when terminating the
+	  program due to a fatal exception
+
 2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* common.c (cob_set_signal): add the enum COB_SIGNAL_REGIME to toggle
@@ -37,6 +46,7 @@
 	  parsing and general handling of finished/not finished also when built
 	  without libxml2
 
+<<<<<<< HEAD
 2025-11-10  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* common.h, common.c: add `cob_exception_tab_fatal`, which informs
@@ -55,6 +65,8 @@
 	* call.c (add_to_preload): remove usage of cob_strcat and directly 
 	  concatenate preload paths instead
 
+=======
+>>>>>>> 1d54c863 (Edits after review)
 2025-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	first performance-tweaks for JSON GENERATE and XML GENERATE

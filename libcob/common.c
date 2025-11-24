@@ -466,16 +466,6 @@ static const int		cob_exception_tab_code[] = {
 	0		/* COB_EC_MAX */
 };
 
-#undef	COB_EXCEPTION
-#define COB_EXCEPTION(code, tag, name, critical)	critical,
-static const int		cob_exception_tab_fatal[] = {
-	0,		/* COB_EC_ZERO */
-#include "exception.def"
-	0		/* COB_EC_MAX */
-};
-
-#undef	COB_EXCEPTION
-
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
 /* Switches */
@@ -2559,10 +2549,12 @@ cob_set_exception (const int id)
 	}
 }
 
-int
-cob_last_exception_fatal() {
-	return cobglobptr->cob_exception_id
-		&& cob_exception_tab_fatal[cobglobptr->cob_exception_id];
+/* reset exception for the exception checker only */
+void
+cob_reset_exception (void) {
+	if (cobglobptr->cob_got_exception) {
+		cobglobptr->cob_got_exception = -1;
+	}
 }
 
 /* add to last exception, set if empty */

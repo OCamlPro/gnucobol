@@ -19,7 +19,6 @@
 */
 
 
-#include "common.h"
 #include "config.h"
 
 #ifndef	_GNU_SOURCE

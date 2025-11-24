@@ -2655,7 +2655,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            COMPUTE X = 100 ON SIZE ERROR CONTINUE.
            *> this overflows which does not store a result
-           COMPUTE Y = 99 ON SIZE ERROR CONTINUE.
+           COMPUTE Y = 99.
            *> and once in a time this result was not stored
            IF X NOT = 0 AND
               Y NOT = 99
@@ -11778,7 +11778,7 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [],
+AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:10: warning: value size exceeds data size
 prog.cob:10: note: value is 30000
 prog.cob:7: note: 'x' defined here as PIC 9(4)
@@ -12786,7 +12786,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fno-ec=size prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -12942,7 +12942,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -farithmetic-osvs -fno-ec=size prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size-overflow -farithmetic-osvs prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -15809,6 +15809,26 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [], [libcob: prog.cob:10: error: Fatal exception not handled: EC-SIZE-OVERFLOW
 ])
+
+AT_DATA([prog0.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LARGE-VALUE PIC 9(3) VALUE 999.
+       01 SMALL-VALUE PIC 9(3) VALUE 1.
+       01 RESULT      PIC 9(3).
+       PROCEDURE DIVISION.
+           ADD SMALL-VALUE TO LARGE-VALUE
+                GIVING RESULT
+                NOT ON SIZE ERROR CONTINUE.
+           DISPLAY RESULT.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog0.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog0], [0], [000
+], [])
 
 AT_DATA([prog1.cob], [
        IDENTIFICATION DIVISION.

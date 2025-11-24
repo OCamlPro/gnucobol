@@ -1,10 +1,3 @@
-2025-11-10  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
-
-	* codegen.c (output_size_exception_handler): generate a check for a
-	size exception on statements that can raise them
-	* codegen.c (output_stmt): add a check for `ON SIZE ERROR` phrase, and
-	if not present  then generate a check for enabled size exceptions
-
 
 2025-12-04  Roger Bowler <rbowler@snipix.net>
 
@@ -27,6 +20,13 @@
 
 	* ppparse.y: error on extraneous periods at the end of SET
 	  directives; turn to a warning in relaxed syntax mode.
+
+2025-11-24  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_ec_size_handler): generate a check for a
+	size exception on statements that can raise them
+	* codegen.c (output_stmt): add a check for `ON SIZE ERROR` phrase, and
+	if not present  then generate a check for enabled size exceptions
 
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
