@@ -6208,7 +6208,8 @@ build_store_option (cb_tree x, cb_tree round_opt)
 			opt |= COB_STORE_KEEP_ON_OVERFLOW;
 		}
 	} else if (current_statement->handler_type != NO_HANDLER
-		    && current_statement->ex_handler) {
+		    && (current_statement->ex_handler
+			|| current_statement->not_ex_handler)) {
 		/* There is a [NOT] ERROR/OVERFLOW/EXCEPTION and it is not
 		 * implied by the enabled exceptions - Set in parser */
 		opt |= COB_STORE_KEEP_ON_OVERFLOW;
