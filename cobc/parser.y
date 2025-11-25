@@ -7053,8 +7053,7 @@ working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); 
 
 _working_storage_section:
   /* empty */
-| working_storage SECTION
-  dot_or_else_end_of_record_description
+| working_storage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -7088,7 +7087,7 @@ _record_description_list:
 
 record_description_list:
   data_description dot_or_else_end_of_record_description
-| record_description_list data_description dot_or_else_end_of_record_description
+| record_description_list _extra_dot data_description dot_or_else_end_of_record_description
 ;
 
 data_description:
@@ -20408,6 +20407,15 @@ _dot:
   }
 ;
 
+_extra_dot:
+|  TOK_DOT
+ {
+	if (!cb_verify (cb_missing_period, _("extra period"))) {
+		YYERROR;
+	}
+ }
+;
+
 dot_or_else_end_of_file_control:
   TOK_DOT
 | file_control_end_delimiter
@@ -20415,15 +20423,6 @@ dot_or_else_end_of_file_control:
 	if (!cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
 	}
-	cobc_repeat_last_token = 1;
-  }
-;
-
-level_number_in_area_a:
-  LEVEL_NUMBER_IN_AREA_A
-  {
-	/* No need to raise the error for *_IN_AREA_A tokens */
-	(void) cb_verify (cb_missing_period, _("optional period"));
 	cobc_repeat_last_token = 1;
   }
 ;
