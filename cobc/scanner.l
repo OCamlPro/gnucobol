@@ -109,11 +109,21 @@
 #include "parser.h"
 #include "eprintf_token.def"
 
+#ifdef MUST_PRINT_TOKENS
+#define PRINT_TOK(expr) \
+		fprintf(stderr, "%s:%d:token ", cb_source_file, cb_source_line); \
+		eprintf_token(expr);				\
+		fprintf(stderr, "\n")
+#else
+#define PRINT_TOK(expr)
+#endif
+
 #define RETURN_TOK(expr)			\
 	do {					\
 		last_yylval = yylval;		\
 		second_last_token = last_token;		\
 		last_token = (expr);		\
+		PRINT_TOK(last_token);		\
 		return last_token;		\
 	} ONCE_COB
 
