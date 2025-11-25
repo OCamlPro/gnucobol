@@ -1418,7 +1418,7 @@ return_token2:
   "IS" {
 	/* Ignore */
   }
-  [^ \n;]+ {
+  ([^ \n;(]|"("[^)]+")")+ {
 	BEGIN INITIAL;
 	scan_picture (yytext);
 	RETURN_TOK (PICTURE);
@@ -2411,19 +2411,23 @@ static void
 scan_picture (const char *text)
 {
 	unsigned char			*p;
+	unsigned char			*dst;
 
 	/* Scan a PICTURE clause */
 	/* Normalize the input */
+	dst = (unsigned char*) text;
 	for (p = (unsigned char *)text; *p; p++) {
 		/* unput trailing '.' or ',' */
 		if (p[1] == 0 && (*p == '.' || *p == ',')) {
 			unput (*p);
-			*p = 0;
 			break;
 		}
-		*p = cb_toupper (*p);
+		/* remove spaces à la MF in pictures */
+		if (*p != ' '){
+			*dst++ = cb_toupper (*p);
+		}
 	}
-
+	*dst = 0;
 	yylval = CB_TREE (cb_build_picture (text));
 }
 
