@@ -608,7 +608,6 @@ H#[0-9A-Za-z]+ {
 		case THRU:
 		case VALUE:
 		case VARYING:
-		case WORD:
 		{
 			// fprintf(stderr, "literal '%s' after token:", yytext);
 			// eprintf_token(last_token);
