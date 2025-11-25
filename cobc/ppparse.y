@@ -1380,9 +1380,7 @@ _dot:
 _unexpected_dot:
 | DOT
   {
-	  if (cb_syntax_check (_("unexpected period")) == 0) {
-		  YYERROR;
-	  }
+    cb_syntax_check (_("unexpected period"));
   }
 ;
 
