@@ -5869,7 +5869,7 @@ $SET SOURCEFORMAT "FIXED".
 ])
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:2: error: unexpected period
-prog2.cob:2: error: PROGRAM-ID header missing
+prog2.cob:5: error: unexpected period
 ])
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog2.cob], [0], [],
 [prog2.cob:2: warning: unexpected period
