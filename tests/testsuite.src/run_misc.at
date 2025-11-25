@@ -911,6 +911,18 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [OKOKOKOK])
 
+AT_DATA([prog2.cob], [
+       $SET SOURCEFORMAT "FREE".
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      prog.
+$SET SOURCEFORMAT "FIXED".
+             STOP RUN.
+])
+
+# Note: error with strict syntax is checked in syn_misc.at
+AT_CHECK([$COMPILE -frelax-syntax-checks -w prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [])
+
 AT_CLEANUP
 
 

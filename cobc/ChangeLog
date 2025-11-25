@@ -1,4 +1,9 @@
 
+2025-11-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* ppparse.y: error on extraneous periods at the end of SET
+	  directives; turn to a warning in relaxed syntax mode.
+
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_xml_parse): fixed xml state to be static-local
