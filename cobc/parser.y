@@ -20430,7 +20430,6 @@ level_number_in_area_a:
 
 dot_or_else_end_of_file_description:
   TOK_DOT
-| level_number_in_area_a	/* repeats last token */
 | file_description_end_delimiter
   {
 	if (!cb_verify (cb_missing_period, _("optional period"))) {
@@ -20451,7 +20450,6 @@ dot_or_else_end_of_record_description;
 
 dot_or_else_end_of_record_description:
   TOK_DOT
-| level_number_in_area_a	/* repeats last token */
 | record_description_end_delimiter
   {
 	if (!cb_verify (cb_missing_period, _("optional period"))) {
@@ -20462,13 +20460,13 @@ dot_or_else_end_of_record_description:
 ;
 
 file_control_end_delimiter:
-  SELECT | I_O_CONTROL | DATA | PROCEDURE;
+  SELECT | I_O_CONTROL | DATA | PROCEDURE | LEVEL_NUMBER | LEVEL_NUMBER_IN_AREA_A;
 
 file_description_end_delimiter:
   TOK_FILE | PROCEDURE;
 
 record_description_end_delimiter:
-  PROCEDURE | COMMUNICATION | LOCAL_STORAGE | LINKAGE | REPORT | SCREEN;
+  PROCEDURE | COMMUNICATION | LOCAL_STORAGE | LINKAGE | REPORT | SCREEN | LEVEL_NUMBER_IN_AREA_A | LEVEL_NUMBER ;
 
 _dot_or_else_area_a:		/* in PROCEDURE DIVISION */
   TOK_DOT

@@ -107,6 +107,7 @@
 #define YYSTYPE			cb_tree
 #define _PARSER_H	/* work around bad Windows SDK header */
 #include "parser.h"
+#include "eprintf_token.def"
 
 #define RETURN_TOK(expr)			\
 	do {					\
@@ -509,7 +510,9 @@ H#[0-9A-Za-z]+ {
 }
 
 [0-9][0-9]? {
-	int	value;
+        int	value;
+	int return_token1;
+	int return_token2;
 
 	/* We treat integer literals immediately after '.' as labels;
 	   that is, they must be level numbers or section names. */
@@ -520,28 +523,30 @@ H#[0-9A-Za-z]+ {
 			value = atoi (yytext);
 			if (value == 66) {
 				/* level number 66 */
-				RETURN_TOK (SIXTY_SIX);
+				return_token1 = SIXTY_SIX; goto return_token1;
 			} else if (value == 78) {
 				/* level number 78 */
-				RETURN_TOK (SEVENTY_EIGHT);
+				return_token1 = SEVENTY_EIGHT; goto return_token1;
 			} else if (value == 88) {
 				/* level number 88 */
-				RETURN_TOK (EIGHTY_EIGHT);
+				return_token1 = EIGHTY_EIGHT; goto return_token1;
 			} else if ((value >= 1 && value <= 49) || value == 77) {
 				/* level number (1 through 49, 77) */
 				if (cobc_in_area_a) {
-					RETURN_TOK (LEVEL_NUMBER_IN_AREA_A);
+					return_token1 = LEVEL_NUMBER_IN_AREA_A;
+					goto return_token1 ;
 				} else {
-					RETURN_TOK (LEVEL_NUMBER);
+					return_token1 = LEVEL_NUMBER;
+					goto return_token1 ;
 				}
 			}
 		}
 
 		/* Integer label */
 		if (cobc_in_area_a) {
-			RETURN_TOK (WORD_IN_AREA_A);
+			return_token1 = WORD_IN_AREA_A; goto return_token1;
 		} else {
-			RETURN_TOK (WORD);
+		  return_token1 = WORD; goto return_token1;
 		}
 	}
 	/* Numeric literal or referenced integer label
@@ -550,7 +555,126 @@ H#[0-9A-Za-z]+ {
 	   integer label to typeck.c (cb_build_section_name)
 	*/
 	yylval = cb_build_numeric_literal (0, yytext, 0);
-	RETURN_TOK (LITERAL);
+	return_token1 = LITERAL; goto return_token1;
+
+ return_token1:
+
+
+	/* We treat integer literals immediately after '.' as labels;
+	   that is, they must be level numbers or section names. */
+	if (last_token == TOK_DOT || cobc_in_area_a) {
+		yylval = cb_build_reference (yytext);
+
+		if (!cobc_in_procedure) {
+			value = atoi (yytext);
+			if (value == 66) {
+				/* level number 66 */
+				return_token2 = SIXTY_SIX; goto return_token2;
+			} else if (value == 78) {
+				/* level number 78 */
+				return_token2 = SEVENTY_EIGHT; goto return_token2;
+			} else if (value == 88) {
+				/* level number 88 */
+				return_token2 = EIGHTY_EIGHT; goto return_token2;
+			} else if ((value >= 1 && value <= 49) || value == 77) {
+				/* level number (1 through 49, 77) */
+				if (cobc_in_area_a) {
+					return_token2 = LEVEL_NUMBER_IN_AREA_A;
+					goto return_token2 ;
+				} else {
+					return_token2 = LEVEL_NUMBER;
+					goto return_token2 ;
+				}
+			}
+		}
+
+		/* Integer label */
+		if (cobc_in_area_a) {
+			return_token2 = WORD_IN_AREA_A; goto return_token2;
+		} else {
+		  return_token2 = WORD; goto return_token2;
+		}
+	}
+
+	if (!cobc_in_procedure) {
+		// fprintf(stderr, "not in procedure\n");
+		switch(last_token){
+		case TOK_OPEN_PAREN:
+		case BLOCK:
+		case CONTAINS:
+		case IS:
+		case OCCURS:
+		case TO:
+		case THRU:
+		case VALUE:
+		case VARYING:
+		case WORD:
+		{
+			// fprintf(stderr, "literal '%s' after token:", yytext);
+			// eprintf_token(last_token);
+			// fprintf(stderr, "\n");
+			yylval = cb_build_numeric_literal (0, yytext, 0);
+			return_token2 = LITERAL;
+			goto return_token2;
+		}
+		case LITERAL: {
+			switch (cb_tree_category (last_yylval)){
+			case CB_CATEGORY_NUMERIC: {
+				// fprintf(stderr, "literal after numeric LITERAL\n");
+				yylval = cb_build_numeric_literal (0, yytext, 0);
+				return_token2 = LITERAL;
+				goto return_token2;
+			}
+			default:
+			}
+		}
+		default:
+		}
+		// fprintf(stderr, "probably a level number\n");
+		yylval = cb_build_reference (yytext);
+		value = atoi (yytext);
+		if (value == 66) {
+			/* level number 66 */
+			return_token2 = SIXTY_SIX; goto return_token2;
+		} else if (value == 78) {
+			/* level number 78 */
+			return_token2 = SEVENTY_EIGHT; goto return_token2;
+		} else if (value == 88) {
+			/* level number 88 */
+			return_token2 = EIGHTY_EIGHT; goto return_token2;
+		} else if ((value >= 1 && value <= 49) || value == 77) {
+			/* level number (1 through 49, 77) */
+			if (cobc_in_area_a) {
+				return_token2 = LEVEL_NUMBER_IN_AREA_A;
+				goto return_token2 ;
+			} else {
+				return_token2 = LEVEL_NUMBER;
+				goto return_token2 ;
+			}
+		}
+		return_token2 = WORD; goto return_token2;
+	}
+	/* Numeric literal or referenced integer label
+	   remark: all transformations/checks are postponed:
+	   literals to tree.c,
+	   integer label to typeck.c (cb_build_section_name)
+	*/
+	yylval = cb_build_numeric_literal (0, yytext, 0);
+	return_token2 = LITERAL; goto return_token2;
+
+return_token2:
+
+	if (return_token1 != return_token2){
+		fprintf(stderr, "%s:%d: Number %s translated differently ",
+			cb_source_file, cb_source_line, yytext);
+		eprintf_token(return_token1);
+		fprintf(stderr, " vs ");
+		eprintf_token(return_token2);
+		fprintf(stderr, " (last token was ");
+		eprintf_token(last_token);
+		fprintf(stderr, " )\n");
+	}
+	RETURN_TOK(return_token2);
 }
 
 [0-9]+ {
