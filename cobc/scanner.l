@@ -109,11 +109,12 @@
 #include "parser.h"
 #include "eprintf_token.def"
 
+//#define MUST_PRINT_TOKENS
 #ifdef MUST_PRINT_TOKENS
 #define PRINT_TOK(expr) \
 		fprintf(stderr, "%s:%d:token ", cb_source_file, cb_source_line); \
 		eprintf_token(expr);				\
-		fprintf(stderr, "\n")
+		fprintf(stderr, " for '%s'\n", yytext)
 #else
 #define PRINT_TOK(expr)
 #endif
