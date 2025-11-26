@@ -20462,7 +20462,7 @@ file_control_end_delimiter:
   SELECT | I_O_CONTROL | DATA | PROCEDURE | LEVEL_NUMBER | LEVEL_NUMBER_IN_AREA_A;
 
 file_description_end_delimiter:
-  TOK_FILE | PROCEDURE;
+  TOK_FILE | PROCEDURE | FD;
 
 record_description_end_delimiter:
   PROCEDURE | COMMUNICATION | LOCAL_STORAGE | LINKAGE | REPORT | SCREEN | LEVEL_NUMBER_IN_AREA_A | LEVEL_NUMBER ;
