@@ -2510,6 +2510,8 @@ extern cb_tree		cb_build_replacing_first (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_replacing_trailing (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_converting (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_inspect_region_start (void);
+extern cb_tree		cb_build_inspect_or_before (cb_tree);
+extern cb_tree		cb_build_inspect_or_after (cb_tree);
 
 extern int		validate_move (cb_tree, cb_tree, const unsigned int, int *);
 extern cb_tree		cb_build_move (cb_tree, cb_tree);

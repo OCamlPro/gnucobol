@@ -617,6 +617,16 @@ cob_inspect_before (const cob_field *str)
 	cob_inspect_before_intern (&share_inspect_state, str);
 }
 
+void
+cob_inspect_or_before (const cob_field *str) {
+	unsigned char *end = share_inspect_state.end;
+	cob_inspect_before_intern (&share_inspect_state, str);
+	if (end < share_inspect_state.end) {
+		/* We found two matches, so we choose the first one in the inspected string */
+		share_inspect_state.end = end;
+	}
+}
+
 static void
 cob_inspect_after_intern (struct cob_inspect_state *st, const cob_field *str)
 {
@@ -630,6 +640,16 @@ void
 cob_inspect_after (const cob_field *str)
 {
 	cob_inspect_after_intern (&share_inspect_state, str);
+}
+
+void
+cob_inspect_or_after (const cob_field *str) {
+	unsigned char *start = share_inspect_state.start;
+	cob_inspect_after_intern (&share_inspect_state, str);
+	if (share_inspect_state.start > start) {
+		/* We found two matches, so we choose the first one in the inspected string */
+		share_inspect_state.start = start;
+	}
 }
 
 static void

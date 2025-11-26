@@ -10732,6 +10732,31 @@ cb_build_inspect_region_start (void)
 	return CB_LIST_INIT (CB_BUILD_FUNCALL_0 ("cob_inspect_start"));
 }
 
+cb_tree
+cb_build_inspect_or_before (cb_tree candidates)
+{
+	cb_tree l = candidates;
+	cb_tree res = CB_LIST_INIT (CB_BUILD_FUNCALL_1 ("cob_inspect_or_before", CB_VALUE(l)));
+	for (l = CB_CHAIN (l); l; l = CB_CHAIN(l)) {
+		res = cb_list_add(res, CB_BUILD_FUNCALL_1 ("cob_inspect_or_before", CB_VALUE(l)));
+	}
+
+	return res;
+}
+
+cb_tree
+cb_build_inspect_or_after (cb_tree candidates)
+{
+	cb_tree l = candidates;
+	cb_tree res = CB_LIST_INIT (CB_BUILD_FUNCALL_1 ("cob_inspect_or_after", CB_VALUE(l)));
+	for (l = CB_CHAIN (l); l; l = CB_CHAIN(l)) {
+		res = cb_list_add(res, CB_BUILD_FUNCALL_1 ("cob_inspect_or_after", CB_VALUE(l)));
+	}
+
+
+	return res;
+}
+
 /* MOVE statement */
 
 static void

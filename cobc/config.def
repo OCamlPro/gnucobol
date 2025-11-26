@@ -442,3 +442,6 @@ CB_CONFIG_SUPPORT (cb_record_contains_depending_clause, "record-contains-dependi
 
 CB_CONFIG_SUPPORT (cb_picture_l, "picture-l",
 	_("PICTURE string with 'L' character"))
+
+CB_CONFIG_SUPPORT (cb_inspect_or, "inspect-with-or",
+	_("INSPECT with OR conditions"))

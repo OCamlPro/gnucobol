@@ -15239,6 +15239,11 @@ inspect_before:
   {
 	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_before", $3);
   }
+ | BEFORE _initial inspect_or_list
+  {
+	cb_verify(cb_inspect_or, _("INSPECT or"));
+	$$ = cb_build_inspect_or_before($3);
+  }
 ;
 
 inspect_after:
@@ -15246,7 +15251,22 @@ inspect_after:
   {
 	$$ = CB_BUILD_FUNCALL_1 ("cob_inspect_after", $3);
   }
+ | AFTER _initial inspect_or_list
+  {
+	cb_verify(cb_inspect_or, _("INSPECT or"));
+	$$ = cb_build_inspect_or_after($3);
+  }
 ;
+
+inspect_or_list:
+  x OR x
+  {
+	$$ = cb_list_add (CB_LIST_INIT ($1), $3);
+  }
+ | inspect_or_list OR x
+  {
+	$$ = cb_list_add ($1, $3);
+  }
 
 /* JSON GENERATE statement */
 
