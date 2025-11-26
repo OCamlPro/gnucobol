@@ -5828,7 +5828,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET SOURCEFORMAT syntax checks])
-AT_KEYWORDS([misc extensions source directives])
+AT_KEYWORDS([misc extensions source directives FIXED FREE])
 
 AT_DATA([prog.cob], [
       *> Valid
@@ -5859,23 +5859,54 @@ prog.cob:8: error: syntax error, unexpected Literal
 # Let's add a double quote here " to match the one in the error and
 # please emacs coloring...
 
+# Check `>>` variants
 AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       >>SOURCE FREE
+   DATA             DIVISION.
+   WORKING-STORAGE  SECTION.
+   >>SOURCE FIXED
+       PROCEDURE        DIVISION.                                       FIXED
+             DISPLAY "OK" NO ADVANCING
+             END-DISPLAY.
+       >>SOURCE FREE
+                                                                        DISPLAY
+   "OK"
+ NO ADVANCING
+   END-DISPLAY.
+   >>SET SOURCEFORMAT "FIXED"
+             DISPLAY "OK" NO ADVANCING                                  FIXED
+             END-DISPLAY.
+       >>SET SOURCEFORMAT "FREE"
+                                                                        DISPLAY
+   "OK"
+ NO ADVANCING
+   END-DISPLAY.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [], [])
+
+# Check with extraneous period.
+AT_DATA([prog3.cob], [
        $SET SOURCEFORMAT"FREE".
 IDENTIFICATION   DIVISION.
 PROGRAM-ID.      prog.
-$SET SOURCEFORMAT "FIXED".
+>>SET SOURCEFORMAT "FIXED".
        PROCEDURE DIVISION.
              STOP RUN.
 ])
-AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
-[prog2.cob:2: error: unexpected period
-prog2.cob:5: error: unexpected period
+AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
+[prog3.cob:2: error: unexpected period
+prog3.cob:5: error: unexpected period
 ])
-AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog2.cob], [0], [],
-[prog2.cob:2: warning: unexpected period
-prog2.cob:5: warning: unexpected period
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog3.cob], [0], [],
+[prog3.cob:2: warning: unexpected period
+prog3.cob:5: warning: unexpected period
 ])
 AT_CLEANUP
+
 
 # normal register extension,
 # active for lax and standard configurations

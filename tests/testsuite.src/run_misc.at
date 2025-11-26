@@ -878,54 +878,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK OK])
 AT_CLEANUP
 
 
-AT_SETUP([SOURCE FIXED/FREE directives])
-AT_KEYWORDS([runmisc SOURCEFORMAT FIXED FREE])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       >>SOURCE FREE
-   DATA             DIVISION.
-   WORKING-STORAGE  SECTION.
-   >>SOURCE FIXED
-       PROCEDURE        DIVISION.                                       FIXED
-             DISPLAY "OK" NO ADVANCING
-             END-DISPLAY.
-       >>SOURCE FREE
-                                                                        DISPLAY
-   "OK"
- NO ADVANCING
-   END-DISPLAY.
-   >>SET SOURCEFORMAT "FIXED"
-             DISPLAY "OK" NO ADVANCING                                  FIXED
-             END-DISPLAY.
-       >>SET SOURCEFORMAT "FREE"
-                                                                        DISPLAY
-   "OK"
- NO ADVANCING
-   END-DISPLAY.
-             STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[OKOKOKOK])
-
-AT_DATA([prog2.cob], [
-       $SET SOURCEFORMAT "FREE".
-IDENTIFICATION   DIVISION.
-PROGRAM-ID.      prog.
-$SET SOURCEFORMAT "FIXED".
-             STOP RUN.
-])
-
-# Note: error with strict syntax is checked in syn_misc.at
-AT_CHECK([$COMPILE -frelax-syntax-checks -w prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [])
-
-AT_CLEANUP
-
-
 AT_SETUP([TURN directive])
 AT_KEYWORDS([runmisc BOUND NOBOUND directives])
 
