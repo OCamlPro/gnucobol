@@ -1,4 +1,9 @@
 
+2025-11-27  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* general: add inspect-with-or dialect support option
+	* mf-strict.conf: set inspect-with-or to ok
+
 2025-04-22  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	* runtime.cfg: add runtime configuration COB_HEAP_MEMORY and

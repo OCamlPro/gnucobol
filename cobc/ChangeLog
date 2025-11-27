@@ -1,4 +1,9 @@
 
+2025-11-27  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* parser.y, typeck.c, tree.h: add support for OR conditions in INSPECT
+	  statements.
+
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_xml_parse): fixed xml state to be static-local

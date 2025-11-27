@@ -15241,7 +15241,7 @@ inspect_before:
   }
  | BEFORE _initial inspect_or_list
   {
-	cb_verify(cb_inspect_or, _("INSPECT or"));
+	cb_verify(cb_inspect_or, _("INSPECT with OR in inspect region"));
 	$$ = cb_build_inspect_or_before($3);
   }
 ;

@@ -1,4 +1,11 @@
 
+2025-11-27  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+	
+	initial support of OR conditions in inspect regions
+	* common.h, strings.c: add cob_inspect_or_before and
+	  cob_inspect_or_after to support INSPECT statements with OR
+	  conditions in inspect regions
+
 2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h [__GNUC__]: only use C11's _Thread_local for gcc 5+
