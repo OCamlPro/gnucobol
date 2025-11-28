@@ -236,27 +236,6 @@ $cobc_flags{DB201A} = "-fno-ec=data-incompatible";
 #$cobc_flags{DB203A} = "-fno-ec=data-incompatible";
 #$cobc_flags{DB204A} = "-fno-ec=data-incompatible";
 
-# these programs would fail with those exceptions enabled
-$cobc_flags{NC101A} = "-fno-ec=size-overflow";
-$cobc_flags{NC106A} = "-fno-ec=size-overflow";
-$cobc_flags{NC112A} = "-fno-ec=size-overflow";
-$cobc_flags{NC118A} = "-fno-ec=size-overflow";
-$cobc_flags{NC119A} = "-fno-ec=size-overflow";
-$cobc_flags{NC121M} = "-fno-ec=size-overflow -fno-ec=size-zero-divide";
-$cobc_flags{NC123A} = "-fno-ec=size-overflow";
-$cobc_flags{NC170A} = "-fno-ec=size-overflow";
-$cobc_flags{NC171A} = "-fno-ec=size-overflow";
-$cobc_flags{NC172A} = "-fno-ec=size-overflow";
-$cobc_flags{NC173A} = "-fno-ec=size-overflow";
-$cobc_flags{NC175A} = "-fno-ec=size-overflow";
-$cobc_flags{NC176A} = "-fno-ec=size-overflow";
-$cobc_flags{NC177A} = "-fno-ec=size-overflow";
-$cobc_flags{NC202A} = "-fno-ec=size-overflow";
-$cobc_flags{NC203A} = "-fno-ec=size-zero-divide";
-$cobc_flags{NC205A} = "-fno-ec=size-overflow";
-$cobc_flags{NC251A} = "-fno-ec=size-zero-divide";
-$cobc_flags{NC252A} = "-fno-ec=size-overflow";
-$cobc_flags{NC253A} = "-fno-ec=size-overflow";
 
 # Programs that need to be "visual" inspected
 # NC113M: inspected additional to normal tests for output of hex values
