@@ -538,6 +538,7 @@ test.conf: missing definitions:
 	no definition of 'self-call-recursive'
 	no definition of 'record-contains-depending-clause'
 	no definition of 'picture-l'
+	no definition of 'odo-in-redefines'
 ])
 
 AT_CLEANUP

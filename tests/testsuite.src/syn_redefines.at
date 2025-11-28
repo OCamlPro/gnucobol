@@ -244,9 +244,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:8: error: 'Y' cannot be variable length
+[prog.cob:18: warning: OCCURS DEPENDING ON in source or destination of REDEFINES group used
 prog.cob:11: error: 'Y' cannot be variable length
-prog.cob:16: error: the original definition 'X' cannot be variable length
 ])
 
 AT_CLEANUP

@@ -1417,10 +1417,10 @@ validate_redefines (const struct cb_field * const f)
 	}
 
 	/* Check variable occurrence */
-	if (cb_odo_redefines) {
-		if (cb_field_variable_size(f->redefines) || f->depending) {
-			return;
-		}
+	if (cb_field_variable_size(f->redefines) || f->depending
+	     && cb_verify(cb_odo_redefines,
+		     _("OCCURS DEPENDING ON in source or destination of REDEFINES group"))) {
+		return;
 	}
 
 	if (!f->redefines->flag_picture_l && cb_field_variable_size (f->redefines)) {
