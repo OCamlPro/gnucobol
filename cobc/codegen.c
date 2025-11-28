@@ -8721,12 +8721,12 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 static void
 output_ec_size_handler (void)
 {
+	int ec_checked = 0;
 
 	output_line ("if (unlikely ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x)"
 		     " && (cob_glob_ptr->cob_got_exception > 0))",
 		     CB_EXCEPTION_CODE (COB_EC_SIZE));
 	output_block_open();
-	int ec_checked = 0;
 	if (CB_EXCEPTION_ENABLE(COB_EC_SIZE_ADDRESS)) {
 		ec_checked = 1;
 		output_line("if (cob_glob_ptr->cob_exception_code == %d) "
@@ -8781,7 +8781,6 @@ output_ec_size_handler (void)
 static void
 output_handler (const struct cb_statement *stmt)
 {
-	unsigned ex_handler = 0;
 	if (stmt->file) {
 		output_ferror_stmt (stmt);
 		return;
