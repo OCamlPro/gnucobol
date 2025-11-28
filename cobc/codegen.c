@@ -8787,27 +8787,29 @@ output_handler (const struct cb_statement *stmt)
 		return;
 	}
 
+	if (stmt->ex_handler || stmt->not_ex_handler) {
+		/* We have a handler, so the exceptions should not be raised, and we reset them
+		 * before in case the handling statements can also raise exceptions. */
+		output_line("cob_reset_exception ();");
+	}
 	if (stmt->ex_handler) {
-		ex_handler = 1;
 		output_ec_condition_for_handler (stmt->handler_type);
 		output_block_open ();
 		output_stmt (stmt->ex_handler);
-		/* reset the exception after it is handled */
 		output_block_close ();
 		if (stmt->not_ex_handler) {
 			output_line ("else");
 		}
 	}
 	if (stmt->not_ex_handler) {
+		/* We have a not handler, so we should reset exceptions to avoid them
+		 * being triggered after */
 		if (stmt->ex_handler == NULL) {
 			output_line ("if (!cob_glob_ptr->cob_exception_code)");
 		}
 		output_block_open ();
 		output_stmt (stmt->not_ex_handler);
 		output_block_close ();
-	}
-	if (ex_handler) {
-		output_line("cob_reset_exception ();");
 	}
 }
 
