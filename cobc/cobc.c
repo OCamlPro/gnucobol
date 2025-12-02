@@ -266,7 +266,7 @@ int			cb_flag_copybook_deps = 0;
 #endif
 
 /* set by option -fttitle=<title> */
-char                    *cb_listing_with_title = NULL;
+char		*cb_listing_with_title = NULL;
 
 /* Listing structures and externals */
 
@@ -2400,7 +2400,8 @@ cobc_terminate_exit (const char *filename, const char *error)
 		set_listing_date ();
 		set_standard_title ();
 		cb_listing_linecount = cb_lines_per_page;
-		cobc_elided_strcpy (cb_listing_filename, filename, sizeof (cb_listing_filename), 0);
+		cobc_elided_strcpy (cb_listing_filename, filename,
+			sizeof (cb_listing_filename), 0);
 		print_program_header ();
 	}
 	cb_source_line = 0;	/* no context output for fatal open input/output errors */
@@ -3996,8 +3997,9 @@ process_command_line (const int argc, char **argv)
 			/* -fttitle=<title> : Title for listing */
 			const size_t len = strlen (cob_optarg);
 			size_t i;
-			if (cb_listing_with_title)
+			if (cb_listing_with_title) {
 				cobc_main_free (cb_listing_with_title);
+			}
 			cb_listing_with_title = cobc_main_strdup (cob_optarg);
 			for (i = 0; i < len; i++) {
 				if (cb_listing_with_title[i] == '_')
@@ -4066,7 +4068,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case CB_FLAG_GETOPT_INCLUDE_FILE:
-			/* -include=<file.h> : add #include "file.h" to
+			/* --include=<file.h> : add #include "file.h" to
 			   generated C file */
 			if (strlen (cob_optarg) > (COB_MINI_MAX)) {
 				cobc_err_exit (COBC_INV_PAR, "--include");
@@ -5606,11 +5608,33 @@ set_standard_title (void)
 	}
 }
 
+
+/* returns the basename of the given 'src' using 'buff';
+   if that would have a length bigger than 'max_size', an
+   eliding "..." is placed at the end of the buffer */
+static char *
+get_elided_fname (char* buff, const char *src, size_t max_size)
+{
+	const char *p = src + strlen (src) - 1;
+
+	while (p > src) {
+		if (*p == '/' || *p == '\\') {
+			p++;
+			break;
+		}
+		--p;
+	}
+	cobc_elided_strcpy (buff, p, max_size, 1);
+	return buff;
+}
+
 /* print header */
 static void
 print_program_header (void)
 {
 	const char	*format_str;
+	char		fname_buf[COB_MINI_BUFF];
+	size_t		fname_len;
 
 	cb_listing_linecount = 1;
 
@@ -5627,25 +5651,29 @@ print_program_header (void)
 		}
 		if (!cb_listing_with_timestamp){
 			if (cb_listing_wide) {
+				fname_len = 87;
 				format_str = "%-23.23s %-87.87s  Page %04d\n";
 			} else {
+				fname_len = 46;
 				format_str = "%-23.23s %-46.46s  Page %04d\n";
 			}
 			fprintf (cb_src_list_file,
 				 format_str,
 				 cb_listing_title,
-				 cb_listing_filename,
+				 get_elided_fname (fname_buf, cb_listing_filename, fname_len),
 				 ++cb_listing_page);
 		} else {
 			if (cb_listing_wide) {
+				fname_len = 61;
 				format_str = "%-23.23s %-61.61s %s  Page %04d\n";
 			} else {
+				fname_len = 20;
 				format_str = "%-23.23s %-20.20s %s  Page %04d\n";
 			}
 			fprintf (cb_src_list_file,
 				 format_str,
 				 cb_listing_title,
-				 cb_listing_filename,
+				 get_elided_fname (fname_buf, cb_listing_filename, fname_len),
 				 cb_listing_date,
 				 ++cb_listing_page);
 		}
@@ -5661,24 +5689,28 @@ print_program_header (void)
 			cb_listing_page = 1;
 			if (!cb_listing_with_timestamp){
 				if (cb_listing_wide) {
+					fname_len = 92;
 					format_str = "%-28.28s %.92s\n";
 				} else {
+					fname_len = 52;
 					format_str = "%-28.28s %.52s\n";
 				}
 				fprintf (cb_src_list_file,
 					 format_str,
 					 cb_listing_title,
-					 cb_listing_filename);
+					 get_elided_fname (fname_buf, cb_listing_filename, fname_len));
 			} else {
 				if (cb_listing_wide) {
+					fname_len = 66;
 					format_str = "%-28.28s %-66.66s %s\n";
 				} else {
+					fname_len = 26;
 					format_str = "%-28.28s %-26.26s %s\n";
 				}
 				fprintf (cb_src_list_file,
 					 format_str,
 					 cb_listing_title,
-					 cb_listing_filename,
+					 get_elided_fname (fname_buf, cb_listing_filename, fname_len),
 					 cb_listing_date);
 			}
 		}
@@ -6565,20 +6597,20 @@ print_program_trailer (void)
 		print_program_data ("");
 	}
 
-	/* Print error/warning summary (this note may be always included later)
-	   and/or be replaced to be the secondary title of the listing */
-	if (cb_listing_error_head && cb_listing_with_messages) {
-		if (!cb_listing_cmd) {
-			force_new_page_for_next_line ();
-		} else {
-			print_program_data ("");
-		}
-		print_program_data (_("Error/Warning summary:"));
-		print_program_data ("");
-	}
 	if (cb_listing_error_head) {
 		if (cb_listing_with_messages) {
 			char errmsg[COB_SMALL_BUFF];
+			/* Print error/warning summary (this note may be always included later)
+			   and/or be replaced to be the secondary title of the listing */
+			{
+				if (!cb_listing_cmd) {
+					force_new_page_for_next_line ();
+				} else {
+					print_program_data ("");
+				}
+				print_program_data (_("Error/Warning summary:"));
+				print_program_data ("");
+			}
 			err = cb_listing_error_head;
 			do {
 				const char *prefix = err->prefix ? err->prefix : "";
@@ -9524,7 +9556,7 @@ main (int argc, char **argv)
 	cb_saveargv = argv;
 
 	/* This value is used when setting the format in FIXED mode in
-	   pplex, but it might happen that the value has not yet been 
+	   pplex, but it might happen that the value has not yet been
 	   initialized in the configuration file.
 	*/
 	cb_config_text_column = 72;

@@ -1,4 +1,11 @@
 
+2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (get_elided_fname): new function for the listing code
+	* cobc.c (print_program_header): use of the new function to ensure
+	  that the source name is visible in the header and not cut after
+	  its path, fixing last part of FR #294 "listing adjustments"
+
 2025-11-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* ppparse.y: error on extraneous periods at the end of SET
@@ -37,6 +44,10 @@
 	* scanner.l: translate non-printable character for invalid symbols
 	* pplex.l: handle MS-DOS EOF and control code for file separator,
 	  currently consuming consecutive occurences as a single new-line
+
+2025-09-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gentable.c (gentable): fix compile warning under 32bit
 
 2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
 

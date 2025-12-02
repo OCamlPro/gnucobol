@@ -107,6 +107,15 @@ NEWS - user visible changes				-*- outline -*-
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table
 
+* Listing changes
+
+** the listing header shows the processed file's basename to prevent
+   cutting of the important part in case of compiling with full paths;
+   note: use -ftcmd if you want the listing to contain the full name
+   as passed to cobc
+
+** -ftcmd now outputs the full command line, even if spans multiple lines
+
 * More notable changes
 
 ** execution times were significantly reduced for the following:

@@ -2158,8 +2158,9 @@ command line:
 0 errors in compilation group
 ])
 
-AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob], [0],
-[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only \
+-t- -tlines=0 -fno-tsymbols -ftcmd prog.cob], [0],
+[GnuCOBOL V.R.P               prog.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -2174,17 +2175,16 @@ LINE    PG/LN  A...B............................................................
 000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
 000010             GOBACK.
 000011         END FUNCTION WITHPAR.
-GnuCOBOL V.R.P          prog.cob                                        Page 0002
 
 command line:
   cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
-+ -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob
++ -fno-tmessages -fsyntax-only -t- -tlines=0 -fno-tsymbols -ftcmd prog.cob
 ])
 
 AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only \
 -fno-tsymbols -fdiagnostics-show-option -t abcde -ftcmd -fdiagnostics-show-line-numbers \
--fdiagnostics-absolute-paths -t- -fno-remove-unreachable prog.cob], [0],
-[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+-fdiagnostics-absolute-paths -t- -tlines=0 -fno-remove-unreachable prog.cob], [0],
+[GnuCOBOL V.R.P               prog.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -2199,13 +2199,87 @@ LINE    PG/LN  A...B............................................................
 000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
 000010             GOBACK.
 000011         END FUNCTION WITHPAR.
-GnuCOBOL V.R.P          prog.cob                                        Page 0002
 
 command line:
   cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
 + -fno-tmessages -fsyntax-only -fno-tsymbols -fdiagnostics-show-option -t abcde
 + -ftcmd -fdiagnostics-show-line-numbers -fdiagnostics-absolute-paths -t-
-+ -fno-remove-unreachable prog.cob
++ -tlines=0 -fno-remove-unreachable prog.cob
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([listing header with file path specified])
+AT_KEYWORDS([listing return_path basename])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog1.
+       PROCEDURE        DIVISION.
+           DISPLAY "one".
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+           DISPLAY "two".
+           GOBACK.
+])
+
+AT_CHECK([$COBC $LISTING_FLAGS -fsyntax-only \
+ -fno-tmessages  -t- -tlines=0 \
+"$(_return_path "$(pwd)/prog1.cob")" "$(_return_path "$(pwd)/prog2.cob")" ], [0],
+[GnuCOBOL V.R.P               prog1.cob
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog1.
+000004         PROCEDURE        DIVISION.
+000005             DISPLAY "one".
+000006             GOBACK.
+
+
+GnuCOBOL V.R.P               prog2.cob
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog2.
+000004         PROCEDURE        DIVISION.
+000005             DISPLAY "two".
+000006             GOBACK.
+
+
+])
+
+# we still need to elide if too long, even if totally unlikely
+# ... and cover that along the basename part here
+AT_DATA([some_real_long_name_that_surely_breaks_8to3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COBC $LISTING_FLAGS -frelax-syntax-checks -fsyntax-only \
+ -fno-tmessages -t- some_real_long_name_that_surely_breaks_8to3.cob], [0],
+[GnuCOBOL V.R.P          some_real_long_name_that_surely_breaks_8to3...  Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         PROCEDURE        DIVISION.
+000005             GOBACK.
+
+
 ])
 
 AT_CLEANUP
