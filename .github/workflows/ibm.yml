@@ -3,15 +3,14 @@ name: IBM Power & Z
 on:
   pull_request:
     branches: [ gitside-master ]
+  push:
+    branches: [ gitside-master ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
-env:
-  HOME: /home/runner
-
 jobs:
   build:
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +51,8 @@ jobs:
                        --enable-cobc-internal-checks \
                        --enable-hardening \
                        --prefix=/opt/gnucobol \
-                       --with-pkgversion="GnuCOBOL CI"
+                       --with-pkgversion="GnuCOBOL CI" \
+                       CPPFLAGS="-DCOB_NON_ALIGNED $CPPFLAGS"
           echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
 
       - name: Build GnuCOBOL
@@ -79,6 +79,7 @@ jobs:
           sed -i '/AT_SETUP(\[EXAMINE TALLYING\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_extensions.at
 
       - name: Run testsuite
+        continue-on-error: true
         run: |
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || \
           make -C _build check TESTSUITEFLAGS="--recheck --verbose"

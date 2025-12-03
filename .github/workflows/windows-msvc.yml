@@ -17,6 +17,7 @@ env:
   VCVARS64: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
 
   VCPKG_ROOT: C:\vcpkg
+  # libxml2 package break in 2.14.5, see https://github.com/microsoft/vcpkg/issues/47155
   VCPKGS32: mpir:x86-windows pdcurses:x86-windows berkeleydb:x86-windows libxml2:x86-windows cjson:x86-windows
   VCPKGS64: mpir:x64-windows pdcurses:x64-windows berkeleydb:x64-windows libxml2:x64-windows cjson:x64-windows
 
@@ -85,7 +86,7 @@ jobs:
         run: vcpkg integrate install
 
       - name: Install VCPKG packages
-        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
+        # note: always done to update the cache as-needed
         run: vcpkg install %VCPKGS%
 
       - name: Save VCPKG cache
@@ -148,6 +149,7 @@ jobs:
       - name: Build GnuCOBOL
         run: |
           cd build_windows
+          set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include\libxml2"
           "%MSBUILD%" .\vs2019\GnuCOBOL.sln /m /p:Platform=${{ matrix.arch }} /p:Configuration=${{ matrix.target }}
 
       - name: Install MSYS2 packages

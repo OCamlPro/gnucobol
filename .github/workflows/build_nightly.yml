@@ -609,7 +609,7 @@ jobs:
       - name: Setup build environment
         shell: pwsh
         run: |
-          echo $env:MSYS_BIN >> $env:GITHUB_PATH
+          # echo $env:MSYS_BIN >> $env:GITHUB_PATH   note: we need to prefix
           echo HOME=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
           If ("${{ matrix.target }}" -eq "release") {
             echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
@@ -634,13 +634,15 @@ jobs:
 
       - name: Install MSYS1 packages
         if: steps.restore-msys.outputs.cache-hit != 'true'
-        run: bash -lc "mingw-get install %MSYSPKGS%"
+        run: |
+          %MSYS_BIN%\bash -lc "mingw-get install %MSYSPKGS%"
 
       - name: Cleanup MSYS1 env
         if: steps.restore-msys.outputs.cache-hit != 'true'
         run: |
           rmdir /Q /S %MSYS_ROOT%\docs
           rmdir /Q /S %MSYS_ROOT%\var
+          rem if needed, use a newer multiarch GDB
           del /Q %MSYS_ROOT%\bin\gdb*
 
       - name: Save MSYS1 cache
@@ -663,11 +665,12 @@ jobs:
         run: |
           curl -L %GMP_URL% -o gmp.tar.xz
           mkdir gmp && tar -xvf gmp.tar.xz -C gmp --strip-components=1
-          bash -lc "cd gmp && ./configure --prefix=/mingw --enable-fat --enable-shared --disable-static ABI=32 CFLAGS=\"-Wno-attributes -Wno-ignored-attributes\""
-          bash -lc "make -C gmp --jobs=$(($(nproc)+1))"
+          %MSYS_BIN%\bash -lc "cd gmp && ./configure --prefix=/mingw --enable-fat --enable-shared --disable-static ABI=32 CFLAGS=\"-Wno-attributes -Wno-ignored-attributes\""
+          %MSYS_BIN%\bash -lc "make -C gmp --jobs=$(($(nproc)+1))"
 
       - name: Install GMP
-        run: bash -lc "make -C gmp install"
+        run: |
+          %MSYS_BIN%\bash -lc "make -C gmp install"
 
       - name: Save GMP cache
         if: steps.restore-gmp.outputs.cache-hit != 'true'
@@ -689,9 +692,9 @@ jobs:
         run: |
           curl -L %PDCM_URL% -o pdcm.tar.gz
           mkdir pdcm && tar -xvf pdcm.tar.gz -C pdcm --strip-components=1
-          bash -lc "make -C pdcm/wincon --jobs=$(($(nproc)+1)) INFOEX=N CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
-          bash -lc "make -C pdcm/wingui --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
-          bash -lc "make -C pdcm/vt     --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll CFLAGS=\"-Wall -Wextra -pedantic -g -DPDCDEBUG -fPIC -DPDC_DLL_BUILD\""
+          %MSYS_BIN%\bash -lc "make -C pdcm/wincon --jobs=$(($(nproc)+1)) INFOEX=N CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          %MSYS_BIN%\bash -lc "make -C pdcm/wingui --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          %MSYS_BIN%\bash -lc "make -C pdcm/vt     --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll CFLAGS=\"-Wall -Wextra -pedantic -g -DPDCDEBUG -fPIC -DPDC_DLL_BUILD\""
           echo #define CHTYPE_64 > pdcm\pdcurses.h
           echo #define PDC_DLL_BUILD >> pdcm\pdcurses.h
           echo #include "pdcurses/curses.h" >> pdcm\pdcurses.h
@@ -699,15 +702,15 @@ jobs:
       - name: Install PDCursesMod
         run: |
           set HOME=%HOME%\pdcm
-          bash -lc "install wincon/libpdcurses.dll.a /mingw/lib/"
-          bash -lc "install wincon/libpdcurses.dll /mingw/bin/"
+          %MSYS_BIN%\bash -lc "install wincon/libpdcurses.dll.a /mingw/lib/"
+          %MSYS_BIN%\bash -lc "install wincon/libpdcurses.dll /mingw/bin/"
           rem The following three do not seem necessary (no failure if commented out)
-          bash -lc "install wincon/libpdcurses.dll /mingw/bin/libpdcurses-wincon.dll"
-          bash -lc "install wingui/libpdcurses.dll /mingw/bin/libpdcurses-wingui.dll"
-          bash -lc "install vt/libpdcurses.dll /mingw/bin/libpdcurses-vt.dll"
-          bash -lc "install -d /mingw/include/pdcurses"
-          bash -lc "install -m 0644 curses.h panel.h term.h /mingw/include/pdcurses/"
-          bash -lc "install -m 0644 pdcurses.h /mingw/include/"
+          %MSYS_BIN%\bash -lc "install wincon/libpdcurses.dll /mingw/bin/libpdcurses-wincon.dll"
+          %MSYS_BIN%\bash -lc "install wingui/libpdcurses.dll /mingw/bin/libpdcurses-wingui.dll"
+          %MSYS_BIN%\bash -lc "install vt/libpdcurses.dll /mingw/bin/libpdcurses-vt.dll"
+          %MSYS_BIN%\bash -lc "install -d /mingw/include/pdcurses"
+          %MSYS_BIN%\bash -lc "install -m 0644 curses.h panel.h term.h /mingw/include/pdcurses/"
+          %MSYS_BIN%\bash -lc "install -m 0644 pdcurses.h /mingw/include/"
 
       - name: Save PDCursesMod cache
         if: steps.restore-pdcm.outputs.cache-hit != 'true'
@@ -732,15 +735,17 @@ jobs:
           curl -L %BDBP_URL%/mingw.patch                      -o mingw.patch
           curl -L %BDBP_URL%/clang_cxx_11.patch               -o cx11.patch
           mkdir bdb && tar -xvf bdb.tar.gz -C bdb --strip-components=1
-          sed -i 's/_tcsclen/_mbslen/' bdb\src\os_windows\os_stat.c
-          bash -lc "patch -d bdb -p1 -i ../db-tls-m4-fix-pthread.patch"
-          bash -lc "patch -d bdb -p1 -i ../mingw.patch"
-          bash -lc "patch -d bdb -p1 -i ../cx11.patch"
-          bash -lc "cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32"
-          bash -lc "make -C bdb/build_unix --jobs=$(($(nproc)+1))"
+          rem assume non-unicode, otherwise replace by wcslen (or MBCS: _mbstrlen)
+          sed -i 's/_tcsclen/strlen/' bdb\src\os_windows\os_stat.c
+          %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../db-tls-m4-fix-pthread.patch"
+          %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../mingw.patch"
+          %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../cx11.patch"
+          %MSYS_BIN%\bash -lc "lt_cv_deplibs_check_method=${lt_cv_deplibs_check_method='pass_all'}; cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32 CC=/mingw/bin/gcc CPPFLAGS='-Wno-incompatible-pointer-types -Wno-old-style-definition'"
+          %MSYS_BIN%\bash -lc "make -C bdb/build_unix --jobs=$(($(nproc)+1))"
 
       - name: Install BDB
-        run: bash -lc "make -C bdb/build_unix install"
+        run: |
+          %MSYS_BIN%\bash -lc "make -C bdb/build_unix install"
 
       - name: Save BDB cache
         if: steps.restore-bdb.outputs.cache-hit != 'true'
@@ -762,11 +767,12 @@ jobs:
         run: |
           curl -L %XML2_URL% -o libxml2.tar.gz
           mkdir libxml2 && tar -xvf libxml2.tar.gz -C libxml2 --strip-components=1
-          bash -lc "cd libxml2 && ./autogen.sh && ./configure --prefix=/mingw --enable-debug"
-          bash -lc "make -C libxml2 --jobs=$(($(nproc)+1))"
+          %MSYS_BIN%\bash -lc "cd libxml2 && ./autogen.sh && ./configure --prefix=/mingw --enable-debug"
+          %MSYS_BIN%\bash -lc "make -C libxml2 --jobs=$(($(nproc)+1))"
 
       - name: Install LibXML2
-        run: bash -lc "make -C libxml2 install"
+        run: |
+          %MSYS_BIN%\bash -lc "make -C libxml2 install"
 
       - name: Save LibXML2 cache
         if: steps.restore-xml2.outputs.cache-hit != 'true'
@@ -783,12 +789,12 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build
-          bash -lc "cd _build && ../configure --with-db --with-indexed=db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% CPPFLAGS=-I../libcob LDFLAGS=-lintl"
+          %MSYS_BIN%\bash -lc "cd _build && ../configure --with-db --with-indexed=db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% CPPFLAGS=-I../libcob LDFLAGS=-lintl"
           rem  CPPFLAGS to be dropped after merging the adjustment in configure.ac
 
       - name: Build GnuCOBOL
         run: |
-          bash -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
+          %MSYS_BIN%\bash -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [pre-inst-env]), for some reason...
 
@@ -812,7 +818,7 @@ jobs:
         #   perl -pi -e 's/^# OBNC1M/\$skip{IF106A} = 1; # OBNC1M/' tests/cobol85/report.pl
         #   bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd) || echo \"WARNING: NIST85 did not pass!\""
         run: |
-          bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
+          %MSYS_BIN%\bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
 
@@ -829,15 +835,25 @@ jobs:
 
       - name: Adjust testsuite
         run: |
-          cd tests\testsuite.src
-          sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
+          rem skip test as it sometimes works and sometimes not...
+          rem instead of
+          rem    sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
+          rem use
+          %MSYS_BIN%\bash -lc "sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo \"workflow:1\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite"
+
+          rem change to expected fail if there's an error specific to the CI that we don't want to change
+          rem in the testsuite for expected result (should normally only be a temporary thing)
+          rem instead of
+          rem    sed -i '/AT_SETUP(\[Compare FLOAT-LONG with floating-point literal\])/a AT_XFAIL_IF(\[true\])' tests/testsuite.src/run_fundamental.at
+          rem use
+          rem    sed -i '/run_fundamental/{N;/Compare FLOAT-LONG with floating-point literal/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
 
       - name: Run testsuite
         continue-on-error: true
         run: |
           rem to work around regular hangs we run NIST first, then the internal
           rem and the later only with 2 jobs -> --jobs does not seem to have any effect in this env
-          bash -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\" CPATH=$(pwd)"
+          %MSYS_BIN%\bash -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\" CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
 
@@ -849,7 +865,8 @@ jobs:
           path: _build/tests/testsuite.log
 
       - name: Package GnuCOBOL MinGW nightly
-        run: bash -lc "make -C _build distmingw"
+        run: |
+          %MSYS_BIN%\bash -lc "make -C _build distmingw"
 
       - name: Upload GnuCOBOL_mingw
         uses: actions/upload-artifact@v4

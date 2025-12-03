@@ -47,7 +47,9 @@ CODE_COVERAGE_IGNORE_PATTERN= \
 	"*/libcob/statement.def"
 # silence some warnings in lcov2
 CODE_COVERAGE_LCOV_OPTIONS_DEFAULT= \
-	--ignore-errors source --rc geninfo_unexecuted_blocks=1
+	--ignore-errors source --rc geninfo_unexecuted_blocks=1 --ignore-errors negative
+CODE_COVERAGE_LCOV_RMOPTS_DEFAULT= \
+	--ignore-errors unused
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \
