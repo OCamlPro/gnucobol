@@ -8,9 +8,6 @@ on:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
-env:
-  HOME: /home/runner
-
 jobs:
   build:
     timeout-minutes: 10
