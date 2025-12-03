@@ -10021,14 +10021,14 @@ output_stmt (cb_tree x)
 					cobc_err_msg (_("unexpected tree tag: %d"),
 						(int)CB_TREE_TAG (body_value));
 					COBC_ABORT ();
-				/* LCOV_EXCL_END */
+				/* LCOV_EXCL_STOP */
 				}
 			/* LCOV_EXCL_START */
 			} else {
 				cobc_err_msg ("unexpected state");
 				COBC_ABORT ();
 			}
-			/* LCOV_EXCL_END */
+			/* LCOV_EXCL_STOP */
 
 			if (p->flag_retry_forever) {
 				output_line ("cob_file_set_retry (%s%s,COB_RETRY_FOREVER,0);",

@@ -951,18 +951,17 @@ cob_order_keys (cob_file *f)
 {
 	int		didswap = 1;
 	int		k;
-	cob_file_key kx;
 	while (didswap) {
 		didswap = 0;
-		for (k=0; k < (int)f->nkeys-1; k++) {
+		for (k = 0; k < (int)f->nkeys-1; k++) {
 			if (f->keys[k].keyn > f->keys[k+1].keyn) {
+				cob_file_key kx;
 				didswap = 1;
-				memcpy(&kx, &f->keys[k], sizeof(cob_file_key));
-				memcpy(&f->keys[k], &f->keys[k+1], sizeof(cob_file_key));
-				memcpy(&f->keys[k+1], &kx, sizeof(cob_file_key));
+				memcpy (&kx, &f->keys[k], sizeof(cob_file_key));
+				memcpy (&f->keys[k], &f->keys[k+1], sizeof(cob_file_key));
+				memcpy (&f->keys[k+1], &kx, sizeof(cob_file_key));
 			}
 		}
-		/* LCOV_EXCL_STOP */
 	}
 }
 
