@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2018,2020-2024 Free Software Foundation, Inc.
+## Copyright (C) 2014-2018,2020-2025 Free Software Foundation, Inc.
 ## Written by Edward Hart, Simon Sobisch, Chuck Haatvedt
 ##
 ## This file is part of GnuCOBOL.
@@ -3733,23 +3733,24 @@ AT_DATA([prog.cob], [
        SCREEN SECTION.
 
        01 SCREEN-SELECTION.
-           02 LINE 06  COL 05 :FCOL: BLACK :BCOL: CYAN
-               VALUE 'TIMEOUT TEST - ENTER 4 CHARACTERS OF DATA'  &
-                   ' AND PAUSE UNTIL TIME CHANGES'.
-           02 LINE 07  COL 05 :FCOL: BLACK :BCOL: CYAN
-               VALUE ' THEN ENTER 4 MORE CHARACTERS OF DATA'      &
-                   ' AND PAUSE UNTIL TIME CHANGES'.
-           02 LINE 08  COL 05 :FCOL: BLACK :BCOL: CYAN
-               VALUE ' THEN AFTER THE TIME CHANGES '              &
-                   ' ENTER A Y IN THE REPY LINE IF THE DATA '     &
-                   ' IS CORRECT'.
+           02 colored-lines :FCOL: BLACK :BCOL: CYAN.
+             03 LINE 06  COL 05 
+                 VALUE 'TIMEOUT TEST - ENTER 4 CHARACTERS OF DATA' &
+                       ' AND PAUSE UNTIL TIME CHANGES'.
+             03 LINE 07  COL 05
+                 VALUE 'THEN ENTER 4 MORE CHARACTERS OF DATA'      &
+                       ' AND PAUSE UNTIL TIME CHANGES'.
+             03 LINE 08  COL 05
+                 VALUE 'THEN AFTER THE TIME CHANGES'              &
+                       ' ENTER A "Y" IN THE REPLY LINE IF THE DATA'.
+             03 LINE 09  COL 05
+                       'IS CORRECT.55'.
 
            02 LINE 15  COL 20 VALUE 'Data Entry:'.
            02 LINE + 2 COL 20 VALUE 'Reply:'.
-           02 LINE 15  COL 40 PIC A(08) AUTO-SKIP USING W-DATA
-                                                         HIGHLIGHT.
-           02 LINE + 2 COL 40 PIC X     AUTO-SKIP USING W-REPLY
-                                                         HIGHLIGHT.
+           02 highlighted-lines HIGHLIGHT.
+             03 LINE 15  COL 40 PIC A(08) AUTO-SKIP USING W-DATA.
+             03 LINE + 2 COL 40 PIC X     AUTO-SKIP USING W-REPLY.
 
        PROCEDURE DIVISION.
 

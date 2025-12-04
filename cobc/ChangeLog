@@ -1,4 +1,10 @@
 
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (get_number_in_parentheses): use local namebuffer
+	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually allign not only
+	  for SET pointer-name but also for SET index-name
+
 2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (get_elided_fname): new function for the listing code

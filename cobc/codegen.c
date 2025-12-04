@@ -8936,9 +8936,17 @@ static void
 output_assign (const struct cb_assign *ap)
 {
 #ifdef	COB_NON_ALIGNED		/* Nonaligned */
-	if (CB_TREE_CLASS (ap->var) == CB_CLASS_POINTER
-	 || CB_TREE_CLASS (ap->val) == CB_CLASS_POINTER) {
-		/* Pointer assignment */
+	
+	/* FIXME: the non-aligned code has only to be executed if 
+	the source and/or target is a non-aligned COBOL variable (which
+	it is in case of level 01/77, SYNC or manually aligned) */
+
+	const enum cb_class dst_class = CB_TREE_CLASS (ap->var);
+	const enum cb_class src_class = CB_TREE_CLASS (ap->val);
+   
+	   /* Pointer assignment */
+	if (dst_class == CB_CLASS_POINTER
+	 || src_class == CB_CLASS_POINTER) {
 		output_block_open ();
 		output_line ("void *temp_ptr;");
 
@@ -8977,7 +8985,7 @@ output_assign (const struct cb_assign *ap)
 			output (";");
 		} else {
 			/* MOVE val ... */
-			output ("memcpy(&temp_ptr, ");
+			output ("memcpy (&temp_ptr, ");
 			output_data (ap->val);
 			output (", sizeof(temp_ptr));");
 		}
@@ -8999,27 +9007,42 @@ output_assign (const struct cb_assign *ap)
 			output (" = temp_ptr;");
 		} else {
 			/* MOVE ... TO var */
-			output ("memcpy(");
+			output ("memcpy (");
 			output_data (ap->var);
 			output (", &temp_ptr, sizeof(temp_ptr));");
 		}
 		output_newline ();
 
 		output_block_close ();
-	} else {
-		/* Numeric assignment */
-		output_prefix ();
-		output_integer (ap->var);
-		output (" = ");
-		output_integer (ap->val);
-		if (inside_check == 0) {
-			output (";");
-			output_newline ();
-		} else {
-			inside_stack[inside_check - 1] = 1;
-		}
+		return;
 	}
-#else	/* Nonaligned */
+	
+	/* Index assignment */
+	if ( (dst_class == CB_CLASS_INDEX
+	   || dst_class == CB_CLASS_NUMERIC)
+	 &&  CB_FIELD_PTR (ap->var)->size == sizeof (int)) {
+		output_block_open ();
+		
+		/* temp_var = index / integer value; */
+		output_prefix ();
+		output ("const int temp_idx = ");
+		output_integer (ap->val);
+		output (";");
+		output_newline ();
+
+		/* Destination index = temp_idx; */
+		output_prefix ();
+		output ("memcpy (");
+		output_data (ap->var);
+		output (", &temp_idx, sizeof(temp_idx));");
+		output_newline ();
+
+		output_block_close ();
+		return;
+	}
+
+#endif	/* Nonaligned */
+
 	/* Numeric assignment */
 	output_prefix ();
 	output_integer (ap->var);
@@ -9031,7 +9054,6 @@ output_assign (const struct cb_assign *ap)
 	} else {
 		inside_stack[inside_check - 1] = 1;
 	}
-#endif	/* Nonaligned */
 }
 
 static void
