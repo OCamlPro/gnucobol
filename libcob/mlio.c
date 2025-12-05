@@ -26,6 +26,10 @@
 #include <ctype.h>
 #include <stdio.h>
 
+#ifdef  _WIN32
+#include "localcharset.h"
+#endif
+
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
@@ -39,6 +43,7 @@
 #include <libxml/xmlversion.h>
 #include <libxml/xmlwriter.h>
 #include <libxml/tree.h>
+#include <libxml/SAX2.h>
 
 #ifndef LIBXML_CONST_ERROR_PTR
 #if LIBXML_VERSION >= 21200
@@ -139,14 +144,20 @@ enum xml_parser_state {
 	XML_PARSER_FINE,
 	XML_PARSER_HAD_NONFATAL_ERROR,
 	XML_PARSER_HAD_FATAL_ERROR,
+	XML_PARSER_STARTING_NEXT_CHUNK,
 	XML_PARSER_FINISHED,
 	XML_PARSER_IGNORE_ERROR /* special value for suppressing errors */
 };
 
-struct xml_event_data {
-	const char	*data_ptr;	/* data pointer in buff */
-	size_t data_len;	/* length of this data */
-	struct xml_event_data *next;	/* pointer to next element */
+enum cob_xml_registers {
+	SREG_XML_EVENT,
+	SREG_XML_INFORMATION,
+	SREG_XML_TEXT,
+	SREG_XML_NTEXT,
+	SREG_XML_NAMESPACE,
+	SREG_XML_NNAMESPACE,
+	SREG_XML_NS_PREFIX,
+	SREG_XML_NNS_PREFIX
 };
 
 #define COB_XML_EVENT(name,str)	name,
@@ -178,10 +189,14 @@ static void init_xml_event_list (void);
 #endif
 
 struct xml_event {
-	enum cob_xml_event event;
-	struct xml_event_data *first;	/* first data element */
-	struct xml_event_data *last;	/* last data element */
-	struct xml_event *next;	/* pointer to next element */
+	enum cob_xml_event		event;
+	struct xml_event		*next;				/* pointer to next element */
+	const char				*text_ptr;			/* text pointer in buff */
+	size_t					text_len;			/* length of this text */
+	const char				*namespace_ptr;		/* namespace pointer in buff */
+	size_t					namespace_len;		/* length of this namespace */
+	const char				*prefix_ptr;		/* prefix pointer in buff */
+	size_t					prefix_len;			/* length of this prefix */
 };
 
 struct xml_state {
@@ -204,6 +219,7 @@ struct xml_state {
 	size_t	buff_len;		/* size of current buffer for "text"
 	                 		  (increasing until end of XML processing) */
 	size_t	buff_off;		/* offset in buffer, reset before each iteration */
+	int		eof;
 };
 
 enum json_code_status {
@@ -215,7 +231,13 @@ enum json_code_status {
 
 static cob_global		*cobglobptr;
 
-/* Local functions */
+/* Local functions prototypes */
+
+static void xml_endDocument (void *ctx);
+void * buffer_xml_event_data (struct xml_state *state,
+							const void *data,
+							size_t size);
+
 
 /* set special register XML-CODE */
 static COB_INLINE COB_A_INLINE void
@@ -267,11 +289,12 @@ set_xml_event (enum cob_xml_event event)
    note: re-uses events if possible, allocates a new event if needed */
 static struct xml_event *
 xml_event_initialized (struct xml_event *event) {
-	struct xml_event_data *data;
-	for (data = event->first; data; data = data->next) {
-		data->data_ptr = NULL;
-	}
-	event->last = event->first;
+			event->text_ptr			= NULL;
+			event->text_len			= 0;
+			event->namespace_ptr	= NULL;
+			event->namespace_len	= 0;
+			event->prefix_ptr		= NULL;
+			event->prefix_len		= 0;
 	return event;
 }
 
@@ -299,6 +322,8 @@ new_xml_event (struct xml_state *state,  enum cob_xml_event xml_event) {
 
 	/* no empty events from previous parsing, create a new one */
 	event = cob_malloc (sizeof (struct xml_event));
+	/* add logic to check for malloc failure */
+	memset (event, '\0', sizeof (struct xml_event));
 	event->event = xml_event;
 	if (state->event) {
 		state->event->next = event;
@@ -317,26 +342,24 @@ new_xml_event (struct xml_state *state,  enum cob_xml_event xml_event) {
 
 /* add data to event buffer with given size;
    returns -1 if buffer allocation is not possible */
-static int
-buffer_xml_event_data (struct xml_state *state, struct xml_event_data *event_data,
-		const void *data, size_t size)
+void *
+buffer_xml_event_data (struct xml_state *state,
+		       const void *data,
+		       size_t size)
 {
 	size_t buff_free_size = state->buff_len - state->buff_off;
 	void *next_buffer_pos = ((unsigned char *)state->buff) + state->buff_off;
-
-	event_data->data_ptr = next_buffer_pos;
 
 	/* most common: enough size in the buffer, so copy and finish */
 	if (size <= buff_free_size) {
 		memcpy (next_buffer_pos, data, size);
 		state->buff_off += size;
-		return 0;
+		return next_buffer_pos;
 	}
 
 	/* otherwise: allocate new buffer with additional space, preserving existing data */
 	{
-		const size_t malloc_size = state->buff_off
-				+ size > COB_MINI_BUFF ? size : COB_MINI_BUFF;
+		const size_t malloc_size = state->buff_len + COB_LARGE_BUFF;
 		void	*mptr = cob_fast_malloc (malloc_size);
 		/* CHECKME: we possibly want to handle out of memory to pass it to COBOL
 		   as XML error - but cob_fast_malloc / cob_malloc already abort the runtime
@@ -348,102 +371,53 @@ buffer_xml_event_data (struct xml_state *state, struct xml_event_data *event_dat
 			cob_free (state->buff);
 			state->buff = mptr;
 			state->buff_len = malloc_size;
-			memcpy (next_buffer_pos, data, size);
-			state->buff_off += size;
-			return 0;
+			buff_free_size = state->buff_len - state->buff_off;
+			next_buffer_pos = ((unsigned char *)state->buff) + state->buff_off;
+
+	/* most common: enough size in the buffer, so copy and finish */
+			if (size <= buff_free_size) {
+				memcpy (next_buffer_pos, data, size);
+				state->buff_off += size;
+				return next_buffer_pos;
+			}
 		}
 	}
 
-	/* if that did not work out, set whatever our buffer provides */
-	event_data->data_len = size = buff_free_size;
-	if (size) {
-		memcpy (next_buffer_pos, data, size);
-		state->buff_off += size;
-	}
-	return 1;
-}
-
-/* add data to event buffer with given size (will be calculated if -1 is specified);
-   returns event_data to use */
-static struct xml_event_data *
-new_xml_event_data (struct xml_event *event)
-{
-	struct xml_event_data *event_data = event->last;
-
-	/* re-use event structure from previous run */
-	if (event_data) {
-		if (event_data->data_ptr == NULL) {
-			/* very first element, and unsused: */
-			return event_data;
-		}
-		if (event_data->next) {
-			/* another unused element */
-			return event_data->next;
-		}
-	}
-
-	/* no empty event data from previous parsing, create a new one */
-
-	/* add to the current event's data*/
-	event_data = cob_malloc (sizeof (struct xml_event_data));
-	if (event->last) {
-		event->last->next = event_data;
-	} else {
-		event->first = event_data;
-	}
-	event->last = event_data;
-	return event_data;
+	return NULL;
 }
 
 /* add data to event buffer with given size, ignores size = zero;
    returns -1 if buffer allocation is not possible */
-static int
-add_xml_event_data (struct xml_state *state, const void *data, size_t size, const int c_string)
+static void
+add_xml_event_data (struct xml_state *state,
+					enum cob_xml_registers sreg,
+					const void *data,
+					size_t size)
 {
-	/* add to the current event's data*/
-	struct xml_event_data *new_event_data;
+	void	*buff_data;
+	buff_data = buffer_xml_event_data (state, data, size);
 
+	/* add to the current event's data*/
 	if (size == 0) {
-		/* comments, CDATA, ... may be empty */
-		return 0;
+		return;
 	}
-
-	new_event_data = new_xml_event_data (state->event);
-	new_event_data->data_len = size;
-
-	/* TODO: handle out-of-memory per IBM in the caller */
-	return buffer_xml_event_data (state, new_event_data, data, size + c_string);
-}
-
-/* add data to event buffer with given size;
-   returns -1 if buffer allocation is not possible */
-static int
-add_xml_event_data_tag (struct xml_state *state, const xmlChar *name, size_t size)
-{
-	/* add to the current event's data*/
-	struct xml_event_data *new_event_data = new_xml_event_data (state->event);
-	new_event_data->data_len = size;
-
-	/* check if already existing in previous cached events,
-	   which is likely for namespaces and tags */
-	{
-		struct xml_event *event = state->first_event;
-		struct xml_event_data *event_data;
-
-		while (event != state->event) {
-			for (event_data = event->first; event_data; event_data = event_data->next) {
-				if (event_data->data_len == size
-				 && memcmp (event_data->data_ptr, name, size) == 0) {
-					new_event_data->data_ptr = event_data->data_ptr;
-					return 0;
-				}
-			}
-			event = event->next;
-		}
+	switch (sreg) {
+		case SREG_XML_TEXT :
+		case SREG_XML_NTEXT :
+			state->event->text_ptr		= (char *) buff_data;
+			state->event->text_len		= size;
+			break;
+		case SREG_XML_NAMESPACE :
+		case SREG_XML_NNAMESPACE :
+			state->event->namespace_ptr	= (char *) buff_data;
+			state->event->namespace_len	= size;
+			break;
+		case SREG_XML_NS_PREFIX :
+		case SREG_XML_NNS_PREFIX :
+			state->event->prefix_ptr	= (char *) buff_data;
+			state->event->prefix_len	= size;
+			break;
 	}
-
-	/* TODO: handle out-of-memory per IBM in the caller */
-	return buffer_xml_event_data (state, new_event_data, name, size);
 }
 #endif /* defined (WITH_XML2) */
 
@@ -1424,6 +1398,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		}
 		/* LCOV_EXCL_STOP */
 		*saved_state = cob_malloc (sizeof (struct xml_state));
+		memset (*saved_state, '\0', sizeof(struct xml_state));
 		((struct xml_state *)*saved_state)->flags = flags;
 		xml_code = 0;
 	}
@@ -1436,8 +1411,10 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 
 	/* initial setup of registers, ensuring they are available
 	   in the processing procedure */
+#if 0
 	set_xml_text (0, "", 0);
 	set_xml_namespace (0, "", 0, NULL, 0);
+#endif
 
 	/* LINKAGE or BASED item without data */
 	if (!in->data) {
@@ -1491,10 +1468,21 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		switch (xml_code) {
 		case 0:
 			xml_endDocument (state);
+			if (state->eof == 0) {
+				state->eof = 1;
+			} else {
+//				xml_code = 1;
+				state->state == XML_PARSER_FINISHED;
+			}
 			break;
 		case 1:
-			/* goes on with parsing */
+			/* goes on with parsing
+			   note that since we are processing a new chunk
+			   of the xml data, we need to set both data pointers */
 			xml_code = 0;
+			state->input_data_ptr = (const char*)in->data;
+			state->input_data_end = state->input_data_ptr + in->size;
+			state->state = XML_PARSER_STARTING_NEXT_CHUNK;
 			break;
 		default:
 			/* fatal runtime error,
@@ -1672,13 +1660,19 @@ xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 
 static void
 xml_error_handling (struct xml_state *state, const xmlError *err) {
+	char err_code[5];
 	new_xml_event (state, EVENT_EXCEPTION);
-	add_xml_event_data (state, err->message, strlen (err->message), 1);
-	{
-		char err_code[5];
-		sprintf (err_code, "%4d", err->code);
-		add_xml_event_data (state, err_code, 4, 1);
-	}
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						err->message,
+						strlen (err->message) + 1);
+	new_xml_event (state, EVENT_EXCEPTION);
+	sprintf (err_code, "%4d", err->code);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						err_code,
+						5);
+
 	/* CHECKME: Which other elements of the xmlError do we want to pass? */
 #if 0 /* CHECKME: Do we want that? */
 	state->state = XML_PARSER_HAD_NONFATAL_ERROR;
@@ -1760,26 +1754,81 @@ xml_endDocument (void *ctx) {
 static void
 xml_startDocument (void *ctx) {
 	struct xml_state *state = ctx;
+	xmlParserCtxtPtr ctxt = state->ctx;
+
+#if LIBXML_VERSION >= 21200
+	const xmlChar *encoding		= xmlCtxtGetDeclaredEncoding(ctxt);
+	int standalone				= xmlCtxtGetStandalone(ctxt);
+	const xmlChar *version		= xmlCtxtGetVersion(ctxt);
+
+#else
+	const xmlChar *encoding		= ctxt->encoding;
+	int standalone				= ctxt->standalone;
+	const xmlChar *version		= ctxt->version;
+#endif
+
 	new_xml_event (state, EVENT_START_OF_DOCUMENT);
+	new_xml_event (state, EVENT_VERSION_INFORMATION);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						version,
+						xmlStrlen (version));
+	new_xml_event (state, EVENT_ENCODING_DECLARATION);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						encoding,
+						xmlStrlen (encoding));
 	state->state = XML_PARSER_DOCUMENT_START;
+
+	switch (ctxt->standalone) {
+		case 1 :
+			new_xml_event (state, EVENT_STANDALONE_DECLARATION);
+			add_xml_event_data (state,
+								SREG_XML_TEXT,
+								"YES",
+								3);
+			break;
+		case 0 :
+			new_xml_event (state, EVENT_STANDALONE_DECLARATION);
+			add_xml_event_data (state,
+								SREG_XML_TEXT,
+								"no",
+								2);
+			break;
+	}
+
+}
+
+static void
+xml_endofInput (struct xml_state *state) {
+	new_xml_event (state, EVENT_END_OF_INPUT);
 }
 
 static void
 xml_comment (void *ctx, const xmlChar *content) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_COMMENT);
-	add_xml_event_data (state, content, xmlStrlen (content), 0);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						content,
+						xmlStrlen (content));
 }
 
 static void
-xml_element_ns_handling (struct xml_state *state,
-		const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI,
-		int nb_namespaces, const xmlChar **namespaces,
-		int nb_attributes, int nb_defaulted, const xmlChar **attributes) {
-	add_xml_event_data_tag (state, localname, xmlStrlen (localname));
-	/* TODO: cleanup and code namespace stuff and check what to do on endElement */
-	add_xml_event_data_tag (state, prefix, xmlStrlen (prefix));
-	add_xml_event_data_tag (state, URI, xmlStrlen (URI));
+xml_processingInstruction (void *ctx,
+							const xmlChar *target,
+							const xmlChar *data) {
+	struct xml_state *state = ctx;
+	new_xml_event (state, EVENT_PROCESSING_INSTRUCTION_TARGET);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						target,
+						xmlStrlen (target));
+	new_xml_event (state, EVENT_PROCESSING_INSTRUCTION_DATA);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						data,
+						xmlStrlen (data));
 }
 
 static void
@@ -1787,10 +1836,72 @@ xml_startElementNs (void *ctx,
 		const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI,
 		int nb_namespaces, const xmlChar **namespaces,
 		int nb_attributes, int nb_defaulted, const xmlChar **attributes) {
+	int	cntr,	attr_value_len;
 	struct xml_state *state = ctx;
+
 	new_xml_event (state, EVENT_START_OF_ELEMENT);
-	xml_element_ns_handling (state, localname, prefix, URI, nb_namespaces, namespaces,
-		 nb_attributes, nb_defaulted, attributes);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						localname,
+						xmlStrlen (localname));
+	/* TODO: cleanup and code namespace stuff and check what to do on endElement */
+	if (prefix) {
+		add_xml_event_data (state,
+							SREG_XML_NS_PREFIX,
+							prefix,
+							xmlStrlen (prefix));
+	}
+	if (URI) {
+		add_xml_event_data (state,
+							SREG_XML_NAMESPACE,
+							URI,
+							xmlStrlen (URI));
+	}
+
+	/*	Now we start to process the NAMESPACE-DECLARATION's		*/
+	if (namespaces != NULL) {
+		for (cntr = 0; cntr < nb_namespaces * 2; cntr++) {
+			new_xml_event (state, EVENT_NAMESPACE_DECLARATION);
+			const xmlChar *nprefix = namespaces[cntr++];  // Get nprefix (even index)
+			const xmlChar *nuri = namespaces[cntr];	   // Get URI (odd index)
+		/*	Handle default namespace (nprefix is NULL)		*/
+			if (nuri) {
+				add_xml_event_data (state,
+									SREG_XML_NAMESPACE,
+									nuri,
+									xmlStrlen (nuri));
+			}
+			if (nprefix) {
+				add_xml_event_data (state,
+									SREG_XML_NS_PREFIX,
+									nprefix,
+									xmlStrlen (nprefix));
+			}
+		}
+	}
+
+	/*	Process each attribute									*/
+	for (cntr = 0; cntr < nb_attributes * 5; cntr += 5) {
+		const xmlChar *attr_name = attributes[cntr];		   // ATTRIBUTE-NAME
+		const xmlChar *attr_prefix = attributes[cntr + 1];	 // ATTRIBUTE-NAMESPACE
+		const xmlChar *attr_value_start = attributes[cntr + 3]; // ATTRIBUTE-CHARACTERS start
+		const xmlChar *attr_value_end = attributes[cntr + 4];   // ATTRIBUTE-CHARACTERS end
+		
+		// Calculate attribute value length
+		attr_value_len = attr_value_end - attr_value_start;
+		
+		// Use the extracted information
+		new_xml_event (state, EVENT_ATTRIBUTE_NAME);
+		add_xml_event_data (state,
+							SREG_XML_TEXT,
+							attr_name,
+							xmlStrlen (attr_name));
+		new_xml_event (state, EVENT_ATTRIBUTE_CHARACTERS);
+		add_xml_event_data (state,
+							SREG_XML_TEXT,
+							attr_value_start,
+							attr_value_len);
+	}
 }
 
 static void
@@ -1798,38 +1909,187 @@ xml_endElementNs (void *ctx,
 		const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_END_OF_ELEMENT);
-	xml_element_ns_handling (state, localname, prefix, URI,
-		0, NULL, 0, 0, NULL);
+	add_xml_event_data (state, 
+						SREG_XML_TEXT,
+						localname,
+						xmlStrlen (localname));
+	/* TODO: cleanup and code namespace stuff and check what to do on endElement */
+	if (prefix) {
+		add_xml_event_data (state,
+							SREG_XML_NS_PREFIX,
+							prefix,
+							xmlStrlen (prefix));
+	}
+	if (URI) {
+		add_xml_event_data (state,
+							SREG_XML_NAMESPACE,
+							URI,
+							xmlStrlen (URI));
+	}
 }
 
 static void
 xml_startElement (void *ctx, const xmlChar *name, const xmlChar **atts) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_START_OF_ELEMENT);
-	add_xml_event_data_tag (state, name, xmlStrlen (name));
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						name,
+						xmlStrlen (name));
 }
 
 static void
 xml_endElement (void *ctx, const xmlChar *name) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_END_OF_ELEMENT);
-	add_xml_event_data_tag (state, name, xmlStrlen (name));
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						name,
+						xmlStrlen (name));
 }
 
 static void
 xml_characters (void *ctx, const xmlChar *content, int len) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_CONTENT_CHARACTERS);
-	add_xml_event_data (state, content, len, 0);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						content,
+						len);
+}
+
+static void
+myStructuredErrorHandler(void *ctx, const xmlError *error) {
+
+	struct xml_state *state = ctx;
+	static int errorCount = 0;
+	int		i, len;
+	if (error->level == XML_ERR_ERROR || error->level == XML_ERR_FATAL) {
+		errorCount++;
+	}
+
+#if LIBXML_VERSION >= 21400  // 2.14.0  
+	if (error->code == XML_WAR_ENCODING_MISMATCH) {
+#else
+	if (error->code == 113) {
+#endif
+		fprintf(stderr, "WARNING: Encoding mismatch detected!\n");
+		fprintf(stderr, "Message: %s\n", error->message);
+		if (error->str1) {
+			fprintf(stderr, "Declared encoding: %s\n", error->str1);
+		}
+		if (error->str2) {
+			fprintf(stderr, "Auto-detected encoding: %s\n", error->str2);
+		}
+		return;
+	}  
+
+	if 	((errorCount == 1) &&
+		(error->code == XML_ERR_XMLDECL_NOT_FINISHED ||
+		error->code == XML_ERR_SPACE_REQUIRED)) {
+		len = state->input_data_end - state->input_data_ptr;
+#ifdef	_WIN32
+		fprintf(stderr, 
+				"Encoding declaration '%s' appears incompatible with input data\n"
+				"The current runtime character encoding is %s \n"
+				"This caused XML declaration parsing to fail with: %s",
+				state->ctx->encoding, locale_charset(), error->message);
+#else
+		fprintf(stderr, 
+				"Encoding declaration '%s' appears incompatible with input data\n"
+				"The current runtime character encoding does not match  \n"
+				"This caused XML declaration parsing to fail with: %s",
+				state->ctx->encoding, error->message);
+#endif
+		fprintf(stderr, 
+				"The first 5 characters in HEX are X'");
+		if (len > 10) {
+			len = 10;
+		}
+		for (i = 0; i < 5; i++) {
+			printf("%02x", (unsigned char)state->input_data_ptr[i]);
+		}
+		printf("'\n");
+	}
+
+	if (error->code == XML_ERR_INVALID_ENCODING) {
+		fprintf(stderr, "Encoding Error: %s\n", error->message);
+		if (error->file) {
+			fprintf(stderr, "File: %s\n", error->file);
+		}
+		if (error->line > 0) {
+			fprintf(stderr, "Line: %d", error->line);
+			if (error->int2 > 0) {
+				fprintf(stderr, ", Column: %d", error->int2);
+			}
+			fprintf(stderr, "\n");
+		}
+		
+		// Display problematic bytes if available
+		if (error->str1) {
+			fprintf(stderr, "Context: %s\n", error->str1);
+		}
+	} else {
+		fprintf(stderr, 
+				"XML Error ==> %d %s \n",
+					error->code,
+					error->message);
+	}
+
+	if (error->level == XML_ERR_FATAL) {
+		state->last_xml_code = error->code;
+		new_xml_event (state, EVENT_EXCEPTION);
+		len = state->input_data_end - state->input_data_ptr;
+		if (len > 100) {
+			len = 100;
+		}
+		add_xml_event_data (state,
+							SREG_XML_TEXT,
+							state->input_data_ptr,
+							len);
+	}
+}
+
+static void
+xml_internalSubset(void *ctx,
+					const xmlChar *name,
+					const xmlChar *ExternalID,
+					const xmlChar *SystemID) {
+	struct xml_state *state = ctx;
+
+	if (state == NULL || name == NULL) {
+		return;
+	}
+	new_xml_event (state, EVENT_DOCUMENT_TYPE_DECLARATION);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						name,
+						xmlStrlen (name));
 }
 
 static void
 xml_cdata (void *ctx, const xmlChar *content, int len) {
 	struct xml_state *state = ctx;
 	new_xml_event (state, EVENT_START_OF_CDATA_SECTION);
+	if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
+		add_xml_event_data (state,
+							SREG_XML_TEXT,
+							"<![CDATA[",
+							9);
+	}
 	new_xml_event (state, EVENT_CONTENT_CHARACTERS);
-	add_xml_event_data (state, content, len, 0);
+	add_xml_event_data (state,
+						SREG_XML_TEXT,
+						content,
+						len);
+
 	new_xml_event (state, EVENT_END_OF_CDATA_SECTION);
+	if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
+		add_xml_event_data (state,
+							SREG_XML_TEXT,
+							"]]>",
+							3);
+	}
 }
 #endif /* defined (WITH_XML2) */
 
@@ -1839,6 +2099,7 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		const int flags, struct xml_state *state)
 {
 	static int first_xml = 1;
+	const xmlError *error;
 
 	if (state->ctx == NULL) {
 		char	*enc = NULL;
@@ -1848,6 +2109,12 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		}
 
 		/* setup sax-parser callbacks */
+		memset(&state->sax, 0, sizeof(xmlSAXHandler));
+
+		/* do NOT use xmlSAXVersion(&state->sax, 2);
+			only set the callbacks that we need to use
+			All other callbacks remain NULL from memset		*/
+
 		state->sax.startDocument = xml_startDocument;
 		state->sax.endDocument = xml_endDocument;
 		state->sax.comment = xml_comment;
@@ -1860,10 +2127,13 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 			state->sax.startElement = xml_startElement;
 			state->sax.endElement = xml_endElement;
 		}
+		state->sax.internalSubset = xml_internalSubset;
 		state->sax.cdataBlock = xml_cdata;
 		state->sax.endElement = xml_endElement;
+		state->sax.processingInstruction = xml_processingInstruction;
 
 		state->sax.characters = xml_characters;
+		state->sax.serror = myStructuredErrorHandler;
 
 		/*
 		 * The document being in memory, it have no base per RFC 2396,
@@ -1871,6 +2141,23 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		*/
 		state->ctx = xmlCreatePushParserCtxt (&state->sax, state,
 			NULL, 0, "noname.xml");
+
+		// Add this immediately after creating the context:  
+		if (state->ctx != NULL) {
+#if LIBXML_VERSION >= 21200
+			int options = xmlCtxtGetOptions(state->ctx);
+#else
+			int options = state->ctx->options;
+#endif
+			options &= ~XML_PARSE_NOWARNING;		/* Clear the NOWARNING flag */
+			options &= ~XML_PARSE_NOERROR;			/* Also clear NOERROR flag */
+#if LIBXML_VERSION >= 21200
+			xmlCtxtSetOptions(state->ctx, options);  
+#else
+			state->ctx->options = options;
+#endif
+		}
+
 		state->input_data_ptr = (const char*)in->data;
 		state->input_data_end = state->input_data_ptr + in->size;
 
@@ -1964,17 +2251,19 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 			}
 		}
 
-		state->buff = cob_malloc (COB_MINI_BUFF);
-		state->buff_len = COB_MINI_BUFF;
+		state->buff = cob_malloc (COB_LARGE_BUFF);
+		state->buff_len = COB_LARGE_BUFF;
 
 		state->state = XML_PARSER_JUST_STARTED;
 	}
 
+#if 0
 	if (first_xml) {
 		first_xml = 0;
 		cob_runtime_warning (_("%s is unfinished"),
 			"XML PARSE");
 	}
+#endif
 
 	/* unset existing events, allowing re-use*/
 	{
@@ -1993,12 +2282,43 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		if (size > 100) {
 			size = 100;
 		}
-		state->err = xmlParseChunk (state->ctx, state->input_data_ptr, size, end_of_parsing);
-		if (end_of_parsing) {
+		if (state->eof) {
+			state->err = xmlParseChunk (state->ctx, state->input_data_ptr, 0, 1);
+			break;
+		} else if (!end_of_parsing){
+			state->err = xmlParseChunk (state->ctx, state->input_data_ptr, size, end_of_parsing);
+#if 0
+			if (state->err) {
+				error = xmlGetLastError ();
+				fprintf(stderr, "xmlParseChunk returned error %d ==> %s \n",
+					state->err,
+					error->message);
+			}
+#endif
+			state->input_data_ptr += size;
+		} else {
 			break;
 		}
-		state->input_data_ptr += size;
 	}
+
+	if (state->input_data_ptr >= state->input_data_end) {
+		if (state->eof) {
+			state->state = XML_PARSER_FINISHED;
+		} else {
+			xml_endofInput (state);
+		}
+	}
+
+#if 0
+	{
+		struct xml_event *event = state->first_event;
+		for (;event && event->event != EVENT_UNKNOWN; event = event->next) {
+			printf("Event ==> %30.*s \n",
+				xml_event_name_len[event->event],
+				(unsigned char *)xml_event_name[event->event]);
+		}
+	}
+#endif
 
 	state->event = state->first_event;
 	xml_process_next_event (state);
@@ -2011,101 +2331,53 @@ void
 xml_process_next_event (struct xml_state *state)
 {
 	struct xml_event *event = state->event;
-	struct xml_event_data *data = event->first;
 	const int ntext = state->flags & COB_XML_PARSE_NATIONAL;
 
-	const char *text_data = data ? data->data_ptr : NULL;
-	size_t text_len = data ? data->data_len : 0;
+	/*	First set all XML registers to zero length		*/
 
-	state->event = event->next;
+	cob_set_int (COB_MODULE_PTR->xml_information, (int) 1);
+	COB_MODULE_PTR->xml_namespace->size = 0;
+	COB_MODULE_PTR->xml_namespace_prefix->size = 0;
+	COB_MODULE_PTR->xml_nnamespace->size = 0;
+	COB_MODULE_PTR->xml_nnamespace_prefix->size = 0;
+	COB_MODULE_PTR->xml_text->size = 0;
+	COB_MODULE_PTR->xml_ntext->size = 0;
 
-	set_xml_event (event->event);
-	set_xml_code (0);
+	COB_MODULE_PTR->xml_namespace->data = NULL;
+	COB_MODULE_PTR->xml_namespace_prefix->data = NULL;
+	COB_MODULE_PTR->xml_nnamespace->data = NULL;
+	COB_MODULE_PTR->xml_nnamespace_prefix->data = NULL;
+	COB_MODULE_PTR->xml_text->data = NULL;
+	COB_MODULE_PTR->xml_ntext->data = NULL;
 
-	switch (event->event) {
-
-	case EVENT_ATTRIBUTE_CHARACTERS:
-		if (text_len <= 1
-		 && COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
-			event->event = EVENT_ATTRIBUTE_CHARACTER;
-		}
-		/* XML-TEXT already setup */
-		break;
-
-	case EVENT_CONTENT_CHARACTERS:
-		if (text_len <= 1
-		 && COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
-			event->event = EVENT_CONTENT_CHARACTER;
-		}
-		/* XML-TEXT already setup */
-		break;
-
-	case EVENT_START_OF_DOCUMENT:
-		if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
-			text_len = state->input_data_end - state->input_data_ptr;
-			text_data = state->input_data_ptr;
-		}
-		state->state = XML_PARSER_FINE;
-		break;
-	case EVENT_END_OF_DOCUMENT:
-		state->state = XML_PARSER_FINISHED;
-		/* empty register */
-		break;
-
-	case EVENT_START_OF_CDATA_SECTION:
-		if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
-			text_len = 9;
-			text_data = "<![CDATA[";
-		}
-		break;
-	case EVENT_END_OF_CDATA_SECTION:
-		if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
-			text_len = 3;
-			text_data = "]]>";
-		}
-		break;
-
-	case EVENT_START_OF_ELEMENT:
-	case EVENT_END_OF_ELEMENT:
-	case EVENT_COMMENT:
-		/* XML-TEXT already setup */
-		/* TODO: iterate over the next data pointers and set namespace */
-		break;
-
-	case EVENT_END_OF_INPUT:
-		/* empty register */
+	if (event->event == EVENT_END_OF_INPUT && !state->eof) {
 		state->state = XML_PARSER_HAD_END_OF_INPUT;
-		break;
-
-	case EVENT_EXCEPTION:
-		/* first data is message -> already passed as is,
-		   second data is the libxml2 error code */
-		data = data->next;
-		if (data && data->data_len == 4) {
-			set_xml_code_parsing_error (atoi (data->data_ptr));
-		}
-		break;
-	/* TODO */
-	case EVENT_CONTENT_NATIONAL_CHARACTER:
-	case EVENT_DOCUMENT_TYPE_DECLARATION:
-	case EVENT_ENCODING_DECLARATION:
-	case EVENT_NAMESPACE_DECLARATION:
-	case EVENT_PROCESSING_INSTRUCTION_DATA:
-	case EVENT_PROCESSING_INSTRUCTION_TARGET:
-	case EVENT_STANDALONE_DECLARATION:
-	case EVENT_UNKNOWN_REFERENCE_IN_ATTRIBUTE:
-	case EVENT_UNKNOWN_REFERENCE_IN_CONTENT:
-	case EVENT_UNRESOLVED_REFERENCE:
-	case EVENT_VERSION_INFORMATION:
-	default:
-		state->last_xml_code = XML_INTERNAL_ERROR;
-		set_xml_exception (XML_INTERNAL_ERROR);
-		set_xml_event (EVENT_EXCEPTION);
-		state->state = XML_PARSER_HAD_NONFATAL_ERROR;
-		return;
 	}
 
-	set_xml_text (ntext, text_data , text_len);
+	set_xml_event (event->event);
+	if (state->last_xml_code) {
+		set_xml_code (state->last_xml_code);
+	} else {
+	set_xml_code (0);
+	}
+
+	if (ntext) {
+		COB_MODULE_PTR->xml_ntext->size = event->text_len;
+		COB_MODULE_PTR->xml_ntext->data = event->text_ptr;
+		COB_MODULE_PTR->xml_nnamespace->size = event->namespace_len;
+		COB_MODULE_PTR->xml_nnamespace->data = event->namespace_ptr;
+		COB_MODULE_PTR->xml_nnamespace_prefix->size = event->prefix_len;
+		COB_MODULE_PTR->xml_nnamespace_prefix->data = event->prefix_ptr;
+	} else {
+		COB_MODULE_PTR->xml_text->size = event->text_len;
+		COB_MODULE_PTR->xml_text->data = event->text_ptr;
+		COB_MODULE_PTR->xml_namespace->size = event->namespace_len;
+		COB_MODULE_PTR->xml_namespace->data = event->namespace_ptr;
+		COB_MODULE_PTR->xml_namespace_prefix->size = event->prefix_len;
+		COB_MODULE_PTR->xml_namespace_prefix->data = event->prefix_ptr;
+	}
+
+	state->event = event->next;
 }
 
 #if defined (WITH_XML2)
@@ -2130,12 +2402,6 @@ void xml_free_parse_memory (struct xml_state* state)
 		struct xml_event *event = state->first_event;
 		while (event) {
 			struct xml_event *next = event->next;
-			struct xml_event_data  *data = event->first;
-			while (data) {
-				struct xml_event_data *dnext = data->next;
-				cob_free (data);
-				data = dnext;
-			}
 			cob_free (event);
 			event = next;
 		}
