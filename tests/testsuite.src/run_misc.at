@@ -15436,7 +15436,7 @@ AT_DATA([prog1.cob], [
 
 AT_CHECK([$COMPILE prog1.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
-[LOW-VALUE: 063 (064) HIGH-VALUE: 192 (193)], [])
+[LOW-VALUE: 063 (001) HIGH-VALUE: 192 (256)], [])
 
 AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
@@ -15483,7 +15483,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
-[LOW-VALUE: 064 (065) HIGH-VALUE: 255 (256)], [])
+[LOW-VALUE: 064 (001) HIGH-VALUE: 255 (256)], [])
 
 AT_DATA([prog3.cob], [
        IDENTIFICATION DIVISION.
@@ -15529,7 +15529,7 @@ AT_DATA([prog3.cob], [
 
 AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog3.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
-[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (160)], [])
+[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (256)], [])
 
 AT_DATA([prog4.cob], [
        IDENTIFICATION DIVISION.
@@ -15569,7 +15569,7 @@ AT_DATA([prog4.cob], [
 
 AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog4.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
-[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (160)], [])
+[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (256)], [])
 
 AT_DATA([prog5.cob], [
        IDENTIFICATION DIVISION.
@@ -15656,7 +15656,7 @@ AT_DATA([prog5.cob], [
 
 AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5], [0],
-[P1 LOW-VALUE: 000 (001) HIGH-VALUE: 159 (160)
+[P1 LOW-VALUE: 000 (001) HIGH-VALUE: 159 (256)
 P2 LOW-VALUE: 000 (001) HIGH-VALUE: 255 (256)], [])
 
 AT_DATA([prog6.cob], [
@@ -15680,5 +15680,60 @@ AT_DATA([prog6.cob], [
 AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog6.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog6], [0],
 [01 02 03 04 05 06 07 08 09 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CHAR/ORD/ORD-MIN/ORD-MAX when using non-native program collating sequence])
+AT_KEYWORDS([CHAR ORD ORD-MIN ORD-MAX ALPHABET])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               64 THRU 1
+               65 THRU 192
+               256 THRU 193.
+       REPOSITORY.
+           FUNCTION CHAR ORD ORD-MIN ORD-MAX INTRINSIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       PROCEDURE DIVISION.
+           DISPLAY CHAR (1) CHAR (7) CHAR (16) CHAR (22) CHAR (31)
+                   CHAR (66) CHAR (91) CHAR (98) CHAR (123).
+           DISPLAY ORD ("?").
+           DISPLAY ORD ("9").
+           DISPLAY ORD ("0").
+           DISPLAY ORD ("*").
+           DISPLAY ORD ("!").
+           DISPLAY ORD ("A").
+           DISPLAY ORD ("Z").
+           DISPLAY ORD ("a").
+           DISPLAY ORD ("z").
+           DISPLAY ORD-MIN ("?" "9" "0" "*" "!" "A" "Z" "a" "z").
+           DISPLAY ORD-MAX ("?" "9" "0" "*" "!" "A" "Z" "a" "z").
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[?90*!AZaz
+000000001
+000000007
+000000016
+000000022
+000000031
+000000066
+000000091
+000000098
+000000123
+000000001
+000000009
+], [])
 
 AT_CLEANUP

@@ -2,7 +2,7 @@ name: Windows MSVC Workflow
 
 on:
   pull_request:
-    branches: [ gcos4gnucobol-3.x ]
+    branches: [ gitside-gnucobol-3.x ]
   push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
@@ -17,6 +17,7 @@ env:
   VCVARS64: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
 
   VCPKG_ROOT: C:\vcpkg
+  # libxml2 package break in 2.14.5, see https://github.com/microsoft/vcpkg/issues/47155
   VCPKGS32: mpir:x86-windows pdcurses:x86-windows berkeleydb:x86-windows libxml2:x86-windows cjson:x86-windows
   VCPKGS64: mpir:x64-windows pdcurses:x64-windows berkeleydb:x64-windows libxml2:x64-windows cjson:x64-windows
 
@@ -85,7 +86,7 @@ jobs:
         run: vcpkg integrate install
 
       - name: Install VCPKG packages
-        if: steps.restore-vcpkg.outputs.cache-hit != 'true'
+        # note: always done to update the cache as-needed
         run: vcpkg install %VCPKGS%
 
       - name: Save VCPKG cache
@@ -148,6 +149,7 @@ jobs:
       - name: Build GnuCOBOL
         run: |
           cd build_windows
+          set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include\libxml2"
           "%MSBUILD%" .\vs2019\GnuCOBOL.sln /m /p:Platform=${{ matrix.arch }} /p:Configuration=${{ matrix.target }}
 
       - name: Install MSYS2 packages
@@ -175,6 +177,8 @@ jobs:
           sed 's/x64\/Debug/${{ env.ARCHDIR }}\/${{ matrix.target }}/g' atlocal_win > atlocal
           autom4te --lang=autotest -I ./testsuite.src ./testsuite.at -o ./testsuite
 
+        # Fail tests that behave differently under MSVC Debug
+        # - Internal storage: different memory layout leading to different error
       - name: Adjust testsuite
         shell: C:\shells\msys2bash.cmd {0}
         run: |
@@ -184,11 +188,16 @@ jobs:
         # Fail tests that behave differently under MSVC Debug
         # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
         #   of the C runtime while the generated module is linked with the release version
+        #   CHECKME: cobc should use cl.exe /MTd and therefore all should use the debug runtime
+        # - Internal storage: runtime checks abort before signal handler
+        # - COB_SIGNAL_REGIME: runtime checks abort before signal handler
       - name: Adjust testsuite for Debug target
         if: ${{ matrix.target == 'Debug' }}
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           sed -i '/run_extensions/{N;/System routine CBL_GC_HOSTED/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
+          sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
+          sed -i '/run_misc/{N;/COB_SIGNAL_REGIME/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
 
       - name: Run testsuite
         run: |

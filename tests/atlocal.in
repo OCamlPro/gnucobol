@@ -59,6 +59,7 @@ fi
 diff() {
   command "@DIFF@" @DIFF_FLAGS@ "$@"
 }
+
 DIFF=diff
 AWK=@AWK@
 GREP=@GREP@
@@ -93,95 +94,118 @@ LISTING_FLAGS="-fttitle=GnuCOBOL_V.R.P -fno-ttimestamp"
 COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
 COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
 
+perf_record() {
+	local logdir="$1"; shift
+	# using a unique filename each time the function is called
+	local outfile="${logdir}/perf.data.${PERFSUFFIX}-${at_group}-$(date +%s%N)"
+
+	# drop --aio / -z if your system does not support that
+	perf record -q --aio -z --call-graph dwarf,4096 --output "${outfile}" "$@"
+}
+
+perf_stat() {
+	local logdir="$1"; shift
+	local outfile="${logdir}/${PERFSUFFIX}.log"
+
+	perf stat -e instructions --append --output "${outfile}" "$@"
+}
+
 # get performance counters for compiler and/or runtime
 if test "x${PERFSUFFIX}" != "x"; then
-  export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
-  LOG_DIR="${abs_builddir}/perf"
-  LOG_DIR_COMP="${LOG_DIR}/cobc"
-  LOG_DIR_RUN="${LOG_DIR}/cobcrun"
-  PERF="perf stat -e instructions --append"
-  # most reasonable: check actual COBOL runtime performance (only)
-  COBC="${COBC} -g"
-  #mkdir -p "${LOG_DIR_COMP}"
-  # COBC="${PERF} --output ${LOG_DIR_COMP}/${PERFSUFFIX}.log ${COBC} -O0"   # note: full check including C compiler!
-  # COMPILE_ONLY="${PERF} --output ${LOG_DIR_COMP}/${PERFSUFFIX}.log ${COMPILE_ONLY}"  # more reasonable - checks cobc only, but misses codegen
-  mkdir -p "${LOG_DIR_RUN}"
-  COBCRUN="${PERF} --output ${LOG_DIR_RUN}/${PERFSUFFIX}.log ${COBCRUN}"
-  COBCRUN_DIRECT="${PERF} --output ${LOG_DIR_RUN}/${PERFSUFFIX}.log ${COBCRUN_DIRECT}"
-elif test "x${CGSUFFIX}" != "x"; then
-  export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
-  LOG_DIR="${abs_builddir}/callgrind/${CGSUFFIX}"
-  LOG_DIR_COMP="${LOG_DIR}/cobc"
-  LOG_DIR_RUN="${LOG_DIR}"
-  CG="valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --collect-atstart=no --toggle-collect=_start --fn-skip=_dl_runtime_resolve_xsave --fn-skip=_dl_fixup  --toggle-collect=cob_init"
-  if test "x$at_group" = "x"; then
-    at_group="cg"	# must be set as it is part of CG_PREFIX
-  fi
-  export at_group
-  CG_PREFIX="%q{at_group}_%p"
-  LOG_NAME=${CG_PREFIX}.log
-  CG_NAME=callgrind.out.${CG_PREFIX}
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+	LOG_DIR="${abs_builddir}/perf"
+	LOG_DIR_COMP="${LOG_DIR}/cobc"
+	LOG_DIR_RUN="${LOG_DIR}/cobcrun"
+	PERF=perf_stat
+	[ "${PERFRECORD}" != "" ] && PERF=perf_record
+	# most reasonable: record actual COBOL runtime performance (only)
+	mkdir -p "${LOG_DIR_RUN}"
+	COBCRUN="$PERF ${LOG_DIR_RUN} ${COBCRUN}"
+	COBCRUN_DIRECT="$PERF ${LOG_DIR_RUN} ${COBCRUN_DIRECT}"
 
-  # callgrind takes a while - so we only trace COBOL runtime by default
-  COBC="${COBC} -g"
-  #mkdir -p "${LOG_DIR_COMP}"
-  #COBC="${CG} --log-file=${LOG_DIR_COMP}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_COMP}/${CG_NAME} ${COBC}"
-  mkdir -p "${LOG_DIR_RUN}"
-  CG_RUNTIME="${CG} --log-file=${LOG_DIR_RUN}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_RUN}/${CG_NAME} --dump-before=cob_terminate_routines"
-  COBCRUN="${CG_RUNTIME} ${COBCRUN}"
-  COBCRUN_DIRECT="${CG_RUNTIME} ${COBCRUN_DIRECT}"
+	COBC="${COBC} -g"
+
+	#mkdir -p "${LOG_DIR_COMP}"
+	# note: full recording including C compiler; for perf record limit analysis via perf/hotspot to cobc's PID later!
+	# COBC="$PERF ${LOG_DIR_COMP} ${COBC} -O0"
+	# COMPILE_ONLY="$PERF ${LOG_DIR_COMP} ${COMPILE_ONLY}"  # more reasonable - record cobc only, but misses codegen
+elif test "x${CGSUFFIX}" != "x"; then
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+	LOG_DIR="${abs_builddir}/callgrind/${CGSUFFIX}"
+	LOG_DIR_COMP="${LOG_DIR}/cobc"
+	LOG_DIR_RUN="${LOG_DIR}"
+	CG="valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --collect-atstart=no --toggle-collect=_start --fn-skip=_dl_runtime_resolve_xsave --fn-skip=_dl_fixup  --toggle-collect=cob_init"
+	if test "x$at_group" = "x"; then
+		at_group="cg"	# must be set as it is part of CG_PREFIX
+	fi
+	export at_group
+	CG_PREFIX="%q{at_group}_%p"
+	LOG_NAME=${CG_PREFIX}.log
+	CG_NAME=callgrind.out.${CG_PREFIX}
+
+	# callgrind takes a while - so we only trace COBOL runtime by default
+	mkdir -p "${LOG_DIR_RUN}"
+	CG_RUNTIME="${CG} --log-file=${LOG_DIR_RUN}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_RUN}/${CG_NAME} --dump-before=cob_terminate_routines"
+	COBCRUN="${CG_RUNTIME} ${COBCRUN}"
+	COBCRUN_DIRECT="${CG_RUNTIME} ${COBCRUN_DIRECT}"
+
+	COBC="${COBC} -g"
+
+	#mkdir -p "${LOG_DIR_COMP}"
+	#COBC="${CG} --log-file=${LOG_DIR_COMP}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_COMP}/${CG_NAME} ${COBC}"
 
 elif test "x${VGSUFFIX}" != "x"; then
 
-  # To check with valgrind:
-  # * ideally: reconfigure with `./configure --enable-debug & make`
-  # * if your system ships with valgrind suppression files (default.supp is always active) you likely
-  #   want to activate at least the suppressions below (adjusted to your directory);
-  #   some additional common suppressions (bash + BDB) are found in valgrind.supp and added by default
-  # * if you stumble over (other) system library errors you likely want to suppress some of them
-  #   --> re-run single tests with --gen-suppressions=yes # when it seems to be stuck press [Y]+[RETURN]...
-  #   --> inspect and modify the suppression file
-  #   --> add to $VG_SUPPR below (in "local" tests/atlocal)
-  # * choose below  (in "local" tests/atlocal) the valgrind tool you want to use and
-  #   choose if to run valgrind only for the compiler, runtime, or both
-  # * then run with `make check[all] VGSUFFIX (logs will be saved in valgrind/$VGSUFFIX
+	# To check with valgrind:
+	# * ideally: reconfigure with `./configure --enable-debug & make`
+	# * if your system ships with valgrind suppression files (default.supp is always active) you likely
+	#   want to activate at least the suppressions below (adjusted to your directory);
+	#   some additional common suppressions (bash + BDB) are found in valgrind.supp and added by default
+	# * if you stumble over (other) system library errors you likely want to suppress some of them
+	#   --> re-run single tests with --gen-suppressions=yes # when it seems to be stuck press [Y]+[RETURN]...
+	#   --> inspect and modify the suppression file
+	#   --> add to $VG_SUPPR below (in "local" tests/atlocal)
+	# * choose below  (in "local" tests/atlocal) the valgrind tool you want to use and
+	#   choose if to run valgrind only for the compiler, runtime, or both
+	# * then run with `make check[all] VGSUFFIX (logs will be saved in valgrind/$VGSUFFIX
 
-  export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
-  LOG_DIR="${abs_builddir}/valgrind/${VGSUFFIX}"
-  LOG_DIR_COMP="${LOG_DIR}/cobc"
-  LOG_DIR_RUN="${LOG_DIR}"
-  
-  if test "x$at_group" = "x"; then
-    at_group="valgrind"	# must be set as it is part of VG_PREFIX
-  fi
-  export at_group
-  VG_PREFIX="%q{at_group}_%p"
-  LOG_NAME=${VG_PREFIX}.log
-  
-  # if you stumble over system library errors you may want to suppress some of them
-  # re-run with --gen-suppressions=yes and then point to the file (after inspecting and
-  # modifying it via --suppressions=${abs_builddir}/local.supp)
-  #VG_SUPPR_DIR="/usr/lib/valgrind"
-  #VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/debian.supp ${VG_SUPPR}"
-  #VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/ncurses.supp ${VG_SUPPR}"
-  VG_SUPPR="--suppressions=${abs_srcdir}/valgrind.supp ${VG_SUPPR}"
-  # Note: other issue, not suppressible is that some COBOL storage is local
-  #       and can currently not be freed on STOP RUN (or abort).
-  #       It applies to the following elements in the local include files (prog.l*.h)
-  #       and dynamically allocated LOCAL-STORAGE (cob_loc_ptr), temporary decimals,
-  #       frame_stack, cob_procedure_params.
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+	LOG_DIR="${abs_builddir}/valgrind/${VGSUFFIX}"
+	LOG_DIR_COMP="${LOG_DIR}/cobc"
+	LOG_DIR_RUN="${LOG_DIR}"
 
-  MEMCHECK="valgrind --tool=memcheck --read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all ${VG_SUPPR}"
-  SGCHECK="valgrind --tool=exp-sgcheck --read-var-info=yes ${VG_SUPPR}"
+	if test "x$at_group" = "x"; then
+		at_group="valgrind"	# must be set as it is part of VG_PREFIX
+	fi
+	export at_group
+	VG_PREFIX="%q{at_group}_%p"
+	LOG_NAME=${VG_PREFIX}.log
 
-  #COBC="${COBC} -g"
-  mkdir -p "${LOG_DIR_COMP}"
-  COBC="${MEMCHECK} --log-file=${LOG_DIR_COMP}/${LOG_NAME} ${COBC}"
-  
-  mkdir -p "${LOG_DIR_RUN}"
-  VG_RUNTIME="${MEMCHECK} --log-file=${LOG_DIR_RUN}/${LOG_NAME}"
-  COBCRUN="${VG_RUNTIME} ${COBCRUN}"
-  COBCRUN_DIRECT="${VG_RUNTIME} ${COBCRUN_DIRECT}"
+	# if you stumble over system library errors you may want to suppress some of them
+	# re-run with --gen-suppressions=yes and then point to the file (after inspecting and
+	# modifying it via --suppressions=${abs_builddir}/local.supp)
+	#VG_SUPPR_DIR="/usr/lib/valgrind"
+	#VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/debian.supp ${VG_SUPPR}"
+	#VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/ncurses.supp ${VG_SUPPR}"
+	VG_SUPPR="--suppressions=${abs_srcdir}/valgrind.supp ${VG_SUPPR}"
+	# Note: other issue, not suppressible is that some COBOL storage is local
+	#       and can currently not be freed on STOP RUN (or abort).
+	#       It applies to the following elements in the local include files (prog.l*.h)
+	#       and dynamically allocated LOCAL-STORAGE (cob_loc_ptr), temporary decimals,
+	#       frame_stack, cob_procedure_params.
+
+	MEMCHECK="valgrind --tool=memcheck --read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all ${VG_SUPPR}"
+	SGCHECK="valgrind --tool=exp-sgcheck --read-var-info=yes ${VG_SUPPR}"
+
+	mkdir -p "${LOG_DIR_RUN}"
+	VG_RUNTIME="${MEMCHECK} --log-file=${LOG_DIR_RUN}/${LOG_NAME}"
+	COBCRUN="${VG_RUNTIME} ${COBCRUN}"
+	COBCRUN_DIRECT="${VG_RUNTIME} ${COBCRUN_DIRECT}"
+
+	COBC="${COBC} -g"
+
+	mkdir -p "${LOG_DIR_COMP}"
+	COBC="${MEMCHECK} --log-file=${LOG_DIR_COMP}/${LOG_NAME} ${COBC}"
 fi
 
 # test runner for manual tests, content may be adjusted by the user
@@ -202,15 +226,19 @@ _unset_option () {
 	fi
 }
 
-# possible path conversion for running the testsuite in an environment
-# that doesn't match the one where the tested binaries were built
-# Note: not needed for running the testsuite with MSYS as this translates the path
+# get path without quote and possibly translated (MSYS) for running in an
+# environment that doesn't match the one where the binaries were built
 _return_path () {
 	if test "x$MSYSTEM" = x; then
-		echo "$1"
+		path="$1"
 	else
-		cmd //c echo "$1" # note: we want forward slashes here | $SED 's|/|\\|g'
+		# note: we get forward slashes here, and may also quotes,
+		#       which we already add from the outsiode
+		path=$(cmd //c echo "$1")
 	fi
+	path="${path#\"}"
+	path="${path%\"}"
+	echo "$path"
 }
 
 # as we run the testsuite in plain LC_ALL=C the system runs in a plain-as-possible environment;
@@ -220,7 +248,7 @@ set_utf8_locale () {
 	# we need the locale binary to tell us how about the locales available
 	if [ -z "$(which locale)" ]; then
 		echo "Warning: no locale binary found."
-		exit 77  # return code for setting 
+		exit 77  # return code for setting
 	fi
 	unset LC_ALL
 	if [ -z "$LC_ALL" ]; then export LC_ALL=$(locale -a | $GREP -i -E "C\.utf.*8"     | head -n1); fi
@@ -237,15 +265,15 @@ set_utf8_locale () {
 # environments but Windows
 case "$OSTYPE$MSYSTEM" in
   cygwin )
-    COB_ON_CYGWIN=yes
-    export COB_ON_CYGWIN
-    ;;
+	COB_ON_CYGWIN=yes
+	export COB_ON_CYGWIN
+	;;
   msys*|win*|cygwin* )
-    # Windows but not Cygwin
+	# Windows but not Cygwin
 	# note: MSYS2 sets cygwin but also exposes its MSYSTEM
-    COB_ON_WINDOWS=yes
-    export COB_ON_WINDOWS
-    ;;
+	COB_ON_WINDOWS=yes
+	export COB_ON_WINDOWS
+	;;
 esac
 
 # Fix for testcases where cobc translates path to win32 equivalents
@@ -256,7 +284,7 @@ if test "x$MSYSTEM" != "x"; then
 	# order - especially if the current system has cobcrun installed - so
 	# let that cobc call COBCRUN with a full path (converted by MSYS into
 	# the Win32 variant when starting the cobc process)
-	COBCRUN=${ABS_COBCRUN}
+	COBCRUN="${ABS_COBCRUN}"
 else
 	PATHSEP='@PATH_SEPARATOR@'
 fi
@@ -269,16 +297,16 @@ exec_prefix="@exec_prefix@"
 # options that are also used in pre-inst-env (always add to both)
 # but not directly in the testsuite
 if test "$GNUCOBOL_ENV_SETUP" != "1" -a "$GNUCOBOL_TEST_LOCAL" != "1"; then
-	COB_CFLAGS="-I${abs_top_srcdir} @COB_CFLAGS@"
-	COB_LIBS="-L${abs_top_builddir}/libcob/.libs @COB_LIBS@"
-	COB_CONFIG_DIR="${abs_top_srcdir}/config"
-	COB_COPY_DIR="${abs_top_srcdir}/copy"
+	COB_CFLAGS="-I\"$(_return_path "${abs_top_srcdir}")\" @COB_CFLAGS@"
+	COB_LIBS="-L\"$(_return_path "${abs_top_builddir}/libcob/.libs")\" @COB_LIBS@"
+	COB_CONFIG_DIR="$(_return_path "${abs_top_srcdir}/config")"
+	COB_COPY_DIR="$(_return_path "${abs_top_srcdir}/copy")"
 	LD_LIBRARY_PATH="${abs_top_builddir}/libcob/.libs:$LD_LIBRARY_PATH"
 	PATH="${abs_top_builddir}/libcob/.libs:$PATH"
 	DYLD_LIBRARY_PATH="${abs_top_builddir}/libcob/.libs:$DYLD_LIBRARY_PATH"
 	SHLIB_PATH="${abs_top_builddir}/libcob/.libs:$SHLIB_PATH"
 	LIBPATH="${abs_top_builddir}/libcob/.libs:$LIBPATH"
-	COB_LIBRARY_PATH="${abs_top_builddir}/extras"
+	COB_LIBRARY_PATH="$(_return_path "${abs_top_builddir}/extras")"
 
 	export COB_CFLAGS COB_LIBS
 	export COB_CONFIG_DIR COB_COPY_DIR
@@ -290,18 +318,25 @@ export COB_UNIX_LF
 
 # unset all environment variables that are used in libcob
 # for runtime configuration ...
-COB_RUNTIME_CONFIG="${abs_top_srcdir}/config/runtime_empty.cfg"
+COB_RUNTIME_CONFIG="$(_return_path "${abs_top_srcdir}/config/runtime_empty.cfg")"
 export COB_RUNTIME_CONFIG
-for cobenv in $(${LOCAL_ENV} ${ABS_COBCRUN} --runtime-conf \
-                 | $GREP " env:" | cut -d: -f2 | cut -d= -f1 \
-                 | $GREP -v "PATH" | $GREP -v "TERM"); \
+if [ -n "$LOCAL_ENV" ]; then
+	"$LOCAL_ENV" "${ABS_COBCRUN}" --runtime-conf  > info.out
+else
+	"${ABS_COBCRUN}" --runtime-conf  > info.out
+fi
+
+for cobenv in $( $GREP " env:" info.out | cut -d: -f2 | cut -d= -f1 \
+               | $GREP -v "PATH" | $GREP -v "TERM"); \
 	do _unset_option $cobenv; \
 done
 
-# prevent multiple calls by caching the output
-${LOCAL_ENV} ${ABS_COBC} --verbose --info > info.out
-
 # ... and also unset for the compiler
+if [ -n "$LOCAL_ENV" ]; then
+	"$LOCAL_ENV" "${ABS_COBC}" --verbose --info > info.out
+else
+	"${ABS_COBC}" --verbose --info > info.out
+fi
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	for cobenv in $($GREP "env:" info.out | cut -d: -f2 | cut -d= -f1 \
 	              | $GREP -v "PATH"); \
@@ -361,7 +396,7 @@ else
 	" D-ISAM")	COB_HAS_ISAM="disam";;
 	" C-ISAM")	COB_HAS_ISAM="cisam";;
 	" EXTFH")	COB_HAS_ISAM="index_extfh";;
-	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
+	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && return 1;;
 	esac
 
 	if test $($GREP -i -c "XML library.*disabled" info.out) = 0; then
