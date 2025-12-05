@@ -3487,6 +3487,36 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 -fformat=fixed prog.cob], [0], [])
 AT_CLEANUP
 
 
+AT_SETUP([ENTRY statements in areas A and B])
+AT_KEYWORDS([misc cobol85 areacheck ENTRY])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PARM-1        PIC X(256).
+       01 PARM-2        PIC X(256).
+       PROCEDURE        DIVISION.
+           ENTRY 'PRGEP1' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 1'.
+           GOBACK.
+         ENTRY 'PRGEP2' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 2'.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
+[prog.cob:12: error: ENTRY should not start in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fno-areacheck prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fformat=fixed prog.cob], [0], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([pseudotext replacement with text in area A])
 AT_KEYWORDS([misc cobol85 gcos copy missing-periods])
 

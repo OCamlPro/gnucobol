@@ -13957,7 +13957,7 @@ enable_statement:
 
 /* ENTRY statement */
 
-entry: ENTRY {check_area_a_of ("ENTRY"); };
+entry: ENTRY {check_non_area_a_of ("ENTRY"); };
 entry_statement:
   entry
   {
