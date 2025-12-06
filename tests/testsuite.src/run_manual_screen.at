@@ -3947,9 +3947,10 @@ AT_DATA([prog.cob], [
       *    DISPLAY ' ' AT LINE 1 COLUMN 1.
            CALL 'CBL_GC_SET_SCR_SIZE' USING 50, 80.
 
-           DISPLAY ' YOU WILL SEE 4 WINDOWS OF ALTERNATING COLORS ' &
-               'WAIT UNTIL THE END TO ANSWER-TEXT PROMPT'
-               AT LINE 1 COL 4.
+           DISPLAY ' YOU WILL SEE 4 WINDOWS OF ALTERNATING COLORS.'
+               AT LINE 1 COL 3.
+           DISPLAY ' WAIT UNTIL THE END TO ANSWER-TEXT PROMPT.'
+               AT LINE 2 COL 3.
 
       D    DISPLAY ' '                       UPON SYSERR
       D    DISPLAY ' STARTING NEW  WINDOWS ' UPON SYSERR
@@ -4091,9 +4092,9 @@ AT_DATA([prog.cob], [
       *        CALL "C$SLEEP" USING 1
            END-PERFORM.
 
-           DISPLAY ' DID YOU WILL SEE THEM CREATED, MOVED, HIDDEN, S' &
-               'HOWN AND DELETED SUCCESSFULLY ?'
-               AT LINE 4 COL 4.
+           DISPLAY 'DID YOU SEE THEM CREATED, MOVED, HIDDEN, ' &
+                   'SHOWN AND DELETED SUCCESSFULLY?'
+               AT LINE 4 COL 3.
            DISPLAY 'ANSWER Y OR N'
                AT LINE 5 COL 10.
            ACCEPT ANSWER-TEXT

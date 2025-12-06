@@ -198,8 +198,7 @@ elif test "x${VGSUFFIX}" != "x"; then
 	COBC="${MEMCHECK} --log-file=${LOG_DIR_COMP}/${LOG_NAME} ${COBC}"
 fi
 
-ASAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
-LSAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
+LSAN_OPTIONS="suppressions=${abs_srcdir}/lsan.supp:print_suppressions=0"
 
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:

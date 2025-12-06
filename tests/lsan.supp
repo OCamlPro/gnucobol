@@ -19,8 +19,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
-
-
+#
+#
 # bash and other tools are internally used in the test runner and
 # possibly by make but we don't care about it as external tool
 leak:bash
@@ -29,22 +29,24 @@ leak:sed
 leak:gcc
 leak:ld.bfd
 leak:clang
-
-
+#
+#
 # issue that normally has to be checked manually once, as long as
 # endwin and possibly _nc_free_all is called then we did everything
 # we should do to free up the memory
 # --> note: that actually suppresses too much, so disabled by default
 # reachable:newterm
-
+#
 # minor color leak, no problem as not called too often
 # --> note: that actually suppresses too much, so disabled by default
 # reachable:start_color_sp
-
+##
 # that's a potential issue (but external) as a refresh is done quite often
-reachable:wrefresh
-
-
+#reachable:wrefresh   -> seems "reachable" is not supported with all versions
+leak:wrefresh
+#
+#
+#
 # fileio.c should switch to DB_DBT_USERMEM as we already
 # provide the buffers - otherwise BDB allocates a return copy
 # which is no "real" leak as that is re-allocated; but still shown

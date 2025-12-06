@@ -7501,7 +7501,7 @@ AT_CLEANUP
 
 # PROCEDURE DIVISION RETURNING OMITTED
 AT_SETUP([void PROCEDURE])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc RETURNING OMITTED])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -15780,15 +15780,10 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME={0,1} registers runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
+AT_SETUP([COB_SIGNAL_REGIME 0/1 register runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
-# In some environments (e.g. MSVC), Windows does not forward signals for
-# critical errors like segmentation faults to user-defined signal handler
-# when the target program/library is compiled under the debug target, which
-# breaks COB_SIGNAL_REGIME tests.
-AT_SKIP_IF([test "$WINDOWS_COMPILATION_TARGET" == "Debug"])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
@@ -15834,12 +15829,25 @@ main (int argc, char **argv)
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
-AT_CHECK([COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
+
+# In some environments (e.g. MSVC), Windows does not forward signals for
+# critical errors like segmentation faults to user-defined signal handler
+# when the target program/library is compiled under the debug target, which
+# breaks COB_SIGNAL_REGIME tests.
+# Sanitizers may get in the way as well - we can at least portably
+# skip some
+AT_DATA([ubsan.supp], [
+null:*
+])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
-AT_CHECK([COB_SIGNAL_REGIME=1 ./caller], [0], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=1 ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
@@ -15848,11 +15856,10 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME={1,2} does not register runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
+AT_SETUP([COB_SIGNAL_REGIME 1/2 don't register runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
-AT_SKIP_IF([test "$WINDOWS_COMPILATION_TARGET" == "Debug"])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
@@ -15918,12 +15925,20 @@ main (int argc, char **argv)
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
-AT_CHECK([COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
+
+# see note on possibly breaking C/sanitizer runtime checks above
+AT_DATA([ubsan.supp], [
+null:*
+])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
-AT_CHECK([COB_SIGNAL_REGIME=2 ./caller], [0], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=2 ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
