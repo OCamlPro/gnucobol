@@ -4258,31 +4258,12 @@ AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [
 AT_CLEANUP
 
 
-AT_SETUP([COB_LOAD_GLOBAL=false allows cob_resolve and execution from parallel threads])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
-# skip test for MSYS1 - we don't have pthread there
-# skip test for darwin - we don't have dlmopen there
-# FIXME: make that test more portable
-AT_SKIP_IF([echo "DEBUG: OSTYPE is '$OSTYPE'" >&2; test "$OSTYPE" = "msys" -o "${OSTYPE:0:6}" = "darwin"])
-# AT_SKIP_IF([test "$OSTYPE" = "msys" -o "${OSTYPE:0:6}" = "darwin"])
+AT_SETUP([resolve / execution in parallel threads])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL cob_resolve cob_tidy pthread])
 
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 COUNTER PIC 9(5) VALUE 0.
-       
-       PROCEDURE DIVISION.
-           PERFORM 1000 TIMES
-              ADD 1 TO COUNTER
-              CALL "sched_yield"
-           END-PERFORM
-           DISPLAY "Final count: " COUNTER
-           EXIT PROGRAM.
+# check COB_LOAD_GLOBAL=false - could fail on some environments,
+# but those are unlikely to have linkable pthreads as well
 
-])
 AT_DATA([caller.c], [
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -4295,6 +4276,7 @@ typedef int (*hello_world_func)(void);
 typedef void (*cob_init_func)(int, char **);
 typedef hello_world_func (*cob_resolve_func)(char *);
 typedef void (*cob_tidy_func)(void);
+
 /* Function to call COBOL shared library functions */
 void *callCobol() {
     const char *libCobPath = "libcob.so";
@@ -4337,12 +4319,14 @@ void *callCobol() {
     dlclose(libCobHandle);
     return NULL;
 }
+
 /* Thread function wrapper around `callCobol` */
 void *threadFunction(void *arg) {
     long threadId = (long)arg;
     callCobol();
     return NULL;
 }
+
 /* Main function */
 int main() {
     const int numThreads = 2; /* Number of threads to create */
@@ -4363,16 +4347,35 @@ int main() {
     return EXIT_SUCCESS;
 }
 ])
-AT_CHECK([$COBC -x -ldl -lpthread caller.c], [0], [], [], [
-   echo "C compilation failed, skipping rest of group"
+AT_CHECK([$CMPILE -ldl -lpthread caller.c], [0], [], [], [
+   echo "C compilation / linking failed, skipping rest of group"
    exit 77
 ])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+       
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield"
+           END-PERFORM
+           DISPLAY "Final count: " COUNTER
+           EXIT PROGRAM.
+])
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_LIBRARY_PATH="/home/runner/work/gnucobol/gnucobol/_build/tests/testsuite.dir/0788" COB_LOAD_GLOBAL=false ./caller], [0], [Final count: 01000
+AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0],
+[Final count: 01000
 Final count: 01000
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([COB_PRE_LOAD with entry points])
 AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
