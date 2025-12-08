@@ -29,7 +29,7 @@ dnl
 AC_PREREQ([2.70])
 
 AC_INIT([GnuCOBOL],
-	[4.0],
+	[4.0-early-dev],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
