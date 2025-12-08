@@ -183,7 +183,7 @@ jobs:
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           # sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/run_misc.at
-          sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
+          # sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
         # Fail tests that behave differently under MSVC Debug
         # - System routine CBL_GC_HOSTED: fails because libcob is linked with the debug version
@@ -196,7 +196,7 @@ jobs:
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           sed -i '/run_extensions/{N;/System routine CBL_GC_HOSTED/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
-          #sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
+          sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
       - name: Run testsuite
         run: |
