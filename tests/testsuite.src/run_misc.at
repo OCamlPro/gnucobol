@@ -14455,25 +14455,25 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
 AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
-COBCRUN_DIRECT ./caller], [1], [],
+$COBCRUN_DIRECT ./caller], [1], [],
 [libcob: caller.cob:30: error: memory violation detected after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
 AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
-COBCRUN_DIRECT ./caller], [1], [],
+$COBCRUN_DIRECT ./caller], [1], [],
 [libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
 AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
-COBCRUN_DIRECT ./caller], [1], [],
+$COBCRUN_DIRECT ./caller], [1], [],
 [libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
 AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
-COBCRUN_DIRECT ./caller], [1], [],
+$COBCRUN_DIRECT ./caller], [1], [],
 [libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
