@@ -3391,25 +3391,24 @@ get_number_in_parentheses (const unsigned char ** p,
 	}
 
 	if (contains_name) {
-		size_t			name_length;
-		char			*name_buff;
-		cb_tree			item;
+		char			name_buff[COB_MAX_WORDLEN + 1];
+		const size_t	name_length = close_paren - open_paren;
 		struct cb_field *f = NULL;
 		struct cb_literal *l = NULL;
+		cb_tree			item;
 
-		/* Copy name, CHECKME: Shouldn't we limit that - and can use
-		   a fixed-buffer here instead? */
-		name_length = close_paren - open_paren;
-		name_buff = cobc_malloc (name_length);
+		/* Copy name for lookup */
+		if (name_length > COB_MAX_WORDLEN) {
+			*error_detected = 1;
+			return 1;
+		}
 		memcpy (name_buff, open_paren + 1, name_length - 1);
 		name_buff[name_length - 1] = '\0';
 
 		/* Build reference to name */
 		item = cb_ref (cb_build_reference (name_buff));
-
 		if (item == cb_error_node) {
 			*error_detected = 1;
-			cobc_free (name_buff);
 			return 1;
 		}
 		if (CB_FIELD_P (item)) {
@@ -3418,7 +3417,6 @@ get_number_in_parentheses (const unsigned char ** p,
 		if (!(f && f->flag_item_78)) {
 			cb_error (_("'%s' is not a constant-name"), name_buff);
 			*error_detected = 1;
-			cobc_free (name_buff);
 			return 1;
 		}
 
@@ -3431,7 +3429,6 @@ get_number_in_parentheses (const unsigned char ** p,
 		 || l->sign != 0) {
 			cb_error (_("'%s' is not an unsigned positive integer"), name_buff);
 			*error_detected = 1;
-			cobc_free (name_buff);
 			return 1;
 		}
 

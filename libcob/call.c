@@ -563,8 +563,13 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 	if (!cobsetptr->cob_preload_str) {
 		cobsetptr->cob_preload_str = cob_strdup(path);
 	} else {
-		cobsetptr->cob_preload_str = cob_strcat((char*) PATHSEP_STR, cobsetptr->cob_preload_str, 2);
-		cobsetptr->cob_preload_str = cob_strcat((char*) path, cobsetptr->cob_preload_str, 2);
+		/* +1 to len for PATHSEP_CHAR */
+		const size_t len = strlen (path) + strlen (cobsetptr->cob_preload_str) + 2;
+		char *buff = (char *) cob_fast_malloc (len);
+		snprintf (buff, len, "%s%c%s", path, PATHSEP_CHAR,
+			cobsetptr->cob_preload_str);
+		cob_free (cobsetptr->cob_preload_str);
+		cobsetptr->cob_preload_str = buff;
 	}
 }
 

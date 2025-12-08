@@ -1,4 +1,26 @@
 
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking
+	  the first record showed conflicting file attributes do an internal
+	  close before getting back to the program with io status 39
+	* fileio.c (bdb_keylen) [WITH_DB]: minor refactoring
+	* fileio.c (cob_file_close): close file depending on internal state, not
+	  depending on file organization
+
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c (cob_set_signal): add the enum COB_SIGNAL_REGIME to toggle
+	  whether signal handler registration should be skipped or only registered
+	  when there is no other external handler registered for the signal
+	* common.h: export cob_sig_handler for use by external signal handlers
+	* coblocal.h (cob_settings): add COB_SIGNAL_REGIME so that it can be
+	  displayed under cobcrun --runtime
+
+2025-11-18  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* screenio.c (cob_exit_screen): explicit unset cobglobptr
+
 2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h [__GNUC__]: only use C11's _Thread_local for gcc 5+
@@ -14,6 +36,14 @@
 	* mlio.c [!WITH_XML2]: common use of xml events supporting that empty
 	  parsing and general handling of finished/not finished also when built
 	  without libxml2
+
+2025-11-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: remove strbuff variable and cob_strcat/cob_strjoin utilities
+	  which were prone to memory corruption due to strbuff being a global
+	* coblocal.h: remove definitions of cob_strcat and cob_strjoin
+	* call.c (add_to_preload): remove usage of cob_strcat and directly 
+	  concatenate preload paths instead
 
 2025-10-31  Simon Sobisch <simonsobisch@gnu.org>
 

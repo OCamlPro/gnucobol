@@ -1,4 +1,26 @@
 
+2025-12-04  Roger Bowler <rbowler@snipix.net>
+
+	* parser.y (entry): check that ENTRY statement begins in area B not area A
+
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (get_number_in_parentheses): use local namebuffer
+	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually allign not only
+	  for SET pointer-name but also for SET index-name
+
+2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (get_elided_fname): new function for the listing code
+	* cobc.c (print_program_header): use of the new function to ensure
+	  that the source name is visible in the header and not cut after
+	  its path, fixing last part of FR #294 "listing adjustments"
+
+2025-11-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* ppparse.y: error on extraneous periods at the end of SET
+	  directives; turn to a warning in relaxed syntax mode.
+
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_xml_parse): fixed xml state to be static-local
@@ -15,6 +37,11 @@
 	  file type
 	* parser.y (sort_merge_body): fix diagnostic position for SD check
 
+2025-10-17  Roger Bowler <rbowler@snipix.net>
+
+	* cobc.c (print_with_overflow): rewritten, now printing multiple
+	  continuation lines on listing
+
 2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: combined header defines into enum cobc_hd and
@@ -27,6 +54,10 @@
 	* scanner.l: translate non-printable character for invalid symbols
 	* pplex.l: handle MS-DOS EOF and control code for file separator,
 	  currently consuming consecutive occurences as a single new-line
+
+2025-09-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gentable.c (gentable): fix compile warning under 32bit
 
 2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
 

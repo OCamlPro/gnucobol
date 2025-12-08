@@ -71,7 +71,7 @@ testsuite_manual_sources = \
 
 EXTRA_DIST = $(srcdir)/package.m4 \
 	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at \
-	$(srcdir)/valgrind.supp \
+	$(srcdir)/valgrind.supp $(srcdir)/lsan.supp \
 	$(testsuite_sources) $(testsuite_manual_sources)
 
 DISTCLEANFILES = atconfig

@@ -3487,6 +3487,36 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 -fformat=fixed prog.cob], [0], [])
 AT_CLEANUP
 
 
+AT_SETUP([ENTRY statements in areas A and B])
+AT_KEYWORDS([misc cobol85 areacheck ENTRY])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PARM-1        PIC X(256).
+       01 PARM-2        PIC X(256).
+       PROCEDURE        DIVISION.
+           ENTRY 'PRGEP1' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 1'.
+           GOBACK.
+         ENTRY 'PRGEP2' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 2'.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
+[prog.cob:12: error: ENTRY should not start in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fno-areacheck prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fformat=fixed prog.cob], [0], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([pseudotext replacement with text in area A])
 AT_KEYWORDS([misc cobol85 gcos copy missing-periods])
 
@@ -5828,7 +5858,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET SOURCEFORMAT syntax checks])
-AT_KEYWORDS([misc extensions source directives])
+AT_KEYWORDS([misc extensions source directives FIXED FREE])
 
 AT_DATA([prog.cob], [
       *> Valid
@@ -5855,10 +5885,58 @@ prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
 ])
-AT_CLEANUP
 
 # Let's add a double quote here " to match the one in the error and
 # please emacs coloring...
+
+# Check `>>` variants
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       >>SOURCE FREE
+   DATA             DIVISION.
+   WORKING-STORAGE  SECTION.
+   >>SOURCE FIXED
+       PROCEDURE        DIVISION.                                       FIXED
+             DISPLAY "OK" NO ADVANCING
+             END-DISPLAY.
+       >>SOURCE FREE
+                                                                        DISPLAY
+   "OK"
+ NO ADVANCING
+   END-DISPLAY.
+   >>SET SOURCEFORMAT "FIXED"
+             DISPLAY "OK" NO ADVANCING                                  FIXED
+             END-DISPLAY.
+       >>SET SOURCEFORMAT "FREE"
+                                                                        DISPLAY
+   "OK"
+ NO ADVANCING
+   END-DISPLAY.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [], [])
+
+# Check with extraneous period.
+AT_DATA([prog3.cob], [
+       $SET SOURCEFORMAT"FREE".
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      prog.
+>>SET SOURCEFORMAT "FIXED".
+       PROCEDURE DIVISION.
+             STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
+[prog3.cob:2: error: unexpected period
+prog3.cob:5: error: unexpected period
+])
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog3.cob], [0], [],
+[prog3.cob:2: warning: unexpected period
+prog3.cob:5: warning: unexpected period
+])
+AT_CLEANUP
+
 
 # normal register extension,
 # active for lax and standard configurations

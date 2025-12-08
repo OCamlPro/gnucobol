@@ -878,42 +878,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK OK])
 AT_CLEANUP
 
 
-AT_SETUP([SOURCE FIXED/FREE directives])
-AT_KEYWORDS([runmisc SOURCEFORMAT FIXED FREE])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       >>SOURCE FREE
-   DATA             DIVISION.
-   WORKING-STORAGE  SECTION.
-   >>SOURCE FIXED
-       PROCEDURE        DIVISION.                                       FIXED
-             DISPLAY "OK" NO ADVANCING
-             END-DISPLAY.
-       >>SOURCE FREE
-                                                                        DISPLAY
-   "OK"
- NO ADVANCING
-   END-DISPLAY.
-   >>SET SOURCEFORMAT "FIXED"
-             DISPLAY "OK" NO ADVANCING                                  FIXED
-             END-DISPLAY.
-       >>SET SOURCEFORMAT "FREE"
-                                                                        DISPLAY
-   "OK"
- NO ADVANCING
-   END-DISPLAY.
-             STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[OKOKOKOK])
-
-AT_CLEANUP
-
-
 AT_SETUP([TURN directive])
 AT_KEYWORDS([runmisc BOUND NOBOUND directives])
 
@@ -4787,6 +4751,83 @@ note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' ou
 AT_CLEANUP
 
 
+AT_SETUP([can reinitialize cleaned up runtime in C])
+AT_KEYWORDS([runmisc cobcall cob_init cob_call cob_tidy])
+
+# tests memory corruptions caused by leftover global values from previous
+# initializations being used if cob_init/cob_tidy does not correctly reset the
+# global state of the runtime.
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 VAR1 PIC X(1) VALUE "X".
+       PROCEDURE DIVISION USING VAR1.
+           DISPLAY "TEST" VAR1.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.c], [[
+#include <libcob.h>
+
+int
+main (int argc, char **argv)
+{
+    /* for storing libcob return state */
+    int cob_ret;
+
+    /* for storing COBOL parameters */
+    void *cob_argv[1];
+    char cob_arg;
+
+    /* initialize the COBOL run-time library */
+    cob_init (0, NULL);
+
+    /* call COBOL program first time */
+    cob_arg = '1';
+    cob_argv[0] = &cob_arg;
+    cob_ret = cob_call ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check normal exit first time */
+    if (cob_ret != 0) {
+        return 1;
+    }
+
+    /* Reinitialize runtime */
+    cob_init (0, NULL);
+
+    /* call COBOL program second time */
+    cob_arg = '2';
+    cob_argv[0] = &cob_arg;
+    cob_ret = cob_call ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check normal exit second time */
+    if (cob_ret != 0) {
+      return 2;
+    }
+
+    return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[TEST1
+TEST2
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([CALL in from C, cob_call_params explicitly set])
 AT_KEYWORDS([runmisc])
 
@@ -7460,7 +7501,7 @@ AT_CLEANUP
 
 # PROCEDURE DIVISION RETURNING OMITTED
 AT_SETUP([void PROCEDURE])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc RETURNING OMITTED])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -15735,5 +15776,172 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 000000001
 000000009
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([COB_SIGNAL_REGIME 0/1 register runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 VAR1 PIC X(4) VALUE "TEST".
+       PROCEDURE DIVISION USING VAR1.
+           DISPLAY VAR1.
+           STOP RUN RETURNING 0.
+])
+
+AT_DATA([caller.c], [[
+#include <libcob.h>
+
+int
+main (int argc, char **argv)
+{
+    /* for storing libcob return state */
+    int cob_ret;
+
+    /* for COBOL parameters */
+    void *cob_argv[1];
+    cob_argv[0] = NULL;
+
+    /* initialize the COBOL run-time library */
+    cob_init (0, NULL);
+
+    /* call COBOL program */
+    cob_ret = cob_call_with_exception_check ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check exit by signal handler */
+    if (cob_ret != -3) {
+        return 1;
+    }
+    
+    return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
+
+# In some environments (e.g. MSVC), Windows does not forward signals for
+# critical errors like segmentation faults to user-defined signal handler
+# when the target program/library is compiled under the debug target, which
+# breaks COB_SIGNAL_REGIME tests.
+# Sanitizers may get in the way as well - we can at least portably
+# skip some
+AT_DATA([ubsan.supp], [
+null:*
+])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=1 ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([COB_SIGNAL_REGIME 1/2 don't register runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 VAR1 PIC X(4) VALUE "TEST".
+       PROCEDURE DIVISION USING VAR1.
+           DISPLAY VAR1.
+           STOP RUN RETURNING 0.
+])
+
+AT_DATA([caller.c], [[
+#include <stdlib.h>
+#include <signal.h>
+#include <libcob.h>
+
+int signal_received = 0;
+
+void sig_handler(int signum)
+{
+    if (signum != SIGSEGV) {
+        exit (3);
+    }
+    signal_received = 1;
+    cob_sig_handler (signum);
+}
+
+int
+main (int argc, char **argv)
+{
+    /* for storing libcob return state */
+    int cob_ret;
+
+    /* for COBOL parameters */
+    void *cob_argv[1];
+
+    /* register custom signal handler */
+    (void)signal (SIGSEGV, sig_handler);
+
+    /* initialize the COBOL run-time library */
+    cob_init (0, NULL);
+
+    /* call COBOL program */
+    cob_argv[0] = NULL;
+    cob_ret = cob_call_with_exception_check ("callee", 1, cob_argv);
+
+    /* Clean up and terminate runtime */
+    cob_tidy ();
+
+    /* Check exit by signal handler */
+    if (cob_ret != -3) {
+        return 1;
+    }
+    
+    if (signal_received == 1) {
+        return 0;
+    }
+
+    return 2;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
+
+# see note on possibly breaking C/sanitizer runtime checks above
+AT_DATA([ubsan.supp], [
+null:*
+])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=2 ./caller], [0], [],
+[
+callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
+
+])
 
 AT_CLEANUP

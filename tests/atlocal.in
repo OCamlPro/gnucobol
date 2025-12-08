@@ -76,23 +76,13 @@ TZ=UTC
 export TZ
 
 # define for performance checks (running code several thousand times)
-if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "@COB_ENABLE_DEBUG@" = yes; then
+if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "x$CHECKPERF" != "x"; then
 	if test "x$VGSUFFIX" = "x"; then
 		COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
 	fi
 fi
 
-FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
-# workaround to adjust the testsuite later:
-FLAGS="${FLAGS} -fno-diagnostics-show-option"
-
 COBC="${COBC}"
-COMPILE="${COBC} -x ${FLAGS}"
-COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
-COMPILE_MODULE="${COBC} -m ${FLAGS}"
-LISTING_FLAGS="-fttitle=GnuCOBOL_V.R.P -fno-ttimestamp"
-COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
-COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
 
 perf_record() {
 	local logdir="$1"; shift
@@ -123,7 +113,7 @@ if test "x${PERFSUFFIX}" != "x"; then
 	COBCRUN="$PERF ${LOG_DIR_RUN} ${COBCRUN}"
 	COBCRUN_DIRECT="$PERF ${LOG_DIR_RUN} ${COBCRUN_DIRECT}"
 
-	COBC="${COBC} -g"
+	COBOL_FLAGS="${COBOL_FLAGS} -g"
 
 	#mkdir -p "${LOG_DIR_COMP}"
 	# note: full recording including C compiler; for perf record limit analysis via perf/hotspot to cobc's PID later!
@@ -149,7 +139,7 @@ elif test "x${CGSUFFIX}" != "x"; then
 	COBCRUN="${CG_RUNTIME} ${COBCRUN}"
 	COBCRUN_DIRECT="${CG_RUNTIME} ${COBCRUN_DIRECT}"
 
-	COBC="${COBC} -g"
+	COBOL_FLAGS="${COBOL_FLAGS} -g"
 
 	#mkdir -p "${LOG_DIR_COMP}"
 	#COBC="${CG} --log-file=${LOG_DIR_COMP}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_COMP}/${CG_NAME} ${COBC}"
@@ -202,11 +192,24 @@ elif test "x${VGSUFFIX}" != "x"; then
 	COBCRUN="${VG_RUNTIME} ${COBCRUN}"
 	COBCRUN_DIRECT="${VG_RUNTIME} ${COBCRUN_DIRECT}"
 
-	COBC="${COBC} -g"
+	COBOL_FLAGS="${COBOL_FLAGS} -g"
 
 	mkdir -p "${LOG_DIR_COMP}"
 	COBC="${MEMCHECK} --log-file=${LOG_DIR_COMP}/${LOG_NAME} ${COBC}"
 fi
+
+LSAN_OPTIONS="suppressions=${abs_srcdir}/lsan.supp:print_suppressions=0"
+
+FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
+# workaround to adjust the testsuite later:
+FLAGS="${FLAGS} -fno-diagnostics-show-option"
+
+COMPILE="${COBC} -x ${FLAGS}"
+COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
+COMPILE_MODULE="${COBC} -m ${FLAGS}"
+LISTING_FLAGS="-fttitle=GnuCOBOL_V.R.P -fno-ttimestamp"
+COMPILE_LISTING="${COMPILE_ONLY} ${LISTING_FLAGS}"
+COMPILE_LISTING0="${COMPILE_LISTING} -tlines=0"
 
 # test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
@@ -343,6 +346,8 @@ if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 		do _unset_option $cobenv; \
 	done
 fi
+
+HAVE_SIGNAL_H="@HAVE_SIGNAL_H@"
 
 COB_STACKTRACE=0
 export COB_STACKTRACE

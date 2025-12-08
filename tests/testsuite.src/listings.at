@@ -1589,6 +1589,89 @@ Too many errors in compilation group: 0 maximum errors
 AT_CLEANUP
 
 
+AT_SETUP([Multiline messages])
+AT_KEYWORDS([listing error warning warnings multiline])
+
+AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+           SELECT TESTFILE
+           ASSIGN TO a-very-long-name-which-has-not-been-defined-at-all
+           ACCESS IS an-invalid-name.
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD  TESTFILE
+           RECORD IS VARYING IN SIZE FROM 20 TO 50 CHARACTERS
+           DEPENDING ON
+           a-numeric-field-with-a-long-name-defined-in-the-file-section.
+       01  TESTFILE-RECORD.
+           02
+           a-numeric-field-with-a-long-name-defined-in-the-file-section
+           PIC 9(4) COMP.
+           02 FILLER PIC X(48).
+       WORKING-STORAGE  SECTION.
+       01  BAD-PIC PIC +.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_LISTING -Wimplicit-define -t- prog.cob], [1],
+[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001         IDENTIFICATION   DIVISION.
+000002         PROGRAM-ID.      prog.
+000003         ENVIRONMENT      DIVISION.
+000004         INPUT-OUTPUT     SECTION.
+000005         FILE-CONTROL.
+000006             SELECT TESTFILE
+000007             ASSIGN TO a-very-long-name-which-has-not-been-defined-at-all
+000008             ACCESS IS an-invalid-name.
+error: syntax error, unexpected Identifier, expecting DYNAMIC or RANDOM or
+     + SEQUENTIAL
+000009         DATA             DIVISION.
+000010         FILE             SECTION.
+000011         FD  TESTFILE
+000012             RECORD IS VARYING IN SIZE FROM 20 TO 50 CHARACTERS
+000013             DEPENDING ON
+000014             a-numeric-field-with-a-long-name-defined-in-the-file-section.
+error: RECORD DEPENDING item
+     + 'a-numeric-field-with-a-long-name-defined-in-the-file-section' should be
+     + defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION
+000015         01  TESTFILE-RECORD.
+000016             02
+000017             a-numeric-field-with-a-long-name-defined-in-the-file-section
+000018             PIC 9(4) COMP.
+000019             02 FILLER PIC X(48).
+000020         WORKING-STORAGE  SECTION.
+000021         01  BAD-PIC PIC +.
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
+     + and *; or at least two of the set +, - and the currency symbol
+000022         PROCEDURE        DIVISION.
+warning: variable 'a-very-long-name-which-has-not-been-defined-at-all' will be
+       + implicitly defined
+000023             STOP RUN.
+
+
+GnuCOBOL V.R.P          prog.cob                                        Page 0002
+
+Error/Warning summary:
+
+prog.cob:8: error: syntax error, unexpected Identifier, expecting DYNAMIC or RANDOM or SEQUENTIAL
+prog.cob:14: error: RECORD DEPENDING item 'a-numeric-field-with-a-long-name-defined-in-the-file-section' should be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION
+prog.cob:21: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:22: warning: variable 'a-very-long-name-which-has-not-been-defined-at-all' will be implicitly defined
+
+1 warning in compilation group
+3 errors in compilation group
+], [ignore])
+
+AT_CLEANUP
+
+
 AT_SETUP([Two source files])
 AT_KEYWORDS([listing])
 
@@ -2038,7 +2121,7 @@ AT_CLEANUP
 
 
 AT_SETUP([command line])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([listing multiline])
 
 AT_CAPTURE_FILE([prog.lst])
 AT_DATA([prog.cob], [
@@ -2075,8 +2158,9 @@ command line:
 0 errors in compilation group
 ])
 
-AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob], [0],
-[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only \
+-t- -tlines=0 -fno-tsymbols -ftcmd prog.cob], [0],
+[GnuCOBOL V.R.P               prog.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -2091,11 +2175,111 @@ LINE    PG/LN  A...B............................................................
 000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
 000010             GOBACK.
 000011         END FUNCTION WITHPAR.
-GnuCOBOL V.R.P          prog.cob                                        Page 0002
 
 command line:
   cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
-+ -fno-tmessages -fsyntax-only -t- -fno-tsymbols -ftcmd prog.cob
++ -fno-tmessages -fsyntax-only -t- -tlines=0 -fno-tsymbols -ftcmd prog.cob
+])
+
+AT_CHECK([$COBC $LISTING_FLAGS -q -std=default -Wall -fno-tmessages -fsyntax-only \
+-fno-tsymbols -fdiagnostics-show-option -t abcde -ftcmd -fdiagnostics-show-line-numbers \
+-fdiagnostics-absolute-paths -t- -tlines=0 -fno-remove-unreachable prog.cob], [0],
+[GnuCOBOL V.R.P               prog.cob
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         FUNCTION-ID.     WITHPAR.
+000004         DATA             DIVISION.
+000005         LINKAGE          SECTION.
+000006         01 PAR-IN        PIC 9.
+000007         01 PAR-OUT       PIC 9.
+000008         PROCEDURE DIVISION USING PAR-IN RETURNING PAR-OUT.
+000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
+000010             GOBACK.
+000011         END FUNCTION WITHPAR.
+
+command line:
+  cobc -fttitle=GnuCOBOL_V.R.P -fno-ttimestamp -q -std=default -Wall
++ -fno-tmessages -fsyntax-only -fno-tsymbols -fdiagnostics-show-option -t abcde
++ -ftcmd -fdiagnostics-show-line-numbers -fdiagnostics-absolute-paths -t-
++ -tlines=0 -fno-remove-unreachable prog.cob
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([listing header with file path specified])
+AT_KEYWORDS([listing return_path basename])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog1.
+       PROCEDURE        DIVISION.
+           DISPLAY "one".
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+           DISPLAY "two".
+           GOBACK.
+])
+
+AT_CHECK([$COBC $LISTING_FLAGS -fsyntax-only \
+ -fno-tmessages  -t- -tlines=0 \
+"$(_return_path "$(pwd)/prog1.cob")" "$(_return_path "$(pwd)/prog2.cob")" ], [0],
+[GnuCOBOL V.R.P               prog1.cob
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog1.
+000004         PROCEDURE        DIVISION.
+000005             DISPLAY "one".
+000006             GOBACK.
+
+
+GnuCOBOL V.R.P               prog2.cob
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog2.
+000004         PROCEDURE        DIVISION.
+000005             DISPLAY "two".
+000006             GOBACK.
+
+
+])
+
+# we still need to elide if too long, even if totally unlikely
+# ... and cover that along the basename part here
+AT_DATA([some_real_long_name_that_surely_breaks_8to3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COBC $LISTING_FLAGS -frelax-syntax-checks -fsyntax-only \
+ -fno-tmessages -t- some_real_long_name_that_surely_breaks_8to3.cob], [0],
+[GnuCOBOL V.R.P          some_real_long_name_that_surely_breaks_8to3...  Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         PROCEDURE        DIVISION.
+000005             GOBACK.
+
+
 ])
 
 AT_CLEANUP
@@ -3245,7 +3429,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Invalid PICTURE strings])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([listing multiline])
 
 AT_CAPTURE_FILE([prog.lst])
 

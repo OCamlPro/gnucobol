@@ -995,8 +995,11 @@ else
 	AC_MSG_FAILURE([unable to use GMP])
 fi
 
-AC_CHECK_LIB([$with_math], [__gmp_get_memory_functions],
- [AC_DEFINE([HAVE_MP_GET_MEMORY_FUNCTIONS], [1])], [], [])
+AC_MSG_CHECKING([for __gmp_get_memory_functions in $GMP_LIBS])
+AC_LINK_IFELSE([AC_LANG_CALL([], [__gmp_get_memory_functions])],
+ [AC_MSG_RESULT([yes])
+  AC_DEFINE([HAVE_MP_GET_MEMORY_FUNCTIONS], [1])],
+ [AC_MSG_RESULT([no])])
 
 LIBS="$curr_libs"
 CPPFLAGS="$curr_cppflags"
@@ -1413,7 +1416,9 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
 
 AC_MSG_CHECKING([for clock_gettime and CLOCK_REALTIME])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
-  [[clock_gettime (CLOCK_REALTIME, NULL);]])],
+  [[
+	struct timespec	tsec = { 0 };
+	clock_gettime (CLOCK_REALTIME, &tsec);]])],
   [AC_DEFINE([HAVE_CLOCK_GETTIME], [1]) AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])])
 
@@ -1473,7 +1478,8 @@ AC_ARG_WITH([curses],
 
 CPPFLAGS="$CURSES_CFLAGS $curr_cppflags"
 
-if test "x$CURSES_LIBS" != x; then
+if test "$USE_CURSES" != no; then
+  if test "x$CURSES_LIBS" != x; then
 	LIBS="$CURSES_LIBS $LIBS"
 	AC_MSG_CHECKING([whether linking initscr works with CURSES_LIBS, given as "$CURSES_LIBS"])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -1482,10 +1488,26 @@ if test "x$CURSES_LIBS" != x; then
 	 [AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])
 	  AC_MSG_FAILURE([[not able to link initscr with CURSES_LIBS]])])
-	AS_IF([test "$USE_CURSES" = check -o "$USE_CURSES" = no], [
+	AS_IF([test "$USE_CURSES" = check -o "$USE_CURSES" = yes], [
 	  AC_MSG_ERROR([[explicit selection with --with-curses=ARG needed, as CURSES_LIBS is set]])
 	])
 	LIBS="$curr_libs $LIBCOB_LIBS_extern"
+  fi
+  if test "x$PANEL_LIBS" != x; then
+	LIBS="$PANEL_LIBS $CURSES_LIBS $LIBS"
+	AC_MSG_CHECKING([whether linking new_panel works with PANEL_LIBS, given as "$PANEL_LIBS"])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+	#include <stddef.h>
+	extern void *new_panel (void *);]],
+	[[new_panel (NULL);]])],
+	 [AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])
+	  AC_MSG_FAILURE([[not able to link new_panel with PANEL_LIBS]])])
+	AS_IF([test "$USE_CURSES" = check -o "$USE_CURSES" = yes], [
+	  AC_MSG_ERROR([[explicit selection with --with-curses=ARG needed, as PANEL_LIBS is set]])
+	])
+	LIBS="$curr_libs $LIBCOB_LIBS_extern"
+  fi
 fi
 
 dnl note: when switching to $ncurses all checks are done correctly but no generation in config.h is done
@@ -1605,10 +1627,13 @@ if test "$USE_CURSES" = "xcurses" -o "x$ac_cv_lib_XCurses_initscr" = xyes; then
     [CURSES_LIBS="-lXCurses"])
 fi
 
+# note: if CURSES_LIBS are originally set we had checked it up-front,
+#       if it is still missing then this is the last place where we
+#       want to validate --with-curses and --with-curses=curses
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
     AC_CHECK_LIB([curses], [initscr], [true],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+      [AS_IF([test "$with_curses" != check], [USE_CURSES="missing_lib"])])
   fi
   if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = check; then
 	if test "x$PANEL_LIBS" = x; then
@@ -1618,11 +1643,14 @@ if test "x$CURSES_LIBS" = x; then
 fi
 if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
   AC_CHECK_HEADERS([curses.h], [USE_CURSES="curses"],
-    [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ])
+    [AS_IF([test "$with_curses" != check], [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="curses" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
+if test "$with_curses" = yes; then
+   with_curses=curses
+fi
 case "$USE_CURSES" in
   check)
 	USE_CURSES="not_found"
@@ -1639,7 +1667,7 @@ case "$USE_CURSES" in
 	;;
   *curses*)
 	AC_DEFINE_UNQUOTED([WITH_CURSES], ["$USE_CURSES"])
-	LIBCOB_LIBS="$LIBCOB_LIBS $CURSES_LIBS $PANEL_LIBS"
+	LIBCOB_LIBS="$LIBCOB_LIBS $PANEL_LIBS $CURSES_LIBS"
 	LIBCOB_CPPFLAGS="$CURSES_CFLAGS $PANEL_CFLAGS $LIBCOB_CPPFLAGS"
 	;;
 esac
@@ -2761,6 +2789,7 @@ AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
 AC_SUBST([LIBCOB_CPPFLAGS])
 AC_SUBST([COB_ENABLE_DEBUG], [$enable_debug]) # needed for tests/atlocal
+AC_SUBST([HAVE_SIGNAL_H], ["$ac_cv_header_signal_h"]) # needed for tests/atlocal
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])
@@ -2808,7 +2837,11 @@ AC_MSG_NOTICE([ COB_COPY_DIR      ${COB_COPY_DIR}])
 AC_MSG_NOTICE([ COB_LIBRARY_PATH  ${COB_LIBRARY_PATH}])
 AC_MSG_NOTICE([ COB_OBJECT_EXT    ${OBJEXT}])
 AC_MSG_NOTICE([ COB_MODULE_EXT    ${COB_MODULE_EXT}])
-AC_MSG_NOTICE([ COB_EXE_EXT       ${COB_EXE_EXT}])
+if test "x$COB_EXE_EXT" != x; then
+  AC_MSG_NOTICE([ COB_EXE_EXT       ${COB_EXE_EXT}])
+else
+  AC_MSG_NOTICE([ COB_EXE_EXT       (none)])
+fi
 AC_MSG_NOTICE([ COB_SHARED_OPT    ${COB_SHARED_OPT}])
 AC_MSG_NOTICE([ COB_PIC_FLAGS     ${COB_PIC_FLAGS}])
 AC_MSG_NOTICE([ COB_EXPORT_DYN    ${COB_EXPORT_DYN}])

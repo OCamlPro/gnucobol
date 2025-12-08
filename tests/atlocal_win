@@ -62,8 +62,14 @@ TZ=UTC
 export TZ
 
 # define for performance checks (running code several thousand times)
-# uncomment manually if wanted, or set via environment
-# COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+# directly set via environment possible as well
+if test "x$CHECKPERF" != "x"; then
+	COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+fi
+
+# note: clang based MSVC and others may support libasan, so included here
+ASAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
+LSAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
 
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
@@ -191,6 +197,8 @@ if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 		do _unset_option $cobenv; \
 	done
 fi
+
+HAVE_SIGNAL_H="yes"
 
 COB_STACKTRACE=0
 export COB_STACKTRACE

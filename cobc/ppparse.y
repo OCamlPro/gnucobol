@@ -894,8 +894,8 @@ if_directive_elif:
 ;
 
 set_directive:
-  set_choice
-| set_directive set_choice
+  set_choice _unexpected_dot
+| set_directive set_choice _unexpected_dot
 ;
 
 /* FIXME: *all* of the choices below should be #PASSED to the scanner
@@ -1375,6 +1375,13 @@ control_option:
 
 _dot:
 | DOT
+;
+
+_unexpected_dot:
+| DOT
+  {
+	(void) cb_syntax_check (_("unexpected period"));
+  }
 ;
 
 leap_second_directive:
