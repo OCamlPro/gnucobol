@@ -479,7 +479,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -1455,7 +1455,7 @@ AT_DATA([reference],
 040310Howdy 1 2 3<>  01***Abcdefghij. 34545656702***Abcdefghij. 45656767803***Abcdefghij. 567678789<>
 ])
 
-AT_CHECK([diff reference SEQODO], [0], [], [])
+AT_CHECK([$DIFF reference SEQODO], [0], [], [])
 
 AT_CLEANUP
 
@@ -5400,6 +5400,7 @@ SORT-RETURN = +000000000 TALLY = 00000
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([Bit Operations])
 AT_KEYWORDS([BIT-WISE])

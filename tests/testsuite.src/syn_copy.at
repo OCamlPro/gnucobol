@@ -1094,18 +1094,19 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+# note: line 2 is "recognized" as broken statement,
+#       with PROCEDURE DIVISION implied by parser state, then there's
+#       an unexpected "PROCEDURE DIVISION" in line 3,
+#       and finally there's a DISPLAY with a wrong reserved word OUTPUT
+#       which leads the parser to expect () which is MS-COBOL format
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:2: error: PROGRAM-ID header missing
-prog.cob:2: error: ENVIRONMENT DIVISION header missing
-prog.cob:2: error: CONFIGURATION SECTION header missing
-prog.cob:2: error: SPECIAL-NAMES header missing
-prog.cob:2: error: invalid system-name 'BEGIN'
-prog.cob:2: error: syntax error, unexpected PROGRAM, expecting CRT or Identifier
-prog.cob:2: error: invalid system-name 'prog'
-prog.cob:2: error: syntax error, unexpected ., expecting CRT or Identifier
+[[prog.cob:2: error: PROGRAM-ID header missing
+prog.cob:2: error: PROCEDURE DIVISION header missing
+prog.cob:2: error: syntax error, unexpected Identifier
 prog.cob:3: error: syntax error, unexpected PROCEDURE
-prog.cob:4: error: PROCEDURE DIVISION header missing
-])
+prog.cob:4: error: syntax error, unexpected OUTPUT, expecting (
+]])
 
 AT_CHECK([$COMPILE_ONLY --copy copybook1 --copy copybook2 prog.cob], [0], [], [])
 

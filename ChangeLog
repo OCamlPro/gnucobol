@@ -1,4 +1,104 @@
 
+2025-11-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix linking order for PANEL_LIBS
+	* configure.ac: ignore CURSES_LIBS and PANEL_LIBS for --without-curses
+
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* configure.ac: pass HAVE_SIGNAL_H to the tests to indicate whether
+	  signal.h exists
+	* NEWS: note about new runtime configuration option COB_SIGNAL_REGIME
+
+2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: prefer "inline" over "__inline" as the second raises
+	  spurious warnings about always_inline attribute with GCC15
+
+2025-10-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* README, README.md: replace logging instructions by more reasonable
+	  approaches and mention generated log files
+	* README: drop ldconfig note as it is not portable and commonly not neededy
+	* INSTALL: updated from
+	  https://cgit.git.savannah.gnu.org/cgit/gnulib.git/plain/doc
+	* DEPENDENCIES, DEPENDENCIES.md: reformatted, add libxml2 version and
+	  new website as well as fixing MIT/Expat ambiguity
+
+2025-10-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: test for __gmp_get_memory_functions with GMP_LIBS
+	  (manually passed or from pkg_config) instead of linking by library name
+	* configure.ac: improve check for clock_gettime to not -Werror on compilers
+	  testing its parameters
+
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check timezone and designated initializers with -Werror
+	* m4/ax_code_coverage.m4, m4/ax_check_define.m4:
+	  updated from autoconf-archive
+	* Makefile.am (CODE_COVERAGE_LCOV_OPTIONS_DEFAULT): silence some warnings
+	  in lcov2
+
+	update gettext infrastructure from gnulib
+    * m4/gettext.m4, m4/intlmacosx.m4, m4/progtest.m4: updated
+	* m4/build-to-host.m4, m4/host-cpu-c-abi.m4, m4/intl-thread-locale.m4:
+	  added
+    * m4/glibc2.m4, m4/glibc21.m4, m4/intdiv0.m4, m4/intl.m4, m4/intldir.m4,
+	  m4/intmax.m4, m4/uintmax_t.m4: removed
+
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: make signal.h optional again, even if this configuration
+	  will fail some tests
+
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: testing working diff with the option to override by DIFF
+
+2025-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix --without-iconv; use iconv includes, if necessary;
+	  use libtool link
+
+2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: support setting of PANEL_LIBS independent of CURSES_LIBS
+	* ABOUT-NLS, INSTALL: replaced by current versions
+
+2025-02-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix output for --with-curses specified and no curses found
+	* configure.ac: better output for empty COB_EXE_EXT in summary
+
+2025-02-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix warning for \ in AC_CHECK_FUNCS by dropping them
+
+2025-02-11  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: add -Wno-unused-command-line-argument to CFLAGS under
+	  Clang, to prevent some features to be mistakenly detected as missing
+	  (in particular -Wno-pointer-sign and -fstack-clash-protection)
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: only check for IBM/OpenWatcom/Sun's C compilers if not
+	  running under GCC / clang
+
+2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (FILES_TO_BE_EXECUTABLE): added doc/cobcinfo.sh
+
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix check for curses functions if panel headers are found
+
+2024-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added logic to check for PANEL support which
+	  is required for the new multiple window support
+
 2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: new options --with-pkgversion=PKG and --with-bugurl=URL
@@ -1626,7 +1726,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2024 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

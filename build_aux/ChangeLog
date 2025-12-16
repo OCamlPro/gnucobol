@@ -1,4 +1,26 @@
 
+2025-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: included return_path function and use
+	  it to ensure good paths for win32
+
+2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: quote local include and library directories
+	  to support the rare scenario of space-embedded paths, fixing #1142
+
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.guess, config.sub, texinfo.tex: updated to recent versions from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
+2025-02-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: drop COB_ON_CYGWIN as it is set via atlocal for
+	  testsuite checks
+	* missing: updated to recent version from
+	  https://git.savannah.gnu.org/cgit/automake.git/tree/lib/
+
 2024-09-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ar-lib, config.guess, config.rpath, config.sub, texinfo.tex: updated
@@ -186,7 +208,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2024 Free Software Foundation, Inc.
+Copyright 2015-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

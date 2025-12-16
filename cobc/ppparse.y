@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2015-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2015-2023, 2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -707,12 +707,14 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token NOODOSLIDE
 %token NOSPZERO
 %token NOSSRANGE
+%token NOTRACE
 /* OVERRIDE token defined above. */
 %token ODOSLIDE
 %token REMOVE
 %token SOURCEFORMAT
 %token SPZERO
 %token SSRANGE
+%token TRACE
 
 %token IF_DIRECTIVE
 %token ELSE_DIRECTIVE
@@ -741,6 +743,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token WITH
 %token LOCATION
 
+%token IMP_DIRECTIVE
+%token INCLUDE
+
 %token TERMINATOR	"end of line"
 
 %token <s> TOKEN		"Word or Literal"
@@ -768,6 +773,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_equality_list
 %type <l>	ec_list
 %type <s>	unquoted_literal
+%type <l>	imp_include_sources
 
 %type <r>	_copy_replacing
 %type <r>	replacing_list
@@ -838,6 +844,7 @@ directive:
 | TURN_DIRECTIVE turn_directive
 | LISTING_DIRECTIVE listing_directive
 | LEAP_SECOND_DIRECTIVE leap_second_directive
+| IMP_DIRECTIVE imp_directive
 | IF_DIRECTIVE
   {
 	current_cmd = PLEX_ACT_IF;
@@ -887,10 +894,12 @@ if_directive_elif:
 ;
 
 set_directive:
-  set_choice
-| set_directive set_choice
+  set_choice _unexpected_dot
+| set_directive set_choice _unexpected_dot
 ;
 
+/* FIXME: *all* of the choices below should be #PASSED to the scanner
+   and handled there */
 set_choice:
   CONSTANT VARIABLE_NAME LITERAL
   {
@@ -1042,6 +1051,11 @@ set_choice:
 
 	append_to_turn_list (txt, 0, 0);
   }
+| NOTRACE
+  {
+	cb_flag_traceall = 0;
+	cb_flag_trace = 0;
+  }
 | ODOSLIDE
   {
 	fprintf (ppout, "#ODOSLIDE 1\n");
@@ -1118,6 +1132,10 @@ set_choice:
 	} else {
 		ppp_error_invalid_option ("SSRANGE", p);
 	}
+  }
+| TRACE
+  {
+	cb_flag_trace = 1;	/* no traceall with Visual COBOL, leave untouched */
   }
 ;
 
@@ -1359,6 +1377,13 @@ _dot:
 | DOT
 ;
 
+_unexpected_dot:
+| DOT
+  {
+	(void) cb_syntax_check (_("unexpected period"));
+  }
+;
+
 leap_second_directive:
 /* empty (OFF implied) */
 | ON
@@ -1366,6 +1391,34 @@ leap_second_directive:
 	CB_PENDING (_("LEAP-SECOND ON directive"));
   }
 | OFF
+;
+
+imp_directive:
+  /* GnuCOBOL 3.3 extension */
+  INCLUDE
+  {
+	cb_error (_("invalid %s directive"), "IMP INCLUDE");
+	yyerrok;
+  }
+| INCLUDE imp_include_sources
+  {
+	struct cb_text_list *p = $2;
+	while (p != NULL) {
+		fprintf (ppout, "#INCLUDE %s\n", p->text);
+		p = p->next;
+	}
+  }
+;
+
+imp_include_sources:
+  TOKEN
+  {
+	$$ = ppp_list_add (NULL, fix_filename ($1));
+  }
+| imp_include_sources TOKEN
+  {
+	$$ = ppp_list_add ($1, fix_filename ($2));
+  }
 ;
 
 turn_directive:

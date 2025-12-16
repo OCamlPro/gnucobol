@@ -2,7 +2,7 @@
 #
 # run_prog_manual.sh gnucobol/tests
 #
-# Copyright (C) 2014-2022,2024 Free Software Foundation, Inc.
+# Copyright (C) 2014-2022,2025 Free Software Foundation, Inc.
 # Written by Edward Hart, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -69,7 +69,7 @@ TITLE="GnuCOBOL Manual Test Run - $DESC"
 _test_with_xterm () {
    xterm -T "$TITLE" \
         -fa 'Liberation Mono' -fs 14 \
-        -e "sh -c \"(\$* 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
+        -e "sh -c \"($* 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
 }
 
 
@@ -132,9 +132,9 @@ _kill_tmux () {
 
 _test_with_cmd () {
   # run cmd to start a detached cmd (via cmd's start), and execute the tests there,
-  # to work around quoting issues we create a sub-cmd
+  # to work around quoting issues we create a sub-cmd and execute that
   echo "$(echo $* | tr '/' '\\') 2>syserr.log & echo !errorlevel! >result" > run_manual.cmd
-  cmd.exe /c "start \"$TITLE\" /wait cmd /v:on /c run_manual.cmd"
+  cmd.exe /c "start \"$TITLE\" /wait cmd /v:on /c run_manual.cmd 1>NUL"
   #if test -f ./syserr.log; then
   #  dos2unix -q ./syserr.log
   #fi

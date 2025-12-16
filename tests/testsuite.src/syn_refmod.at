@@ -52,6 +52,7 @@ prog.cob:16: warning: suspicious reference-modification: always using max. posit
 
 AT_CLEANUP
 
+
 AT_SETUP([invalid reference-modification])
 AT_KEYWORDS([refmod condition-name])
 

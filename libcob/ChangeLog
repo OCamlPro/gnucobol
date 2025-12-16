@@ -1,4 +1,315 @@
 
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking
+	  the first record showed conflicting file attributes do an internal
+	  close before getting back to the program with io status 39
+	* fileio.c (bdb_keylen) [WITH_DB]: minor refactoring
+	* fileio.c (cob_file_close): close file depending on internal state, not
+	  depending on file organization
+
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c (cob_set_signal): add the enum COB_SIGNAL_REGIME to toggle
+	  whether signal handler registration should be skipped or only registered
+	  when there is no other external handler registered for the signal
+	* common.h: export cob_sig_handler for use by external signal handlers
+	* coblocal.h (cob_settings): add COB_SIGNAL_REGIME so that it can be
+	  displayed under cobcrun --runtime
+
+2025-11-18  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* screenio.c (cob_exit_screen): explicit unset cobglobptr
+
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h [__GNUC__]: only use C11's _Thread_local for gcc 5+
+	  as gcc 4 defines the C11 constant but does not fully support it
+
+2025-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	adjustments to XML PARSE
+	* mlio.c: validate XML-EVENT availability (only) during initial parse
+	  setup; memcpy event text directly to program-local storage instead of
+	  changing the register's data pointer;
+	  adjusted parsing to ensure an empty identifier is parsed correctly
+	* mlio.c [!WITH_XML2]: common use of xml events supporting that empty
+	  parsing and general handling of finished/not finished also when built
+	  without libxml2
+
+2025-11-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: remove strbuff variable and cob_strcat/cob_strjoin utilities
+	  which were prone to memory corruption due to strbuff being a global
+	* coblocal.h: remove definitions of cob_strcat and cob_strjoin
+	* call.c (add_to_preload): remove usage of cob_strcat and directly 
+	  concatenate preload paths instead
+
+2025-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	first performance-tweaks for JSON GENERATE and XML GENERATE
+	* mlio.c: numeric conversions now use local or static buffers instead
+	  of numerous dynamic memory allocation; the program's decimal point is
+	  temporarily adjusted instead of changing the "print-data" after editing;
+	  trimming of COBOL-fields rewritten; overal reduce strlen/strcpy calls
+	* mlio.c [IF_NEG_RETURN_ELSE_COUNT]: replaced the use of this macro, which
+	  led to memory leaks in error cases, by plain code and correct free
+	* mlio.c [WITH_JSON_C]: prefer specific json.h over convenience one json.h
+	* mlio.c (generate_json_from_tree) [WITH_JSON_C]: use cobc generated names
+	  (either from the variable names or explicit literals) as-is, as they do
+	  not require additional trimming and are string constants in the module;
+	  this also has the benefit that we can now indicating to JSON-C that it
+	  does not need to strdup the keys
+	* mlio.c (cob_json_generate_new, cob_exit_mlio) [WITH_JSON_C]: keep
+	  JSON-C's buffer for "serialized objects", doing so heavily improves
+	  frequent calls of JSON GENERATE, especially for bigger objects,
+	  define JSON_CACHING_OFF to use the old behavior of dropping the cache
+	  at the end of the statement, otherwise it will be kept until runtime exit
+
+2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (optimized_move_display_to_edited): minor adjustment of sanity
+	  check
+
+2025-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* libcob.h: improved inclusion note, added IWYU pragma
+
+2025-09-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* intrinsic.c (cob_intr_char, cob_intr_ord): consider
+	  the program collating sequence in CHAR and ORD
+	* intrinsic.c (cob_intr_char): raise COB_EC_ARGUMENT_FUNCTION
+	  when calling CHAR with an argument outside the collation range
+
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, fileio.c: new externalized typedef EXTFH_FUNC used in
+	  EXTFH function declarations
+	* fileio.c (cob_file_sort_giving_extfh): use of EXTFH_FUNC to remove
+	  pedantic warning about invalid cast from void pointer to function pointer
+	* common.c [!SIGFPE]: define per notes in gettext's old intdiv0.m4
+
+2025-07-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c: cater for libxml2 ABI break with LIBXML_VERSION >= 21200 by
+	  providing a check and definition of sax error handler with the old ABI
+
+2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	initial (unfinished) support for XML PARSE
+	* fileio.c (cob_setup_filename), coblocal.h: extracted from other functions
+	  and made available for libcob
+	* fileio.c (open_cbl_file, cob_sys_rename_file, cob_sys_check_file_exist,
+	  cob_sys_copy_file, cob_sys_delete_file): use of cob_setup_filename
+	* statement.def (STMT_JSON_PARSE, STMT_XML_PARSE): fixed statement names
+	* statement.def, exeption.def, exception-io.def: dummy-definition
+	  of used macros as enum for lsp-supported editors
+	* common.h: new definitions COB_XML_COMPAT COB_XML_PARSE_VALIDATE_FILE
+	* mlio.c (xml_parse): register validation and error handlers,
+	  for validation from external XML schema, use cob_setup_filename so
+	  name mapping works identical to SELECT ASSIGN
+	* xmlevent.def, mlio.c, Makefile.am: extracted XML-EVENT values from mlio.c
+	* mlio.c: new enum cob_xml_event along with static structures
+	  xml_event_name and xml_event_name_len
+	* mlio.c (set_xml_namespace): new function setting namespace registers
+	* mlio.c: XML PARSE stub completely rewritten and now "functional what's
+	  implemented"; the logic is changed to first parse the XML data in
+	  chunks, creating internal events using registered SAX handlers into a
+	  queue, then iterating over this to create the events and setup the
+	  registers until the queue is empty; both the event data and the events
+	  are cached
+
+2025-06-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	first VFILE update
+	* fileio.c: drop some debugging code, also fixing SIGSEGV on not opened
+	  debug logfile
+	* fileio.c: refactored, removing nearly all static vars on the way
+	* fileio.c, system.def, common.h: seperate internal function
+	  for CBL_GC_OPEN_VFILE64; now using the runtime setting for memory
+	  allocation depending on the heap's alloc size
+	* fileio.c (SEG_HDR, HEAP_ENTRY) [!_DEBUG]: only provide eyeball in
+	  debug builds
+	* fileio.c (SEG_HDR, HEAP_ENTRY): drop unused fields
+	* fileio.c: adjusted vfile functions per changes in SEG_HDR and HEAP_ENTRY
+
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
+	  now "supported" again (with missing cleanup on signal)
+	* common.c (cob_set_main_argv0) [!HAVE_REALPATH]: fix compile warning
+	* cconv.c (cob_load_collation): fix warning for sprintf
+
+2025-05-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_set_date_from_epoch): simplification, which
+	  also fixes incorrect conversion of epoch (was off by one day)
+
+2025-05-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: updated some defines for WIN32 compilers, especially
+	  for VC2015's availability of snprintf
+
+2025-05-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: some GC4 backport top improve
+	  io-status in case of errors
+
+2025-05-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (do_cancel_module, cob_cancel_field): fixed definition for
+	  cancel_func to not include too much parameters and added cast for C23
+
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* call.c (COB_SYSTEM_GEN): fixed pointer cast per GCC
+	* call.c (cob_call): explicit cast to function pointer with maximum
+	  possible arguments for C23 compat
+
+2025-04-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	  new functions to support virtual heap
+	  CBL_ functions from Fujitsu and Microfocus COBOL compilers
+	* fileio.c (cob_sys_open_vfile,
+				cob_sys_read_vfile
+				cob_sys_read_vfile2,
+				cob_sys_write_vfile,
+				cob_sys_write_vfile2,
+				cob_sys_close_vfile,
+				get_default_alloc,
+				create_first_segment,
+				get_new_segment,
+				locate_segment):
+	  note that as CBL_GC extension we also support a 64 bit
+	  version which allows for a VFILE to exceed the 4GB
+	  limitation if memory is available
+	* coblocal.h: added new variables to support runtime additions
+	  of heap memory for use with VFILES
+	* common.h, system.def: added new definitions for VFILES support
+	* common.c: (config_tbl gc_conf) added new entries for
+	  VFILE default memory allocation size
+
+2025-03-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c: move table SORT variables into the single thread-local
+	  structure (struct sort_state), prepared for module-local with 4.x
+	* common.c: more static variables as thread local via COB_TLS
+
+2025-02-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: prefer C21 _Thread_local specifier for COB_TLS (also for
+	  WIN32), dropping the need for threads.h for the previously used macro
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, common.c: handle [__xlc__] identical to [__IBMC__]
+	* common.c [!SIGPIPE]: fix warning about unused jump
+
+2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c [WITH_EXTENDED_SCREENIO]: adjusted curses includes/defines
+	  used for info output to include panel header definitions and XCurses
+
+2024-12-23  David Declerck <david.declerck@ocamlpro.com>
+
+	* termio.c (clean_double): skip more than a single leading
+	  zero in exponent display
+
+2024-12-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_start_internal): improve handling of partial
+	  keys, to ensure BDB always compares keys of identical length
+
+2024-12-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* string.c: fix a bug where the source of STRING/UNSTRING/INSPECT
+	  is overwritten, by restoring the *_copy fields that were removed
+	  with the change on 2024-02-26
+
+2024-12-11  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* fileio.c: fixed Bug #1032 by always using global thread-static variable
+	  bdb_app_data pointer to access the collating sequence function
+
+2024-12-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): normalize numeric data
+	* move.c (cob_move): extend use of optimized_move_display_to_edited
+	  to more cases (i.e. different source and destination sign, leading
+	  sign, non-separate sign)
+
+2024-12-09  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed additional bug
+	  reported with bug #1008: BLANK WHEN ZERO not working on signed
+	  NUMERIC-EDITED fields
+
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
+	  with X/Open Curses function panel_below()
+
+2024-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (mpz_get_ull, mpz_get_sll, cob_decimal_get_binary):
+	  prefer mpz_sgn over deprecated check for size
+
+2024-11-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* move.c (optimized_move_display_to_edited): minor refactoring
+	* exception.def, move.c: added definition for COBOL2025
+	  COB_EC_DATA_NULL + COB_EC_DATA_TRUNCATION (currently not used)
+
+2024-11-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* move.c (optimized_move_display_to_edited): fixed
+	  Bug #1008: regression in move to numeric edited
+	  items with insertion symbols B, 0 and /
+
+2024-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_sys_window), system.def, common.h:
+	  command as separate first argument
+	* screenio.c [WITH_PANELS]: more refactoring including:
+	  variable amount of elements for LIST command;
+	  parameter struture changes from int to short;
+	  new commands get+set attributes;
+	  hidden now attribute in the flags instead of separate element,
+	  preparation for new attributes wrap + scroll;
+	  reverse panel_hidden return code handling
+	* screenio.c (cob_exit_screen): always use stdscr for exit message
+
+2024-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [WITH_PANELS]: minor refactoring including move of
+	  return code out of PPARM_FLD
+	* screenio.c (cob_sys_window): when function not available and in
+	  testmode, return 77 so test is skipped
+
+2024-11-01  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: added new functions for multiple window support;
+	  also added new static variables to support panel functions
+	  and a static array to store information about the panels
+	  which have been created.
+		cob_sys_window
+		check_panel_parm
+		cob_update_all_windows
+		refresh_mywin
+	* common.h: added cob_sys_window
+	* system.def: added system library call CBL_GC_WINDOW
+
+2024-10-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (HELP2MAN_OPTS): use of -n
+
+2024-10-22  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c (cob_screen_get_all): fixed Bug #999
+	  directly position to the cursor position within the
+	  field according to CURSOR clause
+
 2024-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_sig_handler): moved call of cob_exit_screen_from_signal
@@ -118,11 +429,11 @@
 2024-07-10  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	fix errors in cob_optimized_move_display_to_edited introduced
-	with changes at revision R5285. The errors showed up in the 
+	with changes at revision R5285. The errors showed up in the
 	NIST tests in group NC.
 
 	* move.c (optimized_move_display_to_edited): fixed bugs
-	  (indirect_move): fixed bug when calculating scale of 
+	  (indirect_move): fixed bug when calculating scale of
 	  the intermediate cob field
 
 2024-07-09  Boris Eng <boris.eng@ocamlpro.com>
@@ -146,15 +457,15 @@
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-	fix errors caught by the Sanitizer functionality of GCC. This 
+	fix errors caught by the Sanitizer functionality of GCC. This
 	change did not resolve all of the issues found as some of them
-	were in Berkeley DB and some were intentional in the memory 
+	were in Berkeley DB and some were intentional in the memory
 	corruption logic which has been implemented in the runtime.
 
-	* move.c (the cob_move_display_to_packed function was rewritten to 
+	* move.c (the cob_move_display_to_packed function was rewritten to
 	  fix the out of bounds memory addressing issues and also to make
 	  the code simpler.
-	* numeric.c (the function count_leading_zeros was changed to fix 
+	* numeric.c (the function count_leading_zeros was changed to fix
 	  an out of bounds memory addressing issue
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
@@ -167,7 +478,7 @@
 	  to the indexfile structure for use in these functions.
 	  This will allow the saved partial key to be used in the
 	  positioning logic.
-	  Also the BDB logic was changed to return a status code of "35" 
+	  Also the BDB logic was changed to return a status code of "35"
 	  when encountering a missing directory for OUTPUT on INDEXED file.
 
 2024-05-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
@@ -235,8 +546,15 @@
 	* common.c: add missing include libxml/parser.h
 
 2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
 	FR #488: using state structures instead of state vars for strings
 	* strings.c: moved static variables to structures
+
+2024-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
+	* strings.c (cob_update_low_value): new function to use cob_module's
+	  collating_sequence field for determining the low value instead of the hard-coded constant "\0"
 
 2024-01-25  David Declerck <david.declerck@ocamlpro.com>
 
@@ -1401,7 +1719,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	  cob_add_exception
 	* screenio.c (handle_status): pass type of statement to raise
 	  either COB_EC_IMP_ACCEPT or COB_EC_IMP_DISPLAY
-	* screenio.c (handle_status, cob_set_crt3_status) [!COB_GEN_SCREENIO]:
+	* screenio.c (handle_status, cob_set_crt3_status) [!WITH_EXTENDED_SCREENIO]:
 	  unconditionally defined those functions and finally return error
 	  status and nonfatal exception along with a warning on accept if the
 	  runtime is not configured for extended screenio
@@ -2568,7 +2886,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2019-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (cob_settings_screenio): moved out of COB_GEN_SCREENIO
+	* screenio.c (cob_settings_screenio): moved out of WITH_EXTENDED_SCREENIO
 
 2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3335,7 +3653,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-07-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: moved cob_sys_get_char and added parts for !COB_GEN_SCREENIO
+	* screenio.c: moved cob_sys_get_char and added parts for !WITH_EXTENDED_SCREENIO
 
 2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3500,7 +3818,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2017-02-07  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c: [!COB_GEN_SCREENIO] fixed zero_line_col_allowed
+	* screenio.c: [!WITH_EXTENDED_SCREENIO] fixed zero_line_col_allowed
 	  missing / superfluous in function declarations
 
 2017-02-06  Ron Norman <rjn@inglenet.com>
@@ -4446,7 +4764,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 2010-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* screenio.c (!COB_GEN_SCREENIO): Make cob_sys_sound_bell usable via
+	* screenio.c (!WITH_EXTENDED_SCREENIO): Make cob_sys_sound_bell usable via
 	  cob_speaker_beep
 	* common.c:  Add possibility to disable the bell via
 	  COB_BELL=NO/NONE/0/OFF (currently only the first char is checked)
@@ -6490,7 +6808,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2024 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

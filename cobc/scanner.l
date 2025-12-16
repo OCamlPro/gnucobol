@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 
@@ -143,7 +143,7 @@ enum cb_literal_type {
 	CB_LITERAL_DEFAULT,
 	CB_LITERAL_U,  /* UTF-8, work-in-progress */
 	CB_LITERAL_N,
-	CB_LITERAL_NC,
+	CB_LITERAL_NC
 };
 
 enum cb_sym_ebcdic_state {
@@ -172,6 +172,8 @@ static size_t			pic2_size;
 static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
 
+struct cb_text_list	*cb_include_file_list_directive = NULL;
+
 /* Function declarations */
 static void	read_literal (const char, const enum cb_literal_type);
 static int	scan_x (const char *, const char *);
@@ -189,6 +191,7 @@ static void	copy_two_words_in_quotes (char ** const, char ** const);
 static void	add_synonym (const int, const int);
 static void	make_synonym (void);
 static void clear_constants (void);
+static struct cb_text_list *scan_list_add (struct cb_text_list *, const char *);
 
 %}
 
@@ -217,7 +220,7 @@ AREA_A		"#AREA_A"\n
 	cobc_in_area_a = 0;
 %}
 
-<*>^[ ]?"#CALLFH".*\n {
+<*>^"#CALLFH".*\n {
 	if (current_program) {
 		const char	*p1;
 		char		*p2;
@@ -240,11 +243,11 @@ AREA_A		"#AREA_A"\n
 }
 
 
-<*>^[ ]?"#DEFLIT".*\n {
+<*>^"#DEFLIT".*\n {
 	scan_define_options (yytext);
 }
 
-<*>^[ ]?"#ADDRSV".*\n {
+<*>^"#ADDRSV".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -252,25 +255,25 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#ADDSYN-STD".*\n {
+<*>^"#ADDSYN-STD".*\n {
 	add_synonym (1, 0);
 }
-<*>^[ ]?"#ADDSYN".*\n {
+<*>^"#ADDSYN".*\n {
 	add_synonym (0, 0);
 }
 
-<*>^[ ]?"#MAKESYN".*\n {
+<*>^"#MAKESYN".*\n {
 	make_synonym ();
  }
 
-<*>^[ ]?"#OVERRIDE-STD".*\n {
+<*>^"#OVERRIDE-STD".*\n {
 	add_synonym (1, 1);
 }
-<*>^[ ]?"#OVERRIDE".*\n {
+<*>^"#OVERRIDE".*\n {
 	add_synonym (0, 1);
 }
 
-<*>^[ ]?"#REMOVE-STD".*\n {
+<*>^"#REMOVE-STD".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -283,7 +286,7 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#REMOVE".*\n {
+<*>^"#REMOVE".*\n {
 	char	*word;
 
 	copy_word_in_quotes (&word);
@@ -291,19 +294,19 @@ AREA_A		"#AREA_A"\n
 	cobc_free (word);
 }
 
-<*>^[ ]?"#REFMOD_ZERO "[0-9]\n {
+<*>^"#REFMOD_ZERO "[0-9]\n {
 	cb_ref_mod_zero_length = (yytext[13] - '0');
 }
 
-<*>^[ ]?"#ODOSLIDE "[0-1]\n {
+<*>^"#ODOSLIDE "[0-1]\n {
 	cb_odoslide = (yytext[10] - '0');
 }
 
-<*>^[ ]?"#ASSIGN "[0-9]\n {
+<*>^"#ASSIGN "[0-9]\n {
 	cb_assign_type_default = (enum cb_assign_type)(yytext[8] - '0');
 }
 
-<*>^[ ]?"#TURN".*\n {
+<*>^"#TURN".*\n {
 	struct cb_turn_list	*l;
 
 	for (l = cb_turn_list; l && l->line != -1; l = l->next);
@@ -312,12 +315,19 @@ AREA_A		"#AREA_A"\n
 	}
 }
 
-<*>^[ ]?"#AREACHECK"\n {
+<*>^"#AREACHECK"\n {
 	cobc_areacheck = 1;
 }
 
-<*>^[ ]?"#NOAREACHECK"\n {
+<*>^"#NOAREACHECK"\n {
 	cobc_areacheck = 0;
+}
+
+<*>^"#INCLUDE".*/\n {
+	cb_include_file_list_directive = scan_list_add (
+		cb_include_file_list_directive,
+		yytext + 9
+	);
 }
 
 <*>^{AREA_A}[ ]*/"." {
@@ -647,33 +657,55 @@ H#[0-9A-Za-z]+ {
 }
 
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (PICTURE_SYMBOL);
+	if (lookup_reserved_word ("SYMBOL")) {
+		count_lines (yytext);
+		RETURN_TOK (PICTURE_SYMBOL);
+	} else {
+		/* push whitespace and SYMBOL back, return PICTURE */
+		yyless (yyleng - 7);
+		RETURN_TOK (PICTURE);
+	}
 }
 
 "FROM"[ ,;\n]+"CRT"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (FROM_CRT);
+	if (lookup_reserved_word ("CRT")) {
+		count_lines (yytext);
+		RETURN_TOK (FROM_CRT);
+	} else {
+		/* push whitespace and CRT back, return FROM */
+		yyless (yyleng - 4);
+		RETURN_TOK (FROM);
+	}
 }
 
 "SCREEN"[ ,;\n]+"CONTROL"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (SCREEN_CONTROL);
+	int has_screen = lookup_reserved_word ("SCREEN") != NULL;
+	if (has_screen
+	 && lookup_reserved_word ("CONTROL")) {
+		count_lines (yytext);
+		RETURN_TOK (SCREEN_CONTROL);
+	}
+	/* push whitespace and CONTROL back, return SCREEN or word */
+	yyless (yyleng - 6);
+	if (has_screen) {
+		RETURN_TOK (SCREEN);
+	} else {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (WORD);
+	}
 }
 
 "EVENT"[ ,;\n]+"STATUS"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (EVENT_STATUS);
-}
-
-"READY"[ ,;\n]+"TRACE"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (READY_TRACE);
-}
-
-"RESET"[ ,;\n]+"TRACE"/[ .,;\n] {
-	count_lines (yytext);
-	RETURN_TOK (RESET_TRACE);
+	/* STATUS is reserved in all dialects */
+	if (lookup_reserved_word ("EVENT")) {
+		count_lines (yytext);
+		RETURN_TOK (EVENT_STATUS);
+	} else {
+		/* push whitespace and STATUS back, return EVENT as word */
+		yyless (yyleng - 5 );
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (WORD);
+	}
 }
 
 "GREATER"[ ,;\n]+("THAN"[ ,;\n]+)?"OR"[ ,;\n]+"EQUAL"("S")?([ ,;\n]+"TO")?/[ .,;\n] {
@@ -800,14 +832,14 @@ H#[0-9A-Za-z]+ {
 
 "NOT"[ ,;\n]+("AT"[ ,;\n]+)?("END-OF-PAGE"|"EOP")/[ .,;\n] {
 	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
-	/* TODO: if END-OF-PAGE/EOP are not reserved -> directly return */
+	/* Note: they are reserved words in all dialects, so no check */
 	count_lines (yytext);
 	RETURN_TOK (NOT_EOP);
 }
 
 "AT"[ ,;\n]+("END-OF-PAGE"|"EOP")/[ .,;\n] {
 	/* Note: plain END-OF-PAGE / EOP is directly matched via registered words */
-	/* TODO: if END-OF-PAGE/EOP are not reserved -> directly return */
+	/* Note: they are reserved words in all dialects, so no check */
 	count_lines (yytext);
 	RETURN_TOK (EOP);
 }
@@ -945,19 +977,13 @@ H#[0-9A-Za-z]+ {
 
 	/* FIXME: move the code for filling "name" here and first
 	          check with "lookup_system_name (name) != NULL"
-	          if we actually want to do this,
-	          otherwise return 2 (!) WORD tokens (by adding a queue
-	          of tokens to be returned)
+	          if we actually want to do this, otherwise use the code
+	          below to return one WORD token and push back the rest
 	*/
 	if (cobc_in_procedure) {
-		 /* unput characters */
+		 /* unput characters, return SWITCH as WORD */
+		yyless (6);
 		yylval = cb_build_reference ("SWITCH");
-		if (isdigit((unsigned char)yytext[yyleng-2])) {
-			unput (yytext[yyleng-1]);
-			unput (yytext[yyleng-2]);
-		} else {
-			unput (yytext[yyleng-1]);
-		}
 	} else {
 		 /* we need to return a single word, reverted later in parser.y */
 		strcpy (name, yytext);
@@ -968,6 +994,8 @@ H#[0-9A-Za-z]+ {
 }
 
 "LENGTH"[ ,;\n]+"OF"/[ .,;\n] {
+	/* FIXME: check for LENGTH OF register, otherwise return LENGTH,
+	   and push the rest back */
 	count_lines (yytext);
 	RETURN_TOK (LENGTH_OF);
 }
@@ -1242,8 +1270,15 @@ H#[0-9A-Za-z]+ {
 
 . {
 	int	c;
+	char * symbol = yytext;
+	char buffer[5] = { 0 };
 
-	cb_error (_("invalid symbol '%s' - skipping word"), yytext);
+	if (!isprint (*yytext)) {
+		snprintf (buffer, sizeof (buffer), "0x%x", *yytext);
+		symbol = buffer;
+	}
+
+	cb_error (_("invalid symbol '%s' - skipping word"), symbol);
 	while ((c = input ()) != EOF) {
 		if (c == '\n' || c == ' ') {
 			break;
@@ -1347,10 +1382,6 @@ static cob_u8_t
 scan_ebcdic_char (int c)
 {
 	char buff[10];	       /* Arbitrary limit, mostly for error-reporting */
-#ifndef COB_EBCDIC_MACHINE
-	static  cob_u8_t ebcdic_to_ascii[256] ;
-	static  int ebcdic_to_ascii_initialized = 0 ;
-#endif
 	unsigned int j = 0;
 	do {
 		buff[j++] = (char)c;
@@ -1367,20 +1398,7 @@ scan_ebcdic_char (int c)
 #ifdef COB_EBCDIC_MACHINE
 	return (cob_u8_t) c;
 #else
-	if (!ebcdic_to_ascii_initialized ) {
-		if (cob_load_collation (cb_ebcdic_table, ebcdic_to_ascii, NULL) < 0) {
-			cb_error (_("invalid parameter: %s"), "-febcdic-table");
-			ebcdic_to_ascii_initialized = -1;
-		} else {
-			ebcdic_to_ascii_initialized = 1;
-		}
-	}
-
-	if (ebcdic_to_ascii_initialized > 0) {
-		return ebcdic_to_ascii[c];
-	} else {
-		return '?';
-	}
+	return ebcdic_to_ascii[c];
 #endif
 }
 
@@ -2578,6 +2596,22 @@ clear_constants (void)
 		cobc_free (p78);
 	}
 	top_78_ptr = NULL;
+}
+
+static struct cb_text_list *
+scan_list_add (struct cb_text_list *list, const char *text)
+{
+	struct cb_text_list	*p;
+
+	p = cobc_parse_malloc (sizeof (struct cb_text_list));
+	p->text = cobc_parse_strdup (text);
+	if (!list) {
+		p->last = p;
+		return p;
+	}
+	list->last->next = p;
+	list->last = p;
+	return list;
 }
 
 /* Global functions */

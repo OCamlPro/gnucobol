@@ -108,10 +108,10 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
-	unsigned short	digits;
-	signed short  scale = COB_FIELD_SCALE (f);
+	unsigned short		digits;
+	signed short		scale = COB_FIELD_SCALE (f);
 	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
-	int		size;
+	int			size;
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
@@ -187,7 +187,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 			cob_move (f, &field);
 		}
-		
+
 		/* output of data to viewport */
 		{
 			register unsigned char *q = COB_TERM_BUFF;
@@ -225,9 +225,15 @@ clean_double (char *wrk)
 	char *pos = strrchr (wrk, 'E');
 
 	if (pos) {
+		char *src;
 		pos += 2; /* skip E+ */
-		if (pos[0] == '0') {
-			memmove (pos, pos + 1, strlen (pos));
+		/* Skip leading zeroes */
+		/* Note: each COBOL environment has a different output format for floats;
+		   here we only check for internal consistency (support for other
+		   formats might be considered for addition if widely requested) */
+		for (src = pos; *src == '0'; ++src);
+		if (src != pos) {
+			memmove (pos, src, strlen (src) + 1);
 		}
 		return;
 	}

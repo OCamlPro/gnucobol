@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -46,6 +46,11 @@
 	defined (HAVE_PDCURSES_CURSES_H) || \
 	defined (HAVE_XCURSES_H) || \
 	defined (HAVE_XCURSES_CURSES_H) || \
+	defined (HAVE_NCURSESW_PANEL_H) || \
+	defined (HAVE_NCURSES_PANEL_H) || \
+	defined (HAVE_PDCURSES_PANEL_H) || \
+	defined (HAVE_XCURSES_PANEL_H) || \
+	defined (HAVE_PANEL_H) || \
 	defined (HAVE_CURSES_H)
 #define WITH_EXTENDED_SCREENIO
 #endif
@@ -196,79 +201,10 @@ static const unsigned char	expr_prio[256] = {
 static unsigned char		expr_prio[256];
 #endif
 
-#ifdef	COB_EBCDIC_MACHINE
-/* EBCDIC referring to ASCII */
-static const unsigned char	cob_refer_ascii[256] = {
-	0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F,
-	0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-	0x10, 0x11, 0x12, 0x13, 0x3C, 0x3D, 0x32, 0x26,
-	0x18, 0x19, 0x3F, 0x27, 0x1C, 0x1D, 0x1E, 0x1F,
-	0x40, 0x5A, 0x7F, 0x7B, 0x5B, 0x6C, 0x50, 0x7D,
-	0x4D, 0x5D, 0x5C, 0x4E, 0x6B, 0x60, 0x4B, 0x61,
-	0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7,
-	0xF8, 0xF9, 0x7A, 0x5E, 0x4C, 0x7E, 0x6E, 0x6F,
-	0x7C, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7,
-	0xC8, 0xC9, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6,
-	0xD7, 0xD8, 0xD9, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6,
-	0xE7, 0xE8, 0xE9, 0xAD, 0xE0, 0xBD, 0x5F, 0x6D,
-	0x79, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-	0x88, 0x89, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96,
-	0x97, 0x98, 0x99, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6,
-	0xA7, 0xA8, 0xA9, 0xC0, 0x6A, 0xD0, 0xA1, 0x07,
-	0x68, 0xDC, 0x51, 0x42, 0x43, 0x44, 0x47, 0x48,
-	0x52, 0x53, 0x54, 0x57, 0x56, 0x58, 0x63, 0x67,
-	0x71, 0x9C, 0x9E, 0xCB, 0xCC, 0xCD, 0xDB, 0xDD,
-	0xDF, 0xEC, 0xFC, 0xB0, 0xB1, 0xB2, 0x3E, 0xB4,
-	0x45, 0x55, 0xCE, 0xDE, 0x49, 0x69, 0x9A, 0x9B,
-	0xAB, 0x9F, 0xBA, 0xB8, 0xB7, 0xAA, 0x8A, 0x8B,
-	0xB6, 0xB5, 0x62, 0x4F, 0x64, 0x65, 0x66, 0x20,
-	0x21, 0x22, 0x70, 0x23, 0x72, 0x73, 0x74, 0xBE,
-	0x76, 0x77, 0x78, 0x80, 0x24, 0x15, 0x8C, 0x8D,
-	0x8E, 0x41, 0x06, 0x17, 0x28, 0x29, 0x9D, 0x2A,
-	0x2B, 0x2C, 0x09, 0x0A, 0xAC, 0x4A, 0xAE, 0xAF,
-	0x1B, 0x30, 0x31, 0xFA, 0x1A, 0x33, 0x34, 0x35,
-	0x36, 0x59, 0x08, 0x38, 0xBC, 0x39, 0xA0, 0xBF,
-	0xCA, 0x3A, 0xFE, 0x3B, 0x04, 0xCF, 0xDA, 0x14,
-	0xE1, 0x8F, 0x46, 0x75, 0xFD, 0xEB, 0xEE, 0xED,
-	0x90, 0xEF, 0xB3, 0xFB, 0xB9, 0xEA, 0xBB, 0xFF
-};
-#else
-/* ASCII referring to EBCDIC */
-static const unsigned char	cob_refer_ebcdic[256] = {
-	0x00, 0x01, 0x02, 0x03, 0xEC, 0x09, 0xCA, 0x7F,
-	0xE2, 0xD2, 0xD3, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-	0x10, 0x11, 0x12, 0x13, 0xEF, 0xC5, 0x08, 0xCB,
-	0x18, 0x19, 0xDC, 0xD8, 0x1C, 0x1D, 0x1E, 0x1F,
-	0xB7, 0xB8, 0xB9, 0xBB, 0xC4, 0x0A, 0x17, 0x1B,
-	0xCC, 0xCD, 0xCF, 0xD0, 0xD1, 0x05, 0x06, 0x07,
-	0xD9, 0xDA, 0x16, 0xDD, 0xDE, 0xDF, 0xE0, 0x04,
-	0xE3, 0xE5, 0xE9, 0xEB, 0x14, 0x15, 0x9E, 0x1A,
-	0x20, 0xC9, 0x83, 0x84, 0x85, 0xA0, 0xF2, 0x86,
-	0x87, 0xA4, 0xD5, 0x2E, 0x3C, 0x28, 0x2B, 0xB3,
-	0x26, 0x82, 0x88, 0x89, 0x8A, 0xA1, 0x8C, 0x8B,
-	0x8D, 0xE1, 0x21, 0x24, 0x2A, 0x29, 0x3B, 0x5E,
-	0x2D, 0x2F, 0xB2, 0x8E, 0xB4, 0xB5, 0xB6, 0x8F,
-	0x80, 0xA5, 0x7C, 0x2C, 0x25, 0x5F, 0x3E, 0x3F,
-	0xBA, 0x90, 0xBC, 0xBD, 0xBE, 0xF3, 0xC0, 0xC1,
-	0xC2, 0x60, 0x3A, 0x23, 0x40, 0x27, 0x3D, 0x22,
-	0xC3, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
-	0x68, 0x69, 0xAE, 0xAF, 0xC6, 0xC7, 0xC8, 0xF1,
-	0xF8, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70,
-	0x71, 0x72, 0xA6, 0xA7, 0x91, 0xCE, 0x92, 0xA9,
-	0xE6, 0x7E, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
-	0x79, 0x7A, 0xAD, 0xA8, 0xD4, 0x5B, 0xD6, 0xD7,
-	0x9B, 0x9C, 0x9D, 0xFA, 0x9F, 0xB1, 0xB0, 0xAC,
-	0xAB, 0xFC, 0xAA, 0xFE, 0xE4, 0x5D, 0xBF, 0xE7,
-	0x7B, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-	0x48, 0x49, 0xE8, 0x93, 0x94, 0x95, 0xA2, 0xED,
-	0x7D, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50,
-	0x51, 0x52, 0xEE, 0x96, 0x81, 0x97, 0xA3, 0x98,
-	0x5C, 0xF0, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
-	0x59, 0x5A, 0xFD, 0xF5, 0x99, 0xF7, 0xF6, 0xF9,
-	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-	0x38, 0x39, 0xDB, 0xFB, 0x9A, 0xF4, 0xEA, 0xFF
-};
-#endif
+/* ASCII/EBCDIC translation tables  */
+
+cob_u8_t ebcdic_to_ascii[256];
+cob_u8_t ascii_to_ebcdic[256];
 
 /* System routines */
 
@@ -1451,6 +1387,7 @@ cb_build_register_number_parameters (const char *name, const char *definition)
 	}
 
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
+	/* note: this register needs to be local as it must keep the value in each recursive call */
 	CB_FIELD_PTR (field)->flag_no_init = 1;
 	CB_FIELD_PTR (field)->flag_local = 1;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
@@ -1603,6 +1540,15 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	field = CB_FIELD (cb_build_field (cb_build_reference (name)));
 	field->flag_is_global = (p != NULL);		/* any GLOBAL found ? */
 	field->level = 77;
+
+	/* handle BASED */
+#if 0	/* note: currently unused */
+	p = strstr (definition, "BASED");
+	if (p && (*(p + 5)  == ' ' || *(p + 5) == 0)) {
+		memset (p, ' ', 5);	/* remove from local copy */
+		field->flag_item_based = 1;
+	}
+#endif
 
 	/* handle USAGE */
 	p = strstr (definition, "USAGE ");
@@ -2136,9 +2082,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
 		} else {
-		(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
-					cb_word_length, word);
-	}
+			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+						cb_word_length, word);
+		}
 	}
 }
 
@@ -2413,7 +2359,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 		}
 		return;
 	}
-	
+
 	if (!r->offset) {
 		/* no more checks needed */
 		return;
@@ -2456,7 +2402,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 	} else {
 		length = adjusted_at_runtime;
 	}
-	
+
 	if (CB_LITERAL_P (r->offset)) {
 		offset = cb_get_int (r->offset);
 		if (offset < 1) {
@@ -2484,7 +2430,7 @@ refmod_checks (cb_tree x, struct cb_field *f, struct cb_reference *r)
 			cb_warning_x (cb_warn_filler, x,
 				_("suspicious reference-modification: always using max. length"));
 		}
-	}	
+	}
 
 	/* Run-time check */
 	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_REF_MOD)) {
@@ -2938,7 +2884,7 @@ cb_build_const_start (struct cb_field *f, cb_tree x)
 		if (cb_field_variable_size (p)) {
 			cb_error (_("variable length item not allowed here"));
 			return cb_build_numeric_literal (0, "1", 0);
-	}
+		}
 	}
 	snprintf (buff, sizeof(buff), "%d", target->offset);
 	for (p = target; p; p = p->parent) {
@@ -3790,7 +3736,7 @@ get_value (cb_tree x)
 	} else if (x == cb_norm_low) {
 		return 0;
 	} else if (x == cb_norm_high) {
-		return 255;
+		return 0xff;
 	} else if (x == cb_null) {
 		return 0;
 	} else {
@@ -3815,7 +3761,7 @@ get_value (cb_tree x)
 }
 
 static int
-cb_validate_collating (cb_tree collating_sequence)
+cb_process_collating (struct cb_program *prog, cb_tree collating_sequence)
 {
 	cb_tree		x;
 
@@ -3829,19 +3775,46 @@ cb_validate_collating (cb_tree collating_sequence)
 			    cb_name (collating_sequence));
 		return 1;
 	}
-	if (CB_ALPHABET_NAME (x)->alphabet_type != CB_ALPHABET_CUSTOM) {
+
+	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_CUSTOM) {
+		if (CB_ALPHABET_NAME (x)->alphabet_target == CB_ALPHABET_ALPHANUMERIC) {
+			prog->low_value = (cob_u8_t)CB_ALPHABET_NAME (x)->low_val_char;
+			prog->high_value = (cob_u8_t)CB_ALPHABET_NAME (x)->high_val_char;
+		} else /* CB_ALPHABET_NATIONAL */ {
+			prog->low_value_n = (cob_u16_t)CB_ALPHABET_NAME (x)->low_val_char;
+			prog->high_value_n = (cob_u16_t)CB_ALPHABET_NAME (x)->high_val_char;
+		}
+	} else
+#ifdef COB_EBCDIC_MACHINE
+	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_ASCII) {
+                prog->low_value = ascii_to_ebcdic[0x00];
+                prog->high_value = ascii_to_ebcdic[0xff];
+	}
+#else
+	if (CB_ALPHABET_NAME (x)->alphabet_type == CB_ALPHABET_EBCDIC) {
+                prog->low_value = ebcdic_to_ascii[0x00];
+                prog->high_value = ebcdic_to_ascii[0xff];
+	}
+#endif
+	else {
 		return 0;
 	}
-	if (CB_ALPHABET_NAME (x)->low_val_char) {
-		cb_low = cb_build_alphanumeric_literal ("\0", (size_t)1);
-		CB_LITERAL(cb_low)->data[0] = (unsigned char)CB_ALPHABET_NAME (x)->low_val_char;
-		CB_LITERAL(cb_low)->all = 1;
+
+	if (CB_ALPHABET_NAME (x)->alphabet_target == CB_ALPHABET_ALPHANUMERIC) {
+		if (prog->low_value) {
+			cb_low = cb_build_alphanumeric_literal ("\0", (size_t)1);
+			CB_LITERAL(cb_low)->data[0] = prog->low_value;
+			CB_LITERAL(cb_low)->all = 1;
+		}
+		if (prog->high_value != 0xff) {
+			cb_high = cb_build_alphanumeric_literal ("\0", (size_t)1);
+			CB_LITERAL(cb_high)->data[0] = prog->high_value;
+			CB_LITERAL(cb_high)->all = 1;
+		}
+	} else /* CB_ALPHABET_NATIONAL */ {
+		/* TODO: LOW/HIGH-VALUE for national */
 	}
-	if (CB_ALPHABET_NAME (x)->high_val_char != 255){
-		cb_high = cb_build_alphanumeric_literal ("\0", (size_t)1);
-		CB_LITERAL(cb_high)->data[0] = (unsigned char)CB_ALPHABET_NAME (x)->high_val_char;
-		CB_LITERAL(cb_high)->all = 1;
-	}
+
 	return 0;
 }
 
@@ -3884,6 +3857,8 @@ validate_alphabet (cb_tree alphabet)
 			*entry = n;
 			entry++;
 		}
+		ap->low_val_char = 0;
+		ap->high_val_char = 0xff;
 		return;
 	}
 
@@ -3892,12 +3867,19 @@ validate_alphabet (cb_tree alphabet)
 		register int	*entry = ap->values;
 		for (n = 0; n < COB_MAX_CHAR_ALPHANUMERIC + 1; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-			*entry = (int)cob_refer_ascii[n];
+			*entry = (int)ascii_to_ebcdic[n];
 #else
 			*entry = n;
 #endif
 			entry++;
 		}
+#ifdef	COB_EBCDIC_MACHINE
+		ap->low_val_char = ascii_to_ebcdic[0x00];
+		ap->high_val_char = ascii_to_ebcdic[0xff];
+#else
+		ap->low_val_char = 0;
+		ap->high_val_char = 0xff;
+#endif
 		memcpy (ap->alphachr, ap->values, memsize);
 		return;
 	}
@@ -3909,11 +3891,17 @@ validate_alphabet (cb_tree alphabet)
 #ifdef	COB_EBCDIC_MACHINE
 			*entry = n;
 #else
-			*entry = (int)cob_refer_ebcdic[n];
+			*entry = (int)ebcdic_to_ascii[n];
 #endif
 			entry++;
 		}
-		
+#ifdef	COB_EBCDIC_MACHINE
+		ap->low_val_char = 0;
+		ap->high_val_char = 0xff;
+#else
+		ap->low_val_char = ebcdic_to_ascii[0x00];
+		ap->high_val_char = ebcdic_to_ascii[0xff];
+#endif
 		memcpy (ap->alphachr, ap->values, memsize);
 		return;
 	}
@@ -4138,7 +4126,7 @@ validate_alphabet (cb_tree alphabet)
 						if (n > COB_MAX_CHAR_ALPHANUMERIC) {
 							i += sprintf (dup_val_str + i, "x'%04x'", n);
 						} else if (isprint (n)) {
-							dup_val_str[i++] = (char)n;						
+							dup_val_str[i++] = (char)n;
 						} else {
 							i += sprintf (dup_val_str + i, "x'%02x'", n);
 						}
@@ -4155,7 +4143,7 @@ validate_alphabet (cb_tree alphabet)
 					ap->name, pos);
 			}
 			ap->low_val_char = 0;
-			ap->high_val_char = 255;
+			ap->high_val_char = 0xff;
 			goto val_ex;
 		}
 		/* Calculate HIGH-VALUE */
@@ -4204,7 +4192,7 @@ validate_alphabet (cb_tree alphabet)
 			}
 		}
 
-	val_ex:	
+	val_ex:
 		free (values);
 		free (charvals);
 		free (dupvals);
@@ -4316,10 +4304,10 @@ cb_validate_program_environment (struct cb_program *prog)
 	}
 
 	/* Resolve the program collating sequences */
-	if (cb_validate_collating (prog->collating_sequence)) {
+	if (cb_process_collating (prog, prog->collating_sequence)) {
 		prog->collating_sequence = NULL;
 	};
-	if (cb_validate_collating (prog->collating_sequence_n)) {
+	if (cb_process_collating (prog, prog->collating_sequence_n)) {
 		prog->collating_sequence_n = NULL;
 	};
 
@@ -4676,6 +4664,8 @@ validate_file_status (cb_tree fs)
 	}
 }
 
+/* create an implicit defined variable for ASSIGN or XML SCHEMA,
+   with the given assign reference name and initial value */
 static void
 create_implicit_assign_dynamic_var (struct cb_program * const prog,
 				    cb_tree assign)
@@ -4696,17 +4686,27 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 	CB_FIELD_ADD (prog->working_storage, p);
 }
 
+/* handle file assign name, used in ASSIGN clause or XML SCHEMA,
+   that has no definition */
 static void
-process_undefined_assign_name (struct cb_file * const f,
+process_undefined_assign_name (cb_tree origin,
 			       struct cb_program * const prog)
 {
-	cb_tree	assign = f->assign;
-	cb_tree	l;
-	cb_tree	ll;
+	struct cb_file *f = NULL;
+	struct cb_schema_name *schema = NULL;
 
-	if (f->assign_type != CB_ASSIGN_VARIABLE_DEFAULT) {
-		/* An error is emitted later */
-		return;
+	cb_tree	assign;
+
+	if (CB_FILE_P (origin)) {
+		f = CB_FILE (origin);
+		if (f->assign_type != CB_ASSIGN_VARIABLE_DEFAULT) {
+			/* An error is emitted later */
+			return;
+		}
+		assign = f->assign;
+	} else {
+		schema = CB_SCHEMA_NAME (origin);
+		assign = schema->val;
 	}
 
 	/*
@@ -4714,9 +4714,13 @@ process_undefined_assign_name (struct cb_file * const f,
 	  name.
 	*/
 	if (cb_implicit_assign_dynamic_var) {
-		cb_verify_x (CB_TREE (f), cb_assign_variable, _("ASSIGN [TO] variable in SELECT"));
+		if (f) {
+			cb_verify_x (CB_TREE (f), cb_assign_variable,
+				_("ASSIGN [TO] variable in SELECT"));
+		}
 		create_implicit_assign_dynamic_var (prog, assign);
 	} else {
+		cb_tree	l;
 		/* Remove reference */
 		for (l = prog->reference_list;
 		     CB_VALUE (l) != assign && CB_VALUE (CB_CHAIN (l)) != assign;
@@ -4724,64 +4728,88 @@ process_undefined_assign_name (struct cb_file * const f,
 		if (CB_VALUE (l) == assign) {
 			prog->reference_list = CB_CHAIN (l);
 		} else {
-			ll = CB_CHAIN (CB_CHAIN (l));
+			cb_tree temp = CB_CHAIN (CB_CHAIN (l));
 			cobc_parse_free (CB_CHAIN (l));
-			CB_CHAIN (l) = ll;
+			CB_CHAIN (l) = temp;
 		}
 
 		/* Reinterpret word */
-		f->assign = build_external_assignment_name (assign);
+		l = build_external_assignment_name (assign);
+		if (f) {
+			f->assign = l;
+		} else {
+			schema->val = l;
+		}
 	}
 }
 
-/* Ensure ASSIGN name refers to a valid identifier */
+/* ensure file assign name, used in ASSIGN clause or XML SCHEMA,
+   refers to a valid identifier */
 static void
-validate_assign_name (struct cb_file * const f,
-		      struct cb_program * const prog)
+validate_assign_name (cb_tree origin, struct cb_program * const prog)
 {
-	cb_tree	assign = f->assign;
+	struct cb_file *f = NULL;
+	struct cb_schema_name *schema = NULL;
+
+	cb_tree	assign;
 	cb_tree	x;
-	struct cb_field	*p;
 
-	if (!assign) {
+	if (CB_FILE_P (origin)) {
+		f = CB_FILE (origin);
+		assign = f->assign;
+	} else {
+		schema = CB_SCHEMA_NAME (origin);
+		assign = schema->val;
+	}
+
+	if (!assign
+	 || !CB_REFERENCE_P (assign)) {
 		return;
 	}
 
-	if (!CB_REFERENCE_P (assign)) {
-		return;
-	}
-
-	/* Error if assign name is same as a file name */
-	for (x = prog->file_list; x; x = CB_CHAIN (x)) {
-		if (!strcmp (CB_FILE (CB_VALUE (x))->name,
-			     CB_NAME (assign))) {
-			redefinition_error (assign);
+	if (CB_FILE_P (origin)) {
+		/* Error if assign name is same as a file name */
+		for (x = prog->file_list; x; x = CB_CHAIN (x)) {
+			if (!strcmp (CB_FILE (CB_VALUE (x))->name,
+					CB_NAME (assign))) {
+				redefinition_error (assign);
+			}
 		}
 	}
 
 	/* If assign is a 78-level, change assign to the 78-level's literal. */
-	p = check_level_78 (CB_NAME (assign));
-	if (p) {
-		char *c = (char *)CB_LITERAL (p->values)->data;
-		f->assign = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c)));
-		return;
+	{
+		struct cb_field	*p = check_level_78 (CB_NAME (assign));
+		if (p) {
+			char *c = (char *)CB_LITERAL (p->values)->data;
+			x = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c)));
+
+			if (f) {
+				f->assign = x;
+			} else {
+				schema->val = x;
+			}
+			return;
+		}
+
 	}
 
 	if (CB_WORD_COUNT (assign) == 0) {
-		process_undefined_assign_name (f, prog);
+		process_undefined_assign_name (origin, prog);
 	} else {
 		/*
 		  We now know we have a variable, so can validate whether it is
 		  is allowed
 		*/
-		if (f->flag_assign_no_keyword) {
+		if (f && f->flag_assign_no_keyword) {
 			cb_verify_x (CB_TREE (f), cb_assign_variable, _("ASSIGN variable"));
 		}
 
 		x = cb_ref (assign);
 		if (CB_FIELD_P (x) && CB_FIELD (x)->level == 88) {
-			cb_error_x (assign, _("ASSIGN data item '%s' is invalid"),
-				    CB_NAME (assign));
+			const char *msg = f ? _("ASSIGN data item '%s' is invalid")
+			                    : _("XML SCHEMA data item '%s' is invalid");
+			cb_error_x (assign, msg, CB_NAME (assign));
 		}
 	}
 }
@@ -4834,7 +4862,10 @@ cb_validate_program_data (struct cb_program *prog)
 
 	/* Build undeclared assignment names now */
 	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
-		validate_assign_name (CB_FILE (CB_VALUE (l)), prog);
+		validate_assign_name (CB_VALUE (l), prog);
+	}
+	for (l = prog->schema_name_list; l; l = CB_CHAIN (l)) {
+		validate_assign_name (CB_VALUE (l), prog);
 	}
 
 	if (prog->cursor_pos) {
@@ -5918,7 +5949,7 @@ build_expr_finish (void)
 {
 	cb_tree pos;
 	struct cb_tree_common err_pos;
-	
+
 	/* Reduce all (prio of token 0 is smaller than all other ones) */
 	(void)build_expr_reduce (0);
 
@@ -6828,7 +6859,7 @@ cb_build_optim_cond (struct cb_binary_op *p)
 		}
 	}
 #endif
-	
+
 	/* if the field is DISPLAY and the right side either a literal, a constant (ZERO)
 	   or also a DISPLAY field, then no need to convert the field(s) to an integer */
 	if (f->usage == CB_USAGE_DISPLAY) {
@@ -10629,7 +10660,7 @@ cb_build_converting (cb_tree x, cb_tree y, cb_tree l)
 						cb_build_alphanumeric_literal (conv_tab, 256)));
 			}
 			break;
-		case CB_TAG_REFERENCE: 
+		case CB_TAG_REFERENCE:
 			if (CB_ALPHABET_NAME_P (cb_ref (x))
 			 && CB_ALPHABET_NAME_P (cb_ref (y))) {
 				const struct cb_alphabet_name *alph_x = CB_ALPHABET_NAME (cb_ref (x));
@@ -12167,7 +12198,7 @@ cb_build_move_high (cb_tree x)
 			return CB_BUILD_FUNCALL_2 ("cob_move", cb_high, x);
 		}
 		if (cb_high == cb_norm_high) {
-			return cb_build_memset (x, 255);
+			return cb_build_memset (x, 0xff);
 		}
 		/* Fall through */
 	default:
@@ -13273,6 +13304,10 @@ cb_emit_read (cb_tree ref, cb_tree next, cb_tree into,
 void
 cb_emit_ready_trace (void)
 {
+	#if 0  /* note: at least Visual COBOL skips this statement
+	          if no tracing setup was done, we may do the same */
+	if (!cb_flag_trace) return;
+	#endif
 	cb_emit (CB_BUILD_FUNCALL_0 ("cob_ready_trace"));
 }
 
@@ -13465,12 +13500,17 @@ cb_emit_return (cb_tree ref, cb_tree into)
 	if (file == cb_error_node) {
 		return;
 	}
+	current_statement->file = file;
+	if (CB_FILE (file)->organization != COB_ORG_SORT) {
+		cb_error_x (CB_TREE (current_statement),
+			_("must be an SD filename"));
+		return;
+	}
 	rec = cb_build_field_reference (CB_FILE (file)->record, ref);
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_file_return", file));
 	if (into) {
 		current_statement->handler3 = cb_build_move (rec, into);
 	}
-	current_statement->file = file;
 }
 
 /* ROLLBACK statement */
@@ -15149,7 +15189,7 @@ all_children_ok_qualified_by_only (struct cb_field * const f,
 			return 0;
 		}
 		if (child->children
-		    && !all_children_ok_qualified_by_only (child, qualifier)) {
+		 && !all_children_ok_qualified_by_only (child, qualifier)) {
 			return 0;
 		}
 	}

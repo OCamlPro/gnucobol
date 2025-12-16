@@ -78,6 +78,7 @@ q2340
 
 AT_CLEANUP
 
+
 AT_SETUP([DISPLAY: Sign ASCII (2)])
 AT_KEYWORDS([display])
 
@@ -168,6 +169,7 @@ AT_CHECK([$COMPILE -fsign=ebcdic prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [{ABCDEFGHI}JKLMNOPQR])
 
 AT_CLEANUP
+
 
 AT_SETUP([DISPLAY: unsigned])
 AT_KEYWORDS([display])

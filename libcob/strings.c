@@ -63,6 +63,7 @@ struct cob_inspect_state {
 	size_t			      size;
 	cob_u32_t		      replacing;	/* marker about current operation being INSPECT REPLACING */
 	int			          sign;
+	cob_field			  var_copy;	/* use a copy to account for overwritten temporary field, see cob_inspect_init_common_intern */
 	enum inspect_type type;
 };
 
@@ -70,6 +71,9 @@ struct cob_string_state {
 	cob_field		*dst;
 	cob_field		*ptr;
 	cob_field		*dlm;
+	cob_field		dst_copy;	/* use a copy to account for overwritten temporary field, see cob_string_init_intern */
+	cob_field		ptr_copy;	/* use a copy to account for overwritten temporary field, see cob_string_init_intern */
+	cob_field		dlm_copy;	/* use a copy to account for overwritten temporary field, see cob_string_delimited_intern */
 	int		    	offset;	/* value associated with WITH POINTER clauses */
 };
 
@@ -81,6 +85,8 @@ struct cob_unstring_state {
                                          the maximum needed (amount of DELIMITED BY),
                                          actual size of dlm_list is calculated by
                                          dlm_list_size * sizeof(dlm_struct) */
+	cob_field	    src_copy;	/* use a copy to account for overwritten temporary field, see cob_unstring_init_intern */
+	cob_field	    ptr_copy;	/* use a copy to account for overwritten temporary field, see cob_unstring_init_intern */
 	int                 offset;
 	unsigned int        count;
 	unsigned int        ndlms;
@@ -95,7 +101,7 @@ static const cob_field_attr	const_alpha_attr =
 static const cob_field_attr	const_strall_attr =
 				{COB_TYPE_ALPHANUMERIC_ALL, 0, 0, 0, NULL};
 
-/* Static structures for backward compatibility */
+/* Static structures for string related statements */
 COB_TLS struct cob_inspect_state	share_inspect_state;
 COB_TLS struct cob_string_state		share_string_state;
 COB_TLS struct cob_unstring_state	share_unstring_state;
@@ -107,6 +113,16 @@ static cob_field		alpha_fld;
 static cob_field		str_cob_low;
 
 /* Local functions */
+
+static COB_INLINE COB_A_INLINE void
+cob_update_low_value (void)
+{
+	if (COB_MODULE_PTR && COB_MODULE_PTR->collating_sequence != NULL) {
+		str_cob_low.data = (cob_u8_ptr)&COB_MODULE_PTR->collating_sequence[0];
+	} else {
+		str_cob_low.data = (cob_u8_ptr)"\0";
+	}
+}
 
 static void
 cob_str_memcpy (cob_field *dst, unsigned char *src, const int size)
@@ -325,7 +341,7 @@ inspect_common_no_replace (
 		}
 		/* set the marker so we won't iterate over this area again */
 		if (n) {
-			set_inspect_mark (st, pos, last_marker);
+			set_inspect_mark (st, pos, last_marker + 1);
 		}
 	/* note: same code as for LEADING, moved out as we don't need to check
 	   LEADING for _every_ byte in that tight loop */
@@ -454,9 +470,11 @@ inspect_common (
 	}
 
 	if (unlikely (!f1)) {
+		cob_update_low_value ();
 		f1 = &str_cob_low;
 	}
 	if (unlikely (!f2)) {
+		cob_update_low_value ();
 		f2 = &str_cob_low;
 	}
 
@@ -507,7 +525,11 @@ cob_inspect_init_common_intern (struct cob_inspect_state *st, cob_field *var)
 		/* it is allowed to TRANSFORM / INSPECT a numeric display signed element;
 		   if it isn't stored separately we need to "remove" it here and add it back
 		   in inspect_finish; note: we only handle NUMERIC DISPLAY here */
-		st->var = var;
+		/* var may be a temporary field (created from refmod or indexing),
+		   which might be overwritten between subsequent calls to the
+                   different cob_inspect_* functions */
+		st->var_copy = *var;
+		st->var = &st->var_copy;
 		st->sign = cob_real_get_sign (var, 0);
 	} else {
 		st->var = NULL;
@@ -516,7 +538,6 @@ cob_inspect_init_common_intern (struct cob_inspect_state *st, cob_field *var)
 	st->data = COB_FIELD_DATA (var);
 	st->start = NULL;
 	st->end = NULL;
-	st->mark_size = 0;
 	st->repdata_size = 0;
 
 	cobglobptr->cob_exception_code = 0;
@@ -557,7 +578,7 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 	cob_inspect_start       (setting start/end)
 	cob_inspect_before        (optional, adjusting end)
 	cob_inspect_after         (optional, adjusting start)
-   one-time cob_inspect_converting/cob_inspect_translating (actual converstion) */
+   one-time cob_inspect_converting/cob_inspect_translating (actual conversion) */
 
 static void
 cob_inspect_init_converting_intern (struct cob_inspect_state *st, cob_field *var)
@@ -670,7 +691,7 @@ cob_inspect_characters_intern (struct cob_inspect_state *st, cob_field *f1)
 void
 cob_inspect_characters (cob_field *f1)
 {
-	cob_inspect_characters_intern(&share_inspect_state, f1);
+	cob_inspect_characters_intern (&share_inspect_state, f1);
 }
 
 static void
@@ -737,9 +758,11 @@ cob_inspect_converting_intern (
 	}
 
 	if (unlikely (!f1)) {
+		cob_update_low_value ();
 		f1 = &str_cob_low;
 	}
 	if (unlikely (!f2)) {
+		cob_update_low_value ();
 		f2 = &str_cob_low;
 	}
 	if (f1->size != f2->size) {
@@ -918,8 +941,16 @@ cob_inspect_finish (void)
 static void
 cob_string_init_intern (struct cob_string_state *st, cob_field *dst, cob_field *ptr)
 {
-	st->dst = dst;
-	st->ptr = ptr;
+	/* dst and ptr may be temporary fields (created from refmod or indexing),
+	   which might be overwritten between subsequent calls to the
+	   different cob_string_* functions */
+	st->dst_copy = *dst;
+	st->dst = &st->dst_copy;
+	st->ptr = NULL;
+	if (ptr) {
+		st->ptr_copy = *ptr;
+		st->ptr = &st->ptr_copy;
+	}
 	st->offset = 0;
 	cobglobptr->cob_exception_code = 0;
 
@@ -939,8 +970,12 @@ cob_string_init (cob_field *dst, cob_field *ptr)
 static void
 cob_string_delimited_intern (struct cob_string_state *st, cob_field *dlm)
 {
+	/* dlm may be a temporary field (created from refmod or indexing),
+	   which might be overwritten between subsequent calls to the
+	   different cob_string_* functions */
 	if (dlm) {
-		st->dlm = dlm;
+		st->dlm_copy = *dlm;
+		st->dlm = &st->dlm_copy;
 	} else {
 		st->dlm = NULL;
 	}
@@ -1026,8 +1061,16 @@ cob_unstring_init_intern (
 	const size_t num_dlm
 )
 {
-	st->src = src;
-	st->ptr = ptr;
+	/* src and ptr may be temporary fields (created from refmod or indexing),
+	   which might be overwritten between subsequent calls to the
+	   different cob_unstring_* functions */
+	st->src_copy = *src;
+	st->src = &st->src_copy;
+	st->ptr = NULL;
+	if (ptr) {
+		st->ptr_copy = *ptr;
+		st->ptr = &st->ptr_copy;
+	}
 
 	st->offset = 0;
 	st->count = 0;

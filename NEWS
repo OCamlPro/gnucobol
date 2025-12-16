@@ -8,7 +8,7 @@ NEWS - user visible changes				-*- outline -*-
 
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
-   indicator column) is now limitted to 5 per source file
+   indicator column) is now limited to 5 per source file
 
 ** support the COLLATING SEQUENCE clause on indexed files
    (currently only with the BDB backend)
@@ -20,8 +20,37 @@ NEWS - user visible changes				-*- outline -*-
    customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
    COB_PROF_FORMAT
 
-** new runtime configuraiton COB_HIDE_CURSOR, allows to hide the cursor during
+** initial support for XML PARSE
+   while this feature is not implemented fully and some events are not
+   implemented yet, we'd like you to test this feature already;
+   note that for the XML-EVENT EXCEPTION, the stored exception-values in
+   XML-CODE and XML-TEXT registers differ from other implementations
+
+** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
+
+** new runtime configuration COB_SIGNAL_REGIME, allows skipping registration of
+   the signal handler of GnuCOBOL
+   The registration can be skipped either for all signals or for those that do
+   already have a registered handler, allowing users to preserve their own
+   signal handlers during the initialization of the GnuCOBOL runtime.
+
+** added multiple window functionality with new system function CBL_GC_WINDOW
+
+** New system functions
+
+   CBL_OPEN_VFILE                  opens a "virtual file" (heap)
+   CBL_WRITE_VFILE                 writes bytes to heap; offset 4 byte binary
+   CBL_READ_VFILE                  reads bytes from heap; offset 4 byte binary
+   CBL_CLOSE_VFILE                 closes the heap handle
+   CBL_GC_OPEN_VFILE64             opens a "virtual file" (heap)
+   CBL_GC_WRITE_VFILE64            writes bytes to heap; offset 8 byte binary
+   CBL_GC_READ_VFILE64             reads bytes from heap; offset 8 byte binary
+   CBL_GC_CLOSE_VFILE64            closes the heap handle
+   The VFILE functions provide functionality consistent with Microfocus /
+   Fujitsu, but the heap is never paged to disk.
+   The VFILE64 functions are a GnuCOBOL extension to allow for access beyond the
+   4 GB offset when using the 64 bit environment.
 
   more work in progress
 
@@ -55,6 +84,10 @@ NEWS - user visible changes				-*- outline -*-
    later binary comparison of the field as well as on group MOVEs
 ** #918: COB_LS_VALIDATE (io status 09 and 71) partial broken
 
+** #948: Comparison with HIGH-VALUE in presence of collating sequences
+   using a non-native program collating sequence together with the
+   -febcdic-table option might now alter LOW/HIGH-VALUE
+
 * Changes to the COBOL compiler (cobc) options:
 
 ** New option --copy COPYBOOK to load copybooks before parsing files. This
@@ -66,9 +99,12 @@ NEWS - user visible changes				-*- outline -*-
    calls to externals. The files are put into quotes, unless they start by
    '<'. Quoted files are expected to have absolute paths, as the C compiler
    is called in a temp directory instead of the project directory.
+   The directive >>IMP INCLUDE "file.h", >>IMP INCLUDE "<file.h>",
+   >>IMP INCLUDE <file.h> or >>IMP INCLUDE file.h can be used as an alternative
+   to this compiler option.
 
 ** output of unlimited errors may be requested by -fmax-errors=0,
-   to stop compiliation at first error use -Wfatal-errors
+   to stop compilation at first error use -Wfatal-errors
 ** default value for -fmax-errors was changed from 128 to 20
 
 ** New option -fdiagnostics-absolute-paths to print the full path of
@@ -81,6 +117,18 @@ NEWS - user visible changes				-*- outline -*-
 
 ** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
    to a file (see "Dependencies options" in the GnuCOBOL manual)
+
+** New option --gentable to build EBCDIC/ASCII translation tables,
+   for use with -febcdic-table
+
+* Listing changes
+
+** the listing header shows the processed file's basename to prevent
+   cutting of the important part in case of compiling with full paths;
+   note: use -ftcmd if you want the listing to contain the full name
+   as passed to cobc
+
+** -ftcmd now outputs the full command line, even if spans multiple lines
 
 * More notable changes
 
@@ -116,7 +164,7 @@ NEWS - user visible changes				-*- outline -*-
    package manager version)
 
 ** use the "default" -shared flag to build dynamic libraries on macOS
-   so as to fix testuite issues with recent macOS versions
+   so as to fix testsuite issues with recent macOS versions
 
 ** "make checkmanual" was extended to be also usable with tmux and
    allows to override the test runner and to attach for screen/tmux sessions,
@@ -191,7 +239,7 @@ For more known issues see the bug tracker.
 
 ** Support for additional $SET directives: ODOSLIDE
 
-** Support for the EXTFH has been greatly enhanched and now includes support
+** Support for the EXTFH has been greatly enhanced and now includes support
    for FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
    pointers and now supports - for 32-bit builds - an internal conversion
    between FCD2 and FCD3 for cases where existing programs are coded with FCD2
@@ -245,7 +293,7 @@ For more known issues see the bug tracker.
    the record size the record from the file is truncated, io status 04 set
    and the following READ will start at the next record;
    additionally on OPEN the length of the first record is read and if it
-   isn't within the above rulesan io status 39 is returned; as the default
+   isn't within the above rules, an io status 39 is returned; as the default
    format "COB_VARSEQ_TYPE = 0" contains two NULL bytes this will likely
    make most LINE SEQUENTIAL files not declared as this type fail on OPEN
 
@@ -504,6 +552,9 @@ For more known issues see the bug tracker.
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
+
+** new compiler command line option to output the exact version number
+   `cobc -dumpversion`
 
 ** new compiler command line option -ftcmd to enable printing of the command
    line in the source listing, -fno-timestamp to suppress printing of the time

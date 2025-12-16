@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2024 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -760,6 +760,19 @@ AT_DATA([prog.cob], [
            .
 ])
 
+AT_DATA([badfd.cob], [
+       FD  PRINT-FILE EXTERNAL.
+       01  PRINT-REC          PIC X(64).
+
+           GOBACK.
+])
+
+AT_DATA([data.cob], [
+       01  PRINT-REC          PIC X(64).
+
+           GOBACK.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:2: error: PROGRAM-ID header missing
 prog.cob:2: error: ENVIRONMENT DIVISION header missing
@@ -768,6 +781,22 @@ prog.cob:10: error: INPUT-OUTPUT SECTION header missing
 prog.cob:10: error: FILE-CONTROL header missing
 prog.cob:14: error: FILE SECTION header missing
 prog.cob:17: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY badfd.cob], [1], [],
+[badfd.cob:2: error: PROGRAM-ID header missing
+badfd.cob:2: error: 'PRINT-FILE' is not defined
+badfd.cob:2: error: 'PRINT-FILE' is not a file name
+badfd.cob:2: error: DATA DIVISION header missing
+badfd.cob:2: error: FILE SECTION header missing
+badfd.cob:5: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 data.cob], [1], [],
+[data.cob:2: error: PROGRAM-ID header missing
+data.cob:2: error: DATA DIVISION header missing
+data.cob:2: error: WORKING-STORAGE SECTION header missing
+data.cob:4: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
@@ -785,6 +814,30 @@ prog.cob:14: warning: FILE SECTION header missing
 prog.cob:14: note: FILE SECTION header assumed
 prog.cob:17: warning: PROCEDURE DIVISION header missing
 prog.cob:17: note: PROCEDURE DIVISION header assumed
+])
+
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks badfd.cob], [1], [],
+[badfd.cob:2: warning: PROGRAM-ID header missing
+badfd.cob:2: note: PROGRAM-ID header assumed
+badfd.cob:2: error: 'PRINT-FILE' is not defined
+badfd.cob:2: error: 'PRINT-FILE' is not a file name
+badfd.cob:2: warning: DATA DIVISION header missing
+badfd.cob:2: note: DATA DIVISION header assumed
+badfd.cob:2: warning: FILE SECTION header missing
+badfd.cob:2: note: FILE SECTION header assumed
+badfd.cob:5: warning: PROCEDURE DIVISION header missing
+badfd.cob:5: note: PROCEDURE DIVISION header assumed
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 -frelax-syntax-checks data.cob], [0], [],
+[data.cob:2: warning: PROGRAM-ID header missing
+data.cob:2: note: PROGRAM-ID header assumed
+data.cob:2: warning: DATA DIVISION header missing
+data.cob:2: note: DATA DIVISION header assumed
+data.cob:2: warning: WORKING-STORAGE SECTION header missing
+data.cob:2: note: WORKING-STORAGE SECTION header assumed
+data.cob:4: warning: PROCEDURE DIVISION header missing
+data.cob:4: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
@@ -1865,23 +1918,20 @@ AT_KEYWORDS([misc])
 # remark: some editors remove trailing spaces, the  workaround: add "_" and
 # remove it later via sed; AT_DATA would not do that when using double [[  ]]
 
-AT_DATA([prog_tmpl.cob], [
+AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.                                           																																																																																																																																		_
-       DATA             DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  _
+       CONFIGURATION SECTION.                                           																																																																																																																																		@&t@
+       DATA             DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @&t@
        WORKING-STORAGE  SECTION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   *> This is a real comment
        PROCEDURE        DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  This is commentary only
            CONTINUE.                                              *> comment after column 72
       *    This is a very long comment that exceeds column 72 but doesn't exceed 512 bytes, therefore not leading to a line overflow. As it is a comment line there is no "Source text after column 72" warning
            CONTINUE.                                                    CONTINUE.
-           CONTINUE.                                                                        _
+           CONTINUE.                                                                        @&t@
            STOP RUN.
 ])
-
-# AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/_$//' prog_tmpl.cob > prog.cob], [0], [], [])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fixed -Wextra prog.cob], [0], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
@@ -3437,6 +3487,36 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 -fformat=fixed prog.cob], [0], [])
 AT_CLEANUP
 
 
+AT_SETUP([ENTRY statements in areas A and B])
+AT_KEYWORDS([misc cobol85 areacheck ENTRY])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PARM-1        PIC X(256).
+       01 PARM-2        PIC X(256).
+       PROCEDURE        DIVISION.
+           ENTRY 'PRGEP1' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 1'.
+           GOBACK.
+         ENTRY 'PRGEP2' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 2'.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
+[prog.cob:12: error: ENTRY should not start in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fno-areacheck prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fformat=fixed prog.cob], [0], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([pseudotext replacement with text in area A])
 AT_KEYWORDS([misc cobol85 gcos copy missing-periods])
 
@@ -3585,6 +3665,7 @@ prog.cob:31: error: wrong number of WHEN parameters
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([COBOL-WORDS directive])
 AT_KEYWORDS([misc reserved words])
@@ -3923,7 +4004,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [1], [],
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob], [1], [],
 [prog.cob: in paragraph 'MAIN-10':
 prog.cob:19: error: STRING item 'I-X' must be USAGE DISPLAY or NATIONAL
 prog.cob:19: error: STRING item 'I-B' must be USAGE DISPLAY or NATIONAL
@@ -4996,7 +5077,7 @@ prog.cob:9: error: missing left parenthesis
 prog.cob:10: error: '/' operator misplaced
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob ], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
 [prog.cob:6: error: 78 VALUE does not conform to IBM COBOL
 prog.cob:7: error: 78 VALUE does not conform to IBM COBOL
 prog.cob:8: error: 78 VALUE does not conform to IBM COBOL
@@ -5292,7 +5373,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob ], [0], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:15: warning: expression '115' EQUALS '200' is always FALSE
 prog.cob:16: warning: expression '200' EQUALS '115' is always FALSE
 prog.cob:17: warning: expression '200' EQUALS '315' is always FALSE
@@ -5661,6 +5742,7 @@ AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
 
 AT_CLEANUP
 
+
 AT_SETUP([CONSTANT LENGTH / BYTE-LENGTH])
 AT_KEYWORDS([misc])
 
@@ -5776,7 +5858,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET SOURCEFORMAT syntax checks])
-AT_KEYWORDS([misc extensions source directives])
+AT_KEYWORDS([misc extensions source directives FIXED FREE])
 
 AT_DATA([prog.cob], [
       *> Valid
@@ -5803,10 +5885,58 @@ prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
 ])
-AT_CLEANUP
 
 # Let's add a double quote here " to match the one in the error and
 # please emacs coloring...
+
+# Check `>>` variants
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       >>SOURCE FREE
+   DATA             DIVISION.
+   WORKING-STORAGE  SECTION.
+   >>SOURCE FIXED
+       PROCEDURE        DIVISION.                                       FIXED
+             DISPLAY "OK" NO ADVANCING
+             END-DISPLAY.
+       >>SOURCE FREE
+                                                                        DISPLAY
+   "OK"
+ NO ADVANCING
+   END-DISPLAY.
+   >>SET SOURCEFORMAT "FIXED"
+             DISPLAY "OK" NO ADVANCING                                  FIXED
+             END-DISPLAY.
+       >>SET SOURCEFORMAT "FREE"
+                                                                        DISPLAY
+   "OK"
+ NO ADVANCING
+   END-DISPLAY.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [], [])
+
+# Check with extraneous period.
+AT_DATA([prog3.cob], [
+       $SET SOURCEFORMAT"FREE".
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      prog.
+>>SET SOURCEFORMAT "FIXED".
+       PROCEDURE DIVISION.
+             STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
+[prog3.cob:2: error: unexpected period
+prog3.cob:5: error: unexpected period
+])
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog3.cob], [0], [],
+[prog3.cob:2: warning: unexpected period
+prog3.cob:5: warning: unexpected period
+])
+AT_CLEANUP
+
 
 # normal register extension,
 # active for lax and standard configurations
@@ -6534,7 +6664,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SORT syntax])
-AT_KEYWORDS([misc fundamental KEY])
+AT_KEYWORDS([misc fundamental KEY SD FD])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6583,73 +6713,6 @@ prog.cob:35: error: file SORT requires USING or INPUT PROCEDURE
 prog.cob:35: error: file SORT requires GIVING or OUTPUT PROCEDURE
 prog.cob:37: error: file SORT requires KEY phrase
 prog.cob:38: error: file SORT requires KEY phrase
-])
-AT_CLEANUP
-
-
-AT_SETUP([OSVS I/O extensions])
-AT_KEYWORDS([ibm file extensions])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-
-       ENVIRONMENT      DIVISION.
-       INPUT-OUTPUT     SECTION.
-       FILE-CONTROL.
-           SELECT f ASSIGN "f.dat" SEQUENTIAL
-               FILE-LIMITS ARE 1 THRU 10, 100 THRU f-max
-               TRACK-AREA 100 CHARACTERS
-               TRACK-LIMIT 5 TRACKS.
-           SELECT g ASSIGN "g.dat" RELATIVE
-               RELATIVE KEY g-key
-               ACTUAL KEY g-actual-key.
-
-       I-O-CONTROL.
-           APPLY RECORD-OVERFLOW f, g
-           APPLY CORE-INDEX core-idx ON f
-           APPLY CYL-INDEX TO 5 ON f
-           APPLY CYL-OVERFLOW 10 TRACKS f
-           APPLY EXTENDED-SEARCH g
-           APPLY MASTER-INDEX TO 5 on g
-           APPLY WRITE-VERIFY f, g
-           APPLY REORG-CRITERIA f-rec, f
-           RERUN ON "g2.dat" EVERY END REEL g
-           .
-       DATA             DIVISION.
-       FILE             SECTION.
-       FD  f.
-       01  f-rec        PIC X(100).
-
-       FD  g.
-       01  g-rec        PIC 9(10).
-
-       WORKING-STORAGE  SECTION.
-       01  core-idx     PIC 999.
-       01  f-max        PIC 9(5) VALUE 1000.
-       01  g-key        PIC 999.
-       01  g-actual-key PIC XXX.
-
-       PROCEDURE        DIVISION.
-           OPEN INPUT f DISP, INPUT g REREAD
-           .
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:10: warning: FILE-LIMIT is obsolete in GnuCOBOL
-prog.cob:10: warning: TRACK-AREA is obsolete in GnuCOBOL
-prog.cob:11: warning: TRACK-LIMIT is obsolete in GnuCOBOL
-prog.cob:14: warning: ACTUAL KEY is obsolete in GnuCOBOL
-prog.cob:18: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:19: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:20: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:21: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:22: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:23: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:24: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:25: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
-prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
 ])
 AT_CLEANUP
 
@@ -8099,6 +8162,7 @@ prog.cob:15: warning: start of statement in Area A
 
 AT_CLEANUP
 
+
 AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
 AT_KEYWORDS([misc directive missing-periods])
 
@@ -8283,6 +8347,7 @@ pgm1.cob:18: error: start of statement in Area A
 
 AT_CLEANUP
 
+
 AT_SETUP([autodetect format])
 AT_KEYWORDS([cobc free fixed format])
 
@@ -8357,6 +8422,7 @@ AT_CHECK([$COMPILE_ONLY -fformat=fixed domfixed.cob], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([context sensitive alias])
 AT_KEYWORDS([misc context alias])
 
@@ -8414,3 +8480,72 @@ prog.cob:18: error: ANY LENGTH items may only be BY REFERENCE formal parameters
 
 AT_CLEANUP
 
+
+AT_SETUP([IMP INCLUDE directive])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file.h"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE <file.h>
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_DATA([prog2.cob], [
+       >>IMP INCLUDE
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob:2: error: invalid IMP INCLUDE directive
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([IMP INCLUDE directive multiple files])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file1.h" file2.h <file3.h> "<file4.h>"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE --save-temps -E -o prog.i prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -C prog.cob prog2.cob], [0], [], [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.c], [1], ignore, [])
+
+AT_CLEANUP

@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2002-2012, 2015-2024 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -38,12 +38,12 @@ MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
 SUMMARY = summary.txt
 else
 MODULES = NC SM IC SQ RL ST SG OB IF RW DBNOIX
-MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
+MODULES_RUN = NC_RUN SQ_RUN IF_RUN ST_RUN \
 	IC_RUN RL_RUN SM_RUN SG_RUN OB_RUN DBNOIX_RUN RW_RUN
 SUMMARY = summarynoix.txt
 endif
 
-# currently down, leading to se<rver error with HTTPS, broken redirection on HTTP
+# currently down, leading to server error with HTTPS, broken redirection on HTTP
 #URL_NEWCOB_Z = https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
 URL_NEWCOB_Z = https://web.archive.org/web/20240322143655if_/https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
 URL_NEWCOB_TAR_GZ = https://gnucobol.sourceforge.io/files/newcob.val.tar.gz
@@ -59,6 +59,7 @@ COBC_FLAGS = -std=cobol85 -debug $(COBOL_FLAGS)
 
 CURL_FLAGS = 
 WGET_FLAGS = -t1 -T5
+DIFF = @DIFF@
 DIFF_FLAGS = @DIFF_FLAGS@
 
 PRE_INST_ENV = "$(abs_top_builddir)/pre-inst-env"
@@ -163,7 +164,7 @@ diff:
 	@echo "Comparing test results for each module"
 	@retd=0; for m in $(MODULES); do \
 		echo "diff $$m/report.txt..."; \
-		diff $(DIFF_FLAGS) "$(srcdir)/$$m.txt" "$$m/report.txt"; \
+		"$(DIFF)" $(DIFF_FLAGS) "$(srcdir)/$$m.txt" "$$m/report.txt"; \
 		ret=$$? && if test $$ret -gt $$retd; then retd=$$ret; fi \
 	done; \
 		if test $$retd -gt 1; then exit $$retd; fi
@@ -175,7 +176,7 @@ diff-summary:
 	$(MAKE) summary.log
 	@echo "Comparing total test results..."
 	@echo "diff $(SUMMARY)..."
-	@diff $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
+	@"$(DIFF)" $(DIFF_FLAGS) "$(srcdir)/$(SUMMARY)" "summary.log"
 	@echo Done
 
 newcob.val.Z:
@@ -236,30 +237,31 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	@cat $(srcdir)/EXEC85.conf.in >> ./$@/EXEC85.conf
 #	setting NEWCOB_VAL to the full name for EXEC85
 	@if test -f "$(abs_builddir)/newcob.val"; then \
-		export NEWCOB_VAL=$(abs_builddir)/newcob.val; \
+		export NEWCOB_VAL="$(abs_builddir)/newcob.val"; \
 	else \
-		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
+		export NEWCOB_VAL="$(abs_srcdir)/newcob.val"; \
 	fi; \
-	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) $(abs_builddir)/$@ && false)
-	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) $(abs_builddir)/$@ && false)
+	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) "$(abs_builddir)/$@" && false)
+	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) "$(abs_builddir)/$@" && false)
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
 	@(export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`" && \
 	 $(SED) -e 's/##MODULE##/'"$@"'/'            \
-	        -e 's|##COB85DIR##|'$(abs_srcdir)'|' \
+	        -e 's|##COB85DIR##|'"$(abs_srcdir)"'|' \
+	        -e 's|##DIFF##|'"$(DIFF)"'|' \
 	        -e 's|##DIFF_FLAGS##|'"$(DIFF_FLAGS)"'|' \
 	        -e 's|##PERL##|'"$(PERL)"'|' \
 	        -e 's|##TESTS##|'"` echo $$CBL_LIST | $(SED) -e 's/\.CBL//g'`"'|' \
 	        -e 's|##TESTS_LOCAL##|'"`echo $$CBL_LIST | $(SED) -e 's/\.CBL/-local/g'`"'|' \
-	    $(srcdir)/Makefile.module.in > $@/Makefile) || ($(RM) $(abs_builddir)/$@ && false)
+	    $(srcdir)/Makefile.module.in > $@/Makefile) || ($(RM) "$(abs_builddir)/$@" && false)
 	@echo "Finished module directory $@."
 
 EXEC85.cob: newcob.val
 	@echo "Extracting EXEC85 program from newcob.val"
 #	setting NEWCOB_VAL to the full name for the sed invocation
 	@if test -f "$(abs_builddir)/newcob.val"; then \
-		NEWCOB_VAL=$(abs_builddir)/newcob.val; \
+		NEWCOB_VAL="$(abs_builddir)/newcob.val"; \
 	else \
-		NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
+		NEWCOB_VAL="$(abs_srcdir)/newcob.val"; \
 	fi; \
 	$(SED) -e '/^\*END/,$$d'                                                        \
 	       -e '1,/^\*HEADER/d'                                                      \

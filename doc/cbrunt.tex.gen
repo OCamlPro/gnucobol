@@ -102,7 +102,7 @@ section == 0 { next }
 
 /^## / {
     sub( /^## /, "" )
-    if( section++ > 1 ) {
+    if( section++ >= 1 ) {
 	print "@end verbatim\n"
     }
     print "@section", $0

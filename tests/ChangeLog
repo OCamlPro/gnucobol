@@ -1,4 +1,58 @@
 
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: reordered to correctly use perf/valgrind definitions also
+	  for cobc
+	* valgrind.supp: added BDB retcopy suppresion for now (TODO: remove once
+	  fileio instructs BDB to not make temporary copies - see bug #647)
+	* asan.supp: new file (based on valgrind.supp) - suppressions for libasan
+	* atlocal.in, atlocal_win: set ASAN_OPTIONS, LSAN_OPTIONS to use asan.supp
+
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* atlocal.in, atlocal_win: pass HAVE_SIGNAL_H to the tests
+
+2025-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: adjusted return_path function and its use
+
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [test/checkall]: check PERL before use
+
+2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in (perf_stat, perf_record): moved calling of perf out to a
+	  function and added a second call for recording
+	* atlocal.in, atlocal_win: fixed quoting (2025-09-17 change)
+
+2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: quote local include and library directories
+	  to support the rare scenario of space-embedded paths, fixing #1142
+
+2025-05-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal.in, atlocal_win: set TZ=UTC globally
+	  to help get a reproducible output
+
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_misc.at, testsuite.src/syn_misc.at:
+	  reduce the use of sed by using SOURCE_DATE_EPOCH when possible
+	  and using @&t@ quadrigraphs in expected output with trailing spaces
+	* listing-sed.sh: removed as no longer needed
+	* atlocal.in, atlocal_win: remove the no longer needed UNIFY_LISTING variable
+
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal.in, atlocal_win, testsuite.src/*:
+	  use the new DIFF variable to invoke the diff command
+
+2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: adjusted to handle newer MSYS2's setting OSTYPE=cygwin
+
 2024-10-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win: export new definition COB_ON_WINDOWS
@@ -1173,7 +1227,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

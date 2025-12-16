@@ -1,4 +1,147 @@
 
+2025-12-04  Roger Bowler <rbowler@snipix.net>
+
+	* parser.y (entry): check that ENTRY statement begins in area B not area A
+
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (get_number_in_parentheses): use local namebuffer
+	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually allign not only
+	  for SET pointer-name but also for SET index-name
+
+2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (get_elided_fname): new function for the listing code
+	* cobc.c (print_program_header): use of the new function to ensure
+	  that the source name is visible in the header and not cut after
+	  its path, fixing last part of FR #294 "listing adjustments"
+
+2025-11-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* ppparse.y: error on extraneous periods at the end of SET
+	  directives; turn to a warning in relaxed syntax mode.
+
+2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_xml_parse): fixed xml state to be static-local
+	  to XML PARSE statement to fix out-of-scope memory trashing
+	* codegen.c (output_param): resolve reference value only once
+
+2025-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (file_description_entry): create an unnamed file in case
+	  of broken SD/FD reference to ensure a valid tree for error-recovery,
+	  fixing bug #1151
+	* typeck.c (cb_emit_return): ensure a target of SD file
+	* tree.c (finalize_file): fix diagnostic position for non-supported
+	  file type
+	* parser.y (sort_merge_body): fix diagnostic position for SD check
+
+2025-10-17  Roger Bowler <rbowler@snipix.net>
+
+	* cobc.c (print_with_overflow): rewritten, now printing multiple
+	  continuation lines on listing
+
+2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: combined header defines into enum cobc_hd and
+	  reordered per ISO, allowing to drop get_conf_section_part_order
+	* parser.y: SPECIAL-NAMES handling changed, making the header
+	  mandatory to not parse "starting words" as unknown mnemonic names
+	* parser.y: better parsing for missing headers, cobc
+	  can "compile" data copybooks in relaxed syntax mode now,
+	  currently only with source format COBOL85
+	* scanner.l: translate non-printable character for invalid symbols
+	* pplex.l: handle MS-DOS EOF and control code for file separator,
+	  currently consuming consecutive occurences as a single new-line
+
+2025-09-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gentable.c (gentable): fix compile warning under 32bit
+
+2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l, parser.y, reserved.c: use yyless to push part of scanned
+	  tokens back, used in case of multi-word scanning, if one or more scanned
+	  words are reserved: PICTURE SYMBOL, FROM CRT, SCREEN CONTROL,
+	  EVENT STATUS
+	* parser.y, scanner.l, reserved.c, cobc.h: READY, RESET and TRACE as
+	  reserved words (TRACE is C/S for std default), fixing bug #1130 while
+	  increasing portability (for dialects not reserving it), dropping
+	  special handling within the scanner and extra tokens in the parser
+	* ppparse.y, pplex.l: add (simple) handling for SET TRACE/NOTRACE
+
+2025-07-28  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (output_module_init_function): replace "module" by
+	  "module__" to avoid name clashes with COBOL programs named "module"
+
+2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line): only add -O0 to command line for -g
+	  if COB_DEBUG_FLAGS is not defined - because if it is needed, then
+	  this should be seen and setup by configure
+	* parser.y: fixed enum for C89 support
+
+2025-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h, tree.h, replace.c, scanner.l: fixed enum and forward definitions
+	  for C89 compat
+
+2025-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	initial (unfinished) support for XML PARSE
+	* parser.y (schema_definition), tree.h (cb_schema_name): store reference
+	  for XML SCHEMA, allowing literals and words
+	* typeck.c (validate_assign_name, process_undefined_assign_name): handle
+	  XML SCHEMA references identical to SELECT ASSIGN, allowing external file
+	  references
+	* typeck.c (cb_validate_program_data): call validate_assign_name for each
+	  XML SCHEMA name
+	* codgen.c (output_xml_parse): pass flags to runtime (previously missing)
+	* codgen.c (output_param): handle XML SCHEMA names (previously crashing);
+	  do not overwrite data/size for internal ANY LENGTH registers, as those
+	  have to be setup by the runtime, not the generated code
+
+2025-06-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_sig_handler) [!HAVE_SIGNAL_H]: fix compile error as
+	  now "supported" again (with missing cleanup on signal)
+
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (set_compile_date): fix SOURCE_DATE_EPOCH being
+	  ignored on subsequent invocations
+
+2025-04-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (process_filename): ensure we don't keep the preprocessed
+	  file when using -M or -fcopybook-deps
+	* cobc.c, cobc.h, help.c, pplex.l: make -fcopybook-deps an experimental
+	  feature, activable with the EXPERIMENTAL_COPYBOOK_DEPS_OPTION flag
+
+2025-03-26  David Declerck <david.declerck@ocamlpro.com>
+
+	* gentable.c: generate EBCDIC/ASCII translation tables
+	* cobc.c, help.c: new --gentable option
+
+2025-01-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: handle [__xlc__] identical to [__IBMC__]
+
+2024-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (cobc.1): add description using help2man -n
+
+2024-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line): fix leak for --copy and -include parsing
+
+2024-10-30  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* typeck.c: define [WITH_EXTENDED_SCREENIO] for any curses headers
+	  available, which now includes panel.h definitions
+
 2024-10-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	BUG #1000: Wrong binary size computed for COMP-5 PIC 9
@@ -59,6 +202,16 @@
 2024-09-23  David Declerck <david.declerck@ocamlpro.com>
 
 	* pplex.l (cb_text_list): prevent duplicates
+
+2024-08-30  Ammar Almorsi <ammaralmorsi@gmail.com>
+
+	BUG #961: Nested Elements Mishandled Despite 'with attributes' Specification
+	* tree.c (set_ml_attrs_and_children): enhanced the function to handle
+	  the case where a child has attributes
+	* codegen.c (output_ml_suppress_checks): modified the starting point
+	  to start from the last attribute if present
+	* codegen.c (get_prev_ml_tree_entry): removed the fallback case to
+	  prevent infinite loops
 
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
@@ -141,10 +294,20 @@
 	  internally disabling it for generation of libraries/executable after
 	  first program as we only need that code once, fixing Win32 build errors
 	  and duplication warnings in other environments
-	* flag.def: don't suppress the help of -fwinmain under Win32
+	* flag.def: don't suppress the help of -fwinmain under Win32 and Cygwin
 	* typeck.c (build_expr_finish): use fallback error position token, fixing
 	  compiler aborts on broken expressions, bugs #933, #938 and #966
 	* typeck.c: minor refactoring within functions
+
+2024-04-25  Boris Eng <boris.eng@ocamlpro.com>
+
+	FR #176: "Implementation of GC directive to include .h (c/c++) files"
+	* pplex.l, ppparse.y, cobc.h, codegen.c (output_gnucobol_defines):
+	  new >>IMP INCLUDE directive to include one or multiple header files in the
+	  generated C code (same behavior as the --include but with one directive per
+	  file)
+	* scanner.l: the leading space for all internal directives is removed in the
+	  lexer. Source previously preprocessed may need to be adjusted
 
 2024-04-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -184,6 +347,30 @@
 	  output only copybook names instead of file paths. -fcopybook-deps
 	  also forces -E, -foneline-deps, -MT=copybooks, disables errors on
 	  missing copybooks and removes output on stdout
+
+2024-02-26  David Declerck <david.declerck@ocamlpro.com>
+
+	BUG #948: comparison with HIGH-VALUE in presence of collating sequences
+	* tree.h (cb_program): add low_value and high_value fields to hold
+	  the low and high values used by the program collating sequence
+	* tree.c (cb_build_program): initialize the low_value and
+	  high_value fields to reasonable default values
+	* typeck.c: replace hard-coded cob_refer_ascii and
+	  cob_refer_ebcdic by ebcdic_to_ascii and ascii_to_ebcdic
+	* typeck.c (cb_validate_collating): set the program's
+	  low_value and high_value fields
+	* typeck.c (validate_alphabet): use the new tables,
+	  set the alphabet's low and high values
+	* cobc.h: export the new symbols defined in typeck.c
+	* cobc.c (process_command_line): always load the collating table
+	* scanner.l (scan_ebcdic_char): remove code that loads and use a
+	  local collating table, use the table defined in typeck.c instead
+	* codegen.c: replace hard-coded 0 and 255 / 0xff contants with
+	  the low_value and high_value fields where appropriate
+	* codegen.c (output_low_value, output_high_value): move the
+	  cob_all_low and cob_all_high fields from global to local
+	* codegen.c (output_collating_tables): remove local tables and code
+	  that loads the tables, since they are now loaded from cobc.c
 
 2024-02-19  Boris Eng <boris.eng@ocamlpro.com>
 
@@ -897,7 +1084,7 @@
 2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (validate_alphabet): slightly rewritten to fix compiler warnings
-	* config.c, pparse.y (ppp_replace_list_add), reserved.c (is_invalid_word),
+	* config.c, ppparse.y (ppp_replace_list_add), reserved.c (is_invalid_word),
 	  tree.c, tree.h, typeck.c: minor adjustments to fix compiler warnings
 	* field.c (validate_multi_value, validate_elem_value),
 	  parser.y (setup_external_definition): fixed analyzer warnings by switching
@@ -1602,7 +1789,7 @@
 	* pplex.l: match and ignore editor folding $REGION statement
 	* pplex.l: output actual directive for @OPTIONS and PROCESS
 	* pplex.l: *CONTROL from col7+
-	* pparse.y: don't warn on *CONTROL as this adjust listing only
+	* ppparse.y: don't warn on *CONTROL as this adjust listing only
 	  and does not apply directly (possibly real handling later)
 
 2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
@@ -2607,7 +2794,7 @@
 	FR #390 ref-mod with zero-length
 	* config.def, typeck.c (cb_build_identifier): added cb_ref_mod_zero_length
 	  to allow reference-modification at compile-time with a length of zero
-	* pparse.y, pplex.l, scanner.l, cobc.c: added >> REF-MOD-ZERO-LENGTH and
+	* ppparse.y, pplex.l, scanner.l, cobc.c: added >> REF-MOD-ZERO-LENGTH and
 	  adjusted SSRANGE, now also supporting SSRANGE"1" and SSRANGE"3"
 
 2020-11-04  Simon Sobisch <simonsobisch@gnu.org>
@@ -3751,7 +3938,7 @@
 
 2018-11-22  Simon Sobisch <simonsobisch@gnu.org>
 
-	* pplex.l, pparse.y: FR #344 Support copybook and library names
+	* pplex.l, ppparse.y: FR #344 Support copybook and library names
 	  as text-names (not literals) with periods, always upper-cased
 	  if not requested otherwise by FOLD-CALL=LOWER
 
@@ -6806,7 +6993,7 @@
 2016-04-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: implement STOP RUN integer/identifier (RM/COBOL extension)
-	* parser.y, pparse.y: remove printf non literal spec warning.
+	* parser.y, ppparse.y: remove printf non literal spec warning.
 
 2016-04-24  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -9669,7 +9856,7 @@
 
 2003-05-26  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
 
-	* pplex.l (ppcopy), pparse.y, cobc.c, cobc.h: split ppcopy from ppopen
+	* pplex.l (ppcopy), ppparse.y, cobc.c, cobc.h: split ppcopy from ppopen
 
 2003-05-21  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -9711,13 +9898,13 @@
 
 	integrate cobcpp into cobc
 	* pplex.l: renamed and adjusted from cobpp/scanner.l
-	* pparse.y: renamed and adjusted from cobpp/parser.y
+	* ppparse.y: renamed and adjusted from cobpp/parser.y
 	* cobc.h: definitions from scanner.h
 	* Makefile.am, cobc.c: adjusted
 
 2003-04-02  Keisuke Nishida  <knishida@netlab.jp>
 
-	* pparse.y <- cobpp/parser.y, pplex.l <- cobpp/scanner.l: support for
+	* ppparse.y <- cobpp/parser.y, pplex.l <- cobpp/scanner.l: support for
 	  SOURCE FORMAT compiler directive
 
 2003-03-26  Keisuke Nishida  <knishida@netlab.jp>
@@ -9843,7 +10030,7 @@
 	* cobc.c (probe_source_format): Removed.
 	  (preprocess): Don't set source format.
 	  (process_command_line): Set cobpp flags here.
-	* pparse.y <- cobpp/parser.y (yywarn): New function.
+	* ppparse.y <- cobpp/parser.y (yywarn): New function.
 	* cobpp.h (COBPP_FORMAT_UNKNOWN): New macro.
 	* cobpp.h, cobpp.c (cobpp_source_format_inferred): New variable.
 	* cobpp.c (cobpp_source_format): Default to COBPP_FORMAT_UNKNOWN.
@@ -10047,7 +10234,7 @@
 
 2002-06-07  Keisuke Nishida  <knishida@netlab.jp>
 
-	* pparse.y <- cobpp/parser.y (copy_statement, copy_in, copy_replacing):
+	* ppparse.y <- cobpp/parser.y (copy_statement, copy_in, copy_replacing):
 	  Support "COPY ... IN/OF ..." syntax.
 	* pplex.l <- cobpp/scanner.l, scanner.h (include_copybook): Take a library name.
 
@@ -10184,7 +10371,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2024 Free Software Foundation, Inc.
+Copyright 2001-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
