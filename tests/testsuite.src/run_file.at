@@ -13578,6 +13578,12 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 00: 0005XXXXXXXXXXXX0005
 ], [])
 
+# If there is no database and -fcallfh is not specified then
+# the compile should still fail with an error
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:18: error: runtime is not configured to support ORGANIZATION INDEXED; FD TSTFILE
+])
+
 AT_CLEANUP
 
 
