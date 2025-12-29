@@ -1,4 +1,9 @@
 
+2025-12-29  Roger Bowler <rbowler@snipix.net>
+
+	* tree.c (finalize_file): allow ORGANIZATION INDEXED if -fcallfh
+	  is specified, even when compiler is configured --without-db
+
 2025-12-04  Roger Bowler <rbowler@snipix.net>
 
 	* parser.y (entry): check that ENTRY statement begins in area B not area A
