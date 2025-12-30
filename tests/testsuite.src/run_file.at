@@ -13481,17 +13481,12 @@ AT_CHECK([$DIFF reference prog.out], [0], [], [])
 AT_CLEANUP
 
 
-# When the compiler is configured without a database package,
-# but an external file handler is specified at compile time,
-# programs with INDEXED files should NOT fail with the message
-# "runtime is not configured to support ORGANIZATION INDEXED"
-
 AT_SETUP([INDEXED file using EXTFH without database])
-AT_KEYWORDS([runfile EXTFH indexed without-db])
+AT_KEYWORDS([runfile no-isam])
 
-# This test is only applicable if the compiler has been built
-# with the --without-db configuration option
-AT_SKIP_IF([test "$COB_HAS_ISAM" != "no"])
+# Verifies that an INDEXED file can be processed via an
+# external file handler, even if the compiler has been
+# built with the --without-db configuration option
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -13577,12 +13572,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 00: 0004XXXXXXXXXXXX0004
 00: 0005XXXXXXXXXXXX0005
 ], [])
-
-# If there is no database and -fcallfh is not specified then
-# the compile should still fail with an error
-AT_CHECK([$COMPILE prog.cob], [1], [],
-[prog.cob:18: error: runtime is not configured to support ORGANIZATION INDEXED; FD TSTFILE
-])
 
 AT_CLEANUP
 
