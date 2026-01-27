@@ -5033,7 +5033,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 #if	!defined (WITH_INDEX_EXTFH) && \
 	!defined (WITH_DB) && \
 	!defined (WITH_CISAM) && !defined(WITH_DISAM) && !defined(WITH_VBISAM)
-	if (f->organization == COB_ORG_INDEXED) {
+	if (f->organization == COB_ORG_INDEXED && !f->extfh) {
 		char msg[80];
 		snprintf (msg, sizeof (msg), "ORGANIZATION INDEXED; FD %s", f->name);
 		cb_warning_x (cb_warn_unsupported, f->description_entry,
