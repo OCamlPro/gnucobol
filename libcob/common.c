@@ -398,7 +398,7 @@ COB_TLS struct sort_state	*share_sort_state = NULL;
 COB_TLS const char		*cob_source_file = NULL;
 COB_TLS unsigned int		cob_source_line = 0;
 
-int				is_test = 0;
+int				cob_is_test = 0;
 
 #ifdef	HAVE_DESIGNATED_INITS
 const char	*cob_statement_name[STMT_MAX_ENTRY] = {
@@ -7984,7 +7984,7 @@ cob_expand_env_string (const char *strval)
 			const char *s = NULL;
 		        switch ( strval[k+1] ){
 			case '$': /* Replace $$ with process-id */
-				if (is_test) {
+				if (cob_is_test) {
 					j += sprintf (&env[j], "%d", 123456);
 				} else {
 					j += sprintf (&env[j], "%d", cob_sys_getpid());
@@ -10414,7 +10414,7 @@ cob_init (const int argc, char **argv)
 
 	cob_initialized = 1;
 
-	is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
+	cob_is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
 
 #ifdef	HAVE_SETLOCALE
 	/* Prime the locale from user settings */
