@@ -2947,3 +2947,23 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [0], [], [])
 AT_CLEANUP
+
+
+# CONSTANT SECTION
+AT_SETUP([CONSTANT SECTION syntax])
+AT_KEYWORDS([extension constant VALUE])
+
+AT_DATA([prog.cob],[
+    IDENTIFICATION DIVISION.
+    PROGRAM-ID. TEST-NO-VALUE.
+    DATA DIVISION.
+    CONSTANT SECTION.
+    01 NUM-CONST PIC 9(3).
+    PROCEDURE DIVISION.
+        STOP RUN.
+
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],[prog.cob:6: error: Items in CONSTANT SECTION must have VALUE
+])
+AT_CLEANUP

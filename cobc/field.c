@@ -3408,9 +3408,17 @@ cb_validate_field (struct cb_field *f)
 		f->flag_invalid = 1;
 		return;
 	}
-	if (f->flag_item_78) {
+	if (f->flag_item_78) {	
 		f->flag_is_verified = 1;
 		return;
+	}
+
+	if(f->storage == CB_STORAGE_CONSTANT){
+		if(!f->values){
+			cb_error(_("Items in CONSTANT SECTION must have  VALUE "));
+		}
+		
+		CB_UNFINISHED ("CONSTANT SECTION code generation");
 	}
 
 	/* Set up parameters */

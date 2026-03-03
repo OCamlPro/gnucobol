@@ -297,7 +297,8 @@ enum cobc_hd {
 	COBC_HD_LINKAGE_SECTION		= (1U << 15),
 	COBC_HD_REPORT_SECTION		= (1U << 16),
 	COBC_HD_SCREEN_SECTION		= (1U << 17),
-	COBC_HD_PROCEDURE_DIVISION	= (1U << 18)
+	COBC_HD_PROCEDURE_DIVISION	= (1U << 18),
+	COBC_HD_CONSTANT_SECTION = (1U << 19) 
 };
 
 /* Static functions */
@@ -6437,6 +6438,7 @@ _data_division:
   _working_storage_section
   _communication_section
   _local_storage_section
+  _constant_section
   _linkage_section
   _report_section
   _screen_section
@@ -7403,7 +7405,7 @@ constant_entry:
   {
 	cb_tree x;
 	const int level = cb_get_level ($1);
-
+	
 	cobc_cs_check = 0;
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
@@ -9076,6 +9078,21 @@ _local_storage_section:
 	}
   }
 ;
+
+/* CONSTANT SECTION */
+
+constant_section: CONSTANT {check_area_a_of("CONSTANT SECTION");};
+_constant_section:
+
+| constant_section SECTION _dot
+  {
+	check_headers_present(COBC_HD_DATA_DIVISION,0,0,0); // check for Data division before hand
+	header_check |= COBC_HD_CONSTANT_SECTION;
+	current_storage = CB_STORAGE_CONSTANT; 
+  }
+  _record_description_list
+;
+
 
 
 /* LINKAGE SECTION */

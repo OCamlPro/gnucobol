@@ -1869,6 +1869,7 @@ struct cb_program {
 	struct cb_field		*linkage_storage;	/* LINKAGE */
 	struct cb_field		*screen_storage;	/* SCREEN */
 	struct cb_field		*report_storage;	/* REPORT */
+	struct cb_field     *constant_storage;  /* CONSTANT */
 	cb_tree			local_file_list;	/* Local files */
 	cb_tree			global_file_list;	/* Global files */
 	struct handler_struct	global_handler[5];	/* Global handlers */
