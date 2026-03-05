@@ -2949,21 +2949,24 @@ AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [0], [], [])
 AT_CLEANUP
 
 
-# CONSTANT SECTION
 AT_SETUP([CONSTANT SECTION syntax])
 AT_KEYWORDS([extension constant VALUE])
 
 AT_DATA([prog.cob],[
     IDENTIFICATION DIVISION.
-    PROGRAM-ID. TEST-NO-VALUE.
-    DATA DIVISION.
-    CONSTANT SECTION.
-    01 NUM-CONST PIC 9(3).
-    PROCEDURE DIVISION.
-        STOP RUN.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       CONSTANT SECTION.
+       01  NUM-CONST   PIC 9(3).
+       01  OTHER-CONST PIC 9(3) VALUE 123.
+       PROCEDURE DIVISION.
+           STOP RUN.
 
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],[prog.cob:6: error: Items in CONSTANT SECTION must have VALUE
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:6: error: item in CONSTANT SECTION must have a VALUE clause
+prog.cob:7: warning: handling of CONSTANT SECTION code generation is unfinished; implementation is likely to be changed
 ])
 AT_CLEANUP
+

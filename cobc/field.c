@@ -3413,12 +3413,10 @@ cb_validate_field (struct cb_field *f)
 		return;
 	}
 
-	if(f->storage == CB_STORAGE_CONSTANT){
-		if(!f->values){
-			cb_error(_("Items in CONSTANT SECTION must have  VALUE "));
-		}
-		
-		CB_UNFINISHED ("CONSTANT SECTION code generation");
+	if (f->storage == CB_STORAGE_CONSTANT) {
+        if (!f->values) {
+            cb_error_x (CB_TREE(f),("item in CONSTANT SECTION must have a VALUE clause"));
+        }
 	}
 
 	/* Set up parameters */

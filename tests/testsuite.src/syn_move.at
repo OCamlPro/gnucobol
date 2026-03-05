@@ -753,24 +753,45 @@ prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
 AT_CLEANUP
 
 
-
 AT_SETUP([MOVE to CONSTANT SECTION item])
 AT_KEYWORDS([extension constant move])
 
-AT_XFAIL_IF([true])
+# To be implemented. 
+AT_XFAIL_IF([true]) 
 
 AT_DATA([prog.cob],[
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        DATA DIVISION.
        CONSTANT SECTION.
-       01 NUM-CONST    PIC 9(3) VALUE 123.
+       01  NUM-CONST   PIC 9(3) VALUE 123.
        PROCEDURE DIVISION.
-           MOVE 456 TO NUM-CONST
+           MOVE 456 TO NUM-CONST.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [1], [],[ignore])
-
 AT_CLEANUP
 
+
+AT_SETUP([MOVE CONSTANT SECTION to field])
+AT_KEYWORDS([extension constant move])
+
+AT_XFAIL_IF([true]) 
+
+AT_DATA([prog.cob],[
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       CONSTANT SECTION.
+       01  MY-CONST    PIC 9(3) VALUE 123.
+       WORKING-STORAGE SECTION.
+       01  RESULT-FLD  PIC 9(3).
+       PROCEDURE DIVISION.
+           MOVE MY-CONST TO RESULT-FLD.
+           DISPLAY RESULT-FLD.
+           STOP RUN.
+])
+# This is also not implemented yet but should help towards the bigger issue with CONSTANTs being replaced by literals
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CLEANUP
