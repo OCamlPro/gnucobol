@@ -6299,3 +6299,31 @@ AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=ebcdic500_latin1 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([CONSTANT SECTION with reference modification])
+AT_KEYWORDS([extension constant move refmod])
+
+# Expected to fail until reference modification is 
+# fully implemented for CONSTANT literals.
+AT_XFAIL_IF([true]) 
+
+AT_DATA([prog.cob],[
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       CONSTANT SECTION.
+       01  MY-CONST    PIC X(5) VALUE "ABCDE".
+       WORKING-STORAGE SECTION.
+       01  RESULT-FLD  PIC X(2).
+       PROCEDURE DIVISION.
+           MOVE MY-CONST (2:2) TO RESULT-FLD.
+           DISPLAY RESULT-FLD NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([./prog], [0], [BC],[])
+
+AT_CLEANUP
+

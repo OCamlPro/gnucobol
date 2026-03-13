@@ -770,7 +770,9 @@ AT_DATA([prog.cob],[
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [1], [],[ignore])
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [1], [],
+[ignore
+])
 AT_CLEANUP
 
 

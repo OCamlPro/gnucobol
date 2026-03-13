@@ -2864,6 +2864,8 @@ cobc_def_dump_opts (const char *opt, const int on)
 			dump_to_set |= COB_DUMP_RD;
 		} else if (!cb_strcasecmp (q, "SD")) {
 			dump_to_set |= COB_DUMP_SD;
+		} else if (!cb_strcasecmp (q, "CO")) {
+			dump_to_set |= COB_DUMP_CO;
 		} else if (!cb_strcasecmp (q, "SC")) {
 			dump_to_set |= COB_DUMP_SC;
 		} else if (!cb_strcasecmp (q, "LO")) {
@@ -6492,6 +6494,7 @@ print_program_trailer (void)
 				}
 				found += print_fields_in_section (p->working_storage);
 				found += print_fields_in_section (p->local_storage);
+				found += print_fields_in_section(p->constant_storage);
 				found += print_fields_in_section (p->linkage_storage);
 				found += print_fields_in_section (p->screen_storage);
 				found += print_fields_in_section (p->report_storage);
@@ -6531,6 +6534,7 @@ print_program_trailer (void)
 				}
 				found += xref_fields_in_section (p->working_storage);
 				found += xref_fields_in_section (p->local_storage);
+				found += xref_fields_in_section (p->constant_storage);
 				found += xref_fields_in_section (p->linkage_storage);
 				found += xref_fields_in_section (p->screen_storage);
 				found += xref_fields_in_section (p->report_storage);

@@ -11608,6 +11608,27 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 			}
 		}
 	}
+	if (prog->constant_storage) {
+		if (cb_flag_dump & COB_DUMP_CO) {
+			if (has_field_to_dump(prog->constant_storage)) {
+				has_dump = 1;
+				output_line ("/* Dump CONSTANT SECTION */");
+				output_line ("cob_dump_output (\"CONSTANT\"); ");
+				output_display_fields (prog->constant_storage, 0, 0);
+				output_newline ();
+			}
+		} else if (cb_wants_dump_comments) {
+			if (has_field_to_dump (prog->constant_storage)) {
+				has_dump = has_dump ? has_dump : -1;
+				output_line ("/* Dump CONSTANT SECTION */");
+				output("/* cob_dump_output (\"CONSTANT\"); */");
+				output_as_comment++;
+				output_display_fields (prog->constant_storage, 0, 0);
+				output_as_comment--;
+				output_newline();
+			}
+		}
+	}
 	if (prog->linkage_storage) {
 		if (cb_flag_dump & COB_DUMP_LS) {
 			if (has_field_to_dump (prog->linkage_storage)) {

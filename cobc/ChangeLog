@@ -1,3 +1,4 @@
+
 2026-03-03  Ramy George <ramygeorge19@gmail.com>
 
     * parser.y (constant_section, _constant_section): Add parsing
@@ -6,6 +7,8 @@
 	* typeck.c (cb_validate_field): Enforced VALUE clause requirement
 	  for items defined in the CONSTANT SECTION. Added CB_UNFINISHED 
 	  marker for code generation.
+	* cobc.h, cobc.c, codegen.c Adding the CO as flag and symbol for fdump and tsymbols
+	* field.c  Validate field for Constant storage
 
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
