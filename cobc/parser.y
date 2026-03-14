@@ -3042,6 +3042,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token NUMERIC
 %token NUMERIC_EDITED		"NUMERIC-EDITED"
 %token NUMVALC_FUNC		"FUNCTION NUMVAL-C"
+%token NULLABLE         "NULLABLE"
 %token OBJECT
 %token OBJECT_COMPUTER		"OBJECT-COMPUTER"
 %token OCCURS
@@ -6607,7 +6608,6 @@ block_contains_clause:
 
 _records_or_characters:	| RECORDS | CHARACTERS ;
 
-
 /* RECORD clause */
 
 record_clause:
@@ -7425,6 +7425,21 @@ constant_entry:
 		}
 	}
   }
+| level_number user_entry_name CONSTANT RECORD
+  {
+	const int level = cb_get_level($1);
+
+	if (set_current_field (level, $2)) {
+		YYERROR;
+	}
+
+	if (level != 1) {
+		cb_error_x ($3, "CONSTANT RECORD may only be specified at level 01");
+		YYERROR;
+	} else {
+		current_field->flag_constant = 1;
+	}
+  }  
 | SEVENTY_EIGHT user_entry_name
   {
 	if (set_current_field (78, $2)) {
@@ -7542,6 +7557,10 @@ data_description_clause:
   {
 	CB_PENDING ("VALIDATE");
   }
+| NULLABLE
+  {
+	CB_UNSUPPORTED("NULLABLE");
+  }  
 ;
 
 

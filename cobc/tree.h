@@ -993,8 +993,9 @@ struct cb_field {
 	unsigned int flag_unbounded	: 1;	/* OCCURS UNBOUNDED */
 	unsigned int flag_above_unbounded	: 1;	/* either OCCURS UNBOUNDED field or parent of it */
 	unsigned int flag_volatile	: 1;	/* VOLATILE */
-	unsigned int flag_constant	: 1;	/* Is 01 AS CONSTANT */
+	unsigned int flag_constant	: 1;	/* Is 01 AS CONSTANT / CONSTANT RECORD (depending on ->children) */
 	unsigned int flag_internal_constant	: 1;	/* Is an internally generated CONSTANT */
+	unsigned int flag_nullable  : 1;            /* Is NULLABLE*/
 
 	unsigned int flag_used_in_call : 1;	/* Is used in CALL (only set for level 01/77),
 							currently not set for EXTERNAL item or when in LOCAL-STORAGE / LINKAGE */
