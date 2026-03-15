@@ -3414,11 +3414,14 @@ cb_validate_field (struct cb_field *f)
 	}
 
 	if (f->storage == CB_STORAGE_CONSTANT) {
-        if (!f->values) {
+        if (!f->values && !f->flag_constant) {
             cb_error_x (CB_TREE(f),("item in CONSTANT SECTION must have a VALUE clause"));
         }
-	} else {
 		if (f->flag_constant) {
+			cb_error_x (CB_TREE(f), ("CONSTANT RECORD may only be specified in LOCAL-STORAGE or WORKING-STORAGE"));
+		}
+	} else {
+		if (f->flag_constant) {  /* flag constant is given to 01 constant records and constant AS*/
 			if (f->storage != CB_STORAGE_WORKING && f->storage != CB_STORAGE_LOCAL) {
 			cb_error_x (CB_TREE(f), ("CONSTANT RECORD may only be specified in LOCAL-STORAGE or WORKING-STORAGE"));
 		} else {
@@ -3430,6 +3433,7 @@ cb_validate_field (struct cb_field *f)
 						cb_error_x(CB_TREE(f) , "ANY LENGTH, BASED, BLANK WHEN ZERO, DYNAMIC LENGTH, NULLABLE, SYNCHRONIZED, or TYPEDEF are specified in CONSTANT RECORD or its subordinates");
 					}
 			}
+		}
 	}
 
 	/* Set up parameters */

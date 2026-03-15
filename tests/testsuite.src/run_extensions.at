@@ -6323,7 +6323,29 @@ AT_DATA([prog.cob],[
 ])
 
 AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
-AT_CHECK([./prog], [0], [BC],[])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [BC])
 
 AT_CLEANUP
 
+
+AT_SETUP([MOVE CONSTANT SECTION to field])
+AT_KEYWORDS([extension constant move])
+
+AT_DATA([prog.cob],[
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  RESULT-FLD  PIC 9(3).
+       CONSTANT SECTION.
+       01  MY-CONST    PIC 9(3) VALUE 123.
+       PROCEDURE DIVISION.
+           MOVE MY-CONST TO RESULT-FLD.
+           DISPLAY RESULT-FLD.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wunfinished prog.cob], [0], [], 
+[prog.cob:9: warning: handling of CONSTANT SECTION code generation is unfinished; implementation is likely to be changed
+])
+AT_CLEANUP

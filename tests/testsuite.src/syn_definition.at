@@ -2952,9 +2952,6 @@ AT_CLEANUP
 AT_SETUP([CONSTANT SECTION syntax enforced value])
 AT_KEYWORDS([extension constant VALUE])
 
-#THis fails because codegen is not implemented yet
-AT_XFAIL_IF([true])
-
 AT_DATA([prog.cob],[
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
@@ -2966,13 +2963,10 @@ AT_DATA([prog.cob],[
            DISPLAY NUM-CONST.
            DISPLAY OTHER-CONST.
            STOP RUN.
-
-
-
 ])
 
-AT_CHECK([$COMPILE -Wunfinished prog.cob], [1], [], 
-[prog.cob:7: warning: handling of CONSTANT SECTION code generation is unfinished; implementation is likely to be changed
+AT_CHECK([$COMPILE_ONLY -Wunfinished prog.cob] , [0] , [], 
+[prog.cob:8: warning: handling of CONSTANT SECTION code generation is unfinished; implementation is likely to be changed
 ])
 AT_CLEANUP
 
@@ -2990,16 +2984,33 @@ AT_DATA([prog.cob],[
        CONSTANT SECTION.
        01  NUM-CONST   PIC 9(3).
        01  OTHER-CONST PIC 9(3) VALUE 123.
-       01  THIRD-CONST CONSTANT RECORD.
-           05  SUB-CONST PIC 9(3) VALUE 456.
+       01  bad-record CONSTANT RECORD.
+           5  SUB-CONST PIC 9(3) VALUE 456.
        PROCEDURE DIVISION.
-           STOP RUN.
-
-
+       STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: error: item in CONSTANT SECTION must have a VALUE clause
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:5: error: item in CONSTANT SECTION must have a VALUE clause
+prog.cob:7: error: CONSTANT RECORD may only be specified in LOCAL-STORAGE or WORKING-STORAGE
 prog.cob:7: warning: handling of CONSTANT SECTION code generation is unfinished; implementation is likely to be changed
 ])
+AT_CLEANUP
+
+
+AT_SETUP([CONSTANT RECORD IN WS])
+AT_KEYWORDS([standard constant record])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 good-record CONSTANT RECORD.
+           05  SUB-CONST PIC 9(3) VALUE 123.
+       PROCEDURE DIVISION.
+       STOP RUN.    
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob] , [0] , [], [])
 AT_CLEANUP
