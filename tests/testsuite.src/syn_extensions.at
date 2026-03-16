@@ -1,0 +1,125 @@
+## Copyright (C) 2026 Free Software Foundation, Inc.
+## Written by Uttam Singh Bhadauriya
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of
+## the License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite - EXEC block handling
+
+
+AT_SETUP([EXEC empty block])
+AT_KEYWORDS([exec extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           EXEC END-EXEC.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:5: error: syntax error, unexpected END_EXEC, expecting Word or Literal
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXEC SQL empty block])
+AT_KEYWORDS([exec sql extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           EXEC SQL CONNECT RESET END-EXEC.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wno-error=unsupported prog.cob], [0], [],
+[prog.cob:5: warning: EXEC SQL statement ignored - no preprocessor configured @<:@-Wunsupported@:>@
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXEC SQL INCLUDE missing name])
+AT_KEYWORDS([exec sql include extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       EXEC SQL
+           INCLUDE
+       END-EXEC.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:6: error: syntax error, unexpected END_EXEC, expecting Word or Literal or Text-Name
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXEC SQL INCLUDE sqlca])
+AT_KEYWORDS([exec sql include sqlca extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       EXEC SQL
+           INCLUDE SQLCA
+       END-EXEC.
+       PROCEDURE DIVISION.
+           DISPLAY SQLCODE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -ffold-copy=LOWER prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXEC SQL INCLUDE copybook expands correctly])
+AT_KEYWORDS([exec sql include copy extensions])
+
+AT_DATA([emprec.cpy], [
+       01 EMP-TABLE.
+          03 ENO    PIC S9(4) COMP.
+          03 LNAME  PIC X(10).
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       EXEC SQL
+           INCLUDE EMPREC
+       END-EXEC.
+       PROCEDURE DIVISION.
+           MOVE 1 TO ENO.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -ffold-copy=LOWER prog.cob], [0], [], [])
+
+AT_CLEANUP

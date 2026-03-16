@@ -779,7 +779,6 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	imp_include_sources
 
 %type <r>	_copy_replacing
-%type <l>   exec_token_list
 %type <r>	replacing_list
 
 %type <ds>	object_id
@@ -1731,33 +1730,27 @@ replacing_list:
   }
 ;
 
-exec_token_list:
+_exec_token_list:
   /* empty */
+| _exec_token_list TOKEN
   {
-        $$ = NULL;
-  }
-| exec_token_list TOKEN
-  {
-        $$ = ppp_list_add ($1, $2);
+        /* should be handled by preparser, ignored
+           if seen here purely for parsing reasons */
   }
 ;
 
 exec_statement:
-  EXEC END_EXEC
+  EXEC TOKEN INCLUDE copy_source END_EXEC
   {
-        /* empty EXEC block — silently ignored */
+        /* EXEC TAG INCLUDE copybook — handle as COPY */
+        fputc ('\n', ppout);
+        ppcopy ($4, NULL, NULL);
   }
-| EXEC TOKEN COPY copy_source END_EXEC
-  {
-        /* EXEC TAG INCLUDE copybook */
-        cb_warning (cb_warn_unsupported,
-                    _("EXEC %s INCLUDE is not yet supported"), $2);
-  }
-| EXEC TOKEN exec_token_list END_EXEC
+| EXEC TOKEN _exec_token_list END_EXEC
   {
         /* EXEC TAG ... END-EXEC — warn and ignore */
         cb_warning (cb_warn_unsupported,
-                    _("EXEC %s statement ignored"), $2);
+                    _("EXEC %s statement ignored - no preprocessor configured"), $2);
   }
 | EXEC error END_EXEC
   {
