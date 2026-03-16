@@ -226,6 +226,7 @@ MAYBE_AREA_A	[ ]?#?
 %x CONTROL_STATEMENT_STATE
 %x DISPLAY_DIRECTIVE_STATE
 %x IMP_DIRECTIVE_STATE
+%X EXEC_STATE
 
 %%
 
@@ -501,6 +502,7 @@ MAYBE_AREA_A	[ ]?#?
 ^{AREA_A}[ \n]*/"COPY"[ ,;\n]    { count_newlines (yytext); }
 ^{AREA_A}[ \n]*/"INCLUDE"[ ,;\n] { count_newlines (yytext); }
 ^{AREA_A}[ \n]*/"REPLACE"[ ,;\n] { count_newlines (yytext); }
+^{AREA_A}[ \n]*/"EXEC"[ ,;\n]    { count_newlines (yytext); }
 
 "COPY"/[ ,;\n]			{
 	yy_push_state (COPY_STATE);
@@ -523,6 +525,11 @@ MAYBE_AREA_A	[ ]?#?
 "REPLACE"/[ ,;\n]		{
 	yy_push_state (REPLACE_STATE);
 	return REPLACE;
+}
+
+"EXEC"/[ ,;\n] {
+    BEGIN(EXEC_STATE);
+    return EXEC;
 }
 
 ^{MAYBE_AREA_A}.{6}[ ]*"*CONTROL" |
@@ -567,6 +574,16 @@ MAYBE_AREA_A	[ ]?#?
 	  ppecho (yytext, NULL);
 	  return DOT;
   }
+}
+
+<EXEC_STATE>{
+        "END-EXEC"([ \t]*\.)?      { BEGIN (INITIAL); return END_EXEC; }
+        "INCLUDE"                  { return COPY; }
+        :[A-Za-z0-9][A-Za-z0-9-]* { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
+        [A-Za-z0-9][A-Za-z0-9-]*  { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
+        [(),*/<>=+\-]              { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
+        \n                         { newline_count++; }
+        .                          { /* silently consumed */ }
 }
 
 <SUBSTITUTION_SECTION_STATE,

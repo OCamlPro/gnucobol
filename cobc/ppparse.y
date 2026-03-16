@@ -753,6 +753,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token <s> VARIABLE_NAME	"Variable"
 %token <s> LITERAL		"Literal"
 
+%token EXEC
+%token END_EXEC
+
 %type <s>	_copy_in
 %type <s>	copy_source
 %type <s>	_literal
@@ -776,6 +779,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	imp_include_sources
 
 %type <r>	_copy_replacing
+%type <l>   exec_token_list
 %type <r>	replacing_list
 
 %type <ds>	object_id
@@ -830,6 +834,7 @@ statement:
 
 statement_no_replace:
   copy_statement
+| exec_statement
 | directive TERMINATOR
 | listing_statement
 | CONTROL_STATEMENT control_options _dot TERMINATOR
@@ -1723,6 +1728,40 @@ replacing_list:
 | replacing_list lead_trail text_partial_src BY text_partial_dst
   {
 	$$ = ppp_replace_list_add ($1, $3, $5, $2);
+  }
+;
+
+exec_token_list:
+  /* empty */
+  {
+        $$ = NULL;
+  }
+| exec_token_list TOKEN
+  {
+        $$ = ppp_list_add ($1, $2);
+  }
+;
+
+exec_statement:
+  EXEC END_EXEC
+  {
+        /* empty EXEC block — silently ignored */
+  }
+| EXEC TOKEN COPY copy_source END_EXEC
+  {
+        /* EXEC TAG INCLUDE copybook */
+        cb_warning (cb_warn_unsupported,
+                    _("EXEC %s INCLUDE is not yet supported"), $2);
+  }
+| EXEC TOKEN exec_token_list END_EXEC
+  {
+        /* EXEC TAG ... END-EXEC — warn and ignore */
+        cb_warning (cb_warn_unsupported,
+                    _("EXEC %s statement ignored"), $2);
+  }
+| EXEC error END_EXEC
+  {
+        yyerrok;
   }
 ;
 
