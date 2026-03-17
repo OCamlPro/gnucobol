@@ -754,7 +754,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token <s> LITERAL		"Literal"
 
 %token EXEC
-%token END_EXEC
+%token END_EXEC "END_EXEC"
 
 %type <s>	_copy_in
 %type <s>	copy_source

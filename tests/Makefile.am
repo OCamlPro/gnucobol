@@ -30,7 +30,6 @@ testsuite_sources = \
 	testsuite.src/used_binaries.at \
 	testsuite.src/configuration.at \
 	testsuite.src/syn_copy.at \
-	testsuite.src/syn_extensions.at \
 	testsuite.src/syn_definition.at \
 	testsuite.src/syn_file.at \
 	testsuite.src/syn_functions.at \

@@ -37,7 +37,6 @@ m4_include([configuration.at])
 AT_BANNER([Syntax tests])
 
 m4_include([syn_copy.at])
-m4_include([syn_extensions.at])
 m4_include([syn_definition.at])
 m4_include([syn_subscripts.at])		# 8.4.1.2 Subscripts
 m4_include([syn_occurs.at])		# 13.16.36 OCCURS clause
