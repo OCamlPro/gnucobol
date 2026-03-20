@@ -294,7 +294,7 @@ enum cobc_hd {
 	COBC_HD_WORKING_STORAGE_SECTION	= (1U << 12),
 	COBC_HD_COMMUNICATION_SECTION	= (1U << 13),
 	COBC_HD_LOCAL_STORAGE_SECTION	= (1U << 14),
-	COBC_HD_CONSTANT_SECTION = (1U << 15),
+	COBC_HD_CONSTANT_SECTION	= (1U << 15),
 	COBC_HD_LINKAGE_SECTION		= (1U << 16),
 	COBC_HD_REPORT_SECTION		= (1U << 17),
 	COBC_HD_SCREEN_SECTION		= (1U << 18),
@@ -3437,7 +3437,6 @@ set_record_size (cb_tree min, cb_tree max)
 %token LEVEL_NUMBER_IN_AREA_A	"level-number (Area A)"
 %token WORD_IN_AREA_A		"Identifier (Area A)"
 %token CONSTANT_RECORD
-
 /* Set up precedence operators to force shift */
 
 %nonassoc SHIFT_PREFER
@@ -7425,7 +7424,7 @@ constant_entry:
 			(void)cb_validate_78_item (CB_FIELD (x), 0);
 		}
 	}
-  } 
+  }
 | SEVENTY_EIGHT user_entry_name
   {
 	if (set_current_field (78, $2)) {
@@ -7550,6 +7549,7 @@ data_description_clause:
 nullable_clause:
   NULLABLE
   {
+	current_field->flag_nullable = 1;
 	CB_UNSUPPORTED("NULLABLE");
   }
 ;  
@@ -9114,6 +9114,7 @@ _constant_section:
   {
 	if ($5){
 		CB_FIELD_ADD (current_program->constant_storage, CB_FIELD($5));
+		CB_UNFINISHED ("CONSTANT SECTION code generation");
 	}
   }
 ;

@@ -3014,3 +3014,4 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob] , [0] , [], [])
 AT_CLEANUP
+

@@ -1752,9 +1752,12 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	}
 
 	if (current_program) {
+#if 0 /* currently unreachable */			
 		if (field->storage == CB_STORAGE_CONSTANT) {
-			CB_FIELD_ADD(current_program->constant_storage, field);
+		
+			CB_FIELD_ADD (current_program->constant_storage, field);
 		}
+#endif		
 		if (field->storage == CB_STORAGE_LINKAGE) {
 			CB_FIELD_ADD (current_program->linkage_storage, field);
 		} else
@@ -5079,10 +5082,6 @@ cb_validate_program_data (struct cb_program *prog)
 			}
 		}
 	}
-
-	if (prog->constant_storage) {
-		CB_UNFINISHED ("CONSTANT SECTION code generation");
-	}
 }
 
 
@@ -6164,7 +6163,7 @@ enum_explain_storage (const enum cb_storage storage)
 {
 	switch (storage) {
 	case CB_STORAGE_CONSTANT:
-		return "CONSTANT SECTION";
+		return "Constant";
 	case CB_STORAGE_FILE:
 		return "FILE SECTION";
 	case CB_STORAGE_WORKING:

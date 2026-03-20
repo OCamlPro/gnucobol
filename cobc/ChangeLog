@@ -3,12 +3,11 @@
 
     * parser.y (constant_section, _constant_section): Add parsing
 	  rules for Fujitsu CONSTANT SECTION extension. Route parsed
-	  items to CB_STORAGE_CONSTANT.
-	* typeck.c (cb_validate_field): Enforced VALUE clause requirement
-	  for items defined in the CONSTANT SECTION. Added CB_UNFINISHED 
+	  items to CB_STORAGE_CONSTANT. Items defined in the CONSTANT SECTION. Added CB_UNFINISHED
 	  marker for code generation.
+	* FIELD.c (cb_validate_field): Enforced VALUE clause requirement
 	* cobc.h, cobc.c, codegen.c Adding the CO as flag and symbol for fdump and tsymbols
-	* field.c  Validate field for Constant storage
+	* scanner.l  Addition to scanning for CONSTANT RECORD
 
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 

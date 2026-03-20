@@ -1000,7 +1000,7 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (LENGTH_OF);
 }
 "CONSTANT"[ \t]+"RECORD" {
-    count_lines(yytext);
+    count_lines (yytext);
 	RETURN_TOK (CONSTANT_RECORD);
 }
 

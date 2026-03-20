@@ -11612,7 +11612,7 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		if (cb_flag_dump & COB_DUMP_CO) {
 			if (has_field_to_dump(prog->constant_storage)) {
 				has_dump = 1;
-				output_line ("/* Dump CONSTANT SECTION */");
+				output_line ("/* Dump constants */");
 				output_line ("cob_dump_output (\"CONSTANT\"); ");
 				output_display_fields (prog->constant_storage, 0, 0);
 				output_newline ();
@@ -11620,7 +11620,7 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		} else if (cb_wants_dump_comments) {
 			if (has_field_to_dump (prog->constant_storage)) {
 				has_dump = has_dump ? has_dump : -1;
-				output_line ("/* Dump CONSTANT SECTION */");
+				output_line ("/* Dump constants */");
 				output("/* cob_dump_output (\"CONSTANT\"); */");
 				output_as_comment++;
 				output_display_fields (prog->constant_storage, 0, 0);

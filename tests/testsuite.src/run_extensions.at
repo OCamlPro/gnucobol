@@ -6345,7 +6345,8 @@ AT_DATA([prog.cob],[
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -Wunfinished prog.cob], [0], [], 
-[prog.cob:9: warning: handling of CONSTANT SECTION code generation is unfinished; implementation is likely to be changed
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [123
 ])
 AT_CLEANUP
+
