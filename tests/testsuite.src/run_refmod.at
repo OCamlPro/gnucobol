@@ -54,6 +54,110 @@ d:d
 AT_CLEANUP
 
 
+AT_SETUP([Static reference-modification national])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC N(4) VALUE N"abcd".
+       PROCEDURE        DIVISION.
+           DISPLAY X(1:1) ":" X(1:2) ":" X(1:3) ":" X(1:4) ":" X(1:)
+           END-DISPLAY.
+           DISPLAY X(2:1) ":" X(2:2) ":" X(2:3) ":" X(2:)
+           END-DISPLAY.
+           DISPLAY X(3:1) ":" X(3:2) ":" X(3:)
+           END-DISPLAY.
+           DISPLAY X(4:1) ":" X(4:)
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[a:ab:abc:abcd:abcd
+b:bc:bcd:bcd
+c:cd:cd
+d:d
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Static reference-modification UTF-8])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC U(4) VALUE U"aǭcde".
+       PROCEDURE        DIVISION.
+           DISPLAY X(1:1) ":" X(1:2) ":" X(1:3) ":" X(1:4) ":" X(1:)
+           END-DISPLAY.
+           DISPLAY X(2:1) ":" X(2:2) ":" X(2:3) ":" X(2:)
+           END-DISPLAY.
+           DISPLAY X(3:1) ":" X(3:2) ":" X(3:)
+           END-DISPLAY.
+           DISPLAY X(4:1) ":" X(4:)
+           END-DISPLAY.
+           STOP RUN.
+])
+
+# FIXME: currently single byte instead of single character
+
+AT_XFAIL_IF([true])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[a:aǭ:aǭc:aǭcd:aǭcd
+ǭ:ǭc:ǭcd:ǭcd
+c:cd:cd
+d:d
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Static reference-modification UTF-8 mixed byte-widths])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC U(4) VALUE U"aé日𝄞".
+       PROCEDURE        DIVISION.
+           DISPLAY X(1:1) ":" X(1:2) ":" X(1:3) ":" X(1:4) ":" X(1:)
+           END-DISPLAY.
+           DISPLAY X(2:1) ":" X(2:2) ":" X(2:3) ":" X(2:)
+           END-DISPLAY.
+           DISPLAY X(3:1) ":" X(3:2) ":" X(3:)
+           END-DISPLAY.
+           DISPLAY X(4:1) ":" X(4:)
+           END-DISPLAY.
+           STOP RUN.
+])
+
+# FIXME: currently uses byte offset/length instead of character offset/length
+
+AT_XFAIL_IF([true])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[a:aé:aé日:aé日𝄞:aé日𝄞
+é:é日:é日𝄞:é日𝄞
+日:日𝄞:日𝄞
+𝄞:𝄞
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([Dynamic reference-modification])
 AT_KEYWORDS([refmod])
 

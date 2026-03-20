@@ -323,6 +323,16 @@ cob_display_common (const cob_field *f, FILE *fp)
 		display_numeric ((cob_field *)f, fp);
 		return;
 	}
+	/* poor man's conversion */
+	if (COB_FIELD_IS_NATIONAL (f)) {
+		size_t i;
+		for (i = 0; i < f->size; i += 2) {
+			if (f->data[i] == 0x00) {
+				putc (f->data[i + 1], fp);
+			}
+		}
+		return;
+	}
 	display_alnum (f, fp);
 }
 
