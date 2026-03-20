@@ -999,6 +999,10 @@ H#[0-9A-Za-z]+ {
 	count_lines (yytext);
 	RETURN_TOK (LENGTH_OF);
 }
+"CONSTANT"[ \t]+"RECORD" {
+    count_lines(yytext);
+	RETURN_TOK (CONSTANT_RECORD);
+}
 
 [A-Z0-9\x80-\xFF]([_A-Z0-9\x80-\xFF-]*[A-Z0-9\x80-\xFF]+)? {
 	struct cb_level_78		*p78;

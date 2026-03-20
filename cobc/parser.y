@@ -3436,6 +3436,7 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token LEVEL_NUMBER_IN_AREA_A	"level-number (Area A)"
 %token WORD_IN_AREA_A		"Identifier (Area A)"
+%token CONSTANT_RECORD
 
 /* Set up precedence operators to force shift */
 
@@ -7424,22 +7425,7 @@ constant_entry:
 			(void)cb_validate_78_item (CB_FIELD (x), 0);
 		}
 	}
-  }
-| level_number user_entry_name CONSTANT RECORD
-  {
-	const int level = cb_get_level($1);
-
-	if (set_current_field (level, $2)) {
-		YYERROR;
-	}
-
-	if (level != 1) {
-		cb_error_x ($3, "CONSTANT RECORD may only be specified at level 01");
-		YYERROR;
-	} else {
-		current_field->flag_constant = 1;
-	}
-  }  
+  } 
 | SEVENTY_EIGHT user_entry_name
   {
 	if (set_current_field (78, $2)) {
@@ -7553,16 +7539,31 @@ data_description_clause:
 | present_when_clause
 | invalid_when_clause
 | destination_clause
+| nullable_clause
+| constant_record_clause
 | data_varying_clause
   {
 	CB_PENDING ("VALIDATE");
-  }
-| NULLABLE
-  {
-	CB_UNSUPPORTED("NULLABLE");
-  }  
+  } 
 ;
 
+nullable_clause:
+  NULLABLE
+  {
+	CB_UNSUPPORTED("NULLABLE");
+  }
+;  
+
+constant_record_clause:
+  CONSTANT_RECORD
+  {
+	if (current_field->level != 1) {
+		cb_error (_("CONSTANT RECORD may only be specified at level 01"));
+	} else {
+		current_field->flag_constant = 1;
+	}
+  }
+;  
 
 /* REDEFINES clause */
 
