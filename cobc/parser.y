@@ -2629,6 +2629,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CONDITION		/* remark: not used here */
 %token CONFIGURATION
 %token CONSTANT
+%token CONSTANT_RECORD
 %token CONTAINS
 %token CONTENT
 %token CONTENT_LENGTH_FUNC      "FUNCTION CONTENT-LENGTH"
@@ -3436,7 +3437,6 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token LEVEL_NUMBER_IN_AREA_A	"level-number (Area A)"
 %token WORD_IN_AREA_A		"Identifier (Area A)"
-%token CONSTANT_RECORD
 /* Set up precedence operators to force shift */
 
 %nonassoc SHIFT_PREFER
