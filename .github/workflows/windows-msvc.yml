@@ -221,9 +221,9 @@ jobs:
         run: |
           echo Export VCPKG dependencies
           vcpkg export %VCPKGS% --raw --output=export
-          set VCPKG_EXPORT_DIR=%VCPKG_ROOT%\export
+          set "VCPKG_EXPORT_DIR=%VCPKG_ROOT%\export"
           echo Wrap up VCPKG dependencies for separate download
-          7z a -r -mx=9 dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z "%VCPKG_EXPORT_DIR"
+          7z a -r -mx=9 dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z "%VCPKG_EXPORT_DIR%"
           echo Wrap up GnuCOBOL binary package
           cmd /C .\build_windows\makedist.cmd ${{ matrix.target }} <NUL
 
