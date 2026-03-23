@@ -215,6 +215,17 @@ display_alnum (const cob_field *f, FILE *fp)
 	}
 }
 
+static void
+display_national (const cob_field *f, FILE *fp) 
+{
+	size_t i;
+	for (i = 0; i < f->size; i += 2) {
+		if (f->data[i] == 0x00) {
+			putc (f->data[i + 1], fp);
+		}
+	}
+}
+
 /* Check for alternate styles of Not A Number and convert to just NaN
    and removes the leading zero from the Exponent
    note: not all environments provide display of negative /quiet NaN,
@@ -323,17 +334,11 @@ cob_display_common (const cob_field *f, FILE *fp)
 		display_numeric ((cob_field *)f, fp);
 		return;
 	}
-	/* poor man's conversion */
 	if (COB_FIELD_IS_NATIONAL (f)) {
-		size_t i;
-		for (i = 0; i < f->size; i += 2) {
-			if (f->data[i] == 0x00) {
-				putc (f->data[i + 1], fp);
-			}
-		}
-		return;
+		display_national ((cob_field *)f, fp);
+	} else {
+		display_alnum (f, fp);
 	}
-	display_alnum (f, fp);
 }
 
 void

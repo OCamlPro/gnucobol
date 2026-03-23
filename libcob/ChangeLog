@@ -1,4 +1,11 @@
 
+2026-03-23  Preston Horne <preston.m.horne@vanderbilt.edu>
+
+	* termio.c (display_national): new function for poor man's
+	  national display conversion
+	* termio.c (cob_display_common): use display_national for
+	  NATIONAL fields
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking

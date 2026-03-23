@@ -1261,7 +1261,7 @@ output_data (cb_tree x)
 		if (r->offset) {
 			output (" + ");
 			if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
-				output ("%d * ", COB_NATIONAL_SIZE);
+				output (CB_STRINGIFY (COB_NATIONAL_SIZE) " * ");
 			}
 			output_index (r->offset);
 		}
@@ -1321,7 +1321,7 @@ output_size (const cb_tree x)
 		}
 		if (r->length) {
 			if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
-				output ("%d * ", COB_NATIONAL_SIZE);
+				output (CB_STRINGIFY (COB_NATIONAL_SIZE) " * ");
 			}
 			output_integer (r->length);
 		} else if (r->offset && f->flag_any_length) {
@@ -1365,7 +1365,7 @@ again:
 			if (r->offset) {
 				output (" - ");
 				if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
-					output ("%d * ", COB_NATIONAL_SIZE);
+					output (CB_STRINGIFY (COB_NATIONAL_SIZE) " * ");
 				}
 				output_index (r->offset);
 			}

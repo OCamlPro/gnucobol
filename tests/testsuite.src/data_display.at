@@ -125,6 +125,50 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0123456789pqrstuvwxy])
 AT_CLEANUP
 
 
+AT_SETUP([DISPLAY: national fields/literals])
+AT_KEYWORDS([display])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC N(4) VALUE N"abcd".
+       01 NUM           PIC 9(6)V99 USAGE NATIONAL
+                         VALUE 12.34.
+       PROCEDURE        DIVISION.
+           DISPLAY N"1234"
+           END-DISPLAY.
+           DISPLAY FUNCTION HEX-OF (N"1234")
+           END-DISPLAY.
+           DISPLAY NUM
+           END-DISPLAY.
+           DISPLAY FUNCTION HEX-OF (NUM)
+           END-DISPLAY.
+           DISPLAY X
+           END-DISPLAY.
+           DISPLAY FUNCTION HEX-OF (X)
+           END-DISPLAY.
+           STOP RUN.
+])
+
+# FIXME: DISPLAY of national literals and national numeric fields not yet handled
+
+AT_XFAIL_IF([true])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[1234
+0031003200330034
+00001234
+00300030003000300031003200330034
+abcd
+0061006200630064
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([DISPLAY: Sign EBCDIC])
 AT_KEYWORDS([display])
 
