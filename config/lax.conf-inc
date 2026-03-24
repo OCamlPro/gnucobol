@@ -1,6 +1,6 @@
 # GnuCOBOL compiler configuration
 #
-# Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 # Ron Norman
 #
@@ -88,9 +88,9 @@ stop-literal-statement:			+obsolete
 stop-identifier-statement:		ok
 same-as-clause:				ok
 type-to-clause:				ok
-usage-type:					ok
+usage-type:				ok
 synchronized-clause:			+ignore
-sync-left-right:			+ignore # better use "skip" here?
+sync-left-right:			+ignore	# better use "skip" here?
 special-names-clause:			+warning
 top-level-occurs-clause:		ok
 value-of-clause:			+obsolete
@@ -113,6 +113,7 @@ reference-out-of-declaratives:		+warning
 program-prototypes:			ok
 call-convention-mnemonic:		ok
 call-convention-linkage:		ok
+using-optional:				+warning
 numeric-value-for-edited-item:		+warning
 incorrect-conf-sec-order:		+warning
 define-constant-directive:		+obsolete

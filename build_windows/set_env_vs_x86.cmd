@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2020 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2020,2024 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -39,4 +39,4 @@ if %errorlevel% equ 0 (
   set "stay_open=x"
 )
 
-call %~dp0gcvsvars.cmd %*
+call "%~dp0gcvsvars.cmd" %*

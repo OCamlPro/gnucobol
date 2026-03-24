@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
    Chuck Haatvedt
 
@@ -42,7 +42,33 @@
 #include <io.h>
 #endif
 
-#if defined (HAVE_NCURSESW_NCURSES_H)
+#if defined (HAVE_NCURSESW_PANEL_H)
+#include <ncursesw/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_NCURSES_PANEL_H)
+#include <ncurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_PDCURSES_PANEL_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <pdcurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_XCURSES_PANEL_H)
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses/panel.h>
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_PANEL_H)
+#define PDC_NCMOUSE	/* see comment above */
+#include <panel.h>
+#ifndef PDC_MOUSE_MOVED
+#undef PDC_NCMOUSE
+#endif
+#define WITH_EXTENDED_SCREENIO
+#define WITH_PANELS
+#elif defined (HAVE_NCURSESW_NCURSES_H)
 #include <ncursesw/ncurses.h>
 #define WITH_EXTENDED_SCREENIO
 #elif defined (HAVE_NCURSESW_CURSES_H)
@@ -55,26 +81,18 @@
 #include <ncurses/ncurses.h>
 #define WITH_EXTENDED_SCREENIO
 #elif defined (HAVE_PDCURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
 #define WITH_EXTENDED_SCREENIO
 #elif defined (HAVE_PDCURSES_CURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses/curses.h>
 #define WITH_EXTENDED_SCREENIO
 #elif defined (HAVE_XCURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <xcurses.h>
 #define WITH_EXTENDED_SCREENIO
 #elif defined (HAVE_XCURSES_CURSES_H)
-/* will internally define NCURSES_MOUSE_VERSION with
-   a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <xcurses/curses.h>
 #define WITH_EXTENDED_SCREENIO
@@ -85,6 +103,12 @@
 #undef PDC_NCMOUSE
 #endif
 #define WITH_EXTENDED_SCREENIO
+#endif
+
+#if defined (__PDCURSES__)
+/* Note: PDC will internally define NCURSES_MOUSE_VERSION with
+   a recent version when PDC_NCMOUSE was defined;
+   for older version define manually! */
 #endif
 
 /* work around broken system headers or compile flags defining
@@ -106,7 +130,7 @@
 #ifdef	HAVE_CURSES_FREEALL
 extern void	_nc_freeall (void);
 #endif
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 static mmask_t 	cob_mask_accept;	/* mask that is returned to COBOL ACCEPT */
 static mmask_t 	cob_mask_routine;	/* mask that is returned to COBOL routines (reserved) */
 #if defined BUTTON5_PRESSED	/* added in NCURSES_MOUSE_VERSION 2 */
@@ -155,6 +179,8 @@ static int			cob_current_y;
 static int			cob_current_x;
 static short			fore_color	/* "const" default foreground (pair 0 on init) */;
 static short			back_color	/* "const" default background (pair 0 on init) */;
+static short			stdscr_fore_color	/* "const" default foreground (pair 0 on init) */;
+static short			stdscr_back_color	/* "const" default background (pair 0 on init) */;
 static int			origin_y;
 static int			origin_x;
 static int			display_cursor_y;
@@ -163,8 +189,97 @@ static int			accept_cursor_y;
 static int			accept_cursor_x;
 static int			pending_accept;
 static int			got_sys_char;
-static unsigned int	curr_setting_insert_mode = INT_MAX;
-#ifdef NCURSES_MOUSE_VERSION
+static int			save_cursor_x = 0;
+static int			save_cursor_y = 0;
+static WINDOW			*mywin;
+
+#ifdef WITH_PANELS
+#define MAX_PANELS		20
+
+enum sys_win_mode {
+	SYS_WIN_NEW		= 'N',
+	SYS_WIN_DELETE		= 'D',
+	SYS_WIN_ATTR_GET	= 'G',
+	SYS_WIN_ATTR_CHANGE	= 'S',
+	SYS_WIN_MOVE		= 'M',
+	SYS_WIN_SHOW		= 'V',
+	SYS_WIN_HIDE		= 'I',
+	SYS_WIN_TOP		= 'T',
+	SYS_WIN_BOTTOM		= 'B',
+	SYS_WIN_LIST		= 'L'
+};
+
+#define SYS_WIN_FLAG_HIDDEN 	(1 << 0)
+#define SYS_WIN_FLAG_NOSCROLL	(1 << 1)
+#define SYS_WIN_FLAG_NOWRAP 	(1 << 2)
+
+typedef struct	__PARM_FLD
+	{
+		short		pan_number;
+		short		starty;
+		short		startx;
+		short		win_lines;
+		short		win_cols;
+		short		fg_color;
+		short		bg_color;
+		short 		flags;
+	} PARM_FLD, 	*PPARM_FLD;
+
+typedef struct	__LIST_FLD
+	{
+		short		pan_position;
+		short 		pan_number;
+		short 		starty;
+		short 		startx;
+		short 		win_lines;
+		short 		win_cols;
+		short		input_fg_color;
+		short		input_bg_color;
+		short 		flags;
+	} LIST_FLD, 	*PLIST_FLD;
+
+typedef struct	__PANEL_ENTRY
+	{
+		PANEL		*pan;
+		WINDOW		*win;
+		short		starty;
+		short		startx;
+		short		win_lines;
+		short		win_cols;
+		short 		flags;
+		short		fg_color;
+		short		bg_color;
+		short		input_fg_color;
+		short		input_bg_color;
+		short		pan_number;
+	} PANEL_ENTRY,		*PPANEL_ENTRY;
+
+	static PANEL_ENTRY	my_panels[MAX_PANELS] =
+	{ { NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19} ,
+		{ NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20 } };
+
+
+#endif
+
+#ifdef HAVE_MOUSEMASK
 static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
 #endif
@@ -175,13 +290,13 @@ static int cob_screen_init	(void);
 
 /* Local functions */
 
-/* 
- * Cf. GNU cpp info manual, section 7, Pragmas 
- * 
+/*
+ * Cf. GNU cpp info manual, section 7, Pragmas
+ *
  * Define a macro to use the _Pragma operator, restricted to modern gcc.
  * This section is experimental.  If it proves useful, it should be moved
  * to coblocal.h.
- * 
+ *
  * The ICC guard is there because ICC, clang and many others
  * "helpfully" define __GNUC__, but often leave out some extensions.
  */
@@ -190,8 +305,8 @@ static int cob_screen_init	(void);
 #  define GCC_PRAGMA(w)				\
    _Pragma ("GCC diagnostic push")		\
    _Pragma (#w)
-#  define GCC_POP()   _Pragma ("GCC diagnostic pop") 
-#else 
+#  define GCC_POP()   _Pragma ("GCC diagnostic pop")
+#else
 #  define  GCC_PRAGMA(w)
 #  define  GCC_POP()
 #endif
@@ -303,6 +418,21 @@ handle_status (const int fret, const enum screen_statement stmt)
 
 #ifdef	WITH_EXTENDED_SCREENIO
 
+static COB_INLINE COB_A_INLINE void
+refresh_mywin (WINDOW *curr_win)
+{
+	int		pos_y, pos_x;
+
+	if (curr_win != stdscr) {
+		getyx (curr_win, pos_y, pos_x);
+		if (wmouse_trafo (curr_win, &pos_y, &pos_x, 1)) {
+			move (pos_y, pos_x);
+		}
+	}
+
+	wrefresh (curr_win);
+}
+
 static void
 cob_beep (void)
 {
@@ -327,7 +457,7 @@ raise_ec_on_invalid_line_or_col (const int line, const int column)
 	int	max_y;
 	int	max_x;
 
-	getmaxyx (stdscr, max_y, max_x);
+	getmaxyx (mywin, max_y, max_x);
 	if (line < 0 || line >= max_y) {
 		cob_set_exception (COB_EC_SCREEN_LINE_NUMBER);
 	}
@@ -339,7 +469,7 @@ raise_ec_on_invalid_line_or_col (const int line, const int column)
 static int
 cob_move_cursor (const int line, const int column)
 {
-	int status = move (line, column);
+	int status = wmove (mywin, line, column);
 
 	if (status == ERR) {
 		raise_ec_on_invalid_line_or_col (line, column);
@@ -351,7 +481,7 @@ void
 cob_set_cursor_pos (int line, int column)
 {
 	init_cob_screen_if_needed ();
-	(void) move (line, column);
+	(void) wmove (mywin, line, column);
 }
 
 #if 0 /* currently unused */
@@ -361,9 +491,9 @@ cob_move_to_beg_of_last_line (void)
 	int	max_y;
 	int	max_x;
 
-	getmaxyx (stdscr, max_y, max_x);
+	getmaxyx (mywin, max_y, max_x);
 	/* We don't need to check for exceptions here; it will always be fine */
-	move (max_y, 0);
+	wmove (mywin, max_y, 0);
 
 	COB_UNUSED (max_x);
 }
@@ -374,14 +504,14 @@ static short
 cob_get_color_pair (const short fg_color, const short bg_color)
 {
 	/* default color (defined from terminal, read during init ) */
-	if (fg_color == fore_color && bg_color == back_color) {
+	if (fg_color == stdscr_fore_color && bg_color == stdscr_back_color) {
 		return 0;
 	}
 	/* reserved color "all black", defined during init */
 	if (fg_color == 0 && bg_color == 0) {
 		return 1;
 	}
-	
+
 	{
 		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 		   provide more color pairs than we currently support, limit appropriate */
@@ -416,11 +546,11 @@ cob_activate_color_pair (const short color_pair_number)
 	int ret;
 
 #ifdef	HAVE_COLOR_SET
-	ret = color_set (color_pair_number, NULL);
+	ret = wcolor_set (mywin, color_pair_number, NULL);
 #else
-	ret = attrset (COLOR_PAIR(color_pair_number));
+	ret = wattrset (mywin, COLOR_PAIR(color_pair_number));
 #endif
-	bkgdset (COLOR_PAIR(color_pair_number));
+	wbkgdset (mywin, COLOR_PAIR(color_pair_number));
 
 	return ret;
 }
@@ -845,7 +975,7 @@ adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 				continue;
 			}
 
-			/* normal attribute - apply and go on*/
+			/* normal attribute - apply and go on */
 			if (control_attr->cobflag != 0) {
 				if (no_indicator == 0) {
 					*attr |= control_attr->cobflag;
@@ -922,7 +1052,7 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	if (control) {
 		adjust_attr_from_control_field (&attr, control, &fg_color, &bg_color);
 	}
-	
+
 	/* curses attributes from (possibly adjusted) COBOL attributes;
 	   note that several "may be ignored if not supported by the terminal"
 	   and that OVERLINE / LEFTLINE / RIGHTLINE is a curses extension
@@ -959,9 +1089,9 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 #endif
 
 	/* apply attributes */
-	attrset (A_NORMAL);
+	wattrset (mywin, A_NORMAL);
 	if (styles != A_NORMAL) {
-		attron (styles);
+		wattron (mywin, styles);
 	}
 
 	/* apply colors */
@@ -978,24 +1108,24 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	}
 	/* BLANK SCREEN colors the whole screen. */
 	if (attr & COB_SCREEN_BLANK_SCREEN) {
-		getyx (stdscr, line, column);
-		clear ();
+		getyx (mywin, line, column);
+		wclear (mywin);
 		cob_move_cursor (line, column);
 	}
 
 	if (stmt == DISPLAY_STATEMENT) {
 		/* BLANK LINE colors the whole line. */
 		if (attr & COB_SCREEN_BLANK_LINE) {
-			getyx (stdscr, line, column);
+			getyx (mywin, line, column);
 			cob_move_cursor (line, 0);
-			clrtoeol ();
+			wclrtoeol (mywin);
 			cob_move_cursor (line, column);
 		}
 		if (attr & COB_SCREEN_ERASE_EOL) {
-			clrtoeol ();
+			wclrtoeol (mywin);
 		}
 		if (attr & COB_SCREEN_ERASE_EOS) {
-			clrtobot ();
+			wclrtobot (mywin);
 		}
 	}
 	if (attr & COB_SCREEN_BELL) {
@@ -1057,6 +1187,14 @@ cob_screen_init (void)
 		cob_runtime_error (_("failed to initialize curses"));
 		return 1;
 	}
+
+	/* set mywin pointer to mywin pointer for future
+	   implementation of panels functionality
+	   Note that stdscr WINDOW pointer can not
+	   be altered as the keyboard and mouse
+	   still require this pointer */
+	mywin = stdscr;
+
 	cobglobptr->cob_screen_initialized = 1;
 #ifdef	HAVE_USE_LEGACY_CODING
 	use_legacy_coding (2);
@@ -1072,12 +1210,14 @@ cob_screen_init (void)
 #endif
 
 	cbreak ();
-	keypad (stdscr, 1);
+	keypad (mywin, 1);
 	nonl ();
 	noecho ();
 	if (has_colors ()) {
 		start_color ();
 		pair_content ((short)0, &fore_color, &back_color);
+		stdscr_fore_color = fore_color;
+		stdscr_back_color = back_color;
 		/* fix bad settings of the terminal on start */
 		if (fore_color == back_color) {
 			if (fore_color == COLOR_BLACK) {
@@ -1100,7 +1240,7 @@ cob_screen_init (void)
 				   provide more color pairs than we currently support, limit appropriate */
 				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? (short)COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
-	
+
 				for (color_pair_number = 2; color_pair_number < max_clr_pairs; ++color_pair_number) {
 					init_pair (color_pair_number, 0, 0);
 					if (color_pair_number == SHRT_MAX) {
@@ -1117,8 +1257,8 @@ cob_screen_init (void)
 #endif
 		}
 	}
-	attrset (A_NORMAL);
-	getmaxyx (stdscr, COB_MAX_Y_COORD, COB_MAX_X_COORD);
+	wattrset (mywin, A_NORMAL);
+	getmaxyx (mywin, COB_MAX_Y_COORD, COB_MAX_X_COORD);
 
 	cob_settings_screenio ();
 
@@ -1320,7 +1460,7 @@ pass_cursor_to_program (void)
 		cob_field	*cursor_field = COB_MODULE_PTR->cursor_pos;
 		int		sline;
 		int		scolumn;
-		getyx (stdscr, sline, scolumn);
+		getyx (mywin, sline, scolumn);
 		sline++; scolumn++;	/* zero-based in curses */
 		if (COB_FIELD_IS_NUMERIC (cursor_field) &&
 			COB_FIELD_TYPE (cursor_field) != COB_TYPE_NUMERIC_DISPLAY) {
@@ -1418,8 +1558,8 @@ raise_ec_on_truncation (const int item_size)
 	int	max_y;
 	int	max_x;
 
-	getyx (stdscr, y, x);
-	getmaxyx (stdscr, max_y, max_x);
+	getyx (mywin, y, x);
+	getmaxyx (mywin, max_y, max_x);
 
 	if (x + item_size - 1 > max_x) {
 		cob_set_exception (COB_EC_SCREEN_ITEM_TRUNCATED);
@@ -1433,7 +1573,7 @@ static void
 cob_addnstr (const char *data, const int size)
 {
 	raise_ec_on_truncation (size);
-	addnstr (data, size);
+	waddnstr (mywin, data, size);
 }
 
 /* variant of cob_addnstr that outputs each character separately,
@@ -1443,188 +1583,188 @@ cob_addnstr_graph (const char *data, const int size)
 {
 	int	count;
 	raise_ec_on_truncation (size);
-	
+
 	for (count = 0; count < size; count++) {
 		const char c = *data++;
 		switch (c) {
 		case 'j':	/* lower-right corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_LRCORNER);
+			wadd_wch (mywin, WACS_LRCORNER);
 #else
-			addch (ACS_LRCORNER);
+			waddch (mywin, ACS_LRCORNER);
 #endif
 			break;
 		case 'J':	/* lower-right corner, double */
 #if defined (WACS_D_LRCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_LRCORNER);
+			wadd_wch (mywin, WACS_D_LRCORNER);
 #elif defined (ACS_D_LRCORNER)
-			addch (ACS_D_LRCORNER);
+			waddch (mywin, ACS_D_LRCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'k':	/* upper-right corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_URCORNER);
+			wadd_wch (mywin, WACS_URCORNER);
 #else
-			addch (ACS_URCORNER);
+			waddch (mywin, ACS_URCORNER);
 #endif
 			break;
 		case 'K':	/* upper-right corner, double */
 #if defined (WACS_D_URCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_URCORNER);
+			wadd_wch (mywin, WACS_D_URCORNER);
 #elif defined (ACS_D_URCORNER)
-			addch (ACS_D_URCORNER);
+			waddch (mywin, ACS_D_URCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'm':	/* lower-left corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_LLCORNER);
+			wadd_wch (mywin, WACS_LLCORNER);
 #else
-			addch (ACS_LLCORNER);
+			waddch (mywin, ACS_LLCORNER);
 #endif
 			break;
 		case 'M':	/* lower-left corner, double */
 #if defined (WACS_D_LLCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_LLCORNER);
+			wadd_wch (mywin, WACS_D_LLCORNER);
 #elif defined (ACS_D_LLCORNER)
-			addch (ACS_D_LLCORNER);
+			waddch (mywin, ACS_D_LLCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'l':	/* upper-left corner */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_ULCORNER);
+			wadd_wch (mywin, WACS_ULCORNER);
 #else
-			addch (ACS_ULCORNER);
+			waddch (mywin, ACS_ULCORNER);
 #endif
 			break;
 		case 'L':	/* upper-left corner, double */
 #if defined (WACS_D_ULCORNER) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_ULCORNER);
+			wadd_wch (mywin, WACS_D_ULCORNER);
 #elif defined (ACS_D_ULCORNER)
-			addch (ACS_D_ULCORNER);
+			waddch (mywin, ACS_D_ULCORNER);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'n':	/* plus */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_PLUS);
+			wadd_wch (mywin, WACS_PLUS);
 #else
-			addch (ACS_PLUS);
+			waddch (mywin, ACS_PLUS);
 #endif
 			break;
 		case 'N':	/* plus, double */
 #if defined (WACS_D_PLUS) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_PLUS);
+			wadd_wch (mywin, WACS_D_PLUS);
 #elif defined (ACS_D_PLUS)
-			addch (ACS_D_PLUS);
+			waddch (mywin, ACS_D_PLUS);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'q':	/* horizontal line */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_HLINE);
+			wadd_wch (mywin, WACS_HLINE);
 #else
-			addch (ACS_HLINE);
+			waddch (mywin, ACS_HLINE);
 #endif
 			break;
 		case 'Q':	/* horizontal line, double */
 #if defined (WACS_D_HLINE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_HLINE);
+			wadd_wch (mywin, WACS_D_HLINE);
 #elif defined (ACS_D_HLINE)
-			addch (ACS_D_HLINE);
+			waddch (mywin, ACS_D_HLINE);
 #else
-			addch ((const chtype)'-');
+			waddch (mywin, (const chtype)'-');
 #endif
 			break;
 		case 'x':	/* vertical line */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_VLINE);
+			wadd_wch (mywin, WACS_VLINE);
 #else
-			addch (ACS_VLINE);
+			waddch (mywin, ACS_VLINE);
 #endif
 			break;
 		case 'X':	/* vertical line, double */
 #if defined (WACS_D_VLINE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_VLINE);
+			wadd_wch (mywin, WACS_D_VLINE);
 #elif defined (ACS_D_VLINE)
-			addch (ACS_D_VLINE);
+			waddch (mywin, ACS_D_VLINE);
 #else
-			addch ((const chtype)'|');
+			waddch (mywin, (const chtype)'|');
 #endif
 			break;
 		case 't':	/* left tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_LTEE);
+			wadd_wch (mywin, WACS_LTEE);
 #else
-			addch (ACS_LTEE);
+			waddch (mywin, ACS_LTEE);
 #endif
 			break;
 		case 'T':	/* left tee , double */
 #if defined (WACS_D_LTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_LTEE);
+			wadd_wch (mywin, WACS_D_LTEE);
 #elif defined (ACS_D_LTEE)
-			addch (ACS_D_LTEE);
+			waddch (mywin, ACS_D_LTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'u':	/* right tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_RTEE);
+			wadd_wch (mywin, WACS_RTEE);
 #else
-			addch (ACS_RTEE);
+			waddch (mywin, ACS_RTEE);
 #endif
 			break;
 		case 'U':	/* right tee , double */
 #if defined (WACS_D_RTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_RTEE);
+			wadd_wch (mywin, WACS_D_RTEE);
 #elif defined (ACS_D_RTEE)
-			addch (ACS_D_RTEE);
+			waddch (mywin, ACS_D_RTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'v':	/* bottom tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_BTEE);
+			wadd_wch (mywin, WACS_BTEE);
 #else
-			addch (ACS_BTEE);
+			waddch (mywin, ACS_BTEE);
 #endif
 			break;
 		case 'V':	/* bottom tee , double */
 #if defined (WACS_D_BTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_BTEE);
+			wadd_wch (mywin, WACS_D_BTEE);
 #elif defined (ACS_D_BTEE)
-			addch (ACS_D_BTEE);
+			waddch (mywin, ACS_D_BTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		case 'w':	/* top tee */
 #if defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_TTEE);
+			wadd_wch (mywin, WACS_TTEE);
 #else
-			addch (ACS_TTEE);
+			waddch (mywin, ACS_TTEE);
 #endif
 			break;
 		case 'W':	/* top tee , double */
 #if defined (WACS_D_TTEE) && defined (WITH_WIDE_FUNCTIONS)
-			add_wch (WACS_D_TTEE);
+			wadd_wch (mywin, WACS_D_TTEE);
 #elif defined (ACS_D_TTEE)
-			addch (ACS_D_TTEE);
+			waddch (mywin, ACS_D_TTEE);
 #else
-			addch ((const chtype)'+');
+			waddch (mywin, (const chtype)'+');
 #endif
 			break;
 		default:
-			addch ((const chtype)c);
+			waddch (mywin, (const chtype)c);
 		}
 	}
 }
@@ -1633,14 +1773,14 @@ static void
 cob_addch (const chtype c)
 {
 	raise_ec_on_truncation (1);
-	addch (c);
+	waddch (mywin, c);
 }
 
 /* Use only when raise_ec_on_truncation is called beforehand. */
 static void
 cob_addch_no_trunc_check (const chtype c)
 {
-	addch (c);
+	waddch (mywin, c);
 }
 
 static void
@@ -1763,7 +1903,7 @@ get_screen_item_line_and_col (cob_screen *s, int * const line,
 			if (s->line && !s->column) {
 				found_col = 1;
 			}
-			
+
 			if (!found_col && !s->column && is_elementary
 			 && !is_first_screen_item (s)) {
 				/*
@@ -1841,7 +1981,7 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 		accept_cursor_x = column + f->size;
 	}
 
-	refresh ();
+	refresh_mywin (mywin);
 }
 
 static COB_INLINE COB_A_INLINE int
@@ -2028,7 +2168,7 @@ refresh_field (cob_screen *s)
 	int		y;
 	int		x;
 
-	getyx (stdscr, y, x);
+	getyx (mywin, y, x);
 	cob_screen_puts (s, s->field, cobsetptr->cob_legacy, ACCEPT_STATEMENT);
 	cob_move_cursor (y, x);
 }
@@ -2147,7 +2287,7 @@ find_field_by_pos (const int initial_curs, const int line, const int column) {
 	return -1;
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 static int
 mouse_to_exception_code (mmask_t mask) {
 	int fret = -1;
@@ -2207,7 +2347,7 @@ static int
 is_number_with_pic_symbol (cob_field * const f, const char symbol)
 {
 	int	i;
-	
+
 	if (COB_FIELD_TYPE (f) != COB_TYPE_NUMERIC_EDITED) {
 		return 0;
 	}
@@ -2232,7 +2372,7 @@ get_pic_symbol_offset (cob_field * const f, const char symbol)
 {
 	int	offset = 0;
 	int	i = 0;
-	
+
 	do {
 		offset += f->attr->pic[i].times_repeated;
 	} while (f->attr->pic[i++].symbol != symbol);
@@ -2258,11 +2398,11 @@ shift_left (cob_screen * const s, const int cline, const int ccolumn,
 	unsigned char	move_char;
 
 	COB_UNUSED (right_pos);
-	
+
 	for (offset = 0; offset < ccolumn - scolumn; offset++) {
 		move_char = s->field->data[offset + 1];
 		s->field->data[offset] = move_char;
-		
+
 		cob_move_cursor (cline, offset + scolumn);
 		if (move_char != ' ') {
 			if (s->attr & COB_SCREEN_NO_ECHO) {
@@ -2327,7 +2467,7 @@ move_to_initial_field_pos (cob_field * const f, const int sline,
 	int	offset;
 
 	*data_ptr = f->data;
-	
+
 	if (COB_INSERT_MODE && cob_field_is_numeric_or_numeric_edited (f)) {
 		if (has_decimal_point (f)) {
 			if (to_right_side) {
@@ -2397,7 +2537,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 	int			integer_part_end;
 	char			sign;
 	int			fix_position = 0;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	MEVENT		mevent;
 #endif
 
@@ -2414,11 +2554,14 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		int		cursor_clause_line;
 		int		cursor_clause_col;
 		get_cursor_from_program (&cursor_clause_line, &cursor_clause_col);
-		if (cursor_clause_line > 0) {
+		if (cursor_clause_line >= 0) {
 			int		fld_index = find_field_by_pos (initial_curs, cursor_clause_line, cursor_clause_col);
 			if (fld_index >= 0) {
 				curr_index = fld_index;
 				SET_FLD_AND_DATA_REFS (curr_index, sptr, s, sline, scolumn, right_pos, p);
+				if (scolumn != cursor_clause_col) {
+					p += cursor_clause_col - scolumn;
+				}
 				at_eof = 0;
 				cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, ACCEPT_STATEMENT);
 				cob_move_cursor (cursor_clause_line, cursor_clause_col);
@@ -2429,7 +2572,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		}
 	}
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	/* prevent warnings about not intialized structure */
 	memset (&mevent, 0, sizeof (MEVENT));
 #endif
@@ -2441,9 +2584,9 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			default_prompt_char = COB_CH_UL;
 		}
 
-		refresh ();
+		refresh_mywin (mywin);
 		errno = 0;
-		timeout (accept_timeout);
+		wtimeout (mywin, accept_timeout);
 		keyp = getch ();
 
 		/* FIXME: modularize (cob_screen_get_all, field_accept) and
@@ -2458,7 +2601,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			goto screen_return;
 		}
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 		/* get mouse event here, handle later */
 		if (keyp == KEY_MOUSE) {
 			getmouse (&mevent);
@@ -2479,7 +2622,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			continue;
 		}
 
-		getyx (stdscr, cline, ccolumn);
+		getyx (mywin, cline, ccolumn);
 
 		switch (keyp) {
 		case KEY_ENTER:
@@ -2712,21 +2855,27 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			} else {
 				break;
 			}
-			
+
 			finalize_field_input (s);
-			
+
 			/* Move cursor to sign */
 			ccolumn = scolumn + get_pic_symbol_offset (s->field, sign);
 			cob_move_cursor (cline, ccolumn);
 			p = s->field->data + ccolumn - scolumn;
 			/* Enter sign */
 			break;
-			
-#ifdef NCURSES_MOUSE_VERSION
+
+#ifdef HAVE_MOUSEMASK
 		case KEY_MOUSE:
 		{
 			int mline = mevent.y;
 			int mcolumn = mevent.x;
+			/* translate mouse position from stdscr to current window;
+			   error if outside current window */
+			if (!wmouse_trafo (mywin, &mline, &mcolumn, 0)) {
+				cob_beep ();
+				continue;
+			}
 			/* handle depending on state */
 			if (mevent.bstate & BUTTON1_PRESSED
 			 && COB_MOUSE_FLAGS & 1) {
@@ -2865,7 +3014,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			} else {
 				cob_addch ((const chtype)keyp);
 			}
-			
+
 			if (ccolumn == right_pos) {
 				/* Auto-skip at end of field. */
 				if (s->attr & COB_SCREEN_AUTO) {
@@ -2902,7 +3051,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		cob_beep ();
 	}
 screen_return:
-	refresh ();
+	refresh_mywin (mywin);
 }
 
 static int
@@ -2939,7 +3088,7 @@ cob_screen_moveyx (cob_screen *s)
 	if (s->line || s->column ||
 	    s->attr & (COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS |
 		       COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS)) {
-		getyx (stdscr, y, x);
+		getyx (mywin, y, x);
 		if (x < 0 || y < 0) {
 			/* not translated as "testing only" (should not happen) */
 			cob_runtime_warning ("negative values from getyx");
@@ -2977,7 +3126,7 @@ cob_screen_moveyx (cob_screen *s)
 		}
 
 		cob_move_cursor (line, column);
-		refresh ();
+		refresh_mywin (mywin);
 		cob_current_y = line;
 		cob_current_x = column;
 	}
@@ -3107,27 +3256,26 @@ extract_line_and_col_vals (cob_field *line, cob_field *column,
 			*sline = 0;
 			*scolumn = 0;
 			return;
+		}
+		if (line->size < 4) {
+			/* this is used when only a LINE clause is specified,
+			   not an AT clause */
+			cobol_line = cob_get_int (line);
+			cobol_col = 1;
 		} else {
-			if (line->size < 4) {
-				/* this is used when only a LINE clause is specified,
-				   not an AT clause */
-				cobol_line = cob_get_int (line);
-				cobol_col = 1;
-			} else {
-				/* common case: line actually contains both the
-				   line and field numbers */
-				int ret = get_line_and_col_from_field
-					(line, &cobol_line, &cobol_col);
-				/* LCOV_EXCL_START */
-				if (unlikely (ret == 1)) {
-#if 0				/* Throw an exception? EC-SCREEN-IMP-LINE-VAR-LENGTH? */
-					cob_set_exception (COB_EC_SCREEN_IMP);
+			/* common case: line actually contains both the
+			   line and field numbers */
+			int ret = get_line_and_col_from_field
+				(line, &cobol_line, &cobol_col);
+			/* LCOV_EXCL_START */
+			if (unlikely (ret == 1)) {
+#if 0			/* Throw an exception? EC-SCREEN-IMP-LINE-VAR-LENGTH? */
+				cob_set_exception (COB_EC_SCREEN_IMP);
 #else
-					cob_fatal_error (COB_FERROR_CODEGEN);
+				cob_fatal_error (COB_FERROR_CODEGEN);
 #endif
-				}
-				/* LCOV_EXCL_STOP */
 			}
+			/* LCOV_EXCL_STOP */
 		}
 	} else {
 		get_line_column (line, column, &cobol_line, &cobol_col);
@@ -3182,7 +3330,7 @@ screen_display (cob_screen *s, const int line, const int column)
 		pending_accept = 1;
 	}
 	cob_screen_iterate (s);
-	refresh ();
+	refresh_mywin (mywin);
 }
 
 static int
@@ -3295,10 +3443,10 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 	       cob_field *fgc, cob_field *bgc, cob_field *fscroll,
 	       cob_field *size_is, cob_field *control, cob_field *color)
 {
-	int	sline;
-	int	scolumn;
-	int	size_display, fsize;
-	int	status;
+	int 	sline;
+	int 	scolumn;
+	int 	size_display, fsize;
+	int 	status;
 	char	fig_const;	/* figurative constant character */
 
 	/* LCOV_EXCL_START */
@@ -3328,10 +3476,10 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		if (fattr & COB_SCREEN_SCROLL_DOWN) {
 			sline = -sline;
 		}
-		scrollok (stdscr, 1);
-		scrl (sline);
-		scrollok (stdscr, 0);
-		refresh ();
+		scrollok (mywin, 1);
+		wscrl (mywin, sline);
+		scrollok (mywin, 0);
+		refresh_mywin (mywin);
 	}
 
 	sline = line;
@@ -3379,7 +3527,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		}
 		cob_move_cursor (sline, 0);
 	}
-	refresh ();
+	refresh_mywin (mywin);
 }
 
 static void
@@ -3401,7 +3549,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	int		status;
 	chtype		prompt_char;    /* prompt character */
 	chtype		default_prompt_char;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	MEVENT		mevent;
 #endif
 
@@ -3421,7 +3569,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 
 	origin_y = 0;
 	origin_x = 0;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	/* prevent warnings about not intialized structure */
 	memset (&mevent, 0, sizeof (MEVENT));
 #endif
@@ -3440,10 +3588,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		if (fattr & COB_SCREEN_SCROLL_DOWN) {
 			keyp = -keyp;
 		}
-		scrollok (stdscr, 1);
-		scrl (keyp);
-		scrollok (stdscr, 0);
-		refresh ();
+		scrollok (mywin, 1);
+		wscrl (mywin, keyp);
+		scrollok (mywin, 0);
+		refresh_mywin (mywin);
 	}
 	cobglobptr->cob_exception_code = 0;
 
@@ -3498,7 +3646,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				}
 			}
 			/* SIZE IS greater than field, blank out trailing screen */
-			if (size_accept > (int)f->size) {
+			if (size_accept > f->size) {
 				cob_addnch (size_accept - f->size, COB_CH_SP);
 			}
 			/* start position within the field, if specified (all 1-based) */
@@ -3524,11 +3672,11 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 
 					if (cursor_clause_line == sline
 					 && cursor_clause_col > scolumn
-					 && cursor_clause_col < scolumn + disp_size) {
+					 && cursor_clause_col < scolumn + (int)disp_size) {
 						cursor_off = cursor_clause_col - scolumn + 1;
 					}
 				}
-				move (sline, scolumn + cursor_off - 1);
+				wmove (mywin, sline, scolumn + cursor_off - 1);
 			}
 		}
 #if	0	/* RXWRXW - Screen update */
@@ -3553,14 +3701,14 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	}
 	count = 0;
 
-	timeout (get_accept_timeout (ftimeout));
+	wtimeout (mywin, get_accept_timeout (ftimeout));
 
 	/* Get characters from keyboard, processing each one. */
 	for (; ;) {
 		/* Show prompt characters. */
 		if (f) {
 			/* Get current line, column. */
-			getyx (stdscr, cline, ccolumn);
+			getyx (mywin, cline, ccolumn);
 			/* Trailing prompts. */
 			if (fattr & COB_SCREEN_NO_ECHO) {
 				prompt_char = COB_CH_SP;
@@ -3611,7 +3759,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Cursor to current column. */
 			cob_move_cursor (cline, ccolumn);
 			/* Refresh screen. */
-			refresh ();
+			refresh_mywin (mywin);
 		}
 		errno = 0;
 
@@ -3636,7 +3784,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			continue;
 		}
 
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 		/* get mouse event here, handle later */
 		if (keyp == KEY_MOUSE) {
 			getmouse (&mevent);
@@ -3722,11 +3870,15 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				/* End key. */
 				fret = 2015;
 				goto field_return;
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 			case KEY_MOUSE:
 			{
 				int mline = mevent.y;
 				int mcolumn = mevent.x;
+				if (!wmouse_trafo (mywin, &mline, &mcolumn, 0)) {
+					cob_beep ();
+					continue;
+				}
 				mevent.bstate &= cob_mask_accept;
 				if (mevent.bstate != 0) {
 					fret = mouse_to_exception_code (mevent.bstate);
@@ -3948,12 +4100,16 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Put cursor back to original position. */
 			cob_move_cursor (cline, ccolumn);
 			continue;
-			
-#ifdef NCURSES_MOUSE_VERSION
+
+#ifdef HAVE_MOUSEMASK
 		case KEY_MOUSE:
 		{
 			int mline = mevent.y;
 			int mcolumn = mevent.x;
+			if (!wmouse_trafo (mywin, &mline, &mcolumn, 0)) {
+				cob_beep ();
+				continue;
+			}
 			/* handle depending on state */
 			if (mevent.bstate & BUTTON1_PRESSED
 			 && COB_MOUSE_FLAGS & 1) {
@@ -4084,7 +4240,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	if (cursor) {
 		/* horizontal position stored in CURSOR clause */
 		if (!COB_FIELD_CONSTANT (cursor)) {
-			getyx (stdscr, cline, ccolumn);
+			getyx (mywin, cline, ccolumn);
 			if (cline == sline) {
 				cob_set_int (cursor, ccolumn + 1 - scolumn);
 			}
@@ -4101,7 +4257,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		memset (COB_TERM_BUFF, ' ', size_accept);
 #endif
 	}
-	refresh ();
+	refresh_mywin (mywin);
 }
 
 static void
@@ -4113,7 +4269,7 @@ field_accept_from_curpos (cob_field *f, cob_field *fgc,
 	size_t		ccolumn;
 
 	/* Get current line, column. */
-	getyx (stdscr, cline, ccolumn);
+	getyx (mywin, cline, ccolumn);
 
 	/* accept field */
 	field_accept (f, (cob_flags_t)fattr, cline, ccolumn, fgc, bgc,
@@ -4129,7 +4285,7 @@ field_display_at_curpos (cob_field *f,
 	size_t		ccolumn;
 
 	/* Get current line, column. */
-	getyx (stdscr, cline, ccolumn);
+	getyx (mywin, cline, ccolumn);
 
 	field_display (f, (cob_flags_t)fattr, cline, ccolumn,
 			fgc, bgc, fscroll, size_is, NULL, NULL);
@@ -4176,7 +4332,7 @@ cob_display_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...
 	cob_field *size_is = NULL;
 	cob_field *control = NULL;
 	cob_field *color = NULL;
-	
+
 	/*
 	  LINE/COL 0 is always allowed here as it is impossible to specify it in
 	  the standard format (DISPLAY ... UPON CRT) and all implementations of
@@ -4188,48 +4344,50 @@ cob_display_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...
 	int 	sline;
 	int 	scolumn;
 
-	va_list 	args;
-	const char	*p = parms;
+	if (parms && *parms) {
+		va_list 	args;
+		const char *p = parms;
 
-	va_start (args, parms);
-	for (;;) {
-		char type = *p++;
-		if (type == 0) {
-			break;
+		va_start (args, parms);
+		for (;;) {
+			char type = *p++;
+			if (type == 0) {
+				break;
+			}
+			switch (type) {
+			case 'p':	/* AT POS, currently combined, likely to be changed later */
+			case 'l':	/* AT LINE */
+				line = va_arg (args, cob_field *);
+				break;
+			case 'c':	/* AT COLUMN */
+				column = va_arg (args, cob_field *);
+				break;
+			case 'f':	/* FOREGROUND-COLOR IS */
+				fgc = va_arg (args, cob_field *);
+				break;
+			case 'b':	/* BACKGROUND-COLOR IS */
+				bgc = va_arg (args, cob_field *);
+				break;
+			case 's':	/* SCROLL UP | DOWN */
+				fscroll = va_arg (args, cob_field *);
+				break;
+			case 'S':	/* SIZE IS */
+				size_is = va_arg (args, cob_field *);
+				break;
+			case 'C':	/* CONTROL -> variable named attributes */
+				control = va_arg (args, cob_field *);
+				break;
+			case 'L':	/* CONTROL -> variable numeric added attributes */
+				color = va_arg (args, cob_field *);
+				break;
+			default:
+				/* unknown attributes are explicit ignored */
+				break;
+			}
+			parms++;
 		}
-		switch (type) {
-		case 'p':	/* AT POS, currently combined, likely to be changed later */
-		case 'l':	/* AT LINE */
-			line = va_arg (args, cob_field *);
-			break;
-		case 'c':	/* AT COLUMN */
-			column = va_arg (args, cob_field *);
-			break;
-		case 'f':	/* FOREGROUND-COLOR IS */
-			fgc = va_arg (args, cob_field *);
-			break;
-		case 'b':	/* BACKGROUND-COLOR IS */
-			bgc = va_arg (args, cob_field *);
-			break;
-		case 's':	/* SCROLL UP | DOWN */
-			fscroll = va_arg (args, cob_field *);
-			break;
-		case 'S':	/* SIZE IS */
-			size_is = va_arg (args, cob_field *);
-			break;
-		case 'C':	/* CONTROL -> variable named attributes */
-			control = va_arg (args, cob_field *);
-			break;
-		case 'L':	/* CONTROL -> variable numeric added attributes */
-			color = va_arg (args, cob_field *);
-			break;
-		default:
-			/* unknown attributes are explicit ignored */
-			break;
-		}
-		parms++;
+		va_end (args);
 	}
-	va_end (args);
 
 	init_cob_screen_if_needed ();
 
@@ -4254,63 +4412,65 @@ cob_accept_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...)
 	cob_field *control = NULL;
 	cob_field *color = NULL;
 	cob_field *cursor = NULL;
-	
+
 	const int zero_line_col_allowed = 1;	/* see comment in cob_display_field */
 
 	int 	sline;
 	int 	scolumn;
 
-	va_list 	args;
-	const char	*p = parms;
+	if (parms && *parms) {
+		va_list 	args;
+		const char	*p = parms;
 
-	va_start (args, parms);
-	for (;;) {
-		char type = *p++;
-		if (type == 0) {
-			break;
+		va_start (args, parms);
+		for (;;) {
+			char type = *p++;
+			if (type == 0) {
+				break;
+			}
+			switch (type) {
+			case 'p':	/* AT POS, currently combined, likely to be changed later */
+			case 'l':	/* AT LINE */
+				line = va_arg (args, cob_field *);
+				break;
+			case 'c':	/* AT COLUMN */
+				column = va_arg (args, cob_field *);
+				break;
+			case 'f':	/* FOREGROUND-COLOR IS */
+				fgc = va_arg (args, cob_field *);
+				break;
+			case 'b':	/* BACKGROUND-COLOR IS */
+				bgc = va_arg (args, cob_field *);
+				break;
+			case 's':	/* SCROLL UP | DOWN */
+				fscroll = va_arg (args, cob_field *);
+				break;
+			case 't':	/* TIME-OUT [AFTER] */
+				ftimeout = va_arg (args, cob_field *);
+				break;
+			case 'P':	/* PROMPT CHARACTER OS */
+				prompt = va_arg (args, cob_field *);
+				break;
+			case 'S':	/* SIZE IS */
+				size_is = va_arg (args, cob_field *);
+				break;
+			case 'C':	/* CONTROL -> variable named attributes */
+				control = va_arg (args, cob_field *);
+				break;
+			case 'L':	/* CONTROL -> variable numeric added attributes */
+				color = va_arg (args, cob_field *);
+				break;
+			case 'R':	/* CURSOR -> offset within field */
+				cursor = va_arg (args, cob_field *);
+				break;
+			default:
+				/* unknown attributes are explicit ignored */
+				break;
+			}
+			parms++;
 		}
-		switch (type) {
-		case 'p':	/* AT POS, currently combined, likely to be changed later */
-		case 'l':	/* AT LINE */
-			line = va_arg (args, cob_field *);
-			break;
-		case 'c':	/* AT COLUMN */
-			column = va_arg (args, cob_field *);
-			break;
-		case 'f':	/* FOREGROUND-COLOR IS */
-			fgc = va_arg (args, cob_field *);
-			break;
-		case 'b':	/* BACKGROUND-COLOR IS */
-			bgc = va_arg (args, cob_field *);
-			break;
-		case 's':	/* SCROLL UP | DOWN */
-			fscroll = va_arg (args, cob_field *);
-			break;
-		case 't':	/* TIME-OUT [AFTER] */
-			ftimeout = va_arg (args, cob_field *);
-			break;
-		case 'P':	/* PROMPT CHARACTER OS */
-			prompt = va_arg (args, cob_field *);
-			break;
-		case 'S':	/* SIZE IS */
-			size_is = va_arg (args, cob_field *);
-			break;
-		case 'C':	/* CONTROL -> variable named attributes */
-			control = va_arg (args, cob_field *);
-			break;
-		case 'L':	/* CONTROL -> variable numeric added attributes */
-			color = va_arg (args, cob_field *);
-			break;
-		case 'R':	/* CURSOR -> offset within field */
-			cursor = va_arg (args, cob_field *);
-			break;
-		default:
-			/* unknown attributes are explicit ignored */
-			break;
-		}
-		parms++;
+		va_end (args);
 	}
-	va_end (args);
 
 	extract_line_and_col_vals (line, column, ACCEPT_STATEMENT,
 			zero_line_col_allowed, &sline, &scolumn);
@@ -4360,8 +4520,8 @@ cob_sys_clear_screen (void)
 {
 	init_cob_screen_if_needed ();
 
-	clear ();
-	refresh ();
+	wclear (mywin);
+	refresh_mywin (mywin);
 	cob_current_y = 0;
 	cob_current_x = 0;
 	return 0;
@@ -4377,14 +4537,14 @@ cob_screen_set_mode (const cob_u32_t smode)
 
 	if (!smode) {
 		if (cobglobptr->cob_screen_initialized) {
-			refresh ();
+			refresh_mywin (mywin);
 			def_prog_mode ();
 			endwin ();
 		}
 	} else {
 		if (cobglobptr->cob_screen_initialized) {
 			reset_prog_mode ();
-			refresh ();
+			refresh_mywin (mywin);
 		} else {
 			cob_screen_init ();
 		}
@@ -4504,8 +4664,12 @@ cob_exit_screen (void)
 	}
 	if (cobglobptr->cob_screen_initialized) {
 		if (pending_accept && cobsetptr->cob_exit_wait) {
-			/* FIXME: we likely should position to the last line since last cleanup before:
-			          DISPLAY AT 1010 DISPLAY AT 0909 GOBACK overrides first DISPLAY */
+			/* FIXME: we likely should position to either the very last line or
+			          the last line since last cleanup + 1 before; problem:
+			          DISPLAY AT 1010 DISPLAY AT 0909 GOBACK
+					  results in first DISPLAY to be overwritten */
+			WINDOW		*savwin = mywin;
+			mywin = stdscr;	/* consider also to restore fg+bg coilor + use reverse-video */
 			if (cobsetptr->cob_exit_msg[0] != 0) {
 				snprintf (exit_msg, COB_MINI_BUFF, "\n%s ", cobsetptr->cob_exit_msg);
 				cob_display_text (exit_msg);
@@ -4519,11 +4683,24 @@ cob_exit_screen (void)
 				cob_settings_screenio ();
 			}
 			field_accept_from_curpos (NULL, NULL, NULL, NULL, NULL, NULL, NULL, flags);
+			mywin = savwin;
 		}
 		cobglobptr->cob_screen_initialized = 0;
 #if 0 /* CHECKME: Shouldn't be necessary */
-		clear ();
+		wclear (mywin);
 		cob_move_to_beg_of_last_line ();
+#endif
+#ifdef WITH_PANELS
+		for (;;) {
+			PANEL *ptr_pan = panel_below (NULL);
+			if (ptr_pan) {
+				mywin = panel_window (ptr_pan);
+				del_panel (ptr_pan);
+				delwin (mywin);
+			} else {
+				break;
+			}
+		}
 #endif
 		endwin (); /* ends curses' terminal mode */
 		delwin (stdscr);	/* free storage related to screen not active */
@@ -4557,7 +4734,9 @@ cob_exit_screen_from_signal (int ss_only)
 	   PDCurses only with PDCursesMod 4.3.5) */
 #if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) \
  && (!defined (PDC_BUILD) || PDC_BUILD < 4305)
-	if (ss_only) return; 
+	if (ss_only) return;
+#else
+	COB_UNUSED (ss_only);
 #endif
 
 	if (cobglobptr->cob_screen_initialized) {
@@ -4767,7 +4946,7 @@ cob_sys_get_csr_pos (unsigned char *fld)
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
-	getyx (stdscr, cline, ccol);
+	getyx (mywin, cline, ccol);
 	if (f && f->size == 4) {
 		/* group with sizes up to 64k (2 * 2 bytes)
 		   as used by Fujitsu (likely with a limit of
@@ -4826,10 +5005,12 @@ cob_sys_get_char (unsigned char *fld)
 			return -1;
 		}
 	}
-#else
-	COB_UNUSED (fld);
-#endif
 	return 0;
+#else
+	/* this function is only valid for extended screenio! */
+	COB_UNUSED (fld);
+	return -2;
+#endif
 }
 
 /* set CurSoR position on screen,
@@ -4862,7 +5043,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 		cline = fld[0];
 		ccol= fld[1];
 	}
-	return move (cline, ccol);
+	return wmove (mywin, cline, ccol);
 #else
 	COB_UNUSED (fld);
 	return 0;
@@ -4914,6 +5095,67 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 #endif
 }
 
+/* save the current mywin screen to a file */
+int
+cob_sys_scr_dump (unsigned char *parm)
+{
+#ifdef	WITH_EXTENDED_SCREENIO
+	int	result;
+	FILE	*filep;
+	const char *filename = cob_get_param_str_buffered (1);
+
+	COB_CHK_PARMS (CBL_GC_SCR_DUMP, 1);
+	init_cob_screen_if_needed ();
+
+	if (filename && (filep = fopen (filename, "wb")) != NULL) {
+		refresh ();
+		result = putwin (mywin, filep);
+		fclose (filep);
+		return result;
+	}
+
+	COB_UNUSED (parm);
+	return ERR;
+#else
+	COB_UNUSED (parm);
+	return -1;
+#endif
+
+}
+
+
+/* restore the current mywin screen from a file */
+int cob_sys_scr_restore (unsigned char *parm)
+{
+#ifdef	WITH_EXTENDED_SCREENIO
+	int	result;
+	FILE	*filep;
+	const char	*filename = cob_get_param_str_buffered (1);
+
+	COB_CHK_PARMS (CBL_GC_SCR_RESTORE, 1);
+	init_cob_screen_if_needed ();
+
+	if (filename && (filep = fopen (filename, "rb")) != NULL) {
+		WINDOW *replacement = getwin (filep);
+		fclose (filep);
+
+		if (replacement) {
+			result = overwrite (replacement, mywin);
+			refresh ();
+			delwin (replacement);
+			return result;
+		}
+	}
+
+	COB_UNUSED (parm);
+	return ERR;
+#else
+	COB_UNUSED (parm);
+	return -1;
+#endif
+
+}
+
 int
 cob_get_scr_cols (void)
 {
@@ -4945,27 +5187,28 @@ cob_settings_screenio (void)
 		return;
 	}
 
-	/* Extended ACCEPT status returns */
-	if (cobsetptr->cob_extended_status == 0) {
-		cobsetptr->cob_use_esc = 0;
+	/* requesting cursor type depending on both settings, 0 = hide,
+	   1 = vertical bar cursor, 2 = square cursor; note: the cursor change
+	   may not have an effect in all curses implementations / terminals */
+	{
+		static unsigned int	prev_cursor_mode = UINT_MAX; 
+		const unsigned int new_cursor_mode
+			= (COB_HIDE_CURSOR)?0U:((COB_INSERT_MODE)?1U:2U);
+		if (prev_cursor_mode != new_cursor_mode) {
+			(void) curs_set (new_cursor_mode);
+			prev_cursor_mode = new_cursor_mode;
+		}
 	}
 
-	if (curr_setting_insert_mode != COB_INSERT_MODE) {
-		/* Depending on insert mode set vertical bar cursor (on)
-		   or square cursor (off) - note: the cursor change may has no
-		   effect in all curses implementations / terminals */
-		if (COB_INSERT_MODE == 0) {
-			(void)curs_set (2);	/* set square cursor */
-		} else {
-			(void)curs_set (1);	/* set vertical bar cursor */
-		}
-		curr_setting_insert_mode = COB_INSERT_MODE;
+	/* extended ACCEPT status returns */
+	if (cobsetptr->cob_extended_status == 0) {
+		cobsetptr->cob_use_esc = 0;
 	}
 
 #ifdef HAVE_MOUSEINTERVAL
 	mouseinterval (COB_MOUSE_INTERVAL);
 #endif
-#ifdef NCURSES_MOUSE_VERSION
+#ifdef HAVE_MOUSEMASK
 	if (curr_setting_mouse_flags != COB_MOUSE_FLAGS) {
 		mmask_t 	mask_applied = cob_mask_routine;
 		if (COB_MOUSE_FLAGS) {
@@ -5037,4 +5280,619 @@ cob_init_screenio (cob_global *lptr, cob_settings *sptr)
 	}
 
 	cob_settings_screenio ();
+}
+
+/* These functions are only defined if we have PANELS */
+
+#ifdef WITH_PANELS
+
+/*	this function updates all the windows which are not hidden 
+	and then does the final "doupdate" to update the physical screen */
+static void
+update_all_windows (void)
+{
+	/* first get the top panel */
+	PANEL	*ptr_pan = panel_below (NULL);
+
+	if (!ptr_pan) {
+		mywin = stdscr;
+		refresh_mywin (mywin);
+		doupdate ();
+		return;
+	}
+
+	update_panels ();
+
+	while (ptr_pan) {
+		WINDOW	*ptr_win = panel_window (ptr_pan);
+		wnoutrefresh (ptr_win);
+		ptr_pan = panel_below (ptr_pan);
+	}
+
+	refresh_mywin (mywin);
+	doupdate ();
+}
+
+/* NEW_WINDOW - create a new panel / window pair */
+static int
+sys_window_new (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	pan_first = &my_panels[0];
+	PPANEL_ENTRY	pan_last = &my_panels[MAX_PANELS];
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+	WINDOW			*ptr_win;
+	short			fg_color;
+	short			bg_color;
+	short			color_pr;
+
+	/* find empty slot in panel array */
+
+	for (ptr_pan_entry = pan_first; ptr_pan_entry <= pan_last; ptr_pan_entry++) {
+		if (ptr_pan_entry->pan == NULL)
+			break;
+	}
+
+	/* if no empty slot exists then set error code */
+
+	if (ptr_pan_entry > pan_last) {
+		return 20;
+	}
+
+	/* note: takes all available space if lines/cols are zero */
+	ptr_win = newwin (parm->win_lines,
+					parm->win_cols,
+					parm->starty - 1,
+					parm->startx - 1);
+	if (!ptr_win) {
+		return 22;
+	}
+	
+	#if 0 /* CHECKME, possibly doing manually ?!?e */
+	scrollok (ptr_win, (parm->flags & SYS_WIN_FLAG_NOSCROLL));
+	(parm->flags & SYS_WIN_FLAG_NOWRAP);	 /* TODO */
+	#endif
+
+
+	ptr_pan = new_panel (ptr_win);
+	if (!ptr_pan) {
+		return 24;
+	}
+
+	cob_to_curses_color (parm->fg_color, &fg_color);
+	cob_to_curses_color (parm->bg_color, &bg_color);
+
+	parm->pan_number = ptr_pan_entry->pan_number;
+	ptr_pan_entry->pan = ptr_pan;
+	ptr_pan_entry->win = ptr_win;
+	ptr_pan_entry->win_lines = parm->win_lines;
+	ptr_pan_entry->win_cols = parm->win_cols;
+	ptr_pan_entry->startx = parm->startx - 1;
+	ptr_pan_entry->starty = parm->starty - 1;
+	ptr_pan_entry->flags = parm->flags;
+
+	if (set_panel_userptr (ptr_pan, ptr_pan_entry)) {
+		return 26;
+	}
+
+	mywin = ptr_win;
+
+	if (cobsetptr->cob_legacy) {
+		fg_color |= (parm->fg_color & 8);
+		bg_color |= (parm->bg_color & 8);
+	}
+	ptr_pan_entry->fg_color = fg_color;
+	ptr_pan_entry->bg_color = bg_color;
+	ptr_pan_entry->input_fg_color = parm->fg_color;
+	ptr_pan_entry->input_bg_color = parm->bg_color;
+	color_pr = cob_get_color_pair (fg_color, bg_color);
+	wbkgd (mywin ,COLOR_PAIR (color_pr));
+	werase (mywin);
+	fore_color = fg_color;
+	back_color = bg_color;
+	update_all_windows ();
+	return 0;
+}
+
+/* MOVE_WINDOW - move the panel within stdscr */
+static int
+sys_window_move (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	PANEL			*ptr_pan = ptr_pan_entry->pan;
+
+	if (!ptr_pan) {
+		return 28;
+	}
+
+	if (panel_hidden (ptr_pan)) {
+		/* TODO: it should be possible to move a hidden
+		   panel as well (if there's a curses issue: either unhide, move, hide
+		   or add a "pending change" flag, set the internal vars only and on
+		   unhide wioth the flag set do all the adjustments then - possibly
+		   by calling this function from there) */
+		return 40;
+	}
+
+	if (move_panel (ptr_pan, parm->starty - 1, parm->startx - 1) ) {
+		return 29;
+	}
+
+	ptr_pan_entry->startx = parm->startx - 1;
+	ptr_pan_entry->starty = parm->starty - 1;
+
+	/* CHECKME: why do we use the top panel here, when we moved
+	   another panel before ?!? */
+	ptr_pan = panel_below (NULL);
+
+	mywin = panel_window (ptr_pan);
+#if 0 /* to be tested */
+	/* TODO: if lines and/or cols are zero, should take all available space,
+	   needs to calculate this up-front */
+	wresize (mywin, parm->win_lines, parm->win_cols);
+#endif
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+
+	parm->win_lines = ptr_pan_entry->win_lines;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->flags = ptr_pan_entry->flags;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	update_all_windows ();
+	return 0;
+}
+
+/* SHOW_WINDOW - show the panel within stdscr */
+
+static int
+sys_window_show (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	PANEL			*ptr_pan = ptr_pan_entry->pan;
+
+	if (!ptr_pan) {
+		return 28;
+	}
+
+	if (!panel_hidden (ptr_pan)) {
+		/* CHECKME: is there a reason to not just update internal vars
+		   and exit with zero? */
+		return 42;
+	}
+
+	if (show_panel (ptr_pan)) {
+		return 30;
+	}
+
+	ptr_pan_entry->flags = ~SYS_WIN_FLAG_HIDDEN;
+
+	ptr_pan = panel_below (NULL);
+	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_lines = ptr_pan_entry->win_lines;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->flags = ptr_pan_entry->flags;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	update_all_windows ();
+	return 0;
+}
+
+/* HIDE_WINDOW - hide the panel within stdscr */
+static int
+sys_window_hide (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	PANEL			*ptr_pan = ptr_pan_entry->pan;
+
+	if (!ptr_pan) {
+		return 28;
+	}
+
+	if (panel_hidden (ptr_pan)) {
+		/* CHECKME: is there a reason to not just update internal vars
+		   and exit with zero? */
+		return 40;
+	}
+
+	if (hide_panel (ptr_pan)) {
+		return 32;
+	}
+
+	ptr_pan_entry->flags &= SYS_WIN_FLAG_HIDDEN;
+
+	/*	note the following is needed in case the top panel
+		was hidden. then the next panel will be on top */
+
+	ptr_pan = panel_below (NULL);
+
+	if (ptr_pan) {
+		mywin = panel_window (ptr_pan);
+		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+		fore_color = ptr_pan_entry->fg_color;
+		back_color = ptr_pan_entry->bg_color;
+	} else {
+		mywin = stdscr;
+		move (save_cursor_y, save_cursor_x);
+		fore_color = stdscr_fore_color;
+		back_color = stdscr_back_color;
+	}
+
+	parm->win_lines = ptr_pan_entry->win_lines;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->flags = ptr_pan_entry->flags;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	update_all_windows ();
+	return 0;
+}
+
+
+/* TOP_WINDOW - make the panel top within stdscr */
+static int
+sys_window_top (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	PANEL			*ptr_pan = ptr_pan_entry->pan;
+
+	if (!ptr_pan) {
+		return 28;
+	}
+
+	if (panel_hidden (ptr_pan)) {
+		return 40;
+	}
+
+	if (top_panel (ptr_pan)) {
+		return 34;
+	}
+
+	ptr_pan = panel_below (NULL);
+	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_lines = ptr_pan_entry->win_lines;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->flags = ptr_pan_entry->flags;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	update_all_windows ();
+	return 0;
+}
+
+
+/* BOTTOM_WINDOW - make the panel bottem within stdscr */
+static int
+sys_window_bottom (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	PANEL			*ptr_pan = ptr_pan_entry->pan;
+
+	if (!ptr_pan) {
+		return 28;
+	}
+
+	if (panel_hidden (ptr_pan)) {
+		return 40;
+	}
+
+	if (bottom_panel (ptr_pan)) {
+		return 35;
+	}
+
+	ptr_pan = panel_below (NULL);
+	mywin = panel_window (ptr_pan);
+	ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+	parm->pan_number = ptr_pan_entry->pan_number;
+	fore_color = ptr_pan_entry->fg_color;
+	back_color = ptr_pan_entry->bg_color;
+
+	parm->win_lines = ptr_pan_entry->win_lines;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->flags = ptr_pan_entry->flags;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	update_all_windows ();
+	return 0;
+}
+
+/* DELETE_WINDOW - delete the panel within stdscr */
+static int
+sys_window_delete (PPARM_FLD parm)
+{
+	PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+	PANEL			*ptr_pan = ptr_pan_entry->pan;
+
+	if (!ptr_pan) {
+		return 28;
+	}
+
+	if (panel_hidden (ptr_pan)) {
+		show_panel (ptr_pan);
+	}
+
+	if (del_panel (ptr_pan)) {
+		return 38;
+	}
+
+	if (delwin (ptr_pan_entry->win)) {
+		return 36;
+	}
+
+	ptr_pan_entry->pan = NULL;
+	ptr_pan_entry->win = NULL;
+	ptr_pan_entry->win_lines = 0;
+	ptr_pan_entry->win_cols = 0;
+	ptr_pan_entry->startx = 0;
+	ptr_pan_entry->starty = 0;
+	ptr_pan_entry->flags = 0;
+	ptr_pan_entry->fg_color = 0;
+	ptr_pan_entry->bg_color = 7;
+	ptr_pan_entry->input_fg_color = 0;
+	ptr_pan_entry->input_bg_color = 7;
+
+	ptr_pan = panel_below (NULL);
+
+	if (ptr_pan) {
+		mywin = panel_window (ptr_pan);
+		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+		fore_color = ptr_pan_entry->fg_color;
+		back_color = ptr_pan_entry->bg_color;
+	} else {
+		mywin = stdscr;
+		move (save_cursor_y, save_cursor_x);
+		fore_color = stdscr_fore_color;
+		back_color = stdscr_back_color;
+	}
+
+	parm->win_lines = ptr_pan_entry->win_lines;
+	parm->win_cols = ptr_pan_entry->win_cols;
+	parm->startx = ptr_pan_entry->startx + 1;
+	parm->starty = ptr_pan_entry->starty + 1;
+	parm->flags = ptr_pan_entry->flags;
+	parm->fg_color = ptr_pan_entry->input_fg_color;
+	parm->bg_color = ptr_pan_entry->input_bg_color;
+
+	update_all_windows ();
+	return 0;
+}
+
+
+/* LIST_WINDOW - list all of the windows */
+static void
+sys_window_list (PLIST_FLD list, size_t amount)
+{
+	PPANEL_ENTRY	ptr_pan_entry;
+	PANEL			*ptr_pan;
+	int				depth, loop;
+
+	depth = 1;
+	memset (list, 0, amount * sizeof(LIST_FLD));
+
+	if (amount > MAX_PANELS) {
+		amount = MAX_PANELS;
+	}
+
+	/* find the depth of all the active windows,
+	   starting at ceiling (top of deck) and work down... */
+	ptr_pan = panel_below (NULL);
+	while (ptr_pan && depth <= amount) {
+		ptr_pan_entry = (PPANEL_ENTRY)panel_userptr (ptr_pan);
+		list->pan_position = depth;
+		list->pan_number = ptr_pan_entry->pan_number;
+		list->win_lines = ptr_pan_entry->win_lines;
+		list->win_cols = ptr_pan_entry->win_cols;
+		list->startx = ptr_pan_entry->startx + 1;
+		list->starty = ptr_pan_entry->starty + 1;
+		list->flags = ptr_pan_entry->flags;
+		list->input_fg_color = ptr_pan_entry->input_fg_color;
+		list->input_bg_color = ptr_pan_entry->input_bg_color;
+		list++;
+		depth++;
+		ptr_pan = panel_below (ptr_pan);
+	}
+
+	/* go through all of the hidden windows,
+	   which are not in the panel deck but only in our internal list */
+	ptr_pan_entry = &my_panels[0];
+	for (loop = 0; loop < depth; loop++, ptr_pan_entry++) {
+		if (ptr_pan_entry->flags & SYS_WIN_FLAG_HIDDEN) {
+			list->pan_position = 0;
+			list->pan_number = ptr_pan_entry->pan_number;
+			list->win_lines = ptr_pan_entry->win_lines;
+			list->win_cols = ptr_pan_entry->win_cols;
+			list->startx = ptr_pan_entry->startx + 1;
+			list->starty = ptr_pan_entry->starty + 1;
+			list->flags = ptr_pan_entry->flags;
+			list->input_fg_color = ptr_pan_entry->input_fg_color;
+			list->input_bg_color = ptr_pan_entry->input_bg_color;
+			list++;
+		}
+	}
+}
+
+#endif /* WITH_PANELS */
+
+
+/* CBL_GC_WINDOW - window functions */
+int
+cob_sys_window (unsigned char *mode_ext, unsigned char *fld)
+{
+#ifdef COB_EXPERIMENTAL
+	const enum sys_win_mode mode = *mode_ext;
+	const cob_field		*f2 = cob_get_param_field (2, "CBL_GC_WINDOW");
+	PPARM_FLD		parm;
+
+	COB_CHK_PARMS (CBL_GC_NEW_WINDOW, 2);
+	if (!mode_ext || !fld) {
+		return	-8;
+	}
+
+	if (mode == SYS_WIN_LIST) {
+#ifdef WITH_PANELS
+		size_t amount = f2->size / sizeof (LIST_FLD);
+		if (!amount) return 44;
+
+		init_cob_screen_if_needed ();
+		sys_window_list ((PLIST_FLD)f2->data, amount);
+		return 0;
+#endif
+	} else if (f2->size == sizeof (PARM_FLD)) {
+		parm = (PPARM_FLD)f2->data;
+		if ( mode != SYS_WIN_NEW
+		 && (parm->pan_number < 1 || parm->pan_number > MAX_PANELS)) {
+			return 10;
+		}
+
+		/* also needed for COB_MAX_X_COORD, so do early */
+		init_cob_screen_if_needed ();
+
+		switch (mode) {
+			case SYS_WIN_NEW:
+			case SYS_WIN_ATTR_CHANGE:
+				if (parm->starty > COB_MAX_Y_COORD)
+					return 2;
+				if (parm->startx > COB_MAX_X_COORD)
+					return 4;
+				if (parm->win_lines > COB_MAX_Y_COORD)
+					return 6;
+				if (parm->win_cols > COB_MAX_X_COORD)
+					return 7;
+				if (parm->bg_color < 0 || parm->bg_color > 15)
+					return 8;
+				if (parm->fg_color < 0 || parm->fg_color > 15)
+					return 9;
+				if (parm->fg_color == parm->bg_color)
+					return 11;
+				break;
+			case SYS_WIN_MOVE:
+				if (parm->starty > COB_MAX_Y_COORD)
+					return 2;
+				if (parm->startx > COB_MAX_X_COORD)
+					return 4;
+				break;
+			case SYS_WIN_ATTR_GET:
+			case SYS_WIN_DELETE:
+			case SYS_WIN_HIDE:
+			case SYS_WIN_SHOW:
+			case SYS_WIN_TOP:
+			case SYS_WIN_BOTTOM:
+				break;
+			default:
+				return 44;
+		}
+	} else {
+		return	-8;
+	}
+
+#ifdef WITH_PANELS
+	if (mywin == stdscr) {
+		getyx (stdscr, save_cursor_y, save_cursor_x);
+		stdscr_fore_color = fore_color;
+		stdscr_back_color = back_color;
+	}
+
+	if (mode == SYS_WIN_ATTR_CHANGE) {
+		PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+		int ret = 0;
+		/* TODO: add changing colors */
+		if (parm->win_lines != ptr_pan_entry->win_lines
+		 || parm->win_cols != ptr_pan_entry->win_cols
+		 || parm->startx   != ptr_pan_entry->startx + 1
+		 || parm->starty   != ptr_pan_entry->starty + 1) {
+			/* TODO: ensure that resizing works */
+			ret += sys_window_move (parm);
+		}
+		if (ptr_pan_entry->flags != parm->flags) {
+			if ((ptr_pan_entry->flags & SYS_WIN_FLAG_HIDDEN) != (parm->flags & SYS_WIN_FLAG_HIDDEN)) {
+				if (parm->flags & SYS_WIN_FLAG_HIDDEN) {
+					ret += sys_window_hide (parm);
+				} else {
+					ret += sys_window_show (parm);
+				}
+			}
+			if ((ptr_pan_entry->flags & SYS_WIN_FLAG_NOSCROLL) != (parm->flags & SYS_WIN_FLAG_NOSCROLL)) {
+				/* TODO */
+			}
+			if ((ptr_pan_entry->flags & SYS_WIN_FLAG_NOWRAP) != (parm->flags & SYS_WIN_FLAG_NOWRAP)) {
+				/* TODO */
+			}
+		}
+		return ret;
+	}
+	if (mode == SYS_WIN_ATTR_GET) {
+		PPANEL_ENTRY	ptr_pan_entry = &my_panels[parm->pan_number - 1];
+		/* CHECKME: is this enough? */
+		parm->win_lines = ptr_pan_entry->win_lines;
+		parm->win_cols = ptr_pan_entry->win_cols;
+		parm->startx = ptr_pan_entry->startx + 1;
+		parm->starty = ptr_pan_entry->starty + 1;
+		parm->flags = ptr_pan_entry->flags;
+		parm->fg_color = ptr_pan_entry->input_fg_color;
+		parm->bg_color = ptr_pan_entry->input_bg_color;
+		return 0;
+	}
+
+	switch (mode) {
+		case SYS_WIN_NEW:	return (sys_window_new (parm));
+		case SYS_WIN_DELETE:	return (sys_window_delete (parm));
+		case SYS_WIN_MOVE:	return (sys_window_move (parm));
+		case SYS_WIN_HIDE:	return (sys_window_hide (parm));
+		case SYS_WIN_SHOW:	return (sys_window_show (parm));
+		case SYS_WIN_TOP:	return (sys_window_top (parm));
+		case SYS_WIN_BOTTOM:	return (sys_window_bottom (parm));
+		default:
+			return 44;
+	}
+
+#else	/* WITH_PANELS */
+	if (getenv ("COB_IS_RUNNING_IN_TESTMODE")) {
+		return 77;	/* let testsuite skip related tests */
+	}
+	return -1;
+#endif
+
+
+#else /* COB_EXPERIMENTAL */
+	COB_UNUSED (mode_ext);
+	COB_UNUSED (fld);
+#ifdef WITH_PANELS
+	COB_UNUSED (sys_window_new);
+	COB_UNUSED (sys_window_delete);
+	COB_UNUSED (sys_window_move);
+	COB_UNUSED (sys_window_hide);
+	COB_UNUSED (sys_window_show);
+	COB_UNUSED (sys_window_top);
+	COB_UNUSED (sys_window_bottom);
+	COB_UNUSED (sys_window_list);
+#endif
+	if (getenv ("COB_IS_RUNNING_IN_TESTMODE")) {
+		return 77;	/* let testsuite skip related tests */
+	}
+	return -2;
+#endif
+
 }

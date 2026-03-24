@@ -1,5 +1,5 @@
-## Copyright (C) 2014-2018,2020-2023 Free Software Foundation, Inc.
-## Written by Edward Hart, Simon Sobisch
+## Copyright (C) 2014-2018,2020-2024 Free Software Foundation, Inc.
+## Written by Edward Hart, Simon Sobisch, Chuck Haatvedt
 ##
 ## This file is part of GnuCOBOL.
 ##
@@ -1138,7 +1138,7 @@ AT_DATA([prog.cob], [
        77  CMAGENTA     PIC 9(05) COMP-5 VALUE 6.
        77  CYELLOW      PIC 9(05) COMP-5 VALUE 7.
        77  CWHITE       PIC 9(05) COMP-5 VALUE 8.
-       
+
        77  LIN          PIC 99    COMP-5.
 
        01  scr1 PIC X(80)
@@ -1248,7 +1248,7 @@ AT_DATA([prog.cob], [[
                                       & "BCOLOR=BLACK,".
        77  CWHITE       PIC X(99) VALUE "FCOLOR=WHITE, "
                                       & "BCOLOR=BLACK, ".
-       
+
        77  LIN          PIC 99    COMP-5.
 
        01  scr1 PIC X(75)
@@ -1300,7 +1300,7 @@ AT_DATA([prog.cob], [[
       *
            ADD  2 TO LIN
            PERFORM dspcol
-           MOVE "REVERSE," TO 
+           MOVE "REVERSE," TO
                CBLACK (40:), CBLUE (40:), CGREEN (40:), CCYAN (40:),
                CRED (40:), CMAGENTA (40:), CYELLOW (40:), CWHITE (40:)
            ADD  1 TO LIN
@@ -1312,12 +1312,12 @@ AT_DATA([prog.cob], [[
            ADD  1 TO LIN
            DISPLAY scr9 AT LINE LIN COL 2
       *
-           MOVE "HIGHLIGHT,NO REVERSE" TO 
+           MOVE "HIGHLIGHT,NO REVERSE" TO
                CBLACK (50:), CBLUE (50:), CGREEN (50:), CCYAN (50:),
                CRED (50:), CMAGENTA (50:), CYELLOW (50:), CWHITE (50:)
            ADD  1 TO LIN
            PERFORM dspcol
-           MOVE "NO HIGH, BLINK" TO 
+           MOVE "NO HIGH, BLINK" TO
                CBLACK (60:), CBLUE (60:), CGREEN (60:), CCYAN (60:),
                CRED (60:), CMAGENTA (60:), CYELLOW (60:), CWHITE (60:)
            MOVE 12 TO LIN
@@ -1359,7 +1359,7 @@ AT_DATA([prog.cob], [[
        WORKING-STORAGE  SECTION.
        01  success-flag PIC X VALUE 'Y'.
            88  success  VALUE 'Y', 'y'.
-       
+
        77  LIN-START    PIC 99    COMP-5.
        77  LIN          PIC 99    COMP-5.
 
@@ -2747,7 +2747,7 @@ AT_CLEANUP
 
 
 AT_SETUP([END key])
-AT_KEYWORDS([END SIZE])
+AT_KEYWORDS([END SIZE position])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -2794,7 +2794,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INSERT key])
-AT_KEYWORDS([INSERT SIZE])
+AT_KEYWORDS([COB_INSERT_MODE SIZE])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -2842,8 +2842,68 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([cursor visibility])
+AT_KEYWORDS([COB_HIDE_CURSOR])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  success-flag PIC X VALUE 'Y'.
+           88  fail     VALUE 'N'.
+       01  ws-input     PIC X.
+           88  success  VALUE 'Y', 'y'.
+       PROCEDURE DIVISION.
+           DISPLAY "Type 'Y' if you see the cursor"
+               LINE 1 COLUMN 1.
+
+           ACCEPT WS-INPUT
+               LINE 1 COLUMN 50
+               WITH AUTO-SKIP
+                    UPDATE.
+           IF NOT success SET fail TO TRUE.
+
+           SET ENVIRONMENT 'COB_HIDE_CURSOR' TO 'TRUE'.
+
+           DISPLAY "Type 'Y' if you do not see the cursor"
+               LINE 3 COLUMN 1.
+
+           ACCEPT WS-INPUT
+               LINE 3 COLUMN 50
+               WITH AUTO-SKIP
+                    UPDATE.
+           IF NOT success SET fail TO TRUE.
+
+           SET ENVIRONMENT 'COB_INSERT_MODE' TO 'TRUE'.
+
+           DISPLAY "Type 'Y' if you still do not see the cursor"
+               LINE 5 COLUMN 1.
+
+           ACCEPT WS-INPUT
+               LINE 5 COLUMN 50
+               WITH AUTO-SKIP
+                    UPDATE.
+           IF NOT success SET fail TO TRUE.
+
+           IF fail
+               GOBACK RETURNING 1
+           ELSE
+               GOBACK RETURNING 0
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([BACKSPACE key])
-AT_KEYWORDS([BACKSPACE SIZE CURSOR])
+AT_KEYWORDS([SIZE CURSOR position])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -2898,7 +2958,7 @@ AT_CLEANUP
 
 
 AT_SETUP([DELETE key])
-AT_KEYWORDS([DELETE SIZE])
+AT_KEYWORDS([SIZE position])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -3478,3 +3538,622 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
+
+AT_SETUP([simple ACCEPT field WITH UPDATE])
+AT_KEYWORDS([screen])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 var           pic x(11) value 'ignore this'.
+       01  success-flag PIC X VALUE 'y'.
+           88  success  VALUE 'Y', 'y'.
+
+       PROCEDURE        DIVISION.
+           display "Press ENTER if you see an ""y"" "
+                   at 0302
+           accept success-flag update.
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([VALUE ALL in SCREEN SECTION])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SCREEN-VALUE-ALL.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       SCREEN SECTION.
+       01 SCREEN001 BLANK SCREEN AUTO-SKIP.
+           03 SCR01 BACKGROUND-COLOR 2 FOREGROUND-COLOR 7.
+             05 LINE 02 COL 001 PIC X(50) VALUE ALL '-'.
+
+       PROCEDURE DIVISION.
+           DISPLAY 'Press ENTER if you see a sequence of ""-""'
+           AT 0101 END-DISPLAY
+           DISPLAY ' ' AT 0201 END-DISPLAY
+           ACCEPT SCREEN001
+           ACCEPT OMITTED
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CURSOR position in line 1])
+AT_KEYWORDS([screen])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    PROG.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           CURSOR IS CURSOR-POSITION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+       01  CURSOR-POSITION.
+           05 CSR-ROW-NUMBER                 PIC 9(03) VALUE 001.
+           05 CSR-COL-NUMBER                 PIC 9(03) VALUE 005.
+
+       01  WORK-FIELDS.
+           05 IN-ID                          PIC X(09) VALUE SPACES.
+           05 TRAN-ID                        PIC X(03) VALUE 'ABC'.
+
+       01  SUCCESS-FLAG PIC X VALUE 'Y'.
+           88  SUCCESS  VALUE 'y', 'Y'.
+
+       SCREEN SECTION.
+
+       01  EMPLOYEE-SCREEN
+              BACKGROUND-COLOR IS 0
+              FOREGROUND-COLOR IS 7.
+
+           05 LINE 01 COL 01  AUTO           PIC X(03) USING
+              TRAN-ID.
+           05 LINE 01 COL 04                 PIC X(01) VALUE
+              ','.
+           05 LINE 01 COL 05  AUTO           PIC X(09) USING
+              IN-ID.
+
+           05  LINE 5 VALUE 'cursor should be '
+               & 'at line 1 and column 5'.
+           05  LINE 6 VALUE 'go to line 10 '
+               & 'and enter an "y" or "n" '.
+           05  LINE 10 PIC X, REQUIRED USING success-flag.
+
+       PROCEDURE DIVISION.
+
+           DISPLAY EMPLOYEE-SCREEN.
+           ACCEPT  EMPLOYEE-SCREEN.
+
+           IF SUCCESS AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF.
+
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT SCREEN TIMEOUT])
+AT_KEYWORDS([crt status cursor])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       REPLACE ==:BCOL:== BY ==BACKGROUND-COLOR==; ==:FCOL:== BY
+                                              ==FOREGROUND-COLOR==.
+      ** *************************************************************
+      **
+      ** *************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    PROG.
+      * GnuCOBOL sample
+       ENVIRONMENT   DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           CRT STATUS IS WCRT-STATUS.
+           CURSOR     IS WCURSORROWCOL.
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       77 K-ENTER         PIC 9(04) VALUE 0000.
+       77 K-TIMEOUT      PIC 9(04) VALUE 8001.
+
+       01 WCRT-STATUS     PIC 9(04) VALUE ZERO.
+       01  WCURSORROWCOL  PIC 9(06) VALUE 000000.
+       01  REDEFINES WCURSORROWCOL .
+           05 WCURSORROW  PIC 9(03).
+           05 WCURSORCOL  PIC 9(03).
+       01 BLACK        CONSTANT AS 00.
+       01 BLUE         CONSTANT AS 01.
+       01 GREEN        CONSTANT AS 02.
+       01 CYAN         CONSTANT AS 03.
+       01 RED          CONSTANT AS 04.
+       01 MAGENTA      CONSTANT AS 05.
+      *                                   old color code as yellow
+       01 BROWN        CONSTANT AS 06.
+      *                                   or Light Gray
+       01 WHITE        CONSTANT AS 07.
+      *                                   or Dark Gray
+       01 GREY         CONSTANT AS 08.
+      *                                   same color code as Grey
+       01 LIGHTBLACK   CONSTANT AS 08.
+       01 LIGHTBLUE    CONSTANT AS 09.
+       01 LIGHTGREEN   CONSTANT AS 10.
+       01 LIGHTCYAN    CONSTANT AS 11.
+       01 LIGHTRED     CONSTANT AS 12.
+       01 LIGHTMAGENTA CONSTANT AS 13.
+       01 PINK         CONSTANT AS 13.
+       01 YELLOW       CONSTANT AS 14.
+       01 LIGHTWHITE   CONSTANT AS 15.
+
+
+
+       01 W-VAR-SELECTION.
+           02 W-DATA   PIC X(8).
+           02 W-REPLY  PIC X(01).
+               88 SUCCESS    VALUE 'Y', 'y'.
+
+
+       SCREEN SECTION.
+
+       01 SCREEN-SELECTION.
+           02 LINE 06  COL 05 :FCOL: BLACK :BCOL: CYAN
+               VALUE 'TIMEOUT TEST - ENTER 4 CHARACTERS OF DATA'  &
+                   ' AND PAUSE UNTIL TIME CHANGES'.
+           02 LINE 07  COL 05 :FCOL: BLACK :BCOL: CYAN
+               VALUE ' THEN ENTER 4 MORE CHARACTERS OF DATA'      &
+                   ' AND PAUSE UNTIL TIME CHANGES'.
+           02 LINE 08  COL 05 :FCOL: BLACK :BCOL: CYAN
+               VALUE ' THEN AFTER THE TIME CHANGES '              &
+                   ' ENTER A Y IN THE REPY LINE IF THE DATA '     &
+                   ' IS CORRECT'.
+
+           02 LINE 15  COL 20 VALUE 'Data Entry:'.
+           02 LINE + 2 COL 20 VALUE 'Reply:'.
+           02 LINE 15  COL 40 PIC A(08) AUTO-SKIP USING W-DATA
+                                                         HIGHLIGHT.
+           02 LINE + 2 COL 40 PIC X     AUTO-SKIP USING W-REPLY
+                                                         HIGHLIGHT.
+
+       PROCEDURE DIVISION.
+
+       MAIN-LOOP.
+           DISPLAY SCREEN-SELECTION
+           CALL 'TIMEDISP'
+
+           PERFORM WITH TEST AFTER UNTIL WCRT-STATUS <> K-TIMEOUT
+               ACCEPT  SCREEN-SELECTION WITH TIMEOUT 1
+                       ON EXCEPTION CALL 'TIMEDISP'
+               END-ACCEPT
+           END-PERFORM.
+
+           IF SUCCESS AND WCRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+
+           GOBACK.
+
+      ** *************************************************************
+      *
+      ** *************************************************************
+       ID DIVISION.
+       PROGRAM-ID. TIMEDISP.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SWITCH                       PIC X.
+       01 BLUE       CONSTANT AS 01.
+       01 RED        CONSTANT AS 04.
+       01 CYAN       CONSTANT AS 03.
+       01 WHITE      CONSTANT AS 07.
+       01 WDAY       PIC 9(08).
+       01 WTIME      PIC 9(08).
+       01 DATE-TIME  PIC X(19).
+       PROCEDURE DIVISION.
+           ACCEPT WDAY  FROM DATE YYYYMMDD
+           ACCEPT WTIME FROM TIME
+           STRING WDAY(1:4)  '.' WDAY(5:2)  '.' WDAY(7:2) ' '
+                  WTIME(1:2) ':' WTIME(3:2) ':' WTIME(5:2) DELIMITED BY
+                                                SIZE INTO DATE-TIME
+           IF SWITCH EQUAL 'N'
+               DISPLAY DATE-TIME AT 002061 :BCOL: CYAN :FCOL: WHITE
+                                                        END-DISPLAY
+               MOVE 'Y'                TO SWITCH
+           ELSE
+               DISPLAY DATE-TIME AT 002061 :BCOL: RED  :FCOL: WHITE
+                                                        END-DISPLAY
+               MOVE 'N'                TO SWITCH
+           END-IF.
+        CONTINUE.
+       ENDPROGRAM.
+        GOBACK.
+       END PROGRAM TIMEDISP.
+
+       END PROGRAM PROG.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([system function CBL_GC_WINDOW])
+AT_KEYWORDS([screen extensions window])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       >>SOURCE FORMAT IS FIXED
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+       OBJECT-COMPUTER. IBM-PC.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+      *> TODO: if possible drop colors all together from this test or use
+      *>       reverse-video; if not replace with screenio.cpy
+       01 BLACK   CONSTANT AS 0.
+       01 BLUE    CONSTANT AS 1.
+       01 GREEN   CONSTANT AS 2.
+       01 CYAN    CONSTANT AS 3.
+       01 RED     CONSTANT AS 4.
+       01 MAGENTA CONSTANT AS 5.
+       01 BROWN   CONSTANT AS 6.
+       01 WHITE   CONSTANT AS 7.
+
+       77  ANSWER-TEXT                 PIC X.
+
+       01  SW-EVEN                     PIC X       VALUE 'N'.
+       01  CNTR                        USAGE BINARY-SHORT  VALUE +0.
+       01  CNTR-LINE                   USAGE BINARY-SHORT  VALUE +0.
+       01  CNTR-COL                    USAGE BINARY-SHORT  VALUE +0.
+
+       01  CURSOR-LOCN-BUFFER.
+           05 CURSOR-LINE              USAGE BINARY-CHAR UNSIGNED.
+           05 CURSOR-COLUMN            USAGE BINARY-CHAR UNSIGNED.
+
+      D01  TMP.
+      D    05  TMP-LINE                PIC 9(4)    COMP-5.
+      D    05  TMP-COLUMN              PIC 9(4)    COMP-5.
+
+       COPY 'gcwindow'.
+           
+       SCREEN SECTION.
+       01 GNUCOBOL-COLOURS.
+          05 LINE   1 COLUMN 1 VALUE "GNUCOBOL COLOURS".
+          05 LINE   2 COLUMN 1 VALUE "==================".
+
+          05 LINE   4 COLUMN 1 VALUE "DEFAULT        HIGHLIGHT      "
+                                   & "LOWLIGHT       REVERSE-VIDEO  ".
+          05 LINE   5 COLUMN 1 VALUE "------------------------------"
+                                   & "------------------------------".
+
+          05 LINE   7 COLUMN 1 VALUE "BLACK  " FOREGROUND-COLOR BLACK.
+          05 LINE + 1 COLUMN 1 VALUE "BLUE   " FOREGROUND-COLOR BLUE.
+          05 LINE + 1 COLUMN 1 VALUE "GREEN  " FOREGROUND-COLOR GREEN.
+          05 LINE + 1 COLUMN 1 VALUE "CYAN   " FOREGROUND-COLOR CYAN.
+          05 LINE + 1 COLUMN 1 VALUE "RED    " FOREGROUND-COLOR RED.
+          05 LINE + 1 COLUMN 1 VALUE "MAGENTA" FOREGROUND-COLOR MAGENTA.
+          05 LINE + 1 COLUMN 1 VALUE "BROWN  " FOREGROUND-COLOR BROWN.
+          05 LINE + 1 COLUMN 1 VALUE "WHITE  " FOREGROUND-COLOR WHITE.
+                                             *>BACKGROUND-COLOR BLACK.
+
+          05 LINE   7 COLUMN 16 VALUE "BLACK  "
+                                HIGHLIGHT FOREGROUND-COLOR BLACK.
+                                        *>BACKGROUND-COLOR WHITE.
+          05 LINE + 1 COLUMN 16 VALUE "BLUE   "
+                                HIGHLIGHT FOREGROUND-COLOR BLUE.
+          05 LINE + 1 COLUMN 16 VALUE "GREEN  "
+                                HIGHLIGHT FOREGROUND-COLOR GREEN.
+          05 LINE + 1 COLUMN 16 VALUE "CYAN   "
+                                HIGHLIGHT FOREGROUND-COLOR CYAN.
+          05 LINE + 1 COLUMN 16 VALUE "RED    "
+                                HIGHLIGHT FOREGROUND-COLOR RED.
+          05 LINE + 1 COLUMN 16 VALUE "MAGENTA"
+                                HIGHLIGHT FOREGROUND-COLOR MAGENTA.
+          05 LINE + 1 COLUMN 16 VALUE "BROWN  "
+                                HIGHLIGHT FOREGROUND-COLOR BROWN.
+          05 LINE + 1 COLUMN 16 VALUE "WHITE  "
+                                HIGHLIGHT FOREGROUND-COLOR WHITE
+                                          BACKGROUND-COLOR BLACK.
+
+          05 LINE   7 COLUMN 31 VALUE "BLACK  "
+                                LOWLIGHT  FOREGROUND-COLOR BLACK.
+                                          *>BACKGROUND-COLOR WHITE.
+          05 LINE + 1 COLUMN 31 VALUE "BLUE   "
+                                LOWLIGHT  FOREGROUND-COLOR BLUE.
+          05 LINE + 1 COLUMN 31 VALUE "GREEN  "
+                                LOWLIGHT  FOREGROUND-COLOR GREEN.
+          05 LINE + 1 COLUMN 31 VALUE "CYAN   "
+                                LOWLIGHT  FOREGROUND-COLOR CYAN.
+          05 LINE + 1 COLUMN 31 VALUE "RED    "
+                                LOWLIGHT  FOREGROUND-COLOR RED.
+          05 LINE + 1 COLUMN 31 VALUE "MAGENTA"
+                                LOWLIGHT  FOREGROUND-COLOR MAGENTA.
+          05 LINE + 1 COLUMN 31 VALUE "BROWN  "
+                                LOWLIGHT  FOREGROUND-COLOR BROWN.
+          05 LINE + 1 COLUMN 31 VALUE "WHITE  "
+                                LOWLIGHT  FOREGROUND-COLOR WHITE.
+                                          *>BACKGROUND-COLOR BLACK.
+
+          05 LINE   7 COLUMN 46 VALUE "BLACK  "
+                          REVERSE-VIDEO  FOREGROUND-COLOR BLACK.
+                                         *>BACKGROUND-COLOR WHITE.
+          05 LINE + 1 COLUMN 46 VALUE "BLUE   "
+                          REVERSE-VIDEO  FOREGROUND-COLOR BLUE.
+          05 LINE + 1 COLUMN 46 VALUE "GREEN  "
+                          REVERSE-VIDEO  FOREGROUND-COLOR GREEN.
+          05 LINE + 1 COLUMN 46 VALUE "CYAN   "
+                          REVERSE-VIDEO  FOREGROUND-COLOR CYAN.
+          05 LINE + 1 COLUMN 46 VALUE "RED    "
+                          REVERSE-VIDEO  FOREGROUND-COLOR RED.
+          05 LINE + 1 COLUMN 46 VALUE "MAGENTA"
+                          REVERSE-VIDEO  FOREGROUND-COLOR MAGENTA.
+          05 LINE + 1 COLUMN 46 VALUE "BROWN  "
+                          REVERSE-VIDEO  FOREGROUND-COLOR BROWN.
+          05 LINE + 1 COLUMN 46 VALUE "WHITE  "
+                          REVERSE-VIDEO  FOREGROUND-COLOR WHITE.
+                                         *>BACKGROUND-COLOR BLACK.
+
+      *> ***************************************************************
+       PROCEDURE DIVISION.
+
+           MOVE ZERO                   TO CNTR.
+      *    DISPLAY ' ' AT LINE 1 COLUMN 1.
+           CALL 'CBL_GC_SET_SCR_SIZE' USING 50, 80.
+
+           DISPLAY ' YOU WILL SEE 4 WINDOWS OF ALTERNATING COLORS ' &
+               'WAIT UNTIL THE END TO ANSWER-TEXT PROMPT'
+               AT LINE 1 COL 4.
+
+      D    DISPLAY ' '                       UPON SYSERR
+      D    DISPLAY ' STARTING NEW  WINDOWS ' UPON SYSERR
+      D    DISPLAY ' '                       UPON SYSERR
+
+           PERFORM 4  TIMES
+               ADD +5                  TO CNTR
+               MOVE CNTR               TO WP-WINDOW-START-LINE
+               MOVE CNTR               TO WP-WINDOW-START-COL
+               MOVE 20                 TO WP-WINDOW-LINES
+               MOVE 60                 TO WP-WINDOW-COLUMNS
+               IF SW-EVEN EQUAL 'Y'
+                   MOVE 'N'            TO SW-EVEN
+                   MOVE 0              TO WP-WINDOW-FG-COLOR
+                   MOVE 6              TO WP-WINDOW-BG-COLOR
+               ELSE
+                   MOVE 'Y'            TO SW-EVEN
+                   MOVE 0              TO WP-WINDOW-FG-COLOR
+                   MOVE 3              TO WP-WINDOW-BG-COLOR
+               END-IF
+               MOVE ZERO               TO WP-WINDOW-FLAGS
+               SET WP-MODE-NEW         TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+               PERFORM 2000-WINDOW-CSR-POS
+               DISPLAY GNUCOBOL-COLOURS
+               PERFORM 2000-WINDOW-CSR-POS
+               CALL "C$SLEEP" USING 1
+           END-PERFORM.
+
+
+           MOVE ZERO                   TO CNTR.
+
+      D    DISPLAY ' '                       UPON SYSERR
+      D    DISPLAY ' STARTING HIDE WINDOWS ' UPON SYSERR
+      D    DISPLAY ' '                       UPON SYSERR
+
+           PERFORM 4  TIMES
+               ADD +1                  TO CNTR
+               MOVE CNTR               TO WP-WINDOW-NUMBER
+               MOVE WP-FLAG-HIDDEN     TO WP-WINDOW-FLAGS
+               SET WP-MODE-HIDE        TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+               CALL "C$SLEEP" USING 1
+           END-PERFORM.
+
+
+           MOVE 5                      TO CNTR.
+
+      D    DISPLAY ' '                       UPON SYSERR
+      D    DISPLAY ' STARTING SHOW WINDOWS ' UPON SYSERR
+      D    DISPLAY ' '                       UPON SYSERR
+
+           PERFORM 4  TIMES
+               ADD -1                  TO CNTR
+               MOVE CNTR               TO WP-WINDOW-NUMBER
+               MOVE ZERO               TO WP-WINDOW-FLAGS
+               SET WP-MODE-SHOW        TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+               CALL "C$SLEEP" USING 1
+               PERFORM 2000-WINDOW-CSR-POS
+           END-PERFORM.
+
+           MOVE ZERO                   TO CNTR.
+           MOVE 10                     TO CNTR-COL.
+           MOVE 10                     TO CNTR-LINE.
+
+      D    DISPLAY ' '                       UPON SYSERR
+      D    DISPLAY ' STARTING MOVE WINDOWS ' UPON SYSERR
+      D    DISPLAY ' STARTING TOP  WINDOWS ' UPON SYSERR
+      D    DISPLAY ' '                       UPON SYSERR
+
+           PERFORM 4  TIMES
+               PERFORM 2000-WINDOW-CSR-POS
+               ADD +1                  TO CNTR
+               ADD +2                  TO CNTR-LINE
+               ADD +2                  TO CNTR-COL
+               MOVE CNTR               TO WP-WINDOW-NUMBER
+               MOVE CNTR-LINE          TO WP-WINDOW-START-LINE
+               MOVE CNTR-COL           TO WP-WINDOW-START-COL
+               MOVE 0                  TO WP-WINDOW-FLAGS
+               SET WP-MODE-MOVE        TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+               MOVE CNTR               TO WP-WINDOW-NUMBER
+               MOVE 0                  TO WP-WINDOW-START-LINE
+               MOVE 0                  TO WP-WINDOW-START-COL
+               MOVE 0                  TO WP-WINDOW-FLAGS
+               PERFORM 2000-WINDOW-CSR-POS
+               SET WP-MODE-TOP         TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               PERFORM 2000-WINDOW-CSR-POS
+               CALL "C$SLEEP" USING 1
+           END-PERFORM.
+
+               CALL "C$SLEEP" USING 1
+      *    ACCEPT
+      *        OMITTED
+      *        LINE 16 COLUMN 1
+      *    END-ACCEPT.
+
+           MOVE ZERO                   TO CNTR.
+
+      D    DISPLAY ' '                       UPON SYSERR
+      D    DISPLAY ' STARTING BOTTOM WINDOWS ' UPON SYSERR
+      D    DISPLAY ' '                       UPON SYSERR
+
+           PERFORM 4  TIMES
+               ADD +1                  TO CNTR
+               MOVE CNTR               TO WP-WINDOW-NUMBER
+               MOVE WP-FLAG-HIDDEN     TO WP-WINDOW-FLAGS
+               SET WP-MODE-BOTTOM      TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+      *        CALL "C$SLEEP" USING 1
+           END-PERFORM.
+
+           MOVE ZERO                   TO CNTR.
+
+      D    DISPLAY ' '                       UPON SYSERR
+      D    DISPLAY ' STARTING DELETE WINDOWS ' UPON SYSERR
+      D    DISPLAY ' '                       UPON SYSERR
+
+           PERFORM 4  TIMES
+               ADD +1                  TO CNTR
+               MOVE CNTR               TO WP-WINDOW-NUMBER
+               MOVE WP-FLAG-HIDDEN     TO WP-WINDOW-FLAGS
+               SET WP-MODE-DELETE         TO TRUE
+               PERFORM 1000-WINDOW-FUNCTION
+               CALL 'CBL_GC_WINDOW' USING WP-WINDOW-LIST WL-WINDOW-LIST
+               PERFORM 3000-LIST-WINDOWS
+      *        CALL "C$SLEEP" USING 1
+           END-PERFORM.
+
+           DISPLAY ' DID YOU WILL SEE THEM CREATED, MOVED, HIDDEN, S' &
+               'HOWN AND DELETED SUCCESSFULLY ?'
+               AT LINE 4 COL 4.
+           DISPLAY 'ANSWER Y OR N'
+               AT LINE 5 COL 10.
+           ACCEPT ANSWER-TEXT
+               AT LINE 5 COL 25.
+
+           IF ANSWER-TEXT EQUAL 'Y' OR 'y'
+               MOVE ZERO               TO RETURN-CODE
+           ELSE
+               MOVE 1                  TO RETURN-CODE
+               END-IF.
+
+           GOBACK.
+
+       1000-WINDOW-FUNCTION.
+
+           CALL 'CBL_GC_WINDOW' USING WP-WINDOW-MODE WP-WINDOW-PARMS.
+           IF RETURN-CODE NOT EQUAL ZERO
+      D        DISPLAY 'RETURN CODE IS ==> ' RETURN-CODE
+      D            UPON SYSERR
+               GOBACK
+           END-IF.
+
+
+       2000-WINDOW-CSR-POS.
+
+           CALL "CBL_GET_CSR_POS" USING CURSOR-LOCN-BUFFER.
+      D    COMPUTE TMP-LINE = CURSOR-LINE + 1.
+      D    COMPUTE TMP-COLUMN = CURSOR-COLUMN + 1.
+      D    DISPLAY ' WINDOW ==> ' WP-WINDOW-NUMBER
+      D        '   CURSOR POSITION IS LINE '
+      D        TMP-LINE
+      D        ' COLUMN '
+      D        TMP-COLUMN
+      D        UPON SYSERR.
+
+
+       3000-LIST-WINDOWS.
+
+           SET WL-INDEX                TO +1.
+      D    DISPLAY '   =========> START LISTING WINDOWS ' UPON SYSERR.
+           PERFORM 20 TIMES
+               IF WL-WINDOW (WL-INDEX) EQUAL LOW-VALUES
+                   EXIT PERFORM
+               END-IF
+      D        DISPLAY ' DEPTH => ' WL-DEPTH               (WL-INDEX)
+      D            ' NUMBER => ' WL-WINDOW-NUMBER          (WL-INDEX)
+      D            ' POS ROW => ' WL-WINDOW-POSITION-LINE  (WL-INDEX)
+      D            ' POS COL => ' WL-WINDOW-POSITION-COL   (WL-INDEX)
+      D            ' WIN ROW => ' WL-WINDOW-SIZE-LINES     (WL-INDEX)
+      D            ' WIN COL => ' WL-WINDOW-SIZE-COLS      (WL-INDEX)
+      D            ' FG => '  WL-WINDOW-FG-COLOR           (WL-INDEX)
+      D            ' BG => '  WL-WINDOW-BG-COLOR           (WL-INDEX)
+      D            ' FLAGS => '  WL-WINDOW-FLAGS           (WL-INDEX)
+      D            UPON SYSERR
+               SET WL-INDEX            UP BY +1
+           END-PERFORM.
+      D    DISPLAY '   =========> END LISTING WINDOWS ' UPON SYSERR.
+
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP

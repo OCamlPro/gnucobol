@@ -71,6 +71,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 
 AT_CLEANUP
 
+
 AT_SETUP([REDEFINES: level 03 by 02])
 AT_KEYWORDS([redefines])
 
@@ -93,6 +94,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 
 AT_CLEANUP
 
+
 AT_SETUP([REDEFINES: level 66])
 AT_KEYWORDS([redefines])
 
@@ -114,6 +116,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([REDEFINES: level 88])
 AT_KEYWORDS([redefines])

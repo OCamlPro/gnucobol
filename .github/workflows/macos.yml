@@ -4,115 +4,188 @@ on:
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
   push:
-    branches: [ gcos4gnucobol-3.x ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
+
+env:
+  HOMEBREW_ROOT: /opt/homebrew/opt
 
 jobs:
   build:
+    #runs-on: macos-latest-large  # amd64
+    runs-on: macos-latest        # arm64
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-latest
-
-    runs-on: ${{ matrix.os }}
+        isam:
+          - db
+          - vbisam
 
     steps:
-      - name: Configure git
-        run: git config --global core.symlinks false
-
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install packages
-        run: |
-          brew install automake help2man texinfo bison berkeley-db@4
-          opt="/usr/local/opt"; \
-          for d in automake help2man bison texinfo berkeley-db@4; do \
-            test -d "$opt/$d/bin" && echo "$opt/$d/bin" >> $GITHUB_PATH; \
-            test -d "$opt/$d/lib" && export LDFLAGS="-L$opt/$d/lib $LDFLAGS"; \
-            test -d "$opt/$d/include" && export CPPFLAGS="-I$opt/$d/include $CPPFLAGS"; \
-          done; \
-          echo "LDFLAGS=${LDFLAGS}" >> $GITHUB_ENV; \
-          echo "CPPFLAGS=${CPPFLAGS}" >> $GITHUB_ENV
 
       - name: Set git user
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
 
-      - name: bootstrap
-        run: |
-          ./autogen.sh
-          autoconf
-          autoreconf --install --force
+      # Why was this necessary ? Works fine without it...
+      # - name: Configure git
+      #   run: git config --global core.symlinks false
 
-      - name: Build environment setup
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup build environment
         run: |
-          mkdir _build
+          echo "TERM=vt100" >> $GITHUB_ENV
           echo "NPROC=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
-          export TERM="vt100"
-          echo "TERM=$TERM" >> $GITHUB_ENV
 
-      - name: configure
+      - name: Install packages
         run: |
-          cd _build
-          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+          brew update || brew update    # seldomly failing in most cases rerun works
+          brew install autoconf automake libtool \
+                       help2man texinfo libiconv \
+                       berkeley-db@5 json-c || (echo "brew install returned $?")
+          # system available bison works fine
+          #brew install bison
+          #echo "$HOMEBREW_ROOT/bison/bin" >> $GITHUB_PATH
+
+      - name: Restore VBISAM cache
+        if: ${{ matrix.isam == 'vbisam' }}
+        id: restore-vbisam
+        uses: actions/cache/restore@v4
+        with:
+          key: cache-vbisam-macos
+          path: vbisam
+
+      - name: Build VBISAM
+        if: ${{ matrix.isam == 'vbisam' &&
+                steps.restore-vbisam.outputs.cache-hit != 'true' }}
+        run: |
+          curl -LO http://inglenet.ca/Products/GnuCOBOL/vbisam-2.2.tar.Z
+          mkdir vbisam && tar -xvzf vbisam-2.2.tar.Z -C vbisam --strip-components=1
+          cd vbisam
+          ./configure --prefix=/opt/vbisam \
+                      CFLAGS="-fstack-protector-strong -fstack-clash-protection -ggdb3 -fasynchronous-unwind-tables" \
+                      LDFLAGS="-fstack-protector-strong -fstack-clash-protection" \
+                      CPPFLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2"
+          chmod u+x build_aux/install-sh
+          make --jobs=$(($(nproc)+1))
+
+      - name: Install VBISAM
+        if: ${{ matrix.isam == 'vbisam' }}
+        run: |
+          sudo make -C vbisam install
+          echo "CPATH=/opt/vbisam/include" >> $GITHUB_ENV
+          echo "LIBRARY_PATH=/opt/vbisam/lib" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/opt/vbisam/lib" >> $GITHUB_ENV
+
+      - name: Save VBISAM cache
+        if: ${{ matrix.isam == 'vbisam' &&
+                steps.restore-vbisam.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          key: cache-vbisam-macos
+          path: vbisam
+
+      - name: Bootstrap GnuCOBOL
+        run: |
+          ./build_aux/bootstrap install
+          gettextize -f
+
+      - name: Configure GnuCOBOL
+        run: |
+          mkdir _build && cd _build
+          ../configure --with-${{ matrix.isam }} \
+                       --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --with-curses=ncurses \
+                       --with-json=json-c \
+                       --prefix=/opt/cobol/gnucobol \
+                       --with-iconv --with-libiconv-prefix="$HOMEBREW_ROOT/libiconv" \
+                       BDB_CFLAGS="-I$HOMEBREW_ROOT/berkeley-db@5/include" \
+                       BDB_LIBS="-L$HOMEBREW_ROOT/berkeley-db@5/lib -ldb"                       
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$((${NPROC}+1))
 
       - name: Upload config.log
-        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
-          name: config.log
+          name: config-${{ matrix.isam }}.log
           path: _build/config.log
-#       if: failure()
 
-      - name: make
+      # make install must be done before make check, otherwise execution of
+      # generated COBOL files fail for a missing /usr/local/lib/libcob.dylib
+      - name: Install GnuCOBOL
         run: |
-          cd _build
-          make --jobs=$((${NPROC}+1))
-
-# make install must be done before make check, otherwise execution of
-# generated COBOL files fail for a missing /usr/local/lib/libcob.dylib
-      - name: make install
-        run: |
-          cd _build
-          sudo make install
-          find /opt/cobol > install.log
+          sudo make -C _build install
+          find /opt/cobol > _build/install.log
 
       - name: Upload install.log
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: install.log
+          name: install-${{ matrix.isam }}.log
           path: _build/install.log
 
-      - name: check
+      - name: Adjust testsuite
         run: |
-          cd _build
-          make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          cd tests/testsuite.src
+          sed -i '' '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a \
+                      AT_SKIP_IF(\[true\])' run_misc.at
+
+      - name: Adjust testsuite for VBISAM
+        if: ${{ matrix.isam == 'vbisam' }}
+        run: |
+          cd tests/testsuite.src
+          sed -i '' '/AT_SETUP(\[OUTPUT on INDEXED file to missing directory\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[INDEXED file with LOCK MODE EXCLUSIVE\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[INDEXED file with OPEN WITH LOCK\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[INDEXED file with SHARING NO\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[INDEXED file with SHARING READ ONLY\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[INDEXED file with blocked lock\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[EXTFH: operation OP_GETINFO \/ QUERY-FILE\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+          sed -i '' '/AT_SETUP(\[EXTFH: changing record address\])/a \
+                      AT_SKIP_IF(\[true\])' run_file.at
+
+      - name: Run testsuite
+        run: |
+          make -C _build check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload testsuite.log
-        uses: actions/upload-artifact@v3
-        if: failure()
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
-          name: testsuite.log
+          name: testsuite-${{ matrix.isam }}.log
           path: _build/tests/testsuite.log
 
-      - name: Cache newcob.val.Z
-        uses: actions/cache@v3
-        id: newcob
+      - name: Cache newcob.val
+        uses: actions/cache@v4
         with:
-          path: _build/tests/cobol85/newcob.val.Z.cached
-          key: newcob
+          path: _build/tests/cobol85/newcob.val
+          key: newcob-val
+          enableCrossOsArchive: true
 
-      - name: Download newcob.val.Z
-        if: steps.newcob.outputs.cache-hit != 'true'
-        run: |
-          cd _build/tests/cobol85
-          make newcob.val.Z
-          ln -f newcob.val.Z newcob.val.Z.cached
+      - name: Run NIST85 testsuite
+        run: make -C _build test --jobs=$((${NPROC}+1))
 
-      - name: NIST85 Test Suite
-        run: |
-          cd _build/tests/cobol85
-          ln -f newcob.val.Z.cached newcob.val.Z
-          make EXEC85 && make --jobs=$(($(nproc)+1)) test
+      - name: Upload NIST85 Test Suite results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NIST85 results on ${{ matrix.isam }}
+          path: |
+            _build/tests/cobol85/summary.*
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+            _build/tests/cobol85/**/duration.txt

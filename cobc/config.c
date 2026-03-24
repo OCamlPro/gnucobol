@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2017, 2019-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2017, 2019-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <ctype.h>
 #include <limits.h>
 
 #include "cobc.h"
@@ -448,7 +447,7 @@ cb_load_conf (const char *fname, const int prefix_dir)
 
 	/* Checks for missing definitions */
 	if (ret == 0) {
-		for (i = 10U; i < CB_CONFIG_SIZE; i++) {
+		for (i = 10; i < CB_CONFIG_SIZE; i++) {
 #if COBC_STORES_CONFIG_VALUES
 			if (config_table[i].val == NULL) {
 #else
@@ -458,7 +457,7 @@ cb_load_conf (const char *fname, const int prefix_dir)
 				if (ret == 0) {
 					configuration_error (fname, 0, 1, _("missing definitions:"));
 				}
-				configuration_error (fname, 0, 1, _("\tno definition of '%s'"),
+				configuration_error (fname, 0, 2, _("\tno definition of '%s'"),
 						config_table[i].name);
 				ret = -1;
 			}
@@ -550,13 +549,13 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	/* Check for reserved word tag, if requested */
 	if (fname == words_file) {
 		if (strcmp (buff, "reserved")
-		&&  strcmp (buff, "not-reserved")
-		&&  strcmp (buff, "intrinsic-function")
-		&&  strcmp (buff, "not-intrinsic-function")
-		&&  strcmp (buff, "system-name")
-		&&  strcmp (buff, "not-system-name")
-		&&  strcmp (buff, "register")
-		&&  strcmp (buff, "not-register")) {
+		 && strcmp (buff, "not-reserved")
+		 && strcmp (buff, "intrinsic-function")
+		 && strcmp (buff, "not-intrinsic-function")
+		 && strcmp (buff, "system-name")
+		 && strcmp (buff, "not-system-name")
+		 && strcmp (buff, "register")
+		 && strcmp (buff, "not-register")) {
 			configuration_error (fname, line, 1,
 				_("invalid configuration tag '%s' in word-list"), buff);
 			return -1;
@@ -588,7 +587,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		val = read_string (val);
 
 		if (strcmp (name, "include") == 0
-		||  strcmp (name, "includeif") == 0) {
+		 || strcmp (name, "includeif") == 0) {
 			/* Include another conf file */
 			s = cob_expand_env_string ((char *)val);
 			cobc_main_free ((void *) val);
@@ -620,8 +619,15 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				snprintf (buff, (size_t)COB_NORMAL_MAX, "%s.words", val);
 				/* check if name.words exists and store the resolved name to words_file */
 				if (cb_load_conf_file (buff, CB_INCLUDE_RESOLVE_WORDS) != 0) {
+#if 0
+					/* must be executed before anything that may adjust errno, ...
+					   ...like function call below. */
+					const char *errno_str = cb_get_strerror ();
 					configuration_error (fname, line, 1, _("Could not access word list for '%s'"), val);
-					/*cb_perror (1, "%s: %s", words_file, cb_get_strerror ()); */
+					cb_perror (1, "%s: %s", words_file, errno_str);
+#else
+					configuration_error (fname, line, 1, _("Could not access word list for '%s'"), val);
+#endif
 					return -1;
 				};
 			}
@@ -812,7 +818,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			if (val[0] == '"' && val[1] != 0 && val[2] == '"' && val[3] == 0) {
 				cb_default_byte = val[1];
 				break;
-			} else
+			}
 			/* convert character to number (convenience,
 			   as quotes will commonly be removed when given on shell) */
 			if (val[1] == 0 && (val[0] < '0' || val[0] > '9')) {

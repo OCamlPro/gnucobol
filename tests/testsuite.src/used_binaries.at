@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2014-2025 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -148,18 +148,27 @@ AT_DATA([prog2.cob], [
            DISPLAY TEST-VAR NO ADVANCING
            END-DISPLAY
            STOP RUN.
+       COPY 'CRUD2.CPY'.
 ])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wall prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
 prog2.cob:6: warning: numeric value is expected [[-Wothers]]
 ])
 
-AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=0 prog2.cob], [97], [],
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=0 -Wall prog2.cob], [1], [],
 [prog2.cob:7: error: CRUD.CPY: No such file or directory
-cobc: too many errors [[-fmax-errors=0]]
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
+prog2.cob:6: warning: numeric value is expected [[-Wothers]]
+])
 
-cobc: aborting compile of prog2.cob at line 7 (unknown: unknown)
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fmax-errors=1 prog2.cob], [97], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:15: error: CRUD2.CPY: No such file or directory
+cobc: too many errors [[-fmax-errors=1]]
+
+cobc: aborting compile of prog2.cob at line 15 (unknown: unknown)
 ])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wfatal-errors prog2.cob], [97], [],
@@ -270,35 +279,11 @@ AT_CHECK([$GREP 'PARAGRAPH_00_l_4:'    prog.c], [0], ignore, [])
 AT_CHECK([$GREP 'PARAGRAPH_EX_l_7:'    prog.c], [0], ignore, [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb END], [])
 
-AT_CAPTURE_FILE([prog.d])
-AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], ignore, [])
-AT_CHECK([$GREP ' prog.i:'             prog.d], [0], ignore, [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
-  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
-  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], ignore, [])
-  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], ignore, [])
-], [
-  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], ignore, [])
-  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], ignore, [])
-  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], ignore, [])
-])
-
-# test again with trailing slash which should not result in different files
-AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [], [
-  # Previous test "failed" --> no entry with slash available, check backslash for this test
-  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], ignore, [])
-])
-
 AT_CLEANUP
 
 
 AT_SETUP([compiler outputs (path specified)])
-AT_KEYWORDS([runmisc cobc])
+AT_KEYWORDS([runmisc cobc return_path])
 
 AT_DATA([prog.cob],[
         IDENTIFICATION DIVISION.
@@ -313,15 +298,15 @@ AT_DATA([prog.cob],[
 
 AT_CHECK([mkdir -p sub], [0], [], [])
 AT_CHECK([$COBC prog.cob -o sub/prog.c], [0], [], [])
-AT_CHECK([$COBC $(_return_path "sub/prog.c") -o $(_return_path "sub/prog.$COB_OBJECT_EXT")], [0], [], [])
-AT_CHECK([$COBC $(_return_path "sub/prog.$COB_OBJECT_EXT") -o $(_return_path "sub/prog")])
-AT_CHECK([$COBCRUN -M $(_return_path "sub/") prog], [0], [bluBb], [])
-AT_CHECK([$COBC -x prog.cob -o $(_return_path "sub/prog.c")], [0], [], [])
-AT_CHECK([$COBC -x $(_return_path "sub/prog.c") -o $(_return_path "sub/prog.$COB_OBJECT_EXT")], [0], [], [])
-AT_CHECK([$COBC -x $(_return_path "sub/prog.$COB_OBJECT_EXT") -o $(_return_path "sub/progo$COB_EXE_EXT")])
+AT_CHECK([$COBC "$(_return_path "sub/prog.c")" -o "$(_return_path "sub/prog.$COB_OBJECT_EXT")"], [0], [], [])
+AT_CHECK([$COBC "$(_return_path "sub/prog.$COB_OBJECT_EXT")" -o "$(_return_path "sub/prog")"])
+AT_CHECK([$COBCRUN -M "$(_return_path "sub/")" prog], [0], [bluBb], [])
+AT_CHECK([$COBC -x prog.cob -o "$(_return_path "sub/prog.c")"], [0], [], [])
+AT_CHECK([$COBC -x "$(_return_path "sub/prog.c")" -o "$(_return_path "sub/prog.$COB_OBJECT_EXT")"], [0], [], [])
+AT_CHECK([$COBC -x "$(_return_path "sub/prog.$COB_OBJECT_EXT")" -o "$(_return_path "sub/progo$COB_EXE_EXT")"])
 AT_CHECK([$COBCRUN_DIRECT ./sub/progo], [0], [bluBb], [])
-AT_CHECK([$COBC prog.cob -o $(_return_path "sub/prog.i")], [0], [], [])
-AT_CHECK([$COBC -x sub/prog.i -o $(_return_path "sub/prog$COB_EXE_EXT")], [0], [], [])
+AT_CHECK([$COBC prog.cob -o "$(_return_path "sub/prog.i")"], [0], [], [])
+AT_CHECK([$COBC -x sub/prog.i -o "$(_return_path "sub/prog$COB_EXE_EXT")"], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./sub/prog], [0], [bluBb], [])
 AT_CLEANUP
 
@@ -374,9 +359,8 @@ AT_CLEANUP
 AT_SETUP([temporary path invalid])
 AT_KEYWORDS([cobc runmisc])
 
-# Note: may be either removed completely as there was a report about
-#       this test "failing" - or skipped as this very often fails for
-#       WIN32 builds
+# Note: we skip this as it often fails for WIN32 builds but sometimes works
+AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -407,7 +391,7 @@ AT_CLEANUP
 
 
 AT_SETUP([use of full path for cobc])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc return_path])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -424,8 +408,79 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 AT_CLEANUP
 
 
+AT_SETUP([save-temps in sub-directory])
+AT_KEYWORDS([runmisc cobc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "OK" NO ADVANCING
+           END-DISPLAY.
+           EXIT PROGRAM.
+])
+
+AT_CHECK([mkdir debug])
+
+AT_CHECK([$COMPILE -save-temps=debug -o prog.exe prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog.exe], [0], [OK])
+AT_CHECK([test -f debug/prog.$COB_OBJECT_EXT])
+AT_CHECK([test -f debug/prog.c])
+AT_CHECK([test -f debug/prog.s], [1])
+AT_CHECK([test -f debug/prog.asm], [1])
+AT_CHECK([test -f debug/prog.i])
+AT_CHECK([test -f debug/prog.c.h])
+AT_CHECK([test -f debug/prog.c.l.h])
+
+# Check with -c
+
+AT_CHECK([test -f prog.$COB_OBJECT_EXT], [1])
+AT_CHECK([$COMPILE -save-temps=debug -c prog.cob])
+AT_CHECK([test -f prog.$COB_OBJECT_EXT])
+AT_CHECK([$COMPILE -save-temps=debug -c -o program.$COB_OBJECT_EXT prog.cob])
+AT_CHECK([test -f program.$COB_OBJECT_EXT])
+
+# Check with -C
+
+AT_CHECK([test -f prog.c], [1])
+AT_CHECK([$COMPILE -save-temps=debug -C prog.cob])
+AT_CHECK([test -f prog.c])
+AT_CHECK([test -f prog.c.h])
+AT_CHECK([test -f prog.c.l.h])
+AT_CHECK([$COMPILE -save-temps=debug -C -o program.c prog.cob])
+AT_CHECK([test -f program.c])
+AT_CHECK([test -f program.c.h])
+AT_CHECK([test -f program.c.l.h])
+
+# Check with -E
+
+AT_CHECK([test -f prog.i], [1])
+AT_CHECK([$COMPILE -save-temps=debug -E -o prog.i prog.cob])
+AT_CHECK([test -f prog.i])
+AT_CHECK([$COMPILE -save-temps=debug -E -o program.i prog.cob])
+AT_CHECK([test -f program.i])
+
+# Check with -S (last as we skip the testsuite entry for some compilers by returning 77)
+
+AT_CHECK([test -f prog.s], [1])
+AT_CHECK([test -f prog.asm], [1])
+AT_CHECK([$COMPILE -save-temps=debug -S prog.cob])
+AT_CHECK([test -f prog.s], [0], [], [],
+# Previous test "failed" --> prog.s not available --> likely a VS build
+[AT_CHECK([test -f prog.asm], [0], [], [])
+ AT_CHECK([$COMPILE -save-temps=debug -S -o program.asm prog.cob])
+ AT_CHECK([test -f program.asm])
+],
+# Previous test "passed" - .s is the extension to be used
+[AT_CHECK([$COMPILE -save-temps=debug -S -o program.s prog.cob])
+ AT_CHECK([test -f program.s])
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([C Compiler optimizations])
-AT_KEYWORDS([runmisc cobc optimization])
+AT_KEYWORDS([runmisc cobc optimization return_path])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -453,9 +508,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog],  [0], [OK], [])
 
 # last test with O2 (strips output) and output name
 AT_CHECK([mkdir -p sub], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -v -O2 -o $(_return_path "sub/prog") prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COMPILE_MODULE -v -O2 -o "$(_return_path "sub/prog")" prog.cob], [0], [ignore], [ignore])
 AT_CHECK([$COBCRUN -M sub/ prog],  [0], [OK], [])
-AT_CHECK([$COMPILE -v -O2 -o $(_return_path "sub/prog$COB_EXE_EXT") prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COMPILE -v -O2 -o "$(_return_path "sub/prog$COB_EXE_EXT")" prog.cob], [0], [ignore], [ignore])
 AT_CHECK([$COBCRUN_DIRECT ./sub/prog],  [0], [OK], [])
 
 AT_CLEANUP
@@ -759,6 +814,39 @@ AT_CHECK([$COBCRUN -M ./mainer --runtime-conf called "first argument" "second" "
 AT_CLEANUP
 
 
+AT_SETUP([cobcrun --config])
+AT_KEYWORDS([runmisc preload COB_LOAD_CASE load_case config])
+
+AT_DATA([COBOL.COB], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      mainer.
+       PROCEDURE        DIVISION.
+           CALL 'sub'
+           DISPLAY 'OK' WITH NO ADVANCING.
+           GOBACK.
+       END PROGRAM mainer.
+       
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      sub.
+       PROCEDURE        DIVISION.
+           DISPLAY 'OK' WITH NO ADVANCING.
+           GOBACK.
+       END PROGRAM sub.
+])
+
+AT_DATA([my.cfg], [pre_load   COBOL
+])
+
+AT_CHECK([$COMPILE_MODULE COBOL.COB], [0], [], [])
+AT_CHECK([$COBCRUN                 mainer], [1], [],
+[libcob: error: module 'mainer' not found
+])
+AT_CHECK([$COBCRUN -c       my.cfg mainer], [0], [OKOK], [])
+AT_CHECK([$COBCRUN --config=my.cfg mainer], [0], [OKOK], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([cobcrun error messages])
 AT_KEYWORDS([runmisc])
 
@@ -786,7 +874,8 @@ AT_CHECK([$COBCRUN ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL], [1], [],
 # it would be allowed for preloading
 # this was previously checked in cobcrun, now only done in the runtime
 AT_CHECK([$COBCRUN -q -M ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL noprog], [1], [],
-[libcob: error: module 'noprog' not found
+[libcob: warning: preloading of 'ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL' failed
+libcob: error: module 'noprog' not found
 ])
 
 AT_CLEANUP
@@ -829,7 +918,7 @@ AT_CLEANUP
 
 
 AT_SETUP([run job after compilation (path specified)])
-AT_KEYWORDS([runmisc cobcrun])
+AT_KEYWORDS([runmisc cobcrun return_path])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -840,8 +929,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([mkdir -p sub], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -jd -o $(_return_path "sub/prog") prog.cob], [0], [job], [])
-AT_CHECK([$COMPILE -jd -o $(_return_path "sub/prog$COB_EXE_EXT") prog.cob], [0], [job], [])
+AT_CHECK([$COMPILE_MODULE -jd -o "$(_return_path "sub/prog")" prog.cob], [0], [job], [])
+AT_CHECK([$COMPILE -jd -o "$(_return_path "sub/prog$COB_EXE_EXT")" prog.cob], [0], [job], [])
 
 AT_CLEANUP
 
@@ -891,6 +980,10 @@ AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [],
 )
 AT_CHECK([$COBCRUN_DIRECT ./a.out], [0], [], [])
 
+AT_CHECK([echo "program-id.test." | $COMPILE_MODULE -free -E -], [0],
+[#line 1 "<stdin>"
+program-id.test.
+], [])
 
 
 AT_CLEANUP
@@ -922,6 +1015,7 @@ AT_CLEANUP
 
 AT_SETUP([cobc diagnostics show caret])
 #AT_KEYWORDS([cobc diagnostics])
+AT_KEYWORDS([return_path])
 
 AT_DATA([progprep.cob],[
        IDENTIFICATION   DIVISION.
@@ -999,5 +1093,519 @@ AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others 
  > <EOF>
 ]])
 
+AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
+
+# note: -fdiagnostics-absolute-paths will show the realpath,
+#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
+#       but the _return_path function from atlocal may adjust that
+AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
+[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
+DIR/prog.cob:6: warning: numeric value is expected
+DIR/prog.cob:14: warning: ignoring redundant .
+], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
+
 AT_CLEANUP
 
+
+AT_SETUP([check include header file])
+AT_KEYWORDS([cobc copy directive imp return_path])
+
+AT_DATA([filec.h], [
+/* COB_EXT_IMPORT will be defined by libcob.h up-front */
+COB_EXT_IMPORT void f (char *, long);
+])
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello".
+])
+
+# dynamic call - program seems correct
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+
+# mismatch in function signature - we ignore the error output, as it depends
+# on the C compiler in use (and also stdout as some [MSVC] put errors there...)
+AT_CHECK([$COMPILE_MODULE --include "$(_return_path "$(pwd)/filec.h")" -fstatic-call prog.cob], [1], ignore, ignore)
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+# note: we likely need to build an import library for some environments
+AT_DATA([filec.c], [
+/* for COB_EXT_EXPORT */
+#include <libcob.h>
+COB_EXT_EXPORT void f (char *str, long num) {}
+])
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o libfilec.$COB_MODULE_EXT], [0], [], [])
+# cater for environments that do not use a lib prefix
+AT_CHECK([$COMPILE_MODULE --save-temps filec.c -o filec.$COB_MODULE_EXT], [0], [], [])
+
+
+# static build with correct function signature
+AT_CHECK([$COMPILE_MODULE --include "$(_return_path "$(pwd)/filec.h")" -fstatic-call prog2.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library, printing details
+  AT_CHECK([$COMPILE_MODULE -v --include "$(_return_path "$(pwd)/filec.h")" -fstatic-call -L. -lfilec prog2.cob], [0], ignore, ignore)]
+)
+AT_CHECK([$COMPILE_MODULE -I . --include "filec.h" -fstatic-call -o prog2b prog2.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library, printing details
+  AT_CHECK([$COMPILE_MODULE -v -I . --include "filec.h" -fstatic-call -L. -lfilec -o prog2b prog2.cob], [0], ignore, ignore)]
+)
+
+# We can use --copy to check a CALL against a prototype. However, this
+# feature is not fully supported by GnuCOBOL yet, so we get some
+# warnings. For exemple:
+# * not putting RETURNING triggers an error
+# * putting RETURNING NOTHING is not supported
+# * putting RETURNING OMITTED is ok, but triggers a warning (see stderr)
+
+AT_DATA([f.copy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. f PROTOTYPE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  a PIC X(20).
+       01  b BINARY-C-LONG.
+       PROCEDURE DIVISION USING a BY VALUE b RETURNING OMITTED.
+       END PROGRAM f.
+])
+
+AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call prog2.cob -o prog2c], [0], [],
+[prog2.cob:8: warning: unexpected RETURNING item
+], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -Wno-unfinished --copy "f.copy" -fstatic-call -L. -lfilec prog2.cob -o prog2c], [0], ignore, ignore)]
+)
+
+# additional check via directive
+AT_DATA([prog3.cob], [
+       >> IMP INCLUDE "filec.h"
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 long USAGE BINARY-C-LONG.
+       PROCEDURE        DIVISION.
+           CALL "f" USING "Hello" BY VALUE long RETURNING NOTHING.
+])
+
+# static build with correct function signature
+AT_CHECK([$COMPILE_MODULE -I . -fstatic-call prog3.cob], [0], [], [], [
+  # Previous test "failed" --> retry with import library
+  AT_CHECK([$COMPILE_MODULE -I . -fstatic-call -L. -lfilec prog3.cob], [0], ignore, ignore)]
+)
+
+AT_CLEANUP
+
+
+AT_SETUP([output dependencies])
+# AT_KEYWORDS([])
+
+AT_CAPTURE_FILE([compiler.output])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY COPY1.
+       PROCEDURE DIVISION.
+       MAIN-PROC SECTION.
+       00.
+       COPY COPY3.
+       COPY COPY3.CPY.
+       END-PROC  SECTION.
+       COPY COPY4 in "sub".
+       EX.
+           STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       PROCEDURE DIVISION.
+       COPY COPY3.
+           STOP RUN.
+])
+
+
+AT_CHECK([mkdir -p sub])
+AT_DATA([COPY1.CPY], [       COPY COPY2.
+])
+AT_DATA([COPY2.CPY], [])
+AT_DATA([COPY3.CPY], [       DISPLAY "Hello".
+])
+AT_DATA([sub/COPY4.CPY], [])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COMPILE -M prog.cob prog2.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT:/.COB_OBJECT_EXT:/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+prog2.COB_OBJECT_EXT: \
+ prog2.cob \
+ COPY3.CPY
+
+])
+AT_CHECK([test -f prog.i], [1])
+
+AT_CHECK([$COMPILE -M -MF prog.dep prog.cob])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.dep], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+AT_CHECK([test -f prog.i], [1])
+
+# AT_CHECK([$COMPILE -M -fcopybook-deps prog.cob > compiler.output], [0])
+# AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+# [prog.COB_OBJECT_EXT: COPY1 COPY2 COPY3 COPY3.CPY sub/COPY4
+
+# ])
+# AT_CHECK([test -f prog.i], [1])
+
+AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_MODULE_EXT/.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_MODULE_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([test -f prog.c], [1])
+AT_CHECK([test -f prog.o], [1])
+
+AT_CHECK([$COMPILE -M -MQ '$(target)#toto' prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.output], [0],
+[$$(target)\#toto: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([rm -f prog.d])
+AT_CAPTURE_FILE([prog.d])
+
+AT_CHECK([$COMPILE -MD prog.cob])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" prog.d], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([$COMPILE -MD -o sub/prog.exe  prog.cob])
+AT_CHECK([test -f sub/prog.exe])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" sub/prog.d], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_CHECK([rm sub/COPY4.CPY])
+
+AT_CHECK([$COMPILE -M prog.cob > compiler.output 2> compiler.error], [1], [], [])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY
+
+])
+
+AT_CHECK([$SED "s/sub\\\\/sub\//g" compiler.error], [0],
+[prog.cob:13: error: sub/COPY4: No such file or directory
+])
+
+AT_CHECK([$COMPILE_ONLY -M -MG prog.cob > compiler.output], [0])
+AT_CHECK([$SED "s/\.$COB_OBJECT_EXT/.COB_OBJECT_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
+[prog.COB_OBJECT_EXT: \
+ prog.cob \
+ COPY1.CPY \
+ COPY2.CPY \
+ COPY3.CPY \
+ sub/COPY4.CPY
+
+])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        MAIN-PROC SECTION.
+        00.
+        COPY PROC.
+        END-PROC  SECTION.
+        COPY PROCE in "sub".
+        EX.
+            STOP RUN.
+])
+
+AT_CHECK([mkdir -p sub/copy])
+AT_DATA([sub/copy/PROC.cpy], [
+           DISPLAY BLA NO ADVANCING.
+])
+AT_DATA([sub/PROCE.cpy], [
+           DISPLAY ' END' NO ADVANCING.
+])
+
+AT_CAPTURE_FILE([prog.d])
+AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -M -MP -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only])
+AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], [ignore])
+AT_CHECK([$GREP ' prog.i:'             prog.d], [0], [ignore])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this and following tests
+  AT_CHECK([$GREP ' sub\\copy\\PROC.cpy \\'  prog.d], [0], [ignore])
+  AT_CHECK([$GREP ' sub\\PROCE.cpy'          prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy:'     prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub\\PROCE.cpy:'          prog.d], [0], [ignore])
+], [
+  AT_CHECK([$GREP ' sub/copy/PROC.cpy \\'    prog.d], [0], [ignore])
+  AT_CHECK([$GREP ' sub/PROCE.cpy'           prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub/copy/PROC.cpy:'       prog.d], [0], [ignore])
+  AT_CHECK([$GREP 'sub/PROCE.cpy:'           prog.d], [0], [ignore])
+])
+
+# test again with trailing slash which should not result in different files
+AT_CHECK([$COBC -I sub/copy/ prog.cob -ext=cpy -o prog.i -M -MP -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], [ignore], [], [
+  # Previous test "failed" --> no entry with slash available, check backslash for this test
+  AT_CHECK([$GREP 'sub\\copy\\PROC.cpy'  prog.d], [0], [ignore])
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGPIPE cobc])
+AT_KEYWORDS([runmisc])
+
+# the runtime is not initialized, so we get out without any error message in libcob
+# and we also don't raise anything in cobc either
+AT_CHECK([$COBC --help | head], [0], [ignore], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGPIPE in COBOL])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       00. DISPLAY '1'. DISPLAY '2'. DISPLAY '3'. DISPLAY '4'.
+           DISPLAY '5'. DISPLAY '6'. DISPLAY '7'. DISPLAY '8'.
+       EX. STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog | head -n 2], [0],
+[1
+2
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([signal handling SIGTERM in COBOL])
+AT_KEYWORDS([runmisc stack stacktrace])
+
+# this is portable in all posix environments, but not on Win32;
+# note: cygwin-compiled programs handle cygwin-sent SIGTERM as expected
+# CTRL+C does raise a SIGINT, but only when executed from "within" the program
+AT_XFAIL_IF([test "$COB_ON_WINDOWS" = "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. 'prog'.
+       PROCEDURE DIVISION.
+       00. DISPLAY '1'.
+           CALL 'wait'. DISPLAY '2'.
+       EX. STOP RUN.
+       END PROGRAM 'prog'.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. 'wait'.
+       PROCEDURE DIVISION.
+       00. PERFORM DO-WAIT.
+       EX. GOBACK.
+       DO-WAIT. CONTINUE AFTER 10 SECONDS.
+       END PROGRAM 'wait'.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+# note: the stack trace, while enabled per default, is globally disabled in the testsuite
+# note 2: we redirect stderr to a file and use that to check for the expected output, to avoid potential interferences in the output from the other commands
+AT_CHECK([$COBCRUN_DIRECT ./prog 2>stderr1 & cobpid=$!
+sleep 6
+kill -15 $cobpid], [0],
+[1
+], [])
+
+AT_CHECK([cat stderr1], [0],
+[
+prog.cob:14: termination (signal SIGTERM)
+
+])
+
+# note 2: we redirect stderr to a file and use that to check for the expected output, to avoid potential interferences in the output from the other commands
+AT_CHECK([COB_STACKTRACE=1 $COBCRUN_DIRECT ./prog a "b c" 2>stderr2 & cobpid=$!
+sleep 6
+kill -15 $cobpid], [0],
+[1
+], [])
+
+AT_CHECK([cat stderr2], [0],
+[
+prog.cob:14: termination (signal SIGTERM)
+
+
+ Last statement of "wait" was CONTINUE AFTER
+	DO-WAIT at prog.cob:14
+	00 at prog.cob:12
+	ENTRY wait at prog.cob:12
+ Last statement of "prog" was CALL
+	00 at prog.cob:6
+	ENTRY prog at prog.cob:5
+ Started by ./prog
+	a
+	b c
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([EBCDIC /ASCII table generation])
+AT_KEYWORDS([runmisc])
+
+AT_SKIP_IF([test "$COB_HAS_ICONV" = "no"])
+
+AT_CHECK([$COBC --gentable=EBCDIC_XXX,ASCII_XXX], [1], [],
+[error: conversion from EBCDIC_XXX to ASCII_XXX is not supported by your iconv implementation
+])
+
+
+AT_CHECK([$COBC --gentable=ISO8859-1,UTF-8], [1], [],
+[error: an error occurred after converting 192 characters
+],
+# Previous test "failed" --> possibly not available
+[AT_CHECK([$COBC --gentable=ISO8859-1,UTF-8], [1], [],
+[error: conversion from ISO8859-1 to UTF-8 is not supported by your iconv implementation
+])])
+
+
+# some environments don't have IBM-500 (like old MSYS and MSVC variants)
+# others don't support this conversion (like Solaris 11) - in this case
+# we skip the rest of the test
+AT_SKIP_IF([test "$($COBC --gentable=IBM500,ASCII 2>&1)" \
+ = "error: conversion from IBM500 to ASCII is not supported by your iconv implementation"])
+
+
+AT_CHECK([$COBC --gentable=IBM500,ASCII], [0],
+[# GnuCOBOL IBM500 <-> ASCII translation tables
+
+# IBM500 to ASCII translation table
+
+00 01 02 03 1A 09 1A 7F 1A 1A 1A 0B 0C 0D 0E 0F
+10 11 12 13 1A 1A 08 1A 18 19 1A 1A 1C 1D 1E 1F
+1A 1A 1A 1A 1A 0A 17 1B 1A 1A 1A 1A 1A 05 06 07
+1A 1A 16 1A 1A 1A 1A 04 1A 1A 1A 1A 14 15 1A 1A
+20 1A 1A 1A 1A 1A 1A 1A 1A 1A 5B 2E 3C 28 2B 21
+26 1A 1A 1A 1A 1A 1A 1A 1A 1A 5D 24 2A 29 3B 5E
+2D 2F 1A 1A 1A 1A 1A 1A 1A 1A 1A 2C 25 5F 3E 3F
+1A 1A 1A 1A 1A 1A 1A 1A 1A 60 3A 23 40 27 3D 22
+1A 61 62 63 64 65 66 67 68 69 1A 1A 1A 1A 1A 1A
+1A 6A 6B 6C 6D 6E 6F 70 71 72 1A 1A 1A 1A 1A 1A
+1A 7E 73 74 75 76 77 78 79 7A 1A 1A 1A 1A 1A 1A
+1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 7C 1A 1A 1A 1A
+7B 41 42 43 44 45 46 47 48 49 1A 1A 1A 1A 1A 1A
+7D 4A 4B 4C 4D 4E 4F 50 51 52 1A 1A 1A 1A 1A 1A
+5C 1A 53 54 55 56 57 58 59 5A 1A 1A 1A 1A 1A 1A
+30 31 32 33 34 35 36 37 38 39 1A 1A 1A 1A 1A 1A
+
+# ASCII to IBM500 translation table
+
+00 01 02 03 37 2D 2E 2F 16 05 25 0B 0C 0D 0E 0F
+10 11 12 13 3C 3D 32 26 18 19 3F 27 1C 1D 1E 1F
+40 4F 7F 7B 5B 6C 50 7D 4D 5D 5C 4E 6B 60 4B 61
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 7A 5E 4C 7E 6E 6F
+7C C1 C2 C3 C4 C5 C6 C7 C8 C9 D1 D2 D3 D4 D5 D6
+D7 D8 D9 E2 E3 E4 E5 E6 E7 E8 E9 4A E0 5A 5F 6D
+79 81 82 83 84 85 86 87 88 89 91 92 93 94 95 96
+97 98 99 A2 A3 A4 A5 A6 A7 A8 A9 C0 BB D0 A1 07
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+
+], [note: 128 non-reversible conversions have been performed, you may want to check the generated table
+])
+
+AT_CHECK([$COBC --gentable=IBM500,ASCII+], [0],
+[# GnuCOBOL IBM500 <-> ASCII translation tables
+
+# IBM500 to ASCII translation table
+
+00 01 02 03 80 09 81 7F 82 83 84 0B 0C 0D 0E 0F
+10 11 12 13 85 86 08 87 18 19 88 89 1C 1D 1E 1F
+8A 8B 8C 8D 8E 0A 17 1B 8F 90 91 92 93 05 06 07
+94 95 16 96 97 98 99 04 9A 9B 9C 9D 14 15 9E 1A
+20 9F A0 A1 A2 A3 A4 A5 A6 A7 5B 2E 3C 28 2B 21
+26 A8 A9 AA AB AC AD AE AF B0 5D 24 2A 29 3B 5E
+2D 2F B1 B2 B3 B4 B5 B6 B7 B8 B9 2C 25 5F 3E 3F
+BA BB BC BD BE BF C0 C1 C2 60 3A 23 40 27 3D 22
+C3 61 62 63 64 65 66 67 68 69 C4 C5 C6 C7 C8 C9
+CA 6A 6B 6C 6D 6E 6F 70 71 72 CB CC CD CE CF D0
+D1 7E 73 74 75 76 77 78 79 7A D2 D3 D4 D5 D6 D7
+D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
+7B 41 42 43 44 45 46 47 48 49 E7 E8 E9 EA EB EC
+7D 4A 4B 4C 4D 4E 4F 50 51 52 ED EE EF F0 F1 F2
+5C F3 53 54 55 56 57 58 59 5A F4 F5 F6 F7 F8 F9
+30 31 32 33 34 35 36 37 38 39 FA FB FC FD FE FF
+
+# ASCII to IBM500 translation table
+
+# As this translation is symmetrical, the table is built from the previous one.
+
+], [note: 128 non-reversible conversions have been arbitrarily made reversible, you may want to check the generated table
+])
+
+AT_CLEANUP

@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -514,17 +514,32 @@ AT_DATA([prog.cob], [
               CONTINUE
            END-PERFORM.
            IF NOTDEFINED = 1 OR 2
-              CONTINUE
-           END-IF.
+              CONTINUE.
 
            IF (V = 1) AND V
+              CONTINUE.
+
+           IF (1 = 2) *> valid
+              CONTINUE.
+
+           IF 1 == 2
+              CONTINUE.
+
+           IF (1 == 2)
+              CONTINUE.
+
+           IF +
+              CONTINUE.
+
+           EVALUATE V
+           WHEN -
               CONTINUE
-           END-IF
+           END-EVALUATE.
 
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:10: error: incomplete expression
 prog.cob:14: error: incomplete expression
 prog.cob:18: error: incomplete expression
@@ -541,7 +556,12 @@ prog.cob:60: error: incomplete expression
 prog.cob:66: error: incomplete expression
 prog.cob:72: error: incomplete expression
 prog.cob:76: error: 'NOTDEFINED' is not defined
-prog.cob:80: error: invalid expression: boolean expected with logical operator
+prog.cob:79: error: invalid expression: boolean expected with logical operator
+prog.cob:82: warning: expression '1' EQUALS '2' is always FALSE
+prog.cob:85: error: invalid expression: unfinished expression
+prog.cob:88: error: invalid expression: unfinished expression
+prog.cob:92: error: invalid expression
+prog.cob:96: error: invalid expression
 ])
 
 AT_CLEANUP
@@ -740,6 +760,19 @@ AT_DATA([prog.cob], [
            .
 ])
 
+AT_DATA([badfd.cob], [
+       FD  PRINT-FILE EXTERNAL.
+       01  PRINT-REC          PIC X(64).
+
+           GOBACK.
+])
+
+AT_DATA([data.cob], [
+       01  PRINT-REC          PIC X(64).
+
+           GOBACK.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:2: error: PROGRAM-ID header missing
 prog.cob:2: error: ENVIRONMENT DIVISION header missing
@@ -748,6 +781,22 @@ prog.cob:10: error: INPUT-OUTPUT SECTION header missing
 prog.cob:10: error: FILE-CONTROL header missing
 prog.cob:14: error: FILE SECTION header missing
 prog.cob:17: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY badfd.cob], [1], [],
+[badfd.cob:2: error: PROGRAM-ID header missing
+badfd.cob:2: error: 'PRINT-FILE' is not defined
+badfd.cob:2: error: 'PRINT-FILE' is not a file name
+badfd.cob:2: error: DATA DIVISION header missing
+badfd.cob:2: error: FILE SECTION header missing
+badfd.cob:5: error: PROCEDURE DIVISION header missing
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 data.cob], [1], [],
+[data.cob:2: error: PROGRAM-ID header missing
+data.cob:2: error: DATA DIVISION header missing
+data.cob:2: error: WORKING-STORAGE SECTION header missing
+data.cob:4: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
@@ -765,6 +814,30 @@ prog.cob:14: warning: FILE SECTION header missing
 prog.cob:14: note: FILE SECTION header assumed
 prog.cob:17: warning: PROCEDURE DIVISION header missing
 prog.cob:17: note: PROCEDURE DIVISION header assumed
+])
+
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks badfd.cob], [1], [],
+[badfd.cob:2: warning: PROGRAM-ID header missing
+badfd.cob:2: note: PROGRAM-ID header assumed
+badfd.cob:2: error: 'PRINT-FILE' is not defined
+badfd.cob:2: error: 'PRINT-FILE' is not a file name
+badfd.cob:2: warning: DATA DIVISION header missing
+badfd.cob:2: note: DATA DIVISION header assumed
+badfd.cob:2: warning: FILE SECTION header missing
+badfd.cob:2: note: FILE SECTION header assumed
+badfd.cob:5: warning: PROCEDURE DIVISION header missing
+badfd.cob:5: note: PROCEDURE DIVISION header assumed
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 -frelax-syntax-checks data.cob], [0], [],
+[data.cob:2: warning: PROGRAM-ID header missing
+data.cob:2: note: PROGRAM-ID header assumed
+data.cob:2: warning: DATA DIVISION header missing
+data.cob:2: note: DATA DIVISION header assumed
+data.cob:2: warning: WORKING-STORAGE SECTION header missing
+data.cob:2: note: WORKING-STORAGE SECTION header assumed
+data.cob:4: warning: PROCEDURE DIVISION header missing
+data.cob:4: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
@@ -929,12 +1002,18 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:14: error: REPLACING operands differ in size
-prog.cob:15: error: REPLACING operands differ in size
-prog.cob:17: error: CONVERTING operands differ in size
-prog.cob:18: error: CONVERTING operands differ in size
-prog.cob:20: error: CONVERTING operands differ in size
-prog.cob:23: error: CONVERTING operands differ in size
+[prog.cob:14: error: REPLACING operands incompatible
+prog.cob:14: note: operands differ in size
+prog.cob:15: error: REPLACING operands incompatible
+prog.cob:15: note: operands differ in size
+prog.cob:17: error: CONVERTING operands incompatible
+prog.cob:17: note: operands differ in size
+prog.cob:18: error: CONVERTING operands incompatible
+prog.cob:18: note: operands differ in size
+prog.cob:20: error: CONVERTING operands incompatible
+prog.cob:20: note: operands differ in size
+prog.cob:23: error: CONVERTING operands incompatible
+prog.cob:23: note: operands differ in size
 ])
 
 AT_CLEANUP
@@ -1538,7 +1617,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY prog.cob -fmax-errors=0], [1], [],
 [prog.cob:7: error: invalid system-name 'SW1'
 prog.cob:8: error: ON/OFF usage requires a SWITCH name
 prog.cob:9: error: ON/OFF usage requires a SWITCH name
@@ -1839,23 +1918,20 @@ AT_KEYWORDS([misc])
 # remark: some editors remove trailing spaces, the  workaround: add "_" and
 # remove it later via sed; AT_DATA would not do that when using double [[  ]]
 
-AT_DATA([prog_tmpl.cob], [
+AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.                                           																																																																																																																																		_
-       DATA             DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  _
+       CONFIGURATION SECTION.                                           																																																																																																																																		@&t@
+       DATA             DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @&t@
        WORKING-STORAGE  SECTION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   *> This is a real comment
        PROCEDURE        DIVISION.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  This is commentary only
            CONTINUE.                                              *> comment after column 72
       *    This is a very long comment that exceeds column 72 but doesn't exceed 512 bytes, therefore not leading to a line overflow. As it is a comment line there is no "Source text after column 72" warning
            CONTINUE.                                                    CONTINUE.
-           CONTINUE.                                                                        _
+           CONTINUE.                                                                        @&t@
            STOP RUN.
 ])
-
-# AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/_$//' prog_tmpl.cob > prog.cob], [0], [], [])
 
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fixed -Wextra prog.cob], [0], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
@@ -2088,8 +2164,7 @@ prog3.cob:3: error: invalid indicator 'M' at column 7
 prog3.cob:4: error: invalid indicator 'N' at column 7
 prog3.cob:5: error: invalid indicator 'U' at column 7
 prog3.cob:7: error: invalid indicator 'G' at column 7
-prog3.cob:8: error: invalid indicator 'U' at column 7
-prog3.cob:15: error: invalid indicator 'x' at column 7
+prog3.cob: error: too many format errors in file, skip output of further errors
 prog3.cob:6: error: PROGRAM-ID header missing
 prog3.cob:6: error: PROCEDURE DIVISION header missing
 prog3.cob:6: error: syntax error, unexpected DIVISION
@@ -2409,7 +2484,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ACUCOBOL USAGE HANDLE])
-AT_KEYWORDS([misc acu extensions reserved CALL DESTROY])
+AT_KEYWORDS([misc acu extensions reserved CALL DESTROY WINDOW MENU THREAD])
 
 # TODO: need a better test here
 # TODO: maybe add a compiler support configuration to provide better messages
@@ -2431,6 +2506,7 @@ AT_DATA([prog.cob], [
        77  unused-thread           handle    thread.
 
        77  mywindow          usage handle of window.
+       77  mymenu            usage handle of menu.
 
        77  nor-a-handle      usage handle bananas.
        77  neither-a-handle  usage handle of apes.
@@ -2475,22 +2551,23 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
-[prog.cob:19: error: unknown HANDLE type: bananas
-prog.cob:20: error: unknown HANDLE type: apes
-prog.cob:21: warning: HANDLE OF control-type is not implemented
+[prog.cob:18: warning: HANDLE OF MENU is not implemented
+prog.cob:20: error: unknown HANDLE type: bananas
+prog.cob:21: error: unknown HANDLE type: apes
+prog.cob:22: warning: HANDLE OF control-type is not implemented
 prog.cob: in paragraph 'MAIN':
-prog.cob:34: warning: THREAD is not implemented
-prog.cob:36: warning: THREAD is not implemented
-prog.cob:35: error: HANDLE must be either a generic or a THREAD HANDLE
-prog.cob:39: error: HANDLE must be either a generic or a THREAD HANDLE
-prog.cob:39: warning: STOP THREAD is replaced by STOP RUN
-prog.cob:44: warning: THREAD is not implemented
-prog.cob:46: warning: THREAD is not implemented
-prog.cob:45: error: HANDLE must be either a generic or a THREAD HANDLE
-prog.cob:51: warning: GRAPHICAL CONTROL is not implemented
-prog.cob:54: error: HANDLE item not allowed here: 'neither-a-handle'
-prog.cob:55: error: HANDLE item not allowed here: 'mywindow'
-prog.cob:56: error: HANDLE item not allowed here: 'mydir'
+prog.cob:35: warning: THREAD is not implemented
+prog.cob:37: warning: THREAD is not implemented
+prog.cob:36: error: HANDLE must be either a generic or a THREAD HANDLE
+prog.cob:40: error: HANDLE must be either a generic or a THREAD HANDLE
+prog.cob:40: warning: STOP THREAD is replaced by STOP RUN
+prog.cob:45: warning: THREAD is not implemented
+prog.cob:47: warning: THREAD is not implemented
+prog.cob:46: error: HANDLE must be either a generic or a THREAD HANDLE
+prog.cob:52: warning: GRAPHICAL CONTROL is not implemented
+prog.cob:55: error: HANDLE item not allowed here: 'neither-a-handle'
+prog.cob:56: error: HANDLE item not allowed here: 'mywindow'
+prog.cob:57: error: HANDLE item not allowed here: 'mydir'
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [1], [],
@@ -2498,18 +2575,19 @@ AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [1], [],
 prog.cob:14: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:15: error: syntax error, unexpected Identifier
 prog.cob:17: error: 'handle' is not defined, but is a reserved word in another dialect
-prog.cob:19: error: 'handle' is not defined, but is a reserved word in another dialect
+prog.cob:18: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:20: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:21: error: 'handle' is not defined, but is a reserved word in another dialect
+prog.cob:22: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob: in paragraph 'MAIN':
-prog.cob:35: error: 'handle IN mywindow' is not defined
-prog.cob:34: error: invalid expression: unfinished expression
-prog.cob:38: error: syntax error, unexpected END-PERFORM
-prog.cob:39: error: 'thread' is not defined, but is a reserved word in another dialect
-prog.cob:39: error: syntax error, unexpected Identifier
-prog.cob:44: error: syntax error, unexpected Identifier, expecting THREAD
-prog.cob:48: error: syntax error, unexpected END-CALL
-prog.cob:51: error: syntax error, unexpected Identifier
+prog.cob:36: error: 'handle IN mywindow' is not defined
+prog.cob:35: error: invalid expression: unfinished expression
+prog.cob:39: error: syntax error, unexpected END-PERFORM
+prog.cob:40: error: 'thread' is not defined, but is a reserved word in another dialect
+prog.cob:40: error: syntax error, unexpected Identifier
+prog.cob:45: error: syntax error, unexpected Identifier, expecting THREAD
+prog.cob:49: error: syntax error, unexpected END-CALL
+prog.cob:52: error: syntax error, unexpected Identifier
 ])
 
 AT_CLEANUP
@@ -2565,6 +2643,8 @@ AT_DATA([prog.cob], [
               FOREGROUND-COLOR 14.
            ACCEPT OMITTED
            DESTROY WINDOW-HANDLE
+           DISPLAY FLOATING WINDOW MODAL CENTERED TITLE IS "centered"
+           DISPLAY FLOATING WINDOW MODELESS RIGHT TITLE IS "correct"
       *
            STOP RUN.
 ])
@@ -2581,6 +2661,8 @@ prog.cob:28: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:33: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:38: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:44: warning: GRAPHICAL CONTROL is not implemented
+prog.cob:45: warning: GRAPHICAL WINDOW is not implemented
+prog.cob:46: warning: GRAPHICAL WINDOW is not implemented
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2595,6 +2677,8 @@ prog.cob:28: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:33: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:38: warning: GRAPHICAL WINDOW is not implemented
 prog.cob:44: warning: GRAPHICAL CONTROL is not implemented
+prog.cob:45: warning: GRAPHICAL WINDOW is not implemented
+prog.cob:46: warning: GRAPHICAL WINDOW is not implemented
 ])
 
 AT_CLEANUP
@@ -3552,6 +3636,7 @@ prog.cob:31: error: wrong number of WHEN parameters
 
 AT_CLEANUP
 
+
 AT_SETUP([COBOL-WORDS directive])
 AT_KEYWORDS([misc reserved words])
 
@@ -3889,7 +3974,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [1], [],
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob], [1], [],
 [prog.cob: in paragraph 'MAIN-10':
 prog.cob:19: error: STRING item 'I-X' must be USAGE DISPLAY or NATIONAL
 prog.cob:19: error: STRING item 'I-B' must be USAGE DISPLAY or NATIONAL
@@ -4151,7 +4236,8 @@ prog.cob:20: error: 'not-a-num' is not numeric
 prog.cob:20: error: 3 is not an alphanumeric literal
 prog.cob:20: error: invalid target for TALLYING
 prog.cob:21: error: 'not-display' is not USAGE DISPLAY
-prog.cob:20: error: REPLACING operands differ in size
+prog.cob:20: error: REPLACING operands incompatible
+prog.cob:20: note: operands differ in size
 prog.cob:20: error: invalid target for REPLACING
 prog.cob:22: error: 'f' is not a field
 prog.cob:22: error: 3 is not an alphanumeric literal
@@ -4961,7 +5047,7 @@ prog.cob:9: error: missing left parenthesis
 prog.cob:10: error: '/' operator misplaced
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob ], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
 [prog.cob:6: error: 78 VALUE does not conform to IBM COBOL
 prog.cob:7: error: 78 VALUE does not conform to IBM COBOL
 prog.cob:8: error: 78 VALUE does not conform to IBM COBOL
@@ -5257,7 +5343,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob ], [0], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:15: warning: expression '115' EQUALS '200' is always FALSE
 prog.cob:16: warning: expression '200' EQUALS '115' is always FALSE
 prog.cob:17: warning: expression '200' EQUALS '315' is always FALSE
@@ -5626,6 +5712,7 @@ AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
 
 AT_CLEANUP
 
+
 AT_SETUP([CONSTANT LENGTH / BYTE-LENGTH])
 AT_KEYWORDS([misc])
 
@@ -5770,6 +5857,8 @@ prog.cob:8: error: syntax error, unexpected Literal
 ])
 AT_CLEANUP
 
+# Let's add a double quote here " to match the one in the error and
+# please emacs coloring...
 
 # normal register extension,
 # active for lax and standard configurations
@@ -6254,7 +6343,7 @@ AT_DATA([prog.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:12: warning: USAGE BIT is not implemented
 prog.cob:37: warning: USAGE BIT is not implemented
 prog.cob:49: error: JSON/XML GENERATE receiving item must be alphanumeric or national
@@ -6497,7 +6586,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SORT syntax])
-AT_KEYWORDS([misc fundamental KEY])
+AT_KEYWORDS([misc fundamental KEY SD FD])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6550,73 +6639,6 @@ prog.cob:38: error: file SORT requires KEY phrase
 AT_CLEANUP
 
 
-AT_SETUP([OSVS I/O extensions])
-AT_KEYWORDS([ibm file extensions])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-
-       ENVIRONMENT      DIVISION.
-       INPUT-OUTPUT     SECTION.
-       FILE-CONTROL.
-           SELECT f ASSIGN "f.dat" SEQUENTIAL
-               FILE-LIMITS ARE 1 THRU 10, 100 THRU f-max
-               TRACK-AREA 100 CHARACTERS
-               TRACK-LIMIT 5 TRACKS.
-           SELECT g ASSIGN "g.dat" RELATIVE
-               RELATIVE KEY g-key
-               ACTUAL KEY g-actual-key.
-
-       I-O-CONTROL.
-           APPLY RECORD-OVERFLOW f, g
-           APPLY CORE-INDEX core-idx ON f
-           APPLY CYL-INDEX TO 5 ON f
-           APPLY CYL-OVERFLOW 10 TRACKS f
-           APPLY EXTENDED-SEARCH g
-           APPLY MASTER-INDEX TO 5 on g
-           APPLY WRITE-VERIFY f, g
-           APPLY REORG-CRITERIA f-rec, f
-           RERUN ON "g2.dat" EVERY END REEL g
-           .
-       DATA             DIVISION.
-       FILE             SECTION.
-       FD  f.
-       01  f-rec        PIC X(100).
-
-       FD  g.
-       01  g-rec        PIC 9(10).
-
-       WORKING-STORAGE  SECTION.
-       01  core-idx     PIC 999.
-       01  f-max        PIC 9(5) VALUE 1000.
-       01  g-key        PIC 999.
-       01  g-actual-key PIC XXX.
-
-       PROCEDURE        DIVISION.
-           OPEN INPUT f DISP, INPUT g REREAD
-           .
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:10: warning: FILE-LIMIT is obsolete in GnuCOBOL
-prog.cob:10: warning: TRACK-AREA is obsolete in GnuCOBOL
-prog.cob:11: warning: TRACK-LIMIT is obsolete in GnuCOBOL
-prog.cob:14: warning: ACTUAL KEY is obsolete in GnuCOBOL
-prog.cob:18: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:19: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:20: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:21: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:22: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:23: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:24: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:25: warning: DOS/VS APPLY phrase is obsolete in GnuCOBOL
-prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
-prog.cob:42: warning: OPEN LEAVE/REREAD/DISP is obsolete in GnuCOBOL
-])
-AT_CLEANUP
-
-
 AT_SETUP([EQUALS in expressions])
 AT_KEYWORDS([misc])
 
@@ -6640,6 +6662,126 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([SEARCH ALL checks])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 TAB-1.
+           05 TAB-1-ENTRY OCCURS 50
+                          ASCENDING KEY IS TAB-1-KEY
+                          INDEXED BY TAB-1-INDEX.
+             10 TAB-1-KEY.
+               15 T1K-SUB1     PIC X(03).
+               15 T1K-SUB2     PIC 9(03).
+             10 TAB-1-DATA     PIC X(50).
+       01 TAB-2.
+           05 TAB-2-ENTRY OCCURS 50
+                          INDEXED BY TAB-2-INDEX.
+             10 TAB-2-KEY.
+               15 T2K-SUB1     PIC X(03).
+               15 T2K-SUB2     PIC 9(03).
+             10 TAB-2-DATA     PIC X(50).
+
+       PROCEDURE DIVISION.
+       TESTING SECTION.
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-1-KEY = ALL ZERO
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-1-KEY (TAB-1-INDEX) = ALL ZERO
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN "ABC123" = TAB-1-KEY (TAB-1-INDEX)
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-1-KEY (TAB-2-INDEX) = ALL ZERO
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              WHEN TAB-1-KEY (TAB-1-INDEX) = ALL ZERO
+                 CONTINUE
+              AT END
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-1-KEY (TAB-1-INDEX) = ALL ZERO
+              WHEN TAB-1-KEY (TAB-1-INDEX) = "ZZZ999"
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TESTING
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN T1K-SUB1 (TAB-1-INDEX) = "ZZZ"
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-2-KEY (TAB-1-INDEX) = ALL ZERO
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-2-KEY (TAB-2-INDEX) = ALL ZERO
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-1-ENTRY
+              AT END
+                 CONTINUE
+              WHEN "AA" = "BB"
+                 CONTINUE
+           END-SEARCH
+           SEARCH ALL TAB-2-ENTRY
+              AT END
+                 CONTINUE
+              WHEN TAB-2-KEY (TAB-2-INDEX) = ALL ZERO
+                 CONTINUE
+           END-SEARCH
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob: in section 'TESTING':
+prog.cob:27: error: 'TAB-1-KEY' requires one subscript
+prog.cob:51: error: syntax error, unexpected AT END
+prog.cob:53: error: syntax error, unexpected END-SEARCH
+prog.cob:58: error: syntax error, unexpected WHEN
+prog.cob:64: error: 'TESTING' is not a field
+prog.cob:70: error: SEARCH ALL requires comparision of KEY field
+prog.cob:76: error: SEARCH ALL requires comparision of KEY field
+prog.cob:82: error: SEARCH ALL requires comparision of KEY field
+prog.cob:88: warning: expression 'AA' EQUALS 'BB' is always FALSE
+prog.cob:88: error: invalid SEARCH ALL condition
+prog.cob:91: error: SEARCH ALL requires KEY phrase
+prog.cob:15: note: 'TAB-2-ENTRY' defined here
+])
 AT_CLEANUP
 
 
@@ -7402,7 +7544,7 @@ AT_DATA([prog.cob], [
 AT_CAPTURE_FILE([prog.c])
 
 AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
-  $COMPILE -C -fdump=all -w prog.cob], [0], [])
+  $COMPILE -C -fdump -w prog.cob], [0], [])
 # TODO: only execute this piece when extended $GREP works
 AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 77], [0],
 [  P_dump:
@@ -7942,6 +8084,7 @@ prog.cob:15: warning: start of statement in Area A
 
 AT_CLEANUP
 
+
 AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
 AT_KEYWORDS([misc directive missing-periods])
 
@@ -8126,6 +8269,7 @@ pgm1.cob:18: error: start of statement in Area A
 
 AT_CLEANUP
 
+
 AT_SETUP([autodetect format])
 AT_KEYWORDS([cobc free fixed format])
 
@@ -8180,7 +8324,7 @@ free.cob:3: error: invalid indicator 'R' at column 7
 free.cob:4: error: invalid indicator 'E' at column 7
 free.cob:5: error: invalid indicator 'I' at column 7
 free.cob:6: error: invalid indicator 'N' at column 7
-free.cob:7: error: invalid indicator 'T' at column 7
+free.cob: error: too many format errors in file, skip output of further errors
 free.cob:8: error: PROGRAM-ID header missing
 ])
 
@@ -8190,7 +8334,7 @@ domfree.cob:3: error: invalid indicator 'R' at column 7
 domfree.cob:4: error: invalid indicator 'E' at column 7
 domfree.cob:5: error: invalid indicator 'I' at column 7
 domfree.cob:6: error: invalid indicator 'N' at column 7
-domfree.cob:7: error: invalid indicator 'T' at column 7
+domfree.cob: error: too many format errors in file, skip output of further errors
 domfree.cob:8: error: PROGRAM-ID header missing
 ])
 
@@ -8199,6 +8343,7 @@ AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed domfixed.cob], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([context sensitive alias])
 AT_KEYWORDS([misc context alias])
@@ -8222,3 +8367,107 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1])
 
 AT_CLEANUP
 
+
+AT_SETUP([PROTOTYPE parameter validation])
+AT_KEYWORDS([prototypes VALUE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. f PROTOTYPE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 a PIC X(20).
+       01 b ANY LENGTH.
+      *> BINARY-C-INT usage does not exist: error on purpose to
+      *> trigger an error below
+       01 c USAGE BINARY-C-INT.
+      *> level 78 triggers an error, but not the expected one: the
+      *> string replaces the identifier in the scanner, so it becomes
+      *> a syntax error instead of a complain about level 78
+       78 d-const VALUE "abc".
+       PROCEDURE DIVISION
+          USING a
+                BY REFERENCE b
+                BY VALUE b
+                         c
+      *>                 d-const
+                RETURNING OMITTED.
+       END PROGRAM f.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:10: error: unknown USAGE: BINARY-C-INT
+prog.cob:18: error: ANY LENGTH items may only be BY REFERENCE formal parameters
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([IMP INCLUDE directive])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file.h"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE <file.h>
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+
+AT_DATA([prog2.cob], [
+       >>IMP INCLUDE
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob:2: error: invalid IMP INCLUDE directive
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([IMP INCLUDE directive multiple files])
+AT_KEYWORDS([IMP INCLUDE])
+
+AT_DATA([prog.cob], [
+       >>IMP INCLUDE "file1.h" file2.h <file3.h> "<file4.h>"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE --save-temps -E -o prog.i prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -C prog.cob prog2.cob], [0], [], [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.i], [0], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file1.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE file2.h"   prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.c], [1], ignore, [])
+AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.c], [1], ignore, [])
+
+AT_CLEANUP

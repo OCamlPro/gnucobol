@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -394,10 +394,14 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1212 2312 3412], [])
+
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.def.$COB_MODULE_EXT])
 AT_CHECK([$COMPILE_MODULE -fdefaultbyte=0 callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1111 2211 3311], [])
 
 # note: this is the tested MF result (INDEXED BY are USAGE COMP 9(08), 0-based !):
+#AT_CHECK([mv callee.$COB_MODULE_EXT callee.zero.$COB_MODULE_EXT])
 #AT_CHECK([$COMPILE_MODULE -std=mf-strict callee.cob], [0], [], [])
 #AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1018 2117 3216], [])
 
@@ -422,6 +426,7 @@ AT_DATA([callee.cob], [
 ])
 
 
+AT_CHECK([mv callee.$COB_MODULE_EXT callee.old.$COB_MODULE_EXT])
 AT_CHECK([$COMPILE_MODULE -std=acu-strict callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 19 20 31], [])
 # note: tested result with 2 byte: AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 15 26 37], [])
@@ -1035,7 +1040,7 @@ AT_CLEANUP
 
 ## Expressions
 
-AT_SETUP([Class check with reference modification])
+AT_SETUP([Class check with reference-modification])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -1163,6 +1168,40 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog2], [0],
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 [[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL (unsigned)) not numeric: '0x000a123f'
 ]])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE of invalid data from numeric to alphanumeric item])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 X-NUM                 PIC 9.
+       77 X-ALN REDEFINES X-NUM PIC X.
+       77 Y-ALN                 PIC X.
+       77 Z-NUM                 PIC +9,9.
+       77 Z-ALN REDEFINES Z-NUM PIC XX.
+       77 T-ALN                 PIC XX.
+       PROCEDURE DIVISION.
+       MAIN.
+           MOVE SPACES TO X-ALN
+           MOVE X-NUM  TO Y-ALN
+	   IF Y-ALN NOT EQUAL " " THEN
+	      DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
+	   END-IF
+           MOVE SPACES TO Z-ALN
+           MOVE Z-NUM  TO T-ALN
+	   IF T-ALN NOT EQUAL "  " THEN
+	      DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
+	   END-IF
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
@@ -2910,6 +2949,76 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([STRING preserve source])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC.
+         10 SRC-X PIC X(3) VALUE "123".
+         10 SRC-Y PIC X(8) VALUE SPACES.
+       01 DST OCCURS 1.
+         10 DST-X PIC X(8) VALUE SPACES.
+       PROCEDURE DIVISION.
+           DISPLAY "SRC-Y BEFORE: '" SRC-Y "'".
+           STRING "DATA " SRC-X(1:3) INTO DST (1).
+           DISPLAY "SRC-Y AFTER:  '" SRC-Y "'".
+           DISPLAY "DST-X AFTER:  '" DST-X (1) "'".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SRC-Y BEFORE: '        '
+SRC-Y AFTER:  '        '
+DST-X AFTER:  'DATA 123'
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT preserve source])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC OCCURS 1.
+         10 SRC-X PIC S9(3) VALUE 123.
+         10 SRC-Y PIC S9(3) VALUE 456.
+       01 DST OCCURS 1.
+         10 DST-X PIC S9(7) VALUE -6540321.
+       PROCEDURE DIVISION.
+           DISPLAY "SRC-X BEFORE: '" SRC-X (1) "'".
+           DISPLAY "SRC-Y BEFORE: '" SRC-Y (1) "'".
+           DISPLAY "DST-X BEFORE: '" DST-X (1) "'".
+           INSPECT DST-X (1) REPLACING
+             LEADING "654" BY SRC-X (1)
+             ALL "321" BY SRC-Y (1).
+           DISPLAY "SRC-X AFTER: '" SRC-X (1) "'".
+           DISPLAY "SRC-Y AFTER: '" SRC-Y (1) "'".
+           DISPLAY "DST-X AFTER: '" DST-X (1) "'".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SRC-X BEFORE: '+123'
+SRC-Y BEFORE: '+456'
+DST-X BEFORE: '-6540321'
+SRC-X AFTER: '+123'
+SRC-Y AFTER: '+456'
+DST-X AFTER: '-1230456'
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([UNSTRING DELIMITED ALL LOW-VALUE])
 AT_KEYWORDS([runmisc])
 
@@ -3964,6 +4073,45 @@ AT_CHECK([$COBCRUN_DIRECT ./ebcdic], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([SEARCH ALL with non-0xff HIGH-VALUE])
+AT_KEYWORDS([runmisc default-colseq])
+
+# This originates from a coding pattern we've witnessed in a code base.
+# When using a collating sequence that loads to HIGH-VALUE not being 0xff
+# (typically EBCDIC-500 / Latin-1), this used to fail.
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TAB.
+         02 TAB-ELT   OCCURS 3
+                      ASCENDING KEY TAB-KEY
+                      INDEXED BY TI.
+           05 TAB-KEY PIC X.
+       PROCEDURE DIVISION.
+           MOVE ALL HIGH-VALUE TO TAB
+           MOVE "1" TO TAB-ELT (1)
+      *    DISPLAY "|" TAB "|"
+           SEARCH ALL TAB-ELT
+              AT END
+                 DISPLAY '"1" NOT FOUND'
+              WHEN TAB-KEY (TI) = "1"
+                 CONTINUE
+           END-SEARCH
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fdefault-colseq=ASCII -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([PIC ZZZ-, ZZZ+])
 AT_KEYWORDS([runmisc editing])
 
@@ -4013,7 +4161,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  MYOCC        PIC 9(8) COMP VALUE 0.
+       01  MYOCC        PIC 9(8) VALUE 0.
        PROCEDURE        DIVISION.
        ASTART SECTION.
        A01.
@@ -4032,6 +4180,7 @@ AT_DATA([prog.cob], [
            END-IF.
        B99.
            EXIT.
+      *> expected without -fperform-osvs: fall through here _SHOULD_ abort with -fsection-exit-check
 ])
 
 AT_CHECK([$COMPILE -fperform-osvs prog.cob], [0], [], [])
@@ -4041,7 +4190,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Sticky LINKAGE])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4056,10 +4205,7 @@ AT_DATA([callee.cob], [
               SET ADDRESS OF P3 TO ADDRESS OF P2
            ELSE
               IF P3 NOT = "OKOKOK"
-                 DISPLAY P3
-                 END-DISPLAY
-              END-IF
-           END-IF.
+                 DISPLAY P3.
            EXIT PROGRAM.
 ])
 
@@ -4071,12 +4217,10 @@ AT_DATA([caller.cob], [
        01 P1            PIC X    VALUE "A".
        01 P2            PIC X(6) VALUE "NOT OK".
        PROCEDURE        DIVISION.
-           CALL "callee" USING P1 P2
-           END-CALL.
+           CALL "callee" USING P1 P2.
            MOVE "B"      TO P1.
            MOVE "OKOKOK" TO P2.
-           CALL "callee" USING P1
-           END-CALL.
+           CALL "callee" USING P1.
            STOP RUN.
 ])
 
@@ -4717,7 +4861,6 @@ AT_DATA([callee.cob], [
               DISPLAY P1.
            IF P2 NOT EQUAL "FROM C"
               DISPLAY P2
-              END-DISPLAY
            ELSE
               DISPLAY "OK" WITH NO ADVANCING.
            EXIT PROGRAM.
@@ -4786,17 +4929,11 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION EXTERN USING
                         BY VALUE P1 P2 BY REFERENCE P3.
            IF P1 NOT EQUAL ADDRESS OF P3
-              DISPLAY P1
-              END-DISPLAY
-           END-IF
+              DISPLAY "P1 != ADDRESS OF P3: " P1.
            IF P2 NOT EQUAL 42
-              DISPLAY P2
-              END-DISPLAY
-           END-IF
+              DISPLAY "P2 != 42: " P2.
            IF P3 NOT EQUAL "CALLBACK"
-              DISPLAY P3
-              END-DISPLAY
-           END-IF
+              DISPLAY "P3 != CALLBACK: " P3.
            EXIT PROGRAM.
 ])
 
@@ -4810,14 +4947,25 @@ cprog (void *cb)
    char *p1;
    int  p2 = 42;
    char *p3 = "CALLBACK";
+   cob_call_union f;
+   f.funcvoid = cb;
 
    p1 = p3;
-   ((int (*)(char *, int, char *))cb)(p1, p2, p3);
+   ((int (*)(char *, int, char *))f.funcint)(p1, p2, p3);
    return 0;
 }
 ]])
 
 AT_CHECK([$COMPILE -Wno-unfinished -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fsticky-linkage -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fusing-optional=skip -o prog prog.cob cprog.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -Wno-unfinished -fusing-optional=skip -fsticky-linkage -o prog prog.cob cprog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -4877,9 +5025,11 @@ cprog (void *cb)
    char *p1;
    int  p2 = 42;
    char *p3 = "CALLBACK";
+   cob_call_union f;
+   f.funcvoid = cb;
 
    p1 = p3;
-   ((int (*)(char *, int, char *))cb)(p1, p2, p3);
+   ((int (*)(char *, int, char *))f.funcint)(p1, p2, p3);
    return 0;
 }
 ]])
@@ -5244,7 +5394,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ANY LENGTH (5)])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 # any length variables resulted in SIGSEGV when module was first program called
 
@@ -5257,7 +5407,7 @@ AT_DATA([subprog.cob], [
        01 str1 PIC X ANY LENGTH.
        01 str2 PIC X ANY LENGTH.
 
-       PROCEDURE DIVISION USING str1 str2.
+       PROCEDURE DIVISION USING OPTIONAL str1 OPTIONAL str2.
            DISPLAY 'IN' WITH NO ADVANCING
            .
        END PROGRAM subprog.
@@ -5308,7 +5458,7 @@ AT_CLEANUP
 
 
 AT_SETUP([access to OPTIONAL LINKAGE item not passed])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CALL])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -5317,10 +5467,8 @@ AT_DATA([caller.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X(4) VALUE '9876'.
        PROCEDURE        DIVISION.
-           CALL 'callee' USING X
-           END-CALL
-           CALL 'callee' USING OMITTED
-           END-CALL
+           CALL 'callee' USING X.
+           CALL 'callee' USING OMITTED.
            STOP RUN.
 ])
 
@@ -7341,7 +7489,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Figurative constants to numeric field])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([Numeric MOVE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7351,7 +7499,7 @@ AT_DATA([prog.cob], [
        01  NUM9    PIC 9(6).
        PROCEDURE DIVISION.
            MOVE SPACES TO NUM9
-           DISPLAY "NUM9 value SPACES is " NUM9 "." UPON SYSOUT
+           DISPLAY "NUM9 value SPACES is " NUM9 (1:) "." UPON SYSOUT
            MOVE LOW-VALUES TO NUM9
            IF NUM9 = LOW-VALUES
               DISPLAY "9(6) tests OK for LOW-VALUES" UPON SYSOUT
@@ -7485,6 +7633,7 @@ dump (unsigned char *data)
   for (i = 0; i < 4; i++)
     printf ("%02X", data[i]);
   puts (" .");
+  fflush(stdout);
   return 0;
 }
 ]])
@@ -7494,7 +7643,6 @@ AT_CHECK([$COMPILE -std=mf -fno-move-non-numeric-lit-to-numeric-is-zero prog.cob
 prog.cob:28: warning: numeric value is expected
 prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:34: warning: numeric value is expected
-prog.cob:6: note: 'MYFLD' defined here as PIC 9(4)
 prog.cob:52: warning: numeric value is expected
 prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
 ])
@@ -7614,7 +7762,7 @@ AT_CLEANUP
 AT_SETUP([READY TRACE / RESET TRACE])
 AT_KEYWORDS([runmisc -ftrace -ftraceall -fsource-location
 CALL RECURSIVE RETURN-CODE SEARCH
-COB_PHYSICAL_CANCEL COB_PRE_LOAD])
+COB_PHYSICAL_CANCEL COB_PRE_LOAD NOTRACE])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -7939,13 +8087,21 @@ Program-Id: caller           Statement: AT END                 Line: 64
 Program-Id: caller           Statement: STOP RUN               Line: 66
 ])
 
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv callee1.$COB_MODULE_EXT callee1.old.$COB_MODULE_EXT])
+AT_CHECK([mv callee2.$COB_MODULE_EXT callee2.old.$COB_MODULE_EXT])
+AT_CHECK([mv preload.$COB_MODULE_EXT preload.old.$COB_MODULE_EXT])
+AT_CHECK([mv preload2.$COB_MODULE_EXT preload2.old.$COB_MODULE_EXT])
+AT_CHECK([mv callee2c.$COB_MODULE_EXT callee2c.old.$COB_MODULE_EXT])
+
+
 AT_CHECK([$COBC -ftraceall callee1.cob], [0], [], [])
 AT_CHECK([$COBC callee2.cob], [0], [], [])
 AT_CHECK([$COBC -ftrace -w preload.cob], [0], [], [])
 AT_CHECK([$COBC -ftraceall preload2.cob], [0], [], [])
 AT_CHECK([$COBC -fsource-location -w callee2c.cob], [0], [], [])
-AT_CHECK([$COBC -x -o prog -ftraceall caller.cob], [0], [], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prog], [0], [],
+AT_CHECK([$COBC -x -o prognew -ftraceall caller.cob], [0], [], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prognew], [0], [],
 [Source: 'caller.cob'
 Program-Id:  caller
 Program-Id:  caller                      MOVE                            Line:     15
@@ -8071,6 +8227,75 @@ Program-Id:  caller                      SEARCH VARYING                  Line:  
 Program-Id:  caller                      SEARCH VARYING                  Line:     61
 Program-Id:  caller                      AT END                          Line:     64
 Program-Id:  caller                      STOP RUN                        Line:     66
+])
+
+
+AT_DATA([mini.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      mini.
+       PROCEDURE        DIVISION.
+       SOME-SEC SECTION.
+       SOME-PAR.
+           READY TRACE
+           PERFORM OTHER-SEC
+           RESET TRACE
+           MOVE 0 TO RETURN-CODE.
+       END-PAR.
+           GOBACK.
+       OTHER-SEC SECTION.
+           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+       EX. EXIT.
+])
+# no trace code enabled, so not active, ignoring READY TRACE
+AT_CHECK([$COMPILE -std=mf mini.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./mini], [0], [], [])
+
+AT_DATA([minin.cob], [
+      $SET NOTRACE
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      minin.
+       PROCEDURE        DIVISION.
+       SOME-SEC SECTION.
+       SOME-PAR.
+           READY TRACE
+           PERFORM OTHER-SEC
+           RESET TRACE
+           MOVE 0 TO RETURN-CODE.
+       END-PAR.
+           GOBACK.
+       OTHER-SEC SECTION.
+           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+       EX. EXIT.
+])
+# even when externally enabled, trace code disabled locally, so not active
+AT_CHECK([$COMPILE -std=mf -ftraceall minin.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./minin], [0], [], [])
+
+AT_DATA([minit.cob], [
+      $SET TRACE
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      minit.
+       PROCEDURE        DIVISION.
+       SOME-SEC SECTION.
+       SOME-PAR.
+           READY TRACE
+           PERFORM OTHER-SEC
+           RESET TRACE
+           MOVE 0 TO RETURN-CODE.
+       END-PAR.
+           GOBACK.
+       OTHER-SEC SECTION.
+           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+       EX. EXIT.
+])
+
+# trace code enabled locally, so active, but only for sections/paragraphs
+AT_CHECK([$COMPILE -std=mf minit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./minit], [0], [],
+[Source: 'minit.cob'
+Program-Id:  minit 
+Program-Id:  minit              Section: OTHER-SEC                       Line:     14
+Program-Id:  minit            Paragraph: EX                              Line:     16
 ])
 
 AT_CLEANUP
@@ -10056,7 +10281,7 @@ Line:    572            CLOSE
 Line:    333            STOP RUN
 ])
 
-AT_CHECK([diff reference trace.txt], [0], [], [])
+AT_CHECK([$DIFF reference trace.txt], [0], [], [])
 
 AT_CHECK([$COMPILE -ftrace prog.cob -o prog_s], [0], [], [])
 
@@ -10196,13 +10421,16 @@ Paragraph: LISTFILE                        -    387
 
 AT_CAPTURE_FILE([trace_append.txt])
 
-AT_CHECK([diff reference_append trace_append.txt], [0], [], [])
+AT_CHECK([$DIFF reference_append trace_append.txt], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([stack and dump feature])
-AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE])
+AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL SOURCE_DATE_EPOCH])
+
+# Note: we use SOURCE_DATE_EPOCH to have a predictable output in dumps;
+# this also allows to test this feature at the same time
 
 AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
@@ -10370,7 +10598,7 @@ AT_DATA([prog.cob], [
            10  CM-DISK                         PICTURE X(8).
            10  CM-NO-TERMINALS                 PICTURE 9(4).
 
-       PROCEDURE DIVISION USING X, TSPFL-RECORD.
+       PROCEDURE DIVISION USING X, OPTIONAL TSPFL-RECORD.
        MAIN-1 SECTION.
             MOVE ALL "X" TO TSTREC.
             MOVE 1 TO TSTG-1 (1).
@@ -10505,9 +10733,8 @@ AT_DATA([sub2.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CAPTURE_FILE([tstdump.dump])
-
-AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=NONE \
 $COBCRUN prog], [1],
@@ -10517,6 +10744,8 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
+
+AT_CAPTURE_FILE([tstdump.dump])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],
@@ -10529,7 +10758,7 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump.dump
 ])
 
-AT_DATA([reference_tmpl], [
+AT_DATA([reference], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of "sub1" was MOVE
@@ -10545,7 +10774,7 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	ENTRY prog at prog.cob:77
  Started by prog
 
-Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10581,12 +10810,12 @@ WORKING-STORAGE
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
        15 TSTX-2 (4,2..4) same as (1)
-  05      TSTTAIL1                        X  _
+  05      TSTTAIL1                        X  @&t@
                                      1 x 5811
   05      TSTCOMP3                        58585
   05      TSTLONG                        'Quick brown fox jumped over the dog              Quick br'
                                       57:'own fox jumped over the dog'
-  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d  _
+  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d  @&t@
                                      1 x 51756963 6B657220 67726579 20666F78 206A756D 70656420
                                           t h e    c o u g  a r   X  X X   X  X X X X  X X   X
                                     25 x 74686520 636F7567 61722058 58581158 58585858 58580758
@@ -10609,7 +10838,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub2 from sub2.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -10641,12 +10870,12 @@ WORKING-STORAGE
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
        15 TSTX-2 (4,2..4) same as (1)
-  05      TSTTAIL1                        X  _
+  05      TSTTAIL1                        X  @&t@
                                      1 x 5811
   05      TSTCOMP3                        58585
   05      TSTLONG                        'Quick brown fox jumped over the dog              Quick br'
                                       57:'own fox jumped over the dog'
-  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d  _
+  05      TSTHEX                          Q u i c  k e r    g r e y    f o x    j u m  p e d  @&t@
                                      1 x 51756963 6B657220 67726579 20666F78 206A756D 70656420
                                           t h e    c o u g  a r   X  X X   X  X X X X  X X   X
                                     25 x 74686520 636F7567 61722058 58581158 58585858 58580758
@@ -10679,7 +10908,7 @@ LINKAGE
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 FD FLATFILE
 **********************
@@ -10740,15 +10969,11 @@ END OF DUMP - prog
 
 ])
 
-# AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
-tstdump.dump > tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.dump], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
 # recheck with COBC_GEN_DUMP_COMMENTS, which may not change the output
-AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 COBC_GEN_DUMP_COMMENTS=1 \
 $COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
@@ -10762,10 +10987,7 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump.dump
 ])
 
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
-tstdump.dump > tstdump.sed], [0], [], [])
-
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.dump], [0], [], [])
 
 
 # using both
@@ -10793,64 +11015,59 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump.dump
 ])
 
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
-tstdump.dump > tstdump.sed], [0], [], [])
-
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference tstdump.dump], [0], [], [])
 
 
+AT_DATA([reference_stderr],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
+ Started by ./prog
+])
+
+AT_CAPTURE_FILE([stderr.txt])
 
 AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
 
 # also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
 [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+], [])
 
- Last statement of "sub1" was MOVE
-	MAIN-2 OF MAIN-1 at cpyabrt:4
-	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:159
- Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
- Last statement of "prog" was CALL
-	CALL-IT-OMIT at prog.cob:118
-	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:77
- Started by ./prog
-])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+stderr.txt > stderr.sed], [0], [], [])
+AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
+
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
 
 # also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN_DIRECT ./prog 2>stderr.txt], [1],
 [X is 000000001
 X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+], [])
 
- Last statement of "sub1" was MOVE
-	MAIN-2 OF MAIN-1 at cpyabrt:4
-	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:159
- Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
- Last statement of "prog" was CALL
-	CALL-IT-OMIT at prog.cob:118
-	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:77
- Started by ./prog
-])
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
+stderr.txt > stderr.sed], [0], [], [])
+AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
-AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
+
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump_fdls.dump \
 $COBCRUN_DIRECT ./prog_fdls], [1],
@@ -10863,10 +11080,9 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump_fdls.dump
 ])
 
-
 AT_CAPTURE_FILE([tstdump_fdls.dump])
 
-AT_DATA([reference_fdls_tmpl], [
+AT_DATA([reference_fdls], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of "sub1" was MOVE
@@ -10882,7 +11098,7 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	ENTRY prog at prog.cob:77
  Started by ./prog_fdls
 
-Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
 LINKAGE
 **********************
@@ -10892,7 +11108,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub2 from sub2.cob compiled Jan 25 2002 12:00:00
 
 LINKAGE
 **********************
@@ -10907,7 +11123,7 @@ LINKAGE
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 FD FLATFILE
 **********************
@@ -10924,14 +11140,13 @@ END OF DUMP - prog
 
 ])
 
-# AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/_$//' reference_fdls_tmpl > reference], [0], [], [])
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+AT_CHECK([$SED -e 's/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
 tstdump_fdls.dump > tstdump.sed], [0], [], [])
+AT_CHECK([$DIFF reference_fdls tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
-AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump_allfdls.dump \
 $COBCRUN_DIRECT ./prog_allfdls], [1],
@@ -10944,16 +11159,16 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump_allfdls.dump
 ])
 
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+AT_CHECK([$SED -e 's/Started by .*prog_allfdls.exe/Started by .\/prog_allfdls/g' \
 tstdump_allfdls.dump > tstdump.sed], [0], [], [])
-
 AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
-reference > reference_all], [0], [], [])
+reference_fdls > reference_all], [0], [], [])
+AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 
 # CHECKME @ Ron: The result is likely wrong, please verify later
-#AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
+#AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+#$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
 #
 #AT_CHECK([COB_DUMP_FILE=tstdump_ls_sticky.dump \
 #$COBCRUN_DIRECT ./prog_ls_sticky], [1],
@@ -10966,10 +11181,9 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #dump written to tstdump_ls_sticky.dump
 #])
 #
-#
 #AT_CAPTURE_FILE([tstdump_ls_sticky.dump])
 #
-#AT_DATA([reference_ls_sticky_tmpl], [
+#AT_DATA([reference_ls_sticky], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #
 # Last statement of "sub1" was MOVE
@@ -10985,14 +11199,14 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #	ENTRY prog at prog.cob:77
 # Started by ./prog_ls_sticky
 #
-#Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
+#Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 #
 #LINKAGE
 #**********************
 #01        X                               000005441
 #01        TSPFL-RECORD.                  <NULL> address
 #
-#Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
+#Dump Program-Id sub2 from sub2.cob compiled Jan 25 2002 12:00:00
 #
 #LINKAGE
 #**********************
@@ -11004,22 +11218,20 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #     10   CM-NO-TERMINALS                 0010
 #77        DYNAMIC-NUM                     0124
 #
-#Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+#Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 #
 #])
 #
-## AT_DATA workaround via sed:
-#AT_CHECK([$SED -e 's/_$//' reference_ls_sticky_tmpl > reference], [0], [], [])
-#AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
-#tstdump_ls_sticky.dump > tstdump.sed], [0], [], [])
-#
-#AT_CHECK([diff reference tstdump.sed], [0], [], [])
+#AT_CHECK([$DIFF reference tstdump_ls_sticky.dump], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([dump feature with NULL address])
-AT_KEYWORDS([stack stacktrace])
+AT_KEYWORDS([stack stacktrace SOURCE_DATE_EPOCH])
+
+# Note: we use SOURCE_DATE_EPOCH to have a predictable output in dumps;
+# this also allows to test this feature at the same time
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -11131,7 +11343,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fdump=ALL prog.cob], [0], [], [])
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL prog.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=dumpall.txt \
 $COBCRUN_DIRECT ./prog "param 1" param 'param 3'], [1],
@@ -11156,7 +11369,7 @@ Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 	param
 	param 3
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id prog from prog.cob compiled Jan 25 2002 12:00:00
 
 WORKING-STORAGE
 **********************
@@ -11196,31 +11409,31 @@ WORKING-STORAGE
 01        GRP-2A.
   05      FILLER                         ALL SPACES
   05      FLD-2A                         ALL SPACES
-  05      FILLER                                                                              _
+  05      FILLER                                                                              @&t@
                                      1 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 25 thru 492 same as above ---
-                                                         P  e e k                             _
+                                                         P  e e k                             @&t@
                                    493 x 20202020 20202050 65656B20 20202020 20202020 20202020
-                                                                                              _
+                                                                                              @&t@
                                    517 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 541 thru 878 same as above ---
-                                                                                             _
+                                                                                             @&t@
                                    879 x 2020 20202020 20202020 20202020 20202020 202020FE 99
-                                          o                                                  _
-                                   902 x 6F2020 20202020 20202020 20202020 20202020 20202020 _
-                                                                                              _
-                                   925 x 20202020 20202020 20202020 20202020 20202020 20202020_
+                                          o                                                  @&t@
+                                   902 x 6F2020 20202020 20202020 20202020 20202020 20202020 @&t@
+                                                                                              @&t@
+                                   925 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 949 thru 974 same as above ---
-                                                                                             _
+                                                                                             @&t@
                                    975 x 2020 20202020 20202020 20202020 20202020 20202020 20
-                                              Y  o u                                         _
-                                   998 x 202059 6F752020 20202020 20202020 20202020 20202020 _
-                                                                                              _
+                                              Y  o u                                         @&t@
+                                   998 x 202059 6F752020 20202020 20202020 20202020 20202020 @&t@
+                                                                                              @&t@
                                   1021 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 1045 thru 1174 same as above ---
-                                                                                             _
+                                                                                             @&t@
                                   1175 x 2020 20202020 20202020 20202020 20202020 20202020 20
-                                               _
+                                               @&t@
                                   1198 x 202020
 01        GRP-3.
   05      FILLER                         '***'
@@ -11276,19 +11489,16 @@ END OF DUMP - prog
 
 ])
 
-# AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+AT_CHECK([$SED -e 's/Started by .*prog.exe/Started by .\/prog/g' \
 dumpall.txt > dumpall.sed], [0], [], [])
-
 AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
 # Previous test "failed" --> 32 bit
-  AT_CHECK([$SED -e 's/_$//; s/0x0000000000000000/0x00000000/' reference_tmpl > reference], [0], [], [])
+  AT_CHECK([$SED -e 's/0x0000000000000000/0x00000000/' reference_tmpl > reference], [0], [], [])
 ,
 # Previous test "passed" --> 64 bit
-  AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
+  AT_CHECK([cp reference_tmpl reference], [0], [], [])
 )
-
-AT_CHECK([diff reference dumpall.sed], [0], [], [])
+AT_CHECK([$DIFF reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 
@@ -11822,7 +12032,6 @@ AT_DATA([cmod.c], [[
 static char *
 getType (int type, int byvalue)
 {
-   static char wrk[24];
    switch (type) {
 #if 1
    case COB_TYPE_GROUP:           return "Group";
@@ -11853,27 +12062,30 @@ getType (int type, int byvalue)
    case COB_TYPE_NATIONAL:        return "N";
 #endif
    }
-   sprintf (wrk,"Type %04X",type);
-   return wrk;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Type 0x%04X", type);
+      return wrk;
+   }
 }
 
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val = 0;
-   char     *str;
-   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80], pic[30];	/* note: maximum _theoretical_ size */
+   const int nargs = cob_get_num_params();
+   int       k;
+   cob_s64_t val = 0;
 
-   nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
+   fflush (stdout);
    for (k=1; k <= nargs; k++) {
-      type   = cob_get_param_type (k);
-      digits = cob_get_param_digits (k);
-      scale  = cob_get_param_scale (k);
-      size   = cob_get_param_size (k);
-      sign   = cob_get_param_sign (k);
-      byvalue = cob_get_param_constant(k);
+      int  type    = cob_get_param_type (k);
+      int  digits  = cob_get_param_digits (k);
+      int  scale   = cob_get_param_scale (k);
+      int  size    = cob_get_param_size (k);
+      int  sign    = cob_get_param_sign (k);
+      int  byvalue = cob_get_param_constant(k);
       printf (" %d: %-8s ", k, getType (type, byvalue));
       if (byvalue) {
          printf ("BY VALUE     ");
@@ -11881,27 +12093,31 @@ CAPI (void *p1, ...)
          printf ("BY REFERENCE ");
       }
       if (type == COB_TYPE_ALPHANUMERIC) {
-         sprintf (pic, "X(%d)", size);
-         str = cob_get_picx_param (k, NULL, 0);
+         char     *str = cob_get_picx_param (k, NULL, 0);
+         snprintf (pic, sizeof(pic), "X(%d)", size);
          printf ("%-11s '%s'", pic, str);
          cob_free ((void*)str);
          cob_put_picx_param (k, "Bye!");
       } else if (type == COB_TYPE_NATIONAL) {
-         sprintf (pic, "N(%d)", size); /* FIXME */
+         snprintf (pic, sizeof(pic), "N(%d)", size); /* FIXME */
          printf ("exchange of national data is not supported yet");
       } else if (type == COB_TYPE_GROUP) {
-         sprintf (pic, "(%d)", size);
-         str = cob_get_grp_param (k, NULL, 0);
+         char     *str = cob_get_grp_param (k, NULL, 0);
+         snprintf (pic, sizeof(pic), "(%d)", size);
          printf ("%-11s '%.*s'", pic, size, str);
          cob_free ((void*)str);
-         memset (wrk,' ',sizeof(wrk));
-         memcpy (wrk,"Bye-Bye Birdie!",15);
+         memset (wrk, ' ',sizeof(wrk));
+         memcpy (wrk, "Bye-Bye Birdie!", 15);
          cob_put_grp_param (k, wrk, sizeof(wrk));
       } else if (type == COB_TYPE_NUMERIC_EDITED) {
          if (scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          val = cob_get_s64_param (k);
          printf ("%-11s %lld ",pic,val);
@@ -11912,9 +12128,13 @@ CAPI (void *p1, ...)
          printf (" to %.*s",size,wrk);
       } else {
          if(scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          val = cob_get_s64_param (k);
          printf ("%-11s %lld", pic, val);
@@ -12001,7 +12221,7 @@ AT_CLEANUP
 
 
 AT_SETUP([C-API (field based)])
-AT_KEYWORDS([runmisc CALL api])
+AT_KEYWORDS([runmisc CALL api field])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12057,7 +12277,6 @@ AT_DATA([cmod.c], [[
 static char *
 getType (int type, int byvalue)
 {
-   static char wrk[24];
    switch (type) {
 #if 1
    case COB_TYPE_GROUP:           return "Group";
@@ -12088,72 +12307,82 @@ getType (int type, int byvalue)
    case COB_TYPE_NATIONAL:        return "N";
 #endif
    }
-   sprintf (wrk,"Type %04X",type);
-   return wrk;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Type 0x%04X", type);
+      return wrk;
+   }
 }
 
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val;
-   char     *str;
-   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   const int nargs = cob_get_num_params();
+   int       k;
 
-   nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
+   fflush (stdout);
    for (k=1; k <= nargs; k++) {
       cob_field *fld = cob_get_param_field (k, "CAPI");
-      type   = cob_get_field_type (fld);
-      digits = cob_get_field_digits (fld);
-      scale  = cob_get_field_scale (fld);
-      size   = cob_get_field_size (fld);
-      sign   = cob_get_field_sign (fld);
-      byvalue = cob_get_field_constant (fld);
+      char *str    = (char *) cob_get_field_str_buffered (fld);
+      int  type    = cob_get_field_type (fld);
+      int  digits  = cob_get_field_digits (fld);
+      int  scale   = cob_get_field_scale (fld);
+      int  size    = cob_get_field_size (fld);
+      int  sign    = cob_get_field_sign (fld);
+      int  byvalue = cob_get_field_constant (fld);
       printf (" %d: %-8s ", k, getType (type, byvalue));
       if (byvalue) {
          printf ("BY VALUE     ");
       } else {
          printf ("BY REFERENCE ");
       }
-      str = (char *) cob_get_field_str_buffered (fld);
       if (type == COB_TYPE_ALPHANUMERIC) {
-         sprintf (pic, "X(%d)", size);
+         snprintf (pic, sizeof(pic),  "X(%d)", size);
          printf ("%-11s '%s'", pic, str);
          cob_put_field_str (fld, "Bye!");
       } else if (type == COB_TYPE_NATIONAL) {
-         sprintf (pic,"N(%d)",size); /* FIXME */
+         snprintf (pic, sizeof(pic), "N(%d)", size); /* FIXME */
          printf ("exchange of national data is not supported yet");
       } else if (type == COB_TYPE_GROUP) {
-         sprintf (pic,"(%d)",size);
+         snprintf (pic, sizeof(pic), "(%d)",size);
          printf ("%-11s '%.*s'",pic,size,str);
          cob_put_field_str (fld, "Bye-Bye Birdie!");
       } else if (type == COB_TYPE_NUMERIC_EDITED) {
+         cob_s64_t   val = cob_get_s64_param (k);
          if (scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          printf ("%-11s %s ",pic,str);
-         val = cob_get_s64_param (k);
          val = val + 130;
          val = -val;
          cob_put_s64_param (k, val);
          str = (char *) cob_get_field_str (fld, wrk, 78);
          printf (" to %.*s",size,wrk);
       } else {
+         cob_s64_t   val = cob_get_s64_param (k);
          if(scale > 0) {
-            sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)V9(%d)",
+               sign ? "S":"",
+               digits - scale, scale);
          } else {
-            sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
+            snprintf (pic, sizeof(pic), "%s9(%d)",
+               sign ? "S":"",
+               digits - scale);
          }
          printf ("%-11s %s", pic, str);
-         val = cob_get_s64_param (k);
-         sprintf (wrk, "%lld", val + 3);
+         snprintf (wrk, sizeof(wrk),  "%lld", val + 3);
          cob_put_field_str (fld, wrk);
       }
       printf (";\n");
-      fflush(stdout);
+      fflush (stdout);
    }
    return 0;
 }
@@ -12345,7 +12574,7 @@ AT_DATA([prog.cob], [
                          DBX-RECORD-CODE (REC-NAME-DBX) '.'.
 ])
 
-AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob ], [0], [],
+AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [],
 [prog.cob:26: warning: INDEXED should follow ASCENDING/DESCENDING
 ])
 
@@ -12418,8 +12647,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:26: error: subscript of 'TSTY' out of bounds: 0
 ])
 
-# Runtime checks disable, subscript may be zero or even negative
-AT_CHECK([$COBC -x -g -fsource-location prog.cob -o prog_unsafe], [0], [], [])
+# Runtime checks disabled, subscript may be zero or even negative
+AT_CHECK([$COMPILE -fno-ec=bound -o prog_unsafe prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog_unsafe], [0],
 [UNUP: 00000000 is :CCCC:
 SNUP: +00000000 is :CCCC:
@@ -13230,12 +13459,12 @@ This is sent to PRINTER PRINT
 This is also sent to PRINTER PRINT
 ])
 
-AT_CHECK([diff reference prt.log], [0], [], [],
+AT_CHECK([$DIFF reference prt.log], [0], [], [],
 
 # Previous test "failed" --> check if EOL of PIPE is the issue
 
 AT_CHECK([$SED -e 's/PIPE.\r/PIPE./g' prt.log > prt2.log], [0], [], [])
-AT_CHECK([diff reference prt2.log], [0], [], [])
+AT_CHECK([$DIFF reference prt2.log], [0], [], [])
 )
 
 AT_CAPTURE_FILE([punch.out])
@@ -13245,7 +13474,7 @@ AT_DATA([reference],
 This is also sent to SYSPUNCH PRINT
 ])
 
-AT_CHECK([diff reference punch.out], [0], [], [])
+AT_CHECK([$DIFF reference punch.out], [0], [], [])
 
 AT_CLEANUP
 
@@ -14100,11 +14329,12 @@ AT_CLEANUP
 
 
 AT_SETUP([runtime check: write to internal storage (1)])
-AT_KEYWORDS([runmisc CALL bounds])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
 
 # note: this check is likely unportable and therefore will likely be adjusted/skipped,
 #       mainly because the memory layout of consecutive variables is not guaranteed;
 #       it is expected to raise a crash if C bound checking is enabled
+AT_SKIP_IF([test $($COBC --info | $GREP -c sanitize) != 0])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION DIVISION.
@@ -14114,12 +14344,24 @@ AT_DATA([caller.cob], [
        WORKING-STORAGE SECTION.
 
        01 var                   PIC  X.
+       01 vars.
+          03 filler             PIC  X.
+          03 vars-field         PIC  X.
 
-       01 varg                  PIC  X GLOBAL.
-       01 vare                  PIC  X EXTERNAL.
-       01 varb                  PIC  X BASED.
+       01 varg                  GLOBAL.
+          03 filler             PIC  X.
+          03 varg-field         PIC  X.
+       01 vare                  EXTERNAL.
+          03 filler             PIC  X.
+          03 vare-field         PIC  X.
+       01 varb                  BASED.
+          03 filler             PIC  X.
+          03 varb-field         PIC  X.
        LINKAGE SECTION.
        01 varl                  PIC  X.
+       01 varls.
+          03 filler             PIC  X.
+          03 varls-field        PIC  X.
 
        PROCEDURE DIVISION.
       *
@@ -14128,10 +14370,17 @@ AT_DATA([caller.cob], [
            CALL "callee" USING var
 
       *    the following are mostly in to co-test the codegen
+           CALL "callee" USING vars
            CALL "callee" USING varg
            CALL "callee" USING vare
            CALL "callee" USING varb
            CALL "callee" USING varl
+           CALL "callee" USING varls
+           CALL "callee" USING vars-field
+           CALL "callee" USING varg-field
+           CALL "callee" USING vare-field
+           CALL "callee" USING varb-field
+           CALL "callee" USING varls-field
 
            GOBACK.
 ])
@@ -14145,13 +14394,13 @@ AT_DATA([callee.cob], [
 
        77 var                   PIC  X.
        01 lrec.
-          03  lvar                  PIC  X(64).
-          03  lvar2                 PIC  X(64).
+          03  lvar                  PIC  X(32).
+          03  lvar2                 PIC  X(32).
 
        PROCEDURE DIVISION USING var.
       *
            SET ADDRESS OF lrec TO ADDRESS OF var
-           SET ADDRESS OF lrec DOWN BY 64
+           SET ADDRESS OF lrec DOWN BY 32
            MOVE SPACES TO lrec
            GOBACK.
 ])
@@ -14159,29 +14408,29 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected after CALL
+[libcob: caller.cob:30: error: memory violation detected after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: caller.cob:18: error: memory violation detected for 'var' after CALL
+[libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([runtime check: write to internal storage (2)])
-AT_KEYWORDS([runmisc CALL bounds])
+AT_KEYWORDS([runmisc CALL bounds exceptions])
 
 # PROG A (WS 16 bytes) has its WS overwritten and calls PROG B
 # because of the write outside of WS the internal storage is broken
@@ -14348,13 +14597,13 @@ note: TooSmall2 has version 2.0.0
 ], [])
 
 AT_DATA([testdata.h], [[
-  { "TooHigh1", "3.3",    0 },
+  { "TooHigh1", "3.4",    0 },
 ]])
 AT_CHECK([$COMPILE -o high1 prog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./high1 2>high1.log], [1], [], [])
 AT_CHECK([$GREP -v "libcob has" high1.log], [0],
 [libcob: error: version mismatch
-note: TooHigh1 has version 3.3.0
+note: TooHigh1 has version 3.4.0
 ], [])
 
 AT_DATA([testdata.h], [[
@@ -14554,5 +14803,937 @@ TST-DECIMAL IS < ZERO-DECIMAL
 # TST-DECIMAL-SIGNED IS < ZERO-DECIMAL
 # CHECKME: Do we want to mimic that with -std=mf?
 
+
+AT_CLEANUP
+
+
+AT_SETUP([Decimal constants and programs in same source])
+AT_KEYWORDS([runmisc INITIAL CANCEL CALL])
+
+# this used to cause a SIGSEGV, see bug #917
+
+AT_DATA([prog.cpy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. :PROG-NAME: :PROG-KIND:.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 42.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           IF (X + Y) / 42.1 = 1
+               DISPLAY "OK" WITH NO ADVANCING.
+           EXIT PROGRAM.
+       END PROGRAM :PROG-NAME:.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  X  PIC 9(2) VALUE 0.
+       01  Y  PIC 9v9  VALUE 0.1.
+       PROCEDURE DIVISION.
+       MAIN.
+      * ensure that cobc cannot optimize the expression away
+           IF FUNCTION CURRENT-DATE = 0
+               ADD 1 TO Y.
+           CALL "nested_init"
+           CALL "nonnested_init"
+           CALL "nested_noninit"
+           CANCEL "nested_noninit"
+           CALL "nonnested_noninit"
+           CANCEL "nonnested_noninit"
+           IF X + Y + 42.1 <> 0
+               DISPLAY "OK" WITH NO ADVANCING.
+           STOP RUN.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nested_init==
+                           ==:PROG-KIND:== BY ==INITIAL==.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nested_noninit==
+                           ==:PROG-KIND:== BY ====.
+       END PROGRAM prog.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nonnested_init==
+                           ==:PROG-KIND:== BY ==INITIAL==.
+       COPY prog REPLACING ==:PROG-NAME:== BY ==nonnested_noninit==
+                           ==:PROG-KIND:== BY ====.
+])
+
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN prog], [0], [OKOKOKOKOK], [])
+AT_CLEANUP
+
+
+AT_SETUP([run profiling])
+AT_KEYWORDS([cobc profiling])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.    prog.
+        PROCEDURE      DIVISION.
+        1ST SECTION.
+        PARA-0001.
+            PERFORM PARA-0003.
+        PARA-0002.
+            CONTINUE.
+        PARA-0003.
+            GO TO 2ND.
+        PARA-0004.
+            CONTINUE.
+        2ND SECTION.
+        PARA-0005.
+            PERFORM PARA-0006.
+        PARA-0006.
+            CONTINUE.
+        PARA-0007.
+            STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob: in section '1ST':
+prog.cob: in paragraph 'PARA-0003':
+prog.cob:11: warning: GO TO SECTION '2ND'
+])
+
+AT_CAPTURE_FILE([prof-prog.csv])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fprof prog.cob], [0], [],
+[prog.cob: in section '1ST':
+prog.cob: in paragraph 'PARA-0003':
+prog.cob:11: warning: GO TO SECTION '2ND'
+])
+
+AT_CHECK([COB_PROF_ENABLE=0 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
+
+# Specific test for $f, which is an absolute file name
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='$f-prof.csv' $COBCRUN_DIRECT ./prog], [0], [], [ignore])
+AT_CHECK([ls prog$COB_EXE_EXT-prof.csv], [0], [ignore], [])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$$-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0], [],
+[File prof-123456-prog.csv generated
+])
+
+# note: The time here is actually the number of times the procedure has
+# been run, to avoid any indeterminism in the running time of the
+# procedure.
+
+AT_CHECK([cat prof-123456-prog.csv], [0],
+[pid,program-id,section,paragraph,entry,file,line,location,kind,time-ns,time,ncalls,%x
+123456,prog,,,,prog.cob,4,prog.cob:4,PROGRAM,13000000,0.013 s,1,%x
+123456,prog,1ST,,,prog.cob,5,prog.cob:5,SECTION,12000000,0.012 s,1,%x
+123456,prog,1ST,PARA-0001,,prog.cob,6,prog.cob:6,PARAGRAPH,11000000,0.011 s,1,%x
+123456,prog,1ST,PARA-0002,,prog.cob,8,prog.cob:8,PARAGRAPH,0,0.000 s,0,%x
+123456,prog,1ST,PARA-0003,,prog.cob,10,prog.cob:10,PARAGRAPH,1000000,0.001 s,1,%x
+123456,prog,1ST,PARA-0004,,prog.cob,12,prog.cob:12,PARAGRAPH,0,0.000 s,0,%x
+123456,prog,2ND,,,prog.cob,14,prog.cob:14,SECTION,6000000,0.006 s,1,%x
+123456,prog,2ND,PARA-0005,,prog.cob,15,prog.cob:15,PARAGRAPH,3000000,0.003 s,1,%x
+123456,prog,2ND,PARA-0006,,prog.cob,17,prog.cob:17,PARAGRAPH,2000000,0.002 s,2,%x
+123456,prog,2ND,PARA-0007,,prog.cob,19,prog.cob:19,PARAGRAPH,1000000,0.001 s,1,%x
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([run profiling with no paragraph/section names])
+AT_KEYWORDS([cobc profiling])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.    prog.
+        PROCEDURE      DIVISION.
+          DISPLAY "HELLO".
+          DISPLAY "WORLD".
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CAPTURE_FILE([prof.csv])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
+WORLD
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog,,,,prog.cob:4,PROGRAM,3000000,0.003 s,1
+prog,MAIN SECTION,,,prog.cob:5,SECTION,1000000,0.001 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([run profiling with no section names])
+AT_KEYWORDS([cobc profiling])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.    prog.
+        PROCEDURE      DIVISION.
+        1ST.
+          DISPLAY "HELLO".
+        2ND.
+          DISPLAY "WORLD".
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CAPTURE_FILE([prof.csv])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
+WORLD
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog,,,,prog.cob:4,PROGRAM,5000000,0.005 s,1
+prog,MAIN SECTION,,,prog.cob:5,SECTION,2000000,0.002 s,1
+prog,MAIN SECTION,1ST,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
+prog,MAIN SECTION,2ND,,prog.cob:7,PARAGRAPH,1000000,0.001 s,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling depth overflow])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN.
+          PERFORM PARA.
+          STOP RUN.
+       PARA.
+          DISPLAY "OK" WITH NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([COB_PROF_MAX_DEPTH=2 COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [OK],
+[libcob: prog.cob:8: warning: [[cob_prof]] Profiling overflow at 2 calls, aborting profiling.
+libcob: prog.cob:8: warning:   Last 10 calls on stack:
+libcob: prog.cob:8: warning:   * MAIN at prog.cob:5
+libcob: prog.cob:8: warning:   * prog at prog.cob:4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([run profiling with recursion, entries and CALL])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog RECURSIVE.
+       PROCEDURE DIVISION.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+          ENTRY "entry".
+          CALL "inside-program".
+       PROGRAM-ID. inside-program.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(4).
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           MOVE 100 TO COUNTER.
+       INSIDE SECTION.
+           PERFORM ITER.
+           EXIT SECTION.
+       ITER.
+           IF COUNTER = 0
+             DISPLAY "end iter"
+             EXIT PARAGRAPH.
+           SUBTRACT 1 FROM COUNTER.
+           PERFORM INSIDE.
+       END PROGRAM inside-program.
+       END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CAPTURE_FILE([prof.csv])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
+[HELLO WORLD
+end iter
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+inside-program,,,,prog.cob:14,PROGRAM,407000000,0.407 s,1
+inside-program,MAIN,,,prog.cob:15,SECTION,1000000,0.001 s,1
+inside-program,MAIN,MAIN PARAGRAPH,,prog.cob:15,PARAGRAPH,1000000,0.001 s,1
+inside-program,INSIDE,,,prog.cob:17,SECTION,804000000,0.804 s,101
+inside-program,INSIDE,MAIN PARAGRAPH,,prog.cob:17,PARAGRAPH,403000000,0.403 s,101
+inside-program,INSIDE,ITER,,prog.cob:20,PARAGRAPH,401000000,0.401 s,101
+prog,,,,prog.cob:4,PROGRAM,419000000,0.419 s,2
+prog,MAIN SECTION,,,prog.cob:5,SECTION,417000000,0.417 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:5,PARAGRAPH,417000000,0.417 s,2
+prog,MAIN SECTION,MAIN PARAGRAPH,entry,prog.cob:6,CALL,415000000,0.415 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,entry,prog.cob:8,ENTRY,0,0.000 s,1
+prog,MAIN SECTION,MAIN PARAGRAPH,inside-program,prog.cob:9,CALL,409000000,0.409 s,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling two modules with CALL])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       DATA DIVISION.
+       LOCAL-STORAGE SECTION.
+       01 COUNTER PIC 9(4).
+       01 PARAM PIC 9.
+       01 CALL-NAME PIC X(10).
+       PROCEDURE DIVISION.
+      *>PROG.  test the non-standard "no main paragraph, but
+      *>       later using one" for its expected profiling output
+           MOVE 'prog2' TO CALL-NAME.
+           PERFORM CALL-PROG2
+              VARYING COUNTER FROM 0 BY 1
+              UNTIL COUNTER = 300.
+           GOBACK.
+       CALL-PROG2.
+           MOVE 1 TO PARAM.
+           CALL "prog2" USING PARAM.
+           MOVE 2 TO PARAM.
+           CALL CALL-NAME USING PARAM.
+       END PROGRAM prog1.
+])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 PARAM PIC 9.
+       PROCEDURE DIVISION USING PARAM.
+       DISPLAYER SECTION.
+           IF PARAM = 1
+              DISPLAY "X" NO ADVANCING
+           ELSE
+              PERFORM OTHER-DISPLAY.
+           GOBACK.
+       OTHER-DISPLAY SECTION.
+           DISPLAY "Y" NO ADVANCING.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE -fprof prog1.cob])
+AT_CHECK([$COMPILE_MODULE prog2.cob])
+
+AT_CAPTURE_FILE([prof.csv])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+[XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog1,,,,prog1.cob:9,PROGRAM,1803000000,1.803 s,1
+prog1,MAIN SECTION,,,prog1.cob:12,SECTION,3301000000,3.301 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:12,PARAGRAPH,1801000000,1.801 s,1
+prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:17,PARAGRAPH,1500000000,1.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:19,CALL,300000000,0.300 s,300
+prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:21,CALL,300000000,0.300 s,300
+])
+
+# same name sometimes leads to locks - especially on Win32
+AT_CHECK([mv prog2.$COB_MODULE_EXT prog2.old.$COB_MODULE_EXT])
+AT_CHECK([$COMPILE_MODULE -fprof prog2.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+[XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog2,,,,prog2.cob:7,PROGRAM,2400000000,2.400 s,600
+prog2,DISPLAYER,,,prog2.cob:8,SECTION,1200000000,1.200 s,600
+prog2,DISPLAYER,MAIN PARAGRAPH,,prog2.cob:8,PARAGRAPH,1200000000,1.200 s,600
+prog2,OTHER-DISPLAY,,,prog2.cob:14,SECTION,300000000,0.300 s,300
+prog2,OTHER-DISPLAY,MAIN PARAGRAPH,,prog2.cob:14,PARAGRAPH,300000000,0.300 s,300
+prog1,,,,prog1.cob:9,PROGRAM,4803000000,4.803 s,1
+prog1,MAIN SECTION,,,prog1.cob:12,SECTION,9301000000,9.301 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:12,PARAGRAPH,4801000000,4.801 s,1
+prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:17,PARAGRAPH,4500000000,4.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:19,CALL,1500000000,1.500 s,300
+prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:21,CALL,2100000000,2.100 s,300
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling multiple programs])
+AT_KEYWORDS([cobc])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       DATA DIVISION.
+       working-storage section.
+       01    os-check   pic x(7).
+         88 os-is-windows-or-dos values 'WINDOWS' 'FREEDOS'.
+       01  callee       pic x(8) value "./prog2".
+         88 callee-wdos value ".\prog2".
+       PROCEDURE DIVISION.
+           accept os-check from environment "COB_ON_CYGWIN".
+           if os-check = spaces
+             accept os-check from environment "OS".
+           if os-check = spaces
+             accept os-check from environment "OS_NAME".
+           inspect os-check converting "werfdosin" to "WERFDOSIN".
+           if os-is-windows-or-dos
+             set callee-wdos to true.
+           call "SYSTEM" using callee.
+           if callee = space
+             call 'impossible'.
+           GOBACK.
+])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       PROCEDURE DIVISION.
+       MAIN.
+           SET ENVIRONMENT "COB_PROF_FILE" TO "prof2.csv"
+           PERFORM PARA 5 TIMES.
+           GOBACK.
+       PARA.
+           CONTINUE.
+])
+AT_CHECK([$COMPILE_MODULE -fprof prog1.cob])
+AT_CHECK([$COMPILE -fprof prog2.cob])
+
+AT_CAPTURE_FILE([prof1.csv])
+AT_CAPTURE_FILE([prof2.csv])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv $COBCRUN prog1], [0], [],
+[File prof2.csv generated
+File prof1.csv generated
+])
+
+AT_CHECK([cat prof1.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog1,,,,prog1.cob:10,PROGRAM,5000000,0.005 s,1
+prog1,MAIN SECTION,,,prog1.cob:11,SECTION,3000000,0.003 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:11,PARAGRAPH,3000000,0.003 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,SYSTEM,prog1.cob:19,CALL,1000000,0.001 s,1
+prog1,MAIN SECTION,MAIN PARAGRAPH,impossible,prog1.cob:21,CALL,0,0.000 s,0
+])
+
+AT_CHECK([cat prof2.csv], [0],
+[program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
+prog2,,,,prog2.cob:4,PROGRAM,13000000,0.013 s,1
+prog2,MAIN SECTION,,,prog2.cob:5,SECTION,16000000,0.016 s,1
+prog2,MAIN SECTION,MAIN,,prog2.cob:5,PARAGRAPH,11000000,0.011 s,1
+prog2,MAIN SECTION,PARA,,prog2.cob:9,PARAGRAPH,5000000,0.005 s,5
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling out of test mode])
+AT_KEYWORDS([cobc])
+
+AT_DATA([caller.c], [[
+#include <stdlib.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+   int i;
+
+   /* portable version from libcob */
+   (void)cob_unsetenv("COB_IS_RUNNING_IN_TESTMODE");
+
+   cob_init (argc, argv);
+
+   for (i = 0; i < 300; ++i) {
+      cob_call ("callee", 0, NULL);
+   }
+
+   cob_tidy ();
+
+   return 0;
+}
+]])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       PROCEDURE DIVISION.
+       MAIN.
+           PERFORM PARA 5 TIMES.
+           GOBACK.
+       PARA.
+           CONTINUE.
+])
+
+AT_CHECK([$COMPILE caller.c])
+AT_CHECK([$COMPILE_MODULE -fprof callee.cob])
+
+AT_CAPTURE_FILE([prof.csv])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
+[File prof.csv generated
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to NUMERIC-EDITED safety])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  PIC 9(5)    VALUE 12345.
+       01 Y  PIC 9(5)CR.
+       PROCEDURE DIVISION.
+           MOVE X TO Y.
+           IF Y(1:) NOT = "12345" THEN
+             DISPLAY "EXPECTED '12345'"
+             DISPLAY "GOT      '" Y(1:) "'"
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY FLOAT])
+AT_KEYWORDS([FLOAT-SHORT FLOAT-LONG COMP-1 COMP-2])
+
+# Note: each COBOL environment has a different output format for floats;
+# here we only check for internal consistency (support for other
+# formats might be considered for addition if widely requested)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X  FLOAT-SHORT  VALUE 0.000012345.
+       01 Y  FLOAT-LONG   VALUE 0.000012345.
+       PROCEDURE DIVISION.
+           DISPLAY X SPACE Y WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LOW/HIGH-VALUE when using non-native program collating sequence])
+AT_KEYWORDS([LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
+
+# See bug #948 - Comparison with HIGH-VALUE in presence of collating sequences
+
+AT_DATA([prog0.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               HIGH-VALUE QUOTE SPACE LOW-VALUE 'X'.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      * Note: we use hex values as we want the LOW and HIGH
+      * values before the collating sequence is applied
+       01 RAW-LV PIC X VALUE X"00".
+       01 RAW-HV PIC X VALUE X"FF".
+       PROCEDURE DIVISION.
+           IF NOT (RAW-HV < QUOTE) THEN
+             DISPLAY "RAW-HV > QUOTE" UPON SYSERR
+           END-IF.
+           IF NOT (QUOTE < SPACE) THEN
+             DISPLAY "QUOTE > SPACE" UPON SYSERR
+           END-IF.
+           IF NOT (SPACE < RAW-LV) THEN
+             DISPLAY "SPACE > RAW-LV" UPON SYSERR
+           END-IF.
+           IF NOT (RAW-LV < "X") THEN
+             DISPLAY "RAW-LV > X" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog0.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog0], [0], [], [])
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               64 THRU 1
+               65 THRU 192
+               256 THRU 193.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
+[LOW-VALUE: 063 (001) HIGH-VALUE: 192 (256)], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               65.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[LOW-VALUE: 064 (001) HIGH-VALUE: 255 (256)], [])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0],
+[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (256)], [])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
+[LOW-VALUE: 000 (001) HIGH-VALUE: 159 (256)], [])
+
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ebcdic.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ebcdic IS EBCDIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "P1 LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")".
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           CALL "prog2".
+           STOP RUN.
+       END PROGRAM prog1.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-ascii.
+       SPECIAL-NAMES.
+           ALPHABET alpha-ascii IS ASCII.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 LV     PIC X.
+       88 IS-LV  VALUE LOW-VALUE.
+       01 LV-VAL REDEFINES LV BINARY-CHAR UNSIGNED.
+       01 LV-ORD PIC 999.
+       01 HV     PIC X.
+       88 IS-HV  VALUE HIGH-VALUE.
+       01 HV-VAL REDEFINES HV BINARY-CHAR UNSIGNED.
+       01 HV-ORD PIC 999.
+       PROCEDURE DIVISION.
+           MOVE LOW-VALUE TO LV.
+           MOVE HIGH-VALUE TO HV.
+           MOVE FUNCTION ORD (LV) TO LV-ORD.
+           MOVE FUNCTION ORD (HV) TO HV-ORD.
+           DISPLAY "P2 LOW-VALUE: " LV-VAL " (" LV-ORD ")"
+                 " HIGH-VALUE: " HV-VAL " (" HV-ORD ")"
+                   WITH NO ADVANCING.
+           IF NOT (LV = LOW-VALUE AND IS-LV)
+             DISPLAY "LOW-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT (HV = HIGH-VALUE AND IS-HV)
+             DISPLAY "HIGH-VALUE KO" UPON SYSERR
+           END-IF.
+           IF NOT ("X" > LOW-VALUE AND "X" > LV)
+              DISPLAY "X < LOW-VALUE" UPON SYSERR
+           END-IF.
+           IF NOT ("X" < HIGH-VALUE AND "X" < HV)
+              DISPLAY "X > HIGH-VALUE" UPON SYSERR
+           END-IF.
+           STOP RUN.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE -febcdic-table=ebcdic500_latin1 prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [0],
+[P1 LOW-VALUE: 000 (001) HIGH-VALUE: 159 (256)
+P2 LOW-VALUE: 000 (001) HIGH-VALUE: 255 (256)], [])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 IND PIC 9(02).
+       01 ENDX PIC X(01).
+       PROCEDURE DIVISION.
+           INITIALIZE ENDX.
+           PERFORM VARYING IND FROM 1 BY 1 UNTIL ENDX = HIGH-VALUE
+              DISPLAY IND " " WITH NO ADVANCING
+              IF IND = 9
+                 MOVE HIGH-VALUE TO ENDX
+              END-IF
+           END-PERFORM.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-colseq=EBCDIC -febcdic-table=ebcdic500_latin1 prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [0],
+[01 02 03 04 05 06 07 08 09 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CHAR/ORD/ORD-MIN/ORD-MAX when using non-native program collating sequence])
+AT_KEYWORDS([CHAR ORD ORD-MIN ORD-MAX ALPHABET])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER. x86,
+           PROGRAM COLLATING SEQUENCE IS alpha-custom.
+       SPECIAL-NAMES.
+           ALPHABET alpha-custom IS
+               64 THRU 1
+               65 THRU 192
+               256 THRU 193.
+       REPOSITORY.
+           FUNCTION CHAR ORD ORD-MIN ORD-MAX INTRINSIC.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       PROCEDURE DIVISION.
+           DISPLAY CHAR (1) CHAR (7) CHAR (16) CHAR (22) CHAR (31)
+                   CHAR (66) CHAR (91) CHAR (98) CHAR (123).
+           DISPLAY ORD ("?").
+           DISPLAY ORD ("9").
+           DISPLAY ORD ("0").
+           DISPLAY ORD ("*").
+           DISPLAY ORD ("!").
+           DISPLAY ORD ("A").
+           DISPLAY ORD ("Z").
+           DISPLAY ORD ("a").
+           DISPLAY ORD ("z").
+           DISPLAY ORD-MIN ("?" "9" "0" "*" "!" "A" "Z" "a" "z").
+           DISPLAY ORD-MAX ("?" "9" "0" "*" "!" "A" "Z" "a" "z").
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[?90*!AZaz
+000000001
+000000007
+000000016
+000000022
+000000031
+000000066
+000000091
+000000098
+000000123
+000000001
+000000009
+], [])
 
 AT_CLEANUP

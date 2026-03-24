@@ -1,7 +1,7 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2023
+## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2025
 ## Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
-## Ron Norman
+## Ron Norman, Denis HUGONNARD-ROCHE, Chuck Haatvedt
 ##
 ## This file is part of GnuCOBOL.
 ##
@@ -442,7 +442,1990 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to edited item (4)])
+AT_KEYWORDS([fundamental editing])
+
+AT_DATA([prog.cob], [
+      *@OPTIONS MAIN(MAIN)
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. NUM-EDIT.
+      ******************************************************************
+      *AUTHOR.  MICHAEL F GLEASON.                                     *
+      * TESTING RESULTS OF NUMERIC EDIT                                *
+      ******************************************************************
+
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+
+      ******************************************************************
+      *                                                                *
+      *    THIS PROGRAM WILL ONLY DISPLAY MESSAGES IF THE              *
+      *    COMPILER IS GENERATING AN INCORRECT RESULT.                 *
+      *                                                                *
+      *    IF YOU WISH TO SEE ALL THE DISPLAYS, THEN                   *
+      *    UNCOMMENT THE SOURCE-COMPUTER LINE BELOW.                   *
+      *                                                                *
+      ******************************************************************
+
+      ******************************************************************
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+      ******************************************************************
+       OBJECT-COMPUTER. IBM-PC.
+
+      ******************************************************************
+      *REPOSITORY.                                                     *
+      *FUNCTION ALL INTRINSIC.                                         *
+      ******************************************************************
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+       01  MISC-WORKING-STORAGE.
+           05  WS-COUNT                    PIC 9(03)   VALUE 0.
+           05  PIC9V99                     PIC S9(09)V99 COMP-3.
+           05  MSG                         PIC X(50).
+           05  MSG-1                       PIC X(50).
+           05  WS-CARDS-BANK-TOT           PIC S9(9)   COMP-3 VALUE 100.
+           05  WS-CARDS-BANK               PIC --,---,--9.
+           05  EX-1                        PIC ---,---,--9.
+           05  EX-2                        PIC $,$$$,$$9.99CR.
+           05  EX-3                        PIC ZZ,ZZZ,ZZ9DB.
+           05  EX-4                        PIC ZZ,ZZZ,ZZ9CR.
+           05  EX-5                        PIC $,$$$,$$9.99-.
+           05  EX-6                        PIC +$$$,$$$,$$9.
+           05  EX-7                        PIC -$,$$$,$$9.99.
+           05  EX-8                        PIC +$,$$$,$$9.99.
+           05  EX-9              PIC +$ZZZZ9.99. *> PROG GUIDE EXMPL
+           05  EX-10                       PIC -$ZZZZ9.99.
+           05  EX-11                       PIC ++++,+++,++9.
+           05  EX-12                       PIC 9BB999BB999B9999.
+           05  EX-13                       PIC $$$$$//99//99CR.
+           05  EX-13-2                     PIC $$$$$/B/90/B/90CR.
+           05  identifier-1                PIC S9(09)  COMP-3.
+           05  identifier-2                PIC ----,---,--9.
+           05  A-PHONE-NUMBER              PIC 9(11) VALUE 15128006789.
+           05  Year-Month-Day              PIC 9(4)/9(2)/9(2).
+           05  YYYY-MM-DD                  PIC 9(10)   VALUE 20240401.
+           05  EX-14                       PIC +$Z,,B0B,,9.909.
+           05  EX-15                       PIC ****,***,***.**.
+
+       PROCEDURE DIVISION.
+
+       000-BEGIN-TEST.
+
+      ******************************************************************
+      *TEST-1                                                          *
+      ******************************************************************
+      D    DISPLAY "Results for Year-Month-Day "
+      D             "when input is an identifier"
+      D    DISPLAY "PIC 9(4)/9(2)/9(2)."
+           MOVE YYYY-MM-DD             TO Year-Month-Day
+           IF Year-Month-Day EQUAL "2024/04/01"
+               MOVE "PASS"             TO MSG-1
+      D        DISPLAY "2024/04/01 IS WHAT I EXPECTED"
+           ELSE
+               MOVE "FAIL"             TO MSG-1
+               ADD 1                   TO WS-COUNT
+               DISPLAY "TEST-1 EXPECTING 2024/04/01. WHAT I GOT WAS "
+               Year-Month-Day "."
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *TEST-2                                                          *
+      ******************************************************************
+      D    DISPLAY "Results identifier-2 for WS-CARDS-BANK"
+      D    DISPLAY "PIC --,---,--9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO WS-CARDS-BANK-TOT
+           MOVE WS-CARDS-BANK-TOT      TO WS-CARDS-BANK
+           IF WS-CARDS-BANK = "       -10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10   " WS-CARDS-BANK MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       -10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-2 -10   " WS-CARDS-BANK MSG
+           END-IF
+      ******************************************************************
+      *TEST-3                                                          *
+      ******************************************************************
+           MOVE -100                   TO WS-CARDS-BANK-TOT
+           MOVE WS-CARDS-BANK-TOT      TO WS-CARDS-BANK
+           IF WS-CARDS-BANK = "      -100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100  " WS-CARDS-BANK MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      -100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-3 -100  " WS-CARDS-BANK MSG
+           END-IF
+      ******************************************************************
+      *TEST-4                                                          *
+      ******************************************************************
+           MOVE -1000                  TO WS-CARDS-BANK-TOT
+           MOVE WS-CARDS-BANK-TOT      TO WS-CARDS-BANK
+           IF WS-CARDS-BANK = "    -1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000 " WS-CARDS-BANK
+           ELSE
+               MOVE " <---<<< EXPECTING '    -1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-4 -1000 " WS-CARDS-BANK MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *TEST-5                                                          *
+      ******************************************************************
+      D    DISPLAY "MOVE identifier-1 TO identifier-2"
+      D    DISPLAY "PIC ----,---,--9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -123456789             TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = "-123,456,789"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1 -123456789  identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-123,456,789'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-5 identifier-1 -123456789  identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-6                                                          *
+      ******************************************************************
+           MOVE -123                   TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = "        -123"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1 -123        identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      -123'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-6 identifier-1 -123        identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-7                                                          *
+      ******************************************************************
+           MOVE -1234                  TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = "      -1,234"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1 -1234       identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '    -1,234'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-7 identifier-1 -1234       identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-8                                                          *
+      ******************************************************************
+           MOVE -123                   TO identifier-2
+           IF identifier-2 = "        -123"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "literal-1 -123           identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      -123'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-8 literal-1 -123           identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      D    DISPLAY "literal-1 -123           identifier-2 "
+      ******************************************************************
+      *TEST-9                                                          *
+      ******************************************************************
+           MOVE -1234                  TO identifier-2
+           IF identifier-2 = "      -1,234"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "literal-1 -1234          identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '    -1,234'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-9 literal-1 -1234          identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-10                                                         *
+      ******************************************************************
+           MOVE 123456789              TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = " 123,456,789"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1  123456789  identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING ' 123,456,789'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-10 identifier-1  123456789  identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-11                                                         *
+      ******************************************************************
+           MOVE 12                     TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = "          12"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1  12         identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '          12'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-11 identifier-1  12         identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-12                                                         *
+      ******************************************************************
+           MOVE 123                    TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = "         123"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1  123        identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         123'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-12 identifier-1  123        identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-13                                                         *
+      ******************************************************************
+           MOVE 1234                   TO identifier-1
+           MOVE identifier-1           TO identifier-2
+           IF identifier-2 = "       1,234"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "identifier-1  1234       identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     1,234'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-13 identifier-1  1234       identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-14                                                         *
+      ******************************************************************
+           MOVE 123                    TO identifier-2
+           IF identifier-2 = "         123"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "literal-1  123           identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       123'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-14 literal-1  123           identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      ******************************************************************
+      *TEST-15                                                         *
+      ******************************************************************
+           MOVE 1234                   TO identifier-2
+           IF identifier-2 = "       1,234"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "literal-1  1234          identifier-2 "
+      D            identifier-2  MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     1,234'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "TEST-15 literal-1  1234          identifier-2 "
+                   identifier-2 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-1A                                                           *
+      ******************************************************************
+      D    DISPLAY "Results for EX-1 when input is a literal"
+      D    DISPLAY "PIC ---,---,--9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO EX-1
+           IF EX-1 = "        -10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        -10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.01 -10    " EX-1 MSG
+           END-IF
+
+           MOVE -100                   TO EX-1
+           IF EX-1 = "       -100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       -100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.02 -100   " EX-1 MSG
+           END-IF
+
+           MOVE -1000                  TO EX-1
+           IF EX-1 = "     -1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     -1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.03 -1000  " EX-1 MSG
+           END-IF
+
+           MOVE -10000                 TO EX-1
+           IF EX-1 = "    -10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '    -10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.04 -10000 " EX-1 MSG
+           END-IF
+
+           MOVE 10                     TO EX-1
+           IF EX-1 = "         10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.05  10    " EX-1 MSG
+           END-IF
+
+           MOVE 100                    TO EX-1
+           IF EX-1 = "        100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.06  100   " EX-1 MSG
+           END-IF
+
+           MOVE 1000                   TO EX-1
+           IF EX-1 = "      1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.07  1000  " EX-1 MSG
+           END-IF
+
+           MOVE 10000                  TO EX-1
+           IF EX-1 = "     10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.08  10000 " EX-1 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-1B                                                           *
+      ******************************************************************
+      D    DISPLAY "Results for EX-1 when input is an identifier"
+      D    DISPLAY "PIC ---,---,--9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "        -10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        -10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.09 -10    " EX-1 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "       -100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       -100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.10 -100   " EX-1 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "     -1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     -1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.11 -1000  " EX-1 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "    -10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '    -10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.12 -10000 " EX-1 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "         10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.13  10    " EX-1 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "        100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.14  100   " EX-1 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "      1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.15  1000  " EX-1 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-1
+           IF EX-1 = "     10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-1 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-1.16  10000 " EX-1 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-2                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-2 when input is a literal"
+      D    DISPLAY "PIC $,$$$,$$9.99CR."
+           MOVE "PASS"                 TO MSG-1
+           MOVE 100                    TO EX-2
+           IF EX-2 = "     $100.00  "
+               MOVE SPACE              TO MSG
+      D        DISPLAY "  100 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     $100.00  '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.01   100 " EX-2 MSG
+           END-IF
+
+           MOVE -100                   TO EX-2
+           IF EX-2 = "     $100.00CR"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " -100 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     $100.00CR'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.02  -100 " EX-2 MSG
+           END-IF
+
+           MOVE 1000                   TO EX-2
+           IF EX-2 = "   $1,000.00  "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $1,000.00  '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.03  1000 " EX-2 MSG
+           END-IF
+
+           MOVE -1000                  TO EX-2
+           IF EX-2 = "   $1,000.00CR"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $1,000.00CR'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.04 -1000 " EX-2 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      D    DISPLAY "Results for EX-2 when input is an identifier "
+      D    DISPLAY "PIC $,$$$,$$9.99CR."
+           MOVE "PASS"                 TO MSG-1
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-2
+           IF EX-2 = "     $100.00  "
+               MOVE SPACE              TO MSG
+      D        DISPLAY "  100 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     $100.00  '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.05   100 " EX-2 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-2
+           IF EX-2 = "     $100.00CR"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " -100 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     $100.00CR'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.06  -100 " EX-2 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-2
+           IF EX-2 = "   $1,000.00  "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $1,000.00  '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.07  1000 " EX-2 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-2
+           IF EX-2 = "   $1,000.00CR"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000 " EX-2 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $1,000.00CR'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-2.08 -1000 " EX-2 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-3                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-3 when input is a literal"
+      D    DISPLAY "PIC ZZ,ZZZ,ZZ9DB."
+           MOVE "PASS"                 TO MSG-1
+           MOVE 100                    TO EX-3
+           IF EX-3 = "       100  "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-3 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       100  '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-3.01  100   " EX-3 MSG
+           END-IF
+
+           MOVE -100                   TO EX-3
+           IF EX-3 = "       100DB"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-3 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       100DB'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-3.02 -100   " EX-3 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-4                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-4 when input is a literal"
+      D    DISPLAY "PIC ZZ,ZZZ,ZZ9CR."
+           MOVE "PASS"                 TO MSG-1
+           MOVE 1000                   TO EX-4
+           IF EX-4 = "     1,000  "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000   " EX-4 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     1,000  '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-4.01  1000   " EX-4 MSG
+           END-IF
+
+           MOVE -1000                  TO EX-4
+           IF EX-4 = "     1,000CR"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000   " EX-4 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     1,000CR'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-4.02 -1000   " EX-4 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-5                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-5 when input is an identifier "
+      D    DISPLAY "PIC $,$$$,$$9.99-."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "      $10.00-"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      $10.00-'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.01 -10    " EX-5 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "     $100.00-"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     $100.00-'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.02 -100   " EX-5 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "   $1,000.00-"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $1,000.00-'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.03 -1000  " EX-5 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "  $10,000.00-"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '  $10,000.00-'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.04 -10000 " EX-5 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "      $10.00 "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      $10.00 '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.05  10    " EX-5 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "     $100.00 "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     $100.00 '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.06  100   " EX-5 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "   $1,000.00 "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $1,000.00 '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.07  1000  " EX-5 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-5
+           IF EX-5 = "  $10,000.00 "
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-5 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '  $10,000.00 '" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-5.08  10000 " EX-5 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-6                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-6 when input is an identifier"
+      D    DISPLAY "PIC +$$$,$$$,$$9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "-        $10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-        $10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.01 -10    " EX-6 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "-       $100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-       $100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.02 -100   " EX-6 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "-     $1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-     $1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.03 -1000  " EX-6 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "-    $10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-    $10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.04 -10000 " EX-6 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "+        $10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+        $10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.05  10    " EX-6 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "+       $100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+       $100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.06  100   " EX-6 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "+     $1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+     $1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.07  1000  " EX-6 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-6
+           IF EX-6 = "+    $10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-6 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+    $10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-6.08  10000 " EX-6 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-7                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-7 when input is an identifier"
+      D    DISPLAY "PIC -$,$$$,$$9.99."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "-      $10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-      $10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.01 -10    " EX-7 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "-     $100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-     $100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.02 -100   " EX-7 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "-   $1,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-   $1,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.03 -1000  " EX-7 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "-  $10,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-  $10,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.04 -10000 " EX-7 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "       $10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '       $10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.05  10    " EX-7 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "      $100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      $100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.06  100   " EX-7 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "    $1,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '    $1,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.07  1000  " EX-7 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-7
+           IF EX-7 = "   $10,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-7 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '   $10,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-7.08  10000 " EX-7 MSG
+           END-IF
+      D    DISPLAY "------------------"MSG-1
+      ******************************************************************
+      *EX-8                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-8 when input is an identifier"
+      D    DISPLAY "PIC +$,$$$,$$9.99."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "-      $10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-      $10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.01 -10    " EX-8 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "-     $100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-     $100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.02 -100   " EX-8 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "-   $1,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-   $1,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.03 -1000  " EX-8 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "-  $10,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-  $10,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.04 -10000 " EX-8 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "+      $10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+      $10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.05  10    " EX-8 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "+     $100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+     $100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.06  100   " EX-8 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "+   $1,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+   $1,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.07  1000  " EX-8 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-8
+           IF EX-8 = "+  $10,000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-8 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+  $10,000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-8.08  10000 " EX-8 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-9                                                            *
+      ******************************************************************
+      D    DISPLAY "Results for EX-9 when input is an identifier"
+      D            " and a literal"
+      D    DISPLAY "PIC +$ZZZZ9.99. *> PROG GUIDE EXMPL"
+      D    DISPLAY " The -$ signs don't float is correct"
+      D    DISPLAY "According to P.G. the sign and $ should float"
+      D    DISPLAY "In reality and by the COBOL STANDARDS, it doesn't"
+           MOVE "PASS"                 TO MSG-1
+           MOVE 1                      TO EX-9
+      D    DISPLAY "literal-1 1     " EX-9
+           MOVE -1                     TO EX-9
+      D    DISPLAY "literal-1 -1    " EX-9
+      D            " <---<<< Should be -$ when negative"
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "-$   10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$   10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.01 -10    " EX-9 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "-$  100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$  100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.02 -100   " EX-9 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "-$ 1000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$ 1000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.03 -1000  " EX-9 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "-$10000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$10000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.04 -10000 " EX-9 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "+$   10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+$   10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.05  10    " EX-9 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "+$  100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+$  100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.06  100   " EX-9 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "+$ 1000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+$ 1000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.07  1000  " EX-9 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-9
+           IF EX-9 = "+$10000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-9 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '+$10000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-9.08  10000 " EX-9 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-10                                                           *
+      ******************************************************************
+      D    DISPLAY "Results for EX-10 when input is an identifier"
+      D            " and a literal"
+      D    DISPLAY "PIC -$ZZZZ9.99."
+      D    DISPLAY " The -$ signs don't float is correct"
+      D    DISPLAY "According to P.G. the sign and $ should float"
+      D    DISPLAY "In reality and by the COBOL STANDARDS, it doesn't"
+           MOVE "PASS"                 TO MSG-1
+           MOVE 1                      TO EX-10
+      D    DISPLAY "literal-1 1     " EX-10
+      D            " <---<<< Should be just $ not -$ when positive"
+           MOVE -1                     TO EX-10
+      D    DISPLAY "literal-1 -1    " EX-10
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = "-$   10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$   10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.01 -10    " EX-10 MSG
+           END-IF
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = "-$  100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$  100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.02 -100   " EX-10 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = "-$ 1000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$ 1000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.03 -1000  " EX-10 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = "-$10000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '-$10000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.04 -10000 " EX-10 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = " $   10.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING ' $   10.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.05  10    " EX-10 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = " $  100.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING ' $  100.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.06  100   " EX-10 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = " $ 1000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING ' $ 1000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.07  1000  " EX-10 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-10
+           IF EX-10 = " $10000.00"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-10 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING ' $10000.00'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-10.08  10000 " EX-10 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-11A                                                          *
+      ******************************************************************
+      D    DISPLAY "Results for EX-11 when input is a literal"
+      D    DISPLAY "PIC ++++,+++,++9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO EX-11
+           IF EX-11 = "         -10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         -10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.01 -10    " EX-11 MSG
+           END-IF
+
+           MOVE -100                   TO EX-11
+           IF EX-11 = "        -100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        -100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.02 -100   " EX-11 MSG
+           END-IF
+
+           MOVE -1000                  TO EX-11
+           IF EX-11 = "      -1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      -1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.03 -1000  " EX-11 MSG
+           END-IF
+
+           MOVE -10000                 TO EX-11
+           IF EX-11 = "     -10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     -10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.04 -10000 " EX-11 MSG
+           END-IF
+
+           MOVE 10                     TO EX-11
+           IF EX-11 = "         +10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         +10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.05  10    " EX-11 MSG
+           END-IF
+
+           MOVE 100                    TO EX-11
+           IF EX-11 = "        +100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        +100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.06  100   " EX-11 MSG
+           END-IF
+
+           MOVE 1000                   TO EX-11
+           IF EX-11 = "      +1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      +1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.07  1000  " EX-11 MSG
+           END-IF
+
+           MOVE 10000                  TO EX-11
+           IF EX-11 = "     +10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     +10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.08  10000 " EX-11 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-11B                                                          *
+      ******************************************************************
+      D    DISPLAY "Results for EX-11 when input is an identifier"
+      D    DISPLAY "PIC ++++,+++,++9."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -10                    TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "         -10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10    " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         -10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.09 -10    " EX-11 MSG
+           END-IF
+      D    DISPLAY "-10    " EX-11 MSG
+
+           MOVE -100                   TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "        -100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-100   " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        -100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.10 -100   " EX-11 MSG
+           END-IF
+
+           MOVE -1000                  TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "      -1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-1000  " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      -1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.11 -1000  " EX-11 MSG
+           END-IF
+
+           MOVE -10000                 TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "     -10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY "-10000 " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     -10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.12 -10000 " EX-11 MSG
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "         +10"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10    " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '         +10'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.13  10    " EX-11 MSG
+           END-IF
+
+           MOVE 100                    TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "        +100"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 100   " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '        +100'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.14  100   " EX-11 MSG
+           END-IF
+
+           MOVE 1000                   TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "      +1,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 1000  " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '      +1,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.15  1000  " EX-11 MSG
+           END-IF
+
+           MOVE 10000                  TO identifier-1
+           MOVE identifier-1           TO EX-11
+           IF EX-11 = "     +10,000"
+               MOVE SPACE              TO MSG
+      D        DISPLAY " 10000 " EX-11 MSG
+           ELSE
+               MOVE " <---<<< EXPECTING '     +10,000'" TO MSG
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-11.16  10000 " EX-11 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-12                                                           *
+      ******************************************************************
+      D    DISPLAY "Results for EX-12 when input is an identifier"
+      D    DISPLAY "PIC 9BB999BB999B9999."
+           MOVE A-PHONE-NUMBER         TO EX-12
+           MOVE "("                    TO EX-12 (3:1)
+           MOVE ")"                    TO EX-12 (7:1)
+           IF EX-12 EQUAL "1 (512) 800 6789"
+               MOVE "PASS"             TO MSG-1
+      D        DISPLAY "HURAH, '" EX-12 "' IS WHAT I WANTED."
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-12.01 EXPECTING '1 (512) 800 6789' NOT '"
+                        EX-12 "'"
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-13                                                           *
+      ******************************************************************
+      D    DISPLAY "Results for EX-13 when input is an identifier"
+      D    DISPLAY "PIC $$$$$//99//99CR"
+           MOVE -123456                TO identifier-1
+           MOVE identifier-1           TO EX-13
+           IF EX-13 EQUAL "  $12//34//56CR"
+               MOVE "PASS"             TO MSG-1
+      D        DISPLAY "  $12//34//56CR IS WHAT I EXPECTED"
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-13.01 EXPECTING ==> '$12//34//56CR' <=="
+               " WHAT I GOT WAS ==>'"
+               EX-13 "'<=="
+           END-IF
+
+           MOVE 10                     TO identifier-1
+           MOVE identifier-1           TO EX-13
+           IF EX-13 EQUAL "      $00//10  "
+               MOVE "PASS"             TO MSG-1
+      D        DISPLAY "      $00//10   IS WHAT I EXPECTED"
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-13.02 EXPECTING ==>'      $00//10  '  "
+               "WHAT I GOT WAS ==>'"
+               EX-13 "'<=="
+      D        DISPLAY "------------------" MSG-1
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      *EX-13-2                                                         *
+      ******************************************************************
+      D    DISPLAY "Results for EX-13-2 when input is an identifier"
+      D    DISPLAY "PIC $$$$$/B/90/B/90CR"
+           MOVE -12345                 TO identifier-1
+           MOVE identifier-1           TO EX-13-2
+           IF EX-13-2 EQUAL " $123/ /40/ /50CR"
+               MOVE "PASS"             TO MSG-1
+      D        DISPLAY " $123/ /40/ /50CR IS WHAT I EXPECTED"
+      D        DISPLAY "------------------" MSG-1
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-13-2.1 EXPECTING   $123/ /40/ /50CR "
+               "WHAT I GOT WAS ==>'"
+               EX-13-2(1:) "'<=="
+      D        DISPLAY "------------------" MSG-1
+           END-IF
+      ******************************************************************
+      *EX-14                                                           *
+      ******************************************************************
+           MOVE -123456.7895           TO EX-14.
+           IF EX-14(1:) EQUAL "-$5,, 0 ,,6.708"
+               MOVE "PASS"             TO MSG-1
+      D        DISPLAY "EX-14 ==> IS WHAT I EXPECTED '"  EX-14(1:)  "'"
+      D        DISPLAY "------------------" MSG-1
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-14 ==>    WHAT I EXPECTED '-$5,, 0 ,,6.708'"
+               DISPLAY "EX-14 ==>    WHAT I GOT      '" EX-14(1:) "'"
+      D        DISPLAY "------------------" MSG-1
+           END-IF
+
+      ******************************************************************
+      *EX-15                                                           *
+      *  It does not matter if a + or - amount is moved to this edit,  *
+      *  the result will be the same.                                  *
+      ******************************************************************
+      D    DISPLAY "Results for EX-15 when input is an identifier"
+      D    DISPLAY "PIC ****,***,***.**."
+           MOVE "PASS"                 TO MSG-1
+           MOVE -123.45                TO PIC9V99
+           MOVE PIC9V99                TO EX-15
+           IF EX-15 =  "*********123.45"
+               MOVE SPACE TO MSG
+      D        DISPLAY "-123.45    " EX-15 MSG
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE " <---<<< EXPECTING '*********123.45'" TO MSG
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-15.1 -123.45    " EX-15 MSG
+           END-IF
+
+           MOVE -1234.56               TO PIC9V99
+           MOVE PIC9V99                TO EX-15
+           IF EX-15 =  "*******1,234.56"
+               MOVE SPACE TO MSG
+      D        DISPLAY "-1234.56   " EX-15 MSG
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE " <---<<< EXPECTING '*******1,234.56'" TO MSG
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-15.2 -1234.56   " EX-15 MSG
+           END-IF
+
+           MOVE -12345.67              TO PIC9V99
+           MOVE PIC9V99                TO EX-15
+           IF EX-15 =  "******12,345.67"
+               MOVE SPACE TO MSG
+      D        DISPLAY "-12345.67  " EX-15 MSG
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE " <---<<< EXPECTING '******12,345.67'" TO MSG
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-15.3 -12345.67  " EX-15 MSG
+           END-IF
+
+           MOVE  10                    TO PIC9V99
+           MOVE PIC9V99                TO EX-15
+           IF EX-15 =  "**********10.00"
+               MOVE SPACE TO MSG
+      D        DISPLAY " 10        " EX-15 MSG
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE " <---<<< EXPECTING '**********10.00'" TO MSG
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-15.4  10        " EX-15 MSG
+           END-IF
+
+           MOVE  100                   TO PIC9V99
+           MOVE PIC9V99                TO EX-15
+           IF EX-15 =  "*********100.00"
+               MOVE SPACE TO MSG
+      D        DISPLAY " 100       " EX-15 MSG
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE " <---<<< EXPECTING '*********100.00'" TO MSG
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-15.5  100       " EX-15 MSG
+           END-IF
+
+           MOVE  100000000             TO PIC9V99
+           MOVE PIC9V99                TO EX-15
+           IF EX-15 =  "*100,000,000.00"
+               MOVE SPACE TO MSG
+      D        DISPLAY " 100       " EX-15 MSG
+           ELSE
+               ADD 1                   TO WS-COUNT
+               MOVE " <---<<< EXPECTING '*100,000,000.00'" TO MSG
+               MOVE "FAIL"             TO MSG-1
+               DISPLAY "EX-15.6  100       " EX-15 MSG
+           END-IF
+      D    DISPLAY "------------------" MSG-1
+      ******************************************************************
+      * End of process. Display error total if not zero                *
+      ******************************************************************
+           IF WS-COUNT > ZERO
+               MOVE "TESTS FAILED"     TO MSG-1
+               DISPLAY "------------------" WS-COUNT SPACE MSG-1(1 : 12)
+                       "------------------"
+           END-IF
+
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to edited item (5)])
+AT_KEYWORDS([fundamental editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.   prog.
+      *AUTHOR.  CHUCK HAATVEDT
+
+      *  CHECK THE char_to_precedence_idx function in tree.c
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      ******************************************************************
+      *                                                                *
+      *    THIS PROGRAM WILL ONLY DISPLAY MESSAGES IF THE              *
+      *    COMPILER IS GENERATING AN INCORRECT RESULT.                 *
+      *                                                                *
+      *    IF YOU WISH TO SEE ALL THE DISPLAYS, THEN                   *
+      *    COMMENT THE SOURCE-COMPUTER LINE BELOW.                     *
+      *                                                                *
+      ******************************************************************
+
+      ******************************************************************
+       SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+      ******************************************************************
+       OBJECT-COMPUTER. IBM-PC.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77  CURR00                      PIC 9$DB.
+       77  CURR01                      PIC 9$+.
+       77  CURR02                      PIC 9$.
+       77  CURR03                      PIC $9.
+       77  CURR04                      PIC +$9.
+       77  CURR05                      PIC 090.
+       77  CURR06                      PIC $9,9999.99-.
+       77  CURR07                      PIC +$9,9999.99.
+       77  CURR08                      PIC +$9,9999.99,99.
+       77  CURR09                      PIC +$9,9999.99099.
+       77  CURR10                      PIC 9,9/99.99$.
+       77  CURR11                      PIC $,$$$$.$$+.
+       77  CURR12                      PIC $,$$$$.$$CR.
+       77  CURR13                      PIC -$,$$$$.$$.
+       77  CURR14                      PIC $,$$$$.$$.
+       77  CURR15                      PIC $,$$$$V99.
+       77  CURR16                      PIC $,$$$$.99.
+       77  CURR17                      PIC -,----V--.
+       77  CURR18                      PIC -,----.--.
+       77  CURR19                      PIC 9$-.
+       77  CURR20                      PIC -$9.
+       77  CURR21                      PIC 9$DB.
+       77  CURR22                      PIC 9$CR.
+       77  CURR23                      PIC 9,9/99.99+.
+       77  N1                          PIC S9(8) COMP-5  VALUE +0.
+       77  PAD-1                       PIC *,***.**-.
+       77  PAD-2                       PIC $.**.
+
+       PROCEDURE DIVISION.
+           MOVE +7                     TO CURR00
+      D    IF CURR00 NOT EQUAL '7$  '
+               DISPLAY 'TEST 1  CURR00 ===>' CURR00 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR01
+      D    IF CURR01 NOT EQUAL '0$+'
+               DISPLAY 'TEST 1  CURR01 ===>' CURR01 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR02
+      D    IF CURR02 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR02 ===>' CURR02 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR03
+      D    IF CURR03 NOT EQUAL '$0'
+               DISPLAY 'TEST 1  CURR03 ===>' CURR03 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR04
+      D    IF CURR04 NOT EQUAL '+$0'
+               DISPLAY 'TEST 1  CURR04 ===>' CURR04 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR05
+      D    IF CURR05 NOT EQUAL '000'
+               DISPLAY 'TEST 1  CURR05 ===>' CURR05 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR06
+      D    IF CURR06 NOT EQUAL '$0,0000.01'
+               DISPLAY 'TEST 1  CURR06 ===>' CURR06 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR07
+      D    IF CURR07 NOT EQUAL '+$0,0000.01'
+               DISPLAY 'TEST 1  CURR07 ===>' CURR07 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR08
+      D    IF CURR08 NOT EQUAL '+$0,0000.01,00'
+               DISPLAY 'TEST 1  CURR08 ===>' CURR08 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR09
+      D    IF CURR09 NOT EQUAL '+$0,0000.01000'
+               DISPLAY 'TEST 1  CURR09 ===>' CURR09 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR10
+      D    IF CURR10 NOT EQUAL '0,0/00.01$'
+               DISPLAY 'TEST 1  CURR10 ===>' CURR10 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR11
+      D    IF CURR11 NOT EQUAL '     $.01+'
+               DISPLAY 'TEST 1  CURR11 ===>' CURR11 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR12
+      D    IF CURR12 NOT EQUAL '     $.01  '
+               DISPLAY 'TEST 1  CURR12 ===>' CURR12 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR13
+      D    IF CURR13 NOT EQUAL '      $.01'
+               DISPLAY 'TEST 1  CURR13 ===>' CURR13 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR14
+      D    IF CURR14 NOT EQUAL '     $.01'
+               DISPLAY 'TEST 1  CURR14 ===>' CURR14 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR15
+      D    IF CURR15 NOT EQUAL '     $01'
+               DISPLAY 'TEST 1  CURR15 ===>' CURR15 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR16
+      D    IF CURR16 NOT EQUAL '     $.01'
+               DISPLAY 'TEST 1  CURR16 ===>' CURR16 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR17
+      D    IF CURR17 NOT EQUAL '      01'
+               DISPLAY 'TEST 1  CURR17 ===>' CURR17 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR18
+      D    IF CURR18 NOT EQUAL '      .01'
+               DISPLAY 'TEST 1  CURR18 ===>' CURR18 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR19
+      D    IF CURR19 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR19 ===>' CURR19 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR20
+      D    IF CURR20 NOT EQUAL ' $0'
+               DISPLAY 'TEST 1  CURR20 ===>' CURR20 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR21
+      D    IF CURR21 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR21 ===>' CURR21 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR22
+      D    IF CURR22 NOT EQUAL '0$'
+               DISPLAY 'TEST 1  CURR22 ===>' CURR22 '<==='
+      D    END-IF.
+
+           MOVE +0.01                  TO CURR23
+      D    IF CURR23 NOT EQUAL '0,0/00.01+'
+               DISPLAY 'TEST 1  CURR23 ===>' CURR23 '<==='
+      D    END-IF.
+
+
+
+           MOVE -987654321.987654      TO CURR01
+      D    IF CURR01 NOT EQUAL '1$-'
+               DISPLAY 'TEST 2  CURR01 ===>' CURR01 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR02
+      D    IF CURR02 NOT EQUAL '1$'
+               DISPLAY 'TEST 2  CURR02 ===>' CURR02 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR03
+      D    IF CURR03 NOT EQUAL '$1'
+               DISPLAY 'TEST 2  CURR03 ===>' CURR03 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR04
+      D    IF CURR04 NOT EQUAL '-$1'
+               DISPLAY 'TEST 2  CURR04 ===>' CURR04 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR05
+      D    IF CURR05 NOT EQUAL '010'
+               DISPLAY 'TEST 2  CURR05 ===>' CURR05 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR06
+      D    IF CURR06 NOT EQUAL '$5,4321.98-'
+               DISPLAY 'TEST 2  CURR06 ===>' CURR06 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR07
+      D    IF CURR07 NOT EQUAL '-$5,4321.98'
+               DISPLAY 'TEST 2  CURR07 ===>' CURR07 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR08
+      D    IF CURR08 NOT EQUAL '-$5,4321.98,76'
+               DISPLAY 'TEST 2  CURR08 ===>' CURR08 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR09
+      D    IF CURR09 NOT EQUAL '-$5,4321.98076'
+               DISPLAY 'TEST 2  CURR09 ===>' CURR09 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR10
+      D    IF CURR10 NOT EQUAL '4,3/21.98$'
+               DISPLAY 'TEST 2  CURR10 ===>' CURR10 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR11
+      D    IF CURR11 NOT EQUAL ' $4321.98-'
+               DISPLAY 'TEST 2  CURR11 ===>' CURR11 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR12
+      D    IF CURR12 NOT EQUAL ' $4321.98CR'
+               DISPLAY 'TEST 2  CURR12 ===>' CURR12 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR13
+      D    IF CURR13 NOT EQUAL '- $4321.98'
+               DISPLAY 'TEST 2  CURR13 ===>' CURR13 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR14
+      D    IF CURR14 NOT EQUAL ' $4321.98'
+               DISPLAY 'TEST 2  CURR14 ===>' CURR14 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR15
+      D    IF CURR15 NOT EQUAL ' $432198'
+               DISPLAY 'TEST 2  CURR15 ===>' CURR15 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR16
+      D    IF CURR16 NOT EQUAL ' $4321.98'
+               DISPLAY 'TEST 2  CURR16 ===>' CURR16 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR17
+      D    IF CURR17 NOT EQUAL ' -432198'
+               DISPLAY 'TEST 2  CURR17 ===>' CURR17 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR18
+      D    IF CURR18 NOT EQUAL ' -4321.98'
+               DISPLAY 'TEST 2  CURR18 ===>' CURR18 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR19
+      D    IF CURR19 NOT EQUAL '1$-'
+               DISPLAY 'TEST 2  CURR19 ===>' CURR19 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR20
+      D    IF CURR20 NOT EQUAL '-$1'
+               DISPLAY 'TEST 2  CURR20 ===>' CURR20 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR21
+      D    IF CURR21 NOT EQUAL '1$DB'
+               DISPLAY 'TEST 2  CURR21 ===>' CURR21 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR22
+      D    IF CURR22 NOT EQUAL '1$CR'
+               DISPLAY 'TEST 2  CURR22 ===>' CURR22 '<==='
+      D    END-IF.
+
+           MOVE -987654321.987654      TO CURR23
+      D    IF CURR23 NOT EQUAL '4,3/21.98-'
+               DISPLAY 'TEST 2  CURR23 ===>' CURR23 '<==='
+      D    END-IF.
+
+
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
@@ -459,6 +2442,9 @@ AT_DATA([prog.cob], [
        01  num-1 PIC -*B*99.
        01  num-2 PIC $BB**,***.**.
        01  num-3 PIC $BB--,---.--.
+       01  num-4 PIC $,$$$,$$9.99CR.
+       01  num-5 PIC --,---,--9.
+       01  num-packed-1  PIC S9(9)V999 COMP-3.
 
        PROCEDURE DIVISION.
            MOVE -123 TO num-1
@@ -469,6 +2455,39 @@ AT_DATA([prog.cob], [
 
            MOVE 1234.56 TO num-3
            DISPLAY ">" num-3 "<"
+
+           MOVE 456789 to num-4
+           DISPLAY ">" num-4 "<"
+
+           MOVE -100 to num-5
+           DISPLAY ">" num-5 "<"
+
+           MOVE -1000 to num-5
+           DISPLAY ">" num-5 "<"
+
+           MOVE -123 TO num-packed-1
+           MOVE num-packed-1  TO num-1
+           DISPLAY ">" num-1 "<"
+
+           MOVE 1234.56 TO num-packed-1
+           MOVE num-packed-1  TO num-2
+           DISPLAY ">" num-2 "<"
+
+           MOVE 1234.56 TO num-packed-1
+           MOVE num-packed-1  TO num-3
+           DISPLAY ">" num-3 "<"
+
+           MOVE 123456789 to num-packed-1
+           MOVE num-packed-1  TO num-4
+           DISPLAY ">" num-4 "<"
+
+           MOVE -100 to num-packed-1
+           MOVE num-packed-1  TO num-5
+           DISPLAY ">" num-5 "<"
+
+           MOVE -1000 to num-packed-1
+           MOVE num-packed-1  TO num-5
+           DISPLAY ">" num-5 "<"
            .
 ])
 
@@ -477,7 +2496,131 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [>-**123<
 >$  *1,234.56<
 >$   1,234.56<
+> $456,789.00  <
+>      -100<
+>    -1,000<
+>-**123<
+>$  *1,234.56<
+>$   1,234.56<
+> $456,789.00  <
+>      -100<
+>    -1,000<
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to item with +, -, B, 0, / and ,])
+AT_KEYWORDS([fundamental edited editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 W-P4    PIC S9          VALUE +4.
+       01 W-M4    PIC S9          VALUE -4.
+       01 W-M     PIC -B-         VALUE SPACES.
+       01 W-P     PIC +B+         VALUE SPACES.
+
+       01 W-P123  PIC S9(3)       VALUE +123.
+       01 W-M123  PIC S9(3)       VALUE -123.
+       01 W-MM    PIC ---B--9     VALUE SPACES.
+       01 W-PP    PIC +++B++9     VALUE SPACES.
+
+       01 W-X     PIC -//00BB,,-  VALUE SPACES.
+
+       PROCEDURE DIVISION.
+           MOVE W-P4 TO W-M.
+           DISPLAY W-M.
+           MOVE W-M4 TO W-M.
+           DISPLAY W-M.
+           MOVE W-P4 TO W-P.
+           DISPLAY W-P.
+           MOVE W-M4 TO W-P.
+           DISPLAY W-P.
+
+           MOVE W-P123 TO W-MM.
+           DISPLAY W-MM.
+           MOVE W-M123 TO W-MM.
+           DISPLAY W-MM.
+           MOVE W-P123 TO W-PP.
+           DISPLAY W-PP.
+           MOVE W-M123 TO W-PP.
+           DISPLAY W-PP.
+
+           MOVE W-P4 TO W-X.
+           DISPLAY W-X.
+           MOVE W-M4 TO W-X.
+           DISPLAY W-X.
+
+           MOVE W-P123 TO W-X.
+           DISPLAY W-X.
+           MOVE W-M123 TO W-X.
+           DISPLAY W-X.
+
+           STOP RUN.
 ])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[  4
+ -4
+ +4
+ -4
+    123
+   -123
+   +123
+   -123
+         4
+        -4
+         3
+        -3
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to shorter edited item (truncation)])
+AT_KEYWORDS([fundamental edited editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 W-SRC1  PIC 999V99  VALUE 123.45.
+       01 W-SRC2  PIC 9999V9  VALUE 1234.5.
+       01 W-SRC3  PIC 99999V  VALUE 12345.
+       01 W-DST1  PIC ZZZV.
+       01 W-DST2  PIC ZZZZZV.
+
+       PROCEDURE DIVISION.
+           MOVE W-SRC1 TO W-DST1.
+           DISPLAY W-DST1.
+           MOVE W-SRC2 TO W-DST1.
+           DISPLAY W-DST1.
+           MOVE W-SRC3 TO W-DST1.
+           DISPLAY W-DST1.
+           MOVE W-SRC1 TO W-DST2.
+           DISPLAY W-DST2.
+           MOVE W-SRC2 TO W-DST2.
+           DISPLAY W-DST2.
+           MOVE W-SRC3 TO W-DST2.
+           DISPLAY W-DST2 WITH NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[123
+234
+345
+  123
+ 1234
+12345])
 
 AT_CLEANUP
 
@@ -528,7 +2671,7 @@ AT_CLEANUP
 
 
 AT_SETUP([MOVE integer literal to alphanumeric])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental typing])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -538,16 +2681,27 @@ AT_DATA([prog.cob], [
        01  X            PIC X(04) VALUE SPACES.
        PROCEDURE        DIVISION.
            MOVE 0 TO X.
-           DISPLAY X NO ADVANCING
-           END-DISPLAY.
+           DISPLAY X NO ADVANCING END-DISPLAY.
+           MOVE 1000 TO X.
+           DISPLAY X NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:8: warning: alphanumeric value is expected
-prog.cob:6: note: 'X' defined here as PIC X(04)
+AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option prog.cob], [0], [],
+[prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0   ])
+AT_CHECK([$COMPILE_ONLY -Wstrict-typing -fdiagnostics-show-option prog.cob], [0], [],
+[prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
+prog.cob:10: warning: alphanumeric value is expected [[-Wstrict-typing]]
+])
+AT_CHECK([$COMPILE_ONLY -Wextra -Wno-strict-typing -fdiagnostics-show-option prog.cob], [0], [],
+[prog.cob:8: warning: alphanumeric value is expected [[-Wtyping]]
+prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
+])
+AT_CHECK([$COMPILE -Wextra -Wno-typing -fdiagnostics-show-option prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0   1000])
 
 AT_CLEANUP
 
@@ -1480,7 +3634,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
@@ -1544,9 +3698,13 @@ some (void)
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE module.c], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+# the warning itself is very system specific, so disable it,
+# then run again checking only for the warning
+AT_CHECK([COB_DISABLE_WARNINGS=1 $COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:6: error: entry point 'module' not found
 ])
+AT_CHECK([$COBCRUN_DIRECT ./prog 2> err.log], [1], [], [])
+AT_CHECK([$GREP "libcob: prog.cob:6: warning: " err.log], [0], ignore, [])
 
 AT_CLEANUP
 
@@ -2259,7 +4417,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CANCEL test (1)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2286,7 +4444,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CANCEL test (2)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2294,10 +4452,8 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        PROCEDURE        DIVISION.
-           CALL "prog2"
-           END-CALL.
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+           CALL "prog2".
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2308,8 +4464,7 @@ AT_DATA([prog2.cob], [
        WORKING-STORAGE SECTION.
        PROCEDURE        DIVISION.
            CANCEL "prog".
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2326,7 +4481,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CANCEL test (3)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2334,16 +4489,12 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        PROCEDURE        DIVISION.
-           CALL "prog2"
-           END-CALL.
-           CALL "prog2"
-           END-CALL.
+           CALL "prog2".
+           CALL "prog2".
            CANCEL "prog2".
-           CALL "prog2"
-           END-CALL.
+           CALL "prog2".
            CANCEL "prog2".
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2354,9 +4505,8 @@ AT_DATA([prog2.cob], [
        WORKING-STORAGE SECTION.
        77  VAR          PIC 9(01) value 1.
        PROCEDURE        DIVISION.
-           DISPLAY VAR NO ADVANCING
-           END-DISPLAY.
-           ADD  1 TO VAR END-ADD.
+           DISPLAY VAR NO ADVANCING.
+           ADD  1 TO VAR.
            GOBACK.
 ])
 
@@ -4827,6 +6977,263 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([BLANK WHEN ZERO with NUMERIC-EDITED])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  W-X  PIC -ZZZBZZ9,99 BLANK WHEN ZERO.
+       01  W-Y  PIC  ZZZBZZ9,99 BLANK WHEN ZERO.
+       01  W-Z  PIC +ZZZBZZ9,99 BLANK WHEN ZERO.
+       01  L    PIC S9(8) SIGN LEADING.
+       01  T    PIC S9(8) SIGN TRAILING.
+       01  LS   PIC S9(8) SIGN LEADING SEPARATE.
+       01  TS   PIC S9(8) SIGN TRAILING SEPARATE.
+       PROCEDURE DIVISION.
+
+           DISPLAY "FROM SIGN LEADING".
+
+           MOVE 0 TO L.
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO L.
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO L.
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO L.
+           MOVE L TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO L.
+           MOVE L TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO L.
+           MOVE L TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO L.
+           MOVE L TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO L.
+           MOVE L TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO L.
+           MOVE L TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "FROM SIGN TRAILING".
+
+           MOVE 0 TO T.
+           MOVE T TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO T.
+           MOVE T TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO T.
+           MOVE T TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO T.
+           MOVE T TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO T.
+           MOVE T TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO T.
+           MOVE T TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO T.
+           MOVE T TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO T.
+           MOVE T TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO T.
+           MOVE T TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "FROM SIGN LEADING SEPARATE".
+
+           MOVE 0 TO LS.
+           MOVE LS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO LS.
+           MOVE LS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO LS.
+           MOVE LS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO LS.
+           MOVE LS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO LS.
+           MOVE LS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO LS.
+           MOVE LS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO LS.
+           MOVE LS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO LS.
+           MOVE LS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO LS.
+           MOVE LS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "FROM SIGN TRAILING SEPARATE".
+
+           MOVE 0 TO TS.
+           MOVE TS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE 1234 TO TS.
+           MOVE TS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO TS.
+           MOVE TS TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+           MOVE -1234 TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 0 TO TS.
+           MOVE TS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE 1234 TO TS.
+           MOVE TS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO TS.
+           MOVE TS TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+           MOVE -1234 TO W-Y.
+           DISPLAY ' ===>' W-Y '<==='.
+
+           MOVE 0 TO TS.
+           MOVE TS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE 1234 TO TS.
+           MOVE TS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO TS.
+           MOVE TS TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+           MOVE -1234 TO W-Z.
+           DISPLAY ' ===>' W-Z '<==='.
+
+           DISPLAY "EXTRA FROM SIGN LEADING SEPARATE".
+
+           MOVE 0 TO L.
+           MOVE SPACES TO L(1:3).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE "A" TO L(8:1).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE 1234 TO L.
+           MOVE SPACES TO L(1:3).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           MOVE "A" TO L(8:1).
+           MOVE L TO W-X.
+           DISPLAY ' ===>' W-X '<==='.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-ec=DATA-INCOMPATIBLE prog.cob], [0], [], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[FROM SIGN LEADING
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+FROM SIGN TRAILING
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+FROM SIGN LEADING SEPARATE
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+FROM SIGN TRAILING SEPARATE
+ ===>           <===
+ ===>      12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+ ===>          <===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>     12,34<===
+ ===>           <===
+ ===>+     12,34<===
+ ===>-     12,34<===
+ ===>-     12,34<===
+EXTRA FROM SIGN LEADING SEPARATE
+ ===>           <===
+ ===>       0,01<===
+ ===>      12,34<===
+ ===>      12,31<===
+])
+
+AT_CLEANUP
+
+
+
 AT_SETUP([MULTIPLY BY literal in INITIAL program])
 AT_KEYWORDS([decimal constants fundamental])
 
@@ -5005,6 +7412,39 @@ AT_DATA([prog.cob], [
            END-PERFORM
 
            GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([decimal constant with multiple programs])
+AT_KEYWORDS([fundamental EXTERNAL INITIAL])
+
+# see bug #923, generated modules init/clear unused decimal constants
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *> to ensure we don't optimize that away: EXTERNAL
+       01  X  PIC 9(2) EXTERNAL.
+       PROCEDURE DIVISION.
+           CALL "prog2"
+           IF X NOT NUMERIC
+              MOVE ZERO TO X.
+           IF X + 42 = 0
+               DISPLAY "BAD".
+           STOP RUN.
+       END PROGRAM prog.
+
+       PROGRAM-ID. prog2 INITIAL.
+       PROCEDURE DIVISION.
+           EXIT PROGRAM.
+       END PROGRAM prog2.
 ])
 
 AT_CHECK([$COMPILE prog.cob])
@@ -6232,25 +8672,35 @@ AT_DATA([caller.cob], [
 
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
-       77  INT         IS TYPEDEF BINARY-LONG.
+       01  INT         IS TYPEDEF BINARY-LONG.
+           88  INT-ZERO  VALUE 0.
+           88  INT-ONE   VALUE 1.
        77  EXT-INT     IS TYPEDEF BINARY-LONG EXTERNAL.
       *> should this be possible?
       *>77  INT-VAL     IS TYPEDEF USAGE INT VALUE 12.
        77  INT-VAL     IS TYPEDEF BINARY-LONG VALUE 12.
-       77  SOMEVAR     USAGE INT VALUE 10.
+       01  SOMEVAR     USAGE INT VALUE 10.
+       01  SOMEVAR2    USAGE INT VALUE 11.
        77  SOMEVAL     USAGE INT-VAL.
        77  SOMEEXT     USAGE EXT-INT.
 
        PROCEDURE       DIVISION.
            IF SOMEVAR <> 10
-              DISPLAY "SOMEVAR (INT) wrong: " SOMEVAR
-           END-IF
+              DISPLAY "SOMEVAR (INT) wrong: " SOMEVAR.
            IF SOMEVAL <> 12
-              DISPLAY "SOMEVAR (INT-VAL) wrong: " SOMEVAL
-           END-IF
+              DISPLAY "SOMEVAL (INT-VAL) wrong: " SOMEVAL.
+           SET INT-ZERO OF SOMEVAR  TO TRUE
+           SET INT-ONE  OF SOMEVAR2 TO TRUE
+           IF SOMEVAR  <> 0
+              DISPLAY "SOMEVAR  (INT) by SET wrong: " SOMEVAR.
+           IF SOMEVAR2 <> 1
+              DISPLAY "SOMEVAR2 (INT) by SET wrong: " SOMEVAR2.
+           IF INT-ONE  OF SOMEVAR
+           OR NOT INT-ONE  OF SOMEVAR2
+              DISPLAY "CHECK BY condition-nam wrong".
            MOVE 42 TO SOMEEXT
            CALL "callee"
-           .
+           GOBACK.
 ])
 
 AT_DATA([callee.cob], [
@@ -6308,7 +8758,7 @@ AT_CLEANUP
 
 
 AT_SETUP([DISPLAY with P fields])
-AT_KEYWORDS([runmisc pretty-display pretty-printing pretty PACKED-DECIMAL])
+AT_KEYWORDS([fundamental runmisc pretty-display pretty-printing pretty PACKED-DECIMAL])
 
 # this test verifies that the size is correctly printed, which was buggy
 # with "P on the left side of the decimal point", see bug #874
@@ -6393,8 +8843,8 @@ AT_CHECK([$COBCRUN_DIRECT ./packed], [0],
 AT_CLEANUP
 
 
-AT_SETUP([Condition IS ZERO AND])
-AT_KEYWORDS([IF])
+AT_SETUP([condition IS ZERO AND])
+AT_KEYWORDS([fundamental IF])
 
 # for more details see bug #875
 
@@ -6433,7 +8883,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:21: warning: unsigned 'W' may not be LESS THAN ZERO
 ])
 
-AT_CHECK([./prog], [0], [V IS ZERO
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [V IS ZERO
 V IS ZERO AND W EQUAL 1
 W EQUAL 1 AND V IS ZERO
 W IS POSITIVE
@@ -6444,8 +8894,8 @@ V EQUAL 0 AND W IS POSITIVE
 AT_CLEANUP
 
 
-AT_SETUP([abbreviated conditions with multiple words operators])
-AT_KEYWORDS([IF])
+AT_SETUP([abbreviated conditions])
+AT_KEYWORDS([fundamental IF])
 
 # for more details see bug #880
 
@@ -6474,16 +8924,15 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-
-AT_CHECK([./prog], [0], [TRUE 2
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [TRUE 2
 TRUE 3
 ], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([abbreviated conditions with multiple words operators])
-AT_KEYWORDS([IF])
+AT_SETUP([invalid use of condition-names])
+AT_KEYWORDS([fundamental IF])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6511,7 +8960,7 @@ AT_CLEANUP
 
 
 AT_SETUP([MOVE with JUSTIFIED clause])
-AT_KEYWORDS([RIGHT])
+AT_KEYWORDS([fundamental RIGHT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -6550,6 +8999,2569 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with PICTURE P])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. Move_Basic_P_Pic .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> Basic checking of P Picture
+      *>   -check lengt content and move
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *>
+       01 P-PIC-1       PIC 99P(4)    .
+       01 P-PIC-1-9 REDEFINES P-PIC-1  PIC 9(02)  .
+       01 FLD-1         PIC 9(06)     .
+       01 FLD-1-RES     PIC 9(06)                 .
+      *>
+       01 P-PIC-2       PIC S99P(4)   .
+       01 P-PIC-2-9 REDEFINES P-PIC-2  PIC S9(02)  .
+       01 FLD-2         PIC S9(06)    .
+       01 FLD-2-RES     PIC S9(06)    .
+      *>
+       01 P-PIC-3       PIC P(4)9     .
+       01 P-PIC-3-9 REDEFINES P-PIC-3  PIC 9(01)  .
+       01 FLD-3         PIC V9(05)    .
+       01 FLD-3-RES     PIC V9(05)    .
+      *>
+       01 P-PIC-4       PIC SP(4)9    .
+       01 P-PIC-4-9 REDEFINES P-PIC-4  PIC S9(01)  .
+       01 FLD-4         PIC SV9(05)   .
+       01 FLD-4-RES     PIC SV9(05)    .
+      *>
+       01 W01-I         PIC 9(02)     .
+      *>
+       PROCEDURE DIVISION .
+      *>
+      *>   Check Length
+      *>
+           PERFORM CHECK-LENGTH .
+      *>
+           PERFORM CHECK-CONTENT.
+      *>
+           PERFORM CHECK-MOVE   .
+      *>
+           GOBACK .
+      *>
+       CHECK-CONTENT.
+      *>------------
+      *>
+           MOVE    123456  TO P-PIC-1      .
+           IF P-PIC-1-9 NOT = 12
+           THEN
+                   DISPLAY 'Error C1 VALUE <' P-PIC-1-9 '> != 12' .
+      *>
+           MOVE    345678  TO P-PIC-2      .
+           IF P-PIC-2-9 NOT = 34
+           THEN
+                   DISPLAY 'Error C2 VALUE <' P-PIC-2-9 '> != 34' .
+      *>
+           MOVE   -456789  TO P-PIC-2      .
+           IF P-PIC-2-9 NOT = -45
+           THEN
+                   DISPLAY 'Error C3 VALUE <' P-PIC-2-9 '> != -45' .
+      *>
+           MOVE   0.12345  TO P-PIC-3      .
+           IF P-PIC-3-9 NOT = 5
+           THEN
+                   DISPLAY 'Error C4 VALUE <' P-PIC-3-9 '> != 5' .
+      *>
+           MOVE   0.56789  TO P-PIC-4      .
+           IF P-PIC-4-9 NOT = 9
+           THEN
+                   DISPLAY 'Error C5 VALUE <' P-PIC-4-9 '> != 9' .
+      *>
+           MOVE  -0.34567  TO P-PIC-4      .
+           IF P-PIC-4-9 NOT = -7
+           THEN
+                   DISPLAY 'Error C6 VALUE <' P-PIC-4-9 '> != -7' .
+      *>
+       CHECK-MOVE .
+      *>----------
+      *>
+           MOVE    123456  TO P-PIC-1      .
+           MOVE    P-PIC-1 TO FLD-1        .
+           MOVE    120000  TO FLD-1-RES    .
+           IF FLD-1 NOT = FLD-1-RES
+           THEN
+               DISPLAY 'M1 <' FLD-1-RES '> != ' FLD-1 .
+      *>
+           MOVE    001234  TO P-PIC-1      .
+           MOVE    P-PIC-1 TO FLD-1        .
+           MOVE    000000  TO FLD-1-RES    .
+           IF FLD-1 NOT = FLD-1-RES
+           THEN
+               DISPLAY 'M2 <' FLD-1-RES '> != ' FLD-1 .
+      *>-----------------------------------
+           MOVE    001234  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE    000000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M3 <' FLD-2-RES '> != ' FLD-2 .
+      *>
+           MOVE   -005678  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE    000000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M4 <' FLD-2-RES '> != ' FLD-2 .
+      *>
+           MOVE    456789  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE    450000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M5 <' FLD-2-RES '> != ' FLD-2 .
+      *>
+           MOVE   -456789  TO P-PIC-2      .
+           MOVE    P-PIC-2 TO FLD-2        .
+           MOVE   -450000  TO FLD-2-RES    .
+           IF FLD-2 NOT = FLD-2-RES
+           THEN
+               DISPLAY 'M6 <' FLD-2-RES '> != ' FLD-2 .
+      *>-----------------------------------
+           MOVE   0.12345  TO P-PIC-3      .
+           MOVE    P-PIC-3 TO FLD-3        .
+           MOVE   0.00005  TO FLD-3-RES    .
+           IF FLD-3 NOT = FLD-3-RES
+           THEN
+               DISPLAY 'M7 <' FLD-3-RES '> != ' FLD-3 .
+      *>
+           MOVE   0.00010  TO P-PIC-3      .
+           MOVE    P-PIC-3 TO FLD-3        .
+           MOVE   0.00000  TO FLD-3-RES    .
+           IF FLD-3 NOT = FLD-3-RES
+           THEN
+               DISPLAY 'M8 <' FLD-3-RES '> != ' FLD-3 .
+      *>
+      *>-----------------------------------
+      *>
+           MOVE   0.23456  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE   0.00006  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M9 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+           MOVE   0.02340  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE   0.00000  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M10 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+           MOVE  -0.12345  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE  -0.00005  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M11 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+           MOVE  -0.34560  TO P-PIC-4      .
+           MOVE    P-PIC-4 TO FLD-4        .
+           MOVE   0.00000  TO FLD-4-RES    .
+           IF FLD-4 NOT = FLD-4-RES
+           THEN
+               DISPLAY 'M11 <' FLD-4-RES '> != ' FLD-4 .
+      *>
+      *>-----------------------------------
+      *>
+       CHECK-LENGTH.
+      *>-----------
+      *>
+           MOVE LENGTH OF P-PIC-1 TO W01-I .
+           IF W01-I NOT = 2
+           THEN
+               DISPLAY 'Error 1 size <' W01-I '> !=2' .
+      *>
+           MOVE LENGTH OF P-PIC-2 TO W01-I .
+           IF W01-I NOT = 2
+           THEN
+               DISPLAY 'Error 2 size <' W01-I '> !=2' .
+      *>
+           MOVE LENGTH OF P-PIC-3 TO W01-I .
+           IF W01-I NOT = 1
+           THEN
+               DISPLAY 'Error 3 size <' W01-I '> !=1' .
+      *>
+
+           MOVE LENGTH OF P-PIC-4 TO W01-I .
+           IF W01-I NOT = 1
+           THEN
+               DISPLAY 'Error 4 size <' W01-I '> !=1' .
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to USAGE DISPLAY])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>    Receiving field is NUMERIC DISPLAY Type
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99.
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6).
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to DECIMAL IS COMMA])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_2 .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING WITH DECIMAL-POINT IS COMMA
+      *>     Receiving fied is display type
+      *>----------------------------------------------------------------
+      *>
+
+       ENVIRONMENT DIVISION .
+       CONFIGURATION    SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT    IS COMMA.
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9,99CR.
+       01  DISP-1               PIC S9(4)V99.
+       01  EDIT-2               PIC --9B,99B99/99.
+       01  DISP-2               PIC S99V9(6).
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123,45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123,45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123,45' .
+
+           IF    EDIT-1 NOT = " $123,45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123,45CR>'.
+
+           MOVE -42,9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42,987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42,987600>'.
+
+           IF   EDIT-2 NOT = "-42 ,98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 ,98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to BINARY])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_3.
+       DATA DIVISION.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>     Receiving fied is binary type
+      *>----------------------------------------------------------------
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99 BINARY .
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6) BINARY .
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to COMP-3])
+AT_KEYWORDS([fundamental PACKED-DECIMAL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_4.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>    Receiving field is PACKED Type
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99 COMP-3 .
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6) COMP-3 .
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to COMP-5])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveDeEditing_5.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> CHECK DE-EDITING
+      *>    Receiving field is COMP-5 Type
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  EDIT-1               PIC $(4)9.99CR.
+       01  DISP-1               PIC S9(4)V99 COMP-5 .
+       01  EDIT-2               PIC --9B.99B99/99.
+       01  DISP-2               PIC S99V9(6) COMP-5 .
+
+
+       PROCEDURE DIVISION .
+
+           MOVE -123.45 TO EDIT-1       .
+           MOVE  EDIT-1 TO DISP-1       .
+           IF    DISP-1 NOT = -123.45
+           THEN
+                 DISPLAY 'Error 1: DISP-1 <' DISP-1 '> != -0123.45' .
+
+           IF    EDIT-1 NOT = " $123.45CR"
+           THEN
+                 DISPLAY 'Error 2: EDIT-1 <' EDIT-1 '> != < $123.45CR>'.
+
+           MOVE -42.9876 TO EDIT-2.
+           MOVE  EDIT-2 TO DISP-2.
+           IF    DISP-2 NOT = -42.987600
+           THEN
+              DISPLAY 'Error 3: DISP-2 <' DISP-2 '> != <-42.987600>'.
+
+           IF   EDIT-2 NOT = "-42 .98 76/00"
+           THEN
+              DISPLAY 'Error 4: EDIT-2 <' EDIT-2 '> != <-42 .98 76/00>'.
+
+
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE with de-editting to NUMERIC DISPLAY (2)])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID.  MoveEditedToDisplay.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *>   Add more test case for edited field
+      *>----------------------------------------------------------------
+      *>
+
+        ENVIRONMENT DIVISION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+
+        01 EDITED-FIELD .
+
+
+           05 SRC-FIELD-100   PIC +$ZZ9999900BB9   .
+           05 SRC-FIELD-101   PIC -$ZZ9999900BB9   .
+           05 SRC-FIELD-102   PIC  $ZZ9999900BB9CR .
+           05 SRC-FIELD-103   PIC  $ZZ9999900BB9DB .
+           05 SRC-FIELD-400   PIC +$**9999900BB9   .
+           05 SRC-FIELD-401   PIC -$**9999900BB9   .
+           05 SRC-FIELD-402   PIC  $**9999900BB9CR .
+           05 SRC-FIELD-403   PIC  $**9999900BB9DB .
+      *
+        01 DST-FIELD.
+           05 DST-FIELD-1     PIC 9(10)V9(04) .
+           05 DST-FIELD-2     PIC S9(10)V9(04) .
+      *
+        PROCEDURE DIVISION.
+      *>-------------------
+      *>
+           MOVE 12345      TO SRC-FIELD-100  .
+           MOVE SRC-FIELD-100 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 1234005
+              DISPLAY '1: DST-FIELD-1 <' DST-FIELD-1 '> != 1234005' .
+      *>
+           MOVE 23456      TO SRC-FIELD-101  .
+           MOVE SRC-FIELD-101 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 2345006
+              DISPLAY '2: DST-FIELD-1 <' DST-FIELD-1 '> != 2345006' .
+      *>
+           MOVE 34567      TO SRC-FIELD-102  .
+           MOVE SRC-FIELD-102 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 3456007
+              DISPLAY '3: DST-FIELD-1 <' DST-FIELD-1 '> != 3456007' .
+      *>
+           MOVE 45678      TO SRC-FIELD-103  .
+           MOVE SRC-FIELD-103 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 4567008
+              DISPLAY '4: DST-FIELD-1 <' DST-FIELD-1 '> != 4567008' .
+      *>
+      *>--------------------------------------------------------------
+      *>
+           MOVE -12345      TO SRC-FIELD-100  .
+           MOVE SRC-FIELD-100 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -1234005
+               DISPLAY '5: DST-FIELD-2 <' DST-FIELD-2 '> != 1234005' .
+      *>
+           MOVE -23456      TO SRC-FIELD-101  .
+           MOVE SRC-FIELD-101 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -2345006
+              DISPLAY '6: DST-FIELD-2 <' DST-FIELD-2 '> != -2345006' .
+      *>
+           MOVE -34567      TO SRC-FIELD-102  .
+           MOVE SRC-FIELD-102 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -3456007
+              DISPLAY '7: DST-FIELD-2 <' DST-FIELD-2 '> != -3456007' .
+      *>
+           MOVE -45678      TO SRC-FIELD-103  .
+           MOVE SRC-FIELD-103 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = 4567008
+              DISPLAY '8: DST-FIELD-2 <' DST-FIELD-2 '> != 45676008' .
+      *>
+      *>--------------------------------------------------------------
+      *>
+           MOVE 12345      TO SRC-FIELD-400  .
+           MOVE SRC-FIELD-400 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 1234005
+              DISPLAY '9: DST-FIELD-1 <' DST-FIELD-1 '> != 1234005' .
+      *>
+           MOVE 23456      TO SRC-FIELD-401  .
+           MOVE SRC-FIELD-401 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 2345006
+              DISPLAY '10: DST-FIELD-1 <' DST-FIELD-1 '> != 2345006' .
+      *>
+           MOVE 34567      TO SRC-FIELD-402  .
+           MOVE SRC-FIELD-402 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 3456007
+              DISPLAY '11: DST-FIELD-1 <' DST-FIELD-1 '> != 3456007' .
+      *>
+           MOVE 45678      TO SRC-FIELD-403  .
+           MOVE SRC-FIELD-403 TO DST-FIELD-1 .
+           IF DST-FIELD-1 NOT = 4567008
+              DISPLAY '12: DST-FIELD-1 <' DST-FIELD-1 '1 != 45676008' .
+      *>
+           MOVE -12345     TO SRC-FIELD-400  .
+           MOVE SRC-FIELD-400 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -1234005
+              DISPLAY '13: DST-FIELD-2 <' DST-FIELD-2 '> != 1234005' .
+      *>
+           MOVE -23456      TO SRC-FIELD-401  .
+           MOVE SRC-FIELD-401 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -2345006
+              DISPLAY '14: DST-FIELD-2 <' DST-FIELD-2 '> != -2345006' .
+      *>
+           MOVE -34567      TO SRC-FIELD-402  .
+           MOVE SRC-FIELD-402 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = -3456007
+              DISPLAY '15: DST-FIELD-2 <' DST-FIELD-2 '> != -3456007' .
+      *>
+           MOVE -45678      TO SRC-FIELD-403  .
+           MOVE SRC-FIELD-403 TO DST-FIELD-2 .
+           IF DST-FIELD-2 NOT = 4567008
+              DISPLAY '16: DST-FIELD-2 <' DST-FIELD-2 '> != 4567008' .
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE misc. edited])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . MoveOtherCases .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> Last several specifics test cases
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+      *>-------------
+
+       DATA DIVISION .
+      *>--------------
+
+       WORKING-STORAGE SECTION.
+      *>-----------------------
+
+       01  SRC-BIN        PIC S9(09) BINARY .
+       01  DST-BIN        PIC  9(09) BINARY .
+      *>
+       01  SRC-EDIT       PIC $$$$,$$9V99-  .
+       01  DST-DISP       PIC  9(06)        .
+      *>
+       01  DST-FIELD-1    PIC XB0XB099/ .
+
+      *>
+       PROCEDURE DIVISION .
+      *>-------------------
+      *>
+      *>   Case 1 move unsigned to signed
+      *>
+           MOVE -12345678     TO SRC-BIN    .
+           MOVE SRC-BIN       TO DST-BIN    .
+           IF DST-BIN NOT = 12345678
+           THEN
+               DISPLAY '1: DST-BIN <' DST-BIN '>!= <12345678>'  .
+
+      *>
+      *>   Case 2 move negative edited to display
+      *>
+           MOVE -3            TO SRC-EDIT .
+           MOVE SRC-EDIT      TO DST-DISP .
+           IF SRC-EDIT NOT = '      $300-'
+           THEN
+             DISPLAY '2: SRC-EDIT <' SRC-EDIT '> != <      $300->'  .
+      *>
+           IF DST-DISP NOT = 3
+           THEN
+             DISPLAY '2.1: DST-DISP <' DST-DISP '> != <3>'  .
+
+
+      *>
+      *>   Case 3 cob_move alphanum to  edited case
+      *>
+           MOVE 3          TO SRC-EDIT     .
+           MOVE SRC-EDIT   TO DST-FIELD-1  .
+
+           IF DST-FIELD-1 NOT = '  0  0  /'
+           THEN
+             DISPLAY '3: DST-FIELD-1 <' DST-FIELD-1 '> != <  0  0  />'.
+
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE between USAGEs])
+AT_KEYWORDS([fundamental COMP-1 COMP-2 COMP-3
+COMP-4 COMP-5 COMP-6 DISPLAY BINARY PACKED-DECIMAL
+BINARY-C-LONG BINARY-CHAR BINARY-DOUBLE BINARY-INT
+BINARY-LONG SIGNED UNSIGNED BINARY-LONG-LONG
+BINARY-SHORT FLOAT-DECIMAL-16 FLOAT-DECIMAL-34
+FLOAT-SHORT SIGNED-INT SIGNED-LONG SIGNED-SHORT
+UNSIGNED-INT UNSIGNED-LONG UNSIGNED-SHORT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . MoveTestCobMove .
+      *>----------------------------------------------------------------
+      *> This programm cover the cob_move function for numeric
+      *> data types except numeric edited
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 ALL-SRC .
+          05 FIELD-02 BINARY-C-LONG  SIGNED  .
+          05 FIELD-03 BINARY-C-LONG UNSIGNED .
+          05 FIELD-04 BINARY-CHAR  SIGNED  .
+          05 FIELD-05 BINARY-CHAR UNSIGNED .
+          05 FIELD-06 BINARY-DOUBLE  SIGNED  .
+          05 FIELD-07 BINARY-DOUBLE UNSIGNED .
+          05 FIELD-08 BINARY-INT .
+          05 FIELD-09 BINARY-LONG  SIGNED  .
+          05 FIELD-10 BINARY-LONG UNSIGNED .
+          05 FIELD-11 BINARY-LONG-LONG .
+          05 FIELD-12 BINARY-SHORT  SIGNED  .
+          05 FIELD-13 BINARY-SHORT UNSIGNED .
+          05 FIELD-14 FLOAT-DECIMAL-16 .
+          05 FIELD-15 FLOAT-DECIMAL-34 .
+          05 FIELD-16 FLOAT-LONG .
+          05 FIELD-17 FLOAT-SHORT .
+          05 FIELD-18 SIGNED-INT .
+          05 FIELD-19 SIGNED-LONG .
+          05 FIELD-20 SIGNED-SHORT .
+          05 FIELD-21 UNSIGNED-INT .
+          05 FIELD-22 UNSIGNED-LONG .
+          05 FIELD-23 UNSIGNED-SHORT .
+          05 FIELD-24            COMP-1 .
+          05 FIELD-25            COMP-2 .
+          05 FIELD-26 PIC  9(10) COMP-6 .
+          05 FIELD-50 PIC S9(09) BINARY            .
+          05 FIELD-51 PIC S9(09) COMP .
+          05 FIELD-52 PIC S9(09)V99 COMP-3 .
+          05 FIELD-53 PIC S9(09) COMP-4 .
+          05 FIELD-54 PIC S9(09) COMP-5 .
+          05 FIELD-55 PIC S9(09) COMP-X .
+          05 FIELD-56 PIC S9(09)V99 DISPLAY .
+      *>
+       01 EXPTD-RESULT PIC 9(09)     .
+      *>
+       01 ALL-DST .
+          05 FIELD-02 BINARY-C-LONG  SIGNED  .
+          05 FIELD-03 BINARY-C-LONG UNSIGNED .
+          05 FIELD-04 BINARY-CHAR  SIGNED  .
+          05 FIELD-05 BINARY-CHAR UNSIGNED .
+          05 FIELD-06 BINARY-DOUBLE  SIGNED  .
+          05 FIELD-07 BINARY-DOUBLE UNSIGNED .
+          05 FIELD-08 BINARY-INT .
+          05 FIELD-09 BINARY-LONG  SIGNED  .
+          05 FIELD-10 BINARY-LONG UNSIGNED .
+          05 FIELD-11 BINARY-LONG-LONG .
+          05 FIELD-12 BINARY-SHORT  SIGNED  .
+          05 FIELD-13 BINARY-SHORT UNSIGNED .
+          05 FIELD-14 FLOAT-DECIMAL-16 .
+          05 FIELD-15 FLOAT-DECIMAL-34 .
+          05 FIELD-16 FLOAT-LONG .
+          05 FIELD-17 FLOAT-SHORT .
+          05 FIELD-18 SIGNED-INT .
+          05 FIELD-19 SIGNED-LONG .
+          05 FIELD-20 SIGNED-SHORT .
+          05 FIELD-21 UNSIGNED-INT .
+          05 FIELD-22 UNSIGNED-LONG .
+          05 FIELD-23 UNSIGNED-SHORT .
+          05 FIELD-24            COMP-1 .
+          05 FIELD-25            COMP-2 .
+          05 FIELD-26 PIC 9(10)  COMP-6 .
+          05 FIELD-50 PIC S9(09) BINARY            .
+          05 FIELD-51 PIC S9(09) COMP .
+          05 FIELD-52 PIC S9(09)V99 COMP-3 .
+          05 FIELD-53 PIC S9(09) COMP-4 .
+          05 FIELD-54 PIC S9(09) COMP-5 .
+          05 FIELD-55 PIC S9(09) COMP-X .
+          05 FIELD-56 PIC S9(09)V99 DISPLAY .
+
+      *>
+       PROCEDURE DIVISION .
+      *>
+           INITIALIZE ALL-SRC REPLACING NUMERIC BY 1 .
+           PERFORM TEST-PASS-1 .
+      *>
+           INITIALIZE ALL-DST REPLACING NUMERIC BY 2 .
+           PERFORM TEST-PASS-2 .
+      *>
+           MOVE  3        TO FIELD-02 OF ALL-SRC .
+           MOVE  3        TO EXPTD-RESULT        .
+           MOVE  FIELD-02 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  4        TO FIELD-03 OF ALL-SRC .
+           MOVE  4        TO EXPTD-RESULT        .
+           MOVE  FIELD-03 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  5        TO FIELD-04 OF ALL-SRC .
+           MOVE  5        TO EXPTD-RESULT        .
+           MOVE  FIELD-04 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  6        TO FIELD-05 OF ALL-SRC .
+           MOVE  6        TO EXPTD-RESULT        .
+           MOVE  FIELD-05 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  7        TO FIELD-06 OF ALL-SRC .
+           MOVE  7        TO EXPTD-RESULT        .
+           MOVE  FIELD-06 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  8        TO FIELD-07 OF ALL-SRC .
+           MOVE  8        TO EXPTD-RESULT        .
+           MOVE  FIELD-07 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  9        TO FIELD-08 OF ALL-SRC .
+           MOVE  9        TO EXPTD-RESULT        .
+           MOVE  FIELD-08 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  10       TO FIELD-09 OF ALL-SRC .
+           MOVE  10       TO EXPTD-RESULT        .
+           MOVE  FIELD-09 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  11       TO FIELD-10 OF ALL-SRC .
+           MOVE  11       TO EXPTD-RESULT        .
+           MOVE  FIELD-10 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  12       TO FIELD-11 OF ALL-SRC .
+           MOVE  12       TO EXPTD-RESULT        .
+           MOVE  FIELD-11 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  13       TO FIELD-12 OF ALL-SRC .
+           MOVE  13       TO EXPTD-RESULT        .
+           MOVE  FIELD-12 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  14       TO FIELD-13 OF ALL-SRC .
+           MOVE  14       TO EXPTD-RESULT        .
+           MOVE  FIELD-13 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  15       TO FIELD-14 OF ALL-SRC .
+           MOVE  15       TO EXPTD-RESULT        .
+           MOVE  FIELD-14 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  16       TO FIELD-15 OF ALL-SRC .
+           MOVE  16       TO EXPTD-RESULT        .
+           MOVE  FIELD-15 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  17       TO FIELD-16 OF ALL-SRC .
+           MOVE  17       TO EXPTD-RESULT        .
+           MOVE  FIELD-16 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  18       TO FIELD-17 OF ALL-SRC .
+           MOVE  18       TO EXPTD-RESULT        .
+           MOVE  FIELD-17 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  19       TO FIELD-18 OF ALL-SRC .
+           MOVE  19       TO EXPTD-RESULT        .
+           MOVE  FIELD-18 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  20       TO FIELD-19 OF ALL-SRC .
+           MOVE  20       TO EXPTD-RESULT        .
+           MOVE  FIELD-19 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  21       TO FIELD-20 OF ALL-SRC .
+           MOVE  21       TO EXPTD-RESULT        .
+           MOVE  FIELD-20 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  22       TO FIELD-21 OF ALL-SRC .
+           MOVE  22       TO EXPTD-RESULT        .
+           MOVE  FIELD-21 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  23       TO FIELD-22 OF ALL-SRC .
+           MOVE  23       TO EXPTD-RESULT        .
+           MOVE  FIELD-22 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  24       TO FIELD-23 OF ALL-SRC .
+           MOVE  24       TO EXPTD-RESULT        .
+           MOVE  FIELD-23 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  25       TO FIELD-24 OF ALL-SRC .
+           MOVE  25       TO EXPTD-RESULT        .
+           MOVE  FIELD-24 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  26       TO FIELD-25 OF ALL-SRC .
+           MOVE  26       TO EXPTD-RESULT        .
+           MOVE  FIELD-25 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  27       TO FIELD-26 OF ALL-SRC .
+           MOVE  27       TO EXPTD-RESULT        .
+           MOVE  FIELD-26 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  50       TO FIELD-50 OF ALL-SRC .
+           MOVE  50       TO EXPTD-RESULT        .
+           MOVE  FIELD-50 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  51       TO FIELD-51 OF ALL-SRC .
+           MOVE  51       TO EXPTD-RESULT        .
+           MOVE  FIELD-51 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  52       TO FIELD-52 OF ALL-SRC .
+           MOVE  52       TO EXPTD-RESULT        .
+           MOVE  FIELD-52 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  53       TO FIELD-53 OF ALL-SRC .
+           MOVE  53       TO EXPTD-RESULT        .
+           MOVE  FIELD-53 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  54       TO FIELD-54 OF ALL-SRC .
+           MOVE  54       TO EXPTD-RESULT        .
+           MOVE  FIELD-54 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  55       TO FIELD-55 OF ALL-SRC .
+           MOVE  55       TO EXPTD-RESULT        .
+           MOVE  FIELD-55 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           MOVE  56       TO FIELD-56 OF ALL-SRC .
+           MOVE  56       TO EXPTD-RESULT        .
+           MOVE  FIELD-56 OF ALL-SRC
+             TO  FIELD-02 OF ALL-DST
+                 FIELD-03 OF ALL-DST
+                 FIELD-04 OF ALL-DST
+                 FIELD-05 OF ALL-DST
+                 FIELD-06 OF ALL-DST
+                 FIELD-07 OF ALL-DST
+                 FIELD-08 OF ALL-DST
+                 FIELD-09 OF ALL-DST
+                 FIELD-10 OF ALL-DST
+                 FIELD-11 OF ALL-DST
+                 FIELD-12 OF ALL-DST
+                 FIELD-13 OF ALL-DST
+                 FIELD-14 OF ALL-DST
+                 FIELD-15 OF ALL-DST
+                 FIELD-16 OF ALL-DST
+                 FIELD-17 OF ALL-DST
+                 FIELD-18 OF ALL-DST
+                 FIELD-19 OF ALL-DST
+                 FIELD-20 OF ALL-DST
+                 FIELD-21 OF ALL-DST
+                 FIELD-22 OF ALL-DST
+                 FIELD-23 OF ALL-DST
+                 FIELD-24 OF ALL-DST
+                 FIELD-25 OF ALL-DST
+                 FIELD-26 OF ALL-DST
+                 FIELD-50 OF ALL-DST
+                 FIELD-51 OF ALL-DST
+                 FIELD-52 OF ALL-DST
+                 FIELD-53 OF ALL-DST
+                 FIELD-54 OF ALL-DST
+                 FIELD-55 OF ALL-DST
+                 FIELD-56 OF ALL-DST .
+           PERFORM TEST-PASS-3        .
+      *>
+           GOBACK .
+      *>
+       TEST-PASS-1.
+      *>----------
+      *>
+         IF FIELD-02 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-02 <' FIELD-02 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-03 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-03 <' FIELD-03 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-04 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-04 <' FIELD-04 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-05 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-05 <' FIELD-05 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-06 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-06 <' FIELD-06 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-07 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-07 <' FIELD-07 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-08 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-08 <' FIELD-08 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-09 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-09 <' FIELD-09 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-10 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-10 <' FIELD-10 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-11 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-11 <' FIELD-11 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-12 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-12 <' FIELD-12 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-13 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-13 <' FIELD-13 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-14 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-14 <' FIELD-14 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-15 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-15 <' FIELD-15 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-16 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-16 <' FIELD-16 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-17 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-17 <' FIELD-17 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-18 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-18 <' FIELD-18 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-19 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-19 <' FIELD-19 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-20 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-20 <' FIELD-20 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-21 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-21 <' FIELD-21 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-22 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-22 <' FIELD-22 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-23 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-23 <' FIELD-23 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-24 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-24 <' FIELD-24 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-25 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-25 <' FIELD-25 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-26 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-26 <' FIELD-26 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-50 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-50 <' FIELD-50 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-51 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-51 <' FIELD-51 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-52 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-52 <' FIELD-52 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-53 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-53 <' FIELD-52 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-54 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-54 <' FIELD-54 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-55 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-55 <' FIELD-55 OF
+                ALL-SRC '> != 1' .
+      *>
+         IF FIELD-56 OF ALL-SRC    IS NOT = 1
+            THEN
+                DISPLAY 'PASS ONE: FIELD-56 <' FIELD-56 OF
+                ALL-SRC '> != 1' .
+      *>
+       TEST-PASS-2.
+      *>----------
+      *>
+         IF FIELD-02 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-02 <' FIELD-02 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-03 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-03 <' FIELD-03 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-04 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-04 <' FIELD-04 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-05 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-05 <' FIELD-05 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-06 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-06 <' FIELD-06 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-07 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-07 <' FIELD-07 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-08 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-08 <' FIELD-08 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-09 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-09 <' FIELD-09 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-10 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-10 <' FIELD-10 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-11 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-11 <' FIELD-11 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-12 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-12 <' FIELD-12 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-13 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-13 <' FIELD-13 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-14 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-14 <' FIELD-14 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-15 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-15 <' FIELD-15 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-16 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-16 <' FIELD-16 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-17 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-17 <' FIELD-17 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-18 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-18 <' FIELD-18 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-19 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-19 <' FIELD-19 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-20 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-20 <' FIELD-20 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-21 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-21 <' FIELD-21 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-22 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-22 <' FIELD-22 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-23 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-23 <' FIELD-23 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-24 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-24 <' FIELD-24 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-25 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-25 <' FIELD-25 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-26 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-26 <' FIELD-26 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-50 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-50 <' FIELD-50 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-51 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-51 <' FIELD-51 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-52 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-52 <' FIELD-52 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-53 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-53 <' FIELD-52 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-54 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-54 <' FIELD-54 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-55 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-55 <' FIELD-55 OF
+                ALL-DST '> != 2' .
+      *>
+         IF FIELD-56 OF ALL-DST    IS NOT = 2
+            THEN
+                DISPLAY 'PASS TWO: FIELD-56 <' FIELD-56 OF
+                ALL-DST '> != 2' .
+      *>
+       TEST-PASS-3.
+      *>----------
+      *>
+         IF FIELD-02 OF ALL-DST    IS NOT =  EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-02 <' FIELD-02 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-03 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-03 <' FIELD-03 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-04 OF ALL-DST    IS NOT =  EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-04 <' FIELD-04 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+
+      *>
+         IF FIELD-05 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-05 <' FIELD-05 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-06 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-06 <' FIELD-06 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-07 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-07 <' FIELD-07 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-08 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-08 <' FIELD-08 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-09 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-09 <' FIELD-09 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-10 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-10 <' FIELD-10 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-11 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-11 <' FIELD-11 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-12 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-12 <' FIELD-12 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-13 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-13 <' FIELD-13 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-14 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-14 <' FIELD-14 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-15 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-15 <' FIELD-15 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-16 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-16 <' FIELD-16 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-17 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-17 <' FIELD-17 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-18 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-18 <' FIELD-18 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-19 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-19 <' FIELD-19 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-20 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-20 <' FIELD-20 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-21 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-21 <' FIELD-21 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-22 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-22 <' FIELD-22 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-23 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-23 <' FIELD-23 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-24 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-24 <' FIELD-24 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-25 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-25 <' FIELD-25 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-26 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-26 <' FIELD-26 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-50 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-50 <' FIELD-50 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-51 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-51 <' FIELD-51 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-52 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-52 <' FIELD-52 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-53 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-53 <' FIELD-52 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-54 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-54 <' FIELD-54 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-55 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-55 <' FIELD-55 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+      *>
+         IF FIELD-56 OF ALL-DST    IS NOT = EXPTD-RESULT
+            THEN
+                DISPLAY 'PASS THREE: FIELD-56 <' FIELD-56 OF
+                ALL-DST '> != <' EXPTD-RESULT '>' .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE to editted ZERO])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MoveToEditedZero .
+      *>----------------------------------------------------------------
+      *>           Additional test cases for MOVE statement
+      *> Move To Edited
+      *>    Edited field contains only '*'  and sending field is ZERO
+      *>----------------------------------------------------------------
+      *>
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 DISP-1       PIC 999999  .
+       01 EDIT-1       PIC ****** .
+       01 EDIT-1-X     REDEFINES EDIT-1 PIC X(06) .
+
+      *>
+       PROCEDURE DIVISION .
+      *>
+           MOVE 111111 TO EDIT-1 *> avoid init by default
+      *>
+           MOVE ZEROES  TO DISP-1 .
+           MOVE DISP-1  TO EDIT-1 .
+           IF EDIT-1-X NOT = '******'
+           THEN
+               DISPLAY 'Error EDIT-1-X <' EDIT-1-X '> !=  <******>' .
+      *>
+      *>
+           MOVE 123     TO DISP-1 .
+           MOVE DISP-1  TO EDIT-1 .
+           IF EDIT-1-X NOT = '***123'
+           THEN
+               DISPLAY 'Error EDIT-1-X <' EDIT-1-X '> !=  <***123>' .
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SPECIAL-NAMES CLASS])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TSTCLASS.
+
+       ENVIRONMENT  DIVISION.
+       CONFIGURATION SECTION .
+       SPECIAL-NAMES         .
+       CLASS HEXA IS '0' THRU '9'
+                     'A' THRU 'F' .
+       CLASS ODD   IS '1' '3' '5' '7' '9'   .
+
+      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+      *                                                               *
+      *    NOTICE THAT THE VALUES SUPPLIED ARE NUMERIC LITERALS       *
+      *    WHICH REPRESENT A VALUE WHICH IS 1 NUMBER HIGHER THAN      *
+      *    THE HEX VALUES WHICH THEY REPRESENT. THIS IS BECAUSE       *
+      *    THE ALLOWABLE VALUES ARE FROM 1 THROUGH 256.               *
+      *                                                               *
+      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+       CLASS EVEN  IS  49 51 53 55 57.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ALPHA       PIC X(01)  .
+       01  NUM-1       PIC 9(01)  .
+      *>
+       PROCEDURE DIVISION.
+      *>
+           MOVE '3' TO ALPHA .
+           IF ALPHA IS HEXA
+           THEN
+               CONTINUE
+           ELSE
+               DISPLAY 'ERROR 1'
+           END-IF.
+      *>
+           IF ALPHA IS ODD
+           THEN
+               CONTINUE
+           ELSE
+               DISPLAY 'ERROR 2'
+           END-IF.
+      *>
+           MOVE  2  TO NUM-1
+           IF NUM-1 IS EVEN
+           THEN
+               CONTINUE
+           ELSE
+               DISPLAY 'ERROR 3'
+           END-IF.
+      *>
+           GOBACK  .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

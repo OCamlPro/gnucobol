@@ -224,6 +224,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libcob\profiling.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libcob\reportio.c"
 				>
 			</File>

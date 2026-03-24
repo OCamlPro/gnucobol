@@ -337,11 +337,11 @@ lookup_word (struct cb_reference *p, const char *name)
 			len = COB_MAX_WORDLEN;
 #endif
 		}
-		for (i = 0; i < len; ++i) {
-			word[i] = (cob_u8_t)toupper ((unsigned char)name[i]);
+			for (i = 0; i < len; ++i) {
+				word[i] = (cob_u8_t)toupper ((unsigned char)name[i]);
+			}
+			word[i] = 0;
 		}
-		word[i] = 0;
-	}
 	val = word_hash (word);
 
 	/* Find an existing word */
@@ -635,7 +635,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 				if (size_real + size_refmod + size_element + 1  >= size) {
 					/* replacement: "(X:Y)" (dropping possible "in XYZ") */
 					size_element = sprintf (s, "(<>:)");
-					return size_real + size_element;	
+					return size_real + size_element;
 				}
 				size_refmod += sprintf (s + size_refmod, "%s)", buff);
 				s += size_refmod;
@@ -1034,7 +1034,7 @@ get_data_from_const (cb_tree const_val, unsigned char **data)
 	} else if (const_val == cb_norm_low) {
 		*data = (unsigned char *)"\0";
 	} else if (const_val == cb_norm_high) {
-		*data = (unsigned char *)"\255";
+		*data = (unsigned char *)"\xff";
 	} else if (const_val == cb_null) {
 		*data = (unsigned char *)"\0";
 	} else {
@@ -1300,10 +1300,18 @@ set_ml_attrs_and_children (struct cb_field *record, const int children_are_attrs
 			continue;
 		}
 
-		child_tree_or_null = cb_build_ml_tree (child, 0,
-							children_are_attrs,
-							name_list, type_list,
-							suppress_list);
+		if (child->children) {
+			child_tree_or_null = cb_build_ml_tree (child, children_are_attrs,
+								0,
+								name_list, type_list,
+								suppress_list);
+		} else {
+			child_tree_or_null = cb_build_ml_tree (child, 0,
+								children_are_attrs,
+								name_list, type_list,
+								suppress_list);
+		}
+
 		if (!child_tree_or_null) {
 			continue;
 		}
@@ -1612,17 +1620,6 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 #endif
 }
 
-/* check if field or any of the child elements has UNBOUNDED */
-int
-cb_field_has_unbounded (struct cb_field *f)
-{
-	if (f->flag_unbounded) {
-		return 1;
-	}
-	f = cb_field_variable_size (f);
-	return (f && f->flag_unbounded);
-}
-
 int
 cb_fits_int (const cb_tree x)
 {
@@ -1842,7 +1839,7 @@ cb_get_int (const cb_tree x)
 	int			val;
 
 	if (x == NULL || x == cb_error_node)	return 0;
-	if (CB_INTEGER_P(x)) return CB_INTEGER(x)->val;
+	if (CB_INTEGER_P (x)) return CB_INTEGER (x)->val;
 
 	/* LCOV_EXCL_START */
 	if (!CB_LITERAL_P (x)) {
@@ -1935,7 +1932,7 @@ cb_get_long_long (const cb_tree x)
 	if (l->scale < 0) {
 		size = size - l->scale;
 	}
-	check_lit_length(size, (const char *)l->data + i);
+	check_lit_length (size, (const char *)l->data + i);
 
 	/* Check numeric literal length matching requested output type */
 	if (unlikely (size >= 19U)) {
@@ -2107,14 +2104,11 @@ cb_list_reverse (cb_tree l)
 unsigned int
 cb_list_length (cb_tree l)
 {
-	unsigned int	n;
-
-	if (l == cb_error_node) {
-		return 0;
-	}
-	n = 0;
-	for (; l; l = CB_CHAIN (l)) {
-		n++;
+	unsigned int	n = 0;
+	if (l != cb_error_node) {
+		for (; l; l = CB_CHAIN (l)) {
+			n++;
+		}
 	}
 	return n;
 }
@@ -2207,9 +2201,18 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	p->decimal_point = '.';
 	p->currency_symbol = '$';
 	p->numeric_separator = ',';
+	p->low_value = 0;
+	p->high_value = 0xff;
+	p->low_value_n = 0;
+	p->high_value_n = 0xffff;
 	if (cb_call_extfh) {
 		p->extfh = cobc_parse_strdup (cb_call_extfh);
 	}
+
+	p->prof_current_section = -1;
+	p->prof_current_paragraph = -1;
+	p->prof_current_call = -1;
+
 	/* Save current program as actual at it's level */
 	container_progs[nest_level] = p;
 	if (nest_level
@@ -2378,7 +2381,7 @@ cb_enum_explain (const enum cb_tag tag)
 		return "REPORT VARYING";
 	case CB_TAG_TAB_VALS:
 		return "VALUE list (table-format)";
-	default: 
+	default:
 		{
 			/* whenever we get here, someone missed to add to the list above... */
 			static char errmsg[31];
@@ -2901,81 +2904,61 @@ is_simple_insertion_char (const char c)
 
 /*
   Returns the first and last characters of a floating insertion string.
+  Returns a zero if no errors encountered or a 1 if an error is encountered.
 
-  A floating insertion string is made up of two adjacent +'s, -'s or currency
-  symbols to each other, optionally with simple insertion characters between them.
+  A floating insertion string is made up of two or more +'s, -'s or currency
+  symbols, optionally with simple insertion characters between them.
+
+  Note that the non punctuation characters are '.', ',', '/', V, B , 0
 */
-static void
+static int
 find_floating_insertion_str (const cob_pic_symbol *str,
 			     const cob_pic_symbol **first,
-			     const cob_pic_symbol **last)
+			     const cob_pic_symbol **last,
+			     const unsigned char float_char)
 {
-	const cob_pic_symbol	*last_non_simple_insertion = NULL;
-	char			floating_char = ' ';
 
-	*first = NULL;
-	*last = NULL;
+	int		non_punctuation_found = 0;
+	unsigned char	non_punctuation_char;
 
 	for (; str->symbol != '\0'; ++str) {
-		if (!*first
-		 && (str->symbol == '+'
-		  || str->symbol == '-'
-		  || (current_program && (str->symbol == current_program->currency_symbol)))) {
-			if (last_non_simple_insertion
-			    && last_non_simple_insertion->symbol == str->symbol) {
-				*first = last_non_simple_insertion;
-				floating_char = str->symbol;
-				continue;
-			} else if (str->times_repeated > 1) {
+		if (str->symbol == float_char) {
+			if (*first == NULL) {
 				*first = str;
-				floating_char = str->symbol;
-				continue;
+			} else {
+				if (non_punctuation_found) {
+					*first = NULL;
+					*last  = NULL;
+					cb_error (_("floating '%c' symbols cannot have a '%c' between them"), float_char, non_punctuation_char);
+					return 1;
+				}
 			}
-		}
-
-
-		if (!*first && !is_simple_insertion_char (str->symbol)) {
-			last_non_simple_insertion = str;
-		} else if (*first && !(is_simple_insertion_char (str->symbol)
-		                     || str->symbol == floating_char)) {
-			*last = str - 1;
-		        break;
-		}
-	}
-
-	if (str->symbol == '\0' && *first) {
-		*last = str - 1;
-		return;
-	} else if (! ( str->symbol == 'V'
-	            || (current_program && (str->symbol == current_program->decimal_point)))) {
-		return;
-	}
-
-	/*
-	  Check whether all digits after the decimal point are also part of the
-	  floating insertion string. If they are, set *last to the last
-	  character in the string.
-	*/
-	++str;
-	for (; str->symbol != '\0'; ++str) {
-		if (!(is_simple_insertion_char (str->symbol)
-		     || str->symbol == floating_char)) {
-			return;
+			*last = str;
+		} else if (*first
+			 && str->symbol != '.'
+			 && str->symbol != ','
+			 && str->symbol != 'V'
+			 && str->symbol != 'B'
+			 && str->symbol != '/'
+			 && str->symbol != '0') {
+			non_punctuation_found = 1;
+			non_punctuation_char = str->symbol;
 		}
 	}
-	*last = str - 1;
+
+	return 0;
 }
 
 /* Number of character types in picture strings */
 /*
-  The 25 character types are:
-  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+  The 26 character types are:
+  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  U  N  E
   0           -  - DB        *  *  -  -           X
   /
   Duplicates indicate floating/non-floating insertion symbols and/or left/right
   of decimal point positon.
 */
-#define CB_PIC_CHAR_TYPES 25
+#define CB_PIC_CHAR_TYPES 26
 #define CB_FIRST_NON_P_DIGIT_CHAR_TYPE 9
 #define CB_LAST_NON_P_DIGIT_CHAR_TYPE 15
 #define CB_PIC_S_CHAR_TYPE 18
@@ -3071,23 +3054,23 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 	case '1':
 		return 22;
 
-	case 'N':
+	case 'U':
 		return 23;
 
-	case 'E':
+	case 'N':
 		return 24;
 
-	case 'U':
+	case 'E':
 		return 25;
 
 	default:
 		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
 			      && current_sym <= last_floating_sym)) {
-				if (first_sym || second_sym) {
-					return 7;
-				} else if (penultimate_sym || last_sym) {
+				if (penultimate_sym || last_sym) {
 					return 8;
+				} else if (first_sym || second_sym) {
+					return 7;
 				} else {
 					/* Fudge char type - will still result in error */
 					return 7;
@@ -3168,11 +3151,11 @@ get_char_type_description (const int idx)
 	case 22:
 		return "1";
 	case 23:
-		return "N";
-	case 24:
-		return "E";
-	case 25:
 		return "U";
+	case 24:
+		return "N";
+	case 25:
+		return "E";
 	default:
 		return NULL;
 	}
@@ -3197,7 +3180,7 @@ emit_precedence_error (const int preceding_idx, const int following_idx)
 }
 
 static int
-valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
+valid_char_order (const cob_pic_symbol *str, const int s_char_seen, const unsigned char float_char)
 {
 	const int	precedence_table[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {
 		/*
@@ -3208,40 +3191,41 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 		  manual.
 		*/
 		/*
-		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  U  N  E
 		  0           -  - DB        *  *  -  -           X
 		  /
 		*/
-		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
-		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
-		{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
-		{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1 },
-		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	};
 	int		error_emitted[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {{ 0 }};
 	int		chars_seen[CB_PIC_CHAR_TYPES] = { 0 };
-	const cob_pic_symbol	*first_floating_sym;
-	const cob_pic_symbol	*last_floating_sym;
+	const cob_pic_symbol	*first_floating_sym = NULL;
+	const cob_pic_symbol	*last_floating_sym = NULL;
 	int		before_decimal_point = 1;
 	int		idx;
 	const cob_pic_symbol	*s;
@@ -3250,9 +3234,18 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	int		j;
 	int		non_p_digits_seen = 0;
 	int		error_detected = 0;
+	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
 
 	chars_seen[CB_PIC_S_CHAR_TYPE] = s_char_seen;
-	find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym);
+	if (float_char == 0xFF) {
+		cb_error (_("only one of the symbols '-' , '+' or '%c' may occur multiple times in a PICTURE string"), currency_symbol);
+		return 0;
+	}
+	if (float_char) {
+		if (find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym, float_char)) {
+			return 0;
+		}
+	}
 
 	for (s = str; s->symbol != '\0'; ++s) {
 		/* Perform the check twice if a character is repeated, e.g. to detect 9VV. */
@@ -3263,6 +3256,9 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 						      last_floating_sym,
 						      before_decimal_point,
 						      non_p_digits_seen);
+			if ((idx == 8) && ((s + 1)->symbol == '9') && ((s +2)->symbol == '\0')) {
+				idx = 7;
+			}
 			if (idx == -1) {
 				continue;
 			}
@@ -3469,6 +3465,10 @@ cb_build_picture (const char *str)
 	cob_u32_t		v_count = 0;
 	cob_u32_t		digits = 0;
 	cob_u32_t		digits_exponent = 0;
+	cob_u32_t		pos_count = 0;
+	cob_u32_t		neg_count = 0;
+	cob_u32_t		curency_count = 0;
+	cob_u32_t		float_count = 0;
 #if 0 /* currently unused */
 	cob_u32_t		real_digits = 0;
 #endif
@@ -3480,6 +3480,7 @@ cb_build_picture (const char *str)
 	int			scale = 0;
 	int			n;
 	unsigned char		c;
+	unsigned char		float_char;
 	const unsigned char	decimal_point = (current_program ? current_program->decimal_point : '.');
 	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
 
@@ -3513,7 +3514,7 @@ cb_build_picture (const char *str)
 		has_parens = 0;
 		c = *p;
 repeat:
-		/* early check for picture characters with mulitple characters */
+		/* early check for picture characters with multiple characters */
 		if ( (c == 'C' && p[1] == 'R')
 		  || (c == 'D' && p[1] == 'B')) {
 			p++;
@@ -3610,7 +3611,7 @@ repeat:
 
 		case 'U':
 			/* this is only a hack and wrong,
-			   adding UTF-8 type woll need a separate
+			   adding UTF-8 type will need a separate
 			   PIC, but this will need handling in both
 			   the compiler and the runtime, so fake as
 			   ALPHANUMERIC for now */
@@ -3757,6 +3758,11 @@ repeat:
 
 		case '+':
 		case '-':
+			if (c == '+') {
+				pos_count += n;
+			} else {
+				neg_count += n;
+			}
 			category |= PIC_NUMERIC_EDITED;
 			digits += n;
 			if (s_edit_count == 0) {
@@ -3803,14 +3809,21 @@ repeat:
 
 		default:
 			if (c == currency_symbol) {
+				curency_count += n;
 				category |= PIC_NUMERIC_EDITED;
 				if (c_count == 0) {
 					digits += n - 1;
-					c_count = n - 1;
 				} else {
 					digits += n;
-					c_count += n;
 				}
+				if (v_count) {
+					if (c_count == 0) {
+						scale += n - 1;
+					} else {
+						scale += n;
+					}
+				}
+				c_count += n;
 				break;
 			}
 
@@ -3858,10 +3871,32 @@ repeat:
 	}
 	if (digits == 0 && x_digits == 0) {
 		cb_error (_("PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; "
-					"or at least two of the set +, - and the currency symbol"));
+			    "or at least two of the set +, - and the currency symbol"));
 		error_detected = 1;
 	}
-	if (!valid_char_order (pic_buff, s_char_seen)) {
+
+	float_char = 0x00;
+
+	if (pos_count > 1) {
+		float_char = '+';
+		float_count++;
+	}
+
+	if (neg_count > 1) {
+		float_char = '-';
+		float_count++;
+	}
+
+	if (curency_count > 1) {
+		float_char = currency_symbol;
+		float_count++;
+	}
+
+	if (float_count > 1) {
+		float_char = 0xFF;
+	}
+
+	if (!valid_char_order (pic_buff, s_char_seen, float_char)) {
 		error_detected = 1;
 	}
 
@@ -4189,7 +4224,7 @@ cb_field_variable_size (const struct cb_field *f)
 		}
 		if (fc->depending) {
 			return fc;
-		} 
+		}
 		if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
@@ -4279,7 +4314,7 @@ cb_literal_value (cb_tree x)
 	} else if (x == cb_norm_low) {
 		return 0;
 	} else if (x == cb_norm_high) {
-		return 255;
+		return 0xff;
 	} else if (x == cb_null) {
 		return 0;
 	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
@@ -4350,7 +4385,7 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	if (f->pic->category != CB_CATEGORY_NUMERIC
 	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
 		s = CB_FIELD_PTR (CB_VALUE(f->report_sum_list));
-		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
+		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f),
 					_("non-numeric PICTURE clause for SUM %s"), s->name);
 	}
 
@@ -4675,9 +4710,12 @@ validate_file (struct cb_file *f, cb_tree name)
 
 static void
 validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
-					cb_tree key, struct cb_key_component *component_list)
+					cb_tree key, struct cb_key_component *component_list,
+					struct cb_alt_key *cbak)
 {
 	cb_tree			key_ref;
+	cb_tree			l;
+
 	struct cb_field		*k;
 	struct cb_field		*p;
 	struct cb_field		*v;
@@ -4744,6 +4782,39 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 						  " needs to be at least %d"), f->record_min, k->name, field_end);
 		}
 	}
+
+	/* get key collating sequence, if any */
+	for (l = f->collating_sequence_keys; l; l = CB_CHAIN (l)) {
+		cb_tree alpha_key = CB_VALUE (l);
+		if (key_ref == cb_ref (CB_PAIR_Y (alpha_key))) {
+			if (cbak == NULL) {
+				f->collating_sequence_key = CB_PAIR_X (alpha_key);
+			} else {
+				cbak->collating_sequence_key = CB_PAIR_X (alpha_key);
+			}
+		}
+	}
+
+	/* check collating sequence is not ignored */
+	if (get_warn_opt_value (cb_warn_filler) != COBC_WARN_DISABLED
+	 && CB_TREE_CLASS (k) != CB_CLASS_ALPHANUMERIC) {
+		const char *source = "KEY";
+		cb_tree colseq = (cbak == NULL)
+			? f->collating_sequence_key
+			: cbak->collating_sequence_key;
+		cb_tree pos = colseq;
+		if (colseq == NULL) {
+			source = "FILE";
+			colseq = f->collating_sequence;
+			pos = key_ref;
+		}
+		if (colseq != NULL) {
+			cb_warning_x (COBC_WARN_FILLER, CB_TREE (pos),
+				      _("%s COLLATING SEQUENCE '%s' is ignored "
+					"for non-alphanumeric key '%s'"),
+				      source, CB_NAME (colseq), k->name);
+		}
+	}
 }
 
 void
@@ -4785,7 +4856,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		struct cb_alt_key	*cbak;
 		if (f->key) {
 			validate_indexed_key_field (f, records,
-				f->key, f->component_list);
+				f->key, f->component_list, NULL);
 		}
 		for (cbak = f->alt_key_list; cbak; cbak = cbak->next) {
 			if (f->flag_global) {
@@ -4795,7 +4866,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 				}
 			}
 			validate_indexed_key_field (f, records,
-				cbak->key, cbak->component_list);
+				cbak->key, cbak->component_list, cbak);
 		}
 	}
 
@@ -4913,7 +4984,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 			}
 		}
 	}
-	
+
 	/* Create record */
 	if (f->record_max == 0) {
 		f->record_max = 32;
@@ -4968,7 +5039,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 	if (f->organization == COB_ORG_INDEXED) {
 		char msg[80];
 		snprintf (msg, sizeof (msg), "ORGANIZATION INDEXED; FD %s", f->name);
-		cb_warning (cb_warn_unsupported,
+		cb_warning_x (cb_warn_unsupported, f->description_entry,
 			_("runtime is not configured to support %s"), msg);
 	}
 #endif
@@ -5411,8 +5482,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x,
 
 	f = CB_FIELD (cb_ref (x));
 	/* ensure the reference was validated as this
-		also calculates the reference' picture and size */
+	   also calculates the reference' picture and size */
 	if (!f->flag_is_verified) {
+		/* CHECKME: why are several fields not validated
+		   at this point? Note: level 66 are outside of the tree,
+		   but there are others... */
 		cb_validate_field (f);
 	}
 	if (f->flag_any_length
@@ -5967,12 +6041,12 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 			yl = CB_LITERAL (y);
 			if (yl->scale == 0) {
 				yval = atoll((const char*)yl->data);
-				if ((op == '+' || op == '-') 
-		 		 && !rel_bin_op 
+				if ((op == '+' || op == '-')
+		 		 && !rel_bin_op
 				 && yval == 0) {		/* + or - ZERO does nothing */
 					return x;
 				}
-				if ((op == '*' || op == '/') 
+				if ((op == '*' || op == '/')
 				 && yval == 1
 				 && yl->sign != -1) {	/* * or / by ONE does nothing */
 					return x;
@@ -6005,18 +6079,20 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		if (x == cb_error_node || y == cb_error_node) {
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (x)) 
+		if ((CB_REF_OR_FIELD_P (x))
 		 && !(CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_X)) {
-			cb_error_x (CB_TREE(current_statement), 
-					_("%s should be COMP-X/COMP-5 for logical operator"), CB_FIELD_PTR (x)->name);
+			cb_error_x (CB_TREE(current_statement),
+					_("%s should be COMP-X/COMP-5 for logical operator"),
+					CB_FIELD_PTR (x)->name);
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (y)) 
+		if ((CB_REF_OR_FIELD_P (y))
 		 && !(CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_X)) {
-			cb_error_x (CB_TREE(current_statement), 
-					_("%s should be COMP-X/COMP-5 for logical operator"), CB_FIELD_PTR (y)->name);
+			cb_error_x (CB_TREE(current_statement),
+					_("%s should be COMP-X/COMP-5 for logical operator"),
+					CB_FIELD_PTR (y)->name);
 			return cb_error_node;
 		}
 		if (cb_constant_folding
@@ -6393,9 +6469,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 cb_tree
 cb_build_binary_list (cb_tree l, const int op)
 {
-	cb_tree e;
-
-	e = CB_VALUE (l);
+	cb_tree e = CB_VALUE (l);
 	for (l = CB_CHAIN (l); l; l = CB_CHAIN (l)) {
 		e = cb_build_binary_op (e, op, CB_VALUE (l));
 	}
@@ -6445,9 +6519,15 @@ cb_build_cast (const enum cb_cast_type type, const cb_tree val)
 	struct cb_cast		*p;
 	enum cb_category	category;
 
-	if (type == CB_CAST_INTEGER) {
+	switch (type) {
+	case CB_CAST_INTEGER:
+	case CB_CAST_LONG_INT:
+	case CB_CAST_LENGTH:
+	case CB_CAST_NEGATIVE_INTEGER:
+	case CB_CAST_NEGATIVE_LONG_INT:
 		category = CB_CATEGORY_NUMERIC;
-	} else {
+		break;
+	default:
 		category = CB_CATEGORY_UNKNOWN;
 	}
 	p = make_tree (CB_TAG_CAST, category, sizeof (struct cb_cast));
@@ -6612,7 +6692,7 @@ cb_build_call_parameter (cb_tree arg, int call_mode, const int size_mode)
 			}
 		}
 	}
-	
+
 	res = CB_BUILD_PAIR (cb_int (call_mode), arg);
 	if (call_mode == CB_CALL_BY_VALUE) {
 		if (size_mode != CB_SIZE_UNSET) {
@@ -6661,7 +6741,7 @@ cb_build_alter (const cb_tree source, const cb_tree target)
 /* GO TO */
 
 cb_tree
-cb_build_goto (const cb_tree target, const cb_tree depending)
+cb_build_goto (const cb_tree target, const cb_tree depending, int flags)
 {
 	struct cb_goto *p;
 
@@ -6669,6 +6749,7 @@ cb_build_goto (const cb_tree target, const cb_tree depending)
 		       sizeof (struct cb_goto));
 	p->target = target;
 	p->depending = depending;
+	p->flags = flags;
 	return CB_TREE (p);
 }
 
@@ -7000,6 +7081,8 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	struct cb_field			*fld;
 	enum cb_category		catg;
 
+	const char *name = CB_NAME (func);
+
 	/* TODO: if all arguments are constants: build a cob_field,
 	   then call into libcob to get the value and from there the string representation
 	   inserting it here directly (-> numeric/alphanumeric/national constant,
@@ -7008,15 +7091,15 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	int numargs = (int)cb_list_length (args);
 
 	if (unlikely (isuser)) {
-		if (refmod && CB_LITERAL_P(CB_PAIR_X(refmod)) &&
-		    cb_get_int (CB_PAIR_X(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), CB_NAME(func));
+		if (refmod && CB_LITERAL_P (CB_PAIR_X (refmod))
+		 && cb_get_int (CB_PAIR_X (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
-		if (refmod && CB_PAIR_Y(refmod) &&
-		    CB_LITERAL_P(CB_PAIR_Y(refmod)) &&
-		    cb_get_int (CB_PAIR_Y(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), CB_NAME(func));
+		if (refmod && CB_PAIR_Y (refmod)
+		 && CB_LITERAL_P (CB_PAIR_Y (refmod))
+		 && cb_get_int (CB_PAIR_Y (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
 		if (numargs > (int)current_program->max_call_param) {
@@ -7025,45 +7108,45 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		return make_intrinsic (func, &userbp, args, cb_int1, refmod, 1);
 	}
 
-	cbp = lookup_intrinsic (CB_NAME (func), 1);
+	cbp = lookup_intrinsic (name, 1);
 	if (!cbp || cbp->active == CB_FEATURE_DISABLED) {
-		cb_error_x (func, _("FUNCTION '%s' unknown"), CB_NAME (func));
+		cb_error_x (func, _("FUNCTION '%s' unknown"), name);
 		return cb_error_node;
 	}
 	if (cbp->active == CB_FEATURE_NOT_IMPLEMENTED) {
-		cb_error_x (func, _("FUNCTION '%s' is not implemented"),
-			    cbp->name);
+		cb_error_x (func, _("FUNCTION '%s' is not implemented"), name);
 		return cb_error_node;
 	}
 	if ((cbp->args == -1)) {
 		if (numargs < cbp->min_args) {
 			cb_error_x (func,
 				_("FUNCTION '%s' has wrong number of arguments"),
-				cbp->name);
+				name);
 			return cb_error_node;
 		}
 	} else {
 		if (numargs > cbp->args || numargs < cbp->min_args) {
 			cb_error_x (func,
 					_("FUNCTION '%s' has wrong number of arguments"),
-					cbp->name);
+					name);
 			return cb_error_node;
 		}
 	}
 	if (refmod) {
 		if (!cbp->refmod) {
-			cb_error_x (func, _("FUNCTION '%s' cannot have reference modification"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' cannot have reference modification"), name);
 			return cb_error_node;
 		}
 		/* TODO: better check needed, see typeck.c (cb_build_identifier) */
-		if (CB_LITERAL_P(CB_PAIR_X(refmod)) &&
-		    cb_get_int (CB_PAIR_X(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), cbp->name);
+		if (CB_LITERAL_P (CB_PAIR_X (refmod))
+		 && cb_get_int (CB_PAIR_X (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
-		if (CB_PAIR_Y(refmod) && CB_LITERAL_P(CB_PAIR_Y(refmod)) &&
-		    cb_get_int (CB_PAIR_Y(refmod)) < 1) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), cbp->name);
+		if (CB_PAIR_Y (refmod)
+		 && CB_LITERAL_P (CB_PAIR_Y (refmod))
+		 && cb_get_int (CB_PAIR_Y (refmod)) < 1) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), name);
 			return cb_error_node;
 		}
 	}
@@ -7158,7 +7241,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_TEST_DAY_YYYYDDD:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_NUMERIC) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7233,13 +7316,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		/* TODO: resolve for all (?) values */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		catg = cb_tree_category (x);
 		if (catg != CB_CATEGORY_NUMERIC &&
 		    catg != CB_CATEGORY_NUMERIC_EDITED) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7247,7 +7330,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_CONTENT_LENGTH:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_DATA_POINTER) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, NULL, 0);
@@ -7255,7 +7338,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_CONTENT_OF:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_DATA_POINTER) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, cb_int1, refmod, 0);
@@ -7277,7 +7360,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		 && !CB_LITERAL_P (x)) {
-			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
@@ -7287,17 +7370,17 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		  &&!CB_LITERAL_P (x)) {
-			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		if (!cb_category_is_alpha (x)
 		 || cb_field_size(x) % 2 != 0) {
-			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), cbp->name);
+			cb_error_x (func, _ ("FUNCTION '%s' has invalid argument"), name);
 			return cb_error_node;
 		}
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
 
-	/* mulitple, numeric only arguments */
+	/* multiple, numeric only arguments */
 	case CB_INTR_MEAN:
 	case CB_INTR_MEDIAN:
 	case CB_INTR_MIDRANGE:
@@ -7308,7 +7391,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_VARIANCE:
 		return make_intrinsic (func, cbp, args, cb_int1, NULL, 0);
 
-	/* mulitple, compatible only arguments */
+	/* multiple, compatible only arguments */
 	case CB_INTR_MAX:
 	case CB_INTR_MIN:
 		return make_intrinsic (func, cbp, args, cb_int1, NULL, 0);
@@ -7329,13 +7412,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	case CB_INTR_SUBSTITUTE:
 	case CB_INTR_SUBSTITUTE_CASE:
 		if ((numargs % 2) == 0) {
-			cb_error_x (func, _("FUNCTION '%s' has wrong number of arguments"), cbp->name);
+			cb_error_x (func, _("FUNCTION '%s' has wrong number of arguments"), name);
 			return cb_error_node;
 		}
 
 		/* TODO: follow-up arguments should be of same type */
-		if (!cb_category_is_alpha_or_national(CB_VALUE (args))) {
-			cb_error_x (func, _("FUNCTION '%s' has invalid first argument"), cbp->name);
+		if (!cb_category_is_alpha_or_national (CB_VALUE (args))) {
+			cb_error_x (func, _("FUNCTION '%s' has invalid first argument"), name);
 			return cb_error_node;
 		}
 		{
@@ -7344,7 +7427,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		}
 
 	default:
-		cb_error_x (func, _("FUNCTION '%s' unknown"), CB_NAME (func));
+		cb_error_x (func, _("FUNCTION '%s' unknown"), name);
 		return cb_error_node;
 	}
 }
@@ -7416,6 +7499,215 @@ cb_build_ml_suppress_checks (struct cb_ml_generate_tree *tree)
 	return CB_TREE (check);
 }
 
+
+enum cb_colseq cb_default_colseq = CB_COLSEQ_NATIVE;
+enum cb_colseq cb_default_file_colseq = CB_COLSEQ_NATIVE;
+
+/* Decipher character conversion table names */
+static int
+cb_deciph_colseq_name (const char * const name, enum cb_colseq *colseq)
+{
+	if (!cb_strcasecmp (name, "ASCII")) {
+		*colseq = CB_COLSEQ_ASCII;
+	} else if (!cb_strcasecmp (name, "EBCDIC")) {
+		*colseq = CB_COLSEQ_EBCDIC;
+	} else if (!cb_strcasecmp (name, "NATIVE")) {
+		*colseq = CB_COLSEQ_NATIVE;
+	} else {
+		return 1;
+	}
+	return 0;
+}
+
+int
+cb_deciph_default_colseq_name (const char * const name)
+{
+	return cb_deciph_colseq_name (name, &cb_default_colseq);
+}
+
+int
+cb_deciph_default_file_colseq_name (const char * const name)
+{
+	return cb_deciph_colseq_name (name, &cb_default_file_colseq);
+}
+
+/* Use constant strings to replace string comparisons by more
+ * efficient pointer comparisons */
+const char *cob_prof_function_call_str = "cob_prof_function_call";
+
+void
+cb_prof_procedure_division (struct cb_program *program,
+			    const char *source_file,
+			    int source_line)
+{
+	/* invariant: program always has index 0 */
+	procedure_list_add (
+		program,
+		COB_PROF_PROCEDURE_MODULE,
+		program->orig_program_id,
+		0,
+		source_file,
+		source_line);
+}
+
+/* Returns a tree node for a funcall to one of the profiling
+ functions, with the index of the procedure as argument (and a second
+ argument for the entry point if meaningful). If the program, section
+ or paragraph are being entered for the first time, register them into
+ the procedure_list of the program.
+
+ To avoid lookups, the current section and current paragraph are kept
+ in the program record for immediate use when exiting.
+*/
+cb_tree
+cb_build_prof_call (enum cb_prof_call prof_call,
+		    struct cb_program  *program,
+		    struct cb_label  *section,
+		    struct cb_label  *paragraph,
+		    const char  *entry,
+		    cb_tree location)
+{
+	const char  *func_name = cob_prof_function_call_str;
+	int          func_arg1 = -1;
+	int          func_arg2 = -1;
+
+	switch (prof_call){
+
+	case COB_PROF_ENTER_SECTION:
+
+		/* allocate section record and remember current section */
+		program->prof_current_section =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_SECTION,
+				section->name,
+				/* the current section will have
+				 * procedure_list_list as index */
+				program->procedure_list_len,
+				section->common.source_file,
+				section->common.source_line);
+		program->prof_current_paragraph = -1;
+		func_arg1 = program->prof_current_section;
+		break;
+
+	case COB_PROF_ENTER_PARAGRAPH:
+
+		/* allocate section record and remember current section */
+		program->prof_current_paragraph =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_PARAGRAPH,
+				paragraph->name,
+				program->prof_current_section,
+				paragraph->common.source_file,
+				paragraph->common.source_line);
+		func_arg1 = program->prof_current_paragraph;
+		break;
+
+		/* In the case of an ENTRY statement, add code before
+		 * to the falling-through paragraph to avoid
+		 * re-registering the entry into the paragraph. */
+	case COB_PROF_STAYIN_PARAGRAPH:
+
+		func_arg1 = program->prof_current_paragraph;
+		break;
+
+	case COB_PROF_USE_PARAGRAPH_ENTRY:
+
+		func_arg1 = program->prof_current_paragraph;
+		func_arg2 =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_ENTRY,
+				entry,
+				/* section field of entry is in fact its paragraph */
+				program->prof_current_paragraph,
+				location->source_file,
+				location->source_line);
+		break;
+
+	case COB_PROF_EXIT_PARAGRAPH:
+
+		func_arg1 = program->prof_current_paragraph;
+		/* Do not reinitialize, because we may have several of these
+		   EXIT_PARAGRAPH, for example at EXIT SECTION.
+		   program->prof_current_paragraph = -1; */
+		break;
+
+	case COB_PROF_EXIT_SECTION:
+
+		func_arg1 = program->prof_current_section;
+		/* reset current paragraph and section */
+		program->prof_current_section = -1;
+		program->prof_current_paragraph = -1;
+		break;
+
+	case COB_PROF_ENTER_CALL:
+
+		/* allocate call record and remember current call */
+		program->prof_current_call =
+			procedure_list_add (
+				program,
+				COB_PROF_PROCEDURE_CALL,
+				NULL,
+				program->prof_current_paragraph,
+				paragraph->common.source_file,
+				paragraph->common.source_line);
+		func_arg1 = program->prof_current_call;
+		break;
+
+	case COB_PROF_EXIT_CALL:
+
+		/* We need to patch the last procedure to add the callee name and loc */
+		program->procedure_list_last->proc.text = cobc_main_strdup (entry);
+		program->procedure_list_last->proc.file = location->source_file;
+		program->procedure_list_last->proc.line = location->source_line;
+
+		func_arg1 = program->prof_current_call;
+		program->prof_current_call = -1;
+		break;
+
+	}
+	if (func_arg2 < 0){
+		return CB_BUILD_FUNCALL_2 (func_name, cb_int (prof_call), cb_int (func_arg1));
+	}
+	return CB_BUILD_FUNCALL_3 (func_name, cb_int (prof_call), cb_int (func_arg1), cb_int (func_arg2));
+}
+
+/* Allocate a procedure description record and add it at the end of
+ * the procedure_list of the current program. The index of the
+ * procedure will be the position in the list. There is an invariant
+ * that 0 is reserved for the record of the program module. */
+int
+procedure_list_add (
+	struct cb_program *program,
+	enum cob_prof_procedure_kind kind,
+	const char *text,
+	int section,
+	const char *file,
+	int line)
+{
+	struct cb_procedure_list	*p;
+	int ret = program->procedure_list_len ;
+
+	p = cobc_main_malloc (sizeof (struct cb_procedure_list));
+	if (text){ p->proc.text = cobc_main_strdup (text); }
+	p->proc.kind = kind;
+	p->proc.file = file;
+	p->proc.line = line;
+	p->proc.section = section;
+	p->next = NULL;
+
+	if (program->procedure_list == NULL){
+		program->procedure_list = p;
+	} else {
+		program->procedure_list_last->next = p;
+	}
+	program->procedure_list_last = p;
+
+	program->procedure_list_len++;
+	return ret;
+}
 
 #ifndef	HAVE_DESIGNATED_INITS
 void

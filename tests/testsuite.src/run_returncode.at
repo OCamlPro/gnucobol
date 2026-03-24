@@ -46,6 +46,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1])
 
 AT_CLEANUP
 
+
 AT_SETUP([RETURN-CODE passing])
 AT_KEYWORDS([returncode])
 
@@ -97,6 +98,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([RETURN-CODE nested])
 AT_KEYWORDS([returncode])

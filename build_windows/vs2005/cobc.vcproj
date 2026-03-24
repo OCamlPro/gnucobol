@@ -213,6 +213,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\cobc\gentable.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\help.c"
 				>
 			</File>

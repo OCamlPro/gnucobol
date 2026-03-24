@@ -685,7 +685,7 @@ prog.cob:25: error: cannot have PIC without FROM, TO or USING
 prog.cob:30: error: VALUE item may not be numeric
 ])
 
-AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=mf prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=mf -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:12: error: 'no-clauses' needs a PIC, COL, LINE, VALUE, BELL or BLANK clause
 prog.cob:13: error: 'no-required-clauses' needs a PIC, COL, LINE, VALUE, BELL or BLANK clause
 prog.cob:15: error: cannot specify both PIC and VALUE
@@ -730,7 +730,7 @@ prog.cob:30: error: VALUE item may not be numeric
 prog.cob:36: error: cannot use AUTO, FULL, REQUIRED or SECURE on elementary item without FROM, TO or USING
 ])
 
-AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=xopen prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=xopen -fmax-errors=0 prog.cob], [1], [],
 [prog.cob:12: error: 'no-clauses' needs a PIC, COL, LINE, VALUE, BELL or BLANK clause
 prog.cob:13: error: 'no-required-clauses' needs a PIC, COL, LINE, VALUE, BELL or BLANK clause
 prog.cob:15: error: cannot specify both PIC and VALUE
@@ -856,6 +856,7 @@ prog.cob:11: warning: 'from-constant-with-size' has FROM, TO or USING without PI
 prog.cob:12: warning: 'from-constant-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:12: error: PICTURE clause required for 'from-constant-without-pic'
 prog.cob:13: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+prog.cob:13: error: PICTURE clause required for 'FILLER'
 prog.cob:14: warning: 'from-func-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:14: error: PICTURE clause required for 'from-func-without-pic'
 ])
@@ -879,5 +880,28 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:7: warning: DISPLAY WITH CONVERSION is not implemented
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([VALUE ALL in SCREEN SECTION])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SCREEN-VALUE-ALL.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       SCREEN SECTION.
+       01 SCREEN001 BLANK SCREEN AUTO-SKIP.
+           03 SCR01 BACKGROUND-COLOR 2 FOREGROUND-COLOR 7.
+             05 LINE 02 COL 001 PIC X(50) VALUE ALL '-'.
+
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CLEANUP

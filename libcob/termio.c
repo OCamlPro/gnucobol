@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -27,7 +27,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <errno.h>
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -109,10 +108,10 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
-	unsigned short	digits;
-	const signed short	scale = COB_FIELD_SCALE (f);
+	unsigned short		digits;
+	signed short		scale = COB_FIELD_SCALE (f);
 	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
-	int		size;
+	int			size;
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
@@ -162,17 +161,17 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		p->times_repeated = scale;
 		++p;
 	} else {
+		scale = 0;
 		p->symbol = '9';
 		p->times_repeated = digits;
 		++p;
 	}
-	if (has_sign) {
-		if (COB_FIELD_SIGN_SEPARATE (f)
-		 && !COB_FIELD_SIGN_LEADING (f)) {
-			p->symbol = '+';
-			p->times_repeated = 1;
-			++p;
-		}
+	if (has_sign
+	 && COB_FIELD_SIGN_SEPARATE (f)
+	 && !COB_FIELD_SIGN_LEADING (f)) {
+		p->symbol = '+';
+		p->times_repeated = 1;
+		++p;
 	}
 	p->symbol = '\0';
 
@@ -182,12 +181,13 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 			cob_field	field;
 			cob_field_attr	attr;
 			COB_FIELD_INIT (size, COB_TERM_BUFF, &attr);
-			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale, 0,
+			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale,
+				has_sign ? (COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE): 0,
 				(const cob_pic_symbol*)pic);
 
 			cob_move (f, &field);
 		}
-		
+
 		/* output of data to viewport */
 		{
 			register unsigned char *q = COB_TERM_BUFF;
@@ -225,9 +225,15 @@ clean_double (char *wrk)
 	char *pos = strrchr (wrk, 'E');
 
 	if (pos) {
+		char *src;
 		pos += 2; /* skip E+ */
-		if (pos[0] == '0') {
-			memmove (pos, pos + 1, strlen (pos));
+		/* Skip leading zeroes */
+		/* Note: each COBOL environment has a different output format for floats;
+		   here we only check for internal consistency (support for other
+		   formats might be considered for addition if widely requested) */
+		for (src = pos; *src == '0'; ++src);
+		if (src != pos) {
+			memmove (pos, src, strlen (src) + 1);
 		}
 		return;
 	}

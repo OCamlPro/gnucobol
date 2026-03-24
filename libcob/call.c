@@ -46,13 +46,19 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 
 #include <errno.h>
 
-/*	NOTE - The following variable should be uncommented when
-	it is known that dlopen(NULL) is borked.
-	This is known to be true for some PA-RISC HP-UX 11.11 systems.
+/* include internal and external libcob definitions, forcing exports */
+#define	COB_LIB_EXPIMP
+#include "coblocal.h"
+
+/*	NOTE:
+	COB_BORKED_DLOPEN should be set with LIBCOB_CFFLAGS=-DCOB_BORKED_DLOPEN
+	when it is known that either dlopen(NULL) is borked or dlclose is a no-op.
+	The first is known to be true for some PA-RISC HP-UX 11.11 systems.
 	This is fixed with HP patch PHSS_28871. (There are newer but this
 	fixes dlopen/dlsym problems)
+	The second (no-op dlclose) is the case with musl, see 
+	https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading_libraries
 */
-/* #define COB_BORKED_DLOPEN */
 
 #ifdef	_WIN32
 
@@ -86,12 +92,12 @@ lt_dlsym (HMODULE hmod, const char *p)
 #define	lt_dlexit()
 #define lt_dlhandle	HMODULE
 
-#if	0	/* RXWRXW - dlerror */
+#if	1	/* RXWRXW - dlerror */
 static char	errbuf[64];
 static char *
 lt_dlerror (void)
 {
-	sprintf(errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
+	sprintf (errbuf, _("LoadLibrary/GetProcAddress error %d"), (int)GetLastError());
 	return errbuf;
 }
 #endif
@@ -113,10 +119,6 @@ lt_dlerror (void)
 #include <ltdl.h>
 
 #endif
-
-/* include internal and external libcob definitions, forcing exports */
-#define	COB_LIB_EXPIMP
-#include "coblocal.h"
 
 #define	COB_MAX_COBCALL_PARMS	16
 #define	CALL_BUFF_SIZE		256U
@@ -181,7 +183,7 @@ static cob_field_attr	const_binull_attr =
 
 #undef	COB_SYSTEM_GEN
 #define	COB_SYSTEM_GEN(cob_name, pmin, pmax, c_name)	\
-	{ cob_name, 0, {(void *(*)(void *))c_name} },
+	{ cob_name, 0, {(void *(*)(void))c_name} },
 
 static struct system_table	system_tab[] = {
 #include "system.def"
@@ -300,7 +302,6 @@ cob_set_library_path ()
 	char		*p;
 	char		*pstr;
 	size_t		i;
-	struct stat	st;
 
 	int 		flag;
 
@@ -391,9 +392,12 @@ cob_set_library_path ()
 
 		/* check if directory
 		   (note: entries like X:\ _must_ be specified with trailing slash !) */
-		if (stat (p, &st) || !(S_ISDIR (st.st_mode))) {
-			/* possibly raise a warning, maybe only if explicit asked */
-			continue;
+		{
+			struct stat	st;
+			if (stat (p, &st) || !(S_ISDIR (st.st_mode))) {
+				/* possibly raise a warning, maybe only if explicit asked */
+				continue;
+			}
 		}
 
 		/* remove trailing slash from entry (always added on use) */
@@ -423,7 +427,7 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 		  struct call_hash *prev)
 {
 	struct struct_handle	*dynptr;
-	int	(*cancel_func)(const int, void *, void *, void *, void *);
+	int	(*cancel_func)(const int);
 	int nocancel;
 	nocancel = 0;
 
@@ -450,13 +454,8 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 	 && *p->module->module_ref_count) {
 		nocancel = 1;
 	}
-#ifdef _MSC_VER
-#pragma warning(suppress: 4113) /* funcint is a generic function prototype */
-	cancel_func = p->module->module_cancel.funcint;
-#else
-	cancel_func = p->module->module_cancel.funcint;
-#endif
-	(void)cancel_func (-1, NULL, NULL, NULL, NULL);
+	cancel_func = (int (*)(const int))p->module->module_cancel.funcint;
+	(void)cancel_func (-1);
 	p->module = NULL;
 
 	if (nocancel) {
@@ -616,11 +615,14 @@ cache_preload (const char *path)
 	}
 
 	if (access (path, R_OK) != 0) {
+		/* note: not reasonable to warn here as we test for multiple paths that way */
 		return 0;
 	}
 
 	libhandle = lt_dlopen (path);
 	if (!libhandle) {
+		cob_runtime_warning (
+			_("preloading from existing path '%s' failed; %s"), path, lt_dlerror());
 		return 0;
 	}
 
@@ -654,25 +656,9 @@ insert (const char *name, void *func, lt_dlhandle handle,
 	p->func = func;
 	p->handle = handle;
 	p->module = module;
-	if (path) {
-#if	defined(HAVE_CANONICALIZE_FILE_NAME)
-		/* Malloced path or NULL */
-		p->path = canonicalize_file_name (path);
-#elif	defined(HAVE_REALPATH)
-		char	*s;
 
-		s = cob_malloc ((size_t)COB_NORMAL_BUFF);
-		if (realpath (path, s) != NULL) {
-			p->path = cob_strdup (s);
-		}
-		cob_free (s);
-#elif	defined	(_WIN32)
-		/* Malloced path or NULL */
-		p->path = _fullpath (NULL, path, 1);
-#endif
-		if (!p->path) {
-			p->path = cob_strdup (path);
-		}
+	if (path) {
+		p->path = cob_path_to_absolute (path);
 	}
 	p->no_phys_cancel = nocanc;
 	val = hash ((const unsigned char *)name);
@@ -921,6 +907,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			set_resolve_error (module_type);
 			return NULL;
 		}
+		lt_dlerror ();	/* clear last error conditions */
 		handle = lt_dlopen (call_filename_buff);
 		if (handle != NULL) {
 			/* Candidate for future calls */
@@ -936,6 +923,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 			  "entry point '%s' not found", (const char *)s);
 		set_resolve_error (module_type);
+		/* lt_dlerror will now give either the message from lt_dlopen or lt_dlym */
+		cob_runtime_warning (
+			_("loading from existing path '%s' failed; %s"),
+			call_filename_buff, lt_dlerror ());
 		return NULL;
 	}
 	for (i = 0; i < resolve_size; ++i) {
@@ -949,6 +940,7 @@ cob_resolve_internal  (const char *name, const char *dirent,
 		}
 		call_filename_buff[COB_NORMAL_MAX] = 0;
 		if (access (call_filename_buff, R_OK) == 0) {
+			lt_dlerror ();	/* clear last error conditions */
 			handle = lt_dlopen (call_filename_buff);
 			if (handle != NULL) {
 				/* Candidate for future calls */
@@ -964,6 +956,10 @@ cob_resolve_internal  (const char *name, const char *dirent,
 			snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 				  "entry point '%s' not found", (const char *)s);
 			set_resolve_error (module_type);
+			/* lt_dlerror will now give either the message from lt_dlopen or lt_dlym */
+			cob_runtime_warning (
+				_("loading from existing path '%s' failed; %s"),
+				call_filename_buff, lt_dlerror ());
 			return NULL;
 		}
 	}
@@ -1267,7 +1263,7 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 	const char			*entry;
 	const struct cob_call_struct	*s;
 
-	int	(*cancel_func)(const int, void *, void *, void *, void *);
+	int	(*cancel_func)(const int);
 
 	/* LCOV_EXCL_START */
 	if (unlikely(!cobglobptr)) {
@@ -1285,14 +1281,8 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 	for (s = cs; s && s->cob_cstr_name; s++) {
 		if (!strcmp (entry, s->cob_cstr_name)) {
 			if (s->cob_cstr_cancel.funcvoid) {
-#ifdef _MSC_VER
-#pragma warning(suppress: 4113) /* funcint is a generic function prototype */
-				cancel_func = s->cob_cstr_cancel.funcint;
-#else
-				cancel_func = s->cob_cstr_cancel.funcint;
-#endif
-				(void)cancel_func (-1, NULL, NULL, NULL,
-						   NULL);
+				cancel_func = (int (*)(const int))s->cob_cstr_cancel.funcint;
+				(void)cancel_func (-1);
 			}
 			return;
 		}
@@ -1306,6 +1296,93 @@ cob_call (const char *name, const int argc, void **argv)
 	void			*pargv[MAX_CALL_FIELD_PARAMS] = { 0 };
 	cob_call_union		unifunc;
 	int			i;
+#if	MAX_CALL_FIELD_PARAMS == 16 || \
+	MAX_CALL_FIELD_PARAMS == 36 || \
+	MAX_CALL_FIELD_PARAMS == 56 || \
+	MAX_CALL_FIELD_PARAMS == 76 || \
+	MAX_CALL_FIELD_PARAMS == 96 || \
+    MAX_CALL_FIELD_PARAMS == 192 || \
+    MAX_CALL_FIELD_PARAMS == 252
+#else
+#error	"Invalid MAX_CALL_FIELD_PARAMS value"
+#endif
+	int (*funcint) (
+			 void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 16
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 36
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 56
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 76
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 96
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 192
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+			);
 
 	/* LCOV_EXCL_START */
 	if (unlikely(!cobglobptr)) {
@@ -1325,18 +1402,84 @@ cob_call (const char *name, const int argc, void **argv)
 	cobglobptr->cob_call_params = argc;
 	for (i = 0; i < argc; ++i) {
 		pargv[i] = argv[i];
-	}
-#if	MAX_CALL_FIELD_PARAMS == 16 || \
-	MAX_CALL_FIELD_PARAMS == 36 || \
-	MAX_CALL_FIELD_PARAMS == 56 || \
-	MAX_CALL_FIELD_PARAMS == 76 || \
-	MAX_CALL_FIELD_PARAMS == 96 || \
-    MAX_CALL_FIELD_PARAMS == 192 || \
-    MAX_CALL_FIELD_PARAMS == 252
-#else
-#error	"Invalid MAX_CALL_FIELD_PARAMS value"
+	}	funcint = (int (*)(
+			 void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 16
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 36
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 56
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 76
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 96
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+#if	MAX_CALL_FIELD_PARAMS > 192
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
+			,void *, void *, void *, void *
 #endif
-	i =  unifunc.funcint (pargv[0], pargv[1], pargv[2], pargv[3]
+#endif
+#endif
+#endif
+#endif
+#endif
+			))unifunc.funcint;
+	i = funcint (pargv[0], pargv[1], pargv[2], pargv[3]
 				,pargv[4], pargv[5], pargv[6], pargv[7]
 				,pargv[8], pargv[9], pargv[10], pargv[11]
 				,pargv[12], pargv[13], pargv[14], pargv[15]
@@ -1380,6 +1523,7 @@ cob_call (const char *name, const int argc, void **argv)
 				,pargv[144], pargv[145], pargv[146], pargv[147]
 				,pargv[148], pargv[149], pargv[130], pargv[131]
 				,pargv[152], pargv[153], pargv[154], pargv[155]
+				,pargv[156], pargv[157], pargv[158], pargv[159]
 				,pargv[160], pargv[161], pargv[162], pargv[163]
 				,pargv[164], pargv[165], pargv[166], pargv[167]
 				,pargv[168], pargv[169], pargv[170], pargv[171]
@@ -1589,7 +1733,12 @@ size_t cob_try_preload (const char* module_name)
 		}
 	}
 	/* If not found, try just using the name as-is */
-	return cache_preload (module_name);
+	ret = cache_preload (module_name);
+
+	if (ret == 0) {
+		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
+	}
+	return ret;
 #endif
 }
 

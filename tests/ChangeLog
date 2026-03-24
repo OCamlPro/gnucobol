@@ -1,4 +1,83 @@
 
+2025-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: adjusted return_path function and its use
+
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [test/checkall]: check PERL before use
+
+2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in (perf_stat, perf_record): moved calling of perf out to a
+	  function and added a second call for recording
+	* atlocal.in, atlocal_win: fixed quoting (2025-09-17 change)
+
+2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: quote local include and library directories
+	  to support the rare scenario of space-embedded paths, fixing #1142
+
+2025-05-22  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal.in, atlocal_win: set TZ=UTC globally
+	  to help get a reproducible output
+
+2025-05-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_misc.at, testsuite.src/syn_misc.at:
+	  reduce the use of sed by using SOURCE_DATE_EPOCH when possible
+	  and using @&t@ quadrigraphs in expected output with trailing spaces
+	* listing-sed.sh: removed as no longer needed
+	* atlocal.in, atlocal_win: remove the no longer needed UNIFY_LISTING variable
+
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal.in, atlocal_win, testsuite.src/*:
+	  use the new DIFF variable to invoke the diff command
+
+2025-03-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: adjusted to handle newer MSYS2's setting OSTYPE=cygwin
+
+2024-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: export new definition COB_ON_WINDOWS
+	  to allow the testsuite skipping/failing tests
+	* run_prog_manual.sh.in: fix extranous $COBCRUN for all test runners
+	* run_prog_manual.sh.in (xterm): use all parameters, not only the first
+
+2024-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: allow overriding COB_CC during tests
+
+2024-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* run_prog_manual.sh.in:  adding testrunner tmux as alternative
+	  to screen; allow to override the deduced test runner by environment
+	  variable TESTRUNNER; new option to call with parameter "attach" and
+	  "kill" for either attaching to or killing test runner sessions in
+	  screen/tmux; enhance portability and use abs_builddir
+	* run_prog_manual.sh.in (_test_with_screen): use separate SCREENDIR
+	  to ensure using system defaults and work around WSL regressions
+	* run_prog_manual.sh.in (_test_with_cmd): work around cmd quoting
+	  by using a dynamically created sub command file
+	* atlocal.in (set_utf8_locale): new function for the testsuite
+	  enabling tests to either run with UTF8 locale or skip
+	* atlocal.in: use configure-setup for the grep binary
+	* atlocal_win: updated to current atlocal.in
+
+2024-08-03  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_file.at, testsuite.src/run_misc.at:
+	  fix a few tests that break under MSVC Debug while working
+	  under MSVC Release, by forcing a flush of stdout with
+	  fflush and using cob_free instead of free in C codes
+
+2024-06-19  David Declerck <david.declerck@ocamlpro.com>
+
+	* atlocal_win: fix path-related issues in Windows builds
+
 2023-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal_win: updated to current atlocal.in
@@ -23,6 +102,11 @@
 	  or if --enable-debug was specified during configure
 	* testsuite.src: adjusted several tests to use that option
 
+2024-02-26  Boris Eng <boris.eng@ocamlpro.com>
+
+	* testsuite.at: added a new test suite to test the backward compatibility
+	  of strings functions (INSPECT, STRING, UNSTRING)
+
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* testsuite.src/syn_literals.at: move syntax checks on literals
@@ -37,11 +121,6 @@
 	* testsuite.src/run_file.at: skip OS recognition on cygwin
 	* testsuite.src/run_misc.at: fix linking/dlopen issue happening
 	  on some systems (mostly win32) in test CALL RETURNING POINTER
-
-2023-01-23 David Declerck <david.declerck@ocamlpro.com>
-
-	* testsuite.src/configuration.at: test reading translation
-	  tables from an external file
 
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -84,16 +163,6 @@
 
 	* atlocal_valgrind, atlocal_win: updated to match atlocal.in
 
-2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* testsuite.src/general: fix area A in testsuite
-
-2022-03-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* testsuite.src/configuration.at, testsuite.at/syn_misc.at: new
-	  tests for sections and paragraphs that do not end with a period
-	* testsuite.src/run_misc.at: fix lines in trace test
-
 2022-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: option to run part of the testsuite via perf -stat
@@ -102,15 +171,6 @@
 	* Makefile.am: additional dependencies atlocal and
 	  run_prog_manual.sh where used
 	* testsuite.src: added missing $COBCRUN_DIRECT
-
-2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* testsuite.src/syn_copy.at: test partial replacing with SPACES
-	  figurative constant
-
-2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* testsuite.src/syn_copy.at: test partial replacing with literal
 
 2022-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1154,7 +1214,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2023 Free Software Foundation, Inc.
+Copyright 2002-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

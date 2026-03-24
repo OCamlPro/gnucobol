@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -105,7 +105,7 @@ enum cb_format {
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
-	CB_FORMAT_AUTO, 	/* Auto-detect format */
+	CB_FORMAT_AUTO 	/* Auto-detect format */
 };
 #define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
 #define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
@@ -133,7 +133,7 @@ enum cb_current_date {
 
 /* Context sensitive keyword defines (trigger words) */
 #define	CB_CS_ACCEPT			(1U << 0)	/* within ACCEPT statement */
-#define CB_CS_ALLOCATE			(1U << 1)	/* within ALLOCATE statement */
+#define	CB_CS_ALLOCATE			(1U << 1)	/* within ALLOCATE statement */
 #define	CB_CS_ALPHABET			(1U << 2)
 #define	CB_CS_ASSIGN			(1U << 3)
 #define	CB_CS_CALL			(1U << 4)	/* within CALL statement */
@@ -145,7 +145,7 @@ enum cb_current_date {
 #define	CB_CS_EXIT			(1U << 10)	/* within EXIT statement */
 #define	CB_CS_FROM			(1U << 11)
 #define	CB_CS_OCCURS			(1U << 12)
-#define CB_CS_OPTIONS			(1U << 13)
+#define	CB_CS_OPTIONS			(1U << 13)
 #define	CB_CS_PERFORM			(1U << 14)	/* within PERFORM statement */
 #define	CB_CS_PROGRAM_ID		(1U << 15)	/* within PROGRAM-ID definition */
 #define	CB_CS_READ			(1U << 16)	/* within READ statement */
@@ -176,6 +176,7 @@ enum cb_current_date {
 #define	CB_CS_DEFAULT			CB_CS_DAY
 #define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
 #define	CB_CS_USAGE				CB_CS_DAY
+#define	CB_READY_RESET_TRACE	CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -257,6 +258,13 @@ enum cb_screen_clauses_rules {
 	CB_XOPEN_SCREEN_RULES
 };
 
+/* How to interpret identifiers in a file's ASSIGN clause */
+enum cb_assign_type {
+	CB_ASSIGN_VARIABLE_DEFAULT,		/* default to ASSIGN variable, where allowed by implicit-assign-dynamic-var */
+	CB_ASSIGN_VARIABLE_REQUIRED,		/* require ASSIGN variable */
+	CB_ASSIGN_EXT_FILE_NAME_REQUIRED	/* require ASSIGN external-file-name */
+};
+
 /* DECIMAL-POINT IS COMMA effect in XML/JSON GENERATE statements */
 enum cb_dpc_in_data_options {
 	CB_DPC_IN_NONE,
@@ -269,14 +277,14 @@ enum cb_dpc_in_data_options {
 enum cb_sub_check {
 	CB_SUB_CHECK_FULL,
 	CB_SUB_CHECK_MAX,
-	CB_SUB_CHECK_RECORD,	/* PENDING */
+	CB_SUB_CHECK_RECORD	/* PENDING */
 };
 
 /* Generic text list structure */
 struct cb_text_list {
 	struct cb_text_list	*next;			/* next pointer */
 	struct cb_text_list	*last;
-	const char		*text;
+	char			*text;
 };
 
 /* Structure for extended filenames */
@@ -440,7 +448,8 @@ extern int			cb_flag_dump;
 extern int			cb_unix_lf;
 
 extern int			cb_flag_main;	/* set if "main" requested by -x */
-extern int			cobc_flag_main;	/* set only until first program compiled, for general: use cb_flag_main*/
+/* set only until first program compiled, for general: use cb_flag_main */
+extern int			cobc_flag_main;
 extern int			cobc_wants_debug;
 extern int			cb_listing_xref;
 extern int			cobc_seen_stdin;
@@ -472,7 +481,15 @@ extern int			cb_saveargc;
 extern FILE			*cb_listing_file;
 extern FILE			*cb_src_list_file;
 extern FILE			*cb_depend_file;
+extern int			cb_depend_output;
+extern int			cb_depend_keep_missing;
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
+extern int			cb_flag_copybook_deps;
+#endif
 extern struct cb_text_list	*cb_depend_list;
+extern struct cb_text_list	*cb_copy_list;
+extern struct cb_text_list	*cb_include_file_list; /* global */
+extern struct cb_text_list	*cb_include_file_list_directive; /* temporary */
 extern struct cb_text_list	*cb_include_list;
 extern struct cb_text_list	*cb_intrinsic_list;
 extern struct cb_text_list	*cb_extension_list;
@@ -618,6 +635,9 @@ extern int		yyparse (void);
 /* typeck.c */
 extern size_t		suppress_warn;	/* no warnings for internal generated stuff */
 
+extern cob_u8_t ebcdic_to_ascii[256];
+extern cob_u8_t ascii_to_ebcdic[256];
+
 /* error.c */
 #define CB_MSG_STYLE_GCC	0
 #define CB_MSG_STYLE_MSC	1U
@@ -652,6 +672,7 @@ extern void		cb_plex_error (const size_t,
 					 const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_plex_verify (const size_t, const enum cb_support,
 					const char *);
+extern const char *cb_copy_find_file (char *name, int has_ext);
 extern void		configuration_warning (const char *, const int,
 					 const char *, ...) COB_A_FORMAT34;
 extern void		configuration_error (const char *, const int,
@@ -660,6 +681,8 @@ extern char *		cb_get_strerror (void);
 extern void		cb_add_error_to_listing (const char *, int, const char *, char *);
 DECLNORET extern void		flex_fatal_error (const char *, const char *,
 					 const int) COB_A_NORETURN;
+
+DECLNORET extern void		cobc_terminate_exit (const char *, const char *) COB_A_NORETURN;
 
 extern void		cobc_set_listing_header_code (void);
 
@@ -683,5 +706,8 @@ extern void		activate_system_name (const char *, const char *, const int);
 extern int		cb_strcasecmp (const void *, const void *);
 extern unsigned char	cb_toupper (const unsigned char);
 extern unsigned char	cb_tolower (const unsigned char);
+
+/* gentable.c */
+extern int		gentable (FILE *, const char *, const char *, char);
 
 #endif /* CB_COBC_H */

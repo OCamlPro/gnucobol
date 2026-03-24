@@ -106,8 +106,8 @@ cob_convert_hex_digit (char h)
 static int
 cob_convert_hex_byte (const char *h)
 {
-	int d1 = cob_convert_hex_digit (h[0]);
-	int d2 = cob_convert_hex_digit (h[1]);
+	const int d1 = cob_convert_hex_digit (h[0]);
+	const int d2 = cob_convert_hex_digit (h[1]);
 	if (d1 < 0 || d2 < 0) {
 		return -1;
 	} else {
@@ -148,7 +148,7 @@ cob_load_collation (const char *col_name,
 	   ) {
 		/* If it's a path, use it as-is, including trailing NUL */
 		n = strlen (col_name) + 1;
-		if (n >= sizeof (filename)) {
+		if (n >= COB_FILE_MAX) {
 			return -1;
 		}
 		memcpy (filename, col_name, n);
@@ -158,11 +158,10 @@ cob_load_collation (const char *col_name,
 		if (config_dir == NULL) {
 			config_dir = COB_CONFIG_DIR;
 		}
-		n = strlen (config_dir) + strlen (col_name) + 7; /* slash + .ttbl + NUL */
-		if (n >= sizeof (filename)) {
+		n = snprintf (filename, COB_FILE_MAX, "%s%c%s.ttbl", config_dir, SLASH_CHAR, col_name);
+		if (n >= COB_FILE_MAX) {
 			return -1;
 		}
-		sprintf (filename, "%s%c%s.ttbl", config_dir, SLASH_CHAR, col_name);
 	}
 
 	/* FIXME: use conf_runtime_error / adjusted cob_load_config_file later */
@@ -324,17 +323,18 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 		break;
 	case CCM_LOWER_LOCALE:
 		while (data <= end) {
-			*s++ = tolower (*data++);
+			*s++ = (unsigned char)tolower (*data++);
 		}
 		break;
 	case CCM_UPPER_LOCALE:
 		while (data <= end) {
-			*s++ = toupper (*data++);
+			*s++ = (unsigned char)toupper (*data++);
 		}
 		break;
 	}
 	*s = 0;
-	return end + 1 - f->data;
+	/* note: we limit individual fields to be of size < INT_MAX in the compiler */
+	return (int)(end + 1 - f->data);
 }
 
 

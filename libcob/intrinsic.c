@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -27,12 +27,10 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <errno.h>
 #include <time.h>
 #ifdef	HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#include <math.h>
 
 /* include decimal definitions, allowing their use in common.h later */
 #ifdef	HAVE_GMP_H
@@ -718,6 +716,7 @@ int
 cob_check_numval_f (const cob_field *srcfield)
 {
 	unsigned char	*p = srcfield->data;
+	const unsigned int	fsize = (unsigned int)srcfield->size;
 	size_t		plus_minus;
 	size_t		digits;
 	size_t		decimal_seen;
@@ -726,10 +725,10 @@ cob_check_numval_f (const cob_field *srcfield)
 	size_t		break_needed;
 	size_t		exponent;
 	size_t		e_plus_minus;
-	int		n;
+	unsigned int		n;
 	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
 
-	if (!srcfield->size) {
+	if (!fsize) {
 		return 1;
 	}
 
@@ -745,7 +744,7 @@ cob_check_numval_f (const cob_field *srcfield)
 	e_plus_minus = 0;
 
 	/* Check leading positions */
-	for (n = 0; n < (int)srcfield->size; ++n, ++p) {
+	for (n = 0; n < fsize; ++n, ++p) {
 		switch (*p) {
 		case '0':
 		case '1':
@@ -783,11 +782,11 @@ cob_check_numval_f (const cob_field *srcfield)
 		}
 	}
 
-	if (n == (int)srcfield->size) {
+	if (n == fsize) {
 		return n + 1;
 	}
 
-	for (; n < (int)srcfield->size; ++n, ++p) {
+	for (; n < fsize; ++n, ++p) {
 		switch (*p) {
 		case '0':
 		case '1':
@@ -1447,7 +1446,7 @@ calculate_start_end_for_numval (cob_field *srcfield,
 				unsigned char **pp, unsigned char **pp_end)
 {
 	unsigned char *p = srcfield->data;
-	unsigned char *p_end;
+	register unsigned char *p_end;
 
 	if (srcfield->size == 0 
 	 || p == NULL) {
@@ -1481,7 +1480,7 @@ enum numval_type {
 static cob_field *
 numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 {
-	unsigned char	*final_buff = NULL;
+	unsigned char	final_buff [COB_MAX_DIGITS + 1] = { 0 };
 	unsigned char	*p, *p_end;
 	unsigned char	*currency_data = NULL;
 	size_t		datasize;
@@ -1513,13 +1512,18 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	}
-	/* not wasting buffer space (COBOL2022: 35/34 max)... */
+	/* not wasting buffer space (COBOL2023: 35/34 max)... */
 	if (datasize > COB_MAX_DIGITS) {
+#ifdef INVALID_NUMVAL_IS_ZERO
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+		cob_alloc_set_field_uint (0);
+		return curr_field;
+#else
+		/* Should this truncate or raise an exception?
+		   What about COBOL2025 new max? */
 		datasize = COB_MAX_DIGITS;
+#endif
 	}
-
-	/* acquire temp buffer long enugh */
-	final_buff = cob_malloc (datasize + 1U);
 
 	sign = 0;
 	digits = 0;
@@ -1649,8 +1653,6 @@ game_over:
 			mpz_neg (d1.value, d1.value);
 		}
 	}
-
-	cob_free (final_buff);
 
 	if (exception) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
@@ -4316,8 +4318,7 @@ cob_intr_current_date (const int offset, const int length)
 	return curr_field;
 }
 
-/* implementation of FUNCTION CHAR - character from ordinal
-   FIXME: Should use the program's alphanumeric program collating sequence! */
+/* implementation of FUNCTION CHAR - character from ordinal */
 cob_field *
 cob_intr_char (cob_field *srcfield)
 {
@@ -4329,9 +4330,23 @@ cob_intr_char (cob_field *srcfield)
 
 	i = cob_get_int (srcfield);
 	if (i < 1 || i > 256) {
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		*curr_field->data = 0;
 	} else {
-		*curr_field->data = (unsigned char)i - 1;
+		const unsigned char *col = COB_MODULE_PTR->collating_sequence;
+		unsigned char chr;
+		cobglobptr->cob_exception_code = 0;
+		--i;
+		if (col == NULL) {
+			chr = (unsigned char)i;
+		} else {
+			for (chr = 0; chr < 255 && col[chr] != i; ++chr);
+			if (chr == 255 && col[chr] != i) {
+				cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+				chr = 0;
+			}
+		}
+		*curr_field->data = chr;
 	}
 	return curr_field;
 }
@@ -4339,7 +4354,18 @@ cob_intr_char (cob_field *srcfield)
 cob_field *
 cob_intr_ord (cob_field *srcfield)
 {
-	cob_alloc_set_field_uint ((cob_u32_t)(*srcfield->data + 1U));
+	switch (COB_FIELD_TYPE (srcfield)) {
+	case COB_TYPE_NATIONAL:
+		error_not_implemented();
+		break;
+	default: {
+		const unsigned char *col = COB_MODULE_PTR->collating_sequence;
+		unsigned char chr = *srcfield->data;
+		int ord = (col == NULL ? chr : col[chr]) + 1U;
+		cob_alloc_set_field_uint ((cob_u32_t)ord);
+		break;
+	}
+	}
 	return curr_field;
 }
 
@@ -5464,11 +5490,7 @@ cob_intr_random (const int params, ...)
 	cob_field	*f;
 	va_list		args;
 	double		val;
-#ifdef DISABLE_GMP_RANDOM
-	unsigned int		seed = 0;
-#else
-	unsigned long		seed = 0;
-#endif
+	unsigned long	seed = 0;
 	cob_field_attr	attr;
 	cob_field	field;
 
@@ -5480,7 +5502,11 @@ cob_intr_random (const int params, ...)
 		if (specified_seed < 0) {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		} else {
+#ifdef _WIN32
+			seed = (unsigned long)(specified_seed & 0xFFFFFFFF);
+#else
 			seed = (unsigned long)specified_seed;
+#endif
 		}
 		rand_needs_seeding++;
 #ifdef DISABLE_GMP_RANDOM
@@ -5492,8 +5518,12 @@ cob_intr_random (const int params, ...)
 		   note: we need an explicit integer cast to get around some warnings,
 		   but then need a matching size to get around others...*/
  #ifdef COB_64_BIT_POINTER
-		seed = get_seconds_past_midnight ()
-		     * (((cob_s64_t)COB_MODULE_PTR) & 0xFFFFF);
+		seed = (get_seconds_past_midnight ()
+  #ifdef _WIN32
+		     * (((cob_s64_t)COB_MODULE_PTR) & 0xFFFFF)) & 0xFFFFFFFF;
+  #else
+		     * (((cob_s64_t)COB_MODULE_PTR) & 0xFFFFF));
+  #endif
  #else
 		seed = get_seconds_past_midnight ()
 			* (((cob_s32_t)COB_MODULE_PTR) & 0xFFFF);

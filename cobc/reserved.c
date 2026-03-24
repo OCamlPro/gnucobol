@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "cobc.h"
 #include "tree.h"
@@ -1853,8 +1852,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MEMORY",			0, 1, MEMORY,			/* 85 */
 				0, CB_CS_OBJECT_COMPUTER
   },
-  { "MENU",			0, 0, MENU,			/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+  { "MENU",			0, 1, MENU,			/* ACU extension */
+				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY | CB_CS_USAGE	 /* at least for MF: undocumented C/S */
   },
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
@@ -1880,8 +1879,14 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MINUS",			0, 0, MINUS,			/* 2002 */
 				0, 0
   },
+  { "MODAL",			0, 1, MODAL,			/* ACU extension */
+				0, CB_CS_DISPLAY | CB_CS_GRAPHICAL_CONTROL
+  },
   { "MODE",			0, 0, MODE,			/* 2002 */
 				0, 0
+  },
+  { "MODELESS",			0, 1, MODELESS,			/* ACU extension */
+				0, CB_CS_DISPLAY | CB_CS_GRAPHICAL_CONTROL
   },
   { "MODIFY",			1, 0, MODIFY,			/* ACU extension */
 				CB_CS_INQUIRE_MODIFY, 0
@@ -2324,6 +2329,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "READ-ONLY",		0, 1, READ_ONLY,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
+  { "READY",			1, 0, READY,			/* OSVS */
+				CB_READY_RESET_TRACE, 0
+  },
   { "READERS",			0, 1, READERS,		/* ACU extension */
 				0, CB_CS_OPEN
   },
@@ -2433,8 +2441,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "RESERVE",			0, 0, RESERVE,			/* 2002 */
 				0, 0
   },
-  { "RESET",			0, 0, RESET,			/* 2002 */
-				0, 0
+  { "RESET",			1, 0, RESET,			/* 2002 */
+				CB_READY_RESET_TRACE, 0
   },
   { "RESET-GRID",			0, 1, RESET_GRID,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -2786,9 +2794,11 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SUPPRESS",			0, 0, SUPPRESS,			/* 2002 */
 				0, 0
   },
-  { "SYMBOL",			0, 1, -1,			/* 2002 (C/S) */
+  { "SYMBOL",			0, 1, SYMBOL,			/* 2002 (C/S) */
 				0, 0
-	/* FIXME: 2014 Context-sensitive to CURRENCY clause */
+	/* FIXME: 2014 Context-sensitive to CURRENCY clause; note: we currently
+	   work around that by scanning it only together with PICTURE as reserved
+	   word, ignoring any other context there */
   },
   { "SYMBOLIC",			0, 0, SYMBOLIC,			/* 2002 */
 				0, 0
@@ -2900,6 +2910,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "TOWARD-LESSER",		0, 1, TOWARD_LESSER,		/* 2014 (C/S) */
 				0, CB_CS_ROUNDED
+  },
+  { "TRACE",			0, 1, TRACE,			/* OSVS */
+				0, CB_READY_RESET_TRACE
   },
   { "TRACK",			0, 1, TRACK,			/* OS/VS extension */
 				0, CB_CS_SELECT | CB_CS_I_O_CONTROL

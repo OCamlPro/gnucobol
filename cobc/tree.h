@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -21,6 +21,8 @@
 
 #ifndef CB_TREE_H
 #define CB_TREE_H
+
+#include "cobc.h"			/* type definitions */
 
 #define CB_BEFORE		cb_int0
 #define CB_AFTER		cb_int1
@@ -135,18 +137,22 @@ enum cb_tag {
 };
 
 /* Alphabet target */
-#define CB_ALPHABET_ALPHANUMERIC	0
-#define CB_ALPHABET_NATIONAL	1
+enum cb_alphabet_target {
+	CB_ALPHABET_ALPHANUMERIC	= 0,
+	CB_ALPHABET_NATIONAL	= 1
+};
 
 /* Alphabet type */
-#define CB_ALPHABET_NATIVE	0
-#define CB_ALPHABET_ASCII	1
-#define CB_ALPHABET_EBCDIC	2
-#define CB_ALPHABET_CUSTOM	3
-#define CB_ALPHABET_LOCALE	4
-#define CB_ALPHABET_UTF_8	5
-#define CB_ALPHABET_UTF_16	6
-#define CB_ALPHABET_UCS_4	7
+enum cb_alphabet_type {
+	CB_ALPHABET_NATIVE	= 0,
+	CB_ALPHABET_ASCII	= 1,
+	CB_ALPHABET_EBCDIC	= 2,
+	CB_ALPHABET_CUSTOM	= 3,
+	CB_ALPHABET_LOCALE	= 4,
+	CB_ALPHABET_UTF_8	= 5,
+	CB_ALPHABET_UTF_16	= 6,
+	CB_ALPHABET_UCS_4	= 7
+};
 
 /* Call convention bits */
 /* Bit number	Meaning			Value */
@@ -319,45 +325,45 @@ enum cb_storage {
 
 /* Field types */
 enum cb_usage {
-	CB_USAGE_BINARY = 0,		/* 0 */
-	CB_USAGE_BIT,			/* 1 */
-	CB_USAGE_COMP_5,		/* 2 */
-	CB_USAGE_COMP_X,		/* 3 */
-	CB_USAGE_DISPLAY,		/* 4 */
-	CB_USAGE_FLOAT,			/* 5 */
-	CB_USAGE_DOUBLE,		/* 6 */
-	CB_USAGE_INDEX,			/* 7 */
-	CB_USAGE_NATIONAL,		/* 8 */
-	CB_USAGE_OBJECT,		/* 9 */
-	CB_USAGE_PACKED,		/* 10 */
-	CB_USAGE_POINTER,		/* 11 */
-	CB_USAGE_LENGTH,		/* 12 */
-	CB_USAGE_PROGRAM_POINTER,	/* 13 */
-	CB_USAGE_UNSIGNED_CHAR,		/* 14 */
-	CB_USAGE_SIGNED_CHAR,		/* 15 */
-	CB_USAGE_UNSIGNED_SHORT,	/* 16 */
-	CB_USAGE_SIGNED_SHORT,		/* 17 */
-	CB_USAGE_UNSIGNED_INT,		/* 18 */
-	CB_USAGE_SIGNED_INT,		/* 19 */
-	CB_USAGE_UNSIGNED_LONG,		/* 20 */
-	CB_USAGE_SIGNED_LONG,		/* 21 */
-	CB_USAGE_COMP_6,		/* 22 */
-	CB_USAGE_FP_DEC64,		/* 23 */
-	CB_USAGE_FP_DEC128,		/* 24 */
-	CB_USAGE_FP_BIN32,		/* 25 */
-	CB_USAGE_FP_BIN64,		/* 26 */
-	CB_USAGE_FP_BIN128,		/* 27 */
-	CB_USAGE_LONG_DOUBLE,		/* 28 */
-	CB_USAGE_HNDL,			/* 29 */
-	CB_USAGE_HNDL_WINDOW,		/* 30 */
-	CB_USAGE_HNDL_SUBWINDOW,	/* 31 */
-	CB_USAGE_HNDL_FONT,		/* 32 */
-	CB_USAGE_HNDL_THREAD,		/* 33 */
-	CB_USAGE_HNDL_MENU,		/* 34 */
-	CB_USAGE_HNDL_VARIANT,		/* 35 */
-	CB_USAGE_HNDL_LM,		/* 36 */
-	CB_USAGE_COMP_N,		/* 37 */
-	CB_USAGE_ERROR			/* 38, always last */
+	CB_USAGE_BINARY = 0,
+	CB_USAGE_BIT,
+	CB_USAGE_COMP_5,
+	CB_USAGE_COMP_X,
+	CB_USAGE_DISPLAY,
+	CB_USAGE_FLOAT,
+	CB_USAGE_DOUBLE,
+	CB_USAGE_INDEX,
+	CB_USAGE_NATIONAL,
+	CB_USAGE_OBJECT,
+	CB_USAGE_PACKED,
+	CB_USAGE_POINTER,
+	CB_USAGE_LENGTH,
+	CB_USAGE_PROGRAM_POINTER,
+	CB_USAGE_UNSIGNED_CHAR,
+	CB_USAGE_SIGNED_CHAR,
+	CB_USAGE_UNSIGNED_SHORT,
+	CB_USAGE_SIGNED_SHORT,
+	CB_USAGE_UNSIGNED_INT,
+	CB_USAGE_SIGNED_INT,
+	CB_USAGE_UNSIGNED_LONG,
+	CB_USAGE_SIGNED_LONG,
+	CB_USAGE_COMP_6,
+	CB_USAGE_FP_DEC64,
+	CB_USAGE_FP_DEC128,
+	CB_USAGE_FP_BIN32,
+	CB_USAGE_FP_BIN64,
+	CB_USAGE_FP_BIN128,
+	CB_USAGE_LONG_DOUBLE,
+	CB_USAGE_HNDL,
+	CB_USAGE_HNDL_WINDOW,
+	CB_USAGE_HNDL_SUBWINDOW,
+	CB_USAGE_HNDL_FONT,
+	CB_USAGE_HNDL_THREAD,
+	CB_USAGE_HNDL_MENU,
+	CB_USAGE_HNDL_VARIANT,
+	CB_USAGE_HNDL_LM,
+	CB_USAGE_COMP_N,
+	CB_USAGE_ERROR			/* always last */
 };
 
 
@@ -680,6 +686,10 @@ struct cb_string {
 #define CB_STRING(x)	(CB_TREE_CAST (CB_TAG_STRING, struct cb_string, x))
 #define CB_STRING_P(x)	(CB_TREE_TAG (x) == CB_TAG_STRING)
 
+
+#define COB_MAX_CHAR_ALPHANUMERIC	(unsigned int)(0xFF)
+#define COB_MAX_CHAR_NATIONAL	(unsigned int)(0xFFFF)
+
 /* Alphabet-name */
 
 struct cb_alphabet_name {
@@ -687,12 +697,12 @@ struct cb_alphabet_name {
 	const char		*name;		/* Original name */
 	char			*cname;		/* Name used in C */
 	cb_tree			custom_list;	/* Custom ALPHABET / LOCALE reference */
-	unsigned int		alphabet_target;	/* ALPHANUMERIC or NATIONAL */
-	unsigned int		alphabet_type;	/* ALPHABET type */
+	enum cb_alphabet_target		alphabet_target;	/* ALPHANUMERIC or NATIONAL */
+	enum cb_alphabet_type		alphabet_type;	/* ALPHABET type */
 	int			low_val_char;	/* LOW-VALUE */
 	int			high_val_char;	/* HIGH-VALUE */
-	int			values[256];	/* Collating values */
-	int			alphachr[256];	/* Actual values */
+	int			*values;		/* Collating values */
+	int			*alphachr;		/* Actual values */
 };
 
 #define CB_ALPHABET_NAME(x)	(CB_TREE_CAST (CB_TAG_ALPHABET_NAME, struct cb_alphabet_name, x))
@@ -739,7 +749,7 @@ struct cb_system_name {
 struct cb_schema_name {
 	struct cb_tree_common	common;		/* Common values */
 	const char		*name;		/* Original name */
-	const char		*data;		/* file name */
+	cb_tree		val;		/* file name, may be a literal or a data name, may be empty */
 };
 
 #define CB_SCHEMA_NAME(x)	(CB_TREE_CAST (CB_TAG_SCHEMA_NAME, struct cb_schema_name, x))
@@ -962,7 +972,7 @@ struct cb_field {
 	unsigned int flag_field		: 1;	/* Has been internally cached */
 	unsigned int flag_chained	: 1;	/* CHAINING item */
 	unsigned int flag_anylen_done	: 1;	/* ANY LENGTH is set up */
-	unsigned int flag_is_verified	: 1;	/* Has been verified */
+	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_is_c_long	: 1;	/* Is BINARY-C-LONG */
 	unsigned int flag_is_pdiv_parm	: 1;	/* Is PROC DIV USING */
 	unsigned int flag_is_pdiv_opt	: 1;	/* Is PROC DIV USING OPTIONAL */
@@ -981,7 +991,7 @@ struct cb_field {
 	unsigned int flag_any_numeric	: 1;	/* Is ANY NUMERIC */
 	unsigned int flag_is_returning	: 1;	/* Is RETURNING item */
 	unsigned int flag_unbounded	: 1;	/* OCCURS UNBOUNDED */
-	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */
+	unsigned int flag_above_unbounded	: 1;	/* either OCCURS UNBOUNDED field or parent of it */
 	unsigned int flag_volatile	: 1;	/* VOLATILE */
 	unsigned int flag_constant	: 1;	/* Is 01 AS CONSTANT */
 	unsigned int flag_internal_constant	: 1;	/* Is an internally generated CONSTANT */
@@ -991,8 +1001,11 @@ struct cb_field {
 	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
-	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
+	unsigned int flag_comp_1	: 1;	/* Is USAGE COMP-1 */
+	unsigned int flag_is_verified	: 1;	/* Has been verified */
+
+	unsigned int flag_had_definition_note : 1;	/* had its defintion output */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1089,13 +1102,6 @@ struct cb_alt_key {
 	struct cb_key_component	*component_list;	/* List of fields making up key */
 };
 
-/* How to interpret identifiers in a file's ASSIGN clause */
-enum cb_assign_type {
-	CB_ASSIGN_VARIABLE_DEFAULT,		/* default to ASSIGN variable, where allowed by implicit-assign-dynamic-var */
-	CB_ASSIGN_VARIABLE_REQUIRED,		/* require ASSIGN variable */
-	CB_ASSIGN_EXT_FILE_NAME_REQUIRED	/* require ASSIGN external-file-name */
-};
-
 struct cb_file {
 	struct cb_tree_common	common;			/* Common values */
 	const char		*name;			/* Original name */
@@ -1190,7 +1196,7 @@ struct cb_reference {
 	cb_tree			value;		/* Item referred to */
 	cb_tree			subs;		/* List of subscripts */
 	cb_tree			offset;		/* Reference mod offset */
-	cb_tree			length;		/* Reference mod length */
+	cb_tree			length;		/* Reference mod length, only set if offset set */
 	cb_tree			check;		/* Runtime checks */
 	enum cob_statement	statement;	/* statement that uses this reference */
 	struct cb_word		*word;		/* Pointer to word list */
@@ -1247,7 +1253,7 @@ enum cb_binary_op_op {
 	BOP_SHIFT_L 	= 'l',	/* ( x << y ) */
 	BOP_SHIFT_R 	= 'r',	/* ( x >> y ) */
 	BOP_SHIFT_LC	= 'c',	/* ( x << y circular-shift) */
-	BOP_SHIFT_RC	= 'd',	/* ( x >> y circular-shift ) */
+	BOP_SHIFT_RC	= 'd'	/* ( x >> y circular-shift ) */
 };
 
 enum cb_binary_op_flag {
@@ -1425,10 +1431,14 @@ struct cb_alter {
 
 /* GO TO */
 
+#define CB_GOTO_FLAG_NONE           0
+#define CB_GOTO_FLAG_SAME_PARAGRAPH 1
+
 struct cb_goto {
 	struct cb_tree_common	common;		/* Common values */
 	cb_tree			target;		/* Procedure name(s) */
 	cb_tree			depending;	/* DEPENDING */
+	int                     flags;          /* Goto flags */
 };
 
 #define CB_GOTO(x)		(CB_TREE_CAST (CB_TAG_GOTO, struct cb_goto, x))
@@ -1625,7 +1635,7 @@ extern void		plex_action_directive (const enum cb_directive_action,
 enum cb_replace {
 	CB_REPLACE_ALL		= 0,
 	CB_REPLACE_LEADING	= 1,
-	CB_REPLACE_TRAILING	= 2,
+	CB_REPLACE_TRAILING	= 2
 };
 
 /* Strict/loose source text replacement structure */
@@ -1791,7 +1801,19 @@ struct cb_ml_generate_tree {
 #define CB_ML_TREE(x)		(CB_TREE_CAST (CB_TAG_ML_TREE, struct cb_ml_generate_tree, x))
 #define CB_ML_TREE_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_TREE)
 
+struct cb_procedure_list {
+	struct cb_procedure_list	*next;
+	struct cob_prof_procedure        proc;
+};
+
 /* Program */
+
+struct literal_list {
+	struct literal_list	*next;
+	struct cb_literal	*literal;
+	int			id;
+	int			make_decimal;
+};
 
 struct nested_list {
 	struct nested_list	*next;
@@ -1887,8 +1909,21 @@ struct cb_program {
 	unsigned char	decimal_point;			/* '.' or ',' */
 	unsigned char	currency_symbol;		/* '$' or user-specified */
 	unsigned char	numeric_separator;		/* ',' or '.' */
+	cob_u8_t	low_value;			/* Low-value for this program */
+	cob_u8_t	high_value;			/* High-value for this program */
+	cob_u16_t	low_value_n;			/* National Low-value */
+	cob_u16_t	high_value_n;			/* National High-value  */
 	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
+	struct literal_list	*decimal_constants;
+
+        /* Data and functions used for profiling */
+	struct cb_procedure_list *procedure_list;
+	struct cb_procedure_list *procedure_list_last;
+	int             procedure_list_len;
+	int             prof_current_section;
+	int             prof_current_paragraph;
+	int             prof_current_call;
 
 	unsigned int	flag_main		: 1;	/* Gen main function */
 	unsigned int	flag_common		: 1;	/* COMMON PROGRAM */
@@ -2041,7 +2076,6 @@ extern int			cb_tree_type (const cb_tree,
 					      const struct cb_field *);
 extern int			cb_category_is_alpha (cb_tree);
 extern int			cb_category_is_national (cb_tree);
-extern int			cb_field_has_unbounded (struct cb_field *);
 extern int			cb_fits_int (const cb_tree);
 extern int			cb_fits_long_long (const cb_tree);
 extern int			cb_get_int (const cb_tree);
@@ -2076,7 +2110,7 @@ extern cb_tree			cb_concat_literals (const cb_tree,
 
 extern cb_tree			cb_build_decimal (const unsigned int);
 extern cb_tree			cb_build_decimal_literal (const int);
-extern int			cb_lookup_literal (cb_tree x, int make_decimal);
+extern int			cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal);
 
 extern cb_tree			cb_build_comment (const char *);
 extern cb_tree			cb_build_direct (const char *,
@@ -2175,7 +2209,7 @@ extern cb_tree			cb_build_alter (const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_cancel (const cb_tree);
 
-extern cb_tree			cb_build_goto (const cb_tree, const cb_tree);
+extern cb_tree			cb_build_goto (const cb_tree, const cb_tree, int flags);
 
 extern cb_tree			cb_build_if (const cb_tree, const cb_tree,
 					     const cb_tree, const enum cob_statement);
@@ -2329,6 +2363,7 @@ extern cb_tree		cb_debug_sub_3;
 extern cb_tree		cb_debug_contents;
 
 extern int		cb_deciph_default_colseq_name (const char *const);
+extern int		cb_deciph_default_file_colseq_name (const char *const);
 
 extern struct cb_program	*cb_build_program (struct cb_program *,
 						   const int);
@@ -2449,7 +2484,7 @@ extern void		cb_emit_divide (cb_tree, cb_tree,
 
 extern void		cb_emit_evaluate (cb_tree, cb_tree);
 
-extern void		cb_emit_goto (cb_tree, cb_tree);
+extern void		cb_emit_goto (cb_tree, cb_tree, int);
 extern void		cb_emit_exit (const unsigned int);
 
 extern void		cb_emit_if (cb_tree, cb_tree, cb_tree);
@@ -2599,6 +2634,38 @@ extern void		codegen (struct cb_program *, const char *);
 extern void		clear_local_codegen_vars (void);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
+
+enum cb_prof_call {
+	COB_PROF_ENTER_SECTION,
+	COB_PROF_ENTER_PARAGRAPH,
+	COB_PROF_STAYIN_PARAGRAPH,
+	COB_PROF_USE_PARAGRAPH_ENTRY,
+	COB_PROF_EXIT_PARAGRAPH,
+	COB_PROF_EXIT_SECTION,
+	COB_PROF_ENTER_CALL,
+	COB_PROF_EXIT_CALL
+};
+
+extern const char *cob_prof_function_call_str;
+
+extern cb_tree		cb_build_prof_call (enum cb_prof_call  prof_fun,
+					    struct cb_program *program,
+					    struct cb_label   *section,
+					    struct cb_label   *paragraph,
+					    const char        *entry,
+					    cb_tree location);
+
+extern void		cb_prof_procedure_division (struct cb_program *program,
+						    const char *file,
+						    int line);
+
+extern int		procedure_list_add (struct cb_program *program,
+					    enum cob_prof_procedure_kind kind,
+					    const char *text,
+					    int section,
+					    const char *file,
+					    int line);
+
 #define CB_MEMCHK_NONE	0
 #define CB_MEMCHK_POINTER	(1 << 0)
 #define CB_MEMCHK_USING 	(1 << 1)
@@ -2727,6 +2794,18 @@ extern int		cobc_has_areacheck_directive (const char *directive);
 #define CB_ADD_TO_CHAIN(x,y)		y = CB_BUILD_CHAIN (x, y)
 #define CB_CHAIN_PAIR(x,y,z)		x = cb_pair_add (x, y, z)
 #define CB_FIELD_ADD(x,y)		x = cb_field_add (x, y)
+
+enum cb_colseq {
+	CB_COLSEQ_NATIVE,
+	CB_COLSEQ_ASCII,
+	CB_COLSEQ_EBCDIC
+};
+
+extern enum cb_colseq cb_default_colseq;
+extern enum cb_colseq cb_default_file_colseq;
+
+extern int	cb_deciph_default_colseq_name (const char * const name);
+extern int	cb_deciph_default_file_colseq_name (const char * const name);
 
 
 #endif /* CB_TREE_H */

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -44,14 +44,20 @@ cobc_print_usage (char * prog)
 
 	cobc_print_usage_dialect ();
 
-	putchar ('\n');
+#ifndef PACKAGE_BUGREPORT_URL
 	printf (_("Report bugs to: %s\n"
 	          "or (preferably) use the issue tracker via the home page."),
-			"bug-gnucobol@gnu.org");
+			PACKAGE_BUGREPORT);
 	putchar ('\n');
-	printf (_("GnuCOBOL home page: <%s>"), "https://www.gnu.org/software/gnucobol/");
+#else
+	puts (_("For bug reporting instructions, please see:"));
+	printf ("%s.\n", PACKAGE_BUGREPORT_URL);
+#endif
+	printf (_("GnuCOBOL home page: <%s>"),
+		"https://www.gnu.org/software/gnucobol/");
 	putchar ('\n');
-	printf (_("General help using GNU software: <%s>"), "https://www.gnu.org/gethelp/");
+	printf (_("General help using GNU software: <%s>"),
+		"https://www.gnu.org/gethelp/");
 	putchar ('\n');
 }
 
@@ -116,7 +122,11 @@ cobc_print_usage_common_options (void)
 	puts (_("  -X, --Xref            specify cross reference in listing"));
 #endif
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
+	puts (_("  --copy <copybook>     include <copybook> at beginning of file,\n"
+                "                        as would COPY copybook."));
 	puts (_("  -L <directory>        add <directory> to library search path"));
+	puts (_("  --include <file.h>    add a #include \"file.h\" at the beginning of the C\n"
+		"                        generated file (implies -fno-gen-c-decl-static-call)"));
 	puts (_("  -l <lib>              link the library <lib>"));
 	puts (_("  -K <entry>            generate CALL to <entry> as static"));
 	puts (_("  -D <define>           define <define> for COBOL compilation"));
@@ -131,9 +141,19 @@ cobc_print_usage_common_options (void)
 	puts (_("  --list-system         display system routines"));
 	puts (_("  --save-temps[=<dir>]  save intermediate files\n"
 	        "                        * default: current directory"));
+	puts (_("  -M                    output dependency list in Makefile format"));
 	puts (_("  -MT <target>          set/add target file used in dependency list"));
+	puts (_("  -MQ <target>          same as -MT but with Makefile-quoting of the target"));
 	puts (_("  -MF <file>            place dependency list into <file>"));
+	puts (_("  -MP                   create phony targets for all dependencies"));
+	puts (_("  -MG                   output missing dependencies without complaining"));
+	puts (_("  -MD                   output dependencies in .d files while compiling"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
+#ifdef EXPERIMENTAL_COPYBOOK_DEPS_OPTION
+	puts (_("  -fcopybook-deps       output copybook names as dependencies"));
+#endif
+	puts (_("  --gentable=<ebcdic-enc>,<ascii-enc>[+]\toutput a translation table between the\n"
+		"                        given encodings to stdout and exit"));
 	putchar ('\n');
 }
 

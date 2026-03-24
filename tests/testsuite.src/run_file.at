@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
 ## Brian Tiffin, Joe Robbins, Edward Hart
 ##
@@ -46,10 +46,11 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  WSFS              PIC X(2).
        PROCEDURE DIVISION.
-      *
+       OUT.
            OPEN EXTEND FILE-OPT
            IF WSFS NOT = "05"
-              DISPLAY "STATUS EXTEND, missing optional file:" WSFS.
+              DISPLAY "STATUS EXTEND, missing optional file:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO INP.
            MOVE ALL "A" TO FOREC
            WRITE FOREC
            IF WSFS NOT = "00"
@@ -64,23 +65,174 @@ AT_DATA([prog.cob], [
            WRITE F0REC
            IF WSFS NOT = "00"
               DISPLAY "STATUS WRITE B:" WSFS.
-           CLOSE FILE0
+           CLOSE FILE0.
       *
+       INP.
            OPEN INPUT FILE-OPT
            IF WSFS NOT = "00"
-              DISPLAY "STATUS INPUT:" WSFS.
+              DISPLAY "STATUS INPUT:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO EX.
            READ FILE-OPT NEXT
            IF WSFS NOT = "00"
               DISPLAY "STATUS READ A:" WSFS.
            READ FILE-OPT NEXT
            IF WSFS NOT = "00"
               DISPLAY "STATUS READ B:" WSFS.
-           CLOSE FILE-OPT
+           CLOSE FILE-OPT.
       *
+       EX.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CLOSE WITH LOCK])
+AT_KEYWORDS([runfile OPEN WRITE READ DELETE FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE-TBL      ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+           SELECT  FILE0         ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE0.
+       01  F0REC             PIC X(80).
+       FD  FILE-TBL.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+       OUT.
+           OPEN OUTPUT FILE-TBL
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS OPEN OUTPUT:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO INP.
+           MOVE ALL "A" TO FOREC
+           WRITE FOREC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE A:" WSFS.
+           CLOSE FILE-TBL WITH LOCK
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE WITH LOCK:" WSFS.
+       INP.
+           OPEN INPUT FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS INPUT after CLOSE LOCK:" WSFS.
+           CLOSE FILE-TBL
+           IF WSFS NOT = "42"
+              DISPLAY "STATUS CLOSE non-opened:" WSFS.
+      *
+       DEL.
+      *    Note: MicroFocus _does_ delete the file and returns status 00 here
+           DELETE FILE FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
+      *
+       INP2.
+           OPEN INPUT FILE0
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS INPUT separate file:" WSFS
+              IF WSFS (1:1) NOT = "0" GO TO EX.
+           READ FILE0 NEXT
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS READ A:" WSFS.
+           IF F0REC NOT = ALL "A"
+              DISPLAY "content not ALL 'A':" F0REC ":".
+           CLOSE FILE0
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE:" WSFS.
+      *
+       EX.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CLOSE WITH LOCK, EXTERNAL FILE])
+AT_KEYWORDS([runfile OPEN WRITE READ DELETE FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE-TBL      ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE-TBL EXTERNAL.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+       MAIN.
+           OPEN OUTPUT FILE-TBL
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS OPEN OUTPUT:" WSFS
+              IF WSFS (1:1) NOT = "0" GOBACK.
+           MOVE ALL "A" TO FOREC
+           WRITE FOREC
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS WRITE A:" WSFS.
+           CLOSE FILE-TBL WITH LOCK
+           IF WSFS NOT = "00"
+              DISPLAY "STATUS CLOSE WITH LOCK:" WSFS.
+      *
+           CALL "progb".
+      *
+           STOP RUN.
+])
+
+AT_DATA([progb.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. progb.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT  FILE-TBL      ASSIGN TO "testfile"
+                   ORGANIZATION  IS SEQUENTIAL
+                   FILE STATUS   IS WSFS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE-TBL EXTERNAL.
+       01  FOREC             PIC X(80).
+       WORKING-STORAGE SECTION.
+       01  WSFS              PIC X(2).
+       PROCEDURE DIVISION.
+      *
+           OPEN INPUT FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS INPUT after CLOSE LOCK:" WSFS.
+           CLOSE FILE-TBL
+           IF WSFS NOT = "42"
+              DISPLAY "STATUS CLOSE non-opened:" WSFS.
+           DELETE FILE FILE-TBL
+           IF WSFS NOT = "38"
+              DISPLAY "STATUS DELETE FILE after CLOSE LOCK:" WSFS.
+      *
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE progb.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -115,12 +267,12 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        FILE SECTION.
        FD TEST-XML00 RECORD VARYING FROM 5 TO 500 CHARACTERS.
-       01 E-ENR                          PIC X(500).
+       01 E-ENR          PIC X(500).
        WORKING-STORAGE SECTION.
-       01 ST-TEST  PIC X(2).
-       01 W-TYPE   PIC 9(03) VALUE ZERO.
+       01 ST-TEST        PIC X(2).
+       01 W-TYPE         PIC 9(03) VALUE ZERO.
        01 EOF-TEST-XML   PIC 9(03) VALUE ZERO.
-       01 COUNT-PASS   PIC 9(02) VALUE ZERO.
+       01 COUNT-PASS     PIC 9(02) VALUE ZERO.
        PROCEDURE DIVISION.
        DEBUT.
            OPEN INPUT  TEST-XML00
@@ -428,7 +580,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
       *
            OPEN OUTPUT FILE0
-           IF WSFS NOT = "30"
+           IF WSFS NOT = "35"
               DISPLAY "STATUS OPENO " WSFS.
       *
            STOP RUN.
@@ -702,16 +854,16 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_DATA([reference],
 [hi
 ])
-AT_CHECK([diff reference whatever], [0], [], [])
+AT_CHECK([$DIFF reference whatever], [0], [], [])
 
 AT_CHECK([$COMPILE -fassign-clause=dynamic -fno-implicit-assign-dynamic-var prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([diff reference whatever], [0], [], [])
+AT_CHECK([$DIFF reference whatever], [0], [], [])
 
 AT_CHECK([$COMPILE -fassign-clause=dynamic prog.cob], [0], [], [])
 AT_CAPTURE_FILE([out.txt])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([diff reference out.txt], [0], [], [])
+AT_CHECK([$DIFF reference out.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -1049,7 +1201,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        LOCAL-STORAGE    SECTION.
@@ -1089,7 +1241,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        LOCAL-STORAGE    SECTION.
@@ -1126,7 +1278,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        WORKING-STORAGE  SECTION.
@@ -1159,7 +1311,7 @@ AT_DATA([prog2.cob], [
                         ORGANIZATION LINE SEQUENTIAL
                         FILE STATUS TEST-STAT.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        WORKING-STORAGE  SECTION.
@@ -1197,7 +1349,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ASSIGN DYNAMIC with data item in LINKAGE])
-AT_KEYWORDS([runfile-CONTROL file status])
+AT_KEYWORDS([runfile-CONTROL file status CALL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -1249,7 +1401,7 @@ AT_DATA([prog.cob], [
        01  REC-NUM    PIC 9(4).
        01  CUST-STAT  PIC X(2).
 
-       PROCEDURE DIVISION USING s-path, REC-NUM, CUST-STAT.
+       PROCEDURE DIVISION USING OPTIONAL s-path, REC-NUM, CUST-STAT.
            IF ADDRESS OF s-path = NULL
               SET ADDRESS OF s-path TO ADDRESS OF z-path
            END-IF.
@@ -1297,7 +1449,7 @@ AT_DATA([prog.cob], [
        LINKAGE SECTION.
        01  s-path   PIC X(80).
 
-       PROCEDURE DIVISION USING s-path.
+       PROCEDURE DIVISION USING OPTIONAL s-path.
            OPEN OUTPUT f
            IF IO-STS NOT = "00"
                DISPLAY "Opened error: " IO-STS "."
@@ -1341,7 +1493,7 @@ AT_DATA([prog2.cob], [
        LINKAGE SECTION.
        01  s-path     PIC X(80).
 
-       PROCEDURE DIVISION USING s-path.
+       PROCEDURE DIVISION USING OPTIONAL s-path.
            OPEN OUTPUT f
            GOBACK.
        END PROGRAM TSTOPEN.
@@ -1380,7 +1532,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN path
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        WORKING-STORAGE  SECTION.
@@ -1420,7 +1572,7 @@ AT_DATA([prog.cob], [
        SELECT test-file ASSIGN fpath
                         ORGANIZATION LINE SEQUENTIAL.
        DATA             DIVISION.
-       FILE	            SECTION.
+       FILE             SECTION.
        FD  test-file.
        01  test-rec     PIC X(5).
        PROCEDURE        DIVISION.
@@ -1806,8 +1958,9 @@ AT_DATA([prog.cob], [
                MOVE ALL "*"                  TO CM-TAPE.
 
            WRITE TSPFL-RECORD.
-           IF CUST-STAT NOT = "00"
-           AND CUST-STAT NOT = "02"
+      *    Note: some ISAM implementations do not support status 02
+           IF  CUST-STAT NOT = "02"
+           AND CUST-STAT NOT = "00"
                DISPLAY "Key: " TSPFL-KEY ", Status: " CUST-STAT
                                  UPON CONSOLE.
 
@@ -2201,7 +2354,7 @@ AT_DATA([prog.cob], [
            record is varying in size
                from 107 to 362 characters
                depending on end-tbw-record
-	       .
+           .
        01  tbw-record.
            02 tbw-key                        pic x(100).
            02 tbw-alt.
@@ -2395,7 +2548,7 @@ AT_DATA([prog.cob], [
            Exit.
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [delete file
@@ -2941,6 +3094,66 @@ rewriting key: 12349865
 rewriting key: 98651234
 ])]
 )
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED START with partial key and collating sequence])
+AT_KEYWORDS([runfile READ WRITE START])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F-DATA ASSIGN TO EXTERNAL fdata
+             ORGANIZATION INDEXED
+             ACCESS MODE DYNAMIC
+             RECORD KEY R-KEY
+             FILE STATUS F-STATUS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD F-DATA.
+       01 R-DATA.
+         05 R-KEY.
+           10 R-SUBKEY-1  PIC X(3).
+           10 R-SUBKEY-2  PIC X(2).
+         05 R-NUM         PIC 99.
+       WORKING-STORAGE SECTION.
+       01 F-STATUS  PIC X(2)  VALUE SPACE.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT F-DATA.
+           MOVE "ABC12" TO R-KEY.
+           MOVE 1 TO R-NUM.
+           WRITE R-DATA.
+           MOVE "DEF34" TO R-KEY.
+           MOVE 2 TO R-NUM.
+           WRITE R-DATA.
+           MOVE "GHI56" TO R-KEY.
+           MOVE 3 TO R-NUM.
+           WRITE R-DATA.
+           CLOSE F-DATA.
+           OPEN INPUT F-DATA.
+           MOVE SPACES TO R-KEY.
+           MOVE "DEF" TO R-SUBKEY-1.
+           START F-DATA KEY >= R-SUBKEY-1.
+           DISPLAY "START STATUS: " F-STATUS.
+           READ F-DATA NEXT.
+           DISPLAY "READ STATUS: " F-STATUS.
+           DISPLAY "READ " R-KEY ", " R-NUM.
+           CLOSE F-DATA.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[START STATUS: 00
+READ STATUS: 00
+READ DEF34, 02
+], [])
 
 AT_CLEANUP
 
@@ -4080,6 +4293,982 @@ AT_CHECK([$COBCRUN_DIRECT ./prog sub/../prog.cob], [0],
 AT_CLEANUP
 
 
+AT_SETUP([VFILE system routines])
+AT_KEYWORDS([extensions runfile virtual heap
+CBL_OPEN_VFILE CBL_WRITE_VFILE CBL_READ_VFILE CBL_CLOSE_VFILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. VTEST005.
+      *AUTHOR.  CHUCK HAATVEDT
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+
+       OBJECT-COMPUTER. IBM-PC.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  HEAP-ID                    PIC 9(4) COMP-5.
+       01  RELATIVE-ADDRESS-IN-HEAP   PIC S9(9) COMP-5.
+       01  DATA-LENGTH                PIC S9(9) COMP-5.
+       01  HEAP-STATUS                PIC X(2).
+       01  STATUS-CODE                PIC S9(4) COMP-5.
+
+       01  PTR-HEAP                        USAGE POINTER.
+
+       01  CNTR-COUNTERS.
+           05  CNTR-HEAP                   PIC S9(9) COMP-5.
+           05  CNTR-RCD-WRITTEN            PIC S9(9) COMP-5.
+           05  CNTR-RCD-READ               PIC S9(9) COMP-5.
+           05  CNTR-RCD-LENGTH             PIC S9(9) COMP-5.
+           05  CNTR-RELATVIE-POS           PIC S9(9) COMP-5.
+
+       01  TIME-START.
+           05  TS-HH                       PIC 99.
+           05  TS-MM                       PIC 99.
+           05  TS-SS                       PIC 99.
+           05  TS-MS                       PIC 9(6).
+
+       01  TIME-WRITE.
+           05  TW-HH                       PIC 99.
+           05  TW-MM                       PIC 99.
+           05  TW-SS                       PIC 99.
+           05  TW-MS                       PIC 9(6).
+
+       01  TIME-READ.
+           05  TR-HH                       PIC 99.
+           05  TR-MM                       PIC 99.
+           05  TR-SS                       PIC 99.
+           05  TR-MS                       PIC 9(6).
+
+       01  TMP.
+           05  TMP-DOUBLE                  PIC S9(18) COMP-5.
+           05  TMP-MILLISECONDS            PIC S9(9) COMP-5.
+           05  TMP-NBR                     PIC S9(9) COMP-5.
+           05  TMP-KB                      PIC X(8).
+           05  TMP-DISPLAY                 PIC ZZZ,ZZZ,ZZ9.
+           05  TMP-DISPLAY-LONG            PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.
+
+       01  REC-BUFFER                      PIC X(100).
+
+       01  REC-RECORD-AREA.
+           05  FILLER                      PIC X(7)  VALUE 'HEAPID '.
+           05  REC-HEAP-ID                 PIC 9(3).
+           05  FILLER                      PIC X(8)  VALUE ' RECORD '.
+           05  REC-RCD-COUNT               PIC ZZZ,ZZZ,ZZ9.
+           05  FILLER                      PIC X     VALUE SPACE.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+
+
+       01  ENV-TEXT                        PIC X(256).
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+
+           DISPLAY 'COB_HEAP_MEMORY'       UPON ENVIRONMENT-NAME.
+           DISPLAY '16K'                   UPON ENVIRONMENT-VALUE.
+
+           DISPLAY 'COB_HEAP_MEMORY_64'    UPON ENVIRONMENT-NAME.
+           DISPLAY '256K'                  UPON ENVIRONMENT-VALUE.
+
+           MOVE ZERO                   TO CNTR-HEAP.
+           MOVE LENGTH OF REC-RECORD-AREA
+                                       TO DATA-LENGTH.
+      D    DISPLAY ' LENGTH OF DATA RECORD IS ' DATA-LENGTH.
+
+      D    ACCEPT TIME-START FROM MICROSECOND-TIME.
+
+           PERFORM WITH TEST AFTER
+               UNTIL CNTR-HEAP >= 1
+                  OR RETURN-CODE NOT EQUAL ZERO
+                   ADD +1              TO CNTR-HEAP
+                   PERFORM 2000-OPEN-VFILE THRU 2000-EXIT
+           END-PERFORM.
+
+           MOVE ZERO                   TO CNTR-RCD-WRITTEN.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-WRITTEN
+      D        IF CNTR-RCD-WRITTEN = 1311
+      D           CONTINUE
+      D        END-IF
+               PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-WRITE FROM MICROSECOND-TIME.
+
+           MOVE ZERO                   TO CNTR-RCD-READ.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-READ
+               PERFORM 5000-READ-VFILE THRU 5000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-READ  FROM MICROSECOND-TIME.
+
+      D    DISPLAY 'THIS IS THE TIME USED TO READ '
+      D        'AND WRITE 5,000,000 '
+      D        DATA-LENGTH ' BYTE SIZE'.
+      D
+      D    DISPLAY 'START TIME IS ==> '
+      D        TS-HH ':'
+      D        TS-MM ':'
+      D        TS-SS ':'
+      D        TS-MS.
+      D
+      D    DISPLAY 'WRITE TIME IS ==> '
+      D        TW-HH ':'
+      D        TW-MM ':'
+      D        TW-SS ':'
+      D        TW-MS.
+      D
+      D    DISPLAY ' READ TIME IS ==> '
+      D        TR-HH ':'
+      D        TR-MM ':'
+      D        TR-SS ':'
+      D        TR-MS.
+
+       0000-STOP.
+
+           GOBACK.
+
+       0000-EXIT.  EXIT.
+
+       2000-OPEN-VFILE.
+
+           CALL 'CBL_OPEN_VFILE'
+               USING BY REFERENCE HEAP-ID
+                     BY REFERENCE HEAP-STATUS.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP.
+
+      D    DISPLAY ' HEAP-ID IS ==> ' HEAP-ID.
+
+       2000-EXIT.  EXIT.
+       4000-WRITE-VFILE.
+
+      *    IF CNTR-RCD-WRITTEN = 11
+      *        COMPUTE RELATIVE-ADDRESS-IN-HEAP
+      *            = ((5                - 1) * DATA-LENGTH)
+      *        END-COMPUTE
+      *    ELSE
+               COMPUTE RELATIVE-ADDRESS-IN-HEAP
+                   = ((CNTR-RCD-WRITTEN - 1) * DATA-LENGTH)
+               END-COMPUTE
+      *    END-IF.
+               MOVE SPACES                 TO HEAP-STATUS
+               MOVE HEAP-ID                TO REC-HEAP-ID
+               MOVE CNTR-RCD-WRITTEN       TO REC-RCD-COUNT
+
+      D    DISPLAY ' '.
+      D    DISPLAY 'CNTR-RCD-WRITTEN IS '
+      D        CNTR-RCD-WRITTEN
+      D    DISPLAY 'RECORD WRITTEN AT OFFSET '
+      D        RELATIVE-ADDRESS-IN-HEAP
+      D    DISPLAY 'DATA LENGTH IS '
+      D        DATA-LENGTH
+      D    DISPLAY REC-RECORD-AREA (1:50).
+      D    DISPLAY ' '.
+
+      *    IF  CNTR-RCD-WRITTEN >= 1305
+      *    AND CNTR-RCD-WRITTEN <= 1329
+      *        DISPLAY ' IN CBL_WRITE_VFILE  '
+      *            'HEAP ID ' HEAP-ID
+      *            ' REL ADDR ' RELATIVE-ADDRESS-IN-HEAP
+      *            ' DATA LEN ' DATA-LENGTH
+      *    END-IF.
+
+           CALL "CBL_WRITE_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-RECORD-AREA.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-WRITTEN
+               GO TO 0000-STOP
+           END-IF.
+
+       4000-EXIT.  EXIT.
+
+
+       5000-READ-VFILE.
+
+           COMPUTE RELATIVE-ADDRESS-IN-HEAP
+               = ((CNTR-RCD-READ - 1) * DATA-LENGTH)
+           END-COMPUTE.
+
+           MOVE SPACES                 TO HEAP-STATUS.
+           MOVE HEAP-ID                TO REC-HEAP-ID.
+           MOVE CNTR-RCD-READ          TO REC-RCD-COUNT.
+
+           CALL "CBL_READ_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-BUFFER.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-READ
+               GO TO 0000-STOP
+           END-IF.
+
+           IF REC-RECORD-AREA NOT EQUAL REC-BUFFER
+               DISPLAY ' '
+               DISPLAY ' CORRUPT RECORD AT ' CNTR-RCD-READ
+               DISPLAY 'COMPARE RECORD .... THEN REC-BUFFER IN HEX'
+               DISPLAY '-------------------'
+               DISPLAY REC-RECORD-AREA  (1:50)
+               DISPLAY '-------------------'
+               DISPLAY REC-BUFFER       (1:50)
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (1:50))
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (51:50))
+               DISPLAY '-------------------'
+               DISPLAY ' '
+      *        GO TO 0000-STOP
+           END-IF.
+
+       5000-EXIT.  EXIT.
+
+
+       6000-CLOSE-VFILE-ALL.
+
+           MOVE ZERO                   TO HEAP-ID.
+
+           PERFORM 512 TIMES
+               ADD +1                  TO HEAP-ID
+               CALL 'CBL_CLOSE_VFILE'
+                   USING BY VALUE HEAP-ID
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_CLOSE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT HEAP ID '
+                       HEAP-ID
+                   GO TO 0000-STOP
+               END-IF
+           END-PERFORM.
+
+       6000-EXIT.  EXIT.
+
+
+       END PROGRAM VTEST005.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([VFILE system routines, GC extension])
+AT_KEYWORDS([extensions runfile virtual heap
+CBL_GC_OPEN_VFILE CBL_GC_WRITE_VFILE CBL_GC_READ_VFILE CBL_GC_CLOSE_VFILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. VTEST006.
+      *AUTHOR.  CHUCK HAATVEDT
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+
+       OBJECT-COMPUTER. IBM-PC.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  HEAP-ID                    PIC 9(4) COMP-5.
+       01  RELATIVE-ADDRESS-IN-HEAP   PIC S9(18) COMP-5.
+       01  DATA-LENGTH                PIC S9(9) COMP-5.
+       01  HEAP-STATUS                PIC X(2).
+       01  STATUS-CODE                PIC S9(4) COMP-5.
+
+       01  PTR-HEAP                        USAGE POINTER.
+
+       01  CNTR-COUNTERS.
+           05  CNTR-HEAP                   PIC S9(9) COMP-5.
+           05  CNTR-RCD-WRITTEN            PIC S9(9) COMP-5.
+           05  CNTR-RCD-READ               PIC S9(9) COMP-5.
+           05  CNTR-RCD-LENGTH             PIC S9(9) COMP-5.
+           05  CNTR-RELATVIE-POS           PIC S9(9) COMP-5.
+
+       01  TIME-START.
+           05  TS-HH                       PIC 99.
+           05  TS-MM                       PIC 99.
+           05  TS-SS                       PIC 99.
+           05  TS-MS                       PIC 9(6).
+
+       01  TIME-WRITE.
+           05  TW-HH                       PIC 99.
+           05  TW-MM                       PIC 99.
+           05  TW-SS                       PIC 99.
+           05  TW-MS                       PIC 9(6).
+
+       01  TIME-READ.
+           05  TR-HH                       PIC 99.
+           05  TR-MM                       PIC 99.
+           05  TR-SS                       PIC 99.
+           05  TR-MS                       PIC 9(6).
+
+       01  TMP.
+           05  TMP-DOUBLE                  PIC S9(18) COMP-5.
+           05  TMP-MILLISECONDS            PIC S9(9) COMP-5.
+           05  TMP-NBR                     PIC S9(9) COMP-5.
+           05  TMP-KB                      PIC X(8).
+           05  TMP-DISPLAY                 PIC ZZZ,ZZZ,ZZ9.
+           05  TMP-DISPLAY-LONG            PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.
+
+       01  REC-BUFFER                      PIC X(1000).
+
+       01  REC-RECORD-AREA.
+           05  FILLER                      PIC X(7)  VALUE 'HEAPID '.
+           05  REC-HEAP-ID                 PIC 9(3).
+           05  FILLER                      PIC X(8)  VALUE ' RECORD '.
+           05  REC-RCD-COUNT               PIC ZZZ,ZZZ,ZZ9.
+           05  FILLER                      PIC X     VALUE SPACE.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(900)
+                   VALUE LOW-VALUES.
+
+
+       01  ENV-TEXT                        PIC X(256).
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+
+           DISPLAY 'COB_HEAP_MEMORY'       UPON ENVIRONMENT-NAME.
+           DISPLAY '16K'                   UPON ENVIRONMENT-VALUE.
+
+           DISPLAY 'COB_HEAP_MEMORY_64'    UPON ENVIRONMENT-NAME.
+           DISPLAY '256K'                  UPON ENVIRONMENT-VALUE.
+
+           MOVE ZERO                   TO CNTR-HEAP.
+           MOVE LENGTH OF REC-RECORD-AREA
+                                       TO DATA-LENGTH.
+      D    DISPLAY ' LENGTH OF DATA RECORD IS ' DATA-LENGTH.
+
+      D    ACCEPT TIME-START FROM MICROSECOND-TIME.
+
+           PERFORM WITH TEST AFTER
+               UNTIL CNTR-HEAP >= 1
+                  OR RETURN-CODE NOT EQUAL ZERO
+                   ADD +1              TO CNTR-HEAP
+                   PERFORM 2000-OPEN-VFILE THRU 2000-EXIT
+           END-PERFORM.
+
+           MOVE ZERO                   TO CNTR-RCD-WRITTEN.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-WRITTEN
+      D        IF CNTR-RCD-WRITTEN = 1311
+      D           CONTINUE
+      D        END-IF
+               PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-WRITE FROM MICROSECOND-TIME.
+
+           MOVE ZERO                   TO CNTR-RCD-READ.
+
+           PERFORM 100000    TIMES
+               ADD +1                  TO CNTR-RCD-READ
+               PERFORM 5000-READ-VFILE THRU 5000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-READ  FROM MICROSECOND-TIME.
+
+      D    DISPLAY 'THIS IS THE TIME USED TO READ '
+      D        'AND WRITE 5,000,000 '
+      D        DATA-LENGTH ' BYTE SIZE'.
+      D
+      D    DISPLAY 'START TIME IS ==> '
+      D        TS-HH ':'
+      D        TS-MM ':'
+      D        TS-SS ':'
+      D        TS-MS.
+      D
+      D    DISPLAY 'WRITE TIME IS ==> '
+      D        TW-HH ':'
+      D        TW-MM ':'
+      D        TW-SS ':'
+      D        TW-MS.
+      D
+      D    DISPLAY ' READ TIME IS ==> '
+      D        TR-HH ':'
+      D        TR-MM ':'
+      D        TR-SS ':'
+      D        TR-MS.
+
+       0000-STOP.
+
+           GOBACK.
+
+       0000-EXIT.  EXIT.
+
+       2000-OPEN-VFILE.
+
+           CALL 'CBL_OPEN_VFILE'
+               USING BY REFERENCE HEAP-ID
+                     BY REFERENCE HEAP-STATUS.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP.
+
+      D    DISPLAY ' HEAP-ID IS ==> ' HEAP-ID.
+
+       2000-EXIT.  EXIT.
+       4000-WRITE-VFILE.
+
+      *    IF CNTR-RCD-WRITTEN = 11
+      *        COMPUTE RELATIVE-ADDRESS-IN-HEAP
+      *            = ((5                - 1) * DATA-LENGTH)
+      *        END-COMPUTE
+      *    ELSE
+               COMPUTE RELATIVE-ADDRESS-IN-HEAP
+                   = ((CNTR-RCD-WRITTEN - 1) * DATA-LENGTH)
+               END-COMPUTE
+      *    END-IF.
+               MOVE SPACES                 TO HEAP-STATUS
+               MOVE HEAP-ID                TO REC-HEAP-ID
+               MOVE CNTR-RCD-WRITTEN       TO REC-RCD-COUNT
+
+      D    DISPLAY ' '.
+      D    DISPLAY 'CNTR-RCD-WRITTEN IS '
+      D        CNTR-RCD-WRITTEN
+      D    DISPLAY 'RECORD WRITTEN AT OFFSET '
+      D        RELATIVE-ADDRESS-IN-HEAP
+      D    DISPLAY 'DATA LENGTH IS '
+      D        DATA-LENGTH
+      D    DISPLAY REC-RECORD-AREA (1:50).
+      D    DISPLAY ' '.
+
+      *    IF  CNTR-RCD-WRITTEN >= 1305
+      *    AND CNTR-RCD-WRITTEN <= 1329
+      *        DISPLAY ' IN CBL_WRITE_VFILE  '
+      *            'HEAP ID ' HEAP-ID
+      *            ' REL ADDR ' RELATIVE-ADDRESS-IN-HEAP
+      *            ' DATA LEN ' DATA-LENGTH
+      *    END-IF.
+
+           CALL "CBL_GC_WRITE_VFILE64"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-RECORD-AREA.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-WRITTEN
+               GO TO 0000-STOP
+           END-IF.
+
+       4000-EXIT.  EXIT.
+
+
+       5000-READ-VFILE.
+
+           COMPUTE RELATIVE-ADDRESS-IN-HEAP
+               = ((CNTR-RCD-READ - 1) * DATA-LENGTH)
+           END-COMPUTE.
+
+           MOVE SPACES                 TO HEAP-STATUS.
+           MOVE HEAP-ID                TO REC-HEAP-ID.
+           MOVE CNTR-RCD-READ          TO REC-RCD-COUNT.
+
+           CALL "CBL_GC_READ_VFILE64"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-BUFFER.
+
+           IF RETURN-CODE NOT EQUAL ZERO
+               DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                   RETURN-CODE
+                   ' AT RCD '
+                   CNTR-RCD-READ
+               GO TO 0000-STOP
+           END-IF.
+
+           IF REC-RECORD-AREA (1:100) NOT EQUAL REC-BUFFER (1:100)
+               DISPLAY ' '
+               DISPLAY ' CORRUPT RECORD AT ' CNTR-RCD-READ
+               DISPLAY 'COMPARE RECORD .... THEN REC-BUFFER IN HEX'
+               DISPLAY '-------------------'
+               DISPLAY REC-RECORD-AREA  (1:50)
+               DISPLAY '-------------------'
+               DISPLAY REC-BUFFER       (1:50)
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (1:50))
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (51:50))
+               DISPLAY '-------------------'
+               DISPLAY ' '
+      *        GO TO 0000-STOP
+           END-IF.
+
+       5000-EXIT.  EXIT.
+
+
+       6000-CLOSE-VFILE-ALL.
+
+           MOVE ZERO                   TO HEAP-ID.
+
+           PERFORM 512 TIMES
+               ADD +1                  TO HEAP-ID
+               CALL 'CBL_CLOSE_VFILE'
+                   USING BY VALUE HEAP-ID
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_CLOSE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT HEAP ID '
+                       HEAP-ID
+                   GO TO 0000-STOP
+               END-IF
+           END-PERFORM.
+
+       6000-EXIT.  EXIT.
+
+
+       END PROGRAM VTEST006.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([VFILE system routines, error handling])
+AT_KEYWORDS([extensions runfile virtual heap
+CBL_OPEN_VFILE CBL_WRITE_VFILE CBL_READ_VFILE CBL_CLOSE_VFILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. VTEST007.
+      *AUTHOR.  CHUCK HAATVEDT
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+      *SOURCE-COMPUTER. IBM-PC  WITH DEBUGGING MODE.
+
+       OBJECT-COMPUTER. IBM-PC.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+      *  VFILE RETURN-CODE ERRORS
+
+       78  MAX-HEAPS-EXCEEDED          VALUE  41.
+       78  ERROR-OUT-OF-DATA-RANGE     VALUE  44.
+       78  HEAP-OUT-BOUNDS             VALUE  45.
+
+       01  HEAP-ID                    PIC 9(4) COMP-5.
+       01  RELATIVE-ADDRESS-IN-HEAP   PIC S9(9) COMP-5.
+       01  DATA-LENGTH                PIC S9(9) COMP-5.
+       01  HEAP-STATUS                PIC X(2).
+       01  STATUS-CODE                PIC S9(4) COMP-5.
+
+       01  PTR-HEAP                        USAGE POINTER.
+
+       01  CNTR-COUNTERS.
+           05  CNTR-HEAP                   PIC S9(9) COMP-5.
+           05  CNTR-RCD-WRITTEN            PIC S9(9) COMP-5.
+           05  CNTR-RCD-READ               PIC S9(9) COMP-5.
+           05  CNTR-RCD-LENGTH             PIC S9(9) COMP-5.
+           05  CNTR-RELATVIE-POS           PIC S9(9) COMP-5.
+
+       01  TIME-START.
+           05  TS-HH                       PIC 99.
+           05  TS-MM                       PIC 99.
+           05  TS-SS                       PIC 99.
+           05  TS-MS                       PIC 9(6).
+
+       01  TIME-WRITE.
+           05  TW-HH                       PIC 99.
+           05  TW-MM                       PIC 99.
+           05  TW-SS                       PIC 99.
+           05  TW-MS                       PIC 9(6).
+
+       01  TIME-READ.
+           05  TR-HH                       PIC 99.
+           05  TR-MM                       PIC 99.
+           05  TR-SS                       PIC 99.
+           05  TR-MS                       PIC 9(6).
+
+       01  TMP.
+           05  TMP-DOUBLE                  PIC S9(18) COMP-5.
+           05  TMP-MILLISECONDS            PIC S9(9) COMP-5.
+           05  TMP-NBR                     PIC S9(9) COMP-5.
+           05  TMP-KB                      PIC X(8).
+           05  TMP-DISPLAY                 PIC ZZZ,ZZZ,ZZ9.
+           05  TMP-DISPLAY-LONG            PIC ZZZ,ZZZ,ZZZ,ZZZ,ZZZ,ZZ9.
+
+       01  REC-BUFFER                      PIC X(100).
+
+       01  REC-RECORD-AREA.
+           05  FILLER                      PIC X(7)  VALUE 'HEAPID '.
+           05  REC-HEAP-ID                 PIC 9(3).
+           05  FILLER                      PIC X(8)  VALUE ' RECORD '.
+           05  REC-RCD-COUNT               PIC ZZZ,ZZZ,ZZ9.
+           05  FILLER                      PIC X     VALUE SPACE.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+           05  FILLER                      PIC X(10)
+                   VALUE '0123456789'.
+
+
+       01  ENV-TEXT                        PIC X(256).
+
+       PROCEDURE DIVISION.
+
+       0000-MAINLINE.
+
+           DISPLAY 'COB_HEAP_MEMORY'       UPON ENVIRONMENT-NAME.
+           DISPLAY '16K'                   UPON ENVIRONMENT-VALUE.
+
+           DISPLAY 'COB_HEAP_MEMORY_64'    UPON ENVIRONMENT-NAME.
+           DISPLAY '256K'                  UPON ENVIRONMENT-VALUE.
+
+           MOVE ZERO                   TO CNTR-HEAP.
+           MOVE LENGTH OF REC-RECORD-AREA
+                                       TO DATA-LENGTH.
+      D    DISPLAY ' LENGTH OF DATA RECORD IS ' DATA-LENGTH.
+
+      D    ACCEPT TIME-START FROM MICROSECOND-TIME.
+
+           PERFORM WITH TEST AFTER
+               UNTIL CNTR-HEAP >= 513
+                  OR RETURN-CODE NOT EQUAL ZERO
+                   ADD +1              TO CNTR-HEAP
+                   PERFORM 2000-OPEN-VFILE THRU 2000-EXIT
+           END-PERFORM.
+
+           PERFORM 6000-CLOSE-VFILE-ALL THRU 6000-EXIT.
+
+           MOVE +1                     TO CNTR-RCD-WRITTEN.
+           MOVE 44                     TO HEAP-ID.
+
+           PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+
+           MOVE +1                     TO CNTR-RCD-WRITTEN.
+           MOVE 999                    TO HEAP-ID.
+
+           PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+
+           MOVE +1                     TO CNTR-HEAP.
+           PERFORM 2000-OPEN-VFILE THRU 2000-EXIT.
+
+           MOVE ZERO                   TO CNTR-RCD-WRITTEN.
+
+           PERFORM 10        TIMES
+               ADD +1                  TO CNTR-RCD-WRITTEN
+      D        IF CNTR-RCD-WRITTEN = 1311
+      D            CONTINUE
+      D        END-IF
+               PERFORM 4000-WRITE-VFILE THRU 4000-EXIT
+           END-PERFORM.
+
+      D    ACCEPT TIME-WRITE FROM MICROSECOND-TIME.
+
+           MOVE ZERO                   TO CNTR-RCD-READ.
+
+           PERFORM 10        TIMES
+               ADD +1                  TO CNTR-RCD-READ
+               PERFORM 5000-READ-VFILE THRU 5000-EXIT
+           END-PERFORM.
+
+           MOVE 10000              TO CNTR-RCD-READ.
+           PERFORM 5000-READ-VFILE THRU 5000-EXIT
+
+           PERFORM 6000-CLOSE-VFILE-ALL THRU 6000-EXIT.
+
+      D    ACCEPT TIME-READ  FROM MICROSECOND-TIME.
+
+      D    DISPLAY 'THIS IS THE TIME USED TO READ '
+      D        'AND WRITE 5,000,000 '
+      D        DATA-LENGTH ' BYTE SIZE'.
+      D
+      D    DISPLAY 'START TIME IS ==> '
+      D        TS-HH ':'
+      D        TS-MM ':'
+      D        TS-SS ':'
+      D        TS-MS.
+      D
+      D    DISPLAY 'WRITE TIME IS ==> '
+      D        TW-HH ':'
+      D        TW-MM ':'
+      D        TW-SS ':'
+      D        TW-MS.
+      D
+      D    DISPLAY ' READ TIME IS ==> '
+      D        TR-HH ':'
+      D        TR-MM ':'
+      D        TR-SS ':'
+      D        TR-MS.
+
+       0000-STOP.
+
+           GOBACK.
+
+       0000-EXIT.  EXIT.
+
+       2000-OPEN-VFILE.
+
+           CALL 'CBL_OPEN_VFILE'
+               USING BY REFERENCE HEAP-ID
+                     BY REFERENCE HEAP-STATUS.
+
+           IF  CNTR-HEAP >  512
+           AND (RETURN-CODE NOT EQUAL MAX-HEAPS-EXCEEDED
+             OR HEAP-STATUS (1:1) EQUAL '0')
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP
+                   '  RETURN CODE IS --> '
+                   RETURN-CODE
+                   '  HEAP-STATUS IS --> '
+                   HEAP-STATUS
+           END-IF.
+
+           IF  CNTR-HEAP <= 512
+           AND (RETURN-CODE NOT EQUAL ZERO
+             OR HEAP-STATUS (1:1) NOT EQUAL '0')
+               DISPLAY 'CBL_OPEN_VFILE FAILED AT HEAP-ID ==> '
+                   CNTR-HEAP
+                   '  RETURN CODE IS --> '
+                   RETURN-CODE
+                   '  HEAP-STATUS IS --> '
+                   HEAP-STATUS
+           END-IF.
+
+      D    DISPLAY ' HEAP-ID IS ==> ' HEAP-ID.
+
+       2000-EXIT.  EXIT.
+
+
+       4000-WRITE-VFILE.
+
+      *    IF CNTR-RCD-WRITTEN = 11
+      *        COMPUTE RELATIVE-ADDRESS-IN-HEAP
+      *            = ((5                - 1) * DATA-LENGTH)
+      *        END-COMPUTE
+      *    ELSE
+               COMPUTE RELATIVE-ADDRESS-IN-HEAP
+                   = ((CNTR-RCD-WRITTEN - 1) * DATA-LENGTH)
+               END-COMPUTE
+      *    END-IF.
+               MOVE SPACES                 TO HEAP-STATUS
+               MOVE HEAP-ID                TO REC-HEAP-ID
+               MOVE CNTR-RCD-WRITTEN       TO REC-RCD-COUNT
+
+      D    DISPLAY ' '.
+      D    DISPLAY 'CNTR-RCD-WRITTEN IS '
+      D        CNTR-RCD-WRITTEN
+      D    DISPLAY 'RECORD WRITTEN AT OFFSET '
+      D        RELATIVE-ADDRESS-IN-HEAP
+      D    DISPLAY 'DATA LENGTH IS '
+      D        DATA-LENGTH
+      D    DISPLAY REC-RECORD-AREA (1:50).
+      D    DISPLAY ' '.
+
+      *    IF  CNTR-RCD-WRITTEN >= 1305
+      *    AND CNTR-RCD-WRITTEN <= 1329
+      *        DISPLAY ' IN CBL_WRITE_VFILE  '
+      *            'HEAP ID ' HEAP-ID
+      *            ' REL ADDR ' RELATIVE-ADDRESS-IN-HEAP
+      *            ' DATA LEN ' DATA-LENGTH
+      *    END-IF.
+
+           CALL "CBL_WRITE_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-RECORD-AREA.
+
+           IF HEAP-ID EQUAL 999
+               IF RETURN-CODE EQUAL HEAP-OUT-BOUNDS
+                   GO TO 4000-EXIT
+               ELSE
+                   DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-WRITTEN
+                       ' HEAP-ID ==> '
+                       HEAP-ID
+      D            GO TO 0000-STOP
+               END-IF
+           END-IF.
+
+           IF HEAP-ID EQUAL 44
+               IF RETURN-CODE NOT EQUAL HEAP-OUT-BOUNDS
+                   DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-WRITTEN
+                       ' HEAP-ID ==> '
+                       HEAP-ID
+                   GO TO 0000-STOP
+               END-IF
+           ELSE
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_WRITE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-WRITTEN
+                       ' HEAP-ID ==> '
+                       HEAP-ID
+      D            GO TO 00000-STOP
+               END-IF
+           END-IF.
+
+       4000-EXIT.  EXIT.
+
+
+       5000-READ-VFILE.
+
+           COMPUTE RELATIVE-ADDRESS-IN-HEAP
+               = ((CNTR-RCD-READ - 1) * DATA-LENGTH)
+           END-COMPUTE.
+
+           MOVE SPACES                 TO HEAP-STATUS.
+           MOVE HEAP-ID                TO REC-HEAP-ID.
+           MOVE CNTR-RCD-READ          TO REC-RCD-COUNT.
+
+           CALL "CBL_READ_VFILE"
+               USING BY VALUE HEAP-ID
+                     BY VALUE RELATIVE-ADDRESS-IN-HEAP
+                     BY VALUE DATA-LENGTH
+                     BY REFERENCE REC-BUFFER.
+
+           IF CNTR-RCD-READ > 100
+      *>       Note: we may drop this as it isn't compatible to MF/Fuji
+               IF RETURN-CODE EQUAL ERROR-OUT-OF-DATA-RANGE
+                   GO TO 5000-EXIT
+               ELSE
+                   DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-READ
+                   GO TO 5000-EXIT
+               END-IF
+           ELSE
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_READ_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT RCD '
+                       CNTR-RCD-READ
+      D            GO TO 0000-STOP
+               END-IF
+           END-IF.
+
+           IF REC-RECORD-AREA NOT EQUAL REC-BUFFER
+               DISPLAY ' '
+               DISPLAY ' CORRUPT RECORD AT ' CNTR-RCD-READ
+               DISPLAY 'COMPARE RECORD .... THEN REC-BUFFER IN HEX'
+               DISPLAY '-------------------'
+               DISPLAY REC-RECORD-AREA  (1:50)
+               DISPLAY '-------------------'
+               DISPLAY REC-BUFFER       (1:50)
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (1:50))
+               DISPLAY 'HEX OF '
+                   FUNCTION HEX-OF (REC-BUFFER (51:50))
+               DISPLAY '-------------------'
+               DISPLAY ' '
+      *        GO TO 0000-STOP
+           END-IF.
+
+       5000-EXIT.  EXIT.
+
+
+       6000-CLOSE-VFILE-ALL.
+
+           MOVE ZERO                   TO HEAP-ID.
+
+           PERFORM 512 TIMES
+               ADD +1                  TO HEAP-ID
+               CALL 'CBL_CLOSE_VFILE'
+                   USING BY VALUE HEAP-ID
+               IF RETURN-CODE NOT EQUAL ZERO
+                   DISPLAY 'CBL_CLOSE_VFILE BAD RETURN CODE '
+                       RETURN-CODE
+                       ' AT HEAP ID '
+                       HEAP-ID
+      D            GO TO 0000-STOP
+               END-IF
+           END-PERFORM.
+
+       6000-EXIT.  EXIT.
+
+
+       END PROGRAM VTEST007.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: prog.cob:248: warning: heap out of bounds 999
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([System routine CBL_COPY_FILE])
 AT_KEYWORDS([extensions runfile])
 
@@ -4110,7 +5299,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
-AT_CHECK([diff prog.cob prog3.cob], [0], [], [])
+AT_CHECK([$DIFF prog.cob prog3.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -4138,13 +5327,13 @@ fexists_signed (char *fid, char *signature, int signature_size)
 
 	f = fopen (fid, "r");
 	if (f != NULL) {
-		 bfr = (char *) cob_malloc (signature_size);
-		 if (1 == fread (bfr, signature_size, 1, f)) {
+		bfr = (char *) cob_malloc (signature_size);
+		if (1 == fread (bfr, signature_size, 1, f)) {
 				if (!memcmp (signature, bfr, signature_size)) {
-					 res = 0;
+					res = 0;
 				}
-		 }
-		 free (bfr);
+		}
+		cob_free (bfr);
 	}
 	return res;
 }
@@ -4566,7 +5755,7 @@ Write 1: STATUS IS 00 LENGTH IS 009
 Write 2: STATUS IS 00 LENGTH IS 064
 ], [])
 
-AT_CHECK([diff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 # same check with dialect option (4.x feature)
 # AT_CHECK([$COMPILE -std=gc31 prog.cob], [0], [], [])
@@ -4585,7 +5774,7 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 # Write 2: STATUS IS 00 LENGTH IS 064
 # ], [])
 #
-# AT_CHECK([diff reference TEST-FILE], [0], [], [])
+# AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -4701,7 +5890,7 @@ AT_DATA([reference],
 Record 2................................
 ])
 
-AT_CHECK([diff reference TEST-FILE], [0], [], [])
+AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 # same check with dialect option (4.x feature)
 # AT_CHECK([$COMPILE -std=gc31 prog.cob], [0], [], [])
@@ -4721,7 +5910,7 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 # Write 2: STATUS IS 00 LENGTH IS 064
 # ], [])
 #
-# AT_CHECK([diff reference TEST-FILE], [0], [], [])
+# AT_CHECK([$DIFF reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
@@ -5008,7 +6197,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
-AT_CHECK([diff mini-report reference-report], [0], [], [])
+AT_CHECK([$DIFF mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -5298,7 +6487,7 @@ AT_XFAIL_IF([true])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
-AT_CHECK([diff mini-report reference-report], [0], [], [])
+AT_CHECK([$DIFF mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -7015,9 +8204,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key1-2
            START f KEY = f-key1-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 1: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 1: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7025,9 +8214,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key1-2
            START f KEY < f-key1-1
            READ f PREVIOUS
-           IF (f-status <> "00") OR
-                   (file1-serial <> 3)
-               DISPLAY "FAILED 2: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 3)
+               DISPLAY "FAILED 2: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7035,9 +8224,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key1-2
            START f KEY > f-key1-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 3: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 3: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7045,9 +8234,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key2-2
            START f KEY = f-key2-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 4: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 4: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7055,9 +8244,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key2-2
            START f KEY < f-key2-1
            READ f PREVIOUS
-           IF (f-status <> "00") OR
-                   (file1-serial <> 3)
-               DISPLAY "FAILED 5: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 3)
+               DISPLAY "FAILED 5: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7065,9 +8254,9 @@ AT_DATA([prog.cob], [
            MOVE "~~~" TO f-key2-2
            START f KEY > f-key2-1
            READ f NEXT
-           IF (f-status <> "00") OR
-                   (file1-serial <> 4)
-               DISPLAY "FAILED 6: status " f-status "-"
+           IF (f-status <> "00")
+           OR (file1-serial <> 4)
+               DISPLAY "FAILED 6: status " f-status " - "
                        "serial: " file1-serial
            END-IF
 
@@ -7075,12 +8264,12 @@ AT_DATA([prog.cob], [
            START f KEY > f-key3-1
            READ f NEXT
       *  CHECK: Return file-status "02" if duplicates exist
-           IF (f-status <> "02"
-      *    Depends on xISAM implementation and the way BDB is used (not yet
-      *    implemented in 3.x)
-            AND f-status <> "00"
-               ) OR file1-serial <> 3
-               DISPLAY "FAILED 7: status " f-status "-"
+      *    Depends on xISAM implementation and also on the way BDB is used
+           IF (f-status <> "02" 
+            AND f-status <> "00")
+           OR (file1-serial <> 3)
+               DISPLAY "FAILED 7: status " f-status " - "
+                       "serial: " file1-serial
            END-IF
            CLOSE f
            STOP RUN
@@ -8669,7 +9858,7 @@ Key: PRE00000 is PRESTIGE OFFICE FURNITURE Disk=8470    .
 Hit End of File after 11
 ])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 # verify that all of this works with wrapping to EXTFH calls
 # and that those don't trash the FH--FCD allocated memory
@@ -8677,7 +9866,7 @@ AT_CHECK([diff reference prog.out], [0], [], [])
 AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 
 AT_CLEANUP
@@ -8887,6 +10076,7 @@ doOpenFile(
    printf("EXFTH did %s; Status=%c%c; File now %s\n",
        opmsg, fcd->fileStatus[0], fcd->fileStatus[1],
        (fcd->openMode & OPEN_NOT_OPEN) ? "Closed" : "Open");
+   fflush(stdout);
    return sts;
 }
 
@@ -8941,13 +10131,13 @@ TSTFH (unsigned char *opCodep, FCD3 *fcd)
    sts = EXTFH(opCodep, fcd);
    printf("EXFTH did %s; Status=%c%c\n", txtOpCode(opCode),
        fcd->fileStatus[0], fcd->fileStatus[1]);
+   fflush(stdout);
    return sts;
 }
 
 static char *           /* Return Text name of function */
 txtOpCode(int opCode)
 {
-   static char tmp[32];
    switch (opCode) {
    case OP_OPEN_INPUT:     return "OPEN_IN";
    case OP_OPEN_OUTPUT:       return "OPEN_OUT";
@@ -8999,8 +10189,11 @@ txtOpCode(int opCode)
    case OP_WRITE_AFTER_TAB:   return "WRITE_AFTER_TAB";
    case OP_WRITE_AFTER_PAGE:  return "WRITE_AFTER_PAGE";
    }
-   sprintf(tmp, "Func 0x%02X:", opCode);
-   return tmp;
+   {
+      static char wrk[20];
+      snprintf (wrk, sizeof(wrk), "Func 0x%02X", opCode);
+      return wrk;
+   }
 }
 ]])
 
@@ -9267,7 +10460,7 @@ AT_DATA([reference],
  10
 ])
 
-AT_CHECK([diff reference TEST-OUT], [0], [], [])
+AT_CHECK([$DIFF reference TEST-OUT], [0], [], [])
 
 AT_CLEANUP
 
@@ -9460,7 +10653,7 @@ THE LAMB WAS GRAND AND A GRANDMA
 THE OLD EWE CHORTLED
 ])
 
-AT_CHECK([diff reference report.txt], [0])
+AT_CHECK([$DIFF reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -11227,7 +12420,7 @@ AT_DATA([reference],
  10
 ])
 
-AT_CHECK([diff reference TEST-OUT], [0], [], [])
+AT_CHECK([$DIFF reference TEST-OUT], [0], [], [])
 
 AT_CLEANUP
 
@@ -12278,12 +13471,576 @@ Ph=8787458374 Key: OLD00000 is OLD TYME PIZZA MFG. CO.  .
 Hit End of File
 ])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
 
 AT_CHECK([$COMPILE -fcallfh=EXTFH -o extfh prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./extfh 1>prog.out], [0], [], [])
 
-AT_CHECK([diff reference prog.out], [0], [], [])
+AT_CHECK([$DIFF reference prog.out], [0], [], [])
+
+AT_CLEANUP
+
+
+# This is, so far, only supported by the BDB backend
+AT_SETUP([INDEXED file under ASCII/EBCDIC collation])
+AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" != "db"])
+
+AT_DATA([prog.cpy], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       OBJECT-COMPUTER.
+           PROGRAM COLLATING SEQUENCE IS DISORDERED.
+       SPECIAL-NAMES.
+           ALPHABET DISORDERED IS "WVUTSRJIHGFEDCB".
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               FILE-COLSEQ
+               KEY-COLSEQ
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY1 WITH DUPLICATES
+               ALTERNATE RECORD KEY IS MY-AKEY2 WITH DUPLICATES.
+
+       DATA DIVISION.
+
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC X(3).
+           05  MY-AKEY1  PIC X(3).
+           05  MY-AKEY2  BINARY-LONG.
+           05  MY-DATA   PIC 9.
+
+       WORKING-STORAGE SECTION.
+       01  DONE-READING  PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+
+           DISPLAY "WRITING DATA"
+
+           MOVE "CCC" TO MY-PKEY
+           MOVE "888" TO MY-AKEY1
+           MOVE 43 TO MY-AKEY2
+           MOVE 1 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "ZZZ" TO MY-PKEY
+           MOVE "AAA" TO MY-AKEY1
+           MOVE 40 TO MY-AKEY2
+           MOVE 2 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "DDD" TO MY-PKEY
+           MOVE "777" TO MY-AKEY1
+           MOVE 42 TO MY-AKEY2
+           MOVE 3 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "XXX" TO MY-PKEY
+           MOVE "VVV" TO MY-AKEY1
+           MOVE 42 TO MY-AKEY2
+           MOVE 4 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "666" TO MY-PKEY
+           MOVE "AAA" TO MY-AKEY1
+           MOVE 41 TO MY-AKEY2
+           MOVE 5 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE "222" TO MY-PKEY
+           MOVE "555" TO MY-AKEY1
+           MOVE 44 TO MY-AKEY2
+           MOVE 6 TO MY-DATA
+           WRITE MY-REC
+
+           CLOSE MY-FILE
+
+
+           OPEN I-O MY-FILE
+
+           DISPLAY "DELETING DATA"
+
+           MOVE "ZZZ" TO MY-PKEY
+           DELETE MY-FILE
+
+           MOVE "XXX" TO MY-PKEY
+           DELETE MY-FILE
+
+           CLOSE MY-FILE
+
+
+           OPEN INPUT MY-FILE
+
+           DISPLAY "READING BY PKEY"
+
+           MOVE 0 TO DONE-READING
+           MOVE SPACES TO MY-PKEY
+           START MY-FILE KEY >= MY-PKEY
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-AKEY1
+                       " " MY-AKEY2 " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           DISPLAY "READING BY AKEY1"
+
+           MOVE 0 TO DONE-READING
+           MOVE SPACES TO MY-AKEY1
+           START MY-FILE KEY >= MY-AKEY1
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-AKEY1
+                       " " MY-AKEY2 " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           DISPLAY "READING BY AKEY2"
+
+           MOVE 0 TO DONE-READING
+           MOVE ZERO TO MY-AKEY2
+           START MY-FILE KEY >= MY-AKEY2
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-AKEY1
+                       " " MY-AKEY2 " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           CLOSE MY-FILE
+
+
+           DISPLAY "DONE"
+
+           STOP RUN.
+])
+
+AT_DATA([reference_ascii],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+222 555 +0000000044 6
+666 AAA +0000000041 5
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+READING BY AKEY1
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+666 AAA +0000000041 5
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+AT_DATA([reference_ascii_ebcdic],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+222 555 +0000000044 6
+666 AAA +0000000041 5
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+READING BY AKEY1
+666 AAA +0000000041 5
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+AT_DATA([reference_ebcdic],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+222 555 +0000000044 6
+666 AAA +0000000041 5
+READING BY AKEY1
+666 AAA +0000000041 5
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+AT_DATA([reference_ebcdic_ascii],
+[WRITING DATA
+DELETING DATA
+READING BY PKEY
+CCC 888 +0000000043 1
+DDD 777 +0000000042 3
+222 555 +0000000044 6
+666 AAA +0000000041 5
+READING BY AKEY1
+222 555 +0000000044 6
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+666 AAA +0000000041 5
+READING BY AKEY2
+666 AAA +0000000041 5
+DDD 777 +0000000042 3
+CCC 888 +0000000043 1
+222 555 +0000000044 6
+DONE
+])
+
+# Note: `-Wno-others` is for ignored COLLATIONS for non-alphanumeric keys
+
+# Testing ASCII file collating sequence using clause
+AT_DATA([prog1.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
+         ==KEY-COLSEQ== BY ====.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1 1>prog1.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii prog1.out], [0], [], [])
+
+# Testing ASCII file collating sequence using flag
+AT_DATA([prog2.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ====.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2 1>prog2.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii prog2.out], [0], [], [])
+
+
+# Testing ASCII file collating sequence + EBCDIC key collating sequence using clauses
+AT_DATA([prog3.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS ASCII==
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3 1>prog3.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii_ebcdic prog3.out], [0], [], [])
+
+# Testing ASCII file collating sequence using flag + EBCDIC key collating sequence using clause
+AT_DATA([prog4.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog4.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4 1>prog4.out], [0], [], [])
+AT_CHECK([$DIFF reference_ascii_ebcdic prog4.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence using clause
+AT_DATA([prog5.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS EBCDIC==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog5.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5 1>prog5.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic prog5.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence using flag
+AT_DATA([prog6.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ====.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog6.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6 1>prog6.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic prog6.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence + ASCII key collating sequence using clauses
+AT_DATA([prog7.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ==COLLATING SEQUENCE IS EBCDIC==
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others prog7.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog7 1>prog7.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic_ascii prog7.out], [0], [], [])
+
+# Testing EBCDIC file collating sequence using flag + ASCII key collating sequence using clause
+AT_DATA([prog8.cob], [
+       COPY "prog.cpy" REPLACING
+         ==FILE-COLSEQ== BY ====
+         ==KEY-COLSEQ== BY ==COLLATING SEQUENCE OF MY-AKEY1 IS ASCII==.
+])
+AT_CHECK([$COMPILE -Wno-unfinished -Wno-others -fdefault-file-colseq=EBCDIC prog8.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog8 1>prog8.out], [0], [], [])
+AT_CHECK([$DIFF reference_ebcdic_ascii prog8.out], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file with collation on group key])
+AT_KEYWORDS([runfile WRITE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+# This is, so far, only supported by the BDB backend
+AT_XFAIL_IF([test "$COB_HAS_ISAM" != "db"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05   MY-KEY.
+             10 MY-KEY-1 PIC X.
+             10 MY-KEY-2 PIC X.
+           05  MY-DATA   PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "111" TO MY-REC WRITE MY-REC
+           MOVE "AA2" TO MY-REC WRITE MY-REC
+           MOVE "223" TO MY-REC WRITE MY-REC
+           MOVE "BB4" TO MY-REC WRITE MY-REC
+           MOVE "335" TO MY-REC WRITE MY-REC
+           MOVE "CC6" TO MY-REC WRITE MY-REC
+           MOVE "447" TO MY-REC WRITE MY-REC
+           MOVE "DD8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE LOW-VALUES TO MY-KEY
+           START MY-FILE KEY >= MY-KEY
+             INVALID KEY
+               DISPLAY "INVALID KEY"
+             NOT INVALID KEY
+               PERFORM UNTIL EXIT
+                 READ MY-FILE NEXT
+                    AT END
+                       EXIT PERFORM
+                    NOT AT END
+                       DISPLAY MY-REC
+                 END-READ
+               END-PERFORM
+           END-START.
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout],
+[ASCII:
+111
+223
+335
+447
+AA2
+BB4
+CC6
+DD8
+EBCDIC:
+AA2
+BB4
+CC6
+DD8
+111
+223
+335
+447
+])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=ASCII prog.cob -o ascii], [0])
+AT_CHECK([$COMPILE -Wno-unfinished -fdefault-file-colseq=EBCDIC prog.cob -o ebcdic], [0])
+
+AT_CHECK([
+  echo "ASCII:"  && $COBCRUN_DIRECT ./ascii && \
+  echo "EBCDIC:" && $COBCRUN_DIRECT ./ebcdic
+], [0], [expout])	    # <- compare stdout with existing `expout`
+
+AT_CLEANUP
+
+
+# Note: codegen only for now
+AT_SETUP([INDEXED file with NATIONAL collation])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY
+	       COLLATING SEQUENCE FOR NATIONAL IS ASCII.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-KEY  PIC N.
+           05  MY-DATA PIC 9.
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE "11" TO MY-REC WRITE MY-REC
+           MOVE "A2" TO MY-REC WRITE MY-REC
+           MOVE "23" TO MY-REC WRITE MY-REC
+           MOVE "B4" TO MY-REC WRITE MY-REC
+           MOVE "35" TO MY-REC WRITE MY-REC
+           MOVE "C6" TO MY-REC WRITE MY-REC
+           MOVE "47" TO MY-REC WRITE MY-REC
+           MOVE "D8" TO MY-REC WRITE MY-REC
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_DATA([expout], [])
+
+# Note: ignore any unfinished warning as the test is about the runtime behavior:
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [],
+[prog.cob:11: warning: NATIONAL COLLATING SEQUENCE is not implemented
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [expout])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file numeric keys ordering])
+AT_KEYWORDS([runfile])
+
+# BUG: non-display numeric keys are currently ordered lexicographically
+# with respect to their binary representation, which is incorrect.
+# Could be fixed with a custom comparison function (BDB)
+# or using key types other than CHARTYPE (ISAM).
+AT_XFAIL_IF([true])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   BINARY-LONG.
+           05  MY-DATA   PIC 9.
+
+       WORKING-STORAGE SECTION.
+       01  DONE-READING  PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+
+           DISPLAY "WRITING DATA"
+
+           MOVE 255 TO MY-PKEY
+           MOVE 1 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE 256 TO MY-PKEY
+           MOVE 2 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE 65535 TO MY-PKEY
+           MOVE 3 TO MY-DATA
+           WRITE MY-REC
+
+           MOVE 65536 TO MY-PKEY
+           MOVE 4 TO MY-DATA
+           WRITE MY-REC
+
+           CLOSE MY-FILE
+
+
+           OPEN INPUT MY-FILE
+
+           DISPLAY "READING BY PKEY"
+
+           MOVE 0 TO DONE-READING
+           MOVE 0 TO MY-PKEY
+           START MY-FILE KEY >= MY-PKEY
+
+           PERFORM UNTIL NOT DONE-READING = 0
+               READ MY-FILE NEXT
+                   AT END MOVE 1 TO DONE-READING
+               END-READ
+               IF DONE-READING = 0
+                   DISPLAY MY-PKEY " " MY-DATA
+               END-IF
+           END-PERFORM
+
+           CLOSE MY-FILE
+
+           DISPLAY "DONE" WITH NO ADVANCING
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[WRITING DATA
+READING BY PKEY
++0000000255 1
++0000000256 2
++0000065535 3
++0000065536 4
+DONE], [])
 
 AT_CLEANUP
 
@@ -12366,7 +14123,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [a
 a
@@ -12658,7 +14415,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL data])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile LS_NULLS LS_VALIDATE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12683,17 +14440,19 @@ AT_DATA([prog.cob], [
            10  CM-TYPE                         PICTURE X.
            10  CM-COMPANY                      PICTURE X(25).
            10  CM-DISK                         PICTURE X(8).
-           10  CM-NO-TERMINALS                 PICTURE 9(4) COMP-4.
-           10  CM-PK-DATE                      PICTURE S9(14) COMP-3.
+           10  CM-NO-TERMINALS                 PICTURE 9(2) COMP-4.
+           10  CM-NO-TERMINALS2                PICTURE 9(2) COMP-4.
+           10  CM-PK-DATE                      PICTURE S9(9) COMP-3.
 
        WORKING-STORAGE SECTION.
 
-       78  MAX-SUB           VALUE  4.
+       78  MAX-SUB           VALUE  5.
        77  CUST-STAT                           PICTURE X(2).
 
        01  TEST-DATA.
 
          02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "   00000".
            05  FILLER PIC X(8) VALUE "ALP00000".
            05  FILLER PIC X(8) VALUE "BET00000".
            05  FILLER PIC X(8) VALUE "GAM00000".
@@ -12702,6 +14461,7 @@ AT_DATA([prog.cob], [
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
                                        PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "SPACE COMPANY            ".
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
            05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
@@ -12709,6 +14469,7 @@ AT_DATA([prog.cob], [
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
                                        PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
+           05  FILLER PIC X(10) VALUE "EARTH     ".
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
            05  FILLER PIC X(10) VALUE "WASHINGTON".
@@ -12717,11 +14478,20 @@ AT_DATA([prog.cob], [
                                        PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+           05  FILLER PIC 9(3) VALUE 9.
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) OCCURS MAX-SUB.
+         02  DATA-NO-TERMINALS-TBL2.
+           05  FILLER PIC 9(3) VALUE 50.
            05  FILLER PIC 9(3) VALUE 10.
            05  FILLER PIC 9(3) VALUE 13.
            05  FILLER PIC 9(3) VALUE 3.
            05  FILLER PIC 9(3) VALUE 254.
-         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+         02  DATA-NO-TERMINALS2 REDEFINES DATA-NO-TERMINALS-TBL2
                                        PIC 9(3) OCCURS MAX-SUB.
        01  WORK-AREA.
            05  SUB                             BINARY-SHORT UNSIGNED.
@@ -12763,10 +14533,21 @@ AT_DATA([prog.cob], [
            READ FLATFILE
            IF CUST-STAT NOT = "00"
              DISPLAY "Read Status: " CUST-STAT
+      *      ignore truncation and skip next record (not portable to EBCDIC)
+             IF CUST-STAT = "06"
+                PERFORM SHOW-RECORD
+                READ FLATFILE
+                MOVE "00" TO CUST-STAT
+             END-IF
            ELSE
-             DISPLAY "Read  " CM-CUST-NUM
-                     " Trms:" CM-NO-TERMINALS
+             PERFORM SHOW-RECORD
            END-IF.
+           
+
+       SHOW-RECORD.
+           DISPLAY "Read  " CM-CUST-NUM
+                   " Trms:" CM-NO-TERMINALS
+                   "-"      CM-NO-TERMINALS2.
 
        LOADFILE.
            OPEN OUTPUT FLATFILE.
@@ -12781,9 +14562,13 @@ AT_DATA([prog.cob], [
            MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
            MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
            MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
-           MOVE 20070319                     TO CM-PK-DATE.
-           IF SUB = 1 OR 4 OR 6
-               MOVE -20070319                 TO CM-PK-DATE.
+           MOVE DATA-NO-TERMINALS2 (SUB)     TO CM-NO-TERMINALS2.
+           IF SUB = 1
+               MOVE 505050505                TO CM-PK-DATE
+           ELSE IF SUB = 4 OR 6
+               MOVE -20070319                TO CM-PK-DATE
+           ELSE
+               MOVE 20070319                 TO CM-PK-DATE.
 
            IF  ODD-RECORD
                MOVE "8417"                   TO CM-DISK
@@ -12795,17 +14580,20 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-trunc prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [MF Load data
 MF Open Sts: 00
-Read  ALP00000 Trms:0010
-Read  BET00000 Trms:0013
-Read  GAM00000 Trms:0003
-Read  DEL00000 Trms:0254
+Read     00000 Trms:009-050
+Read  ALP00000 Trms:009-010
+Read  BET00000 Trms:009-013
+Read  GAM00000 Trms:009-003
+Read  DEL00000 Trms:009-254
 Read Status: 10
 Std Open Sts: 00
+Read Status: 06
+Read     00000 Trms:000-009
 Read Status: 09
 Std Load data
 Error status 71 writing record ALP00000
@@ -13184,7 +14972,7 @@ AT_DATA([prog.cob], [
                 ASCENDING sort-entry
                 USING  SORT-IN
                 GIVING SORT-IN.
-             STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13200,7 +14988,7 @@ world
 AT_CLEANUP
 
 
-AT_SETUP([File SORT, LINE SEQUENTIAL variable records])
+AT_SETUP([File SORT, LINE SEQUENTIAL])
 AT_KEYWORDS([runfile SORT USING GIVING])
 
 AT_DATA([file1],
@@ -13264,7 +15052,7 @@ Z9XXXXXXXXXX
 AT_CLEANUP
 
 
-AT_SETUP([EXTFH: File SORT, LINE SEQUENTIAL variable records])
+AT_SETUP([EXTFH: File SORT, LINE SEQUENTIAL])
 AT_KEYWORDS([runfile SORT USING GIVING EXTFH])
 
 # same test as above, but this time using an external file handler
@@ -13387,11 +15175,11 @@ AT_DATA([prog.cob], [
           2  file4-key2 pic 9.
           2  filler pic x(10).
        PROCEDURE DIVISION.
-          MERGE file4 ON ASCENDING file4-key1
+           MERGE file4 ON ASCENDING file4-key1
                         DESCENDING file4-key2
              USING file1 file2
              GIVING file3.
-          STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13447,7 +15235,7 @@ AT_DATA([prog.cob], [
                 ASCENDING KEY WRK-REC
                 USING  SORT-IN
                 GIVING SORT-OUT.
-             STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13508,37 +15296,37 @@ AT_DATA([prog.cob], [
            3 1-data pic x(10).
        PROCEDURE DIVISION.
        a01-main.
-          SORT file1 ON ASCENDING file1-key
-             INPUT PROCEDURE a02-release-to-sort
-             OUTPUT PROCEDURE a03-return-from-sort.
-          STOP RUN.
+           SORT file1 ON ASCENDING file1-key
+              INPUT PROCEDURE a02-release-to-sort
+              OUTPUT PROCEDURE a03-return-from-sort.
+           STOP RUN.
       *
        a02-release-to-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
-          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
+           PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
+              RELEASE file1-rec from 1-record(ix-1)
+           END-PERFORM.
+           PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
+              RELEASE file1-rec from 1-record(ix-1)
+           END-PERFORM.
       *
        a03-return-from-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 1
-             UNTIL (ix-1 > 26) OR (w-eof = 1)
-             RETURN file1 RECORD
-               AT END MOVE 1 TO w-eof
-             END-RETURN
-             IF (file1-rec <> 1-record(ix-1))
-                MOVE 1 TO w-eof
-             END-IF
-          END-PERFORM.
-          IF (w-eof = 1)
-             DISPLAY "FAILED: unexpected eof"
-          ELSE
-             RETURN file1 RECORD
-               AT END CONTINUE
-               NOT AT END DISPLAY "FAILED: expected eof"
-             END-RETURN
-          END-IF.
+           PERFORM VARYING ix-1 FROM 1 BY 1
+              UNTIL (ix-1 > 26) OR (w-eof = 1)
+              RETURN file1 RECORD
+                AT END MOVE 1 TO w-eof
+              END-RETURN
+              IF (file1-rec <> 1-record(ix-1))
+                 MOVE 1 TO w-eof
+              END-IF
+           END-PERFORM.
+           IF (w-eof = 1)
+              DISPLAY "FAILED: unexpected eof"
+           ELSE
+              RETURN file1 RECORD
+                AT END CONTINUE
+                NOT AT END DISPLAY "FAILED: expected eof"
+              END-RETURN
+           END-IF.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13586,11 +15374,11 @@ AT_DATA([prog.cob], [
           2  file3-key2 pic 9.
           2  file3-dot pic x.
        PROCEDURE DIVISION.
-          SORT file3 ON ASCENDING file3-key1
-                        DESCENDING file3-key2
-             USING file1
-             GIVING file2.
-          STOP RUN.
+           SORT file3 ON ASCENDING file3-key1
+                         DESCENDING file3-key2
+              USING file1
+              GIVING file2.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13639,38 +15427,38 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
        DECLARATIVES.
        P01 SECTION.
-          USE AFTER ERROR PROCEDURE ON FILE-EXT.
+           USE AFTER ERROR PROCEDURE ON FILE-EXT.
        P0101.
-          DISPLAY "ERROR ON FILE-EXT".
+           DISPLAY "ERROR ON FILE-EXT".
        P02 SECTION.
-          USE AFTER ERROR PROCEDURE ON OUTPUT.
+           USE AFTER ERROR PROCEDURE ON OUTPUT.
        P0201.
-          DISPLAY "ERROR ON OUTPUT".
+           DISPLAY "ERROR ON OUTPUT".
        END DECLARATIVES.
        MAIN SECTION.
-         OPEN OUTPUT FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-1".
+           OPEN OUTPUT FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-1".
       * The next line triggers a SILENT error in NESTED-PROGRAM-1-2
-         CLOSE FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-2".
-         GOBACK.
+           CLOSE FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-2".
+           GOBACK.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-1.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "1-1 TRIED TO WRITE".
-         GOBACK.
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "1-1 TRIED TO WRITE".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-1.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-2.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "1-2 TRIED TO WRITE".
-         GOBACK.
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "1-2 TRIED TO WRITE".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-2.
 
        END PROGRAM NESTED-PROGRAM-1.
@@ -13691,9 +15479,9 @@ AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-FILES.
        PROCEDURE DIVISION.
-         CALL    "NESTED-PROGRAM-1".
-         CALL    "NESTED-PROGRAM-2".
-         STOP RUN.
+           CALL    "NESTED-PROGRAM-1".
+           CALL    "NESTED-PROGRAM-2".
+           STOP RUN.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1.
@@ -13711,42 +15499,42 @@ AT_DATA([prog2.cob], [
        DECLARATIVES.
        P01 SECTION.
       * This one is GLOBAL and should be called from within nested programs
-          USE GLOBAL AFTER ERROR PROCEDURE ON FILE-EXT.
+           USE GLOBAL AFTER ERROR PROCEDURE ON FILE-EXT.
        P0101.
-          DISPLAY "ERROR ON FILE-EXT".
+           DISPLAY "ERROR ON FILE-EXT".
        P02 SECTION.
-          USE AFTER ERROR PROCEDURE ON OUTPUT.
+           USE AFTER ERROR PROCEDURE ON OUTPUT.
        P0201.
-          DISPLAY "ERROR ON OUTPUT".
+           DISPLAY "ERROR ON OUTPUT".
        END DECLARATIVES.
        MAIN SECTION.
-         OPEN OUTPUT FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-1".
-	 DISPLAY "CLOSING FILE DESCRIPTOR".
-         CLOSE FILE-EXT.
-         CALL    "NESTED-PROGRAM-1-2".
-         GOBACK.
+           OPEN OUTPUT FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-1".
+           DISPLAY "CLOSING FILE DESCRIPTOR".
+           CLOSE FILE-EXT.
+           CALL    "NESTED-PROGRAM-1-2".
+           GOBACK.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-1.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-	 DISPLAY "ENTERING NESTED-PROGRAM-1-1".
-	 DISPLAY "TRYING TO WRITE".
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "EXITING NESTED-PROGRAM-1-1".
-         GOBACK.
+           DISPLAY "ENTERING NESTED-PROGRAM-1-1".
+           DISPLAY "TRYING TO WRITE".
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "EXITING NESTED-PROGRAM-1-1".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-1.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-1-2.
        PROCEDURE DIVISION.
          NESTED-PROGRAM .
-	 DISPLAY "ENTERING NESTED-PROGRAM-1-2".
-	 DISPLAY "TRYING TO WRITE".
-         WRITE FILE-EXT-REC FROM "Hello".
-	 DISPLAY "EXITING NESTED-PROGRAM-1-2".
-         GOBACK.
+           DISPLAY "ENTERING NESTED-PROGRAM-1-2".
+           DISPLAY "TRYING TO WRITE".
+           WRITE FILE-EXT-REC FROM "Hello".
+           DISPLAY "EXITING NESTED-PROGRAM-1-2".
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-1-2.
 
        END PROGRAM NESTED-PROGRAM-1.
@@ -13754,7 +15542,7 @@ AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. NESTED-PROGRAM-2.
        PROCEDURE DIVISION.
-         GOBACK.
+           GOBACK.
        END PROGRAM NESTED-PROGRAM-2.
 
        END PROGRAM NESTED-FILES.
@@ -13769,7 +15557,9 @@ TRYING TO WRITE
 ERROR ON FILE-EXT
 EXITING NESTED-PROGRAM-1-2
 ], [])
+
 AT_CLEANUP
+
 
 AT_SETUP([OPEN / CLOSE with multiple filenames])
 AT_KEYWORDS([DECLARATIVES file error])
@@ -13791,8 +15581,8 @@ AT_DATA([prog1.cob], [
        FD FILE2.
          01 FS-FILE2 PIC X(10).
        WORKING-STORAGE SECTION.
-	 01  STAT-FILE1               PIC XX.
-	 01  STAT-FILE2               PIC XX.
+       01  STAT-FILE1               PIC XX.
+       01  STAT-FILE2               PIC XX.
        PROCEDURE DIVISION.
        DECLARATIVES.
        F-FILE1 SECTION. USE AFTER ERROR PROCEDURE ON FILE1.
@@ -13809,7 +15599,7 @@ AT_DATA([prog1.cob], [
        PROGRAMME SECTION.
        MAIN.
           OPEN INPUT FILE1
-	  OPEN INPUT FILE2.
+          OPEN INPUT FILE2.
           DISPLAY "READ FILE1".
           READ FILE1.
           DISPLAY "READ FILE2".
@@ -13839,8 +15629,8 @@ AT_DATA([prog2.cob], [
        FD FILE2.
          01 FS-FILE2 PIC X(10).
        WORKING-STORAGE SECTION.
-	 01  STAT-FILE1               PIC XX.
-	 01  STAT-FILE2               PIC XX.
+       01  STAT-FILE1               PIC XX.
+       01  STAT-FILE2               PIC XX.
        PROCEDURE DIVISION.
        DECLARATIVES.
        F-FILE1 SECTION. USE AFTER ERROR PROCEDURE ON FILE1.
@@ -13857,7 +15647,7 @@ AT_DATA([prog2.cob], [
        PROGRAMME SECTION.
        MAIN.
           OPEN INPUT FILE1
-	             FILE2.
+                     FILE2.
           DISPLAY "READ FILE1".
           READ FILE1.
           DISPLAY "READ FILE2".
@@ -13893,11 +15683,107 @@ DELETE FILES
 AT_CHECK([$COMPILE prog1.cob])
 AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog1 > prog1.txt])
-AT_CHECK([diff expected.txt prog1.txt])
+AT_CHECK([$DIFF expected.txt prog1.txt])
 
 AT_CHECK([$COMPILE prog2.cob])
 AT_DATA([file1.txt], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2 > prog2.txt])
-AT_CHECK([diff expected.txt prog2.txt])
+AT_CHECK([$DIFF expected.txt prog2.txt])
+
+AT_CLEANUP
+
+
+AT_SETUP([DELETE WITH COLLATING SEQUENCE])
+AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. READDEL.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+           SELECT READDEL ASSIGN EXTERNAL READDEL
+             ORGANIZATION INDEXED
+             ACCESS MODE DYNAMIC
+             RECORD KEY READDEL-KEY
+             FILE STATUS STA-READDEL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  READDEL.
+       01  READDEL-REC.
+        02 READDEL-KEY.
+           05 READDEL-KEY-NUM   PIC S9(15).
+        02 READDEL-VALUE.
+           05 READDEL-STRING    PIC X(10).
+           05 READDEL-NUM       PIC S9(27) OCCURS 10 TIMES.
+      *>
+
+      *>----------------------*
+       WORKING-STORAGE SECTION.
+      *>----------------------*
+
+       01 STA-READDEL PIC X(2).
+       01 END-READDEL PIC 9(1).
+       01 WS-COUNT PIC S9(2) VALUE 0.
+
+      *>------------------*
+       PROCEDURE DIVISION.
+      *>------------------*
+           MOVE 0 TO END-READDEL.
+           OPEN OUTPUT READDEL.
+           PERFORM 20 TIMES
+             MOVE WS-COUNT TO READDEL-KEY-NUM
+             MOVE "READDELNUM" TO READDEL-STRING
+             MOVE WS-COUNT TO READDEL-NUM(1)
+             MOVE WS-COUNT TO READDEL-NUM(2)
+             MOVE WS-COUNT TO READDEL-NUM(3)
+             MOVE WS-COUNT TO READDEL-NUM(4)
+             MOVE WS-COUNT TO READDEL-NUM(5)
+             MOVE WS-COUNT TO READDEL-NUM(6)
+             MOVE WS-COUNT TO READDEL-NUM(7)
+             MOVE WS-COUNT TO READDEL-NUM(8)
+             MOVE WS-COUNT TO READDEL-NUM(9)
+             MOVE WS-COUNT TO READDEL-NUM(10)
+             WRITE READDEL-REC
+               INVALID KEY
+                 DISPLAY "INVALID KEY " READDEL-KEY
+                 STOP RUN
+             END-WRITE
+             ADD 1 TO WS-COUNT
+           END-PERFORM.
+           CLOSE READDEL.
+           MOVE LOW-VALUE TO READDEL-KEY.
+           OPEN I-O READDEL.
+           START READDEL KEY IS > READDEL-KEY
+             INVALID KEY
+               DISPLAY "ERR START READDEL=" STA-READDEL
+               MOVE 1 TO END-READDEL
+           END-START.
+           PERFORM UNTIL END-READDEL = 1
+             READ READDEL NEXT RECORD
+               AT END
+                 MOVE 1 TO END-READDEL
+               NOT AT END
+                 DELETE READDEL
+                   INVALID KEY
+                     DISPLAY "ERR DELETE KEY=" READDEL-KEY
+                             " / STATUS=" STA-READDEL
+                 END-DELETE
+             END-READ
+           END-PERFORM.
+           CLOSE READDEL.
+           STOP RUN.
+
+
+])
+
+AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog])
 
 AT_CLEANUP

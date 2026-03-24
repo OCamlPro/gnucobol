@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -21,6 +21,14 @@
 
 #ifndef COB_LOCAL_H
 #define COB_LOCAL_H
+
+#pragma once
+
+/* config inclusion for LSPs with file-only context;
+   should otherwise be included up-front */
+#ifndef COB_CONFIG_DIR
+#include "config.h"
+#endif
 
 /* We use this file to define/prototype things that should not be
    exported to user space
@@ -253,10 +261,25 @@ Note: also defined together with __clang__ in both frontends:
 #define	COB_BEEP_VALUE		cobsetptr->cob_beep_value
 #define	COB_TIMEOUT_SCALE	cobsetptr->cob_timeout_scale
 #define	COB_INSERT_MODE		cobsetptr->cob_insert_mode
+#define	COB_HIDE_CURSOR		cobsetptr->cob_hide_cursor
 #define	COB_EXTENDED_STATUS	cobsetptr->cob_extended_status
 #define	COB_MOUSE_FLAGS	cobsetptr->cob_mouse_flags
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
 #define	COB_USE_ESC		cobsetptr->cob_use_esc
+
+#if defined(COB_TLS)
+    /* already defined, for example as static to explicit disable TLS */
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && \
+      (!defined(__GNUC__) || __GNUC__ >= 5)
+    #define COB_TLS	_Thread_local
+#elif defined(__GNUC__) && (__GNUC__ >= 4) || defined(__clang__) || \
+      defined(__hpux) || defined(_AIX) || defined(__sun)
+    #define COB_TLS	static __thread
+#elif defined(_WIN32)
+    #define COB_TLS	__declspec(thread)
+#else
+    #define COB_TLS	static	/* fallback definition */
+#endif
 
 /* Global settings structure */
 
@@ -305,6 +328,8 @@ typedef struct __cob_settings {
 	unsigned char	cob_concat_sep[4];	/* Concatenated sequential file name separator (+)*/
 	char 		*cob_file_path;
 	char		*bdb_home;
+	size_t		cob_heap_memory;		/* Memory segment for VFILE    */
+	size_t		cob_heap_memory_64;		/* Memory segment for VFILE 64 */
 	size_t		cob_sort_memory;
 	size_t		cob_sort_chunk;
 
@@ -321,9 +346,9 @@ typedef struct __cob_settings {
 	unsigned int	cob_use_esc;		/* Check ESC key */
 	unsigned int	cob_timeout_scale;	/* timeout scale */
 	unsigned int	cob_insert_mode;	/* insert toggle, 0=off, 1=on */
+	unsigned int	cob_hide_cursor;	/* hide cursor, 0=visible, 1=hidden */
 	unsigned int	cob_exit_wait;		/* wait on program exit if no ACCEPT came after last DISPLAY */
 	const char		*cob_exit_msg;		/* message for cob_exit_wait */
-
 
 	/* reportio.c */
 	unsigned int 	cob_col_just_lrc;	/* Justify data in column LEFT/RIGHT/CENTER */
@@ -347,6 +372,10 @@ typedef struct __cob_settings {
 	FILE		*cob_dump_file;		/* FILE* to write DUMP information to */
 
 	char		*cob_dump_filename;	/* Place to write dump of variables */
+	char		*cob_prof_filename;	/* Place to write profiling data */
+	int		cob_prof_enable;	/* Whether profiling is enabled */
+	int		cob_prof_max_depth;	/* Max stack depth during profiling (255 by default) */
+	char		*cob_prof_format;	/* Format of prof CSV line */
 	int		cob_dump_width;		/* Max line width for dump */
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
@@ -416,6 +445,7 @@ struct config_tbl {
 #else
 #define	COB_MAX_FIELD_SIZE	2147483646
 #endif
+#define	COB_MAX_FIELD_SIZE_LINKAGE	(INT_MAX - 1)
 
 /* Maximum bytes in an unbounded table entry
    (IBM: old 999999998, current 999999999) */
@@ -435,11 +465,13 @@ COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
 COB_HIDDEN char		*cob_get_filename_print	(cob_file *, const int);
+COB_HIDDEN char		*cob_setup_filename		(const cob_field *);
 COB_HIDDEN void		cob_init_reportio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_call		(cob_global *, cob_settings *, const int);
 COB_HIDDEN void		cob_init_intrinsic	(cob_global *);
 COB_HIDDEN void		cob_init_strings	(cob_global *);
 COB_HIDDEN void		cob_init_move		(cob_global *, cob_settings *);
+COB_HIDDEN void		cob_init_prof		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_screenio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_mlio		(cob_global * const);
 
@@ -486,6 +518,10 @@ COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
+COB_HIDDEN char*        cob_get_strerror (void);
+
+COB_HIDDEN int		cob_cmp_strings (unsigned char*, unsigned char*,
+						 size_t, size_t, const unsigned char*);
 
 enum cob_case_modifier {
 	CCM_NONE,
@@ -502,6 +538,9 @@ COB_HIDDEN int		cob_field_to_string	(const cob_field *, void *,
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
 COB_HIDDEN char	*cob_strndup		(const char *, const size_t);
 
+/* Function called by the runtime at the end of execution to save the
+ * profiling information in a file. */
+COB_HIDDEN void cob_prof_end (void);
 
 enum cob_datetime_res {
 	DTR_DATE,
@@ -547,7 +586,7 @@ COB_HIDDEN char		*cob_int_to_formatted_bytestring	(int, char*);
 COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
-COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
+COB_HIDDEN int		cob_runtime_warning_ss (const char *, const char *);
 
 
 DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;
@@ -567,6 +606,14 @@ cob_max_int (const int x, const int y)
 	if (x > y) return x;
 	return y;
 }
+
+COB_HIDDEN int		cob_cmps	(const unsigned char *, const unsigned char *,
+					 const size_t, const unsigned char *);
+
+COB_HIDDEN FILE *	cob_open_logfile (const char *filename);
+
+/* Whether we are in testsuite mode */
+COB_HIDDEN int is_test;
 
 #undef	COB_HIDDEN
 

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Chuck Haatveet
 
@@ -31,8 +31,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#include <ctype.h>
-#include <errno.h>
 
 #include <math.h>
 #ifdef HAVE_FINITE_IEEEFP_H
@@ -215,16 +213,17 @@ mpz_set_sll (mpz_ptr dest, const cob_s64_t val)
 static cob_u64_t
 mpz_get_ull (const mpz_ptr src)
 {
-	size_t			size;
-
-	size = mpz_size (src);
-	if (!size) {
+#if	GMP_LIMB_BITS > 32
+	if (mpz_sgn (src) == 0) {
 		return 0;
 	}
-#if	GMP_LIMB_BITS > 32
 	return (cob_u64_t)src->_mp_d[0];
 #else
-	if (size < 2) {
+	const size_t	size = mpz_size (src);	/* depr. func! */
+	if (size == 0) {
+		return 0;
+	}
+	if (size == 1) {
 		return (cob_u64_t)src->_mp_d[0];
 	}
 	return (cob_u64_t)src->_mp_d[0] |
@@ -235,20 +234,20 @@ mpz_get_ull (const mpz_ptr src)
 static cob_s64_t
 mpz_get_sll (const mpz_ptr src)
 {
-	int			size;
+	const int		sign = mpz_sgn (src);
 	cob_u64_t		vtmp;
 
-	size = src->_mp_size;
-	if (!size) {
+	if (sign == 0) {
 		return 0;
 	}
 	vtmp = (cob_u64_t)src->_mp_d[0];
 #if	GMP_LIMB_BITS < 64
+	/* depr. func! */
 	if (mpz_size (src) > 1) {
 		vtmp |= (cob_u64_t)src->_mp_d[1] << GMP_NUMB_BITS;
 	}
 #endif
-	if (size > 0) {
+	if (sign == 1) {
 		return (cob_s64_t) vtmp & COB_MAX_LL;
 	}
 	return ~(((cob_s64_t) vtmp - 1LL) & COB_MAX_LL);
@@ -374,7 +373,7 @@ cob_decimal_clear (cob_decimal *d)
 void
 cob_decimal_set_ullint (cob_decimal *d, const cob_u64_t n)
 {
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_ui (d->value, (cob_uli_t)n);
 #else
 	mpz_set_ui (d->value, (cob_uli_t)(n >> 32));
@@ -388,7 +387,7 @@ cob_decimal_set_ullint (cob_decimal *d, const cob_u64_t n)
 void
 cob_decimal_set_llint (cob_decimal *d, const cob_s64_t n)
 {
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_si (d->value, (cob_sli_t)n);
 #else
 	cob_u64_t	uval;
@@ -457,7 +456,7 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 }
 
 #define MAX_LLI_DIGITS_PLUS_1 20
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 #define MAX_LI_DIGITS_PLUS_1  20
 #else
 #define MAX_LI_DIGITS_PLUS_1  10
@@ -499,7 +498,7 @@ const cob_uli_t cob_pow_10_uli_val[MAX_LI_DIGITS_PLUS_1] = {
 	, 10000000
 	, 100000000
 	, 1000000000UL
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	, 10000000000
 	, 100000000000
 	, 1000000000000
@@ -542,7 +541,7 @@ cob_mul_by_pow_10 (mpz_t mexp, unsigned int n)
 	mpz_mul (mexp, mexp, cob_mexp);
 }
 
-/* scale - multiplicate mpz_t by power of 10 */
+/* scale - divide mpz_t by power of 10 */
 static COB_INLINE COB_A_INLINE void
 cob_div_by_pow_10 (mpz_t mexp, unsigned int n)
 {
@@ -703,7 +702,7 @@ cob_decimal_set_ieee64dec (cob_decimal *d, const cob_field *f)
 		d->scale = 0;
 		return;
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_ui (d->value, data);
 #else
 	mpz_set_ui (d->value, (cob_uli_t)(data >> 32));
@@ -812,7 +811,7 @@ cob_decimal_set_ieee128dec (cob_decimal *d, const cob_field *f)
 		d->scale = 0;
 		return;
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_ui (d->value, COB_128_MSW(data));
 	mpz_mul_2exp (d->value, d->value, 64UL);
 	mpz_add_ui (d->value, d->value, COB_128_LSW(data));
@@ -948,7 +947,7 @@ cob_decimal_get_double (cob_decimal *d)
 	double		v;
 
 	cob_not_finite = 0;
-	if (unlikely (mpz_size (d->value) == 0)) {
+	if (unlikely (mpz_sgn (d->value) == 0)) {
 		return 0.0;
 	}
 	cob_decimal_get_mpf (cob_mpft, d);
@@ -1143,7 +1142,7 @@ cob_set_packed_zero (cob_field *f)
 static void
 cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 {
-	register unsigned char	*p = f->data;
+	register unsigned char *p = f->data;
 	const int nibtest = !!COB_FIELD_NO_SIGN_NIBBLE (f);
 	const unsigned char *endp = p + f->size - 1 + nibtest;
 	cob_uli_t	byteval;
@@ -1170,11 +1169,11 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	} else {
 		byteval = 0;
 		/* Skip leading ZEROs */
-		while (p < endp
-		 && *p == 0x00) {
-			digits -= 2;
-			p++;
-		}
+	while (p < endp
+	    && *p == 0x00) {
+		digits -= 2;
+		p++;
+	}
 	}
 	if (digits < MAX_LLI_DIGITS_PLUS_1) {
 		/* note: similar logic in move.c (packed_get_long_long, packed_get_int)
@@ -1187,9 +1186,9 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 
 		if (!nibtest) {
 			val = val * 10
-			    + (*p >> 4);
+				+ (*p >> 4);
 		}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 		mpz_set_ui (d->value, (cob_uli_t)val);
 #else
 		cob_decimal_set_ullint (d, val);
@@ -1210,7 +1209,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 				mpz_mul_ui (d->value, d->value, 10000UL);
 			}
 			mpz_add_ui (d->value, d->value,
-				    ( pack_to_bin[*p] * 100)
+				    ( (int)pack_to_bin[*p] * 100)
 				    + pack_to_bin[*(p + 1)]);
 			/* because of the zero-skipping we are always nonzero here */
 			nonzero = 1;
@@ -1342,7 +1341,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 			i++;
 		}
 		while (i < size) {
-			*p++ = (unsigned char) (*q << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+			*p++ = ((*q << 4) & 0xFF)	/* -> dropping the higher bits = no use in COB_D2I */
 			   + COB_D2I (*(q + 1));
 			q += 2; i += 2;
 		}
@@ -1398,9 +1397,9 @@ cob_set_packed_u64 (cob_field *f, const cob_u64_t val, const int sign)
 		*p = packed_bytes[n % 100];
 	}
 
-#if 0	/* clean first half-byte;
-    	   would only be necessary if not zeroe'd out above */
-	{
+	/* clean first half-byte to handle truncation
+	   as we may have stored 200 in S99's padding byte */
+	if (p <= f->data) {
 		const short	scale = COB_FIELD_SCALE (f);
 		short	digits;
 		if (scale >= 0) {
@@ -1419,7 +1418,6 @@ cob_set_packed_u64 (cob_field *f, const cob_u64_t val, const int sign)
 			*(f->data) &= 0x0FU;
 		}
 	}
-#endif
 }
 
 /* set the specified BCD field 'f' to the given integer 'val';
@@ -1464,7 +1462,8 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 		return;
 	}
 
-	/* Skip leading zeros (also invalid space/low-value) */
+	/* Skip leading zeros (also invalid space/low-value
+	   and valid positive/negative zero overpunch) */
 	while (size > 1 && (COB_D2I (*data) == 0)) {
 		size--;
 		data++;
@@ -1523,7 +1522,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 		   these fields _must_ be _internal_ so there's no need to handle
 		   invalid data via COB_D2I + COB_I2D and we can copy as-is;
 		   this code has shown to be faster than mpz ui multiplication */
-		char	*buff = cob_fast_malloc (size + 1U);
+		char	*buff = cob_fast_malloc ((size_t)size + 1U);
 		memcpy (buff, data, size);
 		/* still we may need to unpunch the sign, which in this internal
 		   case will always be at the last digit */
@@ -1545,6 +1544,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	COB_PUT_SIGN_ADJUSTED (f, sign);
 }
 
+/* store value from decimal into field of type numeric DISPLAY */
 static int
 cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 {
@@ -1565,11 +1565,13 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	/* Build string, note: we can't check the decimal size with
 	   mpz_sizeinbase, as its result is "either exact or one too big" */
 
-	/* huge data, only for internal operations like intrinsic functions */
+	/* huge data, only for internal operations like intrinsic functions,
+	   for example when directly called within intrinsic.c by
+	   cob_alloc_field, cob_decimal_get_field ->  cob_decimal_get_display */
 	if (fsize > COB_MAX_BINARY) {
 		char *p = mpz_get_str (NULL, 10, d->value);
 		const size_t size = strlen (p);
-		const size_t diff = fsize - size;
+		const long long diff = fsize - size;
 		if (diff < 0) {
 			/* Overflow */
 			if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
@@ -1675,7 +1677,7 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 	}
 #endif
 
-#elif	defined(COB_LI_IS_LL)
+#elif !defined (COB_32_BIT_LONG)
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		mpz_set_si (d->value, cob_binary_get_sint64 (f));
 	} else {
@@ -1720,19 +1722,20 @@ static int
 cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 {
 	const int	field_sign = COB_FIELD_HAVE_SIGN (f);
-	const size_t	bitnum = (f->size * 8) - field_sign;
+	const int	sign = mpz_sgn (d->value);
+	const size_t	bitnum = f->size * 8;
 	size_t			overflow;
 
-	if (unlikely (mpz_size (d->value) == 0)) {
+	if (unlikely (sign == 0)) {
 		memset (f->data, 0, f->size);
 		return 0;
 	}
 	overflow = 0;
 	if (!field_sign
-	 && mpz_sgn (d->value) == -1) {
+	 && sign == -1) {
 		mpz_abs (d->value, d->value);
 	}
-	if (unlikely (mpz_sizeinbase (d->value, 2) > bitnum)) {
+	if (unlikely (mpz_sizeinbase (d->value, 2) > bitnum - field_sign)) {
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
 			goto overflow;
 		}
@@ -1750,9 +1753,9 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 			mpz_tdiv_r (d->value, d->value, cob_mpze10[digits]);
 		} else {
 #if	0	/* RXWRXW - Fdiv sign */
-			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8) - field_sign);
+			mpz_fdiv_r_2exp (d->value, d->value, bitnum - field_sign);
 #endif
-			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
+			mpz_fdiv_r_2exp (d->value, d->value, bitnum);
 		}
 	} else if (opt && COB_FIELD_BINARY_TRUNC (f)) {
 		const short	scale = COB_FIELD_SCALE (f);
@@ -1774,11 +1777,11 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 				mpz_tdiv_r (d->value, d->value,
 					    cob_mpze10[digits]);
 			} else {
-				mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
+				mpz_fdiv_r_2exp (d->value, d->value, bitnum);
 			}
 		}
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	if (!field_sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
 		cob_binary_set_uint64 (f, mpz_get_ui (d->value));
 	} else {
@@ -2377,7 +2380,6 @@ cob_addsub_optimized (cob_field *f1, cob_field *f2,
 	return 0;
 }
 
-
 void
 cob_add (cob_field *f1, cob_field *f2, const int opt)
 {
@@ -2498,8 +2500,8 @@ cob_shift_left_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_by
 	unsigned char carry_nibble;
 	unsigned char move_nibble = 0xFF;
 
-	/* calculate the length of data to be shifted */
-	const int len1 = 48 - (ptr_start_data_byte - ptr_buff);
+	/* calculate the length of data to be shifted, never much */
+	const int len1 = 48 - (int)(ptr_start_data_byte - ptr_buff);
 
 	/* add one to ensure the carry nibble is moved */
 	register int shift_cntr = len1 + 1;
@@ -2561,8 +2563,8 @@ cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_b
 	cob_u64_t carry_nibble;
 	cob_u64_t move_nibble = 0xFF;
 
-	/* calculate the length of data to be shifted */
-	const int len1 = 48 - (ptr_start_data_byte - ptr_buff);
+	/* calculate the length of data to be shifted, never much */
+	const int len1 = 48 - (int)(ptr_start_data_byte - ptr_buff);
 
 	register int shift_cntr = len1;
 
@@ -2639,7 +2641,7 @@ cob_move_bcd (cob_field *f1, cob_field *f2)
 	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
 		fld1_sign = 0x00;
 	} else {
-		fld1_sign = *(fld1 + fld1_size - 1) & 0X0F;
+		fld1_sign = *(fld1 + fld1_size - 1) & 0x0F;
 	}
 
 	/************************************************************/
@@ -2683,7 +2685,7 @@ cob_move_bcd (cob_field *f1, cob_field *f2)
 				}
 			} else {
 				memcpy (fld2, fld1 + fld1_size - llen, llen);
-				if (fld1_sign) {
+				if (fld1_sign && llen) {
 					*(fld2 + llen - 1) &= 0xF0;
 				}
 			}
@@ -2731,26 +2733,21 @@ cob_move_bcd (cob_field *f1, cob_field *f2)
 	}
 
 	if (f2_has_no_sign_nibble) {
-		/************************************************************/
-		/*  The following will clear the "pad" nibble if present    */
-		/************************************************************/
+		/* clear pad nibble, if present */
 		if (COB_FIELD_DIGITS (f2) & 1 /* -> digits % 2 == 1 */) {
 			*fld2 &= 0x0F;
 		}
 	} else {
+		/* set sign nibble */
 		unsigned char *pos = fld2 + fld2_size - 1;
-		if (COB_FIELD_HAVE_SIGN (f2)) {
-			if (!fld1_sign) {
-				*pos &= 0xF0;
-				*pos |= 0x0C;
-			} else {
-				*pos &= 0xF0;
-				*pos |= fld1_sign;
-			}
-		} else {
-			*pos &= 0xF0;
+		if (!COB_FIELD_HAVE_SIGN (f2)) {
 			*pos |= 0x0F;
+		} else if (fld1_sign == 0x0D) {
+			*pos = (*pos & 0xF0) | 0x0D;
+		} else {
+			*pos = (*pos & 0xF0) | 0x0C;
 		}
+		/* clear pad nibble, if present */
 		if (!(COB_FIELD_DIGITS (f2) & 1) /* -> digits % 2 == 0 */) {
 			*fld2 &= 0x0F;
 		}
@@ -2924,7 +2921,11 @@ static COB_INLINE COB_A_INLINE int
 count_leading_zeros (unsigned char *ptr_char, int len)
 {
 	int  cntr = 0;
-	while (*ptr_char++ == 0x00 && cntr++ < len);
+	while (cntr < len && *ptr_char == 0x00)
+	{
+		cntr++;
+		ptr_char++;
+	}
 	return cntr;
 }
 
@@ -2933,7 +2934,7 @@ static int
 check_overflow_and_set_sign (cob_field *f, const int opt,
 	int final_positive, unsigned char *buff, unsigned char *pos)
 {
-	const int	buff_size = 48 - (pos - buff);
+	const int	buff_size = 48 - (int)(pos - buff);
 	const int	fsize = (int)f->size;
 	int         cmp_size = buff_size - fsize;
 	unsigned char *last_buff_pos = buff + 48 - 1;
@@ -3051,9 +3052,9 @@ cob_add_bcd (cob_field *fdst,
 	const unsigned char *src2_data = COB_FIELD_DATA (fsrc2);
 
 	unsigned char 	fld1_sign = COB_FIELD_NO_SIGN_NIBBLE (fsrc1) ? 0x00
-	          : *(src1_data + fld1_size - 1) & 0X0F;
+	          : *(src1_data + fld1_size - 1) & 0x0F;
 	const unsigned char 	fld2_sign = COB_FIELD_NO_SIGN_NIBBLE (fsrc2) ? 0x00
-	          : *(src2_data + fld2_size - 1) & 0X0F;
+	          : *(src2_data + fld2_size - 1) & 0x0F;
 
 	const signed short	src1_scale = COB_FIELD_SCALE (fsrc1);
 	const signed short	src2_scale = COB_FIELD_SCALE (fsrc2);
@@ -3089,7 +3090,7 @@ cob_add_bcd (cob_field *fdst,
 	if ((used_original_scale <= dst_scale)
 	 || (used_scale < dest_scale)
 	 || (opt & COB_STORE_TRUNCATION)
-	 || !(opt & ~COB_STORE_MASK)) {
+	 || !(opt & (~COB_STORE_MASK | COB_STORE_ROUND))) {
 		check_rounding = 0;
 		check_all_zeros = 0;
 		all_zeros = 0;
@@ -3181,9 +3182,9 @@ cob_add_bcd (cob_field *fdst,
 
 	/* find the length of the longer buffer data */
 	if (fld1 - fld1_buff > fld2 - fld2_buff) {
-		loop_limit = 48 - (fld2 - fld2_buff) + 1;
+		loop_limit = 48 - (int)(fld2 - fld2_buff) + 1;
 	} else {
-		loop_limit = 48 - (fld1 - fld1_buff) + 1;
+		loop_limit = 48 - (int)(fld1 - fld1_buff) + 1;
 	}
 
 	/* note: both fl1 and fld2 point at the _last_ position of the
@@ -3511,7 +3512,8 @@ cob_display_add_int (cob_field *f, int n, const int opt)
 	}
 
 	if (unlikely (scale < 0)) {
-		/* PIC 9(n)P(m) */
+		/* PIC 9(n)P(m) -> adjust "val"
+		   by applying the same scale (cut integer positions) */
 		if (-scale < 10) {
 			/* Fix optimizer bug */
 			while (scale) {
@@ -3519,9 +3521,9 @@ cob_display_add_int (cob_field *f, int n, const int opt)
 				n /= 10;
 			}
 		} else {
+			scale = 0;
 			n = 0;
 		}
-		scale = 0;
 		if (n == 0) {
 			return 0;
 		}
@@ -3603,25 +3605,30 @@ cob_add_int (cob_field *f, const int n, const int opt)
 		int	scale = COB_FIELD_SCALE (f);
 		int	val = n;
 		if (unlikely (scale < 0)) {
-			/* PIC 9(n)P(m) */
-			if (-scale < 10) {
-				while (scale++) {
-					val /= 10;
-				}
-			} else {
-				val = 0;
+			/* PIC 9(n)P(m) -> adjust "val"
+			   by applying the same scale (cut integer positions) */
+			if (scale <= -10) {
+				/* an int cannot have > 10 digit positions, so
+				   no need to do anything if scale is too small */
+				return 0;
 			}
-			scale = 0;
+			while (scale++) {
+				val /= 10;
+			}
 			if (!val) {
 				return 0;
 			}
+			/* not used anymore, but logically: scale = 0 here */
 		}
 		cob_decimal_set_field (&cob_d1, f);
 		mpz_set_si (cob_d2.value, (cob_sli_t)val);
-		cob_d2.scale = 0;
-		if (scale > 0) {
-			cob_mul_by_pow_10 (cob_d2.value, scale);
+		if (cob_d1.scale > 0) {
+			cob_mul_by_pow_10 (cob_d2.value, cob_d1.scale);
+#if 0	/* second scale is unused, these are just the "logic" values */
 			cob_d2.scale = cob_d1.scale;
+		} else {
+			cob_d2.scale = 0;
+#endif
 		}
 		mpz_add (cob_d1.value, cob_d1.value, cob_d2.value);
 		return cob_decimal_get_field (&cob_d1, f, opt);
@@ -3702,7 +3709,7 @@ cob_cmp_llint (cob_field *f1, const cob_s64_t n)
 	} else {
 		if (n >= 0) return -1;
 	}
-#ifdef	COB_LI_IS_LL
+#ifndef COB_32_BIT_LONG
 	mpz_set_si (cob_d2.value, (cob_sli_t)n);
 #else
 	{
@@ -3795,18 +3802,14 @@ packed_is_negative (cob_field *f)
 {
 	if (cob_packed_get_sign (f) == -1) {
 		/* negative sign, validate for nonzero data */
-		unsigned char			*data = COB_FIELD_DATA (f);
-		register unsigned char  *end = data + f->size - 1;
-		/* nonzero if byte with sign nibble has other data */
-		if ((*end != 0x0D)) {
-			return 1;	/* extra data -> really negative */
+		unsigned char	nullbuff[(COB_MAX_DIGITS / 2) + 1] = { 0 };
+		/* nonzero "really negative" if any data is nonzero */
+		if (memcmp (f->data, nullbuff, f->size - 1)) {
+			return 1;
 		}
-		/* nonzero "really negative" if any other data is nonzero,
-		   checking backwards from before sign until end == start */
-		while (data != end) {
-			if (*--end != 0) {
-				return 1;
-			}
+		/* nonzero if byte with sign nibble has other data */
+		if ((*(f->data + f->size - 1) != 0x0D)) {
+			return 1;	/* extra data -> really negative */
 		}
 		/* all zero -> not negative, even with the sign telling so */
 		return 0;
@@ -4026,21 +4029,255 @@ cob_bcd_cmp (cob_field *f1, cob_field *f2)
 }
 #endif
 
+#ifndef NO_DISPLAY_COMPARE
+static COB_INLINE COB_A_INLINE int
+compare_data (unsigned char *ptr1, unsigned char *ptr2, int len)
+{
+	unsigned char *ptr_end = ptr1 + len;
+
+	do {
+		const unsigned char p1 = COB_D2I (*ptr1);
+		const unsigned char p2 = COB_D2I (*ptr2);
+		if (p1 != p2) {
+			if (p1 > p2) {
+				return 1;
+			}
+			return -1;
+		}
+		ptr1++;
+		ptr2++;
+	} while (ptr1 != ptr_end);
+
+	return 0;
+}
+
+static int
+check_all_zero (unsigned char *ptr, int len)
+{
+	unsigned char *ptr_end = ptr + len;
+
+	do {
+		if (COB_D2I (*ptr++) != 0) {
+			return 0;
+		}
+	} while (ptr != ptr_end);
+
+	return 1;
+}
+
+int
+cob_numeric_display_cmp (cob_field *f1, cob_field *f2)
+{
+	int		compare_result, len;
+	int		f1_strt_offset, f1_end_offset;
+	int		f2_strt_offset, f2_end_offset;
+
+	/************************************************************/
+	/*  first we need to get the scale, data size and sign of   */
+	/*  each of the two cob fields. Note that if the signs are  */
+	/*  different, then we only need to find if either of the   */
+	/*  fields is non-zero.                                     */
+	/************************************************************/
+
+	const short 	scale1 = COB_FIELD_SCALE (f1);
+	const short 	scale2 = COB_FIELD_SCALE (f2);
+	/* numeric DISPLAY fields from a program are limited to COB_MAX_DIGITS,
+	   internal created numeric DISPLAY fields from intrinsic functions
+	   in intrinsic.c (cob_alloc_field, cob_decimal_move_temp) could
+	   _theoretically_ use up to SHRT_MAX */
+	const short 	size1 = (short)COB_FIELD_SIZE (f1);
+	const short 	size2 = (short)COB_FIELD_SIZE (f2);
+	unsigned char	*ptr_f1 = COB_FIELD_DATA (f1);
+	unsigned char	*ptr_f2 = COB_FIELD_DATA (f2);
+
+	const int	orig_sign1 = COB_GET_SIGN_ADJUST (f1);
+	const int	orig_sign2 = COB_GET_SIGN_ADJUST (f2);
+
+	int ret;
+
+	const int	sign1 = orig_sign1 >= 0 ? 1 :
+		check_all_zero (ptr_f1, size1) ? 1 : - 1;
+	const int	sign2 = orig_sign2 >= 0 ? 1 :
+		check_all_zero (ptr_f2, size2) ? 1 : -1;
+
+	if (sign1 != sign2) {
+		ret = sign1;
+		goto over;
+	}
+	/************************************************************/
+	/*  first we need to find the start and end of each field   */
+	/*  relative to the decimal point so that we can compare    */
+	/*  them correctly based on the position relative to the    */
+	/*  decimal point.                                          */
+	/*                                                          */
+	/*  the comparison of two fields containing display         */
+	/*  numeric data will result in one of three conditions     */
+	/*                                                          */
+	/*  one field will be a subset of the other.                */
+	/*  one field would intersect with the other.               */
+	/*  the fields would not intersect at all.                  */
+	/*                                                          */
+	/*  so these are the 3 conditions we need to check for.     */
+	/*  this will result in 3 compares being needed.            */
+	/************************************************************/
+
+	f1_strt_offset = size1 - scale1;
+	f1_end_offset = 0 - scale1;
+
+	f2_strt_offset = size2 - scale2;
+	f2_end_offset = 0 - scale2;
+
+	/************************************************************/
+	/*  the first compare will be to check the leading / pad    */
+	/*  positions in either of the fields to check if they are  */
+	/*  all zeros. if not then we don't need to compare any     */
+	/*  farther, we are done.                                   */
+	/************************************************************/
+
+
+	if (f1_strt_offset > f2_strt_offset) {
+		if (f2_strt_offset > f1_end_offset) {
+			if (!check_all_zero (ptr_f1, (f1_strt_offset - f2_strt_offset))) {
+				ret = sign1;
+				goto over;
+			}
+			ptr_f1 += (f1_strt_offset - f2_strt_offset);
+			f1_strt_offset -= (f1_strt_offset - f2_strt_offset);
+		} else {
+			if (!check_all_zero (ptr_f1, (f1_strt_offset - f1_end_offset))) {
+				ret = sign1;
+				goto over;
+			}
+			ptr_f1 += (f1_strt_offset - f1_end_offset);
+			f1_strt_offset -= (f1_strt_offset - f1_end_offset);
+		}
+	} else if (f2_strt_offset > f1_strt_offset) {
+		if (f1_strt_offset > f2_end_offset) {
+			if (!check_all_zero (ptr_f2, (f2_strt_offset - f1_strt_offset))) {
+				ret = -sign1;
+				goto over;
+			}
+			ptr_f2 += (f2_strt_offset - f1_strt_offset);
+			f2_strt_offset -= (f2_strt_offset - f1_strt_offset);
+		} else {
+			if (!check_all_zero (ptr_f2, (f2_strt_offset - f2_end_offset))) {
+				ret = -sign1;
+				goto over;
+			}
+			ptr_f2 += (f2_strt_offset - f2_end_offset);
+			f2_strt_offset -= (f2_strt_offset - f2_end_offset);
+		}
+	}
+
+	/************************************************************/
+	/*  the second would be to check the overlapping positions  */
+	/*  in both fields against each other. if they do not       */
+	/*  match then we can set the return code to indicate       */
+	/*  which is greater / lesser and we are done.              */
+	/************************************************************/
+
+	if (f1_strt_offset == f2_strt_offset) {
+		len = (f1_end_offset > f2_end_offset) ? (f1_strt_offset - f1_end_offset)
+			: (f2_strt_offset - f2_end_offset);
+		if (len > 0) {
+			compare_result = compare_data (ptr_f1, ptr_f2, len);
+			if (compare_result) {
+				ret = sign1 * compare_result;
+				goto over;
+			}
+			ptr_f1 += len;
+			f1_strt_offset -= len;
+			ptr_f2 += len;
+			f2_strt_offset -= len;
+		}
+	}
+
+	/************************************************************/
+	/*  if we have not exited yet that means that one of the    */
+	/*  fields have trailing positions to the right of the      */
+	/*  overlapping positions, so we have to check those for    */
+	/*  all zeros. then we are done.                            */
+	/************************************************************/
+
+	if (f1_end_offset < f2_end_offset) {
+		if (!check_all_zero (ptr_f1, (f1_strt_offset - f1_end_offset))) {
+			ret = sign1;
+			goto over;
+		}
+	} else if (f2_end_offset < f1_end_offset) {
+		if (!check_all_zero (ptr_f2, (f2_strt_offset - f2_end_offset))) {
+			ret = -sign1;
+			goto over;
+		}
+	}
+	ret = 0;
+
+over:
+	COB_PUT_SIGN_ADJUSTED (f1, orig_sign1);
+	COB_PUT_SIGN_ADJUSTED (f2, orig_sign2);
+	return ret;
+}
+# else
+
+int
+cob_numeric_display_cmp (cob_field *f1, cob_field *f2)
+{
+	/* Fallback: internal decimal compare (most expensive) */
+	cob_decimal_set_field (&cob_d1, f1);
+	cob_decimal_set_field (&cob_d2, f2);
+	return cob_decimal_cmp (&cob_d1, &cob_d2);
+}
+#endif
+
+/* compare USAGE DISPLAY numeric variable with no SIGN SEPARATE
+   and no invalid ebcdic overpunch to zero */
+int
+cob_numeric_display_cmp_zero (cob_field *f)
+{
+	unsigned char *ptr = f->data;
+	unsigned char *ptr_end = ptr + f->size;
+
+	do {
+		const unsigned char p = COB_D2I (*ptr);
+		if (p != 0) {
+			const unsigned char p_sign = *(ptr_end - 1) & 0xF0;
+			int sign = p_sign == 0x70 || p_sign == 0xD0 || p_sign == 0xB0
+			         ? -1 : 1;
+			return sign;
+		}
+		ptr++;
+	} while (ptr < ptr_end);
+
+	return 0;
+}
+
+/* compare BCD field to zero */
+int
+cob_bcd_cmp_zero (cob_field *f)
+{
+	unsigned char	nullbuff[(COB_MAX_DIGITS / 2) + 1] = { 0 };
+
+	if (COB_FIELD_NO_SIGN_NIBBLE(f)) {
+		if (memcmp (f->data, nullbuff, f->size)) {
+			return 1;
+		}
+	} else {
+		if (memcmp (f->data, nullbuff, f->size - 1)) {
+			return cob_packed_get_sign (f) == -1 ? -1 : 1;
+		}
+		/* nonzero if byte with sign nibble has content in data nibble */
+		if ((*(f->data + f->size - 1) & 0xF0) != 0) {
+			return cob_packed_get_sign (f) == -1 ? -1 : 1;
+		}
+	}
+	return 0;
+}
+
 int
 cob_numeric_cmp (cob_field *f1, cob_field *f2)
 {
 	const int f1_type = COB_FIELD_TYPE (f1);
 	const int f2_type = COB_FIELD_TYPE (f2);
-
-	/* float needs special comparison */
-	if (f1_type == COB_TYPE_NUMERIC_FLOAT
-	 || f1_type == COB_TYPE_NUMERIC_DOUBLE
-	 || f1_type == COB_TYPE_NUMERIC_L_DOUBLE
-	 || f2_type == COB_TYPE_NUMERIC_FLOAT
-	 || f2_type == COB_TYPE_NUMERIC_DOUBLE
-	 || f2_type == COB_TYPE_NUMERIC_L_DOUBLE) {
-		return cob_cmp_float (f1, f2);
-	}
 
 #ifndef NO_BCD_COMPARE
 	/* do bcd compare if possible */
@@ -4050,8 +4287,27 @@ cob_numeric_cmp (cob_field *f1, cob_field *f2)
 		if (COB_FIELD_SCALE (f1) >= 0 && COB_FIELD_SCALE (f2) >= 0) {
 			return cob_bcd_cmp (f1, f2);
 		}
+		/* CHECKME: possible create temporary bcd2 if only one is packed
+		   and the other isn't float - then compare as BCD */
 	}
 #endif
+
+#ifndef NO_DISPLAY_COMPARE
+	/* do numeric display compare if possible */
+	if (f1_type == COB_TYPE_NUMERIC_DISPLAY
+	 && f2_type == COB_TYPE_NUMERIC_DISPLAY) {
+		/* CHECKME: if not float then create a temporary display2 */
+		return cob_numeric_display_cmp (f1, f2);
+	}
+#endif
+
+	/* float needs special comparison */
+	if ( (f1_type >= COB_TYPE_NUMERIC_FLOAT
+	   && f1_type <= COB_TYPE_NUMERIC_L_DOUBLE)
+	 ||  (f2_type >= COB_TYPE_NUMERIC_FLOAT
+	   && f2_type <= COB_TYPE_NUMERIC_L_DOUBLE)) {
+		return cob_cmp_float (f1, f2);
+	}
 
 	/* otherwise - preferably compare as integers */
 	if (COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2)
@@ -4305,12 +4561,8 @@ cob_cmp_numdisp (const unsigned char *data, const size_t size,
 		return (val < n) ? -1 : (val > n);
 	}
 	
-	/* safe-guard, should never happen */
-	if (!size) {
-		return 0;
-	}
 	p_end = p + size - 1;
-	while (p != p_end) {
+	while (p < p_end) {
 		val = val * 10 + COB_D2I (*p++);
 	}
 	val *= 10;

@@ -1,4 +1,28 @@
 
+2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [!COB_MAKE_IX]: don't run IX if not built with
+	  support for ORGANIZATION INDEXED
+
+2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am, Makefile.module.in: quote paths to support the rare
+	  scenario of space-embedded paths, fixing #1142
+
+2025-05-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* Makefile.am, Makefile.module.in:
+	  use the new DIFF variable to invoke the diff command
+
+2024-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* summary.pl: compute total duration and modules executed,
+	  output those to stderr at the end; close file handles
+	* Makefile.am (summary.out): new target depending on summary.log
+	* Makefile.am (summary.log): catch stderr of summary.pl into
+	  summary.out file and output that on stdout
+	* Makefile.am (URL_NEWCOB_Z): replaced by web archive URL
+
 2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* report.pl: place stderr from test runs into .out file
@@ -57,7 +81,7 @@
 
 2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefil.module.in: don't pass additional params to atlocal
+	* Makefile.module.in: don't pass additional params to atlocal
 	* report.pl: now exporting at_group for more useful valgrind log names
 
 2020-10-16  Simon Sobisch <simonsobisch@gnu.org>
@@ -396,7 +420,7 @@
 	* SQ.txt, summary.txt : We now pass the LINAGE tests
 
 
-Copyright 2005-2010,2015-2020,2022-2023 Free Software Foundation, Inc.
+Copyright 2005-2010,2015-2020,2022-2025 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

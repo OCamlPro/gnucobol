@@ -1,4 +1,39 @@
 
+2025-04-22  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
+
+	* runtime.cfg: add runtime configuration COB_HEAP_MEMORY and
+	  COB_HEAP_MEMORY64 to support VFILES memory allocation
+
+2025-01-10  David Declerck <david.declerck@ocamlpro.com>
+
+	* gcos-strict.conf: set init-justify to no after testing on GCOS
+
+2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
+
+	FR #474: add runtime configuration to hide cursor for extended screenio
+	* runtime.cfg: add COB_HIDE_CURSOR
+
+2024-07-11  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: fix minor alignment / tab issues
+
+2024-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	fixing bug #965
+	* mf-strict.conf: set missing-statement to ok (according to MF tests)
+
+2023-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* rm-strict.conf (perform-osvs): enabled as noted in MF docs
+
+2023-09-07  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* runtime.cfg: add COB_PROF_FILE
+
+2023-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: add option using-optional
+
 2023-06-25  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	FR #439: dialect option to support justify for IBM compatibility
@@ -18,10 +53,18 @@
 	* rm-strict.conf: enable indirect-redefines as this was added
 	  with later RM-COBOL versions
 
+2023-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add ebcdic-symbolic-characters
+
 2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* gcos.words: remove alias VALUES=VALUE, to correctly parse
 	  "VALUES ARE"
+
+2023-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* default.conf: change default source reference-format to 'auto'
 
 2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -774,7 +817,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2023 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2024 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

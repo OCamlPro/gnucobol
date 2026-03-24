@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -21,6 +21,8 @@
 
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
+
+#pragma once
 
 #include <stddef.h>		/* for size_t */
 
@@ -45,7 +47,34 @@ typedef __mpz_struct mpz_t[1];
 #define	cob_sli_t		long int
 #define	cob_uli_t		unsigned long int
 
-#if	defined(_WIN32) && !defined(__MINGW32__)
+/* If both stdint.h and inttypes.h from C99 are present, use them.
+   Note that recent Visual C++ (>= 2012) and most MinGW versions are
+   C99-compliant (even when MinGW uses the old MSVCRT, it provides
+   a printf compatiblity layer to support standard format strings). */
+#if defined(HAVE_STDINT_H) && defined(HAVE_INTTYPES_H)
+
+#include <stdint.h>
+#include <inttypes.h>
+
+#define	cob_s64_t		int64_t
+#define	cob_u64_t		uint64_t
+
+#define	COB_S64_C(x)		INT64_C(x)
+#define	COB_U64_C(x)		UINT64_C(x)
+
+#define	CB_FMT_LLD		"%"PRId64
+#define	CB_FMT_LLU		"%"PRIu64
+#define	CB_FMT_LLX		"%"PRIx64
+#define	CB_FMT_PLLD		"%+*.*"PRId64
+#define	CB_FMT_PLLU		"%*.*"PRIu64
+#define	CB_FMT_LLD_F		"COB_S64_C(%"PRId64")"
+#define	CB_FMT_LLU_F		"COB_U64_C(%"PRIu64")"
+
+/* If the compiler is not C99-compliant and is MSVC, then it is an old version
+   (stdint.h was introduced in Visual C++ 2010 and inttypes.h in 2012) ;
+   in this case we use the Microsoft-specific __int64 type and the
+   corresponding suffixes and format strings */
+#elif defined(_MSC_VER)
 
 #define	cob_s64_t		__int64
 #define	cob_u64_t		unsigned __int64
@@ -53,6 +82,37 @@ typedef __mpz_struct mpz_t[1];
 #define	COB_S64_C(x)		x ## I64
 #define	COB_U64_C(x)		x ## UI64
 
+#define	CB_FMT_LLD		"%I64d"
+#define	CB_FMT_LLU		"%I64u"
+#define	CB_FMT_LLX		"%I64x"
+#define	CB_FMT_PLLD		"%+*.*I64d"
+#define	CB_FMT_PLLU		"%*.*I64u"
+#define	CB_FMT_LLD_F		"COB_S64_C(%I64d)"
+#define	CB_FMT_LLU_F		"COB_U64_C(%I64u)"
+
+/* If the compiler is not C99-compliant and is MinGW, then it is a VERY old
+   MinGW-32 version (all MinGW-64 versions are C99-compliant) ; we use
+   the standard long long type and LL suffixes, however we have to use
+   the MSVCRT-specific format strings */
+#elif defined(__MINGW32__)
+
+#define	cob_s64_t		long long
+#define	cob_u64_t		unsigned long long
+
+#define	COB_S64_C(x)		x ## LL
+#define	COB_U64_C(x)		x ## ULL
+
+#define	CB_FMT_LLD		"%I64d"
+#define	CB_FMT_LLU		"%I64u"
+#define	CB_FMT_LLX		"%I64x"
+#define	CB_FMT_PLLD		"%+*.*I64d"
+#define	CB_FMT_PLLU		"%*.*I64u"
+#define	CB_FMT_LLD_F		"COB_S64_C(%I64d)"
+#define	CB_FMT_LLU_F		"COB_U64_C(%I64u)"
+
+/* Finally, if the compiler is not C99-compliant and is neither MSVC not MinGW,
+   then we assume it provides the long long type as an extension, with
+   the usual suffixes and format strings. */
 #else
 
 #define	cob_s64_t		long long
@@ -61,33 +121,13 @@ typedef __mpz_struct mpz_t[1];
 #define	COB_S64_C(x)		x ## LL
 #define	COB_U64_C(x)		x ## ULL
 
-#endif
-
-#if	defined(_WIN32)
-
-#define	CB_FMT_LLD		"%I64d"
-#define	CB_FMT_LLU		"%I64u"
-#define	CB_FMT_LLX		"%I64x"
-#define	CB_FMT_PLLD		"%+*.*I64d"
-#define	CB_FMT_PLLU		"%*.*I64u"
-
-#if defined (__MINGW32__)
-#define	CB_FMT_LLD_F		"%I64dLL"
-#define	CB_FMT_LLU_F		"%I64uULL"
-#else
-#define	CB_FMT_LLD_F		"%I64dI64"
-#define	CB_FMT_LLU_F		"%I64uUI64"
-#endif
-
-#else
-
 #define	CB_FMT_LLD		"%lld"
 #define	CB_FMT_LLU		"%llu"
 #define	CB_FMT_LLX		"%llx"
 #define	CB_FMT_PLLD		"%+*.*lld"
 #define	CB_FMT_PLLU		"%*.*llu"
-#define	CB_FMT_LLD_F		"%lldLL"
-#define	CB_FMT_LLU_F		"%lluULL"
+#define	CB_FMT_LLD_F		"COB_S64_C(%lld)"
+#define	CB_FMT_LLU_F		"COB_U64_C(%llu)"
 
 #endif
 
@@ -291,18 +331,15 @@ typedef __mpz_struct mpz_t[1];
 
 #define strncasecmp		_strnicmp
 #define strcasecmp		_stricmp
+#if !COB_USE_VC2015_OR_GREATER
+/* VC2015+ provides standard function with plain
+   name, old posix emulation with underscore */
 #define snprintf		_snprintf
+#endif
 #define getpid			_getpid
 #define access			_access
 #define popen			_popen
 #define pclose			_pclose
-/* MSDN says these are available since VC2005 #if COB_USE_VC2013_OR_GREATER
-only usable with COB_USE_VC2013_OR_GREATER */
-#define timezone		_timezone
-#define tzname			_tzname
-#define daylight		_daylight
-/* only usable with COB_USE_VC2013_OR_GREATER - End
-#endif */
 
 #if !COB_USE_VC2013_OR_GREATER
 #define atoll			_atoi64
@@ -322,26 +359,19 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #endif /* _MSC_VER */
 
-#ifdef	__MINGW32__	/* needed by older versions */
-#define strncasecmp		_strnicmp
-#define strcasecmp		_stricmp
-#endif /* __MINGW32__ */
-
 #ifdef __BORLANDC__
 #define strncasecmp	strnicmp
 #define strcasecmp	stricmp
 #define _setmode	setmode
 #define _chdir		chdir
-#define timezone	_timezone
-#define tzname		_tzname
-#define daylight	_daylight
-#endif /* __BORLANDC__ */
+#endif
 
-#ifdef __ORANGEC__
+#if defined (_MSC_VER) || defined (__ORANGEC__) \
+ || defined (_UCRT) || defined (__BORLANDC__)
 #define timezone		_timezone
 #define tzname			_tzname
 #define daylight		_daylight
-#endif /* _ORANGEC__ */
+#endif
 
 #if	__SUNPRO_C
 /* Disable certain warnings */
@@ -381,10 +411,15 @@ only usable with COB_USE_VC2013_OR_GREATER */
 	#define COB_INLINE
 #endif
 
+/* note: we previously checked only for __xlc__, now only for __IBMC__ */
+#if defined (__xlc__) && !defined(__IBMC__)
+	#define __IBMC__ __xlc__
+#endif
+
 /* Also OK for icc which defines __GNUC__ */
 
 #if	 defined(__GNUC__) || \
-	(defined(__xlc__) && __IBMC__ >= 700  ) || \
+	(defined(__IBMC__) && __IBMC__ >= 700  ) || \
 	(defined(__HP_cc) && __HP_cc  >= 61000)
 #define	COB_A_NORETURN	__attribute__((noreturn))
 #define	COB_A_FORMAT12	__attribute__((format(printf, 1, 2)))
@@ -433,7 +468,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define	COB_A_COLD
 #endif
 
-#elif	defined(__xlc__) && __IBMC__ >= 700
+#elif	defined(__IBMC__) && __IBMC__ >= 700
 
 #if	__IBMC__ >= 900
 #define likely(x)	__builtin_expect((long int)!!(x), 1L)
@@ -1017,6 +1052,8 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 34) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 35) /* used for syntax checking */
 #define COB_SCREEN_GRID			((cob_flags_t)1 << 36) /* used for syntax checking */
+#define COB_SCREEN_POPUP_CREATE	((cob_flags_t)1 << 61)
+#define COB_SCREEN_POPUP_REMOVE	((cob_flags_t)1 << 62)
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1081,6 +1118,7 @@ enum cob_statement {
 
 #define COB_XML_PARSE_XMLNSS	(1U << 0)
 #define COB_XML_PARSE_NATIONAL	(1U << 1)
+#define COB_XML_PARSE_VALIDATE_FILE	(1U << 2)
 
 /* Structure/union declarations */
 
@@ -1252,7 +1290,7 @@ typedef struct __cob_module {
 	unsigned char		flag_pretty_display;	/* Pretty display */
 	unsigned char		flag_host_sign;		/* Host sign */
 
-	unsigned char		flag_no_phys_canc;	/* No physical cancel */
+	unsigned char		flag_no_phys_canc;	/* No physical cancel (constant by cobc)*/
 	unsigned char		flag_main;		/* Main module */
 	unsigned char		flag_fold_call;		/* Fold case */
 	unsigned char		flag_exit_program;	/* Exit after CALL */
@@ -1289,9 +1327,11 @@ typedef struct __cob_module {
 	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
 
 	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
-											   IBM may be different (_very_ likely for error codes);
-											   but the main difference is to "COMPAT" */
+		/* similar to XMLPARSE(XMLNSS) Micro Focus,
+		   IBM may be different (_very_ likely for error codes);
+		   but the main difference is to "COMPAT" */
+		#define COB_XML_COMPAT 		0
+		#define COB_XML_XMLNSS		1
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */
@@ -1327,14 +1367,12 @@ typedef struct __cob_file_key {
 	int		flag;				/* ASCENDING/DESCENDING (for SORT) [3.x only] */
 	int		tf_duplicates;			/* WITH DUPLICATES (for RELATIVE/INDEXED) */
 	int		tf_ascending;			/* ASCENDING/DESCENDING (for SORT) [4.x only, for now: unused] */
-	int		tf_suppress;			/* supress keys where all chars = char_suppress */
-	int		char_suppress;			/* key supression character  */
+	int		tf_suppress;			/* supress keys where all chars = char_suppress (for INDEXED) */
+	int		char_suppress;			/* key supression character (for INDEXED) */
 	unsigned int	offset;			/* Offset of field */
 	int		count_components;		/* 0..1::simple-key  2..n::split-key   */
 	cob_field	*component[COB_MAX_KEYCOMP];	/* key-components iff split-key   */
-#if 0	/* TODO (for file keys, not for SORT/MERGE) */
-	const unsigned char *collating_sequence;	/* COLLATING */
-#endif
+	const unsigned char *collating_sequence;	/* COLLATING (for file keys, not for SORT/MERGE) */
 } cob_file_key;
 
 
@@ -1650,6 +1688,8 @@ COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
 
+COB_EXPIMP void		cob_cleanup_thread (void);
+
 /* General functions */
 
 COB_EXPIMP int		cob_is_initialized	(void);
@@ -1686,7 +1726,7 @@ COB_EXPIMP void	cob_set_locale			(cob_field *, const int);
 COB_EXPIMP int 	cob_setenv		(const char *, const char *, int);
 COB_EXPIMP int 	cob_unsetenv		(const char *);
 COB_EXPIMP char	*cob_getenv_direct		(const char *);
-COB_EXPIMP char *cob_expand_env_string	(char *);
+COB_EXPIMP char *cob_expand_env_string	(const char *);
 COB_EXPIMP char	*cob_getenv			(const char *);
 COB_EXPIMP int	cob_putenv			(char *);
 
@@ -1889,11 +1929,17 @@ COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 COB_EXPIMP void	cob_check_beyond_exit (const char *);
 COB_EXPIMP void	cob_check_fence 	(const char *, const char *,
 					 const enum cob_statement, const char *);
-
+COB_EXPIMP int	cob_check_linkage_size	(const char *,
+					 const char *, const unsigned int,
+					 const int, const unsigned long,
+					 const char **, unsigned int);
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
 COB_EXPIMP int	cob_bcd_cmp		(cob_field *, cob_field *);
+COB_EXPIMP int	cob_numeric_display_cmp		(cob_field *, cob_field *);
+COB_EXPIMP int	cob_numeric_display_cmp_zero	(cob_field *);
+COB_EXPIMP int	cob_bcd_cmp_zero	(cob_field *);
 
 /*******************************/
 /* Functions in strings.c */
@@ -1909,6 +1955,7 @@ COB_EXPIMP void cob_inspect_leading	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_first	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_trailing	(cob_field *, cob_field *);
 COB_EXPIMP void cob_inspect_converting	(const cob_field *, const cob_field *);
+COB_EXPIMP void cob_inspect_translating (const unsigned char *);
 COB_EXPIMP void cob_inspect_finish	(void);
 
 COB_EXPIMP void cob_string_init		(cob_field *, cob_field *);
@@ -2135,12 +2182,22 @@ COB_EXPIMP int		cob_sys_clear_screen	(void);
 COB_EXPIMP int		cob_sys_sound_bell	(void);
 COB_EXPIMP int		cob_sys_get_scr_size	(unsigned char *, unsigned char *);
 COB_EXPIMP int		cob_sys_set_scr_size	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_scr_dump	(unsigned char *);
+COB_EXPIMP int		cob_sys_scr_restore	(unsigned char *);
+COB_EXPIMP int		cob_sys_window		(unsigned char*, unsigned char *);
 COB_EXPIMP int		cob_sys_get_char	(unsigned char *);
-COB_EXPIMP int		cob_get_text 		(char *, int);
+COB_EXPIMP int		cob_get_text		(char *, int);
 COB_EXPIMP int		cob_get_scr_cols	(void);
 COB_EXPIMP int		cob_get_scr_lines	(void);
 COB_EXPIMP int		cob_sys_get_csr_pos	(unsigned char *);
 COB_EXPIMP int		cob_sys_set_csr_pos	(unsigned char *);
+COB_EXPIMP int		cob_sys_open_vfile	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_read_vfile	(cob_u16_t, cob_u32_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_write_vfile	(cob_u16_t, cob_u32_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_close_vfile	(cob_u16_t);
+COB_EXPIMP int		cob_sys_open_vfile2	(unsigned char *, unsigned char *);
+COB_EXPIMP int		cob_sys_read_vfile2	(cob_u16_t, cob_u64_t, cob_u32_t, unsigned char*);
+COB_EXPIMP int		cob_sys_write_vfile2	(cob_u16_t, cob_u64_t, cob_u32_t, unsigned char*);
 
 /******************************************************************************
 *                                                                             *
@@ -2570,23 +2627,25 @@ COB_EXPIMP void cob_rollback	(void);
 /* functions in fileio.c for the MF style EXTFH interface */
 COB_EXPIMP int	EXTFH		(unsigned char *opcode, FCD3 *fcd);
 
-COB_EXPIMP void	cob_extfh_open		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, const int, const int, cob_field *);
-COB_EXPIMP void cob_extfh_close		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int, const int);
-COB_EXPIMP void cob_extfh_read		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_read_next	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int);
-COB_EXPIMP void cob_extfh_rewrite	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int, cob_field *);
-COB_EXPIMP void cob_extfh_delete	(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *);
-COB_EXPIMP void cob_extfh_start		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, const int, cob_field *,
+typedef int (*EXTFH_FUNC)(unsigned char *opcode, FCD3 *fcd);
+
+COB_EXPIMP void	cob_extfh_open		(EXTFH_FUNC callfh, cob_file *,
+					const int, const int, cob_field *);
+COB_EXPIMP void cob_extfh_close		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int, const int);
+COB_EXPIMP void cob_extfh_read		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, cob_field *, const int);
+COB_EXPIMP void cob_extfh_read_next	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int);
+COB_EXPIMP void cob_extfh_rewrite	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int, cob_field *);
+COB_EXPIMP void cob_extfh_delete	(EXTFH_FUNC callfh, cob_file *,
+					cob_field *);
+COB_EXPIMP void cob_extfh_start		(EXTFH_FUNC callfh, cob_file *,
+					const int, cob_field *,
 					cob_field *, cob_field *);
-COB_EXPIMP void cob_extfh_write		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
-					cob_file *, cob_field *, const int,
+COB_EXPIMP void cob_extfh_write		(EXTFH_FUNC callfh, cob_file *,
+					cob_field *, const int,
 				 	cob_field *, const unsigned int);
 COB_EXPIMP void cob_file_fcd_adrs		(cob_file *, void *);
 COB_EXPIMP void cob_file_fcdkey_adrs	(cob_file *, void *);
@@ -2636,6 +2695,8 @@ COB_EXPIMP void	cob_file_sort_giving	(cob_file *, const size_t, ...);
 COB_EXPIMP void	cob_file_sort_giving_extfh	(cob_file *, const size_t, ...);
 COB_EXPIMP void	cob_file_release	(cob_file *);
 COB_EXPIMP void	cob_file_return		(cob_file *);
+
+COB_EXPIMP char * cob_path_to_absolute (const char *path);
 
 /***************************/
 /* Functions in reportio.c */
@@ -2816,8 +2877,8 @@ COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
 COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
-COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
-COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_of (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
 
 /************************/
 /* Functions in cconv.c */
@@ -2910,5 +2971,65 @@ typedef	char *		cobchar_t;
 #define cobput_sxn_compx(d,n,v)	(void)	cob_put_s64_compx(v, d, n)
 
 /*******************************/
+
+
+/* Type to store nanoseconds */
+typedef unsigned long long cob_ns_time;
+
+enum cob_prof_procedure_kind {
+	COB_PROF_PROCEDURE_MODULE,
+	COB_PROF_PROCEDURE_SECTION,
+	COB_PROF_PROCEDURE_PARAGRAPH,
+	COB_PROF_PROCEDURE_ENTRY,
+	COB_PROF_PROCEDURE_CALL
+};
+
+struct cob_prof_procedure {
+	/* Name of the module or section or paragraph or entry */
+	const char				*text;
+	/* File Location */
+	const char				*file;
+	int 					line;
+	/* Index of the section record of this procedure. In the case
+	   of COB_PROF_PROCEDURE_ENTRY, the "section" field is in fact
+	   the paragraph, not the section */
+	int 					section;
+	/* Kind of procedure. */
+	enum cob_prof_procedure_kind	kind;
+};
+
+/* Structure storing profiling information about each COBOL module */
+struct cob_prof_module {
+	/* Array of execution times */
+	cob_ns_time 				*total_times;
+	/* Array of execution counts */
+	unsigned int				*called_count;
+	/* Array of current recursions per procedure  */
+	unsigned int				*procedure_recursions;
+	/* Array of procedure descriptions */
+	struct cob_prof_procedure	*procedures ;
+	/* Number of procedures */
+	size_t  			procedure_count;
+};
+
+/* Function called to start profiling a COBOL module. Allocates the
+   cob_prof_module structure that will be used to store the counters and
+   times. */
+COB_EXPIMP struct cob_prof_module *cob_prof_init_module (
+	cob_module *module,
+	struct cob_prof_procedure	*procedure_names,
+	size_t		procedure_count);
+
+/* Functions used to instrument the generated C code and measure
+ * counters and times */
+COB_EXPIMP void cob_prof_enter_procedure	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_exit_procedure 	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_enter_section  	(struct cob_prof_module *, int);
+COB_EXPIMP void cob_prof_exit_section   	(struct cob_prof_module *, int);
+
+/* Enter a paragraph in the middle, using an ENTRY statement */
+COB_EXPIMP void cob_prof_use_paragraph_entry	(struct cob_prof_module *, int, int);
+/* Exit a paragraph using a GO TO */
+COB_EXPIMP void cob_prof_goto			(struct cob_prof_module *);
 
 #endif	/* COB_COMMON_H */
