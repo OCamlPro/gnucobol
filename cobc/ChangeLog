@@ -1,4 +1,9 @@
 
+2026-03-25	Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* intrinsic.c, reserved.c, tree.c (cb_build_intrinsic):
+	  implement intrinsic function BOOLEAN-OF-INTEGER
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for
