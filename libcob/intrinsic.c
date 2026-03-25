@@ -77,6 +77,9 @@ static cob_global	*cobglobptr;
 static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
+static const cob_field_attr	const_boolean_attr =
+				{COB_TYPE_BOOLEAN, 0, 0, 0, NULL};
+
 /* Working fields */
 static cob_field	*move_field;
 
@@ -7101,15 +7104,99 @@ cob_intr_content_of (const int offset, const int length, const int params, ...)
 	return curr_field;
 }
 
-/* RXWRXW - To be implemented */
+int is_little_endian(void) {
+    unsigned int x = 1;
+    return *((unsigned char *)&x) == 1;
+}
 
+/*
+  Converts a positive integer `val` to it's binary representation truncated or
+  padded to match `bitwidth` bits.
+*/
 cob_field *
-cob_intr_boolean_of_integer (cob_field *f1, cob_field *f2)
+cob_intr_boolean_of_integer(cob_field *val, cob_field *bitwidth)
 {
-	COB_UNUSED (f1);
-	COB_UNUSED (f2);
+	cob_s64_t	int_val;
+	size_t 		int_bitwidth;
+	cob_field	field;
+	int			i, bit, binary_string_start_pos;
 
-	error_not_implemented ();
+	/* `val` can be a large value */
+	int_val = cob_get_llint(val);
+	int_bitwidth = cob_get_int(bitwidth);
+
+	/*
+	  `val` should be a positive integer.
+	  `bitwidth` should be a positive non-zero integer.
+	*/
+	if (int_val < 0 || int_bitwidth < 1) {
+		cob_set_exception(COB_EC_ARGUMENT_FUNCTION);
+		cob_alloc_set_field_uint(0);
+		return curr_field;
+	}
+
+	/* Based on https://stackoverflow.com/a/61938224 */
+	/* Get raw memory reprensentation in bytes. */
+	unsigned char *bytes = (unsigned char *)&int_val;
+
+	COB_FIELD_INIT(int_bitwidth, NULL, &const_boolean_attr);
+	make_field_entry (&field);
+
+	int little_endian = is_little_endian();
+
+	/* Get effective occupied size of `int_val` in memory. */
+	size_t effective_val_size = 0;
+	/* Go to most significant byte */
+	unsigned char *byte = little_endian 
+							? &bytes[sizeof(int_val) - 1] 
+							: &bytes[0];
+
+	/* Count empty bytes */
+	int num_empty_bytes = 0;
+	while (*byte == 0) {
+		num_empty_bytes++;
+		if (little_endian) {
+			byte--;
+		} else {
+			byte++;
+		}
+	}
+
+	effective_val_size = (sizeof(int_val) - num_empty_bytes) * 8;
+
+	/* This is the position where our output bit value starts */
+    binary_string_start_pos = int_bitwidth > effective_val_size 
+								? int_bitwidth - effective_val_size 
+								: 0;
+
+    memset(curr_field->data, '0', int_bitwidth);
+
+	bit = 0;
+	if (little_endian) {
+		/* Go back to the least significant byte */
+		bytes = &bytes[0];
+		for (i = int_bitwidth - 1; i >= binary_string_start_pos; i--) {
+			curr_field->data[i] = *bytes & (1 << bit++) ? '1' : '0';
+			if (bit % 8 == 0) {
+				/* Move to next byte */
+				bit = 0;
+				bytes++;
+			}
+		}
+	} else {
+		/* Go back to the least significant byte */
+		bytes = &bytes[(effective_val_size / 8) - 1];
+		for (i = binary_string_start_pos; i < int_bitwidth; i++) {
+			curr_field->data[i] = *bytes & (1 << bit++) ? '1' : '0';
+			if (bit % 8 == 0) {
+				/* Move to next byte */
+				bit = 0;
+				bytes--;
+			}
+		}
+	}
+
+	return curr_field;
 }
 
 /* implementation of FUNCTION CHAR-NATIONAL - character from ordinal

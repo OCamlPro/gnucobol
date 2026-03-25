@@ -3308,7 +3308,7 @@ static struct cb_intrinsic_table function_list[] = {
   },
   { "BOOLEAN-OF-INTEGER",		"cob_intr_boolean_of_integer",
 					CB_INTR_BOOLEAN_OF_INTEGER, FUNCTION_NAME,
-					CB_FEATURE_NOT_IMPLEMENTED,	2, 2,
+					CB_FEATURE_ACTIVE,	2, 2,
 					CB_CATEGORY_NUMERIC, 0
   },
   { "BYTE-LENGTH",			"cob_intr_byte_length",
