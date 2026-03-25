@@ -4657,3 +4657,58 @@ Return value '5'], [])
 
 AT_CLEANUP
 
+AT_SETUP([FUNCTION BOOLEAN-OF-INTEGER])
+AT_KEYWORDS([functions literal ibm])
+
+AT_DATA([prog.cob], [
+       >> SOURCE FREE
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  VAL          PIC   9(5) VALUE 25.
+       01  BOOL-VAL     PIC   1(20).
+       PROCEDURE DIVISION.
+          *> TODO: BOOLEAN-OF-INTEGER returns a value of USAGE BIT. 
+          *> Modify test when USAGE BIT is supported.
+         
+          *> Bit length matches exactly with that of the binary representation
+          IF FUNCTION BOOLEAN-OF-INTEGER(VAL, 8) NOT = "00011001"
+             DISPLAY "UNEXPECTED BIT-VALUE, expected 00011001, got: "
+             FUNCTION BOOLEAN-OF-INTEGER(VAL, 8).
+         
+          *> Bit length is less than the length of binary representation
+          IF FUNCTION BOOLEAN-OF-INTEGER(VAL, 3) NOT = "001"
+             DISPLAY "UNEXPECTED BIT-VALUE, expected 001, got: "
+             FUNCTION BOOLEAN-OF-INTEGER(VAL, 3).
+
+          *> Bit length is more than the length of binary representation
+          *> Also, the passed integer is multi-byte
+          MOVE 1008 TO VAL.
+          IF FUNCTION BOOLEAN-OF-INTEGER(VAL, 20) NOT = "00000000001111110000"
+             DISPLAY "UNEXPECTED BIT-VALUE, expected 00000000001111110000, got: "
+             FUNCTION BOOLEAN-OF-INTEGER(VAL, 20).
+
+          *> Special case, check 0
+          MOVE 0 TO VAL.
+          IF FUNCTION BOOLEAN-OF-INTEGER(VAL, 12) NOT = "000000000000"
+             DISPLAY "UNEXPECTED BIT-VALUE, expected 000000000000, got: "
+             FUNCTION BOOLEAN-OF-INTEGER(VAL, 12).
+
+          *> Check an integer which has a central byte full of zeroes
+          *> Here, we are essentially checking if our implementation can correctly
+          *> get number of used bytes in an integer.
+          MOVE 65664 TO VAL.
+          MOVE FUNCTION BOOLEAN-OF-INTEGER(VAL, 20) TO BOOL-VAL.
+          IF BOOL-VAL NOT = "00010000000010000000"
+             DISPLAY "UNEXPECTED BIT-VALUE, expected 00010000000010000000, got: "
+             BOOL-VAL.  
+
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
