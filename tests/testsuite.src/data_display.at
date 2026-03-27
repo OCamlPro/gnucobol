@@ -156,7 +156,7 @@ AT_DATA([prog.cob], [
 
 AT_XFAIL_IF([true])
 
-AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fpretty-display -Wno-unfinished prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [1234
 0031003200330034

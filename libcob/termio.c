@@ -218,11 +218,20 @@ display_alnum (const cob_field *f, FILE *fp)
 static void
 display_national (const cob_field *f, FILE *fp) 
 {
-	size_t i;
-	for (i = 0; i < f->size; i += 2) {
-		if (f->data[i] == 0x00) {
-			putc (f->data[i + 1], fp);
+	/* TODO: currently only display national data that 
+		overlaps ISO8859-1 and will need an iconv approach later on */
+
+	const unsigned char *end = f->data + f->size;
+	unsigned char *p = f->data;
+
+	while (p < end) {
+		if (p[0] == 0x00) {
+			const int chr = p[1];
+			if (putc (chr, fp) != chr) {
+				break;
+			}
 		}
+		p += 2;
 	}
 }
 
