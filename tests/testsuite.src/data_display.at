@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2015, 2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2015, 2023, 2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Brian Tiffin,
 ## Chuck Haatveet
 ## 
@@ -157,6 +157,16 @@ AT_DATA([prog.cob], [
 AT_XFAIL_IF([true])
 
 AT_CHECK([$COMPILE -fpretty-display -Wno-unfinished prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[1234
+0031003200330034
+000012.34
+00300030003000300031003200330034
+abcd
+0061006200630064
+])
+
+AT_CHECK([$COMPILE -fno-pretty-display -Wno-unfinished prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [1234
 0031003200330034
