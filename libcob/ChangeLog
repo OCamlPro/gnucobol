@@ -1,4 +1,15 @@
 
+2026-04-04  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c: rewrite cob_mpf_sin and cob_mpd_cos for
+	  better performances.
+
+
+2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
+	  as it is an external value.
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking
