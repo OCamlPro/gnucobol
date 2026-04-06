@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -1018,11 +1018,11 @@ cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 	mpf_set (dst, src_val);
 
 	sign = mpf_sgn (src_val);
-	if ( sign == 0 ) {
+	if (sign == 0) {
 		mpf_set_ui (dst, 0UL);
 		return(0);
 	} else {
-		if ( sign == -1 ) {
+		if (sign == -1) {
 			mpf_neg (dst, dst);
 		}
 	}
@@ -1030,13 +1030,12 @@ cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 
         /* get pi/2 */
 	mpf_div_2exp (half_pi, cob_pi, 1UL);
-	if ( mpf_cmp (dst, half_pi) == 0) {
+	if (mpf_cmp (dst, half_pi) == 0) {
 		if ( sign == -1 ) {
 			return(2);
 		}
 		return(0);
 	}
-
 
 	/* Get Quadrant */
 	mpf_div (vf1, dst, half_pi);
@@ -1051,7 +1050,7 @@ cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 	mpf_sub (dst, dst, vf1);
 
 	/* Process quadrant */
-	if ( n & 1) {
+	if (n & 1) {
 		/* if n odd we have to get the complementary angle */
 		mpf_sub (dst, half_pi, dst);
 	}
@@ -1085,7 +1084,6 @@ cob_mpf_cos (mpf_t dst_val, const mpf_t src_val)
 	mpf_t			term, val_serie, angle;
 	cob_u16_t		arcquad;
 	cob_uli_t		n;
-	cob_uli_t		j;
 
 	if (!set_cob_pi) setup_cob_pi ();
 
@@ -1111,26 +1109,29 @@ cob_mpf_cos (mpf_t dst_val, const mpf_t src_val)
 
 	n = 4;
 	do {
+		const cob_uli_t	j = (n-1UL) * n;
+
 		mpf_set (val_serie, dst_val);
 		mpf_mul (term, term, angle);
-		j = n - 1UL;
-		j = j * n;
 		mpf_div_ui (term, term, j);
 		mpf_neg (term, term);
 
 		mpf_add ( dst_val, dst_val, term);
 
-		n = n + 2;
+		n += 2;
 	} while (!mpf_eq (dst_val, val_serie, COB_MPF_PREC));
 
-	/*  compute 2*n^2 -1 */
-	for ( int i = 0 ; i < COB_COS_DIVIDE_FACTOR; i++ ) {
-		mpf_mul (dst_val, dst_val, dst_val);
-		mpf_mul_ui (dst_val, dst_val, 2UL);
-		mpf_sub_ui (dst_val, dst_val, 1UL);
+	/*  compute 2*n^2 -1 n times */
+	{
+		int i ;
+		for (i = 0 ; i < COB_COS_DIVIDE_FACTOR; i++) {
+			mpf_mul (dst_val, dst_val, dst_val);
+			mpf_mul_ui (dst_val, dst_val, 2UL);
+			mpf_sub_ui (dst_val, dst_val, 1UL);
+		}
 	}
 
-	if (arcquad == 1 || arcquad == 2 )  {
+	if (arcquad == 1 || arcquad == 2)  {
 		mpf_neg (dst_val, dst_val);
 	}
 

@@ -1,9 +1,11 @@
 
 2026-04-04  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
-	* intrinsic.c: rewrite cob_mpf_sin and cob_mpd_cos for
-	  better performances.
-
+	* intrinsic.c (cob_normalize_angle): new_function
+	* intrinsic.c (cob_mpf_cos): better performabce with use of
+	  cob_normalize_angle
+	* intrinsic.c (cob_mpf_sin): better performabce with use of
+	  cob_mpf_sin
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

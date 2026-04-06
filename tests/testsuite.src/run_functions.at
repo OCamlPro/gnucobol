@@ -4658,7 +4658,7 @@ Return value '5'], [])
 AT_CLEANUP
 
 
-AT_SETUP([FUNCTION SIN])
+AT_SETUP([FUNCTION SIN additionnals tests])
 AT_KEYWORDS([functions additionals tests for SIN])
 
 AT_DATA([prog.cob], [
@@ -4672,9 +4672,24 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  Y   PIC   S9V9(37) COMP-3.
+       01  N   PIC   9(04) COMP-5.
        PROCEDURE        DIVISION.
       *
       *    SIN TESTS
+      *
+           MOVE 1 TO N.
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 2500 TO N.
+       >> END-IF
+      *
+           PERFORM DO-TEST N TIMES .
+      *
+           GOBACK.
+      *
+       DO-TEST .
+      *---------
+      *
+           PERFORM QUADRANT-1 .
       *
            PERFORM QUADRANT-1 .
       *
@@ -4685,8 +4700,6 @@ AT_DATA([prog.cob], [
            PERFORM QUADRANT-4 .
       *
            PERFORM OTHERS     .
-      *
-           GOBACK.
       *
        QUADRANT-1 .
       *------------
@@ -4962,7 +4975,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([FUNCTION COS])
+AT_SETUP([FUNCTION COS additionnals tests])
 AT_KEYWORDS([functions additionals tests for COS])
 
 AT_DATA([prog.cob], [
@@ -4976,9 +4989,22 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  Y   PIC   S9V9(37) COMP-3.
+       01  N   PIC   9(04) COMP-5.
        PROCEDURE        DIVISION.
       *
       *    COS TESTS
+      *
+           MOVE 1 TO N.
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 2500 TO N.
+       >> END-IF
+      *
+           PERFORM DO-TEST N TIMES .
+      *
+           GOBACK.
+      *
+       DO-TEST .
+      *---------
       *
            PERFORM QUADRANT-1 .
       *
@@ -4989,8 +5015,6 @@ AT_DATA([prog.cob], [
            PERFORM QUADRANT-4 .
       *
            PERFORM OTHERS     .
-      *
-           GOBACK.
       *
        QUADRANT-1 .
       *------------
