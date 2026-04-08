@@ -38,6 +38,7 @@ testsuite_sources = \
 	testsuite.src/syn_move.at \
 	testsuite.src/syn_multiply.at \
 	testsuite.src/syn_occurs.at \
+	testsuite.src/syn_oo.at \
 	testsuite.src/syn_redefines.at \
 	testsuite.src/syn_refmod.at \
 	testsuite.src/syn_reportwriter.at \
