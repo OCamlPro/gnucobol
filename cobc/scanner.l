@@ -656,6 +656,11 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (END_FUNCTION);
 }
 
+"END"[ ,;\n]+"CLASS"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_CLASS);
+}
+
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
 	if (lookup_reserved_word ("SYMBOL")) {
 		count_lines (yytext);
@@ -1044,8 +1049,10 @@ H#[0-9A-Za-z]+ {
 	/* Bail early for (END) PROGRAM-ID when not a literal */
 	if  ((second_last_token == PROGRAM_ID  && last_token == TOK_DOT)
 	  || (second_last_token == FUNCTION_ID && last_token == TOK_DOT)
+	  || (second_last_token == CLASS_ID && last_token == TOK_DOT)
 	  ||  last_token == END_PROGRAM
-	  ||  last_token == END_FUNCTION) {
+	  ||  last_token == END_FUNCTION
+	  ||  last_token == END_CLASS) {
 		/* Force PROGRAM-ID / END PROGRAM */
 		if (cb_fold_call) {
 			yylval = cb_build_reference (yytext);
