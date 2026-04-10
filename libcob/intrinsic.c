@@ -1,6 +1,7 @@
 /*
    Copyright (C) 2005-2012, 2014-2026 Free Software Foundation, Inc.
-   Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
+   Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin,
+   Denis Hugonnard-Roche
 
    This file is part of GnuCOBOL.
 
@@ -100,6 +101,7 @@ static mpf_t		cob_mpft2;
 static mpf_t		cob_mpft_get;
 
 static mpf_t		cob_pi;
+static mpf_t		cob_half_pi;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
 static mpf_t		cob_log_ten;
@@ -399,6 +401,11 @@ setup_cob_pi (void)
 
 	mpf_init2 (cob_pi, COB_PI_LEN);
 	mpf_set_str (cob_pi, cob_pi_str, 10);
+
+	mpf_init2 (cob_half_pi, COB_PI_LEN);
+	mpf_set (cob_half_pi, cob_pi);
+	mpf_div_ui (cob_half_pi, cob_pi, 2UL);
+
 	set_cob_pi = 1;
 }
 
@@ -1003,42 +1010,29 @@ cob_mpf_log10 (mpf_t dst_val, const mpf_t src_val)
 static cob_u16_t
 cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 {
-	mpf_t half_pi;
 	mpf_t vf1;
 	mpf_t k  ;
 	mpz_t q  ;
-	int sign ;
 	unsigned long n ;
 
-	mpf_init2 (half_pi, COB_MPF_PREC);
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_init2 (k, COB_MPF_PREC);
-	mpz_init2 (q, COB_MPF_PREC);
-
-	mpf_set (dst, src_val);
-
-	sign = mpf_sgn (src_val);
+	const int sign = mpf_sgn (src_val);
 	if (sign == 0) {
 		mpf_set_ui (dst, 0UL);
-		return(0);
-	} else {
-		if (sign == -1) {
-			mpf_neg (dst, dst);
-		}
+		return 0 ;
+	}
+
+	mpf_set (dst, src_val);
+	if (sign == -1) {
+		mpf_neg (dst, dst);
 	}
 	/* Now dst contains abs(src_val) */
 
-        /* get pi/2 */
-	mpf_div_2exp (half_pi, cob_pi, 1UL);
-	if (mpf_cmp (dst, half_pi) == 0) {
-		if ( sign == -1 ) {
-			return(2);
-		}
-		return(0);
-	}
+	mpf_init2 (vf1, COB_MPF_PREC);
+	mpf_init2 (k, COB_MPF_PREC);
+	mpz_init2 (q, COB_MPZ_DEF);
 
 	/* Get Quadrant */
-	mpf_div (vf1, dst, half_pi);
+	mpf_div (vf1, dst, cob_half_pi);
 	mpf_trunc (k, vf1);
 	mpz_set_f(q, k);
 	mpz_mod_ui (q, q, 4UL);
@@ -1046,30 +1040,24 @@ cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 
 	/* Compute the resulting angle reduce on [0;PI/2] */
 	/*         dst     - k*Pi/2  */
-	mpf_mul (vf1, k, half_pi);
+	mpf_mul (vf1, k, cob_half_pi);
 	mpf_sub (dst, dst, vf1);
 
 	/* Process quadrant */
 	if (n & 1) {
 		/* if n odd we have to get the complementary angle */
-		mpf_sub (dst, half_pi, dst);
+		mpf_sub (dst, cob_half_pi, dst);
 	}
 
-	if ( sign < 0 ) {
-			switch (n) {
-			case 0  : n = 3 ; break;
-			case 1  : n = 2 ; break;
-			case 2  : n = 1 ; break;
-			case 3  : n = 0 ; break;
-		}
+	if (sign == -1) {
+		n = 3 - n ;
 	}
 
-	mpf_clear (half_pi);
 	mpf_clear (vf1);
 	mpf_clear (k);
 	mpz_clear (q);
 
-	return(n);
+	return n;
 }
 
 /* Cos function */
@@ -1116,7 +1104,7 @@ cob_mpf_cos (mpf_t dst_val, const mpf_t src_val)
 		mpf_div_ui (term, term, j);
 		mpf_neg (term, term);
 
-		mpf_add ( dst_val, dst_val, term);
+		mpf_add (dst_val, dst_val, term);
 
 		n += 2;
 	} while (!mpf_eq (dst_val, val_serie, COB_MPF_PREC));
@@ -1147,13 +1135,13 @@ static void
 cob_mpf_sin (mpf_t dst_val, const mpf_t src_val)
 {
 	mpf_t           vf1;
-	mpf_init2 (vf1, COB_MPF_PREC);
 
 	if (!set_cob_pi) setup_cob_pi ();
 
-	mpf_set (vf1, cob_pi);
-	mpf_div_2exp (vf1, vf1, 1UL);
+	mpf_init2 (vf1, COB_MPF_PREC);
 
+	/* compute complementary angle = PI/2 - Angle */
+	mpf_set (vf1, cob_half_pi);
 	if (mpf_cmp_ui (src_val, 0UL) != 0) {
 		mpf_sub (vf1, vf1, src_val);
 	}
@@ -1205,15 +1193,14 @@ cob_mpf_atan (mpf_t dst_val, const mpf_t src_val)
 	mpf_add_ui (vf3, cob_sqrt_two, 1UL);
 
 	if (mpf_cmp (vf1, vf3) > 0) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_2exp (dst_temp, dst_temp, 1UL);
+		mpf_set (dst_temp, cob_half_pi);
 		mpf_ui_div (vf1, 1UL, vf1);
 		mpf_neg (vf1, vf1);
 	} else {
 		mpf_sub_ui (vf4, cob_sqrt_two, 1UL);
 		if (mpf_cmp (vf1, vf4) > 0) {
-			mpf_set (dst_temp, cob_pi);
-			mpf_div_2exp (dst_temp, dst_temp, 2UL);
+			mpf_set (dst_temp, cob_half_pi);
+			mpf_div_2exp (dst_temp, dst_temp, 1UL);
 			mpf_sub_ui (vf3, vf1, 1UL);
 			mpf_add_ui (vf4, vf1, 1UL);
 			mpf_div (vf1, vf3, vf4);
@@ -1261,8 +1248,8 @@ cob_mpf_asin (mpf_t dst_val, const mpf_t src_val)
 	if (!set_cob_pi) setup_cob_pi ();
 
 	if (!mpf_cmp_ui (src_val, 1UL) || !mpf_cmp_si (src_val, -1L)) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_ui (dst_temp, dst_temp, 2UL);
+		mpf_set (dst_temp, cob_half_pi);
+		mpf_div_ui (dst_temp, dst_temp, 1UL);
 		if (mpf_sgn (src_val) < 0) {
 			mpf_neg (dst_temp, dst_temp);
 		}
@@ -1309,8 +1296,8 @@ cob_mpf_acos (mpf_t dst_val, const mpf_t src_val)
 	if (!set_cob_pi) setup_cob_pi ();
 
 	if (!mpf_sgn (src_val)) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_ui (dst_temp, dst_temp, 2UL);
+		mpf_set (dst_temp, cob_half_pi);
+		mpf_div_ui (dst_temp, dst_temp, 1UL);
 		mpf_set (dst_val, dst_temp);
 		mpf_clear (dst_temp);
 		return;
@@ -7258,6 +7245,7 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_pi) {
 		mpf_clear (cob_pi);
+		mpf_clear (cob_half_pi);
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);

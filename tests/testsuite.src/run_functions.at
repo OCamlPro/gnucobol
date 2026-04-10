@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -4659,7 +4659,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION SIN additionnals tests])
-AT_KEYWORDS([functions additionals tests for SIN])
+AT_KEYWORDS([functions SIN])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4976,7 +4976,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION COS additionnals tests])
-AT_KEYWORDS([functions additionals tests for COS])
+AT_KEYWORDS([functions COS])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5327,6 +5327,284 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([function ATAN additionals tests])
+AT_KEYWORDS([functions ATAN])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       REPOSITORY.
+           FUNCTION ALL INTRINSIC.
+
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  BIG PIC   S9(38) COMP-3.
+       01  Z   PIC   S9V9(37) COMP-3.
+       01  X   PIC   S9V9(37) COMP-3.
+      *
+       PROCEDURE DIVISION.
+      *
+      *    ATAN TESTS
+      *
+
+           MOVE 99999999999999999999999999999999999999 TO BIG.
+           COMPUTE  Z =   ATAN(BIG) 
+           IF Z NOT = 1.5707963267948966192313216916397514420
+           THEN
+                DISPLAY '1 : ' Z
+                        ' != 1.5707963267948966192313216916397514420'.
+      *
+           MOVE -99999999999999999999999999999999999999 TO BIG.
+           COMPUTE  Z =   ATAN(BIG) 
+           IF Z NOT = -1.5707963267948966192313216916397514420
+           THEN
+                DISPLAY '2 : ' Z
+                        ' != -1.5707963267948966192313216916397514420'.
+      *
+           MOVE 0 TO BIG.
+           COMPUTE  Z =   ATAN(BIG) 
+           IF Z NOT = 0 
+           THEN
+                DISPLAY '3 : ' Z
+                        ' !=  0'.
+      *
+           MOVE 2 TO X.
+           COMPUTE  Z =   ATAN(X) 
+           IF Z NOT = 1.1071487177940905030170654601785370400
+           THEN
+                DISPLAY '4 : ' Z
+                        ' != 1.1071487177940905030170654601785370400'.
+      *
+           MOVE -2 TO X.
+           COMPUTE  Z =   ATAN(X) 
+           IF Z NOT = -1.1071487177940905030170654601785370400
+           THEN
+                DISPLAY '5 : ' Z
+                        ' != -1.1071487177940905030170654601785370400'.
+      *
+           MOVE 0.3 TO X.
+           COMPUTE  Z =   ATAN(X) 
+           IF Z NOT = 0.2914567944778670919956046214328911935
+           THEN
+                DISPLAY '6 : ' Z
+                        ' != 0.2914567944778670919956046214328911935'.
+      *
+           MOVE -0.3 TO X.
+           COMPUTE  Z =   ATAN(X) 
+           IF Z NOT = -0.2914567944778670919956046214328911935
+           THEN
+                DISPLAY '7 : ' Z
+                        ' != -0.2914567944778670919956046214328911935'.
+      *
+           GOBACK.
+
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([function ACOS additionals tests])
+AT_KEYWORDS([functions ACOS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       REPOSITORY.
+           FUNCTION ALL INTRINSIC.
+
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  Z   PIC   S9V9(37) COMP-3.
+       01  X   PIC   S99V9(36) COMP-3.
+       01  E-LOC   PIC   X(50)           .
+       01  E-LOC-PREV  PIC   X(50)           .
+       01  E-STATUS   PIC   X(50)           .
+      *
+       PROCEDURE DIVISION.
+      *
+      *    ACOS TESTS
+      *
+           MOVE 2 TO X  .
+           COMPUTE  Z =   ACOS(X) 
+           MOVE EXCEPTION-STATUS TO E-STATUS .
+           MOVE EXCEPTION-LOCATION TO E-LOC.
+           IF E-STATUS NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+                   DISPLAY '1-1: Should have raise exception'.
+           MOVE E-LOC TO E-LOC-PREV.
+      *
+           MOVE -2 TO X  .
+           COMPUTE  Z =   ACOS(X) 
+           MOVE EXCEPTION-LOCATION TO E-LOC.
+           IF E-LOC = E-LOC-PREV
+           THEN
+                   DISPLAY '2-1: Should have raise exception'.
+           MOVE E-LOC TO E-LOC-PREV.
+      *
+           MOVE 0 TO X  .
+           COMPUTE  Z =   ACOS(X) 
+           MOVE EXCEPTION-LOCATION TO E-LOC.
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '3-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 1.5707963267948966192313216916397514420
+           THEN
+                   DISPLAY '3-2 : <' Z
+                          '> != 1.5707963267948966192313216916397514420'
+           END-IF.
+      *
+           MOVE 1 TO X  .
+           COMPUTE  Z =   ACOS(X) 
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '4-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 0
+           THEN
+                   DISPLAY '4-2 : <' Z
+                          '> != 0'
+           END-IF.
+      *
+           MOVE -1 TO X  .
+           COMPUTE  Z =   ACOS(X) 
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '5-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 3.1415926535897932384626433832795028841
+           THEN
+                   DISPLAY '5-2 : <' Z
+                          '> != 3.1415926535897932384626433832795028841'
+           END-IF.
+      *
+           MOVE 0.5 TO X  .
+           COMPUTE  Z =   ACOS(X) 
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '6-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 1.0471975511965977461542144610931676280
+           THEN
+                   DISPLAY '6-2 : <' Z
+                          '> != 1.0471975511965977461542144610931676280'
+           END-IF.
+      *
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE -d prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([function ASIN additionals tests])
+AT_KEYWORDS([functions ASIN])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       REPOSITORY.
+           FUNCTION ALL INTRINSIC.
+
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  Z   PIC   S9V9(37) COMP-3.
+       01  X   PIC   S99V9(36) COMP-3.
+       01  E-LOC   PIC   X(50)           .
+       01  E-LOC-PREV  PIC   X(50)           .
+       01  E-STATUS   PIC   X(50)           .
+      *
+       PROCEDURE DIVISION.
+      *
+      *    ASIN TESTS
+      *
+           MOVE 2 TO X  .
+           COMPUTE  Z =   ASIN(X) 
+           MOVE EXCEPTION-STATUS TO E-STATUS .
+           MOVE EXCEPTION-LOCATION TO E-LOC.
+           IF E-STATUS NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+                   DISPLAY '1-1: Should have raise exception'.
+           MOVE E-LOC TO E-LOC-PREV.
+      *
+           MOVE -2 TO X  .
+           COMPUTE  Z =   ASIN(X) 
+           MOVE EXCEPTION-LOCATION TO E-LOC.
+           IF E-LOC = E-LOC-PREV
+           THEN
+                   DISPLAY '2-1: Should have raise exception'.
+           MOVE E-LOC TO E-LOC-PREV.
+      *
+           MOVE 0 TO X  .
+           COMPUTE  Z =   ASIN(X) 
+           MOVE EXCEPTION-LOCATION TO E-LOC.
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '3-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 0
+           THEN
+                   DISPLAY '3-2 : <' Z
+                          '> != 0'
+           END-IF.
+      *
+           MOVE 1 TO X  .
+           COMPUTE  Z =   ASIN(X) 
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '4-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 1.5707963267948966192313216916397514420 
+           THEN
+                   DISPLAY '4-2 : <' Z
+                          '> != 1.5707963267948966192313216916397514420'
+           END-IF.
+      *
+           MOVE -1 TO X  .
+           COMPUTE  Z =   ASIN(X) 
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '5-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = -1.5707963267948966192313216916397514420
+           THEN
+                   DISPLAY '5-2 : <' Z
+                         '> != -1.5707963267948966192313216916397514420'
+           END-IF.
+      *
+           MOVE 0.5 TO X  .
+           COMPUTE  Z =   ASIN(X) 
+           IF E-LOC NOT = E-LOC-PREV
+           THEN
+                   DISPLAY '6-1 : Should not have raise exception'
+           END-IF.
+           IF Z NOT = 0.5235987755982988730771072305465838140
+           THEN
+                   DISPLAY '6-2 : <' Z
+                          '> != 0.5235987755982988730771072305465838140'
+           END-IF.
+      *
+           GOBACK.
+
+])
+
+AT_CHECK([$COMPILE -d prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
