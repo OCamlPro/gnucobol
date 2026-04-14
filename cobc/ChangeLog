@@ -1,4 +1,13 @@
 
+2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* parser.y: remove the CB_PENDING warning on XML PARSE but still warn for 
+	  untested XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING.
+	* typeck.c: remove invalid call to cob_check_based for XML-* builtin variable 
+	  length registers (like XML-TEXT)
+	* codegen.c: remove the uninitialized and unused b_* field for XML-* builtin 
+	  variable length registers
+
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* tree.h, parser.y: change type of cobc_cs_check flags to permit
