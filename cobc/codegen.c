@@ -7274,7 +7274,7 @@ output_xml_parse (struct cb_xml_parse *p)
 {
 	int flags = 0;
 	if (cb_xml_parse_xmlss) {
-		flags |= COB_XML_PARSE_XMLNSS;
+		flags |= COB_XML_PARSE_XMLSS;
 	}
 	if (p->returning_national && current_prog->xml_ntext) {
 		flags |= COB_XML_PARSE_NATIONAL;
@@ -11905,7 +11905,9 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Dangling linkage section items */
 	seen = 0;
 	for (f = prog->linkage_storage; f; f = f->sister) {
-		if (f->redefines) {
+		if (f->redefines || f->flag_internal_register) {
+			/* XML-TEXT and other XML-* registers are in linkage_storage but do not use the 
+			   corresponding b_* field. */
 			continue;
 		}
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
