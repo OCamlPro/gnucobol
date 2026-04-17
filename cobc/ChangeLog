@@ -1,8 +1,73 @@
 
+2025-12-29  Roger Bowler <rbowler@snipix.net>
+
+	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for
+	  ORGANIZATION INDEXED, even when compiler is configured --without-db
+
+2025-12-04  Roger Bowler <rbowler@snipix.net>
+
+	* parser.y (entry): check that ENTRY statement begins in area B not area A
+
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (get_number_in_parentheses): use local namebuffer
+	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually allign not only
+	  for SET pointer-name but also for SET index-name
+
+2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (get_elided_fname): new function for the listing code
+	* cobc.c (print_program_header): use of the new function to ensure
+	  that the source name is visible in the header and not cut after
+	  its path, fixing last part of FR #294 "listing adjustments"
+
+2025-11-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* ppparse.y: error on extraneous periods at the end of SET
+	  directives; turn to a warning in relaxed syntax mode.
+
+2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_xml_parse): fixed xml state to be static-local
+	  to XML PARSE statement to fix out-of-scope memory trashing
+	* codegen.c (output_param): resolve reference value only once
+
 2025-10-21  Roger Bowler <rbowler@snipix.net>
 
 	* field.c (setup_parameters): set flag_binary_swap for COMP-5 fields
 	  when comp-5-uses-binary-byteorder dialect option is set
+
+2025-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (file_description_entry): create an unnamed file in case
+	  of broken SD/FD reference to ensure a valid tree for error-recovery,
+	  fixing bug #1151
+	* typeck.c (cb_emit_return): ensure a target of SD file
+	* tree.c (finalize_file): fix diagnostic position for non-supported
+	  file type
+	* parser.y (sort_merge_body): fix diagnostic position for SD check
+
+2025-10-17  Roger Bowler <rbowler@snipix.net>
+
+	* cobc.c (print_with_overflow): rewritten, now printing multiple
+	  continuation lines on listing
+
+2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: combined header defines into enum cobc_hd and
+	  reordered per ISO, allowing to drop get_conf_section_part_order
+	* parser.y: SPECIAL-NAMES handling changed, making the header
+	  mandatory to not parse "starting words" as unknown mnemonic names
+	* parser.y: better parsing for missing headers, cobc
+	  can "compile" data copybooks in relaxed syntax mode now,
+	  currently only with source format COBOL85
+	* scanner.l: translate non-printable character for invalid symbols
+	* pplex.l: handle MS-DOS EOF and control code for file separator,
+	  currently consuming consecutive occurences as a single new-line
+
+2025-09-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gentable.c (gentable): fix compile warning under 32bit
 
 2025-07-30  Simon Sobisch <simonsobisch@gnu.org>
 

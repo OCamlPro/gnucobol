@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020, 2022-2024 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edwart Hard
 
@@ -1112,10 +1112,12 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 		for (n = p->times_repeated; n > 0; n--) {
 			unsigned int src_num;
 #ifndef NDEBUG
+			/* LCOV_EXCL_START */
 			if (dst >= dst_end) {
 				cob_runtime_error ("optimized_move_display_to_edited: overflow in destination field");
-				break;
+				goto loop_end;
 			}
+			/* LCOV_EXCL_STOP */
 #endif
 			switch (c) {
 
@@ -1313,6 +1315,10 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 			}
 		}
 	}
+
+#ifndef NDEBUG
+	loop_end:
+#endif
 
 	/* Restore the source sign */
 	COB_PUT_SIGN (f1, sign);

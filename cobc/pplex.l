@@ -1188,6 +1188,20 @@ ENDIF_DIRECTIVE_STATE>{
   }
 }
 
+[\x1A]+ {
+	/* ignore MS-DOS EOF, handling as single newline */
+	if (*yytext != EOF) {
+		unput ('\n');
+	}
+}
+
+[\x1C]+ {
+	/* ignore file separator, handling as single newline,
+	   note: we may want to change that, parsing as two
+	   files if in "main" source */
+	unput ('\n');
+}
+
 <<EOF>> {
 	struct copy_info *current_copy_info = copy_stack;
 

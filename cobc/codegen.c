@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2024 Free Software Foundation, Inc.
+   Copyright (C) 2003-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -3698,16 +3698,17 @@ output_param (cb_tree x, int id)
 		/* Fall through */
 	case CB_TAG_REFERENCE: {
 		const struct cb_reference	*r = CB_REFERENCE (x);
-		if (CB_LOCALE_NAME_P (r->value)) {
-			output_param (CB_LOCALE_NAME (r->value)->list, id);
+		const cb_tree rx = r->value;
+		if (CB_LOCALE_NAME_P (rx)) {
+			output_param (CB_LOCALE_NAME (rx)->list, id);
 			break;
 		}
-		if (CB_REPORT_P (r->value)) {
-			output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (r->value)->cname);
+		if (CB_REPORT_P (rx)) {
+			output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (rx)->cname);
 			break;
 		}
-		if (CB_PROTOTYPE_P (r->value)) {
-			const char *name = CB_PROTOTYPE (r->value)->ext_name;
+		if (CB_PROTOTYPE_P (rx)) {
+			const char *name = CB_PROTOTYPE (rx)->ext_name;
 			const size_t len = strlen (name);
 			cb_tree lit = cb_build_alphanumeric_literal (name, len);
 			output_param (lit, 0);
@@ -3739,8 +3740,8 @@ output_param (cb_tree x, int id)
 			}
 		}
 
-		if (CB_FILE_P (r->value)) {
-			output ("%s%s", CB_PREFIX_FILE, CB_FILE (r->value)->cname);
+		if (CB_FILE_P (rx)) {
+			output ("%s%s", CB_PREFIX_FILE, CB_FILE (rx)->cname);
 			if (r->check) {
 				if (inside_check) {
 					--inside_check;
@@ -3749,8 +3750,8 @@ output_param (cb_tree x, int id)
 			}
 			break;
 		}
-		if (CB_ALPHABET_NAME_P (r->value)) {
-			const struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (r->value);
+		if (CB_ALPHABET_NAME_P (rx)) {
+			const struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (rx);
 			switch (rbp->alphabet_type) {
 			case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
@@ -3789,7 +3790,7 @@ output_param (cb_tree x, int id)
 		}
 
 		/* LCOV_EXCL_START */
-		if (!CB_FIELD_P (r->value)) {
+		if (!CB_FIELD_P (rx)) {
 			cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 				"output_param", "x");
 			cobc_err_msg (_("%s is not a field"), r->word->name);
@@ -3797,7 +3798,7 @@ output_param (cb_tree x, int id)
 		}
 		/* LCOV_EXCL_STOP */
 
-		f = CB_FIELD (r->value);
+		f = CB_FIELD (rx);
 
 		{
 			const struct cb_field	*ff = real_field_founder (f);
@@ -7283,7 +7284,7 @@ output_xml_parse (struct cb_xml_parse *p)
 	}
 
 	output_block_open ();
-	output_line ("void *xml_state = NULL;");
+	output_line ("static void *xml_state = NULL;");
 	output_prefix ();
 	output ("cob_set_int ("),
 	output_param (CB_TREE (current_program->xml_code), 0);
@@ -8935,9 +8936,17 @@ static void
 output_assign (const struct cb_assign *ap)
 {
 #ifdef	COB_NON_ALIGNED		/* Nonaligned */
-	if (CB_TREE_CLASS (ap->var) == CB_CLASS_POINTER
-	 || CB_TREE_CLASS (ap->val) == CB_CLASS_POINTER) {
-		/* Pointer assignment */
+	
+	/* FIXME: the non-aligned code has only to be executed if 
+	the source and/or target is a non-aligned COBOL variable (which
+	it is in case of level 01/77, SYNC or manually aligned) */
+
+	const enum cb_class dst_class = CB_TREE_CLASS (ap->var);
+	const enum cb_class src_class = CB_TREE_CLASS (ap->val);
+   
+	   /* Pointer assignment */
+	if (dst_class == CB_CLASS_POINTER
+	 || src_class == CB_CLASS_POINTER) {
 		output_block_open ();
 		output_line ("void *temp_ptr;");
 
@@ -8976,7 +8985,7 @@ output_assign (const struct cb_assign *ap)
 			output (";");
 		} else {
 			/* MOVE val ... */
-			output ("memcpy(&temp_ptr, ");
+			output ("memcpy (&temp_ptr, ");
 			output_data (ap->val);
 			output (", sizeof(temp_ptr));");
 		}
@@ -8998,27 +9007,42 @@ output_assign (const struct cb_assign *ap)
 			output (" = temp_ptr;");
 		} else {
 			/* MOVE ... TO var */
-			output ("memcpy(");
+			output ("memcpy (");
 			output_data (ap->var);
 			output (", &temp_ptr, sizeof(temp_ptr));");
 		}
 		output_newline ();
 
 		output_block_close ();
-	} else {
-		/* Numeric assignment */
-		output_prefix ();
-		output_integer (ap->var);
-		output (" = ");
-		output_integer (ap->val);
-		if (inside_check == 0) {
-			output (";");
-			output_newline ();
-		} else {
-			inside_stack[inside_check - 1] = 1;
-		}
+		return;
 	}
-#else	/* Nonaligned */
+	
+	/* Index assignment */
+	if ( (dst_class == CB_CLASS_INDEX
+	   || dst_class == CB_CLASS_NUMERIC)
+	 &&  CB_FIELD_PTR (ap->var)->size == sizeof (int)) {
+		output_block_open ();
+		
+		/* temp_var = index / integer value; */
+		output_prefix ();
+		output ("const int temp_idx = ");
+		output_integer (ap->val);
+		output (";");
+		output_newline ();
+
+		/* Destination index = temp_idx; */
+		output_prefix ();
+		output ("memcpy (");
+		output_data (ap->var);
+		output (", &temp_idx, sizeof(temp_idx));");
+		output_newline ();
+
+		output_block_close ();
+		return;
+	}
+
+#endif	/* Nonaligned */
+
 	/* Numeric assignment */
 	output_prefix ();
 	output_integer (ap->var);
@@ -9030,7 +9054,6 @@ output_assign (const struct cb_assign *ap)
 	} else {
 		inside_stack[inside_check - 1] = 1;
 	}
-#endif	/* Nonaligned */
 }
 
 static void
@@ -11181,7 +11204,7 @@ cb_open_mode_to_string (const enum cob_open_mode mode)
 {
 	switch (mode) {
 	case COB_OPEN_CLOSED:	return CB_XSTRINGIFY (COB_OPEN_CLOSED);
-	case COB_OPEN_INPUT:	return CB_XSTRINGIFY(COB_OPEN_INPUT);
+	case COB_OPEN_INPUT:	return CB_XSTRINGIFY (COB_OPEN_INPUT);
 	case COB_OPEN_OUTPUT:	return CB_XSTRINGIFY (COB_OPEN_OUTPUT);
 	case COB_OPEN_I_O:		return CB_XSTRINGIFY (COB_OPEN_I_O);
 	case COB_OPEN_EXTEND:	return CB_XSTRINGIFY (COB_OPEN_EXTEND);

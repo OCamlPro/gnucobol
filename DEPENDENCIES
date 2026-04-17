@@ -116,9 +116,9 @@ The following libraries ARE required WHEN :
 
     BOTH runtime AND development components required.
 
-    libxml2 - http://xmlsoft.org
+    libxml2 >= 2.5.10 - https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home
 
-    libxml2 is distributed under MIT License.
+    libxml2 is distributed under MIT License (Expat variant).
 
 4) JSON runtime support is used
 
@@ -131,11 +131,11 @@ The following libraries ARE required WHEN :
     cJSON.c and cJSON.h under "libcob" to include the used functions
     directly in the COBOL runtime.
 
-    cJSON is distributed under MIT License.
+    cJSON is distributed under MIT License (Expat variant).
 
   o JSON-C >= 0.12 - https://github.com/json-c/json-c
 
-    JSON-C is distributed under Expat License.
+    JSON-C is distributed under MIT License (Expat variant).
 
 5) character encoding support is needed and iconv is not provided
    as part of libc

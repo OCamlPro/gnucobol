@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2019, 2022-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2019, 2022-2025 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -71,7 +71,7 @@ testsuite_manual_sources = \
 
 EXTRA_DIST = $(srcdir)/package.m4 \
 	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at \
-	$(srcdir)/valgrind.supp \
+	$(srcdir)/valgrind.supp $(srcdir)/lsan.supp \
 	$(testsuite_sources) $(testsuite_manual_sources)
 
 DISTCLEANFILES = atconfig
@@ -111,8 +111,10 @@ checkmanual: prereq-manual
 	prereq-check prereq-testsuite prereq-manual
 
 test: atlocal
-	@echo testing for perl && $(PERL) -v 1>/dev/null \
-		|| (echo "Error: could not executed $(PERL)" && false)
+	@test "x$(PERL)" != x \
+		|| (echo "Error: perl was not found during configure, set PERL to a working binary" && false)
+	@echo testing for perl \"$(PERL)\" && $(PERL) -v 1>/dev/null \
+		|| (echo "Error: could not execute $(PERL)" && false)
 	@cd cobol85 && $(MAKE) $(AM_MAKEFLAGS) test
 
 checkall: check test

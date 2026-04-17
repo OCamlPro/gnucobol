@@ -269,7 +269,8 @@ Note: also defined together with __clang__ in both frontends:
 
 #if defined(COB_TLS)
     /* already defined, for example as static to explicit disable TLS */
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && \
+      (!defined(__GNUC__) || __GNUC__ >= 5)
     #define COB_TLS	_Thread_local
 #elif defined(__GNUC__) && (__GNUC__ >= 4) || defined(__clang__) || \
       defined(__hpux) || defined(_AIX) || defined(__sun)
@@ -305,6 +306,7 @@ typedef struct __cob_settings {
 
 	/* call.c */
 	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
+	unsigned int	cob_load_global; /* hint for dynamic linker to make symbols available 0=global, 1=local */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;
@@ -376,6 +378,10 @@ typedef struct __cob_settings {
 	int		cob_prof_max_depth;	/* Max stack depth during profiling (255 by default) */
 	char		*cob_prof_format;	/* Format of prof CSV line */
 	int		cob_dump_width;		/* Max line width for dump */
+	unsigned int	cob_signal_regime;		/* signal handler registration strategy
+											   not directly used by the runtime instead read directly with getenv
+											   because it is required before the initialization of cob_settings
+											   captured here extra for runtime information purposes */
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */
@@ -582,8 +588,6 @@ COB_HIDDEN FILE			*cob_get_dump_file	(void);
 COB_HIDDEN char		*cob_int_to_string		(int, char*);
 COB_HIDDEN char		*cob_int_to_formatted_bytestring	(int, char*);
 #endif
-COB_HIDDEN char		*cob_strcat		(char*, char*, int);
-COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
 COB_HIDDEN int		cob_runtime_warning_ss (const char *, const char *);
 

@@ -23,11 +23,17 @@ NEWS - user visible changes				-*- outline -*-
 ** initial support for XML PARSE
    while this feature is not implemented fully and some events are not
    implemented yet, we'd like you to test this feature already;
-   note that for the XML-EVENT EXCEPTION, the stored exception-values in 
+   note that for the XML-EVENT EXCEPTION, the stored exception-values in
    XML-CODE and XML-TEXT registers differ from other implementations
 
 ** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations
+
+** new runtime configuration COB_SIGNAL_REGIME, allows skipping registration of
+   the signal handler of GnuCOBOL
+   The registration can be skipped either for all signals or for those that do
+   already have a registered handler, allowing users to preserve their own
+   signal handlers during the initialization of the GnuCOBOL runtime.
 
 ** added multiple window functionality with new system function CBL_GC_WINDOW
 
@@ -101,6 +107,15 @@ NEWS - user visible changes				-*- outline -*-
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table
 
+* Listing changes
+
+** the listing header shows the processed file's basename to prevent
+   cutting of the important part in case of compiling with full paths;
+   note: use -ftcmd if you want the listing to contain the full name
+   as passed to cobc
+
+** -ftcmd now outputs the full command line, even if spans multiple lines
+
 * More notable changes
 
 ** execution times were significantly reduced for the following:
@@ -117,6 +132,12 @@ NEWS - user visible changes				-*- outline -*-
 ** more substitutions in environment variables: $f for executable filename,
    $b for executable basename, $d for date in YYYYMMDD format, $t for time
    in HHMMSS format (before, only $$ was available for pid)
+
+** Introduction of the COB_LOAD_GLOBAL boolean flag, which determines whether
+   the symbols of dynamically loaded shared libraries are made available
+   globally to other shared objects or remain confined locally. Previously,
+   this behavior depended on the underlying platform, where the default was
+   often "global." The default behavior is now explicitly set to "local".
 
 * New build features
 

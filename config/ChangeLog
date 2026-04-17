@@ -1,4 +1,9 @@
 
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* runtime.cfg: add runtime configuration COB_SIGNAL_REGIME to allow
+	  configuration of installed signal handlers
+
 2025-10-21  Roger Bowler <rbowler@snipix.net>
 
 	* general: add option comp-5-uses-binary-byteorder
@@ -11,6 +16,10 @@
 2025-01-10  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf: set init-justify to no after testing on GCOS
+
+2024-12-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config/runtime.cfg: add COB_LOAD_GLOBAL
 
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 

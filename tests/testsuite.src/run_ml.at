@@ -1,4 +1,4 @@
-## Copyright (C) 2018-2020, 2022 Free Software Foundation, Inc.
+## Copyright (C) 2018-2020, 2022, 2024-2025 Free Software Foundation, Inc.
 ## Written by Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -507,12 +507,12 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
-           
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  num PIC 9V9 VALUE 1,1.
        01  out PIC X(100).
-       
+
        PROCEDURE DIVISION.
            XML GENERATE out FROM num
            IF out <> '<num>1.1</num>'
@@ -537,12 +537,12 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
-           
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  num PIC 9V9 VALUE 1,1.
        01  out PIC X(100).
-       
+
        PROCEDURE DIVISION.
            XML GENERATE out FROM num
            DISPLAY FUNCTION TRIM(out)
@@ -601,6 +601,68 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
+
+AT_SETUP([XML register data])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT])
+
+# ensure that we have the data as other compilers
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           DISPLAY 'initial: ' XML-CODE ' - "' XML-EVENT '"'.
+           MOVE 5           TO XML-CODE
+           MOVE 'Test'      TO XML-EVENT
+           DISPLAY 'end    : ' XML-CODE ' - "' XML-EVENT '"'.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[initial: +000000000 - "                              "
+end    : +000000005 - "Test                          "
+], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML register data after use])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
+
+# ensure that we have the data as other compilers
+# and can handle the minimal (not useful) parsing with identical
+# results with / without libxml2
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA      DIVISION.
+       WORKING-STORAGE SECTION.
+       77  empty  PIC X VALUE SPACE.
+       PROCEDURE DIVISION.
+       MAIN.
+           XML PARSE empty
+               PROCESSING PROCEDURE PROC.
+           DISPLAY 'after  : ' XML-CODE ' - "' XML-EVENT '"'.
+           MOVE 5           TO XML-CODE
+           MOVE 'Test'      TO XML-EVENT
+           DISPLAY 'end    : ' XML-CODE ' - "' XML-EVENT '"'.
+           GOBACK.
+       PROC.
+           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+])
+
+AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "END-OF-INPUT                  "
+proc   : +000000000 - "END-OF-DOCUMENT               "
+after  : +000000000 - "END-OF-DOCUMENT               "
+end    : +000000005 - "Test                          "
+], [])
+AT_CLEANUP
+
+
+#
+## JSON
+#
 
 
 AT_SETUP([JSON GENERATE general])
@@ -821,22 +883,32 @@ AT_DATA([prog.cob], [
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  str                     PIC X(3) VALUE "ab".
-       01  num-edited              PIC 99.99 VALUE "01.00".
-       01  leading-zeroes          PIC 9(5) VALUE 5.
-       01  decimal-nums.
-           03  decimal-num         PIC 99V999 PACKED-DECIMAL VALUE 0.12.
-           03  decimal-num-2       PIC 99V9 VALUE 0.1.
-       01  signed-decimal-num      PIC S999 COMP-X VALUE -1.
-       01  comp-5-item             PIC 9(10) COMP-5 VALUE 5.
-       01  index-item              INDEX.
+       01 all-data-checked.
+          02  str                     PIC X(3)         VALUE "ab".
+          02  num-edited              PIC 99.99        VALUE "01.00".
+          02  leading-zeroes          PIC 9(5)         VALUE 5.
+          02  decimal-nums.
+              03  decimal-num         PIC 99V999 PACKED-DECIMAL
+                                                       VALUE 0.12.
+              03  decimal-num-2       PIC 99V9         VALUE 0.1.
+          02  signed-decimal-num      PIC S999  COMP-X VALUE -1.
+          02  comp-5-item             PIC 9(10) COMP-5 VALUE 5.
+          02  index-item              INDEX.
+          02  just-item               PIC X(10) JUST.
+          02  integer-with-p          PIC 999PPP       VALUE 10000.
+          02  decimal-with-p          PIC VPP99        VALUE 0.0004.
+
        01  float-short-item        FLOAT-SHORT VALUE 100.
        01  float-long-item         FLOAT-LONG VALUE 123.0E-10.
-       01  just-item               PIC X(10) JUST.
-       01  integer-with-p          PIC 999PPP VALUE 10000.
-       01  decimal-with-p          PIC VPP99 VALUE 0.0004.
 
        01  out                     PIC X(300).
+
+       78  out-all                 VALUE
+           '{"all-data-checked":{"str":"ab","num-edited":"01.00",'-
+           '"leading-zeroes":5,"decimal-nums":{"decimal-num":0.120,'-
+           '"decimal-num-2":0.1},"signed-decimal-num":-1,'-
+           '"comp-5-item":5,"index-item":500,"just-item":"blah ",'-
+           '"integer-with-p":10000,"decimal-with-p":0.0004}}'.
 
        PROCEDURE DIVISION.
            JSON GENERATE out FROM str
@@ -854,7 +926,13 @@ AT_DATA([prog.cob], [
                DISPLAY "Failed 3: " FUNCTION TRIM (out)
            END-IF
 
+        >> IF CHECK-PERF IS DEFINED
+           PERFORM 2000000 TIMES
+        >> END-IF
            JSON GENERATE out FROM decimal-nums
+        >> IF CHECK-PERF IS DEFINED
+           END-PERFORM
+        >> END-IF
            IF out <> '{"decimal-nums":{"decimal-num":0.120,'-
                      '"decimal-num-2":0.1}}'
                DISPLAY "Failed 4: " FUNCTION TRIM (out)
@@ -901,6 +979,17 @@ AT_DATA([prog.cob], [
            IF out <> '{"decimal-with-p":0.0004}'
                DISPLAY "Failed 12: " FUNCTION TRIM (out)
            END-IF
+
+        >> IF CHECK-PERF IS DEFINED
+           PERFORM 2000000 TIMES
+        >> END-IF
+           JSON GENERATE out FROM all-data-checked
+        >> IF CHECK-PERF IS DEFINED
+           END-PERFORM
+        >> END-IF
+           IF out <> out-all
+               DISPLAY "Failed 13: " FUNCTION TRIM (out)
+           END-IF
            .
 ])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -922,12 +1011,12 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
-           
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  num PIC 9V9 VALUE 1,1.
        01  out PIC X(100).
-       
+
        PROCEDURE DIVISION.
            JSON GENERATE out FROM num
            IF out <> '{"num":1,1}'
@@ -952,12 +1041,12 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
-           
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  num PIC 9V9 VALUE 1,1.
        01  out PIC X(100).
-       
+
        PROCEDURE DIVISION.
            JSON GENERATE out FROM num
            DISPLAY FUNCTION TRIM(out)

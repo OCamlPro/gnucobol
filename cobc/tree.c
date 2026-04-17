@@ -635,7 +635,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 				if (size_real + size_refmod + size_element + 1  >= size) {
 					/* replacement: "(X:Y)" (dropping possible "in XYZ") */
 					size_element = sprintf (s, "(<>:)");
-					return size_real + size_element;	
+					return size_real + size_element;
 				}
 				size_refmod += sprintf (s + size_refmod, "%s)", buff);
 				s += size_refmod;
@@ -2381,7 +2381,7 @@ cb_enum_explain (const enum cb_tag tag)
 		return "REPORT VARYING";
 	case CB_TAG_TAB_VALS:
 		return "VALUE list (table-format)";
-	default: 
+	default:
 		{
 			/* whenever we get here, someone missed to add to the list above... */
 			static char errmsg[31];
@@ -3391,25 +3391,24 @@ get_number_in_parentheses (const unsigned char ** p,
 	}
 
 	if (contains_name) {
-		size_t			name_length;
-		char			*name_buff;
-		cb_tree			item;
+		char			name_buff[COB_MAX_WORDLEN + 1];
+		const size_t	name_length = close_paren - open_paren;
 		struct cb_field *f = NULL;
 		struct cb_literal *l = NULL;
+		cb_tree			item;
 
-		/* Copy name, CHECKME: Shouldn't we limit that - and can use
-		   a fixed-buffer here instead? */
-		name_length = close_paren - open_paren;
-		name_buff = cobc_malloc (name_length);
+		/* Copy name for lookup */
+		if (name_length > COB_MAX_WORDLEN) {
+			*error_detected = 1;
+			return 1;
+		}
 		memcpy (name_buff, open_paren + 1, name_length - 1);
 		name_buff[name_length - 1] = '\0';
 
 		/* Build reference to name */
 		item = cb_ref (cb_build_reference (name_buff));
-
 		if (item == cb_error_node) {
 			*error_detected = 1;
-			cobc_free (name_buff);
 			return 1;
 		}
 		if (CB_FIELD_P (item)) {
@@ -3418,7 +3417,6 @@ get_number_in_parentheses (const unsigned char ** p,
 		if (!(f && f->flag_item_78)) {
 			cb_error (_("'%s' is not a constant-name"), name_buff);
 			*error_detected = 1;
-			cobc_free (name_buff);
 			return 1;
 		}
 
@@ -3431,7 +3429,6 @@ get_number_in_parentheses (const unsigned char ** p,
 		 || l->sign != 0) {
 			cb_error (_("'%s' is not an unsigned positive integer"), name_buff);
 			*error_detected = 1;
-			cobc_free (name_buff);
 			return 1;
 		}
 
@@ -4224,7 +4221,7 @@ cb_field_variable_size (const struct cb_field *f)
 		}
 		if (fc->depending) {
 			return fc;
-		} 
+		}
 		if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
@@ -4385,7 +4382,7 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	if (f->pic->category != CB_CATEGORY_NUMERIC
 	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
 		s = CB_FIELD_PTR (CB_VALUE(f->report_sum_list));
-		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
+		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f),
 					_("non-numeric PICTURE clause for SUM %s"), s->name);
 	}
 
@@ -4984,7 +4981,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 			}
 		}
 	}
-	
+
 	/* Create record */
 	if (f->record_max == 0) {
 		f->record_max = 32;
@@ -5036,10 +5033,10 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 #if	!defined (WITH_INDEX_EXTFH) && \
 	!defined (WITH_DB) && \
 	!defined (WITH_CISAM) && !defined(WITH_DISAM) && !defined(WITH_VBISAM)
-	if (f->organization == COB_ORG_INDEXED) {
+	if (f->organization == COB_ORG_INDEXED && !f->extfh) {
 		char msg[80];
 		snprintf (msg, sizeof (msg), "ORGANIZATION INDEXED; FD %s", f->name);
-		cb_warning (cb_warn_unsupported,
+		cb_warning_x (cb_warn_unsupported, f->description_entry,
 			_("runtime is not configured to support %s"), msg);
 	}
 #endif
@@ -6041,12 +6038,12 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 			yl = CB_LITERAL (y);
 			if (yl->scale == 0) {
 				yval = atoll((const char*)yl->data);
-				if ((op == '+' || op == '-') 
-		 		 && !rel_bin_op 
+				if ((op == '+' || op == '-')
+		 		 && !rel_bin_op
 				 && yval == 0) {		/* + or - ZERO does nothing */
 					return x;
 				}
-				if ((op == '*' || op == '/') 
+				if ((op == '*' || op == '/')
 				 && yval == 1
 				 && yl->sign != -1) {	/* * or / by ONE does nothing */
 					return x;
@@ -6079,18 +6076,18 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		if (x == cb_error_node || y == cb_error_node) {
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (x)) 
+		if ((CB_REF_OR_FIELD_P (x))
 		 && !(CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_X)) {
-			cb_error_x (CB_TREE(current_statement), 
+			cb_error_x (CB_TREE(current_statement),
 					_("%s should be COMP-X/COMP-5 for logical operator"),
 					CB_FIELD_PTR (x)->name);
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (y)) 
+		if ((CB_REF_OR_FIELD_P (y))
 		 && !(CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_X)) {
-			cb_error_x (CB_TREE(current_statement), 
+			cb_error_x (CB_TREE(current_statement),
 					_("%s should be COMP-X/COMP-5 for logical operator"),
 					CB_FIELD_PTR (y)->name);
 			return cb_error_node;
@@ -6692,7 +6689,7 @@ cb_build_call_parameter (cb_tree arg, int call_mode, const int size_mode)
 			}
 		}
 	}
-	
+
 	res = CB_BUILD_PAIR (cb_int (call_mode), arg);
 	if (call_mode == CB_CALL_BY_VALUE) {
 		if (size_mode != CB_SIZE_UNSET) {

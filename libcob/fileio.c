@@ -210,7 +210,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 	/* list of available heaps for VFILE routines,
 	   note that these are explicit not thread-local
 	   but static over all threads */
-	static HEAP_ENTRY		heap_array[MAX_HEAP] = { 0 };
+	static HEAP_ENTRY		heap_array[MAX_HEAP] = {{ 0 }};
 
 	#ifdef	WITH_ANY_ISAM
 	
@@ -793,18 +793,20 @@ static int
 bdb_keylen (cob_file *f, int idx)
 {
 	int totlen, part;
+	cob_file_key key;
 
 	if (idx < 0 || idx > f->nkeys) {
 		return -1;
 	}
-	if (f->keys[idx].count_components > 0) {
+	key = f->keys[idx];
+	if (key.count_components > 0) {
 		totlen = 0;
-		for (part = 0; part < f->keys[idx].count_components; part++) {
-			totlen += f->keys[idx].component[part]->size;
+		for (part = 0; part < key.count_components; part++) {
+			totlen += key.component[part]->size;
 		}
 		return totlen;
 	}
-	return f->keys[idx].field->size;
+	return key.field->size;
 }
 
 /* Save key for given index from 'record' into 'keyarea',
@@ -2228,20 +2230,14 @@ cob_file_close (cob_file *f, const int opt)
 #endif
 		}
 		/* Close the file */
-		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-			if (f->file) {
-				fclose ((FILE *)f->file);
-				f->file = NULL;
-#ifdef _WIN32
-				/* at least on MSVC that closes the underlying file descriptor, too */
-				f->fd = -1;
-#endif
-			}
-		} else {
-			if (f->fd >= 0) {
-				close (f->fd);
-				f->fd = -1;
-			}
+		if (f->file) {
+			fclose ((FILE *)f->file);
+			f->file = NULL;
+			f->fd = -1;
+		} else
+		if (f->fd >= 0) {
+			close (f->fd);
+			f->fd = -1;
 		}
 		if (opt == COB_CLOSE_NO_REWIND) {
 			f->open_mode = COB_OPEN_CLOSED;
@@ -4853,6 +4849,7 @@ dobuild:
 		if (p->data.data != NULL
 		 && p->data.size > 0
 		 && p->data.size > f->record_max) {
+			indexed_close (f, 0);
 			return COB_STATUS_39_CONFLICT_ATTRIBUTE;
 		}
 	} else {

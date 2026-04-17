@@ -24,13 +24,11 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-TEMPLATE="${abs_srcdir}/testsuite.src"
+TEMPLATE="${abs_top_srcdir}/tests/testsuite.src"
 
-COB_SRC_PATH="$(cd ${abs_srcdir}/.. ; pwd)"
+COB_SRC_PATH="${abs_top_srcdir}"
 
-if test "${COB_WIN_BUILDPATH}" = ""; then
-   COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
-fi
+[ -z "${COB_WIN_BUILDPATH}" ] && COB_WIN_BUILDPATH="$COB_SRC_PATH/build_windows/x64/Debug"
 
 COBC="cobc.exe"
 COBCRUN="cobcrun.exe"
@@ -39,6 +37,14 @@ LOCAL_ENV=""
 
 PATH="${COB_WIN_BUILDPATH}:${PATH}"
 export PATH
+
+if ! command -v "${COBC}" >/dev/null 2>&1; then
+	echo "missing ${COBC} in ${PATH}"
+	return 1
+fi
+
+ABS_COBC="$(which ${COBC})"
+ABS_COBCRUN="$(which ${COBCRUN})"
 
 DIFF=diff
 AWK=awk
@@ -56,8 +62,14 @@ TZ=UTC
 export TZ
 
 # define for performance checks (running code several thousand times)
-# uncomment manually if wanted, or set via environment
-# COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+# directly set via environment possible as well
+if test "x$CHECKPERF" != "x"; then
+	COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+fi
+
+# note: clang based MSVC and others may support libasan, so included here
+ASAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
+LSAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
 
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
@@ -88,9 +100,8 @@ _unset_option () {
 	fi
 }
 
-# possible path conversion for running the testsuite in an environment
-# that doesn't match the one where the tested binaries were built
-# Note: not needed for running the testsuite with MSYS as this translates the path
+# get path without quote and possibly translated (MSYS) for running in an
+# environment that doesn't match the one where the binaries were built
 _return_path () {
 	# For later reference only
 	#echo "$1" | sed 's/\//\\/g' | sed 's/^\\\([a-z]\)\\/\1:\\/g')
@@ -98,10 +109,23 @@ _return_path () {
 		cygpath -pm "$1"
 	else
 		# check for WSL / Bash on Windows; ignore error messages (file not available)
-		if $($GREP -q "Microsoft" /proc/sys/kernel/osrelease 2>/dev/null); then
-			echo "$1" | sed -E 's+^/mnt/(.{1})+\1:+' | sed 's+:$+:/+1'
+		if command -v wslpath >/dev/null 2>&1; then
+			IFS=':' read -ra paths <<< "$1"
+			res=""
+			for path in "${paths[@]}"; do
+				# skip empty paths, convert the rest
+				[ -z "$path" ] && continue
+				[ -z "$res" ] || res+=";"
+				res+="$(wslpath -m "$path")"
+			done
+			echo "$res"
 		else
-			echo "$1"
+			# note: we get forward slashes here, and may also quotes,
+			#       which we already add from the outsiode
+			path=$(cmd //c echo "$1")
+			path="${path#\"}"
+			path="${path%\"}"
+			echo "$path"
 		fi
 	fi
 }
@@ -113,7 +137,7 @@ set_utf8_locale () {
 	# we need the locale binary to tell us how about the locales available
 	if [ -z "$(which locale)" ]; then
 		echo "Warning: no locale binary found."
-		exit 77  # return code for setting 
+		exit 77  # return code for setting
 	fi
 	unset LC_ALL
 	if [ -z "$LC_ALL" ]; then export LC_ALL=$(locale -a | $GREP -i -E "C\.utf.*8"     | head -n1); fi
@@ -127,22 +151,22 @@ set_utf8_locale () {
 
 # Note: we explicit do not set COB_ON_CYGWIN here,
 # as this file is about running non-cygwin binaries
-    # Windows but not Cygwin
-    COB_ON_WINDOWS=yes
-    export COB_ON_WINDOWS
+	# Windows but not Cygwin
+	COB_ON_WINDOWS=yes
+	export COB_ON_WINDOWS
 
 # Fix for testcases where cobc uses win32 paths internally
 PATHSEP=";"
 export PATHSEP
 
-COB_CONFIG_DIR="$(_return_path "${abs_top_srcdir}/config")"
-COB_COPY_DIR="$(_return_path "${abs_top_srcdir}/copy")"
-COB_LIBRARY_PATH="$(_return_path "${abs_top_builddir}/extras")${PATHSEP}$(_return_path "${COB_WIN_BUILDPATH}")"
+	COB_CONFIG_DIR="$(_return_path "${abs_top_srcdir}/config")"
+	COB_COPY_DIR="$(_return_path "${abs_top_srcdir}/copy")"
+	COB_LIBRARY_PATH="$(_return_path "${abs_top_builddir}/extras:${COB_WIN_BUILDPATH}")"
 
-export COB_CFLAGS COB_LIBS
-export COB_CONFIG_DIR COB_COPY_DIR
-#export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
-export COB_LIBRARY_PATH
+	export COB_CFLAGS COB_LIBS
+	export COB_CONFIG_DIR COB_COPY_DIR
+	#export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
+	export COB_LIBRARY_PATH
 COB_UNIX_LF=1
 export COB_UNIX_LF
 
@@ -150,22 +174,31 @@ export COB_UNIX_LF
 # for runtime configuration ...
 COB_RUNTIME_CONFIG="$(_return_path "${abs_top_srcdir}/config/runtime_empty.cfg")"
 export COB_RUNTIME_CONFIG
-for cobenv in $(${LOCAL_ENV} ${COBCRUN} --runtime-conf \
-                 | $GREP " env:" | cut -d: -f2 | cut -d= -f1 \
-                 | $GREP -v "PATH" | $GREP -v "TERM"); \
+if [ -n "$LOCAL_ENV" ]; then
+	"$LOCAL_ENV" "${ABS_COBCRUN}" --runtime-conf  > info.out
+else
+	"${ABS_COBCRUN}" --runtime-conf  > info.out
+fi
+
+for cobenv in $( $GREP " env:" info.out | cut -d: -f2 | cut -d= -f1 \
+               | $GREP -v "PATH" | $GREP -v "TERM"); \
 	do _unset_option $cobenv; \
 done
 
-# prevent multiple calls by caching the output
-${LOCAL_ENV} ${COBC} --verbose --info > info.out
-
 # ... and also unset for the compiler
+if [ -n "$LOCAL_ENV" ]; then
+	"$LOCAL_ENV" "${ABS_COBC}" --verbose --info > info.out
+else
+	"${ABS_COBC}" --verbose --info > info.out
+fi
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	for cobenv in $($GREP "env:" info.out | cut -d: -f2 | cut -d= -f1 \
 	              | $GREP -v "PATH"); \
 		do _unset_option $cobenv; \
 	done
 fi
+
+HAVE_SIGNAL_H="yes"
 
 COB_STACKTRACE=0
 export COB_STACKTRACE
@@ -206,7 +239,7 @@ export COB_MSG_FORMAT
 	" D-ISAM")	COB_HAS_ISAM="disam";;
 	" C-ISAM")	COB_HAS_ISAM="cisam";;
 	" EXTFH")	COB_HAS_ISAM="index_extfh";;
-	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
+	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && return 1;;
 	esac
 
 	if test $($GREP -i -c "XML library.*disabled" info.out) = 0; then

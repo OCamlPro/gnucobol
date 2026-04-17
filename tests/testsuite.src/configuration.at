@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2014-2023, 2025 Free Software Foundation, Inc.
 ## Written by Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -145,7 +145,7 @@ AT_CLEANUP
 
 
 AT_SETUP([cobc with own configuration file via -conf])
-AT_KEYWORDS([configuration misc])
+AT_KEYWORDS([configuration misc return_path])
 
 AT_DATA([test.conf], [
 include "default.conf"
@@ -164,11 +164,11 @@ AT_DATA([prog.cob], [
 ])
 
 # check if override via -conf works and if include works
-AT_CHECK([$COMPILE_ONLY -conf=test.conf prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY --conf=test.conf prog.cob], [0], [], [])
 
 # check if configuration file loading with full path works
 AT_CHECK([$COMPILE_ONLY \
--conf="$(_return_path "$(pwd)/test.conf")" prog.cob], [0], [], [])
+--conf="$(_return_path "$(pwd)/test.conf")" prog.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -564,7 +564,7 @@ AT_CLEANUP
 
 
 AT_SETUP([runtime configuration file])
-AT_KEYWORDS([configuration misc])
+AT_KEYWORDS([configuration misc return_path])
 
 AT_DATA([test.cfg], [
 include "test2.cfg"
