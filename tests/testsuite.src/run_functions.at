@@ -4657,3 +4657,242 @@ Return value '5'], [])
 
 AT_CLEANUP
 
+
+AT_SETUP([FUNCTION LOG additionnal tests])
+AT_KEYWORDS([functions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . testln .
+      *>----------------------------------------------------------------
+      *> Additional test for log function
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 I-1       PIC  9(20)V9(10) COMP-3      .
+       01 I-2       PIC  9(20)V9(10) COMP-3      .
+       01 I-3       PIC S9(02)V9(36) COMP-3      .
+       01 I-4       PIC  9(38)       COMP-3      .
+       01 N         PIC  9(09)       COMP-5      .
+
+      *>
+       PROCEDURE DIVISION .
+      *>------------------
+      *>
+           MOVE 1 TO N.
+      >> IF CHECK-PERF IS DEFINED
+           MOVE 1650 TO N.
+      >> END-IF
+           PERFORM DO-TEST N TIMES .
+
+           GOBACK .
+
+      *>
+       DO-TEST .
+      *>--------
+      *>
+      *> test 1
+      *>
+           PERFORM VARYING I-1 FROM 1  BY 1 UNTIL I-1 > 20
+              COMPUTE I-2 = 100 * function log( function exp(I-1) )
+
+              COMPUTE I-2 = I-2 / 100
+
+              IF I-1 NOT = I-2
+              THEN
+                  DISPLAY '1: ' 'I-1 =' I-1 ' I-2 =' I-2
+              END-IF
+           END-PERFORM .
+      *>
+      *> test 2
+      *>
+           MOVE FUNCTION LOG(0.699) TO I-3 .
+           IF I-3 NOT = -0.358104536748326795356504252461679439
+           THEN
+               DISPLAY '2: <' I-3 '> != <'
+                       '-0.358104536748326795356504252461679439>'
+           END-IF
+
+      *>
+      *> test 3
+      *>
+           MOVE FUNCTION LOG(1.2) TO I-3 .
+           IF I-3 NOT =  0.182321556793954626211718025154514633
+           THEN
+               DISPLAY '3: <' I-3 '> != <'
+                        '0.182321556793954626211718025154514633>'
+           END-IF
+
+      *>
+      *> test 4
+      *>
+           MOVE FUNCTION LOG(0.1) TO I-3 .
+           IF I-3 NOT = -2.302585092994045684017991454684364207
+           THEN
+               DISPLAY '4: <' I-3 '> != <'
+                        '2.302585092994045684017991454684364207<'
+           END-IF
+
+      *>
+      *> test 5
+      *>
+           MOVE FUNCTION LOG(0.000000000000000000000000000000000001)
+                TO I-3 .
+           IF I-3 NOT = -82.893063347785644624647692368637111473
+           THEN
+               DISPLAY '5: <' I-3 '> != <'
+                       '-82.893063347785644624647692368637111473>'
+           END-IF
+
+      *>
+      *> test 6
+      *>
+           MOVE 99999999999999999999999999999999999999 TO I-4
+           MOVE FUNCTION LOG(I-4)
+                TO I-3 .
+           IF I-3 NOT = 87.498233533773735992683675278005839888
+           THEN
+               DISPLAY '6: <' I-3 '> != <'
+                       '87.498233533773735992683675278005839888>'
+           END-IF.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION LOG limits])
+AT_KEYWORDS([functions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . testln .
+      *>----------------------------------------------------------------
+      *> Additional test for log function Input < 0
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 I-1       PIC  S9(10) COMP-3      .
+       01 I-2       PIC  S9(10) COMP-3      .
+       01 EXCEPT    PIC  X(20)              .
+
+      *>
+       PROCEDURE DIVISION .
+      *>------------------
+      *>
+      *> test 1
+      *>
+           MOVE -10 TO I-1 .
+           MOVE FUNCTION LOG(I-1) TO I-2 .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY '!! LOG <' I-1
+                   '> SHOULD GENERATE EC-ARGUMENT-FUNCTION EXCEPTION'
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION LOG10 limits])
+AT_KEYWORDS([functions LOG])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . testln .
+      *>----------------------------------------------------------------
+      *> Additional test for log10 function Input < 0
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 I-1       PIC  S9(10) COMP-3      .
+       01 I-2       PIC  S9(10) COMP-3      .
+       01 EXCEPT    PIC  X(20)              .
+
+      *>
+       PROCEDURE DIVISION .
+      *>------------------
+      *>
+      *> test 1
+      *>
+           MOVE -10 TO I-1 .
+           MOVE FUNCTION LOG10(I-1) TO I-2 .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY '!! LOG10 <' I-1
+                   '> SHOULD GENERATE EC-ARGUMENT-FUNCTION EXCEPTION'
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION LOG10 LOG special value])
+AT_KEYWORDS([functions LOG LOG10])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . testln .
+      *>----------------------------------------------------------------
+      *> Additional test for log function Input < 0
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 I-1       PIC  S9(10) COMP-3      .
+       01 I-2       PIC  S9(10) COMP-3      .
+       01 EXCEPT    PIC  X(20)              .
+
+      *>
+       PROCEDURE DIVISION .
+      *>------------------
+      *>
+      *> test 1
+      *>
+           MOVE 1 TO I-1 .
+           MOVE FUNCTION LOG10(I-1) TO I-2 .
+           IF I-2 NOT = 0
+           THEN
+               DISPLAY '1: LOG10 <' I-1
+                   '> != 0'
+      *>
+      *> test 2
+      *>
+           MOVE 1 TO I-1 .
+           MOVE FUNCTION LOG(I-1) TO I-2 .
+           IF I-2 NOT = 0
+           THEN
+               DISPLAY '1: LOG <' I-1
+                   '> != 0'
+      *>
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+

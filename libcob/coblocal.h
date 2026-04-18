@@ -464,6 +464,19 @@ struct config_tbl {
   internal float to internal decimal */
 #define COB_MAX_INTERMEDIATE_FLOATING_SIZE 96
 
+/* #1206 EXP EXP10 FACTORIAL intrinsic limits */
+#define COB_MAX_EXP_LIMIT       14150UL
+#define COB_MIN_EXP_LIMIT      -14145L
+#define COB_MIN_EXP_SCALE        6144
+#define COB_MIN_EXP_MANTISSA     8UL
+
+#define COB_MAX_EXP10_LIMIT     6112UL
+#define COB_MIN_EXP10_LIMIT    -6175
+#define COB_MIN_EXP10_SCALE     6175
+#define COB_MIN_EXP10_MANTISSA     1UL
+
+#define COB_MAX_FACT_LIMIT      2114
+
 /* Local function prototypes */
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
 COB_HIDDEN void		cob_init_cconv		(cob_global *);

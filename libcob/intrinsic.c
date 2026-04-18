@@ -102,6 +102,7 @@ static mpf_t		cob_mpft_get;
 static mpf_t		cob_pi;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
+static mpf_t		cob_log_two;
 static mpf_t		cob_log_ten;
 static int		set_cob_pi;
 static int		set_cob_sqrt_two;
@@ -462,6 +463,11 @@ setup_cob_log_half (void)
 
 	mpf_init2 (cob_log_half, COB_LOG_HALF_LEN);
 	mpf_set_str (cob_log_half, cob_log_half_str, 10);
+
+	mpf_init2 (cob_log_two, COB_LOG_HALF_LEN);
+	mpf_set_str (cob_log_two, cob_log_half_str, 10);
+	mpf_neg (cob_log_two, cob_log_two);
+
 	set_cob_log_half = 1;
 }
 
@@ -915,65 +921,123 @@ cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 	mpf_clear (vf1);
 }
 
-/* Log function */
-/* logn (x) = {n = 1, ...} ( ((1 - x) ^ n) / n ) */
+/* 
+Natural Log function 
 
+	we use ln( ( x+1 ) / ( x-1 ) )  = ln(1+x) - ln(1-x)
+	        x is in [1/2;1[
+
+ 	as     ln( (x-1) )  =  -x - (x^2)/2 - (x^3)/3 ...
+        and    ln( (x+1) )  =   x - (x^2)/2 + (x^3)/3 ...  
+
+	by subtracting the two series the even power are canceled
+	and the series become 2 * ( x + (x^3)/3 + (x^5)/5 ...
+*/
 static void
-cob_mpf_log (mpf_t dst_val, const mpf_t src_val)
+cob_mpf_log (mpf_t dst_val, const mpf_t src_val) 
 {
-	mpf_t			vf1, vf2, vf3, vf4;
-	mpf_t			dst_temp;
-	cob_sli_t		expon;
-	cob_uli_t		n;
-
-
-
+	long int expon ;
+	unsigned long int i ;
+	mpf_t temp ;
+	mpf_t mantissa    ;
+	mpf_t mantissa_square    ;
+	mpf_t term  ;
+	mpf_t power_m  ;
+	
 	if (mpf_sgn (src_val) <= 0 || !mpf_cmp_ui (src_val, 1UL)) {
 		mpf_set_ui (dst_val, 0UL);
 		return;
 	}
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
 	if (!set_cob_log_half) setup_cob_log_half ();
 
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_set_si (vf3, -1L);
-	mpf_init2 (vf4, COB_MPF_PREC);
+	mpf_init2 (mantissa,COB_MPF_PREC);
+	mpf_init2 (temp,COB_MPF_CUTOFF+32);
+	mpf_init2 (term,COB_MPF_CUTOFF+32);
+	mpf_init2 (power_m,COB_MPF_CUTOFF+32);
+	mpf_init2 (mantissa_square,COB_MPF_CUTOFF+32);
 
-	mpf_set_ui (dst_temp, 0UL);
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon != 0) {
-		mpf_set (dst_temp, cob_log_half);
-		if (expon > 0) {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)expon);
-			mpf_neg (dst_temp, dst_temp);
-			mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
-		} else {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)-expon);
-			mpf_mul_2exp (vf1, vf1, (cob_uli_t)-expon);
+	/* compute expon and mantissa as src_val = mantissa * 2^expon */
+	/* so ln(src_val) = ln(mantissa) + expon*ln(2)     */
+	mpf_get_d_2exp (&expon, src_val); 
+
+	/* we need to calulate mantissa in gmp format */
+	if (expon != 0) { 
+		if (expon > 0) { 
+
+			/* src_val / 2^expon if expon > 0 */
+			mpf_div_2exp (mantissa, src_val, (unsigned long) expon);
+
+			/* dst_val <-- expon * ln(2) */
+			mpf_mul_ui (dst_val, cob_log_two, (unsigned long) expon);
+		}
+		else {
+			/* src_val / 2^expon <==> src_val * 2^(-expon) if expon < 0 */
+			mpf_mul_2exp (mantissa, src_val, -expon);
+
+			/* dst_val <-- expon * ln(2) */
+			mpf_mul_ui (dst_val, cob_log_half, -expon);
 		}
 	}
-	mpf_ui_sub (vf1, 1UL, vf1);
+	else {
+		mpf_set (mantissa, src_val);
+		mpf_set_ui (dst_val, 0L);
+	}
+        /*
+                if x = (y+1)/(y-1) ==>  y = (x-1) / (x+1)
 
-	n = 1;
-	do {
-		mpf_mul (vf3, vf3, vf1);
-		mpf_div_ui (vf2, vf3, n);
-		mpf_set (vf4, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf4, dst_temp, COB_MPF_CUTOFF));
+		The closer x is to 1 the closer y will be to 0
+		as x is in [1/2;1[ by square rooting 4 times
+		we get a value closer to 1 .
+		The result should be then multiplied by 16 to
+		compensate the square rooting and again by 2 
+		as the series is 2 * ( x + (x^3)/3 + (x^5)/5 
+	        we so multiply the serie by 32	
+        */
+	mpf_sqrt (mantissa, mantissa);
+	mpf_sqrt (mantissa, mantissa);
+	mpf_sqrt (mantissa, mantissa);
+	mpf_sqrt (mantissa, mantissa);
 
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
+	/* compute precise mantissa ( y-1 ) / (y+1)  */
+	mpf_add_ui (term, mantissa, 1UL);
+	mpf_sub_ui (mantissa, mantissa, 1UL);
+	mpf_div (mantissa, mantissa, term);
+	
+	/* compute first term and add it to final value */
+	mpf_mul_ui (temp, mantissa, 32UL); 
+	mpf_add (dst_val, dst_val, temp);
 
-	mpf_clear (vf4);
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	/* init power of mantissa to mantissa^2  */
+	mpf_mul (mantissa_square, mantissa, mantissa); 
+
+	/* init first term of the serie */
+	mpf_set (power_m, mantissa);
+
+	i = 3;
+
+	mpf_set_ui (mantissa, 0UL); /* reuse mantissa as sum of serie */
+	do  {
+		mpf_set (temp, mantissa);
+
+		mpf_mul (power_m, power_m, mantissa_square);
+		mpf_div_ui (term, power_m, i);
+
+		mpf_add (mantissa, mantissa, term);
+		i += 2;
+
+	} while (!mpf_eq (temp, mantissa , COB_MPF_CUTOFF) );
+
+	mpf_mul_ui (mantissa, mantissa, 32UL);
+
+	mpf_add (dst_val, dst_val, mantissa);
+
+	mpf_clear (term);
+	mpf_clear (power_m);
+	mpf_clear (mantissa);
+	mpf_clear (temp);
+	mpf_clear (mantissa_square);
+
 }
 
 /* Log10 function */
@@ -4624,6 +4688,13 @@ cob_intr_factorial (cob_field *srcfield)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	} else {
+		if ( srcval >= COB_MAX_FACT_LIMIT ) {
+			/* Fix #1206 */
+			d1.scale = COB_DECIMAL_INF ;
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+			cob_alloc_set_field_uint (0);
+			return curr_field;
+		}
 		mpz_fac_ui (d1.value, (cob_uli_t)srcval);
 	}
 
@@ -4671,6 +4742,31 @@ cob_intr_exp (cob_field *srcfield)
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
+
+	/* #1206 Avoid GMP Crash */
+	if ( mpf_cmp_ui (cob_mpft, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft, COB_MIN_EXP_LIMIT) <= 0) {
+	
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+
+			if (mpf_sgn (cob_mpft) > 0) {
+		
+				mpf_set_ui (cob_mpft, 0UL) ;
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_DECIMAL_INF;
+
+			} else {
+
+				mpf_set_ui (cob_mpft, COB_MIN_EXP_MANTISSA);
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_MIN_EXP_SCALE ;
+
+			}
+
+			cob_alloc_field (&d1);
+			(void)cob_decimal_get_field (&d1, curr_field, 0);
+			return curr_field;
+	}
+
 	cob_mpf_exp (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
 	cob_alloc_field (&d1);
@@ -4694,8 +4790,30 @@ cob_intr_exp10 (cob_field *srcfield)
 		cob_alloc_set_field_uint (1);
 		return curr_field;
 	}
+	
+	/* #1206 Avoid GMP Crash */
+	if ( mpz_cmp_ui (d1.value, COB_MAX_EXP10_LIMIT) >= 0 || mpz_cmp_si (d1.value, COB_MIN_EXP10_LIMIT) <= 0) {
 
-	cob_trim_decimal (&d1);
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	
+			if (mpz_sgn (d1.value) > 0) {
+
+				mpf_set_ui (cob_mpft, 0UL) ;
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_DECIMAL_INF;
+
+			} else {
+
+				mpf_set_ui (cob_mpft, COB_MIN_EXP10_MANTISSA);
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_MIN_EXP10_SCALE ;
+
+			}
+
+			cob_alloc_field (&d1);
+			(void)cob_decimal_get_field (&d1, curr_field, 0);
+			return curr_field;
+	}
 
 	if (!d1.scale) {
 		/* Integer positive/negative powers */
@@ -7192,6 +7310,7 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);
+		mpf_clear (cob_log_two);
 	}
 	if (set_cob_log_ten) {
 		mpf_clear (cob_log_ten);

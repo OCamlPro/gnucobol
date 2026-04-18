@@ -16107,3 +16107,362 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([EXP min limit])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test Limit inferior for EXP function
+      *
+       01   A FLOAT-DECIMAL-34 .
+       01   B PIC S9(38) PACKED-DECIMAL.
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP(-14144) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP(-14144) SHOULD NOT RAISE EXCEPTION'
+           END-IF.
+      *
+           MOVE FUNCTION EXP(-14145) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT  NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY 'EXP(-14145) SHOULD RAISE EXCEPTION'
+           END-IF.
+      *
+           MOVE FUNCTION LOG(A) TO B.
+           IF B NOT = -14145
+           THEN
+               DISPLAY 'RESULT LOG LIMIT <> -14145' 
+           END-IF
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXP max limit])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test Limit superior for EXP function
+      *
+       01   A FLOAT-DECIMAL-34 .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP(14149) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP(14449) SHOULD NOT RAISE EXCEPTION'
+               DISPLAY EXCEPT 
+           END-IF.
+      *
+           MOVE FUNCTION EXP(14150) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT  NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY 'EXP(14450) SHOULD RAISE EXCEPTION'
+           END-IF.
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+O
+AT_SETUP([EXP with 0])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test EXP(0)     
+      *
+       01   A PIC 9(02) COMP-3  .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP(0) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP(0) SHOULD NOT RAISE EXCEPTION'
+               DISPLAY EXCEPT
+           END-IF.
+      *
+           IF A NOT = 1     
+           THEN
+               DISPLAY 'RESULT EXP(0)  <' A '>!= 1' 
+           END-IF
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+AT_SETUP([EXP10 min limit])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test Limit inferior for EXP10 function
+      *
+       01   A FLOAT-DECIMAL-34 .
+       01   B PIC S9(38) PACKED-DECIMAL.
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP10(-6174) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP10(-6174) SHOULD NOT RAISE EXCEPTION'
+           END-IF.
+      *
+           MOVE FUNCTION EXP10(-6175) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT  NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY 'EXP10(-6175) SHOULD RAISE EXCEPTION'
+               display EXCEPT
+           END-IF.
+      *
+           MOVE FUNCTION LOG10(A) TO B.
+           IF B NOT = -6175
+           THEN
+               DISPLAY 'RESULT LOG LIMIT <' B '>!= -6175' 
+           END-IF
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE --fec=all  prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXP10 max limit])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test Limit superior for EXP function
+      *
+       01   A FLOAT-DECIMAL-34 .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP10(6111) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP10(6111) SHOULD NOT RAISE EXCEPTION'
+               DISPLAY EXCEPT
+           END-IF.
+      *
+           MOVE FUNCTION EXP10(6112) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT  NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY 'EXP10(6175) SHOULD RAISE EXCEPTION'
+           END-IF.
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FACTORIAL max limit])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test Limit superior for FACTORIAL function
+      *
+       01   A FLOAT-DECIMAL-34 .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION FACTORIAL(2113) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'FACTORIAL(2113) SHOULD NOT RAISE EXCEPTION'
+               DISPLAY EXCEPT
+           END-IF.
+      *
+           MOVE FUNCTION FACTORIAL(2114) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT  NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY 'FACTORIAL(2114) SHOULD RAISE EXCEPTION'
+           END-IF.
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FACTORIAL less than 0])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test Factorial less than 0                      
+      *
+       01   A FLOAT-DECIMAL-34 .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION FACTORIAL(-1) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT  NOT = 'EC-ARGUMENT-FUNCTION'
+           THEN
+               DISPLAY 'FACTORIAL(-1) SHOULD RAISE EXCEPTION'
+           END-IF.
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXP10 with decimal exposant ])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test EXP10 with decimal exponant 
+      *
+       01   A PIC S9(6)V9(3) COMP-3 .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP10(5.8) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP10(5.8) SHOULD NOT RAISE EXCEPTION'
+               DISPLAY EXCEPT
+           END-IF.
+        
+
+           IF A NOT = 630957.344
+           THEN
+               DISPLAY ' ! EXP10(5.8) <' A '>' 630957.344
+           END-IF .
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXP10 with 0 ])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+      *
+      * Test EXP10 with decimal exponant 
+      *
+       01   A PIC S9(6)V9(3) COMP-3 .
+       01   EXCEPT       PIC X(20) .
+      *
+       PROCEDURE        DIVISION.
+      *
+           MOVE FUNCTION EXP10(0) TO A .
+           MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
+           IF EXCEPT NOT = SPACES
+           THEN
+               DISPLAY 'EXP10(0) SHOULD NOT RAISE EXCEPTION'
+               DISPLAY EXCEPT
+           END-IF.
+        
+
+           IF A NOT = 1 
+           THEN
+               DISPLAY ' ! EXP10(0) <' A '>' 1 
+           END-IF .
+      *
+           GOBACK .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
