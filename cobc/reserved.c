@@ -253,6 +253,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ABSENT",			0, 0, ABSENT,			/* IBM RW */
 				0, 0
   },
+  { "ABSTRACT",			0, 0, ABSTRACT,			/* MF extension */
+				0, 0
+  },
   { "ACCEPT",			1, 0, ACCEPT,			/* 2002 */
 				CB_CS_ACCEPT, 0
   },
@@ -1578,7 +1581,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INDICATE",			0, 0, INDICATE,			/* 2002 */
 				0, 0
   },
-  { "INHERITS",			0, 0, -1,			/* 2002 */
+  { "INHERITS",			0, 0, INHERITS,			/* 2002 */
 				0, 0
   },
   { "INITIAL",			0, 0, TOK_INITIAL,		/* 2002 */
@@ -1622,6 +1625,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "INTERMEDIATE",		0, 1, INTERMEDIATE,		/* 2014 (C/S) */
 				0, CB_CS_OPTIONS
+  },
+  { "INTERNAL",		0, 0, INTERNAL,		/* MF extension */
+				0, 0
   },
   { "INTO",			0, 0, INTO,			/* 2002 */
 				0, 0
@@ -2155,6 +2161,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "PARSE",			0, 1, PARSE,			/* IBM extension */
    				0, 0
   },
+  { "PARTIAL",			0, 0, PARTIAL,			/* MF extension */
+				0, 0
+  },
   { "PASCAL",			0, 1, PASCAL,			/* Extension: implicit defined CALL-CONVENTION */
 				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
@@ -2285,6 +2294,9 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_ACCEPT
   },
   { "PROTOTYPE",		0, 0, PROTOTYPE,			/* 2002 */
+				0, 0
+  },
+  { "PUBLIC",			0, 0, PUBLIC,			/* MF extension */
 				0, 0
   },
   { "PURGE",			0, 0, PURGE,			/* Communication Section */
