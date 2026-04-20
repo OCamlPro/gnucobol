@@ -743,7 +743,7 @@ AT_DATA([prog.cob],[
       ******************************************************************
       * XML document data, encoded as initial values of data items.    *
       ******************************************************************
-       01  xml-document-data.
+       01  xml-document.
          02 pic x(10) value '<sandwich>'.
          02 pic x(33) value '<bread type="baker''s best"/>'.
          02 pic x(29) value '<meat>Ham + turkey</meat>'.
@@ -752,7 +752,6 @@ AT_DATA([prog.cob],[
          02 pic x(28) value '<listprice>$4.99</listprice>'.
          02 pic x(25) value '<discount>0.10</discount>'.
          02 pic x(31) value '</sandwich>'.
-       01  xml-document redefines xml-document-data pic x(222).
        Procedure division.
         Mainline section.
            XML parse xml-document
@@ -1041,7 +1040,7 @@ AT_DATA([prog.cob],[
       ******************************************************************
       * XML document data, encoded as initial values of data items.    *
       ******************************************************************
-       01  xml-document-data.
+       01  xml-document.
          02 pic x(10) value '<lorem>'.
          02 pic x(40) value 'Lorem ipsum dolor sit amet,'.
          02 pic x(40) value 'consectetur adipiscing elit.'.
@@ -1059,7 +1058,6 @@ AT_DATA([prog.cob],[
          02 pic x(40) value 'Mauris placerat volutpat nisl,'.
          02 pic x(40) value 'nec malesuada enim ut.'.
          02 pic x(10) value '</lorem>'.
-       01  xml-document redefines xml-document-data pic x(620).
        Procedure division.
         Mainline section.
            XML parse xml-document
@@ -1104,7 +1102,7 @@ AT_DATA([prog.cob],[
       ******************************************************************
       * XML document data, encoded as initial values of data items.    *
       ******************************************************************
-       01  xml-document-data.
+       01  xml-document.
          02 pic x(35) value '<section xmlns="http://example.com"'.
          02 pic x(29) value ' xmlns:bk="urn:loc.gov:books"'.
          02 pic x(35) value ' xmlns:pi="urn:personalInformation"'.
@@ -1120,7 +1118,6 @@ AT_DATA([prog.cob],[
          02 pic x(10) value '</comment>'.
          02 pic x(10) value '</signing>'.
          02 pic x(10) value '</section>'.
-       01  xml-document redefines xml-document-data pic x(351).
        Procedure division.
         Mainline section.
            XML parse xml-document
@@ -1254,6 +1251,33 @@ libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefi
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx6 for localAtName6 on localElName5 is not defined
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx5 on localElName5 is not defined
 ])
+AT_CLEANUP
+
+
+AT_SETUP([XML-TEXT reference modifier])
+# promoted on 2026-04-20T15:51
+AT_KEYWORDS([extensions PARSE XML-TEXT])
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob],[
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+       01  xml-document.
+         02 pic x(14) value '<lorem-ipsum/>'.
+       Procedure division.
+        Mainline section.
+           XML parse xml-document
+               processing procedure XML-handler.
+           Goback.
+        XML-handler section.
+           if xml-event = 'START-OF-ELEMENT'
+             display xml-text (7:5)
+           end-if.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ipsum
+], [])
 AT_CLEANUP
 
 

@@ -1091,6 +1091,8 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		} else {
 			output ("cob_local_ptr");
 		}
+	} else if (f01->storage == CB_STORAGE_LINKAGE && f01->flag_internal_register) {
+		output ("%s%d.data", CB_PREFIX_FIELD, f01->id);	
 	} else {
 		output ("%s%d", CB_PREFIX_BASE, f01->id);
 	}
