@@ -1,10 +1,4 @@
 
-2026-04-08	Saurabh Kumar <developer.saurabh@outlook.com>
-
-	* scanner.l: add support for scanning class names and "END CLASS" token.
-	* parser.y, reserved.c (class_definition): support parsing an "empty" 
-	  CLASS-ID paragraph with no contained paragraphs and divisions.
-
 2026-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c (word_hash): return full 32bit hash, which is stored in the
@@ -211,6 +205,15 @@
 	* field.c (warn_pic_for_numeric_value_implied): Added fix to print
 	  Implied PIC warning only when needed
 
+2026-06-11  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* parser.y, reserved.c: add support for parsing class attributes - AS literal,
+	  IS FINAL, INHERITS FROM {class-name ...}, USING {param-name ...}
+	  with unimplemented warning; also support MF extensions IS STATIC, IS ABSTRACT,
+	  IS PARTIAL, IS PUBLIC, IS INTERNAL
+	* tree.h, common.h: add COB_MODULE_TYPE_CLASS and bit masks for all 
+	  object-oriented class attributes
+
 2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
 
 	* parser.y: remove the CB_PENDING warning on XML PARSE but still warn for 
@@ -245,6 +248,12 @@
 	  each position indicating the number of spaces to insert for a tab
 	  at that position
 	* pplex.c,cobc.c: use the new type of cb_tab_width
+
+2026-04-08  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* scanner.l: add support for scanning class names and "END CLASS" token.
+	* parser.y, reserved.c (class_definition): support parsing an "empty"
+	  CLASS-ID paragraph with no contained paragraphs and divisions.
 
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
