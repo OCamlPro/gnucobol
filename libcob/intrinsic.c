@@ -858,67 +858,137 @@ cob_check_numval_f (const cob_field *srcfield)
 	return 0;
 }
 
-/* Trigonometric formulae (formulas?) from Wikipedia */
-
-
-/* Exp function */
-/* e ^ x = {n = 0, ...} ( (x ^ n) / n! ) */
-
-static void
-cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
+/*                                                                       */
+/* This function reduce the argument used for cob_mpf_exp in two ways:   */
+/* 1) compute decompose abs(arg) = k*ln(2) + r where k is integer        */
+/* 2) divide r by 2^COB_EXP_DIVIDE                                       */
+/* This argument reduction allow the exp Taylor serie to converge faster */
+/*                                                                       */
+static unsigned long
+cob_mpf_reduce_exp_arg(mpf_t remainder, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3;
-	mpf_t			dst_temp;
-	cob_sli_t		expon, i;
-	cob_uli_t		n;
-	cob_u32_t		is_negative;
-
-
-	mpf_init2 (dst_temp, COB_MPF_PREC);
+	mpf_t vf1, nb_ln_2;
+	unsigned long n;
 
 	mpf_init2 (vf1, COB_MPF_PREC);
+	mpf_init2 (nb_ln_2, 128);
+
 	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_set_ui (vf2, 1UL);
-	mpf_init2 (vf3, COB_MPF_PREC);
 
-	mpf_set_ui (dst_temp, 1UL);
+	mpf_abs (vf1, vf1);
 
-	if (mpf_sgn (vf1) < 0) {
-		mpf_neg (vf1, vf1);
-		is_negative = 1;
+	/* 1. First Argument Reduction = k*ln2 + r ==> |r| < ln2/2  */
+	/* k = trunc(x / ln2)  via multiplication par inv_ln2 */
+	mpf_div (nb_ln_2, vf1, cob_log_two);
+	n = mpf_get_ui (nb_ln_2);
+
+	if (n>0) {
+		/* r = x - k*ln2   */
+		mpf_mul_ui (remainder, cob_log_two, n);
+		mpf_sub (remainder, vf1, remainder); 
 	} else {
-		is_negative = 0;
+		mpf_set (remainder, vf1); 
 	}
 
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon > 0) {
-		mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
+	/* 2. Second Réduction : r /= 2^COB_EXP_DIVIDE --- */
+	mpf_div_2exp (remainder, remainder, COB_EXP_DIVIDE);
+
+	mpf_clear (vf1);
+	mpf_clear (nb_ln_2);
+
+	return n;
+}
+
+/* Exp Function:                                                         */
+/* Compute the exp of a number based on this equality:                   */
+/*          EXP( X ) = SINH(X) + SQRT (1 + ( SINH(X)^2) )                */
+/* We use the Taylors series of SINH as it contains only the odd power   */
+/* and then converge faster                                              */
+/*                                                                       */
+static void
+cob_mpf_exp(mpf_t result, const mpf_t src_val)
+{
+	mpf_t r;
+	mpf_t vf2;
+	mpf_t vf3;
+	mpf_t dst_temp;
+	unsigned long n;
+
+	mpf_init2(r, COB_MPF_PREC);
+	mpf_init2(vf2, COB_MPF_CUTOFF+8);
+	mpf_init2(vf3, COB_MPF_CUTOFF+8);
+	mpf_init2(dst_temp, COB_MPF_CUTOFF+8);
+
+	if (!set_cob_log_half) setup_cob_log_half ();
+
+	const int k_sgn = mpf_sgn (src_val);
+
+	/* reduce arg to accelerate serie convergence */
+	const unsigned long nb_ln_2 = cob_mpf_reduce_exp_arg (r, src_val);
+
+        /* init first term */
+        mpf_set (vf2, r);
+        mpf_set (dst_temp, r);
+
+        /* get square of x */
+        mpf_mul (r, r, r);
+
+        n = 3;
+        do {
+                const cob_uli_t j = (n-1UL) * n;
+                mpf_set (vf3, dst_temp);
+
+                mpf_mul (vf2, vf2, r);
+                mpf_div_ui (vf2, vf2, (unsigned long)j);
+                mpf_add (dst_temp, dst_temp, vf2);
+
+                n += 2 ;
+        } while (!mpf_eq (vf3, dst_temp, COB_MPF_CUTOFF));
+
+        /* Compute EXP fron SINH */
+        /* EXP(x) =  SINH(x) + SQRT( 1 + (SINH(x) ^ 2) ) */
+        mpf_mul (vf3, dst_temp, dst_temp);
+        mpf_add_ui (vf3, vf3, 1UL);
+        mpf_sqrt (vf3, vf3);
+        mpf_add (vf3, vf3, dst_temp);
+
+	/* Reconstruct  exp(r^(2^COB_EXP_DIVIDE)) */
+	for (n = 0; n < COB_EXP_DIVIDE; n++) {
+		mpf_mul (vf3, vf3, vf3);
 	}
+	
+	/* Reconstruct  exp(src_val)  */
+	if (k_sgn == 0) {
+                mpf_set (r, vf3);
+        }
+        else {
+                if (k_sgn == -1) {
+                        mpf_ui_div (vf3, 1UL, vf3);
+                        if (nb_ln_2 > 0) {
+                                mpf_div_2exp (r, vf3, nb_ln_2);
+                        }
+                        else {
+                                mpf_set (r, vf3);
+                        }
+                }
+                else {
+                        if (nb_ln_2 > 0) {
+                                mpf_mul_2exp (r, vf3, nb_ln_2);
+                        }
+                        else {
+                                mpf_set (r, vf3);
+                        }
+                }
+        }
 
-	n = 1;
-	do {
-		mpf_mul (vf2, vf2, vf1);
-		mpf_div_ui (vf2, vf2, (cob_uli_t)n);
-		mpf_set (vf3, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf3, dst_temp, COB_MPF_CUTOFF));
+	mpf_set (result, r);
 
-	for (i = 0; i < expon; ++i) {
-		mpf_mul (dst_temp, dst_temp, dst_temp);
-	}
-
-	if (is_negative) {
-		mpf_ui_div (dst_temp, 1UL, dst_temp);
-	}
-
-	mpf_set (dst_val, dst_temp);
+	mpf_clear (r);
+	mpf_clear (vf2);
+	mpf_clear (vf3);
 	mpf_clear (dst_temp);
 
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	return;
 }
 
 /* 

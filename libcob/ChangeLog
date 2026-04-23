@@ -1,4 +1,10 @@
 
+2026-04-24  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_exp): implement a faster algorithm
+	* intrinsic.c (cob_reduce_exp_arg): new function
+	* coblocal.h.c: add COB_EXP_DIVIDE as parameter
+
 2026-03-18  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
 
 	* coblocal.h,  intrinsic.c: implement limits to cob_intr_exp, cob_intr_exp

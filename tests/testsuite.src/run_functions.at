@@ -1132,14 +1132,36 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  Y   PIC   S99V9(34).
+       01  Y   PIC   S99V9(36).
        PROCEDURE        DIVISION.
+           perform do-exp 30000 TIMES .
+      *
+           STOP RUN.
+      *
+       DO-EXP.
            MOVE FUNCTION EXP ( 3 ) TO Y.
-           IF Y NOT = 20.0855369231876677409285296545817178
+           IF Y NOT = 20.085536923187667740928529654581717896
               DISPLAY Y
               END-DISPLAY
            END-IF.
-           STOP RUN.
+      *
+           MOVE FUNCTION EXP ( -3 ) TO Y.
+           IF Y NOT =  0.049787068367863942979342415650061776
+              DISPLAY Y
+              END-DISPLAY
+           END-IF.
+      *
+           MOVE FUNCTION EXP ( 0.1 ) TO Y.
+           IF Y NOT =  1.105170918075647624811707826490246668
+              DISPLAY Y
+              END-DISPLAY
+           END-IF.
+      *
+           MOVE FUNCTION EXP ( -0.1 ) TO Y.
+           IF Y NOT =  0.904837418035959573164249059446436621
+              DISPLAY Y
+              END-DISPLAY
+           END-IF.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])

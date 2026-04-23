@@ -464,6 +464,7 @@ struct config_tbl {
   internal float to internal decimal */
 #define COB_MAX_INTERMEDIATE_FLOATING_SIZE 96
 
+#define COB_EXP_DIVIDE 24L
 /* #1206 EXP EXP10 FACTORIAL intrinsic limits */
 #define COB_MAX_EXP_LIMIT       14150UL
 #define COB_MIN_EXP_LIMIT      -14145L
