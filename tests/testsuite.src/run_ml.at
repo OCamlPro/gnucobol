@@ -625,45 +625,9 @@ end    : +000000005 - "Test                          "
 AT_CLEANUP
 
 
-AT_SETUP([XML PARSE unsupported])
-AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
-
-AT_SKIP_IF([[test "$COB_HAS_XML2" = "yes"]])
-
-AT_DATA([prog.cob],[
-       PROGRAM-ID. prog.
-       DATA      DIVISION.
-       WORKING-STORAGE SECTION.
-       77  empty-xml PIC X(8) VALUE '<empty/>'.
-       PROCEDURE DIVISION.
-       MAIN.
-           XML PARSE empty-xml
-               PROCESSING PROCEDURE PROC.
-           DISPLAY 'after  : ' XML-CODE ' - "' XML-EVENT '"'.
-           MOVE 5           TO XML-CODE
-           MOVE 'Test'      TO XML-EVENT
-           DISPLAY 'end    : ' XML-CODE ' - "' XML-EVENT '"'.
-           GOBACK.
-       PROC.
-           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
-])
-
-AT_CHECK([$COMPILE -Wunsupported prog.cob], [0], [], [prog.cob: in paragraph 'MAIN':
-prog.cob:9: warning: runtime is not configured to support XML
-])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000600 - "EXCEPTION                     "
-after  : +000000600 - "EXCEPTION                     "
-end    : +000000005 - "Test                          "
-], [libcob: prog.cob:8: warning: runtime is not configured to support XML
-])
-AT_CLEANUP
-
-
 AT_SETUP([XML register data after use])
 AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
 
-AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
-
 AT_DATA([prog.cob],[
        PROGRAM-ID. prog.
        DATA      DIVISION.
@@ -682,8 +646,20 @@ AT_DATA([prog.cob],[
            DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000000 - "START-OF-DOCUMENT             "
+AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+
+AT_CHECK([test "$COB_HAS_XML2" = "yes"], [0], [], [],
+# Previous test "failed" -> no XML runtime
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000600 - "EXCEPTION                     "
+after  : +000000600 - "EXCEPTION                     "
+end    : +000000005 - "Test                          "
+],
+[libcob: prog.cob:8: warning: runtime is not configured to support XML
+]),
+# Previous test "passed" -> libxml2 available
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
 proc   : +000000000 - "START-OF-ELEMENT              "
 proc   : +000000000 - "END-OF-ELEMENT                "
 proc   : +000000000 - "END-OF-INPUT                  "
@@ -691,6 +667,8 @@ proc   : +000000000 - "END-OF-DOCUMENT               "
 after  : +000000000 - "END-OF-DOCUMENT               "
 end    : +000000005 - "Test                          "
 ], [])
+)
+
 AT_CLEANUP
 
 
