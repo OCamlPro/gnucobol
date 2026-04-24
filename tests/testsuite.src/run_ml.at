@@ -625,6 +625,40 @@ end    : +000000005 - "Test                          "
 AT_CLEANUP
 
 
+AT_SETUP([XML PARSE unsupported])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "yes"]])
+
+AT_DATA([prog.cob],[
+       PROGRAM-ID. prog.
+       DATA      DIVISION.
+       WORKING-STORAGE SECTION.
+       77  empty-xml PIC X(8) VALUE '<empty/>'.
+       PROCEDURE DIVISION.
+       MAIN.
+           XML PARSE empty-xml
+               PROCESSING PROCEDURE PROC.
+           DISPLAY 'after  : ' XML-CODE ' - "' XML-EVENT '"'.
+           MOVE 5           TO XML-CODE
+           MOVE 'Test'      TO XML-EVENT
+           DISPLAY 'end    : ' XML-CODE ' - "' XML-EVENT '"'.
+           GOBACK.
+       PROC.
+           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+])
+
+AT_CHECK([$COMPILE -Wunsupported prog.cob], [0], [], [prog.cob: in paragraph 'MAIN':
+prog.cob:9: warning: runtime is not configured to support XML
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000600 - "EXCEPTION                     "
+after  : +000000600 - "EXCEPTION                     "
+end    : +000000005 - "Test                          "
+], [libcob: prog.cob:8: warning: runtime is not configured to support XML
+])
+AT_CLEANUP
+
+
 AT_SETUP([XML register data after use])
 AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
 
@@ -648,11 +682,8 @@ AT_DATA([prog.cob],[
            DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
 ])
 
-AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000000 - "START-OF-DOCUMENT             "
-proc   : +000000000 - "VERSION-INFORMATION           "
-proc   : +000000000 - "ENCODING-DECLARATION          "
-proc   : +000000000 - "STANDALONE-DECLARATION        "
 proc   : +000000000 - "START-OF-ELEMENT              "
 proc   : +000000000 - "END-OF-ELEMENT                "
 proc   : +000000000 - "END-OF-INPUT                  "
@@ -684,10 +715,10 @@ AT_DATA([prog.cob],[
            GOBACK.
        PROC.
            DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
-           SET XML-CODE TO -1.
+           MOVE -1 TO XML-CODE.
 ])
 
-AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000000 - "START-OF-DOCUMENT             "
 XML processing aborted, XML-CODE = -000000001
 ], [])
@@ -699,7 +730,7 @@ AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
 
 AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
 
-AT_DATA([prog.cob],[
+AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA      DIVISION.
        WORKING-STORAGE SECTION.
@@ -717,15 +748,51 @@ AT_DATA([prog.cob],[
            DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
 ])
 
-AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000000 - "START-OF-DOCUMENT             "
-proc   : +000000000 - "VERSION-INFORMATION           "
-proc   : +000000000 - "ENCODING-DECLARATION          "
-proc   : +000000000 - "STANDALONE-DECLARATION        "
-proc   : +001048644 - "EXCEPTION                     "
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
+proc   : +001048576 - "EXCEPTION                     "
 XML PARSE aborted
-after  : +001048644 - "EXCEPTION                     "
-], [libcob: prog.cob:8: warning: XML PARSE non-recoverable error (68): StartTag: invalid element name
+after  : +001048576 - "EXCEPTION                     "
+],
+[libcob: prog.cob:8: warning: XML PARSE non-recoverable error (68): StartTag: invalid element name
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE <?xml?> declaration])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA      DIVISION.
+       WORKING-STORAGE SECTION.
+       77  empty-xml PIC X(29) VALUE '<?xml version="1.0"?><empty/>'.
+       PROCEDURE DIVISION.
+       MAIN.
+           XML PARSE empty-xml
+               PROCESSING PROCEDURE PROC
+             ON EXCEPTION
+               DISPLAY 'XML processing aborted, XML-CODE = ' XML-CODE
+               GOBACK.
+           Display 'XML document successfully parsed.'
+           GOBACK.
+       PROC.
+           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
+proc   : +000000000 - "VERSION-INFORMATION           "
+proc   : +000000000 - "START-OF-ELEMENT              "
+proc   : +000000000 - "END-OF-ELEMENT                "
+proc   : +000000000 - "END-OF-INPUT                  "
+proc   : +000000000 - "END-OF-DOCUMENT               "
+XML document successfully parsed.
 ])
 AT_CLEANUP
 
@@ -770,9 +837,6 @@ AT_DATA([prog.cob],[
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [event: START-OF-DOCUMENT             , text: {}
-event: VERSION-INFORMATION           , text: {1.0}
-event: ENCODING-DECLARATION          , text: {}
-event: STANDALONE-DECLARATION        , text: {yes}
 event: START-OF-ELEMENT              , text: {sandwich}
 event: START-OF-ELEMENT              , text: {bread}
 event: ATTRIBUTE-NAME                , text: {type}
@@ -1076,9 +1140,6 @@ AT_DATA([prog.cob],[
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [event: START-OF-DOCUMENT             , text: {}
-event: VERSION-INFORMATION           , text: {1.0}
-event: ENCODING-DECLARATION          , text: {}
-event: STANDALONE-DECLARATION        , text: {yes}
 event: START-OF-ELEMENT              , text: {lorem}
 event: CONTENT-CHARACTERS            , text: {   Lorem ipsum dolor sit amet,             consectetur adipiscing elit.            Sed vitae scelerisque mauris.           Ut suscipit faucibus ultrices.          Proin lacinia luctus imperdiet.         Fusce sit amet augue nisi.              Fusce a justo nec nisl luctus laoreet.  Nulla rutrum fermentum dui quis tincidunDonec neque dui, maximus cursus felis eucommodo vulputate ipsum.                Morbi laoreet risus congue,             dictum dolor tincidunt,                 fermentum diam.                         Mauris placerat volutpat nisl,          nec malesuada enim ut.                  }
 event: END-OF-ELEMENT                , text: {lorem}
@@ -1138,9 +1199,6 @@ AT_DATA([prog.cob],[
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [event: START-OF-DOCUMENT             , text: {}, prefix: {}, namespace: {}
-event: VERSION-INFORMATION           , text: {1.0}, prefix: {}, namespace: {}
-event: ENCODING-DECLARATION          , text: {}, prefix: {}, namespace: {}
-event: STANDALONE-DECLARATION        , text: {yes}, prefix: {}, namespace: {}
 event: START-OF-ELEMENT              , text: {section}, prefix: {}, namespace: {http://example.com}
 event: NAMESPACE-DECLARATION         , text: {}, prefix: {}, namespace: {http://example.com}
 event: NAMESPACE-DECLARATION         , text: {}, prefix: {bk}, namespace: {urn:loc.gov:books}
@@ -1202,7 +1260,7 @@ AT_DATA([prog.cob],[
            display xml-event xml-code '|' xml-text '|'
                xml-namespace-prefix '|'
                xml-namespace '|'
-      * In the original IBM example they check specifically the two exceptions 
+      * In the original IBM example they check specifically the two exceptions
       * codes for undeclared namespaces: 264192 and 264193
       * We do not yet support these IBM code
       * -> ignore all recoverable errors for now
@@ -1213,26 +1271,24 @@ AT_DATA([prog.cob],[
        End program XMLup.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [START-OF-DOCUMENT             +000000000||||
-VERSION-INFORMATION           +000000000|1.0|||
-ENCODING-DECLARATION          +000000000||||
-STANDALONE-DECLARATION        +000000000|yes|||
-EXCEPTION                     +000262345||||
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[START-OF-DOCUMENT             +000000000||||
+EXCEPTION                     +000262144||||
 START-OF-ELEMENT              +000000000|root|pfx0||
 NAMESPACE-DECLARATION         +000000000||pfx1|http://whatever|
 START-OF-ELEMENT              +000000000|localElName1|pfx1|http://whatever|
-EXCEPTION                     +000262345||||
+EXCEPTION                     +000262144||||
 START-OF-ELEMENT              +000000000|localElName2|pfx2||
 END-OF-ELEMENT                +000000000|localElName2|pfx2||
-EXCEPTION                     +000262345||||
-EXCEPTION                     +000262345||||
+EXCEPTION                     +000262144||||
+EXCEPTION                     +000262144||||
 START-OF-ELEMENT              +000000000|localElName3|pfx3||
 ATTRIBUTE-NAME                +000000000|localAtName4|pfx4||
 ATTRIBUTE-CHARACTERS          +000000000||||
 CONTENT-CHARACTERS            +000000000|c1|||
-EXCEPTION                     +000262345||||
-EXCEPTION                     +000262345||||
+EXCEPTION                     +000262144||||
+EXCEPTION                     +000262144||||
 START-OF-ELEMENT              +000000000|localElName5|pfx5||
 ATTRIBUTE-NAME                +000000000|localAtName6|pfx6||
 ATTRIBUTE-CHARACTERS          +000000000||||
@@ -1244,13 +1300,15 @@ END-OF-ELEMENT                +000000000|localElName1|pfx1|http://whatever|
 END-OF-ELEMENT                +000000000|root|pfx0||
 END-OF-INPUT                  +000000000||||
 END-OF-DOCUMENT               +000000000||||
-], [libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx0 on root is not defined
+],
+[libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx0 on root is not defined
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx2 on localElName2 is not defined
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx4 for localAtName4 on localElName3 is not defined
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx3 on localElName3 is not defined
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx6 for localAtName6 on localElName5 is not defined
 libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx5 on localElName5 is not defined
 ])
+
 AT_CLEANUP
 
 

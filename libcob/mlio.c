@@ -1615,10 +1615,11 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 		severity = XRC_FATAL;
 		severity_str = _("non-recoverable error");
 	} else if (err->level == XML_ERR_ERROR) {
+		/* IBM reports recoverable errors with the XRC_WARNING severity */
 		severity = XRC_WARNING;
 		severity_str = _("recoverable error");
 	} else {
-		severity = XRC_WARNING;
+		severity = 0;
 		severity_str = _("warning");
 	}
 
@@ -1648,21 +1649,26 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 		break;
 	}
 
-	new_xml_event (state, EVENT_EXCEPTION);
-	
-	/* TODO: According to IBM we should put the the prefix of the last chunk 
-		that occurs before the error in XML-TEXT. */
-	
-	/* Set the XML exception code:
-	   For now, we do not try to follow the error codes of IBM. 
-	   But we still try to categorize the error between non-recoverable and recoverable. */
-	if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
-		set_xml_event_exception_code (state, (severity << 16) | err->code);
-	} else {
-		if (err->level == XML_ERR_FATAL) {
-			set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_COMPAT);
+	if (severity) {
+		/* Give an EXCEPTION event to the processing procedure on recoverable 
+		   and non-recoverable errors, but skip libxml2 warnings. */
+		new_xml_event (state, EVENT_EXCEPTION);
+		
+		/* TODO: According to IBM we should put the the prefix of the last chunk 
+			that occurs before the error in XML-TEXT.
+		In practice, it seems to be different for namespace recoverable errors */
+		
+		/* Set the XML exception code:
+		For now, we do not try to follow the error codes of IBM. 
+		But we still try to categorize the error between non-recoverable and recoverable. */
+		if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
+			set_xml_event_exception_code (state, severity << 16);
 		} else {
-			set_xml_event_exception_code (state, XML_PARSE_WARNING_MISC_COMPAT);
+			if (err->level == XML_ERR_FATAL) {
+				set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_COMPAT);
+			} else {
+				set_xml_event_exception_code (state, XML_PARSE_WARNING_MISC_COMPAT);
+			}
 		}
 	}
 
@@ -1692,19 +1698,29 @@ xml_startDocument (void *ctx) {
 	const xmlChar *version		= LIBXML_CTXT_GET_VERSION(ctxt);
 
 	new_xml_event (state, EVENT_START_OF_DOCUMENT);
-	new_xml_event (state, EVENT_VERSION_INFORMATION);
-	set_xml_event_text (state, version, xmlStrlen (version));
-	new_xml_event (state, EVENT_ENCODING_DECLARATION);
-	set_xml_event_text (state, encoding, xmlStrlen (encoding));
+	
+	/* standalone is -1 when <?xml?> tag is absent */
+	if (standalone != -1) {
+		/* version attribute is mandatory in <?xml?> tag */
+		new_xml_event (state, EVENT_VERSION_INFORMATION);
+		set_xml_event_text (state, version, xmlStrlen (version));
+		
+		if (encoding) {
+			new_xml_event (state, EVENT_ENCODING_DECLARATION);
+			set_xml_event_text (state, encoding, xmlStrlen (encoding));
+		}
 
-	if (standalone) {
-		new_xml_event (state, EVENT_STANDALONE_DECLARATION);
-		set_xml_event_text (state, "yes", 3);
-	} else {
-		new_xml_event (state, EVENT_STANDALONE_DECLARATION);
-		set_xml_event_text (state, "no", 2);
+		/* standalone is -2 when <?xml?> tag is present without an encoding attribute */
+		if (standalone != -2) {
+			if (standalone) {
+				new_xml_event (state, EVENT_STANDALONE_DECLARATION);
+				set_xml_event_text (state, "yes", 3);
+			} else {
+				new_xml_event (state, EVENT_STANDALONE_DECLARATION);
+				set_xml_event_text (state, "no", 2);
+			}
+		}
 	}
-
 }
 
 static void
