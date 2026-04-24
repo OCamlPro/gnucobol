@@ -5,11 +5,13 @@
 	  the IBM option name
 	* mlio.c [WITH_XML2]: Fix issues in XML PARSE handling most notably a use 
 	  after free error if the internal buffer needs to grow during the parsing. 
-	  Respect the high order half-word for exception XML-CODE. 
+	  Respect the high order half-word for exception XML-CODE, but do not 
+	  expose internal libxml2 error codes. 
 	  Reduce the number of parsing states by removing useless ones, 
 	  and encode eof in these states. 
 	  Handle XML chunks with more than one recoverable error. 
 	  Trigger ON EXCEPTION code after EXCEPTION XML events.
+	  Remove spurious events when there is no <?xml?> declaration in the file.
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
