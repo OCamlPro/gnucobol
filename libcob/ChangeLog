@@ -3,15 +3,17 @@
 
 	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
 	  the IBM option name
-	* mlio.c [WITH_XML2]: Fix issues in XML PARSE handling most notably a use 
+	* mlio.c: Fix issues in XML PARSE handling most notably a use 
 	  after free error if the internal buffer needs to grow during the parsing. 
-	  Respect the high order half-word for exception XML-CODE, but do not 
-	  expose internal libxml2 error codes. 
-	  Reduce the number of parsing states by removing useless ones, 
-	  and encode eof in these states. 
-	  Handle XML chunks with more than one recoverable error. 
-	  Trigger ON EXCEPTION code after EXCEPTION XML events.
-	  Remove spurious events when there is no <?xml?> declaration in the file.
+	  This fix changes the definition of xml_event to store offsets in the 
+	  buffer instead of pointers
+	* mlio.c: Respect the high order half-word for exception XML-CODE, 
+	  but do not expose internal libxml2 error codes 
+	* mlio.c: Reduce the number of parsing states by removing useless ones, 
+	  and encode eof in these states
+	* mlio.c: Handle XML chunks with more than one recoverable error
+	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
+	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
