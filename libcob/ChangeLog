@@ -1,4 +1,11 @@
 
+2026-04-25  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_decimal_pow): Fix #924 #925 #989 #1020
+	* intrinsic.c         	        : add cob_mpft3 cob_init_intrinsic 
+	and cob_exit_intrinsic are updated
+	Fix typo also
+
 2026-04-24  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
 
 	* intrinsic.c (cob_mpf_exp): implement a faster algorithm

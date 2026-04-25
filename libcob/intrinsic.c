@@ -97,6 +97,7 @@ static mpz_t		cob_mpzt;
 
 static mpf_t		cob_mpft;
 static mpf_t		cob_mpft2;
+static mpf_t		cob_mpft3;
 static mpf_t		cob_mpft_get;
 
 static mpf_t		cob_pi;
@@ -3291,99 +3292,150 @@ cob_switch_value (const int id)
 void
 cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 {
-	cob_uli_t		n;
-	const int		sign = mpz_sgn (pd1->value);
+	int negat_result = 0;
 
-	if (unlikely (pd1->scale == COB_DECIMAL_NAN)) {
+	if (unlikely(pd1->scale == COB_DECIMAL_NAN)) {
 		return;
 	}
-	if (unlikely (pd2->scale == COB_DECIMAL_NAN)) {
+	if (unlikely(pd2->scale == COB_DECIMAL_NAN)) {
 		pd1->scale = COB_DECIMAL_NAN;
 		return;
 	}
 
-	if (mpz_sgn (pd2->value) == 0) {
-		/* Exponent is zero */
-		if (sign == 0) {
-			/* 0 ^ 0 */
-			cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		}
-		mpz_set_ui (pd1->value, 1UL);
-		pd1->scale = 0;
-		return;
-	}
-	if (sign == 0) {
-		/* Value is zero */
-		pd1->scale = 0;
-		return;
-	}
-
 	cob_trim_decimal (pd2);
+	cob_trim_decimal (pd1);
 
-	if (sign == -1 && pd2->scale) {
-		/* Negative exponent and non-integer power */
+	const int sign_nbr = mpz_sgn (pd1->value);
+	const int sign_exp = mpz_sgn (pd2->value);
+	const int power_case = sign_nbr * sign_exp;
+
+	if (!power_case) {
+		/* Exponent OR Number are  = 0 */
+		if (sign_nbr == 0) {
+			if ( sign_exp == 1) {
+				/* case 0 ^ Positive number --> zero   */
+				mpz_set_ui (pd1->value, 0UL);
+				pd1->scale = 0;
+
+			}
+			else {
+				/* FIX #924 : 0 raised to negative number or 0 */
+				pd1->scale = COB_DECIMAL_NAN;
+				cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+			}
+		}
+		else {
+			/* Exponent is 0 and Nbr != 0 ---> 1 */
+			mpz_set_ui (pd1->value, 1UL);
+			pd1->scale = 0;
+		}
+
+		return;
+	}
+	
+	if (pd2->scale != 0 && sign_nbr == -1) {
+		/* Case number < 0 and decimal exponent --> Error */
 		pd1->scale = COB_DECIMAL_NAN;
 		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
 		return;
 	}
 
-	cob_trim_decimal (pd1);
+	/* First Check result size */	
+	/* Fix  #925 : Avoid GMPLIB CRASH */
+	cob_decimal_get_mpf (cob_mpft , pd1);
+	cob_decimal_get_mpf (cob_mpft2, pd2);
 
-	if (!pd2->scale) {
-		/* Integer power */
+	mpf_set (cob_mpft3,cob_mpft);
+	if (sign_nbr == -1) {
+		mpf_abs (cob_mpft3, cob_mpft3);
+	}
+	cob_mpf_log (cob_mpft3, cob_mpft3);
+
+	mpf_mul (cob_mpft3, cob_mpft3, cob_mpft2);
+
+	if (mpf_cmp_ui (cob_mpft3, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft3, COB_MIN_EXP_LIMIT) <= 0) {
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+
+		if (mpf_sgn (cob_mpft3) > 0) {
+		
+			mpf_set_ui (cob_mpft, 0UL);
+			cob_decimal_set_mpf (pd1, cob_mpft);
+			pd1->scale = COB_DECIMAL_INF;
+
+		} else {
+			mpf_set_ui (cob_mpft, COB_MIN_EXP_MANTISSA);
+			cob_decimal_set_mpf (pd1, cob_mpft);
+			d1.scale = COB_MIN_EXP_SCALE;
+
+		}
+
+		return;
+	}
+	/*         End Check          */
+	
+	if (!(pd2->scale)) {
+		/* Integer Power */
+
 		if (!mpz_cmp_ui (pd2->value, 1UL)) {
-			/* Power is 1 */
+			/* Power is 1 leave as is */
 			return;
 		}
-		if (mpz_sgn (pd2->value) == -1
-		 && mpz_fits_slong_p (pd2->value)) {
-			/* Negative power */
-			mpz_abs (pd2->value, pd2->value);
-			n = mpz_get_ui (pd2->value);
-			mpz_pow_ui (pd1->value, pd1->value, n);
-			if (pd1->scale) {
-				pd1->scale *= n;
-				cob_trim_decimal (pd1);
-			}
-			mpz_set (pd2->value, pd1->value);
-			pd2->scale = pd1->scale;
-			mpz_set_ui (pd1->value, 1UL),
-			pd1->scale = 0;
-			cob_decimal_div (pd1, pd2);
+		
+		if (mpz_cmp_si (pd2->value, -1L) == 0) {
+			mpf_ui_div (cob_mpft, 1UL, cob_mpft);
+			/* Power is -1 result is inverse */
+			cob_decimal_set_mpf (pd1, cob_mpft);
 			cob_trim_decimal (pd1);
 			return;
 		}
-		if (mpz_fits_ulong_p (pd2->value)) {
-			/* Positive power */
-			n = mpz_get_ui (pd2->value);
-			mpz_pow_ui (pd1->value, pd1->value, n);
-			if (pd1->scale) {
-				pd1->scale *= n;
-				cob_trim_decimal (pd1);
+
+		mpz_abs (pd2->value,pd2->value);
+		if ( mpz_fits_ulong_p (pd2->value) ) {
+			const unsigned long n = mpz_get_ui (pd2->value);
+			if ( sign_exp == -1 ) {
+				mpz_neg (pd2->value, pd2->value); /* restore expon sign --> FIX #1020 */
+				mpf_ui_div (cob_mpft, 1UL, cob_mpft);
 			}
+			mpf_pow_ui (cob_mpft, cob_mpft, n);
+
+			cob_decimal_set_mpf (pd1, cob_mpft );
+			cob_trim_decimal (pd1);
+
 			return;
 		}
+                
+ 		if (sign_nbr == -1) {
+			/* Fix  #989               */
+			if (mpz_odd_p (pd2->value)) {
+				negat_result = 1;
+			}
+		}
 	}
+    
+	/* Compute a ^ b  = exp(b*ln(a) */
 
-	if (sign == -1) {
-		mpz_abs (pd1->value, pd1->value);
-	}
-	cob_decimal_get_mpf (cob_mpft, pd1);
-	if (pd2->scale == 1 && !mpz_cmp_ui (pd2->value, 5UL)) {
-		/* Square root short cut */
-		mpf_sqrt (cob_mpft2, cob_mpft);
-	} else {
-		cob_decimal_get_mpf (cob_mpft2, pd2);
-		cob_mpf_log (cob_mpft, cob_mpft);
-		mpf_mul (cob_mpft, cob_mpft, cob_mpft2);
-		cob_mpf_exp (cob_mpft2, cob_mpft);
-	}
+	/* Compute b*ln( abs(a) )  */
+	mpf_abs (cob_mpft, cob_mpft);
+	cob_mpf_log (cob_mpft, cob_mpft);
+	mpf_mul (cob_mpft, cob_mpft, cob_mpft2);
+
+	cob_mpf_exp (cob_mpft2, cob_mpft);
+
 	cob_decimal_set_mpf (pd1, cob_mpft2);
-	if (sign == -1) {
+
+	if (negat_result) {
 		mpz_neg (pd1->value, pd1->value);
 	}
-}
 
+	if (sign_exp == -1) {
+		/* restore expon sign --> FIX #1020 */
+		mpz_neg (pd2->value, pd2->value);
+	}
+
+	cob_trim_decimal (pd1);
+
+	return;
+}
 /* Indirect field get/put functions */
 
 void
@@ -4814,7 +4866,7 @@ cob_intr_exp (cob_field *srcfield)
 	cob_decimal_get_mpf (cob_mpft, &d1);
 
 	/* #1206 Avoid GMP Crash */
-	if ( mpf_cmp_ui (cob_mpft, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft, COB_MIN_EXP_LIMIT) <= 0) {
+	if (mpf_cmp_ui (cob_mpft, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft, COB_MIN_EXP_LIMIT) <= 0) {
 	
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 
@@ -4825,7 +4877,6 @@ cob_intr_exp (cob_field *srcfield)
 				d1.scale = COB_DECIMAL_INF;
 
 			} else {
-
 				mpf_set_ui (cob_mpft, COB_MIN_EXP_MANTISSA);
 				cob_decimal_set_mpf (&d1, cob_mpft);
 				d1.scale = COB_MIN_EXP_SCALE ;
@@ -7393,6 +7444,7 @@ cob_exit_intrinsic (void)
 #endif
 
 	mpf_clear (cob_mpft_get);
+	mpf_clear (cob_mpft3);
 	mpf_clear (cob_mpft2);
 	mpf_clear (cob_mpft);
 
@@ -7448,6 +7500,7 @@ cob_init_intrinsic (cob_global *lptr)
 
 	mpf_init2 (cob_mpft, COB_MPF_PREC);
 	mpf_init2 (cob_mpft2, COB_MPF_PREC);
+	mpf_init2 (cob_mpft3, COB_MPF_PREC);
 	mpf_init2 (cob_mpft_get, COB_MPF_PREC);
 }
 
