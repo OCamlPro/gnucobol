@@ -116,7 +116,7 @@ The following libraries ARE required WHEN :
 
     BOTH runtime AND development components required.
 
-    libxml2 >= 2.5.10 - https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home
+    libxml2 >= 2.6.1 - https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home
 
     libxml2 is distributed under MIT License (Expat variant).
 

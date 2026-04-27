@@ -842,7 +842,7 @@ XML document successfully parsed.
 AT_CLEANUP
 
 
-AT_SETUP([XML PARSE complex XML])
+AT_SETUP([XML PARSE push parser])
 AT_KEYWORDS([extensions PARSE])
 
 AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
