@@ -42,19 +42,19 @@
 #include <libxml/SAX2.h>
 
 #if LIBXML_VERSION >= 21200
-#define LIBXML_CONST_ERROR_PTR	const xmlError *
-#define LIBXML_CTXT_GET_ENCODING(ctxt) xmlCtxtGetDeclaredEncoding(ctxt)
-#define LIBXML_CTXT_GET_STANDALONE(ctxt) xmlCtxtGetStandalone(ctxt)
-#define LIBXML_CTXT_GET_VERSION(ctxt) xmlCtxtGetVersion(ctxt)
-#define LIBXML_CTXT_GET_OPTIONS(ctxt) xmlCtxtGetOptions(ctxt)
-#define LIBXML_CTXT_SET_OPTIONS(ctxt, options) xmlCtxtSetOptions(ctxt, options)
-#else
-#define LIBXML_CONST_ERROR_PTR	xmlErrorPtr		/* use old ABI */
-#define LIBXML_CTXT_GET_ENCODING(ctxt) ctxt->encoding
-#define LIBXML_CTXT_GET_STANDALONE(ctxt) ctxt->standalone
-#define LIBXML_CTXT_GET_VERSION(ctxt) ctxt->version
-#define LIBXML_CTXT_GET_OPTIONS(ctxt) ctxt->options
-#define LIBXML_CTXT_SET_OPTIONS(ctxt, options) ctxt->options = options
+#define LIBXML_CONST_ERROR_PTR					const xmlError *
+#define LIBXML_CTXT_GET_ENCODING(ctxt) 			xmlCtxtGetDeclaredEncoding(ctxt)
+#define LIBXML_CTXT_GET_STANDALONE(ctxt) 		xmlCtxtGetStandalone(ctxt)
+#define LIBXML_CTXT_GET_VERSION(ctxt) 			xmlCtxtGetVersion(ctxt)
+#define LIBXML_CTXT_GET_OPTIONS(ctxt) 			xmlCtxtGetOptions(ctxt)
+#define LIBXML_CTXT_SET_OPTIONS(ctxt, options) 	xmlCtxtSetOptions(ctxt, options)
+#else /* use old ABI */
+#define LIBXML_CONST_ERROR_PTR					xmlErrorPtr
+#define LIBXML_CTXT_GET_ENCODING(ctxt) 			ctxt->encoding
+#define LIBXML_CTXT_GET_STANDALONE(ctxt) 		ctxt->standalone
+#define LIBXML_CTXT_GET_VERSION(ctxt) 			ctxt->version
+#define LIBXML_CTXT_GET_OPTIONS(ctxt) 			ctxt->options
+#define LIBXML_CTXT_SET_OPTIONS(ctxt, options) 	ctxt->options = options
 #endif
 
 #else
@@ -87,7 +87,7 @@ typedef unsigned char xmlChar;
 #define json_object_object_add_ex(obj, key, val, opts) \
 	json_object_object_add (obj, key, val)
 
-static inline const char *
+static COB_INLINE COB_A_INLINE const char *
 json_object_to_json_string_length (struct json_object *obj,
 	int flags, size_t *length)
 {
@@ -125,15 +125,19 @@ json_object_to_json_string_length (struct json_object *obj,
 
 /* standard error codes */
 enum xml_code_status {
-	XML_STMT_EXIT = -1,
-	XML_STMT_SUCCESSFULL = 0,
+	XML_EXIT = -1,
+	XML_OK = 0,
+	XML_CONTINUE = 1,
 	XML_PARSE_WARNING_MISC_COMPAT = 99, /* various warnings, only in XMLPARSE COMPAT */
 	XML_PARSE_ERROR_MISC_COMPAT = 201, /* various errors, only in XMLPARSE COMPAT */
 	XML_OUT_FIELD_TOO_SMALL = 400,
 	XML_INVALID_NAMESPACE = 416,
 	XML_INVALID_CHAR_REPLACED = 417,
 	XML_INVALID_NAMESPACE_PREFIX = 419,
-	XML_INTERNAL_ERROR = 600
+	XML_INTERNAL_ERROR = 600,
+	XML_PARSE_WARNING_MISC_XMLSS = XRC_WARNING << 16,
+	XML_PARSE_ERROR_MISC_XMLSS = XRC_FATAL << 16,
+	XML_PARSE_NOT_VALID_MISC_XMLSS = XRC_NOT_VALID << 16,
 };
 
 enum xml_parser_state {
@@ -179,7 +183,7 @@ static void init_xml_event_list (void);
 struct xml_event {
 	enum cob_xml_event		event;
 	struct xml_event		*next;				/* pointer to next element */
-	int						xml_code;			/* the XML-CODE of the event (0 unless event is EXCEPTION) */
+	enum xml_code_status	xml_code;			/* the XML-CODE of the event (0 unless event is EXCEPTION) */
 	size_t 					text_off;			/* text offset in buff */
 	size_t					text_len;			/* length of this text */
 	size_t 					namespace_off;		/* namespace offset in buff */
@@ -190,7 +194,7 @@ struct xml_event {
 
 struct xml_state {
 	enum xml_parser_state state;
-	int		last_xml_code;
+	enum xml_code_status last_xml_code;
 	int		flags;
 #if WITH_XML2
 	xmlSAXHandler sax;
@@ -241,7 +245,7 @@ set_xml_exception (const enum xml_code_status code)
 }
 
 /* get special register XML-CODE */
-static COB_INLINE COB_A_INLINE int
+static COB_INLINE COB_A_INLINE enum xml_code_status
 get_xml_code (void)
 {
 	return cob_get_int (COB_MODULE_PTR->xml_code);
@@ -265,8 +269,8 @@ set_xml_event (enum cob_xml_event event)
 	memset (data2 + size1, ' ', size2 - size1);
 }
 
-static void
-xml_event_reset_registers (struct xml_event *event)
+static COB_INLINE COB_A_INLINE void
+xml_event_init (struct xml_event *event)
 {
 	event->xml_code = 0;
 	event->text_len = 0;
@@ -286,7 +290,7 @@ new_xml_event (struct xml_state *state, enum cob_xml_event xml_event)
 		if (event->event == EVENT_UNKNOWN) {
 			/* very first element, and unsused: */
 			event->event = xml_event;
-			xml_event_reset_registers (event);
+			xml_event_init (event);
 			return;
 		}
 		if (event->next) {
@@ -294,17 +298,18 @@ new_xml_event (struct xml_state *state, enum cob_xml_event xml_event)
 			event = event->next;
 			event->event = xml_event;
 			state->event = event;
-			xml_event_reset_registers (event);
+			xml_event_init (event);
 			return;
 		}
 	}
 
 	/* no empty events from previous parsing, create a new one */
 	event = cob_malloc (sizeof (struct xml_event));
-	/* add logic to check for malloc failure */
+	/* TODO: add logic to check for malloc failure */
 	event->event = xml_event;
+	/* Implicit by zero-initialization in cob_malloc:
 	event->next = NULL;
-	xml_event_reset_registers (event);
+	xml_event_init (event); */
 	if (state->event) {
 		state->event->next = event;
 	} else {
@@ -328,7 +333,7 @@ buffer_xml_event_data (struct xml_state *state, const void *data, size_t size)
 	size_t buff_free_size = state->buff_len - buff_off;
 
 	if (size == 0) {
-		return -1;
+		return (size_t)-1;
 	}
 
 	if (size <= buff_free_size) {
@@ -336,8 +341,9 @@ buffer_xml_event_data (struct xml_state *state, const void *data, size_t size)
 		memcpy (state->buff + buff_off, data, size);
 		state->buff_off += size;
 		return buff_off;
-
-	} else {
+	} 
+	
+	{
 		/* otherwise: allocate new buffer with additional space, preserving existing data */
 		const size_t malloc_size = buff_off + size > state->buff_len * 2 ? 
 			buff_off + size : state->buff_len * 2;
@@ -346,18 +352,18 @@ buffer_xml_event_data (struct xml_state *state, const void *data, size_t size)
 		/* CHECKME: we possibly want to handle out of memory to pass it to COBOL
 		   as XML error - but cob_fast_malloc / cob_malloc already abort the runtime
 		   in case of missing memory */
-		if (mptr) {
-			memcpy (mptr, state->buff, buff_off);
-			cob_free (state->buff);
-			state->buff = mptr;
-			state->buff_len = malloc_size;
-
-			memcpy (mptr + buff_off, data, size);
-			state->buff_off += size;
-			return buff_off;
-		} else {
-			return -1;
+		if (!mptr) {
+			return (size_t)-1;
 		}
+
+		memcpy (mptr, state->buff, buff_off);
+		cob_free (state->buff);
+		state->buff = mptr;
+		state->buff_len = malloc_size;
+
+		memcpy (mptr + buff_off, data, size);
+		state->buff_off += size;
+		return buff_off;
 	}
 }
 
@@ -1331,7 +1337,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		const int flags, void **saved_state)
 {
 	struct xml_state *state;
-	int xml_code;
+	enum xml_code_status xml_code;
 
 	/* no state yet ? first call */
 	if (*saved_state == NULL) {
@@ -1361,7 +1367,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		/* LCOV_EXCL_STOP */
 		xml_code = 0;
 		state = cob_malloc (sizeof (struct xml_state));
-		memset (state, '\0', sizeof(struct xml_state));
+		/* state is zero-initialized */
 		state->flags = flags;
 		state->input_data_ptr = (const char*)in->data;
 		state->input_data_len = in->size;
@@ -1395,7 +1401,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		/* TODO: handle errors 100,001 to 165,535 with XMLPARSE(COMPAT)
 			positive non-zero values should set the encoding 
 			and reset the error */
-		if (xml_code != 0) {
+		if (xml_code != XML_OK) {
 			/* not reset: turn the error into a fatal error */
 			state->state = XML_PARSER_HAD_FATAL_ERROR;
 		} else {
@@ -1414,7 +1420,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	}
 
 	/* user-initiated exception condition (-1) */
-	if (xml_code == -1) {
+	if (xml_code == XML_EXIT) {
 		/* xml code stays -1 */
 		cob_set_exception (COB_EC_XML);
 		xml_free_parse_memory (state);
@@ -1424,33 +1430,35 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 
 	if (state->state == XML_PARSER_HAD_END_OF_INPUT) {
 		switch (xml_code) {
-		case 0:
+		case XML_OK:
 			/* no new data chunk to give to the XML parser */
 			state->input_data_ptr = NULL;
 			state->input_data_len = 0;
 			state->state = XML_PARSER_NO_NEW_CHUNKS;
 			break;
-		case 1:
+		case XML_CONTINUE:
 			/* goes on with parsing
 			   note that since we are processing a new chunk
 			   of the xml data, we need to set both data pointers */
-			xml_code = 0;
+			xml_code = XML_OK;
 			state->input_data_ptr = (const char*)in->data;
 			state->input_data_len = in->size;
 			state->state = XML_PARSER_READ_CHUNK;
 			break;
+		default:
+			/* other cases are handled below */
+			break;
 		}
-		/* other cases are handled below */
 	}
 
-	if (xml_code != 0) {
+	if (xml_code != XML_OK) {
 		/* note: -1 is handled above, also 1 where possible */
 		cob_set_exception (COB_EC_XML);
 		if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
 			/* fatal runtime error for IBM, just warn here for now */
-			cob_runtime_warning(_("Unexpected XML-CODE value: %d"), xml_code);
+			cob_runtime_warning(_("unexpected XML-CODE value: %d"), xml_code);
 		} else {
-			set_xml_code (-1);
+			set_xml_code (XML_EXIT);
 		}
 		xml_free_parse_memory (state);
 		*saved_state = NULL;
@@ -1494,7 +1502,7 @@ xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 	int			copy_len;
 	int			num_newlines = 0;
 
-	set_xml_code (XML_STMT_SUCCESSFULL);
+	set_xml_code (XML_OK);
 
 	buff = xmlBufferCreate ();
 	if (buff == NULL) {
@@ -1632,20 +1640,19 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 	switch (state->state) {
 	case XML_PARSER_VALIDATION_SETUP:
 		if (err->file) {
-			cob_runtime_warning (_("XML PARSE %s for VALIDATE FILE %s:%d (%d): %s"),
-				severity_str, err->file, err->line, err->code, err->message);
+			cob_runtime_warning ("XML PARSE VALIDATING FILE %s (%d): %s:%d: %s",
+				severity_str, err->code, err->file, err->line, err->message);
 		} else {
-			cob_runtime_warning (_("XML PARSE %s for VALIDATE FILE (%d): %s"),
+			cob_runtime_warning ("XML PARSE VALIDATING FILE %s (%d): %s",
 				severity_str, err->code, err->message);
 		}
 		break;
 	case XML_PARSER_VALIDATION_SETUP_MEM:
-		cob_runtime_warning (_("XML PARSE %s for VALIDATE (%d): %s"),
+		cob_runtime_warning ("XML PARSE VALIDATING %s (%d): %s",
 			severity_str, err->code, err->message);
 		break;
 	default:
-		cob_runtime_warning (_("XML PARSE %s (%d): %s"),
-			severity_str, err->code, err->message);
+		cob_runtime_warning ("XML PARSE %s (%d): %s", severity_str, err->code, err->message);
 		break;
 	}
 
@@ -1712,11 +1719,10 @@ xml_startDocument (void *ctx) {
 
 		/* standalone is -2 when <?xml?> tag is present without an encoding attribute */
 		if (standalone != -2) {
+			new_xml_event (state, EVENT_STANDALONE_DECLARATION);
 			if (standalone) {
-				new_xml_event (state, EVENT_STANDALONE_DECLARATION);
 				set_xml_event_text (state, "yes", 3);
 			} else {
-				new_xml_event (state, EVENT_STANDALONE_DECLARATION);
 				set_xml_event_text (state, "no", 2);
 			}
 		}
@@ -1903,13 +1909,23 @@ void xml_parse (cob_field *encoding, cob_field *validation,
 		state->sax.serror = xml_error_handler;
 
 		/*
-		 * The document being in memory, it have no base per RFC 2396.
+		 * The document being in memory, it has no base per RFC 2396.
 		*/
 		state->ctx = xmlCreatePushParserCtxt (&state->sax, state,
 			NULL, 0, NULL);
 
-		/* Add this immediately after creating the context: */
-		if (state->ctx != NULL) {
+		if (state->ctx == NULL) {
+			new_xml_event (state, EVENT_EXCEPTION);
+			if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
+				set_xml_event_exception_code (state, XRC_FATAL << 16);
+			} else {
+				set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_COMPAT);
+			}
+			xml_process_next_event (state);
+			return;
+		}
+
+		{
 			int options = LIBXML_CTXT_GET_OPTIONS(state->ctx);
 			options &= ~XML_PARSE_NOWARNING;		/* Clear the NOWARNING flag */
 			options &= ~XML_PARSE_NOERROR;			/* Also clear NOERROR flag */
@@ -1919,16 +1935,6 @@ void xml_parse (cob_field *encoding, cob_field *validation,
 		if (enc) {
 			/* TODO (later): handle encoding */
 			cob_free (enc);
-		}
-		if (state->ctx == NULL) {
-			new_xml_event (state, EVENT_EXCEPTION);
-			if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
-				set_xml_event_exception_code (state, XRC_FATAL << 16);
-			} else {
-				set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_COMPAT);
-			}
-			xml_process_next_event(state);
-			return;
 		}
 
 		/* setup global error handler for every domain that hasn't its own */
@@ -2029,13 +2035,13 @@ void xml_parse (cob_field *encoding, cob_field *validation,
 		new_xml_event (state, EVENT_END_OF_INPUT);
 	}
 
-#if 0
-	{
+#if COB_DEBUG_LOG
+	if (DEBUG_ISON("xml")) {
 		struct xml_event *event = state->first_event;
-		for (;event && event->event != EVENT_UNKNOWN; event = event->next) {
-			printf("Event ==> %30.*s \n",
+		for (; event && event->event != EVENT_UNKNOWN; event = event->next) {
+			DEBUG_LOG("xml",("Event ==> %30.*s \n",
 				xml_event_name_len[event->event],
-				(unsigned char *)xml_event_name[event->event]);
+				(unsigned char *)xml_event_name[event->event]));
 		}
 	}
 #endif
