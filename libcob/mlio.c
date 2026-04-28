@@ -404,30 +404,30 @@ set_xml_event_prefix (struct xml_state *state, const void *data, size_t size)
 static void
 set_xml_registers (const int ntext, unsigned char *buff, const struct xml_event *event)
 {
-	COB_MODULE_PTR->xml_text->data = NULL;
+	COB_MODULE_PTR->xml_text->data = (unsigned char *) "";
 	COB_MODULE_PTR->xml_text->size = 0;
-	COB_MODULE_PTR->xml_namespace->data = NULL;
+	COB_MODULE_PTR->xml_namespace->data = (unsigned char *) "";
 	COB_MODULE_PTR->xml_namespace->size = 0;
-	COB_MODULE_PTR->xml_namespace_prefix->data = NULL;
+	COB_MODULE_PTR->xml_namespace_prefix->data = (unsigned char *) "";
 	COB_MODULE_PTR->xml_namespace_prefix->size = 0;
 	
 	/* XML-NTEXT and other XML-N... special registers are not available with ACUCOBOL */
 	if (COB_MODULE_PTR->xml_ntext) {
-		COB_MODULE_PTR->xml_ntext->data = NULL;
+		COB_MODULE_PTR->xml_ntext->data = (unsigned char *) "";
 		COB_MODULE_PTR->xml_ntext->size = 0;
 	}
 	if (COB_MODULE_PTR->xml_nnamespace) {
-		COB_MODULE_PTR->xml_nnamespace->data = NULL;
+		COB_MODULE_PTR->xml_nnamespace->data = (unsigned char *) "";
 		COB_MODULE_PTR->xml_nnamespace->size = 0;
 	}
 	if (COB_MODULE_PTR->xml_nnamespace_prefix) {
-		COB_MODULE_PTR->xml_nnamespace_prefix->data = NULL;
+		COB_MODULE_PTR->xml_nnamespace_prefix->data = (unsigned char *) "";
 		COB_MODULE_PTR->xml_nnamespace_prefix->size = 0;
 	}
 
 	if (buff && event) {
 		if (ntext) {
-			/* TODO (later): convert input data (libxml2 uses UTF8) to UTF-16
+			/* TODO (later): convert input data (libxml2 uses UTF-8) to UTF-16
 			(or the specified national character set) */
 			if (event->text_len) {
 				COB_MODULE_PTR->xml_ntext->data = buff + event->text_off;
@@ -1365,7 +1365,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 #endif
 		}
 		/* LCOV_EXCL_STOP */
-		xml_code = 0;
+		xml_code = XML_OK;
 		state = cob_malloc (sizeof (struct xml_state));
 		/* state is zero-initialized */
 		state->flags = flags;
@@ -1383,14 +1383,6 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	/* initial setup of registers, ensuring they are available
 	   in the processing procedure */
 	set_xml_registers (0, NULL, NULL);
-
-	/* LINKAGE or BASED item without data */
-	if (!in->data) {
-		set_xml_exception (XML_INTERNAL_ERROR);
-		xml_free_parse_memory (state);
-		*saved_state = NULL;
-		return 1;
-	}
 
 	if (encoding && is_empty (encoding)) {
 		encoding = NULL;
@@ -1917,7 +1909,7 @@ void xml_parse (cob_field *encoding, cob_field *validation,
 		if (state->ctx == NULL) {
 			new_xml_event (state, EVENT_EXCEPTION);
 			if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
-				set_xml_event_exception_code (state, XRC_FATAL << 16);
+				set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_XMLSS);
 			} else {
 				set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_COMPAT);
 			}
@@ -2026,6 +2018,14 @@ void xml_parse (cob_field *encoding, cob_field *validation,
 	}
 	state->event = state->first_event;
 	state->buff_off = 0;
+
+	/* LINKAGE or BASED item without data: also validated by runtime checks by the caller (when enabled) */
+	if (state->input_data_len && !state->input_data_ptr) {
+		state->last_xml_code = XML_INTERNAL_ERROR;
+		state->state = XML_PARSER_HAD_FATAL_ERROR;
+		set_xml_exception (XML_INTERNAL_ERROR);
+		return;
+	}
 
 	state->err = xmlParseChunk (state->ctx, state->input_data_ptr, state->input_data_len, end_of_parsing);
 
