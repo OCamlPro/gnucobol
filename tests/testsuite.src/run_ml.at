@@ -778,9 +778,8 @@ AT_CLEANUP
 AT_SETUP([XML PARSE])
 AT_KEYWORDS([extensions PARSE])
 
-AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
-
-AT_DATA([prog.cob],[
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [
        Identification division.
        PROGRAM-ID. IBMXML.
        Data division.
@@ -790,8 +789,8 @@ AT_DATA([prog.cob],[
       ******************************************************************
        01  xml-document.
          02 pic x(10) value '<sandwich>'.
-         02 pic x(33) value '<bread type="baker''s best"/>'.
-         02 pic x(29) value '<meat>Ham + turkey</meat>'.
+         02 pic x(28) value '<bread type="baker''s best"/>'.
+         02 pic x(25) value '<meat>Ham + turkey</meat>'.
          02 pic x(34) value '<filling>Cheese, lettuce, tomato, '.
          02 pic x(32) value 'and that''s all, Folks!</filling>'.
          02 pic x(28) value '<listprice>$4.99</listprice>'.
@@ -813,18 +812,18 @@ AT_DATA([prog.cob],[
            display 'event: ' xml-event ', text: {' xml-text '}'.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [event: START-OF-DOCUMENT             , text: {}
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[event: START-OF-DOCUMENT             , text: {}
 event: START-OF-ELEMENT              , text: {sandwich}
 event: START-OF-ELEMENT              , text: {bread}
 event: ATTRIBUTE-NAME                , text: {type}
 event: ATTRIBUTE-CHARACTERS          , text: {baker's best}
 event: END-OF-ELEMENT                , text: {bread}
-event: CONTENT-CHARACTERS            , text: {     }
 event: START-OF-ELEMENT              , text: {meat}
 event: CONTENT-CHARACTERS            , text: {Ham + turkey}
 event: END-OF-ELEMENT                , text: {meat}
-event: CONTENT-CHARACTERS            , text: {    }
 event: START-OF-ELEMENT              , text: {filling}
 event: CONTENT-CHARACTERS            , text: {Cheese, lettuce, tomato, and that's all, Folks!}
 event: END-OF-ELEMENT                , text: {filling}
@@ -838,16 +837,16 @@ event: END-OF-ELEMENT                , text: {sandwich}
 event: END-OF-INPUT                  , text: {}
 event: END-OF-DOCUMENT               , text: {}
 XML document successfully parsed.
-], [])
+])
+
 AT_CLEANUP
 
 
 AT_SETUP([XML PARSE push parser])
 AT_KEYWORDS([extensions PARSE])
 
-AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
-
-AT_DATA([prog.cob],[
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [[
        Identification division.
        PROGRAM-ID. IBMXML.
        Data division.
@@ -871,13 +870,13 @@ AT_DATA([prog.cob],[
           2 pic x(19) value ' standalone="yes"?>'.
           2 pic x(39) value '<!--This document is just an example-->'.
           2 pic x(10) value '<sandwich>'.
-          2 pic x(33) value '<bread type="baker''s best"/>'.
+          2 pic x(33) value '<bread type="baker&apos;s best"/>'.
           2 pic x(36) value '<?spread We''ll use real mayonnaise?>'.
-          2 pic x(29) value '<meat>Ham + turkey</meat>'.
+          2 pic x(29) value '<meat>Ham &amp; turkey</meat>'.
           2 pic x(34) value '<filling>Cheese, lettuce, tomato, '.
           2 pic x(32) value 'and that''s all, Folks!</filling>'.
-          2 pic x(25) value '<!@<:@CDATA@<:@We should add a '.
-          2 pic x(20) value '<relish> element!@:>@@:>@>'.
+          2 pic x(25) value '<![CDATA[We should add a '.
+          2 pic x(20) value '<relish> element!]]>'.
           2 pic x(28) value '<listprice>$4.99</listprice>'.
           2 pic x(25) value '<discount>0.10</discount>'.
           2 pic x(31) value '</sandwich>'.
@@ -925,7 +924,7 @@ AT_DATA([prog.cob],[
              When 'CONTENT-CHARACTERS'
       * ==> In general, a split can occur for any element or attribute
       * ==> data, but in this sample, it only occurs for "filling"...
-      * In practice, with GnuCOBOL, there is no split in XML events
+      * With GnuCOBOL, there is no split because filling is too short
                DISPLAY 'XML-INFORMATION: ' XML-INFORMATION
                If xml-information = 2 and
                    current-element(element-depth) not = 'filling'
@@ -987,10 +986,12 @@ AT_DATA([prog.cob],[
              When other
                continue
            End-evaluate.
-])
+]])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [len: 400
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[[len: 400
 Initial segment {<?xml version="1.0" encoding="US-ASCII" }
 event: END-OF-INPUT                  , text: {}
 segment-num: +0002
@@ -1006,31 +1007,27 @@ event: COMMENT                       , text: {This document is just an example}
 event: START-OF-ELEMENT              , text: {sandwich}
 event: END-OF-INPUT                  , text: {}
 segment-num: +0004
-Next segment: {baker's best"/>     <?spread We'll use r}
+Next segment: {baker&apos;s best"/><?spread We'll use r}
 event: START-OF-ELEMENT              , text: {bread}
 event: ATTRIBUTE-NAME                , text: {type}
 event: ATTRIBUTE-CHARACTERS          , text: {baker's best}
 event: END-OF-ELEMENT                , text: {bread}
-event: CONTENT-CHARACTERS            , text: {     }
-XML-INFORMATION: +000000001
 event: END-OF-INPUT                  , text: {}
 segment-num: +0005
-Next segment: {eal mayonnaise?><meat>Ham + turkey</meat}
+Next segment: {eal mayonnaise?><meat>Ham &amp; turkey</}
 event: PROCESSING-INSTRUCTION-TARGET , text: {spread}
 event: PROCESSING-INSTRUCTION-DATA   , text: {We'll use real mayonnaise}
 event: START-OF-ELEMENT              , text: {meat}
-event: CONTENT-CHARACTERS            , text: {Ham + turkey}
+event: CONTENT-CHARACTERS            , text: {Ham & turkey}
 XML-INFORMATION: +000000001
 event: END-OF-INPUT                  , text: {}
 segment-num: +0006
-Next segment: {>    <filling>Cheese, lettuce, tomato, a}
+Next segment: {meat><filling>Cheese, lettuce, tomato, a}
 event: END-OF-ELEMENT                , text: {meat}
-event: CONTENT-CHARACTERS            , text: {    }
-XML-INFORMATION: +000000001
 event: START-OF-ELEMENT              , text: {filling}
 event: END-OF-INPUT                  , text: {}
 segment-num: +0007
-Next segment: {nd that's all, Folks!</filling><!@<:@CDATA@<:@}
+Next segment: {nd that's all, Folks!</filling><![CDATA[}
 event: CONTENT-CHARACTERS            , text: {Cheese, lettuce, tomato, and that's all, Folks!}
 XML-INFORMATION: +000000001
   Element "filling" data (+0047 bytes) is now complete:
@@ -1038,7 +1035,7 @@ XML-INFORMATION: +000000001
 event: END-OF-ELEMENT                , text: {filling}
 event: END-OF-INPUT                  , text: {}
 segment-num: +0008
-Next segment: {We should add a <relish> element!@:>@@:>@><lis}
+Next segment: {We should add a <relish> element!]]><lis}
 event: START-OF-CDATA-SECTION        , text: {}
 event: CONTENT-CHARACTERS            , text: {We should add a <relish> element!}
 XML-INFORMATION: +000000001
@@ -1065,16 +1062,16 @@ XML document successfully parsed.
  Sandwich list price:  $4.99
  Promotional price:  $4.49
  Get one today!
-], [])
+]])
+
 AT_CLEANUP
 
 
 AT_SETUP([XML PARSE long text])
 AT_KEYWORDS([extensions PARSE])
 
-AT_SKIP_IF([test "$COB_HAS_XML2" = "no"])
-
-AT_DATA([prog.cob],[
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [[
        Identification division.
        PROGRAM-ID. IBMXML.
        Data division.
@@ -1082,27 +1079,20 @@ AT_DATA([prog.cob],[
       ******************************************************************
       * XML document data, encoded as initial values of data items.    *
       ******************************************************************
-       01  xml-document.
-         02 pic x(10) value '<lorem>'.
-         02 pic x(40) value 'Lorem ipsum dolor sit amet,'.
-         02 pic x(40) value 'consectetur adipiscing elit.'.
-         02 pic x(40) value 'Sed vitae scelerisque mauris.'.
-         02 pic x(40) value 'Ut suscipit faucibus ultrices.'.
-         02 pic x(40) value 'Proin lacinia luctus imperdiet.'.
-         02 pic x(40) value 'Fusce sit amet augue nisi.'.
-         02 pic x(40) value 'Fusce a justo nec nisl luctus laoreet.'.
-         02 pic x(40) value 'Nulla rutrum fermentum dui quis tincidun'.
-         02 pic x(40) value 'Donec neque dui, maximus cursus felis eu'.
-         02 pic x(40) value 'commodo vulputate ipsum.'.
-         02 pic x(40) value 'Morbi laoreet risus congue,'.
-         02 pic x(40) value 'dictum dolor tincidunt,'.
-         02 pic x(40) value 'fermentum diam.'.
-         02 pic x(40) value 'Mauris placerat volutpat nisl,'.
-         02 pic x(40) value 'nec malesuada enim ut.'.
-         02 pic x(10) value '</lorem>'.
+       01 xml-start-tag pic x(20) value '<lorem>'.
+       01 lorem-ipsum.
+         02 pic x(28) value 'Lorem ipsum dolor sit amet, '.
+         02 pic x(28) value 'consectetur adipiscing elit.'.
+       01 xml-cdata.
+         02 pic x(33) value '<![CDATA[Quousque tandem abutere '.
+         02 pic x(30) value 'Catilina patientia nostra ?]]>'.
+       01 xml-end-tag pic x(20) value '</lorem>'.
+       01 xml-buffer pic x(63).
+       01 nb-buffer pic 99 value 0.
        Procedure division.
         Mainline section.
-           XML parse xml-document
+           Move xml-start-tag to xml-buffer.
+           XML parse xml-buffer
                processing procedure XML-handler
              ON EXCEPTION
                Display 'XML processing error, XML-Code=' XML-Code '.'
@@ -1113,18 +1103,56 @@ AT_DATA([prog.cob],[
            Move 0 to return-code
            Goback.
         XML-handler section.
-           display 'event: ' xml-event ', text: {' xml-text '}'.
+           Display 'event: ' xml-event ', info: ' xml-information
+               ', text: {' xml-text '}'.
+           Evaluate XML-Event
+             When 'END-OF-INPUT'
+               Add 1 to nb-buffer
+               if nb-buffer = 6
+                   Move 1 to xml-code
+                   Move xml-cdata to xml-buffer
+               else if nb-buffer = 12
+                   Move 1 to xml-code
+                   Move xml-end-tag to xml-buffer
+               else if nb-buffer < 12
+                   Move 1 to xml-code
+                   Move lorem-ipsum to xml-buffer
+               end-if
+             When other
+               continue
+           End-evaluate.
+]])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[event: START-OF-DOCUMENT             , info: +000000000, text: {}
+event: START-OF-ELEMENT              , info: +000000000, text: {lorem}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000002, text: {                                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       }
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000001, text: {Lorem ipsum dolor sit amet, consectetur adipiscing elit.       }
+event: START-OF-CDATA-SECTION        , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000001, text: {Quousque tandem abutere Catilina patientia nostra ?}
+event: END-OF-CDATA-SECTION          , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000002, text: {Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       }
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000001, text: {}
+event: END-OF-ELEMENT                , info: +000000000, text: {lorem}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-DOCUMENT               , info: +000000000, text: {}
+XML document successfully parsed.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [event: START-OF-DOCUMENT             , text: {}
-event: START-OF-ELEMENT              , text: {lorem}
-event: CONTENT-CHARACTERS            , text: {   Lorem ipsum dolor sit amet,             consectetur adipiscing elit.            Sed vitae scelerisque mauris.           Ut suscipit faucibus ultrices.          Proin lacinia luctus imperdiet.         Fusce sit amet augue nisi.              Fusce a justo nec nisl luctus laoreet.  Nulla rutrum fermentum dui quis tincidunDonec neque dui, maximus cursus felis eucommodo vulputate ipsum.                Morbi laoreet risus congue,             dictum dolor tincidunt,                 fermentum diam.                         Mauris placerat volutpat nisl,          nec malesuada enim ut.                  }
-event: END-OF-ELEMENT                , text: {lorem}
-event: END-OF-INPUT                  , text: {}
-event: END-OF-DOCUMENT               , text: {}
-XML document successfully parsed.
-], [])
 AT_CLEANUP
 
 

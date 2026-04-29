@@ -14,6 +14,10 @@
 	* mlio.c: Handle XML chunks with more than one recoverable error
 	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
 	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
+	* mlio.c: Handle incomplete CONTENT-CHARACTERS events (with XML-INFORMATION = 2).
+	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
+	  events across END-OF-INPUT boundaries. 
+	  This is due to libxml2 internal details.
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

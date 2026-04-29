@@ -140,6 +140,12 @@ enum xml_code_status {
 	XML_PARSE_NOT_VALID_MISC_XMLSS = XRC_NOT_VALID << 16,
 };
 
+enum xml_information {
+	XML_INFORMATION_NONE = 0,
+	XML_INFORMATION_COMPLETE = 1,
+	XML_INFORMATION_INCOMPLETE = 2,
+};
+
 enum xml_parser_state {
 	XML_PARSER_NOT_STARTED = 0,
 	XML_PARSER_VALIDATION_SETUP,
@@ -184,6 +190,7 @@ struct xml_event {
 	enum cob_xml_event		event;
 	struct xml_event		*next;				/* pointer to next element */
 	enum xml_code_status	xml_code;			/* the XML-CODE of the event (0 unless event is EXCEPTION) */
+	enum xml_information 	xml_information;	/* the XML-INFORMATION of the event */
 	size_t 					text_off;			/* text offset in buff */
 	size_t					text_len;			/* length of this text */
 	size_t 					namespace_off;		/* namespace offset in buff */
@@ -191,6 +198,8 @@ struct xml_event {
 	size_t 					prefix_off;			/* prefix offset in buff */
 	size_t					prefix_len;			/* length of this prefix */
 };
+
+#define XML_PREVIOUS_INCOMPLETE_CONTENT_CHARACTERS	(1 << 16)	/* flag for xml_state */
 
 struct xml_state {
 	enum xml_parser_state state;
@@ -272,7 +281,8 @@ set_xml_event (enum cob_xml_event event)
 static COB_INLINE COB_A_INLINE void
 xml_event_init (struct xml_event *event)
 {
-	event->xml_code = 0;
+	event->xml_code = XML_OK;
+	event->xml_information = XML_INFORMATION_NONE;
 	event->text_len = 0;
 	event->prefix_len = 0;
 	event->namespace_len = 0;
@@ -369,22 +379,46 @@ buffer_xml_event_data (struct xml_state *state, const void *data, size_t size)
 
 /* set the exception code of the current xml event */
 static void
-set_xml_event_exception_code (struct xml_state *state, int xml_code)
+set_xml_event_exception_code (struct xml_state *state, enum xml_code_status xml_code)
 {
 	state->event->xml_code = xml_code;
 }
 
+/* set the XML-INFORMATION of the current xml event */
+static void
+set_xml_event_information (struct xml_state *state, enum xml_information xml_information)
+{
+	state->event->xml_information = xml_information;
+}
+
 /* set text of current event by placing it into the event data buffer */
 static void
-set_xml_event_text (struct xml_state *state, const void *data,  size_t size)
+set_xml_event_text (struct xml_state *state, const void *data, size_t size)
 {
 	state->event->text_off = buffer_xml_event_data (state, data, size);
 	state->event->text_len = size;
 }
 
+/* Extend the text of the current event, by completing the last string of the data buffer.
+	The current event text MUST be the last string of the data buffer, else this function crashes. */
+static void
+extend_xml_event_text (struct xml_state *state, const void *data, size_t size)
+{
+	/* FIXME: replace this define by a general one (COB_TREE_DEBUG) _was_ for debugging
+          the parse tree only ... */
+#if defined (COB_TREE_DEBUG) || defined (_DEBUG)
+	if (state->event->text_off + state->event->text_len != state->buff_off) {
+		cob_runtime_error ("current event text is not last in the data buffer when calling extern_xml_event_text");
+		cob_hard_failure ();
+	}
+#endif
+	buffer_xml_event_data (state, data, size);
+	state->event->text_len += size;
+}
+
 /* set namespace of current event by placing it into the event data buffer */
 static void
-set_xml_event_namespace (struct xml_state *state, const void *data,  size_t size)
+set_xml_event_namespace (struct xml_state *state, const void *data, size_t size)
 {
 	state->event->namespace_off = buffer_xml_event_data (state, data, size);
 	state->event->namespace_len = size;
@@ -396,6 +430,19 @@ set_xml_event_prefix (struct xml_state *state, const void *data, size_t size)
 {
 	state->event->prefix_off = buffer_xml_event_data (state, data, size);
 	state->event->prefix_len = size;
+}
+
+static void
+finalize_xml_content_characters (struct xml_state *state) {
+	if (state->event && state->event->event == EVENT_CONTENT_CHARACTERS) {
+		/* Last event was CONTENT_CHARACTERS: mark it as complete */
+		set_xml_event_information (state, XML_INFORMATION_COMPLETE);		
+	} else if (state->flags & XML_PREVIOUS_INCOMPLETE_CONTENT_CHARACTERS) {
+		/* Notify the end of character content of the previous chunk with an empty character event. */
+		new_xml_event (state, EVENT_CONTENT_CHARACTERS);
+		set_xml_event_information (state, XML_INFORMATION_COMPLETE);
+	}
+	state->flags &= ~XML_PREVIOUS_INCOMPLETE_CONTENT_CHARACTERS;
 }
 #endif /* defined (WITH_XML2) */
 
@@ -1724,6 +1771,7 @@ xml_startDocument (void *ctx) {
 static void
 xml_comment (void *ctx, const xmlChar *content) {
 	struct xml_state *state = ctx;
+	finalize_xml_content_characters (state);
 	new_xml_event (state, EVENT_COMMENT);
 	set_xml_event_text (state, content, xmlStrlen (content));
 }
@@ -1733,6 +1781,7 @@ xml_processingInstruction (void *ctx,
 							const xmlChar *target,
 							const xmlChar *data) {
 	struct xml_state *state = ctx;
+	finalize_xml_content_characters (state);
 	new_xml_event (state, EVENT_PROCESSING_INSTRUCTION_TARGET);
 	set_xml_event_text (state, target, xmlStrlen (target));
 	new_xml_event (state, EVENT_PROCESSING_INSTRUCTION_DATA);
@@ -1747,6 +1796,7 @@ xml_startElementNs (void *ctx,
 	int	cntr,	attr_value_len;
 	struct xml_state *state = ctx;
 
+	finalize_xml_content_characters (state);
 	new_xml_event (state, EVENT_START_OF_ELEMENT);
 	set_xml_event_text (state, localname, xmlStrlen (localname));
 	if (prefix) {
@@ -1789,6 +1839,8 @@ xml_startElementNs (void *ctx,
 		set_xml_event_namespace (state, attr_namespace, xmlStrlen(attr_namespace));
 		new_xml_event (state, EVENT_ATTRIBUTE_CHARACTERS);
 		set_xml_event_text (state, attr_value_start, attr_value_len);
+		/* ATTRIBUTE_CHARACTERS are always complete with this API */
+		set_xml_event_information (state, XML_INFORMATION_COMPLETE);
 	}
 }
 
@@ -1796,6 +1848,7 @@ static void
 xml_endElementNs (void *ctx,
 		const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI) {
 	struct xml_state *state = ctx;
+	finalize_xml_content_characters (state);
 	new_xml_event (state, EVENT_END_OF_ELEMENT);
 	set_xml_event_text (state, localname, xmlStrlen (localname));
 	if (prefix) {
@@ -1809,6 +1862,7 @@ xml_endElementNs (void *ctx,
 static void
 xml_startElement (void *ctx, const xmlChar *name, const xmlChar **atts) {
 	struct xml_state *state = ctx;
+	finalize_xml_content_characters (state);
 	new_xml_event (state, EVENT_START_OF_ELEMENT);
 	set_xml_event_text (state, name, xmlStrlen (name));
 }
@@ -1816,6 +1870,7 @@ xml_startElement (void *ctx, const xmlChar *name, const xmlChar **atts) {
 static void
 xml_endElement (void *ctx, const xmlChar *name) {
 	struct xml_state *state = ctx;
+	finalize_xml_content_characters (state);
 	new_xml_event (state, EVENT_END_OF_ELEMENT);
 	set_xml_event_text (state, name, xmlStrlen (name));
 }
@@ -1823,8 +1878,20 @@ xml_endElement (void *ctx, const xmlChar *name) {
 static void
 xml_characters (void *ctx, const xmlChar *content, int len) {
 	struct xml_state *state = ctx;
-	new_xml_event (state, EVENT_CONTENT_CHARACTERS);
-	set_xml_event_text (state, content, len);
+	/* TODO (later): Unlike XMLSS, COMPAT mode is supposed to send a
+		CONTENT-CHARACTER (without final S) event for predefined entities 
+		(like &amp;) */
+	if (state->event && state->event->event == EVENT_CONTENT_CHARACTERS) {
+		/* Avoid sending more events than expected, 
+			especially on predefined entities (like &amp;) */
+		extend_xml_event_text (state, content, len);
+	} else {
+		new_xml_event (state, EVENT_CONTENT_CHARACTERS);
+		set_xml_event_text (state, content, len);
+		set_xml_event_information (state, XML_INFORMATION_INCOMPLETE);
+		/* if the next event calls finalize_content_characters, 
+			event information will become XML_INFORMATION_COMPLETE. */
+	}
 }
 
 static void
@@ -1844,6 +1911,9 @@ xml_internalSubset(void *ctx,
 static void
 xml_cdata (void *ctx, const xmlChar *content, int len) {
 	struct xml_state *state = ctx;
+	/* TODO: recheck how XML-INFORMATION on CONTENT-CHARACTER interacts with CDATA */
+	finalize_xml_content_characters (state);
+
 	new_xml_event (state, EVENT_START_OF_CDATA_SECTION);
 	if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
 		set_xml_event_text (state, "<![CDATA[", 9);
@@ -1851,6 +1921,7 @@ xml_cdata (void *ctx, const xmlChar *content, int len) {
 
 	new_xml_event (state, EVENT_CONTENT_CHARACTERS);
 	set_xml_event_text (state, content, len);
+	set_xml_event_information (state, XML_INFORMATION_COMPLETE);
 
 	new_xml_event (state, EVENT_END_OF_CDATA_SECTION);
 	if (COB_MODULE_PTR->xml_mode == COB_XML_COMPAT) {
@@ -2032,6 +2103,16 @@ void xml_parse (cob_field *encoding, cob_field *validation,
 	if (end_of_parsing) {
 		state->state = XML_PARSER_FINISHED;
 	} else {
+		if (state->ctx->input && state->ctx->input->cur < state->ctx->input->end) {
+			/* Something is queued in the input buffer. If it starts with '<',
+			the parser saw markup-start and any prior text is complete. */
+			if (*state->ctx->input->cur == '<') {
+				finalize_xml_content_characters (state);
+			}
+		} else if (state->event && state->event->event == EVENT_CONTENT_CHARACTERS) {
+			/* Remember that the last event is an unfinished content characters event */
+			state->flags |= XML_PREVIOUS_INCOMPLETE_CONTENT_CHARACTERS;
+		}
 		new_xml_event (state, EVENT_END_OF_INPUT);
 	}
 
@@ -2084,12 +2165,7 @@ xml_process_next_event (struct xml_state *state)
 	set_xml_registers (ntext, state->buff, event);
 
 	if (COB_MODULE_PTR->xml_information) {
-		/* IBM doc states that we should store 1 in XML-INFORMATION on events
-		   ATTRIBUTE-CHARACTERS and CONTENT-CHARACTERS if the value in XML-TEXT
-		   is complete. It seems to be always the case with libxml2. */
-		const int info = event->event == EVENT_ATTRIBUTE_CHARACTERS 
-			|| event->event == EVENT_CONTENT_CHARACTERS ? 1 : 0;
-		cob_set_int (COB_MODULE_PTR->xml_information, info);	
+		cob_set_int (COB_MODULE_PTR->xml_information, event->xml_information);	
 	}
 
 	state->event = event->next;
