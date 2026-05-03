@@ -179,7 +179,6 @@ int optopt = '?';
 
    'first_nonopt' and 'last_nonopt' are relocated so that they describe
    the new indices of the non-options in ARGV after they are moved.  */
-
 static void
 exchange (char **argv)
 {
@@ -476,6 +475,51 @@ _getopt_initialize (const char *optstring)
   return optstring;
 }
 
+char *
+process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
+	char * ptr = strstr(argument_values,"@");
+	if (ptr){
+		*compile_mode = 1;
+	}
+
+	if (*compile_mode) {
+		const char* endptr = ++ptr;
+		while (*endptr != ' ' && *endptr != '\0') {
+			endptr++;
+		}
+		size_t path_size = endptr - ptr + 1;
+					/* Ptr->endptr carries the directory */
+		char* path_str = malloc(path_size);
+        memcpy(path_str, ptr, path_size - 1);
+        path_str[path_size - 1] = '\0'; 
+		FILE* path = fopen(path_str, "r");
+		if (!path) {
+			free(path_str);
+			fprintf(stderr,"File is non existent or invalid path");
+			return "";
+		}
+		size_t capacity = 256;
+ 	 	size_t length = 0;
+ 		char *options = malloc(capacity);
+		
+		
+		int ret = getc(path);
+		while ((ret = getc(path)) != EOF) {
+			if(length+1 >= capacity){
+				 capacity *= 4;
+         		char *newoptions = realloc(options, capacity);
+				options = newoptions;
+			}
+			
+			options[length++] = (char)ret;
+		}
+		fclose(path); 
+		options[length] = '\0';
+		*atfile_size = length;
+	 	return options;
+	}
+}
+
 /* Scan elements of ARGV (whose length is ARGC) for option characters
    given in OPTSTRING.
 
@@ -554,7 +598,11 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
     print_errors = 0;  
 
   /* Test whether ARGV[optind] points to a non-option argument.  */
-#define NONOPTION_P (argv[optind][0] != '-' || argv[optind][1] == '\0')
+#define NONOPTION_P ((argv[optind][0] != '-' && argv[optind][0] != '@') || argv[optind][1] == '\0')
+
+  if (argv[optind][0] == '@'){ 
+	return '@';		/*Most definitly is wrong but im messing around*/
+  }
 
   if (nextchar == NULL || *nextchar == '\0')
     {

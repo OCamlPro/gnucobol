@@ -3146,6 +3146,7 @@ process_command_line (const int argc, char **argv)
 
 	int			conf_ret = 0;
 	int			error_all_warnings = 0;
+	
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
@@ -3162,7 +3163,17 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 #endif
-
+    cobc_compile_mode = 0;
+	int atfile_size;
+	char ** atfile_options;
+	for(int i = 1 ;i <argc; ++i){
+		atfile_options = process_at_file(argc[i], &cobc_compile_mode, &atfile_size);
+		if (atfile_options) break;
+	}
+	if (cobc_compile_mode) {
+		
+	}
+	
 	/* First run of getopt: handle std/conf and all listing options, along
 	   with grouping options that should not override other entries (as --debug)
 	   We need to postpone single configuration flags as we need
@@ -3448,6 +3459,11 @@ process_command_line (const int argc, char **argv)
 			res = gentable (stdout, code_ebcdic, code_ascii, reversible);
 			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
 		}
+		
+		case '@':
+			cobc_compile_mode = 1;
+			break;
+
 
 		default:
 			/* as we postpone most options simply skip everything other here */
@@ -3658,6 +3674,9 @@ process_command_line (const int argc, char **argv)
 			/* -g : Generate C debug code */
 			/* These options were all processed in the first getopt-run */
 			break;
+		case '@':
+			/* check for file existence and add options inside*/	
+			
 
 		case '$':
 			/* -std=<xx> : Specify dialect */
