@@ -136,6 +136,8 @@ enum xml_code_status {
 	XML_INVALID_NAMESPACE_PREFIX = 419,
 	XML_INTERNAL_ERROR = 600,
 	XML_PARSE_WARNING_MISC_XMLSS = XRC_WARNING << 16,
+	XML_PARSE_WARNING_NS_ATTR_PREFIX_NOT_DECL = (XRC_WARNING << 16) | 0x800,
+	XML_PARSE_WARNING_NS_ELEM_PREFIX_NOT_DECL = (XRC_WARNING << 16) | 0x801,
 	XML_PARSE_ERROR_MISC_XMLSS = XRC_FATAL << 16,
 	XML_PARSE_NOT_VALID_MISC_XMLSS = XRC_NOT_VALID << 16,
 };
@@ -1702,14 +1704,34 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 		
 		/* TODO: According to IBM we should put the the prefix of the last chunk 
 			that occurs before the error in XML-TEXT.
-		In practice, it seems to be different for namespace recoverable errors */
+		In practice, it is different at least for namespace-related recoverable errors. */
 		
 		/* Set the XML exception code:
-		For now, we do not try to follow the error codes of IBM. 
-		But we still try to categorize the error between non-recoverable and recoverable. */
+		At minimum, we need to categorize the error between non-recoverable and recoverable.
+		For some errors, we follow IBM's error code and in that case we also include the correct XML-TEXT.
+		Even when we send the correct error code, we do not guarantee that the EXCEPTION events
+		arrives at the same time as with IBM's parser. */
 		if (COB_MODULE_PTR->xml_mode == COB_XML_XMLSS) {
-			set_xml_event_exception_code (state, severity << 16);
+			switch (err->code) {
+			case XML_NS_ERR_UNDEFINED_NAMESPACE:	
+				set_xml_event_text (state, err->str1, strlen (err->str1));
+				extend_xml_event_text (state, ":", 1);
+				extend_xml_event_text (state, err->str2, strlen (err->str2));
+				/* libxml2 fills str3 with the name of the element surrounding the attribute.
+					We can therefore check if it is present to distinguish between the two cases. */
+				if (err->str3) {
+					set_xml_event_exception_code (state, XML_PARSE_WARNING_NS_ATTR_PREFIX_NOT_DECL);
+				} else {
+					set_xml_event_exception_code (state, XML_PARSE_WARNING_NS_ELEM_PREFIX_NOT_DECL);
+				}
+				break;
+			default:
+				/* Handle errors that are not mapped yet to corresponding IBM errors by simply sending a severity. */
+				set_xml_event_exception_code (state, severity << 16);
+				break;
+			}
 		} else {
+			/* In COMPAT mode, we do not yet try to follow IBM's error codes */
 			if (err->level == XML_ERR_FATAL) {
 				set_xml_event_exception_code (state, XML_PARSE_ERROR_MISC_COMPAT);
 			} else {

@@ -1243,8 +1243,7 @@ AT_SETUP([XML PARSE undeclared namespaces])
 AT_KEYWORDS([extensions PARSE])
 
 AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
-
-AT_DATA([prog.cob],[
+AT_DATA([prog.cob], [
        Identification division.
          Program-id. XMLup.
        Data division.
@@ -1266,35 +1265,32 @@ AT_DATA([prog.cob],[
            display xml-event xml-code '|' xml-text '|'
                xml-namespace-prefix '|'
                xml-namespace '|'
-      * In the original IBM example they check specifically the two exceptions
-      * codes for undeclared namespaces: 264192 and 264193
-      * We do not yet support these IBM code
-      * -> ignore all recoverable errors for now
-      *    if xml-event = 'EXCEPTION' and xml-code = 264192 or 264193
+           if xml-event = 'EXCEPTION' and xml-code = 264192 or 264193
              move 0 to xml-code
-      *    end-if
+           end-if
            .
        End program XMLup.
 ])
 
 AT_CHECK([$COMPILE prog.cob])
+
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [START-OF-DOCUMENT             +000000000||||
-EXCEPTION                     +000262144||||
+EXCEPTION                     +000264193|pfx0:root|||
 START-OF-ELEMENT              +000000000|root|pfx0||
 NAMESPACE-DECLARATION         +000000000||pfx1|http://whatever|
 START-OF-ELEMENT              +000000000|localElName1|pfx1|http://whatever|
-EXCEPTION                     +000262144||||
+EXCEPTION                     +000264193|pfx2:localElName2|||
 START-OF-ELEMENT              +000000000|localElName2|pfx2||
 END-OF-ELEMENT                +000000000|localElName2|pfx2||
-EXCEPTION                     +000262144||||
-EXCEPTION                     +000262144||||
+EXCEPTION                     +000264192|pfx4:localAtName4|||
+EXCEPTION                     +000264193|pfx3:localElName3|||
 START-OF-ELEMENT              +000000000|localElName3|pfx3||
 ATTRIBUTE-NAME                +000000000|localAtName4|pfx4||
 ATTRIBUTE-CHARACTERS          +000000000||||
 CONTENT-CHARACTERS            +000000000|c1|||
-EXCEPTION                     +000262144||||
-EXCEPTION                     +000262144||||
+EXCEPTION                     +000264192|pfx6:localAtName6|||
+EXCEPTION                     +000264193|pfx5:localElName5|||
 START-OF-ELEMENT              +000000000|localElName5|pfx5||
 ATTRIBUTE-NAME                +000000000|localAtName6|pfx6||
 ATTRIBUTE-CHARACTERS          +000000000||||
