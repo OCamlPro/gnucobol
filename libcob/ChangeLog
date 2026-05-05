@@ -1,4 +1,25 @@
 
+2026-04-10  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic): add cob_half_pi
+	constant
+	* intrinsic.c (cob_normalize_angle): simplify & optimize, use
+	cob_halp_pi
+	* intrinsic.c (cob_mpf_xxxx: sin, cos, acos, asin, atan): use cob_half_pi
+
+2026-04-04  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_normalize_angle): new_function
+	* intrinsic.c (cob_mpf_cos): better performabce with use of
+	  cob_normalize_angle
+	* intrinsic.c (cob_mpf_sin): better performabce with use of
+	  cob_mpf_sin
+
+2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
+	  as it is an external value.
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking
