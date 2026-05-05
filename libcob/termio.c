@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024, 2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -215,6 +215,26 @@ display_alnum (const cob_field *f, FILE *fp)
 	}
 }
 
+static void
+display_national (const cob_field *f, FILE *fp) 
+{
+	/* TODO: currently only display national data that 
+		overlaps ISO8859-1 and will need an iconv approach later on */
+
+	const unsigned char *end = f->data + f->size;
+	unsigned char *p = f->data;
+
+	while (p < end) {
+		if (p[0] == 0x00) {
+			const int chr = p[1];
+			if (putc (chr, fp) != chr) {
+				break;
+			}
+		}
+		p += 2;
+	}
+}
+
 /* Check for alternate styles of Not A Number and convert to just NaN
    and removes the leading zero from the Exponent
    note: not all environments provide display of negative /quiet NaN,
@@ -323,7 +343,11 @@ cob_display_common (const cob_field *f, FILE *fp)
 		display_numeric ((cob_field *)f, fp);
 		return;
 	}
-	display_alnum (f, fp);
+	if (COB_FIELD_IS_NATIONAL (f)) {
+		display_national ((cob_field *)f, fp);
+	} else {
+		display_alnum (f, fp);
+	}
 }
 
 void

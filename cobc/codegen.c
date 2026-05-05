@@ -1260,6 +1260,9 @@ output_data (cb_tree x)
 		/* Offset */
 		if (r->offset) {
 			output (" + ");
+			if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
+				output (CB_STRINGIFY (COB_NATIONAL_SIZE) " * ");
+			}
 			output_index (r->offset);
 		}
 
@@ -1317,6 +1320,9 @@ output_size (const cb_tree x)
 			break;
 		}
 		if (r->length) {
+			if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
+				output (CB_STRINGIFY (COB_NATIONAL_SIZE) " * ");
+			}
 			output_integer (r->length);
 		} else if (r->offset && f->flag_any_length) {
 			output ("%s%d.size - ", CB_PREFIX_FIELD, f->id);
@@ -1358,6 +1364,9 @@ again:
 			}
 			if (r->offset) {
 				output (" - ");
+				if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
+					output (CB_STRINGIFY (COB_NATIONAL_SIZE) " * ");
+				}
 				output_index (r->offset);
 			}
 		}
@@ -1600,7 +1609,11 @@ output_attr (const cb_tree x)
 		struct cb_field		*f = CB_FIELD (r->value);
 		flags = 0;
 		if (r->offset) {
-			id = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
+			if (CB_TREE_CLASS (x) == CB_CLASS_NATIONAL) {
+				id = lookup_attr (COB_TYPE_NATIONAL, 0, 0, 0, NULL, 0);
+			} else {
+				id = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
+			}
 		} else {
 			int type = cb_tree_type (x, f);
 			switch (type) {

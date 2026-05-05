@@ -1,4 +1,9 @@
 
+2026-03-23  Preston Horne <preston.m.horne@vanderbilt.edu>
+
+	* codegen.c (output_data): offset calc for NATIONAL ref-mod
+	* codegen.c (output_size): size calc for NATIONAL ref-mod
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for

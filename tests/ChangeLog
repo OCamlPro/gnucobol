@@ -1,4 +1,11 @@
 
+2026-03-23  Preston Horne <preston.m.horne@vanderbilt.edu>
+
+	* testsuite.src/run_refmod.at: add static and dynamic
+	  reference-modification tests for NATIONAL and UTF-8 fields
+	* testsuite.src/data_display.at: add DISPLAY test for NATIONAL
+      fields and literals with HEX-OF
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: reordered to correctly use perf/valgrind definitions also
