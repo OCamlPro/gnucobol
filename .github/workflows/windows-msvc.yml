@@ -51,7 +51,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup build environment
         shell: pwsh
@@ -68,7 +68,7 @@ jobs:
 
       - name: Restore VCPKG cache
         id: restore-vcpkg
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-vcpkg-${{ matrix.arch }}-${{ matrix.target }}
           path: |
@@ -90,7 +90,7 @@ jobs:
         run: vcpkg install %VCPKGS%
 
       - name: Save VCPKG cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-vcpkg-${{ matrix.arch }}-${{ matrix.target }}
           path: |
@@ -98,7 +98,7 @@ jobs:
             ${{ env.VCPKG_ROOT }}/packages
 
       - name: Restore WinFlexBison cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: restore-flexbison
         with:
           key: cache-flexbison-${{ matrix.arch }}-${{ matrix.target }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Save WinFlexBison cache
         if: steps.restore-flexbison.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-flexbison-${{ matrix.arch }}-${{ matrix.target }}
           path: flexbison
@@ -212,10 +212,11 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ matrix.arch }}-${{ matrix.target }}.log
           path: tests/testsuite.log
+          if-no-files-found: error
 
       - name: Package GnuCOBOL and dependencies
         run: |
@@ -228,13 +229,15 @@ jobs:
           cmd /C .\build_windows\makedist.cmd ${{ matrix.target }} <NUL
 
       - name: Upload dependencies
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z
           path: dependencies-${{ matrix.arch }}-${{ matrix.target }}.7z
+          if-no-files-found: error
+          archive: false
 
       - name: Upload distribution
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GnuCOBOL-${{ matrix.arch }}-${{ matrix.target }}.7z
           path: build_windows/GnuCOBOL_*.7z
+          if-no-files-found: error
