@@ -1,4 +1,28 @@
 
+2026-04-25  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_decimal_pow): Fix #924 #925 #989 #1020
+	* intrinsic.c         	        : add cob_mpft3 cob_init_intrinsic 
+	and cob_exit_intrinsic are updated
+	Fix typo also
+
+2026-04-24  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_exp): implement a faster algorithm
+	* intrinsic.c (cob_reduce_exp_arg): new function
+	* coblocal.h.c: add COB_EXP_DIVIDE as parameter
+
+2026-03-18  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* coblocal.h,  intrinsic.c: implement limits to cob_intr_exp, cob_intr_exp
+	  and cob_intr_factorial    .
+
+2026-03-02  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): implement a faster ln algorithm
+	* intrinsic.c (setup_cob_log_half): add cob_log_two constant
+	* intrinsic.c (cob_exit_intrinsic): clear cob_log_two
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking
