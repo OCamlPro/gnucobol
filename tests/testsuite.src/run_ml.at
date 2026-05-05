@@ -707,7 +707,6 @@ AT_SETUP([XML register data after failure])
 AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
 
 AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
-
 AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA      DIVISION.
@@ -724,20 +723,22 @@ AT_DATA([prog.cob], [
            GOBACK.
        PROC.
            DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+           IF XML-EVENT = 'EXCEPTION' THEN DISPLAY XML-TEXT.
 ])
 
 AT_CHECK([$COMPILE prog.cob])
+
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [proc   : +000000000 - "START-OF-DOCUMENT             "
-proc   : +001048576 - "EXCEPTION                     "
+proc   : +000786432 - "EXCEPTION                     "
+unhandled internal XML non-recoverable error (68): StartTag: invalid element name
 XML PARSE aborted
-after  : +001048576 - "EXCEPTION                     "
+after  : +000786432 - "EXCEPTION                     "
 ],
 [libcob: prog.cob:8: warning: XML PARSE non-recoverable error (68): StartTag: invalid element name
 ])
 
 AT_CLEANUP
-
 
 AT_SETUP([XML PARSE <?xml?> declaration])
 AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])

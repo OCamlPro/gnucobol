@@ -138,7 +138,7 @@ enum xml_code_status {
 	XML_PARSE_WARNING_MISC_XMLSS = XRC_WARNING << 16,
 	XML_PARSE_WARNING_NS_ATTR_PREFIX_NOT_DECL = (XRC_WARNING << 16) | 0x800,
 	XML_PARSE_WARNING_NS_ELEM_PREFIX_NOT_DECL = (XRC_WARNING << 16) | 0x801,
-	XML_PARSE_ERROR_MISC_XMLSS = XRC_FATAL << 16,
+	XML_PARSE_ERROR_MISC_XMLSS = XRC_NOT_WELL_FORMED << 16,
 	XML_PARSE_NOT_VALID_MISC_XMLSS = XRC_NOT_VALID << 16,
 };
 
@@ -1661,7 +1661,7 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 		severity = XRC_NOT_VALID;
 		severity_str = _("validation error");
 	} else if (err->level == XML_ERR_FATAL) {
-		severity = XRC_FATAL;
+		severity = XRC_NOT_WELL_FORMED;
 		severity_str = _("non-recoverable error");
 	} else if (err->level == XML_ERR_ERROR) {
 		/* IBM reports recoverable errors with the XRC_WARNING severity */
@@ -1726,8 +1726,16 @@ xml_error_handler (void *ctx, LIBXML_CONST_ERROR_PTR err) {
 				}
 				break;
 			default:
-				/* Handle errors that are not mapped yet to corresponding IBM errors by simply sending a severity. */
-				set_xml_event_exception_code (state, severity << 16);
+				/* Handle errors that are not mapped yet to corresponding IBM errors by sending 
+				a severity and the error message in XML-TEXT. */
+				{
+					char err_text_buf[COB_MINI_BUFF];
+					set_xml_event_exception_code (state, severity << 16);
+					snprintf (err_text_buf, COB_MINI_BUFF, _("unhandled internal XML %s (%d): "), severity_str, err->code);
+					err_text_buf[COB_MINI_MAX] = 0; /* for MSVC compat */
+					set_xml_event_text (state, err_text_buf, strlen (err_text_buf));
+					extend_xml_event_text (state, err->message, strlen (err->message));
+				}
 				break;
 			}
 		} else {
