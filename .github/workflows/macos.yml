@@ -34,7 +34,7 @@ jobs:
       #   run: git config --global core.symlinks false
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup build environment
         run: |
@@ -54,7 +54,7 @@ jobs:
       - name: Restore VBISAM cache
         if: ${{ matrix.isam == 'vbisam' }}
         id: restore-vbisam
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-vbisam-macos
           path: vbisam
@@ -84,7 +84,7 @@ jobs:
       - name: Save VBISAM cache
         if: ${{ matrix.isam == 'vbisam' &&
                 steps.restore-vbisam.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-vbisam-macos
           path: vbisam
@@ -104,15 +104,16 @@ jobs:
                        --with-json=json-c \
                        --prefix=/opt/cobol/gnucobol \
                        --with-iconv --with-libiconv-prefix="$HOMEBREW_ROOT/libiconv" \
+                       CFLAGS="-std=gnu17" \
                        BDB_CFLAGS="-I$HOMEBREW_ROOT/berkeley-db@5/include" \
-                       BDB_LIBS="-L$HOMEBREW_ROOT/berkeley-db@5/lib -ldb"                       
+                       BDB_LIBS="-L$HOMEBREW_ROOT/berkeley-db@5/lib -ldb"
 
       - name: Build GnuCOBOL
         run: make -C _build --jobs=$((${NPROC}+1))
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ matrix.isam }}.log
           path: _build/config.log
@@ -125,7 +126,7 @@ jobs:
           find /opt/cobol > _build/install.log
 
       - name: Upload install.log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: install-${{ matrix.isam }}.log
           path: _build/install.log
@@ -164,7 +165,7 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ matrix.isam }}.log
           path: _build/tests/testsuite.log
@@ -181,7 +182,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on ${{ matrix.isam }}
           path: |

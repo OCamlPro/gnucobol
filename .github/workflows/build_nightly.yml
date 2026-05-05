@@ -27,7 +27,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup build environment
         run: echo "TERM=vt100" >> $GITHUB_ENV
@@ -43,7 +43,7 @@ jobs:
       - name: Restore VBISAM cache
         if: ${{ matrix.isam == 'vbisam' }}
         id: restore-vbisam
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-vbisam
           path: vbisam
@@ -72,7 +72,7 @@ jobs:
       - name: Save VBISAM cache
         if: ${{ matrix.isam == 'vbisam' &&
                 steps.restore-vbisam.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-vbisam
           path: vbisam
@@ -95,7 +95,7 @@ jobs:
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ github.job }}-${{ matrix.isam }}.log
           path: _build/config.log
@@ -133,14 +133,14 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ github.job }}-${{ matrix.isam }}.log
           path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
 
       - name: Upload dist tarball
         if: ${{ matrix.isam != 'vbisam' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gnucobol-ci source distribution
           path: _build/gnucobol*.tar.gz
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload dist tarball (Windows)
         if: ${{ matrix.isam != 'vbisam' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gnucobol-ci windows source distribution
           path: _build/gnucobol*.zip
@@ -158,7 +158,7 @@ jobs:
 
       - name: Upload test binaries
         if: ${{ matrix.isam != 'vbisam' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gnucobol-ci binary distribution
           path: _build/gnucobol*.tar.xz
@@ -177,7 +177,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on ${{ github.job }}-${{ matrix.isam }}
           path: |
@@ -206,7 +206,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup build environment
         run: echo "TERM=vt100" >> $GITHUB_ENV
@@ -222,7 +222,7 @@ jobs:
       - name: Restore VBISAM cache
         if: ${{ matrix.isam == 'vbisam' }}
         id: restore-vbisam
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-vbisam-clang
           path: vbisam
@@ -252,7 +252,7 @@ jobs:
       - name: Save VBISAM cache
         if: ${{ matrix.isam == 'vbisam' &&
                 steps.restore-vbisam.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-vbisam-clang
           path: vbisam
@@ -271,15 +271,15 @@ jobs:
                        CC=clang
           echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
 
-      - name: Build GnuCOBOL
-        run: make -C _build --jobs=$(($(nproc)+1))
-
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ github.job }}-${{ matrix.isam }}.log
           path: _build/config.log
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Adjust testsuite for VBISAM
         if: ${{ matrix.isam == 'vbisam' }}
@@ -309,7 +309,7 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ github.job }}-${{ matrix.isam }}.log
           path: _build/tests/testsuite.log
@@ -326,7 +326,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on ${{ github.job }}-${{ matrix.isam }}
           path: |
@@ -378,15 +378,15 @@ jobs:
           # Note: we pass -fno-tree-coalesce-vars to workaround a bug
           # occurring with gcc on x86 at optimization level -O1
 
-      - name: Build GnuCOBOL
-        run: make -C _build --jobs=$(($(nproc)+1))
-
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ github.job }}.log
           path: _build/config.log
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Run testsuite
         run: |
@@ -395,7 +395,7 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ github.job }}.log
           path: _build/tests/testsuite.log
@@ -412,7 +412,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on ${{ github.job }}
           path: |
@@ -453,15 +453,15 @@ jobs:
                        --without-json --without-iconv --disable-nls \
                        --disable-dependency-tracking
 
-      - name: Build GnuCOBOL
-        run: make -C _build --jobs=$(($(nproc)+1))
-
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ github.job }}.log
           path: _build/config.log
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Run testsuite
         run: |
@@ -470,7 +470,7 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ github.job }}.log
           path: _build/tests/testsuite.log
@@ -487,7 +487,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on ${{ github.job }}
           path: |
@@ -533,15 +533,15 @@ jobs:
                        CPPFLAGS="-Werror=declaration-after-statement" \
                        CC="gcc -std=c89"
 
-      - name: Build GnuCOBOL
-        run: make -C _build --jobs=$(($(nproc)+1))
-
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ github.job }}.log
           path: _build/config.log
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Coverage
         run: |
@@ -552,13 +552,13 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ github.job }}.log
           path: _build/tests/testsuite.log
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: _build/GnuCOBOL-**-coverage
@@ -579,7 +579,7 @@ jobs:
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
       - name: Upload extended coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: extended-coverage
           path: _build/extended-coverage
@@ -656,7 +656,7 @@ jobs:
 
       - name: Restore MSYS1 cache
         id: restore-msys
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-msys-${{ matrix.target }}
           path: ${{ env.MSYS_ROOT }}
@@ -694,7 +694,7 @@ jobs:
 
       - name: Save MSYS1 cache
         if: steps.restore-msys.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-msys-${{ matrix.target }}
           path: ${{ env.MSYS_ROOT }}
@@ -702,7 +702,7 @@ jobs:
 
       - name: Restore GMP cache
         id: restore-gmp
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-msys-gmp-${{ matrix.target }}
           path: gmp
@@ -721,7 +721,7 @@ jobs:
 
       - name: Save GMP cache
         if: steps.restore-gmp.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-msys-gmp-${{ matrix.target }}
           path: gmp
@@ -729,7 +729,7 @@ jobs:
 
       - name: Restore PDCursesMod cache
         id: restore-pdcm
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-msys-pdcm-${{ matrix.target }}
           path: pdcm
@@ -761,7 +761,7 @@ jobs:
 
       - name: Save PDCursesMod cache
         if: steps.restore-pdcm.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-msys-pdcm-${{ matrix.target }}
           path: pdcm
@@ -769,7 +769,7 @@ jobs:
 
       - name: Restore BDB cache
         id: restore-bdb
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-msys-bdb-${{ matrix.target }}
           path: bdb
@@ -796,7 +796,7 @@ jobs:
 
       - name: Save BDB cache
         if: steps.restore-bdb.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-msys-bdb-${{ matrix.target }}
           path: bdb
@@ -804,7 +804,7 @@ jobs:
 
       - name: Restore LibXML2 cache
         id: restore-xml2
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: cache-msys-xml2-${{ matrix.target }}
           path: libxml2
@@ -823,7 +823,7 @@ jobs:
 
       - name: Save LibXML2 cache
         if: steps.restore-xml2.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: cache-msys-xml2-${{ matrix.target }}
           path: libxml2
@@ -838,18 +838,18 @@ jobs:
           mkdir _build
           %MSYS_BIN%\bash -lc "cd _build && ../configure --with-db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% LDFLAGS=-lintl"
 
+      - name: Upload config.log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: config-msys-${{ matrix.target }}.log
+          path: _build/config.log
+
       - name: Build GnuCOBOL
         run: |
           %MSYS_BIN%\bash -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [pre-inst-env]), for some reason...
-
-      - name: Upload config.log
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: config-msys-${{ matrix.target }}.log
-          path: _build/config.log
 
       - name: Cache newcob.val
         uses: actions/cache@v4
@@ -870,7 +870,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on msys-${{ matrix.target }}
           path: |
@@ -902,7 +902,7 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-msys-${{ matrix.target }}.log
           path: _build/tests/testsuite.log
@@ -912,7 +912,7 @@ jobs:
           %MSYS_BIN%\bash -lc "make -C _build distmingw"
 
       - name: Upload GnuCOBOL_mingw
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GnuCOBOL_mingw-${{ matrix.target }}
           path: _build/${{ env.DISTDIR }}

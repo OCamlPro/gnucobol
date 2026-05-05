@@ -20,7 +20,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install packages
         uses: msys2/setup-msys2@v2
@@ -47,6 +47,13 @@ jobs:
           ../configure --without-curses --without-db --without-xml2 --without-json \
                        --without-iconv --disable-dependency-tracking CFLAGS=-std=c17
 
+      - name: Upload config.log
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: config-dist.log
+          path: _build/config.log
+
       - name: Build GnuCOBOL source distribution
         shell: msys2 {0}
         run: |
@@ -54,15 +61,8 @@ jobs:
           OSTYPE=msys make -C _build --jobs=$(($(nproc)+1))
           OSTYPE=msys make -C _build --jobs=$(($(nproc)+1)) dist
 
-      - name: Upload config.log
-        uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: config-dist.log
-          path: _build/config.log
-
       - name: Upload dist tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gnucobol-ci source distribution msys2
           path: _build/gnucobol*.tar.gz
@@ -142,16 +142,16 @@ jobs:
           # command it provides, to workaround a diff bug under the MSYS2 CI
           PATH="$PATH:/c/Program Files/Git/usr/bin" ../configure $CFGOPT CFLAGS=-std=c17
 
-      - name: Build GnuCOBOL
-        shell: msys2 {0}
-        run: make -C _build --jobs=$(($(nproc)+1))
-
       - name: Upload config.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: config-${{ matrix.sys }}-${{ matrix.target }}.log
           path: _build/config.log
+
+      - name: Build GnuCOBOL
+        shell: msys2 {0}
+        run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Cache newcob.val
         uses: actions/cache@v4
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: NIST85 results on ${{ matrix.sys }}-${{ matrix.target }}
           path: |
@@ -184,6 +184,10 @@ jobs:
           # use
           sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
+          # disable screenio - may be resolved by adjusting atlocal;
+          # should be available as testsuite option later
+          sed -i 's/CURSES="yes"/CURSES=no/' _build/tests/atlocal
+
           # to work around regular hangs we run NIST first, then the internal
           # and the later only with 2 jobs
           # OSTYPE added on 2025-02-11 to fix texi2dvi bug
@@ -192,7 +196,7 @@ jobs:
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testsuite-${{ matrix.sys }}-${{ matrix.target }}.log
           path: _build/tests/testsuite.log
@@ -204,7 +208,8 @@ jobs:
           tar -cvf GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar _build/$DISTDIR
 
       - name: Upload GnuCOBOL_msys2.tar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar
           path: GnuCOBOL_msys2-${{ matrix.sys }}-${{ matrix.target }}.tar
+          if-no-files-found: error
+          archive: false
