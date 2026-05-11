@@ -1,5 +1,5 @@
-## Copyright (C) 2003-2012, 2016-2026 Free Software Foundation, Inc.
-## Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
+## Copyright (C) 2026 Free Software Foundation, Inc.
+## Written by Saurabh Kumar
 ##
 ## This file is part of GnuCOBOL.
 ##
@@ -26,12 +26,62 @@ AT_KEYWORDS([CLASS-ID])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
-        
+        CLASS-ID. MyClass.
+        END CLASS MyClass.
+
+        CLASS-ID. MySecondClass AS "MyClass".
+        END CLASS MySecondClass.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:3: warning: CLASS-ID is not implemented
+prog.cob:6: warning: CLASS-ID is not implemented
+])
+AT_CLEANUP
+
+AT_SETUP([CLASS-ID Syntax Error Check])
+AT_KEYWORDS([CLASS-ID])
+
+AT_DATA([prog1.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END CLASS.
+])
+
+AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
+[prog1.cob:3: warning: CLASS-ID is not implemented 
+prog1.cob:4: error: syntax error, unexpected ., expecting class-name or Literal
+])
+
+AT_DATA([prog2.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END PROGRAM MyClass.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob:3: warning: CLASS-ID is not implemented
+prog2.cob:4: error: syntax error, unexpected END PROGRAM, expecting END CLASS
+])
+
+AT_CLEANUP
+
+AT_SETUP([Redefinition of class])
+AT_KEYWORDS([CLASS-ID])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END CLASS MyClass.
+
         CLASS-ID. MyClass.
         END CLASS MyClass.
 ])
 
-AT_CHECK([$COBC -fdiagnostics-plain-output -fsyntax-only prog.cob], [0], [],
-[prog.cob:4: warning: CLASS-ID is not implemented [[-Wpending]]
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: warning: CLASS-ID is not implemented
+prog.cob:6: warning: CLASS-ID is not implemented
+prog.cob:6: error: redefinition of 'MyClass'
+prog.cob:3: note: 'MyClass' previously defined here
 ])
 AT_CLEANUP
