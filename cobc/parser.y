@@ -3911,9 +3911,23 @@ class_id_name:
 ;
 
 class_id_paragraph:
-  class_id_header TOK_DOT class_id_name _as_literal TOK_DOT
+  class_id_header TOK_DOT
   {
 	CB_PENDING ("CLASS-ID");
+  }
+  class_id_name _as_literal TOK_DOT
+  {
+	/* 
+	  TODO: The if block below is added for triggering
+	  a class redefinition error. This is not the correct
+	  way to do it since `current_program` is a dummy AST
+	  node here.
+	  Remove it when adding support for AST generation
+	  through `setup_program()`.
+	*/
+	if (CB_REFERENCE_P ($4)) {
+		cb_define ($4, CB_TREE (current_program));
+	}
 	cobc_in_id = 0;
   }
 ;

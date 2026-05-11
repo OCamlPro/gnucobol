@@ -1049,10 +1049,8 @@ H#[0-9A-Za-z]+ {
 	/* Bail early for (END) PROGRAM-ID when not a literal */
 	if  ((second_last_token == PROGRAM_ID  && last_token == TOK_DOT)
 	  || (second_last_token == FUNCTION_ID && last_token == TOK_DOT)
-	  || (second_last_token == CLASS_ID && last_token == TOK_DOT)
 	  ||  last_token == END_PROGRAM
-	  ||  last_token == END_FUNCTION
-	  ||  last_token == END_CLASS) {
+	  ||  last_token == END_FUNCTION) {
 		/* Force PROGRAM-ID / END PROGRAM */
 		if (cb_fold_call) {
 			yylval = cb_build_reference (yytext);
@@ -1061,6 +1059,10 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 			RETURN_TOK (LITERAL);
 		}
+	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT) 
+		     || last_token == END_CLASS) {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (CLASS_NAME);
 	}
 
 	/* Check reserved word */
