@@ -2,9 +2,9 @@ name: IBM Power & Z
 
 on:
   pull_request:
-    branches: [ gitside-gnucobol-3.x ]
+    branches: [ gitside-gnucobol-3.x, oo4gnucobol-3.x  ]
   push:
-    branches: [ gitside-gnucobol-3.x ]
+    branches: [ gitside-gnucobol-3.x, oo4gnucobol-3.x  ]
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
