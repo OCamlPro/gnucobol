@@ -1,0 +1,87 @@
+## Copyright (C) 2026 Free Software Foundation, Inc.
+## Written by Saurabh Kumar
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+### Syntax tests for object-orientation constructs
+
+
+AT_SETUP([CLASS-ID Syntax Check])
+AT_KEYWORDS([CLASS-ID])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END CLASS MyClass.
+
+        CLASS-ID. MySecondClass AS "MyClass".
+        END CLASS MySecondClass.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:3: warning: CLASS-ID is not implemented
+prog.cob:6: warning: CLASS-ID is not implemented
+])
+AT_CLEANUP
+
+AT_SETUP([CLASS-ID Syntax Error Check])
+AT_KEYWORDS([CLASS-ID])
+
+AT_DATA([prog1.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END CLASS.
+])
+
+AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
+[prog1.cob:3: warning: CLASS-ID is not implemented 
+prog1.cob:4: error: syntax error, unexpected ., expecting class-name or Literal
+])
+
+AT_DATA([prog2.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END PROGRAM MyClass.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob:3: warning: CLASS-ID is not implemented
+prog2.cob:4: error: syntax error, unexpected END PROGRAM, expecting END CLASS
+])
+
+AT_CLEANUP
+
+AT_SETUP([Redefinition of class])
+AT_KEYWORDS([CLASS-ID])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyClass.
+        END CLASS MyClass.
+
+        CLASS-ID. MyClass.
+        END CLASS MyClass.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: warning: CLASS-ID is not implemented
+prog.cob:6: warning: CLASS-ID is not implemented
+prog.cob:6: error: redefinition of 'MyClass'
+prog.cob:3: note: 'MyClass' previously defined here
+])
+AT_CLEANUP

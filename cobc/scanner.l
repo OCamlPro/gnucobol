@@ -656,6 +656,11 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (END_FUNCTION);
 }
 
+"END"[ ,;\n]+"CLASS"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_CLASS);
+}
+
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
 	if (lookup_reserved_word ("SYMBOL")) {
 		count_lines (yytext);
@@ -1054,6 +1059,10 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 			RETURN_TOK (LITERAL);
 		}
+	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT) 
+		     || last_token == END_CLASS) {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (CLASS_NAME);
 	}
 
 	/* Check reserved word */

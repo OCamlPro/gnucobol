@@ -1,4 +1,10 @@
 
+2026-04-08	Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* scanner.l: add support for scanning class names and "END CLASS" token.
+	* parser.y, reserved.c (class_definition): support parsing an "empty" 
+	  CLASS-ID paragraph with no contained paragraphs and divisions.
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for

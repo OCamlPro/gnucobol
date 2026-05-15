@@ -636,7 +636,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "CLASS",			0, 0, CLASS,			/* 2002 */
 				0, 0
   },
-  { "CLASS-ID",			0, 0, -1,			/* 2002 */
+  { "CLASS-ID",			0, 0, CLASS_ID,			/* 2002 */
 				0, 0
   },
   { "CLASSIFICATION",		0, 1, CLASSIFICATION,		/* 2002 (C/S) */

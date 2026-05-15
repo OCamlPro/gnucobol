@@ -2585,6 +2585,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CHARACTERS
 %token CHECK_BOX		"CHECK-BOX"
 %token CLASS
+%token CLASS_ID		"CLASS-ID"
 %token CLASSIFICATION
 %token CLASS_NAME		"class-name"
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
@@ -2734,6 +2735,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_MULTIPLY		"END-MULTIPLY"
 %token END_PERFORM		"END-PERFORM"
 %token END_PROGRAM		"END PROGRAM"
+%token END_CLASS		"END CLASS"
 %token END_READ			"END-READ"
 %token END_RECEIVE		"END-RECEIVE"
 %token END_RETURN		"END-RETURN"
@@ -3623,6 +3625,7 @@ source_element_list:
 
 source_element:
   program_definition
+| class_definition
 | function_definition
 | program_prototype
 | function_prototype
@@ -3649,6 +3652,13 @@ program_definition:
      The _end_program_list above is used for allowing an end marker
      in a program which contains a nested program.
   */
+;
+
+class_definition:
+  _identification_header
+  class_id_paragraph
+  /* TODO: _program_body */
+  end_class
 ;
 
 function_definition:
@@ -3683,6 +3693,21 @@ end_program:
 	first_nested_program = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_PROGRAM);
   }
+;
+
+end_class:
+  END_CLASS
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END CLASS");
+  }
+  end_class_name _dot
+  /*
+	TODO
+  	{
+		clean_up_program ($3, COB_MODULE_TYPE_CLASS);
+  	}
+  */
 ;
 
 end_function:
@@ -3861,6 +3886,60 @@ _default_display_clause:
 	  /* TODO: setup_default_display ($3); */
   }
 ;
+
+/* CLASS */
+
+class_id_header:
+  CLASS_ID
+  {
+	cobc_in_id = 1;
+  }
+;
+
+class_id_name:
+  CLASS_NAME
+  {
+	if (CB_REFERENCE_P ($1) && CB_WORD_COUNT ($1) > 0) {
+		redefinition_error ($1);
+	}
+	$$ = $1;
+  }
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
+class_id_paragraph:
+  class_id_header TOK_DOT
+  {
+	CB_PENDING ("CLASS-ID");
+  }
+  class_id_name _as_literal TOK_DOT
+  {
+	/* 
+	  TODO: The if block below is added for triggering
+	  a class redefinition error. This is not the correct
+	  way to do it since `current_program` is a dummy AST
+	  node here.
+	  Remove it when adding support for AST generation
+	  through `setup_program()`.
+	*/
+	if (CB_REFERENCE_P ($4)) {
+		cb_define ($4, CB_TREE (current_program));
+	}
+	cobc_in_id = 0;
+  }
+;
+
+end_class_name:
+  CLASS_NAME
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
 
 /* PROGRAM body */
 

@@ -1,4 +1,9 @@
 
+2026-05-06	Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* testsuite.at, Makefile.am, testsuite.src/syn_oo.at: new syntax checks for 
+	  object-orientation constructs 
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: reordered to correctly use perf/valgrind definitions also
