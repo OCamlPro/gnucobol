@@ -493,17 +493,13 @@ process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
         memcpy(path_str, ptr, path_size - 1);
         path_str[path_size - 1] = '\0'; 
 		FILE* path = fopen(path_str, "r");
-		if (!path) {
-			free(path_str);
-			fprintf(stderr,"File is non existent or invalid path");
-			return "";
-		}
 		size_t capacity = 256;
  	 	size_t length = 0;
  		char *options = malloc(capacity);
+		free(path_str);
 		
 		
-		int ret = getc(path);
+		int ret;
 		while ((ret = getc(path)) != EOF) {
 			if(length+1 >= capacity){
 				 capacity *= 4;
@@ -517,7 +513,75 @@ process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
 		options[length] = '\0';
 		*atfile_size = length;
 	 	return options;
+		/* -x -g -fdump=all */
 	}
+	else {
+		return NULL;
+	}
+}
+
+char**
+expand_processed_at_file(char *options, int *output_argc){
+	int capacity = 5;
+	int argc = 0;
+	char **output_argv = malloc(capacity * sizeof(char*));
+
+	char * option = strtok(options," \t\n\r");
+	while (option != NULL){
+		if (argc >= capacity) {
+			capacity *= 2;
+			output_argv = realloc(output_argv,capacity * sizeof(char*));
+		}
+		output_argv[argc++] = option;
+		option = strtok(NULL, " \t\n\r");
+	}
+
+	*output_argc = argc;
+	return output_argv;
+}
+
+void
+rebuild_argv_at_file(int * old_argc, char*** old_argv){
+	int orig_argc = *old_argc;
+	char **orig_argv = *old_argv;
+
+	int new_argc = 0;
+	int capacity = 2*orig_argc;
+	char **new_argv = malloc(capacity * sizeof(char*));
+	int i;
+	for(i =0 ; i < orig_argc ; i++){
+		int comp_mode = 0 ;
+		int atfile_size = 0;
+
+		char * filecontents = process_at_file(orig_argv[i], &comp_mode, &atfile_size);
+
+		if (comp_mode && filecontents != NULL) {
+			int file_arg_count = 0;
+			char ** file_expanded_argv = expand_processed_at_file(filecontents, &file_arg_count);
+			int j;
+			for (j = 0; j < file_arg_count; j++) {
+                if (new_argc >= capacity) {
+                    capacity *= 2;
+                    new_argv = realloc(new_argv, capacity * sizeof(char*));
+                }
+                new_argv[new_argc++] = file_expanded_argv[j];
+            }
+			free(file_expanded_argv);
+		}
+		else{
+			if (new_argc >= capacity) {
+                    capacity *= 2;
+                    new_argv = realloc(new_argv, capacity * sizeof(char*));
+                }
+                new_argv[new_argc++] = orig_argv[i];
+		}
+	}
+
+	new_argv = realloc(new_argv, (new_argc + 1) * sizeof(char*));
+    new_argv[new_argc] = "\0";
+
+	*old_argc = new_argc;
+	*old_argv = new_argv;
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters
@@ -598,11 +662,8 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
     print_errors = 0;  
 
   /* Test whether ARGV[optind] points to a non-option argument.  */
-#define NONOPTION_P ((argv[optind][0] != '-' && argv[optind][0] != '@') || argv[optind][1] == '\0')
+#define NONOPTION_P (argv[optind][0] != '-' || argv[optind][1] == '\0')
 
-  if (argv[optind][0] == '@'){ 
-	return '@';		/*Most definitly is wrong but im messing around*/
-  }
 
   if (nextchar == NULL || *nextchar == '\0')
     {

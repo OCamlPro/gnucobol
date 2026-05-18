@@ -3127,8 +3127,9 @@ file_replace_extension (const char *file, const char *ext)
 
 /* process command line options */
 static int
-process_command_line (const int argc, char **argv)
+process_command_line (int argc, char **argv)
 {
+	
 	struct cb_define_struct	*p;
 	int			c;
 	int			idx;
@@ -3163,16 +3164,7 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 #endif
-    cobc_compile_mode = 0;
-	int atfile_size;
-	char ** atfile_options;
-	for(int i = 1 ;i <argc; ++i){
-		atfile_options = process_at_file(argc[i], &cobc_compile_mode, &atfile_size);
-		if (atfile_options) break;
-	}
-	if (cobc_compile_mode) {
-		
-	}
+    
 	
 	/* First run of getopt: handle std/conf and all listing options, along
 	   with grouping options that should not override other entries (as --debug)
@@ -3460,11 +3452,6 @@ process_command_line (const int argc, char **argv)
 			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
 		}
 		
-		case '@':
-			cobc_compile_mode = 1;
-			break;
-
-
 		default:
 			/* as we postpone most options simply skip everything other here */
 			break;
@@ -3674,10 +3661,6 @@ process_command_line (const int argc, char **argv)
 			/* -g : Generate C debug code */
 			/* These options were all processed in the first getopt-run */
 			break;
-		case '@':
-			/* check for file existence and add options inside*/	
-			
-
 		case '$':
 			/* -std=<xx> : Specify dialect */
 		case '&':
@@ -9590,6 +9573,7 @@ main (int argc, char **argv)
 	cb_config_text_column = 72;
 
 	/* Process command line arguments */
+	rebuild_argv_at_file(&argc,&argv);
 	iargs = process_command_line (argc, argv);
 
 	if (fatal_startup_error) {
