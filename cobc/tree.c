@@ -7236,6 +7236,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	/* Fixme: should validate following are taking integers */
 	case CB_INTR_TEST_DATE_YYYYMMDD:
 	case CB_INTR_TEST_DAY_YYYYDDD:
+	case CB_INTR_BOOLEAN_OF_INTEGER:
 		x = CB_VALUE (args);
 		if (cb_tree_category (x) != CB_CATEGORY_NUMERIC) {
 			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), name);
@@ -7244,7 +7245,6 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
 
 	case CB_INTR_ANNUITY:
-	case CB_INTR_BOOLEAN_OF_INTEGER:
 	case CB_INTR_CHAR:
 	case CB_INTR_CHAR_NATIONAL:
 	case CB_INTR_COMBINED_DATETIME:
