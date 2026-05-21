@@ -11710,10 +11710,13 @@ accept_statement:
   ACCEPT
   {
 	begin_statement (STMT_ACCEPT, TERM_ACCEPT);
-	cobc_cs_check = CB_CS_ACCEPT;
+	cobc_cs_check |= CB_CS_ACCEPT;
   }
   accept_body
   _end_accept
+  {
+	cobc_cs_check &= ~CB_CS_ACCEPT;
+  }
 ;
 
 accept_body:
@@ -11748,7 +11751,7 @@ accept_body:
 				_("SIZE IS clause"));
 		}
 	}
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept ($1, line_column, current_statement->attr_ptr);
   }
 | identifier FROM SCREEN
@@ -11759,7 +11762,7 @@ accept_body:
   }
   accept_from_screen_clauses
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	CB_PENDING ("ACCEPT FROM SCREEN");
   }
 | identifier FROM lines_or_number
@@ -11784,22 +11787,22 @@ accept_body:
   }
 | identifier FROM DATE YYYYMMDD
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept_date_yyyymmdd ($1);
   }
 | identifier FROM DATE
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept_date ($1);
   }
 | identifier FROM DAY YYYYDDD
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept_day_yyyyddd ($1);
   }
 | identifier FROM DAY
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept_day ($1);
   }
 | identifier FROM DAY_OF_WEEK
@@ -11834,7 +11837,7 @@ accept_body:
   }
 | identifier FROM USER NAME
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept_user_name ($1);
   }
 | identifier FROM COMMAND_LINE
@@ -11876,7 +11879,7 @@ accept_body:
 	if (cb_accept_auto && !has_dispattr (COB_SCREEN_TAB)) {
 		set_dispattr (COB_SCREEN_AUTO);
 	}
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
 	cb_emit_accept ($1, line_column, current_statement->attr_ptr);
   }
 | cd_name _message COUNT
@@ -12067,7 +12070,7 @@ column_number:
 mode_is_block:
   MODE _is BLOCK
   {
-	cobc_cs_check = 0;
+	/* cobc_cs_check = 0; */
   }
 ;
 
