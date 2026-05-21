@@ -7404,7 +7404,7 @@ constant_entry:
 	cb_tree x;
 	const int level = cb_get_level ($1);
 
-	cobc_cs_check = 0;
+	cobc_cs_check &= ~CB_CS_CONSTANT;
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
 	} else if ($5) {
