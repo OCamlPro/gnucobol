@@ -6,6 +6,12 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
+** initial support for CONSTANT SECTION to define CONSTANT fields aswell
+   as introduction of CONSTANT STORAGE.
+   cobc options now has added option with -fdump=CO to dump CONSTANT SECTION fields
+   cobc now scans and parses for CONSTANT RECORD and nullable clause though
+   nullable is not supported.   
+
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
    indicator column) is now limited to 5 per source file

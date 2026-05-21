@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -916,6 +916,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	field_attribute_copy (flag_sign_clause);
 	field_attribute_copy (flag_sign_leading);
 	field_attribute_copy (flag_sign_separate);
+	field_attribute_copy (flag_nullable);
 	if (source->flag_synchronized
 	 && !target->flag_synchronized) {
 		target->flag_synchronized = source->flag_synchronized;
@@ -3412,6 +3413,25 @@ cb_validate_field (struct cb_field *f)
 		f->flag_is_verified = 1;
 		return;
 	}
+
+	if (f->storage == CB_STORAGE_CONSTANT) {
+        if (!f->values) {
+            cb_error_x (CB_TREE(f),("item in CONSTANT SECTION must have a VALUE clause"));
+        }
+	} else {
+		if (f->flag_constant) {
+			if(f->storage != CB_STORAGE_WORKING && f->storage != CB_STORAGE_LOCAL) {
+				cb_error_x (CB_TREE(f), ("CONSTANT RECORD may only be specified in LOCAL-STORAGE or WORKING-STORAGE"));
+			}
+			if (f->flag_constant && f->level == 1) {
+			if (f->flag_any_length ||  f->flag_base || f->flag_blank_zero || 
+					f->flag_nullable || f->flag_synchronized || f->flag_is_typedef) {
+						cb_error_x(CB_TREE(f) , "ANY LENGTH, BASED, BLANK WHEN ZERO, DYNAMIC LENGTH, NULLABLE, SYNCHRONIZED, or TYPEDEF are specified in CONSTANT RECORD or its subordinates");
+			}
+			f->storage = CB_STORAGE_CONSTANT;
+		    } 
+	    }
+    }
 
 	/* Set up parameters */
 	if (f->storage == CB_STORAGE_LOCAL ||

@@ -294,10 +294,11 @@ enum cobc_hd {
 	COBC_HD_WORKING_STORAGE_SECTION	= (1U << 12),
 	COBC_HD_COMMUNICATION_SECTION	= (1U << 13),
 	COBC_HD_LOCAL_STORAGE_SECTION	= (1U << 14),
-	COBC_HD_LINKAGE_SECTION		= (1U << 15),
-	COBC_HD_REPORT_SECTION		= (1U << 16),
-	COBC_HD_SCREEN_SECTION		= (1U << 17),
-	COBC_HD_PROCEDURE_DIVISION	= (1U << 18)
+	COBC_HD_CONSTANT_SECTION	= (1U << 15),
+	COBC_HD_LINKAGE_SECTION		= (1U << 16),
+	COBC_HD_REPORT_SECTION		= (1U << 17),
+	COBC_HD_SCREEN_SECTION		= (1U << 18),
+	COBC_HD_PROCEDURE_DIVISION	= (1U << 19)
 };
 
 /* Static functions */
@@ -2628,6 +2629,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CONDITION		/* remark: not used here */
 %token CONFIGURATION
 %token CONSTANT
+%token CONSTANT_RECORD
 %token CONTAINS
 %token CONTENT
 %token CONTENT_LENGTH_FUNC      "FUNCTION CONTENT-LENGTH"
@@ -3041,6 +3043,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token NUMERIC
 %token NUMERIC_EDITED		"NUMERIC-EDITED"
 %token NUMVALC_FUNC		"FUNCTION NUMVAL-C"
+%token NULLABLE         "NULLABLE"
 %token OBJECT
 %token OBJECT_COMPUTER		"OBJECT-COMPUTER"
 %token OCCURS
@@ -3434,7 +3437,6 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token LEVEL_NUMBER_IN_AREA_A	"level-number (Area A)"
 %token WORD_IN_AREA_A		"Identifier (Area A)"
-
 /* Set up precedence operators to force shift */
 
 %nonassoc SHIFT_PREFER
@@ -6437,6 +6439,7 @@ _data_division:
   _working_storage_section
   _communication_section
   _local_storage_section
+  _constant_section
   _linkage_section
   _report_section
   _screen_section
@@ -6604,7 +6607,6 @@ block_contains_clause:
 ;
 
 _records_or_characters:	| RECORDS | CHARACTERS ;
-
 
 /* RECORD clause */
 
@@ -7536,12 +7538,32 @@ data_description_clause:
 | present_when_clause
 | invalid_when_clause
 | destination_clause
+| nullable_clause
+| constant_record_clause
 | data_varying_clause
   {
 	CB_PENDING ("VALIDATE");
-  }
+  } 
 ;
 
+nullable_clause:
+  NULLABLE
+  {
+	current_field->flag_nullable = 1;
+	CB_UNSUPPORTED("NULLABLE");
+  }
+;  
+
+constant_record_clause:
+  CONSTANT_RECORD
+  {
+	if (current_field->level != 1) {
+		cb_error (_("CONSTANT RECORD may only be specified at level 01"));
+	} else {
+		current_field->flag_constant = 1;
+	}
+  }
+;  
 
 /* REDEFINES clause */
 
@@ -9076,6 +9098,27 @@ _local_storage_section:
 	}
   }
 ;
+
+/* CONSTANT SECTION */
+
+constant_section: CONSTANT {check_area_a_of("CONSTANT SECTION");};
+_constant_section:
+
+| constant_section SECTION _dot
+  {
+	check_headers_present(COBC_HD_DATA_DIVISION,0,0,0);
+	header_check |= COBC_HD_CONSTANT_SECTION;
+	current_storage = CB_STORAGE_CONSTANT; 
+  }
+  _record_description_list
+  {
+	if ($5){
+		CB_FIELD_ADD (current_program->constant_storage, CB_FIELD($5));
+		CB_UNFINISHED ("CONSTANT SECTION code generation");
+	}
+  }
+;
+
 
 
 /* LINKAGE SECTION */

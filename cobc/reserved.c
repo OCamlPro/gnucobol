@@ -2055,6 +2055,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "NUMERIC-EDITED",		0, 0, NUMERIC_EDITED,		/* 2002 */
 				0, 0
   },
+	{ "NULLABLE",             0, 0, NULLABLE,             /* 2026 */
+					0, 0
+	},
   { "OBJECT",			0, 0, OBJECT,			/* 2002, ACU extension */
 				0, 0
   },

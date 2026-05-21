@@ -1,4 +1,14 @@
 
+2026-03-03  Ramy George <ramygeorge19@gmail.com>
+
+    * parser.y (constant_section, _constant_section): Add parsing
+	  rules for Fujitsu CONSTANT SECTION extension. Route parsed
+	  items to CB_STORAGE_CONSTANT. Items defined in the CONSTANT SECTION. Added CB_UNFINISHED
+	  marker for code generation.
+	* FIELD.c (cb_validate_field): Enforced VALUE clause requirement
+	* cobc.h, cobc.c, codegen.c Adding the CO as flag and symbol for fdump and tsymbols
+	* scanner.l  Addition to scanning for CONSTANT RECORD
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for
