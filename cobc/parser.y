@@ -12486,14 +12486,14 @@ call_statement:
   {
 	emit_prof_call (COB_PROF_ENTER_CALL, NULL, NULL);
 	begin_statement (STMT_CALL, TERM_CALL);
-	cobc_cs_check = CB_CS_CALL;
+	cobc_cs_check |= CB_CS_CALL;
 	call_nothing = 0;
 	cobc_allow_program_name = 1;
   }
   call_body
   _end_call
   {
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_CALL;
   }
 ;
 
