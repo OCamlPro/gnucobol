@@ -6348,7 +6348,7 @@ multiple_file_tape_clause:
   MULTIPLE
   {
 	/* Fake for TAPE */
-	cobc_cs_check = CB_CS_ASSIGN;
+	cobc_cs_check |= CB_CS_ASSIGN;
   }
   _file _tape _contains multiple_file_list
   {
@@ -6356,7 +6356,7 @@ multiple_file_tape_clause:
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_I_O_CONTROL, 0);
 	cb_verify (cb_multiple_file_tape_clause, "MULTIPLE FILE TAPE");
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_ASSIGN;
   }
 ;
 
