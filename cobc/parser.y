@@ -12408,10 +12408,13 @@ allocate_statement:
   ALLOCATE
   {
 	begin_statement (STMT_ALLOCATE, 0);
-	cobc_cs_check = CB_CS_ALLOCATE;
+	cobc_cs_check |= CB_CS_ALLOCATE;
 	current_statement->flag_no_based = 1;
   }
   allocate_body
+  {
+	cobc_cs_check &= ~CB_CS_ALLOCATE;
+  }
 ;
 
 allocate_body:
