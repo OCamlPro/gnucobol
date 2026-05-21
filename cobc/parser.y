@@ -13253,12 +13253,15 @@ display_statement:
   DISPLAY
   {
 	begin_statement (STMT_DISPLAY, TERM_DISPLAY);
-	cobc_cs_check = CB_CS_DISPLAY;
+	cobc_cs_check |= CB_CS_DISPLAY;
 	display_type = UNKNOWN_DISPLAY;
 	is_first_display_item = 1;
   }
   display_body
   _end_display
+  {
+	cobc_cs_check ^= CB_CS_DISPLAY;
+  }
 ;
 
 display_body:
@@ -14421,11 +14424,11 @@ exit_statement:
   EXIT
   {
 	begin_statement (STMT_EXIT, 0);
-	cobc_cs_check = CB_CS_EXIT;
+	cobc_cs_check |= CB_CS_EXIT;
   }
   exit_body
   {
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_EXIT;
   }
 ;
 
@@ -15595,9 +15598,12 @@ perform_statement:
 	/* Turn off field debug - PERFORM is special */
 	save_debug = start_debug;
 	start_debug = 0;
-	cobc_cs_check = CB_CS_PERFORM;
+	cobc_cs_check |= CB_CS_PERFORM;
   }
   perform_body
+  {
+	cobc_cs_check ^= CB_CS_PERFORM;
+  }
 ;
 
 perform_body:
@@ -15608,7 +15614,6 @@ perform_body:
   {
 	cb_emit_perform ($4, $2, $1, $3);
 	start_debug = save_debug;
-	cobc_cs_check = 0;
   }
 | _thread_start
   _perform_option
@@ -15617,7 +15622,6 @@ perform_body:
 	CB_ADD_TO_CHAIN ($2, perform_stack);
 	/* Restore field debug before inline statements */
 	start_debug = save_debug;
-	cobc_cs_check = 0;
   }
   statement_list _end_perform
   {
@@ -15635,7 +15639,6 @@ perform_body:
   {
 	cb_emit_perform ($2, NULL, $1, $3);
 	start_debug = save_debug;
-	cobc_cs_check = 0;
   }
 ;
 
