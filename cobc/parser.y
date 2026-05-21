@@ -13128,10 +13128,11 @@ _continue_after_phrase:
   }
 | AFTER {
 	/* FIXME: hack - fake cs for context-sensitive SECONDS */
-	cobc_cs_check = CB_CS_RETRY;
+	cobc_cs_check |= CB_CS_RETRY;
   }
   exp SECONDS
   {
+	cobc_cs_check ^= CB_CS_RETRY;
 	$$ = $3;
   }
 ;
@@ -15850,17 +15851,18 @@ read_statement:
   READ
   {
 	begin_statement (STMT_READ, TERM_READ);
-	cobc_cs_check = CB_CS_READ;
+	cobc_cs_check |= CB_CS_READ;
   }
   read_body
   _end_read
+  {
+	cobc_cs_check ^= CB_CS_READ;
+  }
 ;
 
 read_body:
   file_name _flag_next _record _read_into _lock_phrases _read_key read_handler
   {
-	cobc_cs_check = 0;
-
 	if (CB_VALID_TREE ($1)) {
 		struct cb_file	*cf;
 
@@ -15931,7 +15933,6 @@ retry_phrase:
   retry_options
   {
 	CB_PENDING ("RETRY");
-	cobc_cs_check = 0;
   }
 ;
 
@@ -16390,11 +16391,11 @@ set_statement:
 	begin_statement (STMT_SET, 0);
 	set_attr_val_on = 0;
 	set_attr_val_off = 0;
-	cobc_cs_check = CB_CS_SET;
+	cobc_cs_check |= CB_CS_SET;
   }
   set_body
   {
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_SET;
   }
 ;
 
@@ -16835,18 +16836,22 @@ _end_start:
 
 /* STOP statement */
 
-stop: STOP { check_non_area_a ($1); };
+stop: STOP
+  {
+	check_non_area_a ($1);
+	cobc_cs_check |= CB_CS_STOP;
+  }
+;
 stop_statement:
   stop RUN
   {
 	begin_statement (STMT_STOP_RUN, 0);
-	cobc_cs_check = CB_CS_STOP;
   }
   stop_returning
   {
 	cb_emit_stop_run ($4);
 	check_unreached = 1;
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_STOP;
   }
 | stop ERROR /* GCOS */
   {
@@ -16854,6 +16859,7 @@ stop_statement:
 	cb_verify (cb_stop_error_statement, "STOP ERROR");
 	cb_emit_stop_error ();
 	check_unreached = 1;
+	cobc_cs_check ^= CB_CS_STOP;
   }
 | stop stop_argument
   {
@@ -16861,13 +16867,13 @@ stop_statement:
 	cb_emit_display (CB_LIST_INIT ($2), cb_int0, cb_int1, NULL,
 			 NULL, 1, DEVICE_DISPLAY);
 	cb_emit_accept (cb_null, NULL, NULL);
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_STOP;
   }
 | stop thread_reference_optional
   {
 	begin_statement (STMT_STOP_THREAD, 0);
 	cb_emit_stop_thread ($2);
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_STOP;
 	cb_warning_x (COBC_WARN_FILLER, $2,
 		_("%s is replaced by %s"),
 		cb_statement_name[STMT_STOP_THREAD],
