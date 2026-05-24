@@ -1,4 +1,16 @@
 
+2026-05-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def: "tab-width" option is changed to a comma-separated
+	  list of tab widths, for example "6,1,4", the last one being reused.
+	  This new meaning is backward compatible.
+	  Implements FR #498 " Adjust tab-width to optionally be a list of
+	  tab-stop positions"
+	* config.c: initialize cb_tab_width as a string,
+	  each position indicating the number of spaces to insert for a tab
+	  at that position
+	* pplex.c,cobc.c: use the new type of cb_tab_width
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for

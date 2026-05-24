@@ -6784,9 +6784,11 @@ get_next_listing_line (FILE *fd, char **pline, int fixed)
 
 	for (in_char = in_line; i != CB_LINE_LENGTH && *in_char; in_char++) {
 		if (*in_char == '\t') {
-			out_line[i++] = ' ';
-			while (i % cb_tab_width != 0) {
+			/* See comment on tab-width in config.c */
+			int tab_width = cb_tab_width[i];
+			while (tab_width > 0){
 				out_line[i++] = ' ';
+				tab_width--;
 				if (i == CB_LINE_LENGTH) {
 					break;
 				}
