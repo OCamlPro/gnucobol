@@ -107,6 +107,10 @@ NEWS - user visible changes				-*- outline -*-
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table
 
+** Option -ftab-width can now receive a list of comma-separated widths,
+   such as "6,1,4", indicating the width of each tabulation, the last one
+   being reused for all the next ones
+
 * Listing changes
 
 ** the listing header shows the processed file's basename to prevent
