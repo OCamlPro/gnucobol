@@ -2952,7 +2952,7 @@ AT_CLEANUP
 ### GnuCOBOL Test Suite - EXEC block handling
 
 
-AT_SETUP([EXEC empty block])
+AT_SETUP([EXEC no tag])
 AT_KEYWORDS([exec extensions])
 
 AT_DATA([prog.cob], [
@@ -2964,32 +2964,32 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:5: error: syntax error, unexpected END_EXEC, expecting Word or Literal
+[prog.cob:5: error: syntax error, unexpected END-EXEC, expecting Word or Literal
 ])
 
 AT_CLEANUP
 
 
-AT_SETUP([EXEC SQL empty block])
-AT_KEYWORDS([exec sql extensions])
+AT_SETUP([EXEC empty block])
+AT_KEYWORDS([exec extensions])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        PROCEDURE DIVISION.
-           EXEC SQL END-EXEC.
+           EXEC CICS END-EXEC.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
-[prog.cob:5: error: EXEC SQL statement ignored - no preprocessor configured
+[prog.cob:5: error: EXEC CICS statement ignored
 ])
 
 AT_CLEANUP
 
 
-AT_SETUP([EXEC SQL statement ignored])
-AT_KEYWORDS([exec sql extensions])
+AT_SETUP([EXEC statement ignored])
+AT_KEYWORDS([exec extensions])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -3000,7 +3000,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
-[prog.cob:5: error: EXEC SQL statement ignored - no preprocessor configured
+[prog.cob:5: error: EXEC SQL statement ignored
 ])
 
 AT_CLEANUP
@@ -3033,5 +3033,30 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -ffold-copy=LOWER prog.cob], [0], [], [])
+
+AT_CHECK([rm -f emprec.cpy], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -ffold-copy=LOWER prog.cob], [1], [],
+[prog.cob:9: error: emprec: No such file or directory
+prog.cob:14: error: 'ENO' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([END-EXEC missing])
+AT_KEYWORDS([exec extensions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+      * typo added on purpose to check handling that
+           EXEC SQL CONNECT RESET ENDEXEC.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
+[prog.cob:6: error: EXEC SQL statement ignored
+])
 
 AT_CLEANUP

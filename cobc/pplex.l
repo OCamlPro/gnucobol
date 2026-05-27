@@ -579,8 +579,9 @@ MAYBE_AREA_A	[ ]?#?
 <EXEC_STATE>{
     "END-EXEC"([ \t]*\.)?     { BEGIN (INITIAL); return END_EXEC; }
     "INCLUDE"                 { return INCLUDE; }
-    [A-Za-z0-9][A-Za-z0-9-]* { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
+    {WORD}                    { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
     \n                        { newline_count++; }
+	\.                        { BEGIN (INITIAL); return END_EXEC; }
     .                         { /* silently consumed */ }
 }
 

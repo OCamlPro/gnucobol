@@ -754,7 +754,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token <s> LITERAL		"Literal"
 
 %token EXEC
-%token END_EXEC "END_EXEC"
+%token END_EXEC		"END-EXEC"
 
 %type <s>	_copy_in
 %type <s>	copy_source
@@ -1750,7 +1750,7 @@ exec_statement:
   {
         /* EXEC TAG ... END-EXEC — warn and ignore */
         cb_warning (cb_warn_unsupported,
-                    _("EXEC %s statement ignored - no preprocessor configured"), $2);
+                    _("EXEC %s statement ignored"), $2);
   }
 | EXEC error END_EXEC
   {
