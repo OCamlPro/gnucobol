@@ -4928,27 +4928,9 @@ lookup_reserved_word (const char *name)
 		return p;
 	}
 
-	if (p->context_test) {
-		if (!(cobc_cs_check & p->context_test)) {
-			return NULL;
-		}
-		/*
-		  The only context-sensitive phrases outside the procedure division
-		  we expect to manually reset cobc_cs_check are OPTIONS, SELECT,
-		  I-O-CONTROL and SCREEN.
-
-		  Note: Everything in the environment and identification division can
-		  (and does) reset cobc_cs_check.
-		*/
-		/* if (!cobc_in_procedure */
-		/*  /\* && !(cobc_cs_check & CB_CS_OPTIONS) *\/ */
-		/*  /\* && !(cobc_cs_check & CB_CS_SELECT) *\/ */
-		/*  /\* && !(cobc_cs_check & CB_CS_I_O_CONTROL) *\/ */
-		/*  /\* && !(cobc_cs_check & CB_CS_SCREEN) *\/) { */
-		/* 	/\* cobc_cs_check = 0; *\/ */
-		/* 	cobc_cs_check &= ~(CB_CS_CONSTANT); */
-		/* } */
-		/* return p; */
+	if (p->context_test
+	 && !(cobc_cs_check & p->context_test)) {
+		return NULL;
 	}
 
 	return p;

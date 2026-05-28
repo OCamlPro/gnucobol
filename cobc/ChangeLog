@@ -3,6 +3,8 @@
 
 	* tree.h, parser.y: change type of cobc_cs_check flags to permit
 	  distinguishing more grammar contexts
+	* cobc.h, parser.y, reserved.c (lookup_reserved_word): generalize and
+	  cleanup device for handling special contexts
 
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
