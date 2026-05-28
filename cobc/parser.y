@@ -14355,11 +14355,11 @@ exhibit_statement:
   {
 	begin_statement (STMT_EXHIBIT, 0);
 	line_column = NULL;
-	cobc_cs_check = CB_CS_EXHIBIT;
+	/* Note: CB_CS_EXHIBIT is entered automatically on 'EXHIBIT' token. */
   }
   exhibit_body
   {
-	cobc_cs_check = 0;
+	cobc_cs_check &= ~CB_CS_EXHIBIT;
   }
 ;
 

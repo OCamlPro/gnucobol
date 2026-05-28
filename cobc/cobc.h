@@ -167,7 +167,7 @@ enum cb_current_date {
 /* HACK: no more space - using minor one until re-written */
 #define	CB_CS_I_O_CONTROL		(1UL << 32)
 #define	CB_CS_TYPEDEF			(1UL << 33)
-#define	CB_CS_EXHIBIT			CB_CS_DAY
+#define	CB_CS_EXHIBIT			(1UL << 34)
 #define	CB_CS_MOVE_CONV			CB_CS_DAY
 #define	CB_CS_INSPECT			CB_CS_DAY
 #define	CB_CS_CONVERT			CB_CS_DAY
