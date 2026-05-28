@@ -4248,7 +4248,6 @@ _with_debugging_mode:
   {
 	current_program->flag_debugging = 1;
 	needs_debug_item = 1;
-	__CS_RESET(1);
 	cb_build_debug_item ();
   }
 ;
@@ -11640,12 +11639,10 @@ statements:
   }
   statement
   {
-	  /* __CS_RESET(1); */
 	cobc_apply_turn_directives ();
   }
 | statements statement
   {
-	  /* __CS_RESET(1); */
 	cobc_apply_turn_directives ();
   }
 ;
@@ -11741,7 +11738,6 @@ statement:
   {
 	emit_statement (cb_error_node);
 	yyerrok;
-	__CS_RESET(1);
   }
 ;
 
@@ -16751,7 +16747,6 @@ sort_input:
 			cb_emit_sort_input ($4);
 		}
 	}
-	__CS_RESET(1);
   }
 ;
 
@@ -16785,7 +16780,6 @@ sort_output:
 			cb_emit_sort_output ($4);
 		}
 	}
-	__CS_RESET(1);
   }
 ;
 
