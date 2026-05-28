@@ -7965,6 +7965,9 @@ type_to_clause:
 usage_clause:
   _usage_is usage
 | USAGE _is conflict_usage
+  {
+	cobc_cs_check &= ~CB_CS_USAGE;
+  }
 | USAGE _is WORD	/* MF extension for referencing types, full support would need
                 	   _usage_is, but this leads to shift/reduce conflicts,
                 	   FIXME: handle conflict by returning TYPEDEF_NAME token,
@@ -7998,10 +8001,12 @@ usage_clause:
 	}
 	check_and_set_usage (CB_USAGE_ERROR);
 	YYERROR;
+	cobc_cs_check &= ~CB_CS_USAGE;
   }
 | USAGE _is error
   {
 	check_and_set_usage (CB_USAGE_ERROR);
+	cobc_cs_check &= ~CB_CS_USAGE;
   }
 ;
 
