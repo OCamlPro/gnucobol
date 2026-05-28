@@ -936,7 +936,8 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "DEFAULT",			0, 0, DEFAULT,			/* 2002 */
-				CB_CS_DEFAULT, 0
+				0, 0
+    /* Note: don't use auto-set as DEFAULT does not appear only in DEFAULT clauses.  */
   },
   { "DEFAULT-BUTTON",		0, 1, DEFAULT_BUTTON,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY

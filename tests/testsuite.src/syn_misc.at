@@ -7424,6 +7424,10 @@ AT_DATA([prog.cob], [
    *>if IN-TYPE fails the PICTURE check, it is assumed to be 1;
    *>without a DEFAULT clause, the assumed value would here be 0.
                                 DEFAULT 1.
+        03  IN-TYPE-WO-DEFAULT PIC 99
+   *>checks DEFAULT NONE is accepted (NONE is sensitive in the DEFAULT
+   *>clause only).
+	                        DEFAULT NONE.
    *>PRESENT WHEN states the condition for this format to be used.
         03  IN-REC-FORMAT-1 PRESENT WHEN IN-TYPE = 0 OR 1 OR 2.
    *>PICTURE A(20) checks for 20 alphabetic (or space) characters.

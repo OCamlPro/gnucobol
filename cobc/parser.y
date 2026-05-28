@@ -3836,9 +3836,6 @@ _default_section:
 | DEFAULT { check_area_a_of ("DEFAULT SECTION"); }
   SECTION TOK_DOT
   _default_clauses
-  {
-	  __CS_RESET(1);
-  }
 ;
 
 _default_clauses:
@@ -8949,9 +8946,14 @@ _on_choice:
 /* DEFAULT clause (content-validation) */
 
 default_clause:
-  DEFAULT _is x_or_none
+  DEFAULT
+  {
+	cobc_cs_check |= CB_CS_DEFAULT;
+  }
+  _is x_or_none
   {
 	CB_PENDING ("VALIDATE");
+	cobc_cs_check ^= CB_CS_DEFAULT;
   }
 ;
 
