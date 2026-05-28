@@ -4264,7 +4264,7 @@ object_computer_paragraph:
   }
   _object_computer_entry
   {
-	__CS_RESET(1);
+	cobc_cs_check ^= CB_CS_OBJECT_COMPUTER;
   }
 ;
 
