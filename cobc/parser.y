@@ -4666,7 +4666,7 @@ alphabet_name_clause:
 		current_program->alphabet_name_list =
 			cb_list_add (current_program->alphabet_name_list, $3);
 	}
-	__CS_RESET(1);
+	cobc_cs_check ^= CB_CS_ALPHABET;
   }
 ;
 
@@ -4687,6 +4687,10 @@ alphabet_definition:
 	}
   }
   _is alphabet_type_national
+| error
+  {
+	cobc_cs_check ^= CB_CS_ALPHABET;
+  }
 ;
 
 alphabet_target_alphanumeric:
