@@ -15269,7 +15269,7 @@ json_generate_statement:
   {
 	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
-	cobc_cs_check = CB_CS_JSON_GENERATE;
+	cobc_cs_check |= CB_CS_JSON_GENERATE;
 	cb_set_register_receiving (current_program->json_code, 1);
   }
   json_generate_body
@@ -15286,7 +15286,7 @@ json_generate_body:
   _json_suppress
   {
 	cobc_in_json_generate_body = 0;
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_JSON_GENERATE;
   }
   _common_exception_phrases
   {
