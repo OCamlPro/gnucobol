@@ -7215,7 +7215,13 @@ lit_or_length:
   literal				{ $$ = $1; }
 | length_of_register con_source			{ $$ = cb_build_const_length ($2); }
 /* note: only reserved in context of CB_CS_CONSTANT: */
-| BYTE_LENGTH _of con_source	{ $$ = cb_build_const_length ($3); }
+| BYTE_LENGTH _of
+  {
+	/* Hack: manually leave CONSTANT special context to allow `CONSTANT
+	   BYTE-LENGTH OF BYTE-LENGTH`.  */
+	cobc_cs_check &= ~CB_CS_CONSTANT;
+  }
+  con_source	{ $$ = cb_build_const_length ($4); }
 ;
 
 con_source:
@@ -7403,7 +7409,8 @@ constant_entry:
 	cb_tree x;
 	const int level = cb_get_level ($1);
 
-	cobc_cs_check &= ~CB_CS_CONSTANT;
+	/* CB_CS_CONSTANT auto-resets when triggered. */
+	/* cobc_cs_check &= ~CB_CS_CONSTANT; */
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
 	} else if ($5) {
