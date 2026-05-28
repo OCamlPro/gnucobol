@@ -20272,7 +20272,7 @@ flag_rounded:
 	} else {
 		$$ = default_rounded_mode;
 	}
-	__CS_RESET(1);
+	cobc_cs_check ^= CB_CS_ROUNDED;
   }
 ;
 
@@ -20280,12 +20280,10 @@ round_mode:
   /* empty */
   {
 	$$ = NULL;
-	__CS_RESET(1);
   }
 | MODE _is round_choice
   {
 	$$ = $3;
-	__CS_RESET(1);
   }
 ;
 
