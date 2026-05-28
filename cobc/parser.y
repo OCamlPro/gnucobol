@@ -146,6 +146,13 @@ unsigned int			cobc_in_json_generate_body = 0;
 unsigned int			cobc_areacheck = 0;
 unsigned int			cobc_in_area_a = 0;
 
+#define __CS_RESET(verbose)						\
+	do {								\
+		if (0 && verbose)					\
+			fprintf (stderr, "%d: manual reset!\n", __LINE__); \
+		cobc_cs_check = 0;					\
+	} while (0);
+
 /* Local variables */
 
 enum inspect_rep_keyword {
@@ -3566,7 +3573,7 @@ start:
 
 	clear_initial_values ();
 	defined_prog_list = NULL;
-	cobc_cs_check = 0;
+	__CS_RESET(0);
 	main_flag_set = 0;
 
 	clear_initial_values ();
@@ -3714,7 +3721,7 @@ program_prototype:
 		YYABORT;
 	}
 	setup_prototype ($4, $5, COB_MODULE_TYPE_PROGRAM, 1);
-	cobc_cs_check = 0;
+	__CS_RESET(1);
 	cobc_in_id = 0;
 
 	CB_UNFINISHED ("PROGRAM PROTOTYPE");
@@ -3763,7 +3770,7 @@ function_prototype:
 		YYABORT;
 	}
 	setup_prototype ($4, $5, COB_MODULE_TYPE_FUNCTION, 1);
-	cobc_cs_check = 0;
+	__CS_RESET(1);
 	cobc_in_id = 0;
 
 	CB_UNFINISHED ("FUNCTION PROTOTYPE");
@@ -3830,7 +3837,7 @@ _default_section:
   SECTION TOK_DOT
   _default_clauses
   {
-	cobc_cs_check = 0;
+	  __CS_RESET(1);
   }
 ;
 
@@ -3935,7 +3942,7 @@ program_id_paragraph:
 		current_program->flag_recursive = 1;
 	}
 
-	cobc_cs_check = 0;
+	__CS_RESET(1);
 	cobc_in_id = 0;
   }
 ;
@@ -3954,7 +3961,7 @@ function_id_header TOK_DOT program_id_name _as_literal TOK_DOT /* optional, yet 
 		YYABORT;
 	}
 	setup_prototype ($3, $4, COB_MODULE_TYPE_FUNCTION, 1);
-	cobc_cs_check = 0;
+	__CS_RESET(1);
 	cobc_in_id = 0;
   }
 ;
@@ -4032,7 +4039,7 @@ _options_paragraph:
 | OPTIONS TOK_DOT
   _options_clauses
   {
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -4240,7 +4247,7 @@ _with_debugging_mode:
   {
 	current_program->flag_debugging = 1;
 	needs_debug_item = 1;
-	cobc_cs_check = 0;
+	__CS_RESET(1);
 	cb_build_debug_item ();
   }
 ;
@@ -4257,7 +4264,7 @@ object_computer_paragraph:
   }
   _object_computer_entry
   {
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -4653,7 +4660,7 @@ alphabet_name_clause:
 		current_program->alphabet_name_list =
 			cb_list_add (current_program->alphabet_name_list, $3);
 	}
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -5084,7 +5091,7 @@ xml_schema_clause:
 			cb_list_add (current_program->schema_name_list, $3);
 		CB_SCHEMA_NAME ($3)->val = $4;
 	}
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -11614,12 +11621,12 @@ statements:
   }
   statement
   {
-	cobc_cs_check = 0;
+	  /* __CS_RESET(1); */
 	cobc_apply_turn_directives ();
   }
 | statements statement
   {
-	cobc_cs_check = 0;
+	  /* __CS_RESET(1); */
 	cobc_apply_turn_directives ();
   }
 ;
@@ -11715,7 +11722,7 @@ statement:
   {
 	emit_statement (cb_error_node);
 	yyerrok;
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -16722,7 +16729,7 @@ sort_input:
 			cb_emit_sort_input ($4);
 		}
 	}
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -16756,7 +16763,7 @@ sort_output:
 			cb_emit_sort_output ($4);
 		}
 	}
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -20250,7 +20257,7 @@ flag_rounded:
 	} else {
 		$$ = default_rounded_mode;
 	}
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
@@ -20258,12 +20265,12 @@ round_mode:
   /* empty */
   {
 	$$ = NULL;
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 | MODE _is round_choice
   {
 	$$ = $3;
-	cobc_cs_check = 0;
+	__CS_RESET(1);
   }
 ;
 
