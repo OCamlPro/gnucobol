@@ -2039,7 +2039,6 @@ validate_screen_attributes (void)
 	 && !has_relative_pos (current_field)) {
 		cb_error (_("relative LINE/COLUMN clause required with OCCURS"));
 	}
-	cobc_cs_check = CB_CS_SCREEN;
 }
 
 static void
@@ -9866,7 +9865,7 @@ _screen_section:
 | SCREEN { check_area_a_of ("SCREEN SECTION"); }
   SECTION _dot
   {
-	cobc_cs_check = CB_CS_SCREEN;
+	cobc_cs_check |= CB_CS_SCREEN;
 	current_storage = CB_STORAGE_SCREEN;
 	current_field = NULL;
 	description_field = NULL;
@@ -9881,7 +9880,7 @@ _screen_section:
 		CB_FIELD_ADD (current_program->screen_storage, description_field);
 		current_program->flag_screen = 1;
 	}
-	cobc_cs_check = 0;
+	cobc_cs_check &= ~CB_CS_SCREEN;
   }
 ;
 
@@ -9907,6 +9906,7 @@ screen_description:
   _screen_options
   {
 	validate_screen_attributes ();
+	cobc_cs_check |= CB_CS_SCREEN;
   }
   /* ACUCOBOL-GT control definition */
 | level_number _entry_name
@@ -9924,7 +9924,7 @@ screen_description:
   _screen_options	/* FIXME: must be included in control_attributes */
   {
 	validate_screen_attributes ();
-	cobc_cs_check = CB_CS_SCREEN;
+	cobc_cs_check |= CB_CS_SCREEN;
   }
   /* entry for error recovery */
 | level_number error TOK_DOT
