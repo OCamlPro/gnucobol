@@ -4033,10 +4033,14 @@ init_or_recurse:
 
 _options_paragraph:
   /* empty */
-| OPTIONS TOK_DOT
+| OPTIONS TOK_DOT		/* Note: OPTIONS auto-enters CB_CS_OPTIONS */
   _options_clauses
   {
-	__CS_RESET(1);
+	  cobc_cs_check ^= CB_CS_OPTIONS;
+  }
+| OPTIONS error
+  {
+	  cobc_cs_check ^= CB_CS_OPTIONS;
   }
 ;
 
