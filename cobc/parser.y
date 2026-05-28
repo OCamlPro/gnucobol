@@ -14949,6 +14949,9 @@ inspect_statement:
 	inspect_keyword = INSPECT_REP_DEFAULT;
   }
   inspect_body
+  {
+	cobc_cs_check ^= CB_CS_INSPECT;
+  }
 ;
 
 inspect_body:
