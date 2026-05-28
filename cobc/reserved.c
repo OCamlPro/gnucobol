@@ -2261,7 +2261,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "PROGRAM-ID",		0, 0, PROGRAM_ID,		/* 2002 */
-				0, 0
+				CB_CS_PROGRAM_ID, 0
   },
   { "PROGRAM-POINTER",		0, 0, PROGRAM_POINTER,		/* 2002 */
 				0, 0
@@ -4952,14 +4952,10 @@ lookup_reserved_word (const char *name)
 		return p;
 	}
 
-	if (p->token == FUNCTION_ID) {
-		cobc_cs_check = 0;
-	} else if (p->token == INTRINSIC) {
+	if (p->token == INTRINSIC) {
 		if (!cobc_in_repository) {
 			return NULL;
 		}
-	} else if (p->token == PROGRAM_ID) {
-		cobc_cs_check = CB_CS_PROGRAM_ID;
 	} else if (p->token == REPOSITORY) {
 		cobc_in_repository = 1;
 	}
