@@ -5101,7 +5101,6 @@ xml_schema_clause:
 			cb_list_add (current_program->schema_name_list, $3);
 		CB_SCHEMA_NAME ($3)->val = $4;
 	}
-	__CS_RESET(1);
   }
 ;
 
