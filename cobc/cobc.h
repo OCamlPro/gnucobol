@@ -174,7 +174,7 @@ enum cb_current_date {
 #define	CB_CS_MODULE_NAME		CB_CS_DAY
 #define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
 #define	CB_CS_DEFAULT			CB_CS_DAY
-#define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
+#define	CB_CS_VALIDATE_STATUS		(1UL << 41)
 #define	CB_CS_USAGE				CB_CS_DAY
 #define	CB_READY_RESET_TRACE	CB_CS_DAY
 

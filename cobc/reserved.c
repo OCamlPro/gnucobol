@@ -2385,7 +2385,6 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "RELATION",			0, 1, RELATION,			/* 2002 (C/S) */
 				0, CB_CS_VALIDATE_STATUS
-	/* FIXME: 2014 Context-sensitive to VALIDATE-STATUS clause */
   },
   { "RELATIVE",			0, 0, RELATIVE,			/* 2002 */
 				0, 0
@@ -3054,7 +3053,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_RECORDING
   },
   { "VAL-STATUS",		0, 0, VALIDATE_STATUS,			/* 2002 */
-				0, CB_CS_VALIDATE_STATUS
+				0, 0
   },
   { "VALID",			0, 0, VALID,			/* 2002 */
 				0, 0
@@ -3063,7 +3062,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "VALIDATE-STATUS",		0, 0, VALIDATE_STATUS,			/* 2002 */
-				0, CB_CS_VALIDATE_STATUS
+				0, 0
   },
   { "VALIDATING",		0, 1, VALIDATING,		/* IBM extension */
 				0, CB_CS_XML_PARSE

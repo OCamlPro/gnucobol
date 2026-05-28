@@ -8902,10 +8902,15 @@ _when_condition:
 /* VALIDATE-STATUS clause (content-validation) */
 
 validate_status_clause:
-  VALIDATE_STATUS _is target_x when_error_choice _on_choice
+  VALIDATE_STATUS _is
+  {
+	cobc_cs_check |= CB_CS_VALIDATE_STATUS;
+  }
+  target_x when_error_choice _on_choice
   FOR validate_for_identifier_list
   {
 	CB_PENDING ("VALIDATE");
+	cobc_cs_check ^= CB_CS_VALIDATE_STATUS;
   }
 ;
 
