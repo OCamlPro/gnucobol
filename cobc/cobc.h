@@ -176,6 +176,7 @@ enum cb_current_date {
 #define	CB_CS_DEFAULT			(1UL << 40)
 #define	CB_CS_VALIDATE_STATUS		(1UL << 41)
 #define	CB_CS_USAGE			(1UL << 42)
+#define	CB_CS_REPOSITORY		(1UL << 43)
 #define	CB_READY_RESET_TRACE		CB_CS_DAY
 
 /* Support for cobc from stdin */

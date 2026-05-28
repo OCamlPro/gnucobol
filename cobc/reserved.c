@@ -1627,8 +1627,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "INTRINSIC",		0, 1, INTRINSIC,		/* 2002 (C/S) */
-				0, 0
-	/* FIXME: 2014 Context-sensitive to function-specifier of the REPOSITORY paragraph */
+				0, CB_CS_REPOSITORY
   },
   { "INVALID",			0, 0, INVALID,			/* 2002 */
 				0, 0
@@ -4949,15 +4948,7 @@ lookup_reserved_word (const char *name)
 		/* 	/\* cobc_cs_check = 0; *\/ */
 		/* 	cobc_cs_check &= ~(CB_CS_CONSTANT); */
 		/* } */
-		return p;
-	}
-
-	if (p->token == INTRINSIC) {
-		if (!cobc_in_repository) {
-			return NULL;
-		}
-	} else if (p->token == REPOSITORY) {
-		cobc_in_repository = 1;
+		/* return p; */
 	}
 
 	return p;

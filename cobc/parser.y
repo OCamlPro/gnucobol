@@ -4405,9 +4405,12 @@ repository_paragraph:
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
 	check_conf_section_order (COBC_HD_REPOSITORY);
 	set_conf_section_part (COBC_HD_REPOSITORY);
+	cobc_cs_check |= CB_CS_REPOSITORY;
+	cobc_in_repository = 1;
   }
   _repository_entry
   {
+	cobc_cs_check ^= CB_CS_REPOSITORY;
 	cobc_in_repository = 0;
   }
 ;
