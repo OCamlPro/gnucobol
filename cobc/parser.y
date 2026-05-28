@@ -17954,7 +17954,7 @@ xml_parse_statement:
   {
 	begin_statement (STMT_XML_PARSE, TERM_XML);
 	CB_PENDING ("XML PARSE");
-	cobc_cs_check = CB_CS_XML_PARSE;
+	cobc_cs_check |= CB_CS_XML_PARSE;
 	cb_set_register_receiving (current_program->xml_code, 1);
 	cb_set_register_receiving (current_program->xml_event, 1);
 	cb_set_register_receiving (current_program->xml_text, 1);
@@ -17984,7 +17984,7 @@ xml_parse_body:
 		cb_verify_x (CB_TREE (current_statement),
 			CB_ERROR, "XML PARSE XMLSS");
 	}
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_XML_PARSE;
   }
   _common_exception_phrases
   {
