@@ -6237,7 +6237,7 @@ _i_o_control:
 i_o_control:
   i_o_control_header _i_o_control_entries
   {
-	cobc_cs_check = 0;
+	cobc_cs_check &= ~CB_CS_I_O_CONTROL;
   }
 ;
 
