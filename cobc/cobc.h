@@ -170,7 +170,7 @@ enum cb_current_date {
 #define	CB_CS_EXHIBIT			(1UL << 34)
 /* #define	CB_CS_MOVE_CONV			CB_CS_DAY (unused) */
 #define	CB_CS_INSPECT			(1UL << 36)
-#define	CB_CS_CONVERT			CB_CS_DAY
+#define	CB_CS_CONVERT			(1UL << 37) /* TODO: within CONVERT intrinsic */
 #define	CB_CS_MODULE_NAME		CB_CS_DAY
 #define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
 #define	CB_CS_DEFAULT			CB_CS_DAY
