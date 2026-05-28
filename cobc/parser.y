@@ -138,7 +138,6 @@ int				suppress_data_exceptions = 0;
 unsigned int			cobc_repeat_last_token = 0;
 unsigned int			cobc_in_id = 0;
 unsigned int			cobc_in_procedure = 0;
-unsigned int			cobc_in_repository = 0;
 cob_u64_t			cobc_cs_check = 0;
 unsigned int			cobc_allow_program_name = 0;
 unsigned int			cobc_in_xml_generate_body = 0;
@@ -1237,7 +1236,7 @@ clear_initial_values (void)
 	check_unreached = 0;
 	cobc_in_id = 0;
 	cobc_in_procedure = 0;
-	cobc_in_repository = 0;
+	cobc_cs_check = 0;
 	cobc_in_xml_generate_body = 0;
 	cobc_in_json_generate_body = 0;
 	non_const_word = 0;
@@ -4493,12 +4492,10 @@ repository_paragraph:
 	check_conf_section_order (COBC_HD_REPOSITORY);
 	set_conf_section_part (COBC_HD_REPOSITORY);
 	__CS_ENTER (CB_CS_REPOSITORY);
-	cobc_in_repository = 1;
   }
   _repository_entry
   {
 	__CS_LEAVE (CB_CS_REPOSITORY);
-	cobc_in_repository = 0;
   }
 ;
 

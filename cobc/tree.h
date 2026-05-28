@@ -2280,7 +2280,6 @@ extern int		suppress_data_exceptions;
 extern unsigned int	cobc_repeat_last_token;
 extern unsigned int	cobc_in_id;
 extern unsigned int	cobc_in_procedure;
-extern unsigned int	cobc_in_repository;
 extern cob_u64_t	cobc_cs_check;
 extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
@@ -2288,6 +2287,8 @@ extern unsigned int	cobc_in_json_generate_body;
 extern unsigned int	cobc_areacheck;
 extern unsigned int	cobc_in_area_a;	      /* set by scanner only */
 extern unsigned int	cobc_still_in_area_a; /* raised by parser only */
+
+#define cobc_in_repository ((cobc_cs_check & CB_CS_REPOSITORY) != COB_U64_C(0))
 
 /* reserved.c */
 extern int			is_reserved_word (const char *);
