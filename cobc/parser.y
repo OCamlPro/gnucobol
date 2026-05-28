@@ -11810,22 +11810,22 @@ accept_body:
   }
 | identifier FROM DATE YYYYMMDD
   {
-	/* cobc_cs_check = 0; */
+	cobc_cs_check &= ~CB_CS_DATE;
 	cb_emit_accept_date_yyyymmdd ($1);
   }
 | identifier FROM DATE
   {
-	/* cobc_cs_check = 0; */
+	cobc_cs_check &= ~CB_CS_DATE;
 	cb_emit_accept_date ($1);
   }
 | identifier FROM DAY YYYYDDD
   {
-	/* cobc_cs_check = 0; */
+	cobc_cs_check &= ~CB_CS_DAY;
 	cb_emit_accept_day_yyyyddd ($1);
   }
 | identifier FROM DAY
   {
-	/* cobc_cs_check = 0; */
+	cobc_cs_check &= ~CB_CS_DAY;
 	cb_emit_accept_day ($1);
   }
 | identifier FROM DAY_OF_WEEK
