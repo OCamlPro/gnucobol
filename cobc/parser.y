@@ -17665,7 +17665,7 @@ xml_generate_statement:
   {
 	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
-	cobc_cs_check = CB_CS_XML_GENERATE;
+	cobc_cs_check |= CB_CS_XML_GENERATE;
 	cb_set_register_receiving (current_program->xml_code, 1);
   }
   xml_generate_body
@@ -17688,7 +17688,7 @@ xml_generate_body:
   _xml_gen_suppress
   {
 	cobc_in_xml_generate_body = 0;
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_XML_GENERATE;
   }
   _common_exception_phrases
   {
