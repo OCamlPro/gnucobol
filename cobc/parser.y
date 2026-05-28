@@ -7640,6 +7640,7 @@ typedef_clause:
 		cb_error (_("%s not allowed in %s"), "TYPEDEF",
 			enum_explain_storage(current_storage));
 	}
+	cobc_cs_check ^= CB_CS_TYPEDEF;
   }
 ;
 
