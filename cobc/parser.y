@@ -5381,7 +5381,7 @@ file_control_entry:
   }
   _select_clauses_or_error
   {
-	cobc_cs_check = 0;
+	cobc_cs_check &= ~CB_CS_SELECT;
 	if (CB_VALID_TREE ($4)) {
 		if (current_file->organization == COB_ORG_INDEXED
 		    && key_type == RELATIVE_KEY) {
@@ -5410,7 +5410,7 @@ _select_clause_sequence:
 | _select_clause_sequence select_clause
   {
 	/* reset context-sensitive words for next clauses */
-	cobc_cs_check = CB_CS_SELECT;
+	cobc_cs_check |= CB_CS_SELECT;
   }
 ;
 
@@ -9921,6 +9921,9 @@ screen_description:
 	CB_PENDING ("GRAPHICAL CONTROL");
   }
   _control_attributes
+  {
+	cobc_cs_check &= ~CB_CS_GRAPHICAL_CONTROL;
+  }
   _screen_options	/* FIXME: must be included in control_attributes */
   {
 	validate_screen_attributes ();
@@ -14904,11 +14907,11 @@ inquire_statement:
   INQUIRE
   {
 	begin_statement (STMT_INQUIRE, 0);
-	cobc_cs_check = CB_CS_INQUIRE_MODIFY;
+	cobc_cs_check |= CB_CS_INQUIRE_MODIFY;
   }
   inquire_body
   {
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_INQUIRE_MODIFY;
   }
 ;
 
@@ -15367,12 +15370,12 @@ modify_statement:
   MODIFY
   {
 	begin_statement (STMT_MODIFY, TERM_MODIFY);
-	cobc_cs_check = CB_CS_INQUIRE_MODIFY;
+	cobc_cs_check |= CB_CS_INQUIRE_MODIFY;
   }
   modify_body
   _end_modify
   {
-	cobc_cs_check = 0;
+	cobc_cs_check ^= CB_CS_INQUIRE_MODIFY;
   }
 ;
 
