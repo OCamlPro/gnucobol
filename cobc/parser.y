@@ -4469,7 +4469,13 @@ repository_name_list:
 
 special_names:
   special_names_header
+  {
+	cobc_cs_check |= CB_CS_SPECIAL_NAMES;
+  }
   _special_names_sentences
+  {
+	cobc_cs_check ^= CB_CS_SPECIAL_NAMES;
+  }
 ;
 
 special_names_header:
@@ -4483,7 +4489,6 @@ special_names_header:
 	if (current_program->nested_level) {
 		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
 	}
-	cobc_cs_check = CB_CS_SPECIAL_NAMES;
   }
 ;
 
