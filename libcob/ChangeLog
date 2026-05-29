@@ -63,6 +63,29 @@
 	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
 	  instead of strcmp to compare paths
 
+2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
+	  configurations for redirection of stdin/stdout/stderr to a file
+	* common.c, common.h: add COB_SET_RUNTIME_STDIN_FILE,
+	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
+	  options
+	* coblocal.h (cob_settings): extend the setting to store FILE pointers
+	  for stdin/stdout/stderr
+	* fileio.c: introduce cob_settings_fileio to trigger reset of settings
+	  related configurations
+	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
+	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
+
+2026-05-29  Ramy George <ramygeorge19@gmail.com>
+
+	* cobgetopt.c (process_at_file): if command line options have a @file
+	  start fetch entire file name and get contents (options)
+	* cobgetopt.c (expand_process_at_file): tokenizes all options returned by
+	  process_at_file to rebuild argv
+	* cobgetopt.c (cob_rebuild_argv_at_file): takes old ARGV,ARGC and rebuilds
+	  new argv,argc with the file options  
+	  
 2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
 
 	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
@@ -82,20 +105,6 @@
 	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
 	  events across END-OF-INPUT boundaries. 
 	  This is due to libxml2 internal details.
-
-2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
-
-	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
-	  configurations for redirection of stdin/stdout/stderr to a file
-	* common.c, common.h: add COB_SET_RUNTIME_STDIN_FILE,
-	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
-	  options
-	* coblocal.h (cob_settings): extend the setting to store FILE pointers
-	  for stdin/stdout/stderr
-	* fileio.c: introduce cob_settings_fileio to trigger reset of settings
-	  related configurations
-	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
-	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
