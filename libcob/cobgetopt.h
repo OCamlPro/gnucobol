@@ -118,7 +118,7 @@ struct option
    `getopt'.  */
 
 
-void cob_rebuild_argv_at_file(int * old_argc, char*** old_argv);
+COB_EMPIMP void cob_rebuild_argv_at_file(int * old_argc, char*** old_argv);
 COB_EXPIMP int cob_getopt_long_long (const int, char *const *, const char *,
 				 const struct option *, int *, const int);
 #endif
