@@ -117,9 +117,8 @@ struct option
    arguments to the option '\0'.  This behavior is specific to the GNU
    `getopt'.  */
 
-char * process_at_file(const char* argument_values,int* compile_mode,int* atfile_size);
-char** expand_processed_at_file(char *options, int *output_argc);
-void rebuild_argv_at_file(int * old_argc, char*** old_argv);
+
+void cob_rebuild_argv_at_file(int * old_argc, char*** old_argv);
 COB_EXPIMP int cob_getopt_long_long (const int, char *const *, const char *,
 				 const struct option *, int *, const int);
 #endif

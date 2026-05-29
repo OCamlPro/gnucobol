@@ -9573,7 +9573,7 @@ main (int argc, char **argv)
 	cb_config_text_column = 72;
 
 	/* Process command line arguments */
-	rebuild_argv_at_file(&argc,&argv);
+	cob_rebuild_argv_at_file(&argc,&argv);
 	iargs = process_command_line (argc, argv);
 
 	if (fatal_startup_error) {

@@ -475,7 +475,7 @@ _getopt_initialize (const char *optstring)
   return optstring;
 }
 
-char *
+static char *
 process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
 	char * ptr = strstr(argument_values,"@");
 	if (ptr){
@@ -483,6 +483,9 @@ process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
 	}
 
 	if (*compile_mode) {
+		int ret;
+		size_t capacity = 256;
+ 	 	size_t length = 0;
 		const char* endptr = ++ptr;
 		while (*endptr != ' ' && *endptr != '\0') {
 			endptr++;
@@ -493,18 +496,23 @@ process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
         memcpy(path_str, ptr, path_size - 1);
         path_str[path_size - 1] = '\0'; 
 		FILE* path = fopen(path_str, "r");
-		size_t capacity = 256;
- 	 	size_t length = 0;
  		char *options = malloc(capacity);
-		free(path_str);
+		if (path == NULL) {
+         	free(path_str);
+    	    free(options);
+    	    return NULL;
+ 		}
 		
-		
-		int ret;
 		while ((ret = getc(path)) != EOF) {
 			if(length+1 >= capacity){
 				 capacity *= 4;
-         		char *newoptions = realloc(options, capacity);
-				options = newoptions;
+         		char *tmp = realloc(options, capacity);
+ 				if (!tmp) {
+     				free(options);
+     				fclose(path);
+    				return NULL;
+ 				}
+	 			options = tmp;
 			}
 			
 			options[length++] = (char)ret;
@@ -520,7 +528,7 @@ process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
 	}
 }
 
-char**
+static char**
 expand_processed_at_file(char *options, int *output_argc){
 	int capacity = 5;
 	int argc = 0;
@@ -541,24 +549,23 @@ expand_processed_at_file(char *options, int *output_argc){
 }
 
 void
-rebuild_argv_at_file(int * old_argc, char*** old_argv){
+cob_rebuild_argv_at_file(int * old_argc, char*** old_argv){
 	int orig_argc = *old_argc;
 	char **orig_argv = *old_argv;
-
+    int i;
 	int new_argc = 0;
 	int capacity = 2*orig_argc;
 	char **new_argv = malloc(capacity * sizeof(char*));
-	int i;
+	
 	for(i =0 ; i < orig_argc ; i++){
 		int comp_mode = 0 ;
 		int atfile_size = 0;
-
 		char * filecontents = process_at_file(orig_argv[i], &comp_mode, &atfile_size);
 
 		if (comp_mode && filecontents != NULL) {
 			int file_arg_count = 0;
-			char ** file_expanded_argv = expand_processed_at_file(filecontents, &file_arg_count);
 			int j;
+			char ** file_expanded_argv = expand_processed_at_file(filecontents, &file_arg_count);
 			for (j = 0; j < file_arg_count; j++) {
                 if (new_argc >= capacity) {
                     capacity *= 2;
@@ -578,7 +585,7 @@ rebuild_argv_at_file(int * old_argc, char*** old_argv){
 	}
 
 	new_argv = realloc(new_argv, (new_argc + 1) * sizeof(char*));
-    new_argv[new_argc] = "\0";
+    new_argv[new_argc] = NULL;
 
 	*old_argc = new_argc;
 	*old_argv = new_argv;

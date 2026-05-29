@@ -18,6 +18,15 @@
 	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
 	  instead of strcmp to compare paths
 
+2026-05-29  Ramy George <ramygeorge19@gmail.com>
+
+	* cobgetopt.c (process_at_file): if command line options have a @file
+	  start fetch entire file name and get contents (options)
+	* cobgetopt.c (expand_process_at_file): tokenizes all options returned by
+	  process_at_file to rebuild argv
+	* cobgetopt.c (cob_rebuild_argv_at_file): takes old ARGV,ARGC and rebuilds
+	  new argv,argc with the file options  
+	  
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test

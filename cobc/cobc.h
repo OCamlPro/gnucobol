@@ -453,7 +453,6 @@ extern int			cobc_flag_main;
 extern int			cobc_wants_debug;
 extern int			cb_listing_xref;
 extern int			cobc_seen_stdin;
-extern int			cobc_compile_mode;	/*0 for in-terminal command options, 1 for @file */
 
 extern int			errorcount;
 extern int			warningcount;

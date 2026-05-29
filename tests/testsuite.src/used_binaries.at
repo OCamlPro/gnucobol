@@ -1609,3 +1609,21 @@ D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP(@file command line options)
+AT_KEYWORDS([syntax])
+
+AT_DATA([prog.cob], [
+    IDENTIFICATION DIVISION.
+    PROGRAM-ID. HELLO.
+    PROCEDURE DIVISION.
+        DISPLAY "Hello, GnuCOBOL!".
+        STOP RUN.   
+])
+
+AT_CHECK([echo "-x" > tempfile.txt
+$COMPILE_MODULE @tempfile.txt prog.cob], [1], [],
+[cobc: error: only one of options 'm', 'x', 'b' may be specified
+])
+AT_CLEANUP()
