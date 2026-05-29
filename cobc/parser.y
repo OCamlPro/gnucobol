@@ -146,13 +146,6 @@ unsigned int			cobc_in_json_generate_body = 0;
 unsigned int			cobc_areacheck = 0;
 unsigned int			cobc_in_area_a = 0;
 
-#define __CS_RESET(verbose)						\
-	do {								\
-		if (0 && verbose)					\
-			fprintf (stderr, "%d: manual reset!\n", __LINE__); \
-		cobc_cs_check = 0;					\
-	} while (0);
-
 /* Local variables */
 
 enum inspect_rep_keyword {
@@ -3573,7 +3566,7 @@ start:
 
 	clear_initial_values ();
 	defined_prog_list = NULL;
-	__CS_RESET(0);
+	cobc_cs_check = 0;
 	main_flag_set = 0;
 
 	clear_initial_values ();
@@ -3721,7 +3714,7 @@ program_prototype:
 		YYABORT;
 	}
 	setup_prototype ($4, $5, COB_MODULE_TYPE_PROGRAM, 1);
-	__CS_RESET(1);
+	cobc_cs_check = 0;
 	cobc_in_id = 0;
 
 	CB_UNFINISHED ("PROGRAM PROTOTYPE");
@@ -3770,7 +3763,7 @@ function_prototype:
 		YYABORT;
 	}
 	setup_prototype ($4, $5, COB_MODULE_TYPE_FUNCTION, 1);
-	__CS_RESET(1);
+	cobc_cs_check = 0;
 	cobc_in_id = 0;
 
 	CB_UNFINISHED ("FUNCTION PROTOTYPE");
@@ -3939,7 +3932,7 @@ program_id_paragraph:
 		current_program->flag_recursive = 1;
 	}
 
-	__CS_RESET(1);
+	cobc_cs_check = 0;
 	cobc_in_id = 0;
   }
 ;
@@ -3958,7 +3951,7 @@ function_id_header TOK_DOT program_id_name _as_literal TOK_DOT /* optional, yet 
 		YYABORT;
 	}
 	setup_prototype ($3, $4, COB_MODULE_TYPE_FUNCTION, 1);
-	__CS_RESET(1);
+	cobc_cs_check = 0;
 	cobc_in_id = 0;
   }
 ;
