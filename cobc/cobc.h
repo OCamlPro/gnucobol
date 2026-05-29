@@ -132,51 +132,50 @@ enum cb_current_date {
 #define CB_XRANGE(min,max)		CB_XSTRINGIFY(min) ".." CB_XSTRINGIFY(max)
 
 /* Context sensitive keyword defines (trigger words) */
-#define	CB_CS_ACCEPT			(1U << 0)	/* within ACCEPT statement */
-#define	CB_CS_ALLOCATE			(1U << 1)	/* within ALLOCATE statement */
-#define	CB_CS_ALPHABET			(1U << 2)
-#define	CB_CS_ASSIGN			(1U << 3)
-#define	CB_CS_CALL			(1U << 4)	/* within CALL statement */
-#define	CB_CS_CONSTANT			(1U << 5)
-#define	CB_CS_DATE			(1U << 6)
-#define	CB_CS_DAY			(1U << 7)
-#define	CB_CS_DISPLAY			(1U << 8)	/* within DISPLAY statement */
-#define	CB_CS_ERASE			(1U << 9)
-#define	CB_CS_EXIT			(1U << 10)	/* within EXIT statement */
-#define	CB_CS_FROM			(1U << 11)
-#define	CB_CS_OCCURS			(1U << 12)
-#define	CB_CS_OPTIONS			(1U << 13)
-#define	CB_CS_PERFORM			(1U << 14)	/* within PERFORM statement */
-#define	CB_CS_PROGRAM_ID		(1U << 15)	/* within PROGRAM-ID definition */
-#define	CB_CS_READ			(1U << 16)	/* within READ statement */
-#define	CB_CS_RECORDING			(1U << 17)
-#define	CB_CS_RETRY			(1U << 18)
-#define	CB_CS_ROUNDED			(1U << 19)
-#define	CB_CS_SET			(1U << 20)	/* within SET statement */
-#define	CB_CS_STOP			(1U << 21)
-#define	CB_CS_OBJECT_COMPUTER		(1U << 22)
-#define	CB_CS_DELIMITER			(1U << 23)
-#define	CB_CS_SCREEN			(1U << 24)	/* within SCREEN section */
-#define	CB_CS_INQUIRE_MODIFY		(1U << 25)	/* within INQUIRE or MODIFY statement */
-#define	CB_CS_GRAPHICAL_CONTROL		(1U << 26)	/* within ACUCOBOL-GT graphical control */
-#define	CB_CS_SELECT			(1U << 27)	/* within SELECT */
-#define	CB_CS_XML_GENERATE		(1U << 28)
-#define	CB_CS_XML_PARSE			(1U << 29)
-#define	CB_CS_OPEN			(1U << 30)	/* within OPEN */
-#define	CB_CS_JSON_GENERATE		(1U << 31)
-/* HACK: no more space - using minor one until re-written */
-#define	CB_CS_I_O_CONTROL		(1UL << 32)
-#define	CB_CS_TYPEDEF			(1UL << 33)
-#define	CB_CS_EXHIBIT			(1UL << 34)
+#define	CB_CS_ACCEPT			(COB_U64_C(1) << 0)	/* within ACCEPT statement */
+#define	CB_CS_ALLOCATE			(COB_U64_C(1) << 1)	/* within ALLOCATE statement */
+#define	CB_CS_ALPHABET			(COB_U64_C(1) << 2)
+#define	CB_CS_ASSIGN			(COB_U64_C(1) << 3)
+#define	CB_CS_CALL			(COB_U64_C(1) << 4)	/* within CALL statement */
+#define	CB_CS_CONSTANT			(COB_U64_C(1) << 5)
+#define	CB_CS_DATE			(COB_U64_C(1) << 6)
+#define	CB_CS_DAY			(COB_U64_C(1) << 7)
+#define	CB_CS_DISPLAY			(COB_U64_C(1) << 8)	/* within DISPLAY statement */
+#define	CB_CS_ERASE			(COB_U64_C(1) << 9)
+#define	CB_CS_EXIT			(COB_U64_C(1) << 10)	/* within EXIT statement */
+#define	CB_CS_FROM			(COB_U64_C(1) << 11)
+#define	CB_CS_OCCURS			(COB_U64_C(1) << 12)
+#define	CB_CS_OPTIONS			(COB_U64_C(1) << 13)
+#define	CB_CS_PERFORM			(COB_U64_C(1) << 14)	/* within PERFORM statement */
+#define	CB_CS_PROGRAM_ID		(COB_U64_C(1) << 15)	/* within PROGRAM-ID definition */
+#define	CB_CS_READ			(COB_U64_C(1) << 16)	/* within READ statement */
+#define	CB_CS_RECORDING			(COB_U64_C(1) << 17)
+#define	CB_CS_RETRY			(COB_U64_C(1) << 18)
+#define	CB_CS_ROUNDED			(COB_U64_C(1) << 19)
+#define	CB_CS_SET			(COB_U64_C(1) << 20)	/* within SET statement */
+#define	CB_CS_STOP			(COB_U64_C(1) << 21)
+#define	CB_CS_OBJECT_COMPUTER		(COB_U64_C(1) << 22)
+#define	CB_CS_DELIMITER			(COB_U64_C(1) << 23)
+#define	CB_CS_SCREEN			(COB_U64_C(1) << 24)	/* within SCREEN section */
+#define	CB_CS_INQUIRE_MODIFY		(COB_U64_C(1) << 25)	/* within INQUIRE or MODIFY statement */
+#define	CB_CS_GRAPHICAL_CONTROL		(COB_U64_C(1) << 26)	/* within ACUCOBOL-GT graphical control */
+#define	CB_CS_SELECT			(COB_U64_C(1) << 27)	/* within SELECT */
+#define	CB_CS_XML_GENERATE		(COB_U64_C(1) << 28)
+#define	CB_CS_XML_PARSE			(COB_U64_C(1) << 29)
+#define	CB_CS_OPEN			(COB_U64_C(1) << 30)	/* within OPEN */
+#define	CB_CS_JSON_GENERATE		(COB_U64_C(1) << 31)
+#define	CB_CS_I_O_CONTROL		(COB_U64_C(1) << 32)
+#define	CB_CS_TYPEDEF			(COB_U64_C(1) << 33)
+#define	CB_CS_EXHIBIT			(COB_U64_C(1) << 34)
+#define	CB_CS_INSPECT			(COB_U64_C(1) << 35)
+#define	CB_CS_CONVERT			(COB_U64_C(1) << 36) /* TODO: within CONVERT intrinsic */
+#define	CB_CS_MODULE_NAME		(COB_U64_C(1) << 37) /* TODO: within MODULE-NAME intrinsic */
+#define	CB_CS_SPECIAL_NAMES		(COB_U64_C(1) << 38)
+#define	CB_CS_DEFAULT			(COB_U64_C(1) << 39)
+#define	CB_CS_VALIDATE_STATUS		(COB_U64_C(1) << 40)
+#define	CB_CS_USAGE			(COB_U64_C(1) << 41)
+#define	CB_CS_REPOSITORY		(COB_U64_C(1) << 42)
 /* #define	CB_CS_MOVE_CONV			CB_CS_DAY (unused) */
-#define	CB_CS_INSPECT			(1UL << 36)
-#define	CB_CS_CONVERT			(1UL << 37) /* TODO: within CONVERT intrinsic */
-#define	CB_CS_MODULE_NAME		(1UL << 38) /* TODO: within MODULE-NAME intrinsic */
-#define	CB_CS_SPECIAL_NAMES		(1UL << 39)
-#define	CB_CS_DEFAULT			(1UL << 40)
-#define	CB_CS_VALIDATE_STATUS		(1UL << 41)
-#define	CB_CS_USAGE			(1UL << 42)
-#define	CB_CS_REPOSITORY		(1UL << 43)
 #define	CB_READY_RESET_TRACE		CB_CS_DAY
 
 /* Support for cobc from stdin */
