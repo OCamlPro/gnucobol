@@ -3032,11 +3032,15 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -ffold-copy=LOWER prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [],
+[prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
+prog.cob:11: error: EXEC SQL INCLUDE handled as COPY
+])
 
 AT_CHECK([rm -f emprec.cpy], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -ffold-copy=LOWER prog.cob], [1], [],
-[prog.cob:9: error: emprec: No such file or directory
+AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [], [prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
+prog.cob:11: error: EXEC SQL INCLUDE handled as COPY
+prog.cob:11: error: emprec: No such file or directory
 prog.cob:14: error: 'ENO' is not defined
 ])
 
@@ -3056,7 +3060,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
-[prog.cob:6: error: EXEC SQL statement ignored
+[prog.cob:8: error: missing END-EXEC at end of file
+prog.cob:8: error: EXEC SQL statement ignored
 ])
 
 AT_CLEANUP

@@ -1743,6 +1743,8 @@ exec_statement:
   EXEC TOKEN INCLUDE copy_source END_EXEC
   {
         /* EXEC TAG INCLUDE copybook — handle as COPY */
+        cb_warning (cb_warn_unsupported,
+                    _("EXEC %s INCLUDE handled as COPY"), $2);
         fputc ('\n', ppout);
         ppcopy ($4, NULL, NULL);
   }

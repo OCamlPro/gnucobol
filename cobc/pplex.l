@@ -580,8 +580,7 @@ MAYBE_AREA_A	[ ]?#?
     "END-EXEC"([ \t]*\.)?     { BEGIN (INITIAL); return END_EXEC; }
     "INCLUDE"                 { return INCLUDE; }
     {WORD}                    { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
-    \n                        { newline_count++; }
-	\.                        { BEGIN (INITIAL); return END_EXEC; }
+    \n                        { cb_source_line++; }
     .                         { /* silently consumed */ }
 }
 
@@ -1220,6 +1219,13 @@ ENDIF_DIRECTIVE_STATE>{
 
 <<EOF>> {
 	struct copy_info *current_copy_info = copy_stack;
+
+	if (YY_START == EXEC_STATE) {
+		BEGIN (INITIAL);
+		cb_plex_error (newline_count, _("missing END-EXEC at end of file"));
+		newline_count = 0;
+		return END_EXEC; 
+	}
 
 	yy_delete_buffer (YY_CURRENT_BUFFER);
 
