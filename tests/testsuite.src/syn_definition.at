@@ -40,10 +40,10 @@ AT_KEYWORDS([definition underscore hyphen ENTRY])
 # note: the name check is identical for the ENTRY statement
 
 AT_DATA([SHORT.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      short.
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      short.
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY SHORT.cob], [1], [],
@@ -51,20 +51,20 @@ AT_CHECK([$COMPILE_ONLY SHORT.cob], [1], [],
 ])
 
 AT_DATA([SHORT2.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      "_short".
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      "_short".
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY SHORT2.cob], [0], [], [])
 
 
 AT_DATA([SHORT3.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      _short.
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      _short.
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY SHORT3.cob], [1], [],
@@ -73,10 +73,10 @@ SHORT3.cob:4: error: syntax error, unexpected DIVISION
 ])
 
 AT_DATA([SHORT4.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      "-short".
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      "-short".
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY SHORT4.cob], [1], [],
@@ -90,10 +90,10 @@ AT_SETUP([Invalid PROGRAM-ID type clause (1)])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog IS COMMON.
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog IS COMMON.
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -107,10 +107,10 @@ AT_SETUP([invalid PROGRAM-ID type clause (2)])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog IS INITIAL RECURSIVE.
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog IS INITIAL RECURSIVE.
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -124,22 +124,22 @@ AT_SETUP([INITIAL / RECURSIVE before COMMON])
 AT_KEYWORDS([PROGRAM-ID definition])
 
 AT_DATA([containing-prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      containing-prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      containing-prog.
 
-	PROCEDURE        DIVISION.
+       PROCEDURE        DIVISION.
 
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog-1 IS INITIAL COMMON.
-	PROCEDURE        DIVISION.
-	STOP RUN.
-	END PROGRAM      prog-1.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog-1 IS INITIAL COMMON.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+       END PROGRAM      prog-1.
 
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog-2 IS RECURSIVE COMMON.
-	PROCEDURE        DIVISION.
-	STOP RUN.
-	END PROGRAM      prog-2.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog-2 IS RECURSIVE COMMON.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+       END PROGRAM      prog-2.
 ])
 
 AT_CHECK([$COMPILE_ONLY containing-prog.cob], [0], [], [])
@@ -156,11 +156,11 @@ AT_SETUP([Undefined data name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	DISPLAY X.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY X.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -174,14 +174,14 @@ AT_SETUP([Undefined group name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X             PIC X.
-	PROCEDURE        DIVISION.
-	DISPLAY X IN G.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X.
+       PROCEDURE        DIVISION.
+           DISPLAY X IN G.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -195,16 +195,16 @@ AT_SETUP([Undefined data name in group])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G.
-	02 X           PIC X.
-	01 Y             PIC X.
-	PROCEDURE        DIVISION.
-	DISPLAY Y IN G.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X           PIC X.
+       01 Y             PIC X.
+       PROCEDURE        DIVISION.
+           DISPLAY Y IN G.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -218,15 +218,15 @@ AT_SETUP([Reference not a group name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X             PIC X.
-	PROCEDURE        DIVISION.
-	DISPLAY X IN X
-	END-DISPLAY.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X.
+       PROCEDURE        DIVISION.
+           DISPLAY X IN X
+           END-DISPLAY.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -240,11 +240,11 @@ AT_SETUP([Incomplete 01 definition])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -258,57 +258,57 @@ AT_SETUP([error handling in conditions])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01 TESTME PIC X(1).
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 TESTME PIC X(1).
 
-	PROCEDURE DIVISION.
+       PROCEDURE DIVISION.
 
-	EVALUATE TRUE
-	WHEN TESTME IS NOT-DEFINED
-	CONTINUE
-	WHEN TESTME = 'A'
-	CONTINUE
-	WHEN OTHER
-	IF NOT TESTME IS NOT-DEFINED
-	THEN
-	CONTINUE
-	ELSE
-	CONTINUE
-	END-IF
-	END-EVALUATE
-	EVALUATE TRUE
-	WHEN TESTME IS 'ABC'
-	CONTINUE
-	WHEN TESTME = 'B'
-	CONTINUE
-	END-EVALUATE
-	EVALUATE TRUE
-	WHEN TESTME IS TESTME
-	CONTINUE
-	WHEN TESTME = 'C'
-	CONTINUE
-	END-EVALUATE
-	EVALUATE TRUE
-	WHEN TESTME NOT = NOT-DEFINED
-	CONTINUE
-	WHEN TESTME = 'D'
-	CONTINUE
-	END-EVALUATE
-	EVALUATE TRUE
-	WHEN TESTME ELSE NOT-DEFINED
-	CONTINUE
-	WHEN TESTME = 'E'
-	CONTINUE
-	END-EVALUATE
-	EVALUATE broken
-	WHEN NOT-DEFINED
-	continue
-	END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME IS NOT-DEFINED
+              CONTINUE
+            WHEN TESTME = 'A'
+              CONTINUE
+            WHEN OTHER
+              IF NOT TESTME IS NOT-DEFINED
+              THEN
+                CONTINUE
+              ELSE
+                CONTINUE
+              END-IF
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME IS 'ABC'
+              CONTINUE
+            WHEN TESTME = 'B'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME IS TESTME
+              CONTINUE
+            WHEN TESTME = 'C'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME NOT = NOT-DEFINED
+              CONTINUE
+            WHEN TESTME = 'D'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME ELSE NOT-DEFINED
+              CONTINUE
+            WHEN TESTME = 'E'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE broken
+            WHEN NOT-DEFINED
+              continue
+          END-EVALUATE
 
-	GOBACK.
+          GOBACK.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -334,33 +334,33 @@ AT_SETUP([Same paragraphs in different sections])
 AT_KEYWORDS([definition procedures label GO TO])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	S-1 SECTION.
-	L.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       S-1 SECTION.
+       L.
 
-	S-2 SECTION.
-	L.
+       S-2 SECTION.
+       L.
 
-	S-3 SECTION.
-	GO TO L.
-	L.
+       S-3 SECTION.
+            GO TO L.
+       L.
 ])
 
 AT_DATA([prog2.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog2.
-	PROCEDURE        DIVISION.
-	S-1 SECTION.
-	L.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+       S-1 SECTION.
+       L.
 
-	S-2 SECTION.
-	L.
+       S-2 SECTION.
+       L.
 
-	S-3 SECTION.
-	GO TO L.
-	K.
+       S-3 SECTION.
+            GO TO L.
+       K.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -377,21 +377,21 @@ AT_SETUP([GO TO sections and foreign paragraphs])
 AT_KEYWORDS([definition procedures section paragraph])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	S-1 SECTION.
-	GO TO S-2.
-	E-1.
-	IF FUNCTION SECONDS-PAST-MIDNIGHT = 10
-	GO TO S-1.  *> check that go to its own section is not warned
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       S-1 SECTION.
+           GO TO S-2.
+       E-1.
+           IF FUNCTION SECONDS-PAST-MIDNIGHT = 10
+              GO TO S-1.  *> check that go to its own section is not warned
 
-	S-2 SECTION.
-	GO TO E-3.
-	E-2.
+       S-2 SECTION.
+           GO TO E-3.
+       E-2.
 
-	S-3 SECTION.
-	E-3.
+       S-3 SECTION.
+       E-3.
 ])
 
 AT_CHECK([$COBC -fdiagnostics-plain-output -fsyntax-only prog.cob], [0], [],
@@ -414,12 +414,12 @@ AT_SETUP([Redefinition of 01 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X             PIC X.
-	01 X             PIC X.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X.
+       01 X             PIC X.
 ])
 
 AT_CHECK([$COBC -fsyntax-only prog.cob], [0], [], [])
@@ -443,12 +443,12 @@ AT_SETUP([Redefinition of 01 and 02 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X.
-	02 X           PIC X.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X.
+         02 X           PIC X.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -463,25 +463,25 @@ AT_SETUP([Redefinition of 02 items])
 AT_KEYWORDS([definition redefines])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G.
-	02 X           PIC X.
-	02 X           PIC X.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X           PIC X.
+         02 X           PIC X.
 ])
 
 # validation for #881 - error if redefinition on redefines
 AT_DATA([prog2.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog2.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G.
-	02 X             PIC X.
-	02 X REDEFINES X PIC X.
-	02 Y             PIC 9.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X             PIC X.
+         02 X REDEFINES X PIC X.
+         02 Y             PIC 9.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [],
@@ -496,12 +496,12 @@ AT_SETUP([Redefinition of 77 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	77 X             PIC X.
-	77 X             PIC X.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 X             PIC X.
+       77 X             PIC X.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -516,12 +516,12 @@ AT_SETUP([Redefinition of 01 and 77 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X             PIC X.
-	77 X             PIC X.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X.
+       77 X             PIC X.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -536,13 +536,13 @@ AT_SETUP([Redefinition of 88 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 X             PIC X.
-	88 A           VALUE "A".
-	88 A           VALUE "B".
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X.
+         88 A           VALUE "A".
+         88 A           VALUE "B".
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -557,57 +557,57 @@ AT_SETUP([Redefinition of program-name by other programs])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
 
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  PROG         PIC X.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  PROG         PIC X.
 
-	PROCEDURE        DIVISION.
-	CONTINUE
-	.
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      foo COMMON.
-	END PROGRAM      foo.
+       PROCEDURE        DIVISION.
+           CONTINUE
+           .
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      foo COMMON.
+       END PROGRAM      foo.
 
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      barr.
-	PROCEDURE        DIVISION.
-	CONTINUE
-	.
-	*> This should cause an error (clashes with COMMON subprog foo)
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      foo.
-	END PROGRAM      foo.
-	END PROGRAM      barr.
-	END PROGRAM      prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      barr.
+       PROCEDURE        DIVISION.
+           CONTINUE
+           .
+       *> This should cause an error (clashes with COMMON subprog foo)
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      foo.
+       END PROGRAM      foo.
+       END PROGRAM      barr.
+       END PROGRAM      prog.
 
 
-	*> This should cause an error.
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
+       *> This should cause an error.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
 
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  foo          PIC X.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  foo          PIC X.
 
-	PROCEDURE        DIVISION.
-	CONTINUE
-	.
-	*> This should clash with the data definition.
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      foo.
-	END PROGRAM      foo.
-	END PROGRAM      prog.
+       PROCEDURE        DIVISION.
+           CONTINUE
+           .
+       *> This should clash with the data definition.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      foo.
+       END PROGRAM      foo.
+       END PROGRAM      prog.
 
-	*> This should cause an error
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      samename.
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      samename.
-	END PROGRAM      samename.
-	END PROGRAM      samename.
+       *> This should cause an error
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      samename.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      samename.
+       END PROGRAM      samename.
+       END PROGRAM      samename.
 ])
 
 AT_CHECK([$COMPILE_ONLY --ffold-call=upper -fdiagnostics-show-option prog.cob], [1], [],
@@ -637,17 +637,17 @@ AT_SETUP([Redefinition of program-name within program])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION  DIVISION.
-	PROGRAM-ID.     prog.
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
 
-	DATA            DIVISION.
-	WORKING-STORAGE SECTION.
-	01  prog        PIC 99 VALUE 0.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  prog        PIC 99 VALUE 0.
 
-	PROCEDURE       DIVISION.
-	prog.
-	CONTINUE
-	.
+       PROCEDURE       DIVISION.
+       prog.
+           CONTINUE
+           .
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -667,17 +667,17 @@ AT_SETUP([Redefinition of function-prototype name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
 
-	ENVIRONMENT      DIVISION.
-	CONFIGURATION    SECTION.
-	REPOSITORY.
-	FUNCTION func
-	.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  func         PIC X.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       REPOSITORY.
+           FUNCTION func
+           .
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  func         PIC X.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -692,11 +692,11 @@ AT_SETUP([PROCEDURE DIVISION RETURNING OMITTED: main])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION RETURNING OMITTED.
-	MOVE 42 TO RETURN-CODE
-	GOBACK.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION RETURNING OMITTED.
+           MOVE 42 TO RETURN-CODE
+           GOBACK.
 ])
 
 
@@ -712,12 +712,12 @@ AT_SETUP([PROCEDURE DIVISION RETURNING OMITTED: FUNCTION])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func.
-	PROCEDURE        DIVISION RETURNING OMITTED.
-	MOVE 42 TO RETURN-CODE
-	GOBACK.
-	END FUNCTION     func.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func.
+       PROCEDURE        DIVISION RETURNING OMITTED.
+           MOVE 42 TO RETURN-CODE
+           GOBACK.
+       END FUNCTION     func.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -732,75 +732,75 @@ AT_KEYWORDS([runmisc])
 
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func.
-	DATA             DIVISION.
-	LINKAGE          SECTION.
-	01 PAR-OUT       PIC 9.
-	PROCEDURE        DIVISION RETURNING PAR-OUT.
-	MOVE 4 TO PAR-OUT
-	GOBACK.
-	END FUNCTION     func.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR-OUT       PIC 9.
+       PROCEDURE        DIVISION RETURNING PAR-OUT.
+           MOVE 4 TO PAR-OUT
+           GOBACK.
+       END FUNCTION     func.
 ])
 
 AT_DATA([prog2.cob], [
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 PAR-OUT       PIC 9.
-	PROCEDURE        DIVISION RETURNING PAR-OUT.
-	MOVE 4 TO PAR-OUT
-	GOBACK.
-	END FUNCTION     func.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 PAR-OUT       PIC 9.
+       PROCEDURE        DIVISION RETURNING PAR-OUT.
+           MOVE 4 TO PAR-OUT
+           GOBACK.
+       END FUNCTION     func.
 ])
 
 AT_DATA([prog3.cob], [
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func.
-	DATA             DIVISION.
-	LINKAGE          SECTION.
-	01 PAR-OUT       PIC 9 OCCURS 10.
-	PROCEDURE        DIVISION RETURNING PAR-OUT.
-	MOVE 4 TO PAR-OUT (1)
-	GOBACK.
-	END FUNCTION     func.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR-OUT       PIC 9 OCCURS 10.
+       PROCEDURE        DIVISION RETURNING PAR-OUT.
+           MOVE 4 TO PAR-OUT (1)
+           GOBACK.
+       END FUNCTION     func.
 ])
 
 AT_DATA([prog4.cob], [
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func.
-	DATA             DIVISION.
-	LINKAGE          SECTION.
-	01 PAR.
-	02 PAR-OUT    PIC 9.
-	PROCEDURE        DIVISION RETURNING PAR-OUT.
-	MOVE 4 TO PAR-OUT
-	GOBACK.
-	END FUNCTION     func.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR.
+          02 PAR-OUT    PIC 9.
+       PROCEDURE        DIVISION RETURNING PAR-OUT.
+           MOVE 4 TO PAR-OUT
+           GOBACK.
+       END FUNCTION     func.
 ])
 
 AT_DATA([prog5.cob], [
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func.
-	DATA             DIVISION.
-	LINKAGE          SECTION.
-	01 PAR           PIC 9.
-	PROCEDURE        DIVISION USING PAR RETURNING PAR.
-	MOVE 4 TO PAR
-	GOBACK.
-	END FUNCTION     func.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR           PIC 9.
+       PROCEDURE        DIVISION USING PAR RETURNING PAR.
+           MOVE 4 TO PAR
+           GOBACK.
+       END FUNCTION     func.
 
-	IDENTIFICATION   DIVISION.
-	FUNCTION-ID.     func2.
-	DATA             DIVISION.
-	LINKAGE          SECTION.
-	01 PAR-IN        PIC 9.
-	01 PAR-OUT       REDEFINES PAR-IN PIC 9.
-	PROCEDURE        DIVISION USING PAR-IN RETURNING PAR-OUT.
-	MOVE 4 TO PAR-OUT
-	GOBACK.
-	END FUNCTION     func2.
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     func2.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR-IN        PIC 9.
+       01 PAR-OUT       REDEFINES PAR-IN PIC 9.
+       PROCEDURE        DIVISION USING PAR-IN RETURNING PAR-OUT.
+           MOVE 4 TO PAR-OUT
+           GOBACK.
+       END FUNCTION     func2.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -826,22 +826,22 @@ AT_SETUP([Data item with same name as program-name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION  DIVISION.
-	FUNCTION-ID.    x.
-	DATA            DIVISION.
-	LINKAGE         SECTION.
-	01  ret         PIC 99.
-	PROCEDURE       DIVISION RETURNING ret.
-	CONTINUE
-	.
-	END FUNCTION x.
+       IDENTIFICATION  DIVISION.
+       FUNCTION-ID.    x.
+       DATA            DIVISION.
+       LINKAGE         SECTION.
+       01  ret         PIC 99.
+       PROCEDURE       DIVISION RETURNING ret.
+           CONTINUE
+           .
+       END FUNCTION x.
 
 
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  x            PIC 999 VALUE 134.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  x            PIC 999 VALUE 134.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -853,17 +853,17 @@ AT_SETUP([Ambiguous reference to 02 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G1.
-	02 X           PIC X.
-	01 G2.
-	02 X           PIC X.
-	PROCEDURE        DIVISION.
-	DISPLAY X.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G1.
+         02 X           PIC X.
+       01 G2.
+         02 X           PIC X.
+       PROCEDURE        DIVISION.
+           DISPLAY X.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -879,16 +879,16 @@ AT_SETUP([Ambiguous reference to 02 and 03 items])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G.
-	02 X.
-	03 X         PIC X.
-	PROCEDURE        DIVISION.
-	DISPLAY X.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X.
+           03 X         PIC X.
+       PROCEDURE        DIVISION.
+           DISPLAY X.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -904,19 +904,19 @@ AT_SETUP([Ambiguous reference with qualification])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G1.
-	02 X.
-	03 Y         PIC X.
-	01 G2.
-	02 X.
-	03 Y         PIC X.
-	PROCEDURE        DIVISION.
-	DISPLAY Y IN X.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G1.
+         02 X.
+           03 Y         PIC X.
+       01 G2.
+         02 X.
+           03 Y         PIC X.
+       PROCEDURE        DIVISION.
+           DISPLAY Y IN X.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -932,19 +932,19 @@ AT_SETUP([Unique reference with ambiguous qualifiers])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 G1.
-	02 X.
-	03 Y         PIC X VALUE "Y".
-	01 G2.
-	02 X.
-	03 Z         PIC X VALUE "Z".
-	PROCEDURE        DIVISION.
-	DISPLAY Z IN X NO ADVANCING.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G1.
+         02 X.
+           03 Y         PIC X VALUE "Y".
+       01 G2.
+         02 X.
+           03 Z         PIC X VALUE "Z".
+       PROCEDURE        DIVISION.
+           DISPLAY Z IN X NO ADVANCING.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -959,17 +959,17 @@ AT_KEYWORDS([definition sync])
 # most dialects just skip this, but according to docs IBM handles it
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	77  CS-FULL            PICTURE 9(4) COMPUTATIONAL SYNCHRONIZED.
-	77  CS                 PIC 9(4) COMP SYNC.
-	77  CSL                PIC 9(4) COMP SYNC LEFT.
-	77  CSR                PIC 9(4) COMP SYNC RIGHT.
-	PROCEDURE        DIVISION.
-	MOVE 1 TO CS-FULL, CS, CSL, CSR.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  CS-FULL            PICTURE 9(4) COMPUTATIONAL SYNCHRONIZED.
+       77  CS                 PIC 9(4) COMP SYNC.
+       77  CSL                PIC 9(4) COMP SYNC LEFT.
+       77  CSR                PIC 9(4) COMP SYNC RIGHT.
+       PROCEDURE        DIVISION.
+           MOVE 1 TO CS-FULL, CS, CSL, CSR.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [0], [], [])
@@ -999,11 +999,11 @@ AT_SETUP([Undefined procedure name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	GO TO END-OF-PROGRAM.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           GO TO END-OF-PROGRAM.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1019,12 +1019,12 @@ AT_SETUP([Redefinition of section names])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	L SECTION.
-	L SECTION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       L SECTION.
+       L SECTION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1044,12 +1044,12 @@ AT_SETUP([Redefinition of section and paragraph names])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	L SECTION.
-	L.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       L SECTION.
+       L.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1073,23 +1073,23 @@ AT_KEYWORDS([definition])
 AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
-	identification division.
-	program-id. WORD.
-	data division.
-	working-storage section.
-	*-----------------------------------------------------------------
-	77 word pic 9.
-	*-----------------------------------------------------------------
-	PROCEDURE DIVISION.
-	main section.
-	*
-	move 0 to word
-	perform word
-	*
-	stop run returning word.
-	*-----------------------------------------------------------------
-	word section.
-	add 1 to word.
+       identification division.
+       program-id. WORD.
+       data division.
+       working-storage section.
+      *-----------------------------------------------------------------
+       77 word pic 9.
+      *-----------------------------------------------------------------
+       PROCEDURE DIVISION.
+       main section.
+      *
+           move 0 to word
+           perform word
+      *
+           stop run returning word.
+      *-----------------------------------------------------------------
+       word section.
+           add 1 to word.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
@@ -1107,12 +1107,12 @@ AT_SETUP([Redefinition of paragraph names])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	L.
-	L.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       L.
+       L.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -1133,16 +1133,16 @@ AT_SETUP([Ambiguous reference to paragraph name])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	S-1 SECTION.
-	L.
-	S-2 SECTION.
-	L.
-	S-3 SECTION.
-	GO TO L.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       S-1 SECTION.
+       L.
+       S-2 SECTION.
+       L.
+       S-3 SECTION.
+           GO TO L.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1159,22 +1159,22 @@ AT_SETUP([Non-matching level numbers (extension)])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  A.
-	05 B.
-	10 C PIC X.
-	04 D.
-	05 E PIC X.
-	05 F PIC X.
-	04 D2.
-	05 E2 PIC X.
-	04 D3.
-	05 E3 PIC X.
-	PROCEDURE        DIVISION.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  A.
+            05 B.
+                10 C PIC X.
+           04 D.
+            05 E PIC X.
+            05 F PIC X.
+           04 D2.
+            05 E2 PIC X.
+           04 D3.
+            05 E3 PIC X.
+       PROCEDURE        DIVISION.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-level-hierarchy prog.cob], [0], [],
@@ -1191,15 +1191,15 @@ AT_SETUP([CALL BY VALUE alphanumeric item (extension)])
 AT_KEYWORDS([definition CONTENT])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  X            PIC X(4).
-	PROCEDURE        DIVISION.
-	CALL "PROG2" USING BY VALUE X
-	END-CALL.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  X            PIC X(4).
+       PROCEDURE        DIVISION.
+           CALL "PROG2" USING BY VALUE X
+           END-CALL.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -1213,15 +1213,15 @@ AT_SETUP([CALL BY VALUE national item (extension)])
 AT_KEYWORDS([definition CONTENT])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  N            PIC N(4).
-	PROCEDURE        DIVISION.
-	CALL "PROG2" USING BY VALUE N
-	END-CALL.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  N            PIC N(4).
+       PROCEDURE        DIVISION.
+           CALL "PROG2" USING BY VALUE N
+           END-CALL.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
@@ -1236,27 +1236,27 @@ AT_SETUP([CALL BY VALUE figurative constants])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	PROCEDURE        DIVISION.
-	CALL "PROG2" USING BY VALUE
-	low-value
-	high-value
-	space
-	quote
-	zero
-	END-CALL.
-	CALL "PROG2" USING
-	low-value
-	high-value
-	space
-	quote
-	zero
-	END-CALL.
-	CALL "PROG3" USING
-	null
-	END-CALL.
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "PROG2" USING BY VALUE
+                low-value
+                high-value
+                space
+                quote
+                zero
+           END-CALL.
+           CALL "PROG2" USING
+                low-value
+                high-value
+                space
+                quote
+                zero
+           END-CALL.
+           CALL "PROG3" USING
+                null
+           END-CALL.
+           STOP RUN.
 ])
 
 # FIXME: should raise an error with -std=cobolNNNN, no warning with -std=default
@@ -1270,9 +1270,9 @@ AT_SETUP([Duplicate identification division header])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1285,39 +1285,39 @@ AT_SETUP([RETURNING in STOP RUN / GOBACK / EXIT PROGRAM])
 AT_KEYWORDS([definition RETURN-CODE])
 
 AT_DATA([prog1.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog1.
-	PROCEDURE        DIVISION.
-	EXIT PROGRAM RETURNING -1.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog1.
+       PROCEDURE        DIVISION.
+           EXIT PROGRAM RETURNING -1.
 ])
 
 AT_DATA([prog2.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog2.
-	PROCEDURE        DIVISION.
-	GOBACK GIVING 2.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+           GOBACK GIVING 2.
 ])
 
 AT_DATA([prog3.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog3.
-	PROCEDURE        DIVISION.
-	STOP RUN GIVING 0.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog3.
+       PROCEDURE        DIVISION.
+           STOP RUN GIVING 0.
 ])
 
 AT_DATA([prog4.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog4.
-	PROCEDURE        DIVISION.
-	MOVE 42 TO RETURN-CODE
-	GOBACK.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog4.
+       PROCEDURE        DIVISION.
+           MOVE 42 TO RETURN-CODE
+           GOBACK.
 ])
 
 AT_DATA([prog5.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog5.
-	PROCEDURE        DIVISION.
-	GOBACK.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog5.
+       PROCEDURE        DIVISION.
+           GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog1.cob prog2.cob prog3.cob prog4.cob prog5.cob],
@@ -1342,34 +1342,34 @@ AT_KEYWORDS([definition])
 AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog1.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	77 display-out   pic x(10).
-	PROCEDURE        DIVISION.
-	MOVE CURRENT-DATE TO DISPLAY-OUT
-	MOVE TIME-OF-DAY  TO DISPLAY-OUT
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog1.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 display-out   pic x(10).
+       PROCEDURE        DIVISION.
+           MOVE CURRENT-DATE TO DISPLAY-OUT
+           MOVE TIME-OF-DAY  TO DISPLAY-OUT
+           STOP RUN.
 ])
 
 AT_DATA([prog2.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog2.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	77 current-date  pic x(08).
-	PROCEDURE        DIVISION.
-	MOVE 'unknown' TO CURRENT-DATE
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 current-date  pic x(08).
+       PROCEDURE        DIVISION.
+           MOVE 'unknown' TO CURRENT-DATE
+           STOP RUN.
 ])
 
 AT_DATA([prog3.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog3.
-	PROCEDURE        DIVISION.
-	MOVE 'unknown' TO CURRENT-DATE
-	STOP RUN.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog3.
+       PROCEDURE        DIVISION.
+           MOVE 'unknown' TO CURRENT-DATE
+           STOP RUN.
 ])
 
 # this extension is NOT available with Enterprise COBOL (also not by default for MF)
@@ -1391,7 +1391,7 @@ AT_CHECK([$COMPILE_ONLY prog1.cob prog2.cob], [1], [],
 prog1.cob:9: error: 'TIME-OF-DAY' is not defined
 ])
 AT_CHECK([$COMPILE_ONLY -fregister=current-date,time-of-day \
-	prog1.cob prog2.cob prog3.cob], [1], [],
+  prog1.cob prog2.cob prog3.cob], [1], [],
 [prog2.cob:6: warning: redefinition of 'CURRENT-DATE'
 prog2.cob:8: error: 'CURRENT-DATE' is ambiguous; needs qualification
 prog2.cob:8: note: 'CURRENT-DATE' is a special register
@@ -1406,18 +1406,18 @@ AT_SETUP([Invalid ENVIRONMENT DIVISION order])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SPECIAL-NAMES.
-	CONSOLE IS CRT
-	.
-	SPECIAL-NAMES.
-	DECIMAL-POINT IS COMMA
-	.
-	SOURCE-COMPUTER. a-computer.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           CONSOLE IS CRT
+           .
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA
+           .
+       SOURCE-COMPUTER. a-computer.
 ])
 
 AT_CHECK([$COMPILE_ONLY -fincorrect-conf-sec-order=error prog.cob], [1], [],
@@ -1431,8 +1431,8 @@ AT_SETUP([Function without END FUNCTION])
 AT_KEYWORDS([definition functions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	FUNCTION-ID. func.
+       IDENTIFICATION DIVISION.
+       FUNCTION-ID. func.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1445,18 +1445,18 @@ AT_SETUP([Nested programs without END PROGRAM])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	PROCEDURE DIVISION.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog-2.
-	PROCEDURE DIVISION.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog-2.
+       PROCEDURE DIVISION.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog-3.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog-3.
 
-	END PROGRAM prog.
+       END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -1467,13 +1467,13 @@ AT_SETUP([Nested programs not in procedure division])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog-2.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog-2.
 
-	END PROGRAM prog.
+       END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1486,12 +1486,12 @@ AT_SETUP([Screen section starts with 78-level])
 AT_KEYWORDS([screen definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	DATA DIVISION.
-	SCREEN SECTION.
-	78 const VALUE "x".
+       DATA DIVISION.
+       SCREEN SECTION.
+       78 const VALUE "x".
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -1502,101 +1502,101 @@ AT_SETUP([Invalid PICTURE strings])
 AT_KEYWORDS([definition USAGE])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01  empty-pic PIC.
-	01  too-long-pic PIC XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-	-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
-	01  too-long-pic2 PIC XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-	-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-	-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-	-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-	-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
-	01  multiple-symbols.
-	03  PIC 9CRCR.
-	03  PIC 9DBDB.
-	03  PIC SS99S.
-	03  PIC 99..9.
-	03  PIC 99VV9.
-	03  PIC +$99+.
-	03  PIC $+99$-.
-	01  non-symbols.
-	03  PIC 9K.
-	03  PIC 999C.
-	03  PIC 999D.
-	01  too-many-digits PIC 9(50).
-	01  too-long-number-in-parens PIC 9(11111111111111).
-	01  nested-parens PIC 9((100)).
-	01  unbalanced-parens PIC 9(.
-	01  multiple-pairs-of-parens PIC 9(5)(3).
-	01  no-digit-in-parens PIC 9().
-	01  mutually-exclusive-symbols.
-	03  PIC P(3)9.9.
-	03  PIC 9V.9.
-	03  PIC Z*.
-	03  PIC +(5)--.
-	03  PIC $(4)Z(9).
-	03  PIC $$B*(4).
-	03  PIC NX.
-	03  PIC AN.
-	03  PIC AZ(3).
-	03  PIC 99.99XXXXX.
-	03  PIC SA.
-	03  PIC $$$B+++B---.
-	03  PIC +++9+.
-	03  PIC +9(5)CR.
-	03  PIC -9(5)DB.
-	01 non-rightmost-leftmost-symbols.
-	03  PIC BBB+BB99.
-	03  PIC 99-B.
-	03  PIC 9CRB.
-	03  PIC DB9(5).
-	03  PIC 99$$$.
-	03  PIC 99$B.
-	03  PIC 0$99.
-	03  PIC PPPVP9.
-	01  missing-symbols.
-	03  PIC B(5).
-	03  PIC +.
-	03  PIC $.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  empty-pic PIC.
+       01  too-long-pic PIC XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      -XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+       01  too-long-pic2 PIC XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      -XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      -XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      -XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+      -XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+       01  multiple-symbols.
+           03  PIC 9CRCR.
+           03  PIC 9DBDB.
+           03  PIC SS99S.
+           03  PIC 99..9.
+           03  PIC 99VV9.
+           03  PIC +$99+.
+           03  PIC $+99$-.
+       01  non-symbols.
+           03  PIC 9K.
+           03  PIC 999C.
+           03  PIC 999D.
+       01  too-many-digits PIC 9(50).
+       01  too-long-number-in-parens PIC 9(11111111111111).
+       01  nested-parens PIC 9((100)).
+       01  unbalanced-parens PIC 9(.
+       01  multiple-pairs-of-parens PIC 9(5)(3).
+       01  no-digit-in-parens PIC 9().
+       01  mutually-exclusive-symbols.
+           03  PIC P(3)9.9.
+           03  PIC 9V.9.
+           03  PIC Z*.
+           03  PIC +(5)--.
+           03  PIC $(4)Z(9).
+           03  PIC $$B*(4).
+           03  PIC NX.
+           03  PIC AN.
+           03  PIC AZ(3).
+           03  PIC 99.99XXXXX.
+           03  PIC SA.
+           03  PIC $$$B+++B---.
+           03  PIC +++9+.
+           03  PIC +9(5)CR.
+           03  PIC -9(5)DB.
+       01 non-rightmost-leftmost-symbols.
+           03  PIC BBB+BB99.
+           03  PIC 99-B.
+           03  PIC 9CRB.
+           03  PIC DB9(5).
+           03  PIC 99$$$.
+           03  PIC 99$B.
+           03  PIC 0$99.
+           03  PIC PPPVP9.
+       01  missing-symbols.
+           03  PIC B(5).
+           03  PIC +.
+           03  PIC $.
 
-	01  str-constant CONSTANT "hello".
-	01  float-constant CONSTANT 1.0.
-	01  signed-constant CONSTANT -1.
-	01  invalid-constant.
-	03  PIC X(str-constant).
-	03  PIC X(float-constant).
-	03  PIC X(signed-constant).
-	03  PIC X(unseen-constant).
+       01  str-constant CONSTANT "hello".
+       01  float-constant CONSTANT 1.0.
+       01  signed-constant CONSTANT -1.
+       01  invalid-constant.
+           03  PIC X(str-constant).
+           03  PIC X(float-constant).
+           03  PIC X(signed-constant).
+           03  PIC X(unseen-constant).
 
-	01  integer-constant CONSTANT 5.
-	01  valid-pics.
-	03  PIC VP9B.
-	03  PIC B9P(3).
-	03  PIC B$$$.
-	03  PIC 0000+B0+++0B,+.
-	03  PIC +(5)P(3).
-	03  PIC ++.++.
-	03  PIC $(integer-constant).
-	03  PIC $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-	-(integer-constant).   *> CHECKME: should this be really valid?
+       01  integer-constant CONSTANT 5.
+       01  valid-pics.
+           03  PIC VP9B.
+           03  PIC B9P(3).
+           03  PIC B$$$.
+           03  PIC 0000+B0+++0B,+.
+           03  PIC +(5)P(3).
+           03  PIC ++.++.
+           03  PIC $(integer-constant).
+           03  PIC $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+      -(integer-constant).   *> CHECKME: should this be really valid?
 
 
-	01  PC-COLOR-BACKGROUND-TABLE.
-	05  BIT-BACKGROUND-BLACK      PIC 1(8) BIT VALUE B"00000000".
-	05  BIT-BACKGROUND-BLUE       PIC 1(8) BIT VALUE B"00010000".
-	05  BIT-BACKGROUND-GREEN      PIC 1(8) BIT VALUE B"00100000".
-	05  BIT-BACKGROUND-CYAN       PIC 1(8) BIT VALUE B"00110000".
-	05  BIT-BACKGROUND-RED        PIC 1(8) BIT VALUE B"01000000".
-	05  BIT-BACKGROUND-MAGENTA    PIC 1(8) BIT VALUE B"01010000".
-	05  BIT-BACKGROUND-BROWN      PIC 1(8) BIT VALUE B"01100000".
-	05  BIT-BACKGROUND-LIGHT-GRAY PIC 1(8) BIT VALUE B"01110000".
-	01  FILLER REDEFINES PC-COLOR-BACKGROUND-TABLE.
-	05  COLOR-BACKGROUND
-	OCCURS 8 TIMES            PIC 1(8) BIT.
+       01  PC-COLOR-BACKGROUND-TABLE.
+           05  BIT-BACKGROUND-BLACK      PIC 1(8) BIT VALUE B"00000000".
+           05  BIT-BACKGROUND-BLUE       PIC 1(8) BIT VALUE B"00010000".
+           05  BIT-BACKGROUND-GREEN      PIC 1(8) BIT VALUE B"00100000".
+           05  BIT-BACKGROUND-CYAN       PIC 1(8) BIT VALUE B"00110000".
+           05  BIT-BACKGROUND-RED        PIC 1(8) BIT VALUE B"01000000".
+           05  BIT-BACKGROUND-MAGENTA    PIC 1(8) BIT VALUE B"01010000".
+           05  BIT-BACKGROUND-BROWN      PIC 1(8) BIT VALUE B"01100000".
+           05  BIT-BACKGROUND-LIGHT-GRAY PIC 1(8) BIT VALUE B"01110000".
+       01  FILLER REDEFINES PC-COLOR-BACKGROUND-TABLE.
+           05  COLOR-BACKGROUND
+               OCCURS 8 TIMES            PIC 1(8) BIT.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 -fmax-errors=0 prog.cob], [1], [],
@@ -1748,7 +1748,7 @@ AT_SETUP([PICTURE string with control character])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	PIC(P)
+       PIC(P)
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1766,16 +1766,16 @@ AT_SETUP([PICTURE strings invalid with BLANK WHEN ZERO])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01  x PIC S9(5) BLANK ZERO.
-	01  y PIC *(5) BLANK ZERO.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x PIC S9(5) BLANK ZERO.
+       01  y PIC *(5) BLANK ZERO.
 
-	*> Actually valid
-	01  z PIC -9(5) BLANK ZERO.
+       *> Actually valid
+       01  z PIC -9(5) BLANK ZERO.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1789,13 +1789,13 @@ AT_SETUP([PICTURE strings invalid with USAGE])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01  x PIC XXX, COMP-6.
-	01  y PIC +999, PACKED-DECIMAL.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x PIC XXX, COMP-6.
+       01  y PIC +999, PACKED-DECIMAL.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1809,23 +1809,23 @@ AT_SETUP([Edited monetary PICTURE strings])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
 
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01 DOLLARS.
-	05  REPORT-LINE.
-	10  REPORT-ITEMS                PIC ZZ,ZZZ,ZZZ,ZZ9-.
-	10  REPORT-FICA-WAGES           PIC
-	$$$,$$$,$$$,$$$,$$$.99-.
-	10  REPORT-FICA-TIPS            PIC
-	$$$,$$$,$$$,$$$,$$$.99-.
-	10  REPORT-TOTAL-COMP           PIC
-	$$$,$$$,$$$,$$$,$$$.99-.
-	10  REPORT-MEDICARE             PIC
-	$$$,$$$,$$$,$$$,$$$.99-.
-	05  ACCT-REPORT-TOTAL-LINE          PIC XXX.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 DOLLARS.
+           05  REPORT-LINE.
+               10  REPORT-ITEMS                PIC ZZ,ZZZ,ZZZ,ZZ9-.
+               10  REPORT-FICA-WAGES           PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+               10  REPORT-FICA-TIPS            PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+               10  REPORT-TOTAL-COMP           PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+               10  REPORT-MEDICARE             PIC
+                     $$$,$$$,$$$,$$$,$$$.99-.
+           05  ACCT-REPORT-TOTAL-LINE          PIC XXX.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -1836,17 +1836,17 @@ AT_SETUP([ALPHABET definition])
 AT_KEYWORDS([definition])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SPECIAL-NAMES.
-	ALPHABET TESTME IS
-	'A' THROUGH 'Z', x'00' thru x'05';
-	x'41' ALSO x'42', ALSO x'00', x'C1' ALSO x'C2'.
-	ALPHABET FINE
-	'A' also 'B' also 'C' also 'd' also 'e' ALSO 'f',
-	'g' also 'G', '1' thru '9', x'00'.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           ALPHABET TESTME IS
+                    'A' THROUGH 'Z', x'00' thru x'05';
+                    x'41' ALSO x'42', ALSO x'00', x'C1' ALSO x'C2'.
+           ALPHABET FINE
+                    'A' also 'B' also 'C' also 'd' also 'e' ALSO 'f',
+                    'g' also 'G', '1' thru '9', x'00'.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -1860,182 +1860,182 @@ AT_KEYWORDS([definition ALPHABET])
 
 # check that a reference on the bad alphabet does not break cobc
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	PROGRAM COLLATING SEQUENCE IS TESTME.
-	SPECIAL-NAMES.
-	ALPHABET TESTME IS
-	x'00' thru x'05', 'A' THROUGH 'Z';
-	x'41' ALSO x'42', ALSO x'00', x'C1' ALSO x'C2'.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        PROGRAM COLLATING SEQUENCE IS TESTME.
+       SPECIAL-NAMES.
+           ALPHABET TESTME IS
+                    x'00' thru x'05', 'A' THROUGH 'Z';
+                    x'41' ALSO x'42', ALSO x'00', x'C1' ALSO x'C2'.
 ])
 
 AT_DATA([prog2.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog2.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	PROGRAM COLLATING SEQUENCE IS TESTNO.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        PROGRAM COLLATING SEQUENCE IS TESTNO.
 ])
 
 AT_DATA([prog3.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	PROGRAM COLLATING SEQUENCE IS ALPHABET-1,
-	ALPHABET-2.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'A' THROUGH 'Z', x'00' thru x'05'.
-	ALPHABET ALPHABET-2 NATIONAL IS
-	n'A' also n'B' ALSO n'f',
-	n'g' also n'G', n'1' thru n'9'.
-	END PROGRAM prog3.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        PROGRAM COLLATING SEQUENCE IS ALPHABET-1,
+                                                      ALPHABET-2.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'A' THROUGH 'Z', x'00' thru x'05'.
+           ALPHABET ALPHABET-2 NATIONAL IS
+                    n'A' also n'B' ALSO n'f',
+                    n'g' also n'G', n'1' thru n'9'.
+       END PROGRAM prog3.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3b.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	PROGRAM           SEQUENCE IS ALPHABET-1,
-	ALPHABET-2.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'A' THROUGH 'Z', x'00' thru x'05'.
-	ALPHABET ALPHABET-2 FOR NATIONAL
-	n'A' ALSO n'f',
-	n'g' also n'G'.
-	END PROGRAM prog3b.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3b.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        PROGRAM           SEQUENCE IS ALPHABET-1,
+                                                      ALPHABET-2.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'A' THROUGH 'Z', x'00' thru x'05'.
+           ALPHABET ALPHABET-2 FOR NATIONAL
+                    n'A' ALSO n'f',
+                    n'g' also n'G'.
+       END PROGRAM prog3b.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3c.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1    x'00' thru x'05'.
-	ALPHABET ALPHABET-2 NATIONAL IS n'g' also n'G', n'1' thru n'9'.
-	END PROGRAM prog3c.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3c.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
+       SPECIAL-NAMES.
+         ALPHABET ALPHABET-1    x'00' thru x'05'.
+         ALPHABET ALPHABET-2 NATIONAL IS n'g' also n'G', n'1' thru n'9'.
+       END PROGRAM prog3c.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3d.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS 'A' THROUGH 'Z'.
-	ALPHABET ALPHABET-2 NATIONAL n'A' also n'B', n'1' thru n'9'.
-	END PROGRAM prog3d.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3d.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1, ALPHABET-2.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS 'A' THROUGH 'Z'.
+           ALPHABET ALPHABET-2 NATIONAL n'A' also n'B', n'1' thru n'9'.
+       END PROGRAM prog3d.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3e.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS 'Z', x'00'.
-	END PROGRAM prog3e.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3e.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE, SEQUENCE ALPHABET-1.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS 'Z', x'00'.
+       END PROGRAM prog3e.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3f.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	COLLATING SEQUENCE
-	FOR ALPHANUMERIC IS ALPHABET-1.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'A' THROUGH 'Z', x'00', x'05'.
-	END PROGRAM prog3f.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3f.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        COLLATING SEQUENCE
+                          FOR ALPHANUMERIC IS ALPHABET-1.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'A' THROUGH 'Z', x'00', x'05'.
+       END PROGRAM prog3f.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3g.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	SEQUENCE ALPHANUMERIC ALPHABET-1.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'A' THROUGH 'D'.
-	END PROGRAM prog3g.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3g.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        SEQUENCE ALPHANUMERIC ALPHABET-1.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'A' THROUGH 'D'.
+       END PROGRAM prog3g.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3h.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	COLLATING SEQUENCE
-	FOR ALPHANUMERIC IS ALPHABET-1
-	NATIONAL     IS ALPHABET-2.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'A', 'C', x'05'.
-	ALPHABET ALPHABET-2 FOR NATIONAL IS
-	n'A', n'1' thru n'9'.
-	END PROGRAM prog3h.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3h.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        COLLATING SEQUENCE
+                          FOR ALPHANUMERIC IS ALPHABET-1
+                              NATIONAL     IS ALPHABET-2.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'A', 'C', x'05'.
+           ALPHABET ALPHABET-2 FOR NATIONAL IS
+                    n'A', n'1' thru n'9'.
+       END PROGRAM prog3h.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3i.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	COLLATING SEQUENCE
-	NATIONAL     ALPHABET-2
-	ALPHANUMERIC ALPHABET-1.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'a' THROUGH 'z'.
-	ALPHABET ALPHABET-2 NATIONAL IS
-	n'B', n'C'; n'g' also n'G'.
-	END PROGRAM prog3i.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3i.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        COLLATING SEQUENCE
+                          NATIONAL     ALPHABET-2
+                          ALPHANUMERIC ALPHABET-1.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'a' THROUGH 'z'.
+           ALPHABET ALPHABET-2 NATIONAL IS
+                    n'B', n'C'; n'g' also n'G'.
+       END PROGRAM prog3i.
 
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog3j.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	COLLATING SEQUENCE
-	NATIONAL     ALPHABET-2.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-2 NATIONAL
-	n'B', n'C'; n'g' also n'G' also nx'003E'.
-	END PROGRAM prog3j.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3j.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        COLLATING SEQUENCE
+                          NATIONAL     ALPHABET-2.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-2 NATIONAL
+                    n'B', n'C'; n'g' also n'G' also nx'003E'.
+       END PROGRAM prog3j.
 ])
 # check that alphabets with a literal have correct types
 AT_DATA([prog4.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog4.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	SOURCE-COMPUTER. GNU-LINUX.
-	OBJECT-COMPUTER. GC-MACHINE,
-	COLLATING SEQUENCE
-	NATIONAL     ALPHABET-2
-	ALPHANUMERIC ALPHABET-1.
-	SPECIAL-NAMES.
-	ALPHABET ALPHABET-1 IS
-	'a' THROUGH n'z',
-	n'B'; 'G' also n'G' also nx'003E'.
-	ALPHABET ALPHABET-2 FOR NATIONAL IS
-	nx'0000' thru nx'0005', N'A' THROUGH N'Z';
-	x'41' ALSO x'42', nx'00C1' ALSO x'C2'.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog4.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-LINUX.
+       OBJECT-COMPUTER. GC-MACHINE,
+                        COLLATING SEQUENCE
+                          NATIONAL     ALPHABET-2
+                          ALPHANUMERIC ALPHABET-1.
+       SPECIAL-NAMES.
+           ALPHABET ALPHABET-1 IS
+                    'a' THROUGH n'z',
+                    n'B'; 'G' also n'G' also nx'003E'.
+           ALPHABET ALPHABET-2 FOR NATIONAL IS
+                    nx'0000' thru nx'0005', N'A' THROUGH N'Z';
+                    x'41' ALSO x'42', nx'00C1' ALSO x'C2'.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2066,55 +2066,55 @@ AT_SETUP([RENAMES item])
 AT_KEYWORDS([definition 66])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION  DIVISION.
-	PROGRAM-ID.     prog.
-	DATA            DIVISION.
-	WORKING-STORAGE SECTION.
-	01  a.
-	03  b       PIC 9.
-	03  c.
-	05 d    PIC 9.
-	05 e    PIC 9.
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  a.
+           03  b       PIC 9.
+           03  c.
+               05 d    PIC 9.
+               05 e    PIC 9.
 
-	66  valid-1     RENAMES b.
-	66  valid-2     RENAMES d THRU e.
+       66  valid-1     RENAMES b.
+       66  valid-2     RENAMES d THRU e.
 
-	66  invalid-1   RENAMES a.
-	66  invalid-2   RENAMES c THRU d.
-	66  invalid-3   RENAMES e THRU d.
-	66  invalid-4   RENAMES valid-2.
+       66  invalid-1   RENAMES a.
+       66  invalid-2   RENAMES c THRU d.
+       66  invalid-3   RENAMES e THRU d.
+       66  invalid-4   RENAMES valid-2.
 
-	01  f.
-	03  g       PIC X.
-	88  h   VALUE "a".
-	03  i       PIC X.
-	03  j       OCCURS 5 TIMES.
-	05  k   PIC X.
-	05  l   PIC 9.
-	03  m       PIC 9.
-	03  n       POINTER, SYNC.
-	03  o.
-	05  p   PIC X OCCURS 1 TO 10 DEPENDING ON l.
+       01  f.
+           03  g       PIC X.
+               88  h   VALUE "a".
+           03  i       PIC X.
+           03  j       OCCURS 5 TIMES.
+               05  k   PIC X.
+               05  l   PIC 9.
+           03  m       PIC 9.
+           03  n       POINTER, SYNC.
+           03  o.
+               05  p   PIC X OCCURS 1 TO 10 DEPENDING ON l.
 
-	66  valid-3     RENAMES g THRU i.
-	66  invalid-5   RENAMES h.
-	66  invalid-6   RENAMES k THRU l.
-	66  invalid-7   RENAMES j.
-	66  invalid-8   RENAMES m THRU o.
-	66  invalid-9   RENAMES b THRU m.
+       66  valid-3     RENAMES g THRU i.
+       66  invalid-5   RENAMES h.
+       66  invalid-6   RENAMES k THRU l.
+       66  invalid-7   RENAMES j.
+       66  invalid-8   RENAMES m THRU o.
+       66  invalid-9   RENAMES b THRU m.
 
-	78  my-ext-const VALUE "123".
-	66  invalid-ec   RENAMES my-ext-const.
+       78  my-ext-const VALUE "123".
+       66  invalid-ec   RENAMES my-ext-const.
 
-	01  my-std-const CONSTANT AS "123".
-	66  invalid-sc   RENAMES my-std-const.
+       01  my-std-const CONSTANT AS "123".
+       66  invalid-sc   RENAMES my-std-const.
 
-	PROCEDURE       DIVISION.
-	DISPLAY valid-2 OF a
-	IF valid-1 = 1
-	CONTINUE
-	END-IF
-	.
+       PROCEDURE       DIVISION.
+           DISPLAY valid-2 OF a
+           IF valid-1 = 1
+              CONTINUE
+           END-IF
+           .
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
@@ -2140,16 +2140,16 @@ AT_SETUP([RENAMES of 01-, 66- and 77-level items])
 AT_KEYWORDS([definition 66 extensions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  a PIC X.
-	66  renames-a RENAMES a.
-	66  renames-a2 RENAMES renames-a.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  a PIC X.
+       66  renames-a RENAMES a.
+       66  renames-a2 RENAMES renames-a.
 
-	77  b PIC X.
-	66  renames-b RENAMES b.
+       77  b PIC X.
+       66  renames-b RENAMES b.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
@@ -2166,46 +2166,46 @@ AT_SETUP([SAME AS clause])
 AT_KEYWORDS([definition EXTERNAL GLOBAL])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  MESSAGE-TEXT-2 EXTERNAL.
-	02 AUSGABE-FILE-NAME   PIC X(50).
-	02 FILLER REDEFINES AUSGABE-FILE-NAME.
-	05 FILLER          PIC 9999.
-	02 AUSGABE-FILE-NAME-2.
-	05 FILLER          PIC 9999.
-	05 DETAIL-NO       PIC 9999.
-	02 FILLER SAME AS AUSGABE-FILE-NAME.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  MESSAGE-TEXT-2 EXTERNAL.
+         02 AUSGABE-FILE-NAME   PIC X(50).
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER          PIC 9999.
+         02 AUSGABE-FILE-NAME-2.
+             05 FILLER          PIC 9999.
+             05 DETAIL-NO       PIC 9999.
+         02 FILLER SAME AS AUSGABE-FILE-NAME.
 
-	77 OUTPUT-NAME SAME AS DETAIL-NO GLOBAL.
+       77 OUTPUT-NAME SAME AS DETAIL-NO GLOBAL.
 
-	01 Z-MESSAGE-T2 SAME AS AUSGABE-FILE-NAME-2.
-	01 Z-MESSAGE-T3.
-	49 MT3       SAME AS MESSAGE-TEXT-2.
-	49 MT3-REN  REDEFINES MT3 SAME AS MESSAGE-TEXT-2.
+       01 Z-MESSAGE-T2 SAME AS AUSGABE-FILE-NAME-2.
+       01 Z-MESSAGE-T3.
+          49 MT3       SAME AS MESSAGE-TEXT-2.
+          49 MT3-REN  REDEFINES MT3 SAME AS MESSAGE-TEXT-2.
 
-	PROCEDURE DIVISION.
-	DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
-	DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
-	DISPLAY AUSGABE-FILE-NAME OF MT3
-	DISPLAY OUTPUT-NAME
-	GOBACK.
+       PROCEDURE DIVISION.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
+           DISPLAY AUSGABE-FILE-NAME OF MT3
+           DISPLAY OUTPUT-NAME
+           GOBACK.
 ])
 
 AT_DATA([badprog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  MESSAGE-TEXT-2.
-	02 AUSGABE-FILE-NAME                 PIC X(50).
-	02 F1         SAME AS MESSAGE-TEXT-2.
-	01 MT2          SAME AS MESSAGE-TEXT-2.
-	05 FILLER                        PIC 9999.
-	01 MT3          SAME AS MESSAGE-TEXT-2 PIC X.
-	77 OUTPUT-NAME  SAME AS MESSAGE-TEXT-2.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  MESSAGE-TEXT-2.
+         02 AUSGABE-FILE-NAME                 PIC X(50).
+         02 F1         SAME AS MESSAGE-TEXT-2.
+       01 MT2          SAME AS MESSAGE-TEXT-2.
+             05 FILLER                        PIC 9999.
+       01 MT3          SAME AS MESSAGE-TEXT-2 PIC X.
+       77 OUTPUT-NAME  SAME AS MESSAGE-TEXT-2.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -2230,138 +2230,138 @@ AT_SETUP([TYPEDEF clause])
 AT_KEYWORDS([definition EXTERNAL GLOBAL TYPE USAGE listing symbols xref])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 AUSGABE-FILE-NAME-T          PIC X(50) IS TYPEDEF.
-	01 SOME-VERY-LONG-TYPEDEF-NAME  PIC 9999  IS TYPEDEF.
-	01 AUSGABE-FILE-NAME-2T         IS TYPEDEF.
-	05 FILLER    PIC 9999.
-	05 DETAIL-NO USAGE SOME-VERY-LONG-TYPEDEF-NAME.
-	*
-	01  MESSAGE-TEXT-2T IS TYPEDEF.
-	02 AUSGABE-FILE-NAME     USAGE AUSGABE-FILE-NAME-T.
-	02 FILLER REDEFINES AUSGABE-FILE-NAME.
-	05 FILLER PIC 9999.
-	02 AUSGABE-FILE-NAME-2   USAGE AUSGABE-FILE-NAME-2T.
-	02 FILLER                USAGE AUSGABE-FILE-NAME-T.
-	*
-	01  MESSAGE-TEXT-2 EXTERNAL USAGE MESSAGE-TEXT-2T.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 AUSGABE-FILE-NAME-T          PIC X(50) IS TYPEDEF.
+       01 SOME-VERY-LONG-TYPEDEF-NAME  PIC 9999  IS TYPEDEF.
+       01 AUSGABE-FILE-NAME-2T         IS TYPEDEF.
+          05 FILLER    PIC 9999.
+          05 DETAIL-NO USAGE SOME-VERY-LONG-TYPEDEF-NAME.
+      *
+       01  MESSAGE-TEXT-2T IS TYPEDEF.
+         02 AUSGABE-FILE-NAME     USAGE AUSGABE-FILE-NAME-T.
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER PIC 9999.
+         02 AUSGABE-FILE-NAME-2   USAGE AUSGABE-FILE-NAME-2T.
+         02 FILLER                USAGE AUSGABE-FILE-NAME-T.
+      *
+       01  MESSAGE-TEXT-2 EXTERNAL USAGE MESSAGE-TEXT-2T.
 
-	77 OUTPUT-NAME USAGE SOME-VERY-LONG-TYPEDEF-NAME GLOBAL.
+       77 OUTPUT-NAME USAGE SOME-VERY-LONG-TYPEDEF-NAME GLOBAL.
 
-	01 Z-MESSAGE-T2 USAGE AUSGABE-FILE-NAME-2T.
-	01 Z-MESSAGE-T3.
-	49 MT3                    USAGE MESSAGE-TEXT-2T.
-	49 MT3-REN  REDEFINES MT3 USAGE MESSAGE-TEXT-2T.
+       01 Z-MESSAGE-T2 USAGE AUSGABE-FILE-NAME-2T.
+       01 Z-MESSAGE-T3.
+          49 MT3                    USAGE MESSAGE-TEXT-2T.
+          49 MT3-REN  REDEFINES MT3 USAGE MESSAGE-TEXT-2T.
 
-	01 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
-	88 NO-DETAIL         VALUE ZERO.
-	88 MIN-DETAIL        VALUE 0.001.
-	01 USER-TYPE            IS TYPEDEF.
-	02 AMOUNT            USAGE CALCULUS.
-	02 FILLER            OCCURS 100.
-	05 GRP-AMOUNT     USAGE CALCULUS.
-	01 USER-VAR             USAGE USER-TYPE.
+       01 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
+          88 NO-DETAIL         VALUE ZERO.
+          88 MIN-DETAIL        VALUE 0.001.
+       01 USER-TYPE            IS TYPEDEF.
+          02 AMOUNT            USAGE CALCULUS.
+          02 FILLER            OCCURS 100.
+             05 GRP-AMOUNT     USAGE CALCULUS.
+       01 USER-VAR             USAGE USER-TYPE.
 
-	01 PROC                 USAGE PROGRAM-POINTER IS TYPEDEF.
-	88 PROC-UNSET        VALUE NULL.
-	77 MY-PROC              USAGE PROC VALUE NULL.
+       01 PROC                 USAGE PROGRAM-POINTER IS TYPEDEF.
+          88 PROC-UNSET        VALUE NULL.
+       77 MY-PROC              USAGE PROC VALUE NULL.
 
-	PROCEDURE DIVISION.
-	DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
-	DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
-	DISPLAY AUSGABE-FILE-NAME OF MT3
-	DISPLAY OUTPUT-NAME
-	MOVE -123.45 TO AMOUNT
-	MOVE AMOUNT  TO GRP-AMOUNT (1)
-	IF MY-PROC = NULL
-	SET MY-PROC TO ADDRESS OF PROGRAM "prog".
-	GOBACK.
+       PROCEDURE DIVISION.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
+           DISPLAY AUSGABE-FILE-NAME OF MT3
+           DISPLAY OUTPUT-NAME
+           MOVE -123.45 TO AMOUNT
+           MOVE AMOUNT  TO GRP-AMOUNT (1)
+           IF MY-PROC = NULL
+              SET MY-PROC TO ADDRESS OF PROGRAM "prog".
+           GOBACK.
 ])
 
 AT_DATA([progstd.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01 AUSGABE-FILE-NAME-T     PIC X(50) IS TYPEDEF.
-	01 DETAIL-NO-T             PIC 9999  IS TYPEDEF.
-	01 AUSGABE-FILE-NAME-2T              IS TYPEDEF.
-	05 FILLER    PIC 9999.
-	05 DETAIL-NO TYPE TO DETAIL-NO-T.
-	*
-	01  MESSAGE-TEXT-2T IS TYPEDEF.
-	02 AUSGABE-FILE-NAME     TYPE AUSGABE-FILE-NAME-T.
-	02 FILLER REDEFINES AUSGABE-FILE-NAME.
-	05 FILLER PIC 9999.
-	02 AUSGABE-FILE-NAME-2   TYPE AUSGABE-FILE-NAME-2T.
-	02 FILLER                TYPE AUSGABE-FILE-NAME-T.
-	*
-	01  MESSAGE-TEXT-2 EXTERNAL TYPE MESSAGE-TEXT-2T.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 AUSGABE-FILE-NAME-T     PIC X(50) IS TYPEDEF.
+       01 DETAIL-NO-T             PIC 9999  IS TYPEDEF.
+       01 AUSGABE-FILE-NAME-2T              IS TYPEDEF.
+          05 FILLER    PIC 9999.
+          05 DETAIL-NO TYPE TO DETAIL-NO-T.
+      *
+       01  MESSAGE-TEXT-2T IS TYPEDEF.
+         02 AUSGABE-FILE-NAME     TYPE AUSGABE-FILE-NAME-T.
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER PIC 9999.
+         02 AUSGABE-FILE-NAME-2   TYPE AUSGABE-FILE-NAME-2T.
+         02 FILLER                TYPE AUSGABE-FILE-NAME-T.
+      *
+       01  MESSAGE-TEXT-2 EXTERNAL TYPE MESSAGE-TEXT-2T.
 
-	77 OUTPUT-NAME TYPE TO DETAIL-NO-T GLOBAL.
+       77 OUTPUT-NAME TYPE TO DETAIL-NO-T GLOBAL.
 
-	01 Z-MESSAGE-T2 TYPE AUSGABE-FILE-NAME-2T.
-	01 Z-MESSAGE-T3.
-	49 MT3                    TYPE MESSAGE-TEXT-2T.
-	49 MT3-REN  REDEFINES MT3 TYPE MESSAGE-TEXT-2T.
+       01 Z-MESSAGE-T2 TYPE AUSGABE-FILE-NAME-2T.
+       01 Z-MESSAGE-T3.
+          49 MT3                    TYPE MESSAGE-TEXT-2T.
+          49 MT3-REN  REDEFINES MT3 TYPE MESSAGE-TEXT-2T.
 
-	77 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
+       77 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
 
-	01 SOME-STRUCT          IS TYPEDEF.
-	02 SOME-DATA         PIC 9.
-	02 SOME-VALUES       OCCURS 3.
-	03 OTHER-DATA     PIC X.
-	03 OTHER-VALUES   OCCURS 2 PIC 9.
-	77 SOME2-DATA           PIC 9.      *> temporary variant until solved...
-	01 SOME-STRUCT2         IS TYPEDEF.
-	*>  02 SOME2-DATA        PIC 9.      TODO!
-	02 SOME2-VALUES      OCCURS 1 TO 6 DEPENDING ON SOME2-DATA
-	DESCENDING KEY SB SA
-	INDEXED BY SOME2-INDEX.
-	05 SA             PIC X VALUE x'12'.
-	05 SB             PIC 9 VALUE 0.
-	05 SDATA          PIC X(12).
+       01 SOME-STRUCT          IS TYPEDEF.
+          02 SOME-DATA         PIC 9.
+          02 SOME-VALUES       OCCURS 3.
+             03 OTHER-DATA     PIC X.
+             03 OTHER-VALUES   OCCURS 2 PIC 9.
+       77 SOME2-DATA           PIC 9.      *> temporary variant until solved...
+       01 SOME-STRUCT2         IS TYPEDEF.
+      *>  02 SOME2-DATA        PIC 9.      TODO!
+          02 SOME2-VALUES      OCCURS 1 TO 6 DEPENDING ON SOME2-DATA
+                               DESCENDING KEY SB SA
+                               INDEXED BY SOME2-INDEX.
+             05 SA             PIC X VALUE x'12'.
+             05 SB             PIC 9 VALUE 0.
+             05 SDATA          PIC X(12).
 
-	01 MY-TEST.
-	02 AMOUNT            TYPE CALCULUS.
-	02 FILLER            OCCURS 100.
-	05 GRP-AMOUNT     TYPE CALCULUS.
-	02 MY-NAME           TYPE SOME-STRUCT  OCCURS 5.
-	02 MY-NAME2          TYPE SOME-STRUCT2.
-	01 MY-TEST2             TYPE SOME-STRUCT2.
-	LINKAGE SECTION.
-	01 MY-STORE             TYPE CALCULUS.
+       01 MY-TEST.
+          02 AMOUNT            TYPE CALCULUS.
+          02 FILLER            OCCURS 100.
+             05 GRP-AMOUNT     TYPE CALCULUS.
+          02 MY-NAME           TYPE SOME-STRUCT  OCCURS 5.
+          02 MY-NAME2          TYPE SOME-STRUCT2.
+       01 MY-TEST2             TYPE SOME-STRUCT2.
+       LINKAGE SECTION.
+       01 MY-STORE             TYPE CALCULUS.
 
-	PROCEDURE DIVISION USING MY-STORE.
-	DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
-	DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
-	DISPLAY AUSGABE-FILE-NAME OF MT3
-	DISPLAY OUTPUT-NAME
-	SET ADDRESS OF MY-STORE TO NULL
-	INITIALIZE MY-NAME(2) GRP-AMOUNT (99)
-	INITIALIZE OTHER-VALUES (2, 3, 2)
-	SEARCH ALL SOME2-VALUES OF MY-NAME2
-	*>     WHEN SA(SOME2-INDEX) = x'12'  CHECKME: Should work
-	WHEN SA OF MY-NAME2(SOME2-INDEX OF MY-NAME2) = x'12'
-	CONTINUE.
-	GOBACK.
+       PROCEDURE DIVISION USING MY-STORE.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
+           DISPLAY AUSGABE-FILE-NAME OF MT3
+           DISPLAY OUTPUT-NAME
+           SET ADDRESS OF MY-STORE TO NULL
+           INITIALIZE MY-NAME(2) GRP-AMOUNT (99)
+           INITIALIZE OTHER-VALUES (2, 3, 2)
+           SEARCH ALL SOME2-VALUES OF MY-NAME2
+      *>     WHEN SA(SOME2-INDEX) = x'12'  CHECKME: Should work
+             WHEN SA OF MY-NAME2(SOME2-INDEX OF MY-NAME2) = x'12'
+                CONTINUE.
+           GOBACK.
 ])
 
 AT_DATA([badprog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  MESSAGE-TEXT-2T IS TYPEDEF.
-	02 AUSGABE-FILE-NAME     PIC X(50).
-	02 F1      USAGE MESSAGE-TEXT-2T.
-	01 MT2 USAGE MESSAGE-TEXT-2T.
-	05 FILLER PIC 9999.
-	01 MT3 TYPE TO MESSAGE-TEXT-2T PIC X.
-	77 OUTPUT-NAME  TYPE TO MESSAGE-TEXT-2T.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  MESSAGE-TEXT-2T IS TYPEDEF.
+         02 AUSGABE-FILE-NAME     PIC X(50).
+         02 F1      USAGE MESSAGE-TEXT-2T.
+       01 MT2 USAGE MESSAGE-TEXT-2T.
+             05 FILLER PIC 9999.
+       01 MT3 TYPE TO MESSAGE-TEXT-2T PIC X.
+       77 OUTPUT-NAME  TYPE TO MESSAGE-TEXT-2T.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -2468,7 +2468,7 @@ AT_DATA([prog-32.lst],
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
-	WORKING-STORAGE SECTION
+      WORKING-STORAGE SECTION
 
 00050 T ALPHANUMERIC 01   AUSGABE-FILE-NAME-T            X(50)
 
@@ -2496,8 +2496,8 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00108 GROUP          49   MT3-REN                        MESSAGE-TEXT-2T, REDEFINES MT3
 
 00018 T NUMERIC      01   CALCULUS                       S9(15)V9(03)
-	CONDITIONAL    88   NO-DETAIL
-	CONDITIONAL    88   MIN-DETAIL
+      CONDITIONAL    88   NO-DETAIL
+      CONDITIONAL    88   MIN-DETAIL
 
 01818 T GROUP        01   USER-TYPE
 00018 NUMERIC        02   AMOUNT                         CALCULUS
@@ -2507,7 +2507,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 01818 GROUP          01   USER-VAR                       USER-TYPE
 
 00004 T POINTER      01   PROC                           PROGRAM-POINTER
-	CONDITIONAL    88   PROC-UNSET
+      CONDITIONAL    88   PROC-UNSET
 
 00004 POINTER        77   MY-PROC                        PROC
 
@@ -2525,7 +2525,7 @@ AT_DATA([prog-64.lst],
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
-	WORKING-STORAGE SECTION
+      WORKING-STORAGE SECTION
 
 00050 T ALPHANUMERIC 01   AUSGABE-FILE-NAME-T            X(50)
 
@@ -2553,8 +2553,8 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00108 GROUP          49   MT3-REN                        MESSAGE-TEXT-2T, REDEFINES MT3
 
 00018 T NUMERIC      01   CALCULUS                       S9(15)V9(03)
-	CONDITIONAL    88   NO-DETAIL
-	CONDITIONAL    88   MIN-DETAIL
+      CONDITIONAL    88   NO-DETAIL
+      CONDITIONAL    88   MIN-DETAIL
 
 01818 T GROUP        01   USER-TYPE
 00018 NUMERIC        02   AMOUNT                         CALCULUS
@@ -2564,7 +2564,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 01818 GROUP          01   USER-VAR                       USER-TYPE
 
 00008 T POINTER      01   PROC                           PROGRAM-POINTER
-	CONDITIONAL    88   PROC-UNSET
+      CONDITIONAL    88   PROC-UNSET
 
 00008 POINTER        77   MY-PROC                        PROC
 
@@ -2585,34 +2585,34 @@ AT_KEYWORDS([definition EXTERNAL GLOBAL])
 AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION   DIVISION.
-	PROGRAM-ID.      prog.
-	DATA             DIVISION.
-	WORKING-STORAGE  SECTION.
-	01  MESSAGE-TEXT-2 EXTERNAL.
-	02 AUSGABE-FILE-NAME     PIC X(50).
-	02 FILLER REDEFINES AUSGABE-FILE-NAME.
-	05 FILLER PIC 9999.
-	02 AUSGABE-FILE-NAME-2.
-	05 FILLER PIC 9999.
-	05 DETAIL-NO PIC 9999.
-	02 FILLER LIKE AUSGABE-FILE-NAME.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  MESSAGE-TEXT-2 EXTERNAL.
+         02 AUSGABE-FILE-NAME     PIC X(50).
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER PIC 9999.
+         02 AUSGABE-FILE-NAME-2.
+             05 FILLER PIC 9999.
+             05 DETAIL-NO PIC 9999.
+         02 FILLER LIKE AUSGABE-FILE-NAME.
 
-	77 OUTPUT-VAL     LIKE DETAIL-NO GLOBAL.
-	77 OUTPUT-VAL-P1  LIKE DETAIL-NO (+1).
-	77 OUTPUT-VAL-P1b LIKE DETAIL-NO (1).
-	77 OUTPUT-VAL-M2  LIKE DETAIL-NO (-2).
+       77 OUTPUT-VAL     LIKE DETAIL-NO GLOBAL.
+       77 OUTPUT-VAL-P1  LIKE DETAIL-NO (+1).
+       77 OUTPUT-VAL-P1b LIKE DETAIL-NO (1).
+       77 OUTPUT-VAL-M2  LIKE DETAIL-NO (-2).
 
-	01 Z-MESSAGE-T2 LIKE AUSGABE-FILE-NAME-2.
-	01 Z-MESSAGE-T3.
-	49 MT3      LIKE MESSAGE-TEXT-2.
+       01 Z-MESSAGE-T2 LIKE AUSGABE-FILE-NAME-2.
+       01 Z-MESSAGE-T3.
+          49 MT3      LIKE MESSAGE-TEXT-2.
 
-	PROCEDURE DIVISION.
-	DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
-	DISPLAY Z-MESSAGE-T2 (55:LENGTH OF DETAIL-NO)
-	DISPLAY MT3 (1:LENGTH OF AUSGABE-FILE-NAME)
-	ADD OUTPUT-VAL TO DETAIL-NO
-	GOBACK.
+       PROCEDURE DIVISION.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY Z-MESSAGE-T2 (55:LENGTH OF DETAIL-NO)
+           DISPLAY MT3 (1:LENGTH OF AUSGABE-FILE-NAME)
+           ADD OUTPUT-VAL TO DETAIL-NO
+           GOBACK.
 ])
 
 # TODO add tests and syntax checks in cobc
@@ -2640,92 +2640,92 @@ AT_SETUP([APPLY COMMIT clause])
 AT_KEYWORDS([definition I-O-CONTROL ROLLBACK])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.  *> taken from "commit and rollback example"
-	*> from COBOL 202x draft
-	ENVIRONMENT DIVISION.
-	INPUT-OUTPUT SECTION.
-	FILE-CONTROL.
-	SELECT STCK-FILE
-	ASSIGN TO "STOCK"
-	ORGANIZATION IS INDEXED
-	ACCESS MODE IS RANDOM
-	FILE STATUS IS STCK-FILE-STATUS
-	RECORD KEY  IS APPLY
-	SHARING WITH ALL OTHER.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.  *> taken from "commit and rollback example"
+                          *> from COBOL 202x draft
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT STCK-FILE
+              ASSIGN TO "STOCK"
+              ORGANIZATION IS INDEXED
+              ACCESS MODE IS RANDOM
+              FILE STATUS IS STCK-FILE-STATUS
+              RECORD KEY  IS APPLY
+              SHARING WITH ALL OTHER.
 
-	SELECT CHNG-FILE
-	ASSIGN TO "CHANGE"
-	ORGANIZATION IS SEQUENTIAL
-	ACCESS MODE IS SEQUENTIAL
-	FILE STATUS IS CHNG-FILE-STATUS
-	SHARING WITH ALL OTHER.
+           SELECT CHNG-FILE
+              ASSIGN TO "CHANGE"
+              ORGANIZATION IS SEQUENTIAL
+              ACCESS MODE IS SEQUENTIAL
+              FILE STATUS IS CHNG-FILE-STATUS
+              SHARING WITH ALL OTHER.
 
-	SELECT SORT-FILE
-	ASSIGN TO "SORT".
+           SELECT SORT-FILE
+              ASSIGN TO "SORT".
 
-	I-O-CONTROL.
-	APPLY COMMIT ON STCK-FILE CHNG-FILE STCK-FILE not-there
-	SORT-FILE UPDATE-COUNT not-there-again BASED-STUFF
-	RED-DATA SOME-DATA.
+       I-O-CONTROL.
+           APPLY COMMIT ON STCK-FILE CHNG-FILE STCK-FILE not-there
+                 SORT-FILE UPDATE-COUNT not-there-again BASED-STUFF
+                 RED-DATA SOME-DATA.
 
-	DATA DIVISION.
-	FILE SECTION.
+       DATA DIVISION.
+       FILE SECTION.
 
-	FD  STCK-FILE.
-	01  STCK-REC.
-	03  APPLY                   PIC X(5).
-	03  STCK-QTY                PIC 9(5)V99.
+       FD  STCK-FILE.
+       01  STCK-REC.
+           03  APPLY                   PIC X(5).
+           03  STCK-QTY                PIC 9(5)V99.
 
-	SD  SORT-FILE.
-	01  SORT-REC                    PIC X(100).
+       SD  SORT-FILE.
+       01  SORT-REC                    PIC X(100).
 
-	FD  CHNG-FILE.
-	01  CHNG-REC.
-	03  CHNG-KEY                PIC X(5).
-	03  CHNG-QTY                PIC 9(5)V99.
-	03  CHNG-ACTION             PIC X.
-	03  CHNG-STATE              PIC X.
+       FD  CHNG-FILE.
+       01  CHNG-REC.
+           03  CHNG-KEY                PIC X(5).
+           03  CHNG-QTY                PIC 9(5)V99.
+           03  CHNG-ACTION             PIC X.
+           03  CHNG-STATE              PIC X.
 
-	WORKING-STORAGE SECTION.
+       WORKING-STORAGE SECTION.
 
-	01  FILE-STATES.
-	03  STCK-FILE-STATUS        PIC XX.
-	88  STCK-FILE-OK                  VALUE "00".
-	03  CHNG-FILE-STATUS        PIC XX.
-	88  CHNG-FILE-OK                  VALUE "00".
-	77  UPDATE-COUNT  BINARY-LONG.
-	77  BASED-STUFF   PIC X BASED.
-	01  DATA-HERE.
-	03 SOME-DATA  PIC 9.
-	01  RED-DATA REDEFINES DATA-HERE PIC X.
+       01  FILE-STATES.
+           03  STCK-FILE-STATUS        PIC XX.
+               88  STCK-FILE-OK                  VALUE "00".
+           03  CHNG-FILE-STATUS        PIC XX.
+               88  CHNG-FILE-OK                  VALUE "00".
+       77  UPDATE-COUNT  BINARY-LONG.
+       77  BASED-STUFF   PIC X BASED.
+       01  DATA-HERE.
+           03 SOME-DATA  PIC 9.
+       01  RED-DATA REDEFINES DATA-HERE PIC X.
 
-	PROCEDURE DIVISION.
+       PROCEDURE DIVISION.
 
-	MAIN SECTION.
+         MAIN SECTION.
 
-	PERFORM INITIALISATION
-	PERFORM TERMINATION
-	STOP RUN WITH NORMAL STATUS 0
+           PERFORM INITIALISATION
+           PERFORM TERMINATION
+           STOP RUN WITH NORMAL STATUS 0
 
-	. INITIALISATION SECTION.
+       . INITIALISATION SECTION.
 
-	OPEN I-O CHNG-FILE, STCK-FILE
-	IF NOT STCK-FILE-OK OR NOT CHNG-FILE-OK
-	PERFORM FATAL-ERROR
-	END-IF
+           OPEN I-O CHNG-FILE, STCK-FILE
+           IF NOT STCK-FILE-OK OR NOT CHNG-FILE-OK
+              PERFORM FATAL-ERROR
+           END-IF
 
-	. TERMINATION SECTION.
+       . TERMINATION SECTION.
 
-	COMMIT
-	IF NOT STCK-FILE-OK OR NOT CHNG-FILE-OK
-	PERFORM FATAL-ERROR
-	END-IF
+           COMMIT
+           IF NOT STCK-FILE-OK OR NOT CHNG-FILE-OK
+              PERFORM FATAL-ERROR
+           END-IF
 
-	. FATAL-ERROR SECTION.
+       . FATAL-ERROR SECTION.
 
-	ROLLBACK
-	STOP RUN WITH ERROR STATUS 16.
+           ROLLBACK
+           STOP RUN WITH ERROR STATUS 16.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2745,108 +2745,108 @@ AT_SETUP([GLOBAL record-names])
 AT_KEYWORDS([definition ALTERNATE INDEXED])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. OUTER-PROGRAM.
-	ENVIRONMENT DIVISION.
-	INPUT-OUTPUT SECTION.
-	FILE-CONTROL.
-	SELECT STCK-FILE
-	ASSIGN TO "STOCK"
-	ORGANIZATION IS INDEXED
-	ACCESS MODE IS RANDOM
-	FILE STATUS IS STCK-FILE-STATUS
-	RECORD People-LastName
-	ALTERNATE People-NameKey
-	SOURCE People-FirstName People-LastName
-	ALTERNATE People-NameKeyFirst
-	SOURCE People-1stName
-	*> validating internal error handling:
-	ALTERNATE BadKey People-1stName.
-	SELECT LOCAL-FILE
-	ASSIGN TO "LOCAL"
-	ORGANIZATION IS INDEXED
-	ACCESS MODE IS RANDOM
-	FILE STATUS IS LOCL-FILE-STATUS
-	RECORD LPeople-LastName
-	ALTERNATE LPeople-NameKey
-	SOURCE LPeople-FirstName LPeople-LastName.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. OUTER-PROGRAM.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT STCK-FILE
+              ASSIGN TO "STOCK"
+              ORGANIZATION IS INDEXED
+              ACCESS MODE IS RANDOM
+              FILE STATUS IS STCK-FILE-STATUS
+              RECORD People-LastName
+              ALTERNATE People-NameKey
+                 SOURCE People-FirstName People-LastName
+              ALTERNATE People-NameKeyFirst
+                 SOURCE People-1stName
+              *> validating internal error handling:
+              ALTERNATE BadKey People-1stName.
+           SELECT LOCAL-FILE
+              ASSIGN TO "LOCAL"
+              ORGANIZATION IS INDEXED
+              ACCESS MODE IS RANDOM
+              FILE STATUS IS LOCL-FILE-STATUS
+              RECORD LPeople-LastName
+              ALTERNATE LPeople-NameKey
+                 SOURCE LPeople-FirstName LPeople-LastName.
 
-	DATA DIVISION.
-	FILE SECTION.
+       DATA DIVISION.
+       FILE SECTION.
 
-	FD  STCK-FILE GLOBAL.
-	01  STCK-REC.
-	02 People-LastName      PIC X(50).
-	02 People-FirstName     PIC X(50).
-	01  STCK-REC-PART.
-	02 People-1stName       PIC X(50).
+       FD  STCK-FILE GLOBAL.
+       01  STCK-REC.
+           02 People-LastName      PIC X(50).
+           02 People-FirstName     PIC X(50).
+       01  STCK-REC-PART.
+           02 People-1stName       PIC X(50).
 
-	FD  LOCAL-FILE.
-	01  LOCAL-REC.
-	02 LPeople-LastName     PIC X(50).
-	02 LPeople-FirstName    PIC X(50).
+       FD  LOCAL-FILE.
+       01  LOCAL-REC.
+           02 LPeople-LastName     PIC X(50).
+           02 LPeople-FirstName    PIC X(50).
 
-	WORKING-STORAGE SECTION.
+       WORKING-STORAGE SECTION.
 
-	01  FILE-STATES IS GLOBAL.
-	03  STCK-FILE-STATUS        PIC XX.
-	88  STCK-FILE-OK        VALUE "00".
-	03  LOCL-FILE-STATUS        PIC XX.
-	88  LOCL-FILE-OK        VALUE "00".
+       01  FILE-STATES IS GLOBAL.
+           03  STCK-FILE-STATUS        PIC XX.
+               88  STCK-FILE-OK        VALUE "00".
+           03  LOCL-FILE-STATUS        PIC XX.
+               88  LOCL-FILE-OK        VALUE "00".
 
-	PROCEDURE DIVISION.
+       PROCEDURE DIVISION.
 
-	MAIN SECTION.
+         MAIN SECTION.
 
-	OPEN OUTPUT LOCAL-FILE
-	MOVE "John" TO LPeople-FirstName
-	MOVE "Doe"  TO LPeople-LastName
-	WRITE LOCAL-REC
-	CLOSE LOCAL-FILE
+           OPEN OUTPUT LOCAL-FILE
+           MOVE "John" TO LPeople-FirstName
+           MOVE "Doe"  TO LPeople-LastName
+           WRITE LOCAL-REC
+           CLOSE LOCAL-FILE
 
-	OPEN OUTPUT STCK-FILE
-	MOVE "John" TO People-FirstName
-	MOVE "Doe"  TO People-LastName
-	WRITE STCK-REC
-	CLOSE STCK-FILE
+           OPEN OUTPUT STCK-FILE
+           MOVE "John" TO People-FirstName
+           MOVE "Doe"  TO People-LastName
+           WRITE STCK-REC
+           CLOSE STCK-FILE
 
-	CALL "INNER-PROGRAM".
-	GOBACK.
+           CALL "INNER-PROGRAM".
+           GOBACK.
 
-	PROGRAM-ID. INNER-PROGRAM.
-	PROCEDURE DIVISION.
-	OPEN INPUT STCK-FILE
-	MOVE "John" TO People-FirstName
-	MOVE "Doe"  TO People-LastName
-	READ STCK-FILE KEY People-NameKey
-	NOT INVALID KEY
-	DISPLAY People-FirstName " " People-LastName
-	INVALID KEY
-	DISPLAY "NOT FOUND"
-	END-READ
-	INITIALIZE STCK-REC
-	MOVE "John" TO People-1stName
-	READ STCK-FILE KEY People-NameKeyFirst
-	NOT INVALID KEY
-	DISPLAY People-FirstName " " People-LastName
-	INVALID KEY
-	DISPLAY "NOT FOUND"
-	END-READ
-	CLOSE STCK-FILE
-	OPEN INPUT LOCAL-FILE
-	MOVE "John" TO LPeople-FirstName
-	MOVE "Doe"  TO LPeople-LastName
-	READ LOCAL-FILE KEY LPeople-NameKey
-	NOT INVALID KEY
-	DISPLAY LPeople-FirstName " " LPeople-LastName
-	INVALID KEY
-	DISPLAY "NOT FOUND"
-	END-READ
-	CLOSE LOCAL-FILE
-	GOBACK.
-	END PROGRAM INNER-PROGRAM.
-	*>****************************************************************
-	END PROGRAM OUTER-PROGRAM.
+       PROGRAM-ID. INNER-PROGRAM.
+       PROCEDURE DIVISION.
+           OPEN INPUT STCK-FILE
+           MOVE "John" TO People-FirstName
+           MOVE "Doe"  TO People-LastName
+           READ STCK-FILE KEY People-NameKey
+             NOT INVALID KEY
+                DISPLAY People-FirstName " " People-LastName
+             INVALID KEY
+                DISPLAY "NOT FOUND"
+           END-READ
+           INITIALIZE STCK-REC
+           MOVE "John" TO People-1stName
+           READ STCK-FILE KEY People-NameKeyFirst
+             NOT INVALID KEY
+                DISPLAY People-FirstName " " People-LastName
+             INVALID KEY
+                DISPLAY "NOT FOUND"
+           END-READ
+           CLOSE STCK-FILE
+           OPEN INPUT LOCAL-FILE
+           MOVE "John" TO LPeople-FirstName
+           MOVE "Doe"  TO LPeople-LastName
+           READ LOCAL-FILE KEY LPeople-NameKey
+             NOT INVALID KEY
+                DISPLAY LPeople-FirstName " " LPeople-LastName
+             INVALID KEY
+                DISPLAY "NOT FOUND"
+           END-READ
+           CLOSE LOCAL-FILE
+           GOBACK.
+       END PROGRAM INNER-PROGRAM.
+      *>****************************************************************
+       END PROGRAM OUTER-PROGRAM.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2864,11 +2864,11 @@ AT_SETUP([Invalid USE BEFORE])
 AT_KEYWORDS([USE])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	PROCEDURE DIVISION.
-	DEPTHDRUSE SECTION.
-	USE BEFORE REPORTING DEPTHDR.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       DEPTHDRUSE SECTION.
+       USE BEFORE REPORTING DEPTHDR.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2883,16 +2883,16 @@ AT_SETUP([POINTER TO typedef-name])
 AT_KEYWORDS([POINTER TYPEDEF])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01 data-type PIC X(10) USAGE DISPLAY IS TYPEDEF.
-	01 data-ptr1 USAGE POINTER data-type.
-	01 data-ptr2 USAGE POINTER TO data-type.
-	PROCEDURE DIVISION.
-	STOP RUN.
-	END PROGRAM prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 data-type PIC X(10) USAGE DISPLAY IS TYPEDEF.
+       01 data-ptr1 USAGE POINTER data-type.
+       01 data-ptr2 USAGE POINTER TO data-type.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-pending prog.cob], [0], [], [])
@@ -2903,15 +2903,15 @@ AT_SETUP([FUNCTION-POINTER TO function-name])
 AT_KEYWORDS([FUNCTION-POINTER])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01 fun-ptr1 USAGE FUNCTION-POINTER FUNCTION random.
-	01 fun-ptr2 USAGE FUNCTION-POINTER TO FUNCTION random.
-	PROCEDURE DIVISION.
-	STOP RUN.
-	END PROGRAM prog.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 fun-ptr1 USAGE FUNCTION-POINTER FUNCTION random.
+       01 fun-ptr2 USAGE FUNCTION-POINTER TO FUNCTION random.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-pending prog.cob], [0], [], [])
@@ -2925,24 +2925,24 @@ AT_KEYWORDS([PROGRAM-POINTER PROTOTYPE])
 AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
+       IDENTIFICATION DIVISION.
 
-	PROGRAM-ID. prog-proto IS PROTOTYPE.
-	PROCEDURE DIVISION.
-	END PROGRAM prog-proto.
+       PROGRAM-ID. prog-proto IS PROTOTYPE.
+       PROCEDURE DIVISION.
+       END PROGRAM prog-proto.
 
-	PROGRAM-ID. prog.
-	ENVIRONMENT DIVISION.
-	CONFIGURATION SECTION.
-	REPOSITORY.
-	PROGRAM prog-proto.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	01 prog-ptr1 USAGE PROGRAM-POINTER prog-proto.
-	01 prog-ptr2 USAGE PROGRAM-POINTER TO prog-proto.
-	PROCEDURE DIVISION.
-	STOP RUN.
-	END PROGRAM prog.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+       PROGRAM prog-proto.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 prog-ptr1 USAGE PROGRAM-POINTER prog-proto.
+       01 prog-ptr2 USAGE PROGRAM-POINTER TO prog-proto.
+       PROCEDURE DIVISION.
+           STOP RUN.
+       END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [0], [], [])
