@@ -145,6 +145,7 @@ static int			quotation_mark = 0;
 static int			echo_newline = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
+static int	exec_subsystem_seen = 0;	/* set after first EXEC token returned */
 static enum cb_format		source_format = CB_FORMAT_AUTO;
 static int	indicator_column = 7;
 static int	indicator_error = 0;
@@ -528,6 +529,7 @@ MAYBE_AREA_A	[ ]?#?
 }
 
 "EXEC"/[ ,;\n] {
+	exec_subsystem_seen = 0;
     BEGIN(EXEC_STATE);
     return EXEC;
 }
@@ -577,11 +579,36 @@ MAYBE_AREA_A	[ ]?#?
 }
 
 <EXEC_STATE>{
-    "END-EXEC"([ \t]*\.)?     { BEGIN (INITIAL); return END_EXEC; }
-    "INCLUDE"                 { return INCLUDE; }
-    {WORD}                    { pplval.s = cobc_plex_strdup (yytext); return TOKEN; }
-    \n                        { cb_source_line++; }
-    .                         { /* silently consumed */ }
+    "END-EXEC"([ \t]*\.)?  {
+        BEGIN (INITIAL);
+        return END_EXEC;
+    }
+    "INCLUDE"               { return INCLUDE; }
+    {WORD}\.{WORD}          {
+        /* dotted name e.g. SQLCA.cpy or table.field */
+        pplval.s = cobc_plex_strdup (yytext);
+        if (!exec_subsystem_seen) {
+            exec_subsystem_seen = 1;
+            return SUBSYSTEM;
+        }
+        return TOKEN;
+    }
+    {WORD}                  {
+        pplval.s = cobc_plex_strdup (yytext);
+        if (!exec_subsystem_seen) {
+            exec_subsystem_seen = 1;
+            return SUBSYSTEM;
+        }
+        return TOKEN;
+    }
+    {ALNUM_LITERAL}         {
+        /* quoted copybook name e.g. INCLUDE "EMPREC" */
+        pplval.s = cobc_plex_strdup (yytext + 1);
+        pplval.s[strlen (pplval.s) - 1] = '\0';
+        return TEXT_NAME;
+    }
+    \n                      { cb_source_line++; }
+    .                       { /* silently consumed */ }
 }
 
 <SUBSTITUTION_SECTION_STATE,

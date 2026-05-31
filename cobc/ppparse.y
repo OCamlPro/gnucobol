@@ -755,6 +755,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %token EXEC
 %token END_EXEC		"END-EXEC"
+%token <s> SUBSYSTEM	"Subsystem"
 
 %type <s>	_copy_in
 %type <s>	copy_source
@@ -1740,15 +1741,15 @@ _exec_token_list:
 ;
 
 exec_statement:
-  EXEC TOKEN INCLUDE copy_source END_EXEC
+  EXEC SUBSYSTEM INCLUDE copy_source END_EXEC
   {
-        /* EXEC TAG INCLUDE copybook — handle as COPY */
+        /* EXEC TAG INCLUDE copybook — warn and handle as COPY */
         cb_warning (cb_warn_unsupported,
                     _("EXEC %s INCLUDE handled as COPY"), $2);
         fputc ('\n', ppout);
         ppcopy ($4, NULL, NULL);
   }
-| EXEC TOKEN _exec_token_list END_EXEC
+| EXEC SUBSYSTEM _exec_token_list END_EXEC
   {
         /* EXEC TAG ... END-EXEC — warn and ignore */
         cb_warning (cb_warn_unsupported,
