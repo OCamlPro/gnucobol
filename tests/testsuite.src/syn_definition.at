@@ -2953,83 +2953,87 @@ AT_CLEANUP
 
 
 AT_SETUP([EXEC no tag])
-AT_KEYWORDS([exec extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	PROCEDURE DIVISION.
-	EXEC END-EXEC.
-	STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN.
+           EXEC END-EXEC.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:5: error: syntax error, unexpected END-EXEC, expecting Subsystem
+[prog.cob:6: error: syntax error, unexpected END-EXEC, expecting Subsystem
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([EXEC empty block])
-AT_KEYWORDS([exec extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	PROCEDURE DIVISION.
-	EXEC CICS END-EXEC.
-	STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN.
+           EXEC CICS END-EXEC.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
-[prog.cob:5: error: EXEC CICS statement ignored
+[prog.cob:6: error: EXEC CICS statement ignored
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([EXEC statement ignored])
-AT_KEYWORDS([exec extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	PROCEDURE DIVISION.
-	EXEC SQL CONNECT RESET END-EXEC.
-	STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN.
+           EXEC SQL CONNECT RESET END-EXEC.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
-[prog.cob:5: error: EXEC SQL statement ignored
+[prog.cob:6: error: EXEC SQL statement ignored
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([EXEC SQL INCLUDE sqlca and copybook])
-AT_KEYWORDS([exec sql include sqlca extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([emprec.cpy], [
-	01 EMP-TABLE.
-	03 ENO    PIC S9(4) COMP.
-	03 LNAME  PIC X(10).
+       01  EMP-TABLE.
+           03  ENO    PIC S9(4) COMP.
+           03  LNAME  PIC X(10).
 ])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	EXEC SQL
-	INCLUDE SQLCA
-	END-EXEC.
-	EXEC SQL
-	INCLUDE EMPREC
-	END-EXEC.
-	PROCEDURE DIVISION.
-	DISPLAY SQLCODE.
-	MOVE 1 TO ENO.
-	STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       EXEC SQL
+           INCLUDE SQLCA
+       END-EXEC.
+       EXEC SQL
+           INCLUDE EMPREC
+       END-EXEC.
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY SQLCODE.
+           MOVE 1 TO ENO.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [],
@@ -3041,32 +3045,34 @@ AT_CHECK([rm -f emprec.cpy], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [], [prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
 prog.cob:11: error: EXEC SQL INCLUDE handled as COPY
 prog.cob:11: error: emprec: No such file or directory
-prog.cob:14: error: 'ENO' is not defined
+prog.cob: in paragraph 'MAIN':
+prog.cob:15: error: 'ENO' is not defined
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([EXEC SQL INCLUDE quoted literal])
-AT_KEYWORDS([exec sql include extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([emprec.cpy], [
-	01 EMP-TABLE.
-	03 ENO    PIC S9(4) COMP.
-	03 LNAME  PIC X(10).
+       01  EMP-TABLE.
+           03  ENO    PIC S9(4) COMP.
+           03  LNAME  PIC X(10).
 ])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	EXEC SQL
-	INCLUDE "EMPREC"
-	END-EXEC.
-	PROCEDURE DIVISION.
-	MOVE 1 TO ENO.
-	STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       EXEC SQL
+           INCLUDE "EMPREC"
+       END-EXEC.
+       PROCEDURE DIVISION.
+       MAIN.
+           MOVE 1 TO ENO.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [],
@@ -3077,19 +3083,20 @@ AT_CLEANUP
 
 
 AT_SETUP([EXEC SQL INCLUDE dotted name])
-AT_KEYWORDS([exec sql include extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
-	PROGRAM-ID. prog.
-	DATA DIVISION.
-	WORKING-STORAGE SECTION.
-	EXEC SQL
-	INCLUDE SQLCA.cpy
-	END-EXEC.
-	PROCEDURE DIVISION.
-	DISPLAY SQLCODE.
-	STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       EXEC SQL
+           INCLUDE SQLCA.cpy
+       END-EXEC.
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY SQLCODE.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [],
@@ -3100,20 +3107,21 @@ AT_CLEANUP
 
 
 AT_SETUP([END-EXEC missing])
-AT_KEYWORDS([exec extensions])
+AT_KEYWORDS([extensions])
 
 AT_DATA([prog.cob], [
-	IDENTIFICATION DIVISION.
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        PROCEDURE DIVISION.
+       MAIN.
       * typo added on purpose to check handling that
            EXEC SQL CONNECT RESET ENDEXEC.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
-[prog.cob:8: error: missing END-EXEC at end of file
-prog.cob:8: error: EXEC SQL statement ignored
+[prog.cob:9: error: missing END-EXEC at end of file
+prog.cob:9: error: EXEC SQL statement ignored
 ])
 
 AT_CLEANUP

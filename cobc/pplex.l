@@ -587,10 +587,6 @@ MAYBE_AREA_A	[ ]?#?
     {WORD}\.{WORD}          {
         /* dotted name e.g. SQLCA.cpy or table.field */
         pplval.s = cobc_plex_strdup (yytext);
-        if (!exec_subsystem_seen) {
-            exec_subsystem_seen = 1;
-            return SUBSYSTEM;
-        }
         return TOKEN;
     }
     {WORD}                  {
