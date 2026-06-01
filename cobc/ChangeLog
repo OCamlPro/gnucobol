@@ -1,4 +1,17 @@
 
+2026-03-16  Uttam Singh Bhadauriya <uttamsinghbhadoriya23@gmail.com>
+
+	* pplex.l: add EXEC_STATE exclusive start condition to
+	  tokenize EXEC <TAG> ... END-EXEC blocks; add AREA_A lookahead
+	  rule for EXEC; return INCLUDE token for INCLUDE keyword,
+	  plain TOKEN for words; consume all other content silently
+	* ppparse.y: add exec_statement grammar rule dispatched
+	  from statement_no_replace; EXEC TAG INCLUDE handled as COPY
+	  (full copybook expansion with -I and -ffold-copy support);
+	  all other EXEC TAG blocks warn at "unsupported" level
+	  (defaulting to error) and are ignored; add _exec_token_list
+	  to consume body tokens for parsing purposes only
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for
