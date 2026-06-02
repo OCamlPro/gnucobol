@@ -1615,11 +1615,11 @@ AT_SETUP(@file command line options)
 AT_KEYWORDS([cobc getopt])
 
 AT_DATA([prog.cob], [
-    IDENTIFICATION DIVISION.
-    PROGRAM-ID. HELLO.
-    PROCEDURE DIVISION.
-        DISPLAY "Hello, GnuCOBOL!".
-        STOP RUN.   
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, GnuCOBOL!".
+           STOP RUN.   
 ])
 
 AT_DATA([echo "-x" > tempfile.txt])
@@ -1632,18 +1632,36 @@ AT_CLEANUP()
 AT_SETUP(recursive @file)
 AT_KEYWORDS([cobc getopt])
 
-AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
-    IDENTIFICATION DIVISION.
-    PROGRAM-ID. HELLO.
-    PROCEDURE DIVISION.
-        DISPLAY "Hello, GnuCOBOL!".
-        STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, GnuCOBOL!".
+           STOP RUN.   
 ])
 
-AT_DATA([echo "x @tempfile.txt" > tempfile.txt])
-AT_CHECK([$COMPILE_MODULE @tempfile.txt prog.cob], [0], [], [])
+AT_DATA([echo "-x @tempfile.txt" > tempfile.txt])
+AT_DATA([echo "-g --free" > otherfile.txt])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [0], [], [])
+
+AT_CLEANUP()
+
+AT_SETUP(recursive @file with conflict)
+AT_KEYWORDS([cobc getopt])
+
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, GnuCOBOL!".
+           STOP RUN.   
+])
+
+AT_DATA([echo "-x @tempfile.txt" > tempfile.txt])
+AT_DATA([echo "-g --free @otherfile.txt" > otherfile.txt])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [0], [], [])
 
 AT_CLEANUP()
 

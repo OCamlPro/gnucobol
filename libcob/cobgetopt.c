@@ -549,48 +549,91 @@ expand_processed_at_file(char *options, int *output_argc){
 
 void
 cob_rebuild_argv_at_file(int * old_argc, char*** old_argv){
-	int orig_argc = *old_argc;
-	char **orig_argv = *old_argv;
+	int fully_expanded;
+	char * encountered_files[8];
+	char* current_file;
+	int found_recursive_at_file;
+	int last_used_file_index = 0;
+	
+	char ** file_expanded_argv ;
+
     int i;
-	int new_argc = 0;
-	int capacity = 2*orig_argc;
-	char **new_argv = malloc(capacity * sizeof(char*));
+	int j;
+	int k;
+	int orig_argc;
+	int new_argc ;
+	char **orig_argv;
+	int capacity ;
+	
 	int comp_mode;
 	int atfile_size;
+	int file_arg_count = 0;
+
+	char **new_argv;
+	
 	char * filecontents;
-	for(i =0 ; i < orig_argc ; i++){
-		comp_mode = 0;
-		atfile_size =0;
-		
-		filecontents = process_at_file(orig_argv[i], &comp_mode, &atfile_size);
-
-		if (comp_mode && filecontents != NULL) {
-			int file_arg_count = 0;
-			int j;
-			char ** file_expanded_argv = expand_processed_at_file(filecontents, &file_arg_count);
-			for (j = 0; j < file_arg_count; j++) {
-                if (new_argc >= capacity) {
-                    capacity *= 2;
-                    new_argv = realloc(new_argv, capacity * sizeof(char*));
-                }
-                new_argv[new_argc++] = file_expanded_argv[j];
-            }
-			free(file_expanded_argv);
-		}
-		else{
-			if (new_argc >= capacity) {
-                    capacity *= 2;
-                    new_argv = realloc(new_argv, capacity * sizeof(char*));
-                }
-                new_argv[new_argc++] = orig_argv[i];
-		}
+	for (i =0; i <8;i++) {
+			encountered_files[i] = NULL;
 	}
+	do {
+		fully_expanded = 1;
+		orig_argc = *old_argc;
+		orig_argv= *old_argv;
+		new_argc = 0;
+		capacity = 2*orig_argc;
+		new_argv = malloc(capacity * sizeof(char*));
 
-	new_argv = realloc(new_argv, (new_argc + 1) * sizeof(char*));
-    new_argv[new_argc] = NULL;
+		for(i =0 ; i < orig_argc ; i++){
+			comp_mode = 0;
+			atfile_size =0;
+			current_file = orig_argv[i];
+			
+			filecontents = process_at_file(current_file, &comp_mode, &atfile_size); /* an entire string of options -x -g --free -Wno-unfinished etc*/
+			if (comp_mode && filecontents != NULL) {
+				fully_expanded = 0;
+				found_recursive_at_file = 0;
 
-	*old_argc = new_argc;
-	*old_argv = new_argv;
+				for (k =0; k <8; k++) {
+					if(encountered_files[k] && strcmp(encountered_files[k], current_file) == 0) {
+						found_recursive_at_file = 1;
+					}
+				}
+
+				if (found_recursive_at_file) {
+					continue;
+				}
+				else {
+					if (last_used_file_index < 8) {
+						encountered_files[last_used_file_index++] = current_file;
+					}
+						file_expanded_argv = expand_processed_at_file(filecontents, &file_arg_count); /*array of each option from the entire string 
+						-x , -g, --free*/
+						for (j = 0; j < file_arg_count; j++) {
+						if (new_argc >= capacity) {
+							capacity *= 2;
+							new_argv = realloc(new_argv, capacity * sizeof(char*));
+						}
+						new_argv[new_argc++] = file_expanded_argv[j];
+					}
+					free(file_expanded_argv);
+				}
+			}
+			else{
+				if (new_argc >= capacity) {
+						capacity *= 2;
+						new_argv = realloc(new_argv, capacity * sizeof(char*));
+					}
+					new_argv[new_argc++] = orig_argv[i];
+			}
+		}
+
+		new_argv = realloc(new_argv, (new_argc + 1) * sizeof(char*));
+		new_argv[new_argc] = NULL;
+
+		*old_argc = new_argc;
+		*old_argv = new_argv;
+	} while (!fully_expanded);
+	
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters
