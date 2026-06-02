@@ -477,55 +477,54 @@ _getopt_initialize (const char *optstring)
 
 static char *
 process_at_file(const char* argument_values,int* compile_mode,int* atfile_size){
+	int ret;
+	size_t capacity = 256;
+ 	size_t length = 0;
+	const char* endptr;
+	FILE* path;
+	char *options;
+	
 	char * ptr = strstr(argument_values,"@");
-	if (ptr){
-		*compile_mode = 1;
+	if (!ptr) return NULL;
+    
+
+	*compile_mode = 1;
+	endptr = ++ptr;
+	while (*endptr != ' ' && *endptr != '\0') {
+		endptr++;
 	}
 
-	if (*compile_mode) {
-		int ret;
-		size_t capacity = 256;
- 	 	size_t length = 0;
-		const char* endptr = ++ptr;
-		while (*endptr != ' ' && *endptr != '\0') {
-			endptr++;
-		}
-		size_t path_size = endptr - ptr + 1;
-					/* Ptr->endptr carries the directory */
-		char* path_str = malloc(path_size);
-        memcpy(path_str, ptr, path_size - 1);
-        path_str[path_size - 1] = '\0'; 
-		FILE* path = fopen(path_str, "r");
- 		char *options = malloc(capacity);
+	{
+		#define file_option_path_size    256 
+		char path_str[file_option_path_size]; 
+		memcpy (path_str, ptr, file_option_path_size - 1);
+		path_str[file_option_path_size - 1] = '\0'; 
+		path = fopen (path_str, "r");
 		if (path == NULL) {
-         	free(path_str);
-    	    free(options);
-    	    return NULL;
- 		}
-		
-		while ((ret = getc(path)) != EOF) {
-			if(length+1 >= capacity){
-				 capacity *= 4;
-         		char *tmp = realloc(options, capacity);
- 				if (!tmp) {
-     				free(options);
-     				fclose(path);
-    				return NULL;
- 				}
-	 			options = tmp;
-			}
-			
-			options[length++] = (char)ret;
+			return NULL;
 		}
-		fclose(path); 
-		options[length] = '\0';
-		*atfile_size = length;
-	 	return options;
-		/* -x -g -fdump=all */
 	}
-	else {
-		return NULL;
+
+	options = malloc (capacity);
+	while ((ret = getc(path)) != EOF) {
+		char *tmp;
+		if (length+1 >= capacity) {
+			capacity *= 4;
+         	tmp = realloc(options, capacity);
+ 			if (!tmp) {
+     			free(options);
+     			fclose(path);
+    			return NULL;
+ 			}
+	 		options = tmp;
+		}
+		options[length++] = (char)ret;
 	}
+	fclose(path); 
+	options[length] = '\0';
+	*atfile_size = length;
+	return options;
+	/* -x -g -fdump=all */
 }
 
 static char**
@@ -533,8 +532,8 @@ expand_processed_at_file(char *options, int *output_argc){
 	int capacity = 5;
 	int argc = 0;
 	char **output_argv = malloc(capacity * sizeof(char*));
-
 	char * option = strtok(options," \t\n\r");
+
 	while (option != NULL){
 		if (argc >= capacity) {
 			capacity *= 2;
@@ -556,11 +555,14 @@ cob_rebuild_argv_at_file(int * old_argc, char*** old_argv){
 	int new_argc = 0;
 	int capacity = 2*orig_argc;
 	char **new_argv = malloc(capacity * sizeof(char*));
-	
+	int comp_mode;
+	int atfile_size;
+	char * filecontents;
 	for(i =0 ; i < orig_argc ; i++){
-		int comp_mode = 0 ;
-		int atfile_size = 0;
-		char * filecontents = process_at_file(orig_argv[i], &comp_mode, &atfile_size);
+		comp_mode = 0;
+		atfile_size =0;
+		
+		filecontents = process_at_file(orig_argv[i], &comp_mode, &atfile_size);
 
 		if (comp_mode && filecontents != NULL) {
 			int file_arg_count = 0;
@@ -670,7 +672,6 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
 
   /* Test whether ARGV[optind] points to a non-option argument.  */
 #define NONOPTION_P (argv[optind][0] != '-' || argv[optind][1] == '\0')
-
 
   if (nextchar == NULL || *nextchar == '\0')
     {

@@ -1612,7 +1612,7 @@ AT_CLEANUP
 
 
 AT_SETUP(@file command line options)
-AT_KEYWORDS([syntax])
+AT_KEYWORDS([cobc getopt])
 
 AT_DATA([prog.cob], [
     IDENTIFICATION DIVISION.
@@ -1622,8 +1622,28 @@ AT_DATA([prog.cob], [
         STOP RUN.   
 ])
 
-AT_CHECK([echo "-x" > tempfile.txt
-$COMPILE_MODULE @tempfile.txt prog.cob], [1], [],
-[cobc: error: only one of options 'm', 'x', 'b' may be specified
+AT_DATA([echo "-x" > tempfile.txt])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @nonexistent.txt prog.cob], [1], [], 
+[cobc: @nonexistent.txt: No such file or directory
 ])
 AT_CLEANUP()
+
+
+AT_SETUP(recursive @file)
+AT_KEYWORDS([cobc getopt])
+
+AT_XFAIL_IF([true])
+
+AT_DATA([prog.cob], [
+    IDENTIFICATION DIVISION.
+    PROGRAM-ID. HELLO.
+    PROCEDURE DIVISION.
+        DISPLAY "Hello, GnuCOBOL!".
+        STOP RUN.
+])
+
+AT_DATA([echo "x @tempfile.txt" > tempfile.txt])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt prog.cob], [0], [], [])
+
+AT_CLEANUP()
+

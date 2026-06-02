@@ -3127,7 +3127,7 @@ file_replace_extension (const char *file, const char *ext)
 
 /* process command line options */
 static int
-process_command_line (int argc, char **argv)
+process_command_line (const int argc, char **argv)
 {
 	
 	struct cb_define_struct	*p;
@@ -3146,8 +3146,7 @@ process_command_line (int argc, char **argv)
 	const char		*copt = NULL;	/* C optimization options */
 
 	int			conf_ret = 0;
-	int			error_all_warnings = 0;
-	
+	int			error_all_warnings = 0;	
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
