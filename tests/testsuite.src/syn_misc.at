@@ -4403,6 +4403,24 @@ prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
 AT_CLEANUP
 
 
+AT_SETUP([CALL-CONVENTION special context])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA          DIVISION.
+       LOCAL-STORAGE SECTION.
+       77 C PIC X.
+       PROCEDURE     DIVISION.
+           CALL 'callee' using C.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[])
+AT_CLEANUP
+
+
 AT_SETUP([dangling LINKAGE items])
 AT_KEYWORDS([misc])
 
