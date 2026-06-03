@@ -254,7 +254,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "ACCEPT",			1, 0, ACCEPT,			/* 2002 */
-				CB_CS_ACCEPT, 0
+				0, 0
   },
   { "ACCESS",			0, 0, ACCESS,			/* 2002 */
 				0, 0
@@ -299,7 +299,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "ALLOCATE",			0, 0, ALLOCATE,			/* 2002 */
-				CB_CS_ALLOCATE, 0
+				0, 0
   },
   { "ALLOWING",		0, 1, ALLOWING,		/* ACU extension */
 				0, CB_CS_OPEN
@@ -389,7 +389,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "AUTO",			0, 1, AUTO,			/* 2002 (C/S), extension */
-				0, CB_CS_ACCEPT | CB_CS_SCREEN | CB_CS_CALL
+				0, CB_CS_ACCEPT | CB_CS_SCREEN | CB_CS_CALL_USING
   },
   { "AUTO-DECIMAL",		0, 1, AUTO_DECIMAL,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -549,13 +549,13 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_CONSTANT
   },
   { "C",			0, 1, C,			/* Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL | CB_CS_OPTIONS
+				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
   { "CALENDAR-FONT",		0, 1, CALENDAR_FONT,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "CALL",			1, 0, CALL,			/* 2002 */
-				CB_CS_CALL, 0
+				CB_CS_CALL_CONVENTION, 0
   },
   { "CANCEL",			0, 0, CANCEL,			/* 2002 */
 				0, 0
@@ -657,7 +657,7 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "COBOL",			0, 1, COBOL,			/* 2002
 								   Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL | CB_CS_OPTIONS
+				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
   { "CODE",			0, 0, CODE,			/* 2002 */
 				0, 0
@@ -1262,7 +1262,7 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "EXTERN",			0, 1, TOK_EXTERN,		/* 2002 Implementor specific ENTRY-CONVENTION,
 								   Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL | CB_CS_OPTIONS
+				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
   { "EXTERNAL",			0, 0, EXTERNAL,			/* 2002 */
 				0, 0
@@ -2156,7 +2156,7 @@ static struct cobc_reserved default_reserved_words[] = {
    				0, 0
   },
   { "PASCAL",			0, 1, PASCAL,			/* Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL | CB_CS_OPTIONS
+				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
   { "PASSWORD",			0, 1, PASSWORD,			/* IBM extension */
 				0, CB_CS_SELECT
@@ -2324,13 +2324,13 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "READ",			1, 0, READ,			/* 2002 */
-				CB_CS_READ, 0
+				0, 0
   },
   { "READ-ONLY",		0, 1, READ_ONLY,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "READY",			1, 0, READY,			/* OSVS */
-				CB_READY_RESET_TRACE, 0
+				CB_CS_READY_OR_RESET, 0
   },
   { "READERS",			0, 1, READERS,		/* ACU extension */
 				0, CB_CS_OPEN
@@ -2441,7 +2441,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "RESET",			1, 0, RESET,			/* 2002 */
-				CB_READY_RESET_TRACE, 0
+				CB_CS_READY_OR_RESET, 0
   },
   { "RESET-GRID",			0, 1, RESET_GRID,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -2737,7 +2737,7 @@ static struct cobc_reserved default_reserved_words[] = {
 	/* FIXME: 2014 Context-sensitive to RESUME statement */
   },
   { "STATIC",			0, 1, STATIC,			/* Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL
+				0, CB_CS_CALL_CONVENTION
   },
   { "STATIC-LIST",			0, 1, STATIC_LIST,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -2752,13 +2752,13 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "STDCALL",			0, 1, STDCALL,			/* Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL | CB_CS_OPTIONS
+				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
   { "STEP",			0, 1, STEP,			/* 2002 (C/S) */
 				0, CB_CS_OCCURS
   },
   { "STOP",			0, 0, STOP,			/* 2002 */
-				CB_CS_STOP, 0
+				0, 0
   },
   { "STRING",			1, 0, STRING,			/* 2002 */
 				0, 0
@@ -2911,7 +2911,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_ROUNDED
   },
   { "TRACE",			0, 1, TRACE,			/* OSVS */
-				0, CB_READY_RESET_TRACE
+				0, CB_CS_READY_OR_RESET
   },
   { "TRACK",			0, 1, TRACK,			/* OS/VS extension */
 				0, CB_CS_SELECT | CB_CS_I_O_CONTROL
@@ -3129,7 +3129,7 @@ static struct cobc_reserved default_reserved_words[] = {
   },
 #if 0 /* deactivated for now, as stdcall prototypes have several pending issues */
   { "WINAPI",			0, 1, WINAPI,			/* Extension: implicit defined CALL-CONVENTION */
-				0, CB_CS_CALL | CB_CS_OPTIONS
+				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
 #endif
   { "WINDOW",			0, 0, WINDOW,			/* ACU extension */

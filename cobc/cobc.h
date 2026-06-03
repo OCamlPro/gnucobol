@@ -136,7 +136,7 @@ enum cb_current_date {
 #define	CB_CS_ALLOCATE			(COB_U64_C(1) << 1)	/* within ALLOCATE statement */
 #define	CB_CS_ALPHABET			(COB_U64_C(1) << 2)
 #define	CB_CS_ASSIGN			(COB_U64_C(1) << 3)
-#define	CB_CS_CALL			(COB_U64_C(1) << 4)	/* within CALL statement */
+#define	CB_CS_CALL_CONVENTION		(COB_U64_C(1) << 4)	/* within CALL statement */
 #define	CB_CS_CONSTANT			(COB_U64_C(1) << 5)
 #define	CB_CS_DATE			(COB_U64_C(1) << 6)
 #define	CB_CS_DAY			(COB_U64_C(1) << 7)
@@ -175,8 +175,8 @@ enum cb_current_date {
 #define	CB_CS_VALIDATE_STATUS		(COB_U64_C(1) << 40)
 #define	CB_CS_USAGE			(COB_U64_C(1) << 41)
 #define	CB_CS_REPOSITORY		(COB_U64_C(1) << 42)
-/* #define	CB_CS_MOVE_CONV			CB_CS_DAY (unused) */
-#define	CB_READY_RESET_TRACE		CB_CS_DAY
+#define	CB_CS_CALL_USING		(COB_U64_C(1) << 43)	/* within USING phrase of CALL statement */
+#define	CB_CS_READY_OR_RESET		(COB_U64_C(1) << 44)
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"

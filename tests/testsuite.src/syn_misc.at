@@ -4413,11 +4413,11 @@ AT_DATA([prog.cob], [
        LOCAL-STORAGE SECTION.
        77 C PIC X.
        PROCEDURE     DIVISION.
+           CALL EXTERN 'callee' using C.
            CALL 'callee' using C.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CLEANUP
 
 
@@ -7424,10 +7424,6 @@ AT_DATA([prog.cob], [
    *>if IN-TYPE fails the PICTURE check, it is assumed to be 1;
    *>without a DEFAULT clause, the assumed value would here be 0.
                                 DEFAULT 1.
-        03  IN-TYPE-WO-DEFAULT PIC 99
-   *>checks DEFAULT NONE is accepted (NONE is sensitive in the DEFAULT
-   *>clause only).
-	                        DEFAULT NONE.
    *>PRESENT WHEN states the condition for this format to be used.
         03  IN-REC-FORMAT-1 PRESENT WHEN IN-TYPE = 0 OR 1 OR 2.
    *>PICTURE A(20) checks for 20 alphabetic (or space) characters.
@@ -7537,6 +7533,29 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free prog.cob], [0], [], [])
+
+AT_DATA([err.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+    01  INPUT-RECORD.
+        03  IN-TYPE-DEFAULT-ERROR PIC 99
+   *>intentional syntax error to validate the special context for DEFAULT
+   *>is left in such cases.
+	                        DEFAULT PROCEDURE.
+        03  IN-TYPE-WO-DEFAULT PIC 99
+   *>checks DEFAULT NONE is accepted (NONE is sensitive in the DEFAULT
+   *>clause only).
+	                        DEFAULT NONE.
+    PROCEDURE DIVISION.
+      GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free err.cob], [1], [],
+[err.cob:10: error: syntax error, unexpected PROCEDURE
+err.cob:10: warning: optional period used
+])
 
 AT_CLEANUP
 
