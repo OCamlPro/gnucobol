@@ -13416,37 +13416,54 @@ display_statement:
 ;
 
 display_body:
-  id_or_lit UPON_ENVIRONMENT_NAME __leave_display_cs _common_exception_phrases
+  display_body_with_exception_phrases
+| display_body_without_exception_phrases
+  {
+	__CS_LEAVE (CB_CS_DISPLAY);
+  }
+;
+
+display_body_with_exception_phrases:
+  id_or_lit UPON_ENVIRONMENT_NAME _common_display_exception_phrases
   {
 	cb_emit_env_name ($1);
   }
-| id_or_lit UPON_ENVIRONMENT_VALUE __leave_display_cs _common_exception_phrases
+| id_or_lit UPON_ENVIRONMENT_VALUE _common_display_exception_phrases
   {
 	cb_emit_env_value ($1);
   }
-| id_or_lit UPON_ARGUMENT_NUMBER __leave_display_cs _common_exception_phrases
+| id_or_lit UPON_ARGUMENT_NUMBER _common_display_exception_phrases
   {
 	cb_emit_arg_number ($1);
   }
-| id_or_lit UPON_COMMAND_LINE __leave_display_cs _common_exception_phrases
+| id_or_lit UPON_COMMAND_LINE _common_display_exception_phrases
   {
 	cb_emit_command_line ($1);
   }
-| screen_or_device_display __leave_display_cs _common_exception_phrases
-| _with CONVERSION screen_or_device_display __leave_display_cs _common_exception_phrases
+| screen_or_device_display _common_display_exception_phrases
+| _with CONVERSION screen_or_device_display _common_display_exception_phrases
   {
 	/* note: aliased by CONVERT */
 	set_dispattr (COB_SCREEN_CONV);
 	CB_PENDING ("DISPLAY WITH CONVERSION");
   }
-| display_erase __leave_display_cs	/* note: may also be part of display_pos_specifier */
-| display_pos_specifier __leave_display_cs
-| display_message_box __leave_display_cs
-| display_window __leave_display_cs
-| display_floating_window __leave_display_cs
-| display_initial_window __leave_display_cs
 ;
-__leave_display_cs: { __CS_LEAVE (CB_CS_DISPLAY); };
+
+_common_display_exception_phrases:
+  {
+	__CS_LEAVE (CB_CS_DISPLAY);
+  }
+  _common_exception_phrases
+;
+
+display_body_without_exception_phrases:
+  display_erase		/* note: may also be part of display_pos_specifier */
+| display_pos_specifier
+| display_message_box
+| display_window
+| display_floating_window
+| display_initial_window
+;
 
 screen_or_device_display:
   display_list _x_list
