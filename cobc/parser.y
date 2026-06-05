@@ -302,63 +302,76 @@ enum cobc_hd {
 
 /* Helpers for manipulation of special context */
 
-#define __CS_CHECK(cs_mask)						\
+/* A macro that is flexible w.r.t resets.  Use this when a valid lookahead token
+   auto-enters a special context, while triggering an action that resets this
+   very same context (in which case the context ends-up not being entered).
+   Examples of this case inclue two successive INQUIRE or MODIFY statements. */
+#define __CS_ENSURE(cs_mask)			\
+	do {					\
+		cobc_cs_check |= (cs_mask);	\
+	} ONCE_COB /* LCOV_EXCL_LINE */
+
+/* Unconditionally clears a special context. */
+#define __CS_CLEAR(cs_mask)			\
+	do {					\
+		cobc_cs_check &= ~(cs_mask);	\
+	} ONCE_COB /* LCOV_EXCL_LINE */
+
+/* Leaves every special context. */
+#define __CS_CLEAR_ALL()			\
+	do {					\
+		cobc_cs_check = COB_U64_C(0);	\
+	} ONCE_COB /* LCOV_EXCL_LINE */
+
+#ifdef COB_TREE_DEBUG	 /* (--enable-cobc-internal-checks at configure time) */
+
+/* Fails when the given contexts are not active. */
+# define __CS_CHECK(cs_mask)						\
 	do {								\
-		/* LCOV_EXCL_START */					\
-		if ((cobc_cs_check & (cs_mask)) == COB_U64_C (0)) {	\
+		if ((cobc_cs_check & (cs_mask)) != (cs_mask)) {		\
 			cobc_err_msg (__FILE__				\
 				      ":%d: expected special"		\
 				      " context: %s", __LINE__,		\
 				      #cs_mask);			\
-			cobc_cs_check |= (cs_mask);			\
+			COBC_ABORT ();					\
 		}							\
-		/* LCOV_EXCL_STOP */					\
-	} while (0);
+	} ONCE_COB /* LCOV_EXCL_LINE */
 
-#define __CS_LEAVE(cs_mask)						\
+/* Similar to __CS_CLEAR (cs_mask), but checks first that the given special
+   contexts are not active. */
+# define __CS_LEAVE(cs_mask)						\
 	do {								\
-		/* LCOV_EXCL_START */					\
-		if ((cobc_cs_check & (cs_mask)) == COB_U64_C (0)) {	\
+		if ((cobc_cs_check & (cs_mask)) != (cs_mask)) {		\
 			cobc_err_msg (__FILE__				\
 				      ":%d: leaving unentered special"	\
 				      " context: %s", __LINE__,		\
 				      #cs_mask);			\
+			COBC_ABORT ();					\
 		}							\
-		/* LCOV_EXCL_STOP */					\
-		cobc_cs_check ^= (cs_mask);				\
-	} while (0);
+		cobc_cs_check &= ~(cs_mask);				\
+	} ONCE_COB /* LCOV_EXCL_LINE */
 
-#define __CS_ENTER(cs_mask)						\
+/* Similar to __CS_ENSURE (cs_mask), but checks first that the given special
+   contexts are active. */
+# define __CS_ENTER(cs_mask)						\
 	do {								\
-		/* LCOV_EXCL_START */					\
 		if ((cobc_cs_check & (cs_mask)) != COB_U64_C (0)) {	\
 			cobc_err_msg (__FILE__				\
 				      ":%d: re-entering special"	\
 				      " context: %s",  __LINE__,	\
 				      #cs_mask);			\
+			COBC_ABORT ();					\
 		}							\
-		/* LCOV_EXCL_STOP */					\
 		cobc_cs_check |= (cs_mask);				\
-	} while (0);
+	} ONCE_COB /* LCOV_EXCL_LINE */
 
-/* Like __CS_ENTER, but flexible w.r.t resets.  Use this when a token that
-   auto-enters a special context may trigger an anction that resets this
-   context.  Examples of this case inclue INQUIRE or MODIFY. */
-#define __CS_ENSURE(cs_mask)						\
-	do {								\
-		cobc_cs_check |= (cs_mask);				\
-	} while (0);
+#else  /* !COB_TREE_DEBUG */
 
-/* Like __CS_LEAVE, but supports early resets. */
-#define __CS_CLEAR(cs_mask)						\
-	do {								\
-		cobc_cs_check &= ~(cs_mask);				\
-	} while (0);
+# define __CS_CHECK(cs_mask) do {} ONCE_COB
+# define __CS_LEAVE(cs_mask) __CS_CLEAR (cs_mask)
+# define __CS_ENTER(cs_mask) __CS_ENSURE (cs_mask)
 
-#define __CS_CLEAR_ALL()						\
-	do {								\
-		cobc_cs_check = COB_U64_C(0);				\
-	} while (0);
+#endif
 
 /* Special contexts for statements that do not reduce to `error` after the
    context is entered. */
@@ -15046,8 +15059,9 @@ inquire_statement:
   }
   inquire_body
   {
-	/* Note: may be evaluated while lookehead token is INQUIRE or MODIFY; we
-	   use __CS_ENSURE above and in MODIFY to account for this situation. */
+	/* Note: may be evaluated while lookahead token is INQUIRE or MODIFY for
+	   next statement; we use __CS_ENSURE above and in MODIFY to deal with
+	   this case. */
 	__CS_LEAVE (CB_CS_INQUIRE_MODIFY);
   }
 ;
@@ -15516,9 +15530,9 @@ modify_statement:
   modify_body
   _end_modify
   {
-	/* Note: may be evaluated while lookehead token is INQUIRE or MODIFY; we
-	   use __CS_ENSURE above and in INQUIRE to account for this
-	   situation. */
+	/* Note: may be evaluated while lookahead token is INQUIRE or MODIFY for
+	   next statement; we use __CS_ENSURE above and in INQUIRE to deal with
+	   this case. */
 	__CS_LEAVE (CB_CS_INQUIRE_MODIFY);
   }
 ;
