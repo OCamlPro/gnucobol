@@ -7540,21 +7540,23 @@ AT_DATA([err.cob], [
        DATA  DIVISION.
        WORKING-STORAGE SECTION.
     01  INPUT-RECORD.
+        03  IN-TYPE             PIC 99
+                                DEFAULT NONE.
         03  IN-TYPE-DEFAULT-ERROR PIC 99
    *>intentional syntax error to validate the special context for DEFAULT
    *>is left in such cases.
-	                        DEFAULT PROCEDURE.
+                                DEFAULT PROCEDURE.
         03  IN-TYPE-WO-DEFAULT PIC 99
    *>checks DEFAULT NONE is accepted (NONE is sensitive in the DEFAULT
    *>clause only).
-	                        DEFAULT NONE.
+                                DEFAULT NONE.
     PROCEDURE DIVISION.
       GOBACK.
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free err.cob], [1], [],
-[err.cob:10: error: syntax error, unexpected PROCEDURE
-err.cob:10: warning: optional period used
+[err.cob:12: error: syntax error, unexpected PROCEDURE
+err.cob:12: warning: optional period used
 ])
 
 AT_CLEANUP
