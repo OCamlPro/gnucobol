@@ -3,10 +3,8 @@
 
 	* tree.h, parser.y: change type of cobc_cs_check flags to permit
 	  distinguishing more grammar contexts
-	* cobc.h, parser.y, reserved.c (lookup_reserved_word), error.c
-	  (cb_error_always): generalize and cleanup device for handling special
-	  contexts; replace cobc_in_repository flag with a check on a special
-	  context
+	* cobc.h, parser.y, reserved.c (lookup_reserved_word): generalize and
+	  cleanup device for handling special contexts
 	* parser.y: use new macros __CS_ENSURE, __CS_CLEAR, __CS_CLEAR_ALL,
 	  __CS_CHECK, __CS_LEAVE, __CS_ENTER, to help debug and explicitly
 	  manipulate special contexts
