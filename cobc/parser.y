@@ -6452,17 +6452,17 @@ obsolete_dos_vs_apply_phrase:
 /* MULTIPLE FILE TAPE clause */
 
 multiple_file_tape_clause:
-  MULTIPLE			/* Note: tested in NIST85 only. */
+  MULTIPLE
   {
 	/* Fake for TAPE */
 	__CS_ENTER (CB_CS_ASSIGN);
-  }
-  _file _tape _contains multiple_file_list
-  {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_I_O_CONTROL, 0);
 	cb_verify (cb_multiple_file_tape_clause, "MULTIPLE FILE TAPE");
+  }
+  _file _tape _contains multiple_file_list
+  {
 	__CS_LEAVE (CB_CS_ASSIGN);
   }
 ;
