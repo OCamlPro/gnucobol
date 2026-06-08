@@ -174,6 +174,10 @@ static char			err_msg[COB_MINI_BUFF];
 
 struct cb_text_list	*cb_include_file_list_directive = NULL;
 
+/* Helper macros */
+
+#define cobc_in_repository ((cobc_cs_check & CB_CS_REPOSITORY) != COB_U64_C(0))
+
 /* Function declarations */
 static void	read_literal (const char, const enum cb_literal_type);
 static int	scan_x (const char *, const char *);

@@ -9,8 +9,8 @@
 	  __CS_CHECK, __CS_LEAVE, __CS_ENTER, to help debug and explicitly
 	  manipulate special contexts
 	* error.c (cb_error_always, cb_error_internal), tree.h, tree.c
-	  (cb_build_program): replace cobc_in_repository flag with a check on
-	  a special context
+	  (cb_build_program), scanner.l: replace cobc_in_repository flag
+	  with a check on a special context
 
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 

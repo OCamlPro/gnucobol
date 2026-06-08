@@ -2288,8 +2288,6 @@ extern unsigned int	cobc_areacheck;
 extern unsigned int	cobc_in_area_a;	      /* set by scanner only */
 extern unsigned int	cobc_still_in_area_a; /* raised by parser only */
 
-#define cobc_in_repository ((cobc_cs_check & CB_CS_REPOSITORY) != COB_U64_C(0))
-
 /* reserved.c */
 extern int			is_reserved_word (const char *);
 extern int			is_default_reserved_word (const char *);
