@@ -11,6 +11,7 @@
 	* error.c (cb_error_always, cb_error_internal), tree.h, tree.c
 	  (cb_build_program), scanner.l: replace cobc_in_repository flag
 	  with a check on a special context
+	* scanner.l: introduce cobc_in_exit_statement helper macro
 
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
