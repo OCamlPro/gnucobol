@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -2183,7 +2183,6 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	}
 	cb_reset_78 ();
 	cobc_in_procedure = 0;
-	cobc_in_repository = 0;
 	cb_clear_real_field ();
 
 	p = cobc_parse_malloc (sizeof (struct cb_program));
