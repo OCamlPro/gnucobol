@@ -4421,6 +4421,27 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([OPTIONS paragraph special context])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       OPTIONS
+       DATA            DIVISION.
+       LOCAL-STORAGE   SECTION.
+      *Check C is accepted here, despinte being sensitive in OPTIONS
+      *paragraph (not properly terminated above).
+       77 C            PIC 9.
+       PROCEDURE       DIVISION.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:5: error: syntax error, unexpected DATA, expecting .
+])
+AT_CLEANUP
+
+
 AT_SETUP([dangling LINKAGE items])
 AT_KEYWORDS([misc])
 

@@ -4121,11 +4121,11 @@ _options_paragraph:
 | OPTIONS TOK_DOT		/* Note: OPTIONS auto-enters CB_CS_OPTIONS */
   _options_clauses
   {
-	  __CS_LEAVE (CB_CS_OPTIONS);
+	__CS_LEAVE (CB_CS_OPTIONS);
   }
 | OPTIONS error
   {
-	  __CS_LEAVE (CB_CS_OPTIONS);
+	__CS_LEAVE (CB_CS_OPTIONS);
   }
 ;
 
