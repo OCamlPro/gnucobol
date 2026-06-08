@@ -57,24 +57,6 @@ Mostly implemented
 
 3.1.3 detailed diagnostics with output of offending code (similar to gcc)
 
-3.1.4 Add special contexts dedicated to the arguments of some intrinsics
-
-Some words are context-sensitive only in the context of some intrinsic
-functions arguments.  This is the case of ANUM, or BYTE, HEX, and NAT
-for CONVERT, or ACTIVATING, CURRENT, STACK, and TOP-LEVEL for
-MODULE-NAME, for instance.
-
-This could be handled in two ways, either: (i) by using a generic
-mechanism (triggered after looking up intrinsic functions in the
-scanner) and a new context set for arguments in `struct
-cb_intrinsic_table`; or (ii) more explicitly in the parser itself (in
-rule `function`).  In both cases, reset of special contexts need to be
-performed in parser actions.
-
-Alternative (i) mimicks the behavior of current token-based entry for
-contexts, but may be harder to adapt to cases of nested function calls
-(as we currently do not maintain a stack of active special contexts).
-
 3.2 Data representations
 
 3.2.1 Fix handling of 32bit, 64bit, and 128bit floating-point usages

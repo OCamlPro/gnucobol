@@ -513,6 +513,7 @@ cb_error_always (const char *fmt, ...)
 {
 	va_list ap;
 
+	cobc_in_repository = 0;
 	va_start (ap, fmt);
 	print_error (NULL, 0, CB_KIND_ERROR, fmt, ap, NULL);
 	va_end (ap);
@@ -533,6 +534,8 @@ cb_error_internal (const char *fmt, va_list ap)
 	const enum cb_warn_opt	opt = cb_warn_ignored_error;
 	const enum cb_warn_val	pref = get_warn_opt_value (opt);
 	enum cb_warn_val	ret = pref;
+
+	cobc_in_repository = 0;
 
 	if (ignore_error && pref == COBC_WARN_DISABLED) {
 		return pref;

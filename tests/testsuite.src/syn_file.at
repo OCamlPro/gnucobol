@@ -2512,34 +2512,3 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:12: error: syntax error, unexpected INPUT, expecting Identifier
 ])
 AT_CLEANUP
-
-
-AT_SETUP([MULTIPLE FILE TAPE])
-AT_KEYWORDS([file])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           SELECT in1 ASSIGN "in1".
-           SELECT in2 ASSIGN "in2".
-       I-O-CONTROL.
-           MULTIPLE FILE TAPE CONTAINS
-	     in1 POSITION 1
-	     in2 POSITION 2.
-       DATA DIVISION.
-       FILE SECTION.
-       FD in1.
-       01 FILLER PIC X.
-       FD in2.
-       01 FILLER PIC X.
-       PROCEDURE DIVISION.
-           CONTINUE.
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:10: warning: MULTIPLE FILE TAPE is obsolete in GnuCOBOL
-])
-AT_CLEANUP

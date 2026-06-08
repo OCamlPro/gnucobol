@@ -1,9 +1,10 @@
 # progtest.m4
-# serial 10 (gettext-0.23)
-dnl Copyright (C) 1996-2003, 2005, 2008-2024 Free Software Foundation, Inc.
+# serial 11 (gettext-0.26)
+dnl Copyright (C) 1996-2003, 2005, 2008-2025 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 dnl
 dnl This file can be used in projects which are not available under
 dnl the GNU General Public License or the GNU Lesser General Public
@@ -67,7 +68,7 @@ AC_CACHE_VAL([ac_cv_path_$1],
       test -z "$ac_dir" && ac_dir=.
       for ac_exec_ext in '' $ac_executable_extensions; do
         if $ac_executable_p "$ac_dir/$ac_word$ac_exec_ext"; then
-          echo "$as_me: trying $ac_dir/$ac_word..." >&AS_MESSAGE_LOG_FD
+          echo "$as_me:${as_lineno-$LINENO}: trying $ac_dir/$ac_word..." >&AS_MESSAGE_LOG_FD
           if [$3]; then
             ac_cv_path_$1="$ac_dir/$ac_word$ac_exec_ext"
             break 2
