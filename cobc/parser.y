@@ -11854,10 +11854,10 @@ statement:
 /* ACCEPT statement */
 
 accept_statement:
-  ACCEPT
+  ACCEPT			/* auto-enters CB_CS_ACCEPT */
   {
 	begin_statement (STMT_ACCEPT, TERM_ACCEPT);
-	__CS_ENTER (CB_CS_ACCEPT);
+	__CS_ENSURE (CB_CS_ACCEPT);
   }
   accept_body
   _end_accept
@@ -12545,11 +12545,11 @@ _end_add:
 /* ALLOCATE statement */
 
 allocate_statement:
-  ALLOCATE
+  ALLOCATE			/* auto-enters CB_CS_ALLOCATE */
   {
 	begin_statement (STMT_ALLOCATE, 0);
 	current_statement->flag_no_based = 1;
-	__CS_ENTER (CB_CS_ALLOCATE);
+	__CS_ENSURE (CB_CS_ALLOCATE);
   }
   allocate_body
   {
@@ -16029,10 +16029,10 @@ exception_name:
 /* READ statement */
 
 read_statement:
-  READ
+  READ				/* auto-enters CB_CS_READ */
   {
 	begin_statement (STMT_READ, TERM_READ);
-	__CS_ENTER (CB_CS_READ);
+	__CS_ENSURE (CB_CS_READ);
   }
   read_body
   _end_read
@@ -17019,10 +17019,10 @@ _end_start:
 
 /* STOP statement */
 
-stop: STOP
+stop: STOP			/* auto-enters CB_CS_STOP */
   {
 	check_non_area_a ($1);
-	__CS_ENTER (CB_CS_STOP);
+	__CS_ENSURE (CB_CS_STOP);
   }
 ;
 stop_statement:

@@ -254,7 +254,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "ACCEPT",			1, 0, ACCEPT,			/* 2002 */
-				0, 0
+				CB_CS_ACCEPT, 0
   },
   { "ACCESS",			0, 0, ACCESS,			/* 2002 */
 				0, 0
@@ -299,7 +299,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "ALLOCATE",			0, 0, ALLOCATE,			/* 2002 */
-				0, 0
+				CB_CS_ALLOCATE, 0
   },
   { "ALLOWING",		0, 1, ALLOWING,		/* ACU extension */
 				0, CB_CS_OPEN
@@ -2324,7 +2324,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "READ",			1, 0, READ,			/* 2002 */
-				0, 0
+				CB_CS_READ, 0
   },
   { "READ-ONLY",		0, 1, READ_ONLY,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -2758,7 +2758,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_OCCURS
   },
   { "STOP",			0, 0, STOP,			/* 2002 */
-				0, 0
+				CB_CS_STOP, 0
   },
   { "STRING",			1, 0, STRING,			/* 2002 */
 				0, 0
