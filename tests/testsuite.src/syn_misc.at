@@ -4403,6 +4403,45 @@ prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
 AT_CLEANUP
 
 
+AT_SETUP([CALL-CONVENTION special context])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA          DIVISION.
+       LOCAL-STORAGE SECTION.
+       77 C PIC X.
+       PROCEDURE     DIVISION.
+           CALL EXTERN 'callee' using C.
+           CALL 'callee' using C.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([OPTIONS paragraph special context])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       OPTIONS
+       DATA            DIVISION.
+       LOCAL-STORAGE   SECTION.
+      *Check C is accepted here, despinte being sensitive in OPTIONS
+      *paragraph (not properly terminated above).
+       77 C            PIC 9.
+       PROCEDURE       DIVISION.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:5: error: syntax error, unexpected DATA, expecting .
+])
+AT_CLEANUP
+
+
 AT_SETUP([dangling LINKAGE items])
 AT_KEYWORDS([misc])
 
@@ -7515,6 +7554,31 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free prog.cob], [0], [], [])
+
+AT_DATA([err.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+    01  INPUT-RECORD.
+        03  IN-TYPE             PIC 99
+                                DEFAULT NONE.
+        03  IN-TYPE-DEFAULT-ERROR PIC 99
+   *>intentional syntax error to validate the special context for DEFAULT
+   *>is left in such cases.
+                                DEFAULT PROCEDURE.
+        03  IN-TYPE-WO-DEFAULT PIC 99
+   *>checks DEFAULT NONE is accepted (NONE is sensitive in the DEFAULT
+   *>clause only).
+                                DEFAULT NONE.
+    PROCEDURE DIVISION.
+      GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free err.cob], [1], [],
+[err.cob:12: error: syntax error, unexpected PROCEDURE
+err.cob:12: warning: optional period used
+])
 
 AT_CLEANUP
 
