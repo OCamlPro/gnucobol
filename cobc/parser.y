@@ -2844,11 +2844,14 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token END_DISPLAY		"END-DISPLAY"
 %token END_DIVIDE		"END-DIVIDE"
 %token END_EVALUATE		"END-EVALUATE"
+%token END_FACTORY		"END FACTORY"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
 %token END_JSON			"END-JSON"
+%token END_METHOD		"END-METHOD"
 %token END_MODIFY		"END-MODIFY"
 %token END_MULTIPLY		"END-MULTIPLY"
+%token END_OBJECT		"END OBJECT"
 %token END_PERFORM		"END-PERFORM"
 %token END_PROGRAM		"END PROGRAM"
 %token END_CLASS		"END CLASS"
@@ -2954,6 +2957,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token FUNCTION_NAME		"intrinsic function name"
 %token FUNCTION_POINTER		"FUNCTION-POINTER"
 %token GENERATE
+%token GET
 %token GIVING
 %token GLOBAL
 %token GO
@@ -3089,6 +3093,8 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token METHOD
+%token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
@@ -3184,6 +3190,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
 %token OVERLINE
+%token OVERRIDE
 %token PACKED_DECIMAL		"PACKED-DECIMAL"
 %token PADDING
 %token PASCAL
@@ -3777,8 +3784,33 @@ program_definition:
 class_definition:
   _identification_header
   class_id_paragraph
-  /* TODO: _program_body */
+  _class_body
+  method_definition /* Move to procedure division */
   end_class
+;
+
+factory_header: | FACTORY TOK_DOT /* _implements_clause */
+object_header: | OBJECT TOK_DOT /* _implements_clause */
+
+factory_definition:
+  factory_header
+  _program_body
+  END FACTORY
+  _dot
+;
+
+object_definition:
+  object_header
+  _program_body
+  END OBJECT
+  _dot
+;
+
+method_definition:
+  _identification_header
+  method_id_paragraph
+  _program_body
+  end_method
 ;
 
 function_definition:
@@ -3825,7 +3857,18 @@ end_class:
   {
 	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
   }
+;
 
+end_method:
+  END_METHOD
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END METHOD");
+  }
+  end_program_name _dot
+  {
+	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
+  }
 ;
 
 end_function:
@@ -4103,6 +4146,27 @@ class_id_paragraph:
   }
 ;
 
+method_id_header:
+  CLASS_ID
+  {
+	cobc_in_id = 1;
+  }
+;
+
+get_or_set:
+  GET
+| SET
+;
+
+method_signature:
+  program_id_name _as_literal
+| get_or_set PROPERTY WORD
+;
+
+method_id_paragraph:
+  method_id_header TOK_DOT method_signature _override _is_final
+;
+
 end_class_name:
   CLASS_NAME
 | LITERAL
@@ -4128,6 +4192,25 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
+;
+
+/* CLASS body */
+
+_factory_or_instance_definition:
+ _identification_header
+ factory_or_object_definition
+;
+
+
+factory_or_object_definition:
+  factory_definition
+  object_definition
+;
+
+_class_body:
+  _options_paragraph
+  _environment_division
+  _factory_or_instance_definition
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -4698,6 +4781,7 @@ repository_name:
   {
 	yyerrok;
   }
+| CLASS 
 ;
 
 repository_name_list:
@@ -20880,6 +20964,7 @@ _is_equal:		| IS | TOK_EQUAL;
 _is_are:	| IS | ARE ;
 _is_are_equal:		| IS | ARE | TOK_EQUAL;
 _is_in:		| IS | IN ;
+_is_final:		| _is FINAL ;
 _key:		| KEY ;
 _line:		| LINE ;
 _line_or_lines:	| LINE | LINES ;
@@ -20897,6 +20982,7 @@ _on_for:	| ON | FOR ;
 _onoff_status:	| STATUS IS | STATUS | IS ;
 _other:		| OTHER ;
 _others:		| OTHERS ;
+_override:		| OVERRIDE ;
 _procedure:	| PROCEDURE ;
 _program:	| PROGRAM ;
 _protected:	| PROTECTED ;

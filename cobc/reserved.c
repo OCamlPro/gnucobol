@@ -1442,8 +1442,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "GENERATE",			0, 0, GENERATE,			/* 2002 */
 				0, 0
   },
-  { "GET",			0, 0, -1,			/* 2002 */
-				0, 0
+  { "GET",			0, 0, GET,			/* 2002 */
+				0, 
   },
   { "GIVING",			0, 0, GIVING,			/* 2002 */
 				0, 0
@@ -1870,10 +1870,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MESSAGE-TAG",			0, 0, -1,			/* COBOL 2023 MCS */
 				0, 0
   },
-  { "METHOD",			0, 0, -1,			/* 2002 */
+  { "METHOD",			0, 0, METHOD,			/* 2002 */
 				0, 0
   },
-  { "METHOD-ID",		0, 0, -1,			/* 2002 */
+  { "METHOD-ID",		0, 0, METHOD_ID,			/* 2002 */
 				0, 0
   },
   { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */

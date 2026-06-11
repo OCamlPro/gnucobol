@@ -666,6 +666,21 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (END_CLASS);
 }
 
+"END"[ ,;\n]+"FACTORY"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_FACTORY);
+}
+
+"END"[ ,;\n]+"OBJECT"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_OBJECT);
+}
+
+"END"[ ,;\n]+"METHOD"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_METHOD);
+}
+
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
 	if (lookup_reserved_word ("SYMBOL")) {
 		count_lines (yytext);
