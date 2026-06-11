@@ -3785,33 +3785,35 @@ class_definition:
   _identification_header
   class_id_paragraph
   _class_body
-  method_definition /* Move to procedure division */
+  /* method_definition /\* Move to procedure division *\/ */
   end_class
 ;
 
-factory_header: | FACTORY TOK_DOT /* _implements_clause */
-object_header: | OBJECT TOK_DOT /* _implements_clause */
+factory_header: FACTORY TOK_DOT /* _implements_clause */;
+object_header: OBJECT TOK_DOT /* _implements_clause */;
 
 factory_definition:
+  _identification_header
   factory_header
   _program_body
-  END FACTORY
+  END_FACTORY
   _dot
 ;
 
-object_definition:
+instance_definition:
+  _identification_header
   object_header
   _program_body
-  END OBJECT
+  END_OBJECT
   _dot
 ;
 
-method_definition:
-  _identification_header
-  method_id_paragraph
-  _program_body
-  end_method
-;
+/* method_definition: */
+/*   _identification_header */
+/*   method_id_paragraph */
+/*   _program_body */
+/*   end_method */
+/* ; */
 
 function_definition:
   _identification_header
@@ -4196,21 +4198,17 @@ _program_body:
 
 /* CLASS body */
 
-_factory_or_instance_definition:
- _identification_header
- factory_or_object_definition
-;
-
-
-factory_or_object_definition:
-  factory_definition
-  object_definition
+_factory_or_instance_definitions:
+| factory_definition
+| instance_definition
+| factory_definition
+  instance_definition
 ;
 
 _class_body:
   _options_paragraph
   _environment_division
-  _factory_or_instance_definition
+  _factory_or_instance_definitions
 ;
 
 /* IDENTIFICATION DIVISION */
