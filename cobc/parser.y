@@ -23,7 +23,7 @@
 
 %defines
 %verbose
-%error-verbose
+%define parse.error verbose
 
 %{
 #include "config.h"
@@ -2838,23 +2838,24 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token END_ACCEPT		"END-ACCEPT"
 %token END_ADD  		"END-ADD"
 %token END_CALL 		"END-CALL"
+%token END_CLASS		"END CLASS"
 %token END_COMPUTE		"END-COMPUTE"
 %token END_COLOR		"END-COLOR"
 %token END_DELETE		"END-DELETE"
 %token END_DISPLAY		"END-DISPLAY"
 %token END_DIVIDE		"END-DIVIDE"
 %token END_EVALUATE		"END-EVALUATE"
-%token END_FACTORY		"END FACTORY"
+%token END_FACTORY		"END-FACTORY"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
+%token END_INTERFACE	"END-INTERFACE"
 %token END_JSON			"END-JSON"
 %token END_METHOD		"END-METHOD"
 %token END_MODIFY		"END-MODIFY"
 %token END_MULTIPLY		"END-MULTIPLY"
-%token END_OBJECT		"END OBJECT"
+%token END_OBJECT		"END-OBJECT"
 %token END_PERFORM		"END-PERFORM"
 %token END_PROGRAM		"END PROGRAM"
-%token END_CLASS		"END CLASS"
 %token END_READ			"END-READ"
 %token END_RECEIVE		"END-RECEIVE"
 %token END_RETURN		"END-RETURN"
@@ -2898,6 +2899,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token EXCLUSIVE
 %token EXHIBIT
 %token EXIT
+%token EXPANDS
 %token EXPONENTIATION		"exponentiation operator"
 %token EXTEND
 %token EXTENDED_SEARCH		"EXTENDED-SEARCH"
@@ -3010,6 +3012,9 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token INSERT_ROWS		"INSERT-ROWS"
 %token INSPECT
 %token INSTALLATION		/* remark: not used here */
+%token INTERFACE
+%token INTERFACE_ID		"INTERFACE-ID"
+%token INTERFACE_NAME
 %token INTERMEDIATE
 %token INTERNAL
 %token INTO
@@ -3093,7 +3098,6 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token MENU
 %token MERGE
 %token MESSAGE
-%token METHOD
 %token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
@@ -3754,6 +3758,7 @@ source_element:
   program_definition
 | class_definition
 | function_definition
+| interface_definition
 | program_prototype
 | function_prototype
 ;
@@ -3785,16 +3790,35 @@ class_definition:
   _identification_header
   class_id_paragraph
   _class_body
-  /* method_definition /\* Move to procedure division *\/ */
   end_class
 ;
 
-factory_header: FACTORY TOK_DOT /* _implements_clause */;
-object_header: OBJECT TOK_DOT /* _implements_clause */;
+_class_body:
+  _options_paragraph
+  _environment_division
+  _factory_or_instance_definition
+;
+
+interface_definition:
+  _identification_header
+  interface_id_paragraph
+  _options_paragraph
+  _environment_division
+  procedure_division
+  end_interface
+;
+
+_factory_or_instance_definition:
+  /* empty */
+| factory_definition
+| instance_definition
+| factory_definition
+  instance_definition
+;
 
 factory_definition:
   _identification_header
-  factory_header
+  FACTORY TOK_DOT /* _implements clause */
   _program_body
   END_FACTORY
   _dot
@@ -3802,18 +3826,18 @@ factory_definition:
 
 instance_definition:
   _identification_header
-  object_header
+  OBJECT TOK_DOT /* _implements clause */
   _program_body
   END_OBJECT
   _dot
 ;
 
-/* method_definition: */
-/*   _identification_header */
-/*   method_id_paragraph */
-/*   _program_body */
-/*   end_method */
-/* ; */
+method_definition:
+  _identification_header
+  method_id_header TOK_DOT method_signature _override _is_final
+  _program_body
+  end_method
+;
 
 function_definition:
   _identification_header
@@ -3855,10 +3879,19 @@ end_class:
 	last_source_line = cb_source_line;
 	check_area_a_of ("END CLASS");
   }
-  end_class_name _dot
+  class_id_name _dot
   {
 	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
   }
+;
+
+end_interface:
+  END_INTERFACE
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END INTERFACE");
+  }
+  interface_id_name _dot
 ;
 
 end_method:
@@ -3867,7 +3900,7 @@ end_method:
 	last_source_line = cb_source_line;
 	check_area_a_of ("END METHOD");
   }
-  end_program_name _dot
+  _end_program_name TOK_DOT
   {
 	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
   }
@@ -4056,8 +4089,23 @@ class_id_header:
   }
 ;
 
+interface_id_header:
+  INTERFACE_ID
+  {
+	cobc_in_id = 1;
+  }
+;
+
 class_id_name:
   CLASS_NAME	{ $$ = $1; }
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
+interface_id_name:
+  INTERFACE_NAME	{ $$ = $1; }
 | LITERAL
   {
 	cb_trim_program_id ($1);
@@ -4077,6 +4125,21 @@ parent_class_name_list:
 | parent_class_name_list parent_class_name
 ;
 
+/* The 2 rules below look same due to usage of WORD,
+   but they would later require checks that would differentiate
+   them as the rule name says.
+*/
+interface_name_list:
+  WORD
+| interface_name_list WORD
+;
+
+class_or_interface_name_list:
+  WORD
+| class_or_interface_name_list WORD
+;
+
+
 /* Parameterized classes not supported for now. */
 class_param_list:
   WORD
@@ -4086,6 +4149,7 @@ class_param_list:
 _inherits_phrase:
   /* empty */
 | INHERITS _from parent_class_name_list
+| INHERITS _from interface_name_list
 ;
 
 _using_phrase:
@@ -4148,8 +4212,21 @@ class_id_paragraph:
   }
 ;
 
+interface_id_paragraph:
+  interface_id_header TOK_DOT interface_id_name _as_literal
+  {
+	cobc_cs_check = 0;
+	cobc_in_id = 0;
+
+	CB_UNSUPPORTED ("interfaces in object-oriented COBOL");
+  }
+  _inherits_phrase
+  _using_phrase
+  TOK_DOT
+;
+
 method_id_header:
-  CLASS_ID
+  METHOD_ID
   {
 	cobc_in_id = 1;
   }
@@ -4163,18 +4240,6 @@ get_or_set:
 method_signature:
   program_id_name _as_literal
 | get_or_set PROPERTY WORD
-;
-
-method_id_paragraph:
-  method_id_header TOK_DOT method_signature _override _is_final
-;
-
-end_class_name:
-  CLASS_NAME
-| LITERAL
-  {
-	cb_trim_program_id ($1);
-  }
 ;
 
 
@@ -4309,6 +4374,11 @@ program_id_name:
   }
 ;
 
+_end_program_name:
+  /* empty */
+| end_program_name
+;
+
 end_program_name:
   PROGRAM_NAME
 | LITERAL
@@ -4320,6 +4390,16 @@ end_program_name:
 _as_literal:
   /* empty */			{ $$ = NULL; }
 | AS LITERAL			{ $$ = $2; }
+;
+
+_override:
+  /* empty */
+| OVERRIDE
+;
+
+_is_final:
+  /* empty */
+| _is FINAL
 ;
 
 _program_type:
@@ -4756,6 +4836,17 @@ repository_list:
 | repository_list repository_name
 ;
 
+_expands_clause:
+  /* empty */
+| EXPANDS WORD
+{
+	/* Check that WORD is a class when used with the CLASS specifier
+	   and interface when used with the INTERFACE specifier.
+	*/
+}
+USING class_or_interface_name_list
+;
+
 repository_name:
   FUNCTION ALL INTRINSIC
   {
@@ -4779,7 +4870,8 @@ repository_name:
   {
 	yyerrok;
   }
-| CLASS 
+| CLASS WORD _as_literal _expands_clause
+| INTERFACE WORD _as_literal _expands_clause
 ;
 
 repository_name_list:
@@ -11369,6 +11461,7 @@ procedure_division:
 		emit_statement (cb_build_perform_exit (current_section));
 	}
   }
+| _method_list
 |
   {
 	cb_tree label;
@@ -11744,6 +11837,12 @@ procedure:
   }
 ;
 
+/* Method list */
+
+_method_list:
+  method_definition
+| _method_list method_definition
+;
 
 /* Section/Paragraph */
 

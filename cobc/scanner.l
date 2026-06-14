@@ -1080,9 +1080,13 @@ H#[0-9A-Za-z]+ {
 			RETURN_TOK (LITERAL);
 		}
 	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT) 
-		     || last_token == END_CLASS) {
+		    || last_token == END_CLASS) {
 		yylval = cb_build_reference (yytext);
 		RETURN_TOK (CLASS_NAME);
+	} else if ((second_last_token == INTERFACE_ID && last_token == TOK_DOT) 
+		    || last_token == END_INTERFACE) {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (INTERFACE_NAME);
 	}
 
 	/* Check reserved word */

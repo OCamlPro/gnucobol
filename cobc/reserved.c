@@ -1252,8 +1252,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "EXPAND",		0, 1, EXPAND,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "EXPANDS",			0, 1, -1,			/* 2002 (C/S) */
-				0, 0
+  { "EXPANDS",			0, 1, EXPANDS,			/* 2002 (C/S) */
+				0, CB_CS_CLASS_SPECIFIER | CB_CS_INTERFACE_SPECIFIER
 	/* FIXME: 2014 Context-sensitive to class-specifier and
 	   interface-specifier of REPOSITORY paragraph */
   },
@@ -1562,8 +1562,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "IGNORING",			0, 1, IGNORING,			/* 2002 (C/S) */
 				0, CB_CS_READ
   },
-  { "IMPLEMENTS",		0, 1, -1,			/* 2002 (C/S) */
-				0, 0
+  { "IMPLEMENTS",		0, 1, IMPLEMENTS,			/* 2002 (C/S) */
+				0, CB_CS_FACTORY_PARAGRAPH | CB_CS_OBJECT_PARAGRAPH
 	/* FIXME: 2014 Context-sensitive to FACTORY and OBJECT paragraph */
   },
   { "IN",			0, 0, IN,			/* 2002 */
@@ -1620,7 +1620,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INTERFACE",		0, 0, -1,			/* 2002 */
 				0, 0
   },
-  { "INTERFACE-ID",		0, 0, -1,			/* 2002 */
+  { "INTERFACE-ID",		0, 0, INTERFACE_ID,			/* 2002 */
 				0, 0
   },
   { "INTERMEDIATE",		0, 1, INTERMEDIATE,		/* 2014 (C/S) */
