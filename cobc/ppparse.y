@@ -51,7 +51,7 @@
 #define	_STDLIB_H 1
 #endif
 
-#define pperror(x)	cb_error_always ("%s", x)
+#define pperror(x)	do { if (!cb_active_preparser) cb_error_always ("%s", x); } while(0)
 
 #define COND_EQ		0
 #define COND_LT		1U

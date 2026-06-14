@@ -590,9 +590,17 @@ MAYBE_AREA_A	[ ]?#?
         return TOKEN;
     }
     {WORD}                  {
+        struct cb_preparser_entry *pe;
         pplval.s = cobc_plex_strdup (yytext);
         if (!exec_subsystem_seen) {
             exec_subsystem_seen = 1;
+            pe = cb_find_preparser (yytext);
+            if (pe) {
+                pe->used = 1;
+                cb_active_preparser = pe;
+                /* Abort internal preparser cleanly by returning EOF */
+                return 0;
+            }
             return SUBSYSTEM;
         }
         return TOKEN;
@@ -1872,6 +1880,9 @@ ppparse_verify (const enum cb_support tag, const char *feature)
 void
 ppparse_error (const char *err_msg)
 {
+	if (cb_active_preparser) {
+		return;
+	}
 	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 
