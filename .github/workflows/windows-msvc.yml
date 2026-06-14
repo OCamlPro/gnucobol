@@ -12,10 +12,6 @@ env:
 
   FLEXBISON: https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip
 
-  MSBUILD: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe
-  VCVARS32: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat
-  VCVARS64: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
-
   VCPKG_ROOT: C:\vcpkg
   # libxml2 package break in 2.14.5, see https://github.com/microsoft/vcpkg/issues/47155
   VCPKGS32: mpir:x86-windows pdcurses:x86-windows berkeleydb:x86-windows libxml2:x86-windows cjson:x86-windows
@@ -57,11 +53,9 @@ jobs:
         shell: pwsh
         run: |
           If ("${{ matrix.arch }}" -eq "x86") {
-            echo VCVARS=$env:VCVARS32 >> $env:GITHUB_ENV
             echo VCPKGS=$env:VCPKGS32 >> $env:GITHUB_ENV
             echo ARCHDIR=Win32 >> $env:GITHUB_ENV
           } Else {
-            echo VCVARS=$env:VCVARS64 >> $env:GITHUB_ENV
             echo VCPKGS=$env:VCPKGS64 >> $env:GITHUB_ENV
             echo ARCHDIR=x64 >> $env:GITHUB_ENV
           }
@@ -150,6 +144,9 @@ jobs:
         run: |
           cd build_windows
           set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include\libxml2"
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do (
+            set "MSBUILD=%%i\MSBuild\Current\Bin\MSBuild.exe"
+          )
           "%MSBUILD%" .\vs2019\GnuCOBOL.sln /m /p:Platform=${{ matrix.arch }} /p:Configuration=${{ matrix.target }}
 
       - name: Install MSYS2 packages
@@ -205,7 +202,13 @@ jobs:
         run: |
           rem Needed so mpir.h can be found
           set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
-          call "%VCVARS%"
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do (
+            if "${{ matrix.arch }}" == "x86" (
+              call "%%i\VC\Auxiliary\Build\vcvars32.bat"
+            ) else (
+              call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+            )
+          )
           cd tests
           set MSYS2_PATH_TYPE=inherit
           C:\shells\msys2bash.cmd -c "./testsuite --jobs=4 || ./testsuite --recheck --verbose"
