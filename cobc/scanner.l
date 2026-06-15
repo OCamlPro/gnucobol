@@ -681,6 +681,11 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (END_METHOD);
 }
 
+"END"[ ,;\n]+"INTERFACE"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_INTERFACE);
+}
+
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
 	if (lookup_reserved_word ("SYMBOL")) {
 		count_lines (yytext);

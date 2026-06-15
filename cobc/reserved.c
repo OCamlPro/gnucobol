@@ -1617,7 +1617,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INSTALLATION",			0, 1, INSTALLATION,			/* 85 (later: C/S) */
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
-  { "INTERFACE",		0, 0, -1,			/* 2002 */
+  { "INTERFACE",		0, 0, INTERFACE,			/* 2002 */
 				0, 0
   },
   { "INTERFACE-ID",		0, 0, INTERFACE_ID,			/* 2002 */

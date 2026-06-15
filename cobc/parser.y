@@ -2996,6 +2996,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token IF
 %token IGNORE
 %token IGNORING
+%token IMPLEMENTS
 %token IN
 %token INDEPENDENT
 %token INDEX
@@ -3098,6 +3099,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token METHOD
 %token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
@@ -3804,7 +3806,7 @@ interface_definition:
   interface_id_paragraph
   _options_paragraph
   _environment_division
-  procedure_division
+  _procedure_division
   end_interface
 ;
 
@@ -3832,12 +3834,12 @@ instance_definition:
   _dot
 ;
 
-method_definition:
-  _identification_header
-  method_id_header TOK_DOT method_signature _override _is_final
-  _program_body
-  end_method
-;
+// method_definition:
+//   _identification_header
+//   method_id_header TOK_DOT method_signature _override _is_final
+//   _program_body
+//   end_method
+// ;
 
 function_definition:
   _identification_header
@@ -4125,20 +4127,6 @@ parent_class_name_list:
 | parent_class_name_list parent_class_name
 ;
 
-/* The 2 rules below look same due to usage of WORD,
-   but they would later require checks that would differentiate
-   them as the rule name says.
-*/
-interface_name_list:
-  WORD
-| interface_name_list WORD
-;
-
-class_or_interface_name_list:
-  WORD
-| class_or_interface_name_list WORD
-;
-
 
 /* Parameterized classes not supported for now. */
 class_param_list:
@@ -4149,7 +4137,6 @@ class_param_list:
 _inherits_phrase:
   /* empty */
 | INHERITS _from parent_class_name_list
-| INHERITS _from interface_name_list
 ;
 
 _using_phrase:
@@ -4259,21 +4246,6 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
-;
-
-/* CLASS body */
-
-_factory_or_instance_definitions:
-| factory_definition
-| instance_definition
-| factory_definition
-  instance_definition
-;
-
-_class_body:
-  _options_paragraph
-  _environment_division
-  _factory_or_instance_definitions
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -4390,16 +4362,6 @@ end_program_name:
 _as_literal:
   /* empty */			{ $$ = NULL; }
 | AS LITERAL			{ $$ = $2; }
-;
-
-_override:
-  /* empty */
-| OVERRIDE
-;
-
-_is_final:
-  /* empty */
-| _is FINAL
 ;
 
 _program_type:
@@ -4844,7 +4806,7 @@ _expands_clause:
 	   and interface when used with the INTERFACE specifier.
 	*/
 }
-USING class_or_interface_name_list
+USING parent_class_name_list
 ;
 
 repository_name:
@@ -11461,7 +11423,7 @@ procedure_division:
 		emit_statement (cb_build_perform_exit (current_section));
 	}
   }
-| _method_list
+// | _method_list
 |
   {
 	cb_tree label;
@@ -11839,10 +11801,10 @@ procedure:
 
 /* Method list */
 
-_method_list:
-  method_definition
-| _method_list method_definition
-;
+// _method_list:
+//   method_definition
+// | _method_list method_definition
+// ;
 
 /* Section/Paragraph */
 
