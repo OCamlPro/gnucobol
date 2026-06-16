@@ -250,3 +250,50 @@ prog.cob:20: error: object-oriented COBOL is not supported
 prog.cob:22: error: duplicate PARTIAL clause
 ])
 AT_CLEANUP
+
+
+AT_SETUP([INTERFACE-ID syntax check])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        
+        CLASS-ID. Account IS FINAL.
+        END CLASS Account.
+
+        INTERFACE-ID. DematAccount
+                    INHERITS Account
+                    USING param-name.
+        END INTERFACE DematAccount.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:4: error: object-oriented COBOL is not supported
+prog.cob:8: error: interfaces in object-oriented COBOL is not supported
+])
+AT_CLEANUP
+
+AT_SETUP([CLASS specifier in REPOSITORY paragraph])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        
+        CLASS-ID. Account IS FINAL.
+        END CLASS Account.
+
+        CLASS-ID. SavingsAccount 
+            INHERITS ACCOUNT
+            IS FINAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS SavingsAccount AS "SavingsAccount".
+        END CLASS SavingsAccount.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:4: error: object-oriented COBOL is not supported
+prog.cob:8: error: object-oriented COBOL is not supported
+])
+AT_CLEANUP

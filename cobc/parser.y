@@ -3801,12 +3801,16 @@ _class_body:
   _factory_or_instance_definition
 ;
 
-interface_definition:
-  _identification_header
-  interface_id_paragraph
+_interface_body:
   _options_paragraph
   _environment_division
   _procedure_division
+;
+
+interface_definition:
+  _identification_header
+  interface_id_paragraph
+  _interface_body
   end_interface
 ;
 
