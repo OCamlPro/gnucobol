@@ -1,4 +1,13 @@
 
+2026-06-11	Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* parser.y, reserved.c: add support for parsing class attributes - AS literal,
+	  IS FINAL, INHERITS FROM {class-name ...}, USING {param-name ...}
+	  with unimplemented warning; also support MF extensions IS STATIC, IS ABSTRACT,
+	  IS PARTIAL, IS PUBLIC, IS INTERNAL
+	* tree.h, common.h: add COB_MODULE_TYPE_CLASS and bit masks for all 
+	  object-oriented class attributes
+
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* tree.h, parser.y: change type of cobc_cs_check flags to permit

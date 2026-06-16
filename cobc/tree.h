@@ -514,6 +514,18 @@ enum cb_index_type {
 	CB_STATIC_INT_VARYING
 };
 
+/* Object-oriented class attributes */
+enum cb_oo_class_attribute {
+	CB_OO_CLASS_ATTR_NONE			= 0x00, 	/* No attribute specified */
+	CB_OO_CLASS_ATTR_FINAL			= 0x01,		/* Cannot be subclassed */
+	CB_OO_CLASS_ATTR_ABSTRACT		= 0x02,		/* Can be subclassed, but not instantiated */
+	CB_OO_CLASS_ATTR_PARTIAL		= 0x04,
+	CB_OO_CLASS_ATTR_STATIC			= 0x08,		/* All methods must be marked STATIC */
+	CB_OO_CLASS_ATTR_PUBLIC			= 0x10,
+	CB_OO_CLASS_ATTR_INTERNAL		= 0x20
+};
+
+
 /* Reserved word list structure */
 struct cobc_reserved {
 	const char	*name;		/* Word */
@@ -1863,6 +1875,7 @@ struct cb_program {
 	cb_tree			user_spec_list;		/* User FUNCTION spec */
 	cb_tree			program_spec_list;	/* PROGRAM spec */
 	cb_tree			property_spec_list;	/* PROPERTY spec */
+	cb_tree			class_inheritance_list;	/* List of Inherited Classes (OOP) */
 	struct cb_alter_id	*alter_gotos;		/* ALTER ids */
 	struct cb_field		*working_storage;	/* WORKING-STORAGE */
 	struct cb_field		*local_storage;		/* LOCAL-STORAGE */
@@ -1913,7 +1926,8 @@ struct cb_program {
 	cob_u8_t	high_value;			/* High-value for this program */
 	cob_u16_t	low_value_n;			/* National Low-value */
 	cob_u16_t	high_value_n;			/* National High-value  */
-	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
+	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1, OO class = 2) */
+	cob_u8_t 	oo_class_attributes;			/* OO class attributes */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;
 

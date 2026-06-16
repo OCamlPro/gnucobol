@@ -123,6 +123,7 @@
 #define	EVAL_DEPTH		32
 #define	PROG_DEPTH		16
 
+
 /* Global variables */
 
 struct cb_program		*current_program = NULL;    /* program in parse/syntax check/codegen */
@@ -1287,10 +1288,17 @@ begin_scope_of_program_name (struct cb_program *program)
 				    elt_name);
 			return;
 		} else if (strcmp (prog_id, elt_id) == 0) {
-			cb_error_x (CB_TREE(program),
-				    _("redefinition of program ID '%s'"),
-				    elt_id);
-			return;
+			if (program->prog_type == COB_MODULE_TYPE_PROGRAM) {
+				cb_error_x (CB_TREE(program),
+						_("redefinition of program ID '%s'"),
+						elt_id);
+				return;
+			} else if (program->prog_type == COB_MODULE_TYPE_CLASS) {
+				cb_error_x (CB_TREE(program),
+						_("redefinition of class ID '%s'"),
+						elt_id);
+				return;
+			}
 		}
 	}
 
@@ -1471,7 +1479,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 			main_flag_set = 1;
 			current_program->flag_main = !!cobc_flag_main;
 		}
-	} else { /* COB_MODULE_TYPE_FUNCTION */
+	} else if (type == COB_MODULE_TYPE_FUNCTION) {
 		current_program->flag_recursive = 1;
 	}
 
@@ -1515,8 +1523,13 @@ decrement_depth (const char *name, const unsigned char type)
 	}
 
 	if (depth != d) {
-		cb_error (_("END PROGRAM '%s' is different from PROGRAM-ID '%s'"),
-			  name, stack_progid[depth]);
+		if (type == COB_MODULE_TYPE_PROGRAM) {
+			cb_error (_("END PROGRAM '%s' is different from PROGRAM-ID '%s'"),
+				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_CLASS) {
+			cb_error (_("END CLASS '%s' is different from CLASS-ID '%s'"),
+				  name, stack_progid[depth]);
+		}
 	}
 }
 
@@ -2548,12 +2561,24 @@ set_record_size (cb_tree min, cb_tree max)
 	}
 }
 
+/* Object-oriented class */
+
+static COB_INLINE void
+set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
+{
+	if (current_program->oo_class_attributes & attr) {							
+		emit_duplicate_clause_message (attr_name);						
+	}	
+	current_program->oo_class_attributes |= attr;
+}
+
 %}
 
 %token TOKEN_EOF 0 "end of file"
 
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
+%token ABSTRACT
 %token ACCEPT
 %token ACCESS
 %token ACTIVEX			"ACTIVE-X"
@@ -2970,6 +2995,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INDEX
 %token INDEXED
 %token INDICATE
+%token INHERITS
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
@@ -2981,6 +3007,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INSPECT
 %token INSTALLATION		/* remark: not used here */
 %token INTERMEDIATE
+%token INTERNAL
 %token INTO
 %token INTRINSIC
 %token INVALID			/* remark: not used here */
@@ -3167,6 +3194,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PARAGRAPH
 %token PARENT
 %token PARSE
+%token PARTIAL
 %token PASSWORD
 %token PERFORM
 %token PERMANENT
@@ -3209,6 +3237,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PROPERTY
 %token PROTECTED
 %token PROTOTYPE
+%token PUBLIC
 %token PURGE
 %token PUSH_BUTTON		"PUSH-BUTTON"
 %token QUERY_INDEX		"QUERY-INDEX"
@@ -3793,12 +3822,10 @@ end_class:
 	check_area_a_of ("END CLASS");
   }
   end_class_name _dot
-  /*
-	TODO
-  	{
-		clean_up_program ($3, COB_MODULE_TYPE_CLASS);
-  	}
-  */
+  {
+	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
+  }
+
 ;
 
 end_function:
@@ -3985,38 +4012,94 @@ class_id_header:
 ;
 
 class_id_name:
-  CLASS_NAME
-  {
-	if (CB_REFERENCE_P ($1) && CB_WORD_COUNT ($1) > 0) {
-		redefinition_error ($1);
-	}
-	$$ = $1;
-  }
+  CLASS_NAME	{ $$ = $1; }
 | LITERAL
   {
 	cb_trim_program_id ($1);
   }
 ;
 
-class_id_paragraph:
-  class_id_header TOK_DOT
+parent_class_name: 
+  WORD
   {
-	CB_PENDING ("CLASS-ID");
+  	current_program->class_inheritance_list = 
+		cb_list_add(current_program->class_inheritance_list, $1);
   }
-  class_id_name _as_literal TOK_DOT
+;
+
+parent_class_name_list:
+  parent_class_name
+| parent_class_name_list parent_class_name
+;
+
+/* Parameterized classes not supported for now. */
+class_param_list:
+  WORD
+| class_param_list WORD
+;
+
+_inherits_phrase:
+  /* empty */
+| INHERITS _from parent_class_name_list
+;
+
+_using_phrase:
+  /* empty */
+| USING class_param_list
+;
+
+class_attribute:
+  _is STATIC		{ set_oo_class_attr(CB_OO_CLASS_ATTR_STATIC, "STATIC"); }
+| _is PARTIAL		{ set_oo_class_attr(CB_OO_CLASS_ATTR_PARTIAL, "PARTIAL"); }
+| _is FINAL			{ set_oo_class_attr(CB_OO_CLASS_ATTR_FINAL, "FINAL"); }
+| _is ABSTRACT		{ set_oo_class_attr(CB_OO_CLASS_ATTR_ABSTRACT, "ABSTRACT"); }
+| _is PUBLIC		{ set_oo_class_attr(CB_OO_CLASS_ATTR_PUBLIC, "PUBLIC"); }
+| _is INTERNAL		{ set_oo_class_attr(CB_OO_CLASS_ATTR_INTERNAL, "INTERNAL"); }
+;
+
+_class_attributes:
+  /* empty */		{ current_program->oo_class_attributes = CB_OO_CLASS_ATTR_NONE; }
+| _class_attributes class_attribute
+;
+
+/*
+ * CLASS-ID paragraph syntax is:
+ *
+ * CLASS-ID. object-class-name-1 [ AS literal-1 ] [ IS STATIC ]
+ * [ IS { PARTIAL, FINAL, ABSTRACT } ... ] [ IS { PUBLIC, INTERNAL } ]
+ * [ INHERITS FROM { object-class-name-2 } ... ]
+ * [ USING { parameter-name-1 } ... ] .
+ * 
+*/
+
+class_id_paragraph:
+  class_id_header TOK_DOT class_id_name _as_literal
   {
-	/* 
-	  TODO: The if block below is added for triggering
-	  a class redefinition error. This is not the correct
-	  way to do it since `current_program` is a dummy AST
-	  node here.
-	  Remove it when adding support for AST generation
-	  through `setup_program()`.
-	*/
-	if (CB_REFERENCE_P ($4)) {
-		cb_define ($4, CB_TREE (current_program));
+	if (setup_program ($3, $4, COB_MODULE_TYPE_CLASS, 1)) {
+		YYABORT;
 	}
+
+	__CS_CLEAR_ALL();
 	cobc_in_id = 0;
+
+	CB_UNSUPPORTED ("object-oriented COBOL");
+  }
+  _inherits_phrase
+  _class_attributes
+  _using_phrase
+  TOK_DOT
+  {
+	/* check consistency of current attribues */
+	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_FINAL
+	 && current_program->oo_class_attributes & CB_OO_CLASS_ATTR_ABSTRACT) {
+		emit_conflicting_clause_message ("FINAL", "ABSTRACT");
+		current_program->oo_class_attributes &= ~CB_OO_CLASS_ATTR_FINAL;
+	}
+	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_INTERNAL
+	 && current_program->oo_class_attributes & CB_OO_CLASS_ATTR_PUBLIC) {
+		emit_conflicting_clause_message ("INTERNAL", "PUBLIC");
+		current_program->oo_class_attributes &= ~CB_OO_CLASS_ATTR_INTERNAL;
+	}
   }
 ;
 
