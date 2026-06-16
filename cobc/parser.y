@@ -3838,12 +3838,12 @@ instance_definition:
   _dot
 ;
 
-// method_definition:
-//   _identification_header
-//   method_id_header TOK_DOT method_signature _override _is_final
-//   _program_body
-//   end_method
-// ;
+method_definition:
+  _identification_header
+  method_id_header TOK_DOT method_signature _override _is_final TOK_DOT
+  _program_body
+  end_method
+;
 
 function_definition:
   _identification_header
@@ -11357,33 +11357,21 @@ _procedure_division:
 | procedure_division
 ;
 
-procedure_division:
-  PROCEDURE
-  {
-	check_area_a_of ("PROCEDURE DIVISION");
-	current_section = NULL;
-	current_paragraph = NULL;
-	check_pic_duplicate = 0;
-	check_duplicate = 0;
-	cobc_in_procedure = 1U;
-	cb_set_system_names ();
-	last_source_line = cb_source_line;
+procedure_division_contents:
+  procedure_division_sections
+| _method_list
+;
 
-	cb_prof_procedure_division (
-		current_program,
-		cb_source_file,
-		cb_source_line
-		);
-  }
-  DIVISION
-  _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
+procedure_division_sections:
+_mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
-	cb_tree call_conv = $4;
-	if ($5) {
-		call_conv = $5;
+	/* check $4 value, they might be incorrect */
+	cb_tree call_conv = $3;
+	if ($4) {
+		call_conv = $4;
 		if ($4) {
 			/* note: $3 is likely to be a reference to SPECIAL-NAMES */
-			cb_error_x ($5, _("%s and %s are mutually exclusive"),
+			cb_error_x ($4, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
 	}
@@ -11402,11 +11390,11 @@ procedure_division:
   _procedure_declaratives
   {
 	if (current_program->flag_main
-	 && !current_program->flag_chained && $6) {
+	 && !current_program->flag_chained && $5) {
 		cb_error (_("executable program requested but PROCEDURE/ENTRY has USING clause"));
 	}
 
-	emit_main_entry (current_program, $6);
+	emit_main_entry (current_program, $5);
 
 	cb_check_definition_matches_prototype (current_program);
   }
@@ -11427,7 +11415,28 @@ procedure_division:
 		emit_statement (cb_build_perform_exit (current_section));
 	}
   }
-// | _method_list
+  ;
+
+procedure_division:
+  PROCEDURE
+  {
+	check_area_a_of ("PROCEDURE DIVISION");
+	current_section = NULL;
+	current_paragraph = NULL;
+	check_pic_duplicate = 0;
+	check_duplicate = 0;
+	cobc_in_procedure = 1U;
+	cb_set_system_names ();
+	last_source_line = cb_source_line;
+
+	cb_prof_procedure_division (
+		current_program,
+		cb_source_file,
+		cb_source_line
+		);
+  }
+  DIVISION
+  procedure_division_contents
 |
   {
 	cb_tree label;
@@ -11805,10 +11814,10 @@ procedure:
 
 /* Method list */
 
-// _method_list:
-//   method_definition
-// | _method_list method_definition
-// ;
+_method_list:
+  method_definition
+| _method_list method_definition
+;
 
 /* Section/Paragraph */
 
