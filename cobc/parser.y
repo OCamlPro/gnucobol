@@ -4118,17 +4118,15 @@ interface_id_name:
   }
 ;
 
-parent_class_name: 
+parent_class_name_list:
   WORD
   {
-  	current_program->class_inheritance_list = 
-		cb_list_add(current_program->class_inheritance_list, $1);
+	$$ = CB_LIST_INIT ($1);
   }
-;
-
-parent_class_name_list:
-  parent_class_name
-| parent_class_name_list parent_class_name
+| parent_class_name_list WORD
+  {
+	$$ = cb_list_add ($1, $2);	
+  }
 ;
 
 
@@ -4141,6 +4139,9 @@ class_param_list:
 _inherits_phrase:
   /* empty */
 | INHERITS _from parent_class_name_list
+  {
+	current_program->class_inheritance_list = $3;
+  }
 ;
 
 _using_phrase:
@@ -4836,8 +4837,22 @@ repository_name:
   {
 	yyerrok;
   }
-| CLASS WORD _as_literal _expands_clause
-| INTERFACE WORD _as_literal _expands_clause
+| CLASS
+  {
+	__CS_ENSURE (CB_CS_CLASS_SPECIFIER);
+  }
+  WORD _as_literal _expands_clause
+  {
+	__CS_LEAVE (CB_CS_CLASS_SPECIFIER);
+  }
+| INTERFACE
+  {
+	__CS_ENSURE (CB_CS_INTERFACE_SPECIFIER);
+  }
+WORD _as_literal _expands_clause
+  {
+	__CS_LEAVE (CB_CS_INTERFACE_SPECIFIER);
+  }
 ;
 
 repository_name_list:
@@ -11359,7 +11374,7 @@ _procedure_division:
 
 procedure_division_contents:
   procedure_division_sections
-| _method_list
+// | _method_list
 ;
 
 procedure_division_sections:

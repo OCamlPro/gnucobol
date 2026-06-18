@@ -637,7 +637,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				CB_CS_GRAPHICAL_CONTROL, CB_CS_DISPLAY | CB_CS_SCREEN
   },
   { "CLASS",			0, 0, CLASS,			/* 2002 */
-				0, 0
+				CB_CS_CLASS_SPECIFIER, 0
   },
   { "CLASS-ID",			0, 0, CLASS_ID,			/* 2002 */
 				0, 0
@@ -1618,7 +1618,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "INTERFACE",		0, 0, INTERFACE,			/* 2002 */
-				0, 0
+				CB_CS_INTERFACE_SPECIFIER, 0
   },
   { "INTERFACE-ID",		0, 0, INTERFACE_ID,			/* 2002 */
 				0, 0
