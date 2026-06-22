@@ -3634,9 +3634,9 @@ join_environment (void)
 	bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
 #endif
 #else
-	bdb_env->set_errfile (bdb_env, stderr);
+	bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgfile (bdb_env, stderr);
+	bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
 #endif
 #endif
 	bdb_env->set_cachesize (bdb_env, 0, 2*1024*1024, 0);
@@ -6371,8 +6371,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = stdout;
-		f->fd = fileno (stdout);
+		f->file = cobsetptr->cob_stdout;
+		f->fd = fileno (cobsetptr->cob_stdout);
 		f->open_mode = mode;
 		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;

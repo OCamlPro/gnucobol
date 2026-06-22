@@ -385,6 +385,9 @@ typedef struct __cob_settings {
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */
+
+	FILE        *cob_stdout; /* FILE* to redirect writes to stdout */
+	FILE        *cob_stderr; /* FILE* to redirect writes to stderr */
 } cob_settings;
 
 
