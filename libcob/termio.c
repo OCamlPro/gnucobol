@@ -337,17 +337,17 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 	/* display to device ? */
 	switch (to_device) {
 	case 0:	/* general (SYSOUT) */
-		fp = stdout;
+		fp = cobsetptr->cob_stdout;
 		if (cobglobptr->cob_screen_initialized) {
 			if (!COB_DISP_TO_STDERR) {
 				disp_redirect = 1;
 			} else {
-				fp = stderr;
+				fp = cobsetptr->cob_stderr;
 			}
 		}
 		break;
 	case 1:	/* SYSERR */
-		fp = stderr;
+		fp = cobsetptr->cob_stderr;
 		break;
 	case 2:	/* PRINTER */
 		/* display to external specified print file handle */
@@ -363,7 +363,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 			}
 			fp = fopen (cobsetptr->cob_display_print_filename, mode);
 			if (fp == NULL) {
-				fp = stderr;
+				fp = cobsetptr->cob_stderr;
 			} else {
 				close_fp = 1;
 			}
@@ -379,19 +379,19 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 			}
 			fp = popen (cobsetptr->cob_display_print_pipe, mode);
 			if (fp == NULL) {
-				fp = stderr;
+				fp = cobsetptr->cob_stderr;
 			} else {
 				close_fp = 2;
 			}
 #endif
 		/* fallback: display to the defined SYSOUT */
 		} else {
-			fp = stdout;
+			fp = cobsetptr->cob_stdout;
 			if (cobglobptr->cob_screen_initialized) {
 				if (!COB_DISP_TO_STDERR) {
 					disp_redirect = 1;
 				} else {
-					fp = stderr;
+					fp = cobsetptr->cob_stderr;
 				}
 			}
 		}
@@ -431,7 +431,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		fp = stderr;
+		fp = cobsetptr->cob_stderr;
 	}
 	/* LCOV_EXCL_STOP */
 
@@ -1053,7 +1053,7 @@ cob_accept (cob_field *f)
 	}
 
 	/* always flush to ensure buffered output is seen */
-	fflush (stdout);
+	fflush (cobsetptr->cob_stdout);
 
 	/* extension: ACCEPT OMITTED */
 	if (unlikely (!f)) {

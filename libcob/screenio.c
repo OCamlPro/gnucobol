@@ -317,7 +317,7 @@ cob_speaker_beep (void)
 {
 	int	fd;
 
-	fd = fileno (stdout);
+	fd = fileno (cobsetptr->cob_stdout);
 	if (fd >= 0) {
 		(void)write (fd, "\a", (size_t)1);
 	}
@@ -1156,8 +1156,8 @@ cob_screen_init (void)
 	pending_accept = 0;
 	got_sys_char = 0;
 
-	fflush (stdout);
-	fflush (stderr);
+	fflush (cobsetptr->cob_stdout);
+	fflush (cobsetptr->cob_stderr);
 
 #if	0	/* RXWRXW sigtin */
 #ifndef _WIN32
