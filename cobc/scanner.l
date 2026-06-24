@@ -1088,6 +1088,12 @@ H#[0-9A-Za-z]+ {
 		    || last_token == END_CLASS) {
 		yylval = cb_build_reference (yytext);
 		RETURN_TOK (CLASS_NAME);
+	} else if ((second_last_token == METHOD_ID && last_token == TOK_DOT
+			&& strcasecmp (yytext, "GET") != 0
+			&& strcasecmp (yytext, "SET") != 0)
+		    || last_token == END_METHOD) {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (METHOD_NAME);
 	} else if ((second_last_token == INTERFACE_ID && last_token == TOK_DOT) 
 		    || last_token == END_INTERFACE) {
 		yylval = cb_build_reference (yytext);

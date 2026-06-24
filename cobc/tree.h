@@ -1875,7 +1875,7 @@ struct cb_program {
 	cb_tree			user_spec_list;		/* User FUNCTION spec */
 	cb_tree			program_spec_list;	/* PROGRAM spec */
 	cb_tree			property_spec_list;	/* PROPERTY spec */
-	cb_tree			class_inheritance_list;	/* List of Inherited Classes (OOP) */
+	cb_tree			oo_inheritance_list;	/* List of Inherited Classes (OOP) */
 	struct cb_alter_id	*alter_gotos;		/* ALTER ids */
 	struct cb_field		*working_storage;	/* WORKING-STORAGE */
 	struct cb_field		*local_storage;		/* LOCAL-STORAGE */

@@ -1529,6 +1529,12 @@ decrement_depth (const char *name, const unsigned char type)
 		} else if (type == COB_MODULE_TYPE_CLASS) {
 			cb_error (_("END CLASS '%s' is different from CLASS-ID '%s'"),
 				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_INTERFACE) {
+			cb_error (_("END INTERFACE '%s' is different from INTERFACE-ID '%s'"),
+				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_METHOD) {
+			cb_error (_("END METHOD '%s' is different from METHOD-ID '%s'"),
+				  name, stack_progid[depth]);
 		}
 	}
 }
@@ -2572,6 +2578,58 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 	current_program->oo_class_attributes |= attr;
 }
 
+static const COB_INLINE char *
+get_cob_module_type_string(enum cob_module_type prog_type)
+{ 															
+	switch (prog_type)									
+	{														
+		case COB_MODULE_TYPE_PROGRAM: 		return "program";
+		case COB_MODULE_TYPE_FUNCTION: 		return "function";
+		case COB_MODULE_TYPE_CLASS: 		return "class";			
+		case COB_MODULE_TYPE_INTERFACE: 	return "interface";
+		case COB_MODULE_TYPE_METHOD: 		return "method";
+	}									
+}
+
+static COB_INLINE cob_u8_t
+check_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
+{
+	cb_tree l;
+	for (l = spec_list; l; l = CB_CHAIN (l)) {
+		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME(parent_name)) == 0) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/* 
+  Check if a parent class, or a class in it's hierarchy,
+  inherits from the current class being declared. 
+  
+  If true, throw an error.
+*/
+// static COB_INLINE void
+// check_inheritance(cb_tree* oo_inheritance_list)
+// {
+// 	cb_program parent_class;
+// 	cb_tree l;
+
+// 	for (l = CB_TREE (oo_inheritance_list); l; l = CB_CHAIN (oo_inheritance_list)) {
+// 		parent_class = CB_PROGRAM (l);
+
+// 		if (parent_class->oo_inheritance_list) {
+// 			check_inheritance (current_program, parent_class_name, &current_class->oo_inheritance_list);
+// 		}
+
+// 		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (parent_class_name)) == 0) {
+// 			cb_error (_("duplicate parent class name '%s'"), CB_NAME (parent_class_name));
+// 			break;
+// 		}
+
+// 	}
+// }
+
 %}
 
 %token TOKEN_EOF 0 "end of file"
@@ -2848,9 +2906,9 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token END_FACTORY		"END-FACTORY"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
-%token END_INTERFACE	"END-INTERFACE"
+%token END_INTERFACE	"END INTERFACE"
 %token END_JSON			"END-JSON"
-%token END_METHOD		"END-METHOD"
+%token END_METHOD		"END METHOD"
 %token END_MODIFY		"END-MODIFY"
 %token END_MULTIPLY		"END-MULTIPLY"
 %token END_OBJECT		"END-OBJECT"
@@ -3100,6 +3158,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token MERGE
 %token MESSAGE
 %token METHOD
+%token METHOD_NAME
 %token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
@@ -3792,6 +3851,14 @@ class_definition:
   _identification_header
   class_id_paragraph
   _class_body
+  {
+	cb_tree l;
+	for (l = current_program->oo_inheritance_list; l; l = CB_CHAIN (l)) {
+		if (check_parent_name_in_spec_list(current_program->class_spec_list, CB_VALUE(l)) == 1) {
+			cb_error(_("inherited class '%s' not found in REPOSITORY paragraph"), CB_NAME (CB_VALUE (l)));
+		}
+	}
+  }
   end_class
 ;
 
@@ -3799,6 +3866,13 @@ _class_body:
   _options_paragraph
   _environment_division
   _factory_or_instance_definition
+;
+
+_oo_body:
+  _options_paragraph
+  _environment_division
+  _data_division
+  _oo_procedure_division
 ;
 
 _interface_body:
@@ -3811,6 +3885,14 @@ interface_definition:
   _identification_header
   interface_id_paragraph
   _interface_body
+  {
+	cb_tree l;
+	for (l = current_program->oo_inheritance_list; l; l = CB_CHAIN (l)) {
+		if (check_parent_name_in_spec_list(current_program->interface_spec_list, CB_VALUE(l)) == 1) {
+			cb_error(_("inherited interface '%s' not found in REPOSITORY paragraph"), CB_NAME (CB_VALUE (l)));
+		}
+	}
+  }
   end_interface
 ;
 
@@ -3824,24 +3906,40 @@ _factory_or_instance_definition:
 
 factory_definition:
   _identification_header
-  FACTORY TOK_DOT /* _implements clause */
-  _program_body
+  FACTORY
+  {
+	__CS_ENTER (CB_CS_FACTORY_PARAGRAPH);
+  }
+  _dot
+  _implements_clause
+  {
+	__CS_LEAVE (CB_CS_FACTORY_PARAGRAPH);
+  }
+  _oo_body
   END_FACTORY
   _dot
 ;
 
 instance_definition:
   _identification_header
-  OBJECT TOK_DOT /* _implements clause */
-  _program_body
+  OBJECT
+  {
+	__CS_ENTER (CB_CS_OBJECT_PARAGRAPH);
+  }
+  _dot
+  _implements_clause
+  {
+	__CS_LEAVE (CB_CS_OBJECT_PARAGRAPH);
+  }
+  _oo_body
   END_OBJECT
   _dot
 ;
 
 method_definition:
   _identification_header
-  method_id_header TOK_DOT method_signature _override _is_final TOK_DOT
-  _program_body
+  method_id_header TOK_DOT method_signature _override _is_final _dot
+  _oo_body
   end_method
 ;
 
@@ -3898,6 +3996,9 @@ end_interface:
 	check_area_a_of ("END INTERFACE");
   }
   interface_id_name _dot
+  {
+	clean_up_program ($3, COB_MODULE_TYPE_INTERFACE);
+  }
 ;
 
 end_method:
@@ -3906,9 +4007,9 @@ end_method:
 	last_source_line = cb_source_line;
 	check_area_a_of ("END METHOD");
   }
-  _end_program_name TOK_DOT
+  _method_id_name _dot
   {
-	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
+	clean_up_program ($3, COB_MODULE_TYPE_METHOD);
   }
 ;
 
@@ -4110,6 +4211,19 @@ class_id_name:
   }
 ;
 
+_method_id_name:
+  /* empty */
+| method_id_name
+;
+
+method_id_name:
+  METHOD_NAME	{ $$ = $1; }
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
 interface_id_name:
   INTERFACE_NAME	{ $$ = $1; }
 | LITERAL
@@ -4118,17 +4232,37 @@ interface_id_name:
   }
 ;
 
-parent_class_name_list:
+oo_parent_name_list:
   WORD
   {
+	if (strcasecmp(current_program->program_name, CB_NAME($1)) == 0) {
+		cb_error(_("cannot inherit from the same %s being declared"),
+			get_cob_module_type_string(current_program->prog_type));
+	}
+
 	$$ = CB_LIST_INIT ($1);
   }
-| parent_class_name_list WORD
+| oo_parent_name_list WORD
   {
+	cb_tree l;
+
+	if (strcasecmp(current_program->program_name, CB_NAME($2)) == 0) {
+		cb_error(_("cannot inherit from the same %s being declared"),
+			get_cob_module_type_string(current_program->prog_type));
+	}
+
+	/* Check for duplicate parent name */
+	for (l = $1; l; l = CB_CHAIN (l)) {
+		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME ($2)) == 0) {
+			cb_error (_("duplicate parent %s name '%s'"), 
+				get_cob_module_type_string(current_program->prog_type),
+				CB_NAME ($2));
+			break;
+		}
+	}
 	$$ = cb_list_add ($1, $2);	
   }
 ;
-
 
 /* Parameterized classes not supported for now. */
 class_param_list:
@@ -4138,15 +4272,20 @@ class_param_list:
 
 _inherits_phrase:
   /* empty */
-| INHERITS _from parent_class_name_list
+| INHERITS _from oo_parent_name_list
   {
-	current_program->class_inheritance_list = $3;
+	current_program->oo_inheritance_list = $3;
   }
 ;
 
 _using_phrase:
   /* empty */
 | USING class_param_list
+;
+
+_implements_clause:
+  /* empty */
+| IMPLEMENTS WORD _dot
 ;
 
 class_attribute:
@@ -4188,7 +4327,7 @@ class_id_paragraph:
   _inherits_phrase
   _class_attributes
   _using_phrase
-  TOK_DOT
+  _dot
   {
 	/* check consistency of current attribues */
 	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_FINAL
@@ -4207,14 +4346,18 @@ class_id_paragraph:
 interface_id_paragraph:
   interface_id_header TOK_DOT interface_id_name _as_literal
   {
-	cobc_cs_check = 0;
+	if (setup_program ($3, $4, COB_MODULE_TYPE_INTERFACE, 1)) {
+		YYABORT;
+	}
+
+	__CS_CLEAR_ALL();
 	cobc_in_id = 0;
 
 	CB_UNSUPPORTED ("interfaces in object-oriented COBOL");
   }
   _inherits_phrase
   _using_phrase
-  TOK_DOT
+  _dot
 ;
 
 method_id_header:
@@ -4230,7 +4373,15 @@ get_or_set:
 ;
 
 method_signature:
-  program_id_name _as_literal
+  method_id_name _as_literal
+  {
+	if (setup_program ($1, $2, COB_MODULE_TYPE_METHOD, 1)) {
+		YYABORT;
+	}
+
+	__CS_CLEAR_ALL();
+	cobc_in_id = 0;
+  }
 | get_or_set PROPERTY WORD
 ;
 
@@ -4349,11 +4500,6 @@ program_id_name:
   {
 	cb_trim_program_id ($1);
   }
-;
-
-_end_program_name:
-  /* empty */
-| end_program_name
 ;
 
 end_program_name:
@@ -4811,7 +4957,7 @@ _expands_clause:
 	   and interface when used with the INTERFACE specifier.
 	*/
 }
-USING parent_class_name_list
+USING oo_parent_name_list
 ;
 
 repository_name:
@@ -4843,14 +4989,18 @@ repository_name:
   }
   WORD _as_literal _expands_clause
   {
+	current_program->class_spec_list =
+		cb_list_add (current_program->class_spec_list, $3);
 	__CS_LEAVE (CB_CS_CLASS_SPECIFIER);
   }
 | INTERFACE
   {
 	__CS_ENSURE (CB_CS_INTERFACE_SPECIFIER);
   }
-WORD _as_literal _expands_clause
+  WORD _as_literal _expands_clause
   {
+	current_program->interface_spec_list =
+		cb_list_add (current_program->interface_spec_list, $3);
 	__CS_LEAVE (CB_CS_INTERFACE_SPECIFIER);
   }
 ;
@@ -11371,22 +11521,17 @@ _procedure_division:
   }
 | procedure_division
 ;
-
-procedure_division_contents:
-  procedure_division_sections
-// | _method_list
-;
-
+ 
 procedure_division_sections:
 _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
 	/* check $4 value, they might be incorrect */
-	cb_tree call_conv = $3;
-	if ($4) {
-		call_conv = $4;
-		if ($4) {
-			/* note: $3 is likely to be a reference to SPECIAL-NAMES */
-			cb_error_x ($4, _("%s and %s are mutually exclusive"),
+	cb_tree call_conv = $1;
+	if ($2) {
+		call_conv = $2;
+		if ($2) {
+			/* note: $1 is likely to be a reference to SPECIAL-NAMES */
+			cb_error_x ($2, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
 	}
@@ -11431,8 +11576,8 @@ _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
 	}
   }
   ;
-
-procedure_division:
+  
+procedure_division_header:
   PROCEDURE
   {
 	check_area_a_of ("PROCEDURE DIVISION");
@@ -11451,7 +11596,21 @@ procedure_division:
 		);
   }
   DIVISION
-  procedure_division_contents
+;
+
+_oo_procedure_division:
+  /* empty */
+| procedure_division_header
+  {
+	header_check |= COBC_HD_PROCEDURE_DIVISION;
+  }
+  _dot_or_else_area_a
+  method_list
+;
+
+procedure_division:
+  procedure_division_header
+  procedure_division_sections
 |
   {
 	cb_tree label;
@@ -11829,9 +11988,9 @@ procedure:
 
 /* Method list */
 
-_method_list:
+method_list:
   method_definition
-| _method_list method_definition
+| method_list method_definition
 ;
 
 /* Section/Paragraph */
