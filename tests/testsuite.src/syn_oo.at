@@ -62,18 +62,23 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:3: error: object-oriented COBOL is not supported
-prog2.cob:4: error: syntax error, unexpected END PROGRAM, expecting END CLASS
+prog2.cob:4: error: syntax error, unexpected END PROGRAM, expecting FACTORY or OBJECT
 ])
 
 AT_DATA([prog3.cob], [
         IDENTIFICATION DIVISION.
         CLASS-ID. MyFirstClass.
         END CLASS MyClass.
+
+        INTERFACE-ID. MyFirstInterface.
+        END INTERFACE MyInterface.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
 [prog3.cob:3: error: object-oriented COBOL is not supported
 prog3.cob:4: error: END CLASS 'MyClass' is different from CLASS-ID 'MyFirstClass'
+prog3.cob:6: error: interfaces in object-oriented COBOL is not supported
+prog3.cob:7: error: END INTERFACE 'MyInterface' is different from INTERFACE-ID 'MyFirstInterface'
 ])
 
 AT_CLEANUP
@@ -297,3 +302,93 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:8: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
+
+AT_SETUP([CLASS-ID and INTERFACE-ID Syntax Checks])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog1.cob], [
+        IDENTIFICATION DIVISION.
+        INTERFACE-ID. MyFactoryInterface.
+        END INTERFACE MyFactoryInterface.
+
+        INTERFACE-ID. MyInterface.
+        END INTERFACE MyInterface.
+
+        CLASS-ID. MyBaseClass.
+        FACTORY.
+                IMPLEMENTS MyFactoryInterface.
+        END FACTORY.
+        OBJECT.
+                PROCEDURE DIVISION.
+                METHOD-ID. MyMethod IS FINAL.
+                END METHOD MyMethod.
+
+                METHOD-ID. GET PROPERTY data-name.
+                        DATA DIVISION.
+                        LINKAGE SECTION.
+                        01 data-name PIC 9(2).
+                END METHOD.
+        END OBJECT.
+        END CLASS MyBaseClass.
+
+        CLASS-ID. MyDerivedClass
+        INHERITS FROM MyBaseClass
+                        MyBaseClass
+                        MyUnknownClass
+                        MyDerivedClass.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+                CLASS MyBaseClass AS "MyKnownClass" 
+                EXPANDS MyInterface
+                USING dummy-param
+                INTERFACE MyInterface.
+        FACTORY.
+        END FACTORY.
+        END CLASS MyDerivedClass.
+])
+
+AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
+[prog1.cob:3: error: interfaces in object-oriented COBOL is not supported
+prog1.cob:6: error: interfaces in object-oriented COBOL is not supported
+prog1.cob:9: error: object-oriented COBOL is not supported
+prog1.cob:27: error: object-oriented COBOL is not supported
+prog1.cob:28: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:30: error: cannot inherit from the same class being declared
+prog1.cob:40: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
+prog1.cob:40: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
+])
+
+AT_DATA([prog2.cob], [
+        IDENTIFICATION DIVISION.
+        INTERFACE-ID. MyInterface.
+        END INTERFACE MyInterface.
+
+        INTERFACE-ID. MyBaseInterface.
+        END INTERFACE MyBaseInterface.
+
+        INTERFACE-ID. MyDerivedInterface
+        INHERITS FROM MyBaseInterface
+                      MyBaseInterface
+                      MyUnknownInterface
+                      MyDerivedInterface.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+                INTERFACE MyBaseInterface AS "MyKnownInterface" 
+                EXPANDS MyInterface
+                USING dummy-param.
+        END INTERFACE MyDerivedInterface.
+])
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob:3: error: interfaces in object-oriented COBOL is not supported
+prog2.cob:6: error: interfaces in object-oriented COBOL is not supported
+prog2.cob:10: error: interfaces in object-oriented COBOL is not supported
+prog2.cob:11: error: duplicate parent interface name 'MyBaseInterface'
+prog2.cob:13: error: cannot inherit from the same interface being declared
+prog2.cob:20: error: inherited interface 'MyUnknownInterface' not found in REPOSITORY paragraph
+prog2.cob:20: error: inherited interface 'MyDerivedInterface' not found in REPOSITORY paragraph
+])
+
+AT_CLEANUP
+
