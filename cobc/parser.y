@@ -2603,32 +2603,6 @@ check_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
 	return 1;
 }
 
-/* 
-  Check if a parent class, or a class in it's hierarchy,
-  inherits from the current class being declared. 
-  
-  If true, throw an error.
-*/
-// static COB_INLINE void
-// check_inheritance(cb_tree* oo_inheritance_list)
-// {
-// 	cb_program parent_class;
-// 	cb_tree l;
-
-// 	for (l = CB_TREE (oo_inheritance_list); l; l = CB_CHAIN (oo_inheritance_list)) {
-// 		parent_class = CB_PROGRAM (l);
-
-// 		if (parent_class->oo_inheritance_list) {
-// 			check_inheritance (current_program, parent_class_name, &current_class->oo_inheritance_list);
-// 		}
-
-// 		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (parent_class_name)) == 0) {
-// 			cb_error (_("duplicate parent class name '%s'"), CB_NAME (parent_class_name));
-// 			break;
-// 		}
-
-// 	}
-// }
 
 %}
 
@@ -4953,8 +4927,9 @@ _expands_clause:
   /* empty */
 | EXPANDS WORD
 {
-	/* Check that WORD is a class when used with the CLASS specifier
-	   and interface when used with the INTERFACE specifier.
+	/* 
+	  TODO: Check that WORD is a class when used with the CLASS specifier
+	  and interface when used with the INTERFACE specifier.
 	*/
 }
 USING oo_parent_name_list
@@ -11525,11 +11500,10 @@ _procedure_division:
 procedure_division_sections:
 _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
-	/* check $4 value, they might be incorrect */
 	cb_tree call_conv = $1;
 	if ($2) {
 		call_conv = $2;
-		if ($2) {
+		if ($1) {
 			/* note: $1 is likely to be a reference to SPECIAL-NAMES */
 			cb_error_x ($2, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
@@ -11550,11 +11524,11 @@ _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   _procedure_declaratives
   {
 	if (current_program->flag_main
-	 && !current_program->flag_chained && $5) {
+	 && !current_program->flag_chained && $3) {
 		cb_error (_("executable program requested but PROCEDURE/ENTRY has USING clause"));
 	}
 
-	emit_main_entry (current_program, $5);
+	emit_main_entry (current_program, $3);
 
 	cb_check_definition_matches_prototype (current_program);
   }
