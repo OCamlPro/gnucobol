@@ -22,7 +22,7 @@
 lib_LTLIBRARIES = libcob.la
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
-	mlio.c coblocal.h cconv.c system.def profiling.c
+	mlio.c coblocal.h cconv.c system.def profiling.c argv.c
 
 EXTRA_DIST = xmlevent.def
 

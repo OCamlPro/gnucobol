@@ -20,6 +20,7 @@
 
 2026-05-29  Ramy George <ramygeorge19@gmail.com>
 
+<<<<<<< HEAD
 	* cobgetopt.c (process_at_file): if command line options have a @file
 	  start fetch entire file name and get contents (options)
 	* cobgetopt.c (expand_process_at_file): tokenizes all options returned by
@@ -27,6 +28,12 @@
 	* cobgetopt.c (cob_rebuild_argv_at_file): takes old ARGV,ARGC and rebuilds
 	  new argv,argc with the file options  
 	  
+=======
+	* argv.c: extracted the argv.c file from GCC
+	* cobgetopt.h (cob_expandargv): added the expandargv function in header 
+	* makefile.am: added the argv.c file libcob sources
+
+>>>>>>> 09eaebf6 (argv.c and relevant changes)
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
