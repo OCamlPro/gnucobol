@@ -22,6 +22,7 @@
    Modified for use in GnuCOBOL by Roger While
 */
 
+#include "libcob/common.h"
 #ifndef COB_GETOPT_H
 #define COB_GETOPT_H 1
 
@@ -117,8 +118,7 @@ struct option
    arguments to the option '\0'.  This behavior is specific to the GNU
    `getopt'.  */
 
-
-COB_EXPIMP void cob_rebuild_argv_at_file(int * old_argc, char*** old_argv);
+COB_EXPIMP void cob_expandargv (int *argcp, char ***argvp);
 COB_EXPIMP int cob_getopt_long_long (const int, char *const *, const char *,
 				 const struct option *, int *, const int);
 #endif
