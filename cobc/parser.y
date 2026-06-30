@@ -23,7 +23,7 @@
 
 %defines
 %verbose
-%define parse.error verbose
+%error-verbose
 
 %{
 #include "config.h"
@@ -3818,18 +3818,6 @@ _class_body:
   _factory_or_instance_definition
 ;
 
-_oo_body:
-  _options_paragraph
-  _environment_division
-  {
-	cb_validate_program_environment(current_program);
-  }
-  _data_division
-  {
-	cb_validate_program_data(current_program);
-  }
-  _oo_procedure_division
-;
 
 _interface_body:
   _options_paragraph
@@ -3886,6 +3874,19 @@ instance_definition:
   _oo_body
   END_OBJECT
   _dot
+;
+
+_oo_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment(current_program);
+  }
+  _data_division
+  {
+	cb_validate_program_data(current_program);
+  }
+  _oo_procedure_division { cobc_in_procedure = 0; }
 ;
 
 method_definition:
@@ -4335,7 +4336,7 @@ _program_body:
 	cb_validate_program_data (current_program);
 	within_typedef_definition = 0;
   }
-  _procedure_division
+  _procedure_division { cobc_in_procedure = 0; }
 ;
 
 /* IDENTIFICATION DIVISION */

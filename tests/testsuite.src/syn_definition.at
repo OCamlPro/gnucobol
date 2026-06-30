@@ -1276,7 +1276,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:3: error: syntax error, unexpected IDENTIFICATION, expecting CLASS-ID or FUNCTION-ID or PROGRAM-ID
+[prog.cob:3: error: syntax error, unexpected IDENTIFICATION, expecting CLASS-ID or FUNCTION-ID or INTERFACE-ID or PROGRAM-ID
 ])
 AT_CLEANUP
 

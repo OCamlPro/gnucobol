@@ -98,8 +98,8 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
-prog.cob:6: error: redefinition of class ID 'MyClass'
 prog.cob:6: error: object-oriented COBOL is not supported
+prog.cob:6: error: redefinition of class ID 'MyClass'
 ])
 AT_CLEANUP
 
@@ -116,14 +116,27 @@ AT_DATA([prog.cob], [
         END CLASS DematAccount.
         
         CLASS-ID. SavingsAccount INHERITS FROM Account.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account.
         END CLASS SavingsAccount.
 
         *> Skips optional FROM keyword for INHERITS attribute
         CLASS-ID. MinorSavingsAccount INHERITS SavingsAccount.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS SavingsAccount.
         END CLASS MinorSavingsAccount.
 
         CLASS-ID. MultiPurposeAccount INHERITS
                   FROM Account DematAccount.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account 
+            CLASS DematAccount.
         END CLASS MultiPurposeAccount.
 
         CLASS-ID. MyAccount USING startingBalance.
@@ -134,9 +147,9 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
 prog.cob:6: error: object-oriented COBOL is not supported
 prog.cob:9: error: object-oriented COBOL is not supported
-prog.cob:13: error: object-oriented COBOL is not supported
-prog.cob:16: error: object-oriented COBOL is not supported
-prog.cob:20: error: object-oriented COBOL is not supported
+prog.cob:17: error: object-oriented COBOL is not supported
+prog.cob:24: error: object-oriented COBOL is not supported
+prog.cob:33: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
@@ -151,6 +164,10 @@ AT_DATA([prog.cob], [
         
         CLASS-ID. MyFirstClass INHERITS 
                   FROM MySuperClass IS FINAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS MySuperClass.
         END CLASS MyFirstClass.
 
         CLASS-ID. MySecondClass AS "MySecondClass" 
@@ -160,6 +177,10 @@ AT_DATA([prog.cob], [
         CLASS-ID. MyThirdClass 
                   INHERITS FROM MySuperClass
                   USING param-name.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS MySuperClass.
         END CLASS MyThirdClass.
 
         *> Skips optional IS keyword for FINAL attribute
@@ -171,9 +192,9 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
 prog.cob:6: error: object-oriented COBOL is not supported
-prog.cob:10: error: object-oriented COBOL is not supported
-prog.cob:15: error: object-oriented COBOL is not supported
-prog.cob:20: error: object-oriented COBOL is not supported
+prog.cob:14: error: object-oriented COBOL is not supported
+prog.cob:18: error: object-oriented COBOL is not supported
+prog.cob:28: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
@@ -189,30 +210,47 @@ AT_DATA([prog.cob], [
         CLASS-ID. DematAccount INHERITS Account
                   ABSTRACT
                   IS PUBLIC.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account.
         END CLASS DematAccount.
         
         CLASS-ID. SavingsAccount 
                   INHERITS FROM Account
                   FINAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account.
         END CLASS SavingsAccount.
 
         CLASS-ID. MinorSavingsAccount
                   INHERITS SavingsAccount
                   IS INTERNAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS SavingsAccount.
         END CLASS MinorSavingsAccount.
 
         CLASS-ID. MultiPurposeAccount 
                   INHERITS Account DematAccount
                   PARTIAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account
+            CLASS DematAccount.
         END CLASS MultiPurposeAccount.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
 prog.cob:6: error: object-oriented COBOL is not supported
-prog.cob:12: error: object-oriented COBOL is not supported
-prog.cob:17: error: object-oriented COBOL is not supported
-prog.cob:22: error: object-oriented COBOL is not supported
+prog.cob:15: error: object-oriented COBOL is not supported
+prog.cob:24: error: object-oriented COBOL is not supported
+prog.cob:33: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
@@ -230,18 +268,31 @@ AT_DATA([prog.cob], [
                   ABSTRACT
                   IS PUBLIC
                   INTERNAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account.
         END CLASS DematAccount.
         
         CLASS-ID. SavingsAccount 
                   INHERITS FROM Account
                   FINAL
                   IS ABSTRACT.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account.
         END CLASS SavingsAccount.
 
         CLASS-ID. MultiPurposeAccount 
                   INHERITS Account DematAccount
                   PARTIAL
                   IS PARTIAL.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Account
+            CLASS DematAccount.
         END CLASS MultiPurposeAccount.
 ])
 
@@ -250,10 +301,10 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:4: error: duplicate FINAL clause
 prog.cob:7: error: object-oriented COBOL is not supported
 prog.cob:10: error: cannot specify both INTERNAL and PUBLIC
-prog.cob:14: error: object-oriented COBOL is not supported
-prog.cob:16: error: cannot specify both FINAL and ABSTRACT
-prog.cob:20: error: object-oriented COBOL is not supported
-prog.cob:22: error: duplicate PARTIAL clause
+prog.cob:17: error: object-oriented COBOL is not supported
+prog.cob:20: error: cannot specify both FINAL and ABSTRACT
+prog.cob:27: error: object-oriented COBOL is not supported
+prog.cob:30: error: duplicate PARTIAL clause
 ])
 AT_CLEANUP
 
@@ -264,18 +315,22 @@ AT_KEYWORDS([OOP])
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
         
-        CLASS-ID. Account IS FINAL.
-        END CLASS Account.
+        INTERFACE-ID. Account.
+        END INTERFACE Account.
 
         INTERFACE-ID. DematAccount
                     INHERITS Account
                     USING param-name.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            INTERFACE Account.
         END INTERFACE DematAccount.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:4: error: object-oriented COBOL is not supported
-prog.cob:8: error: interfaces in object-oriented COBOL is not supported
+[prog.cob:4: error: interfaces in object-oriented COBOL is not supported
+prog.cob:7: error: interfaces in object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
@@ -295,13 +350,13 @@ AT_DATA([prog.cob], [
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
         REPOSITORY.
-            CLASS SavingsAccount AS "SavingsAccount".
+            CLASS Account AS "Account".
         END CLASS SavingsAccount.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:4: error: object-oriented COBOL is not supported
-prog.cob:8: error: object-oriented COBOL is not supported
+prog.cob:7: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
@@ -343,7 +398,6 @@ AT_DATA([prog1.cob], [
         CONFIGURATION SECTION.
         REPOSITORY.
                 CLASS MyBaseClass AS "MyKnownClass"
-                USING dummy-param
                 INTERFACE MyInterface.
         FACTORY.
         END FACTORY.
@@ -354,11 +408,19 @@ AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
 [prog1.cob:3: error: interfaces in object-oriented COBOL is not supported
 prog1.cob:6: error: interfaces in object-oriented COBOL is not supported
 prog1.cob:9: error: object-oriented COBOL is not supported
-prog1.cob:27: error: object-oriented COBOL is not supported
+prog1.cob:26: error: object-oriented COBOL is not supported
 prog1.cob:28: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:27: note: 'MyBaseClass' defined here
+prog1.cob:29: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
 prog1.cob:30: error: cannot inherit from the same class being declared
-prog1.cob:40: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
-prog1.cob:40: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
+prog1.cob:26: note: 'MyDerivedClass' defined here
+prog1.cob:30: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
+prog1.cob:28: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:27: note: 'MyBaseClass' defined here
+prog1.cob:29: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
+prog1.cob:30: error: cannot inherit from the same class being declared
+prog1.cob:26: note: 'MyDerivedClass' defined here
+prog1.cob:30: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
 ])
 
 AT_DATA([prog2.cob], [
@@ -385,17 +447,19 @@ AT_DATA([prog2.cob], [
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:3: error: interfaces in object-oriented COBOL is not supported
 prog2.cob:6: error: interfaces in object-oriented COBOL is not supported
-prog2.cob:10: error: interfaces in object-oriented COBOL is not supported
+prog2.cob:9: error: interfaces in object-oriented COBOL is not supported
 prog2.cob:11: error: duplicate parent interface name 'MyBaseInterface'
+prog2.cob:10: note: 'MyBaseInterface' defined here
+prog2.cob:12: error: inherited interface 'MyUnknownInterface' not found in REPOSITORY paragraph
 prog2.cob:13: error: cannot inherit from the same interface being declared
-prog2.cob:20: error: inherited interface 'MyUnknownInterface' not found in REPOSITORY paragraph
-prog2.cob:20: error: inherited interface 'MyDerivedInterface' not found in REPOSITORY paragraph
+prog2.cob:9: note: 'MyDerivedInterface' defined here
+prog2.cob:13: error: inherited interface 'MyDerivedInterface' not found in REPOSITORY paragraph
 ])
 
 AT_CLEANUP
 
 
-AT_SETUP([INVOKE statement ])
+AT_SETUP([INVOKE statement])
 AT_KEYWORDS([OOP])
 
 AT_DATA([prog.cob], [
@@ -434,5 +498,139 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:6: error: object-oriented COBOL is not supported
 prog.cob:24: warning: USAGE OBJECT is not implemented
 prog.cob:27: error: 'MyBaseClass' is not defined
+])
+AT_CLEANUP
+
+
+AT_SETUP([Simple OO Example (Accounts)])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. Account INHERITS Base.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS Base.
+
+        FACTORY.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 number-of-accounts PIC 9(5) VALUE ZERO.
+        PROCEDURE DIVISION.
+        METHOD-ID. newAccount.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+            01 an-object USAGE IS OBJECT REFERENCE ACTIVE-CLASS.
+        PROCEDURE DIVISION RETURNING an-object.
+            begin-here.
+            INVOKE SELF "new" RETURNING an-object.
+            INVOKE an-object "initializeAccount" 
+                    USING BY CONTENT number-of-accounts.
+            GOBACK.
+            END METHOD newAccount.
+            METHOD-ID. addAccount.
+            PROCEDURE DIVISION.
+                method-start.
+                ADD 1 TO number-of-accounts.
+                GOBACK.
+            END METHOD addAccount.
+            METHOD-ID. removeAccount.
+            PROCEDURE DIVISION.
+                main-entry.
+                SUBTRACT 1 FROM number-of-accounts.
+                GOBACK.
+            END METHOD removeAccount.
+        END FACTORY.
+    
+        OBJECT.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+            01 account-balance PIC S9(9)V99.
+            01 account-number PIC X(9).
+            01 the-date PIC 9(8).
+        PROCEDURE DIVISION.
+            METHOD-ID. displayUI.
+            DATA DIVISION.
+            LOCAL-STORAGE SECTION.
+                01 in-data.
+                    03 action-type PIC X.
+                    03 in-amount PIC S9(9)V99.
+                    03 in-wrk PIC X(12).
+            PROCEDURE DIVISION.
+        
+            get-amount.
+            DISPLAY "Enter amount 9(9).99"
+            ACCEPT in-wrk
+            COMPUTE in-amount = FUNCTION NUMVAL (in-wrk)
+            .
+            END METHOD displayUI.
+            METHOD-ID. balance.
+            DATA DIVISION.
+            LOCAL-STORAGE SECTION.
+                01 display-balance PIC $ZZZ,ZZZ,ZZ9.99B-.
+            PROCEDURE DIVISION.
+            disp-balance.
+            MOVE account-balance to display-balance
+            DISPLAY "Your Account Balance is:" display-balance
+            GOBACK.
+            END METHOD balance.
+            METHOD-ID. deposit.
+                DATA DIVISION.
+                LINKAGE SECTION.
+                    01 in-deposit PIC S9(9)V99.
+                PROCEDURE DIVISION USING in-deposit.
+                make-deposit.
+                ADD in-deposit TO account-balance
+                GOBACK.
+            END METHOD deposit.
+            METHOD-ID. withdraw.
+            DATA DIVISION.
+            LINKAGE SECTION.
+                01 in-withdraw PIC S9(9)V99.
+            PROCEDURE DIVISION USING in-withdraw.
+            withdraw-start.
+            IF account-balance >= in-withdraw
+                SUBTRACT in-withdraw FROM account-balance
+            ELSE
+                DISPLAY "Your Balance is Inadequate"
+            END-IF
+            GOBACK.
+            END METHOD withdraw.
+            METHOD-ID. initializeAccount.
+            DATA DIVISION.
+            LINKAGE SECTION.
+                01 new-account-number PIC 9(5).
+            PROCEDURE DIVISION USING new-account-number.
+                Begin-initialization.
+                MOVE ZERO TO account-balance
+                MOVE new-account-number TO account-number
+                MOVE FUNCTION CURRENT-DATE (1: 8) TO the-date
+                GOBACK.
+            END METHOD initializeAccount.
+        END OBJECT.
+        END CLASS Account.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: error: object-oriented COBOL is not supported
+prog.cob:17: warning: USAGE OBJECT is not implemented
+prog.cob:18: error: RETURNING item is not defined in LINKAGE SECTION
+prog.cob: in paragraph 'begin-here':
+prog.cob:22: error: 'number-of-accounts' is not defined
+prog.cob: in paragraph 'method-start':
+prog.cob:28: error: 'number-of-accounts' is not defined
+prog.cob: in paragraph 'main-entry':
+prog.cob:34: error: 'number-of-accounts' is not defined
+prog.cob: in paragraph 'disp-balance':
+prog.cob:67: error: 'account-balance' is not defined
+prog.cob: in paragraph 'make-deposit':
+prog.cob:77: error: 'account-balance' is not defined
+prog.cob: in paragraph 'withdraw-start':
+prog.cob:86: error: 'account-balance' is not defined
+prog.cob: in paragraph 'Begin-initialization':
+prog.cob:99: error: 'account-balance' is not defined
+prog.cob:100: error: 'account-number' is not defined
+prog.cob:101: error: 'the-date' is not defined
 ])
 AT_CLEANUP
