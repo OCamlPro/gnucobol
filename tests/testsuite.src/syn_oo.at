@@ -216,6 +216,7 @@ prog.cob:22: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
+
 AT_SETUP([CLASS-ID Attribute Error Check])
 AT_KEYWORDS([OOP])
 
@@ -278,6 +279,7 @@ prog.cob:8: error: interfaces in object-oriented COBOL is not supported
 ])
 AT_CLEANUP
 
+
 AT_SETUP([CLASS specifier in REPOSITORY paragraph])
 AT_KEYWORDS([OOP])
 
@@ -302,6 +304,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:8: error: object-oriented COBOL is not supported
 ])
 AT_CLEANUP
+
 
 AT_SETUP([CLASS-ID and INTERFACE-ID Syntax Checks])
 AT_KEYWORDS([OOP])
@@ -339,8 +342,7 @@ AT_DATA([prog1.cob], [
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
         REPOSITORY.
-                CLASS MyBaseClass AS "MyKnownClass" 
-                EXPANDS MyInterface
+                CLASS MyBaseClass AS "MyKnownClass"
                 USING dummy-param
                 INTERFACE MyInterface.
         FACTORY.
@@ -392,3 +394,45 @@ prog2.cob:20: error: inherited interface 'MyDerivedInterface' not found in REPOS
 
 AT_CLEANUP
 
+
+AT_SETUP([INVOKE statement ])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        INTERFACE-ID. MyFactoryInterface.
+        END INTERFACE MyFactoryInterface.
+
+        CLASS-ID. MyBaseClass.
+        FACTORY.
+                IMPLEMENTS MyFactoryInterface.
+            PROCEDURE DIVISION.
+            METHOD-ID. MyMethod IS FINAL.
+                PROCEDURE DIVISION.
+                    DISPLAY "Hello, world!".
+            END METHOD MyMethod.
+        END FACTORY.
+        END CLASS MyBaseClass.
+
+        PROGRAM-ID. prog.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS MyBaseClass AS "MyClass".
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+            01 an-object USAGE OBJECT REFERENCE MyBaseClass.
+
+        PROCEDURE DIVISION.
+            INVOKE MyBaseClass "MyMethod".
+            INVOKE an-object "MyMethod".
+        END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: error: interfaces in object-oriented COBOL is not supported
+prog.cob:6: error: object-oriented COBOL is not supported
+prog.cob:24: warning: USAGE OBJECT is not implemented
+prog.cob:27: error: 'MyBaseClass' is not defined
+])
+AT_CLEANUP
