@@ -5529,7 +5529,6 @@ cb_validate_program_body (struct cb_program *prog)
 
 	prog->exec_list = cb_list_reverse (prog->exec_list);
 }
-	
 
 /* General */
 

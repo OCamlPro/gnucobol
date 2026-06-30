@@ -1,4 +1,8 @@
 
+2026-06-30	Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* common.h: add COB_MODULE_TYPE_INTERFACE, COB_MODULE_TYPE_METHOD
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test

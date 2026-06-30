@@ -2578,7 +2578,6 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 	current_program->oo_class_attributes |= attr;
 }
 
-
 %}
 
 %token TOKEN_EOF 0 "end of file"
