@@ -1638,7 +1638,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INVALID",			0, 0, INVALID,			/* 2002 */
 				0, 0
   },
-  { "INVOKE",			0, 0, -1,			/* 2002 */
+  { "INVOKE",			0, 0, INVOKE,			/* 2002 */
 				0, 0
   },
   { "IS",			0, 0, IS,			/* 2002 */
@@ -2605,7 +2605,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SELECTION-TEXT",			0, 1, SELECTION_TEXT,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "SELF",			0, 0, -1,			/* 2002 */
+  { "SELF",			0, 0, SELF,			/* 2002 */
 				0, 0
   },
   { "SELF-ACT",			0, 1, SELF_ACT,			/* ACU extension */

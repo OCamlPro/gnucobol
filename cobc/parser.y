@@ -2578,31 +2578,6 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 	current_program->oo_class_attributes |= attr;
 }
 
-static const COB_INLINE char *
-get_cob_module_type_string(enum cob_module_type prog_type)
-{ 															
-	switch (prog_type)									
-	{														
-		case COB_MODULE_TYPE_PROGRAM: 		return "program";
-		case COB_MODULE_TYPE_FUNCTION: 		return "function";
-		case COB_MODULE_TYPE_CLASS: 		return "class";			
-		case COB_MODULE_TYPE_INTERFACE: 	return "interface";
-		case COB_MODULE_TYPE_METHOD: 		return "method";
-	}									
-}
-
-static COB_INLINE cob_u8_t
-check_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
-{
-	cb_tree l;
-	for (l = spec_list; l; l = CB_CHAIN (l)) {
-		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME(parent_name)) == 0) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
 
 %}
 
@@ -3054,6 +3029,7 @@ check_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
 %token INTRINSIC
 %token INVALID			/* remark: not used here */
 %token INVALID_KEY		"INVALID KEY"
+%token INVOKE
 %token IS
 %token ITEM
 %token ITEM_TEXT		"ITEM-TEXT"
@@ -3385,6 +3361,7 @@ check_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
 %token SELECTION_INDEX	"SELECTION-INDEX"
 %token SELECTION_TEXT	"SELECTION-TEXT"
 %token SELECT_ALL		"SELECTION-ALL"
+%token SELF
 %token SELF_ACT			"SELF-ACT"
 %token SEMI_COLON		"semi-colon"
 %token SEND
@@ -3639,6 +3616,7 @@ check_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
 %nonassoc INITIATE
 %nonassoc INQUIRE
 %nonassoc INSPECT
+%nonassoc INVOKE
 %nonassoc JSON
 %nonassoc MERGE
 %nonassoc MODIFY
@@ -3826,12 +3804,7 @@ class_definition:
   class_id_paragraph
   _class_body
   {
-	cb_tree l;
-	for (l = current_program->oo_inheritance_list; l; l = CB_CHAIN (l)) {
-		if (check_parent_name_in_spec_list(current_program->class_spec_list, CB_VALUE(l)) == 1) {
-			cb_error(_("inherited class '%s' not found in REPOSITORY paragraph"), CB_NAME (CB_VALUE (l)));
-		}
-	}
+	cb_validate_program_data(current_program);
   }
   end_class
 ;
@@ -3839,19 +3812,32 @@ class_definition:
 _class_body:
   _options_paragraph
   _environment_division
+  {
+	cb_validate_program_environment (current_program);
+  }
   _factory_or_instance_definition
 ;
 
 _oo_body:
   _options_paragraph
   _environment_division
+  {
+	cb_validate_program_environment(current_program);
+  }
   _data_division
+  {
+	cb_validate_program_data(current_program);
+  }
   _oo_procedure_division
 ;
 
 _interface_body:
   _options_paragraph
   _environment_division
+  {
+	cb_validate_program_environment(current_program);
+	cb_validate_program_data(current_program);
+  }
   _procedure_division
 ;
 
@@ -3859,14 +3845,6 @@ interface_definition:
   _identification_header
   interface_id_paragraph
   _interface_body
-  {
-	cb_tree l;
-	for (l = current_program->oo_inheritance_list; l; l = CB_CHAIN (l)) {
-		if (check_parent_name_in_spec_list(current_program->interface_spec_list, CB_VALUE(l)) == 1) {
-			cb_error(_("inherited interface '%s' not found in REPOSITORY paragraph"), CB_NAME (CB_VALUE (l)));
-		}
-	}
-  }
   end_interface
 ;
 
@@ -3913,7 +3891,7 @@ instance_definition:
 method_definition:
   _identification_header
   method_id_header TOK_DOT method_signature _override _is_final _dot
-  _oo_body
+  _program_body
   end_method
 ;
 
@@ -3959,6 +3937,7 @@ end_class:
   }
   class_id_name _dot
   {
+	cobc_in_id = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
   }
 ;
@@ -3971,6 +3950,7 @@ end_interface:
   }
   interface_id_name _dot
   {
+	cobc_in_id = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_INTERFACE);
   }
 ;
@@ -4167,6 +4147,9 @@ class_id_header:
   CLASS_ID
   {
 	cobc_in_id = 1;
+
+	__CS_CLEAR_ALL();
+	CB_UNSUPPORTED ("object-oriented COBOL");
   }
 ;
 
@@ -4174,6 +4157,9 @@ interface_id_header:
   INTERFACE_ID
   {
 	cobc_in_id = 1;
+	__CS_CLEAR_ALL();
+
+	CB_UNSUPPORTED ("interfaces in object-oriented COBOL");
   }
 ;
 
@@ -4209,31 +4195,10 @@ interface_id_name:
 oo_parent_name_list:
   WORD
   {
-	if (strcasecmp(current_program->program_name, CB_NAME($1)) == 0) {
-		cb_error(_("cannot inherit from the same %s being declared"),
-			get_cob_module_type_string(current_program->prog_type));
-	}
-
 	$$ = CB_LIST_INIT ($1);
   }
 | oo_parent_name_list WORD
   {
-	cb_tree l;
-
-	if (strcasecmp(current_program->program_name, CB_NAME($2)) == 0) {
-		cb_error(_("cannot inherit from the same %s being declared"),
-			get_cob_module_type_string(current_program->prog_type));
-	}
-
-	/* Check for duplicate parent name */
-	for (l = $1; l; l = CB_CHAIN (l)) {
-		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME ($2)) == 0) {
-			cb_error (_("duplicate parent %s name '%s'"), 
-				get_cob_module_type_string(current_program->prog_type),
-				CB_NAME ($2));
-			break;
-		}
-	}
 	$$ = cb_list_add ($1, $2);	
   }
 ;
@@ -4292,11 +4257,6 @@ class_id_paragraph:
 	if (setup_program ($3, $4, COB_MODULE_TYPE_CLASS, 1)) {
 		YYABORT;
 	}
-
-	__CS_CLEAR_ALL();
-	cobc_in_id = 0;
-
-	CB_UNSUPPORTED ("object-oriented COBOL");
   }
   _inherits_phrase
   _class_attributes
@@ -4323,11 +4283,6 @@ interface_id_paragraph:
 	if (setup_program ($3, $4, COB_MODULE_TYPE_INTERFACE, 1)) {
 		YYABORT;
 	}
-
-	__CS_CLEAR_ALL();
-	cobc_in_id = 0;
-
-	CB_UNSUPPORTED ("interfaces in object-oriented COBOL");
   }
   _inherits_phrase
   _using_phrase
@@ -4337,13 +4292,13 @@ interface_id_paragraph:
 method_id_header:
   METHOD_ID
   {
-	cobc_in_id = 1;
+	__CS_CLEAR_ALL();
   }
 ;
 
 get_or_set:
-  GET
-| SET
+  GET	{ $$ = $1; }
+| SET	{ $$ = $1; }
 ;
 
 method_signature:
@@ -4353,10 +4308,15 @@ method_signature:
 		YYABORT;
 	}
 
-	__CS_CLEAR_ALL();
-	cobc_in_id = 0;
+	current_program->getter_or_setter = CB_OO_ACCESS_NONE;
   }
 | get_or_set PROPERTY WORD
+  {
+    /* 
+	  TODO: Call setup_program() with appropriate fields here. 
+	  Also set the property accessor type.
+	*/
+  }
 ;
 
 
@@ -4693,7 +4653,8 @@ configuration_header:
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_CONFIGURATION_SECTION;
-	if (current_program->nested_level) {
+	if (current_program->nested_level
+	 && current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		cb_error (_("%s not allowed in nested programs"), "CONFIGURATION SECTION");
 	}
   }
@@ -8505,10 +8466,13 @@ type_to_clause:
 
 usage_clause:
   _usage_is usage
-| USAGE _is conflict_usage	/* auto-enters CB_CS_USAGE */
+| USAGE _is OBJECT REFERENCE _object_reference_type
   {
+	check_and_set_usage (CB_USAGE_OBJECT);
+	CB_PENDING ("USAGE OBJECT");
+	
 	__CS_LEAVE (CB_CS_USAGE);
-  }
+  }	/* auto-enters CB_CS_USAGE */
 | USAGE _is WORD	/* MF extension for referencing types, full support would need
                 	   _usage_is, but this leads to shift/reduce conflicts,
                 	   FIXME: handle conflict by returning TYPEDEF_NAME token,
@@ -8864,14 +8828,6 @@ _to_type_name:
 | _to type_name { $$ = $2;   }
 ;
 
-/* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
-conflict_usage:
-  OBJECT REFERENCE _object_reference_type
-  {
-	check_and_set_usage (CB_USAGE_OBJECT);
-	CB_PENDING ("OBJECTS");
-  }
-;
 
 _object_reference_type:
   /* empty */
@@ -9645,7 +9601,8 @@ _local_storage_section:
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LOCAL_STORAGE_SECTION;
 	current_storage = CB_STORAGE_LOCAL;
-	if (current_program->nested_level) {
+	if (current_program->nested_level 
+	 && current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		cb_error (_("%s not allowed in nested programs"), "LOCAL-STORAGE");
 	} else if (cb_local_implies_recursive) {
 		current_program->flag_recursive = 1;
@@ -11498,13 +11455,13 @@ _procedure_division:
 ;
  
 procedure_division_sections:
-_mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
+  _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
 	cb_tree call_conv = $1;
 	if ($2) {
 		call_conv = $2;
 		if ($1) {
-			/* note: $1 is likely to be a reference to SPECIAL-NAMES */
+			/* note: $2 is likely to be a reference to SPECIAL-NAMES */
 			cb_error_x ($2, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
@@ -11872,7 +11829,7 @@ _procedure_returning:
 #else
 			if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
 				current_program->returning = $2;
-			} else {
+			} else if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 				CB_PENDING ("program RETURNING");
 			}
 #endif
@@ -12247,7 +12204,7 @@ statement:
 | initiate_statement
 | inquire_statement
 | inspect_statement
-/* | TODO: invoke_statement */
+| invoke_statement
 | json_generate_statement
 | json_parse_statement
 | merge_statement
@@ -15573,6 +15530,20 @@ inspect_body:
 		CB_PENDING ("INSPECT BACKWARD");
 	}
   }
+;
+
+invoke_statement:
+  INVOKE
+  id_or_class_name
+  id_or_lit
+  call_using
+  call_returning
+;
+
+id_or_class_name:
+  SELF
+| identifier
+| class_id_name
 ;
 
 _backward:

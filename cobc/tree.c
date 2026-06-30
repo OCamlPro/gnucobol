@@ -7670,6 +7670,34 @@ cb_build_prof_call (enum cb_prof_call prof_call,
 	return CB_BUILD_FUNCALL_3 (func_name, cb_int (prof_call), cb_int (func_arg1), cb_int (func_arg2));
 }
 
+/* Object-oriented */
+
+const char *
+get_cob_module_type_string(enum cob_module_type prog_type)
+{ 															
+	switch (prog_type)									
+	{														
+		case COB_MODULE_TYPE_PROGRAM: 		return _("program");
+		case COB_MODULE_TYPE_FUNCTION: 		return _("function");
+		case COB_MODULE_TYPE_CLASS: 		return _("class");			
+		case COB_MODULE_TYPE_INTERFACE: 	return _("interface");
+		case COB_MODULE_TYPE_METHOD: 		return _("method");
+	}									
+}
+
+int
+validate_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
+{
+	cb_tree l;
+	
+	for (l = spec_list; l; l = CB_CHAIN (l)) {
+		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME(parent_name)) == 0) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 /* Allocate a procedure description record and add it at the end of
  * the procedure_list of the current program. The index of the
  * procedure will be the position in the list. There is an invariant

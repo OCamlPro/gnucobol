@@ -525,6 +525,13 @@ enum cb_oo_class_attribute {
 	CB_OO_CLASS_ATTR_INTERNAL		= 0x20
 };
 
+/* Object-orinted method property accessor type */
+enum cb_oo_property_accessor {
+	CB_OO_ACCESS_NONE	= 0,	/* Default, the method is neither a getter nor a setter */
+	CB_OO_ACCESS_GET	= 1,	/* Getter method */
+	CB_OO_ACCESS_SET	= 2		/* Setter method */
+};
+
 
 /* Reserved word list structure */
 struct cobc_reserved {
@@ -1926,8 +1933,9 @@ struct cb_program {
 	cob_u8_t	high_value;			/* High-value for this program */
 	cob_u16_t	low_value_n;			/* National Low-value */
 	cob_u16_t	high_value_n;			/* National High-value  */
-	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1, OO class = 2) */
+	enum cob_module_type	prog_type;			/* Program type */
 	cob_u8_t 	oo_class_attributes;			/* OO class attributes */
+	enum cb_oo_property_accessor	getter_or_setter;		/* OO method attribute */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;
 
@@ -2616,6 +2624,9 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 						const int, cb_tree, cb_tree);
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
+
+extern const char * get_cob_module_type_string(enum cob_module_type);
+extern int validate_parent_name_in_spec_list(cb_tree, cb_tree);
 
 #ifdef	COB_TREE_DEBUG
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
