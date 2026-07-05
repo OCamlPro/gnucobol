@@ -4815,43 +4815,51 @@ validate_assign_name (cb_tree origin, struct cb_program * const prog)
 }
 
 void
+cb_validate_oo_program_data (struct cb_program *prog) {
+	cb_tree l, x, spec_list;
+
+	if (prog->prog_type == COB_MODULE_TYPE_CLASS) {
+		spec_list = prog->class_spec_list;
+	} else if (prog->prog_type == COB_MODULE_TYPE_INTERFACE) {
+		spec_list = prog->interface_spec_list;
+	}
+	for (l = prog->oo_inheritance_list; l; l = CB_CHAIN (l)) {
+		if (strcasecmp(prog->program_id, CB_NAME(CB_VALUE (l))) == 0) {
+			cb_error_x(l, _("cyclically inheriting %s '%s'"),
+				cb_get_cob_module_type_string(prog->prog_type),
+				CB_NAME (CB_VALUE(l)));
+			cb_note_x(COB_WARNOPT_NONE, CB_TREE(prog), _("'%s' defined here"), 
+				CB_NAME (CB_VALUE(l)));
+		}
+
+		/* Check for parent name in REPOSITORY paragraph */
+		if (cb_search_in_name_list(spec_list, CB_VALUE(l)) == 1) {
+			cb_error_x(l, _("inherited %s '%s' not found in REPOSITORY paragraph"),
+				cb_get_cob_module_type_string(prog->prog_type), 
+				CB_NAME (CB_VALUE (l)));
+		}
+
+		/* Check for duplicate parent name */
+		for (x = CB_CHAIN (l); x; x = CB_CHAIN (x)) {
+			if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (CB_VALUE (x))) == 0) {
+				cb_error_x(x, _("duplicate parent %s name '%s'"), 
+					cb_get_cob_module_type_string(prog->prog_type),
+					CB_NAME (CB_VALUE(x)));
+				cb_note_x(COB_WARNOPT_NONE, l, _("'%s' defined here"), 
+					CB_NAME (CB_VALUE(l)));
+				break;
+			}
+		}
+	}
+}
+
+void
 cb_validate_program_data (struct cb_program *prog)
 {
 	cb_tree		l, x, spec_list;
 
 	if (prog->oo_inheritance_list) {
-		if (prog->prog_type == COB_MODULE_TYPE_CLASS) {
-			spec_list = prog->class_spec_list;
-		} else if (prog->prog_type == COB_MODULE_TYPE_INTERFACE) {
-			spec_list = prog->interface_spec_list;
-		}
-		for (l = prog->oo_inheritance_list; l; l = CB_CHAIN (l)) {
-			if (strcasecmp(prog->program_id, CB_NAME(CB_VALUE (l))) == 0) {
-				cb_error_x(l, _("cannot inherit from the same %s being declared"),
-					get_cob_module_type_string(prog->prog_type));
-				cb_note_x(COB_WARNOPT_NONE, CB_TREE(prog), _("'%s' defined here"), 
-					CB_NAME (CB_VALUE(l)));
-			}
-
-			/* Check for parent name in REPOSITORY paragraph */
-			if (validate_parent_name_in_spec_list(spec_list, CB_VALUE(l)) == 1) {
-				cb_error_x(l, _("inherited %s '%s' not found in REPOSITORY paragraph"),
-					get_cob_module_type_string(prog->prog_type), 
-					CB_NAME (CB_VALUE (l)));
-			}
-
-			/* Check for duplicate parent name */
-			for (x = CB_CHAIN (l); x; x = CB_CHAIN (x)) {
-				if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (CB_VALUE (x))) == 0) {
-					cb_error_x(x, _("duplicate parent %s name '%s'"), 
-						get_cob_module_type_string(prog->prog_type),
-						CB_NAME (CB_VALUE(x)));
-					cb_note_x(COB_WARNOPT_NONE, l, _("'%s' defined here"), 
-						CB_NAME (CB_VALUE(l)));
-					break;
-				}
-			}
-		}
+		cb_validate_oo_program_data(prog);		
 	}
 
 	prog->report_list = cb_list_reverse (prog->report_list);

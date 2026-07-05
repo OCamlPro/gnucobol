@@ -14059,7 +14059,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 			output_entry_function (prog, l, prog->parameter_list, 1);
 			progid++;
 		}
-	}
+	} /* TODO (OO): Handle other prog types. */
 
 	output_internal_function (prog, prog->parameter_list);
 

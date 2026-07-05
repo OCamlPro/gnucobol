@@ -3423,6 +3423,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token SUBTRACT
 %token SUBWINDOW
 %token SUM
+%token SUPER
 %token SUPPRESS
 %token SUPPRESS_XML		"SUPPRESS"
 %token SYMBOL
@@ -3885,7 +3886,14 @@ _oo_body:
   {
 	cb_validate_program_data(current_program);
   }
-  _oo_procedure_division { cobc_in_procedure = 0; }
+  _oo_procedure_division
+  {  
+    /* 
+	  Manual reset as a full OO construct like METHOD-ID 
+	  can appear inside PROCEDURE DIVISIONs.
+	*/  
+    cobc_in_procedure = 0;  
+  }
 ;
 
 method_definition:
@@ -4192,12 +4200,12 @@ interface_id_name:
   }
 ;
 
-oo_parent_name_list:
+word_list:
   WORD
   {
 	$$ = CB_LIST_INIT ($1);
   }
-| oo_parent_name_list WORD
+| word_list WORD
   {
 	$$ = cb_list_add ($1, $2);	
   }
@@ -4211,7 +4219,7 @@ class_param_list:
 
 _inherits_phrase:
   /* empty */
-| INHERITS _from oo_parent_name_list
+| INHERITS _from word_list
   {
 	current_program->oo_inheritance_list = $3;
   }
@@ -4297,8 +4305,8 @@ method_id_header:
 ;
 
 get_or_set:
-  GET	{ $$ = $1; }
-| SET	{ $$ = $1; }
+  GET
+| SET
 ;
 
 method_signature:
@@ -4307,13 +4315,11 @@ method_signature:
 	if (setup_program ($1, $2, COB_MODULE_TYPE_METHOD, 1)) {
 		YYABORT;
 	}
-
-	current_program->getter_or_setter = CB_OO_ACCESS_NONE;
   }
 | get_or_set PROPERTY WORD
   {
     /* 
-	  TODO: Call setup_program() with appropriate fields here. 
+	  TODO (OO): Call setup_program() with appropriate fields here. 
 	  Also set the property accessor type.
 	*/
   }
@@ -4335,7 +4341,14 @@ _program_body:
 	cb_validate_program_data (current_program);
 	within_typedef_definition = 0;
   }
-  _procedure_division { cobc_in_procedure = 0; }
+  _procedure_division
+  {  
+    /* 
+	  Manual reset as a full OO construct like METHOD-ID 
+	  can appear inside PROCEDURE DIVISIONs.
+	*/  
+    cobc_in_procedure = 0;  
+  }
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -4889,11 +4902,11 @@ _expands_clause:
 | EXPANDS WORD
 {
 	/* 
-	  TODO: Check that WORD is a class when used with the CLASS specifier
+	  TODO (OO): Check that WORD is a class when used with the CLASS specifier
 	  and interface when used with the INTERFACE specifier.
 	*/
 }
-USING oo_parent_name_list
+USING word_list
 ;
 
 repository_name:
@@ -8466,13 +8479,14 @@ type_to_clause:
 
 usage_clause:
   _usage_is usage
-| USAGE _is OBJECT REFERENCE _object_reference_type
+| USAGE _is 	/* auto-enters CB_CS_USAGE */
+  OBJECT REFERENCE _object_reference_type
   {
 	check_and_set_usage (CB_USAGE_OBJECT);
-	CB_PENDING ("USAGE OBJECT");
+	CB_PENDING ("USAGE OBJECT REFERENCE");
 	
 	__CS_LEAVE (CB_CS_USAGE);
-  }	/* auto-enters CB_CS_USAGE */
+  }
 | USAGE _is WORD	/* MF extension for referencing types, full support would need
                 	   _usage_is, but this leads to shift/reduce conflicts,
                 	   FIXME: handle conflict by returning TYPEDEF_NAME token,
@@ -11453,6 +11467,27 @@ _procedure_division:
   }
 | procedure_division
 ;
+
+procedure_division_header:
+  PROCEDURE
+  {
+	check_area_a_of ("PROCEDURE DIVISION");
+	current_section = NULL;
+	current_paragraph = NULL;
+	check_pic_duplicate = 0;
+	check_duplicate = 0;
+	cobc_in_procedure = 1U;
+	cb_set_system_names ();
+	last_source_line = cb_source_line;
+
+	cb_prof_procedure_division (
+		current_program,
+		cb_source_file,
+		cb_source_line
+		);
+  }
+  DIVISION
+;
  
 procedure_division_sections:
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
@@ -11506,28 +11541,8 @@ procedure_division_sections:
 		emit_statement (cb_build_perform_exit (current_section));
 	}
   }
-  ;
-  
-procedure_division_header:
-  PROCEDURE
-  {
-	check_area_a_of ("PROCEDURE DIVISION");
-	current_section = NULL;
-	current_paragraph = NULL;
-	check_pic_duplicate = 0;
-	check_duplicate = 0;
-	cobc_in_procedure = 1U;
-	cb_set_system_names ();
-	last_source_line = cb_source_line;
-
-	cb_prof_procedure_division (
-		current_program,
-		cb_source_file,
-		cb_source_line
-		);
-  }
-  DIVISION
 ;
+  
 
 _oo_procedure_division:
   /* empty */
@@ -12202,6 +12217,7 @@ statement:
 | if_statement
 | initialize_statement
 | initiate_statement
+// | inline_method_invocation_statement
 | inquire_statement
 | inspect_statement
 | invoke_statement
@@ -15486,6 +15502,19 @@ initiate_body:
   }
 ;
 
+id_or_class_name:
+  SELF
+| SUPER
+| identifier
+| class_id_name
+;
+
+// inline_method_invocation_statement:
+//   id_or_class_name "::" literal
+// | id_or_class_name "::" literal
+//   TOK_OPEN_PAREN call_param_list TOK_CLOSE_PAREN
+// ;
+
 /* INQUIRE statement */
 
 inquire_statement:
@@ -15532,18 +15561,14 @@ inspect_body:
   }
 ;
 
+/* INVOKE statement */
+
 invoke_statement:
   INVOKE
   id_or_class_name
   id_or_lit
   call_using
   call_returning
-;
-
-id_or_class_name:
-  SELF
-| identifier
-| class_id_name
 ;
 
 _backward:

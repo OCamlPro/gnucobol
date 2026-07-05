@@ -8,6 +8,7 @@
 	* tree.h, tree.c, typeck.c: add syntax validation logic to check OO inheritance
 	  list for duplicates, consistency with names specified in the REPOSITORY
 	  paragraph
+	* cobc.h: add new special contexts for OO constructs
 
 2026-06-11	Saurabh Kumar <developer.saurabh@outlook.com>
 

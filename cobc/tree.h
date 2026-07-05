@@ -1935,7 +1935,6 @@ struct cb_program {
 	cob_u16_t	high_value_n;			/* National High-value  */
 	enum cob_module_type	prog_type;			/* Program type */
 	cob_u8_t 	oo_class_attributes;			/* OO class attributes */
-	enum cb_oo_property_accessor	getter_or_setter;		/* OO method attribute */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;
 
@@ -2423,6 +2422,8 @@ extern void		cb_validate_program_environment (struct cb_program *);
 extern void		cb_validate_program_data (struct cb_program *);
 extern void		cb_validate_program_body (struct cb_program *);
 
+extern void 	cb_validate_oo_program_data (struct cb_program *);
+
 extern cb_tree		cb_build_expr (cb_tree);
 extern cb_tree		cb_build_cond (cb_tree);
 
@@ -2625,8 +2626,8 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
 
-extern const char * get_cob_module_type_string(enum cob_module_type);
-extern int validate_parent_name_in_spec_list(cb_tree, cb_tree);
+extern const char * cb_get_cob_module_type_string(enum cob_module_type);
+extern int cb_search_in_name_list(cb_tree, cb_tree);
 
 #ifdef	COB_TREE_DEBUG
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,

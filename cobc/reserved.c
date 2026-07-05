@@ -2799,7 +2799,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SUM",			0, 0, SUM,			/* 2002 */
 				0, 0
   },
-  { "SUPER",			0, 0, -1,			/* 2002 */
+  { "SUPER",			0, 0, SUPER,			/* 2002 */
 				0, 0
   },
   { "SUPPRESS",			0, 0, SUPPRESS,			/* 2002 */

@@ -377,14 +377,17 @@ AT_DATA([prog1.cob], [
                 IMPLEMENTS MyFactoryInterface.
         END FACTORY.
         OBJECT.
+                DATA DIVISION.
+                WORKING-STORAGE SECTION.
+                    01 data-name PIC 9(2).
                 PROCEDURE DIVISION.
                 METHOD-ID. MyMethod IS FINAL.
                 END METHOD MyMethod.
 
                 METHOD-ID. GET PROPERTY data-name.
-                        DATA DIVISION.
-                        LINKAGE SECTION.
-                        01 data-name PIC 9(2).
+                END METHOD.
+
+                METHOD-ID. SET PROPERTY data-name.
                 END METHOD.
         END OBJECT.
         END CLASS MyBaseClass.
@@ -408,19 +411,19 @@ AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
 [prog1.cob:3: error: interfaces in object-oriented COBOL is not supported
 prog1.cob:6: error: interfaces in object-oriented COBOL is not supported
 prog1.cob:9: error: object-oriented COBOL is not supported
-prog1.cob:26: error: object-oriented COBOL is not supported
-prog1.cob:28: error: duplicate parent class name 'MyBaseClass'
-prog1.cob:27: note: 'MyBaseClass' defined here
-prog1.cob:29: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
-prog1.cob:30: error: cannot inherit from the same class being declared
-prog1.cob:26: note: 'MyDerivedClass' defined here
-prog1.cob:30: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
-prog1.cob:28: error: duplicate parent class name 'MyBaseClass'
-prog1.cob:27: note: 'MyBaseClass' defined here
-prog1.cob:29: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
-prog1.cob:30: error: cannot inherit from the same class being declared
-prog1.cob:26: note: 'MyDerivedClass' defined here
-prog1.cob:30: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
+prog1.cob:29: error: object-oriented COBOL is not supported
+prog1.cob:31: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:30: note: 'MyBaseClass' defined here
+prog1.cob:32: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
+prog1.cob:33: error: cyclically inheriting class 'MyDerivedClass'
+prog1.cob:29: note: 'MyDerivedClass' defined here
+prog1.cob:33: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
+prog1.cob:31: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:30: note: 'MyBaseClass' defined here
+prog1.cob:32: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
+prog1.cob:33: error: cyclically inheriting class 'MyDerivedClass'
+prog1.cob:29: note: 'MyDerivedClass' defined here
+prog1.cob:33: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
 ])
 
 AT_DATA([prog2.cob], [
@@ -451,7 +454,7 @@ prog2.cob:9: error: interfaces in object-oriented COBOL is not supported
 prog2.cob:11: error: duplicate parent interface name 'MyBaseInterface'
 prog2.cob:10: note: 'MyBaseInterface' defined here
 prog2.cob:12: error: inherited interface 'MyUnknownInterface' not found in REPOSITORY paragraph
-prog2.cob:13: error: cannot inherit from the same interface being declared
+prog2.cob:13: error: cyclically inheriting interface 'MyDerivedInterface'
 prog2.cob:9: note: 'MyDerivedInterface' defined here
 prog2.cob:13: error: inherited interface 'MyDerivedInterface' not found in REPOSITORY paragraph
 ])
@@ -496,7 +499,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: interfaces in object-oriented COBOL is not supported
 prog.cob:6: error: object-oriented COBOL is not supported
-prog.cob:24: warning: USAGE OBJECT is not implemented
+prog.cob:24: warning: USAGE OBJECT REFERENCE is not implemented
 prog.cob:27: error: 'MyBaseClass' is not defined
 ])
 AT_CLEANUP
@@ -614,7 +617,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
-prog.cob:17: warning: USAGE OBJECT is not implemented
+prog.cob:17: warning: USAGE OBJECT REFERENCE is not implemented
 prog.cob:18: error: RETURNING item is not defined in LINKAGE SECTION
 prog.cob: in paragraph 'begin-here':
 prog.cob:22: error: 'number-of-accounts' is not defined

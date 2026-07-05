@@ -7673,7 +7673,7 @@ cb_build_prof_call (enum cb_prof_call prof_call,
 /* Object-oriented */
 
 const char *
-get_cob_module_type_string(enum cob_module_type prog_type)
+cb_get_cob_module_type_string (enum cob_module_type prog_type)
 { 															
 	switch (prog_type)									
 	{														
@@ -7686,12 +7686,12 @@ get_cob_module_type_string(enum cob_module_type prog_type)
 }
 
 int
-validate_parent_name_in_spec_list(cb_tree spec_list, cb_tree parent_name)
+cb_search_in_name_list (cb_tree list, cb_tree name)
 {
 	cb_tree l;
 	
-	for (l = spec_list; l; l = CB_CHAIN (l)) {
-		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME(parent_name)) == 0) {
+	for (l = list; l; l = CB_CHAIN (l)) {
+		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (name)) == 0) {
 			return 0;
 		}
 	}
