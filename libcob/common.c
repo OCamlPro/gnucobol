@@ -8992,30 +8992,34 @@ void
 cob_runtime_warning (const char *fmt, ...)
 {
 	va_list args;
+	FILE	*stderr_f = stderr;
 
 	if (cobsetptr && !cobsetptr->cob_display_warn) {
 		return;
 	}
 
+	if (cobsetptr && cobsetptr->cob_stderr) {
+		stderr_f = cobsetptr->cob_stderr;
+	}
 
 	/* Prefix */
-	fprintf (cobsetptr->cob_stderr, "libcob: ");
+	fprintf (stderr_f, "libcob: ");
 	{
 		char buff[COB_MINI_BUFF];
 		cob_get_source_line ();
 		get_source_location (buff);
-		fprintf (cobsetptr->cob_stderr, "%s", buff);
+		fprintf (stderr_f, "%s", buff);
 	}
-	fprintf (cobsetptr->cob_stderr, _("warning: "));
+	fprintf (stderr_f, _("warning: "));
 
 	/* Body */
 	va_start (args, fmt);
-	vfprintf (cobsetptr->cob_stderr, fmt, args);
+	vfprintf (stderr_f, fmt, args);
 	va_end (args);
 
 	/* Postfix */
-	putc ('\n', cobsetptr->cob_stderr);
-	fflush (cobsetptr->cob_stderr);
+	putc ('\n', stderr_f);
+	fflush (stderr_f);
 }
 
 void
