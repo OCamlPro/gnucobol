@@ -4972,7 +4972,7 @@ main (int argc, char **argv)
     cob_tidy ();
 
     /* Check normal exit second time */
-    if (cob_ret != 1) {
+    if (cob_ret != 0) {
       return 2;
     }
 

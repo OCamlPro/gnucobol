@@ -9026,18 +9026,23 @@ void
 cob_runtime_hint (const char *fmt, ...)
 {
 	va_list args;
+	FILE    *stderr_f = stderr;
+
+	if (cobsetptr && cobsetptr->cob_stderr) {
+		stderr_f = cobsetptr->cob_stderr;
+	}
 
 	/* Prefix */
-	fprintf (cobsetptr->cob_stderr, "%s", _("note: "));
+	fprintf (stderr_f, "%s", _("note: "));
 
 	/* Body */
 	va_start (args, fmt);
-	vfprintf (cobsetptr->cob_stderr, fmt, args);
+	vfprintf (stderr_f, fmt, args);
 	va_end (args);
 
 	/* Postfix */
-	putc ('\n', cobsetptr->cob_stderr);
-	fflush (cobsetptr->cob_stderr);
+	putc ('\n', stderr_f);
+	fflush (stderr_f);
 }
 
 /* extra function for direct interaction with the debugger
@@ -9067,7 +9072,12 @@ void
 cob_runtime_error (const char *fmt, ...)
 {
 	struct handlerlist	*h;
-	va_list			ap;
+	va_list				ap;
+	FILE            	*stderr_f = stderr;
+
+	if (cobsetptr && cobsetptr->cob_stderr) {
+		stderr_f = cobsetptr->cob_stderr;
+	}
 
 	int	more_error_procedures = 1;
 	cob_get_source_line ();
@@ -9142,31 +9152,31 @@ cob_runtime_error (const char *fmt, ...)
 		const char		*source_file;
 		unsigned int	 source_line;
 		set_source_location (&source_file, &source_line);
-		fputs ("libcob: ", cobsetptr->cob_stderr);
+		fputs ("libcob: ", stderr_f);
 		if (source_file) {
-			fprintf (cobsetptr->cob_stderr, "%s:", source_file);
+			fprintf (stderr_f, "%s:", source_file);
 			if (source_line) {
-				fprintf (cobsetptr->cob_stderr, "%u:", source_line);
+				fprintf (stderr_f, "%u:", source_line);
 			}
-			fputc (' ', cobsetptr->cob_stderr);
+			fputc (' ', stderr_f);
 		}
-		fprintf (cobsetptr->cob_stderr, "%s: ", _("error"));
+		fprintf (stderr_f, "%s: ", _("error"));
 
 		/* Body */
 		va_start (ap, fmt);
-		vfprintf (cobsetptr->cob_stderr, fmt, ap);
+		vfprintf (stderr_f, fmt, ap);
 		va_end (ap);
 
 		/* Postfix */
-		fputc ('\n', cobsetptr->cob_stderr);
-		fflush (cobsetptr->cob_stderr);
+		fputc ('\n', stderr_f);
+		fflush (stderr_f);
 	}
 
 	/* setup reason for optional module dump */
 	if (cob_initialized && abort_reason[0] == 0) {
 #if 0	/* Is there a use in this message ?*/
-		fputc ('\n', cobsetptr->cob_stderr);
-		fprintf (cobsetptr->cob_stderr, _("abnormal termination - file contents may be incorrect"));
+		fputc ('\n', stderr_f);
+		fprintf (stderr_f, _("abnormal termination - file contents may be incorrect"));
 #endif
 		va_start (ap, fmt);
 		vsnprintf (abort_reason, COB_MINI_BUFF, fmt, ap);
