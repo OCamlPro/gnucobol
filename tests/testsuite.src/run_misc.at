@@ -4972,7 +4972,7 @@ main (int argc, char **argv)
     cob_tidy ();
 
     /* Check normal exit second time */
-    if (cob_ret != 0) {
+    if (cob_ret != 1) {
       return 2;
     }
 
@@ -16105,5 +16105,121 @@ COB_SIGNAL_REGIME=2 ./caller], [0], [],
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
+
+AT_CLEANUP
+
+AT_SETUP([COB_SET_RUNTIME_STDOUT_FILE/COB_SET_RUNTIME_STDERR_FILE changes runtime stdout/stderr])
+AT_KEYWORDS([runmisc cob_set_runtime_option stdout_stderr_redirection])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+          SYSERR IS STANDARD-ERROR.
+       PROCEDURE DIVISION.
+          DISPLAY "STDERR" UPON SYSERR.
+          DISPLAY "STDOUT".
+          STOP RUN.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <libcob.h>
+
+int main (int argc, char **argv) {
+   int stdout_pipe[2];
+   int stderr_pipe[2];
+   FILE *stdout_write;
+   FILE *stderr_write;
+   char buffer[128];
+   ssize_t nbytes;
+   int cob_ret;
+
+   /* Create two pipes for stdout/stderr */
+   if (pipe (stdout_pipe) == -1) {
+      perror("Problem in creating stdout pipe");
+      return 1;
+   }
+   if (pipe (stderr_pipe) == -1) {
+      perror ("Problem in creating stderr pipe");
+      return 2;
+   }
+
+   stdout_write = fdopen (stdout_pipe[1], "w");
+   if (!stdout_write) {
+      perror ("Problem in fdopen for stdout write");
+      return 3;
+   }
+   stderr_write = fdopen (stderr_pipe[1], "w");
+   if (!stderr_write) {
+      perror ("Problem in fdopen for stderr write");
+      return 4;
+   }
+
+   /* Initialize runtime and set up stdout/stderr redirection */
+   cob_init (0, NULL);
+
+   cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE, stdout_write);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, stderr_write);
+
+   /* Call COBOL program */
+   cob_ret = cob_call_with_exception_check ("callee", 0, NULL);
+   if (cob_ret != 1) {
+      fprintf (stderr, "COBOL program did not normally exit: %d", cob_ret);
+      return 5;
+   }
+   if (cob_last_exit_code () != 0) {
+      fprintf (stderr, "COBOL program did not exit with ok code: %d", cob_last_exit_code ());
+      return 6;
+   }
+
+   /* Close write-ends of the stdout/stderr pipes */
+   fclose(stdout_write);
+   fclose(stderr_write);
+
+   /* Check result of COBOL program in read end of stdout pipe */
+   nbytes = read (stdout_pipe[0], buffer, sizeof(buffer) - 1);
+   if (nbytes >= 0) {
+      buffer[nbytes] = '\0';
+   } else {
+      perror ("Problem in reading stdout pipe");
+      return 7;
+   }
+   if (strcmp ("STDOUT\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s", buffer);
+      return 8;
+   }
+
+   /* Check result of COBOL program in read end of stderr pipe */
+   nbytes = read (stderr_pipe[0], buffer, sizeof(buffer) - 1);
+   if (nbytes >= 0) {
+      buffer[nbytes] = '\0';
+   } else {
+      perror ("Problem in reading stderr pipe");
+      return 9;
+   }
+   if (strcmp ("STDERR\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s", buffer);
+      return 10;
+   }
+
+   /* Clean up and terminate */
+   close (stdout_pipe[0]);
+   close (stderr_pipe[1]);
+
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+
+AT_CHECK([./caller], [0], [], [])
+AT_CHECK([./caller], [0], [], [])
 
 AT_CLEANUP
