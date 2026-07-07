@@ -10545,7 +10545,7 @@ cob_init (const int argc, char **argv)
 
 /*
  * Set special runtime options:
- * Currently this is only FILE * for trace and printer output
+ * Currently this is only FILE * for trace, printer and stdout/stderr output
  * or to reload the runtime configuration after changing environment
  */
 void
@@ -10587,9 +10587,6 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 			cobsetptr->cob_dump_filename = cob_strdup ("NONE");
 		}
 		break;
-	case COB_SET_RUNTIME_RESCAN_ENV:
-		cob_rescan_env_vals ();
-		break;
 	case COB_SET_RUNTIME_STDOUT_FILE:
 		if (p) {
 			cobsetptr->cob_stdout = (FILE *)p;
@@ -10599,6 +10596,9 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 		if (p) {
 			cobsetptr->cob_stderr = (FILE *)p;
 		}
+		break;
+	case COB_SET_RUNTIME_RESCAN_ENV:
+		cob_rescan_env_vals ();
 		break;
 	default:
 		cob_runtime_warning (_("%s called with unknown option: %d"),

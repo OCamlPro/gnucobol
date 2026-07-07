@@ -1,4 +1,9 @@
 
+2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* gnucobol.texi: document the new COB_SET_RUNTIME_STDOUT_FILE and
+	  COB_SET_RUNTIME_STDERR_FILE runtime options.
+
 2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
 	* gnucobol.texi: document the new --gentable option

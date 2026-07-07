@@ -326,7 +326,7 @@ process_long_option (const int argc, char * const *argv, const char *optstring,
 	    {
 	      if (ambig_fallback)
 		  {
-		  /* TODO: Decide how to do stdout/stderr redirection here 
+		  /* TODO: Decide how to do stdout/stderr redirection here
 		  (and in examples below), or not at all */
 		  fprintf (stderr, _("%s: option '%s%s' is ambiguous"),
 			 argv[0], prefix, nextchar);
