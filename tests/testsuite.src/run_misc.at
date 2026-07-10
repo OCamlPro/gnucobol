@@ -16108,8 +16108,9 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 AT_CLEANUP
 
-AT_SETUP([COB_SET_RUNTIME_STDOUT_FILE/COB_SET_RUNTIME_STDERR_FILE changes runtime stdout/stderr])
-AT_KEYWORDS([runmisc cob_set_runtime_option stdout_stderr_redirection])
+
+AT_SETUP([stdout/stderr redirection])
+AT_KEYWORDS([runmisc cob_set_runtime_option COB_SET_RUNTIME_STDOUT_FILE COB_SET_RUNTIME_STDERR_FILE])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
