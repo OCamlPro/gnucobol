@@ -10603,11 +10603,19 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 	case COB_SET_RUNTIME_STDOUT_FILE:
 		if (p) {
 			cobsetptr->cob_stdout = (FILE *)p;
+		} else {
+			cobsetptr->cob_stdout = stdout;
+			cob_runtime_warning ("COB_SET_RUNTIME_STDOUT_FILE option used "
+				"with null parameter, defaulting back to process stdout");
 		}
 	    break;
 	case COB_SET_RUNTIME_STDERR_FILE:
 		if (p) {
 			cobsetptr->cob_stderr = (FILE *)p;
+		} else {
+			cobsetptr->cob_stderr = stderr;
+			cob_runtime_warning ("COB_SET_RUNTIME_STDERR_FILE option used "
+				"with null parameter, defaulting back to process stderr");
 		}
 		break;
 	case COB_SET_RUNTIME_RESCAN_ENV:
