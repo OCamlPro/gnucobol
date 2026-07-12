@@ -16190,17 +16190,16 @@ int main (int argc, char **argv) {
       perror ("Problem in writing 'STDOUT' to stdin");
       return 8;
    }
-   fclose (stdin_read);
 
    /* Initialize runtime and set up stdin/stdout/stderr redirection */
    cob_init (0, NULL);
-
    cob_set_runtime_option (COB_SET_RUNTIME_STDIN_FILE, stdin_read);
    cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE, stdout_write);
    cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, stderr_write);
-
+   
    /* Call COBOL program */
    cob_ret = cob_call_with_exception_check ("callee", 0, NULL);
+
    if (cob_ret != 1) {
       fprintf (stderr, "COBOL program did not normally exit: %d", cob_ret);
       return 9;
@@ -16210,9 +16209,10 @@ int main (int argc, char **argv) {
       return 10;
    }
 
-   /* Close write-ends of the stdout/stderr pipes */
-   fclose(stdout_write);
-   fclose(stderr_write);
+   /* Close COBOL-ends of stdin/stdout/stderr pipes */
+   fclose (stdin_read);
+   fclose (stdout_write);
+   fclose (stderr_write);
 
    /* Check result of COBOL program in read end of stdout pipe */
    nbytes = read (stdout_pipe[0], buffer, sizeof(buffer) - 1);

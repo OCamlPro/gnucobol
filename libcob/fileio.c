@@ -8964,12 +8964,12 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 void
 cob_settings_fileio (void) 
 {
-#ifdef	WITH_DB
-	bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
+	if (bdb_env) {
+		bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
+		bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
 #endif
-#endif
+	}
 }
 
 /********************************************************************************/
