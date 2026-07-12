@@ -581,6 +581,9 @@ static struct config_tbl gc_conf[] = {
 	{"COB_PROF_FILE", "prof_file",		"cob-prof-$b-$$-$d-$t.csv",	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_prof_filename)},
 	{"COB_PROF_FORMAT", "prof_format",	"%m,%s,%p,%e,%w,%k,%t,%h,%n", NULL, GRP_MISC, ENV_STR, SETPOS (cob_prof_format)},
 	{"COB_PROF_MAX_DEPTH", "prof_max_depth",        "8192",	NULL, GRP_MISC, ENV_UINT, SETPOS (cob_prof_max_depth)},
+	{"COB_STDIN_FILE", "stdin_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_stdin_filename)},
+	{"COB_STDOUT_FILE", "stdout_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_stdout_filename)},
+	{"COB_STDERR_FILE", "stderr_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_stderr_filename)},
 #ifdef  _WIN32
 	/* checked before configuration load if set from environment in cob_common_init() */
 	{"COB_UNIX_LF", "unix_lf", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_unix_lf)},
@@ -10490,6 +10493,39 @@ cob_init (const int argc, char **argv)
 	/* Load runtime configuration file */
 	if (unlikely (cob_load_config () < 0)) {
 		cob_hard_failure ();
+	}
+
+
+	if (cobsetptr->cob_stdin_filename) {
+		if (!cobsetptr->cob_unix_lf) {
+			cobsetptr->cob_stdin =
+				fopen (cobsetptr->cob_stdin_filename, "r");
+		} else {
+			cobsetptr->cob_stdin =
+				fopen (cobsetptr->cob_stdin_filename, "rb");
+		}
+		if (!cobsetptr->cob_stdin) {
+			cobsetptr->cob_stdin_filename = NULL;
+			cobsetptr->cob_stdin = stdin;
+		}
+	}
+
+	if (cobsetptr->cob_stdout_filename) {
+		cobsetptr->cob_stdout =
+			cob_open_logfile (cobsetptr->cob_stdout_filename);
+		if (!cobsetptr->cob_stdout) {
+			cobsetptr->cob_stdout_filename = NULL;
+			cobsetptr->cob_stdout = stdout;
+		}
+	}
+
+	if (cobsetptr->cob_stderr_filename) {
+		cobsetptr->cob_stderr =
+			cob_open_logfile (cobsetptr->cob_stderr_filename);
+		if (!cobsetptr->cob_stderr) {
+			cobsetptr->cob_stderr_filename = NULL;
+			cobsetptr->cob_stderr = stderr;
+		}
 	}
 
 	/* Copy COB_PHYSICAL_CANCEL from settings (internal) to global structure */
