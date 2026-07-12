@@ -16139,111 +16139,88 @@ AT_DATA([caller.c], [[
 #include <libcob.h>
 
 int main (int argc, char **argv) {
-   int stdin_pipe[2];
-   int stdout_pipe[2];
-   int stderr_pipe[2];
-   FILE *stdin_read;
-   FILE *stdout_write;
-   FILE *stderr_write;
+   FILE *cob_stdin;
+   FILE *cob_stdout;
+   FILE *cob_stderr;
    char buffer[128];
    ssize_t nbytes;
    int cob_ret;
 
-   /* Create pipes for stdin/stdout/stderr */
-   if (pipe (stdin_pipe) == -1) {
-      perror ("Problem in creating stdin pipe");
+   /* Create files for stdin/stdout/stderr */
+   cob_stdin = fopen ("cob_stdin", "w+b");
+   if (!cob_stdin) {
+      perror ("Problem in creating stdin file");
       return 1;
    }
-   if (pipe (stdout_pipe) == -1) {
+   cob_stdout= fopen ("cob_stdout", "w+b");
+   if (!cob_stdout) {
       perror ("Problem in creating stdout pipe");
       return 2;
    }
-   if (pipe (stderr_pipe) == -1) {
+   cob_stderr = fopen ("cob_stderr", "w+b");
+   if (!cob_stderr) {
       perror ("Problem in creating stderr pipe");
       return 3;
    }
 
-   stdin_read = fdopen (stdin_pipe[0], "r");
-   if (!stdin_read) {
-      perror ("Problem in fdopen for stdin read");
-      return 4;
-   }
-   stdout_write = fdopen (stdout_pipe[1], "w");
-   if (!stdout_write) {
-      perror ("Problem in fdopen for stdout write");
-      return 5;
-   }
-   stderr_write = fdopen (stderr_pipe[1], "w");
-   if (!stderr_write) {
-      perror ("Problem in fdopen for stderr write");
-      return 6;
-   }
-
    /* Prepare input for COBOL program */
-   nbytes = write (stdin_pipe[1], "STDERR\n", 7);
+   nbytes = fprintf (cob_stdin, "STDERR\n");
    if (nbytes != 7) {
       perror ("Problem in writing 'STDERR' to stdin");
-      return 7;
+      return 4;
    }
-   nbytes = write (stdin_pipe[1], "STDOUT\n", 7);
+   nbytes = fprintf (cob_stdin, "STDOUT\n");
    if (nbytes != 7) {
       perror ("Problem in writing 'STDOUT' to stdin");
-      return 8;
+      return 5;
    }
+   fflush (cob_stdin);
+   rewind (cob_stdin);
 
    /* Initialize runtime and set up stdin/stdout/stderr redirection */
    cob_init (0, NULL);
-   cob_set_runtime_option (COB_SET_RUNTIME_STDIN_FILE, stdin_read);
-   cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE, stdout_write);
-   cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, stderr_write);
-   
+   cob_set_runtime_option (COB_SET_RUNTIME_STDIN_FILE, cob_stdin);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE, cob_stdout);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, cob_stderr);
+
    /* Call COBOL program */
    cob_ret = cob_call_with_exception_check ("callee", 0, NULL);
 
    if (cob_ret != 1) {
       fprintf (stderr, "COBOL program did not normally exit: %d", cob_ret);
-      return 9;
+      return 6;
    }
    if (cob_last_exit_code () != 0) {
       fprintf (stderr, "COBOL program did not exit with ok code: %d", cob_last_exit_code ());
-      return 10;
+      return 7;
    }
 
-   /* Close COBOL-ends of stdin/stdout/stderr pipes */
-   fclose (stdin_read);
-   fclose (stdout_write);
-   fclose (stderr_write);
+   /* Reset stdout and stderr for reading */
+   fflush (cob_stdout);
+   rewind (cob_stdout);
+   fflush (cob_stderr);
+   rewind (cob_stderr);
 
-   /* Check result of COBOL program in read end of stdout pipe */
-   nbytes = read (stdout_pipe[0], buffer, sizeof(buffer) - 1);
-   if (nbytes >= 0) {
-      buffer[nbytes] = '\0';
-   } else {
-      perror ("Problem in reading stdout pipe");
-      return 11;
-   }
+   /* Check result of COBOL program in stdout */
+   buffer[0] = '\0';
+   fgets (buffer, sizeof(buffer) - 1, cob_stdout);
    if (strcmp ("STDOUT\n", buffer) != 0) {
       fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s", buffer);
-      return 12;
+      return 8;
    }
 
-   /* Check result of COBOL program in read end of stderr pipe */
-   nbytes = read (stderr_pipe[0], buffer, sizeof(buffer) - 1);
-   if (nbytes >= 0) {
-      buffer[nbytes] = '\0';
-   } else {
-      perror ("Problem in reading stderr pipe");
-      return 13;
-   }
+   /* Check result of COBOL program in stderr */
+   buffer[0] = '\0';
+   fgets (buffer, sizeof(buffer) - 1, cob_stderr);
    if (strcmp ("STDERR\n", buffer) != 0) {
       fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s", buffer);
-      return 14;
+      return 9;
    }
 
    /* Clean up and terminate */
-   close (stdin_pipe[1]);
-   close (stdout_pipe[0]);
-   close (stderr_pipe[0]);
+   fclose (cob_stdin);
+   fclose (cob_stdout);
+   fclose (cob_stderr);
 
    return 0;
 }
