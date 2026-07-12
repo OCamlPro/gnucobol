@@ -6628,7 +6628,7 @@ cob_sys_hosted (void *p, const void *var)
 			return 0;
 		}
 		if ((i == 5) && !memcmp (name, "stdin", 5)) {
-			*((FILE **)data) = stdin;
+			*((FILE **)data) = cobsetptr->cob_stdin;
 			return 0;
 		}
 		if ((i == 6) && !memcmp (name, "stdout", 6)) {
@@ -8991,14 +8991,11 @@ void
 cob_runtime_warning (const char *fmt, ...)
 {
 	va_list args;
-	FILE	*stderr_f = stderr;
+	FILE	*stderr_f = cobsetptr && cobsetptr->cob_stderr
+		? cobsetptr->cob_stderr : stderr;
 
 	if (cobsetptr && !cobsetptr->cob_display_warn) {
 		return;
-	}
-
-	if (cobsetptr && cobsetptr->cob_stderr) {
-		stderr_f = cobsetptr->cob_stderr;
 	}
 
 	/* Prefix */
@@ -9025,11 +9022,8 @@ void
 cob_runtime_hint (const char *fmt, ...)
 {
 	va_list args;
-	FILE    *stderr_f = stderr;
-
-	if (cobsetptr && cobsetptr->cob_stderr) {
-		stderr_f = cobsetptr->cob_stderr;
-	}
+	FILE    *stderr_f = cobsetptr && cobsetptr->cob_stderr
+		? cobsetptr->cob_stderr : stderr;
 
 	/* Prefix */
 	fprintf (stderr_f, "%s", _("note: "));
@@ -9072,11 +9066,8 @@ cob_runtime_error (const char *fmt, ...)
 {
 	struct handlerlist	*h;
 	va_list				ap;
-	FILE            	*stderr_f = stderr;
-
-	if (cobsetptr && cobsetptr->cob_stderr) {
-		stderr_f = cobsetptr->cob_stderr;
-	}
+	FILE            	*stderr_f = cobsetptr && cobsetptr->cob_stderr 
+		? cobsetptr->cob_stderr : stderr;
 
 	int	more_error_procedures = 1;
 	cob_get_source_line ();
@@ -9212,7 +9203,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		if (p && (*p == 'Y' || *p == 'y' ||
 			*p == 'T' || *p == 't' ||
 			*p == '1')) {
-			(void)_setmode (_fileno (stdin), _O_BINARY);
+			(void)_setmode (_fileno (cobsetptr->cob_stdin), _O_BINARY);
 			(void)_setmode (_fileno (cobsetptr->cob_stdout), _O_BINARY);
 			(void)_setmode (_fileno (cobsetptr->cob_stderr), _O_BINARY);
 		}
@@ -10261,7 +10252,7 @@ cob_common_init (void *setptr)
 			}
 		}
 		if (use_unix_lf) {
-			(void)_setmode (_fileno (stdin), _O_BINARY);
+			(void)_setmode (_fileno (cobsetptr->cob_stdin), _O_BINARY);
 			(void)_setmode (_fileno (cobsetptr->cob_stdout), _O_BINARY);
 			(void)_setmode (_fileno (cobsetptr->cob_stderr), _O_BINARY);
 		}
@@ -10427,6 +10418,7 @@ cob_init (const int argc, char **argv)
 	cobsetptr = cob_malloc (sizeof (cob_settings));
 
 	/* TODO: Find a better a place set stdout/stderr initial values */
+	cobsetptr->cob_stdin = stdin;
 	cobsetptr->cob_stdout = stdout;
 	cobsetptr->cob_stderr = stderr;
 
@@ -10600,6 +10592,14 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 			cobsetptr->cob_dump_filename = cob_strdup ("NONE");
 		}
 		break;
+	case COB_SET_RUNTIME_STDIN_FILE:
+		if (p) {
+			cobsetptr->cob_stdin = (FILE *)p;
+		} else {
+			cobsetptr->cob_stdin = stdin;
+			cob_runtime_warning ("COB_SET_RUNTIME_STDIN_FILE option used "
+				"with null parameter, defaulting back to process stdin");
+		}
 	case COB_SET_RUNTIME_STDOUT_FILE:
 		if (p) {
 			cobsetptr->cob_stdout = (FILE *)p;
@@ -10617,6 +10617,7 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 			cob_runtime_warning ("COB_SET_RUNTIME_STDERR_FILE option used "
 				"with null parameter, defaulting back to process stderr");
 		}
+		cob_settings_fileio ();
 		break;
 	case COB_SET_RUNTIME_RESCAN_ENV:
 		cob_rescan_env_vals ();
@@ -10647,6 +10648,8 @@ cob_get_runtime_option (enum cob_runtime_option_switch opt)
 		return (void*)cobsetptr->cob_display_punch_file;
 	case COB_SET_RUNTIME_DUMP_FILE:
 		return (void*)cobsetptr->cob_dump_file;
+	case COB_SET_RUNTIME_STDIN_FILE:
+		return (void*)cobsetptr->cob_stdin;
 	case COB_SET_RUNTIME_STDOUT_FILE:
 		return (void*)cobsetptr->cob_stdout;
 	case COB_SET_RUNTIME_STDERR_FILE:

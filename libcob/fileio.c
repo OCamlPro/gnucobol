@@ -6360,8 +6360,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = stdin;
-		f->fd = fileno (stdin);
+		f->file = cobsetptr->cob_stdin;
+		f->fd = fileno (cobsetptr->cob_stdin);
 		f->open_mode = mode;
 		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -8958,6 +8958,17 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 #if	defined(WITH_INDEX_EXTFH) || defined(WITH_SEQRA_EXTFH)
 	extfh_cob_init_fileio (&sequential_funcs, &lineseq_funcs,
 			       &relative_funcs, &cob_file_write_opt);
+#endif
+}
+
+void
+cob_settings_fileio (void) 
+{
+#ifdef	WITH_DB
+	bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
+	bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
+#endif
 #endif
 }
 
