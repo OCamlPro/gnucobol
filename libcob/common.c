@@ -9183,6 +9183,13 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 	int		status;
 #ifdef	_WIN32
 	char		*p;
+
+	FILE 		*stdin_f = cobsetptr && cobsetptr->cob_stdin
+		? cobsetptr->cob_stdin : stdin;
+	FILE 		*stdout_f = cobsetptr && cobsetptr->cob_stdout
+		? cobsetptr->cob_stdout : stdout;
+	FILE 		*stderr_f = cobsetptr && cobsetptr->cob_stderr
+		? cobsetptr->cob_stderr : stderr;
 #endif
 
 	switch (fatal_error) {
@@ -9203,9 +9210,9 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		if (p && (*p == 'Y' || *p == 'y' ||
 			*p == 'T' || *p == 't' ||
 			*p == '1')) {
-			(void)_setmode (_fileno (cobsetptr->cob_stdin), _O_BINARY);
-			(void)_setmode (_fileno (cobsetptr->cob_stdout), _O_BINARY);
-			(void)_setmode (_fileno (cobsetptr->cob_stderr), _O_BINARY);
+			(void)_setmode (_fileno (stdin_f), _O_BINARY);
+			(void)_setmode (_fileno (stdout_f), _O_BINARY);
+			(void)_setmode (_fileno (stderr_f), _O_BINARY);
 		}
 #endif
 		/* note: same message in call.c */
@@ -10239,6 +10246,14 @@ cob_common_init (void *setptr)
 		int use_unix_lf = 0;
 		char *s = getenv ("COB_UNIX_LF");
 
+		FILE *stdin_f = cobsetptr && cobsetptr->cob_stdin
+			? cobsetptr->cob_stdin : stdin;
+		FILE *stdout_f = cobsetptr && cobsetptr->cob_stdout
+			? cobsetptr->cob_stdout : stdout;
+		FILE *stderr_f = cobsetptr && cobsetptr->cob_stderr
+			? cobsetptr->cob_stderr : stderr;
+
+
 		if (s != NULL) {
 			if (setptr) {
 				set_config_val_by_name (s, "unix_lf", NULL);
@@ -10252,9 +10267,9 @@ cob_common_init (void *setptr)
 			}
 		}
 		if (use_unix_lf) {
-			(void)_setmode (_fileno (cobsetptr->cob_stdin), _O_BINARY);
-			(void)_setmode (_fileno (cobsetptr->cob_stdout), _O_BINARY);
-			(void)_setmode (_fileno (cobsetptr->cob_stderr), _O_BINARY);
+			(void)_setmode (_fileno (stdin_f), _O_BINARY);
+			(void)_setmode (_fileno (stdout_f), _O_BINARY);
+			(void)_setmode (_fileno (stderr_f), _O_BINARY);
 		}
 	}
 #endif
