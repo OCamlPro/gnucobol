@@ -16143,6 +16143,7 @@ int main (int argc, char **argv) {
    FILE *cob_stdout;
    FILE *cob_stderr;
    char buffer[128];
+   char *fgets_ret;
    ssize_t nbytes;
    int cob_ret;
 
@@ -16187,11 +16188,11 @@ int main (int argc, char **argv) {
    cob_ret = cob_call_with_exception_check ("callee", 0, NULL);
 
    if (cob_ret != 1) {
-      fprintf (stderr, "COBOL program did not normally exit: %d", cob_ret);
+      fprintf (stderr, "COBOL program did not normally exit: %d\n", cob_ret);
       return 6;
    }
    if (cob_last_exit_code () != 0) {
-      fprintf (stderr, "COBOL program did not exit with ok code: %d", cob_last_exit_code ());
+      fprintf (stderr, "COBOL program did not exit with ok code: %d\n", cob_last_exit_code ());
       return 7;
    }
 
@@ -16203,18 +16204,26 @@ int main (int argc, char **argv) {
 
    /* Check result of COBOL program in stdout */
    buffer[0] = '\0';
-   fgets (buffer, sizeof(buffer) - 1, cob_stdout);
-   if (strcmp ("STDOUT\n", buffer) != 0) {
-      fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s", buffer);
+   fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stdout);
+   if (fgets_ret != buffer) {
+      fprintf (stderr, "Reading from stdout failed\n");
       return 8;
+   }
+   if (strcmp ("STDOUT\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s\n", buffer);
+      return 9;
    }
 
    /* Check result of COBOL program in stderr */
    buffer[0] = '\0';
-   fgets (buffer, sizeof(buffer) - 1, cob_stderr);
+   fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stderr);
+   if (fgets_ret != buffer) {
+      fprintf (stderr, "Reading from stderr failed\n");
+      return 10;
+   }
    if (strcmp ("STDERR\n", buffer) != 0) {
-      fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s", buffer);
-      return 9;
+      fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s\n", buffer);
+      return 11;
    }
 
    /* Clean up and terminate */
