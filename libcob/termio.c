@@ -1058,7 +1058,7 @@ cob_accept (cob_field *f)
 	/* extension: ACCEPT OMITTED */
 	if (unlikely (!f)) {
 		for (; ; ) {
-			ipchr = getchar ();
+			ipchr = getc (cobsetptr->cob_stdin);
 			if (ipchr == '\n' || ipchr == EOF) {
 				break;
 			} else if (ipchr == 03) {
@@ -1073,7 +1073,7 @@ cob_accept (cob_field *f)
 	size = 0;
 	/* Read a line */
 	for (; size < COB_MEDIUM_MAX; ) {
-		ipchr = getchar ();
+		ipchr = getc (cobsetptr->cob_stdin);
 		if (unlikely (ipchr == EOF)) {
 			cob_set_exception (COB_EC_IMP_ACCEPT);
 			if (!size) {
