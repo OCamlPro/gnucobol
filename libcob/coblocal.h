@@ -386,9 +386,12 @@ typedef struct __cob_settings {
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */
 
-	FILE		*cob_stdin;		/* FILE* to redirect reads to stdin */
-	FILE        *cob_stdout; 	/* FILE* to redirect writes to stdout */
-	FILE        *cob_stderr; 	/* FILE* to redirect writes to stderr */
+	char 		*cob_stdin_filename;	/* Filename to redirect reads to stdin */
+	char		*cob_stdout_filename;	/* Filename to redirect writes to stdout */
+	char		*cob_stderr_filename;	/* Filename to redirect writes to stderr */
+	FILE		*cob_stdin;				/* FILE* to redirect reads to stdin */
+	FILE        *cob_stdout; 			/* FILE* to redirect writes to stdout */
+	FILE        *cob_stderr; 			/* FILE* to redirect writes to stderr */
 } cob_settings;
 
 
