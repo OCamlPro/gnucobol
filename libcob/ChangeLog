@@ -8,15 +8,20 @@
 
 2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
-	* common.h (cob_runtime_option_switch): add COB_SET_RUNTIME_STDOUT_FILE and
-	  COB_SET_RUNTIME_STDERR_FILE runtime options to enable redirection of
-	  stdout/stderr output to a file.
+	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
+	  configurations for redirection of stdin/stdout/stderr to a file
+	* common.h (cob_runtime_option_switch): add COB_SET_RUNTIME_STDIN_FILE,
+	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
+	  options to enable redirection programmatically
 	* common.c (cob_set_runtime_option, cob_get_runtime_option): add logic for
-	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE options.
+	  COB_SET_RUNTIME_STDIN_FILE, COB_SET_RUNTIME_STDOUT_FILE and
+	  COB_SET_RUNTIME_STDERR_FILE options
 	* coblocal.h (cob_settings): extend the setting to store FILE pointers
-	  for stdout/stderr.
+	  for stdin/stdout/stderr
+	* fileio.c: introduce cob_settings_fileio to trigger reset of settings
+	  related configurations
 	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
-	  termio.c: use stdout/stderr in cob_settings instead of global.
+	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
