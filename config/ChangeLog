@@ -1,4 +1,10 @@
 
+2026-07-07	Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* runtime.cfg: add runtime configurations COB_STDIN_FILE, COB_STDOUT_FILE,
+	  COB_STDERR_FILE to allow redirection of stdin/stdout/stderr input/output
+	  to given files
+
 2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* runtime.cfg: add runtime configuration COB_SIGNAL_REGIME to allow

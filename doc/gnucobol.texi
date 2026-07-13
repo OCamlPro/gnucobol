@@ -1681,16 +1681,19 @@ cob_set_runtime_option (COB_SET_RUNTIME_DISPLAY_PUNCH_FILE,
                          (void*)((FILE*)myfd));
 @end example
 
-Likewise, you could also redirect all @code{DISPLAY} output that would be normally
-printed to stdout to a file by:
+You are also able to redirect @code{ACCEPT} so that instead of stdin, it reads
+from a file, by using:
 @example
-cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE,
+cob_set_runtime_option (COB_SET_RUNTIME_STDIN_FILE,
                          (void*)((FILE*)myfd));
 @end example
 
-The same option is also possible for stderr, including error outputs directly
-coming from the runtime:
+Likewise, you could also redirect all @code{DISPLAY} output that would be
+normally printed to stdout/stderr, including outputs directly coming from the
+runtime, to a file by:
 @example
+cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE,
+                         (void*)((FILE*)myfd));
 cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE,
                          (void*)((FILE*)myfd));
 @end example
