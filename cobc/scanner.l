@@ -1087,7 +1087,7 @@ H#[0-9A-Za-z]+ {
 	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT) 
 		    || last_token == END_CLASS) {
 		yylval = cb_build_reference (yytext);
-		RETURN_TOK (CLASS_NAME);
+		RETURN_TOK (OO_CLASS_NAME);
 	} else if ((second_last_token == METHOD_ID && last_token == TOK_DOT)
 		    || last_token == END_METHOD) {
 		if (strcasecmp (yytext, "GET") == 0) {
@@ -1281,6 +1281,11 @@ H#[0-9A-Za-z]+ {
 ":" {
 	yylval = NULL;
 	RETURN_TOK (TOK_COLON);
+}
+
+"::" {
+	yylval = NULL;
+	RETURN_TOK (INLINE_METHOD_INVOCATION_OP);
 }
 
 "=" {

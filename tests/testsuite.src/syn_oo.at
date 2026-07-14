@@ -51,7 +51,7 @@ AT_DATA([prog1.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
 [prog1.cob:3: error: object-oriented COBOL is not supported 
-prog1.cob:4: error: syntax error, unexpected ., expecting class-name or Literal
+prog1.cob:4: error: syntax error, unexpected ., expecting Literal or class-name
 ])
 
 AT_DATA([prog2.cob], [
@@ -635,5 +635,73 @@ prog.cob: in paragraph 'Begin-initialization':
 prog.cob:99: error: 'account-balance' is not defined
 prog.cob:100: error: 'account-number' is not defined
 prog.cob:101: error: 'the-date' is not defined
+])
+AT_CLEANUP
+
+
+AT_SETUP([Inline Method Invocation Expression])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        IDENTIFICATION DIVISION.
+        CLASS-ID. MyBaseClass.
+        FACTORY.
+            PROCEDURE DIVISION.
+            METHOD-ID. MyMethod IS FINAL.
+                DATA DIVISION.
+                LINKAGE SECTION.
+                    01 VAR-IN  PIC 9(2).
+                    01 VAR-OUT  PIC 9(2).
+                PROCEDURE DIVISION USING VAR-IN 
+                        RETURNING VAR-OUT.
+                    MOVE VAR-IN TO VAR-OUT.
+                    DISPLAY "Hello, world!".
+            END METHOD MyMethod.
+        END FACTORY.
+        OBJECT.
+            PROCEDURE DIVISION.
+            METHOD-ID. SayHello.
+                ENVIRONMENT DIVISION.
+                CONFIGURATION SECTION.
+                REPOSITORY.
+                    CLASS MyBaseClass AS "MyClass".
+                DATA DIVISION.
+                WORKING-STORAGE SECTION.
+                    01 an-object USAGE OBJECT REFERENCE MyBaseClass.
+                    01 a-var PIC 9(2).
+
+                PROCEDURE DIVISION.
+                    DISPLAY an-object :: "MyMethod" (10).
+                    DISPLAY an-object :: "MyMethod" (10 + 2).
+                    MOVE 98 TO a-var.
+                    DISPLAY an-object :: "MyMethod" (a-var).
+            END METHOD SayHello.
+        END OBJECT.
+        END CLASS MyBaseClass.
+
+        PROGRAM-ID. prog.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS MyBaseClass AS "MyClass".
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+            01 an-object USAGE OBJECT REFERENCE MyBaseClass.
+            01 a-var PIC 9(2).
+
+        PROCEDURE DIVISION.
+            DISPLAY an-object :: "MyMethod" (10).
+            DISPLAY an-object :: "MyMethod" (10 + 2).
+            MOVE 98 TO a-var.
+            DISPLAY an-object :: "MyMethod" (a-var).
+
+            INVOKE an-object "SayHello".
+        END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: error: object-oriented COBOL is not supported
+prog.cob:26: warning: USAGE OBJECT REFERENCE is not implemented
+prog.cob:45: warning: USAGE OBJECT REFERENCE is not implemented
 ])
 AT_CLEANUP

@@ -2709,7 +2709,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token CLASS
 %token CLASS_ID		"CLASS-ID"
 %token CLASSIFICATION
-%token CLASS_NAME		"class-name"
+%token CLASS_NAME
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
 %token CLINE
 %token CLINES			/* remark: not used here */
@@ -3012,6 +3012,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
+%token INLINE_METHOD_INVOCATION_OP
 %token INPUT
 %token INPUT_OUTPUT		"INPUT-OUTPUT"
 %token INQUIRE
@@ -3192,6 +3193,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token ONLY
 %token ON_ESCAPE		"ON ESCAPE"
 %token ON_EXCEPTION		"ON EXCEPTION"
+%token OO_CLASS_NAME	"class-name"
 %token OPEN
 %token OPTIONAL
 %token OPTIONS
@@ -4172,7 +4174,7 @@ interface_id_header:
 ;
 
 class_id_name:
-  CLASS_NAME	{ $$ = $1; }
+  OO_CLASS_NAME	{ $$ = $1; }
 | LITERAL
   {
 	cb_trim_program_id ($1);
@@ -8847,7 +8849,7 @@ _object_reference_type:
   /* empty */
 | WORD
 | _factory_of ACTIVE_CLASS
-| _factory_of CLASS_NAME _only
+| _factory_of OO_CLASS_NAME _only
 ;
 
 _factory_of:
@@ -12217,7 +12219,6 @@ statement:
 | if_statement
 | initialize_statement
 | initiate_statement
-// | inline_method_invocation_statement
 | inquire_statement
 | inspect_statement
 | invoke_statement
@@ -15509,11 +15510,9 @@ id_or_class_name:
 | class_id_name
 ;
 
-// inline_method_invocation_statement:
-//   id_or_class_name "::" literal
-// | id_or_class_name "::" literal
-//   TOK_OPEN_PAREN call_param_list TOK_CLOSE_PAREN
-// ;
+inline_method_invocation:
+  id_or_class_name INLINE_METHOD_INVOCATION_OP literal func_args
+;
 
 /* INQUIRE statement */
 
@@ -20637,6 +20636,7 @@ function:
   {
 	$$ = cb_build_intrinsic ($1, $2, $3, 1);
   }
+| inline_method_invocation
 ;
 
 func_no_parm:

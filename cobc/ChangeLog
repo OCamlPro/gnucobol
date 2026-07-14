@@ -2,9 +2,9 @@
 2026-06-30	Saurabh Kumar <developer.saurabh@outlook.com>
 
 	* parser.y, reserved.c, scanner.l: add support for parsing INTERFACE-ID, 
-	  METHOD-ID, FACTORY, OBJECT paragraphs and INVOKE statement. Support
-	  CLASS and INTERFACE specifiers in REPOSITORY paragraph. Also 
-	  support keywords SELF and ACTIVE-CLASS.
+	  METHOD-ID, FACTORY, OBJECT paragraphs, INVOKE statement and inline method
+	  invocation expression. Support CLASS and INTERFACE specifiers in REPOSITORY
+	  paragraph. Also support keywords SELF and ACTIVE-CLASS.
 	* tree.h, tree.c, typeck.c: add syntax validation logic to check OO inheritance
 	  list for duplicates, consistency with names specified in the REPOSITORY
 	  paragraph
