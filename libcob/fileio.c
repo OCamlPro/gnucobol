@@ -3628,17 +3628,7 @@ join_environment (void)
 				   "env_create", ret, db_strerror (ret));
 		return ret;
 	}
-#if	0	/* RXWRXW - BDB msg */
-	bdb_env->set_errcall (bdb_env, bdb_errcall_set);
-#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
-#endif
-#else
-	bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
-#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
-#endif
-#endif
+	cob_settings_fileio ();
 	bdb_env->set_cachesize (bdb_env, 0, 2*1024*1024, 0);
 	bdb_env->set_alloc (bdb_env, cob_malloc, realloc, cob_free);
 	flags = DB_CREATE | DB_INIT_MPOOL | DB_INIT_CDB;
@@ -8966,9 +8956,16 @@ cob_settings_fileio (void)
 {
 #ifdef WITH_DB
 	if (bdb_env) {
+#if	0	/* RXWRXW - BDB msg */
+		bdb_env->set_errcall (bdb_env, bdb_errcall_set);
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
+		bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
+#endif
+#else
 		bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
 		bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
+#endif
 #endif
 	}
 #endif
