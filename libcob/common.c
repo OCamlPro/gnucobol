@@ -8314,6 +8314,11 @@ set_config_val (char *value, int pos)
 			cob_new_trace_file ();
 		}
 
+		if (data == (char *)cobsetptr->cob_stdin_filename
+			|| data == (char *)cobsetptr->cob_stdout_filename
+			|| data == (char *)cobsetptr->cob_stderr_filename) {
+			cob_settings_termio ();
+		}
 	} else if (data_type & ENV_STR) {	/* String (environment expanded) */
 		memcpy (&str, data, sizeof (char *));
 		if (str != NULL) {
@@ -10492,39 +10497,6 @@ cob_init (const int argc, char **argv)
 	/* Load runtime configuration file */
 	if (unlikely (cob_load_config () < 0)) {
 		cob_hard_failure ();
-	}
-
-
-	if (cobsetptr->cob_stdin_filename) {
-		if (!cobsetptr->cob_unix_lf) {
-			cobsetptr->cob_stdin =
-				fopen (cobsetptr->cob_stdin_filename, "r");
-		} else {
-			cobsetptr->cob_stdin =
-				fopen (cobsetptr->cob_stdin_filename, "rb");
-		}
-		if (!cobsetptr->cob_stdin) {
-			cobsetptr->cob_stdin_filename = NULL;
-			cobsetptr->cob_stdin = stdin;
-		}
-	}
-
-	if (cobsetptr->cob_stdout_filename) {
-		cobsetptr->cob_stdout =
-			cob_open_logfile (cobsetptr->cob_stdout_filename);
-		if (!cobsetptr->cob_stdout) {
-			cobsetptr->cob_stdout_filename = NULL;
-			cobsetptr->cob_stdout = stdout;
-		}
-	}
-
-	if (cobsetptr->cob_stderr_filename) {
-		cobsetptr->cob_stderr =
-			cob_open_logfile (cobsetptr->cob_stderr_filename);
-		if (!cobsetptr->cob_stderr) {
-			cobsetptr->cob_stderr_filename = NULL;
-			cobsetptr->cob_stderr = stderr;
-		}
 	}
 
 	/* Copy COB_PHYSICAL_CANCEL from settings (internal) to global structure */
