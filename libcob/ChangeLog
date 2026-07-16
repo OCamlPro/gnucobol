@@ -11,9 +11,8 @@
 	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
 	  configurations for redirection of stdin/stdout/stderr to a file
 	* common.h (cob_runtime_option_switch): add COB_SET_RUNTIME_STDIN_FILE,
-	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
-	  options to enable redirection programmatically
-	* common.c (cob_set_runtime_option, cob_get_runtime_option): add logic for
+	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE enums
+	* common.c (cob_set_runtime_option, cob_get_runtime_option): extend for
 	  COB_SET_RUNTIME_STDIN_FILE, COB_SET_RUNTIME_STDOUT_FILE and
 	  COB_SET_RUNTIME_STDERR_FILE options
 	* coblocal.h (cob_settings): extend the setting to store FILE pointers

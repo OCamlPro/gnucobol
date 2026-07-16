@@ -1657,6 +1657,7 @@ enum cob_runtime_option_switch @{
    COB_SET_RUNTIME_DISPLAY_PRINTER_FILE    /* 'p' is  FILE *  */
    COB_SET_RUNTIME_RESCAN_ENV              /* rescan environment variables */
    COB_SET_RUNTIME_DISPLAY_PUNCH_FILE      /* 'p' is  FILE *  */
+   COB_SET_RUNTIME_STDIN_FILE              /* 'p' is  FILE *  */
    COB_SET_RUNTIME_STDOUT_FILE             /* 'p' is  FILE *  */
    COB_SET_RUNTIME_STDERR_FILE             /* 'p' is  FILE *  */
 @};
