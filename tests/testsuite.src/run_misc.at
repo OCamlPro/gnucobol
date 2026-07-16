@@ -16139,41 +16139,31 @@ AT_DATA([caller.c], [[
 #include <libcob.h>
 
 int main (int argc, char **argv) {
-   FILE *cob_stdin;
-   FILE *cob_stdout;
-   FILE *cob_stderr;
    char buffer[128];
    char *fgets_ret;
    ssize_t nbytes;
    int cob_ret;
 
-   /* Create files for stdin/stdout/stderr */
-   cob_stdin = fopen ("cob_stdin", "w+b");
-   if (!cob_stdin) {
-      perror ("Problem in creating stdin file");
+   /* Files for stdin/stdout/stderr redirection */
+   FILE *cob_stdin = fopen ("cob_stdin", "w+b");
+   FILE *cob_stdout = fopen ("cob_stdout", "w+b");
+   FILE *cob_stderr = fopen ("cob_stderr", "w+b");
+
+   if (!cob_stdin || !cob_stdout || !cob_stderr) {
+      fprintf (stderr, "Problem in creating stdin/stdout/stderr files");
       return 1;
-   }
-   cob_stdout= fopen ("cob_stdout", "w+b");
-   if (!cob_stdout) {
-      perror ("Problem in creating stdout pipe");
-      return 2;
-   }
-   cob_stderr = fopen ("cob_stderr", "w+b");
-   if (!cob_stderr) {
-      perror ("Problem in creating stderr pipe");
-      return 3;
    }
 
    /* Prepare input for COBOL program */
    nbytes = fprintf (cob_stdin, "STDERR\n");
    if (nbytes != 7) {
       perror ("Problem in writing 'STDERR' to stdin");
-      return 4;
+      return 2;
    }
    nbytes = fprintf (cob_stdin, "STDOUT\n");
    if (nbytes != 7) {
       perror ("Problem in writing 'STDOUT' to stdin");
-      return 5;
+      return 3;
    }
    fflush (cob_stdin);
    rewind (cob_stdin);
@@ -16189,11 +16179,11 @@ int main (int argc, char **argv) {
 
    if (cob_ret != 1) {
       fprintf (stderr, "COBOL program did not normally exit: %d\n", cob_ret);
-      return 6;
+      return 4;
    }
    if (cob_last_exit_code () != 0) {
       fprintf (stderr, "COBOL program did not exit with ok code: %d\n", cob_last_exit_code ());
-      return 7;
+      return 5;
    }
 
    /* Reset stdout and stderr for reading */
@@ -16207,11 +16197,11 @@ int main (int argc, char **argv) {
    fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stdout);
    if (fgets_ret != buffer) {
       fprintf (stderr, "Reading from stdout failed\n");
-      return 8;
+      return 6;
    }
    if (strcmp ("STDOUT\n", buffer) != 0) {
       fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s\n", buffer);
-      return 9;
+      return 7;
    }
 
    /* Check result of COBOL program in stderr */
@@ -16219,11 +16209,11 @@ int main (int argc, char **argv) {
    fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stderr);
    if (fgets_ret != buffer) {
       fprintf (stderr, "Reading from stderr failed\n");
-      return 10;
+      return 8;
    }
    if (strcmp ("STDERR\n", buffer) != 0) {
       fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s\n", buffer);
-      return 11;
+      return 9;
    }
 
    /* Clean up and terminate */
