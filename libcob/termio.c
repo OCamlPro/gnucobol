@@ -1098,9 +1098,113 @@ cob_accept (cob_field *f)
 	cob_move (&temp, f);
 }
 
+static void
+cob_stdin_termio (void)
+{
+	if (!cobsetptr->cob_stdin_filename) {
+		return;
+	}
+
+	if (cobsetptr->cob_stdin_filename_set) {
+		if (strcmp (cobsetptr->cob_stdin_filename,
+		cobsetptr->cob_stdin_filename_set) == 0) {
+			return;
+		}
+		fclose (cobsetptr->cob_stdin);
+		cob_free (cobsetptr->cob_stdin_filename_set);
+		cobsetptr->cob_stdin_filename_set = NULL;
+	}
+
+	if (!cobsetptr->cob_unix_lf) {
+		cobsetptr->cob_stdin = fopen (cobsetptr->cob_stdin_filename, "r");
+	} else {
+		cobsetptr->cob_stdin = fopen (cobsetptr->cob_stdin_filename, "rb");
+	}
+
+	if (!cobsetptr->cob_stdin) {
+		cob_free (cobsetptr->cob_stdin_filename);
+		cobsetptr->cob_stdin_filename = NULL;
+		cobsetptr->cob_stdin = stdin;
+		return;
+	}
+
+	cobsetptr->cob_stdin_filename_set =
+		cob_strdup (cobsetptr->cob_stdin_filename);
+}
+
+static void
+cob_stdout_termio (void)
+{
+	if (!cobsetptr->cob_stdout_filename) {
+		return;
+	}
+
+	if (cobsetptr->cob_stdout_filename_set) {
+		if (strcmp (cobsetptr->cob_stdout_filename,
+		cobsetptr->cob_stdout_filename_set) == 0) {
+			return;
+		}
+		fclose (cobsetptr->cob_stdout);
+		cob_free (cobsetptr->cob_stdout_filename);
+		cobsetptr->cob_stdout_filename = NULL;
+	}
+
+	cobsetptr->cob_stdout = cob_open_logfile (cobsetptr->cob_stdout_filename);
+
+	if (!cobsetptr->cob_stdout) {
+		cob_free (cobsetptr->cob_stdout_filename);
+		cobsetptr->cob_stdout_filename = NULL;
+		cobsetptr->cob_stdout = stdout;
+		return;
+	}
+
+	cobsetptr->cob_stdout_filename_set =
+		cob_strdup (cobsetptr->cob_stdout_filename);
+}
+
+static void
+cob_stderr_termio (void)
+{
+	if (!cobsetptr->cob_stderr_filename) {
+		return;
+	}
+
+	if (cobsetptr->cob_stderr_filename_set) {
+		if (strcmp (cobsetptr->cob_stderr_filename,
+		cobsetptr->cob_stderr_filename_set) == 0) {
+			return;
+		}
+		fclose (cobsetptr->cob_stderr);
+		cob_free (cobsetptr->cob_stderr_filename);
+		cobsetptr->cob_stderr_filename = NULL;
+	}
+
+	cobsetptr->cob_stderr = cob_open_logfile (cobsetptr->cob_stderr_filename);
+
+	if (!cobsetptr->cob_stderr) {
+		cob_free (cobsetptr->cob_stderr_filename);
+		cobsetptr->cob_stderr_filename = NULL;
+		cobsetptr->cob_stderr = stderr;
+		return;
+	}
+
+	cobsetptr->cob_stderr_filename_set =
+		cob_strdup (cobsetptr->cob_stderr_filename);
+}
+
+void
+cob_settings_termio (void)
+{
+	cob_stdin_termio ();
+	cob_stdout_termio ();
+	cob_stderr_termio ();
+}
+
 void
 cob_init_termio (cob_global *lptr, cob_settings *sptr)
 {
 	cobglobptr = lptr;
 	cobsetptr  = sptr;
+
+	cob_settings_termio ();
 }

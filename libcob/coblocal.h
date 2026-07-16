@@ -386,12 +386,15 @@ typedef struct __cob_settings {
 											   / creation of coredumps on runtime errors */
 	char		*cob_core_filename;	/* filename for coredump creation */
 
-	char 		*cob_stdin_filename;	/* Filename to redirect reads to stdin */
-	char		*cob_stdout_filename;	/* Filename to redirect writes to stdout */
-	char		*cob_stderr_filename;	/* Filename to redirect writes to stderr */
-	FILE		*cob_stdin;				/* FILE* to redirect reads to stdin */
-	FILE        *cob_stdout; 			/* FILE* to redirect writes to stdout */
-	FILE        *cob_stderr; 			/* FILE* to redirect writes to stderr */
+	char 		*cob_stdin_filename;		/* Filename to redirect reads to stdin */
+	char		*cob_stdout_filename;		/* Filename to redirect writes to stdout */
+	char		*cob_stderr_filename;		/* Filename to redirect writes to stderr */
+	char		*cob_stdin_filename_set;	/* Current filename which is replacing stdin */
+	char 		*cob_stdout_filename_set;	/* Current filename which is replacing stdout */
+	char 		*cob_stderr_filename_set;	/* Current filename which is replacing stderr */
+	FILE		*cob_stdin;					/* FILE* to redirect reads to stdin */
+	FILE		*cob_stdout; 				/* FILE* to redirect writes to stdout */
+	FILE		*cob_stderr; 				/* FILE* to redirect writes to stderr */
 } cob_settings;
 
 
@@ -477,6 +480,7 @@ COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_settings_fileio (void);
+COB_HIDDEN void		cob_settings_termio (void);
 COB_HIDDEN char		*cob_get_filename_print	(cob_file *, const int);
 COB_HIDDEN char		*cob_setup_filename		(const cob_field *);
 COB_HIDDEN void		cob_init_reportio	(cob_global *, cob_settings *);
