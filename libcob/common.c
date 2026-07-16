@@ -10435,7 +10435,6 @@ cob_init (const int argc, char **argv)
 	/* Get settings structure */
 	cobsetptr = cob_malloc (sizeof (cob_settings));
 
-	/* TODO: Find a better a place set stdout/stderr initial values */
 	cobsetptr->cob_stdin = stdin;
 	cobsetptr->cob_stdout = stdout;
 	cobsetptr->cob_stderr = stderr;
