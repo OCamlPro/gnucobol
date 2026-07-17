@@ -8314,9 +8314,9 @@ set_config_val (char *value, int pos)
 			cob_new_trace_file ();
 		}
 
-		if (data == (char *)cobsetptr->cob_stdin_filename
-			|| data == (char *)cobsetptr->cob_stdout_filename
-			|| data == (char *)cobsetptr->cob_stderr_filename) {
+		if (data_loc == offsetof (cob_settings, cob_stdin_filename)
+			|| data_loc == offsetof (cob_settings, cob_stdout_filename)
+			|| data_loc == offsetof (cob_settings, cob_stderr_filename)) {
 			cob_settings_termio ();
 		}
 	} else if (data_type & ENV_STR) {	/* String (environment expanded) */
