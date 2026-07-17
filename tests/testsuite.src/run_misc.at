@@ -16111,7 +16111,38 @@ AT_CLEANUP
 
 AT_SETUP([stdin/stdout/stderr redirection])
 AT_KEYWORDS([runmisc cob_set_runtime_option COB_SET_RUNTIME_STDIN_FILE
-   COB_SET_RUNTIME_STDOUT_FILE COB_SET_RUNTIME_STDERR_FILE])
+   COB_SET_RUNTIME_STDOUT_FILE COB_SET_RUNTIME_STDERR_FILE COB_STDIN_FILE
+   COB_STDOUT_FILE COB_STDERR_FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+          SYSERR IS STANDARD-ERROR.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+          01 INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+          SET ENVIRONMENT "COB_STDOUT_FILE"
+             TO "prog_stdin".
+          DISPLAY "STDOUT".
+          SET ENVIRONMENT "COB_STDERR_FILE"
+             TO "+prog_stdin".
+          DISPLAY "STDERR" UPON SYSERR.
+          SET ENVIRONMENT "COB_STDIN_FILE"
+             TO "prog_stdin".
+          ACCEPT INPUT-VAR.
+          IF NOT INPUT-VAR = "STDOUT" THEN
+             STOP RUN RETURNING 1
+          END-IF.
+          ACCEPT INPUT-VAR.
+          IF NOT INPUT-VAR = "STDERR" THEN
+             STOP RUN RETURNING 2
+          END-IF.
+          STOP RUN.
+])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
@@ -16225,10 +16256,11 @@ int main (int argc, char **argv) {
 }
 ]])
 
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 
-AT_CHECK([./caller], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([./caller], [0], [], [])
 
 AT_CLEANUP
