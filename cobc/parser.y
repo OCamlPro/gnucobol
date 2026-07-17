@@ -4164,7 +4164,7 @@ interface_id_header:
   INTERFACE_ID
   {
 	__CS_CLEAR_ALL();
-	CB_UNSUPPORTED ("interfaces in object-oriented COBOL");
+	CB_UNSUPPORTED ("object-oriented COBOL (INTERFACE)");
   }
 ;
 

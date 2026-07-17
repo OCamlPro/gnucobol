@@ -77,7 +77,7 @@ AT_DATA([prog3.cob], [
 AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
 [prog3.cob:3: error: object-oriented COBOL is not supported
 prog3.cob:4: error: END CLASS 'MyClass' is different from CLASS-ID 'MyFirstClass'
-prog3.cob:6: error: interfaces in object-oriented COBOL is not supported
+prog3.cob:6: error: object-oriented COBOL (INTERFACE) is not supported
 prog3.cob:7: error: END INTERFACE 'MyInterface' is different from INTERFACE-ID 'MyFirstInterface'
 ])
 
@@ -329,8 +329,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:4: error: interfaces in object-oriented COBOL is not supported
-prog.cob:7: error: interfaces in object-oriented COBOL is not supported
+[prog.cob:4: error: object-oriented COBOL (INTERFACE) is not supported
+prog.cob:7: error: object-oriented COBOL (INTERFACE) is not supported
 ])
 AT_CLEANUP
 
@@ -408,8 +408,8 @@ AT_DATA([prog1.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
-[prog1.cob:3: error: interfaces in object-oriented COBOL is not supported
-prog1.cob:6: error: interfaces in object-oriented COBOL is not supported
+[prog1.cob:3: error: object-oriented COBOL (INTERFACE) is not supported
+prog1.cob:6: error: object-oriented COBOL (INTERFACE) is not supported
 prog1.cob:9: error: object-oriented COBOL is not supported
 prog1.cob:29: error: object-oriented COBOL is not supported
 prog1.cob:31: error: duplicate parent class name 'MyBaseClass'
@@ -448,9 +448,9 @@ AT_DATA([prog2.cob], [
         END INTERFACE MyDerivedInterface.
 ])
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
-[prog2.cob:3: error: interfaces in object-oriented COBOL is not supported
-prog2.cob:6: error: interfaces in object-oriented COBOL is not supported
-prog2.cob:9: error: interfaces in object-oriented COBOL is not supported
+[prog2.cob:3: error: object-oriented COBOL (INTERFACE) is not supported
+prog2.cob:6: error: object-oriented COBOL (INTERFACE) is not supported
+prog2.cob:9: error: object-oriented COBOL (INTERFACE) is not supported
 prog2.cob:11: error: duplicate parent interface name 'MyBaseInterface'
 prog2.cob:10: note: 'MyBaseInterface' defined here
 prog2.cob:12: error: inherited interface 'MyUnknownInterface' not found in REPOSITORY paragraph
@@ -497,7 +497,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:3: error: interfaces in object-oriented COBOL is not supported
+[prog.cob:3: error: object-oriented COBOL (INTERFACE) is not supported
 prog.cob:6: error: object-oriented COBOL is not supported
 prog.cob:24: warning: USAGE OBJECT REFERENCE is not implemented
 prog.cob:27: error: 'MyBaseClass' is not defined
