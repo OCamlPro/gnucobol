@@ -1084,26 +1084,10 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 			RETURN_TOK (LITERAL);
 		}
-	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT) 
+	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT)
 		    || last_token == END_CLASS) {
 		yylval = cb_build_reference (yytext);
 		RETURN_TOK (OO_CLASS_NAME);
-	} else if ((second_last_token == METHOD_ID && last_token == TOK_DOT)
-		    || last_token == END_METHOD) {
-		if (strcasecmp (yytext, "GET") == 0) {
-			yylval = cb_build_reference (yytext);
-			RETURN_TOK (GET);
-		} else if (strcasecmp (yytext, "SET") == 0) {
-			yylval = cb_build_reference (yytext);
-			RETURN_TOK (SET);
-		} else {
-			yylval = cb_build_reference (yytext);
-			RETURN_TOK (METHOD_NAME);
-		}
-	} else if ((second_last_token == INTERFACE_ID && last_token == TOK_DOT) 
-		    || last_token == END_INTERFACE) {
-		yylval = cb_build_reference (yytext);
-		RETURN_TOK (INTERFACE_NAME);
 	}
 
 	/* Check reserved word */

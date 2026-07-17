@@ -3022,7 +3022,6 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token INSTALLATION		/* remark: not used here */
 %token INTERFACE
 %token INTERFACE_ID		"INTERFACE-ID"
-%token INTERFACE_NAME
 %token INTERMEDIATE
 %token INTERNAL
 %token INTO
@@ -3108,7 +3107,6 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token MERGE
 %token MESSAGE
 %token METHOD
-%token METHOD_NAME
 %token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
@@ -4156,8 +4154,7 @@ _default_display_clause:
 class_id_header:
   CLASS_ID
   {
-	cobc_in_id = 1;
-
+	/* cobc_in_id = 1; */
 	__CS_CLEAR_ALL();
 	CB_UNSUPPORTED ("object-oriented COBOL");
   }
@@ -4166,9 +4163,7 @@ class_id_header:
 interface_id_header:
   INTERFACE_ID
   {
-	cobc_in_id = 1;
 	__CS_CLEAR_ALL();
-
 	CB_UNSUPPORTED ("interfaces in object-oriented COBOL");
   }
 ;
@@ -4187,7 +4182,7 @@ _method_id_name:
 ;
 
 method_id_name:
-  METHOD_NAME	{ $$ = $1; }
+  WORD { $$ = $1; }
 | LITERAL
   {
 	cb_trim_program_id ($1);
@@ -4195,7 +4190,7 @@ method_id_name:
 ;
 
 interface_id_name:
-  INTERFACE_NAME	{ $$ = $1; }
+  WORD	{ $$ = $1; }
 | LITERAL
   {
 	cb_trim_program_id ($1);
