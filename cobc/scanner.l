@@ -1269,7 +1269,7 @@ H#[0-9A-Za-z]+ {
 
 "::" {
 	yylval = NULL;
-	RETURN_TOK (INLINE_METHOD_INVOCATION_OP);
+	RETURN_TOK (TOK_COLON_COLON);
 }
 
 "=" {

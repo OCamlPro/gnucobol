@@ -3012,7 +3012,6 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
-%token INLINE_METHOD_INVOCATION_OP
 %token INPUT
 %token INPUT_OUTPUT		"INPUT-OUTPUT"
 %token INQUIRE
@@ -3461,6 +3460,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token TOK_AMPER		"&"
 %token TOK_CLOSE_PAREN		")"
 %token TOK_COLON		":"
+%token TOK_COLON_COLON          "::"
 %token TOK_DIV			"/"
 %token TOK_DOT			"."
 %token TOK_EQUAL		"="
@@ -15506,7 +15506,7 @@ id_or_class_name:
 ;
 
 inline_method_invocation:
-  id_or_class_name INLINE_METHOD_INVOCATION_OP literal func_args
+  id_or_class_name TOK_COLON_COLON literal func_args
 ;
 
 /* INQUIRE statement */
