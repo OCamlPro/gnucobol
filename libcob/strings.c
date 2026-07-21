@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2014, 2016-2020, 2022-2024 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014, 2016-2020, 2022-2024,2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch, Boris
    Eng
 
@@ -125,14 +125,41 @@ cob_update_low_value (void)
 }
 
 static void
-cob_str_memcpy (cob_field *dst, unsigned char *src, const int size)
+cob_str_memcpy (cob_field *dst, const unsigned char *src, const int size)
 {
-	cob_field	temp;
+	if (COB_FIELD_TYPE (dst) == COB_TYPE_ALPHANUMERIC) {
+		/* most common case: dst is alphanumeric, we only need to copy
+		   the right amount of bytes; note: for performance reasons we
+		   duplicate cob_move_alphanum_to_alphanum here (but with memcpy) */
+		unsigned char	*data = dst->data;
+		const size_t	dsize = dst->size;
 
-	temp.size = size;
-	temp.data = src;
-	temp.attr = &const_alpha_attr;
-	cob_move (&temp, dst);
+		if (size >= dsize) {
+			/* copy string with truncation */
+			if (COB_FIELD_JUSTIFIED (dst)) {
+				memcpy (data, src + size - dsize, dsize);
+			} else {
+				memcpy (data, src, dsize);
+			}
+		} else {
+			/* copy string with padding */
+			if (COB_FIELD_JUSTIFIED (dst)) {
+				memset (data, ' ', dsize - size);
+				memcpy (data + dsize - size, src, size);
+			} else {
+				memcpy (data, src, size);
+				memset (data + size, ' ', dsize - size);
+			}
+		}
+	} else {
+		/* numeric, national, group, ... handled by internal MOVE */
+		cob_field	temp;
+
+		temp.size = size;
+		temp.data = (unsigned char *)src;
+		temp.attr = &const_alpha_attr;
+		cob_move (&temp, dst);
+	}
 }
 
 static void
@@ -1162,26 +1189,51 @@ cob_unstring_into_intern (
 	} else {
 
 		const int	srsize = (int)st->src->size;
-		unsigned char	*p;
-		unsigned char	*dp;
-		int		found = 0;
+		const unsigned char	*p;
+		int 		found = 0;
 
 		/* note: duplicate code for performance as most cases
 		         have either none or a single delimiter */
 		if (st->ndlms == 1) {
-			const struct dlm_struct dlms = st->dlm_list[0];
-			const int     dlsize = (int) dlms.uns_dlm.size;
-			const unsigned char *s = st->src->data + srsize - dlsize + 1;
-			dp = dlms.uns_dlm.data;
-
-			for (p = start; p < s; ++p) {
-				if (!memcmp (p, dp, (size_t)dlsize)) {         /* delimiter matches */
-					match_size = (int)(p - start);             /* count in */
-					cob_str_memcpy (dst, start, match_size);   /* into */
-					st->offset += match_size + dlsize;    /* with pointer */
+			const struct	dlm_struct dlms = st->dlm_list[0];
+			const int		dlsize = (int) dlms.uns_dlm.size;
+			const unsigned char	*s = st->src->data + srsize - dlsize + 1;
+			if (dlsize == 1) {
+				/* single-byte delimiter: compare directly, skip memcmp overhead */
+				const unsigned char dc = *dlms.uns_dlm.data;
+				/* check for matching DELIMITED BY */
+				p = (const unsigned char *) memchr (start, dc, (size_t)(s - start));
+				if (p) {
+					match_size = (int)(p - start);             /* COUNT IN */
+					cob_str_memcpy (dst, start, match_size);   /* INTO */
+					st->offset += match_size + 1;              /* WITH POINTER */
+					dlm_data = dlms.uns_dlm.data;
+					dlm_size = dlsize;
+					/* skip consecutive occurences for DELIMITED BY ALL */
+					if (dlms.uns_all) {
+						while (++p < s) {
+							if (*p != dc) {
+								break;
+							}
+							++st->offset;
+						}
+					}
+					found = 1;
+				}
+			} else {
+				const unsigned char *dp = dlms.uns_dlm.data;
+				for (p = start; p < s; ++p) {
+					/* check for matching DELIMITED BY */
+					if (memcmp (p, dp, (size_t)dlsize)) {
+						continue;
+					}
+					match_size = (int)(p - start);             /* COUNT IN */
+					cob_str_memcpy (dst, start, match_size);   /* INTO */
+					st->offset += match_size + dlsize;         /* WITH POINTER */
 					dlm_data = dp;
 					dlm_size = dlsize;
-					if (dlms.uns_all) {                     /* delimited by all */
+					/* skip consecutive occurences for DELIMITED BY ALL */
+					if (dlms.uns_all) {
 						for (p += dlsize; p < s; p += dlsize) {
 							if (memcmp (p, dp, (size_t)dlsize)) {
 								break;
@@ -1198,20 +1250,35 @@ cob_unstring_into_intern (
 			int		i;
 			for (p = start; p < s; ++p) {
 				for (i = 0; i < st->ndlms; ++i) {
-					const struct dlm_struct dlms = st->dlm_list[i];
-					const int     dlsize = (int)dlms.uns_dlm.size;
-					const unsigned char *s2 = s - dlsize + 1;
+					const struct	dlm_struct dlms = st->dlm_list[i];
+					const int		dlsize = (int)dlms.uns_dlm.size;
+					const unsigned char	*s2 = s - dlsize + 1;
+					const unsigned char *dp = dlms.uns_dlm.data;
 					if (p > s2) {
 						continue;
 					}
-					dp = dlms.uns_dlm.data;
-					if (!memcmp (p, dp, (size_t)dlsize)) {         /* delimiter matches */
-						match_size = (int)(p - start);             /* count in */
-						cob_str_memcpy (dst, start, match_size);   /* into */
-						st->offset += match_size + dlsize;    /* with pointer */
-						dlm_data = dp;
-						dlm_size = dlsize;
-						if (dlms.uns_all) {                     /* delimited by all */
+					/* check for matching DELIMITED BY */
+					if (dlsize == 1) {
+						if (*p != *dp) continue;
+					} else if (memcmp (p, dp, (size_t)dlsize)) {
+						continue;
+					}
+					match_size = (int)(p - start);             /* COUNT IN */
+					cob_str_memcpy (dst, start, match_size);   /* INTO */
+					st->offset += match_size + dlsize;         /* WITH POINTER */
+					dlm_data = dlms.uns_dlm.data;
+					dlm_size = dlsize;
+					/* skip consecutive occurences for DELIMITED BY ALL */
+					if (dlms.uns_all) {
+						if (dlsize == 1) {
+							const unsigned char dc = *dp;
+							while (++p < s2) {
+								if (*p != dc) {
+									break;
+								}
+								++st->offset;
+							}
+						} else {
 							for (p += dlsize; p < s2; p += dlsize) {
 								if (memcmp (p, dp, (size_t)dlsize)) {
 									break;
@@ -1219,9 +1286,9 @@ cob_unstring_into_intern (
 								st->offset += dlsize;
 							}
 						}
-						found = 1;
-						break;
 					}
+					found = 1;
+					break;
 				}
 				if (found) {
 					break;
@@ -1240,7 +1307,7 @@ cob_unstring_into_intern (
 
 	/* note: per any known dialect both DELIMITER IN and COUNT IN are only
 	         allowed if there is a DELIMITED BY phrase; the GnuCOBOL parser
-			 does allow this (did so since the first implementation) */
+	         does allow this (did so since the first implementation) */
 
 	/* set DELIMITER IN */
 	if (dlm) {

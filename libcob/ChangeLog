@@ -1,8 +1,15 @@
 
+2026-07-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_unstring_into_intern): explicit code for the common case
+	  "delimiter with size 1", which needs no memcmp calls
+	* strings.c (cob_str_memcpy): inline code for the most common case
+	  "target is alphanumeric" instead of full cob_move
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
-	  as it is an external value.
+	  as it is an external value
 
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -6825,7 +6832,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2025 Free Software Foundation, Inc.
+Copyright 2002-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
