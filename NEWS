@@ -6,6 +6,8 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
+** cobc provides a --preparser option to register external preparser configurations
+
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
    indicator column) is now limited to 5 per source file

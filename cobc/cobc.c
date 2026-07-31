@@ -3122,156 +3122,6 @@ file_replace_extension (const char *file, const char *ext)
 	return cobc_main_stradd_dup (file, ext);
 }
 
-/* Resolve preparser config filename: explicit path (contains separator
- * or exists as-is) is used directly; otherwise look up
- * COB_CONFIG_DIR/<name>.conf, mirroring cb_load_conf_file(). */
-static FILE *
-open_preparser_conf (const char *name, char *resolved, size_t resolved_size)
-{
-        FILE    *fp;
-        size_t  i;
-
-        for (i = 0; name[i] != 0 && name[i] != SLASH_CHAR; i++);
-
-        if (name[i] != 0 || access (name, F_OK) == 0) {
-                /* contains a path separator, or exists as given */
-                snprintf (resolved, resolved_size, "%s", name);
-        } else {
-                /* plain name: look in COB_CONFIG_DIR/<name>.conf */
-                snprintf (resolved, resolved_size, "%s%c%s.conf",
-                          cob_config_dir, SLASH_CHAR, name);
-        }
-
-        fp = fopen (resolved, "r");
-        return fp;
-}
-
-/* Parse a single "key: value" or "key value" line.
- * Leading/trailing whitespace and comments (#) are stripped. */
-static int
-parse_preparser_line (char *buff, char **key, char **val)
-{
-        char    *p, *colon;
-
-        /* strip comment */
-        if ((p = strchr (buff, '#')) != NULL) {
-                *p = '\0';
-        }
-        /* strip trailing whitespace/newline */
-        for (p = buff + strlen (buff); p > buff && isspace ((unsigned char)p[-1]); p--);
-        *p = '\0';
-        /* strip leading whitespace */
-        for (p = buff; isspace ((unsigned char)*p); p++);
-        if (*p == '\0') {
-                return 1;       /* blank line */
-        }
-
-        *key = p;
-        if ((colon = strchr (p, ':')) != NULL) {
-                *colon = '\0';
-                p = colon + 1;
-        } else {
-                /* space-separated: key value */
-                for (; *p && !isspace ((unsigned char)*p); p++);
-                if (*p) {
-                        *p++ = '\0';
-                }
-        }
-        for (; isspace ((unsigned char)*p); p++);
-        *val = p;
-
-        /* trim trailing whitespace of key */
-        for (p = *key + strlen (*key); p > *key && isspace ((unsigned char)p[-1]); p--);
-        *p = '\0';
-
-        return 0;
-}
-
-/* Load an external preparser configuration file and register it
- * in cb_preparser_list. Returns 0 on success, non-zero on error. */
-int
-cb_load_preparser_conf (const char *name)
-{
-        FILE                            *fp;
-        char                            resolved[COB_NORMAL_BUFF];
-        char                            buff[COB_SMALL_BUFF];
-        struct cb_preparser_entry       *pe;
-
-        fp = open_preparser_conf (name, resolved, sizeof (resolved));
-        if (!fp) {
-                cb_error (_("preparser configuration '%s' not found"), name);
-                return 1;
-        }
-
-        pe = cobc_main_malloc (sizeof (struct cb_preparser_entry));
-        pe->tag      = NULL;
-        pe->command  = NULL;
-        pe->cflags   = NULL;
-        pe->ldflags  = NULL;
-        pe->on_error = 1;       /* default: error */
-        pe->used     = 0;
-        pe->next     = NULL;
-
-        while (fgets (buff, sizeof (buff), fp)) {
-                char    *key, *val;
-
-                if (parse_preparser_line (buff, &key, &val) != 0) {
-                        continue;
-                }
-
-                if (strcasecmp (key, "tag") == 0) {
-                        size_t  i;
-                        pe->tag = cobc_main_strdup (val);
-                        for (i = 0; pe->tag[i]; i++) {
-                                pe->tag[i] = (char)toupper ((unsigned char)pe->tag[i]);
-                        }
-                } else if (strcasecmp (key, "command") == 0) {
-                        pe->command = cobc_main_strdup (val);
-                } else if (strcasecmp (key, "cflags") == 0) {
-                        pe->cflags = cobc_main_strdup (val);
-                } else if (strcasecmp (key, "ldflags") == 0) {
-                        pe->ldflags = cobc_main_strdup (val);
-                } else if (strcasecmp (key, "on-error") == 0) {
-                        pe->on_error = (strcasecmp (val, "warn") == 0) ? 0 : 1;
-                } else {
-                        cb_warning (cb_warn_unsupported,
-                                     _("unknown preparser configuration key '%s' in '%s'"),
-                                     key, resolved);
-                }
-        }
-        fclose (fp);
-
-        if (!pe->tag || !pe->command) {
-                cb_error (_("preparser configuration '%s' is missing 'tag' or 'command'"),
-                          resolved);
-                return 1;
-        }
-
-        pe->next = cb_preparser_list;
-        cb_preparser_list = pe;
-        return 0;
-}
-
-/* Find a registered external preparser by tag (case-insensitive). */
-struct cb_preparser_entry *
-cb_find_preparser (const char *tag)
-{
-        struct cb_preparser_entry      *pe;
-        char                            upper_tag[64];
-        size_t                          i;
-
-        for (i = 0; tag[i] && i < sizeof (upper_tag) - 1; i++) {
-                upper_tag[i] = (char)toupper ((unsigned char)tag[i]);
-        }
-        upper_tag[i] = '\0';
-
-        for (pe = cb_preparser_list; pe; pe = pe->next) {
-                if (strcmp (pe->tag, upper_tag) == 0 && !pe->disabled) {
-                        return pe;
-                }
-        }
-        return NULL;
-}
 
 /* process command line options */
 static int
@@ -5634,53 +5484,48 @@ restart_preprocess:
 	plex_call_destroy ();
 
 	if (cb_active_preparser) {
-        char *cmd;
-        size_t cmd_len;
-        int ret_sys;
-        char *new_preprocess;
+		char *cmd;
+		size_t cmd_len;
+		int ret_sys;
+		char *new_preprocess;
 
-        cmd_len = strlen (cb_active_preparser->command) + strlen (fn->source) + strlen (fn->preprocess) + 32;
-        cmd = cobc_malloc (cmd_len);
-        snprintf (cmd, cmd_len, "%s %s %s", cb_active_preparser->command, fn->source, fn->preprocess);
+		cmd_len = strlen (cb_active_preparser->command) + strlen (fn->source) + strlen (fn->preprocess) + 3;
+		cmd = cobc_malloc (cmd_len);
+		snprintf (cmd, cmd_len, "%s %s %s", cb_active_preparser->command, fn->source, fn->preprocess);
 
-        if (verbose_output) {
-                fprintf (stderr, "invoking external preparser: %s\n", cmd);
-                fflush (stderr);
-        }
+		ret_sys = call_system (cmd);
+		cobc_free (cmd);
 
-        ret_sys = call_system (cmd);
-        cobc_free (cmd);
-
-        if (ret_sys != 0) {
-                cb_source_file = fn->source;
-                if (cb_active_preparser->on_error) {
-                        cb_error (_("external preparser '%s' failed with exit status %d"), cb_active_preparser->tag, ret_sys);
-                        cobc_terminate_exit (fn->source, fn->preprocess);
-                } else {
-				cb_warning (0, _("external preparser '%s' failed; falling back to baseline"), cb_active_preparser->tag);
+		if (ret_sys != 0) {
+			cb_source_file = fn->source;
+			if (cb_active_preparser->on_error) {
+				cb_error (_("external preparser '%s' failed with exit status %d"), cb_active_preparser->subsystem, ret_sys);
+				cobc_terminate_exit (fn->source, fn->preprocess);
+			} else {
+				cb_warning (cb_warn_filler, _("external preparser '%s' failed; falling back to baseline"), cb_active_preparser->subsystem);
 				
-				cb_active_preparser->disabled = 1;         /* Don't try this tag again for this file */
+				cb_active_preparser->disabled = 1;         /* Don't try this subsystem again for this file */
 				fn->source = orig_source;     /* Restore the original file names */
 				fn->preprocess = orig_preprocess;
 				
-				goto restart_preprocess;  /* Try again! (Pass 1 will skip this tag now) */
+				goto restart_preprocess;  /* Try again! (Pass 1 will skip this subsystem now) */
 			}
-        }
+		}
 
-       /*This prevents collision in file paths based on manual tests*/
-        new_preprocess = file_replace_extension (fn->preprocess, "i2");
+		/*This prevents collision in file paths based on manual tests*/
+		new_preprocess = file_replace_extension (fn->preprocess, "i2");
 
-        fn->source     = cobc_strdup (fn->preprocess);   /* sqlpp.sh's output */
-        fn->preprocess = new_preprocess;                  /* fresh file for pass 2 */
+		fn->source     = cobc_strdup (fn->preprocess);   /* sqlpp.sh's output */
+		fn->preprocess = new_preprocess;                  /* fresh file for pass 2 */
 
-        if (cb_active_preparser->cflags) {
-                COBC_ADD_STR (cobc_cflags, " ", cb_active_preparser->cflags, NULL);
-        }
-        if (cb_active_preparser->ldflags) {
-                COBC_ADD_STR (cobc_ldflags, " ", cb_active_preparser->ldflags, NULL);
-        }
+		if (cb_active_preparser->cflags) {
+			COBC_ADD_STR (cobc_cflags, " ", cb_active_preparser->cflags, NULL);
+		}
+		if (cb_active_preparser->ldflags) {
+			COBC_ADD_STR (cobc_ldflags, " ", cb_active_preparser->ldflags, NULL);
+		}
 
-        goto restart_preprocess;
+		goto restart_preprocess;
 	}
 
 	if (cobc_gen_listing && !cobc_list_file) {
@@ -5732,7 +5577,7 @@ restart_preprocess:
 #endif
 		cb_listing_file = NULL;
 	}
-	/* This prevents trying the same tag again for the current file */
+	/* This prevents trying the same subsystem again for the current file */
 	for (p_reset = cb_preparser_list; p_reset; p_reset = p_reset->next) {
 		p_reset->disabled = 0;
 	}

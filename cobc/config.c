@@ -26,7 +26,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <limits.h>
-
+#include <ctype.h>
 #include "cobc.h"
 #include "tree.h"
 
@@ -938,4 +938,155 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	config_table[i].set = 1;
 #endif
 	return 0;
+}
+
+/* Resolve preparser config filename: explicit path (contains separator
+ * or exists as-is) is used directly; otherwise look up
+ * COB_CONFIG_DIR/<name>.conf, mirroring cb_load_conf_file(). */
+static FILE *
+open_preparser_conf (const char *name, char *resolved, size_t resolved_size)
+{
+	FILE	*fp;
+	size_t	i;
+
+	for (i = 0; name[i] != 0 && name[i] != SLASH_CHAR; i++);
+
+	if (name[i] != 0 || access (name, F_OK) == 0) {
+		/* contains a path separator, or exists as given */
+		snprintf (resolved, resolved_size, "%s", name);
+	} else {
+		/* plain name: look in COB_CONFIG_DIR/<name>.conf */
+		snprintf (resolved, resolved_size, "%s%c%s.conf",
+			  cob_config_dir, SLASH_CHAR, name);
+	}
+
+	fp = fopen (resolved, "r");
+	return fp;
+}
+
+/* Parse a single "tag: value" or "tag value" line.
+ * Leading/trailing whitespace and comments (#) are stripped. */
+static int
+parse_preparser_line (char *buff, char **tag, char **value)
+{
+	char	*p, *colon;
+
+	/* strip comment */
+	if ((p = strchr (buff, '#')) != NULL) {
+		*p = '\0';
+	}
+	/* strip trailing whitespace/newline */
+	for (p = buff + strlen (buff); p > buff && isspace ((unsigned char)p[-1]); p--);
+	*p = '\0';
+	/* strip leading whitespace */
+	for (p = buff; isspace ((unsigned char)*p); p++);
+	if (*p == '\0') {
+		return 1;	/* blank line */
+	}
+
+	*tag = p;
+	if ((colon = strchr (p, ':')) != NULL) {
+		*colon = '\0';
+		p = colon + 1;
+	} else {
+		/* space-separated: tag value */
+		for (; *p && !isspace ((unsigned char)*p); p++);
+		if (*p) {
+			*p++ = '\0';
+		}
+	}
+	for (; isspace ((unsigned char)*p); p++);
+	*value = p;
+
+	/* trim trailing whitespace of tag */
+	for (p = *tag + strlen (*tag); p > *tag && isspace ((unsigned char)p[-1]); p--);
+	*p = '\0';
+
+	return 0;
+}
+
+/* Load an external preparser configuration file and register it
+ * in cb_preparser_list. Returns 0 on success, non-zero on error. */
+int
+cb_load_preparser_conf (const char *name)
+{
+	FILE				*fp;
+	char				resolved[COB_NORMAL_BUFF];
+	char				buff[COB_SMALL_BUFF];
+	struct cb_preparser_entry	*pe;
+
+	fp = open_preparser_conf (name, resolved, sizeof (resolved));
+	if (!fp) {
+		cb_perror (1, "%s: %s", resolved, cb_get_strerror ());
+		return 1;
+	}
+
+	pe = cobc_main_malloc (sizeof (struct cb_preparser_entry));
+	pe->subsystem = NULL;
+	pe->command   = NULL;
+	pe->cflags    = NULL;
+	pe->ldflags   = NULL;
+	pe->on_error  = 1;	/* default: error */
+	pe->used      = 0;
+	pe->disabled  = 0;
+	pe->next      = NULL;
+
+	while (fgets (buff, sizeof (buff), fp)) {
+		char	*tag, *value;
+
+		if (parse_preparser_line (buff, &tag, &value) != 0) {
+			continue;
+		}
+
+		if (strcasecmp (tag, "tag") == 0 || strcasecmp (tag, "subsystem") == 0) {
+			size_t	i;
+			pe->subsystem = cobc_main_strdup (value);
+			for (i = 0; pe->subsystem[i]; i++) {
+				pe->subsystem[i] = (char)toupper ((unsigned char)pe->subsystem[i]);
+			}
+		} else if (strcasecmp (tag, "command") == 0) {
+			pe->command = cobc_main_strdup (value);
+		} else if (strcasecmp (tag, "cflags") == 0) {
+			pe->cflags = cobc_main_strdup (value);
+		} else if (strcasecmp (tag, "ldflags") == 0) {
+			pe->ldflags = cobc_main_strdup (value);
+		} else if (strcasecmp (tag, "on-error") == 0) {
+			pe->on_error = (strcasecmp (value, "warn") == 0) ? 0 : 1;
+		} else {
+			cb_warning (cb_warn_unsupported,
+				    _("unknown configuration tag '%s'"), tag);
+		}
+	}
+	fclose (fp);
+
+	if (!pe->subsystem || !pe->command) {
+		cb_error (_("preparser configuration '%s' is missing 'subsystem' or 'command'"),
+			  resolved);
+		return 1;
+	}
+
+	pe->next = cb_preparser_list;
+	cb_preparser_list = pe;
+	return 0;
+}
+
+/* Find a registered external preparser by subsystem (case-insensitive). */
+struct cb_preparser_entry *
+cb_find_preparser (const char *subsystem)
+{
+	struct cb_preparser_entry	*pe;
+	char				upper_subsystem[64];
+	size_t				i;
+
+	for (i = 0; subsystem[i] && i < sizeof (upper_subsystem) - 1; i++) {
+		upper_subsystem[i] = (char)toupper ((unsigned char)subsystem[i]);
+	}
+	upper_subsystem[i] = '\0';
+
+	for (pe = cb_preparser_list; pe; pe = pe->next) {
+		if (strcmp (pe->subsystem, upper_subsystem) == 0 && !pe->disabled) {
+			return pe;
+		}
+	}
+	return NULL;
 }

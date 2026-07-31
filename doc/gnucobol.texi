@@ -788,6 +788,9 @@ Compiler uses the given @var{dialect} to determine the reserved words.
 @item -conf=<file>
 User-defined dialect configuration.
 
+@item --preparser=<file>
+Register external preparser configuration.
+
 @item -febcdic-table=@var{cconv-table}/@var{file}
 EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
 the existing @var{cconv-table} from the configuration directory (see @code{cobc --info})

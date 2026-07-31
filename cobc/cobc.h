@@ -287,16 +287,6 @@ struct cb_text_list {
 	char			*text;
 };
 
-struct cb_preparser_entry {
-        struct cb_preparser_entry      *next;
-        char                            *tag;      /* e.g. "SQL" (upper-cased) */
-        char                            *command;  /* external preparser command */
-        char                            *cflags;   /* extra C compiler flags */
-        char                            *ldflags;  /* extra linker flags */
-        int                              on_error; /* 0=warn, 1=error (default) */
-        int                              used;     /* set when tag matched in source */
-		int								 disabled  /* Flag to detect if preparser should skip*/
-};
 
 /* Structure for extended filenames */
 struct local_filename {
@@ -508,7 +498,7 @@ extern struct cb_text_list	*cb_static_call_list;
 extern struct cb_text_list	*cb_early_exit_list;
 
 extern struct cb_preparser_entry       *cb_preparser_list;
-extern struct cb_preparser_entry       *cb_find_preparser (const char *tag);
+extern struct cb_preparser_entry       *cb_find_preparser (const char *subsystem);
 extern int cb_load_preparser_conf (const char *name);
 extern struct cb_preparser_entry       *cb_active_preparser;
 

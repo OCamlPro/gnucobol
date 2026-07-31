@@ -590,11 +590,10 @@ MAYBE_AREA_A	[ ]?#?
         return TOKEN;
     }
     {WORD}                  {
-        struct cb_preparser_entry *pe;
         pplval.s = cobc_plex_strdup (yytext);
         if (!exec_subsystem_seen) {
+            struct cb_preparser_entry *pe = cb_find_preparser (yytext);
             exec_subsystem_seen = 1;
-            pe = cb_find_preparser (yytext);
             if (pe) {
                 pe->used = 1;
                 cb_active_preparser = pe;
