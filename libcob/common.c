@@ -10571,7 +10571,7 @@ cob_init (const int argc, char **argv)
 
 /*
  * Set special runtime options:
- * Currently this is only FILE * for trace, printer and stdout/stderr output
+ * Currently this is only FILE * for trace, printer and stdin/stdout/stderr
  * or to reload the runtime configuration after changing environment
  */
 void
