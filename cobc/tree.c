@@ -634,7 +634,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 				if (size_real + size_refmod + size_element + 1  >= size) {
 					/* replacement: "(X:Y)" (dropping possible "in XYZ") */
 					size_element = sprintf (s, "(<>:)");
-					return size_real + size_element;	
+					return size_real + size_element;
 				}
 				size_refmod += sprintf (s + size_refmod, "%s)", buff);
 				s += size_refmod;
@@ -2464,7 +2464,7 @@ cb_enum_explain (const enum cb_tag tag)
 		return "REPORT VARYING";
 	case CB_TAG_TAB_VALS:
 		return "VALUE list (table-format)";
-	default: 
+	default:
 		{
 			/* whenever we get here, someone missed to add to the list above... */
 			static char errmsg[31];
@@ -4437,7 +4437,7 @@ cb_field_variable_size (const struct cb_field *f)
 		}
 		if (fc->depending) {
 			return fc;
-		} 
+		}
 		if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
@@ -5447,7 +5447,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 			}
 		}
 	}
-	
+
 	/* Create record */
 	if (f->record_max == 0) {
 		f->record_max = 32;
@@ -5500,7 +5500,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 	if (f->organization == COB_ORG_INDEXED) {
 		char msg[80];
 		snprintf (msg, sizeof (msg), "ORGANIZATION INDEXED; FD %s", f->name);
-		cb_warning (cb_warn_unsupported,
+		cb_warning_x (cb_warn_unsupported, f->description_entry,
 			_("runtime is not configured to support %s"), msg);
 	}
 #endif
@@ -6511,12 +6511,12 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 			yl = CB_LITERAL (y);
 			if (yl->scale == 0) {
 				yval = atoll((const char*)yl->data);
-				if ((op == '+' || op == '-') 
-		 		 && !rel_bin_op 
+				if ((op == '+' || op == '-')
+		 		 && !rel_bin_op
 				 && yval == 0) {		/* + or - ZERO does nothing */
 					return x;
 				}
-				if ((op == '*' || op == '/') 
+				if ((op == '*' || op == '/')
 				 && yval == 1
 				 && yl->sign != -1) {	/* * or / by ONE does nothing */
 					return x;
@@ -6549,18 +6549,18 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		if (x == cb_error_node || y == cb_error_node) {
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (x)) 
+		if ((CB_REF_OR_FIELD_P (x))
 		 && !(CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_X)) {
-			cb_error_x (CB_TREE(current_statement), 
+			cb_error_x (CB_TREE(current_statement),
 					_("%s should be COMP-X/COMP-5 for logical operator"),
 					CB_FIELD_PTR (x)->name);
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (y)) 
+		if ((CB_REF_OR_FIELD_P (y))
 		 && !(CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_5
 		  || CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_X)) {
-			cb_error_x (CB_TREE(current_statement), 
+			cb_error_x (CB_TREE(current_statement),
 					_("%s should be COMP-X/COMP-5 for logical operator"),
 					CB_FIELD_PTR (y)->name);
 			return cb_error_node;

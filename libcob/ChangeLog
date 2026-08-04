@@ -1,4 +1,11 @@
 
+2025-09-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* intrinsic.c (cob_intr_char, cob_intr_ord): consider
+	  the program collating sequence in CHAR and ORD
+	* intrinsic.c (cob_intr_char): raise COB_EC_ARGUMENT_FUNCTION
+	  when calling CHAR with an argument outside the collation range
+
 2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h, fileio.c: new externalized typedef EXTFH_FUNC used in

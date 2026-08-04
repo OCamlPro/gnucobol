@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -919,6 +919,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NO-SPZERO"	{
 	return NOSPZERO;
   }
+  "NOTRACE"	|
+  "NO-TRACE"	{
+	return NOTRACE;
+  }
   "NOODOSLIDE"	|
   "NO-ODOSLIDE"	{
 	return NOODOSLIDE;
@@ -937,6 +941,9 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "SPZERO"	{
 	return SPZERO;
+  }
+  "TRACE"	{
+	return TRACE;
   }
   "SOURCEFORMAT" |
   "SOURCE-FORMAT"	{
@@ -1191,6 +1198,20 @@ ENDIF_DIRECTIVE_STATE>{
 	pplval.s = cobc_plex_strdup (yytext);
 	return TOKEN;
   }
+}
+
+[\x1A]+ {
+	/* ignore MS-DOS EOF, handling as single newline */
+	if (*yytext != EOF) {
+		unput ('\n');
+	}
+}
+
+[\x1C]+ {
+	/* ignore file separator, handling as single newline,
+	   note: we may want to change that, parsing as two
+	   files if in "main" source */
+	unput ('\n');
 }
 
 <<EOF>> {
