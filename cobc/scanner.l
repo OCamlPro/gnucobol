@@ -1313,8 +1313,15 @@ H#[0-9A-Za-z]+ {
 
 . {
 	int	c;
+	char * symbol = yytext;
+	char buffer[5] = { 0 };
 
-	cb_error (_("invalid symbol '%s' - skipping word"), yytext);
+	if (!isprint (*yytext)) {
+		snprintf (buffer, sizeof (buffer), "0x%x", *yytext);
+		symbol = buffer;
+	}
+
+	cb_error (_("invalid symbol '%s' - skipping word"), symbol);
 	while ((c = input ()) != EOF) {
 		if (c == '\n' || c == ' ') {
 			break;

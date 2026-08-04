@@ -1,4 +1,9 @@
 
+2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [!COB_MAKE_IX]: don't run IX if not built with
+	  support for ORGANIZATION INDEXED
+
 2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am, Makefile.module.in: quote paths to support the rare
