@@ -4,6 +4,16 @@
 	* configure.ac: fix linking order for PANEL_LIBS
 	* configure.ac: ignore CURSES_LIBS and PANEL_LIBS for --without-curses
 
+2025-10-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* README, README.md: replace logging instructions by more reasonable
+	  approaches and mention generated log files
+	* README: drop ldconfig note as it is not portable and commonly not neededy
+	* INSTALL: updated from
+	  https://cgit.git.savannah.gnu.org/cgit/gnulib.git/plain/doc
+	* DEPENDENCIES, DEPENDENCIES.md: reformatted, add libxml2 version and
+	  new website as well as fixing MIT/Expat ambiguity
+
 2025-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: test for __gmp_get_memory_functions with GMP_LIBS

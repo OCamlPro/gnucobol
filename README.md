@@ -63,11 +63,16 @@ install directories.
 
 Once you've decided on your options, generate the build tree with
 
-*  `../configure [options] > log` 
+*  `../configure [options]`
 
 and build the compiler and run-time library with 
 
-*  `make > log`
+*  `make`
+
+in the unlikely case of this step not succeeding, create a log file
+as following and report it as a bug, providing config.log and make.log:
+
+*  `make clean && make 2>&1 | tee make.log`
 
 Tests
 =====
@@ -75,14 +80,15 @@ Tests
 To verify GnuCOBOL works before installing it, run the internal
 testsuite. Simply do
 
-*  `make check > log`
+*  `make check`
 
-This MUST succeed.  Please report any failures.
+This MUST succeed.  Please report any failures, ideally with providing
+the generated file `tests/testsuite.log`.
 
 Also included are COBOL85 standard tests provided by the NIST.  
 They are run with
 
-* `make test > log`
+*  `make test`
 
 If the the COBOL85 testsuite is not already in the build- or source-tree,
 `make test` will download it.  For details see tests/cobol85/README.
@@ -90,21 +96,25 @@ If the the COBOL85 testsuite is not already in the build- or source-tree,
 ** NOTE **
    The language interpreter `perl` is required to run COBOL85 tests.
 
+If this testsuite fails you may create a minimal log with
+`make -C tests/cobol85 diff | tee test.log`.
 
- If you want to run both testsuites you can run
+If you want to run both testsuites you can run
  
- *  `make checkall`
+*  `make checkall`
 
 
- You may also optionally perform a series of semi-manual tests to
- verify a working extended screenio.
- 
- *  `make checkmanual`
+You may also optionally perform a series of semi-manual tests to
+verify a working extended screenio.
 
- The test execution is automatic but the user needs to check for
- the expected result. See `tests/run_prog_manual.sh` for tweaking the
- test runner used (which is otherwise deduced from the environment),
- either in that script or via TESTRUNNER environment variable.
+*  `make checkmanual`
+
+The test execution is automatic but the user needs to check for
+the expected result. See `tests/run_prog_manual.sh` for tweaking the
+test runner used (which is otherwise deduced from the environment),
+either in that script or via TESTRUNNER environment variable.
+
+The results of those tests are recorded in `tests/testsuite_manual.log`.
 
 ** NOTE **
    The semi-manual tests need either `xterm`, GNU `screen` or `tmux`
@@ -121,7 +131,7 @@ Installation
 To install GnuCOBOL, including the compiler, run-time library, and
 documentation, 
  
- * `make install > log`
+*  `make install > log`
 
 Unless you have taken steps to ensure you can create files in the
 PREFIX directory, you'll probably need super-user privileges for this step.  
