@@ -35,12 +35,8 @@ exec_prefix="@exec_prefix@"
 
 # options that are also used in atlocal (always add to both)
 # keep indent for easier diff
-	# note: quoting the directories breaks building on MSYS (as this disables
-	#       path translation), therefore disabled for now
-	#COB_CFLAGS="-I\"@abs_top_srcdir@" @COB_CFLAGS@"
-	#COB_LDFLAGS="-L\"@abs_top_builddir@/libcob/.libs\" @COB_LDFLAGS@"
-	COB_CFLAGS="-I@abs_top_srcdir@ @COB_CFLAGS@"
-	COB_LDFLAGS="-L@abs_top_builddir@/libcob/.libs @COB_LDFLAGS@"
+	COB_CFLAGS="-I\"@abs_top_srcdir@\" @COB_CFLAGS@"
+	COB_LDFLAGS="-L\"@abs_top_builddir@/libcob/.libs\" @COB_LDFLAGS@"
 	COB_LIBS="@COB_LIBS@ ${COB_LIBS}"
 	COB_CONFIG_DIR="@abs_top_srcdir@/config"
 	COB_COPY_DIR="@abs_top_srcdir@/copy"
@@ -48,7 +44,6 @@ exec_prefix="@exec_prefix@"
 	DYLD_LIBRARY_PATH="@abs_top_builddir@/libcob/.libs:${DYLD_LIBRARY_PATH}" # Mac OS
 	SHLIB_PATH="@abs_top_builddir@/libcob/.libs:${SHLIB_PATH}"               # HP-UX
 	LIBPATH="@abs_top_builddir@/libcob/.libs:${LIBPATH}"                     # AIX
-
 	COB_LIBRARY_PATH="@abs_top_builddir@/extras:${COB_LIBRARY_PATH}"         # only in pre-inst case: prepend
 
 if test "x${COB_SCHEMA_DIR}" = "x"; then
