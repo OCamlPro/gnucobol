@@ -3155,7 +3155,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token READ
 %token READERS
 %token READ_ONLY		"READ-ONLY"
-%token READY_TRACE		"READY TRACE"
+%token READY
 %token RECEIVE
 %token RECEIVED			/* remark: not used here */
 %token RECORD
@@ -3192,7 +3192,6 @@ set_record_size (cb_tree min, cb_tree max)
 %token RERUN
 %token RESERVE
 %token RESET
-%token RESET_TRACE		"RESET TRACE"
 %token RESET_GRID		"RESET-GRID"
 %token RESET_LIST		"RESET-LIST"
 %token RESET_TABS		"RESET-TABS"
@@ -3308,6 +3307,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SUM
 %token SUPPRESS
 %token SUPPRESS_XML		"SUPPRESS"
+%token SYMBOL
 %token SYMBOLIC
 %token SYNCHRONIZED
 %token SYSTEM_DEFAULT		"SYSTEM-DEFAULT"
@@ -3361,6 +3361,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token TOP
 %token TOWARD_GREATER		"TOWARD-GREATER"
 %token TOWARD_LESSER		"TOWARD-LESSER"
+%token TRACE
 %token TRACK
 %token TRACKS
 %token TRACK_AREA		"TRACK-AREA"
@@ -3510,10 +3511,10 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc PURGE
 %nonassoc RAISE
 %nonassoc READ
-%nonassoc READY_TRACE
+%nonassoc READY
 %nonassoc RECEIVE
 %nonassoc RELEASE
-%nonassoc RESET_TRACE
+%nonassoc RESET
 %nonassoc RETURN
 %nonassoc REWRITE
 %nonassoc ROLLBACK
@@ -16012,7 +16013,11 @@ _end_read:
 /* READY TRACE statement */
 
 ready_statement:
-  READY_TRACE
+  READY
+  {
+	cobc_cs_check = CB_READY_RESET_TRACE;
+  }
+  TRACE
   {
 	begin_statement (STMT_READY_TRACE, 0);
 	cb_emit_ready_trace ();
@@ -16097,7 +16102,11 @@ release_body:
 /* RESET TRACE statement */
 
 reset_statement:
-  RESET_TRACE
+  RESET
+  {
+	cobc_cs_check = CB_READY_RESET_TRACE;
+  }
+  TRACE
   {
 	begin_statement (STMT_RESET_TRACE, 0);
 	cb_emit_reset_trace ();
