@@ -1,4 +1,10 @@
 
+2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in (perf_stat, perf_record): moved calling of perf out to a
+	  function and added a second call for recording
+	* atlocal.in, atlocal_win: fixed quoting (2025-09-17 change)
+
 2025-09-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win: quote local include and library directories
