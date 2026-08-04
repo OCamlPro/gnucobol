@@ -1,4 +1,14 @@
 
+2025-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (file_description_entry): create an unnamed file in case
+	  of broken SD/FD reference to ensure a valid tree for error-recovery,
+	  fixing bug #1151
+	* typeck.c (cb_emit_return): ensure a target of SD file
+	* tree.c (finalize_file): fix diagnostic position for non-supported
+	  file type
+	* parser.y (sort_merge_body): fix diagnostic position for SD check
+
 2025-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: combined header defines into enum cobc_hd and

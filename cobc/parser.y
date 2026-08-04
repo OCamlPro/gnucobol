@@ -5370,8 +5370,6 @@ file_control_entry:
   SELECT { check_non_area_a ($1); }
   flag_optional undefined_word
   {
-	char	buff[COB_MINI_BUFF];
-
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -5386,6 +5384,7 @@ file_control_entry:
 				 current_program->file_list);
 	} else {
 		/* Create dummy file */
+		char	buff[COB_MINI_BUFF];
 		snprintf (buff, COB_MINI_BUFF, _("SELECT on line %d"),
 			  cb_source_line);
 		current_file = build_file (cb_build_reference (buff));
@@ -5394,7 +5393,7 @@ file_control_entry:
 
 	}
 	key_type = NO_KEY;
-        setup_default_file_collation (current_file);
+	setup_default_file_collation (current_file);
   }
   _select_clauses_or_error
   {
@@ -6542,7 +6541,14 @@ file_description_entry:
 			       COBC_HD_FILE_SECTION, 0, 0);
 	check_duplicate = 0;
 	if (CB_INVALID_TREE ($2)) {
-		current_file = NULL;
+		/* Create dummy file */
+		char	buff[COB_MINI_BUFF];
+		snprintf (buff, COB_MINI_BUFF, "%s on line %d",
+			  $1 == cb_int1 ? "SD" : "FD", cb_source_line);
+		current_file = build_file (cb_build_reference (buff));
+		if ($1 == cb_int1) {
+			current_file->organization = COB_ORG_SORT;
+		}
 		YYERROR;
 	}
 	current_file = CB_FILE (cb_ref ($2));
@@ -16698,7 +16704,7 @@ sort_merge_body:
 				}
 			}
 		} else if (CB_FILE_P (x) && CB_FILE (x)->organization != COB_ORG_SORT) {
-			cb_error_x (x, _("must be an SD filename"));
+			cb_error (_("must be an SD filename"));
 			$2 = cb_error_node;
 		}
 		if (CB_VALID_TREE ($2)) {

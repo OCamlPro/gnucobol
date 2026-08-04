@@ -10609,9 +10609,9 @@ void cob_set_main_argv0 (const int argc, char **argv)
 #endif
 #ifdef HAVE_READLINK
 	if (!access ("/proc/self/exe", R_OK)) {
-		path = "/proc/self/exe";
+		path = "/proc/self/exe";	/* note: available as symlink in NetBSD */
 	} else if (!access ("/proc/curproc/file", R_OK)) {
-		path = "/proc/curproc/file";
+		path = "/proc/curproc/file";	/* BSDs */
 	} else if (!access ("/proc/self/path/a.out", R_OK)) {
 		path = "/proc/self/path/a.out";
 	} else {
@@ -10630,7 +10630,7 @@ void cob_set_main_argv0 (const int argc, char **argv)
 	}
 #endif
 
-#ifdef	HAVE_GETEXECNAME
+#ifdef	HAVE_GETEXECNAME	/* only common on Solaris */
 	path = getexecname ();
 	if (path) {
 #ifdef	HAVE_REALPATH
@@ -10647,6 +10647,8 @@ void cob_set_main_argv0 (const int argc, char **argv)
 		return;
 	}
 #endif
+
+	/* note: consider proc_pidpath for Mac OS X, if needed */
 
 	if (argc && argv && argv[0]) {
 		cobglobptr->cob_main_argv0 = cob_path_to_absolute (argv[0]);
