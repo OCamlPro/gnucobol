@@ -284,7 +284,7 @@ AT_CLEANUP
 
 
 AT_SETUP([compiler outputs (path specified)])
-AT_KEYWORDS([runmisc cobc])
+AT_KEYWORDS([runmisc cobc return_path])
 
 AT_DATA([prog.cob],[
         IDENTIFICATION DIVISION.
@@ -299,15 +299,15 @@ AT_DATA([prog.cob],[
 
 AT_CHECK([mkdir -p sub], [0], [], [])
 AT_CHECK([$COBC prog.cob -o sub/prog.c], [0], [], [])
-AT_CHECK([$COBC $(_return_path "sub/prog.c") -o $(_return_path "sub/prog.$COB_OBJECT_EXT")], [0], [], [])
-AT_CHECK([$COBC $(_return_path "sub/prog.$COB_OBJECT_EXT") -o $(_return_path "sub/prog")])
-AT_CHECK([$COBCRUN -M $(_return_path "sub/") prog], [0], [bluBb], [])
-AT_CHECK([$COBC -x prog.cob -o $(_return_path "sub/prog.c")], [0], [], [])
-AT_CHECK([$COBC -x $(_return_path "sub/prog.c") -o $(_return_path "sub/prog.$COB_OBJECT_EXT")], [0], [], [])
-AT_CHECK([$COBC -x $(_return_path "sub/prog.$COB_OBJECT_EXT") -o $(_return_path "sub/progo$COB_EXE_EXT")])
+AT_CHECK([$COBC "$(_return_path "sub/prog.c")" -o "$(_return_path "sub/prog.$COB_OBJECT_EXT")"], [0], [], [])
+AT_CHECK([$COBC "$(_return_path "sub/prog.$COB_OBJECT_EXT")" -o "$(_return_path "sub/prog")"])
+AT_CHECK([$COBCRUN -M "$(_return_path "sub/")" prog], [0], [bluBb], [])
+AT_CHECK([$COBC -x prog.cob -o "$(_return_path "sub/prog.c")"], [0], [], [])
+AT_CHECK([$COBC -x "$(_return_path "sub/prog.c")" -o "$(_return_path "sub/prog.$COB_OBJECT_EXT")"], [0], [], [])
+AT_CHECK([$COBC -x "$(_return_path "sub/prog.$COB_OBJECT_EXT")" -o "$(_return_path "sub/progo$COB_EXE_EXT")"])
 AT_CHECK([$COBCRUN_DIRECT ./sub/progo], [0], [bluBb], [])
-AT_CHECK([$COBC prog.cob -o $(_return_path "sub/prog.i")], [0], [], [])
-AT_CHECK([$COBC -x sub/prog.i -o $(_return_path "sub/prog$COB_EXE_EXT")], [0], [], [])
+AT_CHECK([$COBC prog.cob -o "$(_return_path "sub/prog.i")"], [0], [], [])
+AT_CHECK([$COBC -x sub/prog.i -o "$(_return_path "sub/prog$COB_EXE_EXT")"], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./sub/prog], [0], [bluBb], [])
 AT_CLEANUP
 
@@ -393,7 +393,7 @@ AT_CLEANUP
 
 
 AT_SETUP([use of full path for cobc])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc return_path])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -482,7 +482,7 @@ AT_CLEANUP
 
 
 AT_SETUP([C Compiler optimizations])
-AT_KEYWORDS([runmisc cobc optimization])
+AT_KEYWORDS([runmisc cobc optimization return_path])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -510,9 +510,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog],  [0], [OK], [])
 
 # last test with O2 (strips output) and output name
 AT_CHECK([mkdir -p sub], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -v -O2 -o $(_return_path "sub/prog") prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COMPILE_MODULE -v -O2 -o "$(_return_path "sub/prog")" prog.cob], [0], [ignore], [ignore])
 AT_CHECK([$COBCRUN -M sub/ prog],  [0], [OK], [])
-AT_CHECK([$COMPILE -v -O2 -o $(_return_path "sub/prog$COB_EXE_EXT") prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COMPILE -v -O2 -o "$(_return_path "sub/prog$COB_EXE_EXT")" prog.cob], [0], [ignore], [ignore])
 AT_CHECK([$COBCRUN_DIRECT ./sub/prog],  [0], [OK], [])
 
 AT_CLEANUP
@@ -820,6 +820,39 @@ AT_CHECK([$COBCRUN -M ./mainer --runtime-conf called "first argument" "second" "
 AT_CLEANUP
 
 
+AT_SETUP([cobcrun --config])
+AT_KEYWORDS([runmisc preload COB_LOAD_CASE load_case config])
+
+AT_DATA([COBOL.COB], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      mainer.
+       PROCEDURE        DIVISION.
+           CALL 'sub'
+           DISPLAY 'OK' WITH NO ADVANCING.
+           GOBACK.
+       END PROGRAM mainer.
+       
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      sub.
+       PROCEDURE        DIVISION.
+           DISPLAY 'OK' WITH NO ADVANCING.
+           GOBACK.
+       END PROGRAM sub.
+])
+
+AT_DATA([my.cfg], [pre_load   COBOL
+])
+
+AT_CHECK([$COMPILE_MODULE COBOL.COB], [0], [], [])
+AT_CHECK([$COBCRUN                 mainer], [1], [],
+[libcob: error: module 'mainer' not found
+])
+AT_CHECK([$COBCRUN -c       my.cfg mainer], [0], [OKOK], [])
+AT_CHECK([$COBCRUN --config=my.cfg mainer], [0], [OKOK], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([cobcrun error messages])
 AT_KEYWORDS([runmisc])
 
@@ -891,7 +924,7 @@ AT_CLEANUP
 
 
 AT_SETUP([run job after compilation (path specified)])
-AT_KEYWORDS([runmisc cobcrun])
+AT_KEYWORDS([runmisc cobcrun return_path])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -902,8 +935,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([mkdir -p sub], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -jd -o $(_return_path "sub/prog") prog.cob], [0], [job], [])
-AT_CHECK([$COMPILE -jd -o $(_return_path "sub/prog$COB_EXE_EXT") prog.cob], [0], [job], [])
+AT_CHECK([$COMPILE_MODULE -jd -o "$(_return_path "sub/prog")" prog.cob], [0], [job], [])
+AT_CHECK([$COMPILE -jd -o "$(_return_path "sub/prog$COB_EXE_EXT")" prog.cob], [0], [job], [])
 
 AT_CLEANUP
 
@@ -988,6 +1021,7 @@ AT_CLEANUP
 
 AT_SETUP([cobc diagnostics show caret])
 #AT_KEYWORDS([cobc diagnostics])
+AT_KEYWORDS([return_path])
 
 AT_DATA([progprep.cob],[
        IDENTIFICATION   DIVISION.
@@ -1081,7 +1115,7 @@ AT_CLEANUP
 
 
 AT_SETUP([check include header file])
-AT_KEYWORDS([cobc copy directive imp])
+AT_KEYWORDS([cobc copy directive imp return_path])
 
 AT_DATA([filec.h], [
 /* COB_EXT_IMPORT will be defined by libcob.h up-front */

@@ -1,4 +1,12 @@
 
+2025-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: adjusted return_path function and its use
+
+2025-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [test/checkall]: check PERL before use
+
 2025-10-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in (perf_stat, perf_record): moved calling of perf out to a
