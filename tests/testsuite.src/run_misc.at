@@ -16164,7 +16164,6 @@ AT_DATA([callee.cob], [
 
 AT_DATA([caller.c], [[
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <libcob.h>
