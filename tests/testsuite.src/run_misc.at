@@ -16171,7 +16171,7 @@ AT_DATA([caller.c], [[
 int main (int argc, char **argv) {
    char buffer[128];
    char *fgets_ret;
-   ssize_t nbytes;
+   int nbytes;
    int cob_ret;
 
    /* Files for stdin/stdout/stderr redirection */
