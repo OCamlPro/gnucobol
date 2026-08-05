@@ -16195,8 +16195,12 @@ int main (int argc, char **argv) {
       perror ("Problem in writing 'STDOUT' to stdin");
       return 3;
    }
-   fflush (cob_stdin);
-   rewind (cob_stdin);
+   fclose (cob_stdin);
+   cob_stdin = fopen ("cob_stdin", "r+b");
+   if (!cob_stdin) {
+      fprintf (stderr, "Problem in opening stdin file for read");
+      return -1;
+   }
 
    /* Initialize runtime and set up stdin/stdout/stderr redirection */
    cob_init (0, NULL);
@@ -16217,11 +16221,15 @@ int main (int argc, char **argv) {
    }
 
    /* Reset stdout and stderr for reading */
-   fflush (cob_stdout);
-   rewind (cob_stdout);
-   fflush (cob_stderr);
-   rewind (cob_stderr);
-
+   fclose (cob_stdout);
+   fclose (cob_stderr);
+   cob_stdout = fopen ("cob_stdout", "r+b");
+   cob_stderr = fopen ("cob_stderr", "r+b");
+   if (!cob_stdout || !cob_stderr) {
+      fprintf (stderr, "Problem in opening stdout/stderr files for read");
+      return -1;
+   }
+   
    /* Check result of COBOL program in stdout */
    buffer[0] = '\0';
    fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stdout);
@@ -16247,9 +16255,9 @@ int main (int argc, char **argv) {
    }
 
    /* Clean up and terminate */
-   //fclose (cob_stdin);
-   //fclose (cob_stdout);
-   //fclose (cob_stderr);
+   fclose (cob_stdin);
+   fclose (cob_stdout);
+   fclose (cob_stderr);
 
    return 0;
 }
