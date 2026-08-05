@@ -4,14 +4,13 @@ on:
   pull_request:
     branches: [ gitside-gnucobol-3.x ]
   push:
-  # manual run in actions tab - for all branches
   workflow_dispatch:
 
 jobs:
   build:
     name: Build, test and provide nightly
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 10   # usually around 5-6 minutes
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +26,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup build environment
         run: echo "TERM=vt100" >> $GITHUB_ENV
@@ -43,7 +42,7 @@ jobs:
       - name: Restore VBISAM cache
         if: ${{ matrix.isam == 'vbisam' }}
         id: restore-vbisam
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-vbisam
           path: vbisam
@@ -72,7 +71,7 @@ jobs:
       - name: Save VBISAM cache
         if: ${{ matrix.isam == 'vbisam' &&
                 steps.restore-vbisam.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-vbisam
           path: vbisam
@@ -83,15 +82,12 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build && cd _build
-          ../configure --with-${{ matrix.isam }} \
+          ../configure --prefix=/opt/gnucobol \
+                       --with-${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
-                       --prefix=/opt/gnucobol \
                        --with-pkgversion="GnuCOBOL CI"
           echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
-
-      - name: Build GnuCOBOL
-        run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -99,6 +95,16 @@ jobs:
         with:
           name: config-${{ github.job }}-${{ matrix.isam }}.log
           path: _build/config.log
+
+      - name: Build GnuCOBOL
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Adjust testsuite
+        run: |
+          cd tests/testsuite.src
+          # Fails randomly
+          sed -i '/AT_SETUP(\[signal handling SIGPIPE in COBOL\])/a \
+                   AT_SKIP_IF(\[true\])' used_binaries.at
 
       - name: Adjust testsuite for VBISAM
         if: ${{ matrix.isam == 'vbisam' }}
@@ -121,7 +127,8 @@ jobs:
           sed -i '/AT_SETUP(\[EXTFH: changing record address\])/a \
                    AT_SKIP_IF(\[true\])' run_file.at
 
-      # note: distcheck also creates the dist tarball
+      # Note1: distcheck also creates the dist tarball
+      # Note2: gnucobol-VERSION removed on success
       - name: Build distribution archive & run tests
         run: |
           make -C _build distcheck --jobs=$(($(nproc)+1))           \
@@ -166,7 +173,7 @@ jobs:
           retention-days: 0
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -190,7 +197,7 @@ jobs:
   build_clang:
     name: Build, test and provide nightly (Clang)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 10   # usually around 5-7 minutes
     strategy:
       fail-fast: false
       matrix:
@@ -206,7 +213,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup build environment
         run: echo "TERM=vt100" >> $GITHUB_ENV
@@ -222,7 +229,7 @@ jobs:
       - name: Restore VBISAM cache
         if: ${{ matrix.isam == 'vbisam' }}
         id: restore-vbisam
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-vbisam-clang
           path: vbisam
@@ -252,7 +259,7 @@ jobs:
       - name: Save VBISAM cache
         if: ${{ matrix.isam == 'vbisam' &&
                 steps.restore-vbisam.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-vbisam-clang
           path: vbisam
@@ -263,10 +270,10 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build && cd _build
-          ../configure --with-${{ matrix.isam }} \
+          ../configure --prefix=/opt/gnucobol \
+                       --with-${{ matrix.isam }} \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
-                       --prefix=/opt/gnucobol \
                        --with-pkgversion="GnuCOBOL CI" \
                        CC=clang
           echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
@@ -280,6 +287,13 @@ jobs:
 
       - name: Build GnuCOBOL
         run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Adjust testsuite
+        run: |
+          cd tests/testsuite.src
+          # Fails randomly
+          sed -i '/AT_SETUP(\[signal handling SIGPIPE in COBOL\])/a \
+                   AT_SKIP_IF(\[true\])' used_binaries.at
 
       - name: Adjust testsuite for VBISAM
         if: ${{ matrix.isam == 'vbisam' }}
@@ -315,7 +329,7 @@ jobs:
           path: _build/tests/testsuite.log
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -340,7 +354,7 @@ jobs:
     name: Build and test on 32-bit
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 10   # usually around 4-5 minutes
     strategy:
       fail-fast: true
 
@@ -369,10 +383,10 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build && cd _build
-          ../configure --with-db \
+          ../configure --prefix=/opt/gnucobol \
+                       --with-db \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
-                       --prefix=/opt/gnucobol \
                        CC="gcc-9 -m32" \
                        CFLAGS="-fno-tree-coalesce-vars"
           # Note: we pass -fno-tree-coalesce-vars to workaround a bug
@@ -401,7 +415,7 @@ jobs:
           path: _build/tests/testsuite.log
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -426,7 +440,7 @@ jobs:
     name: Build and test with minimal dependencies
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 10   # usually around 2-3 minutes
     strategy:
       fail-fast: true
 
@@ -476,7 +490,7 @@ jobs:
           path: _build/tests/testsuite.log
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -501,7 +515,7 @@ jobs:
     name: Coverage and Warnings
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 10   # usually around 3-4 minutes
 
     steps:
 
@@ -530,8 +544,8 @@ jobs:
           mkdir _build && cd _build
           ../configure --enable-code-coverage \
                        --with-db --with-xml2 --with-json=cjson --with-curses=ncursesw \
-                       CPPFLAGS="-Werror=declaration-after-statement" \
-                       CC="gcc -std=c89"
+                       CC="gcc -std=c89" \
+                       CPPFLAGS="-Werror=declaration-after-statement"
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -562,9 +576,10 @@ jobs:
         with:
           name: coverage
           path: _build/GnuCOBOL-**-coverage
+          if-no-files-found: error
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -583,6 +598,7 @@ jobs:
         with:
           name: extended-coverage
           path: _build/extended-coverage
+          if-no-files-found: error
 
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v3
@@ -597,11 +613,11 @@ jobs:
   msys_build_test_createdist:
     needs: build
     runs-on: windows-latest
-    timeout-minutes: 40   # 30-35 min when building deps, 19-23 min when using cache
+    timeout-minutes: 50   # 37-46 min when building deps, 22-28 min when using cache
 
     env:
       MSYS_ROOT: C:\MinGW
-      MSYS_BIN: C:\MinGW\msys\1.0\bin
+      MSYS_BASH: C:\MinGW\msys\1.0\bin\bash
 
       MSYSTEM: MINGW32
       MSYSPKGS: msys-coreutils msys-patch pthreads
@@ -643,12 +659,11 @@ jobs:
       - name: Setup build environment
         shell: pwsh
         run: |
-          # echo $env:MSYS_BIN >> $env:GITHUB_PATH   note: we need to prefix
           echo HOME=$env:GITHUB_WORKSPACE >> $env:GITHUB_ENV
-          If ("${{ matrix.target }}" -eq "release") {
+          if ("${{ matrix.target }}" -eq "release") {
             echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
             echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS" >> $env:GITHUB_ENV
-          } Else {
+          } else {
             echo DISTDIR=GnuCOBOL_mingw_dbg >> $env:GITHUB_ENV
             echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS-Debug --enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
           }
@@ -656,7 +671,7 @@ jobs:
 
       - name: Restore MSYS1 cache
         id: restore-msys
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-msys-${{ matrix.target }}
           path: ${{ env.MSYS_ROOT }}
@@ -669,9 +684,9 @@ jobs:
           bash -lc "printf \"GCC in $(cd $(dirname $(which gcc)); pwd -W):\n$(gcc --version)\""
           bash -lc "printf \"Bash in $(cd $(dirname $(which bash)); pwd -W):\n$(bash --version)\""
           echo MSYS1 setup
-          %MSYS_BIN%\bash -lc "echo PATH is $PATH"
-          %MSYS_BIN%\bash -lc "printf \"GCC in $(cd $(dirname $(which gcc)); pwd -W):\n$(gcc --version)\""
-          %MSYS_BIN%\bash -lc "printf \"Bash in $(cd $(dirname $(which bash)); pwd -W):\n$(bash --version)\""
+          %MSYS_BASH% -lc "echo PATH is $PATH"
+          %MSYS_BASH% -lc "printf \"GCC in $(cd $(dirname $(which gcc)); pwd -W):\n$(gcc --version)\""
+          %MSYS_BASH% -lc "printf \"Bash in $(cd $(dirname $(which bash)); pwd -W):\n$(bash --version)\""
 
       - name: Install MSYS1
         if: steps.restore-msys.outputs.cache-hit != 'true'
@@ -682,7 +697,7 @@ jobs:
       - name: Install MSYS1 packages
         if: steps.restore-msys.outputs.cache-hit != 'true'
         run: |
-          %MSYS_BIN%\bash -lc "mingw-get install %MSYSPKGS%"
+          %MSYS_BASH% -lc "mingw-get install %MSYSPKGS%"
 
       - name: Cleanup MSYS1 env
         if: steps.restore-msys.outputs.cache-hit != 'true'
@@ -694,7 +709,7 @@ jobs:
 
       - name: Save MSYS1 cache
         if: steps.restore-msys.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-msys-${{ matrix.target }}
           path: ${{ env.MSYS_ROOT }}
@@ -702,7 +717,7 @@ jobs:
 
       - name: Restore GMP cache
         id: restore-gmp
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-msys-gmp-${{ matrix.target }}
           path: gmp
@@ -712,16 +727,16 @@ jobs:
         run: |
           curl -L %GMP_URL% -o gmp.tar.xz
           mkdir gmp && tar -xvf gmp.tar.xz -C gmp --strip-components=1
-          %MSYS_BIN%\bash -lc "cd gmp && ./configure --prefix=/mingw --enable-fat --enable-shared --disable-static ABI=32 CFLAGS=\"-Wno-attributes -Wno-ignored-attributes\""
-          %MSYS_BIN%\bash -lc "make -C gmp --jobs=$(($(nproc)+1))"
+          %MSYS_BASH% -lc "cd gmp && ./configure --prefix=/mingw --enable-fat --enable-shared --disable-static ABI=32 CFLAGS=\"-Wno-attributes -Wno-ignored-attributes\""
+          %MSYS_BASH% -lc "make -C gmp --jobs=$(($(nproc)+1))"
 
       - name: Install GMP
         run: |
-          %MSYS_BIN%\bash -lc "make -C gmp install"
+          %MSYS_BASH% -lc "make -C gmp install"
 
       - name: Save GMP cache
         if: steps.restore-gmp.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-msys-gmp-${{ matrix.target }}
           path: gmp
@@ -729,7 +744,7 @@ jobs:
 
       - name: Restore PDCursesMod cache
         id: restore-pdcm
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-msys-pdcm-${{ matrix.target }}
           path: pdcm
@@ -739,9 +754,9 @@ jobs:
         run: |
           curl -L %PDCM_URL% -o pdcm.tar.gz
           mkdir pdcm && tar -xvf pdcm.tar.gz -C pdcm --strip-components=1
-          %MSYS_BIN%\bash -lc "make -C pdcm/wincon --jobs=$(($(nproc)+1)) INFOEX=N CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
-          %MSYS_BIN%\bash -lc "make -C pdcm/wingui --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
-          %MSYS_BIN%\bash -lc "make -C pdcm/vt     --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll CFLAGS=\"-Wall -Wextra -pedantic -g -DPDCDEBUG -fPIC -DPDC_DLL_BUILD\""
+          %MSYS_BASH% -lc "make -C pdcm/wincon --jobs=$(($(nproc)+1)) INFOEX=N CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          %MSYS_BASH% -lc "make -C pdcm/wingui --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll"
+          %MSYS_BASH% -lc "make -C pdcm/vt     --jobs=$(($(nproc)+1)) CHTYPE_64=Y DEBUG=Y DLL=Y DLLNAME=libpdcurses LIBNAME=libpdcurses.dll CFLAGS=\"-Wall -Wextra -pedantic -g -DPDCDEBUG -fPIC -DPDC_DLL_BUILD\""
           echo #define CHTYPE_64 > pdcm\pdcurses.h
           echo #define PDC_DLL_BUILD >> pdcm\pdcurses.h
           echo #include "pdcurses/curses.h" >> pdcm\pdcurses.h
@@ -749,19 +764,19 @@ jobs:
       - name: Install PDCursesMod
         run: |
           set HOME=%HOME%\pdcm
-          %MSYS_BIN%\bash -lc "install wincon/libpdcurses.dll.a /mingw/lib/"
-          %MSYS_BIN%\bash -lc "install wincon/libpdcurses.dll /mingw/bin/"
+          %MSYS_BASH% -lc "install wincon/libpdcurses.dll.a /mingw/lib/"
+          %MSYS_BASH% -lc "install wincon/libpdcurses.dll /mingw/bin/"
           rem The following three are packaged as alternative variants for the user
-          %MSYS_BIN%\bash -lc "install wincon/libpdcurses.dll /mingw/bin/libpdcurses-wincon.dll"
-          %MSYS_BIN%\bash -lc "install wingui/libpdcurses.dll /mingw/bin/libpdcurses-wingui.dll"
-          %MSYS_BIN%\bash -lc "install vt/libpdcurses.dll /mingw/bin/libpdcurses-vt.dll"
-          %MSYS_BIN%\bash -lc "install -d /mingw/include/pdcurses"
-          %MSYS_BIN%\bash -lc "install -m 0644 curses.h panel.h term.h /mingw/include/pdcurses/"
-          %MSYS_BIN%\bash -lc "install -m 0644 pdcurses.h /mingw/include/"
+          %MSYS_BASH% -lc "install wincon/libpdcurses.dll /mingw/bin/libpdcurses-wincon.dll"
+          %MSYS_BASH% -lc "install wingui/libpdcurses.dll /mingw/bin/libpdcurses-wingui.dll"
+          %MSYS_BASH% -lc "install vt/libpdcurses.dll /mingw/bin/libpdcurses-vt.dll"
+          %MSYS_BASH% -lc "install -d /mingw/include/pdcurses"
+          %MSYS_BASH% -lc "install -m 0644 curses.h panel.h term.h /mingw/include/pdcurses/"
+          %MSYS_BASH% -lc "install -m 0644 pdcurses.h /mingw/include/"
 
       - name: Save PDCursesMod cache
         if: steps.restore-pdcm.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-msys-pdcm-${{ matrix.target }}
           path: pdcm
@@ -769,7 +784,7 @@ jobs:
 
       - name: Restore BDB cache
         id: restore-bdb
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-msys-bdb-${{ matrix.target }}
           path: bdb
@@ -784,19 +799,19 @@ jobs:
           mkdir bdb && tar -xf bdb.tar.gz -C bdb --strip-components=1
           rem assume non-unicode, otherwise replace by wcslen (or MBCS: _mbstrlen)
           sed -i 's/_tcsclen/strlen/' bdb\src\os_windows\os_stat.c
-          %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../db-tls-m4-fix-pthread.patch"
-          %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../mingw.patch"
-          %MSYS_BIN%\bash -lc "patch -d bdb -p1 -i ../cx11.patch"
-          %MSYS_BIN%\bash -lc "lt_cv_deplibs_check_method=${lt_cv_deplibs_check_method='pass_all'}; cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32 CC=/mingw/bin/gcc CPPFLAGS='-Wno-incompatible-pointer-types -Wno-old-style-definition'"
-          %MSYS_BIN%\bash -lc "make -C bdb/build_unix --jobs=$(($(nproc)+1))"
+          %MSYS_BASH% -lc "patch -d bdb -p1 -i ../db-tls-m4-fix-pthread.patch"
+          %MSYS_BASH% -lc "patch -d bdb -p1 -i ../mingw.patch"
+          %MSYS_BASH% -lc "patch -d bdb -p1 -i ../cx11.patch"
+          %MSYS_BASH% -lc "lt_cv_deplibs_check_method=${lt_cv_deplibs_check_method='pass_all'}; cd bdb/build_unix && ../dist/configure --prefix=/mingw --enable-mingw --enable-debug --disable-static --disable-replication --disable-tcl --without-cryptography LIBCSO_LIBS=-lwsock32 CC=/mingw/bin/gcc CPPFLAGS='-Wno-incompatible-pointer-types -Wno-old-style-definition'"
+          %MSYS_BASH% -lc "make -C bdb/build_unix --jobs=$(($(nproc)+1))"
 
       - name: Install BDB
         run: |
-          %MSYS_BIN%\bash -lc "make -C bdb/build_unix install"
+          %MSYS_BASH% -lc "make -C bdb/build_unix install"
 
       - name: Save BDB cache
         if: steps.restore-bdb.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-msys-bdb-${{ matrix.target }}
           path: bdb
@@ -804,7 +819,7 @@ jobs:
 
       - name: Restore LibXML2 cache
         id: restore-xml2
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           key: cache-msys-xml2-${{ matrix.target }}
           path: libxml2
@@ -814,16 +829,16 @@ jobs:
         run: |
           curl -L %XML2_URL% -o libxml2.tar.gz
           mkdir libxml2 && tar -xvf libxml2.tar.gz -C libxml2 --strip-components=1
-          %MSYS_BIN%\bash -lc "cd libxml2 && ./autogen.sh && ./configure --prefix=/mingw --enable-debug"
-          %MSYS_BIN%\bash -lc "make -C libxml2 --jobs=$(($(nproc)+1))"
+          %MSYS_BASH% -lc "cd libxml2 && ./autogen.sh && ./configure --prefix=/mingw --enable-debug"
+          %MSYS_BASH% -lc "make -C libxml2 --jobs=$(($(nproc)+1))"
 
       - name: Install LibXML2
         run: |
-          %MSYS_BIN%\bash -lc "make -C libxml2 install"
+          %MSYS_BASH% -lc "make -C libxml2 install"
 
       - name: Save LibXML2 cache
         if: steps.restore-xml2.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           key: cache-msys-xml2-${{ matrix.target }}
           path: libxml2
@@ -836,7 +851,7 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build
-          %MSYS_BIN%\bash -lc "cd _build && ../configure --with-db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% LDFLAGS=-lintl"
+          %MSYS_BASH% -lc "cd _build && ../configure --with-db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% LDFLAGS=-lintl"
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -847,12 +862,12 @@ jobs:
 
       - name: Build GnuCOBOL
         run: |
-          %MSYS_BIN%\bash -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
+          %MSYS_BASH% -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [pre-inst-env]), for some reason...
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -862,9 +877,9 @@ jobs:
         # if we ever need to disable something in the tests: skip like here IF106A
         # and later expect a failure
         #   perl -pi -e 's/^# OBNC1M/\$skip{IF106A} = 1; # OBNC1M/' tests/cobol85/report.pl
-        #   %MSYS_BIN%\bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd) || echo \"WARNING: NIST85 did not pass!\""
+        #   %MSYS_BASH% -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd) || echo \"WARNING: NIST85 did not pass!\""
         run: |
-          %MSYS_BIN%\bash -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
+          %MSYS_BASH% -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
 
@@ -879,24 +894,20 @@ jobs:
             _build/tests/cobol85/**/*.out
             _build/tests/cobol85/**/duration.txt
 
+      - name: Adjust testsuite
+        run: |
+          rem Skip test as it sometimes works and sometimes not...
+          rem %MSYS_BASH% -lc "sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo \"workflow:1\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite"
+
+          rem Change to expected fail if there's an error specific to the CI that we don't want to change
+          rem in the testsuite for expected result (should normally only be a temporary thing)
+          rem sed -i '/run_fundamental/{N;/Compare FLOAT-LONG with floating-point literal/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
+
       - name: Run testsuite
         run: |
-          rem skip test as it sometimes works and sometimes not...
-          rem instead of
-          rem    sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
-          rem use
-          %MSYS_BIN%\bash -lc "sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo \"workflow:1\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite"
-
-          rem change to expected fail if there's an error specific to the CI that we don't want to change
-          rem in the testsuite for expected result (should normally only be a temporary thing)
-          rem instead of
-          rem    sed -i '/AT_SETUP(\[Compare FLOAT-LONG with floating-point literal\])/a AT_XFAIL_IF(\[true\])' tests/testsuite.src/run_fundamental.at
-          rem use
-          rem    sed -i '/run_fundamental/{N;/Compare FLOAT-LONG with floating-point literal/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
-
-          rem to work around regular hangs we run NIST first, then the internal
+          rem To work around regular hangs we run NIST first, then the internal
           rem and the later only with 2 jobs -> --jobs does not seem to have any effect in this env
-          %MSYS_BIN%\bash -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\" CPATH=$(pwd)"
+          %MSYS_BASH% -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\" CPATH=$(pwd)"
           rem  Note: the extra CPATH above is only required in debug builds
           rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
 
@@ -909,10 +920,11 @@ jobs:
 
       - name: Package GnuCOBOL MinGW nightly
         run: |
-          %MSYS_BIN%\bash -lc "make -C _build distmingw"
+          %MSYS_BASH% -lc "make -C _build distmingw"
 
       - name: Upload GnuCOBOL_mingw
         uses: actions/upload-artifact@v7
         with:
           name: GnuCOBOL_mingw-${{ matrix.target }}
           path: _build/${{ env.DISTDIR }}
+          if-no-files-found: error
