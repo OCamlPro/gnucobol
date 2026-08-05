@@ -16247,9 +16247,9 @@ int main (int argc, char **argv) {
    }
 
    /* Clean up and terminate */
-   fclose (cob_stdin);
-   fclose (cob_stdout);
-   fclose (cob_stderr);
+   //fclose (cob_stdin);
+   //fclose (cob_stdout);
+   //fclose (cob_stderr);
 
    return 0;
 }
