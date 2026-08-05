@@ -16159,7 +16159,7 @@ AT_DATA([callee.cob], [
           DISPLAY INPUT-VAR UPON SYSERR.
           ACCEPT INPUT-VAR.
           DISPLAY INPUT-VAR.
-          STOP RUN.
+          GOBACK.
 ])
 
 AT_DATA([caller.c], [[
@@ -16205,9 +16205,9 @@ int main (int argc, char **argv) {
    cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, cob_stderr);
 
    /* Call COBOL program */
-   cob_ret = cob_call_with_exception_check ("callee", 0, NULL);
+   cob_ret = cob_call ("callee", 0, NULL);
 
-   if (cob_ret != 1) {
+   if (cob_ret != 0) {
       fprintf (stderr, "COBOL program did not normally exit: %d\n", cob_ret);
       return 4;
    }
