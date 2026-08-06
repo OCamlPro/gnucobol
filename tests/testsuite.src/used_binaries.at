@@ -1610,8 +1610,9 @@ D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
 
 AT_CLEANUP
 
+
 AT_SETUP([external preparser --preparser])
-AT_KEYWORDS([preparser])
+AT_KEYWORDS([cobc configuration EXEC])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -1623,16 +1624,19 @@ AT_DATA([prog.cob], [
 ])
 
 # 1. nonexistent file -> error
-AT_CHECK([$COBC --preparser missing.conf prog.cob], [1], [], [stderr])
-AT_CHECK([$GREP "cannot load preparser configuration 'missing.conf'" stderr], [0], [ignore], [ignore])
+AT_CHECK([$COBC --preparser ./missing.conf prog.cob], [1], [],
+[configuration error:
+./missing.conf: No such file or directory
+])
 
 # 2. invalid file -> error
 AT_DATA([invalid.conf], [
 # missing subsystem and command
 cflags: -O2
 ])
-AT_CHECK([$COBC --preparser invalid.conf prog.cob], [1], [], [stderr])
-AT_CHECK([$GREP "is missing 'subsystem' or 'command'" stderr], [0], [ignore], [ignore])
+AT_CHECK([$COBC --preparser ./invalid.conf prog.cob], [1], [],
+[error: preparser configuration './invalid.conf' is missing 'subsystem' or 'command'
+])
 
 # 3. valid config file -> runs and compiles
 AT_DATA([mypp.sh], [
@@ -1664,8 +1668,9 @@ subsystem: SQL
 command: ./badpp.sh
 on-error: error
 ])
-AT_CHECK([$COBC --preparser bad.conf prog.cob], [1], [], [stderr])
-AT_CHECK([$GREP "failed with exit status 1" stderr], [0], [ignore], [ignore])
+AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --preparser bad.conf prog.cob], [1], [],
+[cobc: error: external preparser 'SQL' failed with exit status 1
+])
 
 # 6. pseudo-preparser exits non-zero but warning mode -> compiles (falls back)
 AT_DATA([warn.conf], [
@@ -1673,7 +1678,9 @@ subsystem: SQL
 command: ./badpp.sh
 on-error: warn
 ])
-AT_CHECK([$COBC --preparser warn.conf prog.cob], [1], [], [stderr])
-AT_CHECK([$GREP "falling back to baseline" stderr], [0], [ignore], [ignore])
+AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --preparser warn.conf prog.cob], [1], [],
+[prog.cob:5: error: external preparser 'SQL' failed; falling back to baseline
+prog.cob:6: error: EXEC SQL statement ignored
+])
 
 AT_CLEANUP

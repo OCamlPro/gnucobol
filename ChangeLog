@@ -1,12 +1,4 @@
 
-2026-07-31  Uttam Bhadauriya <uttamsinghbhadoriya23@gmail.com>
-
-	* cobc/cobc.h, cobc/tree.h, cobc/cobc.c, cobc/config.c, cobc/pplex.l:
-	Refactor external preparser subsystem, move struct and functions,
-	rename tag to subsystem, improve error messages and indentation.
-	* cobc/help.c, doc/gnucobol.texi: Add --preparser documentation.
-	* tests/testsuite.src/used_binaries.at: Add preparser tests.
-
 2025-11-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix linking order for PANEL_LIBS

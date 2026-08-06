@@ -26,7 +26,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <limits.h>
-#include <ctype.h>
 #include "cobc.h"
 #include "tree.h"
 
@@ -488,52 +487,43 @@ cb_load_words (void)
 	return ret;
 }
 
+static int cb_conf_split_line (char *buff, char **name, char **val);
+
 /* set configuration entry 'buff' with 'fname' and 'line' used
    for error output */
 int
 cb_config_entry (char *buff, const char *fname, const int line)
 {
-	char		*s;
+	char		*name_ptr;
 	const char	*name;
-	char		*e;
 	char		*val;
 	void		*var;
 	enum cb_support	support_val;
 	size_t		i;
 	size_t		j;
+	char		*s;
 
-	/* ignore leading white-spaces */
-	while (*buff == '\t' || *buff == ' ') {
-		buff++;
+	/* Use the shared line parser */
+	int split_ret = cb_conf_split_line (buff, &name_ptr, &val);
+	if (split_ret == 1) {
+		return 0;	/* blank or comment line */
 	}
-
-	/* ignore empty / comment line */
-	if (*buff == 0 || *buff == '\r' || *buff == '\n' || *buff == '#') {
-		return 0;
-	}
-
-	/* get tag */
-	s = strpbrk (buff, " \t:=");
-	if (!s) {
-		/* no tag separator --> error (remove CR LF for message) */
-		for (j = strlen(buff); buff[j - 1] == '\r' || buff[j - 1] == '\n';) {
-			buff[--j] = 0;
-		}
+	if (split_ret == -1) {
 		configuration_error (fname, line, 1,
 			_("invalid configuration tag '%s'"), buff);
 		return -1;
 	}
-	*s = 0;
 
-	/* Find entry */
+	/* Find entry using the name extracted by the shared parser */
 	for (i = 0; i < CB_CONFIG_SIZE; i++) {
-		if (strcmp (buff, config_table[i].name) == 0) {
+		if (strcmp (name_ptr, config_table[i].name) == 0) {
 			break;
 		}
 	}
+
 	if (i == CB_CONFIG_SIZE) {
 		configuration_error (fname, line, 1,
-			_("unknown configuration tag '%s'"), buff);
+			_("unknown configuration tag '%s'"), name_ptr);
 		return -1;
 	}
 #if 0 /* currently not possible (all entries from config.def are included
@@ -548,39 +538,23 @@ cb_config_entry (char *buff, const char *fname, const int line)
 
 	/* Check for reserved word tag, if requested */
 	if (fname == words_file) {
-		if (strcmp (buff, "reserved")
-		 && strcmp (buff, "not-reserved")
-		 && strcmp (buff, "intrinsic-function")
-		 && strcmp (buff, "not-intrinsic-function")
-		 && strcmp (buff, "system-name")
-		 && strcmp (buff, "not-system-name")
-		 && strcmp (buff, "register")
-		 && strcmp (buff, "not-register")) {
+		if (strcmp (name_ptr, "reserved")
+		 && strcmp (name_ptr, "not-reserved")
+		 && strcmp (name_ptr, "intrinsic-function")
+		 && strcmp (name_ptr, "not-intrinsic-function")
+		 && strcmp (name_ptr, "system-name")
+		 && strcmp (name_ptr, "not-system-name")
+		 && strcmp (name_ptr, "register")
+		 && strcmp (name_ptr, "not-register")) {
 			configuration_error (fname, line, 1,
-				_("invalid configuration tag '%s' in word-list"), buff);
+				_("invalid configuration tag '%s' in word-list"), name_ptr);
 			return -1;
 		}
 	}
 
-	/* Get value */
-	/* Move pointer to beginning of value */
-	for (s++; *s && strchr (" \t:=", *s); s++) {
-		;
-	}
-	/* Set end pointer to first # (comment) or end of value */
-	for (e = s + 1; *e && !strchr ("#", *e); e++) {
-		;
-	}
-	/* Remove trailing white-spaces */
-	for (--e; e >= s && strchr (" \t\r\n", *e); e--) {
-		;
-	}
-	e[1] = 0;
-
 	/* Set value */
 	name = config_table[i].name;
 	var = config_table[i].var;
-	val = s;
 
 	switch (config_table[i].type) {
 	case CB_STRING:
@@ -940,6 +914,55 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	return 0;
 }
 
+/* Split a configuration line into name and value in-place.
+ * Strips leading whitespace and comments.
+ * Returns 0 on success, 1 if blank/comment, -1 if no separator. */
+static int
+cb_conf_split_line (char *buff, char **name, char **val)
+{
+	char	*s;
+	char	*e;
+
+	/* strip leading whitespace */
+	while (*buff == '\t' || *buff == ' ') {
+		buff++;
+	}
+	/* blank or comment line */
+	if (*buff == 0 || *buff == '\r' || *buff == '\n' || *buff == '#') {
+		return 1;
+	}
+	/* find separator */
+	s = strpbrk (buff, " \t:=");
+	if (!s) {
+		/* strip trailing CR/LF for error message */
+		for (size_t j = strlen (buff);
+		     j > 0 && (buff[j-1] == '\r' || buff[j-1] == '\n');) {
+			buff[--j] = 0;
+		}
+		return -1;
+	}
+	*name = buff;
+	*s = 0;
+
+	/* Get value */
+	/* Move pointer to beginning of value */
+	for (s++; *s && strchr (" \t:=", *s); s++) {
+		;
+	}
+	/* Set end pointer to first # (comment) or end of value */
+	for (e = s + 1; *e && !strchr ("#", *e); e++) {
+		;
+	}
+	/* Remove trailing white-spaces */
+	for (--e; e >= s && strchr (" \t\r\n", *e); e--) {
+		;
+	}
+	e[1] = 0;
+	*val = s;
+
+	return 0;
+}
+
 /* Resolve preparser config filename: explicit path (contains separator
  * or exists as-is) is used directly; otherwise look up
  * COB_CONFIG_DIR/<name>.conf, mirroring cb_load_conf_file(). */
@@ -952,57 +975,15 @@ open_preparser_conf (const char *name, char *resolved, size_t resolved_size)
 	for (i = 0; name[i] != 0 && name[i] != SLASH_CHAR; i++);
 
 	if (name[i] != 0 || access (name, F_OK) == 0) {
-		/* contains a path separator, or exists as given */
 		snprintf (resolved, resolved_size, "%s", name);
 	} else {
-		/* plain name: look in COB_CONFIG_DIR/<name>.conf */
+		/* Simplified: Always append .conf for plain names in config dir */
 		snprintf (resolved, resolved_size, "%s%c%s.conf",
 			  cob_config_dir, SLASH_CHAR, name);
 	}
 
 	fp = fopen (resolved, "r");
 	return fp;
-}
-
-/* Parse a single "tag: value" or "tag value" line.
- * Leading/trailing whitespace and comments (#) are stripped. */
-static int
-parse_preparser_line (char *buff, char **tag, char **value)
-{
-	char	*p, *colon;
-
-	/* strip comment */
-	if ((p = strchr (buff, '#')) != NULL) {
-		*p = '\0';
-	}
-	/* strip trailing whitespace/newline */
-	for (p = buff + strlen (buff); p > buff && isspace ((unsigned char)p[-1]); p--);
-	*p = '\0';
-	/* strip leading whitespace */
-	for (p = buff; isspace ((unsigned char)*p); p++);
-	if (*p == '\0') {
-		return 1;	/* blank line */
-	}
-
-	*tag = p;
-	if ((colon = strchr (p, ':')) != NULL) {
-		*colon = '\0';
-		p = colon + 1;
-	} else {
-		/* space-separated: tag value */
-		for (; *p && !isspace ((unsigned char)*p); p++);
-		if (*p) {
-			*p++ = '\0';
-		}
-	}
-	for (; isspace ((unsigned char)*p); p++);
-	*value = p;
-
-	/* trim trailing whitespace of tag */
-	for (p = *tag + strlen (*tag); p > *tag && isspace ((unsigned char)p[-1]); p--);
-	*p = '\0';
-
-	return 0;
 }
 
 /* Load an external preparser configuration file and register it
@@ -1032,29 +1013,27 @@ cb_load_preparser_conf (const char *name)
 	pe->next      = NULL;
 
 	while (fgets (buff, sizeof (buff), fp)) {
-		char	*tag, *value;
-
-		if (parse_preparser_line (buff, &tag, &value) != 0) {
+		char *tag_name, *tag_val;
+		if (cb_conf_split_line (buff, &tag_name, &tag_val) != 0) {
 			continue;
 		}
-
-		if (strcasecmp (tag, "tag") == 0 || strcasecmp (tag, "subsystem") == 0) {
+		if (strcasecmp (tag_name, "tag") == 0 || strcasecmp (tag_name, "subsystem") == 0) {
 			size_t	i;
-			pe->subsystem = cobc_main_strdup (value);
+			pe->subsystem = cobc_main_strdup (tag_val);
 			for (i = 0; pe->subsystem[i]; i++) {
-				pe->subsystem[i] = (char)toupper ((unsigned char)pe->subsystem[i]);
+				pe->subsystem[i] = (char)cb_toupper ((unsigned char)pe->subsystem[i]);
 			}
-		} else if (strcasecmp (tag, "command") == 0) {
-			pe->command = cobc_main_strdup (value);
-		} else if (strcasecmp (tag, "cflags") == 0) {
-			pe->cflags = cobc_main_strdup (value);
-		} else if (strcasecmp (tag, "ldflags") == 0) {
-			pe->ldflags = cobc_main_strdup (value);
-		} else if (strcasecmp (tag, "on-error") == 0) {
-			pe->on_error = (strcasecmp (value, "warn") == 0) ? 0 : 1;
+		} else if (strcasecmp (tag_name, "command") == 0) {
+			pe->command = cobc_main_strdup (tag_val);
+		} else if (strcasecmp (tag_name, "cflags") == 0) {
+			pe->cflags = cobc_main_strdup (tag_val);
+		} else if (strcasecmp (tag_name, "ldflags") == 0) {
+			pe->ldflags = cobc_main_strdup (tag_val);
+		} else if (strcasecmp (tag_name, "on-error") == 0) {
+			pe->on_error = (strcasecmp (tag_val, "warn") == 0) ? 0 : 1;
 		} else {
 			cb_warning (cb_warn_unsupported,
-				    _("unknown configuration tag '%s'"), tag);
+				    _("unknown configuration tag '%s'"), tag_name);
 		}
 	}
 	fclose (fp);
@@ -1079,7 +1058,7 @@ cb_find_preparser (const char *subsystem)
 	size_t				i;
 
 	for (i = 0; subsystem[i] && i < sizeof (upper_subsystem) - 1; i++) {
-		upper_subsystem[i] = (char)toupper ((unsigned char)subsystem[i]);
+		upper_subsystem[i] = (char)cb_toupper ((unsigned char)subsystem[i]);
 	}
 	upper_subsystem[i] = '\0';
 

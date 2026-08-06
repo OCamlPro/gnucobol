@@ -3345,9 +3345,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "--preparser");
 			}
-			if (cb_load_preparser_conf (cob_optarg) != 0) {
-				cobc_err_exit (_("cannot load preparser configuration '%s'"), cob_optarg);
-			}
+			conf_ret |= cb_load_preparser_conf (cob_optarg);
 			break;
 
 		case '&':
@@ -5391,8 +5389,8 @@ preprocess (struct filename *fn)
 	const size_t exception_table_size = sizeof (struct cb_exception) * COB_EC_MAX;
 	int			save_source_format, save_fold_copy, save_fold_call,
 		save_ref_mod_zero_length;
-	char *orig_source     = cobc_strdup (fn->source);
-    char *orig_preprocess = cobc_strdup (fn->preprocess);
+	char *orig_source     = (char *) fn->source;
+	char *orig_preprocess = (char *) fn->preprocess;
 	struct cb_preparser_entry *p_reset;
 #ifndef COB_INTERNAL_XREF
 #ifdef	_WIN32
@@ -5487,7 +5485,7 @@ restart_preprocess:
 		char *cmd;
 		size_t cmd_len;
 		int ret_sys;
-		char *new_preprocess;
+		const char *new_preprocess;
 
 		cmd_len = strlen (cb_active_preparser->command) + strlen (fn->source) + strlen (fn->preprocess) + 3;
 		cmd = cobc_malloc (cmd_len);
@@ -5499,21 +5497,18 @@ restart_preprocess:
 		if (ret_sys != 0) {
 			cb_source_file = fn->source;
 			if (cb_active_preparser->on_error) {
-				cb_error (_("external preparser '%s' failed with exit status %d"), cb_active_preparser->subsystem, ret_sys);
-				cobc_terminate_exit (fn->source, fn->preprocess);
+				cobc_err_exit (_("external preparser '%s' failed with exit status %d"), cb_active_preparser->subsystem, ret_sys);
 			} else {
-				cb_warning (cb_warn_filler, _("external preparser '%s' failed; falling back to baseline"), cb_active_preparser->subsystem);
-				
+				cb_warning (cb_warn_unsupported,_("external preparser '%s' failed; falling back to baseline"),cb_active_preparser->subsystem);
 				cb_active_preparser->disabled = 1;         /* Don't try this subsystem again for this file */
 				fn->source = orig_source;     /* Restore the original file names */
 				fn->preprocess = orig_preprocess;
-				
 				goto restart_preprocess;  /* Try again! (Pass 1 will skip this subsystem now) */
 			}
 		}
 
 		/*This prevents collision in file paths based on manual tests*/
-		new_preprocess = file_replace_extension (fn->preprocess, "i2");
+		new_preprocess = file_replace_extension ((char *)fn->preprocess, ".i2");
 
 		fn->source     = cobc_strdup (fn->preprocess);   /* sqlpp.sh's output */
 		fn->preprocess = new_preprocess;                  /* fresh file for pass 2 */

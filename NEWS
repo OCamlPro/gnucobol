@@ -6,7 +6,14 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
-** cobc provides a --preparser option to register external preparser configurations
+** EXEC blocks (EXEC SQL, EXEC CICS, etc.) are now recognized by the
+   internal preprocessor; EXEC <TAG> INCLUDE is handled as COPY with
+   full -I and -ffold-copy support; all other EXEC blocks raise an
+   "unsupported" diagnostic (defaulting to error) but can be handled
+   by registering an external preparser via --preparser.
+   External preparsers are registered using --preparser=<file> where
+   <file> is a configuration file specifying the subsystem tag,
+   command, and optional cflags/ldflags; see the manual for details.
 
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
