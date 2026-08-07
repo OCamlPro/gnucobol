@@ -4,6 +4,7 @@
 	* gnucobol.texi: document --preparser option and EXEC preprocessing;
 	  add @node EXEC preprocessing section with external preparser
 	  configuration file format and GixSQL integration example
+
 2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
 	* gnucobol.texi: document the new --gentable option

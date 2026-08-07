@@ -487,7 +487,55 @@ cb_load_words (void)
 	return ret;
 }
 
-static int cb_conf_split_line (char *buff, char **name, char **val);
+/* Split a configuration line into name and value in-place.
+ * Strips leading whitespace and comments.
+ * Returns 0 on success, 1 if blank/comment, -1 if no separator. */
+static int
+cb_conf_split_line (char *buff, char **name, char **val)
+{
+	char	*s;
+	char	*e;
+
+	/* strip leading whitespace */
+	while (*buff == '\t' || *buff == ' ') {
+		buff++;
+	}
+	/* blank or comment line */
+	if (*buff == 0 || *buff == '\r' || *buff == '\n' || *buff == '#') {
+		return 1;
+	}
+	/* find separator */
+	s = strpbrk (buff, " \t:=");
+	if (!s) {
+		/* strip trailing CR/LF for error message */
+		e = buff + strlen (buff) - 1;
+		while (e >= buff && (*e == '\r' || *e == '\n')) {
+			e--;
+		}
+		*(e + 1) = 0;
+		return -1;
+	}
+	*name = buff;
+	*s = 0;
+
+	/* Get value */
+	/* Move pointer to beginning of value */
+	for (s++; *s && strchr (" \t:=", *s); s++) {
+		;
+	}
+	/* Set end pointer to first # (comment) or end of value */
+	for (e = s + 1; *e && !strchr ("#", *e); e++) {
+		;
+	}
+	/* Remove trailing white-spaces */
+	for (--e; e >= s && strchr (" \t\r\n", *e); e--) {
+		;
+	}
+	e[1] = 0;
+	*val = s;
+
+	return 0;
+}
 
 /* set configuration entry 'buff' with 'fname' and 'line' used
    for error output */
@@ -914,54 +962,6 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	return 0;
 }
 
-/* Split a configuration line into name and value in-place.
- * Strips leading whitespace and comments.
- * Returns 0 on success, 1 if blank/comment, -1 if no separator. */
-static int
-cb_conf_split_line (char *buff, char **name, char **val)
-{
-	char	*s;
-	char	*e;
-
-	/* strip leading whitespace */
-	while (*buff == '\t' || *buff == ' ') {
-		buff++;
-	}
-	/* blank or comment line */
-	if (*buff == 0 || *buff == '\r' || *buff == '\n' || *buff == '#') {
-		return 1;
-	}
-	/* find separator */
-	s = strpbrk (buff, " \t:=");
-	if (!s) {
-		/* strip trailing CR/LF for error message */
-		for (size_t j = strlen (buff);
-		     j > 0 && (buff[j-1] == '\r' || buff[j-1] == '\n');) {
-			buff[--j] = 0;
-		}
-		return -1;
-	}
-	*name = buff;
-	*s = 0;
-
-	/* Get value */
-	/* Move pointer to beginning of value */
-	for (s++; *s && strchr (" \t:=", *s); s++) {
-		;
-	}
-	/* Set end pointer to first # (comment) or end of value */
-	for (e = s + 1; *e && !strchr ("#", *e); e++) {
-		;
-	}
-	/* Remove trailing white-spaces */
-	for (--e; e >= s && strchr (" \t\r\n", *e); e--) {
-		;
-	}
-	e[1] = 0;
-	*val = s;
-
-	return 0;
-}
 
 /* Resolve preparser config filename: explicit path (contains separator
  * or exists as-is) is used directly; otherwise look up
@@ -969,31 +969,28 @@ cb_conf_split_line (char *buff, char **name, char **val)
 static FILE *
 open_preparser_conf (const char *name, char *resolved, size_t resolved_size)
 {
-	FILE	*fp;
 	size_t	i;
 
-	for (i = 0; name[i] != 0 && name[i] != SLASH_CHAR; i++);
+	for (i = 0; name[i] != 0 && name[i] != SLASH_CHAR
+	#ifdef _WIN32
+			&& name[i] != '/'
+	#endif
+		; i++);
 
-	if (name[i] != 0) {
-		/* explicit path given — use as-is */
-		snprintf (resolved, resolved_size, "%s", name);
-		if (access (resolved, F_OK) != 0) {
-			return NULL;
-		}
-	} else if (access (name, F_OK) == 0) {
-		/* plain name exists in current directory */
-		snprintf (resolved, resolved_size, "%s", name);
-	} else {
-		/* plain name: look up in COB_CONFIG_DIR/<name>.conf */
-		snprintf (resolved, resolved_size, "%s%c%s.conf",
-			  cob_config_dir, SLASH_CHAR, name);
-		if (access (resolved, F_OK) != 0) {
-			return NULL;
-		}
+	/* explicit path or exists as given — use directly */
+	if (name[i] != 0 || access (name, F_OK) == 0) {
+		resolved[0] = 0;	/* unset: caller uses original name */
+		return fopen (name, "r");
 	}
 
-	fp = fopen (resolved, "r");
-	return fp;
+	/* plain name: look in COB_CONFIG_DIR/<name>.conf */
+	snprintf (resolved, resolved_size, "%s%c%s.conf",
+		  cob_config_dir, SLASH_CHAR, name);
+	if (access (resolved, F_OK) != 0) {
+		resolved[0] = 0;	/* unset: caller uses original name */
+		return NULL;
+	}
+	return fopen (resolved, "r");
 }
 
 /* Load an external preparser configuration file and register it
@@ -1005,10 +1002,13 @@ cb_load_preparser_conf (const char *name)
 	char				resolved[COB_NORMAL_BUFF];
 	char				buff[COB_SMALL_BUFF];
 	struct cb_preparser_entry	*pe;
+	int				line = 0;
+	int				status = 0;
 
 	fp = open_preparser_conf (name, resolved, sizeof (resolved));
+	if (resolved[0]) name = resolved;
 	if (!fp) {
-		cb_perror (1, "%s: %s", resolved, cb_get_strerror ());
+		cb_perror (1, "%s: %s", name, cb_get_strerror ());
 		return 1;
 	}
 
@@ -1017,14 +1017,23 @@ cb_load_preparser_conf (const char *name)
 	pe->command   = NULL;
 	pe->cflags    = NULL;
 	pe->ldflags   = NULL;
-	pe->on_error  = 1;	/* default: error */
+	pe->warn_only = 0;	/* default: error */
 	pe->used      = 0;
 	pe->disabled  = 0;
 	pe->next      = NULL;
 
 	while (fgets (buff, sizeof (buff), fp)) {
 		char *tag_name, *tag_val;
-		if (cb_conf_split_line (buff, &tag_name, &tag_val) != 0) {
+		int	 split_ret;
+		line++;
+		split_ret = cb_conf_split_line (buff, &tag_name, &tag_val);
+		if (split_ret == 1) {
+			continue;		/* blank or comment line */
+		}
+		if (split_ret == -1) {
+			configuration_error (name, line, 1,
+				_("invalid configuration tag '%s'"), buff);
+			status = 1;
 			continue;
 		}
 		if (strcasecmp (tag_name, "tag") == 0 || strcasecmp (tag_name, "subsystem") == 0) {
@@ -1040,18 +1049,22 @@ cb_load_preparser_conf (const char *name)
 		} else if (strcasecmp (tag_name, "ldflags") == 0) {
 			pe->ldflags = cobc_main_strdup (tag_val);
 		} else if (strcasecmp (tag_name, "on-error") == 0) {
-			pe->on_error = (strcasecmp (tag_val, "warn") == 0) ? 0 : 1;
+			pe->warn_only = (strcasecmp (tag_val, "warn") == 0) ? 1 : 0;
 		} else {
-			cb_warning (cb_warn_unsupported,
-				    _("unknown configuration tag '%s'"), tag_name);
+			configuration_error (name, line, 1,
+							_("unknown configuration tag '%s'"), tag_name);
+			status = 1;
 		}
 	}
 	fclose (fp);
 
 	if (!pe->subsystem || !pe->command) {
-		cb_error (_("preparser configuration '%s' is missing 'subsystem' or 'command'"),
-			  resolved);
-		return 1;
+		configuration_error (name, 0, 1,
+					_("missing preparser definition 'subsystem' or 'command'"));
+		status = 1;
+	}
+	if (status != 0) {
+		return 1; /* 5. Return 1 if any error occurred */
 	}
 
 	pe->next = cb_preparser_list;

@@ -145,7 +145,7 @@ static int			quotation_mark = 0;
 static int			echo_newline = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
-static int	exec_subsystem_seen = 0;	/* set after first EXEC token returned */
+static int	exec_subsystem_seen;	/* set after first EXEC token returned */
 static enum cb_format		source_format = CB_FORMAT_AUTO;
 static int	indicator_column = 7;
 static int	indicator_error = 0;
@@ -530,8 +530,8 @@ MAYBE_AREA_A	[ ]?#?
 
 "EXEC"/[ ,;\n] {
 	exec_subsystem_seen = 0;
-    BEGIN(EXEC_STATE);
-    return EXEC;
+	BEGIN EXEC_STATE;
+	return EXEC;
 }
 
 ^{MAYBE_AREA_A}.{6}[ ]*"*CONTROL" |
@@ -579,39 +579,39 @@ MAYBE_AREA_A	[ ]?#?
 }
 
 <EXEC_STATE>{
-    "END-EXEC"([ \t]*\.)?  {
-        BEGIN (INITIAL);
-        return END_EXEC;
-    }
-    "INCLUDE"               { return INCLUDE; }
-    {WORD}\.{WORD}          {
-        /* dotted name e.g. SQLCA.cpy or table.field */
-        pplval.s = cobc_plex_strdup (yytext);
-        return TOKEN;
-    }
-    {WORD}                  {
-        pplval.s = cobc_plex_strdup (yytext);
-        if (!exec_subsystem_seen) {
-            struct cb_preparser_entry *pe = cb_find_preparser (yytext);
-            exec_subsystem_seen = 1;
-            if (pe) {
-                pe->used = 1;
-                cb_active_preparser = pe;
-                /* Abort internal preparser cleanly by returning EOF */
-                return 0;
-            }
-            return SUBSYSTEM;
-        }
-        return TOKEN;
-    }
-    {ALNUM_LITERAL}         {
-        /* quoted copybook name e.g. INCLUDE "EMPREC" */
-        pplval.s = cobc_plex_strdup (yytext + 1);
-        pplval.s[strlen (pplval.s) - 1] = '\0';
-        return TEXT_NAME;
-    }
-    \n                      { cb_source_line++; }
-    .                       { /* silently consumed */ }
+	"END-EXEC"([ \t]*\.)?	{
+		BEGIN INITIAL;
+		return END_EXEC;
+	}
+	"INCLUDE"	{ return INCLUDE; }
+	{WORD}\.{WORD}	{
+		/* dotted name e.g. SQLCA.cpy or table.field */
+		pplval.s = cobc_plex_strdup (yytext);
+		return TOKEN;
+	}
+	{WORD}	{
+		/* note: first seen word is the subsystem to be executed */
+		pplval.s = cobc_plex_strdup (yytext);
+		if (!exec_subsystem_seen) {
+			struct cb_preparser_entry *pe = cb_find_preparser (yytext);
+			exec_subsystem_seen = 1;
+			if (pe) {
+				pe->used = 1;
+				cb_active_preparser = pe;
+				return SUBSYSTEM_FOUND;
+			}
+			return SUBSYSTEM;
+		}
+		return TOKEN;
+	}
+	{ALNUM_LITERAL}	{
+		/* quoted copybook name e.g. INCLUDE "EMPREC" */
+		pplval.s = cobc_plex_strdup (yytext + 1);
+		pplval.s[strlen (pplval.s) - 1] = '\0';
+		return TEXT_NAME;
+	}
+	\n	{ cb_source_line++; }
+	.	{ /* silently consumed */ }
 }
 
 <SUBSTITUTION_SECTION_STATE,
@@ -1878,9 +1878,6 @@ ppparse_verify (const enum cb_support tag, const char *feature)
 void
 ppparse_error (const char *err_msg)
 {
-	if (cb_active_preparser) {
-		return;
-	}
 	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 

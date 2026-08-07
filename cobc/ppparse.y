@@ -51,7 +51,7 @@
 #define	_STDLIB_H 1
 #endif
 
-#define pperror(x)	do { if (!cb_active_preparser) cb_error_always ("%s", x); } while(0)
+#define pperror(x)	cb_error_always ("%s", x)
 
 #define COND_EQ		0
 #define COND_LT		1U
@@ -756,6 +756,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token EXEC
 %token END_EXEC		"END-EXEC"
 %token <s> SUBSYSTEM	"Subsystem"
+%token SUBSYSTEM_FOUND	"Subsystem"
 
 %type <s>	_copy_in
 %type <s>	copy_source
@@ -1741,7 +1742,12 @@ _exec_token_list:
 ;
 
 exec_statement:
-  EXEC SUBSYSTEM INCLUDE copy_source END_EXEC
+  EXEC SUBSYSTEM_FOUND
+  {
+        /* External preparser matched — accept cleanly */
+        YYACCEPT;
+  }
+| EXEC SUBSYSTEM INCLUDE copy_source END_EXEC
   {
         /* EXEC TAG INCLUDE copybook — warn and handle as COPY */
         cb_warning (cb_warn_unsupported,

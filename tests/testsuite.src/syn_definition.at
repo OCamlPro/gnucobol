@@ -2965,7 +2965,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: error: syntax error, unexpected END-EXEC, expecting Subsystem
+[prog.cob:6: error: syntax error, unexpected END-EXEC, expecting Subsystem or SUBSYSTEM_FOUND
 ])
 
 AT_CLEANUP
@@ -3006,6 +3006,10 @@ AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
 [prog.cob:6: error: EXEC SQL statement ignored
 ])
 
+AT_CHECK([$COMPILE_ONLY -Wunsupported prog.cob], [0], [],
+[prog.cob:6: warning: EXEC SQL statement ignored
+])
+
 AT_CLEANUP
 
 
@@ -3041,9 +3045,26 @@ AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], []
 prog.cob:11: error: EXEC SQL INCLUDE handled as COPY
 ])
 
+AT_CHECK([$COMPILE_ONLY -Wno-unsupported -ffold-copy=LOWER prog.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY -Wunsupported -ffold-copy=LOWER prog.cob], [0], [],
+[prog.cob:8: warning: EXEC SQL INCLUDE handled as COPY
+prog.cob:11: warning: EXEC SQL INCLUDE handled as COPY
+])
+
 AT_CHECK([rm -f emprec.cpy], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [], [prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
+
+AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], [],
+[prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
 prog.cob:11: error: EXEC SQL INCLUDE handled as COPY
+prog.cob:11: error: emprec: No such file or directory
+prog.cob: in paragraph 'MAIN':
+prog.cob:15: error: 'ENO' is not defined
+])
+
+AT_CHECK([$COMPILE_ONLY -Wunsupported -ffold-copy=LOWER prog.cob], [1], [],
+[prog.cob:8: warning: EXEC SQL INCLUDE handled as COPY
+prog.cob:11: warning: EXEC SQL INCLUDE handled as COPY
 prog.cob:11: error: emprec: No such file or directory
 prog.cob: in paragraph 'MAIN':
 prog.cob:15: error: 'ENO' is not defined
@@ -3079,6 +3100,8 @@ AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], []
 [prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
 ])
 
+AT_CHECK([$COMPILE_ONLY -Wno-unsupported -ffold-copy=LOWER prog.cob], [0], [], [])
+
 AT_CLEANUP
 
 
@@ -3103,6 +3126,8 @@ AT_CHECK([$COMPILE_ONLY -Werror=unsupported -ffold-copy=LOWER prog.cob], [1], []
 [prog.cob:8: error: EXEC SQL INCLUDE handled as COPY
 ])
 
+AT_CHECK([$COMPILE_ONLY -Wno-unsupported -ffold-copy=LOWER prog.cob], [0], [], [])
+
 AT_CLEANUP
 
 
@@ -3122,6 +3147,12 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -Werror=unsupported prog.cob], [1], [],
 [prog.cob:9: error: missing END-EXEC at end of file
 prog.cob:9: error: EXEC SQL statement ignored
+])
+
+
+AT_CHECK([$COMPILE_ONLY -Wunsupported prog.cob], [1], [],
+[prog.cob:9: error: missing END-EXEC at end of file
+prog.cob:9: warning: EXEC SQL statement ignored
 ])
 
 AT_CLEANUP

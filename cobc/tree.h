@@ -531,7 +531,7 @@ struct cb_preparser_entry {
 	char				*command;	/* external preparser command */
 	char				*cflags;	/* extra C compiler flags */
 	char				*ldflags;	/* extra linker flags */
-	int				 on_error;	/* 0=warn, 1=error (default) */
+	int				 warn_only;	 /* 0=error (default), 1=warn */
 	int				 used;		/* set when subsystem matched */
 	int				 disabled;	/* skip this preparser */
 };

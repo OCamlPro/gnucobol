@@ -1,0 +1,7 @@
+/tmp/cob11968_0.cob: in paragraph '100-DECLARE-CURSOR':
+/tmp/cob11968_0.cob:88: error: syntax error, unexpected Identifier
+   86 | 
+   87 |        200-OPEN-CURSOR.
+   88 > GIXSQL*    EXEC SQL
+   89 | GIXSQL*        OPEN EMPCUR
+   90 | GIXSQL*    END-EXEC.

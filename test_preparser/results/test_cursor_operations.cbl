@@ -1,0 +1,89 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TEST-CURSOR-OPS.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-AT.
+       OBJECT-COMPUTER. IBM-AT.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       WORKING-STORAGE SECTION.
+
+       EXEC SQL
+        INCLUDE EMPREC
+       END-EXEC.
+
+           01 DATASRC PIC X(64).
+           01 DBUSR   PIC X(64).
+           01 DBPWD   PIC X(64).
+           01 FETCH-COUNT PIC 9(4) VALUE 0.
+
+       EXEC SQL
+            INCLUDE SQLCA
+       END-EXEC.
+
+       PROCEDURE DIVISION.
+
+       000-CONNECT.
+           DISPLAY "DATASRC" UPON ENVIRONMENT-NAME.
+           ACCEPT DATASRC FROM ENVIRONMENT-VALUE.
+           DISPLAY "DATASRC_USR" UPON ENVIRONMENT-NAME.
+           ACCEPT DBUSR FROM ENVIRONMENT-VALUE.
+           DISPLAY "DATASRC_PWD" UPON ENVIRONMENT-NAME.
+           ACCEPT DBPWD FROM ENVIRONMENT-VALUE.
+
+           EXEC SQL
+              CONNECT TO :DATASRC USER :DBUSR USING :DBPWD
+           END-EXEC.
+
+           IF SQLCODE NOT = 0 THEN
+              DISPLAY 'CONNECT FAILED: ' SQLCODE
+              GO TO 999-EXIT
+           END-IF.
+
+       100-DECLARE-CURSOR.
+           EXEC SQL
+               DECLARE EMPCUR CURSOR FOR
+                   SELECT ENO, LNAME, FNAME
+                   FROM EMPTABLE
+                   ORDER BY ENO
+           END-EXEC.
+
+       200-OPEN-CURSOR.
+           EXEC SQL
+               OPEN EMPCUR
+           END-EXEC.
+
+           DISPLAY 'OPEN CURSOR SQLCODE: ' SQLCODE.
+
+       300-FETCH-LOOP.
+           EXEC SQL
+               FETCH EMPCUR INTO :ENO, :LNAME, :FNAME
+           END-EXEC.
+
+           IF SQLCODE NOT = 0 THEN
+              DISPLAY 'FETCH DONE. ROWS: ' FETCH-COUNT
+              GO TO 400-CLOSE-CURSOR
+           END-IF.
+
+           ADD 1 TO FETCH-COUNT.
+           DISPLAY 'ROW ' FETCH-COUNT ': ' ENO ' ' LNAME ' '
+                   FNAME.
+           GO TO 300-FETCH-LOOP.
+
+       400-CLOSE-CURSOR.
+           EXEC SQL
+               CLOSE EMPCUR
+           END-EXEC.
+
+           DISPLAY 'CLOSE CURSOR SQLCODE: ' SQLCODE.
+
+           EXEC SQL CONNECT RESET END-EXEC.
+
+       999-EXIT.
+           STOP RUN.

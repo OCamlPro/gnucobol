@@ -1630,13 +1630,13 @@ sed 's/EXEC SQL SELECT 1 END-EXEC.//' "$1" > "$2"
 chmod +x mypp.sh
 AT_DATA([valid.conf], [
 subsystem: SQL
-command: ./mypp.sh
+command: sh ./mypp.sh
 ])
 AT_CHECK([$COBC --preparser valid.conf prog.cob], [0], [], [])
 
 AT_DATA([valid2.conf], [
 subsystem: CICS
-command: ./mypp.sh
+command: sh ./mypp.sh
 ])
 AT_CHECK([$COBC --preparser valid.conf --preparser valid2.conf prog.cob], [0], [], [])
 
@@ -1647,7 +1647,7 @@ exit 1
 chmod +x badpp.sh
 AT_DATA([bad.conf], [
 subsystem: SQL
-command: ./badpp.sh
+command: sh ./badpp.sh
 on-error: error
 ])
 AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --preparser bad.conf prog.cob], [1], [],
@@ -1656,7 +1656,7 @@ AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --prepa
 
 AT_DATA([warn.conf], [
 subsystem: SQL
-command: ./badpp.sh
+command: sh ./badpp.sh
 on-error: warn
 ])
 AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --preparser warn.conf prog.cob], [1], [],
@@ -1665,3 +1665,4 @@ prog.cob:6: error: EXEC SQL statement ignored
 ])
 
 AT_CLEANUP
+

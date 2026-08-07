@@ -1589,6 +1589,7 @@ cob_set_signal (void)
 				} else {
 					/* for the others: only register if not configured
 					   from the OS side to be ignored */
+					(void)sigaction (signals[k].sig, NULL, &osa);
 					if (osa.sa_handler != SIG_IGN) {
 						(void)sigemptyset (&sa.sa_mask);
 						(void)sigaction (signals[k].sig, &sa, NULL);
