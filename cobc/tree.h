@@ -522,7 +522,6 @@ struct cobc_reserved {
 	int		token;		/* Token */
 	cob_u64_t		context_set;	/* context sensitive value set */
 	cob_u64_t		context_test;	/* context sensitive value tested */
-<<<<<<< HEAD
 };
 
 /* External preparser configuration entry */
@@ -535,8 +534,6 @@ struct cb_preparser_entry {
 	int				 on_error;	/* 0=warn, 1=error (default) */
 	int				 used;		/* set when subsystem matched */
 	int				 disabled;	/* skip this preparser */
-=======
->>>>>>> a672a26 (Fix handling of some special contexts, and provide room for more)
 };
 
 /* Basic common tree structure */

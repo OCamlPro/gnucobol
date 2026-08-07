@@ -1064,3 +1064,66 @@ prog.cob:11: warning: start of statement in Area A
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([--preparser nonexistent config file])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC --preparser ./missing.conf prog.cob], [1], [],
+[configuration error:
+./missing.conf: No such file or directory
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([--preparser invalid config file])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([invalid.conf], [
+# missing subsystem and command
+cflags: -O2
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC --preparser ./invalid.conf prog.cob], [1], [],
+[error: preparser configuration './invalid.conf' is missing 'subsystem' or 'command'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([--preparser unknown configuration tag])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([unknown.conf], [
+subsystem: SQL
+command: /bin/true
+badkey: something
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -fno-diagnostics-show-option -Wno-error=unsupported --preparser ./unknown.conf prog.cob], [0], [],
+[error: unknown configuration tag 'badkey'
+])
+
+AT_CLEANUP
