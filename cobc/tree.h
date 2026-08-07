@@ -928,6 +928,7 @@ struct cb_field {
 	cb_tree			external_definition;	/* by SAME AS / LIKE data-name or
 											 by type-name (points to field) */
 	cb_tree			like_modifier;	/* set for LIKE, may contain a length modifier */
+	cb_tree			reference;
 
 	int			id;		/* Field id */
 	int			size;		/* Field size */
@@ -1415,6 +1416,7 @@ struct cb_xml_parse {
 
 struct cb_call {
 	struct cb_tree_common	common;		/* Common values */
+	cb_tree			obj_or_class;		/* INVOKE class name or object reference */
 	cb_tree			name;		/* CALL name */
 	cb_tree			args;		/* Arguments */
 	cb_tree			stmt1;		/* ON EXCEPTION */
@@ -2473,7 +2475,7 @@ extern void		cb_emit_allocate_characters (cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 
-extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree,
+extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree, cb_tree,
 				      cb_tree, cb_tree, cb_tree, cb_tree);
 
 extern void		cb_emit_cancel (cb_tree);
@@ -2610,7 +2612,7 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
-extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree);
+extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);

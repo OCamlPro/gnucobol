@@ -1469,6 +1469,8 @@ cb_tree_category (cb_tree x)
 					x->category = CB_CATEGORY_DATA_POINTER;
 				} else if (f->usage == CB_USAGE_PROGRAM_POINTER) {
 					x->category = CB_CATEGORY_PROGRAM_POINTER;
+				} else if (f->usage == CB_USAGE_OBJECT) {
+					x->category = CB_CATEGORY_OBJECT_REFERENCE;
 				} else if (f->pic) {
 					x->category = f->pic->category;
 				/* FIXME: Hack for CGI to not abort */

@@ -1553,7 +1553,15 @@ clean_up_program (cb_tree name, const unsigned char type)
 			s = (char *)(CB_NAME (name));
 		}
 
-		decrement_depth (s, type);
+		/*
+			Skip decrementing depth for methods because they
+			occur inside OO class definitions along with other methods.
+			Preserving method-level depth helps create a list of methods
+			with it's associated class.
+		*/ 
+		if (type != COB_MODULE_TYPE_METHOD) {
+			decrement_depth (s, type);
+		}
 	}
 
 	current_section = NULL;
@@ -4309,7 +4317,7 @@ get_or_set:
 method_signature:
   method_id_name _as_literal
   {
-	if (setup_program ($1, $2, COB_MODULE_TYPE_METHOD, 1)) {
+	if (setup_program ($1, $2, COB_MODULE_TYPE_METHOD, 0)) {
 		YYABORT;
 	}
   }
@@ -8480,7 +8488,12 @@ usage_clause:
   OBJECT REFERENCE _object_reference_type
   {
 	check_and_set_usage (CB_USAGE_OBJECT);
-	CB_PENDING ("USAGE OBJECT REFERENCE");
+	if ($5 && CB_REFERENCE ($5)) {
+		current_field->reference = cb_ref ($5);
+	}
+	/* TODO: set the class to which this is a reference to. */
+
+	// CB_PENDING ("USAGE OBJECT REFERENCE");
 	
 	__CS_LEAVE (CB_CS_USAGE);
   }
@@ -8650,6 +8663,7 @@ usage:
 	check_and_set_usage (CB_USAGE_POINTER);
 	if ($2) {
 		CB_PENDING ("POINTER TO type-name");
+		current_field->reference = $2;
 	}
 	current_field->flag_is_pointer = 1;
   }
@@ -8657,6 +8671,7 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
 	CB_PENDING ("POINTER TO prototype");	/* and function pointers... */
+	current_field->reference = $2;
 	current_field->flag_is_pointer = 1;
   }
 | PROGRAM_POINTER _to_program_type
@@ -8664,6 +8679,7 @@ usage:
 	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
 	if ($2) {
 		CB_PENDING ("POINTER TO prototype");
+		current_field->reference = $2;
 	}
 	current_field->flag_is_pointer = 1;
   }
@@ -8842,7 +8858,7 @@ _to_type_name:
 
 _object_reference_type:
   /* empty */
-| WORD
+| WORD { $$ = $1; }
 | _factory_of ACTIVE_CLASS
 | _factory_of OO_CLASS_NAME _only
 ;
@@ -13138,13 +13154,13 @@ call_body:
 
 	/* Check parameter conformance, if we can work out what is being called. */
 	if (CB_LITERAL_P ($4)) {
-		cb_check_conformance ($4, $8, $9);
+		cb_check_conformance ($4, NULL, $8, $9);
 	} else if (CB_REFERENCE_P ($4)) {
 		cb_tree	ref = cb_ref ($4);
 		if ((CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78)
 		 || CB_PROGRAM_P (ref)
 		 || CB_PROTOTYPE_P (ref)) {
-			cb_check_conformance ($4, $8, $9);
+			cb_check_conformance ($4, NULL, $8, $9);
 		}
 	}
 
@@ -13152,7 +13168,7 @@ call_body:
 	if (call_nothing) {
 		call_conv |= CB_CONV_NO_RET_UPD;
 	}
-	cb_emit_call ($4, $8, $9, CB_PAIR_X ($10), CB_PAIR_Y ($10),
+	cb_emit_call ($4, NULL, $8, $9, CB_PAIR_X ($10), CB_PAIR_Y ($10),
 		      cb_int (call_conv), $2, $6);
 	emit_prof_call (COB_PROF_EXIT_CALL,
 			target_name[0] == 0 ? "(dynamic)" : target_name,
@@ -15563,6 +15579,9 @@ invoke_statement:
   id_or_lit
   call_using
   call_returning
+  {
+	cb_check_conformance ($2, $3, $4, $5);
+  }
 ;
 
 _backward:

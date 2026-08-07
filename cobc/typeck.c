@@ -3168,6 +3168,7 @@ try_get_program (cb_tree prog_ref)
 		name_str = (char *) CB_LITERAL (prog_ref)->data;
 		program = cb_find_defined_program_by_name (name_str);
 	} else if (CB_REFERENCE_P (prog_ref)) {
+		printf("is reference\n");
 		ref = cb_ref (prog_ref);
 		if (ref == cb_error_node) {
 			return NULL;
@@ -3631,22 +3632,31 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 }
 
 void
-cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
+cb_check_conformance (cb_tree prog_ref, cb_tree oo_method, cb_tree using_list,
 		   cb_tree returning)
 {
 	struct cb_program	*program = NULL;
-	cb_tree			l;
+	struct cb_program	*oo_class = NULL;
+	cb_tree			l, x;
 	cb_tree			last_arg = NULL;
 	cb_tree			param;
 	unsigned int	param_num, num_params;
 	const struct cb_field	*prog_returning_field;
 	const struct cb_field	*call_returning_field;
+	struct nested_list* m;
 
 	/* Try to get the program referred to by prog_ref. */
-	program = try_get_program (prog_ref);
+	if (CB_PROGRAM (CB_FIELD_PTR(prog_ref)->reference)->prog_type == COB_MODULE_TYPE_CLASS) {
+		oo_class = try_get_program (prog_ref);
+		for (m = oo_class->nested_prog_list; m; m = m->next) {
+			if (strcasecmp(CB_PROGRAM(oo_method)->program_name, m->nested_prog->program_name) == 0) {
+				program = m->nested_prog;
+			}
+		}
+	} else {
+		program = try_get_program (prog_ref);
+	}
 	if (!program) {
-		/*
-		 */
 		for (l = using_list; l;	l = CB_CHAIN (l)) {
 			set_argument_defaults (l, NULL, NULL);
 		}
@@ -8842,7 +8852,7 @@ get_constant_call_name (cb_tree prog)
 }
 
 void
-cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
+cb_emit_call (cb_tree prog, cb_tree oo_method, cb_tree par_using, cb_tree returning,
 	      cb_tree on_exception, cb_tree not_on_exception,
 	      cb_tree convention, cb_tree newthread, cb_tree handle)
 {

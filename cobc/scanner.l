@@ -2819,6 +2819,7 @@ cb_find_defined_program_by_name (const char *name)
 
 	for (l = defined_prog_list; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
+		printf("program name: %s\n", CB_PROGRAM (x)->program_name);
 		if ((*cmp_func)(name, CB_PROGRAM (x)->program_name) == 0) {
 			return CB_PROGRAM (x);
 		}
