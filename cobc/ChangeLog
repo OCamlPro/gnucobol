@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 2026-07-31  Uttam Singh Bhadauriya <uttamsinghbhadoriya23@gmail.com>
 
 	* cobc.c, config.c, tree.h, pplex.l:
@@ -7,7 +8,7 @@
 	  functions to config.c; share line-parsing with cb_config_entry;
 	  fix indentation; fix cmd_len calculation
 	* help.c: add --preparser option documentation
-
+=======
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* tree.h, parser.y: change type of cobc_cs_check flags to permit
@@ -21,6 +22,7 @@
 	  (cb_build_program), scanner.l: replace cobc_in_repository flag
 	  with a check on a special context
 	* scanner.l: introduce cobc_in_exit_statement helper macro
+>>>>>>> a672a26 (Fix handling of some special contexts, and provide room for more)
 
 2026-05-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

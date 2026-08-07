@@ -974,22 +974,12 @@ open_preparser_conf (const char *name, char *resolved, size_t resolved_size)
 
 	for (i = 0; name[i] != 0 && name[i] != SLASH_CHAR; i++);
 
-	if (name[i] != 0) {
-		/* explicit path given — use as-is */
-		snprintf (resolved, resolved_size, "%s", name);
-		if (access (resolved, F_OK) != 0) {
-			return NULL;
-		}
-	} else if (access (name, F_OK) == 0) {
-		/* plain name exists in current directory */
+	if (name[i] != 0 || access (name, F_OK) == 0) {
 		snprintf (resolved, resolved_size, "%s", name);
 	} else {
-		/* plain name: look up in COB_CONFIG_DIR/<name>.conf */
+		/* Simplified: Always append .conf for plain names in config dir */
 		snprintf (resolved, resolved_size, "%s%c%s.conf",
 			  cob_config_dir, SLASH_CHAR, name);
-		if (access (resolved, F_OK) != 0) {
-			return NULL;
-		}
 	}
 
 	fp = fopen (resolved, "r");
