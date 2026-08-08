@@ -8719,6 +8719,44 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 }
 
 static void
+output_ec_size_handler (void)
+{
+	int ec_checked = 0;
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ADDRESS);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_EXPONENTIATION);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_IMP);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_OVERFLOW);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_TRUNCATION);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_UNDERFLOW);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ZERO_DIVIDE);
+	}
+	if (ec_checked) {
+		output_line (
+			"if (((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)"
+			" && ((cob_glob_ptr->cob_exception_code & 0x%04x) != 0)"
+			" && (cob_glob_ptr->cob_got_exception > 0))",
+			CB_EXCEPTION_CODE (COB_EC_SIZE),
+			CB_EXCEPTION_CODE (COB_EC_SIZE),
+			ec_checked & 0x00FF);
+		output_line ("\t" "cob_fatal_exception (cob_glob_ptr->cob_exception_code);");
+	}
+
+}
+
+static void
 output_handler (const struct cb_statement *stmt)
 {
 	if (stmt->file) {
@@ -8726,6 +8764,11 @@ output_handler (const struct cb_statement *stmt)
 		return;
 	}
 
+	if (stmt->ex_handler || stmt->not_ex_handler) {
+		/* We have a handler, so the exceptions should not be raised, and we reset them
+		 * before in case the handling statements can also raise exceptions. */
+		output_line("cob_reset_exception ();");
+	}
 	if (stmt->ex_handler) {
 		output_ec_condition_for_handler (stmt->handler_type);
 		output_block_open ();
@@ -8736,6 +8779,8 @@ output_handler (const struct cb_statement *stmt)
 		}
 	}
 	if (stmt->not_ex_handler) {
+		/* We have a not handler, so we should reset exceptions to avoid them
+		 * being triggered after */
 		if (stmt->ex_handler == NULL) {
 			output_line ("if (!cob_glob_ptr->cob_exception_code)");
 		}
@@ -9173,6 +9218,13 @@ output_stmt (cb_tree x)
 				output_debug_stmts (debug_checks);
 			}
 		}
+
+		if (p->handler_type == SIZE_ERROR_HANDLER
+		     && p->ex_handler == NULL
+		     && p->not_ex_handler == NULL) {
+			output_ec_size_handler ();
+		}
+
 		break;
 	}
 	case CB_TAG_LABEL:

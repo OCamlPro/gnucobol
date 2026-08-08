@@ -6,6 +6,19 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
+** at runtime, fatal size exception codes now fail when activated (with
+   -fec=ALL or -fec=SIZE or its subordinates). Theses exceptions can be
+   caught with ON SIZE ERROR phrases to avoid the program failing when
+   they are set. The affected exception codes are:
+   EC-SIZE
+   EC-SIZE-ADDRESS
+   EC-SIZE-EXPONENTIATION
+   EC-SIZE-OVERFLOW
+   EC-SIZE-TRUNCATION
+   EC-SIZE-UNDERFLOW
+   EC-SIZE-ZERO-DIVIDE
+
+
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
    indicator column) is now limited to 5 per source file

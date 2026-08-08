@@ -18329,6 +18329,17 @@ on_size_error_phrases:
   %prec SHIFT_PREFER
   {
 	/* no [NOT] ON SIZE ERROR is specified (= no explicit handling) */
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)
+	     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)
+	     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)
+	     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)
+	     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)
+	     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)
+	     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE))
+	{
+		current_statement->handler_type = SIZE_ERROR_HANDLER;
+		current_statement->ex_handler = NULL;
+	}
   }
 | on_size_error _not_on_size_error
 | not_on_size_error _on_size_error
@@ -18336,6 +18347,22 @@ on_size_error_phrases:
 	if ($2) {
 		cb_verify (cb_not_exception_before_exception,
 			_("NOT SIZE ERROR before SIZE ERROR"));
+	} else if ($1 && $1 != cb_int1) {
+		/* One NOT ON SIZE ERROR, but no ON SIZE ERROR, so we need to
+		   check on exceptions */
+#if 0 /* CHECK ME: possible dialect configuration
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)
+		     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)
+		     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)
+		     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)
+		     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)
+		     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)
+		     || CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE))
+		{
+			current_statement->handler_type = SIZE_ERROR_HANDLER;
+			current_statement->ex_handler = NULL;
+		} */
+#endif
 	}
   }
 ;

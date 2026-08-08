@@ -236,6 +236,7 @@ $cobc_flags{DB201A} = "-fno-ec=data-incompatible";
 #$cobc_flags{DB203A} = "-fno-ec=data-incompatible";
 #$cobc_flags{DB204A} = "-fno-ec=data-incompatible";
 
+
 # Programs that need to be "visual" inspected
 # NC113M: inspected additional to normal tests for output of hex values
 # SQ101M, SQ201M, SQ207M, SQ208M, SQ209M, SQ210M: send report.log to printer and check result

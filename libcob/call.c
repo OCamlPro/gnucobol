@@ -1097,6 +1097,13 @@ cob_call_error (void)
 }
 
 void
+cob_fatal_exception (const int exception_code) {
+	cob_runtime_error("Fatal exception not handled: %s",
+			cob_get_last_exception_name());
+	cob_hard_failure ();
+}
+
+void
 cob_set_cancel (cob_module *m)
 {
 	struct call_hash	*p;
