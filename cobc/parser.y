@@ -18130,7 +18130,6 @@ xml_parse_statement:
   xml PARSE
   {
 	begin_statement (STMT_XML_PARSE, TERM_XML);
-	CB_PENDING ("XML PARSE");
 	__CS_ENTER (CB_CS_XML_PARSE);
 	cb_set_register_receiving (current_program->xml_code, 1);
 	cb_set_register_receiving (current_program->xml_event, 1);
@@ -18141,8 +18140,6 @@ xml_parse_statement:
 		cb_set_register_receiving (current_program->xml_namespace_prefix, 1);
 		cb_set_register_receiving (current_program->xml_nnamespace, 1);
 		cb_set_register_receiving (current_program->xml_nnamespace_prefix, 1);
-	}
-	if (cb_xml_parse_xmlss) {
 		cb_set_register_receiving (current_program->xml_information, 0);
 	}
   }
@@ -18182,14 +18179,28 @@ _with_encoding:
 ;
 
 _returning_national:
-/* empty */         		{ $$ = NULL; }
-| RETURNING NATIONAL		{ $$ = cb_true; }
+/* empty */
+  { 
+	$$ = NULL; 
+  }
+| RETURNING NATIONAL
+  { 
+	CB_PENDING ("XML PARSE RETURNING NATIONAL");
+	$$ = cb_true;
+  }
 ;
 
 _validating_with:
-/* empty */                 	{ $$ = NULL; }
+/* empty */                 	
+  { 
+	$$ = NULL; 
+  }
 | VALIDATING _with
-  schema_file_or_record_name	{ $$ = $3; }
+  schema_file_or_record_name	
+  { 
+	CB_PENDING ("XML PARSE VALIDATING");
+	$$ = $3;
+  }
 ;
 
 schema_file_or_record_name:

@@ -1,4 +1,24 @@
 
+2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
+	  the IBM option name
+	* mlio.c: Fix issues in XML PARSE handling most notably a use 
+	  after free error if the internal buffer needs to grow during the parsing. 
+	  This fix changes the definition of xml_event to store offsets in the 
+	  buffer instead of pointers
+	* mlio.c: Respect the high order half-word for exception XML-CODE, 
+	  but do not expose internal libxml2 error codes 
+	* mlio.c: Reduce the number of parsing states by removing useless ones, 
+	  and encode eof in these states
+	* mlio.c: Handle XML chunks with more than one recoverable error
+	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
+	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
+	* mlio.c: Handle incomplete CONTENT-CHARACTERS events (with XML-INFORMATION = 2).
+	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
+	  events across END-OF-INPUT boundaries. 
+	  This is due to libxml2 internal details.
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
@@ -12,6 +32,11 @@
 	* fileio.c (bdb_keylen) [WITH_DB]: minor refactoring
 	* fileio.c (cob_file_close): close file depending on internal state, not
 	  depending on file organization
+
+2025-11-19  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* mlio.c (xml_startDocument, myStructuredErrorHandler, xml_parse):
+	  compat for LIBXML_VERSION < 21400
 
 2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
@@ -86,6 +111,22 @@
 	  the program collating sequence in CHAR and ORD
 	* intrinsic.c (cob_intr_char): raise COB_EC_ARGUMENT_FUNCTION
 	  when calling CHAR with an argument outside the collation range
+
+2025-08-15  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* mlio.c: modified to support xml parse with xmlss.
+	  eliminated the xml_event_data structure and moved that data
+	  into the xml_event structure. Created a new enum cob_xml_registers
+	  and added it to the add_xml_event_data function. This function was
+	  modified to update the xml_event structure. All of the context parser
+	  callback functions were modified to use the add_xml_event_data function.
+	  the cob_xml_parse and xml_parse functions were modified to support
+	  the new end_of_input event required by xmlss. a new eof variable
+	  was added to the xml_state structure so that the endDocument callback
+	  function could be triggered by the parser in the xml_parse funtction.
+
+	  TODO ==> logic needs to be added to support returning NATIONAL data
+	  this needs to support the RETURNING NATIONAL phrase.
 
 2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 

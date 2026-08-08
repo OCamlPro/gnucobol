@@ -1,4 +1,4 @@
-## Copyright (C) 2018-2020, 2022, 2024-2025 Free Software Foundation, Inc.
+## Copyright (C) 2018-2020, 2022, 2024-2026 Free Software Foundation, Inc.
 ## Written by Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -628,18 +628,14 @@ AT_CLEANUP
 AT_SETUP([XML register data after use])
 AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
 
-# ensure that we have the data as other compilers
-# and can handle the minimal (not useful) parsing with identical
-# results with / without libxml2
-
-AT_DATA([prog.cob], [
+AT_DATA([prog.cob],[
        PROGRAM-ID. prog.
        DATA      DIVISION.
        WORKING-STORAGE SECTION.
-       77  empty  PIC X VALUE SPACE.
+       77  empty-xml PIC X(8) VALUE '<empty/>'.
        PROCEDURE DIVISION.
        MAIN.
-           XML PARSE empty
+           XML PARSE empty-xml
                PROCESSING PROCEDURE PROC.
            DISPLAY 'after  : ' XML-CODE ' - "' XML-EVENT '"'.
            MOVE 5           TO XML-CODE
@@ -651,11 +647,697 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+
+AT_CHECK([test "$COB_HAS_XML2" = "yes"], [0], [], [],
+# Previous test "failed" -> no XML runtime
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[proc   : +000000000 - "END-OF-INPUT                  "
+[proc   : +000000600 - "EXCEPTION                     "
+after  : +000000600 - "EXCEPTION                     "
+end    : +000000005 - "Test                          "
+],
+[libcob: prog.cob:8: warning: runtime is not configured to support XML
+]),
+# Previous test "passed" -> libxml2 available
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
+proc   : +000000000 - "START-OF-ELEMENT              "
+proc   : +000000000 - "END-OF-ELEMENT                "
+proc   : +000000000 - "END-OF-INPUT                  "
 proc   : +000000000 - "END-OF-DOCUMENT               "
 after  : +000000000 - "END-OF-DOCUMENT               "
 end    : +000000005 - "Test                          "
+], [])
+)
+
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE abort])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+
+AT_DATA([prog.cob],[
+       PROGRAM-ID. prog.
+       DATA      DIVISION.
+       WORKING-STORAGE SECTION.
+       77  empty-xml PIC X(8) VALUE '<empty/>'.
+       PROCEDURE DIVISION.
+       MAIN.
+           XML PARSE empty-xml
+               PROCESSING PROCEDURE PROC
+             ON EXCEPTION
+               DISPLAY 'XML processing aborted, XML-CODE = ' XML-CODE
+               GOBACK.
+           DISPLAY 'Unreachable'.
+           GOBACK.
+       PROC.
+           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+           MOVE -1 TO XML-CODE.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [proc   : +000000000 - "START-OF-DOCUMENT             "
+XML processing aborted, XML-CODE = -000000001
+], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML register data after failure])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA      DIVISION.
+       WORKING-STORAGE SECTION.
+       77  invalid-xml PIC X(4) VALUE '</>'.
+       PROCEDURE DIVISION.
+       MAIN.
+           XML PARSE invalid-xml
+               PROCESSING PROCEDURE PROC
+             ON EXCEPTION
+               DISPLAY 'XML PARSE aborted'
+           .
+           DISPLAY 'after  : ' XML-CODE ' - "' XML-EVENT '"'.
+           GOBACK.
+       PROC.
+           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+           IF XML-EVENT = 'EXCEPTION' THEN DISPLAY XML-TEXT.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
+proc   : +000786432 - "EXCEPTION                     "
+unhandled internal XML non-recoverable error (68): StartTag: invalid element name
+XML PARSE aborted
+after  : +000786432 - "EXCEPTION                     "
+],
+[libcob: prog.cob:8: warning: XML PARSE non-recoverable error (68): StartTag: invalid element name
+])
+
+AT_CLEANUP
+
+AT_SETUP([XML PARSE <?xml?> declaration])
+AT_KEYWORDS([extensions XML-CODE XML-EVENT PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+
+AT_DATA([prog.cob], [
+       PROGRAM-ID. prog.
+       DATA      DIVISION.
+       WORKING-STORAGE SECTION.
+       77  empty-xml PIC X(29) VALUE '<?xml version="1.0"?><empty/>'.
+       PROCEDURE DIVISION.
+       MAIN.
+           XML PARSE empty-xml
+               PROCESSING PROCEDURE PROC
+             ON EXCEPTION
+               DISPLAY 'XML processing aborted, XML-CODE = ' XML-CODE
+               GOBACK.
+           Display 'XML document successfully parsed.'
+           GOBACK.
+       PROC.
+           DISPLAY 'proc   : ' XML-CODE ' - "' XML-EVENT '"'.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
+proc   : +000000000 - "VERSION-INFORMATION           "
+proc   : +000000000 - "START-OF-ELEMENT              "
+proc   : +000000000 - "END-OF-ELEMENT                "
+proc   : +000000000 - "END-OF-INPUT                  "
+proc   : +000000000 - "END-OF-DOCUMENT               "
+XML document successfully parsed.
+])
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE])
+AT_KEYWORDS([extensions PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+      ******************************************************************
+      * XML document data, encoded as initial values of data items.    *
+      ******************************************************************
+       01  xml-document.
+         02 pic x(10) value '<sandwich>'.
+         02 pic x(28) value '<bread type="baker''s best"/>'.
+         02 pic x(25) value '<meat>Ham + turkey</meat>'.
+         02 pic x(34) value '<filling>Cheese, lettuce, tomato, '.
+         02 pic x(32) value 'and that''s all, Folks!</filling>'.
+         02 pic x(28) value '<listprice>$4.99</listprice>'.
+         02 pic x(25) value '<discount>0.10</discount>'.
+         02 pic x(31) value '</sandwich>'.
+       Procedure division.
+        Mainline section.
+           XML parse xml-document
+               processing procedure XML-handler
+             ON EXCEPTION
+               Display 'XML processing error, XML-Code=' XML-Code '.'
+               Move 16 to return-code
+             Goback
+           End-XML
+           Display 'XML document successfully parsed.'
+           Move 0 to return-code
+           Goback.
+        XML-handler section.
+           display 'event: ' xml-event ', text: {' xml-text '}'.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[event: START-OF-DOCUMENT             , text: {}
+event: START-OF-ELEMENT              , text: {sandwich}
+event: START-OF-ELEMENT              , text: {bread}
+event: ATTRIBUTE-NAME                , text: {type}
+event: ATTRIBUTE-CHARACTERS          , text: {baker's best}
+event: END-OF-ELEMENT                , text: {bread}
+event: START-OF-ELEMENT              , text: {meat}
+event: CONTENT-CHARACTERS            , text: {Ham + turkey}
+event: END-OF-ELEMENT                , text: {meat}
+event: START-OF-ELEMENT              , text: {filling}
+event: CONTENT-CHARACTERS            , text: {Cheese, lettuce, tomato, and that's all, Folks!}
+event: END-OF-ELEMENT                , text: {filling}
+event: START-OF-ELEMENT              , text: {listprice}
+event: CONTENT-CHARACTERS            , text: {$4.99}
+event: END-OF-ELEMENT                , text: {listprice}
+event: START-OF-ELEMENT              , text: {discount}
+event: CONTENT-CHARACTERS            , text: {0.10}
+event: END-OF-ELEMENT                , text: {discount}
+event: END-OF-ELEMENT                , text: {sandwich}
+event: END-OF-INPUT                  , text: {}
+event: END-OF-DOCUMENT               , text: {}
+XML document successfully parsed.
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE push parser])
+AT_KEYWORDS([extensions PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [[
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+      ******************************************************************
+      * Sample data definitions for processing numeric XML content.    *
+      ******************************************************************
+       77  element-depth comp pic s9(4).
+       77  countd comp pic s9(4).
+       77  discount computational pic 9v99 value 0.
+       77  display-price pic $$9.99.
+       77  filling pic x(4095).
+       77  list-price computational pic 9v99 value 0.
+       77  ofr-ed pic x(9) justified.
+       77  ofr-ed-1 redefines ofr-ed pic 999999.99.
+      ******************************************************************
+      * XML document data, encoded as initial values of data items.    *
+      ******************************************************************
+         1 xml-document-data.
+          2 pic x(39) value '<?xml version="1.0" encoding="US-ASCII"'.
+          2 pic x(19) value ' standalone="yes"?>'.
+          2 pic x(39) value '<!--This document is just an example-->'.
+          2 pic x(10) value '<sandwich>'.
+          2 pic x(33) value '<bread type="baker&apos;s best"/>'.
+          2 pic x(36) value '<?spread We''ll use real mayonnaise?>'.
+          2 pic x(29) value '<meat>Ham &amp; turkey</meat>'.
+          2 pic x(34) value '<filling>Cheese, lettuce, tomato, '.
+          2 pic x(32) value 'and that''s all, Folks!</filling>'.
+          2 pic x(25) value '<![CDATA[We should add a '.
+          2 pic x(20) value '<relish> element!]]>'.
+          2 pic x(28) value '<listprice>$4.99</listprice>'.
+          2 pic x(25) value '<discount>0.10</discount>'.
+          2 pic x(31) value '</sandwich>'.
+      ******************************************************************
+      * XML document, represented as fixed-length records.             *
+      ******************************************************************
+       01  xml-document redefines xml-document-data.
+           05 xml-segment pic x(40) occurs 10 times.
+       01  xml-segment-no comp pic s9(4).
+       01  content-buffer pic x(100).
+       01  current-element-stack.
+           05 current-element pic x(40) occurs 10 times.
+       Procedure division.
+        Mainline section.
+           display 'len: ' length of xml-document-data.
+           Move 1 to xml-segment-no
+           Display 'Initial segment {' xml-segment(xml-segment-no) '}'
+           XML parse xml-segment (xml-segment-no)
+               processing procedure XML-handler
+             ON EXCEPTION
+               Display 'XML processing error, XML-Code=' XML-Code '.'
+               Move 16 to return-code
+             Goback
+           End-XML
+      ******************************************************************
+      * Process the transformed content and calculate promo price.     *
+      ******************************************************************
+           Display 'XML document successfully parsed.'
+           Display '-----+++++***** Using information from XML '
+               '*****+++++-----'
+           Move list-price to Display-price
+           Display ' Sandwich list price: ' Display-price
+           Compute Display-price = list-price * (1 - discount)
+           Display ' Promotional price: ' Display-price
+           Display ' Get one today!'
+           Move 0 to return-code
+           Goback.
+        XML-handler section.
+           display 'event: ' xml-event ', text: {' xml-text '}'.
+           Evaluate XML-Event
+      * ==> Order XML events most frequent first
+             When 'START-OF-ELEMENT'
+               Add 1 to element-depth
+               Move XML-Text to current-element(element-depth)
+             When 'CONTENT-CHARACTERS'
+      * ==> In general, a split can occur for any element or attribute
+      * ==> data, but in this sample, it only occurs for "filling"...
+      * With GnuCOBOL, there is no split because filling is too short
+               DISPLAY 'XML-INFORMATION: ' XML-INFORMATION
+               If xml-information = 2 and
+                   current-element(element-depth) not = 'filling'
+                 Display 'Unexpected split in content for element '
+                     current-element(element-depth)
+                 Move -1 to xml-code
+               End-if
+      * ==> Transform XML content to operational COBOL data item...
+               Evaluate current-element(element-depth)
+                 When 'filling'
+      * ==> After reassembling separate pieces of character content...
+                   String xml-text delimited by size into
+                       content-buffer with pointer countd
+                     On overflow
+                       Display 'content buffer ('
+                           length of content-buffer
+                           ' bytes) is too small'
+                       Move -1 to xml-code
+                   End-string
+                   Evaluate xml-information
+                     When 2
+                       Display '  Character data for element "filling" '
+                           'is incomplete.'
+                       Display '  The partial data was buffered for '
+                           'content assembly.'
+                     When 1
+                       subtract 1 from countd
+                       move content-buffer(1:countd) to filling
+                       Display '  Element "filling" data (' countd
+                           ' bytes) is now complete:'
+                       Display '  {' filling(1:countd) '}'
+                   End-evaluate
+                 When 'listprice'
+      * ==> Using function NUMVAL-C...
+                   Move XML-Text to content-buffer
+                   Compute list-price =
+                       function numval-c(content-buffer)
+                 When 'discount'
+      * ==> Using de-editing of a numeric edited item...
+                   Move XML-Text to ofr-ed
+                   Move ofr-ed-1 to discount
+               End-evaluate
+             When 'END-OF-ELEMENT'
+               Subtract 1 from element-depth
+             When 'START-OF-DOCUMENT'
+               Move 0 to element-depth
+               Move 1 to countd
+             When 'EXCEPTION'
+               Compute countd = function length (XML-Text)
+               Display 'Exception ' XML-Code ' at offset ' countd '.'
+             When 'END-OF-INPUT'
+               if xml-segment-no < 10
+                   Add 1 to xml-segment-no
+                   Display 'segment-num: ' xml-segment-no
+                   Display
+                   'Next segment: {' xml-segment(xml-segment-no) '}'
+                   Move 1 to xml-code
+              end-if
+             When other
+               continue
+           End-evaluate.
+]])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[[len: 400
+Initial segment {<?xml version="1.0" encoding="US-ASCII" }
+event: END-OF-INPUT                  , text: {}
+segment-num: +0002
+Next segment: {standalone="yes"?><!--This document is j}
+event: START-OF-DOCUMENT             , text: {}
+event: VERSION-INFORMATION           , text: {1.0}
+event: ENCODING-DECLARATION          , text: {US-ASCII}
+event: STANDALONE-DECLARATION        , text: {yes}
+event: END-OF-INPUT                  , text: {}
+segment-num: +0003
+Next segment: {ust an example--><sandwich><bread type="}
+event: COMMENT                       , text: {This document is just an example}
+event: START-OF-ELEMENT              , text: {sandwich}
+event: END-OF-INPUT                  , text: {}
+segment-num: +0004
+Next segment: {baker&apos;s best"/><?spread We'll use r}
+event: START-OF-ELEMENT              , text: {bread}
+event: ATTRIBUTE-NAME                , text: {type}
+event: ATTRIBUTE-CHARACTERS          , text: {baker's best}
+event: END-OF-ELEMENT                , text: {bread}
+event: END-OF-INPUT                  , text: {}
+segment-num: +0005
+Next segment: {eal mayonnaise?><meat>Ham &amp; turkey</}
+event: PROCESSING-INSTRUCTION-TARGET , text: {spread}
+event: PROCESSING-INSTRUCTION-DATA   , text: {We'll use real mayonnaise}
+event: START-OF-ELEMENT              , text: {meat}
+event: CONTENT-CHARACTERS            , text: {Ham & turkey}
+XML-INFORMATION: +000000001
+event: END-OF-INPUT                  , text: {}
+segment-num: +0006
+Next segment: {meat><filling>Cheese, lettuce, tomato, a}
+event: END-OF-ELEMENT                , text: {meat}
+event: START-OF-ELEMENT              , text: {filling}
+event: END-OF-INPUT                  , text: {}
+segment-num: +0007
+Next segment: {nd that's all, Folks!</filling><![CDATA[}
+event: CONTENT-CHARACTERS            , text: {Cheese, lettuce, tomato, and that's all, Folks!}
+XML-INFORMATION: +000000001
+  Element "filling" data (+0047 bytes) is now complete:
+  {Cheese, lettuce, tomato, and that's all, Folks!}
+event: END-OF-ELEMENT                , text: {filling}
+event: END-OF-INPUT                  , text: {}
+segment-num: +0008
+Next segment: {We should add a <relish> element!]]><lis}
+event: START-OF-CDATA-SECTION        , text: {}
+event: CONTENT-CHARACTERS            , text: {We should add a <relish> element!}
+XML-INFORMATION: +000000001
+event: END-OF-CDATA-SECTION          , text: {}
+event: END-OF-INPUT                  , text: {}
+segment-num: +0009
+Next segment: {tprice>$4.99</listprice><discount>0.10</}
+event: START-OF-ELEMENT              , text: {listprice}
+event: CONTENT-CHARACTERS            , text: {$4.99}
+XML-INFORMATION: +000000001
+event: END-OF-ELEMENT                , text: {listprice}
+event: START-OF-ELEMENT              , text: {discount}
+event: CONTENT-CHARACTERS            , text: {0.10}
+XML-INFORMATION: +000000001
+event: END-OF-INPUT                  , text: {}
+segment-num: +0010
+Next segment: {discount></sandwich>                    }
+event: END-OF-ELEMENT                , text: {discount}
+event: END-OF-ELEMENT                , text: {sandwich}
+event: END-OF-INPUT                  , text: {}
+event: END-OF-DOCUMENT               , text: {}
+XML document successfully parsed.
+-----+++++***** Using information from XML *****+++++-----
+ Sandwich list price:  $4.99
+ Promotional price:  $4.49
+ Get one today!
+]])
+
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE long text])
+AT_KEYWORDS([extensions PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [[
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+      ******************************************************************
+      * XML document data, encoded as initial values of data items.    *
+      ******************************************************************
+       01 xml-start-tag pic x(20) value '<lorem>'.
+       01 lorem-ipsum.
+         02 pic x(28) value 'Lorem ipsum dolor sit amet, '.
+         02 pic x(28) value 'consectetur adipiscing elit.'.
+       01 xml-cdata.
+         02 pic x(33) value '<![CDATA[Quousque tandem abutere '.
+         02 pic x(30) value 'Catilina patientia nostra ?]]>'.
+       01 xml-end-tag pic x(20) value '</lorem>'.
+       01 xml-buffer pic x(63).
+       01 nb-buffer pic 99 value 0.
+       Procedure division.
+        Mainline section.
+           Move xml-start-tag to xml-buffer.
+           XML parse xml-buffer
+               processing procedure XML-handler
+             ON EXCEPTION
+               Display 'XML processing error, XML-Code=' XML-Code '.'
+               Move 16 to return-code
+             Goback
+           End-XML
+           Display 'XML document successfully parsed.'
+           Move 0 to return-code
+           Goback.
+        XML-handler section.
+           Display 'event: ' xml-event ', info: ' xml-information
+               ', text: {' xml-text '}'.
+           Evaluate XML-Event
+             When 'END-OF-INPUT'
+               Add 1 to nb-buffer
+               if nb-buffer = 6
+                   Move 1 to xml-code
+                   Move xml-cdata to xml-buffer
+               else if nb-buffer = 12
+                   Move 1 to xml-code
+                   Move xml-end-tag to xml-buffer
+               else if nb-buffer < 12
+                   Move 1 to xml-code
+                   Move lorem-ipsum to xml-buffer
+               end-if
+             When other
+               continue
+           End-evaluate.
+]])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[event: START-OF-DOCUMENT             , info: +000000000, text: {}
+event: START-OF-ELEMENT              , info: +000000000, text: {lorem}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000002, text: {                                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       }
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000001, text: {Lorem ipsum dolor sit amet, consectetur adipiscing elit.       }
+event: START-OF-CDATA-SECTION        , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000001, text: {Quousque tandem abutere Catilina patientia nostra ?}
+event: END-OF-CDATA-SECTION          , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000002, text: {Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       Lorem ipsum dolor sit amet, consectetur adipiscing elit.       }
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: CONTENT-CHARACTERS            , info: +000000001, text: {}
+event: END-OF-ELEMENT                , info: +000000000, text: {lorem}
+event: END-OF-INPUT                  , info: +000000000, text: {}
+event: END-OF-DOCUMENT               , info: +000000000, text: {}
+XML document successfully parsed.
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE namespaces])
+AT_KEYWORDS([extensions PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+
+AT_DATA([prog.cob],[
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+      ******************************************************************
+      * XML document data, encoded as initial values of data items.    *
+      ******************************************************************
+       01  xml-document.
+         02 pic x(35) value '<section xmlns="http://example.com"'.
+         02 pic x(29) value ' xmlns:bk="urn:loc.gov:books"'.
+         02 pic x(35) value ' xmlns:pi="urn:personalInformation"'.
+         02 pic x(37) value ' xmlns:isbn="urn:ISBN:0-395-36341-6">'.
+         02 pic x(33) value '<title>Book-Signing Event</title>'.
+         02 pic x(9) value '<signing>'.
+         02 pic x(24) value '<bk:author pi:title="Mr"'.
+         02 pic x(21) value ' pi:name="Jim Ross"/>'.
+         02 pic x(34) value '<book bk:title="COBOL for dummies"'.
+         02 pic x(27) value ' isbn:number="0426070806"/>'.
+         02 pic x(18) value '<comment xmlns="">'.
+         02 pic x(19) value 'What a great issue!'.
+         02 pic x(10) value '</comment>'.
+         02 pic x(10) value '</signing>'.
+         02 pic x(10) value '</section>'.
+       Procedure division.
+        Mainline section.
+           XML parse xml-document
+               processing procedure XML-handler
+             ON EXCEPTION
+               Display 'XML processing error, XML-Code=' XML-Code '.'
+               Move 16 to return-code
+             Goback
+           End-XML
+           Display 'XML document successfully parsed.'
+           Move 0 to return-code
+           Goback.
+        XML-handler section.
+           display 'event: ' xml-event ', text: {' xml-text '}'
+            ', prefix: {' xml-namespace-prefix '}, namespace: {' 
+            xml-namespace '}'.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [event: START-OF-DOCUMENT             , text: {}, prefix: {}, namespace: {}
+event: START-OF-ELEMENT              , text: {section}, prefix: {}, namespace: {http://example.com}
+event: NAMESPACE-DECLARATION         , text: {}, prefix: {}, namespace: {http://example.com}
+event: NAMESPACE-DECLARATION         , text: {}, prefix: {bk}, namespace: {urn:loc.gov:books}
+event: NAMESPACE-DECLARATION         , text: {}, prefix: {pi}, namespace: {urn:personalInformation}
+event: NAMESPACE-DECLARATION         , text: {}, prefix: {isbn}, namespace: {urn:ISBN:0-395-36341-6}
+event: START-OF-ELEMENT              , text: {title}, prefix: {}, namespace: {http://example.com}
+event: CONTENT-CHARACTERS            , text: {Book-Signing Event}, prefix: {}, namespace: {}
+event: END-OF-ELEMENT                , text: {title}, prefix: {}, namespace: {http://example.com}
+event: START-OF-ELEMENT              , text: {signing}, prefix: {}, namespace: {http://example.com}
+event: START-OF-ELEMENT              , text: {author}, prefix: {bk}, namespace: {urn:loc.gov:books}
+event: ATTRIBUTE-NAME                , text: {title}, prefix: {pi}, namespace: {urn:personalInformation}
+event: ATTRIBUTE-CHARACTERS          , text: {Mr}, prefix: {}, namespace: {}
+event: ATTRIBUTE-NAME                , text: {name}, prefix: {pi}, namespace: {urn:personalInformation}
+event: ATTRIBUTE-CHARACTERS          , text: {Jim Ross}, prefix: {}, namespace: {}
+event: END-OF-ELEMENT                , text: {author}, prefix: {bk}, namespace: {urn:loc.gov:books}
+event: START-OF-ELEMENT              , text: {book}, prefix: {}, namespace: {http://example.com}
+event: ATTRIBUTE-NAME                , text: {title}, prefix: {bk}, namespace: {urn:loc.gov:books}
+event: ATTRIBUTE-CHARACTERS          , text: {COBOL for dummies}, prefix: {}, namespace: {}
+event: ATTRIBUTE-NAME                , text: {number}, prefix: {isbn}, namespace: {urn:ISBN:0-395-36341-6}
+event: ATTRIBUTE-CHARACTERS          , text: {0426070806}, prefix: {}, namespace: {}
+event: END-OF-ELEMENT                , text: {book}, prefix: {}, namespace: {http://example.com}
+event: START-OF-ELEMENT              , text: {comment}, prefix: {}, namespace: {}
+event: NAMESPACE-DECLARATION         , text: {}, prefix: {}, namespace: {}
+event: CONTENT-CHARACTERS            , text: {What a great issue!}, prefix: {}, namespace: {}
+event: END-OF-ELEMENT                , text: {comment}, prefix: {}, namespace: {}
+event: END-OF-ELEMENT                , text: {signing}, prefix: {}, namespace: {http://example.com}
+event: END-OF-ELEMENT                , text: {section}, prefix: {}, namespace: {http://example.com}
+event: END-OF-INPUT                  , text: {}, prefix: {}, namespace: {}
+event: END-OF-DOCUMENT               , text: {}, prefix: {}, namespace: {}
+XML document successfully parsed.
+], [])
+AT_CLEANUP
+
+
+AT_SETUP([XML PARSE undeclared namespaces])
+AT_KEYWORDS([extensions PARSE])
+
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob], [
+       Identification division.
+         Program-id. XMLup.
+       Data division.
+        Working-storage section.
+         1 d.
+          2 pic x(40) value '<pfx0:root xmlns:pfx1="http://whatever">'.
+          2 pic x(19) value '<pfx1:localElName1>'.
+          2 pic x(20) value '<pfx2:localElName2/>'.
+          2 pic x(40) value '<pfx3:localElName3 pfx4:localAtName4="">'.
+          2 pic x(02) value 'c1'.
+          2 pic x(41) value '<pfx5:localElName5 pfx6:localAtName6=""/>'.
+          2 pic x(24) value 'c2</pfx3:localElName3>c3'.
+          2 pic x(32) value '</pfx1:localElName1></pfx0:root>'.
+       Procedure division.
+         main.
+           xml parse d processing procedure h
+           goback.
+         h.
+           display xml-event xml-code '|' xml-text '|'
+               xml-namespace-prefix '|'
+               xml-namespace '|'
+           if xml-event = 'EXCEPTION' and xml-code = 264192 or 264193
+             move 0 to xml-code
+           end-if
+           .
+       End program XMLup.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[START-OF-DOCUMENT             +000000000||||
+EXCEPTION                     +000264193|pfx0:root|||
+START-OF-ELEMENT              +000000000|root|pfx0||
+NAMESPACE-DECLARATION         +000000000||pfx1|http://whatever|
+START-OF-ELEMENT              +000000000|localElName1|pfx1|http://whatever|
+EXCEPTION                     +000264193|pfx2:localElName2|||
+START-OF-ELEMENT              +000000000|localElName2|pfx2||
+END-OF-ELEMENT                +000000000|localElName2|pfx2||
+EXCEPTION                     +000264192|pfx4:localAtName4|||
+EXCEPTION                     +000264193|pfx3:localElName3|||
+START-OF-ELEMENT              +000000000|localElName3|pfx3||
+ATTRIBUTE-NAME                +000000000|localAtName4|pfx4||
+ATTRIBUTE-CHARACTERS          +000000000||||
+CONTENT-CHARACTERS            +000000000|c1|||
+EXCEPTION                     +000264192|pfx6:localAtName6|||
+EXCEPTION                     +000264193|pfx5:localElName5|||
+START-OF-ELEMENT              +000000000|localElName5|pfx5||
+ATTRIBUTE-NAME                +000000000|localAtName6|pfx6||
+ATTRIBUTE-CHARACTERS          +000000000||||
+END-OF-ELEMENT                +000000000|localElName5|pfx5||
+CONTENT-CHARACTERS            +000000000|c2|||
+END-OF-ELEMENT                +000000000|localElName3|pfx3||
+CONTENT-CHARACTERS            +000000000|c3|||
+END-OF-ELEMENT                +000000000|localElName1|pfx1|http://whatever|
+END-OF-ELEMENT                +000000000|root|pfx0||
+END-OF-INPUT                  +000000000||||
+END-OF-DOCUMENT               +000000000||||
+],
+[libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx0 on root is not defined
+libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx2 on localElName2 is not defined
+libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx4 for localAtName4 on localElName3 is not defined
+libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx3 on localElName3 is not defined
+libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx6 for localAtName6 on localElName5 is not defined
+libcob: prog.cob:17: warning: XML PARSE recoverable error (201): Namespace prefix pfx5 on localElName5 is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([XML-TEXT reference modifier])
+# promoted on 2026-04-20T15:51
+AT_KEYWORDS([extensions PARSE XML-TEXT])
+AT_SKIP_IF([[test "$COB_HAS_XML2" = "no"]])
+AT_DATA([prog.cob],[
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+       01  xml-document.
+         02 pic x(14) value '<lorem-ipsum/>'.
+       Procedure division.
+        Mainline section.
+           XML parse xml-document
+               processing procedure XML-handler.
+           Goback.
+        XML-handler section.
+           if xml-event = 'START-OF-ELEMENT'
+             display xml-text (7:5)
+           end-if.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ipsum
 ], [])
 AT_CLEANUP
 

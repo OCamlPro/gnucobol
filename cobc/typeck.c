@@ -2544,7 +2544,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 		 && !current_statement->flag_no_based) {
 			if (p->flag_item_based
 			 || (p->storage == CB_STORAGE_LINKAGE &&
-				!(p->flag_is_pdiv_parm || p->flag_is_returning))) {
+				!(p->flag_is_pdiv_parm || p->flag_is_returning || p->flag_internal_register))) {
 				current_statement->null_check = CB_BUILD_FUNCALL_2 (
 					"cob_check_based",
 					cb_build_address (cb_build_field_reference (p, NULL)),
