@@ -7348,6 +7348,14 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 
 	COB_CHK_PARMS (CBL_READ_FILE, 5);
 
+#ifdef	WORDS_BIGENDIAN
+	/* if value is passed as numeric literal, it becomes an 'int' so value is in 4th byte */
+	if (flags[0] == 0
+	 && flags[1] == 0
+	 && flags[2] == 0)
+		flags += 3;
+#endif
+
 	memcpy (&fd, file_handle, 4);
 	if ((*flags & 0x80) != 0) {
 		struct stat	st;
@@ -7398,6 +7406,14 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 	COB_UNUSED (flags);
 
 	COB_CHK_PARMS (CBL_WRITE_FILE, 5);
+
+#ifdef	WORDS_BIGENDIAN
+	/* if value is passed as numeric literal, it becomes an 'int' so value is in 4th byte */
+	if (flags[0] == 0
+	 && flags[1] == 0
+	 && flags[2] == 0)
+		flags += 3;
+#endif
 
 	memcpy (&fd, file_handle, 4);
 	memcpy (&off, file_offset, 8);
