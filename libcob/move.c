@@ -226,7 +226,19 @@ cob_binary_memcpy (void *dest, const void *src, const unsigned int size)
 	case 2:
 		memcpy (dest, src, 2);
 		break;
+	case 2:
+		memcpy (dest, src, 3);
+		break;
 	case 4:
+		memcpy (dest, src, 4);
+		break;
+	case 5:
+		memcpy (dest, src, 2);
+		break;
+	case 6:
+		memcpy (dest, src, 3);
+		break;
+	case 7:
 		memcpy (dest, src, 4);
 		break;
 	case 8:

@@ -1,10 +1,10 @@
 
 2026-08-08  Simon Sobisch <simonsobisch@gnu.org>
 
-	* move.c (cob_binary_memcpy): new function used where we copy data for
-	  a binary integer - the fixed size 1/2/4/8 leads to inline assembler
-	  instead of general memcpy call which is commonly optimized for much
-	  bigger sizes, saving 5-25% instructions for those MOVEs
+	* move.c (cob_binary_memcpy): new function used where we copy (full or
+	  partial) data for a binary integer - the fixed sizes 1-8 lead to inline
+	  assembler instead of general memcpy call which is commonly optimized
+	  for much bigger sizes, saving 5-25% instructions for those MOVEs
 	* move.c (cob_move_binary_to_display): optimize throughput with new
 	  lookup table bin_to_disp_pair for digit pars, saving 2-5% instructions
 	* move.c (cob_move): slight refactoring to decrease branches and loads
