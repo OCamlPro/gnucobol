@@ -10621,6 +10621,7 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 			cob_runtime_warning ("COB_SET_RUNTIME_STDIN_FILE option used "
 				"with null parameter, defaulting back to process stdin");
 		}
+		break;
 	case COB_SET_RUNTIME_STDOUT_FILE:
 		if (p) {
 			cobsetptr->cob_stdout = (FILE *)p;
