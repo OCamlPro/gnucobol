@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005, 2006, 2013, 2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006, 2013, 2022-2023, 2025-2026 Free Software Foundation, Inc.
    Written by Roger While, Nicolas Berthier, Simon Sobisch, David Declerck
 
    This file is part of GnuCOBOL.
@@ -90,8 +90,6 @@ static const unsigned char	upper_tab[256] = {
 #else
 static unsigned char		lower_tab[256];
 static unsigned char		upper_tab[256];
-static const unsigned char	plower_tab[] = "abcdefghijklmnopqrstuvwxyz";
-static const unsigned char	plower_val[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 #endif
 
 static int
@@ -239,10 +237,7 @@ unsigned char
 cob_toupper (const unsigned char c)
 {
 	const unsigned char tab_entry = lower_tab[c];
-	if (tab_entry) {
-		return tab_entry;
-	}
-	return c;
+	return tab_entry ? tab_entry : c;
 }
 
 /* Lower-casing for internal words using efficient 7bit C locale table lookup. */
@@ -250,10 +245,7 @@ unsigned char
 cob_tolower (const unsigned char c)
 {
 	const unsigned char tab_entry = upper_tab[c];
-	if (tab_entry) {
-		return tab_entry;
-	}
-	return c;
+	return tab_entry ? tab_entry : c;
 }
 
 /* stores the field's rtrimmed string content into the given buffer
@@ -343,6 +335,9 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 static void
 init_upper_lower (void)
 {
+	const unsigned char	*plower_tab = "abcdefghijklmnopqrstuvwxyz";
+	const unsigned char	*plower_val = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 	const unsigned char *p, *v;
 
 	memset (lower_tab, 0, sizeof (lower_tab));

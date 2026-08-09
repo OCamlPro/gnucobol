@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020, 2022-2025 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edwart Hard
 
@@ -141,6 +141,16 @@ static const unsigned char pack_to_bin [] = {
 #endif
 };
 
+/* translation table for integer to 2 digit chars (2 digits);
+   identical defined in numeric.c */
+static const char bin_to_disp_pair[] = {
+    "00010203040506070809" "10111213141516171819"
+    "20212223242526272829" "30313233343536373839"
+    "40414243444546474849" "50515253545556575859"
+    "60616263646566676869" "70717273747576777879"
+    "80818283848586878889" "90919293949596979899"
+};
+
 static void
 store_common_region (cob_field *f, const unsigned char *data,
 		     const size_t size, const int scale, const int verified_data)
@@ -172,7 +182,7 @@ store_common_region (cob_field *f, const unsigned char *data,
 	/* the target may have leading/trailing additional zeroes
 	   and in rare cases, we may be out of scale competely;
 	   we pre-set all positions as this saves a bunch of
-	   calculations which outweight the benefit of not
+	   calculations which outweights the benefit of not
 	   writing over the data two times */
 	memset (fdata, '0', fsize);
 
@@ -203,6 +213,38 @@ store_common_region (cob_field *f, const unsigned char *data,
 	}
 }
 
+/* internal memcpy used for (partial) binary integer copies,
+   the constant size used allows the compiler to generate inline assembler
+   instructions instead of a function call to general memcpy for this cpu */
+static COB_INLINE COB_A_INLINE void
+cob_binary_memcpy (void *dest, const void *src, const unsigned int size)
+{
+	switch (size) {
+	case 1:
+		memcpy (dest, src, 1);
+		break;
+	case 2:
+		memcpy (dest, src, 2);
+		break;
+	case 4:
+		memcpy (dest, src, 4);
+		break;
+	case 8:
+		memcpy (dest, src, 8);
+		break;
+#if 0 /* as soon as we support 128bit integers... */
+	case 16:
+		memcpy (dest, src, 16);
+		break;
+#endif
+	/* LCOV_EXCL_START */
+	default:
+		/* shouldn't be reachable given the binary size */
+		cob_runtime_error ("cob_binary_memcpy: unexected size %u", size);
+    }
+	/* LCOV_EXCL_STOP */
+}
+
 static COB_INLINE COB_A_INLINE cob_s64_t
 cob_binary_mget_sint64 (const cob_field * const f)
 {
@@ -212,30 +254,30 @@ cob_binary_mget_sint64 (const cob_field * const f)
 #ifndef WORDS_BIGENDIAN
 	if (COB_FIELD_BINARY_SWAP (f)) {
 		if (COB_FIELD_HAVE_SIGN (f)) {
-			memcpy (&n, f->data, f->size);
+			cob_binary_memcpy ((unsigned char *)&n, f->data, f->size);
 			n = COB_BSWAP_64 (n);
 			/* Shift with sign */
-			n >>= (cob_s64_t)8 * fsiz;
+			n >>= fsiz * 8;
 		} else {
-			memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
+			cob_binary_memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
 			n = COB_BSWAP_64 (n);
 		}
 	} else {
 		if (COB_FIELD_HAVE_SIGN (f)) {
-			memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
+			cob_binary_memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
 			/* Shift with sign */
-			n >>= (cob_s64_t)8 * fsiz;
+			n >>= fsiz * 8;
 		} else {
-			memcpy (&n, f->data, f->size);
+			cob_binary_memcpy ((unsigned char *)&n, f->data, f->size);
 		}
 	}
 #else	/* WORDS_BIGENDIAN */
 	if (COB_FIELD_HAVE_SIGN (f)) {
-		memcpy (&n, f->data, f->size);
+		cob_binary_memcpy ((unsigned char *)&n, f->data, f->size);
 		/* Shift with sign */
 		n >>= 8 * fsiz;
 	} else {
-		memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
+		cob_binary_memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
 	}
 #endif	/* WORDS_BIGENDIAN */
 	return n;
@@ -249,13 +291,13 @@ cob_binary_mget_uint64 (const cob_field * const f)
 
 #ifndef WORDS_BIGENDIAN
 	if (COB_FIELD_BINARY_SWAP (f)) {
-		memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
+		cob_binary_memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
 		n = COB_BSWAP_64 (n);
 	} else {
-		memcpy (&n, f->data, f->size);
+		cob_binary_memcpy ((unsigned char *)&n, f->data, f->size);
 	}
 #else	/* WORDS_BIGENDIAN */
-	memcpy (((unsigned char *)&n) + fsiz, f->data, f->size);
+	cob_binary_memcpy ((unsigned char *)&n + fsiz, f->data, f->size);
 #endif	/* WORDS_BIGENDIAN */
 
 	return n;
@@ -274,9 +316,9 @@ cob_binary_mset_sint64 (cob_field *f, cob_s64_t n)
 	} else {
 		s = (unsigned char *)&n;
 	}
-	memcpy (f->data, s, f->size);
+	cob_binary_memcpy (f->data, s, f->size);
 #else	/* WORDS_BIGENDIAN */
-	memcpy (f->data, (unsigned char *)&n + fsiz, f->size);
+	cob_binary_memcpy (f->data, (unsigned char *)&n + fsiz, f->size);
 #endif	/* WORDS_BIGENDIAN */
 }
 
@@ -292,9 +334,9 @@ cob_binary_mset_uint64 (cob_field *f, cob_u64_t n)
 	} else {
 		s = (unsigned char *)&n;
 	}
-	memcpy (f->data, s, f->size);
+	cob_binary_memcpy (f->data, s, f->size);
 #else	/* WORDS_BIGENDIAN */
-	memcpy (f->data, ((unsigned char *)&n) + 8 - f->size, f->size);
+	cob_binary_memcpy (f->data, ((unsigned char *)&n) + 8 - f->size, f->size);
 #endif	/* WORDS_BIGENDIAN */
 }
 
@@ -454,15 +496,11 @@ cob_move_display_to_alphanum (cob_field *f1, cob_field *f2)
 static void
 cob_move_alphanum_to_alphanum (cob_field *f1, cob_field *f2)
 {
-	unsigned char	*data1;
-	unsigned char	*data2;
-	size_t		size1;
-	size_t		size2;
+	unsigned char	*data1 = f1->data;
+	unsigned char	*data2 = f2->data;
+	const size_t	size1 = f1->size;
+	const size_t	size2 = f2->size;
 
-	data1 = f1->data;
-	size1 = f1->size;
-	data2 = f2->data;
-	size2 = f2->size;
 	if (size1 >= size2) {
 		/* Move string with truncation */
 		if (COB_FIELD_JUSTIFIED (f2)) {
@@ -850,12 +888,10 @@ cob_move_binary_to_binary (cob_field *f1, cob_field *f2)
 	}
 	if (COB_FIELD_HAVE_SIGN (f2)) {
 		cob_binary_mset_sint64 (f2, ul64.sval);
+	} else if (sign) {
+		cob_binary_mset_uint64 (f2, (cob_u64_t)(-ul64.sval));
 	} else {
-		if (sign) {
-			cob_binary_mset_uint64 (f2, (cob_u64_t)(-ul64.sval));
-		} else {
-			cob_binary_mset_uint64 (f2, ul64.uval);
-		}
+		cob_binary_mset_uint64 (f2, ul64.uval);
 	}
 }
 
@@ -938,7 +974,7 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 	cob_u64_t		val;
 	int			i;
 	int			sign;
-	unsigned char	buff[32];
+	unsigned char	buff[20];
 
 	sign = 1;
 	/* Get value */
@@ -948,7 +984,7 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 			sign = -1;
 			val = (cob_u64_t)-1 * val2;
 		} else {
-			val = (cob_u64_t)1 * val2;
+			val = (cob_u64_t)1  * val2;
 		}
 	} else {
 		val = cob_binary_mget_uint64 (f1);
@@ -957,9 +993,18 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 	/* Convert to string; note: we do this on ourself as this has proven
 	   to be much faster than calling "sprintf (buff, CB_FMT_LLU, val)" */
 	i = 20;
-	while (val > 0) {
-		buff[--i] = COB_I2D (val % 10);
-		val /= 10;
+	while (val >= 100) {
+		const unsigned int rem = (unsigned int)(val % 100);
+		val /= 100;
+		buff[--i] = bin_to_disp_pair[rem * 2 + 1];
+		buff[--i] = bin_to_disp_pair[rem * 2];
+	}
+	if (val >= 10) {
+		const unsigned int rem = (unsigned int)val;
+		buff[--i] = bin_to_disp_pair[rem * 2 + 1];
+		buff[--i] = bin_to_disp_pair[rem * 2];
+	} else if (val > 0) {
+		buff[--i] = COB_I2D (val);
 	}
 
 	/* Store */
@@ -1031,8 +1076,8 @@ optimized_move_display_to_edited (cob_field *f1, cob_field *f2)
 #ifndef NDEBUG	/* Sanity check to ensure that the data types of both the fields have the
 		   correct attributes, if not then something is brokend and needs to be fixed  */
 	if (!(COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_EDITED
-	 && COB_FIELD_DIGITS (f1) == COB_FIELD_DIGITS (f2)
-	 && COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2))) {
+	   && COB_FIELD_DIGITS (f1) == COB_FIELD_DIGITS (f2)
+	   && COB_FIELD_SCALE (f1) == COB_FIELD_SCALE (f2))) {
 		cob_runtime_error ("optimized_move_display_to_edited: invalid argument");
 	}
 #endif
@@ -1641,47 +1686,42 @@ cob_init_table (void *tbl, const size_t len, const size_t occ)
 void
 cob_move (cob_field *src, cob_field *dst)
 {
+	/* independent load, issued early, can be optimized to run in parallel */
+	const size_t dst_size = dst->size;
+	const size_t src_size = src->size;
+
 	int		opt;
-	cob_field	temp;
-	unsigned char	data[2];
 
 	if (src == dst) {
 		return;
 	}
-	if (dst->size == 0) {
+	if (dst_size == 0) {
 		/* TODO: for dynamic sized items: allocate and go on */
 		return;
 	}
-	if (unlikely (src->size == 0)) {
-		temp.size = 1;
-		temp.data = data;
-		temp.attr = &const_alpha_attr;
-		data[0] = ' ';
-		data[1] = 0;
+	if (src_size == 0) {
+		static cob_field	temp;
+		COB_FIELD_INIT_F (temp, 1, (unsigned char *)" ", &const_alpha_attr);
 		src = &temp;
 	}
-	if (COB_FIELD_TYPE (src) == COB_TYPE_ALPHANUMERIC_ALL) {
-		cob_move_all (src, dst);
-		return;
-	}
 
-	/* Non-elementary move */
-	if (COB_FIELD_TYPE (src) == COB_TYPE_GROUP
-	 || COB_FIELD_TYPE (dst) == COB_TYPE_GROUP) {
+	switch (COB_FIELD_TYPE (dst)) {
+	case COB_TYPE_GROUP:	/* Non-elementary move */
 		cob_move_alphanum_to_alphanum (src, dst);
 		return;
-	}
-
-	opt = 0;
-	if (COB_FIELD_TYPE (dst) == COB_TYPE_NUMERIC_BINARY) {
+	case COB_TYPE_NUMERIC_BINARY:
 		if (COB_FIELD_BINARY_TRUNC (dst)
 		 && !COB_FIELD_REAL_BINARY (dst)) {
 			opt = COB_STORE_TRUNC_ON_OVERFLOW;
+			break;
 		}
+		/* Fall-through */
+	default:
+		opt = 0;
 	}
 
-	/* Elementary move */
 	switch (COB_FIELD_TYPE (src)) {
+	/* Elementary moves */
 	case COB_TYPE_NUMERIC_DISPLAY:
 		switch (COB_FIELD_TYPE (dst)) {
 		case COB_TYPE_NUMERIC_FLOAT:
@@ -1835,21 +1875,25 @@ cob_move (cob_field *src, cob_field *dst)
 		case COB_TYPE_NUMERIC_PACKED:
 			{
 				const short src_digits = COB_FIELD_DIGITS (src);
-				if (src_digits < 19) {
-					const short src_scale = COB_FIELD_SCALE (src);
-					const short dst_scale = COB_FIELD_SCALE (dst);
-					const short diff_scale = src_scale - dst_scale;
-					if (src_digits - diff_scale < 19) {
-						cob_s64_t	val = cob_binary_mget_sint64 (src);
-						if (diff_scale <= 0) {
-							val *= cob_exp10_ll[-diff_scale];
-						} else {
-							val /= cob_exp10_ll[diff_scale];
-						}
-						if (val >= INT_MIN && val <= INT_MAX) {
-							cob_set_packed_int (dst, (int)val);
-							return;
-						}
+				const short src_scale = COB_FIELD_SCALE (src);
+				const short dst_scale = COB_FIELD_SCALE (dst);
+				const short diff_scale = src_scale - dst_scale;
+				const short adj_digits = src_digits - diff_scale;
+				const short max_digits = (adj_digits > src_digits) ? adj_digits : src_digits;
+				if (max_digits < 19) {
+					/* note: we compute all parts up front; while that increases
+					   the number of instructions (cheap ones) the previous split of
+					   that code to two conditions raise branches and more important
+					   the number of branch misses (= we get more instr/cycle that way)*/
+					cob_s64_t	val = cob_binary_mget_sint64 (src);
+					if (diff_scale <= 0) {
+						val *= cob_exp10_ll[-diff_scale];
+					} else {
+						val /= cob_exp10_ll[diff_scale];
+					}
+					if (val >= INT_MIN && val <= INT_MAX) {
+						cob_set_packed_int (dst, (int)val);
+						return;
 					}
 				}
 			}
@@ -2036,6 +2080,14 @@ cob_move (cob_field *src, cob_field *dst)
 			cob_decimal_move_temp (src, dst);
 			return;
 		}
+	case COB_TYPE_ALPHANUMERIC_ALL:
+		cob_move_all (src, dst);
+		return;
+	/* Non-elementary move */
+	case COB_TYPE_GROUP:
+		cob_move_all (src, dst);
+		return;
+	/* More elementary moves */
 	default:
 		switch (COB_FIELD_TYPE (dst)) {
 		case COB_TYPE_NUMERIC_DISPLAY:
@@ -2074,6 +2126,10 @@ cob_move (cob_field *src, cob_field *dst)
 static int
 cob_packed_get_int (cob_field *field)
 {
+	/* note: similar logic in (packed_get_long_long) and
+	   in numeric.c (cob_decimal_set_packed), so for
+	   all adjustments here - check there, too */
+
 	register int		val;
 	register unsigned char	*d = field->data;
 	const unsigned char	*d_end = d + field->size - 1;
@@ -2089,7 +2145,7 @@ cob_packed_get_int (cob_field *field)
 		if (val == 0) {
 			/* Skip leading ZEROs */
 			while (d <= d_end
-			 && *d == 0x00) {
+			   && *d == 0x00) {
 				d++;
 			}
 		}
@@ -2107,7 +2163,7 @@ cob_packed_get_int (cob_field *field)
 		if (val == 0) {
 			/* Skip leading ZEROs */
 			while (d < d_end
-			 && *d == 0x00) {
+			   && *d == 0x00) {
 				d++;
 			}
 		}
@@ -2126,6 +2182,10 @@ cob_packed_get_int (cob_field *field)
 static cob_s64_t
 packed_get_long_long (cob_field *field)
 {
+	/* note: similar logic in (packed_get_int) and
+	   in numeric.c (cob_decimal_set_packed), so for
+	   all adjustments here - check there, too */
+
 	const short		scale = COB_FIELD_SCALE (field);
 	register cob_s64_t	val;
 	register unsigned char	*d = field->data;
@@ -2155,7 +2215,7 @@ packed_get_long_long (cob_field *field)
 		if (val == 0) {
 			/* Skip leading ZEROs */
 			while (d <= d_end
-			 && *d == 0x00) {
+			   && *d == 0x00) {
 				d++;
 			}
 		}
@@ -2186,7 +2246,7 @@ packed_get_long_long (cob_field *field)
 		if (val == 0) {
 			/* Skip leading ZEROs */
 			while (d < d_end
-			 && *d == 0x00) {
+			   && *d == 0x00) {
 				d++;
 			}
 		}
