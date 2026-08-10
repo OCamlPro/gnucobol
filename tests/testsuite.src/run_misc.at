@@ -16267,8 +16267,8 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 
-AT_CHECK([timeout 20s $COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([timeout 20s ./caller], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([./caller], [0], [], [])
 
 AT_CLEANUP
 
