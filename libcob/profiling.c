@@ -600,7 +600,7 @@ cob_prof_end ()
 			/* Only print this line when we are not in test mode,
 			   or the file is called hidden.csv, so that we can
 			   run profiling while running the full testsuite */
-			fprintf (cobsetptr->cob_stderr, "File %s generated\n",
+			fprintf (COB_STDERR, "File %s generated\n",
 				cobsetptr->cob_prof_filename);
 		}
 	} else {

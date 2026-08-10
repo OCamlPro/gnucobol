@@ -263,9 +263,14 @@ Note: also defined together with __clang__ in both frontends:
 #define	COB_INSERT_MODE		cobsetptr->cob_insert_mode
 #define	COB_HIDE_CURSOR		cobsetptr->cob_hide_cursor
 #define	COB_EXTENDED_STATUS	cobsetptr->cob_extended_status
-#define	COB_MOUSE_FLAGS	cobsetptr->cob_mouse_flags
+#define	COB_MOUSE_FLAGS		cobsetptr->cob_mouse_flags
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
 #define	COB_USE_ESC		cobsetptr->cob_use_esc
+#define	COB_STDIN		cobsetptr->cob_stdin
+#define	COB_STDOUT		cobsetptr->cob_stdout
+#define	COB_STDERR		cobsetptr->cob_stderr
+#define	COB_STDERR_OR_DEFAULT	cobsetptr && cobsetptr->cob_stderr ? \
+	cobsetptr->cob_stderr : stderr
 
 #if defined(COB_TLS)
     /* already defined, for example as static to explicit disable TLS */

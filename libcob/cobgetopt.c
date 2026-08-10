@@ -249,6 +249,8 @@ process_long_option (const int argc, char * const *argv, const char *optstring,
 		     const int long_only,
 		     int print_errors, const char *prefix)
 {
+  FILE *stderr_f = cob_get_runtime_option (COB_SET_RUNTIME_STDERR_FILE) ?
+	cob_get_runtime_option (COB_SET_RUNTIME_STDERR_FILE) : stderr;
   char *nameend;
   size_t namelen;
   const struct option *p;
@@ -326,26 +328,24 @@ process_long_option (const int argc, char * const *argv, const char *optstring,
 	    {
 	      if (ambig_fallback)
 		  {
-		  /* TODO: Decide how to do stdout/stderr redirection here
-		  (and in examples below), or not at all */
-		  fprintf (stderr, _("%s: option '%s%s' is ambiguous"),
+		  fprintf (stderr_f, _("%s: option '%s%s' is ambiguous"),
 			 argv[0], prefix, nextchar);
-		  fputc ('\n', stderr);
+		  fputc ('\n', stderr_f);
 		}
 	      else
 		{
-		  flockfile (stderr);
-		  fprintf (stderr,
+		  flockfile (stderr_f);
+		  fprintf (stderr_f,
 			   _("%s: option '%s%s' is ambiguous; possibilities:"),
 			   argv[0], prefix, nextchar);
 
 		  for (option_index = 0; option_index < n_options; option_index++)
 		    if (ambig_set[option_index])
-		      fprintf (stderr, " '%s%s'",
+		      fprintf (stderr_f, " '%s%s'",
 			       prefix, longopts[option_index].name);
 
-		  fputc ('\n', stderr);
-		  funlockfile (stderr);
+		  fputc ('\n', stderr_f);
+		  funlockfile (stderr_f);
 		}
 	    }
 	  if (ambig_malloced)
@@ -369,9 +369,9 @@ process_long_option (const int argc, char * const *argv, const char *optstring,
 	{
 	  if (print_errors)
 	  {
-		  fprintf (stderr, _("%s: unrecognized option '%s%s'"),
+		  fprintf (stderr_f, _("%s: unrecognized option '%s%s'"),
 		     argv[0], prefix, nextchar);
-		  fputc ('\n', stderr);
+		  fputc ('\n', stderr_f);
 	  }
 
 	  nextchar = NULL;
@@ -397,10 +397,10 @@ process_long_option (const int argc, char * const *argv, const char *optstring,
 	{
 	  if (print_errors)
 		  {
-		  fprintf (stderr,
+		  fprintf (stderr_f,
 		     _("%s: option '%s%s' doesn't allow an argument"),
 		     argv[0], prefix, pfound->name);
-		  fputc ('\n', stderr);
+		  fputc ('\n', stderr_f);
 		  }
 
 	  optopt = pfound->val;
@@ -415,10 +415,10 @@ process_long_option (const int argc, char * const *argv, const char *optstring,
 	{
 	  if (print_errors)
 		  {
-		    fprintf (stderr,
+		    fprintf (stderr_f,
 		     _("%s: option '%s%s' requires an argument"),
 		     argv[0], prefix, pfound->name);
-		  fputc ('\n', stderr);
+		  fputc ('\n', stderr_f);
 		  }
 
 	  optopt = pfound->val;
@@ -539,6 +539,8 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
 		      const struct option *longopts, int *longind,
 		      const int long_only)
 {
+  FILE *stderr_f = cob_get_runtime_option (COB_SET_RUNTIME_STDERR_FILE) ?
+	cob_get_runtime_option (COB_SET_RUNTIME_STDERR_FILE) : stderr;
   int print_errors = opterr;
 
   if (argc < 1)
@@ -687,8 +689,8 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
       {
 	if (print_errors)
 	  {
-		fprintf (stderr, _("%s: invalid option -- '%c'"), argv[0], c);
-		fputc ('\n', stderr);
+		fprintf (stderr_f, _("%s: invalid option -- '%c'"), argv[0], c);
+		fputc ('\n', stderr_f);
 	  }
 	optopt = c;
 	return '?';
@@ -704,10 +706,10 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
 	  {
 	    if (print_errors)
 	      {
-	      fprintf (stderr,
+	      fprintf (stderr_f,
 		       _("%s: option requires an argument -- '%c'"),
 		       argv[0], c);
-	      fputc ('\n', stderr);
+	      fputc ('\n', stderr_f);
 	      }
 	    optopt = c;
 	    if (optstring[0] == ':')
@@ -752,9 +754,9 @@ cob_getopt_long_long (const int argc, char *const *argv, const char *optstring,
 	      {
 		if (print_errors)
 		  {
-		    fprintf (stderr, _("%s: option requires an argument -- '%c'"),
+		    fprintf (stderr_f, _("%s: option requires an argument -- '%c'"),
 			     argv[0], c);
-		     fputc ('\n', stderr);
+		     fputc ('\n', stderr_f);
 		  }
 		optopt = c;
 		if (optstring[0] == ':')
