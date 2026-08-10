@@ -10561,6 +10561,11 @@ cob_init (const int argc, char **argv)
 void
 cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 {
+	if (!cobsetptr) {
+		cob_fatal_error (COB_FERROR_INITIALIZED);
+		return;
+	}
+
 	switch (opt) {
 	case COB_SET_RUNTIME_TRACE_FILE:
 		cobsetptr->cob_trace_file = (FILE *)p;
@@ -10671,6 +10676,7 @@ cob_get_runtime_option (enum cob_runtime_option_switch opt)
 	if (!cobsetptr) {
 		return NULL;
 	}
+
 	switch (opt) {
 	case COB_SET_RUNTIME_TRACE_FILE:
 		return (void*)cobsetptr->cob_trace_file;
