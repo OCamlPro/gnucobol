@@ -37,10 +37,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** new runtime configurations: COB_STDIN_FILE, COB_STDOUT_FILE,
    COB_STDERR_FILE. They allow redirection of stdin/stdout/stderr input/output
-   to a file. Alternatively, these configurations are also available as runtime
-   options which can be used to set them programmatically:
-   COB_SET_RUNTIME_STDIN_FILE, COB_SET_RUNTIME_STDOUT_FILE,
-   COB_SET_RUNTIME_STDERR_FILE.
+   to a file. These configurations can be set via configuration file,
+   environment variables or programmatically with COB_SET_RUNTIME_STDIN_FILE,
+   COB_SET_RUNTIME_STDOUT_FILE, COB_SET_RUNTIME_STDERR_FILE.
 
 ** added multiple window functionality with new system function CBL_GC_WINDOW
 

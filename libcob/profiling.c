@@ -564,7 +564,7 @@ cob_prof_end ()
 			}
 		}
 		fclose (file);
-		fprintf(cobsetptr->cob_stderr, "File %s generated\n", cobsetptr->cob_prof_filename);
+		fprintf(COB_STDERR, "File %s generated\n", cobsetptr->cob_prof_filename);
 	} else {
 		cob_runtime_warning (_("error '%s' opening COB_PROF_FILE '%s'"),
 				     cob_get_strerror (), cobsetptr->cob_prof_filename);

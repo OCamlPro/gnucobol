@@ -39,6 +39,11 @@
 #define SIGINT 2
 #endif
 
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
@@ -337,17 +342,17 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 	/* display to device ? */
 	switch (to_device) {
 	case 0:	/* general (SYSOUT) */
-		fp = cobsetptr->cob_stdout;
+		fp = COB_STDOUT;
 		if (cobglobptr->cob_screen_initialized) {
 			if (!COB_DISP_TO_STDERR) {
 				disp_redirect = 1;
 			} else {
-				fp = cobsetptr->cob_stderr;
+				fp = COB_STDERR;
 			}
 		}
 		break;
 	case 1:	/* SYSERR */
-		fp = cobsetptr->cob_stderr;
+		fp = COB_STDERR;
 		break;
 	case 2:	/* PRINTER */
 		/* display to external specified print file handle */
@@ -363,7 +368,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 			}
 			fp = fopen (cobsetptr->cob_display_print_filename, mode);
 			if (fp == NULL) {
-				fp = cobsetptr->cob_stderr;
+				fp = COB_STDERR;
 			} else {
 				close_fp = 1;
 			}
@@ -379,19 +384,19 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 			}
 			fp = popen (cobsetptr->cob_display_print_pipe, mode);
 			if (fp == NULL) {
-				fp = cobsetptr->cob_stderr;
+				fp = COB_STDERR;
 			} else {
 				close_fp = 2;
 			}
 #endif
 		/* fallback: display to the defined SYSOUT */
 		} else {
-			fp = cobsetptr->cob_stdout;
+			fp = COB_STDOUT;
 			if (cobglobptr->cob_screen_initialized) {
 				if (!COB_DISP_TO_STDERR) {
 					disp_redirect = 1;
 				} else {
-					fp = cobsetptr->cob_stderr;
+					fp = COB_STDERR;
 				}
 			}
 		}
@@ -431,7 +436,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		fp = cobsetptr->cob_stderr;
+		fp = COB_STDERR;
 	}
 	/* LCOV_EXCL_STOP */
 
@@ -1053,12 +1058,12 @@ cob_accept (cob_field *f)
 	}
 
 	/* always flush to ensure buffered output is seen */
-	fflush (cobsetptr->cob_stdout);
+	fflush (COB_STDOUT);
 
 	/* extension: ACCEPT OMITTED */
 	if (unlikely (!f)) {
 		for (; ; ) {
-			ipchr = getc (cobsetptr->cob_stdin);
+			ipchr = getc (COB_STDIN);
 			if (ipchr == '\n' || ipchr == EOF) {
 				break;
 			} else if (ipchr == 03) {
@@ -1073,7 +1078,7 @@ cob_accept (cob_field *f)
 	size = 0;
 	/* Read a line */
 	for (; size < COB_MEDIUM_MAX; ) {
-		ipchr = getc (cobsetptr->cob_stdin);
+		ipchr = getc (COB_STDIN);
 		if (unlikely (ipchr == EOF)) {
 			cob_set_exception (COB_EC_IMP_ACCEPT);
 			if (!size) {
@@ -1101,100 +1106,136 @@ cob_accept (cob_field *f)
 static void
 cob_stdin_termio (void)
 {
-	if (!cobsetptr->cob_stdin_filename) {
-		return;
-	}
-
-	if (cobsetptr->cob_stdin_filename_set) {
-		if (strcmp (cobsetptr->cob_stdin_filename,
-		cobsetptr->cob_stdin_filename_set) == 0) {
+	if (cobsetptr->cob_stdin_filename) {
+		FILE *stdin_f = NULL;
+		if (cobsetptr->cob_stdin_filename_set &&
+		    strcmp (cobsetptr->cob_stdin_filename,
+	    cobsetptr->cob_stdin_filename_set) == 0) {
 			return;
 		}
-		fclose (cobsetptr->cob_stdin);
-		cob_free (cobsetptr->cob_stdin_filename_set);
-		cobsetptr->cob_stdin_filename_set = NULL;
+
+		if (!cobsetptr->cob_unix_lf) {
+			stdin_f = fopen (cobsetptr->cob_stdin_filename, "r");
+		} else {
+			stdin_f = fopen (cobsetptr->cob_stdin_filename, "rb");
+		}
+
+		if (stdin_f) {
+			if (cobsetptr->cob_stdin_filename_set) {
+				cob_free (cobsetptr->cob_stdin_filename_set);
+				cobsetptr->cob_stdin_filename_set = NULL;
+				fclose (COB_STDIN);
+			}
+			COB_STDIN = stdin_f;
+			cobsetptr->cob_stdin_filename_set =
+				cob_strdup (cobsetptr->cob_stdin_filename);
+		} else {
+			cob_free (cobsetptr->cob_stdin_filename);
+			cobsetptr->cob_stdin_filename = NULL;
+		}
 	}
 
-	if (!cobsetptr->cob_unix_lf) {
-		cobsetptr->cob_stdin = fopen (cobsetptr->cob_stdin_filename, "r");
-	} else {
-		cobsetptr->cob_stdin = fopen (cobsetptr->cob_stdin_filename, "rb");
+	if (!COB_STDIN) {
+		COB_STDIN = stdin;
 	}
 
-	if (!cobsetptr->cob_stdin) {
-		cob_free (cobsetptr->cob_stdin_filename);
-		cobsetptr->cob_stdin_filename = NULL;
-		cobsetptr->cob_stdin = stdin;
-		return;
+#ifdef _WIN32
+	if (cobsetptr->cob_unix_lf) {
+		(void)_setmode (_fileno (COB_STDIN), _O_BINARY);
 	}
-
-	cobsetptr->cob_stdin_filename_set =
-		cob_strdup (cobsetptr->cob_stdin_filename);
+#endif
 }
 
 static void
 cob_stdout_termio (void)
 {
-	if (!cobsetptr->cob_stdout_filename) {
-		return;
-	}
-
-	if (cobsetptr->cob_stdout_filename_set) {
-		if (strcmp (cobsetptr->cob_stdout_filename,
-		cobsetptr->cob_stdout_filename_set) == 0) {
+	if (cobsetptr->cob_stdout_filename) {
+		FILE *stdout_f = NULL;
+		if (cobsetptr->cob_stdout_filename_set &&
+		    strcmp (cobsetptr->cob_stdout_filename,
+		    cobsetptr->cob_stdout_filename_set) == 0) {
 			return;
 		}
-		fclose (cobsetptr->cob_stdout);
-		cob_free (cobsetptr->cob_stdout_filename);
-		cobsetptr->cob_stdout_filename = NULL;
+
+		stdout_f = cob_open_logfile ( cobsetptr->cob_stdout_filename);
+
+		if (stdout_f) {
+			if (cobsetptr->cob_stdout_filename_set) {
+				fclose (COB_STDOUT);
+				cob_free (cobsetptr->cob_stdout_filename_set);
+				cobsetptr->cob_stdout_filename_set = NULL;
+			}
+			COB_STDOUT = stdout_f;
+			cobsetptr->cob_stdout_filename_set =
+				cob_strdup (cobsetptr->cob_stdout_filename);
+		} else {
+			cob_free (cobsetptr->cob_stdout_filename);
+			cobsetptr->cob_stdout_filename = NULL;
+		}
 	}
 
-	cobsetptr->cob_stdout = cob_open_logfile (cobsetptr->cob_stdout_filename);
-
-	if (!cobsetptr->cob_stdout) {
-		cob_free (cobsetptr->cob_stdout_filename);
-		cobsetptr->cob_stdout_filename = NULL;
-		cobsetptr->cob_stdout = stdout;
-		return;
+	if (!COB_STDOUT) {
+		COB_STDOUT = stdout;
 	}
 
-	cobsetptr->cob_stdout_filename_set =
-		cob_strdup (cobsetptr->cob_stdout_filename);
+#ifdef _WIN32
+	if (cobsetptr->cob_unix_lf) {
+		(void)_setmode (_fileno (COB_STDOUT), _O_BINARY);
+	}
+#endif
 }
 
 static void
 cob_stderr_termio (void)
 {
-	if (!cobsetptr->cob_stderr_filename) {
-		return;
-	}
-
-	if (cobsetptr->cob_stderr_filename_set) {
-		if (strcmp (cobsetptr->cob_stderr_filename,
-		cobsetptr->cob_stderr_filename_set) == 0) {
+	if (cobsetptr->cob_stderr_filename) {
+		FILE *stderr_f = NULL;
+		if (cobsetptr->cob_stderr_filename_set &&
+		    strcmp (cobsetptr->cob_stderr_filename,
+		    cobsetptr->cob_stderr_filename_set) == 0) {
 			return;
 		}
-		fclose (cobsetptr->cob_stderr);
-		cob_free (cobsetptr->cob_stderr_filename);
-		cobsetptr->cob_stderr_filename = NULL;
+
+		stderr_f = cob_open_logfile (cobsetptr->cob_stderr_filename);
+
+		if (stderr_f) {
+			if (cobsetptr->cob_stderr_filename_set) {
+				fclose (COB_STDERR);
+				cob_free (cobsetptr->cob_stderr_filename_set);
+				cobsetptr->cob_stderr_filename_set = NULL;
+			}
+			COB_STDERR = stderr_f;
+			cobsetptr->cob_stderr_filename_set =
+				cob_strdup (cobsetptr->cob_stderr_filename);
+		} else {
+			cob_free (cobsetptr->cob_stderr_filename);
+			cobsetptr->cob_stderr_filename = NULL;
+		}
 	}
 
-	cobsetptr->cob_stderr = cob_open_logfile (cobsetptr->cob_stderr_filename);
-
-	if (!cobsetptr->cob_stderr) {
-		cob_free (cobsetptr->cob_stderr_filename);
-		cobsetptr->cob_stderr_filename = NULL;
-		cobsetptr->cob_stderr = stderr;
-		return;
+	if (!COB_STDERR) {
+		COB_STDERR = stderr;
 	}
 
-	cobsetptr->cob_stderr_filename_set =
-		cob_strdup (cobsetptr->cob_stderr_filename);
+#ifdef _WIN32
+	if (cobsetptr->cob_unix_lf) {
+		(void)_setmode (_fileno (COB_STDERR), _O_BINARY);
+	}
+#endif
+
+	cob_settings_fileio();
 }
 
 void
 cob_settings_termio (void)
 {
+	/* Initialization of cob_stdin/cob_stdout/cob_stderr:
+	If a filename is provided, it is preferred. If there was a previous file
+	opened with a different filename, it is flushed and closed. If the filename
+	is invalid, it is ignored. For the other cases, the previous file is not
+	owned by libcob, so it is not closed. Handling them is the responsibility
+	of the programmer. Additionally, on Windows the mode of the file is set to
+	binary. */
 	cob_stdin_termio ();
 	cob_stdout_termio ();
 	cob_stderr_termio ();

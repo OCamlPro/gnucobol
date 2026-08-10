@@ -6350,8 +6350,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = cobsetptr->cob_stdin;
-		f->fd = fileno (cobsetptr->cob_stdin);
+		f->file = COB_STDIN;
+		f->fd = fileno (COB_STDIN);
 		f->open_mode = mode;
 		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -6361,8 +6361,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = cobsetptr->cob_stdout;
-		f->fd = fileno (cobsetptr->cob_stdout);
+		f->file = COB_STDOUT;
+		f->fd = fileno (COB_STDOUT);
 		f->open_mode = mode;
 		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -8962,9 +8962,9 @@ cob_settings_fileio (void)
 		bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
 #endif
 #else
-		bdb_env->set_errfile (bdb_env, cobsetptr->cob_stderr);
+		bdb_env->set_errfile (bdb_env, COB_STDERR);
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-		bdb_env->set_msgfile (bdb_env, cobsetptr->cob_stderr);
+		bdb_env->set_msgfile (bdb_env, COB_STDERR);
 #endif
 #endif
 	}
