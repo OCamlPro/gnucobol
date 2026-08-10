@@ -10668,6 +10668,9 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 void *
 cob_get_runtime_option (enum cob_runtime_option_switch opt)
 {
+	if (!cobsetptr) {
+		return NULL;
+	}
 	switch (opt) {
 	case COB_SET_RUNTIME_TRACE_FILE:
 		return (void*)cobsetptr->cob_trace_file;
@@ -10682,11 +10685,11 @@ cob_get_runtime_option (enum cob_runtime_option_switch opt)
 	case COB_SET_RUNTIME_DUMP_FILE:
 		return (void*)cobsetptr->cob_dump_file;
 	case COB_SET_RUNTIME_STDIN_FILE:
-		return cobsetptr ? (void*)COB_STDIN : NULL;
+		return (void*)COB_STDIN;
 	case COB_SET_RUNTIME_STDOUT_FILE:
-		return cobsetptr ? (void*)COB_STDOUT : NULL;
+		return (void*)COB_STDOUT;
 	case COB_SET_RUNTIME_STDERR_FILE:
-		return cobsetptr ? (void*)COB_STDERR : NULL;
+		return (void*)COB_STDERR;
 	default:
 		cob_runtime_error (_("%s called with unknown option: %d"),
 			"cob_get_runtime_option", opt);
