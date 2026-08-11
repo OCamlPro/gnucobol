@@ -50,7 +50,7 @@ INDEXED_LD_FLAGS = -version-info 1:0:0
 if COB_MAKE_CISAM_LIB
 lib_ci = libcobci.la
 libcobci_la_SOURCES = libcobci.c fsqlxfd.c  # includes fisam.c
-libcobci_la_LIBADD = libcob.la $(CISAM_LIBS)
+libcobci_la_LIBADD = libcob.la $(CISAM_LIBS) $(LIBCOB_LIBS)
 libcobci_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobci_la_CFLAGS = $(AM_CFLAGS) $(CISAM_CFLAGS)
 else
@@ -60,7 +60,7 @@ endif
 if COB_MAKE_DISAM_LIB
 lib_di = libcobdi.la
 libcobdi_la_SOURCES = libcobdi.c fsqlxfd.c  # includes fisam.c
-libcobdi_la_LIBADD = libcob.la $(DISAM_LIBS)
+libcobdi_la_LIBADD = libcob.la $(DISAM_LIBS) $(LIBCOB_LIBS)
 libcobdi_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobdi_la_CFLAGS = $(AM_CFLAGS) $(DISAM_CFLAGS)
 else
@@ -70,7 +70,7 @@ endif
 if COB_MAKE_VBISAM_LIB
 lib_vb = libcobvb.la
 libcobvb_la_SOURCES = libcobvb.c fsqlxfd.c  # includes fisam.c
-libcobvb_la_LIBADD = libcob.la $(VBISAM_LIBS)
+libcobvb_la_LIBADD = libcob.la $(VBISAM_LIBS) $(LIBCOB_LIBS)
 libcobvb_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobvb_la_CFLAGS = $(AM_CFLAGS) $(VBISAM_CFLAGS)
 else
@@ -80,7 +80,7 @@ endif
 if COB_MAKE_VISAM_LIB
 lib_vc = libcobvc.la
 libcobvc_la_SOURCES = libcobvc.c fsqlxfd.c  # includes fisam.c
-libcobvc_la_LIBADD = libcob.la $(VISAM_LIBS)
+libcobvc_la_LIBADD = libcob.la $(VISAM_LIBS) $(LIBCOB_LIBS)
 libcobvc_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobvc_la_CFLAGS = $(AM_CFLAGS) $(VISAM_CFLAGS)
 else
@@ -89,7 +89,7 @@ endif
 
 if COB_MAKE_ODBC_LIB
 lib_od = libcobod.la
-libcobod_la_LIBADD = libcob.la $(ODBC_LIBS)
+libcobod_la_LIBADD = libcob.la $(ODBC_LIBS) $(LIBCOB_LIBS)
 libcobod_la_SOURCES = fodbc.c fsqlxfd.c
 libcobod_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobod_la_CFLAGS = $(AM_CFLAGS) $(ODBC_CFLAGS)
@@ -99,7 +99,7 @@ endif
 
 if COB_MAKE_OCI_LIB
 lib_oc = libcoboc.la
-libcoboc_la_LIBADD = libcob.la $(OCI_LIBS) 
+libcoboc_la_LIBADD = libcob.la $(OCI_LIBS) $(LIBCOB_LIBS)
 libcoboc_la_SOURCES = foci.c fsqlxfd.c
 libcoboc_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcoboc_la_CFLAGS = $(AM_CFLAGS) $(OCI_CFLAGS)
@@ -109,7 +109,7 @@ endif
 
 if COB_MAKE_BDB_LIB
 lib_db = libcobdb.la
-libcobdb_la_LIBADD = libcob.la $(BDB_LIBS) 
+libcobdb_la_LIBADD = libcob.la $(BDB_LIBS) $(LIBCOB_LIBS)
 libcobdb_la_SOURCES = fbdb.c fsqlxfd.c
 libcobdb_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcobdb_la_CFLAGS = $(AM_CFLAGS) $(BDB_CFLAGS)
@@ -119,7 +119,7 @@ endif
 
 if COB_MAKE_LMDB_LIB
 lib_lm = libcoblm.la
-libcoblm_la_LIBADD = libcob.la $(LMDB_LIBS) 
+libcoblm_la_LIBADD = libcob.la $(LMDB_LIBS) $(LIBCOB_LIBS)
 libcoblm_la_SOURCES = flmdb.c fsqlxfd.c
 libcoblm_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
 libcoblm_la_CFLAGS = $(AM_CFLAGS) $(LMDB_CFLAGS)

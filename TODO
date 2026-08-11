@@ -234,6 +234,8 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 
 - Check the TODO about cb_default_byte in codegen.c:output_initialize
 
+- Check the TODO about having a single dialect option to change io stats (also for other dialects) in run_file.at:Test MF Status (sequential)
+
 - Make status an enum instead of an int in fileio.c:cob_file_save_status as per TODO
 
 - Move the IO status codes from common.h to fileio.h as per TODO
