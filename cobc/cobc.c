@@ -190,6 +190,13 @@ enum compile_level {
 #define	CB_COPT_2	" /O2"
 #define	CB_COPT_3	" /Ox"
 #define	CB_COPT_S	" /Os"
+#ifdef _DEBUG
+#define CB_MSC_CRT	" /MDd"
+#define CB_MSC_CRT_DLL	" /LDd"
+#else
+#define CB_MSC_CRT	" /MD"
+#define CB_MSC_CRT_DLL	" /LD"
+#endif
 #elif   defined(__BORLANDC__)
 #define	CB_COPT_0	" -O"
 #define	CB_COPT_1	" -O"	/* optimize jumps only*/
@@ -8475,8 +8482,8 @@ process_compile (struct filename *fn)
 #ifdef	_MSC_VER
 	/* TODO: we likely need to call ml.exe / ml64.exe */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
-		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
+		"%s /c %s %s /Od" CB_MSC_CRT " /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
+		"%s /c %s %s    " CB_MSC_CRT "         /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include, name,
 			fn->object, fn->translate);
 	if (verbose_output > 1) {
@@ -8524,8 +8531,8 @@ process_assemble (struct filename *fn)
 
 #ifdef	_MSC_VER
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s /c %s %s /Od /MDd /Zi /FR /Fo\"%s\" \"%s\"" :
-		"%s /c %s %s     /MD          /Fo\"%s\" \"%s\"",
+		"%s /c %s %s /Od" CB_MSC_CRT " /Zi /FR /Fo\"%s\" \"%s\"" :
+		"%s /c %s %s    " CB_MSC_CRT "         /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include,
 			fn->object, fn->translate);
 	if (verbose_output > 1) {
@@ -8672,8 +8679,8 @@ process_module_direct (struct filename *fn)
 #endif
 #else	/* _MSC_VER */
 	sprintf (cobc_buffer, cb_source_debugging ?
-		"%s %s %s /Od /MDd /LDd /Zi /FR /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s" :
-		"%s %s %s     /MD  /LD          /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s",
+		"%s %s %s /Od" CB_MSC_CRT CB_MSC_CRT_DLL " /Zi /FR /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s" :
+		"%s %s %s    " CB_MSC_CRT CB_MSC_CRT_DLL "         /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s",
 			cobc_cc, cobc_cflags, cobc_include, exe_name, name,
 			fn->translate,
 			manilink, cobc_ldflags, cobc_lib_paths, cobc_libs);
