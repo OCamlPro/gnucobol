@@ -753,6 +753,11 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token <s> VARIABLE_NAME	"Variable"
 %token <s> LITERAL		"Literal"
 
+%token EXEC
+%token END_EXEC		"END-EXEC"
+%token <s> SUBSYSTEM	"Subsystem"
+%token SUBSYSTEM_FOUND	"Subsystem"
+
 %type <s>	_copy_in
 %type <s>	copy_source
 %type <s>	_literal
@@ -830,6 +835,7 @@ statement:
 
 statement_no_replace:
   copy_statement
+| exec_statement
 | directive TERMINATOR
 | listing_statement
 | CONTROL_STATEMENT control_options _dot TERMINATOR
@@ -1723,6 +1729,41 @@ replacing_list:
 | replacing_list lead_trail text_partial_src BY text_partial_dst
   {
 	$$ = ppp_replace_list_add ($1, $3, $5, $2);
+  }
+;
+
+_exec_token_list:
+  /* empty */
+| _exec_token_list TOKEN
+  {
+        /* should be handled by preparser, ignored
+           if seen here purely for parsing reasons */
+  }
+;
+
+exec_statement:
+  EXEC SUBSYSTEM_FOUND
+  {
+        /* External preparser matched — accept cleanly */
+        YYACCEPT;
+  }
+| EXEC SUBSYSTEM INCLUDE copy_source END_EXEC
+  {
+        /* EXEC TAG INCLUDE copybook — warn and handle as COPY */
+        cb_warning (cb_warn_unsupported,
+                    _("EXEC %s INCLUDE handled as COPY"), $2);
+        fputc ('\n', ppout);
+        ppcopy ($4, NULL, NULL);
+  }
+| EXEC SUBSYSTEM _exec_token_list END_EXEC
+  {
+        /* EXEC TAG ... END-EXEC — warn and ignore */
+        cb_warning (cb_warn_unsupported,
+                    _("EXEC %s statement ignored"), $2);
+  }
+| EXEC error END_EXEC
+  {
+        yyerrok;
   }
 ;
 

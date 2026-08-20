@@ -117,6 +117,7 @@ enum compile_level {
 #define CB_FLAG_GETOPT_DEPEND_KEEP_MISSING  25
 #define CB_FLAG_GETOPT_DEPEND_ON_THE_SIDE   26
 #define CB_FLAG_GETOPT_GENTABLE             27
+#define CB_FLAG_GETOPT_PREPARSER            28
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -250,6 +251,8 @@ struct cb_text_list	*cb_intrinsic_list = NULL;
 struct cb_text_list	*cb_extension_list = NULL;
 struct cb_text_list	*cb_static_call_list = NULL;
 struct cb_text_list	*cb_early_exit_list = NULL;
+struct cb_preparser_entry *cb_preparser_list = NULL;
+struct cb_preparser_entry *cb_active_preparser = NULL;
 char			**cb_saveargv = NULL;
 const char		*cob_config_dir = NULL;
 FILE			*cb_storage_file = NULL;
@@ -617,6 +620,7 @@ static const struct option long_options[] = {
 	{"save-temps",		CB_OP_ARG, NULL, '_'},
 	{"std",			CB_RQ_ARG, NULL, '$'},
 	{"conf",		CB_RQ_ARG, NULL, '&'},
+	{"preparser",           CB_RQ_ARG, NULL, CB_FLAG_GETOPT_PREPARSER},
 	{"copy",                CB_RQ_ARG, NULL, CB_FLAG_GETOPT_COPY_FILE},
 	{"include",             CB_RQ_ARG, NULL, CB_FLAG_GETOPT_INCLUDE_FILE},
 	{"debug",		CB_NO_ARG, NULL, 'd'},
@@ -3118,6 +3122,7 @@ file_replace_extension (const char *file, const char *ext)
 	return cobc_main_stradd_dup (file, ext);
 }
 
+
 /* process command line options */
 static int
 process_command_line (const int argc, char **argv)
@@ -3333,6 +3338,14 @@ process_command_line (const int argc, char **argv)
 			}
 			sprintf (ext, "%s.conf", cob_optarg);
 			conf_ret |= cb_load_std (ext);
+			break;
+
+		case CB_FLAG_GETOPT_PREPARSER:
+			/* --preparser <name|path> : register external preparser config */
+			if (strlen (cob_optarg) > COB_SMALL_MAX) {
+				cobc_err_exit (COBC_INV_PAR, "--preparser");
+			}
+			conf_ret |= cb_load_preparser_conf (cob_optarg);
 			break;
 
 		case '&':
@@ -3649,11 +3662,13 @@ process_command_line (const int argc, char **argv)
 			/* -Os : Optimize */
 		case 'g':
 			/* -g : Generate C debug code */
+		case '$':
+			/* -std=<xx> : Specify dialect */
+		case CB_FLAG_GETOPT_PREPARSER:
+			/* --preparser : register external preparser config */
 			/* These options were all processed in the first getopt-run */
 			break;
 
-		case '$':
-			/* -std=<xx> : Specify dialect */
 		case '&':
 			/* -conf=<xx> : Specify dialect configuration file */
 			/* These options were all processed in the first getopt-run */
@@ -5372,7 +5387,8 @@ preprocess (struct filename *fn)
 	const size_t exception_table_size = sizeof (struct cb_exception) * COB_EC_MAX;
 	int			save_source_format, save_fold_copy, save_fold_call,
 		save_ref_mod_zero_length;
-
+	struct cb_preparser_entry *p_reset;
+	int			preparser_pass = 1;
 #ifndef COB_INTERNAL_XREF
 #ifdef	_WIN32
 	const char *envname = "%PATH%";
@@ -5382,6 +5398,7 @@ preprocess (struct filename *fn)
 	int			ret;
 #endif
 
+restart_preprocess:
 	if (output_name
 	 || cb_compile_level > CB_LEVEL_PREPROCESS
 	 || cb_depend_output_only) {
@@ -5436,6 +5453,7 @@ preprocess (struct filename *fn)
 	save_ref_mod_zero_length = cb_ref_mod_zero_length;
 
 	/* Preprocess */
+	cb_active_preparser = NULL;
 	ppparse ();
 
 	/* Restore default exceptions and flags */
@@ -5459,6 +5477,86 @@ preprocess (struct filename *fn)
 
 	/* Release flex buffers - After file close */
 	plex_call_destroy ();
+
+	if (cb_active_preparser) {
+		int ret_sys;
+
+		/* Build include-path argument string: "-I path1 -I path2 ..." */
+		char	*include_args = NULL;
+		{
+			const struct cb_text_list *il;
+			size_t	inc_len = 0;
+			/* First pass: compute total length */
+			for (il = cb_include_list; il; il = il->next) {
+				inc_len += 3 + strlen (il->text) + 1;	/* "-I " + path + space */
+			}
+			if (inc_len > 0) {
+				char	*p;
+				include_args = cobc_malloc (inc_len + 1);
+				p = include_args;
+				for (il = cb_include_list; il; il = il->next) {
+					p += sprintf (p, "-I %s ", il->text);
+				}
+				/* remove trailing space */
+				if (p > include_args) {
+					*(p - 1) = '\0';
+				}
+			}
+		}
+
+		{
+			const char	*inc_str = include_args ? include_args : "";
+			const size_t	cmd_len = strlen (cb_active_preparser->command)
+						+ strlen (fn->source) + strlen (fn->preprocess)
+						+ strlen (inc_str) + 6;
+			char	*cmd = cobc_malloc (cmd_len);
+			if (include_args) {
+				snprintf (cmd, cmd_len, "%s %s %s \"%s\"",
+					  cb_active_preparser->command,
+					  fn->source, fn->preprocess, inc_str);
+			} else {
+				snprintf (cmd, cmd_len, "%s %s %s",
+					  cb_active_preparser->command,
+					  fn->source, fn->preprocess);
+			}
+
+			ret_sys = call_system (cmd);
+			cobc_free (cmd);
+		}
+		if (include_args) {
+			cobc_free (include_args);
+		}
+
+		if (ret_sys == 0) {
+			/* success path — generate unique intermediate filename */
+			{
+				char ext_buf[16];
+				preparser_pass++;
+				snprintf (ext_buf, sizeof (ext_buf), ".i%d", preparser_pass);
+				fn->source     = cobc_strdup (fn->preprocess);
+				fn->preprocess = file_replace_extension (
+					(char *)fn->source, ext_buf);
+			}
+			if (cb_active_preparser->cflags) {
+				COBC_ADD_STR (cobc_cflags, " ", cb_active_preparser->cflags, NULL);
+			}
+			if (cb_active_preparser->ldflags) {
+				COBC_ADD_STR (cobc_ldflags, " ", cb_active_preparser->ldflags, NULL);
+			}
+		} else {
+			/* failure path */
+			cb_source_file = fn->source;
+			if (!cb_active_preparser->warn_only) {
+				cobc_err_exit (_("external preparser '%s' failed with exit status %d"),
+						cb_active_preparser->subsystem, ret_sys);
+			}
+			cb_warning (cb_warn_unsupported,
+					_("external preparser '%s' failed; falling back to baseline"),
+					cb_active_preparser->subsystem);
+			cb_active_preparser->disabled = 1;
+		}
+		goto restart_preprocess;
+	}
 
 	if (cobc_gen_listing && !cobc_list_file) {
 		if (unlikely (fclose (cb_listing_file) != 0)) {
@@ -5509,7 +5607,10 @@ preprocess (struct filename *fn)
 #endif
 		cb_listing_file = NULL;
 	}
-
+	/* This prevents trying the same subsystem again for the current file */
+	for (p_reset = cb_preparser_list; p_reset; p_reset = p_reset->next) {
+		p_reset->disabled = 0;
+	}
 	output_return (errorcount);
 	return !!errorcount;
 }

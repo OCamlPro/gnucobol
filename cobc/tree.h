@@ -524,6 +524,18 @@ struct cobc_reserved {
 	cob_u64_t		context_test;	/* context sensitive value tested */
 };
 
+/* External preparser configuration entry */
+struct cb_preparser_entry {
+	struct cb_preparser_entry	*next;
+	char				*subsystem;	/* e.g. "SQL" (upper-cased) */
+	char				*command;	/* external preparser command */
+	char				*cflags;	/* extra C compiler flags */
+	char				*ldflags;	/* extra linker flags */
+	int				 warn_only;	 /* 0=error (default), 1=warn */
+	int				 used;		/* set when subsystem matched */
+	int				 disabled;	/* skip this preparser */
+};
+
 /* Basic common tree structure */
 
 struct cb_tree_common {

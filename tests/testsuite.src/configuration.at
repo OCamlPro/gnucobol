@@ -1064,3 +1064,117 @@ prog.cob:11: warning: start of statement in Area A
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([--preparser nonexistent config file])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC --preparser ./missing.conf prog.cob], [1], [],
+[configuration error:
+./missing.conf: No such file or directory
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([--preparser invalid config file])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([invalid.conf], [
+# missing subsystem and command
+cflags: -O2
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC --preparser ./invalid.conf prog.cob], [1], [],
+[configuration error:
+./invalid.conf: missing preparser definition 'subsystem' or 'command'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([--preparser unknown configuration tag])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([unknown.conf], [
+subsystem: SQL
+command: /bin/true # value does not matter, we check for the key below
+                    #  (and here for inline parsing of comments)
+badkey: something
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC --preparser ./unknown.conf prog.cob], [1], [],
+[configuration error:
+./unknown.conf:5: unknown configuration tag 'badkey'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([--preparser invalid configuration line without separator])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([nosep.conf], [
+subsystem: SQL
+command: /bin/true
+noseparator
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC --preparser ./nosep.conf prog.cob], [1], [],
+[configuration error:
+./nosep.conf:4: invalid configuration tag 'noseparator'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([--preparser COB_CONFIG_DIR resolution])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+mkdir -p tst
+AT_DATA([tst/mypreparser.conf], [
+subsystem: SQL
+command: /bin/true
+])
+
+# COB_CONFIG_DIR is used for all config lookups including default.conf,
+# so copy the standard config directory contents into our test directory
+cp "$COB_CONFIG_DIR"/* tst/ 2>/dev/null; true
+AT_CHECK([COB_CONFIG_DIR=tst $COBC --preparser=mypreparser prog.cob], [0], [], [])
+
+AT_CLEANUP

@@ -1,0 +1,84 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TEST-TRANSACTION.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-AT.
+       OBJECT-COMPUTER. IBM-AT.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       WORKING-STORAGE SECTION.
+
+           01 DATASRC PIC X(64).
+           01 DBUSR   PIC X(64).
+           01 DBPWD   PIC X(64).
+
+       EXEC SQL
+            INCLUDE SQLCA
+       END-EXEC.
+
+       PROCEDURE DIVISION.
+
+       000-CONNECT.
+           DISPLAY "DATASRC" UPON ENVIRONMENT-NAME.
+           ACCEPT DATASRC FROM ENVIRONMENT-VALUE.
+           DISPLAY "DATASRC_USR" UPON ENVIRONMENT-NAME.
+           ACCEPT DBUSR FROM ENVIRONMENT-VALUE.
+           DISPLAY "DATASRC_PWD" UPON ENVIRONMENT-NAME.
+           ACCEPT DBPWD FROM ENVIRONMENT-VALUE.
+
+           EXEC SQL
+              CONNECT TO :DATASRC USER :DBUSR USING :DBPWD
+           END-EXEC.
+
+           IF SQLCODE NOT = 0 THEN
+              DISPLAY 'CONNECT FAILED: ' SQLCODE
+              GO TO 999-EXIT
+           END-IF.
+
+       100-START-TRANSACTION.
+           EXEC SQL
+              START TRANSACTION
+           END-EXEC.
+
+           DISPLAY 'START TXN SQLCODE: ' SQLCODE.
+
+       200-DO-WORK.
+           EXEC SQL
+               SELECT 1
+           END-EXEC.
+
+           DISPLAY 'SELECT 1 SQLCODE: ' SQLCODE.
+
+       300-COMMIT.
+           EXEC SQL
+               COMMIT
+           END-EXEC.
+
+           DISPLAY 'COMMIT SQLCODE: ' SQLCODE.
+
+       400-ROLLBACK-TEST.
+           EXEC SQL
+              START TRANSACTION
+           END-EXEC.
+
+           EXEC SQL
+               ROLLBACK
+           END-EXEC.
+
+           DISPLAY 'ROLLBACK SQLCODE: ' SQLCODE.
+
+       500-DISCONNECT.
+           EXEC SQL
+               DISCONNECT ALL
+           END-EXEC.
+
+           DISPLAY 'DISCONNECT SQLCODE: ' SQLCODE.
+
+       999-EXIT.
+           STOP RUN.

@@ -1,0 +1,91 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TEST-MULTIPLE-EXEC.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-AT.
+       OBJECT-COMPUTER. IBM-AT.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       WORKING-STORAGE SECTION.
+
+       EXEC SQL
+        INCLUDE EMPREC
+       END-EXEC.
+
+           01 DATASRC   PIC X(64).
+           01 DBUSR     PIC X(64).
+           01 DBPWD     PIC X(64).
+           01 TOT-COUNT PIC 9(4) VALUE 0.
+           01 MAX-PAY   PIC S9(13)V99 COMP-3.
+           01 MIN-PAY   PIC S9(13)V99 COMP-3.
+
+       EXEC SQL
+            INCLUDE SQLCA
+       END-EXEC.
+
+       PROCEDURE DIVISION.
+
+       000-CONNECT.
+           DISPLAY "DATASRC" UPON ENVIRONMENT-NAME.
+           ACCEPT DATASRC FROM ENVIRONMENT-VALUE.
+           DISPLAY "DATASRC_USR" UPON ENVIRONMENT-NAME.
+           ACCEPT DBUSR FROM ENVIRONMENT-VALUE.
+           DISPLAY "DATASRC_PWD" UPON ENVIRONMENT-NAME.
+           ACCEPT DBPWD FROM ENVIRONMENT-VALUE.
+
+           EXEC SQL
+              CONNECT TO :DATASRC USER :DBUSR USING :DBPWD
+           END-EXEC.
+
+           IF SQLCODE NOT = 0 THEN
+              DISPLAY 'CONNECT FAILED: ' SQLCODE
+              GO TO 999-EXIT
+           END-IF.
+
+       100-COUNT.
+           EXEC SQL
+               SELECT COUNT(*) INTO :TOT-COUNT
+               FROM EMPTABLE
+           END-EXEC.
+
+           DISPLAY 'TOTAL EMPLOYEES: ' TOT-COUNT.
+
+       200-MAX-PAY.
+           EXEC SQL
+               SELECT MAX(PAYRATE) INTO :MAX-PAY
+               FROM EMPTABLE
+           END-EXEC.
+
+           DISPLAY 'MAX PAYRATE: ' MAX-PAY.
+
+       300-MIN-PAY.
+           EXEC SQL
+               SELECT MIN(PAYRATE) INTO :MIN-PAY
+               FROM EMPTABLE
+           END-EXEC.
+
+           DISPLAY 'MIN PAYRATE: ' MIN-PAY.
+
+       400-SINGLE-ROW.
+           EXEC SQL
+               SELECT LNAME, FNAME INTO :LNAME, :FNAME
+               FROM EMPTABLE
+               WHERE ENO = 123
+           END-EXEC.
+
+           IF SQLCODE = 0 THEN
+              DISPLAY 'EMPLOYEE 123: ' LNAME ' ' FNAME
+           ELSE
+              DISPLAY 'EMPLOYEE 123 NOT FOUND: ' SQLCODE
+           END-IF.
+
+           EXEC SQL CONNECT RESET END-EXEC.
+
+       999-EXIT.
+           STOP RUN.

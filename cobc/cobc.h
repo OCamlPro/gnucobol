@@ -287,6 +287,7 @@ struct cb_text_list {
 	char			*text;
 };
 
+
 /* Structure for extended filenames */
 struct local_filename {
 	struct local_filename	*next;			/* next pointer */
@@ -495,6 +496,11 @@ extern struct cb_text_list	*cb_intrinsic_list;
 extern struct cb_text_list	*cb_extension_list;
 extern struct cb_text_list	*cb_static_call_list;
 extern struct cb_text_list	*cb_early_exit_list;
+
+extern struct cb_preparser_entry       *cb_preparser_list;
+extern struct cb_preparser_entry       *cb_find_preparser (const char *subsystem);
+extern int cb_load_preparser_conf (const char *name);
+extern struct cb_preparser_entry       *cb_active_preparser;
 
 extern struct cb_program	*current_program;
 extern struct cb_statement	*current_statement;

@@ -1609,3 +1609,60 @@ D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([external preparser --preparser])
+AT_KEYWORDS([cobc configuration EXEC])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           EXEC SQL SELECT 1 END-EXEC.
+           DISPLAY "OK".
+           STOP RUN.
+])
+
+AT_DATA([mypp.sh], [
+#!/bin/sh
+sed 's/EXEC SQL SELECT 1 END-EXEC.//' "$1" > "$2"
+])
+chmod +x mypp.sh
+AT_DATA([valid.conf], [
+subsystem: SQL
+command: sh ./mypp.sh
+])
+AT_CHECK([$COBC --preparser valid.conf prog.cob], [0], [], [])
+
+AT_DATA([valid2.conf], [
+subsystem: CICS
+command: sh ./mypp.sh
+])
+AT_CHECK([$COBC --preparser valid.conf --preparser valid2.conf prog.cob], [0], [], [])
+
+AT_DATA([badpp.sh], [
+#!/bin/sh
+exit 1
+])
+chmod +x badpp.sh
+AT_DATA([bad.conf], [
+subsystem: SQL
+command: sh ./badpp.sh
+on-error: error
+])
+AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --preparser bad.conf prog.cob], [1], [],
+[cobc: error: external preparser 'SQL' failed with exit status 1
+])
+
+AT_DATA([warn.conf], [
+subsystem: SQL
+command: sh ./badpp.sh
+on-error: warn
+])
+AT_CHECK([$COBC -fno-diagnostics-show-caret -fno-diagnostics-show-option --preparser warn.conf prog.cob], [1], [],
+[prog.cob:5: error: external preparser 'SQL' failed; falling back to baseline
+prog.cob:6: error: EXEC SQL statement ignored
+])
+
+AT_CLEANUP
+

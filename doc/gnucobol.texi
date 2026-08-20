@@ -161,6 +161,7 @@ Debug
 Profiling
 * Profiling options::           Profiling options
 * Profiling results::           Profiling results
+* EXEC preprocessing::          EXEC preprocessing   
 
 Extensions
 
@@ -787,6 +788,69 @@ Compiler uses the given @var{dialect} to determine the reserved words.
 
 @item -conf=<file>
 User-defined dialect configuration.
+
+@anchor{--preparser option}
+@item --preparser=@var{file}
+Register an external preparser for @code{EXEC} blocks.  @var{file} is
+either an explicit path or a name looked up as
+@file{@var{COB_CONFIG_DIR}/@var{name}.conf}.
+
+The configuration file uses the same @code{key: value} format as
+dialect configuration files. Recognized keys are:
+
+@table @code
+@item subsystem
+The @code{EXEC} tag this preparser handles (e.g. @code{SQL}).
+Automatically converted to upper-case. Required.
+
+@item command
+The external command to invoke as
+@code{@var{command} @var{input_file} @var{output_file} @var{include_paths}}.
+The third argument @var{include_paths} is a quoted string containing all
+@option{-I} include paths given to @command{cobc} (e.g.
+@code{"-I /path/one -I /path/two"}).  If no @option{-I} paths were
+specified, the third argument is omitted for backward compatibility.
+Any additional options required by the preparser should be included in a
+wrapper script.  For example, GixSQL's @command{gixpp} requires @option{-e}
+and @option{-i}/@option{-o} flags, so a wrapper script is used:
+@example
+#!/bin/sh
+INCLUDE_ARGS=""
+if [ -n "$3" ]; then
+    # Split the quoted "-I path1 -I path2" into individual args
+    eval set -- $3
+    for arg; do INCLUDE_ARGS="$INCLUDE_ARGS $arg"; done
+fi
+/opt/gixsql/bin/gixpp -e $INCLUDE_ARGS -i "$1" -o "$2"
+@end example
+Required unless @code{library} is specified.
+
+@item cflags
+Extra flags passed to the C compiler when compiling the preprocessed
+output (e.g. @code{-I/opt/gixsql/include}).
+
+@item ldflags
+Extra flags passed to the linker (e.g. @code{-L/opt/gixsql/lib -lgixsql}).
+
+@item on-error
+Action on non-zero exit: @code{error} (default) aborts compilation; 
+@code{warn} issues a warning and falls back to baseline.
+@end table
+
+Example configuration for GixSQL integration:
+@example
+# gixsql.conf
+subsystem:  SQL
+command:    /usr/local/bin/gixpp-wrapper.sh
+cflags:     -I/usr/local/include/gixsql
+ldflags:    -L/usr/local/lib -lgixsql
+on-error:   error
+@end example
+
+Multiple @option{--preparser} options may be specified to register
+preparsers for different @code{EXEC} subsystems.
+See @ref{EXEC preprocessing} for details.
+
 
 @item -febcdic-table=@var{cconv-table}/@var{file}
 EBCDIC/ASCII translation table to use; either read from @var{file}, or one of
@@ -1948,6 +2012,45 @@ readable form (currently, the time in seconds and milliseconds)
 The number of calls to this section/paragraph
 
 @end table
+
+
+@node EXEC preprocessing
+@section EXEC preprocessing
+@cindex EXEC blocks
+@cindex Preprocessing EXEC
+
+GnuCOBOL supports @code{EXEC} blocks (such as @code{EXEC SQL} or @code{EXEC CICS}) 
+through the use of an internal preprocessor and optional external preparsers.
+
+The handling of @code{INCLUDE} statements (e.g., @code{EXEC SQL INCLUDE ...})
+depends on whether an external preparser is active:
+@itemize @bullet
+@item
+If an external preparser is registered for the subsystem, the entire
+@code{EXEC} block (including @code{INCLUDE}) is handed to the external
+preparser.  The external tool is responsible for resolving includes.
+@item
+If no external preparser is registered, the internal preprocessor handles
+@code{INCLUDE} as a standard @code{COPY} statement, with full support for
+library paths (@option{-I}) and case folding.
+@end itemize
+
+When the internal preprocessor encounters an @code{EXEC} block:
+@enumerate
+@item
+The compiler looks for an external preparser registered for that specific 
+subsystem tag.
+@item
+If a preparser is found, the entire block is passed to the external command
+or library.  Any include paths given via @option{-I} are forwarded as a
+third argument to the external command.
+@item
+If no preparser is registered, or if a preparser fails in @code{warn} mode, 
+the compiler will issue a diagnostic and ignore the block.
+@end enumerate
+
+External preparsers must be registered via the compiler configuration or the 
+@ref{--preparser option} command-line switch.
 
 @node Extensions, System Routines, Profiling, Top
 @chapter Non-standard extensions
