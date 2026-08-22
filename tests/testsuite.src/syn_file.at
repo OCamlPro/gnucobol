@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014, 2016-2025 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014, 2016-2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Joe Robbins,
 ## Edward Hart
 ##
@@ -1765,6 +1765,57 @@ prog.cob:15: error: PASSWORD 'PASS2' for EXTERNAL file 'file2' must have EXTERNA
 AT_CLEANUP
 
 
+AT_SETUP([INDEXED file without database])
+AT_KEYWORDS([EXTFH no-isam])
+
+# This test will be run only if the compiler was built
+# with the --without-db configuration option
+AT_SKIP_IF([test "$COB_HAS_ISAM" != "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT TSTFILE
+           ASSIGN TO "testisam"
+           ORGANIZATION INDEXED
+           ACCESS SEQUENTIAL
+           RECORD KEY IS TS-KEY
+           FILE STATUS IS CUST-STAT.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  TSTFILE.
+       01  TSTFL-RECORD.
+           10  TS-KEY                          PICTURE 9(4).
+           10  TS-DATA                         PICTURE X(12).
+
+       WORKING-STORAGE SECTION.
+       01  CUST-STAT                           PICTURE XX.
+
+       PROCEDURE DIVISION.
+       MAINFILE.
+           OPEN OUTPUT TSTFILE
+           MOVE 1 TO TS-KEY
+           MOVE ALL 'X' TO TS-DATA
+           WRITE TSTFL-RECORD
+           CLOSE TSTFILE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wunsupported -Werror prog.cob], [1], [],
+[prog.cob:17: error: runtime is not configured to support ORGANIZATION INDEXED; FD TSTFILE
+])
+
+# No error message is expected when INDEXED is used with an external file handler
+AT_CHECK([$COMPILE_ONLY -Wunsupported -Werror -fcallfh=TESTFH prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([RECORD clause equal limits])
 AT_KEYWORDS([file])
 
@@ -2459,5 +2510,36 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:8: error: syntax error, unexpected INPUT, expecting Identifier
 prog.cob:12: error: syntax error, unexpected INPUT, expecting Identifier
+])
+AT_CLEANUP
+
+
+AT_SETUP([MULTIPLE FILE TAPE])
+AT_KEYWORDS([file])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT in1 ASSIGN "in1".
+           SELECT in2 ASSIGN "in2".
+       I-O-CONTROL.
+           MULTIPLE FILE TAPE CONTAINS
+	     in1 POSITION 1
+	     in2 POSITION 2.
+       DATA DIVISION.
+       FILE SECTION.
+       FD in1.
+       01 FILLER PIC X.
+       FD in2.
+       01 FILLER PIC X.
+       PROCEDURE DIVISION.
+           CONTINUE.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:10: warning: MULTIPLE FILE TAPE is obsolete in GnuCOBOL
 ])
 AT_CLEANUP

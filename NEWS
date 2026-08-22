@@ -107,6 +107,10 @@ NEWS - user visible changes				-*- outline -*-
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table
 
+** Option -ftab-width can now receive a list of comma-separated widths,
+   such as "6,1,4", indicating the width of each tabulation, the last one
+   being reused for all the next ones
+
 * Listing changes
 
 ** the listing header shows the processed file's basename to prevent
@@ -132,6 +136,12 @@ NEWS - user visible changes				-*- outline -*-
 ** more substitutions in environment variables: $f for executable filename,
    $b for executable basename, $d for date in YYYYMMDD format, $t for time
    in HHMMSS format (before, only $$ was available for pid)
+
+** Introduction of the COB_LOAD_GLOBAL boolean flag, which determines whether
+   the symbols of dynamically loaded shared libraries are made available
+   globally to other shared objects or remain confined locally. Previously,
+   this behavior depended on the underlying platform, where the default was
+   often "global." The default behavior is now explicitly set to "local".
 
 * New build features
 

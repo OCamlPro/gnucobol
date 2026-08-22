@@ -398,7 +398,7 @@ COB_TLS struct sort_state	*share_sort_state = NULL;
 COB_TLS const char		*cob_source_file = NULL;
 COB_TLS unsigned int		cob_source_line = 0;
 
-int				is_test = 0;
+int				cob_is_test = 0;
 
 #ifdef	HAVE_DESIGNATED_INITS
 const char	*cob_statement_name[STMT_MAX_ENTRY] = {
@@ -549,6 +549,9 @@ static struct config_tbl gc_conf[] = {
 	{"LOGICAL_CANCELS", "logical_cancels", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
+#ifndef _WIN32
+	{"COB_LOAD_GLOBAL", "load_global", "0", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
+#endif
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
 	{"COB_DISABLE_WARNINGS", "disable_warnings", "0", 	NULL, GRP_MISC, ENV_BOOL | ENV_NOT, SETPOS (cob_display_warn)},
@@ -7981,7 +7984,7 @@ cob_expand_env_string (const char *strval)
 			const char *s = NULL;
 		        switch ( strval[k+1] ){
 			case '$': /* Replace $$ with process-id */
-				if (is_test) {
+				if (cob_is_test) {
 					j += sprintf (&env[j], "%d", 123456);
 				} else {
 					j += sprintf (&env[j], "%d", cob_sys_getpid());
@@ -10411,7 +10414,7 @@ cob_init (const int argc, char **argv)
 
 	cob_initialized = 1;
 
-	is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
+	cob_is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
 
 #ifdef	HAVE_SETLOCALE
 	/* Prime the locale from user settings */

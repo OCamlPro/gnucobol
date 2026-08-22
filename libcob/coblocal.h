@@ -306,6 +306,7 @@ typedef struct __cob_settings {
 
 	/* call.c */
 	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
+	unsigned int	cob_load_global; /* hint for dynamic linker to make symbols available 0=global, 1=local */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;
@@ -615,7 +616,7 @@ COB_HIDDEN int		cob_cmps	(const unsigned char *, const unsigned char *,
 COB_HIDDEN FILE *	cob_open_logfile (const char *filename);
 
 /* Whether we are in testsuite mode */
-COB_HIDDEN int is_test;
+COB_HIDDEN int cob_is_test;
 
 #undef	COB_HIDDEN
 

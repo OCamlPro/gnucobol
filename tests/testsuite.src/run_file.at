@@ -13481,6 +13481,101 @@ AT_CHECK([$DIFF reference prog.out], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([INDEXED file using EXTFH without database])
+AT_KEYWORDS([runfile no-isam])
+
+# Verifies that an INDEXED file can be processed via an
+# external file handler, even if the compiler has been
+# built with the --without-db configuration option
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT TSTFILE
+           ASSIGN TO "testisam"
+           ORGANIZATION INDEXED ACCESS SEQUENTIAL
+           RECORD KEY IS TS-KEY
+           FILE STATUS IS CUST-STAT .
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  TSTFILE
+           BLOCK CONTAINS 5 RECORDS.
+
+       01  TSTFL-RECORD.
+           10  TS-KEY                          PICTURE 9(4).
+           10  TS-DATA                         PICTURE X(12).
+           10  TS-SEQ                          PICTURE 9(4).
+
+       WORKING-STORAGE SECTION.
+
+       01  CUST-STAT                           PICTURE XX.
+       01  I                                   PICTURE 9(4) BINARY.
+
+       PROCEDURE DIVISION.
+
+       MAINFILE.
+           OPEN OUTPUT TSTFILE
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 5
+               MOVE I TO TS-KEY TS-SEQ
+               MOVE ALL 'X' TO TS-DATA
+               WRITE TSTFL-RECORD
+           END-PERFORM
+           CLOSE TSTFILE.
+
+       READFILE.
+           OPEN INPUT TSTFILE
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 5
+               READ TSTFILE
+               DISPLAY CUST-STAT ': ' TSTFL-RECORD
+           END-PERFORM
+           CLOSE TSTFILE.
+           STOP RUN.
+])
+
+AT_DATA([cmod.c], [[
+#include <stdio.h>
+#include <libcob.h>
+
+static char *txtOpCode(int opCode);
+
+/*********************************************************
+ *  TSTFH - External File Handler entry point.
+ *  Simulates INDEXED read/write by LINE SEQUENTIAL
+*********************************************************/
+
+COB_EXT_EXPORT int
+TSTFH (unsigned char *opCodep, FCD3 *fcd)
+{
+   int rc;
+   unsigned char origOrg = fcd->fileOrg;
+   if (origOrg == ORG_INDEXED) fcd->fileOrg = ORG_LINE_SEQ;
+   rc = EXTFH(opCodep, fcd);
+   fcd->fileOrg = origOrg;
+   return rc;
+}
+]])
+
+AT_CHECK([$COMPILE -fcallfh=TSTFH prog.cob cmod.c], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+
+[00: 0001XXXXXXXXXXXX0001
+00: 0002XXXXXXXXXXXX0002
+00: 0003XXXXXXXXXXXX0003
+00: 0004XXXXXXXXXXXX0004
+00: 0005XXXXXXXXXXXX0005
+], [])
+
+AT_CLEANUP
+
+
 # This is, so far, only supported by the BDB backend
 AT_SETUP([INDEXED file under ASCII/EBCDIC collation])
 AT_KEYWORDS([runfile WRITE DELETE READ EBCDIC])

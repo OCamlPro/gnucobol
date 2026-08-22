@@ -1,4 +1,9 @@
 
+2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
+	  as it is an external value.
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (indexed_open) [WITH_DB]: if open was successful but checking
@@ -205,6 +210,18 @@
 
 	* common.h, common.c: handle [__xlc__] identical to [__IBMC__]
 	* common.c [!SIGPIPE]: fix warning about unused jump
+
+2025-01-08  Florian Schmidt <florian.schmidt.1994@icloud.com>
+            Simon Sobisch <simonsobisch@gnu.org>
+
+  * call.c (cob_dlopen): new function used instead of partially re-defining
+    lt_dlopen; changed default to not load symbols to the global namespace
+    any more but locally (was always the case for _WIN32)
+  * common.c, coblocal.h (cob_settings): added boolean COB_LOAD_GLOBAL
+    to toggle into which namespace the symbols of CALLed programs should be
+    made available
+  * call.c (cob_dlopen, add_to_preload, cache_preload, cob_exit_call):
+    handle COB_LOAD_GLOBAL (load_global)
 
 2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
 

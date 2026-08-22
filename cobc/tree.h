@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -520,8 +520,8 @@ struct cobc_reserved {
 	unsigned short	nodegen;	/* Statement with END-xxx */
 	unsigned short	context_sens;	/* Context sensitive (needed for user-amendmends) */
 	int		token;		/* Token */
-	unsigned int	context_set;	/* context sensitive value set */
-	unsigned int	context_test;	/* context sensitive value tested */
+	cob_u64_t		context_set;	/* context sensitive value set */
+	cob_u64_t		context_test;	/* context sensitive value tested */
 };
 
 /* Basic common tree structure */
@@ -2280,8 +2280,7 @@ extern int		suppress_data_exceptions;
 extern unsigned int	cobc_repeat_last_token;
 extern unsigned int	cobc_in_id;
 extern unsigned int	cobc_in_procedure;
-extern unsigned int	cobc_in_repository;
-extern unsigned int	cobc_cs_check;
+extern cob_u64_t	cobc_cs_check;
 extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
 extern unsigned int	cobc_in_json_generate_body;
