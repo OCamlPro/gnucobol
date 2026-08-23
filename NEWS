@@ -62,9 +62,14 @@ NEWS - user visible changes				-*- outline -*-
    patterns where invalid numerical data (e.g, SPACES) encode "absent"
    data
 
+** bugfix on replacement pseudo-text: in COPY REPLACING and REPLACE, spaces
+   around the replacement pseudo-text between == are now removed, conforming
+   to the standard and existing dialects.
+
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
+
 ** Padding bytes of BCD may store a non-truncated digit; while
    this has no effect on calculations it can create problems on
    later binary comparison of the field as well as on group MOVEs
