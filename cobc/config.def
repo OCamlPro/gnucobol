@@ -111,6 +111,9 @@ CB_CONFIG_BOOLEAN (cb_pretty_display, "pretty-display",
 CB_CONFIG_BOOLEAN (cb_binary_truncate, "binary-truncate",
 	_("numeric truncation according to ANSI"))
 
+CB_CONFIG_BOOLEAN (cb_comp_5_uses_binary_byteorder, "comp-5-uses-binary-byteorder",
+	_("COMP-5 uses the same byte order as BINARY"))
+
 CB_CONFIG_BOOLEAN (cb_complex_odo, "complex-odo",
 	_("allow non-standard OCCURS DEPENDING ON syntax"))
 

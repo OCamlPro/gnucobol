@@ -2530,6 +2530,11 @@ setup_parameters (struct cb_field *f)
 			}
 		}
 #ifndef WORDS_BIGENDIAN
+		if (f->usage == CB_USAGE_COMP_5 &&
+			cb_comp_5_uses_binary_byteorder &&
+			cb_binary_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
+			f->flag_binary_swap = 1;
+		}
 		if (f->usage == CB_USAGE_COMP_X &&
 			cb_binary_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
 			f->flag_binary_swap = 1;

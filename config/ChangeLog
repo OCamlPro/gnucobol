@@ -4,6 +4,10 @@
 	* runtime.cfg: add runtime configuration COB_SIGNAL_REGIME to allow
 	  configuration of installed signal handlers
 
+2025-10-21  Roger Bowler <rbowler@snipix.net>
+
+	* general: add option comp-5-uses-binary-byteorder
+
 2025-04-22  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	* runtime.cfg: add runtime configuration COB_HEAP_MEMORY and

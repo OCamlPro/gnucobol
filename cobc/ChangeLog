@@ -63,6 +63,11 @@
 	  to XML PARSE statement to fix out-of-scope memory trashing
 	* codegen.c (output_param): resolve reference value only once
 
+2025-10-21  Roger Bowler <rbowler@snipix.net>
+
+	* field.c (setup_parameters): set flag_binary_swap for COMP-5 fields
+	  when comp-5-uses-binary-byteorder dialect option is set
+
 2025-10-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (file_description_entry): create an unnamed file in case
