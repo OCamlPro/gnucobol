@@ -6934,44 +6934,6 @@ cb_build_xml_parse (cb_tree data, cb_tree proc,
 
 /* Prototypes */
 
-static void
-warn_if_no_definition_seen_for_prototype (const struct cb_prototype *proto)
-{
-	struct cb_program	*program;
-	const char		*error_msg;
-
-	program = cb_find_defined_program_by_id (proto->ext_name);
-	if (program) {
-		return;
-	}
-
-	if (get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
-		if (strcmp (proto->name, proto->ext_name) == 0) {
-			/*
-			  Warn if no definition seen for element with prototype-
-			  name.
-			*/
-			if (proto->type == COB_MODULE_TYPE_FUNCTION) {
-				error_msg = _("no definition/prototype seen for FUNCTION '%s'");
-			} else { /* PROGRAM_TYPE */
-				error_msg = _("no definition/prototype seen for PROGRAM '%s'");
-			}
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto), error_msg, proto->name);
-		} else {
-			/*
-			  Warn if no definition seen for element with given
-			  external-name.
-			*/
-			if (proto->type == COB_MODULE_TYPE_FUNCTION) {
-				error_msg = _("no definition/prototype seen for FUNCTION with external name '%s'");
-			} else { /* PROGRAM_TYPE */
-				error_msg = _("no definition/prototype seen for PROGRAM with external name '%s'");
-			}
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto), error_msg, proto->ext_name);
-		}
-	}
-}
-
 cb_tree
 cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 		    const enum cob_module_type type)
@@ -7002,8 +6964,6 @@ cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 	}
 
 	prototype->type = type;
-
-	warn_if_no_definition_seen_for_prototype (prototype);
 
 	return CB_TREE (prototype);
 }
@@ -7676,24 +7636,25 @@ cb_build_prof_call (enum cb_prof_call prof_call,
 
 const char *
 cb_get_cob_module_type_string (enum cob_module_type prog_type)
-{ 															
-	switch (prog_type)									
-	{														
-		case COB_MODULE_TYPE_PROGRAM: 		return _("program");
-		case COB_MODULE_TYPE_FUNCTION: 		return _("function");
-		case COB_MODULE_TYPE_CLASS: 		return _("class");			
-		case COB_MODULE_TYPE_INTERFACE: 	return _("interface");
-		case COB_MODULE_TYPE_METHOD: 		return _("method");
-	}									
+{
+	switch (prog_type) {
+	default:
+	case COB_MODULE_TYPE_PROGRAM: 		return "PROGRAM";
+	case COB_MODULE_TYPE_FUNCTION: 		return "FUNCTION";
+	case COB_MODULE_TYPE_CLASS: 		return "CLASS";
+	case COB_MODULE_TYPE_INTERFACE: 	return "INTERFACE";
+	case COB_MODULE_TYPE_METHOD: 		return "METHOD";
+	}
 }
 
 int
-cb_search_in_name_list (cb_tree list, cb_tree name)
+cb_search_in_prototypes (cb_tree list, cb_tree name)
 {
 	cb_tree l;
 	
 	for (l = list; l; l = CB_CHAIN (l)) {
-		if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (name)) == 0) {
+		const char * const x_name = CB_PROTOTYPE (CB_VALUE (l))->name;
+		if (strcasecmp (x_name, CB_NAME (name)) == 0) {
 			return 0;
 		}
 	}

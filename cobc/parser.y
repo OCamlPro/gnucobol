@@ -1471,7 +1471,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 
 	/* build encoded external PROGRAM-ID */
 	current_program->program_id
-		= cb_build_program_id (external_name, type == COB_MODULE_TYPE_FUNCTION);
+		= cb_build_program_id (external_name, type != COB_MODULE_TYPE_PROGRAM);
 
 	if (type == COB_MODULE_TYPE_PROGRAM) {
 		if (!main_flag_set
@@ -1540,7 +1540,7 @@ decrement_depth (const char *name, const unsigned char type)
 }
 
 static void
-clean_up_program (cb_tree name, const unsigned char type)
+clean_up_program (cb_tree name, const enum cob_module_type type)
 {
 	char		*s;
 
@@ -1553,15 +1553,11 @@ clean_up_program (cb_tree name, const unsigned char type)
 			s = (char *)(CB_NAME (name));
 		}
 
-		/*
-			Skip decrementing depth for methods because they
-			occur inside OO class definitions along with other methods.
-			Preserving method-level depth helps create a list of methods
-			with it's associated class.
-		*/ 
-		if (type != COB_MODULE_TYPE_METHOD) {
-			decrement_depth (s, type);
-		}
+		/* CHECKME: shouldn' depth decrement also be perfomed when name
+		   is not given?  Maybe that's ok as per grammar rules that
+		   force END-X to be followed by a name for every OO
+		   construct... */
+		decrement_depth (s, type);
 	}
 
 	current_section = NULL;
@@ -1674,7 +1670,7 @@ check_prototype_redefines_current_element (const cb_tree prototype_name)
 /* Returns 1 if the prototype has been duplicated. */
 static int
 check_for_duplicate_prototype (const cb_tree prototype_name,
-			       const cb_tree prototype)
+			       const struct cb_prototype *prototype)
 {
 	cb_tree	dup;
 
@@ -1687,9 +1683,8 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 		}
 
 		/* Check the duplicate prototypes match */
-		if (strcmp (CB_PROTOTYPE (prototype)->ext_name,
-			    CB_PROTOTYPE (dup)->ext_name)
-		    || CB_PROTOTYPE (prototype)->type != CB_PROTOTYPE (dup)->type) {
+		if (strcmp (prototype->ext_name, CB_PROTOTYPE (dup)->ext_name)
+		 || prototype->type != CB_PROTOTYPE (dup)->type) {
 			cb_error_x (prototype_name,
 				    _("duplicate REPOSITORY entries for '%s' do not match"),
 				    get_literal_or_word_name (prototype_name));
@@ -1704,11 +1699,59 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 	return 0;
 }
 
+/* Note: neither proto nor program may be NULL */
+static void
+check_prototype_against_definition (const struct cb_prototype *proto,
+				    const struct cb_program *program)
+{
+	if (program->prog_type == proto->type) {
+		return;
+	}
+	cb_error_x (CB_TREE (proto),
+		    _("%s REPOSITORY entry for '%s' does not match its definition"),
+		    cb_get_cob_module_type_string (proto->type),
+		    proto->ext_name);
+	cb_note_x (COB_WARNOPT_NONE, CB_TREE (program),
+		   _("'%s' defined as a %s here"),
+		   program->program_name,
+		   cb_get_cob_module_type_string (program->prog_type));
+}
+
+static struct cb_program *
+find_prototype_definition (const struct cb_prototype *proto)
+{
+	struct cb_program	*program = NULL;
+
+	program = cb_find_defined_program_by_id (proto->ext_name);
+
+	if (!program &&
+	    get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
+		if (strcmp (proto->name, proto->ext_name) == 0) {
+			/*
+			  Warn if no definition seen for element with prototype-
+			  name.
+			*/
+			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
+				      _("no definition/prototype seen for %s '%s'"),
+				      cb_get_cob_module_type_string (proto->type), proto->name);
+		} else {
+			/*
+			  Warn if no definition seen for element with given
+			  external-name.
+			*/
+			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
+				      _("no definition/prototype seen for %s with external name '%s'"),
+				      cb_get_cob_module_type_string (proto->type), proto->ext_name);
+		}
+	}
+	return program;
+}
+
 static void
 setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 		  const enum cob_module_type type, const int is_current_element)
 {
-	cb_tree	prototype;
+	struct cb_prototype *prototype;
 	int	name_redefinition_allowed;
 
 	if (!is_current_element
@@ -1716,28 +1759,47 @@ setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 		return;
 	}
 
-	prototype = cb_build_prototype (prototype_name, ext_name, type);
+	prototype = CB_PROTOTYPE (cb_build_prototype (prototype_name, ext_name, type));
 
-	if (!is_current_element
-	 && check_for_duplicate_prototype (prototype_name, prototype)) {
-		return;
+	if (!is_current_element) {
+		const struct cb_program *program = find_prototype_definition (prototype);
+		if (check_for_duplicate_prototype (prototype_name, prototype)) {
+			return;
+		}
+		if (program) {
+			check_prototype_against_definition (prototype, program);
+		}
 	}
 
 	name_redefinition_allowed = type == COB_MODULE_TYPE_PROGRAM
 		&& is_current_element && cb_program_name_redefinition;
 	if (!name_redefinition_allowed) {
+		cb_tree p = CB_TREE (prototype);
 		if (CB_LITERAL_P (prototype_name)) {
-			cb_define (cb_build_reference ((const char *)CB_LITERAL (prototype_name)->data), prototype);
+			cb_define (cb_build_reference ((const char *)CB_LITERAL (prototype_name)->data), p);
 		} else {
-			cb_define (prototype_name, prototype);
+			cb_define (prototype_name, p);
 		}
 
-		if (type == COB_MODULE_TYPE_PROGRAM) {
+		switch (type) {
+		case COB_MODULE_TYPE_PROGRAM:
 			current_program->program_spec_list =
-				cb_list_add (current_program->program_spec_list, prototype);
-		} else { /* COB_MODULE_TYPE_FUNCTION */
+				cb_list_add (current_program->program_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_FUNCTION:
 			current_program->user_spec_list =
-				cb_list_add (current_program->user_spec_list, prototype);
+				cb_list_add (current_program->user_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_CLASS:
+			current_program->class_spec_list =
+				cb_list_add (current_program->class_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_INTERFACE:
+			current_program->interface_spec_list =
+				cb_list_add (current_program->interface_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_METHOD: /* unreachable... (for now) */
+			break;
 		}
 	}
 }
@@ -2575,15 +2637,63 @@ set_record_size (cb_tree min, cb_tree max)
 	}
 }
 
-/* Object-oriented class */
+/* Object-orientation helpers */
 
 static COB_INLINE void
-set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
+set_oo_class_attr (enum cb_oo_class_attribute attr, const char* attr_name)
 {
 	if (current_program->oo_class_attributes & attr) {							
 		emit_duplicate_clause_message (attr_name);						
 	}	
 	current_program->oo_class_attributes |= attr;
+}
+
+/* Returns the program that corresponds to the currently defined class.
+
+   Returns NULL outside of a method definition. */
+static struct cb_program *
+current_self_class (void) {
+	struct cb_program *oo_class = current_program;
+	if (current_program->prog_type != COB_MODULE_TYPE_METHOD) {
+		cb_error (_("use of SELF outside of METHOD definition"));
+		return NULL;
+	}
+	while (oo_class && oo_class->prog_type == COB_MODULE_TYPE_METHOD) {
+		oo_class = oo_class->next_program;
+	}
+	return oo_class;
+}
+
+/* Returns the program that corresponds to the super class of the currently
+   defined class, if it is unique and defined.  Returns NULL in every other
+   case.
+
+   Returns NULL outside of a method implementation. */
+static struct cb_program *
+current_super_class (void) {
+	cb_tree super;
+	if (current_program->prog_type != COB_MODULE_TYPE_METHOD) {
+		cb_error (_("use of SUPER outside of METHOD definition"));
+		return NULL;
+	}
+	super = current_self_class ()->oo_inheritance_list;
+	if (unlikely (cb_list_length (super) == 0)) {
+		/* no declared inheritance (implcity Base)... */
+	} else if (cb_list_length (super) == 1) {
+		super = cb_ref (CB_VALUE (super));
+		if (CB_PROGRAM_P (super)) {
+			return CB_PROGRAM (super);
+		} else {
+			/* otherwise, it's only a prototype and we cannot check
+			   much more at the moment... or do we?  */
+		}
+	} else {
+		/* multiple inheritance case */
+		cb_warning (COBC_WARN_FILLER,
+			    _("use of SUPER in CLASS or INTERFACE with "
+			      "multiple inheritance may be ambiguous"));
+	}
+	return NULL;
 }
 
 %}
@@ -2862,7 +2972,7 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token END_FACTORY		"END-FACTORY"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
-%token END_INTERFACE	"END INTERFACE"
+%token END_INTERFACE		"END INTERFACE"
 %token END_JSON			"END-JSON"
 %token END_METHOD		"END METHOD"
 %token END_MODIFY		"END-MODIFY"
@@ -3198,7 +3308,8 @@ set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
 %token ONLY
 %token ON_ESCAPE		"ON ESCAPE"
 %token ON_EXCEPTION		"ON EXCEPTION"
-%token OO_CLASS_NAME	"class-name"
+%token OO_CLASS_NAME		"class-name"
+%token OO_INTERFACE_NAME	"interface-name"
 %token OPEN
 %token OPTIONAL
 %token OPTIONS
@@ -3812,9 +3923,12 @@ class_definition:
   class_id_paragraph
   _class_body
   {
-	cb_validate_program_data(current_program);
+	cb_validate_program_data (current_program);
   }
   end_class
+  {
+	cb_check_definition_matches_prototype (current_program);
+  }
 ;
 
 _class_body:
@@ -3826,22 +3940,24 @@ _class_body:
   _factory_or_instance_definition
 ;
 
-
-_interface_body:
-  _options_paragraph
-  _environment_division
-  {
-	cb_validate_program_environment(current_program);
-	cb_validate_program_data(current_program);
-  }
-  _procedure_division
-;
-
 interface_definition:
   _identification_header
   interface_id_paragraph
   _interface_body
   end_interface
+  {
+	cb_check_definition_matches_prototype (current_program);
+  }
+;
+
+_interface_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment (current_program);
+	cb_validate_program_data (current_program);
+  }
+  _procedure_division
 ;
 
 _factory_or_instance_definition:
@@ -3864,6 +3980,13 @@ factory_definition:
 	__CS_LEAVE (CB_CS_FACTORY_PARAGRAPH);
   }
   _oo_body
+  {
+	/* TODO: use a flag to denote that those are factory method definitions,
+	   or post-process the list of methods.  The flag approach may be
+	   necessary in case some checks performed during parsing depend on this
+	   context.  We could also generate distinct programs for factory and
+	   for instance.. */
+  }
   END_FACTORY
   _dot
 ;
@@ -3888,25 +4011,28 @@ _oo_body:
   _options_paragraph
   _environment_division
   {
-	cb_validate_program_environment(current_program);
+	cb_validate_program_environment (current_program);
   }
   _data_division
   {
-	cb_validate_program_data(current_program);
+	cb_validate_program_data (current_program);
   }
   _oo_procedure_division
-  {  
-    /* 
-	  Manual reset as a full OO construct like METHOD-ID 
-	  can appear inside PROCEDURE DIVISIONs.
-	*/  
-    cobc_in_procedure = 0;  
+  {
+	/* Manual reset as a full OO construct like METHOD-ID can appear inside
+	   PROCEDURE DIVISIONs. */
+	cobc_in_procedure = 0;
   }
 ;
 
 method_definition:
   _identification_header
   method_id_header TOK_DOT method_signature _override _is_final _dot
+  {
+	/* The PROCEDURE DIVISION is optional in methods definitions, so we'll
+	   assume it is there already. */
+	header_check |= COBC_HD_PROCEDURE_DIVISION;
+  }
   _program_body
   end_method
 ;
@@ -3951,7 +4077,7 @@ end_class:
 	last_source_line = cb_source_line;
 	check_area_a_of ("END CLASS");
   }
-  class_id_name _dot
+  OO_CLASS_NAME _dot
   {
 	cobc_in_id = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
@@ -4162,7 +4288,6 @@ _default_display_clause:
 class_id_header:
   CLASS_ID
   {
-	/* cobc_in_id = 1; */
 	__CS_CLEAR_ALL();
 	CB_UNSUPPORTED ("object-oriented COBOL");
   }
@@ -4176,21 +4301,13 @@ interface_id_header:
   }
 ;
 
-class_id_name:
-  OO_CLASS_NAME	{ $$ = $1; }
-| LITERAL
-  {
-	cb_trim_program_id ($1);
-  }
-;
-
 _method_id_name:
   /* empty */
 | method_id_name
 ;
 
 method_id_name:
-  WORD { $$ = $1; }
+  WORD
 | LITERAL
   {
 	cb_trim_program_id ($1);
@@ -4212,7 +4329,7 @@ word_list:
   }
 | word_list WORD
   {
-	$$ = cb_list_add ($1, $2);	
+	$$ = cb_list_add ($1, $2);
   }
 ;
 
@@ -4241,12 +4358,12 @@ _implements_clause:
 ;
 
 class_attribute:
-  _is STATIC		{ set_oo_class_attr(CB_OO_CLASS_ATTR_STATIC, "STATIC"); }
-| _is PARTIAL		{ set_oo_class_attr(CB_OO_CLASS_ATTR_PARTIAL, "PARTIAL"); }
-| _is FINAL			{ set_oo_class_attr(CB_OO_CLASS_ATTR_FINAL, "FINAL"); }
-| _is ABSTRACT		{ set_oo_class_attr(CB_OO_CLASS_ATTR_ABSTRACT, "ABSTRACT"); }
-| _is PUBLIC		{ set_oo_class_attr(CB_OO_CLASS_ATTR_PUBLIC, "PUBLIC"); }
-| _is INTERNAL		{ set_oo_class_attr(CB_OO_CLASS_ATTR_INTERNAL, "INTERNAL"); }
+  _is STATIC		{ set_oo_class_attr (CB_OO_CLASS_ATTR_STATIC, "STATIC"); }
+| _is PARTIAL		{ set_oo_class_attr (CB_OO_CLASS_ATTR_PARTIAL, "PARTIAL"); }
+| _is FINAL		{ set_oo_class_attr (CB_OO_CLASS_ATTR_FINAL, "FINAL"); }
+| _is ABSTRACT		{ set_oo_class_attr (CB_OO_CLASS_ATTR_ABSTRACT, "ABSTRACT"); }
+| _is PUBLIC		{ set_oo_class_attr (CB_OO_CLASS_ATTR_PUBLIC, "PUBLIC"); }
+| _is INTERNAL		{ set_oo_class_attr (CB_OO_CLASS_ATTR_INTERNAL, "INTERNAL"); }
 ;
 
 _class_attributes:
@@ -4265,9 +4382,9 @@ _class_attributes:
 */
 
 class_id_paragraph:
-  class_id_header TOK_DOT class_id_name _as_literal
+  class_id_header TOK_DOT OO_CLASS_NAME _as_literal
   {
-	if (setup_program ($3, $4, COB_MODULE_TYPE_CLASS, 1)) {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_CLASS, 0)) {
 		YYABORT;
 	}
   }
@@ -4293,7 +4410,7 @@ class_id_paragraph:
 interface_id_paragraph:
   interface_id_header TOK_DOT interface_id_name _as_literal
   {
-	if (setup_program ($3, $4, COB_MODULE_TYPE_INTERFACE, 1)) {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_INTERFACE, 0)) {
 		YYABORT;
 	}
   }
@@ -4323,10 +4440,13 @@ method_signature:
   }
 | get_or_set PROPERTY WORD
   {
-    /* 
-	  TODO (OO): Call setup_program() with appropriate fields here. 
-	  Also set the property accessor type.
+	/*
+	  TODO (OO): Call setup_program() with appropriate fields here.  Also
+	  set the property accessor type.
 	*/
+	if (setup_program ($3, NULL, COB_MODULE_TYPE_METHOD, 0)) {
+		YYABORT;
+	}
   }
 ;
 
@@ -4341,17 +4461,16 @@ _program_body:
   }
   _data_division
   {
-	/* note:
-	   we also validate all references we found so far here */
+	/* note: we also validate all references we found so far here */
 	cb_validate_program_data (current_program);
 	within_typedef_definition = 0;
   }
   _procedure_division
   {  
-    /* 
-	  Manual reset as a full OO construct like METHOD-ID 
-	  can appear inside PROCEDURE DIVISIONs.
-	*/  
+    /*
+      Manual reset as a full OO construct like METHOD-ID can appear inside
+      PROCEDURE DIVISIONs.
+    */
     cobc_in_procedure = 0;  
   }
 ;
@@ -4905,12 +5024,12 @@ repository_list:
 _expands_clause:
   /* empty */
 | EXPANDS WORD
-{
-	/* 
-	  TODO (OO): Check that WORD is a class when used with the CLASS specifier
-	  and interface when used with the INTERFACE specifier.
+  {
+	/*
+	  TODO (OO): Check that WORD is a class when used with the CLASS
+	  specifier and interface when used with the INTERFACE specifier.
 	*/
-}
+  }
 USING word_list
 ;
 
@@ -4943,8 +5062,9 @@ repository_name:
   }
   WORD _as_literal _expands_clause
   {
-	current_program->class_spec_list =
-		cb_list_add (current_program->class_spec_list, $3);
+	if ($3 != cb_error_node) {
+		setup_prototype ($3, $4, COB_MODULE_TYPE_CLASS, 0);
+	}
 	__CS_LEAVE (CB_CS_CLASS_SPECIFIER);
   }
 | INTERFACE
@@ -4953,8 +5073,9 @@ repository_name:
   }
   WORD _as_literal _expands_clause
   {
-	current_program->interface_spec_list =
-		cb_list_add (current_program->interface_spec_list, $3);
+	if ($3 != cb_error_node) {
+		setup_prototype ($3, $4, COB_MODULE_TYPE_INTERFACE, 0);
+	}
 	__CS_LEAVE (CB_CS_INTERFACE_SPECIFIER);
   }
 ;
@@ -8488,13 +8609,6 @@ usage_clause:
   OBJECT REFERENCE _object_reference_type
   {
 	check_and_set_usage (CB_USAGE_OBJECT);
-	if ($5 && CB_REFERENCE ($5)) {
-		current_field->reference = cb_ref ($5);
-	}
-	/* TODO: set the class to which this is a reference to. */
-
-	// CB_PENDING ("USAGE OBJECT REFERENCE");
-	
 	__CS_LEAVE (CB_CS_USAGE);
   }
 | USAGE _is WORD	/* MF extension for referencing types, full support would need
@@ -8855,22 +8969,21 @@ _to_type_name:
 | _to type_name { $$ = $2;   }
 ;
 
-
 _object_reference_type:
   /* empty */
-| WORD { $$ = $1; }
-| _factory_of ACTIVE_CLASS
-| _factory_of OO_CLASS_NAME _only
+| OO_INTERFACE_NAME               { current_field->reference = cb_ref ($1); }
+| _factory_of ACTIVE_CLASS        { current_field->reference = cb_int0; }
+| _factory_of OO_CLASS_NAME _only { current_field->reference = cb_ref ($2); }
 ;
 
 _factory_of:
-  /* empty */
-| FACTORY _of
+  /* empty */ { current_field->flag_factory_reference = 0; }
+| FACTORY _of { current_field->flag_factory_reference = 1; }
 ;
 
 _only:
-  /* empty */ { $$ = NULL; }
-| ONLY	 { $$ = cb_int0; }
+  /* empty */ { current_field->flag_reference_only = 0; }
+| ONLY        { current_field->flag_reference_only = 1; }
 ;
 
 double_usage:
@@ -9628,7 +9741,7 @@ _local_storage_section:
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LOCAL_STORAGE_SECTION;
 	current_storage = CB_STORAGE_LOCAL;
-	if (current_program->nested_level 
+	if (current_program->nested_level
 	 && current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		cb_error (_("%s not allowed in nested programs"), "LOCAL-STORAGE");
 	} else if (cb_local_implies_recursive) {
@@ -11492,6 +11605,7 @@ procedure_division_header:
 	cobc_in_procedure = 1U;
 	cb_set_system_names ();
 	last_source_line = cb_source_line;
+	header_check |= COBC_HD_PROCEDURE_DIVISION;
 
 	cb_prof_procedure_division (
 		current_program,
@@ -11501,7 +11615,7 @@ procedure_division_header:
   }
   DIVISION
 ;
- 
+
 procedure_division_sections:
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
@@ -11523,7 +11637,6 @@ procedure_division_sections:
 	} else if (!current_program->entry_convention) {
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
-	header_check |= COBC_HD_PROCEDURE_DIVISION;
   }
   _dot_or_else_area_a
   _procedure_declaratives
@@ -11555,14 +11668,10 @@ procedure_division_sections:
 	}
   }
 ;
-  
 
 _oo_procedure_division:
   /* empty */
 | procedure_division_header
-  {
-	header_check |= COBC_HD_PROCEDURE_DIVISION;
-  }
   _dot_or_else_area_a
   method_list
 ;
@@ -13153,16 +13262,7 @@ call_body:
 	}
 
 	/* Check parameter conformance, if we can work out what is being called. */
-	if (CB_LITERAL_P ($4)) {
-		cb_check_conformance ($4, NULL, $8, $9);
-	} else if (CB_REFERENCE_P ($4)) {
-		cb_tree	ref = cb_ref ($4);
-		if ((CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78)
-		 || CB_PROGRAM_P (ref)
-		 || CB_PROTOTYPE_P (ref)) {
-			cb_check_conformance ($4, NULL, $8, $9);
-		}
-	}
+	cb_check_conformance ($4, NULL, $8, $9);
 
 	/* For CALL ... RETURNING NOTHING, set the call convention bit */
 	if (call_nothing) {
@@ -15514,17 +15614,6 @@ initiate_body:
   }
 ;
 
-id_or_class_name:
-  SELF
-| SUPER
-| identifier
-| class_id_name
-;
-
-inline_method_invocation:
-  id_or_class_name TOK_COLON_COLON literal func_args
-;
-
 /* INQUIRE statement */
 
 inquire_statement:
@@ -15582,6 +15671,11 @@ invoke_statement:
   {
 	cb_check_conformance ($2, $3, $4, $5);
   }
+;
+
+id_or_class_name:
+  identifier
+| OO_CLASS_NAME
 ;
 
 _backward:
@@ -20218,6 +20312,21 @@ identifier:
 		$$ = cb_error_node;
 	}
   }
+| SELF
+  {
+	  $$ = cb_validate_oo_class_or_interface (current_self_class ());
+  }
+| SUPER
+  {
+	  /* Note: warns in case of multiple inheritance... may we return a list
+	     instead? */
+	  $$ = cb_validate_oo_class_or_interface (current_super_class ());
+  }
+| OO_CLASS_NAME OF SUPER
+  {
+	  /* Note: this leaves multiple inheritance aside... */
+	  $$ = cb_validate_oo_class_or_interface (current_super_class ());
+  }
 ;
 
 identifier_1:
@@ -20650,7 +20759,50 @@ function:
   {
 	$$ = cb_build_intrinsic ($1, $2, $3, 1);
   }
-| inline_method_invocation
+| id_or_class_name TOK_COLON_COLON literal inline_invoke_args /* CHECKME: allow refmod? */
+  {
+	/* TODO: check target method returns something... */
+	cb_check_conformance ($1, $3, $4, NULL);
+  }
+;
+
+inline_invoke_args:
+  /* empty */	%prec SHIFT_PREFER
+  {
+	$$ = NULL;
+  }
+| TOK_OPEN_PAREN inline_invoke_args_list TOK_CLOSE_PAREN
+  {
+	if (cb_list_length ($2) > MAX_CALL_FIELD_PARAMS) {
+		cb_error_x (CB_TREE (current_statement),
+			    _("number of arguments exceeds maximum %d"),
+			    MAX_CALL_FIELD_PARAMS);
+	}
+	$$ = $2;
+  }
+| TOK_OPEN_PAREN TOK_CLOSE_PAREN
+  {
+	$$ = NULL;
+  }
+;
+
+inline_invoke_args_list:
+  inline_invoke_arg
+| inline_invoke_args_list _e_sep inline_invoke_arg
+  {
+	$$ = cb_list_append ($1, $3);
+  }
+;
+
+inline_invoke_arg:
+  OMITTED
+  {
+	$$ = CB_BUILD_PAIR (cb_int (CB_CALL_BY_REFERENCE), cb_null);
+  }
+| exp %prec SHIFT_PREFER
+  {
+	$$ = cb_build_call_parameter ($1, CB_CALL_BY_REFERENCE, CB_SIZE_UNSET);
+  }
 ;
 
 func_no_parm:

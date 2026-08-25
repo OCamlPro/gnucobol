@@ -1,7 +1,23 @@
 
-2026-06-30	Saurabh Kumar <developer.saurabh@outlook.com>
+2026-08-26  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* parser.y, reserved.c, scanner.l: add support for parsing INTERFACE-ID, 
+	* tree.c (warn_if_no_definition_seen_for_prototype): move to typeck.c,
+	  renamed into find_prototype_definition
+	* tree.c (cb_build_prototype): move check for missing definitions to the
+	  (unique) call-site in typeck.c
+	* typeck.c (setup_prototype, check_prototype_against_definition):
+	  report REPOSITORY entries that mismatch their definition
+	* typeck.c (try_get_program): handle USAGE OBJECT REFERENCE
+	* typeck.c (cb_check_conformance, cb_validate_oo_class_or_interface):
+	  add support for checking method INVOKE, fix determination of last given
+	  argument
+	* parser.y (call_body): remove unneeded guard for call to
+	  cb_check_conformance (now dealt with internally in try_get_program)
+	* parser.y (clean_up_program): proper module type in signature
+
+2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* parser.y, reserved.c, scanner.l: add support for parsing INTERFACE-ID,
 	  METHOD-ID, FACTORY, OBJECT paragraphs, INVOKE statement and inline method
 	  invocation expression. Support CLASS and INTERFACE specifiers in REPOSITORY
 	  paragraph. Also support keywords SELF and ACTIVE-CLASS.
@@ -10,13 +26,13 @@
 	  paragraph
 	* cobc.h: add new special contexts for OO constructs
 
-2026-06-11	Saurabh Kumar <developer.saurabh@outlook.com>
+2026-06-11  Saurabh Kumar <developer.saurabh@outlook.com>
 
 	* parser.y, reserved.c: add support for parsing class attributes - AS literal,
 	  IS FINAL, INHERITS FROM {class-name ...}, USING {param-name ...}
 	  with unimplemented warning; also support MF extensions IS STATIC, IS ABSTRACT,
 	  IS PARTIAL, IS PUBLIC, IS INTERNAL
-	* tree.h, common.h: add COB_MODULE_TYPE_CLASS and bit masks for all 
+	* tree.h, common.h: add COB_MODULE_TYPE_CLASS and bit masks for all
 	  object-oriented class attributes
 
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>

@@ -50,8 +50,8 @@ AT_DATA([prog1.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
-[prog1.cob:3: error: object-oriented COBOL is not supported 
-prog1.cob:4: error: syntax error, unexpected ., expecting Literal or class-name
+[prog1.cob:3: error: object-oriented COBOL is not supported
+prog1.cob:4: error: syntax error, unexpected ., expecting class-name
 ])
 
 AT_DATA([prog2.cob], [
@@ -114,7 +114,7 @@ AT_DATA([prog.cob], [
 
         CLASS-ID. DematAccount.
         END CLASS DematAccount.
-        
+
         CLASS-ID. SavingsAccount INHERITS FROM Account.
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
@@ -135,7 +135,7 @@ AT_DATA([prog.cob], [
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
         REPOSITORY.
-            CLASS Account 
+            CLASS Account
             CLASS DematAccount.
         END CLASS MultiPurposeAccount.
 
@@ -161,8 +161,8 @@ AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
         CLASS-ID. MySuperClass.
         END CLASS MySuperClass.
-        
-        CLASS-ID. MyFirstClass INHERITS 
+
+        CLASS-ID. MyFirstClass INHERITS
                   FROM MySuperClass IS FINAL.
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
@@ -170,11 +170,11 @@ AT_DATA([prog.cob], [
             CLASS MySuperClass.
         END CLASS MyFirstClass.
 
-        CLASS-ID. MySecondClass AS "MySecondClass" 
+        CLASS-ID. MySecondClass AS "MySecondClass"
                   IS FINAL.
         END CLASS MySecondClass.
 
-        CLASS-ID. MyThirdClass 
+        CLASS-ID. MyThirdClass
                   INHERITS FROM MySuperClass
                   USING param-name.
         ENVIRONMENT DIVISION.
@@ -215,8 +215,8 @@ AT_DATA([prog.cob], [
         REPOSITORY.
             CLASS Account.
         END CLASS DematAccount.
-        
-        CLASS-ID. SavingsAccount 
+
+        CLASS-ID. SavingsAccount
                   INHERITS FROM Account
                   FINAL.
         ENVIRONMENT DIVISION.
@@ -234,7 +234,7 @@ AT_DATA([prog.cob], [
             CLASS SavingsAccount.
         END CLASS MinorSavingsAccount.
 
-        CLASS-ID. MultiPurposeAccount 
+        CLASS-ID. MultiPurposeAccount
                   INHERITS Account DematAccount
                   PARTIAL.
         ENVIRONMENT DIVISION.
@@ -273,8 +273,8 @@ AT_DATA([prog.cob], [
         REPOSITORY.
             CLASS Account.
         END CLASS DematAccount.
-        
-        CLASS-ID. SavingsAccount 
+
+        CLASS-ID. SavingsAccount
                   INHERITS FROM Account
                   FINAL
                   IS ABSTRACT.
@@ -284,7 +284,7 @@ AT_DATA([prog.cob], [
             CLASS Account.
         END CLASS SavingsAccount.
 
-        CLASS-ID. MultiPurposeAccount 
+        CLASS-ID. MultiPurposeAccount
                   INHERITS Account DematAccount
                   PARTIAL
                   IS PARTIAL.
@@ -314,7 +314,7 @@ AT_KEYWORDS([OOP])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
-        
+
         INTERFACE-ID. Account.
         END INTERFACE Account.
 
@@ -340,11 +340,11 @@ AT_KEYWORDS([OOP])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
-        
+
         CLASS-ID. Account IS FINAL.
         END CLASS Account.
 
-        CLASS-ID. SavingsAccount 
+        CLASS-ID. SavingsAccount
             INHERITS ACCOUNT
             IS FINAL.
         ENVIRONMENT DIVISION.
@@ -412,18 +412,19 @@ AT_CHECK([$COMPILE_ONLY prog1.cob], [1], [],
 prog1.cob:6: error: object-oriented COBOL (INTERFACE) is not supported
 prog1.cob:9: error: object-oriented COBOL is not supported
 prog1.cob:29: error: object-oriented COBOL is not supported
-prog1.cob:31: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:37: warning: no definition/prototype seen for CLASS with external name 'MyKnownClass'
+prog1.cob:31: error: duplicate parent CLASS 'MyBaseClass'
 prog1.cob:30: note: 'MyBaseClass' defined here
-prog1.cob:32: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
-prog1.cob:33: error: cyclically inheriting class 'MyDerivedClass'
+prog1.cob:32: error: inherited CLASS 'MyUnknownClass' not found in REPOSITORY paragraph
+prog1.cob:33: error: cyclically inheriting CLASS 'MyDerivedClass'
 prog1.cob:29: note: 'MyDerivedClass' defined here
-prog1.cob:33: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
-prog1.cob:31: error: duplicate parent class name 'MyBaseClass'
+prog1.cob:33: error: inherited CLASS 'MyDerivedClass' not found in REPOSITORY paragraph
+prog1.cob:31: error: duplicate parent CLASS 'MyBaseClass'
 prog1.cob:30: note: 'MyBaseClass' defined here
-prog1.cob:32: error: inherited class 'MyUnknownClass' not found in REPOSITORY paragraph
-prog1.cob:33: error: cyclically inheriting class 'MyDerivedClass'
+prog1.cob:32: error: inherited CLASS 'MyUnknownClass' not found in REPOSITORY paragraph
+prog1.cob:33: error: cyclically inheriting CLASS 'MyDerivedClass'
 prog1.cob:29: note: 'MyDerivedClass' defined here
-prog1.cob:33: error: inherited class 'MyDerivedClass' not found in REPOSITORY paragraph
+prog1.cob:33: error: inherited CLASS 'MyDerivedClass' not found in REPOSITORY paragraph
 ])
 
 AT_DATA([prog2.cob], [
@@ -442,7 +443,7 @@ AT_DATA([prog2.cob], [
         ENVIRONMENT DIVISION.
         CONFIGURATION SECTION.
         REPOSITORY.
-                INTERFACE MyBaseInterface AS "MyKnownInterface" 
+                INTERFACE MyBaseInterface AS "MyKnownInterface"
                 EXPANDS MyInterface
                 USING dummy-param.
         END INTERFACE MyDerivedInterface.
@@ -451,12 +452,13 @@ AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:3: error: object-oriented COBOL (INTERFACE) is not supported
 prog2.cob:6: error: object-oriented COBOL (INTERFACE) is not supported
 prog2.cob:9: error: object-oriented COBOL (INTERFACE) is not supported
-prog2.cob:11: error: duplicate parent interface name 'MyBaseInterface'
+prog2.cob:17: warning: no definition/prototype seen for INTERFACE with external name 'MyKnownInterface'
+prog2.cob:11: error: duplicate parent INTERFACE 'MyBaseInterface'
 prog2.cob:10: note: 'MyBaseInterface' defined here
-prog2.cob:12: error: inherited interface 'MyUnknownInterface' not found in REPOSITORY paragraph
-prog2.cob:13: error: cyclically inheriting interface 'MyDerivedInterface'
+prog2.cob:12: error: inherited INTERFACE 'MyUnknownInterface' not found in REPOSITORY paragraph
+prog2.cob:13: error: cyclically inheriting INTERFACE 'MyDerivedInterface'
 prog2.cob:9: note: 'MyDerivedInterface' defined here
-prog2.cob:13: error: inherited interface 'MyDerivedInterface' not found in REPOSITORY paragraph
+prog2.cob:13: error: inherited INTERFACE 'MyDerivedInterface' not found in REPOSITORY paragraph
 ])
 
 AT_CLEANUP
@@ -489,18 +491,19 @@ AT_DATA([prog.cob], [
         DATA DIVISION.
         WORKING-STORAGE SECTION.
             01 an-object USAGE OBJECT REFERENCE MyBaseClass.
+            01 a-factory USAGE OBJECT REFERENCE FACTORY OF ACTIVE-CLASS.
 
         PROCEDURE DIVISION.
             INVOKE MyBaseClass "MyMethod".
             INVOKE an-object "MyMethod".
+            INVOKE a-factory "StaticMethod".
         END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL (INTERFACE) is not supported
 prog.cob:6: error: object-oriented COBOL is not supported
-prog.cob:24: warning: USAGE OBJECT REFERENCE is not implemented
-prog.cob:27: error: 'MyBaseClass' is not defined
+prog.cob:21: warning: no definition/prototype seen for CLASS with external name 'MyClass'
 ])
 AT_CLEANUP
 
@@ -528,7 +531,7 @@ AT_DATA([prog.cob], [
         PROCEDURE DIVISION RETURNING an-object.
             begin-here.
             INVOKE SELF "new" RETURNING an-object.
-            INVOKE an-object "initializeAccount" 
+            INVOKE an-object "initializeAccount"
                     USING BY CONTENT number-of-accounts.
             GOBACK.
             END METHOD newAccount.
@@ -545,7 +548,7 @@ AT_DATA([prog.cob], [
                 GOBACK.
             END METHOD removeAccount.
         END FACTORY.
-    
+
         OBJECT.
         DATA DIVISION.
         WORKING-STORAGE SECTION.
@@ -561,7 +564,7 @@ AT_DATA([prog.cob], [
                     03 in-amount PIC S9(9)V99.
                     03 in-wrk PIC X(12).
             PROCEDURE DIVISION.
-        
+
             get-amount.
             DISPLAY "Enter amount 9(9).99"
             ACCEPT in-wrk
@@ -617,7 +620,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
-prog.cob:17: warning: USAGE OBJECT REFERENCE is not implemented
+prog.cob:7: warning: no definition/prototype seen for CLASS 'Base'
 prog.cob:18: error: RETURNING item is not defined in LINKAGE SECTION
 prog.cob: in paragraph 'begin-here':
 prog.cob:22: error: 'number-of-accounts' is not defined
@@ -639,12 +642,12 @@ prog.cob:101: error: 'the-date' is not defined
 AT_CLEANUP
 
 
-AT_SETUP([Inline Method Invocation Expression])
+AT_SETUP([Inline method invocation expression])
 AT_KEYWORDS([OOP])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
-        CLASS-ID. MyBaseClass.
+        CLASS-ID. MyBaseClass AS "MyClass".
         FACTORY.
             PROCEDURE DIVISION.
             METHOD-ID. MyMethod IS FINAL.
@@ -652,7 +655,7 @@ AT_DATA([prog.cob], [
                 LINKAGE SECTION.
                     01 VAR-IN  PIC 9(2).
                     01 VAR-OUT  PIC 9(2).
-                PROCEDURE DIVISION USING VAR-IN 
+                PROCEDURE DIVISION USING VAR-IN
                         RETURNING VAR-OUT.
                     MOVE VAR-IN TO VAR-OUT.
                     DISPLAY "Hello, world!".
@@ -669,12 +672,17 @@ AT_DATA([prog.cob], [
                 WORKING-STORAGE SECTION.
                     01 an-object USAGE OBJECT REFERENCE MyBaseClass.
                     01 a-var PIC 9(2).
-
                 PROCEDURE DIVISION.
                     DISPLAY an-object :: "MyMethod" (10).
+                    DISPLAY an-object :: "MyMethod" ().
                     DISPLAY an-object :: "MyMethod" (10 + 2).
+                    DISPLAY an-object :: "MyMethod" (10 + 2, 42).
+                    DISPLAY an-object :: "MyMethod" (OMITTED).
+                    DISPLAY an-object :: "MyMethod" (OMITTED, 42).
                     MOVE 98 TO a-var.
                     DISPLAY an-object :: "MyMethod" (a-var).
+                    DISPLAY SELF :: "MyMethod" (a-var).
+                    INVOKE an-object "MyMethod" USING SUPER.
             END METHOD SayHello.
         END OBJECT.
         END CLASS MyBaseClass.
@@ -695,13 +703,110 @@ AT_DATA([prog.cob], [
             MOVE 98 TO a-var.
             DISPLAY an-object :: "MyMethod" (a-var).
 
-            INVOKE an-object "SayHello".
+            INVOKE an-object "SayHello" USING 1.
+            INVOKE an-object "MyMethod" USING SUPER.
+
+            MOVE SELF TO an-object.
+            MOVE SUPER TO an-object.
         END PROGRAM prog.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:3: error: object-oriented COBOL is not supported
-prog.cob:26: warning: USAGE OBJECT REFERENCE is not implemented
-prog.cob:45: warning: USAGE OBJECT REFERENCE is not implemented
+prog.cob:30: warning: argument #1 is not optional
+prog.cob:32: warning: expecting up to 1 arguments, but found 2
+prog.cob:33: warning: argument #1 is not optional
+prog.cob:34: warning: argument #1 is not optional
+prog.cob:34: warning: expecting up to 1 arguments, but found 2
+prog.cob:3: error: invalid type for DISPLAY operand
+prog.cob:38: error: syntax error, unexpected ., expecting ::
+prog.cob:59: warning: expecting up to 0 arguments, but found 1
+prog.cob:60: error: use of SUPER outside of METHOD definition
+prog.cob:60: error: syntax error, unexpected ., expecting ::
+prog.cob:62: error: use of SELF outside of METHOD definition
+prog.cob:63: error: use of SUPER outside of METHOD definition
 ])
+AT_CLEANUP
+
+
+AT_SETUP([SUPER in multiple inheritance context])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        CLASS-ID. A.
+        OBJECT.
+        PROCEDURE DIVISION.
+        METHOD-ID. M.
+        END METHOD M.
+        END OBJECT.
+        END CLASS A.
+
+        CLASS-ID. B.
+        OBJECT.
+        PROCEDURE DIVISION.
+        METHOD-ID. M.
+        END METHOD M.
+        END OBJECT.
+        END CLASS B.
+
+        CLASS-ID. C INHERITS A B.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+          CLASS A
+          CLASS B.
+        OBJECT.
+        PROCEDURE DIVISION.
+        METHOD-ID. M.
+        PROCEDURE DIVISION.
+           INVOKE SUPER "M"
+           GOBACK.
+        END METHOD M.
+        END OBJECT.
+        END CLASS C.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:2: error: object-oriented COBOL is not supported
+prog.cob:10: error: object-oriented COBOL is not supported
+prog.cob:18: error: object-oriented COBOL is not supported
+prog.cob:28: warning: use of SUPER in CLASS or INTERFACE with multiple inheritance may be ambiguous
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Wrong CLASS prototype])
+AT_KEYWORDS([OOP])
+
+AT_DATA([prog.cob], [
+        FUNCTION-ID. fun.
+        DATA DIVISION.
+        LINKAGE SECTION.
+        77 X PIC 9.
+        PROCEDURE DIVISION RETURNING X.
+             MOVE 0 TO X
+             GOBACK.
+        END FUNCTION fun.
+
+        PROGRAM-ID. prog.
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+        REPOSITORY.
+            CLASS C AS "fun".
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+            01 O USAGE OBJECT REFERENCE C.
+        PROCEDURE DIVISION.
+            INVOKE C "MyMethod".
+            INVOKE O "MyMethod".
+        END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:15: error: CLASS REPOSITORY entry for 'fun' does not match its definition
+prog.cob:15: note: 'fun' defined as a FUNCTION here
+prog.cob:20: error: CLASS or INTERFACE expected (got FUNCTION 'fun')
+prog.cob:21: error: CLASS or INTERFACE expected (got FUNCTION 'fun')
+])
+
 AT_CLEANUP

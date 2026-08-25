@@ -1026,6 +1026,8 @@ struct cb_field {
 	unsigned int flag_is_verified	: 1;	/* Has been verified */
 
 	unsigned int flag_had_definition_note : 1;	/* had its defintion output */
+	unsigned int flag_factory_reference : 1;	/* OBJECT REFERENCE FACTORY */
+	unsigned int flag_reference_only : 1;	/* OBJECT REFERENCE _ ONLY */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1878,8 +1880,8 @@ struct cb_program {
 	cb_tree			cb_sort_return;		/* SORT-RETURN */
 	cb_tree			cb_call_params;		/* Number of CALL params */
 	cb_tree			mnemonic_spec_list;	/* MNEMONIC spec */
-	cb_tree			class_spec_list;	/* CLASS spec */
-	cb_tree			interface_spec_list;	/* INTERFACE spec */
+	cb_tree			class_spec_list;	/* CLASS spec (prototypes only) */
+	cb_tree			interface_spec_list;	/* INTERFACE spec (prototypes only) */
 	cb_tree			function_spec_list;	/* FUNCTION spec */
 	cb_tree			user_spec_list;		/* User FUNCTION spec */
 	cb_tree			program_spec_list;	/* PROGRAM spec */
@@ -2424,7 +2426,8 @@ extern void		cb_validate_program_environment (struct cb_program *);
 extern void		cb_validate_program_data (struct cb_program *);
 extern void		cb_validate_program_body (struct cb_program *);
 
-extern void 	cb_validate_oo_program_data (struct cb_program *);
+extern void		cb_validate_oo_program_data (struct cb_program *);
+extern cb_tree		cb_validate_oo_class_or_interface (struct cb_program *);
 
 extern cb_tree		cb_build_expr (cb_tree);
 extern cb_tree		cb_build_cond (cb_tree);
@@ -2628,8 +2631,8 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
 
-extern const char * cb_get_cob_module_type_string(enum cob_module_type);
-extern int cb_search_in_name_list(cb_tree, cb_tree);
+extern const char	*cb_get_cob_module_type_string (enum cob_module_type);
+extern int		cb_search_in_prototypes (cb_tree prototypes, cb_tree name);
 
 #ifdef	COB_TREE_DEBUG
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,

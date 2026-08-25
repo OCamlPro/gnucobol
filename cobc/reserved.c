@@ -1443,7 +1443,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "GET",			0, 0, GET,			/* 2002 */
-				0, 
+				0,
   },
   { "GIVING",			0, 0, GIVING,			/* 2002 */
 				0, 0

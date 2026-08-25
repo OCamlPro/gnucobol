@@ -3064,6 +3064,21 @@ set_argument_defaults (cb_tree argument, cb_tree parameter, const struct cb_fiel
 
 }
 
+cb_tree
+cb_validate_oo_class_or_interface (struct cb_program *prog) {
+	if (!prog) {
+		return cb_error_node;
+	}
+	if (prog->prog_type != COB_MODULE_TYPE_CLASS
+	 && prog->prog_type != COB_MODULE_TYPE_INTERFACE) {
+		cb_error_x (CB_TREE (prog),
+			    _("CLASS or INTERFACE expected (got %s '%s')"),
+			    cb_get_cob_module_type_string (prog->prog_type),
+			    prog->program_name);
+		return cb_error_node;
+	}
+	return CB_TREE (prog);
+}
 
 void
 cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_list)
@@ -3153,6 +3168,26 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	}
 }
 
+/* Returns NULL on figurative constants */
+static COB_INLINE const char *
+try_get_literal_data (cb_tree ref) {
+	if (CB_LITERAL_P (ref)) {
+		return (char *) CB_LITERAL (ref)->data;
+	} else if (CB_REFERENCE_P (ref)) {
+		ref = cb_ref (ref);
+		if (ref == cb_error_node) {
+			return NULL;
+		}
+		if (CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78) {
+			cb_tree x = CB_VALUE (CB_FIELD (ref)->values);
+			if (!CB_LITERAL_P (x)) {
+				return NULL;
+			}
+			return (char *) CB_LITERAL (x)->data;
+		}
+	}
+	return NULL;
+}
 
 /* TODO: Add params differing in BY REFERENCE/VALUE and OPTIONAL to testsuite */
 
@@ -3163,27 +3198,25 @@ try_get_program (cb_tree prog_ref)
 	const char		*name_str;
 	cb_tree			ref;
 
-	if (CB_LITERAL_P (prog_ref)
+	name_str = try_get_literal_data (prog_ref);
+	if (name_str
 	    /* && TODO: Check user wants checks on this kind of CALL. */) {
-		name_str = (char *) CB_LITERAL (prog_ref)->data;
 		program = cb_find_defined_program_by_name (name_str);
 	} else if (CB_REFERENCE_P (prog_ref)) {
-		printf("is reference\n");
 		ref = cb_ref (prog_ref);
 		if (ref == cb_error_node) {
 			return NULL;
 		}
-
-		if (CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78
-		    /* && TODO: Check user wants checks on this kind of CALL. */) {
-			cb_tree x = CB_VALUE (CB_FIELD (ref)->values);
-			if (!CB_LITERAL_P (x)) {
-				/* in theory this could be a figurative constant,
-				   in this case there is no matching program */
-				return NULL;
+		if (CB_FIELD_P (ref)
+		 && CB_FIELD (ref)->usage == CB_USAGE_OBJECT
+		 && CB_FIELD (ref)->reference) {
+			cb_tree x = CB_FIELD (ref)->reference;
+			if (CB_PROGRAM_P (x)) {
+				program = CB_PROGRAM (x);
+			} else if (CB_PROTOTYPE_P (x)) {
+				name_str = CB_PROTOTYPE (x)->ext_name;
+				program = cb_find_defined_program_by_id (name_str);
 			}
-			name_str = (char *) CB_LITERAL (x)->data;
-			program = cb_find_defined_program_by_name (name_str);
 		} else if (CB_PROTOTYPE_P (ref)) {
 			name_str = CB_PROTOTYPE (ref)->ext_name;
 			program = cb_find_defined_program_by_id (name_str);
@@ -3631,27 +3664,55 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 	}
 }
 
+static struct cb_program *
+try_get_method (struct cb_program *class, cb_tree oo_method_name) {
+	struct cb_program	*method = NULL;
+	const char * method_name = try_get_literal_data (oo_method_name);
+	if (method_name) {
+		struct nested_list* m;
+		for (m = class->nested_prog_list; m && !method; m = m->next) {
+			if (strcasecmp (method_name, m->nested_prog->program_name) == 0) {
+				method = m->nested_prog;
+			}
+		}
+	}
+	return method;
+}
+
 void
-cb_check_conformance (cb_tree prog_ref, cb_tree oo_method, cb_tree using_list,
-		   cb_tree returning)
+cb_check_conformance (cb_tree prog_ref, cb_tree oo_method_name, cb_tree using_list,
+		      cb_tree returning)
 {
 	struct cb_program	*program = NULL;
-	struct cb_program	*oo_class = NULL;
-	cb_tree			l, x;
+	cb_tree			l;
 	cb_tree			last_arg = NULL;
 	cb_tree			param;
 	unsigned int	param_num, num_params;
 	const struct cb_field	*prog_returning_field;
 	const struct cb_field	*call_returning_field;
-	struct nested_list* m;
 
-	/* Try to get the program referred to by prog_ref. */
-	if (CB_PROGRAM (CB_FIELD_PTR(prog_ref)->reference)->prog_type == COB_MODULE_TYPE_CLASS) {
-		oo_class = try_get_program (prog_ref);
-		for (m = oo_class->nested_prog_list; m; m = m->next) {
-			if (strcasecmp(CB_PROGRAM(oo_method)->program_name, m->nested_prog->program_name) == 0) {
-				program = m->nested_prog;
-			}
+	if (oo_method_name) {
+		/* prog_ref may be either: (i) a user-defined class or interface
+		   name (listed in the REPOSITORY paragraph); (ii) an identifier
+		   (expected with usage OBJECT REFERENCE, maybe to a factory);
+		   (iii) SELF (cb_int0); or SUPER (cb_int1). */
+		struct cb_program	*oo_class = NULL;
+		int			factory_method_invocation = 0;
+		if (CB_PROGRAM_P (prog_ref)) {
+			oo_class = CB_PROGRAM (prog_ref);
+			factory_method_invocation = 1;
+		} else {
+			/* TODO: decompose that check to set
+			   factory_method_invocation when needed */
+			oo_class = try_get_program (prog_ref);
+		}
+		COB_UNUSED (factory_method_invocation); /* for now */
+		l = cb_validate_oo_class_or_interface (oo_class);
+		/* TODO: Walk up the class hierarchy/DAG, starting from
+		   oo_class, checking matching methods...  For now we only check
+		   a method in oo_class, if any. */
+		if (l != cb_error_node) {
+			program = try_get_method (CB_PROGRAM (l), oo_method_name);
 		}
 	} else {
 		program = try_get_program (prog_ref);
@@ -3672,8 +3733,8 @@ cb_check_conformance (cb_tree prog_ref, cb_tree oo_method, cb_tree using_list,
 	     l && param_num <= program->num_proc_params;
 	     l = CB_CHAIN (l), ++param_num) {
 		check_argument_conformance (program, l, param_num);
-		last_arg = l;
 	}
+	last_arg = l;
 
 	/* If there are more params in the using list than in the prototype, error */
 	if (l && param_num > program->num_proc_params) {
@@ -4826,37 +4887,38 @@ validate_assign_name (cb_tree origin, struct cb_program * const prog)
 
 void
 cb_validate_oo_program_data (struct cb_program *prog) {
-	cb_tree l, x, spec_list;
+	cb_tree l, x, inheritable_prototypes = NULL;
 
 	if (prog->prog_type == COB_MODULE_TYPE_CLASS) {
-		spec_list = prog->class_spec_list;
-	} else if (prog->prog_type == COB_MODULE_TYPE_INTERFACE) {
-		spec_list = prog->interface_spec_list;
+		inheritable_prototypes = prog->class_spec_list;
+	} else /* if (prog->prog_type == COB_MODULE_TYPE_INTERFACE) */ {
+		inheritable_prototypes = prog->interface_spec_list;
 	}
 	for (l = prog->oo_inheritance_list; l; l = CB_CHAIN (l)) {
-		if (strcasecmp(prog->program_id, CB_NAME(CB_VALUE (l))) == 0) {
-			cb_error_x(l, _("cyclically inheriting %s '%s'"),
-				cb_get_cob_module_type_string(prog->prog_type),
-				CB_NAME (CB_VALUE(l)));
-			cb_note_x(COB_WARNOPT_NONE, CB_TREE(prog), _("'%s' defined here"), 
-				CB_NAME (CB_VALUE(l)));
+		const cb_tree y = CB_VALUE (l);
+		if (strcasecmp (prog->program_id, CB_NAME (y)) == 0) {
+			cb_error_x (l, _("cyclically inheriting %s '%s'"),
+				    cb_get_cob_module_type_string (prog->prog_type),
+				    CB_NAME (y));
+			cb_note_x (COB_WARNOPT_NONE, CB_TREE (prog), _("'%s' defined here"),
+				   CB_NAME (y));
 		}
 
 		/* Check for parent name in REPOSITORY paragraph */
-		if (cb_search_in_name_list(spec_list, CB_VALUE(l)) == 1) {
-			cb_error_x(l, _("inherited %s '%s' not found in REPOSITORY paragraph"),
-				cb_get_cob_module_type_string(prog->prog_type), 
-				CB_NAME (CB_VALUE (l)));
+		if (cb_search_in_prototypes (inheritable_prototypes, y) == 1) {
+			cb_error_x (l, _("inherited %s '%s' not found in REPOSITORY paragraph"),
+				    cb_get_cob_module_type_string (prog->prog_type),
+				    CB_NAME (y));
 		}
 
 		/* Check for duplicate parent name */
 		for (x = CB_CHAIN (l); x; x = CB_CHAIN (x)) {
-			if (strcasecmp (CB_NAME (CB_VALUE (l)), CB_NAME (CB_VALUE (x))) == 0) {
-				cb_error_x(x, _("duplicate parent %s name '%s'"), 
-					cb_get_cob_module_type_string(prog->prog_type),
-					CB_NAME (CB_VALUE(x)));
-				cb_note_x(COB_WARNOPT_NONE, l, _("'%s' defined here"), 
-					CB_NAME (CB_VALUE(l)));
+			if (strcasecmp (CB_NAME (y), CB_NAME (CB_VALUE (x))) == 0) {
+				cb_error_x (x, _("duplicate parent %s '%s'"),
+					    cb_get_cob_module_type_string (prog->prog_type),
+					    CB_NAME (CB_VALUE (x)));
+				cb_note_x (COB_WARNOPT_NONE, l, _("'%s' defined here"),
+					   CB_NAME (y));
 				break;
 			}
 		}
@@ -4866,11 +4928,7 @@ cb_validate_oo_program_data (struct cb_program *prog) {
 void
 cb_validate_program_data (struct cb_program *prog)
 {
-	cb_tree		l, x, spec_list;
-
-	if (prog->oo_inheritance_list) {
-		cb_validate_oo_program_data(prog);		
-	}
+	cb_tree		l, x;
 
 	prog->report_list = cb_list_reverse (prog->report_list);
 
@@ -4962,6 +5020,11 @@ cb_validate_program_data (struct cb_program *prog)
 		cb_ref (CB_VALUE (l));
 		/* TODO: move allocation of prog->reference_list outside of parse_mem
 		         and free it here directly */
+	}
+
+	if (prog->prog_type == COB_MODULE_TYPE_CLASS
+	 || prog->prog_type == COB_MODULE_TYPE_INTERFACE) {
+		cb_validate_oo_program_data (prog);
 	}
 
 	/* Check ODO items */
@@ -8872,6 +8935,8 @@ cb_emit_call (cb_tree prog, cb_tree oo_method, cb_tree par_using, cb_tree return
 	int				error_ind;
 	int				call_conv;
 	unsigned int		numargs;
+
+	COB_UNUSED (oo_method);
 
 	if (CB_INTRINSIC_P (prog)) {
 		if (CB_INTRINSIC (prog)->intr_tab->category != CB_CATEGORY_ALPHANUMERIC) {

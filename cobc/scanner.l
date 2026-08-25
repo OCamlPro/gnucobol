@@ -1125,6 +1125,20 @@ H#[0-9A-Za-z]+ {
 			RETURN_TOK (USER_FUNCTION_NAME);
 		}
 	}
+	for (l = current_program->class_spec_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
+			yylval = cb_build_reference (yytext);
+			RETURN_TOK (OO_CLASS_NAME);
+		}
+	}
+	for (l = current_program->interface_spec_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
+			yylval = cb_build_reference (yytext);
+			RETURN_TOK (OO_INTERFACE_NAME);
+		}
+	}
 	if (cobc_allow_program_name) {
 		for (l = current_program->program_spec_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
@@ -2819,7 +2833,6 @@ cb_find_defined_program_by_name (const char *name)
 
 	for (l = defined_prog_list; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
-		printf("program name: %s\n", CB_PROGRAM (x)->program_name);
 		if ((*cmp_func)(name, CB_PROGRAM (x)->program_name) == 0) {
 			return CB_PROGRAM (x);
 		}
