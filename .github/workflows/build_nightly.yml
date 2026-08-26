@@ -894,15 +894,6 @@ jobs:
             _build/tests/cobol85/**/*.out
             _build/tests/cobol85/**/duration.txt
 
-      - name: Adjust testsuite
-        run: |
-          rem Skip test as it sometimes works and sometimes not...
-          rem %MSYS_BASH% -lc "sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo \"workflow:1\">\"$at_check_line_file\"; at_fn_check_skip 77/;}}' tests/testsuite"
-
-          rem Change to expected fail if there's an error specific to the CI that we don't want to change
-          rem in the testsuite for expected result (should normally only be a temporary thing)
-          rem sed -i '/run_fundamental/{N;/Compare FLOAT-LONG with floating-point literal/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite
-
       - name: Run testsuite
         run: |
           rem To work around regular hangs we run NIST first, then the internal
