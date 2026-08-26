@@ -1,4 +1,8 @@
 
+2026-08-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* set the UseDebugLibraries property in all project files
+
 2025-03-26  David Declerck <david.declerck@ocamlpro.com>
 
 	* general for cobc: include new gentable.c
