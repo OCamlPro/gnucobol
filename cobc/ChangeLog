@@ -4,6 +4,11 @@
 	* cobc.c [_MSC_VER]: use new macros CB_MSC_CRT and CB_MSC_CRT_DLL to pass
 	  the CRT that is linked with libcob for Windows builds
 
+2026-08-08  Ramy George <ramygeorge19@gmail.com>
+
+	* field.c (warn_pic_for_numeric_value_implied): Added fix to print
+	  Implied PIC warning only when needed
+
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* tree.h, parser.y: change type of cobc_cs_check flags to permit
