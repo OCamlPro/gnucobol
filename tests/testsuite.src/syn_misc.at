@@ -3378,6 +3378,41 @@ AT_CHECK([cat prog.lst], [0],
 AT_CLEANUP
 
 
+AT_SETUP([COPY REPLACING with nothing])
+AT_KEYWORDS([copy replacing trailing])
+
+# see bug 1071 - cobc crashed here
+AT_DATA([prog.cob], [
+IDENTIFICATION DIVISION.
+PROGRAM-ID. HELLO.
+
+DATA DIVISION.
+   WORKING-STORAGE SECTION.
+   01 result PIC 9(4) VALUE 01.
+
+PROCEDURE DIVISION.
+   DISPLAY "result=" result.
+   COPY fab.
+   DISPLAY "resultb=" resultb.
+STOP RUN.
+])
+AT_DATA([fab.cob], [
+COPY fob REPLACING TRAILING ==a== BY ====.
+REPLACE TRAILING ==b== BY ====.
+])
+AT_DATA([fob.cob], [DISPLAY "resulta=" resulta.
+])
+
+AT_CHECK([$COMPILE --free prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [result=0001
+resulta=0001
+resultb=0001
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([missing periods])
 AT_KEYWORDS([misc cobol85 area-a missing-periods])
 

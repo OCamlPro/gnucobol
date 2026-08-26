@@ -189,7 +189,8 @@ ppp_replace_list_add (struct cb_replace_list *list,
 		/* Strictness flag is irrelevant for non-LEADING nor TRAILING
 		   replacements */
 		src->strict = 0;
-	} else {
+	}
+	if (lead_or_trail && new_text != NULL) {
 		/* Use replacement text to decide strictness of partial match */
 		const unsigned char *c;
 		int has_space = new_text->next != NULL;
