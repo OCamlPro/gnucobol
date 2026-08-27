@@ -267,3 +267,69 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 For vfile routines: document return-codes per fileio.c and different 
 handling of cancel and heap-status variable used in CBL_OPEN_VFILE only
 and no use of backup file, limitation of i/o area length.
+
+7 NATIONAL support
+
+Finish implementation of NATIONAL support.
+
+This implies to take care - among other things - of the many TODOs in the following functions:
+
+* tree.c
+- cb_tree_category (CB_TAG_FIELD)
+- cb_tree_type (CB_USAGE_NATIONAL)
+- cb_build_picture ('N')
+
+* parser.y
+- prepare_default_collation
+- program_coll_sequence_values
+- alphabet_type_national
+- symbolic_characters_clause
+- class_name_clause
+- coll_sequence_values
+- usage_screen_report
+- usage
+- class_value
+
+* scanner.l
+- N[''""]
+- NC[''""]
+- U[''""]
+- error_literal
+- read_literal
+- scan_x
+
+* typeck.c
+- cb_emit_sort_init (nat_col)
+
+* field.c
+- validate_any_length_item
+
+* codegen.c
+- output_alphabet_name_definition
+
+* reserved.c
+- function_list (CHAR-NATIONAL, EXCEPTION-FILE-N, EXCEPTION-LOCATION-N, NATIONAL-OF)
+
+* intrinsics.c
+- cob_check_numval_f
+- numval
+- cob_check_numval
+- cob_intr_bit_of
+- cob_intr_hex_of
+- cob_intr_numval_f
+- cob_intr_char_national
+- cob_intr_display_of
+- cob_intr_exception_file_n
+- cob_intr_exception_location_n
+- cob_intr_national_of
+
+* common.c
+- cob_cmp
+
+* fileio.c
+- indexed_open
+
+* mlio.c
+- set_xml_text
+- xml_generate
+- cob_json_generate_new
