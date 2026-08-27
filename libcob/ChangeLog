@@ -1,7 +1,8 @@
 
 2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
 
-	* common.h: add COB_MODULE_TYPE_INTERFACE
+	* common.h (cob_module_type): add COB_MODULE_TYPE_CLASS,
+	  COB_MODULE_TYPE_INTERFACE, COB_MODULE_TYPE_METHOD
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
