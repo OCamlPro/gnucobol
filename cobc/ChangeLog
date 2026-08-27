@@ -1,4 +1,14 @@
 
+2026-08-26 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* ppparse.y (ppp_replace_list_add): fix bug #1071
+	  "cobc crashes when replacing by nothing"
+
+2026-08-23 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* ppparse.y (ppp_replace_list_add): trim spaces before and after
+	  the replacement tokens, for the non LEADING/TRAILING case
+
 2026-08-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* cobc.c [_MSC_VER]: use new macros CB_MSC_CRT and CB_MSC_CRT_DLL to pass
