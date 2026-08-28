@@ -3679,9 +3679,12 @@ try_get_method (struct cb_program *class, cb_tree oo_method_name) {
 	return method;
 }
 
-void
+/* When inline_invocation is set, returns a reference to the field of the
+   *CALLED* program/function/method if it is found, or cb_error_node otheriwse.
+   This is used for type-checking inline method invocations. */
+cb_tree
 cb_check_conformance (cb_tree prog_ref, cb_tree oo_method_name, cb_tree using_list,
-		      cb_tree returning)
+		      cb_tree returning, int inline_invocation)
 {
 	struct cb_program	*program = NULL;
 	cb_tree			l;
@@ -3721,7 +3724,7 @@ cb_check_conformance (cb_tree prog_ref, cb_tree oo_method_name, cb_tree using_li
 		for (l = using_list; l;	l = CB_CHAIN (l)) {
 			set_argument_defaults (l, NULL, NULL);
 		}
-		return;
+		return cb_error_node;
 	}
 
 	/*
@@ -3788,11 +3791,19 @@ cb_check_conformance (cb_tree prog_ref, cb_tree oo_method_name, cb_tree using_li
 	} else if (returning && !program->returning) {
 		/* CHECKME: do we want to cater for RETURNING internally setting RETURN-CODE? */
 		cb_warning_x (cb_warn_repository_checks, returning,
-			_("unexpected RETURNING item"));
-	} else if (!returning && program->returning) {
-		cb_warning_x (cb_warn_repository_checks, returning,
-			_("expecting a RETURNING item, but none provided"));
+			      _("unexpected RETURNING item"));
+	} else if (inline_invocation && !program->returning) {
+		cb_warning (cb_warn_repository_checks,
+			    _("invalid inline invocation of a method with no RETURNING"));
+	} else if (!returning && !inline_invocation && program->returning) {
+		cb_warning (cb_warn_repository_checks,
+			    _("expecting a RETURNING item, but none provided"));
 	}
+
+	if (program->returning && inline_invocation) {
+		return program->returning;
+	}
+	return cb_error_node;
 }
 
 static int

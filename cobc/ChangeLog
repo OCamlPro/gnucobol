@@ -9,8 +9,8 @@
 	  report REPOSITORY entries that mismatch their definition
 	* typeck.c (try_get_program): handle USAGE OBJECT REFERENCE
 	* typeck.c (cb_check_conformance, cb_validate_oo_class_or_interface):
-	  add support for checking method INVOKE, fix determination of last given
-	  argument
+	  add support for checking method invocations, both via INVOKE or inline;
+	  fix determination of last given argument
 	* parser.y (call_body): remove unneeded guard for call to
 	  cb_check_conformance (now dealt with internally in try_get_program)
 	* parser.y (clean_up_program): proper module type in signature

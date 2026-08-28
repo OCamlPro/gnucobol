@@ -1843,6 +1843,9 @@ struct nested_list {
 	struct cb_program	*nested_prog;
 };
 
+/* CHECKME: a new struct cb_object_class (and cb_object_class_signature?) with
+   specific fields would be convenient when it comes to further
+   type-checking... */
 struct cb_program {
 	struct cb_tree_common	common;		/* Common values */
 
@@ -1978,7 +1981,7 @@ struct cb_program {
 #define CB_PROGRAM(x)	(CB_TREE_CAST (CB_TAG_PROGRAM, struct cb_program, x))
 #define CB_PROGRAM_P(x)	(CB_TREE_TAG (x) == CB_TAG_PROGRAM)
 
-/* Function prototype */
+/* Prototype (function, class, or interface) */
 
 struct cb_prototype {
 	struct cb_tree_common	common;
@@ -2617,7 +2620,8 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
-extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree, cb_tree);
+extern cb_tree		cb_check_conformance (cb_tree, cb_tree, cb_tree, cb_tree,
+					      int inline_invocation);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);

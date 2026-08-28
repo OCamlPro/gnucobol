@@ -11955,7 +11955,7 @@ _procedure_returning:
 		} else if (f->flag_occurs) {
 			cb_error (_("RETURNING item should not have OCCURS"));
 		} else {
-			if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
+			if (current_program->prog_type != COB_MODULE_TYPE_PROGRAM) {
 				if (f->flag_any_length) {
 					cb_error (_("function RETURNING item may not be ANY LENGTH"));
 				}
@@ -11964,7 +11964,7 @@ _procedure_returning:
 #if 0	/* doesn't work for programs, will be fixed with allocating in the source-unit */
 			current_program->returning = $2;
 #else
-			if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
+			if (current_program->prog_type != COB_MODULE_TYPE_PROGRAM) {
 				current_program->returning = $2;
 			} else if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 				CB_PENDING ("program RETURNING");
@@ -13262,7 +13262,7 @@ call_body:
 	}
 
 	/* Check parameter conformance, if we can work out what is being called. */
-	cb_check_conformance ($4, NULL, $8, $9);
+	(void) cb_check_conformance ($4, NULL, $8, $9, 0);
 
 	/* For CALL ... RETURNING NOTHING, set the call convention bit */
 	if (call_nothing) {
@@ -15669,7 +15669,7 @@ invoke_statement:
   call_using
   call_returning
   {
-	cb_check_conformance ($2, $3, $4, $5);
+	(void) cb_check_conformance ($2, $3, $4, $5, 0);
   }
 ;
 
@@ -20783,10 +20783,9 @@ function:
   {
 	$$ = cb_build_intrinsic ($1, $2, $3, 1);
   }
-| id_or_class_name TOK_COLON_COLON literal inline_invoke_args /* CHECKME: allow refmod? */
+| id_or_class_name TOK_COLON_COLON literal inline_invoke_args
   {
-	/* TODO: check target method returns something... */
-	cb_check_conformance ($1, $3, $4, NULL);
+	$$ = cb_check_conformance ($1, $3, $4, NULL, 1);
   }
 ;
 

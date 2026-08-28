@@ -703,6 +703,7 @@ AT_DATA([prog.cob], [
             DISPLAY an-object :: "MyMethod" (10 + 2).
             MOVE 98 TO a-var.
             DISPLAY an-object :: "MyMethod" (a-var).
+            DISPLAY an-object :: "SayHello".
 
             INVOKE an-object "SayHello" USING 1.
             INVOKE an-object "MyMethod" USING SUPER.
@@ -720,11 +721,13 @@ prog.cob:33: warning: argument #1 is not optional
 prog.cob:34: warning: argument #1 is not optional
 prog.cob:34: warning: expecting up to 1 arguments, but found 2
 prog.cob:37: error: 'MyBaseClass' is an invalid type for DISPLAY operand
-prog.cob:38: error: 'MyBaseClass' is an invalid type for DISPLAY operand
-prog.cob:60: warning: expecting up to 0 arguments, but found 1
-prog.cob:61: error: use of SUPER outside of METHOD definition
-prog.cob:63: error: use of SELF outside of METHOD definition
-prog.cob:64: error: use of SUPER outside of METHOD definition
+prog.cob:39: warning: expecting a RETURNING item, but none provided
+prog.cob:59: warning: invalid inline invocation of a method with no RETURNING
+prog.cob:61: warning: expecting up to 0 arguments, but found 1
+prog.cob:62: error: use of SUPER outside of METHOD definition
+prog.cob:62: warning: expecting a RETURNING item, but none provided
+prog.cob:64: error: use of SELF outside of METHOD definition
+prog.cob:65: error: use of SUPER outside of METHOD definition
 ])
 AT_CLEANUP
 
