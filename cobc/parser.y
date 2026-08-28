@@ -5058,7 +5058,7 @@ repository_name:
   }
 | CLASS
   {
-	__CS_ENSURE (CB_CS_CLASS_SPECIFIER);
+	__CS_ENTER (CB_CS_CLASS_SPECIFIER);
   }
   WORD _as_literal _expands_clause
   {
@@ -5069,7 +5069,7 @@ repository_name:
   }
 | INTERFACE
   {
-	__CS_ENSURE (CB_CS_INTERFACE_SPECIFIER);
+	__CS_ENTER (CB_CS_INTERFACE_SPECIFIER);
   }
   WORD _as_literal _expands_clause
   {
