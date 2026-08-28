@@ -5127,7 +5127,7 @@ cb_build_filler (void)
   If ref != NULL, other attributes are set to the same as ref.
 */
 cb_tree
-cb_build_field_reference (struct cb_field *f, cb_tree ref)
+cb_build_field_reference (const struct cb_field *f, const cb_tree ref)
 {
 	cb_tree		x;
 	struct cb_word	*word;
@@ -5140,6 +5140,27 @@ cb_build_field_reference (struct cb_field *f, cb_tree ref)
 	x->category = CB_CATEGORY_UNKNOWN;
 	CB_REFERENCE (x)->word = word;
 	CB_REFERENCE (x)->value = CB_TREE (f);
+	return x;
+}
+
+/*
+  Return a reference to the program p.
+  If ref != NULL, other attributes are set to the same as ref.
+*/
+cb_tree
+cb_build_object_reference (const struct cb_program *p, const cb_tree ref)
+{
+	cb_tree		x;
+	struct cb_word	*word;
+
+	x = cb_build_reference (p->program_name);
+	word = CB_REFERENCE (x)->word;
+	if (ref) {
+		memcpy (x, ref, sizeof (struct cb_reference));
+	}
+	x->category = CB_CATEGORY_OBJECT_REFERENCE;
+	CB_REFERENCE (x)->word = word;
+	CB_REFERENCE (x)->value = CB_TREE (p);
 	return x;
 }
 

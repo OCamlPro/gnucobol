@@ -3599,7 +3599,7 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 		return;
 	}
 
-	param_ref = cb_build_field_reference ((struct cb_field *)param_field, NULL);
+	param_ref = cb_build_field_reference (param_field, NULL);
 
 	/*
 	  Check the definition of the argument is compatible with the parameter.

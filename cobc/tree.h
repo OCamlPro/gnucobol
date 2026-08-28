@@ -2184,8 +2184,10 @@ extern void			cb_finalize_cd (struct cb_cd *,
 
 extern cb_tree			cb_build_filler (void);
 extern cb_tree			cb_build_reference (const char *);
-extern cb_tree			cb_build_field_reference (struct cb_field *,
-							  cb_tree);
+extern cb_tree			cb_build_field_reference (const struct cb_field *,
+							  const cb_tree);
+extern cb_tree			cb_build_object_reference (const struct cb_program *,
+							   const cb_tree);
 extern const char		*cb_define (cb_tree, cb_tree);
 extern char			*cb_to_cname (const char *);
 extern void			cb_set_system_names (void);

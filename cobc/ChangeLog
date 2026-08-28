@@ -14,6 +14,8 @@
 	* parser.y (call_body): remove unneeded guard for call to
 	  cb_check_conformance (now dealt with internally in try_get_program)
 	* parser.y (clean_up_program): proper module type in signature
+	* tree.c, tree.h (cb_build_field_reference): add const attributes to arguments
+	* tree.c, tree.h (cb_build_object_reference): new function
 
 2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
 

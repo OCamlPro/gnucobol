@@ -20274,6 +20274,7 @@ identifier_or_file_name:
 		$$ = cb_error_node;
 	}
   }
+| oo_identifier
 ;
 
 /* guarantees a reference to a validated field-reference (or cb_error_node) */
@@ -20312,20 +20313,43 @@ identifier:
 		$$ = cb_error_node;
 	}
   }
-| SELF
+| oo_identifier
+;
+
+/* TODO: make the semantic actions below return field references, so this can
+   then be merged into identifier_1? */
+oo_identifier:
+  SELF
   {
-	  $$ = cb_validate_oo_class_or_interface (current_self_class ());
+	cb_tree x = cb_validate_oo_class_or_interface (current_self_class ());
+	if (x != cb_error_node) {
+		$$ = cb_build_object_reference (CB_PROGRAM (x), 0);
+	} else {
+		$$ = cb_error_node;
+	}
   }
 | SUPER
   {
-	  /* Note: warns in case of multiple inheritance... may we return a list
-	     instead? */
-	  $$ = cb_validate_oo_class_or_interface (current_super_class ());
+	/* Note: warns in case of multiple inheritance... may we return a list
+	   instead? */
+	cb_tree x = cb_validate_oo_class_or_interface (current_super_class ());
+	if (x != cb_error_node) {
+		$$ = cb_build_object_reference (CB_PROGRAM (x), 0);
+	} else {
+		$$ = cb_error_node;
+	}
   }
 | OO_CLASS_NAME OF SUPER
   {
-	  /* Note: this leaves multiple inheritance aside... */
-	  $$ = cb_validate_oo_class_or_interface (current_super_class ());
+	cb_tree x = cb_ref ($1);
+	if (CB_PROGRAM_P (x)) {
+		/* TODO: check super is actually inherited by the current
+		   class... */
+		x = cb_validate_oo_class_or_interface (CB_PROGRAM (x));
+		$$ = cb_build_object_reference (CB_PROGRAM (x), 0);
+	} else {
+		$$ = cb_error_node;
+	}
   }
 ;
 
