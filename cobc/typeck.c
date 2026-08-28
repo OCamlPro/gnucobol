@@ -12062,13 +12062,7 @@ cb_build_move_copy (cb_tree src, cb_tree dst)
 	if (size == 1) {
 		return CB_BUILD_FUNCALL_2 ("$F", dst, src);
 	}
-	if (cb_move_ibm) {
-		overlapping = 0;
-		return CB_BUILD_FUNCALL_3 ("cob_move_ibm",
-					   CB_BUILD_CAST_ADDRESS (dst),
-					   CB_BUILD_CAST_ADDRESS (src),
-					   CB_BUILD_CAST_LENGTH (dst));
-	} else if (overlapping
+	else if (overlapping
 	|| CB_FIELD_PTR (src)->storage == CB_STORAGE_LINKAGE
 	|| CB_FIELD_PTR (dst)->storage == CB_STORAGE_LINKAGE
 	|| CB_FIELD_PTR (src)->flag_item_based
@@ -12645,7 +12639,14 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 	int 		src_size;
 	int 		dst_size;
 
-	if (dst_f->flag_any_length || src_f->flag_any_length) {
+	if (cb_move_ibm) {
+		overlapping = 0;
+		return CB_BUILD_FUNCALL_3 ("cob_move_ibm",
+						 CB_BUILD_CAST_ADDRESS (dst),
+						 CB_BUILD_CAST_ADDRESS (src),
+						 CB_BUILD_CAST_LENGTH (dst));
+	}
+	else if (dst_f->flag_any_length || src_f->flag_any_length) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 	src_size = cb_field_size (src);
