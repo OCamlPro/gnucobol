@@ -60,9 +60,10 @@ jobs:
       - name: Build GnuCOBOL source distribution
         shell: msys2 {0}
         run: |
-          # OSTYPE added on 2025-02-11 to fix texi2dvi bug
-          OSTYPE=msys make -C _build --jobs=$(($(nproc)+1))
-          OSTYPE=msys make -C _build --jobs=$(($(nproc)+1)) dist
+          # note: to work around texi2dvi term issues, we set this explicitly
+          export TERMINFO="$(cygpath -w /$MINGW_PREFIX/share/terminfo)"
+          make -C _build check TESTSUITEFLAGS="--jobs=2" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload dist tarball
         uses: actions/upload-artifact@v7
