@@ -4159,3 +4159,43 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field larger than internal I/O buffer])
+AT_KEYWORDS([screen accept])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+# regression test: the internal screen I/O buffer used to be a fixed
+# 8192 bytes (COB_MEDIUM_BUFF); ACCEPTing into a field larger than that
+# overflowed it. The buffer now grows on demand, so this must complete
+# (and not crash) for a field well past that old limit.
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  big-field    PIC X(9000).
+
+       SCREEN           SECTION.
+       01  scr.
+           03  LINE 1 VALUE
+               'Type a few characters, then press ENTER.'.
+           03  LINE 3 COL 1 PIC X(9000) USING big-field.
+
+       PROCEDURE        DIVISION.
+           DISPLAY scr
+           ACCEPT scr
+
+           IF COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP

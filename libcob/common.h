@@ -665,6 +665,9 @@ typedef __mpz_struct mpz_t[1];
    TODO: add compiler configuration for limiting this */
 #define COB_MAX_SUBSCRIPTS	16
 
+/* Maximum Buffer Warning Size */
+#define COB_TERM_BUFF_WARN_SIZE		32768
+
 /* Memory size for sorting */
 #define	COB_SORT_MEMORY		128 * 1024 * 1024
 #define	COB_SORT_CHUNK		256 * 1024
