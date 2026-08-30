@@ -3540,13 +3540,15 @@ ensure_buffer (size_t requested_size)
 	}
 
 	if (requested_size > screen_buffer_size) {
+		char *tmp;
+
 		if (requested_size > COB_TERM_BUFF_WARN_SIZE) {
 			cob_runtime_warning (_("ACCEPT/DISPLAY of unusually large field (%lu bytes)"),
 					     (unsigned long)requested_size);
 		}
 
 		/* Expanding the Buffer */
-		char *tmp = realloc (screen_term_buff, requested_size);
+		tmp = realloc (screen_term_buff, requested_size);
 		if (tmp == NULL) {
 			cob_runtime_error (_("could not allocate %lu bytes of memory"),
 					    (unsigned long)requested_size);
