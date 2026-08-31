@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2014-2023, 2026 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Edward Hart, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
@@ -758,7 +758,6 @@ prog.cob:36: error: cannot use FULL or REQUIRED on item without TO or USING
 AT_CHECK([$COMPILE_ONLY -fscreen-section-rules=gc prog.cob], [0], [],
 [prog.cob:12: warning: 'no-clauses' does nothing
 prog.cob:13: warning: 'no-required-clauses' does nothing
-prog.cob:15: warning: 'numeric-pic-and-value' has numeric VALUE without PIC; PIC will be implied
 prog.cob:16: warning: 'only-pic' does nothing
 prog.cob:17: warning: 'from-to-using-without-pic' has FROM, TO or USING without PIC; PIC will be implied
 prog.cob:18: warning: 'auto-without-from-to-using' does nothing
@@ -905,3 +904,27 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([NUMERIC PIC WITH VALUE in SCREEN SECTION])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. testsection.
+       DATA DIVISION.
+       SCREEN SECTION.
+       01 scr.
+           03 numeric-pic-and-value PIC 999 value 100.
+           03 numeric-pic-and-second PIC 9(01) VALUE 1.
+           03 numeric-value-no-pic VALUE 2.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wall prog.cob], [0], [], 
+[prog.cob:9: warning: 'numeric-value-no-pic' has numeric VALUE without PIC; PIC will be implied
+])
+AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [], 
+[prog.cob:9: error: cannot have numeric VALUE without PIC
+])
+
+AT_CLEANUP
+

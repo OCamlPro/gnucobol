@@ -1,4 +1,11 @@
 
+2026-08-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_sync, cob_file_unlock): call fdcobsync
+	  only if file is open in mode other than COB_OPEN_INPUT
+	  and fflush only is last operation was a write
+	* call.c (cob_get_buff): protect call to cob_free
+
 2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
 
 	* common.h (cob_module_type): add COB_MODULE_TYPE_CLASS,
