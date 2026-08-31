@@ -6,6 +6,11 @@
 	  and fflush only is last operation was a write
 	* call.c (cob_get_buff): protect call to cob_free
 
+2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* common.h (cob_module_type): add COB_MODULE_TYPE_CLASS,
+	  COB_MODULE_TYPE_INTERFACE, COB_MODULE_TYPE_METHOD
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test

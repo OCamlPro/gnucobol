@@ -1469,6 +1469,8 @@ cb_tree_category (cb_tree x)
 					x->category = CB_CATEGORY_DATA_POINTER;
 				} else if (f->usage == CB_USAGE_PROGRAM_POINTER) {
 					x->category = CB_CATEGORY_PROGRAM_POINTER;
+				} else if (f->usage == CB_USAGE_OBJECT) {
+					x->category = CB_CATEGORY_OBJECT_REFERENCE;
 				} else if (f->pic) {
 					x->category = f->pic->category;
 				/* FIXME: Hack for CGI to not abort */
@@ -5125,7 +5127,7 @@ cb_build_filler (void)
   If ref != NULL, other attributes are set to the same as ref.
 */
 cb_tree
-cb_build_field_reference (struct cb_field *f, cb_tree ref)
+cb_build_field_reference (const struct cb_field *f, const cb_tree ref)
 {
 	cb_tree		x;
 	struct cb_word	*word;
@@ -5138,6 +5140,27 @@ cb_build_field_reference (struct cb_field *f, cb_tree ref)
 	x->category = CB_CATEGORY_UNKNOWN;
 	CB_REFERENCE (x)->word = word;
 	CB_REFERENCE (x)->value = CB_TREE (f);
+	return x;
+}
+
+/*
+  Return a reference to the program p.
+  If ref != NULL, other attributes are set to the same as ref.
+*/
+cb_tree
+cb_build_object_reference (const struct cb_program *p, const cb_tree ref)
+{
+	cb_tree		x;
+	struct cb_word	*word;
+
+	x = cb_build_reference (p->program_name);
+	word = CB_REFERENCE (x)->word;
+	if (ref) {
+		memcpy (x, ref, sizeof (struct cb_reference));
+	}
+	x->category = CB_CATEGORY_OBJECT_REFERENCE;
+	CB_REFERENCE (x)->word = word;
+	CB_REFERENCE (x)->value = CB_TREE (p);
 	return x;
 }
 
@@ -6932,44 +6955,6 @@ cb_build_xml_parse (cb_tree data, cb_tree proc,
 
 /* Prototypes */
 
-static void
-warn_if_no_definition_seen_for_prototype (const struct cb_prototype *proto)
-{
-	struct cb_program	*program;
-	const char		*error_msg;
-
-	program = cb_find_defined_program_by_id (proto->ext_name);
-	if (program) {
-		return;
-	}
-
-	if (get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
-		if (strcmp (proto->name, proto->ext_name) == 0) {
-			/*
-			  Warn if no definition seen for element with prototype-
-			  name.
-			*/
-			if (proto->type == COB_MODULE_TYPE_FUNCTION) {
-				error_msg = _("no definition/prototype seen for FUNCTION '%s'");
-			} else { /* PROGRAM_TYPE */
-				error_msg = _("no definition/prototype seen for PROGRAM '%s'");
-			}
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto), error_msg, proto->name);
-		} else {
-			/*
-			  Warn if no definition seen for element with given
-			  external-name.
-			*/
-			if (proto->type == COB_MODULE_TYPE_FUNCTION) {
-				error_msg = _("no definition/prototype seen for FUNCTION with external name '%s'");
-			} else { /* PROGRAM_TYPE */
-				error_msg = _("no definition/prototype seen for PROGRAM with external name '%s'");
-			}
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto), error_msg, proto->ext_name);
-		}
-	}
-}
-
 cb_tree
 cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 		    const enum cob_module_type type)
@@ -7000,8 +6985,6 @@ cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 	}
 
 	prototype->type = type;
-
-	warn_if_no_definition_seen_for_prototype (prototype);
 
 	return CB_TREE (prototype);
 }
@@ -7668,6 +7651,35 @@ cb_build_prof_call (enum cb_prof_call prof_call,
 		return CB_BUILD_FUNCALL_2 (func_name, cb_int (prof_call), cb_int (func_arg1));
 	}
 	return CB_BUILD_FUNCALL_3 (func_name, cb_int (prof_call), cb_int (func_arg1), cb_int (func_arg2));
+}
+
+/* Object-oriented */
+
+const char *
+cb_get_cob_module_type_string (enum cob_module_type prog_type)
+{
+	switch (prog_type) {
+	default:
+	case COB_MODULE_TYPE_PROGRAM: 		return "PROGRAM";
+	case COB_MODULE_TYPE_FUNCTION: 		return "FUNCTION";
+	case COB_MODULE_TYPE_CLASS: 		return "CLASS";
+	case COB_MODULE_TYPE_INTERFACE: 	return "INTERFACE";
+	case COB_MODULE_TYPE_METHOD: 		return "METHOD";
+	}
+}
+
+int
+cb_search_in_prototypes (cb_tree list, cb_tree name)
+{
+	cb_tree l;
+	
+	for (l = list; l; l = CB_CHAIN (l)) {
+		const char * const x_name = CB_PROTOTYPE (CB_VALUE (l))->name;
+		if (strcasecmp (x_name, CB_NAME (name)) == 0) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* Allocate a procedure description record and add it at the end of

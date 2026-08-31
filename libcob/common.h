@@ -1252,7 +1252,9 @@ typedef struct __cob_screen {
 enum cob_module_type {
 	COB_MODULE_TYPE_PROGRAM		= 0,
 	COB_MODULE_TYPE_FUNCTION	= 1,
-	COB_MODULE_TYPE_CLASS		= 2
+	COB_MODULE_TYPE_CLASS		= 2,
+	COB_MODULE_TYPE_INTERFACE	= 3,
+	COB_MODULE_TYPE_METHOD		= 4
 };
 
 /*

@@ -3987,12 +3987,12 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:12: error: syntax error, unexpected DELIMITED
 prog.cob:15: error: syntax error, unexpected END-STRING, expecting INTO
-prog.cob:17: error: syntax error, unexpected END-STRING, expecting Identifier
+prog.cob:17: error: syntax error, unexpected END-STRING, expecting class-name or SELF or SUPER or Identifier
 prog.cob:19: error: syntax error, unexpected DELIMITED
 prog.cob:24: error: syntax error, unexpected DELIMITED, expecting INTO
 prog.cob:32: error: syntax error, unexpected DELIMITED
 prog.cob:34: error: syntax error, unexpected Identifier, expecting INTO
-prog.cob:37: error: syntax error, unexpected END-UNSTRING, expecting Identifier
+prog.cob:37: error: syntax error, unexpected END-UNSTRING, expecting class-name or SELF or SUPER or Identifier
 prog.cob:38: error: syntax error, unexpected DELIMITED
 prog.cob:43: error: syntax error, unexpected DELIMITED, expecting INTO
 ])
@@ -4371,8 +4371,8 @@ prog.cob:22: error: 'f' is not a field
 prog.cob:22: error: 3 is not an alphanumeric literal
 prog.cob:22: error: 2 is not an alphanumeric literal
 prog.cob:22: error: invalid target for TRANSFORM
-prog.cob:23: error: syntax error, unexpected intrinsic function name, expecting Identifier
-prog.cob:24: error: syntax error, unexpected Literal, expecting Identifier
+prog.cob:23: error: syntax error, unexpected intrinsic function name, expecting class-name or SELF or SUPER or Identifier
+prog.cob:24: error: syntax error, unexpected Literal, expecting class-name or SELF or SUPER or Identifier
 prog.cob:25: error: invalid target for REPLACING
 ])
 AT_CLEANUP
@@ -6565,7 +6565,7 @@ prog.cob:49: error: JSON/XML GENERATE receiving item must be alphanumeric or nat
 prog.cob:51: error: JSON/XML GENERATE receiving item may not have JUSTIFIED clause
 prog.cob:53: error: JSON/XML GENERATE receiving item may not be subscripted
 prog.cob:54: error: JSON/XML GENERATE receiving item may not be reference modified
-prog.cob:57: error: syntax error, unexpected intrinsic function name, expecting Identifier
+prog.cob:57: error: syntax error, unexpected intrinsic function name, expecting class-name or SELF or SUPER or Identifier
 prog.cob:59: error: JSON/XML GENERATE input record may not be reference modified
 prog.cob:61: error: JSON/XML GENERATE input record may not have RENAMES clause
 prog.cob:66: error: JSON/XML GENERATE input record has subrecords with non-unique names
@@ -6603,7 +6603,7 @@ prog.cob:133: error: SUPPRESS item with WHEN clause must be elementary
 prog.cob:133: error: SUPPRESS item must be a child of the input record
 prog.cob:132: error: SUPPRESS item may not be an ignored item in JSON/XML GENERATE
 prog.cob:132: error: SUPPRESS item with WHEN clause must be elementary
-prog.cob:136: error: syntax error, unexpected intrinsic function name, expecting EVERY or WHEN or Identifier
+prog.cob:136: error: syntax error, unexpected intrinsic function name
 prog.cob:142: warning: OCCURS items in JSON/XML GENERATE is not implemented
 prog.cob:140: error: SUPPRESS item may not be subscripted
 prog.cob:139: error: SUPPRESS item may not be reference modified

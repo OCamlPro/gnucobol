@@ -14052,14 +14052,14 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		for (l = prog->entry_list; l; l = CB_CHAIN (l)) {
 			output_function_entry_function (prog, l, 1);
 		}
-	} else {
+	} else if (prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_line ("/* PROGRAM-ID '%s' */", prog->orig_program_id);
 		output_newline ();
 		for (l = prog->entry_list; l; l = CB_CHAIN (l)) {
 			output_entry_function (prog, l, prog->parameter_list, 1);
 			progid++;
 		}
-	}
+	} /* TODO (OO): Handle other prog types. */
 
 	output_internal_function (prog, prog->parameter_list);
 
