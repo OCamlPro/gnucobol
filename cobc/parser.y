@@ -123,6 +123,7 @@
 #define	EVAL_DEPTH		32
 #define	PROG_DEPTH		16
 
+
 /* Global variables */
 
 struct cb_program		*current_program = NULL;    /* program in parse/syntax check/codegen */
@@ -1287,10 +1288,17 @@ begin_scope_of_program_name (struct cb_program *program)
 				    elt_name);
 			return;
 		} else if (strcmp (prog_id, elt_id) == 0) {
-			cb_error_x (CB_TREE(program),
-				    _("redefinition of program ID '%s'"),
-				    elt_id);
-			return;
+			if (program->prog_type == COB_MODULE_TYPE_PROGRAM) {
+				cb_error_x (CB_TREE(program),
+						_("redefinition of program ID '%s'"),
+						elt_id);
+				return;
+			} else if (program->prog_type == COB_MODULE_TYPE_CLASS) {
+				cb_error_x (CB_TREE(program),
+						_("redefinition of class ID '%s'"),
+						elt_id);
+				return;
+			}
 		}
 	}
 
@@ -1471,7 +1479,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 			main_flag_set = 1;
 			current_program->flag_main = !!cobc_flag_main;
 		}
-	} else { /* COB_MODULE_TYPE_FUNCTION */
+	} else if (type == COB_MODULE_TYPE_FUNCTION) {
 		current_program->flag_recursive = 1;
 	}
 
@@ -1515,8 +1523,13 @@ decrement_depth (const char *name, const unsigned char type)
 	}
 
 	if (depth != d) {
-		cb_error (_("END PROGRAM '%s' is different from PROGRAM-ID '%s'"),
-			  name, stack_progid[depth]);
+		if (type == COB_MODULE_TYPE_PROGRAM) {
+			cb_error (_("END PROGRAM '%s' is different from PROGRAM-ID '%s'"),
+				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_CLASS) {
+			cb_error (_("END CLASS '%s' is different from CLASS-ID '%s'"),
+				  name, stack_progid[depth]);
+		}
 	}
 }
 
@@ -2548,12 +2561,24 @@ set_record_size (cb_tree min, cb_tree max)
 	}
 }
 
+/* Object-oriented class */
+
+static COB_INLINE void
+set_oo_class_attr(enum cb_oo_class_attribute attr, const char* attr_name)
+{
+	if (current_program->oo_class_attributes & attr) {							
+		emit_duplicate_clause_message (attr_name);						
+	}	
+	current_program->oo_class_attributes |= attr;
+}
+
 %}
 
 %token TOKEN_EOF 0 "end of file"
 
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
+%token ABSTRACT
 %token ACCEPT
 %token ACCESS
 %token ACTIVEX			"ACTIVE-X"
@@ -2676,6 +2701,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CHARACTERS
 %token CHECK_BOX		"CHECK-BOX"
 %token CLASS
+%token CLASS_ID		"CLASS-ID"
 %token CLASSIFICATION
 %token CLASS_NAME		"class-name"
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
@@ -2825,6 +2851,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_MULTIPLY		"END-MULTIPLY"
 %token END_PERFORM		"END-PERFORM"
 %token END_PROGRAM		"END PROGRAM"
+%token END_CLASS		"END CLASS"
 %token END_READ			"END-READ"
 %token END_RECEIVE		"END-RECEIVE"
 %token END_RETURN		"END-RETURN"
@@ -2968,6 +2995,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INDEX
 %token INDEXED
 %token INDICATE
+%token INHERITS
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
@@ -2979,6 +3007,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INSPECT
 %token INSTALLATION		/* remark: not used here */
 %token INTERMEDIATE
+%token INTERNAL
 %token INTO
 %token INTRINSIC
 %token INVALID			/* remark: not used here */
@@ -3165,6 +3194,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PARAGRAPH
 %token PARENT
 %token PARSE
+%token PARTIAL
 %token PASSWORD
 %token PERFORM
 %token PERMANENT
@@ -3207,6 +3237,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PROPERTY
 %token PROTECTED
 %token PROTOTYPE
+%token PUBLIC
 %token PURGE
 %token PUSH_BUTTON		"PUSH-BUTTON"
 %token QUERY_INDEX		"QUERY-INDEX"
@@ -3714,6 +3745,7 @@ source_element_list:
 
 source_element:
   program_definition
+| class_definition
 | function_definition
 | program_prototype
 | function_prototype
@@ -3740,6 +3772,13 @@ program_definition:
      The _end_program_list above is used for allowing an end marker
      in a program which contains a nested program.
   */
+;
+
+class_definition:
+  _identification_header
+  class_id_paragraph
+  /* TODO: _program_body */
+  end_class
 ;
 
 function_definition:
@@ -3774,6 +3813,19 @@ end_program:
 	first_nested_program = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_PROGRAM);
   }
+;
+
+end_class:
+  END_CLASS
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END CLASS");
+  }
+  end_class_name _dot
+  {
+	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
+  }
+
 ;
 
 end_function:
@@ -3949,6 +4001,116 @@ _default_display_clause:
 	  /* TODO: setup_default_display ($3); */
   }
 ;
+
+/* CLASS */
+
+class_id_header:
+  CLASS_ID
+  {
+	cobc_in_id = 1;
+  }
+;
+
+class_id_name:
+  CLASS_NAME	{ $$ = $1; }
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
+parent_class_name: 
+  WORD
+  {
+  	current_program->class_inheritance_list = 
+		cb_list_add(current_program->class_inheritance_list, $1);
+  }
+;
+
+parent_class_name_list:
+  parent_class_name
+| parent_class_name_list parent_class_name
+;
+
+/* Parameterized classes not supported for now. */
+class_param_list:
+  WORD
+| class_param_list WORD
+;
+
+_inherits_phrase:
+  /* empty */
+| INHERITS _from parent_class_name_list
+;
+
+_using_phrase:
+  /* empty */
+| USING class_param_list
+;
+
+class_attribute:
+  _is STATIC		{ set_oo_class_attr(CB_OO_CLASS_ATTR_STATIC, "STATIC"); }
+| _is PARTIAL		{ set_oo_class_attr(CB_OO_CLASS_ATTR_PARTIAL, "PARTIAL"); }
+| _is FINAL			{ set_oo_class_attr(CB_OO_CLASS_ATTR_FINAL, "FINAL"); }
+| _is ABSTRACT		{ set_oo_class_attr(CB_OO_CLASS_ATTR_ABSTRACT, "ABSTRACT"); }
+| _is PUBLIC		{ set_oo_class_attr(CB_OO_CLASS_ATTR_PUBLIC, "PUBLIC"); }
+| _is INTERNAL		{ set_oo_class_attr(CB_OO_CLASS_ATTR_INTERNAL, "INTERNAL"); }
+;
+
+_class_attributes:
+  /* empty */		{ current_program->oo_class_attributes = CB_OO_CLASS_ATTR_NONE; }
+| _class_attributes class_attribute
+;
+
+/*
+ * CLASS-ID paragraph syntax is:
+ *
+ * CLASS-ID. object-class-name-1 [ AS literal-1 ] [ IS STATIC ]
+ * [ IS { PARTIAL, FINAL, ABSTRACT } ... ] [ IS { PUBLIC, INTERNAL } ]
+ * [ INHERITS FROM { object-class-name-2 } ... ]
+ * [ USING { parameter-name-1 } ... ] .
+ * 
+*/
+
+class_id_paragraph:
+  class_id_header TOK_DOT class_id_name _as_literal
+  {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_CLASS, 1)) {
+		YYABORT;
+	}
+
+	__CS_CLEAR_ALL();
+	cobc_in_id = 0;
+
+	CB_UNSUPPORTED ("object-oriented COBOL");
+  }
+  _inherits_phrase
+  _class_attributes
+  _using_phrase
+  TOK_DOT
+  {
+	/* check consistency of current attribues */
+	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_FINAL
+	 && current_program->oo_class_attributes & CB_OO_CLASS_ATTR_ABSTRACT) {
+		emit_conflicting_clause_message ("FINAL", "ABSTRACT");
+		current_program->oo_class_attributes &= ~CB_OO_CLASS_ATTR_FINAL;
+	}
+	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_INTERNAL
+	 && current_program->oo_class_attributes & CB_OO_CLASS_ATTR_PUBLIC) {
+		emit_conflicting_clause_message ("INTERNAL", "PUBLIC");
+		current_program->oo_class_attributes &= ~CB_OO_CLASS_ATTR_INTERNAL;
+	}
+  }
+;
+
+end_class_name:
+  CLASS_NAME
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
 
 /* PROGRAM body */
 

@@ -2,7 +2,7 @@ name: MacOS Workflow
 
 on:
   pull_request:
-    branches: [ gitside-gnucobol-3.x ]
+    branches: [ gitside-gnucobol-3.x, oo4gnucobol-3.x  ]
   push:
   workflow_dispatch:
 
