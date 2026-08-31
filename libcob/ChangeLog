@@ -1,4 +1,13 @@
 
+2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* profiling.c (print_stack): export/debug option with environment
+	  variable COB_PROF_TRACE, can be used when profiling is enabled to
+	  print the stack when entering/leaving code segments
+	* profiling.c: during test mode, COB_PROF_FILE set to 'hidden.csv'
+	  does not display the warning message when the profile file is
+	  generated
+
 2026-08-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (cob_sync, cob_file_unlock): call fdcobsync

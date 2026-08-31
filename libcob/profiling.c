@@ -65,6 +65,9 @@ static int current_idx = -1;
 /* Whether profiling is active or not. */
 static int is_active = -1;
 
+/* Whether COB_PROF_TRACE is also specified */
+static int has_traces = -1;
+
 /* Which clock to use for clock_gettime (if available) */
 #ifdef HAVE_CLOCK_GETTIME
 static clockid_t	clockid = CLOCK_REALTIME;
@@ -153,9 +156,35 @@ static void
 prof_init_static ()
 {
 	if (is_active == -1 && cobsetptr) {
+		const char *envvar = cob_getenv_direct ("COB_PROF_TRACE");
 		prof_setup_clock ();
 		is_active = cobsetptr->cob_prof_enable;
+		has_traces = 0;
+		if (envvar
+		    && (!strcmp (envvar, "1")
+			|| !strcmp (envvar, "yes")))
+			has_traces = 1;
 	}
+}
+
+const char *procedure_kind[] = {
+	"MODULE", "SECTION", "PARAGRAPH", "ENTRY", "CALL"
+};
+
+static void print_stack(const char *msg)
+{
+	int j;
+
+	for (j=0; j<=current_idx;j++){
+		struct cob_prof_procedure *p =
+			& called_runtimes[j]->procedures[called_procedures[j]];
+		fprintf(stderr, "%s (%s:%d %s) -> ",
+			p->text,
+			p->file,
+			p->line,
+			procedure_kind[p->kind]);
+	}
+	fprintf(stderr, "%s\n", msg);
 }
 
 void
@@ -263,6 +292,7 @@ cob_prof_enter_procedure (struct cob_prof_module *info, int proc_idx)
 
 	info->procedure_recursions[proc_idx] ++;
 	info->called_count[proc_idx] ++;
+	if (has_traces) print_stack("ENTER");
 }
 
 void
@@ -273,6 +303,7 @@ cob_prof_exit_procedure (struct cob_prof_module *info, int proc_idx)
 
 	if (!is_active) return;
 
+	if (has_traces) print_stack("EXIT");
 	t = get_ns_time ();
 
 	while (current_idx >= 0) {
@@ -564,7 +595,14 @@ cob_prof_end ()
 			}
 		}
 		fclose (file);
-		fprintf(stderr, "File %s generated\n", cobsetptr->cob_prof_filename);
+		if (!cob_is_test
+		 || strcmp (cobsetptr->cob_prof_filename, "hidden.csv") ) {
+			/* Only print this line when we are not in test mode,
+			   or the file is called hidden.csv, so that we can
+			   run profiling while running the full testsuite */
+			fprintf (stderr, "File %s generated\n",
+				cobsetptr->cob_prof_filename);
+		}
 	} else {
 		cob_runtime_warning (_("error '%s' opening COB_PROF_FILE '%s'"),
 				     cob_get_strerror (), cobsetptr->cob_prof_filename);

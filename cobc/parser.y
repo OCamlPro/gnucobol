@@ -2407,6 +2407,47 @@ validated_field_reference (cb_tree fld_ref)
 	return cb_error_node;
 }
 
+static void maybe_emit_dummy_section (struct cb_label *section)
+{
+	if (!section) {
+		char section_name[COB_MINI_BUFF];
+		snprintf (section_name, COB_MINI_MAX,
+			  "ENTRY OF PROG %s", current_program->program_id);
+		current_section = CB_LABEL (
+			cb_build_label (
+				cb_build_reference (section_name), NULL));
+		current_section->flag_section = 1;
+		current_section->flag_dummy_section = 1;
+		current_section->flag_skip_label = !!skip_statements;
+		current_section->flag_declaratives = !!in_declaratives;
+		current_section->xref.skip = 1;
+		emit_statement (CB_TREE (current_section));
+		emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
+	}
+}
+
+static void maybe_emit_dummy_paragraph (struct cb_label *paragraph)
+{
+	if (!paragraph) {
+		char paragraph_name[COB_MINI_BUFF];
+		snprintf (paragraph_name, COB_MINI_MAX,
+			  "ENTRY OF SECTION %s", current_section->name);
+		current_paragraph = CB_LABEL (
+			cb_build_label (
+				cb_build_reference (paragraph_name), NULL));
+		current_paragraph->common.source_file
+			= current_section->common.source_file;
+		current_paragraph->common.source_line
+			= current_section->common.source_line;
+		current_paragraph->flag_declaratives = !!in_declaratives;
+		current_paragraph->flag_skip_label = !!skip_statements;
+		current_paragraph->flag_dummy_paragraph = 1;
+		current_paragraph->xref.skip = 1;
+		emit_statement (CB_TREE (current_paragraph));
+		emit_prof_call (COB_PROF_ENTER_PARAGRAPH, NULL, NULL);
+	}
+}
+
 static void
 check_validate_item (cb_tree x)
 {
@@ -8691,7 +8732,8 @@ occurs_index:
 	const cb_tree init_val = cb_default_byte == CB_DEFAULT_BYTE_INIT
 	                       ? cb_int1 : NULL;
 	$$ = cb_build_index ($1, init_val, 1U, current_field);
-	if (storage == CB_STORAGE_LOCAL) {
+	if (storage == CB_STORAGE_LOCAL
+	 || storage == CB_STORAGE_LINKAGE) {
 		CB_FIELD_PTR ($$)->index_type = CB_INT_INDEX;
 	} else {
 		CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
@@ -11127,8 +11169,6 @@ procedure_division:
   }
 |
   {
-	cb_tree label;
-
 	/* No PROCEDURE DIVISION header here */
 	/* FIXME: Only a statement is allowed as first element because of conflicts
 	   ideally we'd use non-optional "procedure_list" here */
@@ -11139,23 +11179,8 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	cobc_in_procedure = 1U;
-	label = cb_build_reference ("MAIN SECTION");
-	current_section = CB_LABEL (cb_build_label (label, NULL));
-	current_section->flag_section = 1;
-	current_section->flag_dummy_section = 1;
-	current_section->flag_skip_label = !!skip_statements;
-	current_section->flag_declaratives = !!in_declaratives;
-	current_section->xref.skip = 1;
-	emit_statement (CB_TREE (current_section));
-	label = cb_build_reference ("MAIN PARAGRAPH");
-	current_paragraph = CB_LABEL (cb_build_label (label, NULL));
-	emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
-	emit_prof_call (COB_PROF_ENTER_PARAGRAPH, NULL, NULL);
-	current_paragraph->flag_declaratives = !!in_declaratives;
-	current_paragraph->flag_skip_label = !!skip_statements;
-	current_paragraph->flag_dummy_paragraph = 1;
-	current_paragraph->xref.skip = 1;
-	emit_statement (CB_TREE (current_paragraph));
+	maybe_emit_dummy_section (NULL);
+	maybe_emit_dummy_paragraph (NULL);
 	cb_set_system_names ();
   }
   statements
@@ -11572,8 +11597,6 @@ _use_statement:
 paragraph_header:
   proc_name TOK_DOT
   {
-	cb_tree label;
-
 	non_const_word = 0;
 	check_unreached = 0;
 	if (cb_build_section_name ($1, 1) == cb_error_node) {
@@ -11596,17 +11619,7 @@ paragraph_header:
 	}
 
 	/* Begin a new paragraph */
-	if (!current_section) {
-		label = cb_build_reference ("MAIN SECTION");
-		current_section = CB_LABEL (cb_build_label (label, NULL));
-		current_section->flag_section = 1;
-		current_section->flag_dummy_section = 1;
-		current_section->flag_declaratives = !!in_declaratives;
-		current_section->flag_skip_label = !!skip_statements;
-		current_section->xref.skip = 1;
-		emit_statement (CB_TREE (current_section));
-		emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
-	}
+	maybe_emit_dummy_section (current_section);
 	current_paragraph = CB_LABEL (cb_build_label ($1, current_section));
 	current_paragraph->flag_declaratives = !!in_declaratives;
 	current_paragraph->flag_skip_label = !!skip_statements;
@@ -11707,31 +11720,8 @@ statement_list:
 
 statements:
   {
-	if (!current_section) {
-		cb_tree label = cb_build_reference ("MAIN SECTION");
-		current_section = CB_LABEL (cb_build_label (label, NULL));
-		current_section->flag_section = 1;
-		current_section->flag_dummy_section = 1;
-		current_section->flag_skip_label = !!skip_statements;
-		current_section->flag_declaratives = !!in_declaratives;
-		current_section->xref.skip = 1;
-		emit_statement (CB_TREE (current_section));
-		emit_prof_call (COB_PROF_ENTER_SECTION, NULL, NULL);
-	}
-	if (!current_paragraph) {
-		cb_tree label = cb_build_reference ("MAIN PARAGRAPH");
-		current_paragraph = CB_LABEL (cb_build_label (label, NULL));
-		current_paragraph->common.source_file
-			= current_section->common.source_file;
-		current_paragraph->common.source_line
-			= current_section->common.source_line;
-		current_paragraph->flag_declaratives = !!in_declaratives;
-		current_paragraph->flag_skip_label = !!skip_statements;
-		current_paragraph->flag_dummy_paragraph = 1;
-		current_paragraph->xref.skip = 1;
-		emit_statement (CB_TREE (current_paragraph));
-		emit_prof_call (COB_PROF_ENTER_PARAGRAPH, NULL, NULL);
-	}
+	maybe_emit_dummy_section (current_section);
+	maybe_emit_dummy_paragraph (current_paragraph);
 	if (check_headers_present (COBC_HD_PROCEDURE_DIVISION, 0, 0, 0) == 1) {
 		if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 			emit_main_entry (current_program, NULL);
@@ -11830,7 +11820,7 @@ statement:
 		sprintf (name, "L$%d", next_label_id);
 		label = cb_build_reference (name);
 		next_label_list = cb_list_add (next_label_list, label);
-		emit_statement (cb_build_goto (label, NULL, CB_GOTO_FLAG_NONE));
+		emit_statement (cb_build_goto (label, NULL, CB_GOTO_FLAG_SAME_PARAGRAPH));
 	} else {
 		cb_tree note = cb_build_comment ("skipped NEXT SENTENCE");
 		emit_statement (note);
@@ -12621,7 +12611,6 @@ _proceed_to:	| PROCEED TO ;
 call_statement:
   CALL			   /* Note: auto-enters CB_CS_CALL_CONVENTION context */
   {
-	emit_prof_call (COB_PROF_ENTER_CALL, NULL, NULL);
 	begin_statement (STMT_CALL, TERM_CALL);
 	call_nothing = 0;
 	cobc_allow_program_name = 1;
@@ -12717,6 +12706,7 @@ call_body:
 	if (call_nothing) {
 		call_conv |= CB_CONV_NO_RET_UPD;
 	}
+	emit_prof_call (COB_PROF_ENTER_CALL, NULL, NULL);
 	cb_emit_call ($4, $8, $9, CB_PAIR_X ($10), CB_PAIR_Y ($10),
 		      cb_int (call_conv), $2, $6);
 	emit_prof_call (COB_PROF_EXIT_CALL,
@@ -16441,7 +16431,7 @@ search_when:
   WHEN condition
   statement_list
   {
-	$$ = cb_build_if_check_break ($2, $3);
+	$$ = cb_build_if_maybe_insert_break ($2, $3);
   }
 ;
 

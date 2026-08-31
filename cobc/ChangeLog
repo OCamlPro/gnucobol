@@ -1,4 +1,30 @@
 
+2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX
+	  also for INDEXED BY appearing in LINKAGE SECTION, otherwise
+	  the variable is not added to the local include file
+	* parser.y (rules statements, call_statement): fix bugs in
+	  profiling for CALL with exceptions, and with NEXT SENTENCE
+	* parser.y (maybe_emit_dummy_section, maybe_emit_dummy_paragraph):
+	  extracted functions and change to use the meaningful default
+	  section name "ENTRY OF PROG $prog" and paragraph name "ENTRY OF
+	  SECTION $sections" instead of resp. MAIN SECTION and MAIN
+	  PARAGRAPH
+
+2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (build_evaluate, cb_check_needs_break): fix a bug where
+	  EVALUATE fails in profiling mode. The reason was that a check for
+	  a last GOTO statement is not correctly written, because it was
+	  actually checking either a GOTO or not a statement, which was
+	  evaluated to true for instructions added by profiling. Fixed by
+	  checking only that the last statement is a GOTO. Also modify
+	  cb_check_needs_break that uses the same code.
+	* typeck.c: rename cb_check_needs_break to cb_maybe_insert_break, and
+	  cb_build_if_check_break to cb_build_if_maybe_insert_break.
+	  Introduce cb_statement_finishes_with_goto to remove duplicated code.
+
 2026-08-26 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* ppparse.y (ppp_replace_list_add): fix bug #1071
