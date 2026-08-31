@@ -1402,7 +1402,7 @@ cob_sync (cob_file *f)
 #endif
 		return;
 	}
-	if (f->organization != COB_ORG_SORT) {
+	if (f->organization != COB_ORG_SORT && f->open_mode != COB_OPEN_INPUT) {
 		if (f->file) {
 			fflush ((FILE *)f->file);
 		}
@@ -6100,7 +6100,7 @@ cob_file_unlock (cob_file *f)
 		}
 		if (f->organization != COB_ORG_INDEXED) {
 #ifndef	WITH_SEQRA_EXTFH
-			if (f->fd >= 0) {
+			if (f->fd >= 0 && f->open_mode != COB_OPEN_INPUT) {
 				fdcobsync (f->fd);
 			}
 #ifdef	HAVE_FCNTL

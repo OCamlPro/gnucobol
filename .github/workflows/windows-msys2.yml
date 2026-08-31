@@ -4,13 +4,16 @@ on:
   pull_request:
     branches: [ gitside-gnucobol-3.x, oo4gnucobol-3.x  ]
   push:
-  # manual run in actions tab - for all branches
   workflow_dispatch:
+
+env:
+  # Note: no more 32-bit release of JSON-C, switch to cJSON for 32-bit
+  CJSON_URL: https://raw.githubusercontent.com/DaveGamble/cJSON/v1.7.19
 
 jobs:
   prepare:
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 10   # usually around 6-7 minutes
 
     steps:
 
@@ -20,7 +23,7 @@ jobs:
           git config --global user.email github-actions-bot@users.noreply.github.com
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install packages
         uses: msys2/setup-msys2@v2
@@ -72,13 +75,13 @@ jobs:
   build:
     needs: prepare
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 25   # usually around 13-20 minutes
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { target: release, sys: mingw64, env: x86_64       }
           - { target: debug,   sys: mingw64, env: x86_64       }
+          - { target: release, sys: mingw64, env: x86_64       }
           - { target: release, sys: ucrt64,  env: ucrt-x86_64  }
           - { target: release, sys: clang64, env: clang-x86_64 }
           - { target: release, sys: mingw32, env: i686         }
@@ -97,20 +100,20 @@ jobs:
       - name: Setup build environment
         shell: pwsh
         run: |
-          If ("${{ matrix.target }}" -eq "release") {
+          if ("${{ matrix.target }}" -eq "release") {
             echo DISTDIR=GnuCOBOL_mingw >> $env:GITHUB_ENV
             echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS2" >> $env:GITHUB_ENV
-          } Else {
+          } else {
             echo DISTDIR=GnuCOBOL_mingw_dbg >> $env:GITHUB_ENV
             echo CFGOPT="--with-pkgversion=GnuCOBOL-CI-MSYS2-Debug --enable-debug --enable-cobc-internal-checks --enable-hardening" >> $env:GITHUB_ENV
           }
           # Common options (dependencies)
-          echo CFGOPT="$env:CFGOPT --with-math=gmp --with-curses=ncursesw --with-xml2 --with-json=json-c" >> $env:GITHUB_ENV
+          echo CFGOPT="$env:CFGOPT --with-math=gmp --with-curses=ncursesw --with-xml2" >> $env:GITHUB_ENV
           # Conditional inclusion of --with-db (MSYS2 does not provide 32bit builds for BDB any more)
-          If ("${{ matrix.sys }}" -ne "mingw32") {
-            echo CFGOPT="$env:CFGOPT --with-db" >> $env:GITHUB_ENV
-          } Else {
-            echo CFGOPT="$env:CFGOPT --without-db" >> $env:GITHUB_ENV
+          if ("${{ matrix.sys }}" -ne "mingw32") {
+            echo CFGOPT="$env:CFGOPT --with-db --with-json=json-c" >> $env:GITHUB_ENV
+          } else {
+            echo CFGOPT="$env:CFGOPT --without-db --with-json=local" >> $env:GITHUB_ENV
           }
 
       - name: Install packages
@@ -124,23 +127,30 @@ jobs:
                    mingw-w64-${{ matrix.env }}-gmp
                    mingw-w64-${{ matrix.env }}-ncurses
                    mingw-w64-${{ matrix.env }}-libxml2
-                   mingw-w64-${{ matrix.env }}-json-c
 
-      - name: Install BDB package
-        if: ${{ matrix.sys != 'mingw32' }}  # MSYS2 does not provide 32bit builds for it any more
+      - name: Install BDB and JSON-C packages
+        if: ${{ matrix.sys != 'mingw32' }}  # MSYS2 does not provide 32-bit builds for these any more
         uses: msys2/setup-msys2@v2
         with:
           release: false
           msystem: ${{ matrix.sys }}
           install: mingw-w64-${{ matrix.env }}-db
+                   mingw-w64-${{ matrix.env }}-json-c
+
+      - name: Download cJSON
+        if: ${{ matrix.sys == 'mingw32' }}  # MSYS2 32-bit : use cJSON instead of JSON-C
+        shell: cmd
+        run: curl -LO %CJSON_URL%/cJSON.{c,h} --output-dir libcob
 
       - name: Configure GnuCOBOL
         shell: msys2 {0}
         run: |
           mkdir _build && cd _build
-          # Note: we add the path to git-bash so that we can use the diff
-          # command it provides, to workaround a diff bug under the MSYS2 CI
-          PATH="$PATH:/c/Program Files/Git/usr/bin" ../configure $CFGOPT CFLAGS=-std=c17
+          # Note: we used to add the path to git-bash in order to use the diff
+          # command it provides, to workaround a diff bug under the MSYS2 CI ;
+          # this no longer seems necessary today
+          # PATH="$PATH:/c/Program Files/Git/usr/bin"
+          ../configure $CFGOPT CFLAGS=-std=c17
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -154,7 +164,7 @@ jobs:
         run: make -C _build --jobs=$(($(nproc)+1))
 
       - name: Cache newcob.val
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build/tests/cobol85/newcob.val
           key: newcob-val
@@ -175,24 +185,24 @@ jobs:
             _build/tests/cobol85/**/*.out
             _build/tests/cobol85/**/duration.txt
 
-      - name: Run testuite
+      - name: Adjust testsuite
         shell: msys2 {0}
         run: |
-          # skip test as it sometimes works and sometimes not...
-          # instead of
-          #    sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' tests/testsuite.src/used_binaries.at
-          # use
-          sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
+          # Skip test as it sometimes works and sometimes not...
+          # sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
-          # disable screenio - may be resolved by adjusting atlocal;
+      - name: Run testsuite
+        shell: msys2 {0}
+        run: |
+          # Disable screenio - may be resolved by adjusting atlocal;
           # should be available as testsuite option later
+          # Note: works with the clang64 environment
           sed -i 's/CURSES="yes"/CURSES=no/' _build/tests/atlocal
 
-          # to work around regular hangs we run NIST first, then the internal
+          # To work around regular hangs we run NIST first, then the internal
           # and the later only with 2 jobs
-          # OSTYPE added on 2025-02-11 to fix texi2dvi bug
-          OSTYPE=msys make -C _build check TESTSUITEFLAGS="--jobs=2" || \
-          OSTYPE=msys make -C _build check TESTSUITEFLAGS="--recheck --verbose"
+          make -C _build check TESTSUITEFLAGS="--jobs=2" || \
+          make -C _build check TESTSUITEFLAGS="--recheck --verbose"
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}

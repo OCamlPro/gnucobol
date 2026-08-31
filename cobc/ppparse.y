@@ -148,10 +148,35 @@ ppp_replace_src (const struct cb_text_list * const text_list,
 	return s;
 }
 
+/* Remove leading and trailing spaces from pseudo-text, typically for the
+   replacement text of COPY REPLACING */
+static struct cb_text_list * trim_pseudotext(struct cb_text_list *new_text)
+{
+	struct cb_text_list *last_text;
+	struct cb_text_list *curr_text;
+	/* Remove leading spaces in replacement text */
+	while ( new_text != NULL &&
+		new_text->text != NULL &&
+		isspace (new_text->text[0]) )
+		new_text = new_text->next;
+	/* Remove trailing spaces in replacement text */
+	last_text = new_text;
+	curr_text = new_text;
+	while ( curr_text != NULL ){
+		if ( curr_text->text != NULL &&
+		     ! isspace (curr_text->text[0]) )
+			last_text = curr_text;
+		curr_text = curr_text->next;
+	}
+	if (last_text)
+		last_text->next = NULL;
+	return new_text;
+}
+
 static struct cb_replace_list *
 ppp_replace_list_add (struct cb_replace_list *list,
 		      struct cb_replace_src *src,
-		      const struct cb_text_list *new_text,
+		      struct cb_text_list *new_text,
 		      const unsigned int lead_or_trail)
 {
 	struct cb_replace_list *p;
@@ -160,10 +185,12 @@ ppp_replace_list_add (struct cb_replace_list *list,
 	p->line_num = cb_source_line;
 	src->lead_trail = lead_or_trail;
 	if (!lead_or_trail) {
+		new_text = trim_pseudotext (new_text);
 		/* Strictness flag is irrelevant for non-LEADING nor TRAILING
 		   replacements */
 		src->strict = 0;
-	} else {
+	}
+	if (lead_or_trail && new_text != NULL) {
 		/* Use replacement text to decide strictness of partial match */
 		const unsigned char *c;
 		int has_space = new_text->next != NULL;
