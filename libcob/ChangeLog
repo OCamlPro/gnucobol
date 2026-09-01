@@ -4,7 +4,10 @@
 	* fileio.c (cob_sync, cob_file_unlock): call fdcobsync
 	  only if file is open in mode other than COB_OPEN_INPUT
 	  and fflush only is last operation was a write
-	* call.c (cob_get_buff): protect call to cob_free
+	* fileio.c (pathcmp) [_WIN32]: new function to compare paths
+	  while ignoring slash differences
+	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
+	  instead of strcmp to compare paths
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

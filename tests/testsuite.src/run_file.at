@@ -15882,3 +15882,75 @@ AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog])
 
 AT_CLEANUP
+
+
+AT_SETUP([Check for potential COB_SYNC bugs])
+AT_KEYWORDS([runfile INPUT READ UNLOCK COB_SYNC])
+
+# Under Windows, fdcobsync is an alias of _commit, which calls the
+# FlushFileBuffers function, which can not be called on a file opened
+# exclusively for input. Therefore, we should ensure the READ and
+# UNLOCK operation do not call fdcobsync.
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ASSIGN DISK ORGANIZATION SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1.
+       01 file1-rec PIC X.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT file1.
+           WRITE file1-rec.
+           CLOSE file1.
+           OPEN INPUT file1.
+           READ file1.
+           UNLOCK file1.
+           CLOSE file1.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog1], [0], [], [])
+
+# Per C standard, calling fflush is UB on files opened for input or after a
+# read operation on a file opened for update/append. While harmless under
+# most C runtime implementations, this causes problems under MSVCRT (used
+# by older MSVC and by MSYS2's MINGW32/64 environments). Typically, a fflush
+# after read might mess up the EOF indicator, resulting in incomplete
+# file read. Therefore, we should not call fflush on files opened for
+# INPUT, or after a READ operation on files opened for I-O.
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file2 ASSIGN DISK ORGANIZATION LINE SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file2.
+       01 file2-rec PIC X.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT file2.
+           MOVE "X" TO file2-rec.
+           WRITE file2-rec.
+           MOVE "Y" TO file2-rec.
+           WRITE file2-rec.
+           CLOSE file2.
+           OPEN I-O file2.
+           READ file2.
+           READ file2.
+           CLOSE file2.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog2], [0], [], [])
+
+AT_CLEANUP
