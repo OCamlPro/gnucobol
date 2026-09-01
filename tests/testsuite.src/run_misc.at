@@ -16107,3 +16107,168 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([stdin/stdout/stderr redirection])
+AT_KEYWORDS([runmisc cob_set_runtime_option COB_SET_RUNTIME_STDIN_FILE
+   COB_SET_RUNTIME_STDOUT_FILE COB_SET_RUNTIME_STDERR_FILE COB_STDIN_FILE
+   COB_STDOUT_FILE COB_STDERR_FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+          SYSERR IS STANDARD-ERROR.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+          01 INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+          SET ENVIRONMENT "COB_STDOUT_FILE"
+             TO "prog_stdin".
+          DISPLAY "STDOUT".
+          SET ENVIRONMENT "COB_STDERR_FILE"
+             TO "+prog_stdin".
+          DISPLAY "STDERR" UPON SYSERR.
+          SET ENVIRONMENT "COB_STDIN_FILE"
+             TO "prog_stdin".
+          ACCEPT INPUT-VAR.
+          IF NOT INPUT-VAR = "STDOUT" THEN
+             STOP RUN RETURNING 1
+          END-IF.
+          ACCEPT INPUT-VAR.
+          IF NOT INPUT-VAR = "STDERR" THEN
+             STOP RUN RETURNING 2
+          END-IF.
+          STOP RUN.
+])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+          SYSERR IS STANDARD-ERROR.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+          01 INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+          ACCEPT INPUT-VAR.
+          DISPLAY INPUT-VAR UPON SYSERR.
+          ACCEPT INPUT-VAR.
+          DISPLAY INPUT-VAR.
+          GOBACK.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <libcob.h>
+
+int main (int argc, char **argv) {
+   char buffer[128];
+   char *fgets_ret;
+   int nbytes;
+   int cob_ret;
+
+   /* Files for stdin/stdout/stderr redirection */
+   FILE *cob_stdin = fopen ("cob_stdin", "w+b");
+   FILE *cob_stdout = fopen ("cob_stdout", "w+b");
+   FILE *cob_stderr = fopen ("cob_stderr", "w+b");
+
+   if (!cob_stdin || !cob_stdout || !cob_stderr) {
+      fprintf (stderr, "Problem in creating stdin/stdout/stderr files");
+      return 1;
+   }
+
+   /* Prepare input for COBOL program */
+   nbytes = fprintf (cob_stdin, "STDERR\n");
+   if (nbytes != 7) {
+      perror ("Problem in writing 'STDERR' to stdin");
+      return 2;
+   }
+   nbytes = fprintf (cob_stdin, "STDOUT\n");
+   if (nbytes != 7) {
+      perror ("Problem in writing 'STDOUT' to stdin");
+      return 3;
+   }
+   fclose (cob_stdin);
+   cob_stdin = fopen ("cob_stdin", "r+b");
+   if (!cob_stdin) {
+      fprintf (stderr, "Problem in opening stdin file for read");
+      return -1;
+   }
+
+   /* Initialize runtime and set up stdin/stdout/stderr redirection */
+   cob_init (0, NULL);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDIN_FILE, cob_stdin);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE, cob_stdout);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, cob_stderr);
+
+   /* Call COBOL program */
+   cob_ret = cob_call ("callee", 0, NULL);
+
+   if (cob_ret != 0) {
+      fprintf (stderr, "COBOL program did not normally exit: %d\n", cob_ret);
+      return 4;
+   }
+   if (cob_last_exit_code () != 0) {
+      fprintf (stderr, "COBOL program did not exit with ok code: %d\n", cob_last_exit_code ());
+      return 5;
+   }
+
+   /* Reset stdout and stderr for reading */
+   fclose (cob_stdout);
+   fclose (cob_stderr);
+   cob_stdout = fopen ("cob_stdout", "r+b");
+   cob_stderr = fopen ("cob_stderr", "r+b");
+   if (!cob_stdout || !cob_stderr) {
+      fprintf (stderr, "Problem in opening stdout/stderr files for read");
+      return -1;
+   }
+   
+   /* Check result of COBOL program in stdout */
+   buffer[0] = '\0';
+   fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stdout);
+   if (fgets_ret != buffer) {
+      fprintf (stderr, "Reading from stdout failed\n");
+      return 6;
+   }
+   if (strcmp ("STDOUT\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s\n", buffer);
+      return 7;
+   }
+
+   /* Check result of COBOL program in stderr */
+   buffer[0] = '\0';
+   fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stderr);
+   if (fgets_ret != buffer) {
+      fprintf (stderr, "Reading from stderr failed\n");
+      return 8;
+   }
+   if (strcmp ("STDERR\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s\n", buffer);
+      return 9;
+   }
+
+   /* Clean up and terminate */
+   fclose (cob_stdin);
+   fclose (cob_stdout);
+   fclose (cob_stderr);
+
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([./caller], [0], [], [])
+
+AT_CLEANUP
+

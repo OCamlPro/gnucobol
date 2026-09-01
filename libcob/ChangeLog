@@ -6,6 +6,20 @@
 	  and fflush only is last operation was a write
 	* call.c (cob_get_buff): protect call to cob_free
 
+2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
+	  configurations for redirection of stdin/stdout/stderr to a file
+	* common.c, common.h: add COB_SET_RUNTIME_STDIN_FILE,
+	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
+	  options
+	* coblocal.h (cob_settings): extend the setting to store FILE pointers
+	  for stdin/stdout/stderr
+	* fileio.c: introduce cob_settings_fileio to trigger reset of settings
+	  related configurations
+	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
+	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
