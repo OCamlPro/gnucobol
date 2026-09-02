@@ -958,7 +958,8 @@ struct cb_field {
 	unsigned int flag_justified	: 1;	/* JUSTIFIED RIGHT */
 	unsigned int flag_binary_swap	: 1;	/* Binary byteswap */
 
-	unsigned int flag_real_binary	: 1;	/* BINARY-CHAR/SHORT/LONG/DOUBLE */
+	unsigned int flag_real_binary	: 1;	/* BINARY-CHAR/SHORT/LONG/DOUBLE/COMP-5 */
+	unsigned int flag_binary_char	: 1;	/* Is BINARY-CHAR */
 	unsigned int flag_is_pointer	: 1;	/* Is POINTER */
 	unsigned int flag_item_78 	: 1;	/* Is a constant by 78 level,
 										   01 CONSTANT or SYMBOLIC CONSTANT */
