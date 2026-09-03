@@ -1,10 +1,22 @@
 
+2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* profiling.c (print_stack): export/debug option with environment
+	  variable COB_PROF_TRACE, can be used when profiling is enabled to
+	  print the stack when entering/leaving code segments
+	* profiling.c: during test mode, COB_PROF_FILE set to 'hidden.csv'
+	  does not display the warning message when the profile file is
+	  generated
+
 2026-08-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (cob_sync, cob_file_unlock): call fdcobsync
 	  only if file is open in mode other than COB_OPEN_INPUT
 	  and fflush only is last operation was a write
-	* call.c (cob_get_buff): protect call to cob_free
+	* fileio.c (pathcmp) [_WIN32]: new function to compare paths
+	  while ignoring slash differences
+	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
+	  instead of strcmp to compare paths
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 

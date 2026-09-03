@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -724,12 +724,10 @@ cb_is_integer_field_and_int (struct cb_field *f, cb_tree n)
 }
 #endif
 
-static cb_tree
-cb_check_needs_break (cb_tree stmt)
+static int cb_statement_finishes_with_goto (cb_tree stmt)
 {
 	cb_tree		l;
 
-	/* Check if last statement is GO TO */
 	for (l = stmt; l; l = CB_CHAIN (l)) {
 		if (!CB_CHAIN(l)) {
 			break;
@@ -737,11 +735,19 @@ cb_check_needs_break (cb_tree stmt)
 	}
 	if (l && CB_VALUE (l) && CB_STATEMENT_P (CB_VALUE (l))) {
 		l = CB_STATEMENT(CB_VALUE(l))->body;
-		if (l && CB_VALUE (l) && !CB_GOTO_P (CB_VALUE(l))) {
-			/* Append a break */
-			l = cb_build_direct ("break;", 0);
-			return cb_list_add (stmt, l);
+		if (l && CB_VALUE (l) && CB_GOTO_P (CB_VALUE(l))) {
+			return 1;
 		}
+	}
+	return 0;
+}
+
+static cb_tree
+cb_maybe_insert_break (cb_tree stmt)
+{
+	if (! cb_statement_finishes_with_goto (stmt)){
+		cb_tree l = cb_build_direct ("break;", 0);
+		return cb_list_add (stmt, l);
 	}
 	return stmt;
 }
@@ -10046,18 +10052,9 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree goto_end_label)
 
 	} else {
 		c2 = stmt;
-		/* Check if last statement is GO TO */
-		for (c3 = stmt; c3; c3 = CB_CHAIN (c3)) {
-			if (!CB_CHAIN(c3)) {
-				break;
-			}
-		}
-		if (c3 && CB_VALUE (c3) && CB_STATEMENT_P (CB_VALUE (c3))) {
-			c3 = CB_STATEMENT (CB_VALUE (c3))->body;
-			if (c3 && CB_VALUE (c3) && !CB_GOTO_P (CB_VALUE(c3))) {
-				/* Append the jump */
-				c2 = cb_list_add (stmt, goto_end_label);
-			}
+		if (! cb_statement_finishes_with_goto (stmt)){
+			/* Append the jump */
+			c2 = cb_list_add (stmt, goto_end_label);
 		}
 		cb_emit (cb_build_if (cb_build_cond (c1), c2, NULL, STMT_WHEN));
 		build_evaluate (subject_list, CB_CHAIN (case_list), goto_end_label);
@@ -10208,11 +10205,11 @@ cb_emit_if (cb_tree cond, cb_tree stmt1, cb_tree stmt2)
 /* SEARCH .. WHEN clause (internal IF statement) */
 
 cb_tree
-cb_build_if_check_break (cb_tree cond, cb_tree stmts)
+cb_build_if_maybe_insert_break (cb_tree cond, cb_tree stmts)
 {
 	cb_tree		stmt_lis;
 
-	stmt_lis = cb_check_needs_break (stmts);
+	stmt_lis = cb_maybe_insert_break (stmts);
 	return cb_build_if (cond, stmt_lis, NULL, STMT_WHEN);
 }
 
@@ -13652,7 +13649,7 @@ cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 	}
 	whens = cb_list_reverse (whens);
 	if (at_end) {
-		cb_check_needs_break (CB_PAIR_Y (at_end));
+		cb_maybe_insert_break (CB_PAIR_Y (at_end));
 	}
 	return cb_emit (cb_build_search (0, table, varying, at_end, whens));
 }
@@ -13672,9 +13669,9 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 		return NULL;
 	}
 
-	stmt_lis = cb_check_needs_break (stmts);
+	stmt_lis = cb_maybe_insert_break (stmts);
 	if (at_end) {
-		cb_check_needs_break (CB_PAIR_Y (at_end));
+		cb_maybe_insert_break (CB_PAIR_Y (at_end));
 	}
 	x = cb_build_if (x, stmt_lis, NULL, STMT_WHEN);
 	return cb_emit (cb_build_search (1, table, NULL, at_end, x));
