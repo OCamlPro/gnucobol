@@ -165,7 +165,7 @@ jobs:
           # Depends on target-specific memory layout
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' run_misc.at
 
-          # The following 22 fail in Release Mode
+          # The following 20 fail in Release Mode
           sed -i '/AT_SETUP(\[Large BINARY, COMP-X\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[C-API (3)\])/a AT_SKIP_IF(\[true\])' run_misc.at
@@ -179,8 +179,6 @@ jobs:
           sed -i '/AT_SETUP(\[trace feature\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[trace feature with indexed EXTFH\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[trace feature with subroutine\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[PIPE I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[STDOUT STDERR I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[INDEXED COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[SEQUENTIAL\/RELATIVE COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
