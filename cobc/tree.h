@@ -2487,7 +2487,7 @@ extern void		cb_emit_goto (cb_tree, cb_tree, int);
 extern void		cb_emit_exit (const unsigned int);
 
 extern void		cb_emit_if (cb_tree, cb_tree, cb_tree);
-extern cb_tree		cb_build_if_check_break (cb_tree, cb_tree);
+extern cb_tree		cb_build_if_maybe_insert_break (cb_tree, cb_tree);
 
 extern void		cb_emit_initialize (cb_tree, cb_tree,
 					    cb_tree, cb_tree,

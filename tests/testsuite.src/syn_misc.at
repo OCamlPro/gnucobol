@@ -6393,7 +6393,7 @@ prog.cob:30: error: condition-name not allowed here: 'vnum-1'
 prog.cob:31: error: condition-name not allowed here: 'vnum-2'
 prog.cob:33: error: condition-name not allowed here: 'val-i1'
 prog.cob:34: error: condition-name not allowed here: 'val-i2'
-prog.cob:32: error: 'val-i1 (MAIN SECTION:)' is not a procedure name
+prog.cob:32: error: 'val-i1 (ENTRY OF PROG prog:)' is not a procedure name
 ])
 AT_CLEANUP
 
