@@ -1682,6 +1682,9 @@ typedef struct __cob_file {
 	const char			*xfdname;		/* Name for SQL table */
 	const char			*xfdschema;		/* Override of COB_SCHEMA_DIR for this file */
 	long				file_pid;		/* Process id of other end of pipe */
+#ifdef _WIN32
+	void *				file_handle;		/* Win32 hproc: handle of the process at end of (bidirectional) pipe */
+#endif
 	void				*fileout;		/* output side of bi-directional pipe 'FILE*' */
 	int					fdout;			/* output side of bi-directional pipe 'fd' */
 	int					limitreads;		/* Database should LIMIT rows read */

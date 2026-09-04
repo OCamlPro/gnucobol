@@ -4347,6 +4347,9 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	nonexistent = 0;
 	errno = 0;
 	f->file_pid = 0;
+#ifdef _WIN32
+	f->file_handle = NULL;
+#endif
 	f->flag_is_pipe = 0;
 	if (filename[0] == '>') {
 		if (mode != COB_OPEN_OUTPUT)
@@ -4435,7 +4438,86 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	}
 
 	if (filename[0] == '|') {
-#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
+#if defined (_WIN32)
+		HANDLE				p_read, p_write; /* parent to child (parent writes, child reads)  */
+		HANDLE				c_read, c_write; /* child to parent (child writes, parent reads) */
+		SECURITY_ATTRIBUTES		sa;
+		STARTUPINFO			si;
+		PROCESS_INFORMATION		pi;
+		char				*cmdline;
+
+		if (mode != COB_OPEN_I_O) {
+			return COB_STATUS_37_PERMISSION_DENIED;
+		}
+
+		filename++;
+		while (*filename == ' ') {
+			filename++;
+		}
+
+		/* Route through cmd.exe /c (like popen does under the hood).
+		   This allows a behaviour similar to Linux, where a
+		   non-existing program still results in a child being
+		   created, and failure is detected upon read with EOF. */
+		cmdline = cob_malloc (strlen (filename) + 16);
+		sprintf (cmdline, "cmd.exe /c %s", filename);
+
+		/* Create the pipes */
+		sa.nLength = sizeof(sa);
+		sa.bInheritHandle = TRUE;
+		sa.lpSecurityDescriptor = NULL;
+		if (!CreatePipe (&p_read, &p_write, &sa, 0)) {
+			cob_free (cmdline);
+			return COB_STATUS_30_PERMANENT_ERROR;
+		}
+		if (!CreatePipe (&c_read, &c_write, &sa, 0)) {
+			CloseHandle (p_read);
+			CloseHandle (p_write);
+			cob_free (cmdline);
+			return COB_STATUS_30_PERMANENT_ERROR;
+		}
+
+		/* Disable inheritance for pipe ends not used by the child */
+		SetHandleInformation (p_write, HANDLE_FLAG_INHERIT, 0);
+		SetHandleInformation (c_read,  HANDLE_FLAG_INHERIT, 0);
+
+		/* Set the pipe ends as STDIN/STDOUT */
+		ZeroMemory (&si, sizeof(si));
+		si.cb = sizeof(si);
+		si.dwFlags    = STARTF_USESTDHANDLES;
+		si.hStdInput  = p_read;
+		si.hStdOutput = c_write;
+		si.hStdError  = GetStdHandle (STD_ERROR_HANDLE);
+
+		/* Create the child process */
+		if (!CreateProcessA (NULL, cmdline, NULL, NULL, TRUE,
+				     CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+			cob_free (cmdline);
+			CloseHandle (p_read); CloseHandle (p_write);
+			CloseHandle (c_read); CloseHandle (c_write);
+			return COB_STATUS_30_PERMANENT_ERROR;
+		}
+
+		/* Cleanup objects that are no longer needed  */
+		cob_free (cmdline);
+		CloseHandle (p_read);
+		CloseHandle (c_write);
+		CloseHandle (pi.hThread);
+
+		/* Update the cob_file structure accordingly */
+		f->fdout = _open_osfhandle ((intptr_t)p_write, 0);
+		f->fd = _open_osfhandle ((intptr_t)c_read, _O_RDONLY);
+		f->file = (void *)fdopen (f->fd, "r");
+		f->fileout = (void *)fdopen (f->fdout, "w");
+		f->flag_is_pipe = 1;
+		f->open_mode = (enum cob_open_mode)mode;
+		f->file_features &= ~COB_FILE_LS_NULLS;
+		f->file_features &= ~COB_FILE_LS_VALIDATE;
+		f->flag_ls_instab = 0;
+		f->file_pid = (long)pi.dwProcessId;
+		f->file_handle = (void *)pi.hProcess;
+		return COB_STATUS_00_SUCCESS;
+#elif defined (HAVE_UNISTD_H)
 		pid_t	s_pid;
 		int		j, k;
 		int		p_fds[2], c_fds[2];
@@ -4469,9 +4551,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			close (c_fds[1]);
 			f->fdout = p_fds[1];
 			f->fd = c_fds[0];
-			errno = 0;
 			f->file = (void*)fdopen(f->fd, "r");
-			errno = 0;
 			f->fileout = (void*)fdopen(f->fdout, "w");
 			f->flag_is_pipe = 1;
 			f->open_mode = (enum cob_open_mode)mode;
@@ -4777,7 +4857,28 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 				 && f->fileout != f->file) {
 					fclose (f->fileout);
 				}
-#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
+#if defined (_WIN32)
+				{
+					HANDLE hproc = (HANDLE)f->file_handle;
+					DWORD exit_code = 0;
+					if (hproc != NULL) {
+						if (GetExitCodeProcess (hproc, &exit_code)
+						 && exit_code == STILL_ACTIVE) {
+							/* still running: give it a moment to exit on
+							   its own (e.g. after seeing EOF on stdin),
+							   then force it down */
+							if (WaitForSingleObject (hproc, 50) == WAIT_TIMEOUT) {
+								TerminateProcess (hproc, (UINT)-1);
+								WaitForSingleObject (hproc, 50);
+							}
+						}
+						/* already exited, or just terminated above:
+						   release the handle either way */
+						CloseHandle (hproc);
+					}
+					f->file_handle = NULL;
+				}
+#elif defined (HAVE_UNISTD_H)
 				{
 					int	sts;
 					errno = 0;
@@ -4791,12 +4892,6 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 						cob_sleep_msec (50);
 						waitpid (f->file_pid, &sts, 0);
 					}
-				}
-#elif defined (_WIN32)
-				{
-					char buff[COB_MINI_BUFF];
-					snprintf ((char *)&buff, COB_MINI_MAX, "TASKKILL    /PID %d", f->file_pid);
-					system (buff);
 				}
 #endif
 			} else {
@@ -7241,6 +7336,9 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 			f->file = f->fileout = NULL;
 			f->fd = f->fdout = -1;
 			f->file_pid = 0;
+#ifdef _WIN32
+			f->file_handle = NULL;
+#endif
 			f->flag_select_features &= ~COB_SELECT_STDIN;
 			f->flag_select_features &= ~COB_SELECT_STDOUT;
 		}
