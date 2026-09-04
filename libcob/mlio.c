@@ -455,10 +455,16 @@ set_xml_registers (const int ntext, unsigned char *buff, const struct xml_event 
 {
 	COB_MODULE_PTR->xml_text->data = (unsigned char *) "";
 	COB_MODULE_PTR->xml_text->size = 0;
-	COB_MODULE_PTR->xml_namespace->data = (unsigned char *) "";
-	COB_MODULE_PTR->xml_namespace->size = 0;
-	COB_MODULE_PTR->xml_namespace_prefix->data = (unsigned char *) "";
-	COB_MODULE_PTR->xml_namespace_prefix->size = 0;
+	
+	/* In COMPAT mode, we do not define XML-NAMESPACE nor XML-NAMESPACE-PREFIX */
+	if (COB_MODULE_PTR->xml_namespace) {
+		COB_MODULE_PTR->xml_namespace->data = (unsigned char *) "";
+		COB_MODULE_PTR->xml_namespace->size = 0;
+	}
+	if (COB_MODULE_PTR->xml_namespace_prefix) {
+		COB_MODULE_PTR->xml_namespace_prefix->data = (unsigned char *) "";
+		COB_MODULE_PTR->xml_namespace_prefix->size = 0;
+	}
 	
 	/* XML-NTEXT and other XML-N... special registers are not available with ACUCOBOL */
 	if (COB_MODULE_PTR->xml_ntext) {

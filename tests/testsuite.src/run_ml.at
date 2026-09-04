@@ -647,6 +647,7 @@ AT_DATA([prog.cob],[
 ])
 
 AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -w -fno-xml-parse-xmlss prog.cob -o compat], [0], [], [])
 
 AT_CHECK([test "$COB_HAS_XML2" = "yes"], [0], [], [],
 # Previous test "failed" -> no XML runtime
@@ -659,6 +660,15 @@ end    : +000000005 - "Test                          "
 ]),
 # Previous test "passed" -> libxml2 available
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[proc   : +000000000 - "START-OF-DOCUMENT             "
+proc   : +000000000 - "START-OF-ELEMENT              "
+proc   : +000000000 - "END-OF-ELEMENT                "
+proc   : +000000000 - "END-OF-INPUT                  "
+proc   : +000000000 - "END-OF-DOCUMENT               "
+after  : +000000000 - "END-OF-DOCUMENT               "
+end    : +000000005 - "Test                          "
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./compat], [0],
 [proc   : +000000000 - "START-OF-DOCUMENT             "
 proc   : +000000000 - "START-OF-ELEMENT              "
 proc   : +000000000 - "END-OF-ELEMENT                "
