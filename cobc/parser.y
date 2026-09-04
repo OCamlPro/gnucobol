@@ -18138,8 +18138,8 @@ xml_parse_statement:
 	if (cb_xml_parse_xmlss) {
 		cb_set_register_receiving (current_program->xml_namespace, 1);
 		cb_set_register_receiving (current_program->xml_namespace_prefix, 1);
-		cb_set_register_receiving (current_program->xml_nnamespace, 1);
-		cb_set_register_receiving (current_program->xml_nnamespace_prefix, 1);
+		cb_set_register_receiving (current_program->xml_nnamespace, 0);
+		cb_set_register_receiving (current_program->xml_nnamespace_prefix, 0);
 		cb_set_register_receiving (current_program->xml_information, 0);
 	}
   }
@@ -18154,9 +18154,17 @@ xml_parse_body:
   _validating_with
   PROCESSING PROCEDURE _is perform_procedure
   {
-	if (($2 || $3 || $4) && !cb_xml_parse_xmlss) {
+	if (($2 || $4) && !cb_xml_parse_xmlss) {
 		cb_verify_x (CB_TREE (current_statement),
-			CB_ERROR, "XML PARSE XMLSS");
+			CB_ERROR, "XML PARSE XMLSS is required with ENCODING or VALIDATING clauses");
+	}
+	if ($3 && (
+			!current_program->xml_ntext ||
+			(cb_xml_parse_xmlss && !current_program->xml_nnamespace) ||
+			(cb_xml_parse_xmlss && !current_program->xml_nnamespace_prefix)
+		)) {
+		cb_verify_x (CB_TREE (current_statement),
+			CB_ERROR, "XML PARSE RETURNING NATIONAL is unsupported by the current dialect");
 	}
 	__CS_LEAVE (CB_CS_XML_PARSE);
   }
