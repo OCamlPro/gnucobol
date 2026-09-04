@@ -360,6 +360,8 @@ operating system to free the memory when the program exits.
 void
 cob_expandargv (int *argcp, char ***argvp)
 {
+  int encountered_cnt = 0;
+  int j;
   /* The argument we are currently processing.  */
   int i = 0;
   /* To check if ***argvp has been dynamically allocated.  */
@@ -369,6 +371,7 @@ cob_expandargv (int *argcp, char ***argvp)
   unsigned int iteration_limit = 2000;
   /* Loop over the arguments, handling response files.  We always skip
      ARGVP[0], as that is the name of the program being run.  */
+  char * encountered_files[8] = { NULL };
   while (++i < *argcp)
     {
       /* The name of the response file.  */
@@ -396,6 +399,21 @@ cob_expandargv (int *argcp, char ***argvp)
       filename = (*argvp)[i];
       if (filename[0] != '@')
 	continue;
+      /* Iterate over all encountered files to check for recursive response files*/
+      for (j = 0; j < encountered_cnt; ++j)
+        {
+          if (encountered_files[j] && strcmp (encountered_files[j], filename) == 0)
+            {
+              fprintf (stderr, "%s: error: recursive @-file: %s\n", (*argvp)[0], filename);
+              for (j = 0; j < encountered_cnt; ++j) free (encountered_files[j]);
+              exit (1);
+            }
+        }
+
+      if (encountered_cnt < 8)
+        {
+          encountered_files[encountered_cnt++] = cob_strdup (filename);
+        }
       /* If we have iterated too many times then stop.  */
       if (-- iteration_limit == 0)
 	{
@@ -408,6 +426,10 @@ cob_expandargv (int *argcp, char ***argvp)
       if (S_ISDIR(sb.st_mode))
 	{
 	  fprintf (stderr, "%s: error: @-file refers to a directory\n", (*argvp)[0]);
+    for (j = 0; j < encountered_cnt; ++j)
+      {
+        free (encountered_files[j]);
+      }
 	  exit (1);
 	}
 #endif
@@ -469,6 +491,11 @@ cob_expandargv (int *argcp, char ***argvp)
       /* We're all done with the file now.  */
       fclose (f);
     }
+    for (j = 0; j < encountered_cnt; ++j)
+    {
+      free (encountered_files[j]);
+    }
+    
 }
 
 /*
