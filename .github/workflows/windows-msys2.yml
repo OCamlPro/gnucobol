@@ -150,7 +150,7 @@ jobs:
           # command it provides, to workaround a diff bug under the MSYS2 CI ;
           # this no longer seems necessary today
           # PATH="$PATH:/c/Program Files/Git/usr/bin"
-          ../configure $CFGOPT CFLAGS=-std=c17
+          ../configure $CFGOPT CFLAGS=-std=gnu17 LDFLAGS=-lintl
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -184,12 +184,6 @@ jobs:
             _build/tests/cobol85/**/*.log
             _build/tests/cobol85/**/*.out
             _build/tests/cobol85/**/duration.txt
-
-      - name: Adjust testsuite
-        shell: msys2 {0}
-        run: |
-          # Skip test as it sometimes works and sometimes not...
-          # sed -i '/used_binaries/{N;/temporary path invalid/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
       - name: Run testsuite
         shell: msys2 {0}
