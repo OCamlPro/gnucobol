@@ -165,34 +165,11 @@ jobs:
           # Depends on target-specific memory layout
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' run_misc.at
 
-          # The following 22 fail in Release Mode
-          sed -i '/AT_SETUP(\[Large BINARY, COMP-X\])/a AT_SKIP_IF(\[true\])' run_misc.at
+          # The following 2 fail in Release Mode
           sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[C-API (3)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[C API Test JUST\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[Test COBOL-C interface\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[Test COBOL-C interface (2)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[OUTPUT on INDEXED file to missing directory\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL + KEYCHECK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED undeclared keys\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[EXTFH: using ISAM callback\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[trace feature\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[trace feature with indexed EXTFH\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[trace feature with subroutine\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[PIPE I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[STDOUT STDERR I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[SEQUENTIAL\/RELATIVE COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[OPEN OUTPUT COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[MF io status (indexed)\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[Test MF Status (sequential)\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL\])/a AT_SKIP_IF(\[true\])' run_file.at
 
-          # The following 4 fail in Debug Mode
-          sed -i '/AT_SETUP(\[C-API (field based)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[SEQUENTIAL basic I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record\])/a AT_SKIP_IF(\[true\])' run_file.at
+          # The following 1 fail in Debug Mode
           sed -i '/AT_SETUP(\[System routine CBL_GC_HOSTED\])/a AT_SKIP_IF(\[true\])' run_extensions.at
 
       - name: Build testsuite

@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15   # usually around 6-10 minutes
+    timeout-minutes: 20   # usually around 6-10 minutes
     strategy:
       fail-fast: false
       matrix:

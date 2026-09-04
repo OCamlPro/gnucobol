@@ -73,7 +73,9 @@ cob_get_buff (const size_t buffsize)
 {
 	if (buffsize > capi_lastsize) {
 		capi_lastsize = buffsize;
-		cob_free (capi_buffer);
+		if (capi_buffer) {
+			cob_free (capi_buffer);
+		}
 		capi_buffer = cob_fast_malloc (buffsize);
 	}
 	return capi_buffer;
