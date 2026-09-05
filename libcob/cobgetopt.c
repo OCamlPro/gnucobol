@@ -179,7 +179,6 @@ int optopt = '?';
 
    'first_nonopt' and 'last_nonopt' are relocated so that they describe
    the new indices of the non-options in ARGV after they are moved.  */
-
 static void
 exchange (char **argv)
 {
@@ -475,6 +474,7 @@ _getopt_initialize (const char *optstring)
   getopt_initialized = 1;
   return optstring;
 }
+
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters
    given in OPTSTRING.
