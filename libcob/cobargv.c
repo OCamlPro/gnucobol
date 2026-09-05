@@ -22,12 +22,11 @@ Boston, MA 02110-1301, USA.  */
 /*  Create and destroy argument vectors.  An argument vector is simply an
     array of string pointers, terminated by a NULL pointer. */
 
-#include "cobc/cobc.h"
-#include "common.h"
-#include <ctype.h>
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+
 
 
 /*  Routines imported from standard C runtime libraries. */
@@ -53,8 +52,9 @@ Boston, MA 02110-1301, USA.  */
 #endif
 
 #define INITIAL_MAXARGC 8	/* Number of args + NULL in initial argv */
-
+#include "common.h"
 #include <cobgetopt.h>
+#include <ctype.h>
 /*
 
 
