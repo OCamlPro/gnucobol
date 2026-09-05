@@ -9572,7 +9572,7 @@ main (int argc, char **argv)
 	cb_config_text_column = 72;
 
 	/* Process command line arguments */
-	cob_expandargv(&argc, &argv);
+	cob_expandargv (&argc, &argv);
 	iargs = process_command_line (argc, argv);
 
 	if (fatal_startup_error) {

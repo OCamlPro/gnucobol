@@ -1647,9 +1647,9 @@ AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [0], [], [])
 
 AT_CLEANUP()
 
+
 AT_SETUP(recursive @file with conflict)
 AT_KEYWORDS([cobc getopt])
-
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -1659,9 +1659,9 @@ AT_DATA([prog.cob], [
            STOP RUN.   
 ])
 
-AT_DATA([echo "-x @tempfile.txt" > tempfile.txt])
-AT_DATA([echo "-g --free @otherfile.txt" > otherfile.txt])
-AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [0], [], [])
+AT_DATA([tempfile.txt], [-x @tempfile.txt
+])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [1], [], [stderr])
 
 AT_CLEANUP()
 
