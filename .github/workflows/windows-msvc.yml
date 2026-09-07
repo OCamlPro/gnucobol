@@ -161,11 +161,7 @@ jobs:
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           cd tests/testsuite.src
-
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-
-          # The following 2 fail
-          sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL\])/a AT_SKIP_IF(\[true\])' run_file.at
 
       - name: Build testsuite
