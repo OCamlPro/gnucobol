@@ -165,9 +165,8 @@ jobs:
           # Depends on target-specific memory layout
           sed -i '/AT_SETUP(\[runtime check: write to internal storage (1)\])/a AT_SKIP_IF(\[true\])' run_misc.at
 
-          # The following 22 fail in Release Mode
+          # The following 21 fail in Release Mode
           sed -i '/AT_SETUP(\[Large BINARY, COMP-X\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[C-API (3)\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[C API Test JUST\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[Test COBOL-C interface\])/a AT_SKIP_IF(\[true\])' run_misc.at
