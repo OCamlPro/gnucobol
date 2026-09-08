@@ -1,4 +1,16 @@
 
+2026-09-08  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.h (cob_file_operation, cob_file): new enum
+	  cob_file_operation to memorize the last file operation
+	* fileio.c: use the new file field last_operation instead
+	  of last_operation_open
+	* fileio.c (cob_file_fcd_sync): move reset of last_operation
+	  to save_status to fix a bug (uneffetive COB_SYNC)
+	* fileio.c (cob_sync): add missing condition - fflush
+	  should only be called when the last operation is a write
+	  (follow-up to 2026-08-13)
+
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* profiling.c (print_stack): export/debug option with environment
