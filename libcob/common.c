@@ -8315,8 +8315,8 @@ set_config_val (char *value, int pos)
 		}
 
 		if (data_loc == offsetof (cob_settings, cob_stdin_filename)
-		    || data_loc == offsetof (cob_settings, cob_stdout_filename)
-		    || data_loc == offsetof (cob_settings, cob_stderr_filename)) {
+		 || data_loc == offsetof (cob_settings, cob_stdout_filename)
+		 || data_loc == offsetof (cob_settings, cob_stderr_filename)) {
 			cob_settings_termio ();
 		}
 	} else if (data_type & ENV_STR) {	/* String (environment expanded) */
