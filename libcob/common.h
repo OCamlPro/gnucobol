@@ -1847,7 +1847,10 @@ enum cob_runtime_option_switch {
 	COB_SET_RUNTIME_DISPLAY_PRINTER_FILE = 1,	/* 'p' is  FILE *  */
 	COB_SET_RUNTIME_RESCAN_ENV = 2,		/* rescan environment variables */
 	COB_SET_RUNTIME_DISPLAY_PUNCH_FILE = 3,	/* 'p' is  FILE *  */
-	COB_SET_RUNTIME_DUMP_FILE = 4	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_DUMP_FILE = 4,	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_STDIN_FILE = 5,		/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDOUT_FILE = 6, 	/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDERR_FILE = 7,	/* 'p' is FILE * */
 };
 COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, void *p);
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);
