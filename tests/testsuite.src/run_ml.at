@@ -660,6 +660,324 @@ end    : +000000005 - "Test                          "
 AT_CLEANUP
 
 
+AT_SETUP([XML PARSE])
+AT_KEYWORDS([extensions PARSE])
+
+AT_DATA([prog.cob], [
+       PROCESS XMLPARSE XMLSS
+       Identification division.
+       PROGRAM-ID. IBMXML.
+       Data division.
+       Working-storage section.
+      ******************************************************************
+      * Sample data definitions for processing numeric XML content.    *
+      ******************************************************************
+       77  element-depth comp pic s9(4).
+       77  countd comp pic s9(4).
+       77  discount computational pic 9v99 value 0.
+       77  display-price pic $$9.99.
+       77  filling pic x(4095).
+       77  list-price computational pic 9v99 value 0.
+       77  ofr-ed pic x(9) justified.
+       77  ofr-ed-1 redefines ofr-ed pic 999999.99.
+      ******************************************************************
+      * XML document data, encoded as initial values of data items.    *
+      ******************************************************************
+         1 xml-document-data.
+          2 pic x(39) value '<?xml version="1.0" encoding="US-ASCII"'.
+          2 pic x(19) value ' standalone="yes"?>'.
+          2 pic x(39) value '<!--This document is just an example-->'.
+          2 pic x(10) value '<sandwich>'.
+          2 pic x(33) value '<bread type="baker''s best"/>'.
+          2 pic x(36) value '<?spread We''ll use real mayonnaise?>'.
+          2 pic x(29) value '<meat>Ham + turkey</meat>'.
+          2 pic x(34) value '<filling>Cheese, lettuce, tomato, '.
+          2 pic x(32) value 'and that''s all, Folks!</filling>'.
+          2 pic x(25) value '<![CDATA[We should add a '.
+          2 pic x(20) value '<relish> element!]]>'.
+          2 pic x(28) value '<listprice>$4.99</listprice>'.
+          2 pic x(25) value '<discount>0.10</discount>'.
+          2 pic x(31) value '</sandwich>'.
+      ******************************************************************
+      * XML document, represented as fixed-length records.             *
+      ******************************************************************
+       01  xml-document redefines xml-document-data.
+           05 xml-segment pic x(40) occurs 10 times.
+       01  xml-segment-no comp pic s9(4).
+       01  content-buffer pic x(100).
+       01  current-element-stack.
+           05 current-element pic x(40) occurs 10 times.
+       Procedure division.
+        Mainline section.
+           display 'len=:' length of xml-document-data.
+           Move 1 to xml-segment-no
+           Display 'Initial segment {' xml-segment(xml-segment-no) '}'
+           Display ' '
+           XML parse xml-segment (xml-segment-no)
+               processing procedure XML-handler
+             ON EXCEPTION
+               Display 'XML processing error, XML-Code=' XML-Code '.'
+               Move 16 to return-code
+             Goback
+           End-XML
+               Display ' '
+               Display 'XML document successfully parsed.'
+               Display ' '
+               Display '-----+++++***** Using information from XML '
+                   '*****+++++-----'
+               Display ' '
+               Move list-price to Display-price
+               Display ' Sandwich list price: ' Display-price
+               Compute Display-price = list-price * (1 - discount)
+               Display ' Promotional price: ' Display-price
+               Display ' Get one today!'
+               Move 0 to return-code
+           Goback
+      ******************************************************************
+      * Process the transformed content and calculate promo price.     *
+      ******************************************************************
+           Display ' '
+           Display '-----+++++***** Using information from XML '
+               '*****+++++-----'
+           Display ' '
+           Move list-price to Display-price
+           Display ' Sandwich list price: ' Display-price
+           Compute Display-price = list-price * (1 - discount)
+           Display ' Promotional price: ' Display-price
+           Display ' Get one today!'
+           Goback.
+        XML-handler section.
+      *    if xml-segment-no = 10
+      *      move 'END-OF-DOCUMENT' to xml-event
+      *    end-if
+           display 'parsed event=:' xml-event
+           Evaluate XML-Event
+      * ==> Order XML events most frequent first
+             When 'START-OF-ELEMENT'
+      ***      Display 'Start element tag: {' XML-Text '}'
+               Add 1 to element-depth
+      ***      if address of xml-text not = null
+                   Move XML-Text to current-element(element-depth)
+      ***      end-if
+             When 'CONTENT-CHARACTERS'
+      ***      Display 'Content characters: {' XML-Text '}'
+      * ==> In general, a split can occur for any element or attribute
+      * ==> data, but in this sample, it only occurs for "filling"...
+               DISPLAY 'ALL INFO =:' XML-INFORMATION
+               If xml-information = 2
+               DISPLAY 'INFO = 2'
+               END-IF
+               If xml-information = 2 and
+                   current-element(element-depth) not = 'filling'
+               DISPLAY 'INFO = 2 AND FILLING'
+                 Display 'Unexpected split in content for element '
+                     current-element(element-depth)
+                 Move -1 to xml-code
+               End-if
+      * ==> Transform XML content to operational COBOL data item...
+               Evaluate current-element(element-depth)
+                 When 'filling'
+      * ==> After reassembling separate pieces of character content...
+                   String xml-text delimited by size into
+                       content-buffer with pointer countd
+                     On overflow
+                       Display 'content buffer ('
+                           length of content-buffer
+                           ' bytes) is too small'
+                       Move -1 to xml-code
+                   End-string
+                   Evaluate xml-information
+                     When 2
+                       Display '  Character data for element "filling" '
+                           'is incomplete.'
+                       Display '  The partial data was buffered for '
+                           'content assembly.'
+                     When 1
+                       subtract 1 from countd
+                       move content-buffer(1:countd) to filling
+                       Display '  Element "filling" data (' countd
+                           ' bytes) is now complete:'
+                       Display '  {' filling(1:countd) '}'
+                   End-evaluate
+                 When 'listprice'
+      * ==> Using function NUMVAL-C...
+                   Move XML-Text to content-buffer
+                   Compute list-price =
+                       function numval-c(content-buffer)
+                 When 'discount'
+      * ==> Using de-editing of a numeric edited item...
+                   Move XML-Text to ofr-ed
+                   Move ofr-ed-1 to discount
+               End-evaluate
+             When 'END-OF-ELEMENT'
+      ***      Display 'End element tag: {' XML-Text '}'
+               Subtract 1 from element-depth
+             When 'START-OF-DOCUMENT'
+               Display 'Start of document'
+               Move 0 to element-depth
+               Move 1 to countd
+             When 'END-OF-DOCUMENT'
+               Display 'End of document.'
+             When 'VERSION-INFORMATION'
+               continue
+      ***      Display 'Version: {' XML-Text '}'
+             When 'ENCODING-DECLARATION'
+               continue
+      ***      Display 'Encoding: {' XML-Text '}'
+             When 'STANDALONE-DECLARATION'
+      ***      Display 'Standalone: {' XML-Text '}'
+             When 'ATTRIBUTE-NAME'
+               continue
+      ***      Display 'Attribute name: {' XML-Text '}'
+             When 'ATTRIBUTE-CHARACTERS'
+               continue
+      ***      Display 'Attribute value characters: {' XML-Text '}'
+             When 'ATTRIBUTE-CHARACTER'
+               continue
+      ***      Display 'Attribute value character: {' XML-Text '}'
+             When 'START-OF-CDATA-SECTION'
+               Display 'Start of CData section'
+             When 'END-OF-CDATA-SECTION'
+               Display 'End of CData section'
+             When 'CONTENT-CHARACTER'
+      ***      Display 'Content character: {' XML-Text '}'
+             When 'PROCESSING-INSTRUCTION-TARGET'
+      ***      Display 'PI target: {' XML-Text '}'
+             When 'PROCESSING-INSTRUCTION-DATA'
+      ***        Display 'PI data: {' XML-Text '}'
+                   continue
+             When 'COMMENT'
+      *        if address of xml-text not = null
+                   continue
+      ***          Display 'Comment: {' XML-Text '}'
+      *        end-if
+             When 'EXCEPTION'
+               Compute countd = function length (XML-Text)
+               Display 'Exception ' XML-Code ' at offset ' countd '.'
+             When 'END-OF-INPUT'
+               Display 'End of input'
+               if xml-segment-no < 10
+                   Add 1 to xml-segment-no
+                   display 'segment-num=:' xml-segment-no
+                   Display
+                   '  Next segment: {' xml-segment(xml-segment-no)
+                       '}'
+                   Display ' '
+                   Move 1 to xml-code
+              end-if
+             When other
+               Display 'Unexpected XML event: ' XML-Event '.'
+           End-evaluate.
+])
+
+AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[len=:400
+Initial segment {<?xml version="1.0" encoding="US-ASCII" }
+ @&t@
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0002
+  Next segment: {standalone="yes"?><!--This document is j}
+ @&t@
+parsed event=:START-OF-DOCUMENT             @&t@
+Start of document
+parsed event=:VERSION-INFORMATION           @&t@
+parsed event=:ENCODING-DECLARATION          @&t@
+parsed event=:STANDALONE-DECLARATION        @&t@
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0003
+  Next segment: {ust an example--><sandwich><bread type="}
+ @&t@
+parsed event=:COMMENT                       @&t@
+parsed event=:START-OF-ELEMENT              @&t@
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0004
+  Next segment: {baker's best"/>     <?spread We'll use r}
+ @&t@
+parsed event=:START-OF-ELEMENT              @&t@
+parsed event=:ATTRIBUTE-NAME                @&t@
+parsed event=:ATTRIBUTE-CHARACTERS          @&t@
+parsed event=:END-OF-ELEMENT                @&t@
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0005
+  Next segment: {eal mayonnaise?><meat>Ham + turkey</meat}
+ @&t@
+parsed event=:PROCESSING-INSTRUCTION-TARGET @&t@
+parsed event=:PROCESSING-INSTRUCTION-DATA   @&t@
+parsed event=:START-OF-ELEMENT              @&t@
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0006
+  Next segment: {>    <filling>Cheese, lettuce, tomato, a}
+ @&t@
+parsed event=:END-OF-ELEMENT                @&t@
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+parsed event=:START-OF-ELEMENT              @&t@
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0007
+  Next segment: {nd that's all, Folks!</filling><![CDATA[}
+ @&t@
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+  Element "filling" data (+0047 bytes) is now complete:
+  {Cheese, lettuce, tomato, and that's all, Folks!}
+parsed event=:END-OF-ELEMENT                @&t@
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0008
+  Next segment: {We should add a <relish> element!]]><lis}
+ @&t@
+parsed event=:START-OF-CDATA-SECTION        @&t@
+Start of CData section
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+parsed event=:END-OF-CDATA-SECTION          @&t@
+End of CData section
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0009
+  Next segment: {tprice>$4.99</listprice><discount>0.10</}
+ @&t@
+parsed event=:START-OF-ELEMENT              @&t@
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+parsed event=:END-OF-ELEMENT                @&t@
+parsed event=:START-OF-ELEMENT              @&t@
+parsed event=:CONTENT-CHARACTERS            @&t@
+ALL INFO =:+000000001
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+segment-num=:+0010
+  Next segment: {discount></sandwich>                    }
+ @&t@
+parsed event=:END-OF-ELEMENT                @&t@
+parsed event=:END-OF-ELEMENT                @&t@
+parsed event=:END-OF-INPUT                  @&t@
+End of input
+parsed event=:END-OF-DOCUMENT               @&t@
+End of document.
+ @&t@
+XML document successfully parsed.
+ @&t@
+-----+++++***** Using information from XML *****+++++-----
+ @&t@
+ Sandwich list price:  $4.99
+ Promotional price:  $4.49
+ Get one today!
+], [])
+AT_CLEANUP
+
+
 #
 ## JSON
 #
