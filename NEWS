@@ -20,11 +20,29 @@ NEWS - user visible changes				-*- outline -*-
    customization can be done using COB_PROF_FILE, COB_PROF_MAX_DEPTH and
    COB_PROF_FORMAT
 
-** initial support for XML PARSE
-   while this feature is not implemented fully and some events are not
-   implemented yet, we'd like you to test this feature already;
-   note that for the XML-EVENT EXCEPTION, the stored exception-values in
-   XML-CODE and XML-TEXT registers differ from other implementations
+** support for XML PARSE
+   Events sent to COBOL code try to follow as closely as possible what IBM
+   does with a few differences linked to internal XML engine differences:
+   - we cannot guarantee that incomplete CONTENT-CHARACTERS and 
+     ATTRIBUTE-CHARACTERS XML-EVENTS will be sent at the same time, 
+     and cut in the same place as with IBM's parser.
+     GnuCOBOL can merge short CONTENT-CHARACTERS events together across
+     END-OF-INPUT chunks boundary.
+   - For the EXCEPTION XML-EVENT, the reported XML-CODE will often only 
+     correspond to generic error or warning instead of the full error code.
+     In COMPAT mode, generic warnings use code 99 and generic errors use 201.
+     In XMLNSS mode, the low order bits for generic errors and warnings are 
+     set to zero.
+     Moreover, for those generic exceptions, XML-TEXT will contain the error
+     text as reported by libxml2.
+     We may map more of libxml2's errors on IBM's error codes in the future.
+   - The order between EXCEPTION events and other events is not guaranteed 
+     to be the same as with an IBM parser.
+   For most codebases, we do not expect those differences to break existing
+   COBOL code.
+   Support for XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING 
+   is experimental, remain untested and will show a warning at compile time 
+   when used.
 
 ** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
    extended ScreenIO operations

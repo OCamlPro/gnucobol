@@ -1132,7 +1132,7 @@ AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	LIBS="$LIBS $LIBCOB_LIBS_extern $XML2_LIBS"
 	# note: PKG_CONFIG and xml2-config set -I/path/to/libxml2 which contains a "libxml" folder where
 	#       all the files we look for are included
-	for header in xmlwriter xmlversion uri parser tree; do
+	for header in xmlwriter xmlversion uri parser tree SAX2; do
 		AC_CHECK_HEADER([libxml/$header.h], [],
 			[if test "$with_xml2" = yes; then
 			   AC_MSG_ERROR([headers for libxml2 are required for --with-xml2, you may adjust XML2_CFLAGS])

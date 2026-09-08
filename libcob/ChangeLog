@@ -18,6 +18,26 @@
 	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
 	  instead of strcmp to compare paths
 
+2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
+	  the IBM option name
+	* mlio.c: Fix issues in XML PARSE handling most notably a use 
+	  after free error if the internal buffer needs to grow during the parsing. 
+	  This fix changes the definition of xml_event to store offsets in the 
+	  buffer instead of pointers
+	* mlio.c: Respect the high order half-word for exception XML-CODE, 
+	  but do not expose internal libxml2 error codes 
+	* mlio.c: Reduce the number of parsing states by removing useless ones, 
+	  and encode eof in these states
+	* mlio.c: Handle XML chunks with more than one recoverable error
+	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
+	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
+	* mlio.c: Handle incomplete CONTENT-CHARACTERS events (with XML-INFORMATION = 2).
+	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
+	  events across END-OF-INPUT boundaries. 
+	  This is due to libxml2 internal details.
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
