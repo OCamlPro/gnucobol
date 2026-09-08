@@ -542,7 +542,6 @@ static cob_settings	*cobsetptr = NULL;
 static unsigned int	eop_status = 0;
 static unsigned int	check_eop_status = 0;
 static int		cob_vsq_len = 0;
-static int		last_operation_open = 0;
 
 static struct file_list	*file_cache = NULL;
 
@@ -1403,7 +1402,10 @@ cob_sync (cob_file *f)
 		return;
 	}
 	if (f->organization != COB_ORG_SORT && f->open_mode != COB_OPEN_INPUT) {
-		if (f->file) {
+		if (f->file
+		 && (f->last_operation == COB_LAST_WRITE
+		  || f->last_operation == COB_LAST_REWRITE
+		  || f->last_operation == COB_LAST_DELETE)) {
 			fflush ((FILE *)f->file);
 		}
 		if (f->fd >= 0) {
@@ -1502,7 +1504,7 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 			eop_status = 0;
 		}
 		if (cobsetptr->cob_do_sync
-		 && !last_operation_open
+		 && f->last_operation != COB_LAST_OPEN
 		 && f->open_mode != COB_OPEN_CLOSED) {
 			cob_sync (f);
 		}
@@ -1512,6 +1514,7 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 	if (f->fcd) {
 		cob_file_fcd_sync (f);			/* Copy cob_file to app's FCD */
 	}
+	f->last_operation = COB_LAST_NONE;
 }
 
 /* Regular file */
@@ -6312,7 +6315,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 {
 	/*: GC4: mode as cob_open_mode */
 
-	last_operation_open = 1;
+	f->last_operation = COB_LAST_OPEN;
 
 	/* File was previously closed with lock */
 	if (f->open_mode == COB_OPEN_LOCKED) {
@@ -6450,6 +6453,7 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 	struct file_list	*m;
 	int			ret;
 
+	f->last_operation = COB_LAST_CLOSE;
 	f->flag_read_done = 0;
 	f->flag_operation = 0;
 
@@ -6538,6 +6542,7 @@ cob_start (cob_file *f, const int cond, cob_field *key,
 	int		ret;
 	cob_field	tempkey;
 
+	f->last_operation = COB_LAST_START;
 	f->flag_read_done = 0;
 	f->flag_first_read = 0;
 
@@ -6588,6 +6593,7 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	int	ret;
 
 	f->flag_read_done = 0;
+	f->last_operation = COB_LAST_READ;
 
 	if (unlikely (f->open_mode != COB_OPEN_INPUT
 		       && f->open_mode != COB_OPEN_I_O)) {
@@ -6607,6 +6613,7 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 
 	/* Sequential read at the end of file is an error */
 	if (key == NULL) {
+		f->last_operation = COB_LAST_READ_SEQ;
 		if (unlikely (f->flag_end_of_file
 		           && !(read_opts & COB_READ_PREVIOUS))) {
 			save_status (f, fnstatus, COB_STATUS_46_READ_ERROR);
@@ -6687,6 +6694,7 @@ cob_read_next (cob_file *f, cob_field *fnstatus, const int read_opts)
 {
 	int	ret,idx;
 
+	f->last_operation = COB_LAST_READ_SEQ;
 	f->flag_read_done = 0;
 
 	if (unlikely (f->open_mode != COB_OPEN_INPUT
@@ -6799,6 +6807,7 @@ void
 cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 	   const unsigned int check_eop)
 {
+	f->last_operation = COB_LAST_WRITE;
 	f->flag_read_done = 0;
 
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL) {
@@ -6908,6 +6917,7 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 
 	read_done = f->flag_read_done;
 	f->flag_read_done = 0;
+	f->last_operation = COB_LAST_REWRITE;
 
 	if (unlikely (f->open_mode != COB_OPEN_I_O)) {
 		save_status (f, fnstatus, COB_STATUS_49_I_O_DENIED);
@@ -7018,6 +7028,7 @@ cob_delete (cob_file *f, cob_field *fnstatus)
 
 	read_done = f->flag_read_done;
 	f->flag_read_done = 0;
+	f->last_operation = COB_LAST_DELETE;
 
 	if (unlikely (f->open_mode != COB_OPEN_I_O)) {
 		save_status (f, fnstatus, COB_STATUS_49_I_O_DENIED);
@@ -7060,6 +7071,7 @@ cob_rollback (void)
 void
 cob_delete_file (cob_file *f, cob_field *fnstatus)
 {
+	f->last_operation = COB_LAST_DELETE_FILE;
 	if (f->organization == COB_ORG_SORT) {
 		save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 		return;
@@ -9877,6 +9889,7 @@ cob_extfh_open (EXTFH_FUNC callfh, cob_file *f,
 
 	COB_UNUSED (sharing);
 
+	f->last_operation = COB_LAST_OPEN;
 	fcd = find_fcd (f, 1);
 	f->last_open_mode = (unsigned char)mode;
 	if (mode == COB_OPEN_OUTPUT)
@@ -9915,6 +9928,7 @@ cob_extfh_close (EXTFH_FUNC callfh, cob_file *f,
 
 	COB_UNUSED (remfil);
 
+	f->last_operation = COB_LAST_CLOSE;
 	fcd = find_fcd (f, 1);
 	STCOMPX4 (opt, fcd->opt);
 
@@ -9981,6 +9995,7 @@ cob_extfh_start (EXTFH_FUNC callfh, cob_file *f,
 	int	recn;
 	int	keyn,keylen,partlen;
 
+	f->last_operation = COB_LAST_START;
 	fcd = find_fcd (f, 1);
 	if (f->organization == COB_ORG_INDEXED) {
 		keyn = cob_findkey(f,key,&keylen,&partlen);
@@ -10023,9 +10038,11 @@ cob_extfh_read (EXTFH_FUNC callfh, cob_file *f,
 	int	recn;
 	int	keyn,keylen,partlen;
 
+	f->last_operation = COB_LAST_READ;
 	fcd = find_fcd (f, 1);
 	STCOMPX4 (read_opts, fcd->opt);
 	if (key == NULL) {
+		f->last_operation = COB_LAST_READ_SEQ;
 		if ((read_opts & COB_READ_PREVIOUS)) {
 			STCOMPX2(OP_READ_PREV, opcode);
 		} else {
@@ -10067,6 +10084,7 @@ cob_extfh_read_next (EXTFH_FUNC callfh, cob_file *f,
 	FCD3	*fcd;
 	int	recn;
 
+	f->last_operation = COB_LAST_READ_SEQ;
 	fcd = find_fcd (f, 1);
 	STCOMPX4(read_opts, fcd->opt);
 	if ((read_opts & COB_READ_PREVIOUS)) {
@@ -10094,6 +10112,7 @@ cob_extfh_write (EXTFH_FUNC callfh, cob_file *f,
 	FCD3	*fcd;
 	int	recn;
 
+	f->last_operation = COB_LAST_WRITE;
 	fcd = find_fcd (f, 1);
 	STCOMPX2(OP_WRITE, opcode);
 	STCOMPX2(check_eop, fcd->eop);
@@ -10129,6 +10148,7 @@ cob_extfh_rewrite (EXTFH_FUNC callfh, cob_file *f,
 	FCD3	*fcd;
 	int	recn;
 
+	f->last_operation = COB_LAST_REWRITE;
 	fcd = find_fcd (f, 1);
 	STCOMPX2 (OP_REWRITE, opcode);
 	STCOMPX4 (opt, fcd->opt);
@@ -10161,6 +10181,7 @@ cob_extfh_delete (EXTFH_FUNC callfh, cob_file *f,
 	FCD3	*fcd;
 	int	recn;
 
+	f->last_operation = COB_LAST_DELETE;
 	fcd = find_fcd (f, 1);
 	STCOMPX2 (OP_DELETE, opcode);
 	if (f->organization == COB_ORG_RELATIVE) {
@@ -10243,8 +10264,7 @@ cob_fcd_file_sync (cob_file *f, char *external_file_open_name)
 static void
 cob_file_fcd_sync (cob_file *f)
 {
-	if (last_operation_open == 1) {
-		last_operation_open = 0;
+	if (f->last_operation == COB_LAST_OPEN) {
 		copy_file_to_fcd (f, f->fcd);
 	} else {
 		update_file_to_fcd (f, f->fcd, NULL);
