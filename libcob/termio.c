@@ -1108,9 +1108,9 @@ cob_stdin_termio (void)
 {
 	if (cobsetptr->cob_stdin_filename) {
 		FILE *stdin_f = NULL;
-		if (cobsetptr->cob_stdin_filename_set &&
-		    strcmp (cobsetptr->cob_stdin_filename,
-	    cobsetptr->cob_stdin_filename_set) == 0) {
+		if (cobsetptr->cob_stdin_filename_set
+		 && strcmp (cobsetptr->cob_stdin_filename,
+		            cobsetptr->cob_stdin_filename_set) == 0) {
 			return;
 		}
 
