@@ -4159,3 +4159,91 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field larger than internal I/O buffer])
+AT_KEYWORDS([screen accept])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+# regression test: the internal screen I/O buffer used to be a fixed
+# 8192 bytes (COB_MEDIUM_BUFF); ACCEPTing into a field larger than that
+# overflowed it. The buffer now grows on demand, so this must complete
+# (and not crash) for a field well past that old limit.
+#
+# Note: this must use the direct extended-format ACCEPT (identifier
+# LINE/COLUMN, no SCREEN SECTION) to reach field_accept()/
+# ensure_buffer() in screenio.c. A SCREEN SECTION group ACCEPT (e.g.
+# "01 scr. ACCEPT scr.") goes through cob_screen_get_all() instead,
+# which reads directly into the field's own storage and never touches
+# the internal buffer this test is checking.
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  big-field    PIC X(9000).
+
+       PROCEDURE        DIVISION.
+           DISPLAY 'Type a few characters, then press ENTER.'
+               LINE 1 COL 1
+           ACCEPT big-field LINE 3 COL 1
+
+           IF COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field above screen buffer warning threshold])
+AT_KEYWORDS([screen accept])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+# regression test: complements the "ACCEPT field larger than internal
+# I/O buffer" test above. Here the field additionally exceeds
+# COB_TERM_BUFF_WARN_SIZE (32768 bytes, common.h) which should still
+# complete without crashing (the field is still fully accepted, not
+# truncated) *and* emit a runtime warning on stderr. Uses the direct
+# extended-format ACCEPT for the same reason as the test above.
+#
+# run_prog_manual.sh captures the program's stderr to syserr.log and
+# prints it to the terminal once the run finishes, so check that
+# output for a line such as:
+#   libcob: warning: ACCEPT/DISPLAY of unusually large field (40000 bytes)
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  big-field    PIC X(40000).
+
+       PROCEDURE        DIVISION.
+           DISPLAY 'Type a few characters, then press ENTER.'
+               LINE 1 COL 1
+           DISPLAY 'After exiting, check the terminal for a'
+               LINE 2 COL 1
+           DISPLAY '"unusually large field" runtime warning.'
+               LINE 3 COL 1
+           ACCEPT big-field LINE 5 COL 1
+
+           IF COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP

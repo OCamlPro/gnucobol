@@ -191,7 +191,9 @@ static int			pending_accept;
 static int			got_sys_char;
 static int			save_cursor_x = 0;
 static int			save_cursor_y = 0;
-static WINDOW			*mywin;
+static WINDOW		*mywin;
+static unsigned char			*screen_term_buff = NULL;
+static size_t		screen_buffer_size = 0;
 
 #ifdef WITH_PANELS
 #define MAX_PANELS		20
@@ -3530,6 +3532,39 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 	refresh_mywin (mywin);
 }
 
+static int
+ensure_buffer (unsigned long requested_size)
+{
+	size_t buffer_size;
+	unsigned char *tmp;
+
+	if(requested_size > COB_TERM_BUFF_WARN_SIZE){
+		cob_runtime_warning (
+			_("ACCEPT/DISPLAY of unusually large field (%lu bytes)"),
+			requested_size);
+	}
+
+	if(requested_size <= screen_buffer_size){
+		return 0;
+	}
+	
+	buffer_size = requested_size > COB_MINI_BUFF 
+		? (size_t)requested_size : COB_MINI_BUFF;
+
+	tmp = cob_fast_malloc_or_null(buffer_size);
+	if(tmp == NULL){
+		return 1;
+	}
+
+	if(screen_term_buff){
+		cob_free (screen_term_buff);
+	}
+	screen_term_buff = tmp;
+	screen_buffer_size = buffer_size;
+
+	return 0;
+}
+
 static void
 field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolumn,
 		  cob_field *fgc, cob_field *bgc, cob_field *fscroll, cob_field *ftimeout,
@@ -3553,7 +3588,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	MEVENT		mevent;
 #endif
 
-	size_t		size_accept = 0;	/* final size to accept */
+	unsigned long		size_accept = 0;	/* final size to accept */
 	cob_field	temp_field;
 
 #if	0	/* RXWRXW - Screen update */
@@ -3607,20 +3642,29 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			size_accept = cob_get_int (size_is);
 			/* SIZE ZERO is ignored */
 			if (size_accept < 1) {
-				size_accept = (int)f->size;
+				size_accept = f->size;
 			}
 		} else {
 			size_accept = f->size;
+		}		
+		if (size_accept && ensure_buffer(size_accept) != 0) {
+			cob_set_exception (COB_EC_SCREEN_IMP_STORAGE);
+
+			if(screen_buffer_size == 0){
+				return;
+			}
+
+			size_accept = screen_buffer_size;			
 		}
 
-		p = COB_TERM_BUFF;
-		temp_field.data = COB_TERM_BUFF;
+		p = screen_term_buff;
+		temp_field.data = screen_term_buff;
 		temp_field.attr = &const_alpha_attr;
 		temp_field.size = size_accept;
 		if (fattr & COB_SCREEN_UPDATE) {
-			cob_move (f, &temp_field);	/* updates COB_TERM_BUFF */
+			cob_move (f, &temp_field);	/* updates screen_term_buff */
 		} else {
-			memset (COB_TERM_BUFF, ' ', size_accept);
+			memset (screen_term_buff, ' ', size_accept);
 		}
 
 		raise_ec_on_truncation (size_accept);
@@ -3657,7 +3701,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 					cursor_off = cob_get_int (cursor);
 					if (cursor_off >= 1) {
 						/* max: last_position with data */
-						int last_data = p_set - COB_TERM_BUFF + 1;
+						int last_data = p_set - screen_term_buff + 1;
 						if (last_data < cursor_off) {
 							cursor_off = last_data;
 						}
@@ -3694,7 +3738,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		accept_cursor_x = scolumn + size_accept;
 
 		right_pos = scolumn + size_accept - 1;
-		p = COB_TERM_BUFF;
+		p = screen_term_buff;
 	} else {
 		right_pos = 0;
 		p = NULL;
@@ -3721,7 +3765,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			}
 			for (count = right_pos; (int)count > scolumn - 1; count--) {
 				/* Get character */
-				p2 = COB_TERM_BUFF + count - scolumn;
+				p2 = screen_term_buff + count - scolumn;
 				move_char = *p2;
 				/* Field prompts. */
 				if (COB_FIELD_IS_NUMERIC (f)) {
@@ -3902,10 +3946,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				/* Shift remainder left with cursor. */
 				for (count = ccolumn; count < right_pos + 1; count++) {
 					/* Get character. */
-					p2 = COB_TERM_BUFF + count - scolumn ;
+					p2 = screen_term_buff + count - scolumn ;
 					move_char = *p2;
 					/* Move the character left. */
-					p2 = COB_TERM_BUFF + count - scolumn - 1;
+					p2 = screen_term_buff + count - scolumn - 1;
 					*p2 = move_char;
 					/* Update screen with moved character. */
 					cob_move_cursor (cline, count - 1);
@@ -3918,7 +3962,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 					}
 				}
 				/* Put space as the right most character. */
-				p2 = COB_TERM_BUFF + size_accept - 1;
+				p2 = screen_term_buff + size_accept - 1;
 				if (fattr & COB_SCREEN_NO_ECHO) {
 					*p2 = COB_CH_SP;
 				} else if (COB_FIELD_IS_NUMERIC (f)) {
@@ -3942,7 +3986,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Find non-blank character left to right. */
 			for (count = scolumn; count <= right_pos; count++) {
 				/* Get character. */
-				p2 = COB_TERM_BUFF + count - scolumn;
+				p2 = screen_term_buff + count - scolumn;
 				move_char = *p2;
 				/* Stop at beginning non-blank character. */
 				if (move_char != ' ') {
@@ -3958,11 +4002,11 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				/* Cursor to start of characters. */
 				ccolumn = count;
 				cob_move_cursor (cline, ccolumn);
-				p = COB_TERM_BUFF + ccolumn - scolumn;
+				p = screen_term_buff + ccolumn - scolumn;
 			} else {
 				/* Cursor to start of field. */
 				cob_move_cursor (sline, scolumn);
-				p = COB_TERM_BUFF;
+				p = screen_term_buff;
 			}
 			/* Reset */
 			at_eof = 0;
@@ -3974,7 +4018,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Find non-blank character right to left. */
 			for (count = right_pos; (int) count >= scolumn; count--) {
 				/* Get character. */
-				p2 = COB_TERM_BUFF + count - scolumn;
+				p2 = screen_term_buff + count - scolumn;
 				move_char = *p2;
 				/* Stop at ending non-blank character. */
 				if (move_char != ' ') {
@@ -3995,11 +4039,11 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				/* Cursor after end character. */
 				ccolumn = count;
 				cob_move_cursor (cline, ccolumn);
-				p = COB_TERM_BUFF + ccolumn - scolumn;
+				p = screen_term_buff + ccolumn - scolumn;
 			} else {
 				/* Cursor to end of size of field */
 				cob_move_cursor (sline, right_pos);
-				p = COB_TERM_BUFF + size_accept - 1;
+				p = screen_term_buff + size_accept - 1;
 			}
 			/* Reset */
 			at_eof = 0;
@@ -4012,7 +4056,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			if ((int) ccolumn > scolumn) {
 				ccolumn--;
 				cob_move_cursor (cline, ccolumn);
-				p = COB_TERM_BUFF + ccolumn - scolumn;
+				p = screen_term_buff + ccolumn - scolumn;
 				continue;
 			}
 			/* End of field, auto-skip, return left-arrow. */
@@ -4029,7 +4073,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			if (ccolumn < right_pos) {
 				ccolumn++;
 				cob_move_cursor (cline, ccolumn);
-				p = COB_TERM_BUFF + ccolumn - scolumn;
+				p = screen_term_buff + ccolumn - scolumn;
 				continue;
 			}
 			/* End of field, auto-skip, return right-arrow. */
@@ -4048,10 +4092,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Delete character, move remainder left. */
 			for (count = ccolumn; count < right_pos; count++) {
 				/* Get character one position to right. */
-				p2 = COB_TERM_BUFF + count - scolumn + 1;
+				p2 = screen_term_buff + count - scolumn + 1;
 				move_char = *p2;
 				/* Move the character left. */
-				p2 = COB_TERM_BUFF + count - scolumn;
+				p2 = screen_term_buff + count - scolumn;
 				*p2 = move_char;
 				/* Update screen with moved character. */
 				cob_move_cursor (cline, count);
@@ -4064,7 +4108,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				}
 			}
 			/* Put space as the right most character. */
-			p2 = COB_TERM_BUFF + size_accept - 1;
+			p2 = screen_term_buff + size_accept - 1;
 			if (fattr & COB_SCREEN_NO_ECHO) {
 				*p2 = COB_CH_SP;
 			} else if (COB_FIELD_IS_NUMERIC (f)) {
@@ -4079,7 +4123,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 			/* Alt-Delete key, erase cursor to end of field. */
 			for (count = ccolumn; count <= right_pos; count++) {
 				/* Character position. */
-				p2 = COB_TERM_BUFF + count - scolumn;
+				p2 = screen_term_buff + count - scolumn;
 				/* Blank character. */
 				if (fattr & COB_FIELD_IS_NUMERIC (f)) {
 					move_char = '0';
@@ -4119,7 +4163,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 					 && mcolumn <= (int)right_pos) {
 						ccolumn = mcolumn;
 						cob_move_cursor (cline, ccolumn);
-						p = COB_TERM_BUFF + ccolumn - scolumn;
+						p = screen_term_buff + ccolumn - scolumn;
 						continue;
 					}
 				}
@@ -4169,7 +4213,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				if (cob_field_is_numeric_or_numeric_edited (f)) {
 					p2 = (unsigned char *)" ";
 				} else {
-					p2 = COB_TERM_BUFF + right_pos - scolumn;
+					p2 = screen_term_buff + right_pos - scolumn;
 				}
 				if (*p2 != ' ') {
 					cob_beep ();
@@ -4178,10 +4222,10 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 				/* Move remainder to the right. */
 				for (count = right_pos; count > ccolumn; count--) {
 					/* Get character */
-					p2 = COB_TERM_BUFF + count - scolumn - 1;
+					p2 = screen_term_buff + count - scolumn - 1;
 					move_char = *p2;
 					/* Move character one right. */
-					p2 = COB_TERM_BUFF + count - scolumn;
+					p2 = screen_term_buff + count - scolumn;
 					*p2 = move_char;
 					/* Update screen with moved character. */
 					if ((int) count > scolumn) {
@@ -4254,7 +4298,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		cob_move (&temp_field, f);
 		cob_move_cursor (sline, right_pos + 1);
 #if 0	/* possible cleanup to not "leak" input data */
-		memset (COB_TERM_BUFF, ' ', size_accept);
+		memset (screen_term_buff, ' ', size_accept);
 #endif
 	}
 	refresh_mywin (mywin);
@@ -4712,6 +4756,11 @@ cob_exit_screen (void)
 		if (cob_base_inp) {
 			cob_free (cob_base_inp);
 			cob_base_inp = NULL;
+		}
+		if (screen_term_buff) {
+			cob_free (screen_term_buff);
+			screen_term_buff = NULL;
+			screen_buffer_size = 0;
 		}
 	}
 	COB_ACCEPT_STATUS = 0;
@@ -5680,7 +5729,6 @@ sys_window_delete (PPARM_FLD parm)
 	update_all_windows ();
 	return 0;
 }
-
 
 /* LIST_WINDOW - list all of the windows */
 static void
