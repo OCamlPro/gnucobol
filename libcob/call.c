@@ -534,9 +534,7 @@ cob_get_buff (const size_t buffsize)
 {
 	if (buffsize > call_lastsize) {
 		call_lastsize = buffsize;
-		if (call_buffer) {
-			cob_free (call_buffer);
-		}
+		cob_free (call_buffer);
 		call_buffer = cob_fast_malloc (buffsize);
 	}
 	return call_buffer;

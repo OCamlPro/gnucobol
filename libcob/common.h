@@ -1119,7 +1119,7 @@ enum cob_statement {
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
-#define COB_XML_PARSE_XMLNSS	(1U << 0)
+#define COB_XML_PARSE_XMLSS		(1U << 0)
 #define COB_XML_PARSE_NATIONAL	(1U << 1)
 #define COB_XML_PARSE_VALIDATE_FILE	(1U << 2)
 
@@ -1330,11 +1330,11 @@ typedef struct __cob_module {
 	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
 
 	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-		/* similar to XMLPARSE(XMLNSS) Micro Focus,
+		/* similar to XMLPARSE(XMLSS) Micro Focus,
 		   IBM may be different (_very_ likely for error codes);
 		   but the main difference is to "COMPAT" */
 		#define COB_XML_COMPAT 		0
-		#define COB_XML_XMLNSS		1
+		#define COB_XML_XMLSS		1
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */
@@ -1849,7 +1849,10 @@ enum cob_runtime_option_switch {
 	COB_SET_RUNTIME_DISPLAY_PRINTER_FILE = 1,	/* 'p' is  FILE *  */
 	COB_SET_RUNTIME_RESCAN_ENV = 2,		/* rescan environment variables */
 	COB_SET_RUNTIME_DISPLAY_PUNCH_FILE = 3,	/* 'p' is  FILE *  */
-	COB_SET_RUNTIME_DUMP_FILE = 4	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_DUMP_FILE = 4,	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_STDIN_FILE = 5,		/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDOUT_FILE = 6, 	/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDERR_FILE = 7,	/* 'p' is FILE * */
 };
 COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, void *p);
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);

@@ -82,6 +82,17 @@ if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "x$CHECKPERF" != "x"; th
 	fi
 fi
 
+# To activate profiling during tests, modify tests/atlocal:
+# For the normal testsuite, uncomment:
+# COB_PROF_TESTSUITE=yes
+# For the NIST testsuite and _ONLY_ for it, uncomment:
+# COB_PROF_NIST=yes
+
+if test "x$COB_PROF_NIST" = xyes; then
+   COBOL_FLAGS="${COBOL_FLAGS} -fprof"
+   COB_PROF_TESTSUITE=yes
+fi
+
 COBC="${COBC}"
 
 perf_record() {
@@ -352,6 +363,14 @@ HAVE_SIGNAL_H="@HAVE_SIGNAL_H@"
 COB_STACKTRACE=0
 export COB_STACKTRACE
 
+if test "x$COB_PROF_TESTSUITE" = xyes; then
+   COMPILE="${COMPILE} -fprof"
+   COMPILE_MODULE="${COMPILE_MODULE} -fprof"
+   COB_PROF_ENABLE=1
+   export COB_PROF_ENABLE
+   COB_PROF_FILE="hidden.csv"
+   export COB_PROF_FILE
+fi
 
 # different variables used in the testsuite
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
@@ -449,7 +468,7 @@ rm -rf info.out
 
 # NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
 export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
-export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
+export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL COBOL_FLAGS
 export COB_CC COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
 # to ensure that no external DB_HOME is polluted: unset

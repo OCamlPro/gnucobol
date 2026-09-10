@@ -3628,17 +3628,7 @@ join_environment (void)
 				   "env_create", ret, db_strerror (ret));
 		return ret;
 	}
-#if	0	/* RXWRXW - BDB msg */
-	bdb_env->set_errcall (bdb_env, bdb_errcall_set);
-#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
-#endif
-#else
-	bdb_env->set_errfile (bdb_env, stderr);
-#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgfile (bdb_env, stderr);
-#endif
-#endif
+	cob_settings_fileio ();
 	bdb_env->set_cachesize (bdb_env, 0, 2*1024*1024, 0);
 	bdb_env->set_alloc (bdb_env, cob_malloc, realloc, cob_free);
 	flags = DB_CREATE | DB_INIT_MPOOL | DB_INIT_CDB;
@@ -6360,8 +6350,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = stdin;
-		f->fd = fileno (stdin);
+		f->file = COB_STDIN;
+		f->fd = fileno (COB_STDIN);
 		f->open_mode = mode;
 		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -6371,8 +6361,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = stdout;
-		f->fd = fileno (stdout);
+		f->file = COB_STDOUT;
+		f->fd = fileno (COB_STDOUT);
 		f->open_mode = mode;
 		save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -8769,6 +8759,53 @@ cob_file_return (cob_file *f)
 	}
 }
 
+#ifdef _WIN32
+
+static int
+get_drive_letter(const char **s)
+{
+	const char *p = *s;
+	if (p[0] == '/'
+	 && ((p[1] >= 'A' && p[1] <= 'Z')
+	  || (p[1] >= 'a' && p[1] <= 'z'))
+	 && p[2] == '/') {
+		*s += 3;
+		return p[1];
+	} else
+	if (((p[0] >= 'A' && p[0] <= 'Z')
+	  || (p[0] >= 'a' && p[0] <= 'z'))
+	 && p[1] == ':'
+	 && (p[2] == '\\' || p[2] == '/')) {
+		*s += 3;
+		return p[0];
+	}
+	return 0;
+}
+
+static int
+pathcmp (const char *s1, const char *s2)
+{
+	int c1, c2;
+	c1 = get_drive_letter(&s1);
+	c2 = get_drive_letter(&s2);
+	if (c1 != c2) {
+		return c1 - c2;
+	}
+	do {
+		c1 = (unsigned char)*s1++;
+		c2 = (unsigned char)*s2++;
+		if (c1 == '\\') c1 = '/';
+		if (c2 == '\\') c2 = '/';
+	} while (c1 && c1 == c2);
+	return c1 - c2;
+}
+
+#else
+
+#define pathcmp strcmp
+
+#endif
+
 char *
 cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
@@ -8794,7 +8831,7 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	offset += len;
 
 	if (show_resolved_name
-	 && strcmp (file_open_env, file_open_name)) {
+	 && pathcmp (file_open_env, file_open_name)) {
 		/* environment name is set; format: "%s ('%s' => %s)" */
 		len = 5;
 		memcpy (runtime_buffer + offset, "' => ", len);
@@ -8958,6 +8995,26 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 #if	defined(WITH_INDEX_EXTFH) || defined(WITH_SEQRA_EXTFH)
 	extfh_cob_init_fileio (&sequential_funcs, &lineseq_funcs,
 			       &relative_funcs, &cob_file_write_opt);
+#endif
+}
+
+void
+cob_settings_fileio (void) 
+{
+#ifdef WITH_DB
+	if (bdb_env) {
+#if	0	/* RXWRXW - BDB msg */
+		bdb_env->set_errcall (bdb_env, bdb_errcall_set);
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
+		bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
+#endif
+#else
+		bdb_env->set_errfile (bdb_env, COB_STDERR);
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
+		bdb_env->set_msgfile (bdb_env, COB_STDERR);
+#endif
+#endif
+	}
 #endif
 }
 
