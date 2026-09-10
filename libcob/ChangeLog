@@ -1,4 +1,12 @@
 
+2026-09-10  Arnab Dan <arnabdan.edu@gmail.com>
+
+	* screenio.c, termio.c: use private terminal buffers and handle
+	  insufficient screen buffer storage with EC-SCREEN-IMP-STORAGE.
+	* common.c, coblocal.h: add non-aborting allocation helper.
+	* common.h: remove the obsolete global screen buffer.
+	* exception.def: add EC-SCREEN-IMP-STORAGE.
+
 2026-08-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (cob_sync, cob_file_unlock): call fdcobsync

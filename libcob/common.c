@@ -760,12 +760,6 @@ cob_exit_common (void)
 		cob_free (cob_local_env);
 	}
 
-	/* Free library routine stuff */
-
-	if (cobglobptr->cob_term_buff) {
-		cob_free (cobglobptr->cob_term_buff);
-	}
-
 	/* Free cached externals */
 	for (p = basext; p;) {
 		q = p;
@@ -2653,6 +2647,11 @@ cob_free (void * mptr)
 #endif
 	free (mptr);
 
+}
+void *
+cob_fast_malloc_or_null (const size_t size)
+{
+    return malloc (size);
 }
 
 void *
@@ -10493,9 +10492,6 @@ cob_init (const int argc, char **argv)
 	cob_init_termio (cobglobptr, cobsetptr);
 	cob_init_reportio (cobglobptr, cobsetptr);
 	cob_init_mlio (cobglobptr);
-
-	/* Set up library routine stuff */
-	cobglobptr->cob_term_buff = cob_malloc ((size_t)COB_MEDIUM_BUFF);
 
 	/* Set switches */
 	for (i = 0; i <= COB_SWITCH_MAX; ++i) {

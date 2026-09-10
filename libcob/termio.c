@@ -57,6 +57,11 @@ static const unsigned short	bin_digits[] =
 static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
+/* private buffer for non-screen ACCEPT/DISPLAY conversions, replacing
+   the formerly shared cobglobptr->cob_term_buff (now local to each of
+   termio.c and screenio.c, which have different size needs) */
+static unsigned char		termio_buff[COB_MEDIUM_BUFF];
+
 /* DISPLAY */
 
 static void
@@ -88,14 +93,14 @@ display_numeric (cob_field *f, FILE *fp)
 				attr.flags |= COB_FLAG_SIGN_LEADING;
 			}
 		}
-		COB_FIELD_INIT (size, COB_TERM_BUFF, &attr);
+		COB_FIELD_INIT (size, termio_buff, &attr);
 
 		cob_move (f, &field);
 	}
 
 	/* output of data to viewport */
 	{
-		register unsigned char *q = COB_TERM_BUFF;
+		register unsigned char *q = termio_buff;
 		const unsigned char *end = q + size;
 		for ( ; q < end; ++q) {
 			if (putc (*q, fp) != *q) {
@@ -180,7 +185,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		{
 			cob_field	field;
 			cob_field_attr	attr;
-			COB_FIELD_INIT (size, COB_TERM_BUFF, &attr);
+			COB_FIELD_INIT (size, termio_buff, &attr);
 			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale,
 				has_sign ? (COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE): 0,
 				(const cob_pic_symbol*)pic);
@@ -190,7 +195,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 		/* output of data to viewport */
 		{
-			register unsigned char *q = COB_TERM_BUFF;
+			register unsigned char *q = termio_buff;
 			const unsigned char *end = q + size;
 			for ( ; q < end; ++q) {
 				if (putc (*q, fp) != *q) {
@@ -1067,7 +1072,7 @@ cob_accept (cob_field *f)
 		}
 		return;
 	}
-	p = COB_TERM_BUFF;
+	p = termio_buff;
 	temp.data = p;
 	temp.attr = &const_alpha_attr;
 	size = 0;

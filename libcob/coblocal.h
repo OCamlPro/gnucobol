@@ -252,7 +252,6 @@ Note: also defined together with __clang__ in both frontends:
 #define COB_I2D(x)		(char) ('0' + (x))
 
 #define	COB_MODULE_PTR		cobglobptr->cob_current_module
-#define	COB_TERM_BUFF		cobglobptr->cob_term_buff
 #define	COB_ACCEPT_STATUS	cobglobptr->cob_accept_status
 #define	COB_MAX_Y_COORD		cobglobptr->cob_max_y
 #define	COB_MAX_X_COORD		cobglobptr->cob_max_x
@@ -524,7 +523,7 @@ COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 COB_HIDDEN char*        cob_get_strerror (void);
-
+COB_HIDDEN void	*cob_fast_malloc_or_null (const size_t);
 COB_HIDDEN int		cob_cmp_strings (unsigned char*, unsigned char*,
 						 size_t, size_t, const unsigned char*);
 

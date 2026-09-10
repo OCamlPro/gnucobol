@@ -1628,7 +1628,6 @@ typedef struct __cob_global {
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
 												/* screenio / termio */
-	unsigned char		*cob_term_buff;		/* Screen I/O buffer */
 	int			cob_accept_status;	/* ACCEPT STATUS */
 
 	int			cob_max_y;		/* Screen max y */
