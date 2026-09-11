@@ -1,4 +1,9 @@
 
+2026-09-04  Ramy George <ramygeorge19@gmail.com>
+	* cobargv.c: extracted the argv.c file from GCC, adjusted for recursive response file detection
+	* cobgetopt.h (cob_expandargv): added the expandargv function in header 
+	* makefile.am: added the cobargv.c file libcob sources
+	
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* profiling.c (print_stack): export/debug option with environment
