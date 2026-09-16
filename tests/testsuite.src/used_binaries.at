@@ -1483,20 +1483,50 @@ AT_CLEANUP
 AT_SETUP([signal handling SIGPIPE in COBOL])
 AT_KEYWORDS([runmisc])
 
+# "prog" counts down from the value passed as argument, displaying each step
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      * We need PIC 9(6) to hold numbers large enough for the second test
+       01 NUM-ITER PIC 9(6).
        PROCEDURE DIVISION.
-       00. DISPLAY '1'. DISPLAY '2'. DISPLAY '3'. DISPLAY '4'.
-           DISPLAY '5'. DISPLAY '6'. DISPLAY '7'. DISPLAY '8'.
+       00. ACCEPT NUM-ITER FROM ARGUMENT-VALUE.
+           PERFORM UNTIL NUM-ITER = ZERO
+               DISPLAY NUM-ITER
+               SUBTRACT 1 FROM NUM-ITER
+           END-PERFORM.
        EX. STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog | head -n 2], [0],
-[1
-2
+
+# The reader consumes everything, so no SIGPIPE can happen
+AT_CHECK([$COBCRUN_DIRECT ./prog 000008 | head -n 20], [0],
+[000008
+000007
+000006
+000005
+000004
+000003
+000002
+000001
 ], [])
+
+# Note: there is no SIGPIPE on Windows
+AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
+
+# to ensure we cause a SIGPIPE, the writer has to still be writing when
+# the reader exits ; for this to happen we must fill the pipe buffer
+# entirely: we therefore request a large number (1000000) of writes
+AT_CHECK([$COBCRUN_DIRECT ./prog 100000 | head -n 2], [0],
+[100000
+099999
+], [
+prog.cob:11: broken pipe (signal SIGPIPE)
+
+])
 
 AT_CLEANUP
 
