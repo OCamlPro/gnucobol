@@ -311,6 +311,9 @@ struct filename {
 	unsigned int		need_preprocess;	/* Needs preprocess */
 	unsigned int		need_translate;		/* Needs parse */
 	unsigned int		need_assemble;		/* Needs C compile */
+	unsigned int		preprocess_is_temp;	/* Temp is generated */
+	unsigned int		translate_is_temp;	/* Temp is generated */
+	unsigned int		object_is_temp;		/* Temp is generated */
 	int			has_error;		/* Error detected */
 	int			file_is_stdin;		/* dash used as filename */
 };

@@ -511,6 +511,7 @@ COB_HIDDEN void		cob_exit_strings	(void);
 COB_HIDDEN void		cob_exit_mlio		(void);
 
 COB_HIDDEN FILE		*cob_create_tmpfile	(const char *);
+COB_HIDDEN int		cob_temp_file_create	(char *, const char *, const int);
 COB_HIDDEN int		cob_check_numval_f	(const cob_field *);
 
 COB_HIDDEN int		cob_real_get_sign	(cob_field *, const int);

@@ -1,4 +1,17 @@
 
+2026-09-15  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.h (struct filename): new fields preprocess_is_temp,
+	  translate_is_temp and object_is_temp, set by process_filename
+	  where cob_temp_name is used
+	* cobc.c (clean_up_intermediates, cobc_clean_up): always remove a
+	  generated temporary name, whatever the compile level is
+	* cobc.c (cobc_remove_temps): new function, registered with atexit in
+	  begin_setup_internal_and_compiler_env, to remove the temporaries
+	  for code paths that did not call cobc_clean_up
+	* cobc.c (cobc_early_exit): clear file_list before releasing the
+	  memory it is allocated in
+
 2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX

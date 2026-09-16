@@ -1,4 +1,16 @@
 
+2026-09-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (get_user_tmpdir): new function to create a private
+	  per-user sub-directory int the temporary directory
+	* common.c (cob_gettmpdir): use directory returned by get_uer_tmpdir
+	* common.c (get_temp_random): new function to return a random
+	  number of tuse in temporary file name
+	* common.c (cob_temp_name): use random hexadecimal digits in
+	  place of the iteration counter
+	* common.c (cob_incr_temp_iteration): now does nothing, but kept
+	  for compatibility since the function is exported
+
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* profiling.c (print_stack): export/debug option with environment

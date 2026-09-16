@@ -65,13 +65,20 @@
 #include <sys/wait.h>
 #endif
 
+#ifdef	HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
 #ifdef	_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef MOUSE_MOVED
 #include <process.h>
 #include <io.h>
-#include <fcntl.h>	/* for _O_BINARY only */
+#if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
+#define	open		_open
+#define	close		_close
+#endif
 #endif
 
 #ifdef	HAVE_SIGNAL_H
@@ -424,7 +431,6 @@ static char			*cob_debug_file_name = NULL;
 #endif
 
 static int		cob_process_id = 0;
-static int		cob_temp_iteration = 0;
 
 static unsigned int	conf_runtime_error_displayed = 0;
 static unsigned int	last_runtime_error_line = 0;
@@ -6145,13 +6151,49 @@ check_valid_env_tmpdir (const char *envname)
 	return dir;
 }
 
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
 
-/* return pointer to TMPDIR without trailing slash */
+/* Create/get a directory under "base" for the current user to avoid collisions ;
+   returns NULL to just use the "base" directory */
+static const char *
+get_user_tmpdir (const char *base)
+{
+	struct stat sb;
+	const size_t size = strlen (base) + 24;
+	const uid_t uid = getuid ();
+	char *dir;
+
+	dir = cob_fast_malloc (size);
+	snprintf (dir, size, "%s%ccob-%lu", base, SLASH_CHAR, (unsigned long)uid);
+
+	if (mkdir (dir, 0700) != 0) {
+		/* ensure it is a real directory owned by the current user */
+		if (errno != EEXIST
+		 || lstat (dir, &sb) != 0
+		 || !S_ISDIR (sb.st_mode)
+		 || sb.st_uid != uid) {
+			cob_runtime_warning (_("temporary directory %s is not usable"), dir);
+			cob_free (dir);
+			return NULL;
+		}
+		if ((sb.st_mode & 0077) != 0) {
+			(void)chmod (dir, 0700);
+		}
+	}
+	return dir;
+}
+
+#endif	/* !_WIN32 && !HAVE_8DOT3_FILENAMES */
+
+/* return pointer to temporary directory without trailing slash */
 static const char *
 cob_gettmpdir (void)
 {
 	static const char	*tmpdir = NULL;
 	char	*tmp;
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
+	const char *user_dir = NULL;
+#endif
 
 	if (tmpdir != NULL) {
 		return tmpdir;
@@ -6191,6 +6233,14 @@ cob_gettmpdir (void)
 			tmpdir = tmp;
 		}
 	}
+
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
+	user_dir = get_user_tmpdir (tmpdir);
+	if (user_dir != NULL) {
+		tmpdir = user_dir;
+	}
+#endif
+
 	/* ensure TMPDIR is set for called tools (which partially break hard otherwise) */
 	(void)cob_setenv ("TMPDIR", tmpdir, 1);
 
@@ -6198,41 +6248,89 @@ cob_gettmpdir (void)
 		cob_free ((void *)tmp);
 	}
 
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
+	if (user_dir != NULL) {
+		cob_free ((void *)user_dir);
+	}
+#endif
+
 	/* get the pointer to the environment copy - as this may point to a different place -
 	   store it for subsequent calls and finally return it to the caller */
 	tmpdir = getenv ("TMPDIR");
+
 	return tmpdir;
 }
+
+/* Gennerate a random number for use with temporary file names */
+static cob_u64_t
+get_temp_random (void)
+{
+	static cob_u64_t counter = 0;
+	cob_u64_t val;
+
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
+	int fd = open ("/dev/urandom", O_RDONLY);
+	if (fd != -1) {
+		const int n = (int)read (fd, &val, sizeof (val));
+		(void)close (fd);
+		if (n == (int)sizeof (val)) {
+			return val;
+		}
+	}
+#endif
+
+	/* fallback if no /dev/urandom */
+	val = (cob_u64_t)time (NULL) ^ ((cob_u64_t)cob_sys_getpid () << 32);
+	return val + ++counter;
+}
+
+/* Number of digits in temp file name (shorter for 8.3 names) */
+#ifndef HAVE_8DOT3_FILENAMES
+#define COB_TEMP_RAND_LEN	12
+#else
+#define COB_TEMP_RAND_LEN	2
+#endif
 
 /* Set temporary file name */
 void
 cob_temp_name (char *filename, const char *ext)
 {
-	int pid = cob_sys_getpid ();
+	static const char	hexval[] = "0123456789abcdef";
+	char		rnd[COB_TEMP_RAND_LEN + 1];
+	cob_u64_t	val = get_temp_random ();
+	int		pid = cob_sys_getpid ();
+	int		i;
 #ifndef HAVE_8DOT3_FILENAMES
-#define TEMP_EXT_SCHEMA	"%s%ccob%d_%d%s"
-#define TEMP_SORT_SCHEMA	"%s%ccobsort%d_%d"
+#define TEMP_EXT_SCHEMA		"%s%ccob%d_%s%s"
+#define TEMP_SORT_SCHEMA	"%s%ccobsort%d_%s"
 #else
 /* 8.3 allows only short names... */
-#define TEMP_EXT_SCHEMA	"%s%cc%d_%d%s"
-#define TEMP_SORT_SCHEMA	"%s%cs%d_%d"
+#define TEMP_EXT_SCHEMA		"%s%cc%d_%s%s"
+#define TEMP_SORT_SCHEMA	"%s%cs%d_%s"
 	pid = pid % 9999;
 #endif
+
+	for (i = COB_TEMP_RAND_LEN - 1; i >= 0; --i) {
+		rnd[i] = hexval[val & 0x0F];
+		val >>= 4;
+	}
+	rnd[COB_TEMP_RAND_LEN] = 0;
+
 	if (ext) {
 		snprintf (filename, (size_t)COB_FILE_MAX, TEMP_EXT_SCHEMA,
-			cob_gettmpdir (), SLASH_CHAR, pid, cob_temp_iteration, ext);
+			cob_gettmpdir (), SLASH_CHAR, pid, rnd, ext);
 	} else {
 		snprintf (filename, (size_t)COB_FILE_MAX, TEMP_SORT_SCHEMA,
-			cob_gettmpdir (), SLASH_CHAR, pid, cob_temp_iteration);
+			cob_gettmpdir (), SLASH_CHAR, pid, rnd);
 	}
 #undef TEMP_EXT_SCHEMA
 #undef TEMP_SORT_SCHEMA
 }
 
+/* no longer needed but kept for binary compatibility (exported symbol) */
 void
 cob_incr_temp_iteration (void)
 {
-	cob_temp_iteration++;
 }
 
 int

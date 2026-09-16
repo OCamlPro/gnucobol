@@ -2037,6 +2037,7 @@ cobc_early_exit (int ret_code)
 		fatal_startup_error = 0;
 		cobc_err_exit (_("please check environment variables as noted above"));
 	}
+	file_list = NULL; /* points in memory that is freed by cobc_free_mem */
 	cobc_free_mem ();
 	exit (ret_code);
 }
@@ -2200,6 +2201,31 @@ cobc_check_action (const char *name)
 	}
 }
 
+/* atexit handler to remove any leftover temporary file
+   (for code paths that do not reach cobc_clean_up) */
+static void
+cobc_remove_temps (void)
+{
+	struct filename		*fn;
+	struct local_filename	*lf;
+
+	for (fn = file_list; fn; fn = fn->next) {
+		if (fn->object_is_temp) {
+			cobc_check_action (fn->object);
+		}
+		if (fn->translate_is_temp) {
+			cobc_check_action (fn->translate);
+			cobc_check_action (fn->trstorage);
+			for (lf = fn->localfile; lf; lf = lf->next) {
+				cobc_check_action (lf->local_name);
+			}
+		}
+		if (fn->preprocess_is_temp) {
+			cobc_check_action (fn->preprocess);
+		}
+	}
+}
+
 static void
 clean_up_intermediates (struct filename *fn, const int status)
 {
@@ -2214,10 +2240,12 @@ clean_up_intermediates (struct filename *fn, const int status)
 			lf->local_fp = NULL;
 		}
 	}
-	if (save_all_src && !save_temps_dir) {
+	/* generated temporary name: always remove */
+	if (fn->preprocess_is_temp) {
+		cobc_check_action (fn->preprocess);
+	} else if (save_all_src && !save_temps_dir) {
 		return;
-	}
-	if (fn->need_preprocess
+	} else if (fn->need_preprocess
 	 && (status
 	  ||  cb_compile_level > CB_LEVEL_PREPROCESS
 	  || (cb_compile_level == CB_LEVEL_PREPROCESS
@@ -2227,14 +2255,15 @@ clean_up_intermediates (struct filename *fn, const int status)
 	/* CHECKME: we had reports of unexpected intermediate
 	   files on the dist - it is very likely rooted in this
 	   early exit --> recheck its use */
-	if (save_c_src) {
+	if (save_c_src && !fn->translate_is_temp) {
 		return;
 	}
 
-	if (fn->need_translate
-	 && (status
-	  ||  cb_compile_level > CB_LEVEL_TRANSLATE
-	  || (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
+	if (fn->translate_is_temp
+	 || (fn->need_translate
+	  && (status
+	   ||  cb_compile_level > CB_LEVEL_TRANSLATE
+	   || (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps)))) {
 		cobc_check_action (fn->translate);
 		cobc_check_action (fn->trstorage);
 		if (fn->localfile) {
@@ -2325,11 +2354,12 @@ cobc_clean_up (const int status)
 	ylex_clear_all ();
 
 	for (fn = file_list; fn; fn = fn->next) {
-		if (fn->need_assemble
-		 && (status
+		if (fn->object_is_temp
+		 || (fn->need_assemble
+		  && (status
 			||  cb_compile_level > CB_LEVEL_ASSEMBLE
 			|| (cb_compile_level == CB_LEVEL_ASSEMBLE
-			    && save_temps && !save_temps_dir))) {
+			    && save_temps && !save_temps_dir)))) {
 			cobc_check_action (fn->object);
 		}
 		clean_up_intermediates (fn, status);
@@ -4666,6 +4696,7 @@ process_filename (const char *filename)
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->preprocess, ".cob");
+		fn->preprocess_is_temp = 1;
 	}
 
 	/* Set translate filename */
@@ -4681,6 +4712,7 @@ process_filename (const char *filename)
 	} else {
 		fn->translate = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->translate, ".c");
+		fn->translate_is_temp = 1;
 	}
 #ifdef	__OS400__
 	/* adjustment of fn->translate, seems to need a full path
@@ -4724,6 +4756,7 @@ process_filename (const char *filename)
 		/* note: CB_LEVEL_MODULE is compiled without an intermediate object file */
 		fn->object = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->object, "." COB_OBJECT_EXT);
+		fn->object_is_temp = 1;
 	}
 	if (fn->object) {
 		fn->object_len = strlen (fn->object);
@@ -4753,7 +4786,6 @@ process_filename (const char *filename)
 #endif
 	}
 
-	cob_incr_temp_iteration ();
 	return fn;
 }
 
@@ -9264,6 +9296,8 @@ begin_setup_internal_and_compiler_env (void)
 
 	/* register signal handlers from cobc */
 	cob_reg_sighnd (&cobc_sig_handler);
+	/* last chance cleanup, in case we could not call cobc_clean_up */
+	(void)atexit (&cobc_remove_temps);
 
 	file_list = NULL;
 	cb_listing_file = NULL;

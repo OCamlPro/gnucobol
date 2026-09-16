@@ -7993,7 +7993,6 @@ cob_create_tmpfile (const char *ext)
 
 	filename = cob_malloc ((size_t)COB_FILE_BUFF);
 	cob_temp_name (filename, ext);
-	cob_incr_temp_iteration ();
 #ifdef	_WIN32
 	fd = open (filename,
 		    _O_CREAT | _O_TRUNC | _O_RDWR | _O_BINARY | _O_TEMPORARY,
