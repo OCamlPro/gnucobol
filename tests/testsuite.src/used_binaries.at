@@ -1609,3 +1609,59 @@ D8 D9 DA DB DC DD DE DF E0 E1 E2 7C E3 E4 E5 E6
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP(@file command line options)
+AT_KEYWORDS([cobc getopt])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, GnuCOBOL!".
+           STOP RUN.   
+])
+
+AT_DATA([echo "-x" > tempfile.txt])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @nonexistent.txt prog.cob], [1], [], 
+[cobc: @nonexistent.txt: No such file or directory
+])
+AT_CLEANUP()
+
+
+AT_SETUP(recursive @file)
+AT_KEYWORDS([cobc getopt])
+
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, GnuCOBOL!".
+           STOP RUN.   
+])
+
+AT_DATA([echo "-x @tempfile.txt" > tempfile.txt])
+AT_DATA([echo "-g --free" > otherfile.txt])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [0], [], [])
+
+AT_CLEANUP()
+
+
+AT_SETUP(recursive @file with conflict)
+AT_KEYWORDS([cobc getopt])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, GnuCOBOL!".
+           STOP RUN.   
+])
+
+AT_DATA([tempfile.txt], [-x @tempfile.txt
+])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [1], [], [stderr])
+
+AT_CLEANUP()
+
