@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -2110,6 +2110,7 @@ COB_EXPIMP int		cob_func		(const char *, const int, void **);
 #ifndef COB_WITHOUT_JMP
 COB_EXPIMP void		*cob_savenv		(struct cobjmp_buf *);
 COB_EXPIMP void		*cob_savenv2		(struct cobjmp_buf *, const int);
+COB_EXPIMP int 		cob_setjmp		(struct cobjmp_buf *);
 COB_EXPIMP void		cob_longjmp		(struct cobjmp_buf *);
 #endif
 
@@ -2912,7 +2913,7 @@ typedef	char *		cobchar_t;
 #define	cobs64_t	cob_s64_t
 #define	cobuns64_t	cob_u64_t
 
-#define	cobsetjmp(x)	setjmp (cob_savenv (x))
+#define	cobsetjmp(x)	cob_setjmp (x)
 #define	coblongjmp(x)	cob_longjmp (x)
 #define	cobsavenv(x)	cob_savenv (x)
 #define	cobsavenv2(x,z)	cob_savenv2 (x, z)
