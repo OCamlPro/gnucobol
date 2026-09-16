@@ -1426,17 +1426,48 @@ AT_KEYWORDS([runmisc])
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 CMD-ARG  PIC X(10).
+       01 NUM-ITER PIC 9(6).
+       01 CNT      PIC 9(6).
        PROCEDURE DIVISION.
-       00. DISPLAY '1'. DISPLAY '2'. DISPLAY '3'. DISPLAY '4'.
-           DISPLAY '5'. DISPLAY '6'. DISPLAY '7'. DISPLAY '8'.
+       00. ACCEPT CMD-ARG FROM ARGUMENT-VALUE.
+           COMPUTE NUM-ITER = FUNCTION NUMVAL (CMD-ARG).
+           MOVE ZERO TO CNT.
+           PERFORM NUM-ITER TIMES
+               ADD 1 TO CNT
+               DISPLAY CNT
+           END-PERFORM.
        EX. STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog | head -n 2], [0],
-[1
-2
+
+# reader consumes everything: pipe never closed early, no SIGPIPE
+AT_CHECK([$COBCRUN_DIRECT ./prog 8 | head -n 20], [0],
+[000001
+000002
+000003
+000004
+000005
+000006
+000007
+000008
 ], [])
+
+# reader quits while the writer is still writing: SIGPIPE should happen
+# note: Windows has no SIGPIPE at all, a write to a pipe whose reader is
+# gone only fails with EPIPE and nothing is raised, so nothing to check
+AT_CHECK([test "$COB_ON_WINDOWS" = "yes"], [0], [], [], [
+AT_CHECK([$COBCRUN_DIRECT ./prog 100000 | head -n 2], [0],
+[000001
+000002
+], [
+prog.cob:15: broken pipe (signal SIGPIPE)
+
+])
+])
 
 AT_CLEANUP
 
