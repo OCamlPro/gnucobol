@@ -3544,7 +3544,7 @@ ensure_buffer (unsigned long requested_size)
 			requested_size);
 	}
 
-	if(requested_size <= screen_buffer_size){
+	if (requested_size <= screen_buffer_size) {
 		return 0;
 	}
 	
@@ -3647,6 +3647,7 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 		} else {
 			size_accept = f->size;
 		}		
+		/* Note; Maybe a dynamic zero sized field */
 		if (size_accept && ensure_buffer(size_accept) != 0) {
 			cob_set_exception (COB_EC_SCREEN_IMP_STORAGE);
 

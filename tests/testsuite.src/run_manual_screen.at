@@ -4214,11 +4214,6 @@ AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 # complete without crashing (the field is still fully accepted, not
 # truncated) *and* emit a runtime warning on stderr. Uses the direct
 # extended-format ACCEPT for the same reason as the test above.
-#
-# run_prog_manual.sh captures the program's stderr to syserr.log and
-# prints it to the terminal once the run finishes, so check that
-# output for a line such as:
-#   libcob: warning: ACCEPT/DISPLAY of unusually large field (40000 bytes)
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -4229,11 +4224,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            DISPLAY 'Type a few characters, then press ENTER.'
                LINE 1 COL 1
-           DISPLAY 'After exiting, check the terminal for a'
-               LINE 2 COL 1
-           DISPLAY '"unusually large field" runtime warning.'
-               LINE 3 COL 1
-           ACCEPT big-field LINE 5 COL 1
+           ACCEPT big-field LINE 3 COL 1
 
            IF COB-CRT-STATUS = 0
                GOBACK RETURNING 0
@@ -4244,6 +4235,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: warning: ACCEPT/DISPLAY of unusually large field (40000 bytes)
+])
 
 AT_CLEANUP

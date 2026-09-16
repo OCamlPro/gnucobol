@@ -62,10 +62,8 @@ static const unsigned short	bin_digits[] =
 static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
-/* private buffer for non-screen ACCEPT/DISPLAY conversions, replacing
-   the formerly shared cobglobptr->cob_term_buff (now local to each of
-   termio.c and screenio.c, which have different size needs) */
-static unsigned char		termio_buff[COB_MEDIUM_BUFF];
+#define COB_NUMERIC_DISP_BUFF		128
+#define COB_PRETTY_DISP_BUFF		256
 
 /* DISPLAY */
 
@@ -79,9 +77,10 @@ display_numeric (cob_field *f, FILE *fp)
 		= digits
 		+ ((scale < 0) ? scale : 0)	/* subtract scale when negative */
 		+ has_sign;
+	unsigned char		buffer[COB_NUMERIC_DISP_BUFF];
 
 	/* minimal validation */
-	if (size >= COB_MEDIUM_MAX) {
+	if (size >= (int)sizeof (buffer)) {
 		fputs (_("(Not representable)"), fp);
 		return;
 	}
@@ -98,14 +97,14 @@ display_numeric (cob_field *f, FILE *fp)
 				attr.flags |= COB_FLAG_SIGN_LEADING;
 			}
 		}
-		COB_FIELD_INIT (size, termio_buff, &attr);
+		COB_FIELD_INIT (size, buffer, &attr);
 
 		cob_move (f, &field);
 	}
 
 	/* output of data to viewport */
 	{
-		register unsigned char *q = termio_buff;
+		register unsigned char *q = buffer;
 		const unsigned char *end = q + size;
 		for ( ; q < end; ++q) {
 			if (putc (*q, fp) != *q) {
@@ -122,6 +121,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 	signed short		scale = COB_FIELD_SCALE (f);
 	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
 	int			size;
+	unsigned char		buffer[COB_PRETTY_DISP_BUFF];
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
@@ -141,7 +141,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		size = digits + has_sign + 1;
 	}
 
-	if (size > COB_MEDIUM_MAX) {
+	if (size > (int)sizeof (buffer)) {
 		fputs (_("(Not representable)"), fp);
 		return;
 	}
@@ -190,7 +190,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		{
 			cob_field	field;
 			cob_field_attr	attr;
-			COB_FIELD_INIT (size, termio_buff, &attr);
+			COB_FIELD_INIT (size, buffer, &attr);
 			COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale,
 				has_sign ? (COB_FLAG_HAVE_SIGN | COB_FLAG_SIGN_SEPARATE): 0,
 				(const cob_pic_symbol*)pic);
@@ -200,7 +200,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 		/* output of data to viewport */
 		{
-			register unsigned char *q = termio_buff;
+			register unsigned char *q = buffer;
 			const unsigned char *end = q + size;
 			for ( ; q < end; ++q) {
 				if (putc (*q, fp) != *q) {
@@ -1041,6 +1041,7 @@ cob_dump_field_ext (const int level, const char *name, cob_field *f_addr,
 void
 cob_accept (cob_field *f)
 {
+	static unsigned char	buffer[COB_MEDIUM_BUFF];
 	unsigned char	*p;
 	size_t		size;
 	int		ipchr;
@@ -1077,12 +1078,11 @@ cob_accept (cob_field *f)
 		}
 		return;
 	}
-	p = termio_buff;
+	p = buffer;
 	temp.data = p;
 	temp.attr = &const_alpha_attr;
 	size = 0;
-	/* Read a line */
-	for (; size < COB_MEDIUM_MAX; ) {
+	for (;;) {
 		ipchr = getc (COB_STDIN);
 		if (unlikely (ipchr == EOF)) {
 			cob_set_exception (COB_EC_IMP_ACCEPT);
@@ -1097,7 +1097,9 @@ cob_accept (cob_field *f)
 		} else if (ipchr == '\n') {
 			break;
 		}
-		p[size++] = (char) ipchr;
+		if (size < sizeof (buffer) - 1) {
+			p[size++] = (char) ipchr;
+		}
 	}
 	temp.size = size;
 	if (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_DISPLAY) {
