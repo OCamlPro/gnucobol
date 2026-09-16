@@ -665,6 +665,9 @@ typedef __mpz_struct mpz_t[1];
    TODO: add compiler configuration for limiting this */
 #define COB_MAX_SUBSCRIPTS	16
 
+/* Maximum Buffer Warning Size */
+#define COB_TERM_BUFF_WARN_SIZE		32768
+
 /* Memory size for sorting */
 #define	COB_SORT_MEMORY		128 * 1024 * 1024
 #define	COB_SORT_CHUNK		256 * 1024
@@ -1625,7 +1628,6 @@ typedef struct __cob_global {
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
 												/* screenio / termio */
-	unsigned char		*cob_term_buff;		/* Screen I/O buffer */
 	int			cob_accept_status;	/* ACCEPT STATUS */
 
 	int			cob_max_y;		/* Screen max y */
