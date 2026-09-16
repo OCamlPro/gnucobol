@@ -5,7 +5,8 @@ and po/ja.po.
 * lib/getopt1.c, lib/getopt.h, lib/getopt1.c were extracted
 from the GNU C Library 2.3.2.  Distributed under GNU LGPL.
 
-* libcob/argv.c was extracted from GCC.
+* libcob/cobargv.c was extracted from libiberty/GCC (argv) VERSIONHERE.
+Distributed under GNU LGPL.
 
 * lib/gettext.h was extracted from the GNU gettext 0.11.2.
 Distributed under GNU LGPL.
