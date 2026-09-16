@@ -22,9 +22,8 @@ Boston, MA 02110-1301, USA.  */
 /*  Create and destroy argument vectors.  An argument vector is simply an
     array of string pointers, terminated by a NULL pointer. */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+
 
 
 
@@ -51,9 +50,12 @@ Boston, MA 02110-1301, USA.  */
 #define EOS '\0'
 #endif
 
+   /* Force symbol exports */
+#define	COB_LIB_EXPIMP
+
 #define INITIAL_MAXARGC 8	/* Number of args + NULL in initial argv */
 #include "common.h"
-#include <cobgetopt.h>
+#include "cobgetopt.h"
 #include <ctype.h>
 /*
 
