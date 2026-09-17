@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -4195,8 +4195,8 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([COB_PRE_LOAD])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+AT_SETUP([pre-loading via COB_PRE_LOAD])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4209,15 +4209,17 @@ AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      caller.
        PROCEDURE        DIVISION.
-           CALL "callee2"
-           END-CALL.
+           CALL "callee2".
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
+# lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
 AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+# lookup with full path
+AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 

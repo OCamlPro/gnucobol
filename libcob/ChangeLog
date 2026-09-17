@@ -8,6 +8,13 @@
 	  multiple places and also may jump to them multiple times - it is up
 	  to the user to ensure a correct stack (= never jump "forward")
 
+2026-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (pre_load_once): extracted from cob_init_call
+	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
+	  a global scope request, independent of COB_LOAD_GLOBAL setting
+	* common.c: minimal refactor
+
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* profiling.c (print_stack): export/debug option with environment

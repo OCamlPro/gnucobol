@@ -816,8 +816,8 @@ cob_exit_common (void)
 		/* Free all strings pointed to by cobsetptr */
 		for (i = 0; i < NUM_CONFIG; i++) {
 			if ((gc_conf[i].data_type & ENV_STR)
-			||  (gc_conf[i].data_type & ENV_FILE)
-			||  (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path to be stored as a string */
+			 || (gc_conf[i].data_type & ENV_FILE)
+			 || (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path to be stored as a string */
 				data = (void *)((char *)cobsetptr + gc_conf[i].data_loc);
 				memcpy (&str, data, sizeof (char *));
 				if (str != NULL) {
@@ -968,8 +968,9 @@ cob_terminate_routines (void)
 	if (module_unload == COB_IMMEDIATE) {
 		cob_exit_call ();
 		cob_exit_common ();
-        /* If module unloading has been postponed, "remember" unloading has indeed been requested */
 	} else if (module_unload == COB_POSTPONE) {
+        /* if module unloading has been postponed,
+		   "remember" unloading has indeed been requested */
 		module_unload = COB_REQUESTED;
 	}
 }
@@ -1288,7 +1289,7 @@ cob_sig_handler (int sig)
 	}
 
 #ifdef	HAVE_SIGACTION
-#ifndef	SA_RESETHAND
+#ifndef	SA_RESETHAND	/* otherwise we use that attribute to do the same */
 	memset (&sa, 0, sizeof (sa));
 	sa.sa_handler = SIG_DFL;
 	(void)sigemptyset (&sa.sa_mask);
@@ -1344,7 +1345,6 @@ cob_sig_handler (int sig)
 		cobsetptr->cob_core_on_error = 4;
 	}
 	switch (sig) {
-	case -1:
 #ifdef	SIGSEGV
 	case SIGSEGV:
 #endif
@@ -1459,6 +1459,10 @@ static void
 cob_init_sig_descriptions (void)
 {
 	int	k;
+	/* note: this loop does not use a switch/case as the signals may have
+	   duplicate numeric values - which is commonly an error with switch/case;
+	   the use of else if _may_ be internally optimized but does not raise
+	   the same error/warning */
 	for (k = 0; k <= NUM_SIGNALS; k++) {
 		/* always defined, if missing */
 		if (signals[k].sig == SIGFPE) {
