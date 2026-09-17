@@ -1,4 +1,19 @@
 
+2026-09-16  David Declerck <david.declerck@ocamlpro.com>
+
+	Rework memory block handling in the compiler so as to improve
+	compilation times. This was made after profiling cobc and
+	noticing it spends 90% of its time in cobc_main_free,
+	iterating over the memory block list. The new code
+	is now in constant time.
+
+	* cobc.c (struct cobc_mem_struct): add prev and base pointers
+	* cobc.c (cobc_mem_add, cobc_mem_get, cobc_mem_remove,
+	  cobc_mem_replace): new functions to manage the memory blocks lists
+	* cobc.c (cobc_main_malloc, cobc_main_realloc, cobc_main_free,
+	  cobc_parse_malloc, cobc_parse_realloc, cobc_parse_free,
+	  cobc_plex_malloc): use the new functions to manage the block lists
+
 2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX
