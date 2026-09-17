@@ -3697,7 +3697,6 @@ start:
   {
 	const char *backup_source_file = cb_source_file;
 
-	clear_initial_values ();
 	defined_prog_list = NULL;
 	__CS_CLEAR_ALL ();
 	main_flag_set = 0;

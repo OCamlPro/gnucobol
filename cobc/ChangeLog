@@ -1,4 +1,10 @@
 
+2026-09-17  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* scanner.l (ylex_call_destroy): reset more state variables
+	  between two calls to the parser
+	* parser.y (start): remove duplicate call to clear_initial_values
+
 2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX
