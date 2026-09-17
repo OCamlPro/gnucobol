@@ -14327,6 +14327,41 @@ E: OK OTHER option taken
 AT_CLEANUP
 
 
+AT_SETUP([Nested EVALUATE with empty WHEN])
+AT_KEYWORDS([runmisc missing-statement EVALUATE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA                DIVISION.
+       WORKING-STORAGE     SECTION.
+       01 A PICTURE 9 VALUE 1.
+       01 B PICTURE 9 VALUE 2.
+       PROCEDURE DIVISION.
+
+       EVALUATE A
+           WHEN 1
+               EVALUATE B
+                   WHEN 1
+               END-EVALUATE
+      * If END-EVALUATE is ignored, WHEN 2 will be attached to EVALUATE B
+           WHEN 2
+               DISPLAY "FAIL"
+       END-EVALUATE.
+])
+
+# explicit check that we only get only a single warning for WHEN
+# and no wrong warnings for the END-EVALUATE terminator
+AT_CHECK([$COMPILE -fmissing-statement=warning -Wterminator prog.cob], [0], [],
+[prog.cob:14: warning: WHEN without imperative statement used
+prog.cob:17: warning: DISPLAY statement not terminated by END-DISPLAY
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([ENTRY FOR GO TO / GO TO ENTRY])
 AT_KEYWORDS([runmisc condition expression])
 
