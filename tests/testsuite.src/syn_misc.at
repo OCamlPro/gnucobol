@@ -8711,3 +8711,30 @@ AT_CHECK([$GREP "#INCLUDE <file3.h>" prog.c], [1], ignore, [])
 AT_CHECK([$GREP "#INCLUDE <file4.h>" prog.c], [1], ignore, [])
 
 AT_CLEANUP
+
+AT_SETUP([cobc multiple files with errors])
+AT_KEYWORDS([parser state])
+
+AT_DATA([prog1.cob], [
+       DIENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       PROCEDURE DIVISION.
+           DISPLAY "prog1".
+           GOBACK.
+])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       PROCEDURE DIVISION.
+           DISPLAY "prog1".
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog1.cob prog2.cob], [1], [],
+[prog1.cob:2: error: PROGRAM-ID header missing
+prog1.cob:2: error: PROCEDURE DIVISION header missing
+prog1.cob:2: error: syntax error, unexpected Identifier
+])
+
+AT_CLEANUP
+

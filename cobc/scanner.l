@@ -2657,6 +2657,15 @@ ylex_call_destroy (void)
 #if 0
 	const_78_ptr = NULL;
 #endif
+	/* A parse that stopped early (fatal syntax error) never reaches the
+	   <<EOF>> rule, which otherwise resets this per-file lexer state.
+	   Reset it here too, so a following source file (when several are
+	   given on the same cobc command line) does not inherit stale state
+	   from the aborted parse. */
+	clear_constants ();
+	last_token = second_last_token = 0;
+	cobc_in_area_a = 0;
+	inside_bracket = 0;
 }
 
 void
