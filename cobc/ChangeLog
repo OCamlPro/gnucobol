@@ -1,4 +1,12 @@
 
+2026-09-17  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	Fix ignored END-EVALUATE after a WHEN without imperative statements
+
+	* parser.y (rules evaluate_when and evaluate_other): repeat
+	  the END-EVALUATE token if consumed by the empty imperative
+	  statement rule.
+
 2026-09-16  David Declerck <david.declerck@ocamlpro.com>
 
 	Rework memory block handling in the compiler so as to improve

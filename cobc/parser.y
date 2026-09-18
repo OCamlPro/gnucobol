@@ -14298,9 +14298,7 @@ evaluate_case:
 	eval_inc2 = 0;
 	cb_verify (cb_missing_statement,
 		_("WHEN without imperative statement"));
-	/* Note: we don't clear the EVALUATE terminator here
-	         as we'd have to skip this later
-	         [side effect: possible warning about missing terminator] */
+	cobc_repeat_last_token = 1;
 	$$ = CB_BUILD_CHAIN (CB_LIST_INIT (cb_build_continue ()), $1);
   }
 | evaluate_when_list TOK_DOT
@@ -14339,9 +14337,7 @@ evaluate_other:
 	eval_inc2 = 0;
 	cb_verify_x ($1, cb_missing_statement,
 		_("WHEN OTHER without imperative statement"));
-	/* Note: we don't clear the EVALUATE terminator here
-	         as we'd have to skip this later
-	         [side effect: possible warning about missing terminator] */
+	cobc_repeat_last_token = 1;
 	$$ = NULL;
   }
 | when_other TOK_DOT
