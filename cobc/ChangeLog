@@ -1,4 +1,33 @@
 
+2026-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_filler): no addition of internal "FILLER n" names
+	  to the word list (= no strcmp or hashing either), saving 40 % processing
+	  time in sources with lots of FILLERs (like EXEC preprocessed files)
+	* error.c (diagnostics_show_caret): save last line of the post-context
+	  printed and skip those lines in the next pre-context, reducing the
+	  possible "overload" of output for cases like missing copybooks
+	* error.c (diagnostics_show_caret): rewritten to fill the buffer
+	  directly with fgets instead of character-wise and also use a single
+	  fprintf for output
+	* error.c (skip_lines): new function called in diagnostics_show_caret to
+	  skip leading lines before entering the main loop, also caching the offset
+	  for files processed already to start reading from there, saving 80 %
+	  processing time in huge sources / sources with lots of errors by not
+	  reading the file over and over again
+	* cobc.c (cobc_intern_filename), tree.h: new function as sole place to set
+	  a (potentially new) filename - allowing pointer comparisions afterwards
+	* cobc.c (cleanup_copybook_reference): removed, copybook->name uses new
+	  function cobc_intern_filename so does not to be manually removed
+	* scanner.l: use cobc_intern_filename instead of manual strdup for
+	  #LINE directive
+	* tree.c (cb_build_program): directly use cb_source_name (setup only with
+	  cobc_intern_filename) instead of manual strdup
+	* pplex.l, error.c: directly use cobc_intern_filename setup filenames
+	  instead of manual strdup, also allowing pointer comparisons instead
+	  of strcmp
+	* cobc.c: fixed minor memory leak of cb_depend_filename
+
 2026-09-16  David Declerck <david.declerck@ocamlpro.com>
 
 	Rework memory block handling in the compiler so as to improve
@@ -308,8 +337,9 @@
 
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
-	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
-	  adjusted size of precedence table and gave proper precedence to U
+	* tree.c (char_to_precedence_idx, get_char_type_description,
+	  valid_char_order): adjusted size of precedence table and gave proper
+	  precedence to U
 
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 

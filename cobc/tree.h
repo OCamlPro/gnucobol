@@ -1663,7 +1663,7 @@ struct list_error {
 	struct list_error	*next;
 	struct list_error	*prev;
 	int			line;		/* Line number for error */
-	char			*file;		/* File name */
+	const char		*file;		/* File name (pointer from internal buffer) */
 	char			*prefix;	/* Error prefix */
 	char			*msg;		/* Error Message text */
 };
@@ -1698,7 +1698,7 @@ struct list_files {
 	int 			copy_line;	/* Line start for copy book */
 	int 			listing_on;	/* Listing flag for this file */
 	enum cb_format		source_format;	/* source format for file */
-	const char		*name;		/* Name of this file */
+	const char		*name;		/* Name of this file (pointer from internal buffer) */
 };
 
 extern struct list_files	*cb_current_file;
@@ -2689,6 +2689,8 @@ extern void		ylex_clear_all (void);
 extern void		ylex_call_destroy (void);
 
 /* cobc.c, help.c */
+extern const char	*cobc_intern_filename (const char *);
+
 #ifndef COB_EXTERNAL_XREF
 #define COB_INTERNAL_XREF
 #endif
