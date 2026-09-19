@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 
@@ -173,6 +173,11 @@ static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
 
 struct cb_text_list	*cb_include_file_list_directive = NULL;
+
+/* Helper macros for checks based on special contexts */
+
+#define cobc_in_repository (cobc_cs_check & CB_CS_REPOSITORY)
+#define cobc_in_exit_statement (cobc_cs_check & CB_CS_EXIT)
 
 /* Function declarations */
 static void	read_literal (const char, const enum cb_literal_type);
@@ -385,7 +390,7 @@ AREA_A		"#AREA_A"\n
 			RETURN_TOK (WORD);
 		}
 	}
-	if (cobc_in_repository || cobc_cs_check == CB_CS_EXIT) {
+	if (cobc_in_repository || cobc_in_exit_statement) {
 		yylval = NULL;
 		RETURN_TOK (FUNCTION);
 	}

@@ -1,4 +1,100 @@
 
+2026-09-16  David Declerck <david.declerck@ocamlpro.com>
+
+	Rework memory block handling in the compiler so as to improve
+	compilation times. This was made after profiling cobc and
+	noticing it spends 90% of its time in cobc_main_free,
+	iterating over the memory block list. The new code
+	is now in constant time.
+
+	* cobc.c (struct cobc_mem_struct): add prev and base pointers
+	* cobc.c (cobc_mem_add, cobc_mem_get, cobc_mem_remove,
+	  cobc_mem_replace): new functions to manage the memory blocks lists
+	* cobc.c (cobc_main_malloc, cobc_main_realloc, cobc_main_free,
+	  cobc_parse_malloc, cobc_parse_realloc, cobc_parse_free,
+	  cobc_plex_malloc): use the new functions to manage the block lists
+
+2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX
+	  also for INDEXED BY appearing in LINKAGE SECTION, otherwise
+	  the variable is not added to the local include file
+	* parser.y (rules statements, call_statement): fix bugs in
+	  profiling for CALL with exceptions, and with NEXT SENTENCE
+	* parser.y (maybe_emit_dummy_section, maybe_emit_dummy_paragraph):
+	  extracted functions and change to use the meaningful default
+	  section name "ENTRY OF PROG $prog" and paragraph name "ENTRY OF
+	  SECTION $sections" instead of resp. MAIN SECTION and MAIN
+	  PARAGRAPH
+
+2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (build_evaluate, cb_check_needs_break): fix a bug where
+	  EVALUATE fails in profiling mode. The reason was that a check for
+	  a last GOTO statement is not correctly written, because it was
+	  actually checking either a GOTO or not a statement, which was
+	  evaluated to true for instructions added by profiling. Fixed by
+	  checking only that the last statement is a GOTO. Also modify
+	  cb_check_needs_break that uses the same code.
+	* typeck.c: rename cb_check_needs_break to cb_maybe_insert_break, and
+	  cb_build_if_check_break to cb_build_if_maybe_insert_break.
+	  Introduce cb_statement_finishes_with_goto to remove duplicated code.
+
+2026-08-26 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* ppparse.y (ppp_replace_list_add): fix bug #1071
+	  "cobc crashes when replacing by nothing"
+
+2026-08-23 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* ppparse.y (ppp_replace_list_add): trim spaces before and after
+	  the replacement tokens, for the non LEADING/TRAILING case
+
+2026-08-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* cobc.c [_MSC_VER]: use new macros CB_MSC_CRT and CB_MSC_CRT_DLL to pass
+	  the CRT that is linked with libcob for Windows builds
+
+2026-08-08  Ramy George <ramygeorge19@gmail.com>
+
+	* field.c (warn_pic_for_numeric_value_implied): Added fix to print
+	  Implied PIC warning only when needed
+
+2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* parser.y: remove the CB_PENDING warning on XML PARSE but still warn for 
+	  untested XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING.
+	* typeck.c: remove invalid call to cob_check_based for XML-* builtin variable 
+	  length registers (like XML-TEXT)
+	* codegen.c: remove the uninitialized and unused b_* field for XML-* builtin 
+	  variable length registers
+
+2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* tree.h, parser.y: change type of cobc_cs_check flags to permit
+	  distinguishing more grammar contexts
+	* cobc.h, parser.y, reserved.c (lookup_reserved_word): generalize and
+	  cleanup device for handling special contexts
+	* parser.y: use new macros __CS_ENSURE, __CS_CLEAR, __CS_CLEAR_ALL,
+	  __CS_CHECK, __CS_LEAVE, __CS_ENTER, to help debug and explicitly
+	  manipulate special contexts
+	* error.c (cb_error_always, cb_error_internal), tree.h, tree.c
+	  (cb_build_program), scanner.l: replace cobc_in_repository flag
+	  with a check on a special context
+	* scanner.l: introduce cobc_in_exit_statement helper macro
+
+2026-05-24  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def: "tab-width" option is changed to a comma-separated
+	  list of tab widths, for example "6,1,4", the last one being reused.
+	  This new meaning is backward compatible.
+	  Implements FR #498 " Adjust tab-width to optionally be a list of
+	  tab-stop positions"
+	* config.c: initialize cb_tab_width as a string,
+	  each position indicating the number of spaces to insert for a tab
+	  at that position
+	* pplex.c,cobc.c: use the new type of cb_tab_width
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for
@@ -10368,7 +10464,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2025 Free Software Foundation, Inc.
+Copyright 2001-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

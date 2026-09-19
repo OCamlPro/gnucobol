@@ -732,6 +732,57 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 			break;
 
+		} else if (strcmp (name, "tab-width") == 0) {
+			/* The original implementation tab-width used
+			 * to rely on a unique tab width and
+			 * computation by modulos. Instead, this new
+			 * implementation relies on cb_tab_width being
+			 * an array of offsets, each position in the
+			 * array corresponding to the offset from that
+			 * position to the next tabstop. The array is
+			 * initialized here from the tab-width
+			 * option. */
+
+			/* This option is always initialized, so let's
+			   allocate a static buffer. COB_SMALL_BUFF is
+			   much larger than the maximal line length,
+			   but there is currently no other constant
+			   available for that. */
+			static char cb_tab_width_static[COB_SMALL_BUFF];
+
+			char *token = strtok(val, ",");
+			int pos = 0;
+			unsigned int last_tab_width = 8;
+			if (cb_tab_width == NULL)
+				cb_tab_width = cb_tab_width_static;
+			/* Initialize the beginning of the array
+			 * corresponding to the tabulations set in the
+			 * tab-width option, storing the last one in
+			 * last_tab_width. */
+			while (token != NULL) {
+				unsigned int tab_width = atoi(token);
+
+				if (tab_width < 1 || tab_width > 12){
+					invalid_value (fname, line, name,
+						       token, "1-12", 0, 0);
+					return -1;
+				}
+				last_tab_width = tab_width;
+				while (tab_width > 0 && pos < COB_SMALL_BUFF){
+					cb_tab_width[pos++] = tab_width--;
+				}
+				token = strtok(NULL, ",");
+			}
+			/* Initialize the end of the array, using the
+			 * last tabulation found. */
+			while (pos < COB_SMALL_BUFF){
+				unsigned int tab_width = last_tab_width;
+				while (tab_width > 0 && pos < COB_SMALL_BUFF){
+					cb_tab_width[pos++] = tab_width--;
+				}
+			}
+			break;
+
 		} else if (strcmp (name, "binary-byteorder") == 0) {
 			if (strcmp (val, "native") == 0) {
 				cb_binary_byteorder = CB_BYTEORDER_NATIVE;

@@ -1,0 +1,16 @@
+
+The Win32 CIs randomly hangs when running the testsuite, especially
+when the number of concurrent processes is high.
+
+Running strace an a hang sh/bash process reveals it loops on this error:
+  53 21134612 [main] sh 8478 nt_create: name dd50a72ab4668b33-13984-pipe-nt-0x1ABC4BA7, size 65536, mode PIPE_TYPE_BYTE
+  56 21134668 [main] sh 8478 nt_create: NtCreateNamedPipeFile failed: 0xC0000008
+
+According to "The Internet", this could to be related to a flawed
+MSYS2/Cygwin implementation of fork(), and possible solutions are to:
+- disable ASLR + "rebase" the MSYS2 DLLs
+- exclude the MSYS2 and temporary directories from Windows Defender scans
+
+However, these solutions did not work.
+
+The only solution would be to run the testsuite with a single process.
