@@ -57,6 +57,24 @@ Mostly implemented
 
 3.1.3 detailed diagnostics with output of offending code (similar to gcc)
 
+3.1.4 Add special contexts dedicated to the arguments of some intrinsics
+
+Some words are context-sensitive only in the context of some intrinsic
+functions arguments.  This is the case of ANUM, or BYTE, HEX, and NAT
+for CONVERT, or ACTIVATING, CURRENT, STACK, and TOP-LEVEL for
+MODULE-NAME, for instance.
+
+This could be handled in two ways, either: (i) by using a generic
+mechanism (triggered after looking up intrinsic functions in the
+scanner) and a new context set for arguments in `struct
+cb_intrinsic_table`; or (ii) more explicitly in the parser itself (in
+rule `function`).  In both cases, reset of special contexts need to be
+performed in parser actions.
+
+Alternative (i) mimicks the behavior of current token-based entry for
+contexts, but may be harder to adapt to cases of nested function calls
+(as we currently do not maintain a stack of active special contexts).
+
 3.2 Data representations
 
 3.2.1 Fix handling of 32bit, 64bit, and 128bit floating-point usages
@@ -249,3 +267,69 @@ https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 For vfile routines: document return-codes per fileio.c and different 
 handling of cancel and heap-status variable used in CBL_OPEN_VFILE only
 and no use of backup file, limitation of i/o area length.
+
+7 NATIONAL support
+
+Finish implementation of NATIONAL support.
+
+This implies to take care - among other things - of the many TODOs in the following functions:
+
+* tree.c
+- cb_tree_category (CB_TAG_FIELD)
+- cb_tree_type (CB_USAGE_NATIONAL)
+- cb_build_picture ('N')
+
+* parser.y
+- prepare_default_collation
+- program_coll_sequence_values
+- alphabet_type_national
+- symbolic_characters_clause
+- class_name_clause
+- coll_sequence_values
+- usage_screen_report
+- usage
+- class_value
+
+* scanner.l
+- N[''""]
+- NC[''""]
+- U[''""]
+- error_literal
+- read_literal
+- scan_x
+
+* typeck.c
+- cb_emit_sort_init (nat_col)
+
+* field.c
+- validate_any_length_item
+
+* codegen.c
+- output_alphabet_name_definition
+
+* reserved.c
+- function_list (CHAR-NATIONAL, EXCEPTION-FILE-N, EXCEPTION-LOCATION-N, NATIONAL-OF)
+
+* intrinsics.c
+- cob_check_numval_f
+- numval
+- cob_check_numval
+- cob_intr_bit_of
+- cob_intr_hex_of
+- cob_intr_numval_f
+- cob_intr_char_national
+- cob_intr_display_of
+- cob_intr_exception_file_n
+- cob_intr_exception_location_n
+- cob_intr_national_of
+
+* common.c
+- cob_cmp
+
+* fileio.c
+- indexed_open
+
+* mlio.c
+- set_xml_text
+- xml_generate
+- cob_json_generate_new

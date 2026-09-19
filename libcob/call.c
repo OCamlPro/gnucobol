@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023, 2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -165,9 +165,8 @@ static lt_dlhandle		mainhandle;
 static lt_dladvise advise = NULL;
 #endif
 
-static size_t			call_lastsize;
-static size_t			resolve_size = 0;
-static unsigned int		cob_jmp_primed;
+static size_t		call_lastsize;
+static size_t		resolve_size = 0;
 static cob_field_attr	const_float_attr =
 			{COB_TYPE_NUMERIC_DOUBLE, 8, 0, COB_FLAG_HAVE_SIGN, NULL};
 static cob_field_attr	const_binll_attr =
@@ -1619,6 +1618,16 @@ cob_func (const char *name, const int argc, void **argv)
 }
 
 #ifndef COB_WITHOUT_JMP
+/* save jump structure */
+int
+cob_setjmp (struct cobjmp_buf *jbuf)
+{
+	/* note: _consider_ saving a CURRENT_MODULE_PTR into jbuf,
+	   then before restoring via longjmp compare that this is still
+	   in the current COBOL stack */
+	return setjmp (cob_savenv (jbuf));
+}
+
 /* save jump structure, normally called by cobsetjmp which wraps it into setjmp */
 void *
 cob_savenv (struct cobjmp_buf *jbuf)
@@ -1631,12 +1640,7 @@ cob_savenv (struct cobjmp_buf *jbuf)
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_savenv");
 		cob_hard_failure ();
 	}
-	if (cob_jmp_primed) {
-		cob_runtime_error (_("multiple call to 'cob_setjmp'"));
-		cob_hard_failure ();
-	}
 	/* LCOV_EXCL_STOP */
-	cob_jmp_primed = 1;
 	return jbuf->cbj_jmp_buf;
 }
 
@@ -1658,12 +1662,7 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_longjmp");
 		cob_hard_failure ();
 	}
-	if (!cob_jmp_primed) {
-		cob_runtime_error (_("call to 'cob_longjmp' with no prior 'cob_setjmp'"));
-		cob_hard_failure ();
-	}
 	/* LCOV_EXCL_STOP */
-	cob_jmp_primed = 0;
 	longjmp (jbuf->cbj_jmp_buf, 1);
 }
 #endif
@@ -1820,7 +1819,6 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	resolve_error = NULL;
 	call_buffer = NULL;
 	call_lastsize = 0;
-	cob_jmp_primed = 0;
 
 #ifndef	HAVE_DESIGNATED_INITS
 	init_valid_char = 0;

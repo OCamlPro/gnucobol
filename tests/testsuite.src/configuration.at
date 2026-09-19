@@ -1010,3 +1010,57 @@ cobc: error: invalid parameter: -febcdic-table
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([tabstop tab-width])
+AT_KEYWORDS([tabulation])
+
+AT_DATA([prog.cob], [
+02		IDENTIFICATION   DIVISION.
+03		PROGRAM-ID.      prog.
+04		PROCEDURE        DIVISION.
+05    * In the next line, the star is an indicator after a tab of size 6
+06	*PROCEDURE        DIVISION.
+07    * After 2 tabs, the line is at the beginning of Area A
+08		DISPLAY "hello".
+09		 DISPLAY "hello".
+10		  DISPLAY "hello".
+11		   DISPLAY "hello".
+12		    DISPLAY "hello".
+13    * After 3 tabs, the line is at the beginning of Area B
+14			DISPLAY "hello".
+15			STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm -ftab-width=6,1,4 -ftab-width=6 prog.cob], [0], [],
+[prog.cob:2: warning: IDENTIFICATION DIVISION should start in Area A
+prog.cob:4: warning: PROCEDURE DIVISION should start in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm -ftab-width=4 prog.cob], [1], [],
+[prog.cob:6: error: invalid indicator 'R' at column 7
+prog.cob:8: warning: start of statement in Area A
+prog.cob:9: warning: start of statement in Area A
+prog.cob:10: warning: start of statement in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm -ftab-width=6,1,a prog.cob], [1], [],
+[configuration error:
+-ftab-width=6,1,a: invalid value 'a' for configuration tag 'tab-width';
+	should be one of the following values: 1-12
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm -ftab-width=a prog.cob], [1], [],
+[configuration error:
+-ftab-width=a: invalid value 'a' for configuration tag 'tab-width';
+	should be one of the following values: 1-12
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm -ftab-width=6,1,4 prog.cob], [0], [],
+[prog.cob:8: warning: start of statement in Area A
+prog.cob:9: warning: start of statement in Area A
+prog.cob:10: warning: start of statement in Area A
+prog.cob:11: warning: start of statement in Area A
+])
+
+AT_CLEANUP

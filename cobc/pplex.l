@@ -1426,11 +1426,10 @@ ppopen_get_file (const char *name)
 					line_pos = 0;
 					break;
 				case '\t':
+					/* See comment on tab-width in
+					 * config.c */
+					line_pos+= cb_tab_width[pos];
 					buffer[pos] = ' ';
-					line_pos++;				/* move test from run_extensions.at 1809 to -fformat */
-					while (line_pos % cb_tab_width != 0) {
-						line_pos++;
-					}
 					break;
 				default:
 					line_pos++;
@@ -2383,9 +2382,11 @@ start:
 		}
 		if (unlikely (ipchar == '\t')) {
 			if (likely (line_overflow == 0)) {
-				buff[n++] = ' ';
-				while (n % cb_tab_width != 0) {
+				/* See comment on tab-width in config.c */
+				int tab_width = cb_tab_width[n];
+				while (tab_width > 0){
 					buff[n++] = ' ';
+					tab_width--;
 				}
 				if (unlikely (n > PPLEX_BUFF_LEN)) {
 					n = PPLEX_BUFF_LEN;

@@ -1916,6 +1916,7 @@ warn_pic_for_numeric_value_implied (const struct cb_field * const f)
 	cb_tree first_value = get_first_value (f);
 	if (first_value && CB_NUMERIC_LITERAL_P (first_value)) {
 		const cb_tree	x = CB_TREE (f);
+		if (f->pic) return 0;
 		/* TODO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
 			_("'%s' has numeric VALUE without PIC; PIC will be implied"),
