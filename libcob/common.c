@@ -466,6 +466,8 @@ static const int		cob_exception_tab_code[] = {
 	0		/* COB_EC_MAX */
 };
 
+#undef COB_EXCEPTION
+
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
 /* Switches */
@@ -9373,7 +9375,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
 		break;
 	case COB_FERROR_FATAL_EC:
-		cob_runtime_error(_("unhandled fatal exception code: %s"),
+		cob_runtime_error (_("unhandled fatal exception code: %s"),
 			cob_get_last_exception_name ());
 		break;
 	default:

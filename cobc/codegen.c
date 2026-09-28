@@ -8747,15 +8747,14 @@ output_ec_size_handler (void)
 	}
 	if (ec_checked) {
 		output_line (
-			"if (((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)"
-			" && ((cob_glob_ptr->cob_exception_code & 0x%04x) != 0)"
-			" && (cob_glob_ptr->cob_got_exception > 0))",
+			"if (((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
 			CB_EXCEPTION_CODE (COB_EC_SIZE),
-			CB_EXCEPTION_CODE (COB_EC_SIZE),
+			CB_EXCEPTION_CODE (COB_EC_SIZE));
+		output_line (" && ((cob_glob_ptr->cob_exception_code & 0x%04x) != 0)",
 			ec_checked & 0x00FF);
+		output_line ( " && (cob_glob_ptr->cob_got_exception > 0))");
 		output_line ("\t" "cob_fatal_exception (cob_glob_ptr->cob_exception_code);");
 	}
-
 }
 
 static void
@@ -8769,7 +8768,7 @@ output_handler (const struct cb_statement *stmt)
 	if (stmt->ex_handler || stmt->not_ex_handler) {
 		/* We have a handler, so the exceptions should not be raised, and we reset them
 		 * before in case the handling statements can also raise exceptions. */
-		output_line("cob_reset_exception ();");
+		output_line ("cob_reset_exception ();");
 	}
 	if (stmt->ex_handler) {
 		output_ec_condition_for_handler (stmt->handler_type);
@@ -9222,8 +9221,8 @@ output_stmt (cb_tree x)
 		}
 
 		if (p->handler_type == SIZE_ERROR_HANDLER
-		     && p->ex_handler == NULL
-		     && p->not_ex_handler == NULL) {
+		 && p->ex_handler == NULL
+		 && p->not_ex_handler == NULL) {
 			output_ec_size_handler ();
 		}
 
