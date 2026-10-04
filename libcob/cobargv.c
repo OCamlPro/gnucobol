@@ -2,6 +2,9 @@
    Copyright (C) 1992-2026 Free Software Foundation, Inc.
    Written by Fred Fish @ Cygnus Support
 
+   Modified for use in GnuCOBOL 
+
+
 This file is part of the libiberty library.
 Libiberty is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -17,6 +20,7 @@ You should have received a copy of the GNU Library General Public
 License along with libiberty; see the file COPYING.LIB.  If
 not, write to the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
 Boston, MA 02110-1301, USA.  */
+
 
 
 /*  Create and destroy argument vectors.  An argument vector is simply an
