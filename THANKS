@@ -71,6 +71,8 @@ contributing the result.
 Denis Hugonnard-Roche for continuous additions to the internal test suite to
 improve code coverage.
 
+Guillaume Bertholon and David Declerck from the SuperBOL team of OCamlPro,
+along with Chuck Haatvedt and Simon Sobisch for adding support for XML PARSE.
 
 Further explicit thanks to
 

@@ -341,6 +341,8 @@ int cb_flag_alt_ebcdic = 0;
 /* Basic memory structure */
 struct cobc_mem_struct {
 	struct	cobc_mem_struct	*next;			/* next pointer */
+	struct	cobc_mem_struct	*prev;			/* previous pointer */
+	struct	cobc_mem_struct	**base;			/* list this entry is linked in */
 	void			*memptr;
 	size_t			memlen;
 };
@@ -1086,6 +1088,69 @@ cobc_realloc (void *prevptr, const size_t size)
 	return mptr;
 }
 
+/* Handling of memory blocks lists */
+
+/* Add a new entry at the head of the given list */
+static COB_INLINE COB_A_INLINE void
+cobc_mem_add (struct cobc_mem_struct **base, struct cobc_mem_struct *m)
+{
+	m->base = base;
+	m->prev = NULL;
+	m->next = *base;
+	if (m->next) {
+		m->next->prev = m;
+	}
+	*base = m;
+}
+
+/* Get the entry matching a pointer in the given list,
+   or NULL if it does not belong to that list */
+static COB_INLINE COB_A_INLINE struct cobc_mem_struct *
+cobc_mem_get (struct cobc_mem_struct **base, void *memptr)
+{
+	struct cobc_mem_struct	*m;
+
+	if (unlikely (!memptr)) {
+		return NULL;
+	}
+	m = (struct cobc_mem_struct *)((char *)memptr - COBC_MEM_SIZE);
+	if (unlikely (m->memptr != memptr || m->base != base)) {
+		return NULL;
+	}
+	return m;
+}
+
+/* Remove an entry from the list it belongs to */
+static COB_INLINE COB_A_INLINE void
+cobc_mem_remove (struct cobc_mem_struct *m)
+{
+	if (m->prev) {
+		m->prev->next = m->next;
+	} else {
+		*m->base = m->next;
+	}
+	if (m->next) {
+		m->next->prev = m->prev;
+	}
+}
+
+/* Replace an entry by a new one at the same position in the same list */
+static COB_INLINE COB_A_INLINE void
+cobc_mem_replace (struct cobc_mem_struct *old, struct cobc_mem_struct *m)
+{
+	m->base = old->base;
+	m->prev = old->prev;
+	m->next = old->next;
+	if (m->prev) {
+		m->prev->next = m;
+	} else {
+		*m->base = m;
+	}
+	if (m->next) {
+		m->next->prev = m;
+	}
+}
+
 /* Memory allocate/strdup/reallocate/free for complete execution */
 void *
 cobc_main_malloc (const size_t size)
@@ -1100,10 +1165,9 @@ cobc_main_malloc (const size_t size)
 		cobc_abort_terminate (0);
 	}
 	/* LCOV_EXCL_STOP */
-	m->next = cobc_mainmem_base;
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
-	cobc_mainmem_base = m;
+	cobc_mem_add (&cobc_mainmem_base, m);
 	return m->memptr;
 }
 
@@ -1150,9 +1214,16 @@ cobc_main_stradd_dup (const char *str1, const char *str2)
 void *
 cobc_main_realloc (void *prevptr, const size_t size)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 	struct cobc_mem_struct	*m;
+
+	curr = cobc_mem_get (&cobc_mainmem_base, prevptr);
+	/* LCOV_EXCL_START */
+	if (unlikely (!curr)) {
+		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1165,27 +1236,8 @@ cobc_main_realloc (void *prevptr, const size_t size)
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
 
-	prev = NULL;
-	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
-	/* LCOV_EXCL_START */
-	if (unlikely (!curr)) {
-		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
-		cobc_abort_terminate (1);
-	}
-	/* LCOV_EXCL_STOP */
-	m->next = curr->next;
-	if (prev) {
-		prev->next = m;
-	} else {
-		/* At mainmem_base */
-		cobc_mainmem_base = m;
-	}
-	memcpy (m->memptr, curr->memptr, curr->memlen);
+	cobc_mem_replace (curr, m);
+	memcpy (m->memptr, curr->memptr, curr->memlen < size ? curr->memlen : size);
 	cobc_free (curr);
 
 	return m->memptr;
@@ -1194,16 +1246,9 @@ cobc_main_realloc (void *prevptr, const size_t size)
 void
 cobc_main_free (void *prevptr)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 
-	prev = NULL;
-	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
+	curr = cobc_mem_get (&cobc_mainmem_base, prevptr);
 	/* LCOV_EXCL_START */
 	if (unlikely (!curr)) {
 #ifdef	COB_TREE_DEBUG
@@ -1215,12 +1260,7 @@ cobc_main_free (void *prevptr)
 #endif
 	}
 	/* LCOV_EXCL_STOP */
-	if (prev) {
-		prev->next = curr->next;
-	} else {
-		/* At mainmem_base */
-		cobc_mainmem_base = curr->next;
-	}
+	cobc_mem_remove (curr);
 	cobc_free (curr);
 }
 
@@ -1238,10 +1278,9 @@ cobc_parse_malloc (const size_t size)
 		cobc_abort_terminate (0);
 	}
 	/* LCOV_EXCL_STOP */
-	m->next = cobc_parsemem_base;
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
-	cobc_parsemem_base = m;
+	cobc_mem_add (&cobc_parsemem_base, m);
 	return m->memptr;
 }
 
@@ -1266,9 +1305,16 @@ cobc_parse_strdup (const char *dupstr)
 void *
 cobc_parse_realloc (void *prevptr, const size_t size)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 	struct cobc_mem_struct	*m;
+
+	curr = cobc_mem_get (&cobc_parsemem_base, prevptr);
+	/* LCOV_EXCL_START */
+	if (unlikely (!curr)) {
+		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1281,27 +1327,8 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
 
-	prev = NULL;
-	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
-	/* LCOV_EXCL_START */
-	if (unlikely (!curr)) {
-		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
-		cobc_abort_terminate (1);
-	}
-	/* LCOV_EXCL_STOP */
-	m->next = curr->next;
-	if (prev) {
-		prev->next = m;
-	} else {
-		/* At parsemem_base */
-		cobc_parsemem_base = m;
-	}
-	memcpy (m->memptr, curr->memptr, curr->memlen);
+	cobc_mem_replace (curr, m);
+	memcpy (m->memptr, curr->memptr, curr->memlen < size ? curr->memlen : size);
 	cobc_free (curr);
 
 	return m->memptr;
@@ -1310,16 +1337,9 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 void
 cobc_parse_free (void *prevptr)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 
-	prev = NULL;
-	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
+	curr = cobc_mem_get (&cobc_parsemem_base, prevptr);
 	/* LCOV_EXCL_START */
 	if (unlikely (!curr)) {
 #ifdef	COB_TREE_DEBUG
@@ -1331,12 +1351,7 @@ cobc_parse_free (void *prevptr)
 #endif
 	}
 	/* LCOV_EXCL_STOP */
-	if (prev) {
-		prev->next = curr->next;
-	} else {
-		/* At parsemem_base */
-		cobc_parsemem_base = curr->next;
-	}
+	cobc_mem_remove (curr);
 	cobc_free (curr);
 }
 
@@ -1355,8 +1370,7 @@ cobc_plex_malloc (const size_t size)
 	}
 	/* LCOV_EXCL_STOP */
 	m->memptr = (char *)m + COBC_MEM_SIZE;
-	m->next = cobc_plexmem_base;
-	cobc_plexmem_base = m;
+	cobc_mem_add (&cobc_plexmem_base, m);
 	return m->memptr;
 }
 
