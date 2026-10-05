@@ -1,4 +1,13 @@
 
+2026-10-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* coblocal.h (COB_STDOUT_OR_DEFAULT): new macro,
+	  counterpart of COB_STDERR_OR_DEFAULT
+	* common.c (cob_sig_handler, cob_hard_failure_internal): use
+	  COB_STDERR_OR_DEFAULT and COB_STDOUT_OR_DEFAULT instead of
+	  COB_STDERR and COB_STDOUT, as the runtime settings are not
+	  initialized when these are called from cobc
+
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function

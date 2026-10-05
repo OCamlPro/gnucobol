@@ -1241,8 +1241,8 @@ cob_sig_handler (int sig)
 #ifdef	SIGHUP
 	case SIGHUP:
 #endif
-		fflush (COB_STDERR);
-		fflush (COB_STDOUT);
+		fflush (COB_STDERR_OR_DEFAULT);
+		fflush (COB_STDOUT_OR_DEFAULT);
 		break;
 	default:
 		break;
@@ -3314,12 +3314,12 @@ cob_hard_failure_internal (const char *prefix)
 {
 	unsigned int core_on_error;
 	if (prefix) {
-		fprintf (COB_STDERR, "\n%s: ", prefix);
+		fprintf (COB_STDERR_OR_DEFAULT, "\n%s: ", prefix);
 	} else {
-		fprintf (COB_STDERR, "\n");
+		fprintf (COB_STDERR_OR_DEFAULT, "\n");
 	}
-	fprintf (COB_STDERR, _("Please report this!"));
-	fprintf (COB_STDERR, "\n");
+	fprintf (COB_STDERR_OR_DEFAULT, _("Please report this!"));
+	fprintf (COB_STDERR_OR_DEFAULT, "\n");
 	core_on_error = handle_core_on_error ();
 	if (core_on_error != 4) {
 		if (core_on_error == 2 && cob_initialized) {
