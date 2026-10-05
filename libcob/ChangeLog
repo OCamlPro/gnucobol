@@ -8,6 +8,13 @@
 	  multiple places and also may jump to them multiple times - it is up
 	  to the user to ensure a correct stack (= never jump "forward")
 
+2026-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (pre_load_once): extracted from cob_init_call
+	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
+	  a global scope request, independent of COB_LOAD_GLOBAL setting
+	* common.c: minimal refactor
+
 2026-09-04  Ramy George <ramygeorge19@gmail.com>
 
 	* cobargv.c: extracted the argv.c file from GCC, adjusted for recursive response file detection

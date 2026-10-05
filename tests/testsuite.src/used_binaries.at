@@ -825,7 +825,7 @@ AT_DATA([COBOL.COB], [
            DISPLAY 'OK' WITH NO ADVANCING.
            GOBACK.
        END PROGRAM mainer.
-       
+
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      sub.
        PROCEDURE        DIVISION.
@@ -1017,6 +1017,9 @@ AT_SETUP([cobc diagnostics show caret])
 #AT_KEYWORDS([cobc diagnostics])
 AT_KEYWORDS([return_path])
 
+# note: the "COPY" leads to a #line directive afterwards;
+#       we explicit have a warning directly behind it to ensure
+#       that our internal filename(pointer) comparision is fine
 AT_DATA([progprep.cob],[
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -1025,61 +1028,78 @@ AT_DATA([progprep.cob],[
        01 TEST-VAR PIC 9(2) VALUE 'A'.
        COPY 'CRUD.CPY'.
        PROCEDURE        DIVISION.
-           DISPLAY TEST-VAR NO ADVANCING
-           END-DISPLAY
-           MOVE 12 TO TEST-VAR
-           DISPLAY TEST-VAR NO ADVANCING
-           END-DISPLAY
+           DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+              MOVE 12 TO TEST-VAR.
+           DISPLAY TEST-VAR NO                                       ADVANCING
+           END-DISPLAY                                                   *> long line
            STOP RUN...
 ])
 
 # Testcase includes trailing whitespace, setup by dropping '#'
-AT_CHECK([cat progprep.cob | tr -d '#' > prog.cob])
+cat progprep.cob | tr -d '#' > prog.cob
 
-AT_CHECK([$COBC -fdiagnostics-plain-output -Wall prog.cob], [1], [],
+AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-plain-output prog.cob], [1], [],
 [[prog.cob:7: error: CRUD.CPY: No such file or directory
 prog.cob:6: warning: numeric value is expected [-Wothers]
-prog.cob:14: warning: ignoring redundant . [-Wothers]
+prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
+prog.cob:13: warning: ignoring redundant . [-Wothers]
 ]])
-AT_CHECK([$COBC -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
+AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
 [[prog.cob:7: error: CRUD.CPY: No such file or directory
     5 |        WORKING-STORAGE  SECTION.
     6 |        01 TEST-VAR PIC 9(2) VALUE 'A'.
     7 >        COPY 'CRUD.CPY'.
     8 |        PROCEDURE        DIVISION.
-    9 |            DISPLAY TEST-VAR NO ADVANCING
+    9 |            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
 prog.cob:6: warning: numeric value is expected [-Wothers]
     4 |        DATA             DIVISION.
     5 |        WORKING-STORAGE  SECTION.
     6 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
     7 |        COPY 'CRUD.CPY'.
     8 |        PROCEDURE        DIVISION.
-prog.cob:14: warning: ignoring redundant . [-Wothers]
-   12 |            DISPLAY TEST-VAR NO ADVANCING
-   13 |            END-DISPLAY
-   14 >            STOP RUN...
-   15 | <EOF>
+prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
+    9 >            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+   10 |               MOVE 12 TO TEST-VAR.
+   11 |            DISPLAY TEST-VAR NO                                       ADVA ...
+prog.cob:13: warning: ignoring redundant . [-Wothers]
+   12 |            END-DISPLAY                                                    ...
+   13 >            STOP RUN...
+   14 | <EOF>
 ]])
 
-AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret prog.cob], [1], [],
+AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-plain-output -fdiagnostics-show-caret prog.cob], [1], [],
 [[prog.cob:7: error: CRUD.CPY: No such file or directory
           WORKING-STORAGE  SECTION.
           01 TEST-VAR PIC 9(2) VALUE 'A'.
  >        COPY 'CRUD.CPY'.
           PROCEDURE        DIVISION.
-              DISPLAY TEST-VAR NO ADVANCING
+              DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
 prog.cob:6: warning: numeric value is expected [-Wothers]
           DATA             DIVISION.
           WORKING-STORAGE  SECTION.
  >        01 TEST-VAR PIC 9(2) VALUE 'A'.
           COPY 'CRUD.CPY'.
           PROCEDURE        DIVISION.
-prog.cob:14: warning: ignoring redundant . [-Wothers]
-              DISPLAY TEST-VAR NO ADVANCING
-              END-DISPLAY
+prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
+ >            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+                 MOVE 12 TO TEST-VAR.
+              DISPLAY TEST-VAR NO                                       ADVANCING
+prog.cob:13: warning: ignoring redundant . [-Wothers]
+              END-DISPLAY                                                   *> lo ...
  >            STOP RUN...
    <EOF>
 ]])
+
+AT_CHECK([$COMPILE -fformat=terminal -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
+
+# note: -fdiagnostics-absolute-paths will show the realpath,
+#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
+#       but the _return_path function from atlocal may adjust that
+AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
+[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
+DIR/prog.cob:6: warning: numeric value is expected
+DIR/prog.cob:13: warning: ignoring redundant .
+], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
 
 # Testcase for line too long and printing only one line
 AT_DATA([longgy.cob],[ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
@@ -1089,20 +1109,30 @@ AT_DATA([longgy.cob],[dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 #       but until that is solved, it is a nice edge case of "line not available"
 AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others longgy.cob], [1], [],
 [[longgy.cob:2: error: PROGRAM-ID header missing
-   dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd..
+   dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd ...
  > <EOF>
 ]])
 
-AT_CHECK([$COMPILE -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
+# Testcase for line too long, EOF w/o preceding newline
+printf "%s" "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" > longyl.cob
 
-# note: -fdiagnostics-absolute-paths will show the realpath,
-#       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,
-#       but the _return_path function from atlocal may adjust that
-AT_CHECK([cat compiler.output | tr '\\' '/' | $SED "s|$(_return_path "$(pwd)")|DIR|"], [0],
-[DIR/prog.cob:7: error: CRUD.CPY: No such file or directory
-DIR/prog.cob:6: warning: numeric value is expected
-DIR/prog.cob:14: warning: ignoring redundant .
-], [], [echo set: $SED "s|$(_return_path "$(pwd)")|DIR|"])
+# note: this is actually an error in the parser line number,
+#       but until that is solved, it is a nice edge case of "line not available"
+AT_CHECK([$COBC -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others longyl.cob], [1], [],
+[[longyl.cob:1: warning: line not terminated by a newline [-Wmissing-newline]
+ > dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd ...
+longyl.cob:2: error: PROGRAM-ID header missing
+]])
+
+# Testcase for EOF w/o preceding newline
+printf "%s" "DISPLAY 'HELLO'.      " > nonleof.cob
+
+# note: this is actually an error in the parser line number,
+#       but until that is solved, it is a nice edge case of "line not available"
+AT_CHECK([$COBC -fformat=free -frelax-syntax-check -fdiagnostics-plain-output -fdiagnostics-show-caret -Wno-others nonleof.cob], [0], [],
+[[nonleof.cob:2: warning: line not terminated by a newline [-Wmissing-newline]
+   DISPLAY 'HELLO'.<EOF>
+]])
 
 AT_CLEANUP
 

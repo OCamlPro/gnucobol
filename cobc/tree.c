@@ -2192,7 +2192,7 @@ cb_build_program (struct cb_program *last_program, const int nest_level)
 	p->common.tag = CB_TAG_PROGRAM;
 	p->common.category = CB_CATEGORY_UNKNOWN;
 
-	p->common.source_file = cobc_parse_strdup (cb_source_file);
+	p->common.source_file = cb_source_file;
 	p->common.source_line = cb_source_line;
 
 	p->next_program = last_program;
@@ -5110,14 +5110,32 @@ cb_build_reference (const char *name)
 cb_tree
 cb_build_filler (void)
 {
-	cb_tree		x;
-	char		name[20];
+	struct cb_reference	*r =
+			make_tree (CB_TAG_REFERENCE, CB_CATEGORY_UNKNOWN,
+			           sizeof (struct cb_reference));
+	struct cb_word	*w = cobc_parse_malloc (sizeof (struct cb_word));;
 
-	sprintf (name, "FILLER %d", filler_id++);
-	x = cb_build_reference (name);
-	x->source_line = cb_source_line;
-	CB_REFERENCE (x)->flag_filler_ref = 1;
-	return x;
+	r->flag_filler_ref = 1;
+
+	/* position of reference */
+	r->section = current_section;
+	r->paragraph = current_paragraph;
+
+	/* statement this reference was used with for later checks */
+	if (current_statement) {
+		r->statement = current_statement->statement;
+	}
+
+	/* NO Look up, but create word */
+	w->name = cobc_parse_malloc (20);
+	snprintf ((char *)w->name, 20, "FILLER %d", filler_id++);
+	r->word = w;
+
+	/* position of reference */
+	r->common.source_file = cb_source_file;
+	r->common.source_line = cb_source_line;
+
+	return CB_TREE(r);
 }
 
 /*
