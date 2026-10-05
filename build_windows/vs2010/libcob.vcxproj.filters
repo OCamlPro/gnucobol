@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\libcob\cconv.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libcob\cobargv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\libcob\cobgetopt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
