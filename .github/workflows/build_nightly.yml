@@ -52,7 +52,7 @@ jobs:
         if: ${{ matrix.isam == 'visam' &&
                 steps.restore-visam.outputs.cache-hit != 'true' }}
         run: |
-          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          curl -LO http://inglenet.com/Products/GnuCOBOL/visam-2.2.tar.Z
           mkdir visam && tar -xvzf visam-2.2.tar.Z -C visam --strip-components=1
           cd visam
           ./configure --prefix=/opt/visam --enable-vbisamdefault \
@@ -221,7 +221,7 @@ jobs:
         if: ${{ matrix.isam == 'visam' &&
                 steps.restore-visam.outputs.cache-hit != 'true' }}
         run: |
-          curl -LO http://inglenet.ca/Products/GnuCOBOL/visam-2.2.tar.Z
+          curl -LO http://inglenet.com/Products/GnuCOBOL/visam-2.2.tar.Z
           mkdir visam && tar -xvzf visam-2.2.tar.Z -C visam --strip-components=1
           cd visam
           ./configure --prefix=/opt/visam --enable-vbisamdefault \

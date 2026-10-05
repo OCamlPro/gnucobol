@@ -3701,22 +3701,28 @@ AT_DATA([prog.cob], [
 
 AT_DATA([cmod.c], [[
 #include <stdio.h>
-int dump (unsigned char *data)
+#include <libcob.h>
+
+COB_EXT_EXPORT int
+dump (unsigned char *data)
 {
   int i;
   for (i = 0; i < 4; i++)
     printf ("%02X", data[i]);
   puts (" ");
+  fflush(stdout);
   return 0;
 }
 
-int dumpln (unsigned char *data, int len)
+COB_EXT_EXPORT int
+dumpln (unsigned char *data, int len)
 {
   int i;
   printf ("%2d: ",len);
   for (i = 0; i < 32 && i < len; i++)
     printf ("%02X", data[i]);
   puts (":");
+  fflush(stdout);
   return 0;
 }
 ]])
@@ -11322,7 +11328,7 @@ AT_DATA([cmod.c], [[
 #include <libcob.h>
 
 static int doWatch = 1;
-int
+COB_EXT_EXPORT int
 CSYMDMP ()
 {
    int      nargs,sts;
@@ -11392,6 +11398,7 @@ CSYMDMP ()
       sts = cob_get_field_value (modname, fld, sizeof(buf), buf);
       printf(" %30s is %s%s. Was changed\n",fld,sts?"Error: ":"",buf);
    }
+   fflush(stdout);
    return 0;
 }
 ]])
@@ -11501,7 +11508,7 @@ getType(int type, int byvalue)
    return wrk;
 }
 
-int
+COB_EXT_EXPORT int
 CAPI(void *p1, ...)
 {
    int      k,nargs,type,digits,scale,size,sign,byvalue,isright;
@@ -14204,17 +14211,18 @@ AT_DATA([prog.cob], [
 
 AT_DATA([cmod.c], [[
 #include <stdio.h>
-#include <stdio.h>
+#include <libcob.h>
 extern int CSUB4();
 extern int CSUB5();
 extern int SUB6();
 extern int CSUB7(float f);
 extern int CSUB8(float *f);
-int
+COB_EXT_EXPORT int
 COBCSUB(int y, unsigned char x[15])
 {
    float flt1;
    printf("C routine passed: Y is %d; X is '%.15s'\n",y,x);
+   fflush(stdout);
    CSUB4(y, x);
    CSUB4(y+1, "A C-String is being passed");
    CSUB5(y+2, "A much longer C-String is being passed");
@@ -14354,9 +14362,11 @@ int main()
     return 0;
 }
 
-void one_parameter(void *dummy)
+COB_EXT_EXPORT void
+one_parameter(void *dummy)
 {
    printf("Now in one_parameter\n");
+   fflush(stdout);
     routine2((void *)(0x3),(void *)(0x4));
 }
 ]])
