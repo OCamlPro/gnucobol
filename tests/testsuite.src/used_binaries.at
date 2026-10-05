@@ -1652,7 +1652,8 @@ AT_DATA([prog.cob], [
            STOP RUN.   
 ])
 
-AT_DATA([tempfile.txt], [-x])
+AT_DATA([tempfile.txt], [--free
+])
 AT_CHECK([$COMPILE_MODULE @tempfile.txt @nonexistent.txt prog.cob], [1], [], 
 [cobc: @nonexistent.txt: No such file or directory
 ])
