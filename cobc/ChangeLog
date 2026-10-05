@@ -1,4 +1,9 @@
 
+2026-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (file_replace_extension): minor refactor
+	* typeck.c (validate_move): prevent MOVE NULL
+
 2026-09-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c (cb_build_filler): no addition of internal "FILLER n" names

@@ -1,4 +1,9 @@
 
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c [LIBXML_VERSION]: fix version check for new ABI
+
+
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function
