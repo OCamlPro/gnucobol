@@ -410,7 +410,7 @@ cob_expandargv (int *argcp, char ***argvp)
         {
           if (encountered_files[j] && strcmp (encountered_files[j], filename) == 0)
             {
-              fprintf (stderr, "%s: error: recursive @-file: %s\n", (*argvp)[0], filename);
+              fprintf (stderr, "error: recursive @-file: %s\n", filename);
               for (j = 0; j < encountered_cnt; ++j) free (encountered_files[j]);
               exit (1);
             }

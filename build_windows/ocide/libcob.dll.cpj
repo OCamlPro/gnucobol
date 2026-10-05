@@ -40,6 +40,7 @@
 			<FOLDER TITLE="Source Files">
 				<FILE NAME="..\..\libcob\call.c" TITLE="call.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\cconv.c" TITLE="cconv.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cobargv.c" TITLE="cobargv.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\cobgetopt.c" TITLE="cobgetopt.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\common.c" TITLE="common.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\fileio.c" TITLE="fileio.c" CLEAN="0"/>

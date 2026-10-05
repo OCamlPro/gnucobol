@@ -1672,9 +1672,12 @@ AT_DATA([prog.cob], [
            STOP RUN.   
 ])
 
-AT_DATA([echo "-x @tempfile.txt" > tempfile.txt])
-AT_DATA([echo "-g --free" > otherfile.txt])
-AT_CHECK([$COMPILE_MODULE @tempfile.txt @otherfile.txt prog.cob], [0], [], [])
+AT_DATA([tempfile.txt], [
+    -g @tempfile.txt --free
+])
+AT_CHECK([$COMPILE_MODULE @tempfile.txt prog.cob], [1], [], 
+[error: recursive @-file: @tempfile.txt 
+])
 
 AT_CLEANUP()
 
