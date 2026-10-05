@@ -399,12 +399,20 @@ void cob_seqra_init_fileio (cob_file_api *);
 
 /* Local functions */
 
+static COB_INLINE COB_A_INLINE int
+isslash (char c)
+{
+	return
+#ifdef _WIN32
+		c == '\\' ||
+#endif
+		c == '/';
+}
+
 static int
 isdirvalid (char *filename)
 {
-#ifndef	_WIN32
 	struct stat st;
-#endif
 	char	tmp[COB_NORMAL_BUFF];
 	int		ln = strlen (filename);
 
@@ -419,12 +427,19 @@ isdirvalid (char *filename)
 
 	strcpy (tmp, filename);
 	while (--ln > 0) {
-#ifndef	_WIN32
-	/* TODO: This code needs to be tested on Windows and adjusted as needed */
-	/* For now it is effectively disabled on Windows */
-		if (tmp[ln] == SLASH_CHAR) {
+		if (isslash(tmp[ln]))  {
+			while (ln > 1 && isslash(tmp[ln-1])) { --ln; }
 			tmp[ln] = 0;
 			errno = 0;
+#ifdef _WIN32
+			/* Under Windows, a slash is required after a drive letter, else stat fails */
+			if (ln == 2 && tmp[1] == ':'
+			 && ((tmp[0] >= 'A' && tmp[0] <= 'Z')
+			  || (tmp[0] >= 'a' && tmp[0] <= 'z'))) {
+				tmp[ln] = '\\';
+				tmp[ln + 1] = 0;
+			}
+#endif
 			if (stat(tmp, &st) == -1) {
 				errno = ENOENT;
 				return 0;
@@ -434,7 +449,6 @@ isdirvalid (char *filename)
 				return 0;
 			}
 		}
-#endif
 	}
 	errno = 0;
 	return 1;
@@ -1095,12 +1109,12 @@ cob_open_qbl (char *filename, int makeit, int append)
 {
 	int fd, mode;
 	errno = 0;
-	mode = O_RDWR;
+	mode = O_RDWR | O_BINARY;
 	if (append)
 		mode |= O_APPEND;
 	if (makeit)
 		mode |= O_CREAT;
-	fd = open (filename, mode, 0666);
+	fd = open (filename, mode, COB_FILE_MODE);
 	if (errno) {
 		cob_runtime_warning (_("Error opening %s; %s"),
 			filename, strerror(errno));
@@ -1912,8 +1926,13 @@ cob_file_sync (cob_file *f)
 		fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
 		return;
 	}
-	if (f->organization != COB_ORG_SORT) {
-		if (f->file) {
+	if (f->organization != COB_ORG_SORT && f->open_mode != COB_OPEN_INPUT) {
+		if (f->file
+		 && (f->last_operation == COB_LAST_WRITE
+		  || f->last_operation == COB_LAST_REWRITE
+		  || f->last_operation == COB_LAST_DELETE
+		  || f->last_operation == COB_LAST_COMMIT
+		  || f->last_operation == COB_LAST_ROLLBACK)) {
 			fflush ((FILE *)f->file);
 		}
 		if (f->fd >= 0) {
@@ -6580,7 +6599,7 @@ cob_file_unlock (cob_file *f)
 			return;
 		}
 		if (f->organization != COB_ORG_INDEXED) {
-			if (f->fd >= 0) {
+			if (f->fd >= 0 && f->open_mode != COB_OPEN_INPUT) {
 				fdcobsync (f->fd);
 			}
 #ifdef	HAVE_FCNTL
@@ -9919,6 +9938,53 @@ cob_file_return (cob_file *f)
 	}
 }
 
+#ifdef _WIN32
+
+static int
+get_drive_letter(const char **s)
+{
+	const char *p = *s;
+	if (p[0] == '/'
+	 && ((p[1] >= 'A' && p[1] <= 'Z')
+	  || (p[1] >= 'a' && p[1] <= 'z'))
+	 && p[2] == '/') {
+		*s += 3;
+		return p[1];
+	} else
+	if (((p[0] >= 'A' && p[0] <= 'Z')
+	  || (p[0] >= 'a' && p[0] <= 'z'))
+	 && p[1] == ':'
+	 && (p[2] == '\\' || p[2] == '/')) {
+		*s += 3;
+		return p[0];
+	}
+	return 0;
+}
+
+static int
+pathcmp (const char *s1, const char *s2)
+{
+	int c1, c2;
+	c1 = get_drive_letter(&s1);
+	c2 = get_drive_letter(&s2);
+	if (c1 != c2) {
+		return c1 - c2;
+	}
+	do {
+		c1 = (unsigned char)*s1++;
+		c2 = (unsigned char)*s2++;
+		if (c1 == '\\') c1 = '/';
+		if (c2 == '\\') c2 = '/';
+	} while (c1 && c1 == c2);
+	return c1 - c2;
+}
+
+#else
+
+#define pathcmp strcmp
+
+#endif
+
 char *
 cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
@@ -9944,7 +10010,7 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	offset += len;
 
 	if (show_resolved_name
-	 && strcmp (file_open_env, file_open_name)) {
+	 && pathcmp (file_open_env, file_open_name)) {
 		/* environment name is set; format: "%s ('%s' => %s)" */
 		len = 5;
 		memcpy (runtime_buffer + offset, "' => ", len);
