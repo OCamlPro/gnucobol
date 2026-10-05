@@ -2235,6 +2235,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 	}
 	if (fn->need_preprocess
 	 && (status
+	  || fn->preprocess_is_temp
 	  ||  cb_compile_level > CB_LEVEL_PREPROCESS
 	  || (cb_compile_level == CB_LEVEL_PREPROCESS
 	   && save_temps && !save_temps_dir))) {
@@ -4713,6 +4714,7 @@ process_filename (const char *filename)
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->preprocess, ".cob");
+		fn->preprocess_is_temp = 1;
 	}
 
 	/* Set translate filename */

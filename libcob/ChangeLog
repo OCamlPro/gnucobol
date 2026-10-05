@@ -1,4 +1,11 @@
 
+2026-10-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_temp_name) [!_WIN32 && !HAVE_8DOT3_FILENAMES]:
+	  include the user id in the temporary file names to avoid collisions
+	  between users, and increment the iteration counter as long as the
+	  name matches an existing file
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c [LIBXML_VERSION]: fix version check for new ABI

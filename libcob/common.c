@@ -6214,22 +6214,35 @@ cob_gettmpdir (void)
 void
 cob_temp_name (char *filename, const char *ext)
 {
+	const char *tmpdir = cob_gettmpdir ();
 	int pid = cob_sys_getpid ();
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
+	char uid_str[32] = "";
+	snprintf (uid_str, sizeof (uid_str), "%lu_", (unsigned long)getuid ());
+#else
+	const char uid_str[] = "";
+#endif
 #ifndef HAVE_8DOT3_FILENAMES
-#define TEMP_EXT_SCHEMA	"%s%ccob%d_%d%s"
-#define TEMP_SORT_SCHEMA	"%s%ccobsort%d_%d"
+#define TEMP_EXT_SCHEMA	"%s%ccob%s%d_%d%s"
+#define TEMP_SORT_SCHEMA	"%s%ccobsort%s%d_%d"
 #else
 /* 8.3 allows only short names... */
-#define TEMP_EXT_SCHEMA	"%s%cc%d_%d%s"
-#define TEMP_SORT_SCHEMA	"%s%cs%d_%d"
+#define TEMP_EXT_SCHEMA	"%s%cc%s%d_%d%s"
+#define TEMP_SORT_SCHEMA	"%s%cs%s%d_%d"
 	pid = pid % 9999;
 #endif
-	if (ext) {
-		snprintf (filename, (size_t)COB_FILE_MAX, TEMP_EXT_SCHEMA,
-			cob_gettmpdir (), SLASH_CHAR, pid, cob_temp_iteration, ext);
-	} else {
-		snprintf (filename, (size_t)COB_FILE_MAX, TEMP_SORT_SCHEMA,
-			cob_gettmpdir (), SLASH_CHAR, pid, cob_temp_iteration);
+	for (;;) {
+		if (ext) {
+			snprintf (filename, (size_t)COB_FILE_MAX, TEMP_EXT_SCHEMA,
+				  tmpdir, SLASH_CHAR, uid_str, pid, cob_temp_iteration, ext);
+		} else {
+			snprintf (filename, (size_t)COB_FILE_MAX, TEMP_SORT_SCHEMA,
+				  tmpdir, SLASH_CHAR, uid_str, pid, cob_temp_iteration);
+		}
+		if (access (filename, F_OK) != 0) {
+			break;
+		}
+		cob_temp_iteration++;
 	}
 #undef TEMP_EXT_SCHEMA
 #undef TEMP_SORT_SCHEMA
