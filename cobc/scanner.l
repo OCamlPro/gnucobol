@@ -361,7 +361,7 @@ AREA_A		"#AREA_A"\n
 		p1 = strrchr (p2, '"');
 		if (p1) {
 			*p1 = 0;
-			cb_source_file = cobc_parse_strdup (p2);
+			cb_source_file = cobc_intern_filename (p2);
 			/* FIXME: only place where strol is used, replace by cobc internal
 			          function for base 10 (found in cobc.c already) and base 16,
 			          remove from configure.ac */

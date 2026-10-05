@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -109,8 +109,8 @@ struct copy_info {
 	struct copy_info	*next;
 	struct copy_info	*prev;
 	struct list_files	*containing_files;
-	const char		*file;
-	char			*dname;
+	const char		*file;	/* file with COPY */
+	const char		*dname;	/* copybook being read */
 	struct cb_replace_list	*replacing;
 	YY_BUFFER_STATE		buffer;
 	int			line;
@@ -1216,7 +1216,6 @@ ENDIF_DIRECTIVE_STATE>{
 			cb_error (_("IF/ELIF/ELSE directive without matching END-IF"));
 		}
 		plex_nest_depth = 0;
-		cobc_free (current_copy_info->dname);
 		cobc_free (current_copy_info);
 		listing_line = 0;
 		requires_listing_line = 1;
@@ -1253,7 +1252,6 @@ ENDIF_DIRECTIVE_STATE>{
 	cobc_set_source_format (current_copy_info->source_format);
 
 	copy_stack = current_copy_info->next;
-	cobc_free (current_copy_info->dname);
 	cobc_free (current_copy_info);
 
 	/* Check whether we are back at the toplevel source file. In this case,
@@ -1303,25 +1301,32 @@ ppopen_get_file (const char *name)
 	}
 
 	/* check for recursive inclusion */
-	for (current_copy_info = copy_stack; current_copy_info; current_copy_info = current_copy_info->next) {
-		/* FIXME: for WIN32 compare with cleaning / and \ (COPY "lib/file" vs COPY "lib\file"),
-		          ideally open first, then check if we have the same physical file
-		          (would also fix recursion check for symlinked files) */
-		if (!strcmp (name, current_copy_info->dname)) {
-		struct cb_tree_common	loc;
-		for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
-			int		line;
-			if (current_copy_info->prev) {
-				line = current_copy_info->prev->line;
-			} else {
-				line = cb_source_line;
+	for (current_copy_info = copy_stack;
+		 current_copy_info;
+		 current_copy_info = current_copy_info->next) {
+		/* FIXME: for WIN32 compare with cleaning / and \ (e.g. COPY "lib/file"
+		          vs. COPY "lib\file"), ideally open first, then check if we
+				  have the same physical file; this would also fix recursion
+				  check for symlinked files) */
+		/* note: "current_copy_info->file" points to internal filename buffer,
+		   as does "name", allowing us to do a direct pointer comparison */
+		if (name == current_copy_info->dname) {
+			struct cb_tree_common	loc;
+			for (current_copy_info = current_copy_info->next;
+			     current_copy_info;
+				 current_copy_info = current_copy_info->prev) {
+				int		line;
+				if (current_copy_info->prev) {
+					line = current_copy_info->prev->line;
+				} else {
+					line = cb_source_line;
+				}
+				cb_inclusion_note (current_copy_info->dname, line);
 			}
-			cb_inclusion_note (current_copy_info->dname, line);
-		}
-		loc.source_file = name;
-		loc.source_line = -1;
-		cb_error_x (&loc, _("recursive inclusion"));
-		return 0;
+			loc.source_file = name;
+			loc.source_line = -1;
+			cb_error_x (&loc, _("recursive inclusion"));
+			return 0;
 		}
 	}
 
@@ -1345,7 +1350,8 @@ ppopen_get_file (const char *name)
 		const int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
 
 		/* check for and skip UTF-8 BOM */
-		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
+		if (nread >= 3
+		 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
 			fseek_to = 3;
 		} else
 		/* check for binary */
@@ -1367,11 +1373,13 @@ ppopen_get_file (const char *name)
 				/* unsupported encoding */
 				fclose (ppin);
 				ppin = NULL;
-				cb_note (COB_WARNOPT_NONE, 0, _("try \"iconv -f %s -t UTF-8 '%s' -o 'out%c%s'"),
+				cb_note (COB_WARNOPT_NONE, 0,
+					_("try \"iconv -f %s -t UTF-8 '%s' -o 'out%c%s'"),
 					enc, name, SLASH_CHAR, name);
 				if (cb_source_line == 0) {
 					/* if this is a "main" source, terminate with an error */
-					cobc_terminate_exit (name, _("source file has unsupported encoding"));
+					cobc_terminate_exit (name,
+						_("source file has unsupported encoding"));
 				}
 				cb_error ("%s: %s", name, _("source file has unsupported encoding"));
 				return 0;
@@ -1412,7 +1420,8 @@ ppopen_get_file (const char *name)
 		/* try to deduce source format */
 		if (source_format == CB_FORMAT_AUTO) {
 			unsigned char pos = fseek_to;
-			/* if indicator is wrong on first line with source, switch to free format */
+			/* if indicator is wrong on first line with source,
+			   directly switch to free format */
 			/* skip empty lines */
 			char last_pos_7 = ' ';
 			unsigned char amount_of_0a_seen = 0;
@@ -1462,7 +1471,6 @@ int
 ppopen (const char *name, struct cb_replace_list *replacing_list)
 {
 	struct copy_info	*current_copy_info;
-	char			*dname;
 	struct cb_replace_list *current_replace_list;
 
 	if (ppin) {
@@ -1470,6 +1478,9 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 			ungetc ('\n', ppin);
 		}
 	}
+
+	/* get a name with validated single-storage from our filename list */
+	name = cobc_intern_filename (name);
 
 	/* open copy/source file, or use stdin */
 	ppin = ppopen_get_file (name);
@@ -1488,7 +1499,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 		cobc_set_listing_header_code ();
 		/* Save name for listing */
 		if (!cb_current_file->name) {
-			cb_current_file->name = cobc_strdup (name);
+			cb_current_file->name = name;
 		}
 		cb_current_file->copy_line = cb_source_line;
 	}
@@ -1534,22 +1545,10 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 		}
 	}
 
-	dname = cobc_strdup (name);
-	current_copy_info->dname = dname;
-#if 0	/* Simon: better adjust the output where needed */
-	{
-		char *s = dname;
-		while (*s) {
-			if (*s == '\\') {
-				*s = '/';
-			}
-			s++;
-		}
-	}
-#endif
+	current_copy_info->dname = name;
 
 	/* switch to new buffer */
-	switch_to_buffer (1, current_copy_info->dname, yy_create_buffer (ppin, YY_BUF_SIZE));
+	switch_to_buffer (1, name, yy_create_buffer (ppin, YY_BUF_SIZE));
 	indicator_error = 0;
 
 	/* postponed errror handling */
@@ -2004,9 +2003,6 @@ plex_call_destroy (void)
 	while (copy_stack) {
 		ci = copy_stack;
 		copy_stack = ci->next;
-		if (ci->dname) {
-			cobc_free (ci->dname);
-		}
 		cobc_free (ci);
 	}
 
@@ -2174,8 +2170,8 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 	/* Reset file/line */
 	cb_source_line = line;
 	cb_source_file = file;
-	
-    output_line_directive (yyout);
+
+	output_line_directive (yyout);
 	/* Switch buffer */
 	yy_switch_to_buffer (buffer);
 }

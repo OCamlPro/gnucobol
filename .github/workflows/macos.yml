@@ -59,7 +59,7 @@ jobs:
         if: ${{ matrix.isam == 'vbisam' &&
                 steps.restore-vbisam.outputs.cache-hit != 'true' }}
         run: |
-          curl -LO http://inglenet.ca/Products/GnuCOBOL/vbisam-2.2.tar.Z
+          curl -LO http://inglenet.com/Products/GnuCOBOL/vbisam-2.2.tar.Z
           mkdir vbisam && tar -xvzf vbisam-2.2.tar.Z -C vbisam --strip-components=1
           cd vbisam
           ./configure --prefix=/opt/vbisam \
