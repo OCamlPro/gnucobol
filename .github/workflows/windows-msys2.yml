@@ -150,7 +150,7 @@ jobs:
           # command it provides, to workaround a diff bug under the MSYS2 CI ;
           # this no longer seems necessary today
           # PATH="$PATH:/c/Program Files/Git/usr/bin"
-          ../configure $CFGOPT CFLAGS=-std=c17
+          ../configure $CFGOPT CFLAGS=-std=gnu17
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -190,23 +190,8 @@ jobs:
         run: |
           cd tests/testsuite.src
 
-          # Skip test as it sometimes works and sometimes not...
-          # sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
-
-          # The following 13 fail (identical to MSYS1)
-          # Note LINE SEQUENTIAL one Record works with the clang64 environment
+          # The following 2 fail (identical to MSYS1)
           sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[OUTPUT on INDEXED file to missing directory\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED undeclared keys\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[PIPE I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[STDOUT STDERR I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[SEQUENTIAL\/RELATIVE COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[OPEN OUTPUT COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[MF io status (indexed)\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[Test MF Status (sequential)\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL\])/a AT_SKIP_IF(\[true\])' run_file.at
 
       - name: Run testsuite
