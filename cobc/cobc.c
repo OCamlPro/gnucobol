@@ -418,7 +418,7 @@ static char		*cobc_include;		/* -I... */
 static char		*cobc_ldflags;		/* -Q / COB_LDFLAGS */
 
 static char		*cb_depend_target = NULL;	/* -MT <target>... */
-static const char       *cb_depend_filename = NULL;    /* -MF <file> */
+static char       *cb_depend_filename = NULL;    /* -MF <file> */
 
 static size_t		cobc_cflags_size;
 static size_t		cobc_libs_size;
@@ -3119,19 +3119,18 @@ add_depend_escape_target (const char *s)
 	}
 }
 
-static const char *
+static char *
 file_replace_extension (const char *file, const char *ext)
 {
 	int i;
-	const int len = strlen (file);
-	const int extlen = strlen (ext);
-	for (i=len; i>0; i--) {
+	for (i = strlen (file); i > 0; i--) {
 		const char c = file[i];
 		if (c == '.') {
-			const int newlen = i+extlen+1;
-			char *new_file = cobc_malloc(newlen);
+			const int extlen = strlen (ext);
+			const int newlen = i + extlen + 1;
+			char *new_file = cobc_malloc (newlen);
 			memcpy (new_file, file, i);
-			memcpy (new_file+i, ext, extlen+1);
+			memcpy (new_file+i, ext, extlen + 1);
 			return new_file;
 		}
 		if (c == '/') {
