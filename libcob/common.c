@@ -10258,12 +10258,8 @@ cob_common_init (void *setptr)
 
 #ifdef	_WIN32
 	/* Allows running tests under Win */
-	{
-		if (setptr) {
-			/* termio initialization does this when settings is initialized */
-			return;
-		}
-
+	/* note: termio initialization does this when settings is initialized */
+	if (!setptr) {
 		int use_unix_lf = 0;
 		char *s = getenv ("COB_UNIX_LF");
 
