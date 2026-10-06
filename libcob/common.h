@@ -801,7 +801,8 @@ enum cob_fatal_error {
 	COB_FERROR_FUNCTION,
 	COB_FERROR_FREE,
 	COB_FERROR_XML,
-	COB_FERROR_JSON
+	COB_FERROR_JSON,
+	COB_FERROR_FATAL_EC,
 };
 
 /* Exception identifier enumeration */
@@ -1620,8 +1621,8 @@ typedef struct __cob_global {
 									   cob_module structure within cob_module_enter().
 									*/
 	int			cob_initial_external;	/* First external ref */
-	unsigned int		last_exception_line;		/* Last exception: Program source line */
-	unsigned int		cob_got_exception;	/* Exception active (see last_exception) */
+	unsigned int		last_exception_line;	/* Last exception: Program source line */
+	int			cob_got_exception;	/* Exception active (see last_exception) */
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
 												/* screenio / termio */
@@ -1634,6 +1635,12 @@ typedef struct __cob_global {
 	unsigned int		cob_stmt_exception;	/* Statement has 'On Exception' */
 
 	unsigned int		cob_debugging_mode;	/* activation of USE ON DEBUGGING code */
+
+	/* NOTE: The following fields should be reordered in GC 4, as they were added here to avoid
+	 * breaking already built GC 3 binaries. */
+	int			cob_exception_id;	/* current exception id, to use with internal
+							   exceptions table */
+	unsigned int		last_exception_fatal;	/* Last exception: is fatal */
 #if 0	/* consider addition for 4.x, possibly with getting rid of last_exception_line */
 	const char		*last_exception_source;	/* Last exception: Source */
 #endif
@@ -1682,6 +1689,8 @@ COB_EXPIMP void		print_runtime_conf	(void);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
+COB_EXPIMP int		cob_last_exception_fatal (void);
+COB_EXPIMP void		cob_reset_exception	(void);
 
 COB_EXPIMP int		cob_last_exit_code	(void);
 COB_EXPIMP const char*	cob_last_runtime_error	(void);
@@ -2086,6 +2095,7 @@ COB_EXPIMP cob_s64_t	cob_s64_pow (cob_s64_t, cob_s64_t);
 /* Functions in call.c */
 
 DECLNORET COB_EXPIMP void	cob_call_error		(void) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_fatal_exception	(const int) COB_A_NORETURN;
 COB_EXPIMP void		cob_field_constant (cob_field *f, cob_field *t, cob_field_attr *a, void *d);
 
 COB_EXPIMP void		cob_set_cancel		(cob_module *);
