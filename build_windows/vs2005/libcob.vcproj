@@ -200,6 +200,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libcob\cobargv.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libcob\cobgetopt.c"
 				>
 			</File>

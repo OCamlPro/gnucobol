@@ -3177,7 +3177,6 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 #endif
-
 	/* First run of getopt: handle std/conf and all listing options, along
 	   with grouping options that should not override other entries (as --debug)
 	   We need to postpone single configuration flags as we need
@@ -3463,7 +3462,6 @@ process_command_line (const int argc, char **argv)
 			res = gentable (stdout, code_ebcdic, code_ascii, reversible);
 			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
 		}
-
 		default:
 			/* as we postpone most options simply skip everything other here */
 			break;
@@ -3673,7 +3671,7 @@ process_command_line (const int argc, char **argv)
 			/* -g : Generate C debug code */
 			/* These options were all processed in the first getopt-run */
 			break;
-
+			
 		case '$':
 			/* -std=<xx> : Specify dialect */
 		case '&':
@@ -9609,6 +9607,7 @@ main (int argc, char **argv)
 	cb_config_text_column = 72;
 
 	/* Process command line arguments */
+	cob_expandargv (&argc, &argv);
 	iargs = process_command_line (argc, argv);
 
 	if (fatal_startup_error) {
