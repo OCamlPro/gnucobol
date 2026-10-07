@@ -1,4 +1,8 @@
 
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c [LIBXML_VERSION]: fix version check for new ABI
+
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function
@@ -7,6 +11,16 @@
 	  that setjmp / longjmp can be executed only once as a user may store
 	  multiple places and also may jump to them multiple times - it is up
 	  to the user to ensure a correct stack (= never jump "forward")
+	* common.c (cob_sig_handler), coblocal.h: full output to configured
+	  stderr stream, fix crash when cob_init was not called (for example
+	  signal handler registered by cobc)
+
+2026-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (pre_load_once): extracted from cob_init_call
+	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
+	  a global scope request, independent of COB_LOAD_GLOBAL setting
+	* common.c: minimal refactor
 
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
