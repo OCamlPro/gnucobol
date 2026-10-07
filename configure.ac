@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -2279,15 +2279,11 @@ COB_CONFIG_DIR="$datadir/$PACKAGE_TARNAME/config"
 COB_COPY_DIR="$datadir/$PACKAGE_TARNAME/copy"
 COB_LIBRARY_PATH="$libdir/$PACKAGE_TARNAME"
 COB_EXE_EXT="$EXEEXT"
-if test "$COB_EXE_EXT" = ".exe"; then
+if test "$COB_EXE_EXT" = ".exe" -o "$COB_EXE_EXT" = ".EXE"; then
 	COB_MODULE_EXT="dll"
 else
-	if test "$COB_EXE_EXT" = ".exe" -o "$COB_EXE_EXT" = ".EXE"; then
-		COB_MODULE_EXT="dll"
-	else
-		# normal case...
-		COB_MODULE_EXT=$(echo "$acl_cv_shlibext" | sed -e 's/dll\.a/dll/')
-	fi
+	# normal case...
+	COB_MODULE_EXT=$(echo "$acl_cv_shlibext" | sed -e 's/dll\.a/dll/')
 fi
 COB_OBJECT_EXT="$OBJEXT"
 LIBS="$curr_libs"

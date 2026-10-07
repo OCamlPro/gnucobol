@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2020, 2022-2025 Free Software Foundation, Inc.
+   Copyright (C) 2018-2020, 2022-2026 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -41,7 +41,7 @@
 #include <libxml/tree.h>
 #include <libxml/SAX2.h>
 
-#if LIBXML_VERSION >= 21200
+#if LIBXML_VERSION >= 21400
 #define LIBXML_CONST_ERROR_PTR					const xmlError *
 #define LIBXML_CTXT_GET_ENCODING(ctxt) 			xmlCtxtGetDeclaredEncoding(ctxt)
 #define LIBXML_CTXT_GET_STANDALONE(ctxt) 		xmlCtxtGetStandalone(ctxt)

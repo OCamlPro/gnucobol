@@ -11097,7 +11097,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
 
-	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
+	/* TODO: most of the "invalid" checks should possibly be handled in the parser */
 
 	loc = src->source_line ? src : dst;
 	is_numeric_edited = 0;
@@ -11164,7 +11164,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 					}
 					break;
 				}
-				return -1; /* error message raised already*/
+				return -1; /* error message raised already */
 			}
 		} else if (src == cb_zero) {
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHABETIC) {
@@ -11195,6 +11195,14 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				if (cb_move_nonnumlit_to_numeric_is_zero) {
 					goto movezero;
 				}
+			}
+		} else if (src == cb_null) {
+			/* note: while not documented MF+ACU may compile that for
+			   numeric values --> then adjust accordingly */
+			if (CB_TREE_CATEGORY (dst) != CB_CATEGORY_DATA_POINTER
+			 && CB_TREE_CATEGORY (dst) != CB_CATEGORY_PROGRAM_POINTER
+			 && CB_TREE_CATEGORY (dst) != CB_CATEGORY_OBJECT_REFERENCE) {
+				goto invalid;
 			}
 		}
 		break;

@@ -106,6 +106,73 @@ print_error_prefix (const char *file, int line, const char *prefix)
 	}
 }
 
+#define OFFSET_CACHE_SIZE	127
+
+/* Skip n complete lines. Returns 0 if EOF came first. */
+static int
+skip_lines (FILE *fd, const char *filename, int n)
+{
+	/* keep positional offsets for each file, that will catch
+	   _most_ cases (not the "defined here" in the same source),
+	   preventing the search of the start line for each file */
+	struct cache_entry {
+		const char *name;
+		int         line;
+		long        off;
+	};
+
+	static struct cache_entry	offset_cache[OFFSET_CACHE_SIZE];
+
+	char tmp[COB_MINI_BUFF];
+	struct cache_entry *cache = NULL;
+	const int target = n + 1;
+
+	if (filename) {
+		int slot = 0;
+		/* entries are filled front to back, so the first unused one ends
+		   the search; when all are used the last one gets recycled */
+		while (slot < OFFSET_CACHE_SIZE) {
+			const char *slot_name = offset_cache[slot].name;
+			if (slot_name == filename
+			 || slot_name == NULL) {
+				cache = &offset_cache[slot];
+				break;
+			}
+			slot++;
+		}
+		if (slot == OFFSET_CACHE_SIZE) {
+			cache = &offset_cache[0];
+		} else	/* slot found, resume from last n + offset */
+		if (cache->name == filename
+		 && cache->line <= target
+		 && fseek (fd, cache->off, SEEK_SET) == 0) {
+			n -= cache->line - 1;
+		}
+	}
+
+	while (n > 0) {
+		size_t len;
+		if (!fgets (tmp, sizeof (tmp), fd)) {
+			return 0;
+		}
+		len = strlen (tmp);
+		if (len != 0 && tmp[len - 1] == '\n') {
+			n--;	/* otherwise: line longer than tmp, keep going */
+		}
+	}
+
+	if (cache) {
+		long off = ftell (fd);
+		if (off >= 0) {
+			cache->name = filename;
+			cache->line = target;
+			cache->off  = off;
+		}
+	}
+
+	return 1;
+}
+
 /* Display a context around the location of the error/warning,
    only used if cb_diagnostics_show_caret is true
 
@@ -113,58 +180,95 @@ print_error_prefix (const char *file, int line, const char *prefix)
    we only have the line. Since we directly use the file, source is printed
    before any REPLACE. */
 static void
-diagnostics_show_caret (FILE *fd, const int line)
+diagnostics_show_caret (FILE *fd, const char *filename, const int line)
 {
-	#define CARET_MAX_COLS 73 + 5
-	#define CARET_CONTEXT_LINES 2
-	const int line_start = line > CARET_CONTEXT_LINES ? line - CARET_CONTEXT_LINES : 1;
-	const int line_end = line + CARET_CONTEXT_LINES;
-	const int max_pos = cb_diagnostics_show_line_numbers ? CARET_MAX_COLS - 5 : CARET_MAX_COLS;
-	unsigned char buffer[ CARET_MAX_COLS + 1 ];
-	int line_pos = 1;
-	int char_pos = 0;
-	int c = 0;
-	while (c != EOF) {
-		c = fgetc (fd);
-		buffer[char_pos] = c;
-		if (c == '\n' || c == EOF || char_pos == max_pos) {
-			if (line_pos >= line_start) {
-				/* prefix */
-				if (cb_diagnostics_show_line_numbers) {
-					fprintf (stderr, "%5d %c ", line_pos,
-						line == line_pos ? '>' : '|');
-				} else {
-					fprintf (stderr, " %c ",
-						line == line_pos ? '>' : ' ');
-				}
-				/* drop trailing whitespace from buffer */
-				while (char_pos >= 0
-				    && (buffer[char_pos] == ' '
-				     || buffer[char_pos] == '\t'
-				     || buffer[char_pos] == '\r'
-				     || buffer[char_pos] == '\n'
-				     || buffer[char_pos] == (unsigned char)EOF
-				     || char_pos == max_pos)) {
-					buffer[char_pos--] = 0;
-				}
-				/* print it */
-				fprintf (stderr, "%s%s\n",
-					 buffer,
-					 c == '\n' ? "" :
-					 c == EOF ? "<EOF>" : "..");
-			}
-			if (line_pos++ >= line_end) {
-				break;
-			}
-			/* skip end of line too long */
-			while (c != '\n' && c != EOF) {
-				c = fgetc (fd);
-			}
-			char_pos = buffer[0] = 0;
+	#define CARET_MAX_COLS		(73 + 5)
+	#define CARET_CONTEXT_LINES	2
+
+	char buffer[CARET_MAX_COLS + 2];
+
+	const int line_end  	= line + CARET_CONTEXT_LINES;
+	int line_start  		= line > CARET_CONTEXT_LINES
+	                     	? line - CARET_CONTEXT_LINES : 1;
+	const int max_pos		= cb_diagnostics_show_line_numbers
+	                     	? CARET_MAX_COLS - 5 : CARET_MAX_COLS;
+
+	/* the block printed last: everything up to last_end is already on screen */
+	static const char *last_file;
+	static int         last_line;
+	static int         last_end;
+	int printed = 0;
+
+	int line_pos;
+
+	/* don't repeat front context that the previous block of the same file
+	   has just printed; the line itself and what follows are always shown */
+	if (line > 0 && filename == last_file
+	 && line >= last_line && line_start <= last_end) {
+		line_start = last_end < line ? last_end + 1 : line;
+	}
+
+	/* everything before the context: no per-character work */
+	if (!skip_lines (fd, filename, line_start - 1)) {
+		return;
+	}
+
+	for (line_pos = line_start; line_pos <= line_end; line_pos++) {
+		const char *tail;
+		int stop;
+
+		/* note: we can use fgets here and in skip_lines as ppopen_get_file
+		   already verified that we don't run in UTF16 or UTF32, so we expect
+		   no 0x00 in the source file */
+
+		if (!fgets (buffer, max_pos + 2, fd)) {
+			/* EOF - at "start" of line (or unspecified reading error) */
+			buffer[0] = 0;
+			tail = "<EOF>";
+			stop = 1;
 		} else {
-			char_pos++;
+			int len = (int)strlen (buffer);	/* checked above: is at least 1, the \n */
+			const char has_nl = buffer[len - 1] == '\n';
+			/* drop trailing whitespace */
+			while ((buffer[len - 1] == ' ' || buffer[len - 1] == '\t'
+			     || buffer[len - 1] == '\r' || buffer[len - 1] == '\n')) {
+				buffer[--len] = 0;
+				if (len == 0) break;
+			}
+			if (has_nl) {
+				/* complete line */
+				tail = "";
+				stop = 0;
+			} else if (len > max_pos) {
+				/* too long ... */
+				buffer[max_pos] = 0;
+				len = max_pos;
+				tail = " ...";
+				/* ... so drop rest of line */
+				stop = !skip_lines (fd, NULL, 1);
+			} else {
+				/* last line, newline missing */
+				tail = "<EOF>";
+				stop = 1;
+			}
+		}
+		if (cb_diagnostics_show_line_numbers) {
+			fprintf (stderr, "%5d %c %s%s\n", line_pos,
+				 line == line_pos ? '>' : '|', buffer, tail);
+		} else {
+			fprintf (stderr, " %c %s%s\n",
+				 line == line_pos ? '>' : ' ', buffer, tail);
+		}
+		printed = line_pos;
+		if (stop) {
+			break;
 		}
 	}
+
+	/* store for next round */
+	last_file = filename;
+	last_line = line;
+	last_end  = printed;
 }
 
 static void
@@ -246,7 +350,7 @@ print_error (const char *file, int line, enum cb_error_kind kind,
 		 || last_caret_line != line) {
 			FILE *fd = fopen (file, "r");
 			if (fd) {
-				diagnostics_show_caret (fd, line);
+				diagnostics_show_caret (fd, file, line);
 				fclose (fd);
 			}
 			/* remember last printed location to avoid reprinting it */
@@ -342,7 +446,7 @@ cb_add_error_to_listing (const char *file, int line,
 		err = cobc_malloc (sizeof (struct list_error));
 		err->line = line;
 		if (file) {
-			err->file = cobc_strdup (file);
+			err->file = file;
 		} else {
 			err->file = NULL;
 		}
@@ -356,11 +460,10 @@ cb_add_error_to_listing (const char *file, int line,
 		/* set correct listing entry for this file */
 		cfile = cb_current_file;
 		if (!cfile->name
-		 || (file && strcmp (cfile->name, file))) {
+		 || (file != cfile->name)) {
 			cfile = cfile->copy_head;
 			while (cfile) {
-				if (file && cfile->name
-				 && !strcmp (cfile->name, file)) {
+				if (file == cfile->name) {
 					break;
 				}
 				cfile = cfile->next;
@@ -387,7 +490,7 @@ cb_add_error_to_listing (const char *file, int line,
 			struct list_error* old_err;
 			for (old_err = cfile->err_head; old_err; old_err = old_err->next) {
 				if (!old_err
-				 || strcmp (old_err->file, err->file)) {
+				 || old_err->file == err->file) {
 					continue;
 				}
 				if (old_err->line > err->line) {
