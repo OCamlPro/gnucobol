@@ -97,11 +97,13 @@ static mpz_t		cob_mpzt;
 
 static mpf_t		cob_mpft;
 static mpf_t		cob_mpft2;
+static mpf_t		cob_mpft3;
 static mpf_t		cob_mpft_get;
 
 static mpf_t		cob_pi;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
+static mpf_t		cob_log_two;
 static mpf_t		cob_log_ten;
 static int		set_cob_pi;
 static int		set_cob_sqrt_two;
@@ -462,6 +464,11 @@ setup_cob_log_half (void)
 
 	mpf_init2 (cob_log_half, COB_LOG_HALF_LEN);
 	mpf_set_str (cob_log_half, cob_log_half_str, 10);
+
+	mpf_init2 (cob_log_two, COB_LOG_HALF_LEN);
+	mpf_set_str (cob_log_two, cob_log_half_str, 10);
+	mpf_neg (cob_log_two, cob_log_two);
+
 	set_cob_log_half = 1;
 }
 
@@ -852,128 +859,256 @@ cob_check_numval_f (const cob_field *srcfield)
 	return 0;
 }
 
-/* Trigonometric formulae (formulas?) from Wikipedia */
-
-
-/* Exp function */
-/* e ^ x = {n = 0, ...} ( (x ^ n) / n! ) */
-
-static void
-cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
+/*                                                                       */
+/* This function reduce the argument used for cob_mpf_exp in two ways:   */
+/* 1) compute decompose abs(arg) = k*ln(2) + r where k is integer        */
+/* 2) divide r by 2^COB_EXP_DIVIDE                                       */
+/* This argument reduction allow the exp Taylor serie to converge faster */
+/*                                                                       */
+static unsigned long
+cob_mpf_reduce_exp_arg(mpf_t remainder, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3;
-	mpf_t			dst_temp;
-	cob_sli_t		expon, i;
-	cob_uli_t		n;
-	cob_u32_t		is_negative;
-
-
-	mpf_init2 (dst_temp, COB_MPF_PREC);
+	mpf_t vf1, nb_ln_2;
+	unsigned long n;
 
 	mpf_init2 (vf1, COB_MPF_PREC);
+	mpf_init2 (nb_ln_2, 128);
+
 	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_set_ui (vf2, 1UL);
-	mpf_init2 (vf3, COB_MPF_PREC);
 
-	mpf_set_ui (dst_temp, 1UL);
+	mpf_abs (vf1, vf1);
 
-	if (mpf_sgn (vf1) < 0) {
-		mpf_neg (vf1, vf1);
-		is_negative = 1;
+	/* 1. First Argument Reduction = k*ln2 + r ==> |r| < ln2/2  */
+	/* k = trunc(x / ln2)  via multiplication par inv_ln2 */
+	mpf_div (nb_ln_2, vf1, cob_log_two);
+	n = mpf_get_ui (nb_ln_2);
+
+	if (n>0) {
+		/* r = x - k*ln2   */
+		mpf_mul_ui (remainder, cob_log_two, n);
+		mpf_sub (remainder, vf1, remainder); 
 	} else {
-		is_negative = 0;
+		mpf_set (remainder, vf1); 
 	}
 
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon > 0) {
-		mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
-	}
+	/* 2. Second Réduction : r /= 2^COB_EXP_DIVIDE --- */
+	mpf_div_2exp (remainder, remainder, COB_EXP_DIVIDE);
 
-	n = 1;
-	do {
-		mpf_mul (vf2, vf2, vf1);
-		mpf_div_ui (vf2, vf2, (cob_uli_t)n);
-		mpf_set (vf3, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf3, dst_temp, COB_MPF_CUTOFF));
-
-	for (i = 0; i < expon; ++i) {
-		mpf_mul (dst_temp, dst_temp, dst_temp);
-	}
-
-	if (is_negative) {
-		mpf_ui_div (dst_temp, 1UL, dst_temp);
-	}
-
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
-
-	mpf_clear (vf3);
-	mpf_clear (vf2);
 	mpf_clear (vf1);
+	mpf_clear (nb_ln_2);
+
+	return n;
 }
 
-/* Log function */
-/* logn (x) = {n = 1, ...} ( ((1 - x) ^ n) / n ) */
-
+/* Exp Function:                                                         */
+/* Compute the exp of a number based on this equality:                   */
+/*          EXP( X ) = SINH(X) + SQRT (1 + ( SINH(X)^2) )                */
+/* We use the Taylors series of SINH as it contains only the odd power   */
+/* and then converge faster                                              */
+/*                                                                       */
 static void
-cob_mpf_log (mpf_t dst_val, const mpf_t src_val)
+cob_mpf_exp(mpf_t result, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3, vf4;
-	mpf_t			dst_temp;
-	cob_sli_t		expon;
-	cob_uli_t		n;
+	mpf_t r;
+	mpf_t vf2;
+	mpf_t vf3;
+	mpf_t dst_temp;
+	unsigned long n;
 
+	mpf_init2(r, COB_MPF_PREC);
+	mpf_init2(vf2, COB_MPF_CUTOFF+8);
+	mpf_init2(vf3, COB_MPF_CUTOFF+8);
+	mpf_init2(dst_temp, COB_MPF_CUTOFF+8);
 
+	if (!set_cob_log_half) setup_cob_log_half ();
 
+	const int k_sgn = mpf_sgn (src_val);
+
+	/* reduce arg to accelerate serie convergence */
+	const unsigned long nb_ln_2 = cob_mpf_reduce_exp_arg (r, src_val);
+
+        /* init first term */
+        mpf_set (vf2, r);
+        mpf_set (dst_temp, r);
+
+        /* get square of x */
+        mpf_mul (r, r, r);
+
+        n = 3;
+        do {
+                const cob_uli_t j = (n-1UL) * n;
+                mpf_set (vf3, dst_temp);
+
+                mpf_mul (vf2, vf2, r);
+                mpf_div_ui (vf2, vf2, (unsigned long)j);
+                mpf_add (dst_temp, dst_temp, vf2);
+
+                n += 2 ;
+        } while (!mpf_eq (vf3, dst_temp, COB_MPF_CUTOFF));
+
+        /* Compute EXP fron SINH */
+        /* EXP(x) =  SINH(x) + SQRT( 1 + (SINH(x) ^ 2) ) */
+        mpf_mul (vf3, dst_temp, dst_temp);
+        mpf_add_ui (vf3, vf3, 1UL);
+        mpf_sqrt (vf3, vf3);
+        mpf_add (vf3, vf3, dst_temp);
+
+	/* Reconstruct  exp(r^(2^COB_EXP_DIVIDE)) */
+	for (n = 0; n < COB_EXP_DIVIDE; n++) {
+		mpf_mul (vf3, vf3, vf3);
+	}
+	
+	/* Reconstruct  exp(src_val)  */
+	if (k_sgn == 0) {
+                mpf_set (r, vf3);
+        }
+        else {
+                if (k_sgn == -1) {
+                        mpf_ui_div (vf3, 1UL, vf3);
+                        if (nb_ln_2 > 0) {
+                                mpf_div_2exp (r, vf3, nb_ln_2);
+                        }
+                        else {
+                                mpf_set (r, vf3);
+                        }
+                }
+                else {
+                        if (nb_ln_2 > 0) {
+                                mpf_mul_2exp (r, vf3, nb_ln_2);
+                        }
+                        else {
+                                mpf_set (r, vf3);
+                        }
+                }
+        }
+
+	mpf_set (result, r);
+
+	mpf_clear (r);
+	mpf_clear (vf2);
+	mpf_clear (vf3);
+	mpf_clear (dst_temp);
+
+	return;
+}
+
+/* 
+Natural Log function 
+
+	we use ln( ( x+1 ) / ( x-1 ) )  = ln(1+x) - ln(1-x)
+	        x is in [1/2;1[
+
+ 	as     ln( (x-1) )  =  -x - (x^2)/2 - (x^3)/3 ...
+        and    ln( (x+1) )  =   x - (x^2)/2 + (x^3)/3 ...  
+
+	by subtracting the two series the even power are canceled
+	and the series become 2 * ( x + (x^3)/3 + (x^5)/5 ...
+*/
+static void
+cob_mpf_log (mpf_t dst_val, const mpf_t src_val) 
+{
+	long int expon ;
+	unsigned long int i ;
+	mpf_t temp ;
+	mpf_t mantissa    ;
+	mpf_t mantissa_square    ;
+	mpf_t term  ;
+	mpf_t power_m  ;
+	
 	if (mpf_sgn (src_val) <= 0 || !mpf_cmp_ui (src_val, 1UL)) {
 		mpf_set_ui (dst_val, 0UL);
 		return;
 	}
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
 	if (!set_cob_log_half) setup_cob_log_half ();
 
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_set_si (vf3, -1L);
-	mpf_init2 (vf4, COB_MPF_PREC);
+	mpf_init2 (mantissa,COB_MPF_PREC);
+	mpf_init2 (temp,COB_MPF_CUTOFF+32);
+	mpf_init2 (term,COB_MPF_CUTOFF+32);
+	mpf_init2 (power_m,COB_MPF_CUTOFF+32);
+	mpf_init2 (mantissa_square,COB_MPF_CUTOFF+32);
 
-	mpf_set_ui (dst_temp, 0UL);
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon != 0) {
-		mpf_set (dst_temp, cob_log_half);
-		if (expon > 0) {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)expon);
-			mpf_neg (dst_temp, dst_temp);
-			mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
-		} else {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)-expon);
-			mpf_mul_2exp (vf1, vf1, (cob_uli_t)-expon);
+	/* compute expon and mantissa as src_val = mantissa * 2^expon */
+	/* so ln(src_val) = ln(mantissa) + expon*ln(2)     */
+	mpf_get_d_2exp (&expon, src_val); 
+
+	/* we need to calulate mantissa in gmp format */
+	if (expon != 0) { 
+		if (expon > 0) { 
+
+			/* src_val / 2^expon if expon > 0 */
+			mpf_div_2exp (mantissa, src_val, (unsigned long) expon);
+
+			/* dst_val <-- expon * ln(2) */
+			mpf_mul_ui (dst_val, cob_log_two, (unsigned long) expon);
+		}
+		else {
+			/* src_val / 2^expon <==> src_val * 2^(-expon) if expon < 0 */
+			mpf_mul_2exp (mantissa, src_val, -expon);
+
+			/* dst_val <-- expon * ln(2) */
+			mpf_mul_ui (dst_val, cob_log_half, -expon);
 		}
 	}
-	mpf_ui_sub (vf1, 1UL, vf1);
+	else {
+		mpf_set (mantissa, src_val);
+		mpf_set_ui (dst_val, 0L);
+	}
+        /*
+                if x = (y+1)/(y-1) ==>  y = (x-1) / (x+1)
 
-	n = 1;
-	do {
-		mpf_mul (vf3, vf3, vf1);
-		mpf_div_ui (vf2, vf3, n);
-		mpf_set (vf4, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf4, dst_temp, COB_MPF_CUTOFF));
+		The closer x is to 1 the closer y will be to 0
+		as x is in [1/2;1[ by square rooting 4 times
+		we get a value closer to 1 .
+		The result should be then multiplied by 16 to
+		compensate the square rooting and again by 2 
+		as the series is 2 * ( x + (x^3)/3 + (x^5)/5 
+	        we so multiply the serie by 32	
+        */
+	mpf_sqrt (mantissa, mantissa);
+	mpf_sqrt (mantissa, mantissa);
+	mpf_sqrt (mantissa, mantissa);
+	mpf_sqrt (mantissa, mantissa);
 
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
+	/* compute precise mantissa ( y-1 ) / (y+1)  */
+	mpf_add_ui (term, mantissa, 1UL);
+	mpf_sub_ui (mantissa, mantissa, 1UL);
+	mpf_div (mantissa, mantissa, term);
+	
+	/* compute first term and add it to final value */
+	mpf_mul_ui (temp, mantissa, 32UL); 
+	mpf_add (dst_val, dst_val, temp);
 
-	mpf_clear (vf4);
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	/* init power of mantissa to mantissa^2  */
+	mpf_mul (mantissa_square, mantissa, mantissa); 
+
+	/* init first term of the serie */
+	mpf_set (power_m, mantissa);
+
+	i = 3;
+
+	mpf_set_ui (mantissa, 0UL); /* reuse mantissa as sum of serie */
+	do  {
+		mpf_set (temp, mantissa);
+
+		mpf_mul (power_m, power_m, mantissa_square);
+		mpf_div_ui (term, power_m, i);
+
+		mpf_add (mantissa, mantissa, term);
+		i += 2;
+
+	} while (!mpf_eq (temp, mantissa , COB_MPF_CUTOFF) );
+
+	mpf_mul_ui (mantissa, mantissa, 32UL);
+
+	mpf_add (dst_val, dst_val, mantissa);
+
+	mpf_clear (term);
+	mpf_clear (power_m);
+	mpf_clear (mantissa);
+	mpf_clear (temp);
+	mpf_clear (mantissa_square);
+
 }
 
 /* Log10 function */
@@ -3157,99 +3292,150 @@ cob_switch_value (const int id)
 void
 cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 {
-	cob_uli_t		n;
-	const int		sign = mpz_sgn (pd1->value);
+	int negat_result = 0;
 
-	if (unlikely (pd1->scale == COB_DECIMAL_NAN)) {
+	if (unlikely(pd1->scale == COB_DECIMAL_NAN)) {
 		return;
 	}
-	if (unlikely (pd2->scale == COB_DECIMAL_NAN)) {
+	if (unlikely(pd2->scale == COB_DECIMAL_NAN)) {
 		pd1->scale = COB_DECIMAL_NAN;
 		return;
 	}
 
-	if (mpz_sgn (pd2->value) == 0) {
-		/* Exponent is zero */
-		if (sign == 0) {
-			/* 0 ^ 0 */
-			cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		}
-		mpz_set_ui (pd1->value, 1UL);
-		pd1->scale = 0;
-		return;
-	}
-	if (sign == 0) {
-		/* Value is zero */
-		pd1->scale = 0;
-		return;
-	}
-
 	cob_trim_decimal (pd2);
+	cob_trim_decimal (pd1);
 
-	if (sign == -1 && pd2->scale) {
-		/* Negative exponent and non-integer power */
+	const int sign_nbr = mpz_sgn (pd1->value);
+	const int sign_exp = mpz_sgn (pd2->value);
+	const int power_case = sign_nbr * sign_exp;
+
+	if (!power_case) {
+		/* Exponent OR Number are  = 0 */
+		if (sign_nbr == 0) {
+			if ( sign_exp == 1) {
+				/* case 0 ^ Positive number --> zero   */
+				mpz_set_ui (pd1->value, 0UL);
+				pd1->scale = 0;
+
+			}
+			else {
+				/* FIX #924 : 0 raised to negative number or 0 */
+				pd1->scale = COB_DECIMAL_NAN;
+				cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+			}
+		}
+		else {
+			/* Exponent is 0 and Nbr != 0 ---> 1 */
+			mpz_set_ui (pd1->value, 1UL);
+			pd1->scale = 0;
+		}
+
+		return;
+	}
+	
+	if (pd2->scale != 0 && sign_nbr == -1) {
+		/* Case number < 0 and decimal exponent --> Error */
 		pd1->scale = COB_DECIMAL_NAN;
 		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
 		return;
 	}
 
-	cob_trim_decimal (pd1);
+	/* First Check result size */	
+	/* Fix  #925 : Avoid GMPLIB CRASH */
+	cob_decimal_get_mpf (cob_mpft , pd1);
+	cob_decimal_get_mpf (cob_mpft2, pd2);
 
-	if (!pd2->scale) {
-		/* Integer power */
+	mpf_set (cob_mpft3,cob_mpft);
+	if (sign_nbr == -1) {
+		mpf_abs (cob_mpft3, cob_mpft3);
+	}
+	cob_mpf_log (cob_mpft3, cob_mpft3);
+
+	mpf_mul (cob_mpft3, cob_mpft3, cob_mpft2);
+
+	if (mpf_cmp_ui (cob_mpft3, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft3, COB_MIN_EXP_LIMIT) <= 0) {
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+
+		if (mpf_sgn (cob_mpft3) > 0) {
+		
+			mpf_set_ui (cob_mpft, 0UL);
+			cob_decimal_set_mpf (pd1, cob_mpft);
+			pd1->scale = COB_DECIMAL_INF;
+
+		} else {
+			mpf_set_ui (cob_mpft, COB_MIN_EXP_MANTISSA);
+			cob_decimal_set_mpf (pd1, cob_mpft);
+			d1.scale = COB_MIN_EXP_SCALE;
+
+		}
+
+		return;
+	}
+	/*         End Check          */
+	
+	if (!(pd2->scale)) {
+		/* Integer Power */
+
 		if (!mpz_cmp_ui (pd2->value, 1UL)) {
-			/* Power is 1 */
+			/* Power is 1 leave as is */
 			return;
 		}
-		if (mpz_sgn (pd2->value) == -1
-		 && mpz_fits_slong_p (pd2->value)) {
-			/* Negative power */
-			mpz_abs (pd2->value, pd2->value);
-			n = mpz_get_ui (pd2->value);
-			mpz_pow_ui (pd1->value, pd1->value, n);
-			if (pd1->scale) {
-				pd1->scale *= n;
-				cob_trim_decimal (pd1);
-			}
-			mpz_set (pd2->value, pd1->value);
-			pd2->scale = pd1->scale;
-			mpz_set_ui (pd1->value, 1UL),
-			pd1->scale = 0;
-			cob_decimal_div (pd1, pd2);
+		
+		if (mpz_cmp_si (pd2->value, -1L) == 0) {
+			mpf_ui_div (cob_mpft, 1UL, cob_mpft);
+			/* Power is -1 result is inverse */
+			cob_decimal_set_mpf (pd1, cob_mpft);
 			cob_trim_decimal (pd1);
 			return;
 		}
-		if (mpz_fits_ulong_p (pd2->value)) {
-			/* Positive power */
-			n = mpz_get_ui (pd2->value);
-			mpz_pow_ui (pd1->value, pd1->value, n);
-			if (pd1->scale) {
-				pd1->scale *= n;
-				cob_trim_decimal (pd1);
+
+		mpz_abs (pd2->value,pd2->value);
+		if ( mpz_fits_ulong_p (pd2->value) ) {
+			const unsigned long n = mpz_get_ui (pd2->value);
+			if ( sign_exp == -1 ) {
+				mpz_neg (pd2->value, pd2->value); /* restore expon sign --> FIX #1020 */
+				mpf_ui_div (cob_mpft, 1UL, cob_mpft);
 			}
+			mpf_pow_ui (cob_mpft, cob_mpft, n);
+
+			cob_decimal_set_mpf (pd1, cob_mpft );
+			cob_trim_decimal (pd1);
+
 			return;
 		}
+                
+ 		if (sign_nbr == -1) {
+			/* Fix  #989               */
+			if (mpz_odd_p (pd2->value)) {
+				negat_result = 1;
+			}
+		}
 	}
+    
+	/* Compute a ^ b  = exp(b*ln(a) */
 
-	if (sign == -1) {
-		mpz_abs (pd1->value, pd1->value);
-	}
-	cob_decimal_get_mpf (cob_mpft, pd1);
-	if (pd2->scale == 1 && !mpz_cmp_ui (pd2->value, 5UL)) {
-		/* Square root short cut */
-		mpf_sqrt (cob_mpft2, cob_mpft);
-	} else {
-		cob_decimal_get_mpf (cob_mpft2, pd2);
-		cob_mpf_log (cob_mpft, cob_mpft);
-		mpf_mul (cob_mpft, cob_mpft, cob_mpft2);
-		cob_mpf_exp (cob_mpft2, cob_mpft);
-	}
+	/* Compute b*ln( abs(a) )  */
+	mpf_abs (cob_mpft, cob_mpft);
+	cob_mpf_log (cob_mpft, cob_mpft);
+	mpf_mul (cob_mpft, cob_mpft, cob_mpft2);
+
+	cob_mpf_exp (cob_mpft2, cob_mpft);
+
 	cob_decimal_set_mpf (pd1, cob_mpft2);
-	if (sign == -1) {
+
+	if (negat_result) {
 		mpz_neg (pd1->value, pd1->value);
 	}
-}
 
+	if (sign_exp == -1) {
+		/* restore expon sign --> FIX #1020 */
+		mpz_neg (pd2->value, pd2->value);
+	}
+
+	cob_trim_decimal (pd1);
+
+	return;
+}
 /* Indirect field get/put functions */
 
 void
@@ -4624,6 +4810,13 @@ cob_intr_factorial (cob_field *srcfield)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	} else {
+		if ( srcval >= COB_MAX_FACT_LIMIT ) {
+			/* Fix #1206 */
+			d1.scale = COB_DECIMAL_INF ;
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+			cob_alloc_set_field_uint (0);
+			return curr_field;
+		}
 		mpz_fac_ui (d1.value, (cob_uli_t)srcval);
 	}
 
@@ -4671,6 +4864,30 @@ cob_intr_exp (cob_field *srcfield)
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
+
+	/* #1206 Avoid GMP Crash */
+	if (mpf_cmp_ui (cob_mpft, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft, COB_MIN_EXP_LIMIT) <= 0) {
+	
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+
+			if (mpf_sgn (cob_mpft) > 0) {
+		
+				mpf_set_ui (cob_mpft, 0UL) ;
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_DECIMAL_INF;
+
+			} else {
+				mpf_set_ui (cob_mpft, COB_MIN_EXP_MANTISSA);
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_MIN_EXP_SCALE ;
+
+			}
+
+			cob_alloc_field (&d1);
+			(void)cob_decimal_get_field (&d1, curr_field, 0);
+			return curr_field;
+	}
+
 	cob_mpf_exp (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
 	cob_alloc_field (&d1);
@@ -4694,8 +4911,30 @@ cob_intr_exp10 (cob_field *srcfield)
 		cob_alloc_set_field_uint (1);
 		return curr_field;
 	}
+	
+	/* #1206 Avoid GMP Crash */
+	if ( mpz_cmp_ui (d1.value, COB_MAX_EXP10_LIMIT) >= 0 || mpz_cmp_si (d1.value, COB_MIN_EXP10_LIMIT) <= 0) {
 
-	cob_trim_decimal (&d1);
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	
+			if (mpz_sgn (d1.value) > 0) {
+
+				mpf_set_ui (cob_mpft, 0UL) ;
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_DECIMAL_INF;
+
+			} else {
+
+				mpf_set_ui (cob_mpft, COB_MIN_EXP10_MANTISSA);
+				cob_decimal_set_mpf (&d1, cob_mpft);
+				d1.scale = COB_MIN_EXP10_SCALE ;
+
+			}
+
+			cob_alloc_field (&d1);
+			(void)cob_decimal_get_field (&d1, curr_field, 0);
+			return curr_field;
+	}
 
 	if (!d1.scale) {
 		/* Integer positive/negative powers */
@@ -7192,6 +7431,7 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);
+		mpf_clear (cob_log_two);
 	}
 	if (set_cob_log_ten) {
 		mpf_clear (cob_log_ten);
@@ -7204,6 +7444,7 @@ cob_exit_intrinsic (void)
 #endif
 
 	mpf_clear (cob_mpft_get);
+	mpf_clear (cob_mpft3);
 	mpf_clear (cob_mpft2);
 	mpf_clear (cob_mpft);
 
@@ -7259,6 +7500,7 @@ cob_init_intrinsic (cob_global *lptr)
 
 	mpf_init2 (cob_mpft, COB_MPF_PREC);
 	mpf_init2 (cob_mpft2, COB_MPF_PREC);
+	mpf_init2 (cob_mpft3, COB_MPF_PREC);
 	mpf_init2 (cob_mpft_get, COB_MPF_PREC);
 }
 
