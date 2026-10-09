@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2019, 2022-2025 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2019, 2022-2026 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -21,10 +21,16 @@
 
 SUBDIRS = cobol85
 
+# to be handled via configure
+#AUTOM4TE = @AUTOM4TE@
+AUTOM4TE = autom4te
+AUTOTEST = $(AUTOM4TE) --language=autotest
+
 TESTSUITE = $(srcdir)/testsuite
 TESTSUITE_MANUAL = $(srcdir)/testsuite_manual
 
-dist_noinst_SCRIPTS = $(TESTSUITE) $(TESTSUITE_MANUAL)
+dist_noinst_SCRIPTS = $(TESTSUITE) $(TESTSUITE_MANUAL) \
+	perf_stat.sh perf_record.sh perf_aggregate.sh
 
 testsuite_sources = \
 	testsuite.src/used_binaries.at \
@@ -100,7 +106,7 @@ prereq-manual: $(TESTSUITE_MANUAL) atlocal run_prog_manual.sh
 	@rm -rf testsuite_manual.dir
 
 clean-local:
-	rm -rf *.dir *.log *.out valgrind callgrind perf
+	rm -rf *.dir *.log *.out valgrind callgrind perf rr fprof
 
 checkmanual: prereq-manual
 	@$(TESTSUITE_MANUAL) $(TESTSUITEFLAGS) || (rm -f testsuite_manual.dir/at-job-fifo; exit 1)
@@ -131,10 +137,26 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	  echo 'm4_define([AT_PACKAGE_URL],       [@PACKAGE_URL@])'; \
 	} > $(srcdir)/package.m4
 
+# note: we do kind of experimental adjustment in the testsuite,
+# to export at_group for external tools / runtime translation
 $(TESTSUITE): $(testsuite_sources) $(srcdir)/package.m4 $(srcdir)/testsuite.at
-	autom4te --language=autotest -I $(srcdir) -I $(srcdir)/testsuite.src -o $(srcdir)/testsuite $(srcdir)/testsuite.at
-	chmod +x $(srcdir)/testsuite
+	tmp1=$@.$$$$.tmp; tmp2=$@.$$$$.2.tmp; \
+	trap 'rm -f "$$tmp1" "$$tmp2"' 0; \
+	trap 'exit 1' 1 2 13 15; \
+	$(AUTOTEST) -I $(srcdir) -I $(srcdir)/testsuite.src \
+	    -o "$$tmp1" $(srcdir)/testsuite.at && \
+	$(SED) -e 's/\. "[$$]at_test_source"/export at_group \&\& . "$$at_test_source"/g' \
+	    "$$tmp1" > "$$tmp2" && \
+	chmod +x "$$tmp2" && \
+	mv -f "$$tmp2" $@
 
 $(TESTSUITE_MANUAL): $(testsuite_manual_sources) $(srcdir)/package.m4 $(srcdir)/testsuite_manual.at
-	autom4te --language=autotest -I $(srcdir) -I $(srcdir)/testsuite.src -o $(srcdir)/testsuite_manual $(srcdir)/testsuite_manual.at
-	chmod +x $(srcdir)/testsuite_manual
+	tmp1=$@.$$$$.tmp; tmp2=$@.$$$$.2.tmp; \
+	trap 'rm -f "$$tmp1" "$$tmp2"' 0; \
+	trap 'exit 1' 1 2 13 15; \
+	$(AUTOTEST) -I $(srcdir) -I $(srcdir)/testsuite.src \
+	    -o "$$tmp1" $(srcdir)/testsuite_manual.at && \
+	$(SED) -e 's/\. "[$$]at_test_source"/export at_group \&\& . "$$at_test_source"/g' \
+	    "$$tmp1" > "$$tmp2" && \
+	chmod +x "$$tmp2" && \
+	mv -f "$$tmp2" $@

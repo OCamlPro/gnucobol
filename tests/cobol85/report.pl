@@ -294,8 +294,8 @@ sub compile_lib {
 	my $in_clean = substr($in,4);
 	$in_clean =~ s/\.CBL//;
 
-	# export identifier in at_group (originally for autotest)
-	# (mainly for use with external tools like valgrind)
+	# export identifier in at_group (originally for autotest),
+	# mainly for use with external tools like valgrind
 	$ENV{"at_group"} = "NIST_lib_" + $in_clean;
 	
 	my $compile_current = $compile_module;
@@ -382,7 +382,7 @@ sub run_test {
 			die "Interrupted\n";
 		}
 		$compile_error++;
-		print LOG_FH ("$line_prefix  ***** compile error *****\n");
+		print LOG_FH ("$line_prefix  ***** compile error $ret *****\n");
 		my $local_end = time;
 		printf LOG_TIME ("%-11s %8.4f\n", $in,  ($local_end - $local_start));
 		return;

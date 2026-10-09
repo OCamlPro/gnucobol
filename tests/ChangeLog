@@ -1,4 +1,29 @@
 
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* perf_stat.sh, perf_record.sh: new scripts based on functions previously
+	  included in atlocal.in - that provides a portable option to use those
+	  for both the internal and the NIST test suite; adjusted to (per default) 
+	  not inherit counters in sub-calls providing more useful output, also for
+	  the compiler; extended in-source documentation on using it
+	* atlocal.in: adjusted to use perf_stat.sh and perf_record.sh
+	* perf_aggregate.sh: script contributed to summarize "perf stat" output
+	  over multiple runs, works especially well for running the testsuite with
+	  PERFSUFFIX (perf_stat.sh) 
+	* atlocal.in: new option to record testsuite executions with "rr", the
+	  record and replay framework via RRSUFFIX
+	* atlocal.in: new option to run the internal profiler on generated
+	  executables via FPROFSUFFIX
+	* Makefile.am (dist_noinst_SCRIPTS): include new scripts
+	* Makefile.am (clean-local): drop all folders created with SUFFIX options
+	* Makefile.am: define AUTOTEST variable depending on AUTOM4TE (to be set
+	  by configure later) instead of direct
+	* Makefile.am (TESTSUITE, TESTSUITE_MANUAL): create the target with a
+	  temporary file to not leave broken script that are not remade;
+	  use sed to adjust the generated sources exporting at_group for use with
+	  FPROFSUFFIX and others
+	* atlocal_win: merged FPROFSUFFIX and other minor things from atlocal.in 
+
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: reordered to correctly use perf/valgrind definitions also
@@ -1227,7 +1252,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2025 Free Software Foundation, Inc.
+Copyright 2002-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

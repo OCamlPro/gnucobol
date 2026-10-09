@@ -5,7 +5,7 @@
 # a not POSIX build (OrangeC or Visual Studio build for example)
 # in a POSIX environment (like MinGW or Cygwin, possibly WSL).
 #
-# Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2026 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -63,13 +63,29 @@ export TZ
 
 # define for performance checks (running code several thousand times)
 # directly set via environment possible as well
-if test "x$CHECKPERF" != "x"; then
+if test "x$CHECKPERF" != "x" -o "x$FPROFSUFFIX" != "x"; then
 	COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+fi
+
+# Running tests under -fprof "outside" of test mode, keeping the resulting files
+if test "x${FPROFSUFFIX}" != "x"; then
+	export _FPROF_DIR="${abs_builddir}/fprof"
+	mkdir -p "${_FPROF_DIR}"
+
+	COBOL_FLAGS="${COBOL_FLAGS} -fprof"
+	# hide the name of the output file if not explicit set,
+    # allowing to run all tests with profiling enabled
+	# nice name for NIST where report.pl exports at_group
+    COB_PROF_FILE="${_FPROF_DIR}/\${at_group:fprof}-${FPROFSUFFIX}-\$b-\$\$-\$d-\$t_hidden.csv"
+
+	# variant with a single file (needing the pid in the format to be useful)
+    #COB_PROF_FILE="+${_FPROF_DIR}/combined-${FPROFSUFFIX}-hidden.csv"
+	#COB_PROF_FORMAT="%i,%m,%s,%p,%e,%w,%k,%t,%h,%n"
 fi
 
 # note: clang based MSVC and others may support libasan, so included here
 ASAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
-LSAN_OPTIONS="suppressions=${abs_srcdir}/asan.supp:print_suppressions=0"
+LSAN_OPTIONS="suppressions=${abs_srcdir}/lsan.supp:print_suppressions=0"
 
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fdiagnostics-plain-output"
 # workaround to adjust the testsuite later:
@@ -95,8 +111,10 @@ _unset_option () {
 	     -a "$1" != "COB_CFLAGS" \
 	     -a "$1" != "COB_LIBS" \
 	     -a "$1" != "COB_UNIX_LF" \
+	     -a "$1" != "COB_PROF_FILE" \
+	     -a "$1" != "COB_PROF_FORMAT" \
 	     -a "$1" != "OS"; then
-		unset $1
+		unset "$1"
 	fi
 }
 
@@ -165,7 +183,6 @@ export PATHSEP
 
 	export COB_CFLAGS COB_LIBS
 	export COB_CONFIG_DIR COB_COPY_DIR
-	#export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
 	export COB_LIBRARY_PATH
 COB_UNIX_LF=1
 export COB_UNIX_LF
@@ -285,9 +302,22 @@ fi
 
 rm -rf info.out
 
-# NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
-export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
-export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
+# to activate profiling during tests, pass COBOL_FLAGS=-fprof
+case "${COBOL_FLAGS}" in
+   *-fprof*)
+      COB_PROF_ENABLE=1
+	  # for additional tracing:
+	  # export COB_PROF_TRACE=yes
+	  ;;
+esac
+
+
+# NIST tests (tests/cobol85) are executed in a separate perl process with
+# a new environment, runs under Windows may as well --> export needed
+export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES \
+	COB_HAS_64_BIT_POINTER COB_BIGENDIAN
+export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL COBOL_FLAGS \
+	COB_PROF_ENABLE COB_PROF_FILE COB_PROF_FORMAT
 export COB_CC COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
 # to ensure that no external DB_HOME is polluted: unset

@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2025 Free Software Foundation, Inc.
+## Copyright (C) 2014-2026 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -1310,6 +1310,9 @@ AT_CHECK([test -f prog.i], [1])
 
 # ])
 # AT_CHECK([test -f prog.i], [1])
+
+# ensure that "intermediate" files are not there, even if $COMPILE/$COBOL_FLAGS include -g
+rm -f prog.c prog.c.*
 
 AT_CHECK([$COMPILE -g -M -MT prog.$COB_MODULE_EXT prog.cob > compiler.output], [0])
 AT_CHECK([$SED "s/\.$COB_MODULE_EXT/.COB_MODULE_EXT/g;s/sub\\\\/sub\//g" compiler.output], [0],
