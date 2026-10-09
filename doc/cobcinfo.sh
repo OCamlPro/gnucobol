@@ -1,7 +1,7 @@
 #!/bin/sh
 # cobcinfo.sh gnucobol/doc
 #
-# Copyright (C) 2010,2012, 2015-2021 Free Software Foundation, Inc.
+# Copyright (C) 2010,2012, 2015-2021, 2026 Free Software Foundation, Inc.
 # Written by Roger While, Simon Sobisch, James K. Lowden
 #
 # This file is part of GnuCOBOL.
@@ -21,13 +21,13 @@
 
 # use GREP, SED and AWK from configure, passed when called from Makefile
 GREP_ORIG="$GREP";
-if test "x$GREP" = "x"; then GREP=grep; fi
-if test "x$SED" = "x" ; then SED=sed  ; fi
-if test "x$AWK" = "x" ; then AWK=awk  ; fi
+if test -z "$GREP"; then GREP="grep"; fi
+if test -z "$SED" ; then SED="sed"  ; fi
+if test -z "$AWK" ; then AWK="awk"  ; fi
 
 # default to POSIX, Solaris for example uses "tail +"
-if test "x$TAIL_START" = "x"; then TAIL_START="tail -n +"; fi
-#if test "x$TAIL_LAST" = "x"; then TAIL_LAST="tail -n "; fi
+if test -z "$TAIL_START"; then TAIL_START="tail -n +"; fi
+#if test -z "$TAIL_LAST"; then TAIL_LAST="tail -n "; fi
 
 if test "$1" != "fixtimestamps"; then
 
@@ -43,12 +43,12 @@ if test "$1" != "fixtimestamps"; then
       fi
    fi
 
-   if test "x$COBC" = "x"; then
-      echo 'WARNING: $COBC not set, defaulting to "cobc"'
+   if test -z "$COBC"; then
+      echo "WARNING: \$COBC not set, defaulting to \"cobc\""
       COBC=cobc
    fi
-   if test "x$COBCRUN" = "x"; then
-      echo 'WARNING: $COBCRUN not set, defaulting to "cobcrun"'
+   if test -z "$COBCRUN"; then
+      echo "WARNING: \$COBCRUN not set, defaulting to \"cobcun\""
       COBCRUN=cobcrun
    fi
    
@@ -84,11 +84,10 @@ _create_file () {
 			$AWK -f "$docdir/$1.gen" |
 			$AWK 'NR > 1 {sep = "\n"}  
 			      /^;/ { sep = "" } # remove newline when line starts with ";"
-			      { printf "%s%s", sep, $0; } END {print ""}' > $1
+			      { printf "%s%s", sep, $0; } END {print ""}' > "$1.$$.tmp"
 		;;
 	"cbchelp.tex")
-		rm -rf $1
-		header_found=""
+		header1_found=""
 		$COBCRUN -q --help                | \
 			$GREP -E -A2000 -E "ptions.*:" | \
 			$GREP -E -B2000 "^$" -m 1       | \
@@ -98,24 +97,25 @@ _create_file () {
 			     -e 's/<\([^>]\+\)>/@var{\1}/g'| \
 		while IFS='~' read -r name desc; do
 			if test -z "$name"; then continue; fi
-			if test -z "$header_found"; then
-				header_found=1
-				echo "@table @code"        >>$1
+			if test -z "$header1_found"; then
+				header1_found=1
+				echo "@table @code"        >> "$1.$$.tmp"
 			else
 				if test "$name" != "D"; then
-					echo "@item @code{$name}"  >>$1
+					echo "@item @code{$name}"  >> "$1.$$.tmp"
 				fi
 				echo "$desc"          | \
 				$SED -e 's/ -M/ @option{-M}/g' \
-				    -e 's/\(COB[A-Z_]\+\)/@env{\1}/g' >>$1
+				    -e 's/\(COB[A-Z_]\+\)/@env{\1}/g' >> "$1.$$.tmp"
 			fi
 		done
-		echo "@end table"          >>$1
+		echo "@end table"          >> "$1.$$.tmp"
 		;;
 	"cbrese.tex")
-		echo "@section Common reserved words"   >$1
-		echo "@multitable @columnfractions .40 .20 .40"  >>$1
-		echo "@headitem Reserved word @tab Implemented @tab Aliases" >>$1
+		header2_found=""
+		echo "@section Common reserved words"   > "$1.$$.tmp"
+		echo "@multitable @columnfractions .40 .20 .40"  >> "$1.$$.tmp"
+		echo "@headitem Reserved word @tab Implemented @tab Aliases" >> "$1.$$.tmp"
 		$COBC -q --list-reserved | \
 			$GREP -E -B9999 "^$" -m 2 | \
 			$SED -e 's/  \+/;/g' \
@@ -124,88 +124,88 @@ _create_file () {
 			     -e 's/ ;/;/g' | \
 		while IFS=';' read -r name impl aliases; do
 			if test -z "$name"; then continue; fi
-			if test -z "$header_found"; then
-				header_found=1
+			if test -z "$header2_found"; then
+				header2_found=1
 			else
-				echo "@item @code{$name} @tab $impl @tab $aliases"  >>$1
+				echo "@item @code{$name} @tab $impl @tab $aliases"  >> "$1.$$.tmp"
 			fi
 		done
-		echo "@end multitable" >>$1
+		echo "@end multitable" >> "$1.$$.tmp"
 
 		needs_comma=""
-		header_found=""
+		header2_found=""
 		$COBC -q --list-reserved    | \
 			$GREP    -A50 "Extra"   | \
 			$GREP -E -B50 "^$" -m 1 | \
 		while read line; do
 			if test -z "$line"; then continue; fi
-			if test -z "$header_found"; then
-				header_found=1
-				echo "@section $line"  >>$1
+			if test -z "$header2_found"; then
+				header2_found=1
+				echo "@section $line"  >> "$1.$$.tmp"
 			else
 				if test -z "$needs_comma"; then needs_comma=1
-				else printf ", " >>$1; fi
-				printf "@code{%s}" "$line" >>$1
+				else printf ", " >> "$1.$$.tmp"; fi
+				printf "@code{%s}" "$line" >> "$1.$$.tmp"
 			fi
 		done
-		printf "\n\n" >>$1
+		printf "\n\n" >> "$1.$$.tmp"
 
-		header_found=""
-		echo "@section Internal registers"  >>$1
-		echo "@multitable @columnfractions .40 .20 .40"  >>$1
-		echo "@headitem Register @tab Implemented @tab Definition" >>$1
+		header2_found=""
+		echo "@section Internal registers"  >> "$1.$$.tmp"
+		echo "@multitable @columnfractions .40 .20 .40"  >> "$1.$$.tmp"
+		echo "@headitem Register @tab Implemented @tab Definition" >> "$1.$$.tmp"
 		$COBC -q --list-reserved     | \
 			$GREP -A100 "registers"  | \
 			$SED -e 's/  \+/~/g'     | \
 		while IFS='~' read -r name impl definition; do
 			if test -z "$name"; then continue; fi
-			if test -z "$header_found"; then
-				header_found=1
+			if test -z "$header2_found"; then
+				header2_found=1
 			else
-				echo "@item @code{$name} @tab $impl @tab @code{$definition}"  >>$1
+				echo "@item @code{$name} @tab $impl @tab @code{$definition}"  >> "$1.$$.tmp"
 			fi
 		done
-		echo "@end multitable" >>$1
+		echo "@end multitable" >> "$1.$$.tmp"
 		;;
 	"cbintr.tex")
-		$COBC -q --list-intrinsics | $AWK -f "$docdir/$1.gen" > $1
+		$COBC -q --list-intrinsics | $AWK -f "$docdir/$1.gen" > "$1.$$.tmp"
 		;;
 	"cbsyst.tex")
-		echo "@multitable @columnfractions .40 .20"  >$1
+		header3_found=""
+		echo "@multitable @columnfractions .40 .20"  > "$1.$$.tmp"
 		$COBC -q --list-system     | \
 			$SED -e 's/  \+/~/g'   | \
 		while IFS='~' read -r name params; do
 			if test -z "$name"; then continue; fi
-			if test -z "$header_found"; then
-				header_found=1
-				echo "@headitem $name @tab $params"  >>$1
+			if test -z "$header3_found"; then
+				header3_found=1
+				echo "@headitem $name @tab $params"  >> "$1.$$.tmp"
 			else
-				echo "@item @code{$name} @tab $params"  >>$1
+				echo "@item @code{$name} @tab $params"  >> "$1.$$.tmp"
 			fi
 		done
-		echo "@end multitable" >>$1
+		echo "@end multitable" >> "$1.$$.tmp"
 		;;
 	"cbmnem.tex")
 		system_names="device feature switch"
 		section_prefix="System names"
-		rm -rf $1
 		for section in $system_names; do
 			needs_comma=""
-			echo "@section $section_prefix: $section"   >>$1
+			echo "@section $section_prefix: $section"   >> "$1.$$.tmp"
 			$COBC -q --list-mnemonics | \
 				$GREP "$section" | cut -d' ' -f1 |\
 			while read name; do
 				if test -z "$needs_comma"; then needs_comma=1
-				else printf ", " >>$1; fi
-				printf "@code{%s}" "$name" >>$1
+				else printf ", " >> "$1.$$.tmp"; fi
+				printf "@code{%s}" "$name" >> "$1.$$.tmp"
 			done
-			printf "\n\n" >>$1
+			printf "\n\n" >> "$1.$$.tmp"
 		done
 		;;
 	"cbexceptions.tex")
-		echo "@verbatim"   >$1
-		$COBC -q --list-exceptions >> $1
-		echo "">>$1; echo "@end verbatim"   >>$1
+		echo "@verbatim"   > "$1.$$.tmp"
+		$COBC -q --list-exceptions >> "$1.$$.tmp"
+		printf "\n@end verbatim\n" >> "$1.$$.tmp"
 		;;
 	"cbconf.tex")
 		lines=2
@@ -213,15 +213,20 @@ _create_file () {
 		      "$confdir/default.conf" \
 		| tr -d '\r' \
 		| $SED -e 's/# \?TO-\?DO.*//g'  \
-		| $TAIL_START$lines >$1
+		| $TAIL_START$lines > "$1.$$.tmp"
 		;;
 	"cbrunt.tex")
-		$AWK -f "$docdir/$1.gen" "$confdir/runtime.cfg" > $1
+		$AWK -f "$docdir/$1.gen" "$confdir/runtime.cfg" > "$1.$$.tmp"
+		;;
+	*)
+		echo "$0: INTERNAL ERROR: create_file called with unsupported option $1" 1>&2
+		exit 1
 		;;
   esac
+  mv "$1.$$.tmp" "$1"
 }
 
-docdir="`dirname $0`"
+docdir="$(dirname "$0")"
 confdir="$docdir/../config"
 created_texfiles="cbhelp.tex cbchelp.tex cbrese.tex cbintr.tex cbsyst.tex"
 created_texfiles="$created_texfiles cbmnem.tex cbexceptions.tex cbconf.tex cbrunt.tex"
@@ -233,7 +238,7 @@ created_texfiles="$created_texfiles cbmnem.tex cbexceptions.tex cbconf.tex cbrun
 case "${1##*/}" in
 	"")
 		for file in $created_texfiles; do
-			_create_file $file
+			_create_file "$file"
 		done
 		;;
 	"help")
@@ -263,21 +268,22 @@ case "${1##*/}" in
 		_create_file "${1##*/}"
 		;;
 	"fixtimestamps")
-		echo $0: touch tex-includes
+		echo "$0: touch tex-includes"
 		for file in $created_texfiles; do
 			echo " touch $file"
-			touch $file
+			touch "$file"
 		done
 		if test "$2" != "includes"; then
-			echo $0: touch tex-results
-			for file in $docdir/gnucobol.*; do
+			echo "$0: touch tex-results"
+			for file in "$docdir"/gnucobol.*; do
 				if test "$file" = "$docdir/gnucobol.texi"; then continue; fi
 				echo " touch $file"
-				touch $file
+				touch "$file"
 			done
 		fi
 		;;
 	*)
-		echo "$0: ERROR: called with unsupported option $1"
-		exit 1;
+		echo "$0: ERROR: called with unsupported option $1" 1>&2
+		exit 1
+		;;
 esac
