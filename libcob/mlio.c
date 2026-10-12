@@ -41,7 +41,7 @@
 #include <libxml/tree.h>
 #include <libxml/SAX2.h>
 
-#if LIBXML_VERSION >= 21400
+#if LIBXML_VERSION >= 21300	/* tripple-checked, that's the right version */
 #define LIBXML_CONST_ERROR_PTR					const xmlError *
 #define LIBXML_CTXT_GET_ENCODING(ctxt) 			xmlCtxtGetDeclaredEncoding(ctxt)
 #define LIBXML_CTXT_GET_STANDALONE(ctxt) 		xmlCtxtGetStandalone(ctxt)

@@ -16,8 +16,7 @@
 	  executables via FPROFSUFFIX
 	* Makefile.am (dist_noinst_SCRIPTS): include new scripts
 	* Makefile.am (clean-local): drop all folders created with SUFFIX options
-	* Makefile.am: define AUTOTEST variable depending on AUTOM4TE (to be set
-	  by configure later) instead of direct
+	* Makefile.am: define AUTOTEST variable depending on AUTOM4TE
 	* Makefile.am (TESTSUITE, TESTSUITE_MANUAL): create the target with a
 	  temporary file to not leave broken script that are not remade;
 	  use sed to adjust the generated sources exporting at_group for use with

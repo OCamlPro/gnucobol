@@ -22,7 +22,7 @@
 #include "config.h"
 
 #ifdef __MINGW32__
-/* Is this needed for other environments as well?
+/* CHECKME: Is this needed for other environments as well?
    We want to use all POSIX extensions possible. */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200112

@@ -21,9 +21,7 @@
 
 SUBDIRS = cobol85
 
-# to be handled via configure
-#AUTOM4TE = @AUTOM4TE@
-AUTOM4TE = autom4te
+AUTOM4TE = @AUTOM4TE@
 AUTOTEST = $(AUTOM4TE) --language=autotest
 
 TESTSUITE = $(srcdir)/testsuite

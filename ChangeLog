@@ -1,7 +1,15 @@
 
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added AM_MISSING_PROG of AUTOM4TE for testsuite
+	* configure.ac: check for optional sys/wait.h (not doing so disabled
+	  CBL_GC_WAITPID since a while)
+	* configure.ac: use configured SED internally
+
 2026-09-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: drop duplicate check for COB_EXE_EXT
+	* configure.ac: use configured SED internally
 
 2025-11-20  Simon Sobisch <simonsobisch@gnu.org>
 
