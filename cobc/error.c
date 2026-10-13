@@ -348,7 +348,11 @@ print_error (const char *file, int line, enum cb_error_kind kind,
 		static int last_caret_line = -1 ;
 		if (last_caret_file != file
 		 || last_caret_line != line) {
+#ifdef	__OS400__
 			FILE *fd = fopen (file, "r");
+#else
+			FILE *fd = fopen (file, "rb");
+#endif
 			if (fd) {
 				diagnostics_show_caret (fd, file, line);
 				fclose (fd);
@@ -490,7 +494,7 @@ cb_add_error_to_listing (const char *file, int line,
 			struct list_error* old_err;
 			for (old_err = cfile->err_head; old_err; old_err = old_err->next) {
 				if (!old_err
-				 || old_err->file == err->file) {
+				 || old_err->file != err->file) {
 					continue;
 				}
 				if (old_err->line > err->line) {
