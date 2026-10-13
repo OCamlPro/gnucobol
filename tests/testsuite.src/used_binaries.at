@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2025 Free Software Foundation, Inc.
+## Copyright (C) 2014-2026 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -1044,6 +1044,33 @@ prog.cob:6: warning: numeric value is expected [-Wothers]
 prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
 prog.cob:13: warning: ignoring redundant . [-Wothers]
 ]])
+AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+    5 |        WORKING-STORAGE  SECTION.
+    6 |        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 >        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+    9 |            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+prog.cob:6: warning: numeric value is expected [-Wothers]
+    4 |        DATA             DIVISION.
+    5 |        WORKING-STORAGE  SECTION.
+    6 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 |        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
+    9 >            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+   10 |               MOVE 12 TO TEST-VAR.
+   11 |            DISPLAY TEST-VAR NO                                       ADVA ...
+prog.cob:13: warning: ignoring redundant . [-Wothers]
+   12 |            END-DISPLAY                                                    ...
+   13 >            STOP RUN...
+   14 | <EOF>
+]])
+
+# ensure that output stays identical no matter if CR or CRLF is used
+mv prog.cob prog.cr
+awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' prog.cr > prog.cob
+
 AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
 [[prog.cob:7: error: CRUD.CPY: No such file or directory
     5 |        WORKING-STORAGE  SECTION.
