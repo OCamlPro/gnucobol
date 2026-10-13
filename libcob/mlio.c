@@ -708,7 +708,7 @@ get_num_int (cob_field * const f, const char decimal_point,
 	const unsigned char mod_orig_decimal_point = COB_MODULE_PTR->decimal_point != decimal_point
 	                                           ? COB_MODULE_PTR->decimal_point : 0;
 	cob_field_attr	attr;
-	cob_field   	edited_field = { .size = len, .data = p, .attr = &attr };
+	cob_field   	edited_field = { len, p, &attr };
 
 	/* temporarily swap decimal point, if needed */
 	if (mod_orig_decimal_point) {

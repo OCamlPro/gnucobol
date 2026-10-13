@@ -1090,7 +1090,34 @@ prog.cob:13: warning: ignoring redundant . [-Wothers]
    <EOF>
 ]])
 
-AT_CHECK([$COMPILE -fformat=terminal -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
+# ensure that output stays identical no matter if CR or CRLF is used
+mv prog.cob prog.cr
+awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' prog.cr > prog.cob
+
+AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-show-caret -fdiagnostics-show-line-numbers prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+    5 |        WORKING-STORAGE  SECTION.
+    6 |        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 >        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+    9 |            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+prog.cob:6: warning: numeric value is expected [-Wothers]
+    4 |        DATA             DIVISION.
+    5 |        WORKING-STORAGE  SECTION.
+    6 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+    7 |        COPY 'CRUD.CPY'.
+    8 |        PROCEDURE        DIVISION.
+prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
+    9 >            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+   10 |               MOVE 12 TO TEST-VAR.
+   11 |            DISPLAY TEST-VAR NO                                       ADVA ...
+prog.cob:13: warning: ignoring redundant . [-Wothers]
+   12 |            END-DISPLAY                                                    ...
+   13 >            STOP RUN...
+   14 | <EOF>
+]])
+
+AT_CHECK([$COMPILE -fformat=terminal -fdiagnostics-absolute-paths -Wall prog.cob 2>compiler.output], [1])
 
 # note: -fdiagnostics-absolute-paths will show the realpath,
 #       so for MSYS/MSVC builds that will be x:\something\prog.cob, not the output of PWD,

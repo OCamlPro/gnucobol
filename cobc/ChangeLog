@@ -1,4 +1,9 @@
 
+2026-10-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c (print_error): open source file to show diagnostic context
+	  in binary mode, to prevent broken ftell/fseek on Windows
+
 2026-10-05  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.h (struct filename): new field preprocess_is_temp
@@ -29,7 +34,7 @@
 	  processing time in huge sources / sources with lots of errors by not
 	  reading the file over and over again
 	* cobc.c (cobc_intern_filename), tree.h: new function as sole place to set
-	  a (potentially new) filename - allowing pointer comparisions afterwards
+	  a (potentially new) filename - allowing pointer comparisons afterwards
 	* cobc.c (cleanup_copybook_reference): removed, copybook->name uses new
 	  function cobc_intern_filename so does not to be manually removed
 	* scanner.l: use cobc_intern_filename instead of manual strdup for
@@ -157,7 +162,7 @@
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c (get_number_in_parentheses): use local namebuffer
-	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually allign not only
+	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually align not only
 	  for SET pointer-name but also for SET index-name
 
 2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
@@ -204,7 +209,7 @@
 	  currently only with source format COBOL85
 	* scanner.l: translate non-printable character for invalid symbols
 	* pplex.l: handle MS-DOS EOF and control code for file separator,
-	  currently consuming consecutive occurences as a single new-line
+	  currently consuming consecutive occurrences as a single new-line
 
 2025-09-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2711,7 +2716,7 @@
 	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
 	  most-used runtime checks - now only passed to libcob in case of actual
 	  errors; new entry COB_NOP to replace the cob_nop call (frame switch)
-	  by a simple pointer comparision, which also ensures on all tested
+	  by a simple pointer comparison, which also ensures on all tested
 	  compilers that the line is not optimized out, and for those that
 	  optimize the check away the old cob_nop call is still done
 
@@ -2945,7 +2950,7 @@
 
 	* codegen.c (output_initialize_compound): adjusted OCCURS initialization
 	  to only do the initialization (and runtime checks) once and then
-	  memcpy to all other occurences
+	  memcpy to all other occurrences
 	* tree.c: preparation for all-upper-case names (post 3.1)
 
 2020-11-03  Simon Sobisch <simonsobisch@gnu.org>
@@ -4745,7 +4750,7 @@
 	  overflow when offset is is a variable
 	* typeck.c (cb_build_identifier): only build field name if actual
 	  needed, moved code building to new static cb_build_name_reference
-	* tree.c (compare_field_literal): added check for comparisions against
+	* tree.c (compare_field_literal): added check for comparisons against
 	  a reference modified field when the offset or length is known
 
 2018-01-16  Simon Sobisch <simonsobisch@gnu.org>
@@ -9496,7 +9501,7 @@
 2005-12-08  Roger While <simrw@sim-basis.de>
 
 	* cobc.h : New defines - COB_SMALL_BUFF, COB_MEDIUM_BUFF, COB_LARGE_BUFF
-	* Relevant files : Replace all occurences of FILENAME_MAX/BUFSIZ
+	* Relevant files : Replace all occurrences of FILENAME_MAX/BUFSIZ
 	* codegen.c : Do not use arrays for cob_decimal
 	* flags.def : Mark -fmain as deprecated
 	* cobc.c : Implement '-x' option (Create executable).
