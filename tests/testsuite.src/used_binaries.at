@@ -1067,6 +1067,29 @@ prog.cob:13: warning: ignoring redundant . [-Wothers]
    14 | <EOF>
 ]])
 
+AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-plain-output -fdiagnostics-show-caret prog.cob], [1], [],
+[[prog.cob:7: error: CRUD.CPY: No such file or directory
+          WORKING-STORAGE  SECTION.
+          01 TEST-VAR PIC 9(2) VALUE 'A'.
+ >        COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION.
+              DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+prog.cob:6: warning: numeric value is expected [-Wothers]
+          DATA             DIVISION.
+          WORKING-STORAGE  SECTION.
+ >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+          COPY 'CRUD.CPY'.
+          PROCEDURE        DIVISION.
+prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
+ >            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
+                 MOVE 12 TO TEST-VAR.
+              DISPLAY TEST-VAR NO                                       ADVANCING
+prog.cob:13: warning: ignoring redundant . [-Wothers]
+              END-DISPLAY                                                   *> lo ...
+ >            STOP RUN...
+   <EOF>
+]])
+
 # ensure that output stays identical no matter if CR or CRLF is used
 mv prog.cob prog.cr
 awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' prog.cr > prog.cob
@@ -1092,29 +1115,6 @@ prog.cob:13: warning: ignoring redundant . [-Wothers]
    12 |            END-DISPLAY                                                    ...
    13 >            STOP RUN...
    14 | <EOF>
-]])
-
-AT_CHECK([$COBC -fformat=terminal -Wextra -fdiagnostics-plain-output -fdiagnostics-show-caret prog.cob], [1], [],
-[[prog.cob:7: error: CRUD.CPY: No such file or directory
-          WORKING-STORAGE  SECTION.
-          01 TEST-VAR PIC 9(2) VALUE 'A'.
- >        COPY 'CRUD.CPY'.
-          PROCEDURE        DIVISION.
-              DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
-prog.cob:6: warning: numeric value is expected [-Wothers]
-          DATA             DIVISION.
-          WORKING-STORAGE  SECTION.
- >        01 TEST-VAR PIC 9(2) VALUE 'A'.
-          COPY 'CRUD.CPY'.
-          PROCEDURE        DIVISION.
-prog.cob:9: warning: DISPLAY statement not terminated by END-DISPLAY [-Wterminator]
- >            DISPLAY TEST-VAR NO ADVANCING ON EXCEPTION
-                 MOVE 12 TO TEST-VAR.
-              DISPLAY TEST-VAR NO                                       ADVANCING
-prog.cob:13: warning: ignoring redundant . [-Wothers]
-              END-DISPLAY                                                   *> lo ...
- >            STOP RUN...
-   <EOF>
 ]])
 
 AT_CHECK([$COMPILE -fformat=terminal -fdiagnostics-absolute-paths -Wall prog.cob 2> compiler.output], [1])
