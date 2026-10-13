@@ -973,7 +973,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INSPECT invalid size])
-AT_KEYWORDS([misc refmod]) 
+AT_KEYWORDS([misc refmod])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -1077,7 +1077,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
       *> Ok
            INSPECT "abcde" TALLYING x FOR CHARACTERS CHARACTERS
-       
+
       *> Not ok
            INSPECT "abcde" TALLYING x FOR ALL LEADING
                TRAILING ALL ALL ALL TRAILING
@@ -3800,7 +3800,7 @@ AT_DATA([prog.cob], [
            >>COBOL-WORDS UNDEFINE "DOGGY" "CATTY"
       *> Invalid in Standard COBOL, must be a defined word
            >>COBOL-WORDS UNDEFINE "BREAD"
-           
+
       *> FIXME: error-recovery is bad, see below
       *>>COBOL-WORDS REMOVE "BREAD"
 
@@ -4093,11 +4093,11 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
        MAIN-10.
-           STRING " ID:" I-D 
+           STRING " ID:" I-D
                DELIMITED BY SIZE INTO TSTWRK.
-           STRING " IX:" I-X " IB:" I-B 
-                  " ID:" I-D 
-                  " IP:" I-P " IF:" I-F 
+           STRING " IX:" I-X " IB:" I-B
+                  " ID:" I-D
+                  " IP:" I-P " IF:" I-F
                DELIMITED BY SIZE INTO TSTWRK.
            STOP RUN.
 ])
@@ -4629,7 +4629,7 @@ AT_DATA([prog.cob], [
        01  p                    PIC 99.
        01  o                    PIC X(5).
        PROCEDURE DIVISION.
-          CALL "prog2"  USING p p o 
+          CALL "prog2"  USING p p o
                               p.
           CALL "prog3"  USING BY REFERENCE p
                               BY CONTENT   p o
@@ -5578,20 +5578,20 @@ AT_DATA([prog2.cob], [
        78  var-len   value 115.
 
        PROCEDURE DIVISION.
-       
+
            IF var-len < 16
               move notdefined to var *> won't be seen with -Wno-ignore-error
            END-IF
 
        >> IF SKIP-FIRST-ERROR NOT DEFINED
       *> always reported here (if active) as that's the first error
-           move notdefined to var    
+           move notdefined to var
        >> END-IF
 
            IF var-len < 16
               move notdefined to var      *> never here, because of the warning/error above
            END-IF
-           
+
            move var        to notdefined   *> only here if not the skip was active
 
            STOP RUN.
@@ -7011,13 +7011,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  num PIC 99 VALUE 0.
        PROCEDURE DIVISION.
-           IF num NOT (LESS OR EQUALS) 0 
+           IF num NOT (LESS OR EQUALS) 0
                CONTINUE
            END-IF
            .
 ])
 
-AT_CHECK([$COMPILE prog.cob], [1], [], 
+AT_CHECK([$COMPILE prog.cob], [1], [],
 [prog.cob:9: error: invalid expression: unfinished expression
 ])
 AT_CLEANUP
@@ -7382,7 +7382,7 @@ AT_DATA([prog.cob], [
       $ELSE
       $DISPLAY BROKEN
       $END
-      
+
       $IF X > Y
       $DISPLAY correct X > Y
       $ELIF X < Y
@@ -7449,7 +7449,7 @@ AT_DATA([prog.cob], [
            IF Full-Name(SUB2:1) = SPACE
               IF Full-Name(SUB2 + 1:1) = SPACE
                  DISPLAY 'IN'
-                 EXIT PERFORM CYCLE 
+                 EXIT PERFORM CYCLE
               END-IF
            END-IF
            ADD 1 TO SUB1.
@@ -7551,7 +7551,7 @@ AT_DATA([prog.cob], [
                                  PRESENT WHEN IN-TYPE = 0 OR 1
    *>CLASS checks each character for a class defined in SPECIAL-NAMES
    *>or a predefined class
-                                 CLASS IS ALPHABETIC-UPPER 
+                                 CLASS IS ALPHABETIC-UPPER
    *>DESTINATION moves this item (or spaces if not alpha) to OUT-NAME.
                                  DESTINATION OUT-NAME.
    *>PRESENT WHEN checks whether the item is "blank" under this condition
@@ -7582,19 +7582,19 @@ AT_DATA([prog.cob], [
                  88                    VALUES "20,000.01" THRU "30,000.00" ARE VALID
                                        WHEN IN-TYPE = 8.
    *>exceptional cases can be specified using PRESENT WHEN
-            05  IN-CODE                PIC AX(3)9(4) 
+            05  IN-CODE                PIC AX(3)9(4)
                                        PRESENT WHEN IN-CODE NOT = "UNKNOWN".
             05  FILLER           PIC X(13).
    *>
    *>*************************************************************
    *> Description of error messages
    *>*************************************************************
-   *>Error messages or flags are set up or cleared automatically 
+   *>Error messages or flags are set up or cleared automatically
    *>when the VALIDATE statement is executed; the programmer chooses
    *>where they go and what messages or values they contain;
    *>they need not be contiguous as they are in this example.
    01  VALIDATE-MESSAGES.
-       03  PIC X(40)  VALIDATE-STATUS "Unknown Record Type - 1 assumed" 
+       03  PIC X(40)  VALIDATE-STATUS "Unknown Record Type - 1 assumed"
                         WHEN ERROR FOR IN-TYPE
    *> more than one VALIDATE-STATUS clause may be defined in one entry;
    *> a NO ERROR  phrase produces a message when the item is valid.
@@ -7614,7 +7614,7 @@ AT_DATA([prog.cob], [
                       VALIDATE-STATUS 1 WHEN ERROR FOR IN-WEEK.
    *>An EC-VALIDATE (nonfatal) exception is also set if the
    *>VALIDATE statement detects an invalid condition.
-   
+
 
    *> From D.22.7.2    Example of validation of non-display items:
       01  MIXED-GROUP TYPEDEF STRONG.
@@ -7625,14 +7625,14 @@ AT_DATA([prog.cob], [
           05  PTR-2             USAGE OBJECT REFERENCE.
           05  TXT-1             PIC N(12)  USAGE NATIONAL.
     01 MY-MIXED-GROUP TYPE MIXED-GROUP.
-   
-   
+
+
    *>
    *>*************************************************************
    *>Execution of the VALIDATE statement
    *>*************************************************************
     PROCEDURE DIVISION.
-    
+
    *>A single VALIDATE statement performs all the actions implied
    *>in the above data descriptions.
         VALIDATE INPUT-RECORD
@@ -7641,13 +7641,13 @@ AT_DATA([prog.cob], [
    *>(2) input items are moved automatically to the target area;
    *>(3) error messages are set up wherever specified in the program.
    *>
-   
+
    *> From D.22.7.2    Example of validation of non-display items:
    *>A declarative section could be used instead of VALIDATE-STATUS clauses
    *>especially if errors are not expected.
    *>> TURN EC-VALIDATE CHECKING ON
         VALIDATE MY-MIXED-GROUP
-        
+
      GOBACK.
 ])
 
@@ -7679,7 +7679,6 @@ err.cob:12: warning: optional period used
 ])
 
 AT_CLEANUP
-
 
 
 AT_SETUP([field-tree via COBC_GEN_DUMP_COMMENTS])
@@ -7768,7 +7767,7 @@ AT_DATA([prog.cob], [
            05  x-c                 pic x(01) value space.
          03 filler redefines x-basis pic x(03).
            88  sw-x-basis-full     value "xxx".
-       01  x-rms.                  
+       01  x-rms.
            05  x-rms-a             pic x(01) value space.
        01 filler redefines x-rms   pic x(01).
            88  sw-x-rms-full       value "X" or "A" thru "C" or QUOTE.
@@ -7950,7 +7949,8 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 7
   /* cob_dump_output ("END OF DUMP - debugme"); */
 ])
 
-AT_CHECK([$COMPILE -C -w prog.cob], [0], [])
+AT_CHECK([COBC_GEN_DUMP_COMMENTS="" \
+  $COMPILE -C -w prog.cob], [0], [])
 # TODO: only execute this piece when extended $GREP works
 AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 " CANCEL ") || exit 77], [0],
 [  P_dump:

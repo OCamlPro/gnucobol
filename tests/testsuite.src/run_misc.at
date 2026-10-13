@@ -348,7 +348,7 @@ AT_CLEANUP
 AT_SETUP([LOCAL-STORAGE (3)])
 AT_KEYWORDS([runmisc OCCURS INDEX INDEXED])
 
-# Note: this tests undefined behaviour, because the initial value
+# Note: this tests undefined behavior, because the initial value
 #       of index-names are undefined per standard; where they are
 #       explicit defined to be "... treated as a static item [for WS]
 #       and as an automatic item [for LS]"; see bug #794
@@ -10887,6 +10887,9 @@ AT_DATA([sub2.cob], [
            10  CM-DISK            PICTURE X(8).
            10  CM-NO-TERMINALS    PICTURE 9(4).
        77  DYNAMIC-NUM            PICTURE 9(4).
+       01  LS-DATA.
+           03  LS-ITEM            PIC X  OCCURS  1 TO 4
+               DEPENDING ON DYNAMIC-NUM INDEXED BY LS-IDX.
 
        PROCEDURE DIVISION USING X, TSPFL-RECORD.
        SubwaY SECTION.
@@ -10971,8 +10974,8 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11109,6 +11112,7 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+01        LS-DATA.                       <NULL> address
 
 END OF DUMP - sub2
 **********************
@@ -11209,8 +11213,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11232,8 +11236,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11295,8 +11299,8 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11324,6 +11328,7 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+01        LS-DATA.                       <NULL> address
 
 END OF DUMP - sub2
 **********************
@@ -11371,7 +11376,8 @@ reference_fdls > reference_all], [0], [], [])
 AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 
 
-# CHECKME @ Ron: The result is likely wrong, please verify later
+# CHECKME: The result is possibly wrong, verify later
+# CHECKME: sticky linkage with non-USING fields has a broken codegen
 #AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
 #$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o lssticky], [0], [], [])
 #
@@ -11396,8 +11402,8 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #	MAIN-1 at prog.cob:177
 #	ENTRY sub1 at prog.cob:159
 # Last statement of "sub2" was CALL
-#	DO-CALL OF SubwaY at sub2.cob:48
-#	ENTRY sub2 at sub2.cob:39
+#	DO-CALL OF SubwaY at sub2.cob:51
+#	ENTRY sub2 at sub2.cob:42
 # Last statement of "prog" was CALL
 #	CALL-IT-OMIT at prog.cob:118
 #	MAIN-100 at prog.cob:85
@@ -16400,6 +16406,7 @@ prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,recurse,prog.cob:9,C
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([INDEXED BY in LINKAGE])
 AT_KEYWORDS([runmisc OCCURS SEARCH])

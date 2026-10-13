@@ -2416,7 +2416,7 @@ output_local_field_cache (struct cb_program *prog)
 	local_field_cache = list_cache_sort (local_field_cache,
 					     &field_cache_cmp);
 	for (field = local_field_cache; field; field = field->next) {
-		int		needs_comment = 1;
+		int 	needs_comment = 1;
 		f = field->f;
 		if (!f->flag_local
 		 && !f->flag_external) {
@@ -10906,6 +10906,7 @@ output_initial_values (struct cb_field *f)
 static int field_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 static size_t size_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
+/* output dump code to display a single field */
 static void
 output_field_display (struct cb_field *f, size_t offset,
 		unsigned int idx)
@@ -10939,7 +10940,8 @@ output_field_display (struct cb_field *f, size_t offset,
 		output (")");
 	} else
 	if (f->count != 0
-	 && f->storage != CB_STORAGE_LINKAGE) {
+	 && f->storage != CB_STORAGE_LINKAGE
+	 && f->index_type != CB_INT_INDEX /* an index on LINKAGE is "local" */) {
 		output_param (x, 0);
 	} else {
 		output ("COB_SET_FLD (f0, ");
@@ -11071,6 +11073,7 @@ has_field_to_dump (struct cb_field * f)
 	return 0;
 }
 
+/* output dump code to display a record including all sisters */
 static void
 output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 {
@@ -11663,12 +11666,14 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		}
 	}
 
+	/* LCOV_EXCL_START */
 	if (output_as_comment) {
 		/* should be always zero here, was not at one time... */
 		cobc_err_msg ("bad comment state in output_dump_code,\n"
 			"you may disable COBC_GEN_DUMP_COMMENTS and retry");
 		cobc_abort_terminate (1);
 	}
+	/* LCOV_EXCL_STOP */
 }
 
 static void
@@ -12246,6 +12251,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		) {
 		output_line ("/* Store last parameters for possible later lookup */");
 		output_local ("/* Last USING parameters for possible later lookup */\n");
+		/* FIXME: likely we need all of LINKAGE here (not only parameters),
+		   otherwise dump code generation would be broken, see run_misc.at "tdsticky" */
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
 			f = cb_code_field (CB_VALUE (l));
 			output_prefix ();

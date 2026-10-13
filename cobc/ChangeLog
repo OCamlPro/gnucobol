@@ -3,6 +3,9 @@
 
 	* error.c (print_error): open source file to show diagnostic context
 	  in binary mode, to prevent broken ftell/fseek on Windows
+	* codegen.c (output_field_display): fix dump code for INDEXED BY in
+	  LINKAGE fields (and by that COBC_GEN_DUMP_COMMENTS)
+	* cobc.c (finish_setup_compiler_env): allow to unset COBC_GEN_DUMP_COMMENTS
 
 2026-10-05  David Declerck <david.declerck@ocamlpro.com>
 
