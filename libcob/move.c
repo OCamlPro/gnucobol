@@ -2097,7 +2097,7 @@ cob_move (cob_field *src, cob_field *dst)
 		return;
 	/* Non-elementary move */
 	case COB_TYPE_GROUP:
-		cob_move_all (src, dst);
+		cob_move_alphanum_to_alphanum (src, dst);
 		return;
 	/* More elementary moves */
 	default:
