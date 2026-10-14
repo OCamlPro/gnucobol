@@ -2079,7 +2079,7 @@ cb_define_switch_name (cb_tree name, cb_tree sname, const int flag)
 	return value;
 }
 
-void
+int
 cb_check_word_length (unsigned int length, const char *word)
 {
 	if (unlikely (length > cb_word_length)) {
@@ -2087,11 +2087,13 @@ cb_check_word_length (unsigned int length, const char *word)
 			/* Absolute limit */
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
+			return 1;
 		} else {
 			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
 						cb_word_length, word);
 		}
 	}
+	return 0;
 }
 
 cb_tree

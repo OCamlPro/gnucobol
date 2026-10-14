@@ -4060,12 +4060,9 @@ create_dummy_reserved (const char *word)
 {
 	struct cobc_reserved	ret;
 
+	memset (&ret, 0, sizeof(struct cobc_reserved));
 	ret.name = word;
-	ret.nodegen = 0;
-	ret.context_sens = 0;
 	ret.token = -1;
-	ret.context_set = 0;
-	ret.context_test = 0;
 
 	return ret;
 }
@@ -4358,8 +4355,8 @@ reduce_amendment_list (struct amendment_list **amendment_list)
 }
 
 /* hash function for _reserved words/intrinsics/..._ (no extended letters!) */
-static int
-hash_word (const cob_c8_t *word, const cob_u32_t mod)
+static COB_INLINE COB_A_INLINE cob_u32_t
+hash_single_word (const cob_c8_t *word)
 {
 	cob_u32_t	result = 0x811c9dc5;
 
@@ -4370,128 +4367,257 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		result *= (cob_u32_t) 0x1677619;
 	}
 
-	return result % mod;
+	return result;
 }
 
-#define HASHMAP(type, type_struct, word_member)				\
-	static struct type_struct	**type##_map;			\
-	static size_t	type##_map_arr_size;				\
-	static unsigned int	num_##type##s;					\
-									\
-	static void							\
-	init_##type##_map (void)					\
-	{								\
-		type##_map_arr_size = 512;				\
-		num_##type##s = 0;					\
-		type##_map = cobc_main_malloc (type##_map_arr_size * sizeof (void *)); \
-	}								\
-									\
-	static COB_INLINE COB_A_INLINE int				\
-	type##_hash (const char *word)					\
-	{								\
-		return hash_word ((const cob_c8_t *) word, type##_map_arr_size); \
-	}								\
-									\
-	static COB_INLINE COB_A_INLINE int				\
-	next_##type##_key (const unsigned int key)				\
-	{								\
-		if (key < type##_map_arr_size - 1) {			\
-			return key + 1;					\
-		} else {						\
-			return 0;					\
-		}							\
-	}								\
-									\
-	static unsigned int							\
-	find_key_for_##type (const char * const word)			\
-	{								\
-		unsigned int key;						\
-									\
-		for (key = type##_hash (word);				\
-			/* FIXME: we currently cannot use strcmp here instead of cb_strcasecmp. */ \
-			type##_map[key] && cb_strcasecmp (type##_map[key]->word_member, word); \
-			key = next_##type##_key (key));			\
-									\
-		return key;						\
-	}								\
-									\
-	static void							\
-	realloc_##type##_map (const size_t new_size)			\
-	{								\
-		struct type_struct	**new_map = cobc_main_malloc (new_size * sizeof(void *)); \
-		struct type_struct	**old_map = type##_map;		\
-		size_t	old_size = type##_map_arr_size;			\
-		unsigned int	i;						\
-		unsigned int	key;						\
-									\
-		type##_map_arr_size = new_size;				\
-		type##_map = new_map;					\
-									\
-		for (i = 0; i < old_size; ++i) {			\
-			if (old_map[i]) {				\
-				key = find_key_for_##type (old_map[i]->word_member); \
-				type##_map[key] = old_map[i];		\
-			}						\
-		}							\
-									\
-		cobc_main_free (old_map);				\
-	}								\
-									\
-									\
-	static void							\
-	free_##type##_with_key (const int key)				\
-	{								\
-		cobc_main_free (type##_map[key]);			\
-		type##_map[key] = NULL;					\
-	}								\
-									\
-	static int							\
-	add_##type##_to_map (const struct type_struct val, const int overwrite) \
-	{								\
-		unsigned int	key;					\
-		int	entry_already_there;				\
-									\
-		if (!type##_map) {					\
-			init_##type##_map ();				\
-		}							\
-		/*							\
-		  The "- 1" is there so there is always one NULL entry in the \
-		  array. If there is not one and the array is full,	\
-		  find_##type will not terminate when given a word which \
-		  shares a hash with a different word.			\
-		*/							\
-		if (num_##type##s == type##_map_arr_size - 1) {		\
-			realloc_##type##_map (type##_map_arr_size * 2); \
-		}							\
-									\
-		key = find_key_for_##type (val.word_member);		\
-		entry_already_there = !!type##_map[key];		\
-		if (entry_already_there) {				\
-			if (overwrite) {				\
-				free_##type##_with_key (key);		\
-			} else {					\
-				return 1;				\
-			}						\
-		} else {						\
-			++num_##type##s;				\
-		}							\
-									\
-		type##_map[key] = cobc_main_malloc (sizeof (struct type_struct)); \
-		*type##_map[key] = val;					\
-		return entry_already_there;				\
+/* hash function for _reserved words/intrinsics/..._ (no extended letters!)
+   to store in a map (size: mod) */
+static cob_u32_t
+hash_word (const cob_c8_t *word, const cob_u32_t mod)
+{
+	return hash_single_word (word) % mod;
+}
+
+/* hashmap implementation cobc_reserved */
+
+static struct cobc_reserved	**reserved_word_map;
+static cob_u32_t	*reserved_hash_map;
+static size_t	reserved_word_map_arr_size;
+static unsigned int	num_reserved_words;
+
+static void
+init_reserved_word_map (void)
+{
+	reserved_word_map_arr_size = 512;
+	num_reserved_words = 0;
+	reserved_word_map = cobc_main_malloc (reserved_word_map_arr_size * sizeof (void *));
+	reserved_hash_map = cobc_main_malloc (reserved_word_map_arr_size * sizeof (cob_u32_t));
+}
+
+static COB_INLINE COB_A_INLINE int
+reserved_word_hash (const char *word)
+{
+	return hash_word ((const cob_c8_t *) word, reserved_word_map_arr_size);
+}
+
+static COB_INLINE COB_A_INLINE int
+next_reserved_word_key (const unsigned int key)
+{
+	if (key < reserved_word_map_arr_size - 1) {
+		return key + 1;
+	}
+	return 0;
+}
+
+static unsigned int
+find_key_for_reserved_word (const char * const word)
+{
+	cob_u32_t key_map = reserved_word_hash (word);
+	struct cobc_reserved *res_word = reserved_word_map[key_map];
+
+	if (res_word) {
+		const cob_u32_t word_hash = hash_single_word ((const cob_c8_t *) word);
+		while (res_word) {
+			if (res_word->word_hash == word_hash
+			 && cb_strcasecmp (res_word->name, word) == 0) {
+				/* FIXME: we still can't use strcmp here, try to adjust callers */
+				break;
+			}
+			key_map = next_reserved_word_key (key_map);
+			res_word = reserved_word_map[key_map];
+		}
 	}
 
-HASHMAP (reserved_word, cobc_reserved, name)
-HASHMAP (amendment, amendment_list, word)
+	return key_map;
+}
+
+static void
+realloc_reserved_word_map (const size_t new_size)
+{
+	struct cobc_reserved	**new_map = cobc_main_malloc (new_size * sizeof(void *));
+	struct cobc_reserved	**old_map = reserved_word_map;
+	size_t	old_size = reserved_word_map_arr_size;
+	unsigned int	i;
+	unsigned int	key;
+
+	reserved_word_map_arr_size = new_size;
+
+	/* the hashes for the map are depending on the map-size, so recompute */
+	reserved_word_map = new_map;
+
+	for (i = 0; i < old_size; ++i) {
+		if (old_map[i]) {
+			key = find_key_for_reserved_word (old_map[i]->name);
+			reserved_word_map[key] = old_map[i];
+		}
+	}
+
+	cobc_main_free (old_map);
+
+	/* hashes for words stay identicaly -> just resize */
+	reserved_hash_map = cobc_main_realloc (reserved_hash_map, new_size * sizeof(cob_u32_t));
+}
 
 
-/* These functions are separate to suppress "unused function" warnings. */
+static void
+free_reserved_word_with_key (const int key)
+{
+	cobc_main_free (reserved_word_map[key]);
+	reserved_word_map[key] = NULL;
+}
+
+static int
+add_reserved_word_to_map (struct cobc_reserved val, const int overwrite)
+{
+	unsigned int	key;
+	int	entry_already_there;
+
+	if (!reserved_word_map) {
+		init_reserved_word_map ();
+	}
+	/*
+	  The "- 1" is there so there is always one NULL entry in the
+	  array. If there is not one and the array is full,
+	  find_reserved_word will not terminate when given a word which
+	  shares a hash with a different word.
+	*/
+	if (num_reserved_words == reserved_word_map_arr_size - 1) {
+		realloc_reserved_word_map (reserved_word_map_arr_size * 2);
+	}
+	if (val.word_hash == 0) {
+		val.word_hash = hash_single_word ((const cob_c8_t *) val.name);
+	}
+	key = find_key_for_reserved_word (val.name);
+	entry_already_there = !!reserved_word_map[key];
+	if (entry_already_there) {
+		if (overwrite) {
+			free_reserved_word_with_key (key);
+		} else {
+			return 1;
+		}
+	} else {
+		++num_reserved_words;
+	}
+
+	reserved_word_map[key] = cobc_main_malloc (sizeof (struct cobc_reserved));
+	*reserved_word_map[key] = val;
+	return entry_already_there;
+}
+
+
+/* hashmap amendment_list */
+
+static struct amendment_list	**amendment_map;
+static size_t	amendment_map_arr_size;
+static unsigned int	num_amendments;
+
+static void
+init_amendment_map (void)
+{
+	amendment_map_arr_size = 512;
+	num_amendments = 0;
+	amendment_map = cobc_main_malloc (amendment_map_arr_size * sizeof (void *));
+}
+
+static COB_INLINE COB_A_INLINE int
+amendment_hash (const char *word)
+{
+	return hash_word ((const cob_c8_t *) word, amendment_map_arr_size);
+}
+
+static COB_INLINE COB_A_INLINE int
+next_amendment_key (const unsigned int key)
+{
+	if (key < amendment_map_arr_size - 1) {
+		return key + 1;
+	}
+	return 0;
+}
+
+static unsigned int
+find_key_for_amendment (const char * const word)
+{
+	unsigned int key;
+	// TODO: ensure upper-case inserts
+	for (key = amendment_hash (word);
+		amendment_map[key] && strcmp (amendment_map[key]->word, word);
+		key = next_amendment_key (key));
+
+	return key;
+}
+
+static void
+realloc_amendment_map (const size_t new_size)
+{
+	// TODO: realloc + comment below
+	struct amendment_list	**new_map = cobc_main_malloc (new_size * sizeof(void *));
+	struct amendment_list	**old_map = amendment_map;
+	size_t	old_size = amendment_map_arr_size;
+	unsigned int	i;
+	unsigned int	key;
+
+	amendment_map_arr_size = new_size;
+	amendment_map = new_map;
+
+	for (i = 0; i < old_size; ++i) {
+		if (old_map[i]) {
+			key = find_key_for_amendment (old_map[i]->word);
+			amendment_map[key] = old_map[i];
+		}
+	}
+
+	cobc_main_free (old_map);
+}
+
+
+static void
+free_amendment_with_key (const int key)
+{
+	cobc_main_free (amendment_map[key]);
+	amendment_map[key] = NULL;
+}
+
+static int
+add_amendment_to_map (const struct amendment_list val, const int overwrite)
+{
+	unsigned int	key;
+	int	entry_already_there;
+
+	if (!amendment_map) {
+		init_amendment_map ();
+	}
+	/*
+	  The "- 1" is there so there is always one NULL entry in the
+	  array. If there is not one and the array is full,
+	  find_amendment will not terminate when given a word which
+	  shares a hash with a different word.
+	*/
+	if (num_amendments == amendment_map_arr_size - 1) {
+		realloc_amendment_map (amendment_map_arr_size * 2);
+	}
+
+	key = find_key_for_amendment (val.word);
+	entry_already_there = !!amendment_map[key];
+	if (entry_already_there) {
+		if (overwrite) {
+			free_amendment_with_key (key);
+		} else {
+			return 1;
+		}
+	} else {
+		++num_amendments;
+	}
+
+	amendment_map[key] = cobc_main_malloc (sizeof (struct amendment_list));
+	*amendment_map[key] = val;
+	return entry_already_there;
+}
+
 static void
 remove_reserved_word_from_map (const char * const word)
 {
 	int	key = find_key_for_reserved_word (word);
 	int	deleted_key;
-	int	following_entry_key;
 
 	if (!reserved_word_map[key]) {
 		return;
@@ -4505,8 +4631,11 @@ remove_reserved_word_from_map (const char * const word)
 	  entry's key, it would be in the NULL position.
 	*/
 	deleted_key = key;
-	for (key = next_reserved_word_key (key); reserved_word_map[key]; key = next_reserved_word_key (key)) {
-		following_entry_key = find_key_for_reserved_word (reserved_word_map[key]->name);
+	for (key = next_reserved_word_key (key);
+	     reserved_word_map[key];
+	     key = next_reserved_word_key (key)) {
+		const int	following_entry_key
+			= find_key_for_reserved_word (reserved_word_map[key]->name);
 		if (following_entry_key == deleted_key) {
 			reserved_word_map[deleted_key] = reserved_word_map[key];
 			reserved_word_map[key] = NULL;
@@ -4523,6 +4652,8 @@ remove_reserved_word_from_map (const char * const word)
 	}
 }
 
+/* get the entry for the reserved word 'word'
+   (less than COB_MAX_NAMELEN size, all upper-case )*/
 static struct cobc_reserved *
 find_reserved_word (const char * const word)
 {
@@ -4893,16 +5024,16 @@ remove_reserved_word_now (const char * const word)
 	remove_reserved_word_from_map (word);
 }
 
-/* lookup function for the scanner to get the reserved-word toke
+/* lookup function for the scanner to get the reserved-word token
    for a given word (or NULL) */
 struct cobc_reserved *
-lookup_reserved_word (const char *name)
+lookup_reserved_word (const char *word)
 {
 	struct cobc_reserved	*p;
 
 	initialize_reserved_words_if_needed ();
 
-	p = find_reserved_word (name);
+	p = find_reserved_word (word);
 	if (!p) {
 		return NULL;
 	}
@@ -4911,7 +5042,7 @@ lookup_reserved_word (const char *name)
 	if (unlikely(p->token <= 0)) {
 		/* Not implemented - If context sensitive, no error */
 		if (!p->context_sens) {
-			cb_error (_("'%s' is a reserved word, but isn't supported"), name);
+			cb_error (_("'%s' is a reserved word, but isn't supported"), word);
 		}
 		return NULL;
 	}
@@ -4937,18 +5068,21 @@ lookup_reserved_word (const char *name)
 }
 
 struct cb_intrinsic_table *
-lookup_intrinsic (const char *name, const int checkimpl)
+lookup_intrinsic (const char *name, const size_t size, const int checkimpl)
 {
 	struct cb_intrinsic_table	*cbp;
-	static char	upper_name[43];
-	size_t		name_len = strlen (name);
+	static char	upper_name[43];	/* max. length of intrinsic name = 42 */
 
-	if (name_len > sizeof (upper_name) - 1) {
+	if (size > sizeof (upper_name) - 1) {
 		return NULL;
 	}
 
+	/* TODO: for heavy calling (huge programs with FUNCTION ALL INTRINSIC)
+	   this needs to be improved, maybe checked here with a
+	   possibly_intrinsic_name function */
+
 	/* copy including terminating byte */
-	cb_memcpy_upper (upper_name, name, name_len + 1);
+	cb_memcpy_upper (upper_name, name, size + 1);
 
 	cbp = bsearch (upper_name, function_list, NUM_INTRINSICS,
 		sizeof (struct cb_intrinsic_table), intrinsic_comp);
@@ -4972,7 +5106,7 @@ static void
 change_intrinsic (const char *name, const char *fname, const int line, enum cb_feature_mode mode)
 {
 	struct cb_intrinsic_table *cbp;
-	size_t		i;
+	unsigned int i;
 
 	/* Group "ALL" intrinsics */
 	if (cb_strcasecmp (name, "DIALECT-ALL") == 0) {
@@ -4982,7 +5116,7 @@ change_intrinsic (const char *name, const char *fname, const int line, enum cb_f
 		return;
 	}
 
-	cbp = lookup_intrinsic (name, 1);
+	cbp = lookup_intrinsic (name, strlen (name), 1);
 	if (!cbp) {
 		if (mode == CB_FEATURE_ACTIVE) {
 			configuration_error (fname, line, 1, _("intrinsic function %s is unknown"), name);

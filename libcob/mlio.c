@@ -53,7 +53,6 @@
 #define LIBXML_CTXT_GET_OPTIONS(ctxt) 			xmlCtxtGetOptions(ctxt)
 #define LIBXML_CTXT_SET_OPTIONS(ctxt, options) 	xmlCtxtSetOptions(ctxt, options)
 #else /* use old ABI */
-#define LIBXML_CONST_ERROR_PTR					xmlErrorPtr
 #define LIBXML_CTXT_GET_ENCODING(ctxt) 			ctxt->encoding
 #define LIBXML_CTXT_GET_STANDALONE(ctxt) 		ctxt->standalone
 #define LIBXML_CTXT_GET_VERSION(ctxt) 			ctxt->version

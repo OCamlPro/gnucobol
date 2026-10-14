@@ -299,22 +299,16 @@ copy_file_line (cb_tree e, cb_tree y, cb_tree x)
 
 /* compute hash value of COBOL word */
 static size_t
-word_hash (const unsigned char *s)
+word_hash (const unsigned char *word)
 {
-	size_t	val;
-	size_t	pos;
+	cob_u32_t	result = 0x811c9dc5;	/* FNV-1a */
 
-	/* Hash a name */
-	/* We multiply by position to get a better distribution */
-	val = 0;
-	pos = 1;
-	for (; *s; s++, pos++) {
-		val += *s * pos;
+	/* Perform 32-bit FNV1a hash */
+	for (; *word; ++word) {
+		result = (result ^ *word) * (cob_u32_t) 0x1677619;
 	}
-#if	0	/* RXWRXW - Hash remainder */
-	return val % CB_WORD_HASH_SIZE;
-#endif
-	return val & CB_WORD_HASH_MASK;
+
+	return result % CB_WORD_HASH_MASK;
 }
 
 /* look up word (case insensitive) */
@@ -7032,7 +7026,7 @@ cb_build_any_intrinsic (cb_tree args)
 {
 	struct cb_intrinsic_table	*cbp;
 
-	cbp = lookup_intrinsic ("BYTE-LENGTH", 1);
+	cbp = lookup_intrinsic ("BYTE-LENGTH", sizeof("BYTE-LENGTH"), 1);
 	return make_intrinsic (NULL, cbp, args, NULL, NULL, 0);
 }
 
@@ -7122,7 +7116,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		return make_intrinsic (func, &userbp, args, cb_int1, refmod, 1);
 	}
 
-	cbp = lookup_intrinsic (name, 1);
+	cbp = lookup_intrinsic (name, strlen (name), 1);
 	if (!cbp || cbp->active == CB_FEATURE_DISABLED) {
 		cb_error_x (func, _("FUNCTION '%s' unknown"), name);
 		return cb_error_node;

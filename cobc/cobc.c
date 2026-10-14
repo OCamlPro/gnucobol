@@ -2922,10 +2922,13 @@ cobc_deciph_funcs (const char *opt)
 	p = cobc_strdup (opt);
 	q = strtok (p, ",");
 	while (q) {
-		if (!lookup_intrinsic (q, 1)) {
+		const struct cb_intrinsic_table *cbp
+			= lookup_intrinsic (q, strlen (q), 1);
+		if (!cbp) {
 			cobc_err_exit (_("'%s' is not an intrinsic function"), q);
 		}
-		CB_TEXT_LIST_ADD (cb_intrinsic_list, q);
+		/* add always-uppercase name for later compare */
+		CB_TEXT_LIST_ADD (cb_intrinsic_list, cbp->name);
 		q = strtok (NULL, ",");
 	}
 	cobc_free (p);
@@ -4708,7 +4711,7 @@ process_filename (const char *filename)
 	if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_strdup (output_name);
 	} else
-	if (save_all_src || save_temps
+	if (save_temps   /* Oct 9 change ??? */
 	 || (cb_compile_level == CB_LEVEL_PREPROCESS && !cb_depend_output_only)) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {

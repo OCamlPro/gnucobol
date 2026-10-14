@@ -1,4 +1,11 @@
 
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c (lookup_intrinsic), tree.h, scanner.l, tree.c, cobc.c:
+	  added size parameter as the main caller scanner.l provides that already
+	* cobc.c (cobc_deciph_funcs), scanner.l: add and compare resolved intrinsic
+	  function name (always upper-case) to/from internal list
+
 2026-10-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* error.c (print_error): open source file to show diagnostic context
@@ -6,6 +13,37 @@
 	* codegen.c (output_field_display): fix dump code for INDEXED BY in
 	  LINKAGE fields (and by that COBC_GEN_DUMP_COMMENTS)
 	* cobc.c (finish_setup_compiler_env): allow to unset COBC_GEN_DUMP_COMMENTS
+
+2026-10-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_check_word_length), tree.h: now returns 1 on bad length
+	* scanner.l: exit early when looking up words and cb_check_word_length
+	  returned an error
+	* reserved.c (create_dummy_reserved): refactor to init by memset
+	* reserved.c: expanded HASHMAP macro to have separate functions for
+	  debugging and performance checks
+	* reserved.c (hash_single_word): extracted hash_word
+	* tree.h (cobc_reserved): added word_hash
+	* reserved.c (add_reserved_word_to_map): compute the word's hash when adding
+	* reserved.c (find_key_for_reserved_word): only cb_strcasecmp if word hashes
+	  match
+	* tree.c (word_hash): apply FNV-1a hashing from reserved's hash_single_word
+	  for a much better distribution in our program's word list
+	* scanner.l (word_hash): new copy of reserved's hash_single_word which uses
+	  a locale-aware toupper function (user-defined words!)
+	* scanner.l (cb_level_78): replaced name_len with name_hash
+	* scanner.l: compute and compare name_hash instead of name_len
+	* scanner.l (possibly_defined_name_hash): function used before looping over
+	  the internal constant lists using the new constant hash filter map
+	  containing combined hashes in a char[] added when computing hashes for
+	  constants, unset on calling clear_constants;
+	  note: the idea and functions to do this was "contributed"
+	  by Claude Sonnect 5.5
+	* tree.h (cb_literal): removed padding by reordering and adjusting the type
+	  for llit attribute
+	* tree.h (literal_list): added literal_hash member
+	* codegen.c (cb_literal_hash): new function for computing a hash based on
+	  the literal data; note: assisted by Claude Sonnet 5.5
 
 2026-10-05  David Declerck <david.declerck@ocamlpro.com>
 

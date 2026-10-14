@@ -129,7 +129,7 @@ struct cb_level_78 {
 	struct cb_level_78	*last;		/* Last in chain */
 	struct cb_field		*fld_78;		/* Pointer to field */
 	struct cb_program	*prog;		/* Program where defined */
-	cob_u32_t		name_len;	/* Length of name */
+	cob_u32_t		name_hash;	/* Hash value */
 	cob_u32_t		not_const;	/* Invalid usage check */
 	cob_u32_t		chk_const;	/* Check global level use */
 };
@@ -197,6 +197,8 @@ static void	add_synonym (const int, const int);
 static void	make_synonym (void);
 static void clear_constants (void);
 static struct cb_text_list *scan_list_add (struct cb_text_list *, const char *);
+static cob_u32_t hash_word (const char *);
+static int possibly_defined_name_hash (const cob_u32_t);
 
 %}
 
@@ -1013,23 +1015,36 @@ H#[0-9A-Za-z]+ {
 	cb_tree				x;
 	cb_tree				l;
 
-	cb_check_word_length ((unsigned int)yyleng, yytext);
+	if (cb_check_word_length ((unsigned int)yyleng, yytext)) {
+		/* in case of hard error return a word so parsing can still go on
+		   and error messages may reference that as well */
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (WORD);
+	}
 
 	/* Check Intrinsic FUNCTION name without keyword */
-	if ((cobc_in_procedure && (functions_are_all || cb_intrinsic_list ||
-	     current_program->function_spec_list)) || cobc_in_repository) {
-		cbp = lookup_intrinsic (yytext, 0);
+	if ((cobc_in_procedure
+	   && (functions_are_all
+	    || cb_intrinsic_list
+		|| current_program->function_spec_list))
+	 || cobc_in_repository) {
+		cbp = lookup_intrinsic (yytext, (size_t)yyleng, 0);
 		if (cbp) {
+			const char *upper_case_funcname = cbp->name;
 			if (cobc_in_repository) {
 				yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 				RETURN_TOK (FUNCTION_NAME);
 			}
+			/* for FUNCTIONS ALL INTRINSIC, just pass the token */
 			if (functions_are_all) {
 				yylval = cb_build_reference (yytext);
 				RETURN_TOK ((enum yytokentype)(cbp->token));
 			}
+			/* for FUNCTIONS with a list, check if we're in there,
+			   note: cb_intrinsic_list contains only upper-case entries */
+			/* CHECKME: possible improvement when comparing the size first */
 			for (tlp = cb_intrinsic_list; tlp; tlp = tlp->next) {
-				if (!strcasecmp (yytext, tlp->text)) {
+				if (!strcmp (upper_case_funcname, tlp->text)) {
 					yylval = cb_build_reference (yytext);
 					RETURN_TOK ((enum yytokentype)(cbp->token));
 				}
@@ -1037,7 +1052,7 @@ H#[0-9A-Za-z]+ {
 			l = current_program->function_spec_list;
 			for (; l; l = CB_CHAIN(l)) {
 				x = CB_VALUE (l);
-				if (!strcasecmp (yytext,
+				if (!strcasecmp (upper_case_funcname,
 						 (char *)(CB_LITERAL(x)->data))) {
 					yylval = cb_build_reference (yytext);
 					RETURN_TOK ((enum yytokentype)(cbp->token));
@@ -1116,39 +1131,44 @@ H#[0-9A-Za-z]+ {
 	}
 
 	/* User word */
+		
+	const cob_u32_t hash = hash_word (yytext);
 
 	/* Check local, global and source global CONSTANT (78) items */
-
-	for (p78 = top_78_ptr; p78; p78 = p78->glob_next) {
-		if (strcasecmp (yytext, p78->fld_78->name) == 0) {
-			if (unlikely (non_const_word)) {
-				if (p78->prog == current_program) {
-					cb_error (_("a constant may not be used here - '%s'"), yytext);
-					yylval = cb_error_node;
-					RETURN_TOK (WORD);
+	if (possibly_defined_name_hash (hash)) {
+		for (p78 = top_78_ptr; p78; p78 = p78->glob_next) {
+			if (p78->name_hash == hash
+			 && strcasecmp (p78->fld_78->name, yytext) == 0) {
+				if (unlikely (non_const_word)) {
+					if (p78->prog == current_program) {
+						cb_error (_("a constant may not be used here - '%s'"),
+							yytext);
+						yylval = cb_error_node;
+						RETURN_TOK (WORD);
+					}
+					if (p78->chk_const) {
+						p78->not_const = 1;
+					}
+					break;
 				}
-				if (p78->chk_const) {
-					p78->not_const = 1;
+				if (p78->chk_const && p78->not_const) {
+					break;
 				}
-				break;
+				x = p78->fld_78->values;
+				if (CB_LITERAL_P (x)) {
+					/* duplicate the constant literal to
+					   assign current source location */
+					yylval = cobc_parse_malloc (sizeof (struct cb_literal));
+					memcpy (yylval, x, sizeof (struct cb_literal));
+					SET_LOCATION (yylval);
+				} else {
+					/* Note: we cannot do this for cb_zero and friends,
+					         as those have sepcial meanings and are checked
+					         by tree comparision only */
+					yylval = x;
+				}
+				RETURN_TOK (LITERAL);
 			}
-			if (p78->chk_const && p78->not_const) {
-				break;
-			}
-			x = p78->fld_78->values;
-			if (CB_LITERAL_P (x)) {
-				/* duplicate the constant literal
-				   to assign current source location */
-				yylval = cobc_parse_malloc (sizeof (struct cb_literal));
-				memcpy (yylval, x, sizeof (struct cb_literal));
-				SET_LOCATION (yylval);
-			} else {
-				/* Note: we cannot do this for cb_zero and friends,
-				         as those have sepcial meanings and are checked
-						 by tree comparision only */
-				yylval = x;
-			}
-			RETURN_TOK (LITERAL);
 		}
 	}
 
@@ -1322,7 +1342,7 @@ H#[0-9A-Za-z]+ {
 			RETURN_TOK (USER_FUNCTION_NAME);
 		}
 	}
-	cbp = lookup_intrinsic (yytext, 0);
+	cbp = lookup_intrinsic (yytext, (size_t)yyleng, 0);
 	if (cbp) {
 		RETURN_TOK ((enum yytokentype)(cbp->token));
 	}
@@ -2321,6 +2341,29 @@ count_lines (const char *text)
 	}
 }
 
+/* constant hash filter map */
+static unsigned char	l78_filter[8192];	/* 65536 bits */
+#define L78_BIT(h)	(h & 0xFFFF)
+
+/* calculate name_hash, attach to p78 and add it to a filter list,
+   preventing unnecessary loops over constants later */
+static COB_INLINE COB_A_INLINE void
+setup_name_hash (struct cb_level_78	*p78, const char *name)
+{
+	const cob_u32_t hash = hash_word (name);
+
+	p78->name_hash = hash;
+
+	l78_filter[L78_BIT (hash) >> 3] |= 1U << (L78_BIT (hash) & 7);
+}
+
+/* check if name_hash is potentially in the list of stored values */
+static int
+possibly_defined_name_hash (const cob_u32_t hash)
+{
+	return l78_filter[L78_BIT (hash) >> 3] & (1U << (L78_BIT (hash) & 7));
+}
+
 static void
 cb_add_const_var (const char *name, cb_tree value)
 {
@@ -2341,7 +2384,8 @@ cb_add_const_var (const char *name, cb_tree value)
 	p78 = cobc_malloc (sizeof(struct cb_level_78));
 	p78->fld_78 = f;
 	p78->prog = NULL;
-	p78->name_len = (cob_u32_t)strlen (f->name);
+	setup_name_hash (p78, name);
+
 	/* RXWRXW - Check this */
 	p78->chk_const = 0;
 	if (!const_78_ptr) {
@@ -2402,11 +2446,15 @@ scan_define_options (const char *text)
 	}
 
 	/* Check for already defined constant */
-	if (!override) {
-		for (p78 = top_78_ptr; p78; p78 = p78->glob_next) {
-			if (strcasecmp (s, p78->fld_78->name) == 0) {
-				cobc_free (p);
-				return;
+	if (!override) {	
+		const cob_u32_t hash = hash_word (s);
+		if (possibly_defined_name_hash (hash)) {
+			for (p78 = top_78_ptr; p78; p78 = p78->glob_next) {
+				if (p78->name_hash == hash
+				 && strcasecmp (p78->fld_78->name, s) == 0) {
+					cobc_free (p);
+					return;
+				}
 			}
 		}
 	}
@@ -2601,6 +2649,22 @@ clear_constants (void)
 		cobc_free (p78);
 	}
 	top_78_ptr = NULL;
+	memset (l78_filter, 0, sizeof (l78_filter));
+}
+
+/* hash function for user-defined words */
+static cob_u32_t
+hash_word (const cob_c8_t *word)
+{
+	cob_u32_t	result = 0x811c9dc5;
+
+	/* Perform 32-bit FNV1a hash */
+	for (; *word; ++word) {
+		result ^= toupper(*word);
+		result *= (cob_u32_t) 0x1677619;
+	}
+
+	return result;
 }
 
 static struct cb_text_list *
@@ -2707,11 +2771,12 @@ void
 cb_add_78 (struct cb_field *f)
 {
 	struct cb_level_78	*p78;
+	const char *name = f->name;
 
 	p78	= cobc_malloc (sizeof(struct cb_level_78));
 	p78->fld_78 = f;
 	p78->prog = current_program;
-	p78->name_len = (cob_u32_t)strlen (f->name);
+	setup_name_hash (p78, name);
 	if (f->flag_is_global) {
 		if (!glob_lev_78_ptr) {
 			p78->last = p78;
@@ -2750,16 +2815,23 @@ struct cb_field *
 check_level_78 (const char *name)
 {
 	const struct cb_level_78	*p78;
+	const cob_u32_t hash = hash_word (name);
+	
+	if (!possibly_defined_name_hash (hash)) {
+		return NULL;
+	}
 
 	/* Check against a current constant (78 level) */
 	for (p78 = lev_78_ptr; p78; p78 = p78->next) {
-		if (strcasecmp (name, p78->fld_78->name) == 0) {
+		if (p78->name_hash == hash
+		 && strcasecmp (p78->fld_78->name, name) == 0) {
 			return p78->fld_78;
 		}
 	}
 	/* Check against a global constant (78 level) */
 	for (p78 = glob_lev_78_ptr; p78; p78 = p78->next) {
-		if (strcasecmp (name, p78->fld_78->name) == 0) {
+		if (p78->name_hash == hash
+		 && strcasecmp (p78->fld_78->name, name) == 0) {
 			return p78->fld_78;
 		}
 	}
