@@ -828,7 +828,22 @@ cob_exit_common (void)
 			}
 		}
 		if (cobsetptr->cob_preload_str_set) {
-			cob_free((void*)(cobsetptr->cob_preload_str_set));
+			cob_free (cobsetptr->cob_preload_str_set);
+		}
+		if (cobsetptr->cob_stdin_filename_set) {
+			fclose (COB_STDIN);
+			COB_STDIN = stdin;
+			cob_free (cobsetptr->cob_stdin_filename_set);
+		}
+		if (cobsetptr->cob_stdout_filename_set) {
+			fclose (COB_STDOUT);
+			COB_STDOUT = stdout;
+			cob_free (cobsetptr->cob_stdout_filename_set);
+		}
+		if (cobsetptr->cob_stderr_filename_set) {
+			fclose (COB_STDERR);
+			COB_STDERR = stderr;
+			cob_free (cobsetptr->cob_stderr_filename_set);
 		}
 		cob_free (cobsetptr);
 		cobsetptr = NULL;

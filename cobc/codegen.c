@@ -2810,7 +2810,8 @@ cb_literal_hash (const unsigned char *data, cob_u32_t size)
 		h ^= h >> 32;
 	}
 
-	return (cob_u32_t)h;
+ 	/* explicit drop bytes exceeding 32bit */
+	return (cob_u32_t)(h & 0xFFFFFFFF);
 }
 
 /* Resolve literal "x" from the literal cache and return its id.

@@ -4394,7 +4394,7 @@ init_reserved_word_map (void)
 	reserved_hash_map = cobc_main_malloc (reserved_word_map_arr_size * sizeof (cob_u32_t));
 }
 
-static COB_INLINE COB_A_INLINE int
+static COB_INLINE COB_A_INLINE cob_u32_t
 reserved_word_hash (const char *word)
 {
 	return hash_word ((const cob_c8_t *) word, reserved_word_map_arr_size);

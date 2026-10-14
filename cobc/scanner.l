@@ -1012,8 +1012,10 @@ H#[0-9A-Za-z]+ {
 	struct cb_intrinsic_table	*cbp;
 	struct cobc_reserved		*resptr;
 	struct cb_text_list		*tlp;
-	cb_tree				x;
-	cb_tree				l;
+	
+	cob_u32_t 		hash;
+	cb_tree 		x;
+	cb_tree 		l;
 
 	if (cb_check_word_length ((unsigned int)yyleng, yytext)) {
 		/* in case of hard error return a word so parsing can still go on
@@ -1132,7 +1134,7 @@ H#[0-9A-Za-z]+ {
 
 	/* User word */
 		
-	const cob_u32_t hash = hash_word (yytext);
+	hash = hash_word (yytext);
 
 	/* Check local, global and source global CONSTANT (78) items */
 	if (possibly_defined_name_hash (hash)) {

@@ -7024,9 +7024,7 @@ cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 cb_tree
 cb_build_any_intrinsic (cb_tree args)
 {
-	struct cb_intrinsic_table	*cbp;
-
-	cbp = lookup_intrinsic ("BYTE-LENGTH", sizeof("BYTE-LENGTH"), 1);
+	struct cb_intrinsic_table	*cbp = lookup_intrinsic ("BYTE-LENGTH", 11, 1);
 	return make_intrinsic (NULL, cbp, args, NULL, NULL, 0);
 }
 
