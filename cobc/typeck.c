@@ -14053,6 +14053,10 @@ cb_emit_read (cb_tree ref, cb_tree next, cb_tree into,
 void
 cb_emit_ready_trace (void)
 {
+	#if 0  /* note: at least Visual COBOL skips this statement
+	          if no tracing setup was done, we may do the same */
+	if (!cb_flag_trace) return;
+	#endif
 	cb_emit (CB_BUILD_FUNCALL_0 ("cob_ready_trace"));
 }
 
@@ -14247,12 +14251,17 @@ cb_emit_return (cb_tree ref, cb_tree into)
 	if (file == cb_error_node) {
 		return;
 	}
+	current_statement->file = file;
+	if (CB_FILE (file)->organization != COB_ORG_SORT) {
+		cb_error_x (CB_TREE (current_statement),
+			_("must be an SD filename"));
+		return;
+	}
 	rec = cb_build_field_reference (CB_FILE (file)->record, ref);
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_file_return", file));
 	if (into) {
 		current_statement->handler3 = cb_build_move (rec, into);
 	}
-	current_statement->file = file;
 }
 
 /* ROLLBACK statement */

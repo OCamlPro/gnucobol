@@ -18,6 +18,13 @@
 	* fbdb.c (ix_bdb_open): call ix_bdb_close to cleanup on
 	* cobcapi.c (cob_get_buff): protect call to cob_free
 
+2025-09-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* intrinsic.c (cob_intr_char, cob_intr_ord): consider
+	  the program collating sequence in CHAR and ORD
+	* intrinsic.c (cob_intr_char): raise COB_EC_ARGUMENT_FUNCTION
+	  when calling CHAR with an argument outside the collation range
+
 2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h, fileio.c: new externalized typedef EXTFH_FUNC used in
@@ -7989,7 +7996,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2025 Free Software Foundation, Inc.
+Copyright 2002-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

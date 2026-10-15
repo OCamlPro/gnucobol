@@ -4342,8 +4342,7 @@ cob_intr_current_date (const int offset, const int length)
 	return curr_field;
 }
 
-/* implementation of FUNCTION CHAR - character from ordinal
-   FIXME: Should use the program's alphanumeric program collating sequence! */
+/* implementation of FUNCTION CHAR - character from ordinal */
 cob_field *
 cob_intr_char (cob_field *srcfield)
 {
@@ -4355,9 +4354,23 @@ cob_intr_char (cob_field *srcfield)
 
 	i = cob_get_int (srcfield);
 	if (i < 1 || i > 256) {
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		*curr_field->data = 0;
 	} else {
-		*curr_field->data = (unsigned char)i - 1;
+		const unsigned char *col = COB_MODULE_PTR->collating_sequence;
+		unsigned char chr;
+		cobglobptr->cob_exception_code = 0;
+		--i;
+		if (col == NULL) {
+			chr = (unsigned char)i;
+		} else {
+			for (chr = 0; chr < 255 && col[chr] != i; ++chr);
+			if (chr == 255 && col[chr] != i) {
+				cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+				chr = 0;
+			}
+		}
+		*curr_field->data = chr;
 	}
 	return curr_field;
 }
@@ -4365,7 +4378,18 @@ cob_intr_char (cob_field *srcfield)
 cob_field *
 cob_intr_ord (cob_field *srcfield)
 {
-	cob_alloc_set_field_uint ((cob_u32_t)(*srcfield->data + 1U));
+	switch (COB_FIELD_TYPE (srcfield)) {
+	case COB_TYPE_NATIONAL:
+		error_not_implemented();
+		break;
+	default: {
+		const unsigned char *col = COB_MODULE_PTR->collating_sequence;
+		unsigned char chr = *srcfield->data;
+		int ord = (col == NULL ? chr : col[chr]) + 1U;
+		cob_alloc_set_field_uint ((cob_u32_t)ord);
+		break;
+	}
+	}
 	return curr_field;
 }
 

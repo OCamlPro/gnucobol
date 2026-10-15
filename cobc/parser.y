@@ -279,27 +279,30 @@ static cb_tree			eval_check[EVAL_DEPTH][EVAL_DEPTH];
 
 static int			last_source_line = 0;
 
-/* Defines for header presence */
-
-#define	COBC_HD_ENVIRONMENT_DIVISION	(1U << 0)
-#define	COBC_HD_CONFIGURATION_SECTION	(1U << 1)
-#define	COBC_HD_SPECIAL_NAMES		(1U << 2)
-#define	COBC_HD_INPUT_OUTPUT_SECTION	(1U << 3)
-#define	COBC_HD_FILE_CONTROL		(1U << 4)
-#define	COBC_HD_I_O_CONTROL		(1U << 5)
-#define	COBC_HD_DATA_DIVISION		(1U << 6)
-#define	COBC_HD_FILE_SECTION		(1U << 7)
-#define	COBC_HD_WORKING_STORAGE_SECTION	(1U << 8)
-#define	COBC_HD_LOCAL_STORAGE_SECTION	(1U << 9)
-#define	COBC_HD_LINKAGE_SECTION		(1U << 10)
-#define	COBC_HD_COMMUNICATION_SECTION	(1U << 11)
-#define	COBC_HD_REPORT_SECTION		(1U << 12)
-#define	COBC_HD_SCREEN_SECTION		(1U << 13)
-#define	COBC_HD_PROCEDURE_DIVISION	(1U << 14)
-#define	COBC_HD_PROGRAM_ID		(1U << 15)
-#define	COBC_HD_SOURCE_COMPUTER		(1U << 16)
-#define	COBC_HD_OBJECT_COMPUTER		(1U << 17)
-#define	COBC_HD_REPOSITORY		(1U << 18)
+/* enum for header presence;
+   note: binary combined into header_check
+         must be in ISO standard order */
+enum cobc_hd {
+	COBC_HD_PROGRAM_ID		= (1U << 0),
+	COBC_HD_ENVIRONMENT_DIVISION	= (1U << 1),
+	COBC_HD_CONFIGURATION_SECTION	= (1U << 2),
+	COBC_HD_SOURCE_COMPUTER		= (1U << 3),
+	COBC_HD_OBJECT_COMPUTER		= (1U << 4),
+	COBC_HD_SPECIAL_NAMES		= (1U << 5),
+	COBC_HD_REPOSITORY		= (1U << 6),
+	COBC_HD_INPUT_OUTPUT_SECTION	= (1U << 7),
+	COBC_HD_FILE_CONTROL		= (1U << 8),
+	COBC_HD_I_O_CONTROL		= (1U << 9),
+	COBC_HD_DATA_DIVISION		= (1U << 10),
+	COBC_HD_FILE_SECTION		= (1U << 11),
+	COBC_HD_WORKING_STORAGE_SECTION	= (1U << 12),
+	COBC_HD_COMMUNICATION_SECTION	= (1U << 13),
+	COBC_HD_LOCAL_STORAGE_SECTION	= (1U << 14),
+	COBC_HD_LINKAGE_SECTION		= (1U << 15),
+	COBC_HD_REPORT_SECTION		= (1U << 16),
+	COBC_HD_SCREEN_SECTION		= (1U << 17),
+	COBC_HD_PROCEDURE_DIVISION	= (1U << 18)
+};
 
 /* Static functions */
 
@@ -833,7 +836,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 }
 
 static void
-check_relaxed_syntax (const cob_flags_t lev)
+check_relaxed_syntax (const enum cobc_hd lev)
 {
 	const char	*s;
 
@@ -952,8 +955,8 @@ program_init_without_program_id (void)
    Lev2/3/4, if non-zero (forced) may be present
 */
 static int
-check_headers_present (const cob_flags_t lev1, const cob_flags_t lev2,
-		       const cob_flags_t lev3, const cob_flags_t lev4)
+check_headers_present (const enum cobc_hd lev1, const enum cobc_hd lev2,
+		       const enum cobc_hd lev3, const enum cobc_hd lev4)
 {
 	int ret = 0;
 	if (!(header_check & lev1)) {
@@ -1000,7 +1003,7 @@ set_conf_section_part (const cob_flags_t part)
 }
 
 static const char *
-get_conf_section_part_name (const cob_flags_t part)
+get_conf_section_part_name (const enum cobc_hd part)
 {
 	if (part == COBC_HD_SOURCE_COMPUTER) {
 		return "SOURCE-COMPUTER";
@@ -1013,34 +1016,15 @@ get_conf_section_part_name (const cob_flags_t part)
 	/* LCOV_EXCL_START */
 	} else {
 		/* This should never happen (and therefore doesn't get a translation) */
-		cb_error ("unexpected configuration section part " CB_FMT_LLU, part);
-		COBC_ABORT ();
-	/* LCOV_EXCL_STOP */
-	}
-}
-
-static int
-get_conf_section_part_order (const cob_flags_t part)
-{
-	if (part == COBC_HD_SOURCE_COMPUTER) {
-		return 1;
-	} else if (part == COBC_HD_OBJECT_COMPUTER) {
-		return 2;
-	} else if (part == COBC_HD_SPECIAL_NAMES) {
-		return 3;
-	} else if (part == COBC_HD_REPOSITORY) {
-		return 4;
-	/* LCOV_EXCL_START */
-	} else {
-		/* This should never happen (and therefore doesn't get a translation) */
-		cb_error ("unexpected configuration section part " CB_FMT_LLU, part);
+		cb_error ("unexpected configuration section part " CB_FMT_LLU,
+			(cob_flags_t)part);
 		COBC_ABORT ();
 	/* LCOV_EXCL_STOP */
 	}
 }
 
 static void
-check_conf_section_order (const cob_flags_t part)
+check_conf_section_order (const enum cobc_hd part)
 {
 	const cob_flags_t	prev_part
 		= header_check & (COBC_HD_SOURCE_COMPUTER
@@ -1056,7 +1040,7 @@ check_conf_section_order (const cob_flags_t part)
 
 	if (prev_part == part) {
 		cb_error (_("duplicate %s"), get_conf_section_part_name (part));
-	} else if (get_conf_section_part_order (part) < get_conf_section_part_order (prev_part)) {
+	} else if (part < prev_part) {
 		snprintf (message, MESSAGE_LEN, _("%s incorrectly after %s"),
 			  get_conf_section_part_name (part),
 			  get_conf_section_part_name (prev_part));
@@ -3155,7 +3139,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token READ
 %token READERS
 %token READ_ONLY		"READ-ONLY"
-%token READY_TRACE		"READY TRACE"
+%token READY
 %token RECEIVE
 %token RECEIVED			/* remark: not used here */
 %token RECORD
@@ -3192,7 +3176,6 @@ set_record_size (cb_tree min, cb_tree max)
 %token RERUN
 %token RESERVE
 %token RESET
-%token RESET_TRACE		"RESET TRACE"
 %token RESET_GRID		"RESET-GRID"
 %token RESET_LIST		"RESET-LIST"
 %token RESET_TABS		"RESET-TABS"
@@ -3308,6 +3291,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SUM
 %token SUPPRESS
 %token SUPPRESS_XML		"SUPPRESS"
+%token SYMBOL
 %token SYMBOLIC
 %token SYNCHRONIZED
 %token SYSTEM_DEFAULT		"SYSTEM-DEFAULT"
@@ -3361,6 +3345,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token TOP
 %token TOWARD_GREATER		"TOWARD-GREATER"
 %token TOWARD_LESSER		"TOWARD-LESSER"
+%token TRACE
 %token TRACK
 %token TRACKS
 %token TRACK_AREA		"TRACK-AREA"
@@ -3510,10 +3495,10 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc PURGE
 %nonassoc RAISE
 %nonassoc READ
-%nonassoc READY_TRACE
+%nonassoc READY
 %nonassoc RECEIVE
 %nonassoc RELEASE
-%nonassoc RESET_TRACE
+%nonassoc RESET
 %nonassoc RETURN
 %nonassoc REWRITE
 %nonassoc ROLLBACK
@@ -4240,8 +4225,7 @@ configuration_paragraphs:
 configuration_paragraph:
   source_computer_paragraph
 | object_computer_paragraph
-| special_names_header
-| special_names_sentence
+| special_names
 | repository_paragraph
 ;
 
@@ -4492,6 +4476,11 @@ repository_name_list:
 
 /* SPECIAL-NAMES paragraph */
 
+special_names:
+  special_names_header
+  _special_names_sentences
+;
+
 special_names_header:
   SPECIAL_NAMES _dot
   {
@@ -4507,8 +4496,13 @@ special_names_header:
   }
 ;
 
+_special_names_sentences:
+| _special_names_sentences special_names_sentence
+;
+
 special_names_sentence:
   special_name_list TOK_DOT
+;
 
 special_name_list:
   special_name
@@ -4881,7 +4875,7 @@ symbolic_characters_clause:
 		cb_tree type = CB_PAIR_X ($1);
 		cb_tree chars_list = CB_PAIR_Y ($1);
 		cb_tree alph = $2;
-		
+
 		/* TODO: at least add a check that $3 and $6 match by type */
 		if (type && !alph) {
 			cb_error_x (type, _("type does not match alphabet"));
@@ -5376,8 +5370,6 @@ file_control_entry:
   SELECT { check_non_area_a ($1); }
   flag_optional undefined_word
   {
-	char	buff[COB_MINI_BUFF];
-
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -5392,6 +5384,7 @@ file_control_entry:
 				 current_program->file_list);
 	} else {
 		/* Create dummy file */
+		char	buff[COB_MINI_BUFF];
 		snprintf (buff, COB_MINI_BUFF, _("SELECT on line %d"),
 			  cb_source_line);
 		current_file = build_file (cb_build_reference (buff));
@@ -5400,7 +5393,7 @@ file_control_entry:
 
 	}
 	key_type = NO_KEY;
-        setup_default_file_collation (current_file);
+	setup_default_file_collation (current_file);
   }
   _select_clauses_or_error
   {
@@ -6479,6 +6472,17 @@ _data_division:
   _linkage_section
   _report_section
   _screen_section
+|
+  {
+	check_headers_present (COBC_HD_DATA_DIVISION, COBC_HD_WORKING_STORAGE_SECTION, 0, 0);
+	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
+	current_storage = CB_STORAGE_WORKING;
+	current_field = NULL;
+	control_field = NULL;
+	description_field = NULL;
+	cb_clear_real_field ();
+  }
+  record_description_list
 ;
 
 _data_division_header:
@@ -6537,7 +6541,14 @@ file_description_entry:
 			       COBC_HD_FILE_SECTION, 0, 0);
 	check_duplicate = 0;
 	if (CB_INVALID_TREE ($2)) {
-		current_file = NULL;
+		/* Create dummy file */
+		char	buff[COB_MINI_BUFF];
+		snprintf (buff, COB_MINI_BUFF, "%s on line %d",
+			  $1 == cb_int1 ? "SD" : "FD", cb_source_line);
+		current_file = build_file (cb_build_reference (buff));
+		if ($1 == cb_int1) {
+			current_file->organization = COB_ORG_SORT;
+		}
 		YYERROR;
 	}
 	current_file = CB_FILE (cb_ref ($2));
@@ -7072,7 +7083,9 @@ unnamed_i_o_cd_clauses:
 /* WORKING-STORAGE SECTION */
 
 working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
+
 _working_storage_section:
+  /* empty */
 | working_storage SECTION
   dot_or_else_end_of_record_description
   {
@@ -11026,7 +11039,8 @@ procedure_division:
 	cb_tree label;
 
 	/* No PROCEDURE DIVISION header here */
-	/* Only a statement is allowed as first element */
+	/* FIXME: Only a statement is allowed as first element because of conflicts
+	   ideally we'd use non-optional "procedure_list" here */
 	/* Thereafter, sections/paragraphs may be used */
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
@@ -16012,7 +16026,11 @@ _end_read:
 /* READY TRACE statement */
 
 ready_statement:
-  READY_TRACE
+  READY
+  {
+	cobc_cs_check = CB_READY_RESET_TRACE;
+  }
+  TRACE
   {
 	begin_statement (STMT_READY_TRACE, 0);
 	cb_emit_ready_trace ();
@@ -16097,7 +16115,11 @@ release_body:
 /* RESET TRACE statement */
 
 reset_statement:
-  RESET_TRACE
+  RESET
+  {
+	cobc_cs_check = CB_READY_RESET_TRACE;
+  }
+  TRACE
   {
 	begin_statement (STMT_RESET_TRACE, 0);
 	cb_emit_reset_trace ();
@@ -16682,7 +16704,7 @@ sort_merge_body:
 				}
 			}
 		} else if (CB_FILE_P (x) && CB_FILE (x)->organization != COB_ORG_SORT) {
-			cb_error_x (x, _("must be an SD filename"));
+			cb_error (_("must be an SD filename"));
 			$2 = cb_error_node;
 		}
 		if (CB_VALID_TREE ($2)) {
