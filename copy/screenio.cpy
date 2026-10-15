@@ -47,8 +47,8 @@
       *> Values that may be returned in CRT STATUS (or COB-CRT-STATUS)
       *> Normal return - Value 0000
        78  COB-SCR-OK                       VALUE  0.
-                                        
-      *>  Function keys - Values 1xxx   
+
+      *>  Function keys - Values 1xxx
        78  COB-SCR-F1                       VALUE  1001.
        78  COB-SCR-F2                       VALUE  1002.
        78  COB-SCR-F3                       VALUE  1003.
@@ -131,7 +131,7 @@
        78  COB-SCR-BACKSPACE                VALUE  2013.
        78  COB-SCR-KEY-HOME                 VALUE  2014.
        78  COB-SCR-KEY-END                  VALUE  2015.
-      *>  Exception keys for mouse handling        
+      *>  Exception keys for mouse handling
        78  COB-SCR-MOUSE-MOVE               VALUE  2040.
        78  COB-SCR-LEFT-PRESSED             VALUE  2041.
        78  COB-SCR-LEFT-RELEASED            VALUE  2042.
@@ -191,6 +191,6 @@
       *>  Input validation - Values 8xxx
        78  COB-SCR-NO-FIELD                 VALUE  8000.
        78  COB-SCR-TIME-OUT                 VALUE  8001.
-      *>  Other errors - Values 9xxx  
+      *>  Other errors - Values 9xxx
        78  COB-SCR-FATAL                    VALUE  9000.
        78  COB-SCR-MAX-FIELD                VALUE  9001.

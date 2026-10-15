@@ -175,6 +175,52 @@ This function is relative often called in production systems and
 re-calculates the picture on runtime, which the compiler already
 did - pass this information along with the call.
 
+4.4 optimize multiple uses of the same (sub-)expression
+
+the following code
+
+      IF  T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "E"
+      AND T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "L"
+      AND T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "T"
+      AND T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "t"
+      AND T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "M"
+      AND T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "i"
+      AND T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "v"
+
+as well as
+
+      IF  T01-VAL (T01-MAIN T01-IND1 T01-IND2) NOT = "E"
+      AND                                      NOT = "L"
+      AND                                      NOT = "T"
+      AND                                      NOT = "t"
+      AND                                      NOT = "M"
+      AND                                      NOT = "i"
+      AND                                      NOT = "v"
+
+currently generates identical code; it generates
+  * in case of non-binary data: a cob_get_int for the subscripts
+    seven times
+  * the runtime checks, if enabled, seven times
+    (each with 3 subscript checks, possibly with 4 linkage checks)
+  * seven times the same offset calculation
+  * for the case of non-optimized comparisions (here a single byte
+    vs. a single byte -> direct compare) like comparing different
+    lengths or numeric types, we generate a COB_SET_FLD or
+    cob_get_int multiple times
+
+ideally each of those are only done once (if there's no UDF call
+in the expression as those can have side effect for left-to-right compare
+by changing the underying data)
+
+4.4.1 ensure that the same integer is only resolved once by using local
+int fields
+
+4.4.1 optimize runtime checks by doing them once (as the abbeviated
+condition example above would "imply"); note:
+cater for   IF IND <= MAX AND ( TAB (IND) = "5" OR  TAB (IND) = "6" )
+--> can only be generated for the second part, not for the complete statement
+
+
 5 Debugging support
 
 5.1 Data access method
@@ -190,6 +236,9 @@ Note: GnuCOBOL 3 implemented this partially, using extensions
 near full GDB support is already possible.
 
 GnuCOBOL 4 provides this quite complete at runtime, too.
+
+In case of coredumps and recorded code using those functions are
+unlikely to work.
 
 
 6 Better user manual

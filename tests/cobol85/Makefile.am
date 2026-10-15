@@ -38,7 +38,7 @@ MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
 SUMMARY = summary.txt
 else
 MODULES = NC SM IC SQ RL ST SG OB IF RW DBNOIX
-MODULES_RUN = NC_RUN SQ_RUN IX_RUN IF_RUN ST_RUN \
+MODULES_RUN = NC_RUN SQ_RUN IF_RUN ST_RUN \
 	IC_RUN RL_RUN SM_RUN SG_RUN OB_RUN DBNOIX_RUN RW_RUN
 SUMMARY = summarynoix.txt
 endif
@@ -237,31 +237,31 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	@cat $(srcdir)/EXEC85.conf.in >> ./$@/EXEC85.conf
 #	setting NEWCOB_VAL to the full name for EXEC85
 	@if test -f "$(abs_builddir)/newcob.val"; then \
-		export NEWCOB_VAL=$(abs_builddir)/newcob.val; \
+		export NEWCOB_VAL="$(abs_builddir)/newcob.val"; \
 	else \
-		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
+		export NEWCOB_VAL="$(abs_srcdir)/newcob.val"; \
 	fi; \
-	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) $(abs_builddir)/$@ && false)
-	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) $(abs_builddir)/$@ && false)
+	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) "$(abs_builddir)/$@" && false)
+	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) "$(abs_builddir)/$@" && false)
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
 	@(export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`" && \
 	 $(SED) -e 's/##MODULE##/'"$@"'/'            \
-	        -e 's|##COB85DIR##|'$(abs_srcdir)'|' \
+	        -e 's|##COB85DIR##|'"$(abs_srcdir)"'|' \
 	        -e 's|##DIFF##|'"$(DIFF)"'|' \
 	        -e 's|##DIFF_FLAGS##|'"$(DIFF_FLAGS)"'|' \
 	        -e 's|##PERL##|'"$(PERL)"'|' \
 	        -e 's|##TESTS##|'"` echo $$CBL_LIST | $(SED) -e 's/\.CBL//g'`"'|' \
 	        -e 's|##TESTS_LOCAL##|'"`echo $$CBL_LIST | $(SED) -e 's/\.CBL/-local/g'`"'|' \
-	    $(srcdir)/Makefile.module.in > $@/Makefile) || ($(RM) $(abs_builddir)/$@ && false)
+	    $(srcdir)/Makefile.module.in > $@/Makefile) || ($(RM) "$(abs_builddir)/$@" && false)
 	@echo "Finished module directory $@."
 
 EXEC85.cob: newcob.val
 	@echo "Extracting EXEC85 program from newcob.val"
 #	setting NEWCOB_VAL to the full name for the sed invocation
 	@if test -f "$(abs_builddir)/newcob.val"; then \
-		NEWCOB_VAL=$(abs_builddir)/newcob.val; \
+		NEWCOB_VAL="$(abs_builddir)/newcob.val"; \
 	else \
-		NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
+		NEWCOB_VAL="$(abs_srcdir)/newcob.val"; \
 	fi; \
 	$(SED) -e '/^\*END/,$$d'                                                        \
 	       -e '1,/^\*HEADER/d'                                                      \

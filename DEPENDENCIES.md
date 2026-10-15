@@ -33,8 +33,8 @@ Seldom Required
 
 GnuCOBOL requires support for dynamic linking, a feature of nearly all
 target operating systems. Among those that include it are Windows,
-Solaris, Linux, any BSD, and recent versions of AIX (>= 5.1) and HP-UX
-(>= 11.1).
+Solaris, Linux, any BSD, and recent versions of AIX (5.1 or later) and
+HP-UX (11.1 or later).
 
 If your OS is some flavor of Unix or DOS and has no support for **dlopen**(3),
 it can be provided by
@@ -102,22 +102,22 @@ XML Support
 
 Support for GENERATE XML is provided by:
 
-*   [libxml2](https://xmlsoft.org)
+*   [libxml2](https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home) 2.5.10 or later
 
-    libxml2 is distributed under MIT License.
+    libxml2 is distributed under MIT License (Expat variant).
 
 JSON support
 ------------
 
 Support for GENERATE JSON is provided by *one* of the following:
 
-*   [cJSON](https://github.com/DaveGamble/cJSON) >= 1.3.0 - 
+*   [cJSON](https://github.com/DaveGamble/cJSON) 1.3.0 or later
 
-    cJSON is distributed under MIT License.
+    cJSON is distributed under MIT License (Expat variant).
 
-*   [JSON-C](https://github.com/json-c/json-c) >= 1.12 - 
+*   [JSON-C](https://github.com/json-c/json-c) 0.12 or later
 
-    JSON-C is distributed under Expat License.
+    JSON-C is distributed under MIT License (Expat variant).
 
 
 character encoding support
@@ -137,6 +137,6 @@ NIST COBOL85 testsuite
 ----------------------------
 To be able to run `make test`:
 
-*   [Perl](https://www.perl.org) >= 5.0005
+*   [Perl](https://www.perl.org) 5.0005 or later
 
     Perl is licensed under its Artistic License, or the GNU General Public License (GPL). 
