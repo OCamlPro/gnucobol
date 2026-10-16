@@ -216,7 +216,8 @@
 
 #if defined(COB_TLS)
     /* already defined, for example as static to explicit disable TLS */
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && \
+      (!defined(__GNUC__) || __GNUC__ >= 5)
     #define COB_TLS	_Thread_local
 #elif defined(__GNUC__) && (__GNUC__ >= 4) || defined(__clang__) || \
       defined(__hpux) || defined(_AIX) || defined(__sun)
