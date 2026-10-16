@@ -3165,6 +3165,8 @@ process_command_line (const int argc, char **argv)
 
 	int			conf_ret = 0;
 	int			error_all_warnings = 0;
+	/* warnings excluded from -Werror by -Wno-error=warning */
+	char			no_error_warnings[COB_WARNOPT_MAX] = { 0 };
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
@@ -4171,6 +4173,7 @@ process_command_line (const int argc, char **argv)
 #define CB_CHECK_WARNING(opt,name)  \
 				if (strcmp (cob_optarg, name) == 0) {	\
 					set_warn_opt_value (opt, COBC_WARN_AS_ERROR);		\
+					no_error_warnings[opt] = 0;		\
 				} else
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
@@ -4196,9 +4199,11 @@ process_command_line (const int argc, char **argv)
 			/* -Wno-error[=warning] : Treat all/single warnings not as errors */
 			if (cob_optarg) {
 #define CB_CHECK_WARNING(opt,name)  \
-				if (strcmp (cob_optarg, name) == 0	\
-				 && get_warn_opt_value (opt) == COBC_WARN_AS_ERROR) {	\
-					set_warn_opt_value (opt, COBC_WARN_ENABLED);		\
+				if (strcmp (cob_optarg, name) == 0) {	\
+					if (get_warn_opt_value (opt) == COBC_WARN_AS_ERROR) {	\
+						set_warn_opt_value (opt, COBC_WARN_ENABLED);	\
+					}				\
+					no_error_warnings[opt] = 1;		\
 				} else
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
@@ -4425,7 +4430,8 @@ process_command_line (const int argc, char **argv)
 	/* Set active warnings to errors, if requested */
 	if (error_all_warnings) {
 #define CB_CHECK_WARNING(opt)  \
-		if (get_warn_opt_value (opt) == COBC_WARN_ENABLED) {	\
+		if (get_warn_opt_value (opt) == COBC_WARN_ENABLED	\
+		 && !no_error_warnings[opt]) {	\
 			set_warn_opt_value (opt, COBC_WARN_AS_ERROR);		\
 		}
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)

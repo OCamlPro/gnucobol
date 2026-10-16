@@ -1,4 +1,9 @@
 
+2026-10-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c (process_command_line): -Wno-error=warning now also excludes
+	  the warning from a global -Werror
+
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (lookup_intrinsic), tree.h, scanner.l, tree.c, cobc.c:
