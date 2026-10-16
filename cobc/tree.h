@@ -522,6 +522,7 @@ struct cobc_reserved {
 	int		token;		/* Token */
 	cob_u64_t		context_set;	/* context sensitive value set */
 	cob_u64_t		context_test;	/* context sensitive value tested */
+	cob_u32_t		word_hash;	/* hash value for faster compare */
 };
 
 /* Basic common tree structure */
@@ -761,10 +762,10 @@ struct cb_literal {
 	struct cb_tree_common	common;	/* Common values */
 	unsigned char		*data;	/* Literal data */
 	cob_u32_t		size;	/* Literal size */
-	int			scale;	/* Numeric scale */
-	cob_u32_t		llit;	/* 'L' literal */
-	short			sign;	/* unsigned: 0 negative: -1 positive: 1 */
-	short			all;	/* ALL */
+	int 		scale;	/* Numeric scale */
+	int 		sign;	/* unsigned: 0 negative: -1 positive: 1 */
+	short		all;	/* ALL */
+	short		llit;	/* 'L' literal */
 };
 
 #define CB_LITERAL(x)	(CB_TREE_CAST (CB_TAG_LITERAL, struct cb_literal, x))
@@ -1811,6 +1812,7 @@ struct cb_procedure_list {
 struct literal_list {
 	struct literal_list	*next;
 	struct cb_literal	*literal;
+	cob_u32_t	literal_hash;
 	int			id;
 	int			make_decimal;
 };
@@ -2241,7 +2243,7 @@ extern void			cb_insert_common_prog (struct cb_program *,
 
 
 extern struct cb_intrinsic_table	*lookup_intrinsic (const char *,
-							   const int);
+							   const size_t, const int);
 
 extern cb_tree		cb_build_alphabet_name (cb_tree);
 extern cb_tree		cb_build_schema_name (cb_tree);
@@ -2383,7 +2385,7 @@ extern char		*cb_encode_program_id (const char *, const int, const int);
 extern char		*cb_build_program_id (const char *, const cob_u32_t);
 extern cb_tree		cb_define_switch_name (cb_tree, cb_tree, const int);
 
-extern void		cb_check_word_length (unsigned int, const char *);
+extern int		cb_check_word_length (unsigned int, const char *);
 extern cb_tree		cb_build_section_name (cb_tree, const int);
 extern cb_tree		cb_build_assignment_name (struct cb_file *, cb_tree);
 extern cb_tree		cb_build_index (cb_tree, cb_tree,

@@ -36,7 +36,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
 
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
@@ -59,6 +59,10 @@ AC_CONFIG_FILES([pre-inst-env:build_aux/pre-inst-env.in],
 AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
+
+AC_PROG_SED
+AC_PROG_GREP
+AC_PROG_AWK
 
 dnl Support the --with-pkgversion configure option,
 dnl inspired from GCC's ACX_PKGVERSION.
@@ -97,7 +101,7 @@ AC_ARG_WITH([bugurl],
   *)
 	AC_DEFINE_UNQUOTED([PACKAGE_BUGREPORT_URL], ["<$BUGURL>"], [Bug URL instead of mailing list])
     # REPORT_BUGS_TO="<$BUGURL>"
-    # REPORT_BUGS_TEXI=@uref{`echo "$BUGURL" | sed 's/@/@@/g'`}
+    # REPORT_BUGS_TEXI=@uref{`echo "$BUGURL" | $SED -e 's/@/@@/g'`}
     ;;
   esac;
   # AC_SUBST(REPORT_BUGS_TO)
@@ -343,7 +347,6 @@ AC_ARG_WITH([max-call-params],
 
 AC_DEFINE_UNQUOTED([MAX_CALL_FIELD_PARAMS], [$with_max_call_params])
 
-
 # Basic capability tests
 
 configured_make=""
@@ -367,8 +370,9 @@ rm -f confmake.out
 cat > confmf.mk << 'END'
 NOPROG = ${SHELL} './missing' no-prog
 DEFAULTVAR = $${VAR-default}
+SED = $${SED-sed}
 command = \
-  somestrip=`echo "$(DEFAULTVAR)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+  somestrip=`echo "$(DEFAULTVAR)" | $(SED) -e 's/[].[^$$\\*|]/\\\\&/g'`
 test_target:
 	@echo target executed > confmake.out
 END
@@ -673,7 +677,7 @@ dnl AC_CHECK_HEADERS([whcar.h malloc.h])
 AC_CHECK_HEADERS([sys/types.h stddef.h fcntl.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([sys/time.h locale.h dlfcn.h stdint.h inttypes.h signal.h])
+AC_CHECK_HEADERS([sys/time.h sys/wait.h locale.h dlfcn.h stdint.h inttypes.h signal.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -811,7 +815,7 @@ dnl 		])
 dnl 		if test "x$curr_libs" = x; then
 dnl 			MATH_LIBS=$LIBS
 dnl 		else
-dnl 			MATH_LIBS=$(echo "$LIBS" | sed 's#'"$curr_libs"'##')
+dnl 			MATH_LIBS=$(echo "$LIBS" | $SED -e 's#'"$curr_libs"'##')
 dnl 		fi
 dnl 		LIBS=$curr_libs
 dnl 	fi
@@ -2077,7 +2081,7 @@ if test "$with_db" = yes; then
 			AC_MSG_CHECKING([for Berkeley DB library with version $COB_BDB_HEADER])
 			# prefer library with version number included as some systems link against wrong version
 			# of the library and to not break when a newer BDB version is installed, see bug #100
-			COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | sed -e 's/\.//' -e 's/\-//')
+			COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | $SED -e 's/\.//' -e 's/\-//')
 			for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db$COB_BDB_HEADER_CLEAN \
 				db-$COB_BDB_HEADER_MAJOR db$COB_BDB_HEADER_MAJOR db \
 				libdb$COB_BDB_HEADER libdb$COB_BDB_HEADER_CLEAN  # for common Win32 versions...
@@ -2283,18 +2287,18 @@ if test "$COB_EXE_EXT" = ".exe" -o "$COB_EXE_EXT" = ".EXE"; then
 	COB_MODULE_EXT="dll"
 else
 	# normal case...
-	COB_MODULE_EXT=$(echo "$acl_cv_shlibext" | sed -e 's/dll\.a/dll/')
+	COB_MODULE_EXT=$(echo "$acl_cv_shlibext" | $SED -e 's/dll\.a/dll/')
 fi
 COB_OBJECT_EXT="$OBJEXT"
 LIBS="$curr_libs"
 COB_EXPORT_DYN="$(eval echo $export_dynamic_flag_spec)"
 # FIXME: lt_prog_compiler_pic is not always correct, for example with occ
-COB_PIC_FLAGS=$(echo "$lt_prog_compiler_pic" | sed -e 's/^ //')
+COB_PIC_FLAGS=$(echo "$lt_prog_compiler_pic" | $SED -e 's/^ //')
 
 if test "$enable_cflags_setting" = yes -a "$enable_hardening" != yes; then
 	# Remove -O2 option added by AC_PROG_CC and add -O0
 	if test "$enable_debug" = yes -o "$enable_code_coverage" = yes; then
-		CFLAGS=$(echo "$CFLAGS" | sed -e 's/ *-O@<:@0-9a-zA-Z@:>@* */ /g' -e 's/ $//' -e 's/^ //')
+		CFLAGS=$(echo "$CFLAGS" | $SED -e 's/ *-O@<:@0-9a-zA-Z@:>@* */ /g' -e 's/ $//' -e 's/^ //')
 		if test "$COB_USES_GCC" = yes; then
 			CFLAGS="$CFLAGS -O0"
 		fi
@@ -2519,28 +2523,28 @@ cob_temp_flags="$CFLAGS $CPPFLAGS"
 
 if test "$enable_hardening" = no; then
 	cob_temp_flags=$(echo x$cob_temp_flags |		\
-	 sed -e 's/^x//'				\
-	     -e 's/-Wp,-D_FORTIFY_SOURCE=.//g'		\
-	     -e 's/-D_FORTIFY_SOURCE=.//g'		\
-	     -e 's/-fmessage-length=0//g'		\
-	     -e 's/-fstack-protector-strong//g'		\
-	     -e 's/-fstack-protector-all//g'		\
-	     -e 's/-fstack-protector//g'		\
-	     -e 's/-fstack-clash-protection//g'		\
+	 $SED -e 's/^x//'				\
+	      -e 's/-Wp,-D_FORTIFY_SOURCE=.//g'		\
+	      -e 's/-D_FORTIFY_SOURCE=.//g'		\
+	      -e 's/-fmessage-length=0//g'		\
+	      -e 's/-fstack-protector-strong//g'		\
+	      -e 's/-fstack-protector-all//g'		\
+	      -e 's/-fstack-protector//g'		\
+	      -e 's/-fstack-clash-protection//g'		\
 	     )
 fi
 
 cob_temp_flags=$(echo x$cob_temp_flags |		\
-	 sed -e 's/^x//'				\
-	     -e 's/-g\(gdb\)\{0,1\}[[0-9 ]]//g'				\
-	     -e 's/-g\(gdb\)\{0,1\}$//'				\
-	     -e 's/-Ofast//g'			\
-	     -e 's/[[+-]]O[[0-9sz]]* //g'		\
-	     -e 's/[[+-]]O[[0-9sz]]*$//g'		\
-	     -e 's/-funwind-tables//g'			\
-	     -e 's/-fasynchronous-unwind-tables//g'	\
-	     -e 's/  / /g'	\
-	     -e 's/ $//g'	\
+	 $SED -e 's/^x//'				\
+	      -e 's/-g\(gdb\)\{0,1\}[[0-9 ]]//g'				\
+	      -e 's/-g\(gdb\)\{0,1\}$//'				\
+	      -e 's/-Ofast//g'			\
+	      -e 's/[[+-]]O[[0-9sz]]* //g'		\
+	      -e 's/[[+-]]O[[0-9sz]]*$//g'		\
+	      -e 's/-funwind-tables//g'			\
+	      -e 's/-fasynchronous-unwind-tables//g'	\
+	      -e 's/  / /g'	\
+	      -e 's/ $//g'	\
 	     )
 
 if test "x$cob_temp_flags" != x; then
@@ -2811,6 +2815,7 @@ chmod +x tests/atconfig;
 chmod +x tests/atlocal])
 
 AM_MISSING_PROG([HELP2MAN], [help2man])
+AM_MISSING_PROG([AUTOM4TE], [autom4te])
 
 AC_OUTPUT
 

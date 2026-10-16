@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2024, 2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -1230,12 +1230,12 @@ void
 cob_settings_termio (void)
 {
 	/* Initialization of cob_stdin/cob_stdout/cob_stderr:
-	If a filename is provided, it is preferred. If there was a previous file
-	opened with a different filename, it is flushed and closed. If the filename
-	is invalid, it is ignored. For the other cases, the previous file is not
-	owned by libcob, so it is not closed. Handling them is the responsibility
-	of the programmer. Additionally, on Windows the mode of the file is set to
-	binary. */
+	   If a filename is provided, it is preferred. If there was a previous file
+	   opened with a different filename, it is flushed and closed.
+	   If the filename is invalid, it is ignored. For the other cases, the
+	   previous file is not owned by libcob, so it is not closed. Handling them
+	   is the responsibility of the programmer.
+	   Additionally, on Windows the mode of the file is set to binary. */
 	cob_stdin_termio ();
 	cob_stdout_termio ();
 	cob_stderr_termio ();
