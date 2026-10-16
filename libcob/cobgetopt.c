@@ -179,7 +179,7 @@ int optopt = '?';
 
    'first_nonopt' and 'last_nonopt' are relocated so that they describe
    the new indices of the non-options in ARGV after they are moved.  */
-
+   
 static void
 exchange (char **argv)
 {
