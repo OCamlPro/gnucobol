@@ -576,7 +576,7 @@ static int dummy_read		(cob_file *, cob_field *, const int);
 static int dummy_start		(cob_file *, const int, cob_field *);
 
 static int cob_file_open	(cob_file *, char *, const enum cob_open_mode, const int);
-static int cob_file_close	(cob_file *, const int);
+static int cob_file_close	(cob_file *, const enum cob_close_mode);
 static int cob_savekey (cob_file *f, int idx, unsigned char *data);
 static int cob_file_write_opt	(cob_file *, const int);
 
@@ -595,13 +595,25 @@ static int relative_rewrite	(cob_file *, const int);
 static int relative_delete	(cob_file *);
 
 static int indexed_open		(cob_file *, char *, const enum cob_open_mode, const int);
-static int indexed_close	(cob_file *, const int);
+static int indexed_close	(cob_file *, const enum cob_close_mode);
 static int indexed_start	(cob_file *, const int, cob_field *);
 static int indexed_read		(cob_file *, cob_field *, const int);
 static int indexed_read_next	(cob_file *, const int);
 static int indexed_write	(cob_file *, const int);
 static int indexed_delete	(cob_file *);
 static int indexed_rewrite	(cob_file *, const int);
+
+/* File I/O function pointer structure (left here as it needs to be "external" for GC 4.x) */
+struct cob_fileio_funcs {
+	int	(*open)		(cob_file *, char *, const enum cob_open_mode, const int);
+	int	(*close)	(cob_file *, const enum cob_close_mode);
+	int	(*start)	(cob_file *, const int, cob_field *);
+	int	(*read)		(cob_file *, cob_field *, const int);
+	int	(*read_next)	(cob_file *, const int);
+	int	(*write)	(cob_file *, const int);
+	int	(*rewrite)	(cob_file *, const int);
+	int	(*fdelete)	(cob_file *);
+};
 
 static const struct cob_fileio_funcs indexed_funcs = {
 	indexed_open,
@@ -2168,7 +2180,7 @@ cob_file_open (cob_file *f, char *filename,
 }
 
 static int
-cob_file_close (cob_file *f, const int opt)
+cob_file_close (cob_file *f, const enum cob_close_mode opt)
 {
 #ifdef	WITH_SEQRA_EXTFH
 	return extfh_cob_file_close (f, opt);
@@ -4874,7 +4886,7 @@ dobuild:
 /* Close the INDEXED file */
 
 static int
-indexed_close (cob_file *f, const int opt)
+indexed_close (cob_file *f, const enum cob_close_mode opt)
 {
 #ifdef	WITH_INDEX_EXTFH
 
@@ -6446,6 +6458,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 void
 cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 {
+	/*: GC4: opt as cob_close_mode */
+
 	struct file_list	*l;
 	struct file_list	*m;
 	int			ret;
