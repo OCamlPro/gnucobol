@@ -3177,6 +3177,7 @@ AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
 AC_SUBST([LIBCOB_VER])
 AC_SUBST([COB_ENABLE_DEBUG], [$enable_debug]) # needed for tests/atlocal
+AC_SUBST([HAVE_SIGNAL_H], ["$ac_cv_header_signal_h"]) # needed for tests/atlocal
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])

@@ -1914,6 +1914,7 @@ struct cobjmp_buf {
 /*******************************/
 /* Functions in common.c */
 COB_EXPIMP void		cob_set_dump_signal (void *);
+COB_EXPIMP void		cob_sig_handler (int);
 COB_EXPIMP const char*	cob_get_sig_name (int);
 COB_EXPIMP const char*	cob_get_sig_description (int);
 COB_EXPIMP const char*	cob_set_sig_description (int, const char *);
