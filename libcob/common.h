@@ -893,11 +893,13 @@ enum cob_open_mode {
 
 /* Close options */
 
-#define COB_CLOSE_NORMAL	0
-#define COB_CLOSE_LOCK		1
-#define COB_CLOSE_NO_REWIND	2
-#define COB_CLOSE_UNIT		3
-#define COB_CLOSE_UNIT_REMOVAL	4
+enum cob_close_mode {
+	COB_CLOSE_NORMAL	= 0,
+	COB_CLOSE_LOCK		= 1,
+	COB_CLOSE_NO_REWIND	= 2,
+	COB_CLOSE_UNIT		= 3,
+	COB_CLOSE_UNIT_REMOVAL	= 4
+};
 
 /* Write options */
 
@@ -1643,7 +1645,7 @@ typedef struct __cob_global {
 /* File I/O function pointer structure (left here as it needs to be "external" for GC 4.x) */
 struct cob_fileio_funcs {
 	int	(*open)		(cob_file *, char *, const enum cob_open_mode, const int);
-	int	(*close)	(cob_file *, const int);
+	int	(*close)	(cob_file *, const enum cob_close_mode);
 	int	(*start)	(cob_file *, const int, cob_field *);
 	int	(*read)		(cob_file *, cob_field *, const int);
 	int	(*read_next)	(cob_file *, const int);

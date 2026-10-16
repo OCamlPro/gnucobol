@@ -1,4 +1,10 @@
 
+2026-10-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h (cob_close_mode): new enum instead of #define'd constants
+	  and use it in cob_fileio_funcs.close
+	* fileio.c (cob_file_close, indexed_close): use cob_close_mode
+
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
