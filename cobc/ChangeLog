@@ -5,6 +5,7 @@
 	  added size parameter as the main caller scanner.l provides that already
 	* cobc.c (cobc_deciph_funcs), scanner.l: add and compare resolved intrinsic
 	  function name (always upper-case) to/from internal list
+	* reserved.c: reduce size of map_array_size, to match the compared key var
 
 2026-10-13  Simon Sobisch <simonsobisch@gnu.org>
 
