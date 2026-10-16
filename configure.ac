@@ -720,7 +720,7 @@ dnl       get first warning-free supported value
 AC_CACHE_CHECK([for inline keyword], gc_cv_keyword_inline, [
   curr_cflags="$CFLAGS"
   CFLAGS="$curr_cflags $ERRWARN"
-  for gc_cv_keyword_inline in __inline __inline__ inline ""
+  for gc_cv_keyword_inline in inline __inline __inline__ ""
   do
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#ifndef __cplusplus
@@ -3177,6 +3177,7 @@ AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
 AC_SUBST([LIBCOB_VER])
 AC_SUBST([COB_ENABLE_DEBUG], [$enable_debug]) # needed for tests/atlocal
+AC_SUBST([HAVE_SIGNAL_H], ["$ac_cv_header_signal_h"]) # needed for tests/atlocal
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])
