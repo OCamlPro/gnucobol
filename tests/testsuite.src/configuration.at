@@ -431,6 +431,7 @@ test.conf: missing definitions:
 	no definition of 'filename-mapping'
 	no definition of 'pretty-display'
 	no definition of 'binary-truncate'
+	no definition of 'comp-5-uses-binary-byteorder'
 	no definition of 'complex-odo'
 	no definition of 'odoslide'
 	no definition of 'init-justify'
