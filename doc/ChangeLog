@@ -1,4 +1,10 @@
 
+2026-10-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcinfo.sh: use temporary files to ensure only full-files
+	  are seen by make as up-to-date and to cater for parallel execution,
+	  fix most shellcheck warnings
+
 2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* gnucobol.texi: document the new COB_SET_RUNTIME_STDIN_FILE,

@@ -566,8 +566,8 @@ AT_DATA([prog.cob], [
            DISPLAY Y          NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=skip -o prog-skip prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-skip], [0], [OKOKOKOKOKOK])
+AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=skip -o pskip prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./pskip], [0], [OKOKOKOKOKOK])
 AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=ok -o prog prog.cob], [1], [],
 [copy.inc:2: error: parentheses must be preceded by a picture symbol
 copy.inc:2: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
