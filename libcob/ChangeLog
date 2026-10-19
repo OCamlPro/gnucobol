@@ -1,8 +1,9 @@
 
 2026-10-19  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
 
-	* coblocal.h,  intrinsic.c: implement check limits to cob_intr_exp, cob_intr_exp
-	  and cob_intr_factorial    .
+	* intrinsic.c (cob_intr_exp, cob_intr_exp10, cob_intr_factorial),
+	  coblocal.h: fixing bug #1206 "gmp code aborting with out-of-memory"
+	  by implementing limits defined in coblocal.h raising EC-ARGUMENT-EXCEPTION
 
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
