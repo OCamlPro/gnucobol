@@ -7828,11 +7828,17 @@
 
 2014-12-11  Ron Norman <rjn@inglenet.com>
 
-	* Fixes so WARNING is given if no DETAIL lines in a repor
+	* Fixes so WARNING is given if no DETAIL lines in a report
+
+2024-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_standard_includes): only generate the MATH_INCLUDE
+	  if COB_NO_SELF_DECLARE_MPZ is manually defined - otherwise the generated
+	  sources will use the new common.h pseudo-definition for mpf_t
 
 2014-06-17  Ron Norman <rjn@inglenet.com>
 
-        * parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
+	* parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
 
 2014-06-16  Simon Sobisch <simonsobisch@gnu.org>
 
