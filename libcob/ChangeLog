@@ -1,6 +1,17 @@
 
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
+	* profiling.c: fixed memory-leak on profile ending
+	* common.h, profiling.c: split cob_prof_proc_data from cob_prof_module
+	  as all the three elements need to exist together, also simplifying
+	  allocation and free with improved performance
+	* profiling.c (prof_stack): similar combination of three internal vars
+	  that need to coexist to a single structure
+	* profiling.c (prof_init_static): use cob_check_env_true
+	* profiling.c: refactor
+
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
 	* common.c (cob_exit_common): cleanup COB_STDERR and friends 
 
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
