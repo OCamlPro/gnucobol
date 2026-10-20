@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\libcob\call.c" />
     <ClCompile Include="..\..\libcob\cconv.c" />
+    <ClCompile Include="..\..\libcob\cobargv.c"/>
     <ClCompile Include="..\..\libcob\cobgetopt.c" />
     <ClCompile Include="..\..\libcob\common.c" />
     <ClCompile Include="..\..\libcob\fileio.c" />
