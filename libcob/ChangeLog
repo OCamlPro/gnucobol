@@ -78,9 +78,6 @@
 2025-12-04  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* exception.def: exceptions values for EC-SIZE are now bit exclusive
-	* common.h, common.c: add `cob_reset_exception` which disable an
-	  exception check after one was performed, but still allows the
-	  exception intrinsic functions to check for them
 	* common.h, common.c: add `cob_last_exception_fatal`, to check if the
 	  last raised exception was fatal
 	* common.h, common.c: add enum member `COB_FERROR_FATAL_EC` for

@@ -2557,14 +2557,6 @@ cob_set_exception (const int id)
 	}
 }
 
-/* reset exception for the exception checker only */
-void
-cob_reset_exception (void) {
-	if (cobglobptr->cob_got_exception) {
-		cobglobptr->cob_got_exception = -1;
-	}
-}
-
 /* add to last exception, set if empty */
 void
 cob_add_exception (const int id)

@@ -128,6 +128,8 @@
 	  on statements that can raise them
 	* codegen.c (output_stmt): add a check for `ON SIZE ERROR` phrase, and
 	  if not present  then generate a check for enabled size exceptions
+	* codegen.c (output_handler): reset the exceptions if the statement has an
+	  exception handler
 
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -8768,7 +8768,10 @@ output_handler (const struct cb_statement *stmt)
 	if (stmt->ex_handler || stmt->not_ex_handler) {
 		/* We have a handler, so the exceptions should not be raised, and we reset them
 		 * before in case the handling statements can also raise exceptions. */
-		output_line ("cob_reset_exception ();");
+		output_line ("if (cob_glob_ptr->cob_got_exception)");
+		output_block_open ();
+		output_line ("cob_glob_ptr->cob_got_exception = -1;");
+		output_block_close ();
 	}
 	if (stmt->ex_handler) {
 		output_ec_condition_for_handler (stmt->handler_type);
