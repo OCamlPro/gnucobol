@@ -14328,6 +14328,116 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
 AT_CLEANUP
 
 
+AT_SETUP([EC-SIZE-EXPONENTIATION in item identification])
+AT_KEYWORDS([misc fundamental exceptions
+COMPUTE MOVE subscript reference-modification EXCEPTION-STATUS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD  PIC S9 VALUE 0.
+       01  TBL.
+           05 TBL-ENTRY PIC 9 OCCURS 3 VALUE 0.
+
+       PROCEDURE DIVISION.
+           COMPUTE TBL-ENTRY (ZERO-FLD ** ZERO-FLD) = 1
+            ON SIZE ERROR CONTINUE
+           END-COMPUTE
+           DISPLAY TBL ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD  PIC S9   VALUE 0.
+       01  TXT       PIC X(3) VALUE 'XYZ'.
+
+       PROCEDURE DIVISION.
+           MOVE 'AB' TO TXT (1 : 1 + ZERO-FLD ** ZERO-FLD)
+           DISPLAY TXT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD  PIC S9   VALUE 0.
+       01  NEG-FLD   PIC S9   VALUE -1.
+       01  TXT       PIC X(3) VALUE 'XYZ'.
+
+       PROCEDURE DIVISION.
+           MOVE 'A' TO TXT (1 + ZERO-FLD ** NEG-FLD : 1)
+           DISPLAY TXT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
+AT_DATA([prog4.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog4.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  RESULT    PIC S9 VALUE 7.
+
+       PROCEDURE DIVISION.
+      *    0 ** 0 with literals must not be resolved at compile time
+           COMPUTE RESULT = 0 ** 0
+            ON SIZE ERROR DISPLAY 'SIZE ERROR'
+           END-COMPUTE
+           DISPLAY RESULT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE prog3.cob], [0], [], [])
+AT_CHECK([$COMPILE prog4.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog2_loc prog2.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog3_loc prog3.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog4_loc prog4.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:11: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [1], [],
+[libcob: prog3.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
+[SIZE ERROR
++7 EC-SIZE-EXPONENTIATION
+], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog_loc], [0],
+[100 EC-SIZE-EXPONENTIATION
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2_loc], [0],
+[ABZ EC-SIZE-EXPONENTIATION
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3_loc], [0],
+[AYZ EC-SIZE-EXPONENTIATION
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog4_loc], [0],
+[SIZE ERROR
++7 EC-SIZE-EXPONENTIATION
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Constant Expressions])
 AT_KEYWORDS([runmisc condition expression])
 

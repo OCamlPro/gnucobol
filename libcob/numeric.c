@@ -4661,14 +4661,15 @@ cob_decimal_pop (const cob_u32_t params, ...)
 #define POW_IMPL(type)	                           \
 {                                                  \
 	register type	ret;                           \
+	if (base == 0 && power <= 0) {                 \
+		/* 0 ^ 0 or 0 ^ -n: rules violated */     \
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION); \
+		return power == 0 ? 1 : 0;                 \
+	}                                              \
 	if (power == 0 || base == 1 || base == -1) {   \
 		return 1;                                  \
 	}                                              \
 	if (power < 0) {                               \
-		/* division by zero */                     \
-		if (base == 0) {                           \
-			cob_raise (SIGFPE);                    \
-		}                                          \
 		/* too small -> (int)0 */                  \
 		return 0;                                  \
 	}                                              \
@@ -4685,12 +4686,36 @@ cob_s32_pow (cob_s32_t base, cob_s32_t power)
 {
 	POW_IMPL(cob_s32_t)
 }
+
 cob_s64_t
 cob_s64_pow (cob_s64_t base, cob_s64_t power)
 {
 	POW_IMPL (cob_s64_t)
 }
 #undef POW_IMPL
+
+/* checked variants, used in item identification (subscripts, reference
+   modification) where a size error is fatal and not handled by a
+   SIZE ERROR phrase of the statement */
+cob_s32_t
+cob_s32_pow_chk (cob_s32_t base, cob_s32_t power)
+{
+	const cob_s32_t	ret = cob_s32_pow (base, power);
+	if (unlikely (base == 0 && power <= 0)) {
+		cob_fatal_exception (cobglobptr->cob_exception_code);
+	}
+	return ret;
+}
+
+cob_s64_t
+cob_s64_pow_chk (cob_s64_t base, cob_s64_t power)
+{
+	const cob_s64_t	ret = cob_s64_pow (base, power);
+	if (unlikely (base == 0 && power <= 0)) {
+		cob_fatal_exception (cobglobptr->cob_exception_code);
+	}
+	return ret;
+}
 
 
 /* Init/Exit routines */

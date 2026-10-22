@@ -6016,6 +6016,9 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 					 || yl->scale != 0
 					 || yval < 0)
 						break;
+					/* 0 ^ 0 raises EC-SIZE-EXPONENTIATION at runtime */
+					if (xval == 0 && yval == 0)
+						break;
 					if (yval == 0
 					 || xval == 1) {
 						strcpy(result,"1");

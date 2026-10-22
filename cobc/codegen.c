@@ -2875,7 +2875,11 @@ output_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			output ("cob_s32_pow (");
+			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+				output ("cob_s32_pow_chk (");
+			} else {
+				output ("cob_s32_pow (");
+			}
 			output_integer (p->x);
 			output (", ");
 			output_integer (p->y);
@@ -3202,7 +3206,11 @@ output_long_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			output ("cob_s64_pow (");
+			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+				output ("cob_s64_pow_chk (");
+			} else {
+				output ("cob_s64_pow (");
+			}
 			output_long_integer (p->x);
 			output (", ");
 			output_long_integer (p->y);
