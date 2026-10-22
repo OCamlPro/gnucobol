@@ -103,6 +103,11 @@ NEWS - user visible changes				-*- outline -*-
    around the replacement pseudo-text between == are now removed, conforming
    to the standard and existing dialects.
 
+** the exponentiation of zero by zero (for example 0 ** 0) now leaves the
+   receiving fields unchanged instead of storing 1, as it raises the size
+   error condition (EC-SIZE-EXPONENTIATION). This is identical to the
+   behaviour of a division by zero.
+
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign

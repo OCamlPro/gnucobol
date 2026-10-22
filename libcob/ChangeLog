@@ -1,4 +1,11 @@
 
+2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (cob_decimal_pow): 0 ^ 0 now results in NaN instead of 1,
+	  so receiving fields stay unchanged on EC-SIZE-EXPONENTIATION
+	* numeric.c (cob_decimal_get_field): keep EC-SIZE-EXPONENTIATION instead
+	  of overriding it with EC-SIZE-OVERFLOW for a NaN result
+
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function

@@ -2059,7 +2059,8 @@ cob_decimal_get_field (cob_decimal *d, cob_field *f, const int opt)
 {
 	if (unlikely (d->scale == COB_DECIMAL_NAN)) {
 		if (!cobglobptr->cob_exception_code
-		 || !cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)) {
+		 || (!cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)
+		  && !cob_last_exception_is (COB_EC_SIZE_EXPONENTIATION))) {
 			cob_set_exception (COB_EC_SIZE_OVERFLOW);
 		}
 		return cobglobptr->cob_exception_code;

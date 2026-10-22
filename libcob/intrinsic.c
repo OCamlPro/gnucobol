@@ -3172,7 +3172,9 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 		/* Exponent is zero */
 		if (sign == 0) {
 			/* 0 ^ 0 */
+			pd1->scale = COB_DECIMAL_NAN;
 			cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+			return;
 		}
 		mpz_set_ui (pd1->value, 1UL);
 		pd1->scale = 0;

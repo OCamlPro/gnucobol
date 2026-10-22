@@ -14246,6 +14246,88 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([EC-SIZE-EXPONENTIATION])
+AT_KEYWORDS([misc fundamental exceptions
+COMPUTE EXCEPTION-STATUS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD PIC S9      VALUE 0.
+       01  NEG-FLD  PIC S9      VALUE -4.
+       01  HALF-FLD PIC S9V9    VALUE 0.5.
+       01  RESULT   PIC S9      VALUE 7.
+
+       PROCEDURE DIVISION.
+      *    0 ** 0: result unchanged, SIZE ERROR executed
+           COMPUTE RESULT = ZERO-FLD ** ZERO-FLD
+            ON SIZE ERROR DISPLAY 'SIZE ERROR 1'
+           END-COMPUTE
+           DISPLAY RESULT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+      *    0 ** 0: result unchanged, NOT SIZE ERROR not executed
+           COMPUTE RESULT = ZERO-FLD ** ZERO-FLD
+            NOT ON SIZE ERROR DISPLAY 'BAD NOT SIZE ERROR'
+           END-COMPUTE
+           DISPLAY RESULT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+      *    negative base and non-integer exponent: result unchanged
+           COMPUTE RESULT = NEG-FLD ** HALF-FLD
+            ON SIZE ERROR DISPLAY 'SIZE ERROR 2'
+           END-COMPUTE
+           DISPLAY RESULT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+      *    valid exponentiation for comparison
+           COMPUTE RESULT = NEG-FLD ** 1
+            ON SIZE ERROR DISPLAY 'BAD SIZE ERROR'
+           END-COMPUTE
+           DISPLAY RESULT
+           .
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD PIC S9      VALUE 0.
+       01  RESULT   PIC S9      VALUE 7.
+
+       PROCEDURE DIVISION.
+      *    without SIZE ERROR phrase and checking: result unchanged
+           COMPUTE RESULT = ZERO-FLD ** ZERO-FLD
+           DISPLAY RESULT ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-exponentiation prog2.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SIZE ERROR 1
++7 EC-SIZE-EXPONENTIATION
++7 EC-SIZE-EXPONENTIATION
+SIZE ERROR 2
++7 EC-SIZE-EXPONENTIATION
+-4
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog_loc], [0],
+[SIZE ERROR 1
++7 EC-SIZE-EXPONENTIATION
++7 EC-SIZE-EXPONENTIATION
+SIZE ERROR 2
++7 EC-SIZE-EXPONENTIATION
+-4
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[+7 EC-SIZE-EXPONENTIATION
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Constant Expressions])
 AT_KEYWORDS([runmisc condition expression])
 
@@ -16214,7 +16296,7 @@ AT_DATA([prog7.cob], [
 AT_CHECK([$COMPILE prog7.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog7], [0],
 [SIZE ERROR detected
-+1
++0
 ], [])
 
 AT_CLEANUP
