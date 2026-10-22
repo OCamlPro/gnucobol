@@ -2511,8 +2511,8 @@ cobc_abort_terminate (const int should_be_reported)
 			}
 #else
 			/* if not explicit set - let us SIGABRT;
-				during testing this was set to 3 but that led
-				to a huge corefile "no space left on device" once */
+			   during the initial test this was set to 3 but that led
+			   to a huge corefile "no space left on device" once */
 			cob_setenv ("COB_CORE_ON_ERROR", "2", 1);
 #endif
 		}

@@ -4384,7 +4384,6 @@ static struct cob_prof_module *prof_info;
   /* Set frame stack pointer */
   frame_ptr = frame_stack;
   frame_ptr->perform_through = 0;
-  frame_ptr->return_address_ptr = &&P_cgerror;
   frame_overflow = frame_ptr + 255 - 1;
   module->frame_ptr = frame_stack;
 
@@ -4462,7 +4461,6 @@ static struct cob_prof_module *prof_info;
   if (unlikely(frame_ptr == frame_overflow))
   	cob_fatal_error (COB_FERROR_STACK);
   frame_ptr->perform_through = 12;
-  frame_ptr->return_address_ptr = &&l_15;
   goto l_12;
   l_15:
   frame_ptr--;
@@ -4545,7 +4543,6 @@ static struct cob_prof_module *prof_info;
   if (unlikely(frame_ptr == frame_overflow))
   	cob_fatal_error (COB_FERROR_STACK);
   frame_ptr->perform_through = 9;
-  frame_ptr->return_address_ptr = &&l_16;
   goto l_9;
   l_16:
   frame_ptr--;
