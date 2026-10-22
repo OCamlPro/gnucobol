@@ -2480,8 +2480,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog X ABCD], [0], [], [])
 
 # note: sticky linkage and CHAINING produced compiler errors
 #   --> additional test
-AT_CHECK([$COMPILE prog.cob -fsticky-linkage -o prog_sticky], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog_sticky X ABCD], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -fsticky-linkage -o sticky], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./sticky X ABCD], [0], [], [])
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2 X], [0], [-X     -], [])
@@ -4146,7 +4146,7 @@ AT_CLEANUP
 
 
 AT_SETUP([System routine CBL_GC_FORK])
-AT_KEYWORDS([extensions C$GETPID])
+AT_KEYWORDS([extensions C$GETPID C$SLEEP fork sleep])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -4157,6 +4157,7 @@ AT_DATA([prog.cob], [
        77 PARENT-PID  USAGE BINARY-LONG.
        PROCEDURE DIVISION.
 
+       MAIN.
            CALL "C$GETPID" RETURNING PARENT-PID
            CALL "CBL_GC_FORK" END-CALL
            EVALUATE RETURN-CODE
@@ -4214,7 +4215,7 @@ AT_CLEANUP
 # without CBL_GC_FORK (which isn't available on all systems where
 # CBL_GC_WAITPID is available, for example MINGW)
 AT_SETUP([System routine CBL_GC_WAITPID])
-AT_KEYWORDS([extensions CBL_GC_FORK])
+AT_KEYWORDS([extensions CBL_GC_FORK fork sleep])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -4225,6 +4226,7 @@ AT_DATA([prog.cob], [
        01 WAIT-STS    PIC S9(9) BINARY VALUE -3.
        PROCEDURE DIVISION.
 
+       MAIN.
            CALL "CBL_GC_FORK" RETURNING CHILD-PID.
            EVALUATE CHILD-PID
               WHEN ZERO
@@ -4238,7 +4240,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 
        CHILD-CODE.
-           CALL "C$SLEEP" USING 1.
+           CONTINUE AFTER 1 SECONDS.
            DISPLAY "Hello, I am the child".
            MOVE 2 TO RETURN-CODE.
 
@@ -5271,14 +5273,14 @@ DISPLAY X NO ADVANCING
 STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -free -o prog-free prog.cob], [0], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-free], [0], [42])
+AT_CHECK([$COMPILE -free -o prog-f prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-f], [0], [42])
 
-AT_CHECK([$COMPILE -std=mf -fformat=free -o prog-mf-fformat-free prog.cob], [0], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-mf-fformat-free], [0], [06])
+AT_CHECK([$COMPILE -std=mf -fformat=free -o prog-mff prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-mff], [0], [06])
 
-AT_CHECK([$COMPILE -std=mf -free -o prog-mf-free prog.cob], [0], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-mf-free], [0], [06])
+AT_CHECK([$COMPILE -std=mf -free -o prog-mf prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-mf], [0], [06])
 
 AT_DATA([prog2.cob], [
       $SET SOURCEFORMAT"FREE"
@@ -5954,9 +5956,9 @@ AT_CLEANUP
 AT_SETUP([PICTURE L (REDEFINES)])
 AT_KEYWORDS([extensions gcos picture-l odo])
 
-AT_DATA([redefines.cob], [
+AT_DATA([redefine.cob], [
        IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      redefines.
+       PROGRAM-ID.      redefine.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        1 W-DATA.
@@ -6031,10 +6033,10 @@ AT_DATA([redefines.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE redefines.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./redefines], [0], [])
-AT_CHECK([$COMPILE -fodoslide -o redefines-x redefines.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./redefines-x], [0], [])
+AT_CHECK([$COMPILE redefine.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./redefine], [0], [])
+AT_CHECK([$COMPILE -fodoslide -o redx redefine.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./redx], [0], [])
 
 AT_CLEANUP
 

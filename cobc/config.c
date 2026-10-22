@@ -626,30 +626,42 @@ cb_config_entry (char *buff, const char *fname, const int line)
 					configuration_error (fname, line, 1, _("Could not access word list for '%s'"), val);
 					cb_perror (1, "%s: %s", words_file, errno_str);
 #else
-					configuration_error (fname, line, 1, _("Could not access word list for '%s'"), val);
+					configuration_error (fname, line, 1,
+						_("Could not access word list for '%s'"), val);
 #endif
 					return -1;
 				};
 			}
 		} else if (strcmp (name, "not-reserved") == 0) {
-			split_and_iterate_on_comma_separated_str (&remove_reserved_word, 0, 0, val, fname, line);
-			split_and_iterate_on_comma_separated_str (&deactivate_intrinsic, 1, 0, val, fname, line);
-			split_and_iterate_on_comma_separated_str (&deactivate_system_name, 1, 0, val, fname, line);
-			split_and_iterate_on_comma_separated_str (&remove_register, 1, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&remove_reserved_word, 0, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&deactivate_intrinsic, 1, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&deactivate_system_name, 1, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&remove_register, 1, 0, val, fname, line);
 		} else if (strcmp (name, "reserved") == 0) {
-			split_and_iterate_on_comma_separated_str (&add_reserved_word, 0, 1, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&add_reserved_word, 0, 1, val, fname, line);
 		} else if (strcmp (name, "not-intrinsic-function") == 0) {
-			split_and_iterate_on_comma_separated_str (&deactivate_intrinsic, 1, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&deactivate_intrinsic, 1, 0, val, fname, line);
 		} else if (strcmp (name, "intrinsic-function") == 0) {
-			split_and_iterate_on_comma_separated_str (&activate_intrinsic, 1, 1, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&activate_intrinsic, 1, 1, val, fname, line);
 		} else if (strcmp (name, "not-system-name") == 0) {
-			split_and_iterate_on_comma_separated_str (&deactivate_system_name, 1, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&deactivate_system_name, 1, 0, val, fname, line);
 		} else if (strcmp (name, "system-name") == 0) {
-			split_and_iterate_on_comma_separated_str (&activate_system_name, 1, 1, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&activate_system_name, 1, 1, val, fname, line);
 		} else if (strcmp (name, "not-register") == 0) {
-			split_and_iterate_on_comma_separated_str (&remove_register, 1, 0, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&remove_register, 1, 0, val, fname, line);
 		} else if (strcmp (name, "register") == 0) {
-			split_and_iterate_on_comma_separated_str (&add_register, 1, 1, val, fname, line);
+			split_and_iterate_on_comma_separated_str (
+				&add_register, 1, 1, val, fname, line);
 		} else {
 			*((const char **)var) = val;
 		}

@@ -2079,7 +2079,7 @@ cb_define_switch_name (cb_tree name, cb_tree sname, const int flag)
 	return value;
 }
 
-void
+int
 cb_check_word_length (unsigned int length, const char *word)
 {
 	if (unlikely (length > cb_word_length)) {
@@ -2087,11 +2087,13 @@ cb_check_word_length (unsigned int length, const char *word)
 			/* Absolute limit */
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
+			return 1;
 		} else {
 			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
 						cb_word_length, word);
 		}
 	}
+	return 0;
 }
 
 cb_tree
@@ -11100,7 +11102,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
 
-	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
+	/* TODO: most of the "invalid" checks should possibly be handled in the parser */
 
 	loc = src->source_line ? src : dst;
 	is_numeric_edited = 0;
@@ -11167,7 +11169,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 					}
 					break;
 				}
-				return -1; /* error message raised already*/
+				return -1; /* error message raised already */
 			}
 		} else if (src == cb_zero) {
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHABETIC) {
@@ -11198,6 +11200,14 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				if (cb_move_nonnumlit_to_numeric_is_zero) {
 					goto movezero;
 				}
+			}
+		} else if (src == cb_null) {
+			/* note: while not documented MF+ACU may compile that for
+			   numeric values --> then adjust accordingly */
+			if (CB_TREE_CATEGORY (dst) != CB_CATEGORY_DATA_POINTER
+			 && CB_TREE_CATEGORY (dst) != CB_CATEGORY_PROGRAM_POINTER
+			 && CB_TREE_CATEGORY (dst) != CB_CATEGORY_OBJECT_REFERENCE) {
+				goto invalid;
 			}
 		}
 		break;

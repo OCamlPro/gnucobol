@@ -1,4 +1,16 @@
 
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added AM_MISSING_PROG of AUTOM4TE for testsuite
+	* configure.ac: check for optional sys/wait.h (not doing so disabled
+	  CBL_GC_WAITPID since a while)
+	* configure.ac: use configured SED internally
+
+2026-09-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: drop duplicate check for COB_EXE_EXT
+	* configure.ac: use configured SED internally
+
 2025-11-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix linking order for PANEL_LIBS
@@ -1726,7 +1738,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2025 Free Software Foundation, Inc.
+Copyright 2002-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

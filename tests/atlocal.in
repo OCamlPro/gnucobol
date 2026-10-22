@@ -1,7 +1,7 @@
 #
 # atlocal gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2026 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -76,67 +76,46 @@ TZ=UTC
 export TZ
 
 # define for performance checks (running code several thousand times)
-if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "x$CHECKPERF" != "x"; then
+if test "x$PERFSUFFIX" != "x"  -o "x$CGSUFFIX" != "x" \
+     -o "x$FPROFSUFFIX" != "x" -o "x$CHECKPERF" != "x"; then
 	if test "x$VGSUFFIX" = "x"; then
 		COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
 	fi
 fi
 
-# To activate profiling during tests, modify tests/atlocal:
-# For the normal testsuite, uncomment:
-# COB_PROF_TESTSUITE=yes
-# For the NIST testsuite and _ONLY_ for it, uncomment:
-# COB_PROF_NIST=yes
-
-if test "x$COB_PROF_NIST" = xyes; then
-   COBOL_FLAGS="${COBOL_FLAGS} -fprof"
-   COB_PROF_TESTSUITE=yes
-fi
-
 COBC="${COBC}"
 
-perf_record() {
-	local logdir="$1"; shift
-	# using a unique filename each time the function is called
-	local outfile="${logdir}/perf.data.${PERFSUFFIX}-${at_group}-$(date +%s%N)"
-
-	# drop --aio / -z if your system does not support that
-	perf record -q --aio -z --call-graph dwarf,4096 --output "${outfile}" "$@"
-}
-
-perf_stat() {
-	local logdir="$1"; shift
-	local outfile="${logdir}/${PERFSUFFIX}.log"
-
-	perf stat -e instructions --append --output "${outfile}" "$@"
-}
-
-# get performance counters for compiler and/or runtime
+# get performance counters / checks for compiler and/or runtime
 if test "x${PERFSUFFIX}" != "x"; then
-	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin/.libs:${PATH}"
 	LOG_DIR="${abs_builddir}/perf"
 	LOG_DIR_COMP="${LOG_DIR}/cobc"
 	LOG_DIR_RUN="${LOG_DIR}/cobcrun"
-	PERF=perf_stat
-	[ "${PERFRECORD}" != "" ] && PERF=perf_record
-	# most reasonable: record actual COBOL runtime performance (only)
+	if [ -n "$PERFRECORD" ]; then
+		# Warning, using "perf record" may only work with a single job!
+		PERF=". ${abs_srcdir}/perf_record.sh"
+	else
+		PERF=". ${abs_srcdir}/perf_stat.sh"
+	fi
+
 	mkdir -p "${LOG_DIR_RUN}"
 	COBCRUN="$PERF ${LOG_DIR_RUN} ${COBCRUN}"
 	COBCRUN_DIRECT="$PERF ${LOG_DIR_RUN} ${COBCRUN_DIRECT}"
 
 	COBOL_FLAGS="${COBOL_FLAGS} -g"
 
-	#mkdir -p "${LOG_DIR_COMP}"
-	# note: full recording including C compiler; for perf record limit analysis via perf/hotspot to cobc's PID later!
-	# COBC="$PERF ${LOG_DIR_COMP} ${COBC} -O0"
-	# COMPILE_ONLY="$PERF ${LOG_DIR_COMP} ${COMPILE_ONLY}"  # more reasonable - record cobc only, but misses codegen
+	mkdir -p "${LOG_DIR_COMP}"
+	COBC="$PERF ${LOG_DIR_COMP} ${COBC}"
+
+# Valgrind's callgrind tool - be aware that those are exact in their counts and paths
+# but take quite long to be computed
 elif test "x${CGSUFFIX}" != "x"; then
-	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin/.libs:${PATH}"
 	LOG_DIR="${abs_builddir}/callgrind/${CGSUFFIX}"
 	LOG_DIR_COMP="${LOG_DIR}/cobc"
 	LOG_DIR_RUN="${LOG_DIR}"
 	CG="valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --collect-atstart=no --toggle-collect=_start --fn-skip=_dl_runtime_resolve_xsave --fn-skip=_dl_fixup  --toggle-collect=cob_init"
-	if test "x$at_group" = "x"; then
+	if test -z "$at_group"; then
 		at_group="cg"	# must be set as it is part of CG_PREFIX
 	fi
 	export at_group
@@ -155,6 +134,8 @@ elif test "x${CGSUFFIX}" != "x"; then
 	#mkdir -p "${LOG_DIR_COMP}"
 	#COBC="${CG} --log-file=${LOG_DIR_COMP}/${LOG_NAME} --callgrind-out-file=${LOG_DIR_COMP}/${CG_NAME} ${COBC}"
 
+# Valgrind checks - be aware that those are work on non-instructed code,
+# but take really long to be executed
 elif test "x${VGSUFFIX}" != "x"; then
 
 	# To check with valgrind:
@@ -170,12 +151,12 @@ elif test "x${VGSUFFIX}" != "x"; then
 	#   choose if to run valgrind only for the compiler, runtime, or both
 	# * then run with `make check[all] VGSUFFIX (logs will be saved in valgrind/$VGSUFFIX
 
-	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin/.libs:${PATH}"
 	LOG_DIR="${abs_builddir}/valgrind/${VGSUFFIX}"
 	LOG_DIR_COMP="${LOG_DIR}/cobc"
 	LOG_DIR_RUN="${LOG_DIR}"
 
-	if test "x$at_group" = "x"; then
+	if test -z "$at_group"; then
 		at_group="valgrind"	# must be set as it is part of VG_PREFIX
 	fi
 	export at_group
@@ -207,6 +188,37 @@ elif test "x${VGSUFFIX}" != "x"; then
 
 	mkdir -p "${LOG_DIR_COMP}"
 	COBC="${MEMCHECK} --log-file=${LOG_DIR_COMP}/${LOG_NAME} ${COBC}"
+
+# RR recordings to post-inspect especially broken tests,
+# with a small overhead
+elif test "x${RRSUFFIX}" != "x"; then
+
+	export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin/.libs:${PATH}"
+	export _RR_TRACE_DIR="${abs_builddir}/rr/${RRSUFFIX}"
+	mkdir -p "${_RR_TRACE_DIR}"
+
+	COBCRUN="rr record ${COBCRUN}"
+	COBCRUN_DIRECT="rr record ${COBCRUN_DIRECT}"
+	COBC="rr record --nested=ignore ${COBC}"   # we don't want to trace the C compiler, or -j job executions
+
+	COBOL_FLAGS="${COBOL_FLAGS} -g"
+
+fi
+
+# Running tests under -fprof "outside" of test mode, keeping the resulting files
+if test "x${FPROFSUFFIX}" != "x"; then
+	export _FPROF_DIR="${abs_builddir}/fprof"
+	mkdir -p "${_FPROF_DIR}"
+
+	COBOL_FLAGS="${COBOL_FLAGS} -fprof"
+	# hide the name of the output file if not explicit set,
+    # allowing to run all tests with profiling enabled
+	# nice name for NIST where report.pl exports at_group
+    COB_PROF_FILE="${_FPROF_DIR}/\${at_group:fprof}-${FPROFSUFFIX}-\$b-\$\$-\$d-\$t_hidden.csv"
+
+	# variant with a single file (needing the pid in the format to be useful)
+    #COB_PROF_FILE="+${_FPROF_DIR}/combined-${FPROFSUFFIX}-hidden.csv"
+	#COB_PROF_FORMAT="%i,%m,%s,%p,%e,%w,%k,%t,%h,%n"
 fi
 
 LSAN_OPTIONS="suppressions=${abs_srcdir}/lsan.supp:print_suppressions=0"
@@ -235,8 +247,10 @@ _unset_option () {
 	     -a "$1" != "COB_CFLAGS" \
 	     -a "$1" != "COB_LIBS" \
 	     -a "$1" != "COB_UNIX_LF" \
+	     -a "$1" != "COB_PROF_FILE" \
+	     -a "$1" != "COB_PROF_FORMAT" \
 	     -a "$1" != "OS"; then
-		unset $1
+		unset "$1"
 	fi
 }
 
@@ -360,17 +374,9 @@ fi
 
 HAVE_SIGNAL_H="@HAVE_SIGNAL_H@"
 
+# smaller output in testcases that abort
 COB_STACKTRACE=0
 export COB_STACKTRACE
-
-if test "x$COB_PROF_TESTSUITE" = xyes; then
-   COMPILE="${COMPILE} -fprof"
-   COMPILE_MODULE="${COMPILE_MODULE} -fprof"
-   COB_PROF_ENABLE=1
-   export COB_PROF_ENABLE
-   COB_PROF_FILE="hidden.csv"
-   export COB_PROF_FILE
-fi
 
 # different variables used in the testsuite
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
@@ -466,9 +472,22 @@ fi
 
 rm -rf info.out
 
-# NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
-export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
-export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL COBOL_FLAGS
+# to activate profiling during tests, pass COBOL_FLAGS=-fprof
+case "${COBOL_FLAGS}" in
+   *-fprof*)
+      COB_PROF_ENABLE=1
+	  # for additional tracing:
+	  # export COB_PROF_TRACE=yes
+	  ;;
+esac
+
+
+# NIST tests (tests/cobol85) are executed in a separate perl process with
+# a new environment, runs under Windows may as well --> export needed
+export COB_HAS_ICONV COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES \
+	COB_HAS_64_BIT_POINTER COB_BIGENDIAN
+export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL COBOL_FLAGS \
+	COB_PROF_ENABLE COB_PROF_FILE COB_PROF_FORMAT
 export COB_CC COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
 # to ensure that no external DB_HOME is polluted: unset

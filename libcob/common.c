@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -22,7 +22,7 @@
 #include "config.h"
 
 #ifdef __MINGW32__
-/* Is this needed for other environments as well?
+/* CHECKME: Is this needed for other environments as well?
    We want to use all POSIX extensions possible. */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200112
@@ -703,7 +703,7 @@ static cob_s64_t	get_sleep_nanoseconds	(cob_field *nano_seconds);
 static cob_s64_t	get_sleep_nanoseconds_from_seconds	(cob_field *decimal_seconds);
 static void		internal_nanosleep	(cob_s64_t nsecs);
 
-static int		set_config_val	(char *value, int pos);
+static int		set_config_val	(const char *value, int pos);
 static char		*get_config_val	(char *value, int pos, char *orgvalue);
 
 static void		cob_dump_module (char *reason);
@@ -816,8 +816,8 @@ cob_exit_common (void)
 		/* Free all strings pointed to by cobsetptr */
 		for (i = 0; i < NUM_CONFIG; i++) {
 			if ((gc_conf[i].data_type & ENV_STR)
-			||  (gc_conf[i].data_type & ENV_FILE)
-			||  (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path to be stored as a string */
+			 || (gc_conf[i].data_type & ENV_FILE)
+			 || (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path to be stored as a string */
 				data = (void *)((char *)cobsetptr + gc_conf[i].data_loc);
 				memcpy (&str, data, sizeof (char *));
 				if (str != NULL) {
@@ -828,7 +828,22 @@ cob_exit_common (void)
 			}
 		}
 		if (cobsetptr->cob_preload_str_set) {
-			cob_free((void*)(cobsetptr->cob_preload_str_set));
+			cob_free (cobsetptr->cob_preload_str_set);
+		}
+		if (cobsetptr->cob_stdin_filename_set) {
+			fclose (COB_STDIN);
+			COB_STDIN = stdin;
+			cob_free (cobsetptr->cob_stdin_filename_set);
+		}
+		if (cobsetptr->cob_stdout_filename_set) {
+			fclose (COB_STDOUT);
+			COB_STDOUT = stdout;
+			cob_free (cobsetptr->cob_stdout_filename_set);
+		}
+		if (cobsetptr->cob_stderr_filename_set) {
+			fclose (COB_STDERR);
+			COB_STDERR = stderr;
+			cob_free (cobsetptr->cob_stderr_filename_set);
 		}
 		cob_free (cobsetptr);
 		cobsetptr = NULL;
@@ -968,8 +983,9 @@ cob_terminate_routines (void)
 	if (module_unload == COB_IMMEDIATE) {
 		cob_exit_call ();
 		cob_exit_common ();
-        /* If module unloading has been postponed, "remember" unloading has indeed been requested */
 	} else if (module_unload == COB_POSTPONE) {
+        /* if module unloading has been postponed,
+		   "remember" unloading has indeed been requested */
 		module_unload = COB_REQUESTED;
 	}
 }
@@ -1201,7 +1217,8 @@ cob_sig_handler (int sig)
 	char signal_text[COB_MINI_BUFF];
 	const char *signal_name;
 	const char *msg;
-	size_t pos = 0;
+	size_t	pos = 0;
+	int  	fileno_stderr = STDERR_FILENO;
 
 #if	defined (HAVE_SIGACTION) && !defined (SA_RESETHAND)
 	struct sigaction	sa;
@@ -1240,8 +1257,9 @@ cob_sig_handler (int sig)
 #ifdef	SIGHUP
 	case SIGHUP:
 #endif
-		fflush (COB_STDERR);
-		fflush (COB_STDOUT);
+		fflush (COB_STDERR_OR_DEFAULT);
+		fflush (COB_STDOUT_OR_DEFAULT);
+		fileno_stderr = fileno (COB_STDERR_OR_DEFAULT);
 		break;
 	default:
 		break;
@@ -1288,7 +1306,7 @@ cob_sig_handler (int sig)
 	}
 
 #ifdef	HAVE_SIGACTION
-#ifndef	SA_RESETHAND
+#ifndef	SA_RESETHAND	/* otherwise we use that attribute to do the same */
 	memset (&sa, 0, sizeof (sa));
 	sa.sa_handler = SIG_DFL;
 	(void)sigemptyset (&sa.sa_mask);
@@ -1336,7 +1354,7 @@ cob_sig_handler (int sig)
 
 	buff[pos++] = '\n';
 	buff[pos] = 0;
-	write_until_fail (STDERR_FILENO, buff, pos);
+	write_until_fail (fileno_stderr, buff, pos);
 
 	/* early coredump if requested would be nice,
 	   but that is not signal-safe so do SIGABRT later... */
@@ -1344,7 +1362,6 @@ cob_sig_handler (int sig)
 		cobsetptr->cob_core_on_error = 4;
 	}
 	switch (sig) {
-	case -1:
 #ifdef	SIGSEGV
 	case SIGSEGV:
 #endif
@@ -1459,6 +1476,10 @@ static void
 cob_init_sig_descriptions (void)
 {
 	int	k;
+	/* note: this loop does not use a switch/case as the signals may have
+	   duplicate numeric values - which is commonly an error with switch/case;
+	   the use of else if _may_ be internally optimized but does not raise
+	   the same error/warning */
 	for (k = 0; k <= NUM_SIGNALS; k++) {
 		/* always defined, if missing */
 		if (signals[k].sig == SIGFPE) {
@@ -2395,9 +2416,14 @@ cob_rescan_env_vals (void)
 	for (i = 0; i < NUM_CONFIG; i++) {
 		if (gc_conf[i].env_name
 		 && (env = getenv (gc_conf[i].env_name)) != NULL) {
+
+			/* skip if empty in environment (default will be used) */
+			if (*env == '\0') {
+				continue;
+			}
+
 			old_type = gc_conf[i].data_type;
 			gc_conf[i].data_type |= STS_ENVSET;
-
 			if (*env != '\0' && set_config_val (env, i)) {
 				gc_conf[i].data_type = old_type;
 
@@ -6209,22 +6235,35 @@ cob_gettmpdir (void)
 void
 cob_temp_name (char *filename, const char *ext)
 {
+	const char *tmpdir = cob_gettmpdir ();
 	int pid = cob_sys_getpid ();
+#if !defined (_WIN32) && !defined (HAVE_8DOT3_FILENAMES)
+	char uid_str[32] = "";
+	snprintf (uid_str, sizeof (uid_str), "%lu_", (unsigned long)getuid ());
+#else
+	const char uid_str[] = "";
+#endif
 #ifndef HAVE_8DOT3_FILENAMES
-#define TEMP_EXT_SCHEMA	"%s%ccob%d_%d%s"
-#define TEMP_SORT_SCHEMA	"%s%ccobsort%d_%d"
+#define TEMP_EXT_SCHEMA	"%s%ccob%s%d_%d%s"
+#define TEMP_SORT_SCHEMA	"%s%ccobsort%s%d_%d"
 #else
 /* 8.3 allows only short names... */
-#define TEMP_EXT_SCHEMA	"%s%cc%d_%d%s"
-#define TEMP_SORT_SCHEMA	"%s%cs%d_%d"
+#define TEMP_EXT_SCHEMA	"%s%cc%s%d_%d%s"
+#define TEMP_SORT_SCHEMA	"%s%cs%s%d_%d"
 	pid = pid % 9999;
 #endif
-	if (ext) {
-		snprintf (filename, (size_t)COB_FILE_MAX, TEMP_EXT_SCHEMA,
-			cob_gettmpdir (), SLASH_CHAR, pid, cob_temp_iteration, ext);
-	} else {
-		snprintf (filename, (size_t)COB_FILE_MAX, TEMP_SORT_SCHEMA,
-			cob_gettmpdir (), SLASH_CHAR, pid, cob_temp_iteration);
+	for (;;) {
+		if (ext) {
+			snprintf (filename, (size_t)COB_FILE_MAX, TEMP_EXT_SCHEMA,
+				  tmpdir, SLASH_CHAR, uid_str, pid, cob_temp_iteration, ext);
+		} else {
+			snprintf (filename, (size_t)COB_FILE_MAX, TEMP_SORT_SCHEMA,
+				  tmpdir, SLASH_CHAR, uid_str, pid, cob_temp_iteration);
+		}
+		if (access (filename, F_OK) != 0) {
+			break;
+		}
+		cob_temp_iteration++;
 	}
 #undef TEMP_EXT_SCHEMA
 #undef TEMP_SORT_SCHEMA
@@ -7988,10 +8027,10 @@ cob_expand_env_string (const char *strval)
 			const char *s = NULL;
 		        switch ( strval[k+1] ){
 			case '$': /* Replace $$ with process-id */
-				if (cob_is_test) {
+				if (cob_is_test == 1) {
 					j += sprintf (&env[j], "%d", 123456);
 				} else {
-					j += sprintf (&env[j], "%d", cob_sys_getpid());
+					j += sprintf (&env[j], "%d", cob_sys_getpid ());
 				}
 				k++;
 				break;
@@ -8027,7 +8066,7 @@ cob_expand_env_string (const char *strval)
 				env[j++] = strval[k];
 				break;
 			}
-			if (s){
+			if (s) {
 				size_t copylen = strlen(s);
 				if (copylen + j > envlen - 128) {
 					env = cob_realloc (env, envlen,
@@ -8117,9 +8156,9 @@ translate_boolean_to_int (const char* ptr)
 
 /* Set runtime setting with given value */
 static int					/* returns 1 if any error, else 0 */
-set_config_val (char *value, int pos)
+set_config_val (const char *value, int pos)
 {
-	register char	*ptr = value;
+	register const char	*ptr = (char *)value;
 	char	*str;
 	cob_s64_t	numval = 0;
 	int 	i, slen;
@@ -8349,7 +8388,7 @@ set_config_val (char *value, int pos)
 
 /* Set runtime setting by name with given value */
 static int					/* returns 1 if any error, else 0 */
-set_config_val_by_name (char *value, const char *name, const char *func)
+set_config_val_by_name (const char *value, const char *name, const char *func)
 {
 	int	i;
 	int ret = 1;
@@ -9808,7 +9847,7 @@ print_version (void)
 
 	printf ("libcob %s%s.%d\n",
 		PKGVERSION, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2024 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2026 Free Software Foundation, Inc.");
 	printf (_("License LGPLv3+: GNU LGPL version 3 or later <%s>"),
 		"https://gnu.org/licenses/lgpl.html");
 	putchar ('\n');
@@ -10244,12 +10283,8 @@ cob_common_init (void *setptr)
 
 #ifdef	_WIN32
 	/* Allows running tests under Win */
-	{
-		if (setptr) {
-			/* termio initialization does this when settings is initialized */
-			return;
-		}
-
+	/* note: termio initialization does this when settings is initialized */
+	if (!setptr) {
 		int use_unix_lf = 0;
 		char *s = getenv ("COB_UNIX_LF");
 
@@ -10435,6 +10470,16 @@ cob_init (const int argc, char **argv)
 	cob_initialized = 1;
 
 	cob_is_test = !!getenv ("COB_IS_RUNNING_IN_TESTMODE");
+	if (cob_is_test) {
+		const char *s = getenv ("COB_PROF_FILE");
+		const size_t prof_flen = s ? strlen (s) : 0;
+		if (prof_flen >= 10
+		 && memcmp (s + prof_flen - 10, "hidden.csv", 11) == 0) {
+			/* we actually do want to profile, so negate test mode
+			   for later checks */
+			cob_is_test = -1;
+		}
+	}
 
 #ifdef	HAVE_SETLOCALE
 	/* Prime the locale from user settings */

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -271,6 +271,8 @@ Note: also defined together with __clang__ in both frontends:
 #define	COB_STDERR		cobsetptr->cob_stderr
 #define	COB_STDERR_OR_DEFAULT	cobsetptr && cobsetptr->cob_stderr ? \
 	cobsetptr->cob_stderr : stderr
+#define	COB_STDOUT_OR_DEFAULT	cobsetptr && cobsetptr->cob_stdout ? \
+	cobsetptr->cob_stdout : stdout
 
 #if defined(COB_TLS)
     /* already defined, for example as static to explicit disable TLS */

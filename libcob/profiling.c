@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023-2024 Free Software Foundation, Inc.
+   Copyright (C) 2023-2024, 2026 Free Software Foundation, Inc.
    Written by Emilien Lemaire, Fabrice Le Fessant, David Declerck,
    Simon Sobisch.
 
@@ -90,7 +90,7 @@ static cob_ns_time
 get_ns_time (void)
 {
 	static cob_ns_time ns_time = 0;
-	if (cob_is_test) {
+	if (cob_is_test == 1) {
 		ns_time += 1000000;
 		return ns_time;
 	}
@@ -159,11 +159,13 @@ prof_init_static ()
 		const char *envvar = cob_getenv_direct ("COB_PROF_TRACE");
 		prof_setup_clock ();
 		is_active = cobsetptr->cob_prof_enable;
-		has_traces = 0;
 		if (envvar
-		    && (!strcmp (envvar, "1")
-			|| !strcmp (envvar, "yes")))
+		 && (!strcmp (envvar, "1")
+		  || !strcmp (envvar, "yes"))) {
 			has_traces = 1;
+		  } else {
+			has_traces = 0;
+		  }
 	}
 }
 
@@ -493,10 +495,10 @@ cob_prof_print_line (
 			case 'I':
 			case 'i':
 				if (info){
-					if (cob_is_test){
+					if (cob_is_test == 1) {
 						fprintf (file, "%d", 123456);
 					} else {
-						fprintf (file, "%d", cob_sys_getpid());
+						fprintf (file, "%d", cob_sys_getpid ());
 					}
 				} else {
 					fputs ("pid", file);
@@ -547,7 +549,11 @@ cob_prof_print_line (
 		}
 	}
 	fputc ('\n', file);
+#if 0 /* Simon: Do we really need this -only useful for multiple PIDs to a single file?
+         If yes, then better place in local buffer
+		 do a single unbuffered write, ensuring that all parts stay together*/
 	fflush (file);
+#endif
 }
 
 
@@ -569,6 +575,7 @@ cob_prof_end ()
 	file = cob_open_logfile (cobsetptr->cob_prof_filename);
 
 	if (!!file) {
+		const size_t prof_flen = strlen (cobsetptr->cob_prof_filename);
 
 		/* First pass: accumulate section times */
 		for (l = prof_info_list ; l != NULL; l=l->next){
@@ -595,8 +602,9 @@ cob_prof_end ()
 			}
 		}
 		fclose (file);
-		if (!cob_is_test
-		 || strcmp (cobsetptr->cob_prof_filename, "hidden.csv") ) {
+		if (prof_flen < 10
+		 || memcmp (cobsetptr->cob_prof_filename + prof_flen - 10, 
+		            "hidden.csv", 11)) {
 			/* Only print this line when we are not in test mode,
 			   or the file is called hidden.csv, so that we can
 			   run profiling while running the full testsuite */

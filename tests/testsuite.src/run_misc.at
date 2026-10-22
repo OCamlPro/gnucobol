@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -348,7 +348,7 @@ AT_CLEANUP
 AT_SETUP([LOCAL-STORAGE (3)])
 AT_KEYWORDS([runmisc OCCURS INDEX INDEXED])
 
-# Note: this tests undefined behaviour, because the initial value
+# Note: this tests undefined behavior, because the initial value
 #       of index-names are undefined per standard; where they are
 #       explicit defined to be "... treated as a static item [for WS]
 #       and as an automatic item [for LS]"; see bug #794
@@ -1792,18 +1792,18 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Converted: "A#O2018 |!"], [])
 
 # For characters above IBM (with irregularities) and GCOS should match:
-AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii7bit -o prog-ibm], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-ibm], [0],
+AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii7bit -o ibm], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ibm], [0],
 [Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
 
-AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii8bit -o prog-gcos], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-gcos], [0],
+AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii8bit -o gcos], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./gcos], [0],
 [Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
 
 # FIXME: This really does not convert to anything close to ASCII;
 # what's this table supposed to encode?
-# AT_CHECK([$COMPILE prog.cob -febcdic-table=RESTRICTED-GC -o prog-rgc], [0], [], [])
-# AT_CHECK([$COBCRUN_DIRECT ./prog-rgc], [0], [])
+# AT_CHECK([$COMPILE prog.cob -febcdic-table=RESTRICTED-GC -o rgc], [0], [], [])
+# AT_CHECK([$COBCRUN_DIRECT ./rgc], [0], [])
 
 AT_CLEANUP
 
@@ -4197,8 +4197,8 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([COB_PRE_LOAD])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+AT_SETUP([pre-loading via COB_PRE_LOAD])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4211,15 +4211,17 @@ AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      caller.
        PROCEDURE        DIVISION.
-           CALL "callee2"
-           END-CALL.
+           CALL "callee2".
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
+# lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
 AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+# lookup with full path
+AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
@@ -4253,7 +4255,7 @@ typedef void (*cob_tidy_func)(void);
 
 /* Function to call COBOL shared library functions */
 void *callCobol() {
-   
+
     const char *libCobPath = "libcob" LIB_EXT;
     void *libCobHandle;
     cob_init_func cob_init;
@@ -4303,7 +4305,7 @@ void *threadFunction(void *arg) {
 }
 
 /* Main function */
-int main() {
+int main (int argc, char **argv) {
     const int numThreads = 2; /* Number of threads to create */
     pthread_t threads[[numThreads]];
     long i;
@@ -10887,6 +10889,9 @@ AT_DATA([sub2.cob], [
            10  CM-DISK            PICTURE X(8).
            10  CM-NO-TERMINALS    PICTURE 9(4).
        77  DYNAMIC-NUM            PICTURE 9(4).
+       01  LS-DATA.
+           03  LS-ITEM            PIC X  OCCURS  1 TO 4
+               DEPENDING ON DYNAMIC-NUM INDEXED BY LS-IDX.
 
        PROCEDURE DIVISION USING X, TSPFL-RECORD.
        SubwaY SECTION.
@@ -10971,8 +10976,8 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11109,6 +11114,7 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+01        LS-DATA.                       <NULL> address
 
 END OF DUMP - sub2
 **********************
@@ -11209,8 +11215,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11232,8 +11238,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11272,20 +11278,20 @@ AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
 
 AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
-$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
+$COMPILE -fdump=FD,LS prog.cob sub2.cob -o progfdls], [0], [], [])
 
-AT_CHECK([COB_DUMP_FILE=tstdump_fdls.dump \
-$COBCRUN_DIRECT ./prog_fdls], [1],
+AT_CHECK([COB_DUMP_FILE=tdfdls.dump \
+$COBCRUN_DIRECT ./progfdls], [1],
 [X is 000000001
 X is 000005441
 ],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
-dump written to tstdump_fdls.dump
+dump written to tdfdls.dump
 ])
 
-AT_CAPTURE_FILE([tstdump_fdls.dump])
+AT_CAPTURE_FILE([tdfdls.dump])
 
 AT_DATA([reference_fdls], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
@@ -11295,13 +11301,13 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
 	ENTRY prog at prog.cob:77
- Started by ./prog_fdls
+ Started by ./progfdls
 
 Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
@@ -11324,6 +11330,7 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+01        LS-DATA.                       <NULL> address
 
 END OF DUMP - sub2
 **********************
@@ -11345,48 +11352,49 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([$SED -e 's/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
-tstdump_fdls.dump > tstdump.sed], [0], [], [])
+AT_CHECK([$SED -e 's/Started by .*progfdls.exe/Started by .\/progfdls/g' \
+tdfdls.dump > tstdump.sed], [0], [], [])
 AT_CHECK([$DIFF reference_fdls tstdump.sed], [0], [], [])
 
 
 AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
-$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
+$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o allfdls], [0], [], [])
 
-AT_CHECK([COB_DUMP_FILE=tstdump_allfdls.dump \
-$COBCRUN_DIRECT ./prog_allfdls], [1],
+AT_CHECK([COB_DUMP_FILE=allfdls.dump \
+$COBCRUN_DIRECT ./allfdls], [1],
 [X is 000000001
 X is 000005441
 ],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
-dump written to tstdump_allfdls.dump
+dump written to allfdls.dump
 ])
 
-AT_CHECK([$SED -e 's/Started by .*prog_allfdls.exe/Started by .\/prog_allfdls/g' \
-tstdump_allfdls.dump > tstdump.sed], [0], [], [])
-AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
+AT_CHECK([$SED -e 's/Started by .*allfdls.exe/Started by .\/allfdls/g' \
+allfdls.dump > tstdump.sed], [0], [], [])
+AT_CHECK([$SED -e 's/progfdls/allfdls/' \
 reference_fdls > reference_all], [0], [], [])
 AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 
 
-# CHECKME @ Ron: The result is likely wrong, please verify later
+# CHECKME: The result is possibly wrong, verify later
+# CHECKME: sticky linkage with non-USING fields has a broken codegen
 #AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
-#$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
+#$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o lssticky], [0], [], [])
 #
-#AT_CHECK([COB_DUMP_FILE=tstdump_ls_sticky.dump \
-#$COBCRUN_DIRECT ./prog_ls_sticky], [1],
+#AT_CHECK([COB_DUMP_FILE=tdsticky.dump \
+#$COBCRUN_DIRECT ./lssticky], [1],
 #[X is 000000001
 #X is 000005441
 #],
 #[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 #
-#dump written to tstdump_ls_sticky.dump
+#dump written to tdsticky.dump
 #])
 #
-#AT_CAPTURE_FILE([tstdump_ls_sticky.dump])
+#AT_CAPTURE_FILE([tdsticky.dump])
 #
 #AT_DATA([reference_ls_sticky], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
@@ -11396,13 +11404,13 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #	MAIN-1 at prog.cob:177
 #	ENTRY sub1 at prog.cob:159
 # Last statement of "sub2" was CALL
-#	DO-CALL OF SubwaY at sub2.cob:48
-#	ENTRY sub2 at sub2.cob:39
+#	DO-CALL OF SubwaY at sub2.cob:51
+#	ENTRY sub2 at sub2.cob:42
 # Last statement of "prog" was CALL
 #	CALL-IT-OMIT at prog.cob:118
 #	MAIN-100 at prog.cob:85
 #	ENTRY prog at prog.cob:77
-# Started by ./prog_ls_sticky
+# Started by ./lssticky
 #
 #Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 #
@@ -11427,7 +11435,7 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #
 #])
 #
-#AT_CHECK([$DIFF reference tstdump_ls_sticky.dump], [0], [], [])
+#AT_CHECK([$DIFF reference tdsticky.dump], [0], [], [])
 
 AT_CLEANUP
 
@@ -12855,8 +12863,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 ])
 
 # Runtime checks disabled, subscript may be zero or even negative
-AT_CHECK([$COMPILE -fno-ec=bound -o prog_unsafe prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog_unsafe], [0],
+AT_CHECK([$COMPILE -fno-ec=bound -o unsafe prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./unsafe], [0],
 [UNUP: 00000000 is :CCCC:
 SNUP: +00000000 is :CCCC:
 SBIN: +00000000 is :CCCC:
@@ -14608,6 +14616,41 @@ E: OK OTHER option taken
 AT_CLEANUP
 
 
+AT_SETUP([Nested EVALUATE with empty WHEN])
+AT_KEYWORDS([runmisc missing-statement EVALUATE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA                DIVISION.
+       WORKING-STORAGE     SECTION.
+       01 A PICTURE 9 VALUE 1.
+       01 B PICTURE 9 VALUE 2.
+       PROCEDURE DIVISION.
+
+       EVALUATE A
+           WHEN 1
+               EVALUATE B
+                   WHEN 1
+               END-EVALUATE
+      * If END-EVALUATE is ignored, WHEN 2 will be attached to EVALUATE B
+           WHEN 2
+               DISPLAY "FAIL"
+       END-EVALUATE.
+])
+
+# explicit check that we only get only a single warning for WHEN
+# and no wrong warnings for the END-EVALUATE terminator
+AT_CHECK([$COMPILE -fmissing-statement=warning -Wterminator prog.cob], [0], [],
+[prog.cob:14: warning: WHEN without imperative statement used
+prog.cob:17: warning: DISPLAY statement not terminated by END-DISPLAY
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([ENTRY FOR GO TO / GO TO ENTRY])
 AT_KEYWORDS([runmisc condition expression])
 
@@ -15444,7 +15487,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -fprof prog.cob])
 AT_CAPTURE_FILE([prof.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog], [0],
 [HELLO
 WORLD
 ],
@@ -15477,7 +15520,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -fprof prog.cob])
 AT_CAPTURE_FILE([prof.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog], [0],
 [HELLO
 WORLD
 ],
@@ -15556,7 +15599,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -fprof prog.cob])
 AT_CAPTURE_FILE([prof.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog], [0],
 [HELLO WORLD
 end iter
 ],
@@ -15697,7 +15740,7 @@ AT_CHECK([$COMPILE -fprof prog1.cob])
 AT_CHECK([$COMPILE_MODULE -fno-prof prog2.cob])
 AT_CAPTURE_FILE([prof.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog1], [0],
 [XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
 [File prof.csv generated
 ])
@@ -15718,7 +15761,7 @@ AT_CHECK([mv prog2.$COB_MODULE_EXT prog2.old.$COB_MODULE_EXT])
 
 AT_CHECK([$COMPILE_MODULE -fprof prog2.cob])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog1], [0],
 [XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
 [File prof.csv generated
 ])
@@ -15785,7 +15828,7 @@ AT_CHECK([$COMPILE -fprof prog2.cob])
 AT_CAPTURE_FILE([prof1.csv])
 AT_CAPTURE_FILE([prof2.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv $COBCRUN prog1], [0], [],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv COB_PROF_FORMAT="" $COBCRUN prog1], [0], [],
 [File prof2.csv generated
 File prof1.csv generated
 ])
@@ -15856,7 +15899,7 @@ AT_CHECK([$COMPILE caller.c])
 AT_CHECK([$COMPILE_MODULE -fprof callee.cob])
 
 AT_CAPTURE_FILE([prof.csv])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
 
@@ -16884,6 +16927,7 @@ prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,recurse,prog.cob:9,C
 
 AT_CLEANUP
 
+
 AT_SETUP([INDEXED BY in LINKAGE])
 AT_KEYWORDS([runmisc OCCURS SEARCH])
 
@@ -17055,7 +17099,7 @@ int main (int argc, char **argv) {
       fprintf (stderr, "Problem in opening stdout/stderr files for read");
       return -1;
    }
-   
+
    /* Check result of COBOL program in stdout */
    buffer[0] = '\0';
    fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stdout);

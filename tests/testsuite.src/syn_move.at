@@ -1,5 +1,5 @@
-## Copyright (C) 2003-2012, 2015-2018, 2020-2021, 2023 Free Software
-## Foundation, Inc.
+## Copyright (C) 2003-2012, 2015-2018, 2020-2021, 2023-2024, 2026
+## Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ## 
 ## This file is part of GnuCOBOL.
@@ -616,7 +616,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET error])
-AT_KEYWORDS([SET-MOVE])
+AT_KEYWORDS([invalid])
 
 AT_DATA([prog.cob], [
        program-id. prog.
@@ -650,8 +650,8 @@ prog.cob:17: error: invalid SET statement
 AT_CLEANUP
 
 
-AT_SETUP([MOVE FIGURATIVE to NUMERIC])
-AT_KEYWORDS([MOVE])
+AT_SETUP([MOVE figurative-constant to NUMERIC])
+AT_KEYWORDS([invalid SPACE QUOTE NULL HIGH-VALUE LOW-VALUE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -678,7 +678,8 @@ AT_DATA([prog.cob], [
            MOVE HIGH-VALUES TO BIGFLT.
            MOVE QUOTE TO BIGFLT.
            MOVE ALL '*' TO BIGFLT.
-           MOVE ALL '21' TO BIGFLT.
+           MOVE ALL '21' TO BIGFLT. *> this converts the numeric literal (after expanding) to a number
+           MOVE NULL     TO MYFLD.  *> NULLS is an extension
            STOP RUN.
 ])
 
@@ -697,6 +698,7 @@ prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in 
 prog.cob:24: warning: MOVE of figurative constant QUOTE to numeric item is archaic in COBOL 2002
 prog.cob:25: warning: numeric value is expected
 prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
+prog.cob:27: error: invalid MOVE statement
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=ibm prog.cob], [1], [],
@@ -714,6 +716,7 @@ prog.cob:23: warning: MOVE of figurative constant to numeric item is archaic in 
 prog.cob:24: warning: MOVE of figurative constant QUOTE to numeric item is archaic in IBM COBOL (lax)
 prog.cob:25: warning: numeric value is expected
 prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
+prog.cob:27: error: invalid MOVE statement
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
@@ -729,6 +732,7 @@ prog.cob:20: error: invalid SET statement
 prog.cob:23: warning: source is non-numeric - substituting zero
 prog.cob:24: warning: source is non-numeric - substituting zero
 prog.cob:25: warning: source is non-numeric - substituting zero
+prog.cob:27: error: invalid MOVE statement
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -748,6 +752,7 @@ prog.cob:24: warning: MOVE of figurative constant QUOTE to numeric item is obsol
 prog.cob:24: warning: MOVE of figurative constant to numeric item is archaic in GnuCOBOL
 prog.cob:25: warning: numeric value is expected
 prog.cob:7: note: 'BIGFLT' defined here as USAGE FLOAT
+prog.cob:27: error: invalid MOVE statement
 ])
 
 AT_CLEANUP

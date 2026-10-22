@@ -11,6 +11,33 @@
 	  aborting with a fatal exception if the exponentiation rules are
 	  violated, used for item identification
 
+2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
+	  cob_is_test as negative value for "hidden" files to still get correct pids
+	  and timings during testsuite run
+	* profiling.c (cob_prof_print_line): disabled flushing each line
+	* common.c (cob_rescan_env_vals): skip empty environment values as if they
+	  would not be set at all (easy set to default), also fixes SIGSEGV in
+	  other places like cob_prof_print_line that used a resulting NULL pointer
+
+2026-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_common_init) [_WIN32]: fix C89 declaration
+
+2026-10-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_temp_name) [!_WIN32 && !HAVE_8DOT3_FILENAMES]:
+	  include the user id in the temporary file names to avoid collisions
+	  between users, and increment the iteration counter as long as the
+	  name matches an existing file
+
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c [LIBXML_VERSION]: fix version check for new ABI
+	* profiling.c (cob_prof_end): hide csv output for any filename that ends
+	  with "hidden.csv" instead of comparing the full name
+
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function
@@ -19,6 +46,16 @@
 	  that setjmp / longjmp can be executed only once as a user may store
 	  multiple places and also may jump to them multiple times - it is up
 	  to the user to ensure a correct stack (= never jump "forward")
+	* common.c (cob_sig_handler), coblocal.h: full output to configured
+	  stderr stream, fix crash when cob_init was not called (for example
+	  signal handler registered by cobc)
+
+2026-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (pre_load_once): extracted from cob_init_call
+	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
+	  a global scope request, independent of COB_LOAD_GLOBAL setting
+	* common.c: minimal refactor
 
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -26,8 +63,7 @@
 	  variable COB_PROF_TRACE, can be used when profiling is enabled to
 	  print the stack when entering/leaving code segments
 	* profiling.c: during test mode, COB_PROF_FILE set to 'hidden.csv'
-	  does not display the warning message when the profile file is
-	  generated
+	  does not display an output when the profile file is generated
 
 2026-08-13  David Declerck <david.declerck@ocamlpro.com>
 
