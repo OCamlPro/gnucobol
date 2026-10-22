@@ -14438,6 +14438,87 @@ AT_CHECK([$COBCRUN_DIRECT ./prog4_loc], [0],
 AT_CLEANUP
 
 
+AT_SETUP([SIZE ERROR phrases and EXCEPTION-LOCATION])
+AT_KEYWORDS([misc fundamental exceptions
+ADD DIVIDE COMPUTE EXCEPTION-LOCATION])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD  PIC 9    VALUE 0.
+       01  A         PIC 9(3) VALUE 11.
+       01  B         PIC 9(3) VALUE 22.
+       01  C         PIC 9(3) VALUE 33.
+       01  B2        PIC 9    VALUE 9.
+       01  FLD       PIC S9   VALUE 0.
+
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+       DIV-SIZE.
+           DIVIDE ZERO-FLD INTO A B C
+             ON SIZE ERROR
+               DISPLAY 'SIZE ERROR ' A ' ' B ' ' C
+               DISPLAY 'IN:  ' FUNCTION EXCEPTION-LOCATION
+           END-DIVIDE
+           DISPLAY 'OUT: ' FUNCTION EXCEPTION-LOCATION.
+       DIV-NOT-SIZE.
+           DIVIDE ZERO-FLD INTO A B C
+             NOT ON SIZE ERROR
+               DISPLAY 'BAD NOT SIZE ERROR'
+           END-DIVIDE
+           DISPLAY 'UNCHANGED ' A ' ' B ' ' C
+           DISPLAY 'OUT: ' FUNCTION EXCEPTION-LOCATION.
+       ADD-OVERFLOW.
+           ADD 1 TO A B2 C
+             ON SIZE ERROR
+               DISPLAY 'SIZE ERROR ' A ' ' B2 ' ' C
+               DISPLAY 'IN:  ' FUNCTION EXCEPTION-LOCATION
+           END-ADD
+           DISPLAY 'OUT: ' FUNCTION EXCEPTION-LOCATION.
+       POW-NOT-SIZE.
+           MOVE 0 TO FLD
+           COMPUTE FLD = FLD ** FLD
+             NOT ON SIZE ERROR DISPLAY 'BAD NOT SIZE ERROR'
+           END-COMPUTE
+           DISPLAY 'FLD ' FLD
+           DISPLAY 'OUT: ' FUNCTION EXCEPTION-LOCATION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SIZE ERROR 011 022 033
+IN:  prog; DIV-SIZE OF MAIN; 17
+OUT: prog; DIV-SIZE OF MAIN; 17
+UNCHANGED 011 022 033
+OUT: prog; DIV-NOT-SIZE OF MAIN; 24
+SIZE ERROR 012 9 034
+IN:  prog; ADD-OVERFLOW OF MAIN; 31
+OUT: prog; ADD-OVERFLOW OF MAIN; 31
+FLD +0
+OUT: prog; POW-NOT-SIZE OF MAIN; 39
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog_loc], [0],
+[SIZE ERROR 011 022 033
+IN:  prog; DIV-SIZE OF MAIN; 17
+OUT: prog; DIV-SIZE OF MAIN; 17
+UNCHANGED 011 022 033
+OUT: prog; DIV-NOT-SIZE OF MAIN; 24
+SIZE ERROR 012 9 034
+IN:  prog; ADD-OVERFLOW OF MAIN; 31
+OUT: prog; ADD-OVERFLOW OF MAIN; 31
+FLD +0
+OUT: prog; POW-NOT-SIZE OF MAIN; 39
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Constant Expressions])
 AT_KEYWORDS([runmisc condition expression])
 
