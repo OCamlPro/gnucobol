@@ -1,4 +1,13 @@
 
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_div): new function used by output_integer and
+	  output_long_integer, generating a check for a zero divisor raising
+	  EC-SIZE-ZERO-DIVIDE, fatal if enabled, instead of a C division that
+	  raises SIGFPE
+	* codegen.c (output_param): generate a fatal check for a zero divisor
+	  if EC-SIZE-ZERO-DIVIDE is enabled for cob_intr_binop
+
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* codegen.c (output_pow): new function used by output_integer and

@@ -2898,6 +2898,55 @@ output_pow (const struct cb_binary_op *p, const int is_long)
 	}
 }
 
+/* check if x is a constant known to be non-zero */
+static int
+is_nonzero_constant (cb_tree x)
+{
+	if (CB_INTEGER_P (x)) {
+		return CB_INTEGER (x)->val != 0;
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		const struct cb_literal	*l = CB_LITERAL (x);
+		unsigned int	i;
+		for (i = 0; i < l->size; i++) {
+			if (l->data[i] != '0') {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+/* output integer division, with a check for EC-SIZE-ZERO-DIVIDE, which
+   is fatal if enabled (divisor is evaluated twice) */
+static void
+output_div (const struct cb_binary_op *p, const int is_long)
+{
+	void		(*output_operand) (cb_tree)
+		= is_long ? output_long_integer : output_integer;
+
+	if (is_nonzero_constant (p->y)) {
+		output ("(");
+		output_operand (p->x);
+		output (" / ");
+		output_operand (p->y);
+		output (")");
+		return;
+	}
+	output ("((");
+	output_operand (p->y);
+	output (" == 0)");
+	output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+		output (" cob_fatal_exception (cob_glob_ptr->cob_exception_code),");
+	}
+	output (" (%s)0) : (", is_long ? "cob_s64_t" : "cob_s32_t");
+	output_operand (p->x);
+	output (" / ");
+	output_operand (p->y);
+	output ("))");
+}
+
 static void
 output_integer (cb_tree x)
 {
@@ -2939,6 +2988,8 @@ output_integer (cb_tree x)
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
 			output_pow (p, 0);
+		} else if (p->op == '/') {
+			output_div (p, 0);
 		} else if (p->op == 'n') {
 			output (" ~ (");
 			output_integer (p->y);
@@ -3262,6 +3313,8 @@ output_long_integer (cb_tree x)
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
 			output_pow (p, 1);
+		} else if (p->op == '/') {
+			output_div (p, 1);
 		} else {
 			output ("(");
 			output_long_integer (p->x);
@@ -3930,6 +3983,18 @@ output_param (cb_tree x, int id)
 	}
 	case CB_TAG_BINARY_OP: {
 		const struct cb_binary_op	*bp = CB_BINARY_OP (x);
+		const int	chk_zero_divide = bp->op == '/'
+			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+			&& !is_nonzero_constant (bp->y);
+		if (chk_zero_divide) {
+			/* fatal check for EC-SIZE-ZERO-DIVIDE (divisor evaluated twice) */
+			output ("(cob_cmp_int (");
+			output_param (bp->y, id);
+			output (", 0) == 0");
+			output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+			output (" cob_fatal_exception (cob_glob_ptr->cob_exception_code),");
+			output (" (cob_field *)NULL) : ");
+		}
 		output ("cob_intr_binop (");
 		output_param (bp->x, id);
 		output (", ");
@@ -3943,6 +4008,9 @@ output_param (cb_tree x, int id)
 		output (", ");
 		output_param (bp->y, id);
 		output (")");
+		if (chk_zero_divide) {
+			output (")");
+		}
 		break;
 	}
 	case CB_TAG_INTRINSIC: {
