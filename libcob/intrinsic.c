@@ -3151,6 +3151,24 @@ cob_switch_value (const int id)
 	return curr_field;
 }
 
+/* check if the rules for exponentiation are violated:
+   a zero base needs a positive exponent,
+   a negative base needs an integer exponent */
+static int
+pow_rules_violated (cob_decimal *pd1, cob_decimal *pd2)
+{
+	const int	sign = mpz_sgn (pd1->value);
+
+	if (sign == 0) {
+		return mpz_sgn (pd2->value) <= 0;
+	}
+	if (sign == -1) {
+		cob_trim_decimal (pd2);
+		return pd2->scale > 0;
+	}
+	return 0;
+}
+
 /* Decimal exponentiation function */
 /* x ^ z = e ^ (z * log(x)) */
 
@@ -3168,14 +3186,14 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 		return;
 	}
 
+	if (pow_rules_violated (pd1, pd2)) {
+		pd1->scale = COB_DECIMAL_NAN;
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+		return;
+	}
+
 	if (mpz_sgn (pd2->value) == 0) {
 		/* Exponent is zero */
-		if (sign == 0) {
-			/* 0 ^ 0 */
-			pd1->scale = COB_DECIMAL_NAN;
-			cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-			return;
-		}
 		mpz_set_ui (pd1->value, 1UL);
 		pd1->scale = 0;
 		return;
@@ -3187,14 +3205,6 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 	}
 
 	cob_trim_decimal (pd2);
-
-	if (sign == -1 && pd2->scale) {
-		/* Negative exponent and non-integer power */
-		pd1->scale = COB_DECIMAL_NAN;
-		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		return;
-	}
-
 	cob_trim_decimal (pd1);
 
 	if (!pd2->scale) {

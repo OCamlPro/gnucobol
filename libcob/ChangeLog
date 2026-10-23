@@ -1,4 +1,11 @@
 
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (pow_rules_violated): new function checking the rules for
+	  exponentiation
+	* intrinsic.c (cob_decimal_pow): use pow_rules_violated, raising
+	  EC-SIZE-EXPONENTIATION for 0 ^ -n instead of returning 0
+
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* intrinsic.c (cob_decimal_pow): 0 ^ 0 now results in NaN instead of 1,
