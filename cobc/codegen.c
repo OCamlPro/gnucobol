@@ -4422,6 +4422,28 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 		}
 		break;
 
+	case 'Z':	/* Fatal check for EC-SIZE on a decimal result */
+		if (!CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+		 && !CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+			output ("0");
+			break;
+		}
+		output ("((");
+		output_param (p->argv[0], 0);
+		output ("->scale == COB_DECIMAL_NAN && (");
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+			output ("cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)");
+			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+				output (" || ");
+			}
+		}
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+			output ("cob_last_exception_is (COB_EC_SIZE_EXPONENTIATION)");
+		}
+		output ("))");
+		output (" ? (cob_fatal_exception (cob_glob_ptr->cob_exception_code), 0) : 0)");
+		break;
+
 	case 'R':	/* Generate REPORT line */
 	case 'T':	/* Terminate REPORT */
 	case 'M':	/* Move data for REPORT */

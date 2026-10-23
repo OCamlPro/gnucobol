@@ -10,6 +10,8 @@
 	* intrinsic.c (cob_intr_binop): return zero if the rules for
 	  exponentiation are violated, keeping EC-SIZE-EXPONENTIATION instead of
 	  raising EC-ARGUMENT-FUNCTION and EC-SIZE-OVERFLOW
+	* common.h, coblocal.h: move COB_DECIMAL_NAN to common.h for use in the
+	  generated code
 
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 

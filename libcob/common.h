@@ -1182,6 +1182,9 @@ typedef struct __cob_decimal {
 	mpz_t		value;			/* GMP value definition */
 	int 		scale;			/* Decimal scale */
 } cob_decimal;
+
+/* Not-A-Number, as scale of a decimal */
+#define COB_DECIMAL_NAN		-32768
 #endif
 
 /* Perform stack structure */

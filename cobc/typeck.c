@@ -7240,6 +7240,25 @@ cb_build_cond_fields (struct cb_binary_op *p,
 	return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
 }
 
+/* check if the expression x contains an operation which may raise
+   an enabled EC-SIZE-ZERO-DIVIDE or EC-SIZE-EXPONENTIATION */
+static int
+has_checked_size_error (cb_tree x)
+{
+	const struct cb_binary_op	*p;
+
+	if (!CB_BINARY_OP_P (x)) {
+		return 0;
+	}
+	p = CB_BINARY_OP (x);
+	if ((p->op == '/' && CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE))
+	 || (p->op == '^' && CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION))) {
+		return 1;
+	}
+	return (p->x && has_checked_size_error (p->x))
+	    || (p->y && has_checked_size_error (p->y));
+}
+
 static cb_tree
 cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 {
@@ -7255,6 +7274,13 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 
 		d1 = decimal_expand (d1, left);
 		d2 = decimal_expand (d2, right);
+		/* size errors in a condition are fatal, if enabled */
+		if (has_checked_size_error (left)) {
+			dpush (CB_BUILD_FUNCALL_1 ("$Z", d1));
+		}
+		if (has_checked_size_error (right)) {
+			dpush (CB_BUILD_FUNCALL_1 ("$Z", d2));
+		}
 		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", d1, d2));
 		decimal_free ();
 		decimal_free ();

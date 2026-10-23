@@ -9,6 +9,13 @@
 	  if EC-SIZE-ZERO-DIVIDE is enabled for cob_intr_binop
 	* codegen.c (output_param): generate a fatal check using cob_valid_pow
 	  if EC-SIZE-EXPONENTIATION is enabled for cob_intr_binop
+	* typeck.c (has_checked_size_error): new function checking if an
+	  expression contains an operation with enabled EC-SIZE-ZERO-DIVIDE or
+	  EC-SIZE-EXPONENTIATION
+	* typeck.c (cb_build_cond_default): generate a fatal check for those
+	  size errors in decimal comparisons, as conditions have no SIZE ERROR
+	  phrase
+	* codegen.c (output_funcall_typed): new type 'Z' for that check
 
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
