@@ -7,7 +7,7 @@ NEWS - user visible changes				-*- outline -*-
 * New GnuCOBOL features
 
 ** at runtime, fatal size exception codes now fail when activated (with
-   -fec=ALL or -fec=SIZE or its subordinates). Theses exceptions can be
+   -fec=ALL or -fec=SIZE or its subordinates). These exceptions can be
    caught with ON SIZE ERROR phrases to avoid the program failing when
    they are set. The affected exception codes are:
    EC-SIZE
@@ -17,7 +17,8 @@ NEWS - user visible changes				-*- outline -*-
    EC-SIZE-TRUNCATION
    EC-SIZE-UNDERFLOW
    EC-SIZE-ZERO-DIVIDE
-
+   Note that those errors, if checking is enabled, will abort in
+   all other places (during item identification and in expressions)
 
 ** cobc now checks for binary and multi-byte encoded files and early exit
    parsing those; the error output for format errors (for example invalid
@@ -103,11 +104,6 @@ NEWS - user visible changes				-*- outline -*-
    around the replacement pseudo-text between == are now removed, conforming
    to the standard and existing dialects.
 
-** the exponentiation of zero by zero (for example 0 ** 0) now leaves the
-   receiving fields unchanged instead of storing 1, as it raises the size
-   error condition (EC-SIZE-EXPONENTIATION). This is identical to the
-   behaviour of a division by zero.
-
 * Important Bugfixes
 
 ** #904: MOVE PACKED-DECIMAL unsigned to signed led to bad sign
@@ -115,11 +111,20 @@ NEWS - user visible changes				-*- outline -*-
 ** Padding bytes of BCD may store a non-truncated digit; while
    this has no effect on calculations it can create problems on
    later binary comparison of the field as well as on group MOVEs
-** #918: COB_LS_VALIDATE (io status 09 and 71) partial broken
+
+** #918: COB_LS_VALIDATE (io status 09 and 71) were partial broken
 
 ** #948: Comparison with HIGH-VALUE in presence of collating sequences
    using a non-native program collating sequence together with the
    -febcdic-table option might now alter LOW/HIGH-VALUE
+
+** the exponentiation of zero by zero or by a negative exponent (for example
+   0 ** 0) now leaves the receiving fields unchanged instead of storing 1 or
+   0, as it raises the size error condition (EC-SIZE-EXPONENTIATION). This is
+   identical to the behaviour of a division by zero.
+
+** a division by zero in a subscript or a reference modification does not
+   abort with SIGFPE any more, but raises EC-SIZE-ZERO-DIVIDE
 
 * Changes to the COBOL compiler (cobc) options:
 
