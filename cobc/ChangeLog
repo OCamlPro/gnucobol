@@ -1,4 +1,33 @@
 
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_div): new function used by output_integer and
+	  output_long_integer, generating a check for a zero divisor raising
+	  EC-SIZE-ZERO-DIVIDE, fatal if enabled, instead of a C division that
+	  raises SIGFPE
+	* codegen.c (output_param): generate a fatal check for a zero divisor
+	  if EC-SIZE-ZERO-DIVIDE is enabled for cob_intr_binop
+	* codegen.c (output_param): generate a fatal check using cob_valid_pow
+	  if EC-SIZE-EXPONENTIATION is enabled for cob_intr_binop
+	* typeck.c (has_checked_size_error): new function checking if an
+	  expression contains an operation with enabled EC-SIZE-ZERO-DIVIDE or
+	  EC-SIZE-EXPONENTIATION
+	* typeck.c (cb_build_cond_default): generate a fatal check for those
+	  size errors in decimal comparisons, as conditions have no SIZE ERROR
+	  phrase
+	* codegen.c (output_funcall_typed): new type 'Z' for that check
+
+2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_pow): new function used by output_integer and
+	  output_long_integer, generating a check for the exponentiation rules
+	  if EC-SIZE-EXPONENTIATION is enabled, raising the fatal exception,
+	  as a size error during item identification is fatal and must not be
+	  handled by the SIZE ERROR phrase of the statement
+	* tree.c (cb_build_binary_op): don't fold 0 ^ 0 to 1, so the exception
+	  is raised at runtime, and warn about constant ZERO with an exponent
+	  of zero or less
+
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (lookup_intrinsic), tree.h, scanner.l, tree.c, cobc.c:
@@ -217,6 +246,15 @@
 
 	* ppparse.y: error on extraneous periods at the end of SET
 	  directives; turn to a warning in relaxed syntax mode.
+
+2025-11-24  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_ec_size_handler): generate a check for a size exception
+	  on statements that can raise them
+	* codegen.c (output_stmt): add a check for `ON SIZE ERROR` phrase, and
+	  if not present  then generate a check for enabled size exceptions
+	* codegen.c (output_handler): reset the exceptions if the statement has an
+	  exception handler
 
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 

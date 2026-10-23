@@ -466,7 +466,7 @@ static const int		cob_exception_tab_code[] = {
 	0		/* COB_EC_MAX */
 };
 
-#undef	COB_EXCEPTION
+#undef COB_EXCEPTION
 
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
@@ -2525,6 +2525,7 @@ void
 cob_set_exception (const int id)
 {
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
+	cobglobptr->cob_exception_id = id;
 	last_exception_code = cobglobptr->cob_exception_code;
 
 	cobglobptr->last_exception_statement = STMT_UNKNOWN;
@@ -9403,6 +9404,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
+		break;
+	case COB_FERROR_FATAL_EC:
+		cob_runtime_error (_("unhandled fatal exception code: %s"),
+			cob_get_last_exception_name ());
 		break;
 	default:
 		/* internal rare error, no need for translation */

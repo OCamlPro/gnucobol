@@ -1,4 +1,27 @@
 
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (pow_rules_violated): new function checking the rules for
+	  exponentiation
+	* intrinsic.c (cob_decimal_pow): use pow_rules_violated, raising
+	  EC-SIZE-EXPONENTIATION for 0 ^ -n instead of returning 0
+	* intrinsic.c, common.h (cob_valid_pow): new function checking the rules
+	  for exponentiation, used by the generated code
+	* intrinsic.c (cob_intr_binop): return zero if the rules for
+	  exponentiation are violated, keeping EC-SIZE-EXPONENTIATION instead of
+	  raising EC-ARGUMENT-FUNCTION and EC-SIZE-OVERFLOW
+	* common.h, coblocal.h: move COB_DECIMAL_NAN to common.h for use in the
+	  generated code
+
+2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (cob_decimal_pow): 0 ^ 0 now results in NaN instead of 1,
+	  so receiving fields stay unchanged on EC-SIZE-EXPONENTIATION
+	* numeric.c (cob_decimal_get_field): keep EC-SIZE-EXPONENTIATION instead
+	  of overriding it with EC-SIZE-OVERFLOW for a NaN result
+	* numeric.c (cob_s32_pow, cob_s64_pow): set EC-SIZE-EXPONENTIATION for
+	  0 ^ 0 and 0 ^ -n instead of silently returning 1 or raising SIGFPE
+
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
@@ -111,6 +134,15 @@
 	* fileio.c (cob_file_close): close file depending on internal state, not
 	  depending on file organization
 
+2025-12-04  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* exception.def: exceptions values for EC-SIZE are now bit exclusive
+	* common.h, common.c: add `cob_last_exception_fatal`, to check if the
+	  last raised exception was fatal
+	* common.h, common.c: add enum member `COB_FERROR_FATAL_EC` for
+	  `struct cob_fatal_error` which can be used when terminating the
+	  program due to a fatal exception
+
 2025-11-19  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* mlio.c (xml_startDocument, myStructuredErrorHandler, xml_parse):
@@ -144,6 +176,14 @@
 	* mlio.c [!WITH_XML2]: common use of xml events supporting that empty
 	  parsing and general handling of finished/not finished also when built
 	  without libxml2
+
+2025-11-10  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* common.h, common.c: add `cob_exception_tab_fatal`, which informs
+	whether an exception is fatal or not
+	* common.h, common.c: add enum member `COB_FERROR_FATAL_EC` for
+	`struct cob_fatal_error` which can be used when terminating the
+	program due to a fatal exception
 
 2025-11-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 

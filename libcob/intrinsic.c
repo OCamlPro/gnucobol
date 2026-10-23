@@ -3151,6 +3151,24 @@ cob_switch_value (const int id)
 	return curr_field;
 }
 
+/* check if the rules for exponentiation are violated:
+   a zero base needs a positive exponent,
+   a negative base needs an integer exponent */
+static int
+pow_rules_violated (cob_decimal *pd1, cob_decimal *pd2)
+{
+	const int	sign = mpz_sgn (pd1->value);
+
+	if (sign == 0) {
+		return mpz_sgn (pd2->value) <= 0;
+	}
+	if (sign == -1) {
+		cob_trim_decimal (pd2);
+		return pd2->scale > 0;
+	}
+	return 0;
+}
+
 /* Decimal exponentiation function */
 /* x ^ z = e ^ (z * log(x)) */
 
@@ -3168,12 +3186,14 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 		return;
 	}
 
+	if (pow_rules_violated (pd1, pd2)) {
+		pd1->scale = COB_DECIMAL_NAN;
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+		return;
+	}
+
 	if (mpz_sgn (pd2->value) == 0) {
 		/* Exponent is zero */
-		if (sign == 0) {
-			/* 0 ^ 0 */
-			cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		}
 		mpz_set_ui (pd1->value, 1UL);
 		pd1->scale = 0;
 		return;
@@ -3185,14 +3205,6 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 	}
 
 	cob_trim_decimal (pd2);
-
-	if (sign == -1 && pd2->scale) {
-		/* Negative exponent and non-integer power */
-		pd1->scale = COB_DECIMAL_NAN;
-		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		return;
-	}
-
 	cob_trim_decimal (pd1);
 
 	if (!pd2->scale) {
@@ -3629,6 +3641,16 @@ cob_valid_datetime_format (const char *format, const char decimal_point)
 
 /* Numeric expressions */
 
+/* check if f1 ^ f2 follows the rules for exponentiation,
+   used by the generated code to check for EC-SIZE-EXPONENTIATION */
+int
+cob_valid_pow (cob_field *f1, cob_field *f2)
+{
+	cob_decimal_set_field (&d1, f1);
+	cob_decimal_set_field (&d2, f2);
+	return !pow_rules_violated (&d1, &d2);
+}
+
 cob_field *
 cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 {
@@ -3680,6 +3702,11 @@ cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 		break;
 	case '^':
 		cob_decimal_pow (&d1, &d2);
+		if (d1.scale == COB_DECIMAL_NAN) {
+			/* Exponentiation rules violated, exception is set */
+			mpz_set_ui (d1.value, 0UL);
+			d1.scale = 0;
+		}
 		break;
 	default:
 		break;

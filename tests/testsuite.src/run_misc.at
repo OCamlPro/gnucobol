@@ -2653,8 +2653,10 @@ AT_DATA([prog.cob], [
        01  X            PIC 9(2) VALUE 0.
        01  Y            PIC 9(2) VALUE 0.
        PROCEDURE        DIVISION.
-           COMPUTE X = 100. *> this overflows which does not store a result
-           COMPUTE Y = 99.  *> and once in a time this result was not stored
+           COMPUTE X = 100 ON SIZE ERROR CONTINUE.
+           *> this overflows which does not store a result
+           COMPUTE Y = 99.
+           *> and once in a time this result was not stored
            IF X NOT = 0 AND
               Y NOT = 99
               DISPLAY Y.
@@ -7640,7 +7642,7 @@ AT_DATA([prog.cob], [
        01  x PIC 9.
 
        PROCEDURE DIVISION.
-           COMPUTE x = 10
+           COMPUTE x = 10 ON SIZE ERROR CONTINUE
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-LOCATION)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
@@ -11918,10 +11920,12 @@ AT_DATA([prog.cob], [
            PERFORM check-x-val
 
            COMPUTE x = 30000
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            MOVE ZERO TO x
            ADD 30000 TO x
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            GOBACK
@@ -12952,7 +12956,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -13072,7 +13076,7 @@ AT_DATA([prog.cob], [
            DISPLAY 'Subtract RSLT    IS ' RSLT.
            MOVE 0 TO RSLT
            ADD NUM-A NUM-C TO RSLT GIVING RSLTV1.
-           DISPLAY 'Add      RSLTv9  IS ' RSLTV1
+           DISPLAY 'Add      RSLTv9  IS ' RSLTV1.
            MULTIPLY NUM-A BY NUM-C GIVING RSLT.
            DISPLAY 'Multiply RSLT    IS ' RSLT.
            MULTIPLY RSLT BY NUM-C.
@@ -13108,7 +13112,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -farithmetic-osvs prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size-overflow -farithmetic-osvs prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -14169,80 +14173,6 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 #       intermediate rounding
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], ignore, [SIZE ERROR raised])
 
-AT_CLEANUP
-
-
-AT_SETUP([EC-SIZE-ZERO-DIVIDE])
-AT_KEYWORDS([misc fundamental exceptions
-DIVIDE COMPUTE EXCEPTION-STATUS])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01  x PIC 9 VALUE 0.
-       01  y PIC 9 VALUE 0.
-
-       PROCEDURE DIVISION.
-           DIVIDE x BY y GIVING y
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-ZERO-DIVIDE'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           SET LAST EXCEPTION TO OFF
-           IF FUNCTION EXCEPTION-STATUS NOT = SPACES
-              DISPLAY 'Exception is not empty after reset: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           MOVE 0 TO y
-           COMPUTE y = x - 1 / y + 6.5
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-ZERO-DIVIDE'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CLEANUP
-
-
-AT_SETUP([EC-SIZE-OVERFLOW])
-AT_KEYWORDS([misc fundamental exceptions])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01  x PIC 9 VALUE 1.
-       01  y PIC 9.
-
-       PROCEDURE DIVISION.
-      *    raise exception checked in previous test
-      *    as it may interfere with the expected exception
-           DIVIDE x BY y GIVING y
-           DIVIDE x BY 0.1 GIVING y
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-OVERFLOW'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
@@ -16060,7 +15990,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 000000001
 000000009
 ], [])
-
 AT_CLEANUP
 
 
