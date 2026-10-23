@@ -7,7 +7,8 @@
 	  as a size error during item identification is fatal and must not be
 	  handled by the SIZE ERROR phrase of the statement
 	* tree.c (cb_build_binary_op): don't fold 0 ^ 0 to 1, so the exception
-	  is raised at runtime
+	  is raised at runtime, and warn about constant ZERO with an exponent
+	  of zero or less
 
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 

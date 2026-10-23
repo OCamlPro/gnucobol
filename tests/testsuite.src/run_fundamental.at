@@ -6628,6 +6628,11 @@ AT_DATA([prog.cob], [
                  DISPLAY 'SIZE ERROR not set from divide by zero!'
                  END-DISPLAY
            END-COMPUTE
+           COMPUTE COMPUTE-8 = 0 ** (1 - 1)
+              NOT ON SIZE ERROR
+                 DISPLAY 'SIZE ERROR not set from 0 ** 0!'
+                 END-DISPLAY
+           END-COMPUTE
            COMPUTE COMPUTE-8 = 0 ** 1
            IF COMPUTE-8 NOT = 0
               DISPLAY '0 ** 1 <> 0: ' COMPUTE-8
@@ -6649,6 +6654,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -fno-ec=size-zero-divide prog.cob], [0], [],
 [prog.cob:14: warning: divide by constant ZERO
+prog.cob:19: warning: invalid exponentiation of constant ZERO
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 

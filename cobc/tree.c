@@ -6023,13 +6023,14 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 					}
 					break;
 				case '^':
+					if (xval == 0 && yval <= 0) {	/* raises EC-SIZE-EXPONENTIATION */
+						cb_warning_x (COBC_WARN_FILLER, x, _("invalid exponentiation of constant ZERO"));
+						break;
+					}
 					/* only calculate simple integer numerics */
 					if (xl->scale != 0
 					 || yl->scale != 0
 					 || yval < 0)
-						break;
-					/* 0 ^ 0 raises EC-SIZE-EXPONENTIATION at runtime */
-					if (xval == 0 && yval == 0)
 						break;
 					if (yval == 0
 					 || xval == 1) {

@@ -14409,11 +14409,11 @@ AT_DATA([prog4.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE prog3.cob], [0], [], [])
-AT_CHECK([$COMPILE prog4.cob], [0], [], [])
+AT_CHECK([$COMPILE -w prog4.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog2_loc prog2.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog3_loc prog3.cob], [0], [], [])
-AT_CHECK([$COBC -x -fsource-location -o prog4_loc prog4.cob], [0], [], [])
+AT_CHECK([$COBC -x -w -fsource-location -o prog4_loc prog4.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
