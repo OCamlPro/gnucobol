@@ -14545,8 +14545,28 @@ AT_DATA([prog2.cob], [
            .
 ])
 
+AT_DATA([prog3.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  SOME-FLD  PIC 9 VALUE 1.
+       01  TBL.
+           05 TBL-VAR PIC 9 OCCURS 5 VALUE 1.
+
+       PROCEDURE DIVISION.
+           MOVE 0 TO SOME-FLD
+           ADD TBL-VAR (5 / SOME-FLD) TO TBL-VAR (5)
+            ON SIZE ERROR DISPLAY 'Should not be taken'
+           END-ADD
+           DISPLAY TBL ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE prog3.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog2loc prog2.cob], [0], [], [])
 
@@ -14555,6 +14575,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 [libcob: prog2.cob:11: error: fatal exception not handled: EC-SIZE-ZERO-DIVIDE
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [1], [],
+[libcob: prog3.cob:13: error: fatal exception not handled: EC-SIZE-ZERO-DIVIDE
 ])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog_loc], [0],
