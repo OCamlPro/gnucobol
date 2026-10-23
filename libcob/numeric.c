@@ -4694,29 +4694,6 @@ cob_s64_pow (cob_s64_t base, cob_s64_t power)
 }
 #undef POW_IMPL
 
-/* checked variants, used in item identification (subscripts, reference
-   modification) where a size error is fatal and not handled by a
-   SIZE ERROR phrase of the statement */
-cob_s32_t
-cob_s32_pow_chk (cob_s32_t base, cob_s32_t power)
-{
-	const cob_s32_t	ret = cob_s32_pow (base, power);
-	if (unlikely (base == 0 && power <= 0)) {
-		cob_fatal_exception (cobglobptr->cob_exception_code);
-	}
-	return ret;
-}
-
-cob_s64_t
-cob_s64_pow_chk (cob_s64_t base, cob_s64_t power)
-{
-	const cob_s64_t	ret = cob_s64_pow (base, power);
-	if (unlikely (base == 0 && power <= 0)) {
-		cob_fatal_exception (cobglobptr->cob_exception_code);
-	}
-	return ret;
-}
-
 
 /* Init/Exit routines */
 

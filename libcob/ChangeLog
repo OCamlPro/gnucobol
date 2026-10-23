@@ -7,9 +7,6 @@
 	  of overriding it with EC-SIZE-OVERFLOW for a NaN result
 	* numeric.c (cob_s32_pow, cob_s64_pow): set EC-SIZE-EXPONENTIATION for
 	  0 ^ 0 and 0 ^ -n instead of silently returning 1 or raising SIGFPE
-	* numeric.c, common.h (cob_s32_pow_chk, cob_s64_pow_chk): new functions
-	  aborting with a fatal exception if the exponentiation rules are
-	  violated, used for item identification
 
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 

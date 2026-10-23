@@ -1,8 +1,9 @@
 
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
-	* codegen.c (output_integer, output_long_integer): generate the checked
-	  cob_s32_pow_chk / cob_s64_pow_chk if EC-SIZE-EXPONENTIATION is enabled,
+	* codegen.c (output_pow): new function used by output_integer and
+	  output_long_integer, generating a check for the exponentiation rules
+	  if EC-SIZE-EXPONENTIATION is enabled, raising the fatal exception,
 	  as a size error during item identification is fatal and must not be
 	  handled by the SIZE ERROR phrase of the statement
 	* tree.c (cb_build_binary_op): don't fold 0 ^ 0 to 1, so the exception

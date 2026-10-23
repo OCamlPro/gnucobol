@@ -282,6 +282,7 @@ static void	out_odoslide_grp_size (struct cb_field *p, struct cb_field *fld);
 
 static void output_stmt		(cb_tree);
 static void output_integer	(cb_tree);
+static void output_long_integer	(cb_tree);
 static void output_index	(cb_tree);
 static void output_func_1	(const char *, cb_tree);
 static void output_param	(cb_tree, int);
@@ -2868,6 +2869,35 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 
 /* Integer */
 
+/* output integer exponentiation, with a fatal check for
+   EC-SIZE-EXPONENTIATION if enabled (operands are evaluated twice) */
+static void
+output_pow (const struct cb_binary_op *p, const int is_long)
+{
+	const char	*type = is_long ? "cob_s64" : "cob_s32";
+	void		(*output_operand) (cb_tree)
+		= is_long ? output_long_integer : output_integer;
+
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		output ("((");
+		output_operand (p->x);
+		output (" == 0 && ");
+		output_operand (p->y);
+		output (" <= 0)");
+		output (" ? (cob_set_exception (COB_EC_SIZE_EXPONENTIATION),");
+		output (" cob_fatal_exception (cob_glob_ptr->cob_exception_code),");
+		output (" (%s_t)0) : ", type);
+	}
+	output ("%s_pow (", type);
+	output_operand (p->x);
+	output (", ");
+	output_operand (p->y);
+	output (")");
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		output (")");
+	}
+}
+
 static void
 output_integer (cb_tree x)
 {
@@ -2908,15 +2938,7 @@ output_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
-				output ("cob_s32_pow_chk (");
-			} else {
-				output ("cob_s32_pow (");
-			}
-			output_integer (p->x);
-			output (", ");
-			output_integer (p->y);
-			output (")");
+			output_pow (p, 0);
 		} else if (p->op == 'n') {
 			output (" ~ (");
 			output_integer (p->y);
@@ -3239,15 +3261,7 @@ output_long_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
-				output ("cob_s64_pow_chk (");
-			} else {
-				output ("cob_s64_pow (");
-			}
-			output_long_integer (p->x);
-			output (", ");
-			output_long_integer (p->y);
-			output (")");
+			output_pow (p, 1);
 		} else {
 			output ("(");
 			output_long_integer (p->x);
