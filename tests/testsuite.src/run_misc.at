@@ -14312,6 +14312,7 @@ AT_DATA([prog2.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
 AT_CHECK([$COMPILE -fno-ec=size-exponentiation prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE -o prog2c prog2.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [SIZE ERROR 1
@@ -14332,6 +14333,9 @@ SIZE ERROR 2
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
 [+7 EC-SIZE-EXPONENTIATION
 ], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2c], [1], [],
+[libcob: prog2.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
+])
 
 AT_CLEANUP
 
@@ -14411,9 +14415,9 @@ AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE prog3.cob], [0], [], [])
 AT_CHECK([$COMPILE -w prog4.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
-AT_CHECK([$COBC -x -fsource-location -o prog2_loc prog2.cob], [0], [], [])
-AT_CHECK([$COBC -x -fsource-location -o prog3_loc prog3.cob], [0], [], [])
-AT_CHECK([$COBC -x -w -fsource-location -o prog4_loc prog4.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog2loc prog2.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog3loc prog3.cob], [0], [], [])
+AT_CHECK([$COBC -x -w -fsource-location -o prog4loc prog4.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
@@ -14432,13 +14436,13 @@ AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
 AT_CHECK([$COBCRUN_DIRECT ./prog_loc], [0],
 [100 EC-SIZE-EXPONENTIATION
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog2_loc], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog2loc], [0],
 [ABZ EC-SIZE-EXPONENTIATION
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog3_loc], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog3loc], [0],
 [AYZ EC-SIZE-EXPONENTIATION
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog4_loc], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog4loc], [0],
 [SIZE ERROR
 +7 EC-SIZE-EXPONENTIATION
 ], [])
@@ -16560,24 +16564,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [], [libcob: prog.cob:11: error: fatal exception not handled: EC-SIZE-ZERO-DIVIDE
 ])
 
-AT_DATA([prog1.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog1.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 LARGE-VALUE PIC 9(3) VALUE 999.
-       01 SMALL-VALUE PIC 9(3) VALUE 1.
-       01 RESULT      PIC 9(3).
-       PROCEDURE DIVISION.
-           COMPUTE LARGE-VALUE = LARGE-VALUE - (999 * SMALL-VALUE).
-           DIVIDE SMALL-VALUE BY LARGE-VALUE
-                GIVING RESULT.
-           DISPLAY RESULT.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE -fno-ec=all -fec=size-overflow prog1.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
+AT_CHECK([$COMPILE -fno-ec=all -fec=size-overflow -o badprog prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./badprog], [0],
 [000
 ], [])
 
