@@ -5,6 +5,11 @@
 	  exponentiation
 	* intrinsic.c (cob_decimal_pow): use pow_rules_violated, raising
 	  EC-SIZE-EXPONENTIATION for 0 ^ -n instead of returning 0
+	* intrinsic.c, common.h (cob_valid_pow): new function checking the rules
+	  for exponentiation, used by the generated code
+	* intrinsic.c (cob_intr_binop): return zero if the rules for
+	  exponentiation are violated, keeping EC-SIZE-EXPONENTIATION instead of
+	  raising EC-ARGUMENT-FUNCTION and EC-SIZE-OVERFLOW
 
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 

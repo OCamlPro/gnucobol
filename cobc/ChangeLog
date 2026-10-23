@@ -7,6 +7,8 @@
 	  raises SIGFPE
 	* codegen.c (output_param): generate a fatal check for a zero divisor
 	  if EC-SIZE-ZERO-DIVIDE is enabled for cob_intr_binop
+	* codegen.c (output_param): generate a fatal check using cob_valid_pow
+	  if EC-SIZE-EXPONENTIATION is enabled for cob_intr_binop
 
 2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 

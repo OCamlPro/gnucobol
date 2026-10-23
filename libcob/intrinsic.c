@@ -3641,6 +3641,16 @@ cob_valid_datetime_format (const char *format, const char decimal_point)
 
 /* Numeric expressions */
 
+/* check if f1 ^ f2 follows the rules for exponentiation,
+   used by the generated code to check for EC-SIZE-EXPONENTIATION */
+int
+cob_valid_pow (cob_field *f1, cob_field *f2)
+{
+	cob_decimal_set_field (&d1, f1);
+	cob_decimal_set_field (&d2, f2);
+	return !pow_rules_violated (&d1, &d2);
+}
+
 cob_field *
 cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 {
@@ -3692,6 +3702,11 @@ cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 		break;
 	case '^':
 		cob_decimal_pow (&d1, &d2);
+		if (d1.scale == COB_DECIMAL_NAN) {
+			/* Exponentiation rules violated, exception is set */
+			mpz_set_ui (d1.value, 0UL);
+			d1.scale = 0;
+		}
 		break;
 	default:
 		break;

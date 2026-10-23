@@ -14419,14 +14419,51 @@ AT_DATA([prog4.cob], [
            .
 ])
 
+AT_DATA([prog5.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog5.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  ZERO-FLD  PIC S9 VALUE 0.
+       01  TBL.
+           05 TBL-ENTRY PIC 9 OCCURS 3 VALUE 0.
+
+       PROCEDURE DIVISION.
+           MOVE 1 TO TBL-ENTRY (1 + ZERO-FLD ** ZERO-FLD)
+           DISPLAY TBL ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
+AT_DATA([prog6.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog6.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  NEG-FLD   PIC S9   VALUE -4.
+       01  HALF-FLD  PIC S9V9 VALUE 0.5.
+       01  TBL.
+           05 TBL-ENTRY PIC 9 OCCURS 3 VALUE 0.
+
+       PROCEDURE DIVISION.
+           MOVE 1 TO TBL-ENTRY (1 + NEG-FLD ** HALF-FLD)
+           DISPLAY TBL ' ' FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           .
+])
+
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE prog3.cob], [0], [], [])
 AT_CHECK([$COMPILE -w prog4.cob], [0], [], [])
+AT_CHECK([$COMPILE prog5.cob], [0], [], [])
+AT_CHECK([$COMPILE prog6.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog_loc prog.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog2loc prog2.cob], [0], [], [])
 AT_CHECK([$COBC -x -fsource-location -o prog3loc prog3.cob], [0], [], [])
 AT_CHECK([$COBC -x -w -fsource-location -o prog4loc prog4.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog5loc prog5.cob], [0], [], [])
+AT_CHECK([$COBC -x -fsource-location -o prog6loc prog6.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
@@ -14441,6 +14478,12 @@ AT_CHECK([$COBCRUN_DIRECT ./prog4], [0],
 [SIZE ERROR
 +7 EC-SIZE-EXPONENTIATION
 ], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5], [1], [],
+[libcob: prog5.cob:12: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog6], [1], [],
+[libcob: prog6.cob:13: error: fatal exception not handled: EC-SIZE-EXPONENTIATION
+])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog_loc], [0],
 [100 EC-SIZE-EXPONENTIATION
@@ -14454,6 +14497,12 @@ AT_CHECK([$COBCRUN_DIRECT ./prog3loc], [0],
 AT_CHECK([$COBCRUN_DIRECT ./prog4loc], [0],
 [SIZE ERROR
 +7 EC-SIZE-EXPONENTIATION
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog5loc], [0],
+[100 EC-SIZE-EXPONENTIATION
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog6loc], [0],
+[100 EC-SIZE-EXPONENTIATION
 ], [])
 
 AT_CLEANUP

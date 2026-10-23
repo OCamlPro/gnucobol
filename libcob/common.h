@@ -2750,6 +2750,7 @@ COB_EXPIMP void		cob_get_indirect_field		(cob_field *);
 COB_EXPIMP cob_field *cob_switch_value			(const int);
 COB_EXPIMP cob_field *cob_intr_binop			(cob_field *, const int,
 							 cob_field *);
+COB_EXPIMP int cob_valid_pow				(cob_field *, cob_field *);
 
 COB_EXPIMP int cob_check_numval				(const cob_field *,
 							 const cob_field *,

@@ -3986,12 +3986,23 @@ output_param (cb_tree x, int id)
 		const int	chk_zero_divide = bp->op == '/'
 			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
 			&& !is_nonzero_constant (bp->y);
+		const int	chk_pow = bp->op == '^'
+			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION);
+		/* fatal checks for EC-SIZE (operands evaluated twice) */
 		if (chk_zero_divide) {
-			/* fatal check for EC-SIZE-ZERO-DIVIDE (divisor evaluated twice) */
 			output ("(cob_cmp_int (");
 			output_param (bp->y, id);
 			output (", 0) == 0");
 			output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+			output (" cob_fatal_exception (cob_glob_ptr->cob_exception_code),");
+			output (" (cob_field *)NULL) : ");
+		} else if (chk_pow) {
+			output ("(!cob_valid_pow (");
+			output_param (bp->x, id);
+			output (", ");
+			output_param (bp->y, id);
+			output (")");
+			output (" ? (cob_set_exception (COB_EC_SIZE_EXPONENTIATION),");
 			output (" cob_fatal_exception (cob_glob_ptr->cob_exception_code),");
 			output (" (cob_field *)NULL) : ");
 		}
@@ -4008,7 +4019,7 @@ output_param (cb_tree x, int id)
 		output (", ");
 		output_param (bp->y, id);
 		output (")");
-		if (chk_zero_divide) {
+		if (chk_zero_divide || chk_pow) {
 			output (")");
 		}
 		break;
