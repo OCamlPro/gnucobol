@@ -566,7 +566,8 @@ COB_EXCEPTION  (0F05, COB_EC_SCREEN_STARTING_COLUMN,
 		"EC-SCREEN-STARTING-COLUMN", 0)
 
 
-/* Size error exception */
+/* Size error exception; its subordinates use one bit each, allowing codegen
+   to check for all enabled ones at once (limited to 7, see TODO 3.4) */
 COB_EXCEPTION  (1000, COB_EC_SIZE,
 		"EC-SIZE", 0)
 
