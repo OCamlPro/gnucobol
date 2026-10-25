@@ -1,4 +1,10 @@
 
+2026-10-19  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_intr_exp, cob_intr_exp10, cob_intr_factorial),
+	  coblocal.h: fixing bug #1206 "gmp code aborting with out-of-memory"
+	  by implementing limits defined in coblocal.h raising EC-ARGUMENT-EXCEPTION
+
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
