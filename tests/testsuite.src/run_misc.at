@@ -16636,9 +16636,19 @@ AT_DATA([prog.cob], [
        01   A FLOAT-DECIMAL-34 .
        01   B PIC S9(38) PACKED-DECIMAL.
        01   EXCEPT       PIC X(20) .
+       01   N            PIC 9(06) COMP-5 VALUE 1 .
       *
-       PROCEDURE        DIVISION.
+       PROCEDURE DIVISION.
       *
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 20000 TO N.
+       >> END-IF
+           PERFORM DO-TEST N TIMES .
+      *
+           GOBACK .
+      *
+       DO-TEST.
+      *-------
            MOVE FUNCTION EXP(-14144) TO A .
            MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
            IF EXCEPT NOT = SPACES
@@ -16657,9 +16667,10 @@ AT_DATA([prog.cob], [
            IF B NOT = -14145
            THEN
                DISPLAY 'RESULT LOG LIMIT <> -14145'
-           END-IF
+           END-IF.
       *
-           GOBACK .
+           SET LAST EXCEPTION TO OFF.
+      *
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -16681,8 +16692,19 @@ AT_DATA([prog.cob], [
       *
        01   A FLOAT-DECIMAL-34 .
        01   EXCEPT       PIC X(20) .
+       01   N            PIC 9(06) COMP-5 VALUE 1 .
       *
-       PROCEDURE        DIVISION.
+       PROCEDURE DIVISION.
+      *
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 20000 TO N.
+       >> END-IF
+           PERFORM DO-TEST N TIMES .
+      *
+           GOBACK .
+      *
+       DO-TEST.
+      *--------
       *
            MOVE FUNCTION EXP(14149) TO A .
            MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
@@ -16699,7 +16721,8 @@ AT_DATA([prog.cob], [
                DISPLAY 'EXP(14450) SHOULD RAISE EXCEPTION'
            END-IF.
       *
-           GOBACK .
+           SET LAST EXCEPTION TO OFF.
+      *
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -16758,8 +16781,20 @@ AT_DATA([prog.cob], [
        01   A FLOAT-DECIMAL-34 .
        01   B PIC S9(38) PACKED-DECIMAL.
        01   EXCEPT       PIC X(20) .
+       01   N            PIC 9(06) COMP-5 VALUE 1 .
       *
        PROCEDURE        DIVISION.
+      *
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 20000 TO N.
+       >> END-IF
+           PERFORM DO-TEST N TIMES .
+      *
+           GOBACK .
+      *
+       DO-TEST.
+      *--------
+      *
       *
            MOVE FUNCTION EXP10(-6174) TO A .
            MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
@@ -16780,9 +16815,10 @@ AT_DATA([prog.cob], [
            IF B NOT = -6175
            THEN
                DISPLAY 'RESULT LOG LIMIT <' B '>!= -6175'
-           END-IF
+           END-IF.
       *
-           GOBACK .
+           SET LAST EXCEPTION TO OFF.
+      *
 ])
 
 AT_CHECK([$COMPILE --fec=all  prog.cob], [0], [], [])
@@ -16804,8 +16840,20 @@ AT_DATA([prog.cob], [
       *
        01   A FLOAT-DECIMAL-34 .
        01   EXCEPT       PIC X(20) .
+       01   N            PIC 9(06) COMP-5 VALUE 1 .
       *
        PROCEDURE        DIVISION.
+      *
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 20000 TO N.
+       >> END-IF
+      *
+           PERFORM  DO-TEST N TIMES .
+      *
+           GOBACK .
+      *
+       DO-TEST.
+      *--------
       *
            MOVE FUNCTION EXP10(6111) TO A .
            MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
@@ -16822,7 +16870,8 @@ AT_DATA([prog.cob], [
                DISPLAY 'EXP10(6175) SHOULD RAISE EXCEPTION'
            END-IF.
       *
-           GOBACK .
+           SET LAST EXCEPTION TO OFF.
+      *
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -16844,8 +16893,20 @@ AT_DATA([prog.cob], [
       *
        01   A FLOAT-DECIMAL-34 .
        01   EXCEPT       PIC X(20) .
+       01   N            PIC 9(06) COMP-5 VALUE 1 .
       *
-       PROCEDURE        DIVISION.
+       PROCEDURE DIVISION.
+      *
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 5000 TO N.
+       >> END-IF
+      *
+           PERFORM  DO-TEST N TIMES .
+      *
+           GOBACK .
+      *
+       DO-TEST.
+      *--------
       *
            MOVE FUNCTION FACTORIAL(2113) TO A .
            MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
@@ -16862,7 +16923,8 @@ AT_DATA([prog.cob], [
                DISPLAY 'FACTORIAL(2114) SHOULD RAISE EXCEPTION'
            END-IF.
       *
-           GOBACK .
+           SET LAST EXCEPTION TO OFF.
+      *
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -16884,8 +16946,19 @@ AT_DATA([prog.cob], [
       *
        01   A FLOAT-DECIMAL-34 .
        01   EXCEPT       PIC X(20) .
+       01   N            PIC 9(06) COMP-5 VALUE 1 .
       *
-       PROCEDURE        DIVISION.
+       PROCEDURE DIVISION.
+      *
+       >> IF CHECK-PERF IS DEFINED
+           MOVE 5000 TO N.
+       >> END-IF
+      *
+           PERFORM  DO-TEST N TIMES .
+      *
+      *
+       DO-TEST.
+      *--------
       *
            MOVE FUNCTION FACTORIAL(-1) TO A .
            MOVE FUNCTION EXCEPTION-STATUS TO EXCEPT.
@@ -16894,7 +16967,8 @@ AT_DATA([prog.cob], [
                DISPLAY 'FACTORIAL(-1) SHOULD RAISE EXCEPTION'
            END-IF.
       *
-           GOBACK .
+           SET LAST EXCEPTION TO OFF.
+      *
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
