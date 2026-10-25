@@ -1,4 +1,10 @@
 
+2026-10-25  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): Implement a faster new algorithm
+	* intrinsic.c (cob_agm_log): new function needed for cob_mpf_log
+	* intrinsic.c (COB_LN_PREC): new macro for ln precision threshold
+
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
