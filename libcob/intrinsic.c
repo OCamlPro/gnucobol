@@ -64,10 +64,50 @@
 #include <locale.h>
 #endif
 
+#define COB_LN_PREC  ((unsigned long) ((COB_MPF_CUTOFF / 2UL) + 1UL) )
+/*
+ * How to compute COB_LN_PREC
+ * --------------------------
+ *
+ * The AGM method says that for a given number x
+ * the precision is reached with
+ *
+ *                   ln(10)       ln(x)
+ * COB_LN_PREC = P * ------ + 1 - -----
+ *                   2 ln(2)      ln(2)
+ *
+ *   where P is the precison in number of digits
+ *
+ *   As for x < 1 we compute ln (y) and negat
+ *   where y = 1/x,
+ *   So ln(y) > 0
+ *   We then can safely says that
+ *
+ *                   ln(10)
+ * COB_LN_PREC = P * ------ + 1 is the max precison
+ *                   2 ln(2)
+ *
+ * How to compute P :
+ * ------------------
+ *
+ * on gmp for a given precision the number
+ * of digits is
+ *                    PREC
+ *         P  =  -------------
+ *               LOG_BASE_2(10)
+ *
+ * By replacing P in the first equation and simplifying
+ * we obtain
+ *
+ * COB_LN_PREC = (PREC / 2 ) + 1
+ *
+ */
+
 /* Function prototypes */
 static cob_u32_t	integer_of_date (const int, const int, const int);
 static void		get_iso_week (const int, int *, int *);
 static void		cob_mpf_log (mpf_t, const mpf_t);
+static void		cob_agm_log(mpf_t, const mpf_t);
 static int		get_seconds_past_midnight (void);
 
 /* Local variables */
@@ -102,6 +142,7 @@ static mpf_t		cob_mpft_get;
 static mpf_t		cob_pi;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
+static mpf_t		cob_log_two;
 static mpf_t		cob_log_ten;
 static int		set_cob_pi;
 static int		set_cob_sqrt_two;
@@ -462,6 +503,10 @@ setup_cob_log_half (void)
 
 	mpf_init2 (cob_log_half, COB_LOG_HALF_LEN);
 	mpf_set_str (cob_log_half, cob_log_half_str, 10);
+
+	mpf_init2 (cob_log_two, COB_LOG_HALF_LEN);
+	mpf_neg (cob_log_two, cob_log_half) ;
+
 	set_cob_log_half = 1;
 }
 
@@ -915,65 +960,110 @@ cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 	mpf_clear (vf1);
 }
 
-/* Log function */
-/* logn (x) = {n = 1, ...} ( ((1 - x) ^ n) / n ) */
-
+/*
+ * AGM (Arithmetic-Geometric Mean):
+ * The AGM of two positive numbers a and b is the common limit
+ * of two sequences defined iteratively by:
+ *   a_(n+1) = (a_n + b_n) / 2
+ *   b_(n+1) = sqrt(a_n * b_n)
+ */
 static void
-cob_mpf_log (mpf_t dst_val, const mpf_t src_val)
+cob_agm_log(mpf_t dst_val, const mpf_t val_2 )
 {
-	mpf_t			vf1, vf2, vf3, vf4;
-	mpf_t			dst_temp;
-	cob_sli_t		expon;
-	cob_uli_t		n;
+	mpf_t a_avg;
+	mpf_t g_avg;
+	mpf_t temp;
 
+	mpf_init2 (a_avg, COB_MPF_CUTOFF+8);
+	mpf_init2 (g_avg, COB_MPF_CUTOFF+8);
+	mpf_init2 (temp, COB_MPF_CUTOFF+8);
 
+	mpf_set_ui (a_avg, 1UL) ;
+	mpf_set (g_avg, val_2) ;
+
+	do {
+		mpf_set (temp, a_avg) ;
+
+		mpf_add (a_avg, a_avg, g_avg) ;
+		mpf_div_ui (a_avg, a_avg, 2UL) ;
+
+		mpf_mul (g_avg, g_avg, temp) ;
+		mpf_sqrt (g_avg, g_avg) ;
+
+	} while (!mpf_eq (a_avg, g_avg, COB_MPF_CUTOFF)) ;
+
+	mpf_set (dst_val, a_avg);
+
+	mpf_clear (a_avg);
+	mpf_clear (g_avg);
+	mpf_clear (temp);
+}
+
+/*      Log function     */
+/*
+ * We use the AGM method :
+ * -----------------------
+ * ln(x) = ln(2^s * x) - s * ln(2)
+ *       = (pi * x^(s - 2)) / (2 * AGM(x^(s - 2), 1)) - s * ln(2)
+ *
+ * See https://www.hvks.com/Numerical/Downloads/HVE%20Fast%20Log()%20calculation%20for%20arbitrary%20precision.pdf
+ */
+static void
+cob_mpf_log(mpf_t dst_val, const mpf_t src_val) {
+	long s;
+	mpf_t agm_val;
+	mpf_t init_val;
+	int negat_result = 0;
 
 	if (mpf_sgn (src_val) <= 0 || !mpf_cmp_ui (src_val, 1UL)) {
 		mpf_set_ui (dst_val, 0UL);
 		return;
 	}
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
 	if (!set_cob_log_half) setup_cob_log_half ();
+	if (!set_cob_pi) setup_cob_pi ();
 
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_set_si (vf3, -1L);
-	mpf_init2 (vf4, COB_MPF_PREC);
+	mpf_init2 (agm_val,COB_MPF_CUTOFF+8);
+	mpf_init2 (init_val,COB_MPF_PREC);
 
-	mpf_set_ui (dst_temp, 0UL);
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon != 0) {
-		mpf_set (dst_temp, cob_log_half);
-		if (expon > 0) {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)expon);
-			mpf_neg (dst_temp, dst_temp);
-			mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
-		} else {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)-expon);
-			mpf_mul_2exp (vf1, vf1, (cob_uli_t)-expon);
-		}
+	if (mpf_cmp_ui (src_val, 1UL) < 0) {
+		mpf_ui_div (init_val, 1UL, src_val);
+		negat_result = 1;
 	}
-	mpf_ui_sub (vf1, 1UL, vf1);
+	else {
+		mpf_set (init_val, src_val);
+	}
 
-	n = 1;
-	do {
-		mpf_mul (vf3, vf3, vf1);
-		mpf_div_ui (vf2, vf3, n);
-		mpf_set (vf4, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf4, dst_temp, COB_MPF_CUTOFF));
+	/* Reduce Argument for faster convergence   */
 
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
+	/* step 1                                   */
+	/*  - Get i such = n * 2^i                  */
+	/*    where n is in [0,5 ; 1]               */
+	mpf_get_d_2exp (&s, init_val) ;
 
-	mpf_clear (vf4);
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	/* step 2                                   */
+	/* Adding COB_LN_PREC to i and divide by 2^i*/
+
+	s = COB_LN_PREC  + s;
+	mpf_div_2exp(dst_val, init_val, s);
+
+	cob_agm_log (agm_val, dst_val);
+
+	s = s + 2;
+	mpf_mul_ui (dst_val, cob_log_two, s);
+
+	mpf_mul_ui (agm_val, agm_val, 2UL);
+	mpf_div (agm_val, cob_pi, agm_val);
+
+	if (negat_result) {
+		mpf_sub (dst_val, agm_val, dst_val);
+	}
+	else {
+		mpf_sub (dst_val, dst_val, agm_val);
+	}
+
+	mpf_clear (agm_val);
+	mpf_clear (init_val);
 }
 
 /* Log10 function */
@@ -7192,6 +7282,7 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);
+		mpf_clear (cob_log_two);
 	}
 	if (set_cob_log_ten) {
 		mpf_clear (cob_log_ten);
