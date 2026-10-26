@@ -2901,13 +2901,16 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE_ONLY -freserved=hello,foo,bars,background-color -fnot-reserved=file prog.cob], [1], [],
+# note: reserving/unreserving puts to ammendment list, which
+#       is always case-insensitive (upper-cased on entry)
+AT_CHECK([$COMPILE_ONLY -freserved=hEllO,fOo,Bars,Background-Color \
+    -fnot-reserved=filE prog.cob], [1], [],
 [prog.cob:7: error: 'hello' is a reserved word, but isn't supported
 prog.cob:8: error: 'foo' is a reserved word, but isn't supported
 prog.cob:9: error: 'bars' is a reserved word, but isn't supported
 prog.cob:11: error: syntax error, unexpected BACKGROUND-COLOR
 ])
-AT_CHECK([$COMPILE_ONLY -fnot-reserved=file prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -fnot-reserved=FILe prog.cob], [0], [])
 AT_CLEANUP
 
 
@@ -2923,10 +2926,10 @@ AT_DATA([prog.cob], [
            .
 ])
 
-# FIXME: user defined words need to store a reference to the name originally defining the word
-#        otherwise we can't help the user to know where the error came from
-#        (command line is only a special case, but even then it may be wrapped and not visible
-#        to the user)
+# FIXME: user defined words need to store a reference to the name originally
+#        defining the word otherwise we can't help the user to know where the
+#        error came from (command line is only a special case, but even then
+#        it may be wrapped and not visible to the user)
 #AT_CHECK([$COMPILE_ONLY -freserved=FOO=DISPLAY* -freserved=BARS:FOO prog.cob], [1], [],
 #[configuration warning: -freserved=FOO=DISPLAY*: ignored asterisk at end of alias target
 #configuration error:
@@ -2968,7 +2971,7 @@ AT_DATA([prog2.cob], [
            DISPLAY "Hello, world!".
 ])
 
-AT_CHECK([$COMPILE_ONLY -fnot-reserved=DISPLAY -freserved=COMP-1=DISPLAY prog2.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fnot-reserved=DISPLAY -freserved=Comp-1=Display prog2.cob], [1], [],
 [prog2.cob:7: error: syntax error, unexpected Literal, expecting SECTION or .
 prog2.cob:7: note: unknown statement 'DISPLAY'; it may exist in another dialect
 ])
