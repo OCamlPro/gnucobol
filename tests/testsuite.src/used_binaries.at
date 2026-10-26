@@ -110,6 +110,19 @@ AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -fno-diagnostics-show-o
 AT_CHECK([$COBC -fsyntax-only -Wno-error=additional prog.cob], [0], [], [])
 # ... now combined
 AT_CHECK([$COBC -fsyntax-only -Werror -Wno-error=additional prog.cob], [0], [], [])
+# ... "no-error" excludes a warning from a global "error", unless re-enabled
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wterminator -Werror -Wno-error=terminator prog.cob], [0], [],
+[prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
+])
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wterminator -Wno-error=terminator -Werror prog.cob], [0], [],
+[prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
+])
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wterminator -Werror=terminator -Wno-error=terminator -Werror prog.cob], [0], [],
+[prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
+])
+AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Wterminator -Werror -Wno-error=terminator -Werror=terminator prog.cob], [1], [],
+[prog.cob:10: error: DISPLAY statement not terminated by END-DISPLAY [[-Werror=terminator]]
+])
 AT_CHECK([$COBC -fsyntax-only -fdiagnostics-plain-output -Werror=additional -Wno-error prog.cob], [1], [],
 [prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
 ])
