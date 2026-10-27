@@ -1,4 +1,42 @@
 
+2026-10-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (word_hash): return full 32bit hash, which is stored in the
+	  refernce containing the word (previously stored only 11 bit)
+	* tree.c (lookup_word, cb_ref_internal): cut hash for indexing to 11 bit
+	* tree.h (cb_label), tree.c (cb_build_label): new member name_hash,
+	  set from 32 bit hash of the reference
+	* codgen.c (codegen_init): allocate output name via global memory, not
+	  in cobc's string cache
+	* cobc.c (strcache, cobc_check_string, hash_simple_string): string cache
+	  for PIC and ENTRY names uses hashes now for even faster comparison,
+	  to speed up generated programs with thousands of ENTRY points use
+	  additionally a hash-bucket for each of the string lists
+	* parser.y (entry_filter, add_entry_hash, possibly_defined_entry_hash):
+	  to speed up generated programs with thousands of ENTRY points (including
+	  ENTRY FOR GO TO) the names are hashed and those are partially included
+	  in a hash map to check for existing entries
+	* parser.y (perform_procedure): only setup perform_thru_list if checks
+	  using this list are enabled
+	* parser.y (perform_procedure), typeck.c (cb_validate_perform_thru_ranges):
+	  perform_thru_list is not embedded into another list any more and added
+	  up front (no need to iterate to the end for addition)
+	* parser.y: label_list is added up-front now as well
+	* tree.h (cb_program), parser.y, typeck.c: new member main_using set
+	  to the USING list for the main PROCEDURE, allowing direct checks as well
+	  as addition up-front for entry_list and entry_list_goto, saving most time
+	  spent in generated programswith thousands of elements in there
+	* codegen.c (cb_cache_program_decimal_constant): only check for existing
+	  literal id if we don't create a new one in the first place
+	* codegen.c (lit_slot, lit_tab_grow, lit_tab_find, lit_tab_add): C literal
+	  cache now uses a self-growing hash map of literals to check for duplicates
+	* pplex.l (plex_clear_all), replace.c (cb_free_replace): cleanup for hard
+	  errors (may be executed multiple times now), including closing input file
+	* cobc.c (process_command_line, file_replace_extension, add_depend_target):
+	  full memory cleanup for -dumpversion, --gentable and -MT/-MD options
+	* tree.c (cb_file_errtype): new enum, containing and used instead of
+	  previous #define'd constants
+
 2026-10-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (process_command_line): -Wno-error=warning now also excludes
@@ -46,7 +84,7 @@
 	  note: the idea and functions to do this was "contributed"
 	  by Claude Sonnect 5.5
 	* tree.h (cb_literal): removed padding by reordering and adjusting the type
-	  for llit attribute
+	  for llit member
 	* tree.h (literal_list): added literal_hash member
 	* codegen.c (cb_literal_hash): new function for computing a hash based on
 	  the literal data; note: assisted by Claude Sonnet 5.5

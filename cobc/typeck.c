@@ -3055,15 +3055,15 @@ cb_build_ppointer (cb_tree x)
 static void
 set_argument_defaults (cb_tree argument, cb_tree parameter, const struct cb_field *arg_field)
 {
-	const int argument_size = CB_SIZES_INT(argument);
+	const int argument_size = CB_SIZES_INT (argument);
 	if (argument_size == CB_SIZE_UNSET) {
 		if (parameter) {
-			CB_SIZES(argument) = CB_SIZES(parameter);
+			CB_SIZES (argument) = CB_SIZES (parameter);
 		} else {
 #ifdef COB_64_BIT_POINTER
-			CB_SIZES(argument) = CB_SIZE_8;
+			CB_SIZES (argument) = CB_SIZE_8;
 #else
-			CB_SIZES(argument) = CB_SIZE_4;
+			CB_SIZES (argument) = CB_SIZE_4;
 #endif
 		}
 	} else if (argument_size == CB_SIZE_AUTO && arg_field) {
@@ -3082,7 +3082,8 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	int		param_num = 1;
 
 	for (l = using_list; l; l = CB_CHAIN (l)) {
-		set_argument_defaults (l, NULL, NULL);	/* TODO: move for supporting that with prototypes */
+		/* TODO: move for supporting that with prototypes */
+		set_argument_defaults (l, NULL, NULL);
 		x = CB_VALUE (l);
 		if (cb_try_ref (x) != cb_error_node) {
 			f = CB_FIELD (cb_ref (x));
@@ -3136,8 +3137,8 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 		}
 	}
 
-	if (prog->returning &&
-		cb_ref (prog->returning) != cb_error_node) {
+	if (prog->returning
+	 && cb_ref (prog->returning) != cb_error_node) {
 		ret_f = CB_FIELD (cb_ref (prog->returning));
 		if (ret_f->redefines) {
 			cb_error_x (prog->returning,
@@ -3151,10 +3152,12 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION && ret_f) {
 		for (l = using_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-				f = CB_FIELD (cb_ref (x));
-				if (ret_f == f) {
-					cb_error_x (x, _("'%s' USING item duplicates RETURNING item"), f->name);
+			if (x && CB_REFERENCE_P (x)) {
+				cb_tree x2 = cb_ref (x);
+				if (CB_FIELD_P (x2)
+				 && CB_FIELD (x2) == ret_f) {
+					cb_error_x (x, _("'%s' USING item duplicates RETURNING item"),
+						f->name);
 				}
 			}
 		}
@@ -3210,11 +3213,11 @@ is_alphanum_group (const struct cb_field *f)
 
 /* get numbered USING parameter tree */
 static cb_tree
-find_nth_parameter (const struct cb_program *prog, const unsigned int n)
+find_nth_parameter (const cb_tree using_list, const unsigned int n)
 {
 	cb_tree		entry_param;
 	unsigned int parmnum = 1;
-	for (entry_param = CB_VALUE (CB_VALUE (prog->entry_list)); entry_param;
+	for (entry_param = using_list; entry_param;
 	     entry_param = CB_CHAIN (entry_param)) {
 		if (n == parmnum++) {
 			return entry_param;
@@ -3433,8 +3436,8 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 		for (parameter_num = 1;
 		     parameter_num <= definition->num_proc_params;
 		     ++parameter_num) {
-			def_item = find_nth_parameter (definition, parameter_num);
-			proto_item = find_nth_parameter (prototype, parameter_num);
+			def_item = find_nth_parameter (definition->main_using, parameter_num);
+			proto_item = find_nth_parameter (prototype->main_using, parameter_num);
 
 			if (def_item && proto_item) {
 				def_field = CB_FIELD_PTR(CB_VALUE(def_item));
@@ -3531,7 +3534,7 @@ static void
 check_argument_conformance (struct cb_program *program, cb_tree argument_tripple,
 			    const int param_num)
 {
-	cb_tree		param = find_nth_parameter (program, param_num);
+	cb_tree		param = find_nth_parameter (program->main_using, param_num);
 	cb_tree		arg_tree = CB_VALUE (argument_tripple);
 	enum cb_call_mode	arg_mode = CB_PURPOSE_INT (argument_tripple);
 	const enum cb_call_mode	param_mode = CB_PURPOSE_INT (param);
@@ -3689,7 +3692,7 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	  check the omitted ones are for OPTIONAL parameters.
 	*/
 	for (; param_num <= program->num_proc_params; ++param_num) {
-		param = find_nth_parameter (program, param_num);
+		param = find_nth_parameter (program->main_using, param_num);
 		if (CB_PURPOSE_INT(param) != CB_CALL_BY_REFERENCE
 		  || !CB_FIELD_PTR(CB_VALUE(param))->flag_is_pdiv_opt) {
 			if (last_arg) {
@@ -5240,9 +5243,6 @@ cb_validate_labels (struct cb_program *prog)
 						    label->name);
 					continue;
 				case CB_WARNING:
-					if (get_warn_opt_value (cb_warn_dialect) == COBC_WARN_DISABLED) {
-						break;
-					}
 					cb_warning_x (cb_warn_dialect, x,
 						    _("'%s' is not in DECLARATIVES"),
 							label->name);
@@ -5298,10 +5298,14 @@ cb_validate_perform_thru_ranges (struct cb_program *prog)
 	 && get_warn_opt_value (cb_warn_suspicious_perform_thru) == COBC_WARN_DISABLED) {
 		return;
 	}
-	for (l = prog->perform_thru_list; l; l = CB_CHAIN (l)) {
-		const cb_tree v = CB_VALUE (l);
-		const cb_tree x = cb_ref (CB_PAIR_X (v));
-		const cb_tree y = cb_ref (CB_PAIR_Y (v));
+
+	/* we added up front for performance, process reverses for
+	   reasonable order of warning messages */
+
+	/* TODO: preferably on addition, otherwise here: drop duplicates */
+	for (l = cb_list_reverse (prog->perform_thru_list); l; l = CB_CHAIN (l)) {
+		const cb_tree x = cb_ref (CB_PAIR_X (l));
+		const cb_tree y = cb_ref (CB_PAIR_Y (l));
 		if (x != y
 		 && x != cb_error_node
 		 && y != cb_error_node) {
@@ -5309,19 +5313,19 @@ cb_validate_perform_thru_ranges (struct cb_program *prog)
 			const struct cb_label *le = CB_LABEL (y);
 			if (le->flag_section) {
 				if (cb_flag_section_exit_check) {
-					cb_warning_x (COBC_WARN_FILLER, v,
+					cb_warning_x (COBC_WARN_FILLER, l,
 						_("%s and %s are mutually exclusive"),
 						"PERFORM ... THROUGH SECTION", "-fsection-exit-check");
 					/* this code would always raise that check, so disable */
 					cb_flag_section_exit_check = 0;
 				}
 			} else if (le->section != lb->section && le->section != lb) {
-				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+				cb_warning_x (cb_warn_suspicious_perform_thru, l,
 					_("%s and %s are not in the same SECTION"), lb->name, le->name);
 			}
 			if (le->common.source_file == lb->common.source_file
 			 && le->common.source_line < lb->common.source_line) {
-				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+				cb_warning_x (cb_warn_suspicious_perform_thru, l,
 					_("%s is defined before %s"), le->name, lb->name);
 				cb_note_x (cb_warn_suspicious_perform_thru, x, _("'%s' defined here"), lb->name);
 				cb_note_x (cb_warn_suspicious_perform_thru, y, _("'%s' defined here"), le->name);
@@ -5354,10 +5358,12 @@ cb_validate_program_body (struct cb_program *prog)
 		}
 
 		/* ignore fields that are part of main entry USING */
-		for (l = CB_VALUE (CB_VALUE (prog->entry_list)); l; l = CB_CHAIN (l)) {
+		for (l = prog->main_using; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-				if (f == CB_FIELD (cb_ref (x))) {
+			if (x && CB_REFERENCE_P (x)) {
+				x = cb_ref (x);
+				if (CB_FIELD_P (x)
+				 && CB_FIELD (x) == f) {
 					break;
 				}
 			}
@@ -5370,6 +5376,8 @@ cb_validate_program_body (struct cb_program *prog)
 	}
 
 	/* Validate entry points */
+	prog->entry_list = cb_list_reverse (prog->entry_list);
+	prog->entry_list_goto = cb_list_reverse (prog->entry_list_goto);
 
 	/* Check dangling LINKAGE items */
 	if (get_warn_opt_value (cb_warn_linkage) != COBC_WARN_DISABLED
@@ -5398,8 +5406,10 @@ cb_validate_program_body (struct cb_program *prog)
 				/* ignore fields that are part of current entry USING */
 				for (l = CB_VALUE (CB_VALUE (v)); l; l = CB_CHAIN (l)) {
 					x = CB_VALUE (l);
-					if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-						if (f == CB_FIELD (cb_ref (x))) {
+					if (x && CB_REFERENCE_P (x)) {
+						x = cb_ref (x);
+						if (CB_FIELD_P (x)
+						 && CB_FIELD (x) == f) {
 							break;
 						}
 					}
@@ -5410,9 +5420,10 @@ cb_validate_program_body (struct cb_program *prog)
 
 				/* check if field or its children have any actual reference,
 				   otherwise the warning is useless */
-				if (has_sub_reference(f)) {
+				if (has_sub_reference (f)) {
 					cb_warning_x (cb_warn_linkage, CB_TREE (f),
-						_("LINKAGE item '%s' is not a PROCEDURE USING parameter"), f->name);
+						_("LINKAGE item '%s' is not a PROCEDURE USING parameter"),
+						 f->name);
 				}
 			}
 		}

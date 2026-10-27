@@ -3874,7 +3874,7 @@ AT_CLEANUP
 
 
 AT_SETUP([profiling with recursion, entries and CALL])
-AT_KEYWORDS([backcomp runtime-checks])
+AT_KEYWORDS([backcomp runtime-checks recursion])
 
 # originally from "profiling with recursion, entries and CALL"
 # explicit with runtime checks for CALL included
@@ -3941,7 +3941,7 @@ static const char *st_source_files[]	= { ""
 
 /* Function prototypes */
 
-static int		prog2 ();
+int			prog2 ();
 static int		prog2_ (const int);
 static void		prog2_module_init (cob_module *module);
 static int		inside__program_0__ (void);

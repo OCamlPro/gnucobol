@@ -1050,6 +1050,7 @@ struct cb_label {
 	int			id;			/* Unique id */
 	int			section_id;		/* SECTION id */
 	int			segment;		/* Segment number */
+	unsigned int 		name_hash;	/* hashing of original_name */
 
 	unsigned int		flag_section		: 1;	/* Section */
 	unsigned int		flag_entry		: 1;	/* Entry */
@@ -1838,6 +1839,7 @@ struct cb_program {
 	struct nested_list	*nested_prog_list;	/* Callable contained */
 	struct nested_list	*common_prog_list;	/* COMMON contained */
 	cb_tree			entry_list;		/* Entry point list */
+	cb_tree			main_using;		/* main entry USING (for syntax checks) */
 	cb_tree			entry_list_goto;	/* Special Entry point list */
 	cb_tree			file_list;		/* File list */
 	cb_tree			cd_list;		/* CD list */
