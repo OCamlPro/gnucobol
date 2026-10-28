@@ -544,7 +544,7 @@ jobs:
           mkdir _build && cd _build
           ../configure --enable-code-coverage \
                        --with-db --with-xml2 --with-json=cjson --with-curses=ncursesw \
-                       CC="gcc -std=c89" \
+                       CFLAGS="-std=c89" \
                        CPPFLAGS="-Werror=declaration-after-statement"
 
       - name: Upload config.log
@@ -561,7 +561,9 @@ jobs:
         run: |
           # make -C _build check-code-coverage # <- (ignores errors)
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          # lcov 2.x: statement.def lines have differing branch data
           make -C _build code-coverage-capture \
+                         CODE_COVERAGE_GENHTML_OPTIONS="--ignore-errors inconsistent" \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
       - name: Upload testsuite.log
@@ -591,6 +593,7 @@ jobs:
           make -C _build code-coverage-capture                            \
                          CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
                          CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
+                         CODE_COVERAGE_GENHTML_OPTIONS="--ignore-errors inconsistent" \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
       - name: Upload extended coverage report
