@@ -2674,6 +2674,7 @@ extern int		procedure_list_add (struct cb_program *program,
 extern int		cb_flag_memory_check;
 
 extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
+extern const char *	cb_close_mode_to_string (const enum cob_close_mode);
 
 /* scanner.l */
 extern void		cb_unput_dot (void);

@@ -11316,6 +11316,22 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 }
 
 const char *
+cb_close_mode_to_string (const enum cob_close_mode mode)
+{
+	switch (mode) {
+	case COB_CLOSE_NORMAL:		return CB_XSTRINGIFY (COB_CLOSE_NORMAL);
+	case COB_CLOSE_LOCK:		return CB_XSTRINGIFY (COB_CLOSE_LOCK);
+	case COB_CLOSE_NO_REWIND:	return CB_XSTRINGIFY (COB_CLOSE_NO_REWIND);
+	case COB_CLOSE_UNIT:		return CB_XSTRINGIFY (COB_CLOSE_UNIT);
+	case COB_CLOSE_UNIT_REMOVAL:	return CB_XSTRINGIFY (COB_CLOSE_UNIT_REMOVAL);
+	}
+	/* LCOV_EXCL_START */
+	cobc_err_msg ("unexpected cob_close_mode");
+	COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
+}
+
+const char *
 cb_open_mode_to_string (const enum cob_open_mode mode)
 {
 	switch (mode) {

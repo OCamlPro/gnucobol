@@ -37,6 +37,11 @@
 	* tree.c (cb_file_errtype): new enum, containing and used instead of
 	  previous #define'd constants
 
+2026-10-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (cb_close_mode_to_string), tree.h: new function
+	* typeck.c (cb_emit_close): use it to output cob_close_mode names
+
 2026-10-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* cobc.c (process_command_line): -Wno-error=warning now also excludes

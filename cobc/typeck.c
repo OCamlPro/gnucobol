@@ -9146,6 +9146,7 @@ void
 cb_emit_close (cb_tree file, cb_tree opt)
 {
 	struct cb_file	*f;
+	cb_tree		close_mode;
 
 	file = cb_ref (file);
 	if (file == cb_error_node) {
@@ -9159,12 +9160,13 @@ cb_emit_close (cb_tree file, cb_tree opt)
 				_("%s not allowed on %s files"), "CLOSE", "SORT");
 	}
 
+	close_mode = cb_build_direct (cb_close_mode_to_string (CB_INTEGER (opt)->val), 0);
 	if (f->extfh) {
 		cb_emit (CB_BUILD_FUNCALL_5 ("cob_extfh_close", f->extfh, file,
-					     f->file_status, opt, cb_int0));
+					     f->file_status, close_mode, cb_int0));
 	} else {
 		cb_emit (CB_BUILD_FUNCALL_4 ("cob_close", file,
-					     f->file_status, opt, cb_int0));
+					     f->file_status, close_mode, cb_int0));
 	}
 
 	/* Check for file debugging */

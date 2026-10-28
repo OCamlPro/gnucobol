@@ -1,4 +1,10 @@
 
+2026-10-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h (cob_close_mode): new enum instead of #define'd constants
+	* common.h, fileio.c (cob_fileio_funcs): move to fileio.c, use cob_close_mode
+	* fileio.c (cob_file_close, indexed_close): use cob_close_mode
+
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* profiling.c: fixed memory-leak on profile ending
