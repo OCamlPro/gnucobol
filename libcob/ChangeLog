@@ -66,6 +66,16 @@
 	  a global scope request, independent of COB_LOAD_GLOBAL setting
 	* common.c: minimal refactor
 
+2026-09-08  David Declerck <david.declerck@ocamlpro.com>
+
+	Note: partial merge of 4674 (cob_file_operation enum)
+
+	* fileio.c (cob_file_fcd_sync): move reset of last_operation
+	  to save_status to fix a bug (ineffective COB_SYNC)
+	* fileio.c (cob_sync): add missing condition - fflush
+	  should only be called when the last operation is a write
+	  (follow-up to 2026-08-13)
+
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* profiling.c (print_stack): export/debug option with environment
@@ -1872,6 +1882,11 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* mlio.c: code refactoring and minor improvements for XML GENERATE
 	  and JSON GENERATE (including bug-fix: COUNT IN sets variable,
 	  not increments it)
+
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_file_operation): moved defines to enum
+	* common.h (cob_file), fileio.c: adjusted to use new enums
 
 2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
