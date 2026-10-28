@@ -561,9 +561,10 @@ jobs:
         run: |
           # make -C _build check-code-coverage # <- (ignores errors)
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-          # lcov 2.x: statement.def lines have differing branch data
+          # lcov 2.x: ignore inconsistent branch data
           make -C _build code-coverage-capture \
-                         CODE_COVERAGE_GENHTML_OPTIONS="--ignore-errors inconsistent" \
+                         CODE_COVERAGE_LCOV_SHOPTS="--rc lcov_branch_coverage=1 --ignore-errors inconsistent" \
+                         CODE_COVERAGE_GENHTML_OPTIONS="--rc genhtml_branch_coverage=1 --ignore-errors inconsistent,range" \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
       - name: Upload testsuite.log
@@ -593,7 +594,8 @@ jobs:
           make -C _build code-coverage-capture                            \
                          CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
                          CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
-                         CODE_COVERAGE_GENHTML_OPTIONS="--ignore-errors inconsistent" \
+                         CODE_COVERAGE_LCOV_SHOPTS="--rc lcov_branch_coverage=1 --ignore-errors inconsistent" \
+                         CODE_COVERAGE_GENHTML_OPTIONS="--rc genhtml_branch_coverage=1 --ignore-errors inconsistent,range" \
                          CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
 
       - name: Upload extended coverage report
