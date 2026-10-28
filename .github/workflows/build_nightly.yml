@@ -353,7 +353,7 @@ jobs:
   build_32_bit:
     name: Build and test on 32-bit
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # latest does not provide old gcc 9 we test here
     timeout-minutes: 10   # usually around 4-5 minutes
     strategy:
       fail-fast: true
