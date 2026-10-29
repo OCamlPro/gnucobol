@@ -369,6 +369,32 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([invalid file names])
+AT_KEYWORDS([cobc runmisc])
+
+AT_CHECK([echo "DISPLAY 'x'." | $COMPILE_ONLY -free -frelax-syntax-checks - -], [1], [],
+[cobc: only one stdin input allowed
+])
+
+AT_CHECK([$COMPILE_ONLY 'a*/'b.cob prog.cob], [1], [],
+[cobc: file name may not contain '*'
+])
+
+AT_CHECK([$COMPILE_ONLY 'a?b.cob' prog.cob], [1], [],
+[cobc: file name may not contain '?'
+])
+
+AT_CHECK([$COMPILE_ONLY '"a"'b.cob prog.cob], [1], [],
+[cobc: file name may not contain '"'
+])
+
+AT_CHECK([$COMPILE_ONLY "'a'"b.cob prog.cob], [1], [],
+[cobc: file name may not contain '''
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([temporary path invalid])
 AT_KEYWORDS([cobc runmisc])
 
@@ -1612,8 +1638,8 @@ prog.cob:14: termination (signal SIGTERM)
 AT_CLEANUP
 
 
-AT_SETUP([EBCDIC /ASCII table generation])
-AT_KEYWORDS([runmisc gentable])
+AT_SETUP([EBCDIC/ASCII table generation])
+AT_KEYWORDS([runmisc gentable ASCII EBCDIC])
 
 AT_SKIP_IF([test "$COB_HAS_ICONV" = "no"])
 

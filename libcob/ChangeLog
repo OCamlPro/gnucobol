@@ -1,4 +1,24 @@
 
+2026-10-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	by Arkadiy Agheieff (LLM-assisted research: DeepSeek V4.1 Flash 1017):
+	* call.c (cob_call): arguments 152+153 were never passed when C-API was
+	  used (no effect on cobc generated modules)
+	* intrinsic.c (cob_intr_seconds_from_formatted_time): early exit for
+	  invalid length of variable-defined format instead of unchecked memcpy
+
+	* intrinsic.c: replaced all uses of copy_data_to_null_terminated_str and
+	  num_leading_nonspace, which stopped for performance reasons at the first
+	  space, by cob_field_to_string which does an effective rtrim and returns
+	  the size (negative if cut)
+	* intrinsic.c (copy_data_to_null_terminated_str, num_leading_nonspace):
+	  no longer used -> removed
+	* intrinsic.c (calc_ref_mod): check and set EC-REF-MOD - previously
+	  out-of-bounds reference-modification was silently ignored
+	* intrinsic.c: all formatted date/time functions correctly verify their
+	  given format now, instead of ignoring invalid data after a valid format
+	  specifier
+
 2026-10-16  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h (cob_close_mode): new enum instead of #define'd constants

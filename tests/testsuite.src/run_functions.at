@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023, 2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -4293,7 +4293,9 @@ AT_CLEANUP
 
 AT_SETUP([Formatted funcs w/ invalid variable format])
 AT_KEYWORDS([functions FORMATTED-CURRENT-DATE FORMATTED-DATE
-FORMATTED-TIME FORMATTED-DATETIME])
+FORMATTED-TIME FORMATTED-DATETIME SECONDS-FROM-FORMATTED-TIME
+FORMATTED-CURRENT-DATE INTEGER-OF-FORMATTED-DATE TEST-FORMATTED-DATETIME
+EXCEPTION-STATUS EXCEPTION-LOCATION])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4304,70 +4306,198 @@ AT_DATA([prog.cob], [
        01  invalid-datetime-format      PIC X(17)
                                         VALUE "yyyymmddtHHMMSS".
        01  invalid-time-format          PIC X(6) VALUE "HHMMSS".
+      *
+       01  valid-start-date-format.
+           03 filler                    PIC X(010) VALUE "YYYY-MM-DD".
+           03 vsdf-space                PIC X      VALUE SPACE.
+           03 filler                    PIC X(200) VALUE ALL "a".
+           03 filler                    PIC X(100) VALUE SPACE.
+       01  valid-start-datetime-format.
+           03 filler                    PIC X(019)
+                                        VALUE "YYYYDDDThhmmss+hhmm".
+           03 vsdtf-space               PIC X      VALUE SPACE.
+           03 filler                    PIC X(200) VALUE ALL "a".
+           03 filler                    PIC X(100) VALUE SPACE.
+       01  valid-start-time-format.
+           03 filler                    PIC X(010) VALUE "hhmmss.ssZ".
+           03 vstf-space                PIC X      VALUE SPACE.
+           03 filler                    PIC X(200) VALUE ALL "a".
+           03 filler                    PIC X(100) VALUE SPACE.
+      *
        PROCEDURE        DIVISION.
            IF FUNCTION FORMATTED-CURRENT-DATE
                            (invalid-date-format) <> SPACES
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 11"
-               DISPLAY "Test 1 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 29"
+               DISPLAY "Test 1 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            IF FUNCTION FORMATTED-DATE (invalid-date-format, 1) <> SPACES
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 18"
-               DISPLAY "Test 2 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 36"
+               DISPLAY "Test 2 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            IF FUNCTION FORMATTED-DATETIME
                            (invalid-datetime-format, 1, 1) <> SPACES
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 24"
-               DISPLAY "Test 3 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 42"
+               DISPLAY "Test 3 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            IF FUNCTION FORMATTED-TIME (invalid-time-format, 1) <> SPACES
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 31"
-               DISPLAY "Test 4 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 49"
+               DISPLAY "Test 4 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            IF FUNCTION INTEGER-OF-FORMATTED-DATE
                            (invalid-date-format, 1) <> ZERO
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 37"
-               DISPLAY "Test 5 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 55"
+               DISPLAY "Test 5 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            IF FUNCTION SECONDS-FROM-FORMATTED-TIME
                            (invalid-time-format, 1) <> ZERO
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 44"
-               DISPLAY "Test 6 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 62"
+               DISPLAY "Test 6 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            IF FUNCTION TEST-FORMATTED-DATETIME
                            (invalid-datetime-format, 1) <> ZERO
                   OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
-                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 51"
-               DISPLAY "Test 7 failed" END-DISPLAY
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 69"
+               DISPLAY "Test 7 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+      *>   bad data (after "separator" space)
+           IF FUNCTION FORMATTED-CURRENT-DATE
+                           (valid-start-date-format) <> SPACES
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 77"
+               DISPLAY "Test B1 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION FORMATTED-DATE (valid-start-date-format, 1)<>" "
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 84"
+               DISPLAY "Test B2 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION FORMATTED-DATETIME
+                           (valid-start-datetime-format, 1, 1) <> SPACES
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 90"
+               DISPLAY "Test B3 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION FORMATTED-TIME (valid-start-time-format, 1)<>" "
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 97"
+               DISPLAY "Test B4 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION INTEGER-OF-FORMATTED-DATE
+                           (valid-start-date-format, 1) <> ZERO
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 103"
+               DISPLAY "Test B5 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION SECONDS-FROM-FORMATTED-TIME
+                           (valid-start-time-format, 1) <> ZERO
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 110"
+               DISPLAY "Test B6 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION TEST-FORMATTED-DATETIME
+                           (valid-start-datetime-format, 1) <> ZERO
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 117"
+               DISPLAY "Test B7 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+      *>   bad data (possible overflow)
+           MOVE "A" TO vsdf-space vstf-space vsdtf-space
+
+           IF FUNCTION FORMATTED-CURRENT-DATE
+                           (valid-start-date-format) <> SPACES
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 127"
+               DISPLAY "Test C1 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION FORMATTED-DATE (valid-start-date-format, 1)<>" "
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 134"
+               DISPLAY "Test C2 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION FORMATTED-DATETIME
+                           (valid-start-datetime-format, 1, 1) <> SPACES
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 140"
+               DISPLAY "Test C3 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION FORMATTED-TIME (valid-start-time-format, 1)<>" "
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 147"
+               DISPLAY "Test C4 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION INTEGER-OF-FORMATTED-DATE
+                           (valid-start-date-format, 1) <> ZERO
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 153"
+               DISPLAY "Test C5 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION SECONDS-FROM-FORMATTED-TIME
+                           (valid-start-time-format, 1) <> ZERO
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 160"
+               DISPLAY "Test C6 failed at " FUNCTION EXCEPTION-LOCATION
+           END-IF
+
+           IF FUNCTION TEST-FORMATTED-DATETIME
+                           (valid-start-datetime-format, 1) <> ZERO
+                  OR FUNCTION EXCEPTION-STATUS <> "EC-ARGUMENT-FUNCTION"
+                  OR FUNCTION EXCEPTION-LOCATION <> "prog; ; 167"
+               DISPLAY "Test C7 failed at " FUNCTION EXCEPTION-LOCATION
            END-IF
 
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:11: warning: FUNCTION 'FORMATTED-CURRENT-DATE' has format in variable
-prog.cob:18: warning: FUNCTION 'FORMATTED-DATE' has format in variable
-prog.cob:24: warning: FUNCTION 'FORMATTED-DATETIME' has format in variable
-prog.cob:31: warning: FUNCTION 'FORMATTED-TIME' has format in variable
-prog.cob:37: warning: FUNCTION 'INTEGER-OF-FORMATTED-DATE' has format in variable
-prog.cob:44: warning: FUNCTION 'SECONDS-FROM-FORMATTED-TIME' has format in variable
-prog.cob:51: warning: FUNCTION 'TEST-FORMATTED-DATETIME' has format in variable
+[prog.cob:29: warning: FUNCTION 'FORMATTED-CURRENT-DATE' has format in variable
+prog.cob:36: warning: FUNCTION 'FORMATTED-DATE' has format in variable
+prog.cob:42: warning: FUNCTION 'FORMATTED-DATETIME' has format in variable
+prog.cob:49: warning: FUNCTION 'FORMATTED-TIME' has format in variable
+prog.cob:55: warning: FUNCTION 'INTEGER-OF-FORMATTED-DATE' has format in variable
+prog.cob:62: warning: FUNCTION 'SECONDS-FROM-FORMATTED-TIME' has format in variable
+prog.cob:69: warning: FUNCTION 'TEST-FORMATTED-DATETIME' has format in variable
+prog.cob:77: warning: FUNCTION 'FORMATTED-CURRENT-DATE' has format in variable
+prog.cob:84: warning: FUNCTION 'FORMATTED-DATE' has format in variable
+prog.cob:90: warning: FUNCTION 'FORMATTED-DATETIME' has format in variable
+prog.cob:97: warning: FUNCTION 'FORMATTED-TIME' has format in variable
+prog.cob:103: warning: FUNCTION 'INTEGER-OF-FORMATTED-DATE' has format in variable
+prog.cob:110: warning: FUNCTION 'SECONDS-FROM-FORMATTED-TIME' has format in variable
+prog.cob:117: warning: FUNCTION 'TEST-FORMATTED-DATETIME' has format in variable
+prog.cob:127: warning: FUNCTION 'FORMATTED-CURRENT-DATE' has format in variable
+prog.cob:134: warning: FUNCTION 'FORMATTED-DATE' has format in variable
+prog.cob:140: warning: FUNCTION 'FORMATTED-DATETIME' has format in variable
+prog.cob:147: warning: FUNCTION 'FORMATTED-TIME' has format in variable
+prog.cob:153: warning: FUNCTION 'INTEGER-OF-FORMATTED-DATE' has format in variable
+prog.cob:160: warning: FUNCTION 'SECONDS-FROM-FORMATTED-TIME' has format in variable
+prog.cob:167: warning: FUNCTION 'TEST-FORMATTED-DATETIME' has format in variable
 ])
 
-# running the program
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
 
 AT_CLEANUP
 

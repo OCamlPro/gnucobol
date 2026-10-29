@@ -2707,7 +2707,7 @@ if test "x$lt_cv_dlopen_self" != xyes; then
 	AC_DEFINE([COB_NO_SELFOPEN], [1])
 fi
 
-if test "$with_iconv" = yes; then
+if test "$am_func_iconv" = yes; then
 	COB_HAS_ICONV=yes
 else
 	COB_HAS_ICONV=no
