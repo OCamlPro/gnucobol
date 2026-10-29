@@ -319,7 +319,8 @@ cb_evaluate_expr (cb_tree ch, int normal_prec)
 					unop = 1;
 					break;
 				default:
-					cb_error (_("invalid operator '%s' in expression"),lp->data);
+					cb_error (_("invalid operator '%s' in expression"),
+						lp->data);
 					break;
 				}
 			}

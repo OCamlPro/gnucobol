@@ -2662,8 +2662,8 @@ hash_word (const cob_c8_t *word)
 
 	/* Perform 32-bit FNV1a hash */
 	for (; *word; ++word) {
-		result ^= toupper(*word);
-		result *= (cob_u32_t) 0x1677619;
+		result ^= toupper (*word);
+		result *= (cob_u32_t) 0x01000193;
 	}
 
 	return result;

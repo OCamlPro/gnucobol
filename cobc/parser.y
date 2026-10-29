@@ -591,43 +591,72 @@ is_valid_statement_tree (cb_tree tree) {
 	return 1;
 }
 
-static void
-emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree convention)
+/* constant hash filter map */
+#define ENTRY_FILTER_BITS	0x100000U		/* 2^20 = 1048576 bits */
+static unsigned char	entry_filter[ENTRY_FILTER_BITS / 8];	/* 0x20000 = 131072 bytes */
+/* Fibonacci hashing: take the top bits of a multiplied hash */
+#define ENTRY_BIT(h)	(((h) * 0x9e3779b1U) >> 12)	/* 32 - 20 = 12 */
+
+/* calculate name_hash, attach to p78 and add it to a filter list,
+   preventing unnecessary loops over constants later */
+static COB_INLINE COB_A_INLINE void
+add_entry_hash (const cob_u32_t hash)
 {
-	cb_tree		l;
-	cb_tree		label;
-	cb_tree		entry_conv;
+	entry_filter[ENTRY_BIT (hash) >> 3] |= 1U << (ENTRY_BIT (hash) & 7);
+}
+
+/* check if name_hash is potentially in the list of stored values */
+static COB_INLINE COB_A_INLINE int
+possibly_defined_entry_hash (const cob_u32_t hash)
+{
+	return entry_filter[ENTRY_BIT (hash) >> 3] & (1U << (ENTRY_BIT (hash) & 7));
+}
+
+static void
+emit_entry (const char *name, const int encode, const int validate,
+		cb_tree using_list, cb_tree convention)
+{
 	char		buff[COB_MINI_BUFF];
+	struct cb_label	*label;
+	cb_tree		l;
+	cb_tree		entry_conv;
 
 	snprintf (buff, (size_t)COB_MINI_MAX, "E$%s", name);
-	label = cb_build_label (cb_build_reference (buff), NULL);
+	l = cb_build_label (cb_build_reference (buff), NULL);
+	label = CB_LABEL (l);
 	if (encode) {
-		CB_LABEL (label)->name = cb_encode_program_id (name, 0, cb_fold_call);
-		CB_LABEL (label)->orig_name = name;
+		label->name = cb_encode_program_id (name, 0, cb_fold_call);
+		label->orig_name = name;
 	} else {
-		CB_LABEL (label)->name = name;
-		CB_LABEL (label)->orig_name = current_program->orig_program_id;
+		label->name = name;
+		label->orig_name = current_program->orig_program_id;
 	}
-	CB_LABEL (label)->flag_begin = 1;
-	CB_LABEL (label)->flag_entry = 1;
-	emit_statement (label);
+	label->flag_begin = 1;
+	label->flag_entry = 1;
+	emit_statement (l);
 
 	if (current_program->flag_debugging) {
 		emit_statement (cb_build_debug (cb_debug_contents,
 						"START PROGRAM", NULL));
 	}
 
-	cb_validate_parameters_and_returning (current_program, using_list);
+	if (validate) {
+		cb_validate_parameters_and_returning (current_program, using_list);
+	}
 
-	for (l = current_program->entry_list; l; l = CB_CHAIN (l)) {
-		struct cb_label *check = CB_LABEL (CB_PURPOSE (l));
-		if (strcmp (name, check->name) == 0) {
-			cb_error_x (current_statement
-					? CB_TREE (current_statement)
-					: CB_TREE (current_program),
-				    _("ENTRY '%s' duplicated"), name);
+	if (possibly_defined_entry_hash (label->name_hash)) {
+		for (l = current_program->entry_list; l; l = CB_CHAIN (l)) {
+			struct cb_label *check = CB_LABEL (CB_PURPOSE (l));
+			if (check->name_hash == label->name_hash
+			 && strcmp (name, check->name) == 0) {
+				cb_error_x (current_statement
+						? CB_TREE (current_statement)
+						: CB_TREE (current_program),
+					    _("ENTRY '%s' duplicated"), name);
+			}
 		}
 	}
+	add_entry_hash (label->name_hash);
 
 	if (convention) {
 		entry_conv = convention;
@@ -635,9 +664,13 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 		entry_conv = current_program->entry_convention;
 	}
 
-	current_program->entry_list =
-		cb_list_append (current_program->entry_list,
-				CB_BUILD_PAIR (label, CB_BUILD_PAIR (entry_conv, using_list)));
+	{
+		/* put new entry to start of the list */
+    	cb_tree pair = CB_BUILD_PAIR
+			(CB_TREE (label), CB_BUILD_PAIR (entry_conv, using_list));
+		CB_CHAIN (pair) = current_program->entry_list;
+		current_program->entry_list = pair;
+	}
 }
 
 /* Main entry point and the number of its main parameters */
@@ -648,45 +681,49 @@ emit_main_entry (struct cb_program *program, cb_tree using_list)
 		program->num_proc_params = cb_list_length (using_list);
 	}
 
-	emit_entry (program->program_id, 0, using_list, NULL);
+	emit_entry (program->program_id, 0, 1, using_list, NULL);
+	program->main_using = using_list;
 	if (program->source_name) {
-		emit_entry (program->source_name, 1, using_list, NULL);
+		emit_entry (program->source_name, 1, 0, using_list, NULL);
 	}
 }
 
 static void
 emit_entry_goto (const char *name)
 {
-	cb_tree		l;
-	cb_tree		label;
 	char		buff[COB_MINI_BUFF];
+	struct cb_label	*label;
+	cb_tree		l, x;
 
 	snprintf (buff, (size_t)COB_MINI_MAX, "E$%s", name);
-	label = cb_build_label (cb_build_reference (buff), NULL);
-	CB_LABEL (label)->name = name;
-	CB_LABEL (label)->orig_name = name;
-	CB_LABEL (label)->flag_begin = 1;
-	CB_LABEL (label)->flag_entry = 1;
-	CB_LABEL (label)->flag_entry_for_goto = 1;
+	x = cb_build_label (cb_build_reference (buff), NULL);
+	label = CB_LABEL (x);
+	label->name = name;
+	label->orig_name = name;
+	label->flag_begin = 1;
+	label->flag_entry = 1;
+	label->flag_entry_for_goto = 1;
 #if 0	/* seems to be not necessary */
-	copy_pos (label, current_statement);
+	copy_pos (x, current_statement);
 #endif
-	emit_statement (label);
+	emit_statement (x);
 
-	for (l = current_program->entry_list_goto; l; l = CB_CHAIN (l)) {
-		struct cb_label *real_label = CB_LABEL (CB_VALUE (l));
-		if (strcmp (name, real_label->name) == 0) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("ENTRY FOR GO TO '%s' duplicated"), name);
+	if (possibly_defined_entry_hash (label->name_hash)) {
+		for (l = current_program->entry_list_goto; l; l = CB_CHAIN (l)) {
+			const struct cb_label	*check = CB_LABEL (l);
+			if (check->name_hash == label->name_hash
+			 && strcmp (name, check->name) == 0) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("ENTRY FOR GO TO '%s' duplicated"), name);
+			}
 		}
 	}
+	add_entry_hash (label->name_hash);
 
-	if (current_program->entry_list_goto) {
-		current_program->entry_list_goto =
-			cb_list_add (current_program->entry_list_goto, label);
-	} else {
-		current_program->entry_list_goto = CB_LIST_INIT (label);
-	}
+	/* put new entry to start of the list */
+	x = CB_LIST_INIT (x);
+	CB_CHAIN (x) = current_program->entry_list_goto;
+	current_program->entry_list_goto = x;
 }
 
 static size_t
@@ -1251,6 +1288,7 @@ clear_initial_values (void)
 	report_instance = NULL;
 	next_label_list = NULL;
 	default_rounded_mode = cb_int (COB_STORE_ROUND);
+	memset (entry_filter, 0, sizeof (entry_filter));
 }
 
 /*
@@ -3697,7 +3735,6 @@ start:
   {
 	const char *backup_source_file = cb_source_file;
 
-	clear_initial_values ();
 	defined_prog_list = NULL;
 	__CS_CLEAR_ALL ();
 	main_flag_set = 0;
@@ -11508,8 +11545,9 @@ procedure:
 		plabel = cb_build_label (cb_build_reference (name), NULL);
 		CB_LABEL (plabel)->flag_next_sentence = 1;
 		emit_statement (plabel);
-		current_program->label_list =
-			cb_list_append (current_program->label_list, next_label_list);
+
+		CB_CHAIN (next_label_list) = current_program->label_list;
+		current_program->label_list = next_label_list;
 		next_label_list = NULL;
 		next_label_id++;
 	}
@@ -11819,8 +11857,11 @@ statement:
 		begin_statement (STMT_NEXT_SENTENCE, 0);
 		sprintf (name, "L$%d", next_label_id);
 		label = cb_build_reference (name);
-		next_label_list = cb_list_add (next_label_list, label);
 		emit_statement (cb_build_goto (label, NULL, CB_GOTO_FLAG_SAME_PARAGRAPH));
+		
+		label = CB_LIST_INIT (label);
+		CB_CHAIN (label) = next_label_list;
+		next_label_list = label;
 	} else {
 		cb_tree note = cb_build_comment ("skipped NEXT SENTENCE");
 		emit_statement (note);
@@ -14154,6 +14195,7 @@ entry_body:
 	} else if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
 		cb_error (_("%s is invalid in a user FUNCTION"), "ENTRY");
 	} else if (cb_verify (cb_entry_statement, "ENTRY")) {
+		const char *name = (char *)(CB_LITERAL ($2)->data);
 		cb_tree call_conv = $1;
 		if ($3) {
 			call_conv = $3;
@@ -14163,8 +14205,8 @@ entry_body:
 					"CALL-CONVENTION", "WITH LINKAGE");
 			}
 		}
-		if (!cobc_check_valid_name ((char *)(CB_LITERAL ($2)->data), ENTRY_NAME)) {
-			emit_entry ((char *)(CB_LITERAL ($2)->data), 1, $4, call_conv);
+		if (!cobc_check_valid_name (name, ENTRY_NAME)) {
+			emit_entry (name, 1, 1, $4, call_conv);
 		}
 		emit_prof_call (COB_PROF_USE_PARAGRAPH_ENTRY,
 				(char *)(CB_LITERAL ($2)->data), $2 );
@@ -15853,8 +15895,14 @@ perform_procedure:
 	/* Return from $3 */
 	CB_REFERENCE ($3)->length = cb_true;
 	$$ = CB_BUILD_PAIR ($1, $3);
-	current_program->perform_thru_list =
-		cb_list_add (current_program->perform_thru_list, $$);
+	if (cb_flag_section_exit_check
+	 || get_warn_opt_value (cb_warn_suspicious_perform_thru) != COBC_WARN_DISABLED) {
+		/* TODO: only add if not already contained, or drop
+		   duplicate entries once resolved */
+		/* put new entry to start of the list */
+    	CB_CHAIN ($$) = current_program->perform_thru_list;
+		current_program->perform_thru_list = $$;
+	}
   }
 ;
 
@@ -17675,13 +17723,13 @@ program_start_end:
   {
 	emit_statement (cb_build_comment ("USE AT PROGRAM START"));
 	CB_PENDING ("USE AT PROGRAM START");
-	/* emit_entry ("_AT_START", 0, NULL, NULL); */
+	/* emit_entry ("_AT_START", 0, 0, NULL, NULL); */
   }
 | END
   {
 	emit_statement (cb_build_comment ("USE AT PROGRAM END"));
 	CB_PENDING ("USE AT PROGRAM END");
-	/* emit_entry ("_AT_END", 0, NULL, NULL); */
+	/* emit_entry ("_AT_END", 0, 0, NULL, NULL); */
   }
 ;
 
@@ -17739,7 +17787,7 @@ use_exception:
 		}
 	}
 	current_section->flag_real_label = 1;
-	emit_statement(cb_build_comment("USE AFTER EXCEPTION CONDITION"));
+	emit_statement (cb_build_comment ("USE AFTER EXCEPTION CONDITION"));
 	CB_PENDING ("USE AFTER EXCEPTION CONDITION");
   }
 ;
@@ -19200,13 +19248,16 @@ procedure_name:
   label
   {
 	struct cb_reference *r = CB_REFERENCE ($1);
+	cb_tree l;
 
 	r->offset = CB_TREE (current_section);
 	r->flag_in_decl = !!in_declaratives;
 	r->flag_ignored = cb_set_ignore_error (-1);
 
 	$$ = $1;
-	CB_ADD_TO_CHAIN ($1, current_program->label_list);
+	l = CB_LIST_INIT ($1);	
+	CB_CHAIN (l) = current_program->label_list;
+	current_program->label_list = l;
   }
 ;
 

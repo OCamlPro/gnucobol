@@ -4364,7 +4364,7 @@ hash_single_word (const cob_c8_t *word)
 	for (; *word; ++word) {
 		/* CHECKME: all input should be upper-case already, but isn't */
 		result ^= res_toupper (*word);
-		result *= (cob_u32_t) 0x1677619;
+		result *= (cob_u32_t) 0x01000193;
 	}
 
 	return result;

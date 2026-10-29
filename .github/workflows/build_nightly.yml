@@ -353,7 +353,7 @@ jobs:
   build_32_bit:
     name: Build and test on 32-bit
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # latest does not provide old gcc 9 we test here
     timeout-minutes: 10   # usually around 4-5 minutes
     strategy:
       fail-fast: true
@@ -544,7 +544,7 @@ jobs:
           mkdir _build && cd _build
           ../configure --enable-code-coverage \
                        --with-db --with-xml2 --with-json=cjson --with-curses=ncursesw \
-                       CC="gcc -std=c89" \
+                       CFLAGS="-std=c89" \
                        CPPFLAGS="-Werror=declaration-after-statement"
 
       - name: Upload config.log
@@ -562,7 +562,9 @@ jobs:
           # make -C _build check-code-coverage # <- (ignores errors)
           make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
           make -C _build code-coverage-capture \
-                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
+                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build" \
+                         CODE_COVERAGE_LCOV_SHOPTS="--rc lcov_branch_coverage=1 --ignore-errors inconsistent" \
+                         CODE_COVERAGE_GENHTML_OPTIONS="--rc genhtml_branch_coverage=1 --ignore-errors inconsistent,range"
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}
@@ -591,7 +593,9 @@ jobs:
           make -C _build code-coverage-capture                            \
                          CODE_COVERAGE_OUTPUT_DIRECTORY=extended-coverage \
                          CODE_COVERAGE_OUTPUT_FILE=extended-coverage.info \
-                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"
+                         CODE_COVERAGE_DIRECTORY="$(realpath .)/_build"   \
+                         CODE_COVERAGE_LCOV_SHOPTS="--rc lcov_branch_coverage=1 --ignore-errors inconsistent" \
+                         CODE_COVERAGE_GENHTML_OPTIONS="--rc genhtml_branch_coverage=1 --ignore-errors inconsistent,range"
 
       - name: Upload extended coverage report
         uses: actions/upload-artifact@v7

@@ -184,8 +184,9 @@ static void insert_copy_arg (void)
 {
 	if (copy_list_pointer != NULL){
 		int ret = ppcopy (copy_list_pointer->text, NULL, NULL);
-		if ( ret < 0 ){ /* This should never happen, as we already test it before */
+		if (ret < 0) { /* This should never happen, as we already test it before */
 			cobc_err_msg (_("fatal error: %s"), "could not find --copy argument");
+			plex_clear_all ();
 			cobc_abort_terminate (0);
 		}
 		copy_list_pointer = copy_list_pointer->next;
@@ -1580,8 +1581,8 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
 		plexbuff2[COB_SMALL_MAX] = 0;
 #if 0	/* TODO: output in separate COB_DEBUG_LOG */
 		printf ("checking COPY file: %s... ", plexbuff2);
-			printf ("Found!\n");
-			printf ("%s\n", cb_get_strerror ());
+		printf ("Found!\n");
+		printf ("%s\n", cb_get_strerror ());
 #endif
 		/* Must be an accessible, regular file */
 		if (access (plexbuff2, R_OK) == 0
@@ -1992,6 +1993,13 @@ plex_clear_all (void)
 	if (plexbuff2) {
 		cobc_free (plexbuff2);
 		plexbuff2 = NULL;
+	}
+
+	/* only relevant in case of fatal errors before EOF */
+	cb_free_replace ();	
+	if (ppin) {
+		fclose (ppin);
+		ppin = NULL;
 	}
 }
 
