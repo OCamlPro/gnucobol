@@ -106,6 +106,13 @@
 #define	CB_COPT_2	" /O2"
 #define	CB_COPT_3	" /Ox"
 #define	CB_COPT_S	" /Os"
+#ifdef _DEBUG
+#define CB_MSC_CRT	" /MDd"
+#define CB_MSC_CRT_DLL	" /LDd"
+#else
+#define CB_MSC_CRT	" /MD"
+#define CB_MSC_CRT_DLL	" /LD"
+#endif
 
 #elif   defined(__BORLANDC__)
 #define	CB_COPT_0	" -O"

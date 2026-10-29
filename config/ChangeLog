@@ -1,4 +1,9 @@
 
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* runtime.cfg: add runtime configuration COB_SIGNAL_REGIME to allow
+	  configuration of installed signal handlers
+
 2025-04-22  Chuck Haatvedt  <chuck.haatvedt+cobol@gmail.com>
 
 	* runtime.cfg: add runtime configuration COB_HEAP_MEMORY and
