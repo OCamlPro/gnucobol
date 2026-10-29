@@ -108,7 +108,7 @@
 	/* list of available heaps for VFILE routines,
 	   note that these are explicit not thread-local
 	   but static over all threads */
-	static HEAP_ENTRY		heap_array[MAX_HEAP] = { 0 };
+	static HEAP_ENTRY		heap_array[MAX_HEAP] = {{ 0 }};
 
 /* Define some characters for checking LINE SEQUENTIAL data content */
 #define COB_CHAR_CR	'\r'

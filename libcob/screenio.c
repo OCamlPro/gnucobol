@@ -4719,6 +4719,7 @@ cob_exit_screen (void)
 		}
 	}
 	COB_ACCEPT_STATUS = 0;
+	cobglobptr = NULL;
 }
 
 /* minimal exit from curses screen - without any cleanup */

@@ -90,8 +90,11 @@ gentable (FILE *stream, const char *code_ebcdic, const char *code_ascii, char re
 					--ascii_size;
 					++nb_irreversible;
 				} else {
-					cb_error (_("an error occurred after converting %ld characters"),
-							(ebcdic_ptr - ebcdic));
+					/* note: we iterate over a single-byte iteration with UCHAR_MAX
+					   elements, then subtract the offset pointer from the start
+					   --> %d is more than enough, a wider type warns on 32bit */
+					cb_error (_("an error occurred after converting %d characters"),
+							(int)(ebcdic_ptr - ebcdic));
 					iconv_close (ic);
 					return -1;
 				}

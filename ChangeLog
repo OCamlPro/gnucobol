@@ -1,8 +1,25 @@
 
+2026-10-29  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: if the default C standard (C23) rejects unprototyped
+	  function calls, add the first of -std=gnu17/c17/gnu11/c11/gnu99/c99
+	  that accepts them
+
 2025-11-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix linking order for PANEL_LIBS
 	* configure.ac: ignore CURSES_LIBS and PANEL_LIBS for --without-curses
+
+2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* configure.ac: pass HAVE_SIGNAL_H to the tests to indicate whether
+	  signal.h exists
+	* NEWS: note about new runtime configuration option COB_SIGNAL_REGIME
+
+2025-11-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: prefer "inline" over "__inline" as the second raises
+	  spurious warnings about always_inline attribute with GCC15
 
 2025-10-20  Simon Sobisch <simonsobisch@gnu.org>
 
