@@ -18949,7 +18949,7 @@ exp_term:
 ;
 
 exp_factor:
-  exp_unary EXPONENTIATION exp_factor
+  exp_factor EXPONENTIATION exp_unary
   {
 	$$ = cb_build_binary_op ($1, '^', $3);
   }

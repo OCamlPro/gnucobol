@@ -1,4 +1,8 @@
 
+2026-10-30  Sergey Kashyrin <ska@kiska.net>
+
+	* parser.y (exp_factor): fix ordering for A ** B ** C
+
 2026-10-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_filename): don't allow filenames with contained
