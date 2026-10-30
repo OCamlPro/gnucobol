@@ -18,6 +18,20 @@
 	* fbdb.c (ix_bdb_open): call ix_bdb_close to cleanup on
 	* cobcapi.c (cob_get_buff): protect call to cob_free
 
+2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
+	  as it is an external value.
+
+2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_open) [WITH_DB]->fbdb.c: if open was successful but checking
+	  the first record showed conflicting file attributes do an internal
+	  close before getting back to the program with io status 39
+	* fileio.c (bdb_keylen) [WITH_DB]->fsqlxfd.c: minor refactoring
+	* fileio.c (cob_file_close): close file depending on internal state, not
+	  depending on file organization
+
 2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* common.c (cob_set_signal): add the enum COB_SIGNAL_REGIME to toggle
@@ -244,6 +258,18 @@
 
 	* common.h, common.c: handle [__xlc__] identical to [__IBMC__]
 	* common.c [!SIGPIPE]: fix warning about unused jump
+
+2025-01-08  Florian Schmidt <florian.schmidt.1994@icloud.com>
+            Simon Sobisch <simonsobisch@gnu.org>
+
+  * call.c (cob_dlopen): new function used instead of partially re-defining
+    lt_dlopen; changed default to not load symbols to the global namespace
+    any more but locally (was always the case for _WIN32)
+  * common.c, coblocal.h (cob_settings): added boolean COB_LOAD_GLOBAL
+    to toggle into which namespace the symbols of CALLed programs should be
+    made available
+  * call.c (cob_dlopen, add_to_preload, cache_preload, cob_exit_call):
+    handle COB_LOAD_GLOBAL (load_global)
 
 2024-12-31  Simon Sobisch <simonsobisch@gnu.org>
 

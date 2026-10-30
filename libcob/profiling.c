@@ -87,7 +87,7 @@ static cob_ns_time
 get_ns_time (void)
 {
 	static cob_ns_time ns_time = 0;
-	if (is_test) {
+	if (cob_is_test) {
 		ns_time += 1000000;
 		return ns_time;
 	}
@@ -462,7 +462,7 @@ cob_prof_print_line (
 			case 'I':
 			case 'i':
 				if (info){
-					if (is_test){
+					if (cob_is_test){
 						fprintf (file, "%d", 123456);
 					} else {
 						fprintf (file, "%d", cob_sys_getpid());

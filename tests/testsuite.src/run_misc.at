@@ -4627,7 +4627,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4647,13 +4647,142 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([resolve / execution in parallel threads])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL cob_resolve cob_tidy pthread])
+
+# check COB_LOAD_GLOBAL=false - could fail on some environments,
+# but those are unlikely to have linkable pthreads as well
+
+AT_DATA([caller.c], [
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h> /* For POSIX threads */
+#include <dlfcn.h>   /* For dynamic library loading */
+#include <unistd.h>
+
+typedef int (*hello_world_func)(void);
+typedef void (*cob_init_func)(int, char **);
+typedef hello_world_func (*cob_resolve_func)(char *);
+typedef void (*cob_tidy_func)(void);
+
+#if defined(_WIN32)
+  #define LIB_EXT ".dll"
+#elif defined(__APPLE__)
+  #define LIB_EXT ".dylib"
+#else
+  #define LIB_EXT ".so"
+#endif
+
+/* Function to call COBOL shared library functions */
+void *callCobol() {
+   
+    const char *libCobPath = "libcob" LIB_EXT;
+    void *libCobHandle;
+    cob_init_func cob_init;
+    cob_resolve_func cob_resolve;
+    cob_tidy_func cob_tidy;
+    hello_world_func hello_world;
+
+    /* Use `dlmopen` to load a unique copy of the shared library in each thread */
+    libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    if (!libCobHandle) {
+        fprintf(stderr, "Thread %ld: Failed to load libcob with dlmopen from %s: %s\n",
+                pthread_self(), libCobPath, dlerror());
+        return NULL;
+    }
+
+#define RESOLVE_SYMBOL(symbol, type) \
+    symbol = (type) dlsym(libCobHandle, #symbol); \
+    if (!symbol) { \
+        fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
+                pthread_self(), #symbol, dlerror()); \
+        dlclose(libCobHandle); \
+        return NULL; \
+    }
+
+    /* Resolve required symbols from the COBOL library */
+    RESOLVE_SYMBOL(cob_init, cob_init_func);
+    RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
+    RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
+    cob_init(0, NULL);
+    hello_world = cob_resolve("prog");
+    if (hello_world) {
+        hello_world(); /* Call the COBOL function */
+    } else {
+        fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
+    }
+    /* Clean up COBOL resources */
+    cob_tidy();
+    dlclose(libCobHandle);
+    return NULL;
+}
+
+/* Thread function wrapper around `callCobol` */
+void *threadFunction(void *arg) {
+    long threadId = (long)arg;
+    callCobol();
+    return NULL;
+}
+
+/* Main function */
+int main() {
+    const int numThreads = 2; /* Number of threads to create */
+    pthread_t threads[[numThreads]];
+    long i;
+    int j;
+    /* Create multiple threads */
+    for (i = 0; i < numThreads; i++) {
+        if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
+            fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
+            return EXIT_FAILURE;
+        }
+    }
+    /* Wait for all threads to finish */
+    for (j = 0; j < numThreads; j++) {
+        pthread_join(threads[[j]], NULL);
+    }
+    return EXIT_SUCCESS;
+}
+])
+AT_CHECK([$CMPILE -ldl -lpthread caller.c], [0], [], [], [
+   echo "C compilation / linking failed, skipping rest of group"
+   exit 77
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield" ON EXCEPTION CONTINUE
+           END-PERFORM
+           DISPLAY "Final count: " COUNTER
+           GOBACK.
+])
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0],
+[Final count: 01000
+Final count: 01000
+], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD with entry points])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -4714,7 +4843,12 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./main-prog], [0],
+[12abc
+11
+xxxxx
+], [])
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4785,7 +4919,35 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE CALLEE.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_CASE=UPPER ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_CASE=UPPER $COBCRUN_DIRECT ./caller], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL/CANCEL with COB_LOAD_GLOBAL])
+AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_GLOBAL])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       PROCEDURE        DIVISION.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       PROCEDURE        DIVISION.
+           CALL "callee"
+           END-CALL.
+           CANCEL "callee".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE caller.cob], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
@@ -7928,7 +8090,7 @@ AT_CLEANUP
 
 # PROCEDURE DIVISION RETURNING OMITTED
 AT_SETUP([void PROCEDURE])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc RETURNING OMITTED])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -8638,7 +8800,7 @@ AT_DATA([minit.cob], [
 AT_CHECK([$COMPILE -std=mf minit.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./minit], [0], [],
 [Source: 'minit.cob'
-Program-Id:  minit 
+Program-Id:  minit
 Program-Id:  minit              Section: OTHER-SEC                       Line:     14
 Program-Id:  minit            Paragraph: EX                              Line:     16
 ])
@@ -19609,15 +19771,10 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME={0,1} registers runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
+AT_SETUP([COB_SIGNAL_REGIME 0/1 register runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
-# In some environments (e.g. MSVC), Windows does not forward signals for
-# critical errors like segmentation faults to user-defined signal handler
-# when the target program/library is compiled under the debug target, which
-# breaks COB_SIGNAL_REGIME tests.
-AT_SKIP_IF([test "$WINDOWS_COMPILATION_TARGET" == "Debug"])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
@@ -19656,19 +19813,32 @@ main (int argc, char **argv)
     if (cob_ret != -3) {
         return 1;
     }
-    
+
     return 0;
 }
 ]])
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
-AT_CHECK([COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
+
+# In some environments (e.g. MSVC), Windows does not forward signals for
+# critical errors like segmentation faults to user-defined signal handler
+# when the target program/library is compiled under the debug target, which
+# breaks COB_SIGNAL_REGIME tests.
+# Sanitizers may get in the way as well - we can at least portably
+# skip some
+AT_DATA([ubsan.supp], [
+null:*
+])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=0 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
-AT_CHECK([COB_SIGNAL_REGIME=1 ./caller], [0], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=1 ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
@@ -19677,11 +19847,10 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME={1,2} does not register runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check COB_SIGNAL_REGIME])
+AT_SETUP([COB_SIGNAL_REGIME 1/2 don't register runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
-AT_SKIP_IF([test "$WINDOWS_COMPILATION_TARGET" == "Debug"])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION DIVISION.
@@ -19736,7 +19905,7 @@ main (int argc, char **argv)
     if (cob_ret != -3) {
         return 1;
     }
-    
+
     if (signal_received == 1) {
         return 0;
     }
@@ -19747,12 +19916,20 @@ main (int argc, char **argv)
 
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
-AT_CHECK([COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
+
+# see note on possibly breaking C/sanitizer runtime checks above
+AT_DATA([ubsan.supp], [
+null:*
+])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
-AT_CHECK([COB_SIGNAL_REGIME=2 ./caller], [0], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+COB_SIGNAL_REGIME=2 ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
