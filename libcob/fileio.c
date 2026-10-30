@@ -4421,10 +4421,10 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features |= COB_SELECT_STDIN;
 		f->flag_select_features &= ~COB_SELECT_STDOUT;
-		f->file = stdin;
+		f->file = COB_STDIN;
 		f->fileout = NULL;
 		f->fdout = -1;
-		f->fd = STDIN_FILENO;
+		f->fd = fileno (COB_STDIN);
 		f->open_mode = (enum cob_open_mode)mode;
 		f->flag_is_std = 1;
 		return 0;
@@ -4434,10 +4434,10 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features &= ~COB_SELECT_STDIN;
 		f->flag_select_features |= COB_SELECT_STDOUT;
-		f->file = stdout;
-		f->fileout = stdout;
-		f->fdout = STDOUT_FILENO;
-		f->fd = STDOUT_FILENO;
+		f->file = COB_STDOUT;
+		f->fileout = COB_STDOUT;
+		f->fdout = fileno (COB_STDOUT);
+		f->fd = fileno (COB_STDOUT);
 		f->open_mode = (enum cob_open_mode)mode;
 		f->flag_is_std = 1;
 		return 0;
@@ -4447,10 +4447,10 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features &= ~COB_SELECT_STDIN;
 		f->flag_select_features |= COB_SELECT_STDOUT;
-		f->file = stderr;
-		f->fileout = stderr;
-		f->fdout = STDERR_FILENO;
-		f->fd = STDERR_FILENO;
+		f->file = COB_STDERR;
+		f->fileout = COB_STDERR;
+		f->fdout = fileno (COB_STDERR);
+		f->fd = fileno (COB_STDERR);
 		f->open_mode = (enum cob_open_mode)mode;
 		f->flag_is_std = 1;
 		return 0;
@@ -7229,8 +7229,8 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 			cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = stdin;
-		f->fd = fileno (stdin);
+		f->file = COB_STDIN;
+		f->fd = fileno (COB_STDIN);
 		f->open_mode = (enum cob_open_mode)mode;
 		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -7240,8 +7240,8 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 			cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
 			return;
 		}
-		f->file = stdout;
-		f->fd = fileno (stdout);
+		f->file = COB_STDOUT;
+		f->fd = fileno (COB_STDOUT);
 		f->open_mode = (enum cob_open_mode)mode;
 		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
@@ -10249,6 +10249,19 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	io_rtns [COB_IO_OCI].config = 1;
 #endif
 
+}
+
+void
+cob_settings_fileio (void)
+{
+	int		k;
+
+	for (k = 0; k < COB_IO_MAX; k++) {
+		if (fileio_funcs[k] != NULL
+		 && fileio_funcs[k]->iosettings != NULL) {
+			fileio_funcs[k]->iosettings (&file_api);
+		}
+	}
 }
 
 /* Call this routine when a new process has been forked */
