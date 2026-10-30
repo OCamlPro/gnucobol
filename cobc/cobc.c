@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -237,6 +237,8 @@ int cb_flag_alt_ebcdic = 0;
 /* Basic memory structure */
 struct cobc_mem_struct {
 	struct	cobc_mem_struct	*next;			/* next pointer */
+	struct	cobc_mem_struct	*prev;			/* previous pointer */
+	struct	cobc_mem_struct	**base;			/* list this entry is linked in */
 	void			*memptr;
 	size_t			memlen;
 };
@@ -293,6 +295,12 @@ static struct cobc_mem_struct	*cobc_mainmem_base = NULL;
 static struct cobc_mem_struct	*cobc_parsemem_base = NULL;
 static struct cobc_mem_struct	*cobc_plexmem_base = NULL;
 
+struct source_name {
+	struct source_name	*next;
+	const char			name[1];	/* malloc'd as long as needed */
+};
+static struct source_name		*cobc_source_names = NULL; /* contained in mainmem */
+
 static const char	*cobc_cc;		/* C compiler */
 static char		*cobc_cflags;		/* C compiler flags */
 #ifdef COB_DEBUG_FLAGS
@@ -308,8 +316,8 @@ static char		*cobc_lib_paths;	/* -L... */
 static char		*cobc_include;		/* -I... */
 static char		*cobc_ldflags;		/* -Q / COB_LDFLAGS */
 
-static char		*cb_depend_target;	/* -MT <target>... */
-static const char	*cb_depend_filename;    /* -MF <file> */
+static char		*cb_depend_target = NULL;	/* -MT <target>... */
+static char		*cb_depend_filename = NULL;    /* -MF <file> */
 
 static size_t		cobc_cflags_size;
 static size_t		cobc_libs_size;
@@ -705,6 +713,7 @@ cobc_free_mem (void)
 		cobc_free (repsl);
 	}
 	cobc_mainmem_base = NULL;
+	cobc_source_names = NULL;
 	clear_local_codegen_vars ();
 	ppp_clear_lists ();
 }
@@ -715,9 +724,7 @@ free_error_list (struct list_error *err)
 	struct list_error	*next;
 
 	do {
-		if (err->file) {
-			cobc_free (err->file);
-		}
+		/* note: err->file only points to internal name buffer */
 		if (err->prefix) {
 			cobc_free (err->prefix);
 		}
@@ -781,9 +788,6 @@ free_list_file (struct list_files *list_files_struct)
 		}
 		if (list_files_struct->skip_head) {
 			free_list_skip (list_files_struct->skip_head);
-		}
-		if (list_files_struct->name) {
-			cobc_free ((char *) list_files_struct->name);
 		}
 
 		/* Delete the struct itself */
@@ -983,6 +987,69 @@ cobc_realloc (void *prevptr, const size_t size)
 	return mptr;
 }
 
+/* Handling of memory blocks lists */
+
+/* Add a new entry at the head of the given list */
+static COB_INLINE COB_A_INLINE void
+cobc_mem_add (struct cobc_mem_struct **base, struct cobc_mem_struct *m)
+{
+	m->base = base;
+	m->prev = NULL;
+	m->next = *base;
+	if (m->next) {
+		m->next->prev = m;
+	}
+	*base = m;
+}
+
+/* Get the entry matching a pointer in the given list,
+   or NULL if it does not belong to that list */
+static COB_INLINE COB_A_INLINE struct cobc_mem_struct *
+cobc_mem_get (struct cobc_mem_struct **base, void *memptr)
+{
+	struct cobc_mem_struct	*m;
+
+	if (!memptr) {
+		return NULL;
+	}
+	m = (struct cobc_mem_struct *)((char *)memptr - COBC_MEM_SIZE);
+	if (m->memptr != memptr || m->base != base) {
+		return NULL;
+	}
+	return m;
+}
+
+/* Remove an entry from the list it belongs to */
+static COB_INLINE COB_A_INLINE void
+cobc_mem_remove (struct cobc_mem_struct *m)
+{
+	if (m->prev) {
+		m->prev->next = m->next;
+	} else {
+		*m->base = m->next;
+	}
+	if (m->next) {
+		m->next->prev = m->prev;
+	}
+}
+
+/* Replace an entry by a new one at the same position in the same list */
+static COB_INLINE COB_A_INLINE void
+cobc_mem_replace (struct cobc_mem_struct *old, struct cobc_mem_struct *m)
+{
+	m->base = old->base;
+	m->prev = old->prev;
+	m->next = old->next;
+	if (m->prev) {
+		m->prev->next = m;
+	} else {
+		*m->base = m;
+	}
+	if (m->next) {
+		m->next->prev = m;
+	}
+}
+
 /* Memory allocate/strdup/reallocate/free for complete execution */
 void *
 cobc_main_malloc (const size_t size)
@@ -997,10 +1064,9 @@ cobc_main_malloc (const size_t size)
 		cobc_abort_terminate (0);
 	}
 	/* LCOV_EXCL_STOP */
-	m->next = cobc_mainmem_base;
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
-	cobc_mainmem_base = m;
+	cobc_mem_add (&cobc_mainmem_base, m);
 	return m->memptr;
 }
 
@@ -1047,9 +1113,16 @@ cobc_main_stradd_dup (const char *str1, const char *str2)
 void *
 cobc_main_realloc (void *prevptr, const size_t size)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 	struct cobc_mem_struct	*m;
+
+	curr = cobc_mem_get (&cobc_mainmem_base, prevptr);
+	/* LCOV_EXCL_START */
+	if (!curr) {
+		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1062,27 +1135,8 @@ cobc_main_realloc (void *prevptr, const size_t size)
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
 
-	prev = NULL;
-	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
-	/* LCOV_EXCL_START */
-	if (!curr) {
-		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
-		cobc_abort_terminate (1);
-	}
-	/* LCOV_EXCL_STOP */
-	m->next = curr->next;
-	if (prev) {
-		prev->next = m;
-	} else {
-		/* At mainmem_base */
-		cobc_mainmem_base = m;
-	}
-	memcpy (m->memptr, curr->memptr, curr->memlen);
+	cobc_mem_replace (curr, m);
+	memcpy (m->memptr, curr->memptr, curr->memlen < size ? curr->memlen : size);
 	cobc_free (curr);
 
 	return m->memptr;
@@ -1091,16 +1145,9 @@ cobc_main_realloc (void *prevptr, const size_t size)
 void
 cobc_main_free (void *prevptr)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 
-	prev = NULL;
-	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
+	curr = cobc_mem_get (&cobc_mainmem_base, prevptr);
 	/* LCOV_EXCL_START */
 	if (!curr) {
 #ifdef	COB_TREE_DEBUG
@@ -1112,12 +1159,7 @@ cobc_main_free (void *prevptr)
 #endif
 	}
 	/* LCOV_EXCL_STOP */
-	if (prev) {
-		prev->next = curr->next;
-	} else {
-		/* At mainmem_base */
-		cobc_mainmem_base = curr->next;
-	}
+	cobc_mem_remove (curr);
 	cobc_free (curr);
 }
 
@@ -1135,10 +1177,9 @@ cobc_parse_malloc (const size_t size)
 		cobc_abort_terminate (0);
 	}
 	/* LCOV_EXCL_STOP */
-	m->next = cobc_parsemem_base;
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
-	cobc_parsemem_base = m;
+	cobc_mem_add (&cobc_parsemem_base, m);
 	return m->memptr;
 }
 
@@ -1163,9 +1204,16 @@ cobc_parse_strdup (const char *dupstr)
 void *
 cobc_parse_realloc (void *prevptr, const size_t size)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 	struct cobc_mem_struct	*m;
+
+	curr = cobc_mem_get (&cobc_parsemem_base, prevptr);
+	/* LCOV_EXCL_START */
+	if (!curr) {
+		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1178,27 +1226,8 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 	m->memptr = (char *)m + COBC_MEM_SIZE;
 	m->memlen = size;
 
-	prev = NULL;
-	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
-	/* LCOV_EXCL_START */
-	if (!curr) {
-		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
-		cobc_abort_terminate (1);
-	}
-	/* LCOV_EXCL_STOP */
-	m->next = curr->next;
-	if (prev) {
-		prev->next = m;
-	} else {
-		/* At parsemem_base */
-		cobc_parsemem_base = m;
-	}
-	memcpy (m->memptr, curr->memptr, curr->memlen);
+	cobc_mem_replace (curr, m);
+	memcpy (m->memptr, curr->memptr, curr->memlen < size ? curr->memlen : size);
 	cobc_free (curr);
 
 	return m->memptr;
@@ -1207,16 +1236,9 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 void
 cobc_parse_free (void *prevptr)
 {
-	register struct cobc_mem_struct	*curr;
-	register struct cobc_mem_struct	*prev;
+	struct cobc_mem_struct	*curr;
 
-	prev = NULL;
-	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
-		if (curr->memptr == prevptr) {
-			break;
-		}
-		prev = curr;
-	}
+	curr = cobc_mem_get (&cobc_parsemem_base, prevptr);
 	/* LCOV_EXCL_START */
 	if (!curr) {
 #ifdef	COB_TREE_DEBUG
@@ -1228,12 +1250,7 @@ cobc_parse_free (void *prevptr)
 #endif
 	}
 	/* LCOV_EXCL_STOP */
-	if (prev) {
-		prev->next = curr->next;
-	} else {
-		/* At parsemem_base */
-		cobc_parsemem_base = curr->next;
-	}
+	cobc_mem_remove (curr);
 	cobc_free (curr);
 }
 
@@ -1252,8 +1269,7 @@ cobc_plex_malloc (const size_t size)
 	}
 	/* LCOV_EXCL_STOP */
 	m->memptr = (char *)m + COBC_MEM_SIZE;
-	m->next = cobc_plexmem_base;
-	cobc_plexmem_base = m;
+	cobc_mem_add (&cobc_plexmem_base, m);
 	return m->memptr;
 }
 
@@ -2115,6 +2131,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 	}
 	if (fn->need_preprocess
 	 && (status
+	  || fn->preprocess_is_temp
 	  ||  cb_compile_level > CB_LEVEL_PREPROCESS
 	  || (cb_compile_level == CB_LEVEL_PREPROCESS
 	   && save_temps && !save_temps_dir))) {
@@ -2450,7 +2467,7 @@ static void
 cobc_print_version (void)
 {
 	printf ("cobc %s%s.%d\n", PKGVERSION, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2024 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2026 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
@@ -2915,9 +2932,9 @@ file_stripext (char *buff)
 
 # define COB_BASENAME_KEEP_EXT ""
 /* get basename from file, if optional parameter strip_ext is given then only
-  strip the extension if it matches the parameter (must include the period),
-  don't strip the extension if the parameter equals COB_BASENAME_KEEP_EXT;
-  returns a pointer to the previous allocated basename_buffer */
+   strip the extension if it matches the parameter (must include the period),
+   don't strip the extension if the parameter equals COB_BASENAME_KEEP_EXT;
+   returns a pointer to the previous allocated basename_buffer */
 static char *
 file_basename (const char *filename, const char *strip_ext)
 {
@@ -2957,7 +2974,7 @@ file_basename (const char *filename, const char *strip_ext)
 		endp = startp;
 	}
 	if (endp > startp
-		&& (!strip_ext || cb_strcasecmp (endp, strip_ext) == 0)) {
+	 && (!strip_ext || cb_strcasecmp (endp, strip_ext) == 0)) {
 		len = endp - startp;
 	} else {
 		len = strlen (startp);
@@ -3081,19 +3098,18 @@ add_depend_escape_target (const char *s)
 	}
 }
 
-static const char *
+static char *
 file_replace_extension (const char *file, const char *ext)
 {
 	int i;
-	const int len = strlen (file);
-	const int extlen = strlen (ext);
-	for (i=len; i>0; i--) {
+	for (i = strlen (file); i > 0; i--) {
 		const char c = file[i];
 		if (c == '.') {
-			const int newlen = i+extlen+1;
-			char *new_file = cobc_malloc(newlen);
+			const int extlen = strlen (ext);
+			const int newlen = i + extlen + 1;
+			char *new_file = cobc_malloc (newlen);
 			memcpy (new_file, file, i);
-			memcpy (new_file+i, ext, extlen+1);
+			memcpy (new_file+i, ext, extlen + 1);
 			return new_file;
 		}
 		if (c == '/') {
@@ -3868,7 +3884,10 @@ process_command_line (const int argc, char **argv)
 			add_depend_escape_target (cob_optarg);
 			break;
 		case CB_FLAG_GETOPT_DEPEND_OUTPUT_FILE: /* -MF <file> */
-			cb_depend_filename = cobc_strdup(cob_optarg);
+			if (cb_depend_filename) {
+				cobc_main_free (cb_depend_filename);
+			}
+			cb_depend_filename = cobc_main_strdup (cob_optarg);
 			break;
 
 		case 'I':
@@ -4291,9 +4310,9 @@ process_command_line (const int argc, char **argv)
 		cb_compile_level = CB_LEVEL_PREPROCESS;
 	}
 #endif
-	if (!cb_depend_output &&
-	    (cb_depend_filename || cb_depend_add_phony || cb_depend_target
-	      || cb_depend_keep_missing)) {
+	if (!cb_depend_output
+	 && (cb_depend_filename || cb_depend_add_phony
+	  || cb_depend_target   || cb_depend_keep_missing)) {
 		cobc_err_exit ("dependency options require -M or -MD");
 	}
 	if (cb_depend_output_only && cb_compile_level != CB_LEVEL_PREPROCESS) {
@@ -4376,7 +4395,7 @@ process_command_line (const int argc, char **argv)
 				cb_depend_filename = output_name;
 				output_name = NULL;
 			} else
-				cb_depend_filename = cobc_strdup(COB_DASH);
+				cb_depend_filename = cobc_main_strdup (COB_DASH);
 		}
 	}
 
@@ -4390,7 +4409,7 @@ process_command_line (const int argc, char **argv)
 	}
 
 	if (cb_depend_filename) {
-		if (string_is_dash(cb_depend_filename)) {
+		if (string_is_dash (cb_depend_filename)) {
 			cb_depend_file = stdout;
 		} else {
 			cb_depend_file = fopen (cb_depend_filename, "w");
@@ -4615,6 +4634,36 @@ process_env_copy_path (const char *env)
 	return;
 }
 
+/* Returns the one shared copy of a file name that lives until the end of the
+   run, so that the same file always has the same pointer:
+   cobc sets it for the initial filename, ppopen for any file opened
+   (= especially in case of copybooks); the scanner sets cb_source_file again
+   for every "#LINE" directive (switched file or skipped empty files) */
+const char *
+cobc_intern_filename (const char *name)
+{
+	struct source_name	**pp;
+	struct source_name	*sn;
+	size_t			len;
+
+	for (pp = &cobc_source_names; (sn = *pp) != NULL; pp = &sn->next) {
+		if (!strcmp (sn->name, name)) {
+			/* match in existing filenames found;
+			   move to front, so common names are early */
+			*pp = sn->next;			
+			sn->next = cobc_source_names;
+			cobc_source_names = sn;
+			return sn->name;
+		}
+	}
+	len = strlen (name);
+	sn = cobc_main_malloc (sizeof (struct source_name) + len);
+	memcpy ((char *)sn->name, name, len + 1);
+	sn->next = cobc_source_names;
+	cobc_source_names = sn;
+	return sn->name;
+}
+
 /* process setup for a single filename,
    returns a (struct filename *) if the file
    is to be processed, otherwise NULL */
@@ -4626,7 +4675,6 @@ process_filename (const char *filename)
 	struct filename	*ffn;
 	char		*fbasename;
 	char		*listptr;
-	size_t		fsize;
 	int		file_is_stdin;
 #ifdef HAVE_8DOT3_FILENAMES
 	char	*buffer;
@@ -4645,16 +4693,15 @@ process_filename (const char *filename)
 			return NULL;
 		}
 	} else {
+		/* LCOV_EXCL_START */
+		if (strlen (filename) > COB_NORMAL_MAX) {
+			cobc_err_msg (_("invalid file name parameter (length > %d)"), COB_NORMAL_MAX);
+			return NULL;
+		}
+		/* LCOV_EXCL_STOP */
 		file_is_stdin = 0;
 	}
 
-	fsize = strlen (filename);
-	/* LCOV_EXCL_START */
-	if (fsize > COB_NORMAL_MAX) {
-		cobc_err_msg (_("invalid file name parameter (length > %d)"), COB_NORMAL_MAX);
-		return NULL;
-	}
-	/* LCOV_EXCL_STOP */
 
 #ifdef	__OS400__
 	if (strchr (filename, '.') != NULL) {
@@ -4667,6 +4714,7 @@ process_filename (const char *filename)
 #ifdef	__OS400__
 	}
 #endif
+	filename = cobc_intern_filename (filename);
 
 	fbasename = file_basename (filename, NULL);
 	extension = file_extension (filename);
@@ -4737,7 +4785,7 @@ process_filename (const char *filename)
 	}
 
 	/* Set source filename */
-	fn->source = cobc_main_strdup (filename);
+	fn->source = filename;
 
 	/* Set preprocess filename */
 	if (!fn->need_preprocess) {
@@ -4752,6 +4800,7 @@ process_filename (const char *filename)
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->preprocess, ".cob");
+		fn->preprocess_is_temp = 1;
 	}
 
 	/* Set translate filename */
@@ -4823,7 +4872,7 @@ process_filename (const char *filename)
 		if (cobc_list_file) {
 			fn->listing_file = cobc_list_file;
 		} else if (cobc_list_dir) {
-			fsize = strlen (cobc_list_dir) + strlen (fbasename) + 8U;
+			const size_t	fsize = strlen (cobc_list_dir) + strlen (fbasename) + 8U;
 			listptr = cobc_main_malloc (fsize);
 			snprintf (listptr, fsize, "%s%c%s.lst",
 				  cobc_list_dir, SLASH_CHAR, fbasename);
@@ -7997,15 +8046,6 @@ deep_copy_list_replace (struct list_replace *src, struct list_files *dst_file)
 	dst_file->replace_tail = copy;
 }
 
-static void
-cleanup_copybook_reference (struct list_files *cur)
-{
-	if (cur->name) {
-		cobc_free ((void *)cur->name);
-	}
-	cobc_free (cur);
-}
-
 
 /* TO-DO: Modularise! */
 /*
@@ -8103,7 +8143,7 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 
 				/* Delete the copybook reference when done */
 				cfile->copy_head = cur->next;
-				cleanup_copybook_reference (cur);
+				cobc_free (cur);
 			}
 		} else {
 			/* Print text with replacements */
@@ -8251,7 +8291,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 
 					/* Delete the copybook reference when done */
 					cfile->copy_head = cur->next;
-					cleanup_copybook_reference (cur);
+					cobc_free (cur);
 				}
 
 				/* Delete all but the last line. */
@@ -8274,7 +8314,8 @@ print_program_code (struct list_files *cfile, int in_copy)
 
 		if (cfile->err_head) {
 			for (err = cfile->err_head; err; err = err->next) {
-				snprintf (print_data, CB_PRINT_LEN, "%s%s", err->prefix, err->msg);
+				snprintf (print_data, CB_PRINT_LEN, 
+					"%s%s", err->prefix, err->msg);
 				print_program_data (print_data);
 			}
 		}
@@ -8311,7 +8352,7 @@ print_program (struct list_files *cfile, int in_copy)
 			print_program (cur, 1);
 			/* Delete the copybook reference when done */
 			cfile->copy_head = cur->next;
-			cleanup_copybook_reference (cur);
+			cobc_free (cur);
 		}
 	}
 	/* Free replace data */
@@ -8344,7 +8385,6 @@ print_program_listing (void)
 	print_program_trailer ();
 
 	/* TO-DO: Should this be here? */
-	cobc_free ((void *)cb_listing_file_struct->name);
 	cb_listing_file_struct->name = NULL;
 }
 
@@ -9489,7 +9529,7 @@ process_file (struct filename *fn, int status)
 
 		cb_current_file = cb_listing_file_struct;
 		cb_current_file->copy_tail = NULL;	/* may include an old reference */
-		cb_current_file->name = cobc_strdup (fn->source);
+		cb_current_file->name = fn->source;
 		cb_current_file->source_format = cobc_get_source_format ();
 		force_new_page_for_next_line ();
 	}

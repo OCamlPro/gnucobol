@@ -45,6 +45,7 @@ static int ix_bdb_file_unlock (cob_file_api *a, cob_file *f);
 static void ix_bdb_exit_fileio (cob_file_api *a);
 static int ix_bdb_fork (cob_file_api *a);
 static char * ix_bdb_version (void);
+static void ix_bdb_settings (cob_file_api *a);
 
 static int ix_bdb_dummy () { return 0; }
 
@@ -65,7 +66,8 @@ static const struct cob_fileio_funcs ext_indexed_funcs = {
 	(void*)ix_bdb_dummy,	/* commit */
 	(void*)ix_bdb_dummy,	/* rollback */
 	ix_bdb_file_unlock,
-	ix_bdb_version
+	ix_bdb_version,
+	ix_bdb_settings
 };
 
 static DB_ENV	*bdb_env = NULL;
@@ -383,6 +385,24 @@ bdb_err_event (DB_ENV *env, u_int32_t event, void *info)
 }
 #endif
 
+static void
+ix_bdb_settings (cob_file_api *a)
+{
+	if (bdb_env) {
+#if	0	/* RXWRXW - BDB msg */
+		bdb_env->set_errcall (bdb_env, bdb_errcall_set);
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
+		bdb_env->set_msgcall (bdb_env, bdb_msgcall_set);
+#endif
+#else
+		bdb_env->set_errfile (bdb_env, COB_STDERR);
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
+		bdb_env->set_msgfile (bdb_env, COB_STDERR);
+#endif
+#endif
+	}
+}
+
 static int
 join_environment (cob_file_api *a)
 {
@@ -408,9 +428,8 @@ join_environment (cob_file_api *a)
 				   "env_create", ret, db_strerror (ret));
 		return ret;
 	}
-	bdb_env->set_errfile (bdb_env, stderr);
+	ix_bdb_settings (a);
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
-	bdb_env->set_msgfile (bdb_env, stderr);
 	if (a->file_paths) {
 		for (k=0; a->file_paths[k] != NULL; k++) {
 			ret = bdb_env->set_data_dir (bdb_env, a->file_paths[k]);

@@ -163,6 +163,7 @@ struct cob_fileio_funcs {
 	int	(*rollback)		(cob_file_api *, cob_file *);
 	int	(*iounlock)		(cob_file_api *, cob_file *);
 	char * (*ioversion)	(void);
+	void (*iosettings)	(cob_file_api *);
 };
 
 COB_EXPIMP	cob_global		*file_globptr;
