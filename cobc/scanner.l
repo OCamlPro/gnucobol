@@ -386,7 +386,7 @@ AREA_A		"#AREA_A"\n
 		p1 = strrchr (p2, '"');
 		if (p1) {
 			*p1 = 0;
-			cb_source_file = cobc_parse_strdup (p2);
+			cb_source_file = cobc_intern_filename (p2);
 			cb_source_line = (int)atoi (yytext + 5) - 1;
 		}
 	}
