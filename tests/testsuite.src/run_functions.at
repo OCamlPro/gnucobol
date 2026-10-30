@@ -780,18 +780,18 @@ AT_DATA([prog.cob], [
               WHEN NOT VALID-UNSET
                  DISPLAY "FUNCTION result too long"
                  END-DISPLAY
-              WHEN VALID-YEAR     AND
-                 VALID-MONTH    AND
-                 VALID-DAY      AND
-                 VALID-HOUR     AND
-                 VALID-MIN      AND
-                 VALID-SEC      AND
-                 VALID-HUNDSEC  AND
-                 VALID-GREENW   AND
-                 VALID-OFFSET   AND
-                 VALID-OFFSET2  AND
-                 VALID-UNSET    AND
-                 ((NOT ZERO-GREENW) OR (ZERO-OFFSET AND ZERO-OFFSET2))
+              WHEN VALID-YEAR 
+               AND VALID-MONTH                 
+               AND VALID-DAY                   
+               AND VALID-HOUR                  
+               AND VALID-MIN                   
+               AND VALID-SEC                   
+               AND VALID-HUNDSEC               
+               AND VALID-GREENW                
+               AND VALID-OFFSET                
+               AND VALID-OFFSET2               
+               AND VALID-UNSET                 
+               AND ((NOT ZERO-GREENW) OR (ZERO-OFFSET AND ZERO-OFFSET2))
                  CONTINUE
               WHEN OTHER
                  DISPLAY "CURRENT-DATE with wrong format: "
@@ -3651,6 +3651,13 @@ AT_DATA([prog.cob], [
             IF RESULT <> 10
                DISPLAY "Test 5 failed: " RESULT END-DISPLAY
             END-IF
+            MOVE FUNCTION TEST-FORMATTED-DATETIME
+                    ("YYYYMMDDThhmmss",
+                     "16010101T232425                            a   ")
+              TO RESULT
+            IF RESULT <> 44
+               DISPLAY "Test 6 failed: " RESULT END-DISPLAY
+            END-IF
 
             STOP RUN
             .
@@ -4503,7 +4510,11 @@ AT_CLEANUP
 
 
 AT_SETUP([FORMATTED-(DATE)TIME with SYSTEM-OFFSET])
-AT_KEYWORDS([functions FORMATTED-TIME FORMATTED-DATETIME extensions])
+AT_KEYWORDS([functions FORMATTED-TIME FORMATTED-DATETIME TEST-FORMATTED-DATETIME
+extensions])
+
+# note: SYSTEM-OFFSET seems to not have been proposed to ISO -> do so
+#       for the enxt iteration of the standard
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.

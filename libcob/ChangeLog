@@ -1,4 +1,15 @@
 
+2026-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cconv.c (cob_field_to_string): in case of empty string: returns a single
+	  space while keeping string with size zero on "all null-value";
+	  error strings (NULL field / NULL data) now translated
+	* fileio.c (cob_open): handle single-space similar to zero length string
+	* cconv.c (cob_field_to_string): in case of overflow: return data until
+	  max is reached and the necessary length for the buffer as negative value
+	* intrinsic.c (cob_intr_test_formatted_datetime): if buffer is too big or
+	  small then return the expected bad position, not an exception
+
 2026-10-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	by Arkadiy Agheieff (LLM-assisted research: DeepSeek V4.1 Flash 1017):
@@ -38,7 +49,7 @@
 
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.c (cob_exit_common): cleanup COB_STDERR and friends 
+	* common.c (cob_exit_common): cleanup COB_STDERR and friends
 
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -116,22 +127,22 @@
 
 2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
 
-	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
+	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match
 	  the IBM option name
-	* mlio.c: Fix issues in XML PARSE handling most notably a use 
-	  after free error if the internal buffer needs to grow during the parsing. 
-	  This fix changes the definition of xml_event to store offsets in the 
+	* mlio.c: Fix issues in XML PARSE handling most notably a use
+	  after free error if the internal buffer needs to grow during the parsing.
+	  This fix changes the definition of xml_event to store offsets in the
 	  buffer instead of pointers
-	* mlio.c: Respect the high order half-word for exception XML-CODE, 
-	  but do not expose internal libxml2 error codes 
-	* mlio.c: Reduce the number of parsing states by removing useless ones, 
+	* mlio.c: Respect the high order half-word for exception XML-CODE,
+	  but do not expose internal libxml2 error codes
+	* mlio.c: Reduce the number of parsing states by removing useless ones,
 	  and encode eof in these states
 	* mlio.c: Handle XML chunks with more than one recoverable error
 	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
 	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
 	* mlio.c: Handle incomplete CONTENT-CHARACTERS events (with XML-INFORMATION = 2).
-	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
-	  events across END-OF-INPUT boundaries. 
+	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS
+	  events across END-OF-INPUT boundaries.
 	  This is due to libxml2 internal details.
 
 2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
@@ -201,7 +212,7 @@
 	* common.c: remove strbuff variable and cob_strcat/cob_strjoin utilities
 	  which were prone to memory corruption due to strbuff being a global
 	* coblocal.h: remove definitions of cob_strcat and cob_strjoin
-	* call.c (add_to_preload): remove usage of cob_strcat and directly 
+	* call.c (add_to_preload): remove usage of cob_strcat and directly
 	  concatenate preload paths instead
 
 2025-10-31  Simon Sobisch <simonsobisch@gnu.org>

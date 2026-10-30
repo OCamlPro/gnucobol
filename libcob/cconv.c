@@ -265,10 +265,11 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 	const enum cob_case_modifier target_case)
 {
 	register unsigned char	*end, *data, *s;
+	int bad_size = 0;
 
 	s = (unsigned char *)str;
 	if (unlikely (f == NULL)) {
-		snprintf (str, maxsize, "%s", ("NULL field"));
+		snprintf (str, maxsize, "%s", _("NULL field"));
 		*(s + maxsize - 1) = 0;
 		return -1;
 	}
@@ -280,7 +281,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 	data = f->data;
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
 	if (data == NULL) {
-		snprintf (str, maxsize, "%s", ("field with NULL address"));
+		snprintf (str, maxsize, "%s", _("field with NULL address"));
 		*(s + maxsize - 1) = 0;
 		return -3;
 	}
@@ -291,19 +292,20 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 		}
 		end--;
 	}
-	if (*end == ' ' || *end == 0) {
+	if (*end == 0) {
 		*s = 0;
 		return 0;
+	}
+	if (*end == ' ') {
+		*s++ = ' ';
+		*s = 0;
+		return 1;
 	}
 
 	/* note: the specified max does not contain the low-value */
 	if ((size_t)(end - data) > maxsize) {
-#if 0	/* Simon: it is likely not a good idea to just ignore the data */
+		bad_size = (int)(end - data);
 		end = data + maxsize;
-#else
-		*s = 0;
-		return -4;
-#endif
 	}
 	switch (target_case) {
 	case CCM_NONE:
@@ -334,6 +336,9 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 	}
 	*s = 0;
 	/* note: we limit individual fields to be of size < INT_MAX in the compiler */
+	if (bad_size) {
+		return -bad_size;
+	}
 	return (int)(end + 1 - f->data);
 }
 

@@ -6721,6 +6721,7 @@ cob_intr_formatted_time (const int offset, const int length,
 	return curr_field;
 }
 
+/* FUNCTION FORMATTED-DATETIME */
 cob_field *
 cob_intr_formatted_datetime (const int offset, const int length,
 			     const int params, ...)
@@ -6830,6 +6831,7 @@ cob_intr_formatted_datetime (const int offset, const int length,
 	return curr_field;
 }
 
+/* FUNCTION TEST-FORMATTED-DATETIME */
 cob_field *
 cob_intr_test_formatted_datetime (cob_field *format_field,
 				  cob_field *datetime_field)
@@ -6842,21 +6844,28 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 	char	formatted_time[COB_TIMESTR_LEN] = { '\0' };
 	unsigned int	formatted_date_len, time_part_offset;
 	int 	date_present, time_present;
-	int 	field_len, error_pos;
+	int 	field_len, format_len, error_pos;
 
 	cobglobptr->cob_exception_code = 0;
 
 	/* FIXME later: format_field + time_field may be of category national... */
 
 	/* Copy to null-terminated strings */
-	field_len = cob_field_to_string (format_field, datetime_format_str,
+	format_len = cob_field_to_string (format_field, datetime_format_str,
 					  COB_DATETIMESTR_MAX, CCM_NONE);
 	/* overflow or less than minimal valid entry -> exception */
-	if (field_len < 7
-	 || cob_field_to_string (datetime_field, formatted_datetime,
-					  COB_DATETIMESTR_MAX, CCM_NONE) < field_len) {
+	if (format_len < 6) {
 		goto invalid_args;
 	}
+	
+	field_len = cob_field_to_string (datetime_field, formatted_datetime,
+					  COB_DATETIMESTR_MAX, CCM_NONE);
+	/* Field errors or zero-length -> exception */
+	if (field_len <= 0 && field_len >= -3) {
+		goto invalid_args;
+	}
+	/* note: in case of "overlength" we will get out not later than
+	   checking the rest of the data */
 
 	/* Check whether date or time is present. */
 	if (cob_valid_date_format (datetime_format_str)) {
@@ -6925,6 +6934,20 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 			cob_alloc_set_field_uint (time_part_offset + error_pos);
 			return curr_field;
 		}
+	}
+
+	/* if field is too big for complete check, test for non-spaces */
+	if (field_len < 0) {
+		const char *start = (const char *)datetime_field->data;
+		const char *end = start + datetime_field->size;
+		const char *pos = start + COB_DATETIMESTR_LEN - 1;
+		while (pos++ < end) {
+			if (*pos != ' ') {
+				break;
+			}
+		}
+		cob_alloc_set_field_uint (pos - start + 1);
+		return curr_field;
 	}
 
 	cob_alloc_set_field_uint (0);

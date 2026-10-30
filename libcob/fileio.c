@@ -6387,7 +6387,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 
 	if (f->assign == NULL) {
 		/* CHECKME: that _seems_ to be a codegen error, but may also happen with EXTFH */
-		cob_runtime_error (_("ERROR FILE %s has ASSIGN field is NULL"),
+		cob_runtime_error (_("ERROR FILE %s has ASSIGN field as NULL"),
 							f->select_name);
 		save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
@@ -6412,7 +6412,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		}
 	}
 
-	if (file_open_name[0] == 0) {
+	if ( file_open_name[0] == 0
+	 || (file_open_name[0] == ' ' && file_open_name[1] == 0)) {
 		save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
 	}
