@@ -1221,9 +1221,18 @@ enum cob_statement {
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
-#define COB_XML_PARSE_XMLNSS	(1U << 0)
-#define COB_XML_PARSE_NATIONAL	(1U << 1)
+#define COB_XML_PARSE_XMLSS		(1U << 0)
+#define COB_XML_PARSE_NATIONAL		(1U << 1)
 #define COB_XML_PARSE_VALIDATE_FILE	(1U << 2)
+
+enum cob_xml_mode {
+	COB_XML_COMPAT			= 0,
+	/* similar to XMLPARSE(XMLSS) Micro Focus,
+	   IBM may be different (_very_ likely for error codes);
+	   but the main difference is to "COMPAT" */
+	COB_XML_XMLSS			= 1
+};
+
 
 /* Structure/union declarations */
 
@@ -1462,12 +1471,7 @@ typedef struct __cob_module {
 
 	const char	*gc_version;	/* module version */
 
-	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-		/* similar to XMLPARSE(XMLNSS) Micro Focus,
-		   IBM may be different (_very_ likely for error codes);
-		   but the main difference is to "COMPAT" */
-		#define COB_XML_COMPAT 		0
-		#define COB_XML_XMLNSS		1
+	enum cob_xml_mode	xml_mode;		/* Mode to handle XML PARSE (may be extended) */
 
 	cob_field		function_return;	/* Copy of RETURNING field */
 	unsigned int	num_symbols;		/* Number of symbols in table */

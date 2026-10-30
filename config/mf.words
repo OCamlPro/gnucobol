@@ -678,15 +678,7 @@ reserved:	WRITE
 reserved:	WRITING
 reserved:	XML
 reserved:	XML-DECLARATION*
-reserved:	XML-EVENT             # note: this is a register, move as soon as supported
-#reserved:	XML-INFORMATION       # note: this is a register, move as soon as supported
-#reserved:	XML-NAMESPACE         # note: this is a register, move as soon as supported
-#reserved:	XML-NAMESPACE-PREFIX  # note: this is a register, move as soon as supported
-#reserved:	XML-NNAMESPACE        # note: this is a register, move as soon as supported
-#reserved:	XML-NNAMESPACE-PREFIX # note: this is a register, move as soon as supported
-reserved:	XML-NTEXT             # note: this is a register, move as soon as supported
 reserved:	XML-SCHEMA
-reserved:	XML-TEXT              # note: this is a register, move as soon as supported
 reserved:	YYYYDDD*
 reserved:	YYYYMMDD*
 reserved:	ZERO
@@ -721,14 +713,14 @@ register:	SORT-RETURN
 # register:	TIME-OF-DAY		# only available in OS/VS mode
 # register:	WHEN-COMPILED		# only available in OS/VS or VSC2 modes (note the format of the date differs with the mode!)
 register:	XML-CODE
-# register:	XML-EVENT
-# register:	XML-INFORMATION
-# register:	XML-NAMESPACE
-# register:	XML-NAMESPACE-PREFIX
-# register:	XML-NNAMESPACE
-# register:	XML-NNAMESPACE-PREFIX
-# register:	XML-NTEXT
-# register:	XML-TEXT
+register:	XML-EVENT
+register:	XML-INFORMATION
+register:	XML-NAMESPACE
+register:	XML-NAMESPACE-PREFIX
+register:	XML-NNAMESPACE
+register:	XML-NNAMESPACE-PREFIX
+register:	XML-NTEXT
+register:	XML-TEXT
 
 # disable all functions
 not-intrinsic-function:	DIALECT-ALL

@@ -1145,7 +1145,9 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		} else {
 			output ("cob_local_ptr");
 		}
-	} else if (f01->flag_data_set) {
+	} else if (f01->flag_data_set
+		|| (f01->storage == CB_STORAGE_LINKAGE
+		 && f01->flag_internal_register)) {
 		/* cob_field.data is set upon entry so use that here */
 		output ("%s%d.data", CB_PREFIX_FIELD, f01->id);
 	} else {
@@ -2153,6 +2155,7 @@ emit_one_sym (struct cb_field *f)
 {
 	struct cb_field *fp;
 	int		is_indirect,idx;
+	int		is_auto_index = 0;
 	unsigned int offset;
 
 	if (f->flag_is_returning)	/* Non static so cannot be in symbol table */
@@ -2205,7 +2208,15 @@ emit_one_sym (struct cb_field *f)
 		}
 	} else 
 	if (fp->storage == CB_STORAGE_LOCAL) {
-		output (",&cob_local_save");
+		if (f->flag_indexed_by) {
+			/* automatic variable: no static address, not dumped */
+			is_auto_index = 1;
+			output (",NULL");
+			offset = 0;
+			is_indirect = SYM_ADRS_DATA;
+		} else {
+			output (",&cob_local_save");
+		}
 	} else 
 	if (fp->flag_external) {
 		output (",&%s%d", CB_PREFIX_BASE, fp->id);
@@ -2233,7 +2244,7 @@ emit_one_sym (struct cb_field *f)
 	}
 	output (",");
 	output_attr (cb_build_field_reference (f, NULL));
-	output (",%d",fp->flag_is_typedef?1:0);
+	output (",%d",(fp->flag_is_typedef || is_auto_index)?1:0);
 	output (",0");	/* NOT is_file */
 	output (",%d",is_indirect);
 	if (f->level < 8)
@@ -6640,22 +6651,16 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree at_end,
 	/* Start loop */
 	last_line = -1; /* force statement reference output at begin of loop */
 	last_stmt = -1;
-	skip_line_num++;
-	output_prefix ();
-	output ("if ( (");
-	output_integer (idx);
-	output (" < 1) || (");
-	output_integer (idx);
-	output (" > max) ) /* Is Table Index valid? */");
-	output_newline ();
-	output_block_open ();
-	/* CHECKME: What should be done when the index is invalid */
-	output_prefix ();
-	output_integer (idx);
-	output (" = 1;");
-	output_newline ();
-	/* -- */
-	output_block_close ();
+	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+		/* index below 1: runtime error as for any subscript */
+		output_prefix ();
+		output ("if (");
+		output_integer (idx);
+		output (" < 1) cob_check_subscript (");
+		output_integer (idx);
+		output (", max, \"%s\", 0);", p->name);
+		output_newline ();
+	}
 	output_line ("for (;;)");
 	output_block_open ();
 
@@ -8115,7 +8120,7 @@ output_xml_parse (struct cb_xml_parse *p)
 {
 	int flags = 0;
 	if (cb_xml_parse_xmlss) {
-		flags |= COB_XML_PARSE_XMLNSS;
+		flags |= COB_XML_PARSE_XMLSS;
 	}
 	if (p->returning_national && current_prog->xml_ntext) {
 		flags |= COB_XML_PARSE_NATIONAL;
@@ -12509,7 +12514,8 @@ output_module_init_function (struct cb_program *prog)
 	}
 	output_line ("module__->flag_dump_sect = 0x%02X;", cb_flag_dump);
 	output_line ("module__->flag_dump_ready = %u;", cb_flag_dump ? 1 : 0);
-	output_line ("module__->xml_mode = %u;", cb_xml_parse_xmlss);
+	output_line ("module__->xml_mode = %s;",
+		cb_xml_parse_xmlss ? "COB_XML_XMLSS" : "COB_XML_COMPAT");
 	output_line ("module__->module_stmt = 0;");
 	if (source_cache) {
 		output_line ("module__->module_sources = %ssource_files;",
@@ -13053,7 +13059,9 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Dangling linkage section items */
 	seen = 0;
 	for (f = prog->linkage_storage; f; f = f->sister) {
-		if (f->redefines) {
+		if (f->redefines || f->flag_internal_register) {
+			/* XML-TEXT and other XML-* registers are in linkage_storage but do not use the 
+			   corresponding b_* field. */
 			continue;
 		}
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
