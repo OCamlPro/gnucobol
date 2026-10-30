@@ -1,0 +1,56 @@
+#
+# asan.supp gnucobol/tests
+# suppression rules for _external_ libaries' issues recognized by libasan
+#
+# Copyright (C) 2025 Free Software Foundation, Inc.
+# Written by Simon Sobisch
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+#
+#
+# bash and other tools are internally used in the test runner and
+# possibly by make but we don't care about it as external tool
+leak:bash
+leak:sh
+leak:sed
+leak:gcc
+leak:ld.bfd
+leak:clang
+#
+#
+# issue that normally has to be checked manually once, as long as
+# endwin and possibly _nc_free_all is called then we did everything
+# we should do to free up the memory
+# --> note: that actually suppresses too much, so disabled by default
+# reachable:newterm
+#
+# minor color leak, no problem as not called too often
+# --> note: that actually suppresses too much, so disabled by default
+# reachable:start_color_sp
+##
+# that's a potential issue (but external) as a refresh is done quite often
+#reachable:wrefresh   -> seems "reachable" is not supported with all versions
+leak:wrefresh
+#
+#
+#
+# fileio.c should switch to DB_DBT_USERMEM as we already
+# provide the buffers - otherwise BDB allocates a return copy
+# which is no "real" leak as that is re-allocated; but still shown
+# as a leak at process end (at least if not freed by BDB teardown)
+# and in the meantime creates unnecessary load for memory handling
+# within libdb
+leak:__db_retcopy

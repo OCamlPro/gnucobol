@@ -9795,9 +9795,17 @@ output_assign (const struct cb_assign *ap)
 		}
 	}
 #ifdef	COB_NON_ALIGNED		/* Nonaligned */
-	if (CB_TREE_CLASS (ap->var) == CB_CLASS_POINTER
-	 || CB_TREE_CLASS (ap->val) == CB_CLASS_POINTER) {
-		/* Pointer assignment */
+
+	/* FIXME: the non-aligned code has only to be executed if
+	the source and/or target is a non-aligned COBOL variable (which
+	it is in case of level 01/77, SYNC or manually aligned) */
+
+	const enum cb_class dst_class = CB_TREE_CLASS (ap->var);
+	const enum cb_class src_class = CB_TREE_CLASS (ap->val);
+
+	/* Pointer assignment */
+	if (dst_class == CB_CLASS_POINTER
+	 || src_class == CB_CLASS_POINTER) {
 		output_block_open ();
 		output_line ("void *temp_ptr;");
 
@@ -9836,7 +9844,7 @@ output_assign (const struct cb_assign *ap)
 			output (";");
 		} else {
 			/* MOVE val ... */
-			output ("memcpy(&temp_ptr, ");
+			output ("memcpy (&temp_ptr, ");
 			output_data (ap->val);
 			output (", sizeof(temp_ptr));");
 		}
@@ -9858,45 +9866,42 @@ output_assign (const struct cb_assign *ap)
 			output (" = temp_ptr;");
 		} else {
 			/* MOVE ... TO var */
-			output ("memcpy(");
+			output ("memcpy (");
 			output_data (ap->var);
 			output (", &temp_ptr, sizeof(temp_ptr));");
 		}
 		output_newline ();
 
 		output_block_close ();
-	} else {
-		/* Numeric assignment */
-		output_prefix ();
-		output_integer (ap->var);
-		output (" = ");
-		output_integer (ap->val);
-		if (inside_check == 0) {
-			output (";");
-			output_newline ();
-			if (CB_TREE_TAG (ap->var) == CB_TAG_CAST
-			 && CB_CAST (ap->var)->cast_type == CB_CAST_ADDRESS
-			 && CB_TREE_TAG (ap->val) == CB_TAG_CAST
-			 && CB_CAST (ap->val)->cast_type == CB_CAST_ADDRESS) {
-				f1 = cb_code_field (CB_CAST(ap->var)->val);
-				if (!f1->flag_field) {
-					force_cache (f1);
-				}
-				if (f1->flag_any_length) {
-					f2 = cb_code_field (CB_CAST(ap->val)->val);
-					if (!f2->flag_field) {
-						force_cache (f2);
-					}
-					output_line ("%s%d.size = %s%d.size;",
-							CB_PREFIX_FIELD, f1->id,
-							CB_PREFIX_FIELD, f2->id);
-				}
-			}
-		} else {
-			inside_stack[inside_check - 1] = 1;
-		}
+		return;
 	}
-#else	/* Nonaligned */
+
+	/* Index assignment */
+	if ( (dst_class == CB_CLASS_INDEX
+	   || dst_class == CB_CLASS_NUMERIC)
+	 &&  CB_FIELD_PTR (ap->var)->size == sizeof (int)) {
+		output_block_open ();
+
+		/* temp_var = index / integer value; */
+		output_prefix ();
+		output ("const int temp_idx = ");
+		output_integer (ap->val);
+		output (";");
+		output_newline ();
+
+		/* Destination index = temp_idx; */
+		output_prefix ();
+		output ("memcpy (");
+		output_data (ap->var);
+		output (", &temp_idx, sizeof(temp_idx));");
+		output_newline ();
+
+		output_block_close ();
+		return;
+	}
+
+#endif	/* Nonaligned */
+
 	/* Numeric assignment */
 	output_prefix ();
 	output_integer (ap->var);
@@ -9910,6 +9915,11 @@ output_assign (const struct cb_assign *ap)
 		 && CB_TREE_TAG (ap->val) == CB_TAG_CAST
 		 && CB_CAST (ap->val)->cast_type == CB_CAST_ADDRESS) {
 			f1 = cb_code_field (CB_CAST(ap->var)->val);
+#ifdef	COB_NON_ALIGNED
+			if (!f1->flag_field) {
+				force_cache (f1);
+			}
+#endif
 			if (f1->flag_any_length) {
 				f2 = cb_code_field (CB_CAST(ap->val)->val);
 				if (!f2->flag_field) {
@@ -9923,7 +9933,6 @@ output_assign (const struct cb_assign *ap)
 	} else {
 		inside_stack[inside_check - 1] = 1;
 	}
-#endif	/* Nonaligned */
 }
 
 static void

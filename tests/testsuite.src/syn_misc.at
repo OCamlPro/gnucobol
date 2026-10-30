@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2025 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -3467,6 +3467,36 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 -fformat=fixed prog.cob], [0], [])
 AT_CLEANUP
 
 
+AT_SETUP([ENTRY statements in areas A and B])
+AT_KEYWORDS([misc cobol85 areacheck ENTRY])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PARM-1        PIC X(256).
+       01 PARM-2        PIC X(256).
+       PROCEDURE        DIVISION.
+           ENTRY 'PRGEP1' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 1'.
+           GOBACK.
+         ENTRY 'PRGEP2' USING PARM-1 PARM-2.
+           DISPLAY 'ENTRY POINT 2'.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
+[prog.cob:12: error: ENTRY should not start in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fno-areacheck prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -fformat=fixed prog.cob], [0], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([pseudotext replacement with text in area A])
 AT_KEYWORDS([misc cobol85 gcos copy missing-periods])
 
@@ -4351,6 +4381,45 @@ prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL-CONVENTION special context])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA          DIVISION.
+       LOCAL-STORAGE SECTION.
+       77 C PIC X.
+       PROCEDURE     DIVISION.
+           CALL EXTERN 'callee' using C.
+           CALL 'callee' using C.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([OPTIONS paragraph special context])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       OPTIONS
+       DATA            DIVISION.
+       LOCAL-STORAGE   SECTION.
+      *Check C is accepted here, despinte being sensitive in OPTIONS
+      *paragraph (not properly terminated above).
+       77 C            PIC 9.
+       PROCEDURE       DIVISION.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:5: error: syntax error, unexpected DATA, expecting .
 ])
 AT_CLEANUP
 
@@ -7343,6 +7412,31 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free prog.cob], [0], [], [])
+
+AT_DATA([err.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+    01  INPUT-RECORD.
+        03  IN-TYPE             PIC 99
+                                DEFAULT NONE.
+        03  IN-TYPE-DEFAULT-ERROR PIC 99
+   *>intentional syntax error to validate the special context for DEFAULT
+   *>is left in such cases.
+                                DEFAULT PROCEDURE.
+        03  IN-TYPE-WO-DEFAULT PIC 99
+   *>checks DEFAULT NONE is accepted (NONE is sensitive in the DEFAULT
+   *>clause only).
+                                DEFAULT NONE.
+    PROCEDURE DIVISION.
+      GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free err.cob], [1], [],
+[err.cob:12: error: syntax error, unexpected PROCEDURE
+err.cob:12: warning: optional period used
+])
 
 AT_CLEANUP
 

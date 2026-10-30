@@ -18,6 +18,10 @@
 	* runtime.cfg: dropped not available "varfix_format",
 	  see "fixrel_format" instead; minor reformatting/rewording
 
+2024-12-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config/runtime.cfg: add COB_LOAD_GLOBAL
+
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 
 	FR #474: add runtime configuration to hide cursor for extended screenio

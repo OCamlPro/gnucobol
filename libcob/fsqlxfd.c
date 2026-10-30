@@ -72,18 +72,20 @@ int
 db_keylen (cob_file *f, int idx)
 {
 	int totlen, part;
+	cob_file_key key;
 
 	if (idx < 0 || idx > (int)(f->nkeys)) {
 		return -1;
 	}
-	if (f->keys[idx].count_components > 0) {
+	key = f->keys[idx];
+	if (key.count_components > 0) {
 		totlen = 0;
-		for (part = 0; part < f->keys[idx].count_components; part++) {
-			totlen += f->keys[idx].component[part]->size;
+		for (part = 0; part < key.count_components; part++) {
+			totlen += key.component[part]->size;
 		}
 		return totlen;
 	}
-	return f->keys[idx].field->size;
+	return key.field->size;
 }
 
 /* Save key for given index from 'record' into 'keyarea',
