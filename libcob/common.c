@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -1212,7 +1212,8 @@ cob_sig_handler (int sig)
 	char signal_text[COB_MINI_BUFF];
 	const char *signal_name;
 	const char *msg;
-	size_t pos = 0;
+	size_t	pos = 0;
+	int  	fileno_stderr = STDERR_FILENO;
 
 #if	defined (HAVE_SIGACTION) && !defined (SA_RESETHAND)
 	struct sigaction	sa;
@@ -1251,8 +1252,9 @@ cob_sig_handler (int sig)
 #ifdef	SIGHUP
 	case SIGHUP:
 #endif
-		fflush (COB_STDERR);
-		fflush (COB_STDOUT);
+		fflush (COB_STDERR_OR_DEFAULT);
+		fflush (COB_STDOUT_OR_DEFAULT);
+		fileno_stderr = fileno (COB_STDERR_OR_DEFAULT);
 		break;
 	default:
 		break;
@@ -1352,7 +1354,7 @@ cob_sig_handler (int sig)
 
 	buff[pos++] = '\n';
 	buff[pos] = 0;
-	write_until_fail (STDERR_FILENO, buff, pos);
+	write_until_fail (fileno_stderr, buff, pos);
 
 	/* early coredump if requested would be nice,
 	   but that is not signal-safe so do SIGABRT later... */
@@ -8283,7 +8285,7 @@ cob_expand_env_string (const char *strval)
 				env[j++] = strval[k];
 				break;
 			}
-			if (s){
+			if (s) {
 				size_t copylen = strlen(s);
 				if (copylen + j > envlen - 128) {
 					env = cob_realloc (env, envlen,
@@ -10548,12 +10550,8 @@ cob_common_init (void *setptr)
 
 #ifdef	_WIN32
 	/* Allows running tests under Win */
-	{
-		if (setptr) {
-			/* termio initialization does this when settings is initialized */
-			return;
-		}
-
+	/* note: termio initialization does this when settings is initialized */
+	if (!setptr) {
 		int use_unix_lf = 0;
 		char *s = getenv ("COB_UNIX_LF");
 

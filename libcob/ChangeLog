@@ -4,6 +4,10 @@
 	* common.h (cob_xml_mode, cob_module): use an enum instead
 	  of defines to represent XML parsing mode defines
 
+2026-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_common_init) [_WIN32]: fix C89 declaration
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c [LIBXML_VERSION]: fix version check for new ABI
@@ -21,6 +25,9 @@
 	  that setjmp / longjmp can be executed only once as a user may store
 	  multiple places and also may jump to them multiple times - it is up
 	  to the user to ensure a correct stack (= never jump "forward")
+	* common.c (cob_sig_handler), coblocal.h: full output to configured
+	  stderr stream, fix crash when cob_init was not called (for example
+	  signal handler registered by cobc)
 
 2026-09-09  Simon Sobisch <simonsobisch@gnu.org>
 
