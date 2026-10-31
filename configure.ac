@@ -426,6 +426,7 @@ AC_MSG_RESULT([$enable_cflags_setting])
 dnl Default CFLAGS (removed -g set in AC_INIT for compatibility)
 : ${CFLAGS="-O2"}
 
+gc_user_cc="$CC"	# AC_PROG_CC may add a -std to CC
 AC_PROG_CC([gcc icc xlc cc])
 
 AC_USE_SYSTEM_EXTENSIONS
@@ -537,6 +538,39 @@ AC_CACHE_CHECK([how to error on warnings during configure checks], gc_cv_err_war
 		[gc_cv_err_warn=""])
   ])
   ERRWARN="$gc_cv_err_warn"
+
+dnl C23 gives "()" the meaning of "(void)", which breaks our calls through
+dnl unprototyped function pointers: if needed, select an older C standard.
+m4_define([GC_UNPROTOTYPED_CALL],
+	[AC_LANG_PROGRAM([[static int f (int a, int b) { return a + b; }]],
+			 [[int (*fp)() = f; return fp (1, 2) - 3;]])])
+AC_CACHE_CHECK([whether unprototyped function calls compile], gc_cv_unproto_call, [
+	CFLAGS="$curr_cflags"
+	AC_COMPILE_IFELSE([GC_UNPROTOTYPED_CALL],
+		[gc_cv_unproto_call=yes], [gc_cv_unproto_call=no])
+  ])
+if test "$gc_cv_unproto_call" = no; then
+	case "$gc_user_cc $CFLAGS" in
+	*-std=*)
+		AC_MSG_ERROR([the C standard set in CC/CFLAGS does not accept unprototyped function calls, please use another -std=])
+		;;
+	esac
+	AC_CACHE_CHECK([for a C standard accepting unprototyped function calls], gc_cv_std_unproto, [
+		gc_cv_std_unproto=none
+		for std in gnu17 c17 gnu11 c11 gnu99 c99; do
+			CFLAGS="$curr_cflags -std=$std"
+			AC_COMPILE_IFELSE([GC_UNPROTOTYPED_CALL],
+				[gc_cv_std_unproto="-std=$std"])
+			test "$gc_cv_std_unproto" != none && break
+		done
+		CFLAGS="$curr_cflags"
+	  ])
+	if test "$gc_cv_std_unproto" = none; then
+		AC_MSG_ERROR([no C standard found that accepts unprototyped function calls, please set -std= in CFLAGS])
+	fi
+	curr_cflags="$curr_cflags $gc_cv_std_unproto"
+	CFLAGS="$curr_cflags"
+fi
 
 # save what we have so far as it is quite "constant"
 AC_CACHE_SAVE

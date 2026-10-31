@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -102,7 +102,7 @@ struct cb_token_queue {
 	const char **tokens;
 };
 
-static struct cb_token_queue *token_queue_new(int initial_size)
+static struct cb_token_queue *token_queue_new (int initial_size)
 {
 	struct cb_token_queue *q;
 
@@ -116,7 +116,7 @@ static struct cb_token_queue *token_queue_new(int initial_size)
 	return q;
 }
 
-static void token_queue_put(struct cb_token_queue *q, int strdup,
+static void token_queue_put (struct cb_token_queue *q, int strdup,
 			    const char *text,
 			    const char *token)
 {
@@ -890,17 +890,20 @@ cb_ppecho_copy_replace (const char *text, const char *token)
 	add_text_to_replace (INIT_DEPTH copy_repls, 0, text, token);
 }
 
-/* Called by pplex.l at EOF of top file */
+/* Called by pplex.l at EOF of top file and on teardown */
 void
 cb_free_replace (void)
 {
-	token_queue_free (copy_repls->token_queue);
-	cobc_free (copy_repls);
-	copy_repls = NULL;
-
-	token_queue_free (replace_repls->token_queue);
-	cobc_free (replace_repls);
-	replace_repls = NULL;
+	if (copy_repls) {
+		token_queue_free (copy_repls->token_queue);
+		cobc_free (copy_repls);
+		copy_repls = NULL;		
+	}
+	if (replace_repls) {
+		token_queue_free (replace_repls->token_queue);
+		cobc_free (replace_repls);
+		replace_repls = NULL;
+	}
 }
 
 /* Called by pplex.l when a new file is opened to save the previous

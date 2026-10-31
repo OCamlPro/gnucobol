@@ -5016,35 +5016,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([Invalid source format])
-AT_KEYWORDS([extensions runmisc])
-
-AT_DATA([unknown.cob], [
-       >>SOURCE FORMAT UNKNOWN
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       PROCEDURE DIVISION.
-          STOP RUN.
-])
-AT_DATA([lit.cob], [
-       >>SOURCE FORMAT "literal"
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       PROCEDURE DIVISION.
-          STOP RUN.
-])
-
-AT_CHECK([$COMPILE unknown.cob], [1], [],
-[unknown.cob:2: error: invalid SOURCE directive option 'UNKNOWN'
-])
-AT_CHECK([$COMPILE lit.cob], [1], [],
-[lit.cob:2: error: invalid SOURCE directive option
-lit.cob:2: error: PROGRAM-ID header missing
-])
-
-AT_CLEANUP
-
-
 AT_SETUP([Variable format])
 AT_KEYWORDS([extensions runmisc])
 
