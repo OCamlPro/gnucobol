@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2025 Free Software Foundation, Inc.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -1756,14 +1756,17 @@ output_globext_cache (void)
 static void
 output_standard_includes (struct cb_program *prog)
 {
-	struct cb_program *p;
-
+#if defined (COB_NO_SELF_DECLARE_MPZ)
 #if defined (HAVE_GMP_H)
 	#define MATH_INCLUDE "#include <gmp.h>"
 #elif defined (HAVE_MPIR_H)
 	#define MATH_INCLUDE "#include <mpir.h>"
 #else
-#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+	#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+#endif
+#else
+	/* common.h will define a pseudo-struct which is enough
+	   for passing the value by reference (as part of cob_decimal) */
 #endif
 
 #if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
@@ -1785,14 +1788,19 @@ output_standard_includes (struct cb_program *prog)
 	if (cb_flag_winmain) {
 		output_line ("#include <windows.h>");
 	}
-	/* check if any of the processed programs has any decimal,
-	   then include appropriate header */
-	for (p = prog; p; p = p->next_program) {
-		if (p->decimal_index_max || p->flag_decimal_comp) {
-			output_line (MATH_INCLUDE);
-			break;
+#if defined (COB_NO_SELF_DECLARE_MPZ)
+	{
+		struct cb_program *p;
+		/* check if any of the processed programs has any decimal,
+		   then include appropriate header */
+		for (p = prog; p; p = p->next_program) {
+			if (p->decimal_index_max || p->flag_decimal_comp) {
+				output_line (MATH_INCLUDE);
+				break;
+			}
 		}
 	}
+#endif
 	output_line ("#include <libcob.h>");
 	output_newline ();
 }
@@ -12822,7 +12830,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				else
 					sprintf (wrk,", Default byte: 0x%02X", cb_default_byte);
 			} else {
-				strcpy(wrk,"");
+				strcpy (wrk,"");
 			}
 			output_line ("/* Initialize WORKING-STORAGE%s */",wrk);
 			output_initial_values (prog->working_storage);

@@ -27,12 +27,26 @@
 #include <stddef.h>		/* for size_t */
 
 /* Only define cob_decimal if we have the necessary mpz_t from gmp.h/mpir.h
-   (or can self-define it from mp.h) */
-#if !defined (__GMP_H__)
-#ifndef __GNU_MP__
+   (or can self-define it from mp.h), otherwise go with a replacement struct
+   (also used for generated programs as those use only the reference) */
+#ifndef __GMP_H__
+#if defined (__GNU_MP__)
+typedef __mpz_struct mpz_t[1];
+#else
+#if defined (COB_NO_SELF_DECLARE_MPZ)
 #define COB_WITHOUT_DECIMAL
 #else
-typedef __mpz_struct mpz_t[1];
+/* mpz_t pseudo-structure which matches GMP+MPIR "enough" to use as reference,
+   accessing the fields outside of libcob is not supported in the first place */
+typedef struct {
+	int alloc;
+	int size;
+	void *d;
+} __mpz_pseudo_struct;
+typedef __mpz_pseudo_struct mpz_t[1];
+#endif
+/* can't use the mpf_t type */
+#define COB_WITHOUT_MPF
 #endif
 #endif
 
@@ -2982,6 +2996,7 @@ typedef	char *		cobchar_t;
 /* Type to store nanoseconds */
 typedef unsigned long long cob_ns_time;
 
+/* Kind of procedure. */
 enum cob_prof_procedure_kind {
 	COB_PROF_PROCEDURE_MODULE,
 	COB_PROF_PROCEDURE_SECTION,
@@ -2990,6 +3005,7 @@ enum cob_prof_procedure_kind {
 	COB_PROF_PROCEDURE_CALL
 };
 
+/* structure for static definition inside the program */
 struct cob_prof_procedure {
 	/* Name of the module or section or paragraph or entry */
 	const char				*text;
@@ -3000,34 +3016,36 @@ struct cob_prof_procedure {
 	   of COB_PROF_PROCEDURE_ENTRY, the "section" field is in fact
 	   the paragraph, not the section */
 	int 					section;
-	/* Kind of procedure. */
 	enum cob_prof_procedure_kind	kind;
 };
 
-/* Structure storing profiling information about each COBOL module */
+/* Structure storing profiling information about each COBOL module,
+   to be considered internal API, don't access members directly */
+struct cob_prof_proc_data {
+	cob_ns_time 	total_time;		/* execution time */
+	unsigned int	called_count;		/* execution count */
+	unsigned int	recursions;		/* current recursions per procedure */
+};
+
+/* Structure referencing mostly static profiling information,
+   to be considered internal API, don't access members directly */
 struct cob_prof_module {
-	/* Array of execution times */
-	cob_ns_time 				*total_times;
-	/* Array of execution counts */
-	unsigned int				*called_count;
-	/* Array of current recursions per procedure  */
-	unsigned int				*procedure_recursions;
-	/* Array of procedure descriptions */
-	struct cob_prof_procedure	*procedures ;
-	/* Number of procedures */
-	size_t  			procedure_count;
+	struct cob_prof_module		*next;   			/* next element */
+	struct cob_prof_procedure 	*procedures; 		/* Array of procedure descriptions */
+	size_t						procedure_count;	/* Number of procedures */
+	struct cob_prof_proc_data	data[1]; 	  /* stores procedure_count entries in C89 compat */
 };
 
 /* Function called to start profiling a COBOL module. Allocates the
    cob_prof_module structure that will be used to store the counters and
    times. */
 COB_EXPIMP struct cob_prof_module *cob_prof_init_module (
-	cob_module *module,
+	cob_module		*module,
 	struct cob_prof_procedure	*procedure_names,
-	size_t		procedure_count);
+	size_t  		procedure_count);
 
 /* Functions used to instrument the generated C code and measure
- * counters and times */
+   counters and times */
 COB_EXPIMP void cob_prof_enter_procedure	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_exit_procedure 	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_enter_section  	(struct cob_prof_module *, int);

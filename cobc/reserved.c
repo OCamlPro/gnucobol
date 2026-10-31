@@ -4382,16 +4382,16 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 
 static struct cobc_reserved	**reserved_word_map;
 static cob_u32_t	*reserved_hash_map;
-static size_t	reserved_word_map_arr_size;
+static unsigned int	reserved_word_map_arr_size;
 static unsigned int	num_reserved_words;
 
 static void
 init_reserved_word_map (void)
 {
-	reserved_word_map_arr_size = 512;
+	reserved_word_map_arr_size = 1024;	/* note: NUM_DEFAULT_RESERVED_WORDS > 960 */
 	num_reserved_words = 0;
-	reserved_word_map = cobc_main_malloc (reserved_word_map_arr_size * sizeof (void *));
-	reserved_hash_map = cobc_main_malloc (reserved_word_map_arr_size * sizeof (cob_u32_t));
+	reserved_word_map = cobc_main_malloc (sizeof (void *) * reserved_word_map_arr_size);
+	reserved_hash_map = cobc_main_malloc (sizeof (cob_u32_t) * reserved_word_map_arr_size);
 }
 
 static COB_INLINE COB_A_INLINE cob_u32_t
@@ -4431,12 +4431,14 @@ find_key_for_reserved_word (const char * const word)
 	return key_map;
 }
 
+/* allocates to the new map size, then place the current entries
+   to the correct position per its hash (which depends on that size) */
 static void
 realloc_reserved_word_map (const size_t new_size)
 {
 	struct cobc_reserved	**new_map = cobc_main_malloc (new_size * sizeof(void *));
 	struct cobc_reserved	**old_map = reserved_word_map;
-	size_t	old_size = reserved_word_map_arr_size;
+	const unsigned int	old_size = reserved_word_map_arr_size;
 	unsigned int	i;
 	unsigned int	key;
 
@@ -4508,8 +4510,8 @@ add_reserved_word_to_map (struct cobc_reserved val, const int overwrite)
 /* hashmap amendment_list */
 
 static struct amendment_list	**amendment_map;
-static size_t	amendment_map_arr_size;
-static unsigned int	num_amendments;
+static unsigned int 	amendment_map_arr_size;
+static unsigned int 	num_amendments;
 
 static void
 init_amendment_map (void)
@@ -4538,7 +4540,8 @@ static unsigned int
 find_key_for_amendment (const char * const word)
 {
 	unsigned int key;
-	// TODO: ensure upper-case inserts
+	/* note: all words in the amendment were added by initialize_word
+	   which adds an upper-cased version */
 	for (key = amendment_hash (word);
 		amendment_map[key] && strcmp (amendment_map[key]->word, word);
 		key = next_amendment_key (key));
@@ -4546,22 +4549,23 @@ find_key_for_amendment (const char * const word)
 	return key;
 }
 
+/* allocates to the new map size, then place the current entries
+   to the correct position per its hash (which depends on that size) */
 static void
 realloc_amendment_map (const size_t new_size)
 {
-	// TODO: realloc + comment below
 	struct amendment_list	**new_map = cobc_main_malloc (new_size * sizeof(void *));
 	struct amendment_list	**old_map = amendment_map;
-	size_t	old_size = amendment_map_arr_size;
+	const unsigned int	old_size = amendment_map_arr_size;
 	unsigned int	i;
-	unsigned int	key;
 
 	amendment_map_arr_size = new_size;
 	amendment_map = new_map;
 
 	for (i = 0; i < old_size; ++i) {
 		if (old_map[i]) {
-			key = find_key_for_amendment (old_map[i]->word);
+			const unsigned int	key
+				= find_key_for_amendment (old_map[i]->word);
 			amendment_map[key] = old_map[i];
 		}
 	}
@@ -4671,8 +4675,8 @@ get_reserved_words_with_amendments (void)
 
 	if (cb_reserved_words == NULL) {
 		/*
-		  Prepend the default reserved words to the amendment list as
-		  additions.
+		  Prepend the default reserved words (all upper-case)
+		  to the amendment list as additions.
 		*/
 		for (i = 0; i < NUM_DEFAULT_RESERVED_WORDS; ++i) {
 			amendment = cobc_main_malloc (sizeof (struct amendment_list));
