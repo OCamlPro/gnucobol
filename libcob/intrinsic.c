@@ -1,6 +1,7 @@
 /*
-   Copyright (C) 2005-2012, 2014-2024 Free Software Foundation, Inc.
-   Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
+   Copyright (C) 2005-2012, 2014-2026 Free Software Foundation, Inc.
+   Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin,
+   Denis Hugonnard-Roche
 
    This file is part of GnuCOBOL.
 
@@ -100,6 +101,7 @@ static mpf_t		cob_mpft2;
 static mpf_t		cob_mpft_get;
 
 static mpf_t		cob_pi;
+static mpf_t		cob_half_pi;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
 static mpf_t		cob_log_ten;
@@ -370,6 +372,8 @@ static const struct winlocale	wintable[] =
 
 #endif
 
+#define COB_COS_DIVIDE_FACTOR	16   
+
 static COB_NOINLINE void
 setup_cob_pi (void)
 {
@@ -397,6 +401,11 @@ setup_cob_pi (void)
 
 	mpf_init2 (cob_pi, COB_PI_LEN);
 	mpf_set_str (cob_pi, cob_pi_str, 10);
+
+	mpf_init2 (cob_half_pi, COB_PI_LEN);
+	mpf_set (cob_half_pi, cob_pi);
+	mpf_div_ui (cob_half_pi, cob_pi, 2UL);
+
 	set_cob_pi = 1;
 }
 
@@ -994,102 +1003,150 @@ cob_mpf_log10 (mpf_t dst_val, const mpf_t src_val)
 	mpf_clear (dst_temp);
 }
 
-/* Sin function */
-/* sin (x) = (reduce to pi/2) */
-/* {n = 0, ...} ( (-1 ^ n) * ( x ^ (2n + 1)) / (2n + 1) ) */
+/* Takes an angle X as input and calculates the angle Y reduced to [0;P2/2]  */
+/* such that abs( cos(X) ) = abs( cos(Y) ) and abs( sin(X) ) = abs( sin(Y) ) */
+/* and returns the quadrant to which the initial angle belongs (from 0 to 3) */
 
-static void
-cob_mpf_sin (mpf_t dst_val, const mpf_t src_val)
+static cob_u16_t
+cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3, vf4, vf5;
-	mpf_t			dst_temp;
-	cob_uli_t		arcquad;
-	cob_uli_t		n;
-	int			sign;
+	mpf_t vf1;
+	mpf_t k  ;
+	mpz_t q  ;
+	unsigned long n ;
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
-	if (!set_cob_pi) setup_cob_pi ();
+	const int sign = mpf_sgn (src_val);
+	if (sign == 0) {
+		mpf_set_ui (dst, 0UL);
+		return 0 ;
+	}
+
+	mpf_set (dst, src_val);
+	if (sign == -1) {
+		mpf_neg (dst, dst);
+	}
+	/* Now dst contains abs(src_val) */
 
 	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_init2 (vf4, COB_MPF_PREC);
-	mpf_init2 (vf5, COB_MPF_PREC);
-	sign = mpf_sgn (src_val);
+	mpf_init2 (k, COB_MPF_PREC);
+	mpz_init2 (q, COB_MPZ_DEF);
 
-	mpf_abs (vf4, src_val);
-	mpf_set (vf3, cob_pi);
-	mpf_div_2exp (vf3, vf3, 1UL);
-	mpf_div (vf1, vf4, vf3);
-	mpf_floor (vf4, vf1);
+	/* Get Quadrant */
+	mpf_div (vf1, dst, cob_half_pi);
+	mpf_trunc (k, vf1);
+	mpz_set_f(q, k);
+	mpz_mod_ui (q, q, 4UL);
+	n = mpz_get_ui (q);
 
-	if (mpf_cmp_ui (vf4, 4UL) >= 0) {
-		mpf_div_2exp (vf2, vf4, 2UL);
-		mpf_floor (vf2, vf2);
-		mpf_mul_2exp (vf2, vf2, 2UL);
-		mpf_sub (vf2, vf4, vf2);
-	} else {
-		mpf_set (vf2, vf4);
+	/* Compute the resulting angle reduce on [0;PI/2] */
+	/*         dst     - k*Pi/2  */
+	mpf_mul (vf1, k, cob_half_pi);
+	mpf_sub (dst, dst, vf1);
+
+	/* Process quadrant */
+	if (n & 1) {
+		/* if n odd we have to get the complementary angle */
+		mpf_sub (dst, cob_half_pi, dst);
 	}
 
-	arcquad = mpf_get_ui (vf2);
-	mpf_sub (vf2, vf1, vf4);
-	mpf_mul (vf4, vf3, vf2);
-
-	if (arcquad > 1) {
-		sign = -sign;
-	}
-	if (arcquad & 1) {
-		mpf_sub (vf4, vf3, vf4);
+	if (sign == -1) {
+		n = 3 - n ;
 	}
 
-	mpf_mul (vf3, vf4, vf4);
-	mpf_neg (vf3, vf3);
-
-	n = 1;
-	mpf_set_ui (vf2, 1UL);
-	mpf_set_ui (dst_temp, 1UL);
-
-	do {
-		++n;
-		mpf_div_ui (vf2, vf2, n);
-		++n;
-		mpf_div_ui (vf2, vf2, n);
-		mpf_mul (vf2, vf2, vf3);
-		mpf_set (vf5, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-	} while (!mpf_eq (vf5, dst_temp, COB_MPF_PREC));
-
-	mpf_mul (dst_temp, dst_temp, vf4);
-	if (sign < 0) {
-		mpf_neg (dst_temp, dst_temp);
-	}
-
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
-
-	mpf_clear (vf5);
-	mpf_clear (vf4);
-	mpf_clear (vf3);
-	mpf_clear (vf2);
 	mpf_clear (vf1);
+	mpf_clear (k);
+	mpz_clear (q);
+
+	return n;
 }
 
 /* Cos function */
-/* cos (x) = sin ((pi / 2) - x) */
+/* cos(x) = ( 1 - x^2/2 + x^4/4! - x^6/6! ...*/
+/* (x) = (reduced to pi/2) */
+/* The angle is divided by 2^COB_COS_DIVIDE to make it closer to 0 */
+/* We use the equality cos(2X) = 2*cos^2(X)-1 to have the final value*/
 
 static void
 cob_mpf_cos (mpf_t dst_val, const mpf_t src_val)
 {
-	mpf_t		vf1;
+	mpf_t			term, val_serie, angle;
+	cob_u16_t		arcquad;
+	cob_uli_t		n;
 
-	mpf_init2 (vf1, COB_MPF_PREC);
 	if (!set_cob_pi) setup_cob_pi ();
 
-	mpf_set (vf1, cob_pi);
-	mpf_div_2exp (vf1, vf1, 1UL);
-	mpf_sub (vf1, vf1, src_val);
-	cob_mpf_sin (dst_val, vf1);
+	mpf_init2 (term, COB_MPF_PREC);
+	mpf_init2 (val_serie, COB_MPF_PREC);
+	mpf_init2 (angle, COB_MPF_PREC);
+
+	arcquad = cob_normalize_angle (angle, src_val);
+
+	/* Divide nn time by 2 */
+	mpf_div_2exp (angle, angle, COB_COS_DIVIDE_FACTOR );
+
+	mpf_mul (angle, angle, angle);
+
+	mpf_set_si (term, -1L);
+
+	/* compute first term */
+	mpf_set (dst_val, angle);
+	mpf_div_ui (dst_val, dst_val, 2UL);
+	mpf_neg (dst_val, dst_val);
+	mpf_set (term, dst_val); /* init first term to -x^2/2 */
+	mpf_add_ui (dst_val, dst_val, 1UL);
+
+	n = 4;
+	do {
+		const cob_uli_t	j = (n-1UL) * n;
+
+		mpf_set (val_serie, dst_val);
+		mpf_mul (term, term, angle);
+		mpf_div_ui (term, term, j);
+		mpf_neg (term, term);
+
+		mpf_add (dst_val, dst_val, term);
+
+		n += 2;
+	} while (!mpf_eq (dst_val, val_serie, COB_MPF_PREC));
+
+	/*  compute 2*n^2 -1 n times */
+	{
+		int i ;
+		for (i = 0 ; i < COB_COS_DIVIDE_FACTOR; i++) {
+			mpf_mul (dst_val, dst_val, dst_val);
+			mpf_mul_ui (dst_val, dst_val, 2UL);
+			mpf_sub_ui (dst_val, dst_val, 1UL);
+		}
+	}
+
+	if (arcquad == 1 || arcquad == 2)  {
+		mpf_neg (dst_val, dst_val);
+	}
+
+	mpf_clear (term);
+	mpf_clear (angle);
+	mpf_clear (val_serie);
+}
+
+/* sin function */
+/* sin(X) = cos( PI/2 - X) */
+
+static void
+cob_mpf_sin (mpf_t dst_val, const mpf_t src_val)
+{
+	mpf_t           vf1;
+
+	if (!set_cob_pi) setup_cob_pi ();
+
+	mpf_init2 (vf1, COB_MPF_PREC);
+
+	/* compute complementary angle = PI/2 - Angle */
+	mpf_set (vf1, cob_half_pi);
+	if (mpf_cmp_ui (src_val, 0UL) != 0) {
+		mpf_sub (vf1, vf1, src_val);
+	}
+
+	cob_mpf_cos (dst_val, vf1);
 
 	mpf_clear (vf1);
 }
@@ -1136,15 +1193,14 @@ cob_mpf_atan (mpf_t dst_val, const mpf_t src_val)
 	mpf_add_ui (vf3, cob_sqrt_two, 1UL);
 
 	if (mpf_cmp (vf1, vf3) > 0) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_2exp (dst_temp, dst_temp, 1UL);
+		mpf_set (dst_temp, cob_half_pi);
 		mpf_ui_div (vf1, 1UL, vf1);
 		mpf_neg (vf1, vf1);
 	} else {
 		mpf_sub_ui (vf4, cob_sqrt_two, 1UL);
 		if (mpf_cmp (vf1, vf4) > 0) {
-			mpf_set (dst_temp, cob_pi);
-			mpf_div_2exp (dst_temp, dst_temp, 2UL);
+			mpf_set (dst_temp, cob_half_pi);
+			mpf_div_2exp (dst_temp, dst_temp, 1UL);
 			mpf_sub_ui (vf3, vf1, 1UL);
 			mpf_add_ui (vf4, vf1, 1UL);
 			mpf_div (vf1, vf3, vf4);
@@ -1192,8 +1248,8 @@ cob_mpf_asin (mpf_t dst_val, const mpf_t src_val)
 	if (!set_cob_pi) setup_cob_pi ();
 
 	if (!mpf_cmp_ui (src_val, 1UL) || !mpf_cmp_si (src_val, -1L)) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_ui (dst_temp, dst_temp, 2UL);
+		mpf_set (dst_temp, cob_half_pi);
+		mpf_div_ui (dst_temp, dst_temp, 1UL);
 		if (mpf_sgn (src_val) < 0) {
 			mpf_neg (dst_temp, dst_temp);
 		}
@@ -1240,8 +1296,8 @@ cob_mpf_acos (mpf_t dst_val, const mpf_t src_val)
 	if (!set_cob_pi) setup_cob_pi ();
 
 	if (!mpf_sgn (src_val)) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_ui (dst_temp, dst_temp, 2UL);
+		mpf_set (dst_temp, cob_half_pi);
+		mpf_div_ui (dst_temp, dst_temp, 1UL);
 		mpf_set (dst_val, dst_temp);
 		mpf_clear (dst_temp);
 		return;
@@ -7189,6 +7245,7 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_pi) {
 		mpf_clear (cob_pi);
+		mpf_clear (cob_half_pi);
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);
