@@ -1766,8 +1766,29 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. bad.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 D   PIC X(40) 
+              VALUE "2025010112345678901234567890123456789012".
+       01 RESU   PIC 9(18) VALUE ZERO.
+       PROCEDURE DIVISION.
+           COMPUTE RESU = FUNCTION INTEGER-OF-FORMATTED-DATE
+                   ("YYYYMMDD", D)
+           DISPLAY RESU " " FUNCTION TRIM (FUNCTION EXCEPTION-STATUS)
+           STOP RUN.
+
+])
+
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[000000000000000000 EC-ARGUMENT-FUNCTION
+], [])
 
 AT_CLEANUP
 
@@ -2655,8 +2676,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([FUNCTION NUMVAL-C])
-AT_KEYWORDS([functions NUMVAL])
+AT_SETUP([FUNCTION NUMVAL / NUMVAL-C])
+AT_KEYWORDS([functions])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2673,6 +2694,7 @@ AT_DATA([prog.cob], [
        01  BAD1   PIC   X(18) VALUE " -19,876.1234 %".
        01  BAD2   PIC   X(18) VALUE "19,87,56.12.34 ".
        01  BAD3   PIC   X(18) VALUE "+19,8756CR1234".
+       01  D PIC X(40) VALUE "1234567890123456789012345678901234567890".
        01  N      PIC   s9(8)v9(5).
        PROCEDURE        DIVISION.
            MOVE FUNCTION NUMVAL-C ( X1 , "%" ) TO N
@@ -2707,6 +2729,15 @@ AT_DATA([prog.cob], [
            MOVE FUNCTION NUMVAL ( BAD3 ) TO N
            IF N <> 0 AND N <> -198756
               DISPLAY "BAD3 '" BAD3 "' : " N.
+
+      *> handling overflow (> 38 digits)
+           IF FUNCTION NUMVAL ( D )
+           <> 34567890123456789012345678901234567890
+           OR FUNCTION TRIM (FUNCTION EXCEPTION-LOCATION)
+           <> 'prog; ; 53'
+              DISPLAY "OVERLEN '" FUNCTION NUMVAL ( D )
+                        "' : "    FUNCTION EXCEPTION-LOCATION.
+
            STOP RUN.
 ])
 

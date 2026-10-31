@@ -305,7 +305,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 	/* note: the specified max does not contain the low-value */
 	if ((size_t)(end - data) > maxsize) {
 		bad_size = (int)(end - data);
-		end = data + maxsize;
+		end = data + maxsize - 1;
 	}
 	switch (target_case) {
 	case CCM_NONE:
