@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -2094,7 +2094,10 @@ enum cob_runtime_option_switch {
 	COB_SET_RUNTIME_DISPLAY_PRINTER_FILE = 1,	/* 'p' is  FILE *  */
 	COB_SET_RUNTIME_RESCAN_ENV = 2,		/* rescan environment variables */
 	COB_SET_RUNTIME_DISPLAY_PUNCH_FILE = 3,	/* 'p' is  FILE *  */
-	COB_SET_RUNTIME_DUMP_FILE = 4	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_DUMP_FILE = 4,	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_STDIN_FILE = 5,		/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDOUT_FILE = 6, 	/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDERR_FILE = 7,	/* 'p' is FILE * */
 };
 COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, void *p);
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);
@@ -2356,6 +2359,7 @@ COB_EXPIMP int		cob_func		(const char *, const int, void **);
 #ifndef COB_WITHOUT_JMP
 COB_EXPIMP void		*cob_savenv		(struct cobjmp_buf *);
 COB_EXPIMP void		*cob_savenv2		(struct cobjmp_buf *, const int);
+COB_EXPIMP int 		cob_setjmp		(struct cobjmp_buf *);
 COB_EXPIMP void		cob_longjmp		(struct cobjmp_buf *);
 #endif
 

@@ -86,7 +86,7 @@ typedef	char *		cobchar_t;
 #define	cobs64_t	cob_s64_t
 #define	cobuns64_t	cob_u64_t
 
-#define	cobsetjmp(x)	setjmp (cob_savenv (x))
+#define	cobsetjmp(x)	cob_setjmp (x)
 #define	coblongjmp(x)	cob_longjmp (x)
 #define	cobsavenv(x)	cob_savenv (x)
 #define	cobsavenv2(x,z)	cob_savenv2 (x, z)
