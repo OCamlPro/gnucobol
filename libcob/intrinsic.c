@@ -978,19 +978,19 @@ cob_agm_log(mpf_t dst_val, const mpf_t val_2 )
 	mpf_init2 (g_avg, COB_MPF_CUTOFF+8);
 	mpf_init2 (temp, COB_MPF_CUTOFF+8);
 
-	mpf_set_ui (a_avg, 1UL) ;
-	mpf_set (g_avg, val_2) ;
+	mpf_set_ui (a_avg, 1UL);
+	mpf_set (g_avg, val_2);
 
 	do {
-		mpf_set (temp, a_avg) ;
+		mpf_set (temp, a_avg);
 
-		mpf_add (a_avg, a_avg, g_avg) ;
-		mpf_div_ui (a_avg, a_avg, 2UL) ;
+		mpf_add (a_avg, a_avg, g_avg);
+		mpf_div_ui (a_avg, a_avg, 2UL);
 
-		mpf_mul (g_avg, g_avg, temp) ;
-		mpf_sqrt (g_avg, g_avg) ;
+		mpf_mul (g_avg, g_avg, temp);
+		mpf_sqrt (g_avg, g_avg);
 
-	} while (!mpf_eq (a_avg, g_avg, COB_MPF_CUTOFF)) ;
+	} while (!mpf_eq (a_avg, g_avg, COB_MPF_CUTOFF));
 
 	mpf_set (dst_val, a_avg);
 
@@ -1013,7 +1013,6 @@ cob_mpf_log(mpf_t dst_val, const mpf_t src_val) {
 	long s;
 	mpf_t agm_val;
 	mpf_t init_val;
-	int negat_result = 0;
 
 	if (mpf_sgn (src_val) <= 0 || !mpf_cmp_ui (src_val, 1UL)) {
 		mpf_set_ui (dst_val, 0UL);
@@ -1026,26 +1025,27 @@ cob_mpf_log(mpf_t dst_val, const mpf_t src_val) {
 	mpf_init2 (agm_val,COB_MPF_CUTOFF+8);
 	mpf_init2 (init_val,COB_MPF_PREC);
 
-	if (mpf_cmp_ui (src_val, 1UL) < 0) {
-		mpf_ui_div (init_val, 1UL, src_val);
-		negat_result = 1;
-	}
-	else {
-		mpf_set (init_val, src_val);
-	}
+	mpf_set (init_val, src_val);
 
 	/* Reduce Argument for faster convergence   */
 
 	/* step 1                                   */
 	/*  - Get i such = n * 2^i                  */
 	/*    where n is in [0,5 ; 1]               */
-	mpf_get_d_2exp (&s, init_val) ;
+	mpf_get_d_2exp (&s, init_val);
 
 	/* step 2                                   */
 	/* Adding COB_LN_PREC to i and divide by 2^i*/
 
-	s = COB_LN_PREC  + s;
-	mpf_div_2exp(dst_val, init_val, s);
+	s = (long) COB_LN_PREC  + s;
+	if (s<0) {
+		/* src_val is tiny enough */
+		s = 0 ;
+		mpf_set (dst_val, init_val);
+	}
+	else {
+		mpf_div_2exp(dst_val, init_val, s);
+	}
 
 	cob_agm_log (agm_val, dst_val);
 
@@ -1054,13 +1054,7 @@ cob_mpf_log(mpf_t dst_val, const mpf_t src_val) {
 
 	mpf_mul_ui (agm_val, agm_val, 2UL);
 	mpf_div (agm_val, cob_pi, agm_val);
-
-	if (negat_result) {
-		mpf_sub (dst_val, agm_val, dst_val);
-	}
-	else {
-		mpf_sub (dst_val, dst_val, agm_val);
-	}
+	mpf_sub (dst_val, dst_val, agm_val);
 
 	mpf_clear (agm_val);
 	mpf_clear (init_val);

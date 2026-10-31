@@ -1,4 +1,9 @@
 
+2026-10-31  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): Simplify for tiny number and fix typo
+	* intrinsic.c (cob_agm_log): fix typo
+
 2026-10-25  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
 	* intrinsic.c (cob_mpf_log): Implement a faster new algorithm
