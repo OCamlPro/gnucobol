@@ -1276,7 +1276,7 @@ AT_CLEANUP
 
 
 AT_SETUP([output dependencies])
-# AT_KEYWORDS([])
+AT_KEYWORDS([Makefile])
 
 AT_CAPTURE_FILE([compiler.output])
 
@@ -1613,7 +1613,7 @@ AT_CLEANUP
 
 
 AT_SETUP([EBCDIC /ASCII table generation])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc gentable])
 
 AT_SKIP_IF([test "$COB_HAS_ICONV" = "no"])
 

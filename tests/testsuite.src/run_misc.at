@@ -1136,8 +1136,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 AT_CLEANUP
 
 
-AT_SETUP([MOVE of invalid data from numeric to alphanumeric item])
-AT_KEYWORDS([runmisc])
+AT_SETUP([MOVE of inv. numeric data to alphanumeric item])
+AT_KEYWORDS([runmisc invalid])
 
 AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
@@ -1153,14 +1153,14 @@ AT_DATA([prog.cob], [
        MAIN.
            MOVE SPACES TO X-ALN
            MOVE X-NUM  TO Y-ALN
-	   IF Y-ALN NOT EQUAL " " THEN
-	      DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
-	   END-IF
+           IF Y-ALN NOT EQUAL " " THEN
+              DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
+           END-IF
            MOVE SPACES TO Z-ALN
            MOVE Z-NUM  TO T-ALN
-	   IF T-ALN NOT EQUAL "  " THEN
-	      DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
-	   END-IF
+           IF T-ALN NOT EQUAL "  " THEN
+              DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
+           END-IF
            STOP RUN.
 ])
 
@@ -12530,7 +12530,7 @@ getType (int type, int byvalue)
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   char      wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80], pic[30];	/* note: maximum _theoretical_ size */
    const int nargs = cob_get_num_params();
    int       k;
 
@@ -15286,7 +15286,7 @@ AT_CLEANUP
 
 
 AT_SETUP([run profiling with recursion, entries and CALL])
-AT_KEYWORDS([cobc])
+AT_KEYWORDS([cobc recursion])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -16245,10 +16245,10 @@ AT_DATA([prog.cob], [
        01 OFFSET BINARY-LONG UNSIGNED.
        PROCEDURE DIVISION.
            MOVE 1 TO OFFSET
-	   PERFORM UNTIL OFFSET > LENGTH OF STR
-	     CALL "TestRecurse" USING STR OFFSET
-	   END-PERFORM.
-	   DISPLAY "DONE".
+           PERFORM UNTIL OFFSET > LENGTH OF STR
+             CALL "TestRecurse" USING STR OFFSET
+           END-PERFORM.
+           DISPLAY "DONE".
        END PROGRAM PROG.
 
        IDENTIFICATION DIVISION.
@@ -16259,8 +16259,8 @@ AT_DATA([prog.cob], [
        01 LK-OFFSET BINARY-LONG UNSIGNED.
        PROCEDURE DIVISION USING LK-STR LK-OFFSET.
            DISPLAY "L " LK-OFFSET " " NO ADVANCING
-	   EVALUATE LK-STR(LK-OFFSET:1)
-	     WHEN "."
+           EVALUATE LK-STR(LK-OFFSET:1)
+             WHEN "."
                ADD 1 TO LK-OFFSET
                CALL "TestRecurse" USING LK-STR LK-OFFSET
              WHEN OTHER
@@ -16292,7 +16292,7 @@ AT_DATA([prog.cob], [
            PERFORM UNTIL OFFSET > LENGTH OF STR
                CALL "TestRecurse" USING STR OFFSET
            END-PERFORM.
-	   DISPLAY "DONE".
+           DISPLAY "DONE".
        END PROGRAM PROG.
 
        IDENTIFICATION DIVISION.
@@ -16363,7 +16363,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            MOVE 0 TO WS-COUNTER.
            CALL "recurse" USING WS-COUNTER.
-	   DISPLAY "Done".
+           DISPLAY "Done".
            STOP RUN.
        END PROGRAM prog.
 
@@ -16447,7 +16447,7 @@ AT_DATA([caller.cob], [
            PERFORM UNTIL OFFSET > LENGTH OF STR
                CALL "callee" USING STR OFFSET
            END-PERFORM.
-	   DISPLAY "Done".
+           DISPLAY "Done".
 ])
 
 AT_CHECK([$COMPILE_MODULE callee.cob])

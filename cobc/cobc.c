@@ -74,8 +74,9 @@ enum xref_type {
 #endif
 
 struct strcache {
-	struct strcache	*next;
+	struct strcache	*next;	
 	void		*val;
+	cob_u32_t	hash;
 };
 
 /* Compile level */
@@ -451,7 +452,9 @@ static size_t		cobc_pic_flags_len;
 static char		*save_temps_dir = NULL;
 
 #define STRING_CACHES 32
-static struct strcache	*base_string[STRING_CACHES];
+#define HASH_BITS     10
+#define HASH_BUCKETS  (1u << HASH_BITS)
+static struct strcache *base_string[STRING_CACHES][HASH_BUCKETS];
 
 static char		*cobc_list_dir = NULL;
 static char		*cobc_list_file = NULL;
@@ -1460,14 +1463,31 @@ cobc_elided_strcpy (char *dest, const char *src,
 	return dest;
 }
 
+/* hash function for simple strings - note: these are all upper-cased */
+static cob_u32_t
+hash_simple_string (const cob_c8_t *str)
+{
+	cob_u32_t	result = 0x811c9dc5;
+
+	/* Perform 32-bit FNV1a hash */
+	for (; *str; ++str) {
+		result ^= *str;
+		result *= (cob_u32_t) 0x01000193;
+	}
+
+	return result;
+}
+
 void *
 cobc_check_string (const char *dupstr)
 {
 	struct strcache	*s;
 	size_t cache_num;
+	const cob_u32_t hash = hash_simple_string (dupstr);
+    const cob_u32_t hidx = hash & (HASH_BUCKETS - 1);
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!dupstr)) {
+	if (unlikely (!dupstr || !dupstr[0])) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_check_string");
 		cobc_abort_terminate (1);
 	}
@@ -1477,28 +1497,33 @@ cobc_check_string (const char *dupstr)
 	   of picture strings which is the main use of this function,
 	   we use an array of strings with matching lengths, allowing
 	   us to use plain memcmp to a limitted amount of entries
-	   for most cases */
+	   for most cases, to cater for the one possible exception
+	   "many similar entry points" (generated programs) we keep
+	   all of those in a bucket per hash */
 	cache_num = strlen (dupstr);
-	if (cache_num != 0 && cache_num < STRING_CACHES) {
-		for (s = base_string[cache_num - 1]; s; s = s->next) {
-			if (!memcmp (dupstr, s->val, cache_num)) {
+	if (cache_num < STRING_CACHES) {
+		for (s = base_string[cache_num - 1][hidx]; s; s = s->next) {
+			if (hash == s->hash
+			 && !memcmp (dupstr, s->val, cache_num)) {
 				return s->val;
 			}
 		}
 		cache_num--;
 	} else {
 		cache_num = STRING_CACHES - 1;
-		for (s = base_string[cache_num]; s; s = s->next) {
-			if (!strcmp (dupstr, (const char *)s->val)) {
+		for (s = base_string[cache_num][hidx]; s; s = s->next) {
+			if (hash == s->hash
+			 && !strcmp (dupstr, (const char *)s->val)) {
 				return s->val;
 			}
 		}
 	}
 
 	s = cobc_main_malloc (sizeof(struct strcache));
-	s->next = base_string[cache_num];
+	s->next = base_string[cache_num][hidx];
 	s->val = cobc_main_strdup (dupstr);
-	base_string[cache_num] = s;
+	s->hash = hash;
+	base_string[cache_num][hidx] = s;
 	return s->val;
 }
 
@@ -3079,13 +3104,13 @@ static void
 add_depend_target (const char *s)
 {
 	if (!cb_depend_target) {
-		cb_depend_target = cobc_strdup (s);
+		cb_depend_target = cobc_main_strdup (s);
 	} else {
 		/* multiple invocations add to the list */
 		const size_t orig_len	= strlen (cb_depend_target);
 		const size_t new_len	= strlen (s);
 		const size_t buff_len	= orig_len + 1 + new_len + 1;
-		cb_depend_target = cobc_realloc (cb_depend_target, buff_len);
+		cb_depend_target = cobc_main_realloc (cb_depend_target, buff_len);
 		*(cb_depend_target + orig_len) = ' ';
 		memcpy (cb_depend_target + orig_len + 1, s, new_len);
 		*(cb_depend_target + orig_len + 1 + new_len) = '\0';
@@ -3104,7 +3129,7 @@ add_depend_escape_target (const char *s)
 		}
 	}
 	if (nchars) {
-		char *new_s = cobc_malloc (len+nchars+1);
+		char *new_s = cobc_malloc (len + nchars + 1);
 		char *cur_s = new_s ;
 		for (i=0; i<len; i++) {
 			const char c = s[i];
@@ -3132,7 +3157,7 @@ file_replace_extension (const char *file, const char *ext)
 		if (c == '.') {
 			const int extlen = strlen (ext);
 			const int newlen = i + extlen + 1;
-			char *new_file = cobc_malloc (newlen);
+			char *new_file = cobc_main_malloc (newlen);
 			memcpy (new_file, file, i);
 			memcpy (new_file+i, ext, extlen + 1);
 			return new_file;
@@ -3275,7 +3300,7 @@ process_command_line (const int argc, char **argv)
 				CB_XSTRINGIFY (__LIBCOB_VERSION) "."
 				CB_XSTRINGIFY (__LIBCOB_VERSION_MINOR) "."
 				CB_XSTRINGIFY (__LIBCOB_VERSION_PATCHLEVEL));
-			exit (EXIT_SUCCESS);
+			cobc_early_exit (EXIT_SUCCESS);
 
 		case 'i':
 			/* --info */
@@ -3467,7 +3492,7 @@ process_command_line (const int argc, char **argv)
 				code_ascii[len - 1] = '\0';
 			}
 			res = gentable (stdout, code_ebcdic, code_ascii, reversible);
-			exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
+			cobc_early_exit (res ? EXIT_FAILURE : EXIT_SUCCESS);
 		}
 
 		default:
@@ -4315,8 +4340,7 @@ process_command_line (const int argc, char **argv)
 	if (cb_depend_target_auto) {
 		if (!cb_depend_filename) {
 			if (output_name) {
-				cb_depend_filename =
-					file_replace_extension (output_name, ".d");
+				cb_depend_filename = file_replace_extension (output_name, ".d");
 			}
 		}
 	}
@@ -8455,7 +8479,8 @@ process_translate (struct filename *fn)
 			cobc_terminate (lf->local_name);
 		}
 		/* remove possible path from header name for later codegen */
-		lf->local_include_name = cobc_main_strdup (file_basename (lf->local_name, COB_BASENAME_KEEP_EXT));
+		lf->local_include_name = cobc_main_strdup (
+			file_basename (lf->local_name, COB_BASENAME_KEEP_EXT));
 		p->local_include = lf;
 		lf->next = fn->localfile;
 		fn->localfile = lf;

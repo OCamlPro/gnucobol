@@ -868,6 +868,20 @@ enum cob_file_access_mode {
 	COB_ACCESS_RANDOM = 3
 };
 
+/* io_routine */
+enum cob_file_operation {
+	COB_LAST_NONE		= 0,
+	COB_LAST_START		= 1,
+	COB_LAST_READ_SEQ	= 2,
+	COB_LAST_READ		= 3,
+	COB_LAST_WRITE		= 4,
+	COB_LAST_REWRITE	= 5,
+	COB_LAST_DELETE		= 6,
+	COB_LAST_OPEN		= 7,
+	COB_LAST_CLOSE		= 8,
+	COB_LAST_DELETE_FILE	= 9
+};
+
 /* SELECT features */
 
 #define	COB_SELECT_FILE_STATUS	(1U << 0)
@@ -907,11 +921,13 @@ enum cob_open_mode {
 
 /* Close options */
 
-#define COB_CLOSE_NORMAL	0
-#define COB_CLOSE_LOCK		1
-#define COB_CLOSE_NO_REWIND	2
-#define COB_CLOSE_UNIT		3
-#define COB_CLOSE_UNIT_REMOVAL	4
+enum cob_close_mode {
+	COB_CLOSE_NORMAL	= 0,
+	COB_CLOSE_LOCK		= 1,
+	COB_CLOSE_NO_REWIND	= 2,
+	COB_CLOSE_UNIT		= 3,
+	COB_CLOSE_UNIT_REMOVAL	= 4
+};
 
 /* Write options */
 
@@ -1449,6 +1465,7 @@ typedef struct __cob_file {
 	const unsigned char* code_set_read;	/* CODE-SET conversion for READs */
 	size_t			nconvert_fields;	/* Number of logical fields to convert */
 	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
+	enum cob_file_operation		last_operation;		/* Most recent I/O operation */
 } cob_file;
 
 
@@ -1653,18 +1670,6 @@ typedef struct __cob_global {
 #endif
 
 } cob_global;
-
-/* File I/O function pointer structure (left here as it needs to be "external" for GC 4.x) */
-struct cob_fileio_funcs {
-	int	(*open)		(cob_file *, char *, const enum cob_open_mode, const int);
-	int	(*close)	(cob_file *, const int);
-	int	(*start)	(cob_file *, const int, cob_field *);
-	int	(*read)		(cob_file *, cob_field *, const int);
-	int	(*read_next)	(cob_file *, const int);
-	int	(*write)	(cob_file *, const int);
-	int	(*rewrite)	(cob_file *, const int);
-	int	(*fdelete)	(cob_file *);
-};
 
 #ifndef COB_WITHOUT_JMP
 /* Low level jump structure */
