@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2025 Free Software Foundation, Inc.
+   Copyright (C) 2018-2026 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -41,7 +41,7 @@
 #include <libxml/tree.h>
 #include <libxml/SAX2.h>
 
-#if LIBXML_VERSION >= 21200
+#if LIBXML_VERSION >= 21400
 #define LIBXML_CONST_ERROR_PTR					const xmlError *
 #define LIBXML_CTXT_GET_ENCODING(ctxt) 			xmlCtxtGetDeclaredEncoding(ctxt)
 #define LIBXML_CTXT_GET_STANDALONE(ctxt) 		xmlCtxtGetStandalone(ctxt)
@@ -708,7 +708,7 @@ get_num_int (cob_field * const f, const char decimal_point,
 	const unsigned char mod_orig_decimal_point = COB_MODULE_PTR->decimal_point != decimal_point
 	                                           ? COB_MODULE_PTR->decimal_point : 0;
 	cob_field_attr	attr;
-	cob_field   	edited_field = { .size = len, .data = p, .attr = &attr };
+	cob_field   	edited_field = { len, p, &attr };
 
 	/* temporarily swap decimal point, if needed */
 	if (mod_orig_decimal_point) {

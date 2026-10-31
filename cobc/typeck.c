@@ -11719,7 +11719,7 @@ validate_move_from_const (cb_tree src, cb_tree dst, const unsigned int is_value)
 				}
 				return MOVE_OK;
 			}
-			return MOVE_INVALID_NO_MESSAGE; /* error message raised already*/
+			return MOVE_INVALID_NO_MESSAGE; /* error message raised already */
 		}
 	} else if (src == cb_zero) {
 		if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHABETIC) {
@@ -11751,6 +11751,14 @@ validate_move_from_const (cb_tree src, cb_tree dst, const unsigned int is_value)
 			if (cb_move_nonnumlit_to_numeric_is_zero) {
 				return MOVE_SUBSTITUTING_ZERO;
 			}
+		}
+        } else if (src == cb_null) {
+		/* note: while not documented MF+ACU may compile that for
+		   numeric values --> then adjust accordingly */
+		if (CB_TREE_CATEGORY (dst) != CB_CATEGORY_DATA_POINTER
+		 && CB_TREE_CATEGORY (dst) != CB_CATEGORY_PROGRAM_POINTER
+		 && CB_TREE_CATEGORY (dst) != CB_CATEGORY_OBJECT_REFERENCE) {
+			return MOVE_INVALID;
 		}
 	}
 
@@ -12587,7 +12595,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	signed int		size;	/* -1 as special value */
 	enum move_outcome	outcome = MOVE_OK;
 
-	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
+	/* TODO: most of the "invalid" checks should possibly be handled in the parser */
 
 	overlapping = 0;
 

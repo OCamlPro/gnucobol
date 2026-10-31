@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023, 2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -169,9 +169,8 @@ static lt_dlhandle		mainhandle;
 static lt_dladvise advise = NULL;
 #endif
 
-static size_t			call_lastsize;
-static size_t			resolve_size = 0;
-static unsigned int		cob_jmp_primed;
+static size_t		call_lastsize;
+static size_t		resolve_size = 0;
 
 #undef	COB_SYSTEM_GEN
 #define	COB_SYSTEM_GEN(cob_name, pmin, pmax, c_name)	\
@@ -327,7 +326,7 @@ cob_dlopen (const char* filename)
 
 /* resolves the actual library path used from
    * COB_LIBRARY_PATH runtime setting
-   * "." as current working direktory [if not included already: prefixed]
+   * "." as current working directory [if not included already: prefixed]
    * COB_LIBRARY_PATH inbuilt (which normally includes modules
      like CBL_OC_DUMP) [if not included already: appended]
 */
@@ -626,7 +625,7 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
    * 2 if already preloaded
    * 3 if previously CALLed and not CANCELed, now marked as pre-loaded (no physical cancel)
  */
-static size_t
+static int
 cache_preload (const char *path)
 {
 	struct struct_handle	*preptr;
@@ -677,7 +676,8 @@ cache_preload (const char *path)
 	libhandle = cob_dlopen (path);
 	if (!libhandle) {
 		cob_runtime_warning (
-			_("preloading from existing path '%s' failed; %s"), path, lt_dlerror());
+			_("preloading from existing path '%s' failed; %s"),
+			path, lt_dlerror ());
 		return 0;
 	}
 
@@ -1416,6 +1416,62 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 	cob_cancel (entry);
 }
 
+/* try to load specified module from all entries in COB_LIBRARY_PATH
+   (fallback "as-is") */
+static
+int cob_try_preload (const char* module_name)
+{
+	int		ret;
+
+#ifdef	__OS400__
+	char	buff[COB_MEDIUM_BUFF];
+	char	*b = buff;
+	const char	*t;
+
+	for (t = module_name; *t; ++t, ++b) {
+		*b = toupper (*t);
+	}
+	*b = 0;
+
+	module_name = buff;
+#else
+
+	/* normal lookup in COB_LIBRARY_PATH - if that does not look like a full path */
+	if (module_name[0] != SLASH_CHAR
+#ifdef _WIN32
+	 && module_name[0] != '/'
+	 && module_name[1] != ':'
+#endif
+	   ) {
+		/* check if the module ends with module extension */
+		const char *ext = strrchr(module_name, '.');
+		char	buff[COB_MEDIUM_BUFF];
+		size_t	i;
+		if (!ext || strcasecmp(ext + 1, COB_MODULE_EXT) != 0) {
+			/* common case: preload COBOL module */
+			for (i = 0; i < resolve_size; ++i) {
+				snprintf (buff, (size_t)COB_MEDIUM_MAX,
+					"%s%c%s.%s",
+					resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
+				ret = cache_preload (buff);
+				if (ret) {
+					return ret;
+				}
+			}
+		}
+	}
+
+#endif
+	/* If not found, try just using the name as-is (in which case the
+	   extension needs to be included) */
+	ret = cache_preload (module_name);
+
+	if (ret == 0) {
+		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
+	}
+	return ret;
+}
+
 int
 cob_call (const char *name, const int argc, void **argv)
 {
@@ -1914,6 +1970,16 @@ cob_call_entry (void *entry, const int argc, ...)
 
 
 #ifndef COB_WITHOUT_JMP
+/* save jump structure */
+int
+cob_setjmp (struct cobjmp_buf *jbuf)
+{
+	/* note: _consider_ saving a CURRENT_MODULE_PTR into jbuf,
+	   then before restoring via longjmp compare that this is still
+	   in the current COBOL stack */
+	return setjmp (cob_savenv (jbuf));
+}
+
 /* save jump structure, normally called by cobsetjmp which wraps it into setjmp */
 void *
 cob_savenv (struct cobjmp_buf *jbuf)
@@ -1926,12 +1992,7 @@ cob_savenv (struct cobjmp_buf *jbuf)
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_savenv");
 		cob_hard_failure ();
 	}
-	if (cob_jmp_primed) {
-		cob_runtime_error (_("multiple call to 'cob_setjmp'"));
-		cob_hard_failure ();
-	}
 	/* LCOV_EXCL_STOP */
-	cob_jmp_primed = 1;
 	return jbuf->cbj_jmp_buf;
 }
 
@@ -1953,12 +2014,7 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_longjmp");
 		cob_hard_failure ();
 	}
-	if (!cob_jmp_primed) {
-		cob_runtime_error (_("call to 'cob_longjmp' with no prior 'cob_setjmp'"));
-		cob_hard_failure ();
-	}
 	/* LCOV_EXCL_STOP */
-	cob_jmp_primed = 0;
 	longjmp (jbuf->cbj_jmp_buf, 1);
 }
 #endif
@@ -2059,43 +2115,30 @@ cob_exit_call (void)
 #endif
 }
 
-/* try to load specified module from all entries in COB_LIBRARY_PATH
-   return values see cache_preload */
-static
-size_t cob_try_preload (const char* module_name)
+/* iterating over COB_PRE_LOAD (in cob_preload_str) and try to load all
+   contained entries nto global memory space, storing the full list of
+   resolved entries including their path into cob_preload_str  */
+static void
+pre_load_once ()
 {
-	char		buff[COB_MEDIUM_BUFF];
+	const unsigned int	global_load = cobsetptr->cob_load_global;
+	char	*p, *s;
 
-#ifdef	__OS400__
-	char	*b = buff;
-	char	*t;
+	/* using temporary buffer as cob_preload_str
+	   will be adjusted in the call and contains only the loaded
+	   modules when this function returns */
+	p = cob_strdup (cobsetptr->cob_preload_str);
 
-	for (t = module_name; *t; ++t, ++b) {
-		*b = toupper (*t);
+	cob_free (cobsetptr->cob_preload_str);
+	cobsetptr->cob_preload_str = NULL;
+
+	cobsetptr->cob_load_global = 1;	/* pre-loaded libraries are always global */
+	s = strtok (p, PATHSEP_STR);
+	for (; s; s = strtok (NULL, PATHSEP_STR)) {
+		(void)cob_try_preload (s);
 	}
-	*b = 0;
-
-	return cache_preload (buff);
-#else
-	size_t				i, ret;
-
-	for (i = 0; i < resolve_size; ++i) {
-		snprintf (buff, (size_t)COB_MEDIUM_MAX,
-			"%s%c%s.%s",
-			resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
-		ret = cache_preload (buff);
-		if (ret) {
-			return ret;
-		}
-	}
-	/* If not found, try just using the name as-is */
-	ret = cache_preload (module_name);
-
-	if (ret == 0) {
-		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
-	}
-	return ret;
-#endif
+	cob_free (p);
+	cobsetptr->cob_load_global = global_load;
 }
 
 void
@@ -2115,7 +2158,6 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	resolve_error = NULL;
 	call_buffer = NULL;
 	call_lastsize = 0;
-	cob_jmp_primed = 0;
 
 #ifndef	HAVE_DESIGNATED_INITS
 	init_valid_char = 0;
@@ -2166,22 +2208,7 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	call_filename_buff = cob_malloc ((size_t)COB_NORMAL_BUFF);
 
 	if (cobsetptr->cob_preload_str != NULL) {
-		char	*p;
-		char	*s;
-
-		/* using temporary buffer as cob_preload_str
-		   will be adjusted in the call and contains only
-		   the loaded modules after this call */
-		p = cob_strdup (cobsetptr->cob_preload_str);
-
-		cob_free (cobsetptr->cob_preload_str);
-		cobsetptr->cob_preload_str = NULL;
-
-		s = strtok (p, PATHSEP_STR);
-		for (; s; s = strtok (NULL, PATHSEP_STR)) {
-			(void)cob_try_preload (s);
-		}
-		cob_free (p);
+		pre_load_once ();
 	}
 	call_buffer = cob_fast_malloc ((size_t)CALL_BUFF_SIZE);
 	call_lastsize = CALL_BUFF_SIZE;
