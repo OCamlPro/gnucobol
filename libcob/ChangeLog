@@ -1,4 +1,14 @@
 
+2026-10-31  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): Simplify for tiny number and fix typo
+	* intrinsic.c (cob_agm_log): fix typo
+
+2026-10-25  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): Implement a faster new algorithm
+	* intrinsic.c (cob_agm_log): new function needed for cob_mpf_log
+	* intrinsic.c (COB_LN_PREC): new macro for ln precision threshold
 2026-10-16  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h (cob_close_mode): new enum instead of #define'd constants
