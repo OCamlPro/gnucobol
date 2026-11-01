@@ -169,6 +169,7 @@ elif test "x${VGSUFFIX}" != "x"; then
 	#VG_SUPPR_DIR="/usr/lib/valgrind"
 	#VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/debian.supp ${VG_SUPPR}"
 	#VG_SUPPR="--suppressions=${VG_SUPPR_DIR}/ncurses.supp ${VG_SUPPR}"
+	#VG_SUPPR="--suppressions=/usr/share/doc/ncurses-devel/ncurses.supp ${VG_SUPPR}"
 	VG_SUPPR="--suppressions=${abs_srcdir}/valgrind.supp ${VG_SUPPR}"
 	# Note: other issue, not suppressible is that some COBOL storage is local
 	#       and can currently not be freed on STOP RUN (or abort).

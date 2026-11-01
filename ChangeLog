@@ -1,4 +1,10 @@
 
+2026-10-29  David Declerck <david.declerck@ocamlpro.com>
+
+	* configure.ac: if the default C standard (C23) rejects unprototyped
+	  function calls, add the first of -std=gnu17/c17/gnu11/c11/gnu99/c99
+	  that accepts them
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: added AM_MISSING_PROG of AUTOM4TE for testsuite

@@ -101,7 +101,6 @@ jobs:
                        --with-curses=ncurses \
                        --with-json=json-c \
                        --with-iconv --with-libiconv-prefix="$HOMEBREW_ROOT/libiconv" \
-                       CFLAGS="-std=gnu17" \
                        BDB_CFLAGS="-I$HOMEBREW_ROOT/berkeley-db@5/include" \
                        BDB_LIBS="-L$HOMEBREW_ROOT/berkeley-db@5/lib -ldb"
 
