@@ -1,4 +1,9 @@
 
+2026-11-01  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_cos): correct error that prevent optimization
+	change COB_COS_DIVIDE value and fix typo
+
 2026-10-16  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h (cob_close_mode): new enum instead of #define'd constants

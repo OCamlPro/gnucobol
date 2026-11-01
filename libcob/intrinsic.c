@@ -372,7 +372,7 @@ static const struct winlocale	wintable[] =
 
 #endif
 
-#define COB_COS_DIVIDE_FACTOR	16   
+#define COB_COS_DIVIDE_FACTOR	32
 
 static COB_NOINLINE void
 setup_cob_pi (void)
@@ -1069,63 +1069,75 @@ cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 static void
 cob_mpf_cos (mpf_t dst_val, const mpf_t src_val)
 {
-	mpf_t			term, val_serie, angle;
+	mpf_t			term, val_serie, angle, dst_temp;
 	cob_u16_t		arcquad;
 	cob_uli_t		n;
+	long                    div_factor ;
 
 	if (!set_cob_pi) setup_cob_pi ();
 
-	mpf_init2 (term, COB_MPF_PREC);
-	mpf_init2 (val_serie, COB_MPF_PREC);
 	mpf_init2 (angle, COB_MPF_PREC);
+	mpf_init2 (term, COB_MPF_CUTOFF+8);
+	mpf_init2 (val_serie, COB_MPF_CUTOFF+8);
+	mpf_init2 (dst_temp, COB_MPF_CUTOFF+8);
 
 	arcquad = cob_normalize_angle (angle, src_val);
 
-	/* Divide nn time by 2 */
-	mpf_div_2exp (angle, angle, COB_COS_DIVIDE_FACTOR );
+	/* Divide n time by 2 */
+	mpf_get_d_2exp (&div_factor, angle);
+	div_factor = (long)COB_COS_DIVIDE_FACTOR + div_factor;
+
+	if (div_factor < 0) {
+		div_factor = 0; /* angle tiny enough*/
+	}
+
+	if (div_factor > 0){
+		mpf_div_2exp (angle, angle, div_factor);
+	}
 
 	mpf_mul (angle, angle, angle);
 
-	mpf_set_si (term, -1L);
-
 	/* compute first term */
-	mpf_set (dst_val, angle);
-	mpf_div_ui (dst_val, dst_val, 2UL);
-	mpf_neg (dst_val, dst_val);
-	mpf_set (term, dst_val); /* init first term to -x^2/2 */
-	mpf_add_ui (dst_val, dst_val, 1UL);
+	mpf_set (dst_temp, angle);
+	mpf_div_ui (dst_temp, dst_temp, 2UL);
+	mpf_neg (dst_temp, dst_temp);
+	mpf_set (term, dst_temp); /* init first term to -x^2/2 */
+	mpf_add_ui (dst_temp, dst_temp, 1UL);
 
 	n = 4;
 	do {
 		const cob_uli_t	j = (n-1UL) * n;
 
-		mpf_set (val_serie, dst_val);
+		mpf_set (val_serie, dst_temp);
 		mpf_mul (term, term, angle);
 		mpf_div_ui (term, term, j);
 		mpf_neg (term, term);
 
-		mpf_add (dst_val, dst_val, term);
+		mpf_add (dst_temp, dst_temp, term);
 
 		n += 2;
-	} while (!mpf_eq (dst_val, val_serie, COB_MPF_PREC));
+	} while (!mpf_eq (dst_temp, val_serie, COB_MPF_CUTOFF));
 
-	/*  compute 2*n^2 -1 n times */
-	{
-		int i ;
-		for (i = 0 ; i < COB_COS_DIVIDE_FACTOR; i++) {
-			mpf_mul (dst_val, dst_val, dst_val);
-			mpf_mul_ui (dst_val, dst_val, 2UL);
-			mpf_sub_ui (dst_val, dst_val, 1UL);
+	/*  Undo the division: apply cos(2x) = 2*cos(x)^2 - 1, div_factor times */
+	if (div_factor > 0) {
+		unsigned long i;
+		for (i = 0; i < (unsigned long)div_factor; i++) {
+			mpf_mul (dst_temp, dst_temp, dst_temp);
+			mpf_mul_ui (dst_temp, dst_temp, 2UL);
+			mpf_sub_ui (dst_temp, dst_temp, 1UL);
 		}
 	}
 
 	if (arcquad == 1 || arcquad == 2)  {
-		mpf_neg (dst_val, dst_val);
+		mpf_neg (dst_temp, dst_temp);
 	}
+
+	mpf_set (dst_val, dst_temp);
 
 	mpf_clear (term);
 	mpf_clear (angle);
 	mpf_clear (val_serie);
+	mpf_clear (dst_temp);
 }
 
 /* sin function */
