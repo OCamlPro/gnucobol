@@ -4624,6 +4624,13 @@ cob_intr_factorial (cob_field *srcfield)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	} else {
+		if ( srcval >= COB_MAX_FACT_LIMIT ) {
+			/* Fix #1206 */
+			d1.scale = COB_DECIMAL_INF ;
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+			cob_alloc_set_field_uint (0);
+			return curr_field;
+		}
 		mpz_fac_ui (d1.value, (cob_uli_t)srcval);
 	}
 
@@ -4671,6 +4678,28 @@ cob_intr_exp (cob_field *srcfield)
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
+
+	/* #1206 Avoid GMP Crash */
+	if (mpf_cmp_ui (cob_mpft, COB_MAX_EXP_LIMIT) >= 0 || mpf_cmp_si (cob_mpft, COB_MIN_EXP_LIMIT) <= 0) {
+
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+
+		if (mpf_sgn (cob_mpft) > 0) {
+			mpf_set_ui (cob_mpft, 0UL) ;
+			cob_decimal_set_mpf (&d1, cob_mpft);
+			d1.scale = COB_DECIMAL_INF;
+
+		} else {
+			mpf_set_ui (cob_mpft, COB_MIN_EXP_MANTISSA);
+			cob_decimal_set_mpf (&d1, cob_mpft);
+			d1.scale = COB_MIN_EXP_SCALE ;
+		}
+
+		cob_alloc_field (&d1);
+		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		return curr_field;
+	}
+
 	cob_mpf_exp (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
 	cob_alloc_field (&d1);
@@ -4696,6 +4725,30 @@ cob_intr_exp10 (cob_field *srcfield)
 	}
 
 	cob_trim_decimal (&d1);
+
+	/* #1206 Avoid GMP Crash */
+	if ( mpz_cmp_ui (d1.value, COB_MAX_EXP10_LIMIT) >= 0 || mpz_cmp_si (d1.value, COB_MIN_EXP10_LIMIT) <= 0) {
+
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+
+		if (mpz_sgn (d1.value) > 0) {
+
+			mpf_set_ui (cob_mpft, 0UL) ;
+			cob_decimal_set_mpf (&d1, cob_mpft);
+			d1.scale = COB_DECIMAL_INF;
+
+		} else {
+
+			mpf_set_ui (cob_mpft, COB_MIN_EXP10_MANTISSA);
+			cob_decimal_set_mpf (&d1, cob_mpft);
+			d1.scale = COB_MIN_EXP10_SCALE ;
+
+		}
+
+		cob_alloc_field (&d1);
+		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		return curr_field;
+}
 
 	if (!d1.scale) {
 		/* Integer positive/negative powers */
