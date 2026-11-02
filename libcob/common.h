@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2025 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -27,12 +27,26 @@
 #include <stddef.h>		/* for size_t */
 
 /* Only define cob_decimal if we have the necessary mpz_t from gmp.h/mpir.h
-   (or can self-define it from mp.h) */
-#if !defined (__GMP_H__)
-#ifndef __GNU_MP__
+   (or can self-define it from mp.h), otherwise go with a replacement struct
+   (also used for generated programs as those use only the reference) */
+#ifndef __GMP_H__
+#if defined (__GNU_MP__)
+typedef __mpz_struct mpz_t[1];
+#else
+#if defined (COB_NO_SELF_DECLARE_MPZ)
 #define COB_WITHOUT_DECIMAL
 #else
-typedef __mpz_struct mpz_t[1];
+/* mpz_t pseudo-structure which matches GMP+MPIR "enough" to use as reference,
+   accessing the fields outside of libcob is not supported in the first place */
+typedef struct {
+	int alloc;
+	int size;
+	void *d;
+} __mpz_pseudo_struct;
+typedef __mpz_pseudo_struct mpz_t[1];
+#endif
+/* can't use the mpf_t type */
+#define COB_WITHOUT_MPF
 #endif
 #endif
 
@@ -854,6 +868,20 @@ enum cob_file_access_mode {
 	COB_ACCESS_RANDOM = 3
 };
 
+/* io_routine */
+enum cob_file_operation {
+	COB_LAST_NONE		= 0,
+	COB_LAST_START		= 1,
+	COB_LAST_READ_SEQ	= 2,
+	COB_LAST_READ		= 3,
+	COB_LAST_WRITE		= 4,
+	COB_LAST_REWRITE	= 5,
+	COB_LAST_DELETE		= 6,
+	COB_LAST_OPEN		= 7,
+	COB_LAST_CLOSE		= 8,
+	COB_LAST_DELETE_FILE	= 9
+};
+
 /* SELECT features */
 
 #define	COB_SELECT_FILE_STATUS	(1U << 0)
@@ -893,11 +921,13 @@ enum cob_open_mode {
 
 /* Close options */
 
-#define COB_CLOSE_NORMAL	0
-#define COB_CLOSE_LOCK		1
-#define COB_CLOSE_NO_REWIND	2
-#define COB_CLOSE_UNIT		3
-#define COB_CLOSE_UNIT_REMOVAL	4
+enum cob_close_mode {
+	COB_CLOSE_NORMAL	= 0,
+	COB_CLOSE_LOCK		= 1,
+	COB_CLOSE_NO_REWIND	= 2,
+	COB_CLOSE_UNIT		= 3,
+	COB_CLOSE_UNIT_REMOVAL	= 4
+};
 
 /* Write options */
 
@@ -1116,7 +1146,7 @@ enum cob_statement {
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
-#define COB_XML_PARSE_XMLNSS	(1U << 0)
+#define COB_XML_PARSE_XMLSS		(1U << 0)
 #define COB_XML_PARSE_NATIONAL	(1U << 1)
 #define COB_XML_PARSE_VALIDATE_FILE	(1U << 2)
 
@@ -1330,11 +1360,11 @@ typedef struct __cob_module {
 	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
 
 	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-		/* similar to XMLPARSE(XMLNSS) Micro Focus,
+		/* similar to XMLPARSE(XMLSS) Micro Focus,
 		   IBM may be different (_very_ likely for error codes);
 		   but the main difference is to "COMPAT" */
 		#define COB_XML_COMPAT 		0
-		#define COB_XML_XMLNSS		1
+		#define COB_XML_XMLSS		1
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */
@@ -1438,6 +1468,7 @@ typedef struct __cob_file {
 	const unsigned char* code_set_read;	/* CODE-SET conversion for READs */
 	size_t			nconvert_fields;	/* Number of logical fields to convert */
 	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
+	enum cob_file_operation		last_operation;		/* Most recent I/O operation */
 } cob_file;
 
 
@@ -1643,18 +1674,6 @@ typedef struct __cob_global {
 
 } cob_global;
 
-/* File I/O function pointer structure (left here as it needs to be "external" for GC 4.x) */
-struct cob_fileio_funcs {
-	int	(*open)		(cob_file *, char *, const enum cob_open_mode, const int);
-	int	(*close)	(cob_file *, const int);
-	int	(*start)	(cob_file *, const int, cob_field *);
-	int	(*read)		(cob_file *, cob_field *, const int);
-	int	(*read_next)	(cob_file *, const int);
-	int	(*write)	(cob_file *, const int);
-	int	(*rewrite)	(cob_file *, const int);
-	int	(*fdelete)	(cob_file *);
-};
-
 #ifndef COB_WITHOUT_JMP
 /* Low level jump structure */
 struct cobjmp_buf {
@@ -1850,7 +1869,10 @@ enum cob_runtime_option_switch {
 	COB_SET_RUNTIME_DISPLAY_PRINTER_FILE = 1,	/* 'p' is  FILE *  */
 	COB_SET_RUNTIME_RESCAN_ENV = 2,		/* rescan environment variables */
 	COB_SET_RUNTIME_DISPLAY_PUNCH_FILE = 3,	/* 'p' is  FILE *  */
-	COB_SET_RUNTIME_DUMP_FILE = 4	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_DUMP_FILE = 4,	/* 'p' is  FILE *  */
+	COB_SET_RUNTIME_STDIN_FILE = 5,		/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDOUT_FILE = 6, 	/* 'p' is FILE * */
+	COB_SET_RUNTIME_STDERR_FILE = 7,	/* 'p' is FILE * */
 };
 COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, void *p);
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);
@@ -2110,6 +2132,7 @@ COB_EXPIMP int		cob_func		(const char *, const int, void **);
 #ifndef COB_WITHOUT_JMP
 COB_EXPIMP void		*cob_savenv		(struct cobjmp_buf *);
 COB_EXPIMP void		*cob_savenv2		(struct cobjmp_buf *, const int);
+COB_EXPIMP int 		cob_setjmp		(struct cobjmp_buf *);
 COB_EXPIMP void		cob_longjmp		(struct cobjmp_buf *);
 #endif
 
@@ -2912,7 +2935,7 @@ typedef	char *		cobchar_t;
 #define	cobs64_t	cob_s64_t
 #define	cobuns64_t	cob_u64_t
 
-#define	cobsetjmp(x)	setjmp (cob_savenv (x))
+#define	cobsetjmp(x)	cob_setjmp (x)
 #define	coblongjmp(x)	cob_longjmp (x)
 #define	cobsavenv(x)	cob_savenv (x)
 #define	cobsavenv2(x,z)	cob_savenv2 (x, z)
@@ -2981,6 +3004,7 @@ typedef	char *		cobchar_t;
 /* Type to store nanoseconds */
 typedef unsigned long long cob_ns_time;
 
+/* Kind of procedure. */
 enum cob_prof_procedure_kind {
 	COB_PROF_PROCEDURE_MODULE,
 	COB_PROF_PROCEDURE_SECTION,
@@ -2989,6 +3013,7 @@ enum cob_prof_procedure_kind {
 	COB_PROF_PROCEDURE_CALL
 };
 
+/* structure for static definition inside the program */
 struct cob_prof_procedure {
 	/* Name of the module or section or paragraph or entry */
 	const char				*text;
@@ -2999,34 +3024,36 @@ struct cob_prof_procedure {
 	   of COB_PROF_PROCEDURE_ENTRY, the "section" field is in fact
 	   the paragraph, not the section */
 	int 					section;
-	/* Kind of procedure. */
 	enum cob_prof_procedure_kind	kind;
 };
 
-/* Structure storing profiling information about each COBOL module */
+/* Structure storing profiling information about each COBOL module,
+   to be considered internal API, don't access members directly */
+struct cob_prof_proc_data {
+	cob_ns_time 	total_time;		/* execution time */
+	unsigned int	called_count;		/* execution count */
+	unsigned int	recursions;		/* current recursions per procedure */
+};
+
+/* Structure referencing mostly static profiling information,
+   to be considered internal API, don't access members directly */
 struct cob_prof_module {
-	/* Array of execution times */
-	cob_ns_time 				*total_times;
-	/* Array of execution counts */
-	unsigned int				*called_count;
-	/* Array of current recursions per procedure  */
-	unsigned int				*procedure_recursions;
-	/* Array of procedure descriptions */
-	struct cob_prof_procedure	*procedures ;
-	/* Number of procedures */
-	size_t  			procedure_count;
+	struct cob_prof_module		*next;   			/* next element */
+	struct cob_prof_procedure 	*procedures; 		/* Array of procedure descriptions */
+	size_t						procedure_count;	/* Number of procedures */
+	struct cob_prof_proc_data	data[1]; 	  /* stores procedure_count entries in C89 compat */
 };
 
 /* Function called to start profiling a COBOL module. Allocates the
    cob_prof_module structure that will be used to store the counters and
    times. */
 COB_EXPIMP struct cob_prof_module *cob_prof_init_module (
-	cob_module *module,
+	cob_module		*module,
 	struct cob_prof_procedure	*procedure_names,
-	size_t		procedure_count);
+	size_t  		procedure_count);
 
 /* Functions used to instrument the generated C code and measure
- * counters and times */
+   counters and times */
 COB_EXPIMP void cob_prof_enter_procedure	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_exit_procedure 	(struct cob_prof_module *, int);
 COB_EXPIMP void cob_prof_enter_section  	(struct cob_prof_module *, int);

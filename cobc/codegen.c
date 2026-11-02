@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2025 Free Software Foundation, Inc.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -1091,6 +1091,8 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		} else {
 			output ("cob_local_ptr");
 		}
+	} else if (f01->storage == CB_STORAGE_LINKAGE && f01->flag_internal_register) {
+		output ("%s%d.data", CB_PREFIX_FIELD, f01->id);	
 	} else {
 		output ("%s%d", CB_PREFIX_BASE, f01->id);
 	}
@@ -1754,14 +1756,17 @@ output_globext_cache (void)
 static void
 output_standard_includes (struct cb_program *prog)
 {
-	struct cb_program *p;
-
+#if defined (COB_NO_SELF_DECLARE_MPZ)
 #if defined (HAVE_GMP_H)
 	#define MATH_INCLUDE "#include <gmp.h>"
 #elif defined (HAVE_MPIR_H)
 	#define MATH_INCLUDE "#include <mpir.h>"
 #else
-#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+	#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+#endif
+#else
+	/* common.h will define a pseudo-struct which is enough
+	   for passing the value by reference (as part of cob_decimal) */
 #endif
 
 #if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
@@ -1783,14 +1788,19 @@ output_standard_includes (struct cb_program *prog)
 	if (cb_flag_winmain) {
 		output_line ("#include <windows.h>");
 	}
-	/* check if any of the processed programs has any decimal,
-	   then include appropriate header */
-	for (p = prog; p; p = p->next_program) {
-		if (p->decimal_index_max || p->flag_decimal_comp) {
-			output_line (MATH_INCLUDE);
-			break;
+#if defined (COB_NO_SELF_DECLARE_MPZ)
+	{
+		struct cb_program *p;
+		/* check if any of the processed programs has any decimal,
+		   then include appropriate header */
+		for (p = prog; p; p = p->next_program) {
+			if (p->decimal_index_max || p->flag_decimal_comp) {
+				output_line (MATH_INCLUDE);
+				break;
+			}
 		}
 	}
+#endif
 	output_line ("#include <libcob.h>");
 	output_newline ();
 }
@@ -2414,7 +2424,7 @@ output_local_field_cache (struct cb_program *prog)
 	local_field_cache = list_cache_sort (local_field_cache,
 					     &field_cache_cmp);
 	for (field = local_field_cache; field; field = field->next) {
-		int		needs_comment = 1;
+		int 	needs_comment = 1;
 		f = field->f;
 		if (!f->flag_local
 		 && !f->flag_external) {
@@ -2769,12 +2779,16 @@ output_source_cache (void)
 /* Add the given literal to the list of "seen" decimal
    constants in the given program "prog" */
 static void
-cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list *cached_literal)
+cb_cache_program_decimal_constant (struct cb_program *prog,
+		struct literal_list *cached_literal, const int dupl_check)
 {
 	struct literal_list	*l;
-	for (l = prog->decimal_constants; l; l = l->next) {
-		if (cached_literal->id == l->id) {
-			return;
+	if (dupl_check) {
+		/* only reasonable to check if caller doesn't create a literal */
+		for (l = prog->decimal_constants; l; l = l->next) {
+			if (cached_literal->id == l->id) {
+				return;
+			}
 		}
 	}
 
@@ -2786,6 +2800,110 @@ cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list 
 	prog->decimal_constants = l;
 }
 
+struct lit_slot {
+	cob_u32_t				hash;
+	const struct cb_literal	*cache_literal;
+	struct literal_list 	*node;
+};
+
+static struct lit_slot	*lit_tab = NULL;
+static cob_u32_t	lit_cap = 0;	/* power of two */
+static cob_u32_t	lit_cnt = 0;
+
+static void
+lit_tab_grow (void)
+{
+	const cob_u32_t capacity = lit_cap ? lit_cap * 2 : 1024;
+	struct lit_slot *newtab = cobc_parse_malloc (capacity * sizeof (struct lit_slot));
+	cob_u32_t i, j;
+
+	/* position in the literal slots depend on hash and capacity,
+	   sop take over existing entries into the double-sized table */
+	for (i = 0; i < lit_cap; ++i) {
+		if (!lit_tab[i].cache_literal) {
+					continue;	/* a bunch of entries may be empty */
+		}
+		j = lit_tab[i].hash & (capacity - 1);
+		while (newtab[j].cache_literal) {
+			j = (j + 1) & (capacity - 1);
+		}
+		newtab[j] = lit_tab[i];
+	}
+	if (lit_tab) {
+		cobc_parse_free (lit_tab);
+	}
+	lit_tab = newtab;
+	lit_cap = capacity;
+}
+
+/* returns the matching cache node or NULL */
+static struct literal_list *
+lit_tab_find (const cob_u32_t h, const struct cb_literal *literal)
+{
+	const struct cb_literal	*cache_literal;
+	cob_u32_t i;
+
+	if (!lit_cap) {
+		return NULL;
+	}
+	i = h & (lit_cap - 1);
+	while ((cache_literal = lit_tab[i].cache_literal) != NULL) {
+		if (lit_tab[i].hash == h
+		 && CB_TREE (literal)->category == CB_TREE (cache_literal)->category
+		 && literal->size  == cache_literal->size
+		 && literal->scale == cache_literal->scale
+		 && literal->sign  == cache_literal->sign
+		 && literal->all   == cache_literal->all
+		 && literal->llit  == cache_literal->llit
+		 && memcmp (literal->data, cache_literal->data, literal->size) == 0) {
+			return lit_tab[i].node;
+		}
+		i = (i + 1) & (lit_cap - 1);
+	}
+	return NULL;
+}
+
+/* call only after lit_tab_find returned NULL */
+static void
+lit_tab_add (const cob_u32_t h, struct literal_list *node)
+{
+	cob_u32_t i;
+
+	if ((lit_cnt + 1) * 2 > lit_cap) lit_tab_grow ();	/* load <= 0.5 */
+	i = h & (lit_cap - 1);
+	while (lit_tab[i].cache_literal) i = (i + 1) & (lit_cap - 1);
+	lit_tab[i].hash = h;
+	lit_tab[i].cache_literal = node->literal;
+	lit_tab[i].node = node;
+	++lit_cnt;
+}
+
+/* hash for literal data */
+static cob_u32_t
+cb_literal_hash (const unsigned char *data, cob_u32_t size)
+{
+	cob_u64_t	h = 0x9e3779b97f4a7c15ULL;	/* non-zero seed */
+	cob_u64_t	w;
+	cob_u32_t	i;
+
+	/* data: 8 bytes at a time */
+	for (i = 0; i + 8 <= size; i += 8) {
+		memcpy (&w, data + i, 8);
+		h = (h ^ w) * 0xff51afd7ed558ccdULL;
+		h ^= h >> 32;
+	}
+	/* tail: 0..7 bytes, zero-padded */
+	if (i < size) {
+		w = 0;
+		memcpy (&w, data + i, size - i);
+		h = (h ^ w) * 0xff51afd7ed558ccdULL;
+		h ^= h >> 32;
+	}
+
+ 	/* explicit drop bytes exceeding 32bit */
+	return (cob_u32_t)(h & 0xFFFFFFFF);
+}
+
 /* Resolve literal "x" from the literal cache and return its id.
    The literal is added to the literal cache if missing.
    Additionally, if the literal is a decimal constant, it is
@@ -2793,25 +2911,21 @@ cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list 
 int
 cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 {
-	struct cb_literal	*literal;
+	const struct cb_literal	*literal = CB_LITERAL (x);	
 	struct literal_list	*l;
+	const cob_u32_t 	size = literal->size;
+	const cob_u32_t		literal_hash = cb_literal_hash (literal->data, size);
 
-	literal = CB_LITERAL (x);
 	/* Search literal cache */
-	for (l = literal_cache; l; l = l->next) {
-		if (CB_TREE_CLASS (literal) == CB_TREE_CLASS (l->literal)
-		 && literal->size == l->literal->size
-		 && literal->all == l->literal->all
-		 && literal->sign == l->literal->sign
-		 && literal->scale == l->literal->scale
-		 && memcmp (literal->data, l->literal->data,
-			    (size_t)literal->size) == 0) {
-			if (make_decimal) {
-				l->make_decimal = 1;
-				cb_cache_program_decimal_constant (prog, l);
-			}
-			return l->id;
+	l = lit_tab_find (literal_hash, literal);
+	if (l) {
+		if (make_decimal) {
+			/* FIXME: we should be able to skip this if l->make_decimal != 0,
+			   but doing so generates runtime aborts */
+			l->make_decimal = 1;
+			cb_cache_program_decimal_constant (prog, l, 1);
 		}
+		return l->id;
 	}
 
 	/* Output new literal */
@@ -2820,13 +2934,16 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 	/* Cache it */
 	l = cobc_parse_malloc (sizeof (struct literal_list));
 	l->id = cb_literal_id;
-	l->literal = literal;
-	l->make_decimal = make_decimal;
+	l->literal = (struct cb_literal *)literal;
+	l->literal_hash = literal_hash;
 	l->next = literal_cache;
 	literal_cache = l;
 	if (make_decimal) {
-		cb_cache_program_decimal_constant (prog, l);
+		l->make_decimal = make_decimal;
+		cb_cache_program_decimal_constant (prog, l, 0);
 	}
+
+	lit_tab_add (literal_hash, l);
 
 	return cb_literal_id++;
 }
@@ -3507,7 +3624,7 @@ output_ml_trees_definitions (struct cb_ml_generate_tree *tree)
 
 /* Parameter */
 
-static COB_INLINE COB_A_INLINE void
+static void
 create_field (struct cb_field *f, cb_tree x)
 {
 	if (!f->flag_field) {
@@ -4217,7 +4334,7 @@ output_funcall_typed_report (struct cb_funcall *p, const char type)
 
 /* output a single char with optional (then empty)
    leading and trailing string */
-static void COB_INLINE COB_A_INLINE
+static COB_INLINE COB_A_INLINE void
 output_char (const char *lead, const unsigned char c, const char *trail)
 {
 	if (lead) {
@@ -4317,14 +4434,10 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 }
 
 
-static void COB_INLINE COB_A_INLINE
+static COB_INLINE COB_A_INLINE void
 output_funcall_item (cb_tree x, const int i, unsigned int func_nolitcast)
 {
-	if (x && CB_LITERAL_P (x)) {
-		nolitcast = func_nolitcast;
-	} else {
-		nolitcast = 0;
-	}
+	nolitcast = (x && CB_LITERAL_P (x)) ? func_nolitcast : 0;
 	output_param (x, i);
 }
 
@@ -7274,7 +7387,7 @@ output_xml_parse (struct cb_xml_parse *p)
 {
 	int flags = 0;
 	if (cb_xml_parse_xmlss) {
-		flags |= COB_XML_PARSE_XMLNSS;
+		flags |= COB_XML_PARSE_XMLSS;
 	}
 	if (p->returning_national && current_prog->xml_ntext) {
 		flags |= COB_XML_PARSE_NATIONAL;
@@ -7976,7 +8089,7 @@ output_goto_1 (cb_tree x)
 	output_line ("goto %s%d;", CB_PREFIX_LABEL, lb->id);
 }
 
-/* extension in test, may be removed again */
+/* extension for code generators */
 static void
 output_goto_entry (cb_tree target)
 {
@@ -9228,7 +9341,7 @@ output_stmt (cb_tree x)
 		break;
 
 	case CB_TAG_IF:
-		output_if CB_IF (x);
+		output_if (CB_IF (x));
 		break;
 
 	case CB_TAG_PERFORM:
@@ -10904,6 +11017,7 @@ output_initial_values (struct cb_field *f)
 static int field_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 static size_t size_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
+/* output dump code to display a single field */
 static void
 output_field_display (struct cb_field *f, size_t offset,
 		unsigned int idx)
@@ -10937,7 +11051,8 @@ output_field_display (struct cb_field *f, size_t offset,
 		output (")");
 	} else
 	if (f->count != 0
-	 && f->storage != CB_STORAGE_LINKAGE) {
+	 && f->storage != CB_STORAGE_LINKAGE
+	 && f->index_type != CB_INT_INDEX /* an index on LINKAGE is "local" */) {
 		output_param (x, 0);
 	} else {
 		output ("COB_SET_FLD (f0, ");
@@ -11069,6 +11184,7 @@ has_field_to_dump (struct cb_field * f)
 	return 0;
 }
 
+/* output dump code to display a record including all sisters */
 static void
 output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 {
@@ -11197,6 +11313,22 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			output_as_comment--;
 		}
 	}
+}
+
+const char *
+cb_close_mode_to_string (const enum cob_close_mode mode)
+{
+	switch (mode) {
+	case COB_CLOSE_NORMAL:		return CB_XSTRINGIFY (COB_CLOSE_NORMAL);
+	case COB_CLOSE_LOCK:		return CB_XSTRINGIFY (COB_CLOSE_LOCK);
+	case COB_CLOSE_NO_REWIND:	return CB_XSTRINGIFY (COB_CLOSE_NO_REWIND);
+	case COB_CLOSE_UNIT:		return CB_XSTRINGIFY (COB_CLOSE_UNIT);
+	case COB_CLOSE_UNIT_REMOVAL:	return CB_XSTRINGIFY (COB_CLOSE_UNIT_REMOVAL);
+	}
+	/* LCOV_EXCL_START */
+	cobc_err_msg ("unexpected cob_close_mode");
+	COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
 }
 
 const char *
@@ -11661,12 +11793,14 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		}
 	}
 
+	/* LCOV_EXCL_START */
 	if (output_as_comment) {
 		/* should be always zero here, was not at one time... */
 		cobc_err_msg ("bad comment state in output_dump_code,\n"
 			"you may disable COBC_GEN_DUMP_COMMENTS and retry");
 		cobc_abort_terminate (1);
 	}
+	/* LCOV_EXCL_STOP */
 }
 
 static void
@@ -11905,7 +12039,9 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Dangling linkage section items */
 	seen = 0;
 	for (f = prog->linkage_storage; f; f = f->sister) {
-		if (f->redefines) {
+		if (f->redefines || f->flag_internal_register) {
+			/* XML-TEXT and other XML-* registers are in linkage_storage but do not use the 
+			   corresponding b_* field. */
 			continue;
 		}
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
@@ -12242,6 +12378,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		) {
 		output_line ("/* Store last parameters for possible later lookup */");
 		output_local ("/* Last USING parameters for possible later lookup */\n");
+		/* FIXME: likely we need all of LINKAGE here (not only parameters),
+		   otherwise dump code generation would be broken, see run_misc.at "tdsticky" */
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
 			f = cb_code_field (CB_VALUE (l));
 			output_prefix ();
@@ -12782,7 +12920,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				else
 					sprintf (wrk,", Default byte: 0x%02X", cb_default_byte);
 			} else {
-				strcpy(wrk,"");
+				strcpy (wrk,"");
 			}
 			output_line ("/* Initialize WORKING-STORAGE%s */",wrk);
 			output_initial_values (prog->working_storage);
@@ -13894,18 +14032,24 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	output_line_number = 1;
 	output_name = (char*)translate_name;
 	/* escape output name for C string */
-	if (strchr (output_name, '\\')) {
+	if (strpbrk (output_name, "\\\"")) {
 		char buff[COB_MEDIUM_BUFF];
 		int pos = 0;
 		char* s;
 		for (s = output_name; *s; s++) {
-			if (*s == '\\') {
+			switch (*s) {
+			case '\\':
+			case '\"':
 				buff[pos++] = '\\';
+			}
+			if (pos >= COB_MEDIUM_MAX) {
+				pos = COB_MEDIUM_MAX;
+				break;
 			}
 			buff[pos++] = *s;
 		}
 		buff[pos] = 0;
-		output_name = cobc_check_string (buff);
+		output_name = cobc_main_strdup (buff);
 	}
 	gen_ascii_ebcdic = 0;
 	gen_ebcdic_ascii = 0;
@@ -14223,6 +14367,8 @@ codegen_finalize (void)
 	/* Clean up by clearing these */
 	attr_cache = NULL;
 	literal_cache = NULL;
+	lit_tab = NULL;
+	lit_cap = 0;
 	string_cache = NULL;
 	string_id = 1;
 	source_cache = NULL;

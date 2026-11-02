@@ -193,7 +193,7 @@
 #else
 #define COB_BLD_CFLAGS   "unknown new MSC RELEASE generation"
 #endif
-#elif _MSC_VER >= 1900
+#elif _MSC_VER >= 1900   /* used for 2015+ (2022 is 1943)*/
 #ifdef _DEBUG
 #define COB_BLD_CFLAGS	"/GS /analyze- /W3 /Zc:wchar_t /ZI /Gm /Od /Zc:inline /fp:precise /errorReport:prompt /WX- /Zc:forScope /RTC1 /Gd /Oy- /MDd /EHsc"
 #else
@@ -582,9 +582,6 @@
 /* Define to 1 if you have the 'memmove' function. */
 #define HAVE_MEMMOVE 1
 
-/* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
-
 /* Define to 1 if you have the 'memset' function. */
 #define HAVE_MEMSET 1
 
@@ -747,6 +744,13 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
+/* Define to 1 if you have the <sys/wait.h> header file. */
+#if defined(__ORANGEC__)
+#define HAVE_SYS_WAIT_H 1
+#else
+/* #undef HAVE_SYS_WAIT_H */
+#endif
+
 /* Has timezone variable */
 /* note: MSC and ORANGEC have it as _timezone */
 #define HAVE_TIMEZONE 1
@@ -884,26 +888,16 @@
 /* Use system dynamic loader */
 /* #undef USE_LIBDL */
 
-/* Enable extensions on AIX 3, Interix.  */
-#ifndef _ALL_SOURCE
-# define _ALL_SOURCE 1
-#endif
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE 1
 #endif
-/* Enable threading extensions on Solaris.  */
-#ifndef _POSIX_PTHREAD_SEMANTICS
-# define _POSIX_PTHREAD_SEMANTICS 1
-#endif
-/* Enable extensions on HP NonStop.  */
-#ifndef _TANDEM_SOURCE
-# define _TANDEM_SOURCE 1
-#endif
-/* Enable general extensions on Solaris.  */
-#ifndef __EXTENSIONS__
-# define __EXTENSIONS__ 1
-#endif
+
+/* Define to 1 if needed for POSIX-compatible behavior.  */
+/* #undef _POSIX_SOURCE */
+
+/* Define to 2 if needed for POSIX-compatible behavior.  */
+/* #undef _POSIX_1_SOURCE */
 
 /* Use CISAM as ISAM handler */
 #if CONFIGURED_ISAM == CISAM
@@ -928,21 +922,21 @@
 #define WITH_CURSES "disabled"
 #endif
 
-/* Use Berkeley DB library as emulation of ISAM handler */
+/* Use Berkeley DB library as INDEXED handler */
 #if CONFIGURED_ISAM == BDB
 #define WITH_DB 1
 #else
 /* #undef WITH_DB */
 #endif
 
-/* Use DISAM as ISAM handler */
+/* Use DISAM as INDEXED handler */
 #if CONFIGURED_ISAM == DISAM
 #define WITH_DISAM 1
 #else
 /* #undef WITH_DISAM */
 #endif
 
-/* Compile with an external ISAM handler */
+/* Compile with obsolete external INDEXED handler */
 /* #undef WITH_INDEX_EXTFH */
 
 /* JSON handler */
@@ -970,13 +964,13 @@
 #define WITH_MATH "gmp"
 #endif
 
-/* Compile with an external SEQ/RAN handler */
+/* Compile with obsolete external SEQ/RAN handler */
 /* #undef WITH_SEQRA_EXTFH */
 
 /* Define variable sequential file format */
 #define WITH_VARSEQ 0
 
-/* Use VBISAM as ISAM handler */
+/* Use VBISAM as INDEXED handler */
 #if CONFIGURED_ISAM == VBISAM
 #define WITH_VBISAM 1
 #else
@@ -1005,21 +999,6 @@
 /* Define to 1 if 'lex' declares 'yytext' as a 'char *' by default, not a
    'char[]'. */
 #define YYTEXT_POINTER 1
-
-/* Define to 1 if on MINIX. */
-/* #undef _MINIX */
-
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-/* #undef _POSIX_1_SOURCE */
-
-/* Define to 1 if you need to in order for 'stat' and other things to work. */
-/* #undef _POSIX_SOURCE */
-
-/* Define to 1 if on HPUX.  */
-#ifndef _XOPEN_SOURCE_EXTENDED
-/* # undef _XOPEN_SOURCE_EXTENDED */
-#endif
 
 /* Define to empty if 'const' does not conform to ANSI C. */
 /* #undef const */

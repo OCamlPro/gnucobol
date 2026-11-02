@@ -15882,3 +15882,205 @@ AT_CHECK([$COMPILE -fdefault-file-colseq=EBCDIC prog.cob])
 AT_CHECK([$COBCRUN_DIRECT ./prog])
 
 AT_CLEANUP
+
+
+AT_SETUP([Check for potential COB_SYNC bugs])
+AT_KEYWORDS([runfile INPUT READ UNLOCK COB_SYNC])
+
+# Under Windows, fdcobsync is an alias of _commit, which calls the
+# FlushFileBuffers function, which can not be called on a file opened
+# exclusively for input. Therefore, we should ensure the READ and
+# UNLOCK operation do not call fdcobsync.
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog1.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ASSIGN DISK ORGANIZATION SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1.
+       01 file1-rec PIC X.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT file1.
+           WRITE file1-rec.
+           CLOSE file1.
+           OPEN INPUT file1.
+           READ file1.
+           UNLOCK file1.
+           CLOSE file1.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [], [])
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog1], [0], [], [])
+
+# Per C standard, calling fflush is UB on files opened for input or after a
+# read operation on a file opened for update/append. While harmless under
+# most C runtime implementations, this causes problems under MSVCRT (used
+# by older MSVC and by MSYS2's MINGW32/64 environments). Typically, a fflush
+# after read might mess up the EOF indicator, resulting in incomplete
+# file read. Therefore, we should not call fflush on files opened for
+# INPUT, or after a READ operation on files opened for I-O.
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file2 ASSIGN DISK ORGANIZATION LINE SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file2.
+       01 file2-rec PIC X.
+       PROCEDURE DIVISION.
+           OPEN OUTPUT file2.
+           MOVE "X" TO file2-rec.
+           WRITE file2-rec.
+           MOVE "Y" TO file2-rec.
+           WRITE file2-rec.
+           CLOSE file2.
+           OPEN I-O file2.
+           READ file2.
+           READ file2.
+           CLOSE file2.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog2], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([COB_SYNC])
+AT_KEYWORDS([runfile WRITE REWRITE READ COB_SYNC])
+
+# check that COB_SYNC makes LINE SEQUENTIAL WRITE and REWRITE visible
+# to a second SELECT on the same file
+
+# Note: skipped on Windows, where the file is locked while being written
+AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT O-FILE ASSIGN TO "file.txt"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS O-FILE-STATUS.
+           SELECT I-FILE ASSIGN TO "file.txt"
+               ORGANIZATION IS LINE SEQUENTIAL
+               FILE STATUS IS I-FILE-STATUS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD O-FILE.
+       01 O-DATA PIC X(10).
+       FD I-FILE.
+       01 I-DATA PIC X(10).
+       WORKING-STORAGE SECTION.
+       01 O-FILE-STATUS PIC XX.
+       01 I-FILE-STATUS PIC XX.
+       PROCEDURE DIVISION.
+       MAIN.
+      *    WRITE
+           MOVE "ABCDEFGHIJ" TO O-DATA.
+           MOVE "1234567890" TO I-DATA.
+           OPEN OUTPUT O-FILE.
+           OPEN INPUT I-FILE.
+           WRITE O-DATA.
+           READ I-FILE.
+           DISPLAY I-DATA.
+      *    second WRITE
+           MOVE "KLMNOPQRST" TO O-DATA.
+           MOVE "1234567890" TO I-DATA.
+           WRITE O-DATA.
+           READ I-FILE.
+           DISPLAY I-DATA.
+           CLOSE O-FILE.
+           CLOSE I-FILE.
+      *    REWRITE
+           OPEN I-O O-FILE.
+           READ O-FILE.
+           MOVE "ZYXWVUTSRQ" TO O-DATA.
+           REWRITE O-DATA.
+           MOVE "1234567890" TO I-DATA.
+           OPEN INPUT I-FILE.
+           READ I-FILE.
+           DISPLAY I-DATA.
+           READ I-FILE.
+           DISPLAY I-DATA.
+      *    READ on the file being written
+           READ O-FILE.
+           DISPLAY O-DATA " " O-FILE-STATUS.
+           CLOSE O-FILE.
+           CLOSE I-FILE.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([COB_SYNC=true $COBCRUN_DIRECT ./prog], [0],
+[ABCDEFGHIJ
+KLMNOPQRST
+ZYXWVUTSRQ
+KLMNOPQRST
+KLMNOPQRST 00
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([COB_SYNC file size])
+AT_KEYWORDS([runfile WRITE COB_SYNC])
+
+# check that COB_SYNC makes LINE SEQUENTIAL WRITE reach the file,
+# by checking its size while it is still open
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT O-FILE ASSIGN TO "file.txt"
+               ORGANIZATION IS LINE SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD O-FILE.
+       01 O-DATA PIC X(10).
+       WORKING-STORAGE SECTION.
+       01 F-INFO.
+          05 F-SIZE PIC 9(18) COMP-X.
+          05 FILLER PIC X(8).
+       PROCEDURE DIVISION.
+           MOVE "ABCDEFGHIJ" TO O-DATA.
+           OPEN OUTPUT O-FILE.
+           PERFORM CHECK-SIZE.
+           WRITE O-DATA.
+           PERFORM CHECK-SIZE.
+           WRITE O-DATA.
+           PERFORM CHECK-SIZE.
+           CLOSE O-FILE.
+           GOBACK.
+       CHECK-SIZE.
+           CALL "CBL_CHECK_FILE_EXIST" USING "file.txt" F-INFO.
+           IF F-SIZE > 0
+              DISPLAY "written"
+           ELSE
+              DISPLAY "empty"
+           END-IF.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([COB_SYNC=true $COBCRUN_DIRECT ./prog], [0],
+[empty
+written
+written
+], [])
+
+AT_CLEANUP

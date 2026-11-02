@@ -102,7 +102,7 @@ XML Support
 
 Support for GENERATE XML is provided by:
 
-*   [libxml2](https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home) 2.5.10 or later
+*   [libxml2](https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home) 2.6.1 or later
 
     libxml2 is distributed under MIT License (Expat variant).
 

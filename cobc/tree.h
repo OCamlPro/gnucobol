@@ -525,14 +525,6 @@ enum cb_oo_class_attribute {
 	CB_OO_CLASS_ATTR_INTERNAL		= 0x20
 };
 
-/* Object-orinted method property accessor type */
-enum cb_oo_property_accessor {
-	CB_OO_ACCESS_NONE	= 0,	/* Default, the method is neither a getter nor a setter */
-	CB_OO_ACCESS_GET	= 1,	/* Getter method */
-	CB_OO_ACCESS_SET	= 2		/* Setter method */
-};
-
-
 /* Reserved word list structure */
 struct cobc_reserved {
 	const char	*name;		/* Word */
@@ -541,6 +533,7 @@ struct cobc_reserved {
 	int		token;		/* Token */
 	cob_u64_t		context_set;	/* context sensitive value set */
 	cob_u64_t		context_test;	/* context sensitive value tested */
+	cob_u32_t		word_hash;	/* hash value for faster compare */
 };
 
 /* Basic common tree structure */
@@ -780,10 +773,10 @@ struct cb_literal {
 	struct cb_tree_common	common;	/* Common values */
 	unsigned char		*data;	/* Literal data */
 	cob_u32_t		size;	/* Literal size */
-	int			scale;	/* Numeric scale */
-	cob_u32_t		llit;	/* 'L' literal */
-	short			sign;	/* unsigned: 0 negative: -1 positive: 1 */
-	short			all;	/* ALL */
+	int 		scale;	/* Numeric scale */
+	int 		sign;	/* unsigned: 0 negative: -1 positive: 1 */
+	short		all;	/* ALL */
+	short		llit;	/* 'L' literal */
 };
 
 #define CB_LITERAL(x)	(CB_TREE_CAST (CB_TAG_LITERAL, struct cb_literal, x))
@@ -1071,6 +1064,7 @@ struct cb_label {
 	int			id;			/* Unique id */
 	int			section_id;		/* SECTION id */
 	int			segment;		/* Segment number */
+	unsigned int 		name_hash;	/* hashing of original_name */
 
 	unsigned int		flag_section		: 1;	/* Section */
 	unsigned int		flag_entry		: 1;	/* Entry */
@@ -1686,7 +1680,7 @@ struct list_error {
 	struct list_error	*next;
 	struct list_error	*prev;
 	int			line;		/* Line number for error */
-	char			*file;		/* File name */
+	const char		*file;		/* File name (pointer from internal buffer) */
 	char			*prefix;	/* Error prefix */
 	char			*msg;		/* Error Message text */
 };
@@ -1721,7 +1715,7 @@ struct list_files {
 	int 			copy_line;	/* Line start for copy book */
 	int 			listing_on;	/* Listing flag for this file */
 	enum cb_format		source_format;	/* source format for file */
-	const char		*name;		/* Name of this file */
+	const char		*name;		/* Name of this file (pointer from internal buffer) */
 };
 
 extern struct list_files	*cb_current_file;
@@ -1834,6 +1828,7 @@ struct cb_procedure_list {
 struct literal_list {
 	struct literal_list	*next;
 	struct cb_literal	*literal;
+	cob_u32_t	literal_hash;
 	int			id;
 	int			make_decimal;
 };
@@ -1862,6 +1857,7 @@ struct cb_program {
 	struct nested_list	*nested_prog_list;	/* Callable contained */
 	struct nested_list	*common_prog_list;	/* COMMON contained */
 	cb_tree			entry_list;		/* Entry point list */
+	cb_tree			main_using;		/* main entry USING (for syntax checks) */
 	cb_tree			entry_list_goto;	/* Special Entry point list */
 	cb_tree			file_list;		/* File list */
 	cb_tree			cd_list;		/* CD list */
@@ -1940,7 +1936,7 @@ struct cb_program {
 	cob_u8_t	high_value;			/* High-value for this program */
 	cob_u16_t	low_value_n;			/* National Low-value */
 	cob_u16_t	high_value_n;			/* National High-value  */
-	enum cob_module_type	prog_type;			/* Program type */
+	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1, OO class = 2) */
 	cob_u8_t 	oo_class_attributes;			/* OO class attributes */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;
@@ -2271,7 +2267,7 @@ extern void			cb_insert_common_prog (struct cb_program *,
 
 
 extern struct cb_intrinsic_table	*lookup_intrinsic (const char *,
-							   const int);
+							   const size_t, const int);
 
 extern cb_tree		cb_build_alphabet_name (cb_tree);
 extern cb_tree		cb_build_schema_name (cb_tree);
@@ -2413,7 +2409,7 @@ extern char		*cb_encode_program_id (const char *, const int, const int);
 extern char		*cb_build_program_id (const char *, const cob_u32_t);
 extern cb_tree		cb_define_switch_name (cb_tree, cb_tree, const int);
 
-extern void		cb_check_word_length (unsigned int, const char *);
+extern int		cb_check_word_length (unsigned int, const char *);
 extern cb_tree		cb_build_section_name (cb_tree, const int);
 extern cb_tree		cb_build_assignment_name (struct cb_file *, cb_tree);
 extern cb_tree		cb_build_index (cb_tree, cb_tree,
@@ -2520,7 +2516,7 @@ extern void		cb_emit_goto (cb_tree, cb_tree, int);
 extern void		cb_emit_exit (const unsigned int);
 
 extern void		cb_emit_if (cb_tree, cb_tree, cb_tree);
-extern cb_tree		cb_build_if_check_break (cb_tree, cb_tree);
+extern cb_tree		cb_build_if_maybe_insert_break (cb_tree, cb_tree);
 
 extern void		cb_emit_initialize (cb_tree, cb_tree,
 					    cb_tree, cb_tree,
@@ -2707,6 +2703,7 @@ extern int		procedure_list_add (struct cb_program *program,
 extern int		cb_flag_memory_check;
 
 extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
+extern const char *	cb_close_mode_to_string (const enum cob_close_mode);
 
 /* scanner.l */
 extern void		cb_unput_dot (void);
@@ -2726,6 +2723,8 @@ extern void		ylex_clear_all (void);
 extern void		ylex_call_destroy (void);
 
 /* cobc.c, help.c */
+extern const char	*cobc_intern_filename (const char *);
+
 #ifndef COB_EXTERNAL_XREF
 #define COB_INTERNAL_XREF
 #endif
