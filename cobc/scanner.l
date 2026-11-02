@@ -668,6 +668,26 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (END_CLASS);
 }
 
+"END"[ ,;\n]+"FACTORY"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_FACTORY);
+}
+
+"END"[ ,;\n]+"OBJECT"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_OBJECT);
+}
+
+"END"[ ,;\n]+"METHOD"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_METHOD);
+}
+
+"END"[ ,;\n]+"INTERFACE"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_INTERFACE);
+}
+
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
 	if (lookup_reserved_word ("SYMBOL")) {
 		count_lines (yytext);
@@ -1081,10 +1101,10 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 			RETURN_TOK (LITERAL);
 		}
-	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT) 
-		     || last_token == END_CLASS) {
+	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT)
+		|| last_token == END_CLASS) {
 		yylval = cb_build_reference (yytext);
-		RETURN_TOK (CLASS_NAME);
+		RETURN_TOK (OO_CLASS_NAME);
 	}
 
 	/* Check reserved word */
@@ -1120,6 +1140,20 @@ H#[0-9A-Za-z]+ {
 		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (USER_FUNCTION_NAME);
+		}
+	}
+	for (l = current_program->class_spec_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
+			yylval = cb_build_reference (yytext);
+			RETURN_TOK (OO_CLASS_NAME);
+		}
+	}
+	for (l = current_program->interface_spec_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
+			yylval = cb_build_reference (yytext);
+			RETURN_TOK (OO_INTERFACE_NAME);
 		}
 	}
 	if (cobc_allow_program_name) {
@@ -1267,6 +1301,11 @@ H#[0-9A-Za-z]+ {
 ":" {
 	yylval = NULL;
 	RETURN_TOK (TOK_COLON);
+}
+
+"::" {
+	yylval = NULL;
+	RETURN_TOK (TOK_COLON_COLON);
 }
 
 "=" {
