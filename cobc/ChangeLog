@@ -1,4 +1,190 @@
 
+2026-10-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (word_hash): return full 32bit hash, which is stored in the
+	  refernce containing the word (previously stored only 11 bit)
+	* tree.c (lookup_word, cb_ref_internal): cut hash for indexing to 11 bit
+	* tree.h (cb_label), tree.c (cb_build_label): new member name_hash,
+	  set from 32 bit hash of the reference
+	* codgen.c (codegen_init): allocate output name via global memory, not
+	  in cobc's string cache
+	* cobc.c (strcache, cobc_check_string, hash_simple_string): string cache
+	  for PIC and ENTRY names uses hashes now for even faster comparison,
+	  to speed up generated programs with thousands of ENTRY points use
+	  additionally a hash-bucket for each of the string lists
+	* parser.y (entry_filter, add_entry_hash, possibly_defined_entry_hash):
+	  to speed up generated programs with thousands of ENTRY points (including
+	  ENTRY FOR GO TO) the names are hashed and those are partially included
+	  in a hash map to check for existing entries
+	* parser.y (perform_procedure): only setup perform_thru_list if checks
+	  using this list are enabled
+	* parser.y (perform_procedure), typeck.c (cb_validate_perform_thru_ranges):
+	  perform_thru_list is not embedded into another list any more and added
+	  up front (no need to iterate to the end for addition)
+	* parser.y: label_list is added up-front now as well
+	* tree.h (cb_program), parser.y, typeck.c: new member main_using set
+	  to the USING list for the main PROCEDURE, allowing direct checks as well
+	  as addition up-front for entry_list and entry_list_goto, saving most time
+	  spent in generated programswith thousands of elements in there
+	* codegen.c (cb_cache_program_decimal_constant): only check for existing
+	  literal id if we don't create a new one in the first place
+	* codegen.c (lit_slot, lit_tab_grow, lit_tab_find, lit_tab_add): C literal
+	  cache now uses a self-growing hash map of literals to check for duplicates
+	* pplex.l (plex_clear_all), replace.c (cb_free_replace): cleanup for hard
+	  errors (may be executed multiple times now), including closing input file
+	* cobc.c (process_command_line, file_replace_extension, add_depend_target):
+	  full memory cleanup for -dumpversion, --gentable and -MT/-MD options
+	* tree.c (cb_file_errtype): new enum, containing and used instead of
+	  previous #define'd constants
+
+2026-10-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* codegen.c (cb_close_mode_to_string), tree.h: new function
+	* typeck.c (cb_emit_close): use it to output cob_close_mode names
+
+2026-10-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c (process_command_line): -Wno-error=warning now also excludes
+	  the warning from a global -Werror
+
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c (lookup_intrinsic), tree.h, scanner.l, tree.c, cobc.c:
+	  added size parameter as the main caller scanner.l provides that already
+	* cobc.c (cobc_deciph_funcs), scanner.l: add and compare resolved intrinsic
+	  function name (always upper-case) to/from internal list
+	* reserved.c: reduce size of map_array_size, to match the compared key var
+
+2026-10-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c (print_error): open source file to show diagnostic context
+	  in binary mode, to prevent broken ftell/fseek on Windows
+	* codegen.c (output_field_display): fix dump code for INDEXED BY in
+	  LINKAGE fields (and by that COBC_GEN_DUMP_COMMENTS)
+	* cobc.c (finish_setup_compiler_env): allow to unset COBC_GEN_DUMP_COMMENTS
+
+2026-10-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_check_word_length), tree.h: now returns 1 on bad length
+	* scanner.l: exit early when looking up words and cb_check_word_length
+	  returned an error
+	* reserved.c (create_dummy_reserved): refactor to init by memset
+	* reserved.c: expanded HASHMAP macro to have separate functions for
+	  debugging and performance checks
+	* reserved.c (hash_single_word): extracted hash_word
+	* tree.h (cobc_reserved): added word_hash
+	* reserved.c (add_reserved_word_to_map): compute the word's hash when adding
+	* reserved.c (find_key_for_reserved_word): only cb_strcasecmp if word hashes
+	  match
+	* tree.c (word_hash): apply FNV-1a hashing from reserved's hash_single_word
+	  for a much better distribution in our program's word list
+	* scanner.l (word_hash): new copy of reserved's hash_single_word which uses
+	  a locale-aware toupper function (user-defined words!)
+	* scanner.l (cb_level_78): replaced name_len with name_hash
+	* scanner.l: compute and compare name_hash instead of name_len
+	* scanner.l (possibly_defined_name_hash): function used before looping over
+	  the internal constant lists using the new constant hash filter map
+	  containing combined hashes in a char[] added when computing hashes for
+	  constants, unset on calling clear_constants;
+	  note: the idea and functions to do this was "contributed"
+	  by Claude Sonnect 5.5
+	* tree.h (cb_literal): removed padding by reordering and adjusting the type
+	  for llit member
+	* tree.h (literal_list): added literal_hash member
+	* codegen.c (cb_literal_hash): new function for computing a hash based on
+	  the literal data; note: assisted by Claude Sonnet 5.5
+
+2026-10-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.h (struct filename): new field preprocess_is_temp
+	* cobc.c (process_filename): set preprocess_is_temp when the
+	  preprocessed file name is generated by cob_temp_name
+	* cobc.c (clean_up_intermediates): remove any preprocessed file
+	  marked as temporary on cleanup (fixes a leak on cobc -M)
+
+2026-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (file_replace_extension): minor refactor
+	* typeck.c (validate_move): prevent MOVE NULL
+
+2026-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_filler): no addition of internal "FILLER n" names
+	  to the word list (= no strcmp or hashing either), saving 40 % processing
+	  time in sources with lots of FILLERs (like EXEC preprocessed files)
+	* error.c (diagnostics_show_caret): save last line of the post-context
+	  printed and skip those lines in the next pre-context, reducing the
+	  possible "overload" of output for cases like missing copybooks
+	* error.c (diagnostics_show_caret): rewritten to fill the buffer
+	  directly with fgets instead of character-wise and also use a single
+	  fprintf for output
+	* error.c (skip_lines): new function called in diagnostics_show_caret to
+	  skip leading lines before entering the main loop, also caching the offset
+	  for files processed already to start reading from there, saving 80 %
+	  processing time in huge sources / sources with lots of errors by not
+	  reading the file over and over again
+	* cobc.c (cobc_intern_filename), tree.h: new function as sole place to set
+	  a (potentially new) filename - allowing pointer comparisons afterwards
+	* cobc.c (cleanup_copybook_reference): removed, copybook->name uses new
+	  function cobc_intern_filename so does not to be manually removed
+	* scanner.l: use cobc_intern_filename instead of manual strdup for
+	  #LINE directive
+	* tree.c (cb_build_program): directly use cb_source_name (setup only with
+	  cobc_intern_filename) instead of manual strdup
+	* pplex.l, error.c: directly use cobc_intern_filename setup filenames
+	  instead of manual strdup, also allowing pointer comparisons instead
+	  of strcmp
+	* cobc.c: fixed minor memory leak of cb_depend_filename
+
+2026-09-17  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	Fix ignored END-EVALUATE after a WHEN without imperative statements
+
+	* parser.y (rules evaluate_when and evaluate_other): repeat
+	  the END-EVALUATE token if consumed by the empty imperative
+	  statement rule.
+
+2026-09-16  David Declerck <david.declerck@ocamlpro.com>
+
+	Rework memory block handling in the compiler so as to improve
+	compilation times. This was made after profiling cobc and
+	noticing it spends 90% of its time in cobc_main_free,
+	iterating over the memory block list. The new code
+	is now in constant time.
+
+	* cobc.c (struct cobc_mem_struct): add prev and base pointers
+	* cobc.c (cobc_mem_add, cobc_mem_get, cobc_mem_remove,
+	  cobc_mem_replace): new functions to manage the memory blocks lists
+	* cobc.c (cobc_main_malloc, cobc_main_realloc, cobc_main_free,
+	  cobc_parse_malloc, cobc_parse_realloc, cobc_parse_free,
+	  cobc_plex_malloc): use the new functions to manage the block lists
+
+2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y (rule occurs_index): set index_type to CB_INT_INDEX
+	  also for INDEXED BY appearing in LINKAGE SECTION, otherwise
+	  the variable is not added to the local include file
+	* parser.y (rules statements, call_statement): fix bugs in
+	  profiling for CALL with exceptions, and with NEXT SENTENCE
+	* parser.y (maybe_emit_dummy_section, maybe_emit_dummy_paragraph):
+	  extracted functions and change to use the meaningful default
+	  section name "ENTRY OF PROG $prog" and paragraph name "ENTRY OF
+	  SECTION $sections" instead of resp. MAIN SECTION and MAIN
+	  PARAGRAPH
+
+2026-08-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (build_evaluate, cb_check_needs_break): fix a bug where
+	  EVALUATE fails in profiling mode. The reason was that a check for
+	  a last GOTO statement is not correctly written, because it was
+	  actually checking either a GOTO or not a statement, which was
+	  evaluated to true for instructions added by profiling. Fixed by
+	  checking only that the last statement is a GOTO. Also modify
+	  cb_check_needs_break that uses the same code.
+	* typeck.c: rename cb_check_needs_break to cb_maybe_insert_break, and
+	  cb_build_if_check_break to cb_build_if_maybe_insert_break.
+	  Introduce cb_statement_finishes_with_goto to remove duplicated code.
+
 2026-08-26 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* ppparse.y (ppp_replace_list_add): fix bug #1071
@@ -27,6 +213,15 @@
 	  IS PARTIAL, IS PUBLIC, IS INTERNAL
 	* tree.h, common.h: add COB_MODULE_TYPE_CLASS and bit masks for all
 	  object-oriented class attributes
+
+2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* parser.y: remove the CB_PENDING warning on XML PARSE but still warn for
+	  untested XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING.
+	* typeck.c: remove invalid call to cob_check_based for XML-* builtin variable
+	  length registers (like XML-TEXT)
+	* codegen.c: remove the uninitialized and unused b_* field for XML-* builtin
+	  variable length registers
 
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -72,7 +267,7 @@
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c (get_number_in_parentheses): use local namebuffer
-	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually allign not only
+	* codegen.c (output_assign) [COB_NON_ALIGNED]: manually align not only
 	  for SET pointer-name but also for SET index-name
 
 2025-12-02  Simon Sobisch <simonsobisch@gnu.org>
@@ -119,7 +314,7 @@
 	  currently only with source format COBOL85
 	* scanner.l: translate non-printable character for invalid symbols
 	* pplex.l: handle MS-DOS EOF and control code for file separator,
-	  currently consuming consecutive occurences as a single new-line
+	  currently consuming consecutive occurrences as a single new-line
 
 2025-09-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -273,8 +468,9 @@
 
 2024-08-28  David Declerck <david.declerck@ocamlpro.com>
 
-	* tree.c (char_to_precedence_idx, get_char_type_description, valid_char_order):
-	  adjusted size of precedence table and gave proper precedence to U
+	* tree.c (char_to_precedence_idx, get_char_type_description,
+	  valid_char_order): adjusted size of precedence table and gave proper
+	  precedence to U
 
 2024-08-06  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2625,7 +2821,7 @@
 	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
 	  most-used runtime checks - now only passed to libcob in case of actual
 	  errors; new entry COB_NOP to replace the cob_nop call (frame switch)
-	  by a simple pointer comparision, which also ensures on all tested
+	  by a simple pointer comparison, which also ensures on all tested
 	  compilers that the line is not optimized out, and for those that
 	  optimize the check away the old cob_nop call is still done
 
@@ -2859,7 +3055,7 @@
 
 	* codegen.c (output_initialize_compound): adjusted OCCURS initialization
 	  to only do the initialization (and runtime checks) once and then
-	  memcpy to all other occurences
+	  memcpy to all other occurrences
 	* tree.c: preparation for all-upper-case names (post 3.1)
 
 2020-11-03  Simon Sobisch <simonsobisch@gnu.org>
@@ -4659,7 +4855,7 @@
 	  overflow when offset is is a variable
 	* typeck.c (cb_build_identifier): only build field name if actual
 	  needed, moved code building to new static cb_build_name_reference
-	* tree.c (compare_field_literal): added check for comparisions against
+	* tree.c (compare_field_literal): added check for comparisons against
 	  a reference modified field when the offset or length is known
 
 2018-01-16  Simon Sobisch <simonsobisch@gnu.org>
@@ -7695,11 +7891,17 @@
 
 2014-12-11  Ron Norman <rjn@inglenet.com>
 
-	* Fixes so WARNING is given if no DETAIL lines in a repor
+	* Fixes so WARNING is given if no DETAIL lines in a report
+
+2024-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_standard_includes): only generate the MATH_INCLUDE
+	  if COB_NO_SELF_DECLARE_MPZ is manually defined - otherwise the generated
+	  sources will use the new common.h pseudo-definition for mpf_t
 
 2014-06-17  Ron Norman <rjn@inglenet.com>
 
-        * parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
+	* parser.y, tree.c, codegen.c: Added check to verify PAGE LIMITS of report
 
 2014-06-16  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -9410,7 +9612,7 @@
 2005-12-08  Roger While <simrw@sim-basis.de>
 
 	* cobc.h : New defines - COB_SMALL_BUFF, COB_MEDIUM_BUFF, COB_LARGE_BUFF
-	* Relevant files : Replace all occurences of FILENAME_MAX/BUFSIZ
+	* Relevant files : Replace all occurrences of FILENAME_MAX/BUFSIZ
 	* codegen.c : Do not use arrays for cob_decimal
 	* flags.def : Mark -fmain as deprecated
 	* cobc.c : Implement '-x' option (Create executable).

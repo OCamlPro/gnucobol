@@ -48,7 +48,7 @@ jobs:
           # this is a "prepare" only step for this workflow only, so build
           # without any optional packages as one-time build speeding up this part
           ../configure --without-curses --without-db --without-xml2 --without-json \
-                       --without-iconv --disable-dependency-tracking CFLAGS=-std=c17
+                       --without-iconv --disable-dependency-tracking
 
       - name: Upload config.log
         uses: actions/upload-artifact@v7
@@ -150,7 +150,7 @@ jobs:
           # command it provides, to workaround a diff bug under the MSYS2 CI ;
           # this no longer seems necessary today
           # PATH="$PATH:/c/Program Files/Git/usr/bin"
-          ../configure $CFGOPT CFLAGS=-std=c17
+          ../configure $CFGOPT
 
       - name: Upload config.log
         if: ${{ !cancelled() }}

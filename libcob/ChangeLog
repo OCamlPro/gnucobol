@@ -1,10 +1,132 @@
 
+2026-10-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h (cob_close_mode): new enum instead of #define'd constants
+	* common.h, fileio.c (cob_fileio_funcs): move to fileio.c, use cob_close_mode
+	* fileio.c (cob_file_close, indexed_close): use cob_close_mode
+
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* profiling.c: fixed memory-leak on profile ending
+	* common.h, profiling.c: split cob_prof_proc_data from cob_prof_module
+	  as all the three elements need to exist together, also simplifying
+	  allocation and free with improved performance
+	* profiling.c (prof_stack): similar combination of three internal vars
+	  that need to coexist to a single structure
+	* profiling.c (prof_init_static): use cob_check_env_true
+	* profiling.c: refactor
+
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_exit_common): cleanup COB_STDERR and friends 
+
+2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
+	  cob_is_test as negative value for "hidden" files to still get correct pids
+	  and timings during testsuite run
+	* profiling.c (cob_prof_print_line): disabled flushing each line
+	* common.c (cob_rescan_env_vals): skip empty environment values as if they
+	  would not be set at all (easy set to default), also fixes SIGSEGV in
+	  other places like cob_prof_print_line that used a resulting NULL pointer
+
+2026-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_common_init) [_WIN32]: fix C89 declaration
+
+2026-10-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_temp_name) [!_WIN32 && !HAVE_8DOT3_FILENAMES]:
+	  include the user id in the temporary file names to avoid collisions
+	  between users, and increment the iteration counter as long as the
+	  name matches an existing file
+
+2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c [LIBXML_VERSION]: fix version check for new ABI
+	* profiling.c (cob_prof_end): hide csv output for any filename that ends
+	  with "hidden.csv" instead of comparing the full name
+
+2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function
+	  instead of a plain define, and therefore potentially CALLable
+	* call.c: drop internal marker for "longjmp available" and limitation
+	  that setjmp / longjmp can be executed only once as a user may store
+	  multiple places and also may jump to them multiple times - it is up
+	  to the user to ensure a correct stack (= never jump "forward")
+	* common.c (cob_sig_handler), coblocal.h: full output to configured
+	  stderr stream, fix crash when cob_init was not called (for example
+	  signal handler registered by cobc)
+
+2026-09-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (pre_load_once): extracted from cob_init_call
+	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
+	  a global scope request, independent of COB_LOAD_GLOBAL setting
+	* common.c: minimal refactor
+
+2026-09-08  David Declerck <david.declerck@ocamlpro.com>
+
+	Note: partial merge of 4674 (cob_file_operation enum)
+
+	* fileio.c (cob_file_fcd_sync): move reset of last_operation
+	  to save_status to fix a bug (ineffective COB_SYNC)
+	* fileio.c (cob_sync): add missing condition - fflush
+	  should only be called when the last operation is a write
+	  (follow-up to 2026-08-13)
+
+2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* profiling.c (print_stack): export/debug option with environment
+	  variable COB_PROF_TRACE, can be used when profiling is enabled to
+	  print the stack when entering/leaving code segments
+	* profiling.c: during test mode, COB_PROF_FILE set to 'hidden.csv'
+	  does not display an output when the profile file is generated
+
 2026-08-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* fileio.c (cob_sync, cob_file_unlock): call fdcobsync
 	  only if file is open in mode other than COB_OPEN_INPUT
 	  and fflush only is last operation was a write
-	* call.c (cob_get_buff): protect call to cob_free
+	* fileio.c (pathcmp) [_WIN32]: new function to compare paths
+	  while ignoring slash differences
+	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
+	  instead of strcmp to compare paths
+
+2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
+	  the IBM option name
+	* mlio.c: Fix issues in XML PARSE handling most notably a use 
+	  after free error if the internal buffer needs to grow during the parsing. 
+	  This fix changes the definition of xml_event to store offsets in the 
+	  buffer instead of pointers
+	* mlio.c: Respect the high order half-word for exception XML-CODE, 
+	  but do not expose internal libxml2 error codes 
+	* mlio.c: Reduce the number of parsing states by removing useless ones, 
+	  and encode eof in these states
+	* mlio.c: Handle XML chunks with more than one recoverable error
+	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
+	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
+	* mlio.c: Handle incomplete CONTENT-CHARACTERS events (with XML-INFORMATION = 2).
+	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
+	  events across END-OF-INPUT boundaries. 
+	  This is due to libxml2 internal details.
+
+2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
+	  configurations for redirection of stdin/stdout/stderr to a file
+	* common.c, common.h: add COB_SET_RUNTIME_STDIN_FILE,
+	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
+	  options
+	* coblocal.h (cob_settings): extend the setting to store FILE pointers
+	  for stdin/stdout/stderr
+	* fileio.c: introduce cob_settings_fileio to trigger reset of settings
+	  related configurations
+	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
+	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -19,6 +141,11 @@
 	* fileio.c (bdb_keylen) [WITH_DB]: minor refactoring
 	* fileio.c (cob_file_close): close file depending on internal state, not
 	  depending on file organization
+
+2025-11-19  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* mlio.c (xml_startDocument, myStructuredErrorHandler, xml_parse):
+	  compat for LIBXML_VERSION < 21400
 
 2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
@@ -93,6 +220,22 @@
 	  the program collating sequence in CHAR and ORD
 	* intrinsic.c (cob_intr_char): raise COB_EC_ARGUMENT_FUNCTION
 	  when calling CHAR with an argument outside the collation range
+
+2025-08-15  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* mlio.c: modified to support xml parse with xmlss.
+	  eliminated the xml_event_data structure and moved that data
+	  into the xml_event structure. Created a new enum cob_xml_registers
+	  and added it to the add_xml_event_data function. This function was
+	  modified to update the xml_event structure. All of the context parser
+	  callback functions were modified to use the add_xml_event_data function.
+	  the cob_xml_parse and xml_parse functions were modified to support
+	  the new end_of_input event required by xmlss. a new eof variable
+	  was added to the xml_state structure so that the endDocument callback
+	  function could be triggered by the parser in the xml_parse funtction.
+
+	  TODO ==> logic needs to be added to support returning NATIONAL data
+	  this needs to support the RETURNING NATIONAL phrase.
 
 2025-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -273,6 +416,15 @@
 
 	* screenio.c [WITH_PANELS]: replace use of ncurses extension ceiling_panel()
 	  with X/Open Curses function panel_below()
+
+2024-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: cob_decimal is now always usable as we define a "good enough"
+	  structure if gmp.h / mpir.h / mp.h were not included before, its members
+	  are only used inside libcob anyway; define COB_NO_SELF_DECLARE_MPZ to
+	  create the old COB_WITHOUT_DECIMAL definition instead
+	* coblocal.h:for modules not using GMP use COB_WITHOUT_MPF to declarating
+	  functions with that type
 
 2024-11-24  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1730,6 +1882,11 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* mlio.c: code refactoring and minor improvements for XML GENERATE
 	  and JSON GENERATE (including bug-fix: COUNT IN sets variable,
 	  not increments it)
+
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_file_operation): moved defines to enum
+	* common.h (cob_file), fileio.c: adjusted to use new enums
 
 2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -6832,7 +6989,7 @@ after suggestions by Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2025 Free Software Foundation, Inc.
+Copyright 2002-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

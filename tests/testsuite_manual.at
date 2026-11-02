@@ -16,9 +16,9 @@
 ## You should have received a copy of the GNU General Public License
 ## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
-AT_COPYRIGHT([Test cases Copyright (C) 2022 Free Software Foundation, Inc.
+AT_COPYRIGHT([Test cases Copyright (C) 2025 Free Software Foundation, Inc.
 
-Written by Edward Hart, Simon Sobisch])
+Written by Edward Hart, Simon Sobisch, Chuck Haatvedt])
 
 ### GnuCOBOL Test Suite
 

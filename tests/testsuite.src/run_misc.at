@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2025 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -348,7 +348,7 @@ AT_CLEANUP
 AT_SETUP([LOCAL-STORAGE (3)])
 AT_KEYWORDS([runmisc OCCURS INDEX INDEXED])
 
-# Note: this tests undefined behaviour, because the initial value
+# Note: this tests undefined behavior, because the initial value
 #       of index-names are undefined per standard; where they are
 #       explicit defined to be "... treated as a static item [for WS]
 #       and as an automatic item [for LS]"; see bug #794
@@ -1136,8 +1136,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 AT_CLEANUP
 
 
-AT_SETUP([MOVE of invalid data from numeric to alphanumeric item])
-AT_KEYWORDS([runmisc])
+AT_SETUP([MOVE of inv. numeric data to alphanumeric item])
+AT_KEYWORDS([runmisc invalid])
 
 AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
@@ -1153,14 +1153,14 @@ AT_DATA([prog.cob], [
        MAIN.
            MOVE SPACES TO X-ALN
            MOVE X-NUM  TO Y-ALN
-	   IF Y-ALN NOT EQUAL " " THEN
-	      DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
-	   END-IF
+           IF Y-ALN NOT EQUAL " " THEN
+              DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
+           END-IF
            MOVE SPACES TO Z-ALN
            MOVE Z-NUM  TO T-ALN
-	   IF T-ALN NOT EQUAL "  " THEN
-	      DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
-	   END-IF
+           IF T-ALN NOT EQUAL "  " THEN
+              DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
+           END-IF
            STOP RUN.
 ])
 
@@ -1357,6 +1357,8 @@ AT_CLEANUP
 
 AT_SETUP([Recursive CALL of RECURSIVE program])
 AT_KEYWORDS([runmisc CANCEL EXTERNAL])
+
+# FIXME: recursive programs "leak" on STOP RUN
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -1792,18 +1794,18 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Converted: "A#O2018 |!"], [])
 
 # For characters above IBM (with irregularities) and GCOS should match:
-AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii7bit -o prog-ibm], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-ibm], [0],
+AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii7bit -o ibm], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./ibm], [0],
 [Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
 
-AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii8bit -o prog-gcos], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog-gcos], [0],
+AT_CHECK([$COMPILE prog.cob -febcdic-table=ebcdic500_ascii8bit -o gcos], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./gcos], [0],
 [Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
 
 # FIXME: This really does not convert to anything close to ASCII;
 # what's this table supposed to encode?
-# AT_CHECK([$COMPILE prog.cob -febcdic-table=RESTRICTED-GC -o prog-rgc], [0], [], [])
-# AT_CHECK([$COBCRUN_DIRECT ./prog-rgc], [0], [])
+# AT_CHECK([$COMPILE prog.cob -febcdic-table=RESTRICTED-GC -o rgc], [0], [], [])
+# AT_CHECK([$COBCRUN_DIRECT ./rgc], [0], [])
 
 AT_CLEANUP
 
@@ -4195,8 +4197,8 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([COB_PRE_LOAD])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+AT_SETUP([pre-loading via COB_PRE_LOAD])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4209,15 +4211,17 @@ AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      caller.
        PROCEDURE        DIVISION.
-           CALL "callee2"
-           END-CALL.
+           CALL "callee2".
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
+# lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
 AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+# lookup with full path
+AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
@@ -4251,7 +4255,7 @@ typedef void (*cob_tidy_func)(void);
 
 /* Function to call COBOL shared library functions */
 void *callCobol() {
-   
+
     const char *libCobPath = "libcob" LIB_EXT;
     void *libCobHandle;
     cob_init_func cob_init;
@@ -4301,7 +4305,7 @@ void *threadFunction(void *arg) {
 }
 
 /* Main function */
-int main() {
+int main (int argc, char **argv) {
     const int numThreads = 2; /* Number of threads to create */
     pthread_t threads[[numThreads]];
     long i;
@@ -10885,6 +10889,9 @@ AT_DATA([sub2.cob], [
            10  CM-DISK            PICTURE X(8).
            10  CM-NO-TERMINALS    PICTURE 9(4).
        77  DYNAMIC-NUM            PICTURE 9(4).
+       01  LS-DATA.
+           03  LS-ITEM            PIC X  OCCURS  1 TO 4
+               DEPENDING ON DYNAMIC-NUM INDEXED BY LS-IDX.
 
        PROCEDURE DIVISION USING X, TSPFL-RECORD.
        SubwaY SECTION.
@@ -10969,8 +10976,8 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11107,6 +11114,7 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+01        LS-DATA.                       <NULL> address
 
 END OF DUMP - sub2
 **********************
@@ -11207,8 +11215,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11230,8 +11238,8 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
@@ -11270,20 +11278,20 @@ AT_CHECK([$DIFF reference_stderr stderr.sed], [0], [], [])
 
 
 AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
-$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
+$COMPILE -fdump=FD,LS prog.cob sub2.cob -o progfdls], [0], [], [])
 
-AT_CHECK([COB_DUMP_FILE=tstdump_fdls.dump \
-$COBCRUN_DIRECT ./prog_fdls], [1],
+AT_CHECK([COB_DUMP_FILE=tdfdls.dump \
+$COBCRUN_DIRECT ./progfdls], [1],
 [X is 000000001
 X is 000005441
 ],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
-dump written to tstdump_fdls.dump
+dump written to tdfdls.dump
 ])
 
-AT_CAPTURE_FILE([tstdump_fdls.dump])
+AT_CAPTURE_FILE([tdfdls.dump])
 
 AT_DATA([reference_fdls], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
@@ -11293,13 +11301,13 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
 	MAIN-1 at prog.cob:177
 	ENTRY sub1 at prog.cob:159
  Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
+	DO-CALL OF SubwaY at sub2.cob:51
+	ENTRY sub2 at sub2.cob:42
  Last statement of "prog" was CALL
 	CALL-IT-OMIT at prog.cob:118
 	MAIN-100 at prog.cob:85
 	ENTRY prog at prog.cob:77
- Started by ./prog_fdls
+ Started by ./progfdls
 
 Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 
@@ -11322,6 +11330,7 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+01        LS-DATA.                       <NULL> address
 
 END OF DUMP - sub2
 **********************
@@ -11343,48 +11352,49 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([$SED -e 's/Started by .*prog_fdls.exe/Started by .\/prog_fdls/g' \
-tstdump_fdls.dump > tstdump.sed], [0], [], [])
+AT_CHECK([$SED -e 's/Started by .*progfdls.exe/Started by .\/progfdls/g' \
+tdfdls.dump > tstdump.sed], [0], [], [])
 AT_CHECK([$DIFF reference_fdls tstdump.sed], [0], [], [])
 
 
 AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
-$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
+$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o allfdls], [0], [], [])
 
-AT_CHECK([COB_DUMP_FILE=tstdump_allfdls.dump \
-$COBCRUN_DIRECT ./prog_allfdls], [1],
+AT_CHECK([COB_DUMP_FILE=allfdls.dump \
+$COBCRUN_DIRECT ./allfdls], [1],
 [X is 000000001
 X is 000005441
 ],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
-dump written to tstdump_allfdls.dump
+dump written to allfdls.dump
 ])
 
-AT_CHECK([$SED -e 's/Started by .*prog_allfdls.exe/Started by .\/prog_allfdls/g' \
-tstdump_allfdls.dump > tstdump.sed], [0], [], [])
-AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
+AT_CHECK([$SED -e 's/Started by .*allfdls.exe/Started by .\/allfdls/g' \
+allfdls.dump > tstdump.sed], [0], [], [])
+AT_CHECK([$SED -e 's/progfdls/allfdls/' \
 reference_fdls > reference_all], [0], [], [])
 AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 
 
-# CHECKME @ Ron: The result is likely wrong, please verify later
+# CHECKME: The result is possibly wrong, verify later
+# CHECKME: sticky linkage with non-USING fields has a broken codegen
 #AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
-#$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
+#$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o lssticky], [0], [], [])
 #
-#AT_CHECK([COB_DUMP_FILE=tstdump_ls_sticky.dump \
-#$COBCRUN_DIRECT ./prog_ls_sticky], [1],
+#AT_CHECK([COB_DUMP_FILE=tdsticky.dump \
+#$COBCRUN_DIRECT ./lssticky], [1],
 #[X is 000000001
 #X is 000005441
 #],
 #[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 #
-#dump written to tstdump_ls_sticky.dump
+#dump written to tdsticky.dump
 #])
 #
-#AT_CAPTURE_FILE([tstdump_ls_sticky.dump])
+#AT_CAPTURE_FILE([tdsticky.dump])
 #
 #AT_DATA([reference_ls_sticky], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
@@ -11394,13 +11404,13 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #	MAIN-1 at prog.cob:177
 #	ENTRY sub1 at prog.cob:159
 # Last statement of "sub2" was CALL
-#	DO-CALL OF SubwaY at sub2.cob:48
-#	ENTRY sub2 at sub2.cob:39
+#	DO-CALL OF SubwaY at sub2.cob:51
+#	ENTRY sub2 at sub2.cob:42
 # Last statement of "prog" was CALL
 #	CALL-IT-OMIT at prog.cob:118
 #	MAIN-100 at prog.cob:85
 #	ENTRY prog at prog.cob:77
-# Started by ./prog_ls_sticky
+# Started by ./lssticky
 #
 #Dump Program-Id sub1 from prog.cob compiled Jan 25 2002 12:00:00
 #
@@ -11425,7 +11435,7 @@ AT_CHECK([$DIFF reference_all tstdump.sed], [0], [], [])
 #
 #])
 #
-#AT_CHECK([$DIFF reference tstdump_ls_sticky.dump], [0], [], [])
+#AT_CHECK([$DIFF reference tdsticky.dump], [0], [], [])
 
 AT_CLEANUP
 
@@ -12169,7 +12179,7 @@ SUB GOT Y
 SUB GOT Z
 SUB GOT 0
 ], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([COB_PHYSICAL_CANCEL=Y COB_PROF_ENABLE=0 $COBCRUN_DIRECT ./prog], [0],
 [SUB GOT X
 SUB GOT Y
 SUB GOT Z
@@ -12520,7 +12530,7 @@ getType (int type, int byvalue)
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   char      wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80], pic[30];	/* note: maximum _theoretical_ size */
    const int nargs = cob_get_num_params();
    int       k;
 
@@ -12851,8 +12861,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 ])
 
 # Runtime checks disabled, subscript may be zero or even negative
-AT_CHECK([$COMPILE -fno-ec=bound -o prog_unsafe prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog_unsafe], [0],
+AT_CHECK([$COMPILE -fno-ec=bound -o unsafe prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./unsafe], [0],
 [UNUP: 00000000 is :CCCC:
 SNUP: +00000000 is :CCCC:
 SBIN: +00000000 is :CCCC:
@@ -14327,6 +14337,41 @@ E: OK OTHER option taken
 AT_CLEANUP
 
 
+AT_SETUP([Nested EVALUATE with empty WHEN])
+AT_KEYWORDS([runmisc missing-statement EVALUATE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA                DIVISION.
+       WORKING-STORAGE     SECTION.
+       01 A PICTURE 9 VALUE 1.
+       01 B PICTURE 9 VALUE 2.
+       PROCEDURE DIVISION.
+
+       EVALUATE A
+           WHEN 1
+               EVALUATE B
+                   WHEN 1
+               END-EVALUATE
+      * If END-EVALUATE is ignored, WHEN 2 will be attached to EVALUATE B
+           WHEN 2
+               DISPLAY "FAIL"
+       END-EVALUATE.
+])
+
+# explicit check that we only get only a single warning for WHEN
+# and no wrong warnings for the END-EVALUATE terminator
+AT_CHECK([$COMPILE -fmissing-statement=warning -Wterminator prog.cob], [0], [],
+[prog.cob:14: warning: WHEN without imperative statement used
+prog.cob:17: warning: DISPLAY statement not terminated by END-DISPLAY
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([ENTRY FOR GO TO / GO TO ENTRY])
 AT_KEYWORDS([runmisc condition expression])
 
@@ -15074,50 +15119,57 @@ AT_SETUP([run profiling])
 AT_KEYWORDS([cobc profiling])
 
 AT_DATA([prog.cob], [
-        IDENTIFICATION DIVISION.
-        PROGRAM-ID.    prog.
-        PROCEDURE      DIVISION.
-        1ST SECTION.
-        PARA-0001.
-            PERFORM PARA-0003.
-        PARA-0002.
-            CONTINUE.
-        PARA-0003.
-            GO TO 2ND.
-        PARA-0004.
-            CONTINUE.
-        2ND SECTION.
-        PARA-0005.
-            PERFORM PARA-0006.
-        PARA-0006.
-            CONTINUE.
-        PARA-0007.
-            STOP RUN.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.    prog.
+       PROCEDURE      DIVISION.
+       1ST SECTION.
+       PARA-0001.
+           PERFORM PARA-0003.
+       PARA-0002.
+           CONTINUE.
+       PARA-0003.
+      * NEXT SENTENCE is a GO TO within the same paragraph
+           NEXT SENTENCE.
+           GO TO 2ND.
+       PARA-0004.
+           CONTINUE.
+       2ND SECTION.
+       PARA-0005.
+           PERFORM PARA-0006.
+       PARA-0006.
+           CONTINUE.
+       PARA-0007.
+           STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-prof prog.cob], [0], [],
 [prog.cob: in section '1ST':
 prog.cob: in paragraph 'PARA-0003':
-prog.cob:11: warning: GO TO SECTION '2ND'
+prog.cob:12: warning: NEXT SENTENCE is archaic in GnuCOBOL
+prog.cob:13: warning: GO TO SECTION '2ND'
 ])
-
 AT_CAPTURE_FILE([prof-prog.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog])
 
 AT_CHECK([$COMPILE -fprof prog.cob], [0], [],
 [prog.cob: in section '1ST':
 prog.cob: in paragraph 'PARA-0003':
-prog.cob:11: warning: GO TO SECTION '2ND'
+prog.cob:12: warning: NEXT SENTENCE is archaic in GnuCOBOL
+prog.cob:13: warning: GO TO SECTION '2ND'
 ])
 
-AT_CHECK([COB_PROF_ENABLE=0 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([COB_PROF_ENABLE=0 COB_PROF_FILE='prof-$b.csv' $COBCRUN_DIRECT ./prog])
 
 # Specific test for $f, which is an absolute file name
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='$f-prof.csv' $COBCRUN_DIRECT ./prog], [0], [], [ignore])
-AT_CHECK([ls prog$COB_EXE_EXT-prof.csv], [0], [ignore], [])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$$-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0], [],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='$f-prof.csv' $COBCRUN_DIRECT ./prog], [0],
+[], [ignore])
+
+AT_CHECK([ls prog$COB_EXE_EXT-prof.csv], [0], [ignore])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE='prof-$$-$b.csv' COB_PROF_FORMAT=%i,%m,%s,%p,%e,%f,%l,%w,%k,%t,%h,%n,%x $COBCRUN_DIRECT ./prog], [0],
+[],
 [File prof-123456-prog.csv generated
 ])
 
@@ -15132,11 +15184,11 @@ AT_CHECK([cat prof-123456-prog.csv], [0],
 123456,prog,1ST,PARA-0001,,prog.cob,6,prog.cob:6,PARAGRAPH,11000000,0.011 s,1,%x
 123456,prog,1ST,PARA-0002,,prog.cob,8,prog.cob:8,PARAGRAPH,0,0.000 s,0,%x
 123456,prog,1ST,PARA-0003,,prog.cob,10,prog.cob:10,PARAGRAPH,1000000,0.001 s,1,%x
-123456,prog,1ST,PARA-0004,,prog.cob,12,prog.cob:12,PARAGRAPH,0,0.000 s,0,%x
-123456,prog,2ND,,,prog.cob,14,prog.cob:14,SECTION,6000000,0.006 s,1,%x
-123456,prog,2ND,PARA-0005,,prog.cob,15,prog.cob:15,PARAGRAPH,3000000,0.003 s,1,%x
-123456,prog,2ND,PARA-0006,,prog.cob,17,prog.cob:17,PARAGRAPH,2000000,0.002 s,2,%x
-123456,prog,2ND,PARA-0007,,prog.cob,19,prog.cob:19,PARAGRAPH,1000000,0.001 s,1,%x
+123456,prog,1ST,PARA-0004,,prog.cob,14,prog.cob:14,PARAGRAPH,0,0.000 s,0,%x
+123456,prog,2ND,,,prog.cob,16,prog.cob:16,SECTION,6000000,0.006 s,1,%x
+123456,prog,2ND,PARA-0005,,prog.cob,17,prog.cob:17,PARAGRAPH,3000000,0.003 s,1,%x
+123456,prog,2ND,PARA-0006,,prog.cob,19,prog.cob:19,PARAGRAPH,2000000,0.002 s,2,%x
+123456,prog,2ND,PARA-0007,,prog.cob,21,prog.cob:21,PARAGRAPH,1000000,0.001 s,1,%x
 ])
 
 AT_CLEANUP
@@ -15154,9 +15206,10 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -fprof prog.cob])
-
 AT_CAPTURE_FILE([prof.csv])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog], [0],
+[HELLO
 WORLD
 ],
 [File prof.csv generated
@@ -15165,8 +15218,8 @@ WORLD
 AT_CHECK([cat prof.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog,,,,prog.cob:4,PROGRAM,3000000,0.003 s,1
-prog,MAIN SECTION,,,prog.cob:5,SECTION,1000000,0.001 s,1
-prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
+prog,ENTRY OF PROG prog,,,prog.cob:5,SECTION,1000000,0.001 s,1
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
 ])
 
 AT_CLEANUP
@@ -15186,9 +15239,10 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -fprof prog.cob])
-
 AT_CAPTURE_FILE([prof.csv])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [HELLO
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog], [0],
+[HELLO
 WORLD
 ],
 [File prof.csv generated
@@ -15197,9 +15251,9 @@ WORLD
 AT_CHECK([cat prof.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog,,,,prog.cob:4,PROGRAM,5000000,0.005 s,1
-prog,MAIN SECTION,,,prog.cob:5,SECTION,2000000,0.002 s,1
-prog,MAIN SECTION,1ST,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
-prog,MAIN SECTION,2ND,,prog.cob:7,PARAGRAPH,1000000,0.001 s,1
+prog,ENTRY OF PROG prog,,,prog.cob:5,SECTION,2000000,0.002 s,1
+prog,ENTRY OF PROG prog,1ST,,prog.cob:5,PARAGRAPH,1000000,0.001 s,1
+prog,ENTRY OF PROG prog,2ND,,prog.cob:7,PARAGRAPH,1000000,0.001 s,1
 ])
 
 AT_CLEANUP
@@ -15223,7 +15277,7 @@ AT_CHECK([$COMPILE -fprof prog.cob])
 
 AT_CHECK([COB_PROF_MAX_DEPTH=2 COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [OK],
 [libcob: prog.cob:8: warning: [[cob_prof]] Profiling overflow at 2 calls, aborting profiling.
-libcob: prog.cob:8: warning:   Last 10 calls on stack:
+libcob: prog.cob:8: warning:   Last 2 calls on stack:
 libcob: prog.cob:8: warning:   * MAIN at prog.cob:5
 libcob: prog.cob:8: warning:   * prog at prog.cob:4
 ])
@@ -15232,7 +15286,7 @@ AT_CLEANUP
 
 
 AT_SETUP([run profiling with recursion, entries and CALL])
-AT_KEYWORDS([cobc])
+AT_KEYWORDS([cobc recursion])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -15264,9 +15318,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -fprof prog.cob])
-
 AT_CAPTURE_FILE([prof.csv])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0],
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog], [0],
 [HELLO WORLD
 end iter
 ],
@@ -15277,16 +15331,82 @@ AT_CHECK([cat prof.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 inside-program,,,,prog.cob:14,PROGRAM,407000000,0.407 s,1
 inside-program,MAIN,,,prog.cob:15,SECTION,1000000,0.001 s,1
-inside-program,MAIN,MAIN PARAGRAPH,,prog.cob:15,PARAGRAPH,1000000,0.001 s,1
+inside-program,MAIN,ENTRY OF SECTION MAIN,,prog.cob:15,PARAGRAPH,1000000,0.001 s,1
 inside-program,INSIDE,,,prog.cob:17,SECTION,804000000,0.804 s,101
-inside-program,INSIDE,MAIN PARAGRAPH,,prog.cob:17,PARAGRAPH,403000000,0.403 s,101
+inside-program,INSIDE,ENTRY OF SECTION INSIDE,,prog.cob:17,PARAGRAPH,403000000,0.403 s,101
 inside-program,INSIDE,ITER,,prog.cob:20,PARAGRAPH,401000000,0.401 s,101
 prog,,,,prog.cob:4,PROGRAM,419000000,0.419 s,2
-prog,MAIN SECTION,,,prog.cob:5,SECTION,417000000,0.417 s,1
-prog,MAIN SECTION,MAIN PARAGRAPH,,prog.cob:5,PARAGRAPH,417000000,0.417 s,2
-prog,MAIN SECTION,MAIN PARAGRAPH,entry,prog.cob:6,CALL,415000000,0.415 s,1
-prog,MAIN SECTION,MAIN PARAGRAPH,entry,prog.cob:8,ENTRY,0,0.000 s,1
-prog,MAIN SECTION,MAIN PARAGRAPH,inside-program,prog.cob:9,CALL,409000000,0.409 s,1
+prog,ENTRY OF PROG prog,,,prog.cob:5,SECTION,417000000,0.417 s,1
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,,prog.cob:5,PARAGRAPH,417000000,0.417 s,2
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,entry,prog.cob:6,CALL,1000000,0.001 s,1
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,entry,prog.cob:8,ENTRY,0,0.000 s,1
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,inside-program,prog.cob:9,CALL,1000000,0.001 s,1
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2 RECURSIVE.
+       PROCEDURE DIVISION.
+       MAIN.
+          DISPLAY "HELLO WORLD".
+          CALL "entry".
+          GOBACK.
+       ENTRY "entry".
+          CALL "inside-program".
+       PROGRAM-ID. inside-program.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(4).
+       PROCEDURE DIVISION.
+       SECOND SECTION.
+           MOVE 1 TO COUNTER.
+       INSIDE SECTION.
+           PERFORM ITER.
+           EXIT SECTION.
+       ITER SECTION.
+           IF COUNTER = 0
+             DISPLAY "end iter"
+             EXIT PARAGRAPH.
+           SUBTRACT 1 FROM COUNTER.
+           PERFORM INSIDE.
+       END PROGRAM inside-program.
+       END PROGRAM prog2.
+])
+
+AT_CHECK([$COMPILE -fprof prog2.cob])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_TRACE=1 $COBCRUN_DIRECT ./prog2], [0],
+[HELLO WORLD
+end iter
+end iter
+],
+[prog2 (prog2.cob:4 MODULE) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION SECOND (prog2.cob:16 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION SECOND (prog2.cob:16 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION INSIDE (prog2.cob:18 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> ENTRY OF SECTION ITER (prog2.cob:21 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:15 MODULE) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:10 CALL) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> inside-program (prog2.cob:10 CALL) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> prog2 (prog2.cob:4 MODULE) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> entry (prog2.cob:7 CALL) -> ENTER
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> entry (prog2.cob:7 CALL) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> MAIN (prog2.cob:5 PARAGRAPH) -> EXIT
+prog2 (prog2.cob:4 MODULE) -> EXIT
+File prof.csv generated
 ])
 
 AT_CLEANUP
@@ -15337,10 +15457,11 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE -fprof prog1.cob])
-AT_CHECK([$COMPILE_MODULE prog2.cob])
 
+AT_CHECK([$COMPILE_MODULE -fno-prof prog2.cob])
 AT_CAPTURE_FILE([prof.csv])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog1], [0],
 [XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
 [File prof.csv generated
 ])
@@ -15348,18 +15469,20 @@ AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0]
 AT_CHECK([cat prof.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog1,,,,prog1.cob:9,PROGRAM,1803000000,1.803 s,1
-prog1,MAIN SECTION,,,prog1.cob:12,SECTION,3301000000,3.301 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:12,PARAGRAPH,1801000000,1.801 s,1
-prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:17,PARAGRAPH,1500000000,1.500 s,300
-prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:19,CALL,300000000,0.300 s,300
-prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:21,CALL,300000000,0.300 s,300
+prog1,ENTRY OF PROG prog1,,,prog1.cob:12,SECTION,3301000000,3.301 s,1
+prog1,ENTRY OF PROG prog1,ENTRY OF SECTION ENTRY OF PROG prog1,,prog1.cob:12,PARAGRAPH,1801000000,1.801 s,1
+prog1,ENTRY OF PROG prog1,CALL-PROG2,,prog1.cob:17,PARAGRAPH,1500000000,1.500 s,300
+prog1,ENTRY OF PROG prog1,CALL-PROG2,prog2,prog1.cob:19,CALL,300000000,0.300 s,300
+prog1,ENTRY OF PROG prog1,CALL-PROG2,(dynamic),prog1.cob:21,CALL,300000000,0.300 s,300
 ])
 
 # same name sometimes leads to locks - especially on Win32
+
 AT_CHECK([mv prog2.$COB_MODULE_EXT prog2.old.$COB_MODULE_EXT])
+
 AT_CHECK([$COMPILE_MODULE -fprof prog2.cob])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog1], [0],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./prog1], [0],
 [XYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXYXY],
 [File prof.csv generated
 ])
@@ -15368,15 +15491,15 @@ AT_CHECK([cat prof.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog2,,,,prog2.cob:7,PROGRAM,2400000000,2.400 s,600
 prog2,DISPLAYER,,,prog2.cob:8,SECTION,1200000000,1.200 s,600
-prog2,DISPLAYER,MAIN PARAGRAPH,,prog2.cob:8,PARAGRAPH,1200000000,1.200 s,600
+prog2,DISPLAYER,ENTRY OF SECTION DISPLAYER,,prog2.cob:8,PARAGRAPH,1200000000,1.200 s,600
 prog2,OTHER-DISPLAY,,,prog2.cob:14,SECTION,300000000,0.300 s,300
-prog2,OTHER-DISPLAY,MAIN PARAGRAPH,,prog2.cob:14,PARAGRAPH,300000000,0.300 s,300
+prog2,OTHER-DISPLAY,ENTRY OF SECTION OTHER-DISPLAY,,prog2.cob:14,PARAGRAPH,300000000,0.300 s,300
 prog1,,,,prog1.cob:9,PROGRAM,4803000000,4.803 s,1
-prog1,MAIN SECTION,,,prog1.cob:12,SECTION,9301000000,9.301 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:12,PARAGRAPH,4801000000,4.801 s,1
-prog1,MAIN SECTION,CALL-PROG2,,prog1.cob:17,PARAGRAPH,4500000000,4.500 s,300
-prog1,MAIN SECTION,CALL-PROG2,prog2,prog1.cob:19,CALL,1500000000,1.500 s,300
-prog1,MAIN SECTION,CALL-PROG2,(dynamic),prog1.cob:21,CALL,2100000000,2.100 s,300
+prog1,ENTRY OF PROG prog1,,,prog1.cob:12,SECTION,9301000000,9.301 s,1
+prog1,ENTRY OF PROG prog1,ENTRY OF SECTION ENTRY OF PROG prog1,,prog1.cob:12,PARAGRAPH,4801000000,4.801 s,1
+prog1,ENTRY OF PROG prog1,CALL-PROG2,,prog1.cob:17,PARAGRAPH,4500000000,4.500 s,300
+prog1,ENTRY OF PROG prog1,CALL-PROG2,prog2,prog1.cob:19,CALL,300000000,0.300 s,300
+prog1,ENTRY OF PROG prog1,CALL-PROG2,(dynamic),prog1.cob:21,CALL,300000000,0.300 s,300
 ])
 
 AT_CLEANUP
@@ -15419,13 +15542,14 @@ AT_DATA([prog2.cob], [
        PARA.
            CONTINUE.
 ])
-AT_CHECK([$COMPILE_MODULE -fprof prog1.cob])
-AT_CHECK([$COMPILE -fprof prog2.cob])
 
+AT_CHECK([$COMPILE_MODULE -fprof prog1.cob])
+
+AT_CHECK([$COMPILE -fprof prog2.cob])
 AT_CAPTURE_FILE([prof1.csv])
 AT_CAPTURE_FILE([prof2.csv])
 
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv $COBCRUN prog1], [0], [],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof1.csv COB_PROF_FORMAT="" $COBCRUN prog1], [0], [],
 [File prof2.csv generated
 File prof1.csv generated
 ])
@@ -15433,18 +15557,18 @@ File prof1.csv generated
 AT_CHECK([cat prof1.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog1,,,,prog1.cob:10,PROGRAM,5000000,0.005 s,1
-prog1,MAIN SECTION,,,prog1.cob:11,SECTION,3000000,0.003 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,,prog1.cob:11,PARAGRAPH,3000000,0.003 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,SYSTEM,prog1.cob:19,CALL,1000000,0.001 s,1
-prog1,MAIN SECTION,MAIN PARAGRAPH,impossible,prog1.cob:21,CALL,0,0.000 s,0
+prog1,ENTRY OF PROG prog1,,,prog1.cob:11,SECTION,3000000,0.003 s,1
+prog1,ENTRY OF PROG prog1,ENTRY OF SECTION ENTRY OF PROG prog1,,prog1.cob:11,PARAGRAPH,3000000,0.003 s,1
+prog1,ENTRY OF PROG prog1,ENTRY OF SECTION ENTRY OF PROG prog1,SYSTEM,prog1.cob:19,CALL,1000000,0.001 s,1
+prog1,ENTRY OF PROG prog1,ENTRY OF SECTION ENTRY OF PROG prog1,impossible,prog1.cob:21,CALL,0,0.000 s,0
 ])
 
 AT_CHECK([cat prof2.csv], [0],
 [program-id,section,paragraph,entry,location,kind,time-ns,time,ncalls
 prog2,,,,prog2.cob:4,PROGRAM,13000000,0.013 s,1
-prog2,MAIN SECTION,,,prog2.cob:5,SECTION,16000000,0.016 s,1
-prog2,MAIN SECTION,MAIN,,prog2.cob:5,PARAGRAPH,11000000,0.011 s,1
-prog2,MAIN SECTION,PARA,,prog2.cob:9,PARAGRAPH,5000000,0.005 s,5
+prog2,ENTRY OF PROG prog2,,,prog2.cob:5,SECTION,16000000,0.016 s,1
+prog2,ENTRY OF PROG prog2,MAIN,,prog2.cob:5,PARAGRAPH,11000000,0.011 s,1
+prog2,ENTRY OF PROG prog2,PARA,,prog2.cob:9,PARAGRAPH,5000000,0.005 s,5
 ])
 
 AT_CLEANUP
@@ -15496,7 +15620,7 @@ AT_CHECK([$COMPILE caller.c])
 AT_CHECK([$COMPILE_MODULE -fprof callee.cob])
 
 AT_CAPTURE_FILE([prof.csv])
-AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./caller], [0], [],
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv COB_PROF_FORMAT="" $COBCRUN_DIRECT ./caller], [0], [],
 [File prof.csv generated
 ])
 
@@ -16107,3 +16231,396 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([profiling EVALUATE])
+AT_KEYWORDS([EVALUATE runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 STR PIC X(6) VALUE "..-..-".
+       01 OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE DIVISION.
+           MOVE 1 TO OFFSET
+           PERFORM UNTIL OFFSET > LENGTH OF STR
+             CALL "TestRecurse" USING STR OFFSET
+           END-PERFORM.
+           DISPLAY "DONE".
+       END PROGRAM PROG.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TestRecurse IS RECURSIVE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 LK-STR PIC X ANY LENGTH.
+       01 LK-OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE DIVISION USING LK-STR LK-OFFSET.
+           DISPLAY "L " LK-OFFSET " " NO ADVANCING
+           EVALUATE LK-STR(LK-OFFSET:1)
+             WHEN "."
+               ADD 1 TO LK-OFFSET
+               CALL "TestRecurse" USING LK-STR LK-OFFSET
+             WHEN OTHER
+               ADD 1 TO LK-OFFSET
+           END-EVALUATE.
+       END PROGRAM TestRecurse.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[L 0000000001 L 0000000002 L 0000000003 L 0000000004 L 0000000005 L 0000000006 DONE
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[L 0000000001 L 0000000002 L 0000000003 L 0000000004 L 0000000005 L 0000000006 DONE
+])
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROG.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 STR PIC X(6) VALUE "..-..-".
+       01 OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE DIVISION.
+           MOVE 1 TO OFFSET
+           PERFORM UNTIL OFFSET > LENGTH OF STR
+               CALL "TestRecurse" USING STR OFFSET
+           END-PERFORM.
+           DISPLAY "DONE".
+       END PROGRAM PROG.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. TestRecurse IS RECURSIVE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 LK-STR.
+          03 LK-CHR PIC X OCCURS 6 INDEXED BY LK-IDX.
+       01 LK-OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE DIVISION USING LK-STR LK-OFFSET.
+           DISPLAY "L " LK-OFFSET " " NO ADVANCING
+           SET LK-IDX TO LK-OFFSET
+           SEARCH LK-CHR
+               AT END
+                   IF LK-OFFSET > 20
+                      GOBACK
+                   END-IF
+                   ADD 1 TO LK-OFFSET
+                   CALL "TestRecurse" USING LK-STR LK-OFFSET
+               WHEN LK-CHR (LK-IDX) = "."
+                   ADD 1 TO LK-OFFSET
+           END-SEARCH.
+       END PROGRAM TestRecurse.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[L 0000000001 L 0000000002 L 0000000003 L 0000000004 L 0000000005 L 0000000006 L 0000000007 L 0000000008 L 0000000009 L 0000000010 L 0000000011 L 0000000012 L 0000000013 L 0000000014 L 0000000015 L 0000000016 L 0000000017 L 0000000018 L 0000000019 L 0000000020 L 0000000021 DONE
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[L 0000000001 L 0000000002 L 0000000003 L 0000000004 L 0000000005 L 0000000006 L 0000000007 L 0000000008 L 0000000009 L 0000000010 L 0000000011 L 0000000012 L 0000000013 L 0000000014 L 0000000015 L 0000000016 L 0000000017 L 0000000018 L 0000000019 L 0000000020 L 0000000021 DONE
+])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FORMAT="%m,%s,%p,%e,%w,%k,%n" COB_PROF_FILE="prof.csv" $COBCRUN_DIRECT ./prog], [0],
+[L 0000000001 L 0000000002 L 0000000003 L 0000000004 L 0000000005 L 0000000006 L 0000000007 L 0000000008 L 0000000009 L 0000000010 L 0000000011 L 0000000012 L 0000000013 L 0000000014 L 0000000015 L 0000000016 L 0000000017 L 0000000018 L 0000000019 L 0000000020 L 0000000021 DONE
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,ncalls
+TestRecurse,,,,prog.cob:23,PROGRAM,21
+TestRecurse,ENTRY OF PROG TestRecurse,,,prog.cob:24,SECTION,21
+TestRecurse,ENTRY OF PROG TestRecurse,ENTRY OF SECTION ENTRY OF PROG TestRecurse,,prog.cob:24,PARAGRAPH,21
+TestRecurse,ENTRY OF PROG TestRecurse,ENTRY OF SECTION ENTRY OF PROG TestRecurse,TestRecurse,prog.cob:32,CALL,15
+PROG,,,,prog.cob:8,PROGRAM,1
+PROG,ENTRY OF PROG PROG,,,prog.cob:9,SECTION,1
+PROG,ENTRY OF PROG PROG,ENTRY OF SECTION ENTRY OF PROG PROG,,prog.cob:9,PARAGRAPH,1
+PROG,ENTRY OF PROG PROG,ENTRY OF SECTION ENTRY OF PROG PROG,TestRecurse,prog.cob:11,CALL,6
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([profiling RECURSIVE CALL])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-COUNTER PIC 9.
+       PROCEDURE DIVISION.
+           MOVE 0 TO WS-COUNTER.
+           CALL "recurse" USING WS-COUNTER.
+           DISPLAY "Done".
+           STOP RUN.
+       END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. recurse IS RECURSIVE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01 LK-COUNTER PIC 9.
+       PROCEDURE DIVISION USING LK-COUNTER.
+           DISPLAY "C " LK-COUNTER " " NO ADVANCING.
+           EVALUATE LK-COUNTER
+              WHEN 5
+                EXIT PROGRAM
+              WHEN OTHER
+                ADD 1 TO LK-COUNTER
+                CALL "recurse" USING LK-COUNTER
+           END-EVALUATE.
+       END PROGRAM recurse.
+])
+
+AT_CHECK([$COMPILE -fprof prog.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [C 0 C 1 C 2 C 3 C 4 C 5 Done
+])
+
+AT_CHECK([COB_PROF_ENABLE=1 COB_PROF_FORMAT="%m,%s,%p,%e,%w,%k,%n" COB_PROF_FILE="prof.csv" $COBCRUN_DIRECT ./prog], [0],
+[C 0 C 1 C 2 C 3 C 4 C 5 Done
+],
+[File prof.csv generated
+])
+
+AT_CHECK([cat prof.csv], [0],
+[program-id,section,paragraph,entry,location,kind,ncalls
+recurse,,,,prog.cob:19,PROGRAM,6
+recurse,ENTRY OF PROG recurse,,,prog.cob:20,SECTION,6
+recurse,ENTRY OF PROG recurse,ENTRY OF SECTION ENTRY OF PROG recurse,,prog.cob:20,PARAGRAPH,6
+recurse,ENTRY OF PROG recurse,ENTRY OF SECTION ENTRY OF PROG recurse,recurse,prog.cob:26,CALL,5
+prog,,,,prog.cob:7,PROGRAM,1
+prog,ENTRY OF PROG prog,,,prog.cob:8,SECTION,1
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,,prog.cob:8,PARAGRAPH,1
+prog,ENTRY OF PROG prog,ENTRY OF SECTION ENTRY OF PROG prog,recurse,prog.cob:9,CALL,1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED BY in LINKAGE])
+AT_KEYWORDS([runmisc OCCURS SEARCH])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+           01 LK-STR.
+              03 LK-CHR PIC X OCCURS 6 INDEXED BY LK-IDX.
+           01 LK-OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE        DIVISION USING LK-STR LK-OFFSET.
+           DISPLAY "L " LK-OFFSET " " NO ADVANCING.
+           SET LK-IDX TO LK-OFFSET.
+           SEARCH LK-CHR
+               AT END
+                   IF LK-OFFSET > 20
+                      GOBACK
+                   END-IF
+                   ADD 1 TO LK-OFFSET
+               WHEN LK-CHR (LK-IDX) = "."
+                   ADD 1 TO LK-OFFSET
+           END-SEARCH.
+           EXIT PROGRAM.
+])
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE SECTION.
+           01 STR PIC X(6) VALUE "..-..-".
+           01 OFFSET BINARY-LONG UNSIGNED.
+       PROCEDURE        DIVISION.
+           MOVE 1 TO OFFSET.
+           PERFORM UNTIL OFFSET > LENGTH OF STR
+               CALL "callee" USING STR OFFSET
+           END-PERFORM.
+           DISPLAY "Done".
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob])
+
+AT_CHECK([$COMPILE -o prog caller.cob])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[L 0000000001 L 0000000002 L 0000000003 L 0000000004 L 0000000005 L 0000000006 Done
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([stdin/stdout/stderr redirection])
+AT_KEYWORDS([runmisc cob_set_runtime_option COB_SET_RUNTIME_STDIN_FILE
+   COB_SET_RUNTIME_STDOUT_FILE COB_SET_RUNTIME_STDERR_FILE COB_STDIN_FILE
+   COB_STDOUT_FILE COB_STDERR_FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+          SYSERR IS STANDARD-ERROR.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+          01 INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+          SET ENVIRONMENT "COB_STDOUT_FILE"
+             TO "prog_stdin".
+          DISPLAY "STDOUT".
+          SET ENVIRONMENT "COB_STDERR_FILE"
+             TO "+prog_stdin".
+          DISPLAY "STDERR" UPON SYSERR.
+          SET ENVIRONMENT "COB_STDIN_FILE"
+             TO "prog_stdin".
+          ACCEPT INPUT-VAR.
+          IF NOT INPUT-VAR = "STDOUT" THEN
+             STOP RUN RETURNING 1
+          END-IF.
+          ACCEPT INPUT-VAR.
+          IF NOT INPUT-VAR = "STDERR" THEN
+             STOP RUN RETURNING 2
+          END-IF.
+          STOP RUN.
+])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. callee.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+          SYSERR IS STANDARD-ERROR.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+          01 INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+          ACCEPT INPUT-VAR.
+          DISPLAY INPUT-VAR UPON SYSERR.
+          ACCEPT INPUT-VAR.
+          DISPLAY INPUT-VAR.
+          GOBACK.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <libcob.h>
+
+int main (int argc, char **argv) {
+   char buffer[128];
+   char *fgets_ret;
+   int nbytes;
+   int cob_ret;
+
+   /* Files for stdin/stdout/stderr redirection */
+   FILE *cob_stdin = fopen ("cob_stdin", "w+b");
+   FILE *cob_stdout = fopen ("cob_stdout", "w+b");
+   FILE *cob_stderr = fopen ("cob_stderr", "w+b");
+
+   if (!cob_stdin || !cob_stdout || !cob_stderr) {
+      fprintf (stderr, "Problem in creating stdin/stdout/stderr files");
+      return 1;
+   }
+
+   /* Prepare input for COBOL program */
+   nbytes = fprintf (cob_stdin, "STDERR\n");
+   if (nbytes != 7) {
+      perror ("Problem in writing 'STDERR' to stdin");
+      return 2;
+   }
+   nbytes = fprintf (cob_stdin, "STDOUT\n");
+   if (nbytes != 7) {
+      perror ("Problem in writing 'STDOUT' to stdin");
+      return 3;
+   }
+   fclose (cob_stdin);
+   cob_stdin = fopen ("cob_stdin", "r+b");
+   if (!cob_stdin) {
+      fprintf (stderr, "Problem in opening stdin file for read");
+      return -1;
+   }
+
+   /* Initialize runtime and set up stdin/stdout/stderr redirection */
+   cob_init (0, NULL);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDIN_FILE, cob_stdin);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDOUT_FILE, cob_stdout);
+   cob_set_runtime_option (COB_SET_RUNTIME_STDERR_FILE, cob_stderr);
+
+   /* Call COBOL program */
+   cob_ret = cob_call ("callee", 0, NULL);
+
+   if (cob_ret != 0) {
+      fprintf (stderr, "COBOL program did not normally exit: %d\n", cob_ret);
+      return 4;
+   }
+   if (cob_last_exit_code () != 0) {
+      fprintf (stderr, "COBOL program did not exit with ok code: %d\n", cob_last_exit_code ());
+      return 5;
+   }
+
+   /* Reset stdout and stderr for reading */
+   fclose (cob_stdout);
+   fclose (cob_stderr);
+   cob_stdout = fopen ("cob_stdout", "r+b");
+   cob_stderr = fopen ("cob_stderr", "r+b");
+   if (!cob_stdout || !cob_stderr) {
+      fprintf (stderr, "Problem in opening stdout/stderr files for read");
+      return -1;
+   }
+
+   /* Check result of COBOL program in stdout */
+   buffer[0] = '\0';
+   fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stdout);
+   if (fgets_ret != buffer) {
+      fprintf (stderr, "Reading from stdout failed\n");
+      return 6;
+   }
+   if (strcmp ("STDOUT\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stdout failed, COBOL wrote: %s\n", buffer);
+      return 7;
+   }
+
+   /* Check result of COBOL program in stderr */
+   buffer[0] = '\0';
+   fgets_ret = fgets (buffer, sizeof(buffer) - 1, cob_stderr);
+   if (fgets_ret != buffer) {
+      fprintf (stderr, "Reading from stderr failed\n");
+      return 8;
+   }
+   if (strcmp ("STDERR\n", buffer) != 0) {
+      fprintf (stderr, "Redirection of stderr failed, COBOL wrote: %s\n", buffer);
+      return 9;
+   }
+
+   /* Clean up and terminate */
+   fclose (cob_stdin);
+   fclose (cob_stdout);
+   fclose (cob_stderr);
+
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([./caller], [0], [], [])
+
+AT_CLEANUP
+

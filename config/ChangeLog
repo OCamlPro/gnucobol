@@ -1,4 +1,10 @@
 
+2026-07-07	Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* runtime.cfg: add runtime configurations COB_STDIN_FILE, COB_STDOUT_FILE,
+	  COB_STDERR_FILE to allow redirection of stdin/stdout/stderr input/output
+	  to given files
+
 2025-11-19  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* runtime.cfg: add runtime configuration COB_SIGNAL_REGIME to allow
@@ -826,7 +832,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2024 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2026 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

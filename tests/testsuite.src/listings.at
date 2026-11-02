@@ -1,4 +1,4 @@
-## Copyright (C) 2015-2025 Free Software Foundation, Inc.
+## Copyright (C) 2015-2026 Free Software Foundation, Inc.
 ## Written by Dave Pitts, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -1269,9 +1269,9 @@ AT_CLEANUP
 
 
 AT_SETUP([Error/Warning messages])
-AT_KEYWORDS([listing error warning warnings symbols])
+AT_KEYWORDS([listing error warning warnings symbols cobc])
 
-AT_DATA([copy.inc], [
+AT_DATA([copy.cr], [
        ENVIRONMENT    DIVISION.
        INPUT-OUTPUT   SECTION.
        FILE-CONTROL.
@@ -1282,7 +1282,7 @@ AT_DATA([copy.inc], [
                STATUS IS stat.
 ])
 
-AT_DATA([prog.cob], [
+AT_DATA([prog.cr], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        COPY "copy.inc".
@@ -1293,6 +1293,10 @@ AT_DATA([prog.cob], [
            END-DISPLAY.
            STOP RUN.
 ])
+
+# ensure that output stays identical no matter if CR or CRLF is used
+awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' copy.cr > copy.inc
+awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' prog.cr > prog.cob
 
 AT_CHECK([$COMPILE_LISTING -Wimplicit-define -t- prog.cob], [1],
 [GnuCOBOL V.R.P          prog.cob                                        Page 0001
@@ -1381,7 +1385,7 @@ prog.cob:8: error: 'FIRST-MATCH' is not defined
 3 errors in compilation group
 ], [ignore])
 
-AT_DATA([prog.cob], [
+AT_DATA([prog2.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
@@ -1393,8 +1397,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_LISTING -t- -ftsymbols prog.cob], [0],
-[GnuCOBOL V.R.P          prog.cob                                        Page 0001
+AT_CHECK([$COMPILE_LISTING -t- -ftsymbols prog2.cob], [0],
+[GnuCOBOL V.R.P          prog2.cob                                       Page 0001
 
 LINE    PG/LN  A...B............................................................
 
@@ -1409,7 +1413,7 @@ warning: numeric value is expected
 000008             DISPLAY TEST-VAR NO ADVANCING
 000009             END-DISPLAY.
 000010             STOP RUN.
-GnuCOBOL V.R.P          prog.cob                                        Page 0002
+GnuCOBOL V.R.P          prog2.cob                                       Page 0002
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -1418,11 +1422,11 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00002 NUMERIC        01   TEST-VAR                       9(2)
 
 
-GnuCOBOL V.R.P          prog.cob                                        Page 0003
+GnuCOBOL V.R.P          prog2.cob                                       Page 0003
 
 Error/Warning summary:
 
-prog.cob:6: warning: numeric value is expected
+prog2.cob:6: warning: numeric value is expected
 
 1 warning in compilation group
 0 errors in compilation group
@@ -1444,7 +1448,7 @@ AT_DATA([prog.cpy], [
        78  M   VALUE 5.
 ])
 
-AT_DATA([prog.cob], [
+AT_DATA([prog3.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
@@ -1465,7 +1469,7 @@ AT_DATA([prog17.lst],
 
 LINE    PG/LN  A...B............................................................
 
-000001  #line 1 "prog.cob"
+000001  #line 1 "prog3.cob"
 000001
 000002   IDENTIFICATION   DIVISION.
 000003   PROGRAM-ID. prog.
@@ -1478,7 +1482,7 @@ LINE    PG/LN  A...B............................................................
 000002   78 I VALUE 20.
 000003   78 J VALUE 5000.
 000004   78 M VALUE 5.
-000007  #line 7 "prog.cob"
+000007  #line 7 "prog3.cob"
 000007
 000008   PROCEDURE DIVISION.
 000009   DISPLAY TEST-VAR NO ADVANCING
@@ -1499,13 +1503,13 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 Error/Warning summary:
 
-prog.cob:11: warning: numeric value is expected
+prog3.cob:11: warning: numeric value is expected
 
 1 warning in compilation group
 0 errors in compilation group
 ])
 
-AT_DATA([prog.cob], [
+AT_DATA([prog4.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
@@ -1521,8 +1525,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_LISTING0 -t- prog.cob], [1],
-[GnuCOBOL V.R.P               prog.cob
+AT_CHECK([$COMPILE_LISTING0 -t- prog4.cob], [1],
+[GnuCOBOL V.R.P               prog4.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -1547,15 +1551,15 @@ error: CRUD.CPY: No such file or directory
 
 Error/Warning summary:
 
-prog.cob:7: error: CRUD.CPY: No such file or directory
-prog.cob:6: warning: numeric value is expected
+prog4.cob:7: error: CRUD.CPY: No such file or directory
+prog4.cob:6: warning: numeric value is expected
 
 1 warning in compilation group
 1 error in compilation group
 ], [ignore])
 
-AT_CHECK([$COMPILE_LISTING0 -t- -Wfatal-errors prog.cob], [97],
-[GnuCOBOL V.R.P               prog.cob
+AT_CHECK([$COMPILE_LISTING0 -t- -Wfatal-errors prog4.cob], [97],
+[GnuCOBOL V.R.P               prog4.cob
 
 LINE    PG/LN  A...B............................................................
 
@@ -1579,7 +1583,7 @@ error: CRUD.CPY: No such file or directory
 
 Error/Warning summary:
 
-prog.cob:7: error: CRUD.CPY: No such file or directory
+prog4.cob:7: error: CRUD.CPY: No such file or directory
 
 0 warnings in compilation group
 1 error in compilation group
