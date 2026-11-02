@@ -2960,7 +2960,7 @@ output_local_field_cache (struct cb_program *prog)
 	local_field_cache = list_cache_sort (local_field_cache,
 					     &field_cache_cmp);
 	for (field = local_field_cache; field; field = field->next) {
-		int		needs_comment = 1;
+		int 	needs_comment = 1;
 		f = field->f;
 		if (!f->flag_local
 		 && !f->flag_external) {
@@ -3377,6 +3377,32 @@ cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list 
 	prog->decimal_constants = l;
 }
 
+/* hash for literal including the data and all attributes but size */
+static cob_u32_t
+cb_literal_hash (const unsigned char *data, cob_u32_t size)
+{
+	cob_u64_t	h = 0x9E3779B97F4A7C15ULL;	/* non-zero seed */
+	cob_u64_t	w;
+	cob_u32_t	i;
+
+	/* data: 8 bytes at a time */
+	for (i = 0; i + 8 <= size; i += 8) {
+		memcpy (&w, data + i, 8);
+		h = (h ^ w) * 0xFF51AFD7ED558CCDULL;
+		h ^= h >> 32;
+	}
+	/* tail: 0..7 bytes, zero-padded */
+	if (i < size) {
+		w = 0;
+		memcpy (&w, data + i, size - i);
+		h = (h ^ w) * 0xFF51AFD7ED558CCDULL;
+		h ^= h >> 32;
+	}
+
+ 	/* explicit drop bytes exceeding 32bit */
+	return (cob_u32_t)(h & 0xFFFFFFFF);
+}
+
 /* Resolve literal "x" from the literal cache and return its id.
    The literal is added to the literal cache if missing.
    Additionally, if the literal is a decimal constant, it is
@@ -3384,20 +3410,26 @@ cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list 
 int
 cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 {
-	struct cb_literal	*literal;
+	const struct cb_literal	*cache_literal;
+	const struct cb_literal	*literal = CB_LITERAL (x);
 	struct literal_list	*l;
+	const cob_u32_t 	size = literal->size;
+	const cob_u32_t		literal_hash = cb_literal_hash (literal->data, size);
 	FILE			*savetarget;
 
-	literal = CB_LITERAL (x);
 	/* Search literal cache */
 	for (l = literal_cache; l; l = l->next) {
-		if (CB_TREE_CLASS (literal) == CB_TREE_CLASS (l->literal)
-		 && literal->size == l->literal->size
-		 && literal->all == l->literal->all
-		 && literal->sign == l->literal->sign
-		 && literal->scale == l->literal->scale
-		 && memcmp (literal->data, l->literal->data,
-			    (size_t)literal->size) == 0) {
+		if (literal_hash != l->literal_hash) {
+			continue;
+		}
+		cache_literal = l->literal;
+		if (CB_TREE (literal)->category == CB_TREE (cache_literal)->category
+		 && literal->size == cache_literal->size
+		 && literal->scale == cache_literal->scale
+		 && literal->sign  == cache_literal->sign 
+		 && literal->all   == cache_literal->all  
+		 && literal->llit  == cache_literal->llit
+		 && memcmp (literal->data, cache_literal->data, size) == 0) {
 			if (make_decimal) {
 				l->make_decimal = 1;
 				cb_cache_program_decimal_constant (prog, l);
@@ -3416,7 +3448,8 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 	/* Cache it */
 	l = cobc_parse_malloc (sizeof (struct literal_list));
 	l->id = cb_literal_id;
-	l->literal = literal;
+	l->literal = (struct cb_literal *)literal;
+	l->literal_hash = literal_hash;
 	l->make_decimal = make_decimal;
 	l->next = literal_cache;
 	literal_cache = l;
@@ -4149,7 +4182,7 @@ output_ml_trees_definitions (struct cb_ml_generate_tree *tree)
 
 /* Parameter */
 
-static COB_INLINE COB_A_INLINE void
+static void
 create_field (struct cb_field *f, cb_tree x)
 {
 	if (!f->flag_field) {
@@ -4809,7 +4842,7 @@ output_funcall_typed_report (struct cb_funcall *p, const char type)
 
 /* output a single char with optional (then empty)
    leading and trailing string */
-static void COB_INLINE COB_A_INLINE
+static COB_INLINE COB_A_INLINE void
 output_char (const char *lead, const unsigned char c, const char *trail)
 {
 	if (lead) {
@@ -4993,14 +5026,10 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 }
 
 
-static void COB_INLINE COB_A_INLINE
+static COB_INLINE COB_A_INLINE void
 output_funcall_item (cb_tree x, const int i, unsigned int func_nolitcast)
 {
-	if (x && CB_LITERAL_P (x)) {
-		nolitcast = func_nolitcast;
-	} else {
-		nolitcast = 0;
-	}
+	nolitcast = (x && CB_LITERAL_P (x)) ? func_nolitcast : 0;
 	output_param (x, i);
 }
 
@@ -13363,6 +13392,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		}
 		output_line ("/* Store last parameters for possible later lookup */");
 		output_local ("/* Last USING parameters for possible later lookup */\n");
+		/* FIXME: likely we need all of LINKAGE here (not only parameters),
+		   otherwise dump code generation would be broken, see run_misc.at "tdsticky" */
 		for (l = parameter_list; l; l = CB_CHAIN (l)) {
 			f = cb_code_field (CB_VALUE (l));
 			output_prefix ();

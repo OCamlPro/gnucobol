@@ -41,15 +41,18 @@
 #include <libxml/tree.h>
 #include <libxml/SAX2.h>
 
-#if LIBXML_VERSION >= 21400
+#if LIBXML_VERSION >= 21300
 #define LIBXML_CONST_ERROR_PTR					const xmlError *
+#else /* use old ABI */
+#define LIBXML_CONST_ERROR_PTR					xmlErrorPtr
+#endif
+#if LIBXML_VERSION >= 21400
 #define LIBXML_CTXT_GET_ENCODING(ctxt) 			xmlCtxtGetDeclaredEncoding(ctxt)
 #define LIBXML_CTXT_GET_STANDALONE(ctxt) 		xmlCtxtGetStandalone(ctxt)
 #define LIBXML_CTXT_GET_VERSION(ctxt) 			xmlCtxtGetVersion(ctxt)
 #define LIBXML_CTXT_GET_OPTIONS(ctxt) 			xmlCtxtGetOptions(ctxt)
 #define LIBXML_CTXT_SET_OPTIONS(ctxt, options) 	xmlCtxtSetOptions(ctxt, options)
 #else /* use old ABI */
-#define LIBXML_CONST_ERROR_PTR					xmlErrorPtr
 #define LIBXML_CTXT_GET_ENCODING(ctxt) 			ctxt->encoding
 #define LIBXML_CTXT_GET_STANDALONE(ctxt) 		ctxt->standalone
 #define LIBXML_CTXT_GET_VERSION(ctxt) 			ctxt->version

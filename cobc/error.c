@@ -36,7 +36,7 @@
 
 #ifdef	_WIN32
 #if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
-#include <direct.h> // _getcwd
+#include <direct.h> /* for _getcwd */
 #define	getcwd		_getcwd
 #endif
 #endif
