@@ -5480,9 +5480,11 @@ output_cobol_info (cb_tree x)
 	output ("#line %d \"", x->source_line);
 
     if (strcmp (p, COB_DASH)) {
-	/* escape COBOL file name for C string */
+		/* escape COBOL file name for C string */
 		while (*p) {
-			if (*p == '\\') {
+			switch (*p) {
+			case '\\':
+			case '"':
 				output ("%c", '\\');
 			}
 			output ("%c", *p++);
@@ -14039,7 +14041,7 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 		for (s = output_name; *s; s++) {
 			switch (*s) {
 			case '\\':
-			case '\"':
+			case '"':
 				buff[pos++] = '\\';
 			}
 			if (pos >= COB_MEDIUM_MAX) {

@@ -3942,6 +3942,7 @@ static const char *st_source_files[]	= { ""
 /* Function prototypes */
 
 int			prog2 ();
+COB_EXT_EXPORT int	entry (void);
 static int		prog2_ (const int);
 static void		prog2_module_init (cob_module *module);
 static int		inside__program_0__ (void);

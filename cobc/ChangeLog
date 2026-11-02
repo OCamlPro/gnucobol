@@ -1,8 +1,29 @@
 
+2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_error_name): do not change caller's buffer
+	* typeck.c (cb_trim_program_id): skip trim on zero-lenght / empty literal
+	* typeck.c (cb_build_name_reference): cater for possible long translations
+	* scanner.l, pplex.l: better handling of not closed and/or huge strings
+	* scanner.l (scan_h, scan_o): ensure that huge strings don't overflow
+
+2026-10-30  Sergey Kashyrin <ska@kiska.net>
+
+	* parser.y (exp_factor): fix ordering for A ** B ** C
+
+2026-10-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_filename): don't allow filenames with contained
+	  quote, apostrophe, question mark or asterisk as those may break
+	  generated C code and/or tool calling
+	* cobc.c (cobc_check_valid_name, cobc_error_name): prevent PROGRAM-ID
+	  with contained quote or apostrophe as those may break generated C code
+	* codegen.c (output_cobol_info): escape quote in generated filename
+
 2026-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c (word_hash): return full 32bit hash, which is stored in the
-	  refernce containing the word (previously stored only 11 bit)
+	  reference containing the word (previously stored only 11 bit)
 	* tree.c (lookup_word, cb_ref_internal): cut hash for indexing to 11 bit
 	* tree.h (cb_label), tree.c (cb_build_label): new member name_hash,
 	  set from 32 bit hash of the reference

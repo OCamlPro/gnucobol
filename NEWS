@@ -199,6 +199,9 @@ NEWS - user visible changes				-*- outline -*-
    allows to override the test runner and to attach for screen/tmux sessions,
    see README for further details
 
+** configure checks for std features needed and auto-selects a good -std
+   if not explicit set in CFLAGS
+
 * Known issues in 3.x
 
 ** testsuite:
