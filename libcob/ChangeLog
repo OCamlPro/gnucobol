@@ -4,6 +4,16 @@
 	* common.h (cob_xml_mode, cob_module): use an enum instead
 	  of defines to represent XML parsing mode defines
 
+2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
+	  cob_is_test as negative value for "hidden" files to still get correct pids
+	  and timings during testsuite run
+	* profiling.c (cob_prof_print_line): disabled flushing each line
+	* common.c (cob_rescan_env_vals): skip empty environment values as if they
+	  would not be set at all (easy set to default), also fixes SIGSEGV in
+	  other places like cob_prof_print_line that used a resulting NULL pointer
+
 2026-10-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_common_init) [_WIN32]: fix C89 declaration
@@ -18,6 +28,8 @@
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c [LIBXML_VERSION]: fix version check for new ABI
+	* profiling.c (cob_prof_end): hide csv output for any filename that ends
+	  with "hidden.csv" instead of comparing the full name
 
 2026-09-04  David Declerck <david.declerck@ocamlpro.com>
 
@@ -49,8 +61,7 @@
 	  variable COB_PROF_TRACE, can be used when profiling is enabled to
 	  print the stack when entering/leaving code segments
 	* profiling.c: during test mode, COB_PROF_FILE set to 'hidden.csv'
-	  does not display the warning message when the profile file is
-	  generated
+	  does not display an output when the profile file is generated
 
 2026-08-14  David Declerck <david.declerck@ocamlpro.com>
 
