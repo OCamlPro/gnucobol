@@ -1,4 +1,8 @@
 
+2026-10-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: non-working iconv is not selected as "available" any more
+
 2026-10-29  David Declerck <david.declerck@ocamlpro.com>
 
 	* configure.ac: if the default C standard (C23) rejects unprototyped
