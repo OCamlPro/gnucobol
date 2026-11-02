@@ -24,7 +24,7 @@
 
 %defines
 %verbose
-%error-verbose
+%define parse.error verbose
 
 %{
 #include "config.h"
@@ -47,9 +47,10 @@
 
 #define	yyoverflow	pp_overflow
 
-static void pp_overflow(const char * msg, short ** ptr1, size_t sz1, YYSTYPE ** ptr2, size_t sz2, size_t * newsz) {
+static void pp_overflow(const char * msg, short ** ptr1, size_t sz1, YYSTYPE ** ptr2, size_t sz2, void * newsize) {
 	static short * aptr1 = NULL;
 	static YYSTYPE * aptr2 = NULL;
+	size_t * newsz = (size_t *) newsize;
 	*newsz *= 5;
 	short * nptr1 = new short[*newsz];
 	YYSTYPE * nptr2 = new YYSTYPE[*newsz];
@@ -12362,7 +12363,7 @@ exp_term:
 ;
 
 exp_factor:
-  exp_unary EXPONENTIATION exp_factor
+  exp_factor EXPONENTIATION exp_unary
   {
 	$$ = cb_build_binary_op($1, '^', $3);
   }

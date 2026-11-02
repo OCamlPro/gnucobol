@@ -1,3 +1,8 @@
+2026-11-02 Sergey Kashyrin <ska@kiska.net>
+	* parser.y: fixed A ** B ** C order
+                exp_unary EXPONENTIATION exp_factor ==>   exp_factor EXPONENTIATION exp_unary
+                fix for newer win_bison - in static void pp_overflow use ptrdiff_t * newsz instead of size_t * (C++ is barking)
+
 2023-11-21 Sergey Kashyrin <ska@kiska.net>
 	* codegen.cpp: fixed exception passing in CALL xxx ON OVERFLOW
 
