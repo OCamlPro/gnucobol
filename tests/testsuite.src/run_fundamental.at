@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2025
+## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2026
 ## Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman, Denis HUGONNARD-ROCHE, Chuck Haatvedt
@@ -2702,6 +2702,77 @@ prog.cob:6: note: 'X' defined here as PIC X(04) [[-Wtyping]]
 ])
 AT_CHECK([$COMPILE -Wextra -Wno-typing -fdiagnostics-show-option prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0   1000])
+
+AT_CLEANUP
+
+
+AT_SETUP([exponentiation expression order])
+AT_KEYWORDS([fundamental literal condition COMPUTE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01 A PIC 9 VALUE 1.
+       01 B PIC 9 VALUE 2.
+       01 C PIC 9 VALUE 3.
+       01 R PIC 9(25).
+
+       PROCEDURE DIVISION.
+       TESTEXP.
+      *> ensure that the compiler does not constant them
+           ADD 1 TO A B C.
+
+           COMPUTE R = (A ** B) ** C ON SIZE ERROR DISPLAY 'EC-SIZE A'.
+           IF R NOT = 4096
+              DISPLAY "COMPUTE severely broken 1 => " R
+           END-IF.
+           COMPUTE R = A ** (B ** C) ON SIZE ERROR DISPLAY 'EC-SIZE B'.
+           IF R NOT = 2417851639229258349412352
+              DISPLAY "COMPUTE severely broken 2 => " R
+           END-IF.
+
+           COMPUTE R = A ** B ** C   ON SIZE ERROR DISPLAY 'EC-SIZE C'.
+           IF R NOT = 4096
+              DISPLAY "COMPUTE A**B**C broken => " R
+           END-IF.
+           COMPUTE R = 2 ** 3 ** 4   ON SIZE ERROR DISPLAY 'EC-SIZE D'.
+           IF R NOT = 4096
+              DISPLAY "COMPUTE constant A**B**C broken => " R
+           END-IF.
+
+      *> ensure same processing order in condition
+           IF (A ** B) ** C NOT = 4096
+              DISPLAY "IF severely broken 1"
+           END-IF.
+           IF A ** (B ** C) NOT = 2417851639229258349412352
+              DISPLAY "IF severely broken 2"
+           END-IF.
+           IF A ** B ** C NOT = 4096
+              DISPLAY "IF with broken ordering"
+           END-IF.
+           IF 2 ** 3 ** 4 NOT = 4096
+              DISPLAY "IF constant with broken ordering"
+           END-IF.
+
+      *> COBOL has the sign attached to the number, while other
+      *> languages will have the exponentiation evaluated first
+
+           COMPUTE R = - A ** B ** C  ON SIZE ERROR DISPLAY 'EC-SIZE E'.
+           IF R NOT = 4096
+              DISPLAY "COMPUTE broken 3 => " R
+           END-IF.
+           IF -2 ** 3 ** 4 NOT = 4096
+              DISPLAY "IF negate constant with broken ordering"
+           END-IF.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wno-constant-expression prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 

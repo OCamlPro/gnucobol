@@ -2315,13 +2315,15 @@ start:
 		if (need_continuation || continuation) {
 			cb_plex_error (newline_count,
 					_("buffer overrun - too many continuation lines"));
-#if 0		/* CHECKME: does anything breaks if we don't fake EOF here? */
-			return YY_NULL; /* fake eof (no further processing) */
-#endif
 		}
 		if (newline_count < max_size) {
 			/* FIXME: this doesn't check the buffer size ! */
 			memset (buff, '\n', newline_count);
+			if (need_continuation) {
+				/* end literal and start a new one for follow-up parsing */
+				buff[0] = quotation_mark;
+				buff[newline_count++] = quotation_mark;
+			}
 			buff[newline_count] = 0;
 			ipchar = (int)newline_count;
 			newline_count = 0;

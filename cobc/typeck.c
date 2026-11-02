@@ -1984,16 +1984,21 @@ cb_set_intr_when_compiled (void)
 void
 cb_trim_program_id (cb_tree id_literal)
 {
-	char	*s;
-	cob_u32_t	len;
+	struct cb_literal *lit = CB_LITERAL (id_literal);
+	char	*s = (char *) (lit->data);
+	cob_u32_t	len = lit->size;
 
-	s = (char *) (CB_LITERAL (id_literal)->data);
-	if (!strchr (s, ' ')) {
+	if (len == 0	/* validated later on */
+	 || !strchr (s, ' ')) {
 		return;
 	}
 
-	len = (cob_u32_t) strlen (s);
 	if (*s == ' ') {
+		if (len < COB_SPACES_ALPHABETIC_BYTE_LENGTH
+		 && memcmp (COB_SPACES_ALPHABETIC, s, len) == 0) {
+			/* validated later on */
+			return;
+		}
 		/* same warning as in libcob/common.c */
 		cb_warning_x (COBC_WARN_FILLER, id_literal,
 			_("'%s' literal includes leading spaces which are omitted"), s);
@@ -2009,7 +2014,7 @@ cb_trim_program_id (cb_tree id_literal)
 		len--;
 	}
 	s[len] = 0;
-	CB_LITERAL (id_literal)->size = len;
+	lit->size = len;
 }
 
 /** encode given name
@@ -2335,13 +2340,14 @@ subserror:
 static cb_tree
 cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 {
-	char		full_name[COB_MAX_WORDLEN * 2 + 10];
+	char		full_name[COB_MINI_BUFF]; /* 2 times name + translated message */
 	if (f1 == f2) {
 		/* TRANSLATORS: This msgid is used when a variable name
 		   or label is referenced in a compiler message. */
-		sprintf(full_name, _("'%s'"), f1->name);
+		sprintf (full_name, _("'%s'"), f1->name);
 	} else {
-		sprintf(full_name, _("'%s' (accessed by '%s')"), f1->name, f2->name);
+		snprintf (full_name, COB_MINI_MAX,
+			_("'%s' (accessed by '%s')"), f1->name, f2->name);
 	}
 
 	return cb_build_reference (full_name);
