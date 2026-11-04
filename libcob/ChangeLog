@@ -83,11 +83,6 @@
 	* profiling.c (cob_prof_end): hide csv output for any filename that ends
 	  with "hidden.csv" instead of comparing the full name
 
-2026-09-04  David Declerck <david.declerck@ocamlpro.com>
-
-	* fileio.c (cob_file_open, cob_file_close) [_WIN32]:
-	  implement bidirectional pipes under Windows
-
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function
@@ -106,6 +101,11 @@
 	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
 	  a global scope request, independent of COB_LOAD_GLOBAL setting
 	* common.c: minimal refactor
+
+2026-09-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_file_open, cob_file_close) [_WIN32]:
+	  implement bidirectional pipes under Windows
 
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
