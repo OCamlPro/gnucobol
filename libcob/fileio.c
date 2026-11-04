@@ -252,7 +252,7 @@ static int cob_set_file_format(cob_file *, char *, int);
 static void cob_set_file_defaults (cob_file *);
 static int cob_savekey (cob_file *f, int idx, unsigned char *data);
 static int cob_file_open	(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
-static int cob_file_close	(cob_file_api *, cob_file *, const int);
+static int cob_file_close	(cob_file_api *, cob_file *, const enum cob_close_mode);
 static int cob_file_write_opt	(cob_file *, const int);
 
 static int sequential_read	(cob_file_api *, cob_file *, const int);
@@ -1927,12 +1927,13 @@ cob_file_sync (cob_file *f)
 		return;
 	}
 	if (f->organization != COB_ORG_SORT && f->open_mode != COB_OPEN_INPUT) {
+		/* Note: we don't include COB_LAST_DELETE/COMMIT/ROLLBACK in
+		   the condition below, as f->file is only used for writing
+		   to LINE SEQUENTIAL files, which don't allow any of
+		   DELETE/COMMIT/ROLLBACK */
 		if (f->file
 		 && (f->last_operation == COB_LAST_WRITE
-		  || f->last_operation == COB_LAST_REWRITE
-		  || f->last_operation == COB_LAST_DELETE
-		  || f->last_operation == COB_LAST_COMMIT
-		  || f->last_operation == COB_LAST_ROLLBACK)) {
+		  || f->last_operation == COB_LAST_REWRITE)) {
 			fflush ((FILE *)f->file);
 		}
 		if (f->fd >= 0) {
@@ -4786,7 +4787,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 }
 
 static int
-cob_file_close (cob_file_api *a, cob_file *f, const int opt)
+cob_file_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	COB_UNUSED (a);
 
@@ -7249,7 +7250,7 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 
 	if (f->assign == NULL) {
 		/* CHECKME: that _seems_ to be a codegen error, but may also happen with EXTFH */
-		cob_runtime_error (_("ERROR FILE %s has ASSIGN field is NULL"),
+		cob_runtime_error (_("ERROR FILE %s has ASSIGN field as NULL"),
 							f->select_name);
 		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
@@ -7274,7 +7275,8 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 		}
 	}
 
-	if (file_open_name[0] == 0) {
+	if ( file_open_name[0] == 0
+	 || (file_open_name[0] == ' ' && file_open_name[1] == 0)) {
 		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
 	}
@@ -7337,7 +7339,7 @@ cob_open (cob_file *f, const enum cob_open_mode mode, const int sharing, cob_fie
 }
 
 void
-cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
+cob_close (cob_file *f, cob_field *fnstatus, const enum cob_close_mode opt, const int remfil)
 {
 	int			ret;
 

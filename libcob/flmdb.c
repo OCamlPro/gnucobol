@@ -31,7 +31,7 @@
 /* Local variables */
 
 static int lmdb_open	(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
-static int lmdb_close	(cob_file_api *, cob_file *, const int);
+static int lmdb_close	(cob_file_api *, cob_file *, const enum cob_close_mode);
 static int lmdb_start	(cob_file_api *, cob_file *, const int, cob_field *);
 static int lmdb_read	(cob_file_api *, cob_file *, cob_field *, const int);
 static int lmdb_read_next(cob_file_api *, cob_file *, const int);
@@ -1137,7 +1137,7 @@ lmdb_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mod
 /* Close the INDEXED file */
 
 static int
-lmdb_close (cob_file_api *a, cob_file *f, const int opt)
+lmdb_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	struct indexed_file *p = f->file;
 	int i;

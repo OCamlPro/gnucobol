@@ -979,7 +979,7 @@ cob_extfh_open (EXTFH_FUNC callfh, cob_file *f,
  */
 void
 cob_extfh_close (EXTFH_FUNC callfh, cob_file *f,
-	cob_field *fnstatus, const int opt, const int remfil)
+	cob_field *fnstatus, const enum cob_close_mode opt, const int remfil)
 {
 	unsigned char opcode[2];
 	FCD3	*fcd;

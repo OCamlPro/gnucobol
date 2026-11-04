@@ -207,7 +207,7 @@ struct indexfile {
 /* Local variables */
 
 static int isam_open	(cob_file_api *a, cob_file *, char *, const enum cob_open_mode, const int);
-static int isam_close	(cob_file_api *a, cob_file *, const int);
+static int isam_close	(cob_file_api *a, cob_file *, const enum cob_close_mode);
 static int isam_start	(cob_file_api *a, cob_file *, const int, cob_field *);
 static int isam_read	(cob_file_api *a, cob_file *, cob_field *, const int);
 static int isam_read_next(cob_file_api *a, cob_file *, const int);
@@ -1286,7 +1286,7 @@ dobuild:
 /* Close the INDEXED file */
 
 static int
-isam_close (cob_file_api *a, cob_file *f, const int opt)
+isam_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	struct indexfile	*fh = f->file;
 

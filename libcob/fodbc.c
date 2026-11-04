@@ -47,7 +47,7 @@ static int odbc_sync		(cob_file_api *, cob_file *);
 static int odbc_commit		(cob_file_api *, cob_file *);
 static int odbc_rollback	(cob_file_api *, cob_file *);
 static int odbc_open		(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
-static int odbc_close		(cob_file_api *, cob_file *, const int);
+static int odbc_close		(cob_file_api *, cob_file *, const enum cob_close_mode);
 static int odbc_start		(cob_file_api *, cob_file *, const int, cob_field *);
 static int odbc_read		(cob_file_api *, cob_file *, cob_field *, const int);
 static int odbc_read_next	(cob_file_api *, cob_file *, const int);
@@ -1829,7 +1829,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mod
 /* Close the INDEXED file */
 
 static int
-odbc_close (cob_file_api *a, cob_file *f, const int opt)
+odbc_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	struct indexed_file	*p;
 	struct file_xfd	*fx;
