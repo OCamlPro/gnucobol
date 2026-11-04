@@ -123,6 +123,7 @@
 #define	EVAL_DEPTH		32
 #define	PROG_DEPTH		16
 
+
 /* Global variables */
 
 struct cb_program		*current_program = NULL;    /* program in parse/syntax check/codegen */
@@ -1325,10 +1326,17 @@ begin_scope_of_program_name (struct cb_program *program)
 				    elt_name);
 			return;
 		} else if (strcmp (prog_id, elt_id) == 0) {
-			cb_error_x (CB_TREE(program),
-				    _("redefinition of program ID '%s'"),
-				    elt_id);
-			return;
+			if (program->prog_type == COB_MODULE_TYPE_PROGRAM) {
+				cb_error_x (CB_TREE(program),
+						_("redefinition of program ID '%s'"),
+						elt_id);
+				return;
+			} else if (program->prog_type == COB_MODULE_TYPE_CLASS) {
+				cb_error_x (CB_TREE(program),
+						_("redefinition of class ID '%s'"),
+						elt_id);
+				return;
+			}
 		}
 	}
 
@@ -1501,7 +1509,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 
 	/* build encoded external PROGRAM-ID */
 	current_program->program_id
-		= cb_build_program_id (external_name, type == COB_MODULE_TYPE_FUNCTION);
+		= cb_build_program_id (external_name, type != COB_MODULE_TYPE_PROGRAM);
 
 	if (type == COB_MODULE_TYPE_PROGRAM) {
 		if (!main_flag_set
@@ -1509,7 +1517,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 			main_flag_set = 1;
 			current_program->flag_main = !!cobc_flag_main;
 		}
-	} else { /* COB_MODULE_TYPE_FUNCTION */
+	} else if (type == COB_MODULE_TYPE_FUNCTION) {
 		current_program->flag_recursive = 1;
 	}
 
@@ -1553,13 +1561,24 @@ decrement_depth (const char *name, const unsigned char type)
 	}
 
 	if (depth != d) {
-		cb_error (_("END PROGRAM '%s' is different from PROGRAM-ID '%s'"),
-			  name, stack_progid[depth]);
+		if (type == COB_MODULE_TYPE_PROGRAM) {
+			cb_error (_("END PROGRAM '%s' is different from PROGRAM-ID '%s'"),
+				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_CLASS) {
+			cb_error (_("END CLASS '%s' is different from CLASS-ID '%s'"),
+				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_INTERFACE) {
+			cb_error (_("END INTERFACE '%s' is different from INTERFACE-ID '%s'"),
+				  name, stack_progid[depth]);
+		} else if (type == COB_MODULE_TYPE_METHOD) {
+			cb_error (_("END METHOD '%s' is different from METHOD-ID '%s'"),
+				  name, stack_progid[depth]);
+		}
 	}
 }
 
 static void
-clean_up_program (cb_tree name, const unsigned char type)
+clean_up_program (cb_tree name, const enum cob_module_type type)
 {
 	char		*s;
 
@@ -1572,6 +1591,10 @@ clean_up_program (cb_tree name, const unsigned char type)
 			s = (char *)(CB_NAME (name));
 		}
 
+		/* CHECKME: shouldn' depth decrement also be perfomed when name
+		   is not given?  Maybe that's ok as per grammar rules that
+		   force END-X to be followed by a name for every OO
+		   construct... */
 		decrement_depth (s, type);
 	}
 
@@ -1685,7 +1708,7 @@ check_prototype_redefines_current_element (const cb_tree prototype_name)
 /* Returns 1 if the prototype has been duplicated. */
 static int
 check_for_duplicate_prototype (const cb_tree prototype_name,
-			       const cb_tree prototype)
+			       const struct cb_prototype *prototype)
 {
 	cb_tree	dup;
 
@@ -1698,9 +1721,8 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 		}
 
 		/* Check the duplicate prototypes match */
-		if (strcmp (CB_PROTOTYPE (prototype)->ext_name,
-			    CB_PROTOTYPE (dup)->ext_name)
-		    || CB_PROTOTYPE (prototype)->type != CB_PROTOTYPE (dup)->type) {
+		if (strcmp (prototype->ext_name, CB_PROTOTYPE (dup)->ext_name)
+		 || prototype->type != CB_PROTOTYPE (dup)->type) {
 			cb_error_x (prototype_name,
 				    _("duplicate REPOSITORY entries for '%s' do not match"),
 				    get_literal_or_word_name (prototype_name));
@@ -1715,11 +1737,59 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 	return 0;
 }
 
+/* Note: neither proto nor program may be NULL */
+static void
+check_prototype_against_definition (const struct cb_prototype *proto,
+				    const struct cb_program *program)
+{
+	if (program->prog_type == proto->type) {
+		return;
+	}
+	cb_error_x (CB_TREE (proto),
+		    _("%s REPOSITORY entry for '%s' does not match its definition"),
+		    cb_get_cob_module_type_string (proto->type),
+		    proto->ext_name);
+	cb_note_x (COB_WARNOPT_NONE, CB_TREE (program),
+		   _("'%s' defined as a %s here"),
+		   program->program_name,
+		   cb_get_cob_module_type_string (program->prog_type));
+}
+
+static struct cb_program *
+find_prototype_definition (const struct cb_prototype *proto)
+{
+	struct cb_program	*program = NULL;
+
+	program = cb_find_defined_program_by_id (proto->ext_name);
+
+	if (!program &&
+	    get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
+		if (strcmp (proto->name, proto->ext_name) == 0) {
+			/*
+			  Warn if no definition seen for element with prototype-
+			  name.
+			*/
+			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
+				      _("no definition/prototype seen for %s '%s'"),
+				      cb_get_cob_module_type_string (proto->type), proto->name);
+		} else {
+			/*
+			  Warn if no definition seen for element with given
+			  external-name.
+			*/
+			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
+				      _("no definition/prototype seen for %s with external name '%s'"),
+				      cb_get_cob_module_type_string (proto->type), proto->ext_name);
+		}
+	}
+	return program;
+}
+
 static void
 setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 		  const enum cob_module_type type, const int is_current_element)
 {
-	cb_tree	prototype;
+	struct cb_prototype *prototype;
 	int	name_redefinition_allowed;
 
 	if (!is_current_element
@@ -1727,28 +1797,47 @@ setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 		return;
 	}
 
-	prototype = cb_build_prototype (prototype_name, ext_name, type);
+	prototype = CB_PROTOTYPE (cb_build_prototype (prototype_name, ext_name, type));
 
-	if (!is_current_element
-	 && check_for_duplicate_prototype (prototype_name, prototype)) {
-		return;
+	if (!is_current_element) {
+		const struct cb_program *program = find_prototype_definition (prototype);
+		if (check_for_duplicate_prototype (prototype_name, prototype)) {
+			return;
+		}
+		if (program) {
+			check_prototype_against_definition (prototype, program);
+		}
 	}
 
 	name_redefinition_allowed = type == COB_MODULE_TYPE_PROGRAM
 		&& is_current_element && cb_program_name_redefinition;
 	if (!name_redefinition_allowed) {
+		cb_tree p = CB_TREE (prototype);
 		if (CB_LITERAL_P (prototype_name)) {
-			cb_define (cb_build_reference ((const char *)CB_LITERAL (prototype_name)->data), prototype);
+			cb_define (cb_build_reference ((const char *)CB_LITERAL (prototype_name)->data), p);
 		} else {
-			cb_define (prototype_name, prototype);
+			cb_define (prototype_name, p);
 		}
 
-		if (type == COB_MODULE_TYPE_PROGRAM) {
+		switch (type) {
+		case COB_MODULE_TYPE_PROGRAM:
 			current_program->program_spec_list =
-				cb_list_add (current_program->program_spec_list, prototype);
-		} else { /* COB_MODULE_TYPE_FUNCTION */
+				cb_list_add (current_program->program_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_FUNCTION:
 			current_program->user_spec_list =
-				cb_list_add (current_program->user_spec_list, prototype);
+				cb_list_add (current_program->user_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_CLASS:
+			current_program->class_spec_list =
+				cb_list_add (current_program->class_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_INTERFACE:
+			current_program->interface_spec_list =
+				cb_list_add (current_program->interface_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_METHOD: /* unreachable... (for now) */
+			break;
 		}
 	}
 }
@@ -2627,12 +2716,72 @@ set_record_size (cb_tree min, cb_tree max)
 	}
 }
 
+/* Object-orientation helpers */
+
+static COB_INLINE void
+set_oo_class_attr (enum cb_oo_class_attribute attr, const char* attr_name)
+{
+	if (current_program->oo_class_attributes & attr) {							
+		emit_duplicate_clause_message (attr_name);						
+	}	
+	current_program->oo_class_attributes |= attr;
+}
+
+/* Returns the program that corresponds to the currently defined class.
+
+   Returns NULL outside of a method definition. */
+static struct cb_program *
+current_self_class (void) {
+	struct cb_program *oo_class = current_program;
+	if (current_program->prog_type != COB_MODULE_TYPE_METHOD) {
+		cb_error (_("use of SELF outside of METHOD definition"));
+		return NULL;
+	}
+	while (oo_class && oo_class->prog_type == COB_MODULE_TYPE_METHOD) {
+		oo_class = oo_class->next_program;
+	}
+	return oo_class;
+}
+
+/* Returns the program that corresponds to the super class of the currently
+   defined class, if it is unique and defined.  Returns NULL in every other
+   case.
+
+   Returns NULL outside of a method implementation. */
+static struct cb_program *
+current_super_class (void) {
+	cb_tree super;
+	if (current_program->prog_type != COB_MODULE_TYPE_METHOD) {
+		cb_error (_("use of SUPER outside of METHOD definition"));
+		return NULL;
+	}
+	super = current_self_class ()->oo_inheritance_list;
+	if (unlikely (cb_list_length (super) == 0)) {
+		/* no declared inheritance (implcity Base)... */
+	} else if (cb_list_length (super) == 1) {
+		super = cb_ref (CB_VALUE (super));
+		if (CB_PROGRAM_P (super)) {
+			return CB_PROGRAM (super);
+		} else {
+			/* otherwise, it's only a prototype and we cannot check
+			   much more at the moment... or do we?  */
+		}
+	} else {
+		/* multiple inheritance case */
+		cb_warning (COBC_WARN_FILLER,
+			    _("use of SUPER in CLASS or INTERFACE with "
+			      "multiple inheritance may be ambiguous"));
+	}
+	return NULL;
+}
+
 %}
 
 %token TOKEN_EOF 0 "end of file"
 
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
+%token ABSTRACT
 %token ACCEPT
 %token ACCESS
 %token ACTIVEX			"ACTIVE-X"
@@ -2755,8 +2904,9 @@ set_record_size (cb_tree min, cb_tree max)
 %token CHARACTERS
 %token CHECK_BOX		"CHECK-BOX"
 %token CLASS
+%token CLASS_ID		"CLASS-ID"
 %token CLASSIFICATION
-%token CLASS_NAME		"class-name"
+%token CLASS_NAME
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
 %token CLINE
 %token CLINES			/* remark: not used here */
@@ -2891,19 +3041,25 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_ACCEPT		"END-ACCEPT"
 %token END_ADD  		"END-ADD"
 %token END_CALL 		"END-CALL"
+%token END_CLASS		"END CLASS"
 %token END_COMPUTE		"END-COMPUTE"
 %token END_COLOR		"END-COLOR"
 %token END_DELETE		"END-DELETE"
 %token END_DISPLAY		"END-DISPLAY"
 %token END_DIVIDE		"END-DIVIDE"
 %token END_EVALUATE		"END-EVALUATE"
+%token END_FACTORY		"END-FACTORY"
 %token END_FUNCTION		"END FUNCTION"
 %token END_IF			"END-IF"
+%token END_INTERFACE		"END INTERFACE"
 %token END_JSON			"END-JSON"
+%token END_METHOD		"END METHOD"
 %token END_MODIFY		"END-MODIFY"
 %token END_MULTIPLY		"END-MULTIPLY"
+%token END_OBJECT		"END-OBJECT"
 %token END_PERFORM		"END-PERFORM"
 %token END_PROGRAM		"END PROGRAM"
+%token END_CLASS		"END CLASS"
 %token END_READ			"END-READ"
 %token END_RECEIVE		"END-RECEIVE"
 %token END_RETURN		"END-RETURN"
@@ -2947,6 +3103,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EXCLUSIVE
 %token EXHIBIT
 %token EXIT
+%token EXPANDS
 %token EXPONENTIATION		"exponentiation operator"
 %token EXTEND
 %token EXTENDED_SEARCH		"EXTENDED-SEARCH"
@@ -3006,6 +3163,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FUNCTION_NAME		"intrinsic function name"
 %token FUNCTION_POINTER		"FUNCTION-POINTER"
 %token GENERATE
+%token GET
 %token GIVING
 %token GLOBAL
 %token GO
@@ -3042,11 +3200,13 @@ set_record_size (cb_tree min, cb_tree max)
 %token IF
 %token IGNORE
 %token IGNORING
+%token IMPLEMENTS
 %token IN
 %token INDEPENDENT
 %token INDEX
 %token INDEXED
 %token INDICATE
+%token INHERITS
 %token INITIALIZE
 %token INITIALIZED
 %token INITIATE
@@ -3057,11 +3217,15 @@ set_record_size (cb_tree min, cb_tree max)
 %token INSERT_ROWS		"INSERT-ROWS"
 %token INSPECT
 %token INSTALLATION		/* remark: not used here */
+%token INTERFACE
+%token INTERFACE_ID		"INTERFACE-ID"
 %token INTERMEDIATE
+%token INTERNAL
 %token INTO
 %token INTRINSIC
 %token INVALID			/* remark: not used here */
 %token INVALID_KEY		"INVALID KEY"
+%token INVOKE
 %token IS
 %token ITEM
 %token ITEM_TEXT		"ITEM-TEXT"
@@ -3139,6 +3303,8 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token METHOD
+%token METHOD_ID
 %token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
@@ -3222,6 +3388,8 @@ set_record_size (cb_tree min, cb_tree max)
 %token ONLY
 %token ON_ESCAPE		"ON ESCAPE"
 %token ON_EXCEPTION		"ON EXCEPTION"
+%token OO_CLASS_NAME		"class-name"
+%token OO_INTERFACE_NAME	"interface-name"
 %token OPEN
 %token OPTIONAL
 %token OPTIONS
@@ -3234,6 +3402,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
 %token OVERLINE
+%token OVERRIDE
 %token PACKED_DECIMAL		"PACKED-DECIMAL"
 %token PADDING
 %token PASCAL
@@ -3244,6 +3413,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PARAGRAPH
 %token PARENT
 %token PARSE
+%token PARTIAL
 %token PASSWORD
 %token PERFORM
 %token PERMANENT
@@ -3286,6 +3456,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PROPERTY
 %token PROTECTED
 %token PROTOTYPE
+%token PUBLIC
 %token PURGE
 %token PUSH_BUTTON		"PUSH-BUTTON"
 %token QUERY_INDEX		"QUERY-INDEX"
@@ -3387,6 +3558,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SELECTION_INDEX	"SELECTION-INDEX"
 %token SELECTION_TEXT	"SELECTION-TEXT"
 %token SELECT_ALL		"SELECTION-ALL"
+%token SELF
 %token SELF_ACT			"SELF-ACT"
 %token SEMI_COLON		"semi-colon"
 %token SEND
@@ -3449,6 +3621,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SUBTRACT
 %token SUBWINDOW
 %token SUM
+%token SUPER
 %token SUPPRESS
 %token SUPPRESS_XML		"SUPPRESS"
 %token SYMBOL
@@ -3486,6 +3659,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token TOK_AMPER		"&"
 %token TOK_CLOSE_PAREN		")"
 %token TOK_COLON		":"
+%token TOK_COLON_COLON          "::"
 %token TOK_DIV			"/"
 %token TOK_DOT			"."
 %token TOK_EQUAL		"="
@@ -3641,6 +3815,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc INITIATE
 %nonassoc INQUIRE
 %nonassoc INSPECT
+%nonassoc INVOKE
 %nonassoc JSON
 %nonassoc MERGE
 %nonassoc MODIFY
@@ -3792,7 +3967,9 @@ source_element_list:
 
 source_element:
   program_definition
+| class_definition
 | function_definition
+| interface_definition
 | program_prototype
 | function_prototype
 ;
@@ -3818,6 +3995,125 @@ program_definition:
      The _end_program_list above is used for allowing an end marker
      in a program which contains a nested program.
   */
+;
+
+class_definition:
+  _identification_header
+  class_id_paragraph
+  _class_body
+  {
+	cb_validate_program_data (current_program);
+  }
+  end_class
+  {
+	cb_check_definition_matches_prototype (current_program);
+  }
+;
+
+_class_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment (current_program);
+  }
+  _factory_or_instance_definition
+;
+
+interface_definition:
+  _identification_header
+  interface_id_paragraph
+  _interface_body
+  end_interface
+  {
+	cb_check_definition_matches_prototype (current_program);
+  }
+;
+
+_interface_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment (current_program);
+	cb_validate_program_data (current_program);
+  }
+  _procedure_division
+;
+
+_factory_or_instance_definition:
+  /* empty */
+| factory_definition
+| instance_definition
+| factory_definition
+  instance_definition
+;
+
+factory_definition:
+  _identification_header
+  FACTORY
+  {
+	__CS_ENTER (CB_CS_FACTORY_PARAGRAPH);
+  }
+  _dot
+  _implements_clause
+  {
+	__CS_LEAVE (CB_CS_FACTORY_PARAGRAPH);
+  }
+  _oo_body
+  {
+	/* TODO: use a flag to denote that those are factory method definitions,
+	   or post-process the list of methods.  The flag approach may be
+	   necessary in case some checks performed during parsing depend on this
+	   context.  We could also generate distinct programs for factory and
+	   for instance.. */
+  }
+  END_FACTORY
+  _dot
+;
+
+instance_definition:
+  _identification_header
+  OBJECT
+  {
+	__CS_ENTER (CB_CS_OBJECT_PARAGRAPH);
+  }
+  _dot
+  _implements_clause
+  {
+	__CS_LEAVE (CB_CS_OBJECT_PARAGRAPH);
+  }
+  _oo_body
+  END_OBJECT
+  _dot
+;
+
+_oo_body:
+  _options_paragraph
+  _environment_division
+  {
+	cb_validate_program_environment (current_program);
+  }
+  _data_division
+  {
+	cb_validate_program_data (current_program);
+  }
+  _oo_procedure_division
+  {
+	/* Manual reset as a full OO construct like METHOD-ID can appear inside
+	   PROCEDURE DIVISIONs. */
+	cobc_in_procedure = 0;
+  }
+;
+
+method_definition:
+  _identification_header
+  method_id_header TOK_DOT method_signature _override _is_final _dot
+  {
+	/* The PROCEDURE DIVISION is optional in methods definitions, so we'll
+	   assume it is there already. */
+	header_check |= COBC_HD_PROCEDURE_DIVISION;
+  }
+  _program_body
+  end_method
 ;
 
 function_definition:
@@ -3851,6 +4147,44 @@ end_program:
   {
 	first_nested_program = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_PROGRAM);
+  }
+;
+
+end_class:
+  END_CLASS
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END CLASS");
+  }
+  OO_CLASS_NAME _dot
+  {
+	cobc_in_id = 0;
+	clean_up_program ($3, COB_MODULE_TYPE_CLASS);
+  }
+;
+
+end_interface:
+  END_INTERFACE
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END INTERFACE");
+  }
+  interface_id_name _dot
+  {
+	cobc_in_id = 0;
+	clean_up_program ($3, COB_MODULE_TYPE_INTERFACE);
+  }
+;
+
+end_method:
+  END_METHOD
+  {
+	last_source_line = cb_source_line;
+	check_area_a_of ("END METHOD");
+  }
+  _method_id_name _dot
+  {
+	clean_up_program ($3, COB_MODULE_TYPE_METHOD);
   }
 ;
 
@@ -4028,6 +4362,174 @@ _default_display_clause:
   }
 ;
 
+/* CLASS */
+
+class_id_header:
+  CLASS_ID
+  {
+	__CS_CLEAR_ALL();
+	CB_UNSUPPORTED ("object-oriented COBOL");
+  }
+;
+
+interface_id_header:
+  INTERFACE_ID
+  {
+	__CS_CLEAR_ALL();
+	CB_UNSUPPORTED ("object-oriented COBOL (INTERFACE)");
+  }
+;
+
+_method_id_name:
+  /* empty */
+| method_id_name
+;
+
+method_id_name:
+  WORD
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
+interface_id_name:
+  WORD	{ $$ = $1; }
+| LITERAL
+  {
+	cb_trim_program_id ($1);
+  }
+;
+
+word_list:
+  WORD
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| word_list WORD
+  {
+	$$ = cb_list_add ($1, $2);
+  }
+;
+
+/* Parameterized classes not supported for now. */
+class_param_list:
+  WORD
+| class_param_list WORD
+;
+
+_inherits_phrase:
+  /* empty */
+| INHERITS _from word_list
+  {
+	current_program->oo_inheritance_list = $3;
+  }
+;
+
+_using_phrase:
+  /* empty */
+| USING class_param_list
+;
+
+_implements_clause:
+  /* empty */
+| IMPLEMENTS WORD _dot
+;
+
+class_attribute:
+  _is STATIC		{ set_oo_class_attr (CB_OO_CLASS_ATTR_STATIC, "STATIC"); }
+| _is PARTIAL		{ set_oo_class_attr (CB_OO_CLASS_ATTR_PARTIAL, "PARTIAL"); }
+| _is FINAL		{ set_oo_class_attr (CB_OO_CLASS_ATTR_FINAL, "FINAL"); }
+| _is ABSTRACT		{ set_oo_class_attr (CB_OO_CLASS_ATTR_ABSTRACT, "ABSTRACT"); }
+| _is PUBLIC		{ set_oo_class_attr (CB_OO_CLASS_ATTR_PUBLIC, "PUBLIC"); }
+| _is INTERNAL		{ set_oo_class_attr (CB_OO_CLASS_ATTR_INTERNAL, "INTERNAL"); }
+;
+
+_class_attributes:
+  /* empty */		{ current_program->oo_class_attributes = CB_OO_CLASS_ATTR_NONE; }
+| _class_attributes class_attribute
+;
+
+/*
+ * CLASS-ID paragraph syntax is:
+ *
+ * CLASS-ID. object-class-name-1 [ AS literal-1 ] [ IS STATIC ]
+ * [ IS { PARTIAL, FINAL, ABSTRACT } ... ] [ IS { PUBLIC, INTERNAL } ]
+ * [ INHERITS FROM { object-class-name-2 } ... ]
+ * [ USING { parameter-name-1 } ... ] .
+ * 
+*/
+
+class_id_paragraph:
+  class_id_header TOK_DOT OO_CLASS_NAME _as_literal
+  {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_CLASS, 0)) {
+		YYABORT;
+	}
+  }
+  _inherits_phrase
+  _class_attributes
+  _using_phrase
+  _dot
+  {
+	/* check consistency of current attribues */
+	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_FINAL
+	 && current_program->oo_class_attributes & CB_OO_CLASS_ATTR_ABSTRACT) {
+		emit_conflicting_clause_message ("FINAL", "ABSTRACT");
+		current_program->oo_class_attributes &= ~CB_OO_CLASS_ATTR_FINAL;
+	}
+	if (current_program->oo_class_attributes & CB_OO_CLASS_ATTR_INTERNAL
+	 && current_program->oo_class_attributes & CB_OO_CLASS_ATTR_PUBLIC) {
+		emit_conflicting_clause_message ("INTERNAL", "PUBLIC");
+		current_program->oo_class_attributes &= ~CB_OO_CLASS_ATTR_INTERNAL;
+	}
+  }
+;
+
+interface_id_paragraph:
+  interface_id_header TOK_DOT interface_id_name _as_literal
+  {
+	if (setup_program ($3, $4, COB_MODULE_TYPE_INTERFACE, 0)) {
+		YYABORT;
+	}
+  }
+  _inherits_phrase
+  _using_phrase
+  _dot
+;
+
+method_id_header:
+  METHOD_ID
+  {
+	__CS_CLEAR_ALL();
+  }
+;
+
+get_or_set:
+  GET
+| SET
+;
+
+method_signature:
+  method_id_name _as_literal
+  {
+	if (setup_program ($1, $2, COB_MODULE_TYPE_METHOD, 0)) {
+		YYABORT;
+	}
+  }
+| get_or_set PROPERTY WORD
+  {
+	/*
+	  TODO (OO): Call setup_program() with appropriate fields here.  Also
+	  set the property accessor type.
+	*/
+	if (setup_program ($3, NULL, COB_MODULE_TYPE_METHOD, 0)) {
+		YYABORT;
+	}
+  }
+;
+
+
 /* PROGRAM body */
 
 _program_body:
@@ -4038,12 +4540,18 @@ _program_body:
   }
   _data_division
   {
-	/* note:
-	   we also validate all references we found so far here */
+	/* note: we also validate all references we found so far here */
 	cb_validate_program_data (current_program);
 	within_typedef_definition = 0;
   }
   _procedure_division
+  {  
+    /*
+      Manual reset as a full OO construct like METHOD-ID can appear inside
+      PROCEDURE DIVISIONs.
+    */
+    cobc_in_procedure = 0;  
+  }
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -4361,7 +4869,8 @@ configuration_header:
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_CONFIGURATION_SECTION;
-	if (current_program->nested_level) {
+	if (current_program->nested_level
+	 && current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		cb_error (_("%s not allowed in nested programs"), "CONFIGURATION SECTION");
 	}
   }
@@ -4591,6 +5100,18 @@ repository_list:
 | repository_list repository_name
 ;
 
+_expands_clause:
+  /* empty */
+| EXPANDS WORD
+  {
+	/*
+	  TODO (OO): Check that WORD is a class when used with the CLASS
+	  specifier and interface when used with the INTERFACE specifier.
+	*/
+  }
+USING word_list
+;
+
 repository_name:
   FUNCTION ALL INTRINSIC
   {
@@ -4613,6 +5134,28 @@ repository_name:
 | FUNCTION repository_name_list error
   {
 	yyerrok;
+  }
+| CLASS
+  {
+	__CS_ENTER (CB_CS_CLASS_SPECIFIER);
+  }
+  WORD _as_literal _expands_clause
+  {
+	if ($3 != cb_error_node) {
+		setup_prototype ($3, $4, COB_MODULE_TYPE_CLASS, 0);
+	}
+	__CS_LEAVE (CB_CS_CLASS_SPECIFIER);
+  }
+| INTERFACE
+  {
+	__CS_ENTER (CB_CS_INTERFACE_SPECIFIER);
+  }
+  WORD _as_literal _expands_clause
+  {
+	if ($3 != cb_error_node) {
+		setup_prototype ($3, $4, COB_MODULE_TYPE_INTERFACE, 0);
+	}
+	__CS_LEAVE (CB_CS_INTERFACE_SPECIFIER);
   }
 ;
 
@@ -8141,8 +8684,10 @@ type_to_clause:
 
 usage_clause:
   _usage_is usage
-| USAGE _is conflict_usage	/* auto-enters CB_CS_USAGE */
+| USAGE _is 	/* auto-enters CB_CS_USAGE */
+  OBJECT REFERENCE _object_reference_type
   {
+	check_and_set_usage (CB_USAGE_OBJECT);
 	__CS_LEAVE (CB_CS_USAGE);
   }
 | USAGE _is WORD	/* MF extension for referencing types, full support would need
@@ -8311,6 +8856,7 @@ usage:
 	check_and_set_usage (CB_USAGE_POINTER);
 	if ($2) {
 		CB_PENDING ("POINTER TO type-name");
+		current_field->reference = $2;
 	}
 	current_field->flag_is_pointer = 1;
   }
@@ -8318,6 +8864,7 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
 	CB_PENDING ("POINTER TO prototype");	/* and function pointers... */
+	current_field->reference = $2;
 	current_field->flag_is_pointer = 1;
   }
 | PROGRAM_POINTER _to_program_type
@@ -8325,6 +8872,7 @@ usage:
 	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
 	if ($2) {
 		CB_PENDING ("POINTER TO prototype");
+		current_field->reference = $2;
 	}
 	current_field->flag_is_pointer = 1;
   }
@@ -8500,30 +9048,21 @@ _to_type_name:
 | _to type_name { $$ = $2;   }
 ;
 
-/* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
-conflict_usage:
-  OBJECT REFERENCE _object_reference_type
-  {
-	check_and_set_usage (CB_USAGE_OBJECT);
-	CB_PENDING ("OBJECTS");
-  }
-;
-
 _object_reference_type:
   /* empty */
-| WORD
-| _factory_of ACTIVE_CLASS
-| _factory_of CLASS_NAME _only
+| OO_INTERFACE_NAME               { current_field->reference = cb_ref ($1); }
+| _factory_of ACTIVE_CLASS        { current_field->reference = cb_int0; }
+| _factory_of OO_CLASS_NAME _only { current_field->reference = cb_ref ($2); }
 ;
 
 _factory_of:
-  /* empty */
-| FACTORY _of
+  /* empty */ { current_field->flag_factory_reference = 0; }
+| FACTORY _of { current_field->flag_factory_reference = 1; }
 ;
 
 _only:
-  /* empty */ { $$ = NULL; }
-| ONLY	 { $$ = cb_int0; }
+  /* empty */ { current_field->flag_reference_only = 0; }
+| ONLY        { current_field->flag_reference_only = 1; }
 ;
 
 double_usage:
@@ -9282,7 +9821,8 @@ _local_storage_section:
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LOCAL_STORAGE_SECTION;
 	current_storage = CB_STORAGE_LOCAL;
-	if (current_program->nested_level) {
+	if (current_program->nested_level
+	 && current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		cb_error (_("%s not allowed in nested programs"), "LOCAL-STORAGE");
 	} else if (cb_local_implies_recursive) {
 		current_program->flag_recursive = 1;
@@ -11134,7 +11674,7 @@ _procedure_division:
 | procedure_division
 ;
 
-procedure_division:
+procedure_division_header:
   PROCEDURE
   {
 	check_area_a_of ("PROCEDURE DIVISION");
@@ -11145,6 +11685,7 @@ procedure_division:
 	cobc_in_procedure = 1U;
 	cb_set_system_names ();
 	last_source_line = cb_source_line;
+	header_check |= COBC_HD_PROCEDURE_DIVISION;
 
 	cb_prof_procedure_division (
 		current_program,
@@ -11153,14 +11694,17 @@ procedure_division:
 		);
   }
   DIVISION
+;
+
+procedure_division_sections:
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
-	cb_tree call_conv = $4;
-	if ($5) {
-		call_conv = $5;
-		if ($4) {
-			/* note: $3 is likely to be a reference to SPECIAL-NAMES */
-			cb_error_x ($5, _("%s and %s are mutually exclusive"),
+	cb_tree call_conv = $1;
+	if ($2) {
+		call_conv = $2;
+		if ($1) {
+			/* note: $2 is likely to be a reference to SPECIAL-NAMES */
+			cb_error_x ($2, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
 	}
@@ -11173,17 +11717,16 @@ procedure_division:
 	} else if (!current_program->entry_convention) {
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
-	header_check |= COBC_HD_PROCEDURE_DIVISION;
   }
   _dot_or_else_area_a
   _procedure_declaratives
   {
 	if (current_program->flag_main
-	 && !current_program->flag_chained && $6) {
+	 && !current_program->flag_chained && $3) {
 		cb_error (_("executable program requested but PROCEDURE/ENTRY has USING clause"));
 	}
 
-	emit_main_entry (current_program, $6);
+	emit_main_entry (current_program, $3);
 
 	cb_check_definition_matches_prototype (current_program);
   }
@@ -11204,6 +11747,18 @@ procedure_division:
 		emit_statement (cb_build_perform_exit (current_section));
 	}
   }
+;
+
+_oo_procedure_division:
+  /* empty */
+| procedure_division_header
+  _dot_or_else_area_a
+  method_list
+;
+
+procedure_division:
+  procedure_division_header
+  procedure_division_sections
 |
   {
 	/* No PROCEDURE DIVISION header here */
@@ -11463,7 +12018,7 @@ _procedure_returning:
 		} else if (f->flag_occurs) {
 			cb_error (_("RETURNING item should not have OCCURS"));
 		} else {
-			if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
+			if (current_program->prog_type != COB_MODULE_TYPE_PROGRAM) {
 				if (f->flag_any_length) {
 					cb_error (_("function RETURNING item may not be ANY LENGTH"));
 				}
@@ -11472,9 +12027,9 @@ _procedure_returning:
 #if 0	/* doesn't work for programs, will be fixed with allocating in the source-unit */
 			current_program->returning = $2;
 #else
-			if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
+			if (current_program->prog_type != COB_MODULE_TYPE_PROGRAM) {
 				current_program->returning = $2;
-			} else {
+			} else if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
 				CB_PENDING ("program RETURNING");
 			}
 #endif
@@ -11563,6 +12118,12 @@ procedure:
   }
 ;
 
+/* Method list */
+
+method_list:
+  method_definition
+| method_list method_definition
+;
 
 /* Section/Paragraph */
 
@@ -11809,7 +12370,7 @@ statement:
 | initiate_statement
 | inquire_statement
 | inspect_statement
-/* | TODO: invoke_statement */
+| invoke_statement
 | json_generate_statement
 | json_parse_statement
 | merge_statement
@@ -12732,23 +13293,14 @@ call_body:
 	}
 
 	/* Check parameter conformance, if we can work out what is being called. */
-	if (CB_LITERAL_P ($4)) {
-		cb_check_conformance ($4, $8, $9);
-	} else if (CB_REFERENCE_P ($4)) {
-		cb_tree	ref = cb_ref ($4);
-		if ((CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78)
-		 || CB_PROGRAM_P (ref)
-		 || CB_PROTOTYPE_P (ref)) {
-			cb_check_conformance ($4, $8, $9);
-		}
-	}
+	(void) cb_check_conformance ($4, NULL, $8, $9, 0);
 
 	/* For CALL ... RETURNING NOTHING, set the call convention bit */
 	if (call_nothing) {
 		call_conv |= CB_CONV_NO_RET_UPD;
 	}
 	emit_prof_call (COB_PROF_ENTER_CALL, NULL, NULL);
-	cb_emit_call ($4, $8, $9, CB_PAIR_X ($10), CB_PAIR_Y ($10),
+	cb_emit_call ($4, NULL, $8, $9, CB_PAIR_X ($10), CB_PAIR_Y ($10),
 		      cb_int (call_conv), $2, $6);
 	emit_prof_call (COB_PROF_EXIT_CALL,
 			target_name[0] == 0 ? "(dynamic)" : target_name,
@@ -15135,6 +15687,24 @@ inspect_body:
 		CB_PENDING ("INSPECT BACKWARD");
 	}
   }
+;
+
+/* INVOKE statement */
+
+invoke_statement:
+  INVOKE
+  id_or_class_name
+  id_or_lit
+  call_using
+  call_returning
+  {
+	(void) cb_check_conformance ($2, $3, $4, $5, 0);
+  }
+;
+
+id_or_class_name:
+  identifier
+| OO_CLASS_NAME
 ;
 
 _backward:
@@ -18382,6 +18952,17 @@ on_size_error_phrases:
   %prec SHIFT_PREFER
   {
 	/* no [NOT] ON SIZE ERROR is specified (= no explicit handling) */
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)
+	 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)
+	 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)
+	 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)
+	 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)
+	 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)
+	 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE))
+	{
+		current_statement->handler_type = SIZE_ERROR_HANDLER;
+		current_statement->ex_handler = NULL;
+	}
   }
 | on_size_error _not_on_size_error
 | not_on_size_error _on_size_error
@@ -18389,6 +18970,22 @@ on_size_error_phrases:
 	if ($2) {
 		cb_verify (cb_not_exception_before_exception,
 			_("NOT SIZE ERROR before SIZE ERROR"));
+	} else if ($1 && $1 != cb_int1) {
+		/* One NOT ON SIZE ERROR, but no ON SIZE ERROR, so we need to
+		   check on exceptions */
+#if 0 /* CHECK ME: possible dialect configuration, keep the same condition as the check above
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)
+		 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)
+		 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)
+		 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)
+		 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)
+		 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)
+		 || CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE))
+		{
+			current_statement->handler_type = SIZE_ERROR_HANDLER;
+			current_statement->ex_handler = NULL;
+		} */
+#endif
 	}
   }
 ;
@@ -19761,6 +20358,7 @@ identifier_or_file_name:
 		$$ = cb_error_node;
 	}
   }
+| oo_identifier
 ;
 
 /* guarantees a reference to a validated field-reference (or cb_error_node) */
@@ -19795,6 +20393,44 @@ identifier:
 	cb_tree x = validated_field_reference ($1);
 	if (x != cb_error_node) {
 		$$ = cb_build_identifier ($1, 0);
+	} else {
+		$$ = cb_error_node;
+	}
+  }
+| oo_identifier
+;
+
+/* TODO: make the semantic actions below return field references, so this can
+   then be merged into identifier_1? */
+oo_identifier:
+  SELF
+  {
+	cb_tree x = cb_validate_oo_class_or_interface (current_self_class ());
+	if (x != cb_error_node) {
+		$$ = cb_build_object_reference (CB_PROGRAM (x), 0);
+	} else {
+		$$ = cb_error_node;
+	}
+  }
+| SUPER
+  {
+	/* Note: warns in case of multiple inheritance... may we return a list
+	   instead? */
+	cb_tree x = cb_validate_oo_class_or_interface (current_super_class ());
+	if (x != cb_error_node) {
+		$$ = cb_build_object_reference (CB_PROGRAM (x), 0);
+	} else {
+		$$ = cb_error_node;
+	}
+  }
+| OO_CLASS_NAME OF SUPER
+  {
+	cb_tree x = cb_ref ($1);
+	if (CB_PROGRAM_P (x)) {
+		/* TODO: check super is actually inherited by the current
+		   class... */
+		x = cb_validate_oo_class_or_interface (CB_PROGRAM (x));
+		$$ = cb_build_object_reference (CB_PROGRAM (x), 0);
 	} else {
 		$$ = cb_error_node;
 	}
@@ -20230,6 +20866,49 @@ function:
 | USER_FUNCTION_NAME func_args func_refmod
   {
 	$$ = cb_build_intrinsic ($1, $2, $3, 1);
+  }
+| id_or_class_name TOK_COLON_COLON literal inline_invoke_args
+  {
+	$$ = cb_check_conformance ($1, $3, $4, NULL, 1);
+  }
+;
+
+inline_invoke_args:
+  /* empty */	%prec SHIFT_PREFER
+  {
+	$$ = NULL;
+  }
+| TOK_OPEN_PAREN inline_invoke_args_list TOK_CLOSE_PAREN
+  {
+	if (cb_list_length ($2) > MAX_CALL_FIELD_PARAMS) {
+		cb_error_x (CB_TREE (current_statement),
+			    _("number of arguments exceeds maximum %d"),
+			    MAX_CALL_FIELD_PARAMS);
+	}
+	$$ = $2;
+  }
+| TOK_OPEN_PAREN TOK_CLOSE_PAREN
+  {
+	$$ = NULL;
+  }
+;
+
+inline_invoke_args_list:
+  inline_invoke_arg
+| inline_invoke_args_list _e_sep inline_invoke_arg
+  {
+	$$ = cb_list_append ($1, $3);
+  }
+;
+
+inline_invoke_arg:
+  OMITTED
+  {
+	$$ = CB_BUILD_PAIR (cb_int (CB_CALL_BY_REFERENCE), cb_null);
+  }
+| exp %prec SHIFT_PREFER
+  {
+	$$ = cb_build_call_parameter ($1, CB_CALL_BY_REFERENCE, CB_SIZE_UNSET);
   }
 ;
 
@@ -20774,6 +21453,7 @@ _is_equal:		| IS | TOK_EQUAL;
 _is_are:	| IS | ARE ;
 _is_are_equal:		| IS | ARE | TOK_EQUAL;
 _is_in:		| IS | IN ;
+_is_final:		| _is FINAL ;
 _key:		| KEY ;
 _line:		| LINE ;
 _line_or_lines:	| LINE | LINES ;
@@ -20791,6 +21471,7 @@ _on_for:	| ON | FOR ;
 _onoff_status:	| STATUS IS | STATUS | IS ;
 _other:		| OTHER ;
 _others:		| OTHERS ;
+_override:		| OVERRIDE ;
 _procedure:	| PROCEDURE ;
 _program:	| PROGRAM ;
 _protected:	| PROTECTED ;

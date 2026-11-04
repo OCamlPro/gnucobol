@@ -68,6 +68,35 @@
 	* cobc.c (process_command_line): -Wno-error=warning now also excludes
 	  the warning from a global -Werror
 
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_div): new function used by output_integer and
+	  output_long_integer, generating a check for a zero divisor raising
+	  EC-SIZE-ZERO-DIVIDE, fatal if enabled, instead of a C division that
+	  raises SIGFPE
+	* codegen.c (output_param): generate a fatal check for a zero divisor
+	  if EC-SIZE-ZERO-DIVIDE is enabled for cob_intr_binop
+	* codegen.c (output_param): generate a fatal check using cob_valid_pow
+	  if EC-SIZE-EXPONENTIATION is enabled for cob_intr_binop
+	* typeck.c (has_checked_size_error): new function checking if an
+	  expression contains an operation with enabled EC-SIZE-ZERO-DIVIDE or
+	  EC-SIZE-EXPONENTIATION
+	* typeck.c (cb_build_cond_default): generate a fatal check for those
+	  size errors in decimal comparisons, as conditions have no SIZE ERROR
+	  phrase
+	* codegen.c (output_funcall_typed): new type 'Z' for that check
+
+2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_pow): new function used by output_integer and
+	  output_long_integer, generating a check for the exponentiation rules
+	  if EC-SIZE-EXPONENTIATION is enabled, raising the fatal exception,
+	  as a size error during item identification is fatal and must not be
+	  handled by the SIZE ERROR phrase of the statement
+	* tree.c (cb_build_binary_op): don't fold 0 ^ 0 to 1, so the exception
+	  is raised at runtime, and warn about constant ZERO with an exponent
+	  of zero or less
+
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (lookup_intrinsic), tree.h, scanner.l, tree.c, cobc.c:
@@ -206,6 +235,24 @@
 	  cb_build_if_check_break to cb_build_if_maybe_insert_break.
 	  Introduce cb_statement_finishes_with_goto to remove duplicated code.
 
+2026-08-26  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* tree.c (warn_if_no_definition_seen_for_prototype): move to typeck.c,
+	  renamed into find_prototype_definition
+	* tree.c (cb_build_prototype): move check for missing definitions to the
+	  (unique) call-site in typeck.c
+	* typeck.c (setup_prototype, check_prototype_against_definition):
+	  report REPOSITORY entries that mismatch their definition
+	* typeck.c (try_get_program): handle USAGE OBJECT REFERENCE
+	* typeck.c (cb_check_conformance, cb_validate_oo_class_or_interface):
+	  add support for checking method invocations, both via INVOKE or inline;
+	  fix determination of last given argument
+	* parser.y (call_body): remove unneeded guard for call to
+	  cb_check_conformance (now dealt with internally in try_get_program)
+	* parser.y (clean_up_program): proper module type in signature
+	* tree.c, tree.h (cb_build_field_reference): add const attributes to arguments
+	* tree.c, tree.h (cb_build_object_reference): new function
+
 2026-08-26 Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* ppparse.y (ppp_replace_list_add): fix bug #1071
@@ -226,13 +273,33 @@
 	* field.c (warn_pic_for_numeric_value_implied): Added fix to print
 	  Implied PIC warning only when needed
 
+2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* parser.y, reserved.c, scanner.l: add support for parsing INTERFACE-ID,
+	  METHOD-ID, FACTORY, OBJECT paragraphs, INVOKE statement and inline method
+	  invocation expression. Support CLASS and INTERFACE specifiers in REPOSITORY
+	  paragraph. Also support keywords SELF and ACTIVE-CLASS.
+	* tree.h, tree.c, typeck.c: add syntax validation logic to check OO inheritance
+	  list for duplicates, consistency with names specified in the REPOSITORY
+	  paragraph
+	* cobc.h: add new special contexts for OO constructs
+
+2026-06-11  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* parser.y, reserved.c: add support for parsing class attributes - AS literal,
+	  IS FINAL, INHERITS FROM {class-name ...}, USING {param-name ...}
+	  with unimplemented warning; also support MF extensions IS STATIC, IS ABSTRACT,
+	  IS PARTIAL, IS PUBLIC, IS INTERNAL
+	* tree.h, common.h: add COB_MODULE_TYPE_CLASS and bit masks for all
+	  object-oriented class attributes
+
 2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
 
-	* parser.y: remove the CB_PENDING warning on XML PARSE but still warn for 
+	* parser.y: remove the CB_PENDING warning on XML PARSE but still warn for
 	  untested XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING.
-	* typeck.c: remove invalid call to cob_check_based for XML-* builtin variable 
+	* typeck.c: remove invalid call to cob_check_based for XML-* builtin variable
 	  length registers (like XML-TEXT)
-	* codegen.c: remove the uninitialized and unused b_* field for XML-* builtin 
+	* codegen.c: remove the uninitialized and unused b_* field for XML-* builtin
 	  variable length registers
 
 2026-06-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
@@ -261,6 +328,12 @@
 	  at that position
 	* pplex.c,cobc.c: use the new type of cb_tab_width
 
+2026-04-08  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* scanner.l: add support for scanning class names and "END CLASS" token.
+	* parser.y, reserved.c (class_definition): support parsing an "empty"
+	  CLASS-ID paragraph with no contained paragraphs and divisions.
+
 2025-12-29  Roger Bowler <rbowler@snipix.net>
 
 	* tree.c (finalize_file): if file is EXTFH enabled then don't warn for
@@ -287,6 +360,15 @@
 
 	* ppparse.y: error on extraneous periods at the end of SET
 	  directives; turn to a warning in relaxed syntax mode.
+
+2025-11-24  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* codegen.c (output_ec_size_handler): generate a check for a size exception
+	  on statements that can raise them
+	* codegen.c (output_stmt): add a check for `ON SIZE ERROR` phrase, and
+	  if not present  then generate a check for enabled size exceptions
+	* codegen.c (output_handler): reset the exceptions if the statement has an
+	  exception handler
 
 2025-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
