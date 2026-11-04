@@ -83,6 +83,38 @@ AT_CHECK([$COMPILE_ONLY SHORT4.cob], [1], [],
 [SHORT4.cob:3: error: invalid PROGRAM-ID '-short' - name cannot begin with space or hyphen
 ])
 
+AT_DATA([AsB.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      'A/B'.
+])
+AT_CHECK([$COMPILE_MODULE AsB.cob], [1], [],
+[AsB.cob:3: error: invalid PROGRAM-ID 'A/B' - name cannot contain a directory separator
+])
+
+AT_DATA([AbB.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      'A\B'.
+])
+AT_CHECK([$COMPILE_MODULE AbB.cob], [1], [],
+[AbB.cob:3: error: invalid PROGRAM-ID 'A\B' - name cannot contain a directory separator
+])
+
+AT_DATA([AaB.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      'A''B'.
+])
+AT_CHECK([$COMPILE_MODULE AaB.cob], [1], [],
+[AaB.cob:3: error: invalid PROGRAM-ID 'A'B' - name cannot contain an apostrophe
+])
+
+AT_DATA([AqB.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      'A"B'.
+])
+AT_CHECK([$COMPILE_MODULE AqB.cob], [1], [],
+[AqB.cob:3: error: invalid PROGRAM-ID 'A"B' - name cannot contain a quote
+])
+
 AT_CLEANUP
 
 

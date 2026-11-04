@@ -66,7 +66,7 @@ void cob_index_init_fileio (cob_file_api *);
 
 static void cob_index_exit_fileio (cob_file_api *a);
 static int indexed_open		(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
-static int indexed_close	(cob_file_api *, cob_file *, const int);
+static int indexed_close	(cob_file_api *, cob_file *, const enum cob_close_mode);
 static int indexed_start	(cob_file_api *, cob_file *, const int, cob_field *);
 static int indexed_read		(cob_file_api *, cob_file *, cob_field *, const int);
 static int indexed_read_next	(cob_file_api *, cob_file *, const int);
@@ -101,7 +101,7 @@ extern void	extfh_cob_exit_fileio	(void);
 extern void extfh_indexed_unlock	(cob_file *);
 extern int extfh_indexed_locate		(cob_file *, char *);
 extern int extfh_indexed_open		(cob_file *, char *, const enum cob_open_mode, const int);
-extern int extfh_indexed_close		(cob_file *, const int);
+extern int extfh_indexed_close		(cob_file *, const enum cob_close_mode);
 extern int extfh_indexed_start		(cob_file *, const int, cob_field *);
 extern int extfh_indexed_read		(cob_file *, cob_field *, const int);
 extern int extfh_indexed_read_next	(cob_file *, const int);
@@ -152,7 +152,7 @@ indexed_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_
 
 /* Close the INDEXED file */
 static int
-indexed_close (cob_file_api *a, cob_file *f, const int opt)
+indexed_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	COB_UNUSED (a);
 	return extfh_indexed_close (f, opt);
@@ -241,7 +241,7 @@ cob_index_init_fileio (cob_file_api *a)
 extern void extfh_seqra_unlock		(cob_file *);
 extern int extfh_seqra_locate		(cob_file *, char *);
 extern int extfh_cob_file_open		(cob_file *, char *, const enum cob_open_mode, const int);
-extern int extfh_cob_file_close		(cob_file *, const int);
+extern int extfh_cob_file_close		(cob_file *, const enum cob_close_mode);
 extern int extfh_sequential_read	(cob_file *, const int);
 extern int extfh_sequential_write	(cob_file *, const int);
 extern int extfh_sequential_rewrite	(cob_file *, const int);
@@ -253,7 +253,7 @@ extern int extfh_relative_rewrite	(cob_file *, const int);
 extern int extfh_relative_delete	(cob_file *);
 void cob_seqra_init_fileio (cob_file_api *);
 static int seqra_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode mode, const int sharing);
-static int seqra_close (cob_file_api *a, cob_file *f, const int opt);
+static int seqra_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt);
 static void cob_seqra_exit_fileio (cob_file_api *a);
 
 static int sequential_read	(cob_file_api *, cob_file *, const int);
@@ -353,7 +353,7 @@ seqra_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mo
 }
 
 static int
-seqra_close (cob_file_api *a, cob_file *f, const int opt)
+seqra_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	COB_UNUSED (a);
 	return extfh_cob_file_close (f, opt);

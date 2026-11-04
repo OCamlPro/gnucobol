@@ -265,6 +265,10 @@ Open Plans:
 
 * New build features
 
+** while GMP is the basis for GnuCOBOL's precise computations, its header
+   file gmp.h (or replacement mpir.h) is now only needed when building
+   GnuCOBOL itself, not when using it to compile COBOL programs
+
 ** configure now uses pkg-config/ncurses-config to search for ncurses and
    honors NCURSES_LIBS and NCURSES_CFLAGS
 
@@ -285,6 +289,9 @@ Open Plans:
 ** "make checkmanual" was extended to be also usable with tmux and
    allows to override the test runner and to attach for screen/tmux sessions,
    see README for further details
+
+** configure checks for std features needed and auto-selects a good -std
+   if not explicit set in CFLAGS
 
 * Known issues in 3.x
 

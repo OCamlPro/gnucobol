@@ -189,6 +189,7 @@ static void insert_copy_arg (void)
 		int ret = ppcopy (copy_list_pointer->text, NULL, NULL);
 		if (ret < 0) { /* This should never happen, as we already test it before */
 			cobc_err_msg (_("fatal error: %s"), "could not find --copy argument");
+			plex_clear_all ();
 			cobc_abort_terminate (0);
 		}
 		copy_list_pointer = copy_list_pointer->next;
@@ -1593,7 +1594,7 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
 		if (access (plexbuff2, R_OK) == 0
 		 && stat (plexbuff2, &st) == 0) {
 			/* Must be a regular file */
-			if (S_ISREG(st.st_mode)) 	/* Use POSIX macro */	
+			if (S_ISREG(st.st_mode)) 	/* Use POSIX macro */
 				return plexbuff2;
 		}
 #ifdef COB_MULTI_EXTENSION	/* compat to older GC versions */
@@ -1999,6 +2000,13 @@ plex_clear_all (void)
 	if (plexbuff2) {
 		cobc_free (plexbuff2);
 		plexbuff2 = NULL;
+	}
+
+	/* only relevant in case of fatal errors before EOF */
+	cb_free_replace ();	
+	if (ppin) {
+		fclose (ppin);
+		ppin = NULL;
 	}
 }
 

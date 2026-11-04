@@ -35,7 +35,7 @@ static int oci_sync			(cob_file_api *, cob_file *);
 static int oci_commit		(cob_file_api *, cob_file *);
 static int oci_rollback		(cob_file_api *, cob_file *);
 static int oci_open			(cob_file_api *, cob_file *, char *, const enum cob_open_mode, const int);
-static int oci_close		(cob_file_api *, cob_file *, const int);
+static int oci_close		(cob_file_api *, cob_file *, const enum cob_close_mode);
 static int oci_start		(cob_file_api *, cob_file *, const int, cob_field *);
 static int oci_read			(cob_file_api *, cob_file *, cob_field *, const int);
 static int oci_read_next	(cob_file_api *, cob_file *, const int);
@@ -1376,7 +1376,7 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const enum cob_open_mode
 /* Close the INDEXED file */
 
 static int
-oci_close (cob_file_api *a, cob_file *f, const int opt)
+oci_close (cob_file_api *a, cob_file *f, const enum cob_close_mode opt)
 {
 	struct indexed_file	*p;
 	struct file_xfd	*fx;
