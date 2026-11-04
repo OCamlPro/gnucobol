@@ -6023,14 +6023,25 @@ AT_DATA([prog.cob], [
 
 # FIXME: something is broken with the '"#OPTION here,
 #        that should be generated as #OPTION 'mis-matched"
-#        and in a second step not be generated at all
+#        and in a second step not be generated at all;
+#        the issue is that pplex.l:
+#             returns SOURCEFORMAT
+#           + passes unknown '" as-is
+#           + returns WORD->VARIABLE for mis-matched
+#        ppparse.y
+#             finds broken SOURCEFORMAT directive
+#           + passes unknown '" as-is
+#             finds VARIABLE -> outputs #OPTION + "name"
+# TODO:  within SET_DIRECTIVE_STATE recognize mis-matched literals,
+#        passing that as LITERAL, then adjust ppparse.y (unquoted_literal)
+#        to check for 1st matching last position
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: error: invalid SOURCEFORMAT directive option 'hi!'
 prog.cob:7: error: invalid SOURCEFORMAT directive option ''
 prog.cob:8: error: syntax error, unexpected Variable, expecting Literal
 prog.cob:8: error: invalid SOURCEFORMAT directive option
-prog.cob:8: error: invalid literal: '"#OPTION mis-matched ...'
+prog.cob:8: error: invalid literal: '"#OPTION mis-matched'
 prog.cob:8: note: missing terminating ' character
 prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing

@@ -1,4 +1,12 @@
 
+2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_error_name): do not change caller's buffer
+	* typeck.c (cb_trim_program_id): skip trim on zero-lenght / empty literal
+	* typeck.c (cb_build_name_reference): cater for possible long translations
+	* scanner.l, pplex.l: better handling of not closed and/or huge strings
+	* scanner.l (scan_h, scan_o): ensure that huge strings don't overflow
+
 2026-10-30  David Declerck <david.declerck@ocamlpro.com>
 
 	* codegen.c (output_module_init_function): output enum values

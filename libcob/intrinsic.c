@@ -1533,16 +1533,17 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	}
-	/* not wasting buffer space (COBOL2023: 35/34 max)... */
+	/* not wasting buffer space (COBOL2027 : 35/34 max)... */
 	if (datasize > COB_MAX_DIGITS) {
-#ifdef INVALID_NUMVAL_IS_ZERO
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+#ifdef INVALID_NUMVAL_IS_ZERO
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 #else
 		/* Should this truncate or raise an exception?
 		   What about COBOL2025 new max? */
 		datasize = COB_MAX_DIGITS;
+		p = p_end - COB_MAX_DIGITS + 1; 
 #endif
 	}
 

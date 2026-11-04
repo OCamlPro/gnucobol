@@ -3233,6 +3233,12 @@ AT_DATA([prog.cob], [
           05 RES-DELIM-2       PIC X(01).
           05 RES-COUNT-2       PIC 9(02).
           05 RES-TALLY         PIC 9(02).
+
+       01 DST  PIC X(10) VALUE SPACES.
+       01 DLM1 PIC X(2)  VALUE "AB".
+       01 DLM2 PIC X(2)  VALUE "CD".
+       01 SRC  PIC X(1)  VALUE "Y".
+
       *>
        PROCEDURE DIVISION.
       *>------------------
@@ -3253,7 +3259,7 @@ AT_DATA([prog.cob], [
                    DISPLAY
                       'Unstring tallying case 1 should not OVERFLOW'
                    END-DISPLAY
-           END-UNSTRING.
+           END-UNSTRING
            PERFORM TEST-CASE-1-RESULT
       *>
       *>   case B : should  OVERFLOW; use of two delimiters
@@ -3272,8 +3278,22 @@ AT_DATA([prog.cob], [
                    DISPLAY
                       'Unstring tallying case 2 should  OVERFLOW'
                    END-DISPLAY
-           END-UNSTRING.
+           END-UNSTRING
            PERFORM TEST-CASE-2-RESULT
+      *>
+      *>   case C :
+      *>   this can never unstring anything - but still needed to be
+      *>   processed for additional clauses
+      *>   TODO: add compile-time warning
+           UNSTRING SRC DELIMITED BY DLM1 OR DLM2 INTO DST
+               ON OVERFLOW
+                   DISPLAY
+                      'Unstring case 3 should  OVERFLOW'
+                   END-DISPLAY
+           END-UNSTRING
+           IF DST NOT = "Y"
+              DISPLAY "UN DST=" DST
+           END-IF
       *>
            GOBACK.
 
@@ -5340,7 +5360,11 @@ AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
 [libcob: error: module 'notthere' not found
 note: error exit with return code -1 and error "module 'notthere' not found"
 ])
-AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+# We just acknowledge that we have some minor leaks in case of hard errors in cob_call_with_exception_check
+# CHECKME: can we still prevent those?
+AT_CHECK([ASAN_OPTIONS=detect_leaks=0 \
+          $COBCRUN_DIRECT ./caller buggy], [0],
+[out of bounds - refmod following],
 [libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
 note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
 ])
@@ -12239,6 +12263,8 @@ AT_DATA([prog.cob], [
        END PROGRAM "S U B".
 ])
 
+# TODO: move compile-checks out to a syn test
+
 AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:10: warning: ' SUB ' literal includes leading spaces which are omitted
 prog.cob:10: warning: ' SUB ' literal includes trailing spaces which are omitted
@@ -12255,6 +12281,24 @@ S U B  GOT B
 ],
 [libcob: prog.cob:12: warning: ' SUB' literal includes leading spaces which are omitted
 libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are omitted
+])
+
+AT_DATA([bad.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "".
+       END PROGRAM "".
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. " ".
+       END PROGRAM " ".
+])
+
+AT_CHECK([$COMPILE_ONLY bad.cob], [1], [],
+[bad.cob:3: warning: alphanumeric literal has zero length; a SPACE will be assumed
+bad.cob:3: error: invalid PROGRAM-ID ' ' - name cannot begin with space or hyphen
+bad.cob:4: warning: alphanumeric literal has zero length; a SPACE will be assumed
+bad.cob:7: error: invalid PROGRAM-ID ' ' - name cannot begin with space or hyphen
+bad.cob:7: error: redefinition of program ID ' '
 ])
 
 AT_CLEANUP

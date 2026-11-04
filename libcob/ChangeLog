@@ -1,4 +1,16 @@
 
+2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_unstring_into_intern): fix overflow for multiple UNSTRING
+	  delimters when they are longer than the source
+	* intrinsic.c (numval): better handling of too huge input data, raising
+	  EC-ARGUMENT-EXCEPTION and instead of overflow pass the maximum digits,
+	  justified right
+	* common.c (cob_expand_env_string): prevent overflow in case of unexpected
+	  long environment variable names
+	* common.c (cb_config_entry): prevent overflow in case of not existing
+	  configuration names/values before they are validated
+
 2026-10-30  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h (cob_xml_mode, cob_module): use an enum instead
