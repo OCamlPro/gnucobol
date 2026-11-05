@@ -3020,7 +3020,6 @@ output_div (const struct cb_binary_op *p, const int is_long)
 	output (" == 0)");
 	output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
 	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
-		// output (" cob_fatal_exception (cob_glob_ptr->cob_exception_code),");
 		output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
 	}
 	output (" (%s)0) : (", is_long ? "cob_s64_t" : "cob_s32_t");
