@@ -3066,7 +3066,6 @@ current_super_class (void) {
 %token END_OBJECT		"END-OBJECT"
 %token END_PERFORM		"END-PERFORM"
 %token END_PROGRAM		"END PROGRAM"
-%token END_CLASS		"END CLASS"
 %token END_READ			"END-READ"
 %token END_RECEIVE		"END-RECEIVE"
 %token END_RETURN		"END-RETURN"
