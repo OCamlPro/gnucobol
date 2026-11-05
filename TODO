@@ -81,7 +81,17 @@ contexts, but may be harder to adapt to cases of nested function calls
 
 3.2.2 Finish USAGE BINARY for sizes > 18 digits "COB_MAX_BINARY"
 
-3.3 add checks 
+3.3 add checks
+
+3.4 Exception codes
+
+The EC-SIZE exceptions use one bit per exception in the low byte of
+the exception code, so that the generated code can check for any of
+the enabled ones at once; this limits a group to seven exceptions
+and the group itself cannot be distinguished from its subordinates.
+The current draft standard has already 26 groups and 12 exceptions
+in EC-I-O alone, so GnuCOBOL 4 should use a 64bit integer for the
+exception codes, allowing that check for all groups.
 
 4 Optimization
 

@@ -419,7 +419,7 @@ static const int		cob_exception_tab_code[] = {
 	0		/* COB_EC_MAX */
 };
 
-#undef	COB_EXCEPTION
+#undef COB_EXCEPTION
 
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
@@ -3055,6 +3055,7 @@ void
 cob_set_exception (const int id)
 {
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
+	cobglobptr->cob_exception_id = id;
 	last_exception_code = cobglobptr->cob_exception_code;
 
 	cobglobptr->last_exception_statement = STMT_UNKNOWN;
@@ -3848,8 +3849,6 @@ cob_module_leave (cob_module *module)
 {
 	COB_UNUSED (module);
 	cob_get_source_line ();
-	if(cobglobptr->cob_exception_code == -1)
-		cobglobptr->cob_exception_code = 0;
 	/* Pop module pointer */
 	COB_MODULE_PTR = COB_MODULE_PTR->next;
 	cobglobptr->cob_call_name_hash = 0;
@@ -9569,9 +9568,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("call to %s with NULL pointer"), "cob_free");
 		break;
 	/* LCOV_EXCL_STOP */
-	case COB_FERROR_DIV_ZERO:
-		cob_runtime_error (_("divide by ZERO"));
-		break;
 	case COB_FERROR_FILE:
 		file_status = cobglobptr->cob_error_file->file_status;
 		status = COB_D2I (file_status[0]) * 10 + COB_D2I (file_status[1]);
@@ -9670,6 +9666,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
+		break;
+	case COB_FERROR_FATAL_EC:
+		cob_runtime_error (_("unhandled fatal exception code: %s"),
+			cob_get_last_exception_name ());
 		break;
 	default:
 		/* internal rare error, no need for translation */

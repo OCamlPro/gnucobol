@@ -88,12 +88,6 @@
 /* Stacked field depth */
 #define COB_DEPTH_LEVEL		32U
 
-/* Not-A-Number */
-#define COB_DECIMAL_NAN		-32768
-
-/* Infinity */
-#define COB_DECIMAL_INF		-32767
-
 /* GMP decimal default */
 #define COB_MPZ_DEF		1024UL
 

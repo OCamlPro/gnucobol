@@ -259,7 +259,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
            END PROGRAM "SUB".
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 
 AT_CHECK([./prog], [0], [COBOL: X is +000000009 and Y is 0000000010
 COBOL: X is +000001280 and Y is 0000000011
@@ -6025,6 +6025,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+#XXXXX             -fno-ec=size-overflow
 AT_CHECK([$COBC -x -std=mf -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
@@ -6103,6 +6104,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+#XXXXX             -fno-ec=size-overflow
 AT_CHECK([$COBC -x -std=mf -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],

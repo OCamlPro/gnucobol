@@ -783,9 +783,9 @@ enum cob_fatal_error {
 	COB_FERROR_FILE,
 	COB_FERROR_FUNCTION,
 	COB_FERROR_FREE,
-	COB_FERROR_DIV_ZERO,
 	COB_FERROR_XML,
-	COB_FERROR_JSON
+	COB_FERROR_JSON,
+	COB_FERROR_FATAL_EC,
 };
 
 /* Exception identifier enumeration */
@@ -1324,6 +1324,11 @@ typedef struct __cob_decimal {
 	mpz_t		value;			/* GMP value definition */
 	int 		scale;			/* Decimal scale */
 } cob_decimal;
+
+/* Not-A-Number, as scale of a decimal */
+#define COB_DECIMAL_NAN		-32768
+/* Infinity, as scale of a decimal */
+#define COB_DECIMAL_INF		-32767
 #endif
 
 /* Perform stack structure */
@@ -1893,8 +1898,11 @@ typedef struct __cob_global {
 									   cob_module structure within cob_module_enter().
 									*/
 	int			cob_initial_external;	/* First external ref */
-	unsigned int		last_exception_line;		/* Last exception: Program source line */
-	unsigned int		cob_got_exception;	/* Exception active (see last_exception) */
+	unsigned int		last_exception_line;	/* Last exception: Program source line */
+	unsigned int		last_exception_fatal;	/* Last exception: is fatal */
+	int			cob_exception_id;	/* current exception id, to use with internal
+							   exceptions table */
+	int			cob_got_exception;	/* Exception active (see last_exception) */
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
 							/* screenio / termio */
@@ -1951,6 +1959,7 @@ COB_EXPIMP const char *	cob_relocate_string (const char *str);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
+COB_EXPIMP int		cob_last_exception_fatal (void);
 
 COB_EXPIMP int		cob_last_exit_code	(void);
 COB_EXPIMP const char*	cob_last_runtime_error	(void);
@@ -3000,6 +3009,7 @@ COB_EXPIMP void		cob_get_indirect_field		(cob_field *);
 COB_EXPIMP cob_field *cob_switch_value			(const int);
 COB_EXPIMP cob_field *cob_intr_binop			(cob_field *, const int,
 							 cob_field *);
+COB_EXPIMP int cob_valid_pow				(cob_field *, cob_field *);
 
 COB_EXPIMP int cob_check_numval				(const cob_field *,
 							 const cob_field *,
