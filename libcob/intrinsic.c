@@ -3134,7 +3134,7 @@ static DECLNORET COB_A_NORETURN void
 error_not_implemented (void)
 {
 	cob_set_exception (COB_EC_IMP_FEATURE_MISSING);
-	cob_fatal_error (COB_FERROR_FUNCTION);
+	cob_fatal_error (COB_FERROR_FATAL_EC);
 }
 
 /* Global functions */

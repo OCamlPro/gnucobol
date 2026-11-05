@@ -2,6 +2,10 @@
 2026-11-05  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.h, cobc.c, codegen.c, reserved.c: use 64 bit exception codes
+	* codegen.c (output_internal_function): raise EC-PROGRAM-CANCEL-ACTIVE
+	  instead of COB_FERROR_CANCEL
+	* codegen.c (output_perform_exit): raise EC-FLOW-IMP instead of
+	  COB_FERROR_GLOBAL
 
 2026-11-04  David Declerck <david.declerck@ocamlpro.com>
 

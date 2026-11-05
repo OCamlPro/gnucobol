@@ -4509,10 +4509,10 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:8: error: attempt to CANCEL active program
+[libcob: prog.cob:8: error: unhandled fatal exception code: EC-PROGRAM-CANCEL-ACTIVE
 ])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 ./prog], [1], [],
-[libcob: prog.cob:8: error: attempt to CANCEL active program
+[libcob: prog.cob:8: error: unhandled fatal exception code: EC-PROGRAM-CANCEL-ACTIVE
 ])
 
 AT_CLEANUP
@@ -4546,10 +4546,10 @@ AT_DATA([prog2.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog2.cob:7: error: attempt to CANCEL active program
+[libcob: prog2.cob:7: error: unhandled fatal exception code: EC-PROGRAM-CANCEL-ACTIVE
 ])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 ./prog], [1], [],
-[libcob: prog2.cob:7: error: attempt to CANCEL active program
+[libcob: prog2.cob:7: error: unhandled fatal exception code: EC-PROGRAM-CANCEL-ACTIVE
 ])
 
 AT_CLEANUP

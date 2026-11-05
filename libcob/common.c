@@ -303,7 +303,6 @@ static int			cob_argc = 0;
 static char			**cob_argv = NULL;
 static struct cob_alloc_cache	*cob_alloc_base = NULL;
 static struct cob_alloc_module	*cob_module_list = NULL;
-static cob_module		*cob_module_err = NULL;
 static const char		*cob_last_sfile = NULL;
 static const char		*cob_last_progid = NULL;
 
@@ -3800,8 +3799,8 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 					cobglobptr->cob_stmt_exception = 0;
 					return 1;
 				}
-				cob_module_err = mod;
-				cob_fatal_error (COB_FERROR_RECURSIVE);
+				cob_set_exception (COB_EC_PROGRAM_RECURSIVE_CALL);
+				cob_fatal_error (COB_FERROR_FATAL_EC);
 			}
 			/* LCOV_EXCL_START */
 			if (k++ == MAX_MODULE_ITERS) {	/* prevent endless loop in case of broken list */
@@ -9493,10 +9492,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 #endif
 	/* Note: can be simply tested; therefore no exclusion */
-	case COB_FERROR_CANCEL:
-		cob_runtime_error (_("attempt to CANCEL active program"));
-		break;
-	/* Note: can be simply tested; therefore no exclusion */
 	case COB_FERROR_INITIALIZED:
 #ifdef	_WIN32
 		/* cob_unix_lf needs to be set before any error message is thrown,
@@ -9530,10 +9525,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("stack overflow, possible PERFORM depth exceeded"));
 		break;
 	/* LCOV_EXCL_STOP */
-	/* Note: can be simply tested (GO TO DECLARATIVES); therefore no exclusion */
-	case COB_FERROR_GLOBAL:
-		cob_runtime_error (_("invalid entry/exit in GLOBAL USE procedure"));
-		break;
 	/* LCOV_EXCL_START */
 	case COB_FERROR_MEMORY:
 		cob_runtime_error (_("unable to allocate memory"));
@@ -9544,25 +9535,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("invalid entry into module"));
 		break;
 	/* LCOV_EXCL_STOP */
-	/* Note: can be simply tested; therefore no exclusion */
-	case COB_FERROR_RECURSIVE:
-#if 0 /* not merged yet */
-		/* LCOV_EXCL_LINE */
-		if (cob_module_err) {
-			cob_runtime_error (_("recursive CALL from '%s' to '%s' which is NOT RECURSIVE"),
-					COB_MODULE_PTR->module_name, cob_module_err->module_name);
-		/* LCOV_EXCL_START */
-		/* Note: only in for old modules - not active with current generation */
-		} else {
-			cob_runtime_error (_("invalid recursive COBOL CALL to '%s'"),
-					   COB_MODULE_PTR->module_name);
-		}
-		/* LCOV_EXCL_STOP */
-#else
-		cob_runtime_error (_("invalid recursive COBOL CALL to '%s'"),
-				   COB_MODULE_PTR->module_name);
-#endif
-		break;
 	/* LCOV_EXCL_START */
 	case COB_FERROR_FREE:
 		cob_runtime_error (_("call to %s with NULL pointer"), "cob_free");
@@ -9658,9 +9630,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		}
 		break;
 	/* LCOV_EXCL_START */
-	case COB_FERROR_FUNCTION:
-		cob_runtime_error (_("attempt to use non-implemented function"));
-		break;
 	case COB_FERROR_XML:
 		cob_runtime_error (_("attempt to use non-implemented XML I/O"));
 		break;

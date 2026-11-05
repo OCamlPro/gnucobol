@@ -1462,7 +1462,7 @@ AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
-[libcob: callee2.cob:5: error: invalid recursive COBOL CALL to 'callee2'
+[libcob: callee2.cob:5: error: unhandled fatal exception code: EC-PROGRAM-RECURSIVE-CALL
 ])
 # TODO: check merge state from 3.1 later, seems fine
 #[libcob: callee2.cob:5: error: recursive CALL from 'callee2' to 'callee' which is NOT RECURSIVE

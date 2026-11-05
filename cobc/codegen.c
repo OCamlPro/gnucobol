@@ -8628,12 +8628,14 @@ output_perform_exit (struct cb_label *l)
 	if (l->flag_fatal_check) {
 		output_newline ();
 		output_line ("/* Fatal error if reached */");
-		output_line ("cob_fatal_error (COB_FERROR_GLOBAL);");
+		output_line ("cob_set_exception (COB_EC_FLOW_IMP);");
+		output_line ("cob_fatal_error (COB_FERROR_FATAL_EC);");
 	} else
 	if (current_program->flag_report) {
 		output_newline ();
 		output_line ("/* Report Fatal error if reached */");
-		output_line ("cob_fatal_error (COB_FERROR_GLOBAL);");
+		output_line ("cob_set_exception (COB_EC_FLOW_IMP);");
+		output_line ("cob_fatal_error (COB_FERROR_FATAL_EC);");
 	}
 }
 
@@ -14287,8 +14289,10 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	output_newline ();
 	output_line ("if (!initialized)");
 	output_line ("\treturn 0;");
-	output_line ("if (module && module->module_active)");
-	output_line ("\tcob_fatal_error (COB_FERROR_CANCEL);");
+	output_line ("if (module && module->module_active) {");
+	output_line ("\tcob_set_exception (COB_EC_PROGRAM_CANCEL_ACTIVE);");
+	output_line ("\tcob_fatal_error (COB_FERROR_FATAL_EC);");
+	output_line ("}");
 	output_newline ();
 
 	if (prog->flag_main) {
