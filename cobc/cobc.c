@@ -247,7 +247,7 @@ const size_t COBC_MEM_SIZE =
 	((sizeof(struct cobc_mem_struct) + sizeof(long long) - 1)
 	/ sizeof(long long)) * sizeof(long long);
 
-#define	COB_EXCEPTION(code,tag,name,fatal) {name, 0x##code, 0, fatal},
+#define	COB_EXCEPTION(code,tag,name,fatal) {name, code, 0, fatal},
 struct cb_exception cb_exception_table[] = {
 	{NULL, 0, 0, 0},	/* CB_EC_ZERO */
 #include "../libcob/exception.def"
@@ -1699,10 +1699,10 @@ turn_ec_for_table (struct cb_exception *table, const size_t table_len,
 		for (i = 0; i < table_len; ++i) {
 			table[i].enable = to_on_off;
 		}
-	} else if ((ec.code & 0x00FF) == 0) {
+	} else if ((ec.code & COB_EC_EXC_MASK) == 0) {
 		/* Set all ECs subordinate to level-2 EC */
 		for (i = 0; i < table_len; ++i) {
-			if ((table[i].code & 0xFF00) == ec.code) {
+			if (table[i].code & ec.code) {
 				table[i].enable = to_on_off;
 			}
 		}

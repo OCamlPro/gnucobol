@@ -788,6 +788,17 @@ enum cob_fatal_error {
 	COB_FERROR_FATAL_EC,
 };
 
+/* Exception codes: 64 bit, group in the upper 32 bits (one bit per group,
+   1..32), exception in the lower 32 bits (one bit per exception, 1..32);
+   a group has only its group bit set */
+#define COB_EC_GROUP_BIT(g)	((cob_u64_t)1 << (31 + (g)))
+#define COB_EC_EXC_BIT(e)	((cob_u64_t)1 << ((e) - 1))
+#define COB_EC_GROUP(g)		COB_EC_GROUP_BIT (g)
+#define COB_EC_CODE(g,e)	(COB_EC_GROUP_BIT (g) | COB_EC_EXC_BIT (e))
+#define COB_EC_CODE_ALL		(~(cob_u64_t)0)
+#define COB_EC_GROUP_MASK	((cob_u64_t)0xFFFFFFFF00000000ULL)
+#define COB_EC_EXC_MASK		((cob_u64_t)0x00000000FFFFFFFFULL)
+
 /* Exception identifier enumeration */
 
 #undef	COB_EXCEPTION
@@ -1894,7 +1905,7 @@ typedef struct __cob_global {
 	char			*cob_locale_numeric;	/* Initial locale */
 	char			*cob_locale_time;	/* Initial locale */
 
-	int			cob_exception_code;	/* current exception code, in contrast to last_exception_code heavily changed */
+	cob_u64_t		cob_exception_code;	/* current exception code, in contrast to last_exception_code heavily changed */
 	int			cob_call_params;	/* Number of current arguments
 									   This is set to the actual number before a CALL
 									   and is stored directly on module entry to its

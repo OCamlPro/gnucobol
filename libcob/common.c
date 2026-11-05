@@ -312,7 +312,7 @@ static cob_settings		*cobsetptr = NULL;
 
 static enum cob_module_unload	module_unload = COB_IMMEDIATE;
 
-static int			last_exception_code;	/* Last exception: code */
+static cob_u64_t		last_exception_code;	/* Last exception: code */
 static int			active_error_handler = 0;
 static int			in_stop_run = 0;
 
@@ -412,8 +412,8 @@ static const char		* const cob_exception_tab_name[] = {
 };
 
 #undef	COB_EXCEPTION
-#define COB_EXCEPTION(code, tag, name, critical)	0x##code,
-static const int		cob_exception_tab_code[] = {
+#define COB_EXCEPTION(code, tag, name, critical)	code,
+static const cob_u64_t		cob_exception_tab_code[] = {
 	0,		/* COB_EC_ZERO */
 #include "exception.def"
 	0		/* COB_EC_MAX */
@@ -421,7 +421,7 @@ static const int		cob_exception_tab_code[] = {
 
 #undef COB_EXCEPTION
 
-#define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
+#define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (cob_u64_t)
 
 /* Switches */
 #define	COB_SWITCH_MAX	36  /* maximum switches, must match cobc/tree.h! */
@@ -3001,7 +3001,7 @@ cob_str_case_str (char *str1, const char *str2)					/* Like  strcasestr  */
 }
 
 /* get last exception (or 0 if not active) */
-int
+cob_u64_t
 cob_get_last_exception_code (void)
 {
 	return last_exception_code;
@@ -3139,7 +3139,7 @@ cob_add_exception (const int id)
 void
 cob_accept_exception_status (cob_field *f)
 {
-	int exception = last_exception_code;
+	cob_u64_t exception = last_exception_code;
 	/* Note: MF set this to a 9(3) item, we do a translation here (only works for USAGE DISPLAY!);
 	   MF: intended for CALL only, 0=ok, 1=ENOMEM, 2=module not found, 128 other CALL failure,
 	   "unpredictable if the last statement was not a CALL, especially: adjusted by fileio" */

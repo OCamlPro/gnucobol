@@ -295,7 +295,7 @@ struct filename {
 /* Exception structure */
 struct cb_exception {
 	const char	*name;			/* Exception name */
-	const int	code;			/* Exception code */
+	const cob_u64_t	code;			/* Exception code */
 	int		enable;			/* If turned on */
 	int		fatal;			/* If recognizing this should abort */
 };

@@ -48,6 +48,10 @@
 
 #define COB_INSIDE_SIZE		64
 
+/* 64 bit exception code in generated code */
+#define CB_FMT_EC		"0x%llxULL"
+#define CB_ARG_EC(id)		((unsigned long long) CB_EXCEPTION_CODE (id))
+
 /* Type of initialization to be done */
 enum cobc_init_type {
 	INITIALIZE_NONE = 0,	/* no init (beause of FILLER, REDEFINES, ...) */
@@ -2141,7 +2145,7 @@ output_debugging_fields (struct cb_program *prog)
 	COB_UNUSED (prog);
 	if (need_save_exception) {
 		output_local ("\n/* DEBUG exception code save */\n");
-		output_local ("int\t\tsave_exception_code = 0;\n");
+		output_local ("cob_u64_t\tsave_exception_code = 0;\n");
 	}
 }
 
@@ -7997,9 +8001,9 @@ output_call (struct cb_call *p)
 	if (dynamic_link) {
 		/* ensure that we don't have a program exception set already
 		   as this will be checked directly when returning from CALL */
-		output_line ("if ((cob_global_exception & 0x%04x) == 0x%04x) "
+		output_line ("if ((cob_global_exception & " CB_FMT_EC ") == " CB_FMT_EC ") "
 				"cob_global_exception = 0;",
-			CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
+			CB_ARG_EC (COB_EC_PROGRAM), CB_ARG_EC (COB_EC_PROGRAM));
 	}
 
 	/* fence check before the CALL to ensure it works and gets untrashed 01/77 */
@@ -8275,8 +8279,8 @@ output_call (struct cb_call *p)
 	}
 
 	if (except_id > 0) {
-		output_line ("if ((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
-			CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
+		output_line ("if ((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ") == " CB_FMT_EC ")",
+			CB_ARG_EC (COB_EC_PROGRAM), CB_ARG_EC (COB_EC_PROGRAM));
 		output_line ("\tgoto %s%d;", CB_PREFIX_LABEL, except_id);
 	}
 
@@ -9463,7 +9467,7 @@ output_ml_suppress_checks (struct cb_ml_suppress_checks * const suppress_checks)
 
 /* Output statement */
 
-static int
+static cob_u64_t
 get_ec_code_for_handler (const enum cb_handler_type handler_type)
 {
 	switch (handler_type) {
@@ -9488,8 +9492,8 @@ output_ferror_stmt (const struct cb_statement *stmt)
 	output_line ("if (cob_glob_ptr->cob_exception_code != 0)");
 	output_block_open ();
 	if (stmt->ex_handler) {
-		output_line ("if (cob_glob_ptr->cob_exception_code == 0x%04x)",
-			     get_ec_code_for_handler (stmt->handler_type));
+		output_line ("if (cob_glob_ptr->cob_exception_code == " CB_FMT_EC ")",
+			     (unsigned long long) get_ec_code_for_handler (stmt->handler_type));
 		output_block_open ();
 		output_stmt (stmt->ex_handler);
 		output_block_close ();
@@ -9712,8 +9716,8 @@ output_alter_check (const struct cb_label *lp)
 static void
 output_level_2_ex_condition (const int level_2_ec)
 {
-	output_line ("if ( (cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x)",
-		     CB_EXCEPTION_CODE (level_2_ec));
+	output_line ("if (cob_glob_ptr->cob_exception_code & " CB_FMT_EC ")",
+		     CB_ARG_EC (level_2_ec));
 }
 
 static void
@@ -9721,16 +9725,16 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 {
 	int	imp_ec;
 
-	output_line ("if ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x",
-		     CB_EXCEPTION_CODE (COB_EC_SCREEN));
+	output_line ("if ((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ")",
+		     CB_ARG_EC (COB_EC_SCREEN));
 
 	if (handler_type == DISPLAY_HANDLER) {
 		imp_ec = COB_EC_IMP_DISPLAY;
 	} else { /* ACCEPT_HANDLER */
 		imp_ec = COB_EC_IMP_ACCEPT;
 	}
-	output_line ("     || cob_glob_ptr->cob_exception_code == 0x%04x)",
-		     CB_EXCEPTION_CODE (imp_ec));
+	output_line ("     || cob_glob_ptr->cob_exception_code == " CB_FMT_EC ")",
+		     CB_ARG_EC (imp_ec));
 }
 
 static void
@@ -9777,7 +9781,7 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 static void
 output_ec_size_handler (void)
 {
-	int ec_checked = 0;
+	cob_u64_t ec_checked = 0;
 	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)) {
 		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ADDRESS);
 	}
@@ -9801,11 +9805,10 @@ output_ec_size_handler (void)
 	}
 	if (ec_checked) {
 		output_line (
-			"if (((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
-			CB_EXCEPTION_CODE (COB_EC_SIZE),
-			CB_EXCEPTION_CODE (COB_EC_SIZE));
-		output_line (" && ((cob_glob_ptr->cob_exception_code & 0x%04x) != 0)",
-			ec_checked & 0x00FF);
+			"if (((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ") != 0)",
+			CB_ARG_EC (COB_EC_SIZE));
+		output_line (" && ((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ") != 0)",
+			(unsigned long long) (ec_checked & COB_EC_EXC_MASK));
 		output_line ( " && (cob_glob_ptr->cob_got_exception > 0))");
 		output_line ("\t" "cob_fatal_error (COB_FERROR_FATAL_EC);");
 	}

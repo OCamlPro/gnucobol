@@ -1,4 +1,10 @@
 
+2026-11-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h, common.c, coblocal.h, exception.def, exception-io.def, numeric.c:
+	  64 bit exception codes, one bit per group and per exception
+	* exception.def: fix duplicate code of EC-FUNCTION-IMP
+
 2026-11-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* numeric.c (cob_decimal_div), common.c (cob_module_leave, cob_fatal_error),

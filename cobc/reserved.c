@@ -5216,7 +5216,7 @@ cb_list_exceptions (void)
 		if (i == COB_EC_ALL) {
 			/* EC-ALL - level-1 EC to set all ECs, no indent */
 			printf ("\n%s", CB_EXCEPTION_NAME (i));
-		} else if ((CB_EXCEPTION_CODE(i) & 0x00FF) == 0) {
+		} else if ((CB_EXCEPTION_CODE(i) & COB_EC_EXC_MASK) == 0) {
 			/* EC level-2 EC, newline and indent by 2 */
 			printf ("\n  %-26s", CB_EXCEPTION_NAME (i));
 		} else {
