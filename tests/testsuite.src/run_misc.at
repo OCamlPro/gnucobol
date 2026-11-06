@@ -4241,10 +4241,8 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 # lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true \
-$COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false \
-$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
 # lookup with full path
 AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" \
 $COBCRUN_DIRECT ./caller], [0], [], [])
@@ -4253,9 +4251,9 @@ AT_CLEANUP
 
 
 AT_SETUP([resolve / execution in parallel threads])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL cob_resolve cob_tidy pthread])
+AT_KEYWORDS([runmisc COB_LOAD_GLOBAL COB_PRE_LOAD cob_resolve cob_tidy pthread])
 
-# check COB_LOAD_GLOBAL=false - could fail on some environments,
+# check COB_LOAD_GLOBAL=LOCAL_PREFERRED - could fail on some environments,
 # but those are unlikely to have linkable pthreads as well
 
 AT_DATA([caller.c], [
@@ -4350,8 +4348,7 @@ int main (int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 ])
-# FIXME: this is an error, so all the real tests below are skipped
-AT_CHECK([$CMPILE -ldl -lpthread caller.c], [0], [], [], [
+AT_CHECK([$COMPILE -ldl -lpthread caller.c], [0], [], [], [
    echo "C compilation / linking failed, skipping rest of group"
    AT_SKIP_IF([:])
 ])
@@ -4374,10 +4371,34 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false \
-$COBCRUN_DIRECT ./caller], [0],
+AT_CHECK([COB_LOAD_GLOBAL=LOCAL_PREFERRED ./caller], [0],
 [Final count: 01000
 Final count: 01000
+], [])
+
+# Preloading an alternate implementation of prog must work in each
+# dlmopen namespace, with independent working-storage for each thread.
+AT_DATA([preloaded.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield" ON EXCEPTION CONTINUE
+           END-PERFORM
+           DISPLAY "Preloaded count: " COUNTER
+           GOBACK.
+])
+AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob],
+    [0], [], [])
+AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_GLOBAL=LOCAL_ONLY ./caller], [0],
+[Preloaded count: 01000
+Preloaded count: 01000
 ], [])
 
 AT_CLEANUP
@@ -4445,14 +4466,12 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true \
-$COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=GLOBAL $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
 ], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false \
-$COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=LOCAL_PREFERRED $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4550,10 +4569,8 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=true \
-$COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false \
-$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
