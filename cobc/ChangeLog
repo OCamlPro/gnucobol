@@ -1,4 +1,13 @@
 
+2026-11-06  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y (examine_format_variant): use a reference to TALLY
+	  (fixes big-endian crash)
+	* codegen.c (output_attr): use COMP-5 for internal registers also
+	  without byte swap (big-endian)
+	* codegen.c (output_entry_function, output_sticky_parm_address):
+	  pass the low bytes of narrower BY VALUE parameters (big-endian)
+
 2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_error_name): do not change caller's buffer

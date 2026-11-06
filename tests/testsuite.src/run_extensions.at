@@ -2033,11 +2033,15 @@ AT_DATA([caller.cob], [
        01.
          03 SOME-FILL   PIC X(33).
          03 ADR-PTR     USAGE POINTER.
+      >> IF P64 SET
+         03 ADR-BUFFER  REDEFINES ADR-PTR  USAGE COMP-5 PIC S9(18).
+      >> ELSE
          03 ADR-BUFFER  REDEFINES ADR-PTR  USAGE COMP-5 PIC S9(8).
+      >> END-IF
        77 BIG-BUFF      USAGE COMP-5 PIC S9(18) VALUE 99999999999999.
        PROCEDURE        DIVISION  CHAINING CALL-NAME.
 
-      >> IF P64 DEFINED
+      >> IF P64 SET
            MOVE "callee64" TO CALL-NAME
       >> ELSE
            MOVE "callee32" TO CALL-NAME
@@ -2051,7 +2055,7 @@ AT_DATA([caller.cob], [
            CALL CALL-NAME USING BY VALUE LENGTH OF SOME-FILL
 
            MOVE -42 TO ADR-BUFFER
-      >> IF P64 DEFINED
+      >> IF P64 SET
            CALL "callee32" USING BY VALUE SIZE 4 ADR-BUFFER
            CALL "callee64" USING BY VALUE BIG-BUFF
       >> ELSE
