@@ -1,4 +1,9 @@
 
+2026-11-06  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* runtime.cfg (COB_LOAD_GLOBAL): document LOCAL_PREFERRED, GLOBAL and
+	  LOCAL_ONLY modes and their numeric equivalents
+
 2026-10-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobol2002.cfg, cobol2014.cfg: comment not-yet implemented functions

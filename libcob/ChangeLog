@@ -1,4 +1,9 @@
 
+2026-11-06  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* call.c (pre_load_once): promote cob_load_global to COB_LOAD_GLOBAL for
+	  pre-loaded modules only when COB_LOAD_LOCAL_ONLY is not explicitly set
+
 2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_unstring_into_intern): fix overflow for multiple UNSTRING
