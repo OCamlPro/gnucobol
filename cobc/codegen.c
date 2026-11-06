@@ -1651,7 +1651,6 @@ output_attr (const cb_tree x)
 					type = COB_TYPE_NUMERIC_COMP5;
 				} else
 				if (type == COB_TYPE_NUMERIC_BINARY
-				 && (f->flag_binary_swap || f->flag_real_binary)
 				 && (f->flag_indexed_by || f->index_type || f->flag_internal_register)) {
 					type = COB_TYPE_NUMERIC_COMP5;
 				}
@@ -13483,6 +13482,24 @@ try_get_by_value_parameter_type (const enum cb_usage usage,
 	return NULL;
 }
 
+/* set cob_parm_N to the address of the by-value sticky variable */
+static void
+output_sticky_parm_address (const int id, const int size)
+{
+#ifdef	WORDS_BIGENDIAN
+	if (size < 8) {
+		/* value is right-aligned in its C variable */
+		output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d"
+			" + (sizeof (cob_parm_l_%d) > %d ? sizeof (cob_parm_l_%d) - %d : 0);",
+			id, id, id, size, id, size);
+		return;
+	}
+#else
+	COB_UNUSED (size);
+#endif
+	output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;", id, id);
+}
+
 static void
 output_program_entry_function_parameters (cb_tree using_list, const int gencode,
 					  const char ** const s_type)
@@ -13552,6 +13569,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	cob_u32_t		n;
 	int			sticky_ids[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			sticky_nonp[MAX_CALL_FIELD_PARAMS] = { 0 };
+	int			sticky_size[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			entry_convention = 0;
 
 	/* LCOV_EXCL_START */
@@ -13653,6 +13671,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 		cb_tree f_tree = CB_VALUE (l);
 		f = cb_code_field (f_tree);
 		sticky_ids[parmnum] = f->id;
+		sticky_size[parmnum] = (int)f->size;
 		if (!cb_sticky_linkage
 		 && (entry_convention & CB_CONV_COBOL)) {
 			output_line ("cob_u8_t *cob_parm_%d = NULL;"
@@ -13724,9 +13743,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 							output_line ("cob_parm_l_%d = %s%d;",
 								sticky_ids[n], CB_PREFIX_BASE,
 								sticky_ids[n]);
-							output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-								sticky_ids[n],
-								sticky_ids[n]);
+							output_sticky_parm_address (sticky_ids[n],
+								sticky_size[n]);
 						} else {
 							output_line ("cob_parm_%d = %s%d;",
 								sticky_ids[n], CB_PREFIX_BASE,
@@ -13748,9 +13766,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 					output_line ("cob_parm_l_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
 						sticky_ids[n]);
-					output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-						sticky_ids[n],
-						sticky_ids[n]);
+					output_sticky_parm_address (sticky_ids[n],
+						sticky_size[n]);
 				} else {
 					output_line ("cob_parm_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
@@ -13887,6 +13904,14 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 							  || f2->usage == CB_USAGE_PROGRAM_POINTER)
 							 && (entry_convention & CB_CONV_COBOL)) {
 								output (", (cob_u8_ptr)&ptr_%d", f2->id);
+#ifdef	WORDS_BIGENDIAN
+							} else if (f2->size < 8) {
+								/* value is right-aligned in its C variable */
+								output (", (cob_u8_ptr)&%s%d + (sizeof (%s%d) > %d ? sizeof (%s%d) - %d : 0)",
+									CB_PREFIX_BASE, f2->id,
+									CB_PREFIX_BASE, f2->id, (int)f2->size,
+									CB_PREFIX_BASE, f2->id, (int)f2->size);
+#endif
 							} else {
 								output (", (cob_u8_ptr)&%s%d",
 									CB_PREFIX_BASE, f2->id);
