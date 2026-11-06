@@ -138,16 +138,6 @@ jobs:
           cd tests/testsuite.src
           sed -i '' '/AT_SETUP(\[LINE SEQUENTIAL COMMIT \/ ROLLBACK\])/a \
                       AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '' '/AT_SETUP(\[INDEXED file SUPPRESS WHEN ALL \+ KEYCHECK\])/a \
-                      AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '' '/AT_SETUP(\[EXTFH: using ISAM callback\])/a \
-                      AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature\])/a \
-                      AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature with subroutine\])/a \
-                      AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '' '/AT_SETUP(\[trace feature with indexed EXTFH\])/a \
-                      AT_SKIP_IF(\[true\])' run_file.at
 
       - name: Run testsuite
         run: |

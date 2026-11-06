@@ -75,7 +75,7 @@ enum xref_type {
 #endif
 
 struct strcache {
-	struct strcache	*next;	
+	struct strcache	*next;
 	void		*val;
 	cob_u32_t	hash;
 };
@@ -247,7 +247,7 @@ const size_t COBC_MEM_SIZE =
 	((sizeof(struct cobc_mem_struct) + sizeof(long long) - 1)
 	/ sizeof(long long)) * sizeof(long long);
 
-#define	COB_EXCEPTION(code,tag,name,fatal) {name, 0x##code, 0, fatal},
+#define	COB_EXCEPTION(code,tag,name,fatal) {name, code, 0, fatal},
 struct cb_exception cb_exception_table[] = {
 	{NULL, 0, 0, 0},	/* CB_EC_ZERO */
 #include "../libcob/exception.def"
@@ -1560,12 +1560,17 @@ static void
 cobc_error_name (const char *name, const enum cobc_name_type type,
 		 const enum name_error_reason reason)
 {
-	const char *s, *dots = "";
+	char	name_buff[COB_MAX_NAMELEN + 5];
+	const char	*s;
 
 	switch (reason) {
 	case INVALID_LENGTH:	/* > COB_MAX_NAMELEN ("normal mode ") || > COB_MAX_WORDLEN */
-		s = _(" - length exceeds maximum");
-		dots = "...";
+		s = _("length exceeds maximum");
+		if (strlen (name) > sizeof(name_buff) - 1) {
+			memcpy (name_buff, name, COB_MAX_NAMELEN);
+			strcpy (name_buff + COB_MAX_NAMELEN, "...");
+			name = (const char *)&name_buff;
+		}
 		break;
 	case EMPTY_NAME:
 		s = _("name cannot be empty");
@@ -1609,8 +1614,8 @@ cobc_error_name (const char *name, const enum cobc_name_type type,
 	default:
 		/* internal rare error (should be raised for 'a-[150 times]-b'),
 		   no need for translation */
-		cobc_err_msg ("unknown name error '%.32s%s'%s%s",
-			name, dots, s[0] ? " - " : "", s);
+		cobc_err_msg ("unknown name error '%s'%s%s",
+			name, s[0] ? " - " : "", s);
 		break;
 	}
 }
@@ -1694,10 +1699,10 @@ turn_ec_for_table (struct cb_exception *table, const size_t table_len,
 		for (i = 0; i < table_len; ++i) {
 			table[i].enable = to_on_off;
 		}
-	} else if ((ec.code & 0x00FF) == 0) {
+	} else if ((ec.code & COB_EC_EXC_MASK) == 0) {
 		/* Set all ECs subordinate to level-2 EC */
 		for (i = 0; i < table_len; ++i) {
-			if ((table[i].code & 0xFF00) == ec.code) {
+			if (table[i].code & ec.code) {
 				table[i].enable = to_on_off;
 			}
 		}
@@ -4853,7 +4858,7 @@ process_filename (const char *filename)
 	if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_strdup (output_name);
 	} else
-	if (save_temps   /* Oct 9 change ??? */
+	if ( save_temps
 	 || (cb_compile_level == CB_LEVEL_PREPROCESS && !cb_depend_output_only)) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {

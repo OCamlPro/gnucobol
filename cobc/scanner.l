@@ -685,6 +685,31 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (END_FUNCTION);
 }
 
+"END"[ ,;\n]+"CLASS"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_CLASS);
+}
+
+"END"[ ,;\n]+"FACTORY"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_FACTORY);
+}
+
+"END"[ ,;\n]+"OBJECT"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_OBJECT);
+}
+
+"END"[ ,;\n]+"METHOD"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_METHOD);
+}
+
+"END"[ ,;\n]+"INTERFACE"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (END_INTERFACE);
+}
+
 "PICTURE"[ ,;\n]+"SYMBOL"/[ .,;\n] {
 	if (lookup_reserved_word ("SYMBOL")) {
 		count_lines (yytext);
@@ -1098,6 +1123,10 @@ H#[0-9A-Za-z]+ {
 			yylval = cb_build_alphanumeric_literal (yytext, (size_t)yyleng);
 			RETURN_TOK (LITERAL);
 		}
+	} else if ((second_last_token == CLASS_ID && last_token == TOK_DOT)
+		|| last_token == END_CLASS) {
+		yylval = cb_build_reference (yytext);
+		RETURN_TOK (OO_CLASS_NAME);
 	}
 
 	/* Check reserved word */
@@ -1133,6 +1162,20 @@ H#[0-9A-Za-z]+ {
 		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
 			yylval = cb_build_reference (yytext);
 			RETURN_TOK (USER_FUNCTION_NAME);
+		}
+	}
+	for (l = current_program->class_spec_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
+			yylval = cb_build_reference (yytext);
+			RETURN_TOK (OO_CLASS_NAME);
+		}
+	}
+	for (l = current_program->interface_spec_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (!strcasecmp (yytext, CB_PROTOTYPE (x)->name)) {
+			yylval = cb_build_reference (yytext);
+			RETURN_TOK (OO_INTERFACE_NAME);
 		}
 	}
 	if (cobc_allow_program_name) {
@@ -1301,6 +1344,11 @@ H#[0-9A-Za-z]+ {
 ":" {
 	yylval = NULL;
 	RETURN_TOK (TOK_COLON);
+}
+
+"::" {
+	yylval = NULL;
+	RETURN_TOK (TOK_COLON_COLON);
 }
 
 "=" {
@@ -1488,6 +1536,11 @@ read_literal (const char mark, const enum cb_literal_type type)
 #if EOF != 0
 		if (c == 0) break;	/* fixes unexpected error case */
 #endif
+		if (c == '\n') {
+			unput ('\n');
+			c = 0;
+			break;
+		}
 		if (!literal_error) {
 			if (i + 1 == plex_size) {
 				plex_size *= 2;
@@ -1568,7 +1621,12 @@ read_literal (const char mark, const enum cb_literal_type type)
 		) {
 			snprintf (err_msg, COB_MINI_MAX,
 				_("missing terminating %c character"), mark);
-			plex_buff[i] = 0; /* ensure valid C-string for error message */
+			/* ensure valid but not overlylong C-string for error message */
+			if (i > CB_ERR_LITMAX) {
+				plex_buff[CB_ERR_LITMAX + 1] = 0;
+			} else {
+				plex_buff[i] = 0;
+			}
 			error_literal ("", plex_buff, literal_error);
 			if (!literal_error) {
 				literal_error = i;
@@ -1850,7 +1908,7 @@ scan_z (const char *text, const char *type)
 static int
 scan_h (const char *text, const char *type)
 {
-	size_t		curr_len;
+	size_t		real_len, curr_len;
 	char		*p;
 	cob_u64_t	val = 0;
 	int 		c;
@@ -1864,7 +1922,10 @@ scan_h (const char *text, const char *type)
 	}
 
 	/* curr_len can include the terminating quote */
-	curr_len = strlen (text);
+	real_len = curr_len = strlen (text);
+	if (curr_len > COB_MINI_MAX) {
+		curr_len = COB_MINI_MAX;
+	}
 	memcpy (plex_buff, text, curr_len + 1);
 	if (type[1] != '#') {
 		curr_len--;
@@ -1877,11 +1938,13 @@ scan_h (const char *text, const char *type)
 			RETURN_TOK (LITERAL);
 		}
 		plex_buff[curr_len] = 0;
+		real_len--;
 	}
 	if (curr_len > 16) {
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %lu exceeds %u characters"),
-			  (unsigned long) curr_len,  16);
+			  (unsigned long) real_len,  16);
+		plex_buff[COB_MINI_MAX] = 0;	/* saveguard for extra long texts */
 		error_literal ("hex", plex_buff, literal_error++);
 	}
 
@@ -2021,7 +2084,7 @@ scan_b (const char *text, const char *type)
 static int
 scan_o (const char *text, const char *type)
 {
-	size_t		curr_len;
+	size_t		curr_len, real_len;
 	cob_u64_t	val = 0;
 	char		*p;
 	char		c;
@@ -2041,12 +2104,16 @@ scan_o (const char *text, const char *type)
 		}
 	}
 
-	curr_len = strlen (text);
+	real_len = curr_len = strlen (text);
+	if (curr_len > COB_MINI_MAX) {
+		curr_len = COB_MINI_MAX;
+	}
 	memcpy (plex_buff, text, curr_len + 1);
 	if (curr_len > 22) {
 		snprintf (err_msg, COB_MINI_MAX,
 			  _("literal length %lu exceeds %u characters"),
-			  (unsigned long) curr_len, 22);
+			  (unsigned long) real_len, 22);
+		plex_buff[COB_MINI_MAX] = 0;	/* saveguard for extra long texts */
 		error_literal (type, plex_buff, literal_error++);
 	}
 

@@ -770,23 +770,30 @@ typedef __mpz_pseudo_struct mpz_t[1];
 
 enum cob_fatal_error {
 	COB_FERROR_NONE = 0,
-	COB_FERROR_CANCEL,
 	COB_FERROR_INITIALIZED,
 	COB_FERROR_CODEGEN,
 	COB_FERROR_CHAINING,
 	COB_FERROR_STACK,
-	COB_FERROR_GLOBAL,
 	COB_FERROR_MEMORY,
 	COB_FERROR_MODULE,
-	COB_FERROR_RECURSIVE,
 	COB_FERROR_SCR_INP,
 	COB_FERROR_FILE,
-	COB_FERROR_FUNCTION,
 	COB_FERROR_FREE,
-	COB_FERROR_DIV_ZERO,
 	COB_FERROR_XML,
-	COB_FERROR_JSON
+	COB_FERROR_JSON,
+	COB_FERROR_FATAL_EC,
 };
+
+/* Exception codes: 64 bit, group in the upper 32 bits (one bit per group,
+   1..32), exception in the lower 32 bits (one bit per exception, 1..32);
+   a group has only its group bit set */
+#define COB_EC_GROUP_BIT(g)	((cob_u64_t)1 << (31 + (g)))
+#define COB_EC_EXC_BIT(e)	((cob_u64_t)1 << ((e) - 1))
+#define COB_EC_GROUP(g)		COB_EC_GROUP_BIT (g)
+#define COB_EC_CODE(g,e)	(COB_EC_GROUP_BIT (g) | COB_EC_EXC_BIT (e))
+#define COB_EC_CODE_ALL		(~(cob_u64_t)0)
+#define COB_EC_GROUP_MASK	COB_U64_C(0xFFFFFFFF00000000)
+#define COB_EC_EXC_MASK		COB_U64_C(0x00000000FFFFFFFF)
 
 /* Exception identifier enumeration */
 
@@ -1324,6 +1331,11 @@ typedef struct __cob_decimal {
 	mpz_t		value;			/* GMP value definition */
 	int 		scale;			/* Decimal scale */
 } cob_decimal;
+
+/* Not-A-Number, as scale of a decimal */
+#define COB_DECIMAL_NAN		-32768
+/* Infinity, as scale of a decimal */
+#define COB_DECIMAL_INF		-32767
 #endif
 
 /* Perform stack structure */
@@ -1394,7 +1406,10 @@ typedef struct __cob_screen {
 /* Module structure */
 enum cob_module_type {
 	COB_MODULE_TYPE_PROGRAM		= 0,
-	COB_MODULE_TYPE_FUNCTION	= 1
+	COB_MODULE_TYPE_FUNCTION	= 1,
+	COB_MODULE_TYPE_CLASS		= 2,
+	COB_MODULE_TYPE_INTERFACE	= 3,
+	COB_MODULE_TYPE_METHOD		= 4
 };
 
 /*
@@ -1886,15 +1901,18 @@ typedef struct __cob_global {
 	char			*cob_locale_numeric;	/* Initial locale */
 	char			*cob_locale_time;	/* Initial locale */
 
-	int			cob_exception_code;	/* current exception code, in contrast to last_exception_code heavily changed */
+	cob_u64_t		cob_exception_code;	/* current exception code, in contrast to last_exception_code heavily changed */
 	int			cob_call_params;	/* Number of current arguments
 									   This is set to the actual number before a CALL
 									   and is stored directly on module entry to its
 									   cob_module structure within cob_module_enter().
 									*/
 	int			cob_initial_external;	/* First external ref */
-	unsigned int		last_exception_line;		/* Last exception: Program source line */
-	unsigned int		cob_got_exception;	/* Exception active (see last_exception) */
+	unsigned int		last_exception_line;	/* Last exception: Program source line */
+	unsigned int		last_exception_fatal;	/* Last exception: is fatal */
+	int			cob_exception_id;	/* current exception id, to use with internal
+							   exceptions table */
+	int			cob_got_exception;	/* Exception active (see last_exception) */
 	unsigned int		cob_screen_initialized;	/* Screen initialized */
 	unsigned int		cob_physical_cancel;	/* Unloading of modules */
 							/* screenio / termio */
@@ -1951,6 +1969,7 @@ COB_EXPIMP const char *	cob_relocate_string (const char *str);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
+COB_EXPIMP int		cob_last_exception_fatal (void);
 
 COB_EXPIMP int		cob_last_exit_code	(void);
 COB_EXPIMP const char*	cob_last_runtime_error	(void);
@@ -3000,6 +3019,7 @@ COB_EXPIMP void		cob_get_indirect_field		(cob_field *);
 COB_EXPIMP cob_field *cob_switch_value			(const int);
 COB_EXPIMP cob_field *cob_intr_binop			(cob_field *, const int,
 							 cob_field *);
+COB_EXPIMP int cob_valid_pow				(cob_field *, cob_field *);
 
 COB_EXPIMP int cob_check_numval				(const cob_field *,
 							 const cob_field *,

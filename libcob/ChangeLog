@@ -1,4 +1,32 @@
 
+2026-11-05  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h, common.c, coblocal.h, exception.def, exception-io.def, numeric.c:
+	  64 bit exception codes, one bit per group and per exception
+	* common.h, common.c (cob_fatal_error, cob_module_global_enter),
+	  intrinsic.c (error_not_implemented): remove COB_FERROR_CANCEL,
+	  COB_FERROR_RECURSIVE, COB_FERROR_GLOBAL and COB_FERROR_FUNCTION,
+	  use COB_FERROR_FATAL_EC
+	* exception.def: fix duplicate code of EC-FUNCTION-IMP
+
+2026-11-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* numeric.c (cob_decimal_div), common.c (cob_module_leave, cob_fatal_error),
+	  common.h: remove the "divide by ZERO" abort (COB_FERROR_DIV_ZERO), now
+	  handled by the EC-SIZE-ZERO-DIVIDE checks
+
+2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_unstring_into_intern): fix overflow for multiple UNSTRING
+	  delimters when they are longer than the source
+	* intrinsic.c (numval): better handling of too huge input data, raising
+	  EC-ARGUMENT-EXCEPTION and instead of overflow pass the maximum digits,
+	  justified right
+	* common.c (cob_expand_env_string): prevent overflow in case of unexpected
+	  long environment variable names
+	* common.c (cb_config_entry): prevent overflow in case of not existing
+	  configuration names/values before they are validated
+
 2026-10-30  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h (cob_xml_mode, cob_module): use an enum instead
@@ -56,6 +84,29 @@
 
 	* common.c (cob_exit_common): cleanup COB_STDERR and friends
 
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (pow_rules_violated): new function checking the rules for
+	  exponentiation
+	* intrinsic.c (cob_decimal_pow): use pow_rules_violated, raising
+	  EC-SIZE-EXPONENTIATION for 0 ^ -n instead of returning 0
+	* intrinsic.c, common.h (cob_valid_pow): new function checking the rules
+	  for exponentiation, used by the generated code
+	* intrinsic.c (cob_intr_binop): return zero if the rules for
+	  exponentiation are violated, keeping EC-SIZE-EXPONENTIATION instead of
+	  raising EC-ARGUMENT-FUNCTION and EC-SIZE-OVERFLOW
+	* common.h, coblocal.h: move COB_DECIMAL_NAN to common.h for use in the
+	  generated code, along with COB_DECIMAL_INF which is used similar
+
+2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (cob_decimal_pow): 0 ^ 0 now results in NaN instead of 1,
+	  so receiving fields stay unchanged on EC-SIZE-EXPONENTIATION
+	* numeric.c (cob_decimal_get_field): keep EC-SIZE-EXPONENTIATION instead
+	  of overriding it with EC-SIZE-OVERFLOW for a NaN result
+	* numeric.c (cob_s32_pow, cob_s64_pow): set EC-SIZE-EXPONENTIATION for
+	  0 ^ 0 and 0 ^ -n instead of silently returning 1 or raising SIGFPE
+
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_init), profiling.c (cob_prof_print_line): set and handle
@@ -83,11 +134,6 @@
 	* profiling.c (cob_prof_end): hide csv output for any filename that ends
 	  with "hidden.csv" instead of comparing the full name
 
-2026-09-04  David Declerck <david.declerck@ocamlpro.com>
-
-	* fileio.c (cob_file_open, cob_file_close) [_WIN32]:
-	  implement bidirectional pipes under Windows
-
 2026-09-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_setjmp), common.h: cob_setjmp is now a proper function
@@ -106,6 +152,11 @@
 	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
 	  a global scope request, independent of COB_LOAD_GLOBAL setting
 	* common.c: minimal refactor
+
+2026-09-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_file_open, cob_file_close) [_WIN32]:
+	  implement bidirectional pipes under Windows
 
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -163,6 +214,11 @@
 	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
 	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
 
+2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* common.h (cob_module_type): add COB_MODULE_TYPE_CLASS,
+	  COB_MODULE_TYPE_INTERFACE, COB_MODULE_TYPE_METHOD
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
@@ -176,6 +232,14 @@
 	* fileio.c (bdb_keylen) [WITH_DB]->fsqlxfd.c: minor refactoring
 	* fileio.c (cob_file_close): close file depending on internal state, not
 	  depending on file organization
+
+2025-12-04  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* exception.def: exceptions values for EC-SIZE are now bit exclusive
+	* common.h, common.c (cob_last_exception_fatal): new function to check
+	  if the last raised exception was fatal
+	* common.h (struct cob_fatal_error), common.c (cob_fatal_error): add
+	  COB_FERROR_FATAL_EC for terminating the pogram due to a fatal exception
 
 2025-11-19  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -487,7 +551,7 @@
 	  structure if gmp.h / mpir.h / mp.h were not included before, its members
 	  are only used inside libcob anyway; define COB_NO_SELF_DECLARE_MPZ to
 	  create the old COB_WITHOUT_DECIMAL definition instead
-	* coblocal.h:for modules not using GMP use COB_WITHOUT_MPF to declarating
+	* coblocal.h: for modules not using GMP use COB_WITHOUT_MPF to declarating
 	  functions with that type
 
 2024-11-24  Simon Sobisch <simonsobisch@gnu.org>
