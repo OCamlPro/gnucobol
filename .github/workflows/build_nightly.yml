@@ -881,8 +881,7 @@ jobs:
           rem Skip test as it sometimes works and sometimes not...
           rem sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
 
-          rem The following 13 fail (identical to MSYS2)
-          sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
+          rem The following 12 fail (identical to MSYS2)
           sed -i '/AT_SETUP(\[OUTPUT on INDEXED file to missing directory\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[INDEXED undeclared keys\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[PIPE I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at

@@ -396,6 +396,13 @@ static int		return_jmp_buffer_set = 0;
 volatile sig_atomic_t	sig_is_handled = 0;
 #endif
 
+/* Dump recovery (skipping a faulting field) uses setjmp/longjmp, except on
+   Windows x64/arm64 where the handler restores a saved context instead */
+#if !defined (_WIN32) || defined (_M_IX86) || defined (__i386__)
+#define DUMP_RECOVERY_SETJMP
+static jmp_buf		save_sig_env;
+#endif
+
 /* Function Pointer for external signal handling */
 static void		(*cob_ext_sighdl) (int) = NULL;
 
@@ -1489,6 +1496,94 @@ cob_get_sig_description (int sig)
 	return signal_entry.description;
 }
 
+#if defined (_WIN32)
+
+/* Map Win32 exception codes to POSIX signals */
+static int
+win32_exn_to_signal (DWORD code)
+{
+	switch (code) {
+	case EXCEPTION_ACCESS_VIOLATION:
+	case EXCEPTION_IN_PAGE_ERROR:
+	case EXCEPTION_STACK_OVERFLOW:
+	case EXCEPTION_DATATYPE_MISALIGNMENT:
+		return SIGSEGV;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	case EXCEPTION_INT_OVERFLOW:
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+	case EXCEPTION_FLT_OVERFLOW:
+	case EXCEPTION_FLT_UNDERFLOW:
+	case EXCEPTION_FLT_INVALID_OPERATION:
+	case EXCEPTION_FLT_DENORMAL_OPERAND:
+	case EXCEPTION_FLT_INEXACT_RESULT:
+	case EXCEPTION_FLT_STACK_CHECK:
+		return SIGFPE;
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+	case EXCEPTION_PRIV_INSTRUCTION:
+		return SIGILL;
+	default:
+		return 0;
+	}
+}
+
+/* Dump recovery state, see win32_exn_handler */
+static volatile int	win32_dump_active = 0;	/* armed while dumping a field */
+static volatile int	win32_dump_faulted = 0;	/* set by the handler on a fault */
+#ifdef DUMP_RECOVERY_SETJMP
+/* Resume point after a fault: back outside exception dispatch, jump to the setjmp */
+static void
+win32_dump_landing (void)
+{
+	longjmp (save_sig_env, 1);
+}
+#else
+static CONTEXT		win32_dump_ctx;		/* saved by DUMP_RECOVERY_ARM */
+#endif
+
+/* Win32 counterpart of cob_set_dump_signal */
+static void
+win32_set_dump_recovery (int active)
+{
+	win32_dump_active = active;
+	win32_dump_faulted = 0;
+}
+
+static PVOID		win32_exn_handle = NULL;	/* see cob_set_signal */
+
+/* Vectored Exception Handler (VEH) to treat hardware faults as POSIX signals */
+static LONG CALLBACK
+win32_exn_handler (EXCEPTION_POINTERS *ep)
+{
+	int			sig;
+	struct signal_table	entry;
+
+	sig = win32_exn_to_signal (ep->ExceptionRecord->ExceptionCode);
+	if (sig == 0) {
+		/* Exceptions we do not handle: just pass through */
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	entry = get_signal_entry (sig);
+
+	/* A fault while dumping a field resumes at the recovery point,
+	   by patching the context (never by jumping from the handler) */
+	if (entry.for_dump && win32_dump_active) {
+		win32_dump_faulted = 1;
+#ifdef DUMP_RECOVERY_SETJMP
+		ep->ContextRecord->Eip = (DWORD) (DWORD_PTR) win32_dump_landing;
+#else
+		*ep->ContextRecord = win32_dump_ctx;
+#endif
+		return EXCEPTION_CONTINUE_EXECUTION;
+	}
+
+	/* Only handle the signals that cob_set_signal took over */
+	if (entry.for_set) {
+		cob_sig_handler (sig);
+	}
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif	/* _WIN32 */
+
 static void
 cob_init_sig_descriptions (void)
 {
@@ -1593,8 +1688,20 @@ cob_set_signal (void)
 	void (*ohdlr) (int);
 #endif
 
+#if defined (_WIN32)
+	/* Registered once, whatever the regime: it also does the dump recovery */
+	if (win32_exn_handle == NULL) {
+		win32_exn_handle = AddVectoredExceptionHandler (1, win32_exn_handler);
+	}
+#endif
+
 	if (signal_regime == '2') {
 		/* Don't set any signal */
+#if defined (_WIN32)
+		for (k = 0; k < NUM_SIGNALS; k++) {
+			signals[k].for_set = 0;	/* the handler must not handle any */
+		}
+#endif
 		return;
 	}
 
@@ -1646,6 +1753,11 @@ cob_set_signal (void)
 				ohdlr = signal (signals[k].sig, cob_sig_handler);
 				if (ohdlr != SIG_DFL) {
 					(void)signal (signals[k].sig, ohdlr);
+#if defined (_WIN32)
+					if (ohdlr != cob_sig_handler) {
+						signals[k].for_set = 0;	/* not ours: the handler must not handle it */
+					}
+#endif
 				}
 			} else {
 				/* Take direct control of some hard errors */
@@ -11418,12 +11530,35 @@ static int	sym_idx = 0;
 static int	sym_sub [SYM_MAX_IDX];
 static int	sym_size[SYM_MAX_IDX];
 
-static jmp_buf save_sig_env;
-static void 
+/* Skipping a faulting field in cob_dump_symbols:
+   DUMP_RECOVERY_ARM () before dumping the field,
+   if (DUMP_RECOVERY_FAULTED ()) once a fault came back to that point
+   (the setjmp variants are only valid as an if condition),
+   DUMP_RECOVERY_DISARM () when done */
+#if defined (_WIN32)
+#define DUMP_RECOVERY_DISARM()	win32_set_dump_recovery (0)
+#ifdef DUMP_RECOVERY_SETJMP
+#define DUMP_RECOVERY_ARM()	win32_set_dump_recovery (1)
+#define DUMP_RECOVERY_FAULTED()	setjmp (save_sig_env) != 0
+#else
+#define DUMP_RECOVERY_ARM() \
+	do { \
+		win32_set_dump_recovery (1); \
+		RtlCaptureContext (&win32_dump_ctx); \
+	} while (0)
+#define DUMP_RECOVERY_FAULTED()	win32_dump_faulted
+#endif
+#else
+/* signal handler: longjmp back into cob_dump_symbols to skip the field */
+static void
 catch_sig_jmp (int sig)
-{ 
-	longjmp(save_sig_env, sig);
+{
+	longjmp (save_sig_env, sig);
 }
+#define DUMP_RECOVERY_ARM()	cob_set_dump_signal ((void *)catch_sig_jmp)
+#define DUMP_RECOVERY_FAULTED()	setjmp (save_sig_env) != 0
+#define DUMP_RECOVERY_DISARM()	cob_set_dump_signal (NULL)
+#endif
 
 void
 cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
@@ -11568,8 +11703,8 @@ cob_dump_symbols (cob_module *mod)
 		}
 		skipgrp = 0;
 		cob_sym_get_field (&f0, sym, k);
-		cob_set_dump_signal ((void *)catch_sig_jmp);
-		if (setjmp (save_sig_env) != 0) {
+		DUMP_RECOVERY_ARM ();
+		if (DUMP_RECOVERY_FAULTED ()) {
 			skipgrp = 1;
 			while (sym[k].parent > 0)
 				k = sym[k].parent;
@@ -11612,6 +11747,8 @@ skipsym:
 			}
 		}
 	}
+	/* The recovery point dies with this frame */
+	DUMP_RECOVERY_DISARM ();
 	sprintf (msg, "END OF DUMP - %s", mod->module_name);
 	cob_dump_output (msg);
 	fputc ('\n', fp);
