@@ -7296,20 +7296,10 @@ cob_sys_open_file (unsigned char *file_name, unsigned char *file_access,
 
 	COB_CHK_PARMS (CBL_OPEN_FILE, 5);
 
-#ifdef	WORDS_BIGENDIAN
-	/* if value is passed as numeric literal, it becomes an 'int' so value is in 4th byte */
-	if (file_access[0] == 0
-	 && file_access[1] == 0
-	 && file_access[2] == 0)
-		file_access += 3;
-	if (file_lock[0] == 0
-	 && file_lock[1] == 0
-	 && file_lock[2] == 0)
-		file_lock += 3;
-	if (file_dev[0] == 0
-	 && file_dev[1] == 0
-	 && file_dev[2] == 0)
-		file_dev += 3;
+	file_access = cob_param_low_byte (1, file_access);
+#if 0	/* UNUSED */
+	file_lock = cob_param_low_byte (2, file_lock);
+	file_dev = cob_param_low_byte (3, file_dev);
 #endif
 
 	return open_cbl_file (file_name, file_access, file_handle, 0);
@@ -7329,21 +7319,9 @@ cob_sys_create_file (unsigned char *file_name, unsigned char *file_access,
 
 	COB_CHK_PARMS (CBL_CREATE_FILE, 5);
 
-#ifdef	WORDS_BIGENDIAN
-	/* if value is passed as numeric literal, it becomes an 'int' so value is in 4th byte */
-	if (file_access[0] == 0
-	 && file_access[1] == 0
-	 && file_access[2] == 0)
-		file_access += 3;
-	if (file_lock[0] == 0
-	 && file_lock[1] == 0
-	 && file_lock[2] == 0)
-		file_lock += 3;
-	if (file_dev[0] == 0
-	 && file_dev[1] == 0
-	 && file_dev[2] == 0)
-		file_dev += 3;
-#endif
+	file_access = cob_param_low_byte (1, file_access);
+	file_lock = cob_param_low_byte (2, file_lock);
+	file_dev = cob_param_low_byte (3, file_dev);
 
 	if (*file_lock != 0) {
 		cob_runtime_warning (_("call to CBL_CREATE_FILE with wrong file_lock: %d"), *file_lock);
@@ -7368,6 +7346,7 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	COB_CHK_PARMS (CBL_READ_FILE, 5);
 
 	memcpy (&fd, file_handle, 4);
+	flags = cob_param_low_byte (3, flags);
 	if ((*flags & 0x80) != 0) {
 		struct stat	st;
 		if (fstat (fd, &st) < 0) {

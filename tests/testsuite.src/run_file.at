@@ -14051,7 +14051,8 @@ AT_SETUP([INDEXED file numeric keys ordering])
 AT_KEYWORDS([runfile])
 
 # BUG: non-display numeric keys are currently ordered lexicographically
-# with respect to their binary representation, which is incorrect.
+# with respect to their binary representation, which is incorrect
+# (negative keys also on big-endian).
 # Could be fixed with a custom comparison function (BDB)
 # or using key types other than CHARTYPE (ISAM).
 AT_XFAIL_IF([true])
@@ -14084,6 +14085,10 @@ AT_DATA([prog.cob], [
 
            DISPLAY "WRITING DATA"
 
+           MOVE -1 TO MY-PKEY
+           MOVE 0 TO MY-DATA
+           WRITE MY-REC
+
            MOVE 255 TO MY-PKEY
            MOVE 1 TO MY-DATA
            WRITE MY-REC
@@ -14108,7 +14113,7 @@ AT_DATA([prog.cob], [
            DISPLAY "READING BY PKEY"
 
            MOVE 0 TO DONE-READING
-           MOVE 0 TO MY-PKEY
+           MOVE -1 TO MY-PKEY
            START MY-FILE KEY >= MY-PKEY
 
            PERFORM UNTIL NOT DONE-READING = 0
@@ -14131,6 +14136,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [WRITING DATA
 READING BY PKEY
+-0000000001 0
 +0000000255 1
 +0000000256 2
 +0000065535 3
