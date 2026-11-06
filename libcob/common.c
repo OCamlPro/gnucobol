@@ -528,6 +528,14 @@ static struct config_enum never[] = {{"never", "!"}, {NULL, NULL}};
 static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALSE", "9"}, {"BEEP", "0"}, {NULL, NULL}};
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
+#ifndef _WIN32
+static struct config_enum loadopts[] = {
+	{"LOCAL_PREFERRED", "0"},
+	{"GLOBAL", "1"},
+	{"LOCAL_ONLY", "2"},
+	{NULL, NULL}
+};
+#endif
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
 static struct config_enum sighdlrregopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
@@ -550,7 +558,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
 #ifndef _WIN32
-	{"COB_LOAD_GLOBAL", "load_global", "0", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
+	{"COB_LOAD_GLOBAL", "load_global", "0", loadopts, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_load_global)},
 #endif
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},

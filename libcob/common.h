@@ -1876,6 +1876,13 @@ COB_EXPIMP void			cob_ready_trace		(void);
 COB_EXPIMP void			cob_reset_trace		(void);
 COB_EXPIMP void			cob_nop (void);
 
+/* Dynamic linker symbol visibility policy */
+enum cob_load_mode {
+	COB_LOAD_LOCAL_PREFERRED = 0,
+	COB_LOAD_GLOBAL = 1,
+	COB_LOAD_LOCAL_ONLY = 2
+};
+
 /* Call from outside to set/read/re-evaluate libcob options */
 enum cob_runtime_option_switch {
 	COB_SET_RUNTIME_TRACE_FILE = 0,				/* 'p' is  FILE *  */
