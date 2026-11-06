@@ -792,8 +792,8 @@ enum cob_fatal_error {
 #define COB_EC_GROUP(g)		COB_EC_GROUP_BIT (g)
 #define COB_EC_CODE(g,e)	(COB_EC_GROUP_BIT (g) | COB_EC_EXC_BIT (e))
 #define COB_EC_CODE_ALL		(~(cob_u64_t)0)
-#define COB_EC_GROUP_MASK	((cob_u64_t)0xFFFFFFFF00000000ULL)
-#define COB_EC_EXC_MASK		((cob_u64_t)0x00000000FFFFFFFFULL)
+#define COB_EC_GROUP_MASK	COB_U64_C(0xFFFFFFFF00000000)
+#define COB_EC_EXC_MASK		COB_U64_C(0x00000000FFFFFFFF)
 
 /* Exception identifier enumeration */
 

@@ -49,8 +49,7 @@
 #define COB_INSIDE_SIZE		64
 
 /* 64 bit exception code in generated code */
-#define CB_FMT_EC		"0x%llxULL"
-#define CB_ARG_EC(id)		((unsigned long long) CB_EXCEPTION_CODE (id))
+#define CB_FMT_EC		"COB_U64_C(0x" CB_FMT_LLX ")"
 
 /* Type of initialization to be done */
 enum cobc_init_type {
@@ -8003,7 +8002,7 @@ output_call (struct cb_call *p)
 		   as this will be checked directly when returning from CALL */
 		output_line ("if ((cob_global_exception & " CB_FMT_EC ") == " CB_FMT_EC ") "
 				"cob_global_exception = 0;",
-			CB_ARG_EC (COB_EC_PROGRAM), CB_ARG_EC (COB_EC_PROGRAM));
+			CB_EXCEPTION_CODE (COB_EC_PROGRAM), CB_EXCEPTION_CODE (COB_EC_PROGRAM));
 	}
 
 	/* fence check before the CALL to ensure it works and gets untrashed 01/77 */
@@ -8280,7 +8279,7 @@ output_call (struct cb_call *p)
 
 	if (except_id > 0) {
 		output_line ("if ((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ") == " CB_FMT_EC ")",
-			CB_ARG_EC (COB_EC_PROGRAM), CB_ARG_EC (COB_EC_PROGRAM));
+			CB_EXCEPTION_CODE (COB_EC_PROGRAM), CB_EXCEPTION_CODE (COB_EC_PROGRAM));
 		output_line ("\tgoto %s%d;", CB_PREFIX_LABEL, except_id);
 	}
 
@@ -9495,7 +9494,7 @@ output_ferror_stmt (const struct cb_statement *stmt)
 	output_block_open ();
 	if (stmt->ex_handler) {
 		output_line ("if (cob_glob_ptr->cob_exception_code == " CB_FMT_EC ")",
-			     (unsigned long long) get_ec_code_for_handler (stmt->handler_type));
+			     get_ec_code_for_handler (stmt->handler_type));
 		output_block_open ();
 		output_stmt (stmt->ex_handler);
 		output_block_close ();
@@ -9719,7 +9718,7 @@ static void
 output_level_2_ex_condition (const int level_2_ec)
 {
 	output_line ("if (cob_glob_ptr->cob_exception_code & " CB_FMT_EC ")",
-		     CB_ARG_EC (level_2_ec));
+		     CB_EXCEPTION_CODE (level_2_ec));
 }
 
 static void
@@ -9728,7 +9727,7 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 	int	imp_ec;
 
 	output_line ("if ((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ")",
-		     CB_ARG_EC (COB_EC_SCREEN));
+		     CB_EXCEPTION_CODE (COB_EC_SCREEN));
 
 	if (handler_type == DISPLAY_HANDLER) {
 		imp_ec = COB_EC_IMP_DISPLAY;
@@ -9736,7 +9735,7 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 		imp_ec = COB_EC_IMP_ACCEPT;
 	}
 	output_line ("     || cob_glob_ptr->cob_exception_code == " CB_FMT_EC ")",
-		     CB_ARG_EC (imp_ec));
+		     CB_EXCEPTION_CODE (imp_ec));
 }
 
 static void
@@ -9808,9 +9807,9 @@ output_ec_size_handler (void)
 	if (ec_checked) {
 		output_line (
 			"if (((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ") != 0)",
-			CB_ARG_EC (COB_EC_SIZE));
+			CB_EXCEPTION_CODE (COB_EC_SIZE));
 		output_line (" && ((cob_glob_ptr->cob_exception_code & " CB_FMT_EC ") != 0)",
-			(unsigned long long) (ec_checked & COB_EC_EXC_MASK));
+			ec_checked & COB_EC_EXC_MASK);
 		output_line ( " && (cob_glob_ptr->cob_got_exception > 0))");
 		output_line ("\t" "cob_fatal_error (COB_FERROR_FATAL_EC);");
 	}
