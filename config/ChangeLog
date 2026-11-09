@@ -39,7 +39,7 @@
 
 2024-12-16  Simon Sobisch <simonsobisch@gnu.org>
 
-	* config/runtime.cfg: add COB_LOAD_VISIBILITY
+	* config/runtime.cfg: add COB_LOAD_GLOBAL
 
 2024-08-17 Ammar Almoris <ammaralmorsi@gmail.com>
 
