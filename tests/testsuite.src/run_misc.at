@@ -12002,6 +12002,36 @@ x IS 30000
 AT_CLEANUP
 
 
+AT_SETUP([MOVE literal to BINARY with -fno-trunc])
+AT_KEYWORDS([runmisc size binary-truncate])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X1            PIC 99 COMP.
+       01 X2            PIC S99 COMP.
+       01 X3            PIC 9(5) COMP.
+       PROCEDURE        DIVISION.
+           MOVE 263 TO X1.
+           MOVE 200 TO X2.
+           MOVE 70000 TO X3.
+           DISPLAY X1 " " X2 " " X3.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-trunc prog.cob], [0], [],
+[prog.cob:10: warning: numeric literal exceeds data size
+prog.cob:11: warning: numeric literal exceeds data size
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[007 -056 0000070000
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([Alphanumeric MOVE with truncation])
 AT_KEYWORDS([misc fundamental size])
 

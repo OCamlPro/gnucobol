@@ -1,4 +1,9 @@
 
+2026-11-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* typeck.c (cb_build_move_literal): with -fno-trunc, explicitly truncate
+	  binary literals to field size instead of letting the C compiler do it
+
 2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_error_name): do not change caller's buffer
