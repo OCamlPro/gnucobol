@@ -3368,6 +3368,71 @@ AT_CHECK([$DIFF reference tspfilex.xd], [0], [], [])
 
 AT_CLEANUP
 
+AT_SETUP([XFD directive with overlong parameters])
+AT_KEYWORDS([file cobc sql])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F ASSIGN TO "f" ORGANIZATION INDEXED
+           RECORD KEY IS K.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  F.
+      $XFD NAME=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      $XFD NAME=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      $XFD NAME=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+       01  REC.
+           05  K PIC X(4).
+      $XFD DATE "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+           05  D1 PIC 9(8) COMP-3.
+      $XFD DATE "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
+           05  D2 PIC 9(8) COMP-3.
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -free -fsql prog.cob], [1], [],
+[prog.cob:13: error: XFD directive too long
+prog.cob:14: error: XFD directive too long
+prog.cob:19: error: DATE format too long
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([XFD directive with overlong source line])
+AT_KEYWORDS([file cobc sql])
+
+AT_DATA([base.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F ASSIGN TO "f" ORGANIZATION INDEXED
+           RECORD KEY IS K.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  F.
+@@
+       01  REC.
+           05  K PIC X(4).
+       PROCEDURE DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$AWK '{ if ($0 == "@@") { l = "      $XFD NAME="; for (i = 0; i < 300; i++) l = l "a"; print l } else print }' base.cob > prog.cob], [0])
+
+AT_CHECK([$COMPILE_ONLY -free -fsql prog.cob], [1], [],
+[prog.cob:12: error: XFD directive too long
+])
+
+AT_CLEANUP
+
 
 AT_SETUP([Invalid file name in SELECT])
 AT_KEYWORDS([file])

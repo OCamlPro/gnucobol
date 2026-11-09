@@ -1,4 +1,12 @@
 
+2026-11-12  David Declerck <david.declerck@ocamlpro.com>
+
+	* pplex.l (ppinput): fix buffer overflow on overlong XFD lines
+	* sqlxfdgen.c (xfd_get_params, xfd_params_fit): new functions.
+	  (XFD_LINE_LEN, XFD_PARAM_LEN, XFD_MAX_PARAMS): new macros.
+	  (cb_save_xfd, cb_get_param, cb_parse_xfd): check lengths, fix buffer
+	  overflows on overlong XFD parameters and DATE formats.
+
 2026-11-05  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.h, cobc.c, codegen.c, reserved.c: use 64 bit exception codes
