@@ -4380,9 +4380,7 @@ AT_DATA([thread_sleep.cob], [
        01 DELAY-SECONDS PIC 9V9(6).
 
        PROCEDURE DIVISION.
-           COMPUTE DELAY-SECONDS =
-               (100 + FUNCTION INTEGER(FUNCTION RANDOM * 10))
-               / 1000000
+           COMPUTE DELAY-SECONDS = 0.1 + FUNCTION RANDOM * 0.01
            CONTINUE AFTER DELAY-SECONDS SECONDS
            GOBACK.
 ])
