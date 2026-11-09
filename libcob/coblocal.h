@@ -307,7 +307,7 @@ typedef struct __cob_settings {
 
 	/* call.c */
 	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
-	enum cob_load_mode	cob_load_global; /* Dynamic linker symbol visibility policy */
+	enum cob_load_visibility	cob_load_visibility; /* Dynamic linker symbol visibility policy */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;

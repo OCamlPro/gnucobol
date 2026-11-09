@@ -568,7 +568,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
 #ifndef _WIN32
-	{"COB_LOAD_GLOBAL", "load_global", "0", loadopts, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_load_global)},
+	{"COB_LOAD_VISIBILITY", "load_visibility", "0", loadopts, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_load_visibility)},
 #endif
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},

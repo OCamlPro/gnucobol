@@ -4221,7 +4221,7 @@ AT_CLEANUP
 
 
 AT_SETUP([pre-loading via COB_PRE_LOAD])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL preload])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4241,8 +4241,8 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 # lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
 # lookup with full path
 AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" \
 $COBCRUN_DIRECT ./caller], [0], [], [])
@@ -4251,9 +4251,9 @@ AT_CLEANUP
 
 
 AT_SETUP([resolve / execution in parallel threads])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread])
 
-# check COB_LOAD_GLOBAL=LOCAL_ONLY/PREFERRED - could fail on some environments,
+# check COB_LOAD_VISIBILITY=LOCAL_ONLY/PREFERRED - could fail on some environments,
 # but those are unlikely to have linkable pthreads as well
 
 AT_DATA([caller.c], [
@@ -4411,13 +4411,13 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_GLOBAL=LOCAL_PREFERRED ./caller], [0],
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED ./caller], [0],
 [Final count: 01000
 Final count: 01000
 Final count: 01000
 Final count: 01000
 ], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_GLOBAL=LOCAL_PREFERRED ./caller], [0],
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED ./caller], [0],
 [Final count: 01000
 Final count: 01000
 Final count: 01000
@@ -4444,13 +4444,13 @@ AT_DATA([preloaded.cob], [
 
 AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob], [0], [], [])
 # Pre-loaded modules are not unloaded, but must still be reset.
-AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_GLOBAL=LOCAL_ONLY ./caller], [0],
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY ./caller], [0],
 [Preloaded count: 01000
 Preloaded count: 01000
 Preloaded count: 01000
 Preloaded count: 01000
 ], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_GLOBAL=LOCAL_ONLY ./caller], [0],
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY ./caller], [0],
 [Preloaded count: 01000
 Preloaded count: 01000
 Preloaded count: 01000
@@ -4461,7 +4461,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD with entry points])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -4522,12 +4522,12 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=GLOBAL $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=GLOBAL $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
 ], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=LOCAL_PREFERRED $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4603,8 +4603,8 @@ AT_CHECK([COB_LOAD_CASE=UPPER $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([CALL/CANCEL with COB_LOAD_GLOBAL])
-AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_GLOBAL])
+AT_SETUP([CALL/CANCEL with COB_LOAD_VISIBILITY])
+AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_VISIBILITY])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4625,8 +4625,8 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
