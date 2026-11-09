@@ -597,6 +597,7 @@ COB_HIDDEN int	cob_debug_dump		(void *mem, int len);
          as these parts should be surrounded by #ifdef COB_DEBUG_LOG */
 #endif
 COB_HIDDEN FILE			*cob_get_dump_file	(void);
+COB_HIDDEN int			cob_dump_protected	(void (*) (void *), void *);
 
 
 #if 0 /* currently not used */

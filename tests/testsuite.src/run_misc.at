@@ -10659,6 +10659,61 @@ AT_CHECK([$DIFF reference_append trace_append.txt], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([dump feature with faulting field])
+AT_KEYWORDS([stack stacktrace SOURCE_DATE_EPOCH])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+# A bad (non-NULL) address faults while dumping a field:
+# the rest of the record is skipped and the dump goes on
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  P            USAGE POINTER.
+       01  BEFORE-FLD   PIC X(4) VALUE "FRST".
+       01  BAD-GRP      BASED.
+           05  BAD-FLD  PIC X(4).
+           05  BAD-FLD2 PIC X(4).
+       01  AFTER-FLD    PIC X(4) VALUE "LAST".
+       PROCEDURE        DIVISION.
+           SET P UP BY 8
+           SET ADDRESS OF BAD-GRP TO P
+           MOVE "ABCD" TO BAD-FLD
+           STOP RUN.
+])
+
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL prog.cob], [0], [], [])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS=halt_on_error=0 \
+COB_DUMP_FILE=dump.txt $COBCRUN_DIRECT ./prog], [ignore], [ignore], [ignore])
+
+AT_CAPTURE_FILE([dump.txt])
+
+# (pointer value not shown, its size depends on the platform;
+#  trailing blanks of the interrupted field line are removed)
+AT_CHECK([sed -n '/^WORKING-STORAGE/,$p' dump.txt | sed -e '/^01        P /d' -e 's/ *$//'], [0],
+[WORKING-STORAGE
+**********************
+77        RETURN-CODE                     +000000000
+01        BEFORE-FLD                     'FRST'
+01        BAD-GRP.
+  05      BAD-FLD
+ >>>> Dump of BAD-GRP aborted! <<<< !!
+**********************
+01        AFTER-FLD                      'LAST'
+
+END OF DUMP - prog
+**********************
+
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([stack and dump feature])
 AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL SOURCE_DATE_EPOCH])
 
