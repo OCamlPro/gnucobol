@@ -466,7 +466,7 @@ static const int		cob_exception_tab_code[] = {
 	0		/* COB_EC_MAX */
 };
 
-#undef	COB_EXCEPTION
+#undef COB_EXCEPTION
 
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
@@ -2525,6 +2525,7 @@ void
 cob_set_exception (const int id)
 {
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
+	cobglobptr->cob_exception_id = id;
 	last_exception_code = cobglobptr->cob_exception_code;
 
 	cobglobptr->last_exception_statement = STMT_UNKNOWN;
@@ -7974,12 +7975,15 @@ cob_expand_env_string (const char *strval)
 		}
 
 		/* ${envname:default} */
-		if (strval[k] == '$' && strval[k + 1] == '{') {
+		if (strval[k] == '$'
+		 && strval[k + 1] == '{') {
 			k += 2;
 			for (i = 0; strval[k] != '}'
 				     && strval[k] != 0
 				     && strval[k] != ':'; k++) {
-				ename[i++] = strval[k];
+				if (i < sizeof (ename)) {
+					ename[i++] = strval[k];
+				}
 			}
 			ename[i++] = 0;
 			penv = getenv (ename);
@@ -8610,19 +8614,34 @@ cb_config_entry (char *buf, int line)
 
 	for (i = 0; isspace ((unsigned char)buf[i]); i++); /* drop leading spaces */
 
-	for (j = 0; buf[i] != 0 && buf[i] != ':' && !isspace ((unsigned char)buf[i]) && buf[i] != '=' && buf[i] != '#'; )
-		keyword[j++] = buf[i++];
+	for (j = 0;
+		buf[i] != 0 && buf[i] != ':'
+	 && buf[i] != '=' && buf[i] != '#'
+	 && !isspace ((unsigned char)buf[i]); ) {
+		if (j < sizeof (keyword)) {
+			keyword[j++] = buf[i++];
+		}
+	}
+
 	keyword[j] = 0;
 
 	while (buf[i] != 0 && (isspace ((unsigned char)buf[i]) || buf[i] == ':' || buf[i] == '=')) i++;
 	if (buf[i] == '"'
 	 || buf[i] == '\'') {
 		qt = buf[i++];
-		for (j = 0; buf[i] != qt && buf[i] != 0; )
-			value[j++] = buf[i++];
+		for (j = 0; buf[i] != qt && buf[i] != 0; ) {
+			if (j < sizeof (value)) {
+				value[j++] = buf[i];
+			}
+			i++;
+		}
 	} else {
-		for (j = 0; !isspace ((unsigned char)buf[i]) && buf[i] != '#' && buf[i] != 0; )
-			value[j++] = buf[i++];
+		for (j = 0; !isspace ((unsigned char)buf[i]) && buf[i] != '#' && buf[i] != 0; ) {
+			if (j < sizeof (value)) {
+				value[j++] = buf[i];
+			}
+			i++;
+		}
 	}
 
 	value[j] = 0;
@@ -9403,6 +9422,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
+		break;
+	case COB_FERROR_FATAL_EC:
+		cob_runtime_error (_("unhandled fatal exception code: %s"),
+			cob_get_last_exception_name ());
 		break;
 	default:
 		/* internal rare error, no need for translation */

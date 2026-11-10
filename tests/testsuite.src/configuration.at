@@ -865,17 +865,16 @@ AT_DATA([wide.cob], [
       -            '        80'
            STOP RUN.
 ])
+# FIXME: in case of "open" literals consecutive spaces are lost
 AT_CHECK([$COMPILE_ONLY -fformat=fixed wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
-wide.cob:9: error: invalid literal: '  ...'
+wide.cob:9: error: invalid literal: ' 20 30 40 50 60 '
 wide.cob:9: note: missing terminating ' character
-wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=cobol85 wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
-wide.cob:9: error: invalid literal: '  ...'
+wide.cob:9: error: invalid literal: ' 20 30 40 50 60 '
 wide.cob:9: note: missing terminating ' character
-wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -ftext-column=80 wide.cob], [0], [], [])
 

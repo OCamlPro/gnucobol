@@ -1984,16 +1984,21 @@ cb_set_intr_when_compiled (void)
 void
 cb_trim_program_id (cb_tree id_literal)
 {
-	char	*s;
-	cob_u32_t	len;
+	struct cb_literal *lit = CB_LITERAL (id_literal);
+	char	*s = (char *) (lit->data);
+	cob_u32_t	len = lit->size;
 
-	s = (char *) (CB_LITERAL (id_literal)->data);
-	if (!strchr (s, ' ')) {
+	if (len == 0	/* validated later on */
+	 || !strchr (s, ' ')) {
 		return;
 	}
 
-	len = (cob_u32_t) strlen (s);
 	if (*s == ' ') {
+		if (len < COB_SPACES_ALPHABETIC_BYTE_LENGTH
+		 && memcmp (COB_SPACES_ALPHABETIC, s, len) == 0) {
+			/* validated later on */
+			return;
+		}
 		/* same warning as in libcob/common.c */
 		cb_warning_x (COBC_WARN_FILLER, id_literal,
 			_("'%s' literal includes leading spaces which are omitted"), s);
@@ -2009,7 +2014,7 @@ cb_trim_program_id (cb_tree id_literal)
 		len--;
 	}
 	s[len] = 0;
-	CB_LITERAL (id_literal)->size = len;
+	lit->size = len;
 }
 
 /** encode given name
@@ -2335,13 +2340,14 @@ subserror:
 static cb_tree
 cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 {
-	char		full_name[COB_MAX_WORDLEN * 2 + 10];
+	char		full_name[COB_MINI_BUFF]; /* 2 times name + translated message */
 	if (f1 == f2) {
 		/* TRANSLATORS: This msgid is used when a variable name
 		   or label is referenced in a compiler message. */
-		sprintf(full_name, _("'%s'"), f1->name);
+		sprintf (full_name, _("'%s'"), f1->name);
 	} else {
-		sprintf(full_name, _("'%s' (accessed by '%s')"), f1->name, f2->name);
+		snprintf (full_name, COB_MINI_MAX,
+			_("'%s' (accessed by '%s')"), f1->name, f2->name);
 	}
 
 	return cb_build_reference (full_name);
@@ -3055,15 +3061,15 @@ cb_build_ppointer (cb_tree x)
 static void
 set_argument_defaults (cb_tree argument, cb_tree parameter, const struct cb_field *arg_field)
 {
-	const int argument_size = CB_SIZES_INT(argument);
+	const int argument_size = CB_SIZES_INT (argument);
 	if (argument_size == CB_SIZE_UNSET) {
 		if (parameter) {
-			CB_SIZES(argument) = CB_SIZES(parameter);
+			CB_SIZES (argument) = CB_SIZES (parameter);
 		} else {
 #ifdef COB_64_BIT_POINTER
-			CB_SIZES(argument) = CB_SIZE_8;
+			CB_SIZES (argument) = CB_SIZE_8;
 #else
-			CB_SIZES(argument) = CB_SIZE_4;
+			CB_SIZES (argument) = CB_SIZE_4;
 #endif
 		}
 	} else if (argument_size == CB_SIZE_AUTO && arg_field) {
@@ -3072,6 +3078,21 @@ set_argument_defaults (cb_tree argument, cb_tree parameter, const struct cb_fiel
 
 }
 
+cb_tree
+cb_validate_oo_class_or_interface (struct cb_program *prog) {
+	if (!prog) {
+		return cb_error_node;
+	}
+	if (prog->prog_type != COB_MODULE_TYPE_CLASS
+	 && prog->prog_type != COB_MODULE_TYPE_INTERFACE) {
+		cb_error_x (CB_TREE (prog),
+			    _("CLASS or INTERFACE expected (got %s '%s')"),
+			    cb_get_cob_module_type_string (prog->prog_type),
+			    prog->program_name);
+		return cb_error_node;
+	}
+	return CB_TREE (prog);
+}
 
 void
 cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_list)
@@ -3082,7 +3103,8 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	int		param_num = 1;
 
 	for (l = using_list; l; l = CB_CHAIN (l)) {
-		set_argument_defaults (l, NULL, NULL);	/* TODO: move for supporting that with prototypes */
+		/* TODO: move for supporting that with prototypes */
+		set_argument_defaults (l, NULL, NULL);
 		x = CB_VALUE (l);
 		if (cb_try_ref (x) != cb_error_node) {
 			f = CB_FIELD (cb_ref (x));
@@ -3136,8 +3158,8 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 		}
 	}
 
-	if (prog->returning &&
-		cb_ref (prog->returning) != cb_error_node) {
+	if (prog->returning
+	 && cb_ref (prog->returning) != cb_error_node) {
 		ret_f = CB_FIELD (cb_ref (prog->returning));
 		if (ret_f->redefines) {
 			cb_error_x (prog->returning,
@@ -3151,16 +3173,38 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION && ret_f) {
 		for (l = using_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-				f = CB_FIELD (cb_ref (x));
-				if (ret_f == f) {
-					cb_error_x (x, _("'%s' USING item duplicates RETURNING item"), f->name);
+			if (x && CB_REFERENCE_P (x)) {
+				cb_tree x2 = cb_ref (x);
+				if (CB_FIELD_P (x2)
+				 && CB_FIELD (x2) == ret_f) {
+					cb_error_x (x, _("'%s' USING item duplicates RETURNING item"),
+						f->name);
 				}
 			}
 		}
 	}
 }
 
+/* Returns NULL on figurative constants */
+static COB_INLINE const char *
+try_get_literal_data (cb_tree ref) {
+	if (CB_LITERAL_P (ref)) {
+		return (char *) CB_LITERAL (ref)->data;
+	} else if (CB_REFERENCE_P (ref)) {
+		ref = cb_ref (ref);
+		if (ref == cb_error_node) {
+			return NULL;
+		}
+		if (CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78) {
+			cb_tree x = CB_VALUE (CB_FIELD (ref)->values);
+			if (!CB_LITERAL_P (x)) {
+				return NULL;
+			}
+			return (char *) CB_LITERAL (x)->data;
+		}
+	}
+	return NULL;
+}
 
 /* TODO: Add params differing in BY REFERENCE/VALUE and OPTIONAL to testsuite */
 
@@ -3171,26 +3215,25 @@ try_get_program (cb_tree prog_ref)
 	const char		*name_str;
 	cb_tree			ref;
 
-	if (CB_LITERAL_P (prog_ref)
+	name_str = try_get_literal_data (prog_ref);
+	if (name_str
 	    /* && TODO: Check user wants checks on this kind of CALL. */) {
-		name_str = (char *) CB_LITERAL (prog_ref)->data;
 		program = cb_find_defined_program_by_name (name_str);
 	} else if (CB_REFERENCE_P (prog_ref)) {
 		ref = cb_ref (prog_ref);
 		if (ref == cb_error_node) {
 			return NULL;
 		}
-
-		if (CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78
-		    /* && TODO: Check user wants checks on this kind of CALL. */) {
-			cb_tree x = CB_VALUE (CB_FIELD (ref)->values);
-			if (!CB_LITERAL_P (x)) {
-				/* in theory this could be a figurative constant,
-				   in this case there is no matching program */
-				return NULL;
+		if (CB_FIELD_P (ref)
+		 && CB_FIELD (ref)->usage == CB_USAGE_OBJECT
+		 && CB_FIELD (ref)->reference) {
+			cb_tree x = CB_FIELD (ref)->reference;
+			if (CB_PROGRAM_P (x)) {
+				program = CB_PROGRAM (x);
+			} else if (CB_PROTOTYPE_P (x)) {
+				name_str = CB_PROTOTYPE (x)->ext_name;
+				program = cb_find_defined_program_by_id (name_str);
 			}
-			name_str = (char *) CB_LITERAL (x)->data;
-			program = cb_find_defined_program_by_name (name_str);
 		} else if (CB_PROTOTYPE_P (ref)) {
 			name_str = CB_PROTOTYPE (ref)->ext_name;
 			program = cb_find_defined_program_by_id (name_str);
@@ -3210,11 +3253,11 @@ is_alphanum_group (const struct cb_field *f)
 
 /* get numbered USING parameter tree */
 static cb_tree
-find_nth_parameter (const struct cb_program *prog, const unsigned int n)
+find_nth_parameter (const cb_tree using_list, const unsigned int n)
 {
 	cb_tree		entry_param;
 	unsigned int parmnum = 1;
-	for (entry_param = CB_VALUE (CB_VALUE (prog->entry_list)); entry_param;
+	for (entry_param = using_list; entry_param;
 	     entry_param = CB_CHAIN (entry_param)) {
 		if (n == parmnum++) {
 			return entry_param;
@@ -3433,8 +3476,8 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 		for (parameter_num = 1;
 		     parameter_num <= definition->num_proc_params;
 		     ++parameter_num) {
-			def_item = find_nth_parameter (definition, parameter_num);
-			proto_item = find_nth_parameter (prototype, parameter_num);
+			def_item = find_nth_parameter (definition->main_using, parameter_num);
+			proto_item = find_nth_parameter (prototype->main_using, parameter_num);
 
 			if (def_item && proto_item) {
 				def_field = CB_FIELD_PTR(CB_VALUE(def_item));
@@ -3531,7 +3574,7 @@ static void
 check_argument_conformance (struct cb_program *program, cb_tree argument_tripple,
 			    const int param_num)
 {
-	cb_tree		param = find_nth_parameter (program, param_num);
+	cb_tree		param = find_nth_parameter (program->main_using, param_num);
 	cb_tree		arg_tree = CB_VALUE (argument_tripple);
 	enum cb_call_mode	arg_mode = CB_PURPOSE_INT (argument_tripple);
 	const enum cb_call_mode	param_mode = CB_PURPOSE_INT (param);
@@ -3573,7 +3616,7 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 		return;
 	}
 
-	param_ref = cb_build_field_reference ((struct cb_field *)param_field, NULL);
+	param_ref = cb_build_field_reference (param_field, NULL);
 
 	/*
 	  Check the definition of the argument is compatible with the parameter.
@@ -3638,9 +3681,27 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 	}
 }
 
-void
-cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
-		   cb_tree returning)
+static struct cb_program *
+try_get_method (struct cb_program *class, cb_tree oo_method_name) {
+	struct cb_program	*method = NULL;
+	const char * method_name = try_get_literal_data (oo_method_name);
+	if (method_name) {
+		struct nested_list* m;
+		for (m = class->nested_prog_list; m && !method; m = m->next) {
+			if (strcasecmp (method_name, m->nested_prog->program_name) == 0) {
+				method = m->nested_prog;
+			}
+		}
+	}
+	return method;
+}
+
+/* When inline_invocation is set, returns a reference to the field of the
+   *CALLED* program/function/method if it is found, or cb_error_node otheriwse.
+   This is used for type-checking inline method invocations. */
+cb_tree
+cb_check_conformance (cb_tree prog_ref, cb_tree oo_method_name, cb_tree using_list,
+		      cb_tree returning, int inline_invocation)
 {
 	struct cb_program	*program = NULL;
 	cb_tree			l;
@@ -3650,15 +3711,37 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	const struct cb_field	*prog_returning_field;
 	const struct cb_field	*call_returning_field;
 
-	/* Try to get the program referred to by prog_ref. */
-	program = try_get_program (prog_ref);
+	if (oo_method_name) {
+		/* prog_ref may be either: (i) a user-defined class or interface
+		   name (listed in the REPOSITORY paragraph); (ii) an identifier
+		   (expected with usage OBJECT REFERENCE, maybe to a factory);
+		   (iii) SELF (cb_int0); or SUPER (cb_int1). */
+		struct cb_program	*oo_class = NULL;
+		int			factory_method_invocation = 0;
+		if (CB_PROGRAM_P (prog_ref)) {
+			oo_class = CB_PROGRAM (prog_ref);
+			factory_method_invocation = 1;
+		} else {
+			/* TODO: decompose that check to set
+			   factory_method_invocation when needed */
+			oo_class = try_get_program (prog_ref);
+		}
+		COB_UNUSED (factory_method_invocation); /* for now */
+		l = cb_validate_oo_class_or_interface (oo_class);
+		/* TODO: Walk up the class hierarchy/DAG, starting from
+		   oo_class, checking matching methods...  For now we only check
+		   a method in oo_class, if any. */
+		if (l != cb_error_node) {
+			program = try_get_method (CB_PROGRAM (l), oo_method_name);
+		}
+	} else {
+		program = try_get_program (prog_ref);
+	}
 	if (!program) {
-		/*
-		 */
 		for (l = using_list; l;	l = CB_CHAIN (l)) {
 			set_argument_defaults (l, NULL, NULL);
 		}
-		return;
+		return cb_error_node;
 	}
 
 	/*
@@ -3670,8 +3753,8 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	     l && param_num <= program->num_proc_params;
 	     l = CB_CHAIN (l), ++param_num) {
 		check_argument_conformance (program, l, param_num);
-		last_arg = l;
 	}
+	last_arg = l;
 
 	/* If there are more params in the using list than in the prototype, error */
 	if (l && param_num > program->num_proc_params) {
@@ -3689,7 +3772,7 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	  check the omitted ones are for OPTIONAL parameters.
 	*/
 	for (; param_num <= program->num_proc_params; ++param_num) {
-		param = find_nth_parameter (program, param_num);
+		param = find_nth_parameter (program->main_using, param_num);
 		if (CB_PURPOSE_INT(param) != CB_CALL_BY_REFERENCE
 		  || !CB_FIELD_PTR(CB_VALUE(param))->flag_is_pdiv_opt) {
 			if (last_arg) {
@@ -3725,11 +3808,19 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	} else if (returning && !program->returning) {
 		/* CHECKME: do we want to cater for RETURNING internally setting RETURN-CODE? */
 		cb_warning_x (cb_warn_repository_checks, returning,
-			_("unexpected RETURNING item"));
-	} else if (!returning && program->returning) {
-		cb_warning_x (cb_warn_repository_checks, returning,
-			_("expecting a RETURNING item, but none provided"));
+			      _("unexpected RETURNING item"));
+	} else if (inline_invocation && !program->returning) {
+		cb_warning (cb_warn_repository_checks,
+			    _("invalid inline invocation of a method with no RETURNING"));
+	} else if (!returning && !inline_invocation && program->returning) {
+		cb_warning (cb_warn_repository_checks,
+			    _("expecting a RETURNING item, but none provided"));
 	}
+
+	if (program->returning && inline_invocation) {
+		return program->returning;
+	}
+	return cb_error_node;
 }
 
 static int
@@ -4823,6 +4914,46 @@ validate_assign_name (cb_tree origin, struct cb_program * const prog)
 }
 
 void
+cb_validate_oo_program_data (struct cb_program *prog) {
+	cb_tree l, x, inheritable_prototypes = NULL;
+
+	if (prog->prog_type == COB_MODULE_TYPE_CLASS) {
+		inheritable_prototypes = prog->class_spec_list;
+	} else /* if (prog->prog_type == COB_MODULE_TYPE_INTERFACE) */ {
+		inheritable_prototypes = prog->interface_spec_list;
+	}
+	for (l = prog->oo_inheritance_list; l; l = CB_CHAIN (l)) {
+		const cb_tree y = CB_VALUE (l);
+		if (strcasecmp (prog->program_id, CB_NAME (y)) == 0) {
+			cb_error_x (l, _("cyclically inheriting %s '%s'"),
+				    cb_get_cob_module_type_string (prog->prog_type),
+				    CB_NAME (y));
+			cb_note_x (COB_WARNOPT_NONE, CB_TREE (prog), _("'%s' defined here"),
+				   CB_NAME (y));
+		}
+
+		/* Check for parent name in REPOSITORY paragraph */
+		if (cb_search_in_prototypes (inheritable_prototypes, y) == 1) {
+			cb_error_x (l, _("inherited %s '%s' not found in REPOSITORY paragraph"),
+				    cb_get_cob_module_type_string (prog->prog_type),
+				    CB_NAME (y));
+		}
+
+		/* Check for duplicate parent name */
+		for (x = CB_CHAIN (l); x; x = CB_CHAIN (x)) {
+			if (strcasecmp (CB_NAME (y), CB_NAME (CB_VALUE (x))) == 0) {
+				cb_error_x (x, _("duplicate parent %s '%s'"),
+					    cb_get_cob_module_type_string (prog->prog_type),
+					    CB_NAME (CB_VALUE (x)));
+				cb_note_x (COB_WARNOPT_NONE, l, _("'%s' defined here"),
+					   CB_NAME (y));
+				break;
+			}
+		}
+	}
+}
+
+void
 cb_validate_program_data (struct cb_program *prog)
 {
 	cb_tree		l, x;
@@ -4917,6 +5048,11 @@ cb_validate_program_data (struct cb_program *prog)
 		cb_ref (CB_VALUE (l));
 		/* TODO: move allocation of prog->reference_list outside of parse_mem
 		         and free it here directly */
+	}
+
+	if (prog->prog_type == COB_MODULE_TYPE_CLASS
+	 || prog->prog_type == COB_MODULE_TYPE_INTERFACE) {
+		cb_validate_oo_program_data (prog);
 	}
 
 	/* Check ODO items */
@@ -5240,9 +5376,6 @@ cb_validate_labels (struct cb_program *prog)
 						    label->name);
 					continue;
 				case CB_WARNING:
-					if (get_warn_opt_value (cb_warn_dialect) == COBC_WARN_DISABLED) {
-						break;
-					}
 					cb_warning_x (cb_warn_dialect, x,
 						    _("'%s' is not in DECLARATIVES"),
 							label->name);
@@ -5298,10 +5431,14 @@ cb_validate_perform_thru_ranges (struct cb_program *prog)
 	 && get_warn_opt_value (cb_warn_suspicious_perform_thru) == COBC_WARN_DISABLED) {
 		return;
 	}
-	for (l = prog->perform_thru_list; l; l = CB_CHAIN (l)) {
-		const cb_tree v = CB_VALUE (l);
-		const cb_tree x = cb_ref (CB_PAIR_X (v));
-		const cb_tree y = cb_ref (CB_PAIR_Y (v));
+
+	/* we added up front for performance, process reverses for
+	   reasonable order of warning messages */
+
+	/* TODO: preferably on addition, otherwise here: drop duplicates */
+	for (l = cb_list_reverse (prog->perform_thru_list); l; l = CB_CHAIN (l)) {
+		const cb_tree x = cb_ref (CB_PAIR_X (l));
+		const cb_tree y = cb_ref (CB_PAIR_Y (l));
 		if (x != y
 		 && x != cb_error_node
 		 && y != cb_error_node) {
@@ -5309,19 +5446,19 @@ cb_validate_perform_thru_ranges (struct cb_program *prog)
 			const struct cb_label *le = CB_LABEL (y);
 			if (le->flag_section) {
 				if (cb_flag_section_exit_check) {
-					cb_warning_x (COBC_WARN_FILLER, v,
+					cb_warning_x (COBC_WARN_FILLER, l,
 						_("%s and %s are mutually exclusive"),
 						"PERFORM ... THROUGH SECTION", "-fsection-exit-check");
 					/* this code would always raise that check, so disable */
 					cb_flag_section_exit_check = 0;
 				}
 			} else if (le->section != lb->section && le->section != lb) {
-				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+				cb_warning_x (cb_warn_suspicious_perform_thru, l,
 					_("%s and %s are not in the same SECTION"), lb->name, le->name);
 			}
 			if (le->common.source_file == lb->common.source_file
 			 && le->common.source_line < lb->common.source_line) {
-				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+				cb_warning_x (cb_warn_suspicious_perform_thru, l,
 					_("%s is defined before %s"), le->name, lb->name);
 				cb_note_x (cb_warn_suspicious_perform_thru, x, _("'%s' defined here"), lb->name);
 				cb_note_x (cb_warn_suspicious_perform_thru, y, _("'%s' defined here"), le->name);
@@ -5354,10 +5491,12 @@ cb_validate_program_body (struct cb_program *prog)
 		}
 
 		/* ignore fields that are part of main entry USING */
-		for (l = CB_VALUE (CB_VALUE (prog->entry_list)); l; l = CB_CHAIN (l)) {
+		for (l = prog->main_using; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-				if (f == CB_FIELD (cb_ref (x))) {
+			if (x && CB_REFERENCE_P (x)) {
+				x = cb_ref (x);
+				if (CB_FIELD_P (x)
+				 && CB_FIELD (x) == f) {
 					break;
 				}
 			}
@@ -5370,6 +5509,8 @@ cb_validate_program_body (struct cb_program *prog)
 	}
 
 	/* Validate entry points */
+	prog->entry_list = cb_list_reverse (prog->entry_list);
+	prog->entry_list_goto = cb_list_reverse (prog->entry_list_goto);
 
 	/* Check dangling LINKAGE items */
 	if (get_warn_opt_value (cb_warn_linkage) != COBC_WARN_DISABLED
@@ -5398,8 +5539,10 @@ cb_validate_program_body (struct cb_program *prog)
 				/* ignore fields that are part of current entry USING */
 				for (l = CB_VALUE (CB_VALUE (v)); l; l = CB_CHAIN (l)) {
 					x = CB_VALUE (l);
-					if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-						if (f == CB_FIELD (cb_ref (x))) {
+					if (x && CB_REFERENCE_P (x)) {
+						x = cb_ref (x);
+						if (CB_FIELD_P (x)
+						 && CB_FIELD (x) == f) {
 							break;
 						}
 					}
@@ -5410,9 +5553,10 @@ cb_validate_program_body (struct cb_program *prog)
 
 				/* check if field or its children have any actual reference,
 				   otherwise the warning is useless */
-				if (has_sub_reference(f)) {
+				if (has_sub_reference (f)) {
 					cb_warning_x (cb_warn_linkage, CB_TREE (f),
-						_("LINKAGE item '%s' is not a PROCEDURE USING parameter"), f->name);
+						_("LINKAGE item '%s' is not a PROCEDURE USING parameter"),
+						 f->name);
 				}
 			}
 		}
@@ -6215,8 +6359,11 @@ build_store_option (cb_tree x, cb_tree round_opt)
 		if (current_statement->ex_handler) {
 			opt |= COB_STORE_KEEP_ON_OVERFLOW;
 		}
-	} else if (current_statement->handler_type != NO_HANDLER) {
-		/* There is a [NOT] ERROR/OVERFLOW/EXCEPTION - Set in parser */
+	} else if ( current_statement->handler_type != NO_HANDLER
+	        && (current_statement->ex_handler
+	         || current_statement->not_ex_handler)) {
+		/* There is a [NOT] ERROR/OVERFLOW/EXCEPTION and it is not
+		 * implied by the enabled exceptions - Set in parser */
 		opt |= COB_STORE_KEEP_ON_OVERFLOW;
 	} else if (usage == CB_USAGE_BINARY && cb_binary_truncate) {
 		/* Truncate binary field to digits in picture */
@@ -7237,6 +7384,25 @@ cb_build_cond_fields (struct cb_binary_op *p,
 	return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
 }
 
+/* check if the expression x contains an operation which may raise
+   an enabled EC-SIZE-ZERO-DIVIDE or EC-SIZE-EXPONENTIATION */
+static int
+has_checked_size_error (cb_tree x)
+{
+	const struct cb_binary_op	*p;
+
+	if (!CB_BINARY_OP_P (x)) {
+		return 0;
+	}
+	p = CB_BINARY_OP (x);
+	if ((p->op == '/' && CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE))
+	 || (p->op == '^' && CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION))) {
+		return 1;
+	}
+	return (p->x && has_checked_size_error (p->x))
+	    || (p->y && has_checked_size_error (p->y));
+}
+
 static cb_tree
 cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 {
@@ -7252,6 +7418,13 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 
 		d1 = decimal_expand (d1, left);
 		d2 = decimal_expand (d2, right);
+		/* size errors in a condition are fatal, if enabled */
+		if (has_checked_size_error (left)) {
+			dpush (CB_BUILD_FUNCALL_1 ("$Z", d1));
+		}
+		if (has_checked_size_error (right)) {
+			dpush (CB_BUILD_FUNCALL_1 ("$Z", d2));
+		}
 		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", d1, d2));
 		decimal_free ();
 		decimal_free ();
@@ -8807,7 +8980,7 @@ get_constant_call_name (cb_tree prog)
 }
 
 void
-cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
+cb_emit_call (cb_tree prog, cb_tree oo_method, cb_tree par_using, cb_tree returning,
 	      cb_tree on_exception, cb_tree not_on_exception,
 	      cb_tree convention, cb_tree newthread, cb_tree handle)
 {
@@ -8827,6 +9000,8 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 	int				error_ind;
 	int				call_conv;
 	unsigned int		numargs;
+
+	COB_UNUSED (oo_method);
 
 	if (CB_INTRINSIC_P (prog)) {
 		if (CB_INTRINSIC (prog)->intr_tab->category != CB_CATEGORY_ALPHANUMERIC) {
@@ -9135,6 +9310,7 @@ void
 cb_emit_close (cb_tree file, cb_tree opt)
 {
 	struct cb_file	*f;
+	cb_tree		close_mode;
 
 	file = cb_ref (file);
 	if (file == cb_error_node) {
@@ -9148,12 +9324,13 @@ cb_emit_close (cb_tree file, cb_tree opt)
 				_("%s not allowed on %s files"), "CLOSE", "SORT");
 	}
 
+	close_mode = cb_build_direct (cb_close_mode_to_string (CB_INTEGER (opt)->val), 0);
 	if (f->extfh) {
 		cb_emit (CB_BUILD_FUNCALL_5 ("cob_extfh_close", f->extfh, file,
-					     f->file_status, opt, cb_int0));
+					     f->file_status, close_mode, cb_int0));
 	} else {
 		cb_emit (CB_BUILD_FUNCALL_4 ("cob_close", file,
-					     f->file_status, opt, cb_int0));
+					     f->file_status, close_mode, cb_int0));
 	}
 
 	/* Check for file debugging */

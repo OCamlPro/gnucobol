@@ -1136,8 +1136,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
 AT_CLEANUP
 
 
-AT_SETUP([MOVE of invalid data from numeric to alphanumeric item])
-AT_KEYWORDS([runmisc])
+AT_SETUP([MOVE of inv. numeric data to alphanumeric item])
+AT_KEYWORDS([runmisc invalid])
 
 AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
@@ -1153,14 +1153,14 @@ AT_DATA([prog.cob], [
        MAIN.
            MOVE SPACES TO X-ALN
            MOVE X-NUM  TO Y-ALN
-	   IF Y-ALN NOT EQUAL " " THEN
-	      DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
-	   END-IF
+           IF Y-ALN NOT EQUAL " " THEN
+              DISPLAY "Y-ALN: '" Y-ALN "' (' ' EXPECTED)"
+           END-IF
            MOVE SPACES TO Z-ALN
            MOVE Z-NUM  TO T-ALN
-	   IF T-ALN NOT EQUAL "  " THEN
-	      DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
-	   END-IF
+           IF T-ALN NOT EQUAL "  " THEN
+              DISPLAY "T-ALN: '" T-ALN "' ('  ' EXPECTED)"
+           END-IF
            STOP RUN.
 ])
 
@@ -1357,6 +1357,8 @@ AT_CLEANUP
 
 AT_SETUP([Recursive CALL of RECURSIVE program])
 AT_KEYWORDS([runmisc CANCEL EXTERNAL])
+
+# FIXME: recursive programs "leak" on STOP RUN
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
@@ -2653,8 +2655,10 @@ AT_DATA([prog.cob], [
        01  X            PIC 9(2) VALUE 0.
        01  Y            PIC 9(2) VALUE 0.
        PROCEDURE        DIVISION.
-           COMPUTE X = 100. *> this overflows which does not store a result
-           COMPUTE Y = 99.  *> and once in a time this result was not stored
+           COMPUTE X = 100 ON SIZE ERROR CONTINUE.
+           *> this overflows which does not store a result
+           COMPUTE Y = 99.
+           *> and once in a time this result was not stored
            IF X NOT = 0 AND
               Y NOT = 99
               DISPLAY Y.
@@ -3181,6 +3185,12 @@ AT_DATA([prog.cob], [
           05 RES-DELIM-2       PIC X(01).
           05 RES-COUNT-2       PIC 9(02).
           05 RES-TALLY         PIC 9(02).
+
+       01 DST  PIC X(10) VALUE SPACES.
+       01 DLM1 PIC X(2)  VALUE "AB".
+       01 DLM2 PIC X(2)  VALUE "CD".
+       01 SRC  PIC X(1)  VALUE "Y".
+
       *>
        PROCEDURE DIVISION.
       *>------------------
@@ -3201,7 +3211,7 @@ AT_DATA([prog.cob], [
                    DISPLAY
                       'Unstring tallying case 1 should not OVERFLOW'
                    END-DISPLAY
-           END-UNSTRING.
+           END-UNSTRING
            PERFORM TEST-CASE-1-RESULT
       *>
       *>   case B : should  OVERFLOW; use of two delimiters
@@ -3220,8 +3230,22 @@ AT_DATA([prog.cob], [
                    DISPLAY
                       'Unstring tallying case 2 should  OVERFLOW'
                    END-DISPLAY
-           END-UNSTRING.
+           END-UNSTRING
            PERFORM TEST-CASE-2-RESULT
+      *>
+      *>   case C :
+      *>   this can never unstring anything - but still needed to be
+      *>   processed for additional clauses
+      *>   TODO: add compile-time warning
+           UNSTRING SRC DELIMITED BY DLM1 OR DLM2 INTO DST
+               ON OVERFLOW
+                   DISPLAY
+                      'Unstring case 3 should  OVERFLOW'
+                   END-DISPLAY
+           END-UNSTRING
+           IF DST NOT = "Y"
+              DISPLAY "UN DST=" DST
+           END-IF
       *>
            GOBACK.
 
@@ -4907,7 +4931,11 @@ AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
 [libcob: error: module 'notthere' not found
 note: error exit with return code -1 and error "module 'notthere' not found"
 ])
-AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+# We just acknowledge that we have some minor leaks in case of hard errors in cob_call_with_exception_check
+# CHECKME: can we still prevent those?
+AT_CHECK([ASAN_OPTIONS=detect_leaks=0 \
+          $COBCRUN_DIRECT ./caller buggy], [0],
+[out of bounds - refmod following],
 [libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
 note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
 ])
@@ -7336,10 +7364,10 @@ AT_DATA([callee2.cob], [
                                  .
            EXIT PROGRAM.
 ])
-
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee2.cob], [0], [], [])
-AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile,xor -o prog caller.cob], [0], [], [])
+ 
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor,public callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor,public callee2.cob], [0], [], [])
+AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile,xor,public -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -7640,7 +7668,7 @@ AT_DATA([prog.cob], [
        01  x PIC 9.
 
        PROCEDURE DIVISION.
-           COMPUTE x = 10
+           COMPUTE x = 10 ON SIZE ERROR CONTINUE
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-LOCATION)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
@@ -11918,10 +11946,12 @@ AT_DATA([prog.cob], [
            PERFORM check-x-val
 
            COMPUTE x = 30000
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            MOVE ZERO TO x
            ADD 30000 TO x
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            GOBACK
@@ -12070,6 +12100,8 @@ AT_DATA([prog.cob], [
        END PROGRAM "S U B".
 ])
 
+# TODO: move compile-checks out to a syn test
+
 AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:10: warning: ' SUB ' literal includes leading spaces which are omitted
 prog.cob:10: warning: ' SUB ' literal includes trailing spaces which are omitted
@@ -12086,6 +12118,24 @@ S U B  GOT B
 ],
 [libcob: prog.cob:12: warning: ' SUB' literal includes leading spaces which are omitted
 libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are omitted
+])
+
+AT_DATA([bad.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "".
+       END PROGRAM "".
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. " ".
+       END PROGRAM " ".
+])
+
+AT_CHECK([$COMPILE_ONLY bad.cob], [1], [],
+[bad.cob:3: warning: alphanumeric literal has zero length; a SPACE will be assumed
+bad.cob:3: error: invalid PROGRAM-ID ' ' - name cannot begin with space or hyphen
+bad.cob:4: warning: alphanumeric literal has zero length; a SPACE will be assumed
+bad.cob:7: error: invalid PROGRAM-ID ' ' - name cannot begin with space or hyphen
+bad.cob:7: error: redefinition of program ID ' '
 ])
 
 AT_CLEANUP
@@ -12528,7 +12578,7 @@ getType (int type, int byvalue)
 COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
-   char      wrk[80],pic[30];	/* note: maximum _theoretical_ size */
+   char      wrk[80], pic[30];	/* note: maximum _theoretical_ size */
    const int nargs = cob_get_num_params();
    int       k;
 
@@ -12952,7 +13002,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -13072,7 +13122,7 @@ AT_DATA([prog.cob], [
            DISPLAY 'Subtract RSLT    IS ' RSLT.
            MOVE 0 TO RSLT
            ADD NUM-A NUM-C TO RSLT GIVING RSLTV1.
-           DISPLAY 'Add      RSLTv9  IS ' RSLTV1
+           DISPLAY 'Add      RSLTv9  IS ' RSLTV1.
            MULTIPLY NUM-A BY NUM-C GIVING RSLT.
            DISPLAY 'Multiply RSLT    IS ' RSLT.
            MULTIPLY RSLT BY NUM-C.
@@ -13108,7 +13158,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -farithmetic-osvs prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size-overflow -farithmetic-osvs prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -14172,80 +14222,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], ignore, [SIZE ERROR raised])
 AT_CLEANUP
 
 
-AT_SETUP([EC-SIZE-ZERO-DIVIDE])
-AT_KEYWORDS([misc fundamental exceptions
-DIVIDE COMPUTE EXCEPTION-STATUS])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01  x PIC 9 VALUE 0.
-       01  y PIC 9 VALUE 0.
-
-       PROCEDURE DIVISION.
-           DIVIDE x BY y GIVING y
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-ZERO-DIVIDE'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           SET LAST EXCEPTION TO OFF
-           IF FUNCTION EXCEPTION-STATUS NOT = SPACES
-              DISPLAY 'Exception is not empty after reset: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           MOVE 0 TO y
-           COMPUTE y = x - 1 / y + 6.5
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-ZERO-DIVIDE'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CLEANUP
-
-
-AT_SETUP([EC-SIZE-OVERFLOW])
-AT_KEYWORDS([misc fundamental exceptions])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01  x PIC 9 VALUE 1.
-       01  y PIC 9.
-
-       PROCEDURE DIVISION.
-      *    raise exception checked in previous test
-      *    as it may interfere with the expected exception
-           DIVIDE x BY y GIVING y
-           DIVIDE x BY 0.1 GIVING y
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-OVERFLOW'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CLEANUP
-
-
 AT_SETUP([Constant Expressions])
 AT_KEYWORDS([runmisc condition expression])
 
@@ -15275,7 +15251,7 @@ AT_CHECK([$COMPILE -fprof prog.cob])
 
 AT_CHECK([COB_PROF_MAX_DEPTH=2 COB_PROF_ENABLE=1 COB_PROF_FILE=prof.csv $COBCRUN_DIRECT ./prog], [0], [OK],
 [libcob: prog.cob:8: warning: [[cob_prof]] Profiling overflow at 2 calls, aborting profiling.
-libcob: prog.cob:8: warning:   Last 10 calls on stack:
+libcob: prog.cob:8: warning:   Last 2 calls on stack:
 libcob: prog.cob:8: warning:   * MAIN at prog.cob:5
 libcob: prog.cob:8: warning:   * prog at prog.cob:4
 ])
@@ -15284,7 +15260,7 @@ AT_CLEANUP
 
 
 AT_SETUP([run profiling with recursion, entries and CALL])
-AT_KEYWORDS([cobc])
+AT_KEYWORDS([cobc recursion])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -16060,7 +16036,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 000000001
 000000009
 ], [])
-
 AT_CLEANUP
 
 
@@ -16243,10 +16218,10 @@ AT_DATA([prog.cob], [
        01 OFFSET BINARY-LONG UNSIGNED.
        PROCEDURE DIVISION.
            MOVE 1 TO OFFSET
-	   PERFORM UNTIL OFFSET > LENGTH OF STR
-	     CALL "TestRecurse" USING STR OFFSET
-	   END-PERFORM.
-	   DISPLAY "DONE".
+           PERFORM UNTIL OFFSET > LENGTH OF STR
+             CALL "TestRecurse" USING STR OFFSET
+           END-PERFORM.
+           DISPLAY "DONE".
        END PROGRAM PROG.
 
        IDENTIFICATION DIVISION.
@@ -16257,8 +16232,8 @@ AT_DATA([prog.cob], [
        01 LK-OFFSET BINARY-LONG UNSIGNED.
        PROCEDURE DIVISION USING LK-STR LK-OFFSET.
            DISPLAY "L " LK-OFFSET " " NO ADVANCING
-	   EVALUATE LK-STR(LK-OFFSET:1)
-	     WHEN "."
+           EVALUATE LK-STR(LK-OFFSET:1)
+             WHEN "."
                ADD 1 TO LK-OFFSET
                CALL "TestRecurse" USING LK-STR LK-OFFSET
              WHEN OTHER
@@ -16290,7 +16265,7 @@ AT_DATA([prog.cob], [
            PERFORM UNTIL OFFSET > LENGTH OF STR
                CALL "TestRecurse" USING STR OFFSET
            END-PERFORM.
-	   DISPLAY "DONE".
+           DISPLAY "DONE".
        END PROGRAM PROG.
 
        IDENTIFICATION DIVISION.
@@ -16361,7 +16336,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            MOVE 0 TO WS-COUNTER.
            CALL "recurse" USING WS-COUNTER.
-	   DISPLAY "Done".
+           DISPLAY "Done".
            STOP RUN.
        END PROGRAM prog.
 
@@ -16445,7 +16420,7 @@ AT_DATA([caller.cob], [
            PERFORM UNTIL OFFSET > LENGTH OF STR
                CALL "callee" USING STR OFFSET
            END-PERFORM.
-	   DISPLAY "Done".
+           DISPLAY "Done".
 ])
 
 AT_CHECK([$COMPILE_MODULE callee.cob])

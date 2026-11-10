@@ -184,8 +184,9 @@ static void insert_copy_arg (void)
 {
 	if (copy_list_pointer != NULL){
 		int ret = ppcopy (copy_list_pointer->text, NULL, NULL);
-		if ( ret < 0 ){ /* This should never happen, as we already test it before */
+		if (ret < 0) { /* This should never happen, as we already test it before */
 			cobc_err_msg (_("fatal error: %s"), "could not find --copy argument");
+			plex_clear_all ();
 			cobc_abort_terminate (0);
 		}
 		copy_list_pointer = copy_list_pointer->next;
@@ -1580,8 +1581,8 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
 		plexbuff2[COB_SMALL_MAX] = 0;
 #if 0	/* TODO: output in separate COB_DEBUG_LOG */
 		printf ("checking COPY file: %s... ", plexbuff2);
-			printf ("Found!\n");
-			printf ("%s\n", cb_get_strerror ());
+		printf ("Found!\n");
+		printf ("%s\n", cb_get_strerror ());
 #endif
 		/* Must be an accessible, regular file */
 		if (access (plexbuff2, R_OK) == 0
@@ -1993,6 +1994,13 @@ plex_clear_all (void)
 		cobc_free (plexbuff2);
 		plexbuff2 = NULL;
 	}
+
+	/* only relevant in case of fatal errors before EOF */
+	cb_free_replace ();	
+	if (ppin) {
+		fclose (ppin);
+		ppin = NULL;
+	}
 }
 
 void
@@ -2307,13 +2315,15 @@ start:
 		if (need_continuation || continuation) {
 			cb_plex_error (newline_count,
 					_("buffer overrun - too many continuation lines"));
-#if 0		/* CHECKME: does anything breaks if we don't fake EOF here? */
-			return YY_NULL; /* fake eof (no further processing) */
-#endif
 		}
 		if (newline_count < max_size) {
 			/* FIXME: this doesn't check the buffer size ! */
 			memset (buff, '\n', newline_count);
+			if (need_continuation) {
+				/* end literal and start a new one for follow-up parsing */
+				buff[0] = quotation_mark;
+				buff[newline_count++] = quotation_mark;
+			}
 			buff[newline_count] = 0;
 			ipchar = (int)newline_count;
 			newline_count = 0;

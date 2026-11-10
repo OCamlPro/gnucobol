@@ -514,6 +514,17 @@ enum cb_index_type {
 	CB_STATIC_INT_VARYING
 };
 
+/* Object-oriented class attributes */
+enum cb_oo_class_attribute {
+	CB_OO_CLASS_ATTR_NONE			= 0x00, 	/* No attribute specified */
+	CB_OO_CLASS_ATTR_FINAL			= 0x01,		/* Cannot be subclassed */
+	CB_OO_CLASS_ATTR_ABSTRACT		= 0x02,		/* Can be subclassed, but not instantiated */
+	CB_OO_CLASS_ATTR_PARTIAL		= 0x04,
+	CB_OO_CLASS_ATTR_STATIC			= 0x08,		/* All methods must be marked STATIC */
+	CB_OO_CLASS_ATTR_PUBLIC			= 0x10,
+	CB_OO_CLASS_ATTR_INTERNAL		= 0x20
+};
+
 /* Reserved word list structure */
 struct cobc_reserved {
 	const char	*name;		/* Word */
@@ -910,6 +921,7 @@ struct cb_field {
 	cb_tree			external_definition;	/* by SAME AS / LIKE data-name or
 											 by type-name (points to field) */
 	cb_tree			like_modifier;	/* set for LIKE, may contain a length modifier */
+	cb_tree			reference;
 
 	int			id;		/* Field id */
 	int			size;		/* Field size */
@@ -1007,6 +1019,8 @@ struct cb_field {
 	unsigned int flag_is_verified	: 1;	/* Has been verified */
 
 	unsigned int flag_had_definition_note : 1;	/* had its defintion output */
+	unsigned int flag_factory_reference : 1;	/* OBJECT REFERENCE FACTORY */
+	unsigned int flag_reference_only : 1;	/* OBJECT REFERENCE _ ONLY */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1050,6 +1064,7 @@ struct cb_label {
 	int			id;			/* Unique id */
 	int			section_id;		/* SECTION id */
 	int			segment;		/* Segment number */
+	unsigned int 		name_hash;	/* hashing of original_name */
 
 	unsigned int		flag_section		: 1;	/* Section */
 	unsigned int		flag_entry		: 1;	/* Entry */
@@ -1397,6 +1412,7 @@ struct cb_xml_parse {
 
 struct cb_call {
 	struct cb_tree_common	common;		/* Common values */
+	cb_tree			obj_or_class;		/* INVOKE class name or object reference */
 	cb_tree			name;		/* CALL name */
 	cb_tree			args;		/* Arguments */
 	cb_tree			stmt1;		/* ON EXCEPTION */
@@ -1822,6 +1838,9 @@ struct nested_list {
 	struct cb_program	*nested_prog;
 };
 
+/* CHECKME: a new struct cb_object_class (and cb_object_class_signature?) with
+   specific fields would be convenient when it comes to further
+   type-checking... */
 struct cb_program {
 	struct cb_tree_common	common;		/* Common values */
 
@@ -1838,6 +1857,7 @@ struct cb_program {
 	struct nested_list	*nested_prog_list;	/* Callable contained */
 	struct nested_list	*common_prog_list;	/* COMMON contained */
 	cb_tree			entry_list;		/* Entry point list */
+	cb_tree			main_using;		/* main entry USING (for syntax checks) */
 	cb_tree			entry_list_goto;	/* Special Entry point list */
 	cb_tree			file_list;		/* File list */
 	cb_tree			cd_list;		/* CD list */
@@ -1859,12 +1879,13 @@ struct cb_program {
 	cb_tree			cb_sort_return;		/* SORT-RETURN */
 	cb_tree			cb_call_params;		/* Number of CALL params */
 	cb_tree			mnemonic_spec_list;	/* MNEMONIC spec */
-	cb_tree			class_spec_list;	/* CLASS spec */
-	cb_tree			interface_spec_list;	/* INTERFACE spec */
+	cb_tree			class_spec_list;	/* CLASS spec (prototypes only) */
+	cb_tree			interface_spec_list;	/* INTERFACE spec (prototypes only) */
 	cb_tree			function_spec_list;	/* FUNCTION spec */
 	cb_tree			user_spec_list;		/* User FUNCTION spec */
 	cb_tree			program_spec_list;	/* PROGRAM spec */
 	cb_tree			property_spec_list;	/* PROPERTY spec */
+	cb_tree			oo_inheritance_list;	/* List of Inherited Classes (OOP) */
 	struct cb_alter_id	*alter_gotos;		/* ALTER ids */
 	struct cb_field		*working_storage;	/* WORKING-STORAGE */
 	struct cb_field		*local_storage;		/* LOCAL-STORAGE */
@@ -1915,7 +1936,8 @@ struct cb_program {
 	cob_u8_t	high_value;			/* High-value for this program */
 	cob_u16_t	low_value_n;			/* National Low-value */
 	cob_u16_t	high_value_n;			/* National High-value  */
-	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
+	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1, OO class = 2) */
+	cob_u8_t 	oo_class_attributes;			/* OO class attributes */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 	struct literal_list	*decimal_constants;
 
@@ -1955,7 +1977,7 @@ struct cb_program {
 #define CB_PROGRAM(x)	(CB_TREE_CAST (CB_TAG_PROGRAM, struct cb_program, x))
 #define CB_PROGRAM_P(x)	(CB_TREE_TAG (x) == CB_TAG_PROGRAM)
 
-/* Function prototype */
+/* Prototype (function, class, or interface) */
 
 struct cb_prototype {
 	struct cb_tree_common	common;
@@ -2161,8 +2183,10 @@ extern void			cb_finalize_cd (struct cb_cd *,
 
 extern cb_tree			cb_build_filler (void);
 extern cb_tree			cb_build_reference (const char *);
-extern cb_tree			cb_build_field_reference (struct cb_field *,
-							  cb_tree);
+extern cb_tree			cb_build_field_reference (const struct cb_field *,
+							  const cb_tree);
+extern cb_tree			cb_build_object_reference (const struct cb_program *,
+							   const cb_tree);
 extern const char		*cb_define (cb_tree, cb_tree);
 extern char			*cb_to_cname (const char *);
 extern void			cb_set_system_names (void);
@@ -2403,6 +2427,9 @@ extern void		cb_validate_program_environment (struct cb_program *);
 extern void		cb_validate_program_data (struct cb_program *);
 extern void		cb_validate_program_body (struct cb_program *);
 
+extern void		cb_validate_oo_program_data (struct cb_program *);
+extern cb_tree		cb_validate_oo_class_or_interface (struct cb_program *);
+
 extern cb_tree		cb_build_expr (cb_tree);
 extern cb_tree		cb_build_cond (cb_tree);
 
@@ -2452,7 +2479,7 @@ extern void		cb_emit_allocate_characters (cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 
-extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree,
+extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree, cb_tree,
 				      cb_tree, cb_tree, cb_tree, cb_tree);
 
 extern void		cb_emit_cancel (cb_tree);
@@ -2589,7 +2616,8 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
-extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree);
+extern cb_tree		cb_check_conformance (cb_tree, cb_tree, cb_tree, cb_tree,
+					      int inline_invocation);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);
@@ -2604,6 +2632,9 @@ extern cb_tree		cb_build_xml_parse (cb_tree, cb_tree,
 						const int, cb_tree, cb_tree);
 extern void		cb_emit_json_generate (cb_tree, cb_tree, cb_tree,
 					       cb_tree, cb_tree);
+
+extern const char	*cb_get_cob_module_type_string (enum cob_module_type);
+extern int		cb_search_in_prototypes (cb_tree prototypes, cb_tree name);
 
 #ifdef	COB_TREE_DEBUG
 extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
@@ -2672,6 +2703,7 @@ extern int		procedure_list_add (struct cb_program *program,
 extern int		cb_flag_memory_check;
 
 extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
+extern const char *	cb_close_mode_to_string (const enum cob_close_mode);
 
 /* scanner.l */
 extern void		cb_unput_dot (void);

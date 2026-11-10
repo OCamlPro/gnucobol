@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2025 Free Software Foundation, Inc.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -282,6 +282,7 @@ static void	out_odoslide_grp_size (struct cb_field *p, struct cb_field *fld);
 
 static void output_stmt		(cb_tree);
 static void output_integer	(cb_tree);
+static void output_long_integer	(cb_tree);
 static void output_index	(cb_tree);
 static void output_func_1	(const char *, cb_tree);
 static void output_param	(cb_tree, int);
@@ -1756,14 +1757,17 @@ output_globext_cache (void)
 static void
 output_standard_includes (struct cb_program *prog)
 {
-	struct cb_program *p;
-
+#if defined (COB_NO_SELF_DECLARE_MPZ)
 #if defined (HAVE_GMP_H)
 	#define MATH_INCLUDE "#include <gmp.h>"
 #elif defined (HAVE_MPIR_H)
 	#define MATH_INCLUDE "#include <mpir.h>"
 #else
-#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+	#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+#endif
+#else
+	/* common.h will define a pseudo-struct which is enough
+	   for passing the value by reference (as part of cob_decimal) */
 #endif
 
 #if !defined (_GNU_SOURCE) && defined (_XOPEN_SOURCE_EXTENDED)
@@ -1785,14 +1789,19 @@ output_standard_includes (struct cb_program *prog)
 	if (cb_flag_winmain) {
 		output_line ("#include <windows.h>");
 	}
-	/* check if any of the processed programs has any decimal,
-	   then include appropriate header */
-	for (p = prog; p; p = p->next_program) {
-		if (p->decimal_index_max || p->flag_decimal_comp) {
-			output_line (MATH_INCLUDE);
-			break;
+#if defined (COB_NO_SELF_DECLARE_MPZ)
+	{
+		struct cb_program *p;
+		/* check if any of the processed programs has any decimal,
+		   then include appropriate header */
+		for (p = prog; p; p = p->next_program) {
+			if (p->decimal_index_max || p->flag_decimal_comp) {
+				output_line (MATH_INCLUDE);
+				break;
+			}
 		}
 	}
+#endif
 	output_line ("#include <libcob.h>");
 	output_newline ();
 }
@@ -2771,12 +2780,16 @@ output_source_cache (void)
 /* Add the given literal to the list of "seen" decimal
    constants in the given program "prog" */
 static void
-cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list *cached_literal)
+cb_cache_program_decimal_constant (struct cb_program *prog,
+		struct literal_list *cached_literal, const int dupl_check)
 {
 	struct literal_list	*l;
-	for (l = prog->decimal_constants; l; l = l->next) {
-		if (cached_literal->id == l->id) {
-			return;
+	if (dupl_check) {
+		/* only reasonable to check if caller doesn't create a literal */
+		for (l = prog->decimal_constants; l; l = l->next) {
+			if (cached_literal->id == l->id) {
+				return;
+			}
 		}
 	}
 
@@ -2788,25 +2801,103 @@ cb_cache_program_decimal_constant (struct cb_program *prog, struct literal_list 
 	prog->decimal_constants = l;
 }
 
-/* hash for literal including the data and all attributes but size */
+struct lit_slot {
+	cob_u32_t				hash;
+	const struct cb_literal	*cache_literal;
+	struct literal_list 	*node;
+};
+
+static struct lit_slot	*lit_tab = NULL;
+static cob_u32_t	lit_cap = 0;	/* power of two */
+static cob_u32_t	lit_cnt = 0;
+
+static void
+lit_tab_grow (void)
+{
+	const cob_u32_t capacity = lit_cap ? lit_cap * 2 : 1024;
+	struct lit_slot *newtab = cobc_parse_malloc (capacity * sizeof (struct lit_slot));
+	cob_u32_t i, j;
+
+	/* position in the literal slots depend on hash and capacity,
+	   sop take over existing entries into the double-sized table */
+	for (i = 0; i < lit_cap; ++i) {
+		if (!lit_tab[i].cache_literal) {
+					continue;	/* a bunch of entries may be empty */
+		}
+		j = lit_tab[i].hash & (capacity - 1);
+		while (newtab[j].cache_literal) {
+			j = (j + 1) & (capacity - 1);
+		}
+		newtab[j] = lit_tab[i];
+	}
+	if (lit_tab) {
+		cobc_parse_free (lit_tab);
+	}
+	lit_tab = newtab;
+	lit_cap = capacity;
+}
+
+/* returns the matching cache node or NULL */
+static struct literal_list *
+lit_tab_find (const cob_u32_t h, const struct cb_literal *literal)
+{
+	const struct cb_literal	*cache_literal;
+	cob_u32_t i;
+
+	if (!lit_cap) {
+		return NULL;
+	}
+	i = h & (lit_cap - 1);
+	while ((cache_literal = lit_tab[i].cache_literal) != NULL) {
+		if (lit_tab[i].hash == h
+		 && CB_TREE (literal)->category == CB_TREE (cache_literal)->category
+		 && literal->size  == cache_literal->size
+		 && literal->scale == cache_literal->scale
+		 && literal->sign  == cache_literal->sign
+		 && literal->all   == cache_literal->all
+		 && literal->llit  == cache_literal->llit
+		 && memcmp (literal->data, cache_literal->data, literal->size) == 0) {
+			return lit_tab[i].node;
+		}
+		i = (i + 1) & (lit_cap - 1);
+	}
+	return NULL;
+}
+
+/* call only after lit_tab_find returned NULL */
+static void
+lit_tab_add (const cob_u32_t h, struct literal_list *node)
+{
+	cob_u32_t i;
+
+	if ((lit_cnt + 1) * 2 > lit_cap) lit_tab_grow ();	/* load <= 0.5 */
+	i = h & (lit_cap - 1);
+	while (lit_tab[i].cache_literal) i = (i + 1) & (lit_cap - 1);
+	lit_tab[i].hash = h;
+	lit_tab[i].cache_literal = node->literal;
+	lit_tab[i].node = node;
+	++lit_cnt;
+}
+
+/* hash for literal data */
 static cob_u32_t
 cb_literal_hash (const unsigned char *data, cob_u32_t size)
 {
-	cob_u64_t	h = 0x9E3779B97F4A7C15ULL;	/* non-zero seed */
+	cob_u64_t	h = 0x9e3779b97f4a7c15ULL;	/* non-zero seed */
 	cob_u64_t	w;
 	cob_u32_t	i;
 
 	/* data: 8 bytes at a time */
 	for (i = 0; i + 8 <= size; i += 8) {
 		memcpy (&w, data + i, 8);
-		h = (h ^ w) * 0xFF51AFD7ED558CCDULL;
+		h = (h ^ w) * 0xff51afd7ed558ccdULL;
 		h ^= h >> 32;
 	}
 	/* tail: 0..7 bytes, zero-padded */
 	if (i < size) {
 		w = 0;
 		memcpy (&w, data + i, size - i);
-		h = (h ^ w) * 0xFF51AFD7ED558CCDULL;
+		h = (h ^ w) * 0xff51afd7ed558ccdULL;
 		h ^= h >> 32;
 	}
 
@@ -2821,31 +2912,21 @@ cb_literal_hash (const unsigned char *data, cob_u32_t size)
 int
 cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 {
-	const struct cb_literal	*cache_literal;
 	const struct cb_literal	*literal = CB_LITERAL (x);	
 	struct literal_list	*l;
 	const cob_u32_t 	size = literal->size;
 	const cob_u32_t		literal_hash = cb_literal_hash (literal->data, size);
 
 	/* Search literal cache */
-	for (l = literal_cache; l; l = l->next) {
-		if (literal_hash != l->literal_hash) {
-			continue;
+	l = lit_tab_find (literal_hash, literal);
+	if (l) {
+		if (make_decimal) {
+			/* FIXME: we should be able to skip this if l->make_decimal != 0,
+			   but doing so generates runtime aborts */
+			l->make_decimal = 1;
+			cb_cache_program_decimal_constant (prog, l, 1);
 		}
-		cache_literal = l->literal;
-		if (CB_TREE (literal)->category == CB_TREE (cache_literal)->category
-		 && literal->size == cache_literal->size
-		 && literal->scale == cache_literal->scale
-		 && literal->sign  == cache_literal->sign 
-		 && literal->all   == cache_literal->all  
-		 && literal->llit  == cache_literal->llit
-		 && memcmp (literal->data, cache_literal->data, size) == 0) {
-			if (make_decimal) {
-				l->make_decimal = 1;
-				cb_cache_program_decimal_constant (prog, l);
-			}
-			return l->id;
-		}
+		return l->id;
 	}
 
 	/* Output new literal */
@@ -2856,17 +2937,97 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 	l->id = cb_literal_id;
 	l->literal = (struct cb_literal *)literal;
 	l->literal_hash = literal_hash;
-	l->make_decimal = make_decimal;
 	l->next = literal_cache;
 	literal_cache = l;
 	if (make_decimal) {
-		cb_cache_program_decimal_constant (prog, l);
+		l->make_decimal = make_decimal;
+		cb_cache_program_decimal_constant (prog, l, 0);
 	}
+
+	lit_tab_add (literal_hash, l);
 
 	return cb_literal_id++;
 }
 
 /* Integer */
+
+/* output integer exponentiation, with a fatal check for
+   EC-SIZE-EXPONENTIATION if enabled (operands are evaluated twice) */
+static void
+output_pow (const struct cb_binary_op *p, const int is_long)
+{
+	const char	*type = is_long ? "cob_s64" : "cob_s32";
+	void		(*output_operand) (cb_tree)
+		= is_long ? output_long_integer : output_integer;
+
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		output ("((");
+		output_operand (p->x);
+		output (" == 0 && ");
+		output_operand (p->y);
+		output (" <= 0)");
+		output (" ? (cob_set_exception (COB_EC_SIZE_EXPONENTIATION),");
+		output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+		output (" (%s_t)0) : ", type);
+	}
+	output ("%s_pow (", type);
+	output_operand (p->x);
+	output (", ");
+	output_operand (p->y);
+	output (")");
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		output (")");
+	}
+}
+
+/* check if x is a constant known to be non-zero */
+static int
+is_nonzero_constant (cb_tree x)
+{
+	if (CB_INTEGER_P (x)) {
+		return CB_INTEGER (x)->val != 0;
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		const struct cb_literal	*l = CB_LITERAL (x);
+		unsigned int	i;
+		for (i = 0; i < l->size; i++) {
+			if (l->data[i] != '0') {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+/* output integer division, with a check for EC-SIZE-ZERO-DIVIDE, which
+   is fatal if enabled (divisor is evaluated twice) */
+static void
+output_div (const struct cb_binary_op *p, const int is_long)
+{
+	void		(*output_operand) (cb_tree)
+		= is_long ? output_long_integer : output_integer;
+
+	if (is_nonzero_constant (p->y)) {
+		output ("(");
+		output_operand (p->x);
+		output (" / ");
+		output_operand (p->y);
+		output (")");
+		return;
+	}
+	output ("((");
+	output_operand (p->y);
+	output (" == 0)");
+	output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+		output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+	}
+	output (" (%s)0) : (", is_long ? "cob_s64_t" : "cob_s32_t");
+	output_operand (p->x);
+	output (" / ");
+	output_operand (p->y);
+	output ("))");
+}
 
 static void
 output_integer (cb_tree x)
@@ -2908,11 +3069,9 @@ output_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			output ("cob_s32_pow (");
-			output_integer (p->x);
-			output (", ");
-			output_integer (p->y);
-			output (")");
+			output_pow (p, 0);
+		} else if (p->op == '/') {
+			output_div (p, 0);
 		} else if (p->op == 'n') {
 			output (" ~ (");
 			output_integer (p->y);
@@ -3235,11 +3394,9 @@ output_long_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			output ("cob_s64_pow (");
-			output_long_integer (p->x);
-			output (", ");
-			output_long_integer (p->y);
-			output (")");
+			output_pow (p, 1);
+		} else if (p->op == '/') {
+			output_div (p, 1);
 		} else {
 			output ("(");
 			output_long_integer (p->x);
@@ -3908,6 +4065,29 @@ output_param (cb_tree x, int id)
 	}
 	case CB_TAG_BINARY_OP: {
 		const struct cb_binary_op	*bp = CB_BINARY_OP (x);
+		const int	chk_zero_divide = bp->op == '/'
+			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+			&& !is_nonzero_constant (bp->y);
+		const int	chk_pow = bp->op == '^'
+			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION);
+		/* fatal checks for EC-SIZE (operands evaluated twice) */
+		if (chk_zero_divide) {
+			output ("(cob_cmp_int (");
+			output_param (bp->y, id);
+			output (", 0) == 0");
+			output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+			output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+			output (" (cob_field *)NULL) : ");
+		} else if (chk_pow) {
+			output ("(!cob_valid_pow (");
+			output_param (bp->x, id);
+			output (", ");
+			output_param (bp->y, id);
+			output (")");
+			output (" ? (cob_set_exception (COB_EC_SIZE_EXPONENTIATION),");
+			output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+			output (" (cob_field *)NULL) : ");
+		}
 		output ("cob_intr_binop (");
 		output_param (bp->x, id);
 		output (", ");
@@ -3921,6 +4101,9 @@ output_param (cb_tree x, int id)
 		output (", ");
 		output_param (bp->y, id);
 		output (")");
+		if (chk_zero_divide || chk_pow) {
+			output (")");
+		}
 		break;
 	}
 	case CB_TAG_INTRINSIC: {
@@ -4319,6 +4502,28 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 			output_data (p->argv[1]);
 			output ("))");
 		}
+		break;
+
+	case 'Z':	/* Fatal check for EC-SIZE on a decimal result */
+		if (!CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+		 && !CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+			output ("0");
+			break;
+		}
+		output ("((");
+		output_param (p->argv[0], 0);
+		output ("->scale == COB_DECIMAL_NAN && (");
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+			output ("cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)");
+			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+				output (" || ");
+			}
+		}
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+			output ("cob_last_exception_is (COB_EC_SIZE_EXPONENTIATION)");
+		}
+		output ("))");
+		output (" ? (cob_fatal_error (COB_FERROR_FATAL_EC), 0) : 0)");
 		break;
 
 	case 'R':	/* Generate REPORT line */
@@ -5398,9 +5603,11 @@ output_cobol_info (cb_tree x)
 	output ("#line %d \"", x->source_line);
 
     if (strcmp (p, COB_DASH)) {
-	/* escape COBOL file name for C string */
+		/* escape COBOL file name for C string */
 		while (*p) {
-			if (*p == '\\') {
+			switch (*p) {
+			case '\\':
+			case '"':
 				output ("%c", '\\');
 			}
 			output ("%c", *p++);
@@ -8007,7 +8214,7 @@ output_goto_1 (cb_tree x)
 	output_line ("goto %s%d;", CB_PREFIX_LABEL, lb->id);
 }
 
-/* extension in test, may be removed again */
+/* extension for code generators */
 static void
 output_goto_entry (cb_tree target)
 {
@@ -8750,6 +8957,43 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 }
 
 static void
+output_ec_size_handler (void)
+{
+	int ec_checked = 0;
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ADDRESS);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_EXPONENTIATION);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_IMP);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_OVERFLOW);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_TRUNCATION);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_UNDERFLOW);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ZERO_DIVIDE);
+	}
+	if (ec_checked) {
+		output_line (
+			"if (((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
+			CB_EXCEPTION_CODE (COB_EC_SIZE),
+			CB_EXCEPTION_CODE (COB_EC_SIZE));
+		output_line (" && ((cob_glob_ptr->cob_exception_code & 0x%04x) != 0)",
+			ec_checked & 0x00FF);
+		output_line ( " && (cob_glob_ptr->cob_got_exception > 0))");
+		output_line ("\t" "cob_fatal_error (COB_FERROR_FATAL_EC);");
+	}
+}
+
+static void
 output_handler (const struct cb_statement *stmt)
 {
 	if (stmt->file) {
@@ -8757,6 +9001,14 @@ output_handler (const struct cb_statement *stmt)
 		return;
 	}
 
+	if (stmt->ex_handler || stmt->not_ex_handler) {
+		/* We have a handler, so the exceptions should not be raised, and we reset them
+		 * before in case the handling statements can also raise exceptions. */
+		output_line ("if (cob_glob_ptr->cob_got_exception)");
+		output_block_open ();
+		output_line ("cob_glob_ptr->cob_got_exception = -1;");
+		output_block_close ();
+	}
 	if (stmt->ex_handler) {
 		output_ec_condition_for_handler (stmt->handler_type);
 		output_block_open ();
@@ -8767,6 +9019,8 @@ output_handler (const struct cb_statement *stmt)
 		}
 	}
 	if (stmt->not_ex_handler) {
+		/* We have a not handler, so we should reset exceptions to avoid them
+		 * being triggered after */
 		if (stmt->ex_handler == NULL) {
 			output_line ("if (!cob_glob_ptr->cob_exception_code)");
 		}
@@ -9204,6 +9458,13 @@ output_stmt (cb_tree x)
 				output_debug_stmts (debug_checks);
 			}
 		}
+
+		if (p->handler_type == SIZE_ERROR_HANDLER
+		 && p->ex_handler == NULL
+		 && p->not_ex_handler == NULL) {
+			output_ec_size_handler ();
+		}
+
 		break;
 	}
 	case CB_TAG_LABEL:
@@ -11234,6 +11495,22 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 }
 
 const char *
+cb_close_mode_to_string (const enum cob_close_mode mode)
+{
+	switch (mode) {
+	case COB_CLOSE_NORMAL:		return CB_XSTRINGIFY (COB_CLOSE_NORMAL);
+	case COB_CLOSE_LOCK:		return CB_XSTRINGIFY (COB_CLOSE_LOCK);
+	case COB_CLOSE_NO_REWIND:	return CB_XSTRINGIFY (COB_CLOSE_NO_REWIND);
+	case COB_CLOSE_UNIT:		return CB_XSTRINGIFY (COB_CLOSE_UNIT);
+	case COB_CLOSE_UNIT_REMOVAL:	return CB_XSTRINGIFY (COB_CLOSE_UNIT_REMOVAL);
+	}
+	/* LCOV_EXCL_START */
+	cobc_err_msg ("unexpected cob_close_mode");
+	COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
+}
+
+const char *
 cb_open_mode_to_string (const enum cob_open_mode mode)
 {
 	switch (mode) {
@@ -12822,7 +13099,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				else
 					sprintf (wrk,", Default byte: 0x%02X", cb_default_byte);
 			} else {
-				strcpy(wrk,"");
+				strcpy (wrk,"");
 			}
 			output_line ("/* Initialize WORKING-STORAGE%s */",wrk);
 			output_initial_values (prog->working_storage);
@@ -13934,18 +14211,24 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	output_line_number = 1;
 	output_name = (char*)translate_name;
 	/* escape output name for C string */
-	if (strchr (output_name, '\\')) {
+	if (strpbrk (output_name, "\\\"")) {
 		char buff[COB_MEDIUM_BUFF];
 		int pos = 0;
 		char* s;
 		for (s = output_name; *s; s++) {
-			if (*s == '\\') {
+			switch (*s) {
+			case '\\':
+			case '"':
 				buff[pos++] = '\\';
+			}
+			if (pos >= COB_MEDIUM_MAX) {
+				pos = COB_MEDIUM_MAX;
+				break;
 			}
 			buff[pos++] = *s;
 		}
 		buff[pos] = 0;
-		output_name = cobc_check_string (buff);
+		output_name = cobc_main_strdup (buff);
 	}
 	gen_ascii_ebcdic = 0;
 	gen_ebcdic_ascii = 0;
@@ -14092,14 +14375,14 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		for (l = prog->entry_list; l; l = CB_CHAIN (l)) {
 			output_function_entry_function (prog, l, 1);
 		}
-	} else {
+	} else if (prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_line ("/* PROGRAM-ID '%s' */", prog->orig_program_id);
 		output_newline ();
 		for (l = prog->entry_list; l; l = CB_CHAIN (l)) {
 			output_entry_function (prog, l, prog->parameter_list, 1);
 			progid++;
 		}
-	}
+	} /* TODO (OO): Handle other prog types. */
 
 	output_internal_function (prog, prog->parameter_list);
 
@@ -14263,6 +14546,8 @@ codegen_finalize (void)
 	/* Clean up by clearing these */
 	attr_cache = NULL;
 	literal_cache = NULL;
+	lit_tab = NULL;
+	lit_cap = 0;
 	string_cache = NULL;
 	string_id = 1;
 	source_cache = NULL;

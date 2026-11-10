@@ -305,10 +305,10 @@ word_hash (const unsigned char *word)
 
 	/* Perform 32-bit FNV1a hash */
 	for (; *word; ++word) {
-		result = (result ^ *word) * (cob_u32_t) 0x1677619;
+		result = (result ^ *word) * (cob_u32_t) 0x01000193;
 	}
 
-	return result % CB_WORD_HASH_MASK;
+	return result;
 }
 
 /* look up word (case insensitive) */
@@ -316,7 +316,8 @@ static void
 lookup_word (struct cb_reference *p, const char *name)
 {
 	struct cb_word	*w;
-	size_t		val;
+	cob_u32_t		val;	/* word hash */
+	cob_u16_t hash_index;	/* reduced word hash to lower 11 bits for use as table index */
 
 	/* build uppercase variant (we don't want the hash to differentiate those) */
 	unsigned char word[COB_MAX_WORDLEN + 1];
@@ -331,17 +332,18 @@ lookup_word (struct cb_reference *p, const char *name)
 			len = COB_MAX_WORDLEN;
 #endif
 		}
-			for (i = 0; i < len; ++i) {
-				word[i] = (cob_u8_t)toupper ((unsigned char)name[i]);
-			}
-			word[i] = 0;
+		for (i = 0; i < len; ++i) {
+			word[i] = (cob_u8_t)toupper ((unsigned char)name[i]);
 		}
+		word[i] = 0;
+	}
 	val = word_hash (word);
+	hash_index = val % CB_WORD_HASH_MASK;
 
 	/* Find an existing word */
 	if (likely(current_program)) {
 		/* checking only "very similar" words that share the same hash */
-		for (w = current_program->word_table[val]; w; w = w->next) {
+		for (w = current_program->word_table[hash_index]; w; w = w->next) {
 #if 1	/* TODO we currently use words "as written first" use an all-upper
 		   approach post 3.1 */
 			if (strcasecmp (w->name, name) == 0) {
@@ -367,19 +369,21 @@ lookup_word (struct cb_reference *p, const char *name)
 
 	/* Insert it into the table */
 	if (likely(current_program)) {
-		w->next = current_program->word_table[val];
-		current_program->word_table[val] = w;
+		w->next = current_program->word_table[hash_index];
+		current_program->word_table[hash_index] = w;
 	}
 	p->word = w;
 	p->hashval = val;
 }
 
-#define CB_FILE_ERR_REQUIRED	1
-#define CB_FILE_ERR_INVALID_FT	2
-#define CB_FILE_ERR_INVALID		3
+enum cb_file_errtype {
+	CB_FILE_ERR_REQUIRED	= 1,
+	CB_FILE_ERR_INVALID_FT	= 2,
+	CB_FILE_ERR_INVALID		= 3
+};
 
 static void
-file_error (cb_tree name, const char *clause, const char errtype)
+file_error (cb_tree name, const char *clause, const enum cb_file_errtype errtype)
 {
 	switch (errtype) {
 	case CB_FILE_ERR_REQUIRED:
@@ -969,7 +973,7 @@ valid_format (const enum cb_intr_enum intr, const char *format)
 static const char *
 try_get_constant_data (cb_tree val)
 {
-	if (val == NULL) {
+	if (CB_INVALID_TREE (val)) {
 		return NULL;
 	} else if (CB_LITERAL_P (val)) {
 		return (char *) CB_LITERAL (val)->data;
@@ -1006,8 +1010,9 @@ valid_const_date_time_args (const cb_tree tree, const struct cb_intrinsic_table 
 static cb_tree
 get_last_elt (cb_tree l)
 {
-	while (CB_CHAIN (l)) {
-		l = CB_CHAIN (l);
+	cb_tree	next;
+	while ((next = CB_CHAIN (l)) != NULL) {
+		l = next;
 	}
 	return l;
 }
@@ -1463,6 +1468,8 @@ cb_tree_category (cb_tree x)
 					x->category = CB_CATEGORY_DATA_POINTER;
 				} else if (f->usage == CB_USAGE_PROGRAM_POINTER) {
 					x->category = CB_CATEGORY_PROGRAM_POINTER;
+				} else if (f->usage == CB_USAGE_OBJECT) {
+					x->category = CB_CATEGORY_OBJECT_REFERENCE;
 				} else if (f->pic) {
 					x->category = f->pic->category;
 				/* FIXME: Hack for CGI to not abort */
@@ -2136,9 +2143,7 @@ cb_next_length (struct cb_next_elem *l)
 const char *
 cb_define (cb_tree name, cb_tree val)
 {
-	struct cb_word *w;
-
-	w = CB_REFERENCE (name)->word;
+	struct cb_word *w = CB_REFERENCE (name)->word;
 	w->items = cb_list_add (w->items, val);
 	w->count++;
 	val->source_file = name->source_file;
@@ -4690,8 +4695,8 @@ validate_file (struct cb_file *f, cb_tree name)
 			file_error (name, "ALTERNATE", CB_FILE_ERR_INVALID_FT);
 			f->alt_key_list = NULL;
 		}
-		if (f->access_mode == COB_ACCESS_DYNAMIC ||
-		    f->access_mode == COB_ACCESS_RANDOM) {
+		if (f->access_mode == COB_ACCESS_DYNAMIC
+		 || f->access_mode == COB_ACCESS_RANDOM) {
 			file_error (name, "ORGANIZATION", CB_FILE_ERR_INVALID);
 		}
 		break;
@@ -5137,7 +5142,7 @@ cb_build_filler (void)
   If ref != NULL, other attributes are set to the same as ref.
 */
 cb_tree
-cb_build_field_reference (struct cb_field *f, cb_tree ref)
+cb_build_field_reference (const struct cb_field *f, const cb_tree ref)
 {
 	cb_tree		x;
 	struct cb_word	*word;
@@ -5150,6 +5155,27 @@ cb_build_field_reference (struct cb_field *f, cb_tree ref)
 	x->category = CB_CATEGORY_UNKNOWN;
 	CB_REFERENCE (x)->word = word;
 	CB_REFERENCE (x)->value = CB_TREE (f);
+	return x;
+}
+
+/*
+  Return a reference to the program p.
+  If ref != NULL, other attributes are set to the same as ref.
+*/
+cb_tree
+cb_build_object_reference (const struct cb_program *p, const cb_tree ref)
+{
+	cb_tree		x;
+	struct cb_word	*word;
+
+	x = cb_build_reference (p->program_name);
+	word = CB_REFERENCE (x)->word;
+	if (ref) {
+		memcpy (x, ref, sizeof (struct cb_reference));
+	}
+	x->category = CB_CATEGORY_OBJECT_REFERENCE;
+	CB_REFERENCE (x)->word = word;
+	CB_REFERENCE (x)->value = CB_TREE (p);
 	return x;
 }
 
@@ -5214,7 +5240,6 @@ cb_ref_internal (cb_tree x, const int emit_error)
 	cb_tree			c;
 	struct cb_program	*prog;
 	struct cb_word		*w;
-	size_t			val;
 	size_t			ambiguous;
 	struct cb_label		*save_section;
 	struct cb_label		*save_paragraph;
@@ -5334,15 +5359,11 @@ cb_ref_internal (cb_tree x, const int emit_error)
 
 	/* There is no candidate */
 	if (candidate == NULL) {
+		cob_u16_t hash_index = r->hashval % CB_WORD_HASH_MASK;
 		if (likely(current_program->nested_level <= 0)) {
 			goto raise_error;
 		}
 		/* Nested program - check parents for GLOBAL candidate */
-#if 0 /* RXWRXW */
-		val = word_hash ((const unsigned char *)r->word->name);
-#else
-		val = r->hashval;
-#endif
 		prog = current_program;
 		while (prog) {
 			if (!cb_correct_program_order) {
@@ -5353,7 +5374,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 			if (prog->nested_level >= current_program->nested_level) {
 				continue;
 			}
-			for (w = prog->word_table[val]; w; w = w->next) {
+			for (w = prog->word_table[hash_index]; w; w = w->next) {
 				if (strcasecmp (r->word->name, w->name) == 0) {
 					candidate = global_check (r, w->items, &ambiguous);
 					if (candidate) {
@@ -6023,6 +6044,10 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 					}
 					break;
 				case '^':
+					if (xval == 0 && yval <= 0) {	/* raises EC-SIZE-EXPONENTIATION */
+						cb_warning_x (COBC_WARN_FILLER, x, _("invalid exponentiation of constant ZERO"));
+						break;
+					}
 					/* only calculate simple integer numerics */
 					if (xl->scale != 0
 					 || yl->scale != 0
@@ -6580,11 +6605,12 @@ cb_build_label (cb_tree name, struct cb_label *section)
 	p->id = cb_id++;
 	p->name = cb_define (name, CB_TREE (p));
 	p->orig_name = p->name;
-	p->section = section;
+	p->name_hash = CB_REFERENCE (name)->hashval;
 	if (section) {
+		p->section = section;
 		l = cobc_parse_malloc (sizeof(struct cb_para_label));
 		l->next = section->para_label;
-		l->para= p;
+		l->para = p;
 		section->para_label = l;
 		p->section_id = p->section->id;
 	} else {
@@ -6944,44 +6970,6 @@ cb_build_xml_parse (cb_tree data, cb_tree proc,
 
 /* Prototypes */
 
-static void
-warn_if_no_definition_seen_for_prototype (const struct cb_prototype *proto)
-{
-	struct cb_program	*program;
-	const char		*error_msg;
-
-	program = cb_find_defined_program_by_id (proto->ext_name);
-	if (program) {
-		return;
-	}
-
-	if (get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
-		if (strcmp (proto->name, proto->ext_name) == 0) {
-			/*
-			  Warn if no definition seen for element with prototype-
-			  name.
-			*/
-			if (proto->type == COB_MODULE_TYPE_FUNCTION) {
-				error_msg = _("no definition/prototype seen for FUNCTION '%s'");
-			} else { /* PROGRAM_TYPE */
-				error_msg = _("no definition/prototype seen for PROGRAM '%s'");
-			}
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto), error_msg, proto->name);
-		} else {
-			/*
-			  Warn if no definition seen for element with given
-			  external-name.
-			*/
-			if (proto->type == COB_MODULE_TYPE_FUNCTION) {
-				error_msg = _("no definition/prototype seen for FUNCTION with external name '%s'");
-			} else { /* PROGRAM_TYPE */
-				error_msg = _("no definition/prototype seen for PROGRAM with external name '%s'");
-			}
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto), error_msg, proto->ext_name);
-		}
-	}
-}
-
 cb_tree
 cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 		    const enum cob_module_type type)
@@ -7012,8 +7000,6 @@ cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
 	}
 
 	prototype->type = type;
-
-	warn_if_no_definition_seen_for_prototype (prototype);
 
 	return CB_TREE (prototype);
 }
@@ -7678,6 +7664,35 @@ cb_build_prof_call (enum cb_prof_call prof_call,
 		return CB_BUILD_FUNCALL_2 (func_name, cb_int (prof_call), cb_int (func_arg1));
 	}
 	return CB_BUILD_FUNCALL_3 (func_name, cb_int (prof_call), cb_int (func_arg1), cb_int (func_arg2));
+}
+
+/* Object-oriented */
+
+const char *
+cb_get_cob_module_type_string (enum cob_module_type prog_type)
+{
+	switch (prog_type) {
+	default:
+	case COB_MODULE_TYPE_PROGRAM: 		return "PROGRAM";
+	case COB_MODULE_TYPE_FUNCTION: 		return "FUNCTION";
+	case COB_MODULE_TYPE_CLASS: 		return "CLASS";
+	case COB_MODULE_TYPE_INTERFACE: 	return "INTERFACE";
+	case COB_MODULE_TYPE_METHOD: 		return "METHOD";
+	}
+}
+
+int
+cb_search_in_prototypes (cb_tree list, cb_tree name)
+{
+	cb_tree l;
+	
+	for (l = list; l; l = CB_CHAIN (l)) {
+		const char * const x_name = CB_PROTOTYPE (CB_VALUE (l))->name;
+		if (strcasecmp (x_name, CB_NAME (name)) == 0) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 /* Allocate a procedure description record and add it at the end of
