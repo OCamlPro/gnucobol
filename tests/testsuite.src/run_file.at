@@ -1551,7 +1551,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:22: error: inconsistent file name (status = 31) for file test-file ('') on OPEN
+[libcob: prog.cob:22: error: inconsistent file name (status = 31) for file test-file (' ') on OPEN
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog X], [1], [],
 [libcob: prog.cob:22: error: inconsistent file name (status = 31) for file test-file ('') on OPEN

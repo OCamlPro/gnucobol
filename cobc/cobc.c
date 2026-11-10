@@ -1654,34 +1654,47 @@ enum name_error_reason {
 	SPACE_HYPHEN_FIRST_CHAR,
 	GNUCOBOL_PREFIX,
 	C_KEYWORD,
-	CONTAINS_DIRECTORY_SEPARATOR
+	CONTAINS_DIRECTORY_SEPARATOR,
+	CONTAINS_APOSTROPHE,
+	CONTAINS_QUOTE
 };
 
 static void
 cobc_error_name (const char *name, const enum cobc_name_type type,
 		 const enum name_error_reason reason)
 {
+	char	name_buff[COB_MAX_NAMELEN + 5];
 	const char	*s;
 
 	switch (reason) {
 	case INVALID_LENGTH:	/* > COB_MAX_NAMELEN ("normal mode ") || > COB_MAX_WORDLEN */
-		s = _(" - length exceeds maximum");
-		strcpy ((char *)(name + 32), "...");
+		s = _("length exceeds maximum");
+		if (strlen (name) > sizeof(name_buff) - 1) {
+			memcpy (name_buff, name, COB_MAX_NAMELEN);
+			strcpy (name_buff + COB_MAX_NAMELEN, "...");
+			name = (const char *)&name_buff;
+		}
 		break;
 	case EMPTY_NAME:
-		s = _(" - name cannot be empty");
+		s = _("name cannot be empty");
 		break;
 	case SPACE_HYPHEN_FIRST_CHAR:
-		s = _(" - name cannot begin with space or hyphen");
+		s = _("name cannot begin with space or hyphen");
 		break;
 	case GNUCOBOL_PREFIX:
-		s = _(" - name cannot begin with 'cob_' or 'COB_'");
+		s = _("name cannot begin with 'cob_' or 'COB_'");
 		break;
 	case C_KEYWORD:
-		s = _(" - name duplicates a 'C' keyword");
+		s = _("name duplicates a 'C' keyword");
 		break;
 	case CONTAINS_DIRECTORY_SEPARATOR:
-		s = _(" - name cannot contain a directory separator");
+		s = _("name cannot contain a directory separator");
+		break;
+	case CONTAINS_APOSTROPHE:
+		s = _("name cannot contain an apostrophe");
+		break;
+	case CONTAINS_QUOTE:
+		s = _("name cannot contain a quote");
 		break;
 	default:
 		s = "";
@@ -1690,19 +1703,22 @@ cobc_error_name (const char *name, const enum cobc_name_type type,
 
 	switch (type) {
 	case FILE_BASE_NAME:
-		cb_error (_("invalid file base name '%s'%s"),
-			name, s);
+		cb_error (_("invalid file base name '%s'%s%s"),
+			name, s[0] ? " - " : "", s);
 		break;
 	case ENTRY_NAME:
-		cb_error (_("invalid ENTRY '%s'%s"), name, s);
+		cb_error (_("invalid ENTRY '%s'%s%s"),
+			name, s[0] ? " - " : "", s);
 		break;
 	case PROGRAM_ID_NAME:
-		cb_error (_("invalid PROGRAM-ID '%s'%s"), name, s);
+		cb_error (_("invalid PROGRAM-ID '%s'%s%s"),
+			name, s[0] ? " - " : "", s);
 		break;
 	default:
 		/* internal rare error (should be raised for 'a-[150 times]-b'),
 		   no need for translation */
-		cobc_err_msg ("unknown name error '%s'%s", name, s);
+		cobc_err_msg ("unknown name error '%s'%s%s",
+			name, s[0] ? " - " : "", s);
 		break;
 	}
 }
@@ -1713,11 +1729,19 @@ cobc_check_valid_name (const char *name, const enum cobc_name_type prechk)
 	const char	*p;
 	size_t		len;
 
-	/* Check name doesn't contain path separator. */
+	/* Check name doesn't contain path separator
+	   (or an end comment or an escape sequence when output to C string). */
 	for (p = name, len = 0; *p; p++, len++) {
-		if (*p == '/' || *p == '\\') {
-			cobc_error_name (name, prechk,
-					 CONTAINS_DIRECTORY_SEPARATOR);
+		switch (*p) {		
+		case '/':
+		case '\\':
+			cobc_error_name (name, prechk, CONTAINS_DIRECTORY_SEPARATOR);
+			return 1;
+		case '\'':
+			cobc_error_name (name, prechk, CONTAINS_APOSTROPHE);
+			return 1;
+		case '"':
+			cobc_error_name (name, prechk, CONTAINS_QUOTE);
 			return 1;
 		}
 	}
@@ -4631,15 +4655,22 @@ process_filename (const char *filename)
 #endif
 
 	if (string_is_dash (filename)) {
-		if (cobc_seen_stdin == 0) {
-			cobc_seen_stdin = 1;
-			file_is_stdin = 1;
-			filename = COB_DASH_NAME;
-		} else {
+		if (cobc_seen_stdin) {
 			cobc_err_msg (_("only one stdin input allowed"));
 			return NULL;
 		}
+		cobc_seen_stdin = 1;
+		filename = COB_DASH_NAME;
+		file_is_stdin = 1;
 	} else {
+		/* note: a duplicate filename just generates and compile/assemble twice,
+		   the linker will commonly drop the duplicate elements; a warning would
+		   be nice, but would need to readlink the files... */
+		char *bad = strpbrk (filename, "*\"'?");
+		if (bad) {	/* would break generated comments */
+			cobc_err_msg (_("file name may not contain '%c'"), *bad);
+			return NULL;
+		}
 		/* LCOV_EXCL_START */
 		if (strlen (filename) > COB_NORMAL_MAX) {
 			cobc_err_msg (_("invalid file name parameter (length > %d)"), COB_NORMAL_MAX);
@@ -4741,7 +4772,7 @@ process_filename (const char *filename)
 	if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_strdup (output_name);
 	} else
-	if (save_temps   /* Oct 9 change ??? */
+	if ( save_temps
 	 || (cb_compile_level == CB_LEVEL_PREPROCESS && !cb_depend_output_only)) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {

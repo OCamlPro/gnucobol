@@ -1,4 +1,5 @@
-## Copyright (C) 2007-2012, 2014-2018, 2020-2023 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2018, 2020-2023, 2026 Free Software
+## Foundation, Inc.
 ## Written by Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -431,7 +432,9 @@ AT_CLEANUP
 
 
 AT_SETUP([invalid formatted date/time args])
-AT_KEYWORDS([functions FORMATTED-DATE FORMATTED-CURRENT-DATE FORMATTED-TIME FORMATTED-DATETIME INTEGER-OF-FORMATTED-DATE SECONDS-FROM-FORMATTED-TIME])
+AT_KEYWORDS([functions datetime FORMATTED-DATE FORMATTED-CURRENT-DATE
+  FORMATTED-TIME FORMATTED-DATETIME INTEGER-OF-FORMATTED-DATE
+  SECONDS-FROM-FORMATTED-TIME])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -442,6 +445,11 @@ AT_DATA([prog.cob], [
        01  Date-Format        CONSTANT "YYYYMMDD".
        01  Time-Format        CONSTANT "hhmmss".
        01  Datetime-Format    CONSTANT "YYYYMMDDThhmmss".
+       01  bad-data           pic x  *> separator period missing on purpose
+       01  dummy              pic x.
+       01  bad-group                 *> separator period missing on purpose
+           03  filler         pic x.
+       01  dummy              pic x.
        PROCEDURE        DIVISION.
       *>   Test wrong formats
            DISPLAY FUNCTION FORMATTED-DATE ( "YYYYWWWD", 1 )
@@ -488,25 +496,36 @@ AT_DATA([prog.cob], [
            DISPLAY FUNCTION FORMATTED-TIME ( "hhmmss.ssssssssss", 1)
            END-DISPLAY
 
+      *>   data of invalid field (to ensure nice error handling)
+           DISPLAY FUNCTION FORMATTED-TIME ( bad-data, 1)
+           END-DISPLAY
+           DISPLAY FUNCTION FORMATTED-TIME ( bad-group, 1)
+           END-DISPLAY
+
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:12: error: FUNCTION 'FORMATTED-DATE' has invalid date/time format
-prog.cob:14: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
-prog.cob:16: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
-prog.cob:21: warning: FUNCTION 'FORMATTED-DATE' has format in variable
-prog.cob:25: error: FUNCTION 'FORMATTED-CURRENT-DATE' has invalid date/time format
-prog.cob:27: error: FUNCTION 'FORMATTED-CURRENT-DATE' has invalid date/time format
-prog.cob:30: error: FUNCTION 'FORMATTED-DATE' has invalid date/time format
-prog.cob:32: error: FUNCTION 'FORMATTED-DATE' has invalid date/time format
-prog.cob:35: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
-prog.cob:37: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
-prog.cob:40: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
-prog.cob:42: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
-prog.cob:45: error: FUNCTION 'INTEGER-OF-FORMATTED-DATE' has invalid date/time format
-prog.cob:48: error: FUNCTION 'SECONDS-FROM-FORMATTED-TIME' has invalid date/time format
-prog.cob:53: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
+[prog.cob:11: error: syntax error, unexpected Literal
+prog.cob:13: error: syntax error, unexpected Literal
+prog.cob:17: error: FUNCTION 'FORMATTED-DATE' has invalid date/time format
+prog.cob:19: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
+prog.cob:21: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
+prog.cob:26: warning: FUNCTION 'FORMATTED-DATE' has format in variable
+prog.cob:30: error: FUNCTION 'FORMATTED-CURRENT-DATE' has invalid date/time format
+prog.cob:32: error: FUNCTION 'FORMATTED-CURRENT-DATE' has invalid date/time format
+prog.cob:35: error: FUNCTION 'FORMATTED-DATE' has invalid date/time format
+prog.cob:37: error: FUNCTION 'FORMATTED-DATE' has invalid date/time format
+prog.cob:40: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
+prog.cob:42: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
+prog.cob:45: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
+prog.cob:47: error: FUNCTION 'FORMATTED-DATETIME' has invalid date/time format
+prog.cob:50: error: FUNCTION 'INTEGER-OF-FORMATTED-DATE' has invalid date/time format
+prog.cob:53: error: FUNCTION 'SECONDS-FROM-FORMATTED-TIME' has invalid date/time format
+prog.cob:58: error: FUNCTION 'FORMATTED-TIME' has invalid date/time format
+prog.cob:62: warning: FUNCTION 'FORMATTED-TIME' has format in variable
+prog.cob:64: error: 'bad-group' is not defined
+prog.cob:64: warning: FUNCTION 'FORMATTED-TIME' has format in variable
 ])
 
 AT_CLEANUP

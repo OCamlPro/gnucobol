@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021-2023 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021-2023,2026 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -537,10 +537,11 @@ intrinsic-function:	ACOS
 intrinsic-function:	ANNUITY
 intrinsic-function:	ASIN
 intrinsic-function:	ATAN
-intrinsic-function:	BOOLEAN-OF-INTEGER
+#  intrinsic-function:	BOOLEAN-OF-INTEGER		to be implemented
 intrinsic-function:	BYTE-LENGTH
 intrinsic-function:	CHAR
-intrinsic-function:	CHAR-NATIONAL
+intrinsic-function:	
+#  intrinsic-function:	CHAR-NATIONAL			to be implemented
 intrinsic-function:	COS
 intrinsic-function:	CURRENT-DATE
 intrinsic-function:	DATE-OF-INTEGER
@@ -550,9 +551,9 @@ intrinsic-function:	DAY-TO-YYYYDDD
 intrinsic-function:	DISPLAY-OF
 intrinsic-function:	E
 intrinsic-function:	EXCEPTION-FILE
-intrinsic-function:	EXCEPTION-FILE-N
+#  intrinsic-function:	EXCEPTION-FILE-N		to be implemented
 intrinsic-function:	EXCEPTION-LOCATION
-intrinsic-function:	EXCEPTION-LOCATION-N
+#  intrinsic-function:	EXCEPTION-LOCATION-N	to be implemented
 intrinsic-function:	EXCEPTION-STATEMENT
 intrinsic-function:	EXCEPTION-STATUS
 intrinsic-function:	EXP
@@ -595,7 +596,7 @@ intrinsic-function:	REVERSE
 intrinsic-function:	SIGN
 intrinsic-function:	SIN
 intrinsic-function:	SQRT
-intrinsic-function:	STANDARD-COMPARE
+#  intrinsic-function:	STANDARD-COMPARE		to be implemented
 intrinsic-function:	STANDARD-DEVIATION
 intrinsic-function:	SUM
 intrinsic-function:	TAN

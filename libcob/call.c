@@ -56,7 +56,7 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 	The first is known to be true for some PA-RISC HP-UX 11.11 systems.
 	This is fixed with HP patch PHSS_28871. (There are newer but this
 	fixes dlopen/dlsym problems)
-	The second (no-op dlclose) is the case with musl, see 
+	The second (no-op dlclose) is the case with musl, see
 	https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading_libraries
 */
 
@@ -604,7 +604,7 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 #endif
 
 	if (!cobsetptr->cob_preload_str) {
-		cobsetptr->cob_preload_str = cob_strdup(path);
+		cobsetptr->cob_preload_str = cob_strdup (path);
 	} else {
 		/* +1 to len for PATHSEP_CHAR */
 		const size_t len = strlen (path) + strlen (cobsetptr->cob_preload_str) + 2;
@@ -819,7 +819,7 @@ cob_encode_program_id (const unsigned char *const name,
 	default:
 		break;
 	}
-	
+
 	return pos;
 }
 
@@ -1115,6 +1115,63 @@ cob_set_cancel (cob_module *m)
 	insert (m->module_name, m->module_entry.funcvoid, NULL, m, NULL, 1);
 }
 
+/* try to load specified module from all entries in COB_LIBRARY_PATH
+   (fallback "as-is") */
+static
+int cob_try_preload (const char* module_name)
+{
+	int		ret;
+
+#ifdef	__OS400__
+	char	buff[COB_MEDIUM_BUFF];
+	char	*b = buff;
+	const char	*t;
+
+	for (t = module_name; *t; ++t, ++b) {
+		*b = toupper (*t);
+	}
+	*b = 0;
+
+	module_name = buff;
+#else
+
+	/* normal lookup in COB_LIBRARY_PATH - if that does not look like a full path */
+	if (module_name[0] != SLASH_CHAR
+#ifdef _WIN32
+	 && module_name[0] != '/'
+	 && module_name[1] != ':'
+#endif
+	   ) {
+		/* check if the module ends with module extension */
+		const char *ext = strrchr(module_name, '.');
+		char	buff[COB_MEDIUM_BUFF];
+		size_t	i;
+		if (!ext || strcasecmp(ext + 1, COB_MODULE_EXT) != 0) {
+			/* common case: preload COBOL module */
+			for (i = 0; i < resolve_size; ++i) {
+				snprintf (buff, (size_t)COB_MEDIUM_MAX,
+					"%s%c%s.%s",
+					resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
+				ret = cache_preload (buff);
+				if (ret) {
+					return ret;
+				}
+			}
+		}
+	}
+
+#endif
+	/* If not found, try just using the name as-is (in which case the
+	   extension needs to be included) */
+	ret = cache_preload (module_name);
+
+	if (ret == 0) {
+		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
+	}
+	return ret;
+}
+
+
 void *
 cob_resolve (const char *name)
 {
@@ -1340,62 +1397,6 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 		}
 	}
 	cob_cancel (entry);
-}
-
-/* try to load specified module from all entries in COB_LIBRARY_PATH
-   (fallback "as-is") */
-static
-int cob_try_preload (const char* module_name)
-{
-	int		ret;
-
-#ifdef	__OS400__
-	char	buff[COB_MEDIUM_BUFF];
-	char	*b = buff;
-	const char	*t;
-
-	for (t = module_name; *t; ++t, ++b) {
-		*b = toupper (*t);
-	}
-	*b = 0;
-
-	module_name = buff;
-#else
-
-	/* normal lookup in COB_LIBRARY_PATH - if that does not look like a full path */
-	if (module_name[0] != SLASH_CHAR
-#ifdef _WIN32
-	 && module_name[0] != '/'
-	 && module_name[1] != ':'
-#endif
-	   ) {
-		/* check if the module ends with module extension */
-		const char *ext = strrchr(module_name, '.');
-		char	buff[COB_MEDIUM_BUFF];
-		size_t	i;
-		if (!ext || strcasecmp(ext + 1, COB_MODULE_EXT) != 0) {
-			/* common case: preload COBOL module */
-			for (i = 0; i < resolve_size; ++i) {
-				snprintf (buff, (size_t)COB_MEDIUM_MAX,
-					"%s%c%s.%s",
-					resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
-				ret = cache_preload (buff);
-				if (ret) {
-					return ret;
-				}
-			}
-		}
-	}
-
-#endif
-	/* If not found, try just using the name as-is (in which case the
-	   extension needs to be included) */
-	ret = cache_preload (module_name);
-
-	if (ret == 0) {
-		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
-	}
-	return ret;
 }
 
 int
@@ -1629,7 +1630,7 @@ cob_call (const char *name, const int argc, void **argv)
 				,pargv[136], pargv[137], pargv[138], pargv[139]
 				,pargv[140], pargv[141], pargv[142], pargv[143]
 				,pargv[144], pargv[145], pargv[146], pargv[147]
-				,pargv[148], pargv[149], pargv[130], pargv[131]
+				,pargv[148], pargv[149], pargv[150], pargv[151]
 				,pargv[152], pargv[153], pargv[154], pargv[155]
 				,pargv[156], pargv[157], pargv[158], pargv[159]
 				,pargv[160], pargv[161], pargv[162], pargv[163]

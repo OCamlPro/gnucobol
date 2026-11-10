@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2024 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2024, 2026 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -537,19 +537,25 @@ comp_field (const void *m1, const void *m2)
 static void
 calc_ref_mod (cob_field *f, const int offset, const int length)
 {
-	size_t		calcoff;
+	size_t		calcoff = 0;
 	size_t		size;
 
 	if ((size_t)offset <= f->size) {
 		calcoff = (size_t)offset - 1;
 		size = f->size - calcoff;
-		if (length > 0 && (size_t)length < size) {
-			size = (size_t)length;
+		if (length != 0) {
+			if (length > 0 && (size_t)length <= size) {
+				size = (size_t)length;
+			} else {
+				cob_set_exception (COB_EC_BOUND_REF_MOD);
+			}
 		}
 		f->size = size;
-		if (calcoff > 0) {
-			memmove (f->data, f->data + calcoff, size);
-		}
+	}
+	if (calcoff > 0) {
+		memmove (f->data, f->data + calcoff, size);
+	} else {
+		cob_set_exception (COB_EC_BOUND_REF_MOD);
 	}
 }
 
@@ -1512,16 +1518,17 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	}
-	/* not wasting buffer space (COBOL2023: 35/34 max)... */
+	/* not wasting buffer space (COBOL2027 : 35/34 max)... */
 	if (datasize > COB_MAX_DIGITS) {
-#ifdef INVALID_NUMVAL_IS_ZERO
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+#ifdef INVALID_NUMVAL_IS_ZERO
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 #else
 		/* Should this truncate or raise an exception?
 		   What about COBOL2025 new max? */
 		datasize = COB_MAX_DIGITS;
+		p = p_end - COB_MAX_DIGITS + 1; 
 #endif
 	}
 
@@ -1832,8 +1839,8 @@ locale_time (const int hours, const int minutes, const int seconds,
 
 	/* Get specified locale */
 	if (locale_field) {
-		char		locale_buff[COB_MINI_BUFF];
-		int flen = cob_field_to_string (locale_field, locale_buff,
+		char	locale_buff[COB_MINI_BUFF];
+		int 	flen = cob_field_to_string (locale_field, locale_buff,
 					COB_MINI_MAX, CCM_NONE);
 #if 0	/* re-null-terminate last char (first space/comma/...)
 		   of the locale string
@@ -2140,15 +2147,6 @@ static int
 valid_day_and_format (const int day, const char *format)
 {
 	return valid_integer_date (day) && cob_valid_date_format (format);
-}
-
-static size_t
-num_leading_nonspace (const char *str, const size_t str_len)
-{
-	size_t	i;
-
-	for (i = 0; i < str_len && !isspace ((int) str[i]); ++i);
-	return i;
 }
 
 static void
@@ -2505,22 +2503,6 @@ format_time (const struct time_format format, int time,
 	}
 
 	return date_overflow;
-}
-
-/*
-  Copies as many character as possible from before the first space
-  from f->data into out_str and add a null terminator to out_str.
-*/
-static void
-copy_data_to_null_terminated_str (cob_field *f, char * const out_str,
-				  const size_t out_str_max)
-{
-	size_t	chars_before_space = num_leading_nonspace ((char *)f->data,
-							   f->size);
-	size_t	length = cob_min_int (chars_before_space, out_str_max);
-
-	strncpy (out_str, (char *)f->data, length);
-	out_str[length] = '\0';
 }
 
 static int
@@ -3151,6 +3133,24 @@ cob_switch_value (const int id)
 	return curr_field;
 }
 
+/* check if the rules for exponentiation are violated:
+   a zero base needs a positive exponent,
+   a negative base needs an integer exponent */
+static int
+pow_rules_violated (cob_decimal *pd1, cob_decimal *pd2)
+{
+	const int	sign = mpz_sgn (pd1->value);
+
+	if (sign == 0) {
+		return mpz_sgn (pd2->value) <= 0;
+	}
+	if (sign == -1) {
+		cob_trim_decimal (pd2);
+		return pd2->scale > 0;
+	}
+	return 0;
+}
+
 /* Decimal exponentiation function */
 /* x ^ z = e ^ (z * log(x)) */
 
@@ -3168,12 +3168,14 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 		return;
 	}
 
+	if (pow_rules_violated (pd1, pd2)) {
+		pd1->scale = COB_DECIMAL_NAN;
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
+		return;
+	}
+
 	if (mpz_sgn (pd2->value) == 0) {
 		/* Exponent is zero */
-		if (sign == 0) {
-			/* 0 ^ 0 */
-			cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		}
 		mpz_set_ui (pd1->value, 1UL);
 		pd1->scale = 0;
 		return;
@@ -3185,14 +3187,6 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 	}
 
 	cob_trim_decimal (pd2);
-
-	if (sign == -1 && pd2->scale) {
-		/* Negative exponent and non-integer power */
-		pd1->scale = COB_DECIMAL_NAN;
-		cob_set_exception (COB_EC_SIZE_EXPONENTIATION);
-		return;
-	}
-
 	cob_trim_decimal (pd1);
 
 	if (!pd2->scale) {
@@ -3629,6 +3623,16 @@ cob_valid_datetime_format (const char *format, const char decimal_point)
 
 /* Numeric expressions */
 
+/* check if f1 ^ f2 follows the rules for exponentiation,
+   used by the generated code to check for EC-SIZE-EXPONENTIATION */
+int
+cob_valid_pow (cob_field *f1, cob_field *f2)
+{
+	cob_decimal_set_field (&d1, f1);
+	cob_decimal_set_field (&d2, f2);
+	return !pow_rules_violated (&d1, &d2);
+}
+
 cob_field *
 cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 {
@@ -3680,6 +3684,11 @@ cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 		break;
 	case '^':
 		cob_decimal_pow (&d1, &d2);
+		if (d1.scale == COB_DECIMAL_NAN) {
+			/* Exponentiation rules violated, exception is set */
+			mpz_set_ui (d1.value, 0UL);
+			d1.scale = 0;
+		}
 		break;
 	default:
 		break;
@@ -3713,6 +3722,7 @@ cob_intr_byte_length (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION INTEGER - integer <= value */
 cob_field *
 cob_intr_integer (cob_field *srcfield)
 {
@@ -3737,6 +3747,7 @@ cob_intr_integer (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION INTEGER-PART - integer portion of value */
 cob_field *
 cob_intr_integer_part (cob_field *srcfield)
 {
@@ -3756,6 +3767,7 @@ cob_intr_integer_part (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION FRACTION-PART - fractional portion of value */
 cob_field *
 cob_intr_fraction_part (cob_field *srcfield)
 {
@@ -3775,6 +3787,7 @@ cob_intr_fraction_part (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION SIGN - sign of value */
 cob_field *
 cob_intr_sign (cob_field *srcfield)
 {
@@ -3783,6 +3796,7 @@ cob_intr_sign (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION UPPER-CASE - upper-case in current locale */
 cob_field *
 cob_intr_upper_case (const int offset, const int length, cob_field *srcfield)
 {
@@ -3800,6 +3814,7 @@ cob_intr_upper_case (const int offset, const int length, cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION LOWER-CASE - lower-case in current locale */
 cob_field *
 cob_intr_lower_case (const int offset, const int length, cob_field *srcfield)
 {
@@ -3817,6 +3832,7 @@ cob_intr_lower_case (const int offset, const int length, cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION REVERSE */
 cob_field *
 cob_intr_reverse (const int offset, const int length, cob_field *srcfield)
 {
@@ -3834,6 +3850,7 @@ cob_intr_reverse (const int offset, const int length, cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION BIT-OF */
 cob_field *
 cob_intr_bit_of (cob_field *srcfield)
 {
@@ -3869,6 +3886,7 @@ has_bit_checked (const unsigned char byte) {
 	return 1;
 }
 
+/* FUNCTION BIT-TO-CHAR */
 cob_field *
 cob_intr_bit_to_char (cob_field *srcfield)
 {
@@ -3897,6 +3915,7 @@ cob_intr_bit_to_char (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION HEX-OF (IBM extension) */
 cob_field *
 cob_intr_hex_of (cob_field *srcfield)
 {
@@ -3922,6 +3941,7 @@ cob_intr_hex_of (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION HEX-TO-CHAR (IBM extension) */
 cob_field *
 cob_intr_hex_to_char (cob_field *srcfield)
 {
@@ -3969,6 +3989,7 @@ cob_intr_hex_to_char (cob_field *srcfield)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-DATE (OC extension) */
 cob_field *
 cob_intr_module_date (void)
 {
@@ -3984,6 +4005,7 @@ cob_intr_module_date (void)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-TIME (OC extension) */
 cob_field *
 cob_intr_module_time (void)
 {
@@ -3999,6 +4021,7 @@ cob_intr_module_time (void)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-ID (OC extension) / MODULE-NAME (2023) */
 cob_field *
 cob_intr_module_id (void)
 {
@@ -4006,6 +4029,7 @@ cob_intr_module_id (void)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-CALLER-ID (OC extension) */
 cob_field *
 cob_intr_module_caller_id (void)
 {
@@ -4021,6 +4045,7 @@ cob_intr_module_caller_id (void)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-FORMATTED-DATE (OC extension) */
 cob_field *
 cob_intr_module_formatted_date (void)
 {
@@ -4028,6 +4053,7 @@ cob_intr_module_formatted_date (void)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-SOURCE (OC extension) */
 cob_field *
 cob_intr_module_source (void)
 {
@@ -4035,6 +4061,7 @@ cob_intr_module_source (void)
 	return curr_field;
 }
 
+/* FUNCTION MODULE-PATH (OC extension) */
 cob_field *
 cob_intr_module_path (void)
 {
@@ -4051,6 +4078,7 @@ cob_intr_module_path (void)
 	return curr_field;
 }
 
+/* FUNCTION CONCATENATE (OC extension) / CONCAT (2023) */
 cob_field *
 cob_intr_concatenate (const int offset, const int length,
 		      const int params, ...)
@@ -4090,6 +4118,7 @@ cob_intr_concatenate (const int offset, const int length,
 	return curr_field;
 }
 
+/* FUNCTION SUBSTITUTE (OC extension / 2023) */
 cob_field *
 cob_intr_substitute (const int offset, const int length,
 		     const int params, ...)
@@ -4104,6 +4133,7 @@ cob_intr_substitute (const int offset, const int length,
 	return ret;
 }
 
+/* FUNCTION SUBSTITUTE-CASE (OC extension) / SUBSTITUTE ANYCASE (2023) */
 cob_field *
 cob_intr_substitute_case (const int offset, const int length,
 			  const int params, ...)
@@ -4118,6 +4148,7 @@ cob_intr_substitute_case (const int offset, const int length,
 	return ret;
 }
 
+/* FUNCTION TRIM */
 cob_field *
 cob_intr_trim (const int offset, const int length,
 		cob_field *srcfield, const int direction)
@@ -4161,7 +4192,9 @@ cob_intr_trim (const int offset, const int length,
 	return curr_field;
 }
 
-/* get variable length (at least 2) temporary field containing last file exception status + name */
+/* FUNCTION EXCEPION-FILE
+   get variable length (at least 2) temporary field containing
+   last file exception status + name */
 cob_field *
 cob_intr_exception_file (void)
 {
@@ -4424,13 +4457,11 @@ cob_intr_combined_datetime (cob_field *srcdays, cob_field *srctime)
 
 	cob_alloc_field (combined_datetime);
 	(void) cob_decimal_get_field (combined_datetime, curr_field, 0);
-	goto end_of_func;
+	return curr_field;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 	cob_alloc_set_field_uint (0);
-
- end_of_func:
 	return curr_field;
 }
 
@@ -5907,18 +5938,23 @@ cob_intr_seconds_past_midnight (void)
 cob_field *
 cob_intr_seconds_from_formatted_time (cob_field *format_field, cob_field *time_field)
 {
-	size_t		str_length;
-	char		format_str[2 * COB_DATETIMESTR_LEN] = { '\0' };
-	char *		time_format_str = format_str;
-	const char	decimal_point = COB_MODULE_PTR->decimal_point;
-	int		is_datetime = 0;
-	char		time_str[COB_DATETIMESTR_LEN] = { '\0' };
 	struct time_format	time_fmt;
 	cob_decimal	*seconds = &d1;
+	char		format_str[2 * COB_DATETIMESTR_LEN] = { '\0' };
+	char		time_str[COB_DATETIMESTR_LEN] = { '\0' };
+	char *		time_format_str = format_str;
+	int 		str_length;
+	const char	decimal_point = COB_MODULE_PTR->decimal_point;
+	int 		is_datetime = 0;
 
-	str_length = num_leading_nonspace ((char *) format_field->data,
-					   format_field->size);
-	memcpy (format_str, format_field->data, str_length);
+	/* FIXME later: format_field + time_field may be of category national... */
+
+	str_length = cob_field_to_string (format_field, format_str,
+				sizeof (format_str) - 1, CCM_NONE);
+	/* overflow or less than minimal valid entry -> exception */
+	if (str_length < 6) {
+		goto invalid_args;
+	}
 
 	cobglobptr->cob_exception_code = 0;
 
@@ -6041,7 +6077,7 @@ cob_intr_locale_date (const int offset, const int length,
 	syst.wMonth = (WORD)month;
 	syst.wDay = (WORD)days;
 	if (locale_field) {
-		int flen = cob_field_to_string (locale_field, locale_buff,
+		int 	flen = cob_field_to_string (locale_field, locale_buff,
 				     COB_MINI_MAX, CCM_NONE);
 #if 0	/* re-null-terminate last char (first space/comma/...)
 		   of the locale string
@@ -6621,15 +6657,22 @@ cob_intr_formatted_date (const int offset, const int length,
 			 cob_field *format_field, cob_field *days_field)
 {
 	cob_field	field;
-	size_t		field_length;
-	char		format_str[COB_DATESTR_LEN] = { '\0' };
-	int		days;
 	struct date_format	format;
+	char		format_str[COB_DATESTR_LEN] = { '\0' };
 	char		buff[COB_DATESTR_LEN] = { '\0' };
+	int 		field_length;
+	int 		days;
 
-	copy_data_to_null_terminated_str (format_field, format_str,
-					  COB_DATESTR_MAX);
-	field_length = strlen (format_str);
+	/* FIXME later: format_field + days_field may be of category national... */
+
+	field_length = cob_field_to_string (format_field, format_str,
+					  COB_DATESTR_MAX, CCM_NONE);
+	/* overflow or less than minimal valid entry -> exception */
+	if (field_length < 7) {
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+		make_field_entry (&field);
+		goto invalid_args;
+	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
 	make_field_entry (&field);
@@ -6645,16 +6688,14 @@ cob_intr_formatted_date (const int offset, const int length,
 	format_date (format, days, buff);
 
 	memcpy (curr_field->data, buff, field_length);
-	goto end_of_func;
-
- invalid_args:
-	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', strlen (format_str));
-
- end_of_func:
 	if (unlikely (offset > 0)) {
 		calc_ref_mod (curr_field, offset, length);
 	}
+	return curr_field;
+
+ invalid_args:
+	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	memset (curr_field->data, ' ', curr_field->size);
 	return curr_field;
 }
 
@@ -6667,15 +6708,15 @@ cob_intr_formatted_time (const int offset, const int length,
 	cob_field	*time_field;
 	cob_field	*offset_time_field;
 	cob_field	field;
-	size_t		field_length;
 	char		buff[COB_TIMESTR_LEN] = { '\0' };
 	char		format_str[COB_TIMESTR_LEN] = { '\0' };
-	int		whole_seconds;
-	cob_decimal	*fractional_seconds;
-	int		use_system_offset;
-	int		offset_time;
-	int		*offset_time_ptr;
 	struct time_format	format;
+	cob_decimal	*fractional_seconds;
+	int 		field_length;
+	int 		whole_seconds;
+	int 		use_system_offset;
+	int 		offset_time;
+	int 		*offset_time_ptr;
 
 	if (!(params == 3 || params == 4)) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
@@ -6697,13 +6738,7 @@ cob_intr_formatted_time (const int offset, const int length,
 
 	va_end (args);
 
-	/* Initialise buffers */
-	copy_data_to_null_terminated_str (format_field, format_str,
-					  COB_TIMESTR_MAX);
-	field_length = strlen (format_str);
-
-	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	/* FIXME later: format_field may be of category national... */
 
 	cobglobptr->cob_exception_code = 0;
 
@@ -6711,15 +6746,30 @@ cob_intr_formatted_time (const int offset, const int length,
 
 	whole_seconds = cob_get_int (time_field);
 	if (!valid_time (whole_seconds)) {
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+		make_field_entry (&field);
+		goto invalid_args;
+	}
+
+	field_length = cob_field_to_string (format_field, format_str,
+					  COB_TIMESTR_MAX, CCM_NONE);
+
+	/* overflow or less than minimal valid entry -> exception */
+	if (field_length < 6) {
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+		make_field_entry (&field);
+		goto invalid_args;
+	}
+
+	if (!cob_valid_time_format (format_str, COB_MODULE_PTR->decimal_point)) {
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+		make_field_entry (&field);
 		goto invalid_args;
 	}
 
 	fractional_seconds = &d2;
 	get_fractional_seconds (time_field, fractional_seconds);
 
-	if (!cob_valid_time_format (format_str, COB_MODULE_PTR->decimal_point)) {
-		goto invalid_args;
-	}
 	format = parse_time_format_string (format_str);
 
 	if (use_system_offset) {
@@ -6727,29 +6777,32 @@ cob_intr_formatted_time (const int offset, const int length,
 	} else {
 		if (try_get_valid_offset_time (offset_time_field,
 					       &offset_time)) {
+			COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+			make_field_entry (&field);
 			goto invalid_args;
 		} else {
 			offset_time_ptr = &offset_time;
 		}
 	}
 
+	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
+	make_field_entry (&field);
 	format_time (format, whole_seconds, fractional_seconds, offset_time_ptr,
 		     buff);
 
 	memcpy (curr_field->data, buff, field_length);
-	goto end_of_func;
-
- invalid_args:
-	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', strlen (format_str));
-
- end_of_func:
 	if (unlikely (offset > 0)) {
 		calc_ref_mod (curr_field, offset, length);
 	}
 	return curr_field;
+
+ invalid_args:
+	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	memset (curr_field->data, ' ', curr_field->size);
+	return curr_field;
 }
 
+/* FUNCTION FORMATTED-DATETIME */
 cob_field *
 cob_intr_formatted_datetime (const int offset, const int length,
 			     const int params, ...)
@@ -6760,18 +6813,18 @@ cob_intr_formatted_datetime (const int offset, const int length,
 	cob_field	*time_field;
 	cob_field	*offset_time_field;
 	cob_field	field;
-	size_t		field_length;
 	char		fmt_str[COB_DATETIMESTR_LEN] = { '\0' };
 	char		date_fmt_str[COB_DATESTR_LEN] = { '\0' };
 	char		time_fmt_str[COB_TIMESTR_LEN] = { '\0' };
 	struct date_format     date_fmt;
 	struct time_format     time_fmt;
-	int		days;
-	int		whole_seconds;
+	int 		field_length;
+	int 		days;
+	int 		whole_seconds;
 	cob_decimal	*fractional_seconds;
-	int		use_system_offset;
-	int		offset_time;
-	int		*offset_time_ptr;
+	int 		use_system_offset;
+	int 		offset_time;
+	int 		*offset_time_ptr;
 	char		buff[COB_DATETIMESTR_LEN] = { '\0' };
 
 	if (!(params == 4 || params == 5)) {
@@ -6795,9 +6848,15 @@ cob_intr_formatted_datetime (const int offset, const int length,
 
 	va_end (args);
 
-	copy_data_to_null_terminated_str (fmt_field, fmt_str,
-					  COB_DATETIMESTR_MAX);
-	field_length = strlen (fmt_str);
+	field_length = cob_field_to_string (fmt_field, fmt_str,
+					  COB_DATETIMESTR_MAX, CCM_NONE);
+
+	/* overflow or less than minimal valid entry -> exception */
+	if (field_length < 14) {
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+		make_field_entry (&field);
+		goto invalid_args;
+	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
 	make_field_entry (&field);
@@ -6842,19 +6901,18 @@ cob_intr_formatted_datetime (const int offset, const int length,
 			 fractional_seconds, offset_time_ptr, buff);
 
 	memcpy (curr_field->data, buff, (size_t) field_length);
-	goto end_of_func;
-
- invalid_args:
-	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', strlen (fmt_str));
-
- end_of_func:
 	if (unlikely (offset > 0)) {
 		calc_ref_mod (curr_field, offset, length);
 	}
 	return curr_field;
+
+ invalid_args:
+	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	memset (curr_field->data, ' ', curr_field->size);
+	return curr_field;
 }
 
+/* FUNCTION TEST-FORMATTED-DATETIME */
 cob_field *
 cob_intr_test_formatted_datetime (cob_field *format_field,
 				  cob_field *datetime_field)
@@ -6862,21 +6920,33 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 	char	datetime_format_str[COB_DATETIMESTR_LEN] = { '\0' };
 	char	date_format_str[COB_DATESTR_LEN] = { '\0' };
 	char	time_format_str[COB_TIMESTR_LEN] = { '\0' };
-	int	date_present;
-	int	time_present;
 	char	formatted_datetime[COB_DATETIMESTR_LEN] = { '\0' };
 	char	formatted_date[COB_DATESTR_LEN] = { '\0' };
 	char	formatted_time[COB_TIMESTR_LEN] = { '\0' };
-	int	time_part_offset;
-	int	error_pos;
+	unsigned int	formatted_date_len, time_part_offset;
+	int 	date_present, time_present;
+	int 	field_len, format_len, error_pos;
 
 	cobglobptr->cob_exception_code = 0;
 
+	/* FIXME later: format_field + time_field may be of category national... */
+
 	/* Copy to null-terminated strings */
-	copy_data_to_null_terminated_str (format_field, datetime_format_str,
-					  COB_DATETIMESTR_MAX);
-	copy_data_to_null_terminated_str (datetime_field, formatted_datetime,
-					  COB_DATETIMESTR_MAX);
+	format_len = cob_field_to_string (format_field, datetime_format_str,
+					  COB_DATETIMESTR_MAX, CCM_NONE);
+	/* overflow or less than minimal valid entry -> exception */
+	if (format_len < 6) {
+		goto invalid_args;
+	}
+	
+	field_len = cob_field_to_string (datetime_field, formatted_datetime,
+					  COB_DATETIMESTR_MAX, CCM_NONE);
+	/* Field errors or zero-length -> exception */
+	if (field_len <= 0 && field_len >= -3) {
+		goto invalid_args;
+	}
+	/* note: in case of "overlength" we will get out not later than
+	   checking the rest of the data */
 
 	/* Check whether date or time is present. */
 	if (cob_valid_date_format (datetime_format_str)) {
@@ -6915,9 +6985,11 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 		strcpy (formatted_time, formatted_datetime);
 	}
 
+	formatted_date_len = strlen (formatted_date);
+
 	/* Set time offset */
 	if (date_present) {
-		time_part_offset = (int)strlen (formatted_date) + 1;
+		time_part_offset = formatted_date_len + 1;
 	} else {
 		time_part_offset = 0;
 	}
@@ -6928,31 +7000,43 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 						 formatted_date, !time_present);
 		if (error_pos != 0) {
 			cob_alloc_set_field_uint (error_pos);
-			goto end_of_func;
+			return curr_field;
 		}
 	}
 	if (date_present && time_present
-	    && formatted_datetime[strlen (formatted_date)] != 'T') {
-		cob_alloc_set_field_uint ((unsigned int)strlen (formatted_date) + 1U);
-		goto end_of_func;
+	 && formatted_datetime[formatted_date_len] != 'T') {
+		cob_alloc_set_field_uint (time_part_offset);
+		return curr_field;
 	}
 	if (time_present) {
 		error_pos = test_formatted_time (parse_time_format_string (time_format_str),
 						 formatted_time, COB_MODULE_PTR->decimal_point);
 		if (error_pos != 0) {
 			cob_alloc_set_field_uint (time_part_offset + error_pos);
-			goto end_of_func;
+			return curr_field;
 		}
 	}
 
+	/* if field is too big for complete check, test for non-spaces */
+	if (field_len < 0) {
+		const char *start = (const char *)datetime_field->data;
+		const char *end = start + datetime_field->size;
+		const char *pos = start + COB_DATETIMESTR_LEN - 1;
+		while (pos++ < end) {
+			if (*pos != ' ') {
+				break;
+			}
+		}
+		cob_alloc_set_field_uint (pos - start + 1);
+		return curr_field;
+	}
+
 	cob_alloc_set_field_uint (0);
-	goto end_of_func;
+	return curr_field;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 	cob_alloc_set_field_uint (0);
-
- end_of_func:
 	return curr_field;
 }
 
@@ -6964,15 +7048,22 @@ cob_intr_integer_of_formatted_date (cob_field *format_field,
 	char	original_date_str[COB_DATETIMESTR_LEN] = { '\0' };
 	char	format_str[COB_DATESTR_LEN] = { '\0' };
 	char	date_str[COB_DATESTR_LEN] = { '\0' };
-	int	is_date;
+	int 	field_len;
+	int 	is_date;
 	struct date_format date_fmt;
 
 	cobglobptr->cob_exception_code = 0;
 
-	copy_data_to_null_terminated_str (format_field, original_format_str,
-					  COB_DATETIMESTR_MAX);
-	copy_data_to_null_terminated_str (date_field, original_date_str,
-					  COB_DATETIMESTR_MAX);
+	/* FIXME later: format_field + date_field may be of category national... */
+
+	field_len = cob_field_to_string (format_field, original_format_str,
+					  COB_DATETIMESTR_MAX, CCM_NONE);
+	/* overflow or less than minimal valid entry -> exception */
+	if (field_len < 7
+	 || cob_field_to_string (date_field, original_date_str,
+					  COB_DATETIMESTR_MAX, CCM_NONE) < field_len) {
+		goto invalid_args;
+	}
 
 	/* Get date format string and parse it */
 	is_date = cob_valid_date_format (original_format_str);
@@ -6997,13 +7088,11 @@ cob_intr_integer_of_formatted_date (cob_field *format_field,
 	}
 
 	cob_alloc_set_field_uint (integer_of_formatted_date (date_fmt, date_str));
-	goto end_of_func;
+	return curr_field;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 	cob_alloc_set_field_uint (0);
-
- end_of_func:
 	return curr_field;
 }
 
@@ -7016,16 +7105,24 @@ cob_intr_formatted_current_date (const int offset, const int length,
 {
 	cob_field	field;
 	char		format_str[COB_DATETIMESTR_LEN] = { '\0' };
-	size_t		field_length;
 	char		date_format_str[COB_DATESTR_LEN] = { '\0' };
 	char		time_format_str[COB_TIMESTR_LEN] = { '\0' };
+	char		formatted_date[COB_DATETIMESTR_LEN] = { '\0' };
+	int 		field_length;
 	struct date_format	date_fmt;
 	struct time_format	time_fmt;
-	char		formatted_date[COB_DATETIMESTR_LEN] = { '\0' };
 
-	copy_data_to_null_terminated_str (format_field, format_str,
-					  COB_DATETIMESTR_MAX);
-	field_length = strlen (format_str);
+	/* FIXME later: format_field may be of category national... */
+
+	field_length = cob_field_to_string (format_field, format_str,
+					  COB_DATETIMESTR_MAX, CCM_NONE);
+
+	/* overflow or less than minimal valid entry -> exception */
+	if (field_length < 14) {
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
+		make_field_entry (&field);
+		goto invalid_args;
+	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
 	make_field_entry (&field);
@@ -7034,9 +7131,7 @@ cob_intr_formatted_current_date (const int offset, const int length,
 
 	/* Validate format */
 	if (!cob_valid_datetime_format (format_str, COB_MODULE_PTR->decimal_point)) {
-		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		memset (curr_field->data, ' ', field_length);
-		goto end_of_func;
+		goto invalid_args;
 	}
 
 	/* Parse format */
@@ -7048,10 +7143,14 @@ cob_intr_formatted_current_date (const int offset, const int length,
 	format_current_date (date_fmt, time_fmt, formatted_date);
 	memcpy (curr_field->data, formatted_date, field_length);
 
- end_of_func:
 	if (unlikely (offset > 0)) {
 		calc_ref_mod (curr_field, offset, length);
 	}
+	return curr_field;
+
+ invalid_args:
+	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	memset (curr_field->data, ' ', curr_field->size);
 	return curr_field;
 }
 
@@ -7135,19 +7234,21 @@ cob_intr_content_of (const int offset, const int length, const int params, ...)
 		cob_set_exception (COB_EC_DATA_PTR_NULL);
 		size = 0;
 	}
-	if (size != 0) {
-		COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-		make_field_entry (&field);
-		/* Testing for memory access permissions is canonically: */
-		/*   open fake pipe, use write and test for -1 and EFAULT */
-		/* Not used here, performance hit versus programmer error */
-		memcpy (curr_field->data, pointed, size);
-	} else {
+	if (size == 0) {
+		/* note: this is no error, but a special case for this intrinsic */
 		COB_FIELD_INIT (1, NULL, &const_alpha_attr);
 		make_field_entry (&field);
 		curr_field->data[0] = ' ';
 		curr_field->size = 0;
+		return curr_field;
 	}
+
+	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
+	make_field_entry (&field);
+	/* Testing for memory access permissions is canonically: */
+	/*   open fake pipe, use write and test for -1 and EFAULT */
+	/* Not used here, performance hit versus programmer error */
+	memcpy (curr_field->data, pointed, size);
 	if (unlikely(offset > 0)) {
 		calc_ref_mod (curr_field, offset, length);
 	}
