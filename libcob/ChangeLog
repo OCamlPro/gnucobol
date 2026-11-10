@@ -4,11 +4,55 @@
 	* intrinsic.c (cob_mpf_log): Simplify for tiny number and fix typo
 	* intrinsic.c (cob_agm_log): fix typo
 
+2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_unstring_into_intern): fix overflow for multiple UNSTRING
+	  delimters when they are longer than the source
+	* intrinsic.c (numval): better handling of too huge input data, raising
+	  EC-ARGUMENT-EXCEPTION and instead of overflow pass the maximum digits,
+    justified right
+	* common.c (cob_expand_env_string): prevent overflow in case of unexpected
+	  long environment variable names
+	* common.c (cb_config_entry): prevent overflow in case of not existing
+	  configuration names/values before they are validated
+
+2026-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cconv.c (cob_field_to_string): in case of empty string: returns a single
+	  space while keeping string with size zero on "all null-value";
+	  error strings (NULL field / NULL data) now translated
+	* fileio.c (cob_open): handle single-space similar to zero length string
+	* cconv.c (cob_field_to_string): in case of overflow: return data until
+	  max is reached and the necessary length for the buffer as negative value
+	* intrinsic.c (cob_intr_test_formatted_datetime): if buffer is too big or
+	  small then return the expected bad position, not an exception
+
+2026-10-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	by Arkadiy Agheieff (LLM-assisted research: DeepSeek V4.1 Flash 1017):
+	* call.c (cob_call): arguments 152+153 were never passed when C-API was
+	  used (no effect on cobc generated modules)
+	* intrinsic.c (cob_intr_seconds_from_formatted_time): early exit for
+	  invalid length of variable-defined format instead of unchecked memcpy
+
+	* intrinsic.c: replaced all uses of copy_data_to_null_terminated_str and
+	  num_leading_nonspace, which stopped for performance reasons at the first
+	  space, by cob_field_to_string which does an effective rtrim and returns
+	  the size (negative if cut)
+	* intrinsic.c (copy_data_to_null_terminated_str, num_leading_nonspace):
+	  no longer used -> removed
+	* intrinsic.c (calc_ref_mod): check and set EC-REF-MOD - previously
+	  out-of-bounds reference-modification was silently ignored
+	* intrinsic.c: all formatted date/time functions correctly verify their
+	  given format now, instead of ignoring invalid data after a valid format
+	  specifier
+
 2026-10-25  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
 	* intrinsic.c (cob_mpf_log): Implement a faster new algorithm
 	* intrinsic.c (cob_agm_log): new function needed for cob_mpf_log
 	* intrinsic.c (COB_LN_PREC): new macro for ln precision threshold
+ 
 2026-10-16  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h (cob_close_mode): new enum instead of #define'd constants
@@ -28,7 +72,30 @@
 
 2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.c (cob_exit_common): cleanup COB_STDERR and friends 
+	* common.c (cob_exit_common): cleanup COB_STDERR and friends
+
+2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (pow_rules_violated): new function checking the rules for
+	  exponentiation
+	* intrinsic.c (cob_decimal_pow): use pow_rules_violated, raising
+	  EC-SIZE-EXPONENTIATION for 0 ^ -n instead of returning 0
+	* intrinsic.c, common.h (cob_valid_pow): new function checking the rules
+	  for exponentiation, used by the generated code
+	* intrinsic.c (cob_intr_binop): return zero if the rules for
+	  exponentiation are violated, keeping EC-SIZE-EXPONENTIATION instead of
+	  raising EC-ARGUMENT-FUNCTION and EC-SIZE-OVERFLOW
+	* common.h, coblocal.h: move COB_DECIMAL_NAN to common.h for use in the
+	  generated code, along with COB_DECIMAL_INF which is used similar
+
+2026-10-22  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* intrinsic.c (cob_decimal_pow): 0 ^ 0 now results in NaN instead of 1,
+	  so receiving fields stay unchanged on EC-SIZE-EXPONENTIATION
+	* numeric.c (cob_decimal_get_field): keep EC-SIZE-EXPONENTIATION instead
+	  of overriding it with EC-SIZE-OVERFLOW for a NaN result
+	* numeric.c (cob_s32_pow, cob_s64_pow): set EC-SIZE-EXPONENTIATION for
+	  0 ^ 0 and 0 ^ -n instead of silently returning 1 or raising SIGFPE
 
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -106,22 +173,22 @@
 
 2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
 
-	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match 
+	* common.h: rename COB_XML_PARSE_XMLNSS into COB_XML_PARSE_XMLSS to match
 	  the IBM option name
-	* mlio.c: Fix issues in XML PARSE handling most notably a use 
-	  after free error if the internal buffer needs to grow during the parsing. 
-	  This fix changes the definition of xml_event to store offsets in the 
+	* mlio.c: Fix issues in XML PARSE handling most notably a use
+	  after free error if the internal buffer needs to grow during the parsing.
+	  This fix changes the definition of xml_event to store offsets in the
 	  buffer instead of pointers
-	* mlio.c: Respect the high order half-word for exception XML-CODE, 
-	  but do not expose internal libxml2 error codes 
-	* mlio.c: Reduce the number of parsing states by removing useless ones, 
+	* mlio.c: Respect the high order half-word for exception XML-CODE,
+	  but do not expose internal libxml2 error codes
+	* mlio.c: Reduce the number of parsing states by removing useless ones,
 	  and encode eof in these states
 	* mlio.c: Handle XML chunks with more than one recoverable error
 	* mlio.c: Trigger ON EXCEPTION code after EXCEPTION XML events
 	* mlio.c: Remove spurious events when there is no <?xml?> declaration in the file
 	* mlio.c: Handle incomplete CONTENT-CHARACTERS events (with XML-INFORMATION = 2).
-	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS 
-	  events across END-OF-INPUT boundaries. 
+	  Note that, compared to IBM, we may merge short contiguous CONTENT-CHARACTERS
+	  events across END-OF-INPUT boundaries.
 	  This is due to libxml2 internal details.
 
 2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
@@ -138,6 +205,11 @@
 	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
 	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
 
+2026-06-30  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* common.h (cob_module_type): add COB_MODULE_TYPE_CLASS,
+	  COB_MODULE_TYPE_INTERFACE, COB_MODULE_TYPE_METHOD
+
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* coblocal.h, common.c, profiling.c: rename is_test to cob_is_test
@@ -151,6 +223,14 @@
 	* fileio.c (bdb_keylen) [WITH_DB]: minor refactoring
 	* fileio.c (cob_file_close): close file depending on internal state, not
 	  depending on file organization
+
+2025-12-04  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* exception.def: exceptions values for EC-SIZE are now bit exclusive
+	* common.h, common.c (cob_last_exception_fatal): new function to check
+	  if the last raised exception was fatal
+	* common.h (struct cob_fatal_error), common.c (cob_fatal_error): add
+	  COB_FERROR_FATAL_EC for terminating the pogram due to a fatal exception
 
 2025-11-19  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
@@ -191,7 +271,7 @@
 	* common.c: remove strbuff variable and cob_strcat/cob_strjoin utilities
 	  which were prone to memory corruption due to strbuff being a global
 	* coblocal.h: remove definitions of cob_strcat and cob_strjoin
-	* call.c (add_to_preload): remove usage of cob_strcat and directly 
+	* call.c (add_to_preload): remove usage of cob_strcat and directly
 	  concatenate preload paths instead
 
 2025-10-31  Simon Sobisch <simonsobisch@gnu.org>

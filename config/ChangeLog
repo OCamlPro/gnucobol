@@ -1,4 +1,10 @@
 
+2026-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobol2002.cfg, cobol2014.cfg: comment not-yet implemented functions
+	  BOOLEAN-OF-INTEGER, CHAR-NATIONAL, EXCEPTION-FILE-N,
+	  EXCEPTION-LOCATION-N and STANDARD-COMPARE, related to bug #1274
+
 2026-07-07	Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* runtime.cfg: add runtime configurations COB_STDIN_FILE, COB_STDOUT_FILE,
