@@ -193,8 +193,6 @@ jobs:
 
       - name: Run testsuite
         run: |
-          rem Needed for now because the paths compiled in have trailing slashes - cl.exe does not like that
-          set COB_CFLAGS=/I"%GITHUB_WORKSPACE%" /I"%GITHUB_WORKSPACE%\build_windows"
           rem Needed so mpir.h can be found
           set CL=/I "%VCPKG_ROOT%\installed\${{ matrix.arch }}-windows\include"
           call "%VCVARS%"
