@@ -42,27 +42,6 @@
 	  given format now, instead of ignoring invalid data after a valid format
 	  specifier
 
-2026-10-16  David Declerck <david.declerck@ocamlpro.com>
-
-	* common.h (cob_close_mode): new enum instead of #define'd constants
-	* common.h, fileio.c (cob_fileio_funcs): move to fileio.c, use cob_close_mode
-	* fileio.c (cob_file_close, indexed_close): use cob_close_mode
-
-2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
-
-	* profiling.c: fixed memory-leak on profile ending
-	* common.h, profiling.c: split cob_prof_proc_data from cob_prof_module
-	  as all the three elements need to exist together, also simplifying
-	  allocation and free with improved performance
-	* profiling.c (prof_stack): similar combination of three internal vars
-	  that need to coexist to a single structure
-	* profiling.c (prof_init_static): use cob_check_env_true
-	* profiling.c: refactor
-
-2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
-
-	* common.c (cob_exit_common): cleanup COB_STDERR and friends
-
 2026-10-23  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* intrinsic.c (pow_rules_violated): new function checking the rules for
@@ -85,6 +64,33 @@
 	  of overriding it with EC-SIZE-OVERFLOW for a NaN result
 	* numeric.c (cob_s32_pow, cob_s64_pow): set EC-SIZE-EXPONENTIATION for
 	  0 ^ 0 and 0 ^ -n instead of silently returning 1 or raising SIGFPE
+
+2026-10-19  Denis Hugonnnard-Roche  <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_intr_exp, cob_intr_exp10, cob_intr_factorial),
+	  coblocal.h: fixing bug #1206 "gmp code aborting with out-of-memory"
+	  by implementing limits defined in coblocal.h raising EC-ARGUMENT-EXCEPTION
+
+2026-10-16  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h (cob_close_mode): new enum instead of #define'd constants
+	* common.h, fileio.c (cob_fileio_funcs): move to fileio.c, use cob_close_mode
+	* fileio.c (cob_file_close, indexed_close): use cob_close_mode
+
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* profiling.c: fixed memory-leak on profile ending
+	* common.h, profiling.c: split cob_prof_proc_data from cob_prof_module
+	  as all the three elements need to exist together, also simplifying
+	  allocation and free with improved performance
+	* profiling.c (prof_stack): similar combination of three internal vars
+	  that need to coexist to a single structure
+	* profiling.c (prof_init_static): use cob_check_env_true
+	* profiling.c: refactor
+
+2026-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_exit_common): cleanup COB_STDERR and friends
 
 2026-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
