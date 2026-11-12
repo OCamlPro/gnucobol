@@ -12731,6 +12731,17 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		if (val < 0 && !f->pic->have_sign) {
 			val = -val;
 		}
+		if (f->size < 4) {
+			/* binary truncation to the field size */
+			const int		bits = f->size * 8;
+			const unsigned int	uval = (unsigned int)val
+						     & ((1U << bits) - 1);
+			if (f->pic->have_sign && (uval & (1U << (bits - 1)))) {
+				val = (int)uval - (1 << bits);
+			} else {
+				val = (int)uval;
+			}
+		}
 		if (f->size == 1) {
 			return cb_build_assign (dst, cb_int (val));
 		}
