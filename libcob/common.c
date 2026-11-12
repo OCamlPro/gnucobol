@@ -6513,6 +6513,30 @@ cob_tidy (void)
 
 /* System routines */
 
+/* address of the low byte of the native binary argument 'n' (0-based) given
+   as 'data' (e.g. a numeric literal), as described by the caller's parameter
+   list; 'data' if that is not available; only differs on big-endian */
+unsigned char *
+cob_param_low_byte (const int n, const void *data)
+{
+#ifdef	WORDS_BIGENDIAN
+	const cob_field	*f;
+
+	if (COB_MODULE_PTR
+	 && cobglobptr->cob_call_params > n
+	 && (f = COB_MODULE_PTR->cob_procedure_params[n]) != NULL
+	 && f->data == data
+	 && f->size > 1
+	 && (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_BINARY
+	  || COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_COMP5)) {
+		return (unsigned char *)data + f->size - 1;
+	}
+#else
+	COB_UNUSED (n);
+#endif
+	return (unsigned char *)data;
+}
+
 /* CBL_EXIT_PROC - register exit handlers that will be called
    before teardown (after posible error procedures) without
    any parameters passed
@@ -6559,7 +6583,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 			return -1;
 		}
 
-		install_flag = *(unsigned char*)dispo;
+		install_flag = *cob_param_low_byte (0, dispo);
 		switch (install_flag) {
 		case 0:
 			priority = 64;
@@ -6683,7 +6707,7 @@ cob_sys_error_proc (const void *dispo, const void *pptr)
 		hp = h;
 		h = h->next;
 	}
-	x = dispo;
+	x = cob_param_low_byte (0, dispo);
 	if (*x != 0) {
 		/* Remove handler */
 		if (h != NULL) {
@@ -7056,7 +7080,7 @@ cob_sys_xf4 (void *p1, const void *p2)
 int
 cob_sys_xf5 (const void *p1, void *p2)
 {
-	const cob_u8_ptr	data_1 = p1;
+	const cob_u8_ptr	data_1 = cob_param_low_byte (0, p1);
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
@@ -7078,7 +7102,7 @@ int
 cob_sys_x91 (void *p1, const void *p2, void *p3)
 {
 	cob_u8_ptr		result = p1;
-	const cob_u8_ptr	func = p2;
+	const cob_u8_ptr	func = cob_param_low_byte (1, p2);
 	cob_u8_ptr		parm = p3;
 	unsigned char		*p;
 	size_t			i;

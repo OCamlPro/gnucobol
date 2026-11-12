@@ -16136,6 +16136,7 @@ AT_DATA([callee.cob], [
        LINKAGE SECTION.
        01 VAR1 PIC X(4) VALUE "TEST".
        PROCEDURE DIVISION USING VAR1.
+           INITIALIZE VAR1 ALL TO VALUE. *> AIX: only a write faults
            DISPLAY VAR1.
            STOP RUN RETURNING 0.
 ])
@@ -16212,6 +16213,7 @@ AT_DATA([callee.cob], [
        LINKAGE SECTION.
        01 VAR1 PIC X(4) VALUE "TEST".
        PROCEDURE DIVISION USING VAR1.
+           INITIALIZE VAR1 ALL TO VALUE. *> AIX: only a write faults
            DISPLAY VAR1.
            STOP RUN RETURNING 0.
 ])
