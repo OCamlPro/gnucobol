@@ -16096,6 +16096,7 @@ AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 # Sanitizers may get in the way as well - we can at least portably
 # skip some
 AT_DATA([ubsan.supp], [
+nonnull-attribute:*
 null:*
 ])
 
@@ -16187,6 +16188,7 @@ AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 
 # see note on possibly breaking C/sanitizer runtime checks above
 AT_DATA([ubsan.supp], [
+nonnull-attribute:*
 null:*
 ])
 
