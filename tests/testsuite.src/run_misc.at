@@ -4295,7 +4295,7 @@ typedef void (*cob_tidy_fn)(void);
 #endif
 
 /* Function to call COBOL shared library functions */
-static int callCobol(void) {
+static int callCobol (void) {
     const char *libCobPath = "libcob" LIB_EXT;
     void *libCobHandle;
     cob_init_fn cob_init;
@@ -4307,28 +4307,28 @@ static int callCobol(void) {
     int result = EXIT_SUCCESS;
 
     /* Load a unique copy of the shared library for each worker. */
-    libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    libCobHandle = dlmopen (LM_ID_NEWLM, libCobPath, RTLD_NOW);
     if (!libCobHandle) {
         fprintf(stderr, "Worker: Failed to load libcob with dlmopen from %s: %s\n",
-                libCobPath, dlerror());
+                libCobPath, dlerror ());
         return EXIT_FAILURE;
     }
 
 #define RESOLVE_SYMBOL(symbol, type) \
-    symbol = (type) dlsym(libCobHandle, #symbol); \
+    symbol = (type) dlsym (libCobHandle, #symbol); \
     if (!symbol) { \
-        fprintf(stderr, "Worker: Failed to load symbol %s: %s\n", \
-                #symbol, dlerror()); \
-        dlclose(libCobHandle); \
+        fprintf (stderr, "Worker: Failed to load symbol %s: %s\n", \
+                #symbol, dlerror ()); \
+        dlclose (libCobHandle); \
         return EXIT_FAILURE; \
     }
 
     /* Resolve required symbols from the COBOL library */
-    RESOLVE_SYMBOL(cob_init, cob_init_fn);
-    RESOLVE_SYMBOL(cob_resolve, cob_resolve_fn);
-    RESOLVE_SYMBOL(cob_cancel, cob_cancel_fn);
-    RESOLVE_SYMBOL(cob_tidy, cob_tidy_fn);
-    cob_init(0, NULL);
+    RESOLVE_SYMBOL (cob_init, cob_init_fn);
+    RESOLVE_SYMBOL (cob_resolve, cob_resolve_fn);
+    RESOLVE_SYMBOL (cob_cancel, cob_cancel_fn);
+    RESOLVE_SYMBOL (cob_tidy, cob_tidy_fn);
+    cob_init (0, NULL);
 
 #if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
     iteration = 0;
@@ -4339,19 +4339,19 @@ static int callCobol(void) {
     for (; iteration < 2; iteration++) {
         /* Resolve prog every iteration due to cancellation: 
            physical cancellation unloads prog if it is not preloaded. */
-        program = cob_resolve("prog");
+        program = cob_resolve ("prog");
         if (!program) {
-            fprintf(stderr, "Worker: Failed to resolve prog function.\n");
+            fprintf (stderr, "Worker: Failed to resolve prog function.\n");
             result = EXIT_FAILURE;
             break;
         }
-        program(); /* Call the COBOL function */
-        cob_cancel("prog");
+        program (); /* Call the COBOL function */
+        cob_cancel ("prog");
     }
 
     /* Clean up COBOL resources */
-    cob_tidy();
-    dlclose(libCobHandle);
+    cob_tidy ();
+    dlclose (libCobHandle);
     return result;
 }
 
@@ -4359,13 +4359,13 @@ static int callCobol(void) {
 #if defined(USE_PTHREAD)
 static void *threadFunction(void *arg) {
     int *result = arg;
-    *result = callCobol();
+    *result = callCobol ();
     return NULL;
 }
 #elif defined(USE_C11_THREADS)
 static int threadFunction(void *arg) {
-    (void)arg;
-    return callCobol();
+    (void) arg;
+    return callCobol ();
 }
 #endif
 
@@ -4388,58 +4388,59 @@ int main (int argc, char **argv) {
     int major, minor;
     /* glibc < 2.34 reproducibly crashes with a separate libpthread in a new
        namespace, including with C11 threads. */
-    if (sscanf(gnu_get_libc_version(), "%d.%d", &major, &minor) != 2
+    if (sscanf (gnu_get_libc_version (), "%d.%d", &major, &minor) != 2
         || major < 2 || (major == 2 && minor < 34)) {
+        fprintf (stderr, "glibc version is known to be buggy for versions under 2.34.\n");
         return 77;
     }
 #endif
 
     /* Use the base namespace runtime for COBOL sleep. */
-    cob_init(argc, argv);
-    sleep_program = (cobol_program_fn) cob_resolve("thread_sleep");
+    cob_init (argc, argv);
+    sleep_program = (cobol_program_fn) cob_resolve ("thread_sleep");
     if (!sleep_program) {
-        fprintf(stderr, "Main thread: Failed to resolve thread_sleep function.\n");
-        cob_tidy();
+        fprintf (stderr, "Main thread: Failed to resolve thread_sleep function.\n");
+        cob_tidy ();
         return EXIT_FAILURE;
     }
 
     /* Create multiple threads */
     for (i = 0; i < NUM_THREADS; i++) {
 #if defined(USE_PTHREAD)
-        int thread_created = pthread_create(&threads[[i]], NULL, threadFunction, &results[[i]]) == 0;
+        int thread_created = pthread_create (&threads[[i]], NULL, threadFunction, &results[[i]]) == 0;
 #else
-        int thread_created = thrd_create(&threads[[i]], threadFunction, NULL) == thrd_success;
+        int thread_created = thrd_create (&threads[[i]], threadFunction, NULL) == thrd_success;
 #endif
         if (!thread_created) {
-            fprintf(stderr, "Main thread: Failed to create thread %d.\n", i);
+            fprintf (stderr, "Main thread: Failed to create thread %d.\n", i);
             result = EXIT_FAILURE;
             break;
         }
         /* Stagger startup slightly */
-        sleep_program();
+        sleep_program ();
     }
     /* Wait for all threads to finish */
     for (j = 0; j < i; j++) {
 #if defined(USE_PTHREAD)
-        int thread_joined = pthread_join(threads[[j]], NULL) == 0;
+        int thread_joined = pthread_join (threads[[j]], NULL) == 0;
 #else
-        int thread_joined = thrd_join(threads[[j]], &results[[j]]) == thrd_success;
+        int thread_joined = thrd_join (threads[[j]], &results[[j]]) == thrd_success;
 #endif
         if (!thread_joined) {
-            fprintf(stderr, "Main thread: Failed to join thread %d.\n", j);
+            fprintf (stderr, "Main thread: Failed to join thread %d.\n", j);
             return EXIT_FAILURE;
         }
         if (results[[j]] != EXIT_SUCCESS) {
             result = EXIT_FAILURE;
         }
     }
-    cob_tidy();
+    cob_tidy ();
     return result;
 #else
     /* dlmopen test with no threads */
-    (void)argc;
-    (void)argv;
-    return callCobol();
+    (void) argc;
+    (void) argv;
+    return callCobol ();
 #endif
 }
 ])
