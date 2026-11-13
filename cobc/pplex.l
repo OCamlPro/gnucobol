@@ -2523,7 +2523,9 @@ start:
 		for(k=7; buff[k] == ' '; k++);
 		if (strncasecmp(&buff[k],"XFD ",4) == 0) {
 			for(k=k+3; buff[k] == ' '; k++);
-			k = sprintf(wrk,"%s",&buff[k]);
+			snprintf (wrk, sizeof (wrk), "%s", &buff[k]);
+			wrk[sizeof (wrk) - 1] = 0;
+			k = (int)strlen (wrk);
 			while(wrk[k-1] == '\n' || wrk[k-1] == '\r')
 				wrk[--k] = 0;
 			qt = strchr(wrk,'"') ? '\'' : '"';
@@ -2541,7 +2543,9 @@ start:
 			while(isspace(buff[k])) k++;
 			if (strncasecmp(&buff[k],"XFD ",4) == 0) {
 				for(k=k+4; isspace(buff[k]); k++);
-				k = sprintf(wrk,"%s",&buff[k]);
+				snprintf (wrk, sizeof (wrk), "%s", &buff[k]);
+				wrk[sizeof (wrk) - 1] = 0;
+				k = (int)strlen (wrk);
 				while (wrk[k-1] == '\r'
 					|| wrk[k-1] == '\n'
 					|| isspace(wrk[k-1]))

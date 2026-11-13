@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019-2021,2025 Free Software Foundation, Inc.
+   Copyright (C) 2019-2021,2025-2026 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -34,9 +34,12 @@
 #include "cobc.h"
 #include "tree.h"
 
-#define MAX_XFD 24
+#define MAX_XFD 24		/* max number of directives */
+#define XFD_LINE_LEN 80		/* directive line length */
+#define XFD_PARAM_LEN 64	/* max param/table name length (MF: 30) */
+#define XFD_MAX_PARAMS 6	/* max number of params */
 static int	hasxfd = 0;
-static char xfd[MAX_XFD][80];
+static char xfd[MAX_XFD][XFD_LINE_LEN];
 
 #define MAX_DATE 24
 static int	ndate = 0;
@@ -77,6 +80,45 @@ static const char *sqlnames[] = {
 	NULL};
 
 
+static char *cb_get_param (char *p, char *prm, size_t size, int skipeq);
+static int compstr (char *tst, const char *val);
+
+/* Split the first 6 parameters of a directive; returns the 2nd one,
+   or NULL if a parameter does not fit in 'size' bytes */
+static char *
+xfd_get_params (char *str, char *prm[XFD_MAX_PARAMS], size_t size)
+{
+	char	*p, *pw;
+	int	i, skipeq;
+	pw = cb_get_param (str, prm[0], size, 1);
+	if (pw == NULL)
+		return NULL;
+	if (compstr (prm[0], "WHEN") == 0
+	 || compstr (prm[0], "AND") == 0
+	 || compstr (prm[0], "OR") == 0)
+		skipeq = 0;
+	else
+		skipeq = 1;
+	p = pw;
+	for (i = 1; i < XFD_MAX_PARAMS; i++) {
+		p = cb_get_param (p, prm[i], size, skipeq);
+		if (p == NULL)
+			return NULL;
+	}
+	return pw;
+}
+
+/* Check that the first 6 parameters of a directive fit in 64 bytes */
+static int
+xfd_params_fit (char *str)
+{
+	char	buf[XFD_MAX_PARAMS][XFD_PARAM_LEN], *prm[XFD_MAX_PARAMS];
+	int	i;
+	for (i = 0; i < XFD_MAX_PARAMS; i++)
+		prm[i] = buf[i];
+	return xfd_get_params (str, prm, sizeof (buf[0])) != NULL;
+}
+
 void
 cb_save_xfd (char *str)
 {
@@ -90,6 +132,11 @@ cb_save_xfd (char *str)
 	}
 	if (strcasecmp(str,"ALL") == 0) {	/* ALL files are implied XFD */
 		cb_all_files_xfd = 1;
+		return;
+	}
+	if (strlen (str) >= sizeof (xfd[0])
+	 || !xfd_params_fit (str)) {
+		cb_error (_("XFD directive too long"));
 		return;
 	}
 	strcpy(xfd[hasxfd],str);
@@ -316,8 +363,9 @@ cb_date_str (struct sql_date *sdf, char *format)
 }
 
 static char *
-cb_get_param (char *p, char *prm, int skipeq)
+cb_get_param (char *p, char *prm, size_t size, int skipeq)
 {
+	char	*end = prm + size - 1;
 	char	eq = 0x01;
 	char	qt = 0x00;
 	if (skipeq)
@@ -326,19 +374,29 @@ cb_get_param (char *p, char *prm, int skipeq)
 	if (*p == '"' || *p == '\'') {
 		qt = *p;
 		do {
+			if (prm >= end)
+				goto toolong;
 			*prm++ = *p++;
 		} while (*p != 0 && *p != qt);
-		if (*p == qt)
+		if (*p == qt) {
+			if (prm >= end)
+				goto toolong;
 			*prm++ = *p++;
+		}
 	} else {
 		while (*p != 0 && *p != ',' 
 			&& *p != eq && !isspace(*p)) {
+			if (prm >= end)
+				goto toolong;
 			*prm++ = *p++;
 		}
 	}
 	*prm = 0;
 	while (*p == ',' || isspace(*p)) p++;
 	return p;
+toolong:
+	*prm = 0;
+	return NULL;
 }
 
 static void
@@ -376,38 +434,24 @@ compstr(char *tst, const char *val)
 void
 cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 {
-	int		i, k, skipeq;
-	char	*p, *pw, expr[COB_NORMAL_BUFF];
-	char	p1[64], p2[64], p3[64], p4[64], p5[64], p6[64];
-	char	*prm[6];
+	int		i, k;
+	char	*pw, expr[COB_NORMAL_BUFF];
+	char	p1[XFD_PARAM_LEN], p2[XFD_PARAM_LEN], p3[XFD_PARAM_LEN];
+	char	p4[XFD_PARAM_LEN], p5[XFD_PARAM_LEN], p6[XFD_PARAM_LEN];
+	char	*prm[XFD_MAX_PARAMS] = {p1, p2, p3, p4, p5, p6};
 	struct sql_date sdf[1];
 	if (hasxfd <= 0)
 		return;
-	prm[0] = p1;
-	prm[1] = p2;
-	prm[2] = p3;
-	prm[3] = p4;
-	prm[4] = p5;
-	prm[5] = p6;
 	if (!fn->flag_sql_xfd) {
 		fn->max_sql_name_len = 24;
 		fn->flag_sql_trim_prefix = 1;
 		fn->flag_sql_xfd = 1;
 		fn->flag_sql_keep_filler = 0;
 	}
-	for(k=0; k < hasxfd; k++) {
-		pw = cb_get_param (xfd[k], p1, 1);
-		if (compstr(p1,"WHEN") == 0
-		 || compstr(p1,"AND") == 0
-		 || compstr(p1,"OR") == 0)
-			skipeq = 0;
-		else
-			skipeq = 1;
-		p = cb_get_param (pw, p2, skipeq);
-		p = cb_get_param (p, p3, skipeq);
-		p = cb_get_param (p, p4, skipeq);
-		p = cb_get_param (p, p5, skipeq);
-		p = cb_get_param (p, p6, skipeq);
+	for (k=0; k < hasxfd; k++) {
+		pw = xfd_get_params (xfd[k], prm, sizeof (p1));
+		if (pw == NULL)
+			continue;
 		if (compstr(p1,"USE") == 0) {
 			strcpy(p1,p2);
 			strcpy(p2,p3);
@@ -435,7 +479,7 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 			} else {
 				cb_use_name (f, p2);
 			}
-			for (i=2; i < 5; i++) {
+			for (i=2; i < XFD_MAX_PARAMS - 1; i++) {
 				if (compstr(prm[i],"KEEP") == 0
 				 && compstr(prm[i+1],"FILLER") == 0) {
 					fn->flag_sql_keep_filler = 1;
@@ -504,6 +548,13 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 					if (p2[len-1] == '"')
 						p2[len-1] = 0;
 					memmove(p2,p2+1,len);
+				}
+				if (strlen (p2) >= sizeof (sdf->format)) {
+					cb_source_line--;
+					cb_error (_("DATE format too long"));
+					cb_source_line++;
+					cb_use_name (f, p3);
+					continue;
 				}
 				f->sql_date_format = cobc_parse_strdup (p2);
 			} else {
@@ -1313,7 +1364,7 @@ check_prefix (struct cb_field *f)
 void
 output_xfd_file (struct cb_file *fl)
 {
-	char	outname[COB_FILE_BUFF], tblname[64], time_stamp[32];
+	char	outname[COB_FILE_BUFF], tblname[XFD_PARAM_LEN], time_stamp[32];
 	char	ridname[72];
 	FILE	*fx, *fs;
 	struct cb_field		*f;
