@@ -1,4 +1,13 @@
 
+2026-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c, tree.h, parser.y (cb_setup_prototype): renamed + moved from
+	  parser.y to typeck.c
+	* typeck.c, parser.y (get_literal_or_word_name, find_prototype_definition,
+	  check_prototype_redefines_current_element, check_for_duplicate_prototype,
+	  check_prototype_against_definition): moved static functions related to
+	  (cb_setup_prototype) from parser.y to typeck.c
+
 2026-11-12  David Declerck <david.declerck@ocamlpro.com>
 
 	* pplex.l (ppinput): fix buffer overflow on overlong XFD lines
@@ -55,6 +64,13 @@
 	* cobc.c (cobc_check_valid_name, cobc_error_name): prevent PROGRAM-ID
 	  with contained quote or apostrophe as those may break generated C code
 	* codegen.c (output_cobol_info): escape quote in generated filename
+
+2026-11-03  Brent Rector  <brent@wiseowl.com>
+
+	* parser.y (find_prototype_definition): fixing #1286 by testing the option
+	  the warning is issued under, cb_warn_prototypes, instead of
+	  cb_warn_ignored_initial_val, leading to -Wprototypes alone reporting
+	  a prototype with no definition seen while -Winitial-value doesn't
 
 2026-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
