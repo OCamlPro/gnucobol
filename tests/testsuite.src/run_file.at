@@ -3877,7 +3877,8 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED sample])
-AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START UNLOCK COB_SYNC])
+AT_KEYWORDS([runfile optional file status READ WRITE
+DUPLICATES START UNLOCK COB_SYNC])
 
 # modified version of GC-FAQ: indexing example
 # Author: Brian Tiffin, Date:   17-Feb-2009, 28-Jan-2014
@@ -4384,8 +4385,8 @@ rewriting key: 98651234
 AT_CLEANUP
 
 
-AT_SETUP([INDEXED START with partial key and collating sequence])
-AT_KEYWORDS([runfile READ WRITE START])
+AT_SETUP([INDEXED START: partial key + collating sequence])
+AT_KEYWORDS([runfile READ WRITE START EBCDIC])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
