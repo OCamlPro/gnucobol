@@ -8510,7 +8510,7 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	COB_UNUSED (file_offset);
 	COB_UNUSED (file_len);
 	COB_UNUSED (flags);
-	p_flags = cob_get_param_data (4);
+	p_flags = cob_param_low_byte (3, cob_get_param_data (4));
 	if ((*p_flags & 0x80) != 0) {
 		struct stat	st;
 		if (fstat (fd, &st) < 0) {

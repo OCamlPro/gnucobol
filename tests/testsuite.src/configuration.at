@@ -427,6 +427,8 @@ test.conf: missing definitions:
 	no definition of 'format'
 	no definition of 'binary-size'
 	no definition of 'binary-byteorder'
+	no definition of 'call-literal-byteorder'
+	no definition of 'call-literal-size'
 	no definition of 'assign-clause'
 	no definition of 'screen-section-rules'
 	no definition of 'dpc-in-data'

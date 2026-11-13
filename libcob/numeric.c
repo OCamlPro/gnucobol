@@ -1573,7 +1573,7 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 #else
 		sizeb = 0;
 		order = 1;
-		adj = 0;
+		adj = (sizeof (cob_u64_t) * 2) - size;
 #endif
 		p = (unsigned char *)data;
 		data[0] = data[1] = 0;
@@ -1676,7 +1676,7 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 #else
 		sizeb = 0;
 		order = 1;
-		adj = 0;
+		adj = (sizeof (cob_u64_t) * 2) - size;
 #endif
 		neg = (int)mpz_sgn (d->value);
 		/* Returns 0 when value is 0 */
