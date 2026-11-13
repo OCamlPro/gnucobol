@@ -4250,19 +4250,32 @@ $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([resolve / execution in parallel threads])
-AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread])
+# Missing dlmopen or the selected thread API skips that variant.
+m4_define([_AT_CHECK_ISOLATED_RUNTIME], [
+m4_pushdef([_test_description], [$1])
+m4_pushdef([_compile_options], [$2])
+m4_pushdef([_expected_output], [$3])
+m4_pushdef([_extra_keywords], [$4])
 
-# check COB_LOAD_VISIBILITY=LOCAL_ONLY/PREFERRED - could fail on some environments,
-# but those are unlikely to have linkable pthreads as well
+AT_SETUP(m4_defn([_test_description]))
+AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy ] m4_defn([_extra_keywords]))
 
 AT_DATA([caller.c], [
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h> /* For POSIX threads */
 #include <dlfcn.h>   /* For dynamic library loading */
 #include <libcob.h>
+
+#if defined(USE_PTHREAD)
+#include <pthread.h>
+#elif defined(USE_C11_THREADS)
+#include <threads.h>
+#endif
+
+#if defined(__GLIBC__)
+#include <gnu/libc-version.h>
+#endif
 
 typedef int (*cobol_program_fn)(void);
 typedef void (*cob_init_fn)(int, char **);
@@ -4279,7 +4292,7 @@ typedef void (*cob_tidy_fn)(void);
 #endif
 
 /* Function to call COBOL shared library functions */
-void *callCobol() {
+static int callCobol(void) {
     const char *libCobPath = "libcob" LIB_EXT;
     void *libCobHandle;
     cob_init_fn cob_init;
@@ -4288,22 +4301,23 @@ void *callCobol() {
     cob_tidy_fn cob_tidy;
     cobol_program_fn program;
     int iteration;
+    int result = EXIT_SUCCESS;
 
-    /* Use `dlmopen` to load a unique copy of the shared library in each thread */
+    /* Load a unique copy of the shared library for each worker. */
     libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
     if (!libCobHandle) {
-        fprintf(stderr, "Thread %ld: Failed to load libcob with dlmopen from %s: %s\n",
-                pthread_self(), libCobPath, dlerror());
-        return NULL;
+        fprintf(stderr, "Worker: Failed to load libcob with dlmopen from %s: %s\n",
+                libCobPath, dlerror());
+        return EXIT_FAILURE;
     }
 
 #define RESOLVE_SYMBOL(symbol, type) \
     symbol = (type) dlsym(libCobHandle, #symbol); \
     if (!symbol) { \
-        fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
-                pthread_self(), #symbol, dlerror()); \
-        dlclose (libCobHandle); \
-        return NULL; \
+        fprintf(stderr, "Worker: Failed to load symbol %s: %s\n", \
+                #symbol, dlerror()); \
+        dlclose(libCobHandle); \
+        return EXIT_FAILURE; \
     }
 
     /* Resolve required symbols from the COBOL library */
@@ -4313,35 +4327,68 @@ void *callCobol() {
     RESOLVE_SYMBOL(cob_tidy, cob_tidy_fn);
     cob_init(0, NULL);
     /* Resolve again after cancellation: physical cancellation unloads prog if it is not preloaded. */
-    for (iteration = 0; iteration < 2; iteration++) {
+
+#if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
+    iteration = 0;
+#else
+    iteration = 1;
+#endif
+
+    for (; iteration < 2; iteration++) {
         program = cob_resolve("prog");
         if (!program) {
-            fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
+            fprintf(stderr, "Worker: Failed to resolve prog function.\n");
+            result = EXIT_FAILURE;
             break;
         }
         program(); /* Call the COBOL function */
         cob_cancel("prog");
     }
+
     /* Clean up COBOL resources */
-    cob_tidy ();
-    dlclose (libCobHandle);
-    return NULL;
+    cob_tidy();
+    dlclose(libCobHandle);
+    return result;
 }
 
 /* Thread function wrapper around `callCobol` */
-void *threadFunction (void *arg) {
-    long threadId = (long)arg;
-    callCobol ();
+#if defined(USE_PTHREAD)
+static void *threadFunction(void *arg) {
+    int *result = arg;
+    *result = callCobol();
     return NULL;
 }
+#elif defined(USE_C11_THREADS)
+static int threadFunction(void *arg) {
+    (void)arg;
+    return callCobol();
+}
+#endif
 
 /* Main function */
 int main (int argc, char **argv) {
-    const int numThreads = 2; /* Number of threads to create */
-    pthread_t threads[[numThreads]];
-    long i;
+#if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
+#define NUM_THREADS 2
+#if defined(USE_PTHREAD)
+    pthread_t threads[[NUM_THREADS]];
+#else
+    thrd_t threads[[NUM_THREADS]];
+#endif
+    int results[[NUM_THREADS]];
+    int i;
     int j;
+    int result = EXIT_SUCCESS;
     cobol_program_fn sleep_program;
+
+#if defined(__GLIBC__)
+    int major, minor;
+    /* glibc < 2.34 reproducibly crashes with a separate libpthread in a new
+       namespace, including with C11 threads. */
+    if (sscanf(gnu_get_libc_version(), "%d.%d", &major, &minor) != 2
+        || major < 2 || (major == 2 && minor < 34)) {
+        return 77;
+    }
+#endif
 
     /* Use the base namespace runtime for COBOL sleep. */
     cob_init(argc, argv);
@@ -4353,21 +4400,43 @@ int main (int argc, char **argv) {
     }
 
     /* Create multiple threads */
-    for (i = 0; i < numThreads; i++) {
-        if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
-            fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
-            cob_tidy();
-            return EXIT_FAILURE;
+    for (i = 0; i < NUM_THREADS; i++) {
+#if defined(USE_PTHREAD)
+        int thread_created = pthread_create(&threads[[i]], NULL, threadFunction, &results[[i]]) == 0;
+#else
+        int thread_created = thrd_create(&threads[[i]], threadFunction, NULL) == thrd_success;
+#endif
+        if (!thread_created) {
+            fprintf(stderr, "Main thread: Failed to create thread %d.\n", i);
+            result = EXIT_FAILURE;
+            break;
         }
         /* Stagger startup slightly */
         sleep_program();
     }
     /* Wait for all threads to finish */
-    for (j = 0; j < numThreads; j++) {
-        pthread_join (threads[[j]], NULL);
+    for (j = 0; j < i; j++) {
+#if defined(USE_PTHREAD)
+        int thread_joined = pthread_join(threads[[j]], NULL) == 0;
+#else
+        int thread_joined = thrd_join(threads[[j]], &results[[j]]) == thrd_success;
+#endif
+        if (!thread_joined) {
+            fprintf(stderr, "Main thread: Failed to join thread %d.\n", j);
+            return EXIT_FAILURE;
+        }
+        if (results[[j]] != EXIT_SUCCESS) {
+            result = EXIT_FAILURE;
+        }
     }
     cob_tidy();
-    return EXIT_SUCCESS;
+    return result;
+#else
+    /* dlmopen test with no threads */
+    (void)argc;
+    (void)argv;
+    return callCobol();
+#endif
 }
 ])
 
@@ -4384,9 +4453,9 @@ AT_DATA([thread_sleep.cob], [
            CONTINUE AFTER DELAY-SECONDS SECONDS
            GOBACK.
 ])
-AT_CHECK([$COMPILE_MODULE thread_sleep.cob], [0], [], [])
 
-AT_CHECK([$COMPILE -ldl -lpthread caller.c], [0], [], [], [
+AT_CHECK([$COMPILE_MODULE thread_sleep.cob], [0], [], [])
+AT_CHECK([$COMPILE ] m4_defn([_compile_options]) [ caller.c], [0], [], [], [
    echo "C compilation / linking failed, skipping rest of group"
    AT_SKIP_IF([:])
 ])
@@ -4409,18 +4478,10 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED ./caller], [0],
-[Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED ./caller], [0],
-[Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
+m4_defn([_expected_output]), [])
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
+m4_defn([_expected_output]), [])
 
 # Preloading an alternate implementation of prog must work in each dlmopen namespace.
 AT_DATA([preloaded.cob], [
@@ -4441,21 +4502,41 @@ AT_DATA([preloaded.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob], [0], [], [])
+AT_DATA([ordinary-output], m4_defn([_expected_output]))
+AT_CHECK([$SED 's/Final count:/Preloaded count:/' ordinary-output > expout], [0], [], [])
+
 # Pre-loaded modules are not unloaded, but must still be reset.
-AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY ./caller], [0],
-[Preloaded count: 01000
-Preloaded count: 01000
-Preloaded count: 01000
-Preloaded count: 01000
-], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY ./caller], [0],
-[Preloaded count: 01000
-Preloaded count: 01000
-Preloaded count: 01000
-Preloaded count: 01000
-], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
+[expout], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
+[expout], [])
 
 AT_CLEANUP
+m4_popdef([_extra_keywords])
+m4_popdef([_expected_output])
+m4_popdef([_compile_options])
+m4_popdef([_test_description])
+])
+
+_AT_CHECK_ISOLATED_RUNTIME([resolve / execution in isolated namespace], [-ldl],
+[Final count: 01000
+], [])
+
+_AT_CHECK_ISOLATED_RUNTIME([resolve / execution in parallel threads], [-ldl -lpthread -A -DUSE_PTHREAD],
+[Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+], [pthread parallel])
+
+_AT_CHECK_ISOLATED_RUNTIME([resolve / execution in parallel C11 threads], [-ldl -lpthread -A "-DUSE_C11_THREADS -std=c11"],
+[Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+], [c11 threads parallel])
+
+m4_undefine([_AT_CHECK_ISOLATED_RUNTIME])
 
 
 AT_SETUP([COB_PRE_LOAD with entry points])
