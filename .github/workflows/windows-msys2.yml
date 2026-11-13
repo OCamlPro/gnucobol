@@ -189,12 +189,8 @@ jobs:
         shell: msys2 {0}
         run: |
           cd tests/testsuite.src
-
           # Skip test as it sometimes works and sometimes not...
           # sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
-
-          # The following 2 fail
-          sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL\])/a AT_SKIP_IF(\[true\])' run_file.at
 
       - name: Run testsuite

@@ -395,6 +395,16 @@ static int		return_jmp_buffer_set = 0;
 volatile sig_atomic_t	sig_is_handled = 0;
 #endif
 
+/* Dump recovery (skipping a faulting field), see cob_dump_protected:
+   Windows x64/arm64: the exception handler restores a saved context,
+   else setjmp/longjmp, unless COB_WITHOUT_JMP (then no recovery) */
+#if defined (_WIN32) && !defined (_M_IX86) && !defined (__i386__)
+#define DUMP_RECOVERY_CONTEXT
+#elif !defined (COB_WITHOUT_JMP)
+#define DUMP_RECOVERY_SETJMP
+static jmp_buf		dump_env;
+#endif
+
 /* Function Pointer for external signal handling */
 static void		(*cob_ext_sighdl) (int) = NULL;
 
@@ -1488,6 +1498,160 @@ cob_get_sig_description (int sig)
 	return signal_entry.description;
 }
 
+#if defined (_WIN32)
+
+/* Map Win32 exception codes to POSIX signals */
+static int
+win32_exn_to_signal (DWORD code)
+{
+	switch (code) {
+	case EXCEPTION_ACCESS_VIOLATION:
+	case EXCEPTION_IN_PAGE_ERROR:
+	case EXCEPTION_STACK_OVERFLOW:
+	case EXCEPTION_DATATYPE_MISALIGNMENT:
+		return SIGSEGV;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	case EXCEPTION_INT_OVERFLOW:
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+	case EXCEPTION_FLT_OVERFLOW:
+	case EXCEPTION_FLT_UNDERFLOW:
+	case EXCEPTION_FLT_INVALID_OPERATION:
+	case EXCEPTION_FLT_DENORMAL_OPERAND:
+	case EXCEPTION_FLT_INEXACT_RESULT:
+	case EXCEPTION_FLT_STACK_CHECK:
+		return SIGFPE;
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+	case EXCEPTION_PRIV_INSTRUCTION:
+		return SIGILL;
+	default:
+		return 0;
+	}
+}
+
+/* Dump recovery state, see cob_dump_protected */
+static volatile int	win32_dump_active = 0;	/* armed while dumping a field */
+static volatile int	win32_dump_faulted = 0;	/* set by the handler on a fault */
+#if defined (DUMP_RECOVERY_SETJMP)
+/* Resume point after a fault: back outside exception dispatch, jump to the setjmp */
+static void
+win32_dump_landing (void)
+{
+	longjmp (dump_env, 1);
+}
+#elif defined (DUMP_RECOVERY_CONTEXT)
+static CONTEXT		win32_dump_ctx;		/* saved by cob_dump_protected */
+#endif
+
+static PVOID		win32_exn_handle = NULL;	/* see cob_set_signal */
+
+/* Vectored Exception Handler (VEH) to treat hardware faults as POSIX signals */
+static LONG CALLBACK
+win32_exn_handler (EXCEPTION_POINTERS *ep)
+{
+	int			sig;
+	struct signal_table	entry;
+
+	sig = win32_exn_to_signal (ep->ExceptionRecord->ExceptionCode);
+	if (sig == 0) {
+		/* Exceptions we do not handle: just pass through */
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	entry = get_signal_entry (sig);
+
+	/* A fault while dumping a field resumes at the recovery point,
+	   by patching the context (never by jumping from the handler) */
+	if (entry.for_dump && win32_dump_active) {
+#if defined (DUMP_RECOVERY_SETJMP) || defined (DUMP_RECOVERY_CONTEXT)
+		win32_dump_faulted = 1;
+#ifdef DUMP_RECOVERY_SETJMP
+		ep->ContextRecord->Eip = (DWORD) (DWORD_PTR) win32_dump_landing;
+#else
+		*ep->ContextRecord = win32_dump_ctx;
+#endif
+		return EXCEPTION_CONTINUE_EXECUTION;
+#endif
+	}
+
+	/* Only handle the signals that cob_set_signal took over */
+	if (entry.for_set) {
+		cob_sig_handler (sig);
+	}
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif	/* _WIN32 */
+
+#if defined (HAVE_SIGNAL_H) && !defined (_WIN32) && defined (DUMP_RECOVERY_SETJMP)
+/* signal handler: longjmp back into cob_dump_protected */
+static void
+catch_dump_fault (int sig)
+{
+	longjmp (dump_env, sig);
+}
+#endif
+
+/* Call func (arg) with a recovery point: a fault in func (bad address, ...)
+   returns here instead of terminating, result is 1 in that case, else 0;
+   used for skipping a field whose dump faults */
+static int
+cob_dump_protected (void (*func) (void *), void *arg)
+{
+#if defined (_WIN32)
+	win32_dump_active = 1;
+	win32_dump_faulted = 0;
+#if defined (DUMP_RECOVERY_SETJMP)
+	if (setjmp (dump_env) != 0) {
+		win32_dump_active = 0;
+		return 1;
+	}
+#elif defined (DUMP_RECOVERY_CONTEXT)
+	RtlCaptureContext (&win32_dump_ctx);
+	if (win32_dump_faulted) {
+		win32_dump_active = 0;
+		return 1;
+	}
+#endif
+	func (arg);
+	win32_dump_active = 0;
+	return 0;
+#elif defined (HAVE_SIGNAL_H) && defined (DUMP_RECOVERY_SETJMP)
+	void	(*ohdlr[NUM_SIGNALS]) (int);
+	int	k;
+	int	faulted;
+#ifdef HAVE_SIGACTION
+	sigset_t	sigs;
+
+	/* Unblock signals to allow catch of another fault during dump */
+	(void)sigemptyset (&sigs);
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			(void)sigaddset (&sigs, signals[k].sig);
+		}
+	}
+	(void)sigprocmask (SIG_UNBLOCK, &sigs, NULL);
+#endif
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			ohdlr[k] = signal (signals[k].sig, catch_dump_fault);
+		}
+	}
+	faulted = setjmp (dump_env) != 0;
+	if (!faulted) {
+		func (arg);
+	}
+	/* The recovery point dies with this frame */
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump
+		 && ohdlr[k] != SIG_ERR) {
+			(void)signal (signals[k].sig, ohdlr[k]);
+		}
+	}
+	return faulted;
+#else
+	func (arg);
+	return 0;
+#endif
+}
+
 static void
 cob_init_sig_descriptions (void)
 {
@@ -1592,8 +1756,18 @@ cob_set_signal (void)
 	void (*ohdlr) (int);
 #endif
 
+#if defined (_WIN32)
+	/* Registered once, whatever the regime: it also does the dump recovery */
+	if (win32_exn_handle == NULL) {
+		win32_exn_handle = AddVectoredExceptionHandler (1, win32_exn_handler);
+	}
+#endif
+
 	if (signal_regime == '2') {
 		/* Don't set any signal */
+		for (k = 0; k < NUM_SIGNALS; k++) {
+			signals[k].for_set = 0;	/* not taken over */
+		}
 		return;
 	}
 
@@ -1620,6 +1794,8 @@ cob_set_signal (void)
 				if (osa.sa_handler == SIG_DFL) {
 					(void)sigemptyset (&sa.sa_mask);
 					(void)sigaction (signals[k].sig, &sa, NULL);
+				} else if (osa.sa_handler != cob_sig_handler) {
+					signals[k].for_set = 0;	/* not taken over */
 				}
 			} else {
 				/* Take direct control of some hard errors */
@@ -1645,6 +1821,9 @@ cob_set_signal (void)
 				ohdlr = signal (signals[k].sig, cob_sig_handler);
 				if (ohdlr != SIG_DFL) {
 					(void)signal (signals[k].sig, ohdlr);
+					if (ohdlr != cob_sig_handler) {
+						signals[k].for_set = 0;	/* not taken over */
+					}
 				}
 			} else {
 				/* Take direct control of some hard errors */
@@ -2869,13 +3048,33 @@ cob_relocate_string (const char *str)
 
 	if (do_I) {
 		size_t i = do_I - str;
+		int rlen = (int)strlen (exec_root);
+		const char *esc = "";
 		if (i) {
 			memcpy (str_work, str, i);
 		}
+		/* the path is quoted: drop trailing separators, as with MSVC
+		   a final \ would escape the closing quote and make cl fail */
+		while (rlen > 1 && exec_root[rlen - 1] == SLASH_CHAR) {
+			rlen--;
+		}
+#if defined (_WIN32) || defined (__DJGPP__)
+		/* back to "X:" from a drive root "X:\": restore the separator,
+		   "X:" alone is the current directory of X */
+		if (rlen == 2 && exec_root[1] == ':' && exec_root[2] == SLASH_CHAR) {
+			rlen = 3;
+		}
+#endif
+#ifdef _MSC_VER
+		/* a root ("X:\" or "\") still ends with \: double it */
+		if (exec_root[rlen - 1] == '\\') {
+			esc = "\\";
+		}
+#endif
 		/* include dir should be enough here, too */
 		snprintf (str_work + i, COB_FILE_MAX - i,
-			" "IOPT"\"%s\" "IOPT"\"%sinclude\" %s",
-			exec_root, exec_root, do_I);
+			" "IOPT"\"%.*s%s\" "IOPT"\"%sinclude\" %s",
+			rlen, exec_root, esc, exec_root, do_I);
 	} else {
 		size_t i = do_L - str;
 		if (i) {
@@ -11405,13 +11604,6 @@ static int	sym_idx = 0;
 static int	sym_sub [SYM_MAX_IDX];
 static int	sym_size[SYM_MAX_IDX];
 
-static jmp_buf save_sig_env;
-static void 
-catch_sig_jmp (int sig)
-{ 
-	longjmp(save_sig_env, sig);
-}
-
 void
 cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
 {
@@ -11506,6 +11698,32 @@ cob_dump_table ( cob_symbol *sym, int k)
 	sym_size [--sym_idx] = 0;
 }
 
+/* Arguments of dump_symbol_call, for cob_dump_protected */
+struct dump_symbol_args {
+	cob_symbol	*sym;
+	int		k;
+	cob_field	*f0;
+	int		skipgrp;	/* result: skip the subordinates */
+};
+
+static void
+dump_symbol_call (void *p)
+{
+	struct dump_symbol_args	*a = p;
+	const cob_symbol	*s = &a->sym[a->k];
+
+	if (s->occurs > 1) {
+		for (sym_idx = 0; sym_idx < SYM_MAX_IDX; sym_idx++)
+			sym_sub [sym_idx] = sym_size [sym_idx] = 0;
+		sym_idx = 0;
+		cob_dump_table ( a->sym, a->k);
+		if (s->is_group)
+			a->skipgrp = 1;
+	} else {
+		cob_dump_field ( s->level, s->name?s->name:"FILLER", a->f0, 0, 0);
+	}
+}
+
 static void
 cob_dump_symbols (cob_module *mod)
 {
@@ -11514,6 +11732,7 @@ cob_dump_symbols (cob_module *mod)
 	int			j, k, sect;
 	cob_symbol *sym;
 	cob_field	f0;
+	struct dump_symbol_args	args;
 	char		msg[80];
 	FILE		*fp;
 	cob_file	*fl;
@@ -11555,8 +11774,11 @@ cob_dump_symbols (cob_module *mod)
 		}
 		skipgrp = 0;
 		cob_sym_get_field (&f0, sym, k);
-		cob_set_dump_signal ((void *)catch_sig_jmp);
-		if (setjmp (save_sig_env) != 0) {
+		args.sym = sym;
+		args.k = k;
+		args.f0 = &f0;
+		args.skipgrp = 0;
+		if (cob_dump_protected (dump_symbol_call, &args)) {
 			skipgrp = 1;
 			while (sym[k].parent > 0)
 				k = sym[k].parent;
@@ -11566,15 +11788,8 @@ cob_dump_symbols (cob_module *mod)
 			sprintf (msg," >>>> Dump of %s aborted! <<<< !!",
 						sym[k].name?sym[k].name:"FILLER");
 			cob_dump_output (msg);
-		} else if (sym[k].occurs > 1) {
-			for (sym_idx = 0; sym_idx < SYM_MAX_IDX; sym_idx++)
-				sym_sub [sym_idx] = sym_size [sym_idx] = 0;
-			sym_idx = 0;
-			cob_dump_table ( sym, k);
-			if (sym[k].is_group)
-				skipgrp = 1;
 		} else {
-			cob_dump_field ( sym[k].level, sym[k].name?sym[k].name:"FILLER", &f0, 0, 0);
+			skipgrp = args.skipgrp;
 		}
 		if (skipgrp) {
 skipsym:

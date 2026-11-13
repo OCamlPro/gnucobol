@@ -1,4 +1,20 @@
 
+2026-11-12  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (cob_relocate_string): no trailing separator in the
+	  quoted include path (breaks cl.exe)
+
+2026-11-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,
+	  vectored exception handler mapping hard errors to signals
+	* common.c (cob_dump_protected): new, runs a function with a recovery
+	  point, used to skip a field whose dump faults
+	* common.c (cob_set_signal): clear for_set for the signals not taken over
+	  according to COB_SIGNAL_REGIME; [_WIN32]: register the handler
+	* common.c (cob_dump_symbols, dump_symbol_call): use cob_dump_protected
+	  to skip a faulting field
+
 2026-11-05  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.h, common.c, coblocal.h, exception.def, exception-io.def, numeric.c:

@@ -858,12 +858,8 @@ jobs:
       - name: Adjust testsuite
         run: |
           cd tests\testsuite.src
-
           rem Skip test as it sometimes works and sometimes not...
           rem sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
-
-          rem The following 2 fail
-          sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL\])/a AT_SKIP_IF(\[true\])' run_file.at
 
       - name: Run testsuite
