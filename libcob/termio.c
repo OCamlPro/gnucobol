@@ -985,6 +985,58 @@ dump_field_internal (const int level, const char *name,
 	}
 }
 
+/* Arguments of dump_field_internal, for cob_dump_protected */
+struct dump_field_args {
+	int		level;
+	const char	*name;
+	cob_field	*f_addr;
+	size_t		field_offset;
+	unsigned int	indexes;
+	va_list		*ap;
+};
+
+static void
+dump_field_call (void *p)
+{
+	struct dump_field_args	*a = p;
+
+	dump_field_internal (a->level, a->name, a->f_addr, a->field_offset,
+		a->indexes, *a->ap);
+}
+
+/* Output field for DUMP purposes, skipping the rest of the record
+   (01/77 level item and its subordinates) if the dump of a field faults */
+static void
+dump_field_protected (const int level, const char *name,
+		cob_field *f_addr, const size_t field_offset,
+		const unsigned int indexes, va_list *ap)
+{
+	static const char	*record_name = NULL;
+	static int		record_aborted = 0;
+	struct dump_field_args	args;
+	char			msg[COB_MINI_BUFF];
+
+	if (level == 1
+	 || level == 77) {
+		record_name = name;
+		record_aborted = 0;
+	} else if (record_aborted) {
+		return;
+	}
+	args.level = level;
+	args.name = name;
+	args.f_addr = f_addr;
+	args.field_offset = field_offset;
+	args.indexes = indexes;
+	args.ap = ap;
+	if (cob_dump_protected (dump_field_call, &args)) {
+		record_aborted = 1;
+		sprintf (msg, " >>>> Dump of %s aborted! <<<< !!",
+			record_name ? record_name : name);
+		cob_dump_output (msg);
+	}
+}
+
 /* 3.1 - compat function */
 void
 cob_dump_field (const int level, const char *name, cob_field *f_addr,
@@ -1011,7 +1063,7 @@ cob_dump_field (const int level, const char *name, cob_field *f_addr,
 
 	dump_compat = 1;
 	va_start (ap, indexes_ext);
-	dump_field_internal (level, name, f_addr, field_offset, indexes, ap);
+	dump_field_protected (level, name, f_addr, field_offset, indexes, &ap);
 	dump_compat = 0;
 	va_end (ap);
 }
@@ -1027,7 +1079,7 @@ cob_dump_field_ext (const int level, const char *name, cob_field *f_addr,
 		return;
 	}
 	va_start (ap, indexes);
-	dump_field_internal (level, name, f_addr, field_offset, indexes, ap);
+	dump_field_protected (level, name, f_addr, field_offset, indexes, &ap);
 	va_end (ap);
 }
 

@@ -186,14 +186,6 @@ jobs:
         shell: C:\shells\msys2bash.cmd {0}
         run: |
           sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
-
-      # Fail tests that behave differently under MSVC Debug
-      # - Internal storage: runtime checks abort before signal handler
-      - name: Adjust testsuite for Debug target
-        if: ${{ matrix.target == 'Debug' }}
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
       #    we keep an example of how to change failure expectation just before
       #    running the tests:
       #    sed -i '/run_misc/{N;/COB_SIGNAL_REGIME 0/{N;s/at_xfail=no/at_xfail=yes/;}}' tests/testsuite

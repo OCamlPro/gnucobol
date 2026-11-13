@@ -1606,16 +1606,6 @@ clean_up_program (cb_tree name, const enum cob_module_type type)
 	}
 }
 
-static const char *
-get_literal_or_word_name (const cb_tree x)
-{
-	if (CB_LITERAL_P (x)) {
-		return (const char *) CB_LITERAL (x)->data;
-	} else { /* CB_REFERENCE_P (x) */
-		return (const char *) CB_NAME (x);
-	}
-}
-
 /* verify and set currency symbol used in picture (compile time) and - if no currency
    string is explicitly set (which is currently not implemented) - as currency string
    (run time for display and [de-]editing)*/
@@ -1688,158 +1678,6 @@ set_currency_picture_symbol (const cb_tree x)
 		break;
 	}
 	current_program->currency_symbol = s[0];
-}
-
-/* Return 1 if the prototype name is the same as the current function's. */
-static int
-check_prototype_redefines_current_element (const cb_tree prototype_name)
-{
-	const char	*name = get_literal_or_word_name (prototype_name);
-
-	if (strcasecmp (name, current_program->program_name) == 0) {
-		cb_warning_x (COBC_WARN_FILLER, prototype_name,
-			_("prototype has same name as current function and will be ignored"));
-		return 1;
-	}
-
-	return 0;
-}
-
-/* Returns 1 if the prototype has been duplicated. */
-static int
-check_for_duplicate_prototype (const cb_tree prototype_name,
-			       const struct cb_prototype *prototype)
-{
-	cb_tree	dup;
-
-	if (CB_WORD_COUNT (prototype_name) > 0) {
-		/* Make sure the duplicate is a prototype */
-		dup = cb_ref (prototype_name);
-		if (!CB_PROTOTYPE_P (dup)) {
-			redefinition_error (prototype_name);
-			return 1;
-		}
-
-		/* Check the duplicate prototypes match */
-		if (strcmp (prototype->ext_name, CB_PROTOTYPE (dup)->ext_name)
-		 || prototype->type != CB_PROTOTYPE (dup)->type) {
-			cb_error_x (prototype_name,
-				    _("duplicate REPOSITORY entries for '%s' do not match"),
-				    get_literal_or_word_name (prototype_name));
-		} else {
-			cb_warning_x (COBC_WARN_FILLER, prototype_name,
-				      _("duplicate REPOSITORY entry for '%s'"),
-				      get_literal_or_word_name (prototype_name));
-		}
-		return 1;
-	}
-
-	return 0;
-}
-
-/* Note: neither proto nor program may be NULL */
-static void
-check_prototype_against_definition (const struct cb_prototype *proto,
-				    const struct cb_program *program)
-{
-	if (program->prog_type == proto->type) {
-		return;
-	}
-	cb_error_x (CB_TREE (proto),
-		    _("%s REPOSITORY entry for '%s' does not match its definition"),
-		    cb_get_cob_module_type_string (proto->type),
-		    proto->ext_name);
-	cb_note_x (COB_WARNOPT_NONE, CB_TREE (program),
-		   _("'%s' defined as a %s here"),
-		   program->program_name,
-		   cb_get_cob_module_type_string (program->prog_type));
-}
-
-static struct cb_program *
-find_prototype_definition (const struct cb_prototype *proto)
-{
-	struct cb_program	*program = NULL;
-
-	program = cb_find_defined_program_by_id (proto->ext_name);
-
-	if (!program &&
-	    get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_DISABLED) {
-		if (strcmp (proto->name, proto->ext_name) == 0) {
-			/*
-			  Warn if no definition seen for element with prototype-
-			  name.
-			*/
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
-				      _("no definition/prototype seen for %s '%s'"),
-				      cb_get_cob_module_type_string (proto->type), proto->name);
-		} else {
-			/*
-			  Warn if no definition seen for element with given
-			  external-name.
-			*/
-			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
-				      _("no definition/prototype seen for %s with external name '%s'"),
-				      cb_get_cob_module_type_string (proto->type), proto->ext_name);
-		}
-	}
-	return program;
-}
-
-static void
-setup_prototype (cb_tree prototype_name, cb_tree ext_name,
-		  const enum cob_module_type type, const int is_current_element)
-{
-	struct cb_prototype *prototype;
-	int	name_redefinition_allowed;
-
-	if (!is_current_element
-	    && check_prototype_redefines_current_element (prototype_name)) {
-		return;
-	}
-
-	prototype = CB_PROTOTYPE (cb_build_prototype (prototype_name, ext_name, type));
-
-	if (!is_current_element) {
-		const struct cb_program *program = find_prototype_definition (prototype);
-		if (check_for_duplicate_prototype (prototype_name, prototype)) {
-			return;
-		}
-		if (program) {
-			check_prototype_against_definition (prototype, program);
-		}
-	}
-
-	name_redefinition_allowed = type == COB_MODULE_TYPE_PROGRAM
-		&& is_current_element && cb_program_name_redefinition;
-	if (!name_redefinition_allowed) {
-		cb_tree p = CB_TREE (prototype);
-		if (CB_LITERAL_P (prototype_name)) {
-			cb_define (cb_build_reference ((const char *)CB_LITERAL (prototype_name)->data), p);
-		} else {
-			cb_define (prototype_name, p);
-		}
-
-		switch (type) {
-		case COB_MODULE_TYPE_PROGRAM:
-			current_program->program_spec_list =
-				cb_list_add (current_program->program_spec_list, p);
-			break;
-		case COB_MODULE_TYPE_FUNCTION:
-			current_program->user_spec_list =
-				cb_list_add (current_program->user_spec_list, p);
-			break;
-		case COB_MODULE_TYPE_CLASS:
-			current_program->class_spec_list =
-				cb_list_add (current_program->class_spec_list, p);
-			break;
-		case COB_MODULE_TYPE_INTERFACE:
-			current_program->interface_spec_list =
-				cb_list_add (current_program->interface_spec_list, p);
-			break;
-		case COB_MODULE_TYPE_METHOD: /* unreachable... (for now) */
-			break;
-		}
-	}
 }
 
 static void
@@ -4216,7 +4054,7 @@ program_prototype:
 	if (setup_program ($4, $5, COB_MODULE_TYPE_PROGRAM, 1)) {
 		YYABORT;
 	}
-	setup_prototype ($4, $5, COB_MODULE_TYPE_PROGRAM, 1);
+	cb_setup_prototype ($4, $5, COB_MODULE_TYPE_PROGRAM, 1);
 	__CS_CLEAR_ALL ();
 	cobc_in_id = 0;
 
@@ -4265,7 +4103,7 @@ function_prototype:
 	if (setup_program ($4, $5, COB_MODULE_TYPE_FUNCTION, 1)) {
 		YYABORT;
 	}
-	setup_prototype ($4, $5, COB_MODULE_TYPE_FUNCTION, 1);
+	cb_setup_prototype ($4, $5, COB_MODULE_TYPE_FUNCTION, 1);
 	__CS_CLEAR_ALL ();
 	cobc_in_id = 0;
 
@@ -4590,7 +4428,7 @@ program_id_paragraph:
 	}
 
 
-	setup_prototype ($3, $4, COB_MODULE_TYPE_PROGRAM, 1);
+	cb_setup_prototype ($3, $4, COB_MODULE_TYPE_PROGRAM, 1);
 
 	if ($5) {
 		if (!current_program->nested_level) {
@@ -4627,7 +4465,7 @@ function_id_header TOK_DOT program_id_name _as_literal TOK_DOT /* optional, yet 
 	if (setup_program ($3, $4, COB_MODULE_TYPE_FUNCTION, 0)) {
 		YYABORT;
 	}
-	setup_prototype ($3, $4, COB_MODULE_TYPE_FUNCTION, 1);
+	cb_setup_prototype ($3, $4, COB_MODULE_TYPE_FUNCTION, 1);
 	__CS_CLEAR_ALL ();
 	cobc_in_id = 0;
   }
@@ -5119,7 +4957,7 @@ repository_name:
 | FUNCTION WORD _as_literal
   {
 	if ($2 != cb_error_node) {
-		setup_prototype ($2, $3, COB_MODULE_TYPE_FUNCTION, 0);
+		cb_setup_prototype ($2, $3, COB_MODULE_TYPE_FUNCTION, 0);
 	}
   }
 | FUNCTION repository_name_list INTRINSIC
@@ -5127,7 +4965,7 @@ repository_name:
   {
 	  if ($2 != cb_error_node
 	   && cb_verify (cb_program_prototypes, _("PROGRAM phrase"))) {
-		setup_prototype ($2, $3, COB_MODULE_TYPE_PROGRAM, 0);
+		cb_setup_prototype ($2, $3, COB_MODULE_TYPE_PROGRAM, 0);
 	}
   }
 | FUNCTION repository_name_list error
@@ -5141,7 +4979,7 @@ repository_name:
   WORD _as_literal _expands_clause
   {
 	if ($3 != cb_error_node) {
-		setup_prototype ($3, $4, COB_MODULE_TYPE_CLASS, 0);
+		cb_setup_prototype ($3, $4, COB_MODULE_TYPE_CLASS, 0);
 	}
 	__CS_LEAVE (CB_CS_CLASS_SPECIFIER);
   }
@@ -5152,7 +4990,7 @@ repository_name:
   WORD _as_literal _expands_clause
   {
 	if ($3 != cb_error_node) {
-		setup_prototype ($3, $4, COB_MODULE_TYPE_INTERFACE, 0);
+		cb_setup_prototype ($3, $4, COB_MODULE_TYPE_INTERFACE, 0);
 	}
 	__CS_LEAVE (CB_CS_INTERFACE_SPECIFIER);
   }
@@ -15738,7 +15576,7 @@ examine_statement:
 examine_format_variant:
   TALLYING
   {
-	cb_tree tally = cb_ref (cb_build_reference ("TALLY"));
+	cb_tree tally = cb_build_reference ("TALLY");
 	cb_emit_move (cb_zero, CB_LIST_INIT (tally));
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);

@@ -1651,7 +1651,6 @@ output_attr (const cb_tree x)
 					type = COB_TYPE_NUMERIC_COMP5;
 				} else
 				if (type == COB_TYPE_NUMERIC_BINARY
-				 && (f->flag_binary_swap || f->flag_real_binary)
 				 && (f->flag_indexed_by || f->index_type || f->flag_internal_register)) {
 					type = COB_TYPE_NUMERIC_COMP5;
 				}
@@ -6715,6 +6714,60 @@ output_call_by_value_args (cb_tree x, cb_tree l)
 	}
 }
 
+/* Byte size of a numeric literal passed in CALL */
+static unsigned int
+call_literal_size (const cb_tree x)
+{
+	switch (cb_call_literal_size) {
+	case CB_LITERAL_SIZE_32:
+		return 4;
+	case CB_LITERAL_SIZE_64:
+		return 8;
+	default:
+		return cb_fits_int (x) ? 4 : 8;
+	}
+}
+
+/* Set the data of the 'content_N' of a numeric literal passed in CALL */
+static void
+output_call_literal (const cb_tree x, const cob_u32_t n)
+{
+	const unsigned int	size = call_literal_size (x);
+	cob_u64_t		v;
+	unsigned int		i;
+
+	if (cb_fits_int (x)) {
+		v = (cob_u64_t)(cob_s64_t)cb_get_int (x);
+	} else if (CB_LITERAL (x)->sign >= 0) {
+		v = cb_get_u_long_long (x);
+	} else {
+		v = (cob_u64_t)cb_get_long_long (x);
+	}
+	if (size == 4) {
+		v &= COB_U64_C(0xFFFFFFFF);
+	}
+	if (cb_call_literal_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
+		for (i = 0; i < size; i++) {
+			output_line ("content_%u.data[%u] = 0x%02X;", n, i,
+				(unsigned int)((v >> (8 * (size - 1 - i))) & 0xFF));
+		}
+		return;
+	}
+	output_prefix ();
+	if (size == 4) {
+		output ("content_%u.dataint = ", n);
+		output ("%d", (int)(cob_u32_t)v);
+	} else if (CB_LITERAL (x)->sign >= 0) {
+		output ("content_%u.dataull = ", n);
+		output (CB_FMT_LLU_F, v);
+	} else {
+		output ("content_%u.datall = ", n);
+		output (CB_FMT_LLD_F, (cob_s64_t)v);
+	}
+	output (";");
+	output_newline ();
+}
+
 static void
 output_bin_field (const cb_tree x, const cob_u32_t id)
 {
@@ -6726,18 +6779,28 @@ output_bin_field (const cb_tree x, const cob_u32_t id)
 	if (!CB_NUMERIC_LITERAL_P (x)) {
 		return;
 	}
-	aflags = COB_FLAG_REAL_BINARY;
-	if (cb_fits_int (x)) {
-		size = 4;
+	size = call_literal_size (x);
+	if (size == 4) {
 		digits = 9;
 		aflags = COB_FLAG_HAVE_SIGN;	/* Drop: COB_FLAG_REAL_BINARY */
+		if (cb_call_literal_size == CB_LITERAL_SIZE_32
+		 && !cb_fits_int (x)
+		 && CB_LITERAL (x)->sign >= 0) {
+			digits = 10;
+			aflags = 0;
+		}
 	} else {
-		size = 8;
 		digits = 18;
+		aflags = COB_FLAG_REAL_BINARY;
 		if (CB_LITERAL (x)->sign < 0) {
 			aflags |= COB_FLAG_HAVE_SIGN;
 		}
 	}
+#ifndef	WORDS_BIGENDIAN
+	if (cb_call_literal_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
+		aflags |= COB_FLAG_BINARY_SWAP;
+	}
+#endif
 	aflags |= COB_FLAG_CONSTANT;
 	i = lookup_attr (COB_TYPE_NUMERIC_BINARY, digits, 0, aflags, NULL, 0);
 	/* Note: some C compilers (SUN for one) will not accept inline initialization
@@ -7007,23 +7070,7 @@ output_call (struct cb_call *p)
 				/* Set 'data' after all variable declarations */
 				output_line ("content_fb_%u.data = content_%u.data;", n, n);
 
-				output_prefix ();
-				if (cb_fits_int (x)) {
-					output ("content_%u.dataint = ", n);
-					output ("%d", cb_get_int (x));
-				} else {
-					if (CB_LITERAL (x)->sign >= 0) {
-						output ("content_%u.dataull = ", n);
-						output (CB_FMT_LLU_F,
-							cb_get_u_long_long (x));
-					} else {
-						output ("content_%u.datall = ", n);
-						output (CB_FMT_LLD_F,
-							cb_get_long_long (x));
-					}
-				}
-				output (";");
-				output_newline ();
+				output_call_literal (x, n);
 			} else if (CB_BINARY_OP_P (x)) {
 				output_prefix ();
 				output ("content_%u.dataint = ", n);
@@ -7050,19 +7097,7 @@ output_call (struct cb_call *p)
 					/* Set 'data' after all variable declarations */
 					output_line ("content_fb_%u.data = content_%u.data;", n, n);
 
-					output_prefix ();
-					if (cb_fits_int (x)) {
-						output ("content_%u.dataint = ", n);
-						output ("%d", cb_get_int (x));
-					} else if (CB_LITERAL (x)->sign >= 0) {
-						output ("content_%u.dataull = ", n);
-						output (CB_FMT_LLU_F, cb_get_u_long_long (x));
-					} else {
-						output ("content_%u.datall = ", n);
-						output (CB_FMT_LLD_F, cb_get_long_long (x));
-					}
-					output (";");
-					output_newline ();
+					output_call_literal (x, n);
 				} else if (CB_REF_OR_FIELD_P (x)
 				        && CB_TREE_CATEGORY (x) == CB_CATEGORY_NUMERIC
 				        && cb_code_field (x)->usage == CB_USAGE_LENGTH) {
@@ -13483,6 +13518,24 @@ try_get_by_value_parameter_type (const enum cb_usage usage,
 	return NULL;
 }
 
+/* set cob_parm_N to the address of the by-value sticky variable */
+static void
+output_sticky_parm_address (const int id, const int size)
+{
+#ifdef	WORDS_BIGENDIAN
+	if (size < 8) {
+		/* value is right-aligned in its C variable */
+		output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d"
+			" + (sizeof (cob_parm_l_%d) > %d ? sizeof (cob_parm_l_%d) - %d : 0);",
+			id, id, id, size, id, size);
+		return;
+	}
+#else
+	COB_UNUSED (size);
+#endif
+	output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;", id, id);
+}
+
 static void
 output_program_entry_function_parameters (cb_tree using_list, const int gencode,
 					  const char ** const s_type)
@@ -13552,6 +13605,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	cob_u32_t		n;
 	int			sticky_ids[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			sticky_nonp[MAX_CALL_FIELD_PARAMS] = { 0 };
+	int			sticky_size[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			entry_convention = 0;
 
 	/* LCOV_EXCL_START */
@@ -13653,6 +13707,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 		cb_tree f_tree = CB_VALUE (l);
 		f = cb_code_field (f_tree);
 		sticky_ids[parmnum] = f->id;
+		sticky_size[parmnum] = (int)f->size;
 		if (!cb_sticky_linkage
 		 && (entry_convention & CB_CONV_COBOL)) {
 			output_line ("cob_u8_t *cob_parm_%d = NULL;"
@@ -13724,9 +13779,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 							output_line ("cob_parm_l_%d = %s%d;",
 								sticky_ids[n], CB_PREFIX_BASE,
 								sticky_ids[n]);
-							output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-								sticky_ids[n],
-								sticky_ids[n]);
+							output_sticky_parm_address (sticky_ids[n],
+								sticky_size[n]);
 						} else {
 							output_line ("cob_parm_%d = %s%d;",
 								sticky_ids[n], CB_PREFIX_BASE,
@@ -13748,9 +13802,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 					output_line ("cob_parm_l_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
 						sticky_ids[n]);
-					output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-						sticky_ids[n],
-						sticky_ids[n]);
+					output_sticky_parm_address (sticky_ids[n],
+						sticky_size[n]);
 				} else {
 					output_line ("cob_parm_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
@@ -13887,6 +13940,14 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 							  || f2->usage == CB_USAGE_PROGRAM_POINTER)
 							 && (entry_convention & CB_CONV_COBOL)) {
 								output (", (cob_u8_ptr)&ptr_%d", f2->id);
+#ifdef	WORDS_BIGENDIAN
+							} else if (f2->size < 8) {
+								/* value is right-aligned in its C variable */
+								output (", (cob_u8_ptr)&%s%d + (sizeof (%s%d) > %d ? sizeof (%s%d) - %d : 0)",
+									CB_PREFIX_BASE, f2->id,
+									CB_PREFIX_BASE, f2->id, (int)f2->size,
+									CB_PREFIX_BASE, f2->id, (int)f2->size);
+#endif
 							} else {
 								output (", (cob_u8_ptr)&%s%d",
 									CB_PREFIX_BASE, f2->id);

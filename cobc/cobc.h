@@ -240,6 +240,13 @@ enum cb_binary_byteorder_options {
 	CB_BYTEORDER_NATIVE
 };
 
+/* Byte size of numeric literals passed in CALL */
+enum cb_literal_size_options {
+	CB_LITERAL_SIZE_DYNAMIC = 0,	/* 4 bytes, or 8 if larger */
+	CB_LITERAL_SIZE_32,		/* 4 bytes, truncated */
+	CB_LITERAL_SIZE_64		/* 8 bytes */
+};
+
 /* Type of device specified in ASSIGN clause */
 enum cb_assign_device {
 	CB_ASSIGN_NO_DEVICE,

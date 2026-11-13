@@ -4168,7 +4168,8 @@ AT_DATA([prog.cob], [
            END-IF.
        B99.
            EXIT.
-      *> expected without -fperform-osvs: fall through here _SHOULD_ abort with -fsection-exit-check
+      *> expected without -fperform-osvs: fall through here
+      *> _SHOULD_ abort with -fsection-exit-check
 ])
 
 AT_CHECK([$COMPILE -fperform-osvs prog.cob], [0], [], [])
@@ -4240,10 +4241,13 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 # lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true \
+$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 # lookup with full path
-AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
@@ -4260,7 +4264,7 @@ AT_DATA([caller.c], [
 #include <stdlib.h>
 #include <pthread.h> /* For POSIX threads */
 #include <dlfcn.h>   /* For dynamic library loading */
-#include <unistd.h>
+#include <libcob.h>
 
 typedef int (*hello_world_func)(void);
 typedef void (*cob_init_func)(int, char **);
@@ -4298,31 +4302,31 @@ void *callCobol() {
     if (!symbol) { \
         fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
                 pthread_self(), #symbol, dlerror()); \
-        dlclose(libCobHandle); \
+        dlclose (libCobHandle); \
         return NULL; \
     }
 
     /* Resolve required symbols from the COBOL library */
-    RESOLVE_SYMBOL(cob_init, cob_init_func);
-    RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
-    RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
-    cob_init(0, NULL);
-    hello_world = cob_resolve("prog");
+    RESOLVE_SYMBOL (cob_init, cob_init_func);
+    RESOLVE_SYMBOL (cob_resolve, cob_resolve_func);
+    RESOLVE_SYMBOL (cob_tidy, cob_tidy_func);
+    cob_init (0, NULL);
+    hello_world = cob_resolve ("prog");
     if (hello_world) {
-        hello_world(); /* Call the COBOL function */
+        hello_world (); /* Call the COBOL function */
     } else {
-        fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
+        fprintf (stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
     }
     /* Clean up COBOL resources */
-    cob_tidy();
-    dlclose(libCobHandle);
+    cob_tidy ();
+    dlclose (libCobHandle);
     return NULL;
 }
 
 /* Thread function wrapper around `callCobol` */
-void *threadFunction(void *arg) {
+void *threadFunction (void *arg) {
     long threadId = (long)arg;
-    callCobol();
+    callCobol ();
     return NULL;
 }
 
@@ -4334,21 +4338,22 @@ int main (int argc, char **argv) {
     int j;
     /* Create multiple threads */
     for (i = 0; i < numThreads; i++) {
-        if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
-            fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
+        if (pthread_create (&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
+            fprintf (stderr, "Main thread: Failed to create thread %ld.\n", i);
             return EXIT_FAILURE;
         }
     }
     /* Wait for all threads to finish */
     for (j = 0; j < numThreads; j++) {
-        pthread_join(threads[[j]], NULL);
+        pthread_join (threads[[j]], NULL);
     }
     return EXIT_SUCCESS;
 }
 ])
+# FIXME: this is an error, so all the real tests below are skipped
 AT_CHECK([$CMPILE -ldl -lpthread caller.c], [0], [], [], [
    echo "C compilation / linking failed, skipping rest of group"
-   exit 77
+   AT_SKIP_IF([:])
 ])
 
 AT_DATA([prog.cob], [
@@ -4367,8 +4372,10 @@ AT_DATA([prog.cob], [
            DISPLAY "Final count: " COUNTER
            GOBACK.
 ])
+
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0],
+AT_CHECK([COB_LOAD_GLOBAL=false \
+$COBCRUN_DIRECT ./caller], [0],
 [Final count: 01000
 Final count: 01000
 ], [])
@@ -4438,12 +4445,14 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true \
+$COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
 ], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false \
+$COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4541,8 +4550,10 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=true \
+$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_GLOBAL=false \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
@@ -10659,6 +10670,61 @@ AT_CHECK([$DIFF reference_append trace_append.txt], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([dump feature with faulting field])
+AT_KEYWORDS([stack stacktrace SOURCE_DATE_EPOCH])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+# A bad (non-NULL) address faults while dumping a field:
+# the rest of the record is skipped and the dump goes on
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  P            USAGE POINTER.
+       01  BEFORE-FLD   PIC X(4) VALUE "FRST".
+       01  BAD-GRP      BASED.
+           05  BAD-FLD  PIC X(4).
+           05  BAD-FLD2 PIC X(4).
+       01  AFTER-FLD    PIC X(4) VALUE "LAST".
+       PROCEDURE        DIVISION.
+           SET P UP BY 8
+           SET ADDRESS OF BAD-GRP TO P
+           MOVE "ABCD" TO BAD-FLD
+           STOP RUN.
+])
+
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL prog.cob], [0], [], [])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS=halt_on_error=0 \
+COB_DUMP_FILE=dump.txt $COBCRUN_DIRECT ./prog], [ignore], [ignore], [ignore])
+
+AT_CAPTURE_FILE([dump.txt])
+
+# (pointer value not shown, its size depends on the platform;
+#  trailing blanks of the interrupted field line are removed)
+AT_CHECK([sed -n '/^WORKING-STORAGE/,$p' dump.txt | sed -e '/^01        P /d' -e 's/ *$//'], [0],
+[WORKING-STORAGE
+**********************
+77        RETURN-CODE                     +000000000
+01        BEFORE-FLD                     'FRST'
+01        BAD-GRP.
+  05      BAD-FLD
+ >>>> Dump of BAD-GRP aborted! <<<< !!
+**********************
+01        AFTER-FLD                      'LAST'
+
+END OF DUMP - prog
+**********************
+
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([stack and dump feature])
 AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL SOURCE_DATE_EPOCH])
 
@@ -11997,6 +12063,36 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [x IS 30000
 x IS 30000
 x IS 30000
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE literal to BINARY with -fno-trunc])
+AT_KEYWORDS([runmisc size binary-truncate])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X1            PIC 99 COMP.
+       01 X2            PIC S99 COMP.
+       01 X3            PIC 9(5) COMP.
+       PROCEDURE        DIVISION.
+           MOVE 263 TO X1.
+           MOVE 200 TO X2.
+           MOVE 70000 TO X3.
+           DISPLAY X1 " " X2 " " X3.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-trunc prog.cob], [0], [],
+[prog.cob:10: warning: numeric literal exceeds data size
+prog.cob:11: warning: numeric literal exceeds data size
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[007 -056 0000070000
 ])
 
 AT_CLEANUP
@@ -15650,8 +15746,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 AT_CLEANUP
 
 
-AT_SETUP([LOW/HIGH-VALUE when using non-native program collating sequence])
-AT_KEYWORDS([LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
+AT_SETUP([program collating sequence and LOW/HIGH-VALUE])
+AT_KEYWORDS([runmisc LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
 
 # See bug #948 - Comparison with HIGH-VALUE in presence of collating sequences
 
@@ -15985,8 +16081,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog6], [0],
 AT_CLEANUP
 
 
-AT_SETUP([CHAR/ORD/ORD-MIN/ORD-MAX when using non-native program collating sequence])
-AT_KEYWORDS([CHAR ORD ORD-MIN ORD-MAX ALPHABET])
+AT_SETUP([program collating sequence: intrinsics])
+AT_KEYWORDS([runmisc CHAR ORD ORD-MIN ORD-MAX ALPHABET])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -16039,8 +16135,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME 0/1 register runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
+AT_SETUP([registration of runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime
+COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
 
@@ -16051,6 +16148,7 @@ AT_DATA([callee.cob], [
        LINKAGE SECTION.
        01 VAR1 PIC X(4) VALUE "TEST".
        PROCEDURE DIVISION USING VAR1.
+           INITIALIZE VAR1 ALL TO VALUE. *> AIX: only a write faults
            DISPLAY VAR1.
            STOP RUN RETURNING 0.
 ])
@@ -16096,6 +16194,7 @@ AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 # Sanitizers may get in the way as well - we can at least portably
 # skip some
 AT_DATA([ubsan.supp], [
+nonnull-attribute:*
 null:*
 ])
 
@@ -16106,7 +16205,7 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
 AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
-COB_SIGNAL_REGIME=1 ./caller], [0], [],
+COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
@@ -16115,8 +16214,9 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME 1/2 don't register runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
+AT_SETUP([skip registration of runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime
+COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
 
@@ -16127,6 +16227,7 @@ AT_DATA([callee.cob], [
        LINKAGE SECTION.
        01 VAR1 PIC X(4) VALUE "TEST".
        PROCEDURE DIVISION USING VAR1.
+           INITIALIZE VAR1 ALL TO VALUE. *> AIX: only a write faults
            DISPLAY VAR1.
            STOP RUN RETURNING 0.
 ])
@@ -16187,6 +16288,7 @@ AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 
 # see note on possibly breaking C/sanitizer runtime checks above
 AT_DATA([ubsan.supp], [
+nonnull-attribute:*
 null:*
 ])
 
