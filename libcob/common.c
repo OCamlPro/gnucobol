@@ -3048,13 +3048,33 @@ cob_relocate_string (const char *str)
 
 	if (do_I) {
 		size_t i = do_I - str;
+		int rlen = (int)strlen (exec_root);
+		const char *esc = "";
 		if (i) {
 			memcpy (str_work, str, i);
 		}
+		/* the path is quoted: drop trailing separators, as with MSVC
+		   a final \ would escape the closing quote and make cl fail */
+		while (rlen > 1 && exec_root[rlen - 1] == SLASH_CHAR) {
+			rlen--;
+		}
+#if defined (_WIN32) || defined (__DJGPP__)
+		/* back to "X:" from a drive root "X:\": restore the separator,
+		   "X:" alone is the current directory of X */
+		if (rlen == 2 && exec_root[1] == ':' && exec_root[2] == SLASH_CHAR) {
+			rlen = 3;
+		}
+#endif
+#ifdef _MSC_VER
+		/* a root ("X:\" or "\") still ends with \: double it */
+		if (exec_root[rlen - 1] == '\\') {
+			esc = "\\";
+		}
+#endif
 		/* include dir should be enough here, too */
 		snprintf (str_work + i, COB_FILE_MAX - i,
-			" "IOPT"\"%s\" "IOPT"\"%sinclude\" %s",
-			exec_root, exec_root, do_I);
+			" "IOPT"\"%.*s%s\" "IOPT"\"%sinclude\" %s",
+			rlen, exec_root, esc, exec_root, do_I);
 	} else {
 		size_t i = do_L - str;
 		if (i) {
