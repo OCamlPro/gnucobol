@@ -2235,7 +2235,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -20536,7 +20536,7 @@ AT_DATA([prog.cob], [
               DISPLAY 'EXPECTED  ==> ' XPC-FLD0499E.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_DATA([prog2.cob], [
@@ -28745,7 +28745,7 @@ AT_DATA([prog2.cob], [
               DISPLAY 'EXPECTED  ==> ' XPC-FLD0999E.
 ])
 
-AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 
 AT_CLEANUP
@@ -34837,7 +34837,7 @@ AT_DATA([prog.cob], [
               DISPLAY 'EXPECTED ==> ' HEX-OF (XPC-FLD0499B).
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow -fno-ec=size-truncation prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_DATA([prog2.cob], [
@@ -40884,7 +40884,7 @@ AT_DATA([prog2.cob], [
               DISPLAY 'EXPECTED ==> ' HEX-OF (XPC-FLD0999B).
 ])
 
-AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow -fno-ec=size-truncation prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 
 AT_CLEANUP

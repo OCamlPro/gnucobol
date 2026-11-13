@@ -303,7 +303,6 @@ static int			cob_argc = 0;
 static char			**cob_argv = NULL;
 static struct cob_alloc_cache	*cob_alloc_base = NULL;
 static struct cob_alloc_module	*cob_module_list = NULL;
-static cob_module		*cob_module_err = NULL;
 static const char		*cob_last_sfile = NULL;
 static const char		*cob_last_progid = NULL;
 
@@ -312,7 +311,7 @@ static cob_settings		*cobsetptr = NULL;
 
 static enum cob_module_unload	module_unload = COB_IMMEDIATE;
 
-static int			last_exception_code;	/* Last exception: code */
+static cob_u64_t		last_exception_code;	/* Last exception: code */
 static int			active_error_handler = 0;
 static int			in_stop_run = 0;
 
@@ -412,16 +411,16 @@ static const char		* const cob_exception_tab_name[] = {
 };
 
 #undef	COB_EXCEPTION
-#define COB_EXCEPTION(code, tag, name, critical)	0x##code,
-static const int		cob_exception_tab_code[] = {
+#define COB_EXCEPTION(code, tag, name, critical)	code,
+static const cob_u64_t		cob_exception_tab_code[] = {
 	0,		/* COB_EC_ZERO */
 #include "exception.def"
 	0		/* COB_EC_MAX */
 };
 
-#undef	COB_EXCEPTION
+#undef COB_EXCEPTION
 
-#define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
+#define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (cob_u64_t)
 
 /* Switches */
 #define	COB_SWITCH_MAX	36  /* maximum switches, must match cobc/tree.h! */
@@ -3001,7 +3000,7 @@ cob_str_case_str (char *str1, const char *str2)					/* Like  strcasestr  */
 }
 
 /* get last exception (or 0 if not active) */
-int
+cob_u64_t
 cob_get_last_exception_code (void)
 {
 	return last_exception_code;
@@ -3055,6 +3054,7 @@ void
 cob_set_exception (const int id)
 {
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
+	cobglobptr->cob_exception_id = id;
 	last_exception_code = cobglobptr->cob_exception_code;
 
 	cobglobptr->last_exception_statement = STMT_UNKNOWN;
@@ -3138,7 +3138,7 @@ cob_add_exception (const int id)
 void
 cob_accept_exception_status (cob_field *f)
 {
-	int exception = last_exception_code;
+	cob_u64_t exception = last_exception_code;
 	/* Note: MF set this to a 9(3) item, we do a translation here (only works for USAGE DISPLAY!);
 	   MF: intended for CALL only, 0=ok, 1=ENOMEM, 2=module not found, 128 other CALL failure,
 	   "unpredictable if the last statement was not a CALL, especially: adjusted by fileio" */
@@ -3799,8 +3799,8 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 					cobglobptr->cob_stmt_exception = 0;
 					return 1;
 				}
-				cob_module_err = mod;
-				cob_fatal_error (COB_FERROR_RECURSIVE);
+				cob_set_exception (COB_EC_PROGRAM_RECURSIVE_CALL);
+				cob_fatal_error (COB_FERROR_FATAL_EC);
 			}
 			/* LCOV_EXCL_START */
 			if (k++ == MAX_MODULE_ITERS) {	/* prevent endless loop in case of broken list */
@@ -3848,8 +3848,6 @@ cob_module_leave (cob_module *module)
 {
 	COB_UNUSED (module);
 	cob_get_source_line ();
-	if(cobglobptr->cob_exception_code == -1)
-		cobglobptr->cob_exception_code = 0;
 	/* Pop module pointer */
 	COB_MODULE_PTR = COB_MODULE_PTR->next;
 	cobglobptr->cob_call_name_hash = 0;
@@ -8230,12 +8228,15 @@ cob_expand_env_string (const char *strval)
 		}
 
 		/* ${envname:default} */
-		if (strval[k] == '$' && strval[k + 1] == '{') {
+		if (strval[k] == '$'
+		 && strval[k + 1] == '{') {
 			k += 2;
 			for (i = 0; strval[k] != '}'
 				     && strval[k] != 0
 				     && strval[k] != ':'; k++) {
-				ename[i++] = strval[k];
+				if (i < sizeof (ename)) {
+					ename[i++] = strval[k];
+				}
 			}
 			ename[i++] = 0;
 			penv = getenv (ename);
@@ -8858,19 +8859,34 @@ cb_config_entry (char *buf, int line)
 
 	for (i = 0; isspace ((unsigned char)buf[i]); i++); /* drop leading spaces */
 
-	for (j = 0; buf[i] != 0 && buf[i] != ':' && !isspace ((unsigned char)buf[i]) && buf[i] != '=' && buf[i] != '#'; )
-		keyword[j++] = buf[i++];
+	for (j = 0;
+		buf[i] != 0 && buf[i] != ':'
+	 && buf[i] != '=' && buf[i] != '#'
+	 && !isspace ((unsigned char)buf[i]); ) {
+		if (j < sizeof (keyword)) {
+			keyword[j++] = buf[i++];
+		}
+	}
+
 	keyword[j] = 0;
 
 	while (buf[i] != 0 && (isspace ((unsigned char)buf[i]) || buf[i] == ':' || buf[i] == '=')) i++;
 	if (buf[i] == '"'
 	 || buf[i] == '\'') {
 		qt = buf[i++];
-		for (j = 0; buf[i] != qt && buf[i] != 0; )
-			value[j++] = buf[i++];
+		for (j = 0; buf[i] != qt && buf[i] != 0; ) {
+			if (j < sizeof (value)) {
+				value[j++] = buf[i];
+			}
+			i++;
+		}
 	} else {
-		for (j = 0; !isspace ((unsigned char)buf[i]) && buf[i] != '#' && buf[i] != 0; )
-			value[j++] = buf[i++];
+		for (j = 0; !isspace ((unsigned char)buf[i]) && buf[i] != '#' && buf[i] != 0; ) {
+			if (j < sizeof (value)) {
+				value[j++] = buf[i];
+			}
+			i++;
+		}
 	}
 
 	value[j] = 0;
@@ -9476,10 +9492,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 #endif
 	/* Note: can be simply tested; therefore no exclusion */
-	case COB_FERROR_CANCEL:
-		cob_runtime_error (_("attempt to CANCEL active program"));
-		break;
-	/* Note: can be simply tested; therefore no exclusion */
 	case COB_FERROR_INITIALIZED:
 #ifdef	_WIN32
 		/* cob_unix_lf needs to be set before any error message is thrown,
@@ -9513,10 +9525,6 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("stack overflow, possible PERFORM depth exceeded"));
 		break;
 	/* LCOV_EXCL_STOP */
-	/* Note: can be simply tested (GO TO DECLARATIVES); therefore no exclusion */
-	case COB_FERROR_GLOBAL:
-		cob_runtime_error (_("invalid entry/exit in GLOBAL USE procedure"));
-		break;
 	/* LCOV_EXCL_START */
 	case COB_FERROR_MEMORY:
 		cob_runtime_error (_("unable to allocate memory"));
@@ -9527,33 +9535,11 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("invalid entry into module"));
 		break;
 	/* LCOV_EXCL_STOP */
-	/* Note: can be simply tested; therefore no exclusion */
-	case COB_FERROR_RECURSIVE:
-#if 0 /* not merged yet */
-		/* LCOV_EXCL_LINE */
-		if (cob_module_err) {
-			cob_runtime_error (_("recursive CALL from '%s' to '%s' which is NOT RECURSIVE"),
-					COB_MODULE_PTR->module_name, cob_module_err->module_name);
-		/* LCOV_EXCL_START */
-		/* Note: only in for old modules - not active with current generation */
-		} else {
-			cob_runtime_error (_("invalid recursive COBOL CALL to '%s'"),
-					   COB_MODULE_PTR->module_name);
-		}
-		/* LCOV_EXCL_STOP */
-#else
-		cob_runtime_error (_("invalid recursive COBOL CALL to '%s'"),
-				   COB_MODULE_PTR->module_name);
-#endif
-		break;
 	/* LCOV_EXCL_START */
 	case COB_FERROR_FREE:
 		cob_runtime_error (_("call to %s with NULL pointer"), "cob_free");
 		break;
 	/* LCOV_EXCL_STOP */
-	case COB_FERROR_DIV_ZERO:
-		cob_runtime_error (_("divide by ZERO"));
-		break;
 	case COB_FERROR_FILE:
 		file_status = cobglobptr->cob_error_file->file_status;
 		status = COB_D2I (file_status[0]) * 10 + COB_D2I (file_status[1]);
@@ -9644,14 +9630,15 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		}
 		break;
 	/* LCOV_EXCL_START */
-	case COB_FERROR_FUNCTION:
-		cob_runtime_error (_("attempt to use non-implemented function"));
-		break;
 	case COB_FERROR_XML:
 		cob_runtime_error (_("attempt to use non-implemented XML I/O"));
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
+		break;
+	case COB_FERROR_FATAL_EC:
+		cob_runtime_error (_("unhandled fatal exception code: %s"),
+			cob_get_last_exception_name ());
 		break;
 	default:
 		/* internal rare error, no need for translation */

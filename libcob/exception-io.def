@@ -23,62 +23,62 @@
 
 #ifndef COB_EXCEPTION
 	#define DUMMY_ENUM
-	#define	COB_EXCEPTION(code,tag,name,fatal) tag = 0x##code + sizeof(name) + fatal,
+	#define	COB_EXCEPTION(code,tag,name,fatal) tag = (code) + sizeof(name) + fatal,
 	/* dummy-definition for lsp-supported editors */
 	enum exception_dummy {
 #endif
 
 /* input-output exception */
-COB_EXCEPTION  (0500, COB_EC_I_O,
+COB_EXCEPTION  (COB_EC_GROUP (0x05), COB_EC_I_O,
 		"EC-I-O", 0)
 
 /* I-O status "1x" (COBOL 2014) */
-COB_EXCEPTION  (0501, COB_EC_I_O_AT_END,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 1), COB_EC_I_O_AT_END,
 		"EC-I-O-AT-END", 0)
 
 /* An end of page condition occurred */
-COB_EXCEPTION  (0502, COB_EC_I_O_EOP,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 2), COB_EC_I_O_EOP,
 		"EC-I-O-EOP", 0)
 
 /* A page overflow condition occurred */
-COB_EXCEPTION  (0503, COB_EC_I_O_EOP_OVERFLOW,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 3), COB_EC_I_O_EOP_OVERFLOW,
 		"EC-I-O-EOP-OVERFLOW", 0)
 
 /* I-O status "6x" (COBOL 2014) */
-COB_EXCEPTION  (0504, COB_EC_I_O_FILE_SHARING,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 4), COB_EC_I_O_FILE_SHARING,
 		"EC-I-O-FILE-SHARING", 0)
 
 /* I-O status "9x" (COBOL 2014) */
-COB_EXCEPTION  (0505, COB_EC_I_O_IMP,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 5), COB_EC_I_O_IMP,
 		"EC-I-O-IMP", 0)
 
 /* I-O status "2x" (COBOL 2014) */
-COB_EXCEPTION  (0506, COB_EC_I_O_INVALID_KEY,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 6), COB_EC_I_O_INVALID_KEY,
 		"EC-I-O-INVALID-KEY", 0)
 
 /* The value of a LINAGE data-item is not within the required range
    (COBOL 2014). */
-COB_EXCEPTION  (0507, COB_EC_I_O_LINAGE,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 7), COB_EC_I_O_LINAGE,
 		"EC-I-O-LINAGE", 1)
 
 /* I-O status "4x" (COBOL 2014) */
-COB_EXCEPTION  (0508, COB_EC_I_O_LOGIC_ERROR,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 8), COB_EC_I_O_LOGIC_ERROR,
 		"EC-I-O-LOGIC-ERROR", 1)
 
 /* I-O status "3x" (COBOL 2014) */
-COB_EXCEPTION  (0509, COB_EC_I_O_PERMANENT_ERROR,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 9), COB_EC_I_O_PERMANENT_ERROR,
 		"EC-I-O-PERMANENT-ERROR", 1)
 
 /* I-O status "7x" (COBOL 202x) */
-COB_EXCEPTION  (050B, COB_EC_I_O_RECORD_CONTENT,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 11), COB_EC_I_O_RECORD_CONTENT,
 		"EC-I-O-RECORD-CONTENT", 1)
 
 /* I-O status "5x" (COBOL 2014) */
-COB_EXCEPTION  (050A, COB_EC_I_O_RECORD_OPERATION,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 10), COB_EC_I_O_RECORD_OPERATION,
 		"EC-I-O-RECORD-OPERATION", 0)
 
 /* I-O status "0x" (COBOL 202x) */
-COB_EXCEPTION  (050C, COB_EC_I_O_RECORD_WARNING,
+COB_EXCEPTION  (COB_EC_CODE (0x05, 12), COB_EC_I_O_RECORD_WARNING,
 		"EC-I-O-RECORD-WARNING", 0)
 
 
