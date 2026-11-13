@@ -4241,8 +4241,10 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 # lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 # lookup with full path
 AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" \
 $COBCRUN_DIRECT ./caller], [0], [], [])
@@ -4251,11 +4253,14 @@ AT_CLEANUP
 
 
 AT_SETUP([resolve / execution in isolated runtime and parallel threads])
-AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread c11 threads parallel])
+AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread parallel])
 
-# Run without threads first, then with each thread API (pthread.h, threads.h).
-# Skip the test at any point if the platform does not support it.
-# This test also requires glibc >= 2.34 due to an implementation bug in dlmopen
+# Skips at any point if the platform does not support it (dlmopen, pthread).
+#
+# The test also contains an alternative C11 implementation that may be needed
+# for portability in the future.
+#
+# It also requires glibc >= 2.34 due to an implementation bug in dlmopen
 # in previous versions.
 
 AT_DATA([caller.c], [
@@ -4324,15 +4329,16 @@ static int callCobol(void) {
     RESOLVE_SYMBOL(cob_cancel, cob_cancel_fn);
     RESOLVE_SYMBOL(cob_tidy, cob_tidy_fn);
     cob_init(0, NULL);
-    /* Resolve again after cancellation: physical cancellation unloads prog if it is not preloaded. */
 
 #if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
     iteration = 0;
 #else
-    iteration = 1;
+    iteration = 1; /* Unthreaded test does not interact with COB_PHYSICAL_CANCEL */
 #endif
 
     for (; iteration < 2; iteration++) {
+        /* Resolve prog every iteration due to cancellation: 
+           physical cancellation unloads prog if it is not preloaded. */
         program = cob_resolve("prog");
         if (!program) {
             fprintf(stderr, "Worker: Failed to resolve prog function.\n");
@@ -4492,56 +4498,57 @@ AT_DATA([preloaded.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob], [0], [], [])
-AT_DATA([unthreaded-output],
-[Final count: 01000
+
+# Unthreaded basic dlmopen test
+AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
+   echo "C compilation / linking failed, skipping rest of group"
+   AT_SKIP_IF([:])
 ])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Final count: 01000
+], [])
+AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+], [])
 
-AT_DATA([threaded-output],
+
+# Same test as above, but threaded and with/out COB_PHYSICAL_CANCEL
+AT_CHECK([$COMPILE -ldl -lpthread -A -DUSE_PTHREAD caller.c], [0], [], [], [
+   echo "pthread compilation / linking failed, skipping rest of group"
+   AT_SKIP_IF([:])
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
 [Final count: 01000
 Final count: 01000
 Final count: 01000
 Final count: 01000
-])
+], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+], [])
+# Pre-loaded modules are not unloaded, but must still be reset.
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+], [])
 
-for variant in unthreaded pthread c11_threads; do
-   echo "Checking isolated runtime: $variant"
-   case $variant in
-      unthreaded)
-         AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
-            echo "C compilation / linking failed, skipping rest of group"
-            AT_SKIP_IF([:])
-         ])
-         AT_CHECK([cp unthreaded-output expected-output], [0], [], [])
-         ;;
-      pthread)
-         AT_CHECK([$COMPILE -ldl -lpthread -A -DUSE_PTHREAD caller.c], [0], [], [], [
-            echo "pthread compilation / linking failed, skipping rest of group"
-            AT_SKIP_IF([:])
-         ])
-         AT_CHECK([cp threaded-output expected-output], [0], [], [])
-         ;;
-      c11_threads)
-         AT_CHECK([$COMPILE -ldl -lpthread -A "-DUSE_C11_THREADS -std=c11" caller.c], [0], [], [], [
-            echo "C11 threads compilation / linking failed, skipping rest of group"
-            AT_SKIP_IF([:])
-         ])
-         AT_CHECK([cp threaded-output expected-output], [0], [], [])
-         ;;
-   esac
-
-   AT_CHECK([cp expected-output expout], [], [], [])
-   AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
-   [expout], [])
-   AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
-   [expout], [])
-
-   AT_CHECK([$SED 's/Final count:/Preloaded count:/' expected-output > expout], [0], [], [])
-   # Pre-loaded modules are not unloaded, but must still be reset.
-   AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
-   [expout], [])
-   AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
-   [expout], [])
-done
 
 AT_CLEANUP
 
@@ -4608,12 +4615,14 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=GLOBAL $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
 ], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4711,8 +4720,10 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
