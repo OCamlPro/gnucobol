@@ -104,7 +104,7 @@ prog.cob:6: error: redefinition of class ID 'MyClass'
 AT_CLEANUP
 
 
-AT_SETUP([CLASS-ID Attribute Check - INHERITS FROM and USING])
+AT_SETUP([CLASS-ID attributes INHERITS FROM and USING])
 AT_KEYWORDS([OOP])
 
 AT_DATA([prog.cob], [
@@ -154,7 +154,7 @@ prog.cob:33: error: object-oriented COBOL is not supported
 AT_CLEANUP
 
 
-AT_SETUP([CLASS-ID Attribute Check - Multiple attributes together])
+AT_SETUP([CLASS-ID multiple attributes together])
 AT_KEYWORDS([OOP])
 
 AT_DATA([prog.cob], [
@@ -199,8 +199,8 @@ prog.cob:28: error: object-oriented COBOL is not supported
 AT_CLEANUP
 
 
-AT_SETUP([CLASS-ID Attribute Check - FINAL, ABSTRACT, PARTIAL, PUBLIC, INTERNAL])
-AT_KEYWORDS([OOP])
+AT_SETUP([CLASS-ID specific attribute checks])
+AT_KEYWORDS([OOP FINAL ABSTRACT PARTIAL PUBLIC INTERNAL])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.

@@ -3483,6 +3483,170 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 
 }
 
+/* prototypes */
+
+static const char *
+get_literal_or_word_name (const cb_tree x)
+{
+	if (CB_LITERAL_P (x)) {
+		return (const char *) CB_LITERAL (x)->data;
+	} else { /* CB_REFERENCE_P (x) */
+		return (const char *) CB_NAME (x);
+	}
+}
+
+/* Return 1 if the prototype name is the same as the current function's. */
+static int
+check_prototype_redefines_current_element (const cb_tree prototype_name)
+{
+	const char	*name = get_literal_or_word_name (prototype_name);
+
+	if (strcasecmp (name, current_program->program_name) == 0) {
+		cb_warning_x (COBC_WARN_FILLER, prototype_name,
+			_("prototype has same name as current function and will be ignored"));
+		return 1;
+	}
+
+	return 0;
+}
+
+/* Returns 1 if the prototype has been duplicated. */
+static int
+check_for_duplicate_prototype (const cb_tree prototype_name,
+			       const struct cb_prototype *prototype)
+{
+	cb_tree	dup;
+
+	if (CB_WORD_COUNT (prototype_name) > 0) {
+		/* Make sure the duplicate is a prototype */
+		dup = cb_ref (prototype_name);
+		if (!CB_PROTOTYPE_P (dup)) {
+			redefinition_error (prototype_name);
+			return 1;
+		}
+
+		/* Check the duplicate prototypes match */
+		if (strcmp (prototype->ext_name, CB_PROTOTYPE (dup)->ext_name)
+		 || prototype->type != CB_PROTOTYPE (dup)->type) {
+			cb_error_x (prototype_name,
+				    _("duplicate REPOSITORY entries for '%s' do not match"),
+				    get_literal_or_word_name (prototype_name));
+		} else {
+			cb_warning_x (COBC_WARN_FILLER, prototype_name,
+				    _("duplicate REPOSITORY entry for '%s'"),
+				    get_literal_or_word_name (prototype_name));
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
+/* Note: neither proto nor program may be NULL */
+static void
+check_prototype_against_definition (const struct cb_prototype *proto,
+				    const struct cb_program *program)
+{
+	if (program->prog_type == proto->type) {
+		return;
+	}
+	cb_error_x (CB_TREE (proto),
+		    _("%s REPOSITORY entry for '%s' does not match its definition"),
+		    cb_get_cob_module_type_string (proto->type),
+		    proto->ext_name);
+	cb_note_x (COB_WARNOPT_NONE, CB_TREE (program),
+		   _("'%s' defined as a %s here"),
+		   program->program_name,
+		   cb_get_cob_module_type_string (program->prog_type));
+}
+
+static struct cb_program *
+find_prototype_definition (const struct cb_prototype *proto)
+{
+	struct cb_program	*program = NULL;
+
+	program = cb_find_defined_program_by_id (proto->ext_name);
+
+	if (!program
+	 && get_warn_opt_value (cb_warn_prototypes) != COBC_WARN_DISABLED) {
+		if (strcmp (proto->name, proto->ext_name) == 0) {
+			/*
+			  Warn if no definition seen for element with prototype-
+			  name.
+			*/
+			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
+				      _("no definition/prototype seen for %s '%s'"),
+				      cb_get_cob_module_type_string (proto->type), proto->name);
+		} else {
+			/*
+			  Warn if no definition seen for element with given
+			  external-name.
+			*/
+			cb_warning_x (cb_warn_prototypes, CB_TREE (proto),
+				      _("no definition/prototype seen for %s with external name '%s'"),
+				      cb_get_cob_module_type_string (proto->type), proto->ext_name);
+		}
+	}
+	return program;
+}
+
+void
+cb_setup_prototype (const cb_tree prototype_name, const cb_tree ext_name,
+		  const enum cob_module_type type, const int is_current_element)
+{
+	struct cb_prototype *prototype;
+	int	name_redefinition_allowed;
+
+	if (!is_current_element
+	 && check_prototype_redefines_current_element (prototype_name)) {
+		return;
+	}
+
+	prototype = CB_PROTOTYPE (cb_build_prototype (prototype_name, ext_name, type));
+
+	if (!is_current_element) {
+		const struct cb_program *program = find_prototype_definition (prototype);
+		if (check_for_duplicate_prototype (prototype_name, prototype)) {
+			return;
+		}
+		if (program) {
+			check_prototype_against_definition (prototype, program);
+		}
+	}
+
+	name_redefinition_allowed = type == COB_MODULE_TYPE_PROGRAM
+		&& is_current_element && cb_program_name_redefinition;
+	if (!name_redefinition_allowed) {
+		cb_tree p = CB_TREE (prototype);
+		if (CB_LITERAL_P (prototype_name)) {
+			cb_define (cb_build_reference ((const char *)CB_LITERAL (prototype_name)->data), p);
+		} else {
+			cb_define (prototype_name, p);
+		}
+
+		switch (type) {
+		case COB_MODULE_TYPE_PROGRAM:
+			current_program->program_spec_list =
+				cb_list_add (current_program->program_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_FUNCTION:
+			current_program->user_spec_list =
+				cb_list_add (current_program->user_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_CLASS:
+			current_program->class_spec_list =
+				cb_list_add (current_program->class_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_INTERFACE:
+			current_program->interface_spec_list =
+				cb_list_add (current_program->interface_spec_list, p);
+			break;
+		case COB_MODULE_TYPE_METHOD: /* unreachable... (for now) */
+			break;
+		}
+	}
+}
+
 /* Returns NULL on figurative constants */
 static COB_INLINE const char *
 try_get_literal_data (cb_tree ref) {
@@ -13478,6 +13642,17 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		}
 		if (val < 0 && !f->pic->have_sign) {
 			val = -val;
+		}
+		if (f->size < 4) {
+			/* binary truncation to the field size */
+			const int		bits = f->size * 8;
+			const unsigned int	uval = (unsigned int)val
+						     & ((1U << bits) - 1);
+			if (f->pic->have_sign && (uval & (1U << (bits - 1)))) {
+				val = (int)uval - (1 << bits);
+			} else {
+				val = (int)uval;
+			}
 		}
 		if (f->size == 1) {
 			return cb_build_assign (dst, cb_int (val));
