@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2023,2026 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -568,12 +568,16 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:538: error: buffer overrun - too many continuation lines
+prog.cob:9: error: invalid literal: '                                   ...'
+prog.cob:9: note: literal length exceeds 8191 characters
 ])
 
 # extra test with listing as this is an edge case there
 AT_CAPTURE_FILE([prog.lst])
 AT_CHECK([$COMPILE_ONLY -t prog.lst prog.cob], [1], [],
 [prog.cob:538: error: buffer overrun - too many continuation lines
+prog.cob:9: error: invalid literal: '                                   ...'
+prog.cob:9: note: literal length exceeds 8191 characters
 ])
 
 AT_CLEANUP
@@ -1308,6 +1312,22 @@ prog.cob:9: error: HP COBOL octal literal does not conform to COBOL 2014
 prog.cob:10: error: HP COBOL octal literal does not conform to COBOL 2014
 ])
 
+
+AT_DATA([bad.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           *> invalid length
+           DISPLAY %7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fhp-octal-literals=ok -free bad.cob], [1], [],
+[bad.cob:6: error: invalid % literal: '7777777777777777777777777777777777 ...'
+bad.cob:6: note: literal length 256 exceeds 22 characters
+bad.cob:6: warning: handling of HP COBOL octal literals is unfinished; implementation is likely to be changed
+])
+
 AT_CLEANUP
 
 
@@ -1368,6 +1388,20 @@ prog.cob:14: error: ACUCOBOL numeric literal does not conform to COBOL 2014
 prog.cob:14: error: ACUCOBOL numeric literal does not conform to COBOL 2014
 prog.cob:14: error: ACUCOBOL numeric literal does not conform to COBOL 2014
 prog.cob:14: error: ACUCOBOL numeric literal does not conform to COBOL 2014
+])
+
+AT_DATA([bad.cob], [
+ IDENTIFICATION   DIVISION.
+ PROGRAM-ID.      prog.
+ PROCEDURE        DIVISION.
+*> invalid length
+     DISPLAY H"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".
+     STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=acu -fformat=terminal bad.cob], [1], [],
+[bad.cob:6: error: invalid hexadecimal literal: 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ...'
+bad.cob:6: note: literal length 255 exceeds 16 characters
 ])
 
 AT_CLEANUP
@@ -1471,7 +1505,7 @@ AT_KEYWORDS([misc literals])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      tutorial.
+       PROGRAM-ID.      prog.
        PROCEDURE DIVISION.
            move low-values to
            ' 1  c d e f g h i j k l m n 0 q.'-
@@ -1510,11 +1544,28 @@ AT_DATA([prog.cob], [
       -            ' 2  C D E F G H I J K L M N 0 Q.
 ])
 
+AT_DATA([prog2.cob],
+[ *> free format has no line continuation without closing
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 A PIC X(10) VALUE " oopsie
+       PROCEDURE DIVISION.
+           GOBACK.
+])
+
 # FIXME: we should move this from scanner to pplex to preserve the spaces
 # [prog.cob:5: error: invalid literal: ' 1  c d e f g h i j k l m n 0 q. ...'
 AT_CHECK([$COMPILE_ONLY -w prog.cob], [1], [],
 [prog.cob:5: error: invalid literal: ' 1 c d e f g h i j k l m n 0 q. 2  ...'
 prog.cob:5: note: missing terminating ' character
+])
+
+AT_CHECK([$COMPILE_ONLY -free prog2.cob], [1], [],
+[prog2.cob:6: error: invalid literal: ' oopsie'
+prog2.cob:6: note: missing terminating " character
+prog2.cob:7: warning: optional period used
 ])
 
 AT_CLEANUP

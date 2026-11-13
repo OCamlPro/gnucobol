@@ -103,13 +103,6 @@ jobs:
       - name: Build GnuCOBOL
         run: make -C _build --jobs=$(($(nproc)+1))
 
-      - name: Adjust testsuite
-        run: |
-          cd tests/testsuite.src
-          # Fails randomly
-          sed -i '/AT_SETUP(\[signal handling SIGPIPE in COBOL\])/a \
-                   AT_SKIP_IF(\[true\])' used_binaries.at
-
       # Note1: distcheck also creates the dist tarball
       # Note2: gnucobol-VERSION removed on success
       - name: Build distribution archive & run tests
@@ -274,13 +267,6 @@ jobs:
 
       - name: Build GnuCOBOL
         run: make -C _build --jobs=$(($(nproc)+1))
-
-      - name: Adjust testsuite
-        run: |
-          cd tests/testsuite.src
-          # Fails randomly
-          sed -i '/AT_SETUP(\[signal handling SIGPIPE in COBOL\])/a \
-                   AT_SKIP_IF(\[true\])' used_binaries.at
 
       - name: Run testsuite
         run: |
@@ -830,8 +816,7 @@ jobs:
       - name: Configure GnuCOBOL
         run: |
           mkdir _build
-          %MSYS_BASH% -lc "cd _build && ../configure --with-db --with-indexed=db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT% LDFLAGS=-lintl CPPFLAGS=-I../libcob"
-          rem CPPFLAGS to be dropped after merging the adjustment in configure.ac
+          %MSYS_BASH% -lc "cd _build && ../configure --with-db --with-indexed=db --with-xml2 --with-json=local --with-curses=pdcurses --prefix=/mingw %CFGOPT%"
 
       - name: Upload config.log
         if: ${{ !cancelled() }}
@@ -842,9 +827,7 @@ jobs:
 
       - name: Build GnuCOBOL
         run: |
-          %MSYS_BASH% -lc "make -C _build --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
-          rem  Note: the extra CPATH above is only required in debug builds
-          rem  (otherwise gcc invoked from cobc does not find libcob.h [pre-inst-env]), for some reason...
+          %MSYS_BASH% -lc "make -C _build --jobs=$(($(nproc)+1))"
 
       - name: Cache newcob.val
         uses: actions/cache@v6
@@ -859,9 +842,7 @@ jobs:
         #   perl -pi -e 's/^# OBNC1M/\$skip{IF106A} = 1; # OBNC1M/' tests/cobol85/report.pl
         #   %MSYS_BASH% -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd) || echo \"WARNING: NIST85 did not pass!\""
         run: |
-          %MSYS_BASH% -lc "make -C _build test --jobs=$(($(nproc)+1)) CPATH=$(pwd)"
-          rem  Note: the extra CPATH above is only required in debug builds
-          rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
+          %MSYS_BASH% -lc "make -C _build test --jobs=$(($(nproc)+1))"
 
       - name: Upload NIST85 Test Suite results
         if: ${{ !cancelled() }}
@@ -881,28 +862,15 @@ jobs:
           rem Skip test as it sometimes works and sometimes not...
           rem sed -i '/AT_SETUP(\[temporary path invalid\])/a AT_SKIP_IF(\[true\])' used_binaries.at
 
-          rem The following 13 fail (identical to MSYS2)
+          rem The following 2 fail
           sed -i '/AT_SETUP(\[Test dump feature (4)\])/a AT_SKIP_IF(\[true\])' run_misc.at
-          sed -i '/AT_SETUP(\[OUTPUT on INDEXED file to missing directory\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED undeclared keys\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[PIPE I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[STDOUT STDERR I\/O\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL one Record\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[INDEXED COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[SEQUENTIAL\/RELATIVE COMMIT\/ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[LINE SEQUENTIAL COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[OPEN OUTPUT COMMIT \/ ROLLBACK\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[MF io status (indexed)\])/a AT_SKIP_IF(\[true\])' run_file.at
-          sed -i '/AT_SETUP(\[Test MF Status (sequential)\])/a AT_SKIP_IF(\[true\])' run_file.at
           sed -i '/AT_SETUP(\[LINE SEQUENTIAL\])/a AT_SKIP_IF(\[true\])' run_file.at
 
       - name: Run testsuite
         run: |
           rem To work around regular hangs we run NIST first, then the internal
           rem and the later only with 2 jobs -> --jobs does not seem to have any effect in this env
-          %MSYS_BASH% -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\" CPATH=$(pwd)"
-          rem  Note: the extra CPATH above is only required in debug builds
-          rem  (otherwise gcc invoked from cobc does not find libcob.h [atlocal]), for some reason...
+          %MSYS_BASH% -lc "make -C _build check TESTSUITEFLAGS=\"--jobs=2\""
 
       - name: Upload testsuite.log
         if: ${{ !cancelled() }}

@@ -51,6 +51,7 @@ jobs:
           mkdir _build && cd _build
           ../configure --prefix=/opt/gnucobol \
                        --with-db \
+                       --with-indexed=db \
                        --enable-cobc-internal-checks \
                        --enable-hardening \
                        --with-pkgversion="GnuCOBOL CI" \

@@ -14,3 +14,6 @@ MSYS2/Cygwin implementation of fork(), and possible solutions are to:
 However, these solutions did not work.
 
 The only solution would be to run the testsuite with a single process.
+
+Update: this is likely due to a bug in the MSYS2 runtime ; the following patch
+should fix it: https://github.com/msys2/msys2-runtime/pull/402

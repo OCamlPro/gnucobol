@@ -149,6 +149,10 @@ enum cb_current_date {
 #define	CB_CS_REPOSITORY		(COB_U64_C(1) << 42)
 #define	CB_CS_CALL_USING		(COB_U64_C(1) << 43)	/* within USING phrase of CALL statement */
 #define	CB_CS_READY_OR_RESET		(COB_U64_C(1) << 44)
+#define	CB_CS_CLASS_SPECIFIER		(COB_U64_C(1) << 45)
+#define	CB_CS_INTERFACE_SPECIFIER	(COB_U64_C(1) << 46)
+#define	CB_CS_FACTORY_PARAGRAPH		(COB_U64_C(1) << 47)
+#define	CB_CS_OBJECT_PARAGRAPH		(COB_U64_C(1) << 48)
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -291,7 +295,7 @@ struct filename {
 /* Exception structure */
 struct cb_exception {
 	const char	*name;			/* Exception name */
-	const int	code;			/* Exception code */
+	const cob_u64_t	code;			/* Exception code */
 	int		enable;			/* If turned on */
 	int		fatal;			/* If recognizing this should abort */
 };

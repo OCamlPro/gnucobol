@@ -253,6 +253,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ABSENT",			0, 0, ABSENT,			/* IBM RW */
 				0, 0
   },
+  { "ABSTRACT",			0, 0, ABSTRACT,			/* MF extension */
+				0, 0
+  },
   { "ACCEPT",			1, 0, ACCEPT,			/* 2002 */
 				CB_CS_ACCEPT, 0
   },
@@ -636,7 +639,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "CLASS",			0, 0, CLASS,			/* 2002 */
 				0, 0
   },
-  { "CLASS-ID",			0, 0, -1,			/* 2002 */
+  { "CLASS-ID",			0, 0, CLASS_ID,			/* 2002 */
 				0, 0
   },
   { "CLASSIFICATION",		0, 1, CLASSIFICATION,		/* 2002 (C/S) */
@@ -1252,8 +1255,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "EXPAND",		0, 1, EXPAND,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "EXPANDS",			0, 1, -1,			/* 2002 (C/S) */
-				0, 0
+  { "EXPANDS",			0, 1, EXPANDS,			/* 2002 (C/S) */
+				0, CB_CS_CLASS_SPECIFIER | CB_CS_INTERFACE_SPECIFIER
 	/* FIXME: 2014 Context-sensitive to class-specifier and
 	   interface-specifier of REPOSITORY paragraph */
   },
@@ -1442,8 +1445,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "GENERATE",			0, 0, GENERATE,			/* 2002 */
 				0, 0
   },
-  { "GET",			0, 0, -1,			/* 2002 */
-				0, 0
+  { "GET",			0, 0, GET,			/* 2002 */
+				0,
   },
   { "GIVING",			0, 0, GIVING,			/* 2002 */
 				0, 0
@@ -1565,8 +1568,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "IGNORING",			0, 1, IGNORING,			/* 2002 (C/S) */
 				0, CB_CS_READ
   },
-  { "IMPLEMENTS",		0, 1, -1,			/* 2002 (C/S) */
-				0, 0
+  { "IMPLEMENTS",		0, 1, IMPLEMENTS,			/* 2002 (C/S) */
+				0, CB_CS_FACTORY_PARAGRAPH | CB_CS_OBJECT_PARAGRAPH
 	/* FIXME: 2014 Context-sensitive to FACTORY and OBJECT paragraph */
   },
   { "IN",			0, 0, IN,			/* 2002 */
@@ -1584,7 +1587,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INDICATE",			0, 0, INDICATE,			/* 2002 */
 				0, 0
   },
-  { "INHERITS",			0, 0, -1,			/* 2002 */
+  { "INHERITS",			0, 0, INHERITS,			/* 2002 */
 				0, 0
   },
   { "INITIAL",			0, 0, TOK_INITIAL,		/* 2002 */
@@ -1620,14 +1623,17 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INSTALLATION",			0, 1, INSTALLATION,			/* 85 (later: C/S) */
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
-  { "INTERFACE",		0, 0, -1,			/* 2002 */
+  { "INTERFACE",		0, 0, INTERFACE,			/* 2002 */
 				0, 0
   },
-  { "INTERFACE-ID",		0, 0, -1,			/* 2002 */
+  { "INTERFACE-ID",		0, 0, INTERFACE_ID,			/* 2002 */
 				0, 0
   },
   { "INTERMEDIATE",		0, 1, INTERMEDIATE,		/* 2014 (C/S) */
 				0, CB_CS_OPTIONS
+  },
+  { "INTERNAL",		0, 0, INTERNAL,		/* MF extension */
+				0, 0
   },
   { "INTO",			0, 0, INTO,			/* 2002 */
 				0, 0
@@ -1638,7 +1644,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INVALID",			0, 0, INVALID,			/* 2002 */
 				0, 0
   },
-  { "INVOKE",			0, 0, -1,			/* 2002 */
+  { "INVOKE",			0, 0, INVOKE,			/* 2002 */
 				0, 0
   },
   { "IS",			0, 0, IS,			/* 2002 */
@@ -1870,10 +1876,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MESSAGE-TAG",			0, 0, -1,			/* COBOL 2023 MCS */
 				0, 0
   },
-  { "METHOD",			0, 0, -1,			/* 2002 */
+  { "METHOD",			0, 0, METHOD,			/* 2002 */
 				0, 0
   },
-  { "METHOD-ID",		0, 0, -1,			/* 2002 */
+  { "METHOD-ID",		0, 0, METHOD_ID,			/* 2002 */
 				0, 0
   },
   { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */
@@ -2164,6 +2170,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "PARSE",			0, 1, PARSE,			/* IBM extension */
    				0, 0
   },
+  { "PARTIAL",			0, 0, PARTIAL,			/* MF extension */
+				0, 0
+  },
   { "PASCAL",			0, 1, PASCAL,			/* Extension: implicit defined CALL-CONVENTION */
 				0, CB_CS_CALL_CONVENTION | CB_CS_OPTIONS
   },
@@ -2294,6 +2303,9 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_ACCEPT
   },
   { "PROTOTYPE",		0, 0, PROTOTYPE,			/* 2002 */
+				0, 0
+  },
+  { "PUBLIC",			0, 0, PUBLIC,			/* MF extension */
 				0, 0
   },
   { "PURGE",			0, 0, PURGE,			/* Communication Section */
@@ -2605,7 +2617,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SELECTION-TEXT",			0, 1, SELECTION_TEXT,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "SELF",			0, 0, -1,			/* 2002 */
+  { "SELF",			0, 0, SELF,			/* 2002 */
 				0, 0
   },
   { "SELF-ACT",			0, 1, SELF_ACT,			/* ACU extension */
@@ -2799,7 +2811,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SUM",			0, 0, SUM,			/* 2002 */
 				0, 0
   },
-  { "SUPER",			0, 0, -1,			/* 2002 */
+  { "SUPER",			0, 0, SUPER,			/* 2002 */
 				0, 0
   },
   { "SUPPRESS",			0, 0, SUPPRESS,			/* 2002 */
@@ -5204,7 +5216,7 @@ cb_list_exceptions (void)
 		if (i == COB_EC_ALL) {
 			/* EC-ALL - level-1 EC to set all ECs, no indent */
 			printf ("\n%s", CB_EXCEPTION_NAME (i));
-		} else if ((CB_EXCEPTION_CODE(i) & 0x00FF) == 0) {
+		} else if ((CB_EXCEPTION_CODE(i) & COB_EC_EXC_MASK) == 0) {
 			/* EC level-2 EC, newline and indent by 2 */
 			printf ("\n  %-26s", CB_EXCEPTION_NAME (i));
 		} else {
