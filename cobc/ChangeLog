@@ -13,6 +13,11 @@
 	  but keep a root; (process_command_line) [_MSC_VER]: double a final
 	  backslash of -I / -L paths
 
+2026-11-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* typeck.c (cb_build_move_literal): with -fno-trunc, explicitly truncate
+	  binary literals to field size instead of letting the C compiler do it
+
 2026-11-05  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.h, cobc.c, codegen.c, reserved.c: use 64 bit exception codes
