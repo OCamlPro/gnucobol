@@ -4250,15 +4250,13 @@ $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-# Missing dlmopen or the selected thread API skips that variant.
-m4_define([_AT_CHECK_ISOLATED_RUNTIME], [
-m4_pushdef([_test_description], [$1])
-m4_pushdef([_compile_options], [$2])
-m4_pushdef([_expected_output], [$3])
-m4_pushdef([_extra_keywords], [$4])
+AT_SETUP([resolve / execution in isolated runtime and parallel threads])
+AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread c11 threads parallel])
 
-AT_SETUP(m4_defn([_test_description]))
-AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy ] m4_defn([_extra_keywords]))
+# Run without threads first, then with each thread API (pthread.h, threads.h).
+# Skip the test at any point if the platform does not support it.
+# This test also requires glibc >= 2.34 due to an implementation bug in dlmopen
+# in previous versions.
 
 AT_DATA([caller.c], [
 #define _GNU_SOURCE
@@ -4455,10 +4453,6 @@ AT_DATA([thread_sleep.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE thread_sleep.cob], [0], [], [])
-AT_CHECK([$COMPILE ] m4_defn([_compile_options]) [ caller.c], [0], [], [], [
-   echo "C compilation / linking failed, skipping rest of group"
-   AT_SKIP_IF([:])
-])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -4478,10 +4472,6 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
-m4_defn([_expected_output]), [])
-AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
-m4_defn([_expected_output]), [])
 
 # Preloading an alternate implementation of prog must work in each dlmopen namespace.
 AT_DATA([preloaded.cob], [
@@ -4502,41 +4492,58 @@ AT_DATA([preloaded.cob], [
 ])
 
 AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob], [0], [], [])
-AT_DATA([ordinary-output], m4_defn([_expected_output]))
-AT_CHECK([$SED 's/Final count:/Preloaded count:/' ordinary-output > expout], [0], [], [])
-
-# Pre-loaded modules are not unloaded, but must still be reset.
-AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
-[expout], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
-[expout], [])
-
-AT_CLEANUP
-m4_popdef([_extra_keywords])
-m4_popdef([_expected_output])
-m4_popdef([_compile_options])
-m4_popdef([_test_description])
+AT_DATA([unthreaded-output],
+[Final count: 01000
 ])
 
-_AT_CHECK_ISOLATED_RUNTIME([resolve / execution in isolated namespace], [-ldl],
-[Final count: 01000
-], [])
-
-_AT_CHECK_ISOLATED_RUNTIME([resolve / execution in parallel threads], [-ldl -lpthread -A -DUSE_PTHREAD],
+AT_DATA([threaded-output],
 [Final count: 01000
 Final count: 01000
 Final count: 01000
 Final count: 01000
-], [pthread parallel])
+])
 
-_AT_CHECK_ISOLATED_RUNTIME([resolve / execution in parallel C11 threads], [-ldl -lpthread -A "-DUSE_C11_THREADS -std=c11"],
-[Final count: 01000
-Final count: 01000
-Final count: 01000
-Final count: 01000
-], [c11 threads parallel])
+for variant in unthreaded pthread c11_threads; do
+   echo "Checking isolated runtime: $variant"
+   case $variant in
+      unthreaded)
+         AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
+            echo "C compilation / linking failed, skipping rest of group"
+            AT_SKIP_IF([:])
+         ])
+         AT_CHECK([cp unthreaded-output expected-output], [0], [], [])
+         ;;
+      pthread)
+         AT_CHECK([$COMPILE -ldl -lpthread -A -DUSE_PTHREAD caller.c], [0], [], [], [
+            echo "pthread compilation / linking failed, skipping rest of group"
+            AT_SKIP_IF([:])
+         ])
+         AT_CHECK([cp threaded-output expected-output], [0], [], [])
+         ;;
+      c11_threads)
+         AT_CHECK([$COMPILE -ldl -lpthread -A "-DUSE_C11_THREADS -std=c11" caller.c], [0], [], [], [
+            echo "C11 threads compilation / linking failed, skipping rest of group"
+            AT_SKIP_IF([:])
+         ])
+         AT_CHECK([cp threaded-output expected-output], [0], [], [])
+         ;;
+   esac
 
-m4_undefine([_AT_CHECK_ISOLATED_RUNTIME])
+   AT_CHECK([cp expected-output expout], [], [], [])
+   AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
+   [expout], [])
+   AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED $COBCRUN_DIRECT ./caller], [0],
+   [expout], [])
+
+   AT_CHECK([$SED 's/Final count:/Preloaded count:/' expected-output > expout], [0], [], [])
+   # Pre-loaded modules are not unloaded, but must still be reset.
+   AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
+   [expout], [])
+   AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY $COBCRUN_DIRECT ./caller], [0],
+   [expout], [])
+done
+
+AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD with entry points])
