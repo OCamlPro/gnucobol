@@ -1,4 +1,8 @@
 
+2026-10-05  Ramy George <ramygeorge19@gmail.com>
+
+	* general for libcob: add missing cobargv.c
+	
 2026-08-14  David Declerck <david.declerck@ocamlpro.com>
 
 	* set the UseDebugLibraries property in all project files

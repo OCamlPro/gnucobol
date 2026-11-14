@@ -153,7 +153,7 @@
 	* call.c (pre_load_once): elements in COB_PRE_LOAD are always loaded with
 	  a global scope request, independent of COB_LOAD_GLOBAL setting
 	* common.c: minimal refactor
-
+	
 2026-09-08  David Declerck <david.declerck@ocamlpro.com>
 
 	Note: partial merge of 4674 (cob_file_operation enum)
@@ -163,6 +163,12 @@
 	* fileio.c (cob_sync): add missing condition - fflush
 	  should only be called when the last operation is a write
 	  (follow-up to 2026-08-13)
+
+2026-09-04  Ramy George <ramygeorge19@gmail.com>
+	* cobargv.c: extracted the argv.c file from GCC, adjusted for recursive
+    response file detection
+	* cobgetopt.h (cob_expandargv): added the expandargv function in header
+	* Makefile.am: added the cobargv.c file libcob sources
 
 2026-09-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -181,6 +187,20 @@
 	  while ignoring slash differences
 	* fileio.c (cob_get_filename_print) [_WIN32]: use pathcmp
 	  instead of strcmp to compare paths
+
+2026-07-07  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* common.c: add COB_STDIN_FILE, COB_STDOUT_FILE and COB_STDERR_FILE runtime
+	  configurations for redirection of stdin/stdout/stderr to a file
+	* common.c, common.h: add COB_SET_RUNTIME_STDIN_FILE,
+	  COB_SET_RUNTIME_STDOUT_FILE and COB_SET_RUNTIME_STDERR_FILE runtime
+	  options
+	* coblocal.h (cob_settings): extend the setting to store FILE pointers
+	  for stdin/stdout/stderr
+	* fileio.c: introduce cob_settings_fileio to trigger reset of settings
+	  related configurations
+	* common.c, cobgetopt.c, coblocal.h, fileio.c, profiling.c, screenio.c,
+	  termio.c: use stdin/stdout/stderr in cob_settings instead of global
 
 2026-04-14  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
 
