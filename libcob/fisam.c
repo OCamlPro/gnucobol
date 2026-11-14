@@ -1601,6 +1601,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				case COB_GE:
 					domoveback = 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						domoveback = 1;
@@ -1612,6 +1613,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				case COB_LE:
 					domoveback = 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
@@ -1691,6 +1693,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 					else
 						domoveback = 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey (fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;

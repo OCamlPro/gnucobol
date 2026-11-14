@@ -220,7 +220,7 @@
 	#elif !defined(__hpux) && !defined(_HPUX_SOURCE) && !defined(__SUNPRO_C) && !defined(__s390__)
 		#define COB_ALLOW_UNALIGNED
 	#endif
-	#if !defined(__powerpc__)
+	#if !defined(__powerpc__) || !defined(__xlC__)
 	#define COB_NO_UNALIGNED_ATTRIBUTE
 	#endif
 #endif

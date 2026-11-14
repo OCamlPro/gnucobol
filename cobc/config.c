@@ -813,6 +813,30 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 			break;
 
+		} else if (strcmp (name, "call-literal-byteorder") == 0) {
+			if (strcmp (val, "native") == 0) {
+				cb_call_literal_byteorder = CB_BYTEORDER_NATIVE;
+			} else if (strcmp (val, "big-endian") == 0) {
+				cb_call_literal_byteorder = CB_BYTEORDER_BIG_ENDIAN;
+			} else {
+				invalid_value (fname, line, name, val, "native, big-endian", 0, 0);
+				return -1;
+			}
+			break;
+
+		} else if (strcmp (name, "call-literal-size") == 0) {
+			if (strcmp (val, "dynamic") == 0) {
+				cb_call_literal_size = CB_LITERAL_SIZE_DYNAMIC;
+			} else if (strcmp (val, "32") == 0) {
+				cb_call_literal_size = CB_LITERAL_SIZE_32;
+			} else if (strcmp (val, "64") == 0) {
+				cb_call_literal_size = CB_LITERAL_SIZE_64;
+			} else {
+				invalid_value (fname, line, name, val, "dynamic, 32, 64", 0, 0);
+				return -1;
+			}
+			break;
+
 		} else if (strcmp (name, "screen-section-rules") == 0) {
 			if (strcmp (val, "acu") == 0) {
 				cb_screen_section_clauses = CB_ACU_SCREEN_RULES;

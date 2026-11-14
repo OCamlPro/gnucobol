@@ -15758,7 +15758,7 @@ examine_statement:
 examine_format_variant:
   TALLYING
   {
-	cb_tree tally = cb_ref (cb_build_reference ("TALLY"));
+	cb_tree tally = cb_build_reference ("TALLY");
 	cb_emit_move (cb_zero, CB_LIST_INIT (tally));
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);

@@ -97,6 +97,12 @@ CB_CONFIG_ANY (enum cb_binary_size_options, cb_binary_size, "binary-size",
 CB_CONFIG_ANY (enum cb_binary_byteorder_options, cb_binary_byteorder, "binary-byteorder",
 	_("binary byte order, may be one of: native, big-endian"))
 
+CB_CONFIG_ANY (enum cb_binary_byteorder_options, cb_call_literal_byteorder, "call-literal-byteorder",
+	_("byte order of numeric literals passed in CALL, may be one of: native, big-endian"))
+
+CB_CONFIG_ANY (enum cb_literal_size_options, cb_call_literal_size, "call-literal-size",
+	_("byte size of numeric literals passed in CALL, may be one of: dynamic, 32, 64"))
+
 CB_CONFIG_ANY (enum cb_assign_type, cb_assign_type_default, "assign-clause",
 	_("how to interpret 'ASSIGN word': as 'ASSIGN EXTERNAL word' or 'ASSIGN DYNAMIC word', may be one of: dynamic, external, ibm (= external), mf (= dynamic)"))
 

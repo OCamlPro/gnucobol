@@ -9540,6 +9540,14 @@ cb_emit_call (cb_tree prog, cb_tree oo_method, cb_tree par_using, cb_tree return
 		}
 		if (CB_NUMERIC_LITERAL_P (x)) {
 			if (CB_PURPOSE_INT (l) != CB_CALL_BY_VALUE) {
+				if (cb_call_literal_size == CB_LITERAL_SIZE_32
+				 && !cb_fits_int (x)
+				 && (CB_LITERAL (x)->sign < 0
+				  || !cb_fits_long_long (x)
+				  || cb_get_u_long_long (x) > COB_U64_C(0xFFFFFFFF))) {
+					cb_warning_x (cb_warn_additional, x,
+						_("numeric literal truncated to 32 bits"));
+				}
 				continue;
 			}
 			if (CB_SIZES_INT_UNSIGNED (l)

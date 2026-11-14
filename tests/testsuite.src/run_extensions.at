@@ -2531,11 +2531,15 @@ AT_DATA([caller.cob], [
        01.
          03 SOME-FILL   PIC X(33).
          03 ADR-PTR     USAGE POINTER.
+      >> IF P64 SET
+         03 ADR-BUFFER  REDEFINES ADR-PTR  USAGE COMP-5 PIC S9(18).
+      >> ELSE
          03 ADR-BUFFER  REDEFINES ADR-PTR  USAGE COMP-5 PIC S9(8).
+      >> END-IF
        77 BIG-BUFF      USAGE COMP-5 PIC S9(18) VALUE 99999999999999.
        PROCEDURE        DIVISION  CHAINING CALL-NAME.
 
-      >> IF P64 DEFINED
+      >> IF P64 SET
            MOVE "callee64" TO CALL-NAME
       >> ELSE
            MOVE "callee32" TO CALL-NAME
@@ -2549,7 +2553,7 @@ AT_DATA([caller.cob], [
            CALL CALL-NAME USING BY VALUE LENGTH OF SOME-FILL
 
            MOVE -42 TO ADR-BUFFER
-      >> IF P64 DEFINED
+      >> IF P64 SET
            CALL "callee32" USING BY VALUE SIZE 4 ADR-BUFFER
            CALL "callee64" USING BY VALUE BIG-BUFF
       >> ELSE
@@ -6846,5 +6850,117 @@ AT_DATA([prog.cob], [[
 
 AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=ebcdic500_latin1 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL numeric literal size and byte order])
+AT_KEYWORDS([runextensions])
+
+AT_DATA([dump.c], [
+#include <stdio.h>
+#include <libcob.h>
+
+COB_EXT_EXPORT int
+dump (unsigned char *p)
+{
+  int i, n = cob_get_param_size (1);
+  printf ("%d:", n);
+  for (i = 0; i < n; i++)
+    printf (" %02x", p[[i]]);
+  puts ("");
+  return 0;
+}
+])
+
+AT_DATA([dumpn.c], [
+#include <stdio.h>
+#include <string.h>
+#include <libcob.h>
+
+COB_EXT_EXPORT int
+dumpn (void *p)
+{
+  int n = cob_get_param_size (1);
+  if (n == 4) {
+    unsigned int v;
+    memcpy (&v, p, 4);
+    printf ("4: %08x\n", v);
+  } else {
+    unsigned long long v;
+    memcpy (&v, p, 8);
+    printf ("8: %016llx\n", v);
+  }
+  return 0;
+}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "dump" USING 128
+           END-CALL.
+           CALL "dump" USING BY CONTENT -2
+           END-CALL.
+           CALL "dump" USING 5000000000
+           END-CALL.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE dumpn.c], [0], [], [])
+
+AT_CHECK([$COMPILE -fcall-literal-byteorder=big-endian prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[4: 00 00 00 80
+4: ff ff ff fe
+8: 00 00 00 01 2a 05 f2 00
+])
+
+AT_CHECK([$COMPILE -fcall-literal-byteorder=big-endian \
+                   -fcall-literal-size=64 prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[8: 00 00 00 00 00 00 00 80
+8: ff ff ff ff ff ff ff fe
+8: 00 00 00 01 2a 05 f2 00
+])
+
+AT_CHECK([$COMPILE -fcall-literal-byteorder=big-endian \
+                   -fcall-literal-size=32 -Wadditional prog.cob], [0], [],
+[prog.cob:9: warning: numeric literal truncated to 32 bits
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[4: 00 00 00 80
+4: ff ff ff fe
+4: 2a 05 f2 00
+])
+
+AT_CHECK([sed -e 's/"dump"/"dumpn"/' prog.cob > progn.cob])
+
+AT_CHECK([$COMPILE -fcall-literal-byteorder=native progn.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progn], [0],
+[4: 00000080
+4: fffffffe
+8: 000000012a05f200
+])
+
+AT_CHECK([$COMPILE -fcall-literal-byteorder=native \
+                   -fcall-literal-size=64 progn.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progn], [0],
+[8: 0000000000000080
+8: fffffffffffffffe
+8: 000000012a05f200
+])
+
+AT_CHECK([$COMPILE -fcall-literal-byteorder=native \
+                   -fcall-literal-size=32 progn.cob], [0], [],
+[progn.cob:9: warning: numeric literal truncated to 32 bits
+])
+AT_CHECK([$COBCRUN_DIRECT ./progn], [0],
+[4: 00000080
+4: fffffffe
+4: 2a05f200
+])
 
 AT_CLEANUP

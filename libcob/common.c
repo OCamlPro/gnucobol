@@ -6763,6 +6763,32 @@ cob_tidy (void)
 
 /* System routines */
 
+/* address of the low byte of the native binary argument 'n' (0-based) given
+   as 'data' (e.g. a numeric literal), as described by the caller's parameter
+   list; 'data' if that is not available or not a multi-byte binary field;
+   differs for big-endian data (big-endian host or swapped binary field) */
+unsigned char *
+cob_param_low_byte (const int n, const void *data)
+{
+	const cob_field	*f;
+
+	if (COB_MODULE_PTR
+	 && cobglobptr->cob_call_params > n
+	 && (f = COB_MODULE_PTR->cob_procedure_params[n]) != NULL
+	 && f->data == data
+	 && f->size > 1
+	 && (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_BINARY
+	  || COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_COMP5)) {
+#ifndef	WORDS_BIGENDIAN
+		if (COB_FIELD_BINARY_SWAP (f))
+#endif
+		{
+			return (unsigned char *)data + f->size - 1;
+		}
+	}
+	return (unsigned char *)data;
+}
+
 int
 cob_sys_exit_proc (const void *dispo, const void *pptr)
 {
@@ -6805,7 +6831,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 			return -1;
 		}
 
-		install_flag = *(unsigned char*)dispo;
+		install_flag = *cob_param_low_byte (0, dispo);
 		switch (install_flag) {
 		case 0:
 			priority = 64;
@@ -6925,7 +6951,7 @@ cob_sys_error_proc (const void *dispo, const void *pptr)
 		hp = h;
 		h = h->next;
 	}
-	x = dispo;
+	x = cob_param_low_byte (0, dispo);
 	if (*x != 0) {
 		/* Remove handler */
 		if (h != NULL) {
@@ -7365,7 +7391,7 @@ cob_sys_xf5 (const void *p1, void *p2)
 	COB_UNUSED (p2);
 	COB_CHK_PARMS (CBL_XF5, 2);
 
-	data_1 = cob_get_param_data (1);
+	data_1 = cob_param_low_byte (0, cob_get_param_data (1));
 	data_2 = cob_get_param_data (2);
 
 	if (data_1 == NULL
@@ -7388,7 +7414,7 @@ int
 cob_sys_x91 (void *p1, const void *p2, void *p3)
 {
 	cob_u8_ptr		result = p1;
-	const cob_u8_ptr	func = p2;
+	const cob_u8_ptr	func = cob_param_low_byte (1, p2);
 	cob_u8_ptr		parm = p3;
 	unsigned char		*p;
 	size_t			i;

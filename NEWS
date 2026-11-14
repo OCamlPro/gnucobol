@@ -247,6 +247,13 @@ Open Plans:
 ** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
    to a file (see "Dependencies options" in the GnuCOBOL manual)
 
+** New dialect options call-literal-byteorder (native, big-endian) and
+   call-literal-size (dynamic, 32, 64) defining how numeric literals are
+   passed BY REFERENCE or BY CONTENT in CALL; the dialects use big-endian
+   (as binary-byteorder) and 4 bytes or 8 bytes if larger, except mf-strict,
+   ibm-strict, mvs-strict, gcos-strict and rm-strict which use 32 bits
+   (truncating, with -Wadditional warning)
+
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table
 

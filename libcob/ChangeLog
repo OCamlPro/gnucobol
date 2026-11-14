@@ -1,4 +1,15 @@
 
+2026-11-14  David Declerck <david.declerck@ocamlpro.com>
+
+	* fisam.c (isam_read_next): after START, only walk over equal keys if
+	  duplicates are allowed (fixes START >= first key with VISAM)
+
+2026-11-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* numeric.c (cob_decimal_set_binary, cob_decimal_get_binary): fix fields
+	  larger than 8 bytes (big-endian)
+	* sysdefines.h: use the __unaligned attribute on PowerPC only with xlc
+
 2026-11-12  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_relocate_string): no trailing separator in the

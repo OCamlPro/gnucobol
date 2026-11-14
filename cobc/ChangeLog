@@ -1,4 +1,19 @@
 
+2026-11-13  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.h, config.def, config.c: new dialect options call-literal-byteorder
+	  and call-literal-size
+	* codegen.c (call_literal_size, output_call_literal, output_bin_field):
+	  pass numeric literals in CALL as per these options, replacing the use
+	  of binary-byteorder (cb_fit_to_int, gen_num_lit_big_end)
+	* codegen.c (output_attr): use COMP-5 for internal registers also without
+	  byte swap (big-endian)
+	* codegen.c (output_entry_function, output_sticky_parm_address): pass the
+	  low bytes of narrower BY VALUE parameters (big-endian)
+	* typeck.c (cb_emit_call): warn on literal truncated to 32 bits
+	* parser.y (examine_format_variant): use a reference to TALLY (fixes
+	  big-endian crash)
+
 2026-11-12  David Declerck <david.declerck@ocamlpro.com>
 
 	* pplex.l (ppinput): fix buffer overflow on overlong XFD lines
