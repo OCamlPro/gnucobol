@@ -2217,9 +2217,9 @@ extern cb_tree			cb_build_assign (const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_intrinsic (cb_tree, cb_tree,
 						    cb_tree, const int);
+extern cb_tree			cb_build_any_intrinsic (cb_tree);
 extern cb_tree			cb_build_prototype (const cb_tree,
 						    const cb_tree, const enum cob_module_type);
-extern cb_tree			cb_build_any_intrinsic (cb_tree);
 
 extern cb_tree			cb_build_search (const int,
 						 const cb_tree, const cb_tree,
@@ -2423,34 +2423,37 @@ extern cb_tree		cb_build_const_next (struct cb_field *);
 extern cb_tree		cb_build_address (cb_tree);
 extern cb_tree		cb_build_ppointer (cb_tree);
 
-extern void		cb_validate_program_environment (struct cb_program *);
-extern void		cb_validate_program_data (struct cb_program *);
-extern void		cb_validate_program_body (struct cb_program *);
+extern void 		cb_validate_program_environment (struct cb_program *);
+extern void 		cb_validate_program_data (struct cb_program *);
+extern void 		cb_validate_program_body (struct cb_program *);
 
-extern void		cb_validate_oo_program_data (struct cb_program *);
+extern void 		cb_setup_prototype (const cb_tree, const cb_tree,
+							const enum cob_module_type, const int);
+
+extern void 		cb_validate_oo_program_data (struct cb_program *);
 extern cb_tree		cb_validate_oo_class_or_interface (struct cb_program *);
 
 extern cb_tree		cb_build_expr (cb_tree);
 extern cb_tree		cb_build_cond (cb_tree);
 
-extern void		cb_end_cond (cb_tree);
-extern void		cb_save_cond (void);
-extern void		cb_terminate_cond (void);
-extern void		cb_true_side (void);
-extern void		cb_false_side (void);
-extern void		cb_end_statement (void);
+extern void 		cb_end_cond (cb_tree);
+extern void 		cb_save_cond (void);
+extern void 		cb_terminate_cond (void);
+extern void 		cb_true_side (void);
+extern void 		cb_false_side (void);
+extern void 		cb_end_statement (void);
 extern const char		*explain_operator (const enum cb_binary_op_op);
-extern const char		*enum_explain_storage (const enum cb_storage storage);
+extern const char		*enum_explain_storage (const enum cb_storage);
 
-extern void		cb_emit_arithmetic (cb_tree, const int, cb_tree);
+extern void 		cb_emit_arithmetic (cb_tree, const int, cb_tree);
 extern cb_tree		cb_build_add (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_sub (cb_tree, cb_tree, cb_tree);
-extern void		cb_emit_corresponding (
-				cb_tree (*) (cb_tree, cb_tree, cb_tree),
-				cb_tree, cb_tree, cb_tree);
-extern void		cb_emit_tab_arithmetic (
-	cb_tree (*) (cb_tree, cb_tree, cb_tree),
-	cb_tree, cb_tree, cb_tree, cb_tree, cb_tree);
+extern void 		cb_emit_corresponding (
+						cb_tree (*) (cb_tree, cb_tree, cb_tree),
+						cb_tree, cb_tree, cb_tree);
+extern void 		cb_emit_tab_arithmetic (
+						cb_tree (*) (cb_tree, cb_tree, cb_tree),
+						cb_tree, cb_tree, cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_move_corresponding (cb_tree, cb_tree);
 
 extern void		cb_emit_accept (cb_tree, cb_tree,

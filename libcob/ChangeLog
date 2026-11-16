@@ -1,4 +1,26 @@
 
+2026-11-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,
+	  vectored exception handler mapping hard errors to signals
+	* common.c (cob_dump_protected): new, runs a function with a recovery
+	  point, used to skip a field whose dump faults
+	* common.c (cob_set_signal): clear for_set for the signals not taken over
+	  according to COB_SIGNAL_REGIME; [_WIN32]: register the handler
+	* termio.c (dump_field_protected, cob_dump_field, cob_dump_field_ext):
+	  new, skip the rest of the record if the dump of a field faults
+	* coblocal.h: added cob_dump_protected
+
+2026-11-06  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.c, coblocal.h (cob_param_low_byte): new, low byte of a
+	  native binary argument (big-endian)
+	* common.c (cob_sys_exit_proc, cob_sys_error_proc, cob_sys_x91,
+	  cob_sys_xf5): use it for numeric literal arguments
+	* fileio.c (cob_sys_open_file, cob_sys_create_file,
+	  cob_sys_read_file): likewise, replacing the previous big-endian hack
+	* screenio.c (cob_sys_set_scr_size): likewise
+
 2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_unstring_into_intern): fix overflow for multiple UNSTRING

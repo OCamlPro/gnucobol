@@ -113,7 +113,7 @@ jobs:
           if ("${{ matrix.sys }}" -ne "mingw32") {
             echo CFGOPT="$env:CFGOPT --with-db --with-json=json-c" >> $env:GITHUB_ENV
           } else {
-            echo CFGOPT="$env:CFGOPT --without-db --with-json=local" >> $env:GITHUB_ENV
+            echo CFGOPT="$env:CFGOPT --without-db --without-xml2 --with-json=local" >> $env:GITHUB_ENV
           }
 
       - name: Install packages
@@ -126,9 +126,8 @@ jobs:
                    mingw-w64-${{ matrix.env }}-cc
                    mingw-w64-${{ matrix.env }}-gmp
                    mingw-w64-${{ matrix.env }}-ncurses
-                   mingw-w64-${{ matrix.env }}-libxml2
 
-      - name: Install BDB and JSON-C packages
+      - name: Install BDB, JSON-C and LibXML packages
         if: ${{ matrix.sys != 'mingw32' }}  # MSYS2 does not provide 32-bit builds for these any more
         uses: msys2/setup-msys2@v2
         with:
@@ -136,6 +135,7 @@ jobs:
           msystem: ${{ matrix.sys }}
           install: mingw-w64-${{ matrix.env }}-db
                    mingw-w64-${{ matrix.env }}-json-c
+                   mingw-w64-${{ matrix.env }}-libxml2
 
       - name: Download cJSON
         if: ${{ matrix.sys == 'mingw32' }}  # MSYS2 32-bit : use cJSON instead of JSON-C
