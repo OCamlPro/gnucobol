@@ -182,10 +182,10 @@ jobs:
 
       # Fail tests that behave differently under Windows
       # - Internal storage: different memory layout leading to different error
-      - name: Adjust testsuite
-        shell: C:\shells\msys2bash.cmd {0}
-        run: |
-          sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
+      #- name: Adjust testsuite
+      #  shell: C:\shells\msys2bash.cmd {0}
+      #  run: |
+      #    sed -i '/run_misc/{N;/write to internal storage (1)/{N;N;N;N;s/traceon/traceon; echo "workflow:1">"$at_check_line_file"; at_fn_check_skip 77/;}}' tests/testsuite
 
       # Fail tests that behave differently under MSVC Debug
       # - Internal storage: runtime checks abort before signal handler
