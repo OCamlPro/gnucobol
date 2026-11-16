@@ -14652,7 +14652,14 @@ AT_KEYWORDS([runmisc CALL bounds exceptions])
 # note: this check is likely unportable and therefore will likely be adjusted/skipped,
 #       mainly because the memory layout of consecutive variables is not guaranteed;
 #       it is expected to raise a crash if C bound checking is enabled
-AT_SKIP_IF([test $($COBC --info | $GREP -c sanitize) != 0])
+
+# Sanitizers may get in the way as well - we can at least portably
+# skip some.
+AT_DATA([ubsan.supp], [
+nonnull-attribute:*
+null:*
+])
+#AT_SKIP_IF([test $($COBC --info | $GREP -c sanitize) != 0])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION DIVISION.
@@ -14723,24 +14730,30 @@ AT_DATA([callee.cob], [
            GOBACK.
 ])
 
-AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE -fno-ec=program-arg-mismatch callee.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=pointer -o callerP caller.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using   -o callerU caller.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check                    caller.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all     -o callerA caller.cob], [0], [], [])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+$COBCRUN_DIRECT ./callerP], [1], [],
 [libcob: caller.cob:30: error: memory violation detected after CALL
 ])
 
-AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=using caller.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+$COBCRUN_DIRECT ./callerU], [1], [],
 [libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
-AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check caller.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+$COBCRUN_DIRECT ./caller], [1], [],
 [libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
-AT_CHECK([$COMPILE -fno-ec=program-arg-mismatch -fmemory-check=all caller.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./caller], [1], [],
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
+$COBCRUN_DIRECT ./callerA], [1], [],
 [libcob: caller.cob:30: error: memory violation detected for 'var' after CALL
 ])
 
@@ -16187,12 +16200,12 @@ main (int argc, char **argv)
 AT_CHECK([$COMPILE caller.c], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 
-# In some environments (e.g. MSVC), Windows does not forward signals for
-# critical errors like segmentation faults to user-defined signal handler
-# when the target program/library is compiled under the debug target, which
-# breaks COB_SIGNAL_REGIME tests.
+# Note: In some environments libc does not forward signals for critical
+# errors like segmentation faults to user-defined signal handler
+# when the target program/library is compiled under the debug target,
+# which breaks COB_SIGNAL_REGIME tests.
 # Sanitizers may get in the way as well - we can at least portably
-# skip some
+# skip some.
 AT_DATA([ubsan.supp], [
 nonnull-attribute:*
 null:*
