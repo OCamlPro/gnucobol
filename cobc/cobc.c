@@ -3112,9 +3112,14 @@ set_compile_level_from_file_extension (const char *filename)
 static void
 remove_trailing_slash (char *data)
 {
-	char *path_end = data + strlen (data) - 1;
-	if (*path_end == '/' || *path_end == '\\') {
-		*path_end = 0;
+	size_t len = strlen (data);
+	/* strip all trailing separators, but keep a root ("/" or "X:\") */
+	while (len > 1 && (data[len - 1] == '/' || data[len - 1] == '\\')
+#if defined (_WIN32) || defined (__DJGPP__)
+	    && !(len == 3 && data[1] == ':')
+#endif
+	) {
+		data[--len] = 0;
 	}
 }
 
@@ -3908,7 +3913,11 @@ process_command_line (const int argc, char **argv)
 				}
 			}
 #ifdef	_MSC_VER
-			COBC_ADD_STR (cobc_include, " /I \"", cob_optarg, "\"");
+			/* only a drive root "X:\" can still end with \: double it,
+			   else it escapes the closing quote */
+			COBC_ADD_STR (cobc_include, " /I \"", cob_optarg,
+				(*cob_optarg && cob_optarg[strlen (cob_optarg) - 1] == '\\')
+				? "\\\"" : "\"");
 #elif	defined (__WATCOMC__)
 			COBC_ADD_STR (cobc_include, " -i\"", cob_optarg, "\"");
 #else
@@ -3948,7 +3957,10 @@ process_command_line (const int argc, char **argv)
 				}
 			}
 #ifdef	_MSC_VER
-			COBC_ADD_STR (cobc_lib_paths, " /LIBPATH:\"", cob_optarg, "\"");
+			/* as for -I: double a final \ (drive root) */
+			COBC_ADD_STR (cobc_lib_paths, " /LIBPATH:\"", cob_optarg,
+				(*cob_optarg && cob_optarg[strlen (cob_optarg) - 1] == '\\')
+				? "\\\"" : "\"");
 #else
 			COBC_ADD_STR (cobc_lib_paths, " -L\"", cob_optarg, "\"");
 #endif

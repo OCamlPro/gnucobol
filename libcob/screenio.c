@@ -5085,8 +5085,8 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 	return -1;
 #else
 	{
-		const int screen_row = (int)*line;
-		const int screen_col = (int)*col;
+		const int screen_row = (int)*cob_param_low_byte (0, line);
+		const int screen_col = (int)*cob_param_low_byte (1, col);
 		const int ret = resize_term (screen_row, screen_col);
 		if (ret != OK) {
 			return ret;

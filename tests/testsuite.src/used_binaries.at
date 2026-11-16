@@ -575,6 +575,36 @@ AT_CHECK([$COMPILE -q -flagdoesntexist prog.cob], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([cobc -I and -L with trailing separators])
+AT_KEYWORDS([runmisc cobc])
+
+# note: a drive root like "X:\" is not tested here
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           COPY "copy.inc".
+           STOP RUN.
+])
+
+AT_CHECK([mkdir SUB], [0], [], [])
+AT_DATA([SUB/copy.inc], [
+           DISPLAY "OK" NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE_ONLY -I SUB/ prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -I SUB// prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -I 'SUB\' prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -I 'SUB\\' prog.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_MODULE -I SUB -L SUB/ prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -I SUB -L 'SUB\' prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -I SUB -L 'SUB\\' prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([cobcrun help and information])
 AT_KEYWORDS([runmisc cobcrun])
 
