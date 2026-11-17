@@ -1,4 +1,41 @@
 
+2026-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c, tree.h, parser.y (cb_setup_prototype): renamed + moved from
+	  parser.y to typeck.c
+	* typeck.c, parser.y (get_literal_or_word_name, find_prototype_definition,
+	  check_prototype_redefines_current_element, check_for_duplicate_prototype,
+	  check_prototype_against_definition): moved static functions related to
+	  (cb_setup_prototype) from parser.y to typeck.c
+
+2026-11-12  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c (remove_trailing_slash): strip all trailing separators,
+	  but keep a root; (process_command_line) [_MSC_VER]: double a final
+	  backslash of -I / -L paths
+
+2026-11-10  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.h, config.def, config.c: new dialect options
+	  call-literal-byteorder and call-literal-size
+	* codegen.c (call_literal_size, output_call_literal, output_bin_field):
+	  pass numeric literals in CALL as per these options
+	* typeck.c (cb_emit_call): warn on literal truncated to 32 bits
+
+2026-11-09  David Declerck <david.declerck@ocamlpro.com>
+
+	* typeck.c (cb_build_move_literal): with -fno-trunc, explicitly truncate
+	  binary literals to field size instead of letting the C compiler do it
+
+2026-11-06  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y (examine_format_variant): use a reference to TALLY
+	  (fixes big-endian crash)
+	* codegen.c (output_attr): use COMP-5 for internal registers also
+	  without byte swap (big-endian)
+	* codegen.c (output_entry_function, output_sticky_parm_address):
+	  pass the low bytes of narrower BY VALUE parameters (big-endian)
+
 2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_error_name): do not change caller's buffer
@@ -19,6 +56,13 @@
 	* cobc.c (cobc_check_valid_name, cobc_error_name): prevent PROGRAM-ID
 	  with contained quote or apostrophe as those may break generated C code
 	* codegen.c (output_cobol_info): escape quote in generated filename
+
+2026-11-03  Brent Rector  <brent@wiseowl.com>
+
+	* parser.y (find_prototype_definition): fixing #1286 by testing the option
+	  the warning is issued under, cb_warn_prototypes, instead of
+	  cb_warn_ignored_initial_val, leading to -Wprototypes alone reporting
+	  a prototype with no definition seen while -Winitial-value doesn't
 
 2026-10-27  Simon Sobisch <simonsobisch@gnu.org>
 

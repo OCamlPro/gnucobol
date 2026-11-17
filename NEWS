@@ -6,27 +6,6 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
-** at runtime, fatal size exception codes now fail when activated (with
-   -fec=ALL or -fec=SIZE or its subordinates). These exceptions can be
-   caught with ON SIZE ERROR phrases to avoid the program failing when
-   they are set. The affected exception codes are:
-   EC-SIZE
-   EC-SIZE-ADDRESS
-   EC-SIZE-EXPONENTIATION
-   EC-SIZE-OVERFLOW
-   EC-SIZE-TRUNCATION
-   EC-SIZE-UNDERFLOW
-   EC-SIZE-ZERO-DIVIDE
-   Note that those errors, if checking is enabled, will abort in
-   all other places (during item identification and in expressions)
-
-** cobc now checks for binary and multi-byte encoded files and early exit
-   parsing those; the error output for format errors (for example invalid
-   indicator column) is now limited to 5 per source file
-
-** support the COLLATING SEQUENCE clause on indexed files
-   (currently only with the BDB backend)
-
 ** support for time profiling of modules, sections, paragraphs, entries
    and external CALLs. This feature is activated by compiling the modules
    to be profiled with -fprof, and then executing the code with environment
@@ -58,8 +37,32 @@ NEWS - user visible changes				-*- outline -*-
    is experimental, remain untested and will show a warning at compile time 
    when used.
 
-** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
-   extended ScreenIO operations
+** at runtime, fatal size exception codes now fail when activated (with
+   -fec=ALL or -fec=SIZE or its subordinates). These exceptions can be
+   caught with ON SIZE ERROR phrases to avoid the program failing when
+   they are set. The affected exception codes are:
+   EC-SIZE
+   EC-SIZE-ADDRESS
+   EC-SIZE-EXPONENTIATION
+   EC-SIZE-OVERFLOW
+   EC-SIZE-TRUNCATION
+   EC-SIZE-UNDERFLOW
+   EC-SIZE-ZERO-DIVIDE
+   Note that those errors, if checking is enabled, will abort in
+   all other places (during item identification and in expressions)
+
+** support the COLLATING SEQUENCE clause on indexed files
+   (currently only with the BDB backend)
+
+** cobc now checks for binary and multi-byte encoded files and early exit
+   parsing those; the error output for format errors (for example invalid
+   indicator column) is now limited to 5 per source file
+
+** new runtime configurations: COB_STDIN_FILE, COB_STDOUT_FILE,
+   COB_STDERR_FILE. They allow redirection of stdin/stdout/stderr input/output
+   to a file. These configurations can be set via configuration file,
+   environment variables or programmatically with COB_SET_RUNTIME_STDIN_FILE,
+   COB_SET_RUNTIME_STDOUT_FILE, COB_SET_RUNTIME_STDERR_FILE.
 
 ** new runtime configuration COB_SIGNAL_REGIME, allows skipping registration of
    the signal handler of GnuCOBOL
@@ -67,11 +70,8 @@ NEWS - user visible changes				-*- outline -*-
    already have a registered handler, allowing users to preserve their own
    signal handlers during the initialization of the GnuCOBOL runtime.
 
-** new runtime configurations: COB_STDIN_FILE, COB_STDOUT_FILE,
-   COB_STDERR_FILE. They allow redirection of stdin/stdout/stderr input/output
-   to a file. These configurations can be set via configuration file,
-   environment variables or programmatically with COB_SET_RUNTIME_STDIN_FILE,
-   COB_SET_RUNTIME_STDOUT_FILE, COB_SET_RUNTIME_STDERR_FILE.
+** new runtime configuration COB_HIDE_CURSOR, allows to hide the cursor during
+   extended ScreenIO operations
 
 ** added multiple window functionality with new system function CBL_GC_WINDOW
 
@@ -99,6 +99,17 @@ NEWS - user visible changes				-*- outline -*-
    is of category numeric or numeric-edited.  This enables programming
    patterns where invalid numerical data (e.g, SPACES) encode "absent"
    data
+
+** EC-SIZE will now do much more checks, if you compile with runtime checks
+   and need to preserve the behaviour (we highly suggest to fix the programs
+   instead), you can disable the most likely ones by compiling with
+   -fno-ec=SIZE-TRUNCATION -fno-ec=SIZE-ZERO-DIVIDE
+
+** The common extension CALL ... USING numeric-literal now passes data according
+   to the specified -std which may switch to big-endian and truncates passed
+   literals to 32bit; if you compile with a -std you may revert to the old
+   behaviour (still the default if no -std is given) by using
+   -fcall-literal-byteorder=native -fcall-literal-size=dynamic
 
 ** bugfix on replacement pseudo-text: in COPY REPLACING and REPLACE, spaces
    around the replacement pseudo-text between == are now removed, conforming
@@ -155,6 +166,13 @@ NEWS - user visible changes				-*- outline -*-
 
 ** New options -M, -MP, -MG, -MD and -MQ to output COPY dependencies
    to a file (see "Dependencies options" in the GnuCOBOL manual)
+
+** New dialect options call-literal-byteorder (native, big-endian) and
+   call-literal-size (dynamic, 32, 64) defining how numeric literals are
+   passed BY REFERENCE or BY CONTENT in CALL; the default is the previous
+   behavior (native, 4 bytes or 8 bytes if larger), the dialects mf-strict,
+   ibm-strict, mvs-strict, gcos-strict and rm-strict use big-endian and
+   32 bits (truncating, with -Wadditional warning)
 
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table

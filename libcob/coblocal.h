@@ -477,6 +477,7 @@ struct config_tbl {
 
 /* Local function prototypes */
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
+COB_HIDDEN unsigned char	*cob_param_low_byte	(const int, const void *);
 COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
@@ -597,6 +598,7 @@ COB_HIDDEN int	cob_debug_dump		(void *mem, int len);
          as these parts should be surrounded by #ifdef COB_DEBUG_LOG */
 #endif
 COB_HIDDEN FILE			*cob_get_dump_file	(void);
+COB_HIDDEN int			cob_dump_protected	(void (*) (void *), void *);
 
 
 #if 0 /* currently not used */
