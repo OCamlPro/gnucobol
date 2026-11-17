@@ -218,6 +218,14 @@ NEWS - user visible changes				-*- outline -*-
    this behavior depended on the underlying platform, where the default was
    often "global." The default behavior is now explicitly set to "local".
 
+** File sharing on OPEN is now properly handled for SEQUENTIAL, LINE
+   SEQUENTIAL and RELATIVE files: the SHARING clause and the SHARING phrase
+   of OPEN are honored (ALL OTHER and READ ONLY were previously ignored),
+   including between two file connectors of the same program; the behavior
+   follows Micro Focus where possible and ISO 2023 otherwise;
+   note: a file in use by an older runtime version cannot be opened, and an
+   older runtime version may still open INPUT a file in use by this version
+
 * New build features
 
 ** while GMP is the basis for GnuCOBOL's precise computations, its header

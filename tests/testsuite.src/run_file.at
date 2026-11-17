@@ -6757,8 +6757,6 @@ AT_CLEANUP
 AT_SETUP([SEQUENTIAL file with LOCK MODE EXCLUSIVE])
 AT_KEYWORDS([runfile])
 
-AT_XFAIL_IF([true])
-
 AT_DATA([prog1.cob], [
        identification division.
        program-id. prog1.
@@ -6827,8 +6825,6 @@ AT_CLEANUP
 AT_SETUP([SEQUENTIAL file with OPEN WITH LOCK])
 AT_KEYWORDS([runfile])
 
-AT_XFAIL_IF([true])
-
 AT_DATA([prog1.cob], [
        identification division.
        program-id. prog1.
@@ -6894,8 +6890,6 @@ AT_CLEANUP
 
 AT_SETUP([SEQUENTIAL file with SHARING NO])
 AT_KEYWORDS([runfile])
-
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -7040,8 +7034,6 @@ AT_CLEANUP
 AT_SETUP([SEQUENTIAL file with blocked lock])
 AT_KEYWORDS([runfile])
 
-AT_XFAIL_IF([true])
-
 AT_DATA([prog1.cob], [
        identification division.
        program-id. prog1.
@@ -7115,6 +7107,7 @@ AT_CLEANUP
 ## tries each open of the second list. Codes: sharing N(o other),
 ## R(ead only), A(ll other), D(efault), L (WITH LOCK); then open mode
 ## I(nput), U (I-O), E(xtend), O(utput).
+## Expected results follow ISO 2023 table 19 and Micro Focus.
 
 m4_define([_FILE_SHARING_PROG], [AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -7237,6 +7230,49 @@ m4_define([_FILE_SHARING_PROG], [AT_DATA([prog.cob], [
 ])])
 
 m4_define([_FILE_SHARING_TESTS], [
+AT_SETUP([$1 file sharing: SHARING phrase])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# as MF: a file held in OUTPUT with SHARING ALL refuses any other open,
+# where the standard admits INPUT, I-O and EXTEND
+AT_CHECK([$COBCRUN_DIRECT ./prog HO NI NU NE NO RI RU RE RO AI AU AE AO VS NI NU NE NO RI RU RE RO AI AU AE AO], [0],
+[NI: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=61 AU=61 AE=61 AO=61
+NU: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=61 AU=61 AE=61 AO=61
+NE: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=61 AU=61 AE=61 AO=61
+NO: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=61 AU=61 AE=61 AO=61
+RI: NI=61 NU=61 NE=61 NO=61 RI=00 RU=61 RE=61 RO=61 AI=00 AU=61 AE=61 AO=61
+RU: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=00 AU=61 AE=61 AO=61
+RE: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=00 AU=61 AE=61 AO=61
+RO: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=00 AU=61 AE=61 AO=61
+AI: NI=61 NU=61 NE=61 NO=61 RI=00 RU=00 RE=00 RO=61 AI=00 AU=00 AE=00 AO=61
+AU: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=00 AU=00 AE=00 AO=61
+AE: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=00 AU=00 AE=00 AO=61
+AO: NI=61 NU=61 NE=61 NO=61 RI=61 RU=61 RE=61 RO=61 AI=61 AU=61 AE=61 AO=61
+], [])
+# a refused OPEN OUTPUT keeps the file; MF defect not followed: there
+# OPEN OUTPUT SHARING READ ONLY succeeds and empties the file being read
+AT_CHECK([$COBCRUN_DIRECT ./prog RD AI VS AO RO DO], [0],
+[AI: AO=61 RO=61 DO=61
+holder read: 00 one
+], [])
+# UNLOCK and COMMIT keep the file lock, CLOSE releases it
+AT_CHECK([$COBCRUN_DIRECT ./prog UN NU LU VS AI DI], [0],
+[NU: AI=61 DI=61
+LU: AI=61 DI=61
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog CM NU LU VS AI DI], [0],
+[NU: AI=61 DI=61
+LU: AI=61 DI=61
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog CL NU LU VS AU], [0],
+[NU: AU=00
+LU: AU=00
+], [])
+
+AT_CLEANUP
+
 AT_SETUP([$1 file sharing: no clause])
 AT_KEYWORDS([runfile sharing lock])
 
@@ -7252,6 +7288,14 @@ AT_CHECK([$COBCRUN_DIRECT ./prog RD DI VS DO], [0],
 [DI: DO=61
 holder read: 00 one
 ], [])
+# OPEN WITH LOCK is exclusive
+AT_CHECK([$COBCRUN_DIRECT ./prog HO LI LU LE LO DI VS DI LI], [0],
+[LI: DI=61 LI=61
+LU: DI=61 LI=61
+LE: DI=61 LI=61
+LO: DI=61 LI=61
+DI: DI=00 LI=61
+], [])
 # UNLOCK and COMMIT keep the file lock, CLOSE releases it
 AT_CHECK([$COBCRUN_DIRECT ./prog UN DU VS DI DU], [0],
 [DU: DI=61 DU=61
@@ -7262,6 +7306,199 @@ AT_CHECK([$COBCRUN_DIRECT ./prog CM DU VS DI DU], [0],
 AT_CHECK([$COBCRUN_DIRECT ./prog CL DU DO VS DU], [0],
 [DU: DU=00
 DO: DU=00
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: LOCK MODE MANUAL])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# MF shares the file here; kept exclusive without SHARING, as there
+# are no record locks to protect concurrent updates
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
+[DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61 RI=00 NI=61
+DU: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+DE: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+AI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=00 NI=61
+AU: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=61 NI=61
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: LOCK MODE AUTOMATIC])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [LOCK MODE IS AUTOMATIC])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# MF shares the file here; kept exclusive without SHARING, as there
+# are no record locks to protect concurrent updates
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
+[DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61 RI=00 NI=61
+DU: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+DE: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+AI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=00 NI=61
+AU: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=61 NI=61
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: LOCK MODE EXCLUSIVE])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [LOCK MODE IS EXCLUSIVE])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO VS DI DU DE DO], [0],
+[DI: DI=61 DU=61 DE=61 DO=61
+DU: DI=61 DU=61 DE=61 DO=61
+DE: DI=61 DU=61 DE=61 DO=61
+DO: DI=61 DU=61 DE=61 DO=61
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: SHARING ALL clause])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [SHARING WITH ALL OTHER LOCK MODE IS MANUAL])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO NI RU VS DI DU DE DO NI RI], [0],
+[DI: DI=00 DU=00 DE=00 DO=61 NI=61 RI=00
+DU: DI=00 DU=00 DE=00 DO=61 NI=61 RI=61
+DE: DI=00 DU=00 DE=00 DO=61 NI=61 RI=61
+DO: DI=61 DU=61 DE=61 DO=61 NI=61 RI=61
+NI: DI=61 DU=61 DE=61 DO=61 NI=61 RI=61
+RU: DI=00 DU=61 DE=61 DO=61 NI=61 RI=61
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: SHARING READ ONLY clause])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [SHARING WITH READ ONLY LOCK MODE IS MANUAL])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AU VS DI DU DE DO AI AU], [0],
+[DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61
+DU: DI=61 DU=61 DE=61 DO=61 AI=00 AU=61
+DE: DI=61 DU=61 DE=61 DO=61 AI=00 AU=61
+DO: DI=61 DU=61 DE=61 DO=61 AI=00 AU=61
+AU: DI=61 DU=61 DE=61 DO=61 AI=00 AU=00
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: SHARING NO clause])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [SHARING WITH NO OTHER LOCK MODE IS MANUAL])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI AI VS DI AI], [0],
+[DI: DI=61 AI=61
+AI: DI=61 AI=00
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([$1 file sharing: two connectors])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL])
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F ASSIGN "shared.dat"
+              ORGANIZATION IS $1
+              LOCK MODE IS MANUAL
+              FILE STATUS IS FS.
+           SELECT G ASSIGN "shared.dat"
+              ORGANIZATION IS $1
+              LOCK MODE IS MANUAL
+              FILE STATUS IS GS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  F.
+       01  R             PIC X(10).
+       FD  G.
+       01  GR            PIC X(10).
+       WORKING-STORAGE SECTION.
+       01  FS            PIC XX.
+       01  GS            PIC XX.
+       01  P             PIC 999 VALUE 1.
+       01  OUT           PIC X(120) VALUE SPACES.
+       01  CMD           PIC X(40) VALUE SPACES.
+       01  OS-CHECK      PIC X(7).
+         88 OS-IS-WINDOWS-OR-DOS VALUES 'WINDOWS' 'FREEDOS'.
+       PROCEDURE DIVISION.
+           ACCEPT OS-CHECK FROM ENVIRONMENT "COB_ON_CYGWIN"
+           IF OS-CHECK = SPACES
+              ACCEPT OS-CHECK FROM ENVIRONMENT "OS"
+           END-IF
+           IF OS-CHECK = SPACES
+              ACCEPT OS-CHECK FROM ENVIRONMENT "OS_NAME"
+           END-IF
+           INSPECT OS-CHECK CONVERTING "werfdosin" TO "WERFDOSIN"
+           OPEN OUTPUT F
+           MOVE "one" TO R
+           WRITE R
+           CLOSE F
+      *> exclusive connector refuses a second one
+           OPEN I-O SHARING WITH NO OTHER F
+           OPEN INPUT SHARING WITH ALL OTHER G
+           STRING "NU: F=" FS " G=" GS DELIMITED BY SIZE
+              INTO OUT POINTER P
+           CLOSE F
+      *> read-only sharing refuses a writer, accepts a reader
+           OPEN INPUT SHARING WITH READ ONLY F
+           OPEN I-O SHARING WITH ALL OTHER G
+           STRING " | RI: F=" FS " G=" GS DELIMITED BY SIZE
+              INTO OUT POINTER P
+           OPEN INPUT SHARING WITH ALL OTHER G
+           STRING " G=" GS DELIMITED BY SIZE INTO OUT POINTER P
+      *> closing the second connector keeps the first one's lock
+           CLOSE G
+           MOVE "P RI AU AI" TO CMD(8:)
+           PERFORM CALL-PROBER
+           CLOSE F
+           OPEN I-O SHARING WITH ALL OTHER F
+           OPEN I-O SHARING WITH ALL OTHER G
+           STRING " | AU: F=" FS " G=" GS DELIMITED BY SIZE
+              INTO OUT POINTER P
+           CLOSE G
+           MOVE "P AU NI AU" TO CMD(8:)
+           PERFORM CALL-PROBER
+           CLOSE F
+      *> refused OPEN OUTPUT keeps the file
+           OPEN INPUT SHARING WITH ALL OTHER F
+           OPEN OUTPUT SHARING WITH ALL OTHER G
+           STRING " | AI: F=" FS " G=" GS DELIMITED BY SIZE
+              INTO OUT POINTER P
+           READ F
+           STRING " read=" FS " " R(1:3) DELIMITED BY SIZE
+              INTO OUT POINTER P
+           CLOSE F
+           DISPLAY OUT(1:P - 1)
+           STOP RUN.
+       CALL-PROBER.
+           IF OS-IS-WINDOWS-OR-DOS
+              MOVE ".\prog" TO CMD(1:6)
+           ELSE
+              MOVE "./prog" TO CMD(1:6)
+           END-IF
+           CALL "SYSTEM" USING CMD.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[RI: AU=61 AI=00
+AU: NI=61 AU=00
+NU: F=00 G=61 | RI: F=00 G=61 G=00 | AU: F=00 G=00 | AI: F=00 G=61 read=00 one
 ], [])
 
 AT_CLEANUP
@@ -16131,9 +16368,6 @@ AT_KEYWORDS([runfile WRITE REWRITE READ COB_SYNC])
 # check that COB_SYNC makes LINE SEQUENTIAL WRITE and REWRITE visible
 # to a second SELECT on the same file
 
-# Note: skipped on Windows, where the file is locked while being written
-AT_SKIP_IF([test "$COB_ON_WINDOWS" = "yes"])
-
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
@@ -16142,9 +16376,12 @@ AT_DATA([prog.cob], [
        FILE-CONTROL.
            SELECT O-FILE ASSIGN TO "file.txt"
                ORGANIZATION IS LINE SEQUENTIAL
+               SHARING WITH READ ONLY
                FILE STATUS IS O-FILE-STATUS.
            SELECT I-FILE ASSIGN TO "file.txt"
                ORGANIZATION IS LINE SEQUENTIAL
+               SHARING WITH ALL OTHER
+               LOCK MODE IS MANUAL
                FILE STATUS IS I-FILE-STATUS.
        DATA DIVISION.
        FILE SECTION.

@@ -3,6 +3,10 @@
 
 	* testsuite.src/run_file.at: add file sharing tests for SEQUENTIAL,
 	  LINE SEQUENTIAL and RELATIVE files
+	* testsuite.src/run_file.at: remove the expected failure of the file
+	  sharing tests on SEQUENTIAL files
+	* testsuite.src/run_file.at (COB_SYNC): add SHARING clauses and
+	  no longer skip the test on Windows
 
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 

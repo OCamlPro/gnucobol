@@ -1734,7 +1734,345 @@ cob_file_write_opt (cob_file *f, const int opt)
 	return 0;
 }
 
-/* Empty the file (OPEN OUTPUT), once it is locked */
+/* File sharing on OPEN, for SEQUENTIAL, LINE SEQUENTIAL and RELATIVE files
+
+   A single lock on the whole file can only tell "shared" from "exclusive",
+   which is not enough for three sharing modes and four open modes. So each
+   file connector locks a few single bytes located far beyond the data
+   (at COB_SHARE_BASE), each one having its own meaning:
+
+     COB_SHARE_ANY          the file is open
+     COB_SHARE_UPDATE       in a mode other than INPUT
+     COB_SHARE_DENY_UPDATE  others may only open it INPUT
+     COB_SHARE_DENY_ALL     nobody else may open it
+
+   An OPEN is refused (status 61) when the locks it needs conflict with
+   those of the other file connectors.
+
+   We follow Micro Focus (MF) where it makes sense, ISO 2023 otherwise:
+   - OUTPUT with SHARING WITH ALL OTHER is exclusive (MF; ISO lets others
+     open the file INPUT, I-O or EXTEND)
+   - OPEN OUTPUT SHARING WITH READ ONLY is refused on a file in use
+     (ISO; MF accepts it and empties the file)
+   - INPUT without SHARING is shared READ ONLY, but accepts a file already
+     open for update (MF)
+   - LOCK MODE MANUAL / AUTOMATIC without SHARING does not share the file,
+     as these organizations have no record locks (MF shares it)
+
+   Note: with fcntl, locks belong to the process: we find its other file
+   connectors in file_cache, and set their locks again after a close (which
+   drops all the locks of the process on that file). With LockFileEx, locks
+   can only be tested by setting them, hence the COB_SHARE_MUTEX byte. */
+
+#define COB_SHARE_ANY		(1U << 0)	/* file is open */
+#define COB_SHARE_UPDATE	(1U << 1)	/* open mode other than INPUT */
+#define COB_SHARE_DENY_UPDATE	(1U << 2)	/* others may only read */
+#define COB_SHARE_DENY_ALL	(1U << 3)	/* no other allowed */
+#define COB_SHARE_NUM_LOCKS	4
+#define COB_SHARE_MUTEX		COB_SHARE_NUM_LOCKS
+#define COB_SHARE_ACTIVE	0x80U		/* in share_mode: locks are set */
+#define COB_SHARE_DEFAULT	0x40U		/* in share_mode: no SHARING given */
+#define COB_SHARE_MODES		\
+	(COB_SHARE_READ_ONLY | COB_SHARE_ALL_OTHER | COB_SHARE_NO_OTHER)
+
+static unsigned int
+share_locks (const unsigned int share_mode, const int open_mode)
+{
+	unsigned int	locks = COB_SHARE_ANY;
+
+	if (open_mode != COB_OPEN_INPUT) {
+		locks |= COB_SHARE_UPDATE;
+	}
+	if (share_mode & COB_SHARE_READ_ONLY) {
+		locks |= COB_SHARE_DENY_UPDATE;
+	}
+	/* As per MF, OUTPUT with SHARING WITH ALL OTHER is exclusive */
+	if ((share_mode & COB_SHARE_NO_OTHER)
+	 || (open_mode == COB_OPEN_OUTPUT
+	  && (share_mode & COB_SHARE_ALL_OTHER))) {
+		locks |= COB_SHARE_DENY_ALL;
+	}
+	return locks;
+}
+
+/* Check the wanted locks against those of the other file connectors */
+static int
+share_conflict (const unsigned int locks, const int open_mode,
+		const unsigned int others)
+{
+	if (!(others & COB_SHARE_ANY)) {
+		return 0;
+	}
+	return (others & COB_SHARE_DENY_ALL)
+	    || (locks & COB_SHARE_DENY_ALL)
+	    || open_mode == COB_OPEN_OUTPUT
+	    || ((locks & COB_SHARE_UPDATE) && (others & COB_SHARE_DENY_UPDATE))
+	    || ((locks & COB_SHARE_DENY_UPDATE) && (others & COB_SHARE_UPDATE));
+}
+
+#ifdef	HAVE_FCNTL
+
+#define COB_SHARE_BASE	\
+	((off_t)(sizeof (off_t) > 4 ? (cob_s64_t)1 << 62 : (cob_s64_t)0x7FFFFF00))
+
+static int
+share_set_locks (const int fd, const unsigned int locks)
+{
+	struct flock	lock;
+	unsigned int	i;
+
+	for (i = 0; i < COB_SHARE_NUM_LOCKS; i++) {
+		if (!(locks & (1U << i))) {
+			continue;
+		}
+		memset ((void *)&lock, 0, sizeof (struct flock));
+		/* Note: a write lock is also seen by older versions */
+		lock.l_type = (1U << i) == COB_SHARE_DENY_ALL ? F_WRLCK : F_RDLCK;
+		lock.l_whence = SEEK_SET;
+		lock.l_start = COB_SHARE_BASE + i;
+		lock.l_len = 1;
+		if (fcntl (fd, F_SETLK, &lock) < 0) {
+			/* The lock type must match the access mode */
+			if (errno != EBADF) {
+				return errno;
+			}
+			lock.l_type = lock.l_type == F_WRLCK ? F_RDLCK : F_WRLCK;
+			if (fcntl (fd, F_SETLK, &lock) < 0) {
+				return errno;
+			}
+		}
+	}
+	return 0;
+}
+
+/* Get the locks set by other processes */
+static unsigned int
+share_get_locks (const int fd)
+{
+	struct flock	lock;
+	unsigned int	locks = 0;
+	unsigned int	i;
+
+	for (i = 0; i < COB_SHARE_NUM_LOCKS; i++) {
+		memset ((void *)&lock, 0, sizeof (struct flock));
+		lock.l_type = F_WRLCK;
+		lock.l_whence = SEEK_SET;
+		lock.l_start = COB_SHARE_BASE + i;
+		lock.l_len = 1;
+		if (fcntl (fd, F_GETLK, &lock) == 0
+		 && lock.l_type != F_UNLCK) {
+			locks |= 1U << i;
+		}
+	}
+	return locks;
+}
+
+/* Get the next file connector of this process on the same file, if any */
+static cob_file *
+share_next_local (struct file_list **l, const cob_file *f,
+		  const struct stat *st)
+{
+	struct stat	ost;
+
+	for (; *l; *l = (*l)->next) {
+		cob_file	*o = (*l)->file;
+		if (o && o != f
+		 && (o->share_mode & COB_SHARE_ACTIVE)
+		 && o->fd >= 0
+		 && fstat (o->fd, &ost) == 0
+		 && ost.st_dev == st->st_dev
+		 && ost.st_ino == st->st_ino) {
+			*l = (*l)->next;
+			return o;
+		}
+	}
+	return NULL;
+}
+
+#elif defined _WIN32
+
+#define COB_SHARE_BASE	((cob_u64_t)1 << 62)
+
+static void
+share_set_pos (OVERLAPPED *pos, const unsigned int i)
+{
+	memset (pos, 0, sizeof (OVERLAPPED));
+	pos->Offset = (DWORD)((COB_SHARE_BASE + i) & 0xFFFFFFFFU);
+	pos->OffsetHigh = (DWORD)((COB_SHARE_BASE + i) >> 32);
+}
+
+static int
+share_lock (HANDLE h, const unsigned int i, const int exclusive)
+{
+	OVERLAPPED	pos;
+	DWORD		flags = LOCKFILE_FAIL_IMMEDIATELY;
+
+	if (exclusive) {
+		flags |= LOCKFILE_EXCLUSIVE_LOCK;
+	}
+	share_set_pos (&pos, i);
+	return LockFileEx (h, flags, 0, 1, 0, &pos) != 0;
+}
+
+static void
+share_unlock (HANDLE h, const unsigned int i)
+{
+	OVERLAPPED	pos;
+
+	share_set_pos (&pos, i);
+	UnlockFileEx (h, 0, 1, 0, &pos);
+}
+
+#endif
+
+/* Get the sharing mode of the file, or its default if not specified */
+static unsigned int
+default_share_mode (const cob_file *f, const int open_mode)
+{
+	const unsigned int	share_mode
+		= f->share_mode & (COB_SHARE_MODES | COB_SHARE_DEFAULT);
+
+	if (f->lock_mode & COB_FILE_EXCLUSIVE) {
+		return COB_SHARE_NO_OTHER;
+	}
+	if (share_mode != 0) {
+		return share_mode;
+	}
+	if (open_mode == COB_OPEN_INPUT) {
+		return COB_SHARE_READ_ONLY | COB_SHARE_DEFAULT;
+	}
+	return COB_SHARE_NO_OTHER;
+}
+
+/* Set the file sharing locks, depending on sharing and open mode */
+static int
+set_file_lock (cob_file *f, const char *filename, const int open_mode)
+{
+	const unsigned int	share_mode = default_share_mode (f, open_mode);
+	unsigned int	locks, wanted;
+
+	f->share_mode = 0;
+	if (memcmp (filename, "/dev/", (size_t)5) == 0) {
+		return 0;
+	}
+	locks = share_locks (share_mode, open_mode);
+	/* As per MF, INPUT without SHARING accepts a file already open
+	   for update, then only lets others read it */
+	wanted = locks;
+	if (share_mode & COB_SHARE_DEFAULT) {
+		wanted &= ~COB_SHARE_DENY_UPDATE;
+	}
+
+#ifdef	HAVE_FCNTL
+	{
+		struct file_list	*l = file_cache;
+		struct stat	st;
+		cob_file	*o;
+		unsigned int	others = 0;
+		int		ret;
+
+		if (fstat (f->fd, &st) != 0) {
+			return COB_STATUS_30_PERMANENT_ERROR;
+		}
+		/* Locks are per process: check its other file connectors */
+		while ((o = share_next_local (&l, f, &st)) != NULL) {
+			others |= share_locks (o->share_mode, o->open_mode);
+		}
+		if (share_conflict (wanted, open_mode, others)
+		 || share_conflict (wanted, open_mode, share_get_locks (f->fd))) {
+			return COB_STATUS_61_FILE_SHARING;
+		}
+		/* Set the locks, then check again (concurrent OPEN) */
+		ret = share_set_locks (f->fd, locks);
+		if (ret == 0
+		 && share_conflict (wanted, open_mode, share_get_locks (f->fd))) {
+			ret = EAGAIN;
+		}
+		switch (ret) {
+		case 0:
+			break;
+		case EACCES:
+		case EAGAIN:
+			return COB_STATUS_61_FILE_SHARING;
+		default:
+			return COB_STATUS_30_PERMANENT_ERROR;
+		}
+	}
+#elif defined _WIN32
+	{
+		HANDLE		h = (HANDLE)_get_osfhandle (f->fd);
+		unsigned int	others = 0;
+		unsigned int	i;
+
+		if (h == INVALID_HANDLE_VALUE) {
+			return 0;
+		}
+		/* Locks are tested by setting them: one OPEN at a time */
+		for (i = 0; !share_lock (h, COB_SHARE_MUTEX, 1); i++) {
+			/* Work around call errors happening on MSYS */
+			if (GetLastError () == ERROR_INVALID_FUNCTION) {
+				return 0;
+			}
+			if (i == 100) {
+				return COB_STATUS_61_FILE_SHARING;
+			}
+			Sleep (5);
+		}
+		for (i = 0; i < COB_SHARE_NUM_LOCKS; i++) {
+			if (share_lock (h, i, 1)) {
+				share_unlock (h, i);
+			} else {
+				others |= 1U << i;
+			}
+		}
+		if (!share_conflict (wanted, open_mode, others)) {
+			for (i = 0; i < COB_SHARE_NUM_LOCKS; i++) {
+				if (locks & (1U << i)) {
+					share_lock (h, i, 0);
+				}
+			}
+			others = 0;
+		}
+		share_unlock (h, COB_SHARE_MUTEX);
+		if (others) {
+			return COB_STATUS_61_FILE_SHARING;
+		}
+	}
+#endif
+	f->share_mode = (unsigned char)(share_mode | COB_SHARE_ACTIVE);
+	return 0;
+}
+
+/* Close the file, releasing its file sharing locks */
+static void
+close_file (cob_file *f, FILE *fp, const int fd)
+{
+#ifdef	HAVE_FCNTL
+	struct stat	st;
+	const int	has_stat = fd >= 0 && fstat (fd, &st) == 0;
+#endif
+
+	f->share_mode = 0;
+	if (fp) {
+		fclose (fp);
+	} else if (fd >= 0) {
+		close (fd);
+	}
+#ifdef	HAVE_FCNTL
+	/* this dropped all locks of the process on that file: set the ones
+	   of its other file connectors again */
+	if (has_stat) {
+		struct file_list	*l = file_cache;
+		cob_file	*o;
+		while ((o = share_next_local (&l, f, &st)) != NULL) {
+			share_set_locks (o->fd,
+				share_locks (o->share_mode, o->open_mode));
+		}
+	}
+#endif
+}
+
+/* Empty the file (OPEN OUTPUT), once the file sharing locks are set */
 static void
 truncate_file (const int fd)
 {
@@ -1745,6 +2083,18 @@ truncate_file (const int fd)
 		/* Not a regular file */
 	}
 #endif
+}
+
+/* Check whether OPEN OUTPUT may get read access (needed for shared locks) */
+static int
+is_regular_or_new (const char *filename)
+{
+	struct stat	st;
+
+	if (stat (filename, &st) != 0) {
+		return errno == ENOENT;
+	}
+	return S_ISREG (st.st_mode);
 }
 
 /*
@@ -1770,9 +2120,10 @@ cob_fd_file_open (cob_file *f, char *filename,
 		break;
 	case COB_OPEN_OUTPUT:
 		nonexistent = 0;
-		/* Truncated later, once the file is locked */
+		/* Truncated later, once the file sharing locks are set */
 		fdmode |= O_CREAT;
-		if (f->organization == COB_ORG_RELATIVE) {
+		if (f->organization == COB_ORG_RELATIVE
+		 || is_regular_or_new (filename)) {
 			fdmode |= O_RDWR;
 		} else {
 			fdmode |= O_WRONLY;
@@ -1811,6 +2162,13 @@ cob_fd_file_open (cob_file *f, char *filename,
 	}
 
 	fd = open (filename, fdmode, fperms);
+	if (fd == -1
+	 && errno == EACCES
+	 && mode == COB_OPEN_OUTPUT
+	 && f->organization != COB_ORG_RELATIVE) {
+		/* No read access */
+		fd = open (filename, (fdmode & ~O_RDWR) | O_WRONLY, fperms);
+	}
 	if (fd != -1) {
 		errno = 0;
 	}
@@ -1837,7 +2195,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 		 during OPEN processing" - which we do here on the first record */
 			if (f->record->size < f->record_min
 			 || f->record->size > f->record_max) {
-				close (fd);
+				close_file (f, NULL, fd);
 				return COB_STATUS_39_CONFLICT_ATTRIBUTE;
 			}
 #else
@@ -1875,60 +2233,19 @@ cob_fd_file_open (cob_file *f, char *filename,
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 
-#ifdef	HAVE_FCNTL
-	/* Lock the file */
-	if (memcmp (filename, "/dev/", (size_t)5)) {
-		struct flock	lock;
-		memset ((void *)&lock, 0, sizeof (struct flock));
-		if (mode != COB_OPEN_INPUT) {
-			lock.l_type = F_WRLCK;
-		} else {
-			lock.l_type = F_RDLCK;
-		}
-		lock.l_whence = SEEK_SET;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		errno = 0;
-		if (fcntl (fd, F_SETLK, &lock) < 0) {
-			int		ret = errno;
-			f->open_mode = COB_OPEN_CLOSED;
-			close (fd);
-			switch (ret) {
-			case EACCES:
-			case EAGAIN:
-#ifdef EDEADLK
-			case EDEADLK:
-#endif
-				return COB_STATUS_61_FILE_SHARING;
-			default:
-				return COB_STATUS_30_PERMANENT_ERROR;
-			}
-		}
-	}
-#elif defined _WIN32
+	f->fd = fd;
 	{
-		HANDLE osHandle = (HANDLE)_get_osfhandle (fd);
-		if (osHandle != INVALID_HANDLE_VALUE) {
-			DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-			OVERLAPPED fromStart = { 0 };
-			if (mode != COB_OPEN_INPUT) flags |= LOCKFILE_EXCLUSIVE_LOCK;
-			if (!LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
-				DWORD err = GetLastError ();
-				/* normally that return value would not happen, we use it to
-				   work around call errors happening on MSYS */
-				if (err != ERROR_INVALID_FUNCTION) {
-					f->open_mode = COB_OPEN_CLOSED;
-					close (fd);
-					return COB_STATUS_61_FILE_SHARING;
-				}
-			}
+		const int	ret = set_file_lock (f, filename, mode);
+		if (ret) {
+			f->open_mode = COB_OPEN_CLOSED;
+			close_file (f, NULL, fd);
+			f->fd = -1;
+			return ret;
 		}
 	}
-#endif
 	if (mode == COB_OPEN_OUTPUT) {
 		truncate_file (fd);
 	}
-	f->fd = fd;
 	f->record_off = -1;
 #if 0	/* Simon: disabled, this function is expected to not use a FILE* */
 	{
@@ -2080,9 +2397,10 @@ cob_file_open (cob_file *f, char *filename,
 	/* LCOV_EXCL_STOP */
 	}
 
-	if (mode == COB_OPEN_OUTPUT) {
-		/* Truncated later, once the file is locked */
-		int	fdmode = O_CREAT | O_WRONLY;
+	if (mode == COB_OPEN_OUTPUT
+	 && is_regular_or_new (filename)) {
+		/* Truncated later, once the file sharing locks are set */
+		int	fdmode = O_CREAT | O_RDWR;
 		int	fd;
 #ifdef	_WIN32
 		const int	fperms = _S_IREAD | _S_IWRITE;
@@ -2092,6 +2410,12 @@ cob_file_open (cob_file *f, char *filename,
 		fdmode |= cobsetptr->cob_unix_lf ? O_BINARY : O_TEXT;
 		errno = 0;
 		fd = open (filename, fdmode, fperms);
+		if (fd == -1
+		 && errno == EACCES) {
+			/* No read access */
+			errno = 0;
+			fd = open (filename, (fdmode & ~O_RDWR) | O_WRONLY, fperms);
+		}
 		fp = NULL;
 		if (fd != -1) {
 			fp = fdopen (fd, fmode);
@@ -2147,7 +2471,7 @@ cob_file_open (cob_file *f, char *filename,
 	if (unlikely (f->flag_select_features & COB_SELECT_LINAGE)) {
 		if (file_linage_check (f)) {
 			if (fp) {
-				fclose (fp);
+				close_file (f, fp, -1);
 			}
 			return COB_STATUS_57_I_O_LINAGE;
 		}
@@ -2162,65 +2486,17 @@ cob_file_open (cob_file *f, char *filename,
 		f->fd = -1;
 	}
 
-#ifdef	HAVE_FCNTL
-	/* Lock the file */
-	if (fp && memcmp (filename, "/dev/", (size_t)5)) {
-		struct flock		lock;
-		memset ((void *)&lock, 0, sizeof (struct flock));
-		if (mode != COB_OPEN_INPUT) {
-			lock.l_type = F_WRLCK;
-		} else {
-			lock.l_type = F_RDLCK;
-		}
-		lock.l_whence = SEEK_SET;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		errno = 0;
-		if (fcntl (f->fd, F_SETLK, &lock) < 0) {
-			int ret = errno;
+	if (fp) {
+		const int	ret = set_file_lock (f, filename, mode);
+		if (ret) {
 			f->open_mode = COB_OPEN_CLOSED;
+			close_file (f, fp, -1);
 			f->fd = -1;
-			fclose (fp);
-			switch (ret) {
-			case EACCES:
-			case EAGAIN:
-#ifdef EDEADLK
-			/* CHECKME: can that happen outside of F_SETLKW, which we don't use? */
-			case EDEADLK:
-#endif
-				return COB_STATUS_61_FILE_SHARING;
-			default:
-				return COB_STATUS_30_PERMANENT_ERROR;
-			}
+			return ret;
 		}
-	}
-#elif defined _WIN32
-	{
-		/* Lock the file */
-		if (fp) {
-			HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
-			if (osHandle != INVALID_HANDLE_VALUE) {
-				DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-				OVERLAPPED fromStart = {0};
-				if (mode != COB_OPEN_INPUT) flags |= LOCKFILE_EXCLUSIVE_LOCK;
-				if (!LockFileEx (osHandle, flags, 0, MAXDWORD, MAXDWORD, &fromStart)) {
-					DWORD err = GetLastError ();
-					/* normally that return value would not happen, we use it to
-					   work around call errors happening on MSYS */
-					if (err != ERROR_INVALID_FUNCTION) {
-						f->open_mode = COB_OPEN_CLOSED;
-						fclose (fp);
-						f->fd = -1;
-						return COB_STATUS_61_FILE_SHARING;
-					}
-				}
-			}
+		if (mode == COB_OPEN_OUTPUT) {
+			truncate_file (f->fd);
 		}
-	}
-#endif
-	if (fp
-	 && mode == COB_OPEN_OUTPUT) {
-		truncate_file (f->fd);
 	}
 	f->file = fp;
 	if (f->flag_optional && nonexistent) {
@@ -2259,50 +2535,10 @@ cob_file_close (cob_file *f, const enum cob_close_mode opt)
 				COB_CHECKED_WRITE (f->fd, "\n", 1);
 			}
 		}
-		/* Unlock the file */
-		if (f->fd >= 0) {
-#ifdef	HAVE_FCNTL
-			struct flock lock;
-			memset ((void *)&lock, 0, sizeof (struct flock));
-			lock.l_type = F_UNLCK;
-			lock.l_whence = SEEK_SET;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			errno = 0;
-			if (fcntl (f->fd, F_SETLK, &lock) == -1) {
-#if 1 /* CHECKME - What is the correct thing to do here? */
-				/* not translated as "testing only" */
-				cob_runtime_warning ("issue during unlock (%s), errno: %d", "cob_file_close", errno);
-#endif
-			}
-#elif defined _WIN32
-			{
-				HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
-				/* CHECKME: Should this use UnlockFileEx ? */
-				if (osHandle != INVALID_HANDLE_VALUE
-				 && !UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
-					const DWORD last_error = GetLastError ();
-					if (last_error != 158) {	/* no locked region */
-#if 1					/* CHECKME - What is the correct thing to do here? */
-						/* not translated as "testing only" */
-						cob_runtime_warning ("issue during UnLockFile (%s), lastError: " CB_FMT_LLU,
-							"cob_file_close", (cob_u64_t)last_error);
-#endif
-					}
-				}
-			}
-#endif
-		}
 		/* Close the file */
-		if (f->file) {
-			fclose ((FILE *)f->file);
-			f->file = NULL;
-			f->fd = -1;
-		} else
-		if (f->fd >= 0) {
-			close (f->fd);
-			f->fd = -1;
-		}
+		close_file (f, (FILE *)f->file, f->fd);
+		f->file = NULL;
+		f->fd = -1;
 		if (opt == COB_CLOSE_NO_REWIND) {
 			f->open_mode = COB_OPEN_CLOSED;
 			return COB_STATUS_07_SUCCESS_NO_UNIT;
@@ -2329,19 +2565,7 @@ open_next (cob_file *f)
 #endif
 		int fmode = O_BINARY;	/* without this ftell does not work on some systems */
 
-#ifdef _WIN32	/* win32 seems to resolve the file descriptor from the file handler
-		   on fclose - and then aborts because it was closed directly before */
-		if (f->file) {
-			fclose (f->file);
-		} else {
-			close (f->fd);
-		}
-#else
-		close (f->fd);
-		if (f->file) {
-			fclose (f->file);
-		}
-#endif
+		close_file (f, (FILE *)f->file, f->fd);
 		if (f->open_mode == COB_OPEN_I_O) {
 			fmode |= O_RDWR;
 		} else {
@@ -6367,7 +6591,10 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	f->flag_first_read = 2;
 	f->flag_operation = 0;
 	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
-	f->lock_mode |= sharing;
+	if (sharing & (COB_LOCK_OPEN_EXCLUSIVE | COB_SHARE_NO_OTHER)) {
+		f->lock_mode |= COB_LOCK_OPEN_EXCLUSIVE;
+	}
+	f->share_mode = (unsigned char)(sharing & COB_SHARE_MODES);
 
 	if (f->fcd) {
 		cob_fcd_file_sync (f, file_open_name);		/* Copy app's FCD to cob_file */

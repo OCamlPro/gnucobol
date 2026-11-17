@@ -1,4 +1,8 @@
 
+2026-11-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y (sharing_option): pass all SHARING options to the runtime
+
 2026-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c, tree.h, parser.y (cb_setup_prototype): renamed + moved from
