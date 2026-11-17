@@ -137,6 +137,11 @@ NEWS - user visible changes				-*- outline -*-
 ** a division by zero in a subscript or a reference modification does not
    abort with SIGFPE any more, but raises EC-SIZE-ZERO-DIVIDE
 
+** OPEN OUTPUT no longer empties a SEQUENTIAL, LINE SEQUENTIAL or RELATIVE
+   file when it is refused because the file is in use (status 61), and
+   UNLOCK (as well as COMMIT and ROLLBACK) no longer releases the file-level
+   lock taken at OPEN, which is now held until CLOSE
+
 * Changes to the COBOL compiler (cobc) options:
 
 ** New option --copy COPYBOOK to load copybooks before parsing files. This

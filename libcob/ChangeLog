@@ -1,4 +1,10 @@
 
+2026-11-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_fd_file_open, cob_file_open): only empty the file
+	  on OPEN OUTPUT once the lock is acquired
+	* fileio.c (cob_file_unlock): do not release the file lock
+
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,

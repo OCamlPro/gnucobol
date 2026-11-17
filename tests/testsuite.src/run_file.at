@@ -7110,6 +7110,168 @@ AT_CHECK([$COBCRUN_DIRECT ./prog1], [0], [], [])
 AT_CLEANUP
 
 
+## File sharing on OPEN, checked from a second process: the holder opens
+## the file as in the first list (after an action code), the prober then
+## tries each open of the second list. Codes: sharing N(o other),
+## R(ead only), A(ll other), D(efault), L (WITH LOCK); then open mode
+## I(nput), U (I-O), E(xtend), O(utput).
+
+m4_define([_FILE_SHARING_PROG], [AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT F ASSIGN "shared.dat"
+              ORGANIZATION IS $1
+              $2
+              FILE STATUS IS FS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  F.
+       01  R             PIC X(10).
+       WORKING-STORAGE SECTION.
+       01  FS            PIC XX.
+       01  ARG           PIC X(120).
+       01  ACT           PIC XX.
+       01  OP            PIC XX.
+       01  I             PIC 999.
+       01  P             PIC 999 VALUE 1.
+       01  OUT           PIC X(120) VALUE SPACES.
+       01  CMD           PIC X(140) VALUE SPACES.
+       01  OS-CHECK      PIC X(7).
+         88 OS-IS-WINDOWS-OR-DOS VALUES 'WINDOWS' 'FREEDOS'.
+       PROCEDURE DIVISION.
+           ACCEPT ARG FROM COMMAND-LINE
+           MOVE ARG(1:2) TO ACT
+           IF ACT = "P "
+              PERFORM PROBER
+           ELSE
+              PERFORM HOLDER
+           END-IF
+           STOP RUN.
+      *> open in each requested way, report the statuses
+       PROBER.
+           STRING ARG(3:2) ":" DELIMITED BY SIZE INTO OUT POINTER P
+           PERFORM VARYING I FROM 6 BY 3 UNTIL ARG(I:2) = SPACES
+              MOVE ARG(I:2) TO OP
+              PERFORM OPEN-F
+              STRING " " OP "=" FS DELIMITED BY SIZE
+                 INTO OUT POINTER P
+              IF FS(1:1) = "0"
+                 CLOSE F
+              END-IF
+           END-PERFORM
+           DISPLAY OUT(1:P - 1).
+      *> hold the file in each given way while a prober runs
+       HOLDER.
+           ACCEPT OS-CHECK FROM ENVIRONMENT "COB_ON_CYGWIN"
+           IF OS-CHECK = SPACES
+              ACCEPT OS-CHECK FROM ENVIRONMENT "OS"
+           END-IF
+           IF OS-CHECK = SPACES
+              ACCEPT OS-CHECK FROM ENVIRONMENT "OS_NAME"
+           END-IF
+           INSPECT OS-CHECK CONVERTING "werfdosin" TO "WERFDOSIN"
+           PERFORM VARYING I FROM 4 BY 3 UNTIL ARG(I:2) = "VS"
+              MOVE ARG(I:2) TO OP
+              OPEN OUTPUT F
+              MOVE "one" TO R
+              WRITE R
+              MOVE "two" TO R
+              WRITE R
+              CLOSE F
+              PERFORM OPEN-F
+              IF FS NOT = "00"
+                 DISPLAY "holder " OP " failed: " FS
+              END-IF
+              EVALUATE ACT
+              WHEN "UN" UNLOCK F
+              WHEN "CM" COMMIT
+              WHEN "CL" CLOSE F
+              END-EVALUATE
+              MOVE SPACES TO CMD
+              IF OS-IS-WINDOWS-OR-DOS
+                 STRING ".\prog P " DELIMITED BY SIZE INTO CMD
+              ELSE
+                 STRING "./prog P " DELIMITED BY SIZE INTO CMD
+              END-IF
+              MOVE OP TO CMD(10:2)
+              PERFORM VARYING P FROM I BY 3 UNTIL ARG(P:2) = "VS"
+                 CONTINUE
+              END-PERFORM
+              MOVE ARG(P + 3:) TO CMD(13:)
+              MOVE 1 TO P
+              CALL "SYSTEM" USING CMD
+              IF ACT = "RD"
+                 READ F
+                 DISPLAY "holder read: " FS " " R(1:3)
+              END-IF
+              IF ACT NOT = "CL"
+                 CLOSE F
+              END-IF
+           END-PERFORM.
+       OPEN-F.
+           EVALUATE OP
+           WHEN "NI" OPEN INPUT SHARING WITH NO OTHER F
+           WHEN "NU" OPEN I-O SHARING WITH NO OTHER F
+           WHEN "NE" OPEN EXTEND SHARING WITH NO OTHER F
+           WHEN "NO" OPEN OUTPUT SHARING WITH NO OTHER F
+           WHEN "RI" OPEN INPUT SHARING WITH READ ONLY F
+           WHEN "RU" OPEN I-O SHARING WITH READ ONLY F
+           WHEN "RE" OPEN EXTEND SHARING WITH READ ONLY F
+           WHEN "RO" OPEN OUTPUT SHARING WITH READ ONLY F
+           WHEN "AI" OPEN INPUT SHARING WITH ALL OTHER F
+           WHEN "AU" OPEN I-O SHARING WITH ALL OTHER F
+           WHEN "AE" OPEN EXTEND SHARING WITH ALL OTHER F
+           WHEN "AO" OPEN OUTPUT SHARING WITH ALL OTHER F
+           WHEN "DI" OPEN INPUT F
+           WHEN "DU" OPEN I-O F
+           WHEN "DE" OPEN EXTEND F
+           WHEN "DO" OPEN OUTPUT F
+           WHEN "LI" OPEN INPUT F WITH LOCK
+           WHEN "LU" OPEN I-O F WITH LOCK
+           WHEN "LE" OPEN EXTEND F WITH LOCK
+           WHEN "LO" OPEN OUTPUT F WITH LOCK
+           END-EVALUATE.
+])])
+
+m4_define([_FILE_SHARING_TESTS], [
+AT_SETUP([$1 file sharing: no clause])
+AT_KEYWORDS([runfile sharing lock])
+
+_FILE_SHARING_PROG([$1], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO VS DI DU DE DO], [0],
+[DI: DI=00 DU=61 DE=61 DO=61
+DU: DI=61 DU=61 DE=61 DO=61
+DE: DI=61 DU=61 DE=61 DO=61
+DO: DI=61 DU=61 DE=61 DO=61
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog RD DI VS DO], [0],
+[DI: DO=61
+holder read: 00 one
+], [])
+# UNLOCK and COMMIT keep the file lock, CLOSE releases it
+AT_CHECK([$COBCRUN_DIRECT ./prog UN DU VS DI DU], [0],
+[DU: DI=61 DU=61
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog CM DU VS DI DU], [0],
+[DU: DI=61 DU=61
+], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog CL DU DO VS DU], [0],
+[DU: DU=00
+DO: DU=00
+], [])
+
+AT_CLEANUP
+])
+
+_FILE_SHARING_TESTS([SEQUENTIAL])
+_FILE_SHARING_TESTS([LINE SEQUENTIAL])
+_FILE_SHARING_TESTS([RELATIVE])
+
+
 AT_SETUP([RELATIVE SEQUENTIAL basic I/O])
 AT_KEYWORDS([runfile])
 

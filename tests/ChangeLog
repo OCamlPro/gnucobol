@@ -1,4 +1,9 @@
 
+2026-11-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_file.at: add file sharing tests for SEQUENTIAL,
+	  LINE SEQUENTIAL and RELATIVE files
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* perf_stat.sh, perf_record.sh: new scripts based on functions previously

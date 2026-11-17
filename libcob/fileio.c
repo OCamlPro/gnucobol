@@ -96,6 +96,9 @@ int fdatasync(int fd);
 #ifndef	O_BINARY
 #define	O_BINARY	0
 #endif
+#ifndef	O_TEXT
+#define	O_TEXT		0
+#endif
 
 #endif	/* _WIN32 */
 
@@ -1731,6 +1734,19 @@ cob_file_write_opt (cob_file *f, const int opt)
 	return 0;
 }
 
+/* Empty the file (OPEN OUTPUT), once it is locked */
+static void
+truncate_file (const int fd)
+{
+#ifdef	_WIN32
+	(void)_chsize (fd, 0);
+#else
+	if (ftruncate (fd, 0) != 0) {
+		/* Not a regular file */
+	}
+#endif
+}
+
 /*
  * Open (record) Sequential and Relative files
  *  with just an 'fd' (No FILE *)
@@ -1754,7 +1770,8 @@ cob_fd_file_open (cob_file *f, char *filename,
 		break;
 	case COB_OPEN_OUTPUT:
 		nonexistent = 0;
-		fdmode |= O_CREAT | O_TRUNC;
+		/* Truncated later, once the file is locked */
+		fdmode |= O_CREAT;
 		if (f->organization == COB_ORG_RELATIVE) {
 			fdmode |= O_RDWR;
 		} else {
@@ -1908,6 +1925,9 @@ cob_fd_file_open (cob_file *f, char *filename,
 		}
 	}
 #endif
+	if (mode == COB_OPEN_OUTPUT) {
+		truncate_file (fd);
+	}
 	f->fd = fd;
 	f->record_off = -1;
 #if 0	/* Simon: disabled, this function is expected to not use a FILE* */
@@ -2060,8 +2080,31 @@ cob_file_open (cob_file *f, char *filename,
 	/* LCOV_EXCL_STOP */
 	}
 
-	errno = 0;
-	fp = fopen (filename, fmode);
+	if (mode == COB_OPEN_OUTPUT) {
+		/* Truncated later, once the file is locked */
+		int	fdmode = O_CREAT | O_WRONLY;
+		int	fd;
+#ifdef	_WIN32
+		const int	fperms = _S_IREAD | _S_IWRITE;
+#else
+		const int	fperms = COB_FILE_MODE;
+#endif
+		fdmode |= cobsetptr->cob_unix_lf ? O_BINARY : O_TEXT;
+		errno = 0;
+		fd = open (filename, fdmode, fperms);
+		fp = NULL;
+		if (fd != -1) {
+			fp = fdopen (fd, fmode);
+			if (fp) {
+				errno = 0;
+			} else {
+				close (fd);
+			}
+		}
+	} else {
+		errno = 0;
+		fp = fopen (filename, fmode);
+	}
 	switch (errno) {
 	case 0:
 		f->open_mode = mode;
@@ -2175,6 +2218,10 @@ cob_file_open (cob_file *f, char *filename,
 		}
 	}
 #endif
+	if (fp
+	 && mode == COB_OPEN_OUTPUT) {
+		truncate_file (f->fd);
+	}
 	f->file = fp;
 	if (f->flag_optional && nonexistent) {
 		return COB_STATUS_05_SUCCESS_OPTIONAL;
@@ -6110,40 +6157,6 @@ cob_file_unlock (cob_file *f)
 			if (f->fd >= 0 && f->open_mode != COB_OPEN_INPUT) {
 				fdcobsync (f->fd);
 			}
-#ifdef	HAVE_FCNTL
-			if (!(f->lock_mode & COB_FILE_EXCLUSIVE)) {
-				/* Unlock the file */
-				if (f->fd >= 0) {
-					struct flock	lock;
-					memset ((void *)&lock, 0, sizeof (struct flock));
-					lock.l_type = F_UNLCK;
-					lock.l_whence = SEEK_SET;
-					lock.l_start = 0;
-					lock.l_len = 0;
-					if (fcntl (f->fd, F_SETLK, &lock) == -1) {
-#if 1 /* CHECKME - What is the correct thing to do here? */
-						/* not translated as "testing only" */
-						cob_runtime_warning ("issue during unlock (%s), errno: %d",
-							"cob_file_unlock", errno);
-#endif
-					}
-				}
-			}
-#elif defined _WIN32
-			{
-				HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
-				if (osHandle != INVALID_HANDLE_VALUE) {
-					if (!UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
-#if 1 /* CHECKME - What is the correct thing to do here? */
-						/* not translated as "testing only" */
-						cob_runtime_warning ("issue during UnLockFile (%s), lastError: " CB_FMT_LLU,
-							"cob_file_unlock", (cob_u64_t)GetLastError());
-#endif
-					}
-				}
-			}
-#endif
-
 #endif
 		} else {
 #ifdef	WITH_INDEX_EXTFH
