@@ -1,4 +1,20 @@
 
+2026-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	speedup environment handling
+	* common.c (cob_display_env_value): only force rescan of env values
+	  if variable set starts with "COB" prefix
+	* common.c (cob_expand_env_string): shortcut if no contained $
+
+	allow faster file output configuration
+	* common.c (cob_open_logfile): skip leading '!' marking "unsafe" file
+	  handling (skipping close/reopen and/or flush)
+	* common.c, coblocal.h (cob_flush_if_not_disabled): helper function to
+	  ease flush of files opened with (cob_open_logfile)
+	* common.c: allow to skip flushing for common tracing (COB_TRACE_FILE)
+	* termio.c (cob_display): allow to skip flushing for stdout/stderr/syspunch
+	  and to skip close/re-opening for printer
+
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,

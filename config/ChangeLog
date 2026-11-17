@@ -1,4 +1,9 @@
 
+2026-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: document new "unsafe" runtime file handling (disabling
+	  flush and close/reopen)
+
 2026-11-10  David Declerck <david.declerck@ocamlpro.com>
 
 	* *.conf: new options call-literal-byteorder and call-literal-size,

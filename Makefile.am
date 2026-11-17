@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol
 #
-# Copyright (C) 2003-2012, 2014-2020, 2023-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2020, 2023-2024, 2026 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -162,7 +162,7 @@ $(tarstamps): NEWS configure.ac Makefile.am libcob/version.h
 # TODO: possibly disable / adjust depending on what
 #       configure.ac founds (currently not checked there)
 vcs-update:
-	svn update $(srcdir)
+	svn update $(srcdir) || git pull
 
 
 # targets that are only logical targets and should always be executed
@@ -175,12 +175,12 @@ checkmanual: all
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C tests checkmanual
 
 checkall: check test
-	
+
 @CODE_COVERAGE_ENABLED_TRUE@checkmanual-code-coverage:
 @CODE_COVERAGE_ENABLED_TRUE@	-$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -k checkmanual
 @CODE_COVERAGE_ENABLED_TRUE@	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture
 @CODE_COVERAGE_ENABLED_FALSE@checkmanual-code-coverage: check-code-coverage
-	
+
 @CODE_COVERAGE_ENABLED_TRUE@checkall-code-coverage:
 @CODE_COVERAGE_ENABLED_TRUE@	-$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -k checkall
 @CODE_COVERAGE_ENABLED_TRUE@	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) code-coverage-capture

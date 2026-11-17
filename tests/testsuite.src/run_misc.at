@@ -594,6 +594,88 @@ AT_CHECK([$COBCRUN_DIRECT ./smaller], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([SET ENVIRONMENT TO / ACCEPT FROM ENVIRONMENT])
+AT_KEYWORDS([runmisc runtime_option COB_PHYSICAL_CANCEL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01    os-check   pic x(7).
+         88 os-is-windows-or-dos values 'WINDOWS' 'FREEDOS'.
+       01  callee       pic x(8) value "./prog2".
+         88 callee-wdos value ".\prog2".
+       PROCEDURE DIVISION.
+       main-start.
+       
+       >> IF CHECK-PERF IS DEFINED
+           PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
+
+       do-check.
+
+      *>  variable that changes the current env to
+      *>  a non-default value
+          SET ENVIRONMENT "COB_PHYSICAL_CANCEL" TO "Y".
+
+      *>  more common: other vars
+          SET ENVIRONMENT "FILE1" TO "file1".
+          SET ENVIRONMENT "FILE2" TO "file2".
+          SET ENVIRONMENT "FILE3" TO "file3".
+          SET ENVIRONMENT "FILE4" TO "file4".
+          
+          accept os-check from environment "COB_ON_CYGWIN".
+          if os-check = spaces
+             accept os-check from environment "OS".
+             if os-check = spaces
+                accept os-check from environment "OS_NAME".
+
+       test-part2.
+          inspect os-check converting "werfdosin" to "WERFDOSIN".
+          if os-is-windows-or-dos
+             set callee-wdos to true.
+      
+      *>  external program to see if the vars are externalized
+          CALL "SYSTEM" USING callee.
+          STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01    INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+       DO-CHECK.
+          ACCEPT INPUT-VAR FROM ENVIRONMENT "COB_PHYSICAL_CANCEL"
+          IF INPUT-VAR NOT = "Y"
+             DISPLAY "UNEXPECTED VALUE CANCEL >" INPUT-VAR "<"
+               UPON SYSERR
+             MOVE "Y" TO INPUT-VAR.
+            
+          ACCEPT INPUT-VAR FROM ENVIRONMENT "SOMETHING_NOT_SET"
+          IF INPUT-VAR NOT = SPACE
+             DISPLAY "UNEXPECTED VALUE NOT_SET >" INPUT-VAR "<"
+               UPON SYSERR.
+         
+          ACCEPT INPUT-VAR FROM ENVIRONMENT "FILE1"
+          IF INPUT-VAR NOT = "file1"
+             DISPLAY "UNEXPECTED VALUE FILE1   >" INPUT-VAR "<"
+               UPON SYSERR.
+          
+          DISPLAY 'END' WITH NO ADVANCING.
+          GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [END], [])
+
+AT_CLEANUP
+
+
 ## MOVE statement
 
 AT_SETUP([MOVE to itself])
@@ -4292,7 +4374,7 @@ AT_DATA([caller.c], [
 
 #if defined (__GLIBC__) \
  && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 34))
-    #error glibc implementation of dlmopen is known to be buggy for versions under 2.34.
+    #error glibc implementation of dlmopen is known to be buggy for versions under 2.34
 #endif
 
 typedef int (*cobol_program_fn)(void);
@@ -13935,30 +14017,20 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        77 note PIC X(05).
        PROCEDURE DIVISION CHAINING note.
-       DISPLAY "This is sent to CONSOLE " note UPON CONSOLE.
-       DISPLAY "This is sent to SYSERR  " note UPON SYSERR.
-       DISPLAY "This is sent to PRINTER " note UPON PRINTER.
-       DISPLAY "This is also sent to CONSOLE " note UPON CONSOLE.
-       DISPLAY "This is also sent to SYSERR  " note UPON SYSERR.
-       DISPLAY "This is also sent to PRINTER " note UPON PRINTER.
-       DISPLAY "This is sent to SYSPUNCH " note UPON SYSPUNCH
-            ON EXCEPTION DISPLAY 'NO ...'        UPON SYSERR.
-       DISPLAY "This is also sent to SYSPUNCH " note UPON SYSPCH
-            ON EXCEPTION DISPLAY ' ... SYSPUNCH' UPON SYSERR.
-       STOP RUN RETURNING 0.
+           DISPLAY "This is sent to CONSOLE " note UPON CONSOLE.
+           DISPLAY "This is sent to SYSERR  " note UPON SYSERR.
+           DISPLAY "This is sent to PRINTER " note UPON PRINTER.
+           DISPLAY "This is also sent to CONSOLE " note UPON CONSOLE.
+           DISPLAY "This is also sent to SYSERR  " note UPON SYSERR.
+           DISPLAY "This is also sent to PRINTER " note UPON PRINTER.
+           DISPLAY "This is sent to SYSPUNCH " note UPON SYSPUNCH
+                ON EXCEPTION DISPLAY 'NO ...'        UPON SYSERR.
+           DISPLAY "This is also sent to SYSPUNCH " note UPON SYSPCH
+                ON EXCEPTION DISPLAY ' ... SYSPUNCH' UPON SYSERR.
+           STOP RUN RETURNING 0.
 ])
 
-AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [],
-[prog.cob:12: warning: start of statement in Area A
-prog.cob:13: warning: start of statement in Area A
-prog.cob:14: warning: start of statement in Area A
-prog.cob:15: warning: start of statement in Area A
-prog.cob:16: warning: start of statement in Area A
-prog.cob:17: warning: start of statement in Area A
-prog.cob:18: warning: start of statement in Area A
-prog.cob:20: warning: start of statement in Area A
-prog.cob:22: warning: start of statement in Area A
-])
+AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog PLAIN], [0],
 [This is sent to CONSOLE PLAIN
@@ -13973,6 +14045,9 @@ NO ...
  ... SYSPUNCH
 ])
 
+# ensure the file does not exist for re-runs
+rm -f prt.log
+
 AT_CHECK([COB_DISPLAY_PRINT_PIPE='cat >>prt.log' \
 COB_DISPLAY_PUNCH_FILE='punch.out' \
 $COBCRUN_DIRECT ./prog PIPE.], [0],
@@ -13983,8 +14058,18 @@ This is also sent to CONSOLE PIPE.
 This is also sent to SYSERR  PIPE.
 ])
 
+AT_CHECK([COB_DISPLAY_PRINT_FILE='!prt.log' \
+COB_DISPLAY_PUNCH_FILE='!punch.out' \
+$COBCRUN_DIRECT ./prog PRINT], [0],
+[This is sent to CONSOLE PRINT
+This is also sent to CONSOLE PRINT
+],
+[This is sent to SYSERR  PRINT
+This is also sent to SYSERR  PRINT
+])
+
 AT_CHECK([COB_DISPLAY_PRINT_FILE='prt.log' \
-COB_DISPLAY_PUNCH_FILE='punch.out' \
+COB_DISPLAY_PUNCH_FILE='+punch.out' \
 $COBCRUN_DIRECT ./prog PRINT], [0],
 [This is sent to CONSOLE PRINT
 This is also sent to CONSOLE PRINT
@@ -13998,6 +14083,8 @@ AT_CAPTURE_FILE([prt.log])
 AT_DATA([reference],
 [This is sent to PRINTER PIPE.
 This is also sent to PRINTER PIPE.
+This is sent to PRINTER PRINT
+This is also sent to PRINTER PRINT
 This is sent to PRINTER PRINT
 This is also sent to PRINTER PRINT
 ])
@@ -14014,6 +14101,8 @@ AT_CAPTURE_FILE([punch.out])
 
 AT_DATA([reference],
 [This is sent to SYSPUNCH PRINT
+This is also sent to SYSPUNCH PRINT
+This is sent to SYSPUNCH PRINT
 This is also sent to SYSPUNCH PRINT
 ])
 

@@ -336,6 +336,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 {
 	FILE		*fp;
 	int		close_fp = 0;
+	int		do_flush = 1;
 	cob_u32_t	disp_redirect = 0;
 	va_list		args;
 
@@ -358,20 +359,30 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 		/* display to external specified print file handle */
 		if (cobsetptr->cob_display_print_file) {
 			fp = cobsetptr->cob_display_print_file;
+			if (cobsetptr->cob_display_print_filename
+			 && cobsetptr->cob_display_print_filename[0] == '!') {
+				do_flush = 0;
+			 }
 		/* display to configured print file */
 		} else if (cobsetptr->cob_display_print_filename != NULL) {
-			const char *mode;
-			if (!cobsetptr->cob_unix_lf) {
-				mode = "a";
-			} else {
-				mode = "ab";
+			const char *mode = cobsetptr->cob_unix_lf ? "ab" : "a";
+			const char *filename = cobsetptr->cob_display_print_filename;
+			close_fp = 1;
+			/* skip marker for unsafe / no flush */
+			if (*filename == '!') {
+				filename++;
+				do_flush = 0;
 			}
-			fp = fopen (cobsetptr->cob_display_print_filename, mode);
-			if (fp == NULL) {
+			/* note: always opened for append */
+			fp = fopen (filename, mode);
+			if (fp != NULL) {
+				if (do_flush == 0) {
+					cobsetptr->cob_display_print_file = fp;
+				}
+			} else {
 				fp = COB_STDERR;
-			} else {
-				close_fp = 1;
-			}
+				close_fp = 0;
+			}	
 #ifdef HAVE_POPEN
 		/* display to configured print command (piped) */
 		} else if (cobsetptr->cob_display_print_pipe != NULL) {
@@ -391,13 +402,19 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 #endif
 		/* fallback: display to the defined SYSOUT */
 		} else {
-			fp = COB_STDOUT;
-			if (cobglobptr->cob_screen_initialized) {
-				if (!COB_DISP_TO_STDERR) {
-					disp_redirect = 1;
-				} else {
-					fp = COB_STDERR;
-				}
+			const char *fname;
+			if (!cobglobptr->cob_screen_initialized) {
+				fp = COB_STDOUT;
+				fname = cobsetptr->cob_stdout_filename;
+			} else if (!COB_DISP_TO_STDERR) {
+				disp_redirect = 1;
+				fname = NULL;
+			} else {
+				fp = COB_STDERR;
+				fname = cobsetptr->cob_stderr_filename;
+			}
+			if (fname && *fname == '!') {
+				do_flush = 0;
 			}
 		}
 		break;
@@ -405,14 +422,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 		/* open if not available but specified */
 		if (!cobsetptr->cob_display_punch_file
 		 && cobsetptr->cob_display_punch_filename != NULL) {
-			const char* mode;
-			if (!cobsetptr->cob_unix_lf) {
-				mode = "w";
-			} else {
-				/* Note: this doesn't seem to help with pipes :-( */
-				mode = "wb";
-			}
-			fp = fopen (cobsetptr->cob_display_punch_filename, mode);
+			fp = cob_open_logfile (cobsetptr->cob_display_punch_filename);
 			if (fp == NULL) {
 				cob_runtime_warning (_("cannot open %s (=%s)"),
 					"COB_DISPLAY_PUNCH_FILE", cobsetptr->cob_display_punch_filename);
@@ -420,11 +430,13 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 				cobsetptr->cob_display_punch_filename = NULL;
 			} else {
 				cobsetptr->cob_display_punch_file = fp;
+				do_flush = *cobsetptr->cob_display_punch_filename != '!';
 			}
 		}
 		/* display to already opened punch file */
 		if (cobsetptr->cob_display_punch_file) {
 			fp = cobsetptr->cob_display_punch_file;
+			do_flush = *cobsetptr->cob_display_punch_filename != '!';
 		} else {
 			cob_set_exception (COB_EC_IMP_DISPLAY);	/* come back to this later... */
 			if (!no_syspunch_error_raised) {
@@ -457,12 +469,14 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 		}
 		if (newline) {
 			putc ('\n', fp);
-			fflush (fp);
+			if (do_flush) {
+				fflush (fp);
+			}
 		}
 	}
 	va_end (args);
 
-	if (close_fp) {
+	if (close_fp && do_flush) {
 #ifdef HAVE_POPEN
 		if (close_fp == 2) {
 			pclose (fp);
@@ -1209,7 +1223,7 @@ cob_stdout_termio (void)
 			return;
 		}
 
-		stdout_f = cob_open_logfile ( cobsetptr->cob_stdout_filename);
+		stdout_f = cob_open_logfile (cobsetptr->cob_stdout_filename);
 
 		if (stdout_f) {
 			if (cobsetptr->cob_stdout_filename_set) {

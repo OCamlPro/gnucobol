@@ -637,7 +637,8 @@ cob_max_int (const int x, const int y)
 COB_HIDDEN int		cob_cmps	(const unsigned char *, const unsigned char *,
 					 const size_t, const unsigned char *);
 
-COB_HIDDEN FILE *	cob_open_logfile (const char *filename);
+COB_HIDDEN FILE *	cob_open_logfile (const char *);
+COB_HIDDEN void		cob_flush_if_not_disabled (FILE *, const char *);
 
 /* Whether we are in testsuite mode */
 COB_HIDDEN int cob_is_test;
