@@ -4253,74 +4253,83 @@ AT_CLEANUP
 
 
 AT_SETUP([library visibility via COB_LOAD_VISIBILITY])
-AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY COB_PRE_LOAD])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY COB_PRE_LOAD cob_resolve dlsym])
 
 AT_DATA([visibility_target.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. visibility_target.
        PROCEDURE DIVISION.
-           DISPLAY "Primary module target"
+           DISPLAY "COBOL module called"
            GOBACK.
 ])
 
-AT_DATA([probe_call.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. probe_call.
-       PROCEDURE DIVISION.
-           CALL "visibility_target"
-           GOBACK.
-])
+AT_DATA([caller.c], [
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
+#include <libcob.h>
 
-AT_DATA([probe_target.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. visibility_target.
-       PROCEDURE DIVISION.
-           DISPLAY "Probe module target"
-           GOBACK.
-])
+typedef int (*cobol_program_fn)(void);
 
-AT_DATA([caller.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. caller.
-       PROCEDURE DIVISION.
-           CALL "visibility_target"
-           CALL "probe_call"
-           STOP RUN.
+int main (int argc, char **argv) {
+    cobol_program_fn program;
+    void *symbol;
+    const char *error;
+
+    cob_init (argc, argv);
+
+    /* Let libcob load the module using the configured visibility. */
+    program = (cobol_program_fn) cob_resolve ("visibility_target");
+    if (!program) {
+        fprintf (stderr, "Failed to resolve visibility_target.\n");
+        cob_tidy ();
+        return EXIT_FAILURE;
+    }
+    program ();
+
+    /* Look in the global scope, not through the module's own handle. */
+    dlerror ();
+    symbol = dlsym (RTLD_DEFAULT, "visibility_target");
+    error = dlerror ();
+
+    puts (!error && symbol
+          ? "Target globally visible"
+          : "Target not globally visible");
+
+    cob_tidy ();
+    return EXIT_SUCCESS;
+}
 ])
 
 AT_CHECK([$COMPILE_MODULE visibility_target.cob], [0], [], [])
-# Compile separately so the wrapper cannot optimize against the target's body.
-AT_CHECK([$COMPILE_MODULE -c -fstatic-call probe_call.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -c probe_target.cob], [0], [], [])
-AT_CHECK([$COBC -b $FLAGS -o probe_call.$COB_MODULE_EXT \
-probe_call.$COB_OBJECT_EXT probe_target.$COB_OBJECT_EXT], [0], [], [])
-AT_CHECK([$COMPILE caller.cob], [0], [], [])
+AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
+   echo "compilation / linking failed, skipping rest of group"
+   AT_SKIP_IF([:])
+])
 
-# The probe's static call binds to the earlier global COBOL target.
 AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL \
 $COBCRUN_DIRECT ./caller], [0],
-[Primary module target
-Primary module target
+[COBOL module called
+Target globally visible
 ], [])
 
-# The first target is local, so the probe calls its own target.
 AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
 $COBCRUN_DIRECT ./caller], [0],
-[Primary module target
-Probe module target
+[COBOL module called
+Target not globally visible
 ], [])
 
 AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_ONLY \
 $COBCRUN_DIRECT ./caller], [0],
-[Primary module target
-Probe module target
+[COBOL module called
+Target not globally visible
 ], [])
 
 # Preloading promotes visibility to global with LOCAL_PREFERRED.
 AT_CHECK([COB_PRE_LOAD=visibility_target COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
 $COBCRUN_DIRECT ./caller], [0],
-[Primary module target
-Primary module target
+[COBOL module called
+Target globally visible
 ], [])
 
 
