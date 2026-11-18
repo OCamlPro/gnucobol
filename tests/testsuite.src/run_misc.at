@@ -4252,7 +4252,240 @@ $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([resolve / execution in isolated runtime and parallel threads])
+AT_SETUP([library visibility via COB_LOAD_VISIBILITY])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY COB_PRE_LOAD])
+
+AT_DATA([visibility_target.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. visibility_target.
+       PROCEDURE DIVISION.
+           DISPLAY "Primary module target"
+           GOBACK.
+])
+
+AT_DATA([probe_call.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. probe_call.
+       PROCEDURE DIVISION.
+           CALL "visibility_target"
+           GOBACK.
+])
+
+AT_DATA([probe_target.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. visibility_target.
+       PROCEDURE DIVISION.
+           DISPLAY "Probe module target"
+           GOBACK.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. caller.
+       PROCEDURE DIVISION.
+           CALL "visibility_target"
+           CALL "probe_call"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE visibility_target.cob], [0], [], [])
+# Compile separately so the wrapper cannot optimize against the target's body.
+AT_CHECK([$COMPILE_MODULE -c -fstatic-call probe_call.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -c probe_target.cob], [0], [], [])
+AT_CHECK([$COBC -b $FLAGS -o probe_call.$COB_MODULE_EXT \
+probe_call.$COB_OBJECT_EXT probe_target.$COB_OBJECT_EXT], [0], [], [])
+AT_CHECK([$COMPILE caller.cob], [0], [], [])
+
+# The probe's static call binds to the earlier global COBOL target.
+AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [0],
+[Primary module target
+Primary module target
+], [])
+
+# The first target is local, so the probe calls its own target.
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Primary module target
+Probe module target
+], [])
+
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Primary module target
+Probe module target
+], [])
+
+# Preloading promotes visibility to global with LOCAL_PREFERRED.
+AT_CHECK([COB_PRE_LOAD=visibility_target COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Primary module target
+Primary module target
+], [])
+
+
+AT_CLEANUP
+
+
+AT_SETUP([resolve / execution in isolated runtime with single thread])
+AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD cob_resolve cob_cancel cob_tidy])
+
+# skips if dlmopen is unsupported by the target platform
+
+AT_DATA([caller.c], [
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
+#include <libcob.h>
+
+typedef int (*cobol_program_fn)(void);
+typedef void (*cob_init_fn)(int, char **);
+typedef cobol_program_fn (*cob_resolve_fn)(char *);
+typedef void (*cob_cancel_fn)(const char *);
+typedef void (*cob_tidy_fn)(void);
+
+#if defined(_WIN32)
+  #define LIB_EXT ".dll"
+#elif defined(__APPLE__)
+  #define LIB_EXT ".dylib"
+#else
+  #define LIB_EXT ".so"
+#endif
+
+static int callCobol (void) {
+    const char *libCobPath = "libcob" LIB_EXT;
+    void *libCobHandle;
+    cob_init_fn cob_init;
+    cob_resolve_fn cob_resolve;
+    cob_cancel_fn cob_cancel;
+    cob_tidy_fn cob_tidy;
+    cobol_program_fn program;
+    int result = EXIT_SUCCESS;
+
+    /* Load an isolated runtime instance in a new namespace. */
+    libCobHandle = dlmopen (LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    if (!libCobHandle) {
+        fprintf (stderr, "Failed to load libcob with dlmopen from %s: %s\n",
+                 libCobPath, dlerror ());
+        return EXIT_FAILURE;
+    }
+
+#define RESOLVE_SYMBOL(symbol, type) \
+    symbol = (type) dlsym (libCobHandle, #symbol); \
+    if (!symbol) { \
+        fprintf (stderr, "Failed to load symbol %s: %s\n", \
+                 #symbol, dlerror ()); \
+        dlclose (libCobHandle); \
+        return EXIT_FAILURE; \
+    }
+
+    RESOLVE_SYMBOL (cob_init, cob_init_fn);
+    RESOLVE_SYMBOL (cob_resolve, cob_resolve_fn);
+    RESOLVE_SYMBOL (cob_cancel, cob_cancel_fn);
+    RESOLVE_SYMBOL (cob_tidy, cob_tidy_fn);
+    cob_init (0, NULL);
+
+    program = cob_resolve ("prog");
+    if (!program) {
+        fprintf (stderr, "Failed to resolve prog function.\n");
+        result = EXIT_FAILURE;
+    } else {
+        program ();
+    }
+
+    cob_tidy ();
+    dlclose (libCobHandle);
+    return result;
+}
+
+int main (void) {
+    return callCobol ();
+}
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield" ON EXCEPTION CONTINUE
+           END-PERFORM
+           DISPLAY "Final count: " COUNTER
+           GOBACK.
+])
+
+AT_DATA([preloaded.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield" ON EXCEPTION CONTINUE
+           END-PERFORM
+           DISPLAY "Preloaded count: " COUNTER
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob],
+         [0], [], [])
+AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
+   echo "compilation / linking failed, skipping rest of group"
+   AT_SKIP_IF([:])
+])
+
+# Ordinary module, without preload. This should work in local
+# visibility settings, and fail in explicit global loading.
+# See incompatibility issues between RTLD_GLOBAL and dlmopen.
+AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [139], [], [
+attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Final count: 01000
+], [])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Final count: 01000
+], [])
+
+# This should fail due to same reason as above
+AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [139], [], [
+attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+# This should fail because preloading promotes visibility to global
+AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [139], [], [
+attempt to reference invalid memory address (signal SIGSEGV)
+
+])
+# This should work by forcing libcob to load everything local
+AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+], [])
+
+
+AT_CLEANUP
+
+
+AT_SETUP([resolve / execution in isolated runtime with parallel threads])
 AT_KEYWORDS([runmisc dlmopen COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL cob_resolve cob_cancel cob_tidy pthread parallel])
 
 # Skips at any point if the platform does not support it (dlmopen, pthread).
@@ -4274,6 +4507,8 @@ AT_DATA([caller.c], [
 #include <pthread.h>
 #elif defined(USE_C11_THREADS)
 #include <threads.h>
+#else
+#error "Define USE_PTHREAD or USE_C11_THREADS for this parallel test"
 #endif
 
 #if defined(__GLIBC__)
@@ -4293,6 +4528,8 @@ typedef void (*cob_tidy_fn)(void);
 #else
   #define LIB_EXT ".so"
 #endif
+
+#define NUM_THREADS 2
 
 /* Function to call COBOL shared library functions */
 static int callCobol (void) {
@@ -4330,13 +4567,7 @@ static int callCobol (void) {
     RESOLVE_SYMBOL (cob_tidy, cob_tidy_fn);
     cob_init (0, NULL);
 
-#if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
-    iteration = 0;
-#else
-    iteration = 1; /* Unthreaded test does not interact with COB_PHYSICAL_CANCEL */
-#endif
-
-    for (; iteration < 2; iteration++) {
+    for (iteration = 0; iteration < 2; iteration++) {
         /* Resolve prog every iteration due to cancellation: 
            physical cancellation unloads prog if it is not preloaded. */
         program = cob_resolve ("prog");
@@ -4371,8 +4602,6 @@ static int threadFunction(void *arg) {
 
 /* Main function */
 int main (int argc, char **argv) {
-#if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
-#define NUM_THREADS 2
 #if defined(USE_PTHREAD)
     pthread_t threads[[NUM_THREADS]];
 #else
@@ -4436,12 +4665,6 @@ int main (int argc, char **argv) {
     }
     cob_tidy ();
     return result;
-#else
-    /* dlmopen test with no threads */
-    (void) argc;
-    (void) argv;
-    return callCobol ();
-#endif
 }
 ])
 
@@ -4500,24 +4723,9 @@ AT_DATA([preloaded.cob], [
 
 AT_CHECK([$COMPILE_MODULE -o preloaded.$COB_MODULE_EXT preloaded.cob], [0], [], [])
 
-# Unthreaded basic dlmopen test
-AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
-   echo "C compilation / linking failed, skipping rest of group"
-   AT_SKIP_IF([:])
-])
-AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
-$COBCRUN_DIRECT ./caller], [0],
-[Final count: 01000
-], [])
-AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
-$COBCRUN_DIRECT ./caller], [0],
-[Preloaded count: 01000
-], [])
-
-
-# Same test as above, but threaded and with/out COB_PHYSICAL_CANCEL
+# Parallel execution with and without COB_PHYSICAL_CANCEL.
 AT_CHECK([$COMPILE -ldl -lpthread -A -DUSE_PTHREAD caller.c], [0], [], [], [
-   echo "pthread compilation / linking failed, skipping rest of group"
+   echo "compilation / linking failed, skipping rest of group"
    AT_SKIP_IF([:])
 ])
 AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
