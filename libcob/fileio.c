@@ -598,6 +598,8 @@ static int relative_delete	(cob_file *);
 
 static int indexed_open		(cob_file *, char *, const enum cob_open_mode, const int);
 static int indexed_close	(cob_file *, const enum cob_close_mode);
+static int indexed_open_internal	(cob_file *, char *, const enum cob_open_mode, const int);
+static int indexed_close_internal	(cob_file *, const enum cob_close_mode);
 static int indexed_start	(cob_file *, const int, cob_field *);
 static int indexed_read		(cob_file *, cob_field *, const int);
 static int indexed_read_next	(cob_file *, const int);
@@ -1734,7 +1736,7 @@ cob_file_write_opt (cob_file *f, const int opt)
 	return 0;
 }
 
-/* File sharing on OPEN, for SEQUENTIAL, LINE SEQUENTIAL and RELATIVE files
+/* File sharing on OPEN
 
    A single lock on the whole file can only tell "shared" from "exclusive",
    which is not enough for three sharing modes and four open modes. So each
@@ -1756,13 +1758,18 @@ cob_file_write_opt (cob_file *f, const int opt)
      (ISO; MF accepts it and empties the file)
    - INPUT without SHARING is shared READ ONLY, but accepts a file already
      open for update (MF)
-   - LOCK MODE MANUAL / AUTOMATIC without SHARING does not share the file,
-     as these organizations have no record locks (MF shares it)
+   - LOCK MODE MANUAL / AUTOMATIC without SHARING only shares INDEXED files,
+     as the other organizations have no record locks (MF shares them all).
+     WARNING: Berkeley DB has none either unless DB_HOME is set; the file
+     is still shared (as before), so concurrent updates are unprotected.
 
    Note: with fcntl, locks belong to the process: we find its other file
    connectors in file_cache, and set their locks again after a close (which
    drops all the locks of the process on that file). With LockFileEx, locks
-   can only be tested by setting them, hence the COB_SHARE_MUTEX byte. */
+   can only be tested by setting them, hence the COB_SHARE_MUTEX byte.
+
+   INDEXED files are opened by the ISAM library, so we lock our own
+   descriptor on the data file, before and after calling the library. */
 
 #define COB_SHARE_ANY		(1U << 0)	/* file is open */
 #define COB_SHARE_UPDATE	(1U << 1)	/* open mode other than INPUT */
@@ -1938,6 +1945,13 @@ default_share_mode (const cob_file *f, const int open_mode)
 	if (share_mode != 0) {
 		return share_mode;
 	}
+	/* As per MF, files with record locks are shared.
+	   WARNING: BDB has no record locks unless DB_HOME is set,
+	   concurrent updates are then unprotected */
+	if (f->organization == COB_ORG_INDEXED
+	 && (f->lock_mode & (COB_LOCK_MANUAL | COB_LOCK_AUTOMATIC))) {
+		return COB_SHARE_ALL_OTHER;
+	}
 	if (open_mode == COB_OPEN_INPUT) {
 		return COB_SHARE_READ_ONLY | COB_SHARE_DEFAULT;
 	}
@@ -2043,6 +2057,22 @@ set_file_lock (cob_file *f, const char *filename, const int open_mode)
 	return 0;
 }
 
+#ifdef	HAVE_FCNTL
+/* Set the locks of the other file connectors on that file again, as
+   closing one of its descriptors dropped all the locks of the process */
+static void
+share_restore_locks (const cob_file *f, const struct stat *st)
+{
+	struct file_list	*l = file_cache;
+	cob_file	*o;
+
+	while ((o = share_next_local (&l, f, st)) != NULL) {
+		share_set_locks (o->fd,
+			share_locks (o->share_mode, o->open_mode));
+	}
+}
+#endif
+
 /* Close the file, releasing its file sharing locks */
 static void
 close_file (cob_file *f, FILE *fp, const int fd)
@@ -2059,15 +2089,8 @@ close_file (cob_file *f, FILE *fp, const int fd)
 		close (fd);
 	}
 #ifdef	HAVE_FCNTL
-	/* this dropped all locks of the process on that file: set the ones
-	   of its other file connectors again */
 	if (has_stat) {
-		struct file_list	*l = file_cache;
-		cob_file	*o;
-		while ((o = share_next_local (&l, f, &st)) != NULL) {
-			share_set_locks (o->fd,
-				share_locks (o->share_mode, o->open_mode));
-		}
+		share_restore_locks (f, &st);
 	}
 #endif
 }
@@ -4547,7 +4570,7 @@ indexed_file_delete (cob_file *f, const char *filename)
 /* OPEN INDEXED file */
 
 static int
-indexed_open (cob_file *f, char *filename,
+indexed_open_internal (cob_file *f, char *filename,
 		const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
@@ -4603,8 +4626,6 @@ indexed_open (cob_file *f, char *filename,
 
 	COB_UNUSED (sharing);
 
-	cob_chk_file_mapping ();
-
 	if (mode == COB_OPEN_INPUT) {
 		checkvalue = R_OK;
 	} else {
@@ -4657,13 +4678,7 @@ indexed_open (cob_file *f, char *filename,
 		ISRECLEN = f->record_min;
 	}
 #endif
-	if (!f->lock_mode) {
-		if (mode != COB_OPEN_INPUT) {
-			lmode = ISEXCLLOCK;
-		} else {
-			lmode = ISMANULOCK;
-		}
-	} else if ((f->lock_mode & COB_FILE_EXCLUSIVE)) {
+	if ((f->share_mode & COB_SHARE_NO_OTHER)) {
 		lmode = ISEXCLLOCK;
 	} else if ((f->lock_mode & COB_LOCK_AUTOMATIC) && mode != COB_OPEN_INPUT) {
 		lmode = ISAUTOLOCK;
@@ -4675,7 +4690,6 @@ indexed_open (cob_file *f, char *filename,
 		omode = ISINPUT;
 		break;
 	case COB_OPEN_OUTPUT:
-		lmode = ISEXCLLOCK;
 		omode = ISOUTPUT;
 		ISERRNO = 0;
 		isfd = isopen ((void *)filename, ISINPUT | ISEXCLLOCK | vmode);
@@ -4694,7 +4708,6 @@ indexed_open (cob_file *f, char *filename,
 		omode = ISINOUT;
 		break;
 	case COB_OPEN_EXTEND:
-		lmode = ISEXCLLOCK;
 		omode = ISINOUT;
 		break;
 	default:
@@ -4705,6 +4718,10 @@ indexed_open (cob_file *f, char *filename,
 			 ((sizeof (struct keydesc)) * (f->nkeys + 1)));
 	ISERRNO = 0;
 	fh->lmode = 0;
+	if (lmode == ISAUTOLOCK) {
+		fh->lmode = ISLOCK;
+		lmode = ISMANULOCK;
+	}
 	if (dobld) {
 dobuild:
 		/* copy index information cob_file_key -> keydesc */
@@ -4715,7 +4732,7 @@ dobuild:
 			}
 		}
 		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
-				vmode | ISINOUT | ISEXCLLOCK);
+				vmode | ISINOUT | lmode);
 
 		if (isfd < 0) {
 			if (ISERRNO == EFLOCKED) {
@@ -4751,10 +4768,6 @@ dobuild:
 #endif
 		}
 	} else {
-		if (lmode == ISAUTOLOCK) {
-			fh->lmode = ISLOCK;
-			lmode = ISMANULOCK;
-		}
 		isfd = isopen ((void *)filename, omode | lmode | vmode);
 		if (isfd >= 0) {
 			struct dictinfo		di = { 0 };		/* Defined in (c|d|vb)isam.h */
@@ -4864,17 +4877,6 @@ dobuild:
 	struct stat	st;
 
 	COB_UNUSED (sharing);
-	if (cobsetptr->bdb_home != NULL
-	 && bdb_env == NULL) {		/* Join BDB, on first OPEN of INDEXED file */
-		if (join_environment ()) {
-#if 0	/* better return a permanent or sharing error */
-			cob_hard_failure ();
-#else
-			return COB_STATUS_61_FILE_SHARING;
-#endif
-		}
-	}
-	cob_chk_file_mapping ();
 
 #if	0	/* RXWRXW - Access check BDB Human */
 	if (mode == COB_OPEN_INPUT) {
@@ -4909,10 +4911,7 @@ dobuild:
 	f->file = p;
 	f->curkey = -1;
 	if (bdb_env != NULL) {
-		if (mode == COB_OPEN_OUTPUT
-		 || mode == COB_OPEN_EXTEND
-		 || (f->lock_mode & COB_FILE_EXCLUSIVE)
-		 || (mode == COB_OPEN_I_O && !f->lock_mode)) {
+		if ((f->share_mode & COB_SHARE_NO_OTHER)) {
 			lock_mode = DB_LOCK_WRITE;
 		} else {
 			lock_mode = DB_LOCK_READ;
@@ -5127,7 +5126,7 @@ dobuild:
 		if (p->data.data != NULL
 		 && p->data.size > 0
 		 && p->data.size > f->record_max) {
-			indexed_close (f, 0);
+			indexed_close_internal (f, 0);
 			return COB_STATUS_39_CONFLICT_ATTRIBUTE;
 		}
 	} else {
@@ -5162,7 +5161,7 @@ dobuild:
 /* Close the INDEXED file */
 
 static int
-indexed_close (cob_file *f, const enum cob_close_mode opt)
+indexed_close_internal (cob_file *f, const enum cob_close_mode opt)
 {
 #ifdef	WITH_INDEX_EXTFH
 
@@ -5243,6 +5242,147 @@ indexed_close (cob_file *f, const enum cob_close_mode opt)
 
 #endif
 }
+
+#if	!defined (WITH_INDEX_EXTFH) && (defined (WITH_ANY_ISAM) || defined (WITH_DB))
+
+/* Set the file sharing locks of an INDEXED file, using our own descriptor
+   on the data file (which the ISAM library does not lock) */
+static int
+indexed_set_file_lock (cob_file *f, const char *filename, const int mode)
+{
+	const unsigned int	share_mode = f->share_mode & ~COB_SHARE_ACTIVE;
+	int		ret;
+
+#ifdef	WITH_ANY_ISAM
+	snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s.dat", filename);
+#else
+	/* Note: bdb_nofile leaves the actual file name in bdb_buff */
+	if (bdb_nofile (filename)) {
+		return 0;
+	}
+	snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s",
+		  bdb_env && !is_absolute (filename) ? bdb_buff : filename);
+#endif
+	file_open_buff[COB_FILE_MAX] = 0;
+	if (f->fd < 0) {
+		f->fd = open (file_open_buff, O_RDWR | O_BINARY);
+		if (f->fd < 0) {
+			f->fd = open (file_open_buff, O_RDONLY | O_BINARY);
+		}
+		if (f->fd < 0) {
+			/* No file yet (or the library reports the error) */
+			return 0;
+		}
+	}
+	ret = set_file_lock (f, file_open_buff, mode);
+	if (ret) {
+		close_file (f, NULL, f->fd);
+		f->fd = -1;
+		f->share_mode = (unsigned char)share_mode;
+	}
+#ifdef	HAVE_FCNTL
+	else {
+		struct stat	st;
+		if (fstat (f->fd, &st) == 0) {
+			share_restore_locks (f, &st);
+		}
+	}
+#endif
+	return ret;
+}
+
+/* OPEN INDEXED file, with file sharing */
+static int
+indexed_open (cob_file *f, char *filename,
+		const enum cob_open_mode mode, const int sharing)
+{
+	int		ret;
+
+#ifndef	WITH_ANY_ISAM
+	if (cobsetptr->bdb_home != NULL
+	 && bdb_env == NULL) {		/* Join BDB, on first OPEN of INDEXED file */
+		if (join_environment ()) {
+#if 0	/* better return a permanent or sharing error */
+			cob_hard_failure ();
+#else
+			return COB_STATUS_61_FILE_SHARING;
+#endif
+		}
+	}
+#endif
+	cob_chk_file_mapping ();
+
+	f->fd = -1;
+	f->share_mode = (unsigned char)default_share_mode (f, mode);
+	/* Refuse the OPEN before the library touches the file */
+	ret = indexed_set_file_lock (f, filename, mode);
+	if (ret) {
+		return ret;
+	}
+	if (mode == COB_OPEN_OUTPUT
+	 && f->fd >= 0) {
+		/* The file is replaced by a new one, which is locked below */
+		const unsigned int	share_mode = f->share_mode & ~COB_SHARE_ACTIVE;
+		close_file (f, NULL, f->fd);
+		f->fd = -1;
+		f->share_mode = (unsigned char)share_mode;
+	}
+
+	ret = indexed_open_internal (f, filename, mode, sharing);
+	if (ret > 9
+	 || f->flag_nonexistent) {
+		if (f->fd >= 0) {
+			close_file (f, NULL, f->fd);
+			f->fd = -1;
+		}
+		return ret;
+	}
+
+#ifndef	HAVE_FCNTL
+	if (f->fd < 0)
+#endif
+	{
+		/* The library may have dropped the locks of the process
+		   on that file, so we set them again */
+		const int	sts = indexed_set_file_lock (f, filename, mode);
+		if (sts) {
+			indexed_close_internal (f, COB_CLOSE_NORMAL);
+			f->open_mode = COB_OPEN_CLOSED;
+			return sts;
+		}
+	}
+	return ret;
+}
+
+/* Close the INDEXED file, releasing its file sharing locks */
+static int
+indexed_close (cob_file *f, const enum cob_close_mode opt)
+{
+	const int	ret = indexed_close_internal (f, opt);
+
+	if (f->fd >= 0) {
+		close_file (f, NULL, f->fd);
+		f->fd = -1;
+	}
+	return ret;
+}
+
+#else
+
+static int
+indexed_open (cob_file *f, char *filename,
+		const enum cob_open_mode mode, const int sharing)
+{
+	return indexed_open_internal (f, filename, mode, sharing);
+}
+
+static int
+indexed_close (cob_file *f, const enum cob_close_mode opt)
+{
+	return indexed_close_internal (f, opt);
+}
+
+#endif
 
 
 /* START INDEXED file with positioning */

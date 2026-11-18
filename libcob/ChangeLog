@@ -12,6 +12,11 @@
 	* fileio.c (cob_open), common.h (cob_file): add share_mode
 	* common.h: add COB_SHARE_READ_ONLY, COB_SHARE_ALL_OTHER
 	  and COB_SHARE_NO_OTHER
+	* fileio.c (indexed_open, indexed_close): handle file sharing on OPEN
+	  for INDEXED files; move the former code to indexed_open_internal
+	  and indexed_close_internal
+	* fileio.c (default_share_mode): share INDEXED files with LOCK MODE
+	  MANUAL / AUTOMATIC when SHARING is not specified (as per MF)
 
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 

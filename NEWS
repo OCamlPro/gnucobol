@@ -218,13 +218,17 @@ NEWS - user visible changes				-*- outline -*-
    this behavior depended on the underlying platform, where the default was
    often "global." The default behavior is now explicitly set to "local".
 
-** File sharing on OPEN is now properly handled for SEQUENTIAL, LINE
-   SEQUENTIAL and RELATIVE files: the SHARING clause and the SHARING phrase
-   of OPEN are honored (ALL OTHER and READ ONLY were previously ignored),
-   including between two file connectors of the same program; the behavior
-   follows Micro Focus where possible and ISO 2023 otherwise;
+** File sharing on OPEN is now properly handled for all file organizations:
+   the SHARING clause and the SHARING phrase of OPEN are honored (ALL OTHER
+   and READ ONLY were previously ignored), including between two file
+   connectors of the same program; the behavior follows Micro Focus where
+   possible and ISO 2023 otherwise;
    note: a file in use by an older runtime version cannot be opened, and an
    older runtime version may still open INPUT a file in use by this version
+
+** INDEXED files with LOCK MODE MANUAL / AUTOMATIC and no SHARING are shared;
+   warning: with Berkeley DB, record locks require DB_HOME to be set,
+   otherwise concurrent updates are not protected
 
 * New build features
 

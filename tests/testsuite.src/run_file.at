@@ -7117,6 +7117,7 @@ m4_define([_FILE_SHARING_PROG], [AT_DATA([prog.cob], [
        FILE-CONTROL.
            SELECT F ASSIGN "shared.dat"
               ORGANIZATION IS $1
+              $3
               $2
               FILE STATUS IS FS.
        DATA DIVISION.
@@ -7229,11 +7230,42 @@ m4_define([_FILE_SHARING_PROG], [AT_DATA([prog.cob], [
            END-EVALUATE.
 ])])
 
+## LOCK MODE MANUAL/AUTOMATIC without SHARING: shared as MF for INDEXED
+## files, which have record locks; other files are kept exclusive
+m4_define([_FILE_SHARING_LOCK_MODE], [m4_if([$1], [INDEXED], [
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
+[DI: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=00 NI=61
+DU: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=61 NI=61
+DE: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=61 NI=61
+DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+AI: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=00 NI=61
+AU: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=61 NI=61
+], [])
+# same within a Berkeley DB environment
+AT_CHECK([mkdir dbhome], [0], [], [])
+AT_CHECK([DB_HOME=dbhome $COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
+[DI: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=00 NI=61
+DU: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=61 NI=61
+DE: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=61 NI=61
+DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+AI: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=00 NI=61
+AU: DI=00 DU=00 DE=00 DO=61 AI=00 AU=00 RI=61 NI=61
+], [])], [
+AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
+[DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61 RI=00 NI=61
+DU: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+DE: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
+AI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=00 NI=61
+AU: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=61 NI=61
+], [])])])
+
 m4_define([_FILE_SHARING_TESTS], [
 AT_SETUP([$1 file sharing: SHARING phrase])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL])
+_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 # as MF: a file held in OUTPUT with SHARING ALL refuses any other open,
 # where the standard admits INPUT, I-O and EXTEND
@@ -7275,8 +7307,9 @@ AT_CLEANUP
 
 AT_SETUP([$1 file sharing: no clause])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [])
+_FILE_SHARING_PROG([$1], [], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO VS DI DU DE DO], [0],
 [DI: DI=00 DU=61 DE=61 DO=61
@@ -7312,44 +7345,29 @@ AT_CLEANUP
 
 AT_SETUP([$1 file sharing: LOCK MODE MANUAL])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL])
+_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# MF shares the file here; kept exclusive without SHARING, as there
-# are no record locks to protect concurrent updates
-AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
-[DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61 RI=00 NI=61
-DU: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
-DE: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
-DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
-AI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=00 NI=61
-AU: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=61 NI=61
-], [])
+_FILE_SHARING_LOCK_MODE([$1])
 
 AT_CLEANUP
 
 AT_SETUP([$1 file sharing: LOCK MODE AUTOMATIC])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [LOCK MODE IS AUTOMATIC])
+_FILE_SHARING_PROG([$1], [LOCK MODE IS AUTOMATIC], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# MF shares the file here; kept exclusive without SHARING, as there
-# are no record locks to protect concurrent updates
-AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AI AU VS DI DU DE DO AI AU RI NI], [0],
-[DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61 RI=00 NI=61
-DU: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
-DE: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
-DO: DI=61 DU=61 DE=61 DO=61 AI=61 AU=61 RI=61 NI=61
-AI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=00 NI=61
-AU: DI=00 DU=61 DE=61 DO=61 AI=00 AU=00 RI=61 NI=61
-], [])
+_FILE_SHARING_LOCK_MODE([$1])
 
 AT_CLEANUP
 
 AT_SETUP([$1 file sharing: LOCK MODE EXCLUSIVE])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [LOCK MODE IS EXCLUSIVE])
+_FILE_SHARING_PROG([$1], [LOCK MODE IS EXCLUSIVE], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO VS DI DU DE DO], [0],
 [DI: DI=61 DU=61 DE=61 DO=61
@@ -7362,8 +7380,9 @@ AT_CLEANUP
 
 AT_SETUP([$1 file sharing: SHARING ALL clause])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [SHARING WITH ALL OTHER LOCK MODE IS MANUAL])
+_FILE_SHARING_PROG([$1], [SHARING WITH ALL OTHER LOCK MODE IS MANUAL], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO NI RU VS DI DU DE DO NI RI], [0],
 [DI: DI=00 DU=00 DE=00 DO=61 NI=61 RI=00
@@ -7378,8 +7397,9 @@ AT_CLEANUP
 
 AT_SETUP([$1 file sharing: SHARING READ ONLY clause])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [SHARING WITH READ ONLY LOCK MODE IS MANUAL])
+_FILE_SHARING_PROG([$1], [SHARING WITH READ ONLY LOCK MODE IS MANUAL], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog HO DI DU DE DO AU VS DI DU DE DO AI AU], [0],
 [DI: DI=00 DU=61 DE=61 DO=61 AI=00 AU=61
@@ -7393,8 +7413,9 @@ AT_CLEANUP
 
 AT_SETUP([$1 file sharing: SHARING NO clause])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [SHARING WITH NO OTHER LOCK MODE IS MANUAL])
+_FILE_SHARING_PROG([$1], [SHARING WITH NO OTHER LOCK MODE IS MANUAL], [$2])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog HO DI AI VS DI AI], [0],
 [DI: DI=61 AI=61
@@ -7405,8 +7426,9 @@ AT_CLEANUP
 
 AT_SETUP([$1 file sharing: two connectors])
 AT_KEYWORDS([runfile sharing lock])
+m4_if([$1], [INDEXED], [AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])])
 
-_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL])
+_FILE_SHARING_PROG([$1], [LOCK MODE IS MANUAL], [$2])
 AT_DATA([prog2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog2.
@@ -7415,10 +7437,12 @@ AT_DATA([prog2.cob], [
        FILE-CONTROL.
            SELECT F ASSIGN "shared.dat"
               ORGANIZATION IS $1
+              $2
               LOCK MODE IS MANUAL
               FILE STATUS IS FS.
            SELECT G ASSIGN "shared.dat"
               ORGANIZATION IS $1
+              $3
               LOCK MODE IS MANUAL
               FILE STATUS IS GS.
        DATA DIVISION.
@@ -7507,6 +7531,7 @@ AT_CLEANUP
 _FILE_SHARING_TESTS([SEQUENTIAL])
 _FILE_SHARING_TESTS([LINE SEQUENTIAL])
 _FILE_SHARING_TESTS([RELATIVE])
+_FILE_SHARING_TESTS([INDEXED], [RECORD KEY IS R], [RECORD KEY IS GR])
 
 
 AT_SETUP([RELATIVE SEQUENTIAL basic I/O])
@@ -7790,9 +7815,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with LOCK MODE EXCLUSIVE])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -7869,9 +7892,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with OPEN WITH LOCK])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -7947,9 +7968,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with SHARING NO])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -8026,9 +8045,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with SHARING READ ONLY])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -8112,9 +8129,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with blocked lock])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
