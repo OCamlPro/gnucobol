@@ -2456,6 +2456,47 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [XXX])
 AT_CLEANUP
 
 
+AT_SETUP([PERFORM VARYING subscripted item with runtime checks])
+AT_KEYWORDS([runmisc subscript debug])
+
+# the FROM move must not be done again with the BY step;
+# N > 5 stops the loop if it is
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  I            PIC 9 VALUE 1.
+       01  N            PIC 9 VALUE 0.
+       01  T.
+           05  A        PIC 9 OCCURS 3 VALUE 0.
+           05  B        PIC S9(3) COMP OCCURS 3 VALUE 0.
+       PROCEDURE        DIVISION.
+           PERFORM VARYING A (I) FROM 1 BY 1
+                   UNTIL A (I) > 3 OR N > 5
+              ADD 1 TO N
+           END-PERFORM
+           DISPLAY A (I) " " N
+           END-DISPLAY
+           MOVE 0 TO N
+           PERFORM VARYING B (I) FROM 1 BY 1
+                   UNTIL B (I) > 3 OR N > 5
+              ADD 1 TO N
+           END-PERFORM
+           DISPLAY B (I) " " N
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -debug prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[4 3
++004 3
+], [])
+
+AT_CLEANUP
+
+
 ## EXIT PERFORM  see ISO/IEC 1989:2002(E) 14.8.13 Format 5
 
 AT_SETUP([EXIT PERFORM])

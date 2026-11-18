@@ -4624,6 +4624,397 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([FUNCTION results: more than 32 in one statement])
+AT_KEYWORDS([functions CHAR CONCATENATE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  X            PIC X(40).
+       PROCEDURE        DIVISION.
+           DISPLAY FUNCTION CHAR (66)  FUNCTION CHAR (67)
+                   FUNCTION CHAR (68)  FUNCTION CHAR (69)
+                   FUNCTION CHAR (70)  FUNCTION CHAR (71)
+                   FUNCTION CHAR (72)  FUNCTION CHAR (73)
+                   FUNCTION CHAR (74)  FUNCTION CHAR (75)
+                   FUNCTION CHAR (76)  FUNCTION CHAR (77)
+                   FUNCTION CHAR (78)  FUNCTION CHAR (79)
+                   FUNCTION CHAR (80)  FUNCTION CHAR (81)
+                   FUNCTION CHAR (82)  FUNCTION CHAR (83)
+                   FUNCTION CHAR (84)  FUNCTION CHAR (85)
+                   FUNCTION CHAR (86)  FUNCTION CHAR (87)
+                   FUNCTION CHAR (88)  FUNCTION CHAR (89)
+                   FUNCTION CHAR (90)  FUNCTION CHAR (91)
+                   FUNCTION CHAR (98)  FUNCTION CHAR (99)
+                   FUNCTION CHAR (100) FUNCTION CHAR (101)
+                   FUNCTION CHAR (102) FUNCTION CHAR (103)
+                   FUNCTION CHAR (104) FUNCTION CHAR (105)
+                   FUNCTION CHAR (106) FUNCTION CHAR (107)
+                   FUNCTION CHAR (108) FUNCTION CHAR (109)
+                   FUNCTION CHAR (110) FUNCTION CHAR (111)
+           END-DISPLAY
+           MOVE FUNCTION CONCATENATE
+                  (FUNCTION LOWER-CASE ("A") FUNCTION LOWER-CASE ("B")
+                   FUNCTION LOWER-CASE ("C") FUNCTION LOWER-CASE ("D")
+                   FUNCTION LOWER-CASE ("E") FUNCTION LOWER-CASE ("F")
+                   FUNCTION LOWER-CASE ("G") FUNCTION LOWER-CASE ("H")
+                   FUNCTION LOWER-CASE ("I") FUNCTION LOWER-CASE ("J")
+                   FUNCTION LOWER-CASE ("K") FUNCTION LOWER-CASE ("L")
+                   FUNCTION LOWER-CASE ("M") FUNCTION LOWER-CASE ("N")
+                   FUNCTION LOWER-CASE ("O") FUNCTION LOWER-CASE ("P")
+                   FUNCTION LOWER-CASE ("Q") FUNCTION LOWER-CASE ("R")
+                   FUNCTION LOWER-CASE ("S") FUNCTION LOWER-CASE ("T")
+                   FUNCTION LOWER-CASE ("U") FUNCTION LOWER-CASE ("V")
+                   FUNCTION LOWER-CASE ("W") FUNCTION LOWER-CASE ("X")
+                   FUNCTION LOWER-CASE ("Y") FUNCTION LOWER-CASE ("Z")
+                   FUNCTION UPPER-CASE ("a") FUNCTION UPPER-CASE ("b")
+                   FUNCTION UPPER-CASE ("c") FUNCTION UPPER-CASE ("d")
+                   FUNCTION UPPER-CASE ("e") FUNCTION UPPER-CASE ("f")
+                   FUNCTION UPPER-CASE ("g") FUNCTION UPPER-CASE ("h"))
+             TO X
+           DISPLAY "<" X ">"
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
+<abcdefghijklmnopqrstuvwxyzABCDEFGH      >
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION in conditions: evaluation order])
+AT_KEYWORDS([functions ABS IF EVALUATE PERFORM])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  I            PIC 9 VALUE 0.
+       01  T.
+           05  TE       PIC S9 OCCURS 3 VALUE -2.
+       PROCEDURE        DIVISION.
+      *    the right operand of AND is not evaluated when I = 0
+           IF I > 0 AND FUNCTION ABS (TE (I)) > 1
+              DISPLAY "AND evaluated" END-DISPLAY
+           END-IF
+      *    a WHEN after a matching WHEN is not evaluated
+           EVALUATE TRUE
+           WHEN I = 0
+              CONTINUE
+           WHEN FUNCTION ABS (TE (I)) > 1
+              DISPLAY "WHEN evaluated" END-DISPLAY
+           END-EVALUATE
+      *    the condition is evaluated again before each iteration
+           PERFORM VARYING I FROM 1 BY 1
+                   UNTIL I > 3 OR FUNCTION ABS (TE (I)) > 5
+              MOVE -9 TO TE (I + 1)
+           END-PERFORM
+           IF I NOT = 2
+              DISPLAY "PERFORM stopped at " I END-DISPLAY
+           END-IF
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -debug prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION in STRING and UNSTRING])
+AT_KEYWORDS([functions TRIM REVERSE UPPER-CASE LOWER-CASE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  S            PIC X(20) VALUE "  ab,cdef,g  ".
+       01  SEP          PIC X VALUE ",".
+       01  D            PIC X(20).
+       01  A            PIC X(5).
+       01  N            PIC 9.
+       01  T.
+           05  TE       PIC X(5) OCCURS 5.
+       PROCEDURE        DIVISION.
+           STRING FUNCTION TRIM (S)
+                       DELIMITED BY FUNCTION UPPER-CASE (SEP)
+                  "-" DELIMITED BY SIZE
+                  FUNCTION REVERSE (FUNCTION TRIM (S))
+                       DELIMITED BY FUNCTION LOWER-CASE (SEP)
+                  INTO D
+           END-STRING
+           DISPLAY "<" D ">"
+           END-DISPLAY
+           MOVE SPACES TO T
+      *    the subscript of TE is evaluated after N is set
+           UNSTRING FUNCTION TRIM (S)
+                    DELIMITED BY FUNCTION UPPER-CASE (SEP)
+                    INTO A COUNT IN N
+                         TE (N)
+           END-UNSTRING
+           DISPLAY "<" A "><" N "><" T ">"
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -debug prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<ab-g                >
+<ab   ><2><     cdef                >
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION in INSPECT])
+AT_KEYWORDS([functions UPPER-CASE])
+
+# the inspected FUNCTION result is kept by the runtime until the end of
+# the statement, so the second FUNCTION result must not overwrite it
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  X            PIC X(8) VALUE "aaxxxxxx".
+       01  Y            PIC X    VALUE "x".
+       01  CNT          PIC 99   VALUE 0.
+       PROCEDURE        DIVISION.
+           INSPECT FUNCTION UPPER-CASE (X)
+                   TALLYING CNT FOR ALL FUNCTION UPPER-CASE (Y)
+           DISPLAY "<" CNT ">"
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [<06>
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION in MOVE to several receivers])
+AT_KEYWORDS([functions UPPER-CASE MIN MAX])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  A            PIC X(4) VALUE "abc".
+       01  B            PIC X(4).
+       01  C            PIC X(4).
+       01  I            PIC 9 VALUE 2.
+       01  T.
+           05  TE       PIC X(4) OCCURS 3.
+       01  N.
+           05  NE       PIC 9 OCCURS 3.
+       PROCEDURE        DIVISION.
+           MOVE FUNCTION UPPER-CASE (A) TO B C
+           DISPLAY "<" B "><" C ">"
+           END-DISPLAY
+           MOVE "ab" TO TE (1)
+           MOVE "cd" TO TE (2)
+           MOVE "ef" TO TE (3)
+           MOVE 1 TO NE (1)
+           MOVE 3 TO NE (2)
+           MOVE 2 TO NE (3)
+      *    the subscript of the source is evaluated once
+           MOVE NE (I) TO I B
+           DISPLAY "<" I "><" B ">"
+           END-DISPLAY
+           MOVE FUNCTION UPPER-CASE (TE (I))
+             TO B TE (FUNCTION MIN (I, 1)) TE (FUNCTION MAX (I, 2))
+           DISPLAY "<" B "><" T ">"
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -debug prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<ABC ><ABC >
+<3><3   >
+<EF  ><EF  cd  EF  >
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION in INITIALIZE])
+AT_KEYWORDS([functions MIN MAX ABS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  I            PIC 9 VALUE 2.
+       01  T.
+           05  TE       OCCURS 3.
+               10  TA   PIC X(3) VALUE "aaa".
+               10  TN   PIC 9(3) VALUE 1.
+       01  W            PIC X(12) VALUE "abcdefghijkl".
+       PROCEDURE        DIVISION.
+           INITIALIZE TE (FUNCTION MAX (I, 1))
+           DISPLAY "<" T ">"
+           END-DISPLAY
+           INITIALIZE TE (FUNCTION MIN (I, 3)) REPLACING
+                      ALPHANUMERIC BY "xyz" NUMERIC BY 42
+           DISPLAY "<" T ">"
+           END-DISPLAY
+           INITIALIZE W (FUNCTION ABS (I - 4) : FUNCTION ABS (I - 7))
+           DISPLAY "<" W ">"
+           END-DISPLAY
+           INITIALIZE W (2 : FUNCTION MIN (I, 9)) REPLACING
+                      ALPHANUMERIC BY "-"
+           DISPLAY "<" W ">"
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -debug prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<aaa001   000aaa001>
+<aaa001xyz042aaa001>
+<a     ghijkl>
+<a-    ghijkl>
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION in CALL])
+AT_KEYWORDS([functions UPPER-CASE MIN MAX ABS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  I            PIC 9 VALUE 2.
+       01  T.
+           05  TE       PIC X(5) OCCURS 3.
+       01  NAMES.
+           05  NM       PIC X(8) OCCURS 2.
+       01  NS.
+           05  NE       PIC S9(9) COMP-5 OCCURS 2 VALUE -7.
+       01  R.
+           05  RE       PIC S9(9) OCCURS 3 VALUE 0.
+       PROCEDURE        DIVISION.
+           MOVE "abc" TO TE (1)
+           MOVE "def" TO TE (2)
+           MOVE "callee" TO NM (2)
+           CALL "callee" USING BY REFERENCE TE (FUNCTION MIN (I, 3))
+                               BY CONTENT FUNCTION UPPER-CASE (TE (1))
+                               BY VALUE NE (FUNCTION MIN (I, 1))
+                         RETURNING RE (FUNCTION MAX (I, 1))
+           END-CALL
+           CALL NM (FUNCTION ABS (I - 4))
+                         USING BY REFERENCE TE (1)
+                               BY CONTENT "vwxyz"
+                               BY VALUE I
+           END-CALL
+           DISPLAY "<" T "><" RE (2) ">"
+           END-DISPLAY
+           MOVE 0 TO RETURN-CODE
+           STOP RUN.
+       END PROGRAM prog.
+
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01  A            PIC X(5).
+       01  B            PIC X(5).
+       01  C            PIC S9(9) COMP-5.
+       PROCEDURE        DIVISION USING A B BY VALUE C.
+           DISPLAY "<" A "><" B "><" C ">"
+           END-DISPLAY
+           MOVE "zz" TO A
+           MOVE 42 TO RETURN-CODE
+           GOBACK.
+       END PROGRAM callee.
+])
+
+AT_CHECK([$COMPILE -debug prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[<def  ><ABC  ><-0000000007>
+<abc  ><vwxyz><+0000000002>
+<zz   zz        ><+000000042>
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION result passed BY CONTENT])
+AT_KEYWORDS([functions UPPER-CASE LOWER-CASE CALL])
+
+# the argument must not be changed by function calls in the callee
+# (previously the intrinsic results were kept in a ring of 32 fields,
+#  so that the argument was overwritten by the 32nd one, or freed if
+#  it was bigger)
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  WS-NAME      PIC X(10) VALUE "caller-arg".
+       PROCEDURE        DIVISION.
+           CALL "callee" USING
+                BY CONTENT FUNCTION UPPER-CASE (WS-NAME)
+           END-CALL
+           STOP RUN.
+       END PROGRAM prog.
+
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  WS-FILL      PIC X(10)  VALUE "ZZZZZZZZZZ".
+       01  WS-TMP       PIC X(10).
+       01  WS-BIG       PIC X(300) VALUE ALL "b".
+       01  WS-BIG-TMP   PIC X(300).
+       LINKAGE          SECTION.
+       01  LK-ARG       PIC X(10).
+       PROCEDURE        DIVISION USING LK-ARG.
+           DISPLAY "on entry              : <" LK-ARG ">"
+           END-DISPLAY
+      *    32 results of the same size
+           PERFORM 32 TIMES
+              MOVE FUNCTION LOWER-CASE (WS-FILL) TO WS-TMP
+           END-PERFORM
+           DISPLAY "after 32 small results: <" LK-ARG ">"
+           END-DISPLAY
+      *    31 small results, then a bigger one
+           PERFORM 31 TIMES
+              MOVE FUNCTION LOWER-CASE (WS-FILL) TO WS-TMP
+           END-PERFORM
+           MOVE FUNCTION UPPER-CASE (WS-BIG) TO WS-BIG-TMP
+           DISPLAY "after a big result    : <" LK-ARG ">"
+           END-DISPLAY
+           GOBACK.
+       END PROGRAM callee.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[on entry              : <CALLER-ARG>
+after 32 small results: <CALLER-ARG>
+after a big result    : <CALLER-ARG>
+], [])
+
+AT_CLEANUP
+
+
 ### ISO+IEC+1989-2002 9.4 User-Defined Functions
 
 AT_SETUP([User-Defined FUNCTION with/without parameter])

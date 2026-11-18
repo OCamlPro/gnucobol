@@ -44,6 +44,7 @@
 #define CB_PREFIX_PIC		"p_"	/* PICTURE string */
 #define CB_PREFIX_SEQUENCE	"s_"	/* Collating sequence */
 #define CB_PREFIX_STRING	"st_"	/* String */
+#define CB_PREFIX_TEMP		"t_"	/* Result of a hoisted subexpression (cob_dyn_field) */
 #define CB_PREFIX_REPORT	"r_"	/* Report (cob_report) */
 #define CB_PREFIX_REPORT_LINE	"rl_"	/* Report line (cob_report_line) */
 #define CB_PREFIX_REPORT_FIELD	"rf_"	/* Report field (cob_report_field) */

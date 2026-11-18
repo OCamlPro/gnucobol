@@ -85,9 +85,6 @@
 #define	R_OK		4
 #endif
 
-/* Stacked field depth */
-#define COB_DEPTH_LEVEL		32U
-
 /* GMP decimal default */
 #define COB_MPZ_DEF		1024UL
 

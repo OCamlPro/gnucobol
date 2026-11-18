@@ -1,4 +1,29 @@
 
+2026-11-16  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* common.h (cob_dyn_field): new type for a reusable field owning its
+	  data and attributes
+	* intrinsic.c (cob_dyn_field_copy, cob_dyn_field_free): new functions
+	  to set and to release a cob_dyn_field
+	* intrinsic.c, common.h: all intrinsic functions and cob_intr_binop now
+	  store their result into a cob_dyn_field given as first argument and
+	  return nothing, instead of returning an entry of an internal ring of
+	  32 fields, which was silently overwritten when more than 32 results
+	  were in use at once (e.g. in a single DISPLAY or as arguments of a
+	  single function)
+	* intrinsic.c (calc_struct, calc_base, curr_field, curr_entry,
+	  move_field), coblocal.h (COB_DEPTH_LEVEL): removed the ring of fields,
+	  also from cob_init_intrinsic and cob_exit_intrinsic
+	* intrinsic.c (cob_put_indirect_field, cob_get_indirect_field): copy the
+	  source of a MOVE to several receivers into an internal cob_dyn_field,
+	  freed in cob_exit_intrinsic
+	* intrinsic.c (cob_switch_value): return one of two constant fields
+	* intrinsic.c (cob_decimal_move_temp): use a local buffer, allocated
+	  only for big sizes, instead of a ring entry
+	* cobcapi.c (cob_put_field_str), screenio.c (format_field): adjusted to
+	  the new intrinsic functions, using a local cob_dyn_field
+	* numeric.c: adjusted comments to the renamed intrinsic.c functions
+
 2026-11-12  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (cob_relocate_string): no trailing separator in the

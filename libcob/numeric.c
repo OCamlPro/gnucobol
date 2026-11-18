@@ -1481,7 +1481,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 
 	/* huge data, only for internal operations like intrinsic functions,
 	   for example when directly called within intrinsic.c by
-	   cob_alloc_field, cob_decimal_get_field ->  cob_decimal_get_display */
+	   dyn_field_store_decimal, cob_decimal_get_field ->  cob_decimal_get_display */
 	if (fsize > COB_MAX_BINARY) {
 		char *p = mpz_get_str (NULL, 10, d->value);
 		const size_t size = strlen (p);
@@ -4138,7 +4138,7 @@ cob_numeric_display_cmp (cob_field *f1, cob_field *f2)
 	const short 	scale2 = COB_FIELD_SCALE (f2);
 	/* numeric DISPLAY fields from a program are limited to COB_MAX_DIGITS,
 	   internal created numeric DISPLAY fields from intrinsic functions
-	   in intrinsic.c (cob_alloc_field, cob_decimal_move_temp) could
+	   in intrinsic.c (dyn_field_store_decimal, cob_decimal_move_temp) could
 	   _theoretically_ use up to SHRT_MAX */
 	const short 	size1 = (short)COB_FIELD_SIZE (f1);
 	const short 	size2 = (short)COB_FIELD_SIZE (f2);

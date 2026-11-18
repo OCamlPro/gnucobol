@@ -1,4 +1,33 @@
 
+2026-11-18  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* codegen.c: calls of intrinsic functions and of cob_intr_binop are no
+	  longer nested in the expression using their result, but hoisted
+	  before it in a fixed order, as statements (or as a comma sequence in
+	  conditions, keeping short-circuit evaluation), each storing its result
+	  into a local cob_dyn_field t_N; 
+	  the runtime checks of references are hoisted the same way, 
+	  in every context (this adds checks that were previously missing);
+	  the output functions for expressions take the phase as first argument: 
+	  output the hoisted calls and checks, or the expression reading their 
+	  results;
+	  the temporary results of the calls in a statement are kept until its end,
+	  as libcob may keep pointers to them between its calls (STRING, UNSTRING, 
+	  INSPECT); 
+	  removed inside_check, inside_stack and COB_INSIDE_SIZE
+	* codegen.c (output_code, output_code_v, output_hoisting_stmt,
+	  output_hoisting_comma_expr): new functions outputting code from a
+	  printf-like format with conversions for tree operands, in a given
+	  phase, or as a statement or comma expression after its hoisted calls
+	  and checks; used instead of sequences of output calls, and of
+	  output_func_1, which was removed
+	* codegen.c (output_call, output_call_returning, call_func_member):
+	  output the C call once for all kinds of CALL
+	* codegen.c (output_param): removed the unused id parameter and param_id
+	* tree.h (CB_PREFIX_TEMP): new prefix for the t_N
+	* typeck.c (cb_build_move): the runtime checks of source and receiver are
+	  no longer moved out of their references, as codegen hoists them now
+
 2026-11-12  David Declerck <david.declerck@ocamlpro.com>
 
 	* pplex.l (ppinput): fix buffer overflow on overlong XFD lines
