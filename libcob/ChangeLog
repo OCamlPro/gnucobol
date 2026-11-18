@@ -1,4 +1,23 @@
 
+2026-11-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (cob_fd_file_open, cob_file_open): only empty the file
+	  on OPEN OUTPUT once the lock is acquired
+	* fileio.c (cob_file_unlock): do not release the file lock
+	* fileio.c (set_file_lock, close_file): new functions to handle
+	  file sharing on OPEN for SEQUENTIAL, LINE SEQUENTIAL and RELATIVE
+	  files (replaces the lock on the whole file)
+	* fileio.c (default_share_mode): new function to compute the sharing
+	  mode when SHARING is not specified (as per MF)
+	* fileio.c (cob_open), common.h (cob_file): add share_mode
+	* common.h: add COB_SHARE_READ_ONLY, COB_SHARE_ALL_OTHER
+	  and COB_SHARE_NO_OTHER
+	* fileio.c (indexed_open, indexed_close): handle file sharing on OPEN
+	  for INDEXED files; move the former code to indexed_open_internal
+	  and indexed_close_internal
+	* fileio.c (default_share_mode): share INDEXED files with LOCK MODE
+	  MANUAL / AUTOMATIC when SHARING is not specified (as per MF)
+
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,

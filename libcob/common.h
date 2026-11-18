@@ -909,6 +909,12 @@ enum cob_file_operation {
 
 #define COB_FILE_EXCLUSIVE	(COB_LOCK_EXCLUSIVE | COB_LOCK_OPEN_EXCLUSIVE)
 
+/* Sharing option */
+
+#define COB_SHARE_READ_ONLY	(1U << 0)
+#define COB_SHARE_ALL_OTHER	(1U << 1)
+#define COB_SHARE_NO_OTHER	(1U << 2)
+
 /* Open mode */
 
 enum cob_open_mode {
@@ -1475,6 +1481,7 @@ typedef struct __cob_file {
 	size_t			nconvert_fields;	/* Number of logical fields to convert */
 	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
 	enum cob_file_operation		last_operation;		/* Most recent I/O operation */
+	unsigned char		share_mode;		/* Active SHARING MODE */
 } cob_file;
 
 

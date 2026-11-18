@@ -6727,14 +6727,9 @@ sharing_clause:
 ;
 
 sharing_option:
-/* code from trunk not available in 3.1 yet
   ALL _other			{ $$ = cb_int (COB_SHARE_ALL_OTHER); }
 | NO _other			{ $$ = cb_int (COB_SHARE_NO_OTHER); }
 | READ ONLY			{ $$ = cb_int (COB_SHARE_READ_ONLY); }
-  current code: */
-  ALL _other			{ $$ = NULL; }
-| NO _other			{ $$ = cb_int (COB_LOCK_OPEN_EXCLUSIVE); }
-| READ ONLY			{ $$ = NULL; }
 ;
 
 /* FILE-LIMIT clause */

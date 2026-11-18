@@ -1,4 +1,15 @@
 
+2026-11-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/run_file.at: add file sharing tests for SEQUENTIAL,
+	  LINE SEQUENTIAL and RELATIVE files
+	* testsuite.src/run_file.at: remove the expected failure of the file
+	  sharing tests on SEQUENTIAL files
+	* testsuite.src/run_file.at (COB_SYNC): add SHARING clauses and
+	  no longer skip the test on Windows
+	* testsuite.src/run_file.at: add file sharing tests for INDEXED files
+	  and remove the expected failure of the former ones
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* perf_stat.sh, perf_record.sh: new scripts based on functions previously

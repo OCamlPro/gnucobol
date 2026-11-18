@@ -1,4 +1,8 @@
 
+2026-11-18  David Declerck <david.declerck@ocamlpro.com>
+
+	* runtime.cfg: document DB_HOME
+
 2026-11-10  David Declerck <david.declerck@ocamlpro.com>
 
 	* *.conf: new options call-literal-byteorder and call-literal-size,
