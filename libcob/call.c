@@ -292,20 +292,21 @@ cob_dlopen (const char* filename)
 	}
 	return LoadLibrary (filename);
 #elif	defined(USE_LIBDL)
-	const int flags = cobsetptr->cob_load_global
+	const int flags =
+		cobsetptr->cob_load_visibility == COB_LOAD_VISIBILITY_GLOBAL
 		? RTLD_LAZY | RTLD_GLOBAL
 		: RTLD_LAZY | RTLD_LOCAL;
 
 	return dlopen (filename, flags);
 #else
 	if (advise != NULL) {
-		static int last_cob_load_global = -1;
+		static int last_cob_load_visibility = -1;
 
-		if (cobsetptr->cob_load_global != last_cob_load_global) {
+		if (cobsetptr->cob_load_visibility != last_cob_load_visibility) {
 			int error;
-			last_cob_load_global = cobsetptr->cob_load_global
+			last_cob_load_visibility = cobsetptr->cob_load_visibility;
 
-			if (cobsetptr->cob_load_global) {
+			if (cobsetptr->cob_load_visibility == COB_LOAD_VISIBILITY_GLOBAL) {
 				error = lt_dladvise_global (&advise);
 			} else {
 				error = lt_dladvise_local (&advise);
@@ -587,8 +588,8 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 		base_preload_ptr = preptr;
 	}
 #else
-	/* Use the same logic as above in case the cob_load_global is set to local */
-	if (!cobsetptr->cob_load_global) {
+	/* Use the same logic as above when local visibility is requested. */
+	if (cobsetptr->cob_load_visibility != COB_LOAD_VISIBILITY_GLOBAL) {
 		if (last_elem) {
 			last_elem->next = preptr;
 		} else {
@@ -638,7 +639,7 @@ cache_preload (const char *path)
 		/* Save last element of preload list */
 		if (!preptr->next) last_elem = preptr;
 #endif
-		if (!cobsetptr->cob_load_global) {
+		if (cobsetptr->cob_load_visibility != COB_LOAD_VISIBILITY_GLOBAL) {
 			if (!preptr->next) last_elem = preptr;
 		}
 	}
@@ -1822,12 +1823,13 @@ cob_exit_call (void)
 }
 
 /* iterating over COB_PRE_LOAD (in cob_preload_str) and try to load all
-   contained entries nto global memory space, storing the full list of
-   resolved entries including their path into cob_preload_str  */
+   contained entries with the configured visibility policy, storing the full
+   list of resolved entries including their path into cob_preload_str  */
 static void
 pre_load_once ()
 {
-	const unsigned int	global_load = cobsetptr->cob_load_global;
+	const enum cob_load_visibility	load_visibility =
+		cobsetptr->cob_load_visibility;
 	char	*p, *s;
 
 	/* using temporary buffer as cob_preload_str
@@ -1838,13 +1840,16 @@ pre_load_once ()
 	cob_free (cobsetptr->cob_preload_str);
 	cobsetptr->cob_preload_str = NULL;
 
-	cobsetptr->cob_load_global = 1;	/* pre-loaded libraries are always global */
+	/* Pre-loaded libraries are global unless local visibility is forced. */
+	if (cobsetptr->cob_load_visibility != COB_LOAD_VISIBILITY_LOCAL_ONLY) {
+		cobsetptr->cob_load_visibility = COB_LOAD_VISIBILITY_GLOBAL;
+	}
 	s = strtok (p, PATHSEP_STR);
 	for (; s; s = strtok (NULL, PATHSEP_STR)) {
 		(void)cob_try_preload (s);
 	}
 	cob_free (p);
-	cobsetptr->cob_load_global = global_load;
+	cobsetptr->cob_load_visibility = load_visibility;
 }
 
 void

@@ -207,11 +207,14 @@ NEWS - user visible changes				-*- outline -*-
    $b for executable basename, $d for date in YYYYMMDD format, $t for time
    in HHMMSS format (before, only $$ was available for pid)
 
-** Introduction of the COB_LOAD_GLOBAL boolean flag, which determines whether
-   the symbols of dynamically loaded shared libraries are made available
-   globally to other shared objects or remain confined locally. Previously,
-   this behavior depended on the underlying platform, where the default was
-   often "global." The default behavior is now explicitly set to "local".
+** Introduction of the COB_LOAD_VISIBILITY setting, which controls symbol
+   visibility for dynamically loaded shared libraries. It accepts
+   LOCAL_PREFERRED (0), GLOBAL (1), and LOCAL_ONLY (2). LOCAL_PREFERRED is the
+   default: CALLed modules are loaded locally and pre-loaded modules globally.
+   GLOBAL requests global visibility for both; LOCAL_ONLY requests local
+   visibility for both. Previously, this behavior depended on the underlying
+   platform, where the default was often "global." LOCAL_ONLY is mainly
+   introduced to make GnuCOBOL compatible with dlmopen from glibc.
 
 * New build features
 
