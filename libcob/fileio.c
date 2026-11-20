@@ -5080,6 +5080,11 @@ indexed_start (cob_file *f, const int cond, cob_field *key)
 				savecond = COB_LA;
 			}
 		} else {
+			/* workaround for V(B)ISAM bug: ISEQUAL on an empty file
+			   gives EBADFILE instead of ENOREC */
+			if (cond == COB_EQ && ISERRNO == EBADFILE) {
+				ISERRNO = ENOREC;
+			}
 			f->curkey = -1;
 			f->mapkey = -1;
 			fh->startcond = -1;
