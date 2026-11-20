@@ -5466,7 +5466,16 @@ indexed_read_next (cob_file *f, const int read_opts)
 				fh->wrkhasrec = 0;
 			}
 			if (isread (fh->isfd, (void *)f->record->data, ISPREV | lmode)) {
+				const int	lost = (ISERRNO == ENOCURR);
 				ret = fisretsts (COB_STATUS_10_END_OF_FILE);
+				/* workaround for V(B)ISAM bug: ISPREV fails (ENOCURR)
+				   after ISNEXT reached the last record */
+				if (lost
+				 && !isread (fh->isfd, (void *)f->record->data, ISLAST)
+				 && ISRECNUM == fh->recnum
+				 && !isread (fh->isfd, (void *)f->record->data, ISPREV | lmode)) {
+					ret = COB_STATUS_00_SUCCESS;
+				}
 			}
 		}
 		break;
