@@ -14598,6 +14598,80 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([INDEXED file START before the first key])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY
+               FILE STATUS IS MY-STATUS.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-KEY    PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  MY-STATUS     PIC XX.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE 10 TO MY-KEY
+           WRITE MY-REC
+           MOVE 20 TO MY-KEY
+           WRITE MY-REC
+           MOVE 30 TO MY-KEY
+           WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+
+           MOVE 10 TO MY-KEY
+           START MY-FILE KEY < MY-KEY
+           DISPLAY "< 10: " MY-STATUS
+
+           MOVE 5 TO MY-KEY
+           START MY-FILE KEY <= MY-KEY
+           DISPLAY "<= 05: " MY-STATUS
+
+           MOVE 10 TO MY-KEY
+           START MY-FILE KEY <= MY-KEY
+           READ MY-FILE PREVIOUS
+           DISPLAY "<= 10: " MY-STATUS " " MY-KEY
+
+           MOVE 20 TO MY-KEY
+           START MY-FILE KEY < MY-KEY
+           READ MY-FILE PREVIOUS
+           DISPLAY "< 20: " MY-STATUS " " MY-KEY
+
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[< 10: 23
+<= 05: 23
+<= 10: 00 10
+< 20: 00 10
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([TURN EC-I-O])
 AT_KEYWORDS([runfile directive])
 

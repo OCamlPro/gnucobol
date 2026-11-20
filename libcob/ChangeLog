@@ -14,6 +14,8 @@
 	  record is the last one (workaround for V(B)ISAM bug)
 	* fileio.c (indexed_start): fix START = on an empty file (workaround for
 	  V(B)ISAM bug: ISEQUAL gives EBADFILE instead of ENOREC)
+	* fileio.c (indexed_start): START <= and START < return status 23 if no
+	  record is before the key (logic bug: missing check)
 
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 

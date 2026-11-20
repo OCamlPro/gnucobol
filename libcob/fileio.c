@@ -5093,6 +5093,26 @@ indexed_start (cob_file *f, const int cond, cob_field *key)
 			return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
 		}
 	}
+	if ((cond == COB_LE || cond == COB_LT)
+	 && savecond != COB_LA) {
+		/* logic bug fix: for <= and <, check that a record is
+		   before the first one >= key */
+		indexed_savekey (fh, f->record->data, k);
+		if (isread (fh->isfd, fh->recwrk, ISCURR) == 0
+		 && (cond == COB_LT
+		  || indexed_cmpkey (fh, fh->recwrk, k, fh->partial_key_length) != 0)) {
+			if (isread (fh->isfd, fh->recwrk, ISPREV) != 0) {
+				f->curkey = -1;
+				f->mapkey = -1;
+				fh->startcond = -1;
+				fh->readdir = -1;
+				fh->startiscur = 0;
+				return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
+			}
+			/* back to the record found */
+			isstart (fh->isfd, keyd, klen, (void *)f->record->data, ISGTEQ);
+		}
+	}
 	fh->startcond = savecond;
 	indexed_savekey (fh, f->record->data, k);
 	f->curkey = k;
