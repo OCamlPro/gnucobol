@@ -5359,7 +5359,11 @@ indexed_read_next (cob_file *f, const int read_opts)
 					}
 					break;
 				}
-				if (isread (fh->isfd, (void *)f->record->data, ISCURR | lmode)) {
+				/* workaround for V(B)ISAM bug: ISCURR fails (ENOCURR)
+				   after ISNEXT reached the last record */
+				if (isread (fh->isfd, (void *)f->record->data, ISCURR | lmode)
+				 && (ISERRNO != ENOCURR
+				  || isread (fh->isfd, (void *)f->record->data, ISLAST | lmode))) {
 					ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 				}
 			}

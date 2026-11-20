@@ -10,6 +10,8 @@
 	  PREVIOUS if the walk ends on the last record (workaround for V(B)ISAM bug)
 	* fileio.c (indexed_read_next): fix READ PREVIOUS after a READ NEXT that
 	  reached the last record (workaround for V(B)ISAM bug)
+	* fileio.c (indexed_read_next): after START >=, fix READ NEXT if the start
+	  record is the last one (workaround for V(B)ISAM bug)
 
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
