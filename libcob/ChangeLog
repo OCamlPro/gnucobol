@@ -1,4 +1,24 @@
 
+2026-11-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_read_next): after START, no walk over equal keys if no
+	  duplicates (wrong libcob assumption: a failed read moves the position)
+	* fileio.c (indexed_read_next): after START <=, fix READ PREVIOUS if the
+	  walk reaches the end (wrong libcob assumption: a failed ISNEXT moves
+	  the position)
+	* fileio.c (indexed_read_next): after START <=, fix READ NEXT and READ
+	  PREVIOUS if the walk ends on the last record (workaround for V(B)ISAM bug)
+	* fileio.c (indexed_read_next): fix READ PREVIOUS after a READ NEXT that
+	  reached the last record (workaround for V(B)ISAM bug)
+	* fileio.c (indexed_read_next): after START >=, fix READ NEXT if the start
+	  record is the last one (workaround for V(B)ISAM bug)
+	* fileio.c (indexed_start): fix START = on an empty file (workaround for
+	  V(B)ISAM bug: ISEQUAL gives EBADFILE instead of ENOREC)
+	* fileio.c (indexed_start): START <= and START < return status 23 if no
+	  record is before the key (logic bug: missing check)
+	* fileio.c (indexed_read_next): after START <=, READ NEXT goes back if the
+	  record found is after the key (logic bug: missing check)
+
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,

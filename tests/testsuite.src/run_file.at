@@ -14147,6 +14147,587 @@ DONE], [])
 AT_CLEANUP
 
 
+AT_SETUP([INDEXED file START on first and last key])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-KEY    PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  I             PIC 99.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 3
+               COMPUTE MY-KEY = I * 10
+               WRITE MY-REC
+           END-PERFORM
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+
+           MOVE 10 TO MY-KEY
+           START MY-FILE KEY >= MY-KEY
+           PERFORM 3 TIMES
+               READ MY-FILE NEXT
+               DISPLAY MY-KEY
+           END-PERFORM
+
+           MOVE 30 TO MY-KEY
+           START MY-FILE KEY <= MY-KEY
+           PERFORM 3 TIMES
+               READ MY-FILE PREVIOUS
+               DISPLAY MY-KEY
+           END-PERFORM
+
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[10
+20
+30
+30
+20
+10
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file START <= with the same key on all records])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 9.
+           05  MY-AKEY   PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  I             PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 4
+               MOVE I TO MY-PKEY
+               MOVE 20 TO MY-AKEY
+               WRITE MY-REC
+           END-PERFORM
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE 20 TO MY-AKEY
+           START MY-FILE KEY >= MY-AKEY
+           PERFORM 4 TIMES
+               READ MY-FILE NEXT
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           MOVE 20 TO MY-AKEY
+           START MY-FILE KEY <= MY-AKEY
+           PERFORM 4 TIMES
+               READ MY-FILE PREVIOUS
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[1234.
+4321.
+], [])
+
+AT_CLEANUP
+
+
+
+AT_SETUP([INDEXED file START <= with duplicate keys before the last key])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 9.
+           05  MY-AKEY   PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  I             PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 5
+               MOVE I TO MY-PKEY
+               EVALUATE I
+                   WHEN 1 MOVE 10 TO MY-AKEY
+                   WHEN 5 MOVE 30 TO MY-AKEY
+                   WHEN OTHER MOVE 20 TO MY-AKEY
+               END-EVALUATE
+               WRITE MY-REC
+           END-PERFORM
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE 20 TO MY-AKEY
+           START MY-FILE KEY >= MY-AKEY
+           PERFORM 4 TIMES
+               READ MY-FILE NEXT
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           MOVE 20 TO MY-AKEY
+           START MY-FILE KEY <= MY-AKEY
+           PERFORM 4 TIMES
+               READ MY-FILE PREVIOUS
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           MOVE 20 TO MY-AKEY
+           START MY-FILE KEY <= MY-AKEY
+           PERFORM 2 TIMES
+               READ MY-FILE NEXT
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[2345.
+4321.
+45.
+], [])
+
+AT_CLEANUP
+
+
+
+AT_SETUP([INDEXED file READ PREVIOUS after READ NEXT with duplicate keys])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 9.
+           05  MY-AKEY   PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  I             PIC 9.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 3
+               MOVE I TO MY-PKEY
+               MOVE 20 TO MY-AKEY
+               WRITE MY-REC
+           END-PERFORM
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE 20 TO MY-AKEY
+           READ MY-FILE KEY IS MY-AKEY
+           DISPLAY MY-PKEY WITH NO ADVANCING
+           PERFORM 2 TIMES
+               READ MY-FILE NEXT
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           PERFORM 2 TIMES
+               READ MY-FILE PREVIOUS
+               DISPLAY MY-PKEY WITH NO ADVANCING
+           END-PERFORM
+           DISPLAY "."
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[123.
+21.
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file READ PREVIOUS ends after a REWRITE changing the key])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES
+               FILE STATUS IS MY-STATUS.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 9.
+           05  MY-AKEY   PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  MY-STATUS     PIC XX.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           CLOSE MY-FILE
+
+           OPEN I-O MY-FILE
+           MOVE 1 TO MY-PKEY  MOVE 20 TO MY-AKEY  WRITE MY-REC
+           MOVE 1 TO MY-PKEY  MOVE 10 TO MY-AKEY  REWRITE MY-REC
+           MOVE 2 TO MY-PKEY  MOVE 30 TO MY-AKEY  WRITE MY-REC
+
+           MOVE 50 TO MY-AKEY
+           START MY-FILE KEY <= MY-AKEY
+           PERFORM 3 TIMES
+               READ MY-FILE PREVIOUS
+               IF MY-STATUS = "00"
+                   DISPLAY MY-PKEY WITH NO ADVANCING
+               ELSE
+                   DISPLAY "(" MY-STATUS ")" WITH NO ADVANCING
+               END-IF
+           END-PERFORM
+           DISPLAY "."
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[21(10).
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file START >= on the last key with duplicates allowed])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 9.
+           05  MY-AKEY   PIC 99.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE 1 TO MY-PKEY  MOVE 10 TO MY-AKEY  WRITE MY-REC
+           MOVE 2 TO MY-PKEY  MOVE 20 TO MY-AKEY  WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE 20 TO MY-AKEY
+           START MY-FILE KEY >= MY-AKEY
+           READ MY-FILE NEXT
+           DISPLAY MY-PKEY
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[2
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file START = on an empty file])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES
+               FILE STATUS IS MY-STATUS.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 9.
+           05  MY-AKEY   PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  MY-STATUS     PIC XX.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE 5 TO MY-PKEY
+           START MY-FILE KEY = MY-PKEY
+           DISPLAY MY-STATUS
+           MOVE 5 TO MY-AKEY
+           START MY-FILE KEY = MY-AKEY
+           DISPLAY MY-STATUS
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[23
+23
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file START before the first key])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-KEY
+               FILE STATUS IS MY-STATUS.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-KEY    PIC 99.
+
+       WORKING-STORAGE SECTION.
+       01  MY-STATUS     PIC XX.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE 10 TO MY-KEY
+           WRITE MY-REC
+           MOVE 20 TO MY-KEY
+           WRITE MY-REC
+           MOVE 30 TO MY-KEY
+           WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+
+           MOVE 10 TO MY-KEY
+           START MY-FILE KEY < MY-KEY
+           DISPLAY "< 10: " MY-STATUS
+
+           MOVE 5 TO MY-KEY
+           START MY-FILE KEY <= MY-KEY
+           DISPLAY "<= 05: " MY-STATUS
+
+           MOVE 10 TO MY-KEY
+           START MY-FILE KEY <= MY-KEY
+           READ MY-FILE PREVIOUS
+           DISPLAY "<= 10: " MY-STATUS " " MY-KEY
+
+           MOVE 20 TO MY-KEY
+           START MY-FILE KEY < MY-KEY
+           READ MY-FILE PREVIOUS
+           DISPLAY "< 20: " MY-STATUS " " MY-KEY
+
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[< 10: 23
+<= 05: 23
+<= 10: 00 10
+< 20: 00 10
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INDEXED file START <= between keys])
+AT_KEYWORDS([runfile])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT MY-FILE ASSIGN TO "testfile"
+               ORGANIZATION IS INDEXED
+               ACCESS IS DYNAMIC
+               RECORD KEY IS MY-PKEY
+               ALTERNATE RECORD KEY IS MY-AKEY WITH DUPLICATES.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  MY-FILE.
+       01  MY-REC.
+           05  MY-PKEY   PIC 99.
+           05  MY-AKEY   PIC 99.
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT MY-FILE
+           MOVE 10 TO MY-PKEY  MOVE 10 TO MY-AKEY  WRITE MY-REC
+           MOVE 20 TO MY-PKEY  MOVE 20 TO MY-AKEY  WRITE MY-REC
+           MOVE 30 TO MY-PKEY  MOVE 30 TO MY-AKEY  WRITE MY-REC
+           CLOSE MY-FILE
+
+           OPEN INPUT MY-FILE
+           MOVE 25 TO MY-PKEY
+           START MY-FILE KEY <= MY-PKEY
+           READ MY-FILE NEXT
+           DISPLAY MY-PKEY
+           MOVE 25 TO MY-AKEY
+           START MY-FILE KEY <= MY-AKEY
+           READ MY-FILE NEXT
+           DISPLAY MY-PKEY
+           CLOSE MY-FILE
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[20
+20
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([TURN EC-I-O])
 AT_KEYWORDS([runfile directive])
 

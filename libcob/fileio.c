@@ -5080,12 +5080,37 @@ indexed_start (cob_file *f, const int cond, cob_field *key)
 				savecond = COB_LA;
 			}
 		} else {
+			/* workaround for V(B)ISAM bug: ISEQUAL on an empty file
+			   gives EBADFILE instead of ENOREC */
+			if (cond == COB_EQ && ISERRNO == EBADFILE) {
+				ISERRNO = ENOREC;
+			}
 			f->curkey = -1;
 			f->mapkey = -1;
 			fh->startcond = -1;
 			fh->readdir = -1;
 			fh->startiscur = 0;
 			return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
+		}
+	}
+	if ((cond == COB_LE || cond == COB_LT)
+	 && savecond != COB_LA) {
+		/* logic bug fix: for <= and <, check that a record is
+		   before the first one >= key */
+		indexed_savekey (fh, f->record->data, k);
+		if (isread (fh->isfd, fh->recwrk, ISCURR) == 0
+		 && (cond == COB_LT
+		  || indexed_cmpkey (fh, fh->recwrk, k, fh->partial_key_length) != 0)) {
+			if (isread (fh->isfd, fh->recwrk, ISPREV) != 0) {
+				f->curkey = -1;
+				f->mapkey = -1;
+				fh->startcond = -1;
+				fh->readdir = -1;
+				fh->startiscur = 0;
+				return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
+			}
+			/* back to the record found */
+			isstart (fh->isfd, keyd, klen, (void *)f->record->data, ISGTEQ);
 		}
 	}
 	fh->startcond = savecond;
@@ -5313,7 +5338,10 @@ indexed_read_next (cob_file *f, const int read_opts)
 				switch (fh->startcond) {
 				case COB_GE:
 					domoveback = 0;
+					/* wrong libcob assumption: a failed ISNEXT or ISPREV does not
+					   move the position, so no walk if no duplicates */
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						domoveback = 1;
@@ -5323,14 +5351,22 @@ indexed_read_next (cob_file *f, const int read_opts)
 					}
 					break;
 				case COB_LE:
-					domoveback = 0;
+					/* logic bug fix: go back if the record found is after the key */
+					domoveback = indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) > 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
 					if (domoveback) {
 						isread (fh->isfd, (void *)f->record->data, ISERRNO == 0 ? ISPREV : ISLAST);
+						if (ISERRNO == ENOCURR) {
+							/* workaround for V(B)ISAM bug: ISPREV fails (ENOCURR)
+							   after ISNEXT reached the last record */
+							isread (fh->isfd, (void *)f->record->data, ISLAST);
+							isread (fh->isfd, (void *)f->record->data, ISPREV);
+						}
 					}
 					break;
 				case COB_LT:
@@ -5349,7 +5385,11 @@ indexed_read_next (cob_file *f, const int read_opts)
 					}
 					break;
 				}
-				if (isread (fh->isfd, (void *)f->record->data, ISCURR | lmode)) {
+				/* workaround for V(B)ISAM bug: ISCURR fails (ENOCURR)
+				   after ISNEXT reached the last record */
+				if (isread (fh->isfd, (void *)f->record->data, ISCURR | lmode)
+				 && (ISERRNO != ENOCURR
+				  || isread (fh->isfd, (void *)f->record->data, ISLAST | lmode))) {
 					ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 				}
 			}
@@ -5399,12 +5439,21 @@ indexed_read_next (cob_file *f, const int read_opts)
 					else
 						domoveback = 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
 					}
 					if (domoveback) {
-						isread (fh->isfd, (void *)f->record->data, ISPREV);
+						/* wrong libcob assumption: a failed ISNEXT does not move
+						   the position, stay on the last record */
+						isread (fh->isfd, (void *)f->record->data, ISERRNO == 0 ? ISPREV : ISLAST);
+						if (ISERRNO == ENOCURR) {
+							/* workaround for V(B)ISAM bug: ISPREV fails (ENOCURR)
+							   after ISNEXT reached the last record */
+							isread (fh->isfd, (void *)f->record->data, ISLAST);
+							isread (fh->isfd, (void *)f->record->data, ISPREV);
+						}
 					}
 					break;
 				case COB_LT:
@@ -5447,7 +5496,16 @@ indexed_read_next (cob_file *f, const int read_opts)
 				fh->wrkhasrec = 0;
 			}
 			if (isread (fh->isfd, (void *)f->record->data, ISPREV | lmode)) {
+				const int	lost = (ISERRNO == ENOCURR);
 				ret = fisretsts (COB_STATUS_10_END_OF_FILE);
+				/* workaround for V(B)ISAM bug: ISPREV fails (ENOCURR)
+				   after ISNEXT reached the last record */
+				if (lost
+				 && !isread (fh->isfd, (void *)f->record->data, ISLAST)
+				 && ISRECNUM == fh->recnum
+				 && !isread (fh->isfd, (void *)f->record->data, ISPREV | lmode)) {
+					ret = COB_STATUS_00_SUCCESS;
+				}
 			}
 		}
 		break;
