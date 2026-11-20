@@ -5409,7 +5409,9 @@ indexed_read_next (cob_file *f, const int read_opts)
 						domoveback = 1;
 					}
 					if (domoveback) {
-						isread (fh->isfd, (void *)f->record->data, ISPREV);
+						/* wrong libcob assumption: a failed ISNEXT does not move
+						   the position, stay on the last record */
+						isread (fh->isfd, (void *)f->record->data, ISERRNO == 0 ? ISPREV : ISLAST);
 					}
 					break;
 				case COB_LT:

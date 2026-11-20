@@ -3,6 +3,9 @@
 
 	* fileio.c (indexed_read_next): after START, no walk over equal keys if no
 	  duplicates (wrong libcob assumption: a failed read moves the position)
+	* fileio.c (indexed_read_next): after START <=, fix READ PREVIOUS if the
+	  walk reaches the end (wrong libcob assumption: a failed ISNEXT moves
+	  the position)
 
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
